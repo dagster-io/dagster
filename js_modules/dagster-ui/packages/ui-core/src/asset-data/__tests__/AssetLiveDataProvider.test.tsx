@@ -98,6 +98,7 @@ describe('AssetLiveDataProvider', () => {
 
     // Initially an empty object
     expect(resultFn).toHaveBeenCalledTimes(0);
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     expect(hookResult.mock.calls[0]!.value).toEqual(undefined);
 
     act(() => {
@@ -106,6 +107,7 @@ describe('AssetLiveDataProvider', () => {
 
     expect(resultFn).toHaveBeenCalled();
     await waitFor(() => {
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
       expect(hookResult.mock.calls[1]!.value).not.toEqual({});
     });
 
@@ -163,6 +165,7 @@ describe('AssetLiveDataProvider', () => {
 
     // Initially an empty object
     expect(resultFn).toHaveBeenCalledTimes(0);
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     expect(hookResult.mock.calls[0]!.value).toEqual(undefined);
 
     act(() => {
@@ -183,6 +186,7 @@ describe('AssetLiveDataProvider', () => {
 
     // Initially an empty object
     expect(resultFn2).not.toHaveBeenCalled();
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     expect(hookResult2.mock.calls[0]!.value).toEqual(undefined);
     act(() => {
       jest.runOnlyPendingTimers();
@@ -363,6 +367,7 @@ describe('AssetLiveDataProvider', () => {
       expect(resultFn).toHaveBeenCalled();
     });
     await waitFor(() => {
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
       expect(hookResult.mock.calls[1]!.value).not.toEqual({});
     });
     expect(resultFn2).not.toHaveBeenCalled();
@@ -431,6 +436,7 @@ describe('AssetLiveDataProvider', () => {
 
     // Initially an empty object
     expect(resultFn).toHaveBeenCalledTimes(0);
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     expect(hookResult.mock.calls[0]!.value).toEqual(undefined);
 
     act(() => {
@@ -497,7 +503,9 @@ describe('AssetLiveDataProvider', () => {
     // Initially an empty object
     expect(resultFn).toHaveBeenCalledTimes(0);
     expect(resultFn2).toHaveBeenCalledTimes(0);
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     expect(hookResult.mock.calls[0]!.value).toEqual(undefined);
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     expect(hookResult2.mock.calls[0]!.value).toEqual(undefined);
 
     act(() => {
@@ -507,7 +515,9 @@ describe('AssetLiveDataProvider', () => {
     expect(resultFn).toHaveBeenCalled();
     expect(resultFn2).toHaveBeenCalled();
     await waitFor(() => {
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
       expect(hookResult.mock.calls[1]!.value).not.toEqual({});
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
       expect(hookResult2.mock.calls[1]!.value).not.toEqual({});
     });
   });
@@ -592,6 +602,7 @@ describe('AssetLiveDataProvider', () => {
 
     // Initially an empty object
     expect(resultFn).toHaveBeenCalledTimes(0);
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     expect(hookResult.mock.calls[0]!.value).toEqual(undefined);
 
     act(() => {
@@ -600,6 +611,7 @@ describe('AssetLiveDataProvider', () => {
 
     expect(resultFn).toHaveBeenCalled();
     await waitFor(() => {
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
       expect(hookResult.mock.calls[1][0]!).toEqual({
         ['key1']: expect.any(Object),
         ['key2']: expect.any(Object),

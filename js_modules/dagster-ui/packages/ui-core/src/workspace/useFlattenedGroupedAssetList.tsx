@@ -34,6 +34,7 @@ export const useFlattenedGroupedAssetList = ({repoAddress, assets}: Config) => {
       if (!groups[groupName]) {
         groups[groupName] = [];
       }
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
       groups[groupName]!.push(asset);
     }
 

@@ -59,6 +59,7 @@ export const SelectionHealthDataProvider = ({children}: {children: React.ReactNo
       if (!registries[selection]) {
         registries[selection] = new SelectionRegistry();
       }
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
       const registry = registries[selection]!;
       const unwatch = registry.watchSelection(setHealthData, setFilterData);
       forceRerender();
@@ -76,8 +77,11 @@ export const SelectionHealthDataProvider = ({children}: {children: React.ReactNo
         <SelectionHealthDataObserver
           key={selection}
           selection={selection}
+          // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
           registry={registries[selection]!}
+          // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
           filterListeners={registries[selection]!.getFilterListeners()}
+          // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
           healthListeners={registries[selection]!.getHealthListeners()}
         />
       ))}

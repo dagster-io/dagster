@@ -142,6 +142,7 @@ export const PartitionPerAssetStatus = React.memo(
             name: box.node.name,
             unix: 0,
             color: assetPartitionStatusToSquareColor(
+              // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
               partitionStatusAtIndex(rangesByAssetKey[box.node.name]!, partitionKeyIdx),
             ),
           })),
@@ -520,6 +521,7 @@ const PartitionSquare = React.memo(
             <MenuLink
               icon="open_in_new"
               text="Show logs from last run"
+              // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
               to={linkToRunEvent(runs[runs.length - 1]!, {stepKey: step ? step.name : null})}
             />
             <MenuItem

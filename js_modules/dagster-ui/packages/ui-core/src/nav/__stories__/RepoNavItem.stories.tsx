@@ -159,6 +159,7 @@ export const ManyRepos = () => {
   );
 };
 
+// eslint-disable-next-line @typescript-eslint/no-non-null-assertion
 const ONE_REPO = [OPTIONS[0]!];
 
 export const OneRepo = () => {

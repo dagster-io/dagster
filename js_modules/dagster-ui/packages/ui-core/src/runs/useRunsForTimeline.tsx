@@ -86,7 +86,9 @@ export const useRunsForTimeline = ({
       setCompletedRuns(
         runs.filter(
           (run) =>
+            // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
             (run.startTime! <= endSec && run.updateTime! >= endSec) ||
+            // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
             (run.updateTime! >= startSec && run.updateTime! <= endSec),
         ),
       );
@@ -201,6 +203,7 @@ export const useRunsForTimeline = ({
         const runs: RunTimelineFragment[] = data.completed.results;
 
         const hasMoreData = runs.length === batchLimit;
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
         const nextCursor = hasMoreData ? runs[runs.length - 1]!.id : undefined;
 
         const accumulatedData = dataToCommitToCacheByBucket.get(bucket) ?? [];
@@ -272,6 +275,7 @@ export const useRunsForTimeline = ({
           }
           const runs = data.ongoing.results;
           const hasMoreData = runs.length === batchLimit;
+          // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
           const nextCursor = hasMoreData ? runs[runs.length - 1]!.id : undefined;
           return {
             data: runs,
@@ -375,6 +379,7 @@ export const useRunsForTimeline = ({
       const runJobKey = makeJobKey(repoAddress, run.pipelineName);
 
       map[runJobKey] = map[runJobKey] || {};
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
       map[runJobKey]![run.id] = {
         id: run.id,
         status: run.status,
@@ -479,6 +484,7 @@ export const useRunsForTimeline = ({
           for (const schedule of schedules) {
             if (schedule.scheduleState.status === InstigationStatus.RUNNING) {
               schedule.futureTicks.results.forEach(({timestamp}) => {
+                // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
                 const startTime = timestamp! * 1000;
                 if (
                   startTime > now &&
@@ -542,6 +548,7 @@ export const useRunsForTimeline = ({
     }
     allKeys.forEach((key) => {
       if (!addedJobKeys.has(key)) {
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
         jobs.push(jobsWithCompletedRunsAndOngoingRuns[key]!);
       }
     });
@@ -567,6 +574,7 @@ export const useRunsForTimeline = ({
       {} as {[jobKey: string]: number},
     );
 
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     return unsortedJobs.sort((a, b) => earliest[a.key]! - earliest[b.key]!);
   }, [unsortedJobs]);
 

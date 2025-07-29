@@ -56,6 +56,7 @@ export const AssetCatalogTopAssetsChart = React.memo(
       return datasets.labels
         .map((label, i) => ({
           label,
+          // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
           value: datasets.data[i]!,
         }))
         .filter(({value}) => value !== 0)

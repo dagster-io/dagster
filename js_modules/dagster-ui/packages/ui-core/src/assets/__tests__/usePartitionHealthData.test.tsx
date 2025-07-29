@@ -35,7 +35,9 @@ function selectionWithSlice(
     selectedKeys: dim.partitionKeys.slice(start, end + 1),
     selectedRanges: [
       {
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
         start: {idx: start, key: dim.partitionKeys[start]!},
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
         end: {idx: end, key: dim.partitionKeys[end]!},
       },
     ],
@@ -616,6 +618,7 @@ describe('usePartitionHealthData utilities', () => {
       const one = buildPartitionHealthData(ONE_DIMENSIONAL_ASSET, {path: ['asset']});
 
       expect(
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
         keyCountByStateInSelection(one, [selectionWithSlice(one.dimensions[0]!, 0, 5)]),
       ).toEqual({
         ...emptyAssetPartitionStatusCounts(),
@@ -625,6 +628,7 @@ describe('usePartitionHealthData utilities', () => {
       });
 
       expect(
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
         keyCountByStateInSelection(one, [selectionWithSlice(one.dimensions[0]!, 0, 2)]),
       ).toEqual({
         ...emptyAssetPartitionStatusCounts(),
@@ -637,7 +641,9 @@ describe('usePartitionHealthData utilities', () => {
 
       expect(
         keyCountByStateInSelection(two, [
+          // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
           selectionWithSlice(two.dimensions[0]!, 0, 5),
+          // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
           selectionWithSlice(two.dimensions[1]!, 0, 4),
         ]),
       ).toEqual({
@@ -649,7 +655,9 @@ describe('usePartitionHealthData utilities', () => {
 
       expect(
         keyCountByStateInSelection(two, [
+          // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
           selectionWithSlice(two.dimensions[0]!, 0, 3),
+          // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
           selectionWithSlice(two.dimensions[1]!, 0, 3),
         ]),
       ).toEqual({
@@ -660,7 +668,9 @@ describe('usePartitionHealthData utilities', () => {
 
       expect(
         keyCountByStateInSelection(two, [
+          // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
           selectionWithSlice(two.dimensions[0]!, 0, 5),
+          // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
           selectionWithSlice(two.dimensions[1]!, 4, 4),
         ]),
       ).toEqual({
@@ -674,7 +684,9 @@ describe('usePartitionHealthData utilities', () => {
 
       expect(
         keyCountByStateInSelection(twoEmpty, [
+          // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
           selectionWithSlice(twoEmpty.dimensions[0]!, 0, 5),
+          // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
           selectionWithSlice(twoEmpty.dimensions[1]!, 0, 4),
         ]),
       ).toEqual({

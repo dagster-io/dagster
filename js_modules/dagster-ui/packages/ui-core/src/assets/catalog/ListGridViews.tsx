@@ -193,6 +193,7 @@ export const List = ({rows}: {rows: React.ReactNode[]}) => {
     <Container ref={scrollWrapperRef} style={{maxHeight: '600px', overflowY: 'auto'}}>
       <Inner $totalHeight={totalHeight}>
         {rowItems.map(({index, key, size, start}) => {
+          // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
           const row = rows[index]!;
           return (
             <Row key={key} $height={size} $start={start}>

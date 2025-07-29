@@ -45,6 +45,7 @@ export const AssetCatalogHorizontalTopAssetsChart = React.memo(
       return datasets.labels
         .map((label, i) => ({
           label,
+          // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
           value: datasets.data[i]!,
         }))
         .filter(({value}) => value !== 0)
@@ -85,6 +86,7 @@ export const AssetCatalogHorizontalTopAssetsChart = React.memo(
                 <Mono color={Colors.textDefault()} className={styles.tableValue}>
                   {numberFormatter.format(Math.round(value))}
                 </Mono>
+                {/* eslint-disable-next-line @typescript-eslint/no-non-null-assertion */}
                 <DistributionChartRow maxValue={maxValue!} value={Math.round(value)} />
               </React.Fragment>
             ))}

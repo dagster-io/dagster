@@ -96,6 +96,7 @@ export const AssetNode = React.memo(({definition, selected, onChangeAssetSelecti
 }, isEqual);
 
 export const AssetNameRow = ({definition}: {definition: AssetNodeFragment}) => {
+  // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
   const displayName = definition.assetKey.path[definition.assetKey.path.length - 1]!;
 
   return (
@@ -226,6 +227,7 @@ export const AssetNodeMinimalWithHealth = ({
   const {liveData: healthData} = useAssetHealthData(assetKey);
   const health = healthData?.assetHealth;
 
+  // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
   const displayName = assetKey.path[assetKey.path.length - 1]!;
   const isChanged = definition.changedReasons.length;
   const isStale = isAssetStale(liveData);
@@ -302,6 +304,7 @@ export const AssetNodeMinimalOld = ({
   const {liveData} = useAssetLiveData(assetKey);
 
   const {border, background} = buildAssetNodeStatusContent({assetKey, definition, liveData});
+  // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
   const displayName = assetKey.path[assetKey.path.length - 1]!;
 
   const isChanged = definition.changedReasons.length;

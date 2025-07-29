@@ -37,12 +37,14 @@ export function generateObjectHashStream(
   hash.append(encoder.encode(isRootArray ? '[' : '{'));
 
   while (stack.length > 0) {
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     const currentFrame = stack[stack.length - 1]!;
 
     if (currentFrame.index >= currentFrame.keys.length) {
       stack.pop();
       hash.append(encoder.encode(currentFrame.isArray ? ']' : '}'));
       if (stack.length > 0) {
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
         const parentFrame = stack[stack.length - 1]!;
         parentFrame.isFirst = false;
       }

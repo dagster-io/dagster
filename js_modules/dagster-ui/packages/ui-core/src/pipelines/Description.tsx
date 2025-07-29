@@ -24,10 +24,12 @@ function removeLeadingSpaces(input: string) {
   }
 
   const lines = input.split('\n');
+  // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
   if (!lines.every((l) => l.substr(0, leadingSpaces[1]!.length).trim() === '')) {
     return input;
   }
 
+  // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
   return lines.map((l) => l.substr(leadingSpaces[1]!.length)).join('\n');
 }
 

@@ -197,6 +197,7 @@ export const indexedDBAsyncMemoize = <R, U extends (...args: any[]) => Promise<R
         });
       }
       try {
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
         const result = await hashToPromise[hashKey]!;
         resolve(result);
       } catch (e) {

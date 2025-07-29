@@ -21,6 +21,7 @@ const POPULAR_PROTOCOLS: {[name: string]: string} = {
   '': 'Custom',
 };
 
+// eslint-disable-next-line @typescript-eslint/no-non-null-assertion
 const DEFAULT_PROTOCOL = {protocol: Object.keys(POPULAR_PROTOCOLS)[0]!, custom: false};
 
 export type ProtocolData = {

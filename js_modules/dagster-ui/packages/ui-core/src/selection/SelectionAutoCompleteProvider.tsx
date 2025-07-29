@@ -235,6 +235,7 @@ export const createProvider = <
     const displayText = `${attribute as string}:`;
     const icon: IconName = attributeToIcon[attribute];
     let label = (attribute as string).replace(/_/g, ' ');
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     label = label[0]!.toUpperCase() + label.slice(1);
     return {
       text,
@@ -290,6 +291,7 @@ export const createProvider = <
     text: string;
     options?: {includeParenthesis?: boolean};
   }) {
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     const functionName = func[0]!.toUpperCase() + func.slice(1);
     const rightLabel = options?.includeParenthesis ? `${func}()` : func;
     let icon: IconName;
@@ -319,6 +321,7 @@ export const createProvider = <
     const attribute = primaryAttributeKey as string;
     const text = `${attribute}:"*${query}*"`;
     let displayAttribute = attribute.replace(/_/g, ' ');
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     displayAttribute = displayAttribute[0]!.toUpperCase() + displayAttribute.slice(1);
     const displayText = (
       <Box flex={{direction: 'row', alignItems: 'center', gap: 2}}>

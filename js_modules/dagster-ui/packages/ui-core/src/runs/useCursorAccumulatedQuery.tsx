@@ -73,6 +73,7 @@ class AccumulatingDataFetcher<DataType, CursorType, ErrorType> {
       }
       res();
     });
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     const result = await this.fetchPromise!;
     this.fetchPromise = undefined;
     return result;

@@ -18,6 +18,7 @@ function buildEdge(descriptor: string): Edge {
     throw new Error(`Cannot parse ${descriptor}`);
   }
   const [_, fromOp, fromIO, toOp, toIO] = match;
+  // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
   return {fromOp: fromOp!, fromIO: fromIO!, toOp: toOp!, toIO: toIO!};
 }
 
@@ -103,6 +104,7 @@ export function buildTaggedDAG() {
   const ops = buildBasicDAG();
 
   ['ipynb', 'sql', 'verylongtypename', 'story'].forEach((kind, idx) =>
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     ops[idx]!.definition.metadata.push({
       key: 'kind',
       value: kind,
@@ -115,6 +117,7 @@ export function buildTaggedDAG() {
 
 export function buildCompositeDAG() {
   const ops = buildBasicDAG();
+  // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
   const composite = ops.find((s) => s.name === 'C')!;
 
   const edges = [buildEdge(`CA:out=>CB:in`)];
@@ -130,10 +133,13 @@ export function buildCompositeDAG() {
     inputMappings: [
       {
         __typename: 'InputMapping',
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
         definition: composite.definition.inputDefinitions[0]!,
         mappedInput: {
           __typename: 'Input',
+          // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
           solid: childOps[0]!,
+          // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
           definition: childOps[0]!.definition.inputDefinitions[0]!,
         },
       },
@@ -141,10 +147,13 @@ export function buildCompositeDAG() {
     outputMappings: [
       {
         __typename: 'OutputMapping',
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
         definition: composite.definition.outputDefinitions[0]!,
         mappedOutput: {
           __typename: 'Output',
+          // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
           solid: childOps[1]!,
+          // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
           definition: childOps[1]!.definition.outputDefinitions[0]!,
         },
       },
@@ -172,21 +181,29 @@ export function buildCompositeCollapsedIODAG() {
     ...composite.definition,
     __typename: 'CompositeSolidDefinition',
     id: 'composite-solid-id',
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     inputMappings: childOps[0]!.definition.inputDefinitions.map((inputDef, idx) => ({
       __typename: 'InputMapping',
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
       definition: composite.definition.inputDefinitions[idx]!,
       mappedInput: {
         __typename: 'Input',
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
         solid: childOps[0]!,
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
         definition: inputDef!,
       },
     })),
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     outputMappings: childOps[1]!.definition.outputDefinitions.map((outputDef, idx) => ({
       __typename: 'OutputMapping',
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
       definition: composite.definition.outputDefinitions[idx]!,
       mappedOutput: {
         __typename: 'Output',
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
         solid: childOps[1]!,
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
         definition: outputDef!,
       },
     })),

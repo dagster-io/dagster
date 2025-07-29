@@ -134,6 +134,7 @@ export const graphHasCycles = (graphData: GraphData) => {
   };
   let hasCycles = false;
   while (nodes.size !== 0 && !hasCycles) {
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     hasCycles = search([], nodes.values().next().value!);
   }
   return hasCycles;

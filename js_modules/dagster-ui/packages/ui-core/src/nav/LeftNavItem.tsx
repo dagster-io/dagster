@@ -35,6 +35,7 @@ export const LeftNavItem = React.forwardRef(
 
     useQuery<InstigationStatesQuery, InstigationStatesQueryVariables>(INSTIGATION_STATES_QUERY, {
       variables: {
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
         repositoryID: repositoryId!,
       },
       skip: !repositoryId,
@@ -75,6 +76,7 @@ export const LeftNavItem = React.forwardRef(
 
         if (scheduleCount) {
           if (scheduleCount === 1) {
+            // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
             const schedule = schedules[0]!;
             const {cronSchedule, executionTimezone} = schedule;
             return (
@@ -92,7 +94,8 @@ export const LeftNavItem = React.forwardRef(
 
         return sensorCount === 1 ? (
           <div>
-            Sensor: <strong>{sensors[0]!.name}</strong>
+            {/* eslint-disable-next-line @typescript-eslint/no-non-null-assertion */}
+            <strong>{sensors[0]!.name}</strong>
           </div>
         ) : (
           `${sensorCount} sensors`
@@ -118,9 +121,11 @@ export const LeftNavItem = React.forwardRef(
         }
 
         const path = scheduleCount
-          ? `/schedules/${schedules[0]!.name}`
+          ? // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+            `/schedules/${schedules[0]!.name}`
           : sensorCount
-            ? `/sensors/${sensors[0]!.name}`
+            ? // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+              `/sensors/${sensors[0]!.name}`
             : null;
 
         return path ? <Link to={workspacePathFromAddress(repoAddress, path)}>{icon}</Link> : null;

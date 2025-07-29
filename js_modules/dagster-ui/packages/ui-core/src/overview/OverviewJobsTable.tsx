@@ -85,7 +85,9 @@ export const OverviewJobsTable = ({repos}: Props) => {
             }}
           >
             {items.map(({index, key}) => {
+              // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
               const row: RowType = flattened[index]!;
+              // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
               const type = row!.type;
 
               if (type === 'header') {

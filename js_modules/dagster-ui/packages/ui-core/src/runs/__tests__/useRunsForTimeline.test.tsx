@@ -246,7 +246,9 @@ describe('useRunsForTimeline', () => {
         {
           id: `1-0`,
           status: RunStatus.SUCCESS,
+          // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
           startTime: buckets[0]![0] * 1000,
+          // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
           endTime: buckets[0]![1] * 1000,
           automation: null,
           externalJobSource: null,
@@ -375,6 +377,7 @@ describe('useRunsForTimeline', () => {
     // Verify the initial data
     expect(result.current.jobs).toHaveLength(2);
     expect(result.current.loading).toBe(false);
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     expect(result.current.jobs[0]!.runs).toHaveLength(1);
 
     // Rerender hook with extended interval
@@ -397,6 +400,7 @@ describe('useRunsForTimeline', () => {
     const buckets = getHourlyBuckets(interval[0], interval[1]);
     expect(buckets).toHaveLength(1);
 
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     const bucket = buckets[0]!;
     const updatedBefore = bucket[1];
     const updatedAfter = bucket[0];
@@ -500,21 +504,28 @@ describe('useRunsForTimeline', () => {
       expect(result.current.jobs).toHaveLength(2);
     });
 
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     expect(result.current.jobs[0]!.runs).toHaveLength(2);
 
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     expect(result.current.jobs[0]!.runs[0]).toEqual({
       id: '1-1',
       status: 'SUCCESS',
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
       startTime: buckets[0]![0] * 1000,
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
       endTime: buckets[0]![1] * 1000,
       automation: null,
       externalJobSource: null,
     });
 
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     expect(result.current.jobs[0]!.runs[1]).toEqual({
       id: '1-2',
       status: 'SUCCESS',
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
       startTime: buckets[0]![0] * 1000,
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
       endTime: buckets[0]![1] * 1000,
       automation: null,
       externalJobSource: null,
@@ -716,6 +727,7 @@ describe('useRunsForTimeline', () => {
     const buckets = getHourlyBuckets(interval[0], interval[1]);
     expect(buckets).toHaveLength(1);
 
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     const bucket = buckets[0]!;
     const updatedBefore = bucket[1];
     const updatedAfter = bucket[0];

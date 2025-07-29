@@ -29,6 +29,7 @@ const workspaceMocks = buildWorkspaceMocks([
       repositories: [
         buildRepository({
           assetNodes: AssetCatalogTableMockAssets.filter((asset) => asset.definition).map(
+            // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
             (asset) => asset.definition!,
           ),
         }),
