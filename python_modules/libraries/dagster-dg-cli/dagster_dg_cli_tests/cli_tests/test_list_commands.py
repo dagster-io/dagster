@@ -590,6 +590,8 @@ def test_list_defs_asset_subselection():
             assert "epsilon" not in output
             assert "alpha:alpha_check" in output
             assert "alpha:alpha_beta_check" in output
+            assert "should_not_be_included" not in output
+
             result = subprocess.run(
                 ["dg", "list", "defs", "--assets", "group:group_2"], check=True, capture_output=True
             )
@@ -601,6 +603,7 @@ def test_list_defs_asset_subselection():
             assert "epsilon" in output
             assert "alpha:alpha_check" not in output, output
             assert "alpha:alpha_beta_check" not in output
+            assert "should_not_be_included" not in output
 
 
 def _sample_complex_asset_defs():
@@ -655,6 +658,10 @@ def _sample_complex_asset_defs():
     def alpha_beta_check() -> dg.AssetCheckResult:
         """This check is for alpha and beta."""
         return dg.AssetCheckResult(passed=True)
+
+    @dg.job
+    def should_not_be_included():
+        pass
 
 
 def test_list_defs_with_env_file_succeeds(snapshot):
