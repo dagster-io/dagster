@@ -23,4 +23,3 @@ defs = dg.Definitions(
     jobs=[all_fivetran_assets_job],
     resources={"fivetran": fivetran_workspace},
 )
-
