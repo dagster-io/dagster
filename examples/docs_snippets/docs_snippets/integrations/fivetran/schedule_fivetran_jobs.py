@@ -2,7 +2,6 @@ from dagster_fivetran import FivetranWorkspace, fivetran_assets
 
 import dagster as dg
 
-
 fivetran_workspace = FivetranWorkspace(
     account_id=dg.EnvVar("FIVETRAN_ACCOUNT_ID"),
     api_key=dg.EnvVar("FIVETRAN_API_KEY"),
@@ -16,7 +15,7 @@ fivetran_workspace = FivetranWorkspace(
     workspace=fivetran_workspace,
 )
 def fivetran_connector_assets(
-        context: dg.AssetExecutionContext, fivetran: FivetranWorkspace
+    context: dg.AssetExecutionContext, fivetran: FivetranWorkspace
 ):
     yield from fivetran.sync_and_poll(context=context)
 
