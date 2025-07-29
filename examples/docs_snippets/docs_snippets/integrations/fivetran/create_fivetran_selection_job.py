@@ -15,7 +15,7 @@ fivetran_workspace = FivetranWorkspace(
     workspace=fivetran_workspace,
 )
 def fivetran_connector_assets(
-        context: dg.AssetExecutionContext, fivetran: FivetranWorkspace
+    context: dg.AssetExecutionContext, fivetran: FivetranWorkspace
 ):
     yield from fivetran.sync_and_poll(context=context)
 
@@ -31,4 +31,3 @@ defs = dg.Definitions(
     jobs=[fivetran_connector_assets_job],
     resources={"fivetran": fivetran_workspace},
 )
-
