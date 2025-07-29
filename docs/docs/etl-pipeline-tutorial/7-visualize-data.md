@@ -39,6 +39,7 @@ Next, we will need to install Dagster's [Evidence integration](https://docs.dags
          ```shell
          uv pip install dagster-evidence
          ```
+
    </TabItem>
 
    <TabItem value="pip" label="pip">
@@ -47,6 +48,7 @@ Next, we will need to install Dagster's [Evidence integration](https://docs.dags
          ```shell
          pip install dagster-evidence
          ```
+
    </TabItem>
 </Tabs>
 
@@ -65,9 +67,9 @@ Unlike the other components we used, which generated individual assets for each 
 However, we can still configure our Evidence component to be dependent on multiple upstream assets by setting the `deps` value within the `attributes` key of the Evidence component `defs.yaml` file:
 
 <CodeExample
-    path="docs_snippets/docs_snippets/guides/tutorials/etl_tutorial/src/etl_tutorial/defs/dashboard/defs.yaml"
-    language="yaml"
-    title="src/etl_tutorial/defs/dashboard/defs.yaml"
+  path="docs_snippets/docs_snippets/guides/tutorials/etl_tutorial/src/etl_tutorial/defs/dashboard/defs.yaml"
+  language="yaml"
+  title="src/etl_tutorial/defs/dashboard/defs.yaml"
 />
 
 ## 4. Execute the Evidence asset

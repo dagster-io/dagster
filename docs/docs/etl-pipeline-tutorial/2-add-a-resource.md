@@ -19,6 +19,7 @@ First, we will need to install the `dagster-duckdb` and `pandas` libraries:
          ```shell
          uv pip install dagster-duckdb pandas
          ```
+
    </TabItem>
 
    <TabItem value="pip" label="pip">
@@ -27,6 +28,7 @@ First, we will need to install the `dagster-duckdb` and `pandas` libraries:
          ```shell
          pip install dagster-duckdb pandas
          ```
+
    </TabItem>
 </Tabs>
 

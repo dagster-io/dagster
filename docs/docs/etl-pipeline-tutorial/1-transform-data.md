@@ -42,6 +42,7 @@ Now that we have a dbt project to work with, we need to install both the Dagster
          ```shell
          uv pip install dagster-dbt dbt-duckdb
          ```
+
    </TabItem>
 
    <TabItem value="pip" label="pip">
@@ -50,6 +51,7 @@ Now that we have a dbt project to work with, we need to install both the Dagster
          ```shell
          pip install dagster-dbt dbt-duckdb
          ```
+
    </TabItem>
 </Tabs>
 
@@ -81,15 +83,14 @@ To check that Dagster can load the dbt component definition correctly in the top
 The component is correctly configured for our dbt project, but we need to make one addition to the YAML file:
 
 <CodeExample
-    path="docs_snippets/docs_snippets/guides/tutorials/etl_tutorial/src/etl_tutorial/defs/transform/defs.yaml"
-    language="yaml"
-    title="src/etl_tutorial/defs/transform/defs.yaml"
+  path="docs_snippets/docs_snippets/guides/tutorials/etl_tutorial/src/etl_tutorial/defs/transform/defs.yaml"
+  language="yaml"
+  title="src/etl_tutorial/defs/transform/defs.yaml"
 />
 
 Adding in the `translation` attribute aligns the keys of our dbt models with the assets we defined previously. Associating them together ensures the proper lineage across our assets.
 
 ![2048 resolution](/images/tutorial/etl-tutorial/ingest-assets-run.png)
-
 
 ## 4. Materialize assets
 
