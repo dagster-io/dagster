@@ -73,6 +73,13 @@ self_dependant_asset_with_single_run_backfill_policy = [
     )
 ]
 
+self_dependant_asset_with_no_backfill_policy = [
+    asset_def(
+        "self_dependant",
+        partitions_def=dg.DailyPartitionsDefinition("2023-01-01"),
+        deps={"self_dependant": dg.TimeWindowPartitionMapping(start_offset=-1, end_offset=-1)},
+    )
+]
 
 root_assets_different_partitions_same_downstream = [
     asset_def("root1", partitions_def=two_partitions_partitions_def),
