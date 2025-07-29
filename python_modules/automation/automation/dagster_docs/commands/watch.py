@@ -9,8 +9,10 @@ from typing import Optional
 
 import click
 
+from automation.dagster_docs.changed_validator import ValidationConfig
+from automation.dagster_docs.path_converters import dagster_path_converter
 from automation.dagster_docs.validator import SymbolImporter, validate_symbol_docstring
-from automation.dagster_docs.watcher import DocstringFileWatcher
+from automation.dagster_docs.watcher import ChangedFilesWatcher, DocstringFileWatcher
 
 
 def _resolve_symbol_file_path(symbol_path: str, verbose: bool) -> Path:
@@ -73,7 +75,7 @@ def _create_validation_callback(symbol_path: str, verbose: bool):
     return validate_and_report
 
 
-def _setup_signal_handlers(watcher: DocstringFileWatcher) -> None:
+def _setup_signal_handlers(watcher) -> None:
     """Setup signal handlers for graceful shutdown."""
 
     def signal_handler(signum, frame):
@@ -95,6 +97,64 @@ def _run_file_watcher(watcher: DocstringFileWatcher, verbose: bool) -> None:
     # Keep the main thread alive
     while True:
         time.sleep(1)
+
+
+def _find_git_root() -> Optional[Path]:
+    """Find the git repository root directory.
+
+    Returns:
+        Path to git root, or None if not in a git repository
+    """
+    root_path = Path.cwd()
+    while not (root_path / ".git").exists() and root_path != root_path.parent:
+        root_path = root_path.parent
+
+    if not (root_path / ".git").exists():
+        return None
+
+    return root_path
+
+
+def _run_changed_files_watch_mode(verbose: bool) -> int:
+    """Run watch mode for changed files, monitoring git changes.
+
+    Returns:
+        0 on successful shutdown, 1 on error
+    """
+    root_path = _find_git_root()
+    if root_path is None:
+        click.echo("Error: Not in a git repository", err=True)
+        return 1
+
+    click.echo("Setting up watch mode for changed files...")
+    if verbose:
+        click.echo("Debug mode enabled - will show file system events")
+    click.echo("Press Ctrl+C to stop watching\n")
+
+    config = ValidationConfig(
+        root_path=root_path,
+        path_converter=dagster_path_converter,
+    )
+
+    watcher = ChangedFilesWatcher(root_path, config, verbose)
+    _setup_signal_handlers(watcher)
+
+    try:
+        watcher.start_watching()
+        # Keep the main thread alive
+        while True:
+            time.sleep(1)
+    except Exception as e:
+        click.echo(f"Watch mode error: {e}", err=True)
+        if verbose:
+            import traceback
+
+            traceback.print_exc()
+        return 1
+    finally:
+        watcher.stop_watching()
+
+    return 0
 
 
 def _run_symbol_watch_mode(symbol_path: str, verbose: bool) -> int:
@@ -171,9 +231,6 @@ def docstrings(changed: bool, symbol: Optional[str], verbose: bool):
         sys.exit(exit_code)
 
     elif changed:
-        # Watch changed files - this functionality is not fully implemented yet
-        raise NotImplementedError(
-            "Watching changed files functionality not yet fully implemented. "
-            "Use --symbol to watch a specific symbol. "
-            "Full changed files watching will be implemented in a future PR."
-        )
+        # Watch changed files
+        exit_code = _run_changed_files_watch_mode(verbose)
+        sys.exit(exit_code)
