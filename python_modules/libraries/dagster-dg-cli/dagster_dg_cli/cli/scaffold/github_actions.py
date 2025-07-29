@@ -51,14 +51,11 @@ def _get_git_web_url(git_root: Path) -> Optional[str]:
 
 
 # Template file paths
-SERVERLESS_GITHUB_ACTION_FILE = (
-    Path(__file__).parent.parent / "templates" / "serverless-github-action.yaml"
-)
-HYBRID_GITHUB_ACTION_FILE = Path(__file__).parent.parent / "templates" / "hybrid-github-action.yaml"
+TEMPLATES_DIR = Path(__file__).parent.parent.parent / "templates"
+SERVERLESS_GITHUB_ACTION_FILE = TEMPLATES_DIR / "serverless-github-action.yaml"
+HYBRID_GITHUB_ACTION_FILE = TEMPLATES_DIR / "hybrid-github-action.yaml"
 
-BUILD_LOCATION_FRAGMENT = (
-    Path(__file__).parent.parent / "templates" / "build-location-fragment.yaml"
-)
+BUILD_LOCATION_FRAGMENT = TEMPLATES_DIR / "build-location-fragment.yaml"
 
 
 class ContainerRegistryInfo(NamedTuple):
@@ -72,10 +69,7 @@ REGISTRY_INFOS = [
     ContainerRegistryInfo(
         name="ECR",
         match=lambda url: "ecr" in url,
-        fragment=Path(__file__).parent.parent
-        / "templates"
-        / "registry_fragments"
-        / "ecr-login-fragment.yaml",
+        fragment=TEMPLATES_DIR / "registry_fragments" / "ecr-login-fragment.yaml",
         secrets_hints=[
             'gh secret set AWS_ACCESS_KEY_ID --body "(your AWS access key ID)"',
             'gh secret set AWS_SECRET_ACCESS_KEY --body "(your AWS secret access key)"',
@@ -85,10 +79,7 @@ REGISTRY_INFOS = [
     ContainerRegistryInfo(
         name="DockerHub",
         match=lambda url: "docker.io" in url,
-        fragment=Path(__file__).parent.parent
-        / "templates"
-        / "registry_fragments"
-        / "dockerhub-login-fragment.yaml",
+        fragment=TEMPLATES_DIR / "registry_fragments" / "dockerhub-login-fragment.yaml",
         secrets_hints=[
             'gh secret set DOCKERHUB_USERNAME --body "(your DockerHub username)"',
             'gh secret set DOCKERHUB_TOKEN --body "(your DockerHub token)"',
@@ -97,8 +88,7 @@ REGISTRY_INFOS = [
     ContainerRegistryInfo(
         name="GitHub Container Registry",
         match=lambda url: "ghcr.io" in url,
-        fragment=Path(__file__).parent.parent
-        / "templates"
+        fragment=TEMPLATES_DIR
         / "registry_fragments"
         / "github-container-registry-login-fragment.yaml",
         secrets_hints=[],
@@ -106,8 +96,7 @@ REGISTRY_INFOS = [
     ContainerRegistryInfo(
         name="Azure Container Registry",
         match=lambda url: "azurecr.io" in url,
-        fragment=Path(__file__).parent.parent
-        / "templates"
+        fragment=TEMPLATES_DIR
         / "registry_fragments"
         / "azure-container-registry-login-fragment.yaml",
         secrets_hints=[
@@ -118,10 +107,7 @@ REGISTRY_INFOS = [
     ContainerRegistryInfo(
         name="Google Container Registry",
         match=lambda url: "gcr.io" in url,
-        fragment=Path(__file__).parent.parent
-        / "templates"
-        / "registry_fragments"
-        / "gcr-login-fragment.yaml",
+        fragment=TEMPLATES_DIR / "registry_fragments" / "gcr-login-fragment.yaml",
         secrets_hints=[
             'gh secret set GCR_JSON_KEY --body "(your GCR JSON key)"',
         ],
