@@ -24,7 +24,6 @@ if TYPE_CHECKING:
 
 
 @public
-@public
 class Model(BaseModel):
     """pydantic BaseModel configured with recommended default settings for use with the Resolved framework.
 
