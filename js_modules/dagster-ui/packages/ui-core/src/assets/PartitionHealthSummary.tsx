@@ -24,10 +24,14 @@ export const PartitionHealthSummary = memo((props: Props) => {
   const history = useHistory();
 
   const handlePartitionInteraction = useCallback((selectedPartitions: string[], dimension?: PartitionHealthDimension) => {
-
+    
     if (selectedPartitions.length > 0) {
-      const firstPartition = selectedPartitions[0]!;
-      const lastPartition = selectedPartitions[selectedPartitions.length - 1]!;
+      const firstPartition = selectedPartitions.length > 0 ? selectedPartitions[0] : null;
+      const lastPartition = selectedPartitions.length > 0 ? selectedPartitions[selectedPartitions.length - 1] : null;
+
+      if (!firstPartition || !lastPartition) {
+        return;
+      }
 
       let defaultRange: string;
       let queryParams: AssetViewParams;
