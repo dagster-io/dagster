@@ -6,7 +6,7 @@ sidebar_position: 51
 
 import ScaffoldProject from '@site/docs/partials/\_ScaffoldProject.md';
 
-This article covers how to use [Databricks Connect](https://docs.databricks.com/aws/en/dev-tools/databricks-connect/python) to run compute on Databricks from Dagster.
+This article covers how to use [Spark Connect](https://spark.apache.org/docs/latest/spark-connect-overview.html) or [Databricks Connect](https://docs.databricks.com/aws/en/dev-tools/databricks-connect/python) to run compute in Spark or Databricks from Dagster. These protocols allow you to centralize your Python code in your Dagster project and run it in Spark or Databricks.
 
 
 ## Prerequisites
@@ -66,7 +66,7 @@ import ScaffoldAsset from '@site/docs/partials/\_ScaffoldAsset.md';
 
 <ScaffoldAsset />
 
-In your Dagster project, create a file named `dags.py` and paste in the following code:
+In your Dagster project, create a file named `spark_assets.py` and paste in the following code:
 
 <CodeExample path="docs_snippets/docs_snippets/guides/tutorials/spark_connect/spark_assets.py" title="src/<project_name>/spark_assets.py" />
 
