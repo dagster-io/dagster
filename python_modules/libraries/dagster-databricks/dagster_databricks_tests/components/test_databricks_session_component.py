@@ -254,13 +254,12 @@ def test_databricks_session_component_integration() -> None:
         from unittest import mock
 
         from dagster_databricks import DatabricksSessionComponent
-        from pandas import DataFrame
 
         class MockDatabricksSessionComponent(DatabricksSessionComponent):
             @cached_property
             def session(self):
                 mock_session = mock.Mock()
-                mock_session.sql.return_value = DataFrame([{"test_col": 1}])
+                mock_session.sql.return_value = [{"test_col": 1}]
                 return mock_session
 
     with create_defs_folder_sandbox(project_name="databricks_integration_test_project") as sandbox:
