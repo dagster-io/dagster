@@ -43,6 +43,7 @@ export class SelectionAutoCompleteVisitor extends BaseSelectionVisitor {
   private getFunctionResultsMatchingQuery: SelectionAutoCompleteProvider['getFunctionResultsMatchingQuery'];
   private getSubstringResultMatchingQuery: SelectionAutoCompleteProvider['getSubstringResultMatchingQuery'];
   private createOperatorSuggestion: SelectionAutoCompleteProvider['createOperatorSuggestion'];
+  private supportsTraversal: SelectionAutoCompleteProvider['supportsTraversal'];
 
   public list: Array<Suggestion> = [];
 
@@ -58,6 +59,7 @@ export class SelectionAutoCompleteVisitor extends BaseSelectionVisitor {
     getSubstringResultMatchingQuery,
     getAllResults,
     createOperatorSuggestion,
+    supportsTraversal,
   }: {
     line: string;
     cursorIndex: number;
@@ -67,6 +69,7 @@ export class SelectionAutoCompleteVisitor extends BaseSelectionVisitor {
     getFunctionResultsMatchingQuery: SelectionAutoCompleteProvider['getFunctionResultsMatchingQuery'];
     getSubstringResultMatchingQuery: SelectionAutoCompleteProvider['getSubstringResultMatchingQuery'];
     createOperatorSuggestion: SelectionAutoCompleteProvider['createOperatorSuggestion'];
+    supportsTraversal: SelectionAutoCompleteProvider['supportsTraversal'];
   }) {
     super({line, cursorIndex});
     this.getAttributeResultsMatchingQuery = getAttributeResultsMatchingQuery;
@@ -77,6 +80,7 @@ export class SelectionAutoCompleteVisitor extends BaseSelectionVisitor {
     this.createOperatorSuggestion = createOperatorSuggestion;
     this._startReplacementIndex = cursorIndex;
     this._stopReplacementIndex = cursorIndex;
+    this.supportsTraversal = supportsTraversal;
   }
 
   set startReplacementIndex(newValue: number) {
@@ -350,6 +354,9 @@ export class SelectionAutoCompleteVisitor extends BaseSelectionVisitor {
   }
 
   public visitPostDigitsWhitespace(ctx: PostDigitsWhitespaceContext) {
+    if (!this.supportsTraversal) {
+      return;
+    }
     this.startReplacementIndex = ctx.start.startIndex;
     // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     this.stopReplacementIndex = ctx.stop!.stopIndex;
@@ -439,7 +446,7 @@ export class SelectionAutoCompleteVisitor extends BaseSelectionVisitor {
       );
     }
     if (value === '') {
-      if (!options.excludePlus) {
+      if (!options.excludePlus && this.supportsTraversal) {
         this.list.push(
           this.createOperatorSuggestion({
             text: textCallback('+'),
@@ -484,7 +491,7 @@ export class SelectionAutoCompleteVisitor extends BaseSelectionVisitor {
       this.createOperatorSuggestion({text: ' or ', type: 'or', displayText: 'or'}),
     );
 
-    if (!options.excludePlus) {
+    if (!options.excludePlus && this.supportsTraversal) {
       this.list.push(
         this.createOperatorSuggestion({text: '+', type: 'down-traversal', displayText: '+'}),
       );

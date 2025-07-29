@@ -95,6 +95,8 @@ export interface SelectionAutoCompleteProvider {
     };
     loading: boolean;
   };
+
+  supportsTraversal?: boolean;
 }
 
 export type Suggestion =
@@ -194,6 +196,7 @@ export const SuggestionJSXBase = ({
   );
 };
 
+type Functions = Array<'sinks' | 'roots'>;
 export const createProvider = <
   TAttributeMap extends {[key: string]: string[] | {key: string; value?: string}[]},
   TPrimaryAttributeKey extends keyof TAttributeMap,
@@ -201,12 +204,13 @@ export const createProvider = <
   attributeToIcon,
   primaryAttributeKey,
   attributesMap,
+  functions = ['sinks', 'roots'],
 }: {
   attributeToIcon: Record<keyof TAttributeMap, IconName>;
   primaryAttributeKey: TPrimaryAttributeKey;
   attributesMap: TAttributeMap;
+  functions?: Functions;
 }): Omit<SelectionAutoCompleteProvider, 'useAutoComplete'> => {
-  const functions = ['sinks', 'roots'] as const;
   function doesValueIncludeQuery({
     value,
     query,

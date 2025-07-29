@@ -1295,4 +1295,93 @@ describe('createAssetSelectionHint', () => {
       to: 7,
     });
   });
+
+  it('should not suggest + after + if supportsTraversal is false', () => {
+    const provider = createProvider({
+      attributesMap: {
+        key: [],
+        tag: [],
+        owner: [],
+        group: [],
+        kind: [],
+        code_location: [],
+      },
+      primaryAttributeKey: 'tag',
+      attributeToIcon: {
+        key: 'magnify_glass',
+        tag: 'magnify_glass',
+        owner: 'magnify_glass',
+        group: 'magnify_glass',
+        kind: 'magnify_glass',
+        code_location: 'magnify_glass',
+      },
+    });
+    const selectionHint = createSelectionAutoComplete({
+      ...provider,
+      supportsTraversal: false,
+    });
+    expect(testAutocomplete('key:"value"|', selectionHint)).toEqual({
+      from: 11,
+      // Should not suggest "+"
+      list: [expect.objectContaining({text: ' and '}), expect.objectContaining({text: ' or '})],
+      to: 11,
+    });
+  });
+
+  it('should not suggest functions if empty array passed in', () => {
+    const provider = createProvider({
+      attributesMap: {
+        key: [],
+        tag: [],
+        owner: [],
+        group: [],
+        kind: [],
+        code_location: [],
+      },
+      functions: [],
+      primaryAttributeKey: 'tag',
+      attributeToIcon: {
+        key: 'magnify_glass',
+        tag: 'magnify_glass',
+        owner: 'magnify_glass',
+        group: 'magnify_glass',
+        kind: 'magnify_glass',
+        code_location: 'magnify_glass',
+      },
+    });
+    const selectionHint = createSelectionAutoComplete(provider);
+    expect(testAutocomplete('|', selectionHint)).toEqual({
+      list: [
+        expect.objectContaining({
+          text: 'key:',
+        }),
+        expect.objectContaining({
+          text: 'tag:',
+        }),
+        expect.objectContaining({
+          text: 'owner:',
+        }),
+        expect.objectContaining({
+          text: 'group:',
+        }),
+        expect.objectContaining({
+          text: 'kind:',
+        }),
+        expect.objectContaining({
+          text: 'code_location:',
+        }),
+        expect.objectContaining({
+          text: 'not ',
+        }),
+        expect.objectContaining({
+          text: '+',
+        }),
+        expect.objectContaining({
+          text: '()',
+        }),
+      ],
+      from: 0, // cursor location
+      to: 0, // cursor location
+    });
+  });
 });
