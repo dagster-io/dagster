@@ -100,6 +100,15 @@ You can also define a job for a selection of these assets, or for the assets of 
 
 <CodeExample path="docs_snippets/docs_snippets/integrations/airbyte_cloud/create_airbyte_cloud_selection_job.py" language="python" />
 
+Finally, jobs created for your Airbyte Cloud assets can be scheduled.
+
+<CodeExample
+startAfter="start_airbyte_cloud_schedule"
+endBefore="end_airbyte_cloud_schedule"
+path="docs_snippets/docs_snippets/integrations/airbyte_cloud/schedule_airbyte_cloud_jobs.py"
+language="python"
+/>
+
 
 ### Load Airbyte Cloud assets from multiple workspaces
 
