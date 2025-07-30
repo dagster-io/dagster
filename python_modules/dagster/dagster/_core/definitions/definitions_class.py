@@ -466,25 +466,14 @@ class Definitions(IHaveNew):
 
         After dagster 1.11, this resolution step will not happen, and will throw an error if the job is not found.
         """
-        found_direct = False
         for job in self.jobs or []:
             if job.name == name:
                 if isinstance(job, JobDefinition):
-                    found_direct = True
+                    return job
 
-        if not found_direct:
-            warning = self.dig_for_warning(name)
-            if warning:
-                warnings.warn(warning)
-            else:
-                warnings.warn(
-                    f"JobDefinition with name {name} directly passed to Definitions not found, "
-                    "will attempt to resolve to a JobDefinition. "
-                    "This will be an error in a future release and will require a call to "
-                    "resolve_job_def in dagster 1.11. "
-                )
-
-        return self.resolve_job_def(name)
+        warning = self.dig_for_warning(name)
+        reason = f" Reason: {warning}" if warning else None
+        check.failed(f"JobDefinition with name {name} not found.{reason}")
 
     def resolve_job_def(self, name: str) -> JobDefinition:
         """Resolve a job definition by name. If you passed in an :py:class:`UnresolvedAssetJobDefinition`
@@ -526,51 +515,37 @@ class Definitions(IHaveNew):
 
     @public
     def get_sensor_def(self, name: str) -> SensorDefinition:
-        """Get a :py:class:`SensorDefinition` by name.
-        If your passed-in sensor had resource dependencies, or the job targeted by the sensor had
-        resource dependencies, those resource dependencies will be fully resolved on the returned object.
-        """
-        warnings.warn(
-            "Starting in dagster 1.11, get_sensor_def will return a SensorDefinition without resolving resource dependencies on it or its target."
-        )
-
-        return self.resolve_sensor_def(name)
-
-    # TODO: after dagster 1.11, this will become the implementation of get_sensor_def -- schrockn 2025-06-02
-    def get_unresolved_sensor_def(self, name: str) -> SensorDefinition:
+        """Get a sensor definition by name directly passed in to the `Definitions` object."""
         for sensor in self.sensors or []:
             if sensor.name == name:
                 return sensor
-        raise ValueError(f"SensorDefinition with name {name} not found")
+        check.failed(f"SensorDefinition with name {name} not found")
 
     def resolve_sensor_def(self, name: str) -> SensorDefinition:
+        """Resolve a sensor definition by name. If your passed-in sensor had resource dependencies, or the job targeted by the sensor had
+        resource dependencies, those resource dependencies will be fully resolved on the returned object.
+        """
         check.str_param(name, "name")
         return self.get_repository_def().get_sensor_def(name)
 
     @public
     def get_schedule_def(self, name: str) -> ScheduleDefinition:
-        """Get a :py:class:`ScheduleDefinition` by name.
-        If your passed-in schedule had resource dependencies, or the job targeted by the schedule had
-        resource dependencies, those resource dependencies will be fully resolved on the returned object.
-        """
-        warnings.warn(
-            "Starting in dagster 1.11, get_schedule_def will return a ScheduleDefinition without resolving resource dependencies on it or its target."
-        )
-        return self.resolve_schedule_def(name)
-
-    # TODO: after dagster 1.11, this will become the implementation of get_schedule_def -- schrockn 2025-06-02
-    def get_unresolved_schedule_def(self, name: str) -> ScheduleDefinition:
+        """Get a schedule definition by name directly passed in to the `Definitions` object."""
         for schedule in self.schedules or []:
             if schedule.name == name:
                 if isinstance(schedule, ScheduleDefinition):
                     return schedule
-                raise ValueError(
-                    f"ScheduleDefinition with name {name} is an UnresolvedPartitionedAssetScheduleDefinition, which is not supported in get_unresolved_schedule_def"
+
+                check.failed(
+                    f"ScheduleDefinition with name {name} is an UnresolvedPartitionedAssetScheduleDefinition, which is not supported in get_schedule_def"
                 )
 
-        raise ValueError(f"ScheduleDefinition with name {name} not found")
+        check.failed(f"ScheduleDefinition with name {name} not found")
 
     def resolve_schedule_def(self, name: str) -> ScheduleDefinition:
+        """Resolve a schedule definition by name. If your passed-in schedule had resource dependencies, or the job targeted by the schedule had
+        resource dependencies, those resource dependencies will be fully resolved on the returned object.
+        """
         check.str_param(name, "name")
         return self.get_repository_def().get_schedule_def(name)
 
