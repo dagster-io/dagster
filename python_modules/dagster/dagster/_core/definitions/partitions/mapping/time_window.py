@@ -198,6 +198,18 @@ class TimeWindowPartitionMapping(
                 f"Timezones {upstream_partitions_def.timezone} and {downstream_partitions_def.timezone} don't match"
             )
 
+        with partition_loading_context():
+            full_partition_mapping_result = self.get_upstream_mapped_partitions_result_for_partitions(
+                downstream_partitions_subset=downstream_partitions_def.subset_with_all_partitions(),
+                downstream_partitions_def=downstream_partitions_def,
+                upstream_partitions_def=upstream_partitions_def,
+            )
+            if not full_partition_mapping_result.required_but_nonexistent_subset.is_empty:
+                raise DagsterInvalidDefinitionError(
+                    f"Upstream partitions definition is missing expected partitions: {full_partition_mapping_result.required_but_nonexistent_subset}. "
+                    "To allow missing partitions in a TimeWindowPartitionMapping, set allow_nonexistent_upstream_partitions to True."
+                )
+
     def get_downstream_partitions_for_partitions(
         self,
         upstream_partitions_subset: PartitionsSubset,

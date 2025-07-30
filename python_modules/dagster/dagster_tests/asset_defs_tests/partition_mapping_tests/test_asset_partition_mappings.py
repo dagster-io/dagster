@@ -15,6 +15,7 @@ from dagster import (
 from dagster._core.asset_graph_view.asset_graph_view import AssetGraphView
 from dagster._core.definitions.assets.graph.asset_graph import AssetGraph
 from dagster._core.definitions.events import AssetKeyPartitionKey
+from dagster._core.definitions.partitions.context import partition_loading_context
 from dagster._core.definitions.partitions.mapping import UpstreamPartitionsResult
 from dagster._core.definitions.partitions.subset import DefaultPartitionsSubset, PartitionsSubset
 from dagster._core.definitions.partitions.utils import get_builtin_partition_mapping_types
@@ -423,6 +424,28 @@ def test_partition_keys_in_range():
         resources={"io_manager": IOManagerDefinition.hardcoded_io_manager(MyIOManager())},
         partition_key="2022-09-11",
     ).success
+
+
+def test_missing_partitions_error_partition_mapping():
+    smaller_partitions_def = dg.DailyPartitionsDefinition(
+        start_date="2020-01-01", timezone="US/Pacific"
+    )
+    bigger_partitions_def = dg.DailyPartitionsDefinition(
+        start_date="2019-01-01", timezone="US/Pacific"
+    )
+
+    partition_mapping = dg.TimeWindowPartitionMapping(start_offset=0, end_offset=0)
+
+    with partition_loading_context(effective_dt=create_datetime(2020, 1, 3)):
+        with pytest.raises(
+            Exception,
+            match=r"Upstream partitions definition is missing expected partitions: TimeWindowPartitionsSubset\(\[PartitionKeyRange\(start='2019-01-01', end='2019-12-31'\)\]\). To allow missing partitions in a TimeWindowPartitionMapping, set allow_nonexistent_upstream_partitions to True.",
+        ):
+            partition_mapping.validate_partition_mapping(
+                smaller_partitions_def, bigger_partitions_def
+            )
+
+    partition_mapping.validate_partition_mapping(bigger_partitions_def, smaller_partitions_def)
 
 
 def test_timezone_error_partition_mapping():
