@@ -317,13 +317,17 @@ def test_kitchen_sink_on_create_helper_and_definitions():
     def an_op():
         pass
 
+    @dg.op(required_resource_keys={"a_resource_key"})
+    def other_op():
+        pass
+
     @dg.job
     def a_job():
         an_op()
 
     @dg.job
     def sensor_target():
-        an_op()
+        other_op()
 
     @dg.job
     def schedule_target():
