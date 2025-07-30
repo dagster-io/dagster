@@ -10,9 +10,6 @@ This package provides:
 
 from dagster_shared.libraries import DagsterLibraryRegistry
 
-from dagster_databricks.components.databricks_session import (
-    DatabricksSessionComponent as DatabricksSessionComponent,
-)
 from dagster_databricks.databricks import (
     DatabricksClient as DatabricksClient,
     DatabricksError as DatabricksError,
@@ -38,5 +35,26 @@ from dagster_databricks.resources import (
     databricks_client as databricks_client,
 )
 from dagster_databricks.version import __version__
+
+try:
+    from dagster_databricks.components.databricks_session import (
+        DatabricksSessionComponent as DatabricksSessionComponent,
+    )
+
+    _DatabricksSessionComponent = DatabricksSessionComponent
+except ImportError:
+    _DatabricksSessionComponent = None
+
+# define getter on the module
+
+
+def __getattr__(name: str):
+    if name == "DatabricksSessionComponent":
+        if _DatabricksSessionComponent is None:
+            raise ImportError(
+                "databricks-connect is not installed. Please install the `connect` extra with `pip install dagster-databricks[connect]`"
+            )
+        return _DatabricksSessionComponent
+
 
 DagsterLibraryRegistry.register("dagster-databricks", __version__)

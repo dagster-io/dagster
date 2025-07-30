@@ -38,7 +38,6 @@ from dagster._core.execution.plan.external_step import (
 from dagster._core.log_manager import DagsterLogManager
 from dagster._serdes import deserialize_value
 from dagster._utils.backoff import backoff
-from dagster_pyspark.utils import build_pyspark_zip
 from databricks.sdk.core import DatabricksError
 from databricks.sdk.service import iam
 
@@ -53,6 +52,7 @@ from dagster_databricks.configs import (
     define_oauth_credentials,
 )
 from dagster_databricks.databricks import DEFAULT_RUN_MAX_WAIT_TIME_SEC, DatabricksJobRunner
+from dagster_databricks.utils import build_pyspark_zip
 
 CODE_ZIP_NAME = "code.zip"
 PICKLED_CONFIG_FILE_NAME = "config.pkl"

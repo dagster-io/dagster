@@ -3,7 +3,6 @@ from unittest import mock
 
 import dagster
 import dagster_databricks
-import dagster_pyspark
 import pytest
 from dagster import build_op_context
 from dagster_databricks import DatabricksClientResource
@@ -38,11 +37,6 @@ def test_databricks_submit_job_existing_cluster(mock_submit_run, databricks_run_
         compute.Library(
             pypi=compute.PythonPyPiLibrary(
                 package=f"dagster-databricks=={dagster_databricks.__version__}"
-            )
-        ),
-        compute.Library(
-            pypi=compute.PythonPyPiLibrary(
-                package=f"dagster-pyspark=={dagster_pyspark.__version__}"
             )
         ),
         compute.Library(
@@ -142,11 +136,6 @@ def test_databricks_submit_job_new_cluster(mock_submit_run, databricks_run_confi
         compute.Library(
             pypi=compute.PythonPyPiLibrary(
                 package=f"dagster-databricks=={dagster_databricks.__version__}"
-            )
-        ),
-        compute.Library(
-            pypi=compute.PythonPyPiLibrary(
-                package=f"dagster-pyspark=={dagster_pyspark.__version__}"
             )
         ),
         compute.Library(

@@ -5,7 +5,13 @@ from unittest import mock
 from dagster import AssetKey, Definitions, PythonScriptComponent
 from dagster.components.testing import copy_code_to_file, create_defs_folder_sandbox
 from dagster_databricks.components.databricks_session.component import DatabricksSessionComponent
-from databricks.connect import DatabricksSession
+
+try:
+    from databricks.connect import DatabricksSession
+except ImportError as e:
+    raise ImportError(
+        "databricks-connect is not installed. Please install the `connect` extra with `pip install dagster-databricks[connect]`"
+    ) from e
 
 
 @contextmanager

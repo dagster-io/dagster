@@ -9,7 +9,6 @@ from typing import IO, Any, Final, Optional
 
 import dagster
 import dagster._check as check
-import dagster_pyspark
 import requests.exceptions
 from dagster._annotations import public
 from databricks.sdk import WorkspaceClient
@@ -500,7 +499,7 @@ class DatabricksJobRunner:
             "Invalid value for run_config.cluster",
         )
 
-        # We'll always need some libraries, namely dagster/dagster_databricks/dagster_pyspark,
+        # We'll always need some libraries, namely dagster/dagster_databricks,
         # since they're imported by our scripts.
         # Add them if they're not already added by users in config.
         libraries = list(run_config.get("libraries", []))
@@ -515,7 +514,6 @@ class DatabricksJobRunner:
             for library_name, library in [
                 ("dagster", dagster),
                 ("dagster-databricks", dagster_databricks),
-                ("dagster-pyspark", dagster_pyspark),
             ]:
                 if library_name not in python_libraries:
                     libraries.append(

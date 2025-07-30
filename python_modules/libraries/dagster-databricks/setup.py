@@ -34,10 +34,11 @@ setup(
     install_requires=[
         f"dagster{pin}",
         f"dagster-pipes{pin}",
-        f"dagster-pyspark{pin}",
         "databricks-sdk>=0.41,<0.61.0",  # dbt-databricks is pinned to this version
-        "databricks-connect",
     ],
+    extras_require={
+        "connect": ["databricks-connect"],
+    },
     zip_safe=False,
     entry_points={
         "dagster_dg.plugin": [
