@@ -90,6 +90,13 @@ Note that `super()` is called in each of the overridden methods to generate the 
 
 You can pass an instance of the custom <PyObject section="libraries" module="dagster_airbyte" object="DagsterAirbyteTranslator" /> to the <PyObject section="libraries" module="dagster_airbyte" object="airbyte_assets" /> decorator or the <PyObject section="libraries" module="dagster_airbyte" object="build_airbyte_assets_definitions" /> factory.
 
+### Creating Airbyte Cloud jobs
+
+Once you have your Airbyte Cloud assets, you can define a job to materialize all of them.
+
+<CodeExample path="docs_snippets/docs_snippets/integrations/fivetran/create_airbyte_cloud_all_assets_job.py" language="python" />
+
+
 ### Load Airbyte Cloud assets from multiple workspaces
 
 Definitions from multiple Airbyte Cloud workspaces can be combined by instantiating multiple <PyObject section="libraries" module="dagster_airbyte" object="AirbyteCloudWorkspace" /> resources and merging their specs. This lets you view all your Airbyte Cloud assets in a single asset graph:
