@@ -13,7 +13,7 @@ import yaml
 from dagster_shared import check
 
 from dagster.components.component_scaffolding import scaffold_object
-from dagster.components.core.tree import ComponentTree
+from dagster.components.core.component_tree import ComponentTree
 from dagster.components.scaffold.scaffold import ScaffoldFormatOptions
 
 """Testing utilities for components."""

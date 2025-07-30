@@ -1,4 +1,5 @@
 import importlib
+from collections import defaultdict
 from collections.abc import Sequence
 from contextlib import contextmanager
 from functools import cached_property
@@ -83,6 +84,91 @@ class ComponentTreeException(Exception):
     pass
 
 
+class ComponentTreeDependencies:
+    def __init__(self):
+        self._component_load_dependency_dict = defaultdict(set)
+        self._component_defs_dependency_dict = defaultdict(set)
+
+    def mark_component_load_dependency(
+        self, defs_module_path: Path, from_path: ComponentPath, to_path: ResolvableToComponentPath
+    ) -> None:
+        self._component_load_dependency_dict[
+            _get_canonical_component_path(defs_module_path, from_path)
+        ].add(_get_canonical_component_path(defs_module_path, to_path))
+
+    def mark_component_defs_dependency(
+        self, defs_module_path: Path, from_path: ComponentPath, to_path: ResolvableToComponentPath
+    ) -> None:
+        self._component_defs_dependency_dict[
+            _get_canonical_component_path(defs_module_path, from_path)
+        ].add(_get_canonical_component_path(defs_module_path, to_path))
+
+    def component_load_dependencies_to_string(self) -> str:
+        return "\n".join(
+            f"{from_path} -> {to_path}"
+            for from_path, to_paths in self._component_load_dependency_dict.items()
+            for to_path in to_paths
+        )
+
+    def get_load_dependents_of_component(
+        self, defs_module_path: Path, component_path: ComponentPath
+    ) -> list[ComponentPath]:
+        """Returns a topologically sorted list of all components that depend on the given component,
+        starting from the given component and ending with root components which have no dependents.
+
+        For example, if component A depends on component B, and component B depends on component C,
+        then the load dependents of component C are [B, A].
+
+        Args:
+            defs_module_path: The defs module path used when dependencies were marked.
+            component_path: The component path to get dependents of.
+
+        Returns:
+            A topologically sorted list of all components that depend on the given component.
+        """
+
+        def _get_all_dependents_recursive(
+            canonical_path: tuple[str, Optional[Union[int, str]]],
+            visited: set[tuple[str, Optional[Union[int, str]]]],
+            result: list[ComponentPath],
+        ) -> None:
+            if canonical_path in visited:
+                return
+
+            visited.add(canonical_path)
+
+            # Find all components that directly depend on this path
+            direct_dependents = []
+            for (
+                from_canonical_path,
+                to_canonical_paths,
+            ) in self._component_load_dependency_dict.items():
+                if canonical_path in to_canonical_paths:
+                    direct_dependents.append(from_canonical_path)
+
+            # Add direct dependents to result first
+            for dependent_file_path, dependent_instance_key in direct_dependents:
+                dependent_component_path = ComponentPath(
+                    file_path=Path(dependent_file_path).relative_to(defs_module_path),
+                    instance_key=dependent_instance_key,
+                )
+                if dependent_component_path not in result:
+                    result.append(dependent_component_path)
+
+            # Then recursively process each direct dependent (depth-first)
+            # This ensures topological ordering: direct dependents come before their dependents
+            for dependent_canonical_path in direct_dependents:
+                _get_all_dependents_recursive(dependent_canonical_path, visited, result)
+
+        # Convert component_path to canonical form for lookup
+        canonical_target_path = _get_canonical_component_path(defs_module_path, component_path)
+
+        result = []
+        visited = set()
+        _get_all_dependents_recursive(canonical_target_path, visited, result)
+        return result
+
+
 @record(
     checked=False,  # cant handle ModuleType
 )
@@ -97,6 +183,7 @@ class ComponentTree:
     defs_module: ModuleType
     project_root: Path
     terminate_autoloading_on_keyword_files: Optional[bool] = None
+    component_tree_dependencies: ComponentTreeDependencies = ComponentTreeDependencies()
 
     @contextmanager
     def augment_component_tree_exception(
@@ -183,7 +270,7 @@ class ComponentTree:
     @cached_property
     def decl_load_context(self):
         return ComponentDeclLoadContext(
-            path=self.defs_module_path,
+            component_path=ComponentPath(file_path=self.defs_module_path, instance_key=None),
             project_root=self.project_root,
             defs_module_path=self.defs_module_path,
             defs_module_name=self.defs_module_name,
@@ -291,6 +378,20 @@ class ComponentTree:
             raise Exception(f"No component decl found for path {defs_path}")
         return component_decl_and_path[1]
 
+    def mark_component_load_dependency(
+        self, from_path: ComponentPath, to_path: ResolvableToComponentPath
+    ) -> None:
+        self.component_tree_dependencies.mark_component_load_dependency(
+            self.defs_module_path, from_path, to_path
+        )
+
+    def mark_component_defs_dependency(
+        self, from_path: ComponentPath, to_path: ResolvableToComponentPath
+    ) -> None:
+        self.component_tree_dependencies.mark_component_defs_dependency(
+            self.defs_module_path, from_path, to_path
+        )
+
     @overload
     def load_component_at_path(self, defs_path: Union[Path, ComponentPath, str]) -> Component: ...
     @overload
@@ -390,6 +491,12 @@ class ComponentTree:
             {"defs_path_posix": canonical_path[0], "instance_key": canonical_path[1]}
         )
         return key in cache
+
+    def is_fully_loaded(self) -> bool:
+        return self._has_loaded_component_at_path(self.defs_module_path)
+
+    def has_built_all_defs(self) -> bool:
+        return self._has_built_defs_at_path(self.defs_module_path)
 
     def _add_string_representation(
         self,
@@ -516,7 +623,7 @@ class TestComponentTree(ComponentTree):
     @cached_property
     def decl_load_context(self):
         return ComponentDeclLoadContext(
-            path=self.defs_module_path,
+            component_path=ComponentPath(file_path=self.defs_module_path, instance_key=None),
             project_root=self.project_root,
             defs_module_path=self.defs_module_path,
             defs_module_name=self.defs_module_name,
@@ -541,7 +648,7 @@ class LegacyAutoloadingComponentTree(ComponentTree):
     @cached_property
     def decl_load_context(self):
         return ComponentDeclLoadContext(
-            path=self.defs_module_path,
+            component_path=ComponentPath(file_path=self.defs_module_path, instance_key=None),
             project_root=self.project_root,
             defs_module_path=self.defs_module_path,
             defs_module_name=self.defs_module_name,

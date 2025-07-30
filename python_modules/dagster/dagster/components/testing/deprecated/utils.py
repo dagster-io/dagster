@@ -17,8 +17,8 @@ from dagster._core.definitions.definitions_class import Definitions
 from dagster._utils import alter_sys_path
 from dagster.components.component.component import Component
 from dagster.components.component_scaffolding import scaffold_object
+from dagster.components.core.component_tree import ComponentTree
 from dagster.components.core.defs_module import CompositeYamlComponent, get_component
-from dagster.components.core.tree import ComponentTree
 from dagster.components.scaffold.scaffold import ScaffoldFormatOptions
 
 
