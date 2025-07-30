@@ -14,10 +14,10 @@ DEFAULT_EXCLUDE = [
 ]
 
 
-# This function is duplicated to dagster-databricks/dagster_databricks/utils.py
+# This function is duplicated from dagster-pyspark/dagster_pyspark/utils.py
 # in order to avoid a dependency on dagster-pyspark, since databricks-connect
 # conflicts with pyspark. If you update this function, please update the
-# duplicate in dagster-databricks/dagster_databricks/utils.py.
+# duplicate in dagster-pyspark/dagster_pyspark/utils.py.
 def build_pyspark_zip(zip_file, path, exclude=DEFAULT_EXCLUDE) -> None:
     """Archives the current path into a file named `zip_file`.
 
