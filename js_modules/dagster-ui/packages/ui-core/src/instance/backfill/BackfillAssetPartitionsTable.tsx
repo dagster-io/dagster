@@ -1,29 +1,13 @@
-import {
-  Box,
-  ButtonLink,
-  Caption,
-  Colors,
-  MiddleTruncate,
-  NonIdealState,
-  Tag,
-} from '@dagster-io/ui-components';
+import {Box, Caption, Colors, MiddleTruncate, NonIdealState, Tag} from '@dagster-io/ui-components';
 import {useVirtualizer} from '@tanstack/react-virtual';
 import React, {useRef} from 'react';
 import {Link} from 'react-router-dom';
 import styled from 'styled-components';
 
-import {
-  BackfillPartitionsForAssetKeyQuery,
-  BackfillPartitionsForAssetKeyQueryVariables,
-} from './types/BackfillAssetPartitionsTable.types';
 import {BackfillDetailsBackfillFragment} from './types/useBackfillDetailsQuery.types';
-import {gql, useApolloClient} from '../../apollo-client';
+import {gql} from '../../apollo-client';
 import {displayNameForAssetKey, tokenForAssetKey} from '../../asset-graph/Utils';
-import {asAssetKeyInput} from '../../assets/asInput';
 import {assetDetailsPathForKey} from '../../assets/assetDetailsPathForKey';
-import {AssetViewParams} from '../../assets/types';
-import {AssetKey} from '../../graphql/types';
-import {useOpenInNewTab} from '../../hooks/useOpenInNewTab';
 import {
   failedStatuses,
   inProgressStatuses,
@@ -79,7 +63,6 @@ export const BackfillAssetPartitionsTable = ({
           <VirtualizedBackfillPartitionsRow
             key={key}
             asset={assetStatuses[index]!}
-            backfill={backfill}
             height={size}
             start={start}
           />
@@ -159,12 +142,10 @@ export const VirtualizedBackfillPartitionsHeader = ({
 
 export const VirtualizedBackfillPartitionsRow = ({
   asset,
-  backfill,
   height,
   start,
 }: {
   asset: AssetBackfillStatus;
-  backfill: BackfillDetailsBackfillFragment;
   height: number;
   start: number;
 }) => {
@@ -184,32 +165,6 @@ export const VirtualizedBackfillPartitionsRow = ({
     succeeded = asset.materialized ? 1 : 0;
   }
 
-  const client = useApolloClient();
-  const openInNewTab = useOpenInNewTab();
-
-  const onShowAssetDetails = async (assetKey: AssetKey, isPartitioned: boolean) => {
-    let params: AssetViewParams = {};
-
-    if (isPartitioned) {
-      const resp = await client.query<
-        BackfillPartitionsForAssetKeyQuery,
-        BackfillPartitionsForAssetKeyQueryVariables
-      >({
-        query: BACKFILL_PARTITIONS_FOR_ASSET_KEY_QUERY,
-        variables: {backfillId: backfill.id, assetKey: asAssetKeyInput(assetKey)},
-      });
-      const data =
-        resp.data.partitionBackfillOrError.__typename === 'PartitionBackfill'
-          ? resp.data.partitionBackfillOrError.partitionsTargetedForAssetKey
-          : null;
-
-      if (data && data.ranges?.length) {
-        params = {default_range: data.ranges.map((r) => `[${r.start}...${r.end}]`).join(',')};
-      }
-    }
-    return openInNewTab(assetDetailsPathForKey(assetKey, params));
-  };
-
   return (
     <Row
       $height={height}
@@ -222,17 +177,9 @@ export const VirtualizedBackfillPartitionsRow = ({
             flex={{direction: 'row', justifyContent: 'space-between', alignItems: 'baseline'}}
             style={{minWidth: 0}}
           >
-            <ButtonLink
-              style={{minWidth: 0}}
-              onClick={() =>
-                onShowAssetDetails(
-                  asset.assetKey,
-                  asset.__typename === 'AssetPartitionsStatusCounts',
-                )
-              }
-            >
+            <Link to={assetDetailsPathForKey(asset.assetKey)}>
               <MiddleTruncate text={displayNameForAssetKey(asset.assetKey)} />
-            </ButtonLink>
+            </Link>
             <StatusBar
               targeted={targeted}
               inProgress={inProgress}
