@@ -22,7 +22,7 @@ import ProjectCreationPrereqs from '@site/docs/partials/\_ProjectCreationPrereqs
       1. Open your terminal and scaffold a new Dagster project:
 
          ```shell
-         uvx -U create-dagster project dagster-quickstart
+         uvx create-dagster@latest project dagster-quickstart
          ```
 
       2. Respond `y` to the prompt to run `uv sync` after scaffolding

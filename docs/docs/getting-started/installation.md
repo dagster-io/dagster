@@ -31,7 +31,7 @@ Install the Python package manager [`uv`](https://docs.astral.sh/uv/getting-star
 
 Installing `uv` will install the [`uvx` command](https://docs.astral.sh/uv/guides/tools), which allows you to execute commands without having to install packages directly. You can run the `create-dagster` command using `uvx`:
 
-<CliInvocationExample contents="uvx -U create-dagster project my-project" />
+<CliInvocationExample contents="uvx create-dagster@latest project my-project" />
 
 </TabItem>
 
