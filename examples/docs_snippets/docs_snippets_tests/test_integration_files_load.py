@@ -98,6 +98,7 @@ EXCLUDED_FILES = {
     f"{snippets_folder}/power-bi/materialize-semantic-models.py",
     f"{snippets_folder}/power-bi/multiple-power-bi-workspaces.py",
     f"{snippets_folder}/power-bi/representing-power-bi-assets.py",
+    f"{snippets_folder}/power-bi/create_power_bi_all_assets_job.py",
     f"{snippets_folder}/sigma/customize-sigma-asset-defs.py",
     f"{snippets_folder}/sigma/customize_upstream_dependencies.py",
     f"{snippets_folder}/sigma/filtering-sigma-assets.py",
