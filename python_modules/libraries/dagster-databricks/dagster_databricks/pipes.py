@@ -526,6 +526,7 @@ class PipesDatabricksServerlessClient(PipesClient, TreatAsResourceParam):
 
     Args:
         client (WorkspaceClient): A databricks `WorkspaceClient` object.
+        volume_path (str): Path to the volume that will be used by this client to read and write temporary files.
         context_injector (Optional[PipesContextInjector]): A context injector to use to inject
             context into the k8s container process. Defaults to :py:class:`PipesUnityCatalogVolumesContextInjector`.
         message_reader (Optional[PipesMessageReader]): A message reader to use to read messages
