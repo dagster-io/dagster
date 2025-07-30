@@ -103,6 +103,42 @@ class ComponentTreeDependencies:
             _get_canonical_component_path(defs_module_path, from_path)
         ].add(_get_canonical_component_path(defs_module_path, to_path))
 
+    def get_direct_load_dependencies_of_component(
+        self, defs_module_path: Path, component_path: ComponentPath
+    ) -> set[ComponentPath]:
+        """Returns the set of components that are directly depended on by the given component.
+
+        Args:
+            defs_module_path: The path to the defs module.
+            component_path: The path to the component to get the direct load dependencies of.
+        """
+        return set(
+            ComponentPath(
+                file_path=Path(file_path).relative_to(defs_module_path), instance_key=instance_key
+            )
+            for file_path, instance_key in self._component_load_dependency_dict[
+                _get_canonical_component_path(defs_module_path, component_path)
+            ]
+        )
+
+    def get_direct_defs_dependencies_of_component(
+        self, defs_module_path: Path, component_path: ComponentPath
+    ) -> set[ComponentPath]:
+        """Returns the set of components that are directly depended on by the given component's defs.
+
+        Args:
+            defs_module_path: The path to the defs module.
+            component_path: The path to the component to get the direct defs dependencies of.
+        """
+        return set(
+            ComponentPath(
+                file_path=Path(file_path).relative_to(defs_module_path), instance_key=instance_key
+            )
+            for file_path, instance_key in self._component_defs_dependency_dict[
+                _get_canonical_component_path(defs_module_path, component_path)
+            ]
+        )
+
 
 @record(
     checked=False,  # cant handle ModuleType
