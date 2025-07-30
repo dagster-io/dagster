@@ -94,7 +94,7 @@ You can pass an instance of the custom <PyObject section="libraries" module="dag
 
 Once you have your Airbyte Cloud assets, you can define a job to materialize all of them.
 
-<CodeExample path="docs_snippets/docs_snippets/integrations/fivetran/create_airbyte_cloud_all_assets_job.py" language="python" />
+<CodeExample path="docs_snippets/docs_snippets/integrations/airbyte_cloud/create_airbyte_cloud_all_assets_job.py" language="python" />
 
 
 ### Load Airbyte Cloud assets from multiple workspaces
