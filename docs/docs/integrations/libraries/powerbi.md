@@ -101,6 +101,15 @@ You can also define a job for a selection of these assets.
   language="python" 
 />
 
+Finally, jobs created for your Power BI assets can be scheduled.
+
+<CodeExample
+  startAfter="start_power_bi_schedule"
+  endBefore="end_power_bi_schedule"
+  path="docs_snippets/docs_snippets/integrations/power-bi/schedule_power_bi_jobs.py"
+  language="python"
+/>
+
 
 ## Customize upstream dependencies
 
