@@ -135,6 +135,10 @@ Once you have your Fivetran assets, you can define a job to materialize all of t
 
 <CodeExample path="docs_snippets/docs_snippets/integrations/fivetran/create_fivetran_all_assets_job.py" language="python" />
 
+You can also define a job for a selection of these assets, or for the assets of a single connector.
+
+<CodeExample path="docs_snippets/docs_snippets/integrations/fivetran/create_fivetran_selection_job.py" language="python" />
+
 
 ### Load Fivetran assets from multiple workspaces
 
