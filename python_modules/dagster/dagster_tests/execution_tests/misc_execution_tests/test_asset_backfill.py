@@ -57,6 +57,7 @@ from dagster_tests.declarative_automation_tests.legacy_tests.scenarios.asset_gra
     one_asset_self_dependency,
     root_assets_different_partitions_same_downstream,
     self_dependant_asset_downstream_of_regular_asset,
+    self_dependant_asset_downstream_of_regular_asset_multiple_run,
     self_dependant_asset_with_grouped_run_backfill_policy,
     self_dependant_asset_with_no_backfill_policy,
     self_dependant_asset_with_single_run_backfill_policy,
@@ -506,7 +507,7 @@ def test_self_dependant_asset_with_grouped_run_backfill_policy():
         )
 
 
-def test_self_dependant_asset_downstream_of_regular_asset():
+def test_self_dependant_asset_downstream_of_regular_asset_single_run_backfill_policies():
     with environ({"ASSET_BACKFILL_CURSOR_OFFSET": "10000"}):
         assets_by_repo_name = {"repo": self_dependant_asset_downstream_of_regular_asset}
         asset_graph = get_asset_graph(assets_by_repo_name)
@@ -633,6 +634,68 @@ def test_self_dependant_asset_downstream_of_regular_asset():
                         {
                             AssetKeyPartitionKey(regular_asset_key, partition)
                             for partition in partitions
+                        }
+                    ),
+                    asset_graph,
+                )
+            )
+
+
+def test_self_dependant_asset_downstream_of_regular_asset_multiple_run_backfill_policies():
+    assets_by_repo_name: dict[str, list[AssetsDefinition]] = {
+        "repo": self_dependant_asset_downstream_of_regular_asset_multiple_run
+    }
+    asset_graph = get_asset_graph(assets_by_repo_name)
+
+    regular_asset_key = AssetKey(["regular_asset"])
+    self_dependant_asset_key = AssetKey(["self_dependant"])
+
+    partitions = [
+        "2023-01-01",
+        "2023-01-02",
+        "2023-01-03",
+    ]
+
+    with DagsterInstance.ephemeral() as instance:
+        backfill_id = "self_dependant_asset_with_grouped_run_backfill_policy"
+
+        asset_backfill_data = AssetBackfillData.from_asset_partitions(
+            asset_graph=asset_graph,
+            partition_names=partitions,
+            asset_selection=[regular_asset_key, self_dependant_asset_key],
+            dynamic_partitions_store=MagicMock(),
+            all_partitions=False,
+            backfill_start_timestamp=create_datetime(2023, 1, 12, 0, 0, 0).timestamp(),
+        )
+
+        asset_backfill_data = _single_backfill_iteration(
+            backfill_id, asset_backfill_data, asset_graph, instance, assets_by_repo_name
+        )
+
+        assert asset_backfill_data.requested_subset == AssetGraphSubset.from_asset_partition_set(
+            {AssetKeyPartitionKey(regular_asset_key, partition) for partition in partitions},
+            asset_graph,
+        )
+
+        assert instance.get_runs_count() == 3
+
+        for i in range(len(partitions)):
+            asset_backfill_data = _single_backfill_iteration(
+                backfill_id, asset_backfill_data, asset_graph, instance, assets_by_repo_name
+            )
+
+            assert instance.get_runs_count() == 4 + i
+
+            assert (
+                asset_backfill_data.requested_subset
+                == AssetGraphSubset.from_asset_partition_set(
+                    {
+                        AssetKeyPartitionKey(regular_asset_key, partition)
+                        for partition in partitions
+                    }.union(
+                        {
+                            AssetKeyPartitionKey(self_dependant_asset_key, partition)
+                            for partition in partitions[: i + 1]
                         }
                     ),
                     asset_graph,

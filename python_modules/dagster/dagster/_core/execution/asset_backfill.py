@@ -1801,7 +1801,7 @@ def _get_cant_run_with_parent_reason(
     parent_asset_key = parent_subset.key
 
     assert isinstance(asset_graph_view.asset_graph, RemoteWorkspaceAssetGraph)
-    asset_graph = asset_graph_view.asset_graph
+    asset_graph = cast("RemoteWorkspaceAssetGraph", asset_graph_view.asset_graph)
 
     parent_node = asset_graph.get(parent_asset_key)
     candidate_node = asset_graph.get(candidate_asset_key)
@@ -1851,6 +1851,19 @@ def _get_cant_run_with_parent_reason(
 
     is_self_dependency = parent_asset_key == candidate_asset_key
 
+    has_self_dependency = any(
+        parent_key == candidate_asset_key for parent_key in candidate_node.parent_keys
+    )
+
+    # launching a self-dependant asset with a non-self-dependant asset can result in invalid
+    # runs being launched that don't respect lineage
+    if (
+        has_self_dependency
+        and parent_asset_key not in candidate_asset_graph_subset_unit.asset_keys
+        and num_parent_partitions_being_requested_this_tick > 0
+    ):
+        return "Self-dependant assets cannot be materialized in the same run as other assets."
+
     if not (
         # this check is here to guard against cases where the parent asset has a superset of
         # the child asset's asset partitions, which will mean that the runs that would be created
@@ -1889,7 +1902,7 @@ def _get_cant_run_with_parent_reason(
             ).compute_difference(parent_materialized_subset)
 
         if not required_parent_subset.is_empty:
-            return f"Waiting for the following parent partitions of a self-dependant asset to materialize: {_partition_subset_str(required_parent_subset.get_internal_subset_value(), parent_node.partitions_def)}"
+            return f"Waiting for the following parent partitions of a self-dependant asset to materialize: {_partition_subset_str(required_parent_subset.get_internal_subset_value(), check.not_none(parent_node.partitions_def))}"
         else:
             return None
 
