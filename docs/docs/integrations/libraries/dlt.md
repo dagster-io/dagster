@@ -230,7 +230,7 @@ And that's it! You should now have two assets that load data to corresponding Sn
 
 ## Advanced usage
 
-### Creating dlt jobs
+### Creating dlt jobs and schedules
 
 Once you have your dlt assets, you can define a job to materialize them.
 
