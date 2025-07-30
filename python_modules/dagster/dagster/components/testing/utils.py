@@ -9,7 +9,6 @@ import textwrap
 from pathlib import Path
 from typing import Callable
 
-import tomlkit
 import yaml
 from dagster_shared import check
 
@@ -322,9 +321,13 @@ def create_defs_folder_sandbox(
         defs_folder_path = project_root / "src" / project_name / "defs"
         defs_folder_path.mkdir(parents=True, exist_ok=True)
         (project_root / "dg.toml").write_text(
-            tomlkit.dumps(
-                {"project": {"root_module": project_name, "defs_module": f"{project_name}.defs"}}
-            )
+            textwrap.dedent(
+                """
+                [tool.dg]
+                root_module = "{project_name}"
+                defs_module = "{project_name}.defs"
+                """
+            ).format(project_name=project_name)
         )
         python_path = os.getenv("PYTHONPATH", "")
         updated_path = os.pathsep.join([python_path, str(project_root / "src")])
