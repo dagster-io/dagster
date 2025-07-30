@@ -31,7 +31,7 @@ def script_fn():
     with open_dagster_pipes(
         context_loader=PipesUnityCatalogVolumesContextLoader(),
         message_writer=PipesUnityCatalogVolumesMessageWriter(),
-        params_loader=PipesDatabricksNotebookWidgetsParamsLoader(dbutils.widgets),  # noqa
+        params_loader=PipesDatabricksNotebookWidgetsParamsLoader(dbutils.widgets),  # noqa  # pyright: ignore
     ) as context:
         multiplier = context.get_extra("multiplier")
         value = 2 * multiplier
