@@ -1,4 +1,5 @@
 import importlib
+from collections import defaultdict
 from collections.abc import Sequence
 from contextlib import contextmanager
 from functools import cached_property
@@ -83,6 +84,26 @@ class ComponentTreeException(Exception):
     pass
 
 
+class ComponentTreeDependencies:
+    def __init__(self):
+        self._component_load_dependency_dict = defaultdict(set)
+        self._component_defs_dependency_dict = defaultdict(set)
+
+    def mark_component_load_dependency(
+        self, defs_module_path: Path, from_path: ComponentPath, to_path: ResolvableToComponentPath
+    ) -> None:
+        self._component_load_dependency_dict[
+            _get_canonical_component_path(defs_module_path, from_path)
+        ].add(_get_canonical_component_path(defs_module_path, to_path))
+
+    def mark_component_defs_dependency(
+        self, defs_module_path: Path, from_path: ComponentPath, to_path: ResolvableToComponentPath
+    ) -> None:
+        self._component_defs_dependency_dict[
+            _get_canonical_component_path(defs_module_path, from_path)
+        ].add(_get_canonical_component_path(defs_module_path, to_path))
+
+
 @record(
     checked=False,  # cant handle ModuleType
 )
@@ -97,6 +118,7 @@ class ComponentTree:
     defs_module: ModuleType
     project_root: Path
     terminate_autoloading_on_keyword_files: Optional[bool] = None
+    component_tree_dependencies: ComponentTreeDependencies = ComponentTreeDependencies()
 
     @contextmanager
     def augment_component_tree_exception(
@@ -290,6 +312,20 @@ class ComponentTree:
         if component_decl_and_path is None:
             raise Exception(f"No component decl found for path {defs_path}")
         return component_decl_and_path[1]
+
+    def mark_component_load_dependency(
+        self, from_path: ComponentPath, to_path: ResolvableToComponentPath
+    ) -> None:
+        self.component_tree_dependencies.mark_component_load_dependency(
+            self.defs_module_path, from_path, to_path
+        )
+
+    def mark_component_defs_dependency(
+        self, from_path: ComponentPath, to_path: ResolvableToComponentPath
+    ) -> None:
+        self.component_tree_dependencies.mark_component_defs_dependency(
+            self.defs_module_path, from_path, to_path
+        )
 
     @overload
     def load_component_at_path(self, defs_path: Union[Path, ComponentPath, str]) -> Component: ...
