@@ -52,7 +52,7 @@ import ProjectCreationPrereqs from '@site/docs/partials/\_ProjectCreationPrereqs
       5. Install the required dependencies in the virtual environment:
 
          ```shell
-         uv pip install pandas
+         uv add pandas
          ```
    </TabItem>
 

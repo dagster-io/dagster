@@ -223,6 +223,7 @@ export const usePermissionsForLocation = (
   const {unscopedPermissions, locationPermissions, loading} = React.useContext(PermissionsContext);
   let permissionsForLocation = unscopedPermissions;
   if (locationName && locationPermissions.hasOwnProperty(locationName)) {
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     permissionsForLocation = locationPermissions[locationName]!;
   }
 

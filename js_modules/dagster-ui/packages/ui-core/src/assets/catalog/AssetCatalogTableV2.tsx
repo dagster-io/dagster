@@ -245,7 +245,16 @@ export const AssetCatalogTableV2 = React.memo(() => {
           />
         );
       case 'insights':
-        return <AssetCatalogInsights assets={filtered} selection={assetSelection} tabs={tabs} />;
+        return (
+          <AssetCatalogInsights
+            assets={filtered}
+            selection={assetSelection}
+            tabs={tabs}
+            visibleSections={
+              new Set(['rate-cards', 'performance-metrics', 'activity-charts', 'top-assets'])
+            }
+          />
+        );
       default:
         return (
           <Table
@@ -293,19 +302,19 @@ AssetCatalogTableV2.displayName = 'AssetCatalogTableV2';
 const SORT_ITEMS = [
   {
     key: 'materialization_asc' as const,
-    text: 'Materialization (asc)',
+    text: 'Materialization (new to old)',
   },
   {
     key: 'materialization_desc' as const,
-    text: 'Materialization (desc)',
+    text: 'Materialization (old to new)',
   },
   {
     key: 'key_asc' as const,
-    text: 'Asset key (asc)',
+    text: 'Asset key (a to z)',
   },
   {
     key: 'key_desc' as const,
-    text: 'Asset key (desc)',
+    text: 'Asset key (z to a)',
   },
 ];
 const ITEMS_BY_KEY = SORT_ITEMS.reduce(

@@ -103,6 +103,7 @@ export const useRepositoryForRunWithoutSnapshot = (
   }
   const jobNameMatches = jobNameMatchesForRun(options, run);
   if (jobNameMatches && jobNameMatches.length) {
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     return {match: jobNameMatches[0]!, type: 'pipeline-name-only'};
   }
   return null;

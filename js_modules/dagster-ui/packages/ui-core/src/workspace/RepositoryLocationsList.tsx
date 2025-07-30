@@ -93,6 +93,7 @@ export const RepositoryLocationsList = ({
       <VirtualizedCodeLocationHeader />
       <Inner $totalHeight={totalHeight}>
         {items.map(({index, key, size, start}) => {
+          // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
           const row: CodeLocationRowType = codeLocations[index]!;
           if (row.type === 'location') {
             const repoAddressString = repoAddressAsHumanString({

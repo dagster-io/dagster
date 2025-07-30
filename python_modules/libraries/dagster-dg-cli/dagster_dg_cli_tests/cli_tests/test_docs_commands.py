@@ -260,3 +260,12 @@ def test_build_docs_success_matches_graphql():
 
             finally:
                 assert_projects_loaded_and_exit({"foo-bar"}, port, dev_process)
+
+
+def test_docs_integrations_json():
+    with ProxyRunner.test() as runner:
+        result = runner.invoke("docs", "integrations", "--json")
+        assert_runner_result(result)
+        output_json = json.loads(result.output)
+        assert isinstance(output_json, list)
+        assert isinstance(output_json[0], dict)

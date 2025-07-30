@@ -74,6 +74,7 @@ export const useAssetSelectionFiltering = <
     return (
       graphAssetKeys
         .map((key) => {
+          // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
           return assetsByKey.get(tokenForAssetKey(key))!;
         })
         .filter(Boolean)

@@ -45,7 +45,9 @@ describe('AssetNode', () => {
       function SetCacheEntry() {
         if (scenario.liveData) {
           const key = tokenForAssetKey(definitionCopy.assetKey);
+          // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
           const entry = {[key]: scenario.liveData!};
+          // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
           const {staleStatus, staleCauses} = scenario.liveData!;
           const staleEntry = {
             [key]: buildAssetNode({
@@ -73,6 +75,7 @@ describe('AssetNode', () => {
 
       await waitFor(() => {
         const assetKey = definitionCopy.assetKey;
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
         const displayName = assetKey.path[assetKey.path.length - 1]!;
         expect(
           screen.getByText(

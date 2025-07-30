@@ -20,11 +20,13 @@ type Path = {
 const buildSVGPaths = weakMapMemoize((edges: OpLayoutEdge[], nodes: {[name: string]: OpLayout}) =>
   edges
     .map(({from, to}) => {
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
       const source = nodes[from.opName]!;
       const sourceOutput =
         source.outputs[from.edgeName] ||
         Object.values(source.outputs).find((o) => o.collapsed.includes(from.edgeName));
 
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
       const target = nodes[to.opName]!;
       const targetInput =
         target.inputs[to.edgeName] ||

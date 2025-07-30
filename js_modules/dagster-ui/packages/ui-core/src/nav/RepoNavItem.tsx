@@ -41,9 +41,11 @@ export const RepoNavItem = (props: Props) => {
       return <span style={{color: Colors.textLighter()}}>No definitions</span>;
     }
     if (allRepos.length === 1) {
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
       return <SingleRepoSummary repo={allRepos[0]!} onlyRepo />;
     }
     if (selected.length === 1) {
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
       const selectedRepo = selected[0]!;
       return <SingleRepoSummary repo={selectedRepo} onlyRepo={false} />;
     }

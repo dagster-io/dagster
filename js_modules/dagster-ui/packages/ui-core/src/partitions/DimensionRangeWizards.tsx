@@ -55,6 +55,7 @@ export const DimensionRangeWizards = ({
             health={{
               ranges: displayedHealth.rangesForSingleDimension(
                 idx,
+                // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
                 selections.length === 2 ? selections[1 - idx]!.selectedRanges : undefined,
               ),
             }}

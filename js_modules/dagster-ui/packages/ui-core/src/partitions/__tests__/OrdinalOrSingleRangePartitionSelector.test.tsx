@@ -25,6 +25,7 @@ const Wrapper = ({
   return (
     <>
       <OrdinalOrSingleRangePartitionSelector
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
         dimension={assetHealth.dimensions[0]!}
         health={assetHealth}
         selection={selection}

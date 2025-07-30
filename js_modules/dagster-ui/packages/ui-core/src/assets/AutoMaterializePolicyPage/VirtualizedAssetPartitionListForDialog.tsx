@@ -37,6 +37,7 @@ export function VirtualizedAssetPartitionListForDialog<A>({
       COMMON_COLLATOR.compare(a, b),
     );
     partitionNames.forEach((partitionName) => {
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
       const assetKeys = assetKeysByPartition[partitionName]!;
       const expanded = expandedPartitions.has(partitionName);
       rows.push({type: 'partition-name', partitionName, expanded, assetCount: assetKeys.length});
@@ -74,6 +75,7 @@ export function VirtualizedAssetPartitionListForDialog<A>({
     <Container ref={container} style={{padding: '8px 24px'}}>
       <Inner $totalHeight={totalHeight}>
         {items.map(({index, key, size, start}) => {
+          // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
           const row = allRows[index]!;
           return (
             <Row $height={size} $start={start} key={key}>

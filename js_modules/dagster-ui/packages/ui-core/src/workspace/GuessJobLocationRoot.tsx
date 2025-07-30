@@ -26,6 +26,7 @@ export const GuessJobLocationRoot = () => {
   const entireMatch = useRouteMatch('/guess/(/?.*)');
   const location = useLocation();
 
+  // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
   const toAppend = (entireMatch!.params as any)[0];
   const {search} = location;
 
@@ -57,6 +58,7 @@ export const GuessJobLocationRoot = () => {
   }
 
   if (reposWithMatch.length === 1) {
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     const match = reposWithMatch[0]!;
     const repoAddress = optionToRepoAddress(match);
     const isJob = isThisThingAJob(match, pipelineName);

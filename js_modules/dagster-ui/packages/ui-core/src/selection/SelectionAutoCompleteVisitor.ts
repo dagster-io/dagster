@@ -43,6 +43,7 @@ export class SelectionAutoCompleteVisitor extends BaseSelectionVisitor {
   private getFunctionResultsMatchingQuery: SelectionAutoCompleteProvider['getFunctionResultsMatchingQuery'];
   private getSubstringResultMatchingQuery: SelectionAutoCompleteProvider['getSubstringResultMatchingQuery'];
   private createOperatorSuggestion: SelectionAutoCompleteProvider['createOperatorSuggestion'];
+  private supportsTraversal: SelectionAutoCompleteProvider['supportsTraversal'];
 
   public list: Array<Suggestion> = [];
 
@@ -58,6 +59,7 @@ export class SelectionAutoCompleteVisitor extends BaseSelectionVisitor {
     getSubstringResultMatchingQuery,
     getAllResults,
     createOperatorSuggestion,
+    supportsTraversal,
   }: {
     line: string;
     cursorIndex: number;
@@ -67,6 +69,7 @@ export class SelectionAutoCompleteVisitor extends BaseSelectionVisitor {
     getFunctionResultsMatchingQuery: SelectionAutoCompleteProvider['getFunctionResultsMatchingQuery'];
     getSubstringResultMatchingQuery: SelectionAutoCompleteProvider['getSubstringResultMatchingQuery'];
     createOperatorSuggestion: SelectionAutoCompleteProvider['createOperatorSuggestion'];
+    supportsTraversal: SelectionAutoCompleteProvider['supportsTraversal'];
   }) {
     super({line, cursorIndex});
     this.getAttributeResultsMatchingQuery = getAttributeResultsMatchingQuery;
@@ -77,6 +80,7 @@ export class SelectionAutoCompleteVisitor extends BaseSelectionVisitor {
     this.createOperatorSuggestion = createOperatorSuggestion;
     this._startReplacementIndex = cursorIndex;
     this._stopReplacementIndex = cursorIndex;
+    this.supportsTraversal = supportsTraversal;
   }
 
   set startReplacementIndex(newValue: number) {
@@ -161,6 +165,7 @@ export class SelectionAutoCompleteVisitor extends BaseSelectionVisitor {
   public visitFunctionName(ctx: FunctionNameContext) {
     if (this.nodeIncludesCursor(ctx)) {
       this.startReplacementIndex = ctx.start.startIndex;
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
       this.stopReplacementIndex = ctx.stop!.stopIndex + 1;
       this.addFunctionResults(ctx.text);
     }
@@ -178,6 +183,7 @@ export class SelectionAutoCompleteVisitor extends BaseSelectionVisitor {
   }
 
   public visitAttributeValue(ctx: AttributeValueContext) {
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     const stopIndex = ctx.stop!.stopIndex;
     if (
       this.cursorIndex >= stopIndex &&
@@ -187,12 +193,15 @@ export class SelectionAutoCompleteVisitor extends BaseSelectionVisitor {
       this.addAfterExpressionResults(ctx);
       return;
     }
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     this.startReplacementIndex = ctx.start!.startIndex;
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     this.stopReplacementIndex = ctx.stop!.stopIndex + 1;
 
     const parentContext = ctx.parent;
     if (parentContext instanceof AttributeExpressionContext) {
       this.startReplacementIndex = parentContext.colonToken().start.startIndex + 1;
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
       this.stopReplacementIndex = parentContext.postAttributeValueWhitespace().start!.startIndex;
     }
 
@@ -234,15 +243,18 @@ export class SelectionAutoCompleteVisitor extends BaseSelectionVisitor {
 
   public visitAttributeName(ctx: AttributeNameContext) {
     this.startReplacementIndex = ctx.start.startIndex;
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     this.stopReplacementIndex = ctx.stop!.stopIndex + 2;
     this.addAttributeResults(ctx.text);
   }
 
   public visitOrToken(ctx: OrTokenContext) {
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     if (this.cursorIndex > ctx.stop!.stopIndex) {
       // Let whitespace token handle
     } else {
       this.startReplacementIndex = ctx.start.startIndex;
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
       this.stopReplacementIndex = ctx.stop!.stopIndex + 1;
       this.list.push(
         this.createOperatorSuggestion({text: 'or', type: 'or', displayText: 'or'}),
@@ -252,10 +264,12 @@ export class SelectionAutoCompleteVisitor extends BaseSelectionVisitor {
   }
 
   public visitAndToken(ctx: AndTokenContext) {
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     if (this.cursorIndex > ctx.stop!.stopIndex) {
       // Let whitespace token handle
     } else {
       this.startReplacementIndex = ctx.start.startIndex;
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
       this.stopReplacementIndex = ctx.stop!.stopIndex + 1;
       this.list.push(
         this.createOperatorSuggestion({text: 'and', type: 'and', displayText: 'and'}),
@@ -267,6 +281,7 @@ export class SelectionAutoCompleteVisitor extends BaseSelectionVisitor {
   public visitUnmatchedValue(ctx: UnmatchedValueContext) {
     if (this.nodeIncludesCursor(ctx)) {
       this.startReplacementIndex = ctx.start.startIndex;
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
       this.stopReplacementIndex = ctx.stop!.stopIndex + 1;
       this.addUnmatchedValueResults(ctx.text);
     }
@@ -278,6 +293,7 @@ export class SelectionAutoCompleteVisitor extends BaseSelectionVisitor {
     const value = getValueNodeValue(ctx.value());
     if (this.nodeIncludesCursor(ctx.value())) {
       this.startReplacementIndex = ctx.value().start.startIndex;
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
       this.stopReplacementIndex = ctx.value().stop!.stopIndex + 1;
       this.addUnmatchedValueResults(value, DEFAULT_TEXT_CALLBACK, {
         excludePlus: true,
@@ -338,7 +354,11 @@ export class SelectionAutoCompleteVisitor extends BaseSelectionVisitor {
   }
 
   public visitPostDigitsWhitespace(ctx: PostDigitsWhitespaceContext) {
+    if (!this.supportsTraversal) {
+      return;
+    }
     this.startReplacementIndex = ctx.start.startIndex;
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     this.stopReplacementIndex = ctx.stop!.stopIndex;
     this.list.push(
       this.createOperatorSuggestion({
@@ -426,7 +446,7 @@ export class SelectionAutoCompleteVisitor extends BaseSelectionVisitor {
       );
     }
     if (value === '') {
-      if (!options.excludePlus) {
+      if (!options.excludePlus && this.supportsTraversal) {
         this.list.push(
           this.createOperatorSuggestion({
             text: textCallback('+'),
@@ -471,7 +491,7 @@ export class SelectionAutoCompleteVisitor extends BaseSelectionVisitor {
       this.createOperatorSuggestion({text: ' or ', type: 'or', displayText: 'or'}),
     );
 
-    if (!options.excludePlus) {
+    if (!options.excludePlus && this.supportsTraversal) {
       this.list.push(
         this.createOperatorSuggestion({text: '+', type: 'down-traversal', displayText: '+'}),
       );

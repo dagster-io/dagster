@@ -24,6 +24,7 @@ export const groupRunsByAutomation = (jobRows: TimelineRow[]): TimelineRow[] => 
         };
       }
 
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
       byAutomation[key]!.runs.push(run);
     });
   }

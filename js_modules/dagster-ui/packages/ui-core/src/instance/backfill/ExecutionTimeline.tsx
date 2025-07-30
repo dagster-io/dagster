@@ -77,6 +77,7 @@ export const ExecutionTimeline = (props: Props) => {
               {items.map(({index, key, size, start}) => (
                 <ExecutionTimelineRow
                   key={key}
+                  // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
                   run={runs[index]!}
                   top={start}
                   height={size}

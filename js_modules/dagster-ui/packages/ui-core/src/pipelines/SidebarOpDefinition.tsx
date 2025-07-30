@@ -142,6 +142,7 @@ export const SidebarOpDefinition = (props: SidebarOpDefinitionProps) => {
                 <TypeWithTooltip type={inputDef.type} />
               </TypeWrapper>
               <Description description={inputDef.description} />
+              {/* eslint-disable-next-line @typescript-eslint/no-non-null-assertion */}
               <OpEdges title="Mapped to:" items={inputMappings[inputDef.name]!} />
             </SectionItemContainer>
           ))}
@@ -158,6 +159,7 @@ export const SidebarOpDefinition = (props: SidebarOpDefinitionProps) => {
               <TypeWrapper>
                 <TypeWithTooltip type={outputDef.type} />
               </TypeWrapper>
+              {/* eslint-disable-next-line @typescript-eslint/no-non-null-assertion */}
               <OpEdges title="Mapped from:" items={outputMappings[outputDef.name]!} />
               <Description description={outputDef.description} />
             </SectionItemContainer>

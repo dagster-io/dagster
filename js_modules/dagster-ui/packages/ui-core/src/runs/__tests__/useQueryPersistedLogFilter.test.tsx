@@ -151,6 +151,7 @@ describe('decodeRunPageFilters', () => {
         render(<Test />);
         const mockFn = useQueryPersistedState as jest.MockedFunction<typeof useQueryPersistedState>;
         expect(mockFn).toHaveBeenCalled();
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
         const args = mockFn.mock.calls[0]![0];
         expect(args).toMatchObject({
           defaults: {
@@ -164,6 +165,7 @@ describe('decodeRunPageFilters', () => {
         render(<Test />);
         const mockFn = useQueryPersistedState as jest.MockedFunction<typeof useQueryPersistedState>;
         expect(mockFn).toHaveBeenCalled();
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
         const args = mockFn.mock.calls[0]![0];
         expect(args).toMatchObject({
           defaults: {
@@ -177,6 +179,7 @@ describe('decodeRunPageFilters', () => {
         render(<Test />);
         const mockFn = useQueryPersistedState as jest.MockedFunction<typeof useQueryPersistedState>;
         expect(mockFn).toHaveBeenCalled();
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
         const args = mockFn.mock.calls[0]![0];
         expect(args).toMatchObject({
           defaults: {

@@ -1122,7 +1122,9 @@ class JobDefinition(IHasInternalInit):
             asset_layer=self.asset_layer,
             input_values=self.input_values,
             partitions_def=self._original_partitions_def_argument,
-            _was_explicitly_provided_resources=None,
+            _was_explicitly_provided_resources=(
+                "resource_defs" in kwargs or self._was_provided_resources
+            ),
         )
         resolved_kwargs = {**base_kwargs, **kwargs}  # base kwargs overwritten for conflicts
         job_def = JobDefinition.dagster_internal_init(**resolved_kwargs)

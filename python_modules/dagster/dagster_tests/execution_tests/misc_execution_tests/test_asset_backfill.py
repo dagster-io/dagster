@@ -272,7 +272,10 @@ def _single_backfill_iteration(
 
     backfill_data = result.backfill_data
 
-    for idx, run_request in enumerate(result.run_requests):
+    for idx, run_request in enumerate(
+        # very janky sort key, just make sure that the partition range and the asset keys are involved
+        sorted(result.run_requests, key=lambda x: sorted(str(x.asset_selection) + str(x.tags)))
+    ):
         asset_keys = run_request.asset_selection
         assert asset_keys is not None
 
@@ -548,14 +551,6 @@ def test_matching_partitions_with_different_subsets():
                         end=create_datetime(2023, 1, 2),
                     )
                 ),
-                AssetKey(["parent"]): asset_graph.get(
-                    AssetKey(["parent"])
-                ).partitions_def.get_partition_subset_in_time_window(  # type: ignore
-                    TimeWindow(
-                        start=create_datetime(2023, 1, 2),
-                        end=create_datetime(2023, 1, 10),
-                    )
-                ),
                 AssetKey(["other_parent"]): asset_graph.get(
                     AssetKey(["other_parent"])
                 ).partitions_def.get_partition_subset_in_time_window(  # type: ignore
@@ -594,6 +589,14 @@ def test_matching_partitions_with_different_subsets():
                 ).partitions_def.get_partition_subset_in_time_window(  # type: ignore
                     TimeWindow(
                         start=create_datetime(2023, 1, 9),
+                        end=create_datetime(2023, 1, 10),
+                    ),
+                ),
+                AssetKey(["child"]): asset_graph.get(
+                    AssetKey(["child"])
+                ).partitions_def.get_partition_subset_in_time_window(  # type: ignore
+                    TimeWindow(
+                        start=create_datetime(2023, 1, 1),
                         end=create_datetime(2023, 1, 10),
                     ),
                 ),
@@ -624,14 +627,6 @@ def test_matching_partitions_with_different_subsets_failure():
                     end=create_datetime(2023, 1, 2),
                 )
             ),
-            AssetKey(["parent"]): asset_graph.get(
-                AssetKey(["parent"])
-            ).partitions_def.get_partition_subset_in_time_window(  # type: ignore
-                TimeWindow(
-                    start=create_datetime(2023, 1, 1),
-                    end=create_datetime(2023, 1, 10),
-                )
-            ),
             AssetKey(["child"]): asset_graph.get(
                 AssetKey(["child"])
             ).partitions_def.get_partition_subset_in_time_window(  # type: ignore
@@ -660,7 +655,13 @@ def test_matching_partitions_with_different_subsets_failure():
             backfill_start_timestamp=create_datetime(2023, 1, 12, 0, 0, 0).timestamp(),
         )
         asset_backfill_data = _single_backfill_iteration(
-            backfill_id, asset_backfill_data, asset_graph, instance, assets_by_repo_name
+            backfill_id,
+            asset_backfill_data,
+            asset_graph,
+            instance,
+            assets_by_repo_name,
+            # one of the parent runs fail
+            fail_idxs={1},
         )
         # doesn't try to materialize child yet, even though it has the same targeted
         # subset as parent, because different subsets of parent and child are eligible
@@ -674,14 +675,6 @@ def test_matching_partitions_with_different_subsets_failure():
                     TimeWindow(
                         start=create_datetime(2023, 1, 1),
                         end=create_datetime(2023, 1, 2),
-                    )
-                ),
-                AssetKey(["parent"]): asset_graph.get(
-                    AssetKey(["parent"])
-                ).partitions_def.get_partition_subset_in_time_window(  # type: ignore
-                    TimeWindow(
-                        start=create_datetime(2023, 1, 2),
-                        end=create_datetime(2023, 1, 10),
                     )
                 ),
                 AssetKey(["other_parent"]): asset_graph.get(
@@ -701,8 +694,6 @@ def test_matching_partitions_with_different_subsets_failure():
             asset_graph,
             instance,
             assets_by_repo_name,
-            # one of the parent runs fail
-            fail_idxs={0},
         )
         assert asset_backfill_data.requested_subset == AssetGraphSubset(
             non_partitioned_asset_keys=set(),
@@ -715,12 +706,12 @@ def test_matching_partitions_with_different_subsets_failure():
                         end=create_datetime(2023, 1, 2),
                     )
                 ),
-                AssetKey(["parent"]): asset_graph.get(
-                    AssetKey(["parent"])
+                AssetKey(["child"]): asset_graph.get(
+                    AssetKey(["child"])
                 ).partitions_def.get_partition_subset_in_time_window(  # type: ignore
                     TimeWindow(
                         start=create_datetime(2023, 1, 1),
-                        end=create_datetime(2023, 1, 10),
+                        end=create_datetime(2023, 1, 9),
                     )
                 ),
                 AssetKey(["other_parent"]): asset_graph.get(
@@ -741,7 +732,7 @@ def test_matching_partitions_with_different_subsets_failure():
 
         # not all things were requested because some upstreams failed
         assert asset_backfill_data.requested_subset != target_asset_graph_subset
-        # but everythin was either requested or failed
+        # but everything was either requested or failed
         assert (
             asset_backfill_data.requested_subset | asset_backfill_data.failed_and_downstream_subset
         ) == target_asset_graph_subset

@@ -336,6 +336,7 @@ describe('useSelectionHealthData', () => {
       ];
       const assetKeys = assets.map((asset) => asset.key);
       // Only provide health data for one asset
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
       const partialHealthData = createMockHealthData([assetKeys[0]!]);
 
       mockedUseAssetSelectionFiltering.mockReturnValue({

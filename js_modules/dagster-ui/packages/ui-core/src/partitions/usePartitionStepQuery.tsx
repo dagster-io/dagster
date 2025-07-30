@@ -232,6 +232,7 @@ function assemblePartitions(data: DataState, partitionTagName: string) {
       runsLoaded: idx >= data.loadingCursorIdx,
       runs: [],
     };
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     results.push(byName[name]!);
   });
 

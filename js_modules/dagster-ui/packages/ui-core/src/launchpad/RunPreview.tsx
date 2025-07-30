@@ -77,8 +77,11 @@ const RemoveExtraConfigButton = ({
     // these in `knownKeyExtraPaths` just so we can display them with an extra description.
     if (parts.length === 2) {
       const [type, name] = parts;
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
       const target = knownKeyExtraPaths[type!] || [];
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
       target.push(name!);
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
       knownKeyExtraPaths[type!] = target;
     } else {
       otherPaths.push(path);
@@ -383,12 +386,15 @@ export const RunPreview = (props: RunPreviewProps) => {
         return (
           <Tooltip
             position="bottom"
+            // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
             content={stateToHint[state]!.title}
+            // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
             intent={stateToHint[state]!.intent}
             key={item.name}
           >
             <Tag
               key={item.name}
+              // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
               intent={stateToHint[state]!.intent}
               onClick={() => {
                 const first = pathErrors.find(isValidationError);
@@ -691,5 +697,6 @@ function pathExistsInObject(path: string[], object: any): boolean {
     return true;
   }
   const [first, ...rest] = path;
+  // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
   return pathExistsInObject(rest, object[first!]);
 }

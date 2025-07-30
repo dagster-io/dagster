@@ -9,13 +9,7 @@ This command finds files with uncommitted changes (staged or unstaged), extracts
 Run the validation script on changed files:
 
 ```bash
-python scripts/validate_changed_docstrings.py
-```
-
-Run with verbose output to see which symbols are being validated:
-
-```bash
-python scripts/validate_changed_docstrings.py --verbose
+dagster-docs check docstrings --changed
 ```
 
 ## What it does

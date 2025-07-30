@@ -75,6 +75,7 @@ export const getFeatureFlagsWithDefaults = (): FeatureFlagMap => {
  */
 export const featureEnabled = (flag: FeatureFlag): boolean => {
   if (flag in currentFeatureFlags) {
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     return currentFeatureFlags[flag]!;
   }
 

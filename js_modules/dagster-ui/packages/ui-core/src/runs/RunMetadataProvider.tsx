@@ -373,7 +373,9 @@ export function extractMetadataFromLogs(
     // as a tiny dot on the chart.
     if (step.transitions.length === 1 && step.state === IStepState.SKIPPED) {
       step.attempts.push({
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
         start: step.transitions[0]!.time,
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
         end: step.transitions[0]!.time,
         exitState: IStepState.SKIPPED,
       });

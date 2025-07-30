@@ -94,6 +94,7 @@ export const InsightsLineChart = (props: Props) => {
     return {
       labels: timestamps,
       datasets: dataEntries.map(([key, {label, lineColor, values}]) => {
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
         const rgbLineColor = rgbColors[lineColor]!;
         return {
           label,

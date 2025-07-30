@@ -43,6 +43,7 @@ function tryDecodeURIComponent(str: string) {
 
 export function explorerPathFromString(path: string): ExplorerPath {
   const rootAndOps = path.split('/');
+  // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
   const root = rootAndOps[0]!;
   const opNames = rootAndOps.length === 1 ? [''] : rootAndOps.slice(1);
 

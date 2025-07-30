@@ -29,7 +29,7 @@ source .venv/bin/activate
 Next, install Dagster and verify that the `dagster` CLI is available:
 
 ```bash
-uv pip install dagster
+uv add dagster
 dagster --version
 ```
 

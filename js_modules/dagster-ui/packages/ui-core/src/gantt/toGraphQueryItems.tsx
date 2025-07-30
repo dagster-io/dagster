@@ -72,6 +72,7 @@ export const toGraphQueryItems = (
       for (const input of step.inputs) {
         // Add the input to our node in the result set
         const nodeInput: GraphQueryItem['inputs'][0] = {dependsOn: []};
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
         nodeTable[key]!.inputs.push(nodeInput);
 
         // For each upstream step in the plan, map it to upstream nodes in the runtime graph
@@ -97,9 +98,11 @@ export const toGraphQueryItems = (
               continue;
             }
             nodeInput.dependsOn.push({solid: {name: upstreamKey}});
+            // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
             let upstreamOutput: GraphQueryItem['outputs'][0] = nodeTable[upstreamKey]!.outputs[0]!;
             if (!upstreamOutput) {
               upstreamOutput = {dependedBy: []};
+              // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
               nodeTable[upstreamKey]!.outputs.push(upstreamOutput);
             }
             upstreamOutput.dependedBy.push({

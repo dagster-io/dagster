@@ -242,10 +242,12 @@ export const AssetCheckErrorsTag = ({
 
   if (checks.length === 1) {
     const actions: TagAction[] = [];
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     const execution = checks[0]!.executionForLatestMaterialization;
 
     actions.push({
       label: 'View details',
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
       to: assetDetailsPathForAssetCheck({assetKey, name: checks[0]!.name}),
     });
     if (execution) {
@@ -265,6 +267,7 @@ export const AssetCheckErrorsTag = ({
         childrenMiddleTruncate={checks.length === 1}
       >
         <Tag icon={tagIcon} intent={tagIntent}>
+          {/* eslint-disable-next-line @typescript-eslint/no-non-null-assertion */}
           <MiddleTruncate text={checks[0]!.name} />
         </Tag>
       </TagActionsPopover>

@@ -53,6 +53,7 @@ const FinalRedirectOrLoadingRoot = () => {
           to={workspacePath(
             repoWithAssetGroup.repository.name,
             repoWithAssetGroup.repositoryLocation.name,
+            // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
             `/asset-groups/${repoWithAssetGroup.repository.assetGroups[0]!.groupName}`,
           )}
         />

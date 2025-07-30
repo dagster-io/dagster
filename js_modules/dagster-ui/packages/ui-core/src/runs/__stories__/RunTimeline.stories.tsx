@@ -54,6 +54,7 @@ export const RowWithOverlappingRuns = () => {
         type: 'job',
         path: `/${rowKey}`,
         repoAddress,
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
         runs: [{...first!}, {...first!}, {...second!}, {...second!}, {...second!}, third!],
       },
     ];

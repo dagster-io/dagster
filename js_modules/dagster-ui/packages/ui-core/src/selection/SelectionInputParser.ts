@@ -62,6 +62,7 @@ export const parseInput = memoize((input: string): ParseResult => {
       const currentErrors = errorListener.getErrors();
 
       if (currentErrors.length > 0) {
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
         const error = currentErrors[0]!;
         const errorCharPos = error.from;
         const errorIndex = currentPosition + errorCharPos;

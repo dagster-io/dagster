@@ -192,6 +192,7 @@ class FetchManager {
     }
 
     if (didChange) {
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
       this._subscribers.forEach((callback) => callback(this._assetsOrError!));
     }
     if (this._subscribers.size) {
@@ -339,6 +340,7 @@ const getAssets = weakMapMemoize((allAssetNodes: WorkspaceAssetFragment[]) => {
       materializableAsset || observableAsset || nonGeneratedAsset || assetWithRepo || anyAsset;
 
     softwareDefinedAssets.push(
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
       combineAssetDefinitions(assetToReturn!, softwareDefinedAssetsByAssetKey[key]!),
     );
   });

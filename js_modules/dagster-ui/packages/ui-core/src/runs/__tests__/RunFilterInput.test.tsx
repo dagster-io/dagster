@@ -190,6 +190,7 @@ describe('<RunFilterInput  />', () => {
     expect(onChange).toHaveBeenCalledWith([
       {
         token: 'created_date_after',
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
         value: '' + todayRange[0]! / 1000,
       },
     ]);

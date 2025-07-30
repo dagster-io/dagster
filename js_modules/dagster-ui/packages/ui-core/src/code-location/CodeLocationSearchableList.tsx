@@ -64,6 +64,7 @@ export const CodeLocationSearchableList = <T,>(props: Props<T>) => {
           {virtualItems.length > 0 ? (
             <Inner $totalHeight={totalHeight}>
               {virtualItems.map(({index, key, size, start}) => {
+                // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
                 const item = filteredItems[index]!;
                 return (
                   <Row key={key} $height={size} $start={start}>

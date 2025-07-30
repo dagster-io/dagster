@@ -21,9 +21,27 @@ To run the examples, you'll need to:
 - Create a new Dagster project:
   <ScaffoldProject />
 - Install the necessary Python libraries:
-  ```bash
-  uv pip install dagster-databricks
-  ```
+
+<Tabs groupId="package-manager">
+   <TabItem value="uv" label="uv">
+      Install the required dependencies:
+
+         ```shell
+         uv add dagster-databricks
+         ```
+
+   </TabItem>
+
+   <TabItem value="pip" label="pip">
+      Install the required dependencies:
+
+         ```shell
+         pip install dagster-databricks
+         ```
+
+   </TabItem>
+</Tabs>
+
 - Refer to the [Dagster installation guide](/getting-started/installation) for more info. In Databricks, you'll need:
   - **A Databricks workspace**. If you don't have this, follow the [Databricks quickstart](https://docs.databricks.com/workflows/jobs/jobs-quickstart.html) to set one up.
   - **The following information about your Databricks workspace**:

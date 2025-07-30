@@ -22,6 +22,7 @@ export const AssetPartitionList = ({
 
   const rowVirtualizer = useVirtualizer({
     count: partitions.length,
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     getItemKey: (idx) => partitions[idx]!,
     getScrollElement: () => parentRef.current,
     estimateSize: () => 36,
@@ -58,6 +59,7 @@ export const AssetPartitionList = ({
     >
       <Inner $totalHeight={totalHeight}>
         {items.map(({index, key, size, start}) => {
+          // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
           const dimensionKey = partitions[index]!;
           const state = statusForPartition(dimensionKey);
           return (

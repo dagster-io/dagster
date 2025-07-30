@@ -104,6 +104,7 @@ export const LogsScrollingTable = (props: Props) => {
     return (
       <Inner $totalHeight={totalHeight}>
         {items.map(({index, key, size, start}) => {
+          // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
           const node = filteredNodes[index]!;
           const textMatch = textMatchNodes.includes(node);
           const focusedTimeMatch = Number(node.timestamp) === filter.focusedTime;

@@ -326,6 +326,7 @@ export function useLiveDataOrLatestMaterializationDebounced(
   }, [type, path]);
 
   if (type === 'asset') {
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     return liveDataByNode[tokenForAssetKey({path})]!;
   }
 

@@ -184,9 +184,11 @@ const AssetGraphExplorerWithData = ({
     Object.values(assetGraphData.nodes).forEach((node) => {
       const groupId = groupIdForNode(node);
       groupedAssets[groupId] = groupedAssets[groupId] || [];
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
       groupedAssets[groupId]!.push(node);
     });
     const counts: Record<string, number> = {};
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     Object.keys(groupedAssets).forEach((key) => (counts[key] = groupedAssets[key]!.length));
     return {allGroups: Object.keys(groupedAssets), allGroupCounts: counts, groupedAssets};
   }, [assetGraphData]);
@@ -226,10 +228,12 @@ const AssetGraphExplorerWithData = ({
   const viewportEl = React.useRef<SVGViewportRef>();
 
   const selectedTokens =
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     explorerPath.opNames[explorerPath.opNames.length - 1]!.split(',').filter(Boolean);
   const selectedGraphNodes = Object.values(assetGraphData.nodes).filter((node) =>
     selectedTokens.includes(tokenForAssetKey(node.definition.assetKey)),
   );
+  // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
   const lastSelectedNode = selectedGraphNodes[selectedGraphNodes.length - 1]!;
 
   const selectedDefinitions = selectedGraphNodes.map((a) => a.definition);
@@ -274,12 +278,14 @@ const AssetGraphExplorerWithData = ({
           }
         }
 
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
         const existing = explorerPath.opNames[0]!.split(',');
         nextOpsNameSelection = (
           existing.includes(token) ? without(existing, token) : uniq([...existing, ...tokensToAdd])
         ).join(',');
       }
 
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
       const nextCenter = layout?.nodes[nextOpsNameSelection[nextOpsNameSelection.length - 1]!];
       if (nextCenter) {
         viewportEl.current?.zoomToSVGCoords(nextCenter.bounds.x, nextCenter.bounds.y, true);
@@ -387,6 +393,7 @@ const AssetGraphExplorerWithData = ({
       const assets = groupedAssets[groupId] || [];
       const childNodeTokens = assets.map((n) => tokenForAssetKey(n.assetKey));
 
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
       const existing = explorerPath.opNames[0]!.split(',');
 
       const nextOpsNameSelection = childNodeTokens.every((token) => existing.includes(token))
@@ -589,6 +596,7 @@ const AssetGraphExplorerWithData = ({
           {Object.values(layout.nodes)
             .filter((node) => !isNodeOffscreen(node.bounds, viewportRect))
             .map(({id, bounds}) => {
+              // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
               const graphNode = assetGraphData.nodes[id]!;
               const path = JSON.parse(id);
               if (scale < GROUPS_ONLY_SCALE) {

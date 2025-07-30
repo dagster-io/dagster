@@ -77,6 +77,7 @@ yarn build-api-docs          # Build API docs after .rst changes
 ## Package Management
 
 - Always use uv instead of pip
+- **IMPORTANT**: When command line entry_points change in setup.py, you must reinstall the package using `uv pip install -e .` for the changes to take effect
 
 ## Code searching
 
@@ -99,3 +100,7 @@ yarn build-api-docs          # Build API docs after .rst changes
 ## Import Guidelines
 
 - Use top-level imports unless you need conditional imports or have performance concerns requiring lazy loading
+
+## Development Best Practices
+
+- ALWAYS run make ruff and make quick_pyright from repository root directory

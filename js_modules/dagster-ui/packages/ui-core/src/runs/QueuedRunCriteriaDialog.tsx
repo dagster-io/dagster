@@ -197,6 +197,7 @@ const QueuedRunCriteriaDialogContent = ({run}: ContentProps) => {
               </Box>
             </td>
             <td>
+              {/* eslint-disable-next-line @typescript-eslint/no-non-null-assertion */}
               {(poolOpGranularityRunLimited ? rootConcurrencyKeys : allPools)!.map((pool) => (
                 <PoolTag key={pool} pool={pool} />
               ))}

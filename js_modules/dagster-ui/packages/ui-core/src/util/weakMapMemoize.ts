@@ -139,6 +139,7 @@ export function weakMapMemoize<T extends AnyFunction>(fn: T, options?: WeakMapMe
         nextCacheNode = currentCache.map.get(arg);
       }
 
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
       currentCache = nextCacheNode!;
     }
 

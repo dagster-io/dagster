@@ -39,6 +39,7 @@ export const TypeListContainer = ({explorerPath, repoAddress}: ITypeListContaine
   const queryResult = useQuery<TypeListContainerQuery, TypeListContainerQueryVariables>(
     TYPE_LIST_CONTAINER_QUERY,
     {
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
       variables: {pipelineSelector: pipelineSelector!},
       skip: !pipelineSelector,
     },

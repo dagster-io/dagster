@@ -229,6 +229,7 @@ export function TickDetailSummary({
                 onClick={() => {
                   showCustomAlert({
                     title: 'Tick error',
+                    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
                     body: <PythonErrorInfo error={tick.error!} />,
                   });
                 }}

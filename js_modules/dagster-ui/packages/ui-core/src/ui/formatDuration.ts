@@ -109,6 +109,7 @@ export function formatDuration(
     let violatingUnitIndex = -1;
 
     for (let i = 0; i < UNITS.length; i++) {
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
       const [unitMs, singular] = UNITS[i]!;
       const value = roundFn(remainingMs / unitMs);
       const threshold = maxValueBeforeNextUnit[singular];
@@ -120,6 +121,7 @@ export function formatDuration(
 
     if (violatingUnitIndex !== -1) {
       if (violatingUnitIndex > 0) {
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
         const nextLargerUnit = UNITS[violatingUnitIndex - 1]!;
         if (nextLargerUnit) {
           const [unitMs, singular, plural] = nextLargerUnit;

@@ -21,6 +21,7 @@ setup(
         "click",
         "packaging>=20.9",
         "pandas",
+        "pathspec",
         "pytablereader",
         "requests",
         "twine>=1.15.0",
@@ -38,7 +39,7 @@ setup(
         "console_scripts": [
             "dagster-image = automation.docker.cli:main",
             "dagster-graphql-client = automation.graphql.python_client.cli:main",
-            "dagster-docs = automation.docs_cli:main",
+            "dagster-docs = automation.dagster_docs:main",
         ]
     },
 )

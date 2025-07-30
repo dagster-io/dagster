@@ -30,41 +30,98 @@ You will learn to:
 
 To follow the steps in this tutorial, you'll need:
 
-* Python 3.9+ and [`uv`](https://docs.astral.sh/uv) installed. For more information, see the [Installation guide](/getting-started/installation).
-* Familiarity with Python and SQL.
-* A basic understanding of data pipelines and the extract, transform, and load (ETL) process.
+- Python 3.9+ and [`uv`](https://docs.astral.sh/uv) installed. For more information, see the [Installation guide](/getting-started/installation).
+- Familiarity with Python and SQL.
+- A basic understanding of data pipelines and the extract, transform, and load (ETL) process.
 
-## Set up your Dagster project
+## 1: Scaffold a new Dagster project
 
-1. Open your terminal and scaffold a new project with `uv`:
+<Tabs groupId="package-manager">
+   <TabItem value="uv" label="uv">
+      1. Open your terminal and scaffold a new Dagster project:
 
-   <CliInvocationExample path="docs_snippets/docs_snippets/guides/tutorials/etl_tutorial/commands/uvx-create.txt" />
+         ```shell
+         uvx -U create-dagster project etl-tutorial
+         ```
+      
+      2. Respond `y` to the prompt to run `uv sync` after scaffolding
 
-2. Change directory into your new project:
+         ![Responding y to uv sync prompt](/images/getting-started/quickstart/uv_sync_yes.png)
 
-   <CliInvocationExample contents="cd etl-tutorial" />
+      3. Change to the `etl-tutorial` directory:
 
-3. Activate the project virtual environment:
+         ```shell
+         cd etl-tutorial
+         ```
+      4. Activate the virtual environment:
 
-   <Tabs>
-     <TabItem value="macos" label="MacOS">
-       ```source .venv/bin/activate ```
-     </TabItem>
-     <TabItem value="windows" label="Windows">
-       ```.venv\Scripts\activate ```
-     </TabItem>
-   </Tabs>
+         <Tabs>
+            <TabItem value="macos" label="MacOS/Unix">
+               ```shell
+               source .venv/bin/activate
+               ```
+            </TabItem>
+            <TabItem value="windows" label="Windows">
+               ```shell
+               .venv\Scripts\activate
+               ```
+            </TabItem>
+         </Tabs>
 
+   </TabItem>
 
-4. To make sure Dagster and its dependencies were installed correctly, start the Dagster webserver:
+   <TabItem value="pip" label="pip">
+      1. Open your terminal and scaffold a new Dagster project:
 
-   <CliInvocationExample contents="dg dev" />
+         ```shell
+         create-dagster project etl-tutorial
+         ```
+      2. Change to the `etl-tutorial` directory:
 
-   In your browser, navigate to [http://127.0.0.1:3000](http://127.0.0.1:3000)
+         ```shell
+         cd etl-tutorial
+         ```
+      
+      3. Create and activate a virtual environment:
 
-   At this point the project will be empty, but we will continue to add to it throughout the tutorial.
+         <Tabs>
+            <TabItem value="macos" label="MacOS/Unix">
+               ```shell
+               python -m venv .venv
+               ```
+               ```shell
+               source .venv/bin/activate
+               ```
+            </TabItem>
+            <TabItem value="windows" label="Windows">
+               ```shell
+               python -m venv .venv
+               ```
+               ```shell
+               .venv\Scripts\activate
+               ```
+            </TabItem>
+         </Tabs>
 
-   ![2048 resolution](/images/tutorial/etl-tutorial/empty-project.png)
+      4. Install your project as an editable package:
+
+         ```shell
+         pip install --editable .
+         ```
+   </TabItem>
+</Tabs>
+
+## 2: Start Dagster webserver
+
+Make sure Dagster and its dependencies were installed correctly by starting the Dagster webserver:
+
+<CliInvocationExample contents="dg dev" />
+
+In your browser, navigate to [http://127.0.0.1:3000](http://127.0.0.1:3000)
+
+At this point the project will be empty, but we will continue to add to it throughout the tutorial.
+
+![2048 resolution](/images/tutorial/etl-tutorial/empty-project.png)
 
 ## Next steps
 

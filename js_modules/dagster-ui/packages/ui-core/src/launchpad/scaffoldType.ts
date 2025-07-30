@@ -8,6 +8,7 @@ export const scaffoldType = (
   configTypeKey: string,
   typeLookup: {[key: string]: AllConfigTypesForEditorFragment},
 ): any => {
+  // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
   const type = typeLookup[configTypeKey]!;
 
   switch (type.__typename) {
@@ -34,6 +35,7 @@ export const scaffoldType = (
     case 'NullableConfigType':
       // If a type is nullable we include it in the scaffolded config anyway
       // by using the inner type
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
       const innerType = type.typeParamKeys[0]!;
       return scaffoldType(innerType, typeLookup);
     case 'EnumConfigType':

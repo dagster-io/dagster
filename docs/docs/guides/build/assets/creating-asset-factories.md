@@ -26,11 +26,30 @@ This article assumes familiarity with:
 <details>
   <summary>Prerequisites</summary>
 
-To run the code in this article, you'll need to create and activate a Python virtual environment and install the following dependencies:
+To run the example code in this article, you'll need:
 
-   ```bash
-   uv pip install dagster dagster-aws duckdb pyyaml pydantic
-   ```
+- Install the necessary Python libraries:
+
+<Tabs groupId="package-manager">
+   <TabItem value="uv" label="uv">
+      Install the required dependencies:
+
+         ```shell
+         uv add dagster dagster-aws duckdb pyyaml pydantic
+         ```
+
+   </TabItem>
+
+   <TabItem value="pip" label="pip">
+      Install the required dependencies:
+
+         ```shell
+         pip install dagster dagster-aws duckdb pyyaml pydantic
+         ```
+
+   </TabItem>
+</Tabs>
+
 </details>
 
 ## Building an asset factory in Python

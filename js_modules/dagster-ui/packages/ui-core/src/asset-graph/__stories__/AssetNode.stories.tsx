@@ -149,7 +149,9 @@ export const PartnerTags = () => {
     function SetCacheEntry() {
       const assetKey = buildAssetKey({path: [liveData.stepKey]});
       const key = tokenForAssetKey(assetKey);
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
       const entry = {[key]: liveData!};
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
       const {staleStatus, staleCauses} = liveData!;
       const staleEntry = {
         [key]: buildAssetNode({

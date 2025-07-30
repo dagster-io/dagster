@@ -70,7 +70,9 @@ describe('FilterDropdown', () => {
     await userEvent.type(searchInput, 'type');
     await waitFor(() => expect(screen.getByText('Type 1')).toBeInTheDocument());
     await waitFor(() => expect(screen.getByText('Type 2')).toBeInTheDocument());
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     await waitFor(() => expect(mockFilters[0]!.getResults).toHaveBeenCalledWith('type'));
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     await waitFor(() => expect(mockFilters[1]!.getResults).toHaveBeenCalledWith('type'));
   });
 
@@ -172,6 +174,7 @@ describe('FilterDropdown Accessibility', () => {
     await userEvent.keyboard(enterKey);
 
     await waitFor(() => {
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
       expect(mockFilters[1]!.onSelect).toHaveBeenCalled();
     });
   };

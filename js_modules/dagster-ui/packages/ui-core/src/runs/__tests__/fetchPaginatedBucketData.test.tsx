@@ -50,6 +50,7 @@ describe('fetchPaginatedBucketData', () => {
     });
 
     expect(
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
       setQueryDataMock.mock.calls[0][0]!({data: [{id: 1}], hasMore: false, cursor: undefined}),
     ).toEqual({
       called: true,
@@ -130,6 +131,7 @@ describe('fetchPaginatedBucketData', () => {
 
     const calls = setQueryDataMock.mock.calls;
     expect(calls.length).toEqual(2);
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     expect(calls[calls.length - 1]![0]({})).toEqual({
       loading: false,
       called: true,
@@ -157,6 +159,7 @@ describe('fetchPaginatedBucketData', () => {
     const data = [{id: 1}];
     const calls = setQueryDataMock.mock.calls;
     expect(calls.length).toEqual(2);
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     expect(calls[calls.length - 1]![0]({data})).toEqual({
       data,
       loading: false,
@@ -184,6 +187,7 @@ describe('fetchPaginatedBucketData', () => {
 
     const calls = setQueryDataMock.mock.calls;
     expect(calls.length).toEqual(2);
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     expect(calls[calls.length - 1]![0]({data})).toEqual({
       data,
       loading: false,

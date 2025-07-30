@@ -22,6 +22,7 @@ describe('batchRunsForTimeline', () => {
 
       const batched = getBatch(runs);
       expect(batched.length).toBe(1);
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
       const batch = batched[0]!;
       expect(batch.startTime).toBe(10);
       expect(batch.endTime).toBe(70);
@@ -42,6 +43,7 @@ describe('batchRunsForTimeline', () => {
 
       const batched = getBatch(runs);
       expect(batched.length).toBe(1);
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
       const batch = batched[0]!;
       expect(batch.startTime).toBe(10);
       expect(batch.endTime).toBe(50);
@@ -64,6 +66,7 @@ describe('batchRunsForTimeline', () => {
 
       const batched = getBatch(runs);
       expect(batched.length).toBe(1);
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
       const batch = batched[0]!;
       expect(batch.startTime).toBe(10);
       expect(batch.endTime).toBe(90);
@@ -87,6 +90,7 @@ describe('batchRunsForTimeline', () => {
 
       const batched = getBatch(runs);
       expect(batched.length).toBe(1);
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
       const batch = batched[0]!;
       expect(batch.startTime).toBe(10);
       expect(batch.endTime).toBe(90);
@@ -108,6 +112,7 @@ describe('batchRunsForTimeline', () => {
 
       const batched = getBatch(runs);
       expect(batched.length).toBe(1);
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
       const batch = batched[0]!;
       expect(batch.startTime).toBe(10);
       expect(batch.endTime).toBe(100);
@@ -128,6 +133,7 @@ describe('batchRunsForTimeline', () => {
 
       const batched = getBatch(runs);
       expect(batched.length).toBe(1);
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
       const batch = batched[0]!;
       expect(batch.startTime).toBe(10);
       expect(batch.endTime).toBe(70);
@@ -152,7 +158,9 @@ describe('batchRunsForTimeline', () => {
       expect(batched.length).toBe(2);
 
       // Batch A contains the earlier run due to sorting.
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
       const batchA = batched[0]!;
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
       const batchB = batched[1]!;
 
       expect(batchA.startTime).toBe(10);
@@ -182,8 +190,11 @@ describe('batchRunsForTimeline', () => {
       const batched = getBatch(runs);
       expect(batched.length).toBe(3);
 
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
       const batchA = batched[0]!;
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
       const batchB = batched[1]!;
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
       const batchC = batched[2]!;
 
       expect(batchA.startTime).toBe(10);
@@ -211,6 +222,7 @@ describe('batchRunsForTimeline', () => {
       const tinyRun = {startTime: 10, endTime: 11};
       const batched = getBatch([tinyRun]);
 
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
       const batch = batched[0]!;
       expect(batch.startTime).toBe(10);
       expect(batch.endTime).toBe(11);
@@ -224,6 +236,7 @@ describe('batchRunsForTimeline', () => {
       const tinyRunB = {startTime: 10, endTime: 12};
       const batched = getBatch([tinyRunA, tinyRunB]);
 
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
       const batch = batched[0]!;
       expect(batch.startTime).toBe(10);
       expect(batch.endTime).toBe(12);
@@ -257,6 +270,7 @@ describe('batchRunsForTimeline', () => {
 
       const batched = getBatch(runs);
       expect(batched.length).toBe(1);
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
       const batch = batched[0]!;
       expect(batch.startTime).toBe(10);
       expect(batch.endTime).toBe(70);
@@ -280,7 +294,9 @@ describe('batchRunsForTimeline', () => {
       const batched = getBatch(runs);
       expect(batched.length).toBe(2);
 
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
       const batchA = batched[0]!;
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
       const batchB = batched[1]!;
 
       expect(batchA.startTime).toBe(10);

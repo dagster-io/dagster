@@ -101,6 +101,7 @@ export const TickMaterializationsTable = ({
         </HeaderRow>
         <Inner $totalHeight={totalHeight}>
           {items.map(({index, key, size, start}) => {
+            // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
             const assetKey = filteredAssetKeys[index]!;
             return (
               <AssetDetailRow
@@ -109,6 +110,7 @@ export const TickMaterializationsTable = ({
                 $start={start}
                 assetKey={assetKey}
                 partitionKeys={assetKeyToPartitionsMap[tokenForAssetKey(assetKey)]}
+                // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
                 evaluationId={tick.autoMaterializeAssetEvaluationId!}
               />
             );

@@ -18,7 +18,7 @@ First, you will want a new shell and navigate to the same directory. You will ne
 
 ```bash
 source .venv/bin/activate
-uv pip install 'dagster-airlift[core]' dagster-webserver dagster
+uv add 'dagster-airlift[core]' dagster-webserver dagster
 ```
 
 ## Create asset representations of DAGs in Dagster

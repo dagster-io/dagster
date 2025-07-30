@@ -22,6 +22,7 @@ export const ThrottledMemoBatchingContext = createContext<{enqueue: (update: () 
           setTimeout(() => {
             unstable_batchedUpdates(() => {
               while (queue.length) {
+                // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
                 queue.shift()!();
               }
               isScheduled = false;

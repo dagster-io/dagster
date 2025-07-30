@@ -43,6 +43,7 @@ export class GraphTraverser<T extends GraphQueryItem> {
      * A --> B --> C
      */
     while (queue.length) {
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
       const [item, depth] = queue.shift()!;
       results[item.name] = item;
       if (depth < maxDepth) {

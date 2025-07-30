@@ -11,5 +11,6 @@ export const colorForString = (colors: string[]) =>
           return a & a;
         }, 0),
       ) % colors.length;
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     return colors[index]!;
   });

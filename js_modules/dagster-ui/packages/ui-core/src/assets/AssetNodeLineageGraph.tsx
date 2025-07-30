@@ -47,6 +47,7 @@ const AssetNodeLineageGraphInner = ({
     Object.values(assetGraphData.nodes).forEach((node) => {
       const groupId = groupIdForNode(node);
       groupedAssets[groupId] = groupedAssets[groupId] || [];
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
       groupedAssets[groupId]!.push(node);
     });
     return {allGroups: Object.keys(groupedAssets), groupedAssets};
@@ -149,6 +150,7 @@ const AssetNodeLineageGraphInner = ({
               .map((group) => (
                 <foreignObject {...group.bounds} key={group.id}>
                   <ExpandedGroupNode
+                    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
                     group={{...group, assets: groupedAssets[group.id]!}}
                     minimal={scale < MINIMAL_SCALE}
                     setHighlighted={setHighlighted}
@@ -164,6 +166,7 @@ const AssetNodeLineageGraphInner = ({
 
                 const contextMenuProps = {
                   graphData: assetGraphData,
+                  // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
                   node: graphNode!,
                 };
 

@@ -99,7 +99,8 @@ export const LaunchAssetChoosePartitionsDialog = (
   const displayName =
     props.assets.length > 1
       ? `${props.assets.length} assets`
-      : displayNameForAssetKey(props.assets[0]!.assetKey);
+      : // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+        displayNameForAssetKey(props.assets[0]!.assetKey);
 
   const title = `Launch runs to materialize ${displayName}`;
 
@@ -182,6 +183,7 @@ const LaunchAssetChoosePartitionsDialogBody = ({
 
   const displayedPartitionDefinition = displayedBaseAsset?.partitionDefinition;
 
+  // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
   const knownDimensions = partitionedAssets[0]!.partitionDefinition?.dimensionTypes || [];
   const [missingFailedOnly, setMissingFailedOnly] = useState(false);
 
@@ -271,6 +273,7 @@ const LaunchAssetChoosePartitionsDialogBody = ({
     }
 
     const config = await fetchTagsAndConfigForAssetJob(client, {
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
       partitionName: keysFiltered[0]!,
       repositoryLocationName: repoAddress.location,
       repositoryName: repoAddress.name,
@@ -288,10 +291,12 @@ const LaunchAssetChoosePartitionsDialogBody = ({
       allTags = allTags.filter((t) => !t.key.startsWith(DagsterTag.Partition));
       allTags.push({
         key: DagsterTag.AssetPartitionRangeStart,
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
         value: keysFiltered[0]!,
       });
       allTags.push({
         key: DagsterTag.AssetPartitionRangeEnd,
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
         value: keysFiltered[keysFiltered.length - 1]!,
       });
     }
@@ -631,7 +636,8 @@ const UpstreamUnavailableWarning = ({
 
   const upstreamUnavailableSpans =
     selections.length === 1
-      ? assembleIntoSpans(selections[0]!.selectedKeys, upstreamUnavailable).filter(
+      ? // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+        assembleIntoSpans(selections[0]!.selectedKeys, upstreamUnavailable).filter(
           (s) => s.status === true,
         )
       : [];
@@ -644,6 +650,7 @@ const UpstreamUnavailableWarning = ({
     if (selections.length > 1) {
       throw new Error('Assertion failed, this feature is only available for 1 dimensional assets');
     }
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     const selection = selections[0]!;
     setSelections([
       {...selection, selectedKeys: reject(selection.selectedKeys, upstreamUnavailable)},
@@ -657,6 +664,7 @@ const UpstreamUnavailableWarning = ({
       description={
         <>
           {upstreamUnavailableSpans
+            // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
             .map((span) => stringForSpan(span, selections[0]!.selectedKeys))
             .join(', ')}
           {

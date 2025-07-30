@@ -18,9 +18,26 @@ This guide assumes familiarity with [assets](/guides/build/assets) and [resource
 To run the example code in this article, you'll need:
 
 - Install the necessary Python libraries:
-  ```bash
-  uv pip install requests
-  ```
+
+<Tabs groupId="package-manager">
+   <TabItem value="uv" label="uv">
+      Install the required dependencies:
+
+         ```shell
+         uv add requests
+         ```
+
+   </TabItem>
+
+   <TabItem value="pip" label="pip">
+      Install the required dependencies:
+
+         ```shell
+         pip install requests
+         ```
+
+   </TabItem>
+</Tabs>
 
 </details>
 

@@ -97,8 +97,10 @@ export function buildPartitionHealthData(data: PartitionHealthQuery, loadKey: As
   const isRangeDataInverted =
     __dims.length === 2 &&
     assetPartitionStatuses.__typename === 'MultiPartitionStatuses' &&
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     assetPartitionStatuses.primaryDimensionName !== __dims[0]!.name;
 
+  // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
   const dimensions = isRangeDataInverted ? [__dims[1]!, __dims[0]!] : __dims;
   const ranges = addKeyIndexesToMaterializedRanges(dimensions, assetPartitionStatuses);
 
@@ -111,6 +113,7 @@ export function buildPartitionHealthData(data: PartitionHealthQuery, loadKey: As
       warnUnlessTest('[stateForKey] called with zero dimension keys');
       return AssetPartitionStatus.MISSING;
     }
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     return stateForKeyIdx(dimensionKeys.map((key, idx) => __dims[idx]!.partitionKeys.indexOf(key)));
   };
 
@@ -128,6 +131,7 @@ export function buildPartitionHealthData(data: PartitionHealthQuery, loadKey: As
       return AssetPartitionStatus.MISSING;
     }
 
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     const d0Range = ranges.find((r) => r.start.idx <= dIndexes[0]! && r.end.idx >= dIndexes[0]!);
 
     if (!d0Range) {
@@ -137,8 +141,10 @@ export function buildPartitionHealthData(data: PartitionHealthQuery, loadKey: As
       return d0Range.value[0] ?? AssetPartitionStatus.MISSING; // 1D case
     }
     const d1Range = d0Range.subranges.find(
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
       (r) => r.start.idx <= dIndexes[1]! && r.end.idx >= dIndexes[1]!,
     );
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     return d1Range ? d1Range.value[0]! : AssetPartitionStatus.MISSING;
   };
 
@@ -182,10 +188,12 @@ export function buildPartitionHealthData(data: PartitionHealthQuery, loadKey: As
       return removeSubrangesAndJoin(clipped);
     } else {
       const [d0, d1] = dimensions;
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
       const allKeys = d1!.partitionKeys;
       const d0KeyCount = otherDimensionSelectedRanges
         ? keyCountInRanges(otherDimensionSelectedRanges)
-        : d0!.partitionKeys.length;
+        : // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+          d0!.partitionKeys.length;
       if (d0KeyCount === 0) {
         return [];
       }
@@ -361,10 +369,12 @@ export function keyCountByStateInSelection(
 
   const rangesInSelection = rangesClippedToSelection(
     assetHealth?.ranges || [],
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     selections[0]!.selectedRanges,
   );
 
   const secondDimensionKeyCount =
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     selections.length > 1 ? keyCountInRanges(selections[1]!.selectedRanges) : 1;
 
   const sumWithStatus = (status: AssetPartitionStatus) => {
@@ -374,6 +384,7 @@ export function keyCountByStateInSelection(
         (b.end.idx - b.start.idx + 1) *
           (b.subranges
             ? keyCountInRanges(
+                // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
                 rangesClippedToSelection(b.subranges, selections[1]!.selectedRanges).filter((b) =>
                   b.value.includes(status),
                 ),
@@ -417,6 +428,7 @@ function addKeyIndexesToMaterializedRanges(
     return result;
   }
   if (partitions.__typename === 'DefaultPartitionStatuses') {
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     const dim = dimensions[0]!;
     const materializedPartitionKeys = new Set(partitions.materializedPartitions);
     const materializingPartitionKeys = new Set(partitions.materializingPartitions);
@@ -443,7 +455,9 @@ function addKeyIndexesToMaterializedRanges(
   for (const range of partitions.ranges) {
     if (range.__typename === 'TimePartitionRangeStatus') {
       result.push({
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
         start: {key: range.startKey, idx: dimensions[0]!.partitionKeys.indexOf(range.startKey)},
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
         end: {key: range.endKey, idx: dimensions[0]!.partitionKeys.indexOf(range.endKey)},
         value: [rangeStatusToState(range.status)],
       });
@@ -453,7 +467,9 @@ function addKeyIndexesToMaterializedRanges(
         return result;
       }
       const [dim0, dim1] = dimensions;
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
       const subranges: Range[] = addKeyIndexesToMaterializedRanges([dim1!], range.secondaryDim);
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
       const value = partitionStatusGivenRanges(subranges, dim1!.partitionKeys.length);
       if (isEqual(value, [AssetPartitionStatus.MISSING])) {
         continue; // should not happen, just for Typescript correctness
@@ -463,10 +479,12 @@ function addKeyIndexesToMaterializedRanges(
         subranges,
         start: {
           key: range.primaryDimStartKey,
+          // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
           idx: dim0!.partitionKeys.indexOf(range.primaryDimStartKey),
         },
         end: {
           key: range.primaryDimEndKey,
+          // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
           idx: dim0!.partitionKeys.indexOf(range.primaryDimEndKey),
         },
       });
@@ -487,7 +505,9 @@ export function rangesForKeys(keys: string[], allKeys: string[]): Range[] {
   if (keys.length === allKeys.length) {
     return [
       {
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
         start: {key: allKeys[0]!, idx: 0},
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
         end: {key: allKeys[allKeys.length - 1]!, idx: allKeys.length - 1},
         value: [AssetPartitionStatus.MATERIALIZED],
       },
@@ -502,11 +522,15 @@ export function rangesForKeys(keys: string[], allKeys: string[]): Range[] {
   const ranges: Range[] = [];
 
   for (const idx of keysIdxs) {
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     if (ranges.length && idx === ranges[ranges.length - 1]!.end.idx + 1) {
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
       ranges[ranges.length - 1]!.end = {idx, key: allKeys[idx]!};
     } else {
       ranges.push({
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
         start: {idx, key: allKeys[idx]!},
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
         end: {idx, key: allKeys[idx]!},
         value: [AssetPartitionStatus.MATERIALIZED],
       });

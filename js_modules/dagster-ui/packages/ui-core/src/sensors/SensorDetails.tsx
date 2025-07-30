@@ -175,6 +175,7 @@ export const SensorDetails = ({
             <tr>
               <td>Next tick</td>
               <td>
+                {/* eslint-disable-next-line @typescript-eslint/no-non-null-assertion */}
                 <TimestampDisplay timestamp={sensor.nextTick.timestamp!} timeFormat={TIME_FORMAT} />
               </td>
             </tr>

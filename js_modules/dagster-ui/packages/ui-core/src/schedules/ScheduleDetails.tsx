@@ -97,6 +97,7 @@ export const ScheduleDetails = (props: {
               <td>Next tick</td>
               <td>
                 <TimestampDisplay
+                  // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
                   timestamp={futureTicks.results[0].timestamp!}
                   timezone={executionTimezone}
                   timeFormat={TIME_FORMAT}

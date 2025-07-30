@@ -60,6 +60,7 @@ export const DefinitionSection = ({
         <Tag icon="asset_group">
           <Link
             to={workspacePathFromAddress(
+              // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
               repoAddress!,
               `/asset-groups/${cachedOrLiveAssetNode.groupName}`,
             )}
@@ -73,8 +74,10 @@ export const DefinitionSection = ({
         <Box flex={{direction: 'column'}}>
           <AssetDefinedInMultipleReposNotice
             assetKey={cachedOrLiveAssetNode.assetKey}
+            // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
             loadedFromRepo={repoAddress!}
           />
+          {/* eslint-disable-next-line @typescript-eslint/no-non-null-assertion */}
           <RepositoryLink repoAddress={repoAddress!} />
           {location && (
             <Caption color={Colors.textLighter()}>

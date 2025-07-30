@@ -111,6 +111,7 @@ export const LaunchpadTabs = (props: LaunchpadTabsProps) => {
       await confirm({
         title: 'Remove tab?',
         description: `The configuration for ${
+          // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
           keyToRemove && sessions[keyToRemove] ? `"${sessions[keyToRemove]!.name}"` : 'this tab'
         } will be discarded.`,
       });
@@ -141,6 +142,7 @@ export const LaunchpadTabs = (props: LaunchpadTabsProps) => {
             canRemove={sessionCount > 1}
             key={key}
             active={key === data.current}
+            // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
             title={sessions[key]!.name || 'Unnamed'}
             onClick={() => onApply(applySelectSession, key)}
             onChange={(name) => onApply(applyChangesToSession, key, {name})}

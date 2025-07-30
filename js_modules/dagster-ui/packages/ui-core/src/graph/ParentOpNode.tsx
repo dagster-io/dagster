@@ -128,6 +128,7 @@ export const ParentOpNode = (props: ParentOpNodeProps) => {
       })}
       {op.definition.inputDefinitions.map((input, idx) => {
         const metadata = metadataForCompositeParentIO(op.definition, input);
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
         const invocationInput = op.inputs.find((i) => i.definition.name === input.name)!;
         return (
           <Fragment key={idx}>
@@ -139,7 +140,9 @@ export const ParentOpNode = (props: ParentOpNodeProps) => {
                 labelAttachment="top"
                 label={titleOfIO(dependsOn)}
                 minified={minified}
+                // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
                 layout={parentLayout.dependsOn[titleOfIO(dependsOn)]!}
+                // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
                 target={parentLayout.inputs[input.name]!.port}
                 onDoubleClickLabel={() => props.onClickOp({path: ['..', dependsOn.solid.name]})}
               />
@@ -149,6 +152,7 @@ export const ParentOpNode = (props: ParentOpNodeProps) => {
       })}
       {op.definition.outputDefinitions.map((output, idx) => {
         const metadata = metadataForCompositeParentIO(op.definition, output);
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
         const invocationOutput = op.outputs.find((i) => i.definition.name === output.name)!;
         return (
           <Fragment key={idx}>
@@ -160,7 +164,9 @@ export const ParentOpNode = (props: ParentOpNodeProps) => {
                 labelAttachment="bottom"
                 label={titleOfIO(dependedBy)}
                 minified={minified}
+                // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
                 layout={parentLayout.dependedBy[titleOfIO(dependedBy)]!}
+                // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
                 target={parentLayout.outputs[output.name]!.port}
                 onDoubleClickLabel={() => props.onClickOp({path: ['..', dependedBy.solid.name]})}
               />

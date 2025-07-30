@@ -18,6 +18,7 @@
     "generate-selection-autocomplete": "ts-node -O '{\"module\": \"commonjs\"}' ./src/scripts/generateSelection.ts && eslint src/selection/generated/ --fix -c .eslintrc.js",
     "generate-run-selection": "ts-node -O '{\"module\": \"commonjs\"}' ./src/scripts/generateRunSelection.ts && eslint src/run-selection/generated/ --fix -c .eslintrc.js",
     "generate-op-selection": "ts-node -O '{\"module\": \"commonjs\"}' ./src/scripts/generateOpSelection.ts && eslint src/op-selection/generated/ --fix -c .eslintrc.js",
+    "generate-job-selection": "ts-node -O '{\"module\": \"commonjs\"}' ./src/scripts/generateJobSelection.ts && eslint src/job-selection/generated/ --fix -c .eslintrc.js",
     "storybook": "storybook dev -p 6006",
     "build-storybook": "storybook build",
     "find-circular-dependencies": "ts-node -O '{\"module\": \"commonjs\"}' ./src/scripts/findCircularDependencies.ts"

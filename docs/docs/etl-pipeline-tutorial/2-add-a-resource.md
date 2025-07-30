@@ -10,9 +10,27 @@ We've now created our own ingest assets and combined them with assets from the d
 
 In Dagster, resources are reusable objects that provide external context or functionality, such as database connections, clients, or configurations. Resources can be used by a number of different Dagster objects.
 
-First, we will need to install the `dagster-duckdb` library:
+First, we will need to install the `dagster-duckdb` and `pandas` libraries:
 
-<CliInvocationExample contents="uv pip install dagster-duckdb pandas" />
+<Tabs groupId="package-manager">
+   <TabItem value="uv" label="uv">
+      Install the required dependencies:
+
+         ```shell
+         uv add dagster-duckdb pandas
+         ```
+
+   </TabItem>
+
+   <TabItem value="pip" label="pip">
+      Install the required dependencies:
+
+         ```shell
+         pip install dagster-duckdb pandas
+         ```
+
+   </TabItem>
+</Tabs>
 
 Next, we need to scaffold our resources file with `dg`:
 
@@ -62,7 +80,7 @@ With our resource defined, we need to update our asset code. Since all of our in
   language="python"
   startAfter="start_import_url_to_duckdb_with_resource"
   endBefore="end_import_url_to_duckdb_with_resource"
-  title="src/etl_tutorial/defs/assets/py"
+  title="src/etl_tutorial/defs/assets.py"
 />
 
 The `DuckDBResource` is designed to handle concurrent queries, so we no longer need the `serialize_duckdb_query` function. Now we can update the assets themselves. We will add `duckdb` as a parameter to each asset function. Within our Dagster project, the `DuckDBResource` will now be available which we can pass through to the `import_url_to_duckdb` function:

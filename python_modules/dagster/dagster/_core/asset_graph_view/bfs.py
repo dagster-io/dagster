@@ -143,8 +143,20 @@ class ToposortedPriorityQueue:
         # include_full_execution_set is set to True, or just the passed in
         # asset key if it was not. If there are multiple assets in the subset
         # the subset will have the same partitions included for each asset.
-        heap_value = heappop(self._heap)
-        return heap_value.asset_graph_subset
+        #
+        # Returns the union of all subsets that share the same sort key
+        # (i.e. asset key).
+
+        # the minimum item in a heap is always at index 0
+        min_item = self._heap[0]
+
+        result = AssetGraphSubset.create_empty_subset()
+        # Collect all items with the same minimum sort key (asset key)
+        while self._heap and self._heap[0].sort_key == min_item.sort_key:
+            heap_value = heappop(self._heap)
+            result |= heap_value.asset_graph_subset
+
+        return result
 
     def _queue_item(self, entity_subset: "EntitySubset") -> "ToposortedPriorityQueue.QueueItem":
         asset_key = entity_subset.key

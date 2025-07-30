@@ -36,6 +36,7 @@ export const Default = () => {
         return [
           key,
           {
+            // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
             lineColor: orderedColors[ii % numLines]!,
             type: 'asset-group' as const,
             label: key,

@@ -3,22 +3,6 @@ from collections.abc import Mapping
 from enum import Enum
 from typing import Any, Callable, Optional, TypedDict
 
-import yaml
-
-
-# This is a hack to force a string with leading zeros to be quoted in yaml
-# This is necessary because yaml will interpret a string with leading zeros as an octal number
-class YamlQuotedString(str):
-    pass
-
-
-def quoted_presenter(dumper, data):
-    return dumper.represent_scalar("tag:yaml.org,2002:str", data, style="'")
-
-
-yaml.add_multi_representer(YamlQuotedString, quoted_presenter)
-
-
 DEFAULT_TIMEOUT_IN_MIN = 35
 
 DOCKER_PLUGIN = "docker#v5.10.0"
@@ -187,20 +171,21 @@ class CommandStepBuilder:
         env=None,
         image_name=BASE_IMAGE_NAME,
         image_version=BASE_IMAGE_TAG,
+        ecr_account_ids=[AWS_ACCOUNT_ID],
     ):
         return self.on_python_image(
             image=f"{image_name}:py{ver}-{image_version}",
             env=env,
-        ).with_ecr_login()
+        ).with_ecr_login(ecr_account_ids)
 
-    def with_ecr_login(self):
+    def with_ecr_login(self, ecr_account_ids=[AWS_ACCOUNT_ID]):
         assert "plugins" in self._step
         self._step["plugins"].append(
             {
                 ECR_PLUGIN: {
                     "login": True,
                     "no-include-email": True,
-                    "account_ids": AWS_ACCOUNT_ID,
+                    "account_ids": ecr_account_ids,
                     "region": "us-west-2",
                 }
             }

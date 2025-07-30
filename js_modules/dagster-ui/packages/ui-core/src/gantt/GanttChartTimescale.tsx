@@ -139,11 +139,14 @@ export const GanttChartTimescale = React.memo(
               key="highlight-duration"
               className="tick duration"
               style={{
+                // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
                 left: (highlightedMs[0]! - startMs) * pxPerMs + 2,
+                // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
                 width: (highlightedMs[1]! - highlightedMs[0]!) * pxPerMs - 2,
                 transform,
               }}
             >
+              {/* eslint-disable-next-line @typescript-eslint/no-non-null-assertion */}
               {formatElapsedTimeWithoutMsec(highlightedMs[1]! - highlightedMs[0]!)}
             </div>
           )}

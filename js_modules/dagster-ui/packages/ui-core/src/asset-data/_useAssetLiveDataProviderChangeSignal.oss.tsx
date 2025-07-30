@@ -49,6 +49,7 @@ export const useAssetLiveDataProviderChangeSignal = () => {
       ];
       const assetKeyTokens = new Set(assetKeyTokensArray);
       const dataForObservedKeys = assetKeyTokensArray
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
         .map((key) => AssetBaseData.manager.getCacheEntry(key)!)
         .filter((n) => n);
 

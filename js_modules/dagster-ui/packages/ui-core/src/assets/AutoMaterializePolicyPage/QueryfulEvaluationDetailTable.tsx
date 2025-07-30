@@ -44,6 +44,7 @@ export const QueryfulEvaluationDetailTable = ({
     variables: {
       assetKey: {path: assetKeyPath},
       evaluationId: evaluation.evaluationId,
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
       partition: selectedPartition!,
     },
     skip: !selectedPartition || !evaluation.isLegacy,
