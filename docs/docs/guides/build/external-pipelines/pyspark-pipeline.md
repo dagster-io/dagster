@@ -17,9 +17,27 @@ To run the examples, you'll need to:
 - Create a new Dagster project:
   <ScaffoldProject />
 - Install the necessary Python libraries:
-  ```bash
-  uv pip install dagster-aws
-  ```
+
+<Tabs groupId="package-manager">
+   <TabItem value="uv" label="uv">
+      Install the required dependencies:
+
+         ```shell
+         uv add dagster-aws
+         ```
+
+   </TabItem>
+
+   <TabItem value="pip" label="pip">
+      Install the required dependencies:
+
+         ```shell
+         pip install dagster-aws
+         ```
+
+   </TabItem>
+</Tabs>
+
 - In the PySpark environment, you'll need to install the `dagster-pipes` Python package, and typically the Java AWS S3 SDK packages. For example:
 
   ```shell
