@@ -9,24 +9,24 @@ from docs_snippets.concepts.assets.observable_source_assets import (
 )
 
 
-def test_observable_source_asset() -> None:
+def test_observable_source_asset():
     job_def = create_test_asset_job([foo_source_asset])
     result = job_def.execute_in_process()
     assert result.success
 
 
-def test_observable_source_asset_job() -> None:
+def test_observable_source_asset_job():
     with instance_for_test() as instance:
         Definitions(
             assets=[foo_source_asset],
             jobs=[observation_job],
-        ).resolve_job_def("observation_job").execute_in_process(instance=instance)
+        ).get_job_def("observation_job").execute_in_process(instance=instance)
 
         record = instance.get_latest_data_version_record(foo_source_asset.key)
         assert record
         assert extract_data_version_from_entry(record.event_log_entry)
 
 
-def test_observable_source_asset_schedule() -> None:
+def test_observable_source_asset_schedule():
     assert observation_schedule.name == "observation_schedule"
     assert observation_schedule.cron_schedule == "@daily"
