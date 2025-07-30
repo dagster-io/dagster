@@ -3,8 +3,10 @@ from glob import glob
 from typing import List
 
 from dagster_buildkite.defines import GIT_REPO_ROOT
-from dagster_buildkite.python_packages import PythonPackages
+from buildkite_shared.python_packages import PythonPackages
 from dagster_buildkite.images.versions import add_test_image
+from buildkite_shared.environment import is_release_branch, safe_getenv
+from buildkite_shared.uv import UV_PIN
 from buildkite_shared.python_version import AvailablePythonVersion
 from buildkite_shared.step_builders.command_step_builder import (
     CommandStepBuilder,
@@ -20,10 +22,7 @@ from dagster_buildkite.steps.packages import (
 )
 from dagster_buildkite.steps.test_project import build_test_project_steps
 from dagster_buildkite.utils import (
-    UV_PIN,
     is_feature_branch,
-    is_release_branch,
-    safe_getenv,
     skip_if_no_non_docs_markdown_changes,
     skip_if_no_pyright_requirements_txt_changes,
     skip_if_no_python_changes,

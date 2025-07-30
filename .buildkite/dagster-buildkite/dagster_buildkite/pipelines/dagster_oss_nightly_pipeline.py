@@ -1,6 +1,6 @@
 from typing import List
 
-from dagster_buildkite.package_spec import PackageSpec
+from dagster_buildkite.steps.packages import PackageSpec
 from buildkite_shared.python_version import AvailablePythonVersion
 from buildkite_shared.step_builders.command_step_builder import BuildkiteQueue
 from buildkite_shared.step_builders.step_builder import StepConfiguration

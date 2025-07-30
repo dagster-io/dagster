@@ -1,7 +1,6 @@
 # The ignore below is not valid in the dagster repo, but is valid in the internal repo
 # so we need this to suppress a pyright error in dagster buildkite
 # pyright: reportUnnecessaryTypeIgnoreComment=false
-import tomli
 import logging
 import subprocess
 
@@ -9,12 +8,11 @@ import subprocess
 from distutils import core as distutils_core  # pyright: ignore[reportAttributeAccessIssue]
 from importlib import reload
 from pathlib import Path
-from typing import Dict, Optional, Set
+from typing import Optional
 
-
+import tomli
+from buildkite_shared.git import ChangedFiles, GitInfo
 from pkg_resources import Requirement, parse_requirements
-
-from dagster_buildkite.git import ChangedFiles, GitInfo
 
 changed_filetypes = [
     ".py",
@@ -43,9 +41,7 @@ class PythonPackage:
             # distribution if our setup.py doesn't implement setup() correctly
             reload(distutils_core)
 
-            distribution = distutils_core.run_setup(
-                str(setup_path / "setup.py"), stop_after="init"
-            )
+            distribution = distutils_core.run_setup(str(setup_path / "setup.py"), stop_after="init")
 
             self._install_requires = distribution.install_requires  # type: ignore[attr-defined]
             self._extras_require = distribution.extras_require  # type: ignore[attr-defined]
@@ -71,7 +67,7 @@ class PythonPackage:
                 self._extras_require = project.get("optional-dependencies", {})
 
     @property
-    def install_requires(self) -> Set[Requirement]:
+    def install_requires(self) -> set[Requirement]:
         return set(
             requirement
             for requirement in parse_requirements(self._install_requires)
@@ -79,7 +75,7 @@ class PythonPackage:
         )
 
     @property
-    def extras_require(self) -> Dict[str, Set[Requirement]]:
+    def extras_require(self) -> dict[str, set[Requirement]]:
         extras_require = {}
         for extra, requirements in self._extras_require.items():
             extras_require[extra] = set(
@@ -108,9 +104,9 @@ class PythonPackage:
 
 
 class PythonPackages:
-    _repositories: Set[Path] = set()
-    all: Dict[str, PythonPackage] = dict()
-    with_changes: Set[PythonPackage] = set()
+    _repositories: set[Path] = set()
+    all: dict[str, PythonPackage] = dict()
+    with_changes: set[PythonPackage] = set()
 
     @classmethod
     def get(cls, name: str) -> Optional[PythonPackage]:
@@ -124,8 +120,8 @@ class PythonPackages:
         )
 
     @classmethod
-    def walk_dependencies(cls, requirement: Requirement) -> Set[PythonPackage]:
-        dependencies: Set[PythonPackage] = set()
+    def walk_dependencies(cls, requirement: Requirement) -> set[PythonPackage]:
+        dependencies: set[PythonPackage] = set()
         dagster_package = cls.get(requirement.name)
 
         # Return early if it's not a dependency defined in our repo
@@ -171,9 +167,7 @@ class PythonPackages:
                 continue
             processed |= {str(path_dir)}
             assert path_dir.is_dir()
-            if (path_dir / "setup.py").exists() or (
-                path_dir / "pyproject.toml"
-            ).exists():
+            if (path_dir / "setup.py").exists() or (path_dir / "pyproject.toml").exists():
                 try:
                     packages.append(PythonPackage(path_dir))
                 except:
@@ -184,7 +178,7 @@ class PythonPackages:
             logging.info("  - " + package.name)
             cls.all[package.name] = package
 
-        packages_with_changes: Set[PythonPackage] = set()
+        packages_with_changes: set[PythonPackage] = set()
 
         logging.info("Finding changed packages:")
         for package in packages:
