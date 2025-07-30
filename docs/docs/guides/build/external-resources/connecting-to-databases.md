@@ -21,9 +21,26 @@ To run the example code in this article, you'll need:
 
 - Connection information for a Snowflake database
 - Install the necessary Python libraries:
-  ```bash
-  uv pip install dagster-snowflake pandas
-  ```
+
+<Tabs groupId="package-manager">
+   <TabItem value="uv" label="uv">
+      Install the required dependencies:
+
+         ```shell
+         uv add dagster-snowflake pandas
+         ```
+
+   </TabItem>
+
+   <TabItem value="pip" label="pip">
+      Install the required dependencies:
+
+         ```shell
+         pip install dagster-snowflake pandas
+         ```
+
+   </TabItem>
+</Tabs>
 
 </details>
 

@@ -19,7 +19,7 @@ To run the examples, you'll need to:
   <ScaffoldProject />
 - Install the necessary Python libraries:
   ```bash
-  uv pip install dagster-aws
+  uv add dagster-aws
   ```
 - Configure AWS authentication credentials. If you don't have this set up already, refer to the [boto3 quickstart](https://boto3.amazonaws.com/v1/documentation/api/latest/guide/quickstart.html).
 - In AWS, you'll need:

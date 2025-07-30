@@ -26,7 +26,7 @@ Since we will be working with DuckDB, we will need to add the DuckDB Python libr
       Install the required dependencies:
 
          ```shell
-         uv pip install duckdb
+         uv add duckdb
          ```
 
    </TabItem>

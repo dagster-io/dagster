@@ -37,7 +37,7 @@ Next, we will need to install Dagster's [Evidence integration](https://docs.dags
       Install the required dependencies:
 
          ```shell
-         uv pip install dagster-evidence
+         uv add dagster-evidence
          ```
 
    </TabItem>
