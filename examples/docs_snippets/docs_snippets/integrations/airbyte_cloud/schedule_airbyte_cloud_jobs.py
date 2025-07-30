@@ -15,7 +15,7 @@ airbyte_workspace = AirbyteCloudWorkspace(
     name="airbyte_connection_name",  # Replace with your connection name
 )
 def airbyte_connection_assets(
-        context: dg.AssetExecutionContext, airbyte: AirbyteCloudWorkspace
+    context: dg.AssetExecutionContext, airbyte: AirbyteCloudWorkspace
 ):
     yield from airbyte.sync_and_poll(context=context)
 
