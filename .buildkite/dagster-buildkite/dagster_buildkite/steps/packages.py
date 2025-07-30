@@ -3,15 +3,16 @@ from glob import glob
 from pathlib import Path
 from typing import Iterable, List, Optional
 
+from buildkite_shared.python_version import AvailablePythonVersion
+from buildkite_shared.step_builders.command_step_builder import BuildkiteQueue
+from buildkite_shared.step_builders.step_builder import StepConfiguration
+
 from dagster_buildkite.defines import (
     GCP_CREDS_FILENAME,
     GCP_CREDS_LOCAL_FILE,
     GIT_REPO_ROOT,
 )
 from dagster_buildkite.package_spec import PackageSpec
-from buildkite_shared.python_version import AvailablePythonVersion
-from buildkite_shared.step_builders.command_step_builder import BuildkiteQueue
-from buildkite_shared.step_builders.step_builder import StepConfiguration
 from dagster_buildkite.steps.test_project import test_project_depends_fn
 from dagster_buildkite.utils import (
     connect_sibling_docker_container,
@@ -567,6 +568,7 @@ LIBRARY_PACKAGES_WITH_CUSTOM_CONFIG: List[PackageSpec] = [
     ),
     PackageSpec(
         "python_modules/libraries/dagster-databricks",
+        pytest_tox_factors=["pyspark", "connect"],
     ),
     PackageSpec(
         "python_modules/libraries/dagster-docker",
