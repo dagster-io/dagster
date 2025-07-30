@@ -137,7 +137,7 @@ To set up a Sling sync between a file in an object store and a database, such as
 
 ## Advanced usage
 
-### Creating Sling jobs
+### Creating Sling jobs and schedules
 
 Once you have your Sling assets, you can define a job to materialize them.
 
@@ -145,6 +145,15 @@ Once you have your Sling assets, you can define a job to materialize them.
   startAfter="start_sling_job"
   endBefore="end_sling_job"
   path="docs_snippets/docs_snippets/integrations/sling/create_sling_asset_job.py"
+  language="python"
+/>
+
+Also, jobs created for your Sling assets can be scheduled.
+
+<CodeExample
+  startAfter="start_sling_schedule"
+  endBefore="end_sling_schedule"
+  path="docs_snippets/docs_snippets/integrations/sling/schedule_sling_jobs.py"
   language="python"
 />
 
