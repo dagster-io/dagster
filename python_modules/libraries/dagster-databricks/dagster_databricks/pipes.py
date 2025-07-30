@@ -36,88 +36,12 @@ from pydantic import Field
 
 _CONTEXT_FILENAME = "context.json"
 
-
-class BasePipesDatabricksClient(PipesClient):
-    def run(
-        self,
-        *,
-        context: Union[OpExecutionContext, AssetExecutionContext],
-        extras: Optional[PipesExtras] = None,
-        **kwargs,
-    ):
-        raise NotImplementedError()
-
-    def _poll_til_success(
-        self, context: Union[OpExecutionContext, AssetExecutionContext], run_id: int
-    ) -> None:
-        # poll the Databricks run until it reaches RunResultState.SUCCESS, raising otherwise
-
-        last_observed_state = None
-        while True:
-            run_state = self._get_run_state(run_id)
-            if run_state.life_cycle_state != last_observed_state:
-                context.log.info(
-                    f"[pipes] Databricks run {run_id} observed state transition to {run_state.life_cycle_state}"
-                )
-            last_observed_state = run_state.life_cycle_state
-
-            if run_state.life_cycle_state in (
-                jobs.RunLifeCycleState.TERMINATED,
-                jobs.RunLifeCycleState.SKIPPED,
-            ):
-                if run_state.result_state == jobs.RunResultState.SUCCESS:
-                    break
-                else:
-                    raise DagsterPipesExecutionError(
-                        f"Error running Databricks job: {run_state.state_message}"
-                    )
-            elif run_state.life_cycle_state == jobs.RunLifeCycleState.INTERNAL_ERROR:
-                raise DagsterPipesExecutionError(
-                    f"Error running Databricks job: {run_state.state_message}"
-                )
-
-            time.sleep(self.poll_interval_seconds)
-
-    def _poll_til_terminating(self, run_id: int) -> None:
-        # Wait to see the job enters a state that indicates the underlying task is no longer executing
-        # TERMINATING: "The task of this run has completed, and the cluster and execution context are being cleaned up."
-        while True:
-            run_state = self._get_run_state(run_id)
-            if run_state.life_cycle_state in (
-                jobs.RunLifeCycleState.TERMINATING,
-                jobs.RunLifeCycleState.TERMINATED,
-                jobs.RunLifeCycleState.SKIPPED,
-                jobs.RunLifeCycleState.INTERNAL_ERROR,
-            ):
-                return
-
-            time.sleep(self.poll_interval_seconds)
-
-    def _get_run_state(self, run_id: int) -> jobs.RunState:
-        run = self.client.jobs.get_run(run_id)
-        if run.state is None:
-            check.failed("Databricks job run state is None")
-        return run.state
-
-    def _extract_dagster_metadata(self, run_id: int) -> RawMetadataMapping:
-        metadata: RawMetadataMapping = {}
-
-        run = self.client.jobs.get_run(run_id)
-
-        metadata["Databricks Job Run ID"] = str(run_id)
-
-        if run_page_url := run.run_page_url:
-            metadata["Databricks Job Run URL"] = run_page_url
-
-        return metadata
-
-
 # #########################
 # ##### Databricks
 # #########################
 
 
-class PipesDatabricksClient(BasePipesDatabricksClient, TreatAsResourceParam):
+class PipesDatabricksClient(PipesClient, TreatAsResourceParam):
     """Pipes client for databricks.
 
     Args:
@@ -322,6 +246,70 @@ class PipesDatabricksClient(BasePipesDatabricksClient, TreatAsResourceParam):
 
     def get_task_fields_which_support_cli_parameters(self) -> set[str]:
         return {"spark_python_task", "python_wheel_task"}
+
+    def _poll_til_success(
+        self, context: Union[OpExecutionContext, AssetExecutionContext], run_id: int
+    ) -> None:
+        # poll the Databricks run until it reaches RunResultState.SUCCESS, raising otherwise
+
+        last_observed_state = None
+        while True:
+            run_state = self._get_run_state(run_id)
+            if run_state.life_cycle_state != last_observed_state:
+                context.log.info(
+                    f"[pipes] Databricks run {run_id} observed state transition to {run_state.life_cycle_state}"
+                )
+            last_observed_state = run_state.life_cycle_state
+
+            if run_state.life_cycle_state in (
+                jobs.RunLifeCycleState.TERMINATED,
+                jobs.RunLifeCycleState.SKIPPED,
+            ):
+                if run_state.result_state == jobs.RunResultState.SUCCESS:
+                    break
+                else:
+                    raise DagsterPipesExecutionError(
+                        f"Error running Databricks job: {run_state.state_message}"
+                    )
+            elif run_state.life_cycle_state == jobs.RunLifeCycleState.INTERNAL_ERROR:
+                raise DagsterPipesExecutionError(
+                    f"Error running Databricks job: {run_state.state_message}"
+                )
+
+            time.sleep(self.poll_interval_seconds)
+
+    def _poll_til_terminating(self, run_id: int) -> None:
+        # Wait to see the job enters a state that indicates the underlying task is no longer executing
+        # TERMINATING: "The task of this run has completed, and the cluster and execution context are being cleaned up."
+        while True:
+            run_state = self._get_run_state(run_id)
+            if run_state.life_cycle_state in (
+                jobs.RunLifeCycleState.TERMINATING,
+                jobs.RunLifeCycleState.TERMINATED,
+                jobs.RunLifeCycleState.SKIPPED,
+                jobs.RunLifeCycleState.INTERNAL_ERROR,
+            ):
+                return
+
+            time.sleep(self.poll_interval_seconds)
+
+    def _get_run_state(self, run_id: int) -> jobs.RunState:
+        run = self.client.jobs.get_run(run_id)
+        if run.state is None:
+            check.failed("Databricks job run state is None")
+        return run.state
+
+    def _extract_dagster_metadata(self, run_id: int) -> RawMetadataMapping:
+        metadata: RawMetadataMapping = {}
+
+        run = self.client.jobs.get_run(run_id)
+
+        metadata["Databricks Job Run ID"] = str(run_id)
+
+        if run_page_url := run.run_page_url:
+            metadata["Databricks Job Run URL"] = run_page_url
+
+        return metadata
 
 
 @contextmanager
@@ -533,7 +521,7 @@ class PipesDbfsLogReader(PipesChunkedLogReader):
 # ####################################
 
 
-class PipesDatabricksServerlessClient(BasePipesDatabricksClient, TreatAsResourceParam):
+class PipesDatabricksServerlessClient(PipesClient, TreatAsResourceParam):
     """Pipes client for Databricks Serverless.
 
     Args:
@@ -644,6 +632,70 @@ class PipesDatabricksServerlessClient(BasePipesDatabricksClient, TreatAsResource
         return PipesClientCompletedInvocation(
             pipes_session, metadata=self._extract_dagster_metadata(run_id)
         )
+
+    def _poll_til_success(
+        self, context: Union[OpExecutionContext, AssetExecutionContext], run_id: int
+    ) -> None:
+        # poll the Databricks run until it reaches RunResultState.SUCCESS, raising otherwise
+
+        last_observed_state = None
+        while True:
+            run_state = self._get_run_state(run_id)
+            if run_state.life_cycle_state != last_observed_state:
+                context.log.info(
+                    f"[pipes] Databricks run {run_id} observed state transition to {run_state.life_cycle_state}"
+                )
+            last_observed_state = run_state.life_cycle_state
+
+            if run_state.life_cycle_state in (
+                jobs.RunLifeCycleState.TERMINATED,
+                jobs.RunLifeCycleState.SKIPPED,
+            ):
+                if run_state.result_state == jobs.RunResultState.SUCCESS:
+                    break
+                else:
+                    raise DagsterPipesExecutionError(
+                        f"Error running Databricks job: {run_state.state_message}"
+                    )
+            elif run_state.life_cycle_state == jobs.RunLifeCycleState.INTERNAL_ERROR:
+                raise DagsterPipesExecutionError(
+                    f"Error running Databricks job: {run_state.state_message}"
+                )
+
+            time.sleep(self.poll_interval_seconds)
+
+    def _poll_til_terminating(self, run_id: int) -> None:
+        # Wait to see the job enters a state that indicates the underlying task is no longer executing
+        # TERMINATING: "The task of this run has completed, and the cluster and execution context are being cleaned up."
+        while True:
+            run_state = self._get_run_state(run_id)
+            if run_state.life_cycle_state in (
+                jobs.RunLifeCycleState.TERMINATING,
+                jobs.RunLifeCycleState.TERMINATED,
+                jobs.RunLifeCycleState.SKIPPED,
+                jobs.RunLifeCycleState.INTERNAL_ERROR,
+            ):
+                return
+
+            time.sleep(self.poll_interval_seconds)
+
+    def _get_run_state(self, run_id: int) -> jobs.RunState:
+        run = self.client.jobs.get_run(run_id)
+        if run.state is None:
+            check.failed("Databricks job run state is None")
+        return run.state
+
+    def _extract_dagster_metadata(self, run_id: int) -> RawMetadataMapping:
+        metadata: RawMetadataMapping = {}
+
+        run = self.client.jobs.get_run(run_id)
+
+        metadata["Databricks Job Run ID"] = str(run_id)
+
+        if run_page_url := run.run_page_url:
+            metadata["Databricks Job Run URL"] = run_page_url
+
+        return metadata
 
 
 @contextmanager
