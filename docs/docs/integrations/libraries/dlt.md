@@ -235,8 +235,8 @@ And that's it! You should now have two assets that load data to corresponding Sn
 Once you have your dlt assets, you can define a job to materialize them.
 
 <CodeExample
-    startAfter="start_upstream_asset"
-    endBefore="end_upstream_asset"
+    startAfter="start_dlt_job"
+    endBefore="end_dlt_job"
     path="docs_snippets/docs_snippets/integrations/dlt/create_dlt_asset_job.py" 
     language="python" 
 />
