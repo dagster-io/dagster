@@ -107,6 +107,7 @@ EXCLUDED_FILES = {
     f"{snippets_folder}/sling/customize_upstream_dependencies.py",
     f"{snippets_folder}/sling/define_downstream_dependencies.py",
     f"{snippets_folder}/sling/sling_dagster_translator.py",
+    f"{snippets_folder}/sling/create_sling_asset_job.py",
     f"{snippets_folder}/tableau/add-tableau-data-quality-warning.py",
     f"{snippets_folder}/tableau/customize-tableau-asset-defs.py",
     f"{snippets_folder}/tableau/customize_upstream_dependencies.py",
