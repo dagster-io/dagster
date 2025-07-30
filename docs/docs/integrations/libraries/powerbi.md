@@ -81,6 +81,36 @@ Instead of using the out-of-the-box <PyObject section="libraries" module="dagste
 
 <CodeExample path="docs_snippets/docs_snippets/integrations/power-bi/materialize-semantic-models-advanced.py" />
 
+### Creating Power BI jobs
+
+Once you have your Power BI assets for your semantic models, you can define a job to materialize all of them.
+
+<CodeExample
+  startAfter="start_power_bi_all_assets_job"
+  endBefore="end_power_bi_all_assets_job"
+  path="docs_snippets/docs_snippets/integrations/power-bi/create_power_bi_all_assets_job.py" 
+  language="python" 
+/>
+
+You can also define a job for a selection of these assets.
+
+<CodeExample
+  startAfter="start_power_bi_selection_job"
+  endBefore="end_power_bi_selection_job"
+  path="docs_snippets/docs_snippets/integrations/power-bi/create_power_bi_selection_job.py" 
+  language="python" 
+/>
+
+Finally, jobs created for your Power BI assets can be scheduled.
+
+<CodeExample
+  startAfter="start_power_bi_schedule"
+  endBefore="end_power_bi_schedule"
+  path="docs_snippets/docs_snippets/integrations/power-bi/schedule_power_bi_jobs.py"
+  language="python"
+/>
+
+
 ## Customize upstream dependencies
 
 By default, Dagster sets upstream dependencies when generating asset specs for your PowerBI assets. To do so, Dagster parses information about assets that are upstream of specific PowerBI assets from the PowerBI workspace itself. You can customize how upstream dependencies are set on your PowerBI assets by passing an instance of the custom <PyObject section="libraries" module="dagster_powerbi" object="DagsterPowerBITranslator" /> to the <PyObject section="libraries" module="dagster_powerbi" object="load_powerbi_asset_specs" /> function.

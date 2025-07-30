@@ -10,7 +10,7 @@ from docs_snippets.concepts.logging.custom_logger import (
 )
 
 
-def test_json_logger() -> None:
+def test_json_logger():
     with open(
         file_relative_path(
             __file__,
@@ -22,12 +22,10 @@ def test_json_logger() -> None:
     assert demo_job.execute_in_process(run_config=run_config).success
 
 
-def test_testing_examples() -> None:
+def test_testing_examples():
     test_init_json_console_logger()
     test_init_json_console_logger_with_context()
 
 
-def test_default_logger_repo_example() -> None:
-    assert defs.resolve_job_def("the_job").loggers == {
-        "json_logger": json_console_logger
-    }
+def test_default_logger_repo_example():
+    assert defs.get_job_def("the_job").loggers == {"json_logger": json_console_logger}
