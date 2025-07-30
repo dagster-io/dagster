@@ -90,7 +90,7 @@ Note that `super()` is called in each of the overridden methods to generate the 
 
 You can pass an instance of the custom <PyObject section="libraries" module="dagster_airbyte" object="DagsterAirbyteTranslator" /> to the <PyObject section="libraries" module="dagster_airbyte" object="airbyte_assets" /> decorator or the <PyObject section="libraries" module="dagster_airbyte" object="build_airbyte_assets_definitions" /> factory.
 
-### Creating Airbyte Cloud jobs
+### Creating Airbyte Cloud jobs and schedules
 
 Once you have your Airbyte Cloud assets, you can define a job to materialize all of them.
 
@@ -99,6 +99,15 @@ Once you have your Airbyte Cloud assets, you can define a job to materialize all
 You can also define a job for a selection of these assets, or for the assets of a single connection.
 
 <CodeExample path="docs_snippets/docs_snippets/integrations/airbyte_cloud/create_airbyte_cloud_selection_job.py" language="python" />
+
+Finally, jobs created for your Airbyte Cloud assets can be scheduled.
+
+<CodeExample
+startAfter="start_airbyte_cloud_schedule"
+endBefore="end_airbyte_cloud_schedule"
+path="docs_snippets/docs_snippets/integrations/airbyte_cloud/schedule_airbyte_cloud_jobs.py"
+language="python"
+/>
 
 
 ### Load Airbyte Cloud assets from multiple workspaces
