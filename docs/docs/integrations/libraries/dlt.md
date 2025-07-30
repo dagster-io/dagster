@@ -230,6 +230,18 @@ And that's it! You should now have two assets that load data to corresponding Sn
 
 ## Advanced usage
 
+### Creating dlt jobs
+
+Once you have your dlt assets, you can define a job to materialize them.
+
+<CodeExample
+    startAfter="start_upstream_asset"
+    endBefore="end_upstream_asset"
+    path="docs_snippets/docs_snippets/integrations/dlt/create_dlt_asset_job.py" 
+    language="python" 
+/>
+
+
 ### Overriding the translator to customize dlt assets
 
 The <PyObject section="libraries" module="dagster_dlt" object="DagsterDltTranslator" /> object can be used to customize how dlt properties map to Dagster concepts.
