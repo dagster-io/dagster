@@ -86,12 +86,20 @@ Instead of using the out-of-the-box <PyObject section="libraries" module="dagste
 Once you have your Power BI assets for your semantic models, you can define a job to materialize all of them.
 
 <CodeExample
-startAfter="start_power_bi_all_assets_job"
-endBefore="end_power_bi_all_assets_job"
+  startAfter="start_power_bi_all_assets_job"
+  endBefore="end_power_bi_all_assets_job"
   path="docs_snippets/docs_snippets/integrations/power-bi/create_power_bi_all_assets_job.py" 
   language="python" 
 />
 
+You can also define a job for a selection of these assets.
+
+<CodeExample
+  startAfter="start_power_bi_selection_job"
+  endBefore="end_power_bi_selection_job"
+  path="docs_snippets/docs_snippets/integrations/power-bi/create_power_bi_selection_job.py" 
+  language="python" 
+/>
 
 
 ## Customize upstream dependencies
