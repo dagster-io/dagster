@@ -122,7 +122,7 @@ class BasePipesDatabricksClient(PipesClient):
 # #########################
 
 
-class PipesDatabricksClient(PipesClient, TreatAsResourceParam):
+class PipesDatabricksClient(BasePipesDatabricksClient, TreatAsResourceParam):
     """Pipes client for databricks.
 
     Args:
@@ -538,7 +538,7 @@ class PipesDbfsLogReader(PipesChunkedLogReader):
 # ####################################
 
 
-class PipesDatabricksServerlessClient(PipesClient, TreatAsResourceParam):
+class PipesDatabricksServerlessClient(BasePipesDatabricksClient, TreatAsResourceParam):
     """Pipes client for Databricks Serverless.
 
     Args:
