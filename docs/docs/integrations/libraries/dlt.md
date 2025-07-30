@@ -241,6 +241,15 @@ Once you have your dlt assets, you can define a job to materialize them.
     language="python" 
 />
 
+Also, jobs created for your Fivetran assets can be scheduled.
+
+<CodeExample
+    startAfter="start_dlt_schedule"
+    endBefore="end_dlt_schedule"
+    path="docs_snippets/docs_snippets/integrations/dlt/schedule_dlt_jobs.py"
+    language="python"
+/>
+
 
 ### Overriding the translator to customize dlt assets
 
