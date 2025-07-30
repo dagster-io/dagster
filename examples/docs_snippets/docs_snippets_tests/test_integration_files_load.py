@@ -108,7 +108,6 @@ EXCLUDED_FILES = {
     f"{snippets_folder}/tableau/refresh-and-materialize-tableau-assets.py",
     f"{snippets_folder}/tableau/representing-tableau-cloud-assets.py",
     f"{snippets_folder}/tableau/representing-tableau-server-assets.py",
-    f"{snippets_folder}/guides/tutorials/spark_connect/databricks_resources.py",
 }
 
 
