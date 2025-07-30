@@ -84,6 +84,7 @@ EXCLUDED_FILES = {
     f"{snippets_folder}/dlt/dlt_source_assets.py",
     f"{snippets_folder}/dlt/dlt_source_assets.py",
     f"{snippets_folder}/dlt/create_dlt_asset_job.py",
+    f"{snippets_folder}/dlt/schedule_dlt_jobs.py",
     f"{snippets_folder}/duckdb/reference/resource.py",
     f"{snippets_folder}/duckdb/tutorial/resource/downstream.py",
     f"{snippets_folder}/looker/customize-looker-assets.py",

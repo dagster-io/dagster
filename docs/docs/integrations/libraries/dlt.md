@@ -230,7 +230,7 @@ And that's it! You should now have two assets that load data to corresponding Sn
 
 ## Advanced usage
 
-### Creating dlt jobs
+### Creating dlt jobs and schedules
 
 Once you have your dlt assets, you can define a job to materialize them.
 
@@ -239,6 +239,15 @@ Once you have your dlt assets, you can define a job to materialize them.
     endBefore="end_dlt_job"
     path="docs_snippets/docs_snippets/integrations/dlt/create_dlt_asset_job.py" 
     language="python" 
+/>
+
+Also, jobs created for your dlt assets can be scheduled.
+
+<CodeExample
+    startAfter="start_dlt_schedule"
+    endBefore="end_dlt_schedule"
+    path="docs_snippets/docs_snippets/integrations/dlt/schedule_dlt_jobs.py"
+    language="python"
 />
 
 
