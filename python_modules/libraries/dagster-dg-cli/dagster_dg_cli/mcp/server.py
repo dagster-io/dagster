@@ -1,5 +1,6 @@
 import subprocess
 from collections.abc import Sequence
+from typing import Optional
 
 from mcp.server.fastmcp import FastMCP
 
@@ -248,30 +249,52 @@ async def check_dagster_definitions(project_path: str) -> str:
 
 
 @mcp.tool()
-async def list_dagster_definitions(project_path: str) -> str:
+async def list_dagster_definitions(project_path: str, asset_selection: Optional[str] = None) -> str:
     """Retrieve comprehensive metadata about all definitions in the Dagster project.
 
-    This tool provides detailed information about all successfully loaded definitions
-    in the project.
+    Use this tool when exploring a Dagster project.
 
-    Use this tool to get an overview of all definitions and where they were defined.
+    The output can be filtered down to specific set of asset definitions with the asset_selection argument using the following syntax:
+    FILTERS:
+        key:"name" | key:"prefix_*" | tag:"key" | tag:"key"="val" | owner:"name" | group:"name" | kind:"type"
+    TRAVERSAL:
+        +sel (all upstream) | sel+ (all downstream) | N+sel (N upstream) | sel+N (N downstream) | +sel+ (all up and downstream)
+    OPERATORS:
+        and | or | not | ()
+
+    Examples:
+        key:"sql" and kind:"snowflake" - assets have kind "snowflake" and "sql"
+        +key:"metrics_*" - all assets that start with "metrics_" and all their upstream dependencies
+        not tag:"deprecated" - all assets without the "deprecated" tag
+        roots(group:"raw") - root assets from the "raw" group
 
     Args:
         project_path: Absolute filesystem path to the root directory of your Dagster project
                      (the directory containing pyproject.toml with [tool.dg] or dg.toml).
+        asset_selection: Optional asset selection to filter the definitions by.
 
     Returns:
         JSON-formatted metadata about all definitions in the project, including
         their names, types, dependencies, and configuration details. The structure
         provides a comprehensive view of the project's data pipeline architecture.
     """
+    args = [
+        "dg",
+        "list",
+        "defs",
+        "--json",
+    ]
+
+    if asset_selection:
+        args.extend(
+            [
+                "--assets",
+                asset_selection,
+            ]
+        )
+
     return _subprocess(
-        [
-            "dg",
-            "list",
-            "defs",
-            "--json",
-        ],
+        args,
         cwd=project_path,
     )
 
