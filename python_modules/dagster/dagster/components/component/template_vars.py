@@ -3,6 +3,8 @@ from typing import Any, Callable, Optional, Union, overload
 
 from typing_extensions import TypeAlias
 
+from dagster._symbol_annotations.public import public
+
 TemplateVarFn: TypeAlias = Callable[..., Any]
 
 TEMPLATE_VAR_ATTR = "__dagster_template_var"
@@ -16,6 +18,7 @@ def template_var(fn: TemplateVarFn) -> TemplateVarFn: ...
 def template_var() -> Callable[[TemplateVarFn], TemplateVarFn]: ...
 
 
+@public
 def template_var(
     fn: Optional[TemplateVarFn] = None,
 ) -> Union[TemplateVarFn, Callable[[TemplateVarFn], TemplateVarFn]]:
@@ -70,11 +73,12 @@ def is_staticmethod(cls, method):
     return False
 
 
-def get_static_template_vars(cls: type) -> dict[str, TemplateVarFn]:
+def get_static_template_vars(cls: type, context=None) -> dict[str, TemplateVarFn]:
     """Find all staticmethods in a class that can be used as template variables.
 
     Args:
         cls: The class to search through
+        context: Optional ComponentLoadContext to pass to template variables that accept it
 
     Returns:
         A dictionary mapping method names to their callable functions for each matching staticmethod
@@ -85,8 +89,41 @@ def get_static_template_vars(cls: type) -> dict[str, TemplateVarFn]:
             # Get the actual function from the staticmethod wrapper
             func = method.__get__(None, cls)
             if is_template_var(func):
-                if len(inspect.signature(func).parameters) > 0:
-                    raise ValueError(f"Static template var {name} must not take any arguments")
-                results[name] = func()
+                sig = inspect.signature(func)
+                if len(sig.parameters) == 1:
+                    if context is None:
+                        # Skip context-requiring functions when no context provided
+                        continue
+                    results[name] = func(context)
+                elif len(sig.parameters) == 0:
+                    results[name] = func()
+                else:
+                    raise ValueError(
+                        f"Static template var {name} must have 0 or 1 parameters, got {len(sig.parameters)}"
+                    )
+
+    return results
+
+
+def get_context_aware_static_template_vars(cls: type, context) -> dict[str, TemplateVarFn]:
+    """Find staticmethods that require context and invoke them with the provided context.
+
+    Args:
+        cls: The class to search through
+        context: ComponentLoadContext to pass to template variables
+
+    Returns:
+        A dictionary mapping method names to their values for context-requiring staticmethods
+    """
+    results = {}
+    for name, method in cls.__dict__.items():
+        if is_staticmethod(cls, method):
+            # Get the actual function from the staticmethod wrapper
+            func = method.__get__(None, cls)
+            if is_template_var(func):
+                sig = inspect.signature(func)
+                if len(sig.parameters) == 1:
+                    results[name] = func(context)
+                # Skip 0-parameter functions as they're handled by get_static_template_vars
 
     return results

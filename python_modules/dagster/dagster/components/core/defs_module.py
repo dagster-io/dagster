@@ -443,9 +443,16 @@ def context_with_injected_scope(
     component_cls: type[Component],
     template_vars_module: Optional[str],
 ) -> T:
-    context = context.with_rendering_scope(
-        component_cls.get_additional_scope(),
-    )
+    # Merge backward-compatible get_additional_scope with context-aware static template vars
+    from dagster.components.component.template_vars import get_context_aware_static_template_vars
+
+    legacy_scope = component_cls.get_additional_scope()
+    context_aware_scope = get_context_aware_static_template_vars(component_cls, context)
+
+    # Merge scopes, with context-aware taking precedence
+    merged_scope = {**legacy_scope, **context_aware_scope}
+
+    context = context.with_rendering_scope(merged_scope)
 
     if not template_vars_module:
         return context
