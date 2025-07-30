@@ -393,3 +393,55 @@ class TestSectionHeaderEdgeCases:
         # (Exact behavior may vary based on RST processing)
         # Just verify it runs without crashing
         assert result is not None
+
+    def test_attributes_in_code_block_should_not_be_flagged(self):
+        """Test that 'attributes:' within code blocks should not trigger validation errors.
+
+        This reproduces the false positive reported in dagster.template_var docstring.
+        """
+        docstring = '''"""Template variable decorator function.
+
+        This decorator marks functions for use in YAML templates.
+
+        Examples:
+            Basic usage in YAML:
+
+            .. code-block:: yaml
+
+                type: my_project.components.DataProcessor
+                template_vars_module: .template_vars
+                attributes:
+                  database_url: "{{ database_url }}"
+                  table_name: "{{ component_specific_table }}"
+
+            Component class usage:
+
+            .. code-block:: yaml
+
+                type: my_project.components.MyComponent
+                attributes:
+                  config: "{{ default_config }}"
+                  name: "{{ context_aware_value }}"
+
+        Args:
+            fn: The function to decorate as a template variable.
+
+        Returns:
+            The decorated function with template variable metadata.
+        """'''
+        result = validate_docstring_text(docstring, "test.template_var_function")
+
+        # Should not flag 'attributes:' within the code blocks as malformed headers
+        if result.has_errors():
+            errors = " ".join(result.errors)
+            # Make sure no error mentions 'attributes:'
+            assert "attributes:" not in errors.lower(), (
+                f"Should not flag 'attributes:' in code blocks, got errors: {result.errors}"
+            )
+
+        # Should not have warnings about 'attributes:' either
+        if result.has_warnings():
+            warnings = " ".join(result.warnings)
+            assert "attributes:" not in warnings.lower(), (
+                f"Should not warn about 'attributes:' in code blocks, got warnings: {result.warnings}"
+            )
