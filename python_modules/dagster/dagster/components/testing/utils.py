@@ -323,7 +323,7 @@ def create_defs_folder_sandbox(
         (project_root / "dg.toml").write_text(
             textwrap.dedent(
                 """
-                [tool.dg]
+                [project]
                 root_module = "{project_name}"
                 defs_module = "{project_name}.defs"
                 """
