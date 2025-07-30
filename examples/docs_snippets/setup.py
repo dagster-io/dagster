@@ -22,7 +22,6 @@ setup(
             "matplotlib-inline<=0.1.3",
             "click",
             "dagster-webserver[test]",
-            "databricks-connect",
             "dbt-duckdb",
             "duckdb",
             "flaky",
