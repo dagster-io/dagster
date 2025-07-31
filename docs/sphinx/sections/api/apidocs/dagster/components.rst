@@ -19,6 +19,8 @@ Using Components
 Building Components
 -------------------
 
+.. autodecorator:: template_var
+
 .. autoclass:: Component
     :members:
 
