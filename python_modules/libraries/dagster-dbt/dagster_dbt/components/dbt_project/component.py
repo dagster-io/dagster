@@ -2,22 +2,20 @@ from collections.abc import Iterator, Mapping
 from dataclasses import dataclass
 from functools import cached_property
 from pathlib import Path
-from typing import Annotated, Any, Callable, Optional, Union
+from typing import Annotated, Any, Optional, Union
 
 from dagster import Resolvable
 from dagster._core.definitions.asset_key import AssetKey
-from dagster._core.definitions.assets.definition.asset_spec import AssetSpec
 from dagster._core.definitions.definitions_class import Definitions
 from dagster._core.execution.context.asset_execution_context import AssetExecutionContext
 from dagster._utils.cached_method import cached_method
 from dagster.components.component.component import Component
 from dagster.components.core.context import ComponentLoadContext
 from dagster.components.core.tree import ComponentTree
-from dagster.components.resolved.core_models import AssetAttributesModel, OpSpec, ResolutionContext
+from dagster.components.resolved.core_models import OpSpec, ResolutionContext
 from dagster.components.resolved.model import Resolver
 from dagster.components.scaffold.scaffold import scaffold_with
-from dagster.components.utils import TranslatorResolvingInfo
-from typing_extensions import TypeAlias
+from dagster.components.utils.translation import TranslationFn, TranslationFnResolver
 
 from dagster_dbt.asset_decorator import dbt_assets
 from dagster_dbt.asset_utils import DBT_DEFAULT_EXCLUDE, DBT_DEFAULT_SELECT, get_node
@@ -33,40 +31,12 @@ from dagster_dbt.dbt_manifest_asset_selection import DbtManifestAssetSelection
 from dagster_dbt.dbt_project import DbtProject
 from dagster_dbt.utils import ASSET_RESOURCE_TYPES
 
-TranslationFn: TypeAlias = Callable[[AssetSpec, Mapping[str, Any]], AssetSpec]
-
 
 @dataclass(frozen=True)
 class DagsterDbtComponentsTranslatorSettings(DagsterDbtTranslatorSettings):
     """Subclass of DagsterDbtTranslatorSettings that enables code references by default."""
 
     enable_code_references: bool = True
-
-
-def resolve_translation(context: ResolutionContext, model):
-    info = TranslatorResolvingInfo(
-        "node",
-        asset_attributes=model,
-        resolution_context=context,
-        model_key="translation",
-    )
-    return lambda base_asset_spec, dbt_props: info.get_asset_spec(
-        base_asset_spec,
-        {
-            "node": dbt_props,
-            "spec": base_asset_spec,
-        },
-    )
-
-
-ResolvedTranslationFn: TypeAlias = Annotated[
-    TranslationFn,
-    Resolver(
-        resolve_translation,
-        inject_before_resolve=False,
-        model_field_type=Union[str, AssetAttributesModel],
-    ),
-]
 
 
 @dataclass
@@ -158,15 +128,8 @@ class DbtProjectComponent(Component, Resolvable):
         ),
     ] = None
     translation: Annotated[
-        Optional[ResolvedTranslationFn],
-        Resolver.default(
-            description="Defines how AssetSpecs are translated from dbt nodes",
-            examples=[
-                {
-                    "key": "target/main/{{ node.name }}",
-                },
-            ],
-        ),
+        Optional[TranslationFn[Mapping[str, Any]]],
+        TranslationFnResolver(template_vars_for_translation_fn=lambda data: {"node": data}),
     ] = None
     select: Annotated[
         str,

@@ -933,6 +933,10 @@ class ScheduleDefinition(IHasInternalInit):
         """Mapping[str, str]: The metadata for this schedule."""
         return self._metadata
 
+    @property
+    def has_job(self) -> bool:
+        return self._target.has_job_def
+
     @public
     @property
     def job(self) -> Union[JobDefinition, UnresolvedAssetJobDefinition]:

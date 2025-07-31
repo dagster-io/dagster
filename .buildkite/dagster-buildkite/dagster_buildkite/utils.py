@@ -8,7 +8,8 @@ from typing import Dict, List, Optional, Sequence
 import packaging.version
 import yaml
 
-from dagster_buildkite.git import ChangedFiles, get_commit_message
+from buildkite_shared.environment import is_feature_branch, message_contains
+from buildkite_shared.git import ChangedFiles
 from buildkite_shared.step_builders.step_builder import StepConfiguration
 
 BUILD_CREATOR_EMAIL_TO_SLACK_CHANNEL_MAP = {
@@ -18,27 +19,8 @@ BUILD_CREATOR_EMAIL_TO_SLACK_CHANNEL_MAP = {
 }
 
 # ########################
-# ##### BUILDKITE STEP DATA STRUCTURES
-# ########################
-
-# Buildkite step configurations can be quite complex-- the full specifications are in the Pipelines
-# -> Step Types section of the Buildkite docs:
-#   https://buildkite.com/docs/pipelines/command-step
-#
-# The structures defined below are subsets of the full specifications that only cover the attributes
-# we use. Additional keys can be added from the full spec as needed.
-
-UV_PIN = "uv==0.7.2"
-
-
-# ########################
 # ##### FUNCTIONS
 # ########################
-
-
-def safe_getenv(env_var: str) -> str:
-    assert env_var in os.environ, f"${env_var} must be set."
-    return os.environ[env_var]
 
 
 def buildkite_yaml_for_steps(
@@ -121,14 +103,6 @@ def connect_sibling_docker_container(
         f"'{{{{ .NetworkSettings.Networks.{network_name}.IPAddress }}}}' "
         f"{container_name}`"
     ]
-
-
-def is_feature_branch(branch_name: str = safe_getenv("BUILDKITE_BRANCH")) -> bool:
-    return not (branch_name == "master" or branch_name.startswith("release"))
-
-
-def is_release_branch(branch_name: str) -> bool:
-    return branch_name.startswith("release-")
 
 
 # Preceding a line of BK output with "---" turns it into a section header.
@@ -284,13 +258,6 @@ def skip_if_no_helm_changes():
         return None
 
     return "No helm changes"
-
-
-def message_contains(substring: str) -> bool:
-    return any(
-        substring in message
-        for message in [os.getenv("BUILDKITE_MESSAGE", ""), get_commit_message("HEAD")]
-    )
 
 
 def skip_if_no_docs_changes():

@@ -32,6 +32,7 @@ setup(
             "pandera",
             "pexpect",
             "plotly",
+            "pyspark",
             "pytest",
             "requests",
             "scikit-learn",

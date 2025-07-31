@@ -317,13 +317,17 @@ def test_kitchen_sink_on_create_helper_and_definitions():
     def an_op():
         pass
 
+    @dg.op(required_resource_keys={"a_resource_key"})
+    def other_op():
+        pass
+
     @dg.job
     def a_job():
         an_op()
 
     @dg.job
     def sensor_target():
-        an_op()
+        other_op()
 
     @dg.job
     def schedule_target():
@@ -348,7 +352,12 @@ def test_kitchen_sink_on_create_helper_and_definitions():
     repo = dg.create_repository_using_definitions_args(
         name="foobar",
         assets=[an_asset, another_asset],
-        jobs=[a_job, another_asset_job],
+        jobs=[
+            a_job,
+            another_asset_job,
+            sensor_target,
+            schedule_target,
+        ],
         schedules=[a_schedule],
         sensors=[a_sensor],
         resources={"a_resource_key": "the resource"},
@@ -382,7 +391,12 @@ def test_kitchen_sink_on_create_helper_and_definitions():
     # test the kitchen sink since we have created it
     defs = dg.Definitions(
         assets=[an_asset, another_asset],
-        jobs=[a_job, another_asset_job],
+        jobs=[
+            a_job,
+            another_asset_job,
+            sensor_target,
+            schedule_target,
+        ],
         schedules=[a_schedule],
         sensors=[a_sensor],
         resources={"a_resource_key": "the resource"},

@@ -135,6 +135,7 @@ export class BaseSelectionVisitor
   }
 
   public visitPostAttributeValueWhitespace(ctx: PostAttributeValueWhitespaceContext) {
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     const attributeValue = ctx.parent!.getChild(2) as ParserRuleContext;
     if (this.cursorIndex === (attributeValue?.stop?.stopIndex ?? 0) + 1) {
       this.forceVisit(attributeValue);

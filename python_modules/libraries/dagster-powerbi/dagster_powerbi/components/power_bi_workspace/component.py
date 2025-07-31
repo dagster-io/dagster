@@ -68,7 +68,6 @@ TranslationFn: TypeAlias = Callable[[AssetSpec, PowerBITranslatorData], AssetSpe
 
 def resolve_translation(context: ResolutionContext, model):
     info = TranslatorResolvingInfo(
-        "data",
         asset_attributes=model,
         resolution_context=context,
         model_key="translation",
@@ -125,7 +124,6 @@ def resolve_multilayer_translation(context: ResolutionContext, model):
     per-content-type transforms with the global transforms.
     """
     info = TranslatorResolvingInfo(
-        "data",
         asset_attributes=model,
         resolution_context=context,
         model_key="translation",

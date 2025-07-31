@@ -136,6 +136,7 @@ export const GanttChart = (props: GanttChartProps) => {
       cachedLayout.current = buildLayout(layoutParams);
       cachedLayoutParams.current = layoutParams;
     }
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     return cachedLayout.current!;
   }, [layoutParams]);
 

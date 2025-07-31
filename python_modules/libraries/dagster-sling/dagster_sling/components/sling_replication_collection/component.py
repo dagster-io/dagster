@@ -3,7 +3,7 @@ from collections.abc import Iterator, Mapping, Sequence
 from dataclasses import dataclass, field
 from functools import cached_property
 from pathlib import Path
-from typing import Annotated, Any, Callable, Literal, Optional, Union
+from typing import Annotated, Any, Literal, Optional, Union
 
 from dagster import Resolvable, Resolver
 from dagster._core.definitions.assets.definition.asset_spec import AssetSpec
@@ -18,9 +18,9 @@ from dagster._core.definitions.result import MaterializeResult
 from dagster.components.component.component import Component
 from dagster.components.core.context import ComponentLoadContext
 from dagster.components.resolved.context import ResolutionContext
-from dagster.components.resolved.core_models import AssetAttributesModel, AssetPostProcessor, OpSpec
+from dagster.components.resolved.core_models import AssetPostProcessor, OpSpec
 from dagster.components.scaffold.scaffold import scaffold_with
-from dagster.components.utils import TranslatorResolvingInfo
+from dagster.components.utils.translation import TranslationFn, TranslationFnResolver
 from dagster_shared.utils.warnings import deprecation_warning
 from pydantic import BaseModel, ConfigDict, Field
 from typing_extensions import TypeAlias
@@ -35,36 +35,8 @@ from dagster_sling.resources import AssetExecutionContext, SlingConnectionResour
 SlingMetadataAddons: TypeAlias = Literal["column_metadata", "row_count"]
 
 
-def resolve_translation(context: ResolutionContext, model):
-    info = TranslatorResolvingInfo(
-        "stream_definition",
-        asset_attributes=model,
-        resolution_context=context,
-        model_key="translation",
-    )
-    return lambda base_asset_spec, stream_definition: info.get_asset_spec(
-        base_asset_spec,
-        {
-            "stream_definition": stream_definition,
-            "spec": base_asset_spec,
-        },
-    )
-
-
-TranslationFn: TypeAlias = Callable[[AssetSpec, Mapping[str, Any]], AssetSpec]
-
-ResolvedTranslationFn: TypeAlias = Annotated[
-    TranslationFn,
-    Resolver(
-        resolve_translation,
-        model_field_type=Union[str, AssetAttributesModel],
-        inject_before_resolve=False,
-    ),
-]
-
-
 class ProxyDagsterSlingTranslator(DagsterSlingTranslator):
-    def __init__(self, fn: TranslationFn):
+    def __init__(self, fn: TranslationFn[Mapping[str, Any]]):
         self._fn = fn
 
     def get_asset_spec(self, stream_definition: Mapping[str, Any]) -> AssetSpec:
@@ -76,7 +48,14 @@ class ProxyDagsterSlingTranslator(DagsterSlingTranslator):
 class SlingReplicationSpecModel(Resolvable):
     path: str
     op: Optional[OpSpec] = None
-    translation: Optional[ResolvedTranslationFn] = None
+    translation: Optional[
+        Annotated[
+            TranslationFn[Mapping[str, Any]],
+            TranslationFnResolver(
+                template_vars_for_translation_fn=lambda data: {"stream_definition": data}
+            ),
+        ]
+    ] = None
     include_metadata: list[SlingMetadataAddons] = field(default_factory=list)
 
     @cached_property

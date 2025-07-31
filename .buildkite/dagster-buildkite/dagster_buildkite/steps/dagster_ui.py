@@ -1,14 +1,14 @@
 from pathlib import Path
 from typing import List
 
-from dagster_buildkite.git import ChangedFiles
-from dagster_buildkite.package_spec import PackageSpec
+from buildkite_shared.git import ChangedFiles
+from dagster_buildkite.steps.packages import PackageSpec
 from buildkite_shared.python_version import AvailablePythonVersion
 from buildkite_shared.step_builders.command_step_builder import (
     CommandStepBuilder,
     CommandStepConfiguration,
 )
-from dagster_buildkite.utils import is_feature_branch
+from buildkite_shared.environment import is_feature_branch
 from dagster_buildkite.images.versions import add_test_image
 
 

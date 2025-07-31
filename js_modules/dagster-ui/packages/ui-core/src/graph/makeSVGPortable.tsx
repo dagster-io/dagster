@@ -59,6 +59,7 @@ async function makeAttributeValuePortable(attrValue: string) {
   if (attrValue.startsWith('url(')) {
     const match = attrValue.match(/url\(['"]?(http[^'"]+)['"]?\)/);
     if (match) {
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
       const url = match[1]!;
       const data = await convertURLToBase64Data(url);
       attrValue = attrValue.replace(url, data);

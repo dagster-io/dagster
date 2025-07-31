@@ -7,6 +7,7 @@ import pydantic
 import pytest
 from dagster import Field as LegacyDagsterField
 from dagster._config.config_type import ConfigTypeKind
+from dagster._config.pythonic_config.config import PermissiveConfig
 from dagster._config.type_printer import print_config_type_to_string
 from dagster._utils.cached_method import cached_method
 from typing_extensions import TypeAlias
@@ -991,3 +992,18 @@ def test_aliases() -> None:
     d = {"test": "test"}
     result = echo_job.execute_in_process(resources={"my_resource": ConfigWithAlias(alias_name=d)})
     assert result.output_for_node("echo_config") == d
+
+
+def test_permissive_extra_field_via_dot():
+    class ExtraConfig(PermissiveConfig):
+        foo: int
+
+    conf = ExtraConfig(foo=10, bar="hello", baz=[1, 2, 3])  # type: ignore
+    conf1 = ExtraConfig(foo=10, bar="hello", baz=[1, 2, 3])  # type: ignore
+    assert conf == conf1
+    assert conf.foo == 10
+    assert conf.bar == "hello"
+    assert conf.baz == [1, 2, 3]
+    # confirm it's in dict and convert_to_config_dictionary
+    expected = {"foo": 10, "bar": "hello", "baz": [1, 2, 3]}
+    assert conf.model_dump() == expected

@@ -45,6 +45,7 @@ const reducer = (state: State, action: Action): State => {
       }
 
       const [start, end] = [indexOfLast, indexOfChecked].sort();
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
       allIds.slice(start, end! + 1).forEach((id) => {
         if (checked) {
           copy.add(id);
