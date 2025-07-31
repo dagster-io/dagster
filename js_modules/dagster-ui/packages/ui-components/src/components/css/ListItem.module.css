@@ -85,7 +85,7 @@
 
 .right {
   align-self: center;
-  padding: var(--spacing-top) var(--spacing-right) var(--spacing-bottom) 0;
+  padding-right: var(--spacing-right);
 }
 
 .right > * {
