@@ -3,12 +3,25 @@ from unittest.mock import Mock, patch
 
 import click
 import pytest
-from dagster_dg_core_tests.utils import ProxyRunner, assert_runner_result
+from dagster_dg_core.utils import activate_venv
+from dagster_dg_core_tests.utils import (
+    ProxyRunner,
+    assert_runner_result,
+    isolated_example_project_foo_bar,
+)
 
 
 def test_scaffold_branch_command_success():
     """Test successful branch creation with all steps."""
-    with ProxyRunner.test() as runner:
+    with (
+        ProxyRunner.test() as runner,
+        isolated_example_project_foo_bar(
+            runner,
+            in_workspace=False,
+            uv_sync=True,
+        ) as project_dir,
+        activate_venv(project_dir / ".venv"),
+    ):
         # Mock the subprocess calls to simulate git and gh commands
         with (
             patch("dagster_dg_cli.cli.scaffold.branch._run_git_command") as mock_git,
@@ -65,7 +78,15 @@ def test_scaffold_branch_command_success():
 
 def test_scaffold_branch_command_whitespace_branch_name():
     """Test that branch name is properly stripped of whitespace."""
-    with ProxyRunner.test() as runner:
+    with (
+        ProxyRunner.test() as runner,
+        isolated_example_project_foo_bar(
+            runner,
+            in_workspace=False,
+            uv_sync=True,
+        ) as project_dir,
+        activate_venv(project_dir / ".venv"),
+    ):
         with (
             patch("dagster_dg_cli.cli.scaffold.branch._run_git_command") as mock_git,
             patch("dagster_dg_cli.cli.scaffold.branch._run_gh_command") as mock_gh,
