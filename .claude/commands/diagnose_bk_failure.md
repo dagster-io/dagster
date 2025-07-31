@@ -11,8 +11,8 @@ Automatically diagnose Buildkite test failures for the current PR by fetching bu
 ## What it does
 
 1. **Get PR Status**: Uses `gh` CLI to fetch the current PR's status checks
-2. **Find Failing Builds**: Identifies any failing Buildkite builds and extracts build numbers
-3. **Fetch Failure Logs**: Uses Buildkite MCP server to get detailed logs from failing jobs
+2. **Find Failing Builds**: Identifies failing Buildkite builds and extracts build numbers
+3. **Fetch Failure Logs**: Uses Buildkite MCP server to get detailed logs from the most recent failing build.
 4. **Analyze Failures**: Examines error patterns and provides diagnosis
 5. **Suggest Solutions**: Recommends specific fixes or next steps
 
