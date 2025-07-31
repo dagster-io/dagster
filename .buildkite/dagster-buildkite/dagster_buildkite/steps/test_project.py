@@ -1,17 +1,17 @@
 import os
-from typing import List, Optional, Set
+from typing import Optional
 
-from dagster_buildkite.defines import GCP_CREDS_FILENAME, GCP_CREDS_LOCAL_FILE
-from dagster_buildkite.images.versions import (
-    BUILDKITE_BUILD_TEST_PROJECT_IMAGE_IMAGE_VERSION,
-    TEST_PROJECT_BASE_IMAGE_VERSION,
-)
 from buildkite_shared.python_version import AvailablePythonVersion
 from buildkite_shared.step_builders.command_step_builder import CommandStepBuilder
 from buildkite_shared.step_builders.group_step_builder import (
     GroupLeafStepConfiguration,
     GroupStepBuilder,
     GroupStepConfiguration,
+)
+from dagster_buildkite.defines import GCP_CREDS_FILENAME, GCP_CREDS_LOCAL_FILE
+from dagster_buildkite.images.versions import (
+    BUILDKITE_BUILD_TEST_PROJECT_IMAGE_IMAGE_VERSION,
+    TEST_PROJECT_BASE_IMAGE_VERSION,
 )
 
 # Some python packages depend on these images but we don't explicitly define that dependency anywhere other
@@ -26,14 +26,14 @@ from buildkite_shared.step_builders.group_step_builder import (
 #
 # TODO: Don't do this :) More explicitly define the dependencies.
 # See https://github.com/dagster-io/dagster/pull/10099 for implementation ideas.
-build_test_project_for: Set[AvailablePythonVersion] = set()
+build_test_project_for: set[AvailablePythonVersion] = set()
 
 
-def build_test_project_steps() -> List[GroupStepConfiguration]:
+def build_test_project_steps() -> list[GroupStepConfiguration]:
     """This set of tasks builds and pushes Docker images, which are used by the dagster-airflow and
     the dagster-k8s tests.
     """
-    steps: List[GroupLeafStepConfiguration] = []
+    steps: list[GroupLeafStepConfiguration] = []
 
     # Build for all available versions because a dependent extension might need to run tests on any version.
     py_versions = AvailablePythonVersion.get_all()
@@ -97,7 +97,7 @@ def _test_project_step_key(version: AvailablePythonVersion) -> str:
     return f"sample-project-{AvailablePythonVersion.to_tox_factor(version)}"
 
 
-def test_project_depends_fn(version: AvailablePythonVersion, _) -> List[str]:
+def test_project_depends_fn(version: AvailablePythonVersion, _) -> list[str]:
     if not os.getenv("CI_DISABLE_INTEGRATION_TESTS"):
         build_test_project_for.add(version)
         return [_test_project_step_key(version)]

@@ -19,13 +19,13 @@ For example, freshness policies can help identify stale assets caused by:
 ### Enabling freshness policies
 
 Freshness policies are not enabled by default while in preview. To use them in open source and local development, add the following to your `dagster.yaml`:
+
 ```
 freshness:
   enabled: True
 ```
 
 To use freshness policies in Dagster+, sign up for the [Observability update early access program](/guides/labs/observability-update/#how-to-join-and-enable-the-beta).
-
 
 ### Relationship to existing `FreshnessPolicy`
 
@@ -74,7 +74,7 @@ Example:
 
 - `deadline_cron` must be a valid cron string and has a minimum resolution of 1 minute.
 - `lower_bound_delta` cannot be shorter than 1 minute, and must fit within the smallest interval of `deadline_cron`.
-Example: for `deadline_cron="0 10 * * 1-5"` (weekdays at 10am), `lower_bound_delta` must be between 1 minute and 24 hours.
+  Example: for `deadline_cron="0 10 * * 1-5"` (weekdays at 10am), `lower_bound_delta` must be between 1 minute and 24 hours.
 - `timezone` is optional. [IANA timezones](https://www.iana.org/time-zones) are supported. If not provided, defaults to UTC.
 
 :::

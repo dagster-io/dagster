@@ -244,6 +244,31 @@ class MdxTranslator(SphinxTranslator):
 
         return current_obj
 
+    def _find_dagster_repo_root(self, source_file: str) -> Optional[str]:
+        """Find the Dagster repository root by looking for python_modules directory.
+
+        Args:
+            source_file: Path to the source file
+
+        Returns:
+            Path to the repository root or None if not found
+        """
+        current_dir = os.path.dirname(os.path.abspath(source_file))
+
+        while current_dir and current_dir != os.path.dirname(current_dir):
+            # Check if this directory contains python_modules
+            python_modules_path = os.path.join(current_dir, "python_modules")
+            if os.path.isdir(python_modules_path):
+                # Additional validation: check for dagster package within python_modules
+                dagster_path = os.path.join(python_modules_path, "dagster")
+                if os.path.isdir(dagster_path):
+                    return current_dir
+
+            # Move up one directory
+            current_dir = os.path.dirname(current_dir)
+
+        return None
+
     ############################################################
     # Utility and State Methods
     ############################################################
@@ -278,12 +303,16 @@ class MdxTranslator(SphinxTranslator):
                 logger.warning(f"No object for {fullname}")
                 return None
 
-            # unwrap the root function if function is wrapped
-            while hasattr(obj, "__wrapped__"):
-                obj = obj.__wrapped__
+            # Don't unwrap enum classes as they should point to their definition
+            from enum import Enum
 
-            # Handle various patterns of function-wrapping objects
-            obj = self._unwrap_function_object(obj)
+            if not (isinstance(obj, type) and issubclass(obj, Enum)):
+                # unwrap the root function if function is wrapped
+                while hasattr(obj, "__wrapped__"):
+                    obj = obj.__wrapped__
+
+                # Handle various patterns of function-wrapping objects
+                obj = self._unwrap_function_object(obj)
 
             try:
                 source_file = inspect.getsourcefile(obj)
@@ -291,8 +320,15 @@ class MdxTranslator(SphinxTranslator):
                     logger.warning(f"No source file for {fullname}")
                     return None
 
-                # get relative path, and trim `..`
-                repo_path = os.path.relpath(source_file).replace("../", "")
+                # Find the repository root by looking for python_modules directory
+                repo_root = self._find_dagster_repo_root(source_file)
+                if repo_root:
+                    # Calculate relative path from repository root
+                    repo_path = os.path.relpath(source_file, repo_root)
+                else:
+                    # Fallback to original behavior if repo root not found
+                    repo_path = os.path.relpath(source_file).replace("../", "")
+
                 source_line = inspect.getsourcelines(obj)[1]
 
                 return f"{self.github_url}/{repo_path}#L{source_line}"

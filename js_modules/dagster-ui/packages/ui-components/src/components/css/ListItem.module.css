@@ -11,12 +11,6 @@
   width: 100%;
   overflow: hidden;
   padding-left: var(--spacing-left);
-
-  /**
-   * Ensure that we avoid subpixel rendering problems by setting the height explicitly.
-   * Tanstack rounds off subpixels, so we can end up cutting off contents in the row item.
-   */
-  height: 100%;
 }
 
 .listItem:hover {

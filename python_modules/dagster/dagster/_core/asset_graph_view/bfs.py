@@ -25,6 +25,7 @@ def bfs_filter_asset_graph_view(
     ],
     initial_asset_graph_subset: "AssetGraphSubset",
     include_full_execution_set: bool,
+    traverse_self_dependent_assets: bool = True,
 ) -> tuple[AssetGraphSubset, Sequence[tuple[AssetGraphSubset, str]]]:
     """Returns the subset of the graph that satisfy supplied criteria.
 
@@ -77,6 +78,9 @@ def bfs_filter_asset_graph_view(
         ):
             # Add any child subsets that have not yet been visited to the queue
             for child_key in asset_graph.get(matching_entity_subset.key).child_keys:
+                if not traverse_self_dependent_assets and child_key == matching_entity_subset.key:
+                    continue
+
                 child_subset = asset_graph_view.compute_child_subset(
                     child_key, matching_entity_subset
                 )

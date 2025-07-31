@@ -1,7 +1,5 @@
 import os
-from typing import List
 
-from dagster_buildkite.steps.packages import PackageSpec
 from buildkite_shared.python_version import AvailablePythonVersion
 from buildkite_shared.step_builders.command_step_builder import (
     CommandStepBuilder,
@@ -11,18 +9,13 @@ from buildkite_shared.step_builders.group_step_builder import (
     GroupLeafStepConfiguration,
     GroupStepBuilder,
 )
-from buildkite_shared.step_builders.step_builder import (
-    is_command_step,
-    StepConfiguration,
-)
-from dagster_buildkite.utils import (
-    has_helm_changes,
-    skip_if_no_helm_changes,
-)
+from buildkite_shared.step_builders.step_builder import StepConfiguration, is_command_step
 from dagster_buildkite.images.versions import add_test_image
+from dagster_buildkite.steps.packages import PackageSpec
+from dagster_buildkite.utils import has_helm_changes, skip_if_no_helm_changes
 
 
-def build_helm_steps() -> List[StepConfiguration]:
+def build_helm_steps() -> list[StepConfiguration]:
     package_spec = PackageSpec(
         os.path.join("helm", "dagster", "schema"),
         # run helm schema tests only once, on the latest python version
@@ -32,7 +25,7 @@ def build_helm_steps() -> List[StepConfiguration]:
         always_run_if=has_helm_changes,
     )
 
-    steps: List[GroupLeafStepConfiguration] = []
+    steps: list[GroupLeafStepConfiguration] = []
     steps += _build_lint_steps(package_spec)
     pkg_steps = package_spec.build_steps()
     assert len(pkg_steps) == 1
@@ -50,7 +43,7 @@ def build_helm_steps() -> List[StepConfiguration]:
     ]
 
 
-def _build_lint_steps(package_spec) -> List[CommandStepConfiguration]:
+def _build_lint_steps(package_spec) -> list[CommandStepConfiguration]:
     return [
         add_test_image(
             CommandStepBuilder("dagster-json-schema"),

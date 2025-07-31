@@ -36,6 +36,7 @@ from dagster._core.definitions.repository_definition.repository_definition impor
 from dagster._utils.error import serializable_error_info_from_exc_info
 from dagster._utils.hosted_user_process import recon_repository_from_origin
 from dagster.components.component.component import Component
+from dagster.components.core.component_tree import ComponentTree
 from dagster.components.core.defs_module import ComponentRequirementsModel
 from dagster.components.core.package_entry import (
     ComponentsEntryPointLoadError,
@@ -44,7 +45,6 @@ from dagster.components.core.package_entry import (
     get_plugin_entry_points,
 )
 from dagster.components.core.snapshot import get_package_entry_snap
-from dagster.components.core.tree import ComponentTree
 
 
 def list_plugins(

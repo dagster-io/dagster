@@ -103,9 +103,5 @@ ready_dagster_dg_docs_for_publish:
 	rm -rf python_modules/libraries/dagster-dg-cli/dagster_dg_cli/docs/packages/dg-docs-components/node_modules
 	rm -rf python_modules/libraries/dagster-dg-cli/dagster_dg_cli/docs/packages/dg-docs-site/node_modules
 
-.PHONY: ruff_fix_tests
-
-ruff_fix_tests:
-	ruff check --unsafe-fixes \
-		python_modules/dagster/dagster_tests/logging_tests/test_bridge.py \
-		python_modules/dagster/dagster_tests/logging_tests/test_buildkite_collector.py
+format_docs:
+	cd docs; yarn format

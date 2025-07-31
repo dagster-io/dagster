@@ -90,7 +90,7 @@ export const AutomationsTable = ({
     getScrollElement: () => parentRef.current,
     estimateSize: (ii: number) => {
       const row = flattened[ii];
-      return row?.type === 'header' ? 32 : 64;
+      return row?.type === 'header' ? 32 : 62;
     },
     overscan: 15,
   });

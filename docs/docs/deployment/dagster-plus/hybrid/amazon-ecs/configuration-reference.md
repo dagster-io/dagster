@@ -242,8 +242,8 @@ agent_queues:
 
 ### isolated_agents properties
 
-| Property                | Description                                                                                                                                                                                                       |
-| ----------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Property                | Description                                                                                                                                                                                      |
+| ----------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | isolated_agents.enabled | When enabled, agents are isolated and will not be able to access each others' resources. See the [Running multiple agents guide](/deployment/dagster-plus/hybrid/multiple) for more information. |
 
 ### agent_queues properties

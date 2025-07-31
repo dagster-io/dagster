@@ -1,5 +1,28 @@
 # Changelog
 
+## 1.11.4 (core) / 0.27.4 (libraries)
+
+### New
+
+- Schedules now support specifying a subset of asset checks to execute in a `RunRequest`.
+- [dg] A new `docs integrations` cli is available for viewing an index of available integrations.
+- [ui] Jobs can now be filtered with a selection syntax.
+- [dagster-tableau] Dashboards containing hidden sheets are now correctly linked to upstream data sources.
+- [dagster-tableau] Tableau sheets and dashboards now produce observation events instead of materialization events when using `refresh_and_poll` inside the `@tableau_assets` asset decorator.
+
+### Bugfixes
+
+- Fixed a set of issues with the asset backfill system that could, in rare cases, cause runs to be kicked off out of order or never be kicked off.
+- Fixed issue where additional args passed into a PermissiveConfig object could not be accessed via dot notation (thanks [@CarlyAThomas](https://github.com/CarlyAThomas) and [@BoLiuV5](https://github.com/BoLiuV5)!)
+- Duplicate definitions are no longer incorrectly created when including jobs for schedules & sensors when loading from a `defs` folder.
+- [components] Fixed an incorrect import being generated when scaffolding a component in Python. (thanks, [@ajohnson5](https://github.com/ajohnson5)!)
+- [dg] when assets are selected via `--assets`, other definitions types will no longer be displayed.
+
+### Documentation
+
+- Fixed typo in the `polars.md` example doc (thanks [@j1wilmot](https://github.com/j1wilmot)!)
+- Fixed a typo in the ETL tutorial docs (thanks [@yumazak](https://github.com/yumazak)!)
+
 ## 1.11.3 (core) / 0.27.3 (libraries)
 
 ### New

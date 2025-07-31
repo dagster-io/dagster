@@ -63,9 +63,7 @@ These examples showcase the most basic config types that can be used. For more i
 
 Configurable parameters for a resource are defined by specifying attributes for a resource class, which subclasses <PyObject section="resources" module="dagster" object="ConfigurableResource"/>. The below resource defines a configurable connection URL, which can be accessed in any methods defined on the resource:
 
-<CodeExample
-  path="docs_snippets/docs_snippets/guides/operate/configuration/run_config/resource_example/resources.py"
-/>
+<CodeExample path="docs_snippets/docs_snippets/guides/operate/configuration/run_config/resource_example/resources.py" />
 
 For more information on using resources, see the [External resources documentation](/guides/build/external-resources).
 
