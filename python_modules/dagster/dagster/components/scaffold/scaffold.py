@@ -111,6 +111,8 @@ class ScaffoldRequest(Generic[TModel]):
     project_root: Optional[Path]
     # optional params for scaffolding
     params: TModel
+    # whether to append to an existing file
+    append: bool = False
 
 
 @public
