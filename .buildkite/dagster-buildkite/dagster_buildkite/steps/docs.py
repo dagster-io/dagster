@@ -19,13 +19,13 @@ from dagster_buildkite.utils import (
 def build_repo_wide_format_docs_step() -> GroupLeafStepConfiguration:
     return (
         add_test_image(
-            CommandStepBuilder(":notebook: make format_docs"),
+            CommandStepBuilder(":notebook: yarn check_format"),
             AvailablePythonVersion.get_default(),
         )
         .run(
             "cd docs",
             "yarn install",
-            "yarn format",
+            "yarn check_format",
         )
         .skip_if(skip_if_no_docs_changes())
         .build()
