@@ -1,10 +1,11 @@
 import os
 from collections.abc import Mapping
 from pathlib import Path
-from typing import Any
+from typing import Any, Optional
 
 import dagster as dg
 from dagster_dbt import DagsterDbtTranslator, DbtCliResource, DbtProject, dbt_assets
+from dagster_dbt.asset_utils import get_node
 
 # start_dbt_project
 dbt_project = DbtProject(
@@ -16,7 +17,13 @@ dbt_project.prepare_if_dev()
 
 
 class CustomizedDagsterDbtTranslator(DagsterDbtTranslator):
-    def get_asset_spec(self, dbt_resource_props: Mapping[str, Any]) -> dg.AssetSpec:
+    def get_asset_spec(
+        self,
+        manifest: Mapping[str, Any],
+        unique_id: str,
+        project: Optional[DbtProject],
+    ) -> dg.AssetSpec:
+        dbt_resource_props = get_node(manifest, unique_id)
         asset_path = dbt_resource_props["fqn"][1:-1]
         if asset_path:
             group_name = "_".join(asset_path)
