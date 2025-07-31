@@ -36,7 +36,7 @@ if [ "$VERCEL" = "1" ]; then
   # Parallelize production sphinx-mdx build -- see tox.ini
   echo "Running sphinx-mdx and copying files to \`docs/api\`"
   tox -e sphinx-mdx-vercel
-  cp -rf sphinx/_build/mdx/sections/api/apidocs/sdk docs/api
+  cp -rf sphinx/_build/mdx/sections/api/apidocs/dagster docs/api
   cp -rf sphinx/_build/mdx/sections/api/apidocs/libraries docs/api
   cp -rf sphinx/_build/mdx/sections/api/apidocs/clis docs/api
 
@@ -48,7 +48,7 @@ else
   # Do not parallelize local sphinx-mdx build -- see tox.ini
   echo "Running sphinx-mdx and copying files to \`docs/api\`"
   tox -e sphinx-mdx-local
-  cp -rf sphinx/_build/mdx/sections/api/apidocs/sdk docs/api
+  cp -rf sphinx/_build/mdx/sections/api/apidocs/dagster docs/api
   cp -rf sphinx/_build/mdx/sections/api/apidocs/libraries docs/api
   cp -rf sphinx/_build/mdx/sections/api/apidocs/clis docs/api
 
