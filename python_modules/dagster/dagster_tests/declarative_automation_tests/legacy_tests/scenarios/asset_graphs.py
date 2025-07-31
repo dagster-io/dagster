@@ -55,6 +55,26 @@ self_dependant_asset_downstream_of_regular_asset = [
     ),
 ]
 
+
+regular_asset_downstream_of_self_dependant_asset = [
+    asset_def(
+        "self_dependant",
+        partitions_def=dg.DailyPartitionsDefinition("2023-01-01"),
+        backfill_policy=BackfillPolicy.multi_run(1),
+        deps={
+            "self_dependant": dg.TimeWindowPartitionMapping(start_offset=-1, end_offset=-1),
+        },
+    ),
+    asset_def(
+        "regular_asset",
+        partitions_def=dg.DailyPartitionsDefinition("2023-01-01"),
+        backfill_policy=BackfillPolicy.multi_run(2),
+        deps={
+            "self_dependant": dg.TimeWindowPartitionMapping(),
+        },
+    ),
+]
+
 self_dependant_asset_downstream_of_regular_asset_multiple_run = [
     asset_def(
         "regular_asset",

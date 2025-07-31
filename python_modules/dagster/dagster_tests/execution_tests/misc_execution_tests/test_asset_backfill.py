@@ -55,6 +55,7 @@ from dagster_tests.declarative_automation_tests.legacy_tests.scenarios.asset_gra
     matching_partitions_with_different_subsets,
     multipartitioned_self_dependency,
     one_asset_self_dependency,
+    regular_asset_downstream_of_self_dependant_asset,
     root_assets_different_partitions_same_downstream,
     self_dependant_asset_downstream_of_regular_asset,
     self_dependant_asset_downstream_of_regular_asset_multiple_run,
@@ -703,6 +704,114 @@ def test_self_dependant_asset_downstream_of_regular_asset_multiple_run_backfill_
             )
 
 
+def test_can_submit_additional_runs_without_any_materializations():
+    assets_by_repo_name: dict[str, list[AssetsDefinition]] = {
+        "repo": regular_asset_downstream_of_self_dependant_asset
+    }
+    asset_graph = get_asset_graph(assets_by_repo_name)
+
+    self_dependant_asset_key = AssetKey(["self_dependant"])
+    regular_asset_key = AssetKey(["regular_asset"])
+
+    partitions = [
+        "2023-01-01",
+        "2023-01-02",
+    ]
+
+    with DagsterInstance.ephemeral() as instance:
+        backfill_id = "regular_asset_downstream_of_self_dependant_asset"
+
+        asset_backfill_data = AssetBackfillData.from_asset_partitions(
+            asset_graph=asset_graph,
+            partition_names=partitions,
+            asset_selection=[regular_asset_key, self_dependant_asset_key],
+            dynamic_partitions_store=MagicMock(),
+            all_partitions=False,
+            backfill_start_timestamp=create_datetime(2023, 1, 12, 0, 0, 0).timestamp(),
+        )
+
+        asset_backfill_data = _single_backfill_iteration(
+            backfill_id, asset_backfill_data, asset_graph, instance, assets_by_repo_name
+        )
+
+        assert asset_backfill_data.requested_subset == AssetGraphSubset.from_asset_partition_set(
+            {AssetKeyPartitionKey(self_dependant_asset_key, "2023-01-01")}, asset_graph
+        )
+
+        assert instance.get_runs_count() == 1
+
+        result = execute_asset_backfill_iteration_consume_generator(
+            backfill_id, asset_backfill_data, asset_graph, instance
+        )
+
+        run_requests = list(result.run_requests)
+
+        asset_backfill_data = result.backfill_data.with_run_requests_submitted(
+            result.run_requests,
+            _get_asset_graph_view(
+                instance, asset_graph, asset_backfill_data.backfill_start_datetime
+            ),
+        )
+
+        # doesn't materialize the downstream asset yet because its still in the middle of
+        # materializing the next partition of the upstream asset
+
+        assert asset_backfill_data.requested_subset == AssetGraphSubset.from_asset_partition_set(
+            {
+                AssetKeyPartitionKey(self_dependant_asset_key, "2023-01-01"),
+                AssetKeyPartitionKey(self_dependant_asset_key, "2023-01-02"),
+            },
+            asset_graph,
+        )
+
+        # but on the next iteration, the eligible downstream asset is requested now that the upstream asset
+        # is no longer in the middle of being materialized
+        result = execute_asset_backfill_iteration_consume_generator(
+            backfill_id, asset_backfill_data, asset_graph, instance
+        )
+
+        assert len(result.run_requests) == 1
+
+        run_requests.extend(result.run_requests)
+
+        asset_backfill_data = result.backfill_data.with_run_requests_submitted(
+            result.run_requests,
+            _get_asset_graph_view(
+                instance, asset_graph, asset_backfill_data.backfill_start_datetime
+            ),
+        )
+
+        assert asset_backfill_data.requested_subset == AssetGraphSubset.from_asset_partition_set(
+            {
+                AssetKeyPartitionKey(self_dependant_asset_key, "2023-01-01"),
+                AssetKeyPartitionKey(self_dependant_asset_key, "2023-01-02"),
+                AssetKeyPartitionKey(regular_asset_key, "2023-01-01"),
+            },
+            asset_graph,
+        )
+
+        # but then stabilizes until more upstreams come in
+        result = execute_asset_backfill_iteration_consume_generator(
+            backfill_id, asset_backfill_data, asset_graph, instance
+        )
+        asset_backfill_data = result.backfill_data
+        assert not result.run_requests
+
+        _launch_runs(
+            run_requests,
+            backfill_id,
+            asset_graph,
+            instance,
+            assets_by_repo_name,
+        )
+
+        asset_backfill_data = _single_backfill_iteration(
+            backfill_id, asset_backfill_data, asset_graph, instance, assets_by_repo_name
+        )
+
+        assert asset_backfill_data.requested_subset == asset_backfill_data.target_subset
+
+
 def test_matching_partitions_with_different_subsets():
     assets_by_repo_name = {"repo": matching_partitions_with_different_subsets}
     asset_graph = get_asset_graph(assets_by_repo_name)
@@ -813,6 +922,14 @@ def test_matching_partitions_with_different_subsets_failure():
                     end=create_datetime(2023, 1, 2),
                 )
             ),
+            AssetKey(["parent"]): asset_graph.get(
+                AssetKey(["parent"])
+            ).partitions_def.get_partition_subset_in_time_window(  # type: ignore
+                TimeWindow(
+                    start=create_datetime(2023, 1, 1),
+                    end=create_datetime(2023, 1, 10),
+                )
+            ),
             AssetKey(["child"]): asset_graph.get(
                 AssetKey(["child"])
             ).partitions_def.get_partition_subset_in_time_window(  # type: ignore
@@ -840,18 +957,27 @@ def test_matching_partitions_with_different_subsets_failure():
             dynamic_partitions_store=instance,
             backfill_start_timestamp=create_datetime(2023, 1, 12, 0, 0, 0).timestamp(),
         )
-        asset_backfill_data = _single_backfill_iteration(
-            backfill_id,
-            asset_backfill_data,
-            asset_graph,
-            instance,
-            assets_by_repo_name,
-            # one of the parent runs fail
-            fail_idxs={1},
+
+        asset_graph_view = _get_asset_graph_view(
+            instance, asset_graph, asset_backfill_data.backfill_start_datetime
         )
-        # doesn't try to materialize child yet, even though it has the same targeted
-        # subset as parent, because different subsets of parent and child are eligible
-        # on the first iteration and thus cannot be grouped together into a run
+
+        result = execute_asset_backfill_iteration_consume_generator(
+            backfill_id, asset_backfill_data, asset_graph, instance
+        )
+
+        unlaunched_run_requests = list(result.run_requests)
+
+        assert len(unlaunched_run_requests) == 2
+
+        # sort the run requests to that the grandparent one is first
+        unlaunched_run_requests.sort(key=lambda x: sorted(str(x.asset_selection)), reverse=True)
+
+        asset_backfill_data = result.backfill_data.with_run_requests_submitted(
+            unlaunched_run_requests,
+            asset_graph_view,
+        )
+
         assert asset_backfill_data.requested_subset == AssetGraphSubset(
             non_partitioned_asset_keys=set(),
             partitions_subsets_by_asset_key={
@@ -874,14 +1000,73 @@ def test_matching_partitions_with_different_subsets_failure():
             },
         )
 
-        asset_backfill_data = _single_backfill_iteration(
+        # fail the grandparent run request, leave the other_parent run request un-materialized
+        _launch_runs(
+            unlaunched_run_requests[0:1],
             backfill_id,
-            asset_backfill_data,
+            asset_graph,
+            instance,
+            assets_by_repo_name,
+            fail_idxs={0},
+        )
+
+        unlaunched_run_requests = unlaunched_run_requests[1:]
+
+        # Next iteration requests the remainder of child that is now eligible, even though
+        # other_parent has not materialized yet (since other_parent is not being materialized this tick)
+        result = execute_asset_backfill_iteration_consume_generator(
+            backfill_id, asset_backfill_data, asset_graph, instance
+        )
+
+        asset_backfill_data = result.backfill_data.with_run_requests_submitted(
+            result.run_requests,
+            asset_graph_view,
+        )
+
+        assert asset_backfill_data.requested_subset == AssetGraphSubset(
+            non_partitioned_asset_keys=set(),
+            partitions_subsets_by_asset_key={
+                AssetKey(["grandparent"]): asset_graph.get(
+                    AssetKey(["grandparent"])
+                ).partitions_def.get_partition_subset_in_time_window(  # type: ignore
+                    TimeWindow(
+                        start=create_datetime(2023, 1, 1),
+                        end=create_datetime(2023, 1, 2),
+                    )
+                ),
+                AssetKey(["parent"]): asset_graph.get(
+                    AssetKey(["parent"])
+                ).partitions_def.get_partition_subset_in_time_window(  # type: ignore
+                    TimeWindow(
+                        start=create_datetime(2023, 1, 2),
+                        end=create_datetime(2023, 1, 10),
+                    )
+                ),
+                AssetKey(["other_parent"]): asset_graph.get(
+                    AssetKey(["other_parent"])
+                ).partitions_def.get_partition_subset_in_time_window(  # type: ignore
+                    TimeWindow(
+                        start=create_datetime(2023, 1, 9),
+                        end=create_datetime(2023, 1, 10),
+                    ),
+                ),
+            },
+        )
+
+        unlaunched_run_requests.extend(list(result.run_requests))
+
+        _launch_runs(
+            unlaunched_run_requests,
+            backfill_id,
             asset_graph,
             instance,
             assets_by_repo_name,
         )
 
+        # do last iteration
+        asset_backfill_data = _single_backfill_iteration(
+            backfill_id, asset_backfill_data, asset_graph, instance, assets_by_repo_name
+        )
         # not all things were requested because some upstreams failed
         assert asset_backfill_data.requested_subset != target_asset_graph_subset
         # but everything was either requested or failed
