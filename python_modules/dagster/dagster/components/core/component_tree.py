@@ -90,55 +90,55 @@ class ComponentTreeDependencies:
     """
 
     def __init__(self):
-        self._component_load_dependency_dict = defaultdict(set)
-        self._component_defs_dependency_dict = defaultdict(set)
+        self._component_load_dependents_dict = defaultdict(set)
+        self._component_defs_dependents_dict = defaultdict(set)
 
     def mark_component_load_dependency(
         self, defs_module_path: Path, from_path: ComponentPath, to_path: ResolvableToComponentPath
     ) -> None:
-        self._component_load_dependency_dict[
-            _get_canonical_component_path(defs_module_path, from_path)
-        ].add(_get_canonical_component_path(defs_module_path, to_path))
+        self._component_load_dependents_dict[
+            _get_canonical_component_path(defs_module_path, to_path)
+        ].add(_get_canonical_component_path(defs_module_path, from_path))
 
     def mark_component_defs_dependency(
         self, defs_module_path: Path, from_path: ComponentPath, to_path: ResolvableToComponentPath
     ) -> None:
-        self._component_defs_dependency_dict[
-            _get_canonical_component_path(defs_module_path, from_path)
-        ].add(_get_canonical_component_path(defs_module_path, to_path))
+        self._component_defs_dependents_dict[
+            _get_canonical_component_path(defs_module_path, to_path)
+        ].add(_get_canonical_component_path(defs_module_path, from_path))
 
-    def get_direct_load_dependencies_of_component(
+    def get_direct_load_dependents_of_component(
         self, defs_module_path: Path, component_path: ComponentPath
     ) -> set[ComponentPath]:
-        """Returns the set of components that are directly depended on by the given component.
+        """Returns the set of components that directly depend on the given component.
 
         Args:
             defs_module_path: The path to the defs module.
-            component_path: The path to the component to get the direct load dependencies of.
+            component_path: The path to the component to get the direct load dependents of.
         """
         return set(
             ComponentPath(
                 file_path=Path(file_path).relative_to(defs_module_path), instance_key=instance_key
             )
-            for file_path, instance_key in self._component_load_dependency_dict[
+            for file_path, instance_key in self._component_load_dependents_dict[
                 _get_canonical_component_path(defs_module_path, component_path)
             ]
         )
 
-    def get_direct_defs_dependencies_of_component(
+    def get_direct_defs_dependents_of_component(
         self, defs_module_path: Path, component_path: ComponentPath
     ) -> set[ComponentPath]:
-        """Returns the set of components that are directly depended on by the given component's defs.
+        """Returns the set of components that directly depend on the given component's defs.
 
         Args:
             defs_module_path: The path to the defs module.
-            component_path: The path to the component to get the direct defs dependencies of.
+            component_path: The path to the component to get the direct defs dependents of.
         """
         return set(
             ComponentPath(
                 file_path=Path(file_path).relative_to(defs_module_path), instance_key=instance_key
             )
-            for file_path, instance_key in self._component_defs_dependency_dict[
+            for file_path, instance_key in self._component_defs_dependents_dict[
                 _get_canonical_component_path(defs_module_path, component_path)
             ]
         )
