@@ -1,7 +1,6 @@
 import {
+  BodySmall,
   Box,
-  Caption,
-  CaptionMono,
   Checkbox,
   Colors,
   HorizontalControls,
@@ -9,6 +8,7 @@ import {
   Icon,
   ListItem,
   MetadataTable,
+  MonoSmall,
   Popover,
   Skeleton,
   Tooltip,
@@ -182,7 +182,7 @@ export const ObserveAutomationScheduleRow = forwardRef(
                 ) : null}
               </Box>
               {withHumanTimezone ? (
-                <Caption>
+                <BodySmall>
                   Scheduled{' '}
                   <Tooltip
                     placement="top"
@@ -191,7 +191,7 @@ export const ObserveAutomationScheduleRow = forwardRef(
                         rows={[
                           {
                             key: 'Cron value',
-                            value: <CaptionMono>{scheduleData?.cronSchedule ?? ''}</CaptionMono>,
+                            value: <MonoSmall>{scheduleData?.cronSchedule ?? ''}</MonoSmall>,
                           },
                           {key: 'Your time', value: <span>{withHumanTimezone}</span>},
                         ]}
@@ -200,7 +200,7 @@ export const ObserveAutomationScheduleRow = forwardRef(
                   >
                     <span>{withExecutionTimezone}</span>
                   </Tooltip>
-                </Caption>
+                </BodySmall>
               ) : (
                 <Skeleton $width={80} $height={16} />
               )}

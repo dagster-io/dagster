@@ -411,3 +411,24 @@ export const SmallList = () => {
     </div>
   );
 };
+
+export const BigPadding = () => {
+  return (
+    <div style={{width: '400px'}}>
+      <ListItem
+        index={0}
+        padding={{vertical: 48, horizontal: 48}}
+        renderLink={renderLink}
+        href="/jobs/foo"
+        left={<div>Left</div>}
+        right={
+          <HorizontalControls
+            controls={[
+              {key: 'menu', control: <Button intent="none" icon={<Icon name="more_horiz" />} />},
+            ]}
+          />
+        }
+      />
+    </div>
+  );
+};
