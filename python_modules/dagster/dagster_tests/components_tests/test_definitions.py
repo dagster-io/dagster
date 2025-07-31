@@ -5,7 +5,7 @@ import dagster as dg
 import pytest
 from dagster import ComponentLoadContext
 from dagster._core.remote_representation.external_data import RepositorySnap
-from dagster.components.core.component_tree import ComponentTree, LegacyAutoloadingComponentTree
+from dagster.components.core.tree import ComponentTree, LegacyAutoloadingComponentTree
 from dagster_shared import check
 
 

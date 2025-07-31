@@ -335,7 +335,7 @@ class Component(ABC):
         Returns:
             A Component instance.
         """
-        from dagster.components.core.component_tree import ComponentTree
+        from dagster.components.core.tree import ComponentTree
 
         model_cls = cls.get_model_cls()
         assert model_cls
@@ -355,8 +355,8 @@ class Component(ABC):
         Returns:
             A Component instance.
         """
-        from dagster.components.core.component_tree import ComponentTree
         from dagster.components.core.defs_module import load_yaml_component_from_path
+        from dagster.components.core.tree import ComponentTree
 
         return load_yaml_component_from_path(
             context=context or ComponentTree.for_test().load_context,

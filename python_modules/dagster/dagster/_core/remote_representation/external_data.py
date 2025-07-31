@@ -102,12 +102,12 @@ from dagster._serdes import whitelist_for_serdes
 from dagster._time import datetime_from_timestamp
 from dagster._utils.error import SerializableErrorInfo
 from dagster._utils.warnings import suppress_dagster_warnings
-from dagster.components.core.component_tree import ComponentTree
 from dagster.components.core.defs_module import (
     CompositeYamlComponent,
     DefsFolderComponent,
     PythonFileComponent,
 )
+from dagster.components.core.tree import ComponentTree
 
 DEFAULT_MODE_NAME = "default"
 DEFAULT_PRESET_NAME = "default"

@@ -10,8 +10,8 @@ from dagster._core.definitions.definitions_class import Definitions
 from dagster._core.execution.context.asset_execution_context import AssetExecutionContext
 from dagster._utils.cached_method import cached_method
 from dagster.components.component.component import Component
-from dagster.components.core.component_tree import ComponentTree
 from dagster.components.core.context import ComponentLoadContext
+from dagster.components.core.tree import ComponentTree
 from dagster.components.resolved.core_models import OpSpec, ResolutionContext
 from dagster.components.resolved.model import Resolver
 from dagster.components.scaffold.scaffold import scaffold_with

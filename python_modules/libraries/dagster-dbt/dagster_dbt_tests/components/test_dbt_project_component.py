@@ -16,8 +16,8 @@ from dagster._core.definitions.metadata.source_code import (
 )
 from dagster._core.test_utils import ensure_dagster_tests_import
 from dagster._utils.env import environ
-from dagster.components.core.component_tree import ComponentTree
 from dagster.components.core.load_defs import build_component_defs
+from dagster.components.core.tree import ComponentTree
 from dagster.components.resolved.core_models import AssetAttributesModel, OpSpec
 from dagster.components.resolved.errors import ResolutionException
 from dagster.components.testing import TestOpCustomization, TestTranslation

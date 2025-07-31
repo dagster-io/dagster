@@ -4,7 +4,6 @@ from pathlib import Path
 
 import dagster as dg
 import pytest
-from dagster.components.core.component_tree import ComponentTree
 from dagster.components.core.context import ComponentLoadContext
 from dagster.components.core.decl import (
     ComponentDecl,
@@ -13,6 +12,7 @@ from dagster.components.core.decl import (
     PythonFileDecl,
 )
 from dagster.components.core.defs_module import ComponentPath, PythonFileComponent
+from dagster.components.core.tree import ComponentTree
 from dagster_shared.record import record
 
 
