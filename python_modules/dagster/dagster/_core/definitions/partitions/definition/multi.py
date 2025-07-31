@@ -214,7 +214,7 @@ class MultiPartitionsDefinition(PartitionsDefinition[MultiPartitionKey]):
     @lru_cache(maxsize=1)
     def _get_partition_keys(self, _current_time: datetime) -> Sequence[MultiPartitionKey]:
         partition_key_sequences = [
-            partition_dim.partitions_def.get_partition_keys()
+            filter(lambda k: "|" not in k, partition_dim.partitions_def.get_partition_keys())
             for partition_dim in self._partitions_defs
         ]
 

@@ -9,7 +9,6 @@ from collections import defaultdict
 from collections.abc import Iterable, Mapping, Sequence
 from datetime import datetime
 from enum import Enum
-from pathlib import Path
 from tempfile import TemporaryDirectory
 from types import TracebackType
 from typing import (  # noqa: UP035
@@ -76,7 +75,6 @@ from dagster._core.storage.dagster_run import (
     TagBucket,
     assets_are_externally_managed,
 )
-from dagster._core.storage.state_store import StateStore
 from dagster._core.storage.tags import (
     ASSET_PARTITION_RANGE_END_TAG,
     ASSET_PARTITION_RANGE_START_TAG,
@@ -205,6 +203,7 @@ if TYPE_CHECKING:
     from dagster._core.storage.runs import RunStorage
     from dagster._core.storage.schedules import ScheduleStorage
     from dagster._core.storage.sql import AlembicVersion
+    from dagster._core.storage.state import StateStorage
     from dagster._core.workspace.context import BaseWorkspaceRequestContext
     from dagster._daemon.types import DaemonHeartbeat, DaemonStatus
 
@@ -381,7 +380,7 @@ class DynamicPartitionsStore(Protocol):
 
 
 @public
-class DagsterInstance(DynamicPartitionsStore, StateStore):
+class DagsterInstance(DynamicPartitionsStore):
     """Core abstraction for managing Dagster's access to storage and other resources.
 
     Use DagsterInstance.get() to grab the current DagsterInstance which will load based on
@@ -451,6 +450,7 @@ class DagsterInstance(DynamicPartitionsStore, StateStore):
         schedule_storage: Optional["ScheduleStorage"] = None,
         settings: Optional[Mapping[str, Any]] = None,
         secrets_loader: Optional["SecretsLoader"] = None,
+        state_storage: Optional["StateStorage"] = None,
         ref: Optional[InstanceRef] = None,
         **_kwargs: Any,  # we accept kwargs for forward-compat of custom instances
     ):
@@ -463,6 +463,7 @@ class DagsterInstance(DynamicPartitionsStore, StateStore):
         from dagster._core.storage.root import LocalArtifactStorage
         from dagster._core.storage.runs import RunStorage
         from dagster._core.storage.schedules import ScheduleStorage
+        from dagster._core.storage.state import StateStorage
 
         self._instance_type = check.inst_param(instance_type, "instance_type", InstanceType)
         self._local_artifact_storage = check.inst_param(
@@ -518,6 +519,15 @@ class DagsterInstance(DynamicPartitionsStore, StateStore):
 
         if self._secrets_loader:
             self._secrets_loader.register_instance(self)
+
+        self._state_storage = check.opt_inst_param(
+            state_storage,
+            "state_storage",
+            StateStorage,
+            # if no state storage is provided, we create one using the run storage
+            default=StateStorage.from_run_storage(self._run_storage),
+        )
+        self._state_storage.register_instance(self)
 
         self._ref = check.opt_inst_param(ref, "ref", InstanceRef)
 
@@ -788,56 +798,13 @@ class DagsterInstance(DynamicPartitionsStore, StateStore):
             sort_keys=False,
         )
 
-    def get_latest_state_version_for_defs(self, defs_key: str) -> Optional[str]:
-        """Returns the saved state version for the given defs key, if it exists.
-
-        Args:
-            defs_key (str): The key of the defs to retrieve the state for.
-
-        Returns:
-            Optional[str]: The saved state version for the given defs key, if it exists.
-        """
-        return self.run_storage.get_cursor_values({f"version_{defs_key}"}).get(
-            f"version_{defs_key}"
-        )
-
-    def load_state_file(self, defs_key: str, version: str, file_path: Path) -> bool:
-        """Loads the state file for the given defs key and version into the given file path.
-
-        Args:
-            defs_key (str): The key of the defs to retrieve the state for.
-            version (str): The version of the state to retrieve.
-            file_path (Path): The path to write the state to.
-
-        Returns:
-            bool: True if the state was loaded, False otherwise.
-        """
-        state_from_blob_store = (
-            self.run_storage.get_cursor_values({f"{defs_key}_{version}"}).get(
-                f"{defs_key}_{version}"
-            )
-            if version
-            else None
-        )
-        if state_from_blob_store:
-            file_path.write_bytes(state_from_blob_store.encode("utf-8"))
-            return True
-        return False
-
-    def persist_state_from_file(self, defs_key: str, version: str, file_path: Path) -> None:
-        """Persists the defs state stored at `file_path` to persistent storage.
-
-        Args:
-            defs_key (str): The key of the defs to persist the state for.
-            version (str): The version of the state to persist.
-            file_path (Path): The path to the state to persist.
-        """
-        self.run_storage.set_cursor_values({f"{defs_key}_{version}": file_path.read_text()})
-        self.run_storage.set_cursor_values({f"version_{defs_key}": version})
-
     @property
     def run_storage(self) -> "RunStorage":
         return self._run_storage
+
+    @property
+    def state_storage(self) -> "StateStorage":
+        return self._state_storage
 
     @property
     def event_log_storage(self) -> "EventLogStorage":
