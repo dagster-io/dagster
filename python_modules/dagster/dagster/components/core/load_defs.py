@@ -9,7 +9,7 @@ from dagster._annotations import deprecated, public
 from dagster._core.definitions.definitions_class import Definitions
 from dagster._utils.warnings import suppress_dagster_warnings
 from dagster.components.component.component import Component
-from dagster.components.core.tree import ComponentTree, LegacyAutoloadingComponentTree
+from dagster.components.core.component_tree import ComponentTree, LegacyAutoloadingComponentTree
 
 PLUGIN_COMPONENT_TYPES_JSON_METADATA_KEY = "plugin_component_types_json"
 

@@ -1,1 +1,1 @@
-uvx -U create-dagster project jaffle-platform
+uvx create-dagster@latest project jaffle-platform

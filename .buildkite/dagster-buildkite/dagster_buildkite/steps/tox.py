@@ -1,7 +1,7 @@
 import os
 import re
 import shlex
-from typing import List, Optional
+from typing import Optional
 
 from buildkite_shared.python_version import AvailablePythonVersion
 from buildkite_shared.step_builders.command_step_builder import (
@@ -10,8 +10,8 @@ from buildkite_shared.step_builders.command_step_builder import (
     CommandStepConfiguration,
 )
 from buildkite_shared.uv import UV_PIN
-from dagster_buildkite.utils import make_buildkite_section_header
 from dagster_buildkite.images.versions import add_test_image
+from dagster_buildkite.utils import make_buildkite_section_header
 
 _COMMAND_TYPE_TO_EMOJI_MAP = {
     "pytest": ":pytest:",
@@ -26,10 +26,10 @@ def build_tox_step(
     command_type: str = "miscellaneous",
     python_version: Optional[AvailablePythonVersion] = None,
     tox_file: Optional[str] = None,
-    extra_commands_pre: Optional[List[str]] = None,
-    extra_commands_post: Optional[List[str]] = None,
-    env_vars: Optional[List[str]] = None,
-    dependencies: Optional[List[str]] = None,
+    extra_commands_pre: Optional[list[str]] = None,
+    extra_commands_post: Optional[list[str]] = None,
+    env_vars: Optional[list[str]] = None,
+    dependencies: Optional[list[str]] = None,
     retries: Optional[int] = None,
     timeout_in_minutes: Optional[int] = None,
     queue: Optional[BuildkiteQueue] = None,
@@ -47,7 +47,7 @@ def build_tox_step(
         None,
         [
             "tox",
-            "-c %s " % tox_file if tox_file else None,
+            f"-c {tox_file} " if tox_file else None,
             "-vv",  # extra-verbose
             "-e",
             tox_env,

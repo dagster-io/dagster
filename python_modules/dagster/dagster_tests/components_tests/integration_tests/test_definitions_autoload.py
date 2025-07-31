@@ -6,13 +6,13 @@ from typing import Union
 import dagster as dg
 import pytest
 from dagster._utils.env import environ
-from dagster.components.core.decl import ComponentDecl, DefsFolderDecl, PythonFileDecl, YamlFileDecl
-from dagster.components.core.defs_module import ComponentPath, CompositeYamlComponent
-from dagster.components.core.tree import (
+from dagster.components.core.component_tree import (
     ComponentTree,
     ComponentTreeException,
     LegacyAutoloadingComponentTree,
 )
+from dagster.components.core.decl import ComponentDecl, DefsFolderDecl, PythonFileDecl, YamlFileDecl
+from dagster.components.core.defs_module import ComponentPath, CompositeYamlComponent
 from dagster_shared import check
 
 from dagster_tests.components_tests.integration_tests.component_loader import (
@@ -161,7 +161,36 @@ def test_definitions_component_with_multiple_definitions_objects() -> None:
 
 @pytest.mark.parametrize("component_tree", ["definitions/single_file"], indirect=True)
 def test_autoload_single_file(component_tree: ComponentTree) -> None:
+    assert not component_tree.is_fully_loaded()
+    component_tree.load_root_component()
+    assert component_tree.is_fully_loaded()
     defs = component_tree.build_defs()
+    assert component_tree.has_built_all_defs()
+
+    assert component_tree.component_tree_dependencies.get_direct_load_dependents_of_component(
+        component_tree.defs_module_path,
+        ComponentPath(file_path=Path("single_file/some_file.py"), instance_key=None),
+    ) == {ComponentPath(file_path=Path("single_file"), instance_key=None)}
+
+    assert component_tree.component_tree_dependencies.get_direct_defs_dependents_of_component(
+        component_tree.defs_module_path,
+        ComponentPath(file_path=Path("single_file/some_file.py"), instance_key=None),
+    ) == {ComponentPath(file_path=Path("single_file"), instance_key=None)}
+
+    assert component_tree.component_tree_dependencies.get_direct_load_dependents_of_component(
+        component_tree.defs_module_path,
+        ComponentPath(file_path=Path("single_file"), instance_key=None),
+    ) == {
+        ComponentPath(file_path=Path("."), instance_key=None),
+    }
+
+    assert component_tree.component_tree_dependencies.get_direct_load_dependents_of_component(
+        component_tree.defs_module_path,
+        ComponentPath(file_path=Path("__init__.py"), instance_key=None),
+    ) == {
+        ComponentPath(file_path=Path("."), instance_key=None),
+    }
+
     assert {spec.key for spec in defs.resolve_all_asset_specs()} == {dg.AssetKey("an_asset")}
     assert (
         component_tree.to_string_representation()

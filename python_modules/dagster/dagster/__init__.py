@@ -661,6 +661,7 @@ from dagster.components.components import (
     DefinitionsComponent as DefinitionsComponent,  # back-compat
     DefsFolderComponent as DefsFolderComponent,
 )
+from dagster.components.core.component_tree import ComponentTree as ComponentTree
 from dagster.components.core.context import ComponentLoadContext as ComponentLoadContext
 from dagster.components.core.load_defs import (
     build_component_defs as build_component_defs,
@@ -668,7 +669,6 @@ from dagster.components.core.load_defs import (
     load_defs as load_defs,
     load_from_defs_folder as load_from_defs_folder,
 )
-from dagster.components.core.tree import ComponentTree as ComponentTree
 from dagster.components.definitions import definitions as definitions
 from dagster.components.lib.shim_components.resources import resources as resources
 from dagster.components.lib.sql_component.sql_component import (

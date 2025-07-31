@@ -17,7 +17,7 @@ import ProjectCreationPrereqs from '@site/docs/partials/\_ProjectCreationPrereqs
    1. Open your terminal and scaffold a new Dagster project. You can replace `my-project` with a different project name if you wish:
 
       ```shell
-      uvx -U create-dagster project my-project
+      uvx create-dagster@latest project my-project
       ```
    
    2. Respond `y` to the prompt to run `uv sync` after scaffolding

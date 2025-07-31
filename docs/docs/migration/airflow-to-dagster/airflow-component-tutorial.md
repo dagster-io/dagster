@@ -16,7 +16,7 @@ The [dagster-airlift](/integrations/libraries/airlift) library provides an `Airf
 
 To begin, you'll need a Dagster project. You can use an [existing components-ready project](/guides/build/projects/moving-to-components/migrating-project) or create a new one:
 
-uvx -U create-dagster project my-project && cd my-project
+uvx create-dagster@latest project my-project && cd my-project
 
 Activate the project virtual environment:
 

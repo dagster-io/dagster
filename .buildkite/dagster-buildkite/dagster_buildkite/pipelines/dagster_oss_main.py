@@ -1,19 +1,15 @@
+import logging
 import os
 import re
-import sys
-from typing import List, Optional
+from typing import Optional
 
+from buildkite_shared.environment import is_release_branch, message_contains, safe_getenv
+from buildkite_shared.quarantine import (
+    filter_and_print_steps_by_quarantined,
+    get_buildkite_quarantined_objects,
+)
 from buildkite_shared.step_builders.step_builder import StepConfiguration
 from buildkite_shared.step_builders.trigger_step_builder import TriggerStepBuilder
-from buildkite_shared.environment import (
-    is_release_branch,
-    safe_getenv,
-    message_contains,
-)
-from dagster_buildkite.quarantine_utils import (
-    get_buildkite_quarantined_objects,
-    filter_and_print_steps_by_quarantined,
-)
 from dagster_buildkite.steps.dagster import build_dagster_steps, build_repo_wide_steps
 from dagster_buildkite.steps.dagster_ui import (
     build_dagster_ui_components_steps,
@@ -44,9 +40,7 @@ def filter_steps_by_quarantined(steps, skip_quarantined_steps, mute_quarantined_
             group_steps = step["steps"]
             filtered_group_steps = []
             for group_step in group_steps:
-                stripped_label = re.sub(
-                    r":[^:]+:", "", group_step.get("label") or ""
-                ).strip()
+                stripped_label = re.sub(r":[^:]+:", "", group_step.get("label") or "").strip()
                 if stripped_label in skip_quarantined_keys:
                     skipped_steps.append(group_step)
                 elif stripped_label in mute_quarantined_keys:
@@ -74,12 +68,12 @@ def filter_steps_by_quarantined(steps, skip_quarantined_steps, mute_quarantined_
     return filtered_steps, skipped_steps, muted_steps
 
 
-def build_dagster_oss_main_steps() -> List[StepConfiguration]:
+def build_dagster_oss_main_steps() -> list[StepConfiguration]:
     branch_name = safe_getenv("BUILDKITE_BRANCH")
     commit_hash = safe_getenv("BUILDKITE_COMMIT")
     oss_contribution = os.getenv("OSS_CONTRIBUTION")
 
-    steps: List[StepConfiguration] = []
+    steps: list[StepConfiguration] = []
 
     # Trigger a build on the internal pipeline for dagster PRs.
     # master/release branches always trigger
@@ -120,8 +114,7 @@ def build_dagster_oss_main_steps() -> List[StepConfiguration]:
                         "DAGSTER_UI_ONLY_OSS_CHANGE": (
                             "1" if not skip_if_no_dagster_ui_changes() else ""
                         ),
-                        "DAGSTER_CHECKOUT_DEPTH": _get_setting("DAGSTER_CHECKOUT_DEPTH")
-                        or "100",
+                        "DAGSTER_CHECKOUT_DEPTH": _get_setting("DAGSTER_CHECKOUT_DEPTH") or "100",
                         "OSS_COMPAT_SLIM": "1" if oss_compat_slim else "",
                         "DAGSTER_FROM_OSS": "1" if pipeline_name == "internal" else "0",
                     },
@@ -150,9 +143,8 @@ def build_dagster_oss_main_steps() -> List[StepConfiguration]:
         "muted",
         suppress_errors=True,
     )
-    print(
-        f"buildkite_suite_mute_quarantined_objects = {buildkite_suite_mute_quarantined_objects}",
-        file=sys.stderr,
+    logging.info(
+        f"buildkite_suite_mute_quarantined_objects = {buildkite_suite_mute_quarantined_objects}"
     )
     buildkite_suite_skip_quarantined_objects = get_buildkite_quarantined_objects(
         BUILDKITE_TEST_QUARANTINE_TOKEN,
@@ -161,9 +153,8 @@ def build_dagster_oss_main_steps() -> List[StepConfiguration]:
         "skipped",
         suppress_errors=True,
     )
-    print(
-        f"buildkite_suite_skip_quarantined_objects = {buildkite_suite_skip_quarantined_objects}",
-        file=sys.stderr,
+    logging.info(
+        f"buildkite_suite_skip_quarantined_objects = {buildkite_suite_skip_quarantined_objects}"
     )
 
     return filter_and_print_steps_by_quarantined(

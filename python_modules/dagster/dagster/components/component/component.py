@@ -269,8 +269,8 @@ class Component(ABC):
         if issubclass(cls, Resolvable):
             context_with_injected_scope = context.with_rendering_scope(
                 {
-                    "load_component_at_path": context.component_tree.load_component_at_path,
-                    "build_defs_at_path": context.component_tree.build_defs_at_path,
+                    "load_component_at_path": context.load_component_at_path,
+                    "build_defs_at_path": context.build_defs_at_path,
                 }
             )
             return (
@@ -335,7 +335,7 @@ class Component(ABC):
         Returns:
             A Component instance.
         """
-        from dagster.components.core.tree import ComponentTree
+        from dagster.components.core.component_tree import ComponentTree
 
         model_cls = cls.get_model_cls()
         assert model_cls
@@ -355,8 +355,8 @@ class Component(ABC):
         Returns:
             A Component instance.
         """
+        from dagster.components.core.component_tree import ComponentTree
         from dagster.components.core.defs_module import load_yaml_component_from_path
-        from dagster.components.core.tree import ComponentTree
 
         return load_yaml_component_from_path(
             context=context or ComponentTree.for_test().load_context,
