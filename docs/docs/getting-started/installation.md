@@ -14,8 +14,9 @@ To follow the steps in this guide, you'll need to install [Python 3.9](https://w
 :::
 
 To get started with Dagster, you can scaffold a new project with the [`create-dagster` CLI](/api/dg/create-dagster) (recommended), manually create a new project, or update an existing project to install Dagster dependencies.
-* [Installation requirements for using the `create-dagster` CLI](#installation-requirements-for-using-the-create-dagster-cli)
-* [Installation requirements for manually creating or updating a project](#installation-requirements-for-manually-creating-or-updating-a-project)
+
+- [Installation requirements for using the `create-dagster` CLI](#installation-requirements-for-using-the-create-dagster-cli)
+- [Installation requirements for manually creating or updating a project](#installation-requirements-for-manually-creating-or-updating-a-project)
 
 ## Installation requirements for using the `create-dagster` CLI
 
@@ -65,12 +66,12 @@ After installation, you can run the `create-dagster` command:
 If you prefer to set up Dagster manually or are installing it into an existing project, you can install Dagster directly into your Python environment:
 
 <Tabs>
-<TabItem value="uv" label="uv">
-  <CliInvocationExample contents="uv add dagster dagster-webserver dagster-dg-cli" />
-</TabItem>
-<TabItem value="pip" label="pip">
-  <CliInvocationExample contents="pip install dagster dagster-webserver dagster-dg-cli" />
-</TabItem>
+  <TabItem value="uv" label="uv">
+    <CliInvocationExample contents="uv add dagster dagster-webserver dagster-dg-cli" />
+  </TabItem>
+  <TabItem value="pip" label="pip">
+    <CliInvocationExample contents="pip install dagster dagster-webserver dagster-dg-cli" />
+  </TabItem>
 </Tabs>
 
 ## Verifying your Dagster installation

@@ -88,8 +88,8 @@ Once you have your Power BI assets for your semantic models, you can define a jo
 <CodeExample
   startAfter="start_power_bi_all_assets_job"
   endBefore="end_power_bi_all_assets_job"
-  path="docs_snippets/docs_snippets/integrations/power-bi/create_power_bi_all_assets_job.py" 
-  language="python" 
+  path="docs_snippets/docs_snippets/integrations/power-bi/create_power_bi_all_assets_job.py"
+  language="python"
 />
 
 You can also define a job for a selection of these assets.
@@ -97,8 +97,8 @@ You can also define a job for a selection of these assets.
 <CodeExample
   startAfter="start_power_bi_selection_job"
   endBefore="end_power_bi_selection_job"
-  path="docs_snippets/docs_snippets/integrations/power-bi/create_power_bi_selection_job.py" 
-  language="python" 
+  path="docs_snippets/docs_snippets/integrations/power-bi/create_power_bi_selection_job.py"
+  language="python"
 />
 
 Finally, jobs created for your Power BI assets can be scheduled.
@@ -109,7 +109,6 @@ Finally, jobs created for your Power BI assets can be scheduled.
   path="docs_snippets/docs_snippets/integrations/power-bi/schedule_power_bi_jobs.py"
   language="python"
 />
-
 
 ## Customize upstream dependencies
 

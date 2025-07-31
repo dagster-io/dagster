@@ -157,7 +157,6 @@ Also, jobs created for your Sling assets can be scheduled.
   language="python"
 />
 
-
 ### Customize upstream dependencies
 
 By default, Dagster sets upstream dependencies when generating asset specs for your Sling assets. To do so, Dagster parses information about assets that are upstream of specific Sling assets from the Sling replication configuration itself. You can customize how upstream dependencies are set on your Sling assets by passing an instance of the custom <PyObject section="libraries" module="dagster_sling" object="DagsterSlingTranslator" /> to the <PyObject section="libraries" module="dagster_sling" object="sling_assets" /> decorator.

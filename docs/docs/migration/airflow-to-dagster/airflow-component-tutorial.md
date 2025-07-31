@@ -74,4 +74,3 @@ You can manually define which assets are produced by a given Airflow DAG by edit
 If you have a more specific mapping from a task within the dag to a set of assets, you can also set these mappings at the task level:
 
 <CodeExample path="docs_snippets/docs_snippets/integrations/airlift_v2/represent_airflow_dags_in_dagster/component_task_mappings.yaml" />
-
