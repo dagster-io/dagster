@@ -380,12 +380,14 @@ class MetadataValue(ABC, Generic[T_Packable]):
 
         .. code-block:: python
 
+            from dagster import AssetMaterialization, MetadataValue, op
+
             @op
             def emit_metadata(context, df):
                 yield AssetMaterialization(
-                    asset_key="my_dataset"
+                    asset_key="my_dataset",
                     metadata={
-                        "Producing job": MetadataValue.job('my_other_job'),
+                        "Producing job": MetadataValue.job('my_other_job', 'my_location'),
                     },
                 )
 

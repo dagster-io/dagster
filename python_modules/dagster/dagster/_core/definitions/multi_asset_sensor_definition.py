@@ -210,7 +210,7 @@ class MultiAssetSensorEvaluationContext(SensorEvaluationContext):
 
             from dagster import multi_asset_sensor, MultiAssetSensorEvaluationContext
 
-            @multi_asset_sensor(monitored_assets=[AssetKey("asset_1), AssetKey("asset_2)])
+            @multi_asset_sensor(monitored_assets=[AssetKey("asset_1"), AssetKey("asset_2")])
             def the_sensor(context: MultiAssetSensorEvaluationContext):
                 ...
     """
