@@ -41,43 +41,45 @@ export const ListItem = forwardRef<HTMLDivElement, Props>((props, ref) => {
   const {top, right: rightPadding, bottom, left: leftPadding} = directionalSpacingToValues(padding);
 
   return (
-    <div
-      className={styles.listItem}
-      style={
-        {
-          '--spacing-top': `${top}px`,
-          '--spacing-bottom': `${bottom}px`,
-          '--spacing-left': `${leftPadding}px`,
-          '--spacing-right': `${rightPadding}px`,
-        } as CSSProperties
-      }
-      data-index={index}
-      ref={ref}
-    >
-      {onToggle ? (
-        <div className={styles.checkboxContainer}>
-          <Checkbox
-            format="check"
-            checked={checked}
-            size="small"
-            onChange={(e: ChangeEvent<HTMLInputElement>) => {
-              const event = e.nativeEvent;
-              const shiftKey = event instanceof MouseEvent && event.getModifierState('Shift');
-              onToggle({checked: e.target.checked, shiftKey});
-            }}
-          />
-        </div>
-      ) : null}
-      {link({
-        href,
-        className: styles.listItemAnchor,
-        children: left,
-      })}
+    <div className={styles.listItemWrapper}>
       <div
-        style={{'--spacing-right': `${rightPadding}px`} as CSSProperties}
-        className={styles.right}
+        className={styles.listItem}
+        style={
+          {
+            '--spacing-top': `${top}px`,
+            '--spacing-bottom': `${bottom}px`,
+            '--spacing-left': `${leftPadding}px`,
+            '--spacing-right': `${rightPadding}px`,
+          } as CSSProperties
+        }
+        data-index={index}
+        ref={ref}
       >
-        {right}
+        {onToggle ? (
+          <div className={styles.checkboxContainer}>
+            <Checkbox
+              format="check"
+              checked={checked}
+              size="small"
+              onChange={(e: ChangeEvent<HTMLInputElement>) => {
+                const event = e.nativeEvent;
+                const shiftKey = event instanceof MouseEvent && event.getModifierState('Shift');
+                onToggle({checked: e.target.checked, shiftKey});
+              }}
+            />
+          </div>
+        ) : null}
+        {link({
+          href,
+          className: styles.listItemAnchor,
+          children: left,
+        })}
+        <div
+          style={{'--spacing-right': `${rightPadding}px`} as CSSProperties}
+          className={styles.right}
+        >
+          {right}
+        </div>
       </div>
     </div>
   );
