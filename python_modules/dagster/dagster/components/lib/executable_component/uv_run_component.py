@@ -27,14 +27,14 @@ class UvRunComponent(ExecutableComponent):
     Accepts a path to a Python script which will be executed in a dagster-pipes subprocess using the `uv run` command.
 
     Example:
-    ```yaml
-    type: dagster.UvRunComponent
-    attributes:
-      execution:
-        path: update_table.py
-      assets:
-        - key: my_table
-    ```
+        .. code-block:: yaml
+
+            type: dagster.UvRunComponent
+            attributes:
+              execution:
+                path: update_table.py
+              assets:
+                - key: my_table
     """
 
     execution: ScriptSpec
