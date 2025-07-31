@@ -102,10 +102,6 @@ yarn build-api-docs          # Build API docs after .rst changes
 
 - Use top-level imports unless you need conditional imports or have performance concerns requiring lazy loading
 
-## Development Best Practices
-
-- ALWAYS run make ruff and make quick_pyright from the root of this repository, no matter what your working directory is
-
 ## Make Command Guidelines
 
 - Whenever there is an instruction to run a make command, ALWAYS cd to $DAGSTER_GIT_REPO_DIR, as the Makefile is at the root of the repository

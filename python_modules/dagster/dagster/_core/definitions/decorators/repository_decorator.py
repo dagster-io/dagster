@@ -275,7 +275,7 @@ def repository(
 
         {
             'jobs': Dict[str, Callable[[], JobDefinition]],
-            'schedules': Dict[str, Callable[[], ScheduleDefinition]]
+            'schedules': Dict[str, Callable[[], ScheduleDefinition]],
             'sensors': Dict[str, Callable[[], SensorDefinition]]
         }
 
@@ -319,7 +319,7 @@ def repository(
             def some_sensor():
                 if foo():
                     yield RunRequest(
-                        run_key= ...,
+                        run_key=...,
                         run_config={
                             'ops': {'return_n': {'config': {'n': bar()}}}
                         }
@@ -348,7 +348,7 @@ def repository(
                     'team': 'Team A',
                     'repository_version': '1.2.3',
                     'environment': 'production',
-             })
+                })
             def simple_repository():
                 return [simple_job, some_sensor, my_schedule]
 

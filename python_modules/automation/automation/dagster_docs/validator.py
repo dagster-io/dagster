@@ -16,6 +16,7 @@ from automation.dagster_docs.docstring_rules import (
     ValidationContext,
     ValidationFunction,
     ValidationResult,
+    create_python_ast_validator,
     create_rst_syntax_validator,
     create_section_header_validator,
     create_sphinx_filter_validator,
@@ -159,6 +160,7 @@ def validate_docstring_text(docstring: str, symbol_path: str = "unknown") -> Val
     # 3. Apply all validation functions in sequence
     validators: list[ValidationFunction] = [
         create_section_header_validator(),
+        create_python_ast_validator(),
         create_rst_syntax_validator(),
         create_sphinx_filter_validator(),
     ]
