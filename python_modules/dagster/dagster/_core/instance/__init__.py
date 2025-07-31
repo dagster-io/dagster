@@ -3704,20 +3704,20 @@ class DagsterInstance(DynamicPartitionsStore):
 
     def get_asset_check_health_state_for_assets(
         self, asset_keys: Sequence[AssetKey]
-    ) -> Optional[Mapping[AssetKey, Optional["AssetCheckHealthState"]]]:
-        return None
+    ) -> Mapping[AssetKey, Optional["AssetCheckHealthState"]]:
+        return {asset_key: None for asset_key in asset_keys}
 
     def get_asset_freshness_health_state_for_assets(
         self, asset_keys: Sequence[AssetKey]
-    ) -> Optional[Mapping[AssetKey, Optional["AssetFreshnessHealthState"]]]:
-        return None
+    ) -> Mapping[AssetKey, Optional["AssetFreshnessHealthState"]]:
+        return {asset_key: None for asset_key in asset_keys}
 
     def get_asset_materialization_health_state_for_assets(
         self, asset_keys: Sequence[AssetKey]
-    ) -> Optional[Mapping[AssetKey, Optional["AssetMaterializationHealthState"]]]:
-        return None
+    ) -> Mapping[AssetKey, Optional["AssetMaterializationHealthState"]]:
+        return {asset_key: None for asset_key in asset_keys}
 
     def get_minimal_asset_materialization_health_state_for_assets(
         self, asset_keys: Sequence[AssetKey]
-    ) -> Optional[Mapping[AssetKey, Optional["MinimalAssetMaterializationHealthState"]]]:
-        return None
+    ) -> Mapping[AssetKey, Optional["MinimalAssetMaterializationHealthState"]]:
+        return {asset_key: None for asset_key in asset_keys}
