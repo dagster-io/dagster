@@ -192,13 +192,12 @@ Examples:
         def my_table() -> pd.DataFrame:  # the name of the asset will be the table name
             ...
 
-        Definitions(
+        defs = Definitions(
             assets=[my_table],
             resources={
                 "io_manager": snowflake_pandas_io_manager.configured({
                     "database": "my_database",
                     "account" : {"env": "SNOWFLAKE_ACCOUNT"}
-                    ...
                 })
             }
         )
@@ -208,10 +207,10 @@ Examples:
 
     .. code-block:: python
 
-        Definitions(
-            assets=[my_table]
-            resources={"io_manager" snowflake_pandas_io_manager.configured(
-                {"database": "my_database", "schema": "my_schema", ...} # will be used as the schema
+        defs = Definitions(
+            assets=[my_table],
+            resources={"io_manager": snowflake_pandas_io_manager.configured(
+                {"database": "my_database", "schema": "my_schema"}  # will be used as the schema
             )}
         )
 
@@ -295,9 +294,9 @@ class SnowflakePandasIOManager(SnowflakeIOManager):
         .. code-block:: python
 
             Definitions(
-                assets=[my_table]
+                assets=[my_table],
                 resources={
-                    "io_manager" SnowflakePandasIOManager(database="my_database", schema="my_schema", ...)
+                    "io_manager": SnowflakePandasIOManager(database="my_database", schema="my_schema", ...)
                 }
             )
 

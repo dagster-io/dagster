@@ -267,8 +267,7 @@ def snowflake_polars_io_manager(init_context):
                 resources={
                     "io_manager": snowflake_polars_io_manager.configured({
                         "database": "my_database",
-                        "account" : {"env": "SNOWFLAKE_ACCOUNT"},
-                        ...
+                        "account" : {"env": "SNOWFLAKE_ACCOUNT"}
                     })
                 }
             )
@@ -281,7 +280,7 @@ def snowflake_polars_io_manager(init_context):
             defs = Definitions(
                 assets=[my_table],
                 resources={"io_manager": snowflake_polars_io_manager.configured(
-                    {"database": "my_database", "schema": "my_schema", ...} # will be used as the schema
+                    {"database": "my_database", "schema": "my_schema"} # will be used as the schema
                 )}
             )
 

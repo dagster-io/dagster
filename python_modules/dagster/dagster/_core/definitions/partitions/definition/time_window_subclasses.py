@@ -41,10 +41,10 @@ class HourlyPartitionsDefinition(TimeWindowPartitionsDefinition):
 
     .. code-block:: python
 
-        HourlyPartitionsDefinition(start_date=datetime(2022, 03, 12))
+        HourlyPartitionsDefinition(start_date=datetime(2022, 3, 12))
         # creates partitions (2022-03-12-00:00, 2022-03-12-01:00), (2022-03-12-01:00, 2022-03-12-02:00), ...
 
-        HourlyPartitionsDefinition(start_date=datetime(2022, 03, 12), minute_offset=15)
+        HourlyPartitionsDefinition(start_date=datetime(2022, 3, 12), minute_offset=15)
         # creates partitions (2022-03-12-00:15, 2022-03-12-01:15), (2022-03-12-01:15, 2022-03-12-02:15), ...
     """
 

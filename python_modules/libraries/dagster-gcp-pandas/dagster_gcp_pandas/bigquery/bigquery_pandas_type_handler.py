@@ -138,7 +138,7 @@ Examples:
             assets=[my_table],
             resources={
                     "io_manager": bigquery_pandas_io_manager.configured({
-                        "project" : {"env": "GCP_PROJECT"}
+                        "project" : {"env": "GCP_PROJECT"},
                         "dataset": "my_dataset"
                     })
                 }
@@ -231,7 +231,7 @@ class BigQueryPandasIOManager(BigQueryIOManager):
             Definitions(
                 assets=[my_table],
                 resources={
-                        "io_manager": BigQueryPandasIOManager(project=EnvVar("GCP_PROJECT", dataset="my_dataset")
+                        "io_manager": BigQueryPandasIOManager(project=EnvVar("GCP_PROJECT"), dataset="my_dataset")
                     }
             )
 

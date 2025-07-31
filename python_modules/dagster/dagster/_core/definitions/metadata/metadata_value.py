@@ -286,7 +286,7 @@ class MetadataValue(ABC, Generic[T_Packable]):
     @staticmethod
     def bool(value: bool) -> "BoolMetadataValue":
         """Static constructor for a metadata value wrapping a bool as
-        :py:class:`BoolMetadataValuye`. Can be used as the value type for the `metadata`
+        :py:class:`BoolMetadataValue`. Can be used as the value type for the `metadata`
         parameter for supported events.
 
         Example:
@@ -383,7 +383,7 @@ class MetadataValue(ABC, Generic[T_Packable]):
             @op
             def emit_metadata(context, df):
                 yield AssetMaterialization(
-                    asset_key="my_dataset"
+                    asset_key="my_dataset",
                     metadata={
                         "Producing job": MetadataValue.job('my_other_job'),
                     },

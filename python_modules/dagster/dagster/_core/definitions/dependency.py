@@ -645,7 +645,7 @@ class DependencyDefinition(
         dependency_structure = {
             'my_downstream_op': {
                 'input': DependencyDefinition('my_upstream_op', 'result')
-            }
+            },
             'my_downstream_op': {
                 'input': DependencyDefinition('my_upstream_graph', 'result')
             }

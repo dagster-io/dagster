@@ -295,7 +295,7 @@ class Enum(ConfigType):
             )
         )
         def resolve_standoff(context):
-            # ...
+            pass
     """
 
     def __init__(self, name: str, enum_values: Sequence[EnumValue]):
