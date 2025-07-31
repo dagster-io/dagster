@@ -330,7 +330,7 @@ def test_loguru_bridge_performance():
     logger.add(sink, level="INFO")
     start = time.time()
     for _ in range(100):
-        logger.info("Perf msg")
+        logger.info("Perf message")
     duration = time.time() - start
     assert duration < 1.0
 
