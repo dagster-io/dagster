@@ -1,6 +1,6 @@
 # Buildkite Architecture Guide
 
-*Reference guide for understanding and working with Dagster's Buildkite CI/CD architecture*
+_Reference guide for understanding and working with Dagster's Buildkite CI/CD architecture_
 
 ## Overview
 
@@ -9,6 +9,7 @@ This guide documents the architecture, patterns, and conventions used in Dagster
 ## Architecture Overview
 
 ### Directory Structure
+
 ```
 .buildkite/
 ├── ARCHITECTURE.md              # This guide
@@ -42,11 +43,13 @@ This guide documents the architecture, patterns, and conventions used in Dagster
 **Purpose**: Manages Docker image versions used across all steps
 
 **Key Images**:
+
 - `buildkite-test`: Main test execution environment
 - `buildkite-build-test-project-image`: For building test projects
 - `test-project-base`: Base images for test projects
 
 **Pattern**:
+
 ```python
 BUILDKITE_TEST_IMAGE_VERSION: str = get_image_version("buildkite-test")
 
@@ -60,6 +63,7 @@ def add_test_image(step_builder: CommandStepBuilder, ver: AvailablePythonVersion
 ### 2. Step Builders
 
 **Base Pattern**: All steps follow this structure
+
 ```python
 def build_example_step() -> GroupLeafStepConfiguration:
     return (
@@ -69,7 +73,7 @@ def build_example_step() -> GroupLeafStepConfiguration:
         )
         .run(
             "command1",
-            "command2", 
+            "command2",
             "command3",
         )
         .build()
@@ -77,6 +81,7 @@ def build_example_step() -> GroupLeafStepConfiguration:
 ```
 
 **Key Methods**:
+
 - `add_test_image()`: Adds Docker environment
 - `.run()`: Defines commands to execute
 - `.skip_if()`: Conditional execution
@@ -85,16 +90,19 @@ def build_example_step() -> GroupLeafStepConfiguration:
 ### 3. Step Categories
 
 #### Documentation Steps (`steps/docs.py`)
+
 - **Build docs**: Full documentation build
 - **Format check**: Yarn format validation
 - **Docstring validation**: Python docstring checking
 
 #### Core Test Steps (`steps/dagster.py`)
+
 - **Dagster core tests**: Main test suites
 - **Integration tests**: Cross-component testing
 - **Performance tests**: Benchmarking and perf validation
 
 #### Test Project Steps (`steps/test_project.py`)
+
 - **Docker image building**: Test project containers
 - **Multi-version testing**: Python version matrix
 
@@ -103,6 +111,7 @@ def build_example_step() -> GroupLeafStepConfiguration:
 ### Package Installation Standards
 
 **Current Best Practice (2025)**:
+
 ```python
 .run(
     "uv pip install -e python_modules/package[extras]",
@@ -111,26 +120,30 @@ def build_example_step() -> GroupLeafStepConfiguration:
 ```
 
 **Legacy Pattern (still supported)**:
+
 ```python
 .run(
     "pip install -e python_modules/package[extras]",
-    "actual_command_here", 
+    "actual_command_here",
 )
 ```
 
 ### Common Installation Patterns
 
 #### Single Package with Extras
+
 ```python
 "uv pip install -e python_modules/automation[buildkite]"
 ```
 
 #### Multiple Packages
+
 ```python
 "uv pip install -e 'python_modules/dagster[test]' -e 'python_modules/dagster-pipes' -e 'python_modules/libraries/dagster-shared'"
 ```
 
 #### Complex Dependencies
+
 ```python
 "uv pip install -e python_modules/dagster[test] -e python_modules/dagster-graphql -e python_modules/automation"
 ```
@@ -138,6 +151,7 @@ def build_example_step() -> GroupLeafStepConfiguration:
 ### Package Extras Reference
 
 #### Automation Module
+
 ```python
 # python_modules/automation/setup.py
 extras_require={
@@ -146,14 +160,16 @@ extras_require={
     ]
 }
 ```
+
 **When to use**: Any step running automation scripts that import dagster modules
 
 #### Dagster Core
+
 ```python
-# python_modules/dagster/setup.py  
+# python_modules/dagster/setup.py
 extras_require={
     "test": [...],      # Test dependencies
-    "ruff": [...],      # Linting dependencies  
+    "ruff": [...],      # Linting dependencies
     "pyright": [...],   # Type checking dependencies
 }
 ```
@@ -163,6 +179,7 @@ extras_require={
 ### 1. Adding New Steps
 
 **Template**:
+
 ```python
 def build_my_new_step() -> GroupLeafStepConfiguration:
     return (
@@ -180,6 +197,7 @@ def build_my_new_step() -> GroupLeafStepConfiguration:
 ```
 
 **Best Practices**:
+
 - Use descriptive emoji and name for easy identification
 - Install dependencies before running commands
 - Use `uv pip install` for consistency
@@ -189,15 +207,17 @@ def build_my_new_step() -> GroupLeafStepConfiguration:
 ### 2. Dependency Management
 
 **Rule**: Always install packages with required extras
+
 ```python
 # ❌ Wrong - missing extras
 "uv pip install -e python_modules/automation"
 
-# ✅ Correct - includes buildkite extra for dagster dependency  
+# ✅ Correct - includes buildkite extra for dagster dependency
 "uv pip install -e python_modules/automation[buildkite]"
 ```
 
 **Common Extras Needed**:
+
 - `automation[buildkite]` - For scripts importing dagster
 - `dagster[test]` - For running tests
 - `dagster[ruff]` - For linting steps
@@ -206,11 +226,13 @@ def build_my_new_step() -> GroupLeafStepConfiguration:
 ### 3. Error Handling Patterns
 
 **Conditional Steps**:
+
 ```python
 .skip_if(skip_if_no_docs_changes())  # Skip if no relevant changes
 ```
 
 **Environment Variables**:
+
 ```python
 add_test_image(step_builder, python_version, env=["CUSTOM_VAR"])
 ```
@@ -218,41 +240,50 @@ add_test_image(step_builder, python_version, env=["CUSTOM_VAR"])
 ## Common Failure Patterns & Solutions
 
 ### 1. Missing Dependencies
+
 **Symptom**: `ModuleNotFoundError: No module named 'package'`
 **Solution**: Add installation command with appropriate extras
 
-### 2. Wrong Working Directory  
+### 2. Wrong Working Directory
+
 **Symptom**: `FileNotFoundError` or `No such file or directory`
 **Solution**: Add `cd target_directory` before commands
 
 ### 3. Missing Extras
+
 **Symptom**: Import errors for transitive dependencies
 **Solution**: Check package setup.py and include required extras
 
 ### 4. Image Version Issues
+
 **Symptom**: `Unable to find image` or Docker pull failures
 **Solution**: Check `images/versions.py` and update image versions
 
 ## Pipeline Configuration
 
 ### Main Pipeline Definition
+
 The main pipeline configuration uses a minimal bootstrap approach:
+
 ```yaml
 steps:
   - command:
-    - "git config --global --add safe.directory /workdir"
-    - "python -m pip install --user -e .buildkite/dagster-buildkite"
-    - "LOGLEVEL=INFO ~/.local/bin/dagster-buildkite | buildkite-agent pipeline upload"
+      - "git config --global --add safe.directory /workdir"
+      - "python -m pip install --user -e .buildkite/dagster-buildkite"
+      - "LOGLEVEL=INFO ~/.local/bin/dagster-buildkite | buildkite-agent pipeline upload"
     label: ":pipeline:"
 ```
 
 This approach:
+
 1. Installs the `dagster-buildkite` package
 2. Runs it to generate the full pipeline dynamically
 3. Uploads the generated pipeline to Buildkite
 
 ### Dynamic Step Generation
+
 Steps are generated programmatically in Python, allowing for:
+
 - **Conditional steps** based on file changes
 - **Matrix builds** across Python versions
 - **Complex dependencies** between steps
@@ -261,11 +292,13 @@ Steps are generated programmatically in Python, allowing for:
 ## Hooks System
 
 ### Global Hooks (`hooks/`)
+
 - **pre-command**: Environment setup, Docker cleanup
 - **post-command**: Result uploading, cleanup
 - **pre-exit**: Final cleanup, network pruning
 
 ### Hook Responsibilities
+
 - Docker container/network management
 - Environment variable setup
 - Secret management via S3
@@ -274,6 +307,7 @@ Steps are generated programmatically in Python, allowing for:
 ## Development Workflow
 
 ### Local Testing
+
 ```bash
 # Install the buildkite package
 pip install -e .buildkite/dagster-buildkite
@@ -283,12 +317,14 @@ dagster-buildkite
 ```
 
 ### Adding New Step Categories
+
 1. Create new file in `steps/` directory
 2. Define step builder functions
 3. Export steps in main step collection
-4. Update imports in package __init__.py
+4. Update imports in package **init**.py
 
 ### Debugging Steps
+
 1. Check step definition in appropriate `steps/` file
 2. Verify Docker image and dependencies
 3. Test installation commands locally
@@ -297,17 +333,19 @@ dagster-buildkite
 ## Performance Considerations
 
 ### Build Optimization
+
 - **Parallel execution**: Steps run in parallel when possible
 - **Conditional skipping**: Skip irrelevant steps based on file changes
 - **Image caching**: Docker images are cached and versioned
 - **Dependency caching**: Package installations leverage Docker layer caching
 
 ### Resource Management
+
 - **Queue management**: Different queues for different resource needs
 - **Agent utilization**: Steps distributed across available agents
 - **Cleanup hooks**: Automatic cleanup prevents resource leaks
 
 ---
 
-*Architecture documented: 2025-07-31*  
-*For questions or updates, contact the Dagster team*
+_Architecture documented: 2025-07-31_  
+_For questions or updates, contact the Dagster team_
