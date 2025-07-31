@@ -12,7 +12,7 @@ from dagster import AssetKey
 from dagster._core.definitions.assets.definition.asset_spec import AssetSpec
 from dagster._core.definitions.definitions_class import Definitions
 from dagster._utils.env import environ
-from dagster.components.core.tree import ComponentTree
+from dagster.components.core.component_tree import ComponentTree
 from dagster.components.testing import TestTranslation, create_defs_folder_sandbox
 from dagster_fivetran.components.workspace_component.component import FivetranAccountComponent
 from dagster_fivetran.resources import FivetranWorkspace

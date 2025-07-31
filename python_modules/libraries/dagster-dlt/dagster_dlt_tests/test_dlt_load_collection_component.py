@@ -16,7 +16,7 @@ from dagster._core.definitions.assets.definition.asset_spec import AssetSpec
 from dagster._core.definitions.definitions_class import Definitions
 from dagster._utils import pushd
 from dagster._utils.env import environ
-from dagster.components.core.tree import ComponentTree
+from dagster.components.core.component_tree import ComponentTree
 from dagster.components.testing import TestTranslationBatched, create_defs_folder_sandbox
 from dagster_dlt import DagsterDltResource, DltLoadCollectionComponent
 from dagster_dlt.components.dlt_load_collection.component import DltLoadSpecModel

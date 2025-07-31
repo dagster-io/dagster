@@ -6,13 +6,13 @@ from typing import Union
 import dagster as dg
 import pytest
 from dagster._utils.env import environ
-from dagster.components.core.decl import ComponentDecl, DefsFolderDecl, PythonFileDecl, YamlFileDecl
-from dagster.components.core.defs_module import ComponentPath, CompositeYamlComponent
-from dagster.components.core.tree import (
+from dagster.components.core.component_tree import (
     ComponentTree,
     ComponentTreeException,
     LegacyAutoloadingComponentTree,
 )
+from dagster.components.core.decl import ComponentDecl, DefsFolderDecl, PythonFileDecl, YamlFileDecl
+from dagster.components.core.defs_module import ComponentPath, CompositeYamlComponent
 from dagster_shared import check
 
 from dagster_tests.components_tests.integration_tests.component_loader import (
