@@ -25,7 +25,7 @@ from dagster._cli.proxy_server_manager import ProxyServerManager
 from dagster._cli.utils import assert_no_remaining_opts, get_possibly_temporary_instance_for_cli
 from dagster._cli.workspace.cli_target import WorkspaceOpts, workspace_opts_to_load_target
 from dagster._core.instance import DagsterInstance
-from dagster._core.storage.state_store import StateStore
+from dagster._core.storage.state import StateStorage
 from dagster._utils.interrupts import setup_interrupt_handlers
 from dagster._utils.log import configure_loggers
 
@@ -193,7 +193,7 @@ def dev_command_impl(
             get_possibly_temporary_instance_for_cli("dagster dev", logger=logger)
         )
 
-        StateStore.set_current(instance)
+        StateStorage.set_current(instance.state_storage)
 
         logger.info("Launching Dagster services...")
 

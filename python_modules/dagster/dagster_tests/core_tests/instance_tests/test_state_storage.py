@@ -2,14 +2,14 @@ import dagster as dg
 from dagster import instance_for_test
 from dagster._core.definitions.reconstruct import ReconstructableJob
 from dagster._core.execution.api import create_execution_plan, execute_run_iterator
-from dagster._core.storage.state_store import StateStore
+from dagster._core.storage.state import StateStorage
 from dagster._core.test_utils import create_run_for_test
 
 
 @dg.op
 def recon_op():
-    state_store = StateStore.get_current()
-    assert isinstance(state_store, StateStore)
+    state_store = StateStorage.get_current()
+    assert isinstance(state_store, StateStorage)
     return "value"
 
 
@@ -24,8 +24,8 @@ def test_state_store_get_current_during_job_execution():
 
     @dg.asset
     def test_asset():
-        state_store = StateStore.get_current()
-        assert isinstance(state_store, StateStore)
+        state_storage = StateStorage.get_current()
+        assert isinstance(state_storage, StateStorage)
         executed_ops.append("test_asset")
         return "value"
 
@@ -41,8 +41,8 @@ def test_state_store_get_current_during_asset_execution():
 
     @dg.asset
     def test_asset():
-        state_store = StateStore.get_current()
-        assert isinstance(state_store, StateStore)
+        state_storage = StateStorage.get_current()
+        assert isinstance(state_storage, StateStorage)
         executed_assets.append("test_asset")
         return "value"
 
@@ -58,8 +58,8 @@ def test_state_store_get_current_during_op_execution():
 
     @dg.asset
     def test_op_asset():
-        state_store = StateStore.get_current()
-        assert isinstance(state_store, StateStore)
+        state_storage = StateStorage.get_current()
+        assert isinstance(state_storage, StateStorage)
         executed_ops.append("test_op_asset")
         return "value"
 
@@ -85,8 +85,8 @@ def test_state_store_get_current_during_execution_plan_creation():
 
     @dg.op
     def test_op():
-        state_store = StateStore.get_current()
-        assert isinstance(state_store, StateStore)
+        state_storage = StateStorage.get_current()
+        assert isinstance(state_storage, StateStorage)
         plan_created.append("plan_created")
         return "value"
 
