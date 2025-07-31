@@ -1,36 +1,25 @@
 import os
+from collections.abc import Iterable, Mapping
+from dataclasses import dataclass
 from glob import glob
 from pathlib import Path
-from typing import (
-    Iterable,
-    List,
-    Optional,
-    Union,
-    Callable,
-    Mapping,
-)
-from dataclasses import dataclass
-from dagster_buildkite.steps.tox import build_tox_step
-from typing_extensions import TypeAlias
+from typing import Callable, Optional, Union
 
-from dagster_buildkite.defines import (
-    GCP_CREDS_FILENAME,
-    GCP_CREDS_LOCAL_FILE,
-    GIT_REPO_ROOT,
-)
 from buildkite_shared.packages import skip_reason
 from buildkite_shared.python_version import AvailablePythonVersion
 from buildkite_shared.step_builders.command_step_builder import BuildkiteQueue
 from buildkite_shared.step_builders.group_step_builder import (
-    GroupStepBuilder,
     GroupLeafStepConfiguration,
+    GroupStepBuilder,
 )
 from buildkite_shared.step_builders.step_builder import (
-    is_command_step,
     StepConfiguration,
     TopLevelStepConfiguration,
+    is_command_step,
 )
+from dagster_buildkite.defines import GCP_CREDS_FILENAME, GCP_CREDS_LOCAL_FILE, GIT_REPO_ROOT
 from dagster_buildkite.steps.test_project import test_project_depends_fn
+from dagster_buildkite.steps.tox import build_tox_step
 from dagster_buildkite.utils import (
     connect_sibling_docker_container,
     has_dagster_airlift_changes,
@@ -39,7 +28,7 @@ from dagster_buildkite.utils import (
     network_buildkite_container,
     skip_if_not_dagster_dbt_cloud_commit,
 )
-
+from typing_extensions import TypeAlias
 
 _CORE_PACKAGES = [
     "python_modules/dagster",
@@ -62,9 +51,7 @@ def _infer_package_type(directory: str) -> str:
         return "example"
     elif directory.startswith("python_modules/libraries/"):
         return "extension"
-    elif directory in _INFRASTRUCTURE_PACKAGES or directory.startswith(
-        "integration_tests"
-    ):
+    elif directory in _INFRASTRUCTURE_PACKAGES or directory.startswith("integration_tests"):
         return "infrastructure"
     else:
         return "unknown"
@@ -83,12 +70,8 @@ _PACKAGE_TYPE_TO_EMOJI_MAP: Mapping[str, str] = {
 PytestExtraCommandsFunction: TypeAlias = Callable[
     [AvailablePythonVersion, Optional[str]], list[str]
 ]
-PytestDependenciesFunction: TypeAlias = Callable[
-    [AvailablePythonVersion, Optional[str]], list[str]
-]
-UnsupportedVersionsFunction: TypeAlias = Callable[
-    [Optional[str]], list[AvailablePythonVersion]
-]
+PytestDependenciesFunction: TypeAlias = Callable[[AvailablePythonVersion, Optional[str]], list[str]]
+UnsupportedVersionsFunction: TypeAlias = Callable[[Optional[str]], list[AvailablePythonVersion]]
 
 
 @dataclass
@@ -141,9 +124,7 @@ class PackageSpec:
         Union[list[AvailablePythonVersion], UnsupportedVersionsFunction]
     ] = None
     pytest_extra_cmds: Optional[Union[list[str], PytestExtraCommandsFunction]] = None
-    pytest_step_dependencies: Optional[Union[list[str], PytestDependenciesFunction]] = (
-        None
-    )
+    pytest_step_dependencies: Optional[Union[list[str], PytestDependenciesFunction]] = None
     pytest_tox_factors: Optional[list[str]] = None
     env_vars: Optional[list[str]] = None
     tox_file: Optional[str] = None
@@ -179,9 +160,7 @@ class PackageSpec:
 
             for other_factor in tox_factors:
                 if callable(self.unsupported_python_versions):
-                    unsupported_python_versions = self.unsupported_python_versions(
-                        other_factor
-                    )
+                    unsupported_python_versions = self.unsupported_python_versions(other_factor)
                 else:
                     unsupported_python_versions = self.unsupported_python_versions or []
 
@@ -212,9 +191,7 @@ class PackageSpec:
                     if isinstance(self.pytest_extra_cmds, list):
                         extra_commands_pre = self.pytest_extra_cmds
                     elif callable(self.pytest_extra_cmds):
-                        extra_commands_pre = self.pytest_extra_cmds(
-                            py_version, other_factor
-                        )
+                        extra_commands_pre = self.pytest_extra_cmds(py_version, other_factor)
                     else:
                         extra_commands_pre = []
 
@@ -223,9 +200,7 @@ class PackageSpec:
                         if isinstance(self.pytest_step_dependencies, list):
                             dependencies = self.pytest_step_dependencies
                         elif callable(self.pytest_step_dependencies):
-                            dependencies = self.pytest_step_dependencies(
-                                py_version, other_factor
-                            )
+                            dependencies = self.pytest_step_dependencies(py_version, other_factor)
 
                     steps.append(
                         build_tox_step(
@@ -279,45 +254,33 @@ class PackageSpec:
                 )
             return self._skip_reason
 
-        self._skip_reason = skip_reason(
-            self.directory, self.name, self.always_run_if, self.skip_if
-        )
+        self._skip_reason = skip_reason(self.directory, self.name, self.always_run_if, self.skip_if)
         self._should_skip = self._skip_reason is not None
         return self._skip_reason
 
 
-def build_example_packages_steps() -> List[StepConfiguration]:
-    custom_example_pkg_roots = [
-        pkg.directory for pkg in EXAMPLE_PACKAGES_WITH_CUSTOM_CONFIG
-    ]
+def build_example_packages_steps() -> list[StepConfiguration]:
+    custom_example_pkg_roots = [pkg.directory for pkg in EXAMPLE_PACKAGES_WITH_CUSTOM_CONFIG]
     example_packages_with_standard_config = [
         PackageSpec(pkg)
         for pkg in (
             _get_uncustomized_pkg_roots("examples", custom_example_pkg_roots)
-            + _get_uncustomized_pkg_roots(
-                "examples/experimental", custom_example_pkg_roots
-            )
+            + _get_uncustomized_pkg_roots("examples/experimental", custom_example_pkg_roots)
         )
         if pkg not in ("examples/deploy_ecs", "examples/starlift-demo")
     ]
 
-    example_packages = (
-        EXAMPLE_PACKAGES_WITH_CUSTOM_CONFIG + example_packages_with_standard_config
-    )
+    example_packages = EXAMPLE_PACKAGES_WITH_CUSTOM_CONFIG + example_packages_with_standard_config
 
     return build_steps_from_package_specs(example_packages)
 
 
-def build_library_packages_steps() -> List[StepConfiguration]:
-    custom_library_pkg_roots = [
-        pkg.directory for pkg in LIBRARY_PACKAGES_WITH_CUSTOM_CONFIG
-    ]
+def build_library_packages_steps() -> list[StepConfiguration]:
+    custom_library_pkg_roots = [pkg.directory for pkg in LIBRARY_PACKAGES_WITH_CUSTOM_CONFIG]
     library_packages_with_standard_config = [
         *[
             PackageSpec(pkg)
-            for pkg in _get_uncustomized_pkg_roots(
-                "python_modules", custom_library_pkg_roots
-            )
+            for pkg in _get_uncustomized_pkg_roots("python_modules", custom_library_pkg_roots)
         ],
         *[
             PackageSpec(pkg)
@@ -333,9 +296,9 @@ def build_library_packages_steps() -> List[StepConfiguration]:
 
 
 def build_steps_from_package_specs(
-    package_specs: List[PackageSpec],
-) -> List[StepConfiguration]:
-    steps: List[StepConfiguration] = []
+    package_specs: list[PackageSpec],
+) -> list[StepConfiguration]:
+    steps: list[StepConfiguration] = []
     all_packages = sorted(
         package_specs,
         key=lambda p: f"{_PACKAGE_TYPE_ORDER.index(p.package_type)} {p.name}",  # type: ignore[arg-type]
@@ -351,15 +314,12 @@ _PACKAGE_TYPE_ORDER = ["core", "extension", "example", "infrastructure", "unknow
 
 
 # Find packages under a root subdirectory that are not configured above.
-def _get_uncustomized_pkg_roots(root: str, custom_pkg_roots: List[str]) -> List[str]:
+def _get_uncustomized_pkg_roots(root: str, custom_pkg_roots: list[str]) -> list[str]:
     all_files_in_root = [
-        os.path.relpath(p, GIT_REPO_ROOT)
-        for p in glob(os.path.join(GIT_REPO_ROOT, root, "*"))
+        os.path.relpath(p, GIT_REPO_ROOT) for p in glob(os.path.join(GIT_REPO_ROOT, root, "*"))
     ]
     return [
-        p
-        for p in all_files_in_root
-        if p not in custom_pkg_roots and os.path.exists(f"{p}/tox.ini")
+        p for p in all_files_in_root if p not in custom_pkg_roots and os.path.exists(f"{p}/tox.ini")
     ]
 
 
@@ -368,7 +328,7 @@ def _get_uncustomized_pkg_roots(root: str, custom_pkg_roots: List[str]) -> List[
 # ########################
 
 
-def airflow_extra_cmds(version: AvailablePythonVersion, _) -> List[str]:
+def airflow_extra_cmds(version: AvailablePythonVersion, _) -> list[str]:
     return [
         'export AIRFLOW_HOME="/airflow"',
         "mkdir -p $${AIRFLOW_HOME}",
@@ -390,7 +350,7 @@ airline_demo_extra_cmds = [
 ]
 
 
-def dagster_graphql_extra_cmds(_, tox_factor: Optional[str]) -> List[str]:
+def dagster_graphql_extra_cmds(_, tox_factor: Optional[str]) -> list[str]:
     if tox_factor and tox_factor.startswith("postgres"):
         return [
             "pushd python_modules/dagster-graphql/dagster_graphql_tests/graphql/",
@@ -421,7 +381,7 @@ deploy_docker_example_extra_cmds = [
 ]
 
 
-def celery_extra_cmds(version: AvailablePythonVersion, _) -> List[str]:
+def celery_extra_cmds(version: AvailablePythonVersion, _) -> list[str]:
     return [
         "export DAGSTER_DOCKER_IMAGE_TAG=$${BUILDKITE_BUILD_ID}-" + version.value,
         'export DAGSTER_DOCKER_REPOSITORY="$${AWS_ACCOUNT_ID}.dkr.ecr.us-west-2.amazonaws.com"',
@@ -439,7 +399,7 @@ def celery_extra_cmds(version: AvailablePythonVersion, _) -> List[str]:
     ]
 
 
-def docker_extra_cmds(version: AvailablePythonVersion, _) -> List[str]:
+def docker_extra_cmds(version: AvailablePythonVersion, _) -> list[str]:
     return [
         "export DAGSTER_DOCKER_IMAGE_TAG=$${BUILDKITE_BUILD_ID}-" + version.value,
         'export DAGSTER_DOCKER_REPOSITORY="$${AWS_ACCOUNT_ID}.dkr.ecr.us-west-2.amazonaws.com"',
@@ -468,7 +428,7 @@ mysql_extra_cmds = [
 ]
 
 
-def k8s_extra_cmds(version: AvailablePythonVersion, _) -> List[str]:
+def k8s_extra_cmds(version: AvailablePythonVersion, _) -> list[str]:
     return [
         "export DAGSTER_DOCKER_IMAGE_TAG=$${BUILDKITE_BUILD_ID}-" + version.value,
         'export DAGSTER_DOCKER_REPOSITORY="$${AWS_ACCOUNT_ID}.dkr.ecr.us-west-2.amazonaws.com"',
@@ -488,7 +448,7 @@ gcp_creds_extra_cmds = (
 
 # Some Dagster packages have more involved test configs or support only certain Python version;
 # special-case those here
-EXAMPLE_PACKAGES_WITH_CUSTOM_CONFIG: List[PackageSpec] = [
+EXAMPLE_PACKAGES_WITH_CUSTOM_CONFIG: list[PackageSpec] = [
     PackageSpec(
         "examples/assets_smoke_test",
     ),
@@ -608,7 +568,7 @@ EXAMPLE_PACKAGES_WITH_CUSTOM_CONFIG: List[PackageSpec] = [
 
 def _unsupported_dagster_python_versions(
     tox_factor: Optional[str],
-) -> List[AvailablePythonVersion]:
+) -> list[AvailablePythonVersion]:
     if tox_factor == "general_tests_old_protobuf":
         return [
             AvailablePythonVersion.V3_11,
@@ -640,14 +600,14 @@ def test_subfolders(tests_folder_name: str) -> Iterable[str]:
             yield subfolder.name
 
 
-def tox_factors_for_folder(tests_folder_name: str) -> List[str]:
+def tox_factors_for_folder(tests_folder_name: str) -> list[str]:
     return [
         f"{tests_folder_name}__{subfolder_name}"
         for subfolder_name in test_subfolders(tests_folder_name)
     ]
 
 
-LIBRARY_PACKAGES_WITH_CUSTOM_CONFIG: List[PackageSpec] = [
+LIBRARY_PACKAGES_WITH_CUSTOM_CONFIG: list[PackageSpec] = [
     PackageSpec(
         "python_modules/automation",
         # automation is internal code that doesn't need to be tested in every python version. The

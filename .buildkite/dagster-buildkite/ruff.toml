@@ -1,2 +1,0 @@
-# TODO: Delete this as we combine dagster-buildkite and internal
-target-version = "py38"
