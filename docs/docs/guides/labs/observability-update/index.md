@@ -24,6 +24,8 @@ Once you are a member of the early access program, you can enable or disable the
 
 Get a holistic view of your data platform’s health from the moment you log in. The redesigned Dagster+ homepage keeps your most important signals front and center so you can track key metrics in real time, surface issues quickly, and stay focused on what matters most.
 
+{/* TODO screenshot of homepage or separate doc if needed */}
+
 ### Freshness policies
 
 Ensure your most critical data stays fresh and trustworthy so teams can make timely, confident decisions without second-guessing the source. For more information, see the [Freshness policies guide](/guides/labs/observability-update/freshness).
@@ -38,7 +40,7 @@ Unlock a comprehensive, dashboard-style view of your data platform’s health. T
 
 ### Custom catalog dashboards
 
-Give teams a focused view of the data that matters most. Create flexible, shareable dashboards organized by asset, owner, tag, or business domain so every stakeholder can monitor performance and act with clarity.
+Give teams a focused view of the data that matters most. Create flexible, shareable dashboards organized by asset, owner, tag, or business domain so every stakeholder can monitor performance and act with clarity. For more information, see the [Asset catalog with custom selections guide](/guides/labs/observability-update/asset-catalog).
 
 ### Asset facets
 

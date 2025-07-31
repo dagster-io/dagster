@@ -1,5 +1,5 @@
 ---
-title: Asset catalog
+title: Asset catalog with custom selections
 description: TK
 sidebar_position: 400
 ---
