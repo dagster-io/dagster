@@ -8,7 +8,7 @@
 - [dg] A new `docs integrations` cli is available for viewing an index of available integrations.
 - [ui] Jobs can now be filtered with a selection syntax.
 - [dagster-tableau] Dashboards containing hidden sheets are now correctly linked to upstream data sources.
-- [dagster-tableau] Tableau sheets and dashboards are now produce observation events instead of materialization events when using `refresh_and_poll` inside the `@tableau_assets` asset decorator.
+- [dagster-tableau] Tableau sheets and dashboards now produce observation events instead of materialization events when using `refresh_and_poll` inside the `@tableau_assets` asset decorator.
 
 ### Bugfixes
 
