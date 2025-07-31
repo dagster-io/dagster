@@ -21,11 +21,13 @@ Automatically diagnose Buildkite test failures for the current PR by fetching bu
 - **GitHub CLI (`gh`)**: Must be installed and authenticated
 - **Buildkite MCP Server**: Must be installed and configured
   - Installation: https://github.com/buildkite/buildkite-mcp-server
+  - API access tokens available here: https://buildkite.com/user/api-access-tokens
   - Required for fetching build logs and job details
 
 ## Output
 
 The command will:
+
 - List all failing Buildkite builds for the current PR
 - Show detailed error messages from failed jobs
 - Categorize failure types (test failures, infrastructure issues, etc.)
@@ -54,15 +56,15 @@ The command will:
 📊 Failure Analysis:
    Build: dagster-dagster #129927
    Failed Jobs: 1
-   
+
    Job: :pytest: automation 3.12
    Error Type: Test Failure
    Root Cause: test_check_docstrings_real_dagster_symbols[dagster.DagsterInstance] FAILED
-   
+
    Details: Test expects validation output but symbol is in exclude list
-   
+
 💡 Recommended Fix:
    Update test in test_integration.py to handle excluded symbols
-   
+
 🔗 Build URL: https://buildkite.com/dagster/dagster-dagster/builds/129927
 ```
