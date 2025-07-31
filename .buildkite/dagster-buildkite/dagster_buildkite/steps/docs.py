@@ -19,7 +19,7 @@ from dagster_buildkite.utils import (
 def build_repo_wide_format_docs_step() -> GroupLeafStepConfiguration:
     return (
         add_test_image(
-            CommandStepBuilder(":fountain_pen: make format_docs"),
+            CommandStepBuilder(":notebook: make format_docs"),
             AvailablePythonVersion.get_default(),
         )
         .run(
