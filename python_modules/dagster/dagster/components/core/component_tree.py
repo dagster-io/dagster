@@ -10,7 +10,11 @@ from unittest import mock
 
 from dagster_shared import check
 from dagster_shared.record import record
-from dagster_shared.utils.cached_method import get_cached_method_cache, make_cached_method_cache_key
+from dagster_shared.utils.cached_method import (
+    CACHED_METHOD_CACHE_FIELD,
+    get_cached_method_cache,
+    make_cached_method_cache_key,
+)
 from dagster_shared.utils.config import (
     discover_config_file,
     get_canonical_defs_module_name,
@@ -348,6 +352,33 @@ class ComponentTree:
                 return (cp.file_path, component_decl)
         return None
 
+    def _mark_component_as_needing_reload(
+        self, defs_path_posix: str, instance_key: Optional[Union[int, str]]
+    ) -> None:
+        key = make_cached_method_cache_key(
+            {"defs_path_posix": defs_path_posix, "instance_key": instance_key}
+        )
+        cache = get_cached_method_cache(self, "_component_and_context_at_posix_path")
+        if key in cache:
+            del cache[key]
+
+        defs_cache = get_cached_method_cache(self, "_defs_at_posix_path")
+        if key in defs_cache:
+            del defs_cache[key]
+
+        decl_cache = get_cached_method_cache(self, "_component_decl_at_posix_path")
+        if key in decl_cache:
+            del decl_cache[key]
+
+        if "find_root_decl" in getattr(self, CACHED_METHOD_CACHE_FIELD, {}):
+            del getattr(self, CACHED_METHOD_CACHE_FIELD, {})["find_root_decl"]
+        if "load_root_component" in getattr(self, CACHED_METHOD_CACHE_FIELD, {}):
+            del getattr(self, CACHED_METHOD_CACHE_FIELD, {})["load_root_component"]
+        if "build_defs" in getattr(self, CACHED_METHOD_CACHE_FIELD, {}):
+            del getattr(self, CACHED_METHOD_CACHE_FIELD, {})["build_defs"]
+        if "_component_decl_tree" in getattr(self, CACHED_METHOD_CACHE_FIELD, {}):
+            del getattr(self, CACHED_METHOD_CACHE_FIELD, {})["_component_decl_tree"]
+
     @cached_method
     def _component_and_context_at_posix_path(
         self, defs_path_posix: str, instance_key: Optional[Union[int, str]]
@@ -484,6 +515,24 @@ class ComponentTree:
             raise Exception(f"No component found for path {defs_path}")
 
         return component.component
+
+    def mark_component_changed(self, defs_path: Union[Path, ComponentPath, str]) -> None:
+        """Marks a component at the given path as changed, and needing to be reloaded. Also marks
+        all components that depend on it as changed, invalidating cached component values/defs.
+
+        Args:
+            defs_path: Path to the component to reload. If relative, resolves relative to the defs root.
+        """
+        self._mark_component_as_needing_reload(
+            *_get_canonical_component_path(self.defs_module_path, defs_path)
+        )
+        for dependent_path in self.component_tree_dependencies.get_all_dependents_of_component(
+            self.defs_module_path,
+            resolve_to_component_path(defs_path),
+        ):
+            self._mark_component_as_needing_reload(
+                *_get_canonical_component_path(self.defs_module_path, dependent_path)
+            )
 
     def build_defs_at_path(self, defs_path: Union[Path, ComponentPath, str]) -> Definitions:
         """Builds definitions from the given defs subdirectory. Currently
