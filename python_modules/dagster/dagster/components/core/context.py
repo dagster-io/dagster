@@ -17,9 +17,9 @@ from dagster.components.resolved.context import ResolutionContext
 
 if TYPE_CHECKING:
     from dagster.components.component.component import Component
+    from dagster.components.core.component_tree import ComponentTree
     from dagster.components.core.decl import ComponentDecl
     from dagster.components.core.defs_module import ComponentPath
-    from dagster.components.core.tree import ComponentTree
 
 
 RESOLUTION_CONTEXT_STASH_KEY = "component_load_context"
