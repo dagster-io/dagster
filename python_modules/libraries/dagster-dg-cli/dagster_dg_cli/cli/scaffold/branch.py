@@ -1,3 +1,4 @@
+import functools
 import json
 import os
 import re
@@ -128,11 +129,13 @@ def _branch_name_prompt(prompt: str) -> str:
     )
 
 
+@functools.cache
 def _find_claude(dg_context: DgContext) -> Optional[list[str]]:
     try:  # on PATH
         subprocess.run(
             ["claude", "--version"],
             check=False,
+            capture_output=True,
         )
         return ["claude"]
     except FileNotFoundError:
@@ -152,6 +155,25 @@ def _find_claude(dg_context: DgContext) -> Optional[list[str]]:
         pass
 
     return None
+
+
+def _run_claude(dg_context: DgContext, prompt: str, allowed_tools: list[str]) -> str:
+    """Runs Claude with the given prompt and allowed tools."""
+    claude_cmd = _find_claude(dg_context)
+    assert claude_cmd is not None
+    cmd = [
+        *claude_cmd,
+        prompt,
+        "--allowedTools",
+        ",".join(allowed_tools),
+    ]
+    output = subprocess.run(
+        cmd,
+        check=False,
+        capture_output=True,
+        text=True,
+    )
+    return output.stdout
 
 
 class InputType(ABC):
@@ -179,22 +201,10 @@ def get_branch_name_and_pr_title_from_prompt(
     """Invokes Claude under the hood to generate a reasonable, valid
     git branch name and pull request title based on the user's stated goal.
     """
-    claude_cmd = _find_claude(dg_context)
-    assert claude_cmd is not None
-
-    cmd = [
-        *claude_cmd,
-        _branch_name_prompt(input_type.get_context(user_input)),
-        "--allowedTools",
-        ",".join(input_type.additional_allowed_tools()),
-    ]
-    output = subprocess.run(
-        cmd,
-        check=False,
-        capture_output=True,
-        text=True,
+    output = _run_claude(
+        dg_context, input_type.get_context(user_input), input_type.additional_allowed_tools()
     )
-    json_output = json.loads(output.stdout.strip())
+    json_output = json.loads(output.strip())
     return json_output["branch-name"], json_output["pr-title"]
 
 
