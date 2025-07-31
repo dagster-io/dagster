@@ -55,7 +55,6 @@ def build_repo_wide_steps() -> List[StepConfiguration]:
         *build_repo_wide_ruff_steps(),
         *build_repo_wide_prettier_steps(),
         *build_buildkite_lint_steps(),
-        *build_repo_wide_format_docs_steps(),
     ]
 
 
@@ -94,19 +93,6 @@ def build_repo_wide_ruff_steps() -> List[CommandStepConfiguration]:
             "make check_ruff",
         )
         .skip_if(skip_if_no_python_changes())
-        .build(),
-    ]
-
-
-def build_repo_wide_format_docs_steps() -> List[CommandStepConfiguration]:
-    return [
-        add_test_image(
-            CommandStepBuilder(":magical_wand: format_docs"),
-            AvailablePythonVersion.get_default(),
-        )
-        .run(
-            "make format_docs",
-        )
         .build(),
     ]
 

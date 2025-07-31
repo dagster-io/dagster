@@ -1,22 +1,39 @@
 from typing import List
 
 from buildkite_shared.python_version import AvailablePythonVersion
-from buildkite_shared.step_builders.command_step_builder import CommandStepBuilder
+from buildkite_shared.step_builders.command_step_builder import (
+    CommandStepBuilder,
+)
 from buildkite_shared.step_builders.group_step_builder import (
     GroupLeafStepConfiguration,
     GroupStepBuilder,
 )
 from buildkite_shared.step_builders.step_builder import StepConfiguration
+
+from dagster_buildkite.images.versions import add_test_image
 from dagster_buildkite.utils import (
     skip_if_no_docs_changes,
 )
-from dagster_buildkite.images.versions import add_test_image
 
 
-def build_docs_steps() -> List[StepConfiguration]:
-    steps: List[StepConfiguration] = []
+def build_repo_wide_format_docs_step() -> GroupLeafStepConfiguration:
+    return (
+        add_test_image(
+            CommandStepBuilder(":fountain_pen: make format_docs"),
+            AvailablePythonVersion.get_default(),
+        )
+        .run(
+            "cd docs",
+            "yarn install",
+            "yarn format",
+        )
+        .skip_if(skip_if_no_docs_changes())
+        .build()
+    )
 
-    docs_steps: List[GroupLeafStepConfiguration] = [
+
+def build_build_docs_step():
+    return (
         add_test_image(
             CommandStepBuilder("build docs"), AvailablePythonVersion.get_default()
         )
@@ -28,15 +45,15 @@ def build_docs_steps() -> List[StepConfiguration]:
             "yarn build",
         )
         .skip_if(skip_if_no_docs_changes())
-        .build(),
-    ]
+        .build()
+    )
 
-    steps += [
+
+def build_docs_steps() -> List[StepConfiguration]:
+    return [
         GroupStepBuilder(
             name=":book: docs",
             key="docs",
-            steps=docs_steps,
+            steps=[build_build_docs_step(), build_repo_wide_format_docs_step()],
         ).build()
     ]
-
-    return steps
