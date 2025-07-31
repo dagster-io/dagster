@@ -445,3 +445,27 @@ class TestSectionHeaderEdgeCases:
             assert "attributes:" not in warnings.lower(), (
                 f"Should not warn about 'attributes:' in code blocks, got warnings: {result.warnings}"
             )
+
+    def test_see_also_with_cross_references_should_not_warn(self):
+        """Test that 'See Also:' sections with cross-references should not generate RST warnings.
+
+        This reproduces the false positive RST warning for seealso directive in dagster.template_var.
+        Napoleon converts 'See Also:' to '.. seealso::' but the RST parser incorrectly flags it.
+        """
+        docstring = """See Also:
+    - :py:class:`dagster.ComponentLoadContext`: Context object available to template variables
+"""
+        result = validate_docstring_text(docstring, "test.template_var_function")
+
+        # Should not generate RST warnings about seealso directive
+        # This currently fails because the RST parser generates a false positive warning
+        if result.has_warnings():
+            warnings = " ".join(result.warnings)
+            # The specific warning we want to avoid
+            assert ".. seealso::" not in warnings, (
+                f"Should not warn about seealso directive, got warnings: {result.warnings}"
+            )
+            # More general check for seealso-related warnings
+            assert "seealso" not in warnings.lower(), (
+                f"Should not have seealso warnings, got warnings: {result.warnings}"
+            )
