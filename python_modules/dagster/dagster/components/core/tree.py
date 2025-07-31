@@ -183,7 +183,7 @@ class ComponentTree:
     @cached_property
     def decl_load_context(self):
         return ComponentDeclLoadContext(
-            path=self.defs_module_path,
+            component_path=ComponentPath(file_path=self.defs_module_path, instance_key=None),
             project_root=self.project_root,
             defs_module_path=self.defs_module_path,
             defs_module_name=self.defs_module_name,
@@ -391,6 +391,12 @@ class ComponentTree:
         )
         return key in cache
 
+    def is_fully_loaded(self) -> bool:
+        return self._has_loaded_component_at_path(self.defs_module_path)
+
+    def has_built_all_defs(self) -> bool:
+        return self._has_built_defs_at_path(self.defs_module_path)
+
     def _add_string_representation(
         self,
         lines: list[str],
@@ -516,7 +522,7 @@ class TestComponentTree(ComponentTree):
     @cached_property
     def decl_load_context(self):
         return ComponentDeclLoadContext(
-            path=self.defs_module_path,
+            component_path=ComponentPath(file_path=self.defs_module_path, instance_key=None),
             project_root=self.project_root,
             defs_module_path=self.defs_module_path,
             defs_module_name=self.defs_module_name,
@@ -541,7 +547,7 @@ class LegacyAutoloadingComponentTree(ComponentTree):
     @cached_property
     def decl_load_context(self):
         return ComponentDeclLoadContext(
-            path=self.defs_module_path,
+            component_path=ComponentPath(file_path=self.defs_module_path, instance_key=None),
             project_root=self.project_root,
             defs_module_path=self.defs_module_path,
             defs_module_name=self.defs_module_name,

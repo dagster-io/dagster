@@ -161,7 +161,12 @@ def test_definitions_component_with_multiple_definitions_objects() -> None:
 
 @pytest.mark.parametrize("component_tree", ["definitions/single_file"], indirect=True)
 def test_autoload_single_file(component_tree: ComponentTree) -> None:
+    assert not component_tree.is_fully_loaded()
+    component_tree.load_root_component()
+    assert component_tree.is_fully_loaded()
     defs = component_tree.build_defs()
+    assert component_tree.has_built_all_defs()
+
     assert {spec.key for spec in defs.resolve_all_asset_specs()} == {dg.AssetKey("an_asset")}
     assert (
         component_tree.to_string_representation()

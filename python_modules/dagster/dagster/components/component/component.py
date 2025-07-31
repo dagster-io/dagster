@@ -269,8 +269,8 @@ class Component(ABC):
         if issubclass(cls, Resolvable):
             context_with_injected_scope = context.with_rendering_scope(
                 {
-                    "load_component_at_path": context.component_tree.load_component_at_path,
-                    "build_defs_at_path": context.component_tree.build_defs_at_path,
+                    "load_component_at_path": context.load_component_at_path,
+                    "build_defs_at_path": context.build_defs_at_path,
                 }
             )
             return (
