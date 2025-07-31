@@ -157,15 +157,29 @@ def _find_claude(dg_context: DgContext) -> Optional[list[str]]:
     return None
 
 
-def _run_claude(dg_context: DgContext, prompt: str, allowed_tools: list[str]) -> str:
+MAX_TURNS = 20
+
+
+def _run_claude(
+    dg_context: DgContext,
+    prompt: str,
+    allowed_tools: list[str],
+    max_turns=MAX_TURNS,
+    output_format="text",
+) -> str:
     """Runs Claude with the given prompt and allowed tools."""
     claude_cmd = _find_claude(dg_context)
     assert claude_cmd is not None
     cmd = [
         *claude_cmd,
+        "-p",
         prompt,
         "--allowedTools",
         ",".join(allowed_tools),
+        "--maxTurns",
+        str(max_turns),
+        "--outputFormat",
+        output_format,
     ]
     output = subprocess.run(
         cmd,
@@ -202,7 +216,10 @@ def get_branch_name_and_pr_title_from_prompt(
     git branch name and pull request title based on the user's stated goal.
     """
     output = _run_claude(
-        dg_context, input_type.get_context(user_input), input_type.additional_allowed_tools()
+        dg_context,
+        _branch_name_prompt(input_type.get_context(user_input)),
+        input_type.additional_allowed_tools(),
+        output_format="text",
     )
     json_output = json.loads(output.strip())
     return json_output["branch-name"], json_output["pr-title"]
