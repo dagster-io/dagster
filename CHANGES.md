@@ -13,7 +13,7 @@
 ### Bugfixes
 
 - Fixed a set of issues with the asset backfill system that could, in rare cases, cause runs to be kicked off out of order or never be kicked off.
-- Fixed issue where additional args passed into a PermissiveConfig object could not be accesssed via dot notation (thanks [@CarlyAThomas](https://github.com/CarlyAThomas) and [@BoLiuV5](https://github.com/BoLiuV5)!)
+- Fixed issue where additional args passed into a PermissiveConfig object could not be accessed via dot notation (thanks [@CarlyAThomas](https://github.com/CarlyAThomas) and [@BoLiuV5](https://github.com/BoLiuV5)!)
 - Duplicate definitions are no longer incorrectly created when including jobs for schedules & sensors when loading from a `defs` folder.
 - [components] Fixed an incorrect import being generated when scaffolding a component in Python. (thanks, [@ajohnson5](https://github.com/ajohnson5)!)
 - [dg] when assets are selected via `--assets`, other definitions types will no longer be displayed.
