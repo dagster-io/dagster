@@ -4,7 +4,7 @@ description: With asset health criteria, you can quickly identify which datasets
 sidebar_position: 300
 ---
 
-Quickly identify which assets are performing well and which need attention with health indicators that highlight data quality and platform reliability in real time.
+You can quickly identify which assets are performing well and which need attention with health indicators that highlight data quality and platform reliability in real time. These indicators appear on the home page, throughout the asset catalog, and in the asset lineage view.
 
 ## Asset health indicators
 
