@@ -10,7 +10,7 @@ from buildkite_shared.environment import (
     safe_getenv,
     message_contains,
 )
-from dagster_buildkite.quarantine_utils import (
+from buildkite_shared.quarantine import (
     get_buildkite_quarantined_objects,
     filter_and_print_steps_by_quarantined,
 )
