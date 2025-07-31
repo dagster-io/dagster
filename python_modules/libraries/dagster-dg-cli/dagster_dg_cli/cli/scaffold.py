@@ -145,11 +145,17 @@ class ScaffoldDefsGroup(DgClickGroup):
             aliases=aliases,
         )
         @click.argument("defs_path", type=str)
+        @click.option(
+            "--append",
+            is_flag=True,
+            help="Append to existing defs file, rather than creating a new one.",
+        )
         @click.pass_context
         @cli_telemetry_wrapper
         def scaffold_command(
             cli_context: click.Context,
             defs_path: str,
+            append: bool,
             **other_opts: Any,
         ) -> None:
             f"""Scaffold a {key.name} object.
@@ -196,6 +202,7 @@ class ScaffoldDefsGroup(DgClickGroup):
                 key_value_scaffolder_params,
                 scaffolder_format,
                 json_scaffolder_params,
+                append,
             )
 
         if obj.is_component:
@@ -908,14 +915,19 @@ def _core_scaffold(
     key_value_params: Mapping[str, Any],
     scaffold_format: ScaffoldFormatOptions,
     json_params: Optional[Mapping[str, Any]] = None,
+    append: bool = False,
 ) -> None:
     from dagster.components.core.package_entry import is_scaffoldable_object_key
     from pydantic import ValidationError
 
     if not is_scaffoldable_object_key(object_key):
         exit_with_error(f"Scaffoldable object type `{object_key.to_typename()}` not found.")
-    elif dg_context.has_object_at_defs_path(defs_path):
+    elif not append and dg_context.has_object_at_defs_path(defs_path):
         exit_with_error(f"Path `{(dg_context.defs_path / defs_path).absolute()}` already exists.")
+    elif append and not (dg_context.defs_path / defs_path).exists():
+        exit_with_error(
+            f"Path `{(dg_context.defs_path / defs_path).absolute()}` does not exist. When using --append, you must provide a path to an existing file."
+        )
 
     # Specified key-value params will be passed to this function with their default value of
     # `None` even if the user did not set them. Filter down to just the ones that were set by
@@ -938,12 +950,19 @@ def _core_scaffold(
         scaffold_params = None
 
     try:
+        target_path = Path(dg_context.defs_path) / defs_path
+        if append:
+            # When appending, the target path should be the file itself, not the directory.
+            # The scaffolder will then write to the parent of this path.
+            check.invariant(target_path.is_file(), "When using --append, the path must be a file.")
+
         scaffold_registry_object(
-            Path(dg_context.defs_path) / defs_path,
+            target_path,
             object_key.to_typename(),
             scaffold_params,
             dg_context,
             scaffold_format,
+            append,
         )
     except ValidationError as e:
         exit_with_error(
