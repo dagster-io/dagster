@@ -73,7 +73,8 @@ def test_host_run_worker():
         }
         execution_plan = create_execution_plan(
             job_with_resources,
-            run_config,
+            instance,
+            run_config=run_config,
         )
 
         dagster_run = instance.create_run_for_job(
@@ -121,7 +122,8 @@ def test_custom_executor_fn():
         }
         execution_plan = create_execution_plan(
             job_with_resources,
-            run_config,
+            instance,
+            run_config=run_config,
         )
 
         dagster_run = instance.create_run_for_job(

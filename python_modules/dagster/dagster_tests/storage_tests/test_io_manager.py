@@ -171,7 +171,7 @@ def test_fs_io_manager_reexecution():
 
 def test_can_reexecute():
     job_def = define_job(dg.fs_io_manager, {})
-    plan = create_execution_plan(job_def)
+    plan = create_execution_plan(job_def, DagsterInstance.ephemeral())
     assert plan.artifacts_persisted
 
 
@@ -312,7 +312,7 @@ def execute_job_with_steps(
 ):
     recon_job = dg.reconstructable(job_fn)
     plan = create_execution_plan(
-        recon_job, step_keys_to_execute=step_keys_to_execute, run_config=run_config
+        recon_job, instance, step_keys_to_execute=step_keys_to_execute, run_config=run_config
     )
     dagster_run = instance.create_run_for_job(
         job_def=recon_job.get_definition(),
@@ -626,7 +626,7 @@ def test_get_output_context_with_resources():
         ),
     ):
         get_output_context(
-            execution_plan=create_execution_plan(basic_job),
+            execution_plan=create_execution_plan(basic_job, DagsterInstance.ephemeral()),
             job_def=basic_job,
             resolved_run_config=ResolvedRunConfig.build(basic_job),
             step_output_handle=StepOutputHandle("basic_op", "result"),

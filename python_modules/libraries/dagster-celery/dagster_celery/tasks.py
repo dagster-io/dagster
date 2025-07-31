@@ -48,6 +48,7 @@ def create_task(celery_app, **task_kwargs):
 
         execution_plan = create_execution_plan(
             recon_job,
+            instance,
             dagster_run.run_config,  # pyright: ignore[reportOptionalMemberAccess]
             step_keys_to_execute=execute_step_args.step_keys_to_execute,
             known_state=execute_step_args.known_state,

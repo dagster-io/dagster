@@ -296,7 +296,7 @@ def test_create_job_snapshot():
 
 def test_create_execution_plan_snapshot():
     with dg.instance_for_test() as instance:
-        execution_plan = create_execution_plan(noop_job)
+        execution_plan = create_execution_plan(noop_job, instance)
 
         ep_snapshot = snapshot_from_execution_plan(execution_plan, noop_job.get_job_snapshot_id())
         ep_snapshot_id = create_execution_plan_snapshot_id(ep_snapshot)
@@ -373,7 +373,7 @@ def test_create_run_without_asset_execution_type_on_snapshot():
 
 def test_create_run_with_asset_partitions():
     with dg.instance_for_test() as instance:
-        execution_plan = create_execution_plan(noop_asset_job)
+        execution_plan = create_execution_plan(noop_asset_job, instance)
 
         ep_snapshot = snapshot_from_execution_plan(
             execution_plan, noop_asset_job.get_job_snapshot_id()

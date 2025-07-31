@@ -291,7 +291,7 @@ class ScenarioState:
                 asset_keys=list(asset_keys)
             )
             assert job_def
-            execution_plan = create_execution_plan(job_def, run_config={})
+            execution_plan = create_execution_plan(job_def, self.instance, run_config={})
             self.instance.create_run_for_job(
                 job_def=job_def,
                 run_id=run_id,

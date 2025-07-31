@@ -31,12 +31,14 @@ def define_foo_job():
 def test_recover_with_step_in_flight():
     foo_job = define_foo_job()
 
-    with dg.instance_for_test():
+    with dg.instance_for_test() as instance:
         with pytest.raises(
             dg.DagsterInvariantViolationError,
             match="Execution finished without completing the execution plan",
         ):
-            with create_execution_plan(foo_job).start(RetryMode.DISABLED) as active_execution:
+            with create_execution_plan(foo_job, instance).start(
+                RetryMode.DISABLED
+            ) as active_execution:
                 steps = active_execution.get_steps_to_execute()
                 assert len(steps) == 1
                 step_1 = steps[0]
@@ -52,7 +54,7 @@ def test_recover_with_step_in_flight():
 
         # CRASH!- we've closed the active execution. Now we recover, spinning up a new one
 
-        with create_execution_plan(foo_job).start(RetryMode.DISABLED) as active_execution:
+        with create_execution_plan(foo_job, instance).start(RetryMode.DISABLED) as active_execution:
             possibly_in_flight_steps = active_execution.rebuild_from_events(
                 [
                     dg.DagsterEvent(
@@ -117,12 +119,14 @@ def test_recover_in_between_steps():
         ),
     ]
 
-    with dg.instance_for_test():
+    with dg.instance_for_test() as instance:
         with pytest.raises(
             dg.DagsterInvariantViolationError,
             match="Execution finished without completing the execution plan",
         ):
-            with create_execution_plan(two_op_job).start(RetryMode.DISABLED) as active_execution:
+            with create_execution_plan(two_op_job, instance).start(
+                RetryMode.DISABLED
+            ) as active_execution:
                 steps = active_execution.get_steps_to_execute()
                 assert len(steps) == 1
                 step_1 = steps[0]
@@ -134,7 +138,9 @@ def test_recover_in_between_steps():
 
         # CRASH!- we've closed the active execution. Now we recover, spinning up a new one
 
-        with create_execution_plan(two_op_job).start(RetryMode.DISABLED) as active_execution:
+        with create_execution_plan(two_op_job, instance).start(
+            RetryMode.DISABLED
+        ) as active_execution:
             possibly_in_flight_steps = active_execution.rebuild_from_events(events)
             assert len(possibly_in_flight_steps) == 1
             step_2 = possibly_in_flight_steps[0]
@@ -211,7 +217,7 @@ def test_active_concurrency(use_tags):
                 match="Execution finished without completing the execution plan",
             ):
                 with InstanceConcurrencyContext(instance, run) as instance_concurrency_context:
-                    with create_execution_plan(foo_job).start(
+                    with create_execution_plan(foo_job, instance).start(
                         RetryMode.DISABLED,
                         instance_concurrency_context=instance_concurrency_context,
                     ) as active_execution:
@@ -295,80 +301,82 @@ def define_concurrency_retry_job(use_tags):
 def test_active_concurrency_sleep(use_tags):
     instance_concurrency_context = MockInstanceConcurrencyContext(2.0)
     foo_job = define_concurrency_retry_job(use_tags)
-    with pytest.raises(dg.DagsterExecutionInterruptedError):
-        with create_execution_plan(foo_job).start(
-            RetryMode.ENABLED,
-            instance_concurrency_context=instance_concurrency_context,
-        ) as active_execution:
-            steps = active_execution.get_steps_to_execute()
+    with dg.instance_for_test() as instance:
+        with pytest.raises(dg.DagsterExecutionInterruptedError):
+            with create_execution_plan(foo_job, instance).start(
+                RetryMode.ENABLED,
+                instance_concurrency_context=instance_concurrency_context,
+            ) as active_execution:
+                steps = active_execution.get_steps_to_execute()
 
-            assert len(steps) == 1
-            step = steps[0]
-            assert step.key == "bar_op"
+                assert len(steps) == 1
+                step = steps[0]
+                assert step.key == "bar_op"
 
-            # start the step
-            active_execution.handle_event(
-                dg.DagsterEvent(
-                    DagsterEventType.STEP_START.value,
-                    job_name=foo_job.name,
-                    step_key=step.key,
+                # start the step
+                active_execution.handle_event(
+                    dg.DagsterEvent(
+                        DagsterEventType.STEP_START.value,
+                        job_name=foo_job.name,
+                        step_key=step.key,
+                    )
                 )
-            )
 
-            assert instance_concurrency_context.has_pending_claims()
-            assert math.isclose(active_execution.sleep_interval(), 2.0, abs_tol=0.1)
+                assert instance_concurrency_context.has_pending_claims()
+                assert math.isclose(active_execution.sleep_interval(), 2.0, abs_tol=0.1)
 
-            error_info = SerializableErrorInfo("Exception", [], None)
+                error_info = SerializableErrorInfo("Exception", [], None)
 
-            # retry the step
-            active_execution.handle_event(
-                dg.DagsterEvent(
-                    DagsterEventType.STEP_UP_FOR_RETRY.value,
-                    job_name=foo_job.name,
-                    step_key=step.key,
-                    event_specific_data=StepRetryData(error=error_info, seconds_to_wait=1),
+                # retry the step
+                active_execution.handle_event(
+                    dg.DagsterEvent(
+                        DagsterEventType.STEP_UP_FOR_RETRY.value,
+                        job_name=foo_job.name,
+                        step_key=step.key,
+                        event_specific_data=StepRetryData(error=error_info, seconds_to_wait=1),
+                    )
                 )
-            )
-            assert math.isclose(active_execution.sleep_interval(), 1.0, abs_tol=0.1)
-            active_execution.mark_interrupted()
+                assert math.isclose(active_execution.sleep_interval(), 1.0, abs_tol=0.1)
+                active_execution.mark_interrupted()
 
     instance_concurrency_context = MockInstanceConcurrencyContext(2.0)
-    with pytest.raises(dg.DagsterExecutionInterruptedError):
-        with create_execution_plan(foo_job).start(
-            RetryMode.ENABLED,
-            instance_concurrency_context=instance_concurrency_context,
-        ) as active_execution:
-            steps = active_execution.get_steps_to_execute()
+    with dg.instance_for_test() as instance:
+        with pytest.raises(dg.DagsterExecutionInterruptedError):
+            with create_execution_plan(foo_job, instance).start(
+                RetryMode.ENABLED,
+                instance_concurrency_context=instance_concurrency_context,
+            ) as active_execution:
+                steps = active_execution.get_steps_to_execute()
 
-            assert len(steps) == 1
-            step = steps[0]
-            assert step.key == "bar_op"
+                assert len(steps) == 1
+                step = steps[0]
+                assert step.key == "bar_op"
 
-            # start the step
-            active_execution.handle_event(
-                dg.DagsterEvent(
-                    DagsterEventType.STEP_START.value,
-                    job_name=foo_job.name,
-                    step_key=step.key,
+                # start the step
+                active_execution.handle_event(
+                    dg.DagsterEvent(
+                        DagsterEventType.STEP_START.value,
+                        job_name=foo_job.name,
+                        step_key=step.key,
+                    )
                 )
-            )
 
-            assert instance_concurrency_context.has_pending_claims()
-            assert math.isclose(active_execution.sleep_interval(), 2.0, abs_tol=0.1)
+                assert instance_concurrency_context.has_pending_claims()
+                assert math.isclose(active_execution.sleep_interval(), 2.0, abs_tol=0.1)
 
-            error_info = SerializableErrorInfo("Exception", [], None)
+                error_info = SerializableErrorInfo("Exception", [], None)
 
-            # retry the step
-            active_execution.handle_event(
-                dg.DagsterEvent(
-                    DagsterEventType.STEP_UP_FOR_RETRY.value,
-                    job_name=foo_job.name,
-                    step_key=step.key,
-                    event_specific_data=StepRetryData(error=error_info, seconds_to_wait=3),
+                # retry the step
+                active_execution.handle_event(
+                    dg.DagsterEvent(
+                        DagsterEventType.STEP_UP_FOR_RETRY.value,
+                        job_name=foo_job.name,
+                        step_key=step.key,
+                        event_specific_data=StepRetryData(error=error_info, seconds_to_wait=3),
+                    )
                 )
-            )
-            assert math.isclose(active_execution.sleep_interval(), 2.0, abs_tol=0.1)
-            active_execution.mark_interrupted()
+                assert math.isclose(active_execution.sleep_interval(), 2.0, abs_tol=0.1)
+                active_execution.mark_interrupted()
 
 
 @pytest.mark.parametrize("use_tags", [True, False])
@@ -395,7 +403,7 @@ def test_active_concurrency_changing_default(use_tags):
             run = instance.create_run_for_job(foo_job, run_id=run_id)
 
             with InstanceConcurrencyContext(instance, run) as instance_concurrency_context:
-                with create_execution_plan(foo_job).start(
+                with create_execution_plan(foo_job, instance).start(
                     RetryMode.DISABLED,
                     instance_concurrency_context=instance_concurrency_context,
                 ) as active_execution:

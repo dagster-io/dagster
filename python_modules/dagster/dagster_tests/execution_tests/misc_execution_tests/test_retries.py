@@ -182,7 +182,7 @@ def test_retry_deferral():
     with dg.instance_for_test() as instance:
         job_def = define_retry_limit_job()
         events = execute_plan(
-            create_execution_plan(job_def),
+            create_execution_plan(job_def, instance),
             InMemoryJob(job_def),
             dagster_run=dg.DagsterRun(job_name="retry_limits", run_id="42"),
             retry_mode=RetryMode.DEFERRED,

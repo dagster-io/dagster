@@ -308,7 +308,7 @@ def initialize_step_context(
 
     recon_job = dg.reconstructable(job_def_fn)
 
-    plan = create_execution_plan(recon_job, run.run_config)
+    plan = create_execution_plan(recon_job, instance, run_config=run.run_config)
 
     initialization_manager = PlanExecutionContextManager(
         job=recon_job,

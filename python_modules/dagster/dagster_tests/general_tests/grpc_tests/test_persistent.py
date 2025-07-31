@@ -35,6 +35,12 @@ from dagster_shared import seven
 from dagster_shared.version import __version__ as dagster_shared_version
 
 
+@pytest.fixture(scope="session", autouse=True)
+def setup_dagster_home():
+    with dg.instance_for_test(set_dagster_home=True) as instance:
+        yield instance
+
+
 def entrypoints():
     return [
         ["dagster", "api", "grpc"],

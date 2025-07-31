@@ -12,7 +12,7 @@ import pytest
 from dagster._core.errors import DagsterRunAlreadyExists, DagsterSnapshotDoesNotExist
 from dagster._core.events import DagsterEvent, DagsterEventType, JobFailureData, RunFailureReason
 from dagster._core.execution.backfill import BulkActionsFilter, BulkActionStatus, PartitionBackfill
-from dagster._core.instance import InstanceType
+from dagster._core.instance import DagsterInstance, InstanceType
 from dagster._core.launcher.sync_in_memory_run_launcher import SyncInMemoryRunLauncher
 from dagster._core.remote_representation import (
     ManagedGrpcPythonEnvCodeLocationOrigin,
@@ -1151,7 +1151,7 @@ class TestRunStorage:
         from dagster._core.snap import snapshot_from_execution_plan
 
         job_def = dg.GraphDefinition(name="some_pipeline", node_defs=[]).to_job()
-        execution_plan = create_execution_plan(job_def)
+        execution_plan = create_execution_plan(job_def, DagsterInstance.ephemeral())
         ep_snapshot = snapshot_from_execution_plan(execution_plan, job_def.get_job_snapshot_id())
 
         snapshot_id = storage.add_execution_plan_snapshot(ep_snapshot)

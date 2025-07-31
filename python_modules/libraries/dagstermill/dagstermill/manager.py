@@ -165,6 +165,7 @@ class Manager:
 
         execution_plan = create_execution_plan(
             self.job,
+            instance,
             run_config,
             step_keys_to_execute=dagster_run.step_keys_to_execute,
         )
@@ -273,7 +274,7 @@ class Manager:
         self.job = job_def
 
         job = InMemoryJob(job_def)
-        execution_plan = create_execution_plan(job, run_config)
+        execution_plan = create_execution_plan(job, DagsterInstance.ephemeral(), run_config)
 
         with scoped_job_context(
             execution_plan,

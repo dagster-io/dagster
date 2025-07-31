@@ -101,14 +101,14 @@ def test_adls2_pickle_io_manager_deletes_recursively(storage_account, file_syste
     }
 
     run_id = make_new_run_id()
+    instance = DagsterInstance.ephemeral()
 
     resolved_run_config = ResolvedRunConfig.build(job, run_config=run_config)
-    execution_plan = create_execution_plan(job, run_config)
+    execution_plan = create_execution_plan(job, instance, run_config=run_config)
 
     assert execution_plan.get_step_by_key("return_one")
 
     step_keys = ["return_one"]
-    instance = DagsterInstance.ephemeral()
     dagster_run = DagsterRun(job_name=job.name, run_id=run_id, run_config=run_config)
 
     return_one_step_events = list(
@@ -171,14 +171,14 @@ def test_adls2_pickle_io_manager_execution(storage_account, file_system, credent
     }
 
     run_id = make_new_run_id()
+    instance = DagsterInstance.ephemeral()
 
     resolved_run_config = ResolvedRunConfig.build(job, run_config=run_config)
-    execution_plan = create_execution_plan(job, run_config)
+    execution_plan = create_execution_plan(job, instance, run_config=run_config)
 
     assert execution_plan.get_step_by_key("return_one")
 
     step_keys = ["return_one"]
-    instance = DagsterInstance.ephemeral()
     dagster_run = DagsterRun(job_name=job.name, run_id=run_id, run_config=run_config)
 
     return_one_step_events = list(

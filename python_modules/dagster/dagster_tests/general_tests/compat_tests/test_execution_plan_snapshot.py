@@ -185,7 +185,7 @@ def test_execution_plan_snapshot_backcompat():
                 the_job = dg.reconstructable(get_dynamic_job)
 
                 # First create a brand new plan from the pipeline and validate it
-                new_plan = create_execution_plan(the_job, run_config=run.run_config)
+                new_plan = create_execution_plan(the_job, instance, run_config=run.run_config)
                 _validate_execution_plan(new_plan)
 
                 # Create a snapshot and rebuild it, validate the rebuilt plan
