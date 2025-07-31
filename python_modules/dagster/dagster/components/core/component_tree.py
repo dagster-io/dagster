@@ -85,6 +85,10 @@ class ComponentTreeException(Exception):
 
 
 class ComponentTreeDependencies:
+    """Stateful class which tracks the dependencies between components,
+    used when reloading a subset of the component tree.
+    """
+
     def __init__(self):
         self._component_load_dependency_dict = defaultdict(set)
         self._component_defs_dependency_dict = defaultdict(set)
@@ -352,6 +356,12 @@ class ComponentTree:
     def mark_component_load_dependency(
         self, from_path: ComponentPath, to_path: ResolvableToComponentPath
     ) -> None:
+        """Marks a dependency between the component at `from_path` and the component at `to_path`.
+
+        Args:
+            from_path: The path to the component that depends on the component at `to_path`.
+            to_path: The path to the component that the component at `from_path` depends on.
+        """
         self.component_tree_dependencies.mark_component_load_dependency(
             self.defs_module_path, from_path, to_path
         )
@@ -359,6 +369,13 @@ class ComponentTree:
     def mark_component_defs_dependency(
         self, from_path: ComponentPath, to_path: ResolvableToComponentPath
     ) -> None:
+        """Marks a dependency between the component at `from_path` on the defs of
+        the component at `to_path`.
+
+        Args:
+            from_path: The path to the component that depends on the defs of the component at `to_path`.
+            to_path: The path to the component that the component at `from_path` depends on.
+        """
         self.component_tree_dependencies.mark_component_defs_dependency(
             self.defs_module_path, from_path, to_path
         )
