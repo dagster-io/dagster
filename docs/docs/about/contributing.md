@@ -50,7 +50,6 @@ You can develop for Dagster using macOS, Linux, or Windows. If using Windows, yo
   <summary>Note for Macs with an Apple silicon chip</summary>
 
     Some users have reported installation problems due to missing wheels for arm64 Macs when installing the `grpcio` package. To install the `dagster` development environment using our pre-built wheel of the `grpcio` package for M1, M2, and M3 machines, run `make dev_install_m1_grpcio_wheel` instead of `make dev_install`.
-
  </details>
 
 6. Verify `dagster` and `dagster-webserver` are installed and editable
