@@ -1,6 +1,6 @@
 # Changelog
 
-## 1.11.4.rc3 (core) / 0.27.4 (libraries)
+## 1.11.4 (core) / 0.27.4 (libraries)
 
 ### New
 
