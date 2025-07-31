@@ -175,7 +175,6 @@ class ComponentTreeDependencyTracker:
                 | self._component_defs_dependents_dict[canonical_path]
             )
 
-            # Add direct dependents to result first
             for dependent_file_path, dependent_instance_key in direct_dependents:
                 dependent_component_path = ComponentPath(
                     file_path=Path(dependent_file_path).relative_to(defs_module_path),
@@ -189,7 +188,6 @@ class ComponentTreeDependencyTracker:
             for dependent_canonical_path in direct_dependents:
                 _get_all_dependents_recursive(dependent_canonical_path, visited, result)
 
-        # Convert component_path to canonical form for lookup
         canonical_target_path = _get_canonical_component_path(defs_module_path, component_path)
 
         result = []
