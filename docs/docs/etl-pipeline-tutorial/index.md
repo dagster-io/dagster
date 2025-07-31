@@ -43,7 +43,7 @@ To follow the steps in this tutorial, you'll need:
          ```shell
          uvx -U create-dagster project etl-tutorial
          ```
-      
+
       2. Respond `y` to the prompt to run `uv sync` after scaffolding
 
          ![Responding y to uv sync prompt](/images/getting-started/quickstart/uv_sync_yes.png)
@@ -81,7 +81,7 @@ To follow the steps in this tutorial, you'll need:
          ```shell
          cd etl-tutorial
          ```
-      
+
       3. Create and activate a virtual environment:
 
          <Tabs>
@@ -108,6 +108,7 @@ To follow the steps in this tutorial, you'll need:
          ```shell
          pip install --editable .
          ```
+
    </TabItem>
 </Tabs>
 

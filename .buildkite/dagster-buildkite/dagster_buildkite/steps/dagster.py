@@ -2,11 +2,8 @@ import os
 from glob import glob
 from typing import List
 
-from dagster_buildkite.defines import GIT_REPO_ROOT
-from buildkite_shared.python_packages import PythonPackages
-from dagster_buildkite.images.versions import add_test_image
 from buildkite_shared.environment import is_release_branch, safe_getenv
-from buildkite_shared.uv import UV_PIN
+from buildkite_shared.python_packages import PythonPackages
 from buildkite_shared.python_version import AvailablePythonVersion
 from buildkite_shared.step_builders.command_step_builder import (
     CommandStepBuilder,
@@ -14,6 +11,10 @@ from buildkite_shared.step_builders.command_step_builder import (
 )
 from buildkite_shared.step_builders.group_step_builder import GroupStepBuilder
 from buildkite_shared.step_builders.step_builder import StepConfiguration
+from buildkite_shared.uv import UV_PIN
+
+from dagster_buildkite.defines import GIT_REPO_ROOT
+from dagster_buildkite.images.versions import add_test_image
 from dagster_buildkite.steps.helm import build_helm_steps
 from dagster_buildkite.steps.integration import build_integration_steps
 from dagster_buildkite.steps.packages import (

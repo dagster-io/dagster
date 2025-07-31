@@ -144,11 +144,13 @@ The `@public` annotation system provides automatic filtering, but **only applies
 ### How Symbols Reach Documentation
 
 1. **Top-level exports** (like `dagster.asset`):
+
    - Exported in module `__init__.py` files
    - Explicitly documented in RST files with appropriate autodoc directives
    - May or may not have `@public` annotation (not required)
 
 2. **Class members**:
+
    - Must be marked with `@public` annotation to appear in documentation
    - Only filtered when parent class uses `:members:` option in RST files
 

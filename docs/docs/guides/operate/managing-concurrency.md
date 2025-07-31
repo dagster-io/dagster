@@ -134,7 +134,6 @@ The default limit for op execution within a run depends on which executor you ar
   title="src/<project_name>/defs/executor.py"
 />
 
-
 ## Prevent runs from starting if another run is already occurring (advanced)
 
 You can use Dagster's rich metadata to use a schedule or a sensor to only start a run when there are no currently running jobs.

@@ -23,6 +23,7 @@
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
     "format": "prettier --write .",
+    "format_check": "prettier --check .",
     "format:diff": "prettier --list-different ."
   },
   "dependencies": {
