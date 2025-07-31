@@ -23,7 +23,6 @@
 - Fixed typo in the `polars.md` example doc (thanks [@j1wilmot](https://github.com/j1wilmot)!)
 - Fixed a typo in the ETL tutorial docs (thanks [@yumazak](https://github.com/yumazak)!)
 
-
 ## 1.11.3 (core) / 0.27.3 (libraries)
 
 ### New
