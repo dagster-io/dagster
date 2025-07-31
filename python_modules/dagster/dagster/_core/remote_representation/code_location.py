@@ -117,7 +117,7 @@ class CodeLocation(AbstractContextManager):
         run_config: Mapping[str, object],
         step_keys_to_execute: Optional[Sequence[str]],
         known_state: Optional[KnownExecutionState],
-        instance: Optional[DagsterInstance] = None,
+        instance: DagsterInstance,
     ) -> RemoteExecutionPlan: ...
 
     @abstractmethod
@@ -127,7 +127,7 @@ class CodeLocation(AbstractContextManager):
         run_config: Mapping[str, object],
         step_keys_to_execute: Optional[Sequence[str]],
         known_state: Optional[KnownExecutionState],
-        instance: Optional[DagsterInstance] = None,
+        instance: DagsterInstance,
     ) -> RemoteExecutionPlan: ...
 
     def _get_remote_job_from_subset_result(
@@ -504,7 +504,7 @@ class InProcessCodeLocation(CodeLocation):
         run_config: Mapping[str, object],
         step_keys_to_execute: Optional[Sequence[str]],
         known_state: Optional[KnownExecutionState],
-        instance: Optional[DagsterInstance] = None,
+        instance: DagsterInstance,
     ) -> RemoteExecutionPlan:
         return self.get_execution_plan(
             remote_job,
@@ -520,7 +520,7 @@ class InProcessCodeLocation(CodeLocation):
         run_config: Mapping[str, object],
         step_keys_to_execute: Optional[Sequence[str]],
         known_state: Optional[KnownExecutionState],
-        instance: Optional[DagsterInstance] = None,
+        instance: DagsterInstance,
     ) -> RemoteExecutionPlan:
         check.inst_param(remote_job, "remote_job", RemoteJob)
         check.mapping_param(run_config, "run_config")
@@ -538,10 +538,10 @@ class InProcessCodeLocation(CodeLocation):
                 asset_selection=remote_job.asset_selection,
                 asset_check_selection=remote_job.asset_check_selection,
             ),
-            instance=instance or DagsterInstance.get(),
             run_config=run_config,
             step_keys_to_execute=step_keys_to_execute,
             known_state=known_state,
+            instance=instance,
         )
         return RemoteExecutionPlan(
             execution_plan_snapshot=snapshot_from_execution_plan(
@@ -881,7 +881,7 @@ class GrpcServerCodeLocation(CodeLocation):
         run_config: Mapping[str, Any],
         step_keys_to_execute: Optional[Sequence[str]],
         known_state: Optional[KnownExecutionState],
-        instance: Optional[DagsterInstance] = None,
+        instance: DagsterInstance,
     ) -> RemoteExecutionPlan:
         from dagster._api.snapshot_execution_plan import sync_get_external_execution_plan_grpc
 

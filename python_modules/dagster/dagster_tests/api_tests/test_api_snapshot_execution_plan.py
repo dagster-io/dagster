@@ -49,11 +49,19 @@ async def test_async_execution_plan_grpc(instance: DagsterInstance):
 
         assert (
             code_location.get_execution_plan(
-                job, run_config={}, step_keys_to_execute=None, known_state=None
+                job,
+                run_config={},
+                step_keys_to_execute=None,
+                known_state=None,
+                instance=DagsterInstance.ephemeral(),
             ).execution_plan_snapshot
             == (
                 await code_location.gen_execution_plan(
-                    job, run_config={}, step_keys_to_execute=None, known_state=None
+                    job,
+                    run_config={},
+                    step_keys_to_execute=None,
+                    known_state=None,
+                    instance=DagsterInstance.ephemeral(),
                 )
             ).execution_plan_snapshot
         )
