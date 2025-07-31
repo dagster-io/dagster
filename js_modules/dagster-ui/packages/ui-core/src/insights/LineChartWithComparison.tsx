@@ -53,7 +53,7 @@ export type LineChartMetrics = {
   };
 };
 
-const getDataset = (
+export const getDataset = (
   metrics: LineChartMetrics,
   formatDatetime: (date: Date, options: Intl.DateTimeFormatOptions) => string,
 ): ChartData<'line', (number | null)[], string> => {
