@@ -1,6 +1,5 @@
 import os
 from glob import glob
-from typing import List
 
 from buildkite_shared.environment import is_release_branch, safe_getenv
 from buildkite_shared.python_packages import PythonPackages
@@ -12,7 +11,6 @@ from buildkite_shared.step_builders.command_step_builder import (
 from buildkite_shared.step_builders.group_step_builder import GroupStepBuilder
 from buildkite_shared.step_builders.step_builder import StepConfiguration
 from buildkite_shared.uv import UV_PIN
-
 from dagster_buildkite.defines import GIT_REPO_ROOT
 from dagster_buildkite.images.versions import add_test_image
 from dagster_buildkite.steps.helm import build_helm_steps
@@ -45,7 +43,7 @@ def build_buildkite_lint_steps() -> list[CommandStepConfiguration]:
     ]
 
 
-def build_repo_wide_steps() -> List[StepConfiguration]:
+def build_repo_wide_steps() -> list[StepConfiguration]:
     # Other linters may be run in per-package environments because they rely on the dependencies of
     # the target. `check-manifest`, `pyright`, and `ruff` are run for the whole repo at once.
     return [
@@ -58,8 +56,8 @@ def build_repo_wide_steps() -> List[StepConfiguration]:
     ]
 
 
-def build_dagster_steps() -> List[StepConfiguration]:
-    steps: List[StepConfiguration] = []
+def build_dagster_steps() -> list[StepConfiguration]:
+    steps: list[StepConfiguration] = []
 
     # "Package" used loosely here to mean roughly "a directory with some python modules". For
     # instance, a directory of unrelated scripts counts as a package. All packages must have a
@@ -83,11 +81,9 @@ def build_dagster_steps() -> List[StepConfiguration]:
     return steps
 
 
-def build_repo_wide_ruff_steps() -> List[CommandStepConfiguration]:
+def build_repo_wide_ruff_steps() -> list[CommandStepConfiguration]:
     return [
-        add_test_image(
-            CommandStepBuilder(":zap: ruff"), AvailablePythonVersion.get_default()
-        )
+        add_test_image(CommandStepBuilder(":zap: ruff"), AvailablePythonVersion.get_default())
         .run(
             "pip install -e python_modules/dagster[ruff] -e python_modules/dagster-pipes -e python_modules/libraries/dagster-shared",
             "make check_ruff",
@@ -97,7 +93,7 @@ def build_repo_wide_ruff_steps() -> List[CommandStepConfiguration]:
     ]
 
 
-def build_repo_wide_prettier_steps() -> List[CommandStepConfiguration]:
+def build_repo_wide_prettier_steps() -> list[CommandStepConfiguration]:
     return [
         add_test_image(
             CommandStepBuilder(":prettier: prettier"),
@@ -112,7 +108,7 @@ def build_repo_wide_prettier_steps() -> List[CommandStepConfiguration]:
     ]
 
 
-def build_check_changelog_steps() -> List[CommandStepConfiguration]:
+def build_check_changelog_steps() -> list[CommandStepConfiguration]:
     branch_name = safe_getenv("BUILDKITE_BRANCH")
     if not is_release_branch(branch_name):
         return []
@@ -128,7 +124,7 @@ def build_check_changelog_steps() -> List[CommandStepConfiguration]:
     ]
 
 
-def build_repo_wide_pyright_steps() -> List[StepConfiguration]:
+def build_repo_wide_pyright_steps() -> list[StepConfiguration]:
     return [
         GroupStepBuilder(
             name=":pyright: pyright",
@@ -167,7 +163,7 @@ def build_repo_wide_pyright_steps() -> List[StepConfiguration]:
     ]
 
 
-def build_repo_wide_check_manifest_steps() -> List[CommandStepConfiguration]:
+def build_repo_wide_check_manifest_steps() -> list[CommandStepConfiguration]:
     published_packages = [
         "python_modules/dagit",
         "python_modules/dagster",
@@ -198,7 +194,7 @@ def build_repo_wide_check_manifest_steps() -> List[CommandStepConfiguration]:
     ]
 
 
-def build_sql_schema_check_steps() -> List[CommandStepConfiguration]:
+def build_sql_schema_check_steps() -> list[CommandStepConfiguration]:
     return [
         add_test_image(
             CommandStepBuilder(":mysql: mysql-schema")
@@ -212,7 +208,7 @@ def build_sql_schema_check_steps() -> List[CommandStepConfiguration]:
     ]
 
 
-def build_graphql_python_client_backcompat_steps() -> List[CommandStepConfiguration]:
+def build_graphql_python_client_backcompat_steps() -> list[CommandStepConfiguration]:
     return [
         add_test_image(
             CommandStepBuilder(":graphql: GraphQL Python Client backcompat")
@@ -232,7 +228,7 @@ def build_graphql_python_client_backcompat_steps() -> List[CommandStepConfigurat
     ]
 
 
-def skip_mysql_if_no_changes_to_dependencies(dependencies: List[str]):
+def skip_mysql_if_no_changes_to_dependencies(dependencies: list[str]):
     if not is_feature_branch():
         return None
 
@@ -243,7 +239,7 @@ def skip_mysql_if_no_changes_to_dependencies(dependencies: List[str]):
     return "Skip unless mysql schemas might have changed"
 
 
-def skip_graphql_if_no_changes_to_dependencies(dependencies: List[str]):
+def skip_graphql_if_no_changes_to_dependencies(dependencies: list[str]):
     if not is_feature_branch():
         return None
 
