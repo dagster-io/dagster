@@ -1,7 +1,7 @@
 import os
 from collections.abc import Mapping
 from pathlib import Path
-from typing import Any, Optional
+from typing import Any
 
 import dagster as dg
 from dagster_dbt import DagsterDbtTranslator, DbtCliResource, DbtProject, dbt_assets
@@ -16,19 +16,22 @@ dbt_project.prepare_if_dev()
 
 
 class CustomizedDagsterDbtTranslator(DagsterDbtTranslator):
-    def get_group_name(self, dbt_resource_props: Mapping[str, Any]) -> Optional[str]:
+    def get_asset_spec(self, dbt_resource_props: Mapping[str, Any]) -> dg.AssetSpec:
         asset_path = dbt_resource_props["fqn"][1:-1]
         if asset_path:
-            return "_".join(asset_path)
-        return "default"
-
-    def get_asset_key(self, dbt_resource_props):
-        resource_type = dbt_resource_props["resource_type"]
-        name = dbt_resource_props["name"]
-        if resource_type == "source":
-            return dg.AssetKey(name)
+            group_name = "_".join(asset_path)
         else:
-            return super().get_asset_key(dbt_resource_props)
+            group_name = "default"
+
+        if dbt_resource_props["resource_type"] == "source":
+            asset_key = dg.AssetKey(dbt_resource_props["name"])
+        else:
+            asset_key = super().get_asset_key(dbt_resource_props)
+
+        return dg.AssetSpec(
+            key=asset_key,
+            group_name=group_name,
+        )
 
 
 # start_dbt_assets
