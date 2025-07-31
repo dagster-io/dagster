@@ -196,6 +196,18 @@ class AssetGraphView(LoadingContext):
         )
 
     @use_partition_loading_context
+    def get_latest_asset_graph_subset_from_serialized_asset_graph_subset(
+        self, asset_graph_subset: AssetGraphSubset
+    ) -> AssetGraphSubset:
+        # Ensures that all the passed in subsets are valid and up to date with the latest partitions
+        # that are actually in the asset graph
+        entity_subsets = [
+            self.get_entity_subset_from_asset_graph_subset(asset_graph_subset, asset_key)
+            for asset_key in asset_graph_subset.asset_keys
+        ]
+        return AssetGraphSubset.from_entity_subsets(entity_subsets)
+
+    @use_partition_loading_context
     def get_entity_subset_from_asset_graph_subset(
         self, asset_graph_subset: AssetGraphSubset, key: AssetKey
     ) -> EntitySubset[AssetKey]:
