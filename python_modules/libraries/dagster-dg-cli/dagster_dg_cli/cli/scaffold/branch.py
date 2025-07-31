@@ -1,12 +1,12 @@
-import asyncio
 import json
+import os
+import re
 import subprocess
 import textwrap
 from pathlib import Path
 from typing import Optional
 
 import click
-from claude_code_sdk import ClaudeCodeOptions, ResultMessage, query
 from dagster_dg_core.config import normalize_cli_config
 from dagster_dg_core.context import DgContext
 from dagster_dg_core.shared_options import dg_global_options, dg_path_options
@@ -127,22 +127,51 @@ def _branch_name_prompt(prompt: str) -> str:
     )
 
 
-async def get_branch_name_and_pr_title_from_prompt(
-    dg_context: DgContext, prompt: str
-) -> tuple[str, str]:
+def _find_claude(dg_context: DgContext) -> Optional[list[str]]:
+    try:  # on PATH
+        subprocess.run(
+            ["claude", "--version"],
+            check=False,
+        )
+        return ["claude"]
+    except FileNotFoundError:
+        pass
+
+    try:  # check for alias (auto-updating version recommends registering an alias instead of putting on PATH)
+        result = subprocess.run(
+            [os.getenv("SHELL", "bash"), "-ic", "type claude"],
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+        path_match = re.search(r"(/[^\s`\']+)", result.stdout)
+        if path_match:
+            return [path_match.group(1)]
+    except FileNotFoundError:
+        pass
+
+    return None
+
+
+def get_branch_name_and_pr_title_from_prompt(dg_context: DgContext, prompt: str) -> tuple[str, str]:
     """Invokes Claude under the hood to generate a reasonable, valid
     git branch name and pull request title based on the user's stated goal.
     """
-    options = ClaudeCodeOptions(
-        cwd=dg_context.root_path,
+    claude_cmd = _find_claude(dg_context)
+    assert claude_cmd is not None
+
+    cmd = [
+        *claude_cmd,
+        _branch_name_prompt(prompt),
+    ]
+    output = subprocess.run(
+        cmd,
+        check=False,
+        capture_output=True,
+        text=True,
     )
-
-    async for message in query(prompt=_branch_name_prompt(prompt), options=options):
-        if isinstance(message, ResultMessage) and message.result:
-            result = json.loads(message.result)
-            return result["branch-name"], result["pr-title"]
-
-    raise Exception("No result message found")
+    json_output = json.loads(output.stdout.strip())
+    return json_output["branch-name"], json_output["pr-title"]
 
 
 @click.command(name="branch", cls=DgClickCommand, hidden=True)
@@ -160,9 +189,7 @@ def scaffold_branch_command(
     # If no branch name provided, prompt for it
     if not branch_name:
         initial_task = click.prompt("What would you like to accomplish?")
-        branch_name, pr_title = asyncio.run(
-            get_branch_name_and_pr_title_from_prompt(dg_context, initial_task)
-        )
+        branch_name, pr_title = get_branch_name_and_pr_title_from_prompt(dg_context, initial_task)
 
     else:
         branch_name = branch_name.strip()
