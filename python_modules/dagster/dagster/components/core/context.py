@@ -184,7 +184,7 @@ class ComponentDeclLoadContext:
         Returns:
             Component: The component loaded from the given path.
         """
-        return self.component_tree.load_component_at_path(defs_path)
+        return self.component_tree.load_component_at_path(defs_path, expected_type)  # type: ignore[reportIncompatibleArgumentType]
 
     def load_structural_component_at_path(
         self, defs_path: Union[Path, "ComponentPath"]
