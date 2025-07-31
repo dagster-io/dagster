@@ -170,14 +170,10 @@ class ComponentTreeDependencyTracker:
 
             visited.add(canonical_path)
 
-            # Find all components that directly depend on this path
-            direct_dependents = []
-            for (
-                from_canonical_path,
-                to_canonical_paths,
-            ) in self._component_load_dependency_dict.items():
-                if canonical_path in to_canonical_paths:
-                    direct_dependents.append(from_canonical_path)
+            direct_dependents = (
+                self._component_load_dependents_dict[canonical_path]
+                | self._component_defs_dependents_dict[canonical_path]
+            )
 
             # Add direct dependents to result first
             for dependent_file_path, dependent_instance_key in direct_dependents:
