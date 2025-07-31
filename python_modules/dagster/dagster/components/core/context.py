@@ -184,6 +184,9 @@ class ComponentDeclLoadContext:
         Returns:
             Component: The component loaded from the given path.
         """
+        self.component_tree.mark_component_load_dependency(
+            from_path=self.component_path, to_path=defs_path
+        )
         return self.component_tree.load_component_at_path(defs_path, expected_type)  # type: ignore[reportIncompatibleArgumentType]
 
     def load_structural_component_at_path(
@@ -197,6 +200,9 @@ class ComponentDeclLoadContext:
         Returns:
             Component: The component loaded from the given path.
         """
+        self.component_tree.mark_component_load_dependency(
+            from_path=self.component_path, to_path=defs_path
+        )
         return self.component_tree.load_structural_component_at_path(defs_path)
 
 
@@ -284,4 +290,7 @@ class ComponentLoadContext(ComponentDeclLoadContext):
         Returns:
             Definitions: The definitions loaded from the given path.
         """
+        self.component_tree.mark_component_defs_dependency(
+            from_path=self.component_path, to_path=defs_path
+        )
         return self.component_tree.build_defs_at_path(defs_path)

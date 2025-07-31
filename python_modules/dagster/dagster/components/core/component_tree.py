@@ -1,4 +1,5 @@
 import importlib
+from collections import defaultdict
 from collections.abc import Sequence
 from contextlib import contextmanager
 from functools import cached_property
@@ -83,6 +84,66 @@ class ComponentTreeException(Exception):
     pass
 
 
+class ComponentTreeDependencyTracker:
+    """Stateful class which tracks the dependencies between components,
+    used when reloading a subset of the component tree.
+    """
+
+    def __init__(self):
+        self._component_load_dependents_dict = defaultdict(set)
+        self._component_defs_dependents_dict = defaultdict(set)
+
+    def mark_component_load_dependency(
+        self, defs_module_path: Path, from_path: ComponentPath, to_path: ResolvableToComponentPath
+    ) -> None:
+        self._component_load_dependents_dict[
+            _get_canonical_component_path(defs_module_path, to_path)
+        ].add(_get_canonical_component_path(defs_module_path, from_path))
+
+    def mark_component_defs_dependency(
+        self, defs_module_path: Path, from_path: ComponentPath, to_path: ResolvableToComponentPath
+    ) -> None:
+        self._component_defs_dependents_dict[
+            _get_canonical_component_path(defs_module_path, to_path)
+        ].add(_get_canonical_component_path(defs_module_path, from_path))
+
+    def get_direct_load_dependents_of_component(
+        self, defs_module_path: Path, component_path: ComponentPath
+    ) -> set[ComponentPath]:
+        """Returns the set of components that directly depend on the given component.
+
+        Args:
+            defs_module_path: The path to the defs module.
+            component_path: The path to the component to get the direct load dependents of.
+        """
+        return set(
+            ComponentPath(
+                file_path=Path(file_path).relative_to(defs_module_path), instance_key=instance_key
+            )
+            for file_path, instance_key in self._component_load_dependents_dict[
+                _get_canonical_component_path(defs_module_path, component_path)
+            ]
+        )
+
+    def get_direct_defs_dependents_of_component(
+        self, defs_module_path: Path, component_path: ComponentPath
+    ) -> set[ComponentPath]:
+        """Returns the set of components that directly depend on the given component's defs.
+
+        Args:
+            defs_module_path: The path to the defs module.
+            component_path: The path to the component to get the direct defs dependents of.
+        """
+        return set(
+            ComponentPath(
+                file_path=Path(file_path).relative_to(defs_module_path), instance_key=instance_key
+            )
+            for file_path, instance_key in self._component_defs_dependents_dict[
+                _get_canonical_component_path(defs_module_path, component_path)
+            ]
+        )
+
+
 @record(
     checked=False,  # cant handle ModuleType
 )
@@ -97,6 +158,7 @@ class ComponentTree:
     defs_module: ModuleType
     project_root: Path
     terminate_autoloading_on_keyword_files: Optional[bool] = None
+    component_tree_dependencies: ComponentTreeDependencyTracker = ComponentTreeDependencyTracker()
 
     @contextmanager
     def augment_component_tree_exception(
@@ -290,6 +352,33 @@ class ComponentTree:
         if component_decl_and_path is None:
             raise Exception(f"No component decl found for path {defs_path}")
         return component_decl_and_path[1]
+
+    def mark_component_load_dependency(
+        self, from_path: ComponentPath, to_path: ResolvableToComponentPath
+    ) -> None:
+        """Marks a dependency between the component at `from_path` and the component at `to_path`.
+
+        Args:
+            from_path: The path to the component that depends on the component at `to_path`.
+            to_path: The path to the component that the component at `from_path` depends on.
+        """
+        self.component_tree_dependencies.mark_component_load_dependency(
+            self.defs_module_path, from_path, to_path
+        )
+
+    def mark_component_defs_dependency(
+        self, from_path: ComponentPath, to_path: ResolvableToComponentPath
+    ) -> None:
+        """Marks a dependency between the component at `from_path` on the defs of
+        the component at `to_path`.
+
+        Args:
+            from_path: The path to the component that depends on the defs of the component at `to_path`.
+            to_path: The path to the component that the component at `from_path` depends on.
+        """
+        self.component_tree_dependencies.mark_component_defs_dependency(
+            self.defs_module_path, from_path, to_path
+        )
 
     @overload
     def load_component_at_path(self, defs_path: Union[Path, ComponentPath, str]) -> Component: ...
