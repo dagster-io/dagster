@@ -40,11 +40,29 @@ def build_build_docs_step():
     )
 
 
+def build_docstring_validation_step() -> GroupLeafStepConfiguration:
+    return (
+        add_test_image(
+            CommandStepBuilder(":memo: docstring validation"),
+            AvailablePythonVersion.get_default(),
+        )
+        .run(
+            "uv pip install --system -e python_modules/automation[buildkite]",
+            "python -m automation.dagster_docs.main check docstrings --all",
+        )
+        .build()
+    )
+
+
 def build_docs_steps() -> list[StepConfiguration]:
     return [
         GroupStepBuilder(
             name=":book: docs",
             key="docs",
-            steps=[build_build_docs_step(), build_repo_wide_format_docs_step()],
+            steps=[
+                build_build_docs_step(),
+                build_repo_wide_format_docs_step(),
+                build_docstring_validation_step(),
+            ],
         ).build()
     ]
