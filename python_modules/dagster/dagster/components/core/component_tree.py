@@ -143,7 +143,7 @@ class ComponentTreeDependencyTracker:
             ]
         )
 
-    def get_load_dependents_of_component(
+    def get_all_dependents_of_component(
         self, defs_module_path: Path, component_path: ComponentPath
     ) -> list[ComponentPath]:
         """Returns a topologically sorted list of all components that depend on the given component,
