@@ -2,11 +2,8 @@ import os
 from glob import glob
 from typing import List
 
-from dagster_buildkite.defines import GIT_REPO_ROOT
-from buildkite_shared.python_packages import PythonPackages
-from dagster_buildkite.images.versions import add_test_image
 from buildkite_shared.environment import is_release_branch, safe_getenv
-from buildkite_shared.uv import UV_PIN
+from buildkite_shared.python_packages import PythonPackages
 from buildkite_shared.python_version import AvailablePythonVersion
 from buildkite_shared.step_builders.command_step_builder import (
     CommandStepBuilder,
@@ -14,6 +11,10 @@ from buildkite_shared.step_builders.command_step_builder import (
 )
 from buildkite_shared.step_builders.group_step_builder import GroupStepBuilder
 from buildkite_shared.step_builders.step_builder import StepConfiguration
+from buildkite_shared.uv import UV_PIN
+
+from dagster_buildkite.defines import GIT_REPO_ROOT
+from dagster_buildkite.images.versions import add_test_image
 from dagster_buildkite.steps.helm import build_helm_steps
 from dagster_buildkite.steps.integration import build_integration_steps
 from dagster_buildkite.steps.packages import (
@@ -54,6 +55,7 @@ def build_repo_wide_steps() -> List[StepConfiguration]:
         *build_repo_wide_ruff_steps(),
         *build_repo_wide_prettier_steps(),
         *build_buildkite_lint_steps(),
+        *build_repo_wide_format_docs_steps(),
     ]
 
 
@@ -92,6 +94,19 @@ def build_repo_wide_ruff_steps() -> List[CommandStepConfiguration]:
             "make check_ruff",
         )
         .skip_if(skip_if_no_python_changes())
+        .build(),
+    ]
+
+
+def build_repo_wide_format_docs_steps() -> List[CommandStepConfiguration]:
+    return [
+        add_test_image(
+            CommandStepBuilder(":magical_wand: format_docs"),
+            AvailablePythonVersion.get_default(),
+        )
+        .run(
+            "make format_docs",
+        )
         .build(),
     ]
 
