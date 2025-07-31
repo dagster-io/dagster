@@ -11,7 +11,7 @@ from unittest import mock
 from dagster_shared import check
 from dagster_shared.record import record
 from dagster_shared.utils.cached_method import (
-    CACHED_METHOD_CACHE_FIELD,
+    clear_cache_for_method,
     get_cached_method_cache,
     make_cached_method_cache_key,
 )
@@ -370,14 +370,10 @@ class ComponentTree:
         if key in decl_cache:
             del decl_cache[key]
 
-        if "find_root_decl" in getattr(self, CACHED_METHOD_CACHE_FIELD, {}):
-            del getattr(self, CACHED_METHOD_CACHE_FIELD, {})["find_root_decl"]
-        if "load_root_component" in getattr(self, CACHED_METHOD_CACHE_FIELD, {}):
-            del getattr(self, CACHED_METHOD_CACHE_FIELD, {})["load_root_component"]
-        if "build_defs" in getattr(self, CACHED_METHOD_CACHE_FIELD, {}):
-            del getattr(self, CACHED_METHOD_CACHE_FIELD, {})["build_defs"]
-        if "_component_decl_tree" in getattr(self, CACHED_METHOD_CACHE_FIELD, {}):
-            del getattr(self, CACHED_METHOD_CACHE_FIELD, {})["_component_decl_tree"]
+        clear_cache_for_method(self, "find_root_decl")
+        clear_cache_for_method(self, "load_root_component")
+        clear_cache_for_method(self, "build_defs")
+        clear_cache_for_method(self, "_component_decl_tree")
 
     @cached_method
     def _component_and_context_at_posix_path(

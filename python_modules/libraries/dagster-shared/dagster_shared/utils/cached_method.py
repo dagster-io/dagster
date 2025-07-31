@@ -186,3 +186,10 @@ def make_cached_method_cache_key(
 
 def get_cached_method_cache(obj: Any, method_name: str) -> dict[str, Any]:
     return getattr(obj, CACHED_METHOD_CACHE_FIELD, {}).get(method_name, {})
+
+
+def clear_cache_for_method(obj: Any, method_name: str) -> None:
+    if hasattr(obj, CACHED_METHOD_CACHE_FIELD):
+        cache_dict = getattr(obj, CACHED_METHOD_CACHE_FIELD)
+        if method_name in cache_dict:
+            del cache_dict[method_name]
