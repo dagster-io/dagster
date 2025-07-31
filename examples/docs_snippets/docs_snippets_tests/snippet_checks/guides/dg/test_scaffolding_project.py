@@ -37,7 +37,7 @@ def test_dg_docs_scaffolding_project(update_snippets: bool) -> None:
                 MASK_EDITABLE_DAGSTER,
                 MASK_USING_ENVIRONMENT,
                 make_project_scaffold_mask("my-project"),
-                ("create-dagster", "uvx -U create-dagster"),
+                ("create-dagster", "uvx create-dagster@latest"),
             ],
             print_cmd="create-dagster project my-project",
             input_str="y\n",
