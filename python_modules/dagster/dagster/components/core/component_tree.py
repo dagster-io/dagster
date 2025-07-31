@@ -84,7 +84,7 @@ class ComponentTreeException(Exception):
     pass
 
 
-class ComponentTreeDependencies:
+class ComponentTreeDependencyTracker:
     """Stateful class which tracks the dependencies between components,
     used when reloading a subset of the component tree.
     """
@@ -158,7 +158,7 @@ class ComponentTree:
     defs_module: ModuleType
     project_root: Path
     terminate_autoloading_on_keyword_files: Optional[bool] = None
-    component_tree_dependencies: ComponentTreeDependencies = ComponentTreeDependencies()
+    component_tree_dependencies: ComponentTreeDependencyTracker = ComponentTreeDependencyTracker()
 
     @contextmanager
     def augment_component_tree_exception(
