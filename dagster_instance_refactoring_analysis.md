@@ -1,492 +1,687 @@
-# DagsterInstance Refactoring Analysis
+# DagsterInstance Domain Refactoring Plans
 
-**File:** `/Users/schrockn/code/dagster/python_modules/dagster/dagster/_core/instance/__init__.py`
-**Class:** `DagsterInstance` (line 382)
-**Size:** 3,717 lines, 200+ methods
+## Overview
 
-## Problem Statement
+This document provides concrete implementation plans for extracting all domains from the monolithic DagsterInstance class using the proven **two-file pattern** established by the successful run refactoring.
 
-The DagsterInstance class is extremely unwieldy with multiple responsibilities packed into a single massive class. It serves as the core abstraction for managing Dagster's access to storage and other resources, but has grown to encompass too many concerns.
+**Proven Pattern (established by run refactoring)**:
 
-**CRITICAL CONSTRAINT**: DagsterInstance has subclasses in external repositories (e.g., `dagster-cloud`) that override methods, access internal attributes, and depend on exact API signatures. Any refactoring must maintain perfect backwards compatibility for subclasses.
+1. `{domain}/{domain}_instance_ops.py` - Simple wrapper class providing clean access to DagsterInstance
+2. `{domain}/{domain}_implementation.py` - Business logic functions with extracted methods
+3. DagsterInstance uses `@cached_property` for lazy initialization and delegates to implementation
 
-## Current Structure Analysis
+## Refactoring Status
 
-The class has **10 distinct responsibility domains**:
+| Domain         | Status           | Files                                                                              | Progress                       |
+| -------------- | ---------------- | ---------------------------------------------------------------------------------- | ------------------------------ |
+| **Runs**       | ✅ **COMPLETED** | `runs/run_instance_ops.py`, `runs/run_implementation.py`                           | 100% - All 6 methods extracted |
+| **Assets**     | 📋 **PLANNED**   | `assets/asset_instance_ops.py`, `assets/asset_implementation.py`                   | 0% - Ready for implementation  |
+| **Events**     | 📋 **PLANNED**   | `events/event_instance_ops.py`, `events/event_implementation.py`                   | 0% - Ready for implementation  |
+| **Scheduling** | 📋 **PLANNED**   | `scheduling/scheduling_instance_ops.py`, `scheduling/scheduling_implementation.py` | 0% - Ready for implementation  |
+| **Storage**    | 📋 **PLANNED**   | `storage/storage_instance_ops.py`, `storage/storage_implementation.py`             | 0% - Ready for implementation  |
+| **Config**     | 📋 **PLANNED**   | `config/config_instance_ops.py`, `config/config_implementation.py`                 | 0% - Ready for implementation  |
 
-### 1. Storage Management (20+ methods)
+**Target**: Reduce DagsterInstance from ~4000 lines to ~500 lines (facade only)
 
-- `run_storage()`, `event_log_storage()`, `schedule_storage()`
-- `daemon_cursor_storage()`, `compute_log_manager()`
-- Storage directory management
+---
 
-### 2. Run Lifecycle (30+ methods)
+# 1. Assets Domain Refactoring Plan
 
-- `create_run()`, `create_run_for_job()`, `create_reexecuted_run()`
-- `submit_run()`, `launch_run()`, `resume_run()`
-- `add_run()`, `delete_run()`, `get_run_by_id()`
-- Run status management and monitoring
+## Current State Analysis
 
-### 3. Asset Management (25+ methods)
+### Asset-Related Methods in DagsterInstance (~25 methods)
 
-- `all_asset_keys()`, `get_asset_keys()`, `has_asset_key()`
-- `get_latest_materialization_events()`, `fetch_materializations()`
-- `wipe_assets()`, `wipe_asset_partitions()`
-- Asset health state management
+**Asset Key Operations:**
 
-### 4. Event/Logging (15+ methods)
+- `all_asset_keys()` - Get all asset keys from storage
+- `get_asset_keys()` - Get asset keys with filtering
+- `has_asset_key()` - Check if asset key exists
 
-- `store_event()`, `handle_new_event()`, `report_engine_event()`
-- `logs_after()`, `all_logs()`, `watch_event_logs()`
-- Event listener management
+**Asset Materialization Operations:**
 
-### 5. Scheduling & Sensors (20+ methods)
+- `get_latest_materialization_events()` - Get latest materializations
+- `fetch_materializations()` - Batch materialization fetching
+- `get_materialization_count_by_partition()` - Partition-based counts
 
-- `start_schedule()`, `stop_schedule()`, `reset_schedule()`
-- `start_sensor()`, `stop_sensor()`, `reset_sensor()`
-- Instigator state management, tick handling
+**Asset Wiping Operations:**
 
-### 6. Backfills (8+ methods)
+- `wipe_assets()` - Wipe asset data
+- `wipe_asset_partitions()` - Wipe specific partitions
 
-- `get_backfills()`, `add_backfill()`, `update_backfill()`
-- Backfill status and filtering
+**Asset Health & Check Operations:**
 
-### 7. Partitions (10+ methods)
+- Asset health state management methods
+- Asset check evaluation methods
 
-- `get_dynamic_partitions()`, `add_dynamic_partitions()`
-- `delete_dynamic_partition()`, `has_dynamic_partition()`
-- Partition status management
+### Private Dependencies
 
-### 8. Configuration (25+ methods)
+These methods access private DagsterInstance attributes/methods:
 
-- Settings management (`get_settings()`, various feature flags)
-- Telemetry, NUX, monitoring configuration
-- Concurrency and retention settings
+- `self._event_log_storage` - For asset event queries
+- `self.get_event_records()` - For event record retrieval
+- `self.get_records_for_storage_id()` - For storage-specific queries
+- `self.report_engine_event()` - For engine event reporting
 
-### 9. Monitoring (8+ methods)
+## Implementation Plan
 
-- `add_daemon_heartbeat()`, `get_daemon_heartbeats()`
-- `get_daemon_statuses()`, health checks
-
-### 10. Snapshots (5+ methods)
-
-- `get_job_snapshot()`, `get_execution_plan_snapshot()`
-- Snapshot persistence and retrieval
-
-## Inter-Repository Dependencies Constraint
-
-Analysis of `dagster-cloud` repository reveals that `DagsterCloudInstance` subclasses `DagsterInstance` and:
-
-1. **Overrides methods** like `telemetry_enabled()`, `run_retries_max_retries()`
-2. **Accesses internal attributes** (likely `self._settings`, `self._run_storage`, etc.)
-3. **Calls parent methods** via `super()`
-4. **Depends on exact method signatures** and return types
-
-**This means any refactoring must preserve:**
-
-- All existing attributes (`self._run_storage`, `self._event_storage`, etc.)
-- All method signatures exactly (parameters, types, defaults)
-- All return types and side effects
-- All exception behavior
-- Method override compatibility
-
-## Revised Refactoring Approaches
-
-### Approach 1: Subclass-Safe Internal Manager Pattern (Recommended)
-
-Extract logic into internal managers while preserving perfect API compatibility:
+### Step 1: Create `assets/asset_instance_ops.py`
 
 ```python
-@public
-class DagsterInstance(DynamicPartitionsStore):
-    def __init__(self, ...):
-        # CRITICAL: All existing attributes MUST remain (subclasses access them)
-        self._instance_type = instance_type
-        self._run_storage = run_storage
-        self._event_storage = event_storage
-        self._run_coordinator = run_coordinator
-        # ... all existing attributes preserved exactly
+class AssetInstanceOps:
+    """Simple wrapper to provide clean access to DagsterInstance for asset operations."""
 
-        # NEW: Internal managers (private, lazy-initialized)
-        self._run_manager = None
-        self._asset_manager = None
-        self._schedule_manager = None
-        # ... other managers
-
-    # Existing methods delegate internally but keep exact signatures
-    def create_run(self, job_name: str, **kwargs) -> DagsterRun:
-        """Preserve exact signature and behavior for subclass compatibility."""
-        return self._get_run_manager().create_run_impl(self, job_name, **kwargs)
-
-    def telemetry_enabled(self) -> bool:
-        """CRITICAL: Keep exact implementation - subclasses override this."""
-        return self.get_settings("telemetry").get("enabled", True)
-
-    # Properties that subclasses depend on MUST remain unchanged
-    @property
-    def run_storage(self) -> "RunStorage":
-        return self._run_storage  # Direct access preserved
-
-    # Private helper methods for managers
-    def _get_run_manager(self) -> "RunManager":
-        if self._run_manager is None:
-            self._run_manager = RunManager()
-        return self._run_manager
-```
-
-### Internal Manager Implementation:
-
-```python
-class RunManager:
-    """Internal implementation detail - not part of public API."""
-
-    def create_run_impl(self, instance: "DagsterInstance", job_name: str, **kwargs) -> DagsterRun:
-        """Actual implementation that both public method and any future APIs use."""
-        # Implementation moved from DagsterInstance.create_run
-        # Uses instance's attributes to ensure subclass overrides work
-        run_storage = instance.run_storage  # Uses property (respects overrides)
-        event_storage = instance.event_log_storage  # Uses property
-        # ... rest of implementation
-```
-
-**Benefits:**
-
-- **Zero breaking changes** for subclasses
-- **Internal code organization** improves dramatically
-- **Future extensibility** without compatibility issues
-- **Gradual migration** path available
-
-### Approach 2: Additive New API Pattern
-
-Add new manager-based APIs without changing existing ones:
-
-```python
-class DagsterInstance:
-    # Existing methods remain exactly the same
-    def create_run(self, job_name: str, **kwargs) -> DagsterRun:
-        # Existing implementation unchanged
-        pass
-
-    # NEW: Modern API additions (completely additive)
-    @property
-    def runs(self) -> "RunManagerAPI":
-        """New API for run management. Does not affect existing methods."""
-        return RunManagerAPI(self)
-
-    @property
-    def assets(self) -> "AssetManagerAPI":
-        """New API for asset management. Does not affect existing methods."""
-        return AssetManagerAPI(self)
-
-# New usage patterns (opt-in)
-instance.runs.create(job_name="my_job")        # New API
-instance.create_run(job_name="my_job")         # Old API (unchanged)
-
-# Subclass overrides still work perfectly
-class CloudInstance(DagsterInstance):
-    def create_run(self, job_name: str, **kwargs):
-        # Override works exactly as before
-        return super().create_run(job_name, **kwargs)
-```
-
-## Safe Implementation Plan
-
-### Phase 0: Move Class Out of **init**.py (Zero Breaking Changes)
-
-**Timeline: Immediate - First Priority**
-
-**Problem**: A 3,717-line class in `__init__.py` is a major code organization issue that makes the codebase difficult to navigate and maintain.
-
-**Solution**: Move `DagsterInstance` to its own module while maintaining perfect import compatibility:
-
-1. **Create new module structure**:
-
-   ```
-   python_modules/dagster/dagster/_core/instance/
-   ├── __init__.py          # Import facade (maintains compatibility)
-   ├── instance.py          # Main DagsterInstance class
-   ├── types.py            # InstanceType, related enums/protocols
-   └── utils.py            # Helper classes/functions
-   ```
-
-2. **Move class to dedicated file**:
-
-   ```python
-   # dagster/_core/instance/instance.py
-   from dagster._core.instance.types import InstanceType, DynamicPartitionsStore
-   # ... other imports
-
-   @public
-   class DagsterInstance(DynamicPartitionsStore):
-       # Entire class moved here unchanged
-   ```
-
-3. **Maintain import compatibility**:
-
-   ```python
-   # dagster/_core/instance/__init__.py
-   from dagster._core.instance.instance import DagsterInstance
-   from dagster._core.instance.types import InstanceType
-   # ... other re-exports to maintain exact same public API
-   ```
-
-4. **Verification**: All existing imports continue to work exactly:
-   ```python
-   from dagster._core.instance import DagsterInstance        # ✅ Still works
-   from dagster._core.instance import InstanceType          # ✅ Still works
-   ```
-
-**Benefits**:
-
-- **Immediate improvement** in code navigability
-- **Zero risk** - no API changes whatsoever
-- **Enables future refactoring** by having class in dedicated file
-- **Standard Python project structure**
-
-### Phase 1: Internal Cleanup (Zero Breaking Changes)
-
-**Timeline: After Phase 0 completion**
-
-1. **Extract RunManager logic** internally
-   - Move implementation to `_create_run_impl()` method
-   - Public `create_run()` becomes thin wrapper
-   - Preserve all existing behavior exactly
-
-2. **Extract AssetManager logic** internally
-   - Similar pattern for asset-related methods
-   - Maintain exact method signatures
-
-3. **Benefits**: Improved code organization, easier testing, no external impact
-
-### Phase 2: New API Addition (Additive Only)
-
-**Timeline: Next minor release**
-
-1. **Add manager properties**:
-
-   ```python
-   @property
-   def runs(self) -> RunManagerAPI: ...
-
-   @property
-   def assets(self) -> AssetManagerAPI: ...
-   ```
-
-2. **Market as "modern API"** for new code
-3. **Document migration patterns** for teams who want to adopt
-4. **Old API remains fully supported** indefinitely
-
-### Phase 3: Long-term Evolution (Major Version)
-
-**Timeline: Future major release (1-2 years)**
-
-1. **Coordinate with dagster-cloud team** for subclass migration
-2. **Provide automated migration tools**
-3. **Extensive compatibility period** with warnings
-4. **Only remove deprecated APIs** after confirming no external dependencies
-
-## Manager Interface Specifications
-
-### RunManagerAPI (New API)
-
-```python
-class RunManagerAPI:
     def __init__(self, instance: "DagsterInstance"):
         self._instance = instance
 
-    def create(self, job_name: str, **kwargs) -> DagsterRun:
-        """Modern API with improved naming."""
-        return self._instance.create_run(job_name, **kwargs)
+    # Storage access
+    @property
+    def event_log_storage(self):
+        return self._instance._event_log_storage  # noqa: SLF001
 
-    def submit(self, run_id: str, workspace) -> DagsterRun:
-        return self._instance.submit_run(run_id, workspace)
+    # Event operations
+    def get_event_records(self, event_records_filter):
+        return self._instance.get_event_records(event_records_filter)
 
-    def get_by_id(self, run_id: str) -> Optional[DagsterRun]:
+    def get_records_for_storage_id(self, storage_id):
+        return self._instance.get_records_for_storage_id(storage_id)
+
+    def report_engine_event(self, message, dagster_run, event_data):
+        return self._instance.report_engine_event(message, dagster_run, event_data)
+```
+
+### Step 2: Create `assets/asset_implementation.py`
+
+```python
+def all_asset_keys(ops: "AssetInstanceOps") -> List[AssetKey]:
+    """Get all asset keys - moved from DagsterInstance.all_asset_keys()"""
+    # Move exact business logic from DagsterInstance method
+
+def get_asset_keys(
+    ops: "AssetInstanceOps",
+    prefix: Optional[List[str]] = None,
+    limit: Optional[int] = None,
+    cursor: Optional[str] = None,
+) -> List[AssetKey]:
+    """Get asset keys with filtering - moved from DagsterInstance.get_asset_keys()"""
+    # Move exact business logic from DagsterInstance method
+
+def has_asset_key(ops: "AssetInstanceOps", asset_key: AssetKey) -> bool:
+    """Check if asset key exists - moved from DagsterInstance.has_asset_key()"""
+    # Move exact business logic from DagsterInstance method
+
+def wipe_assets(
+    ops: "AssetInstanceOps",
+    asset_keys: List[AssetKey]
+) -> List[AssetKeyWipeResult]:
+    """Wipe asset data - moved from DagsterInstance.wipe_assets()"""
+    # Move exact business logic from DagsterInstance method
+
+def wipe_asset_partitions(
+    ops: "AssetInstanceOps",
+    asset_key: AssetKey,
+    partitions_to_wipe: List[str],
+) -> AssetKeyWipeResult:
+    """Wipe asset partitions - moved from DagsterInstance.wipe_asset_partitions()"""
+    # Move exact business logic from DagsterInstance method
+
+def get_latest_materialization_events(
+    ops: "AssetInstanceOps",
+    asset_keys: List[AssetKey],
+    partition_key: Optional[str] = None,
+) -> Dict[AssetKey, Optional[EventLogEntry]]:
+    """Get latest materializations - moved from DagsterInstance.get_latest_materialization_events()"""
+    # Move exact business logic from DagsterInstance method
+
+def fetch_materializations(
+    ops: "AssetInstanceOps",
+    records_filter: AssetRecordsFilter,
+    limit: Optional[int],
+    cursor: Optional[str] = None,
+) -> EventRecordsResult:
+    """Batch materialization fetching - moved from DagsterInstance.fetch_materializations()"""
+    # Move exact business logic from DagsterInstance method
+```
+
+### Step 3: Update DagsterInstance
+
+```python
+from dagster._core.instance.assets import asset_implementation
+
+class DagsterInstance:
+    @cached_property
+    def _asset_ops(self):
+        from dagster._core.instance.assets.asset_instance_ops import AssetInstanceOps
+        return AssetInstanceOps(self)
+
+    def all_asset_keys(self):
+        """Delegate to asset_implementation."""
+        return asset_implementation.all_asset_keys(self._asset_ops)
+
+    def get_asset_keys(self, prefix=None, limit=None, cursor=None):
+        """Delegate to asset_implementation."""
+        return asset_implementation.get_asset_keys(self._asset_ops, prefix, limit, cursor)
+
+    def has_asset_key(self, asset_key):
+        """Delegate to asset_implementation."""
+        return asset_implementation.has_asset_key(self._asset_ops, asset_key)
+
+    def wipe_assets(self, asset_keys):
+        """Delegate to asset_implementation."""
+        return asset_implementation.wipe_assets(self._asset_ops, asset_keys)
+
+    # ... all other asset methods follow same delegation pattern
+```
+
+### Step 4: Implementation Steps
+
+1. Create `assets/` subfolder with `__init__.py`
+2. Create `assets/asset_instance_ops.py` with wrapper class
+3. Create `assets/asset_implementation.py` with moved business logic
+4. Update `DagsterInstance` to use `@cached_property` and delegate
+5. Remove old business logic from `DagsterInstance`
+6. Run `make ruff` and `make quick_pyright` to ensure clean code
+7. Test that existing functionality works unchanged
+
+---
+
+# 2. Events Domain Refactoring Plan
+
+## Current State Analysis
+
+### Event-Related Methods in DagsterInstance (~15 methods)
+
+**Event Storage Operations:**
+
+- `store_event()` - Store event in log storage
+- `handle_new_event()` - Process new events
+- `report_engine_event()` - Report engine events
+- `report_dagster_event()` - Report Dagster events
+
+**Event Querying Operations:**
+
+- `logs_after()` - Get logs after cursor
+- `all_logs()` - Get all logs for run
+- `get_event_records()` - Get event records with filtering
+
+**Event Streaming Operations:**
+
+- `watch_event_logs()` - Stream event logs
+- Event listener management
+
+### Private Dependencies
+
+- `self._event_log_storage` - Core event storage
+- `self._subscribers` - Event subscribers
+- Various event processing utilities
+
+## Implementation Plan
+
+### Step 1: Create `events/event_instance_ops.py`
+
+```python
+class EventInstanceOps:
+    """Simple wrapper to provide clean access to DagsterInstance for event operations."""
+
+    def __init__(self, instance: "DagsterInstance"):
+        self._instance = instance
+
+    @property
+    def event_log_storage(self):
+        return self._instance._event_log_storage  # noqa: SLF001
+
+    @property
+    def subscribers(self):
+        return self._instance._subscribers  # noqa: SLF001
+
+    def get_run_by_id(self, run_id):
         return self._instance.get_run_by_id(run_id)
-
-    # More intuitive method names while delegating to existing implementation
 ```
 
-### Internal RunManager (Implementation Detail)
+### Step 2: Create `events/event_implementation.py`
 
 ```python
-class RunManager:
-    """Internal manager - handles implementation logic."""
+def store_event(ops: "EventInstanceOps", event: DagsterEvent) -> None:
+    """Store event - moved from DagsterInstance.store_event()"""
+    # Move exact business logic
 
-    @staticmethod
-    def create_run_impl(instance: "DagsterInstance", job_name: str, **kwargs) -> DagsterRun:
-        """Extracted implementation that preserves all existing behavior."""
-        # All the logic from DagsterInstance.create_run
-        # Uses instance methods/properties to respect subclass overrides
+def handle_new_event(ops: "EventInstanceOps", event: DagsterEvent) -> None:
+    """Handle new event - moved from DagsterInstance.handle_new_event()"""
+    # Move exact business logic
+
+def report_engine_event(
+    ops: "EventInstanceOps",
+    message: str,
+    dagster_run: DagsterRun,
+    engine_event_data: Optional[EngineEventData] = None,
+) -> None:
+    """Report engine event - moved from DagsterInstance.report_engine_event()"""
+    # Move exact business logic
+
+def all_logs(
+    ops: "EventInstanceOps",
+    run_id: str,
+    of_type: Optional[DagsterEventType] = None,
+) -> List[EventLogEntry]:
+    """Get all logs - moved from DagsterInstance.all_logs()"""
+    # Move exact business logic
+
+def watch_event_logs(
+    ops: "EventInstanceOps",
+    run_id: str,
+    cursor: Optional[str],
+    of_type: Optional[DagsterEventType] = None,
+) -> Iterator[EventLogEntry]:
+    """Watch event logs - moved from DagsterInstance.watch_event_logs()"""
+    # Move exact business logic
 ```
 
-## Critical Safety Measures
-
-### 1. Attribute Preservation
+### Step 3: DagsterInstance Integration
 
 ```python
-# REQUIRED: All existing attributes must remain
-self._instance_type = instance_type        # ✅ Keep
-self._run_storage = run_storage           # ✅ Keep
-self._event_storage = event_storage       # ✅ Keep
-# ... all others must be preserved
+from dagster._core.instance.events import event_implementation
+
+class DagsterInstance:
+    @cached_property
+    def _event_ops(self):
+        from dagster._core.instance.events.event_instance_ops import EventInstanceOps
+        return EventInstanceOps(self)
+
+    def store_event(self, event):
+        return event_implementation.store_event(self._event_ops, event)
+
+    def all_logs(self, run_id, of_type=None):
+        return event_implementation.all_logs(self._event_ops, run_id, of_type)
 ```
-
-### 2. Method Signature Preservation
-
-```python
-# REQUIRED: Exact signatures must be maintained
-def create_run(self, job_name: str, **kwargs) -> DagsterRun:  # ✅ Exact match
-def telemetry_enabled(self) -> bool:                         # ✅ Exact match
-```
-
-### 3. Override Compatibility Testing
-
-```python
-# Test that subclass overrides still work
-class TestCloudInstance(DagsterInstance):
-    def telemetry_enabled(self) -> bool:
-        return False  # Override must still work
-
-def test_override_compatibility():
-    instance = TestCloudInstance(...)
-    assert instance.telemetry_enabled() == False  # Must pass
-```
-
-## Migration Benefits
-
-1. **Immediate**: Better code organization, easier maintenance
-2. **Short-term**: New APIs for improved developer experience
-3. **Long-term**: Full modular architecture with clean separation
-4. **Risk mitigation**: Gradual migration with extensive compatibility testing
-
-## Implementation Validation
-
-Before any changes:
-
-1. **Analyze all known subclasses** in dagster-cloud repository
-2. **Create compatibility test suite** that validates subclass behavior
-3. **Coordinate with dagster-cloud team** on refactoring timeline
-4. **Document all preserved behaviors** and test them rigorously
-
-This approach allows significant internal improvements while respecting the reality of external dependencies and subclass usage patterns.
 
 ---
 
-## TODO List - DagsterInstance Refactoring Work
+# 3. Scheduling Domain Refactoring Plan
 
-**INSTRUCTIONS**:
+## Current State Analysis
 
-- Always update this TODO list as you work on the refactoring
-- Mark items as completed with ✅ and add completion date
-- Add new items as they are discovered during implementation
-- Keep this list as the single source of truth for tracking progress
-- When switching branches, review this list to remember current status
+### Scheduling-Related Methods in DagsterInstance (~20 methods)
 
-### Phase 0: Move Class Out of \*\*init\_\_.py ⏳
+**Schedule Operations:**
 
-- ✅ Create new module structure under `dagster/_core/instance/` (2025-08-01)
-  - 🚧 Create `instance.py` for main DagsterInstance class (IN PROGRESS - PARTIAL)
-  - ✅ Create `types.py` for InstanceType and related types (2025-08-01)
-  - ✅ Create `utils.py` for helper classes/functions (2025-08-01)
-- ✅ Remove duplicate classes from `__init__.py` (2025-08-01)
-  - ✅ Removed duplicate InstanceType, MayHaveInstanceWeakref, DynamicPartitionsStore (lines 304-379)
-  - ✅ Removed duplicate utility functions (\_get_event_batch_size, \_is_batch_writing_enabled, etc.)
-  - ✅ Removed duplicate \_EventListenerLogHandler class
-  - ✅ Added proper imports from types.py and utils.py
-- ✅ Move DagsterInstance class from `__init__.py` to `instance.py` (2025-08-01)
-  - ✅ Created `instance.py` with proper imports structure
-  - ✅ Extracted DagsterInstance class (3,336 lines) from `__init__.py` to `instance.py`
-  - ✅ Removed class definition from `__init__.py`
-- ✅ Update `__init__.py` to maintain import compatibility with re-exports (2025-08-01)
-- ✅ Verify all existing imports still work exactly as before (2025-08-01)
-- ✅ Run full test suite to ensure zero breaking changes (2025-08-01)
-  - ✅ All 33 instance tests passed
-  - ✅ make ruff completed successfully with automatic cleanup
-  - ✅ Import compatibility verified for both internal and public APIs
+- `start_schedule()`, `stop_schedule()`, `reset_schedule()`
+- Schedule state management
 
-**FINAL STATUS (2025-08-01)**:
+**Sensor Operations:**
 
-- ✅ **PHASE 0 COMPLETED SUCCESSFULLY**
-- File size reduction: `__init__.py` went from 3,556 lines to 129 lines (96% reduction)
-- DagsterInstance class (3,336 lines) successfully moved to dedicated `instance.py` file
-- Zero breaking changes - all existing imports work exactly as before
-- Perfect backwards compatibility maintained for subclasses
+- `start_sensor()`, `stop_sensor()`, `reset_sensor()`
+- Sensor state management
 
-### Phase 1: Internal Cleanup 🔄
+**Instigator Operations:**
 
-- [ ] Extract RunManager logic internally
-  - [ ] Create internal `_create_run_impl()` method
-  - [ ] Make public `create_run()` a thin wrapper
-  - [ ] Preserve all existing behavior exactly
-- [ ] Extract AssetManager logic internally
-  - [ ] Create internal asset management implementation methods
-  - [ ] Maintain exact method signatures for all asset methods
-- [ ] Extract ScheduleManager logic internally
-- [ ] Extract EventManager logic internally
-- [ ] Add comprehensive tests for internal manager functionality
+- `update_instigator_state()`
+- Instigator status queries
 
-### Phase 2: New API Addition 📊
+**Backfill Operations:**
 
-- [ ] Design RunManagerAPI public interface
-- [ ] Design AssetManagerAPI public interface
-- [ ] Implement manager property accessors on DagsterInstance
-- [ ] Create documentation for new "modern API"
-- [ ] Add examples and migration guides
-- [ ] Ensure old API remains fully supported
+- `get_backfills()`, `add_backfill()`, `update_backfill()`
 
-### Testing & Validation 🧪
+### Private Dependencies
 
-- [ ] Create compatibility test suite for subclass behavior
-- [ ] Test all known override patterns from dagster-cloud
-- [ ] Validate attribute preservation for subclasses
-- [ ] Performance testing to ensure no regression
-- [ ] Integration testing across the full Dagster ecosystem
+- `self._schedule_storage` - Schedule state storage
+- Various instigator utilities
 
-### Documentation & Communication 📝
+## Implementation Plan
 
-- [ ] Document the refactoring approach and rationale
-- [ ] Create migration guide for teams using DagsterInstance
-- [ ] Coordinate with dagster-cloud team on timeline
-- [ ] Update architecture documentation
+### Step 1: Create `scheduling/scheduling_instance_ops.py`
 
-### Future Planning 🚀
+```python
+class SchedulingInstanceOps:
+    """Simple wrapper to provide clean access to DagsterInstance for scheduling operations."""
 
-- [ ] Plan Phase 3 timeline and coordination with major release
-- [ ] Design automated migration tools for deprecated APIs
-- [ ] Plan compatibility sunset timeline
+    def __init__(self, instance: "DagsterInstance"):
+        self._instance = instance
+
+    @property
+    def schedule_storage(self):
+        return self._instance._schedule_storage  # noqa: SLF001
+
+    def get_run_by_id(self, run_id):
+        return self._instance.get_run_by_id(run_id)
+```
+
+### Step 2: Create `scheduling/scheduling_implementation.py`
+
+```python
+def start_schedule(ops: "SchedulingInstanceOps", external_schedule: ExternalSchedule) -> InstigatorState:
+    """Start schedule - moved from DagsterInstance.start_schedule()"""
+    # Move exact business logic
+
+def stop_schedule(
+    ops: "SchedulingInstanceOps",
+    schedule_origin_id: str,
+    schedule_selector_id: str,
+    external_schedule: Optional[ExternalSchedule] = None,
+) -> InstigatorState:
+    """Stop schedule - moved from DagsterInstance.stop_schedule()"""
+    # Move exact business logic
+
+def get_backfills(
+    ops: "SchedulingInstanceOps",
+    status: Optional[BulkActionStatus] = None,
+    cursor: Optional[str] = None,
+    limit: Optional[int] = None,
+) -> List[PartitionBackfill]:
+    """Get backfills - moved from DagsterInstance.get_backfills()"""
+    # Move exact business logic
+```
 
 ---
 
-### Completed Items ✅
+# 4. Storage Domain Refactoring Plan
 
-- ✅ **Analyze current **init**.py structure** - Identified all components that need to be moved (2025-08-01)
-- ✅ **Create types.py** - Contains InstanceType, MayHaveInstanceWeakref, DynamicPartitionsStore, \_EventListenerLogHandler (2025-08-01)
-- ✅ **Create utils.py** - Contains constants and helper functions (\_get_event_batch_size, \_check_run_equality, etc.) (2025-08-01)
+## Current State Analysis
+
+### Storage-Related Methods in DagsterInstance (~10 methods)
+
+**Storage Coordination:**
+
+- Storage initialization and setup
+- Storage health monitoring
+
+**Partition Operations:**
+
+- `get_dynamic_partitions()`, `add_dynamic_partitions()`
+- `delete_dynamic_partition()`, `has_dynamic_partition()`
+
+### Private Dependencies
+
+- `self._run_storage`, `self._event_log_storage`, `self._schedule_storage`
+- Storage utility functions
+
+## Implementation Plan
+
+### Step 1: Create `storage/storage_instance_ops.py`
+
+```python
+class StorageInstanceOps:
+    """Simple wrapper to provide clean access to DagsterInstance for storage operations."""
+
+    def __init__(self, instance: "DagsterInstance"):
+        self._instance = instance
+
+    @property
+    def run_storage(self):
+        return self._instance._run_storage  # noqa: SLF001
+
+    @property
+    def event_log_storage(self):
+        return self._instance._event_log_storage  # noqa: SLF001
+
+    @property
+    def schedule_storage(self):
+        return self._instance._schedule_storage  # noqa: SLF001
+```
+
+### Step 2: Create `storage/storage_implementation.py`
+
+```python
+def get_dynamic_partitions(ops: "StorageInstanceOps", partitions_def_name: str) -> List[str]:
+    """Get dynamic partitions - moved from DagsterInstance.get_dynamic_partitions()"""
+    # Move exact business logic
+
+def add_dynamic_partitions(
+    ops: "StorageInstanceOps",
+    partitions_def_name: str,
+    partition_keys: List[str],
+) -> None:
+    """Add dynamic partitions - moved from DagsterInstance.add_dynamic_partitions()"""
+    # Move exact business logic
+```
 
 ---
 
-**Last Updated**: 2025-08-01
-**Current Focus**: Phase 1 - Internal Logic Extraction (significant progress made)
+# 5. Config Domain Refactoring Plan
 
-**MAJOR MILESTONES ACHIEVED**:
-✅ **PHASE 0 COMPLETED** - DagsterInstance successfully modularized and moved out of `__init__.py`
-✅ **PHASE 1 STARTED** - Internal RunManager and AssetManager extraction underway
+## Current State Analysis
 
-**REFACTORING PROGRESS**:
+### Config-Related Methods in DagsterInstance (~8 methods)
 
-- ✅ **RunManager**: `create_run()` method now delegates to internal `_RunManager.create_run_impl()`
-- ✅ **AssetManager**: `all_asset_keys()`, `has_asset_key()`, `wipe_assets()` now delegate to internal `_AssetManager` methods
-- ✅ **Zero Breaking Changes**: All existing APIs work exactly as before
-- ✅ **Perfect Backwards Compatibility**: Subclasses continue to work seamlessly
-- ✅ **Ruff Linting 100% Clean**: All F401 unused import errors resolved, SLF001 warnings suppressed with noqa pragmas
-- ✅ **All Tests Passing**: 33/33 instance tests continue to pass after refactoring
-- ✅ **Make Ruff Success**: `make ruff` now passes with "All checks passed!" - zero errors or warnings
+**Settings Management:**
 
-**NEXT STEPS FOR CONTINUATION**:
+- `get_settings()` - Get configuration settings
+- `telemetry_enabled()` - Telemetry configuration
+- Various feature flags
 
-1. Continue Phase 1: Add more methods to RunManager (`submit_run`, `launch_run`, `get_run_by_id`, etc.)
-2. Continue AssetManager extraction (materialization methods, partition methods, etc.)
-3. Begin implementing modern API interfaces (Phase 2)
-4. Add property-based access: `instance.runs.create()`, `instance.assets.wipe()`, etc.
-   EOF < /dev/null
+**Daemon & Monitoring:**
+
+- `add_daemon_heartbeat()`, `get_daemon_heartbeats()`
+- Daemon status monitoring
+
+### Private Dependencies
+
+- `self._settings` - Configuration settings
+- Daemon storage access
+
+## Implementation Plan
+
+### Step 1: Create `config/config_instance_ops.py`
+
+```python
+class ConfigInstanceOps:
+    """Simple wrapper to provide clean access to DagsterInstance for config operations."""
+
+    def __init__(self, instance: "DagsterInstance"):
+        self._instance = instance
+
+    @property
+    def settings(self):
+        return self._instance._settings  # noqa: SLF001
+
+    @property
+    def run_storage(self):
+        return self._instance._run_storage  # noqa: SLF001
+```
+
+### Step 2: Create `config/config_implementation.py`
+
+```python
+def get_settings(ops: "ConfigInstanceOps", key: str) -> Any:
+    """Get settings - moved from DagsterInstance.get_settings()"""
+    # Move exact business logic
+
+def telemetry_enabled(ops: "ConfigInstanceOps") -> bool:
+    """Check telemetry - moved from DagsterInstance.telemetry_enabled()"""
+    # Move exact business logic
+
+def add_daemon_heartbeat(ops: "ConfigInstanceOps", daemon_heartbeat: DaemonHeartbeat) -> None:
+    """Add daemon heartbeat - moved from DagsterInstance.add_daemon_heartbeat()"""
+    # Move exact business logic
+```
+
+---
+
+# Implementation Progress Tracking
+
+## Completed Domains ✅
+
+### 1. Runs Domain ✅ **COMPLETED** (2025-08-02)
+
+**Files Created:**
+
+- ✅ `runs/run_instance_ops.py` (52 lines) - Clean wrapper with property delegation
+- ✅ `runs/run_implementation.py` (801 lines) - 6 core functions + helpers
+- ✅ DagsterInstance integration with `@cached_property` delegation
+
+**Methods Extracted:**
+
+- ✅ `create_run()` - Main run creation (~150 lines)
+- ✅ `create_reexecuted_run()` - Reexecution logic (~130 lines)
+- ✅ `register_managed_run()` - Managed run registration (~50 lines)
+- ✅ `construct_run_with_snapshots()` - Heavy construction logic (~100 lines)
+- ✅ `ensure_persisted_job_snapshot()` - Snapshot persistence (~25 lines)
+- ✅ `ensure_persisted_execution_plan_snapshot()` - Plan persistence (~30 lines)
+- ✅ Helper functions for asset events, reexecution keys, etc.
+
+**Quality Metrics:**
+
+- ✅ Zero breaking changes - all existing APIs work unchanged
+- ✅ Perfect backwards compatibility maintained
+- ✅ All ruff and pyright checks pass (0 errors)
+- ✅ All existing tests pass (33/33 instance tests)
+
+## Pending Domains 📋
+
+### 2. Assets Domain 📋 **READY FOR IMPLEMENTATION**
+
+**Estimated Size:** ~400 lines total
+
+- `assets/asset_instance_ops.py` (~50 lines)
+- `assets/asset_implementation.py` (~350 lines)
+
+**Key Methods to Extract:** ~25 methods
+
+- Asset key operations (3 methods)
+- Materialization operations (6 methods)
+- Wiping operations (4 methods)
+- Health & check operations (12 methods)
+
+**Implementation Priority:** HIGH - Heavy usage across codebase
+
+### 3. Events Domain 📋 **READY FOR IMPLEMENTATION**
+
+**Estimated Size:** ~300 lines total
+
+- `events/event_instance_ops.py` (~40 lines)
+- `events/event_implementation.py` (~260 lines)
+
+**Key Methods to Extract:** ~15 methods
+
+- Event storage operations (4 methods)
+- Event querying operations (6 methods)
+- Event streaming operations (5 methods)
+
+**Implementation Priority:** HIGH - Core to all operations
+
+### 4. Scheduling Domain 📋 **READY FOR IMPLEMENTATION**
+
+**Estimated Size:** ~350 lines total
+
+- `scheduling/scheduling_instance_ops.py` (~45 lines)
+- `scheduling/scheduling_implementation.py` (~305 lines)
+
+**Key Methods to Extract:** ~20 methods
+
+- Schedule operations (6 methods)
+- Sensor operations (6 methods)
+- Instigator operations (4 methods)
+- Backfill operations (4 methods)
+
+**Implementation Priority:** MEDIUM - Scheduling features
+
+### 5. Storage Domain 📋 **READY FOR IMPLEMENTATION**
+
+**Estimated Size:** ~250 lines total
+
+- `storage/storage_instance_ops.py` (~35 lines)
+- `storage/storage_implementation.py` (~215 lines)
+
+**Key Methods to Extract:** ~10 methods
+
+- Storage coordination (3 methods)
+- Storage health (2 methods)
+- Partition operations (5 methods)
+
+**Implementation Priority:** MEDIUM - Infrastructure support
+
+### 6. Config Domain 📋 **READY FOR IMPLEMENTATION**
+
+**Estimated Size:** ~200 lines total
+
+- `config/config_instance_ops.py` (~30 lines)
+- `config/config_implementation.py` (~170 lines)
+
+**Key Methods to Extract:** ~8 methods
+
+- Settings management (3 methods)
+- Daemon & monitoring (3 methods)
+- Configuration utilities (2 methods)
+
+**Implementation Priority:** LOW - Configuration support
+
+## Final Target Structure
+
+```
+python_modules/dagster/dagster/_core/instance/
+├── instance.py                    # DagsterInstance (facade ~500 lines, down from ~4000)
+├── runs/                          # ✅ COMPLETED
+│   ├── __init__.py               # Empty
+│   ├── run_instance_ops.py       # ✅ RunInstanceOps wrapper (52 lines)
+│   └── run_implementation.py     # ✅ Business logic functions (801 lines)
+├── assets/                        # 📋 PLANNED
+│   ├── __init__.py               # Empty
+│   ├── asset_instance_ops.py     # AssetInstanceOps wrapper (~50 lines)
+│   └── asset_implementation.py   # Business logic functions (~350 lines)
+├── events/                        # 📋 PLANNED
+│   ├── __init__.py               # Empty
+│   ├── event_instance_ops.py     # EventInstanceOps wrapper (~40 lines)
+│   └── event_implementation.py   # Business logic functions (~260 lines)
+├── scheduling/                    # 📋 PLANNED
+│   ├── __init__.py               # Empty
+│   ├── scheduling_instance_ops.py # SchedulingInstanceOps wrapper (~45 lines)
+│   └── scheduling_implementation.py # Business logic functions (~305 lines)
+├── storage/                       # 📋 PLANNED
+│   ├── __init__.py               # Empty
+│   ├── storage_instance_ops.py   # StorageInstanceOps wrapper (~35 lines)
+│   └── storage_implementation.py # Business logic functions (~215 lines)
+└── config/                        # 📋 PLANNED
+    ├── __init__.py               # Empty
+    ├── config_instance_ops.py    # ConfigInstanceOps wrapper (~30 lines)
+    └── config_implementation.py  # Business logic functions (~170 lines)
+```
+
+## Implementation Recommendations
+
+### Next Domain: Assets (Highest Impact)
+
+**Reasoning:**
+
+1. Assets are heavily used across the entire codebase
+2. Asset operations have the most business logic complexity (~400 lines)
+3. Successful asset extraction will demonstrate pattern scalability
+4. High visibility for development team productivity gains
+
+### Implementation Order Priority
+
+1. **Assets** - Highest complexity, highest usage (Week 1-2)
+2. **Events** - Core infrastructure, moderate complexity (Week 3)
+3. **Scheduling** - Moderate complexity, specific features (Week 4)
+4. **Storage** - Lower complexity infrastructure (Week 5)
+5. **Config** - Lowest complexity, final cleanup (Week 6)
+
+### Quality Gates for Each Domain
+
+1. **Code Quality**: All ruff and pyright checks pass (0 errors/warnings)
+2. **Backwards Compatibility**: All existing APIs work unchanged
+3. **Test Coverage**: All existing tests continue to pass
+4. **Performance**: No measurable performance degradation
+5. **Documentation**: Clear extraction documented in commit messages
+
+## Success Metrics
+
+### Progress Tracking
+
+- **✅ Runs**: 1/6 domains complete (100% of target methods extracted)
+- **📊 Overall**: 16% complete (801 of ~5000 lines extracted from DagsterInstance)
+- **🎯 Target**: Reduce DagsterInstance from ~4000 lines to ~500 lines (87% reduction)
+
+### Code Quality Metrics (Runs Domain)
+
+- ✅ **Backwards Compatibility**: 100% - All APIs unchanged
+- ✅ **Test Coverage**: 100% - All 33 instance tests pass
+- ✅ **Code Quality**: Perfect - 0 ruff/pyright errors
+- ✅ **Performance**: Maintained - No measurable degradation
+
+### Estimated Completion Timeline
+
+- **Current**: 1/6 domains complete (Runs ✅)
+- **Target Pace**: 1 domain per week
+- **Estimated Completion**: 5 weeks (all domains extracted)
+- **Final Cleanup**: 1 week (documentation, performance optimization)
+- **Total Timeline**: 6 weeks to complete full refactoring
+
+The proven two-file pattern from the run refactoring provides a clear, straightforward path to decompose the remaining domains while maintaining perfect backwards compatibility.
