@@ -1294,6 +1294,11 @@ class DagsterInstance(DynamicPartitionsStore):
         job_code_origin: Optional[JobPythonOrigin] = None,
         asset_graph: Optional["BaseAssetGraph[BaseAssetNode]"] = None,
     ) -> DagsterRun:
+        from dagster._core.definitions.partitions.definition.time_window import (
+            TimeWindowPartitionsDefinition,
+        )
+        from dagster._core.remote_representation.external_data import PartitionsSnap
+
         # https://github.com/dagster-io/dagster/issues/2403
         if tags and IS_AIRFLOW_INGEST_PIPELINE_STR in tags:
             if AIRFLOW_EXECUTION_DATE_STR not in tags:
@@ -1314,6 +1319,7 @@ class DagsterInstance(DynamicPartitionsStore):
             if job_snapshot
             else None
         )
+        partitions_definition = None
 
         # ensure that all asset outputs list their execution type, even if the snapshot was
         # created on an older version before it was being set
@@ -1324,6 +1330,12 @@ class DagsterInstance(DynamicPartitionsStore):
                 for output in step.outputs:
                     asset_key = output.properties.asset_key if output.properties else None
                     adjusted_output = output
+
+                    if asset_key is not None:
+                        asset_node = asset_graph.get(asset_key)
+                        if isinstance(asset_node.partitions_def, TimeWindowPartitionsDefinition):
+                            # maybe check that it's the same partitions definition?
+                            partitions_definition = asset_node.partitions_def
 
                     if (
                         output.properties is not None
@@ -1382,6 +1394,9 @@ class DagsterInstance(DynamicPartitionsStore):
             has_repository_load_data=execution_plan_snapshot is not None
             and execution_plan_snapshot.repository_load_data is not None,
             run_op_concurrency=run_op_concurrency,
+            partitions_snap=PartitionsSnap.from_def(partitions_definition)
+            if partitions_definition
+            else None,
         )
 
     def _ensure_persisted_job_snapshot(
