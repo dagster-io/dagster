@@ -114,7 +114,7 @@ def build_example_step() -> GroupLeafStepConfiguration:
 
 ```python
 .run(
-    "uv pip install -e python_modules/package[extras]",
+    "uv pip install --system -e python_modules/package[extras]",
     "actual_command_here",
 )
 ```
@@ -133,19 +133,19 @@ def build_example_step() -> GroupLeafStepConfiguration:
 #### Single Package with Extras
 
 ```python
-"uv pip install -e python_modules/automation[buildkite]"
+"uv pip install --system -e python_modules/automation[buildkite]"
 ```
 
 #### Multiple Packages
 
 ```python
-"uv pip install -e 'python_modules/dagster[test]' -e 'python_modules/dagster-pipes' -e 'python_modules/libraries/dagster-shared'"
+"uv pip install --system -e 'python_modules/dagster[test]' -e 'python_modules/dagster-pipes' -e 'python_modules/libraries/dagster-shared'"
 ```
 
 #### Complex Dependencies
 
 ```python
-"uv pip install -e python_modules/dagster[test] -e python_modules/dagster-graphql -e python_modules/automation"
+"uv pip install --system -e python_modules/dagster[test] -e python_modules/dagster-graphql -e python_modules/automation"
 ```
 
 ### Package Extras Reference
@@ -188,7 +188,7 @@ def build_my_new_step() -> GroupLeafStepConfiguration:
             AvailablePythonVersion.get_default(),
         )
         .run(
-            "uv pip install -e python_modules/required_package[extras]",
+            "uv pip install --system -e python_modules/required_package[extras]",
             "cd target_directory",
             "python -m module.command --flags",
         )
@@ -200,7 +200,7 @@ def build_my_new_step() -> GroupLeafStepConfiguration:
 
 - Use descriptive emoji and name for easy identification
 - Install dependencies before running commands
-- Use `uv pip install` for consistency
+- Use `uv pip install --system` for consistency (required in Docker containers)
 - Include required extras based on package setup.py
 - Change directory before running commands if needed
 
@@ -209,11 +209,11 @@ def build_my_new_step() -> GroupLeafStepConfiguration:
 **Rule**: Always install packages with required extras
 
 ```python
-# ❌ Wrong - missing extras
+# ❌ Wrong - missing extras and --system flag
 "uv pip install -e python_modules/automation"
 
-# ✅ Correct - includes buildkite extra for dagster dependency
-"uv pip install -e python_modules/automation[buildkite]"
+# ✅ Correct - includes buildkite extra for dagster dependency and --system flag
+"uv pip install --system -e python_modules/automation[buildkite]"
 ```
 
 **Common Extras Needed**:
