@@ -41,6 +41,7 @@ def build_build_docs_step():
 
 
 def build_docstring_validation_step() -> GroupLeafStepConfiguration:
+<<<<<<< HEAD
     return (
         add_test_image(
             CommandStepBuilder(":memo: docstring validation", retry_automatically=False),
@@ -51,6 +52,14 @@ def build_docstring_validation_step() -> GroupLeafStepConfiguration:
             "python -m automation.dagster_docs.main check docstrings --all",
         )
         .build()
+=======
+    return build_tox_step(
+        root_dir="python_modules/automation",
+        tox_env=f"py{AvailablePythonVersion.get_default().value.replace('.', '')}",
+        base_label="docstring validation",
+        command_type="pytest",
+        extra_commands_post=["python -m automation.dagster_docs.main check docstrings --all"],
+>>>>>>> 34b237331a (Fix python syntax errors in docstring)
     )
 
 

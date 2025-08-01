@@ -383,7 +383,7 @@ class MetadataValue(ABC, Generic[T_Packable]):
             @op
             def emit_metadata(context, df):
                 yield AssetMaterialization(
-                    asset_key="my_dataset"
+                    asset_key="my_dataset",
                     metadata={
                         "Producing job": MetadataValue.job('my_other_job'),
                     },
