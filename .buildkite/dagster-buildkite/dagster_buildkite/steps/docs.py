@@ -6,6 +6,7 @@ from buildkite_shared.step_builders.group_step_builder import (
 )
 from buildkite_shared.step_builders.step_builder import StepConfiguration
 from dagster_buildkite.images.versions import add_test_image
+from dagster_buildkite.steps.tox import build_tox_step
 from dagster_buildkite.utils import skip_if_no_docs_changes
 
 
@@ -41,25 +42,13 @@ def build_build_docs_step():
 
 
 def build_docstring_validation_step() -> GroupLeafStepConfiguration:
-<<<<<<< HEAD
-    return (
-        add_test_image(
-            CommandStepBuilder(":memo: docstring validation", retry_automatically=False),
-            AvailablePythonVersion.get_default(),
-        )
-        .run(
-            "uv pip install --system -e python_modules/automation[buildkite]",
-            "python -m automation.dagster_docs.main check docstrings --all",
-        )
-        .build()
-=======
     return build_tox_step(
         root_dir="python_modules/automation",
         tox_env=f"py{AvailablePythonVersion.get_default().value.replace('.', '')}",
         base_label="docstring validation",
         command_type="pytest",
         extra_commands_post=["python -m automation.dagster_docs.main check docstrings --all"],
->>>>>>> 34b237331a (Fix python syntax errors in docstring)
+        retries=0,
     )
 
 
