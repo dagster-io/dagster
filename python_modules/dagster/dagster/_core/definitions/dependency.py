@@ -642,11 +642,13 @@ class DependencyDefinition(
 
     .. code-block:: python
 
+        from dagster import DependencyDefinition
+
         dependency_structure = {
             'my_downstream_op': {
                 'input': DependencyDefinition('my_upstream_op', 'result')
-            }
-            'my_downstream_op': {
+            },
+            'my_other_downstream_op': {
                 'input': DependencyDefinition('my_upstream_graph', 'result')
             }
         }
@@ -656,6 +658,8 @@ class DependencyDefinition(
     :py:func:`@job <job>` API:
 
     .. code-block:: python
+
+        from dagster import job
 
         @job
         def the_job():

@@ -86,7 +86,7 @@ class SnowflakePandasTypeHandler(DbTypeHandler[pd.DataFrame]):
                     return [SnowflakePandasTypeHandler(), SnowflakePySparkTypeHandler()]
 
             @asset(
-                key_prefix=["my_schema"]  # will be used as the schema in snowflake
+                key_prefix=["my_schema"],  # will be used as the schema in snowflake
             )
             def my_table() -> pd.DataFrame:  # the name of the asset will be the table name
                 ...
@@ -187,7 +187,7 @@ Examples:
         from dagster import asset, Definitions
 
         @asset(
-            key_prefix=["my_schema"]  # will be used as the schema in snowflake
+            key_prefix=["my_schema"],  # will be used as the schema in snowflake
         )
         def my_table() -> pd.DataFrame:  # the name of the asset will be the table name
             ...
@@ -197,8 +197,7 @@ Examples:
             resources={
                 "io_manager": snowflake_pandas_io_manager.configured({
                     "database": "my_database",
-                    "account" : {"env": "SNOWFLAKE_ACCOUNT"}
-                    ...
+                    "account": {"env": "SNOWFLAKE_ACCOUNT"}
                 })
             }
         )
@@ -209,9 +208,9 @@ Examples:
     .. code-block:: python
 
         Definitions(
-            assets=[my_table]
-            resources={"io_manager" snowflake_pandas_io_manager.configured(
-                {"database": "my_database", "schema": "my_schema", ...} # will be used as the schema
+            assets=[my_table],
+            resources={"io_manager": snowflake_pandas_io_manager.configured(
+                {"database": "my_database", "schema": "my_schema"} # will be used as the schema
             )}
         )
 
@@ -223,7 +222,7 @@ Examples:
     .. code-block:: python
 
         @asset(
-            key_prefix=["my_schema"]  # will be used as the schema in snowflake
+            key_prefix=["my_schema"],  # will be used as the schema in snowflake
         )
         def my_table() -> pd.DataFrame:
             ...
@@ -277,7 +276,7 @@ class SnowflakePandasIOManager(SnowflakeIOManager):
             from dagster import asset, Definitions, EnvVar
 
             @asset(
-                key_prefix=["my_schema"]  # will be used as the schema in snowflake
+                key_prefix=["my_schema"],  # will be used as the schema in snowflake
             )
             def my_table() -> pd.DataFrame:  # the name of the asset will be the table name
                 ...
@@ -285,7 +284,7 @@ class SnowflakePandasIOManager(SnowflakeIOManager):
             Definitions(
                 assets=[my_table],
                 resources={
-                    "io_manager": SnowflakePandasIOManager(database="MY_DATABASE", account=EnvVar("SNOWFLAKE_ACCOUNT"), ...)
+                    "io_manager": SnowflakePandasIOManager(database="MY_DATABASE", account=EnvVar("SNOWFLAKE_ACCOUNT"))
                 }
             )
 
@@ -295,9 +294,9 @@ class SnowflakePandasIOManager(SnowflakeIOManager):
         .. code-block:: python
 
             Definitions(
-                assets=[my_table]
+                assets=[my_table],
                 resources={
-                    "io_manager" SnowflakePandasIOManager(database="my_database", schema="my_schema", ...)
+                    "io_manager": SnowflakePandasIOManager(database="my_database", schema="my_schema")
                 }
             )
 
@@ -309,7 +308,7 @@ class SnowflakePandasIOManager(SnowflakeIOManager):
         .. code-block:: python
 
             @asset(
-                key_prefix=["my_schema"]  # will be used as the schema in snowflake
+                key_prefix=["my_schema"],  # will be used as the schema in snowflake
             )
             def my_table() -> pd.DataFrame:
                 ...
