@@ -1331,23 +1331,23 @@ class DagsterInstance(DynamicPartitionsStore):
                     asset_key = output.properties.asset_key if output.properties else None
                     adjusted_output = output
 
-                    if asset_key is not None:
-                        asset_node = asset_graph.get(asset_key)
-                        if isinstance(asset_node.partitions_def, TimeWindowPartitionsDefinition):
-                            # maybe check that it's the same partitions definition?
-                            partitions_definition = asset_node.partitions_def
+                    if asset_key and asset_graph.has(asset_key):
+                        if partitions_definition is None:
+                            asset_node = asset_graph.get(asset_key)
+                            if isinstance(
+                                asset_node.partitions_def, TimeWindowPartitionsDefinition
+                            ):
+                                partitions_definition = asset_node.partitions_def
 
-                    if (
-                        output.properties is not None
-                        and asset_key
-                        and asset_graph.has(asset_key)
-                        and output.properties.asset_execution_type is None
-                    ):
-                        adjusted_output = output._replace(
-                            properties=output.properties._replace(
-                                asset_execution_type=asset_graph.get(asset_key).execution_type
+                        if (
+                            output.properties is not None
+                            and output.properties.asset_execution_type is None
+                        ):
+                            adjusted_output = output._replace(
+                                properties=output.properties._replace(
+                                    asset_execution_type=asset_graph.get(asset_key).execution_type
+                                )
                             )
-                        )
 
                     adjusted_outputs.append(adjusted_output)
 
