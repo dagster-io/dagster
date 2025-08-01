@@ -1,12 +1,10 @@
-import functools
 import json
-import os
 import re
 import subprocess
 import textwrap
+import uuid
 from abc import ABC
 from pathlib import Path
-from typing import Optional
 
 import click
 from dagster_dg_core.config import normalize_cli_config
@@ -14,6 +12,9 @@ from dagster_dg_core.context import DgContext
 from dagster_dg_core.shared_options import dg_global_options, dg_path_options
 from dagster_dg_core.utils import DgClickCommand
 from dagster_dg_core.utils.telemetry import cli_telemetry_wrapper
+
+from dagster_dg_cli.utils.claude_utils import run_claude, run_claude_stream
+from dagster_dg_cli.utils.ui import daggy_spinner_context
 
 
 def _run_git_command(args: list[str]) -> subprocess.CompletedProcess[str]:
@@ -88,6 +89,12 @@ def create_empty_commit(message: str) -> None:
     click.echo(f"Created empty commit: {message}")
 
 
+def create_content_commit_and_push(message: str) -> None:
+    _run_git_command(["add", "-A"])
+    _run_git_command(["commit", "-m", message])
+    _run_git_command(["push"])
+
+
 def push_branch_and_create_pr(branch_name: str, pr_title: str, pr_body: str) -> str:
     """Push the current branch to remote and create a GitHub pull request.
 
@@ -129,65 +136,156 @@ def _branch_name_prompt(prompt: str) -> str:
     )
 
 
-@functools.cache
-def _find_claude(dg_context: DgContext) -> Optional[list[str]]:
-    try:  # on PATH
-        subprocess.run(
-            ["claude", "--version"],
-            check=False,
-            capture_output=True,
-        )
-        return ["claude"]
-    except FileNotFoundError:
-        pass
+def _scaffolding_prompt(user_input: str) -> str:
+    return textwrap.dedent(
+        f"""
+        This session was started via the Dagster CLI `dg`. Your job is to complete the following steps, do not deviate from these steps:
 
-    try:  # check for alias (auto-updating version recommends registering an alias instead of putting on PATH)
-        result = subprocess.run(
-            [os.getenv("SHELL", "bash"), "-ic", "type claude"],
-            capture_output=True,
-            text=True,
-            check=False,
-        )
-        path_match = re.search(r"(/[^\s`\']+)", result.stdout)
-        if path_match:
-            return [path_match.group(1)]
-    except FileNotFoundError:
-        pass
+        ## Steps
+        1. Locate any relevant packages which might not be installed using `dg docs integrations`. Install these packages with
+           `uv add <package-name>` and `uv sync`.
+        2. Use `dg scaffold defs` commands to scaffold a set of Dagster definitions to get the user started on their goal. Select technologies appropriate
+           for the user's goal. If you have a choice between multiple technologies, present them to the user and ask them to select the one they prefer.
+           If no matching integrations are found, let the user know, and abort the session. Do not use commands outside of your list of allowed commands.
+           Generally, prefer to scaffold integration-specific components instead of generic components like dagster.DefinitionsComponent,
+           dagster.FunctionComponent, and dagster.PythonScriptComponent, as these are more likely to be useful.
+        3. Locate scaffolded `defs.yaml` files (in the folder where the component was scaffolded) and populate them with data.
+           Run `dg check yaml` to validate the files.
+           Bias towards a fully featured scaffolded YAML file, utilizing e.g. kind tags, descriptions etc on the `translation` field, if present.
+           Do not modify other YAML files. Do not create or modify Python files.
+           Do your best attempt to address the request, and exit once you would have to modify a file that is not a `defs.yaml` file.
+           It is acceptable to produce an invalid `defs.yaml` file, but generally try to produce a valid file.
+        4. Create `MISSION.md` file adjacent to `defs.yaml`. In this file, dump a human and AI friendly version of your accumulated
+           knowledge and context of the task and the next steps which should be taken to finish the task.
+        5. Update the newly generated `defs.yaml` file to mention all environment variables used across the scaffolded files. Insert this
+           at the end of the file. Do so with the format:
+            ```yaml
+            requirements:
+            env:
+                - <ENV_VAR_NAME>
+                - <OTHER_ENV_VAR_NAME>
+            ```
+            Run the `dg list env` command to ensure all required environment variables are listed.
 
-    return None
+
+        ## Rules
+
+        DO NOT TRY TO DIRECTLY EDIT A FILE WHICH IS NOT NAMED `defs.yaml` OR `MISSION.md`.
+        YOU DO NOT HAVE ACCESS TO EDIT THESE FILES. DO NOT REQUEST ACCESS TO EDIT THESE FILES.
+        Instead, note that the file should be updated as part of the next steps instructions in `MISSION.md`.
+
+        ## Context
+
+        The following context will help you work with the user to accomplish their goals using the Dagster library and `dg` CLI.
+
+        # Dagster
+
+        Dagster is a data orchestration platform for building, testing, and monitoring data pipelines.
+
+        # Definitions
+
+        The Dagster library operates over definitions created by the user. The core definition types are:
+
+        * Assets
+        * Asset Checks
+        * Jobs
+        * Schedules
+        * Sensors
+        * Resources
+
+        # Assets
+
+        The primary Dagster definition type, representing a data object (table, file, model) that's produced by computation.
+        Assets have the following identifying properties:
+        * `key` - The unique identifier for the asset.
+        * `group` - The group the asset belongs to.
+        * `kind` - What type of asset it is (can be multiple kinds).
+        * `tags` - User defined key value pairs.
+
+        ## Asset Selection Syntax
+
+        Assets can be selected using the following syntax:
+        - key:"value" - exact key match
+        - key:"prefix_*" - wildcard key matching
+        - tag:"name" - exact tag match
+        - tag:"name"="value" - tag with specific value
+        - owner:"name" - filter by owner
+        - group:"name" - filter by group
+        - kind:"type" - filter by asset kind
+
+
+        # Components
+        An abstraction for creating Dagster Definitions.
+        Component instances are most commonly defined in defs.yaml files. These files abide by the following required schema:
+
+        ```yaml
+        type: module.ComponentType # The Component type to instantiate
+        attributes: ... # The attributes to pass to the Component. The Component type defines the schema of these attributes.
+        ```
+        Multiple component instances can be defined in a yaml file, separated by `---`.
+
+        # `dg` Dagster CLI
+        The `dg` CLI is a tool for managing Dagster projects and workspaces.
+
+        ## Essential Commands
+
+        ```bash
+        # Validation
+        dg check yaml # Validate yaml files according to their schema (fast)
+        dg check defs # Validate definitions by loading them fully (slower)
+
+        # Scaffolding
+        dg scaffold defs <component type> <component path> # Create an instance of a Component type. Available types found via `dg list components`.
+
+        # Searching
+        dg list defs # Show project definitions
+        dg list defs --assets <asset selection> # Show selected asset definitions
+        dg list component-tree # Show the component tree
+        dg list components # Show available component types
+        dg docs integrations # Show documentation for integrations, including the pypi package names, in case you need to install a package.
+
+        # Learning more about a component type
+        dg utils inspect-component <component type> # Show documentation for a component type, including schema.
+        ```
+        * The `dg` CLI will be effective in accomplishing tasks. Use --help to better understand how to use commands.
+        * Prefer `dg list defs` over searching the files system when looking for Dagster definitions.
+        * Use the --json flag to get structured output.
+
+
+        # User Prompt
+
+        {user_input}
+        """
+    )
+
+
+def _allowed_commands_scaffolding() -> list[str]:
+    return [
+        "Bash(dg scaffold defs:*)",
+        "Bash(dg list defs:*)",
+        "Bash(dg list components:*)",
+        "Bash(dg docs component:*)",
+        "Bash(dg check yaml:*)",
+        "Bash(dg check defs:*)",
+        "Bash(dg list env:*)",
+        "Bash(dg utils inspect-component:*)",
+        "Bash(dg docs integrations:*)",
+        "Bash(uv add:*)",
+        "Bash(uv sync:*)",
+        # update yaml files
+        "Edit(**/*defs.yaml)",
+        "Replace(**/*defs.yaml)",
+        "Update(**/*defs.yaml)",
+        "Write(**/*defs.yaml)",
+        "Edit(**/*MISSION.md)",
+        "Replace(**/*MISSION.md)",
+        "Update(**/*MISSION.md)",
+        "Write(**/*MISSION.md)",
+        "Bash(touch:*)",
+    ]
 
 
 MAX_TURNS = 20
-
-
-def _run_claude(
-    dg_context: DgContext,
-    prompt: str,
-    allowed_tools: list[str],
-    max_turns=MAX_TURNS,
-    output_format="text",
-) -> str:
-    """Runs Claude with the given prompt and allowed tools."""
-    claude_cmd = _find_claude(dg_context)
-    assert claude_cmd is not None
-    cmd = [
-        *claude_cmd,
-        "-p",
-        prompt,
-        "--allowedTools",
-        ",".join(allowed_tools),
-        "--maxTurns",
-        str(max_turns),
-        "--outputFormat",
-        output_format,
-    ]
-    output = subprocess.run(
-        cmd,
-        check=False,
-        capture_output=True,
-        text=True,
-    )
-    return output.stdout
 
 
 class InputType(ABC):
@@ -215,14 +313,26 @@ def get_branch_name_and_pr_title_from_prompt(
     """Invokes Claude under the hood to generate a reasonable, valid
     git branch name and pull request title based on the user's stated goal.
     """
-    output = _run_claude(
+    output = run_claude(
         dg_context,
         _branch_name_prompt(input_type.get_context(user_input)),
         input_type.additional_allowed_tools(),
-        output_format="text",
     )
     json_output = json.loads(output.strip())
     return json_output["branch-name"], json_output["pr-title"]
+
+
+def scaffold_content_for_prompt(
+    dg_context: DgContext, user_input: str, input_type: type[InputType]
+) -> None:
+    """Scaffolds content for the user's prompt."""
+    with daggy_spinner_context("Scaffolding") as spinner:
+        run_claude_stream(
+            dg_context,
+            _scaffolding_prompt(input_type.get_context(user_input)),
+            _allowed_commands_scaffolding() + input_type.additional_allowed_tools(),
+            spinner=spinner,
+        )
 
 
 class TextInputType(InputType):
@@ -282,6 +392,8 @@ def scaffold_branch_command(
     dg_context = DgContext.for_workspace_or_project_environment(target_path, cli_config)
 
     prompt_text = " ".join(prompt)
+    ai_scaffolding = False
+    input_type = None
 
     # If the user input a valid git branch name, bypass AI inference and create the branch directly.
     if prompt_text and _is_prompt_valid_git_branch_name(prompt_text.strip()):
@@ -297,10 +409,13 @@ def scaffold_branch_command(
             (input_type for input_type in INPUT_TYPES if input_type.matches(prompt_text)),
             TextInputType,
         )
-
-        branch_name, pr_title = get_branch_name_and_pr_title_from_prompt(
-            dg_context, prompt_text, input_type
-        )
+        with daggy_spinner_context("Generating branch name and PR title"):
+            branch_name, pr_title = get_branch_name_and_pr_title_from_prompt(
+                dg_context, prompt_text, input_type
+            )
+        # For generated branch names, add a random suffix to avoid conflicts
+        branch_name = branch_name + "-" + str(uuid.uuid4())[:8]
+        ai_scaffolding = True
 
     click.echo(f"Creating new branch: {branch_name}")
 
@@ -318,3 +433,7 @@ def scaffold_branch_command(
     pr_url = push_branch_and_create_pr(branch_name, pr_title, pr_body)
 
     click.echo(f"✅ Successfully created branch and pull request: {pr_url}")
+
+    if ai_scaffolding and input_type:
+        scaffold_content_for_prompt(dg_context, prompt_text, input_type)
+        create_content_commit_and_push(f"First pass at {branch_name}")
