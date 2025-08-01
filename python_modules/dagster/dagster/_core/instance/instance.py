@@ -1,23 +1,46 @@
-# Import and re-export commonly used symbols for backwards compatibility
-from collections.abc import Mapping
-from typing import Any
-
-from typing_extensions import TypeAlias
-
-from dagster._core.instance.instance import DagsterInstance as DagsterInstance
-from dagster._core.instance.ref import InstanceRef as InstanceRef
-from dagster._core.instance.types import (
-    DynamicPartitionsStore as DynamicPartitionsStore,
-    InstanceType as InstanceType,
-    MayHaveInstanceWeakref as MayHaveInstanceWeakref,
-    T_DagsterInstance as T_DagsterInstance,
+import logging
+import logging.config
+import os
+import sys
+import warnings
+import weakref
+from collections import defaultdict
+from collections.abc import Iterable, Mapping, Sequence
+from datetime import datetime
+from tempfile import TemporaryDirectory
+from types import TracebackType
+from typing import (  # noqa: UP035
+    TYPE_CHECKING,
+    AbstractSet,
+    Any,
+    Callable,
+    Dict,  # noqa: F401
+    List,  # noqa: F401
+    Optional,
+    Set,  # noqa: F401
+    Tuple,  # noqa: F401
+    Type,  # noqa: F401
+    Union,
+    cast,
 )
-from dagster._core.instance.utils import (
-    RUNLESS_JOB_NAME as RUNLESS_JOB_NAME,
-    RUNLESS_RUN_ID as RUNLESS_RUN_ID,
+
+import yaml
+from typing_extensions import Self, TypeAlias
+
+import dagster._check as check
+from dagster._annotations import deprecated, public
+from dagster._core.definitions.asset_checks.asset_check_evaluation import (
+    AssetCheckEvaluation,
+    AssetCheckEvaluationPlanned,
+)
+from dagster._core.definitions.data_version import extract_data_provenance_from_entry
+from dagster._core.definitions.events import AssetKey, AssetObservation
+from dagster._core.definitions.freshness import (
+    FreshnessStateChange,
+    FreshnessStateEvaluation,
+    FreshnessStateRecord,
 )
 from dagster._core.definitions.partitions.partition_key_range import PartitionKeyRange
-from dagster._core.definitions.partitions.utils.time_window import TimeWindow
 from dagster._core.errors import (
     DagsterHomeNotSetError,
     DagsterInvalidInvocationError,
@@ -35,7 +58,21 @@ from dagster._core.instance.config import (
     get_tick_retention_settings,
 )
 from dagster._core.instance.ref import InstanceRef
-from dagster._core.log_manager import get_log_record_metadata
+from dagster._core.instance.types import (
+    DynamicPartitionsStore,
+    InstanceType,
+    _EventListenerLogHandler,
+)
+from dagster._core.instance.utils import (
+    AIRFLOW_EXECUTION_DATE_STR,
+    IS_AIRFLOW_INGEST_PIPELINE_STR,
+    RUNLESS_JOB_NAME,
+    RUNLESS_RUN_ID,
+    _check_run_equality,
+    _format_field_diff,
+    _get_event_batch_size,
+    _is_batch_writing_enabled,
+)
 from dagster._core.origin import JobPythonOrigin
 from dagster._core.storage.dagster_run import (
     IN_PROGRESS_RUN_STATUSES,
@@ -70,21 +107,6 @@ from dagster._utils import PrintFn, is_uuid, traced
 from dagster._utils.error import serializable_error_info_from_exc_info
 from dagster._utils.merger import merge_dicts
 from dagster._utils.warnings import beta_warning, disable_dagster_warnings
-
-# 'airflow_execution_date' and 'is_airflow_ingest_pipeline' are hardcoded tags used in the
-# airflow ingestion logic (see: dagster_pipeline_factory.py). 'airflow_execution_date' stores the
-# 'execution_date' used in Airflow operator execution and 'is_airflow_ingest_pipeline' determines
-# whether 'airflow_execution_date' is needed.
-# https://github.com/dagster-io/dagster/issues/2403
-AIRFLOW_EXECUTION_DATE_STR = "airflow_execution_date"
-IS_AIRFLOW_INGEST_PIPELINE_STR = "is_airflow_ingest_pipeline"
-
-# Our internal guts can handle empty strings for job name and run id
-# However making these named constants for documentation, to encode where we are making the assumption,
-# and to allow us to change this more easily in the future, provided we are disciplined about
-# actually using this constants.
-RUNLESS_RUN_ID = ""
-RUNLESS_JOB_NAME = ""
 
 if TYPE_CHECKING:
     from dagster._core.debug import DebugRunPayload
@@ -180,178 +202,7 @@ if TYPE_CHECKING:
     from dagster._core.workspace.context import BaseWorkspaceRequestContext
     from dagster._daemon.types import DaemonHeartbeat, DaemonStatus
 
-from dagster._time import get_current_timestamp as get_current_timestamp  # for intenral compat
-
-# Type alias
 DagsterInstanceOverrides: TypeAlias = Mapping[str, Any]
-
-
-# Sets the number of events that will be buffered before being written to the event log. Only
-# applies to explicitly batched events. Currently this defaults to 0, which turns off batching
-# entirely (multiple store_event calls are made instead of store_event_batch). This makes batching
-# opt-in.
-#
-# Note that we don't store the value in the constant so that it can be changed without a process
-# restart.
-def _get_event_batch_size() -> int:
-    return int(os.getenv("DAGSTER_EVENT_BATCH_SIZE", "0"))
-
-
-def _is_batch_writing_enabled() -> bool:
-    return _get_event_batch_size() > 0
-
-
-def _check_run_equality(
-    pipeline_run: DagsterRun, candidate_run: DagsterRun
-) -> Mapping[str, tuple[Any, Any]]:
-    field_diff: dict[str, tuple[Any, Any]] = {}
-    for field in pipeline_run._fields:
-        expected_value = getattr(pipeline_run, field)
-        candidate_value = getattr(candidate_run, field)
-        if expected_value != candidate_value:
-            field_diff[field] = (expected_value, candidate_value)
-
-    return field_diff
-
-
-def _format_field_diff(field_diff: Mapping[str, tuple[Any, Any]]) -> str:
-    return "\n".join(
-        [
-            (
-                "    {field_name}:\n"
-                + "        Expected: {expected_value}\n"
-                + "        Received: {candidate_value}"
-            ).format(
-                field_name=field_name,
-                expected_value=expected_value,
-                candidate_value=candidate_value,
-            )
-            for field_name, (
-                expected_value,
-                candidate_value,
-            ) in field_diff.items()
-        ]
-    )
-
-
-class _EventListenerLogHandler(logging.Handler):
-    def __init__(self, instance: "DagsterInstance"):
-        self._instance = instance
-        super().__init__()
-
-    def emit(self, record: logging.LogRecord) -> None:
-        from dagster._core.events import EngineEventData
-        from dagster._core.events.log import StructuredLoggerMessage, construct_event_record
-
-        record_metadata = get_log_record_metadata(record)
-        event = construct_event_record(
-            StructuredLoggerMessage(
-                name=record.name,
-                message=record.msg,
-                level=record.levelno,
-                meta=record_metadata,
-                record=record,
-            )
-        )
-
-        try:
-            self._instance.handle_new_event(
-                event, batch_metadata=record_metadata["dagster_event_batch_metadata"]
-            )
-        except Exception as e:
-            sys.stderr.write(f"Exception while writing logger call to event log: {e}\n")
-            if event.dagster_event:
-                # Swallow user-generated log failures so that the entire step/run doesn't fail, but
-                # raise failures writing system-generated log events since they are the source of
-                # truth for the state of the run
-                raise
-            elif event.run_id:
-                self._instance.report_engine_event(
-                    "Exception while writing logger call to event log",
-                    job_name=event.job_name,
-                    run_id=event.run_id,
-                    step_key=event.step_key,
-                    engine_event_data=EngineEventData(
-                        error=serializable_error_info_from_exc_info(sys.exc_info()),
-                    ),
-                )
-
-
-class InstanceType(Enum):
-    PERSISTENT = "PERSISTENT"
-    EPHEMERAL = "EPHEMERAL"
-
-
-T_DagsterInstance = TypeVar("T_DagsterInstance", bound="DagsterInstance", default="DagsterInstance")
-
-
-class MayHaveInstanceWeakref(Generic[T_DagsterInstance]):
-    """Mixin for classes that can have a weakref back to a Dagster instance."""
-
-    _instance_weakref: "Optional[weakref.ReferenceType[T_DagsterInstance]]"
-
-    def __init__(self):
-        self._instance_weakref = None
-
-    @property
-    def has_instance(self) -> bool:
-        return hasattr(self, "_instance_weakref") and (self._instance_weakref is not None)
-
-    @property
-    def _instance(self) -> T_DagsterInstance:
-        instance = (
-            self._instance_weakref()
-            # Backcompat with custom subclasses that don't call super().__init__()
-            # in their own __init__ implementations
-            if (hasattr(self, "_instance_weakref") and self._instance_weakref is not None)
-            else None
-        )
-        if instance is None:
-            raise DagsterInvariantViolationError(
-                "Attempted to resolve undefined DagsterInstance weakref."
-            )
-        else:
-            return instance
-
-    def register_instance(self, instance: T_DagsterInstance) -> None:
-        check.invariant(
-            (
-                # Backcompat with custom subclasses that don't call super().__init__()
-                # in their own __init__ implementations
-                not hasattr(self, "_instance_weakref") or self._instance_weakref is None
-            ),
-            "Must only call initialize once",
-        )
-
-        # Store a weakref to avoid a circular reference / enable GC
-        self._instance_weakref = weakref.ref(instance)
-
-
-@runtime_checkable
-class DynamicPartitionsStore(Protocol):
-    @abstractmethod
-    def get_dynamic_partitions(self, partitions_def_name: str) -> Sequence[str]: ...
-
-    @abstractmethod
-    def get_paginated_dynamic_partitions(
-        self,
-        partitions_def_name: str,
-        limit: int,
-        ascending: bool,
-        cursor: Optional[str] = None,
-    ) -> PaginatedResults[str]: ...
-
-    @abstractmethod
-    def has_dynamic_partition(self, partitions_def_name: str, partition_key: str) -> bool: ...
-
-    def get_dynamic_partitions_definition_id(self, partitions_def_name: str) -> str:
-        from dagster._core.definitions.partitions.utils import (
-            generate_partition_key_based_definition_id,
-        )
-
-        # matches the base implementation of the get_serializable_unique_identifier on PartitionsDefinition
-        partition_keys = self.get_dynamic_partitions(partitions_def_name)
-        return generate_partition_key_based_definition_id(partition_keys)
 
 
 @public
@@ -1270,10 +1121,6 @@ class DagsterInstance(DynamicPartitionsStore):
         job_code_origin: Optional[JobPythonOrigin] = None,
         asset_graph: Optional["BaseAssetGraph[BaseAssetNode]"] = None,
     ) -> DagsterRun:
-        from dagster._core.definitions.partitions.definition.time_window import (
-            TimeWindowPartitionsDefinition,
-        )
-
         # https://github.com/dagster-io/dagster/issues/2403
         if tags and IS_AIRFLOW_INGEST_PIPELINE_STR in tags:
             if AIRFLOW_EXECUTION_DATE_STR not in tags:
@@ -1294,7 +1141,6 @@ class DagsterInstance(DynamicPartitionsStore):
             if job_snapshot
             else None
         )
-        partitions_definition = None
 
         # ensure that all asset outputs list their execution type, even if the snapshot was
         # created on an older version before it was being set
@@ -1306,22 +1152,17 @@ class DagsterInstance(DynamicPartitionsStore):
                     asset_key = output.properties.asset_key if output.properties else None
                     adjusted_output = output
 
-                    if asset_key and asset_graph.has(asset_key):
-                        if partitions_definition is None:
-                            # this assumes that if one partitioned asset is in a run, all other partitioned
-                            # assets in the run have the same partitions definition.
-                            asset_node = asset_graph.get(asset_key)
-                            partitions_definition = asset_node.partitions_def
-
-                        if (
-                            output.properties is not None
-                            and output.properties.asset_execution_type is None
-                        ):
-                            adjusted_output = output._replace(
-                                properties=output.properties._replace(
-                                    asset_execution_type=asset_graph.get(asset_key).execution_type
-                                )
+                    if (
+                        output.properties is not None
+                        and asset_key
+                        and asset_graph.has(asset_key)
+                        and output.properties.asset_execution_type is None
+                    ):
+                        adjusted_output = output._replace(
+                            properties=output.properties._replace(
+                                asset_execution_type=asset_graph.get(asset_key).execution_type
                             )
+                        )
 
                     adjusted_outputs.append(adjusted_output)
 
@@ -1348,34 +1189,6 @@ class DagsterInstance(DynamicPartitionsStore):
         else:
             run_op_concurrency = None
 
-        partitions_subset = None
-        if partitions_definition is not None and isinstance(
-            partitions_definition, TimeWindowPartitionsDefinition
-        ):
-            # only store the subset of time window partitions, since those can be compressed efficiently
-            partition_tag = tags.get(PARTITION_NAME_TAG)
-            partition_range_start, partition_range_end = (
-                tags.get(ASSET_PARTITION_RANGE_START_TAG),
-                tags.get(ASSET_PARTITION_RANGE_END_TAG),
-            )
-
-            if partition_tag and (partition_range_start or partition_range_end):
-                raise DagsterInvariantViolationError(
-                    f"Cannot have {ASSET_PARTITION_RANGE_START_TAG} or"
-                    f" {ASSET_PARTITION_RANGE_END_TAG} set along with"
-                    f" {PARTITION_NAME_TAG}"
-                )
-            if partition_tag is not None:
-                partition_range_start = partition_tag
-                partition_range_end = partition_tag
-            start_window = partitions_definition.time_window_for_partition_key(
-                partition_range_start
-            )
-            end_window = partitions_definition.time_window_for_partition_key(partition_range_end)
-            partitions_subset = partitions_definition.get_partition_subset_in_time_window(
-                TimeWindow(start_window.start, end_window.end)
-            ).to_serializable_subset()
-
         return DagsterRun(
             job_name=job_name,
             run_id=run_id,
@@ -1396,7 +1209,6 @@ class DagsterInstance(DynamicPartitionsStore):
             has_repository_load_data=execution_plan_snapshot is not None
             and execution_plan_snapshot.repository_load_data is not None,
             run_op_concurrency=run_op_concurrency,
-            partitions_subset=partitions_subset,
         )
 
     def _ensure_persisted_job_snapshot(
@@ -1618,6 +1430,7 @@ class DagsterInstance(DynamicPartitionsStore):
         job_code_origin: Optional[JobPythonOrigin],
         asset_graph: "BaseAssetGraph",
     ) -> DagsterRun:
+        """Create a run with the given parameters."""
         from dagster._core.definitions.asset_key import AssetCheckKey
         from dagster._core.remote_representation.origin import RemoteJobOrigin
         from dagster._core.snap import ExecutionPlanSnapshot, JobSnap
@@ -2519,6 +2332,7 @@ class DagsterInstance(DynamicPartitionsStore):
             asset_keys (Sequence[AssetKey]): Asset keys to wipe.
         """
         from dagster._core.events import AssetWipedData, DagsterEvent, DagsterEventType
+        from dagster._core.instance.utils import RUNLESS_JOB_NAME, RUNLESS_RUN_ID
 
         check.list_param(asset_keys, "asset_keys", of_type=AssetKey)
         for asset_key in asset_keys:
