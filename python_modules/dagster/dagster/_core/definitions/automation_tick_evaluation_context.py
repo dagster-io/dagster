@@ -27,7 +27,6 @@ from dagster._core.definitions.events import AssetKey, AssetKeyPartitionKey
 from dagster._core.definitions.partitions.context import use_partition_loading_context
 from dagster._core.definitions.partitions.definition import PartitionsDefinition
 from dagster._core.definitions.run_request import RunRequest
-from dagster._core.instance import DynamicPartitionsStore
 from dagster._core.storage.tags import (
     ASSET_PARTITION_RANGE_END_TAG,
     ASSET_PARTITION_RANGE_START_TAG,
@@ -356,9 +355,7 @@ def _build_run_requests_from_partitions_def_mapping(
 
 
 def build_run_requests_with_backfill_policies(
-    asset_partitions: Iterable[AssetKeyPartitionKey],
-    asset_graph: BaseAssetGraph,
-    dynamic_partitions_store: DynamicPartitionsStore,
+    asset_graph: BaseAssetGraph, asset_partitions: Iterable[AssetKeyPartitionKey]
 ) -> Sequence[RunRequest]:
     """Build run requests for a selection of asset partitions based on the associated BackfillPolicies."""
     run_requests = []
@@ -420,7 +417,6 @@ def build_run_requests_with_backfill_policies(
                     check.not_none(partition_keys),
                     check.not_none(partitions_def),
                     tags={},
-                    dynamic_partitions_store=dynamic_partitions_store,
                 )
             )
     return run_requests
@@ -433,7 +429,6 @@ def _build_run_requests_with_backfill_policy(
     partition_keys: frozenset[str],
     partitions_def: PartitionsDefinition,
     tags: dict[str, Any],
-    dynamic_partitions_store: DynamicPartitionsStore,
 ) -> Sequence[RunRequest]:
     run_requests = []
     partition_subset = partitions_def.subset_with_partition_keys(partition_keys)
@@ -462,7 +457,6 @@ def _build_run_requests_with_backfill_policy(
                         backfill_policy.max_partitions_per_run, "max_partitions_per_run"
                     ),
                     run_tags=tags,
-                    dynamic_partitions_store=dynamic_partitions_store,
                 )
             )
     return run_requests
@@ -475,7 +469,6 @@ def _build_run_requests_for_partition_key_range(
     partition_key_range: PartitionKeyRange,
     max_partitions_per_run: int,
     run_tags: dict[str, str],
-    dynamic_partitions_store: DynamicPartitionsStore,
 ) -> Sequence[RunRequest]:
     """Builds multiple run requests for the given partition key range. Each run request will have at most
     max_partitions_per_run partitions.

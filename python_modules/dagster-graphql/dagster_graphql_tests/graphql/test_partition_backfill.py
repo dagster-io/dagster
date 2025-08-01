@@ -250,12 +250,10 @@ def _execute_asset_backfill_iteration_no_side_effects(graphql_context, backfill_
     )
     with environ({"ASSET_BACKFILL_CURSOR_DELAY_TIME": "0"}):
         result = execute_asset_backfill_iteration_inner(
-            backfill_id=backfill_id,
-            asset_backfill_data=asset_backfill_data,
-            asset_graph_view=asset_graph_view,
-            backfill_start_timestamp=asset_backfill_data.backfill_start_timestamp,
+            previous_data=asset_backfill_data.get_computation_data(
+                asset_graph_view, backfill_id, backfill.run_config
+            ),
             logger=logging.getLogger("fake_logger"),
-            run_config=None,
         )
 
     updated_backfill = backfill.with_asset_backfill_data(
