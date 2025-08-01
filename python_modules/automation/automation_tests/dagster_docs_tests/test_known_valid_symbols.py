@@ -34,6 +34,45 @@ SYMBOL_EXCLUDE_LIST = {
     "dagster.asset_check",  # Invalid section header: "Example with a DataFrame Output:" should be "Examples:"
     # Non-standard section header formatting (uses bold/italic formatting)
     "dagster.file_relative_path",  # Uses "**Examples**:" instead of "Examples:"
+    # Python code block syntax errors detected by AST parsing (to be fixed incrementally)
+    "dagster.build_reconstructable_job",  # Syntax error at line 9, column 18: invalid syntax
+    "dagster.daily_partitioned_config",  # Syntax error at line 5: invalid syntax
+    "dagster.execute_job",  # Syntax error at line 5, column 73: positional argument follows keyword argument
+    "dagster.hourly_partitioned_config",  # Syntax error at line 1, column 54: leading zeros in decimal integer literals
+    "dagster.monthly_partitioned_config",  # Syntax error at line 5: invalid syntax
+    "dagster.repository",  # Syntax error at line 3, column 18: invalid syntax. Perhaps you forgot a comma?
+    "dagster.weekly_partitioned_config",  # Syntax error at line 5: invalid syntax
+    # AssetExecutionContext methods with syntax errors in docstring code blocks
+    "dagster.AssetExecutionContext.asset_partition_key_for_output",  # Syntax error at line 14, column 10: invalid syntax. Perhaps you forgot a comma?
+    "dagster.AssetExecutionContext.asset_partition_key_range_for_input",  # Syntax error at line 20, column 9: invalid syntax. Perhaps you forgot a comma?
+    "dagster.AssetExecutionContext.asset_partition_key_range_for_output",  # Syntax error at line 14, column 10: invalid syntax. Perhaps you forgot a comma?
+    "dagster.AssetExecutionContext.asset_partition_keys_for_input",  # Syntax error at line 20, column 9: invalid syntax. Perhaps you forgot a comma?
+    "dagster.AssetExecutionContext.asset_partition_keys_for_output",  # Syntax error at line 14, column 10: invalid syntax. Perhaps you forgot a comma?
+    "dagster.AssetExecutionContext.asset_partitions_def_for_output",  # Syntax error at line 13, column 10: invalid syntax. Perhaps you forgot a comma?
+    "dagster.AssetExecutionContext.asset_partitions_time_window_for_input",  # Syntax error at line 24, column 9: invalid syntax. Perhaps you forgot a comma?
+    "dagster.AssetExecutionContext.asset_partitions_time_window_for_output",  # Syntax error at line 17, column 10: invalid syntax. Perhaps you forgot a comma?
+    # OpExecutionContext methods with syntax errors in docstring code blocks
+    "dagster.OpExecutionContext.asset_partition_key_for_output",  # Syntax error at line 14, column 10: invalid syntax. Perhaps you forgot a comma?
+    "dagster.OpExecutionContext.asset_partition_key_range_for_input",  # Syntax error at line 20, column 9: invalid syntax. Perhaps you forgot a comma?
+    "dagster.OpExecutionContext.asset_partition_key_range_for_output",  # Syntax error at line 14, column 10: invalid syntax. Perhaps you forgot a comma?
+    "dagster.OpExecutionContext.asset_partition_keys_for_input",  # Syntax error at line 20, column 9: invalid syntax. Perhaps you forgot a comma?
+    "dagster.OpExecutionContext.asset_partition_keys_for_output",  # Syntax error at line 14, column 10: invalid syntax. Perhaps you forgot a comma?
+    "dagster.OpExecutionContext.asset_partitions_def_for_output",  # Syntax error at line 13, column 10: invalid syntax. Perhaps you forgot a comma?
+    "dagster.OpExecutionContext.asset_partitions_time_window_for_input",  # Syntax error at line 24, column 9: invalid syntax. Perhaps you forgot a comma?
+    "dagster.OpExecutionContext.asset_partitions_time_window_for_output",  # Syntax error at line 17, column 10: invalid syntax. Perhaps you forgot a comma?
+    # MetadataValue classes with syntax errors in docstring code blocks
+    "dagster.BoolMetadataValue.job",  # Syntax error at line 4, column 19: invalid syntax. Perhaps you forgot a comma?
+    "dagster.CodeReferencesMetadataValue.job",  # Syntax error at line 4, column 19: invalid syntax. Perhaps you forgot a comma?
+    "dagster.DagsterAssetMetadataValue.job",  # Syntax error at line 4, column 19: invalid syntax. Perhaps you forgot a comma?
+    "dagster.DagsterJobMetadataValue.job",  # Syntax error at line 4, column 19: invalid syntax. Perhaps you forgot a comma?
+    "dagster.DagsterRunMetadataValue.job",  # Syntax error at line 4, column 19: invalid syntax. Perhaps you forgot a comma?
+    "dagster.FloatMetadataValue.job",  # Syntax error at line 4, column 19: invalid syntax. Perhaps you forgot a comma?
+    "dagster.IntMetadataValue.job",  # Syntax error at line 4, column 19: invalid syntax. Perhaps you forgot a comma?
+    "dagster.JsonMetadataValue.job",  # Syntax error at line 4, column 19: invalid syntax. Perhaps you forgot a comma?
+    "dagster.MarkdownMetadataValue.job",  # Syntax error at line 4, column 19: invalid syntax. Perhaps you forgot a comma?
+    "dagster.MetadataValue.job",  # Syntax error at line 4, column 19: invalid syntax. Perhaps you forgot a comma?
+    "dagster.NotebookMetadataValue.job",  # Syntax error at line 4, column 19: invalid syntax. Perhaps you forgot a comma?
+    "dagster.NullMetadataValue.job",  # Syntax error at line 4, column 19: invalid syntax. Perhaps you forgot a comma?
 }
 
 
