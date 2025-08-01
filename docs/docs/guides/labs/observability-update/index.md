@@ -6,15 +6,15 @@ sidebar_position: 100
 
 :::info
 
-These features are under active development, and are in limited early access. You may encounter feature gaps, and the functionality and APIs may change. Sign up to join the early access program [here](https://dagster.io/summer). To report issues or give feedback, please reach out to your Customer Success Manager.
+These features are under active development, and are in limited early access. You may encounter feature gaps, and the functionality and APIs may change. To join the early access program, sign up on the [Dagster+ Summer Update page](https://dagster.io/summer). To report issues or give feedback, please reach out to your Customer Success Manager.
 
 :::
 
-The Dagster+ Summer Update is a collection of new functionality that marks a major leap forward in observability and orchestration for data platforms. It focuses on improving real-time understanding of data health, operational metrics, and historical trends. With a redesigned user experience, the update makes it easier for teams to monitor, troubleshoot, and explore their data workflows.
+The Dagster+ Summer Update is a collection of new functionality that marks a major leap forward in observability and orchestration for data platforms. It focuses on improving real-time understanding of data health, operational metrics, and historical trends. With a redesigned user experience, the update makes it easier for you to monitor, troubleshoot, and explore your data workflows.
 
-### How to join and enable the beta
+### How to join the early access program
 
-The full suite of new features is available in limited early access for Dagster+ users. Sign up to join the early access program [here](https://dagster.io/summer).
+The full suite of new features is available in limited early access for Dagster+ users. To join the early access program, sign up on the [Dagster+ Summer Update page](https://dagster.io/summer).
 
 Once you are a member of the early access program, you can enable or disable the new experiences in your user settings, via the "New health & observability UIs" setting.
 
@@ -46,15 +46,13 @@ Give teams a focused view of the data that matters most. Create flexible, sharea
 
 With asset facets, you can customize asset views to surface the most relevant metadata, like ownership, health, freshness, and automation signals.
 
-To configure asset facets, click the facet configuration button on the asset lineage page:
+To configure asset facets, click the facet configuration button on the asset lineage page, then select the facets you want to display:
 
 ![Asset facets configuration button](/images/guides/labs/observability-update/asset-facets-config-button.png)
 
-Next, select the facets you want to display:
-
 ![Asset facets configuration modal](/images/guides/labs/observability-update/asset-facets-config-modal.png)
 
-:::note
+:::info
 
 Asset facets are only configured for your view. Changing the facet configuration will not change it for other users of your data platform.
 
