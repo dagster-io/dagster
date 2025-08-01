@@ -157,7 +157,7 @@ def _scaffolding_prompt(user_input: str) -> str:
         4. Create `MISSION.md` file adjacent to `defs.yaml`. In this file, dump a human and AI friendly version of your accumulated
            knowledge and context of the task and the next steps which should be taken to finish the task.
         5. Update the newly generated `defs.yaml` file to mention all environment variables used across the scaffolded files. Insert this
-           at the end of the file.Do so with the format:
+           at the end of the file. Do so with the format:
             ```yaml
             requirements:
             env:
