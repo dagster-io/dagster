@@ -2634,7 +2634,7 @@ def test_asset_hooks():
         jobs=[job],
     )
 
-    result = defs.get_job_def("my_job").execute_in_process()
+    result = defs.resolve_job_def("my_job").execute_in_process()
     hook_completed = [
         event for event in result.all_events if "HOOK_COMPLETED" == event.event_type_value
     ]
@@ -2705,7 +2705,7 @@ def test_graph_asset_hooks():
         jobs=[job],
     )
 
-    result = defs.get_job_def("my_job").execute_in_process()
+    result = defs.resolve_job_def("my_job").execute_in_process()
     hook_completed = [
         event for event in result.all_events if "HOOK_COMPLETED" == event.event_type_value
     ]
@@ -2837,7 +2837,7 @@ def test_complex_graph_structure_hooks():
     )
 
     # Execute the job
-    result = defs.get_job_def("complex_job").execute_in_process()
+    result = defs.resolve_job_def("complex_job").execute_in_process()
     assert result.success
 
     # Extract hook events
@@ -2949,7 +2949,7 @@ def test_linear_chain_hooks(hook_testing_utils):
     defs = dg.Definitions(assets=[linear_a, linear_b, linear_c, linear_d], jobs=[linear_job])
 
     # Execute and verify
-    result = defs.get_job_def("linear_job").execute_in_process()
+    result = defs.resolve_job_def("linear_job").execute_in_process()
     assert result.success
     assert len(executed_hooks) == 3
     assert set(executed_hooks) == {
@@ -2991,7 +2991,7 @@ def test_diamond_pattern_hooks(hook_testing_utils):
     defs = dg.Definitions(assets=[diamond_a, diamond_b, diamond_c, diamond_d], jobs=[diamond_job])
 
     # Execute and verify
-    result = defs.get_job_def("diamond_job").execute_in_process()
+    result = defs.resolve_job_def("diamond_job").execute_in_process()
     assert result.success
     assert len(executed_hooks) == 3
     assert set(executed_hooks) == {
@@ -3040,7 +3040,7 @@ def test_fan_out_hooks(hook_testing_utils):
     )
 
     # Execute and verify
-    result = defs.get_job_def("fan_out_job").execute_in_process()
+    result = defs.resolve_job_def("fan_out_job").execute_in_process()
     assert result.success
     assert len(executed_hooks) == 3
     assert set(executed_hooks) == {
@@ -3089,7 +3089,7 @@ def test_fan_in_hooks(hook_testing_utils):
     )
 
     # Execute and verify
-    result = defs.get_job_def("fan_in_job").execute_in_process()
+    result = defs.resolve_job_def("fan_in_job").execute_in_process()
     assert result.success
     assert len(executed_hooks) == 3
     assert set(executed_hooks) == {
@@ -3138,7 +3138,7 @@ def test_sibling_chain_hooks(hook_testing_utils):
     )
 
     # Execute and verify
-    result = defs.get_job_def("sibling_job").execute_in_process()
+    result = defs.resolve_job_def("sibling_job").execute_in_process()
     assert result.success
     assert len(executed_hooks) == 3
     assert set(executed_hooks) == {
@@ -3174,7 +3174,7 @@ def test_skip_level_hooks(hook_testing_utils):
     defs = dg.Definitions(assets=[skip_a, skip_b, skip_c], jobs=[skip_job])
 
     # Execute and verify
-    result = defs.get_job_def("skip_job").execute_in_process()
+    result = defs.resolve_job_def("skip_job").execute_in_process()
     assert result.success
     assert len(executed_hooks) == 3
     assert set(executed_hooks) == {
@@ -3227,7 +3227,7 @@ def test_complex_dag_hooks(hook_testing_utils):
     )
 
     # Execute and verify
-    result = defs.get_job_def("complex_job").execute_in_process()
+    result = defs.resolve_job_def("complex_job").execute_in_process()
     assert result.success
     assert len(executed_hooks) == 3
     assert set(executed_hooks) == {
@@ -3258,7 +3258,7 @@ def test_isolated_assets_hooks(hook_testing_utils):
     defs = dg.Definitions(assets=[isolated_x, isolated_y], jobs=[isolated_job])
 
     # Execute and verify
-    result = defs.get_job_def("isolated_job").execute_in_process()
+    result = defs.resolve_job_def("isolated_job").execute_in_process()
     assert result.success
     assert len(executed_hooks) == 2
     assert set(executed_hooks) == {"isolated_x_hook", "isolated_y_another_hook"}
@@ -3315,7 +3315,7 @@ def test_layered_dependencies_hooks(hook_testing_utils):
     )
 
     # Execute and verify
-    result = defs.get_job_def("layer_job").execute_in_process()
+    result = defs.resolve_job_def("layer_job").execute_in_process()
     assert result.success
     assert len(executed_hooks) == 3
     assert set(executed_hooks) == {
@@ -3401,7 +3401,7 @@ def test_cyclic_dependencies_hooks(hook_testing_utils):
     )
 
     # Execute and verify
-    result = defs.get_job_def("cycle_job").execute_in_process()
+    result = defs.resolve_job_def("cycle_job").execute_in_process()
     assert result.success
     assert len(executed_hooks) == 4
     assert set(executed_hooks) == {
