@@ -1,0 +1,912 @@
+---
+title: 'dg cli'
+title_meta: 'dg cli API Documentation - Build Better Data Pipelines | Python Reference Documentation for Dagster'
+description: 'dg cli Dagster API | Comprehensive Python API documentation for Dagster, the data orchestration platform. Learn how to build, test, and maintain data pipelines with our detailed guides and examples.'
+last_update:
+  date: '2025-07-31'
+custom_edit_url: null
+---
+
+<div class="section" id="dg-cli">
+
+
+# dg CLI
+
+<div class="section" id="dg-check">
+
+
+## dg check
+
+Commands for checking the integrity of your Dagster code.
+
+    ```shell
+    dg check [OPTIONS] COMMAND [ARGS]...
+    ```
+<div class="section" id="dg-check-defs">
+
+
+### defs
+
+Loads and validates your Dagster definitions using a Dagster instance.
+
+If run inside a deployment directory, this command will launch all code locations in the
+deployment. If launched inside a code location directory, it will launch only that code
+location.
+
+When running, this command sets the environment variable <cite>DAGSTER_IS_DEFS_VALIDATION_CLI=1</cite>.
+This environment variable can be used to control the behavior of your code in validation mode.
+
+This command returns an exit code 1 when errors are found, otherwise an exit code 0.
+
+    ```shell
+    dg check defs [OPTIONS]
+    ```
+Options:
+
+<dl>
+    <dt><Link class="anchor" id='cmdoption-dg-check-defs-log-level'>--log-level \<log_level><a href="#cmdoption-dg-check-defs-log-level" class="hash-link"></a></Link></dt>
+    <dd>
+
+    Set the log level for dagster services.
+
+    Default: `'warning'`Options: critical | error | warning | info | debug
+
+    </dd>
+
+</dl>
+<dl>
+    <dt><Link class="anchor" id='cmdoption-dg-check-defs-log-format'>--log-format \<log_format><a href="#cmdoption-dg-check-defs-log-format" class="hash-link"></a></Link></dt>
+    <dd>
+
+    Format of the logs for dagster services
+
+    Default: `'colored'`Options: colored | json | rich
+
+    </dd>
+
+</dl>
+<dl>
+    <dt><Link class="anchor" id='cmdoption-dg-check-defs-v'>-v, --verbose<a href="#cmdoption-dg-check-defs-v" class="hash-link"></a></Link></dt>
+    <dd>
+    Show verbose error messages, including system frames in stack traces.
+    </dd>
+
+</dl>
+<dl>
+    <dt><Link class="anchor" id='cmdoption-dg-check-defs-check-yaml'>--check-yaml, --no-check-yaml<a href="#cmdoption-dg-check-defs-check-yaml" class="hash-link"></a></Link></dt>
+    <dd>
+    Whether to schema-check defs.yaml files for the project before loading and checking all definitions.
+    </dd>
+
+</dl>
+<dl>
+    <dt><Link class="anchor" id='cmdoption-dg-check-defs-target-path'>--target-path \<target_path><a href="#cmdoption-dg-check-defs-target-path" class="hash-link"></a></Link></dt>
+    <dd>
+    Specify a directory to use to load the context for this command. This will typically be a folder with a dg.toml or pyproject.toml file in it.
+    </dd>
+
+</dl>
+<dl>
+    <dt><Link class="anchor" id='cmdoption-dg-check-defs-0'>--verbose<a href="#cmdoption-dg-check-defs-0" class="hash-link"></a></Link></dt>
+    <dd>
+    Enable verbose output for debugging.
+    </dd>
+
+</dl>
+</div>
+
+
+<div class="section" id="dg-check-yaml">
+
+
+### yaml
+
+Check defs.yaml files against their schemas, showing validation errors.
+
+    ```shell
+    dg check yaml [OPTIONS] [PATHS]...
+    ```
+Options:
+
+<dl>
+    <dt><Link class="anchor" id='cmdoption-dg-check-yaml-watch'>--watch<a href="#cmdoption-dg-check-yaml-watch" class="hash-link"></a></Link></dt>
+    <dd>
+    Watch for changes to the component files and re-validate them.
+    </dd>
+
+</dl>
+<dl>
+    <dt><Link class="anchor" id='cmdoption-dg-check-yaml-validate-requirements'>--validate-requirements, --no-validate-requirements<a href="#cmdoption-dg-check-yaml-validate-requirements" class="hash-link"></a></Link></dt>
+    <dd>
+    Validate environment variables in requirements for all components in the given module.
+    </dd>
+
+</dl>
+<dl>
+    <dt><Link class="anchor" id='cmdoption-dg-check-yaml-verbose'>--verbose<a href="#cmdoption-dg-check-yaml-verbose" class="hash-link"></a></Link></dt>
+    <dd>
+    Enable verbose output for debugging.
+    </dd>
+
+</dl>
+<dl>
+    <dt><Link class="anchor" id='cmdoption-dg-check-yaml-target-path'>--target-path \<target_path><a href="#cmdoption-dg-check-yaml-target-path" class="hash-link"></a></Link></dt>
+    <dd>
+    Specify a directory to use to load the context for this command. This will typically be a folder with a dg.toml or pyproject.toml file in it.
+    </dd>
+
+</dl>
+Arguments:
+
+<dl>
+    <dt><Link class="anchor" id='cmdoption-dg-check-yaml-arg-PATHS'>PATHS<a href="#cmdoption-dg-check-yaml-arg-PATHS" class="hash-link"></a></Link></dt>
+    <dd>
+    Optional argument(s)
+    </dd>
+
+</dl>
+</div></div>
+
+
+<div class="section" id="dg-dev">
+## dg dev
+
+Start a local instance of Dagster.
+
+If run inside a workspace directory, this command will launch all projects in the
+workspace. If launched inside a project directory, it will launch only that project.
+
+    ```shell
+    dg dev [OPTIONS]
+    ```
+Options:
+
+<dl>
+    <dt><Link class="anchor" id='cmdoption-dg-dev-code-server-log-level'>--code-server-log-level \<code_server_log_level><a href="#cmdoption-dg-dev-code-server-log-level" class="hash-link"></a></Link></dt>
+    <dd>
+
+    Set the log level for code servers spun up by dagster services.
+
+    Default: `'warning'`Options: critical | error | warning | info | debug
+
+    </dd>
+
+</dl>
+<dl>
+    <dt><Link class="anchor" id='cmdoption-dg-dev-log-level'>--log-level \<log_level><a href="#cmdoption-dg-dev-log-level" class="hash-link"></a></Link></dt>
+    <dd>
+
+    Set the log level for dagster services.
+
+    Default: `'info'`Options: critical | error | warning | info | debug
+
+    </dd>
+
+</dl>
+<dl>
+    <dt><Link class="anchor" id='cmdoption-dg-dev-log-format'>--log-format \<log_format><a href="#cmdoption-dg-dev-log-format" class="hash-link"></a></Link></dt>
+    <dd>
+
+    Format of the logs for dagster services
+
+    Default: `'colored'`Options: colored | json | rich
+
+    </dd>
+
+</dl>
+<dl>
+    <dt><Link class="anchor" id='cmdoption-dg-dev-p'>-p, --port \<port><a href="#cmdoption-dg-dev-p" class="hash-link"></a></Link></dt>
+    <dd>
+    Port to use for the Dagster webserver.
+    </dd>
+
+</dl>
+<dl>
+    <dt><Link class="anchor" id='cmdoption-dg-dev-h'>-h, --host \<host><a href="#cmdoption-dg-dev-h" class="hash-link"></a></Link></dt>
+    <dd>
+    Host to use for the Dagster webserver.
+    </dd>
+
+</dl>
+<dl>
+    <dt><Link class="anchor" id='cmdoption-dg-dev-live-data-poll-rate'>--live-data-poll-rate \<live_data_poll_rate><a href="#cmdoption-dg-dev-live-data-poll-rate" class="hash-link"></a></Link></dt>
+    <dd>
+
+    Rate at which the dagster UI polls for updated asset data (in milliseconds)
+
+    Default: `2000`
+
+    </dd>
+
+</dl>
+<dl>
+    <dt><Link class="anchor" id='cmdoption-dg-dev-check-yaml'>--check-yaml, --no-check-yaml<a href="#cmdoption-dg-dev-check-yaml" class="hash-link"></a></Link></dt>
+    <dd>
+    Whether to schema-check defs.yaml files for the project before starting the dev server.
+    </dd>
+
+</dl>
+<dl>
+    <dt><Link class="anchor" id='cmdoption-dg-dev-target-path'>--target-path \<target_path><a href="#cmdoption-dg-dev-target-path" class="hash-link"></a></Link></dt>
+    <dd>
+    Specify a directory to use to load the context for this command. This will typically be a folder with a dg.toml or pyproject.toml file in it.
+    </dd>
+
+</dl>
+<dl>
+    <dt><Link class="anchor" id='cmdoption-dg-dev-verbose'>--verbose<a href="#cmdoption-dg-dev-verbose" class="hash-link"></a></Link></dt>
+    <dd>
+    Enable verbose output for debugging.
+    </dd>
+
+</dl>
+<dl>
+    <dt><Link class="anchor" id='cmdoption-dg-dev-autoload-defs-module-name'>--autoload-defs-module-name \<autoload_defs_module_name><a href="#cmdoption-dg-dev-autoload-defs-module-name" class="hash-link"></a></Link></dt>
+    <dd>
+    A module to import and recursively search through for definitions.
+    </dd>
+
+</dl>
+<dl>
+    <dt><Link class="anchor" id='cmdoption-dg-dev-m'>-m, --module-name \<module_name><a href="#cmdoption-dg-dev-m" class="hash-link"></a></Link></dt>
+    <dd>
+    Specify module or modules (flag can be used multiple times) where dagster definitions reside as top-level symbols/variables and load each module as a code location in the current python environment.
+    </dd>
+
+</dl>
+<dl>
+    <dt><Link class="anchor" id='cmdoption-dg-dev-f'>-f, --python-file \<python_file><a href="#cmdoption-dg-dev-f" class="hash-link"></a></Link></dt>
+    <dd>
+    Specify python file or files (flag can be used multiple times) where dagster definitions reside as top-level symbols/variables and load each file as a code location in the current python environment.
+    </dd>
+
+</dl>
+<dl>
+    <dt><Link class="anchor" id='cmdoption-dg-dev-d'>-d, --working-directory \<working_directory><a href="#cmdoption-dg-dev-d" class="hash-link"></a></Link></dt>
+    <dd>
+    Specify working directory to use when loading the repository or job
+    </dd>
+
+</dl>
+<dl>
+    <dt><Link class="anchor" id='cmdoption-dg-dev-w'>-w, --workspace \<workspace><a href="#cmdoption-dg-dev-w" class="hash-link"></a></Link></dt>
+    <dd>
+    Path to workspace file. Argument can be provided multiple times.
+    </dd>
+
+</dl>
+<dl>
+    <dt><Link class="anchor" id='cmdoption-dg-dev-empty-workspace'>--empty-workspace<a href="#cmdoption-dg-dev-empty-workspace" class="hash-link"></a></Link></dt>
+    <dd>
+    Allow an empty workspace
+    </dd>
+
+</dl>
+Environment variables:
+
+<dl>
+
+    <dt>DAGSTER_autoload_defs_module_name</dt>
+    <dd>
+    > 
+
+    Provide a default for [`--autoload-defs-module-name`](#cmdoption-dg-dev-autoload-defs-module-name)
+
+
+
+
+</dd>
+
+</dl>
+<dl>
+
+    <dt>DAGSTER_MODULE_NAME</dt>
+    <dd>
+    > 
+
+    Provide a default for [`--module-name`](#cmdoption-dg-dev-m)
+
+
+
+
+</dd>
+
+</dl>
+<dl>
+
+    <dt>DAGSTER_PYTHON_FILE</dt>
+    <dd>
+    > 
+
+    Provide a default for [`--python-file`](#cmdoption-dg-dev-f)
+
+
+
+
+</dd>
+
+</dl>
+<dl>
+
+    <dt>DAGSTER_WORKING_DIRECTORY</dt>
+    <dd>
+    > 
+
+    Provide a default for [`--working-directory`](#cmdoption-dg-dev-d)
+
+
+
+
+</dd>
+
+</dl>
+</div>
+
+
+<div class="section" id="dg-launch">
+## dg launch
+
+Launch a Dagster run.
+
+    ```shell
+    dg launch [OPTIONS]
+    ```
+Options:
+
+<dl>
+    <dt><Link class="anchor" id='cmdoption-dg-launch-assets'>--assets \<assets><a href="#cmdoption-dg-launch-assets" class="hash-link"></a></Link></dt>
+    <dd>
+    Comma-separated Asset selection to target
+    </dd>
+
+</dl>
+<dl>
+    <dt><Link class="anchor" id='cmdoption-dg-launch-job'>--job \<job><a href="#cmdoption-dg-launch-job" class="hash-link"></a></Link></dt>
+    <dd>
+    Job to target
+    </dd>
+
+</dl>
+<dl>
+    <dt><Link class="anchor" id='cmdoption-dg-launch-partition'>--partition \<partition><a href="#cmdoption-dg-launch-partition" class="hash-link"></a></Link></dt>
+    <dd>
+    Asset partition to target
+    </dd>
+
+</dl>
+<dl>
+    <dt><Link class="anchor" id='cmdoption-dg-launch-partition-range'>--partition-range \<partition_range><a href="#cmdoption-dg-launch-partition-range" class="hash-link"></a></Link></dt>
+    <dd>
+    Asset partition range to target i.e. \<start>…\<end>
+    </dd>
+
+</dl>
+<dl>
+    <dt><Link class="anchor" id='cmdoption-dg-launch-config-json'>--config-json \<config_json><a href="#cmdoption-dg-launch-config-json" class="hash-link"></a></Link></dt>
+    <dd>
+    JSON string of config to use for the launched run.
+    </dd>
+
+</dl>
+<dl>
+    <dt><Link class="anchor" id='cmdoption-dg-launch-c'>-c, --config \<config><a href="#cmdoption-dg-launch-c" class="hash-link"></a></Link></dt>
+    <dd>
+    Specify one or more run config files. These can also be file patterns. If more than one run config file is captured then those files are merged. Files listed first take precedence.
+    </dd>
+
+</dl>
+<dl>
+    <dt><Link class="anchor" id='cmdoption-dg-launch-target-path'>--target-path \<target_path><a href="#cmdoption-dg-launch-target-path" class="hash-link"></a></Link></dt>
+    <dd>
+    Specify a directory to use to load the context for this command. This will typically be a folder with a dg.toml or pyproject.toml file in it.
+    </dd>
+
+</dl>
+<dl>
+    <dt><Link class="anchor" id='cmdoption-dg-launch-verbose'>--verbose<a href="#cmdoption-dg-launch-verbose" class="hash-link"></a></Link></dt>
+    <dd>
+    Enable verbose output for debugging.
+    </dd>
+
+</dl>
+<dl>
+    <dt><Link class="anchor" id='cmdoption-dg-launch-a'>-a, --attribute \<attribute><a href="#cmdoption-dg-launch-a" class="hash-link"></a></Link></dt>
+    <dd>
+    Attribute that is either a 1) repository or job or 2) a function that returns a repository or job
+    </dd>
+
+</dl>
+<dl>
+    <dt><Link class="anchor" id='cmdoption-dg-launch-package-name'>--package-name \<package_name><a href="#cmdoption-dg-launch-package-name" class="hash-link"></a></Link></dt>
+    <dd>
+    Specify Python package where repository or job function lives
+    </dd>
+
+</dl>
+<dl>
+    <dt><Link class="anchor" id='cmdoption-dg-launch-autoload-defs-module-name'>--autoload-defs-module-name \<autoload_defs_module_name><a href="#cmdoption-dg-launch-autoload-defs-module-name" class="hash-link"></a></Link></dt>
+    <dd>
+    A module to import and recursively search through for definitions.
+    </dd>
+
+</dl>
+<dl>
+    <dt><Link class="anchor" id='cmdoption-dg-launch-m'>-m, --module-name \<module_name><a href="#cmdoption-dg-launch-m" class="hash-link"></a></Link></dt>
+    <dd>
+    Specify module where dagster definitions reside as top-level symbols/variables and load the module as a code location in the current python environment.
+    </dd>
+
+</dl>
+<dl>
+    <dt><Link class="anchor" id='cmdoption-dg-launch-f'>-f, --python-file \<python_file><a href="#cmdoption-dg-launch-f" class="hash-link"></a></Link></dt>
+    <dd>
+    Specify python file where dagster definitions reside as top-level symbols/variables and load the file as a code location in the current python environment.
+    </dd>
+
+</dl>
+<dl>
+    <dt><Link class="anchor" id='cmdoption-dg-launch-d'>-d, --working-directory \<working_directory><a href="#cmdoption-dg-launch-d" class="hash-link"></a></Link></dt>
+    <dd>
+    Specify working directory to use when loading the repository or job
+    </dd>
+
+</dl>
+Environment variables:
+
+<dl>
+
+    <dt>DAGSTER_ATTRIBUTE</dt>
+    <dd>
+    > 
+
+    Provide a default for [`--attribute`](#cmdoption-dg-launch-a)
+
+
+
+
+</dd>
+
+</dl>
+<dl>
+
+    <dt>DAGSTER_PACKAGE_NAME</dt>
+    <dd>
+    > 
+
+    Provide a default for [`--package-name`](#cmdoption-dg-launch-package-name)
+
+
+
+
+</dd>
+
+</dl>
+<dl>
+
+    <dt>DAGSTER_autoload_defs_module_name</dt>
+    <dd>
+    > 
+
+    Provide a default for [`--autoload-defs-module-name`](#cmdoption-dg-launch-autoload-defs-module-name)
+
+
+
+
+</dd>
+
+</dl>
+<dl>
+
+    <dt>DAGSTER_MODULE_NAME</dt>
+    <dd>
+    > 
+
+    Provide a default for [`--module-name`](#cmdoption-dg-launch-m)
+
+
+
+
+</dd>
+
+</dl>
+<dl>
+
+    <dt>DAGSTER_PYTHON_FILE</dt>
+    <dd>
+    > 
+
+    Provide a default for [`--python-file`](#cmdoption-dg-launch-f)
+
+
+
+
+</dd>
+
+</dl>
+<dl>
+
+    <dt>DAGSTER_WORKING_DIRECTORY</dt>
+    <dd>
+    > 
+
+    Provide a default for [`--working-directory`](#cmdoption-dg-launch-d)
+
+
+
+
+</dd>
+
+</dl>
+</div>
+
+
+<div class="section" id="dg-list">
+
+
+## dg list
+
+Commands for listing Dagster entities.
+
+    ```shell
+    dg list [OPTIONS] COMMAND [ARGS]...
+    ```
+<div class="section" id="dg-list-component-tree">
+
+
+### component-tree
+
+    ```shell
+    dg list component-tree [OPTIONS]
+    ```
+Options:
+
+<dl>
+    <dt><Link class="anchor" id='cmdoption-dg-list-component-tree-output-file'>--output-file \<output_file><a href="#cmdoption-dg-list-component-tree-output-file" class="hash-link"></a></Link></dt>
+    <dd>
+    Write to file instead of stdout. If not specified, will write to stdout.
+    </dd>
+
+</dl>
+<dl>
+    <dt><Link class="anchor" id='cmdoption-dg-list-component-tree-target-path'>--target-path \<target_path><a href="#cmdoption-dg-list-component-tree-target-path" class="hash-link"></a></Link></dt>
+    <dd>
+    Specify a directory to use to load the context for this command. This will typically be a folder with a dg.toml or pyproject.toml file in it.
+    </dd>
+
+</dl>
+<dl>
+    <dt><Link class="anchor" id='cmdoption-dg-list-component-tree-verbose'>--verbose<a href="#cmdoption-dg-list-component-tree-verbose" class="hash-link"></a></Link></dt>
+    <dd>
+    Enable verbose output for debugging.
+    </dd>
+
+</dl>
+</div>
+
+
+<div class="section" id="dg-list-components">
+
+
+### components
+
+List all available Dagster component types in the current Python environment.
+
+    ```shell
+    dg list components [OPTIONS]
+    ```
+Options:
+
+<dl>
+    <dt><Link class="anchor" id='cmdoption-dg-list-components-p'>-p, --package \<package><a href="#cmdoption-dg-list-components-p" class="hash-link"></a></Link></dt>
+    <dd>
+    Filter by package name.
+    </dd>
+
+</dl>
+<dl>
+    <dt><Link class="anchor" id='cmdoption-dg-list-components-json'>--json<a href="#cmdoption-dg-list-components-json" class="hash-link"></a></Link></dt>
+    <dd>
+    Output as JSON instead of a table.
+    </dd>
+
+</dl>
+<dl>
+    <dt><Link class="anchor" id='cmdoption-dg-list-components-target-path'>--target-path \<target_path><a href="#cmdoption-dg-list-components-target-path" class="hash-link"></a></Link></dt>
+    <dd>
+    Specify a directory to use to load the context for this command. This will typically be a folder with a dg.toml or pyproject.toml file in it.
+    </dd>
+
+</dl>
+<dl>
+    <dt><Link class="anchor" id='cmdoption-dg-list-components-verbose'>--verbose<a href="#cmdoption-dg-list-components-verbose" class="hash-link"></a></Link></dt>
+    <dd>
+    Enable verbose output for debugging.
+    </dd>
+
+</dl>
+</div>
+
+
+<div class="section" id="dg-list-defs">
+
+
+### defs
+
+List registered Dagster definitions in the current project environment.
+
+    ```shell
+    dg list defs [OPTIONS]
+    ```
+Options:
+
+<dl>
+    <dt><Link class="anchor" id='cmdoption-dg-list-defs-json'>--json<a href="#cmdoption-dg-list-defs-json" class="hash-link"></a></Link></dt>
+    <dd>
+    Output as JSON instead of a table.
+    </dd>
+
+</dl>
+<dl>
+    <dt><Link class="anchor" id='cmdoption-dg-list-defs-p'>-p, --path \<path><a href="#cmdoption-dg-list-defs-p" class="hash-link"></a></Link></dt>
+    <dd>
+    Path to the definitions to list.
+    </dd>
+
+</dl>
+<dl>
+    <dt><Link class="anchor" id='cmdoption-dg-list-defs-a'>-a, --assets \<assets><a href="#cmdoption-dg-list-defs-a" class="hash-link"></a></Link></dt>
+    <dd>
+    Asset selection to list.
+    </dd>
+
+</dl>
+<dl>
+    <dt><Link class="anchor" id='cmdoption-dg-list-defs-c'>-c, --columns \<columns><a href="#cmdoption-dg-list-defs-c" class="hash-link"></a></Link></dt>
+    <dd>
+    Columns to display. Either a comma-separated list of column names, or multiple invocations of the flag. Available columns: key, group, deps, kinds, description, tags, cron, is_executable
+    </dd>
+
+</dl>
+<dl>
+    <dt><Link class="anchor" id='cmdoption-dg-list-defs-verbose'>--verbose<a href="#cmdoption-dg-list-defs-verbose" class="hash-link"></a></Link></dt>
+    <dd>
+    Enable verbose output for debugging.
+    </dd>
+
+</dl>
+<dl>
+    <dt><Link class="anchor" id='cmdoption-dg-list-defs-target-path'>--target-path \<target_path><a href="#cmdoption-dg-list-defs-target-path" class="hash-link"></a></Link></dt>
+    <dd>
+    Specify a directory to use to load the context for this command. This will typically be a folder with a dg.toml or pyproject.toml file in it.
+    </dd>
+
+</dl>
+</div>
+
+
+<div class="section" id="dg-list-envs">
+
+
+### envs
+
+List environment variables from the .env file of the current project.
+
+    ```shell
+    dg list envs [OPTIONS]
+    ```
+Options:
+
+<dl>
+    <dt><Link class="anchor" id='cmdoption-dg-list-envs-target-path'>--target-path \<target_path><a href="#cmdoption-dg-list-envs-target-path" class="hash-link"></a></Link></dt>
+    <dd>
+    Specify a directory to use to load the context for this command. This will typically be a folder with a dg.toml or pyproject.toml file in it.
+    </dd>
+
+</dl>
+<dl>
+    <dt><Link class="anchor" id='cmdoption-dg-list-envs-verbose'>--verbose<a href="#cmdoption-dg-list-envs-verbose" class="hash-link"></a></Link></dt>
+    <dd>
+    Enable verbose output for debugging.
+    </dd>
+
+</dl>
+</div>
+
+
+<div class="section" id="dg-list-projects">
+
+
+### projects
+
+List projects in the current workspace.
+
+    ```shell
+    dg list projects [OPTIONS]
+    ```
+Options:
+
+<dl>
+    <dt><Link class="anchor" id='cmdoption-dg-list-projects-verbose'>--verbose<a href="#cmdoption-dg-list-projects-verbose" class="hash-link"></a></Link></dt>
+    <dd>
+    Enable verbose output for debugging.
+    </dd>
+
+</dl>
+<dl>
+    <dt><Link class="anchor" id='cmdoption-dg-list-projects-target-path'>--target-path \<target_path><a href="#cmdoption-dg-list-projects-target-path" class="hash-link"></a></Link></dt>
+    <dd>
+    Specify a directory to use to load the context for this command. This will typically be a folder with a dg.toml or pyproject.toml file in it.
+    </dd>
+
+</dl>
+</div>
+
+
+<div class="section" id="dg-list-registry-modules">
+
+
+### registry-modules
+
+List dg plugins and their corresponding objects in the current Python environment.
+
+    ```shell
+    dg list registry-modules [OPTIONS]
+    ```
+Options:
+
+<dl>
+    <dt><Link class="anchor" id='cmdoption-dg-list-registry-modules-json'>--json<a href="#cmdoption-dg-list-registry-modules-json" class="hash-link"></a></Link></dt>
+    <dd>
+    Output as JSON instead of a table.
+    </dd>
+
+</dl>
+<dl>
+    <dt><Link class="anchor" id='cmdoption-dg-list-registry-modules-target-path'>--target-path \<target_path><a href="#cmdoption-dg-list-registry-modules-target-path" class="hash-link"></a></Link></dt>
+    <dd>
+    Specify a directory to use to load the context for this command. This will typically be a folder with a dg.toml or pyproject.toml file in it.
+    </dd>
+
+</dl>
+<dl>
+    <dt><Link class="anchor" id='cmdoption-dg-list-registry-modules-verbose'>--verbose<a href="#cmdoption-dg-list-registry-modules-verbose" class="hash-link"></a></Link></dt>
+    <dd>
+    Enable verbose output for debugging.
+    </dd>
+
+</dl>
+</div></div>
+
+
+<div class="section" id="dg-scaffold">
+## dg scaffold
+
+Commands for scaffolding Dagster entities.
+
+    ```shell
+    dg scaffold [OPTIONS] COMMAND [ARGS]...
+    ```
+Commands:
+
+<dl>
+    <dt>build-artifacts</dt>
+    <dd>
+    Scaffolds a Dockerfile to build the given Dagster project or workspace.
+    </dd>
+
+</dl>
+<dl>
+
+    <dt>component</dt>
+    <dd>
+
+    Scaffold of a custom Dagster component type.
+
+    > 
+
+    This command must be run inside a Dagster project directory. The component type scaffold
+
+    will be placed in submodule <cite>\<project_name>.lib.\<name></cite>.
+
+
+
+
+</dd>
+
+</dl>
+<dl>
+    <dt>defs</dt>
+    <dd>
+    Commands for scaffolding Dagster code.
+    </dd>
+
+</dl>
+<dl>
+
+    <dt>github-actions</dt>
+    <dd>
+
+    Scaffold a GitHub Actions workflow for a Dagster project.
+
+    > 
+
+    This command will create a GitHub Actions workflow in the <cite>.github/workflows</cite> directory.
+
+
+
+
+</dd>
+
+</dl>
+</div>
+
+
+<div class="section" id="dg-scaffold-example">
+
+## dg scaffold example
+
+<strong>Note:</strong> Before scaffolding definitions with `dg`, you must [create a project](https://docs.dagster.io/guides/build/projects/creating-a-new-project) with the [create-dagster CLI](https://docs.dagster.io/api/dg/create-dagster) and activate its virtual environment.
+
+You can use the `dg scaffold defs` command to scaffold a new asset underneath the `defs` folder. In this example, we scaffold an asset named `my_asset.py` and write it to the `defs/assets` directory:
+
+    ```bash
+    dg scaffold defs dagster.asset assets/my_asset.py
+
+    Creating a component at /.../my-project/src/my_project/defs/assets/my_asset.py.
+    ```
+Once the asset has been scaffolded, we can see that a new file has been added to `defs/assets`, and view its contents:
+
+    ```bash
+    tree
+
+    .
+    ├── pyproject.toml
+    ├── src
+    │ └── my_project
+    │     ├── __init__.py
+    │     └── defs
+    │         ├── __init__.py
+    │         └── assets
+    │             └── my_asset.py
+    ├── tests
+    │ └── __init__.py
+    └── uv.lock
+    ```
+    ```python
+    cat src/my_project/defs/assets/my_asset.py
+
+    import dagster as dg
+
+
+    @dg.asset
+    def my_asset(context: dg.AssetExecutionContext) -> dg.MaterializeResult: ...
+    ```
+<strong>Note:</strong> You can run `dg scaffold defs` from within any directory in your project and the resulting files will always be created in the `<project-name>/src/<project_name>/defs/` folder.
+
+In the above example, the scaffolded asset contains a basic commented-out definition. You can replace this definition with working code:
+
+    ```python
+    import dagster as dg
+
+
+    @dg.asset(group_name="my_group")
+    def my_asset(context: dg.AssetExecutionContext) -> None:
+        """Asset that greets you."""
+        context.log.info("hi!")
+    ```
+To confirm that the new asset now appears in the list of definitions, run <cite>dg list defs</cite>:
+
+    ```bash
+    dg list defs
+
+    ┏━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
+    ┃ Section ┃ Definitions                                                     ┃
+    ┡━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┩
+    │ Assets  │ ┏━━━━━━━━━━┳━━━━━━━━━━┳━━━━━━┳━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━┓ │
+    │         │ ┃ Key      ┃ Group    ┃ Deps ┃ Kinds ┃ Description            ┃ │
+    │         │ ┡━━━━━━━━━━╇━━━━━━━━━━╇━━━━━━╇━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━━━┩ │
+    │         │ │ my_asset │ my_group │      │       │ Asset that greets you. │ │
+    │         │ └──────────┴──────────┴──────┴───────┴────────────────────────┘ │
+    └─────────┴─────────────────────────────────────────────────────────────────┘
+    ```
+</div></div>
