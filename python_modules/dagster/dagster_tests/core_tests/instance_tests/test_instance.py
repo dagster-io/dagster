@@ -1,3 +1,4 @@
+import datetime
 import json
 import os
 import re
@@ -277,11 +278,21 @@ def noop_asset():
     pass
 
 
+@dg.asset(partitions_def=dg.WeeklyPartitionsDefinition(start_date=datetime.datetime(2025, 1, 1)))
+def noop_time_window_asset():
+    pass
+
+
 noop_asset_defs = dg.Definitions(
-    assets=[noop_asset], jobs=[dg.define_asset_job("noop_asset_job", [noop_asset])]
+    assets=[noop_asset, noop_time_window_asset],
+    jobs=[
+        dg.define_asset_job("noop_asset_job", [noop_asset]),
+        dg.define_asset_job("noop_time_window_asset_job", [noop_time_window_asset]),
+    ],
 )
 
 noop_asset_job = noop_asset_defs.resolve_job_def("noop_asset_job")
+noop_time_window_asset_job = noop_asset_defs.resolve_job_def("noop_time_window_asset_job")
 
 
 def test_create_job_snapshot():
@@ -419,6 +430,54 @@ def test_create_run_with_asset_partitions():
             tags={ASSET_PARTITION_RANGE_START_TAG: "bar", ASSET_PARTITION_RANGE_END_TAG: "foo"},
             asset_graph=noop_asset_job.asset_layer.asset_graph,
         )
+
+
+def test_create_run_with_partitioned_asset_stores_partitions_definition():
+    with dg.instance_for_test() as instance:
+        execution_plan = create_execution_plan(noop_time_window_asset_job)
+
+        ep_snapshot = snapshot_from_execution_plan(
+            execution_plan, noop_time_window_asset_job.get_job_snapshot_id()
+        )
+
+        run = create_run_for_test(
+            instance=instance,
+            job_name="foo",
+            execution_plan_snapshot=ep_snapshot,
+            job_snapshot=noop_time_window_asset_job.get_job_snapshot(),
+            tags={
+                ASSET_PARTITION_RANGE_START_TAG: "2025-1-1",
+                ASSET_PARTITION_RANGE_END_TAG: "2025-1-4",
+            },
+            asset_graph=noop_time_window_asset_job.asset_layer.asset_graph,
+        )
+        assert run.partitions_snap is not None
+        assert (
+            run.partitions_snap.get_partitions_definition()
+            == noop_time_window_asset_job.asset_layer.asset_graph.get(
+                dg.AssetKey("noop_time_window_asset")
+            ).partitions_def
+        )
+
+        # assets with non-time window partitions do not store the partitions definition on the run
+        execution_plan = create_execution_plan(noop_asset_job)
+
+        ep_snapshot = snapshot_from_execution_plan(
+            execution_plan, noop_asset_job.get_job_snapshot_id()
+        )
+
+        run = create_run_for_test(
+            instance=instance,
+            job_name="foo",
+            execution_plan_snapshot=ep_snapshot,
+            job_snapshot=noop_asset_job.get_job_snapshot(),
+            tags={
+                ASSET_PARTITION_RANGE_START_TAG: "foo",
+                ASSET_PARTITION_RANGE_END_TAG: "bar",
+            },
+            asset_graph=noop_asset_job.asset_layer.asset_graph,
+        )
+        assert run.partitions_snap is None
 
 
 def test_get_required_daemon_types():

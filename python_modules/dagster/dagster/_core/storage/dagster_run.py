@@ -37,6 +37,7 @@ if TYPE_CHECKING:
     from dagster._core.definitions.schedule_definition import ScheduleDefinition
     from dagster._core.definitions.sensor_definition import SensorDefinition
     from dagster._core.remote_representation.external import RemoteSchedule, RemoteSensor
+    from dagster._core.remote_representation.external_data import PartitionsSnap
     from dagster._core.remote_representation.origin import RemoteJobOrigin
     from dagster._core.scheduler.instigation import InstigatorState
 
@@ -295,6 +296,7 @@ class DagsterRun(
             ("job_code_origin", Optional[JobPythonOrigin]),
             ("has_repository_load_data", bool),
             ("run_op_concurrency", Optional[RunOpConcurrency]),
+            ("partitions_snap", Optional["PartitionsSnap"]),
         ],
     )
 ):
@@ -342,7 +344,10 @@ class DagsterRun(
         job_code_origin: Optional[JobPythonOrigin] = None,
         has_repository_load_data: Optional[bool] = None,
         run_op_concurrency: Optional[RunOpConcurrency] = None,
+        partitions_snap: Optional["PartitionsSnap"] = None,
     ):
+        from dagster._core.remote_representation.external_data import TimeWindowPartitionsSnap
+
         check.invariant(
             (root_run_id is not None and parent_run_id is not None)
             or (root_run_id is None and parent_run_id is None),
@@ -411,6 +416,11 @@ class DagsterRun(
             ),
             run_op_concurrency=check.opt_inst_param(
                 run_op_concurrency, "run_op_concurrency", RunOpConcurrency
+            ),
+            # Only support storing time window partitions definitions on the run for now, other partitions
+            # definitions types are too big
+            partitions_snap=check.opt_inst_param(
+                partitions_snap, "partitions_snap", TimeWindowPartitionsSnap
             ),
         )
 

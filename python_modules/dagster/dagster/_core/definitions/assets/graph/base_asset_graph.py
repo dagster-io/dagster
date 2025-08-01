@@ -154,6 +154,10 @@ class BaseAssetNode(BaseEntityNode[AssetKey]):
 
     @property
     @abstractmethod
+    def partitions_def(self) -> Optional[PartitionsDefinition]: ...
+
+    @property
+    @abstractmethod
     def legacy_freshness_policy(self) -> Optional[LegacyFreshnessPolicy]: ...
 
     @property
