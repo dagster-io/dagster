@@ -4,9 +4,9 @@ description: With asset health criteria, you can quickly identify which datasets
 sidebar_position: 300
 ---
 
-You can quickly identify which assets are performing well and which need attention with health indicators that highlight data quality and platform reliability in real time. These indicators appear on the home page, throughout the asset catalog, and in the asset lineage view.
+All assets now have a single health status, that combines the status of the most recent materialization, freshness, and asset checks. These statuses appear on the home page, throughout the asset catalog, and in the asset lineage view, and can be used to group and filter your assets.
 
-## Asset health indicators
+## Asset health statuses
 
 | Icon | Health status | Latest materialization (unpartitioned) | Latest materialization (partitioned) | Freshness | Asset checks |
 |---------|------|----------------------------------------|--------------------------------------|-----------|--------------|
