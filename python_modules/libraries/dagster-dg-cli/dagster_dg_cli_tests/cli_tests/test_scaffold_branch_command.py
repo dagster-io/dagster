@@ -155,7 +155,7 @@ def test_scaffold_branch_command_ai_inference_success():
             patch("dagster_dg_cli.cli.scaffold.branch._run_git_command") as mock_git,
             patch("dagster_dg_cli.cli.scaffold.branch._run_gh_command") as mock_gh,
             patch("click.prompt") as mock_prompt,
-            patch("dagster_dg_cli.cli.scaffold.branch._run_claude") as mock_run_claude,
+            patch("dagster_dg_cli.utils.claude_utils.run_claude") as mock_run_claude,
         ):
             mock_prompt.return_value = "Add authentication feature"
 
@@ -226,7 +226,7 @@ def test_scaffold_branch_command_github_issue_url(github_url):
         with (
             patch("dagster_dg_cli.cli.scaffold.branch._run_git_command") as mock_git,
             patch("dagster_dg_cli.cli.scaffold.branch._run_gh_command") as mock_gh,
-            patch("dagster_dg_cli.cli.scaffold.branch._run_claude") as mock_run_claude,
+            patch("dagster_dg_cli.utils.claude_utils.run_claude") as mock_run_claude,
         ):
             # Mock Claude to return predictable JSON response
             mock_run_claude.return_value = (
