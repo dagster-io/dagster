@@ -1,7 +1,7 @@
 ---
-title: Asset catalog with custom selections
+title: Custom asset catalog dashboards
 description: TK
-sidebar_position: 400
+sidebar_position: 500
 ---
 
 The asset catalog now includes custom selections throughout the catalog.

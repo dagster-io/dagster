@@ -38,7 +38,7 @@ Quickly identify which datasets are performing well and which need attention wit
 
 Unlock a comprehensive, dashboard-style view of your data platform’s health. The new Insights experience surfaces critical metrics, like success rate, freshness hit rate, and time to resolution for any selection of assets or jobs – all in real time. For more information, see the [Real-time insights guide](/guides/labs/observability-update/insights).
 
-### Custom catalog dashboards
+### Custom asset catalog dashboards
 
 Give teams a focused view of the data that matters most. Create flexible, shareable dashboards organized by asset, owner, tag, or business domain so every stakeholder can monitor performance and act with clarity. For more information, see the [Asset catalog with custom selections guide](/guides/labs/observability-update/asset-catalog).
 
