@@ -36,7 +36,7 @@ from dagster._record import ImportFrom, record
 
 from dagster_dbt.dbt_project import DbtProject
 from dagster_dbt.metadata_set import DbtMetadataSet
-from dagster_dbt.utils import ASSET_RESOURCE_TYPES, dagster_name_fn, select_unique_ids_from_manifest
+from dagster_dbt.utils import ASSET_RESOURCE_TYPES, dagster_name_fn, select_unique_ids
 
 if TYPE_CHECKING:
     from dagster_dbt.dagster_dbt_translator import DagsterDbtTranslator, DbtManifestWrapper
@@ -626,7 +626,7 @@ def default_description_fn(dbt_resource_props: Mapping[str, Any], display_raw_sq
         dbt_resource_props.get("raw_sql") or dbt_resource_props.get("raw_code", ""), "    "
     )
     description_sections = [
-        dbt_resource_props["description"]
+        dbt_resource_props.get("description")
         or f"dbt {dbt_resource_props['resource_type']} {dbt_resource_props['name']}",
     ]
     if display_raw_sql:
@@ -742,6 +742,18 @@ def get_upstream_unique_ids(
     return upstreams
 
 
+def _build_child_map(manifest: Mapping[str, Any]) -> Mapping[str, AbstractSet[str]]:
+    """Manifests produced by dbt Fusion do not contain a child map, so we need to build it manually."""
+    if manifest.get("child_map"):
+        return manifest["child_map"]
+
+    child_map = defaultdict(set)
+    for unique_id, node in manifest["nodes"].items():
+        for upstream_unique_id in get_upstream_unique_ids(manifest, node):
+            child_map[upstream_unique_id].add(unique_id)
+    return child_map
+
+
 def build_dbt_specs(
     *,
     translator: "DagsterDbtTranslator",
@@ -752,16 +764,15 @@ def build_dbt_specs(
     io_manager_key: Optional[str],
     project: Optional[DbtProject],
 ) -> tuple[Sequence[AssetSpec], Sequence[AssetCheckSpec]]:
-    selected_unique_ids = select_unique_ids_from_manifest(
-        select=select,
-        exclude=exclude,
-        selector=selector,
-        manifest_json=manifest,
+    selected_unique_ids = select_unique_ids(
+        select=select, exclude=exclude, selector=selector, project=project, manifest_json=manifest
     )
 
     specs: list[AssetSpec] = []
     check_specs: dict[str, AssetCheckSpec] = {}
     key_by_unique_id: dict[str, AssetKey] = {}
+
+    child_map = _build_child_map(manifest)
     for unique_id in selected_unique_ids:
         resource_props = get_node(manifest, unique_id)
         resource_type = resource_props["resource_type"]
@@ -786,7 +797,8 @@ def build_dbt_specs(
         specs.append(spec)
 
         # add check specs associated with the asset
-        for child_unique_id in manifest["child_map"][unique_id]:
+
+        for child_unique_id in child_map[unique_id]:
             if not child_unique_id.startswith("test"):
                 continue
             check_spec = translator.get_asset_check_spec(
@@ -809,7 +821,7 @@ def build_dbt_specs(
                 upstream_id.startswith("source")
                 and translator.settings.enable_source_tests_as_checks
             ):
-                for child_unique_id in manifest["child_map"][upstream_id]:
+                for child_unique_id in child_map[upstream_id]:
                     if not child_unique_id.startswith("test"):
                         continue
                     check_spec = translator.get_asset_check_spec(

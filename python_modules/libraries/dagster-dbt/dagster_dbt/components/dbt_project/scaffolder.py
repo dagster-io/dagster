@@ -12,7 +12,6 @@ from pydantic import BaseModel, Field
 # dbt.cli.main adds a handler to the root logger, restore original handlers to prevent logspew
 existing_root_logger_handlers = [*logging.getLogger().handlers]
 
-from dbt.cli.main import dbtRunner
 
 logging.getLogger().handlers = existing_root_logger_handlers
 
@@ -35,6 +34,9 @@ class DbtProjectComponentScaffolder(Scaffolder[DbtScaffoldParams]):
             path_str = f"{project_root_tmpl}/{rel_path}"
 
         elif request.params.init:
+            # TODO: fusion support
+            from dbt.cli.main import dbtRunner
+
             dbtRunner().invoke(["init"])
             subpaths = [
                 path
