@@ -3,7 +3,6 @@
 from pathlib import Path
 from unittest.mock import patch
 
-import pytest
 from automation.dagster_docs.commands.check import check
 from click.testing import CliRunner
 
@@ -140,12 +139,51 @@ class TestCheckDocstringsCommands:
             in result.output
         )
 
-    def test_check_docstrings_all_not_implemented(self):
-        """Test that check docstrings --all raises NotImplementedError."""
-        with pytest.raises(NotImplementedError) as excinfo:
-            self.runner.invoke(check, ["docstrings", "--all"], catch_exceptions=False)
+    def test_check_docstrings_all_runs_successfully(self):
+        """Test that check docstrings --all executes without crashing."""
+        result = self.runner.invoke(check, ["docstrings", "--all"])
 
-        assert "Global docstring checking functionality not yet implemented" in str(excinfo.value)
+        # Should complete (may have warnings/errors but should not crash)
+        assert result.exit_code in [0, 1]  # 0 for success, 1 for validation errors
+        assert "Validating docstrings across" in result.output
+        assert "public Dagster packages" in result.output
+        assert "Overall Summary:" in result.output
+
+    def test_check_docstrings_all_shows_summary_statistics(self):
+        """Test that --all shows package count and symbol statistics."""
+        result = self.runner.invoke(check, ["docstrings", "--all"])
+
+        # Should show statistics about packages and symbols processed
+        assert result.exit_code in [0, 1]
+        assert "symbols processed across" in result.output
+        assert "packages" in result.output
+        assert "Total:" in result.output
+        # Should show counts for errors and warnings
+        assert "errors," in result.output
+        assert "warnings" in result.output
+
+    def test_check_docstrings_all_respects_exclude_lists_by_default(self):
+        """Test that exclude lists are applied by default in --all mode."""
+        result = self.runner.invoke(check, ["docstrings", "--all"])
+
+        # Should complete and may show exclusion information
+        assert result.exit_code in [0, 1]
+        # If exclusions exist, should mention them
+        # Note: We can't assert specific exclusion counts as they may change,
+        # but we can check the format is correct
+        if "excluded from validation" in result.output:
+            assert "symbols excluded from validation" in result.output
+
+    def test_check_docstrings_all_handles_import_errors_gracefully(self):
+        """Test graceful handling when some packages fail to import."""
+        result = self.runner.invoke(check, ["docstrings", "--all"])
+
+        # Should complete successfully even if some packages fail to import
+        assert result.exit_code in [0, 1]
+        # May show warnings about import failures, but should continue
+        if "Warning: Could not import package" in result.output:
+            # Should still show overall summary despite import failures
+            assert "Overall Summary:" in result.output
 
     def test_check_help_command(self):
         """Test that check help works."""
@@ -154,6 +192,129 @@ class TestCheckDocstringsCommands:
         assert result.exit_code == 0
         assert "Check documentation aspects" in result.output
         assert "docstrings" in result.output
+
+
+class TestIgnoreExcludeListsFlag:
+    """Test suite for --ignore-exclude-lists flag functionality."""
+
+    def setup_method(self):
+        """Set up test fixtures."""
+        self.runner = CliRunner()
+
+    def test_ignore_exclude_lists_flag_with_symbol_excluded_symbol(self):
+        """Test --ignore-exclude-lists with --symbol on a known excluded symbol."""
+        # Test with a symbol we know is in EXCLUDE_MISSING_DOCSTRINGS
+        result_normal = self.runner.invoke(check, ["docstrings", "--symbol", "dagster.BoolSource"])
+        result_ignore = self.runner.invoke(
+            check, ["docstrings", "--symbol", "dagster.BoolSource", "--ignore-exclude-lists"]
+        )
+
+        # Normal mode should skip the excluded symbol
+        assert result_normal.exit_code == 0
+        assert (
+            "Symbol 'dagster.BoolSource' is in the exclude list - skipping validation"
+            in result_normal.output
+        )
+        assert "✓ Symbol excluded from validation" in result_normal.output
+
+        # Ignore mode should actually validate the symbol
+        assert result_ignore.exit_code in [0, 1]  # May pass or fail validation
+        assert "Validating docstring for: dagster.BoolSource" in result_ignore.output
+        # Should not show exclusion message
+        assert "Symbol 'dagster.BoolSource' is in the exclude list" not in result_ignore.output
+
+    def test_ignore_exclude_lists_flag_with_symbol_non_excluded_symbol(self):
+        """Test --ignore-exclude-lists with --symbol on a non-excluded symbol."""
+        # Test with a symbol that should have good docstrings
+        result_normal = self.runner.invoke(check, ["docstrings", "--symbol", "dagster.asset"])
+        result_ignore = self.runner.invoke(
+            check, ["docstrings", "--symbol", "dagster.asset", "--ignore-exclude-lists"]
+        )
+
+        # Both should behave the same for non-excluded symbols
+        assert result_normal.exit_code == 0
+        assert result_ignore.exit_code == 0
+        assert "Validating docstring for: dagster.asset" in result_normal.output
+        assert "Validating docstring for: dagster.asset" in result_ignore.output
+
+    def test_ignore_exclude_lists_flag_with_package_shows_more_issues(self):
+        """Test --ignore-exclude-lists with --package shows more validation issues."""
+        # Use a small package that likely has excluded symbols
+        result_normal = self.runner.invoke(
+            check, ["docstrings", "--package", "dagster._core.errors"]
+        )
+        result_ignore = self.runner.invoke(
+            check, ["docstrings", "--package", "dagster._core.errors", "--ignore-exclude-lists"]
+        )
+
+        # Both should complete
+        assert result_normal.exit_code in [0, 1]
+        assert result_ignore.exit_code in [0, 1]
+
+        # Normal mode may show exclusion counts
+        if "symbols excluded from validation" in result_normal.output:
+            # Ignore mode should not show exclusion counts
+            assert "symbols excluded from validation" not in result_ignore.output
+
+    def test_ignore_exclude_lists_flag_with_all_shows_more_issues(self):
+        """Test --ignore-exclude-lists with --all shows more validation issues."""
+        result_normal = self.runner.invoke(check, ["docstrings", "--all"])
+        result_ignore = self.runner.invoke(check, ["docstrings", "--all", "--ignore-exclude-lists"])
+
+        # Both should complete
+        assert result_normal.exit_code in [0, 1]
+        assert result_ignore.exit_code in [0, 1]
+
+        # Both should show overall summary
+        assert "Overall Summary:" in result_normal.output
+        assert "Overall Summary:" in result_ignore.output
+
+        # Normal mode should show exclusion information if excludes exist
+        normal_has_exclusions = "symbols excluded from validation" in result_normal.output
+        # Ignore mode should not show exclusion information
+        assert "symbols excluded from validation" not in result_ignore.output
+
+        # If there were exclusions in normal mode, ignore mode should process more symbols
+        if normal_has_exclusions:
+            # Extract symbol counts (this is a bit fragile but useful for validation)
+            import re
+
+            normal_match = re.search(r"(\d+) symbols processed", result_normal.output)
+            ignore_match = re.search(r"(\d+) symbols processed", result_ignore.output)
+
+            if normal_match and ignore_match:
+                normal_count = int(normal_match.group(1))
+                ignore_count = int(ignore_match.group(1))
+                # Ignore mode should process at least as many symbols as normal mode
+                assert ignore_count >= normal_count
+
+    def test_ignore_exclude_lists_flag_consistency_across_modes(self):
+        """Test that --ignore-exclude-lists behaves consistently across different modes."""
+        # Test a known excluded symbol in both single-symbol and package mode
+        symbol_result = self.runner.invoke(
+            check, ["docstrings", "--symbol", "dagster.BoolSource", "--ignore-exclude-lists"]
+        )
+
+        # Find which package contains dagster.BoolSource and test that package
+        package_result = self.runner.invoke(
+            check, ["docstrings", "--package", "dagster", "--ignore-exclude-lists"]
+        )
+
+        # Both should complete
+        assert symbol_result.exit_code in [0, 1]
+        assert package_result.exit_code in [0, 1]
+
+        # Neither should show exclusion messages
+        assert "is in the exclude list" not in symbol_result.output
+        assert "excluded from validation" not in package_result.output
+
+    def test_ignore_exclude_lists_flag_help_text(self):
+        """Test that --ignore-exclude-lists flag appears in help text."""
+        result = self.runner.invoke(check, ["docstrings", "--help"])
+
+        assert result.exit_code == 0
+        assert "--ignore-exclude-lists" in result.output
+        assert "Ignore exclude lists and show all docstring issues" in result.output
 
 
 class TestCheckOtherCommands:
