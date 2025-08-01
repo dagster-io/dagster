@@ -88,7 +88,7 @@ def build_repo_wide_ruff_steps() -> list[CommandStepConfiguration]:
             AvailablePythonVersion.get_default(),
         )
         .run(
-            "pip install -e python_modules/dagster[ruff] -e python_modules/dagster-pipes -e python_modules/libraries/dagster-shared",
+            "uv pip install --system -e python_modules/dagster[ruff] -e python_modules/dagster-pipes -e python_modules/libraries/dagster-shared",
             "make check_ruff",
         )
         .skip_if(skip_if_no_python_changes())
@@ -181,7 +181,7 @@ def build_repo_wide_check_manifest_steps() -> list[CommandStepConfiguration]:
     ]
 
     commands = [
-        "pip install check-manifest",
+        "uv pip install --system check-manifest",
         *(
             f"check-manifest {library}"
             for library in published_packages
@@ -204,7 +204,7 @@ def build_sql_schema_check_steps() -> list[CommandStepConfiguration]:
         add_test_image(
             CommandStepBuilder(":mysql: mysql-schema")
             .run(
-                "pip install -e python_modules/dagster -e python_modules/dagster-pipes -e python_modules/libraries/dagster-shared",
+                "uv pip install --system -e python_modules/dagster -e python_modules/dagster-pipes -e python_modules/libraries/dagster-shared",
                 "python scripts/check_schemas.py",
             )
             .skip_if(skip_mysql_if_no_changes_to_dependencies(["dagster"])),
@@ -218,7 +218,7 @@ def build_graphql_python_client_backcompat_steps() -> list[CommandStepConfigurat
         add_test_image(
             CommandStepBuilder(":graphql: GraphQL Python Client backcompat")
             .run(
-                "pip install -e python_modules/dagster[test] -e python_modules/dagster-pipes"
+                "uv pip install --system -e python_modules/dagster[test] -e python_modules/dagster-pipes"
                 " -e python_modules/libraries/dagster-shared -e python_modules/dagster-graphql"
                 " -e python_modules/automation",
                 "dagster-graphql-client query check",
