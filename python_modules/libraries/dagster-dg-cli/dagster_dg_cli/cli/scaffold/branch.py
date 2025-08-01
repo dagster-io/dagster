@@ -106,7 +106,7 @@ def push_branch_and_create_pr(branch_name: str, pr_title: str, pr_body: str) -> 
     return pr_url
 
 
-@click.command(name="branch", cls=DgClickCommand)
+@click.command(name="branch", cls=DgClickCommand, hidden=True)
 @click.argument("branch-name", type=str, required=False)
 @dg_path_options
 @dg_global_options
