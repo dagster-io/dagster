@@ -47,7 +47,7 @@ export function getValue(
   throw new Error('Invalid value');
 }
 
-export function isNullValue(ctx: ValueContext | KeyValueContext): boolean {
+export function isNullValue(ctx: Pick<ValueContext, 'NULL_STRING'>): boolean {
   if ('NULL_STRING' in ctx && ctx.NULL_STRING()) {
     return true;
   }
