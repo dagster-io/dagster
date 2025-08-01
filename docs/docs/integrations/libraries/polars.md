@@ -51,4 +51,5 @@ def downstream(upstream: pl.LazyFrame) -> pl.LazyFrame:
 ## Supplementary
 
 {/* - [API docs](/api/libraries/dagster-polars) */}
+
 - [Patito integration](/integrations/libraries/patito)

@@ -110,7 +110,7 @@ def test_components_docs_index(
                 ],
                 input_str="y\n",
                 ignore_output=True,
-                print_cmd="uvx -U create-dagster project jaffle-platform",
+                print_cmd="uvx create-dagster@latest project jaffle-platform",
             )
             context.run_command_and_snippet_output(
                 cmd="cd jaffle-platform && source .venv/bin/activate",

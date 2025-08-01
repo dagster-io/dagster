@@ -19,6 +19,10 @@ import React, {useCallback, useEffect, useMemo, useState} from 'react';
 import {useRouteMatch} from 'react-router-dom';
 import {useSetRecoilState} from 'recoil';
 import {CreateCatalogViewButton} from 'shared/assets/CreateCatalogViewButton.oss';
+import {
+  AssetCatalogAlerts,
+  useShouldShowAssetCatalogAlerts,
+} from 'shared/assets/catalog/AssetCatalogAlerts.oss';
 import {useCatalogExtraDropdownOptions} from 'shared/assets/catalog/useCatalogExtraDropdownOptions.oss';
 import {AssetCatalogInsights} from 'shared/assets/insights/AssetCatalogInsights.oss';
 import {useFavoriteAssets} from 'shared/assets/useFavoriteAssets.oss';
@@ -193,6 +197,8 @@ export const AssetCatalogTableV2 = React.memo(() => {
 
   const {isFullScreen} = useFullScreen();
 
+  const shouldShowCatalogAlerts = useShouldShowAssetCatalogAlerts();
+
   const tabs = useMemo(
     () => (
       <Box border="bottom">
@@ -205,11 +211,12 @@ export const AssetCatalogTableV2 = React.memo(() => {
             <Tab id="assets" title="Assets" />
             <Tab id="lineage" title="Lineage" />
             <Tab id="insights" title="Insights" />
+            {shouldShowCatalogAlerts ? <Tab id="alerts" title="Alert Policies" /> : null}
           </Tabs>
         )}
       </Box>
     ),
-    [isFullScreen, onChangeTab, selectedTab],
+    [isFullScreen, onChangeTab, selectedTab, shouldShowCatalogAlerts],
   );
 
   const content = () => {
@@ -255,6 +262,8 @@ export const AssetCatalogTableV2 = React.memo(() => {
             }
           />
         );
+      case 'alerts':
+        return <AssetCatalogAlerts tabs={tabs} selection={assetSelection} />;
       default:
         return (
           <Table

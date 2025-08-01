@@ -38,6 +38,7 @@ First, you will want a new shell and navigate to the same directory. You will ne
          ```shell
          uv add 'dagster-airlift[core]' dagster-webserver dagster
          ```
+
    </TabItem>
 
    <TabItem value="pip" label="pip">

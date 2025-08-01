@@ -27,8 +27,9 @@ export const AssetsCatalog = React.memo(() => {
         padding={{top: 12, horizontal: 24}}
         flex={{direction: 'row', alignItems: 'center', justifyContent: 'space-between'}}
         border="top"
+        style={{width: '100%'}}
       >
-        <ViewBreadcrumb full />
+        <ViewBreadcrumb />
       </Box>
       <AssetCatalogTableV2 />
     </div>

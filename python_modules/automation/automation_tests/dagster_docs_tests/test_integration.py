@@ -78,14 +78,20 @@ class TestRealDagsterSymbols:
 
         # Should complete successfully (exit code 0 or 1 for validation errors)
         assert result.exit_code in [0, 1]
-        assert f"Validating docstring for: {symbol}" in result.output
 
-        # Should show some result (valid or invalid)
+        # Should either validate the symbol or show it's excluded
+        assert (
+            f"Validating docstring for: {symbol}" in result.output
+            or f"Symbol '{symbol}' is in the exclude list" in result.output
+        )
+
+        # Should show some result (valid or invalid or excluded)
         assert (
             "✓" in result.output
             or "✗" in result.output
             or "ERROR" in result.output
             or "WARNING" in result.output
+            or "excluded" in result.output
         )
 
     def test_check_docstrings_dagster_package(self):

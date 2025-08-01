@@ -2,12 +2,12 @@ import functools
 import logging
 import os
 import subprocess
+from collections.abc import Sequence
 from pathlib import Path
-from typing import Dict, List, Optional, Sequence
+from typing import Optional
 
 import packaging.version
 import yaml
-
 from buildkite_shared.environment import is_feature_branch, message_contains
 from buildkite_shared.git import ChangedFiles
 from buildkite_shared.step_builders.step_builder import StepConfiguration
@@ -71,7 +71,7 @@ def check_for_release() -> bool:
     except subprocess.CalledProcessError:
         return False
 
-    version: Dict[str, object] = {}
+    version: dict[str, object] = {}
     with open("python_modules/dagster/dagster/version.py", encoding="utf8") as fp:
         exec(fp.read(), version)
 
@@ -81,7 +81,7 @@ def check_for_release() -> bool:
     return False
 
 
-def network_buildkite_container(network_name: str) -> List[str]:
+def network_buildkite_container(network_name: str) -> list[str]:
     return [
         # hold onto your hats, this is docker networking at its best. First, we figure out
         # the name of the currently running container...
@@ -95,7 +95,7 @@ def network_buildkite_container(network_name: str) -> List[str]:
 
 def connect_sibling_docker_container(
     network_name: str, container_name: str, env_variable: str
-) -> List[str]:
+) -> list[str]:
     return [
         # Now, we grab the IP address of the target container from within the target
         # bridge network and export it; this will let the tox tests talk to the target cot.
@@ -136,11 +136,7 @@ def parse_package_version(version_str: str) -> packaging.version.Version:
 
 
 def get_commit(rev):
-    return (
-        subprocess.check_output(["git", "rev-parse", "--short", rev])
-        .decode("utf-8")
-        .strip()
-    )
+    return subprocess.check_output(["git", "rev-parse", "--short", rev]).decode("utf-8").strip()
 
 
 def skip_if_no_python_changes(overrides: Optional[Sequence[str]] = None):
@@ -154,9 +150,7 @@ def skip_if_no_python_changes(overrides: Optional[Sequence[str]] = None):
         return None
 
     if overrides and any(
-        Path(override) in path.parents
-        for override in overrides
-        for path in ChangedFiles.all
+        Path(override) in path.parents for override in overrides for path in ChangedFiles.all
     ):
         return None
 
@@ -196,34 +190,30 @@ def skip_if_no_non_docs_markdown_changes():
     if not is_feature_branch():
         return None
 
-    if any(
-        path.suffix == ".md" and Path("docs") not in path.parents
-        for path in ChangedFiles.all
-    ):
+    if any(path.suffix == ".md" and Path("docs") not in path.parents for path in ChangedFiles.all):
         return None
 
     return "No markdown changes outside of docs"
 
 
-@functools.lru_cache(maxsize=None)
+@functools.cache
 def has_helm_changes():
     return any(Path("helm") in path.parents for path in ChangedFiles.all)
 
 
-@functools.lru_cache(maxsize=None)
+@functools.cache
 def has_dagster_airlift_changes():
     return any("dagster-airlift" in str(path) for path in ChangedFiles.all)
 
 
-@functools.lru_cache(maxsize=None)
+@functools.cache
 def has_dg_changes():
     return any(
-        "dagster-dg" in str(path) or "docs_snippets" in str(path)
-        for path in ChangedFiles.all
+        "dagster-dg" in str(path) or "docs_snippets" in str(path) for path in ChangedFiles.all
     )
 
 
-@functools.lru_cache(maxsize=None)
+@functools.cache
 def has_storage_test_fixture_changes():
     # Attempt to ensure that changes to TestRunStorage and TestEventLogStorage suites trigger integration
     return any(

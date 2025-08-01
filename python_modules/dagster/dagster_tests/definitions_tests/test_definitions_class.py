@@ -25,7 +25,7 @@ from dagster._core.definitions.metadata.metadata_value import MetadataValue
 from dagster._core.definitions.partitions.context import PartitionLoadingContext
 from dagster._core.types.pagination import PaginatedResults
 from dagster._utils.test.definitions import scoped_definitions_load_context
-from dagster.components.core.tree import ComponentTree
+from dagster.components.core.component_tree import ComponentTree
 
 
 def get_all_assets_from_defs(defs: Definitions):

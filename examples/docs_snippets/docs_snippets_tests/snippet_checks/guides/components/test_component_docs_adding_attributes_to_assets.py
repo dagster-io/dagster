@@ -59,7 +59,7 @@ def test_components_docs_adding_attributes_to_assets(
             snippet_replace_regex=[
                 ("--uv-sync --use-editable-dagster ", ""),
                 (".*&& source my-project/.venv/bin/activate.*\n", ""),
-                ("create-dagster", "uvx -U create-dagster"),
+                ("create-dagster", "uvx create-dagster@latest"),
             ],
             ignore_output=True,
         )

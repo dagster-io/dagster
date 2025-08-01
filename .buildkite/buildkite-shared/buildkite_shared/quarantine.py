@@ -1,7 +1,7 @@
+import logging
 import time
 from dataclasses import dataclass
 from functools import lru_cache
-import sys
 
 import requests
 
@@ -52,7 +52,7 @@ def get_buildkite_quarantined_objects(
             url = next_url
 
     except Exception as e:
-        print(e, file=sys.stderr)
+        logging.error(e)
         if not suppress_errors:
             raise e
 
@@ -68,12 +68,10 @@ def filter_and_print_steps_by_quarantined(
         )
         if skipped_steps:
             for step in skipped_steps:
-                print(
-                    f"Skipped step: {step.get('label') or 'unnamed'}", file=sys.stderr
-                )
+                logging.info(f"Skipped step: {step.get('label') or 'unnamed'}")
         if muted_steps:
             for step in muted_steps:
-                print(f"Muted step: {step.get('label') or 'unnamed'}", file=sys.stderr)
+                logging.info(f"Muted step: {step.get('label') or 'unnamed'}")
 
         return filtered_steps
     return all_steps

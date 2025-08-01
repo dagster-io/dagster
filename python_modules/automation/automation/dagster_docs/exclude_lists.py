@@ -25,7 +25,7 @@ EXCLUDE_MISSING_RST = {
     "dagster.components.scaffold.scaffold.ScaffoldRequest",
     "dagster.components.scaffold.scaffold.Scaffolder",
     "dagster.components.lib.sql_component.sql_component.SqlComponent",
-    "dagster.components.core.tree.ComponentTree",
+    "dagster.components.core.component_tree.ComponentTree",
     # Core internal functionality
     "dagster._core.definitions.definitions_class.create_repository_using_definitions_args",
     # Core storage and compute management - internal functionality
@@ -411,3 +411,62 @@ EXCLUDE_MODULES_FROM_PUBLIC_SCAN = set()
 
 # RST files to exclude from symbol extraction
 EXCLUDE_RST_FILES = set()
+
+
+# Docstring validation exclude lists
+
+# Symbols that currently have missing or empty docstrings
+EXCLUDE_MISSING_DOCSTRINGS = {
+    "dagster.AssetCheckExecutionContext",
+    "dagster.AssetExecutionContext",
+    "dagster.BoolSource",
+    "dagster.IntSource",
+    "dagster.StringSource",
+    "dagster_dask.dask_resource",
+    "dagster_databricks.databricks_client",
+    "dagster_datahub.datahub_kafka_emitter",
+    "dagster_datahub.datahub_rest_emitter",
+    "dagster_gcp.bigquery_resource",
+    "dagster_gcp.configurable_dataproc_op",
+    "dagster_gcp.dataproc_op",
+    "dagster_gcp.dataproc_resource",
+    "dagster_gcp.gcs_resource",
+    "dagster_gcp.import_df_to_bq",
+    "dagster_gcp.import_file_to_bq",
+    "dagster_gcp.import_gcs_paths_to_bq",
+    "dagster_github.github_resource",
+    "dagster_mlflow.end_mlflow_on_run_finished",
+    "dagster_prometheus.prometheus_resource",
+    "dagster_spark.spark_resource",
+    "dagster_twilio.twilio_resource",
+}
+# Total: 22 symbols
+
+# Symbols that currently have docstring validation errors
+EXCLUDE_DOCSTRING_ERRORS = {
+    "dagster.ExecuteInProcessResult",
+    "dagster.scaffold_with",
+    "dagster_dask.dask_executor",
+    "dagster_fivetran.fivetran_resync_op",
+}
+# Total: 4 symbols
+
+# Symbols that currently have docstring validation warnings
+EXCLUDE_DOCSTRING_WARNINGS = {
+    "dagster.Component",
+    "dagster.ComponentLoadContext",
+    "dagster.ConfigSchema",
+    "dagster.DagsterInstance",
+    "dagster.GraphDefinition.execute_in_process",
+    "dagster.JobDefinition.execute_in_process",
+    "dagster.ReexecutionOptions",
+    "dagster.definitions",
+    "dagster.execute_job",
+    "dagster_celery_k8s.celery_k8s_job_executor",
+    "dagster_docker.docker_container_op",
+    "dagster_docker.docker_executor",
+    "dagster_gcp.gcs_pickle_io_manager",
+    "dagster_k8s.k8s_job_executor",
+    "dagster_k8s.k8s_job_op",
+}
+# Total: 15 symbols

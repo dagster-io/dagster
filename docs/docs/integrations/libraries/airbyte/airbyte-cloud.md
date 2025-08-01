@@ -20,7 +20,6 @@ If you are just getting started with the Airbyte Cloud integration, we recommend
 
 :::
 
-
 This guide provides instructions for using Dagster with Airbyte Cloud using the `dagster-airbyte` library. Your Airbyte Cloud connection tables can be represented as assets in the Dagster asset graph, allowing you to track lineage and dependencies between Airbyte Cloud assets and data assets you are already modeling in Dagster. You can also use Dagster to orchestrate Airbyte Cloud connections, allowing you to trigger syncs for these on a cadence or based on upstream data changes.
 
 ## What you'll learn
@@ -94,21 +93,26 @@ You can pass an instance of the custom <PyObject section="libraries" module="dag
 
 Once you have your Airbyte Cloud assets, you can define a job to materialize all of them.
 
-<CodeExample path="docs_snippets/docs_snippets/integrations/airbyte_cloud/create_airbyte_cloud_all_assets_job.py" language="python" />
+<CodeExample
+  path="docs_snippets/docs_snippets/integrations/airbyte_cloud/create_airbyte_cloud_all_assets_job.py"
+  language="python"
+/>
 
 You can also define a job for a selection of these assets, or for the assets of a single connection.
 
-<CodeExample path="docs_snippets/docs_snippets/integrations/airbyte_cloud/create_airbyte_cloud_selection_job.py" language="python" />
+<CodeExample
+  path="docs_snippets/docs_snippets/integrations/airbyte_cloud/create_airbyte_cloud_selection_job.py"
+  language="python"
+/>
 
 Finally, jobs created for your Airbyte Cloud assets can be scheduled.
 
 <CodeExample
-startAfter="start_airbyte_cloud_schedule"
-endBefore="end_airbyte_cloud_schedule"
-path="docs_snippets/docs_snippets/integrations/airbyte_cloud/schedule_airbyte_cloud_jobs.py"
-language="python"
+  startAfter="start_airbyte_cloud_schedule"
+  endBefore="end_airbyte_cloud_schedule"
+  path="docs_snippets/docs_snippets/integrations/airbyte_cloud/schedule_airbyte_cloud_jobs.py"
+  language="python"
 />
-
 
 ### Load Airbyte Cloud assets from multiple workspaces
 

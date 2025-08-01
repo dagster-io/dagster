@@ -1,18 +1,16 @@
-from typing import List
-
-from dagster_buildkite.steps.packages import PackageSpec
 from buildkite_shared.python_version import AvailablePythonVersion
 from buildkite_shared.step_builders.command_step_builder import BuildkiteQueue
 from buildkite_shared.step_builders.step_builder import StepConfiguration
 from dagster_buildkite.steps.packages import (
+    PackageSpec,
     build_steps_from_package_specs,
     gcp_creds_extra_cmds,
     k8s_extra_cmds,
 )
 
 
-def build_dagster_oss_nightly_steps() -> List[StepConfiguration]:
-    steps: List[StepConfiguration] = []
+def build_dagster_oss_nightly_steps() -> list[StepConfiguration]:
+    steps: list[StepConfiguration] = []
 
     steps += build_steps_from_package_specs(
         [

@@ -393,3 +393,79 @@ class TestSectionHeaderEdgeCases:
         # (Exact behavior may vary based on RST processing)
         # Just verify it runs without crashing
         assert result is not None
+
+    def test_attributes_in_code_block_should_not_be_flagged(self):
+        """Test that 'attributes:' within code blocks should not trigger validation errors.
+
+        This reproduces the false positive reported in dagster.template_var docstring.
+        """
+        docstring = '''"""Template variable decorator function.
+
+        This decorator marks functions for use in YAML templates.
+
+        Examples:
+            Basic usage in YAML:
+
+            .. code-block:: yaml
+
+                type: my_project.components.DataProcessor
+                template_vars_module: .template_vars
+                attributes:
+                  database_url: "{{ database_url }}"
+                  table_name: "{{ component_specific_table }}"
+
+            Component class usage:
+
+            .. code-block:: yaml
+
+                type: my_project.components.MyComponent
+                attributes:
+                  config: "{{ default_config }}"
+                  name: "{{ context_aware_value }}"
+
+        Args:
+            fn: The function to decorate as a template variable.
+
+        Returns:
+            The decorated function with template variable metadata.
+        """'''
+        result = validate_docstring_text(docstring, "test.template_var_function")
+
+        # Should not flag 'attributes:' within the code blocks as malformed headers
+        if result.has_errors():
+            errors = " ".join(result.errors)
+            # Make sure no error mentions 'attributes:'
+            assert "attributes:" not in errors.lower(), (
+                f"Should not flag 'attributes:' in code blocks, got errors: {result.errors}"
+            )
+
+        # Should not have warnings about 'attributes:' either
+        if result.has_warnings():
+            warnings = " ".join(result.warnings)
+            assert "attributes:" not in warnings.lower(), (
+                f"Should not warn about 'attributes:' in code blocks, got warnings: {result.warnings}"
+            )
+
+    def test_see_also_with_cross_references_should_not_warn(self):
+        """Test that 'See Also:' sections with cross-references should not generate RST warnings.
+
+        This reproduces the false positive RST warning for seealso directive in dagster.template_var.
+        Napoleon converts 'See Also:' to '.. seealso::' but the RST parser incorrectly flags it.
+        """
+        docstring = """See Also:
+    - :py:class:`dagster.ComponentLoadContext`: Context object available to template variables
+"""
+        result = validate_docstring_text(docstring, "test.template_var_function")
+
+        # Should not generate RST warnings about seealso directive
+        # This currently fails because the RST parser generates a false positive warning
+        if result.has_warnings():
+            warnings = " ".join(result.warnings)
+            # The specific warning we want to avoid
+            assert ".. seealso::" not in warnings, (
+                f"Should not warn about seealso directive, got warnings: {result.warnings}"
+            )
+            # More general check for seealso-related warnings
+            assert "seealso" not in warnings.lower(), (
+                f"Should not have seealso warnings, got warnings: {result.warnings}"
+            )

@@ -17,7 +17,6 @@ import UseAirliftComponent from '@site/docs/partials/\_UseAirliftComponent.md';
 
 <UseAirliftComponent />
 
-
 <p>{frontMatter.description}</p>
 
 Using [`dagster-airflift`](/api/libraries/dagster-airlift), you can:

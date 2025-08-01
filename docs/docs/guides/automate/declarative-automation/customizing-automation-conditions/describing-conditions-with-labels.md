@@ -12,7 +12,10 @@ When there are a large number of sub-conditions that make up an <PyObject sectio
 
 Arbitrary string labels can be attached to any node in the <PyObject section="assets" module="dagster" object="AutomationCondition" /> tree by using the `with_label()` method, allowing you to describe the purpose of a specific sub-condition. For example:
 
-<CodeExample path="docs_snippets/docs_snippets/concepts/declarative_automation/condition_labels.py" title="src/<project_name>/defs/assets.py" />
+<CodeExample
+  path="docs_snippets/docs_snippets/concepts/declarative_automation/condition_labels.py"
+  title="src/<project_name>/defs/assets.py"
+/>
 
 Then, when viewing evaluation results in the UI, the label will display next to the condition:
 

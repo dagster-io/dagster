@@ -4,7 +4,7 @@ from collections.abc import Mapping
 from dataclasses import dataclass
 from pathlib import Path
 from types import ModuleType
-from typing import TYPE_CHECKING, Any, Union
+from typing import TYPE_CHECKING, Any, Optional, TypeVar, Union, overload
 
 from dagster_shared import check
 from dagster_shared.yaml_utils.source_position import SourcePositionTree
@@ -17,12 +17,14 @@ from dagster.components.resolved.context import ResolutionContext
 
 if TYPE_CHECKING:
     from dagster.components.component.component import Component
+    from dagster.components.core.component_tree import ComponentTree
     from dagster.components.core.decl import ComponentDecl
     from dagster.components.core.defs_module import ComponentPath
-    from dagster.components.core.tree import ComponentTree
 
 
 RESOLUTION_CONTEXT_STASH_KEY = "component_load_context"
+
+T = TypeVar("T")
 
 
 @public
@@ -66,13 +68,17 @@ class ComponentDeclLoadContext:
         - :py:class:`dagster.ComponentLoadContext`: Context available when instantiating Components
     """
 
-    path: PublicAttr[Path]
     project_root: PublicAttr[Path]
     defs_module_path: PublicAttr[Path]
     defs_module_name: PublicAttr[str]
     resolution_context: PublicAttr[ResolutionContext]
     component_tree: "ComponentTree"
     terminate_autoloading_on_keyword_files: bool
+    component_path: PublicAttr["ComponentPath"]
+
+    @property
+    def path(self) -> Path:
+        return self.component_path.file_path
 
     def __post_init__(self):
         object.__setattr__(
@@ -107,8 +113,8 @@ class ComponentDeclLoadContext:
             self.resolution_context.with_source_position_tree(source_position_tree)
         )
 
-    def for_path(self, path: Path) -> "Self":
-        return dataclasses.replace(self, path=path)
+    def for_component_path(self, component_path: "ComponentPath") -> "Self":
+        return dataclasses.replace(self, component_path=component_path)
 
     def defs_relative_module_name(self, path: Path) -> str:
         """Returns the name of the python module at the given path, relative to the project root."""
@@ -158,6 +164,31 @@ class ComponentDeclLoadContext:
         """
         return importlib.import_module(self.defs_relative_module_name(path))
 
+    @overload
+    def load_component_at_path(
+        self, defs_path: Union[Path, "ComponentPath", str]
+    ) -> "Component": ...
+    @overload
+    def load_component_at_path(
+        self, defs_path: Union[Path, "ComponentPath", str], expected_type: type[T]
+    ) -> T: ...
+
+    def load_component_at_path(
+        self, defs_path: Union[Path, "ComponentPath", str], expected_type: Optional[type[T]] = None
+    ) -> Any:
+        """Loads a component from the given path.
+
+        Args:
+            defs_path: Path to the component to load. If relative, resolves relative to the defs root.
+
+        Returns:
+            Component: The component loaded from the given path.
+        """
+        self.component_tree.mark_component_load_dependency(
+            from_path=self.component_path, to_path=defs_path
+        )
+        return self.component_tree.load_component_at_path(defs_path, expected_type)  # type: ignore[reportIncompatibleArgumentType]
+
     def load_structural_component_at_path(
         self, defs_path: Union[Path, "ComponentPath"]
     ) -> "Component":
@@ -169,6 +200,9 @@ class ComponentDeclLoadContext:
         Returns:
             Component: The component loaded from the given path.
         """
+        self.component_tree.mark_component_load_dependency(
+            from_path=self.component_path, to_path=defs_path
+        )
         return self.component_tree.load_structural_component_at_path(defs_path)
 
 
@@ -236,7 +270,7 @@ class ComponentLoadContext(ComponentDeclLoadContext):
             load and build definitions for the component.
         """
         return ComponentLoadContext(
-            path=decl_load_context.path,
+            component_path=decl_load_context.component_path,
             project_root=decl_load_context.project_root,
             defs_module_path=decl_load_context.defs_module_path,
             defs_module_name=decl_load_context.defs_module_name,
@@ -256,4 +290,21 @@ class ComponentLoadContext(ComponentDeclLoadContext):
         Returns:
             Definitions: The definitions loaded from the given path.
         """
+        self.component_tree.mark_component_defs_dependency(
+            from_path=self.component_path, to_path=defs_path
+        )
         return self.component_tree.build_defs_at_path(defs_path)
+
+    def for_path(self, path: Path) -> "Self":
+        """Creates a new context for the given path.
+
+        Args:
+            path: The filesystem path to create a new context for.
+
+        Returns:
+            ComponentLoadContext: A new context for the given path.
+        """
+        from dagster.components.core.defs_module import ComponentPath
+
+        component_path = ComponentPath(file_path=path)
+        return self.for_component_path(component_path)
