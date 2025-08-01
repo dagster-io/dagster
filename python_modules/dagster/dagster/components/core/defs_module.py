@@ -24,7 +24,10 @@ from dagster._core.definitions.module_loaders.load_defs_from_module import (
 from dagster._core.definitions.module_loaders.utils import find_objects_in_module_of_types
 from dagster._core.errors import DagsterInvalidDefinitionError
 from dagster.components.component.component import Component
-from dagster.components.component.template_vars import find_inline_template_vars_in_module
+from dagster.components.component.template_vars import (
+    find_inline_template_vars_in_module,
+    get_context_aware_static_template_vars,
+)
 from dagster.components.core.context import ComponentDeclLoadContext, ComponentLoadContext
 from dagster.components.definitions import LazyDefinitions
 from dagster.components.resolved.base import Resolvable
@@ -443,9 +446,15 @@ def context_with_injected_scope(
     component_cls: type[Component],
     template_vars_module: Optional[str],
 ) -> T:
-    context = context.with_rendering_scope(
-        component_cls.get_additional_scope(),
-    )
+    # Merge backward-compatible get_additional_scope with context-aware static template vars
+
+    legacy_scope = component_cls.get_additional_scope()
+    context_aware_scope = get_context_aware_static_template_vars(component_cls, context)
+
+    # Merge scopes, with context-aware taking precedence
+    merged_scope = {**legacy_scope, **context_aware_scope}
+
+    context = context.with_rendering_scope(merged_scope)
 
     if not template_vars_module:
         return context
