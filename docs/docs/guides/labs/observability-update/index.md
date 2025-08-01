@@ -24,7 +24,7 @@ Once you are a member of the early access program, you can enable or disable the
 
 Get a holistic view of your data platform’s health from the moment you log in. The redesigned Dagster+ homepage keeps your most important signals front and center so you can track key metrics in real time, surface issues quickly, and stay focused on what matters most.
 
-{/* TODO screenshot of homepage or separate doc if needed */}
+![New Dagster+ homepage](/images/guides/labs/observability-update/new-dagster-plus-homepage.png)
 
 ### Freshness policies
 
