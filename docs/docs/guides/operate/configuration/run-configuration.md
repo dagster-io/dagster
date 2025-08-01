@@ -40,7 +40,7 @@ Here, we define a basic asset in `assets.py` and its configurable parameters in 
 </TabItem>
 <TabItem value="Using ops and jobs">
 
-Here, we define a basic op in `ops.py` and its configurable parameters in `resources.py`. `MyOpConfig` is a subclass of <PyObject section="config" module="dagster" object="Config"/> that holds a single string value representing the name of a user. This config can be accessed through the `config` parameter in the asset body:
+Here, we define a basic op in `ops.py` and its configurable parameters in `resources.py`. `MyOpConfig` is a subclass of <PyObject section="config" module="dagster" object="Config"/> that holds a single string value representing the name of a user. This config can be accessed through the `config` parameter in the op body:
 
 <CodeExample
   path="docs_snippets/docs_snippets/guides/operate/configuration/run_config/op_example/ops.py"

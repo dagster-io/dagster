@@ -5,6 +5,7 @@ __pycache__/
 
 # Claude context file
 CLAUDE.local.md
+.claude/settings.local.json
 # C extensions
 *.so
 

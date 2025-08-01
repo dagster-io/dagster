@@ -15,7 +15,7 @@ Consider using sensors in the following situations:
 
 In this step you will:
 
-- Create an asset that runs based on a event-driven workflow
+- Create an asset that runs based on an event-driven workflow
 - Create a sensor to listen for conditions to materialize the asset
 
 ## 1. Create an event-driven asset

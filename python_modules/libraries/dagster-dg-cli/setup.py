@@ -37,16 +37,12 @@ setup(
     install_requires=[
         f"dagster-dg-core{pin}",
         f"dagster{pin}",
+        "mcp; python_version>='3.10'",  # mcp not available for 3.9
     ],
     entry_points={
         "console_scripts": [
             "dg = dagster_dg_cli.cli:main",
         ]
-    },
-    extras_require={
-        "mcp": [
-            "mcp",
-        ],
     },
     zip_safe=False,
 )
