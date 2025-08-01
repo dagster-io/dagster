@@ -30,7 +30,16 @@ Events now stream back to insights views in real time. Insights views show metri
 
 :::
 
-### New asset health metrics
+
+## New KPI dashboard \{#kpi-dashboard}
+
+The new KPI dashboard helps you understand platform health across saved asset selections. To access it, click **Insights** in the left sidebar, then navigate to the **Trends** tab:
+
+![KPI dashboard](/images/guides/operate/insights_v2/kpis.png)
+
+KPIs allow you to understand your platform health at a high level, and compare metrics from different saved selections.
+
+## New asset health metrics
 
 Insights views will continue to display existing [built-in metrics](/guides/monitor/insights#built-in-metrics) alongside new asset health metrics:
 
@@ -43,10 +52,9 @@ Insights views will continue to display existing [built-in metrics](/guides/moni
 | Materialization failure count        | Number of times an asset failed to materialize.                 |
 | Freshness warning and failure counts | Number of times an asset entered a degraded freshness state.    |
 
-## New KPI dashboard \{#kpi-dashboard}
+## Limitations
 
-The new KPI dashboard helps you understand platform health across saved asset selections. To access it, click **Insights** in the left sidebar, then navigate to the **Trends** tab:
+Since this functionality is still in development, there are a few limitations we aim to address in upcoming releases:
 
-![KPI dashboard](/images/guides/operate/insights_v2/kpis.png)
-
-KPIs allow you to understand your platform health at a high level, and compare metrics from different saved selections.
+* Failure events will not exist prior to the introduction of the new metrics
+* Insights views do not currently show cost, Dagster credits, and metadata metrics
