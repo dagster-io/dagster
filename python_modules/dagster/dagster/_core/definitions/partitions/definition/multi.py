@@ -218,12 +218,16 @@ class MultiPartitionsDefinition(PartitionsDefinition[MultiPartitionKey]):
             for partition_dim in self._partitions_defs
         ]
 
-        return [
+        keys = [
             MultiPartitionKey(
                 {self._partitions_defs[i].name: key for i, key in enumerate(partition_key_tuple)}
             )
             for partition_key_tuple in itertools.product(*partition_key_sequences)
         ]
+        # in some cases, an underlying partitions definition may have keys in a format
+        # that produce invalid multi-partition keys (e.g. they have a | character).
+        # in these cases, we filter out the invalid keys.
+        return [key for key in keys if self._is_valid_key_format(key)]
 
     @public
     def get_partition_keys(
@@ -291,16 +295,22 @@ class MultiPartitionsDefinition(PartitionsDefinition[MultiPartitionKey]):
                 results=partition_keys, cursor=next_cursor, has_more=iterator.has_next()
             )
 
+    def _is_valid_key_format(self, partition_key: str) -> bool:
+        """Checks if the given partition key is in the correct format for a multi-partition key
+        of this MultiPartitionsDefinition.
+        """
+        return len(partition_key.split(MULTIPARTITION_KEY_DELIMITER)) == len(self.partitions_defs)
+
     def filter_valid_partition_keys(self, partition_keys: set[str]) -> set[MultiPartitionKey]:
         partition_keys_by_dimension = {
             dim.name: dim.partitions_def.get_partition_keys() for dim in self.partitions_defs
         }
         validated_partitions = set()
         for partition_key in partition_keys:
-            partition_key_strs = partition_key.split(MULTIPARTITION_KEY_DELIMITER)
-            if len(partition_key_strs) != len(self.partitions_defs):
+            if not self._is_valid_key_format(partition_key):
                 continue
 
+            partition_key_strs = partition_key.split(MULTIPARTITION_KEY_DELIMITER)
             multipartition_key = MultiPartitionKey(
                 {dim.name: partition_key_strs[i] for i, dim in enumerate(self._partitions_defs)}
             )
