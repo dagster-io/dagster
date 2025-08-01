@@ -46,6 +46,11 @@ if TYPE_CHECKING:
     )
 
 
+class EntityKeyError(KeyError):
+    def __init__(self, key):
+        super().__init__(key)
+
+
 class ParentsPartitionsResult(NamedTuple):
     """Represents the result of mapping an asset partition to its upstream parent partitions.
 
@@ -285,10 +290,13 @@ class BaseAssetGraph(ABC, Generic[T_AssetNode]):
     def get(self, key: AssetCheckKey) -> AssetCheckNode: ...
 
     def get(self, key: EntityKey) -> Union[T_AssetNode, AssetCheckNode]:
-        if isinstance(key, AssetKey):
-            return self._asset_nodes_by_key[key]
-        else:
-            return self._asset_check_nodes_by_key[key]
+        try:
+            if isinstance(key, AssetKey):
+                return self._asset_nodes_by_key[key]
+            else:
+                return self._asset_check_nodes_by_key[key]
+        except KeyError:
+            raise EntityKeyError(key)
 
     @cached_property
     def asset_dep_graph(self) -> DependencyGraph[AssetKey]:
