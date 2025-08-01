@@ -9,7 +9,6 @@ The Dagster+ Observability update includes the next-generation version of [Dagst
 - [New insights views to help you understand trends](#insights-views)
 - [New KPI dashboard to help you understand platform health](#kpi-dashboard)
 
-
 ## New insights views \{#insights-views}
 
 New insights views help you understand trends in a selection of assets using the [new asset health metrics](#new-asset-health-metrics).
@@ -29,7 +28,6 @@ The insights view also features activity charts that group events by hour to hel
 Events now stream back to insights views in real time. Insights views show metrics bucketed by hour through the last 120 days.
 
 :::
-
 
 ## New KPI dashboard \{#kpi-dashboard}
 
@@ -56,7 +54,7 @@ Insights views will continue to display existing [built-in metrics](/guides/moni
 
 Since this functionality is still under active development, there are a few limitations we aim to address in upcoming releases:
 
-* Health statuses don’t yet take asset observations into account, only materializations
-* Failure events will not exist prior to the introduction of the new asset metrics
-* Insights views do not currently show cost, Dagster credits, and metadata metrics
-* The new pages are all asset-focused, and haven’t yet been implemented for jobs
+- Health statuses don’t yet take asset observations into account, only materializations
+- Failure events will not exist prior to the introduction of the new asset metrics
+- Insights views do not currently show cost, Dagster credits, and metadata metrics
+- The new pages are all asset-focused, and haven’t yet been implemented for jobs
