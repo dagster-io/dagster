@@ -58,14 +58,21 @@ class BaseMultiPartitionMapping(ABC):
         partition keys in the partitions definition b_partitions_def that are
         dependencies of the partition keys in a_partition_keys.
         """
+        if isinstance(a_partitions_def, MultiPartitionsDefinition):
+            valid_a_keys = a_partitions_def.filter_valid_partition_keys(
+                set(a_partitions_subset.get_partition_keys())
+            )
+        else:
+            valid_a_keys = a_partitions_subset.get_partition_keys()
+
         a_partition_keys_by_dimension = defaultdict(set)
         if isinstance(a_partitions_def, MultiPartitionsDefinition):
-            for partition_key in a_partitions_subset.get_partition_keys():
+            for partition_key in valid_a_keys:
                 key = a_partitions_def.get_partition_key_from_str(partition_key)
                 for dimension_name, key in key.keys_by_dimension.items():
                     a_partition_keys_by_dimension[dimension_name].add(key)
         else:
-            for partition_key in a_partitions_subset.get_partition_keys():
+            for partition_key in valid_a_keys:
                 a_partition_keys_by_dimension[None].add(partition_key)
 
         # Maps the dimension name and key of a partition in a_partitions_def to the list of
@@ -179,7 +186,7 @@ class BaseMultiPartitionMapping(ABC):
             set(b_dimension_partitions_def_by_name.keys()) - set(mapped_b_dim_names)
         )
 
-        for key in a_partitions_subset.get_partition_keys():
+        for key in valid_a_keys:
             for b_key_values in itertools.product(
                 *(
                     [
