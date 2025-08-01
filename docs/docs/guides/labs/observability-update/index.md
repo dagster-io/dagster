@@ -36,7 +36,7 @@ Quickly identify which datasets are performing well and which need attention wit
 
 ### Real-time Insights
 
-Unlock a comprehensive, dashboard-style view of your data platform’s health. The new Insights experience surfaces critical metrics, like success rate, freshness hit rate, and time to resolution for any selection of assets or jobs – all in real time. For more information, see the [Real-time insights guide](/guides/labs/observability-update/insights).
+Unlock a comprehensive, dashboard-style view of your data platform’s health. The new Insights experience surfaces critical metrics, like success rate, freshness hit rate, and time to resolution for any selection of assets or jobs – all in real time. For more information, see the [Real-time Insights guide](/guides/labs/observability-update/insights).
 
 ### Custom asset catalog dashboards
 
