@@ -319,7 +319,7 @@ def repository(
             def some_sensor():
                 if foo():
                     yield RunRequest(
-                        run_key= ...,
+                        run_key=...,
                         run_config={
                             'ops': {'return_n': {'config': {'n': bar()}}}
                         }

@@ -294,3 +294,17 @@ class ComponentLoadContext(ComponentDeclLoadContext):
             from_path=self.component_path, to_path=defs_path
         )
         return self.component_tree.build_defs_at_path(defs_path)
+
+    def for_path(self, path: Path) -> "Self":
+        """Creates a new context for the given path.
+
+        Args:
+            path: The filesystem path to create a new context for.
+
+        Returns:
+            ComponentLoadContext: A new context for the given path.
+        """
+        from dagster.components.core.defs_module import ComponentPath
+
+        component_path = ComponentPath(file_path=path)
+        return self.for_component_path(component_path)

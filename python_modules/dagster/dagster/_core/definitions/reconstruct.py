@@ -485,7 +485,7 @@ def build_reconstructable_job(
             from dagster import JobDefinition, job, build_reconstructable_job
 
             class JobFactory:
-                def make_job(*args, **kwargs):
+                def make_job(self, *args, **kwargs):
 
                     @job
                     def _job(...):

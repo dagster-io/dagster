@@ -8,6 +8,9 @@ import click
 
 from automation.dagster_docs.changed_validator import ValidationConfig, validate_changed_files
 from automation.dagster_docs.exclude_lists import (
+    EXCLUDE_DOCSTRING_ERRORS,
+    EXCLUDE_DOCSTRING_WARNINGS,
+    EXCLUDE_MISSING_DOCSTRINGS,
     EXCLUDE_MISSING_EXPORT,
     EXCLUDE_MISSING_PUBLIC,
     EXCLUDE_MISSING_RST,
@@ -17,6 +20,7 @@ from automation.dagster_docs.exclude_lists import (
 from automation.dagster_docs.file_discovery import git_changed_files
 from automation.dagster_docs.path_converters import dagster_path_converter
 from automation.dagster_docs.public_api_validator import PublicApiValidator
+from automation.dagster_docs.public_packages import get_public_module_names
 from automation.dagster_docs.validator import (
     SymbolImporter,
     validate_docstring_text,
@@ -24,12 +28,26 @@ from automation.dagster_docs.validator import (
 )
 
 
-def _validate_single_symbol(symbol: str) -> int:
+def _validate_single_symbol(symbol: str, ignore_exclude_lists: bool = False) -> int:
     """Validate a single symbol's docstring and output results.
+
+    Args:
+        symbol: The symbol to validate
+        ignore_exclude_lists: If True, ignore exclude lists and validate anyway
 
     Returns:
         0 if validation succeeded, 1 if it failed
     """
+    # Check if symbol is in exclude lists (unless we're ignoring them)
+    if not ignore_exclude_lists and (
+        symbol in EXCLUDE_MISSING_DOCSTRINGS
+        or symbol in EXCLUDE_DOCSTRING_ERRORS
+        or symbol in EXCLUDE_DOCSTRING_WARNINGS
+    ):
+        click.echo(f"Symbol '{symbol}' is in the exclude list - skipping validation")
+        click.echo("✓ Symbol excluded from validation")
+        return 0
+
     result = validate_symbol_docstring(symbol)
 
     click.echo(f"Validating docstring for: {symbol}")
@@ -54,8 +72,12 @@ def _validate_single_symbol(symbol: str) -> int:
     return 0 if result.is_valid() else 1
 
 
-def _validate_package_symbols(package: str) -> int:
+def _validate_package_symbols(package: str, ignore_exclude_lists: bool = False) -> int:
     """Validate all symbols in a package and output results.
+
+    Args:
+        package: The package to validate
+        ignore_exclude_lists: If True, ignore exclude lists and validate all symbols
 
     Returns:
         0 if validation succeeded, 1 if there were errors
@@ -65,8 +87,18 @@ def _validate_package_symbols(package: str) -> int:
 
     total_errors = 0
     total_warnings = 0
+    excluded_count = 0
 
     for symbol_info in symbols:
+        # Skip symbols in exclude lists (unless we're ignoring them)
+        if not ignore_exclude_lists and (
+            symbol_info.dotted_path in EXCLUDE_MISSING_DOCSTRINGS
+            or symbol_info.dotted_path in EXCLUDE_DOCSTRING_ERRORS
+            or symbol_info.dotted_path in EXCLUDE_DOCSTRING_WARNINGS
+        ):
+            excluded_count += 1
+            continue
+
         result = validate_docstring_text(symbol_info.docstring or "", symbol_info.dotted_path)
 
         if result.has_errors() or result.has_warnings():
@@ -82,7 +114,90 @@ def _validate_package_symbols(package: str) -> int:
 
             click.echo()
 
+    if excluded_count > 0 and not ignore_exclude_lists:
+        click.echo(f"Note: {excluded_count} symbols excluded from validation")
     click.echo(f"Summary: {total_errors} errors, {total_warnings} warnings")
+    return 1 if total_errors > 0 else 0
+
+
+def _validate_all_packages(ignore_exclude_lists: bool = False) -> int:
+    """Validate all symbols across all public Dagster packages and output results.
+
+    Args:
+        ignore_exclude_lists: If True, ignore exclude lists and validate all symbols
+
+    Returns:
+        0 if validation succeeded, 1 if there were errors
+    """
+    public_modules = get_public_module_names()
+    click.echo(f"Validating docstrings across {len(public_modules)} public Dagster packages\n")
+
+    total_errors = 0
+    total_warnings = 0
+    total_symbols = 0
+    total_excluded = 0
+
+    for package in public_modules:
+        try:
+            symbols = SymbolImporter.get_all_public_symbols(package)
+            total_symbols += len(symbols)
+
+            package_errors = 0
+            package_warnings = 0
+            package_excluded = 0
+
+            for symbol_info in symbols:
+                # Skip symbols in exclude lists (unless we're ignoring them)
+                if not ignore_exclude_lists and (
+                    symbol_info.dotted_path in EXCLUDE_MISSING_DOCSTRINGS
+                    or symbol_info.dotted_path in EXCLUDE_DOCSTRING_ERRORS
+                    or symbol_info.dotted_path in EXCLUDE_DOCSTRING_WARNINGS
+                ):
+                    package_excluded += 1
+                    total_excluded += 1
+                    continue
+
+                result = validate_docstring_text(
+                    symbol_info.docstring or "", symbol_info.dotted_path
+                )
+
+                if result.has_errors() or result.has_warnings():
+                    if package_errors == 0 and package_warnings == 0:
+                        # Only print package header when we encounter first issue
+                        click.echo(f"=== {package} ===")
+
+                    click.echo(f"--- {symbol_info.dotted_path} ---")
+
+                    for error in result.errors:
+                        click.echo(f"  ERROR: {error}")
+                        package_errors += 1
+                        total_errors += 1
+
+                    for warning in result.warnings:
+                        click.echo(f"  WARNING: {warning}")
+                        package_warnings += 1
+                        total_warnings += 1
+
+                    click.echo()
+
+            if package_errors > 0 or package_warnings > 0:
+                click.echo(
+                    f"Package {package}: {package_errors} errors, {package_warnings} warnings"
+                )
+                if package_excluded > 0 and not ignore_exclude_lists:
+                    click.echo(f"  ({package_excluded} symbols excluded)")
+                click.echo()
+
+        except ImportError as e:
+            click.echo(f"Warning: Could not import package '{package}': {e}\n")
+            continue
+
+    click.echo(
+        f"Overall Summary: {total_symbols} symbols processed across {len(public_modules)} packages"
+    )
+    if total_excluded > 0 and not ignore_exclude_lists:
+        click.echo(f"  {total_excluded} symbols excluded from validation")
+    click.echo(f"Total: {total_errors} errors, {total_warnings} warnings")
     return 1 if total_errors > 0 else 0
 
 
@@ -173,7 +288,18 @@ def check():
 @click.option("--symbol", help="Filter down to a particular symbol")
 @click.option("--all", "check_all", is_flag=True, help="Check all docstrings")
 @click.option("--package", help="Filter down to a particular package")
-def docstrings(changed: bool, symbol: Optional[str], check_all: bool, package: Optional[str]):
+@click.option(
+    "--ignore-exclude-lists",
+    is_flag=True,
+    help="Ignore exclude lists and show all docstring issues",
+)
+def docstrings(
+    changed: bool,
+    symbol: Optional[str],
+    check_all: bool,
+    package: Optional[str],
+    ignore_exclude_lists: bool,
+):
     """Validate the docstrings per the existing logic."""
     # Validate that exactly one option is provided
     options_count = sum([changed, bool(symbol), check_all, bool(package)])
@@ -188,7 +314,7 @@ def docstrings(changed: bool, symbol: Optional[str], check_all: bool, package: O
 
     if symbol:
         try:
-            exit_code = _validate_single_symbol(symbol)
+            exit_code = _validate_single_symbol(symbol, ignore_exclude_lists)
             sys.exit(exit_code)
         except Exception as e:
             click.echo(f"Error: {e}", err=True)
@@ -196,7 +322,7 @@ def docstrings(changed: bool, symbol: Optional[str], check_all: bool, package: O
 
     elif package:
         try:
-            exit_code = _validate_package_symbols(package)
+            exit_code = _validate_package_symbols(package, ignore_exclude_lists)
             sys.exit(exit_code)
         except ImportError as e:
             click.echo(f"Error: Could not import package '{package}': {e}", err=True)
@@ -211,11 +337,12 @@ def docstrings(changed: bool, symbol: Optional[str], check_all: bool, package: O
             sys.exit(1)
 
     elif check_all:
-        # Check all docstrings - this functionality is not implemented yet
-        raise NotImplementedError(
-            "Global docstring checking functionality not yet implemented. "
-            "This will be implemented in a future PR."
-        )
+        try:
+            exit_code = _validate_all_packages(ignore_exclude_lists)
+            sys.exit(exit_code)
+        except Exception as e:
+            click.echo(f"Error: {e}", err=True)
+            sys.exit(1)
 
 
 @check.command("rst-symbols")

@@ -392,7 +392,7 @@ def execute_job(
         instance = DagsterInstance.get()
 
         options = ReexecutionOptions.from_failure(run_id=failed_run_id, instance)
-        execute_job(reconstructable(job), instance, reexecution_options=options)
+        execute_job(reconstructable(job), instance=instance, reexecution_options=options)
 
     Parameters:
         job (ReconstructableJob): A reconstructable pointer to a :py:class:`JobDefinition`.
