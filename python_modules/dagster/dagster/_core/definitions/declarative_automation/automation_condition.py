@@ -116,8 +116,8 @@ class AutomationCondition(ABC, Generic[T_EntityKey]):
     def operator_type(self) -> OperatorType:
         return "identity"
 
-    def get_label(self) -> Optional[str]:
-        return None
+    def get_label(self) -> str:
+        return self.name
 
     def get_node_snapshot(self, unique_id: str) -> AutomationConditionNodeSnapshot:
         """Returns a snapshot of this condition that can be used for serialization."""
@@ -750,8 +750,8 @@ class BuiltinAutomationCondition(AutomationCondition[T_EntityKey]):
 
     label: Optional[str] = None
 
-    def get_label(self) -> Optional[str]:
-        return self.label
+    def get_label(self) -> str:
+        return self.label or self.name
 
     @public
     def with_label(self, label: Optional[str]) -> Self:

@@ -137,11 +137,21 @@ def test_deserialize_definitions_with_asset_condition() -> None:
     assert isinstance(deserialized, dg.AutoMaterializePolicy)
 
 
+def test_default_label_automation_condition() -> None:
+    missing = AutomationCondition.missing()
+    assert missing.name == "missing"
+    assert missing.get_label() == "missing"
+
+    label_missing = AutomationCondition.missing().with_label("custom label")
+    assert label_missing.name == "missing"
+    assert label_missing.get_label() == "custom label"
+
+
 def test_label_automation_condition() -> None:
     not_missing = (~AutomationCondition.missing()).with_label("Not missing")
     not_in_progress = (~AutomationCondition.in_progress()).with_label("Not in progress")
     not_missing_and_not_in_progress = (not_missing & not_in_progress).with_label("Blah")
-    assert not_missing_and_not_in_progress.label == "Blah"
+    assert not_missing_and_not_in_progress.get_label() == "Blah"
     assert not_missing_and_not_in_progress.get_node_snapshot("").label == "Blah"
     assert not_missing_and_not_in_progress.children[0].get_label() == "Not missing"
     assert not_missing_and_not_in_progress.children[1].get_label() == "Not in progress"
