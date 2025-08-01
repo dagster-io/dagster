@@ -1,5 +1,5 @@
 ---
-title: 'Real-time Insights'
+title: Real-time Insights
 description: Using real-time insights, you can gain visibility into historical asset health and usage metrics.
 sidebar_position: 400
 ---
