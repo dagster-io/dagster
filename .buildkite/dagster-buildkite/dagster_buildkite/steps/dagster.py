@@ -83,7 +83,10 @@ def build_dagster_steps() -> list[StepConfiguration]:
 
 def build_repo_wide_ruff_steps() -> list[CommandStepConfiguration]:
     return [
-        add_test_image(CommandStepBuilder(":zap: ruff"), AvailablePythonVersion.get_default())
+        add_test_image(
+            CommandStepBuilder(":zap: ruff", retry_automatically=False),
+            AvailablePythonVersion.get_default(),
+        )
         .run(
             "pip install -e python_modules/dagster[ruff] -e python_modules/dagster-pipes -e python_modules/libraries/dagster-shared",
             "make check_ruff",
@@ -96,7 +99,7 @@ def build_repo_wide_ruff_steps() -> list[CommandStepConfiguration]:
 def build_repo_wide_prettier_steps() -> list[CommandStepConfiguration]:
     return [
         add_test_image(
-            CommandStepBuilder(":prettier: prettier"),
+            CommandStepBuilder(":prettier: prettier", retry_automatically=False),
             AvailablePythonVersion.get_default(),
         )
         .run(
@@ -130,7 +133,7 @@ def build_repo_wide_pyright_steps() -> list[StepConfiguration]:
             name=":pyright: pyright",
             steps=[
                 add_test_image(
-                    CommandStepBuilder(":pyright: make pyright"),
+                    CommandStepBuilder(":pyright: make pyright", retry_automatically=False),
                     AvailablePythonVersion.get_default(),
                 )
                 .run(
@@ -144,7 +147,9 @@ def build_repo_wide_pyright_steps() -> list[StepConfiguration]:
                 .skip_if(skip_if_no_python_changes(overrides=["pyright"]))
                 .build(),
                 add_test_image(
-                    CommandStepBuilder(":pyright: make rebuild_pyright_pins"),
+                    CommandStepBuilder(
+                        ":pyright: make rebuild_pyright_pins", retry_automatically=False
+                    ),
                     AvailablePythonVersion.get_default(),
                 )
                 .run(

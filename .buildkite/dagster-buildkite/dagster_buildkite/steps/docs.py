@@ -43,7 +43,7 @@ def build_build_docs_step():
 def build_docstring_validation_step() -> GroupLeafStepConfiguration:
     return (
         add_test_image(
-            CommandStepBuilder(":memo: docstring validation"),
+            CommandStepBuilder(":memo: docstring validation", retry_automatically=False),
             AvailablePythonVersion.get_default(),
         )
         .run(
