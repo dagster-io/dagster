@@ -19,6 +19,7 @@ from dagster._core.definitions.asset_selection import AssetSelection
 from dagster._core.definitions.assets.graph.asset_graph_subset import AssetGraphSubset
 from dagster._core.definitions.backfill_policy import BackfillPolicy
 from dagster._core.definitions.events import AssetKeyPartitionKey
+from dagster._core.definitions.partitions.subset.default import DefaultPartitionsSubset
 from dagster._core.definitions.selector import (
     JobSubsetSelector,
     PartitionRangeSelector,
@@ -1788,7 +1789,9 @@ def test_asset_backfill_forcible_mark_as_canceled_during_canceling_iteration(
         backfill.with_asset_backfill_data(
             backfill.asset_backfill_data._replace(  # pyright: ignore[reportOptionalMemberAccess]
                 requested_subset=AssetGraphSubset(
-                    non_partitioned_asset_keys={dg.AssetKey("daily_1")}
+                    partitions_subsets_by_asset_key={
+                        dg.AssetKey("daily_1"): DefaultPartitionsSubset({"2023-01-01"})
+                    }
                 )
             ),
             dynamic_partitions_store=instance,
