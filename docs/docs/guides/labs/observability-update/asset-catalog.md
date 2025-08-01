@@ -4,9 +4,14 @@ description: TK
 sidebar_position: 500
 ---
 
-The asset catalog now includes custom selections throughout the catalog.
+In the asset catalog, you can now build dashboards scoped by tags, teams, owners, or asset groups, enabling you to focus on the assets that matter most.
 
+To build a dasbhoard, create saved selections from Catalog search. For more information, see the [asset selection syntax documentation](/guides/build/assets/asset-selection-syntax).
 
-Flexibly build dashboards scoped by tags, teams, owners, or asset groups. These enable everyone on your team to focus on the assets that matter most to them.
-Create saved selections from Catalog search. See the full selection syntax documentation 
-for details.
+![New asset catalog with custom dashboards](/images/guides/labs/observability-update/new-catalog-dashboards.png)
+
+:::info Coming soon
+
+Job selection syntax and automation selection syntax are coming soon.
+
+:::

@@ -52,9 +52,11 @@ Insights views will continue to display existing [built-in metrics](/guides/moni
 | Materialization failure count        | Number of times an asset failed to materialize.                 |
 | Freshness warning and failure counts | Number of times an asset entered a degraded freshness state.    |
 
-## Limitations
+## Known limitations
 
-Since this functionality is still in development, there are a few limitations we aim to address in upcoming releases:
+Since this functionality is still under active development, there are a few limitations we aim to address in upcoming releases:
 
-* Failure events will not exist prior to the introduction of the new metrics
+* Health statuses don’t yet take asset observations into account, only materializations
+* Failure events will not exist prior to the introduction of the new asset metrics
 * Insights views do not currently show cost, Dagster credits, and metadata metrics
+* The new pages are all asset-focused, and haven’t yet been implemented for jobs
