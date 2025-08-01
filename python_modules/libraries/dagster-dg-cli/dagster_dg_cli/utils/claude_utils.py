@@ -188,7 +188,7 @@ def run_claude_stream(
         "--output-format",
         "stream-json",
         "--disallowedTools",
-        "Bash(python :*),WebSearch,WebFetch",
+        "Bash(python:*),WebSearch,WebFetch",
         "--verbose",
     ]
     process = subprocess.Popen(
