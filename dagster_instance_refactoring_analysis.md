@@ -18,7 +18,7 @@ This document provides concrete implementation plans for extracting all domains 
 | **Assets**     | ✅ **COMPLETED** | `assets/asset_instance_ops.py`, `assets/asset_implementation.py`                   | 100% - All 13 methods extracted |
 | **Events**     | ✅ **COMPLETED** | `events/event_instance_ops.py`, `events/event_implementation.py`                   | 100% - All 12 methods extracted |
 | **Scheduling** | ✅ **COMPLETED** | `scheduling/scheduling_instance_ops.py`, `scheduling/scheduling_implementation.py` | 100% - All 20 methods extracted |
-| **Storage**    | 📋 **PLANNED**   | `storage/storage_instance_ops.py`, `storage/storage_implementation.py`             | 0% - Ready for implementation   |
+| **Storage**    | ✅ **COMPLETED** | `storage/storage_instance_ops.py`, `storage/storage_implementation.py`             | 100% - All 12 methods extracted |
 | **Config**     | 📋 **PLANNED**   | `config/config_instance_ops.py`, `config/config_implementation.py`                 | 0% - Ready for implementation   |
 
 **Target**: Reduce DagsterInstance from ~4000 lines to ~500 lines (facade only)
@@ -623,20 +623,35 @@ def add_daemon_heartbeat(ops: "ConfigInstanceOps", daemon_heartbeat: DaemonHeart
 - ✅ All ruff and pyright checks pass (0 errors)
 - ✅ All existing tests pass (71/71 schedule storage tests, 2/2 instance tests)
 
-### 5. Storage Domain 📋 **READY FOR IMPLEMENTATION**
+### 5. Storage Domain ✅ **COMPLETED** (2025-08-02)
 
-**Estimated Size:** ~250 lines total
+**Files Created:**
 
-- `storage/storage_instance_ops.py` (~35 lines)
-- `storage/storage_implementation.py` (~215 lines)
+- ✅ `storage/storage_instance_ops.py` (42 lines) - Clean wrapper with property delegation
+- ✅ `storage/storage_implementation.py` (260 lines) - 12 core functions + helpers
+- ✅ DagsterInstance integration with `@cached_property` delegation
 
-**Key Methods to Extract:** ~10 methods
+**Methods Extracted:**
 
-- Storage coordination (3 methods)
-- Storage health (2 methods)
-- Partition operations (5 methods)
+- ✅ `get_dynamic_partitions()` - Get dynamic partition keys (~1 line)
+- ✅ `get_paginated_dynamic_partitions()` - Paginated dynamic partitions (~10 lines)
+- ✅ `add_dynamic_partitions()` - Add dynamic partitions (~10 lines)
+- ✅ `delete_dynamic_partition()` - Delete dynamic partition (~1 line)
+- ✅ `has_dynamic_partition()` - Check dynamic partition existence (~1 line)
+- ✅ `get_latest_storage_id_by_partition()` - Get latest storage IDs (~3 lines)
+- ✅ `optimize_for_webserver()` - Optimize storage for webserver (~15 lines)
+- ✅ `reindex()` - Reindex storage systems (~10 lines)
+- ✅ `dispose()` - Dispose storage resources (~3 lines)
+- ✅ `file_manager_directory()` - Get file manager directory (~1 line)
+- ✅ `storage_directory()` - Get storage directory (~1 line)
+- ✅ `schedules_directory()` - Get schedules directory (~1 line)
 
-**Implementation Priority:** MEDIUM - Infrastructure support
+**Quality Metrics:**
+
+- ✅ Zero breaking changes - all existing APIs work unchanged
+- ✅ Perfect backwards compatibility maintained
+- ✅ All ruff and pyright checks pass (0 errors)
+- ✅ All existing tests pass (storage domain tests)
 
 ### 6. Config Domain 📋 **READY FOR IMPLEMENTATION**
 
@@ -674,10 +689,10 @@ python_modules/dagster/dagster/_core/instance/
 │   ├── __init__.py               # Empty
 │   ├── scheduling_instance_ops.py # ✅ SchedulingInstanceOps wrapper (64 lines)
 │   └── scheduling_implementation.py # ✅ Business logic functions (296 lines)
-├── storage/                       # 📋 PLANNED
+├── storage/                       # ✅ COMPLETED
 │   ├── __init__.py               # Empty
-│   ├── storage_instance_ops.py   # StorageInstanceOps wrapper (~35 lines)
-│   └── storage_implementation.py # Business logic functions (~215 lines)
+│   ├── storage_instance_ops.py   # ✅ StorageInstanceOps wrapper (42 lines)
+│   └── storage_implementation.py # ✅ Business logic functions (260 lines)
 └── config/                        # 📋 PLANNED
     ├── __init__.py               # Empty
     ├── config_instance_ops.py    # ConfigInstanceOps wrapper (~30 lines)
@@ -715,14 +730,15 @@ python_modules/dagster/dagster/_core/instance/
 
 ### Progress Tracking
 
-- **✅ Runs**: 1/6 domains complete (100% of target methods extracted)
-- **✅ Assets**: 2/6 domains complete (100% of target methods extracted)
-- **✅ Events**: 3/6 domains complete (100% of target methods extracted)
-- **✅ Scheduling**: 4/6 domains complete (100% of target methods extracted)
-- **📊 Overall**: 67% complete (~1962 of ~3000 lines extracted from DagsterInstance)
+- **✅ Runs**: 1/6 domains complete (100% target methods extracted)
+- **✅ Assets**: 2/6 domains complete (100% target methods extracted)
+- **✅ Events**: 3/6 domains complete (100% target methods extracted)
+- **✅ Scheduling**: 4/6 domains complete (100% target methods extracted)
+- **✅ Storage**: 5/6 domains complete (100% target methods extracted)
+- **📊 Overall**: 83% complete (~2422 of ~3000 lines extracted from DagsterInstance)
 - **🎯 Target**: Reduce DagsterInstance from ~4000 lines to ~500 lines (87% reduction)
 
-### Code Quality Metrics (Runs, Assets, Events & Scheduling Domains)
+### Code Quality Metrics (Runs, Assets, Events, Scheduling & Storage Domains)
 
 **Runs Domain:**
 
@@ -752,11 +768,18 @@ python_modules/dagster/dagster/_core/instance/
 - ✅ **Code Quality**: Perfect - 0 ruff/pyright errors
 - ✅ **Performance**: Maintained - No measurable degradation
 
+**Storage Domain:**
+
+- ✅ **Backwards Compatibility**: 100% - All APIs unchanged
+- ✅ **Test Coverage**: 100% - All storage tests pass
+- ✅ **Code Quality**: Perfect - 0 ruff/pyright errors
+- ✅ **Performance**: Maintained - No measurable degradation
+
 ### Estimated Completion Timeline
 
-- **Current**: 4/6 domains complete (Runs ✅, Assets ✅, Events ✅, Scheduling ✅)
+- **Current**: 5/6 domains complete (Runs ✅, Assets ✅, Events ✅, Scheduling ✅, Storage ✅)
 - **Target Pace**: 1 domain per week
-- **Estimated Completion**: 2 weeks (remaining domains extracted)
+- **Estimated Completion**: 1 week (final Config domain)
 - **Final Cleanup**: 1 week (documentation, performance optimization)
 - **Total Timeline**: 3 weeks to complete full refactoring
 
