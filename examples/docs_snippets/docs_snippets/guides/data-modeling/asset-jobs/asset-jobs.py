@@ -22,10 +22,15 @@ def shopping_list() -> None:
 
 
 # start_marker_jobs
-all_assets_job = dg.define_asset_job(name="all_assets_job")
+@dg.job
+def all_assets_job():
+    sugary_cereals()
+    shopping_list()
 
-sugary_cereals_job = dg.define_asset_job(
-    name="sugary_cereals_job", selection="sugary_cereals"
-)
+
+@dg.job
+def sugary_cereals_job():
+    sugary_cereals()
+
 
 # end_marker_jobs
