@@ -45,6 +45,8 @@ from dagster._core.instance.config import (
     DEFAULT_LOCAL_CODE_SERVER_STARTUP_TIMEOUT,
     ConcurrencyConfig,
 )
+from dagster._core.instance.daemon import daemon_implementation
+from dagster._core.instance.events import event_implementation
 from dagster._core.instance.ref import InstanceRef
 from dagster._core.instance.run_launcher import run_launcher_implementation
 from dagster._core.instance.scheduling import scheduling_implementation
@@ -1070,6 +1072,12 @@ class DagsterInstance(DynamicPartitionsStore):
 
         return RunLauncherInstanceOps(self)
 
+    @cached_property
+    def _daemon_ops(self):
+        from dagster._core.instance.daemon.daemon_instance_ops import DaemonInstanceOps
+
+        return DaemonInstanceOps(self)
+
     def create_run(
         self,
         *,
@@ -2069,64 +2077,26 @@ class DagsterInstance(DynamicPartitionsStore):
 
     # dagster daemon
     def add_daemon_heartbeat(self, daemon_heartbeat: "DaemonHeartbeat") -> None:
-        """Called on a regular interval by the daemon."""
-        self._run_storage.add_daemon_heartbeat(daemon_heartbeat)
+        """Delegate to daemon_implementation."""
+        return daemon_implementation.add_daemon_heartbeat(self._daemon_ops, daemon_heartbeat)
 
     def get_daemon_heartbeats(self) -> Mapping[str, "DaemonHeartbeat"]:
-        """Latest heartbeats of all daemon types."""
-        return self._run_storage.get_daemon_heartbeats()
+        """Delegate to daemon_implementation."""
+        return daemon_implementation.get_daemon_heartbeats(self._daemon_ops)
 
     def wipe_daemon_heartbeats(self) -> None:
-        self._run_storage.wipe_daemon_heartbeats()
+        """Delegate to daemon_implementation."""
+        return daemon_implementation.wipe_daemon_heartbeats(self._daemon_ops)
 
     def get_required_daemon_types(self) -> Sequence[str]:
-        from dagster._core.run_coordinator import QueuedRunCoordinator
-        from dagster._core.scheduler import DagsterDaemonScheduler
-        from dagster._daemon.asset_daemon import AssetDaemon
-        from dagster._daemon.auto_run_reexecution.event_log_consumer import EventLogConsumerDaemon
-        from dagster._daemon.daemon import (
-            BackfillDaemon,
-            MonitoringDaemon,
-            SchedulerDaemon,
-            SensorDaemon,
-        )
-        from dagster._daemon.freshness import FreshnessDaemon
-        from dagster._daemon.run_coordinator.queued_run_coordinator_daemon import (
-            QueuedRunCoordinatorDaemon,
-        )
-
-        if self.is_ephemeral:
-            return []
-
-        daemons = [SensorDaemon.daemon_type(), BackfillDaemon.daemon_type()]
-        if isinstance(self.scheduler, DagsterDaemonScheduler):
-            daemons.append(SchedulerDaemon.daemon_type())
-        if isinstance(self.run_coordinator, QueuedRunCoordinator):
-            daemons.append(QueuedRunCoordinatorDaemon.daemon_type())
-        if self.run_monitoring_enabled:
-            daemons.append(MonitoringDaemon.daemon_type())
-        if self.run_retries_enabled:
-            daemons.append(EventLogConsumerDaemon.daemon_type())
-        if self.auto_materialize_enabled or self.auto_materialize_use_sensors:
-            daemons.append(AssetDaemon.daemon_type())
-        if self.freshness_enabled:
-            daemons.append(FreshnessDaemon.daemon_type())
-        return daemons
+        """Delegate to daemon_implementation."""
+        return daemon_implementation.get_required_daemon_types(self._daemon_ops)
 
     def get_daemon_statuses(
         self, daemon_types: Optional[Sequence[str]] = None
     ) -> Mapping[str, "DaemonStatus"]:
-        """Get the current status of the daemons. If daemon_types aren't provided, defaults to all
-        required types. Returns a dict of daemon type to status.
-        """
-        from dagster._daemon.controller import get_daemon_statuses
-
-        check.opt_sequence_param(daemon_types, "daemon_types", of_type=str)
-        return get_daemon_statuses(
-            self,
-            daemon_types=daemon_types or self.get_required_daemon_types(),
-            ignore_errors=True,
-        )
+        """Delegate to daemon_implementation."""
+        return daemon_implementation.get_daemon_statuses(self._daemon_ops, daemon_types)
 
     @property
     def daemon_skip_heartbeats_without_errors(self) -> bool:
