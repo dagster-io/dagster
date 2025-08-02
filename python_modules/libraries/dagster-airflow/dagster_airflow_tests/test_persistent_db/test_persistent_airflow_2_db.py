@@ -15,7 +15,7 @@ from dagster import (
     build_reconstructable_job,
     execute_job,
 )
-from dagster._core.instance import AIRFLOW_EXECUTION_DATE_STR
+from dagster._core.instance.utils import AIRFLOW_EXECUTION_DATE_STR
 from dagster_airflow import (
     make_dagster_definitions_from_airflow_dags_path,
     make_dagster_definitions_from_airflow_example_dags,

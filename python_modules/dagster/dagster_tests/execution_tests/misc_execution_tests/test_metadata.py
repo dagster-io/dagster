@@ -134,7 +134,7 @@ def test_unknown_metadata_value():
 
     assert (
         str(exc_info.value) == 'Could not resolve the metadata value for "bad" to a known type. '
-        "Its type was <class 'dagster._core.instance.DagsterInstance'>. "
+        "Its type was <class 'dagster._core.instance.instance.DagsterInstance'>. "
         "Consider wrapping the value with the appropriate MetadataValue type."
     )
 
