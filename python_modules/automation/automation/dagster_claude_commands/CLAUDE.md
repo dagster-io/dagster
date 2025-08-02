@@ -31,33 +31,89 @@ def main():
     pass
 ```
 
-### Adding New Commands
+### Command Organization Patterns
 
-1. **Create command module** in `commands/`:
+#### Simple Commands
 
-   ```python
-   # commands/my_command.py
-   import click
+For simple standalone commands:
 
-   @click.command()
-   def my_command():
-       """Description of what this command does."""
-       click.echo("Command implementation")
-   ```
+```python
+# commands/my_command.py
+import click
 
-2. **Register command** in `__init__.py`:
+@click.command()
+def my_command():
+    """Description of what this command does."""
+    click.echo("Command implementation")
+```
 
-   ```python
-   from automation.dagster_claude_commands.commands.my_command import my_command
+#### Namespace Commands (Recommended)
 
-   main.add_command(my_command)
-   ```
+For commands that correspond to `.claude/commands/*.md` files, use the **namespace subcommand pattern** where the namespace aligns with the claude command name:
 
-3. **Reinstall automation package** to register new commands:
-   ```bash
-   cd python_modules/automation
-   uv pip install -e .
-   ```
+```python
+# commands/my_claude_command_group.py
+import click
+
+@click.group("my-claude-command")
+def my_claude_command():
+    """My Claude Command - command namespace."""
+    pass
+
+@my_claude_command.command("execute")
+def execute():
+    """Execute the main functionality (equivalent to the .md file)."""
+    # Main implementation here
+    pass
+
+@my_claude_command.command("test")
+def test():
+    """Test/preview functionality without side effects."""
+    # Testing implementation here
+    pass
+```
+
+This creates a CLI structure like:
+
+- `dagster-claude-commands my-claude-command execute` (main functionality)
+- `dagster-claude-commands my-claude-command test` (testing/preview)
+
+**Example: submit-summarized-pr namespace**
+
+The `submit-summarized-pr` command follows this pattern:
+
+```bash
+# Main functionality (equivalent to running the .claude/commands/submit_summarized_pr.md)
+dagster-claude-commands submit-summarized-pr submit [--dry-run] [--no-squash]
+
+# Testing/preview (generates summary without creating PR)
+dagster-claude-commands submit-summarized-pr print-pr-summary
+```
+
+This aligns the CLI namespace (`submit-summarized-pr`) with the claude command file name, making it intuitive for users familiar with the `.claude/commands/` structure.
+
+#### Registration
+
+Register commands in `__init__.py`:
+
+```python
+# For simple commands
+from automation.dagster_claude_commands.commands.my_command import my_command
+main.add_command(my_command)
+
+# For namespace commands
+from automation.dagster_claude_commands.commands.my_claude_command_group import my_claude_command
+main.add_command(my_claude_command)
+```
+
+#### Installation
+
+After adding new commands, reinstall the package:
+
+```bash
+cd python_modules/automation
+uv pip install -e .
+```
 
 ### Command Naming Convention
 
@@ -166,7 +222,7 @@ entry_points={
 }
 ```
 
-After any changes to entry points, reinstall the package:
+After any changes to entry points, reinstall the package. This is NOT necessary if you are just changing a subcommand.
 
 ```bash
 cd python_modules/automation
