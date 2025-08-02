@@ -11,7 +11,7 @@ from dagster._core.definitions.partitions.context import partition_loading_conte
 from dagster._core.definitions.partitions.partition_key_range import PartitionKeyRange
 from dagster._core.definitions.partitions.subset import PartitionsSubset, TimeWindowPartitionsSubset
 from dagster._core.errors import DagsterInvariantViolationError
-from dagster._core.execution.asset_backfill import (
+from dagster._core.execution.asset_backfill.status import (
     AssetBackfillStatus,
     PartitionedAssetBackfillStatus,
     UnpartitionedAssetBackfillStatus,

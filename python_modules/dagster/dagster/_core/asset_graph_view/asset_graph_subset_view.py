@@ -26,11 +26,12 @@ class AssetGraphSubsetView(Generic[T_EntityKey]):
 
     @property
     def keys(self) -> Set[T_EntityKey]:
-        return {subset.key for subset in self.subsets if not subset.is_empty}
+        return {subset.key for subset in self.subsets}
 
-    @property
+    @cached_property
     def subsets(self) -> Sequence[EntitySubset[T_EntityKey]]:
-        return self._subsets
+        """All non-empty subsets in the view."""
+        return [subset for subset in self._subsets if not subset.is_empty]
 
     @property
     def asset_graph(self) -> BaseAssetGraph:
@@ -53,7 +54,7 @@ class AssetGraphSubsetView(Generic[T_EntityKey]):
         return AssetGraphSubsetView(asset_graph_view=asset_graph_view, subsets=[])
 
     @staticmethod
-    def from_serializable_subset(
+    def from_serializable_asset_graph_subset(
         asset_graph_view: "AssetGraphView",
         serializable_subset: AssetGraphSubset,
     ) -> "AssetGraphSubsetView[AssetKey]":
@@ -61,6 +62,14 @@ class AssetGraphSubsetView(Generic[T_EntityKey]):
             asset_graph_view=asset_graph_view,
             subsets=list(asset_graph_view.iterate_asset_subsets(serializable_subset)),
         )
+
+    def to_serializable_asset_graph_subset(self) -> AssetGraphSubset:
+        asset_subsets = [
+            cast("EntitySubset[AssetKey]", subset)
+            for subset in self.subsets
+            if isinstance(subset.key, AssetKey)
+        ]
+        return AssetGraphSubset.from_entity_subsets(asset_subsets)
 
     @staticmethod
     def from_asset_partitions(
@@ -128,14 +137,6 @@ class AssetGraphSubsetView(Generic[T_EntityKey]):
         return self._asset_graph_view.compute_downstream_asset_graph_subset_view(
             self, filter_subset=filter_subset
         )
-
-    def to_asset_graph_subset(self) -> AssetGraphSubset:
-        asset_subsets = [
-            cast("EntitySubset[AssetKey]", subset)
-            for subset in self.subsets
-            if isinstance(subset.key, AssetKey)
-        ]
-        return AssetGraphSubset.from_entity_subsets(asset_subsets)
 
     def pprint(self) -> str:
         if self.is_empty:

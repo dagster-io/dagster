@@ -6,7 +6,7 @@ from dagster._core.definitions.selector import PartitionsByAssetSelector, Reposi
 from dagster._core.definitions.utils import check_valid_title
 from dagster._core.errors import DagsterInvariantViolationError, DagsterUserCodeProcessError
 from dagster._core.events import AssetKey
-from dagster._core.execution.asset_backfill import create_asset_backfill_data_from_asset_partitions
+from dagster._core.execution.asset_backfill.asset_backfill_data import AssetBackfillData
 from dagster._core.execution.backfill import (
     BULK_ACTION_TERMINAL_STATUSES,
     BulkActionStatus,
@@ -61,8 +61,13 @@ def get_asset_backfill_preview(
     ]
     partition_names: list[str] = backfill_preview_params["partitionNames"]
 
-    asset_backfill_data = create_asset_backfill_data_from_asset_partitions(
-        asset_graph, asset_selection, partition_names, graphene_info.context.instance
+    asset_backfill_data = AssetBackfillData.from_asset_partitions(
+        asset_graph,
+        partition_names,
+        asset_selection,
+        graphene_info.context.instance,
+        all_partitions=False,
+        backfill_start_timestamp=get_current_timestamp(),
     )
 
     asset_partitions = []
