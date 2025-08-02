@@ -1,4 +1,5 @@
-from typing import TYPE_CHECKING
+import logging
+from typing import TYPE_CHECKING, Union
 
 if TYPE_CHECKING:
     from dagster._core.instance import DagsterInstance
@@ -26,7 +27,7 @@ class RunLauncherInstanceOps:
 
     @property
     def event_log_storage(self):
-        return self._instance._event_log_storage  # noqa: SLF001
+        return self._instance.event_log_storage
 
     # Configuration access
     @property
@@ -45,7 +46,12 @@ class RunLauncherInstanceOps:
         return self._instance.report_engine_event(message, dagster_run, engine_event_data)
 
     def report_dagster_event(
-        self, dagster_event, run_id=None, log_level=None, batch_metadata=None, timestamp=None
+        self,
+        dagster_event,
+        run_id: str,
+        log_level: Union[str, int] = logging.INFO,
+        batch_metadata=None,
+        timestamp=None,
     ):
         return self._instance.report_dagster_event(
             dagster_event, run_id, log_level, batch_metadata, timestamp
