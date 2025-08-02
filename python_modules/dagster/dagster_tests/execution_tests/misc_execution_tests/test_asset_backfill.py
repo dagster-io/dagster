@@ -26,11 +26,6 @@ from dagster._core.definitions.assets.graph.base_asset_graph import BaseAssetGra
 from dagster._core.definitions.assets.graph.remote_asset_graph import RemoteWorkspaceAssetGraph
 from dagster._core.definitions.events import AssetKeyPartitionKey
 from dagster._core.definitions.partitions.context import partition_loading_context
-from dagster._core.definitions.selector import (
-    PartitionRangeSelector,
-    PartitionsByAssetSelector,
-    PartitionsSelector,
-)
 from dagster._core.execution.asset_backfill import (
     AssetBackfillData,
     AssetBackfillIterationResult,
@@ -1627,6 +1622,8 @@ def run_backfill_to_completion(
     backfill_data: AssetBackfillData,
     fail_asset_partitions: Iterable[AssetKeyPartitionKey],
     instance: DagsterInstance,
+    # in most cases, executing an iteration directly after the previous iteration should be idempotent
+    expect_idempotent: bool = True,
 ) -> tuple[AssetBackfillData, AbstractSet[AssetKeyPartitionKey], AbstractSet[AssetKeyPartitionKey]]:
     iteration_count = 0
     instance = instance or DagsterInstance.ephemeral()
@@ -1677,15 +1674,16 @@ def run_backfill_to_completion(
             ),
         )
 
-        # once everything that was requested is added to the requested subset, nothing should change if the iteration repeats
-        result2 = execute_asset_backfill_iteration_consume_generator(
-            backfill_id=backfill_id,
-            asset_backfill_data=backfill_data_with_submitted_runs,
-            asset_graph=asset_graph,
-            instance=instance,
-        )
-        assert result2.backfill_data == backfill_data_with_submitted_runs
-        assert result2.run_requests == []
+        if expect_idempotent:
+            # once everything that was requested is added to the requested subset, nothing should change if the iteration repeats
+            result2 = execute_asset_backfill_iteration_consume_generator(
+                backfill_id=backfill_id,
+                asset_backfill_data=backfill_data_with_submitted_runs,
+                asset_graph=asset_graph,
+                instance=instance,
+            )
+            assert result2.backfill_data == backfill_data_with_submitted_runs
+            assert result2.run_requests == []
 
         backfill_data = result1.backfill_data
 
@@ -2448,7 +2446,21 @@ def test_asset_backfill_nonexistent_parent_partitions():
     )
 
     backfill_data, _, _ = run_backfill_to_completion(
-        asset_graph, assets_by_repo_name, asset_backfill_data, [], instance
+        asset_graph,
+        assets_by_repo_name,
+        asset_backfill_data,
+        [],
+        instance,
+        # in this case, we expect that the backfill will launch runs in the following order:
+        # first, all partitions of foo will be requested. in normal operation, the immediate
+        # next tick would request the children of foo that have no parent partitions (as our logic
+        # is not smart enough yet to be able to submit those on the same tick as their parents).
+        # finally, as foo is materialized, the corresponding children of foo_child will be requested.
+        # the fact that the children are requested immediately after foo is materialized is what
+        # makes this test non-idempotent.
+        #
+        # in our test, materialization happens instantly, hence the two iterations.
+        expect_idempotent=False,
     )
 
     assert set(backfill_data.target_subset.get_partitions_subset(foo.key).get_partition_keys()) == {
@@ -2468,60 +2480,6 @@ def test_asset_backfill_nonexistent_parent_partitions():
         "2023-10-07",
     }
     assert backfill_data.target_subset == backfill_data.materialized_subset
-
-
-def test_connected_assets_disconnected_partitions():
-    instance = DagsterInstance.ephemeral()
-
-    @dg.asset(partitions_def=dg.DailyPartitionsDefinition("2023-10-01"))
-    def foo():
-        pass
-
-    @dg.asset(partitions_def=dg.DailyPartitionsDefinition("2023-10-01"))
-    def foo_child(foo):
-        pass
-
-    @dg.asset(partitions_def=dg.DailyPartitionsDefinition("2023-10-01"))
-    def foo_grandchild(foo_child):
-        pass
-
-    assets_by_repo_name = {"repo": [foo, foo_child, foo_grandchild]}
-    asset_graph = get_asset_graph(assets_by_repo_name)
-
-    backfill_start_datetime = create_datetime(2023, 10, 30, 0, 0, 0)
-    instance_queryer = _get_instance_queryer(instance, asset_graph, backfill_start_datetime)
-    asset_backfill_data = AssetBackfillData.from_partitions_by_assets(
-        asset_graph,
-        instance_queryer,
-        backfill_start_datetime.timestamp(),
-        [
-            PartitionsByAssetSelector(
-                asset_key=foo.key,
-                partitions=PartitionsSelector([PartitionRangeSelector("2023-10-01", "2023-10-05")]),
-            ),
-            PartitionsByAssetSelector(
-                asset_key=foo_child.key,
-                partitions=PartitionsSelector([PartitionRangeSelector("2023-10-01", "2023-10-03")]),
-            ),
-            PartitionsByAssetSelector(
-                asset_key=foo_grandchild.key,
-                partitions=PartitionsSelector([PartitionRangeSelector("2023-10-10", "2023-10-13")]),
-            ),
-        ],
-    )
-
-    target_root_subset = asset_backfill_data.get_target_root_asset_graph_subset(instance_queryer)
-    assert set(target_root_subset.iterate_asset_partitions()) == {
-        AssetKeyPartitionKey(asset_key=dg.AssetKey(["foo"]), partition_key="2023-10-05"),
-        AssetKeyPartitionKey(asset_key=dg.AssetKey(["foo"]), partition_key="2023-10-03"),
-        AssetKeyPartitionKey(asset_key=dg.AssetKey(["foo"]), partition_key="2023-10-04"),
-        AssetKeyPartitionKey(asset_key=dg.AssetKey(["foo"]), partition_key="2023-10-02"),
-        AssetKeyPartitionKey(asset_key=dg.AssetKey(["foo"]), partition_key="2023-10-01"),
-        AssetKeyPartitionKey(asset_key=dg.AssetKey(["foo_grandchild"]), partition_key="2023-10-11"),
-        AssetKeyPartitionKey(asset_key=dg.AssetKey(["foo_grandchild"]), partition_key="2023-10-13"),
-        AssetKeyPartitionKey(asset_key=dg.AssetKey(["foo_grandchild"]), partition_key="2023-10-12"),
-        AssetKeyPartitionKey(asset_key=dg.AssetKey(["foo_grandchild"]), partition_key="2023-10-10"),
-    }
 
 
 def test_partition_outside_backfill_materialized():
