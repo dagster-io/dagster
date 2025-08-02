@@ -929,6 +929,22 @@ class AssetDaemon(DagsterDaemon):
                 log_message="Automation condition daemon caught an error",
             )
 
+    def _add_auto_materialize_asset_evaluations_in_chunks(
+        self,
+        instance: DagsterInstance,
+        evaluation_id: int,
+        evaluations: list[AutomationConditionEvaluationWithRunIds],
+    ):
+        schedule_storage = check.not_none(instance.schedule_storage)
+        if schedule_storage.supports_auto_materialize_asset_evaluations:
+            chunk_size = int(os.getenv("DAGSTER_ASSET_DAEMON_ASSET_EVALUATIONS_CHUNK_SIZE", "50"))
+            for i in range(0, len(evaluations), chunk_size):
+                chunk = evaluations[i : i + chunk_size]
+                schedule_storage.add_auto_materialize_asset_evaluations(
+                    evaluation_id,
+                    chunk,
+                )
+
     async def _evaluate_auto_materialize_tick(
         self,
         tick_context: AutoMaterializeLaunchContext,
@@ -1023,9 +1039,8 @@ class AssetDaemon(DagsterDaemon):
 
             # Write the asset evaluations without run IDs first
             if schedule_storage.supports_auto_materialize_asset_evaluations:
-                schedule_storage.add_auto_materialize_asset_evaluations(
-                    evaluation_id,
-                    list(evaluations_by_key.values()),
+                self._add_auto_materialize_asset_evaluations_in_chunks(
+                    instance, evaluation_id, list(evaluations_by_key.values())
                 )
                 check_for_debug_crash(debug_crash_flags, "ASSET_EVALUATIONS_ADDED")
 
@@ -1262,9 +1277,8 @@ class AssetDaemon(DagsterDaemon):
             evaluations_by_key[asset_key] for asset_key in updated_evaluation_keys
         ]
         if evaluations_to_update:
-            schedule_storage = check.not_none(instance.schedule_storage)
-            schedule_storage.add_auto_materialize_asset_evaluations(
-                evaluation_id, evaluations_to_update
+            self._add_auto_materialize_asset_evaluations_in_chunks(
+                instance, evaluation_id, evaluations_to_update
             )
 
         check_for_debug_crash(debug_crash_flags, "RUN_IDS_ADDED_TO_EVALUATIONS")
