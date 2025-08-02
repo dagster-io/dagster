@@ -45,8 +45,6 @@ from dagster._core.instance.config import (
     DAGSTER_CONFIG_YAML_FILENAME,
     DEFAULT_LOCAL_CODE_SERVER_STARTUP_TIMEOUT,
     ConcurrencyConfig,
-    get_default_tick_retention_settings,
-    get_tick_retention_settings,
 )
 from dagster._core.instance.ref import InstanceRef
 from dagster._core.instance.types import (
@@ -68,7 +66,6 @@ from dagster._core.storage.dagster_run import (
 )
 from dagster._core.types.pagination import PaginatedResults
 from dagster._serdes import ConfigurableClass
-from dagster._time import get_current_timestamp
 from dagster._utils import PrintFn, traced
 from dagster._utils.error import serializable_error_info_from_exc_info
 from dagster._utils.warnings import beta_warning
@@ -1076,6 +1073,12 @@ class DagsterInstance(DynamicPartitionsStore):
 
         return EventDomain(self)
 
+    @cached_property
+    def _scheduling_domain(self):
+        from dagster._core.instance.scheduling.scheduling_domain import SchedulingDomain
+
+        return SchedulingDomain(self)
+
     def create_run(
         self,
         *,
@@ -2081,7 +2084,7 @@ class DagsterInstance(DynamicPartitionsStore):
     # Scheduler
 
     def start_schedule(self, remote_schedule: "RemoteSchedule") -> "InstigatorState":
-        return self._scheduler.start_schedule(self, remote_schedule)  # type: ignore
+        return self._scheduling_domain.start_schedule(remote_schedule)
 
     def stop_schedule(
         self,
@@ -2089,77 +2092,20 @@ class DagsterInstance(DynamicPartitionsStore):
         schedule_selector_id: str,
         remote_schedule: Optional["RemoteSchedule"],
     ) -> "InstigatorState":
-        return self._scheduler.stop_schedule(  # type: ignore
-            self, schedule_origin_id, schedule_selector_id, remote_schedule
+        return self._scheduling_domain.stop_schedule(
+            schedule_origin_id, schedule_selector_id, remote_schedule
         )
 
     def reset_schedule(self, remote_schedule: "RemoteSchedule") -> "InstigatorState":
-        return self._scheduler.reset_schedule(self, remote_schedule)  # type: ignore
+        return self._scheduling_domain.reset_schedule(remote_schedule)
 
     def scheduler_debug_info(self) -> "SchedulerDebugInfo":
-        from dagster._core.definitions.run_request import InstigatorType
-        from dagster._core.scheduler import SchedulerDebugInfo
-
-        errors = []
-
-        schedules: list[str] = []
-        for schedule_state in self.all_instigator_state(instigator_type=InstigatorType.SCHEDULE):
-            schedule_info: Mapping[str, Mapping[str, object]] = {
-                schedule_state.instigator_name: {
-                    "status": schedule_state.status.value,
-                    "cron_schedule": schedule_state.instigator_data.cron_schedule,  # type: ignore
-                    "schedule_origin_id": schedule_state.instigator_origin_id,
-                    "repository_origin_id": schedule_state.repository_origin_id,
-                }
-            }
-
-            schedules.append(yaml.safe_dump(schedule_info, default_flow_style=False))
-
-        return SchedulerDebugInfo(
-            scheduler_config_info=self._info_str_for_component("Scheduler", self.scheduler),
-            scheduler_info=self.scheduler.debug_info(),  # type: ignore
-            schedule_storage=schedules,
-            errors=errors,
-        )
+        return self._scheduling_domain.scheduler_debug_info()
 
     # Schedule / Sensor Storage
 
     def start_sensor(self, remote_sensor: "RemoteSensor") -> "InstigatorState":
-        from dagster._core.definitions.run_request import InstigatorType
-        from dagster._core.scheduler.instigation import (
-            InstigatorState,
-            InstigatorStatus,
-            SensorInstigatorData,
-        )
-
-        stored_state = self.get_instigator_state(
-            remote_sensor.get_remote_origin_id(), remote_sensor.selector_id
-        )
-
-        computed_state = remote_sensor.get_current_instigator_state(stored_state)
-        if computed_state.is_running:
-            return computed_state
-
-        if not stored_state:
-            return self.add_instigator_state(
-                InstigatorState(
-                    remote_sensor.get_remote_origin(),
-                    InstigatorType.SENSOR,
-                    InstigatorStatus.RUNNING,
-                    SensorInstigatorData(
-                        min_interval=remote_sensor.min_interval_seconds,
-                        last_sensor_start_timestamp=get_current_timestamp(),
-                        sensor_type=remote_sensor.sensor_type,
-                    ),
-                )
-            )
-        else:
-            data = cast("SensorInstigatorData", stored_state.instigator_data)
-            return self.update_instigator_state(
-                stored_state.with_status(InstigatorStatus.RUNNING).with_data(
-                    data.with_sensor_start_timestamp(get_current_timestamp())
-                )
-            )
+        return self._scheduling_domain.start_sensor(remote_sensor)
 
     def stop_sensor(
         self,
@@ -2167,38 +2113,7 @@ class DagsterInstance(DynamicPartitionsStore):
         selector_id: str,
         remote_sensor: Optional["RemoteSensor"],
     ) -> "InstigatorState":
-        from dagster._core.definitions.run_request import InstigatorType
-        from dagster._core.scheduler.instigation import (
-            InstigatorState,
-            InstigatorStatus,
-            SensorInstigatorData,
-        )
-
-        stored_state = self.get_instigator_state(instigator_origin_id, selector_id)
-        computed_state: InstigatorState
-        if remote_sensor:
-            computed_state = remote_sensor.get_current_instigator_state(stored_state)
-        else:
-            computed_state = check.not_none(stored_state)
-
-        if not computed_state.is_running:
-            return computed_state
-
-        if not stored_state:
-            assert remote_sensor
-            return self.add_instigator_state(
-                InstigatorState(
-                    remote_sensor.get_remote_origin(),
-                    InstigatorType.SENSOR,
-                    InstigatorStatus.STOPPED,
-                    SensorInstigatorData(
-                        min_interval=remote_sensor.min_interval_seconds,
-                        sensor_type=remote_sensor.sensor_type,
-                    ),
-                )
-            )
-        else:
-            return self.update_instigator_state(stored_state.with_status(InstigatorStatus.STOPPED))
+        return self._scheduling_domain.stop_sensor(instigator_origin_id, selector_id, remote_sensor)
 
     def reset_sensor(self, remote_sensor: "RemoteSensor") -> "InstigatorState":
         """If the given sensor has a default sensor status, then update the status to
@@ -2208,36 +2123,7 @@ class DagsterInstance(DynamicPartitionsStore):
             instance (DagsterInstance): The current instance.
             remote_sensor (ExternalSensor): The sensor to reset.
         """
-        from dagster._core.definitions.run_request import InstigatorType
-        from dagster._core.scheduler.instigation import (
-            InstigatorState,
-            InstigatorStatus,
-            SensorInstigatorData,
-        )
-
-        stored_state = self.get_instigator_state(
-            remote_sensor.get_remote_origin_id(), remote_sensor.selector_id
-        )
-        new_status = InstigatorStatus.DECLARED_IN_CODE
-
-        if not stored_state:
-            new_instigator_data = SensorInstigatorData(
-                min_interval=remote_sensor.min_interval_seconds,
-                sensor_type=remote_sensor.sensor_type,
-            )
-
-            reset_state = self.add_instigator_state(
-                state=InstigatorState(
-                    remote_sensor.get_remote_origin(),
-                    InstigatorType.SENSOR,
-                    new_status,
-                    new_instigator_data,
-                )
-            )
-        else:
-            reset_state = self.update_instigator_state(state=stored_state.with_status(new_status))
-
-        return reset_state
+        return self._scheduling_domain.reset_sensor(remote_sensor)
 
     @traced
     def all_instigator_state(
@@ -2247,33 +2133,22 @@ class DagsterInstance(DynamicPartitionsStore):
         instigator_type: Optional["InstigatorType"] = None,
         instigator_statuses: Optional[set["InstigatorStatus"]] = None,
     ):
-        if not self._schedule_storage:
-            check.failed("Schedule storage not available")
-        return self._schedule_storage.all_instigator_state(
-            repository_origin_id,
-            repository_selector_id,
-            instigator_type,
-            instigator_statuses,
+        return self._scheduling_domain.all_instigator_state(
+            repository_origin_id, repository_selector_id, instigator_type, instigator_statuses
         )
 
     @traced
     def get_instigator_state(self, origin_id: str, selector_id: str) -> Optional["InstigatorState"]:
-        if not self._schedule_storage:
-            check.failed("Schedule storage not available")
-        return self._schedule_storage.get_instigator_state(origin_id, selector_id)
+        return self._scheduling_domain.get_instigator_state(origin_id, selector_id)
 
     def add_instigator_state(self, state: "InstigatorState") -> "InstigatorState":
-        if not self._schedule_storage:
-            check.failed("Schedule storage not available")
-        return self._schedule_storage.add_instigator_state(state)
+        return self._scheduling_domain.add_instigator_state(state)
 
     def update_instigator_state(self, state: "InstigatorState") -> "InstigatorState":
-        if not self._schedule_storage:
-            check.failed("Schedule storage not available")
-        return self._schedule_storage.update_instigator_state(state)
+        return self._scheduling_domain.update_instigator_state(state)
 
     def delete_instigator_state(self, origin_id: str, selector_id: str) -> None:
-        return self._schedule_storage.delete_instigator_state(origin_id, selector_id)  # type: ignore  # (possible none)
+        return self._scheduling_domain.delete_instigator_state(origin_id, selector_id)
 
     @property
     def supports_batch_tick_queries(self) -> bool:
@@ -2429,21 +2304,19 @@ class DagsterInstance(DynamicPartitionsStore):
         limit: Optional[int] = None,
         status: Optional["BulkActionStatus"] = None,
     ) -> Sequence["PartitionBackfill"]:
-        return self._run_storage.get_backfills(
-            status=status, cursor=cursor, limit=limit, filters=filters
-        )
+        return self._scheduling_domain.get_backfills(filters, cursor, limit, status)
 
     def get_backfills_count(self, filters: Optional["BulkActionsFilter"] = None) -> int:
-        return self._run_storage.get_backfills_count(filters=filters)
+        return self._scheduling_domain.get_backfills_count(filters)
 
     def get_backfill(self, backfill_id: str) -> Optional["PartitionBackfill"]:
-        return self._run_storage.get_backfill(backfill_id)
+        return self._scheduling_domain.get_backfill(backfill_id)
 
     def add_backfill(self, partition_backfill: "PartitionBackfill") -> None:
-        self._run_storage.add_backfill(partition_backfill)
+        self._scheduling_domain.add_backfill(partition_backfill)
 
     def update_backfill(self, partition_backfill: "PartitionBackfill") -> None:
-        self._run_storage.update_backfill(partition_backfill)
+        self._scheduling_domain.update_backfill(partition_backfill)
 
     @property
     def should_start_background_run_thread(self) -> bool:
@@ -2453,21 +2326,7 @@ class DagsterInstance(DynamicPartitionsStore):
     def get_tick_retention_settings(
         self, instigator_type: "InstigatorType"
     ) -> Mapping["TickStatus", int]:
-        from dagster._core.definitions.run_request import InstigatorType
-
-        retention_settings = self.get_settings("retention")
-
-        if instigator_type == InstigatorType.SCHEDULE:
-            tick_settings = retention_settings.get("schedule")
-        elif instigator_type == InstigatorType.SENSOR:
-            tick_settings = retention_settings.get("sensor")
-        elif instigator_type == InstigatorType.AUTO_MATERIALIZE:
-            tick_settings = retention_settings.get("auto_materialize")
-        else:
-            raise Exception(f"Unexpected instigator type {instigator_type}")
-
-        default_tick_settings = get_default_tick_retention_settings(instigator_type)
-        return get_tick_retention_settings(tick_settings, default_tick_settings)
+        return self._scheduling_domain.get_tick_retention_settings(instigator_type)
 
     def get_tick_termination_check_interval(self) -> Optional[int]:
         return None
