@@ -8,12 +8,10 @@ from datetime import datetime
 from enum import Enum
 from typing import TYPE_CHECKING, NamedTuple, Optional, Union, cast
 
+from dagster_shared.record import record
+
 import dagster._check as check
 from dagster._core.asset_graph_view.asset_graph_view import AssetGraphView, TemporalContext
-from dagster._core.asset_graph_view.bfs import (
-    AssetGraphViewBfsFilterConditionResult,
-    bfs_filter_asset_graph_view,
-)
 from dagster._core.asset_graph_view.entity_subset import EntitySubset
 from dagster._core.asset_graph_view.serializable_entity_subset import (
     EntitySubsetValue,
@@ -129,6 +127,17 @@ class UnpartitionedAssetBackfillStatus(
                 asset_backfill_status, "asset_backfill_status", AssetBackfillStatus
             ),
         )
+
+
+@record
+class AssetBackfillComputationResult:
+    """Represents the result of a backfill computation. Contains information about the subset of
+    the asset that should be backfilled this tick, and reasons why unselected subsets will not be
+    backfilled on this tick.
+    """
+
+    passed_asset_graph_subset: AssetGraphSubset
+    excluded_asset_graph_subsets_and_reasons: list[tuple[AssetGraphSubset, str]]
 
 
 @whitelist_for_serdes
@@ -1227,25 +1236,18 @@ def get_asset_backfill_iteration_materialized_subset(
 
 
 def _get_failed_and_downstream_asset_graph_subset(
-    backfill_id: str,
     asset_backfill_data: AssetBackfillData,
     asset_graph_view: AssetGraphView,
-    materialized_subset: AssetGraphSubset,
     failed_asset_graph_subset: AssetGraphSubset,
 ) -> AssetGraphSubset:
-    failed_and_downstream_subset = bfs_filter_asset_graph_view(
-        asset_graph_view,
-        lambda candidate_asset_graph_subset, _: (
-            AssetGraphViewBfsFilterConditionResult(
-                passed_asset_graph_subset=candidate_asset_graph_subset,
-                excluded_asset_graph_subsets_and_reasons=[],
-            )
-        ),
-        initial_asset_graph_subset=failed_asset_graph_subset,
-        include_full_execution_set=False,
-    )[0]
+    failed_and_downstream_subset = asset_graph_view.compute_downstream_subsets(
+        list(asset_graph_view.iterate_asset_subsets(failed_asset_graph_subset))
+    )
 
-    return failed_and_downstream_subset & asset_backfill_data.target_subset
+    return (
+        AssetGraphSubset.from_entity_subsets(failed_and_downstream_subset)
+        & asset_backfill_data.target_subset
+    )
 
 
 def _get_next_latest_storage_id(instance_queryer: CachingInstanceQueryer) -> int:
@@ -1371,10 +1373,8 @@ def _execute_asset_backfill_iteration_inner(
     )
 
     failed_and_downstream_subset = _get_failed_and_downstream_asset_graph_subset(
-        backfill_id,
         asset_backfill_data,
         asset_graph_view,
-        updated_materialized_subset,
         failed_asset_graph_subset,
     )
 
@@ -1811,7 +1811,7 @@ def _should_backfill_atomic_asset_graph_subset_unit(
     materialized_subset: AssetGraphSubset,
     failed_and_downstream_subset: AssetGraphSubset,
     logger: logging.Logger,
-) -> AssetGraphViewBfsFilterConditionResult:
+) -> AssetBackfillComputationResult:
     failure_subset_values_with_reasons: list[tuple[EntitySubsetValue, str]] = []
 
     candidate_entity_subsets = list(
@@ -1886,7 +1886,7 @@ def _should_backfill_atomic_asset_graph_subset_unit(
             )
         )
 
-    return AssetGraphViewBfsFilterConditionResult(
+    return AssetBackfillComputationResult(
         passed_asset_graph_subset=AssetGraphSubset.from_entity_subsets(passed_entity_subsets),
         excluded_asset_graph_subsets_and_reasons=failure_asset_graph_subsets_with_reasons,
     )

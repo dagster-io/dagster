@@ -17,10 +17,6 @@ from dagster import (
     TimeWindow,
 )
 from dagster._core.asset_graph_view.asset_graph_view import AssetGraphView, TemporalContext
-from dagster._core.asset_graph_view.bfs import (
-    AssetGraphViewBfsFilterConditionResult,
-    bfs_filter_asset_graph_view,
-)
 from dagster._core.definitions.assets.graph.asset_graph_subset import AssetGraphSubset
 from dagster._core.definitions.assets.graph.base_asset_graph import BaseAssetGraph
 from dagster._core.definitions.assets.graph.remote_asset_graph import RemoteWorkspaceAssetGraph
@@ -1518,19 +1514,12 @@ def make_random_subset(
 
     asset_graph_view = _get_asset_graph_view(instance, asset_graph, evaluation_time=evaluation_time)
 
-    return bfs_filter_asset_graph_view(
-        asset_graph_view=asset_graph_view,
-        condition_fn=lambda candidate_asset_graph_subset, _: (
-            AssetGraphViewBfsFilterConditionResult(
-                passed_asset_graph_subset=candidate_asset_graph_subset,
-                excluded_asset_graph_subsets_and_reasons=[],
-            )
-        ),
-        initial_asset_graph_subset=AssetGraphSubset.from_asset_partition_set(
-            root_asset_partitions, asset_graph
-        ),
-        include_full_execution_set=True,
-    )[0]
+    initial_subset = AssetGraphSubset.from_asset_partition_set(root_asset_partitions, asset_graph)
+    return AssetGraphSubset.from_entity_subsets(
+        asset_graph_view.compute_downstream_subsets(
+            list(asset_graph_view.iterate_asset_subsets(initial_subset))
+        )
+    )
 
 
 def make_subset_from_partition_keys(
@@ -1551,19 +1540,12 @@ def make_subset_from_partition_keys(
 
     asset_graph_view = _get_asset_graph_view(instance, asset_graph, evaluation_time=evaluation_time)
 
-    return bfs_filter_asset_graph_view(
-        asset_graph_view=asset_graph_view,
-        condition_fn=lambda candidate_asset_graph_subset, _: (
-            AssetGraphViewBfsFilterConditionResult(
-                passed_asset_graph_subset=candidate_asset_graph_subset,
-                excluded_asset_graph_subsets_and_reasons=[],
-            )
-        ),
-        initial_asset_graph_subset=AssetGraphSubset.from_asset_partition_set(
-            root_asset_partitions, asset_graph
-        ),
-        include_full_execution_set=True,
-    )[0]
+    initial_subset = AssetGraphSubset.from_asset_partition_set(root_asset_partitions, asset_graph)
+    return AssetGraphSubset.from_entity_subsets(
+        asset_graph_view.compute_downstream_subsets(
+            list(asset_graph_view.iterate_asset_subsets(initial_subset))
+        )
+    )
 
 
 def get_asset_graph(
@@ -1634,16 +1616,13 @@ def run_backfill_to_completion(
 
     asset_graph_view = _get_asset_graph_view(instance, asset_graph)
 
-    fail_and_downstream_asset_graph_subset, _ = bfs_filter_asset_graph_view(
-        asset_graph_view=asset_graph_view,
-        condition_fn=lambda candidate_asset_graph_subset, _: AssetGraphViewBfsFilterConditionResult(
-            passed_asset_graph_subset=candidate_asset_graph_subset,
-            excluded_asset_graph_subsets_and_reasons=[],
-        ),
-        initial_asset_graph_subset=AssetGraphSubset.from_asset_partition_set(
-            set(fail_asset_partitions), asset_graph
-        ),
-        include_full_execution_set=True,
+    initial_subset = AssetGraphSubset.from_asset_partition_set(
+        set(fail_asset_partitions), asset_graph
+    )
+    fail_and_downstream_asset_graph_subset = AssetGraphSubset.from_entity_subsets(
+        asset_graph_view.compute_downstream_subsets(
+            list(asset_graph_view.iterate_asset_subsets(initial_subset))
+        )
     )
 
     fail_and_downstream_asset_partitions = set(

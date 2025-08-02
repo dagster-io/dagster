@@ -8,6 +8,7 @@ from typing import (  # noqa: UP035
     Literal,
     NamedTuple,
     Optional,
+    Sequence,
     TypeVar,
 )
 
@@ -488,6 +489,34 @@ class AssetGraphView(LoadingContext):
             )
         else:
             check.failed(f"Unsupported partitions_def: {partitions_def}")
+
+    def compute_downstream_subsets(
+        self, input_subsets: Sequence[EntitySubset]
+    ) -> Sequence[EntitySubset]:
+        """Computes all downstream subsets from the input subsets, inclusive of the original input.
+        This operates recursively, meaning child subsets of child subsets are included.
+        """
+        results = {subset.key: subset for subset in input_subsets}
+        for level in self._asset_graph.toposorted_entity_keys_by_level:
+            for key in level:
+                if key not in results:
+                    continue
+                subset = results[key]
+                # for each child of this asset, add the subset of the child that is downstream
+                # of the current subset to the results
+                for child_key in self.asset_graph.get(key).child_entity_keys:
+                    child_subset = subset.compute_child_subset(child_key)
+                    current_result = results.get(child_key, self.get_empty_subset(key=child_key))
+                    results[child_key] = current_result.compute_union(child_subset)
+
+                    # for self-dependent assets, keep computing the child subset iteratively until there are
+                    # no new children
+                    if child_key == key:
+                        while not child_subset.is_empty:
+                            child_subset = child_subset.compute_child_subset(child_key)
+                            results[child_key] = results[child_key].compute_union(child_subset)
+
+        return list(results.values())
 
     async def compute_subset_with_status(
         self, key: AssetCheckKey, status: Optional["AssetCheckExecutionResolvedStatus"]
