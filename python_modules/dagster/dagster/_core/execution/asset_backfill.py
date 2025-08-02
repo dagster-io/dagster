@@ -3,7 +3,7 @@ import logging
 import os
 import sys
 import time
-from collections.abc import Iterable, Mapping, Sequence
+from collections.abc import Mapping, Sequence
 from datetime import datetime
 from enum import Enum
 from typing import TYPE_CHECKING, NamedTuple, Optional, Union, cast
@@ -11,12 +11,10 @@ from typing import TYPE_CHECKING, NamedTuple, Optional, Union, cast
 from dagster_shared.record import record
 
 import dagster._check as check
+from dagster._core.asset_graph_view.asset_graph_subset_view import AssetGraphSubsetView
 from dagster._core.asset_graph_view.asset_graph_view import AssetGraphView, TemporalContext
 from dagster._core.asset_graph_view.entity_subset import EntitySubset
-from dagster._core.asset_graph_view.serializable_entity_subset import (
-    EntitySubsetValue,
-    SerializableEntitySubset,
-)
+from dagster._core.asset_graph_view.serializable_entity_subset import EntitySubsetValue
 from dagster._core.definitions.asset_selection import KeysAssetSelection
 from dagster._core.definitions.assets.graph.asset_graph_subset import AssetGraphSubset
 from dagster._core.definitions.assets.graph.base_asset_graph import BaseAssetGraph, BaseAssetNode
@@ -29,10 +27,6 @@ from dagster._core.definitions.automation_tick_evaluation_context import (
 )
 from dagster._core.definitions.events import AssetKey, AssetKeyPartitionKey
 from dagster._core.definitions.partitions.context import partition_loading_context
-from dagster._core.definitions.partitions.definition import (
-    PartitionsDefinition,
-    TimeWindowPartitionsDefinition,
-)
 from dagster._core.definitions.partitions.mapping import (
     IdentityPartitionMapping,
     TimeWindowPartitionMapping,
@@ -136,8 +130,44 @@ class AssetBackfillComputationResult:
     backfilled on this tick.
     """
 
-    passed_asset_graph_subset: AssetGraphSubset
-    excluded_asset_graph_subsets_and_reasons: list[tuple[AssetGraphSubset, str]]
+    to_request: EntitySubset[AssetKey]
+    rejected_subsets_with_reasons: list[tuple[EntitySubsetValue, str]]
+
+
+@record
+class AssetBackfillComputationData:
+    view: AssetGraphView
+    backfill_id: str
+    backfill_start_timestamp: float
+    latest_storage_id: Optional[int]
+    target_subset: AssetGraphSubsetView[AssetKey]
+    requested_subset: AssetGraphSubsetView[AssetKey]
+    materialized_subset: AssetGraphSubsetView[AssetKey]
+    failed_and_downstream_subset: AssetGraphSubsetView[AssetKey]
+
+    def get_candidate_subset(self) -> AssetGraphSubsetView[AssetKey]:
+        """We consider executing any partition in the target subset that has not already
+        been requested, or is downstream of a partition that has failed.
+        """
+        return self.target_subset.compute_difference(self.requested_subset).compute_difference(
+            self.failed_and_downstream_subset
+        )
+
+    def to_asset_backfill_data(
+        self, newly_requested_subset: AssetGraphSubsetView[AssetKey]
+    ) -> "AssetBackfillData":
+        return AssetBackfillData(
+            target_subset=self.target_subset.to_asset_graph_subset(),
+            latest_storage_id=self.latest_storage_id,
+            materialized_subset=self.materialized_subset.to_asset_graph_subset(),
+            failed_and_downstream_subset=self.failed_and_downstream_subset.to_asset_graph_subset(),
+            requested_subset=self.requested_subset.compute_union(
+                newly_requested_subset
+            ).to_asset_graph_subset(),
+            backfill_start_time=TimestampWithTimezone(self.backfill_start_timestamp, "UTC"),
+            # legacy, no longer used
+            requested_runs_for_target_roots=True,
+        )
 
 
 @whitelist_for_serdes
@@ -161,6 +191,28 @@ class AssetBackfillData(NamedTuple):
     @property
     def backfill_start_datetime(self) -> datetime:
         return datetime_from_timestamp(self.backfill_start_time.timestamp)
+
+    def get_computation_data(
+        self, asset_graph_view: AssetGraphView, backfill_id: str
+    ) -> AssetBackfillComputationData:
+        return AssetBackfillComputationData(
+            view=asset_graph_view,
+            backfill_id=backfill_id,
+            backfill_start_timestamp=self.backfill_start_timestamp,
+            latest_storage_id=self.latest_storage_id,
+            target_subset=AssetGraphSubsetView.from_serializable_subset(
+                asset_graph_view, self.target_subset
+            ),
+            requested_subset=AssetGraphSubsetView.from_serializable_subset(
+                asset_graph_view, self.requested_subset
+            ),
+            materialized_subset=AssetGraphSubsetView.from_serializable_subset(
+                asset_graph_view, self.materialized_subset
+            ),
+            failed_and_downstream_subset=AssetGraphSubsetView.from_serializable_subset(
+                asset_graph_view, self.failed_and_downstream_subset
+            ),
+        )
 
     def replace_requested_subset(self, requested_subset: AssetGraphSubset) -> "AssetBackfillData":
         return self._replace(requested_subset=requested_subset)
@@ -952,6 +1004,9 @@ async def execute_asset_backfill_iteration(
     )
     if previous_asset_backfill_data is None:
         return
+    previous_data = previous_asset_backfill_data.get_computation_data(
+        asset_graph_view, backfill.backfill_id
+    )
 
     logger.info(
         f"Assets targeted by backfill {backfill.backfill_id} are valid. Continuing execution with current status: {backfill.status}."
@@ -974,11 +1029,7 @@ async def execute_asset_backfill_iteration(
             # Generate a new set of run requests to launch, and update the materialized and failed
             # subsets
             result = execute_asset_backfill_iteration_inner(
-                backfill_id=backfill.backfill_id,
-                asset_backfill_data=previous_asset_backfill_data,
-                asset_graph_view=asset_graph_view,
-                backfill_start_timestamp=backfill.backfill_timestamp,
-                logger=logger,
+                previous_data=previous_data, logger=logger
             )
 
             # Write the updated asset backfill data with in progress run requests before we launch anything, for idempotency
@@ -1042,40 +1093,13 @@ async def execute_asset_backfill_iteration(
             updated_backfill = updated_backfill.with_end_timestamp(get_current_timestamp())
             instance.update_backfill(updated_backfill)
 
-        new_materialized_partitions = (
-            updated_backfill_data.materialized_subset
-            - previous_asset_backfill_data.materialized_subset
-        )
-        new_failed_partitions = (
-            updated_backfill_data.failed_and_downstream_subset
-            - previous_asset_backfill_data.failed_and_downstream_subset
-        )
-        updated_backfill_in_progress = updated_backfill_data.requested_subset - (
-            updated_backfill_data.materialized_subset
-            | updated_backfill_data.failed_and_downstream_subset
-        )
-        previous_backfill_in_progress = (
-            previous_asset_backfill_data.requested_subset
-            - previous_asset_backfill_data.materialized_subset
-        )
-        new_requested_partitions = updated_backfill_in_progress - previous_backfill_in_progress
         logger.info(
             f"Asset backfill {updated_backfill.backfill_id} completed iteration with status {updated_backfill.status}."
         )
-        logger.info(
-            "Backfill iteration summary:\n"
-            f"**Assets materialized since last iteration:**\n{_asset_graph_subset_to_str(new_materialized_partitions, asset_graph) if new_materialized_partitions.num_partitions_and_non_partitioned_assets > 0 else 'None'}\n"
-            f"**Assets failed since last iteration and their downstream assets:**\n{_asset_graph_subset_to_str(new_failed_partitions, asset_graph) if new_failed_partitions.num_partitions_and_non_partitioned_assets > 0 else 'None'}\n"
-            f"**Assets requested by this iteration:**\n{_asset_graph_subset_to_str(new_requested_partitions, asset_graph) if new_requested_partitions.num_partitions_and_non_partitioned_assets > 0 else 'None'}\n"
-        )
-        logger.info(
-            "Overall backfill status:\n"
-            f"**Materialized assets:**\n{_asset_graph_subset_to_str(updated_backfill_data.materialized_subset, asset_graph) if updated_backfill_data.materialized_subset.num_partitions_and_non_partitioned_assets > 0 else 'None'}\n"
-            f"**Failed assets and their downstream assets:**\n{_asset_graph_subset_to_str(updated_backfill_data.failed_and_downstream_subset, asset_graph) if updated_backfill_data.failed_and_downstream_subset.num_partitions_and_non_partitioned_assets > 0 else 'None'}\n"
-            f"**Assets requested or in progress:**\n{_asset_graph_subset_to_str(updated_backfill_in_progress, asset_graph) if updated_backfill_in_progress.num_partitions_and_non_partitioned_assets > 0 else 'None'}\n"
-        )
-        logger.debug(
-            f"Updated asset backfill data for {updated_backfill.backfill_id}: {updated_backfill_data}"
+        _log_summary(
+            previous_data,
+            updated_backfill_data.get_computation_data(asset_graph_view, backfill.backfill_id),
+            logger,
         )
 
     elif backfill.status == BulkActionStatus.CANCELING:
@@ -1086,12 +1110,7 @@ async def execute_asset_backfill_iteration(
         )
 
         # Update the asset backfill data to contain the newly materialized/failed partitions.
-        updated_asset_backfill_data = get_canceling_asset_backfill_iteration_data(
-            backfill.backfill_id,
-            previous_asset_backfill_data,
-            asset_graph_view,
-            backfill.backfill_timestamp,
-        )
+        updated_asset_backfill_data = get_canceling_asset_backfill_iteration_data(previous_data)
 
         # Refetch, in case the backfill was forcibly marked as canceled in the meantime
         backfill = cast("PartitionBackfill", instance.get_backfill(backfill.backfill_id))
@@ -1136,66 +1155,108 @@ async def execute_asset_backfill_iteration(
         check.failed(f"Unexpected backfill status: {backfill.status}")
 
 
+def _log_results(
+    to_request_subset: AssetGraphSubsetView[AssetKey],
+    rejected_subsets_with_reasons: list[tuple[EntitySubsetValue, str]],
+    logger: logging.Logger,
+):
+    logger.info(
+        f"Asset partitions to request:\n{to_request_subset!s}"
+        if not to_request_subset.is_empty
+        else "No asset partitions to request."
+    )
+
+    if len(rejected_subsets_with_reasons) > 0:
+        not_requested_str = "\n\n".join(
+            [
+                f"{asset_graph_subset!s}\nReason: {reason}"
+                for asset_graph_subset, reason in rejected_subsets_with_reasons
+            ]
+        )
+        logger.info(
+            f"The following assets were considered for materialization but not requested:\n\n{not_requested_str}"
+        )
+
+
+def _log_summary(
+    previous_data: AssetBackfillComputationData,
+    updated_data: AssetBackfillComputationData,
+    logger: logging.Logger,
+) -> None:
+    new_materialized_partitions = updated_data.materialized_subset.compute_difference(
+        previous_data.materialized_subset
+    )
+    new_failed_partitions = updated_data.failed_and_downstream_subset.compute_difference(
+        previous_data.failed_and_downstream_subset
+    )
+    updated_backfill_in_progress = updated_data.requested_subset.compute_difference(
+        updated_data.materialized_subset.compute_union(updated_data.failed_and_downstream_subset)
+    )
+    previous_backfill_in_progress = updated_data.requested_subset.compute_difference(
+        updated_data.materialized_subset
+    )
+    new_requested_partitions = updated_backfill_in_progress.compute_difference(
+        previous_backfill_in_progress
+    )
+    logger.info(
+        "Backfill iteration summary:\n"
+        f"**Assets materialized since last iteration:**\n{str(new_materialized_partitions) if not new_materialized_partitions.is_empty else 'None'}\n"
+        f"**Assets failed since last iteration and their downstream assets:**\n{str(new_failed_partitions) if not new_failed_partitions.is_empty else 'None'}\n"
+        f"**Assets requested by this iteration:**\n{str(new_requested_partitions) if not new_requested_partitions.is_empty else 'None'}\n"
+    )
+    logger.info(
+        "Overall backfill status:\n"
+        f"**Materialized assets:**\n{str(updated_data.materialized_subset) if not updated_data.materialized_subset.is_empty else 'None'}\n"
+        f"**Failed assets and their downstream assets:**\n{str(updated_data.failed_and_downstream_subset) if not updated_data.failed_and_downstream_subset.is_empty else 'None'}\n"
+        f"**Assets requested or in progress:**\n{str(updated_backfill_in_progress) if not updated_backfill_in_progress.is_empty else 'None'}\n"
+    )
+    logger.debug(f"Updated asset backfill data for {updated_data.backfill_id}: {updated_data}")
+
+
 def get_canceling_asset_backfill_iteration_data(
-    backfill_id: str,
-    asset_backfill_data: AssetBackfillData,
-    asset_graph_view: AssetGraphView,
-    backfill_start_timestamp: float,
+    previous_data: AssetBackfillComputationData,
 ) -> AssetBackfillData:
     """For asset backfills in the "canceling" state, fetch the asset backfill data with the updated
     materialized and failed subsets.
     """
-    asset_graph = cast("RemoteWorkspaceAssetGraph", asset_graph_view.asset_graph)
-    instance_queryer = asset_graph_view.get_inner_queryer_for_back_compat()
-    updated_materialized_subset = None
-    updated_materialized_subset = get_asset_backfill_iteration_materialized_subset(
-        backfill_id, asset_backfill_data, asset_graph, instance_queryer
-    )
-
-    failed_subset = _get_failed_asset_graph_subset(
-        asset_graph_view,
-        backfill_id,
-        materialized_subset=updated_materialized_subset,
-    )
+    updated_materialized_subset = get_updated_materialized_subset(previous_data)
+    failed_subset = _get_failed_asset_graph_subset(previous_data, updated_materialized_subset)
 
     # we fetch the failed_subset to get any new assets that have failed and add that to the set of
     # assets we already know failed and their downstreams. However we need to remove any assets in
     # updated_materialized_subset to account for the case where a run retry successfully
     # materialized a previously failed asset.
-    updated_failed_subset = (
-        asset_backfill_data.failed_and_downstream_subset | failed_subset
-    ) - updated_materialized_subset
+    original_failed_subset = previous_data.failed_and_downstream_subset
+    updated_failed_subset = original_failed_subset.compute_union(failed_subset)
+    updated_failed_subset = updated_failed_subset.compute_difference(updated_materialized_subset)
+
     return AssetBackfillData(
-        target_subset=asset_backfill_data.target_subset,
-        latest_storage_id=asset_backfill_data.latest_storage_id,
-        requested_runs_for_target_roots=asset_backfill_data.requested_runs_for_target_roots,
-        materialized_subset=updated_materialized_subset,
-        failed_and_downstream_subset=updated_failed_subset,
-        requested_subset=asset_backfill_data.requested_subset,
-        backfill_start_time=TimestampWithTimezone(backfill_start_timestamp, "UTC"),
+        target_subset=previous_data.target_subset.to_asset_graph_subset(),
+        latest_storage_id=previous_data.latest_storage_id,
+        requested_runs_for_target_roots=True,
+        materialized_subset=updated_materialized_subset.to_asset_graph_subset(),
+        failed_and_downstream_subset=updated_failed_subset.to_asset_graph_subset(),
+        requested_subset=previous_data.requested_subset.to_asset_graph_subset(),
+        backfill_start_time=TimestampWithTimezone(previous_data.backfill_start_timestamp, "UTC"),
     )
 
 
-def get_asset_backfill_iteration_materialized_subset(
-    backfill_id: str,
-    asset_backfill_data: AssetBackfillData,
-    asset_graph: RemoteWorkspaceAssetGraph,
-    instance_queryer: CachingInstanceQueryer,
-) -> AssetGraphSubset:
+def get_updated_materialized_subset(
+    previous_data: AssetBackfillComputationData,
+) -> AssetGraphSubsetView[AssetKey]:
     """Returns the partitions that have been materialized by the backfill.
 
     This function is a generator so we can return control to the daemon and let it heartbeat
     during expensive operations.
     """
-    recently_materialized_asset_partitions = AssetGraphSubset()
-    for asset_key in asset_backfill_data.target_subset.asset_keys:
+    recently_materialized_asset_partitions = AssetGraphSubsetView.empty(previous_data.view)
+    for asset_key in previous_data.target_subset.keys:
         cursor = None
         has_more = True
         while has_more:
-            materializations_result = instance_queryer.instance.fetch_materializations(
+            materializations_result = previous_data.view.instance.fetch_materializations(
                 AssetRecordsFilter(
-                    asset_key=asset_key,
-                    after_storage_id=asset_backfill_data.latest_storage_id,
+                    asset_key=asset_key, after_storage_id=previous_data.latest_storage_id
                 ),
                 cursor=cursor,
                 limit=MATERIALIZATION_CHUNK_SIZE,
@@ -1206,13 +1267,13 @@ def get_asset_backfill_iteration_materialized_subset(
 
             run_ids = [record.run_id for record in materializations_result.records if record.run_id]
             if run_ids:
-                run_records = instance_queryer.instance.get_run_records(
+                run_records = previous_data.view.instance.get_run_records(
                     filters=RunsFilter(run_ids=run_ids),
                 )
                 run_ids_in_backfill = {
                     run_record.dagster_run.run_id
                     for run_record in run_records
-                    if run_record.dagster_run.tags.get(BACKFILL_ID_TAG) == backfill_id
+                    if run_record.dagster_run.tags.get(BACKFILL_ID_TAG) == previous_data.backfill_id
                 }
 
                 materialization_records_in_backfill = [
@@ -1220,100 +1281,22 @@ def get_asset_backfill_iteration_materialized_subset(
                     for record in materializations_result.records
                     if record.run_id in run_ids_in_backfill
                 ]
-                recently_materialized_asset_partitions |= AssetGraphSubset.from_asset_partition_set(
+                materialized_for_run = AssetGraphSubsetView.from_asset_partitions(
+                    previous_data.view,
                     {
                         AssetKeyPartitionKey(asset_key, record.partition_key)
                         for record in materialization_records_in_backfill
                     },
-                    asset_graph,
+                )
+                recently_materialized_asset_partitions = (
+                    recently_materialized_asset_partitions.compute_union(materialized_for_run)
                 )
 
-    updated_materialized_subset = (
-        asset_backfill_data.materialized_subset | recently_materialized_asset_partitions
-    )
-
-    return updated_materialized_subset
-
-
-def _get_failed_and_downstream_asset_graph_subset(
-    asset_backfill_data: AssetBackfillData,
-    asset_graph_view: AssetGraphView,
-    failed_asset_graph_subset: AssetGraphSubset,
-) -> AssetGraphSubset:
-    failed_and_downstream_subset = asset_graph_view.compute_downstream_subsets(
-        list(asset_graph_view.iterate_asset_subsets(failed_asset_graph_subset))
-    )
-
-    return (
-        AssetGraphSubset.from_entity_subsets(failed_and_downstream_subset)
-        & asset_backfill_data.target_subset
-    )
-
-
-def _get_next_latest_storage_id(instance_queryer: CachingInstanceQueryer) -> int:
-    # Events are not always guaranteed to be written to the event log in monotonically increasing
-    # order, so add a configurable offset to ensure that any stragglers will still be included in
-    # the next iteration.
-    # This may result in the same event being considered within multiple iterations, but
-    # idempotence checks later ensure that the materialization isn't incorrectly
-    # double-counted.
-    cursor_offset = int(os.getenv("ASSET_BACKFILL_CURSOR_OFFSET", "0"))
-    next_latest_storage_id = (
-        instance_queryer.instance.event_log_storage.get_maximum_record_id() or 0
-    )
-    return max(next_latest_storage_id - cursor_offset, 0)
-
-
-def _partition_subset_str(
-    partition_subset: PartitionsSubset,
-    partitions_def: PartitionsDefinition,
-):
-    if isinstance(partition_subset, TimeWindowPartitionsSubset) and isinstance(
-        partitions_def, TimeWindowPartitionsDefinition
-    ):
-        time_window_strs = []
-        for time_window in partition_subset.included_time_windows:
-            partition_key_range = partitions_def.get_partition_key_range_for_time_window(
-                time_window.to_public_time_window(), respect_bounds=False
-            )
-            num_partitions = partitions_def.get_num_partitions_in_window(
-                time_window.to_public_time_window()
-            )
-            if num_partitions == 1:
-                time_window_strs.append(f"1 partition: {partition_key_range.start}")
-            else:
-                time_window_strs.append(
-                    f"{num_partitions} partitions: {partition_key_range.start} -> {partition_key_range.end}"
-                )
-        return ", ".join(time_window_strs)
-
-    return ", ".join(partition_subset.get_partition_keys())
-
-
-def _asset_graph_subset_to_str(
-    asset_graph_subset: AssetGraphSubset,
-    asset_graph: BaseAssetGraph,
-) -> str:
-    return_strs = []
-    asset_subsets = asset_graph_subset.iterate_asset_subsets()
-
-    for subset in sorted(asset_subsets, key=lambda x: x.key):
-        if subset.is_partitioned:
-            partitions_def = asset_graph.get(subset.key).partitions_def
-            partition_ranges_str = _partition_subset_str(subset.subset_value, partitions_def)
-            return_strs.append(f"- {subset.key.to_user_string()}: {{{partition_ranges_str}}}")
-        else:
-            return_strs.append(f"- {subset.key.to_user_string()}")
-
-    return "\n".join(return_strs)
+    return previous_data.materialized_subset.compute_union(recently_materialized_asset_partitions)
 
 
 def execute_asset_backfill_iteration_inner(
-    backfill_id: str,
-    asset_backfill_data: AssetBackfillData,
-    asset_graph_view: AssetGraphView,
-    backfill_start_timestamp: float,
-    logger: logging.Logger,
+    previous_data: AssetBackfillComputationData, logger: logging.Logger
 ) -> AssetBackfillIterationResult:
     """Core logic of a backfill iteration. Has no side effects.
 
@@ -1325,27 +1308,26 @@ def execute_asset_backfill_iteration_inner(
     """
     # ensures that all partition operations use the same effective_dt and share a dynamic partition cache
     with partition_loading_context(
-        effective_dt=asset_graph_view.effective_dt,
-        dynamic_partitions_store=asset_graph_view.get_inner_queryer_for_back_compat(),
+        effective_dt=previous_data.view.effective_dt,
+        dynamic_partitions_store=previous_data.view.get_inner_queryer_for_back_compat(),
     ):
-        return _execute_asset_backfill_iteration_inner(
-            backfill_id, asset_backfill_data, asset_graph_view, backfill_start_timestamp, logger
-        )
+        return _execute_asset_backfill_iteration_inner(previous_data, logger)
 
 
-def _execute_asset_backfill_iteration_inner(
-    backfill_id: str,
-    asset_backfill_data: AssetBackfillData,
-    asset_graph_view: AssetGraphView,
-    backfill_start_timestamp: float,
-    logger: logging.Logger,
-) -> AssetBackfillIterationResult:
-    instance_queryer = asset_graph_view.get_inner_queryer_for_back_compat()
-    asset_graph: RemoteWorkspaceAssetGraph = cast(
-        "RemoteWorkspaceAssetGraph", asset_graph_view.asset_graph
+def _get_updated_data(
+    previous_data: AssetBackfillComputationData, logger: logging.Logger
+) -> AssetBackfillComputationData:
+    # Events are not always guaranteed to be written to the event log in monotonically increasing
+    # order, so add a configurable offset to ensure that any stragglers will still be included in
+    # the next iteration.
+    # This may result in the same event being considered within multiple iterations, but
+    # idempotence checks later ensure that the materialization isn't incorrectly
+    # double-counted.
+    cursor_offset = int(os.getenv("ASSET_BACKFILL_CURSOR_OFFSET", "0"))
+    next_latest_storage_id = (
+        previous_data.view.instance.event_log_storage.get_maximum_record_id() or 0
     )
-
-    next_latest_storage_id = _get_next_latest_storage_id(instance_queryer)
+    next_latest_storage_id = max(next_latest_storage_id - cursor_offset, 0)
 
     cursor_delay_time = int(os.getenv("ASSET_BACKFILL_CURSOR_DELAY_TIME", "0"))
     # Events are not guaranteed to be written to the event log in monotonic increasing order,
@@ -1353,223 +1335,146 @@ def _execute_asset_backfill_iteration_inner(
     if cursor_delay_time:
         time.sleep(cursor_delay_time)
 
-    updated_materialized_subset = get_asset_backfill_iteration_materialized_subset(
-        backfill_id, asset_backfill_data, asset_graph, instance_queryer
+    updated_materialized_subset = get_updated_materialized_subset(previous_data)
+    updated_failed_subset = _get_failed_asset_graph_subset(
+        previous_data, updated_materialized_subset
     )
 
-    materialized_since_last_tick = (
-        updated_materialized_subset - asset_backfill_data.materialized_subset
+    materialized_since_last_tick = updated_materialized_subset.compute_difference(
+        previous_data.materialized_subset
     )
     logger.info(
-        f"Assets materialized since last tick:\n{_asset_graph_subset_to_str(materialized_since_last_tick, asset_graph)}"
+        f"Assets materialized since last tick:\n{materialized_since_last_tick!s}"
         if not materialized_since_last_tick.is_empty
         else "No relevant assets materialized since last tick."
     )
 
-    failed_asset_graph_subset = _get_failed_asset_graph_subset(
-        asset_graph_view,
-        backfill_id,
-        updated_materialized_subset,
+    return AssetBackfillComputationData(
+        view=previous_data.view,
+        latest_storage_id=next_latest_storage_id,
+        backfill_start_timestamp=previous_data.backfill_start_timestamp,
+        backfill_id=previous_data.backfill_id,
+        target_subset=previous_data.target_subset,
+        requested_subset=previous_data.requested_subset,
+        materialized_subset=updated_materialized_subset,
+        failed_and_downstream_subset=updated_failed_subset.compute_downstream_subset(),
     )
 
-    failed_and_downstream_subset = _get_failed_and_downstream_asset_graph_subset(
-        asset_backfill_data,
-        asset_graph_view,
-        failed_asset_graph_subset,
-    )
 
-    candidate_asset_graph_subset = (
-        asset_backfill_data.target_subset
-        - asset_backfill_data.requested_subset
-        - failed_and_downstream_subset
-    )
+def _execute_asset_backfill_iteration_inner(
+    previous_data: AssetBackfillComputationData, logger: logging.Logger
+) -> AssetBackfillIterationResult:
+    # query the instance to find any updates to the set of materialized and failed partitions
+    updated_data = _get_updated_data(previous_data, logger)
+    candidate_graph_subset = updated_data.get_candidate_subset()
 
     logger.info(
-        f"Considering the following candidate subset:\n{_asset_graph_subset_to_str(candidate_asset_graph_subset, asset_graph)}"
-        if not candidate_asset_graph_subset.is_empty
+        f"Considering the following candidate subset:\n{candidate_graph_subset!s}"
+        if not candidate_graph_subset.is_empty
         else "Candidate subset is empty."
     )
 
-    asset_graph_subset_to_request = AssetGraphSubset()
-    not_requested_and_reasons = []
-    for asset_key in asset_graph.toposorted_asset_keys:
-        candidate_subset = asset_graph_view.get_entity_subset_from_asset_graph_subset(
-            candidate_asset_graph_subset, asset_key
-        )
+    # iterate over the keys in topological order, and evaluate the candidates for that
+    # key, determining which of the candidates should be requested.
+    asset_graph_view = updated_data.view
+    to_request_subset = AssetGraphSubsetView.empty(asset_graph_view)
+    rejected_subsets_with_reasons = []
+    for asset_key in asset_graph_view.asset_graph.toposorted_asset_keys:
+        candidate_subset = candidate_graph_subset.get(asset_key)
         if candidate_subset.is_empty:
             continue
 
-        result = _should_backfill_atomic_asset_graph_subset_unit(
-            asset_graph_view=asset_graph_view,
-            candidate_asset_graph_subset_unit=AssetGraphSubset.from_entity_subsets(
-                {candidate_subset}
-            ),
-            asset_graph_subset_matched_so_far=asset_graph_subset_to_request,
-            materialized_subset=updated_materialized_subset,
-            requested_subset=asset_backfill_data.requested_subset,
-            target_subset=asset_backfill_data.target_subset,
-            failed_and_downstream_subset=failed_and_downstream_subset,
-            logger=logger,
-        )
-        asset_graph_subset_to_request |= result.passed_asset_graph_subset
-        not_requested_and_reasons.extend(result.excluded_asset_graph_subsets_and_reasons)
+        result = _should_backfill_entity_subset(updated_data, candidate_subset, to_request_subset)
+        to_request_subset = to_request_subset.compute_union(result.to_request)
+        rejected_subsets_with_reasons.extend(result.rejected_subsets_with_reasons)
 
-    logger.info(
-        f"Asset partitions to request:\n{_asset_graph_subset_to_str(asset_graph_subset_to_request, asset_graph)}"
-        if not asset_graph_subset_to_request.is_empty
-        else "No asset partitions to request."
-    )
+    _log_results(to_request_subset, rejected_subsets_with_reasons, logger)
 
-    asset_partitions_to_request = set(asset_graph_subset_to_request.iterate_asset_partitions())
-
-    if len(not_requested_and_reasons) > 0:
-        not_requested_str = "\n\n".join(
-            [
-                f"{_asset_graph_subset_to_str(asset_graph_subset, asset_graph)}\nReason: {reason}"
-                for asset_graph_subset, reason in not_requested_and_reasons
-            ]
-        )
-        logger.info(
-            f"The following assets were considered for materialization but not requested:\n\n{not_requested_str}"
-        )
-
+    # construct run requests for the requested partitions
     run_requests = build_run_requests_with_backfill_policies(
-        asset_partitions=asset_partitions_to_request,
-        asset_graph=asset_graph,
-        dynamic_partitions_store=instance_queryer,
+        asset_graph=asset_graph_view.asset_graph,
+        asset_partitions=set(to_request_subset.to_asset_graph_subset().iterate_asset_partitions()),
     )
 
-    updated_asset_backfill_data = AssetBackfillData(
-        target_subset=asset_backfill_data.target_subset,
-        latest_storage_id=next_latest_storage_id or asset_backfill_data.latest_storage_id,
-        requested_runs_for_target_roots=True,
-        materialized_subset=updated_materialized_subset,
-        failed_and_downstream_subset=failed_and_downstream_subset,
-        requested_subset=asset_backfill_data.requested_subset,
-        backfill_start_time=TimestampWithTimezone(backfill_start_timestamp, "UTC"),
-    )
     return AssetBackfillIterationResult(
         run_requests,
-        updated_asset_backfill_data,
+        updated_data.to_asset_backfill_data(to_request_subset),
         reserved_run_ids=[make_new_run_id() for _ in range(len(run_requests))],
     )
 
 
-def _should_backfill_atomic_asset_subset_unit(
-    asset_graph_view: AssetGraphView,
-    entity_subset_to_filter: EntitySubset[AssetKey],
-    candidate_asset_graph_subset_unit: AssetGraphSubset,
-    asset_graph_subset_matched_so_far: AssetGraphSubset,
-    target_subset: AssetGraphSubset,
-    requested_subset: AssetGraphSubset,
-    materialized_subset: AssetGraphSubset,
-    failed_and_downstream_subset: AssetGraphSubset,
-    logger: logging.Logger,
-) -> tuple[SerializableEntitySubset[AssetKey], Iterable[tuple[EntitySubsetValue, str]]]:
-    failure_subsets_with_reasons: list[tuple[EntitySubsetValue, str]] = []
-    asset_graph = asset_graph_view.asset_graph
-    asset_key = entity_subset_to_filter.key
+def _should_backfill_entity_subset(
+    data: AssetBackfillComputationData,
+    candidate_subset: EntitySubset[AssetKey],
+    to_request_subset: AssetGraphSubsetView[AssetKey],
+) -> AssetBackfillComputationResult:
+    rejected_subsets_with_reasons: list[tuple[EntitySubsetValue, str]] = []
 
-    missing_in_target_partitions = entity_subset_to_filter.compute_difference(
-        asset_graph_view.get_entity_subset_from_asset_graph_subset(target_subset, asset_key)
-    )
+    key = candidate_subset.key
+    missing_in_target_partitions = candidate_subset.compute_difference(data.target_subset.get(key))
     if not missing_in_target_partitions.is_empty:
         # Don't include a failure reason for this subset since it is unlikely to be
         # useful to know that an untargeted subset was not included
-        entity_subset_to_filter = entity_subset_to_filter.compute_difference(
-            missing_in_target_partitions
-        )
+        candidate_subset = candidate_subset.compute_difference(missing_in_target_partitions)
 
-    failed_and_downstream_partitions = entity_subset_to_filter.compute_intersection(
-        asset_graph_view.get_entity_subset_from_asset_graph_subset(
-            failed_and_downstream_subset, asset_key
-        )
+    failed_and_downstream_partitions = candidate_subset.compute_intersection(
+        data.failed_and_downstream_subset.get(key)
     )
     if not failed_and_downstream_partitions.is_empty:
         # Similar to above, only include a failure reason for 'interesting' failure reasons
-        entity_subset_to_filter = entity_subset_to_filter.compute_difference(
-            failed_and_downstream_partitions
-        )
+        candidate_subset = candidate_subset.compute_difference(failed_and_downstream_partitions)
 
-    materialized_partitions = entity_subset_to_filter.compute_intersection(
-        asset_graph_view.get_entity_subset_from_asset_graph_subset(materialized_subset, asset_key)
+    materialized_partitions = candidate_subset.compute_intersection(
+        data.materialized_subset.get(key)
     )
     if not materialized_partitions.is_empty:
         # Similar to above, only include a failure reason for 'interesting' failure reasons
-        entity_subset_to_filter = entity_subset_to_filter.compute_difference(
-            materialized_partitions
-        )
+        candidate_subset = candidate_subset.compute_difference(materialized_partitions)
 
-    requested_partitions = entity_subset_to_filter.compute_intersection(
-        asset_graph_view.get_entity_subset_from_asset_graph_subset(requested_subset, asset_key)
-    )
+    requested_partitions = candidate_subset.compute_intersection(to_request_subset.get(key))
 
     if not requested_partitions.is_empty:
         # Similar to above, only include a failure reason for 'interesting' failure reasons
-        entity_subset_to_filter = entity_subset_to_filter.compute_difference(requested_partitions)
+        candidate_subset = candidate_subset.compute_difference(requested_partitions)
 
+    parent_keys = data.view.asset_graph.get(candidate_subset.key).parent_keys
     has_any_parent_being_requested_this_tick = any(
-        not asset_graph_view.get_entity_subset_from_asset_graph_subset(
-            asset_graph_subset_matched_so_far, parent_key
-        ).is_empty
-        for parent_key in asset_graph.get(asset_key).parent_keys
+        not to_request_subset.get(parent_key).is_empty for parent_key in parent_keys
     )
 
-    for parent_key in sorted(asset_graph.get(asset_key).parent_keys):
-        if entity_subset_to_filter.is_empty:
+    for parent_key in sorted(parent_keys):
+        if candidate_subset.is_empty:
             break
 
         parent_subset, required_but_nonexistent_subset = (
-            asset_graph_view.compute_parent_subset_and_required_but_nonexistent_subset(
-                parent_key,
-                entity_subset_to_filter,
+            data.view.compute_parent_subset_and_required_but_nonexistent_subset(
+                parent_key, candidate_subset
             )
         )
 
         if not required_but_nonexistent_subset.is_empty:
             raise DagsterInvariantViolationError(
-                f"Asset partition subset {entity_subset_to_filter}"
+                f"Asset partition subset {candidate_subset}"
                 f" depends on invalid partitions {required_but_nonexistent_subset}"
             )
 
-        parent_materialized_subset = asset_graph_view.get_entity_subset_from_asset_graph_subset(
-            materialized_subset, parent_key
-        )
+        parent_materialized_subset = data.materialized_subset.get(parent_key)
 
         # Children with parents that are targeted but not materialized are eligible
         # to be filtered out if the parent has not run yet
         targeted_but_not_materialized_parent_subset: EntitySubset[AssetKey] = (
-            parent_subset.compute_intersection(
-                asset_graph_view.get_entity_subset_from_asset_graph_subset(
-                    target_subset, parent_key
-                )
-            )
+            parent_subset.compute_intersection(data.target_subset.get(parent_key))
         ).compute_difference(parent_materialized_subset)
 
         possibly_waiting_for_parent_subset = (
-            asset_graph_view.compute_child_subset(
-                asset_key, targeted_but_not_materialized_parent_subset
-            )
-        ).compute_intersection(entity_subset_to_filter)
-
-        parent_being_requested_this_tick_subset = (
-            asset_graph_view.get_entity_subset_from_asset_graph_subset(
-                asset_graph_subset_matched_so_far, parent_key
-            )
-        )
+            targeted_but_not_materialized_parent_subset.compute_child_subset(candidate_subset.key)
+        ).compute_intersection(candidate_subset)
 
         if not possibly_waiting_for_parent_subset.is_empty:
             cant_run_with_parent_reason = _get_cant_run_with_parent_reason(
-                targeted_but_not_materialized_parent_subset,
-                entity_subset_to_filter,
-                asset_graph_view,
-                target_subset,
-                parent_being_requested_this_tick_subset,
-                candidate_asset_graph_subset_unit,
-                parent_materialized_subset,
-                logger,
+                data, candidate_subset, parent_subset, to_request_subset
             )
-            is_self_dependency = parent_key == asset_key
+            is_self_dependency = parent_key == candidate_subset.key
 
             if cant_run_with_parent_reason is not None:
                 # if any parents are also being requested this tick and there is any reason to
@@ -1580,20 +1485,18 @@ def _should_backfill_atomic_asset_subset_unit(
                 # specific ineligible child keys (to ensure that they aren't required before
                 # their parents materialize)
                 if not is_self_dependency and has_any_parent_being_requested_this_tick:
-                    failure_subsets_with_reasons.append(
+                    rejected_subsets_with_reasons.append(
                         (
-                            entity_subset_to_filter.get_internal_value(),
+                            candidate_subset.get_internal_value(),
                             cant_run_with_parent_reason,
                         )
                     )
-                    entity_subset_to_filter = asset_graph_view.get_empty_subset(
-                        key=entity_subset_to_filter.key
-                    )
+                    candidate_subset = data.view.get_empty_subset(key=candidate_subset.key)
                 else:
-                    entity_subset_to_filter = entity_subset_to_filter.compute_difference(
+                    candidate_subset = candidate_subset.compute_difference(
                         possibly_waiting_for_parent_subset
                     )
-                    failure_subsets_with_reasons.append(
+                    rejected_subsets_with_reasons.append(
                         (
                             possibly_waiting_for_parent_subset.get_internal_value(),
                             cant_run_with_parent_reason,
@@ -1601,7 +1504,7 @@ def _should_backfill_atomic_asset_subset_unit(
                     )
 
             if is_self_dependency:
-                self_dependent_node = asset_graph.get(asset_key)
+                self_dependent_node = data.view.asset_graph.get(candidate_subset.key)
                 # ensure that we don't produce more than max_partitions_per_run partitions
                 # if a backfill policy is set
                 if (
@@ -1616,7 +1519,7 @@ def _should_backfill_atomic_asset_subset_unit(
                     # and returning the first N instead of listing all of them
                     # (can't use expensively_compute_asset_partitions because it returns
                     # an unordered set)
-                    internal_value = entity_subset_to_filter.get_internal_value()
+                    internal_value = candidate_subset.get_internal_value()
                     partition_keys_to_include = (
                         list(internal_value.get_partition_keys())
                         if isinstance(internal_value, PartitionsSubset)
@@ -1627,54 +1530,46 @@ def _should_backfill_atomic_asset_subset_unit(
                             AssetKeyPartitionKey(self_dependent_node.key, partition_key)
                             for partition_key in partition_keys_to_include
                         },
-                        asset_graph=asset_graph,
+                        asset_graph=data.view.asset_graph,
                     )
-                    entity_subset_to_include = (
-                        asset_graph_view.get_entity_subset_from_asset_graph_subset(
-                            partition_subset_to_include, self_dependent_node.key
-                        )
+                    entity_subset_to_include = data.view.get_entity_subset_from_asset_graph_subset(
+                        partition_subset_to_include, self_dependent_node.key
                     )
 
-                    entity_subset_to_reject = entity_subset_to_filter.compute_difference(
-                        entity_subset_to_include
-                    )
+                    rejected_subset = candidate_subset.compute_difference(entity_subset_to_include)
 
-                    if not entity_subset_to_reject.is_empty:
-                        failure_subsets_with_reasons.append(
+                    if not rejected_subset.is_empty:
+                        rejected_subsets_with_reasons.append(
                             (
-                                entity_subset_to_reject.get_internal_value(),
+                                rejected_subset.get_internal_value(),
                                 "Respecting the maximum number of partitions per run for the backfill policy of a self-dependant asset",
                             )
                         )
 
-                    entity_subset_to_filter = entity_subset_to_include
+                    candidate_subset = entity_subset_to_include
 
-    return (
-        entity_subset_to_filter.convert_to_serializable_subset(),
-        failure_subsets_with_reasons,
+    return AssetBackfillComputationResult(
+        to_request=candidate_subset,
+        rejected_subsets_with_reasons=rejected_subsets_with_reasons,
     )
 
 
 def _get_cant_run_with_parent_reason(
+    data: AssetBackfillComputationData,
+    candidate_subset: EntitySubset[AssetKey],
     parent_subset: EntitySubset[AssetKey],
-    entity_subset_to_filter: EntitySubset[AssetKey],
-    asset_graph_view: AssetGraphView,
-    target_subset: AssetGraphSubset,
-    parent_being_requested_this_tick_subset: EntitySubset[AssetKey],
-    candidate_asset_graph_subset_unit: AssetGraphSubset,
-    parent_materialized_subset: EntitySubset[AssetKey],
-    logger: logging.Logger,
+    to_request_subset: AssetGraphSubsetView[AssetKey],
 ) -> Optional[str]:
-    candidate_asset_key = entity_subset_to_filter.key
-    parent_asset_key = parent_subset.key
+    candidate_key = candidate_subset.key
+    parent_key = parent_subset.key
 
-    assert isinstance(asset_graph_view.asset_graph, RemoteWorkspaceAssetGraph)
-    asset_graph = cast("RemoteWorkspaceAssetGraph", asset_graph_view.asset_graph)
+    assert isinstance(data.view.asset_graph, RemoteWorkspaceAssetGraph)
+    asset_graph = cast("RemoteWorkspaceAssetGraph", data.view.asset_graph)
 
-    parent_node = asset_graph.get(parent_asset_key)
-    candidate_node = asset_graph.get(candidate_asset_key)
+    parent_node = asset_graph.get(parent_key)
+    candidate_node = asset_graph.get(candidate_key)
     partition_mapping = asset_graph.get_partition_mapping(
-        candidate_asset_key, parent_asset_key=parent_asset_key
+        candidate_key, parent_asset_key=parent_key
     )
 
     # First filter out cases where even if the parent was requested this iteration, it wouldn't
@@ -1706,22 +1601,22 @@ def _get_cant_run_with_parent_reason(
     if parent_node.partitions_def != candidate_node.partitions_def:
         return f"parent {parent_node.key.to_user_string()} and {candidate_node.key.to_user_string()} have different partitions definitions so they cannot be materialized in the same run. {candidate_node.key.to_user_string()} can be materialized once {parent_node.key.to_user_string()} is materialized."
 
-    parent_target_subset = target_subset.get_asset_subset(parent_asset_key, asset_graph)
-    candidate_target_subset = target_subset.get_asset_subset(candidate_asset_key, asset_graph)
+    parent_target_subset = data.target_subset.get(parent_key)
+    candidate_target_subset = data.target_subset.get(candidate_key)
 
-    num_parent_partitions_being_requested_this_tick = parent_being_requested_this_tick_subset.size
+    num_parent_partitions_being_requested_this_tick = parent_target_subset.size
 
-    is_self_dependency = parent_asset_key == candidate_asset_key
+    is_self_dependency = parent_key == candidate_key
 
     has_self_dependency = any(
-        parent_key == candidate_asset_key for parent_key in candidate_node.parent_keys
+        parent_key == candidate_key for parent_key in candidate_node.parent_keys
     )
 
     # launching a self-dependant asset with a non-self-dependant asset can result in invalid
     # runs being launched that don't respect lineage
     if (
         has_self_dependency
-        and parent_asset_key not in candidate_asset_graph_subset_unit.asset_keys
+        and parent_key not in candidate_node.execution_set_asset_keys
         and num_parent_partitions_being_requested_this_tick > 0
     ):
         return "Self-dependant assets cannot be materialized in the same run as other assets."
@@ -1736,16 +1631,8 @@ def _get_cant_run_with_parent_reason(
             # in the typical case, we will only allow this candidate subset to be requested if
             # it contains exactly the same partitions as its parent asset for this evaluation,
             # otherwise they may end up in different runs
-            parent_being_requested_this_tick_subset.get_internal_value()
-            == entity_subset_to_filter.get_internal_value()
-        )
-        or (
-            # for non-subsettable multi-assets, we will not have yet requested the parent asset
-            # partitions, so we just check that we have a matching set of partitions
-            asset_graph_view.get_entity_subset_from_asset_graph_subset(
-                candidate_asset_graph_subset_unit, parent_asset_key
-            ).get_internal_value()
-            == entity_subset_to_filter.get_internal_value()
+            to_request_subset.get(parent_key).get_internal_value()
+            == candidate_subset.get_internal_value()
         )
     ):
         return (
@@ -1757,14 +1644,14 @@ def _get_cant_run_with_parent_reason(
         if parent_node.backfill_policy is None:
             required_parent_subset = parent_subset
         else:
-            # with a self dependancy, all of its parent partitions need to either have already
+            # with a self dependency, all of its parent partitions need to either have already
             # been materialized or be in the candidate subset
             required_parent_subset = parent_subset.compute_difference(
-                entity_subset_to_filter
-            ).compute_difference(parent_materialized_subset)
+                candidate_subset
+            ).compute_difference(data.materialized_subset.get(parent_key))
 
         if not required_parent_subset.is_empty:
-            return f"Waiting for the following parent partitions of a self-dependant asset to materialize: {_partition_subset_str(required_parent_subset.get_internal_subset_value(), check.not_none(parent_node.partitions_def))}"
+            return f"Waiting for the following parent partitions of a self-dependant asset to materialize: {required_parent_subset!s}"
         else:
             return None
 
@@ -1778,7 +1665,8 @@ def _get_cant_run_with_parent_reason(
             # there is a backfill policy for the parent
             parent_node.backfill_policy is not None
             # the same subset of parents is targeted as the child
-            and parent_target_subset.value == candidate_target_subset.value
+            and parent_target_subset.get_internal_value()
+            == candidate_target_subset.get_internal_value()
             and (
                 # there is no limit on the size of a single run or...
                 parent_node.backfill_policy.max_partitions_per_run is None
@@ -1802,101 +1690,10 @@ def _get_cant_run_with_parent_reason(
     return None
 
 
-def _should_backfill_atomic_asset_graph_subset_unit(
-    asset_graph_view: AssetGraphView,
-    candidate_asset_graph_subset_unit: AssetGraphSubset,
-    asset_graph_subset_matched_so_far: AssetGraphSubset,
-    target_subset: AssetGraphSubset,
-    requested_subset: AssetGraphSubset,
-    materialized_subset: AssetGraphSubset,
-    failed_and_downstream_subset: AssetGraphSubset,
-    logger: logging.Logger,
-) -> AssetBackfillComputationResult:
-    failure_subset_values_with_reasons: list[tuple[EntitySubsetValue, str]] = []
-
-    candidate_entity_subsets = list(
-        asset_graph_view.iterate_asset_subsets(candidate_asset_graph_subset_unit)
-    )
-
-    # this value is the same for all passed in asset keys since they are always part of the same
-    # execution set
-    passed_subset_value = candidate_entity_subsets[0].get_internal_value()
-
-    candidate_asset_keys = [
-        candidate_entity_subset.key for candidate_entity_subset in candidate_entity_subsets
-    ]
-
-    for candidate_asset_key in candidate_asset_keys:
-        # filter down the set of matching values for each asset key
-        passed_serializable_entity_subset = SerializableEntitySubset(
-            candidate_asset_key,
-            passed_subset_value,
-        )
-        entity_subset_to_filter = check.not_none(
-            asset_graph_view.get_subset_from_serializable_subset(passed_serializable_entity_subset)
-        )
-
-        if entity_subset_to_filter.is_empty:
-            break
-
-        entity_subset_to_filter, new_failure_subset_values_with_reasons = (
-            _should_backfill_atomic_asset_subset_unit(
-                asset_graph_view,
-                entity_subset_to_filter=entity_subset_to_filter,
-                candidate_asset_graph_subset_unit=candidate_asset_graph_subset_unit,
-                asset_graph_subset_matched_so_far=asset_graph_subset_matched_so_far,
-                target_subset=target_subset,
-                requested_subset=requested_subset,
-                materialized_subset=materialized_subset,
-                failed_and_downstream_subset=failed_and_downstream_subset,
-                logger=logger,
-            )
-        )
-        passed_subset_value = entity_subset_to_filter.value
-        failure_subset_values_with_reasons.extend(new_failure_subset_values_with_reasons)
-
-    passed_entity_subsets = []
-    for candidate_entity_subset in candidate_entity_subsets:
-        passed_entity_subsets.append(
-            check.not_none(
-                asset_graph_view.get_subset_from_serializable_subset(
-                    SerializableEntitySubset(candidate_entity_subset.key, passed_subset_value)
-                )
-            )
-        )
-
-    failure_asset_graph_subsets_with_reasons = []
-    # Any failure partition values apply to all candidate asset keys, so construct a subset
-    # graph with that partition subset value for each key
-    for failure_subset_value, reason in failure_subset_values_with_reasons:
-        failure_entity_subsets = [
-            check.not_none(
-                asset_graph_view.get_subset_from_serializable_subset(
-                    SerializableEntitySubset(candidate_entity_subset.key, failure_subset_value)
-                )
-            )
-            for candidate_entity_subset in candidate_entity_subsets
-        ]
-        failure_asset_graph_subsets_with_reasons.append(
-            (
-                AssetGraphSubset.from_entity_subsets(
-                    entity_subsets=failure_entity_subsets,
-                ),
-                reason,
-            )
-        )
-
-    return AssetBackfillComputationResult(
-        passed_asset_graph_subset=AssetGraphSubset.from_entity_subsets(passed_entity_subsets),
-        excluded_asset_graph_subsets_and_reasons=failure_asset_graph_subsets_with_reasons,
-    )
-
-
 def _get_failed_asset_graph_subset(
-    asset_graph_view: AssetGraphView,
-    backfill_id: str,
-    materialized_subset: AssetGraphSubset,
-) -> AssetGraphSubset:
+    previous_data: AssetBackfillComputationData,
+    updated_materialized_subset: AssetGraphSubsetView[AssetKey],
+) -> AssetGraphSubsetView[AssetKey]:
     """Returns asset subset that materializations were requested for as part of the backfill, but were
     not successfully materialized.
 
@@ -1909,16 +1706,17 @@ def _get_failed_asset_graph_subset(
     Includes canceled asset partitions. Implementation assumes that successful runs won't have any
     failed partitions.
     """
-    instance_queryer = asset_graph_view.get_inner_queryer_for_back_compat()
-
-    runs = instance_queryer.instance.get_runs(
+    runs = previous_data.view.instance.get_runs(
         filters=RunsFilter(
-            tags={BACKFILL_ID_TAG: backfill_id},
+            tags={BACKFILL_ID_TAG: previous_data.backfill_id},
             statuses=[DagsterRunStatus.CANCELED, DagsterRunStatus.FAILURE],
         )
     )
 
-    result: AssetGraphSubset = AssetGraphSubset.create_empty_subset()
+    result: AssetGraphSubsetView[AssetKey] = AssetGraphSubsetView(
+        asset_graph_view=previous_data.view, subsets=[]
+    )
+    instance_queryer = previous_data.view.get_inner_queryer_for_back_compat()
     for run in runs:
         planned_asset_keys = instance_queryer.get_planned_materializations_for_run(
             run_id=run.run_id
@@ -1938,22 +1736,23 @@ def _get_failed_asset_graph_subset(
                 start=run.tags[ASSET_PARTITION_RANGE_START_TAG],
                 end=run.tags[ASSET_PARTITION_RANGE_END_TAG],
             )
-            candidate_subset = AssetGraphSubset.from_entity_subsets(
-                [
-                    asset_graph_view.get_entity_subset_in_range(asset_key, partition_range)
+            candidate_subset = AssetGraphSubsetView(
+                asset_graph_view=previous_data.view,
+                subsets=[
+                    previous_data.view.get_entity_subset_in_range(asset_key, partition_range)
                     for asset_key in failed_asset_keys
-                ]
+                ],
             )
 
         else:
             # a regular backfill run that run on a single partition
             partition_key = run.tags.get(PARTITION_NAME_TAG)
-            candidate_subset = AssetGraphSubset.from_asset_partition_set(
+            candidate_subset = AssetGraphSubsetView.from_asset_partitions(
+                previous_data.view,
                 {AssetKeyPartitionKey(asset_key, partition_key) for asset_key in failed_asset_keys},
-                asset_graph_view.asset_graph,
             )
 
-        asset_subset_still_failed = candidate_subset - materialized_subset
-        result = result | asset_subset_still_failed
+        asset_subset_still_failed = candidate_subset.compute_difference(updated_materialized_subset)
+        result = result.compute_union(asset_subset_still_failed)
 
     return result

@@ -16,6 +16,7 @@ from dagster import (
     RunRequest,
     TimeWindow,
 )
+from dagster._core.asset_graph_view.asset_graph_subset_view import AssetGraphSubsetView
 from dagster._core.asset_graph_view.asset_graph_view import AssetGraphView, TemporalContext
 from dagster._core.definitions.assets.graph.asset_graph_subset import AssetGraphSubset
 from dagster._core.definitions.assets.graph.base_asset_graph import BaseAssetGraph
@@ -1514,12 +1515,10 @@ def make_random_subset(
 
     asset_graph_view = _get_asset_graph_view(instance, asset_graph, evaluation_time=evaluation_time)
 
-    initial_subset = AssetGraphSubset.from_asset_partition_set(root_asset_partitions, asset_graph)
-    return AssetGraphSubset.from_entity_subsets(
-        asset_graph_view.compute_downstream_subsets(
-            list(asset_graph_view.iterate_asset_subsets(initial_subset))
-        )
+    initial_subset = AssetGraphSubsetView.from_asset_partitions(
+        asset_graph_view, root_asset_partitions
     )
+    return initial_subset.compute_downstream_subset().to_asset_graph_subset()
 
 
 def make_subset_from_partition_keys(
@@ -1540,12 +1539,10 @@ def make_subset_from_partition_keys(
 
     asset_graph_view = _get_asset_graph_view(instance, asset_graph, evaluation_time=evaluation_time)
 
-    initial_subset = AssetGraphSubset.from_asset_partition_set(root_asset_partitions, asset_graph)
-    return AssetGraphSubset.from_entity_subsets(
-        asset_graph_view.compute_downstream_subsets(
-            list(asset_graph_view.iterate_asset_subsets(initial_subset))
-        )
+    initial_subset = AssetGraphSubsetView.from_asset_partitions(
+        asset_graph_view, root_asset_partitions
     )
+    return initial_subset.compute_downstream_subset().to_asset_graph_subset()
 
 
 def get_asset_graph(
@@ -1583,14 +1580,14 @@ def execute_asset_backfill_iteration_consume_generator(
     traced_counter.set(counter)
 
     with environ({"ASSET_BACKFILL_CURSOR_DELAY_TIME": "0"}):
-        result = execute_asset_backfill_iteration_inner(
-            backfill_id=backfill_id,
-            asset_backfill_data=asset_backfill_data,
-            asset_graph_view=_get_asset_graph_view(
+        previous_data = asset_backfill_data.get_computation_data(
+            _get_asset_graph_view(
                 instance, asset_graph, asset_backfill_data.backfill_start_datetime
             ),
-            backfill_start_timestamp=asset_backfill_data.backfill_start_timestamp,
-            logger=logging.getLogger("fake_logger"),
+            backfill_id,
+        )
+        result = execute_asset_backfill_iteration_inner(
+            previous_data, logging.getLogger("fake_logger")
         )
         assert counter.counts().get("DagsterInstance.get_dynamic_partitions", 0) <= 1
         return result
@@ -1616,17 +1613,13 @@ def run_backfill_to_completion(
 
     asset_graph_view = _get_asset_graph_view(instance, asset_graph)
 
-    initial_subset = AssetGraphSubset.from_asset_partition_set(
-        set(fail_asset_partitions), asset_graph
+    initial_subset = AssetGraphSubsetView.from_asset_partitions(
+        asset_graph_view, set(fail_asset_partitions)
     )
-    fail_and_downstream_asset_graph_subset = AssetGraphSubset.from_entity_subsets(
-        asset_graph_view.compute_downstream_subsets(
-            list(asset_graph_view.iterate_asset_subsets(initial_subset))
-        )
-    )
+    fail_and_downstream_asset_graph_subset = initial_subset.compute_downstream_subset()
 
     fail_and_downstream_asset_partitions = set(
-        fail_and_downstream_asset_graph_subset.iterate_asset_partitions()
+        fail_and_downstream_asset_graph_subset.to_asset_graph_subset().iterate_asset_partitions()
     )
 
     while not backfill_is_complete(
@@ -2174,16 +2167,11 @@ def test_asset_backfill_cancellation():
     assert len(instance.get_runs()) == 1
 
     canceling_backfill_data = None
-    canceling_backfill_data = get_canceling_asset_backfill_iteration_data(
+    data = asset_backfill_data.get_computation_data(
+        _get_asset_graph_view(instance, asset_graph, backfill_start_datetime),
         backfill_id,
-        asset_backfill_data,
-        _get_asset_graph_view(
-            instance,
-            asset_graph,
-            backfill_start_datetime,
-        ),
-        backfill_start_datetime.timestamp(),
     )
+    canceling_backfill_data = get_canceling_asset_backfill_iteration_data(data)
 
     assert isinstance(canceling_backfill_data, AssetBackfillData)
 
@@ -2260,10 +2248,10 @@ def test_asset_backfill_cancels_without_fetching_downstreams_of_failed_partition
 
     canceling_backfill_data = None
     canceling_backfill_data = get_canceling_asset_backfill_iteration_data(
-        backfill_id,
-        asset_backfill_data,
-        _get_asset_graph_view(instance, asset_graph, backfill_start_datetime),
-        backfill_start_datetime.timestamp(),
+        asset_backfill_data.get_computation_data(
+            _get_asset_graph_view(instance, asset_graph, backfill_start_datetime),
+            backfill_id,
+        )
     )
 
     assert isinstance(canceling_backfill_data, AssetBackfillData)
