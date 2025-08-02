@@ -43,7 +43,6 @@ from dagster._core.errors import (
     DagsterInvalidInvocationError,
     DagsterInvariantViolationError,
 )
-from dagster._core.execution.retries import auto_reexecution_should_retry_run
 from dagster._core.instance.assets import asset_implementation
 from dagster._core.instance.config import (
     DAGSTER_CONFIG_YAML_FILENAME,
@@ -52,18 +51,14 @@ from dagster._core.instance.config import (
     get_default_tick_retention_settings,
     get_tick_retention_settings,
 )
+from dagster._core.instance.events import event_implementation
 from dagster._core.instance.ref import InstanceRef
 from dagster._core.instance.types import (
     DynamicPartitionsStore,
     InstanceType,
     _EventListenerLogHandler,
 )
-from dagster._core.instance.utils import (
-    RUNLESS_JOB_NAME,
-    RUNLESS_RUN_ID,
-    _get_event_batch_size,
-    _is_batch_writing_enabled,
-)
+from dagster._core.instance.utils import RUNLESS_JOB_NAME, RUNLESS_RUN_ID
 from dagster._core.origin import JobPythonOrigin
 from dagster._core.storage.dagster_run import (
     IN_PROGRESS_RUN_STATUSES,
@@ -76,10 +71,9 @@ from dagster._core.storage.dagster_run import (
     RunsFilter,
     TagBucket,
 )
-from dagster._core.storage.tags import RUN_FAILURE_REASON_TAG, WILL_RETRY_TAG
 from dagster._core.types.pagination import PaginatedResults
 from dagster._serdes import ConfigurableClass
-from dagster._time import datetime_from_timestamp, get_current_timestamp
+from dagster._time import get_current_timestamp
 from dagster._utils import PrintFn, traced
 from dagster._utils.error import serializable_error_info_from_exc_info
 from dagster._utils.warnings import beta_warning
@@ -1079,6 +1073,12 @@ class DagsterInstance(DynamicPartitionsStore):
 
         return AssetInstanceOps(self)
 
+    @cached_property
+    def _event_ops(self):
+        from dagster._core.instance.events.event_instance_ops import EventInstanceOps
+
+        return EventInstanceOps(self)
+
     def create_run(
         self,
         *,
@@ -1292,12 +1292,7 @@ class DagsterInstance(DynamicPartitionsStore):
         of_type: Optional["DagsterEventType"] = None,
         limit: Optional[int] = None,
     ) -> Sequence["EventLogEntry"]:
-        return self._event_storage.get_logs_for_run(
-            run_id,
-            cursor=cursor,
-            of_type=of_type,
-            limit=limit,
-        )
+        return event_implementation.logs_after(self._event_ops, run_id, cursor, of_type, limit)
 
     @traced
     def all_logs(
@@ -1305,7 +1300,7 @@ class DagsterInstance(DynamicPartitionsStore):
         run_id: str,
         of_type: Optional[Union["DagsterEventType", set["DagsterEventType"]]] = None,
     ) -> Sequence["EventLogEntry"]:
-        return self._event_storage.get_logs_for_run(run_id, of_type=of_type)
+        return event_implementation.all_logs(self._event_ops, run_id, of_type)
 
     @traced
     def get_records_for_run(
@@ -1316,13 +1311,15 @@ class DagsterInstance(DynamicPartitionsStore):
         limit: Optional[int] = None,
         ascending: bool = True,
     ) -> "EventLogConnection":
-        return self._event_storage.get_records_for_run(run_id, cursor, of_type, limit, ascending)
+        return event_implementation.get_records_for_run(
+            self._event_ops, run_id, cursor, of_type, limit, ascending
+        )
 
     def watch_event_logs(self, run_id: str, cursor: Optional[str], cb: "EventHandlerFn") -> None:
-        return self._event_storage.watch(run_id, cursor, cb)
+        return event_implementation.watch_event_logs(self._event_ops, run_id, cursor, cb)
 
     def end_watch_event_logs(self, run_id: str, cb: "EventHandlerFn") -> None:
-        return self._event_storage.end_watch(run_id, cb)
+        return event_implementation.end_watch_event_logs(self._event_ops, run_id, cb)
 
     # asset storage
 
@@ -1447,7 +1444,9 @@ class DagsterInstance(DynamicPartitionsStore):
                 "Use fetch_run_status_changes instead of get_event_records to fetch run status change events."
             )
 
-        return self._event_storage.get_event_records(event_records_filter, limit, ascending)
+        return event_implementation.get_event_records(
+            self._event_ops, event_records_filter, limit, ascending
+        )
 
     @public
     @traced
@@ -1874,18 +1873,10 @@ class DagsterInstance(DynamicPartitionsStore):
         return handlers
 
     def should_store_event(self, event: "EventLogEntry") -> bool:
-        if (
-            event.dagster_event is not None
-            and event.dagster_event.is_asset_failed_to_materialize
-            and not self._event_storage.can_store_asset_failure_events
-        ):
-            return False
-        return True
+        return event_implementation.should_store_event(self._event_ops, event)
 
     def store_event(self, event: "EventLogEntry") -> None:
-        if not self.should_store_event(event):
-            return
-        self._event_storage.store_event(event)
+        event_implementation.store_event(self._event_ops, event)
 
     def handle_new_event(
         self,
@@ -1907,72 +1898,12 @@ class DagsterInstance(DynamicPartitionsStore):
             event (EventLogEntry): The event to handle.
             batch_metadata (Optional[DagsterEventBatchMetadata]): Metadata for batch writing.
         """
-        from dagster._core.events import RunFailureReason
-
-        if not self.should_store_event(event):
-            return
-
-        if batch_metadata is None or not _is_batch_writing_enabled():
-            events = [event]
-        else:
-            batch_id, is_batch_end = batch_metadata.id, batch_metadata.is_end
-            self._event_buffer[batch_id].append(event)
-            if is_batch_end or len(self._event_buffer[batch_id]) == _get_event_batch_size():
-                events = self._event_buffer[batch_id]
-                del self._event_buffer[batch_id]
-            else:
-                return
-
-        if len(events) == 1:
-            self._event_storage.store_event(events[0])
-        else:
-            try:
-                self._event_storage.store_event_batch(events)
-
-            # Fall back to storing events one by one if writing a batch fails. We catch a generic
-            # Exception because that is the parent class of the actually received error,
-            # dagster_cloud_cli.core.errors.GraphQLStorageError, which we cannot import here due to
-            # it living in a cloud package.
-            except Exception as e:
-                sys.stderr.write(f"Exception while storing event batch: {e}\n")
-                sys.stderr.write(
-                    "Falling back to storing multiple single-event storage requests...\n"
-                )
-                for event in events:
-                    self._event_storage.store_event(event)
-
-        for event in events:
-            run_id = event.run_id
-            if (
-                not self._event_storage.handles_run_events_in_store_event
-                and event.is_dagster_event
-                and event.get_dagster_event().is_job_event
-            ):
-                self._run_storage.handle_run_event(
-                    run_id, event.get_dagster_event(), datetime_from_timestamp(event.timestamp)
-                )
-                run = self.get_run_by_id(run_id)
-                if run and event.get_dagster_event().is_run_failure and self.run_retries_enabled:
-                    # Note that this tag is only applied to runs that fail. Successful runs will not
-                    # have a WILL_RETRY_TAG tag.
-                    run_failure_reason = (
-                        RunFailureReason(run.tags.get(RUN_FAILURE_REASON_TAG))
-                        if run.tags.get(RUN_FAILURE_REASON_TAG)
-                        else None
-                    )
-                    self.add_run_tags(
-                        run_id,
-                        {
-                            WILL_RETRY_TAG: str(
-                                auto_reexecution_should_retry_run(self, run, run_failure_reason)
-                            ).lower()
-                        },
-                    )
-            for sub in self._subscribers[run_id]:
-                sub(event)
+        return event_implementation.handle_new_event(
+            self._event_ops, event, batch_metadata=batch_metadata
+        )
 
     def add_event_listener(self, run_id: str, cb) -> None:
-        self._subscribers[run_id].append(cb)
+        event_implementation.add_event_listener(self._event_ops, run_id, cb)
 
     def report_engine_event(
         self,
@@ -1985,45 +1916,16 @@ class DagsterInstance(DynamicPartitionsStore):
         run_id: Optional[str] = None,
     ) -> "DagsterEvent":
         """Report a EngineEvent that occurred outside of a job execution context."""
-        from dagster._core.events import DagsterEvent, DagsterEventType, EngineEventData
-
-        check.opt_class_param(cls, "cls")
-        check.str_param(message, "message")
-        check.opt_inst_param(dagster_run, "dagster_run", DagsterRun)
-        check.opt_str_param(run_id, "run_id")
-        check.opt_str_param(job_name, "job_name")
-
-        check.invariant(
-            dagster_run or (job_name and run_id),
-            "Must include either dagster_run or job_name and run_id",
-        )
-
-        run_id = run_id if run_id else dagster_run.run_id  # type: ignore
-        job_name = job_name if job_name else dagster_run.job_name  # type: ignore
-
-        engine_event_data = check.opt_inst_param(
+        return event_implementation.report_engine_event(
+            self._event_ops,
+            message,
+            dagster_run,
             engine_event_data,
-            "engine_event_data",
-            EngineEventData,
-            EngineEventData({}),
+            cls,
+            step_key,
+            job_name,
+            run_id,
         )
-
-        if cls:
-            message = f"[{cls.__name__}] {message}"
-
-        log_level = logging.INFO
-        if engine_event_data and engine_event_data.error:
-            log_level = logging.ERROR
-
-        dagster_event = DagsterEvent(
-            event_type_value=DagsterEventType.ENGINE_EVENT.value,
-            job_name=job_name,
-            message=message,
-            event_specific_data=engine_event_data,
-            step_key=step_key,
-        )
-        self.report_dagster_event(dagster_event, run_id=run_id, log_level=log_level)
-        return dagster_event
 
     def report_dagster_event(
         self,
@@ -2034,58 +1936,21 @@ class DagsterInstance(DynamicPartitionsStore):
         timestamp: Optional[float] = None,
     ) -> None:
         """Takes a DagsterEvent and stores it in persistent storage for the corresponding DagsterRun."""
-        from dagster._core.events.log import EventLogEntry
-
-        event_record = EventLogEntry(
-            user_message="",
-            level=log_level,
-            job_name=dagster_event.job_name,
-            run_id=run_id,
-            error_info=None,
-            timestamp=timestamp or get_current_timestamp(),
-            step_key=dagster_event.step_key,
-            dagster_event=dagster_event,
+        event_implementation.report_dagster_event(
+            self._event_ops, dagster_event, run_id, log_level, batch_metadata, timestamp
         )
-        self.handle_new_event(event_record, batch_metadata=batch_metadata)
 
     def report_run_canceling(self, run: DagsterRun, message: Optional[str] = None):
-        from dagster._core.events import DagsterEvent, DagsterEventType
-
-        check.inst_param(run, "run", DagsterRun)
-        message = check.opt_str_param(
-            message,
-            "message",
-            "Sending run termination request.",
-        )
-        canceling_event = DagsterEvent(
-            event_type_value=DagsterEventType.PIPELINE_CANCELING.value,
-            job_name=run.job_name,
-            message=message,
-        )
-        self.report_dagster_event(canceling_event, run_id=run.run_id)
+        """Delegate to event_implementation."""
+        return event_implementation.report_run_canceling(self._event_ops, run, message)
 
     def report_run_canceled(
         self,
         dagster_run: DagsterRun,
         message: Optional[str] = None,
     ) -> "DagsterEvent":
-        from dagster._core.events import DagsterEvent, DagsterEventType
-
-        check.inst_param(dagster_run, "dagster_run", DagsterRun)
-
-        message = check.opt_str_param(
-            message,
-            "mesage",
-            "This run has been marked as canceled from outside the execution context.",
-        )
-
-        dagster_event = DagsterEvent(
-            event_type_value=DagsterEventType.PIPELINE_CANCELED.value,
-            job_name=dagster_run.job_name,
-            message=message,
-        )
-        self.report_dagster_event(dagster_event, run_id=dagster_run.run_id, log_level=logging.ERROR)
-        return dagster_event
+        """Delegate to event_implementation."""
+        return event_implementation.report_run_canceled(self._event_ops, dagster_run, message)
 
     def report_run_failed(
         self,
@@ -2093,24 +1958,10 @@ class DagsterInstance(DynamicPartitionsStore):
         message: Optional[str] = None,
         job_failure_data: Optional["JobFailureData"] = None,
     ) -> "DagsterEvent":
-        from dagster._core.events import DagsterEvent, DagsterEventType
-
-        check.inst_param(dagster_run, "dagster_run", DagsterRun)
-
-        message = check.opt_str_param(
-            message,
-            "message",
-            "This run has been marked as failed from outside the execution context.",
+        """Delegate to event_implementation."""
+        return event_implementation.report_run_failed(
+            self._event_ops, dagster_run, message, job_failure_data
         )
-
-        dagster_event = DagsterEvent(
-            event_type_value=DagsterEventType.PIPELINE_FAILURE.value,
-            job_name=dagster_run.job_name,
-            message=message,
-            event_specific_data=job_failure_data,
-        )
-        self.report_dagster_event(dagster_event, run_id=dagster_run.run_id, log_level=logging.ERROR)
-        return dagster_event
 
     # directories
 
