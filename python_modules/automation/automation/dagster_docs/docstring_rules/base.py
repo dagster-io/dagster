@@ -1,10 +1,44 @@
-"""Base classes and functional interface for validation rules."""
+"""Base classes and functional interface for validation rules.
+
+This module provides the core types and patterns for creating custom validation rules:
+
+1. **Functional Rules** (Recommended):
+   ```python
+   def create_my_validator(enabled: bool = True) -> ValidationFunction:
+       def validator(context: ValidationContext, result: ValidationResult) -> ValidationResult:
+           if not enabled:
+               return result
+           # Your validation logic here
+           if error_condition:
+               result = result.with_error("Error message", line_number)
+           return result
+       return validator
+   ```
+
+2. **Class-Based Rules** (For complex state):
+   ```python
+   class MyValidationRule(ValidationRule):
+       def _validate_impl(self, context, result):
+           # Validation logic with access to self
+           return result
+   ```
+
+3. **Error vs Warning Guidelines**:
+   - Use errors for: Syntax errors, broken references, critical formatting
+   - Use warnings for: Style issues, potential problems, best practices
+
+4. **Performance Tips**:
+   - Put faster rules first in the pipeline
+   - Cache expensive operations (regex compilation, file reads)
+   - Return immediately if validation cannot proceed
+"""
 
 from typing import Callable, Optional
 
 from dagster_shared.record import record
 
-# Functional validation interface
+# Functional validation interface - preferred pattern for most rules
+# Pure functions are composable, testable, and easy to configure
 ValidationFunction = Callable[["ValidationContext", "ValidationResult"], "ValidationResult"]
 
 

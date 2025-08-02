@@ -1,4 +1,22 @@
-"""Core docstring validation logic using Sphinx parsing pipeline."""
+"""Core docstring validation logic using Sphinx parsing pipeline.
+
+This module provides the main validation functions used by the CLI:
+- validate_docstring_text(): Core validation function for raw docstring text
+- validate_symbol_docstring(): Symbol-based validation with dynamic import
+- SymbolImporter: Utilities for dynamic symbol importing and metadata extraction
+
+Validation Pipeline:
+1. Import Phase: Load symbol and extract metadata
+2. Napoleon Processing: Convert Google-style docstrings to RST using Sphinx
+3. Rule Application: Apply validation rules in sequence (see docstring_rules/)
+4. Result Aggregation: Collect errors and warnings
+
+To add new validation rules:
+1. Create rule in docstring_rules/ following the functional pattern
+2. Import and add to the validators list in validate_docstring_text()
+
+Rule execution order is important - put faster rules first.
+"""
 
 # Import the is_public function to check for @public decorator
 import importlib
