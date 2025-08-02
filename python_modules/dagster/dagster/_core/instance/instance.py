@@ -545,7 +545,7 @@ class DagsterInstance(DynamicPartitionsStore):
 
     def schema_str(self) -> str:
         def _schema_dict(
-            alembic_version: "AlembicVersion",
+            alembic_version: Optional["AlembicVersion"],
         ) -> Optional[Mapping[str, object]]:
             if not alembic_version:
                 return None
@@ -558,9 +558,9 @@ class DagsterInstance(DynamicPartitionsStore):
         return yaml.dump(
             {
                 "schema": {
-                    "event_log_storage": _schema_dict(self._event_storage.alembic_version()),  # type: ignore  # (possible none)
-                    "run_storage": _schema_dict(self._event_storage.alembic_version()),  # type: ignore  # (possible none)
-                    "schedule_storage": _schema_dict(self._event_storage.alembic_version()),  # type: ignore  # (possible none)
+                    "event_log_storage": _schema_dict(self._event_storage.alembic_version()),
+                    "run_storage": _schema_dict(self._event_storage.alembic_version()),
+                    "schedule_storage": _schema_dict(self._event_storage.alembic_version()),
                 }
             },
             default_flow_style=False,
@@ -2130,9 +2130,9 @@ class DagsterInstance(DynamicPartitionsStore):
 
     def __exit__(
         self,
-        exception_type: Optional[type[BaseException]],
-        exception_value: Optional[BaseException],
-        traceback: Optional[TracebackType],
+        _exception_type: Optional[type[BaseException]],
+        _exception_value: Optional[BaseException],
+        _traceback: Optional[TracebackType],
     ) -> None:
         self.dispose()
 
@@ -2327,6 +2327,7 @@ class DagsterInstance(DynamicPartitionsStore):
             "AssetObservation",
             "AssetCheckEvaluation",
             "FreshnessStateEvaluation",
+            "FreshnessStateChange",
         ],
     ):
         """Record an event log entry related to assets that does not belong to a Dagster run."""
@@ -2339,11 +2340,12 @@ class DagsterInstance(DynamicPartitionsStore):
                 AssetObservation,
                 AssetCheckEvaluation,
                 FreshnessStateEvaluation,
+                FreshnessStateChange,
             ),
         ):
             raise DagsterInvariantViolationError(
                 f"Received unexpected asset event type {asset_event}, expected"
-                " AssetMaterialization, AssetObservation, AssetCheckEvaluation or FreshnessStateEvaluation"
+                " AssetMaterialization, AssetObservation, AssetCheckEvaluation, FreshnessStateEvaluation, or FreshnessStateChange"
             )
 
         return self._report_runless_asset_event(asset_event)
@@ -2423,7 +2425,7 @@ class DagsterInstance(DynamicPartitionsStore):
     def dagster_asset_health_queries_supported(self) -> bool:
         return False
 
-    def can_read_failure_events_for_asset(self, asset_record: "AssetRecord") -> bool:
+    def can_read_failure_events_for_asset(self, _asset_record: "AssetRecord") -> bool:
         return False
 
     def can_read_asset_failure_events(self) -> bool:
@@ -2439,16 +2441,16 @@ class DagsterInstance(DynamicPartitionsStore):
         return False
 
     def get_asset_check_health_state_for_assets(
-        self, asset_keys: Sequence[AssetKey]
+        self, _asset_keys: Sequence[AssetKey]
     ) -> Optional[Mapping[AssetKey, Optional["AssetCheckHealthState"]]]:
         return None
 
     def get_asset_freshness_health_state_for_assets(
-        self, asset_keys: Sequence[AssetKey]
+        self, _asset_keys: Sequence[AssetKey]
     ) -> Optional[Mapping[AssetKey, Optional["AssetFreshnessHealthState"]]]:
         return None
 
     def get_asset_materialization_health_state_for_assets(
-        self, asset_keys: Sequence[AssetKey]
+        self, _asset_keys: Sequence[AssetKey]
     ) -> Optional[Mapping[AssetKey, Optional["AssetMaterializationHealthState"]]]:
         return None
