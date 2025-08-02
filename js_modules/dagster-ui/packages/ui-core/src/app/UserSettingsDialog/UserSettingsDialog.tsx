@@ -16,6 +16,7 @@ import {FeatureFlag} from 'shared/app/FeatureFlags.oss';
 import {UserPreferences} from 'shared/app/UserSettingsDialog/UserPreferences.oss';
 
 import {CodeLinkProtocolSelect} from '../../code-links/CodeLinkProtocol';
+import {CustomKindIconMappingEditor} from '../../graph/CustomKindIcons';
 import {showCustomAlert} from '../CustomAlertProvider';
 import {
   getFeatureFlagDefaults,
@@ -133,6 +134,37 @@ const UserSettingsDialogContent = ({onClose, visibleFlags}: DialogContentProps) 
         </Tooltip>
       </Box>
       <CodeLinkProtocolSelect />
+    </Box>,
+  );
+
+  experimentalSettings.push(
+    <Box
+      padding={{vertical: 8}}
+      flex={{
+        justifyContent: 'space-between',
+        alignItems: 'flex-start',
+        direction: 'column',
+        gap: 8,
+      }}
+      key="custom-kind-icon-mapping"
+    >
+      <Box flex={{direction: 'row', gap: 4, alignItems: 'center'}}>
+        Custom kind icon mapping
+        <Tooltip
+          content={
+            <>
+              Allows translating asset kinds to custom SVG icons. Provide a base64 url
+              <br />
+              &quot;data:image/svg+xml;base64,PHN2Z...c3ZnPg==&quot; or a svg url
+              <br />
+              &quot;https://example.com/icon.svg&quot;
+            </>
+          }
+        >
+          <Icon name="info" color={Colors.accentGray()} />
+        </Tooltip>
+      </Box>
+      <CustomKindIconMappingEditor />
     </Box>,
   );
 
