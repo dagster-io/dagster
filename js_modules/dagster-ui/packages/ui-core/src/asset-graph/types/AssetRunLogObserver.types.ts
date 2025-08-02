@@ -69,6 +69,7 @@ export type AssetLiveRunLogsSubscription = {
           | {__typename: 'RunStartEvent'}
           | {__typename: 'RunStartingEvent'}
           | {__typename: 'RunSuccessEvent'}
+          | {__typename: 'RunSuccessWithWarningsEvent'}
           | {__typename: 'StepExpectationResultEvent'}
           | {__typename: 'StepWorkerStartedEvent'}
           | {__typename: 'StepWorkerStartingEvent'}

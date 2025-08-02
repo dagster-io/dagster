@@ -18,6 +18,7 @@ const StateColors = {
   FAILURE: Colors.accentRed(),
   SKIPPED: Colors.accentGray(),
   IN_PROGRESS: Colors.accentBlue(),
+  SUCCESS_WITH_WARNINGS: Colors.accentYellow(),
 };
 
 export const SidebarOpExecutionGraphs = ({

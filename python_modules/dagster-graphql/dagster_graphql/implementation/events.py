@@ -265,6 +265,7 @@ def from_dagster_event_record(event_record: EventLogEntry, pipeline_name: str) -
         GrapheneRunStartEvent,
         GrapheneRunStartingEvent,
         GrapheneRunSuccessEvent,
+        GrapheneRunSuccessWithWarningsEvent,
         GrapheneStepExpectationResultEvent,
         GrapheneStepWorkerStartedEvent,
         GrapheneStepWorkerStartingEvent,
@@ -376,9 +377,14 @@ def from_dagster_event_record(event_record: EventLogEntry, pipeline_name: str) -
     ):
         return GrapheneRunSuccessEvent(pipelineName=pipeline_name, **basic_params)
     elif dagster_event.event_type in (
+        DagsterEventType.RUN_SUCCESS_WITH_WARNINGS,
+        DagsterEventType.PIPELINE_SUCCESS_WITH_WARNINGS,
+    ):
+        return GrapheneRunSuccessWithWarningsEvent(pipelineName=pipeline_name, **basic_params)
+    elif dagster_event.event_type in (
         DagsterEventType.RUN_FAILURE,
         DagsterEventType.PIPELINE_FAILURE,
-    ):
+    ):    
         data = dagster_event.job_failure_data
         return GrapheneRunFailureEvent(
             pipelineName=pipeline_name,

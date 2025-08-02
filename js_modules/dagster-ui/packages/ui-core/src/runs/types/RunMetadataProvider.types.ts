@@ -489,6 +489,13 @@ export type RunMetadataProviderMessageFragment_RunSuccessEvent = {
   stepKey: string | null;
 };
 
+export type RunMetadataProviderMessageFragment_RunSuccessWithWarningsEvent = {
+  __typename: 'RunSuccessWithWarningsEvent';
+  message: string;
+  timestamp: string;
+  stepKey: string | null;
+};
+
 export type RunMetadataProviderMessageFragment_StepExpectationResultEvent = {
   __typename: 'StepExpectationResultEvent';
   message: string;
@@ -553,6 +560,7 @@ export type RunMetadataProviderMessageFragment =
   | RunMetadataProviderMessageFragment_RunStartEvent
   | RunMetadataProviderMessageFragment_RunStartingEvent
   | RunMetadataProviderMessageFragment_RunSuccessEvent
+  | RunMetadataProviderMessageFragment_RunSuccessWithWarningsEvent
   | RunMetadataProviderMessageFragment_StepExpectationResultEvent
   | RunMetadataProviderMessageFragment_StepWorkerStartedEvent
   | RunMetadataProviderMessageFragment_StepWorkerStartingEvent;

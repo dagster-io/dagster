@@ -2894,6 +2894,15 @@ export type LogsScrollingTableMessageFragment_RunSuccessEvent = {
   stepKey: string | null;
 };
 
+export type LogsScrollingTableMessageFragment_RunSuccessWithWarningsEvent = {
+  __typename: 'RunSuccessWithWarningsEvent';
+  message: string;
+  eventType: Types.DagsterEventType | null;
+  timestamp: string;
+  level: Types.LogLevel;
+  stepKey: string | null;
+};
+
 export type LogsScrollingTableMessageFragment_StepExpectationResultEvent = {
   __typename: 'StepExpectationResultEvent';
   message: string;
@@ -3423,6 +3432,7 @@ export type LogsScrollingTableMessageFragment =
   | LogsScrollingTableMessageFragment_RunStartEvent
   | LogsScrollingTableMessageFragment_RunStartingEvent
   | LogsScrollingTableMessageFragment_RunSuccessEvent
+  | LogsScrollingTableMessageFragment_RunSuccessWithWarningsEvent
   | LogsScrollingTableMessageFragment_StepExpectationResultEvent
   | LogsScrollingTableMessageFragment_StepWorkerStartedEvent
   | LogsScrollingTableMessageFragment_StepWorkerStartingEvent;

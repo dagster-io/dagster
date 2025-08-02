@@ -125,6 +125,11 @@ class GrapheneRunSuccessEvent(graphene.ObjectType):
         interfaces = (GrapheneMessageEvent, GrapheneRunEvent)
         name = "RunSuccessEvent"
 
+class GrapheneRunSuccessWithWarningsEvent(graphene.ObjectType):
+    class Meta:
+        interfaces = (GrapheneMessageEvent, GrapheneRunEvent)
+        name = "RunSuccessWithWarningsEvent"
+
 
 class GrapheneRunFailureEvent(graphene.ObjectType):
     class Meta:
@@ -661,6 +666,7 @@ class GrapheneDagsterRunEvent(graphene.Union):
             GrapheneRunCancelingEvent,
             GrapheneRunCanceledEvent,
             GrapheneRunSuccessEvent,
+            GrapheneRunSuccessWithWarningsEvent,
             GrapheneStepWorkerStartedEvent,
             GrapheneStepWorkerStartingEvent,
             GrapheneHandledOutputEvent,

@@ -73,6 +73,8 @@ class DagsterRunStatus(Enum):
     # Runs that have been canceled before completion.
     CANCELED = "CANCELED"
 
+    SUCCESS_WITH_WARNINGS = "SUCCESS_WITH_WARNINGS"
+
 
 # These statuses that indicate a run may be using compute resources
 IN_PROGRESS_RUN_STATUSES = [
@@ -90,12 +92,14 @@ NON_IN_PROGRESS_RUN_STATUSES = [
     DagsterRunStatus.FAILURE,
     DagsterRunStatus.MANAGED,
     DagsterRunStatus.CANCELED,
+    DagsterRunStatus.SUCCESS_WITH_WARNINGS,
 ]
 
 FINISHED_STATUSES = [
     DagsterRunStatus.SUCCESS,
     DagsterRunStatus.FAILURE,
     DagsterRunStatus.CANCELED,
+    DagsterRunStatus.SUCCESS_WITH_WARNINGS,
 ]
 
 NOT_FINISHED_STATUSES = [
@@ -525,6 +529,12 @@ class DagsterRun(
     def is_success(self) -> bool:
         """bool: If this run has successfully finished executing."""
         return self.status == DagsterRunStatus.SUCCESS
+
+    @public
+    @property
+    def is_success_with_warnings(self) -> bool:
+        """bool: If this run has successfully finished executing with warnings."""
+        return self.status == DagsterRunStatus.SUCCESS_WITH_WARNINGS
 
     @public
     @property

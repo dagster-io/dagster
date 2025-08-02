@@ -36,6 +36,8 @@ const calculateDisplayStatus = (partition: SchedulePartitionStatusResultFragment
     case RunStatus.STARTED:
     case RunStatus.STARTING:
       return 'Pending';
+    case RunStatus.SUCCESS_WITH_WARNINGS:
+      return 'Warning';
     default:
       return assertUnreachable(partition.runStatus);
   }

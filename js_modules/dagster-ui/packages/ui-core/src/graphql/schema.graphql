@@ -36,11 +36,13 @@ enum DagsterEventType {
   STEP_START
   STEP_SUCCESS
   STEP_SKIPPED
+  STEP_SUCCESS_WITH_WARNINGS
   STEP_WORKER_STARTING
   STEP_WORKER_STARTED
   RESOURCE_INIT_STARTED
   RESOURCE_INIT_SUCCESS
   RESOURCE_INIT_FAILURE
+  RESOURCE_INIT_SUCCESS_WITH_WARNINGS
   STEP_UP_FOR_RETRY
   STEP_RESTARTED
   ASSET_MATERIALIZATION
@@ -60,6 +62,7 @@ enum DagsterEventType {
   RUN_FAILURE
   RUN_CANCELING
   RUN_CANCELED
+  RUN_SUCCESS_WITH_WARNINGS
   PIPELINE_ENQUEUED
   PIPELINE_DEQUEUED
   PIPELINE_STARTING
@@ -68,6 +71,7 @@ enum DagsterEventType {
   PIPELINE_FAILURE
   PIPELINE_CANCELING
   PIPELINE_CANCELED
+  PIPELINE_SUCCESS_WITH_WARNINGS
   OBJECT_STORE_OPERATION
   ASSET_STORE_OPERATION
   LOADED_INPUT
@@ -79,6 +83,7 @@ enum DagsterEventType {
   ALERT_START
   ALERT_SUCCESS
   ALERT_FAILURE
+  ALERT_SUCCESS_WITH_WARNINGS
   LOGS_CAPTURED
   FRESHNESS_STATE_EVALUATION
   FRESHNESS_STATE_CHANGE
@@ -392,6 +397,7 @@ enum StepEventStatus {
   SUCCESS
   FAILURE
   IN_PROGRESS
+  SUCCESS_WITH_WARNINGS
 }
 
 type ResourceInitFailureEvent implements MessageEvent & DisplayableEvent & StepEvent & MarkerEvent & ErrorEvent {
@@ -1409,6 +1415,7 @@ union DagsterRunEvent =
   | RunCancelingEvent
   | RunCanceledEvent
   | RunSuccessEvent
+  | RunSuccessWithWarningsEvent
   | StepWorkerStartedEvent
   | StepWorkerStartingEvent
   | HandledOutputEvent
@@ -1446,6 +1453,17 @@ type HealthChangedEvent implements MessageEvent & StepEvent & DisplayableEvent {
   stepStats: RunStepStats!
   partition: String
   tags: [EventTag!]!
+}
+
+type RunSuccessWithWarningsEvent implements MessageEvent & RunEvent {
+  runId: String!
+  message: String!
+  timestamp: String!
+  level: LogLevel!
+  stepKey: String
+  solidHandleID: String
+  eventType: DagsterEventType
+  pipelineName: String!
 }
 
 type LogsCapturedEvent implements MessageEvent {
@@ -1583,6 +1601,7 @@ enum RunStatus {
   FAILURE
   CANCELING
   CANCELED
+  SUCCESS_WITH_WARNINGS
 }
 
 type PipelineSnapshot implements SolidContainer & IPipelineSnapshot & PipelineReference {
@@ -3291,6 +3310,16 @@ type RunGroup {
 }
 
 union RunGroupOrError = RunGroup | RunGroupNotFoundError | PythonError
+
+interface LaunchPipelineRunSuccessWithWarnings {
+  run: Run!
+  warnings: [String!]
+}
+
+type LaunchRunSuccessWithWarnings implements LaunchPipelineRunSuccessWithWarnings {
+  run: Run!
+  warnings: [String!]
+}
 
 type RunGroups {
   results: [RunGroup!]!

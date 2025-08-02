@@ -37,6 +37,8 @@ export const eventTypeToDisplayType = (eventType: string) => {
       return DagsterEventType.RUN_CANCELING;
     case DagsterEventType.PIPELINE_CANCELED:
       return DagsterEventType.RUN_CANCELED;
+    case DagsterEventType.PIPELINE_SUCCESS_WITH_WARNINGS:
+      return DagsterEventType.RUN_SUCCESS_WITH_WARNINGS
 
     default:
       return eventType;

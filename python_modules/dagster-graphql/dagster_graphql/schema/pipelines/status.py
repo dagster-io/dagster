@@ -14,6 +14,7 @@ class GrapheneRunStatus(graphene.Enum):
     FAILURE = "FAILURE"
     CANCELING = "CANCELING"
     CANCELED = "CANCELED"
+    SUCCESS_WITH_WARNINGS = "SUCCESS_WITH_WARNINGS"
 
     class Meta:
         name = "RunStatus"
@@ -38,5 +39,7 @@ class GrapheneRunStatus(graphene.Enum):
             return "Runs that are in-progress and pending to be canceled."
         elif self == GrapheneRunStatus.CANCELED:
             return "Runs that have been canceled before completion."
+        elif self == GrapheneRunStatus.SUCCESS_WITH_WARNINGS:
+            return "Runs that have successfully completed with warnings."
         else:
             check.failed(f"unhandled type {self}")
