@@ -12,12 +12,14 @@ from typing import Callable
 import yaml
 from dagster_shared import check
 
+from dagster._core.test_utils import environ
 from dagster.components.component_scaffolding import scaffold_object
 from dagster.components.core.component_tree import ComponentTree
 from dagster.components.scaffold.scaffold import ScaffoldFormatOptions
 
 """Testing utilities for components."""
 
+import os
 import tempfile
 from collections.abc import Iterator, Mapping
 from contextlib import contextmanager
@@ -318,11 +320,26 @@ def create_defs_folder_sandbox(
         project_root = Path(project_root_str)
         defs_folder_path = project_root / "src" / project_name / "defs"
         defs_folder_path.mkdir(parents=True, exist_ok=True)
-        yield DefsFolderSandbox(
-            project_root=project_root,
-            defs_folder_path=defs_folder_path,
-            project_name=project_name,
+        (project_root / "dg.toml").write_text(
+            textwrap.dedent(
+                """
+                [project]
+                root_module = "{project_name}"
+                defs_module = "{project_name}.defs"
+                """
+            ).format(project_name=project_name)
         )
+        python_path = os.getenv("PYTHONPATH", "")
+        updated_path = os.pathsep.join([python_path, str(project_root / "src")])
+        with (
+            environ({"PYTHONPATH": updated_path}),
+            alter_sys_path(to_add=[str(project_root / "src")], to_remove=[]),
+        ):
+            yield DefsFolderSandbox(
+                project_root=project_root,
+                defs_folder_path=defs_folder_path,
+                project_name=project_name,
+            )
 
 
 def copy_code_to_file(fn: Callable, file_path: Path) -> None:
