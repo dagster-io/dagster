@@ -181,6 +181,7 @@ def create_and_launch_partition_backfill(
             asset_selection=asset_selection,
             title=title,
             description=backfill_params.get("description"),
+            run_config=backfill_params.get("runConfig"),
         )
         assert_valid_job_partition_backfill(
             graphene_info,
@@ -237,6 +238,7 @@ def create_and_launch_partition_backfill(
             all_partitions=backfill_params.get("allPartitions", False),
             title=title,
             description=backfill_params.get("description"),
+            run_config=backfill_params.get("runConfig"),
         )
         assert_valid_asset_partition_backfill(
             graphene_info,
@@ -274,6 +276,7 @@ def create_and_launch_partition_backfill(
             partitions_by_assets=partitions_by_assets,
             title=title,
             description=backfill_params.get("description"),
+            run_config=backfill_params.get("runConfig"),
         )
         assert_valid_asset_partition_backfill(
             graphene_info,
@@ -388,6 +391,7 @@ def retry_partition_backfill(
             backfill_timestamp=get_current_timestamp(),
             title=f"Re-execution of {backfill.title}" if backfill.title else None,
             description=backfill.description,
+            run_config=backfill.run_config,
         )
     else:  # job backfill
         partition_set_origin = check.not_none(backfill.partition_set_origin)

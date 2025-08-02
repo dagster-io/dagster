@@ -141,6 +141,31 @@ def partitions_defs_changes_location_1_fixture(
         yield workspace_context
 
 
+def run_config_assets_workspace_1_load_target(attribute=None):
+    return InProcessTestWorkspaceLoadTarget(
+        InProcessCodeLocationOrigin(
+            loadable_target_origin=LoadableTargetOrigin(
+                executable_path=sys.executable,
+                module_name="dagster_tests.daemon_tests.test_locations.run_config_assets_workspace",
+                working_directory=os.getcwd(),
+                attribute=attribute,
+            ),
+            location_name="run_config_assets",
+        )
+    )
+
+
+@pytest.fixture(name="run_config_assets_workspace_context", scope="module")
+def run_config_assets_workspace_context(
+    instance_module_scoped,
+) -> Iterator[WorkspaceProcessContext]:
+    with create_test_daemon_workspace_context(
+        workspace_load_target=run_config_assets_workspace_1_load_target(),
+        instance=instance_module_scoped,
+    ) as workspace_context:
+        yield workspace_context
+
+
 def partitions_def_changes_workspace_2_load_target(attribute=None):
     return InProcessTestWorkspaceLoadTarget(
         InProcessCodeLocationOrigin(
