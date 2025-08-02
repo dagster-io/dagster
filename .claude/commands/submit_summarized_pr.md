@@ -7,7 +7,7 @@ This command integrates the logic from `write_pr_summary.md` into an automated w
 ## Steps performed:
 
 1. **Squash current branch**: Uses `gt squash --no-edit` to combine commits
-2. **Generate PR summary**: Uses the same logic as `write_pr_summary.md` 
+2. **Generate PR summary**: Uses the same logic as `write_pr_summary.md`
 3. **Update commit message**: Amends the commit with the generated summary
 4. **Create/update draft PR**: Uses `gt submit -n -d` to create a draft PR
 5. **Update PR title/body**: Uses `gh pr edit` to set the title and body
@@ -17,6 +17,7 @@ This command integrates the logic from `write_pr_summary.md` into an automated w
 Follows the PR summary template in `_pr_summary_template.md`.
 
 After generating the summary:
+
 - Extract the first sentence from the "Summary & Motivation" section as the PR title
 - Use the full summary as the PR body
 - Create/update the draft PR with this title and body
@@ -25,7 +26,7 @@ After generating the summary:
 
 - Must be run from within a git repository
 - Requires Graphite CLI (`gt`) to be installed
-- Requires GitHub CLI (`gh`) to be installed  
+- Requires GitHub CLI (`gh`) to be installed
 - Cannot be run on master/main branches
 - Current branch must be part of a Graphite stack
 
