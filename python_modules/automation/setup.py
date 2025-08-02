@@ -40,6 +40,7 @@ setup(
             "dagster-image = automation.docker.cli:main",
             "dagster-graphql-client = automation.graphql.python_client.cli:main",
             "dagster-docs = automation.dagster_docs:main",
+            "dagster-claude-commands = automation.dagster_claude_commands:main",
         ]
     },
 )
