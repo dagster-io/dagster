@@ -28,10 +28,8 @@ from dagster._core.definitions.selector import (
 )
 from dagster._core.errors import DagsterUserCodeUnreachableError
 from dagster._core.events import DagsterEventType
-from dagster._core.execution.asset_backfill import (
-    AssetBackfillData,
-    get_asset_backfill_run_chunk_size,
-)
+from dagster._core.execution.asset_backfill.asset_backfill import get_asset_backfill_run_chunk_size
+from dagster._core.execution.asset_backfill.asset_backfill_data import AssetBackfillData
 from dagster._core.execution.backfill import BulkActionStatus, PartitionBackfill
 from dagster._core.execution.plan.resume_retry import ReexecutionStrategy
 from dagster._core.remote_origin import InProcessCodeLocationOrigin, RemoteRepositoryOrigin
@@ -2924,11 +2922,14 @@ def test_asset_backfill_logging(caplog, instance, workspace_context):
 
     assert "Evaluating asset backfill backfill_with_multiple_assets_selected" in logs
     assert "DefaultPartitionsSubset(subset={'foo_b'})" in logs
-    assert "latest_storage_id=None" in logs
+    assert "latest_storage_id=0" in logs
     assert "AssetBackfillData" in logs
     assert (
         """Asset partitions to request:
-- asset_a: {foo_a}"""
+AssetGraphSubsetView(
+    EntitySubset<AssetKey(['asset_a'])>(DefaultPartitionsSubset(subset={'foo_a'})),
+)
+"""
         in logs
     )
 
@@ -2979,7 +2980,8 @@ None
 **Failed assets and their downstream assets:**
 None
 **Assets requested or in progress:**
-- always_fails:"""
+AssetGraphSubsetView(
+    EntitySubset<AssetKey(['always_fails'])>"""
         in logs
     )
 
@@ -3005,7 +3007,8 @@ None
 **Materialized assets:**
 None
 **Failed assets and their downstream assets:**
-- always_fails:"""
+AssetGraphSubsetView(
+    EntitySubset<AssetKey(['always_fails'])>(DefaultPartitionsSubset"""
     ) in logs
 
     assert (

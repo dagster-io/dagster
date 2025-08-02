@@ -6,7 +6,8 @@ import dagster as dg
 import pytest
 from dagster import BackfillPolicy, DagsterInstance
 from dagster._core.definitions.partitions.context import partition_loading_context
-from dagster._core.execution.asset_backfill import AssetBackfillData, AssetBackfillStatus
+from dagster._core.execution.asset_backfill.asset_backfill_data import AssetBackfillData
+from dagster._core.execution.asset_backfill.status import AssetBackfillStatus
 from dagster._core.storage.tags import (
     ASSET_PARTITION_RANGE_END_TAG,
     ASSET_PARTITION_RANGE_START_TAG,

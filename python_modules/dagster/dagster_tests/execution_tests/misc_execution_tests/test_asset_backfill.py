@@ -23,14 +23,13 @@ from dagster._core.definitions.assets.graph.base_asset_graph import BaseAssetGra
 from dagster._core.definitions.assets.graph.remote_asset_graph import RemoteWorkspaceAssetGraph
 from dagster._core.definitions.events import AssetKeyPartitionKey
 from dagster._core.definitions.partitions.context import partition_loading_context
-from dagster._core.execution.asset_backfill import (
-    AssetBackfillData,
+from dagster._core.execution.asset_backfill.asset_backfill import backfill_is_complete
+from dagster._core.execution.asset_backfill.asset_backfill_data import AssetBackfillData
+from dagster._core.execution.asset_backfill.asset_backfill_evaluator import (
+    AssetBackfillEvaluator,
     AssetBackfillIterationResult,
-    AssetBackfillStatus,
-    backfill_is_complete,
-    execute_asset_backfill_iteration_inner,
-    get_canceling_asset_backfill_iteration_data,
 )
+from dagster._core.execution.asset_backfill.status import AssetBackfillStatus
 from dagster._core.storage.tags import (
     ASSET_PARTITION_RANGE_END_TAG,
     ASSET_PARTITION_RANGE_START_TAG,
@@ -1518,7 +1517,7 @@ def make_random_subset(
     initial_subset = AssetGraphSubsetView.from_asset_partitions(
         asset_graph_view, root_asset_partitions
     )
-    return initial_subset.compute_downstream_subset().to_asset_graph_subset()
+    return initial_subset.compute_downstream_subset().to_serializable_asset_graph_subset()
 
 
 def make_subset_from_partition_keys(
@@ -1542,7 +1541,7 @@ def make_subset_from_partition_keys(
     initial_subset = AssetGraphSubsetView.from_asset_partitions(
         asset_graph_view, root_asset_partitions
     )
-    return initial_subset.compute_downstream_subset().to_asset_graph_subset()
+    return initial_subset.compute_downstream_subset().to_serializable_asset_graph_subset()
 
 
 def get_asset_graph(
@@ -1587,9 +1586,9 @@ def execute_asset_backfill_iteration_consume_generator(
             backfill_id,
             None,
         )
-        result = execute_asset_backfill_iteration_inner(
-            previous_data, logging.getLogger("fake_logger")
-        )
+        result = AssetBackfillEvaluator(
+            previous_data=previous_data, logger=logging.getLogger("fake_logger")
+        ).evaluate()
         assert counter.counts().get("DagsterInstance.get_dynamic_partitions", 0) <= 1
         return result
 
@@ -1620,7 +1619,7 @@ def run_backfill_to_completion(
     fail_and_downstream_asset_graph_subset = initial_subset.compute_downstream_subset()
 
     fail_and_downstream_asset_partitions = set(
-        fail_and_downstream_asset_graph_subset.to_asset_graph_subset().iterate_asset_partitions()
+        fail_and_downstream_asset_graph_subset.to_serializable_asset_graph_subset().iterate_asset_partitions()
     )
 
     while not backfill_is_complete(
@@ -2173,7 +2172,8 @@ def test_asset_backfill_cancellation():
         backfill_id,
         run_config=None,
     )
-    canceling_backfill_data = get_canceling_asset_backfill_iteration_data(data)
+    evaluator = AssetBackfillEvaluator(previous_data=data)
+    canceling_backfill_data = evaluator.evaluate_cancellation()
 
     assert isinstance(canceling_backfill_data, AssetBackfillData)
 
@@ -2248,14 +2248,14 @@ def test_asset_backfill_cancels_without_fetching_downstreams_of_failed_partition
         in asset_backfill_data.failed_and_downstream_subset
     )
 
-    canceling_backfill_data = None
-    canceling_backfill_data = get_canceling_asset_backfill_iteration_data(
-        asset_backfill_data.get_computation_data(
+    evaluator = AssetBackfillEvaluator(
+        previous_data=asset_backfill_data.get_computation_data(
             _get_asset_graph_view(instance, asset_graph, backfill_start_datetime),
             backfill_id,
             run_config=None,
         )
     )
+    canceling_backfill_data = evaluator.evaluate_cancellation()
 
     assert isinstance(canceling_backfill_data, AssetBackfillData)
     assert (
