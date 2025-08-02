@@ -38,11 +38,7 @@ from dagster._core.definitions.freshness import (
     FreshnessStateEvaluation,
     FreshnessStateRecord,
 )
-from dagster._core.errors import (
-    DagsterHomeNotSetError,
-    DagsterInvalidInvocationError,
-    DagsterInvariantViolationError,
-)
+from dagster._core.errors import DagsterHomeNotSetError, DagsterInvariantViolationError
 from dagster._core.instance.assets import asset_implementation
 from dagster._core.instance.config import (
     DAGSTER_CONFIG_YAML_FILENAME,
@@ -52,6 +48,7 @@ from dagster._core.instance.config import (
 from dagster._core.instance.events import event_implementation
 from dagster._core.instance.ref import InstanceRef
 from dagster._core.instance.scheduling import scheduling_implementation
+from dagster._core.instance.storage import storage_implementation
 from dagster._core.instance.types import (
     DynamicPartitionsStore,
     InstanceType,
@@ -845,39 +842,19 @@ class DagsterInstance(DynamicPartitionsStore):
     def optimize_for_webserver(
         self, statement_timeout: int, pool_recycle: int, max_overflow: int
     ) -> None:
-        if self._schedule_storage:
-            self._schedule_storage.optimize_for_webserver(
-                statement_timeout=statement_timeout,
-                pool_recycle=pool_recycle,
-                max_overflow=max_overflow,
-            )
-        self._run_storage.optimize_for_webserver(
-            statement_timeout=statement_timeout,
-            pool_recycle=pool_recycle,
-            max_overflow=max_overflow,
-        )
-        self._event_storage.optimize_for_webserver(
-            statement_timeout=statement_timeout,
-            pool_recycle=pool_recycle,
-            max_overflow=max_overflow,
+        storage_implementation.optimize_for_webserver(
+            self._storage_ops, statement_timeout, pool_recycle, max_overflow
         )
 
     def reindex(self, print_fn: PrintFn = lambda _: None) -> None:
-        print_fn("Checking for reindexing...")
-        self._event_storage.reindex_events(print_fn)
-        self._event_storage.reindex_assets(print_fn)
-        self._run_storage.optimize(print_fn)
-        self._schedule_storage.optimize(print_fn)  # type: ignore  # (possible none)
-        print_fn("Done.")
+        storage_implementation.reindex(self._storage_ops, print_fn)
 
     def dispose(self) -> None:
-        self._local_artifact_storage.dispose()
-        self._run_storage.dispose()
+        storage_implementation.dispose(self._storage_ops)
         if self._run_coordinator:
             self._run_coordinator.dispose()
         if self._run_launcher:
             self._run_launcher.dispose()
-        self._event_storage.dispose()
         if self._compute_log_manager:
             self._compute_log_manager.dispose()
         if self._secrets_loader:
@@ -1082,6 +1059,12 @@ class DagsterInstance(DynamicPartitionsStore):
         from dagster._core.instance.scheduling.scheduling_instance_ops import SchedulingInstanceOps
 
         return SchedulingInstanceOps(self)
+
+    @cached_property
+    def _storage_ops(self):
+        from dagster._core.instance.storage.storage_instance_ops import StorageInstanceOps
+
+        return StorageInstanceOps(self)
 
     def create_run(
         self,
@@ -1734,8 +1717,8 @@ class DagsterInstance(DynamicPartitionsStore):
 
         Returns a mapping of partition to storage id.
         """
-        return self._event_storage.get_latest_storage_id_by_partition(
-            asset_key, event_type, partitions
+        return storage_implementation.get_latest_storage_id_by_partition(
+            self._storage_ops, asset_key, event_type, partitions
         )
 
     @traced
@@ -1756,8 +1739,7 @@ class DagsterInstance(DynamicPartitionsStore):
         Args:
             partitions_def_name (str): The name of the `DynamicPartitionsDefinition`.
         """
-        check.str_param(partitions_def_name, "partitions_def_name")
-        return self._event_storage.get_dynamic_partitions(partitions_def_name)
+        return storage_implementation.get_dynamic_partitions(self._storage_ops, partitions_def_name)
 
     @traced
     def get_paginated_dynamic_partitions(
@@ -1775,15 +1757,8 @@ class DagsterInstance(DynamicPartitionsStore):
             ascending (bool): The order of dynamic partitions to return.
             cursor (Optional[str]): Cursor to use for pagination. Defaults to None.
         """
-        check.str_param(partitions_def_name, "partitions_def_name")
-        check.int_param(limit, "limit")
-        check.bool_param(ascending, "ascending")
-        check.opt_str_param(cursor, "cursor")
-        return self._event_storage.get_paginated_dynamic_partitions(
-            partitions_def_name=partitions_def_name,
-            limit=limit,
-            ascending=ascending,
-            cursor=cursor,
+        return storage_implementation.get_paginated_dynamic_partitions(
+            self._storage_ops, partitions_def_name, limit, ascending, cursor
         )
 
     @public
@@ -1798,17 +1773,9 @@ class DagsterInstance(DynamicPartitionsStore):
             partitions_def_name (str): The name of the `DynamicPartitionsDefinition`.
             partition_keys (Sequence[str]): Partition keys to add.
         """
-        from dagster._core.definitions.partitions.utils import (
-            raise_error_on_invalid_partition_key_substring,
+        return storage_implementation.add_dynamic_partitions(
+            self._storage_ops, partitions_def_name, partition_keys
         )
-
-        check.str_param(partitions_def_name, "partitions_def_name")
-        check.sequence_param(partition_keys, "partition_keys", of_type=str)
-        if isinstance(partition_keys, str):
-            # Guard against a single string being passed in `partition_keys`
-            raise DagsterInvalidInvocationError("partition_keys must be a sequence of strings")
-        raise_error_on_invalid_partition_key_substring(partition_keys)
-        return self._event_storage.add_dynamic_partitions(partitions_def_name, partition_keys)
 
     @public
     @traced
@@ -1820,9 +1787,9 @@ class DagsterInstance(DynamicPartitionsStore):
             partitions_def_name (str): The name of the `DynamicPartitionsDefinition`.
             partition_key (str): Partition key to delete.
         """
-        check.str_param(partitions_def_name, "partitions_def_name")
-        check.str_param(partition_key, "partition_key")
-        self._event_storage.delete_dynamic_partition(partitions_def_name, partition_key)
+        return storage_implementation.delete_dynamic_partition(
+            self._storage_ops, partitions_def_name, partition_key
+        )
 
     @public
     @traced
@@ -1833,9 +1800,9 @@ class DagsterInstance(DynamicPartitionsStore):
             partitions_def_name (str): The name of the `DynamicPartitionsDefinition`.
             partition_key (Sequence[str]): Partition key to check.
         """
-        check.str_param(partitions_def_name, "partitions_def_name")
-        check.str_param(partition_key, "partition_key")
-        return self._event_storage.has_dynamic_partition(partitions_def_name, partition_key)
+        return storage_implementation.has_dynamic_partition(
+            self._storage_ops, partitions_def_name, partition_key
+        )
 
     # event subscriptions
 
@@ -1970,13 +1937,13 @@ class DagsterInstance(DynamicPartitionsStore):
     # directories
 
     def file_manager_directory(self, run_id: str) -> str:
-        return self._local_artifact_storage.file_manager_dir(run_id)
+        return storage_implementation.file_manager_directory(self._storage_ops, run_id)
 
     def storage_directory(self) -> str:
-        return self._local_artifact_storage.storage_dir
+        return storage_implementation.storage_directory(self._storage_ops)
 
     def schedules_directory(self) -> str:
-        return self._local_artifact_storage.schedules_dir
+        return storage_implementation.schedules_directory(self._storage_ops)
 
     # Runs coordinator
 
