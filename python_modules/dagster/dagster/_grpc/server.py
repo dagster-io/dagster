@@ -427,6 +427,11 @@ class DagsterApiServer(DagsterApiServicer):
 
         self._enable_metrics = check.bool_param(enable_metrics, "enable_metrics")
         self._server_threadpool_executor = server_threadpool_executor
+        from dagster._cli.utils import get_instance_for_cli
+
+        instance = self._exit_stack.enter_context(get_instance_for_cli(instance_ref=instance_ref))
+
+        DefinitionsLoadContext.set_dagster_instance(instance)
 
         try:
             if inject_env_vars_from_instance:

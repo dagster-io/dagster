@@ -95,6 +95,11 @@ def run_command(
             with get_instance_for_cli(
                 instance_ref=deserialize_value(instance_ref, InstanceRef) if instance_ref else None
             ) as instance:
+                from dagster._core.definitions.definitions_load_context import (
+                    DefinitionsLoadContext,
+                )
+
+                DefinitionsLoadContext.set_dagster_instance(instance)
                 _daemon_run_command(
                     instance, log_level, code_server_log_level, log_format, workspace_opts
                 )

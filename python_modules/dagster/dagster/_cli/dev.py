@@ -191,6 +191,11 @@ def dev_command_impl(
         instance = stack.enter_context(
             get_possibly_temporary_instance_for_cli("dagster dev", logger=logger)
         )
+        from dagster._core.definitions.definitions_load_context import DefinitionsLoadContext
+
+        print("DEV COMMAND IMPL")
+
+        DefinitionsLoadContext.set_dagster_instance(instance)
 
         logger.info("Launching Dagster services...")
 

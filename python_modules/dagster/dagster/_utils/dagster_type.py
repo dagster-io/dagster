@@ -44,7 +44,7 @@ def check_dagster_type(dagster_type: Any, value: Any) -> TypeCheck:
     job_def = job.get_definition()
 
     instance = DagsterInstance.ephemeral()
-    execution_plan = create_execution_plan(job)
+    execution_plan = create_execution_plan(job, instance=instance)
     dagster_run = instance.create_run_for_job(job_def)
     with scoped_job_context(execution_plan, job, {}, dagster_run, instance) as context:
         type_check_context = context.for_type(dagster_type)
