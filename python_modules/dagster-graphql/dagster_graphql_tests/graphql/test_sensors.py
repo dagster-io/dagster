@@ -14,6 +14,8 @@ from dagster._core.scheduler.instigation import (
     TickData,
     TickStatus,
 )
+from dagster._core.storage.dagster_run import DagsterRun
+from dagster._core.storage.tags import RUN_KEY_TAG, SENSOR_NAME_TAG
 from dagster._core.test_utils import SingleThreadPoolExecutor, freeze_time, wait_for_futures
 from dagster._core.types.loadable_target_origin import LoadableTargetOrigin
 from dagster._core.utils import make_new_backfill_id
@@ -604,6 +606,43 @@ class TestSensors(NonLaunchableGraphQLContextTestMatrix):
         assert evaluation_result["skipReason"] is None
         assert evaluation_result["error"] is None
         assert evaluation_result["dynamicPartitionsRequests"] == []
+
+    def test_dry_run_with_run_key(self, graphql_context: WorkspaceRequestContext):
+        instigator_selector = infer_sensor_selector(graphql_context, "run_key_sensor")
+        result = execute_dagster_graphql(
+            graphql_context,
+            SENSOR_DRY_RUN_MUTATION,
+            variables={"selectorData": instigator_selector, "cursor": "blah"},
+        )
+
+        assert result.data
+        assert result.data["sensorDryRun"]["__typename"] == "DryRunInstigationTick"
+        evaluation_result = result.data["sensorDryRun"]["evaluationResult"]
+        assert evaluation_result["cursor"] == "blah"
+        assert len(evaluation_result["runRequests"]) == 1
+        assert evaluation_result["runRequests"][0]["runConfigYaml"] == "{}\n"
+        assert evaluation_result["skipReason"] is None
+        assert evaluation_result["error"] is None
+        assert evaluation_result["dynamicPartitionsRequests"] == []
+
+        graphql_context.instance.add_run(
+            DagsterRun(
+                job_name="run_key_sensor",
+                run_id="123",
+                tags={RUN_KEY_TAG: "the_key", SENSOR_NAME_TAG: "run_key_sensor"},
+            )
+        )
+
+        result = execute_dagster_graphql(
+            graphql_context,
+            SENSOR_DRY_RUN_MUTATION,
+            variables={"selectorData": instigator_selector, "cursor": "blah"},
+        )
+        assert result.data
+        assert result.data["sensorDryRun"]["__typename"] == "DryRunInstigationTick"
+        evaluation_result = result.data["sensorDryRun"]["evaluationResult"]
+        # no more run run requests because the key matches
+        assert len(evaluation_result["runRequests"]) == 0
 
     def test_dry_run_with_dynamic_partition_requests(
         self, graphql_context: WorkspaceRequestContext
