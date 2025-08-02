@@ -11,7 +11,7 @@ from dagster._core.definitions.partitions.definition import (
 from dagster._core.definitions.repository_definition.repository_definition import (
     RepositoryDefinition,
 )
-from dagster._core.execution.asset_backfill import AssetBackfillData
+from dagster._core.execution.asset_backfill.asset_backfill_data import AssetBackfillData
 from dagster._core.instance import DagsterInstance
 from dagster._core.test_utils import ensure_dagster_tests_import, instance_for_test
 from dagster._daemon import get_default_daemon_logger

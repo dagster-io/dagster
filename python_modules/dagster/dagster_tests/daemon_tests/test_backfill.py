@@ -26,10 +26,8 @@ from dagster._core.definitions.selector import (
 )
 from dagster._core.errors import DagsterUserCodeUnreachableError
 from dagster._core.events import DagsterEventType
-from dagster._core.execution.asset_backfill import (
-    AssetBackfillData,
-    get_asset_backfill_run_chunk_size,
-)
+from dagster._core.execution.asset_backfill.asset_backfill import get_asset_backfill_run_chunk_size
+from dagster._core.execution.asset_backfill.asset_backfill_data import AssetBackfillData
 from dagster._core.execution.backfill import BulkActionStatus, PartitionBackfill
 from dagster._core.execution.plan.resume_retry import ReexecutionStrategy
 from dagster._core.remote_representation import (

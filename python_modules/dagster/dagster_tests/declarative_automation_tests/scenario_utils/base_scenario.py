@@ -35,7 +35,7 @@ from dagster._core.definitions.partitions.subset import PartitionsSubset
 from dagster._core.definitions.partitions.utils import get_time_partitions_def
 from dagster._core.definitions.timestamp import TimestampWithTimezone
 from dagster._core.events import AssetMaterializationPlannedData, DagsterEventType
-from dagster._core.execution.asset_backfill import AssetBackfillData
+from dagster._core.execution.asset_backfill.asset_backfill_data import AssetBackfillData
 from dagster._core.execution.backfill import BulkActionStatus, PartitionBackfill
 from dagster._core.remote_representation.origin import InProcessCodeLocationOrigin
 from dagster._core.test_utils import (

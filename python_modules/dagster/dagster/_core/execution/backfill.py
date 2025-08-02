@@ -12,8 +12,8 @@ from dagster._core.definitions.run_request import RunRequest
 from dagster._core.definitions.selector import PartitionsByAssetSelector
 from dagster._core.definitions.utils import check_valid_title
 from dagster._core.errors import DagsterDefinitionChangedDeserializationError
-from dagster._core.execution.asset_backfill import (
-    AssetBackfillData,
+from dagster._core.execution.asset_backfill.asset_backfill_data import AssetBackfillData
+from dagster._core.execution.asset_backfill.status import (
     PartitionedAssetBackfillStatus,
     UnpartitionedAssetBackfillStatus,
 )

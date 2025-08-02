@@ -14,7 +14,7 @@ import dagster._check as check
 from dagster._core.definitions.instigation_logger import InstigationLogger
 from dagster._core.definitions.partitions.context import partition_loading_context
 from dagster._core.errors import DagsterCodeLocationLoadError, DagsterUserCodeUnreachableError
-from dagster._core.execution.asset_backfill import execute_asset_backfill_iteration
+from dagster._core.execution.asset_backfill.asset_backfill import execute_asset_backfill_iteration
 from dagster._core.execution.backfill import (
     BULK_ACTION_TERMINAL_STATUSES,
     BulkActionsFilter,

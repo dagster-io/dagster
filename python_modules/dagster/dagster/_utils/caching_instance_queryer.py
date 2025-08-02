@@ -45,7 +45,7 @@ if TYPE_CHECKING:
     from dagster._core.definitions.partitions.definition.partitions_definition import (
         PartitionsDefinition,
     )
-    from dagster._core.execution.asset_backfill import AssetBackfillData
+    from dagster._core.execution.asset_backfill.asset_backfill_data import AssetBackfillData
     from dagster._core.storage.event_log import EventLogRecord
     from dagster._core.storage.event_log.base import AssetRecord
     from dagster._core.storage.partition_status_cache import AssetStatusCacheValue
