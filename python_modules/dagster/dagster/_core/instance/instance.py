@@ -44,6 +44,7 @@ from dagster._core.errors import (
     DagsterInvariantViolationError,
 )
 from dagster._core.execution.retries import auto_reexecution_should_retry_run
+from dagster._core.instance.assets import asset_implementation
 from dagster._core.instance.config import (
     DAGSTER_CONFIG_YAML_FILENAME,
     DEFAULT_LOCAL_CODE_SERVER_STARTUP_TIMEOUT,
@@ -1072,6 +1073,12 @@ class DagsterInstance(DynamicPartitionsStore):
 
         return RunInstanceOps(self)
 
+    @cached_property
+    def _asset_ops(self):
+        from dagster._core.instance.assets.asset_instance_ops import AssetInstanceOps
+
+        return AssetInstanceOps(self)
+
     def create_run(
         self,
         *,
@@ -1321,23 +1328,23 @@ class DagsterInstance(DynamicPartitionsStore):
 
     @traced
     def can_read_asset_status_cache(self) -> bool:
-        return self._event_storage.can_read_asset_status_cache()
+        return asset_implementation.can_read_asset_status_cache(self._asset_ops)
 
     @traced
     def update_asset_cached_status_data(
         self, asset_key: AssetKey, cache_values: "AssetStatusCacheValue"
     ) -> None:
-        self._event_storage.update_asset_cached_status_data(asset_key, cache_values)
+        asset_implementation.update_asset_cached_status_data(
+            self._asset_ops, asset_key, cache_values
+        )
 
     @traced
     def wipe_asset_cached_status(self, asset_keys: Sequence[AssetKey]) -> None:
-        check.list_param(asset_keys, "asset_keys", of_type=AssetKey)
-        for asset_key in asset_keys:
-            self._event_storage.wipe_asset_cached_status(asset_key)
+        asset_implementation.wipe_asset_cached_status(self._asset_ops, asset_keys)
 
     @traced
     def all_asset_keys(self) -> Sequence[AssetKey]:
-        return self._event_storage.all_asset_keys()
+        return asset_implementation.all_asset_keys(self._asset_ops)
 
     @public
     @traced
@@ -1357,7 +1364,7 @@ class DagsterInstance(DynamicPartitionsStore):
         Returns:
             Sequence[AssetKey]: List of asset keys.
         """
-        return self._event_storage.get_asset_keys(prefix=prefix, limit=limit, cursor=cursor)
+        return asset_implementation.get_asset_keys(self._asset_ops, prefix, limit, cursor)
 
     @public
     @traced
@@ -1367,13 +1374,13 @@ class DagsterInstance(DynamicPartitionsStore):
         Args:
             asset_key (AssetKey): Asset key to check.
         """
-        return self._event_storage.has_asset_key(asset_key)
+        return asset_implementation.has_asset_key(self._asset_ops, asset_key)
 
     @traced
     def get_latest_materialization_events(
         self, asset_keys: Iterable[AssetKey]
     ) -> Mapping[AssetKey, Optional["EventLogEntry"]]:
-        return self._event_storage.get_latest_materialization_events(asset_keys)
+        return asset_implementation.get_latest_materialization_events(self._asset_ops, asset_keys)
 
     @public
     @traced
@@ -1387,14 +1394,14 @@ class DagsterInstance(DynamicPartitionsStore):
             Optional[EventLogEntry]: The latest materialization event for the given asset
                 key, or `None` if the asset has not been materialized.
         """
-        return self._event_storage.get_latest_materialization_events([asset_key]).get(asset_key)
+        return asset_implementation.get_latest_materialization_event(self._asset_ops, asset_key)
 
     @traced
     def get_latest_asset_check_evaluation_record(
         self, asset_check_key: "AssetCheckKey"
     ) -> Optional["AssetCheckExecutionRecord"]:
-        return self._event_storage.get_latest_asset_check_execution_by_key([asset_check_key]).get(
-            asset_check_key
+        return asset_implementation.get_latest_asset_check_evaluation_record(
+            self._asset_ops, asset_check_key
         )
 
     @traced
@@ -1464,7 +1471,9 @@ class DagsterInstance(DynamicPartitionsStore):
         Returns:
             EventRecordsResult: Object containing a list of event log records and a cursor string
         """
-        return self._event_storage.fetch_materializations(records_filter, limit, cursor, ascending)
+        return asset_implementation.fetch_materializations(
+            self._asset_ops, records_filter, limit, cursor, ascending
+        )
 
     @traced
     def fetch_failed_materializations(
@@ -1487,8 +1496,8 @@ class DagsterInstance(DynamicPartitionsStore):
         Returns:
             EventRecordsResult: Object containing a list of event log records and a cursor string
         """
-        return self._event_storage.fetch_failed_materializations(
-            records_filter, limit, cursor, ascending
+        return asset_implementation.fetch_failed_materializations(
+            self._asset_ops, records_filter, limit, cursor, ascending
         )
 
     @traced
@@ -1652,7 +1661,7 @@ class DagsterInstance(DynamicPartitionsStore):
         Returns:
             Sequence[AssetRecord]: List of asset records.
         """
-        return self._event_storage.get_asset_records(asset_keys)
+        return asset_implementation.get_asset_records(self._asset_ops, asset_keys)
 
     @traced
     def get_event_tags_for_asset(
@@ -1673,7 +1682,9 @@ class DagsterInstance(DynamicPartitionsStore):
         Returns a list of dicts, where each dict is a mapping of tag key to tag value for a
         single event.
         """
-        return self._event_storage.get_event_tags_for_asset(asset_key, filter_tags, filter_event_id)
+        return asset_implementation.get_event_tags_for_asset(
+            self._asset_ops, asset_key, filter_tags, filter_event_id
+        )
 
     @public
     @traced
@@ -1683,20 +1694,7 @@ class DagsterInstance(DynamicPartitionsStore):
         Args:
             asset_keys (Sequence[AssetKey]): Asset keys to wipe.
         """
-        from dagster._core.events import AssetWipedData, DagsterEvent, DagsterEventType
-        from dagster._core.instance.utils import RUNLESS_JOB_NAME, RUNLESS_RUN_ID
-
-        check.list_param(asset_keys, "asset_keys", of_type=AssetKey)
-        for asset_key in asset_keys:
-            self._event_storage.wipe_asset(asset_key)
-            self.report_dagster_event(
-                run_id=RUNLESS_RUN_ID,
-                dagster_event=DagsterEvent(
-                    event_type_value=DagsterEventType.ASSET_WIPED.value,
-                    event_specific_data=AssetWipedData(asset_key=asset_key, partition_keys=None),
-                    job_name=RUNLESS_JOB_NAME,
-                ),
-            )
+        asset_implementation.wipe_assets(self._asset_ops, asset_keys)
 
     def wipe_asset_partitions(
         self,
@@ -1709,19 +1707,7 @@ class DagsterInstance(DynamicPartitionsStore):
             asset_key (AssetKey): Asset key to wipe.
             partition_keys (Sequence[str]): Partition keys to wipe.
         """
-        from dagster._core.events import AssetWipedData, DagsterEvent, DagsterEventType
-
-        self._event_storage.wipe_asset_partitions(asset_key, partition_keys)
-        self.report_dagster_event(
-            run_id=RUNLESS_RUN_ID,
-            dagster_event=DagsterEvent(
-                event_type_value=DagsterEventType.ASSET_WIPED.value,
-                event_specific_data=AssetWipedData(
-                    asset_key=asset_key, partition_keys=partition_keys
-                ),
-                job_name=RUNLESS_JOB_NAME,
-            ),
-        )
+        asset_implementation.wipe_asset_partitions(self._asset_ops, asset_key, partition_keys)
 
     @traced
     def get_materialized_partitions(
@@ -1755,7 +1741,9 @@ class DagsterInstance(DynamicPartitionsStore):
         asset_key: AssetKey,
         partition: Optional[str] = None,
     ) -> Optional["PlannedMaterializationInfo"]:
-        return self._event_storage.get_latest_planned_materialization_info(asset_key, partition)
+        return asset_implementation.get_latest_planned_materialization_info(
+            self._asset_ops, asset_key, partition
+        )
 
     @public
     @traced
