@@ -3123,6 +3123,10 @@
       "destination": "/deployment/dagster-plus/hybrid/:path*"
     },
     {
+      "source": "/dagster-plus/deployment/deployment-types/multi-tenancy",
+      "destination": "/deployment/dagster-plus/hybrid/multiple"
+    },
+    {
       "source": "/dagster-plus/deployment/management/deployments",
       "destination": "/deployment/dagster-plus/full-deployments"
     },
