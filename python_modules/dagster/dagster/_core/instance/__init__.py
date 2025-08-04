@@ -1399,7 +1399,7 @@ class DagsterInstance(DynamicPartitionsStore):
             end_window = partitions_definition.time_window_for_partition_key(partition_range_end)
             partitions_subset = partitions_definition.get_partition_subset_in_time_window(
                 TimeWindow(start_window.start, end_window.end)
-            )
+            ).to_serializable_subset()
 
         return DagsterRun(
             job_name=job_name,
