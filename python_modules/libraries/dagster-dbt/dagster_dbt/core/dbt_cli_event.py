@@ -1,3 +1,4 @@
+from abc import ABC, abstractmethod
 from collections.abc import Iterator, Mapping, Sequence
 from dataclasses import InitVar, dataclass
 from functools import cached_property
@@ -22,10 +23,6 @@ from dagster._core.definitions.asset_checks.asset_check_evaluation import AssetC
 from dagster._core.definitions.asset_key import AssetCheckKey, AssetKey
 from dagster._core.definitions.metadata import TableMetadataSet
 from dagster._utils.warnings import disable_dagster_warnings
-from dbt.contracts.results import NodeStatus, TestStatus
-from dbt.node_types import NodeType
-from dbt.version import __version__ as dbt_version
-from packaging import version
 from sqlglot import MappingSchema, exp, parse_one, to_table
 from sqlglot.expressions import normalize_table_name
 from sqlglot.lineage import lineage
@@ -36,14 +33,9 @@ from dagster_dbt.asset_utils import (
     get_asset_check_key_for_test,
     get_checks_on_sources_upstream_of_selected_assets,
 )
+from dagster_dbt.compat import REFABLE_NODE_TYPES, NodeStatus, NodeType, TestStatus
 from dagster_dbt.dagster_dbt_translator import DagsterDbtTranslator, validate_translator
 from dagster_dbt.dbt_manifest import DbtManifestParam, validate_manifest
-
-IS_DBT_CORE_VERSION_LESS_THAN_1_8_0 = version.parse(dbt_version) < version.parse("1.8.0")
-if IS_DBT_CORE_VERSION_LESS_THAN_1_8_0:
-    REFABLE_NODE_TYPES = NodeType.refable()  # type: ignore
-else:
-    from dbt.node_types import REFABLE_NODE_TYPES as REFABLE_NODE_TYPES
 
 logger = get_dagster_logger()
 
@@ -222,7 +214,7 @@ def _build_column_lineage_metadata(
 
 
 @dataclass
-class DbtCliEventMessage:
+class DbtCliEventMessage(ABC):
     """The representation of a dbt CLI event.
 
     Args:
@@ -243,11 +235,6 @@ class DbtCliEventMessage:
         return self.raw_event["info"]["msg"]
 
     @property
-    def log_level(self) -> str:
-        """The log level of the event."""
-        return self.raw_event["info"]["level"]
-
-    @property
     def has_column_lineage_metadata(self) -> bool:
         """Whether the event has column level lineage metadata."""
         return bool(self._event_history_metadata) and "parents" in self._event_history_metadata
@@ -264,13 +251,9 @@ class DbtCliEventMessage:
     def _raw_node_info(self) -> Mapping[str, Any]:
         return self.raw_event["data"]["node_info"]
 
-    @staticmethod
-    def is_result_event(raw_event: dict[str, Any]) -> bool:
-        return raw_event["info"]["name"] in set(
-            ["LogSeedResult", "LogModelResult", "LogSnapshotResult", "LogTestResult"]
-        ) and not raw_event["data"].get("node_info", {}).get("unique_id", "").startswith(
-            "unit_test"
-        )
+    @property
+    @abstractmethod
+    def is_result_event(self) -> bool: ...
 
     def _is_model_execution_event(self, manifest: Mapping[str, Any]) -> bool:
         resource_props = self._get_resource_props(self._unique_id, manifest)
@@ -313,6 +296,10 @@ class DbtCliEventMessage:
             duration = self._raw_data.get("execution_time")
 
         return {"Execution Duration": duration} if duration else {}
+
+    ###############
+    # MODEL PARSING
+    ###############
 
     def _get_column_schema_metadata(self, manifest: Mapping[str, Any]) -> Mapping[str, Any]:
         try:
@@ -409,6 +396,10 @@ class DbtCliEventMessage:
         else:
             yield AssetMaterialization(asset_key=asset_key, metadata=metadata)
 
+    ##############
+    # TEST PARSING
+    ##############
+
     def _get_check_execution_metadata(self, manifest: Mapping[str, Any]) -> dict[str, Any]:
         failure_count = self._raw_data.get("num_failures")
         return {
@@ -417,17 +408,20 @@ class DbtCliEventMessage:
             **({} if failure_count is None else {"dagster_dbt/failed_row_count": failure_count}),
         }
 
+    @abstractmethod
+    def _get_check_passed(self) -> bool: ...
+
+    @abstractmethod
+    def _get_check_severity(self) -> AssetCheckSeverity: ...
+
     def _get_check_properties(
         self, key: AssetCheckKey, manifest: Mapping[str, Any]
     ) -> CheckProperties:
-        node_status = self._get_node_status()
         return CheckProperties(
-            passed=node_status == TestStatus.Pass,
+            passed=self._get_check_passed(),
             asset_key=key.asset_key,
             check_name=key.name,
-            severity=AssetCheckSeverity.WARN
-            if node_status == TestStatus.Warn
-            else AssetCheckSeverity.ERROR,
+            severity=self._get_check_severity(),
             metadata=self._get_check_execution_metadata(manifest),
         )
 
@@ -445,7 +439,7 @@ class DbtCliEventMessage:
             ),
         }
 
-    def _get_observation_events_for_test(
+    def _to_observation_events_for_test(
         self,
         key: Optional[AssetCheckKey],
         dagster_dbt_translator: DagsterDbtTranslator,
@@ -519,7 +513,7 @@ class DbtCliEventMessage:
         # fallback case, emit observation events if we have no key to associate with the
         # test, or if the test was not expected to be evaluated.
         metadata = self._get_check_execution_metadata(manifest)
-        yield from self._get_observation_events_for_test(
+        yield from self._to_observation_events_for_test(
             key=key,
             dagster_dbt_translator=translator,
             validated_manifest=manifest,
@@ -562,7 +556,7 @@ class DbtCliEventMessage:
                 - AssetCheckEvaluation for dbt test results that are enabled as asset checks.
                 - AssetObservation for dbt test results that are not enabled as asset checks.
         """
-        if not self.is_result_event(self.raw_event):
+        if not self.is_result_event:
             return
 
         dagster_dbt_translator = validate_translator(dagster_dbt_translator)
@@ -572,3 +566,41 @@ class DbtCliEventMessage:
             yield from self._to_model_events(manifest, dagster_dbt_translator, context, target_path)
         if self._is_test_execution_event(manifest):
             yield from self._to_test_events(manifest, dagster_dbt_translator, context)
+
+
+class DbtCoreCliEventMessage(DbtCliEventMessage):
+    """Represents a dbt CLI event that was produced using the dbt Core engine."""
+
+    @property
+    def is_result_event(self) -> bool:
+        return self.raw_event["info"]["name"] in set(
+            ["LogSeedResult", "LogModelResult", "LogSnapshotResult", "LogTestResult"]
+        ) and not self.raw_event["data"].get("node_info", {}).get("unique_id", "").startswith(
+            "unit_test"
+        )
+
+    def _get_check_passed(self) -> bool:
+        return self._get_node_status() == TestStatus.Pass
+
+    def _get_check_severity(self) -> AssetCheckSeverity:
+        node_status = self._get_node_status()
+        return (
+            AssetCheckSeverity.WARN if node_status == NodeStatus.Warn else AssetCheckSeverity.ERROR
+        )
+
+
+class DbtFusionCliEventMessage(DbtCliEventMessage):
+    """Represents a dbt CLI event that was produced using the dbt Fusion engine."""
+
+    @property
+    def is_result_event(self) -> bool:
+        return self.raw_event["info"]["name"] == "NodeFinished"
+
+    def _get_check_passed(self) -> bool:
+        return self._get_node_status() == NodeStatus.Success
+
+    def _get_check_severity(self) -> AssetCheckSeverity:
+        node_status = self._get_node_status()
+        return (
+            AssetCheckSeverity.WARN if node_status == NodeStatus.Warn else AssetCheckSeverity.ERROR
+        )
