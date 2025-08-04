@@ -60,11 +60,11 @@ The Dagster+ Pro **Asset catalog** page includes all the information and functio
 
 On this page, you can:
 
-  - View all [assets](/guides/build/assets) in your Dagster deployment
-  - View saved selections of assets
-  - Filter assets by asset key, asset group, code location, column, column tag, table name, kind, owner, and tag
-  - Access the global asset lineage page
-  - Reload definitions
+- View all [assets](/guides/build/assets) in your Dagster deployment
+- View saved selections of assets
+- Filter assets by asset key, asset group, code location, column, column tag, table name, kind, owner, and tag
+- Access the global asset lineage page
+- Reload definitions
 
 To access this page, click **Catalog** in the top navigation bar:
 
@@ -77,8 +77,8 @@ To access this page, click **Catalog** in the top navigation bar:
 
 With **Asset selections**, you can:
 
-  - Select a scoped set of [assets](/guides/build/assets) in your Dagster deployment
-  - Create shared selections of assets for easier team collaboration
+- Select a scoped set of [assets](/guides/build/assets) in your Dagster deployment
+- Create shared selections of assets for easier team collaboration
 
 You can access asset selections by clicking **Catalog** in the top navigation, then clicking the **Saved selections** tab.
 
@@ -89,12 +89,12 @@ The **Global asset lineage** page displays dependencies between all of the asset
 
 On this page, you can:
 
-  - Filter assets by group
-  - Filter a subset of assets by using [asset selection syntax](/guides/build/assets/asset-selection-syntax)
-  - [Customize facets](/guides/build/assets/metadata-and-tags/asset-facets) displayed for each asset
-  - Reload definitions
-  - Materialize all or a selection of assets
-  - View run details for the latest materialization of any asset
+- Filter assets by group
+- Filter a subset of assets by using [asset selection syntax](/guides/build/assets/asset-selection-syntax)
+- [Customize facets](/guides/build/assets/metadata-and-tags/asset-facets) displayed for each asset
+- Reload definitions
+- Materialize all or a selection of assets
+- View run details for the latest materialization of any asset
 
 - **Accessed by**:
 
@@ -108,13 +108,13 @@ On this page, you can:
 
 The **Asset details** page contains details about a single asset. Use the tabs on this page to view detailed information about the asset:
 
-  - **Overview** - Information about the asset such as its description, resources, config, type, etc.
-  - **Partitions** - The asset's partitions, including their materialization status, metadata, and run information
-  - **Events** - The asset's materialization history
-  - **Checks** - The [Asset checks](/guides/test/asset-checks) defined for the asset
-  - **Lineage** - The asset's lineage in the **Global asset lineage** page
-  - **Automation** - The [Declarative Automation conditions](/guides/automate/declarative-automation) associated with the asset
-  - **Insights** - **Dagster+ only.** Historical information about the asset, such as failures and credit usage. Refer to the [Dagster+ Insights](/guides/monitor/insights) documentation for more information.
+- **Overview** - Information about the asset such as its description, resources, config, type, etc.
+- **Partitions** - The asset's partitions, including their materialization status, metadata, and run information
+- **Events** - The asset's materialization history
+- **Checks** - The [Asset checks](/guides/test/asset-checks) defined for the asset
+- **Lineage** - The asset's lineage in the **Global asset lineage** page
+- **Automation** - The [Declarative Automation conditions](/guides/automate/declarative-automation) associated with the asset
+- **Insights** - **Dagster+ only.** Historical information about the asset, such as failures and credit usage. Refer to the [Dagster+ Insights](/guides/monitor/insights) documentation for more information.
 
 To access the asset details page, click an asset in the **Asset catalog**.
 
@@ -141,8 +141,8 @@ The **Run details** page contains details about a single run, including timing i
 
 On this page, you can:
 
-  - **View structured event and raw compute logs.** Refer to the run logs tab for more info.
-  - **Re-execute a run** using the same configuration by clicking the **Re-execute** button. Related runs (e.g., runs created by re-executing the same previous run) are grouped in the right pane for easy reference
+- **View structured event and raw compute logs.** Refer to the run logs tab for more info.
+- **Re-execute a run** using the same configuration by clicking the **Re-execute** button. Related runs (e.g., runs created by re-executing the same previous run) are grouped in the right pane for easy reference
 
 To access the run details page, click a run in the **Run details** page.
 
@@ -153,8 +153,8 @@ To access the run details page, click a run in the **Run details** page.
 
 Located at the bottom of the **Run details** page, the **run logs** list every event that occurred in a run, the type of event, and detailed information about the event itself. There are two types of logs, which we'll discuss in the next section:
 
-  - Structured event logs
-  - Raw compute logs
+- Structured event logs
+- Raw compute logs
 
 To access the run logs, scroll to the bottom of the **Run details** page.
 
@@ -353,12 +353,13 @@ The **Code locations** tab contains information about the code locations in your
 
 You can reload Dagster definitions by:
 
-  - Clicking **Reload all** to reload all definitions in all code locations
-  - Clicking **Reload** next to a specific code location to reload only that code location's definitions
+- Clicking **Reload all** to reload all definitions in all code locations
+- Clicking **Reload** next to a specific code location to reload only that code location's definitions
 
 To access the code locations tab:
-  1. Click **Deployment** in the top navigation bar.
-  2. On the **Deployment overview** page, click the **Code locations** tab.
+
+1. Click **Deployment** in the top navigation bar.
+2. On the **Deployment overview** page, click the **Code locations** tab.
 
 ![UI Deployment overview page](/images/guides/operate/webserver/deployment-code-locations.png)
 

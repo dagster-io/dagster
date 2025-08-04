@@ -19,7 +19,7 @@ The overall health status for an asset becomes the most elevated status from amo
 
 :::note Coming soon
 
-* Health statuses will take asset observations into account (currently they only account for materializations).
-* Alerts will be added for health status changes.
+- Health statuses will take asset observations into account (currently they only account for materializations).
+- Alerts will be added for health status changes.
 
 :::
