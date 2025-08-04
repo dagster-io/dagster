@@ -34,10 +34,10 @@ from dagster._record import IHaveNew, record_custom
 from dagster._utils.tags import get_boolean_tag_value
 
 if TYPE_CHECKING:
+    from dagster._core.definitions.partitions.subset import PartitionsSubset
     from dagster._core.definitions.schedule_definition import ScheduleDefinition
     from dagster._core.definitions.sensor_definition import SensorDefinition
     from dagster._core.remote_representation.external import RemoteSchedule, RemoteSensor
-    from dagster._core.remote_representation.external_data import PartitionsSnap
     from dagster._core.remote_representation.origin import RemoteJobOrigin
     from dagster._core.scheduler.instigation import InstigatorState
 
@@ -296,7 +296,7 @@ class DagsterRun(
             ("job_code_origin", Optional[JobPythonOrigin]),
             ("has_repository_load_data", bool),
             ("run_op_concurrency", Optional[RunOpConcurrency]),
-            ("partitions_snap", Optional["PartitionsSnap"]),
+            ("partitions_subset", Optional["PartitionsSubset"]),
         ],
     )
 ):
@@ -322,6 +322,7 @@ class DagsterRun(
         job_code_origin (Optional[JobPythonOrigin]): The origin of the job code.
         has_repository_load_data (bool): Whether the run has repository load data.
         run_op_concurrency (Optional[RunOpConcurrency]): The op concurrency information for the run.
+        partitions_subset (Optional[PartitionsSubset]): The subset of partitions to execute.
     """
 
     def __new__(
@@ -344,9 +345,11 @@ class DagsterRun(
         job_code_origin: Optional[JobPythonOrigin] = None,
         has_repository_load_data: Optional[bool] = None,
         run_op_concurrency: Optional[RunOpConcurrency] = None,
-        partitions_snap: Optional["PartitionsSnap"] = None,
+        partitions_subset: Optional["PartitionsSubset"] = None,
     ):
-        from dagster._core.remote_representation.external_data import TimeWindowPartitionsSnap
+        from dagster._core.definitions.partitions.subset.time_window import (
+            TimeWindowPartitionsSubset,
+        )
 
         check.invariant(
             (root_run_id is not None and parent_run_id is not None)
@@ -417,10 +420,10 @@ class DagsterRun(
             run_op_concurrency=check.opt_inst_param(
                 run_op_concurrency, "run_op_concurrency", RunOpConcurrency
             ),
-            # Only support storing time window partitions definitions on the run for now, other partitions
-            # definitions types are too big
-            partitions_snap=check.opt_inst_param(
-                partitions_snap, "partitions_snap", TimeWindowPartitionsSnap
+            # Only support storing time window partitions subsets on the run for now, other
+            # partitions subsets are too big
+            partitions_subset=check.opt_inst_param(
+                partitions_subset, "partitions_subset", TimeWindowPartitionsSubset
             ),
         )
 

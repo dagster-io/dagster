@@ -18,6 +18,7 @@ from dagster import (
 from dagster._check import CheckError
 from dagster._cli.utils import get_instance_for_cli
 from dagster._core.definitions.assets.definition.asset_spec import AssetExecutionType
+from dagster._core.definitions.partitions.partition_key_range import PartitionKeyRange
 from dagster._core.errors import DagsterHomeNotSetError
 from dagster._core.execution.api import create_execution_plan
 from dagster._core.instance import DagsterInstance, InstanceRef
@@ -278,7 +279,7 @@ def noop_asset():
     pass
 
 
-@dg.asset(partitions_def=dg.WeeklyPartitionsDefinition(start_date=datetime.datetime(2025, 1, 1)))
+@dg.asset(partitions_def=dg.DailyPartitionsDefinition(start_date=datetime.datetime(2025, 1, 1)))
 def noop_time_window_asset():
     pass
 
@@ -432,7 +433,7 @@ def test_create_run_with_asset_partitions():
         )
 
 
-def test_create_run_with_partitioned_asset_stores_partitions_definition():
+def test_create_run_with_partitioned_asset_stores_partitions_snapshot():
     with dg.instance_for_test() as instance:
         execution_plan = create_execution_plan(noop_time_window_asset_job)
 
@@ -451,12 +452,19 @@ def test_create_run_with_partitioned_asset_stores_partitions_definition():
             },
             asset_graph=noop_time_window_asset_job.asset_layer.asset_graph,
         )
-        assert run.partitions_snap is not None
-        assert (
-            run.partitions_snap.get_partitions_definition()
-            == noop_time_window_asset_job.asset_layer.asset_graph.get(
-                dg.AssetKey("noop_time_window_asset")
-            ).partitions_def
+        partitions_def = noop_time_window_asset_job.asset_layer.asset_graph.get(
+            dg.AssetKey("noop_time_window_asset")
+        ).partitions_def
+        assert partitions_def is not None
+
+        assert run.partitions_subset is not None
+        assert run.partitions_subset == partitions_def.subset_with_partition_keys(
+            partitions_def.get_partition_keys_in_range(
+                PartitionKeyRange(
+                    "2025-1-1",
+                    "2025-1-4",
+                )
+            )
         )
 
         # assets with non-time window partitions do not store the partitions definition on the run
@@ -477,7 +485,7 @@ def test_create_run_with_partitioned_asset_stores_partitions_definition():
             },
             asset_graph=noop_asset_job.asset_layer.asset_graph,
         )
-        assert run.partitions_snap is None
+        assert run.partitions_subset is None
 
 
 def test_get_required_daemon_types():
