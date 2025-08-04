@@ -315,7 +315,7 @@ To access the launchpad tab, on the **Job details** page, click the **Launchpad*
 </TabItem>
 <TabItem value="Runs tab">
 
-The **Runs** tab displays a list of recent runs for a job. Clicking a run will open the [**Run details** page.
+The **Runs** tab displays a list of recent runs for a job. Clicking a run will open the **Run details** page.
 
 To access the runs tab, on the **Job details** page, click the **Runs** tab.
 
