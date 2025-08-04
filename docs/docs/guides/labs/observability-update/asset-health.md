@@ -17,7 +17,7 @@ The overall health status for an asset becomes the most elevated status from amo
 | ![Warning trend icon](/images/guides/labs/observability-update/warning_trend.svg)    | Warning       | Not applicable                         | Not applicable                                                          | Freshness policy is failing with a warning | Some asset checks are failing with a warning                            |
 | ![Degraded trend icon](/images/guides/labs/observability-update/failure_trend.svg)   | Degraded      | Most recent materialization failed     | More than one partition is failing                                      | Freshness policy is failing                | Some asset checks are failing, or had an error on most recent execution |
 
-:::note Comming soon
+:::note Coming soon
 
 * Health statuses will take asset observations into account (currently they only account for materializations).
 * Alerts will be added for health status changes.
