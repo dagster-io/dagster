@@ -259,7 +259,7 @@ To access the configuration tab, on the **Resource details** page, click the **C
 
 The **Uses** tab contains information about the other Dagster definitions that use the resource, including [assets](/guides/build/assets), [jobs](/guides/build/jobs), and [ops](/guides/build/ops). Clicking on any of these definitions will open the details page for that definition type.
 
-To access the uses tab, on the **Resource details** page, clicking the **Uses tab**.
+To access the uses tab, on the **Resource details** page, click the **Uses tab**.
 
 ![UI Resource details - Uses tab](/images/guides/operate/webserver/resource-details-uses-tab.png)
 
@@ -415,7 +415,7 @@ To access this tab, on the **Deployment overview** page, click the **Environment
 </TabItem>
 <TabItem value="Alerts tab">
 
-The **Alerts** tab contains information about the alert policies configured for a Dagster+ deploymen. For more information, see the [Dagster+ alerts documentation](/guides/monitor/alerts).
+The **Alerts** tab contains information about the alert policies configured for a Dagster+ deployment. For more information, see the [Dagster+ alerts documentation](/guides/monitor/alerts).
 
 To access this tab, on the **Deployment overview** page, click the **Alerts** tab.
 
