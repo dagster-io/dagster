@@ -55,6 +55,6 @@ Insights views will continue to display existing [built-in metrics](/guides/moni
 Since this functionality is still under active development, there are a few limitations we aim to address in upcoming releases:
 
 - Health statuses don’t yet take asset observations into account, only materializations
-- Failure events will not exist prior to the introduction of the new asset metrics
+- Failure events and metrics based on them (time to resolution, materialization success rate, and materialization failure count) will not exist prior to the introduction of the new asset metrics
 - Insights views do not currently show cost, Dagster credits, and metadata metrics
 - The new pages are all asset-focused, and haven’t yet been implemented for jobs

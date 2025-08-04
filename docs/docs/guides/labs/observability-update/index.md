@@ -6,7 +6,7 @@ sidebar_position: 100
 
 :::info
 
-These features are under active development, and are in limited early access. You may encounter feature gaps, and the functionality and APIs may change. To join the early access program, sign up on the [Dagster+ Summer Update page](https://dagster.io/summer). To report issues or give feedback, please reach out to your Customer Success Manager.
+These features are under active development, and are in limited early access. You may encounter feature gaps, and the functionality and APIs may change. To join the early access program, sign up on the [Dagster+ Summer Update page](https://dagster.io/summer). To report issues or give feedback, use the "Share feedback" button at the top of your homepage.
 
 :::
 
@@ -32,7 +32,7 @@ Ensure your most critical data stays fresh and trustworthy so teams can make tim
 
 ### Asset health reporting
 
-Quickly identify which datasets are performing well and which need attention with intuitive health indicators that highlight data quality and platform reliability in real time. For more information, see the [Asset health reporting guide](/guides/labs/observability-update/asset-health).
+Quickly identify which pipelines are running smoothly and which need attention with intuitive health indicators that highlight data quality and platform reliability in real time. For more information, see the [Asset health reporting guide](/guides/labs/observability-update/asset-health).
 
 ### Real-time Insights
 
