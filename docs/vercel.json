@@ -1416,7 +1416,7 @@
     },
     {
       "source": "/deployment/dagster-instance",
-      "destination": "/deployment/oss/instance-configuration"
+      "destination": "/deployment/oss/oss-instance-configuration"
     },
     {
       "source": "/deployment/dagster-daemon",
