@@ -1,7 +1,7 @@
 ---
 title: Real-time Insights
 description: Using real-time insights, you can gain visibility into historical asset health and usage metrics.
-sidebar_position: 400
+sidebar_position: 300
 ---
 
 The Dagster+ Observability update includes the next-generation version of [Dagster+ Insights](/guides/monitor/insights) with the following improvements:

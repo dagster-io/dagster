@@ -1,7 +1,7 @@
 ---
 title: Asset health reporting
 description: With asset health criteria, you can quickly identify which datasets are performing well and which need attention.
-sidebar_position: 300
+sidebar_position: 200
 ---
 
 All assets now have a single health status, that combines the status of the most recent materialization, freshness, and asset checks. These statuses appear on the home page, throughout the asset catalog, and in the asset lineage view, and can be used to group and filter your assets.
@@ -17,8 +17,9 @@ The overall health status for an asset becomes the most elevated status from amo
 | ![Warning trend icon](/images/guides/labs/observability-update/warning_trend.svg)    | Warning       | Not applicable                         | Not applicable                                                          | Freshness policy is failing with a warning | Some asset checks are failing with a warning                            |
 | ![Degraded trend icon](/images/guides/labs/observability-update/failure_trend.svg)   | Degraded      | Most recent materialization failed     | More than one partition is failing                                      | Freshness policy is failing                | Some asset checks are failing, or had an error on most recent execution |
 
-:::note Current limitations
+:::note Comming soon
 
-Health statuses don’t yet take asset observations into account (only materializations).
+* Health statuses will take asset observations into account (currently they only account for materializations).
+* Alerts will be added for health status changes.
 
 :::
