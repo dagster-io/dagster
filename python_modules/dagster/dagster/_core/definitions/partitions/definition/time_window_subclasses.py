@@ -12,7 +12,7 @@ from dagster._utils.partitions import DEFAULT_DATE_FORMAT, DEFAULT_HOURLY_FORMAT
 
 
 @public
-@whitelist_for_serdes
+@whitelist_for_serdes(kwargs_fields={"cron_schedule"})
 class HourlyPartitionsDefinition(TimeWindowPartitionsDefinition):
     """A set of hourly partitions.
 
@@ -88,7 +88,7 @@ class HourlyPartitionsDefinition(TimeWindowPartitionsDefinition):
 
 
 @public
-@whitelist_for_serdes
+@whitelist_for_serdes(kwargs_fields={"cron_schedule"})
 class DailyPartitionsDefinition(TimeWindowPartitionsDefinition):
     """A set of daily partitions.
 
@@ -163,7 +163,7 @@ class DailyPartitionsDefinition(TimeWindowPartitionsDefinition):
         )
 
 
-@whitelist_for_serdes
+@whitelist_for_serdes(kwargs_fields={"cron_schedule"})
 class WeeklyPartitionsDefinition(TimeWindowPartitionsDefinition):
     """Defines a set of weekly partitions.
 
