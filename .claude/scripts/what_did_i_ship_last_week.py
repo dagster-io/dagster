@@ -397,13 +397,42 @@ def generate_ai_analyzed_report(
     end_time: datetime,
 ) -> str:
     """Generate an AI-analyzed report using template prompts to drive analysis behavior."""
-    # Read the template to get analysis prompts
-    template_path = Path(__file__).parent.parent / "templates" / "weekly_shipping_report.md"
-    if not template_path.exists():
-        click.echo(f"⚠️  Template not found at {template_path}, using basic format")
-        return generate_basic_report(repo_stats_list, author, start_time, end_time)
+    # Define AI analysis prompt directly
+    impact_prompt = """
+You are analyzing commit data from Dagster repositories to generate a detailed technical impact summary. Your goal is to identify concrete business value and technical achievements rather than generic categorizations.
 
-    template_content = template_path.read_text()
+ANALYSIS APPROACH:
+1. **Business Impact First**: What problems were solved? What capabilities were added?
+2. **Technical Depth**: Specific technologies, patterns, architectures implemented
+3. **Strategic Value**: How does this work enable future development or reduce friction?
+4. **Concrete Details**: Use actual commit messages, line counts, and specific changes
+
+OUTPUT FORMAT:
+### `repository-name` (X commits)
+- **Major Achievements**: 2-3 specific accomplishments with business context
+- **Technical Implementation**: Key technologies/patterns used, architecture changes
+- **Scale**: Lines changed, files affected, complexity indicators
+- **Strategic Impact**: How this enables future work or solves persistent problems
+
+FOCUS AREAS TO IDENTIFY:
+- **Infrastructure Evolution**: Deployment, monitoring, scaling, reliability improvements
+- **Developer Productivity**: Tooling, automation, workflow improvements that save time
+- **Code Quality Systems**: Automated checks, standards, testing frameworks that prevent issues
+- **API & Framework Evolution**: Breaking changes, new capabilities, developer experience improvements
+- **System Architecture**: Storage layers, abstractions, performance optimizations
+
+AVOID:
+- Generic categories like "bug fixes" without context
+- Simple keyword matching
+- Vague descriptions like "various improvements"
+- Listing commits without explaining their significance
+- Mentioning formatting changes, linting fixes, or code style updates
+- Discussing yarn format, ruff format, line length changes, or similar cosmetic changes
+
+EXAMPLE QUALITY:
+❌ "Infrastructure improvements (5 commits): Various deployment and CI changes"
+✅ "Render Deployment Infrastructure: Implemented comprehensive health monitoring system with PostgreSQL/SQLite support, enabling reliable production deployments with automated failover and database migration capabilities (+847 lines, 12 files). This replaces manual deployment processes and provides foundation for multi-environment scaling."
+"""
 
     # Format commit data for AI analysis
     commit_data = format_commits_for_analysis(repo_stats_list)
@@ -421,10 +450,7 @@ def generate_ai_analyzed_report(
     # Use AI to analyze different sections
     click.echo("🤖 Using AI to analyze commit impact...")
 
-    # Extract analysis prompts from template
-    impact_prompt = extract_analysis_prompt(template_content, "Impact Summary")
-
-    # Perform AI analysis using the extracted prompts and commit data
+    # Perform AI analysis using the hardcoded prompt and commit data
     impact_analysis = analyze_with_ai("Impact Summary", impact_prompt, commit_data)
 
     # Generate report structure
@@ -514,33 +540,6 @@ def generate_ai_analyzed_report(
     return "\n".join(output)
 
 
-def extract_analysis_prompt(template_content: str, section_name: str) -> str:
-    """Extract AI analysis prompt from template for a specific section."""
-    # Find the section first, then look for the AI ANALYSIS PROMPT comment within it
-    lines = template_content.split("\n")
-    in_section = False
-    in_prompt = False
-    prompt_lines = []
-
-    for line in lines:
-        # Look for the section header
-        if line.strip() == f"## {section_name}":
-            in_section = True
-            continue
-        elif line.startswith("## ") and in_section:
-            # We've moved to a different section
-            break
-        elif in_section and "AI ANALYSIS PROMPT:" in line:
-            in_prompt = True
-            continue
-        elif in_prompt and line.strip().startswith("-->"):
-            break
-        elif in_prompt:
-            prompt_lines.append(line)
-
-    return "\n".join(prompt_lines)
-
-
 def analyze_with_ai(section_name: str, prompt: str, commit_data: str) -> str:
     """Analyze commit data using Anthropic AI to generate meaningful insights."""
     if not prompt.strip():
@@ -581,37 +580,6 @@ Provide a detailed, specific analysis that goes beyond simple categorization.
     )
 
     return response.content[0].text.strip()
-
-
-def generate_basic_report(
-    repo_stats_list: list[RepoStats],
-    author: str,
-    start_time: datetime,
-    end_time: datetime,
-) -> str:
-    """Fallback basic report generation if template is not available."""
-    output = []
-    output.append("# Weekly Shipping Report")
-    output.append("")
-    output.append(f"**Author**: {author}")
-    output.append(
-        f"**Period**: {start_time.strftime('%A, %B %d, %Y')} - {end_time.strftime('%A, %B %d, %Y')}"
-    )
-    output.append("")
-
-    total_commits = sum(len(rs.commits) for rs in repo_stats_list)
-
-    if total_commits == 0:
-        output.append("No commits found for this period.")
-        return "\n".join(output)
-
-    for repo_stats in repo_stats_list:
-        if repo_stats.commits:
-            output.append(f"## {repo_stats.name} ({len(repo_stats.commits)} commits)")
-            for commit in repo_stats.commits:
-                output.append(f"- **{commit.sha[:7]}** {commit.message.split(chr(10))[0]}")
-
-    return "\n".join(output)
 
 
 def upload_to_gist(content: str, filename: str = "weekly_shipping_report.md") -> Optional[str]:
