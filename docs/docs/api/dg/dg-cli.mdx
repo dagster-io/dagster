@@ -9,11 +9,9 @@ custom_edit_url: null
 
 <div class="section" id="dg-cli">
 
-
 # dg CLI
 
 <div class="section" id="dg-check">
-
 
 ## dg check
 
@@ -22,8 +20,8 @@ Commands for checking the integrity of your Dagster code.
     ```shell
     dg check [OPTIONS] COMMAND [ARGS]...
     ```
-<div class="section" id="dg-check-defs">
 
+<div class="section" id="dg-check-defs">
 
 ### defs
 
@@ -41,6 +39,7 @@ This command returns an exit code 1 when errors are found, otherwise an exit cod
     ```shell
     dg check defs [OPTIONS]
     ```
+
 Options:
 
 <dl>
@@ -95,9 +94,7 @@ Options:
 </dl>
 </div>
 
-
 <div class="section" id="dg-check-yaml">
-
 
 ### yaml
 
@@ -106,6 +103,7 @@ Check defs.yaml files against their schemas, showing validation errors.
     ```shell
     dg check yaml [OPTIONS] [PATHS]...
     ```
+
 Options:
 
 <dl>
@@ -147,7 +145,6 @@ Arguments:
 </dl>
 </div></div>
 
-
 <div class="section" id="dg-dev">
 ## dg dev
 
@@ -159,6 +156,7 @@ workspace. If launched inside a project directory, it will launch only that proj
     ```shell
     dg dev [OPTIONS]
     ```
+
 Options:
 
 <dl>
@@ -288,12 +286,9 @@ Environment variables:
 
     <dt>DAGSTER_autoload_defs_module_name</dt>
     <dd>
-    > 
+    >
 
     Provide a default for [`--autoload-defs-module-name`](#cmdoption-dg-dev-autoload-defs-module-name)
-
-
-
 
 </dd>
 
@@ -302,12 +297,9 @@ Environment variables:
 
     <dt>DAGSTER_MODULE_NAME</dt>
     <dd>
-    > 
+    >
 
     Provide a default for [`--module-name`](#cmdoption-dg-dev-m)
-
-
-
 
 </dd>
 
@@ -316,12 +308,9 @@ Environment variables:
 
     <dt>DAGSTER_PYTHON_FILE</dt>
     <dd>
-    > 
+    >
 
     Provide a default for [`--python-file`](#cmdoption-dg-dev-f)
-
-
-
 
 </dd>
 
@@ -330,18 +319,14 @@ Environment variables:
 
     <dt>DAGSTER_WORKING_DIRECTORY</dt>
     <dd>
-    > 
+    >
 
     Provide a default for [`--working-directory`](#cmdoption-dg-dev-d)
-
-
-
 
 </dd>
 
 </dl>
 </div>
-
 
 <div class="section" id="dg-launch">
 ## dg launch
@@ -351,6 +336,7 @@ Launch a Dagster run.
     ```shell
     dg launch [OPTIONS]
     ```
+
 Options:
 
 <dl>
@@ -457,12 +443,9 @@ Environment variables:
 
     <dt>DAGSTER_ATTRIBUTE</dt>
     <dd>
-    > 
+    >
 
     Provide a default for [`--attribute`](#cmdoption-dg-launch-a)
-
-
-
 
 </dd>
 
@@ -471,12 +454,9 @@ Environment variables:
 
     <dt>DAGSTER_PACKAGE_NAME</dt>
     <dd>
-    > 
+    >
 
     Provide a default for [`--package-name`](#cmdoption-dg-launch-package-name)
-
-
-
 
 </dd>
 
@@ -485,12 +465,9 @@ Environment variables:
 
     <dt>DAGSTER_autoload_defs_module_name</dt>
     <dd>
-    > 
+    >
 
     Provide a default for [`--autoload-defs-module-name`](#cmdoption-dg-launch-autoload-defs-module-name)
-
-
-
 
 </dd>
 
@@ -499,12 +476,9 @@ Environment variables:
 
     <dt>DAGSTER_MODULE_NAME</dt>
     <dd>
-    > 
+    >
 
     Provide a default for [`--module-name`](#cmdoption-dg-launch-m)
-
-
-
 
 </dd>
 
@@ -513,12 +487,9 @@ Environment variables:
 
     <dt>DAGSTER_PYTHON_FILE</dt>
     <dd>
-    > 
+    >
 
     Provide a default for [`--python-file`](#cmdoption-dg-launch-f)
-
-
-
 
 </dd>
 
@@ -527,21 +498,16 @@ Environment variables:
 
     <dt>DAGSTER_WORKING_DIRECTORY</dt>
     <dd>
-    > 
+    >
 
     Provide a default for [`--working-directory`](#cmdoption-dg-launch-d)
-
-
-
 
 </dd>
 
 </dl>
 </div>
 
-
 <div class="section" id="dg-list">
-
 
 ## dg list
 
@@ -550,14 +516,15 @@ Commands for listing Dagster entities.
     ```shell
     dg list [OPTIONS] COMMAND [ARGS]...
     ```
-<div class="section" id="dg-list-component-tree">
 
+<div class="section" id="dg-list-component-tree">
 
 ### component-tree
 
     ```shell
     dg list component-tree [OPTIONS]
     ```
+
 Options:
 
 <dl>
@@ -583,9 +550,7 @@ Options:
 </dl>
 </div>
 
-
 <div class="section" id="dg-list-components">
-
 
 ### components
 
@@ -594,6 +559,7 @@ List all available Dagster component types in the current Python environment.
     ```shell
     dg list components [OPTIONS]
     ```
+
 Options:
 
 <dl>
@@ -626,9 +592,7 @@ Options:
 </dl>
 </div>
 
-
 <div class="section" id="dg-list-defs">
-
 
 ### defs
 
@@ -637,6 +601,7 @@ List registered Dagster definitions in the current project environment.
     ```shell
     dg list defs [OPTIONS]
     ```
+
 Options:
 
 <dl>
@@ -683,9 +648,7 @@ Options:
 </dl>
 </div>
 
-
 <div class="section" id="dg-list-envs">
-
 
 ### envs
 
@@ -694,6 +657,7 @@ List environment variables from the .env file of the current project.
     ```shell
     dg list envs [OPTIONS]
     ```
+
 Options:
 
 <dl>
@@ -712,9 +676,7 @@ Options:
 </dl>
 </div>
 
-
 <div class="section" id="dg-list-projects">
-
 
 ### projects
 
@@ -723,6 +685,7 @@ List projects in the current workspace.
     ```shell
     dg list projects [OPTIONS]
     ```
+
 Options:
 
 <dl>
@@ -741,9 +704,7 @@ Options:
 </dl>
 </div>
 
-
 <div class="section" id="dg-list-registry-modules">
-
 
 ### registry-modules
 
@@ -752,6 +713,7 @@ List dg plugins and their corresponding objects in the current Python environmen
     ```shell
     dg list registry-modules [OPTIONS]
     ```
+
 Options:
 
 <dl>
@@ -777,7 +739,6 @@ Options:
 </dl>
 </div></div>
 
-
 <div class="section" id="dg-scaffold">
 ## dg scaffold
 
@@ -786,6 +747,7 @@ Commands for scaffolding Dagster entities.
     ```shell
     dg scaffold [OPTIONS] COMMAND [ARGS]...
     ```
+
 Commands:
 
 <dl>
@@ -802,14 +764,11 @@ Commands:
 
     Scaffold of a custom Dagster component type.
 
-    > 
+    >
 
     This command must be run inside a Dagster project directory. The component type scaffold
 
     will be placed in submodule <cite>\<project_name>.lib.\<name></cite>.
-
-
-
 
 </dd>
 
@@ -828,24 +787,22 @@ Commands:
 
     Scaffold a GitHub Actions workflow for a Dagster project.
 
-    > 
+    >
 
     This command will create a GitHub Actions workflow in the <cite>.github/workflows</cite> directory.
-
-
-
 
 </dd>
 
 </dl>
 </div>
 
-
 <div class="section" id="dg-scaffold-example">
 
 ## dg scaffold example
 
-<strong>Note:</strong> Before scaffolding definitions with `dg`, you must [create a project](https://docs.dagster.io/guides/build/projects/creating-a-new-project) with the [create-dagster CLI](https://docs.dagster.io/api/dg/create-dagster) and activate its virtual environment.
+<strong>Note:</strong> Before scaffolding definitions with `dg`, you must [create a
+project](https://docs.dagster.io/guides/build/projects/creating-a-new-project) with the [create-dagster
+CLI](https://docs.dagster.io/api/dg/create-dagster) and activate its virtual environment.
 
 You can use the `dg scaffold defs` command to scaffold a new asset underneath the `defs` folder. In this example, we scaffold an asset named `my_asset.py` and write it to the `defs/assets` directory:
 
@@ -854,6 +811,7 @@ You can use the `dg scaffold defs` command to scaffold a new asset underneath th
 
     Creating a component at /.../my-project/src/my_project/defs/assets/my_asset.py.
     ```
+
 Once the asset has been scaffolded, we can see that a new file has been added to `defs/assets`, and view its contents:
 
     ```bash
@@ -881,6 +839,7 @@ Once the asset has been scaffolded, we can see that a new file has been added to
     @dg.asset
     def my_asset(context: dg.AssetExecutionContext) -> dg.MaterializeResult: ...
     ```
+
 <strong>Note:</strong> You can run `dg scaffold defs` from within any directory in your project and the resulting files will always be created in the `<project-name>/src/<project_name>/defs/` folder.
 
 In the above example, the scaffolded asset contains a basic commented-out definition. You can replace this definition with working code:
@@ -894,6 +853,7 @@ In the above example, the scaffolded asset contains a basic commented-out defini
         """Asset that greets you."""
         context.log.info("hi!")
     ```
+
 To confirm that the new asset now appears in the list of definitions, run <cite>dg list defs</cite>:
 
     ```bash
@@ -909,4 +869,5 @@ To confirm that the new asset now appears in the list of definitions, run <cite>
     │         │ └──────────┴──────────┴──────┴───────┴────────────────────────┘ │
     └─────────┴─────────────────────────────────────────────────────────────────┘
     ```
+
 </div></div>

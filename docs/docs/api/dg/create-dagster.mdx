@@ -9,11 +9,9 @@ custom_edit_url: null
 
 <div class="section" id="create-dagster-cli">
 
-
 # create-dagster CLI
 
 <div class="section" id="installation">
-
 
 ## Installation
 
@@ -21,14 +19,11 @@ See the [Installation](https://docs.dagster.io/getting-started/installation) gui
 
 </div>
 
-
 <div class="section" id="commands">
-
 
 ## Commands
 
 <div class="section" id="create-dagster-project">
-
 
 ### create-dagster project
 
@@ -54,9 +49,11 @@ Created projects will have the following structure:
     │   └── __init__.py
     └── pyproject.toml
     ```
+
 The <cite>src.PROJECT_NAME.defs</cite> directory holds Python objects that can be targeted by the
-<cite>dg scaffold</cite> command or have dg-inspectable metadata. Custom component types in the project
-live in <cite>src.PROJECT_NAME.components</cite>. These types can be created with <cite>dg scaffold component</cite>.
+
+<cite>dg scaffold</cite> command or have dg-inspectable metadata. Custom component types in the project live in
+<cite>src.PROJECT_NAME.components</cite>. These types can be created with <cite>dg scaffold component</cite>.
 
 Examples:
 
@@ -70,6 +67,7 @@ Examples:
     ```shell
     create-dagster project [OPTIONS] PATH
     ```
+
 Options:
 
 <dl>
@@ -104,7 +102,6 @@ Arguments:
 </dl>
 </div>
 
-
 <div class="section" id="create-dagster-workspace">
 
 ### create-dagster workspace
@@ -122,6 +119,7 @@ The scaffolded workspace folder has the following structure:
     │       └── uv.lock
     └── dg.toml
     ```
+
 Examples:
 
     ```default
@@ -134,6 +132,7 @@ Examples:
     ```shell
     create-dagster workspace [OPTIONS] PATH
     ```
+
 Options:
 
 <dl>
