@@ -1,5 +1,6 @@
 import contextlib
 import copy
+import logging
 import os
 import shutil
 import signal
@@ -43,7 +44,8 @@ DAGSTER_DBT_TERMINATION_TIMEOUT_SECONDS = int(
 DEFAULT_EVENT_POSTPROCESSING_THREADPOOL_SIZE: Final[int] = 4
 
 
-logger = get_dagster_logger()
+logger = get_dagster_logger("dagster-dbt")
+logger.setLevel(logging.ERROR)
 
 
 def _get_dbt_target_path() -> Path:
