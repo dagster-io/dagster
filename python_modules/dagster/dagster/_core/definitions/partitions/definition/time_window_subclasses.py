@@ -7,10 +7,12 @@ from dagster._core.definitions.partitions.definition.time_window import (
     TimeWindowPartitionsDefinition,
 )
 from dagster._core.definitions.partitions.schedule_type import ScheduleType
+from dagster._serdes import whitelist_for_serdes
 from dagster._utils.partitions import DEFAULT_DATE_FORMAT, DEFAULT_HOURLY_FORMAT_WITHOUT_TIMEZONE
 
 
 @public
+@whitelist_for_serdes
 class HourlyPartitionsDefinition(TimeWindowPartitionsDefinition):
     """A set of hourly partitions.
 
@@ -86,6 +88,7 @@ class HourlyPartitionsDefinition(TimeWindowPartitionsDefinition):
 
 
 @public
+@whitelist_for_serdes
 class DailyPartitionsDefinition(TimeWindowPartitionsDefinition):
     """A set of daily partitions.
 
@@ -160,6 +163,7 @@ class DailyPartitionsDefinition(TimeWindowPartitionsDefinition):
         )
 
 
+@whitelist_for_serdes
 class WeeklyPartitionsDefinition(TimeWindowPartitionsDefinition):
     """Defines a set of weekly partitions.
 
