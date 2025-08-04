@@ -254,6 +254,8 @@ def execute_list_command(client):
             location_desc.append(f"Package: {metadata.package_name}")
         if metadata.image:
             location_desc.append(f"Image: {metadata.image}")
+        if metadata.state_versions:
+            location_desc.append(f"State versions: {metadata.state_versions}")
 
         ui.print("\t".join(location_desc))
 

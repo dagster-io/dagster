@@ -83,6 +83,7 @@ class CodeLocationDeployData(
             ("pex_metadata", Optional[PexMetadata]),
             ("agent_queue", Optional[AgentQueue]),
             ("autoload_defs_module_name", Optional[str]),
+            ("state_versions", Optional[dict[str, str]]),
         ],
     )
 ):
@@ -101,6 +102,7 @@ class CodeLocationDeployData(
         pex_metadata=None,
         agent_queue=None,
         autoload_defs_module_name=None,
+        state_versions=None,
     ):
         check.invariant(
             len(
@@ -129,6 +131,7 @@ class CodeLocationDeployData(
             check.opt_inst_param(pex_metadata, "pex_metadata", PexMetadata),
             check.opt_str_param(agent_queue, "agent_queue"),
             check.opt_str_param(autoload_defs_module_name, "autoload_defs_module_name"),
+            check.opt_dict_param(state_versions, "state_versions", key_type=str, value_type=str),
         )
 
     def with_cloud_context_env(self, cloud_context_env: dict[str, Any]) -> "CodeLocationDeployData":

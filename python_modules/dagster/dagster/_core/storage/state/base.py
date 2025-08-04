@@ -1,6 +1,8 @@
+import json
 from abc import ABC, abstractmethod
+from collections.abc import Mapping
 from pathlib import Path
-from typing import TYPE_CHECKING, ClassVar, Optional
+from typing import TYPE_CHECKING, ClassVar, Optional, cast
 
 from dagster._core.instance import MayHaveInstanceWeakref, T_DagsterInstance
 
@@ -22,7 +24,6 @@ class StateStorage(ABC, MayHaveInstanceWeakref[T_DagsterInstance]):
     def from_run_storage(run_storage: "RunStorage") -> "RunStorageStateStorage":
         return RunStorageStateStorage(run_storage)
 
-    @abstractmethod
     def get_latest_version(self, key: str) -> Optional[str]:
         """Returns the saved state version for the given defs key, if it exists.
 
@@ -31,6 +32,15 @@ class StateStorage(ABC, MayHaveInstanceWeakref[T_DagsterInstance]):
 
         Returns:
             Optional[str]: The saved state version for the given key, if it exists.
+        """
+        return self.get_latest_versions().get(key)
+
+    @abstractmethod
+    def get_latest_versions(self) -> Mapping[str, str]:
+        """Returns the saved state version for all defs keys.
+
+        Returns:
+            Mapping[str, str]: A mapping of defs key to saved state version.
         """
         raise NotImplementedError()
 
@@ -86,12 +96,24 @@ class StateStorage(ABC, MayHaveInstanceWeakref[T_DagsterInstance]):
 class RunStorageStateStorage(StateStorage):
     """Implements StateStorage using a RunStorage as the backing store."""
 
+    VERSIONS_KEY = "__latest_state_versions__"
+
     def __init__(self, run_storage: "RunStorage"):
         self._run_storage = run_storage
 
     def get_latest_version(self, key: str) -> Optional[str]:
         return self._run_storage.get_cursor_values({self._get_version_key(key)}).get(
             self._get_version_key(key)
+        )
+
+    def get_latest_versions(self) -> Mapping[str, str]:
+        return cast(
+            "Mapping[str, str]",
+            json.loads(
+                self._run_storage.get_cursor_values({self.VERSIONS_KEY}).get(
+                    self.VERSIONS_KEY, "{}"
+                )
+            ),
         )
 
     def load_state_to_path(self, key: str, version: str, path: Path) -> None:
@@ -102,9 +124,13 @@ class RunStorageStateStorage(StateStorage):
             return
         raise ValueError(f"No state found for key {key} and version {version}")
 
+    def _update_latest_version(self, key: str, version: str) -> None:
+        current_versions = self.get_latest_versions()
+        self._run_storage.set_cursor_values(
+            {self.VERSIONS_KEY: json.dumps({**current_versions, key: version})}
+        )
+
     def store_state(self, key: str, version: str, path: Path) -> None:
         state_key = self._get_state_key(key, version)
-        self._run_storage.set_cursor_values(
-            {state_key: path.read_bytes().decode("utf-8")}
-        )
-        self._run_storage.set_cursor_values({self._get_version_key(key): version})
+        self._run_storage.set_cursor_values({state_key: path.read_bytes().decode("utf-8")})
+        self._update_latest_version(key, version)
