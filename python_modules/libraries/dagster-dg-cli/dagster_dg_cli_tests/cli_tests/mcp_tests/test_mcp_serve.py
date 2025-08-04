@@ -97,3 +97,7 @@ async def test_list_dagster_integrations():
             response = await session.call_tool("list_available_integrations", {"project_path": "."})
             assert not response.isError
             assert len(response.content) == 1
+            assert isinstance(response.content, list)
+            assert dict(
+                response.content[0]
+            )  # check mcp.types.TextContent conforms to dict structure
