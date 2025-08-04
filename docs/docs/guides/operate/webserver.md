@@ -56,14 +56,14 @@ This feature is only available in Dagster+ Pro.
 
 :::
 
-The Dagster+ Pro **Asset catalog** page includes all the information and functionality of the original page, broken out by compute kind, asset group, [code location](/deployment/code-locations), [tags](/guides/build/assets/metadata-and-tags/index.md#tags), and [owners](/guides/build/assets/metadata-and-tags/index.md#owners), etc.
+The Dagster+ Pro **Asset catalog** page includes all the information and functionality of the original page, broken out by saved selections, asset group, kind, [owners](/guides/build/assets/metadata-and-tags/index.md#owners), [tags](/guides/build/assets/metadata-and-tags/index.md#tags), and [code location](/deployment/code-locations).
 
 On this page, you can:
 
   - View all [assets](/guides/build/assets) in your Dagster deployment
-  - View details about a specific asset by clicking on it
-  - Search assets by asset key, compute kind, asset group, code location, tags, owners, etc.
-  - Access the global asset lineage
+  - View saved selections of assets
+  - Filter assets by asset key, asset group, code location, column, column tag, table name, kind, owner, and tag
+  - Access the global asset lineage page
   - Reload definitions
 
 To access this page, click **Catalog** in the top navigation bar:
@@ -71,21 +71,16 @@ To access this page, click **Catalog** in the top navigation bar:
 ![The Asset Catalog page in the Dagster UI](/images/guides/operate/webserver/asset-catalog-cloud-pro.png)
 
 </TabItem>
-<TabItem value="Catalog views (Dagster+)">
+<TabItem value="Asset selections (Dagster+)">
 
-**Catalog views** save a set of filters against the **Asset catalog** to show only the assets you want to see. You can share these views for easy access and faster team collaboration.
+**[Asset selections](/guides/build/assets/asset-selection-syntax)** save a set of filters against the **Asset catalog** to show only the assets you want to see. You can share these views for easy access and faster team collaboration.
 
-With **Catalog views**, you can:
+With **Asset selections**, you can:
 
-  - Filter for a scoped set of [assets](/guides/build/assets) in your Dagster deployment
-  - Create shared views of assets for easier team collaboration
+  - Select a scoped set of [assets](/guides/build/assets) in your Dagster deployment
+  - Create shared selections of assets for easier team collaboration
 
-You can access catalog views by:
-
-  - Clicking **Catalog** in the top navigation
-  - **From the Global asset lineage**: Clicking **View global asset lineage**, located near the top right corner of the **Catalog** page
-
-![The Catalog views dropdown in the Dagster+ Pro Catalog UI](/images/guides/operate/webserver/catalog-views.png)
+You can access asset selections by clicking **Catalog** in the top navigation, then clicking the **Saved selections** tab.
 
 </TabItem>
 <TabItem value="Global asset lineage">
@@ -96,15 +91,15 @@ On this page, you can:
 
   - Filter assets by group
   - Filter a subset of assets by using [asset selection syntax](/guides/build/assets/asset-selection-syntax)
-  - Change the metadata displayed on each asset
+  - [Customize facets](/guides/build/assets/metadata-and-tags/asset-facets) displayed for each asset
   - Reload definitions
   - Materialize all or a selection of assets
   - View run details for the latest materialization of any asset
 
 - **Accessed by**:
 
-  - **From the Asset catalog**: Clicking **View global asset lineage**, located near the top right corner of the page
-  - **From the Asset details page**: Clicking the **Lineage tab**
+  - **From the Asset catalog**: Clicking **View global asset lineage**, located near the top right corner of the page.
+  - **From the Asset details page**: Clicking the **Lineage tab**.
 
 ![The Global asset lineage page in the Dagster UI](/images/guides/operate/webserver/global-asset-lineage.png)
 
