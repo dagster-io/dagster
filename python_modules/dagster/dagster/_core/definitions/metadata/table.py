@@ -1,6 +1,7 @@
 from collections.abc import Mapping, Sequence
-from typing import NamedTuple, Optional, Union
+from typing import Optional, Union
 
+from dagster_shared.record import IHaveNew, record, record_custom
 from dagster_shared.serdes import whitelist_for_serdes
 
 import dagster._check as check
@@ -14,23 +15,13 @@ from dagster._core.definitions.asset_key import AssetKey, CoercibleToAssetKey
 
 @public
 @whitelist_for_serdes
-class TableRecord(
-    NamedTuple(
-        "TableRecord", [("data", PublicAttr[Mapping[str, Optional[Union[str, int, float, bool]]]])]
-    )
-):
+@record(kw_only=False)
+class TableRecord:
+    data: PublicAttr[Mapping[str, Optional[Union[str, int, float, bool]]]]
+
     """Represents one record in a table. Field keys are arbitrary strings-- field values must be
     strings, integers, floats, or bools.
     """
-
-    def __new__(cls, data: Mapping[str, Optional[Union[str, int, float, bool]]]):
-        check.dict_param(
-            data,
-            "data",
-            value_type=(str, float, int, bool, type(None)),
-            additional_message="Record fields must be one of types: (str, float, int, bool)",
-        )
-        return super().__new__(cls, data=data)
 
 
 # ########################
@@ -40,14 +31,10 @@ class TableRecord(
 
 @public
 @whitelist_for_serdes
-class TableConstraints(
-    NamedTuple(
-        "TableConstraints",
-        [
-            ("other", PublicAttr[Sequence[str]]),
-        ],
-    )
-):
+@record(kw_only=False)
+class TableConstraints:
+    other: PublicAttr[Sequence[str]]
+
     """Descriptor for "table-level" constraints. Presently only one property,
     `other` is supported. This contains strings describing arbitrary
     table-level constraints. A table-level constraint is a constraint defined
@@ -56,15 +43,6 @@ class TableConstraints(
     Args:
         other (List[str]): Descriptions of arbitrary table-level constraints.
     """
-
-    def __new__(
-        cls,
-        other: Sequence[str],
-    ):
-        return super().__new__(
-            cls,
-            other=check.sequence_param(other, "other", of_type=str),
-        )
 
 
 _DEFAULT_TABLE_CONSTRAINTS = TableConstraints(other=[])
@@ -76,16 +54,12 @@ _DEFAULT_TABLE_CONSTRAINTS = TableConstraints(other=[])
 
 @public
 @whitelist_for_serdes
-class TableColumnConstraints(
-    NamedTuple(
-        "TableColumnConstraints",
-        [
-            ("nullable", PublicAttr[bool]),
-            ("unique", PublicAttr[bool]),
-            ("other", PublicAttr[Optional[Sequence[str]]]),
-        ],
-    )
-):
+@record_custom
+class TableColumnConstraints(IHaveNew):
+    nullable: PublicAttr[bool]
+    unique: PublicAttr[bool]
+    other: PublicAttr[Sequence[str]]
+
     """Descriptor for a table column's constraints. Nullability and uniqueness are specified with
     boolean properties. All other constraints are described using arbitrary strings under the
     `other` property.
@@ -105,9 +79,9 @@ class TableColumnConstraints(
     ):
         return super().__new__(
             cls,
-            nullable=check.bool_param(nullable, "nullable"),
-            unique=check.bool_param(unique, "unique"),
-            other=check.opt_sequence_param(other, "other"),
+            nullable=nullable,
+            unique=unique,
+            other=[] if other is None else other,
         )
 
 
@@ -120,18 +94,14 @@ _DEFAULT_TABLE_COLUMN_CONSTRAINTS = TableColumnConstraints()
 
 @public
 @whitelist_for_serdes(skip_when_empty_fields={"tags"})
-class TableColumn(
-    NamedTuple(
-        "TableColumn",
-        [
-            ("name", PublicAttr[str]),
-            ("type", PublicAttr[str]),
-            ("description", PublicAttr[Optional[str]]),
-            ("constraints", PublicAttr[TableColumnConstraints]),
-            ("tags", PublicAttr[Mapping[str, str]]),
-        ],
-    )
-):
+@record_custom
+class TableColumn(IHaveNew):
+    name: PublicAttr[str]
+    type: PublicAttr[str]
+    description: PublicAttr[Optional[str]]
+    constraints: PublicAttr[TableColumnConstraints]
+    tags: PublicAttr[Mapping[str, str]]
+
     """Descriptor for a table column. The only property that must be specified
     by the user is `name`. If no `type` is specified, `string` is assumed. If
     no `constraints` are specified, the column is assumed to be nullable
@@ -157,16 +127,11 @@ class TableColumn(
     ):
         return super().__new__(
             cls,
-            name=check.str_param(name, "name"),
-            type=check.str_param(type, "type"),
-            description=check.opt_str_param(description, "description"),
-            constraints=check.opt_inst_param(
-                constraints,
-                "constraints",
-                TableColumnConstraints,
-                default=_DEFAULT_TABLE_COLUMN_CONSTRAINTS,
-            ),
-            tags=check.opt_mapping_param(tags, "tags", key_type=str, value_type=str),
+            name=name,
+            type=type,
+            description=description,
+            constraints=_DEFAULT_TABLE_COLUMN_CONSTRAINTS if constraints is None else constraints,
+            tags={} if tags is None else tags,
         )
 
 
@@ -177,15 +142,11 @@ class TableColumn(
 
 @public
 @whitelist_for_serdes
-class TableSchema(
-    NamedTuple(
-        "TableSchema",
-        [
-            ("columns", PublicAttr[Sequence[TableColumn]]),
-            ("constraints", PublicAttr[TableConstraints]),
-        ],
-    )
-):
+@record_custom
+class TableSchema(IHaveNew):
+    columns: PublicAttr[Sequence[TableColumn]]
+    constraints: PublicAttr[TableConstraints]
+
     """Representation of a schema for tabular data.
 
     Schema is composed of two parts:
@@ -249,10 +210,8 @@ class TableSchema(
     ):
         return super().__new__(
             cls,
-            columns=check.sequence_param(columns, "columns", of_type=TableColumn),
-            constraints=check.opt_inst_param(
-                constraints, "constraints", TableConstraints, default=_DEFAULT_TABLE_CONSTRAINTS
-            ),
+            columns=columns,
+            constraints=_DEFAULT_TABLE_CONSTRAINTS if constraints is None else constraints,
         )
 
     @public
@@ -275,15 +234,11 @@ class TableSchema(
 
 @public
 @whitelist_for_serdes
-class TableColumnDep(
-    NamedTuple(
-        "_TableColumnDep",
-        [
-            ("asset_key", PublicAttr[CoercibleToAssetKey]),
-            ("column_name", PublicAttr[str]),
-        ],
-    )
-):
+@record_custom(checked=False)
+class TableColumnDep(IHaveNew):
+    asset_key: PublicAttr[AssetKey]
+    column_name: PublicAttr[str]
+
     """Object representing an identifier for a column in an asset."""
 
     def __new__(
@@ -294,20 +249,16 @@ class TableColumnDep(
         return super().__new__(
             cls,
             asset_key=AssetKey.from_coercible(asset_key),
-            column_name=check.str_param(column_name, "column_name"),
+            column_name=column_name,
         )
 
 
 @public
 @whitelist_for_serdes
-class TableColumnLineage(
-    NamedTuple(
-        "_TableSpec",
-        [
-            ("deps_by_column", PublicAttr[Mapping[str, Sequence[TableColumnDep]]]),
-        ],
-    )
-):
+@record_custom
+class TableColumnLineage(IHaveNew):
+    deps_by_column: PublicAttr[Mapping[str, Sequence[TableColumnDep]]]
+
     """Represents the lineage of column outputs to column inputs for a tabular asset.
 
     Args:
