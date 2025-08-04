@@ -243,6 +243,7 @@ class WeeklyPartitionsDefinition(TimeWindowPartitionsDefinition):
 
 
 @public
+@whitelist_for_serdes(kwargs_fields={"cron_schedule"})
 class MonthlyPartitionsDefinition(TimeWindowPartitionsDefinition):
     """A set of monthly partitions.
 
