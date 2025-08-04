@@ -9,4 +9,4 @@ def clear_defined_commands():
     """
     from dagster_dg_cli.cli.scaffold import scaffold_defs_group
 
-    scaffold_defs_group._commands_defined = False  # noqa: SLF001  # type: ignore
+    scaffold_defs_group._commands_defined = False  # noqa: SLF001

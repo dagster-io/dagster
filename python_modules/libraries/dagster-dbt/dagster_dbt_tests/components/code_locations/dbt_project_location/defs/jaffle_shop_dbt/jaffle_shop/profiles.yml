@@ -9,7 +9,7 @@ jaffle_shop:
     snowflake:
       type: snowflake
       account: "{{ env_var('SNOWFLAKE_ACCOUNT') }}"
-      user: "{{ env_var('SNOWFLAKE_USER') }}"
+      user: BUILDKITE
       password: "{{ env_var('SNOWFLAKE_PASSWORD') }}"
       client_session_keep_alive: False
       database: TESTDB

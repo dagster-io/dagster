@@ -29,6 +29,7 @@ from dagster._core.definitions.metadata import (
     MetadataValue,
     TableColumnLineageMetadataValue,
 )
+from dagster._core.definitions.metadata.metadata_value import ObjectMetadataValue
 from dagster._core.definitions.metadata.source_code import LocalFileCodeReference
 from dagster._core.events import (
     DagsterEventType,
@@ -212,6 +213,9 @@ def iterate_metadata_entries(metadata: Mapping[str, MetadataValue]) -> Iterator[
             yield GrapheneTimestampMetadataEntry(label=key, timestamp=value.value)
         elif isinstance(value, PoolMetadataValue):
             yield GraphenePoolMetadataEntry(label=key, pool=value.pool)
+        elif isinstance(value, ObjectMetadataValue):
+            # x-process available value is just class name, so treat as text
+            yield GrapheneTextMetadataEntry(label=key, text=value.value)
         else:
             # skip rest for now
             check.not_implemented(f"{type(value)} unsupported metadata entry for now")

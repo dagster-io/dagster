@@ -87,3 +87,17 @@ async def test_scaffold_dagster_component_and_check_yaml():
                 },
             )
             assert not response.isError, response.content
+
+
+@pytest.mark.skipif(sys.version_info < (3, 10), reason="no mcp support on 3.9")
+@pytest.mark.asyncio
+async def test_list_dagster_integrations():
+    with ProxyRunner.test() as runner, isolated_example_project_foo_bar(runner, in_workspace=False):
+        async with mcp_server() as session:
+            response = await session.call_tool("list_available_integrations", {"project_path": "."})
+            assert not response.isError
+            assert len(response.content) == 1
+            assert isinstance(response.content, list)
+            assert dict(
+                response.content[0]
+            )  # check mcp.types.TextContent conforms to dict structure

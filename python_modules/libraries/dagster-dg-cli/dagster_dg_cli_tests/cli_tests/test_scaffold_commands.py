@@ -97,9 +97,7 @@ def test_scaffold_defs_validation_failure() -> None:
         assert (
             result.output.strip()
             == textwrap.dedent("""
-            Error validating scaffold parameters for `dagster_test.components.SimplePipesScriptComponent`:
-
-            [
+            Error validating scaffold parameters for `dagster_test.components.SimplePipesScriptComponent`:\\n\\n[
                 {
                     "type": "missing",
                     "loc": [
