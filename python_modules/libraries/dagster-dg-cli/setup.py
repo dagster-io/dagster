@@ -38,6 +38,7 @@ setup(
         f"dagster-dg-core{pin}",
         f"dagster{pin}",
         "mcp; python_version>='3.10'",  # mcp not available for 3.9
+        "typer",
     ],
     entry_points={
         "console_scripts": [
