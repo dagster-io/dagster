@@ -84,4 +84,4 @@ Best of all, this setup applies automatically to all dbt models in the project. 
 
 ## Next steps
 
-- Continue this example with [dbt tests](/examples/bluesky/dbt-tests)
+- Continue this example with [dbt tests](/examples/dbt/dbt-tests)
