@@ -84,10 +84,10 @@ Once you have your Looker assets for your PDTs, you can define a job to material
 You can also define a job for a selection of these assets.
 
 <CodeExample
-startAfter="start_looker_selection_job"
-endBefore="end_looker_selection_job"
-path="docs_snippets/docs_snippets/integrations/looker/create_looker_selection_job.py"
-language="python"
+  startAfter="start_looker_selection_job"
+  endBefore="end_looker_selection_job"
+  path="docs_snippets/docs_snippets/integrations/looker/create_looker_selection_job.py"
+  language="python"
 />
 
 ## Customize upstream dependencies
