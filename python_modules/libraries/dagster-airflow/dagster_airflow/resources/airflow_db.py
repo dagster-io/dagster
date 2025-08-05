@@ -10,7 +10,7 @@ from dagster import (
     DagsterRun,
     _check as check,
 )
-from dagster._core.instance import AIRFLOW_EXECUTION_DATE_STR
+from dagster._core.instance.utils import AIRFLOW_EXECUTION_DATE_STR
 
 from dagster_airflow.utils import is_airflow_2_loaded_in_environment
 
