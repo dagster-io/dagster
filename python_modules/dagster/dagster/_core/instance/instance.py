@@ -1207,32 +1207,31 @@ class DagsterInstance(DynamicPartitionsStore):
             if isinstance(partitions_definition, TimeWindowPartitionsDefinition):
                 # only store the subset of time window partitions, since those can be compressed efficiently
                 partition_tag = tags.get(PARTITION_NAME_TAG)
-                partition_range_start, partition_range_end = (
-                    tags.get(ASSET_PARTITION_RANGE_START_TAG),
-                    tags.get(ASSET_PARTITION_RANGE_END_TAG),
+                partition_range_tags = (
+                    (
+                        tags[ASSET_PARTITION_RANGE_START_TAG],
+                        tags[ASSET_PARTITION_RANGE_END_TAG],
+                    )
+                    if tags.get(ASSET_PARTITION_RANGE_START_TAG) is not None
+                    and tags.get(ASSET_PARTITION_RANGE_END_TAG) is not None
+                    else None
                 )
-                has_partition_range_tags = (
-                    partition_range_start is not None and partition_range_end is not None
-                )
-                if partition_tag is not None or has_partition_range_tags:
-                    if partition_tag is not None and has_partition_range_tags:
+
+                if partition_tag is not None or partition_range_tags is not None:
+                    if partition_tag is not None and partition_range_tags is not None:
                         raise DagsterInvariantViolationError(
                             f"Cannot have {ASSET_PARTITION_RANGE_START_TAG} or"
                             f" {ASSET_PARTITION_RANGE_END_TAG} set along with"
                             f" {PARTITION_NAME_TAG}"
                         )
                     if partition_tag is not None:
-                        partition_range_start = partition_tag
-                        partition_range_end = partition_tag
-
-                    # don't reuse has_partition_range_tags here, since we may have just reset
-                    # partition_range_start and partition_range_end
-                    if partition_range_start is not None and partition_range_end is not None:
+                        partition_range_tags = (partition_tag, partition_tag)
+                    if partition_range_tags is not None:
                         start_window = partitions_definition.time_window_for_partition_key(
-                            partition_range_start
+                            partition_range_tags[0]
                         )
                         end_window = partitions_definition.time_window_for_partition_key(
-                            partition_range_end
+                            partition_range_tags[1]
                         )
                         partitions_subset = (
                             partitions_definition.get_partition_subset_in_time_window(
