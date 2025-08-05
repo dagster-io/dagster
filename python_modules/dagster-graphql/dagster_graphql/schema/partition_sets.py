@@ -5,15 +5,17 @@ import dagster._check as check
 import graphene
 from dagster._core.definitions.asset_key import AssetKey
 from dagster._core.definitions.partitions.definition import MultiPartitionsDefinition
-from dagster._core.errors import DagsterUserCodeProcessError
-from dagster._core.remote_representation import RemoteJob, RemotePartitionSet, RepositoryHandle
-from dagster._core.remote_representation.external_data import (
+from dagster._core.definitions.partitions.snap import (
     DynamicPartitionsSnap,
     MultiPartitionsSnap,
-    PartitionExecutionErrorSnap,
     PartitionsSnap,
     StaticPartitionsSnap,
     TimeWindowPartitionsSnap,
+)
+from dagster._core.errors import DagsterUserCodeProcessError
+from dagster._core.remote_representation import RemoteJob, RemotePartitionSet, RepositoryHandle
+from dagster._core.remote_representation.external_data import (
+    PartitionExecutionErrorSnap,
     job_name_for_partition_set_snap_name,
 )
 from dagster._core.storage.dagster_run import RunsFilter

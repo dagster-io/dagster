@@ -557,7 +557,7 @@ class TimeWindowPartitionsSubset(
         )
 
     def to_serializable_subset(self) -> "TimeWindowPartitionsSubset":
-        from dagster._core.remote_representation.external_data import TimeWindowPartitionsSnap
+        from dagster._core.definitions.partitions.snap import TimeWindowPartitionsSnap
 
         # in cases where we're dealing with (e.g.) HourlyPartitionsDefinition, we need to convert
         # this partitions definition into a raw TimeWindowPartitionsDefinition to make it

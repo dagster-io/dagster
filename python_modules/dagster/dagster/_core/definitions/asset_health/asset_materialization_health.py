@@ -10,8 +10,8 @@ from dagster._core.definitions.asset_health.asset_health import AssetHealthStatu
 from dagster._core.definitions.asset_key import AssetKey
 from dagster._core.definitions.partitions.context import partition_loading_context
 from dagster._core.definitions.partitions.definition import PartitionsDefinition
+from dagster._core.definitions.partitions.snap import PartitionsSnap
 from dagster._core.loader import LoadableBy, LoadingContext
-from dagster._core.remote_representation.external_data import PartitionsSnap
 from dagster._core.storage.dagster_run import RunRecord
 from dagster._core.storage.event_log.base import AssetRecord
 from dagster._core.storage.partition_status_cache import get_partition_subsets
