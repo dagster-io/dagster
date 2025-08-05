@@ -2,8 +2,9 @@ import {Colors} from '@dagster-io/ui-components';
 
 import {failedStatuses, inProgressStatuses, queuedStatuses, successStatuses} from './RunStatuses';
 import {TimelineRun} from './RunTimelineTypes';
+import { buildAssetCountBySection } from 'shared/search/BuildAssetSearchResults';
 
-type BackgroundStatus = 'inProgress' | 'queued' | 'failed' | 'succeeded' | 'scheduled';
+type BackgroundStatus = 'inProgress' | 'queued' | 'failed' | 'succeeded' | 'scheduled' | 'succeededWithWarnings';
 
 const statusToColor = (status: BackgroundStatus) => {
   switch (status) {
@@ -17,6 +18,8 @@ const statusToColor = (status: BackgroundStatus) => {
       return Colors.accentRed();
     case 'succeeded':
       return Colors.accentGreen();
+    case 'succeededWithWarnings':
+      return Colors.accentYellow();
   }
 };
 
@@ -27,6 +30,7 @@ export const mergeStatusToBackground = (runs: TimelineRun[]) => {
     inProgress: 0,
     failed: 0,
     succeeded: 0,
+    succeededWithWarnings: 0,
   };
 
   runs.forEach(({status}) => {
@@ -38,6 +42,8 @@ export const mergeStatusToBackground = (runs: TimelineRun[]) => {
       counts.inProgress++;
     } else if (failedStatuses.has(status)) {
       counts.failed++;
+    } else if(status === 'SUCCESS_WITH_WARNINGS'){
+      counts.succeededWithWarnings++;
     } else if (successStatuses.has(status)) {
       counts.succeeded++;
     }
@@ -57,6 +63,8 @@ export const mergeStatusToBackground = (runs: TimelineRun[]) => {
 
   const colors = [
     counts.failed > 0 ? {status: 'failed', pct: (counts.failed * 100) / runCount} : null,
+    counts.succeededWithWarnings > 0
+      ? {status: 'succeededWithWarnings', pct:(counts.succeededWithWarnings * 100)/ runCount} : null,
     counts.succeeded > 0 ? {status: 'succeeded', pct: (counts.succeeded * 100) / runCount} : null,
     counts.inProgress > 0
       ? {status: 'inProgress', pct: (counts.inProgress * 100) / runCount}

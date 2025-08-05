@@ -267,6 +267,7 @@ const RunStatusTags = React.memo(({rows}: {rows: TimelineRow[]}) => {
     let inProgressCount = 0;
     let failedCount = 0;
     let succeededCount = 0;
+    let warningCount = 0;
     rows.forEach(({runs}) => {
       runs.forEach(({status}) => {
         // Refine `SCHEDULED` out so that our Set checks below pass TypeScript.
@@ -277,12 +278,14 @@ const RunStatusTags = React.memo(({rows}: {rows: TimelineRow[]}) => {
           inProgressCount++;
         } else if (failedStatuses.has(status)) {
           failedCount++;
+        } else if(status === 'SUCCESS_WITH_WARNINGS'){
+          warningCount++;
         } else if (successStatuses.has(status)) {
           succeededCount++;
         }
       });
     });
-    return {inProgressCount, failedCount, succeededCount};
+    return {inProgressCount, failedCount, succeededCount, warningCount};
   }, [rows]);
 
   return <RunStatusTagsWithCounts {...counts} />;
@@ -292,16 +295,21 @@ export const RunStatusTagsWithCounts = ({
   inProgressCount,
   succeededCount,
   failedCount,
+  warningCount,
 }: {
   inProgressCount: number;
   succeededCount: number;
   failedCount: number;
+  warningCount: number;
 }) => {
   const inProgressText =
     inProgressCount === 1 ? '1 run in progress' : `${inProgressCount} runs in progress`;
   const succeededText =
     succeededCount === 1 ? '1 run succeeded' : `${succeededCount} runs succeeded`;
-  const failedText = failedCount === 1 ? '1 run failed' : `${failedCount} runs failed`;
+  const failedText = 
+    failedCount === 1 ? '1 run failed' : `${failedCount} runs failed`;
+  const warningText = 
+    warningCount === 1 ? '1 run succeeded with warnings' : `${warningCount} runs succeeded with warnings`;
 
   return (
     <Box flex={{direction: 'row', gap: 4, alignItems: 'center'}}>
@@ -318,6 +326,11 @@ export const RunStatusTagsWithCounts = ({
       {failedCount > 0 ? (
         <Tooltip content={<StatusSpan>{failedText}</StatusSpan>} placement="top">
           <Tag intent="danger">{failedCount}</Tag>
+        </Tooltip>
+      ) : null}
+      {warningCount > 0 ? (
+        <Tooltip content={<StatusSpan>{warningText}</StatusSpan>} placement="top">
+          <Tag intent="warning">{warningCount}</Tag>
         </Tooltip>
       ) : null}
     </Box>
