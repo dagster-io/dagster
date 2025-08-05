@@ -1,5 +1,6 @@
 import sys
 import threading
+from collections.abc import Mapping
 from contextlib import AbstractContextManager
 from typing import TYPE_CHECKING, Any, NamedTuple, Optional, Union, cast
 
@@ -78,6 +79,7 @@ class GrpcServerRegistry(AbstractContextManager):
         container_image: Optional[str] = None,
         container_context: Optional[dict[str, Any]] = None,
         additional_timeout_msg: Optional[str] = None,
+        state_versions: Optional[Mapping[str, str]] = None,
     ):
         self.instance_ref = instance_ref
         self.server_command = server_command
@@ -104,6 +106,7 @@ class GrpcServerRegistry(AbstractContextManager):
         self._inject_env_vars_from_instance = inject_env_vars_from_instance
         self._container_image = container_image
         self._container_context = container_context
+        self._state_versions = state_versions
 
         self._wait_for_processes_on_shutdown = wait_for_processes_on_shutdown
 
@@ -205,6 +208,7 @@ class GrpcServerRegistry(AbstractContextManager):
                     inject_env_vars_from_instance=self._inject_env_vars_from_instance,
                     container_image=self._container_image,
                     container_context=self._container_context,
+                    state_versions=self._state_versions,
                     additional_timeout_msg=self._additional_timeout_msg,
                 )
                 self._all_processes.append(server_process)

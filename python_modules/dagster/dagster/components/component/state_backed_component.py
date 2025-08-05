@@ -101,9 +101,10 @@ class StateBackedComponent(Component):
     def build_defs(self, context: ComponentLoadContext) -> Definitions:
         key = self.get_state_key(context)
 
-        state_storage = StateStorage.get_current()
-        version = self._get_state_version(state_storage, key)
+        defs_load_context = DefinitionsLoadContext.get()
+        version = defs_load_context.get_state_version(key)
 
+        state_storage = StateStorage.get_current()
         if state_storage and version:
             # if we have a state storage and a version, then we can load that state
             # into a tempdir and build definitions from it
@@ -137,7 +138,7 @@ class StateBackedComponent(Component):
         """Fetches and writes required state to a local file."""
         raise NotImplementedError()
 
-    def _get_state_version(self, state_storage: Optional[StateStorage], key: str) -> Optional[str]:
+    def _get_state_version(self, key: str) -> Optional[str]:
         """Retrieves the version of the state that should be used for the given key.
         If no state is available, returns None.
 
@@ -148,19 +149,15 @@ class StateBackedComponent(Component):
         Returns:
             Optional[str]: The version of the state that should be used for the given key.
         """
-        if state_storage is None:
-            return None
-
         context = DefinitionsLoadContext.get()
         if context.load_type == DefinitionsLoadType.RECONSTRUCTION:
             # if you're in reconstruction mode, you can grab the version from the metadata
             return context.reconstruction_metadata.get(key)
         else:
-            # if you're in initialization mode, then you get the latest available version
-            # from the state storage and add it to the reconstruction metadata
-            version = state_storage.get_latest_version(key)
-            context.add_to_pending_reconstruction_metadata(key, version)
-            return version
+            # reconstruction metadata is not available in initialization mode, so we need
+            # to fetch the version
+            # key, then it will already be available on the DefinitionsLoadContext
+            return context.reconstruction_metadata.get(key)
 
     def refresh_state(self, context: ComponentLoadContext) -> None:
         """Rebuilds the state for this component and persists it to the current StateStore."""

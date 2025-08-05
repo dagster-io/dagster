@@ -3,6 +3,7 @@ import logging
 import os
 import sys
 import threading
+from collections.abc import Mapping
 from typing import Optional
 
 import click
@@ -189,6 +190,7 @@ def start_command(
     heartbeat: bool,
     heartbeat_timeout,
     instance_ref: Optional[str],
+    state_versions: Optional[Mapping[str, str]],
     **other_opts,
 ):
     # deferring for import perf
@@ -211,6 +213,7 @@ def start_command(
     logger = logging.getLogger("dagster.code_server")
 
     container_image = container_image or os.getenv("DAGSTER_CURRENT_IMAGE")
+    state_versions = state_versions or json.loads(os.getenv("DAGSTER_STATE_VERSIONS", "{}"))
 
     # in the gRPC api CLI we never load more than one module or python file at a time
     loadable_target_origin = LoadableTargetOrigin(
@@ -258,6 +261,7 @@ def start_command(
         logger=logger,
         server_heartbeat=heartbeat,
         server_heartbeat_timeout=heartbeat_timeout,
+        state_versions=state_versions,
     )
     server = DagsterGrpcServer(
         server_termination_event=server_termination_event,

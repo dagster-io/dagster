@@ -67,6 +67,7 @@ def upload_artifact(
         json={"key": key},
     )
     response.raise_for_status()
+    print("RESPONSE", response.text)
     payload = response.json()
 
     response = requests.post(

@@ -2,6 +2,7 @@ import logging
 import sys
 import threading
 import time
+from collections.abc import Mapping
 from contextlib import ExitStack
 from typing import TYPE_CHECKING, Optional
 
@@ -56,6 +57,7 @@ class DagsterProxyApiServicer(DagsterApiServicer):
         logger: logging.Logger,
         server_heartbeat: bool,
         server_heartbeat_timeout: int,
+        state_versions: Optional[Mapping[str, str]],
     ):
         super().__init__()
 
@@ -88,6 +90,7 @@ class DagsterProxyApiServicer(DagsterApiServicer):
                 inject_env_vars_from_instance=self._inject_env_vars_from_instance,
                 container_image=self._container_image,
                 container_context=self._container_context,
+                state_versions=state_versions,
                 wait_for_processes_on_shutdown=True,
                 additional_timeout_msg="Set from --startup-timeout command line argument. ",
             )
