@@ -9,3 +9,4 @@ recursive-exclude dagster_dg_cli/docs/packages/dg-docs-components/.next *
 recursive-exclude dagster_dg_cli/docs/packages/dg-docs-components/node_modules *
 recursive-exclude dagster_dg_cli/docs/packages/dg-docs-site/.next *
 recursive-exclude dagster_dg_cli/docs/packages/dg-docs-site/node_modules *
+include dagster_dg_cli/cli/scaffold/scaffold_prompt.md
