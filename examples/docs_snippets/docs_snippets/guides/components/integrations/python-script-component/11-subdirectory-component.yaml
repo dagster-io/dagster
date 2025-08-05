@@ -1,0 +1,7 @@
+type: dagster.PythonScriptComponent
+
+attributes:
+  execution:
+    path: scripts/process_sales_data.py
+  assets:
+    - key: sales_revenue_report
