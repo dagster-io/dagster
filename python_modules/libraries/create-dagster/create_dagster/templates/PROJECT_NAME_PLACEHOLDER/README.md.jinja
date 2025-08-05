@@ -1,30 +1,56 @@
 # {{ project_name }}
 
-Welcome to your new Dagster project!
-
 ## Getting started
 
-First, install the dependencies of your newly created Dagster project.
+### Installing dependencies
 
-```bash
-uv venv
-```
+**Option 1: uv**
 
-```bash
-source .venv/bin/activate
-```
+Ensure [`uv`](https://docs.astral.sh/uv/) is installed following their [official documentation](https://docs.astral.sh/uv/getting-started/installation/).
+
+Create a virtual environment, and install the required dependencies using _sync_:
 
 ```bash
 uv sync
 ```
 
-Then, start the Dagster UI web server:
+Then, activate the virtual environment:
+
+| OS | Command |
+| --- | --- |
+| MacOS | ```source .venv/bin/activate``` |
+| Windows | ```.venv\Scripts\activate``` |
+
+**Option 2: pip**
+
+Install the python dependencies with [pip](https://pypi.org/project/pip/):
+
+```bash
+python3 -m venv .venv
+```
+
+Then active the virtual environment:
+
+| OS | Command |
+| --- | --- |
+| MacOS | ```source .venv/bin/activate``` |
+| Windows | ```.venv\Scripts\activate``` |
+
+Install the required dependencies:
+
+```bash
+pip install -e ".[dev]"
+```
+
+### Running Dagster
+
+Start the Dagster UI web server:
 
 ```bash
 dg dev
 ```
 
-Open http://localhost:3000 with your browser to see the project.
+Open http://localhost:3000 in your browser to see the project.
 
 ## Learn more
 
