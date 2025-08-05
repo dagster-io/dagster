@@ -81,6 +81,15 @@ Once you have your Looker assets for your PDTs, you can define a job to material
   language="python"
 />
 
+You can also define a job for a selection of these assets.
+
+<CodeExample
+  startAfter="start_looker_selection_job"
+  endBefore="end_looker_selection_job"
+  path="docs_snippets/docs_snippets/integrations/looker/create_looker_selection_job.py"
+  language="python"
+/>
+
 ## Customize upstream dependencies
 
 By default, Dagster sets upstream dependencies when generating asset specs for your Looker assets. To do so, Dagster parses information about assets that are upstream of specific Looker assets from the Looker instance itself. You can customize how upstream dependencies are set on your Looker assets by passing an instance of the custom <PyObject section="libraries" module="dagster_looker" object="DagsterLookerApiTranslator" /> to the <PyObject section="libraries" module="dagster_looker" object="load_looker_asset_specs" /> function.
