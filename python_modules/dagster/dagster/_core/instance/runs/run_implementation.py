@@ -762,7 +762,6 @@ def log_materialization_planned_event_for_asset(
     """Moved from DagsterInstance._log_materialization_planned_event_for_asset."""
     from dagster._core.definitions.partitions.context import partition_loading_context
     from dagster._core.definitions.partitions.definition import DynamicPartitionsDefinition
-    from dagster._core.definitions.partitions.partition_key_range import PartitionKeyRange
     from dagster._core.events import AssetMaterializationPlannedData, DagsterEvent
 
     partition_tag = dagster_run.tags.get(PARTITION_NAME_TAG)
