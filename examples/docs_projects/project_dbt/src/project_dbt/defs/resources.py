@@ -18,6 +18,8 @@ def resources():
     return dg.Definitions(
         resources={
             "database": database_resource,
+            # highlight-start
             "dbt": dbt_resource,
+            # highlight-end
         },
     )

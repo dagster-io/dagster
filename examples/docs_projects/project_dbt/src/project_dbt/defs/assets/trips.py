@@ -1,8 +1,4 @@
-from io import BytesIO
-
 import dagster as dg
-import pandas as pd
-import requests
 from dagster_duckdb import DuckDBResource
 
 from project_dbt.defs.partitions import monthly_partition
@@ -11,31 +7,15 @@ TAXI_ZONES_FILE_PATH = "data/raw/taxi_zones.csv"
 TAXI_TRIPS_TEMPLATE_FILE_PATH = "data/raw/taxi_trips_{}.parquet"
 
 
+# start_taxi_zones
 @dg.asset(
-    group_name="raw_files",
-    kinds={"python"},
-)
-def taxi_zones_file(context: dg.AssetExecutionContext) -> dg.MaterializeResult:
-    """The raw CSV file for the taxi zones dataset. Sourced from the NYC Open Data portal."""
-    raw_taxi_zones = requests.get(
-        "https://community-engineering-artifacts.s3.us-west-2.amazonaws.com/dagster-university/data/taxi_zones.csv"
-    )
-
-    with open(TAXI_ZONES_FILE_PATH, "wb") as output_file:
-        output_file.write(raw_taxi_zones.content)
-
-    num_rows = len(pd.read_csv(BytesIO(raw_taxi_zones.content)))
-
-    return dg.MaterializeResult(metadata={"Number of records": dg.MetadataValue.int(num_rows)})
-
-
-@dg.asset(
-    deps=["taxi_zones_file"],
     group_name="ingested",
     kinds={"duckdb"},
 )
 def taxi_zones(context: dg.AssetExecutionContext, database: DuckDBResource):
     """The raw taxi zones dataset, loaded into a DuckDB database."""
+    taxi_zones_file_path = "https://community-engineering-artifacts.s3.us-west-2.amazonaws.com/dagster-university/data/taxi_zones.csv"
+
     query = f"""
         create or replace table zones as (
             select
@@ -43,7 +23,7 @@ def taxi_zones(context: dg.AssetExecutionContext, database: DuckDBResource):
                 zone,
                 borough,
                 the_geom as geometry
-            from '{TAXI_ZONES_FILE_PATH}'
+            from '{taxi_zones_file_path}'
         );
     """
 
@@ -51,32 +31,11 @@ def taxi_zones(context: dg.AssetExecutionContext, database: DuckDBResource):
         conn.execute(query)
 
 
+# end_taxi_zones
+
+
+# start_taxi_trips
 @dg.asset(
-    partitions_def=monthly_partition,
-    group_name="raw_files",
-    kinds={"duckdb"},
-)
-def taxi_trips_file(context: dg.AssetExecutionContext) -> dg.MaterializeResult:
-    """The raw parquet files for the taxi trips dataset. Sourced from the NYC Open Data portal."""
-    partition_date_str = context.partition_key
-    month_to_fetch = partition_date_str[:-3]
-
-    raw_trips = requests.get(
-        f"https://d37ci6vzurychx.cloudfront.net/trip-data/yellow_tripdata_{month_to_fetch}.parquet"
-    )
-
-    with open(
-        TAXI_TRIPS_TEMPLATE_FILE_PATH.format(month_to_fetch),
-        "wb",
-    ) as output_file:
-        output_file.write(raw_trips.content)
-
-    num_rows = len(pd.read_parquet(BytesIO(raw_trips.content)))
-    return dg.MaterializeResult(metadata={"Number of records": dg.MetadataValue.int(num_rows)})
-
-
-@dg.asset(
-    deps=["taxi_trips_file"],
     partitions_def=monthly_partition,
     group_name="ingested",
     kinds={"duckdb"},
@@ -85,7 +44,9 @@ def taxi_trips(context: dg.AssetExecutionContext, database: DuckDBResource):
     """The raw taxi trips dataset, loaded into a DuckDB database, partitioned by month."""
     partition_date_str = context.partition_key
     month_to_fetch = partition_date_str[:-3]
-    taxi_trips_template_file_path = f"data/raw/taxi_trips_{month_to_fetch}.parquet"
+    taxi_trips_template_file_path = (
+        f"https://d37ci6vzurychx.cloudfront.net/trip-data/yellow_tripdata_{month_to_fetch}.parquet"
+    )
 
     query = f"""
         create table if not exists trips (
@@ -106,3 +67,6 @@ def taxi_trips(context: dg.AssetExecutionContext, database: DuckDBResource):
 
     with database.get_connection() as conn:
         conn.execute(query)
+
+
+# end_taxi_trips

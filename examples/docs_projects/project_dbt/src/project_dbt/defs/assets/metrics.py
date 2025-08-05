@@ -1,14 +1,11 @@
 import dagster as dg
-import matplotlib.pyplot as plt
-import numpy as np
-import pandas as pd
 from dagster_duckdb import DuckDBResource
 
 
 @dg.asset(
-    deps=[
-        dg.AssetKey(["daily_metrics"]),
-    ],
+    # highlight-start
+    deps=[dg.AssetKey(["daily_metrics"])],
+    # highlight-end
     kinds={"duckdb"},
 )
 def manhattan_stats(database: DuckDBResource) -> dg.MaterializeResult:

@@ -25,10 +25,13 @@ models:
     columns:
       - name: zone_id
         description: The location id
+        # highlight-start
         tests:
           - not_null
+        # highlight-end
       - name: borough
         description: The borough
+        # highlight-start
         tests:
           - accepted_values:
               values:
@@ -38,5 +41,6 @@ models:
                 - Queens
                 - Staten Island
                 - EWR
+        # highlight-end
       - name: zone
         description: The zone

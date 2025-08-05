@@ -14,8 +14,6 @@ def defs():
 
 def test_trips_assets(setup_dbt_env, defs):  # noqa: F811
     assets = [
-        trips.taxi_trips_file,
-        trips.taxi_zones_file,
         trips.taxi_trips,
         trips.taxi_zones,
     ]
