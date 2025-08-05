@@ -17,6 +17,9 @@ from dagster._core.instance.utils import (
     RUNLESS_RUN_ID as RUNLESS_RUN_ID,
 )
 
+# Re-export for backward compatibility - internal repo depends on this export from instance module
+from dagster._time import get_current_timestamp as get_current_timestamp
+
 # Type alias for backward compatibility
 DagsterInstanceOverrides: TypeAlias = Mapping[str, Any]
 
@@ -31,4 +34,5 @@ __all__ = [
     "InstanceType",
     "MayHaveInstanceWeakref",
     "T_DagsterInstance",
+    "get_current_timestamp",
 ]
