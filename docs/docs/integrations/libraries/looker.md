@@ -93,10 +93,10 @@ You can also define a job for a selection of these assets.
 Finally, jobs created for your Looker assets can be scheduled.
 
 <CodeExample
-startAfter="start_looker_schedule"
-endBefore="end_looker_schedule"
-path="docs_snippets/docs_snippets/integrations/looker/schedule_looker_jobs.py"
-language="python"
+  startAfter="start_looker_schedule"
+  endBefore="end_looker_schedule"
+  path="docs_snippets/docs_snippets/integrations/looker/schedule_looker_jobs.py"
+  language="python"
 />
 
 ## Customize upstream dependencies
