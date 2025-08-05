@@ -1217,7 +1217,6 @@ class DagsterInstance(DynamicPartitionsStore):
                     else None
                 )
 
-<<<<<<< HEAD
                 if partition_tag is not None or partition_range_tags is not None:
                     if partition_tag is not None and partition_range_tags is not None:
                         raise DagsterInvariantViolationError(
@@ -1239,28 +1238,6 @@ class DagsterInstance(DynamicPartitionsStore):
                                 TimeWindow(start_window.start, end_window.end)
                             ).to_serializable_subset()
                         )
-=======
-                if partition_tag and (partition_range_start or partition_range_end):
-                    raise DagsterInvariantViolationError(
-                        f"Cannot have {ASSET_PARTITION_RANGE_START_TAG} or"
-                        f" {ASSET_PARTITION_RANGE_END_TAG} set along with"
-                        f" {PARTITION_NAME_TAG}"
-                    )
-                if partition_tag is not None:
-                    partition_range_start = partition_tag
-                    partition_range_end = partition_tag
-
-                if partition_range_start and partition_range_end:
-                    start_window = partitions_definition.time_window_for_partition_key(
-                        partition_range_start
-                    )
-                    end_window = partitions_definition.time_window_for_partition_key(
-                        partition_range_end
-                    )
-                    partitions_subset = partitions_definition.get_partition_subset_in_time_window(
-                        TimeWindow(start_window.start, end_window.end)
-                    ).to_serializable_subset()
->>>>>>> 434dc2247c (Some unnecessary changes identified in report)
 
         return DagsterRun(
             job_name=job_name,
