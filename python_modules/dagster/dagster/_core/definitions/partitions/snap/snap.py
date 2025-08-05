@@ -11,10 +11,10 @@ from typing import Optional
 from typing_extensions import Self
 
 from dagster import _check as check
-from dagster._core.definitions import PartitionsDefinition
 from dagster._core.definitions.partitions.definition import (
     DynamicPartitionsDefinition,
     MultiPartitionsDefinition,
+    PartitionsDefinition,
     StaticPartitionsDefinition,
     TimeWindowPartitionsDefinition,
 )

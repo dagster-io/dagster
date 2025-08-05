@@ -425,7 +425,7 @@ class DagsterRun(
             partitions_subset=check.opt_inst_param(
                 partitions_subset,
                 "partitions_subset",
-                {TimeWindowPartitionsSubset, KeyRangesPartitionsSubset},
+                (TimeWindowPartitionsSubset, KeyRangesPartitionsSubset),
             ),
         )
 
