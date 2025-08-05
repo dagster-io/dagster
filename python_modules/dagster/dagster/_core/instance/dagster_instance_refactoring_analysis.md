@@ -636,7 +636,7 @@ def add_dynamic_partitions(
 **Daemon Heartbeat Management:**
 
 - `add_daemon_heartbeat()` - Called on regular interval by daemon
-- `get_daemon_heartbeats()` - Latest heartbeats of all daemon types  
+- `get_daemon_heartbeats()` - Latest heartbeats of all daemon types
 - `wipe_daemon_heartbeats()` - Clear all daemon heartbeats
 
 **Daemon Status & Configuration:**
@@ -758,7 +758,7 @@ def get_required_daemon_types(ops: "DaemonInstanceOps") -> Sequence[str]:
     return daemons
 
 def get_daemon_statuses(
-    ops: "DaemonInstanceOps", 
+    ops: "DaemonInstanceOps",
     daemon_types: Optional[Sequence[str]] = None
 ) -> Mapping[str, "DaemonStatus"]:
     """Get current daemon status with health checks - moved from DagsterInstance.get_daemon_statuses()"""
