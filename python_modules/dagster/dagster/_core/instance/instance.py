@@ -1211,12 +1211,11 @@ class DagsterInstance(DynamicPartitionsStore):
                     tags.get(ASSET_PARTITION_RANGE_START_TAG),
                     tags.get(ASSET_PARTITION_RANGE_END_TAG),
                 )
-                if partition_tag is not None or (
+                has_partition_range_tags = (
                     partition_range_start is not None and partition_range_end is not None
-                ):
-                    if partition_tag is not None and (
-                        partition_range_start is not None or partition_range_end is not None
-                    ):
+                )
+                if partition_tag is not None or has_partition_range_tags:
+                    if partition_tag is not None and has_partition_range_tags:
                         raise DagsterInvariantViolationError(
                             f"Cannot have {ASSET_PARTITION_RANGE_START_TAG} or"
                             f" {ASSET_PARTITION_RANGE_END_TAG} set along with"
@@ -1226,6 +1225,8 @@ class DagsterInstance(DynamicPartitionsStore):
                         partition_range_start = partition_tag
                         partition_range_end = partition_tag
 
+                    # don't reuse has_partition_range_tags here, since we may have just reset
+                    # partition_range_start and partition_range_end
                     if partition_range_start is not None and partition_range_end is not None:
                         start_window = partitions_definition.time_window_for_partition_key(
                             partition_range_start
