@@ -14,18 +14,15 @@ daggy_spinner = Spinner(frames="ଳଢଡଜ", interval=100)
 
 
 @functools.cache
-def find_claude(_dg_context: DgContext) -> Optional[list[str]]:
+def find_claude() -> list[str]:
     """Find the Claude CLI executable.
 
     Attempts to locate the Claude CLI tool by checking:
     1. If 'claude' is available on the system PATH
     2. If 'claude' is available as a shell alias
 
-    Args:
-        _dg_context: DgContext instance (unused but kept for compatibility)
-
     Returns:
-        List containing the command to run Claude, or None if not found
+        List containing the command to run Claude
     """
     try:  # on PATH
         subprocess.run(
@@ -35,9 +32,7 @@ def find_claude(_dg_context: DgContext) -> Optional[list[str]]:
         )
         return ["claude"]
     except FileNotFoundError:
-        pass
-
-    try:  # check for alias (auto-updating version recommends registering an alias instead of putting on PATH)
+        # check for alias (auto-updating version recommends registering an alias instead of putting on PATH)
         result = subprocess.run(
             [os.getenv("SHELL", "bash"), "-ic", "type claude"],
             capture_output=True,
@@ -47,10 +42,8 @@ def find_claude(_dg_context: DgContext) -> Optional[list[str]]:
         path_match = re.search(r"(/[^\s`\']+)", result.stdout)
         if path_match:
             return [path_match.group(1)]
-    except FileNotFoundError:
-        pass
 
-    return None
+        raise
 
 
 def run_claude(
@@ -74,8 +67,7 @@ def run_claude(
     Raises:
         AssertionError: If Claude CLI is not found on the system
     """
-    claude_cmd = find_claude(dg_context)
-    assert claude_cmd is not None
+    claude_cmd = find_claude()
     cmd = [
         *claude_cmd,
         "-p",
@@ -177,8 +169,7 @@ def run_claude_stream(
     Raises:
         AssertionError: If Claude CLI is not found on the system
     """
-    claude_cmd = find_claude(dg_context)
-    assert claude_cmd is not None
+    claude_cmd = find_claude()
     cmd = [
         *claude_cmd,
         "-p",
@@ -199,17 +190,12 @@ def run_claude_stream(
     )
     assert process.stdout is not None
     for line in process.stdout:
-        try:
-            line_json = json.loads(line)
-            if verbose and spinner:
-                spinner.write(json.dumps(line_json, indent=2))
-            else:
-                output = render_claude_output(line_json)
-                if output and spinner:
-                    spinner.write(output)
-        except json.JSONDecodeError:
-            if spinner:
-                spinner.write(line)
-            else:
-                print(line)  # noqa: T201
+        line_json = json.loads(line)
+        if verbose and spinner:
+            spinner.write(json.dumps(line_json, indent=2))
+        else:
+            output = render_claude_output(line_json)
+            if output and spinner:
+                spinner.write(output)
+
     process.wait()
