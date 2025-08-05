@@ -978,9 +978,9 @@ class DagsterInstance(DynamicPartitionsStore):
         repository_load_data: Optional["RepositoryLoadData"] = None,
     ) -> DagsterRun:
         """Create a run for a given job definition."""
-        from dagster._core.instance.runs import run_implementation
+        from dagster._core.instance.runs import create_run_for_job
 
-        return run_implementation.create_run_for_job(
+        return create_run_for_job(
             self._run_ops,
             job_def=job_def,
             execution_plan=execution_plan,
@@ -1065,9 +1065,9 @@ class DagsterInstance(DynamicPartitionsStore):
         asset_graph: "BaseAssetGraph",
     ) -> DagsterRun:
         """Create a run with the given parameters."""
-        from dagster._core.instance.runs import run_implementation
+        from dagster._core.instance.runs import create_run
 
-        return run_implementation.create_run(
+        return create_run(
             self._run_ops,
             job_name=job_name,
             run_id=run_id,
@@ -1101,9 +1101,9 @@ class DagsterInstance(DynamicPartitionsStore):
         use_parent_run_tags: bool = False,
     ) -> DagsterRun:
         """Delegate to run_implementation."""
-        from dagster._core.instance.runs import run_implementation
+        from dagster._core.instance.runs import create_reexecuted_run
 
-        return run_implementation.create_reexecuted_run(
+        return create_reexecuted_run(
             self._run_ops,
             parent_run=parent_run,
             code_location=code_location,
@@ -1131,9 +1131,9 @@ class DagsterInstance(DynamicPartitionsStore):
         job_code_origin: Optional[JobPythonOrigin] = None,
     ) -> DagsterRun:
         """Delegate to run_implementation."""
-        from dagster._core.instance.runs import run_implementation
+        from dagster._core.instance.runs import register_managed_run
 
-        return run_implementation.register_managed_run(
+        return register_managed_run(
             self._run_ops,
             job_name=job_name,
             run_id=run_id,
