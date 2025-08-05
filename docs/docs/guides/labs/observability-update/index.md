@@ -41,19 +41,3 @@ Give teams a focused view of the data that matters most. Create flexible, sharea
 ### Freshness policies
 
 Ensure your most critical data stays fresh and trustworthy so teams can make timely, confident decisions without second-guessing the source. For more information, see the [Freshness policies guide](/guides/labs/observability-update/freshness).
-
-### Asset facets
-
-With asset facets, you can customize asset views to surface the most relevant metadata, like ownership, health, freshness, and automation signals.
-
-To configure asset facets, click the facet configuration button on the asset lineage page, then select the facets you want to display:
-
-![Asset facets configuration button](/images/guides/labs/observability-update/asset-facets-config-button.png)
-
-![Asset facets configuration modal](/images/guides/labs/observability-update/asset-facets-config-modal.png)
-
-:::info
-
-Asset facets are only configured for your view. Changing the facet configuration will not change it for other users of your data platform.
-
-:::
