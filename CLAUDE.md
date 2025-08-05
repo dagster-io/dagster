@@ -108,3 +108,18 @@ yarn build-api-docs          # Build API docs after .rst changes
 ## Make Command Guidelines
 
 - Whenever there is an instruction to run a make command, ALWAYS cd to $DAGSTER_GIT_REPO_DIR, as the Makefile is at the root of the repository
+
+## PR Stack Operations
+
+### Finding GitHub Usernames Efficiently
+
+- **Best method**: `gh search commits "FirstName" --author="Full Name" --repo=dagster-io/dagster`
+- **Why effective**: Co-authored commits reveal exact GitHub username format
+- **Alternative**: Check recent PRs or issues for the person's contributions
+
+### Stack Operations Always Use GT
+
+- **Key rule**: When someone mentions "stacking" or "stack", always use `gt` commands first
+- **Reason**: GT is the source of truth for stack metadata and relationships
+- **Primary command**: `gt log` provides comprehensive PR numbers, statuses, and branch relationships
+- **Impact**: Single command reveals entire stack structure vs. manual discovery
