@@ -119,6 +119,7 @@ export const CalculateUnsyncedDialog = React.memo(
             <Container ref={containerRef} style={{maxHeight: '400px'}}>
               <Inner $totalHeight={totalHeight}>
                 {items.map(({index, key, size, start}) => {
+                  // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
                   const item = unsynced[index]!;
                   return (
                     <Row

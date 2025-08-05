@@ -32,7 +32,25 @@ Change into that directory and install the necessary packages with [`npm`](https
 
 Next, we will need to install Dagster's [Evidence integration](https://docs.dagster.io/integrations/libraries/evidence):
 
-<CliInvocationExample contents="uv pip install dagster-evidence" />
+<Tabs groupId="package-manager">
+   <TabItem value="uv" label="uv">
+      Install the required dependencies:
+
+         ```shell
+         uv add dagster-evidence
+         ```
+
+   </TabItem>
+
+   <TabItem value="pip" label="pip">
+      Install the required dependencies:
+
+         ```shell
+         pip install dagster-evidence
+         ```
+
+   </TabItem>
+</Tabs>
 
 Now we can scaffold Evidence with `dg`:
 
@@ -49,9 +67,9 @@ Unlike the other components we used, which generated individual assets for each 
 However, we can still configure our Evidence component to be dependent on multiple upstream assets by setting the `deps` value within the `attributes` key of the Evidence component `defs.yaml` file:
 
 <CodeExample
-    path="docs_snippets/docs_snippets/guides/tutorials/etl_tutorial/src/etl_tutorial/defs/dashboard/defs.yaml"
-    language="yaml"
-    title="src/etl_tutorial/defs/dashboard/defs.yaml"
+  path="docs_snippets/docs_snippets/guides/tutorials/etl_tutorial/src/etl_tutorial/defs/dashboard/defs.yaml"
+  language="yaml"
+  title="src/etl_tutorial/defs/dashboard/defs.yaml"
 />
 
 ## 4. Execute the Evidence asset

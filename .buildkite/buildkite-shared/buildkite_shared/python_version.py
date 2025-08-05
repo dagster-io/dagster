@@ -1,15 +1,7 @@
 import os
 from enum import Enum
 
-
-# TODO: import these two functions to buildkite_shared file
-def is_release_branch(branch_name: str) -> bool:
-    return branch_name.startswith("release-")
-
-
-def safe_getenv(env_var: str) -> str:
-    assert env_var in os.environ, f"${env_var} must be set."
-    return os.environ[env_var]
+from buildkite_shared.environment import is_release_branch, safe_getenv
 
 
 class AvailablePythonVersion(Enum):

@@ -185,4 +185,17 @@ describe('WorkspaceStatusPoller', () => {
     expect(clearSpy).toHaveBeenCalled();
     clearSpy.mockRestore();
   });
+
+  it('does not poll when document is hidden', () => {
+    mockGetCachedData.mockResolvedValue(undefined);
+    mockGetData.mockResolvedValue({data: undefined, error: new Error('test error')});
+    jest.spyOn(document, 'visibilityState', 'get').mockReturnValue('hidden');
+    poller = new WorkspaceStatusPoller({
+      localCacheIdPrefix,
+      getData: mockGetData,
+      setCodeLocationStatusAtom: mockSetCodeLocationStatusAtom,
+    });
+    jest.advanceTimersByTime(10000);
+    expect(mockGetData).not.toHaveBeenCalled();
+  });
 });

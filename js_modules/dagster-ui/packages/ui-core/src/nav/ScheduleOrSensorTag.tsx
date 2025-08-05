@@ -67,6 +67,7 @@ export const ScheduleOrSensorTag = ({
   if (scheduleCount) {
     return (
       <MatchingSchedule
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
         schedule={schedules[0]!}
         repoAddress={repoAddress}
         showSwitch={showSwitch}
@@ -76,6 +77,7 @@ export const ScheduleOrSensorTag = ({
 
   if (sensorCount) {
     return (
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
       <MatchingSensor sensor={sensors[0]!} repoAddress={repoAddress} showSwitch={showSwitch} />
     );
   }

@@ -12,7 +12,7 @@ import {AssetSelectionParser} from '../generated/AssetSelectionParser';
 export interface AssetSelectionInputProps {
   assets: AssetGraphQueryItem[];
   value: string;
-  onChange: (value: string) => void;
+  onChange?: (value: string) => void;
   onErrorStateChange?: (errors: SyntaxError[]) => void;
   linter?: (content: string) => SyntaxError[];
   useAssetSelectionAutoComplete?: (

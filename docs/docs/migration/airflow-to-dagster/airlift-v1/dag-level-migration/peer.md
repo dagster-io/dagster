@@ -16,10 +16,62 @@ We call the first stage of migration from Airflow to Dagster the "peering" stage
 
 First, you will want a new shell and navigate to the same directory. You will need to set up the `dagster-airlift` package in your Dagster environment:
 
-```bash
-source .venv/bin/activate
-uv pip install 'dagster-airlift[core]' dagster-webserver dagster
-```
+<Tabs groupId="package-manager">
+   <TabItem value="uv" label="uv">
+      1. Activate the virtual environment:
+
+         <Tabs>
+            <TabItem value="macos" label="MacOS/Unix">
+               ```shell
+               source .venv/bin/activate
+               ```
+            </TabItem>
+            <TabItem value="windows" label="Windows">
+               ```shell
+               .venv\Scripts\activate
+               ```
+            </TabItem>
+         </Tabs>
+
+      2. Install the required dependencies in the virtual environment:
+
+         ```shell
+         uv add 'dagster-airlift[core]' dagster-webserver dagster
+         ```
+
+   </TabItem>
+
+   <TabItem value="pip" label="pip">
+      
+      1. Create and activate a virtual environment:
+
+         <Tabs>
+            <TabItem value="macos" label="MacOS/Unix">
+               ```shell
+               python -m venv .venv
+               ```
+               ```shell
+               source .venv/bin/activate
+               ```
+            </TabItem>
+            <TabItem value="windows" label="Windows">
+               ```shell
+               python -m venv .venv
+               ```
+               ```shell
+               .venv\Scripts\activate
+               ```
+            </TabItem>
+         </Tabs>
+
+      2. Install the required dependencies:
+
+         ```shell
+         pip install 'dagster-airlift[core]' dagster-webserver dagster
+         ```
+
+   </TabItem>
+</Tabs>
 
 ## Create asset representations of DAGs in Dagster
 

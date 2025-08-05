@@ -29,8 +29,11 @@ ForceTerminationCheckbox.args = {
     console.log('Close!');
   },
   selectedRuns: {
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     [runIDs[0]!]: true,
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     [runIDs[1]!]: false,
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     [runIDs[2]!]: true,
   },
 };
@@ -42,8 +45,11 @@ ForceTerminationNoCheckbox.args = {
     console.log('Close!');
   },
   selectedRuns: {
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     [runIDs[0]!]: false,
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     [runIDs[1]!]: false,
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     [runIDs[2]!]: false,
   },
 };

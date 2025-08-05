@@ -44,6 +44,47 @@ ALLOWED_SECTION_HEADERS = {
 }
 
 
+def _is_inside_code_block(lines: list[str], current_line_index: int) -> bool:
+    """Check if the current line is inside a code block.
+
+    Detects RST code blocks like:
+    - .. code-block:: python
+    - .. code-block:: yaml
+    - :: (literal blocks)
+    - Lines indented after code block directives
+    """
+    # Search backwards from current line to find if we're in a code block
+    in_code_block = False
+    code_block_indent = None
+
+    for i in range(current_line_index):
+        line = lines[i]
+        stripped = line.strip()
+        leading_spaces = len(line) - len(line.lstrip())
+
+        # Check for code block directives
+        if stripped.startswith(".. code-block::") or (
+            stripped.endswith("::") and not stripped.startswith(":")
+        ):
+            in_code_block = True
+            code_block_indent = leading_spaces
+            continue
+
+        # If we found a code block, check if current line is still part of it
+        if in_code_block:
+            # Empty lines don't break code blocks
+            if not stripped:
+                continue
+
+            # If this line has less or equal indentation than the code block directive,
+            # we've exited the code block
+            if code_block_indent is not None and leading_spaces <= code_block_indent:
+                in_code_block = False
+                code_block_indent = None
+
+    return in_code_block
+
+
 def validate_section_headers(
     context: ValidationContext, result: ValidationResult
 ) -> ValidationResult:
@@ -57,6 +98,10 @@ def validate_section_headers(
         # Check indentation first - only validate lines with minimal indentation (0-3 spaces)
         # to avoid matching code examples which are typically indented 4+ spaces
         leading_spaces = len(line) - len(line.lstrip())
+
+        # Skip validation if we're inside a code block
+        if _is_inside_code_block(lines, i - 1):  # Convert to 0-based index
+            continue
 
         # First, use regex to identify potential section headers (check dedented line)
         if SECTION_HEADER_PATTERN.match(stripped) and leading_spaces <= 3:

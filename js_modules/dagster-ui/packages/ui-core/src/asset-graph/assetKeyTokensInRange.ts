@@ -13,9 +13,11 @@ const graphDirectionOf = ({
 }) => {
   const stack = [from];
   while (stack.length) {
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     const node = stack.pop()!;
 
     const downstream = [...Object.keys(graph.downstream[node.id] || {})]
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
       .map((n) => graph.nodes[n]!)
       .filter(Boolean);
     if (downstream.some((d) => d.id === to.id)) {
@@ -42,6 +44,7 @@ export const assetKeyTokensInRange = (
   }
 
   const downstream = [...Object.keys(graph.downstream[from.id] || {})]
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     .map((n) => graph.nodes[n]!)
     .filter(Boolean);
 

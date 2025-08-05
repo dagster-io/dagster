@@ -17,9 +17,27 @@ To run the examples, you'll need to:
 - Create a new Dagster project:
   <ScaffoldProject />
 - Install the necessary Python libraries:
-  ```bash
-  uv pip install 'dagster-gcp[dataproc]'
-  ```
+
+<Tabs groupId="package-manager">
+   <TabItem value="uv" label="uv">
+      Install the required dependencies:
+
+         ```shell
+         uv add 'dagster-gcp[dataproc]'
+         ```
+
+   </TabItem>
+
+   <TabItem value="pip" label="pip">
+      Install the required dependencies:
+
+         ```shell
+         pip install 'dagster-gcp[dataproc]'
+         ```
+
+   </TabItem>
+</Tabs>
+
 - Configure GCP authentication for applications. If you don't have this set up already, refer to the [GCP authentication guide](https://cloud.google.com/docs/authentication/gcloud)
 - In GCP, you'll need:
   - An existing project with a Dataproc cluster.

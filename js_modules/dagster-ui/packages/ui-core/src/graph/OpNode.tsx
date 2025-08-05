@@ -202,6 +202,7 @@ const OpNodeAssociatedAssets = ({nodes}: {nodes: {assetKey: AssetKey}[]}) => {
   return (
     <div className="assets">
       <Icon name="asset" size={16} />
+      {/* eslint-disable-next-line @typescript-eslint/no-non-null-assertion */}
       {withMiddleTruncation(displayNameForAssetKey(nodes[0]!.assetKey), {
         maxLength: 48 - more.length,
       })}

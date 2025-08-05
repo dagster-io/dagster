@@ -21,6 +21,7 @@ setup(
         "click",
         "packaging>=20.9",
         "pandas",
+        "pathspec",
         "pytablereader",
         "requests",
         "twine>=1.15.0",

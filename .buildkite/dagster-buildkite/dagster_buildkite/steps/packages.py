@@ -1,18 +1,25 @@
 import os
+from collections.abc import Iterable, Mapping
+from dataclasses import dataclass
 from glob import glob
 from pathlib import Path
-from typing import Iterable, List, Optional
+from typing import Callable, Optional, Union
 
-from dagster_buildkite.defines import (
-    GCP_CREDS_FILENAME,
-    GCP_CREDS_LOCAL_FILE,
-    GIT_REPO_ROOT,
-)
-from dagster_buildkite.package_spec import PackageSpec
+from buildkite_shared.packages import skip_reason
 from buildkite_shared.python_version import AvailablePythonVersion
 from buildkite_shared.step_builders.command_step_builder import BuildkiteQueue
-from buildkite_shared.step_builders.step_builder import StepConfiguration
+from buildkite_shared.step_builders.group_step_builder import (
+    GroupLeafStepConfiguration,
+    GroupStepBuilder,
+)
+from buildkite_shared.step_builders.step_builder import (
+    StepConfiguration,
+    TopLevelStepConfiguration,
+    is_command_step,
+)
+from dagster_buildkite.defines import GCP_CREDS_FILENAME, GCP_CREDS_LOCAL_FILE, GIT_REPO_ROOT
 from dagster_buildkite.steps.test_project import test_project_depends_fn
+from dagster_buildkite.steps.tox import build_tox_step
 from dagster_buildkite.utils import (
     connect_sibling_docker_container,
     has_dagster_airlift_changes,
@@ -21,40 +28,259 @@ from dagster_buildkite.utils import (
     network_buildkite_container,
     skip_if_not_dagster_dbt_cloud_commit,
 )
+from typing_extensions import TypeAlias
+
+_CORE_PACKAGES = [
+    "python_modules/dagster",
+    "python_modules/dagit",
+    "python_modules/dagster-graphql",
+    "js_modules/dagster-ui",
+]
+
+_INFRASTRUCTURE_PACKAGES = [
+    ".buildkite/dagster-buildkite",
+    "python_modules/automation",
+    "python_modules/dagster-test",
+]
 
 
-def build_example_packages_steps() -> List[StepConfiguration]:
-    custom_example_pkg_roots = [
-        pkg.directory for pkg in EXAMPLE_PACKAGES_WITH_CUSTOM_CONFIG
-    ]
+def _infer_package_type(directory: str) -> str:
+    if directory in _CORE_PACKAGES:
+        return "core"
+    elif directory.startswith("examples/"):
+        return "example"
+    elif directory.startswith("python_modules/libraries/"):
+        return "extension"
+    elif directory in _INFRASTRUCTURE_PACKAGES or directory.startswith("integration_tests"):
+        return "infrastructure"
+    else:
+        return "unknown"
+
+
+# The list of all available emojis is here:
+#   https://github.com/buildkite/emojis#emoji-reference
+_PACKAGE_TYPE_TO_EMOJI_MAP: Mapping[str, str] = {
+    "core": ":dagster:",
+    "example": ":large_blue_diamond:",
+    "extension": ":electric_plug:",
+    "infrastructure": ":gear:",
+    "unknown": ":grey_question:",
+}
+
+PytestExtraCommandsFunction: TypeAlias = Callable[
+    [AvailablePythonVersion, Optional[str]], list[str]
+]
+PytestDependenciesFunction: TypeAlias = Callable[[AvailablePythonVersion, Optional[str]], list[str]]
+UnsupportedVersionsFunction: TypeAlias = Callable[[Optional[str]], list[AvailablePythonVersion]]
+
+
+@dataclass
+class PackageSpec:
+    """Main spec for testing Dagster Python packages using tox.
+
+    Args:
+        directory (str): Python directory to test, relative to the repository root. Should contain a
+            tox.ini file.
+        name (str, optional): Used in the buildkite label. Defaults to None
+            (uses the package name as the label).
+        package_type (str, optional): Used to determine the emoji attached to the buildkite label.
+            Possible values are "core", "example", "extension", and "infrastructure". By default it
+            is inferred from the location of the passed directory.
+        unsupported_python_versions (list[AvailablePythonVersion], optional): Python versions that
+            are not supported by this package. The versions for which pytest will be run are
+            the versions determined for the commit minus this list. If this result is empty, then
+            the lowest supported version will be tested. Defaults to None (all versions are supported).
+        pytest_extra_cmds (Callable[str, list[str]], optional): Optional specification of
+            commands to run before the main pytest invocation through tox. Can be either a list of
+            commands or a function. Function form takes two arguments, the python version being
+            tested and the tox factor (if any), and returns a list of shell commands to execute.
+            Defaults to None (no additional commands).
+        pytest_step_dependencies (Callable[str, list[str]], optional): Optional specification of
+            Buildkite dependencies (e.g. on test image build step) for pytest steps. Can be either a
+            list of commands or a function. Function form takes two arguments, the python version
+            being tested and the tox factor (if any), and returns a list of Buildkite step names.
+            Defaults to None (no additional commands).
+        pytest_tox_factors: (list[str], optional): list of additional tox environment factors to
+            use when iterating pytest tox environments. A separate pytest step is generated for each
+            element of the product of versions tested and these factors. For example, if we are
+            testing Python 3.7 and 3.8 and pass factors `["a", "b"]`, then four steps will be
+            generated corresponding to environments "py37-a", "py37-b", "py38-a", "py38-b". Defaults
+            to None.
+        env_vars (list[str], optional): Additional environment variables to pass through to each
+            test environment. These must also be listed in the target toxfile under `passenv`.
+            Defaults to None.
+        tox_file (str, optional): The tox file to use. Defaults to {directory}/tox.ini.
+        retries (int, optional): Whether to retry these tests on failure
+            for packages of type "core" or "library", disabled for other packages.
+        timeout_in_minutes (int, optional): Fail after this many minutes.
+        queue (BuildkiteQueue, optional): Schedule steps to this queue.
+        run_pytest (bool, optional): Whether to run pytest. Enabled by default.
+    """
+
+    directory: str
+    name: Optional[str] = None
+    package_type: Optional[str] = None
+    unsupported_python_versions: Optional[
+        Union[list[AvailablePythonVersion], UnsupportedVersionsFunction]
+    ] = None
+    pytest_extra_cmds: Optional[Union[list[str], PytestExtraCommandsFunction]] = None
+    pytest_step_dependencies: Optional[Union[list[str], PytestDependenciesFunction]] = None
+    pytest_tox_factors: Optional[list[str]] = None
+    env_vars: Optional[list[str]] = None
+    tox_file: Optional[str] = None
+    retries: Optional[int] = None
+    timeout_in_minutes: Optional[int] = None
+    queue: Optional[BuildkiteQueue] = None
+    run_pytest: bool = True
+    always_run_if: Optional[Callable[[], bool]] = None
+    skip_if: Optional[Callable[[], Optional[str]]] = None
+
+    def __post_init__(self):
+        if not self.name:
+            self.name = os.path.basename(self.directory)
+
+        if not self.package_type:
+            self.package_type = _infer_package_type(self.directory)
+
+        self._should_skip = None
+        self._skip_reason = None
+
+    def build_steps(self) -> list[TopLevelStepConfiguration]:
+        base_name = self.name or os.path.basename(self.directory)
+        steps: list[GroupLeafStepConfiguration] = []
+
+        if self.run_pytest:
+            default_python_versions = AvailablePythonVersion.get_pytest_defaults()
+
+            tox_factors: list[Optional[str]] = (
+                [f.lstrip("-") for f in self.pytest_tox_factors]
+                if self.pytest_tox_factors
+                else [None]
+            )
+
+            for other_factor in tox_factors:
+                if callable(self.unsupported_python_versions):
+                    unsupported_python_versions = self.unsupported_python_versions(other_factor)
+                else:
+                    unsupported_python_versions = self.unsupported_python_versions or []
+
+                supported_python_versions = [
+                    v
+                    for v in AvailablePythonVersion.get_all()
+                    if v not in unsupported_python_versions
+                ]
+
+                pytest_python_versions = [
+                    AvailablePythonVersion(v)
+                    for v in sorted(
+                        set(e.value for e in default_python_versions)
+                        - set(e.value for e in unsupported_python_versions)
+                    )
+                ]
+                # Use highest supported python version if no defaults_match
+                if len(pytest_python_versions) == 0:
+                    pytest_python_versions = [supported_python_versions[-1]]
+
+                for py_version in pytest_python_versions:
+                    version_factor = AvailablePythonVersion.to_tox_factor(py_version)
+                    if other_factor is None:
+                        tox_env = version_factor
+                    else:
+                        tox_env = f"{version_factor}-{other_factor}"
+
+                    if isinstance(self.pytest_extra_cmds, list):
+                        extra_commands_pre = self.pytest_extra_cmds
+                    elif callable(self.pytest_extra_cmds):
+                        extra_commands_pre = self.pytest_extra_cmds(py_version, other_factor)
+                    else:
+                        extra_commands_pre = []
+
+                    dependencies = []
+                    if not self.skip_reason:
+                        if isinstance(self.pytest_step_dependencies, list):
+                            dependencies = self.pytest_step_dependencies
+                        elif callable(self.pytest_step_dependencies):
+                            dependencies = self.pytest_step_dependencies(py_version, other_factor)
+
+                    steps.append(
+                        build_tox_step(
+                            self.directory,
+                            tox_env,
+                            base_label=base_name,
+                            command_type="pytest",
+                            python_version=py_version,
+                            env_vars=self.env_vars,
+                            extra_commands_pre=extra_commands_pre,
+                            dependencies=dependencies,
+                            tox_file=self.tox_file,
+                            timeout_in_minutes=self.timeout_in_minutes,
+                            queue=self.queue,
+                            retries=self.retries,
+                            skip_reason=self.skip_reason,
+                        )
+                    )
+
+        emoji = _PACKAGE_TYPE_TO_EMOJI_MAP[self.package_type]  # type: ignore[index]
+        if len(steps) >= 2:
+            return [
+                GroupStepBuilder(
+                    name=f"{emoji} {base_name}",
+                    key=base_name,
+                    steps=steps,
+                ).build()
+            ]
+        elif len(steps) == 1:
+            only_step = steps[0]
+            if not is_command_step(only_step):
+                raise ValueError("Expected only step to be a CommandStep")
+            return [only_step]
+        else:
+            return []
+
+    @property
+    def skip_reason(self) -> Optional[str]:
+        """Provides a message if this package's steps should be skipped on this run, and no message if the package's steps should be run.
+        We actually use this to determine whether or not to run the package.
+
+        Because we use an archaic version of python to build our images, we can't use `cached_property`, and so we reinvent the wheel here with
+        self._should_skip and self._skip_reason. When we determine definitively that a package should or shouldn't be skipped, we cache the result on self._should_skip
+        as a boolean (it starts out as None), and cache the skip reason (or lack thereof) on self._skip_reason.
+        """
+        # If self._should_skip is not None, then the result is cached on self._skip_reason and we can return it.
+        if self._should_skip is not None:
+            if self._should_skip is True:
+                assert self._skip_reason is not None, (
+                    "Expected skip reason to be set if self._should_skip is True."
+                )
+            return self._skip_reason
+
+        self._skip_reason = skip_reason(self.directory, self.name, self.always_run_if, self.skip_if)
+        self._should_skip = self._skip_reason is not None
+        return self._skip_reason
+
+
+def build_example_packages_steps() -> list[StepConfiguration]:
+    custom_example_pkg_roots = [pkg.directory for pkg in EXAMPLE_PACKAGES_WITH_CUSTOM_CONFIG]
     example_packages_with_standard_config = [
         PackageSpec(pkg)
         for pkg in (
             _get_uncustomized_pkg_roots("examples", custom_example_pkg_roots)
-            + _get_uncustomized_pkg_roots(
-                "examples/experimental", custom_example_pkg_roots
-            )
+            + _get_uncustomized_pkg_roots("examples/experimental", custom_example_pkg_roots)
         )
         if pkg not in ("examples/deploy_ecs", "examples/starlift-demo")
     ]
 
-    example_packages = (
-        EXAMPLE_PACKAGES_WITH_CUSTOM_CONFIG + example_packages_with_standard_config
-    )
+    example_packages = EXAMPLE_PACKAGES_WITH_CUSTOM_CONFIG + example_packages_with_standard_config
 
     return build_steps_from_package_specs(example_packages)
 
 
-def build_library_packages_steps() -> List[StepConfiguration]:
-    custom_library_pkg_roots = [
-        pkg.directory for pkg in LIBRARY_PACKAGES_WITH_CUSTOM_CONFIG
-    ]
+def build_library_packages_steps() -> list[StepConfiguration]:
+    custom_library_pkg_roots = [pkg.directory for pkg in LIBRARY_PACKAGES_WITH_CUSTOM_CONFIG]
     library_packages_with_standard_config = [
         *[
             PackageSpec(pkg)
-            for pkg in _get_uncustomized_pkg_roots(
-                "python_modules", custom_library_pkg_roots
-            )
+            for pkg in _get_uncustomized_pkg_roots("python_modules", custom_library_pkg_roots)
         ],
         *[
             PackageSpec(pkg)
@@ -70,9 +296,9 @@ def build_library_packages_steps() -> List[StepConfiguration]:
 
 
 def build_steps_from_package_specs(
-    package_specs: List[PackageSpec],
-) -> List[StepConfiguration]:
-    steps: List[StepConfiguration] = []
+    package_specs: list[PackageSpec],
+) -> list[StepConfiguration]:
+    steps: list[StepConfiguration] = []
     all_packages = sorted(
         package_specs,
         key=lambda p: f"{_PACKAGE_TYPE_ORDER.index(p.package_type)} {p.name}",  # type: ignore[arg-type]
@@ -88,15 +314,12 @@ _PACKAGE_TYPE_ORDER = ["core", "extension", "example", "infrastructure", "unknow
 
 
 # Find packages under a root subdirectory that are not configured above.
-def _get_uncustomized_pkg_roots(root: str, custom_pkg_roots: List[str]) -> List[str]:
+def _get_uncustomized_pkg_roots(root: str, custom_pkg_roots: list[str]) -> list[str]:
     all_files_in_root = [
-        os.path.relpath(p, GIT_REPO_ROOT)
-        for p in glob(os.path.join(GIT_REPO_ROOT, root, "*"))
+        os.path.relpath(p, GIT_REPO_ROOT) for p in glob(os.path.join(GIT_REPO_ROOT, root, "*"))
     ]
     return [
-        p
-        for p in all_files_in_root
-        if p not in custom_pkg_roots and os.path.exists(f"{p}/tox.ini")
+        p for p in all_files_in_root if p not in custom_pkg_roots and os.path.exists(f"{p}/tox.ini")
     ]
 
 
@@ -105,7 +328,7 @@ def _get_uncustomized_pkg_roots(root: str, custom_pkg_roots: List[str]) -> List[
 # ########################
 
 
-def airflow_extra_cmds(version: AvailablePythonVersion, _) -> List[str]:
+def airflow_extra_cmds(version: AvailablePythonVersion, _) -> list[str]:
     return [
         'export AIRFLOW_HOME="/airflow"',
         "mkdir -p $${AIRFLOW_HOME}",
@@ -127,7 +350,7 @@ airline_demo_extra_cmds = [
 ]
 
 
-def dagster_graphql_extra_cmds(_, tox_factor: Optional[str]) -> List[str]:
+def dagster_graphql_extra_cmds(_, tox_factor: Optional[str]) -> list[str]:
     if tox_factor and tox_factor.startswith("postgres"):
         return [
             "pushd python_modules/dagster-graphql/dagster_graphql_tests/graphql/",
@@ -158,7 +381,7 @@ deploy_docker_example_extra_cmds = [
 ]
 
 
-def celery_extra_cmds(version: AvailablePythonVersion, _) -> List[str]:
+def celery_extra_cmds(version: AvailablePythonVersion, _) -> list[str]:
     return [
         "export DAGSTER_DOCKER_IMAGE_TAG=$${BUILDKITE_BUILD_ID}-" + version.value,
         'export DAGSTER_DOCKER_REPOSITORY="$${AWS_ACCOUNT_ID}.dkr.ecr.us-west-2.amazonaws.com"',
@@ -176,7 +399,7 @@ def celery_extra_cmds(version: AvailablePythonVersion, _) -> List[str]:
     ]
 
 
-def docker_extra_cmds(version: AvailablePythonVersion, _) -> List[str]:
+def docker_extra_cmds(version: AvailablePythonVersion, _) -> list[str]:
     return [
         "export DAGSTER_DOCKER_IMAGE_TAG=$${BUILDKITE_BUILD_ID}-" + version.value,
         'export DAGSTER_DOCKER_REPOSITORY="$${AWS_ACCOUNT_ID}.dkr.ecr.us-west-2.amazonaws.com"',
@@ -205,7 +428,7 @@ mysql_extra_cmds = [
 ]
 
 
-def k8s_extra_cmds(version: AvailablePythonVersion, _) -> List[str]:
+def k8s_extra_cmds(version: AvailablePythonVersion, _) -> list[str]:
     return [
         "export DAGSTER_DOCKER_IMAGE_TAG=$${BUILDKITE_BUILD_ID}-" + version.value,
         'export DAGSTER_DOCKER_REPOSITORY="$${AWS_ACCOUNT_ID}.dkr.ecr.us-west-2.amazonaws.com"',
@@ -225,7 +448,7 @@ gcp_creds_extra_cmds = (
 
 # Some Dagster packages have more involved test configs or support only certain Python version;
 # special-case those here
-EXAMPLE_PACKAGES_WITH_CUSTOM_CONFIG: List[PackageSpec] = [
+EXAMPLE_PACKAGES_WITH_CUSTOM_CONFIG: list[PackageSpec] = [
     PackageSpec(
         "examples/assets_smoke_test",
     ),
@@ -345,7 +568,7 @@ EXAMPLE_PACKAGES_WITH_CUSTOM_CONFIG: List[PackageSpec] = [
 
 def _unsupported_dagster_python_versions(
     tox_factor: Optional[str],
-) -> List[AvailablePythonVersion]:
+) -> list[AvailablePythonVersion]:
     if tox_factor == "general_tests_old_protobuf":
         return [
             AvailablePythonVersion.V3_11,
@@ -377,14 +600,14 @@ def test_subfolders(tests_folder_name: str) -> Iterable[str]:
             yield subfolder.name
 
 
-def tox_factors_for_folder(tests_folder_name: str) -> List[str]:
+def tox_factors_for_folder(tests_folder_name: str) -> list[str]:
     return [
         f"{tests_folder_name}__{subfolder_name}"
         for subfolder_name in test_subfolders(tests_folder_name)
     ]
 
 
-LIBRARY_PACKAGES_WITH_CUSTOM_CONFIG: List[PackageSpec] = [
+LIBRARY_PACKAGES_WITH_CUSTOM_CONFIG: list[PackageSpec] = [
     PackageSpec(
         "python_modules/automation",
         # automation is internal code that doesn't need to be tested in every python version. The
@@ -472,17 +695,27 @@ LIBRARY_PACKAGES_WITH_CUSTOM_CONFIG: List[PackageSpec] = [
             f"{deps_factor}-{command_factor}"
             for deps_factor in ["dbt17", "dbt18", "dbt19", "dbt110"]
             for command_factor in ["cloud", "core-main", "core-derived-metadata"]
-        ],
+        ]
+        + ["dbtfusion-snowflake"],
         # dbt-core 1.7's protobuf<5 constraint conflicts with the grpc requirement for Python 3.13
         unsupported_python_versions=(
             lambda tox_factor: [AvailablePythonVersion.V3_13]
             if tox_factor and tox_factor.startswith("dbt17")
             else []
         ),
+        env_vars=[
+            "SNOWFLAKE_ACCOUNT",
+            "SNOWFLAKE_USER",
+            "SNOWFLAKE_BUILDKITE_PASSWORD",
+        ],
     ),
     PackageSpec(
         "python_modules/libraries/dagster-snowflake",
-        env_vars=["SNOWFLAKE_ACCOUNT", "SNOWFLAKE_USER", "SNOWFLAKE_PASSWORD"],
+        env_vars=[
+            "SNOWFLAKE_ACCOUNT",
+            "SNOWFLAKE_USER",
+            "SNOWFLAKE_BUILDKITE_PASSWORD",
+        ],
     ),
     PackageSpec(
         "python_modules/libraries/dagster-airlift",

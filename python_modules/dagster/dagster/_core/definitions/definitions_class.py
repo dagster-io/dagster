@@ -54,7 +54,7 @@ from dagster._utils.warnings import disable_dagster_warnings
 
 if TYPE_CHECKING:
     from dagster._core.storage.asset_value_loader import AssetValueLoader
-    from dagster.components.core.tree import ComponentTree
+    from dagster.components.core.component_tree import ComponentTree
 
 
 TAssets: TypeAlias = Optional[
@@ -421,7 +421,9 @@ class Definitions(IHaveNew):
     # After we fix the bug, we should remove AssetsDefinition from the set of accepted types.
     asset_checks: TAssetChecks = None
     metadata: Mapping[str, MetadataValue]
-    component_tree: Optional[Annotated["ComponentTree", ImportFrom("dagster.components.core.tree")]]
+    component_tree: Optional[
+        Annotated["ComponentTree", ImportFrom("dagster.components.core.component_tree")]
+    ]
 
     def __new__(
         cls,

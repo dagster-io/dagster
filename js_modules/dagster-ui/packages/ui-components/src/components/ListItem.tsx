@@ -73,12 +73,7 @@ export const ListItem = forwardRef<HTMLDivElement, Props>((props, ref) => {
         className: styles.listItemAnchor,
         children: left,
       })}
-      <div
-        style={{'--spacing-right': `${rightPadding}px`} as CSSProperties}
-        className={styles.right}
-      >
-        {right}
-      </div>
+      <div className={styles.right}>{right}</div>
     </div>
   );
 });

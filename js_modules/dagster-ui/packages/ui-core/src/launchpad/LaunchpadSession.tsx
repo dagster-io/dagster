@@ -855,6 +855,7 @@ const deletePropertyPath = (obj: any, path: string) => {
   // the second to last nested object. This is so we can call `delete` using
   // this object and the last part of the path.
   for (let i = 0; i < parts.length - 1; i++) {
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     obj = obj[parts[i]!];
     if (typeof obj === 'undefined') {
       return;

@@ -133,6 +133,7 @@ export const AssetNodeOverview = ({
               <SimpleStakeholderAssetStatus
                 liveData={liveData}
                 partition={liveDataPartition}
+                // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
                 assetNode={assetNode ?? cachedAssetNode!}
               />
             ) : (

@@ -1,23 +1,20 @@
 import os
-from typing import Callable, List, Optional, Union
+from typing import Callable, Optional, Union
 
+from buildkite_shared.git import ChangedFiles
+from buildkite_shared.python_version import AvailablePythonVersion
+from buildkite_shared.step_builders.command_step_builder import BuildkiteQueue
+from buildkite_shared.step_builders.step_builder import StepConfiguration, TopLevelStepConfiguration
 from dagster_buildkite.defines import (
     GCP_CREDS_FILENAME,
     GCP_CREDS_LOCAL_FILE,
     LATEST_DAGSTER_RELEASE,
 )
-from dagster_buildkite.git import ChangedFiles
-from dagster_buildkite.package_spec import (
+from dagster_buildkite.steps.packages import (
     PackageSpec,
     PytestExtraCommandsFunction,
     UnsupportedVersionsFunction,
 )
-from buildkite_shared.python_version import AvailablePythonVersion
-from buildkite_shared.step_builders.step_builder import (
-    StepConfiguration,
-    TopLevelStepConfiguration,
-)
-from buildkite_shared.step_builders.command_step_builder import BuildkiteQueue
 from dagster_buildkite.steps.test_project import test_project_depends_fn
 from dagster_buildkite.utils import (
     connect_sibling_docker_container,
@@ -31,8 +28,8 @@ DAGSTER_CURRENT_BRANCH = "current_branch"
 EARLIEST_TESTED_RELEASE = "0.12.8"
 
 
-def build_integration_steps() -> List[StepConfiguration]:
-    steps: List[StepConfiguration] = []
+def build_integration_steps() -> list[StepConfiguration]:
+    steps: list[StepConfiguration] = []
 
     # Shared dependency of some test suites
     steps += PackageSpec(
@@ -55,7 +52,7 @@ def build_integration_steps() -> List[StepConfiguration]:
 # ########################
 
 
-def build_backcompat_suite_steps() -> List[TopLevelStepConfiguration]:
+def build_backcompat_suite_steps() -> list[TopLevelStepConfiguration]:
     tox_factors = [
         "user-code-latest-release",
         "user-code-earliest-release",
@@ -68,7 +65,7 @@ def build_backcompat_suite_steps() -> List[TopLevelStepConfiguration]:
     )
 
 
-def backcompat_extra_cmds(_, factor: Optional[str]) -> List[str]:
+def backcompat_extra_cmds(_, factor: Optional[str]) -> list[str]:
     tox_factor_map = {
         "user-code-latest-release": LATEST_DAGSTER_RELEASE,
         "user-code-earliest-release": EARLIEST_TESTED_RELEASE,
@@ -125,14 +122,12 @@ def _get_library_version(version: str) -> str:
 # ########################
 
 
-def build_celery_k8s_suite_steps() -> List[TopLevelStepConfiguration]:
+def build_celery_k8s_suite_steps() -> list[TopLevelStepConfiguration]:
     pytest_tox_factors = [
         "-default",
         "-markredis",
     ]
-    directory = os.path.join(
-        "integration_tests", "test_suites", "celery-k8s-test-suite"
-    )
+    directory = os.path.join("integration_tests", "test_suites", "celery-k8s-test-suite")
     return build_integration_suite_steps(
         directory,
         pytest_tox_factors,
@@ -159,9 +154,7 @@ def build_daemon_suite_steps():
 
 def build_auto_materialize_perf_suite_steps():
     pytest_tox_factors = None
-    directory = os.path.join(
-        "integration_tests", "test_suites", "auto_materialize_perf_tests"
-    )
+    directory = os.path.join("integration_tests", "test_suites", "auto_materialize_perf_tests")
     return build_integration_suite_steps(
         directory,
         pytest_tox_factors,
@@ -191,7 +184,7 @@ def skip_if_not_gcp_commit():
     )
 
 
-def build_azure_live_test_suite_steps() -> List[TopLevelStepConfiguration]:
+def build_azure_live_test_suite_steps() -> list[TopLevelStepConfiguration]:
     return PackageSpec(
         os.path.join("integration_tests", "test_suites", "dagster-azure-live-tests"),
         skip_if=skip_if_not_azure_commit,
@@ -218,7 +211,7 @@ def daemon_pytest_extra_cmds(version: AvailablePythonVersion, _):
 # ########################
 
 
-def build_k8s_suite_steps() -> List[TopLevelStepConfiguration]:
+def build_k8s_suite_steps() -> list[TopLevelStepConfiguration]:
     pytest_tox_factors = [
         "-default",
         "-subchart",
@@ -242,14 +235,14 @@ def build_k8s_suite_steps() -> List[TopLevelStepConfiguration]:
 
 def build_integration_suite_steps(
     directory: str,
-    pytest_tox_factors: Optional[List[str]],
+    pytest_tox_factors: Optional[list[str]],
     pytest_extra_cmds: Optional[PytestExtraCommandsFunction] = None,
     queue=None,
     always_run_if: Optional[Callable[[], bool]] = None,
     unsupported_python_versions: Optional[
-        Union[List[AvailablePythonVersion], UnsupportedVersionsFunction]
+        Union[list[AvailablePythonVersion], UnsupportedVersionsFunction]
     ] = None,
-) -> List[TopLevelStepConfiguration]:
+) -> list[TopLevelStepConfiguration]:
     return PackageSpec(
         directory,
         env_vars=[
@@ -271,9 +264,7 @@ def build_integration_suite_steps(
     ).build_steps()
 
 
-def k8s_integration_suite_pytest_extra_cmds(
-    version: AvailablePythonVersion, _
-) -> List[str]:
+def k8s_integration_suite_pytest_extra_cmds(version: AvailablePythonVersion, _) -> list[str]:
     return [
         "export DAGSTER_DOCKER_IMAGE_TAG=$${BUILDKITE_BUILD_ID}-" + version.value,
         'export DAGSTER_DOCKER_REPOSITORY="$${AWS_ACCOUNT_ID}.dkr.ecr.us-west-2.amazonaws.com"',
@@ -281,9 +272,7 @@ def k8s_integration_suite_pytest_extra_cmds(
     ]
 
 
-def celery_k8s_integration_suite_pytest_extra_cmds(
-    version: AvailablePythonVersion, _
-) -> List[str]:
+def celery_k8s_integration_suite_pytest_extra_cmds(version: AvailablePythonVersion, _) -> list[str]:
     cmds = [
         'export AIRFLOW_HOME="/airflow"',
         "mkdir -p $${AIRFLOW_HOME}",

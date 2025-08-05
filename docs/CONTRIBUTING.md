@@ -20,7 +20,7 @@ For more information, see "[Defining assets](defining-assets)".
 
 #### Use non-trailing slash links to Dagster docs
 
-e.g. use `/guides/build/assets/defining-assets` instead of `/guides/build/assets/defining-assets/`. 
+e.g. use `/guides/build/assets/defining-assets` instead of `/guides/build/assets/defining-assets/`.
 
 **Context:** Links to Dagster docs with trailing slashes automatically redirect to non-trailing slash links. While that's helpful for docs links we don't control, too many redirects on our own pages can confuse search engines and cause SEO issues.
 
@@ -92,15 +92,15 @@ Note that if the class name is different from the module, you will need to prepe
 
 Required properties:
 
-* `module`: The module name
-* `section`: The section name in the docs (i.e. the name of the page)
-* `object`: The class or method
+- `module`: The module name
+- `section`: The section name in the docs (i.e. the name of the page)
+- `object`: The class or method
 
 Optional properties:
 
-* pluralize
-* displayText
-* decorator
+- pluralize
+- displayText
+- decorator
 
 The following example creates a link like this: [@assets](https://docs.dagster.io/api/dagster/assets#dagster.asset):
 

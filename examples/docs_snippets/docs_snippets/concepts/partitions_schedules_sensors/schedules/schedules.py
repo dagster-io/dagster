@@ -1,12 +1,9 @@
 import dagster as dg
 
-
 # start_basic_schedule
-@dg.job
-def my_job(): ...
-
-
-basic_schedule = dg.ScheduleDefinition(job=my_job, cron_schedule="0 0 * * *")
+basic_schedule = dg.ScheduleDefinition(
+    name="basic_schedule", cron_schedule="0 0 * * *", target="*"
+)
 # end_basic_schedule
 
 
@@ -18,33 +15,37 @@ def my_asset():
 # start_basic_asset_schedule
 import dagster as dg
 
-asset_job = dg.define_asset_job(
-    "asset_job", dg.AssetSelection.groups("some_asset_group")
+basic_schedule = dg.ScheduleDefinition(
+    name="basic_asset_schedule",
+    cron_schedule="0 0 * * *",
+    target=dg.AssetSelection.groups("some_asset_group"),
 )
-
-basic_schedule = dg.ScheduleDefinition(job=asset_job, cron_schedule="0 0 * * *")
 
 # end_basic_asset_schedule
 
 
 # start_run_config_schedule
-@dg.op(config_schema={"scheduled_date": str})
-def configurable_op(context: dg.OpExecutionContext):
-    context.log.info(context.op_config["scheduled_date"])
+import dagster as dg
 
 
-@dg.job
-def configurable_job():
-    configurable_op()
+class AssetConfig(dg.Config):
+    scheduled_date: str
 
 
-@dg.schedule(job=configurable_job, cron_schedule="0 0 * * *")
+@dg.asset
+def configurable_asset(context: dg.AssetExecutionContext, config: AssetConfig):
+    context.log.info(config.scheduled_date)
+
+
+@dg.schedule(target=configurable_asset, cron_schedule="0 0 * * *")
 def configurable_job_schedule(context: dg.ScheduleEvaluationContext):
     scheduled_date = context.scheduled_execution_time.strftime("%Y-%m-%d")
     return dg.RunRequest(
         run_key=None,
         run_config={
-            "ops": {"configurable_op": {"config": {"scheduled_date": scheduled_date}}}
+            "ops": {
+                "configurable_asset": {"config": {"scheduled_date": scheduled_date}}
+            }
         },
         tags={"date": scheduled_date},
     )
@@ -55,14 +56,18 @@ def configurable_job_schedule(context: dg.ScheduleEvaluationContext):
 
 # start_timezone
 my_timezone_schedule = dg.ScheduleDefinition(
-    job=my_job, cron_schedule="0 9 * * *", execution_timezone="America/Los_Angeles"
+    name="my_timezone_schedule",
+    target="*",
+    cron_schedule="0 9 * * *",
+    execution_timezone="America/Los_Angeles",
 )
 
 # end_timezone
 
 # start_running_in_code
 my_running_schedule = dg.ScheduleDefinition(
-    job=my_job,
+    name="my_running_schedule",
+    target="*",
     cron_schedule="0 9 * * *",
     default_status=dg.DefaultScheduleStatus.RUNNING,
 )
@@ -71,7 +76,7 @@ my_running_schedule = dg.ScheduleDefinition(
 
 
 # start_schedule_logging
-@dg.schedule(job=my_job, cron_schedule="* * * * *")
+@dg.schedule(target="*", cron_schedule="* * * * *")
 def logs_then_skips(context):
     context.log.info("Logging from a dg.schedule!")
     return dg.SkipReason("Nothing to do")

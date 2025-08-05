@@ -103,4 +103,8 @@ yarn build-api-docs          # Build API docs after .rst changes
 
 ## Development Best Practices
 
-- ALWAYS run make ruff and make quick_pyright from repository root directory
+- ALWAYS run make ruff and make quick_pyright from the root of this repository, no matter what your working directory is
+
+## Make Command Guidelines
+
+- Whenever there is an instruction to run a make command, ALWAYS cd to $DAGSTER_GIT_REPO_DIR, as the Makefile is at the root of the repository

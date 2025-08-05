@@ -14,6 +14,7 @@ jaffle_shop:
       client_session_keep_alive: False
       database: TESTDB
       schema: TESTSCHEMA
+      warehouse: BUILDKITE
     bigquery:
       type: bigquery
       method: service-account

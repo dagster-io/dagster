@@ -1,4 +1,4 @@
-uvx -U create-dagster project my-project
+uvx create-dagster@latest project my-project
 
 Creating a Dagster project at /.../my-project.
 Scaffolded files for Dagster project at /.../my-project.

@@ -1,15 +1,14 @@
 from pathlib import Path
-from typing import List
 
-from dagster_buildkite.git import ChangedFiles
-from dagster_buildkite.package_spec import PackageSpec
+from buildkite_shared.environment import is_feature_branch
+from buildkite_shared.git import ChangedFiles
 from buildkite_shared.python_version import AvailablePythonVersion
 from buildkite_shared.step_builders.command_step_builder import (
     CommandStepBuilder,
     CommandStepConfiguration,
 )
-from dagster_buildkite.utils import is_feature_branch
 from dagster_buildkite.images.versions import add_test_image
+from dagster_buildkite.steps.packages import PackageSpec
 
 
 def skip_if_no_dagster_ui_components_changes():
@@ -26,7 +25,7 @@ def skip_if_no_dagster_ui_components_changes():
     return "No changes that affect the ui-components JS library"
 
 
-def build_dagster_ui_components_steps() -> List[CommandStepConfiguration]:
+def build_dagster_ui_components_steps() -> list[CommandStepConfiguration]:
     return [
         add_test_image(
             CommandStepBuilder(":typescript: dagster-ui-components"),
@@ -58,7 +57,7 @@ def skip_if_no_dagster_ui_core_changes():
     return "No changes that affect the JS webapp"
 
 
-def build_dagster_ui_core_steps() -> List[CommandStepConfiguration]:
+def build_dagster_ui_core_steps() -> list[CommandStepConfiguration]:
     return [
         add_test_image(
             CommandStepBuilder(":typescript: dagster-ui-core"),
@@ -75,7 +74,4 @@ def build_dagster_ui_core_steps() -> List[CommandStepConfiguration]:
 
 
 def skip_if_no_dagster_ui_changes():
-    return (
-        skip_if_no_dagster_ui_components_changes()
-        or skip_if_no_dagster_ui_core_changes()
-    )
+    return skip_if_no_dagster_ui_components_changes() or skip_if_no_dagster_ui_core_changes()

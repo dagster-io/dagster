@@ -212,6 +212,7 @@ export function useMergedRefresh(
   return useMemo(() => {
     const refetch: ObservableQuery['refetch'] = async () => {
       const [ar] = await Promise.all(args.map((s) => s?.refetch()));
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
       return ar!;
     };
     return {

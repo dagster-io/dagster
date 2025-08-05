@@ -231,6 +231,7 @@ export function ActiveFilterState({
       if (!state[0]) {
         return (
           <>
+            {/* eslint-disable-next-line @typescript-eslint/no-non-null-assertion */}
             before <FilterTagHighlightedText>{L_FORMAT.format(state[1]!)}</FilterTagHighlightedText>
           </>
         );
@@ -238,6 +239,7 @@ export function ActiveFilterState({
       if (!state[1]) {
         return (
           <>
+            {/* eslint-disable-next-line @typescript-eslint/no-non-null-assertion */}
             after <FilterTagHighlightedText>{L_FORMAT.format(state[0]!)}</FilterTagHighlightedText>
           </>
         );
@@ -245,15 +247,17 @@ export function ActiveFilterState({
       if (state[1] - state[0] === (24 * 60 * 60 - 1) * 1000) {
         return (
           <>
-            on
-            <FilterTagHighlightedText>{L_FORMAT.format(state[0]!)}</FilterTagHighlightedText>
+            {/* eslint-disable-next-line @typescript-eslint/no-non-null-assertion */}
+            on <FilterTagHighlightedText>{L_FORMAT.format(state[0]!)}</FilterTagHighlightedText>
           </>
         );
       }
       return (
         <>
+          {/* eslint-disable-next-line @typescript-eslint/no-non-null-assertion */}
           from <FilterTagHighlightedText>{L_FORMAT.format(state[0]!)}</FilterTagHighlightedText>
           {' through '}
+          {/* eslint-disable-next-line @typescript-eslint/no-non-null-assertion */}
           <FilterTagHighlightedText>{L_FORMAT.format(state[1]!)}</FilterTagHighlightedText>
         </>
       );
@@ -341,6 +345,7 @@ export function CustomTimeRangeFilterDialog({
           intent="primary"
           disabled={!startDate || !endDate}
           onClick={() => {
+            // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
             filter.setState([startDate!.valueOf(), endDate!.valueOf()]);
             setIsOpen(false);
           }}

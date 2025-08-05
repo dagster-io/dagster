@@ -57,6 +57,7 @@ export const SelectedAssetsPopoverContent = ({checkedDisplayKeys, groupedByStatu
             }}
           >
             {items.map(({index, key}) => {
+              // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
               const item = selectedAssets[index]!;
               const {iconName, iconColor} = STATUS_INFO[item.status];
               return (

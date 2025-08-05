@@ -156,6 +156,7 @@ export function explodeCompositesInHandleGraph(handles: GraphExplorerSolidHandle
     if (idx === -1) {
       break;
     }
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     results.splice(idx, 1, ...explodeComposite(handles, results[idx]!));
   }
 

@@ -25,7 +25,7 @@ from dagster._core.definitions.metadata.metadata_value import MetadataValue
 from dagster._core.definitions.partitions.context import PartitionLoadingContext
 from dagster._core.types.pagination import PaginatedResults
 from dagster._utils.test.definitions import scoped_definitions_load_context
-from dagster.components.core.tree import ComponentTree
+from dagster.components.core.component_tree import ComponentTree
 
 
 def get_all_assets_from_defs(defs: Definitions):
@@ -317,13 +317,17 @@ def test_kitchen_sink_on_create_helper_and_definitions():
     def an_op():
         pass
 
+    @dg.op(required_resource_keys={"a_resource_key"})
+    def other_op():
+        pass
+
     @dg.job
     def a_job():
         an_op()
 
     @dg.job
     def sensor_target():
-        an_op()
+        other_op()
 
     @dg.job
     def schedule_target():

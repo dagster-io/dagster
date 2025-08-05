@@ -144,6 +144,7 @@ export const RunsFeedRow = ({
       <RowCell style={{flexDirection: 'row', alignItems: 'flex-start'}}>
         {entry.__typename === 'Run' ? (
           <RunTargetLink
+            // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
             run={{...entry, pipelineName: entry.jobName!, stepKeysToExecute: []}}
             repoAddress={repoAddress}
             extraTags={

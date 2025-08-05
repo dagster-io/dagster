@@ -31,7 +31,7 @@ The second task, `build_dbt_models`, will require building a set of `dbt` asset 
 First, install the `dbt` extra of `dagster-airlift`:
 
 ```bash
-uv pip install 'dagster-airlift[dbt]'
+uv add 'dagster-airlift[dbt]'
 ```
 
 Next, construct the assets:

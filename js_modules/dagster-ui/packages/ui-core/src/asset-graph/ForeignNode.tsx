@@ -6,6 +6,7 @@ import {ASSET_LINK_NAME_MAX_LENGTH} from './layout';
 import {withMiddleTruncation} from '../app/Util';
 
 export const AssetNodeLink = memo(({assetKey}: {assetKey: {path: string[]}}) => {
+  // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
   const label = assetKey.path[assetKey.path.length - 1]!;
   return (
     <AssetNodeLinkContainer>

@@ -15,7 +15,7 @@ Consider using sensors in the following situations:
 
 In this step you will:
 
-- Create an asset that runs based on a event-driven workflow
+- Create an asset that runs based on an event-driven workflow
 - Create a sensor to listen for conditions to materialize the asset
 
 ## 1. Create an event-driven asset
@@ -66,14 +66,14 @@ Now copy the following sensor code in the `sensors.py` file:
 
 5. Create a `data/requests` directory in `dagster_tutorial`. Then include a `request.json` file:
 
-  ```json
-  {
-      "department": "South",
-      "product": "Driftwood Denim Jacket",
-      "start_date": "2024-01-01",
-      "end_date": "2024-06-05"
-  }
-  ```
+```json
+{
+  "department": "South",
+  "product": "Driftwood Denim Jacket",
+  "start_date": "2024-01-01",
+  "end_date": "2024-06-05"
+}
+```
 
 6. Click on the green tick to see the run for this request.
 
@@ -88,5 +88,5 @@ One new files have been added to the `etl_tutorial` module, `sensors.py`:
 Sensors provide a fine grained way to build event driven systems. Combined with declarative automation, there are a number of ways to automate your pipelines.
 
 # Next steps
-- Continue this tutorial to [visualize data](/etl-pipeline-tutorial/visualize-data)
 
+- Continue this tutorial to [visualize data](/etl-pipeline-tutorial/visualize-data)

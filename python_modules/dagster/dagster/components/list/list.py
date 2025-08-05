@@ -36,6 +36,7 @@ from dagster._core.definitions.repository_definition.repository_definition impor
 from dagster._utils.error import serializable_error_info_from_exc_info
 from dagster._utils.hosted_user_process import recon_repository_from_origin
 from dagster.components.component.component import Component
+from dagster.components.core.component_tree import ComponentTree
 from dagster.components.core.defs_module import ComponentRequirementsModel
 from dagster.components.core.package_entry import (
     ComponentsEntryPointLoadError,
@@ -44,7 +45,6 @@ from dagster.components.core.package_entry import (
     get_plugin_entry_points,
 )
 from dagster.components.core.snapshot import get_package_entry_snap
-from dagster.components.core.tree import ComponentTree
 
 
 def list_plugins(
@@ -192,48 +192,51 @@ def list_definitions(
             )
 
         jobs = []
-        for job in repo_def.get_all_jobs():
-            if not is_reserved_asset_job_name(job.name):
-                jobs.append(
-                    DgJobMetadata(
-                        name=job.name,
-                        description=job.description,
-                        source=_get_source(job.metadata, dg_context),
+        schedules = []
+        sensors = []
+        resources = []
+
+        # dont include other definitions if asset selection provided
+        if asset_selection_obj is None:
+            for job in repo_def.get_all_jobs():
+                if not is_reserved_asset_job_name(job.name):
+                    jobs.append(
+                        DgJobMetadata(
+                            name=job.name,
+                            description=job.description,
+                            source=_get_source(job.metadata, dg_context),
+                        )
+                    )
+
+            for schedule in repo_def.schedule_defs:
+                schedule_str = (
+                    schedule.cron_schedule
+                    if isinstance(schedule.cron_schedule, str)
+                    else ", ".join(schedule.cron_schedule)
+                )
+                schedules.append(
+                    DgScheduleMetadata(
+                        name=schedule.name,
+                        cron_schedule=schedule_str,
+                        source=_get_source(schedule.metadata, dg_context),
                     )
                 )
 
-        schedules = []
-        for schedule in repo_def.schedule_defs:
-            schedule_str = (
-                schedule.cron_schedule
-                if isinstance(schedule.cron_schedule, str)
-                else ", ".join(schedule.cron_schedule)
-            )
-            schedules.append(
-                DgScheduleMetadata(
-                    name=schedule.name,
-                    cron_schedule=schedule_str,
-                    source=_get_source(schedule.metadata, dg_context),
+            for sensor in repo_def.sensor_defs:
+                sensors.append(
+                    DgSensorMetadata(
+                        name=sensor.name,
+                        source=_get_source(sensor.metadata, dg_context),
+                    )
                 )
-            )
 
-        sensors = []
-        for sensor in repo_def.sensor_defs:
-            sensors.append(
-                DgSensorMetadata(
-                    name=sensor.name,
-                    source=_get_source(sensor.metadata, dg_context),
+            for name, resource in repo_def.get_top_level_resources().items():
+                resources.append(
+                    DgResourceMetadata(
+                        name=name,
+                        type=get_resource_type_name(resource),
+                    )
                 )
-            )
-
-        resources = []
-        for name, resource in repo_def.get_top_level_resources().items():
-            resources.append(
-                DgResourceMetadata(
-                    name=name,
-                    type=get_resource_type_name(resource),
-                )
-            )
 
         return DgDefinitionMetadata(
             assets=assets,

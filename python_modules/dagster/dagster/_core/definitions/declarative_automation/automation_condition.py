@@ -144,8 +144,7 @@ class AutomationCondition(ABC, Generic[T_EntityKey]):
 
     def get_node_unique_id(self, *, parent_unique_id: Optional[str], index: Optional[int]) -> str:
         """Returns a unique identifier for this condition within the broader condition tree."""
-        parts = [str(parent_unique_id), str(index), self.name]
-        return non_secure_md5_hash_str("".join(parts).encode())
+        return non_secure_md5_hash_str(f"{parent_unique_id}{index}{self.name}".encode())
 
     def get_backcompat_node_unique_ids(
         self, *, parent_unique_id: Optional[str] = None, index: Optional[int] = None

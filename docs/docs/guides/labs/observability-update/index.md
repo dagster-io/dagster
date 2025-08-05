@@ -19,6 +19,7 @@ The full suite of new features is available in limited early access for Dagster+
 Once you are a member of the early access program, you can enable or disable the new experiences in your user settings, via the "New health & observability UIs" setting.
 
 ## Features
+
 - Asset health reporting
 - [Freshness monitoring](/guides/labs/observability-update/freshness)
 - [Real-time insights](/guides/labs/observability-update/insights)
