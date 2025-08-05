@@ -131,16 +131,23 @@ class CodeLocation(AbstractContextManager):
     ) -> RemoteExecutionPlan: ...
 
     def _get_remote_job_from_subset_result(
-        self, repo_handle: RepositoryHandle, subset_result: RemoteJobSubsetResult
+        self,
+        selector: JobSubsetSelector,
+        subset_result: RemoteJobSubsetResult,
     ) -> RemoteJob:
         if subset_result.repository_python_origin:
             # Prefer the python origin from the result if it is set, in case the code location
             # just updated and any origin information (most frequently the image) has changed
             repo_handle = RepositoryHandle(
-                repository_name=repo_handle.repository_name,
-                code_location_origin=repo_handle.code_location_origin,
+                repository_name=selector.repository_name,
+                code_location_origin=self.origin,
                 repository_python_origin=subset_result.repository_python_origin,
-                display_metadata=repo_handle.display_metadata,
+                display_metadata=self.get_display_metadata(),
+            )
+        else:
+            repo_handle = RepositoryHandle.from_location(
+                repository_name=selector.repository_name,
+                code_location=self,
             )
 
         job_data_snap = subset_result.job_data_snap
@@ -164,9 +171,8 @@ class CodeLocation(AbstractContextManager):
         if not selector.is_subset_selection:
             return self.get_repository(selector.repository_name).get_full_job(selector.job_name)
 
-        repo_handle = self.get_repository(selector.repository_name).handle
         subset_result = self._get_subset_remote_job_result(selector)
-        return self._get_remote_job_from_subset_result(repo_handle, subset_result)
+        return self._get_remote_job_from_subset_result(selector, subset_result)
 
     async def gen_job(self, selector: JobSubsetSelector) -> RemoteJob:
         """Return the RemoteJob for a specific pipeline. Subclasses only
@@ -177,11 +183,9 @@ class CodeLocation(AbstractContextManager):
         if not selector.is_subset_selection:
             return self.get_repository(selector.repository_name).get_full_job(selector.job_name)
 
-        repo_handle = self.get_repository(selector.repository_name).handle
-
         subset_result = await self._gen_subset_remote_job_result(selector)
 
-        return self._get_remote_job_from_subset_result(repo_handle, subset_result)
+        return self._get_remote_job_from_subset_result(selector, subset_result)
 
     @abstractmethod
     def _get_subset_remote_job_result(self, selector: JobSubsetSelector) -> RemoteJobSubsetResult:
@@ -978,7 +982,9 @@ class GrpcServerCodeLocation(CodeLocation):
             asset_selection=selector.asset_selection,
             asset_check_selection=selector.asset_check_selection,
         )
-        if subset.job_data_snap:
+        # Omit the parent job snapshot for __ASSET_JOB, since it is potentialy very large
+        # and unlikely to be useful (unlike subset selections of other jobs)
+        if subset.job_data_snap and not is_implicit_asset_job_name(selector.job_name):
             full_job = self.get_repository(selector.repository_name).get_full_job(selector.job_name)
             subset = copy(
                 subset,
