@@ -89,6 +89,7 @@ class MultiprocessExecutorChildProcessCommand(ChildProcessCommand):
                 )
                 execution_plan = create_execution_plan(
                     job=recon_job,
+                    instance=instance,
                     run_config=self.run_config,
                     step_keys_to_execute=[self.step_key],
                     known_state=self.known_state,

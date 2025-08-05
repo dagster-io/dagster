@@ -310,7 +310,7 @@ def test_execute_plan_iterator():
         )
         run_config = {"loggers": {"callback": {}}}
 
-        execution_plan = create_execution_plan(job_def, run_config=run_config)
+        execution_plan = create_execution_plan(job_def, instance, run_config=run_config)
         dagster_run = instance.create_run_for_job(
             job_def=job_def,
             run_config={"loggers": {"callback": {}}},

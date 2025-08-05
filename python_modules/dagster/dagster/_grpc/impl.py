@@ -52,6 +52,7 @@ from dagster._core.remote_representation.external_data import (
 from dagster._core.remote_representation.origin import CodeLocationOrigin
 from dagster._core.snap.execution_plan_snapshot import snapshot_from_execution_plan
 from dagster._core.storage.dagster_run import DagsterRun
+from dagster._core.storage.state import StateStorage
 from dagster._grpc.types import ExecuteExternalJobArgs, ExecutionPlanSnapshotArgs
 from dagster._serdes import deserialize_value
 from dagster._time import datetime_from_timestamp
@@ -103,6 +104,8 @@ def core_execute_run(
     check.inst_param(recon_job, "recon_job", ReconstructableJob)
     check.inst_param(dagster_run, "dagster_run", DagsterRun)
     check.inst_param(instance, "instance", DagsterInstance)
+
+    StateStorage.set_current(instance.state_storage)
 
     if inject_env_vars:
         try:
@@ -517,10 +520,10 @@ def get_external_execution_plan_snapshot(
     return snapshot_from_execution_plan(
         create_execution_plan(
             job_def,
+            instance=args.instance_ref or DagsterInstance.ephemeral(),
             run_config=args.run_config,
             step_keys_to_execute=args.step_keys_to_execute,
             known_state=args.known_state,
-            instance_ref=args.instance_ref,
             repository_load_data=repo_def.repository_load_data,
         ),
         args.job_snapshot_id,

@@ -251,7 +251,9 @@ def test_load_assets_workspace_data_refreshable_workbooks(
             job_name="all_asset_job",
         )
 
-        execution_plan = create_execution_plan(recon_job, repository_load_data=repository_load_data)
+        execution_plan = create_execution_plan(
+            recon_job, instance, repository_load_data=repository_load_data
+        )
         run = instance.create_run_for_job(job_def=job_def, execution_plan=execution_plan)
 
         events = execute_plan(
@@ -353,7 +355,9 @@ def test_load_assets_workspace_data_refreshable_data_sources(
             job_name="all_asset_job",
         )
 
-        execution_plan = create_execution_plan(recon_job, repository_load_data=repository_load_data)
+        execution_plan = create_execution_plan(
+            recon_job, instance, repository_load_data=repository_load_data
+        )
         run = instance.create_run_for_job(job_def=job_def, execution_plan=execution_plan)
 
         events = execute_plan(
@@ -456,7 +460,9 @@ def test_load_assets_workspace_data(
             job_name="all_asset_job",
         )
 
-        execution_plan = create_execution_plan(recon_job, repository_load_data=repository_load_data)
+        execution_plan = create_execution_plan(
+            recon_job, instance, repository_load_data=repository_load_data
+        )
         run = instance.create_run_for_job(job_def=job_def, execution_plan=execution_plan)
 
         events = execute_plan(
@@ -561,7 +567,9 @@ def test_load_assets_workspace_asset_decorator_with_context(
             job_name=job_name,
         )
 
-        execution_plan = create_execution_plan(recon_job, repository_load_data=repository_load_data)
+        execution_plan = create_execution_plan(
+            recon_job, instance, repository_load_data=repository_load_data
+        )
         run = instance.create_run_for_job(job_def=job_def, execution_plan=execution_plan)
 
         events = execute_plan(

@@ -71,15 +71,15 @@ def test_ping_metrics_retrieval(provide_flag: bool):
     if provide_flag:
         subprocess_args.append("--enable-metrics")
 
-    process = subprocess.Popen(subprocess_args)
+    with dg.instance_for_test() as instance:
+        process = subprocess.Popen(subprocess_args)
 
-    try:
-        wait_for_grpc_server(
-            process, DagsterGrpcClient(port=port, host="localhost"), subprocess_args
-        )
-        client = DagsterGrpcClient(port=port)
+        try:
+            wait_for_grpc_server(
+                process, DagsterGrpcClient(port=port, host="localhost"), subprocess_args
+            )
+            client = DagsterGrpcClient(port=port)
 
-        with dg.instance_for_test() as instance:
             repo_origin = RemoteRepositoryOrigin(
                 code_location_origin=GrpcServerCodeLocationOrigin(port=port, host="localhost"),
                 repository_name="the_repo",
@@ -98,6 +98,6 @@ def test_ping_metrics_retrieval(provide_flag: bool):
                 }
             else:
                 assert res["serialized_server_utilization_metrics"] == ""
-    finally:
-        process.terminate()
-        process.wait()
+        finally:
+            process.terminate()
+            process.wait()

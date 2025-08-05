@@ -1,5 +1,6 @@
 import dagster as dg
 from dagster._core.execution.api import create_execution_plan
+from dagster._core.instance import DagsterInstance
 from dagster._core.snap import snapshot_from_execution_plan
 from dagster._serdes import serialize_pp
 
@@ -13,7 +14,7 @@ def test_create_noop_execution_plan(snapshot):
     def noop_job():
         noop_op()
 
-    execution_plan = create_execution_plan(noop_job)
+    execution_plan = create_execution_plan(noop_job, DagsterInstance.ephemeral())
 
     snapshot.assert_match(
         serialize_pp(
@@ -35,7 +36,7 @@ def test_create_execution_plan_with_dep(snapshot):
     def noop_job():
         op_two(op_one())
 
-    execution_plan = create_execution_plan(noop_job)
+    execution_plan = create_execution_plan(noop_job, DagsterInstance.ephemeral())
 
     snapshot.assert_match(
         serialize_pp(
@@ -75,7 +76,7 @@ def test_create_with_graph(snapshot):
     def do_comps():
         add(num_one=comp_1(), num_two=comp_2())
 
-    execution_plan = create_execution_plan(do_comps)
+    execution_plan = create_execution_plan(do_comps, DagsterInstance.ephemeral())
 
     snapshot.assert_match(
         serialize_pp(
@@ -96,7 +97,7 @@ def test_create_noop_execution_plan_with_tags(snapshot):
     def noop_job():
         noop_op()
 
-    execution_plan = create_execution_plan(noop_job)
+    execution_plan = create_execution_plan(noop_job, DagsterInstance.ephemeral())
 
     snapshot.assert_match(
         serialize_pp(

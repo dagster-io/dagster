@@ -39,7 +39,7 @@ def define_diamond_job():
 
 
 def test_topological_sort():
-    plan = create_execution_plan(define_diamond_job())
+    plan = create_execution_plan(define_diamond_job(), DagsterInstance.ephemeral())
 
     levels = plan.get_steps_to_execute_by_level()
 
@@ -54,12 +54,13 @@ def test_create_execution_plan_with_bad_inputs():
     with pytest.raises(dg.DagsterInvalidConfigError):
         create_execution_plan(
             define_diamond_job(),
+            DagsterInstance.ephemeral(),
             run_config={"ops": {"add_three": {"inputs": {"num": 3}}}},
         )
 
 
 def test_active_execution_plan():
-    plan = create_execution_plan(define_diamond_job())
+    plan = create_execution_plan(define_diamond_job(), DagsterInstance.ephemeral())
 
     with plan.start(retry_mode=(RetryMode.DISABLED)) as active_execution:
         steps = active_execution.get_steps_to_execute()
@@ -110,7 +111,7 @@ def test_active_execution_plan():
 
 def test_failing_execution_plan():
     job_def = define_diamond_job()
-    plan = create_execution_plan(job_def)
+    plan = create_execution_plan(job_def, DagsterInstance.ephemeral())
 
     with plan.start(retry_mode=(RetryMode.DISABLED)) as active_execution:
         steps = active_execution.get_steps_to_execute()
@@ -162,7 +163,7 @@ def test_failing_execution_plan():
 
 def test_retries_active_execution():
     job_def = define_diamond_job()
-    plan = create_execution_plan(job_def)
+    plan = create_execution_plan(job_def, DagsterInstance.ephemeral())
 
     with plan.start(retry_mode=(RetryMode.ENABLED)) as active_execution:
         steps = active_execution.get_steps_to_execute()
@@ -225,7 +226,7 @@ def test_retries_active_execution():
 
 def test_retries_disabled_active_execution():
     job_def = define_diamond_job()
-    plan = create_execution_plan(job_def)
+    plan = create_execution_plan(job_def, DagsterInstance.ephemeral())
 
     with pytest.raises(check.CheckError):
         with plan.start(retry_mode=(RetryMode.DISABLED)) as active_execution:
@@ -243,7 +244,7 @@ def test_retries_disabled_active_execution():
 
 def test_retries_deferred_active_execution():
     job_def = define_diamond_job()
-    plan = create_execution_plan(job_def)
+    plan = create_execution_plan(job_def, DagsterInstance.ephemeral())
 
     with plan.start(retry_mode=(RetryMode.DEFERRED)) as active_execution:
         steps = active_execution.get_steps_to_execute()
@@ -312,7 +313,7 @@ def test_priorities():
 
     sort_key_fn = lambda step: int(step.tags.get("priority", 0)) * -1
 
-    plan = create_execution_plan(priorities)
+    plan = create_execution_plan(priorities, DagsterInstance.ephemeral())
     with plan.start(RetryMode.DISABLED, sort_key_fn) as active_execution:
         steps = active_execution.get_steps_to_execute()
         assert steps[0].key == "pri_5"
@@ -358,7 +359,7 @@ def test_tag_concurrency_limits():
         pri_neg_1()
         pri_none()
 
-    plan = create_execution_plan(tag_concurrency_limits_job)
+    plan = create_execution_plan(tag_concurrency_limits_job, DagsterInstance.ephemeral())
 
     tag_concurrency_limits = [
         {"key": "database", "value": "tiny", "limit": 1},
@@ -394,7 +395,7 @@ def test_tag_concurrency_limits():
 def test_executor_not_created_for_execute_plan():
     instance = DagsterInstance.ephemeral()
     pipe = define_diamond_job()
-    plan = create_execution_plan(pipe)
+    plan = create_execution_plan(pipe, instance)
     job_def = instance.create_run_for_job(pipe, plan)
 
     results = execute_plan(
@@ -408,7 +409,7 @@ def test_executor_not_created_for_execute_plan():
 
 
 def test_incomplete_execution_plan():
-    plan = create_execution_plan(define_diamond_job())
+    plan = create_execution_plan(define_diamond_job(), DagsterInstance.ephemeral())
 
     with pytest.raises(
         dg.DagsterInvariantViolationError,
@@ -424,7 +425,7 @@ def test_incomplete_execution_plan():
 
 
 def test_lost_steps():
-    plan = create_execution_plan(define_diamond_job())
+    plan = create_execution_plan(define_diamond_job(), DagsterInstance.ephemeral())
 
     # run to completion - but step was in unknown state so exception thrown
     with pytest.raises(DagsterUnknownStepStateError):
@@ -471,24 +472,24 @@ def test_fan_out_should_skip_step():
     instance = DagsterInstance.ephemeral()
     run = dg.DagsterRun(job_name="optional_outputs", run_id=make_new_run_id())
     execute_plan(
-        create_execution_plan(optional_outputs, step_keys_to_execute=["foo"]),
+        create_execution_plan(optional_outputs, instance, step_keys_to_execute=["foo"]),
         InMemoryJob(optional_outputs),
         instance,
         run,
     )
 
     assert not should_skip_step(
-        create_execution_plan(optional_outputs, step_keys_to_execute=["bar_1"]),
+        create_execution_plan(optional_outputs, instance, step_keys_to_execute=["bar_1"]),
         instance,
         run.run_id,
     )
     assert should_skip_step(
-        create_execution_plan(optional_outputs, step_keys_to_execute=["bar_2"]),
+        create_execution_plan(optional_outputs, instance, step_keys_to_execute=["bar_2"]),
         instance,
         run.run_id,
     )
     assert should_skip_step(
-        create_execution_plan(optional_outputs, step_keys_to_execute=["bar_3"]),
+        create_execution_plan(optional_outputs, instance, step_keys_to_execute=["bar_3"]),
         instance,
         run.run_id,
     )
@@ -526,6 +527,7 @@ def test_fan_in_should_skip_step():
     execute_plan(
         create_execution_plan(
             optional_outputs_composite,
+            instance,
             step_keys_to_execute=[
                 "graph_all_upstream_skip.skip",
                 "graph_all_upstream_skip.skip_2",
@@ -539,6 +541,7 @@ def test_fan_in_should_skip_step():
     assert should_skip_step(
         create_execution_plan(
             optional_outputs_composite,
+            instance,
             step_keys_to_execute=["graph_all_upstream_skip.fan_in"],
         ),
         instance,
@@ -548,6 +551,7 @@ def test_fan_in_should_skip_step():
     execute_plan(
         create_execution_plan(
             optional_outputs_composite,
+            instance,
             step_keys_to_execute=[
                 "graph_one_upstream_skip.one",
                 "graph_one_upstream_skip.skip",
@@ -561,6 +565,7 @@ def test_fan_in_should_skip_step():
     assert not should_skip_step(
         create_execution_plan(
             optional_outputs_composite,
+            instance,
             step_keys_to_execute=["graph_one_upstream_skip.fan_in"],
         ),
         instance,
@@ -593,6 +598,7 @@ def test_configured_input_should_skip_step():
     execute_plan(
         create_execution_plan(
             my_job,
+            instance,
             step_keys_to_execute=["one"],
             run_config=run_config,
         ),
@@ -604,6 +610,7 @@ def test_configured_input_should_skip_step():
     assert not should_skip_step(
         create_execution_plan(
             my_job,
+            instance,
             step_keys_to_execute=["op_should_not_skip"],
             run_config=run_config,
         ),

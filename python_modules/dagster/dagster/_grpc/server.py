@@ -51,6 +51,7 @@ from dagster._core.remote_representation.external_data import (
 )
 from dagster._core.remote_representation.origin import RemoteRepositoryOrigin
 from dagster._core.snap.execution_plan_snapshot import ExecutionPlanSnapshotErrorData
+from dagster._core.storage.state import StateStorage
 from dagster._core.types.loadable_target_origin import (
     LoadableTargetOrigin,
     enter_loadable_target_origin_load_context,
@@ -428,6 +429,10 @@ class DagsterApiServer(DagsterApiServicer):
         self._enable_metrics = check.bool_param(enable_metrics, "enable_metrics")
         self._server_threadpool_executor = server_threadpool_executor
 
+        # first, set the current state store to the provided instance ref, if it exists
+        if instance_ref is not None:
+            StateStorage.set_current(DagsterInstance.from_ref(instance_ref).state_storage)
+
         try:
             if inject_env_vars_from_instance:
                 from dagster._cli.utils import get_instance_for_cli
@@ -438,6 +443,9 @@ class DagsterApiServer(DagsterApiServicer):
                     get_instance_for_cli(instance_ref=instance_ref)
                 )
                 self._instance.inject_env_vars(location_name)
+                # This operation may give us a new instance if instance_ref was not set, so
+                # update to ensure that we have the correct StateStore set
+                StateStorage.set_current(self._instance.state_storage)
 
             self._loaded_repositories: Optional[LoadedRepositories] = LoadedRepositories(
                 loadable_target_origin,
