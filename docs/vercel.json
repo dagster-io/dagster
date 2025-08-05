@@ -3048,7 +3048,7 @@
     },
     {
       "source": "/guides/deploy/dagster-instance-configuration",
-      "destination":  "/deployment/oss/oss-instance-configuration"
+      "destination": "/deployment/oss/oss-instance-configuration"
     },
     {
       "source": "/guides/deploy/dagster-yaml",
