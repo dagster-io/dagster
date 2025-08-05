@@ -28,6 +28,7 @@ from dagster._core.definitions.source_asset import SourceAsset
 from dagster._core.definitions.utils import check_valid_name
 from dagster._core.errors import DagsterInvariantViolationError
 from dagster._core.instance import DagsterInstance
+from dagster._core.storage.defs_state.defs_state_info import DefsStateInfo
 from dagster._serdes import whitelist_for_serdes
 from dagster._utils.cached_method import cached_method
 
@@ -46,6 +47,7 @@ class RepositoryLoadData(
         [
             ("cacheable_asset_data", Mapping[str, Sequence[AssetsDefinitionCacheableData]]),
             ("reconstruction_metadata", Mapping[str, Any]),
+            ("defs_state_info", Optional[DefsStateInfo]),
         ],
     )
 ):
@@ -57,6 +59,7 @@ class RepositoryLoadData(
         reconstruction_metadata: Optional[
             Mapping[str, CodeLocationReconstructionMetadataValue]
         ] = None,
+        defs_state_info: Optional[DefsStateInfo] = None,
     ):
         return super().__new__(
             cls,
@@ -71,6 +74,7 @@ class RepositoryLoadData(
             reconstruction_metadata=check.opt_mapping_param(
                 reconstruction_metadata, "reconstruction_metadata", key_type=str
             ),
+            defs_state_info=check.opt_inst_param(defs_state_info, "defs_state_info", DefsStateInfo),
         )
 
     # Allow this to be hashed for use in `lru_cache`. This is needed because:
@@ -82,14 +86,6 @@ class RepositoryLoadData(
         if not hasattr(self, "_hash"):
             self._hash = hash_collection(self)
         return self._hash
-
-    def replace_reconstruction_metadata(
-        self, reconstruction_metadata: Mapping[str, Any]
-    ) -> "RepositoryLoadData":
-        return RepositoryLoadData(
-            cacheable_asset_data=self.cacheable_asset_data,
-            reconstruction_metadata=reconstruction_metadata,
-        )
 
 
 @public
@@ -128,8 +124,10 @@ class RepositoryDefinition:
     def repository_load_data(self) -> Optional[RepositoryLoadData]:
         return self._repository_load_data
 
-    def replace_reconstruction_metadata(
-        self, reconstruction_metadata: Mapping[str, str]
+    def replace_repository_load_data(
+        self,
+        reconstruction_metadata: Mapping[str, str],
+        defs_state_info: Optional[DefsStateInfo],
     ) -> "RepositoryDefinition":
         """Modifies the repository load data to include the provided reconstruction metadata."""
         check.mapping_param(reconstruction_metadata, "reconstruction_metadata", key_type=str)
@@ -152,11 +150,15 @@ class RepositoryDefinition:
             repository_data=self._repository_data,
             description=self._description,
             metadata=self._metadata,
-            repository_load_data=self._repository_load_data.replace_reconstruction_metadata(
-                normalized_metadata
+            repository_load_data=self._repository_load_data._replace(
+                reconstruction_metadata=normalized_metadata,
+                defs_state_info=defs_state_info,
             )
             if self._repository_load_data
-            else RepositoryLoadData(reconstruction_metadata=normalized_metadata),
+            else RepositoryLoadData(
+                reconstruction_metadata=normalized_metadata,
+                defs_state_info=defs_state_info,
+            ),
         )
 
     @public

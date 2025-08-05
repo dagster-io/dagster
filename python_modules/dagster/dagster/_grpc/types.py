@@ -18,6 +18,7 @@ from dagster._core.remote_representation.external_data import (
     DEFAULT_MODE_NAME,
     job_name_for_partition_set_snap_name,
 )
+from dagster._core.storage.defs_state.defs_state_info import DefsStateInfo
 from dagster._serdes import serialize_value, whitelist_for_serdes
 from dagster._utils.error import SerializableErrorInfo
 
@@ -328,6 +329,7 @@ class ListRepositoriesResponse(
             ("container_image", Optional[str]),
             ("container_context", Optional[Mapping[str, Any]]),
             ("dagster_library_versions", Optional[Mapping[str, str]]),
+            ("state_info", Optional[DefsStateInfo]),
         ],
     )
 ):
@@ -340,6 +342,7 @@ class ListRepositoriesResponse(
         container_image: Optional[str] = None,
         container_context: Optional[Mapping] = None,
         dagster_library_versions: Optional[Mapping[str, str]] = None,
+        state_info: Optional[DefsStateInfo] = None,
     ):
         return super().__new__(
             cls,
@@ -367,6 +370,7 @@ class ListRepositoriesResponse(
             dagster_library_versions=check.opt_nullable_mapping_param(
                 dagster_library_versions, "dagster_library_versions"
             ),
+            state_info=check.opt_inst_param(state_info, "state_info", DefsStateInfo),
         )
 
 

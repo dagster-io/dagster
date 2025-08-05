@@ -9,6 +9,7 @@ import dagster._check as check
 from dagster._core.instance import InstanceRef
 from dagster._core.remote_origin import ManagedGrpcPythonEnvCodeLocationOrigin
 from dagster._core.remote_representation.grpc_server_registry import GrpcServerRegistry
+from dagster._core.storage.defs_state.defs_state_info import DefsStateInfo
 from dagster._core.types.loadable_target_origin import LoadableTargetOrigin
 from dagster._grpc.__generated__ import dagster_api_pb2
 from dagster._grpc.__generated__.dagster_api_pb2_grpc import DagsterApiServicer
@@ -56,6 +57,7 @@ class DagsterProxyApiServicer(DagsterApiServicer):
         logger: logging.Logger,
         server_heartbeat: bool,
         server_heartbeat_timeout: int,
+        state_info: Optional[DefsStateInfo],
     ):
         super().__init__()
 
@@ -90,6 +92,7 @@ class DagsterProxyApiServicer(DagsterApiServicer):
                 container_context=self._container_context,
                 wait_for_processes_on_shutdown=True,
                 additional_timeout_msg="Set from --startup-timeout command line argument. ",
+                state_info=state_info,
             )
         )
         self._origin = ManagedGrpcPythonEnvCodeLocationOrigin(

@@ -1,7 +1,10 @@
+import tempfile
 from abc import ABC, abstractmethod
-from collections.abc import Mapping, Sequence
+from collections.abc import Iterator, Mapping, Sequence
+from contextlib import contextmanager
 from enum import Enum
 from functools import cached_property
+from pathlib import Path
 from typing import TYPE_CHECKING, Any, ClassVar, Generic, Optional, TypeVar, cast
 
 from dagster_shared.serdes.serdes import PackableValue, deserialize_value, serialize_value
@@ -13,7 +16,9 @@ from dagster._core.definitions.definitions_class import Definitions
 from dagster._core.definitions.metadata.metadata_value import (
     CodeLocationReconstructionMetadataValue,
 )
-from dagster._core.errors import DagsterInvariantViolationError
+from dagster._core.errors import DagsterInvalidInvocationError, DagsterInvariantViolationError
+from dagster._core.storage.defs_state.base import DefsStateStorage
+from dagster._core.storage.defs_state.defs_state_info import DefsStateInfo
 
 if TYPE_CHECKING:
     from dagster._core.definitions.repository_definition import RepositoryLoadData
@@ -51,15 +56,27 @@ class DefinitionsLoadContext:
         self,
         load_type: DefinitionsLoadType,
         repository_load_data: Optional["RepositoryLoadData"] = None,
+        defs_state_info: Optional[DefsStateInfo] = None,
     ):
         self._load_type = load_type
         self._repository_load_data = repository_load_data
         self._pending_reconstruction_metadata = {}
 
+        if load_type == DefinitionsLoadType.INITIALIZATION and defs_state_info is None:
+            # defs_state_info is passed in during INITIALIZATION if explicit state versions
+            # are provided via CLI arguments, otherwise we use the latest available state info
+            state_storage = DefsStateStorage.get_current()
+            self._defs_state_info = (
+                state_storage.get_latest_defs_state_info() if state_storage else None
+            )
+        else:
+            self._defs_state_info = defs_state_info
+
     @classmethod
     def get(cls) -> "DefinitionsLoadContext":
         """Get the current DefinitionsLoadContext. If it has not been set, the
-        context is assumed to be initialization.
+        context is assumed to be in initialization, and the state versions are
+        set to the latest available versions.
         """
         return DefinitionsLoadContext._instance or cls(load_type=DefinitionsLoadType.INITIALIZATION)
 
@@ -117,6 +134,29 @@ class DefinitionsLoadContext:
             if self._repository_load_data
             else {}
         )
+
+    @property
+    def defs_state_info(self) -> Optional[DefsStateInfo]:
+        return self._defs_state_info
+
+    @contextmanager
+    def temp_state_path(self, key: str) -> Iterator[Optional[Path]]:
+        """Context manager that creates a temporary path to hold local state for a component."""
+        state_storage = DefsStateStorage.get_current()
+        if state_storage is None:
+            raise DagsterInvalidInvocationError(
+                "Attempted to get a temp state path without a StateStorage in context. "
+                "This is likely the result of an internal framework error."
+            )
+        # if no state has ever been written for this key, we return None to indicate that no state is available
+        version = self._defs_state_info.get_version(key) if self._defs_state_info else None
+        if version is None:
+            yield None
+            return
+        with tempfile.TemporaryDirectory() as temp_dir:
+            state_path = Path(temp_dir) / key
+            state_storage.download_state_to_path(key, version, state_path)
+            yield state_path
 
 
 TState = TypeVar("TState", bound=PackableValue)
