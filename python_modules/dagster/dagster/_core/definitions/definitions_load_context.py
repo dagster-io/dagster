@@ -4,6 +4,7 @@ from enum import Enum
 from functools import cached_property
 from typing import TYPE_CHECKING, Any, ClassVar, Generic, Optional, TypeVar, cast
 
+from dagster_shared import check
 from dagster_shared.serdes.serdes import PackableValue, deserialize_value, serialize_value
 
 from dagster._core.definitions.assets.definition.cacheable_assets_definition import (
@@ -51,10 +52,16 @@ class DefinitionsLoadContext:
         self,
         load_type: DefinitionsLoadType,
         repository_load_data: Optional["RepositoryLoadData"] = None,
+        state_versions: Optional[dict[str, str]] = None,
     ):
         self._load_type = load_type
         self._repository_load_data = repository_load_data
-        self._pending_reconstruction_metadata = {}
+        # state versions are stored in the pending reconstruction metadata
+        check.param_invariant(
+            state_versions is None or load_type == DefinitionsLoadType.INITIALIZATION,
+            "state_versions must be None if load_type is not INITIALIZATION",
+        )
+        self._pending_reconstruction_metadata = state_versions or {}
 
     @classmethod
     def get(cls) -> "DefinitionsLoadContext":
@@ -117,6 +124,14 @@ class DefinitionsLoadContext:
             if self._repository_load_data
             else {}
         )
+
+    def get_state_version(self, key: str) -> Optional[str]:
+        if self._load_type == DefinitionsLoadType.INITIALIZATION:
+            # in INITIALIZATION mode, we will have the state version pre-loaded into the
+            # pending reconstruction metadata
+            return self._pending_reconstruction_metadata.get(key)
+        else:
+            return self.reconstruction_metadata.get(key)
 
 
 TState = TypeVar("TState", bound=PackableValue)
