@@ -51,6 +51,7 @@ from dagster._core.remote_representation.external_data import (
     SensorExecutionErrorSnap,
 )
 from dagster._core.snap.execution_plan_snapshot import ExecutionPlanSnapshotErrorData
+from dagster._core.storage.defs_state.defs_state_info import DefsStateInfo
 from dagster._core.types.loadable_target_origin import (
     LoadableTargetOrigin,
     enter_loadable_target_origin_load_context,
@@ -234,6 +235,7 @@ class LoadedRepositories:
         container_image: Optional[str],
         entry_point: Sequence[str],
         container_context: Optional[Mapping[str, Any]],
+        state_info: Optional[DefsStateInfo] = None,
     ):
         self._loadable_target_origin = loadable_target_origin
 
@@ -248,6 +250,7 @@ class LoadedRepositories:
         DefinitionsLoadContext.set(
             DefinitionsLoadContext(
                 DefinitionsLoadType.INITIALIZATION,
+                defs_state_info=state_info,
             )
         )
 
@@ -373,6 +376,7 @@ class DagsterApiServer(DagsterApiServicer):
         instance_ref: Optional[InstanceRef] = None,
         location_name: Optional[str] = None,
         enable_metrics: bool = False,
+        state_info: Optional[DefsStateInfo] = None,
     ):
         super().__init__()
 
@@ -426,9 +430,12 @@ class DagsterApiServer(DagsterApiServicer):
         self._exit_stack = ExitStack()
 
         self._enable_metrics = check.bool_param(enable_metrics, "enable_metrics")
+        self._state_info = check.opt_inst_param(state_info, "state_info", DefsStateInfo)
+
         self._server_threadpool_executor = server_threadpool_executor
 
         try:
+            instance_entered = False
             if inject_env_vars_from_instance:
                 from dagster._cli.utils import get_instance_for_cli
 
@@ -437,14 +444,24 @@ class DagsterApiServer(DagsterApiServicer):
                 self._instance = self._exit_stack.enter_context(
                     get_instance_for_cli(instance_ref=instance_ref)
                 )
+                instance_entered = True
 
                 self._instance.inject_env_vars(location_name)
+
+            if state_info is not None and not instance_entered:
+                instance_ref = check.not_none(
+                    self._instance_ref, "Cannot set state_info without an instance_ref."
+                )
+                self._instance = DagsterInstance.from_ref(instance_ref)
+                self._exit_stack.enter_context(self._instance)
 
             self._loaded_repositories: Optional[LoadedRepositories] = LoadedRepositories(
                 loadable_target_origin,
                 entry_point=self._entry_point,
                 container_image=self._container_image,
                 container_context=self._container_context,
+                # state versions threaded through via CLI arguments
+                state_info=self._state_info,
             )
         except Exception:
             if not lazy_load_user_code:
@@ -675,6 +692,7 @@ class DagsterApiServer(DagsterApiServicer):
                     container_image=self._container_image,
                     container_context=self._container_context,
                     dagster_library_versions=DagsterLibraryRegistry.get(),
+                    state_info=self._state_info,
                 )
             )
         except Exception:
@@ -1425,6 +1443,7 @@ def open_server_process(
     container_context: Optional[dict[str, Any]] = None,
     enable_metrics: bool = False,
     additional_timeout_msg: Optional[str] = None,
+    state_info: Optional[DefsStateInfo] = None,
 ):
     check.invariant((port or socket) and not (port and socket), "Set only port or socket")
     check.opt_inst_param(loadable_target_origin, "loadable_target_origin", LoadableTargetOrigin)
@@ -1451,6 +1470,7 @@ def open_server_process(
         *(["--container-image", container_image] if container_image else []),
         *(["--container-context", json.dumps(container_context)] if container_context else []),
         *(["--enable-metrics"] if enable_metrics else []),
+        *(["--state-info", serialize_value(state_info)] if state_info else []),
     ]
 
     if loadable_target_origin:
@@ -1549,6 +1569,7 @@ class GrpcServerProcess:
         container_image: Optional[str] = None,
         container_context: Optional[dict[str, Any]] = None,
         additional_timeout_msg: Optional[str] = None,
+        state_info: Optional[DefsStateInfo] = None,
     ):
         self.port = None
         self.socket = None
@@ -1589,6 +1610,7 @@ class GrpcServerProcess:
         self._container_image = container_image
         self._container_context = container_context
         self._additional_timeout_msg = additional_timeout_msg
+        self._state_info = state_info
         self.socket = None
         self.port = None
         self.start_server_process()
@@ -1611,6 +1633,7 @@ class GrpcServerProcess:
             container_context=self._container_context,
             additional_timeout_msg=self._additional_timeout_msg,
             server_command=self._server_command,
+            state_info=self._state_info,
         )
 
         if (seven.IS_WINDOWS or self._force_port) and self.port is None:
