@@ -142,16 +142,14 @@ def store_event(ops: "EventInstanceOps", event: "EventLogEntry") -> None:
 
 def _is_batch_writing_enabled() -> bool:
     """Check if batch writing is enabled."""
-    import os
-
-    return os.getenv("DAGSTER_EVENT_BATCH_WRITING") == "1"
+    return _get_event_batch_size() > 0
 
 
 def _get_event_batch_size() -> int:
     """Get event batch size."""
     import os
 
-    return int(os.getenv("DAGSTER_EVENT_BATCH_SIZE", "20"))
+    return int(os.getenv("DAGSTER_EVENT_BATCH_SIZE", "0"))
 
 
 def handle_new_event(
