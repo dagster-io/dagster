@@ -90,6 +90,15 @@ You can also define a job for a selection of these assets.
   language="python"
 />
 
+Finally, jobs created for your Looker assets can be scheduled.
+
+<CodeExample
+  startAfter="start_looker_schedule"
+  endBefore="end_looker_schedule"
+  path="docs_snippets/docs_snippets/integrations/looker/schedule_looker_jobs.py"
+  language="python"
+/>
+
 ## Customize upstream dependencies
 
 By default, Dagster sets upstream dependencies when generating asset specs for your Looker assets. To do so, Dagster parses information about assets that are upstream of specific Looker assets from the Looker instance itself. You can customize how upstream dependencies are set on your Looker assets by passing an instance of the custom <PyObject section="libraries" module="dagster_looker" object="DagsterLookerApiTranslator" /> to the <PyObject section="libraries" module="dagster_looker" object="load_looker_asset_specs" /> function.
