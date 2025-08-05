@@ -699,6 +699,13 @@ def _execute_step_command_body(
     help="[INTERNAL] Retrieves current utilization metrics from GRPC server.",
     envvar="DAGSTER_ENABLE_SERVER_METRICS",
 )
+@click.option(
+    "--state-versions",
+    type=click.STRING,
+    required=False,
+    help="State versions to use for the code server.",
+    envvar="DAGSTER_STATE_VERSIONS",
+)
 @python_pointer_options
 def grpc_command(
     port: Optional[int],
@@ -719,6 +726,7 @@ def grpc_command(
     location_name: Optional[str],
     instance_ref: Optional[str],
     enable_metrics: bool = False,
+    state_versions: Optional[str] = None,
     **other_opts: Any,
 ) -> None:
     # deferring for import perf
@@ -818,6 +826,7 @@ def grpc_command(
         location_name=location_name,
         enable_metrics=enable_metrics,
         server_threadpool_executor=threadpool_executor,
+        state_versions=json.loads(state_versions) if state_versions else None,
     )
 
     server = DagsterGrpcServer(

@@ -235,6 +235,7 @@ class LoadedRepositories:
         container_image: Optional[str],
         entry_point: Sequence[str],
         container_context: Optional[Mapping[str, Any]],
+        state_versions: Optional[Mapping[str, str]],
     ):
         self._loadable_target_origin = loadable_target_origin
 
@@ -244,11 +245,12 @@ class LoadedRepositories:
         self._loadable_repository_symbols: list[LoadableRepositorySymbol] = []
 
         self._container_context = container_context
+        self._state_versions = state_versions
 
         # Make sure we have a persistent load context before loading any repositories.
         DefinitionsLoadContext.set(
             DefinitionsLoadContext(
-                DefinitionsLoadType.INITIALIZATION,
+                DefinitionsLoadType.INITIALIZATION, state_versions=self._state_versions
             )
         )
 
@@ -374,6 +376,7 @@ class DagsterApiServer(DagsterApiServicer):
         instance_ref: Optional[InstanceRef] = None,
         location_name: Optional[str] = None,
         enable_metrics: bool = False,
+        state_versions: Optional[Mapping[str, str]] = None,
     ):
         super().__init__()
 
@@ -415,6 +418,7 @@ class DagsterApiServer(DagsterApiServicer):
 
         self._container_image = check.opt_str_param(container_image, "container_image")
         self._container_context = check.opt_dict_param(container_context, "container_context")
+        self._state_versions = check.opt_mapping_param(state_versions, "state_versions")
 
         # When will this be set in a gRPC server?
         #  - When running `dagster dev` (or `dagster-webserver`) in the gRPC server subprocesses that are spun up
@@ -447,11 +451,20 @@ class DagsterApiServer(DagsterApiServicer):
                 # update to ensure that we have the correct StateStore set
                 StateStorage.set_current(self._instance.state_storage)
 
+            # if state_versions are explicitly provided, use those
+            if self._state_versions is not None:
+                state_versions = self._state_versions
+            # otherwise, attempt to load the latest available state versions from the instance
+            else:
+                state_storage = StateStorage.get_current()
+                state_versions = state_storage.get_latest_versions() if state_storage else None
+
             self._loaded_repositories: Optional[LoadedRepositories] = LoadedRepositories(
                 loadable_target_origin,
                 entry_point=self._entry_point,
                 container_image=self._container_image,
                 container_context=self._container_context,
+                state_versions=state_versions,
             )
         except Exception:
             if not lazy_load_user_code:
@@ -1555,6 +1568,7 @@ class GrpcServerProcess:
         inject_env_vars_from_instance: bool = True,
         container_image: Optional[str] = None,
         container_context: Optional[dict[str, Any]] = None,
+        state_versions: Optional[Mapping[str, str]] = None,
         additional_timeout_msg: Optional[str] = None,
     ):
         self.port = None
@@ -1595,6 +1609,7 @@ class GrpcServerProcess:
         self._inject_env_vars_from_instance = inject_env_vars_from_instance
         self._container_image = container_image
         self._container_context = container_context
+        self._state_versions = state_versions
         self._additional_timeout_msg = additional_timeout_msg
         self.socket = None
         self.port = None
@@ -1616,6 +1631,7 @@ class GrpcServerProcess:
             inject_env_vars_from_instance=self._inject_env_vars_from_instance,
             container_image=self._container_image,
             container_context=self._container_context,
+            state_versions=self._state_versions,
             additional_timeout_msg=self._additional_timeout_msg,
             server_command=self._server_command,
         )

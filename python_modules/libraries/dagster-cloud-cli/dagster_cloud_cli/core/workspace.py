@@ -1,3 +1,4 @@
+import json
 import os
 from typing import Any, NamedTuple, Optional
 
@@ -56,7 +57,10 @@ class PexMetadata(
         if not agent_image_tag or not serverless_service_name:
             return None
         image_tag = agent_image_tag if self.python_version != "3.8" else _PYTHON_38_BASE_IMAGE_TAG
-        if serverless_service_name in ["serverless-agents", "serverless-agents-public-demo"]:
+        if serverless_service_name in [
+            "serverless-agents",
+            "serverless-agents-public-demo",
+        ]:
             return f"657821118200.dkr.ecr.us-west-2.amazonaws.com/dagster-cloud-serverless-base-py{self.python_version}:{image_tag}"
         else:
             return f"878483074102.dkr.ecr.us-west-2.amazonaws.com/dagster-cloud-serverless-base-py{self.python_version}:{image_tag}"
@@ -108,7 +112,12 @@ class CodeLocationDeployData(
             len(
                 [
                     val
-                    for val in [python_file, package_name, module_name, autoload_defs_module_name]
+                    for val in [
+                        python_file,
+                        package_name,
+                        module_name,
+                        autoload_defs_module_name,
+                    ]
                     if val
                 ]
             )
@@ -143,15 +152,24 @@ class CodeLocationDeployData(
         socket: Optional[str] = None,
         metrics_enabled: bool = False,
     ) -> list[str]:
+        2 / 0
         return (
             ["dagster-cloud", "pex", "grpc", "--host", "0.0.0.0"]
             + (["--port", str(port)] if port else [])
             + (["--socket", str(socket)] if socket else [])
             + (["--enable-metrics"] if metrics_enabled else [])
+            + (["--state-versions", json.dumps(self.state_versions)] if self.state_versions else [])
         )
 
     def get_multipex_server_env(self) -> dict[str, str]:
-        return {"DAGSTER_CURRENT_IMAGE": self.image} if self.image else {}
+        return {
+            **({"DAGSTER_CURRENT_IMAGE": self.image} if self.image else {}),
+            **(
+                {"DAGSTER_STATE_VERSIONS": json.dumps(self.state_versions)}
+                if self.state_versions
+                else {}
+            ),
+        }
 
     def get_grpc_server_command(self, metrics_enabled: bool = False) -> list[str]:
         return (
@@ -162,4 +180,5 @@ class CodeLocationDeployData(
                 "grpc",
             ]
             + (["--enable-metrics"] if metrics_enabled else [])
+            + (["--state-versions", json.dumps(self.state_versions)] if self.state_versions else [])
         )

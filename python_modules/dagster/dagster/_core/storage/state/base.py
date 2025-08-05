@@ -100,11 +100,12 @@ class RunStorageStateStorage(StateStorage):
 
     def __init__(self, run_storage: "RunStorage"):
         self._run_storage = run_storage
+        print("TYPE", type(self._run_storage))
 
     def get_latest_version(self, key: str) -> Optional[str]:
-        return self._run_storage.get_cursor_values({self._get_version_key(key)}).get(
-            self._get_version_key(key)
-        )
+        cursor_values_res = self._run_storage.get_cursor_values({self._get_version_key(key)})
+        print("CURSOR VALUES RES", cursor_values_res)
+        return cursor_values_res.get(self._get_version_key(key))
 
     def get_latest_versions(self) -> Mapping[str, str]:
         return cast(
