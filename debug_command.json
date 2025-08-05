@@ -1,0 +1,9 @@
+{
+  "command": "PYTHONPATH=/workspaces/dagster/python_modules/dagster:/workspaces/dagster/python_modules/dagster-webserver python -m dagster dev -f test_graph_asset_config.py",
+  "description": "Command to run Dagster development server with debugger support",
+  "components": {
+    "pythonpath": "/workspaces/dagster/python_modules/dagster:/workspaces/dagster/python_modules/dagster-webserver",
+    "module": "dagster dev",
+    "file": "test_graph_asset_config.py"
+  }
+}
