@@ -3466,7 +3466,7 @@ meta:
 ### Documentation
 
 - Added a link to Dagster University to the [docs landing page](https://docs.dagster.io) 🎓
-- Improved readability of [API docs landing page](https://docs.dagster.io/_apidocs)
+- Improved readability of [API docs landing page](https://docs.dagster.io/api)
 - Removed straggling mention of Dagit from the [Kubernetes OSS deployment guide](https://docs.dagster.io/deployment/guides/kubernetes/deploying-with-helm)
 
 ## 1.5.4 / 0.21.4 (libraries)
