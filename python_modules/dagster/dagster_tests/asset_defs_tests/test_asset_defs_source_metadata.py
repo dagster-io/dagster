@@ -4,6 +4,7 @@ from typing import cast
 
 import dagster as dg
 import pytest
+from dagster._core.definitions.metadata.source_code import Platform, base_git_url
 
 # path of the `dagster` package on the filesystem
 DAGSTER_PACKAGE_PATH = os.path.normpath(dg.file_relative_path(__file__, "../../"))
@@ -225,27 +226,18 @@ def test_asset_code_origins_source_control_custom_mapping() -> None:
         ("http://x.com", "my_b", "gitlab", "http://x.com/-/tree/my_b"),
     ],
 )
-<<<<<<< HEAD
-def test_base_git_url(url: str, branch: str, platform: str, expected: str) -> None:
-    base_url = dg.base_git_url(url, branch, platform)
-=======
 def test_base_git_url(url: str, branch: str, platform: Platform, expected: str) -> None:
     base_url = base_git_url(url, branch, platform)
->>>>>>> 16e994335e (fix: support python <3.11)
 
     assert base_url == expected
 
 
 def test_base_git_url_invalid_git_url() -> None:
     with pytest.raises(ValueError, match="Unable to infer the source control platform"):
-        dg.base_git_url("http://x.com", "my_b", None)
+        base_git_url("http://x.com", "my_b", None)
 
 
 def test_base_git_url_invalid_platform() -> None:
     platform: Platform = "bogus_platform"  # type: ignore
     with pytest.raises(ValueError, match="Invalid `platform`"):
-<<<<<<< HEAD
-        dg.base_git_url("http://x.com", "my_b", "bogus_platform")
-=======
         base_git_url("http://x.com", "my_b", platform)
->>>>>>> 16e994335e (fix: support python <3.11)

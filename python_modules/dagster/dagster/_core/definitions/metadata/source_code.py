@@ -349,7 +349,7 @@ def base_git_url(url: str, branch: str, platform: Optional[Platform]) -> str:
         return f"{url}/-/tree/{branch}"
     if platform == "github":
         return f"{url}/tree/{branch}"
-    
+
     raise ValueError(
         "Invalid `platform`."
         " Only gitlab and github are supported for linking to source control at this time."
