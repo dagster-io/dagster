@@ -51,7 +51,12 @@ if TYPE_CHECKING:
         BaseAssetGraph,
         BaseAssetNode,
     )
+    from dagster._core.definitions.job_definition import JobDefinition
+    from dagster._core.definitions.repository_definition.repository_definition import (
+        RepositoryLoadData,
+    )
     from dagster._core.definitions.utils import EntityKey
+    from dagster._core.execution.plan.plan import ExecutionPlan
     from dagster._core.execution.plan.resume_retry import ReexecutionStrategy
     from dagster._core.instance.runs.run_instance_ops import RunInstanceOps
     from dagster._core.remote_representation import CodeLocation, RemoteJob
@@ -60,6 +65,88 @@ if TYPE_CHECKING:
     from dagster._core.snap.execution_plan_snapshot import (
         ExecutionStepOutputSnap,
         ExecutionStepSnap,
+    )
+
+
+def create_run_for_job(
+    ops: "RunInstanceOps",
+    job_def: "JobDefinition",
+    execution_plan: Optional["ExecutionPlan"] = None,
+    run_id: Optional[str] = None,
+    run_config: Optional[Mapping[str, object]] = None,
+    resolved_op_selection: Optional[Set[str]] = None,
+    status: Optional[DagsterRunStatus] = None,
+    tags: Optional[Mapping[str, str]] = None,
+    root_run_id: Optional[str] = None,
+    parent_run_id: Optional[str] = None,
+    op_selection: Optional[Sequence[str]] = None,
+    asset_selection: Optional[Set[AssetKey]] = None,
+    remote_job_origin: Optional["RemoteJobOrigin"] = None,
+    job_code_origin: Optional[JobPythonOrigin] = None,
+    repository_load_data: Optional["RepositoryLoadData"] = None,
+) -> DagsterRun:
+    """Create a run for a given job definition.
+
+    This function handles job subsetting, execution plan creation, and parameter validation
+    before delegating to create_run for actual run creation.
+    """
+    from dagster._core.definitions.job_definition import JobDefinition
+    from dagster._core.execution.api import create_execution_plan
+    from dagster._core.execution.plan.plan import ExecutionPlan
+    from dagster._core.snap import snapshot_from_execution_plan
+
+    check.inst_param(job_def, "pipeline_def", JobDefinition)
+    check.opt_inst_param(execution_plan, "execution_plan", ExecutionPlan)
+
+    # note that op_selection is required to execute the solid subset, which is the
+    # frozenset version of the previous solid_subset.
+    # op_selection is not required and will not be converted to op_selection here.
+    # i.e. this function doesn't handle solid queries.
+    # op_selection is only used to pass the user queries further down.
+    check.opt_set_param(resolved_op_selection, "resolved_op_selection", of_type=str)
+    check.opt_list_param(op_selection, "op_selection", of_type=str)
+    check.opt_set_param(asset_selection, "asset_selection", of_type=AssetKey)
+
+    # op_selection never provided
+    if asset_selection or op_selection:
+        # for cases when `create_run_for_pipeline` is directly called
+        job_def = job_def.get_subset(
+            asset_selection=asset_selection,
+            op_selection=op_selection,
+        )
+
+    if not execution_plan:
+        execution_plan = create_execution_plan(
+            job=job_def,
+            run_config=run_config,
+            instance_ref=ops.get_ref() if ops.is_persistent else None,
+            tags=tags,
+            repository_load_data=repository_load_data,
+        )
+
+    return create_run(
+        ops,
+        job_name=job_def.name,
+        run_id=run_id,
+        run_config=run_config,
+        op_selection=op_selection,
+        asset_selection=asset_selection,
+        asset_check_selection=None,
+        resolved_op_selection=resolved_op_selection,
+        step_keys_to_execute=execution_plan.step_keys_to_execute,
+        status=status,
+        tags=tags,
+        root_run_id=root_run_id,
+        parent_run_id=parent_run_id,
+        job_snapshot=job_def.get_job_snapshot(),
+        execution_plan_snapshot=snapshot_from_execution_plan(
+            execution_plan,
+            job_def.get_job_snapshot_id(),
+        ),
+        parent_job_snapshot=job_def.get_parent_job_snapshot(),
+        remote_job_origin=remote_job_origin,
+        job_code_origin=job_code_origin,
+        asset_graph=job_def.asset_layer.asset_graph,
     )
 
 

@@ -49,3 +49,11 @@ class RunInstanceOps:
     # DynamicPartitionsStore access
     def as_dynamic_partitions_store(self):
         return self._instance  # Instance implements DynamicPartitionsStore
+
+    # Instance properties/methods
+    def get_ref(self):
+        return self._instance.get_ref()
+
+    @property
+    def is_persistent(self):
+        return self._instance.is_persistent

@@ -977,62 +977,25 @@ class DagsterInstance(DynamicPartitionsStore):
         job_code_origin: Optional[JobPythonOrigin] = None,
         repository_load_data: Optional["RepositoryLoadData"] = None,
     ) -> DagsterRun:
-        from dagster._core.definitions.job_definition import JobDefinition
-        from dagster._core.execution.api import create_execution_plan
-        from dagster._core.execution.plan.plan import ExecutionPlan
-        from dagster._core.snap import snapshot_from_execution_plan
+        """Create a run for a given job definition."""
+        from dagster._core.instance.runs import run_implementation
 
-        check.inst_param(job_def, "pipeline_def", JobDefinition)
-        check.opt_inst_param(execution_plan, "execution_plan", ExecutionPlan)
-
-        # note that op_selection is required to execute the solid subset, which is the
-        # frozenset version of the previous solid_subset.
-        # op_selection is not required and will not be converted to op_selection here.
-        # i.e. this function doesn't handle solid queries.
-        # op_selection is only used to pass the user queries further down.
-        check.opt_set_param(resolved_op_selection, "resolved_op_selection", of_type=str)
-        check.opt_list_param(op_selection, "op_selection", of_type=str)
-        check.opt_set_param(asset_selection, "asset_selection", of_type=AssetKey)
-
-        # op_selection never provided
-        if asset_selection or op_selection:
-            # for cases when `create_run_for_pipeline` is directly called
-            job_def = job_def.get_subset(
-                asset_selection=asset_selection,
-                op_selection=op_selection,
-            )
-
-        if not execution_plan:
-            execution_plan = create_execution_plan(
-                job=job_def,
-                run_config=run_config,
-                instance_ref=self.get_ref() if self.is_persistent else None,
-                tags=tags,
-                repository_load_data=repository_load_data,
-            )
-
-        return self.create_run(
-            job_name=job_def.name,
+        return run_implementation.create_run_for_job(
+            self._run_ops,
+            job_def=job_def,
+            execution_plan=execution_plan,
             run_id=run_id,
             run_config=run_config,
-            op_selection=op_selection,
-            asset_selection=asset_selection,
-            asset_check_selection=None,
             resolved_op_selection=resolved_op_selection,
-            step_keys_to_execute=execution_plan.step_keys_to_execute,
             status=DagsterRunStatus(status) if status else None,
             tags=tags,
             root_run_id=root_run_id,
             parent_run_id=parent_run_id,
-            job_snapshot=job_def.get_job_snapshot(),
-            execution_plan_snapshot=snapshot_from_execution_plan(
-                execution_plan,
-                job_def.get_job_snapshot_id(),
-            ),
-            parent_job_snapshot=job_def.get_parent_job_snapshot(),
+            op_selection=op_selection,
+            asset_selection=asset_selection,
             remote_job_origin=remote_job_origin,
             job_code_origin=job_code_origin,
-            asset_graph=job_def.asset_layer.asset_graph,
+            repository_load_data=repository_load_data,
         )
 
     @cached_property
