@@ -75,10 +75,10 @@ You can use Dagster to orchestrate the materialization of Looker PDTs. To model 
 Once you have your Looker assets for your PDTs, you can define a job to materialize all of them.
 
 <CodeExample
-startAfter="start_looker_all_assets_job"
-endBefore="end_looker_all_assets_job"
-path="docs_snippets/docs_snippets/integrations/looker/create_looker_all_assets_job.py"
-language="python"
+  startAfter="start_looker_all_assets_job"
+  endBefore="end_looker_all_assets_job"
+  path="docs_snippets/docs_snippets/integrations/looker/create_looker_all_assets_job.py"
+  language="python"
 />
 
 ## Customize upstream dependencies
