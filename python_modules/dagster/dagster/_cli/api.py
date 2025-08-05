@@ -35,6 +35,7 @@ from dagster._core.origin import (
     get_python_environment_entry_point,
 )
 from dagster._core.storage.dagster_run import DagsterRun, DagsterRunStatus
+from dagster._core.storage.defs_state.defs_state_info import DefsStateInfo
 from dagster._core.storage.tags import (
     RUN_METRIC_TAGS,
     RUN_METRICS_POLLING_INTERVAL_TAG,
@@ -698,6 +699,12 @@ def _execute_step_command_body(
     help="[INTERNAL] Retrieves current utilization metrics from GRPC server.",
     envvar="DAGSTER_ENABLE_SERVER_METRICS",
 )
+@click.option(
+    "--state-info",
+    type=click.STRING,
+    required=False,
+    help="[INTERNAL] Serialized DefsStateInfo to use for the server.",
+)
 @python_pointer_options
 def grpc_command(
     port: Optional[int],
@@ -718,6 +725,7 @@ def grpc_command(
     location_name: Optional[str],
     instance_ref: Optional[str],
     enable_metrics: bool = False,
+    state_info: Optional[str] = None,
     **other_opts: Any,
 ) -> None:
     # deferring for import perf
@@ -817,6 +825,7 @@ def grpc_command(
         location_name=location_name,
         enable_metrics=enable_metrics,
         server_threadpool_executor=threadpool_executor,
+        state_info=deserialize_value(state_info, DefsStateInfo) if state_info else None,
     )
 
     server = DagsterGrpcServer(

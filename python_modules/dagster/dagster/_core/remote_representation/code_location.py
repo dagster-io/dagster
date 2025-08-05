@@ -47,6 +47,7 @@ from dagster._core.remote_representation.external_data import (
 from dagster._core.remote_representation.grpc_server_registry import GrpcServerRegistry
 from dagster._core.remote_representation.handle import JobHandle, RepositoryHandle
 from dagster._core.snap.execution_plan_snapshot import snapshot_from_execution_plan
+from dagster._core.storage.defs_state.defs_state_info import DefsStateInfo
 from dagster._grpc.impl import (
     get_external_schedule_execution,
     get_external_sensor_execution,
@@ -398,6 +399,15 @@ class CodeLocation(AbstractContextManager):
     @abstractmethod
     def get_dagster_library_versions(self) -> Optional[Mapping[str, str]]: ...
 
+    def get_defs_state_info(self) -> Optional[DefsStateInfo]:
+        # we only support the normal single-repo case
+        repositories = self.get_repositories()
+        if len(repositories) != 1:
+            return None
+
+        [repo] = repositories.values()
+        return repo.repository_snap.defs_state_info
+
 
 class InProcessCodeLocation(CodeLocation):
     def __init__(self, origin: InProcessCodeLocationOrigin, instance: DagsterInstance):
@@ -412,6 +422,8 @@ class InProcessCodeLocation(CodeLocation):
             entry_point=self._origin.entry_point,
             container_image=self._origin.container_image,
             container_context=self._origin.container_context,
+            # for InProcessCodeLocations, we always use the latest available state versions
+            state_info=self._instance.defs_state_storage.get_latest_defs_state_info(),
         )
 
         self._repository_code_pointer_dict = self._loaded_repositories.code_pointers_by_repo_name

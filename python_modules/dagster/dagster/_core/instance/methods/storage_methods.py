@@ -3,6 +3,7 @@
 from collections.abc import Mapping
 from typing import TYPE_CHECKING, Any, Callable, Optional
 
+from dagster._core.storage.defs_state.defs_state_info import DefsStateInfo
 from dagster._core.types.pagination import PaginatedResults
 from dagster._utils import traced
 
@@ -11,6 +12,7 @@ PrintFn = Callable[[Any], None]
 
 if TYPE_CHECKING:
     from dagster._core.events import AssetKey, DagsterEventType
+    from dagster._core.storage.defs_state import DefsStateStorage
     from dagster._core.storage.event_log import EventLogStorage
     from dagster._core.storage.root import LocalArtifactStorage
     from dagster._core.storage.runs import RunStorage
@@ -29,6 +31,7 @@ class StorageMethods:
     _run_storage: "RunStorage"
     _schedule_storage: Optional["ScheduleStorage"]
     _local_artifact_storage: "LocalArtifactStorage"
+    _defs_state_storage: Optional["DefsStateStorage"]
 
     @traced
     def get_latest_storage_id_by_partition(
@@ -113,3 +116,8 @@ class StorageMethods:
 
     def schedules_directory(self) -> str:
         return self._local_artifact_storage.schedules_dir
+
+    def get_latest_defs_state_info(self) -> Optional[DefsStateInfo]:
+        if not self._defs_state_storage:
+            return None
+        return self._defs_state_storage.get_latest_defs_state_info()

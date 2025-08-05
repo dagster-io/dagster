@@ -12,6 +12,7 @@ from dagster_shared.cli import python_pointer_options
 from dagster._cli.utils import assert_no_remaining_opts
 from dagster._cli.workspace.cli_target import PythonPointerOpts
 from dagster._core.instance import InstanceRef
+from dagster._core.storage.defs_state.defs_state_info import DefsStateInfo
 from dagster._core.types.loadable_target_origin import LoadableTargetOrigin
 from dagster._core.utils import FuturesAwareThreadPoolExecutor
 from dagster._serdes import deserialize_value
@@ -171,6 +172,12 @@ def code_server_cli():
     help="[INTERNAL] Serialized InstanceRef to use for accessing the instance",
     envvar="DAGSTER_INSTANCE_REF",
 )
+@click.option(
+    "--state-info",
+    type=click.STRING,
+    required=False,
+    help="[INTERNAL] Serialized DefsStateInfo to use for accessing the state versions",
+)
 @python_pointer_options
 def start_command(
     port: Optional[int],
@@ -189,6 +196,7 @@ def start_command(
     heartbeat: bool,
     heartbeat_timeout,
     instance_ref: Optional[str],
+    state_info: Optional[str],
     **other_opts,
 ):
     # deferring for import perf
@@ -258,6 +266,7 @@ def start_command(
         logger=logger,
         server_heartbeat=heartbeat,
         server_heartbeat_timeout=heartbeat_timeout,
+        state_info=deserialize_value(state_info, DefsStateInfo) if state_info else None,
     )
     server = DagsterGrpcServer(
         server_termination_event=server_termination_event,

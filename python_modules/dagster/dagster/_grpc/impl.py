@@ -4,7 +4,7 @@ import os
 import sys
 import threading
 from collections.abc import Generator, Iterator, Sequence
-from contextlib import contextmanager, nullcontext
+from contextlib import ExitStack, contextmanager, nullcontext
 from typing import TYPE_CHECKING, AbstractSet, Any, Optional, Union  # noqa: UP035
 
 from dagster_shared.record import record
@@ -240,7 +240,10 @@ def _run_in_subprocess(
     # This is so nasty but seemingly unavoidable
     # https://amir.rachum.com/blog/2017/03/03/generator-cleanup/
     closed = False
+    _exit_stack = ExitStack()
     try:
+        # we exit the context in the above try/except block, so we need to re-enter it here
+        _exit_stack.enter_context(instance)
         for event in core_execute_run(recon_pipeline, dagster_run, instance, inject_env_vars=False):
             run_event_handler(event)
     except GeneratorExit:
@@ -258,7 +261,7 @@ def _run_in_subprocess(
                 )
             )
         subprocess_status_handler(RunInSubprocessComplete())
-        instance.dispose()
+        _exit_stack.close()
         # set events to stop the termination thread on exit
         done_event.set()
         termination_event.set()
