@@ -1,6 +1,6 @@
 ---
-title: Dagster & Power BI (legacy integration)
-sidebar_label: Power BI (legacy integration)
+title: Dagster & Power BI (Legacy)
+sidebar_label: Power BI (Legacy)
 description: Your Power BI assets, such as semantic models, data sources, reports, and dashboards, can be represented in the Dagster asset graph, allowing you to track lineage and dependencies between Power BI assets and upstream data assets you are already modeling in Dagster. You can also use Dagster to orchestrate Power BI semantic models, allowing you to trigger refreshes of these models on a cadence or based on upstream data changes.
 tags: [dagster-supported, bi]
 source: https://github.com/dagster-io/dagster/tree/master/python_modules/libraries/dagster-powerbi
