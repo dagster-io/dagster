@@ -38,17 +38,29 @@ The scaffold call will generate a `defs.yaml` file and a unpopulated Sling `repl
 
 In its scaffolded form, the `defs.yaml` file contains the configuration for your Sling workspace:
 
-<CodeExample path="docs_snippets/docs_snippets/guides/components/integrations/sling-component/5-component.yaml" title="my_project/defs/sling_ingest/defs.yaml" language="yaml" />
+<CodeExample
+  path="docs_snippets/docs_snippets/guides/components/integrations/sling-component/5-component.yaml"
+  title="my_project/defs/sling_ingest/defs.yaml"
+  language="yaml"
+/>
 
 The generated file is a template, which still needs to be configured:
 
-<CodeExample path="docs_snippets/docs_snippets/guides/components/integrations/sling-component/6-replication.yaml" title="my_project/defs/sling_ingest/replication.yaml" language="yaml" />
+<CodeExample
+  path="docs_snippets/docs_snippets/guides/components/integrations/sling-component/6-replication.yaml"
+  title="my_project/defs/sling_ingest/replication.yaml"
+  language="yaml"
+/>
 
 ## 3. Configure Sling replications
 
 In the `defs.yaml` file, you can directly specify a list of Sling [connections](https://docs.slingdata.io/sling-platform/platform/connections) which you can use in your replications. Here, you can specify a connection to DuckDB:
 
-<CodeExample path="docs_snippets/docs_snippets/guides/components/integrations/sling-component/9-customized-component.yaml" title="my_project/defs/sling_ingest/defs.yaml" language="yaml" />
+<CodeExample
+  path="docs_snippets/docs_snippets/guides/components/integrations/sling-component/9-customized-component.yaml"
+  title="my_project/defs/sling_ingest/defs.yaml"
+  language="yaml"
+/>
 
 For this example replication, we will ingest a set of CSV files to DuckDB. You can use `curl` to download some sample data:
 
@@ -56,20 +68,28 @@ For this example replication, we will ingest a set of CSV files to DuckDB. You c
 
 Next, you can configure Sling replications for each CSV file in `replication.yaml`:
 
-<CodeExample path="docs_snippets/docs_snippets/guides/components/integrations/sling-component/8-replication.yaml" title="my_project/defs/sling_ingest/replication.yaml" language="yaml" />
+<CodeExample
+  path="docs_snippets/docs_snippets/guides/components/integrations/sling-component/8-replication.yaml"
+  title="my_project/defs/sling_ingest/replication.yaml"
+  language="yaml"
+/>
 
 Our newly configured Sling component will produce an asset for each replicated file:
 
 <WideContent maxSize={1100}>
-<CliInvocationExample path="docs_snippets/docs_snippets/guides/components/integrations/sling-component/10-list-defs.txt" />
+  <CliInvocationExample path="docs_snippets/docs_snippets/guides/components/integrations/sling-component/10-list-defs.txt" />
 </WideContent>
 
 ## 4. Customize Sling assets
 
 Properties of the assets emitted by each replication can be customized in the `defs.yaml` file using the `translation` key:
 
-<CodeExample path="docs_snippets/docs_snippets/guides/components/integrations/sling-component/11-customized-component.yaml" title="my_project/defs/sling_ingest/defs.yaml" language="yaml" />
+<CodeExample
+  path="docs_snippets/docs_snippets/guides/components/integrations/sling-component/11-customized-component.yaml"
+  title="my_project/defs/sling_ingest/defs.yaml"
+  language="yaml"
+/>
 
 <WideContent maxSize={1100}>
-<CliInvocationExample path="docs_snippets/docs_snippets/guides/components/integrations/sling-component/12-list-defs.txt" />
+  <CliInvocationExample path="docs_snippets/docs_snippets/guides/components/integrations/sling-component/12-list-defs.txt" />
 </WideContent>

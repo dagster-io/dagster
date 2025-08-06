@@ -34,7 +34,11 @@ For this tutorial, we'll use the jaffle shop dbt project as an example. Clone it
 
 We will create a `profiles.yml` file in the `dbt` directory to configure the project to use DuckDB:
 
-<CodeExample path="docs_snippets/docs_snippets/guides/components/integrations/dbt-component/4-profiles.yml" title="dbt/profiles.yml" language="yaml" />
+<CodeExample
+  path="docs_snippets/docs_snippets/guides/components/integrations/dbt-component/4-profiles.yml"
+  title="dbt/profiles.yml"
+  language="yaml"
+/>
 
 ## 3. Scaffold a dbt component
 
@@ -48,12 +52,16 @@ The scaffold call will generate a `defs.yaml` file in your project structure:
 
 In its scaffolded form, the `defs.yaml` file contains the configuration for your dbt project:
 
-<CodeExample path="docs_snippets/docs_snippets/guides/components/integrations/dbt-component/7-component.yaml" title="my_project/defs/dbt_ingest/defs.yaml" language="yaml" />
+<CodeExample
+  path="docs_snippets/docs_snippets/guides/components/integrations/dbt-component/7-component.yaml"
+  title="my_project/defs/dbt_ingest/defs.yaml"
+  language="yaml"
+/>
 
 This is sufficient to load your dbt models as assets. You can use `dg list defs` to see the asset representation:
 
 <WideContent maxSize={1100}>
-<CliInvocationExample path="docs_snippets/docs_snippets/guides/components/integrations/dbt-component/8-list-defs.txt" />
+  <CliInvocationExample path="docs_snippets/docs_snippets/guides/components/integrations/dbt-component/8-list-defs.txt" />
 </WideContent>
 
 ## 4. Run your dbt models
@@ -66,20 +74,28 @@ To execute your dbt models, you can use the `dg launch` command to kick off a ru
 
 You can control which dbt models are included in your component using the `select` or `exclude` attributes. This allows you to filter which models are represented as assets, using [dbt's selection syntax](https://docs.getdbt.com/reference/node-selection/syntax). For example, to include only the `customers` model:
 
-<CodeExample path="docs_snippets/docs_snippets/guides/components/integrations/dbt-component/10-customized-component.yaml" title="my_project/defs/dbt_ingest/defs.yaml" language="yaml" />
+<CodeExample
+  path="docs_snippets/docs_snippets/guides/components/integrations/dbt-component/10-customized-component.yaml"
+  title="my_project/defs/dbt_ingest/defs.yaml"
+  language="yaml"
+/>
 
 <WideContent maxSize={1100}>
-<CliInvocationExample path="docs_snippets/docs_snippets/guides/components/integrations/dbt-component/11-list-defs.txt" />
+  <CliInvocationExample path="docs_snippets/docs_snippets/guides/components/integrations/dbt-component/11-list-defs.txt" />
 </WideContent>
 
 ## 6. Customize dbt assets
 
 You can customize the properties of the assets emitted by each dbt model using the `translation` key in your `defs.yaml` file. This allows you to modify asset metadata such as group names, descriptions, and other properties:
 
-<CodeExample path="docs_snippets/docs_snippets/guides/components/integrations/dbt-component/12-customized-component.yaml" title="my_project/defs/dbt_ingest/defs.yaml" language="yaml" />
+<CodeExample
+  path="docs_snippets/docs_snippets/guides/components/integrations/dbt-component/12-customized-component.yaml"
+  title="my_project/defs/dbt_ingest/defs.yaml"
+  language="yaml"
+/>
 
 <WideContent maxSize={1100}>
-<CliInvocationExample path="docs_snippets/docs_snippets/guides/components/integrations/dbt-component/13-list-defs.txt" />
+  <CliInvocationExample path="docs_snippets/docs_snippets/guides/components/integrations/dbt-component/13-list-defs.txt" />
 </WideContent>
 
 ## 7. Depending on dbt assets in other components
@@ -95,8 +111,12 @@ Imagine a `PythonScriptComponent` that exports the `customers` model to a CSV fi
 
 You can refer to the `customers` asset in this component by using the `asset_key_for_model` method on the dbt component:
 
-<CodeExample path="docs_snippets/docs_snippets/guides/components/integrations/dbt-component/16-component.yaml" title="my_project/defs/my_python_script/defs.yaml" language="yaml" />
+<CodeExample
+  path="docs_snippets/docs_snippets/guides/components/integrations/dbt-component/16-component.yaml"
+  title="my_project/defs/my_python_script/defs.yaml"
+  language="yaml"
+/>
 
 <WideContent maxSize={1100}>
-<CliInvocationExample path="docs_snippets/docs_snippets/guides/components/integrations/dbt-component/17-list-defs.txt" />
+  <CliInvocationExample path="docs_snippets/docs_snippets/guides/components/integrations/dbt-component/17-list-defs.txt" />
 </WideContent>
