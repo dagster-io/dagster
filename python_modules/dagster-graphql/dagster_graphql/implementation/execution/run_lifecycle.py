@@ -5,7 +5,6 @@ import dagster._check as check
 from dagster._core.errors import DagsterRunNotFoundError
 from dagster._core.execution.plan.state import KnownExecutionState
 from dagster._core.instance import DagsterInstance
-from dagster._core.remote_representation.code_location import CodeLocation
 from dagster._core.remote_representation.external import RemoteJob
 from dagster._core.storage.dagster_run import DagsterRun, DagsterRunStatus
 from dagster._core.storage.tags import RESUME_RETRY_TAG
@@ -63,7 +62,6 @@ def create_valid_pipeline_run(
     graphql_context: BaseWorkspaceRequestContext,
     remote_job: RemoteJob,
     execution_params: ExecutionParams,
-    code_location: CodeLocation,
 ) -> DagsterRun:
     ensure_valid_config(remote_job, execution_params.run_config)
 
@@ -114,9 +112,7 @@ def create_valid_pipeline_run(
         status=DagsterRunStatus.NOT_STARTED,
         remote_job_origin=remote_job.get_remote_origin(),
         job_code_origin=remote_job.get_python_origin(),
-        asset_graph=code_location.get_repository(
-            remote_job.repository_handle.repository_name
-        ).asset_graph,
+        asset_graph=graphql_context.asset_graph,
     )
 
     return dagster_run

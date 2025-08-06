@@ -48,6 +48,7 @@ from dagster._record import ImportFrom, record
 from dagster._utils.cached_method import cached_method
 
 if TYPE_CHECKING:
+    from dagster._core.remote_origin import RemoteRepositoryOrigin
     from dagster._core.remote_representation.external_data import AssetCheckNodeSnap, AssetNodeSnap
 
 
@@ -65,6 +66,11 @@ class RemoteAssetCheckNode:
 class RemoteAssetNode(BaseAssetNode, ABC):
     @abstractmethod
     def resolve_to_singular_repo_scoped_node(self) -> "RemoteRepositoryAssetNode": ...
+
+    @abstractmethod
+    def resolve_to_repo_scoped_node(
+        self, repository_origin: "RemoteRepositoryOrigin"
+    ) -> Optional["RemoteRepositoryAssetNode"]: ...
 
     @property
     def execution_set_asset_keys(self) -> AbstractSet[AssetKey]:
@@ -156,6 +162,16 @@ class RemoteRepositoryAssetNode(RemoteAssetNode):
         # we create sets of these objects in the context of asset graphs but don't want to
         # enforce that all recursively contained types are hashable so use object hash instead
         return object.__hash__(self)
+
+    def resolve_to_repo_scoped_node(
+        self, repository_origin: "RemoteRepositoryOrigin"
+    ) -> Optional["RemoteRepositoryAssetNode"]:
+        return (
+            self
+            if self.repository_handle.get_remote_origin().get_selector()
+            == repository_origin.get_selector()
+            else None
+        )
 
     def resolve_to_singular_repo_scoped_node(self) -> "RemoteRepositoryAssetNode":
         return self
@@ -334,6 +350,18 @@ class RemoteWorkspaceAssetNode(RemoteAssetNode):
     @property
     def backfill_policy(self) -> Optional[BackfillPolicy]:
         return self._materializable_node_snap.backfill_policy if self.is_materializable else None
+
+    def resolve_to_repo_scoped_node(
+        self, repository_origin: "RemoteRepositoryOrigin"
+    ) -> Optional["RemoteRepositoryAssetNode"]:
+        return next(
+            iter(
+                info.asset_node
+                for info in self.repo_scoped_asset_infos
+                if info.asset_node.repository_handle.get_remote_origin() == repository_origin
+            ),
+            None,
+        )
 
     ##### REMOTE-SPECIFIC INTERFACE
     @cached_method
@@ -657,6 +685,16 @@ class RemoteWorkspaceAssetGraph(RemoteAssetGraph[RemoteWorkspaceAssetNode]):
             return self.get(key).resolve_to_singular_repo_scoped_node().repository_handle
         else:
             return self.remote_asset_check_nodes_by_key[key].handle
+
+    def get_repo_scoped_node(
+        self, key: EntityKey, repository_origin: "RemoteRepositoryOrigin"
+    ) -> Optional[Union[RemoteRepositoryAssetNode, RemoteAssetCheckNode]]:
+        if isinstance(key, AssetKey):
+            if not self.has(key):
+                return None
+            return self.get(key).resolve_to_repo_scoped_node(repository_origin)
+        else:
+            raise Exception("Key must be an asset key for get_repo_scoped_node")
 
     def split_entity_keys_by_repository(
         self, keys: AbstractSet[EntityKey]
