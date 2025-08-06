@@ -1,5 +1,5 @@
 ---
-title: Using Dagster with Fivetran
+title: Dagster & Fivetran (legacy)
 sidebar_label: Fivetran (legacy)
 description: Orchestrate Fivetran connectors syncs with upstream or downstream dependencies.
 tags: [dagster-supported, etl]

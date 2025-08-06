@@ -1,5 +1,5 @@
 ---
-title: Fivetran component
+title: Dagster & Fivetran (component)
 sidebar_label: Fivetran
 description: The dagster-fivetran library provides a FivetranAccountComponent, which can be used to represent Fivetran connectors as assets in Dagster.
 ---
