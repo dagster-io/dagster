@@ -320,13 +320,16 @@ const InnerLineChartWithComparison = <T,>(props: Props<T>) => {
 
         const after = before - timeSliceSeconds;
 
-        // Open the dialog for any clicked index, including when value is 0
-        openMetricDialog?.({
-          after,
-          before,
-          metric: metricName,
-          unit: unitType,
-        });
+        // Only open the dialog if data exists for the clicked index
+        // in the current period
+        if (metrics.currentPeriod.data[index] && openMetricDialog) {
+          openMetricDialog({
+            after,
+            before,
+            metric: metricName,
+            unit: unitType,
+          });
+        }
       }
     }
   };
