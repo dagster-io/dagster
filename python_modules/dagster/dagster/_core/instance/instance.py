@@ -1719,7 +1719,7 @@ class DagsterInstance(DynamicPartitionsStore):
             partitions_def_name (str): The name of the `DynamicPartitionsDefinition`.
             partition_key (str): Partition key to delete.
         """
-        return self._storage_domain.delete_dynamic_partition(partitions_def_name, partition_key)
+        self._storage_domain.delete_dynamic_partition(partitions_def_name, partition_key)
 
     @public
     @traced
