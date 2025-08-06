@@ -17,3 +17,4 @@ attributes:
     - key: customer_summary_stats
       description: "Summary statistics for customer data"
       group_name: "analytics"
+      deps: [sales_revenue_report]
