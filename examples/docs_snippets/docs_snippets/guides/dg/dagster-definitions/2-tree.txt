@@ -2,16 +2,17 @@ tree
 
 .
 ├── pyproject.toml
+├── README.md
 ├── src
-│   └── my_project
-│       ├── __init__.py
-│       ├── definitions.py
-│       └── defs
-│           ├── __init__.py
-│           └── assets
-│               └── my_asset.py
+│   └── my_project
+│       ├── definitions.py
+│       ├── defs
+│       │   ├── assets
+│       │   │   └── my_asset.py
+│       │   └── __init__.py
+│       └── __init__.py
 ├── tests
-│   └── __init__.py
+│   └── __init__.py
 └── uv.lock
 
-6 directories, 7 files
+6 directories, 8 files
