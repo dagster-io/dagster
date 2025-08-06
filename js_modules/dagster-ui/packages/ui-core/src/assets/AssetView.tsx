@@ -156,7 +156,7 @@ const AssetViewImpl = ({assetKey, headerBreadcrumbs, writeAssetVisit, currentPat
     // We don't render <AssetLoadingDefinitionState /> here like the other tabs because
     // AssetPartitions makes graphql requests and we want to avoid a request waterfall.
     // Instead AssetPartitions will render the AssetLoadingDefinitionState itself.
-    if (!isLoading && !definition?.isMaterializable) {
+    if (!isLoading && !definition) {
       return <Redirect to={assetDetailsPathForKey(assetKey, {view: 'events'})} />;
     }
 
