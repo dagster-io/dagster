@@ -2546,6 +2546,7 @@ class DagsterInstance(DynamicPartitionsStore):
             "AssetObservation",
             "AssetCheckEvaluation",
             "FreshnessStateEvaluation",
+            "FreshnessStateChange",
         ],
     ):
         """Record an event log entry related to assets that does not belong to a Dagster run."""

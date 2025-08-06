@@ -964,6 +964,24 @@ def test_report_runless_asset_event() -> None:
         assert records[0].status == AssetCheckExecutionRecordStatus.FAILED
 
 
+def test_report_runless_asset_event_freshness_state_change() -> None:
+    """Test that report_runless_asset_event accepts FreshnessStateChange events."""
+    from dagster._core.definitions.freshness import FreshnessState, FreshnessStateChange
+
+    with dg.instance_for_test() as instance:
+        my_asset_key = dg.AssetKey("my_asset")
+        freshness_change = FreshnessStateChange(
+            key=my_asset_key,
+            new_state=FreshnessState.FAIL,
+            previous_state=FreshnessState.UNKNOWN,
+            state_change_timestamp=1234567890.0,
+        )
+
+        # This should not raise an exception - this is the main test
+        # Previously this would have raised DagsterInvariantViolationError
+        instance.report_runless_asset_event(freshness_change)
+
+
 def test_invalid_run_id():
     with dg.instance_for_test() as instance:
         with pytest.raises(
