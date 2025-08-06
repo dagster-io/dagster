@@ -1,7 +1,6 @@
 import logging
 import logging.config
 import os
-import sys
 import warnings
 import weakref
 from collections import defaultdict
@@ -37,7 +36,6 @@ from dagster._core.instance.types import (
 )
 from dagster._core.origin import JobPythonOrigin
 from dagster._core.storage.dagster_run import (
-    IN_PROGRESS_RUN_STATUSES,
     DagsterRun,
     DagsterRunStatsSnapshot,
     DagsterRunStatus,
@@ -50,7 +48,6 @@ from dagster._core.storage.dagster_run import (
 from dagster._core.types.pagination import PaginatedResults
 from dagster._serdes import ConfigurableClass
 from dagster._utils import PrintFn, traced
-from dagster._utils.error import serializable_error_info_from_exc_info
 from dagster._utils.warnings import beta_warning
 
 if TYPE_CHECKING:
@@ -529,7 +526,7 @@ class DagsterInstance(DynamicPartitionsStore):
 
     def schema_str(self) -> str:
         def _schema_dict(
-            alembic_version: "AlembicVersion",
+            alembic_version: Optional["AlembicVersion"],
         ) -> Optional[Mapping[str, object]]:
             if not alembic_version:
                 return None
@@ -542,9 +539,9 @@ class DagsterInstance(DynamicPartitionsStore):
         return yaml.dump(
             {
                 "schema": {
-                    "event_log_storage": _schema_dict(self._event_storage.alembic_version()),  # type: ignore  # (possible none)
-                    "run_storage": _schema_dict(self._event_storage.alembic_version()),  # type: ignore  # (possible none)
-                    "schedule_storage": _schema_dict(self._event_storage.alembic_version()),  # type: ignore  # (possible none)
+                    "event_log_storage": _schema_dict(self._event_storage.alembic_version()),
+                    "run_storage": _schema_dict(self._event_storage.alembic_version()),
+                    "schedule_storage": _schema_dict(self._event_storage.alembic_version()),
                 }
             },
             default_flow_style=False,
@@ -1045,6 +1042,12 @@ class DagsterInstance(DynamicPartitionsStore):
         from dagster._core.instance.storage.storage_domain import StorageDomain
 
         return StorageDomain(self)
+
+    @cached_property
+    def _run_launcher_domain(self):
+        from dagster._core.instance.run_launcher.run_launcher_domain import RunLauncherDomain
+
+        return RunLauncherDomain(self)
 
     def create_run(
         self,
@@ -1871,160 +1874,28 @@ class DagsterInstance(DynamicPartitionsStore):
     # Runs coordinator
 
     def submit_run(self, run_id: str, workspace: "BaseWorkspaceRequestContext") -> DagsterRun:
-        """Submit a pipeline run to the coordinator.
-
-        This method delegates to the ``RunCoordinator``, configured on the instance, and will
-        call its implementation of ``RunCoordinator.submit_run()`` to send the run to the
-        coordinator for execution. Runs should be created in the instance (e.g., by calling
-        ``DagsterInstance.create_run()``) *before* this method is called, and
-        should be in the ``PipelineRunStatus.NOT_STARTED`` state. They also must have a non-null
-        ExternalPipelineOrigin.
-
-        Args:
-            run_id (str): The id of the run.
-        """
-        from dagster._core.run_coordinator import SubmitRunContext
-
-        run = self.get_run_by_id(run_id)
-        if run is None:
-            raise DagsterInvariantViolationError(
-                f"Could not load run {run_id} that was passed to submit_run"
-            )
-
-        check.not_none(
-            run.remote_job_origin,
-            "External pipeline origin must be set for submitted runs",
-        )
-        check.not_none(
-            run.job_code_origin,
-            "Python origin must be set for submitted runs",
-        )
-
-        try:
-            submitted_run = self.run_coordinator.submit_run(
-                SubmitRunContext(run, workspace=workspace)
-            )
-        except:
-            from dagster._core.events import EngineEventData
-
-            error = serializable_error_info_from_exc_info(sys.exc_info())
-            self.report_engine_event(
-                error.message,
-                run,
-                EngineEventData.engine_error(error),
-            )
-            self.report_run_failed(run)
-            raise
-
-        return submitted_run
+        """Delegate to run launcher domain."""
+        return self._run_launcher_domain.submit_run(run_id, workspace)
 
     # Run launcher
 
     def launch_run(self, run_id: str, workspace: "BaseWorkspaceRequestContext") -> DagsterRun:
-        """Launch a pipeline run.
-
-        This method is typically called using `instance.submit_run` rather than being invoked
-        directly. This method delegates to the ``RunLauncher``, if any, configured on the instance,
-        and will call its implementation of ``RunLauncher.launch_run()`` to begin the execution of
-        the specified run. Runs should be created in the instance (e.g., by calling
-        ``DagsterInstance.create_run()``) *before* this method is called, and should be in the
-        ``PipelineRunStatus.NOT_STARTED`` state.
-
-        Args:
-            run_id (str): The id of the run the launch.
-        """
-        from dagster._core.events import DagsterEvent, DagsterEventType, EngineEventData
-        from dagster._core.launcher import LaunchRunContext
-
-        run = self.get_run_by_id(run_id)
-        if run is None:
-            raise DagsterInvariantViolationError(
-                f"Could not load run {run_id} that was passed to launch_run"
-            )
-
-        launch_started_event = DagsterEvent(
-            event_type_value=DagsterEventType.PIPELINE_STARTING.value,
-            job_name=run.job_name,
-        )
-        self.report_dagster_event(launch_started_event, run_id=run.run_id)
-
-        run = self.get_run_by_id(run_id)
-        if run is None:
-            check.failed(f"Failed to reload run {run_id}")
-
-        try:
-            self.run_launcher.launch_run(LaunchRunContext(dagster_run=run, workspace=workspace))
-        except:
-            error = serializable_error_info_from_exc_info(sys.exc_info())
-            self.report_engine_event(
-                error.message,
-                run,
-                EngineEventData.engine_error(error),
-            )
-            self.report_run_failed(run)
-            raise
-
-        return run
+        """Delegate to run launcher domain."""
+        return self._run_launcher_domain.launch_run(run_id, workspace)
 
     def resume_run(
         self, run_id: str, workspace: "BaseWorkspaceRequestContext", attempt_number: int
     ) -> DagsterRun:
-        """Resume a pipeline run.
-
-        This method should be called on runs which have already been launched, but whose run workers
-        have died.
-
-        Args:
-            run_id (str): The id of the run the launch.
-        """
-        from dagster._core.events import EngineEventData
-        from dagster._core.launcher import ResumeRunContext
-        from dagster._daemon.monitoring import RESUME_RUN_LOG_MESSAGE
-
-        run = self.get_run_by_id(run_id)
-        if run is None:
-            raise DagsterInvariantViolationError(
-                f"Could not load run {run_id} that was passed to resume_run"
-            )
-        if run.status not in IN_PROGRESS_RUN_STATUSES:
-            raise DagsterInvariantViolationError(
-                f"Run {run_id} is not in a state that can be resumed"
-            )
-
-        self.report_engine_event(
-            RESUME_RUN_LOG_MESSAGE,
-            run,
-        )
-
-        try:
-            self.run_launcher.resume_run(
-                ResumeRunContext(
-                    dagster_run=run,
-                    workspace=workspace,
-                    resume_attempt_number=attempt_number,
-                )
-            )
-        except:
-            error = serializable_error_info_from_exc_info(sys.exc_info())
-            self.report_engine_event(
-                error.message,
-                run,
-                EngineEventData.engine_error(error),
-            )
-            self.report_run_failed(run)
-            raise
-
-        return run
+        """Delegate to run launcher domain."""
+        return self._run_launcher_domain.resume_run(run_id, workspace, attempt_number)
 
     def count_resume_run_attempts(self, run_id: str) -> int:
-        from dagster._daemon.monitoring import count_resume_run_attempts
-
-        return count_resume_run_attempts(self, run_id)
+        """Delegate to run launcher domain."""
+        return self._run_launcher_domain.count_resume_run_attempts(run_id)
 
     def run_will_resume(self, run_id: str) -> bool:
-        if not self.run_monitoring_enabled:
-            return False
-        return self.count_resume_run_attempts(run_id) < self.run_monitoring_max_resume_run_attempts
+        """Delegate to run launcher domain."""
+        return self._run_launcher_domain.run_will_resume(run_id)
 
     # Scheduler
 
@@ -2167,9 +2038,9 @@ class DagsterInstance(DynamicPartitionsStore):
 
     def __exit__(
         self,
-        exception_type: Optional[type[BaseException]],
-        exception_value: Optional[BaseException],
-        traceback: Optional[TracebackType],
+        _exception_type: Optional[type[BaseException]],
+        _exception_value: Optional[BaseException],
+        _traceback: Optional[TracebackType],
     ) -> None:
         self.dispose()
 
@@ -2395,7 +2266,7 @@ class DagsterInstance(DynamicPartitionsStore):
     def dagster_asset_health_queries_supported(self) -> bool:
         return False
 
-    def can_read_failure_events_for_asset(self, asset_record: "AssetRecord") -> bool:
+    def can_read_failure_events_for_asset(self, _asset_record: "AssetRecord") -> bool:
         return False
 
     def can_read_asset_failure_events(self) -> bool:
@@ -2411,19 +2282,19 @@ class DagsterInstance(DynamicPartitionsStore):
         return False
 
     def get_asset_check_health_state_for_assets(
-        self, asset_keys: Sequence[AssetKey]
+        self, _asset_keys: Sequence[AssetKey]
     ) -> Optional[Mapping[AssetKey, Optional["AssetCheckHealthState"]]]:
-        return self._asset_domain.get_asset_check_health_state_for_assets(asset_keys)
+        return self._asset_domain.get_asset_check_health_state_for_assets(_asset_keys)
 
     def get_asset_freshness_health_state_for_assets(
-        self, asset_keys: Sequence[AssetKey]
+        self, _asset_keys: Sequence[AssetKey]
     ) -> Optional[Mapping[AssetKey, Optional["AssetFreshnessHealthState"]]]:
-        return self._asset_domain.get_asset_freshness_health_state_for_assets(asset_keys)
+        return self._asset_domain.get_asset_freshness_health_state_for_assets(_asset_keys)
 
     def get_asset_materialization_health_state_for_assets(
-        self, asset_keys: Sequence[AssetKey]
+        self, _asset_keys: Sequence[AssetKey]
     ) -> Optional[Mapping[AssetKey, Optional["AssetMaterializationHealthState"]]]:
-        return self._asset_domain.get_asset_materialization_health_state_for_assets(asset_keys)
+        return self._asset_domain.get_asset_materialization_health_state_for_assets(_asset_keys)
 
     def get_minimal_asset_materialization_health_state_for_assets(
         self, asset_keys: Sequence[AssetKey]
