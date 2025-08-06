@@ -3,9 +3,8 @@ from contextlib import ExitStack
 from pathlib import Path
 
 from dagster_dg_core.utils import activate_venv
-from docs_snippets_tests.snippet_checks.guides.components.utils import (
-    DAGSTER_ROOT,
-)
+
+from docs_snippets_tests.snippet_checks.guides.components.utils import DAGSTER_ROOT
 from docs_snippets_tests.snippet_checks.utils import (
     compare_tree_output,
     isolated_snippet_generation_environment,
@@ -95,9 +94,9 @@ def test_components_docs_python_script(
                 # Calculate total revenue
                 total_revenue = df["revenue"].sum()
 
-                print(f"Generated revenue report with total revenue: ${total_revenue}")
-                print(f"Number of transactions: {len(df)}")
-                print(f"Average transaction: ${df['revenue'].mean():.2f}")
+                print(f"Generated revenue report with total revenue: ${total_revenue}")  # noqa: T201
+                print(f"Number of transactions: {len(df)}")  # noqa: T201
+                print(f"Average transaction: ${df['revenue'].mean():.2f}")  # noqa: T201
                 """
             ),
             snippet_path=SNIPPETS_DIR

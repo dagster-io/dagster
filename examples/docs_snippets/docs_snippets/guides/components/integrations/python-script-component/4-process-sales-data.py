@@ -14,6 +14,6 @@ df["revenue"] = df["quantity"] * df["price"]
 # Calculate total revenue
 total_revenue = df["revenue"].sum()
 
-print(f"Generated revenue report with total revenue: ${total_revenue}")
-print(f"Number of transactions: {len(df)}")
-print(f"Average transaction: ${df['revenue'].mean():.2f}")
+print(f"Generated revenue report with total revenue: ${total_revenue}")  # noqa: T201
+print(f"Number of transactions: {len(df)}")  # noqa: T201
+print(f"Average transaction: ${df['revenue'].mean():.2f}")  # noqa: T201
