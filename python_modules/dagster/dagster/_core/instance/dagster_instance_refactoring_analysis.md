@@ -16,7 +16,7 @@ This document provides concrete implementation plans for extracting all domains 
 | -------------- | ---------------- | --------------------------------- | -------------------------------- |
 | **Runs**       | ✅ **COMPLETED** | `runs/run_domain.py`              | 100% - All 9 methods extracted   |
 | **Assets**     | ✅ **COMPLETED** | `assets/asset_domain.py`          | 100% - All 25+ methods extracted |
-| **Events**     | 📋 **PLANNED**   | `events/event_domain.py`          | 0% - Ready for implementation    |
+| **Events**     | ✅ **COMPLETED** | `events/event_domain.py`          | 100% - All 15+ methods extracted |
 | **Scheduling** | 📋 **PLANNED**   | `scheduling/scheduling_domain.py` | 0% - Ready for implementation    |
 | **Storage**    | 📋 **PLANNED**   | `storage/storage_domain.py`       | 0% - Ready for implementation    |
 | **Config**     | 📋 **PLANNED**   | `config/config_domain.py`         | 0% - Ready for implementation    |
