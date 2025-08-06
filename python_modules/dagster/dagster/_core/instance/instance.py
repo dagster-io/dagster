@@ -11,8 +11,7 @@ from tempfile import TemporaryDirectory
 from types import TracebackType
 from typing import (  # noqa: UP035
     TYPE_CHECKING,
-    AbstractSet,
-    Any,
+    AbstractSet, Any,
     Callable,
     Dict,  # noqa: F401
     List,  # noqa: F401
@@ -52,8 +51,7 @@ from dagster._core.errors import (
 )
 from dagster._core.execution.retries import auto_reexecution_should_retry_run
 from dagster._core.instance.config import (
-    DAGSTER_CONFIG_YAML_FILENAME,
-    DEFAULT_LOCAL_CODE_SERVER_STARTUP_TIMEOUT,
+    DAGSTER_CONFIG_YAML_FILENAME, DEFAULT_LOCAL_CODE_SERVER_STARTUP_TIMEOUT,
     ConcurrencyConfig,
     get_default_tick_retention_settings,
     get_tick_retention_settings,
