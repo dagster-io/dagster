@@ -4,6 +4,7 @@ import subprocess
 import textwrap
 import uuid
 from abc import ABC
+from contextlib import nullcontext
 from pathlib import Path
 
 import click
@@ -203,16 +204,26 @@ def get_branch_name_and_pr_title_from_prompt(
     return json_output["branch-name"], json_output["pr-title"]
 
 
+class PrintOutputChannel:
+    def write(self, text: str) -> None:
+        click.echo(text)
+
+
 def scaffold_content_for_prompt(
-    dg_context: DgContext, user_input: str, input_type: type[InputType]
+    dg_context: DgContext, user_input: str, input_type: type[InputType], use_spinner: bool = True
 ) -> None:
     """Scaffolds content for the user's prompt."""
-    with daggy_spinner_context("Scaffolding") as spinner:
+    spinner_ctx = (
+        daggy_spinner_context("Scaffolding")
+        if use_spinner
+        else nullcontext(enter_result=PrintOutputChannel())
+    )
+    with spinner_ctx as spinner:
         run_claude_stream(
             dg_context,
             _scaffolding_prompt(input_type.get_context(user_input)),
             _allowed_commands_scaffolding() + input_type.additional_allowed_tools(),
-            spinner=spinner,
+            output_channel=spinner,
         )
 
 
@@ -262,11 +273,12 @@ def _is_prompt_valid_git_branch_name(prompt: str) -> bool:
 
 @click.command(name="branch", cls=DgClickCommand, hidden=True)
 @click.argument("prompt", type=str, nargs=-1)
+@click.option("--disable-progress", is_flag=True, help="Disable progress spinner")
 @dg_path_options
 @dg_global_options
 @cli_telemetry_wrapper
 def scaffold_branch_command(
-    prompt: tuple[str, ...], target_path: Path, **other_options: object
+    prompt: tuple[str, ...], target_path: Path, disable_progress: bool, **other_options: object
 ) -> None:
     """Scaffold a new branch."""
     cli_config = normalize_cli_config(other_options, click.get_current_context())
@@ -290,7 +302,12 @@ def scaffold_branch_command(
             (input_type for input_type in INPUT_TYPES if input_type.matches(prompt_text)),
             TextInputType,
         )
-        with daggy_spinner_context("Generating branch name and PR title"):
+        spinner_ctx = (
+            daggy_spinner_context("Generating branch name and PR title")
+            if not disable_progress
+            else nullcontext()
+        )
+        with spinner_ctx:
             branch_name, pr_title = get_branch_name_and_pr_title_from_prompt(
                 dg_context, prompt_text, input_type
             )
@@ -316,5 +333,7 @@ def scaffold_branch_command(
     click.echo(f"✅ Successfully created branch and pull request: {pr_url}")
 
     if ai_scaffolding and input_type:
-        scaffold_content_for_prompt(dg_context, prompt_text, input_type)
+        scaffold_content_for_prompt(
+            dg_context, prompt_text, input_type, use_spinner=not disable_progress
+        )
         create_content_commit_and_push(f"First pass at {branch_name}")
