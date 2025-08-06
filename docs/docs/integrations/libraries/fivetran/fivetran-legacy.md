@@ -1,6 +1,6 @@
 ---
 title: Using Dagster with Fivetran
-sidebar_label: Fivetran
+sidebar_label: Fivetran (legacy)
 description: Orchestrate Fivetran connectors syncs with upstream or downstream dependencies.
 tags: [dagster-supported, etl]
 source: https://github.com/dagster-io/dagster/tree/master/python_modules/libraries/dagster-fivetran
