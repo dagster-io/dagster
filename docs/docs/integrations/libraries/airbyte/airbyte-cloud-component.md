@@ -10,7 +10,7 @@ sidebar_custom_props:
 partnerlink: https://airbyte.com/tutorials/orchestrate-data-ingestion-and-transformation-pipelines
 ---
 
-The [dagster-airbyte](/api/libraries/airbyte) library provides an `AirbyteCloudWorkspaceComponent` which can be used to easily represent Airbyte Cloud connections as assets in Dagster.
+The [dagster-airbyte](/api/libraries/dagster-airbyte) library provides an `AirbyteCloudWorkspaceComponent` which can be used to easily represent Airbyte Cloud connections as assets in Dagster.
 
 ## 1. Prepare a Dagster project
 

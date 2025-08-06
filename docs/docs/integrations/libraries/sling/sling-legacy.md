@@ -12,7 +12,7 @@ partnerlink: https://slingdata.io/
 
 :::note
 
-If you are just getting started with the Sling integration, we recommend using the new [Sling component](/guides/build/components/integrations/sling-component-tutorial).
+If you are just getting started with the Sling integration, we recommend using the new [Sling component](/integrations/libraries/sling).
 
 :::
 
