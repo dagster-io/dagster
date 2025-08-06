@@ -382,6 +382,7 @@ class AssetDomain:
             "AssetObservation",
             "AssetCheckEvaluation",
             "FreshnessStateEvaluation",
+            "FreshnessStateChange",
         ],
     ):
         """Record an event log entry related to assets that does not belong to a Dagster run.
@@ -396,13 +397,14 @@ class AssetDomain:
                 AssetObservation,
                 AssetCheckEvaluation,
                 FreshnessStateEvaluation,
+                FreshnessStateChange,
             ),
         ):
             from dagster._core.errors import DagsterInvariantViolationError
 
             raise DagsterInvariantViolationError(
                 f"Received unexpected asset event type {asset_event}, expected"
-                " AssetMaterialization, AssetObservation, AssetCheckEvaluation or FreshnessStateEvaluation"
+                " AssetMaterialization, AssetObservation, AssetCheckEvaluation, FreshnessStateEvaluation or FreshnessStateChange"
             )
 
         return self._report_runless_asset_event(asset_event)
