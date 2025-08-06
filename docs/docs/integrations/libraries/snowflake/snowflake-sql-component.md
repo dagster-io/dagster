@@ -1,10 +1,15 @@
 ---
-title: 'Dagster & Snowflake with components'
+title: Snowflake SQL component
 description: Execute custom SQL queries in Snowflake with Dagster
-sidebar_position: 402
+tags: [dagster-supported, storage]
+source: https://github.com/dagster-io/dagster/tree/master/python_modules/libraries/dagster-snowflake
+pypi: https://pypi.org/project/dagster-snowflake/
+sidebar_custom_props:
+  logo: images/integrations/snowflake.svg
+partnerlink: https://www.snowflake.com/en/
 ---
 
-Dagster provides a ready-to-use `TemplatedSQLComponent` which can be used alongside the `SnowflakeConnectionComponent` provided by the [dagster-snowflake](/integrations/libraries/snowflake) library to execute SQL queries in Dagster in order to rebuild data assets in your Snowflake instance. This guide will walk you through how to use these components to execute your SQL.
+Dagster provides a ready-to-use `TemplatedSQLComponent` which can be used alongside the `SnowflakeConnectionComponent` provided by the [dagster-snowflake](/api/libraries/dagster-snowflake) library to execute SQL queries in Dagster in order to rebuild data assets in your Snowflake instance. This guide will walk you through how to use these components to execute your SQL.
 
 ## 1. Prepare a Dagster project
 
