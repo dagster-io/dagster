@@ -1,7 +1,9 @@
 """Storage domain implementation - extracted from DagsterInstance."""
 
-from collections.abc import Sequence
+from collections.abc import Mapping, Sequence
 from typing import TYPE_CHECKING, Any, Callable, Optional
+
+from dagster._core.types.pagination import PaginatedResults
 
 # Type alias for print function to avoid circular imports
 PrintFn = Callable[[Any], None]
@@ -31,16 +33,15 @@ class StorageDomain:
         Returns:
             Sequence of partition keys
         """
-        partitions_def = self._instance.get_dynamic_partitions_store(partitions_def_name)
-        return partitions_def.get_partitions()
+        return self._instance._event_storage.get_dynamic_partitions(partitions_def_name)  # noqa: SLF001
 
     def get_paginated_dynamic_partitions(
         self,
         partitions_def_name: str,
-        limit: Optional[int] = None,
+        limit: int,
         ascending: bool = True,
         cursor: Optional[str] = None,
-    ) -> Sequence[str]:
+    ) -> PaginatedResults[str]:
         """Get paginated dynamic partitions.
         Moved from DagsterInstance.get_paginated_dynamic_partitions().
 
@@ -53,25 +54,12 @@ class StorageDomain:
         Returns:
             Sequence of partition keys
         """
-        partitions_def = self._instance.get_dynamic_partitions_store(partitions_def_name)
-
-        all_partitions = partitions_def.get_partitions()
-
-        if not ascending:
-            all_partitions = list(reversed(all_partitions))
-
-        if cursor:
-            try:
-                cursor_index = all_partitions.index(cursor)
-                all_partitions = all_partitions[cursor_index + 1 :]
-            except ValueError:
-                # Cursor not found, return empty list
-                return []
-
-        if limit:
-            all_partitions = all_partitions[:limit]
-
-        return all_partitions
+        return self._instance._event_storage.get_paginated_dynamic_partitions(  # noqa: SLF001
+            partitions_def_name=partitions_def_name,
+            limit=limit,
+            ascending=ascending,
+            cursor=cursor,
+        )
 
     def add_dynamic_partitions(
         self, partitions_def_name: str, partition_keys: Sequence[str]
@@ -83,8 +71,9 @@ class StorageDomain:
             partitions_def_name: Name of the partitions definition
             partition_keys: Partition keys to add
         """
-        partitions_def = self._instance.get_dynamic_partitions_store(partitions_def_name)
-        partitions_def.add_partitions(partition_keys)
+        return self._instance._event_storage.add_dynamic_partitions(  # noqa: SLF001
+            partitions_def_name, partition_keys
+        )
 
     def delete_dynamic_partition(self, partitions_def_name: str, partition_key: str) -> None:
         """Delete a dynamic partition.
@@ -94,8 +83,9 @@ class StorageDomain:
             partitions_def_name: Name of the partitions definition
             partition_key: Partition key to delete
         """
-        partitions_def = self._instance.get_dynamic_partitions_store(partitions_def_name)
-        partitions_def.delete_partition(partition_key)
+        return self._instance._event_storage.delete_dynamic_partition(  # noqa: SLF001
+            partitions_def_name, partition_key
+        )
 
     def has_dynamic_partition(self, partitions_def_name: str, partition_key: str) -> bool:
         """Check if a dynamic partition exists.
@@ -108,15 +98,16 @@ class StorageDomain:
         Returns:
             True if partition exists, False otherwise
         """
-        partitions_def = self._instance.get_dynamic_partitions_store(partitions_def_name)
-        return partitions_def.has_partition(partition_key)
+        return self._instance._event_storage.has_dynamic_partition(  # noqa: SLF001
+            partitions_def_name, partition_key
+        )
 
     def get_latest_storage_id_by_partition(
         self,
         asset_key: "AssetKey",
         event_type: "DagsterEventType",
-        partitions: Optional[Sequence[str]] = None,
-    ) -> Optional[int]:
+        partitions: Optional[set[str]] = None,
+    ) -> Mapping[str, int]:
         """Get latest storage ID by partition.
         Moved from DagsterInstance.get_latest_storage_id_by_partition().
 
