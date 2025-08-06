@@ -17,7 +17,6 @@ describe('encodeRunPageFilters', () => {
   it('serializes log levels,', () => {
     expect(
       encodeRunPageFilters({
-        hideNonMatches: true,
         focusedTime: 1611430148147,
         logQuery: [
           {token: 'step', value: 'bar'},
@@ -28,7 +27,6 @@ describe('encodeRunPageFilters', () => {
       }),
     ).toEqual({
       focusedTime: '1611430148147',
-      hideNonMatches: 'true',
       levels: 'critical|error',
       logs: 'step:bar|query:foo*',
     });
