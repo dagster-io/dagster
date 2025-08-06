@@ -66,6 +66,7 @@ if TYPE_CHECKING:
         ExecutionStepOutputSnap,
         ExecutionStepSnap,
     )
+    from dagster._core.workspace.context import BaseWorkspaceRequestContext
 
 
 class RunDomain:
@@ -235,7 +236,9 @@ class RunDomain:
         dagster_run = self._instance.run_storage.add_run(dagster_run)
 
         if execution_plan_snapshot and not assets_are_externally_managed(dagster_run):
-            self.log_asset_planned_events(dagster_run, execution_plan_snapshot, asset_graph)
+            self.log_asset_planned_events(
+                dagster_run, execution_plan_snapshot, asset_graph, remote_job_origin
+            )
 
         return dagster_run
 
@@ -260,7 +263,6 @@ class RunDomain:
         job_code_origin: Optional[JobPythonOrigin] = None,
         asset_graph: Optional["BaseAssetGraph[BaseAssetNode]"] = None,
     ) -> DagsterRun:
-        """Heavy run construction logic moved from DagsterInstance."""
         # https://github.com/dagster-io/dagster/issues/2403
         if tags and IS_AIRFLOW_INGEST_PIPELINE_STR in tags:
             if AIRFLOW_EXECUTION_DATE_STR not in tags:
@@ -268,21 +270,18 @@ class RunDomain:
                     **tags,
                     AIRFLOW_EXECUTION_DATE_STR: get_current_datetime().isoformat(),
                 }
-
         check.invariant(
             not (not job_snapshot and execution_plan_snapshot),
             "It is illegal to have an execution plan snapshot and not have a pipeline snapshot."
             " It is possible to have no execution plan snapshot since we persist runs that do"
             " not successfully compile execution plans in the scheduled case.",
         )
-
         job_snapshot_id = (
             self.ensure_persisted_job_snapshot(job_snapshot, parent_job_snapshot)
             if job_snapshot
             else None
         )
         partitions_definition = None
-
         # ensure that all asset outputs list their execution type, even if the snapshot was
         # created on an older version before it was being set
         if execution_plan_snapshot and asset_graph:
@@ -293,29 +292,35 @@ class RunDomain:
                     asset_key = output.properties.asset_key if output.properties else None
                     adjusted_output = output
 
-                    if asset_key and asset_graph.has(asset_key):
-                        if partitions_definition is None:
-                            # this assumes that if one partitioned asset is in a run, all other partitioned
-                            # assets in the run have the same partitions definition.
-                            asset_node = asset_graph.get(asset_key)
+                    if asset_key:
+                        asset_node = self._get_repo_scoped_asset_node(
+                            asset_graph, asset_key, remote_job_origin
+                        )
+                        if asset_node:
                             partitions_definition = asset_node.partitions_def
 
-                        if (
-                            output.properties is not None
-                            and output.properties.asset_execution_type is None
-                        ):
-                            adjusted_output = output._replace(
-                                properties=output.properties._replace(
-                                    asset_execution_type=asset_graph.get(asset_key).execution_type
+                            if (
+                                partitions_definition is None
+                                and asset_node.partitions_def is not None
+                            ):
+                                # this assumes that if one partitioned asset is in a run, all other partitioned
+                                # assets in the run have the same partitions definition.
+                                partitions_definition = asset_node.partitions_def
+
+                            if (
+                                output.properties is not None
+                                and output.properties.asset_execution_type is None
+                            ):
+                                adjusted_output = output._replace(
+                                    properties=output.properties._replace(
+                                        asset_execution_type=asset_node.execution_type
+                                    )
                                 )
-                            )
 
                     adjusted_outputs.append(adjusted_output)
 
                 adjusted_steps.append(step._replace(outputs=adjusted_outputs))
-
             execution_plan_snapshot = execution_plan_snapshot._replace(steps=adjusted_steps)
-
         execution_plan_snapshot_id = (
             self.ensure_persisted_execution_plan_snapshot(
                 execution_plan_snapshot, job_snapshot_id, step_keys_to_execute
@@ -323,7 +328,6 @@ class RunDomain:
             if execution_plan_snapshot and job_snapshot_id
             else None
         )
-
         if execution_plan_snapshot:
             from dagster._core.op_concurrency_limits_counter import (
                 compute_run_op_concurrency_info_for_snapshot,
@@ -334,7 +338,6 @@ class RunDomain:
             )
         else:
             run_op_concurrency = None
-
         # Calculate partitions_subset for time window partitions
         partitions_subset = None
         if partitions_definition is not None:
@@ -345,32 +348,36 @@ class RunDomain:
             if isinstance(partitions_definition, TimeWindowPartitionsDefinition):
                 # only store the subset of time window partitions, since those can be compressed efficiently
                 partition_tag = tags.get(PARTITION_NAME_TAG)
-                partition_range_start, partition_range_end = (
-                    tags.get(ASSET_PARTITION_RANGE_START_TAG),
-                    tags.get(ASSET_PARTITION_RANGE_END_TAG),
+                partition_range_tags = (
+                    (
+                        tags[ASSET_PARTITION_RANGE_START_TAG],
+                        tags[ASSET_PARTITION_RANGE_END_TAG],
+                    )
+                    if tags.get(ASSET_PARTITION_RANGE_START_TAG) is not None
+                    and tags.get(ASSET_PARTITION_RANGE_END_TAG) is not None
+                    else None
                 )
-
-                if partition_tag and (partition_range_start or partition_range_end):
-                    raise DagsterInvariantViolationError(
-                        f"Cannot have {ASSET_PARTITION_RANGE_START_TAG} or"
-                        f" {ASSET_PARTITION_RANGE_END_TAG} set along with"
-                        f" {PARTITION_NAME_TAG}"
-                    )
-                if partition_tag is not None:
-                    partition_range_start = partition_tag
-                    partition_range_end = partition_tag
-
-                if partition_range_start and partition_range_end:
-                    start_window = partitions_definition.time_window_for_partition_key(
-                        partition_range_start
-                    )
-                    end_window = partitions_definition.time_window_for_partition_key(
-                        partition_range_end
-                    )
-                    partitions_subset = partitions_definition.get_partition_subset_in_time_window(
-                        TimeWindow(start_window.start, end_window.end)
-                    ).to_serializable_subset()
-
+                if partition_tag is not None or partition_range_tags is not None:
+                    if partition_tag is not None and partition_range_tags is not None:
+                        raise DagsterInvariantViolationError(
+                            f"Cannot have {ASSET_PARTITION_RANGE_START_TAG} or"
+                            f" {ASSET_PARTITION_RANGE_END_TAG} set along with"
+                            f" {PARTITION_NAME_TAG}"
+                        )
+                    if partition_tag is not None:
+                        partition_range_tags = (partition_tag, partition_tag)
+                    if partition_range_tags is not None:
+                        start_window = partitions_definition.time_window_for_partition_key(
+                            partition_range_tags[0]
+                        )
+                        end_window = partitions_definition.time_window_for_partition_key(
+                            partition_range_tags[1]
+                        )
+                        partitions_subset = (
+                            partitions_definition.get_partition_subset_in_time_window(
+                                TimeWindow(start_window.start, end_window.end)
+                            ).to_serializable_subset()
+                        )
         return DagsterRun(
             job_name=job_name,
             run_id=run_id,
@@ -397,6 +404,7 @@ class RunDomain:
     def create_reexecuted_run(
         self,
         *,
+        request_context: "BaseWorkspaceRequestContext",
         parent_run: DagsterRun,
         code_location: "CodeLocation",
         remote_job: "RemoteJob",
@@ -720,11 +728,29 @@ class RunDomain:
             {key for key in to_reexecute if isinstance(key, AssetCheckKey)},
         )
 
+    def _get_repo_scoped_asset_node(
+        self,
+        asset_graph: "BaseAssetGraph",
+        asset_key: AssetKey,
+        remote_job_origin: Optional["RemoteJobOrigin"] = None,
+    ) -> Optional["BaseAssetNode"]:
+        from dagster._core.definitions.assets.graph.remote_asset_graph import RemoteAssetNode
+
+        if not asset_graph.has(asset_key):
+            return None
+        asset_node = asset_graph.get(asset_key)
+        if isinstance(asset_node, RemoteAssetNode):
+            return asset_node.resolve_to_repo_scoped_node(
+                check.not_none(remote_job_origin).repository_origin
+            )
+        return asset_node
+
     def log_asset_planned_events(
         self,
         dagster_run: DagsterRun,
         execution_plan_snapshot: "ExecutionPlanSnapshot",
         asset_graph: "BaseAssetGraph",
+        remote_job_origin: Optional["RemoteJobOrigin"],
     ) -> None:
         """Moved from DagsterInstance._log_asset_planned_events."""
         from dagster._core.events import DagsterEvent, DagsterEventType
@@ -737,7 +763,13 @@ class RunDomain:
                     asset_key = check.not_none(output.properties).asset_key
                     if asset_key:
                         self.log_materialization_planned_event_for_asset(
-                            dagster_run, asset_key, job_name, step, output, asset_graph
+                            dagster_run,
+                            asset_key,
+                            job_name,
+                            step,
+                            output,
+                            asset_graph,
+                            remote_job_origin,
                         )
 
                     if check.not_none(output.properties).asset_check_key:
@@ -772,6 +804,7 @@ class RunDomain:
         step: "ExecutionStepSnap",
         output: "ExecutionStepOutputSnap",
         asset_graph: "BaseAssetGraph[BaseAssetNode]",
+        remote_job_origin: Optional["RemoteJobOrigin"],
     ) -> None:
         """Moved from DagsterInstance._log_materialization_planned_event_for_asset."""
         from dagster._core.definitions.partitions.context import partition_loading_context
@@ -800,7 +833,11 @@ class RunDomain:
                     f" {ASSET_PARTITION_RANGE_END_TAG} set without the other"
                 )
 
-            partitions_def = asset_graph.get(asset_key).partitions_def
+            asset_node = check.not_none(
+                self._get_repo_scoped_asset_node(asset_graph, asset_key, remote_job_origin)
+            )
+
+            partitions_def = asset_node.partitions_def
             if (
                 isinstance(partitions_def, DynamicPartitionsDefinition)
                 and partitions_def.name is None

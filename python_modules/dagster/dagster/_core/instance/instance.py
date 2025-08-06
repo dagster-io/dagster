@@ -798,6 +798,7 @@ class DagsterInstance(SettingsMixin, DynamicPartitionsStore):
     def create_reexecuted_run(
         self,
         *,
+        request_context: "BaseWorkspaceRequestContext",
         parent_run: DagsterRun,
         code_location: "CodeLocation",
         remote_job: "RemoteJob",
@@ -807,6 +808,7 @@ class DagsterInstance(SettingsMixin, DynamicPartitionsStore):
         use_parent_run_tags: bool = False,
     ) -> DagsterRun:
         return self._run_domain.create_reexecuted_run(
+            request_context=request_context,
             parent_run=parent_run,
             code_location=code_location,
             remote_job=remote_job,

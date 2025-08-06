@@ -48,10 +48,7 @@ def do_launch(
         check.str_param(execution_metadata.root_run_id, "root_run_id")
         check.str_param(execution_metadata.parent_run_id, "parent_run_id")
     remote_job = get_remote_job_or_raise(graphene_info, execution_params.selector)
-    code_location = graphene_info.context.get_code_location(execution_params.selector.location_name)
-    dagster_run = create_valid_pipeline_run(
-        graphene_info.context, remote_job, execution_params, code_location
-    )
+    dagster_run = create_valid_pipeline_run(graphene_info.context, remote_job, execution_params)
 
     return graphene_info.context.instance.submit_run(
         dagster_run.run_id,
@@ -112,6 +109,7 @@ def launch_reexecution_from_parent_run(
 
     run = instance.create_reexecuted_run(
         parent_run=cast("DagsterRun", parent_run),
+        request_context=graphene_info.context,
         code_location=repo_location,
         remote_job=external_pipeline,
         strategy=ReexecutionStrategy(strategy),
