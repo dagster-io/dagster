@@ -3,6 +3,8 @@ from unittest.mock import MagicMock
 
 import dagster as dg
 import pytest
+from dagster._check import CheckError
+from dagster._core.definitions.assets.graph.asset_graph_subset import AssetGraphSubset
 from dagster._core.definitions.partitions.context import partition_loading_context
 from dagster._core.definitions.partitions.definition import (
     DailyPartitionsDefinition,
@@ -18,9 +20,9 @@ from dagster._core.definitions.partitions.subset import (
 )
 from dagster._core.definitions.partitions.utils import PersistedTimeWindow
 from dagster._core.errors import DagsterInvalidDeserializationVersionError
-from dagster._core.test_utils import freeze_time
+from dagster._core.test_utils import freeze_time, instance_for_test
 from dagster._serdes import deserialize_value, serialize_value
-from dagster._time import create_datetime
+from dagster._time import create_datetime, get_current_datetime
 
 
 def test_default_subset_cannot_deserialize_invalid_version():
@@ -287,49 +289,86 @@ def test_key_ranges_subset():
         partitions_snap=PartitionsSnap.from_def(color_partition),
     )
 
-    assert key_ranges_subset.get_partition_keys_not_in_subset(color_partition) == {"green"}
-    assert not key_ranges_subset.is_empty
-    assert key_ranges_subset.partitions_definition == color_partition
+    with pytest.raises(
+        CheckError, match="This function can only be called within a partition_loading_context"
+    ):
+        key_ranges_subset.get_partition_keys()
 
-    assert key_ranges_subset.get_partition_key_ranges(color_partition) == [
-        dg.PartitionKeyRange("red", "blue"),
-        dg.PartitionKeyRange("orange", "orange"),
-    ]
+    with (
+        instance_for_test() as instance,
+        partition_loading_context(
+            effective_dt=get_current_datetime(), dynamic_partitions_store=instance
+        ),
+    ):
+        assert key_ranges_subset.get_partition_keys_not_in_subset(color_partition) == {"green"}
+        assert not key_ranges_subset.is_empty
+        assert key_ranges_subset.partitions_definition == color_partition
 
-    assert key_ranges_subset.get_partition_keys() == ["red", "yellow", "blue", "orange"]
+        assert key_ranges_subset.get_partition_key_ranges(color_partition) == [
+            dg.PartitionKeyRange("red", "blue"),
+            dg.PartitionKeyRange("orange", "orange"),
+        ]
 
-    assert key_ranges_subset.with_partition_keys(["green"]) == DefaultPartitionsSubset(
-        {"red", "yellow", "blue", "green", "orange"}
-    )
+        assert key_ranges_subset.get_partition_keys() == ["red", "yellow", "blue", "orange"]
 
-    assert KeyRangesPartitionsSubset.can_deserialize(
-        color_partition, key_ranges_subset.serialize(), None, None
-    )
+        assert key_ranges_subset.with_partition_keys(["green"]) == DefaultPartitionsSubset(
+            {"red", "yellow", "blue", "green", "orange"}
+        )
 
-    assert (
-        KeyRangesPartitionsSubset.from_serialized(color_partition, key_ranges_subset.serialize())
-        == key_ranges_subset
-    )
+        assert KeyRangesPartitionsSubset.can_deserialize(
+            color_partition, key_ranges_subset.serialize(), None, None
+        )
 
-    assert "yellow" in key_ranges_subset
-    assert "orange" in key_ranges_subset
-    assert "green" not in key_ranges_subset
+        assert (
+            KeyRangesPartitionsSubset.from_serialized(
+                color_partition, key_ranges_subset.serialize()
+            )
+            == key_ranges_subset
+        )
 
-    assert len(key_ranges_subset) == 4
+        assert "yellow" in key_ranges_subset
+        assert "orange" in key_ranges_subset
+        assert "green" not in key_ranges_subset
 
-    empty_subset = KeyRangesPartitionsSubset(
-        key_ranges=[], partitions_snap=PartitionsSnap.from_def(color_partition)
-    )
+        assert len(key_ranges_subset) == 4
 
-    assert empty_subset == key_ranges_subset.empty_subset()
-    assert empty_subset == KeyRangesPartitionsSubset.create_empty_subset(color_partition)
+        empty_subset = KeyRangesPartitionsSubset(
+            key_ranges=[], partitions_snap=PartitionsSnap.from_def(color_partition)
+        )
 
-    assert len(empty_subset) == 0
-    assert empty_subset.is_empty
-    assert empty_subset.partitions_definition == color_partition
-    assert empty_subset.get_partition_keys() == []
-    assert empty_subset.get_partition_key_ranges(color_partition) == []
-    assert empty_subset.with_partition_keys(["red"]) == DefaultPartitionsSubset({"red"})
+        assert empty_subset == key_ranges_subset.empty_subset()
+        assert empty_subset == KeyRangesPartitionsSubset.create_empty_subset(color_partition)
+
+        assert len(empty_subset) == 0
+        assert empty_subset.is_empty
+        assert empty_subset.partitions_definition == color_partition
+        assert empty_subset.get_partition_keys() == []
+        assert empty_subset.get_partition_key_ranges(color_partition) == []
+        assert empty_subset.with_partition_keys(["red"]) == DefaultPartitionsSubset({"red"})
+
+
+def test_key_ranges_subset_dynamic_partitions():
+    dynamic_partitions_def = dg.DynamicPartitionsDefinition(name="dynamic_partitions_def")
+    with instance_for_test() as instance:
+        instance.add_dynamic_partitions("dynamic_partitions_def", ["a", "b", "c", "d"])
+        key_ranges_subset = KeyRangesPartitionsSubset(
+            key_ranges=[dg.PartitionKeyRange("a", "c")],
+            partitions_snap=PartitionsSnap.from_def(dynamic_partitions_def),
+        )
+        with pytest.raises(CheckError):
+            key_ranges_subset.get_partition_keys()
+
+        with partition_loading_context(dynamic_partitions_store=instance):
+            assert key_ranges_subset.get_partition_keys() == ["a", "b", "c"]
+
+            asset_graph_subset = AssetGraphSubset(
+                partitions_subsets_by_asset_key={
+                    dg.AssetKey("asset"): key_ranges_subset,
+                },
+                non_partitioned_asset_keys=set(),
+            )
+
+            assert asset_graph_subset.asset_keys == {dg.AssetKey("asset")}
 
 
 def test_multi_partition_subset_to_range_conversion_grouping_choices():
