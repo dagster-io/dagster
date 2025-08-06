@@ -2,7 +2,12 @@
 title: Dagster & Power BI (component)
 sidebar_label: Power BI
 description: The dagster-powerbi library provides a PowerBIWorkspaceComponent, which can be used to represent Power BI assets as assets in Dagster.
-sidebar_position: 402
+tags: [dagster-supported, bi]
+source: https://github.com/dagster-io/dagster/tree/master/python_modules/libraries/dagster-powerbi
+pypi: https://pypi.org/project/dagster-powerbi
+sidebar_custom_props:
+  logo: images/integrations/powerbi.svg
+partnerlink: https://learn.microsoft.com/en-us/power-bi/
 ---
 
 The [dagster-powerbi](/integrations/libraries/powerbi) library provides a `PowerBIWorkspaceComponent` which can be used to easily represent Power BI dashboards, reports, semantic models, and data sources as assets in Dagster.
