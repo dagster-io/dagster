@@ -312,7 +312,8 @@ class SchedulingDomain:
 
         default_tick_settings = get_default_tick_retention_settings(instigator_type)
         instance_tick_settings = get_tick_retention_settings(
-            self._instance.get_settings("retention").get("tick", {})  # type: ignore
+            self._instance.get_settings("retention").get("tick", {}),
+            default_tick_settings,
         )
 
         tick_settings = {}
