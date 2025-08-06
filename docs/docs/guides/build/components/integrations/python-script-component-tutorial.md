@@ -28,7 +28,7 @@ The scaffold call will generate a `defs.yaml` file:
 
 ## 3. Create your Python script
 
-Create a Python script that will be executed by the component. **You can use any existing Python script** - Dagster will orchestrate it without requiring changes to your code. For this example, we'll create a simple data processing script:
+Create a Python script that will be executed by the component, or use any existing Python script you've already written. Dagster will orchestrate it without requiring changes to your code. For this example, we'll create a simple data processing script:
 
 <CodeExample
   path="docs_snippets/docs_snippets/guides/components/integrations/python-script-component/4-process-sales-data.py"
@@ -36,7 +36,7 @@ Create a Python script that will be executed by the component. **You can use any
   language="python"
 />
 
-This script will be executed by Dagster in a subprocess. Any output printed to stdout/stderr will be captured and displayed in the Dagster UI logs. **The key benefit is that you can take any existing Python script and orchestrate it with Dagster without modification.**
+This script will be executed by Dagster in a subprocess. Any output printed to stdout/stderr will be captured and displayed in the Dagster UI logs.
 
 ## 4. Configure your component
 
@@ -51,14 +51,14 @@ Update your `defs.yaml` file to specify the Python script and define the assets 
 You can run `dg list defs` to see the asset corresponding to your component:
 
 <WideContent maxSize={1100}>
-  <CliInvocationExample path="docs_snippets/docs_snippets/guides/components/integrations/python-script-component/6-list-defs.txt" />
+  <CliInvocationExample path="docs_snippets/docs_snippets/guides/components/integrations/python-script-component/7-list-defs.txt" />
 </WideContent>
 
 ## 5. Launch your assets
 
 Once your component is configured, you can launch your assets to execute the Python scripts:
 
-<CliInvocationExample path="docs_snippets/docs_snippets/guides/components/integrations/python-script-component/5-launch.txt" />
+<CliInvocationExample path="docs_snippets/docs_snippets/guides/components/integrations/python-script-component/6-launch.txt" />
 
 Navigate to the Dagster UI and you'll see your assets. Click on the asset and then "Materialize" to execute your Python script. The script will run in a subprocess, and you'll be able to see the logs and metadata in the Dagster UI.
 
@@ -69,7 +69,7 @@ Navigate to the Dagster UI and you'll see your assets. Click on the asset and th
 For more advanced use cases, you can use [Dagster Pipes](/guides/build/external-pipelines/) to pass metadata from your Python script back to Dagster. This allows you to provide rich information about your assets directly in the Dagster UI:
 
 <CodeExample
-  path="docs_snippets/docs_snippets/guides/components/integrations/python-script-component/6-advanced-pipes-script.py"
+  path="docs_snippets/docs_snippets/guides/components/integrations/python-script-component/8-advanced-pipes-script.py"
   title="my-project/src/my_project/defs/generate_revenue_report/process_sales_data.py"
   language="python"
 />
@@ -85,7 +85,7 @@ With Dagster Pipes, you can:
 You can define multiple Python script components in a single `defs.yaml` file using the `---` separator syntax. This allows you to run different scripts for different assets:
 
 <CodeExample
-  path="docs_snippets/docs_snippets/guides/components/integrations/python-script-component/7-multiple-scripts-component.yaml"
+  path="docs_snippets/docs_snippets/guides/components/integrations/python-script-component/9-multiple-scripts-component.yaml"
   title="my-project/src/my_project/defs/generate_revenue_report/defs.yaml"
   language="yaml"
 />
@@ -97,17 +97,17 @@ Each component instance runs independently and can execute different Python scri
 You can specify dependencies between assets from different scripts. Using the multiple scripts example above, you can make one script depend on another:
 
 <CodeExample
-  path="docs_snippets/docs_snippets/guides/components/integrations/python-script-component/8-dependencies-component.yaml"
+  path="docs_snippets/docs_snippets/guides/components/integrations/python-script-component/10-dependencies-component.yaml"
   title="my-project/src/my_project/defs/generate_revenue_report/defs.yaml"
   language="yaml"
 />
 
 ### Automate Python scripts
 
-You can configure when assets should be automatically materialized using [automation conditions](/concepts/automation):
+You can configure when assets should be automatically materialized using automation conditions:
 
 <CodeExample
-  path="docs_snippets/docs_snippets/guides/components/integrations/python-script-component/9-automation-component.yaml"
+  path="docs_snippets/docs_snippets/guides/components/integrations/python-script-component/11-automation-component.yaml"
   title="my-project/src/my_project/defs/generate_revenue_report/defs.yaml"
   language="yaml"
 />
@@ -116,12 +116,12 @@ You can configure when assets should be automatically materialized using [automa
 
 You can organize your scripts in subdirectories within your component:
 
-<CliInvocationExample path="docs_snippets/docs_snippets/guides/components/integrations/python-script-component/10-tree-with-subdirs.txt" />
+<CliInvocationExample path="docs_snippets/docs_snippets/guides/components/integrations/python-script-component/12-tree-with-subdirs.txt" />
 
 Reference scripts in subdirectories in your `defs.yaml`:
 
 <CodeExample
-  path="docs_snippets/docs_snippets/guides/components/integrations/python-script-component/11-subdirectory-component.yaml"
+  path="docs_snippets/docs_snippets/guides/components/integrations/python-script-component/13-subdirectory-component.yaml"
   title="my-project/src/my_project/defs/generate_revenue_report/defs.yaml"
   language="yaml"
 />
