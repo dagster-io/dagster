@@ -41,7 +41,6 @@ from dagster._core.definitions.freshness import (
     FreshnessStateRecord,
 )
 from dagster._core.definitions.partitions.partition_key_range import PartitionKeyRange
-from dagster._core.definitions.partitions.utils.time_window import TimeWindow
 from dagster._core.errors import (
     DagsterHomeNotSetError,
     DagsterInvalidInvocationError,
@@ -1197,48 +1196,6 @@ class DagsterInstance(DynamicPartitionsStore):
         else:
             run_op_concurrency = None
 
-        # Calculate partitions_subset for time window partitions
-        partitions_subset = None
-        if partitions_definition is not None:
-            from dagster._core.definitions.partitions.definition.time_window import (
-                TimeWindowPartitionsDefinition,
-            )
-
-            if isinstance(partitions_definition, TimeWindowPartitionsDefinition):
-                # only store the subset of time window partitions, since those can be compressed efficiently
-                partition_tag = tags.get(PARTITION_NAME_TAG)
-                partition_range_tags = (
-                    (
-                        tags[ASSET_PARTITION_RANGE_START_TAG],
-                        tags[ASSET_PARTITION_RANGE_END_TAG],
-                    )
-                    if tags.get(ASSET_PARTITION_RANGE_START_TAG) is not None
-                    and tags.get(ASSET_PARTITION_RANGE_END_TAG) is not None
-                    else None
-                )
-
-                if partition_tag is not None or partition_range_tags is not None:
-                    if partition_tag is not None and partition_range_tags is not None:
-                        raise DagsterInvariantViolationError(
-                            f"Cannot have {ASSET_PARTITION_RANGE_START_TAG} or"
-                            f" {ASSET_PARTITION_RANGE_END_TAG} set along with"
-                            f" {PARTITION_NAME_TAG}"
-                        )
-                    if partition_tag is not None:
-                        partition_range_tags = (partition_tag, partition_tag)
-                    if partition_range_tags is not None:
-                        start_window = partitions_definition.time_window_for_partition_key(
-                            partition_range_tags[0]
-                        )
-                        end_window = partitions_definition.time_window_for_partition_key(
-                            partition_range_tags[1]
-                        )
-                        partitions_subset = (
-                            partitions_definition.get_partition_subset_in_time_window(
-                                TimeWindow(start_window.start, end_window.end)
-                            ).to_serializable_subset()
-                        )
-
         return DagsterRun(
             job_name=job_name,
             run_id=run_id,
@@ -1259,7 +1216,6 @@ class DagsterInstance(DynamicPartitionsStore):
             has_repository_load_data=execution_plan_snapshot is not None
             and execution_plan_snapshot.repository_load_data is not None,
             run_op_concurrency=run_op_concurrency,
-            partitions_subset=partitions_subset,
         )
 
     def _ensure_persisted_job_snapshot(
