@@ -8,12 +8,16 @@ from typing import TYPE_CHECKING, Annotated, Callable, Optional, Protocol, TypeV
 from dagster_shared.record import ImportFrom, replace
 from typing_extensions import Concatenate, ParamSpec
 
+import dagster._check as check
 from dagster._core.definitions.temporal_context import TemporalContext
 from dagster._record import record
 from dagster._time import get_current_datetime
 
 if TYPE_CHECKING:
     from dagster._core.instance import DynamicPartitionsStore
+
+P = ParamSpec("P")
+T_Return = TypeVar("T_Return")
 
 
 @record
@@ -64,6 +68,21 @@ _current_ctx: ContextVar[Optional[PartitionLoadingContext]] = ContextVar(
 )
 
 
+def require_full_partition_loading_context(func: Callable[P, T_Return]) -> Callable[P, T_Return]:
+    @wraps(func)
+    def wrapper(*args: P.args, **kwargs: P.kwargs) -> T_Return:
+        current_context = _current_ctx.get()
+        check.invariant(
+            current_context is not None
+            and current_context.effective_dt is not None
+            and current_context.dynamic_partitions_store is not None,
+            "This function can only be called within a partition_loading_context with both a datetime and dynamic_partitions_store set",
+        )
+        return func(*args, **kwargs)
+
+    return wrapper
+
+
 @contextmanager
 def partition_loading_context(
     effective_dt: Optional[datetime.datetime] = None,
@@ -99,8 +118,6 @@ class _HasPartitionLoadingContext(Protocol):
     _partition_loading_context: PartitionLoadingContext
 
 
-P = ParamSpec("P")
-T_Return = TypeVar("T_Return")
 Self = TypeVar("Self", bound=_HasPartitionLoadingContext)
 
 
