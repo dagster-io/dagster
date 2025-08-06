@@ -305,23 +305,22 @@ class SchedulingDomain:
         self, instigator_type: "InstigatorType"
     ) -> Mapping["TickStatus", int]:
         """Get tick retention settings - moved from DagsterInstance.get_tick_retention_settings()."""
+        from dagster._core.definitions.run_request import InstigatorType
         from dagster._core.instance.config import (
             get_default_tick_retention_settings,
             get_tick_retention_settings,
         )
 
+        retention_settings = self._instance.get_settings("retention")
+
+        if instigator_type == InstigatorType.SCHEDULE:
+            tick_settings = retention_settings.get("schedule")
+        elif instigator_type == InstigatorType.SENSOR:
+            tick_settings = retention_settings.get("sensor")
+        elif instigator_type == InstigatorType.AUTO_MATERIALIZE:
+            tick_settings = retention_settings.get("auto_materialize")
+        else:
+            raise Exception(f"Unexpected instigator type {instigator_type}")
+
         default_tick_settings = get_default_tick_retention_settings(instigator_type)
-        instance_tick_settings = get_tick_retention_settings(
-            self._instance.get_settings("retention").get("tick", {}),
-            default_tick_settings,
-        )
-
-        tick_settings = {}
-        for tick_status in default_tick_settings:
-            instance_setting = instance_tick_settings.get(tick_status)
-            if instance_setting is not None:
-                tick_settings[tick_status] = instance_setting
-            else:
-                tick_settings[tick_status] = default_tick_settings[tick_status]
-
-        return tick_settings
+        return get_tick_retention_settings(tick_settings, default_tick_settings)
