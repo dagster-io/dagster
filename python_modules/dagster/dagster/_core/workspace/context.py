@@ -217,9 +217,7 @@ class BaseWorkspaceRequestContext(LoadingContext):
 
     @property
     def code_location_names(self) -> Sequence[str]:
-        # For some WorkspaceRequestContext subclasses, the CodeLocationEntry is more expensive
-        # than the CodeLocationStatusEntry, so use the latter for a faster check.
-        return [status_entry.location_name for status_entry in self.get_code_location_statuses()]
+        return list(self.get_code_location_entries())
 
     def code_location_errors(self) -> Sequence[SerializableErrorInfo]:
         return [
