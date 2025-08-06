@@ -16,9 +16,11 @@ import {
   ChartOptions,
   LineElement,
   LinearScale,
+  Plugin,
   PointElement,
   Tooltip,
 } from 'chart.js';
+import CrosshairPlugin from 'chartjs-plugin-crosshair';
 import React, {memo, useCallback, useMemo, useRef} from 'react';
 import {Line} from 'react-chartjs-2';
 
@@ -211,6 +213,23 @@ const InnerLineChartWithComparison = <T,>(props: Props<T>) => {
     () => ({
       plugins: {
         legend: {display: false},
+        crosshair: {
+          enabled: true,
+          zoom: {
+            enabled: false,
+          },
+          sync: {
+            enabled: true,
+          },
+          line: {
+            color: rgbColors[Colors.borderDefault()],
+            width: 1,
+            dashPattern: [3, 3],
+          },
+          snap: {
+            enabled: true,
+          },
+        },
         tooltip: {
           enabled: false,
           position: 'nearest',
@@ -301,16 +320,13 @@ const InnerLineChartWithComparison = <T,>(props: Props<T>) => {
 
         const after = before - timeSliceSeconds;
 
-        // Only open the dialog if data exists for the clicked index
-        // in the current period
-        if (metrics.currentPeriod.data[index] && openMetricDialog) {
-          openMetricDialog({
-            after,
-            before,
-            metric: metricName,
-            unit: unitType,
-          });
-        }
+        // Open the dialog for any clicked index, including when value is 0
+        openMetricDialog?.({
+          after,
+          before,
+          metric: metricName,
+          unit: unitType,
+        });
       }
     }
   };
@@ -371,6 +387,7 @@ const InnerLineChartWithComparison = <T,>(props: Props<T>) => {
             data={getDataset(metrics, formatDatetime)}
             options={options}
             onClick={onClick}
+            plugins={[CrosshairPlugin as Plugin<'line'>]}
             updateMode="none"
           />
         </div>
