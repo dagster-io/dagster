@@ -9,15 +9,15 @@ from dagster._core.definitions.partitions.definition import (
     MultiPartitionsDefinition,
     StaticPartitionsDefinition,
 )
+from dagster._core.definitions.partitions.snap import PartitionsSnap
 from dagster._core.definitions.partitions.subset import (
     AllPartitionsSubset,
     DefaultPartitionsSubset,
-    KeyRangesPartitionSubset,
+    KeyRangesPartitionsSubset,
     TimeWindowPartitionsSubset,
 )
 from dagster._core.definitions.partitions.utils import PersistedTimeWindow
 from dagster._core.errors import DagsterInvalidDeserializationVersionError
-from dagster._core.remote_representation.external_data import PartitionsSnap
 from dagster._core.test_utils import freeze_time
 from dagster._serdes import deserialize_value, serialize_value
 from dagster._time import create_datetime
@@ -279,7 +279,7 @@ def test_multi_partition_subset_to_range_conversion():
 def test_key_ranges_subset():
     color_partition = dg.StaticPartitionsDefinition(["red", "yellow", "blue", "green", "orange"])
 
-    key_ranges_subset = KeyRangesPartitionSubset(
+    key_ranges_subset = KeyRangesPartitionsSubset(
         key_ranges=[
             dg.PartitionKeyRange("red", "blue"),
             dg.PartitionKeyRange("orange", "orange"),
@@ -302,12 +302,12 @@ def test_key_ranges_subset():
         {"red", "yellow", "blue", "green", "orange"}
     )
 
-    assert KeyRangesPartitionSubset.can_deserialize(
+    assert KeyRangesPartitionsSubset.can_deserialize(
         color_partition, key_ranges_subset.serialize(), None, None
     )
 
     assert (
-        KeyRangesPartitionSubset.from_serialized(color_partition, key_ranges_subset.serialize())
+        KeyRangesPartitionsSubset.from_serialized(color_partition, key_ranges_subset.serialize())
         == key_ranges_subset
     )
 
@@ -317,12 +317,12 @@ def test_key_ranges_subset():
 
     assert len(key_ranges_subset) == 4
 
-    empty_subset = KeyRangesPartitionSubset(
+    empty_subset = KeyRangesPartitionsSubset(
         key_ranges=[], partitions_snap=PartitionsSnap.from_def(color_partition)
     )
 
     assert empty_subset == key_ranges_subset.empty_subset()
-    assert empty_subset == KeyRangesPartitionSubset.create_empty_subset(color_partition)
+    assert empty_subset == KeyRangesPartitionsSubset.create_empty_subset(color_partition)
 
     assert len(empty_subset) == 0
     assert empty_subset.is_empty

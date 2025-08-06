@@ -20,11 +20,11 @@ from dagster._core.definitions.partitions.subset.partitions_subset import Partit
 from dagster._core.definitions.partitions.utils.time_window import PersistedTimeWindow, TimeWindow
 from dagster._core.definitions.timestamp import TimestampWithTimezone
 from dagster._core.errors import DagsterInvalidDeserializationVersionError
-from dagster._core.instance import DynamicPartitionsStore
 from dagster._serdes import whitelist_for_serdes
 
 if TYPE_CHECKING:
     from dagster._core.definitions.partitions.subset.all import AllPartitionsSubset
+    from dagster._core.instance import DynamicPartitionsStore
 
 
 def _attempt_coerce_to_time_window_subset(subset: "PartitionsSubset") -> "PartitionsSubset":
@@ -263,7 +263,7 @@ class TimeWindowPartitionsSubset(
         self,
         partitions_def: PartitionsDefinition,
         current_time: Optional[datetime] = None,
-        dynamic_partitions_store: Optional[DynamicPartitionsStore] = None,
+        dynamic_partitions_store: Optional["DynamicPartitionsStore"] = None,
         respect_bounds: bool = True,
     ) -> Sequence[PartitionKeyRange]:
         with partition_loading_context(current_time, dynamic_partitions_store):
@@ -557,7 +557,7 @@ class TimeWindowPartitionsSubset(
         )
 
     def to_serializable_subset(self) -> "TimeWindowPartitionsSubset":
-        from dagster._core.remote_representation.external_data import TimeWindowPartitionsSnap
+        from dagster._core.definitions.partitions.snap import TimeWindowPartitionsSnap
 
         # in cases where we're dealing with (e.g.) HourlyPartitionsDefinition, we need to convert
         # this partitions definition into a raw TimeWindowPartitionsDefinition to make it

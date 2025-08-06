@@ -230,10 +230,7 @@ def hash_name(name: str) -> str:
 
 
 def get_stats_from_remote_repo(remote_repo: "RemoteRepository") -> Mapping[str, str]:
-    from dagster._core.remote_representation.external_data import (
-        DynamicPartitionsSnap,
-        MultiPartitionsSnap,
-    )
+    from dagster._core.definitions.partitions.snap import DynamicPartitionsSnap, MultiPartitionsSnap
 
     num_pipelines_in_repo = len(remote_repo.get_all_jobs())
     num_schedules_in_repo = len(remote_repo.get_schedules())

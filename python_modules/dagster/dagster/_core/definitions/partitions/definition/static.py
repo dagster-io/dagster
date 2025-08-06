@@ -1,6 +1,6 @@
 from collections.abc import Sequence
 from datetime import datetime
-from typing import Optional
+from typing import TYPE_CHECKING, Optional
 
 import dagster._check as check
 from dagster._annotations import public
@@ -15,8 +15,10 @@ from dagster._core.definitions.partitions.utils.base import (
     raise_error_on_duplicate_partition_keys,
     raise_error_on_invalid_partition_key_substring,
 )
-from dagster._core.instance import DynamicPartitionsStore
 from dagster._core.types.pagination import PaginatedResults
+
+if TYPE_CHECKING:
+    from dagster._core.instance import DynamicPartitionsStore
 
 
 class StaticPartitionsDefinition(PartitionsDefinition[str]):
@@ -56,7 +58,7 @@ class StaticPartitionsDefinition(PartitionsDefinition[str]):
     def get_partition_keys(
         self,
         current_time: Optional[datetime] = None,
-        dynamic_partitions_store: Optional[DynamicPartitionsStore] = None,
+        dynamic_partitions_store: Optional["DynamicPartitionsStore"] = None,
     ) -> Sequence[str]:
         """Returns a list of strings representing the partition keys of the PartitionsDefinition.
 

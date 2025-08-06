@@ -7,6 +7,7 @@ from typing_extensions import TypeAlias
 from dagster._core.instance.instance import DagsterInstance as DagsterInstance
 from dagster._core.instance.ref import InstanceRef as InstanceRef
 from dagster._core.instance.types import (
+    CachingDynamicPartitionsLoader as CachingDynamicPartitionsLoader,
     DynamicPartitionsStore as DynamicPartitionsStore,
     InstanceType as InstanceType,
     MayHaveInstanceWeakref as MayHaveInstanceWeakref,

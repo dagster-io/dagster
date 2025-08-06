@@ -1,5 +1,5 @@
 from collections.abc import Iterable, Sequence
-from typing import TYPE_CHECKING, Optional
+from typing import Optional
 
 from dagster_shared.serdes.serdes import deserialize_value
 
@@ -8,20 +8,18 @@ from dagster._core.definitions.partitions.definition.partitions_definition impor
     PartitionsDefinition,
 )
 from dagster._core.definitions.partitions.partition_key_range import PartitionKeyRange
+from dagster._core.definitions.partitions.snap import PartitionsSnap
 from dagster._core.definitions.partitions.subset.default import DefaultPartitionsSubset
 from dagster._core.definitions.partitions.subset.partitions_subset import PartitionsSubset
 from dagster._record import record
 from dagster._serdes import serialize_value, whitelist_for_serdes
 
-if TYPE_CHECKING:
-    from dagster._core.remote_representation.external_data import PartitionsSnap
-
 
 @whitelist_for_serdes
 @record
-class KeyRangesPartitionSubset(PartitionsSubset):
+class KeyRangesPartitionsSubset(PartitionsSubset):
     key_ranges: Sequence[PartitionKeyRange]
-    partitions_snap: "PartitionsSnap"
+    partitions_snap: PartitionsSnap
 
     def get_partition_keys_not_in_subset(
         self, partitions_def: PartitionsDefinition
@@ -61,7 +59,7 @@ class KeyRangesPartitionSubset(PartitionsSubset):
     def from_serialized(
         cls, partitions_def: PartitionsDefinition, serialized: str
     ) -> "PartitionsSubset":
-        return deserialize_value(serialized, KeyRangesPartitionSubset)
+        return deserialize_value(serialized, KeyRangesPartitionsSubset)
 
     @classmethod
     def can_deserialize(
@@ -87,14 +85,12 @@ class KeyRangesPartitionSubset(PartitionsSubset):
     @classmethod
     def create_empty_subset(
         cls, partitions_def: Optional[PartitionsDefinition] = None
-    ) -> "KeyRangesPartitionSubset":
-        from dagster._core.remote_representation.external_data import PartitionsSnap
-
-        return KeyRangesPartitionSubset(
+    ) -> "KeyRangesPartitionsSubset":
+        return KeyRangesPartitionsSubset(
             key_ranges=[], partitions_snap=PartitionsSnap.from_def(check.not_none(partitions_def))
         )
 
     def empty_subset(
         self,
-    ) -> "KeyRangesPartitionSubset":
-        return KeyRangesPartitionSubset(key_ranges=[], partitions_snap=self.partitions_snap)
+    ) -> "KeyRangesPartitionsSubset":
+        return KeyRangesPartitionsSubset(key_ranges=[], partitions_snap=self.partitions_snap)

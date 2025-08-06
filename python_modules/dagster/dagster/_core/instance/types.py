@@ -8,14 +8,15 @@ from typing import TYPE_CHECKING, Generic, Optional
 
 from typing_extensions import Protocol, TypeVar, runtime_checkable
 
-if TYPE_CHECKING:
-    from dagster._core.instance.instance import DagsterInstance
-
 import dagster._check as check
 from dagster._core.errors import DagsterInvariantViolationError
 from dagster._core.log_manager import get_log_record_metadata
 from dagster._core.types.pagination import PaginatedResults
+from dagster._utils.cached_method import cached_method
 from dagster._utils.error import serializable_error_info_from_exc_info
+
+if TYPE_CHECKING:
+    from dagster._core.instance.instance import DagsterInstance
 
 
 class _EventListenerLogHandler(logging.Handler):
@@ -136,3 +137,28 @@ class DynamicPartitionsStore(Protocol):
         # matches the base implementation of the get_serializable_unique_identifier on PartitionsDefinition
         partition_keys = self.get_dynamic_partitions(partitions_def_name)
         return generate_partition_key_based_definition_id(partition_keys)
+
+
+class CachingDynamicPartitionsLoader(DynamicPartitionsStore):
+    """A batch loader that caches the partition keys for a given dynamic partitions definition,
+    to avoid repeated calls to the database for the same partitions definition.
+    """
+
+    def __init__(self, instance: "DagsterInstance"):
+        self._instance = instance
+
+    @cached_method
+    def get_dynamic_partitions(self, partitions_def_name: str) -> Sequence[str]:
+        return self._instance.get_dynamic_partitions(partitions_def_name)
+
+    @cached_method
+    def get_paginated_dynamic_partitions(
+        self, partitions_def_name: str, limit: int, ascending: bool, cursor: Optional[str] = None
+    ) -> PaginatedResults[str]:
+        return self._instance.get_paginated_dynamic_partitions(
+            partitions_def_name=partitions_def_name, limit=limit, ascending=ascending, cursor=cursor
+        )
+
+    @cached_method
+    def has_dynamic_partition(self, partitions_def_name: str, partition_key: str) -> bool:
+        return self._instance.has_dynamic_partition(partitions_def_name, partition_key)

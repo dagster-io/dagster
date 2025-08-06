@@ -12,6 +12,11 @@ import dagster._check as check
 from dagster._annotations import PublicAttr, public
 from dagster._core.definitions.asset_checks.asset_check_spec import AssetCheckKey
 from dagster._core.definitions.events import AssetKey
+from dagster._core.definitions.partitions.subset import (
+    KeyRangesPartitionsSubset,
+    PartitionsSubset,
+    TimeWindowPartitionsSubset,
+)
 from dagster._core.loader import LoadableBy, LoadingContext
 from dagster._core.origin import JobPythonOrigin
 from dagster._core.storage.tags import (
@@ -34,7 +39,6 @@ from dagster._record import IHaveNew, record_custom
 from dagster._utils.tags import get_boolean_tag_value
 
 if TYPE_CHECKING:
-    from dagster._core.definitions.partitions.subset import PartitionsSubset
     from dagster._core.definitions.schedule_definition import ScheduleDefinition
     from dagster._core.definitions.sensor_definition import SensorDefinition
     from dagster._core.remote_representation.external import RemoteSchedule, RemoteSensor
@@ -345,12 +349,8 @@ class DagsterRun(
         job_code_origin: Optional[JobPythonOrigin] = None,
         has_repository_load_data: Optional[bool] = None,
         run_op_concurrency: Optional[RunOpConcurrency] = None,
-        partitions_subset: Optional["PartitionsSubset"] = None,
+        partitions_subset: Optional[PartitionsSubset] = None,
     ):
-        from dagster._core.definitions.partitions.subset.time_window import (
-            TimeWindowPartitionsSubset,
-        )
-
         check.invariant(
             (root_run_id is not None and parent_run_id is not None)
             or (root_run_id is None and parent_run_id is None),
@@ -423,7 +423,9 @@ class DagsterRun(
             # Only support storing time window partitions subsets on the run for now, other
             # partitions subsets are too big
             partitions_subset=check.opt_inst_param(
-                partitions_subset, "partitions_subset", TimeWindowPartitionsSubset
+                partitions_subset,
+                "partitions_subset",
+                (TimeWindowPartitionsSubset, KeyRangesPartitionsSubset),
             ),
         )
 
