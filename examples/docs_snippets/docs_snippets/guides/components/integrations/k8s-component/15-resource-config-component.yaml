@@ -1,0 +1,23 @@
+type: dagster_k8s.PipesK8sComponent
+
+name: process_data
+assets:
+  - key: processed_transaction_data
+    description: "Processed transaction data"
+    group_name: "analytics"
+
+image: my-registry/my-data-processor:latest
+command: ["python", "process_data.py"]
+env:
+  DATABASE_URL: "postgresql://user:pass@db:5432/mydb"
+  LOG_LEVEL: "INFO"
+base_pod_spec:
+  containers:
+    - name: main
+      resources:
+        requests:
+          memory: "512Mi"
+          cpu: "250m"
+        limits:
+          memory: "1Gi"
+          cpu: "500m"

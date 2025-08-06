@@ -1,0 +1,38 @@
+type: dagster_k8s.PipesK8sComponent
+
+name: advanced_data_processor
+assets:
+  - key: processed_data
+    description: "Advanced data processing with custom K8s config"
+    group_name: "analytics"
+
+image: my-registry/advanced-processor:latest
+command: ["python", "advanced_process.py"]
+namespace: data-processing
+env:
+  WORKER_THREADS: "4"
+  BATCH_SIZE: "1000"
+base_pod_meta:
+  labels:
+    app: dagster-data-processor
+    version: v1.0
+  annotations:
+    monitoring.io/scrape: "true"
+base_pod_spec:
+  serviceAccountName: data-processor-sa
+  containers:
+    - name: main
+      resources:
+        requests:
+          memory: "2Gi"
+          cpu: "1"
+        limits:
+          memory: "4Gi"
+          cpu: "2"
+      volumeMounts:
+        - name: data-volume
+          mountPath: /data
+  volumes:
+    - name: data-volume
+      persistentVolumeClaim:
+        claimName: data-pvc

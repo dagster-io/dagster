@@ -1,0 +1,22 @@
+type: dagster_k8s.PipesK8sComponent
+
+name: transaction_processor
+assets:
+  - key: processed_transaction_data
+    description: "Processed transaction data"
+    group_name: "analytics"
+
+image: my-registry/transaction-processor:latest
+command: ["python", "process_transactions.py"]
+---
+type: dagster_k8s.PipesK8sComponent
+
+name: customer_analyzer
+assets:
+  - key: customer_insights
+    description: "Customer behavior insights"
+    group_name: "analytics"
+    deps: [processed_transaction_data]
+
+image: my-registry/customer-analyzer:latest
+command: ["python", "analyze_customers.py"]

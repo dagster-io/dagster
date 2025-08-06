@@ -1,0 +1,3 @@
+docker build -t my-data-processor:latest .
+docker tag my-data-processor:latest my-registry/my-data-processor:latest
+docker push my-registry/my-data-processor:latest

@@ -1,0 +1,11 @@
+type: dagster_k8s.PipesK8sComponent
+
+name: process_data
+assets:
+  - key: processed_transaction_data
+    description: "Processed transaction data with calculated metrics"
+    group_name: "analytics"
+    automation_condition: "{{ automation_condition.on_cron('@daily') }}"
+
+image: my-registry/my-data-processor:latest
+command: ["python", "process_data.py"]
