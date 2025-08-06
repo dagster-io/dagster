@@ -5,7 +5,6 @@ import re
 import subprocess
 from typing import Any, Optional, Protocol
 
-import typer
 from dagster_dg_core.context import DgContext
 
 
@@ -96,6 +95,8 @@ def render_claude_content(content_json: dict[str, Any]) -> Optional[str]:
     Returns:
         Formatted string representation of the content, or None if no formatting needed
     """
+    import typer
+
     content_type = content_json.get("type")
     if content_type == "tool_use":
         if content_json.get("name") == "Bash":
