@@ -68,3 +68,7 @@ The command will:
 
 🔗 Build URL: https://buildkite.com/dagster/dagster-dagster/builds/129927
 ```
+
+## File Access
+
+This command is pre-authorized to read log files from `/var/folders/` (temp directory) which are created by the Buildkite MCP server when fetching large log files.
