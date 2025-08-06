@@ -173,6 +173,19 @@ def get_repo_with_non_partitioned_asset() -> RepositoryDefinition:
     return Definitions(assets=[asset1, asset2]).get_repository_def()
 
 
+def get_repo_with_missing_upstream_partition() -> RepositoryDefinition:
+    upstream_partitions_def = StaticPartitionsDefinition(["a", "b"])
+    downstream_partitions_def = StaticPartitionsDefinition(["a", "b", "c"])
+
+    @asset(partitions_def=downstream_partitions_def)
+    def child(parent): ...
+
+    @asset(partitions_def=upstream_partitions_def)
+    def parent(): ...
+
+    return Definitions(assets=[child, parent]).get_repository_def()
+
+
 def get_repo_with_root_assets_different_partitions() -> RepositoryDefinition:
     return Definitions(assets=root_assets_different_partitions_same_downstream).get_repository_def()
 
@@ -597,6 +610,32 @@ def test_launch_asset_backfill_with_nonexistent_partition_key():
             )
             assert (
                 "Partition keys `['nonexistent1', 'nonexistent2']` could not be found"
+                in launch_backfill_result.data["launchPartitionBackfill"]["message"]
+            )
+
+
+def test_launch_asset_backfill_with_nonexistent_upstream_partition_key():
+    with instance_for_test() as instance:
+        with define_out_of_process_context(
+            __file__, "get_repo_with_missing_upstream_partition", instance
+        ) as context:
+            # launchPartitionBackfill
+            launch_backfill_result = execute_dagster_graphql(
+                context,
+                LAUNCH_PARTITION_BACKFILL_MUTATION,
+                variables={
+                    "backfillParams": {
+                        "partitionNames": ["a", "b", "c"],
+                        "assetSelection": [{"path": ["child"]}],
+                    }
+                },
+            )
+            assert (
+                launch_backfill_result.data["launchPartitionBackfill"]["__typename"]
+                == "PythonError"
+            )
+            assert (
+                "depends on non-existent partitions: EntitySubset<AssetKey(['parent'])>(DefaultPartitionsSubset(subset={'c'}"
                 in launch_backfill_result.data["launchPartitionBackfill"]["message"]
             )
 

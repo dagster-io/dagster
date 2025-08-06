@@ -17,7 +17,6 @@ from dagster._core.definitions.asset_key import AssetKey
 from dagster._core.definitions.assets.graph.remote_asset_graph import RemoteRepositoryAssetNode
 from dagster._core.definitions.data_time import CachingDataTimeResolver
 from dagster._core.definitions.data_version import CachingStaleStatusResolver
-from dagster._core.definitions.partitions.utils import CachingDynamicPartitionsLoader
 from dagster._core.definitions.selector import (
     JobSelector,
     JobSubsetSelector,
@@ -28,6 +27,7 @@ from dagster._core.definitions.selector import (
 from dagster._core.errors import DagsterCodeLocationLoadError, DagsterCodeLocationNotFoundError
 from dagster._core.execution.plan.state import KnownExecutionState
 from dagster._core.instance import DagsterInstance
+from dagster._core.instance.types import CachingDynamicPartitionsLoader
 from dagster._core.loader import LoadingContext
 from dagster._core.remote_representation import (
     CodeLocation,
@@ -217,7 +217,9 @@ class BaseWorkspaceRequestContext(LoadingContext):
 
     @property
     def code_location_names(self) -> Sequence[str]:
-        return list(self.get_code_location_entries())
+        # For some WorkspaceRequestContext subclasses, the CodeLocationEntry is more expensive
+        # than the CodeLocationStatusEntry, so use the latter for a faster check.
+        return [status_entry.location_name for status_entry in self.get_code_location_statuses()]
 
     def code_location_errors(self) -> Sequence[SerializableErrorInfo]:
         return [

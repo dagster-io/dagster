@@ -41,7 +41,7 @@ export const AssetSidebarNode = (props: AssetSidebarNodeProps) => {
 
   const elementRef = React.useRef<HTMLDivElement | null>(null);
 
-  const showArrow = !isAssetNode;
+  const showArrow = !isAssetNode && !('openAlways' in node && node.openAlways);
 
   return (
     <Box ref={elementRef} padding={{left: 8, right: 12}}>

@@ -12,6 +12,11 @@ import dagster._check as check
 from dagster._annotations import PublicAttr, public
 from dagster._core.definitions.asset_checks.asset_check_spec import AssetCheckKey
 from dagster._core.definitions.events import AssetKey
+from dagster._core.definitions.partitions.subset import (
+    KeyRangesPartitionsSubset,
+    PartitionsSubset,
+    TimeWindowPartitionsSubset,
+)
 from dagster._core.loader import LoadableBy, LoadingContext
 from dagster._core.origin import JobPythonOrigin
 from dagster._core.storage.tags import (
@@ -295,6 +300,7 @@ class DagsterRun(
             ("job_code_origin", Optional[JobPythonOrigin]),
             ("has_repository_load_data", bool),
             ("run_op_concurrency", Optional[RunOpConcurrency]),
+            ("partitions_subset", Optional["PartitionsSubset"]),
         ],
     )
 ):
@@ -320,6 +326,7 @@ class DagsterRun(
         job_code_origin (Optional[JobPythonOrigin]): The origin of the job code.
         has_repository_load_data (bool): Whether the run has repository load data.
         run_op_concurrency (Optional[RunOpConcurrency]): The op concurrency information for the run.
+        partitions_subset (Optional[PartitionsSubset]): The subset of partitions to execute.
     """
 
     def __new__(
@@ -342,6 +349,7 @@ class DagsterRun(
         job_code_origin: Optional[JobPythonOrigin] = None,
         has_repository_load_data: Optional[bool] = None,
         run_op_concurrency: Optional[RunOpConcurrency] = None,
+        partitions_subset: Optional[PartitionsSubset] = None,
     ):
         check.invariant(
             (root_run_id is not None and parent_run_id is not None)
@@ -411,6 +419,13 @@ class DagsterRun(
             ),
             run_op_concurrency=check.opt_inst_param(
                 run_op_concurrency, "run_op_concurrency", RunOpConcurrency
+            ),
+            # Only support storing time window partitions subsets on the run for now, other
+            # partitions subsets are too big
+            partitions_subset=check.opt_inst_param(
+                partitions_subset,
+                "partitions_subset",
+                (TimeWindowPartitionsSubset, KeyRangesPartitionsSubset),
             ),
         )
 

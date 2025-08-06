@@ -2,6 +2,7 @@ tree
 
 .
 ├── pyproject.toml
+├── README.md
 ├── src
 │   └── jaffle_platform
 │       ├── __init__.py
@@ -11,4 +12,4 @@ tree
 └── tests
     └── __init__.py
 
-5 directories, 5 files
+5 directories, 6 files

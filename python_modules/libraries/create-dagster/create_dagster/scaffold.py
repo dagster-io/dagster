@@ -121,13 +121,20 @@ def scaffold_project(
         else None
     )
 
+    project_excludes = None
+    if dg_context.is_in_workspace:
+        project_excludes = [
+            ".gitignore",
+            "README.md.jinja",
+        ]
+
     scaffold_subtree(
         path=path,
         name_placeholder="PROJECT_NAME_PLACEHOLDER",
         project_template_path=Path(
             os.path.join(os.path.dirname(__file__), "templates", "PROJECT_NAME_PLACEHOLDER")
         ),
-        excludes=None,
+        excludes=project_excludes,
         **get_dependencies_template_params(
             use_editable_dagster,
             scaffold_project_options,
