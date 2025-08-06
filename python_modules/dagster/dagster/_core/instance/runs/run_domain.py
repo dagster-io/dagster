@@ -9,7 +9,6 @@ from dagster._core.definitions.asset_checks.asset_check_evaluation import (
 )
 from dagster._core.definitions.events import AssetKey
 from dagster._core.definitions.partitions.partition_key_range import PartitionKeyRange
-from dagster._core.definitions.partitions.utils.time_window import TimeWindow
 from dagster._core.errors import (
     DagsterInvalidSubsetError,
     DagsterInvariantViolationError,
@@ -276,8 +275,6 @@ class RunDomain:
             if job_snapshot
             else None
         )
-        partitions_definition = None
-
         # ensure that all asset outputs list their execution type, even if the snapshot was
         # created on an older version before it was being set
         if execution_plan_snapshot and asset_graph:
@@ -289,12 +286,6 @@ class RunDomain:
                     adjusted_output = output
 
                     if asset_key and asset_graph.has(asset_key):
-                        if partitions_definition is None:
-                            # this assumes that if one partitioned asset is in a run, all other partitioned
-                            # assets in the run have the same partitions definition.
-                            asset_node = asset_graph.get(asset_key)
-                            partitions_definition = asset_node.partitions_def
-
                         if (
                             output.properties is not None
                             and output.properties.asset_execution_type is None
@@ -330,42 +321,6 @@ class RunDomain:
         else:
             run_op_concurrency = None
 
-        # Calculate partitions_subset for time window partitions
-        partitions_subset = None
-        if partitions_definition is not None:
-            from dagster._core.definitions.partitions.definition.time_window import (
-                TimeWindowPartitionsDefinition,
-            )
-
-            if isinstance(partitions_definition, TimeWindowPartitionsDefinition):
-                # only store the subset of time window partitions, since those can be compressed efficiently
-                partition_tag = tags.get(PARTITION_NAME_TAG)
-                partition_range_start, partition_range_end = (
-                    tags.get(ASSET_PARTITION_RANGE_START_TAG),
-                    tags.get(ASSET_PARTITION_RANGE_END_TAG),
-                )
-
-                if partition_tag and (partition_range_start or partition_range_end):
-                    raise DagsterInvariantViolationError(
-                        f"Cannot have {ASSET_PARTITION_RANGE_START_TAG} or"
-                        f" {ASSET_PARTITION_RANGE_END_TAG} set along with"
-                        f" {PARTITION_NAME_TAG}"
-                    )
-                if partition_tag is not None:
-                    partition_range_start = partition_tag
-                    partition_range_end = partition_tag
-
-                if partition_range_start and partition_range_end:
-                    start_window = partitions_definition.time_window_for_partition_key(
-                        partition_range_start
-                    )
-                    end_window = partitions_definition.time_window_for_partition_key(
-                        partition_range_end
-                    )
-                    partitions_subset = partitions_definition.get_partition_subset_in_time_window(
-                        TimeWindow(start_window.start, end_window.end)
-                    ).to_serializable_subset()
-
         return DagsterRun(
             job_name=job_name,
             run_id=run_id,
@@ -386,7 +341,6 @@ class RunDomain:
             has_repository_load_data=execution_plan_snapshot is not None
             and execution_plan_snapshot.repository_load_data is not None,
             run_op_concurrency=run_op_concurrency,
-            partitions_subset=partitions_subset,
         )
 
     def create_reexecuted_run(
