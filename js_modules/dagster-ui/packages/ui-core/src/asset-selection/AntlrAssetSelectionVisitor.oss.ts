@@ -242,7 +242,6 @@ export class AntlrAssetSelectionVisitor
         ? buildRepoPathForHuman(repository.name, repository.location.name)
         : '';
       if (location === value) {
-        console.log({location, value, asset});
         selection.add(asset);
       }
     }
