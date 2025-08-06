@@ -29,7 +29,6 @@ from dagster._core.instance.config import (
     ConcurrencyConfig,
 )
 from dagster._core.instance.ref import InstanceRef
-from dagster._core.instance.run_launcher import run_launcher_implementation
 from dagster._core.instance.types import (
     DynamicPartitionsStore,
     InstanceType,
@@ -1045,12 +1044,10 @@ class DagsterInstance(DynamicPartitionsStore):
         return StorageDomain(self)
 
     @cached_property
-    def _run_launcher_ops(self):
-        from dagster._core.instance.run_launcher.run_launcher_instance_ops import (
-            RunLauncherInstanceOps,
-        )
+    def _run_launcher_domain(self):
+        from dagster._core.instance.run_launcher.run_launcher_domain import RunLauncherDomain
 
-        return RunLauncherInstanceOps(self)
+        return RunLauncherDomain(self)
 
     def create_run(
         self,
@@ -1877,30 +1874,28 @@ class DagsterInstance(DynamicPartitionsStore):
     # Runs coordinator
 
     def submit_run(self, run_id: str, workspace: "BaseWorkspaceRequestContext") -> DagsterRun:
-        """Delegate to run_launcher_implementation."""
-        return run_launcher_implementation.submit_run(self._run_launcher_ops, run_id, workspace)
+        """Delegate to run launcher domain."""
+        return self._run_launcher_domain.submit_run(run_id, workspace)
 
     # Run launcher
 
     def launch_run(self, run_id: str, workspace: "BaseWorkspaceRequestContext") -> DagsterRun:
-        """Delegate to run_launcher_implementation."""
-        return run_launcher_implementation.launch_run(self._run_launcher_ops, run_id, workspace)
+        """Delegate to run launcher domain."""
+        return self._run_launcher_domain.launch_run(run_id, workspace)
 
     def resume_run(
         self, run_id: str, workspace: "BaseWorkspaceRequestContext", attempt_number: int
     ) -> DagsterRun:
-        """Delegate to run_launcher_implementation."""
-        return run_launcher_implementation.resume_run(
-            self._run_launcher_ops, run_id, workspace, attempt_number
-        )
+        """Delegate to run launcher domain."""
+        return self._run_launcher_domain.resume_run(run_id, workspace, attempt_number)
 
     def count_resume_run_attempts(self, run_id: str) -> int:
-        """Delegate to run_launcher_implementation."""
-        return run_launcher_implementation.count_resume_run_attempts(self._run_launcher_ops, run_id)
+        """Delegate to run launcher domain."""
+        return self._run_launcher_domain.count_resume_run_attempts(run_id)
 
     def run_will_resume(self, run_id: str) -> bool:
-        """Delegate to run_launcher_implementation."""
-        return run_launcher_implementation.run_will_resume(self._run_launcher_ops, run_id)
+        """Delegate to run launcher domain."""
+        return self._run_launcher_domain.run_will_resume(run_id)
 
     # Scheduler
 
