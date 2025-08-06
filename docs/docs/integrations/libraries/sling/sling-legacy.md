@@ -1,6 +1,6 @@
 ---
-title: Dagster & Sling
-sidebar_label: Sling
+title: Dagster & Sling (legacy integration)
+sidebar_label: Sling (legacy integration)
 description: Sling provides an easy-to-use YAML configuration layer for loading data from files, replicating data between databases, exporting custom SQL queries to cloud storage, and much more.
 tags: [dagster-supported, etl]
 source: https://github.com/dagster-io/dagster/tree/master/python_modules/libraries/dagster-sling

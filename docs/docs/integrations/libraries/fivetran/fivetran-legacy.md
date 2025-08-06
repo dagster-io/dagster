@@ -12,7 +12,7 @@ partnerlink: https://www.fivetran.com/
 
 :::note
 
-If you are just getting started with the Fivetran integration, we recommend using the new [Fivetran component](/guides/build/components/integrations/fivetran-component-tutorial).
+If you are just getting started with the Fivetran integration, we recommend using the new [Fivetran component](/integrations/libraries/fivetran).
 
 :::
 

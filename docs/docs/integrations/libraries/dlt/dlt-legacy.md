@@ -12,7 +12,7 @@ partnerlink: https://dlthub.com/
 
 :::note
 
-If you are just getting started with the dlt integration, we recommend using the new [dlt component](/guides/build/components/integrations/dlt-component-tutorial).
+If you are just getting started with the dlt integration, we recommend using the new [dlt component](/integrations/libraries/dlt).
 
 :::
 

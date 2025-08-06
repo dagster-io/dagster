@@ -10,7 +10,7 @@ sidebar_custom_props:
 partnerlink: https://dlthub.com/
 ---
 
-The [dagster-dlt](/integrations/libraries/dlt) library provides a `DltLoadCollectionComponent` which can be used to easily represent a collection of dlt sources and pipelines as assets in Dagster.
+The [dagster-dlt](/api/libraries/dagster-dlt) library provides a `DltLoadCollectionComponent` which can be used to easily represent a collection of dlt sources and pipelines as assets in Dagster.
 
 ## 1. Prepare a Dagster project
 
