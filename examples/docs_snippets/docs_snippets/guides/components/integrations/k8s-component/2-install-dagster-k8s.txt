@@ -1,0 +1,24 @@
+uv add dagster-k8s
+
+Resolved 119 packages in 592ms
+   Building dagster-k8s @ file:///Users/yuhan/dev/dagster/python_modules/libraries/dagster-k8s
+   Building my-project @ file:///private/var/folders/d_/1y_txdx53c361mxd4x5l1fk80000gn/T/tmpmpuesdk_/my-project
+Downloading kubernetes (1.9MiB)
+      Built my-project @ file:///private/var/folders/d_/1y_txdx53c361mxd4x5l1fk80000gn/T/tmpmpuesdk_/my-project
+ Downloading kubernetes
+      Built dagster-k8s @ file:///Users/yuhan/dev/dagster/python_modules/libraries/dagster-k8s
+Prepared 12 packages in 473ms
+Uninstalled 1 package in 1ms
+Installed 12 packages in 16ms
+ + cachetools==5.5.2
+ + dagster-k8s==1!0+dev (from file:///Users/yuhan/dev/dagster/python_modules/libraries/dagster-k8s)
+ + durationpy==0.10
+ + google-auth==2.40.3
+ + kubernetes==32.0.1
+ ~ my-project==0.1.0 (from file:///private/var/folders/d_/1y_txdx53c361mxd4x5l1fk80000gn/T/tmpmpuesdk_/my-project)
+ + oauthlib==3.3.1
+ + pyasn1==0.6.1
+ + pyasn1-modules==0.4.2
+ + requests-oauthlib==2.0.0
+ + rsa==4.9.1
+ + websocket-client==1.8.0

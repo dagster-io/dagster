@@ -1,0 +1,12 @@
+FROM python:3.11-slim
+
+# Install required packages
+RUN pip install pandas dagster-pipes
+
+# Copy the processing script
+COPY process_data.py /app/process_data.py
+
+WORKDIR /app
+
+# Set the default command
+CMD ["python", "process_data.py"]
