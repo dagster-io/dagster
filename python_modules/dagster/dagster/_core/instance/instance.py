@@ -2383,7 +2383,6 @@ class DagsterInstance(DynamicPartitionsStore):
             asset_keys (Sequence[AssetKey]): Asset keys to wipe.
         """
         from dagster._core.events import AssetWipedData, DagsterEvent, DagsterEventType
-        from dagster._core.instance.utils import RUNLESS_JOB_NAME, RUNLESS_RUN_ID
 
         check.list_param(asset_keys, "asset_keys", of_type=AssetKey)
         for asset_key in asset_keys:
