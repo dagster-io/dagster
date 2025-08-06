@@ -264,7 +264,7 @@ export const ToggleGroupsMenuItem = ({
     text={
       <Box flex={{direction: 'row', gap: 4, alignItems: 'center'}}>
         {expandedGroups.length === 0 ? 'Expand all groups' : 'Collapse all groups'}{' '}
-        <KeyboardTag $withinTooltip>⌥E</KeyboardTag>
+        <KeyboardTag>⌥E</KeyboardTag>
       </Box>
     }
   />
@@ -290,7 +290,7 @@ export const ToggleDirectionMenuItem = ({
     text={
       <Box flex={{direction: 'row', gap: 4, alignItems: 'center'}}>
         Change graph to {direction === 'vertical' ? 'horizontal' : 'vertical'} orientation{' '}
-        <KeyboardTag $withinTooltip>⌥O</KeyboardTag>
+        <KeyboardTag>⌥O</KeyboardTag>
       </Box>
     }
   />
@@ -312,7 +312,7 @@ export const ToggleHideEdgesToNodesOutsideQueryMenuItem = ({
       text={
         <Box flex={{direction: 'row', gap: 4, alignItems: 'center'}}>
           {hideEdgesToNodesOutsideQuery ? 'Show' : 'Hide'} neighbor assets outside of selection{' '}
-          <KeyboardTag $withinTooltip>⌥V</KeyboardTag>
+          <KeyboardTag>⌥V</KeyboardTag>
         </Box>
       }
     />
