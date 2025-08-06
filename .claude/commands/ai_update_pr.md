@@ -1,4 +1,4 @@
-# Update PR summary
+# AI Update PR summary
 
 Use `gt ls -s` to determine the last git ref in the stack. View all changes since that ref with `git diff`. Also view the commit messages with `git log`. Use this context, alongside any session context from what you know about the changes to write a PR summary in Markdown, of the format
 
@@ -18,4 +18,4 @@ Use `gt ls -s` to determine the last git ref in the stack. View all changes sinc
 
 Use bullet points sparingly, and do not overuse italics/bold text. Use short sentences. 
 
-After generating the PR summary markdown, check if there is a current PR for this branch using `gh pr view` or similar command. If there is no PR, error and tell the user to create a PR first. If there is a PR, update it with the generated summary using `gh pr edit --body "generated_summary"` or similar GitHub CLI command.
+After generating the PR summary markdown, check if there is a current PR for this branch using `gh pr view` or similar command. If there is no PR, error and tell the user to create a PR first. If there is a PR, update it with the generated summary using `gh pr edit --body "generated_summary"` and also generate a concise, descriptive title based on the summary content and update it using `gh pr edit --title "generated_title"` or similar GitHub CLI command.
