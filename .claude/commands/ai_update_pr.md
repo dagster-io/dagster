@@ -16,6 +16,6 @@ Use `gt ls -s` to determine the last git ref in the stack. View all changes sinc
 [End user facing changelog entry, remove this section if no public-facing API was changed and no bug was fixed. Public-facing APIs are identified by the @public decorator. Ignore minor changes. If there are no user-facing changes, remove this section.]
 ```
 
-Use bullet points sparingly, and do not overuse italics/bold text. Use short sentences. 
+Use bullet points sparingly, and do not overuse italics/bold text. Use short sentences.
 
 After generating the PR summary markdown, check if there is a current PR for this branch using `gh pr view` or similar command. If there is no PR, error and tell the user to create a PR first. If there is a PR, update it with the generated summary using `gh pr edit --body "generated_summary"` and also generate a concise, descriptive title based on the summary content and update it using `gh pr edit --title "generated_title"` or similar GitHub CLI command.
