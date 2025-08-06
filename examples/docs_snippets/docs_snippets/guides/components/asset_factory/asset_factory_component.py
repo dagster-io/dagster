@@ -33,32 +33,35 @@ class AssetFactory(dg.Component, dg.Model, dg.Resolvable):
         for etl in self.etl_job:
             asset_key = f"etl_{etl.bucket}_{etl.target_object}".replace(".", "_")
 
-            @dg.asset(name=asset_key)
-            def _etl_asset(context, etl_config=etl):
-                with tempfile.TemporaryDirectory() as root:
-                    source_path = f"{root}/{etl_config.source_object}"
-                    target_path = f"{root}/{etl_config.target_object}"
+            def create_etl_asset(etl_config):
+                @dg.asset(name=asset_key)
+                def _etl_asset(context):
+                    with tempfile.TemporaryDirectory() as root:
+                        source_path = f"{root}/{etl_config.source_object}"
+                        target_path = f"{root}/{etl_config.target_object}"
 
-                    # these steps could be split into separate assets, but
-                    # for brevity we will keep them together.
-                    # 1. extract
-                    context.resources.s3.download_file(
-                        etl_config.bucket, etl_config.source_object, source_path
-                    )
+                        # these steps could be split into separate assets, but
+                        # for brevity we will keep them together.
+                        # 1. extract
+                        context.resources.s3.download_file(
+                            etl_config.bucket, etl_config.source_object, source_path
+                        )
 
-                    # 2. transform
-                    db = duckdb.connect(":memory:")
-                    db.execute(
-                        f"CREATE TABLE source AS SELECT * FROM read_csv('{source_path}');"
-                    )
-                    db.query(etl_config.sql).to_csv(target_path)
+                        # 2. transform
+                        db = duckdb.connect(":memory:")
+                        db.execute(
+                            f"CREATE TABLE source AS SELECT * FROM read_csv('{source_path}');"
+                        )
+                        db.query(etl_config.sql).to_csv(target_path)
 
-                    # 3. load
-                    context.resources.s3.upload_file(
-                        etl_config.bucket, etl_config.target_object, target_path
-                    )
+                        # 3. load
+                        context.resources.s3.upload_file(
+                            etl_config.bucket, etl_config.target_object, target_path
+                        )
 
-            _assets.append(_etl_asset)
+                return _etl_asset
+
+            _assets.append(create_etl_asset(etl))
 
         _resources = {
             "s3": s3.S3Resource(
