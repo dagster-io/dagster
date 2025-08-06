@@ -102,16 +102,6 @@ def has_permission_for_asset_graph(
     asset_keys = set(asset_selection or [])
     context = cast("BaseWorkspaceRequestContext", graphene_info.context)
 
-    # if we have the permission for all code locations, no need to check specific asset keys or locations
-    if context.has_permission(permission):
-        return True
-
-    if not any(
-        context.has_permission_for_location(permission, location_name)
-        for location_name in context.code_location_names
-    ):
-        return False
-
     if asset_keys:
         location_names = set()
         for key in asset_keys:
@@ -195,12 +185,12 @@ def assert_valid_asset_partition_backfill(
         if not partitions_def:
             continue
 
-        invalid_subset = partition_subset - partitions_def.subset_with_all_partitions()
+        invalid_keys = set(partition_subset.get_partition_keys()) - set(
+            partitions_def.get_partition_keys(backfill_datetime, dynamic_partitions_store)
+        )
 
-        if not invalid_subset.is_empty:
-            raise UserFacingGraphQLError(
-                GraphenePartitionKeysNotFoundError(set(invalid_subset.get_partition_keys()))
-            )
+        if invalid_keys:
+            raise UserFacingGraphQLError(GraphenePartitionKeysNotFoundError(invalid_keys))
 
 
 def _noop(_) -> None:
