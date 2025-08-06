@@ -97,7 +97,7 @@ export const getAttributesMap = (assets: AssetGraphQueryItem[]) => {
   return data;
 };
 
-const memoizedTag = weakMapMemoize((key: string, value: string) => ({
+export const memoizedTag = weakMapMemoize((key: string, value: string) => ({
   key,
   value,
 }));
