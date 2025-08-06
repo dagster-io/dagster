@@ -4,7 +4,6 @@ import time
 from collections.abc import Iterator
 from contextlib import contextmanager
 
-import typer
 from yaspin import Spinner, yaspin
 from yaspin.core import Yaspin
 
@@ -22,6 +21,8 @@ def daggy_spinner_context(
     spinner_interval: float = DEFAULT_SPINNER_INTERVAL,
     ellipsis_interval: float = DEFAULT_ELLIPSIS_INTERVAL,
 ) -> Iterator[Yaspin]:
+    import typer
+
     """Create a context manager for a custom animated spinner with dynamic dots.
 
     This context manager provides a visually appealing spinner that combines:

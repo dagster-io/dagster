@@ -3,14 +3,14 @@ import json
 import os
 import re
 import subprocess
-from typing import Any, Optional
+from typing import Any, Optional, Protocol
 
 import typer
 from dagster_dg_core.context import DgContext
-from yaspin import Spinner
-from yaspin.core import Yaspin
 
-daggy_spinner = Spinner(frames="ଳଢଡଜ", interval=100)
+
+class OutputChannel(Protocol):
+    def write(self, text: str) -> None: ...
 
 
 @functools.cache
@@ -150,8 +150,8 @@ def run_claude_stream(
     dg_context: DgContext,
     prompt: str,
     allowed_tools: list[str],
+    output_channel: OutputChannel,
     verbose: bool = False,
-    spinner: Optional[Yaspin] = None,
 ) -> None:
     """Run Claude CLI with streaming output.
 
@@ -191,11 +191,11 @@ def run_claude_stream(
     assert process.stdout is not None
     for line in process.stdout:
         line_json = json.loads(line)
-        if verbose and spinner:
-            spinner.write(json.dumps(line_json, indent=2))
+        if verbose:
+            output_channel.write(json.dumps(line_json, indent=2))
         else:
             output = render_claude_output(line_json)
-            if output and spinner:
-                spinner.write(output)
+            if output:
+                output_channel.write(output)
 
     process.wait()
