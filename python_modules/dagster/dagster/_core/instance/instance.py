@@ -1781,22 +1781,22 @@ class DagsterInstance(SettingsMixin, DynamicPartitionsStore, DomainsMixin):
 
     def get_asset_check_health_state_for_assets(
         self, _asset_keys: Sequence[AssetKey]
-    ) -> Optional[Mapping[AssetKey, Optional["AssetCheckHealthState"]]]:
+    ) -> Mapping[AssetKey, Optional["AssetCheckHealthState"]]:
         return self.asset_domain.get_asset_check_health_state_for_assets(_asset_keys)
 
     def get_asset_freshness_health_state_for_assets(
         self, _asset_keys: Sequence[AssetKey]
-    ) -> Optional[Mapping[AssetKey, Optional["AssetFreshnessHealthState"]]]:
+    ) -> Mapping[AssetKey, Optional["AssetFreshnessHealthState"]]:
         return self.asset_domain.get_asset_freshness_health_state_for_assets(_asset_keys)
 
     def get_asset_materialization_health_state_for_assets(
         self, _asset_keys: Sequence[AssetKey]
-    ) -> Optional[Mapping[AssetKey, Optional["AssetMaterializationHealthState"]]]:
+    ) -> Mapping[AssetKey, Optional["AssetMaterializationHealthState"]]:
         return self.asset_domain.get_asset_materialization_health_state_for_assets(_asset_keys)
 
     def get_minimal_asset_materialization_health_state_for_assets(
-        self, asset_keys: Sequence[AssetKey]
-    ) -> Optional[Mapping[AssetKey, Optional["MinimalAssetMaterializationHealthState"]]]:
+        self, _asset_keys: Sequence[AssetKey]
+    ) -> Mapping[AssetKey, Optional["MinimalAssetMaterializationHealthState"]]:
         return self.asset_domain.get_minimal_asset_materialization_health_state_for_assets(
-            asset_keys
+            _asset_keys
         )
