@@ -1200,44 +1200,56 @@ class DagsterInstance(DynamicPartitionsStore):
         # Calculate partitions_subset for time window partitions
         partitions_subset = None
         if partitions_definition is not None:
+            from dagster._core.definitions.partitions.definition import DynamicPartitionsDefinition
             from dagster._core.definitions.partitions.definition.time_window import (
                 TimeWindowPartitionsDefinition,
             )
+            from dagster._core.definitions.partitions.subset import KeyRangesPartitionsSubset
+            from dagster._core.remote_representation.external_data import PartitionsSnap
 
-            if isinstance(partitions_definition, TimeWindowPartitionsDefinition):
-                # only store the subset of time window partitions, since those can be compressed efficiently
-                partition_tag = tags.get(PARTITION_NAME_TAG)
-                partition_range_tags = (
-                    (
-                        tags[ASSET_PARTITION_RANGE_START_TAG],
-                        tags[ASSET_PARTITION_RANGE_END_TAG],
-                    )
-                    if tags.get(ASSET_PARTITION_RANGE_START_TAG) is not None
-                    and tags.get(ASSET_PARTITION_RANGE_END_TAG) is not None
-                    else None
+            partition_tag = tags.get(PARTITION_NAME_TAG)
+            partition_key_range = (
+                PartitionKeyRange(
+                    tags[ASSET_PARTITION_RANGE_START_TAG],
+                    tags[ASSET_PARTITION_RANGE_END_TAG],
                 )
+                if (
+                    tags.get(ASSET_PARTITION_RANGE_START_TAG) is not None
+                    and tags.get(ASSET_PARTITION_RANGE_END_TAG) is not None
+                )
+                else None
+            )
 
-                if partition_tag is not None or partition_range_tags is not None:
-                    if partition_tag is not None and partition_range_tags is not None:
-                        raise DagsterInvariantViolationError(
-                            f"Cannot have {ASSET_PARTITION_RANGE_START_TAG} or"
-                            f" {ASSET_PARTITION_RANGE_END_TAG} set along with"
-                            f" {PARTITION_NAME_TAG}"
-                        )
-                    if partition_tag is not None:
-                        partition_range_tags = (partition_tag, partition_tag)
-                    if partition_range_tags is not None:
-                        start_window = partitions_definition.time_window_for_partition_key(
-                            partition_range_tags[0]
-                        )
-                        end_window = partitions_definition.time_window_for_partition_key(
-                            partition_range_tags[1]
-                        )
-                        partitions_subset = (
-                            partitions_definition.get_partition_subset_in_time_window(
-                                TimeWindow(start_window.start, end_window.end)
-                            ).to_serializable_subset()
-                        )
+            if partition_tag is not None or partition_key_range is not None:
+                if partition_tag is not None and partition_key_range is not None:
+                    raise DagsterInvariantViolationError(
+                        f"Cannot have {ASSET_PARTITION_RANGE_START_TAG} or"
+                        f" {ASSET_PARTITION_RANGE_END_TAG} tags set along with"
+                        f" {PARTITION_NAME_TAG}"
+                    )
+                if partition_tag is not None:
+                    partition_key_range = PartitionKeyRange(partition_tag, partition_tag)
+
+            if partition_key_range is not None:
+                if isinstance(partitions_definition, TimeWindowPartitionsDefinition):
+                    # only store the subset of time window partitions, since those can be compressed efficiently
+                    start_window = partitions_definition.time_window_for_partition_key(
+                        partition_key_range.start
+                    )
+                    end_window = partitions_definition.time_window_for_partition_key(
+                        partition_key_range.end
+                    )
+                    partitions_subset = partitions_definition.get_partition_subset_in_time_window(
+                        TimeWindow(start_window.start, end_window.end)
+                    ).to_serializable_subset()
+                elif (
+                    isinstance(partitions_definition, DynamicPartitionsDefinition)
+                    and partitions_definition.name is not None
+                ):
+                    partitions_subset = KeyRangesPartitionsSubset(
+                        key_ranges=[partition_key_range],
+                        partitions_snap=PartitionsSnap.from_def(partitions_definition),
+                    )
 
         return DagsterRun(
             job_name=job_name,
