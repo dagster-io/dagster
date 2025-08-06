@@ -10,15 +10,15 @@ sidebar_custom_props:
 partnerlink: https://learn.microsoft.com/en-us/power-bi/
 ---
 
+import Beta from '@site/docs/partials/\_Beta.md';
+
+<Beta />
+
 :::note
 
 If you are just getting started with the Power BI integration, we recommend using the new [Power BI component](/integrations/libraries/powerbi).
 
 :::
-
-import Beta from '@site/docs/partials/\_Beta.md';
-
-<Beta />
 
 <p>{frontMatter.description}</p>
 
