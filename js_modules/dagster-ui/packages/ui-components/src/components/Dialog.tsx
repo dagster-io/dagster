@@ -131,6 +131,7 @@ export const GlobalDialogStyle = createGlobalStyle`
     margin: 0 auto;
     overflow: hidden;
     padding: 0;
+    width: initial;
   }
 
   .dagster-portal .bp5-dialog > :first-child {
