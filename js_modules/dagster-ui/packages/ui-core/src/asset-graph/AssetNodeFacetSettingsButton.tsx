@@ -2,10 +2,12 @@ import {Box, Button, Colors, Dialog, DialogFooter, Icon} from '@dagster-io/ui-co
 import {useState} from 'react';
 
 import {AssetNodeWithLiveData} from './AssetNode2025';
-import {AssetNodeFacet, AssetNodeFacetDefaults} from './AssetNodeFacets';
+import {AssetNodeFacetDefaults} from './AssetNodeFacets';
 import {AssetNodeFacetsPicker} from './AssetNodeFacetsPicker';
+import {AssetNodeFacet} from './AssetNodeFacetsUtil';
 import {LiveDataForNodeWithStaleData} from './Utils';
 import {ASSET_NODE_WIDTH} from './layout';
+import {AssetAutomationFragment} from '../asset-data/types/AssetAutomationDataProvider.types';
 import {
   AssetCheckCanExecuteIndividually,
   AssetCheckExecutionResolvedStatus,
@@ -16,7 +18,6 @@ import {
   StaleStatus,
 } from '../graphql/types';
 import {AssetNodeFragment} from './types/AssetNode.types';
-import {AssetAutomationFragment} from '../asset-data/types/AssetAutomationDataProvider.types';
 
 const ExampleAssetChecks: LiveDataForNodeWithStaleData['assetChecks'] = [
   {
