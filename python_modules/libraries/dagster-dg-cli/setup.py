@@ -35,8 +35,8 @@ setup(
     packages=find_packages(exclude=["dagster_dg_cli_tests*"]),
     include_package_data=True,
     install_requires=[
-        f"dagster-dg-core{pin}",
-        f"dagster{pin}",
+        "dagster-dg-core==1.11.5",
+        "dagster==1.11.5",
         "mcp; python_version>='3.10'",  # mcp not available for 3.9
         "typer",
     ],
