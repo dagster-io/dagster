@@ -4,11 +4,12 @@ import * as React from 'react';
 import {AppContext} from './AppContext';
 import {AssetCheck, AssetKeyInput} from '../graphql/types';
 import {useSetStateUpdateCallback} from '../hooks/useSetStateUpdateCallback';
-import {getJSONForKey, useStateWithStorage} from '../hooks/useStateWithStorage';
+import {useStateWithStorage} from '../hooks/useStateWithStorage';
 import {
   LaunchpadSessionPartitionSetsFragment,
   LaunchpadSessionPipelineFragment,
 } from '../launchpad/types/LaunchpadAllowedRoot.types';
+import {getJSONForKey} from '../util/getJSONForKey';
 import {buildRepoAddress} from '../workspace/buildRepoAddress';
 import {RepoAddress} from '../workspace/types';
 

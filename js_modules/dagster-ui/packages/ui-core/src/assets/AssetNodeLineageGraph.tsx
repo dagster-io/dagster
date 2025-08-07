@@ -6,7 +6,7 @@ import styled from 'styled-components';
 import {SVGSaveZoomLevel, useLastSavedZoomLevel} from './SavedZoomLevel';
 import {assetDetailsPathForKey} from './assetDetailsPathForKey';
 import {AssetKey, AssetViewParams} from './types';
-import {useFeatureFlags} from '../app/Flags';
+import {useFeatureFlags} from '../app/useFeatureFlags';
 import {AssetEdges} from '../asset-graph/AssetEdges';
 import {AssetGraphBackgroundContextMenu} from '../asset-graph/AssetGraphBackgroundContextMenu';
 import {MINIMAL_SCALE} from '../asset-graph/AssetGraphExplorer';

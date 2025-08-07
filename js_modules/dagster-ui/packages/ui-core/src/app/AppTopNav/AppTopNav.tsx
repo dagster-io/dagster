@@ -6,7 +6,7 @@ import styled from 'styled-components';
 
 import {MarketplaceTopNavLink} from '../../integrations/MarketplaceTopNavLink';
 import {SearchTopNavItem} from '../../search/SearchTopNavItem';
-import {useFeatureFlags} from '../Flags';
+import {useFeatureFlags} from '../useFeatureFlags';
 import {GhostDaggyWithTooltip} from './GhostDaggy';
 import {
   reloadFnForWorkspace,
