@@ -116,7 +116,7 @@ export function AssetCatalogRateCard({
           prevValue !== null &&
           value !== null && (
             <>
-              <div className={styles.rateCardPrev}>{prevValueString + ' previous period'}</div>
+              <div className={styles.rateCardPrev}>{prevValueString + ' prev period'}</div>
               <Box
                 className={styles.rateCardDeltaRow}
                 flex={{direction: 'row', alignItems: 'center', gap: 4}}
