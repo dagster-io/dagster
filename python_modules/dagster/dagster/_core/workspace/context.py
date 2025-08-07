@@ -30,12 +30,12 @@ from dagster._core.instance import DagsterInstance
 from dagster._core.instance.types import CachingDynamicPartitionsLoader
 from dagster._core.loader import LoadingContext
 from dagster._core.remote_origin import (
+    CodeLocationOrigin,
     GrpcServerCodeLocationOrigin,
     ManagedGrpcPythonEnvCodeLocationOrigin,
 )
 from dagster._core.remote_representation import (
     CodeLocation,
-    CodeLocationOrigin,
     GrpcServerCodeLocation,
     RemoteExecutionPlan,
     RemoteJob,

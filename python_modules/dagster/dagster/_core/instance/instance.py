@@ -90,11 +90,11 @@ if TYPE_CHECKING:
     from dagster._core.execution.plan.resume_retry import ReexecutionStrategy
     from dagster._core.execution.stats import RunStepKeyStatsSnapshot
     from dagster._core.launcher import RunLauncher
+    from dagster._core.remote_origin import RemoteJobOrigin
     from dagster._core.remote_representation import (
         CodeLocation,
         HistoricalJob,
         RemoteJob,
-        RemoteJobOrigin,
         RemoteSensor,
     )
     from dagster._core.remote_representation.external import RemoteSchedule

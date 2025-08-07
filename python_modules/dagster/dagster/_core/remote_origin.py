@@ -2,22 +2,16 @@ import os
 from abc import ABC, abstractmethod
 from collections.abc import Iterator, Mapping, Sequence
 from contextlib import contextmanager
-from typing import TYPE_CHECKING, Any, Final, NoReturn, Optional, cast
+from typing import TYPE_CHECKING, Any, NoReturn, Optional, cast
 
 from dagster_shared.record import IHaveNew, LegacyNamedTupleMixin, record, record_custom
 
 import dagster._check as check
 from dagster._core.errors import DagsterInvariantViolationError, DagsterUserCodeUnreachableError
 from dagster._core.instance.config import DEFAULT_LOCAL_CODE_SERVER_STARTUP_TIMEOUT
+from dagster._core.origin import DEFAULT_DAGSTER_ENTRY_POINT
 from dagster._core.types.loadable_target_origin import LoadableTargetOrigin
 from dagster._serdes import create_snapshot_id, whitelist_for_serdes
-
-DEFAULT_DAGSTER_ENTRY_POINT: Final = ["dagster"]
-
-
-def get_python_environment_entry_point(executable_path: str) -> Sequence[str]:
-    return [executable_path, "-m", "dagster"]
-
 
 if TYPE_CHECKING:
     from dagster._core.definitions.selector import (

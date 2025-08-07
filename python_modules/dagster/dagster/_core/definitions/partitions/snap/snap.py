@@ -11,6 +11,7 @@ from typing import TYPE_CHECKING, Optional
 from typing_extensions import Self
 
 from dagster import _check as check
+from dagster._core.definitions.partitions.schedule_type import ScheduleType
 from dagster._core.errors import DagsterInvalidDefinitionError
 from dagster._record import IHaveNew, record, record_custom
 from dagster._serdes import whitelist_for_serdes
@@ -24,7 +25,6 @@ if TYPE_CHECKING:
         StaticPartitionsDefinition,
         TimeWindowPartitionsDefinition,
     )
-    from dagster._core.definitions.partitions.schedule_type import ScheduleType
 
 
 class PartitionsSnap(ABC):
@@ -65,7 +65,7 @@ class TimeWindowPartitionsSnap(PartitionsSnap):
     end: Optional[float] = None
     cron_schedule: Optional[str] = None
     # superseded by cron_schedule, but kept around for backcompat
-    schedule_type: Optional["ScheduleType"] = None
+    schedule_type: Optional[ScheduleType] = None
     # superseded by cron_schedule, but kept around for backcompat
     minute_offset: Optional[int] = None
     # superseded by cron_schedule, but kept around for backcompat
