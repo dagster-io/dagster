@@ -1,240 +1,96 @@
 import {
-  Body,
   BodyLarge,
-  BodySmall,
   Box,
   Button,
-  Colors,
-  FontFamily,
   Icon,
-  MiddleTruncate,
-  Mono,
-  MonoSmall,
+  Menu,
+  MenuItem,
+  Popover,
   Spinner,
-  Subheading,
 } from '@dagster-io/ui-components';
-import {
-  BarElement,
-  CategoryScale,
-  Chart as ChartJS,
-  ChartOptions,
-  Legend,
-  LinearScale,
-  Tooltip,
-} from 'chart.js';
-import React, {useCallback, useMemo, useState} from 'react';
-import {Bar} from 'react-chartjs-2';
+import {memo, useMemo, useState} from 'react';
 
 import styles from './AssetCatalogTopAssetsChart.module.css';
-import {Context, useRenderChartTooltip} from './renderChartTooltip';
-import {useRGBColorsForTheme} from '../../app/useRGBColorsForTheme';
-import {TooltipCard} from '../../insights/InsightsChartShared';
-import {formatDuration} from '../../ui/formatDuration';
-import {numberFormatter, numberFormatterWithMaxFractionDigits} from '../../ui/formatters';
+import {AssetCatalogTopAssetsList} from './AssetCatalogTopAssetsList';
+import {ReportingUnitType} from '../../insights/types';
 
-ChartJS.register(CategoryScale, LinearScale, BarElement, Tooltip, Legend);
+interface Props {
+  header: string;
+  datasets: {labels: string[]; data: number[]};
+  unitLabel: string;
+  loading: boolean;
+  unitType: ReportingUnitType;
+}
 
-const PAGE_SIZE = 10;
+export const AssetCatalogTopAssetsChart = memo(
+  ({header, datasets, unitType, unitLabel, loading}: Props) => {
+    const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc');
 
-export const AssetCatalogTopAssetsChart = React.memo(
-  ({
-    header,
-    datasets,
-    unitType,
-    loading,
-  }: {
-    header: string;
-    datasets: {labels: string[]; data: number[]};
-    unitType: string;
-    loading: boolean;
-  }) => {
-    const rgbColors = useRGBColorsForTheme();
-
-    const [page, setPage] = useState(0);
+    const {data, labels} = datasets;
 
     const values = useMemo(() => {
-      return datasets.labels
+      return labels
         .map((label, i) => ({
           label,
-          // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-          value: datasets.data[i]!,
+          value: data[i] ?? 0,
         }))
         .filter(({value}) => value !== 0)
-        .sort((a, b) => b.value - a.value);
-    }, [datasets.data, datasets.labels]);
-
-    // Compute the max value from all values for consistent X axis scaling
-    const maxValue = useMemo(() => {
-      return values.length > 0 ? Math.max(...values.map(({value}) => value)) : undefined;
-    }, [values]);
-
-    const totalPages = Math.ceil(values.length / PAGE_SIZE);
-
-    const currentPageValues = useMemo(
-      () => values.slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE),
-      [page, values],
-    );
-
-    const renderTooltipFn = useRenderChartTooltip(
-      useCallback(
-        ({context}: {context: Context}) => {
-          const {tooltip} = context;
-          const d = tooltip.dataPoints[0];
-
-          const {value, unit} = (() => {
-            const typeLower = unitType.toLowerCase();
-            if (d && (typeLower === 'milliseconds' || typeLower === 'seconds')) {
-              const [result] = formatDuration(d.raw as number, {
-                unit: typeLower,
-              });
-
-              return {value: result.value, unit: result.unit};
-            }
-            return {value: d?.raw as number, unit: unitType};
-          })();
-          return (
-            <TooltipCard>
-              <Box flex={{direction: 'column', gap: 4}} padding={{vertical: 8, horizontal: 12}}>
-                <Box border="bottom" padding={{bottom: 4}} margin={{bottom: 4}}>
-                  <Subheading>{d?.label}</Subheading>
-                </Box>
-                <Box flex={{direction: 'row', gap: 4, alignItems: 'center'}}>
-                  <Mono>{numberFormatterWithMaxFractionDigits(2).format(value)}</Mono>
-                  <Body>{unit}</Body>
-                </Box>
-              </Box>
-            </TooltipCard>
-          );
-        },
-        [unitType],
-      ),
-      useMemo(() => ({side: 'right', align: 'center'}), []),
-    );
-
-    const chartConfig = useMemo(
-      () => ({
-        labels: currentPageValues.map(({label}) => label),
-        datasets: [
-          {
-            label: unitType,
-            data: currentPageValues.map(({value}) => value),
-            backgroundColor: rgbColors[Colors.accentBlue()],
-            borderRadius: 0,
-            maxBarThickness: 10,
-          },
-        ],
-      }),
-      [unitType, currentPageValues, rgbColors],
-    );
-
-    const options: ChartOptions<'bar'> = useMemo(
-      () => ({
-        indexAxis: 'y' as const,
-        scales: {
-          x: {
-            beginAtZero: true,
-            max: maxValue,
-            ticks: {
-              color: rgbColors[Colors.textLight()],
-              font: {size: 12, family: FontFamily.monospace},
-            },
-            grid: {color: rgbColors[Colors.keylineDefault()], borderDash: [4, 4]},
-          },
-          y: {grid: {display: false}, ticks: {display: false}, beginAtZero: true},
-        },
-        plugins: {
-          legend: {display: false},
-          tooltip: {
-            enabled: false,
-            position: 'nearest',
-            external: renderTooltipFn,
-          },
-        },
-      }),
-      [maxValue, rgbColors, renderTooltipFn],
-    );
+        .sort((a, b) => (sortDirection === 'asc' ? a.value - b.value : b.value - a.value));
+    }, [data, labels, sortDirection]);
 
     return (
       <div className={styles.container}>
-        <Box flex={{direction: 'row', gap: 12, justifyContent: 'space-between'}}>
+        <Box
+          flex={{direction: 'row', gap: 12, justifyContent: 'space-between', alignItems: 'center'}}
+          padding={{bottom: 12, horizontal: 12}}
+        >
           <BodyLarge>{header}</BodyLarge>
-          {loading ? <Spinner purpose="body-text" /> : null}
-        </Box>
-        <Box border="bottom" padding={{bottom: 12}} style={{position: 'relative'}}>
-          <Bar data={chartConfig} options={options} />
-        </Box>
-        <div>
-          <Box
-            flex={{direction: 'row', justifyContent: 'space-between', gap: 12}}
-            style={{color: Colors.textLighter()}}
-            border="bottom"
-            padding={{vertical: 8}}
-          >
-            <BodySmall>Asset</BodySmall>
-            <BodySmall>{unitType}</BodySmall>
-          </Box>
-          <div className={styles.table}>
-            {currentPageValues.map(({label, value}, i) => (
-              <React.Fragment key={i}>
-                <BodySmall as="div" color={Colors.textLight()}>
-                  <MiddleTruncate text={label} />
-                </BodySmall>
-                <MonoSmall color={Colors.textDefault()} className={styles.tableValue}>
-                  {numberFormatter.format(Math.round(value))}
-                </MonoSmall>
-              </React.Fragment>
-            ))}
-          </div>
-        </div>
-        {totalPages > 1 && (
-          <Box
-            flex={{
-              alignItems: 'flex-end',
-              grow: 1,
-              direction: 'row',
-            }}
-          >
-            <Box
-              flex={{
-                direction: 'row',
-                grow: 1,
-                alignItems: 'flex-end',
-                justifyContent: 'stretch',
-              }}
-              border="top"
-              padding={{top: 12, horizontal: 8}}
+          {loading ? (
+            <Spinner purpose="body-text" />
+          ) : (
+            <Popover
+              placement="bottom-end"
+              content={
+                <Menu>
+                  <MenuItem
+                    text="Low to high"
+                    icon="sort_asc"
+                    onClick={() => setSortDirection('asc')}
+                    active={sortDirection === 'asc'}
+                  />
+                  <MenuItem
+                    text="High to low"
+                    icon="sort_desc"
+                    onClick={() => setSortDirection('desc')}
+                    active={sortDirection === 'desc'}
+                  />
+                </Menu>
+              }
             >
-              <Box
-                flex={{
-                  direction: 'row',
-                  gap: 12,
-                  alignItems: 'center',
-                  justifyContent: 'space-between',
-                }}
-                style={{width: '100%'}}
+              <Button
+                icon={<Icon name={sortDirection === 'asc' ? 'sort_asc' : 'sort_desc'} />}
+                rightIcon={<Icon name="expand_more" />}
               >
-                <BodySmall>
-                  {page + 1} of {totalPages}
-                </BodySmall>
-                <Box flex={{direction: 'row', gap: 4}}>
-                  <Button
-                    outlined
-                    onClick={() => setPage(page - 1)}
-                    disabled={page === 0}
-                    icon={<Icon name="arrow_back" />}
-                  />
-                  <Button
-                    outlined
-                    onClick={() => setPage(page + 1)}
-                    disabled={page === totalPages - 1}
-                    icon={<Icon name="arrow_forward" />}
-                  />
-                </Box>
-              </Box>
-            </Box>
-          </Box>
+                {sortDirection === 'asc' ? 'Low to high' : 'High to low'}
+              </Button>
+            </Popover>
+          )}
+        </Box>
+        {values.length ? (
+          <AssetCatalogTopAssetsList
+            values={values}
+            unitType={unitType}
+            unitLabel={unitLabel}
+            key={sortDirection} // Reset to first page when sort changes
+          />
+        ) : loading ? null : (
+          <div className={styles.emptyState}>
+            No reported events for this metric in this time range.
+          </div>
         )}
       </div>
     );
   },
 );
+
+AssetCatalogTopAssetsChart.displayName = 'AssetCatalogTopAssetsChart';
