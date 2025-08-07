@@ -1032,7 +1032,7 @@ def test_fan_in():
     assert (
         traced_counter.get().counts()  # pyright: ignore[reportOptionalMemberAccess]
         == {
-            "DagsterInstance.get_asset_records": 1,
+            "AssetMixin.get_asset_records": 1,
             "RunsMixin.get_run_record_by_id": 3,  # get_run_record_by_id called when handling events for the run
         }
     )
