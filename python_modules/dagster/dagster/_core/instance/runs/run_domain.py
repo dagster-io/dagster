@@ -9,7 +9,6 @@ from dagster._core.definitions.asset_checks.asset_check_evaluation import (
 )
 from dagster._core.definitions.events import AssetKey
 from dagster._core.definitions.partitions.partition_key_range import PartitionKeyRange
-from dagster._core.definitions.partitions.utils.time_window import TimeWindow
 from dagster._core.errors import (
     DagsterInvalidSubsetError,
     DagsterInvariantViolationError,
@@ -51,7 +50,12 @@ if TYPE_CHECKING:
         BaseAssetGraph,
         BaseAssetNode,
     )
+    from dagster._core.definitions.job_definition import JobDefinition
+    from dagster._core.definitions.repository_definition.repository_definition import (
+        RepositoryLoadData,
+    )
     from dagster._core.definitions.utils import EntityKey
+    from dagster._core.execution.plan.plan import ExecutionPlan
     from dagster._core.execution.plan.resume_retry import ReexecutionStrategy
     from dagster._core.instance.instance import DagsterInstance
     from dagster._core.remote_representation import CodeLocation, RemoteJob
@@ -276,8 +280,6 @@ class RunDomain:
             if job_snapshot
             else None
         )
-        partitions_definition = None
-
         # ensure that all asset outputs list their execution type, even if the snapshot was
         # created on an older version before it was being set
         if execution_plan_snapshot and asset_graph:
@@ -289,12 +291,6 @@ class RunDomain:
                     adjusted_output = output
 
                     if asset_key and asset_graph.has(asset_key):
-                        if partitions_definition is None:
-                            # this assumes that if one partitioned asset is in a run, all other partitioned
-                            # assets in the run have the same partitions definition.
-                            asset_node = asset_graph.get(asset_key)
-                            partitions_definition = asset_node.partitions_def
-
                         if (
                             output.properties is not None
                             and output.properties.asset_execution_type is None
@@ -330,42 +326,6 @@ class RunDomain:
         else:
             run_op_concurrency = None
 
-        # Calculate partitions_subset for time window partitions
-        partitions_subset = None
-        if partitions_definition is not None:
-            from dagster._core.definitions.partitions.definition.time_window import (
-                TimeWindowPartitionsDefinition,
-            )
-
-            if isinstance(partitions_definition, TimeWindowPartitionsDefinition):
-                # only store the subset of time window partitions, since those can be compressed efficiently
-                partition_tag = tags.get(PARTITION_NAME_TAG)
-                partition_range_start, partition_range_end = (
-                    tags.get(ASSET_PARTITION_RANGE_START_TAG),
-                    tags.get(ASSET_PARTITION_RANGE_END_TAG),
-                )
-
-                if partition_tag and (partition_range_start or partition_range_end):
-                    raise DagsterInvariantViolationError(
-                        f"Cannot have {ASSET_PARTITION_RANGE_START_TAG} or"
-                        f" {ASSET_PARTITION_RANGE_END_TAG} set along with"
-                        f" {PARTITION_NAME_TAG}"
-                    )
-                if partition_tag is not None:
-                    partition_range_start = partition_tag
-                    partition_range_end = partition_tag
-
-                if partition_range_start and partition_range_end:
-                    start_window = partitions_definition.time_window_for_partition_key(
-                        partition_range_start
-                    )
-                    end_window = partitions_definition.time_window_for_partition_key(
-                        partition_range_end
-                    )
-                    partitions_subset = partitions_definition.get_partition_subset_in_time_window(
-                        TimeWindow(start_window.start, end_window.end)
-                    ).to_serializable_subset()
-
         return DagsterRun(
             job_name=job_name,
             run_id=run_id,
@@ -386,7 +346,6 @@ class RunDomain:
             has_repository_load_data=execution_plan_snapshot is not None
             and execution_plan_snapshot.repository_load_data is not None,
             run_op_concurrency=run_op_concurrency,
-            partitions_subset=partitions_subset,
         )
 
     def create_reexecuted_run(
@@ -858,3 +817,78 @@ class RunDomain:
             self._instance.report_dagster_event(
                 materialization_planned, dagster_run.run_id, logging.DEBUG
             )
+
+    def create_run_for_job(
+        self,
+        job_def: "JobDefinition",
+        execution_plan: Optional["ExecutionPlan"] = None,
+        run_id: Optional[str] = None,
+        run_config: Optional[Mapping[str, object]] = None,
+        resolved_op_selection: Optional[Set[str]] = None,
+        status: Optional[DagsterRunStatus] = None,
+        tags: Optional[Mapping[str, str]] = None,
+        root_run_id: Optional[str] = None,
+        parent_run_id: Optional[str] = None,
+        op_selection: Optional[Sequence[str]] = None,
+        asset_selection: Optional[Set[AssetKey]] = None,
+        remote_job_origin: Optional["RemoteJobOrigin"] = None,
+        job_code_origin: Optional[JobPythonOrigin] = None,
+        repository_load_data: Optional["RepositoryLoadData"] = None,
+    ) -> DagsterRun:
+        """Create run for job - moved from DagsterInstance.create_run_for_job()."""
+        from dagster._core.definitions.job_definition import JobDefinition
+        from dagster._core.execution.api import create_execution_plan
+        from dagster._core.execution.plan.plan import ExecutionPlan
+        from dagster._core.snap import snapshot_from_execution_plan
+
+        check.inst_param(job_def, "pipeline_def", JobDefinition)
+        check.opt_inst_param(execution_plan, "execution_plan", ExecutionPlan)
+        # note that op_selection is required to execute the solid subset, which is the
+        # frozenset version of the previous solid_subset.
+        # op_selection is not required and will not be converted to op_selection here.
+        # i.e. this function doesn't handle solid queries.
+        # op_selection is only used to pass the user queries further down.
+        check.opt_set_param(resolved_op_selection, "resolved_op_selection", of_type=str)
+        check.opt_list_param(op_selection, "op_selection", of_type=str)
+        check.opt_set_param(asset_selection, "asset_selection", of_type=AssetKey)
+
+        # op_selection never provided
+        if asset_selection or op_selection:
+            # for cases when `create_run_for_pipeline` is directly called
+            job_def = job_def.get_subset(
+                asset_selection=asset_selection,
+                op_selection=op_selection,
+            )
+
+        if not execution_plan:
+            execution_plan = create_execution_plan(
+                job=job_def,
+                run_config=run_config,
+                instance_ref=self._instance.get_ref() if self._instance.is_persistent else None,
+                tags=tags,
+                repository_load_data=repository_load_data,
+            )
+
+        return self.create_run(
+            job_name=job_def.name,
+            run_id=run_id,
+            run_config=run_config,
+            op_selection=op_selection,
+            asset_selection=asset_selection,
+            asset_check_selection=None,
+            resolved_op_selection=resolved_op_selection,
+            step_keys_to_execute=execution_plan.step_keys_to_execute,
+            status=status,
+            tags=tags,
+            root_run_id=root_run_id,
+            parent_run_id=parent_run_id,
+            job_snapshot=job_def.get_job_snapshot(),
+            execution_plan_snapshot=snapshot_from_execution_plan(
+                execution_plan,
+                job_def.get_job_snapshot_id(),
+            ),
+            parent_job_snapshot=job_def.get_parent_job_snapshot(),
+            remote_job_origin=remote_job_origin,
+            job_code_origin=job_code_origin,
+            asset_graph=job_def.asset_layer.asset_graph,
+        )

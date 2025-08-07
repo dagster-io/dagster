@@ -241,6 +241,7 @@ def create_and_launch_partition_backfill(
         assert_valid_asset_partition_backfill(
             graphene_info,
             backfill,
+            dynamic_partitions_store,
             backfill_datetime,
         )
     elif partitions_by_assets is not None:
@@ -277,6 +278,7 @@ def create_and_launch_partition_backfill(
         assert_valid_asset_partition_backfill(
             graphene_info,
             backfill,
+            dynamic_partitions_store,
             backfill_datetime,
         )
 

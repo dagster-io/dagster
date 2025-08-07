@@ -16,9 +16,11 @@ import {
   ChartOptions,
   LineElement,
   LinearScale,
+  Plugin,
   PointElement,
   Tooltip,
 } from 'chart.js';
+import CrosshairPlugin from 'chartjs-plugin-crosshair';
 import React, {memo, useCallback, useMemo, useRef} from 'react';
 import {Line} from 'react-chartjs-2';
 
@@ -211,6 +213,23 @@ const InnerLineChartWithComparison = <T,>(props: Props<T>) => {
     () => ({
       plugins: {
         legend: {display: false},
+        crosshair: {
+          enabled: true,
+          zoom: {
+            enabled: false,
+          },
+          sync: {
+            enabled: true,
+          },
+          line: {
+            color: rgbColors[Colors.borderDefault()],
+            width: 1,
+            dashPattern: [3, 3],
+          },
+          snap: {
+            enabled: true,
+          },
+        },
         tooltip: {
           enabled: false,
           position: 'nearest',
@@ -352,7 +371,7 @@ const InnerLineChartWithComparison = <T,>(props: Props<T>) => {
             {metrics.prevPeriod.aggregateValue
               ? numberFormatterWithMaxFractionDigits(2).format(prevPeriodDisplayValueAndUnit.value)
               : 0}
-            <span> previous period</span>
+            <span> prev period</span>
           </Box>
           <Box flex={{direction: 'row', gap: 4, alignItems: 'center'}}>
             {metrics.pctChange && metrics.pctChange > 0 ? (
@@ -371,6 +390,7 @@ const InnerLineChartWithComparison = <T,>(props: Props<T>) => {
             data={getDataset(metrics, formatDatetime)}
             options={options}
             onClick={onClick}
+            plugins={[CrosshairPlugin as Plugin<'line'>]}
             updateMode="none"
           />
         </div>

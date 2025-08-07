@@ -1,6 +1,6 @@
 # AI Update PR summary
 
-Use `gt ls -s` to determine the last git ref in the stack. View all changes since that ref with `git diff`. Also view the commit messages with `git log`. Use this context, alongside any session context from what you know about the changes to write a PR summary in Markdown, of the format
+Use `gt ls -s` to determine the last git ref in the stack. View changes for ONLY the current branch with `git diff <previous_branch>..HEAD` where <previous_branch> is the branch immediately below the current branch in the stack. Also view the commit messages for the current branch only with `git log --oneline <previous_branch>..HEAD`. Focus only on changes in the current branch, not the entire stack history. Use this context, alongside any session context from what you know about the changes to write a PR summary in Markdown, of the format
 
 ```md
 ## Summary & Motivation
