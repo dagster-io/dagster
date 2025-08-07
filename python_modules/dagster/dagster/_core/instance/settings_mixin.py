@@ -39,13 +39,9 @@ class SettingsMixin:
         """Property that should be implemented by the concrete class."""
         raise NotImplementedError
 
-    def _get_settings_value(self, settings_key: str) -> Any:
+    def get_settings(self, settings_key: str) -> Any:
         """Abstract method to get settings value - implemented by DagsterInstance."""
         raise NotImplementedError
-
-    def get_settings(self, settings_key: str) -> Any:
-        check.str_param(settings_key, "settings_key")
-        return self._get_settings_value(settings_key)
 
     def get_backfill_settings(self) -> Mapping[str, Any]:
         return self.get_settings("backfills")
@@ -209,8 +205,6 @@ class SettingsMixin:
 
     def _initialize_run_monitoring(self) -> None:
         """Initialize run monitoring settings and validate configuration."""
-        import dagster._check as check
-
         run_monitoring_enabled = self.run_monitoring_settings.get("enabled", False)
         self._run_monitoring_enabled = run_monitoring_enabled
         if self.run_monitoring_enabled and self.run_monitoring_max_resume_run_attempts:

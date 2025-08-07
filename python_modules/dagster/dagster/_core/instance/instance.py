@@ -609,13 +609,8 @@ class DagsterInstance(SettingsMixin, DynamicPartitionsStore):
             self._compute_log_manager.register_instance(self)
         return self._compute_log_manager
 
-    def _get_settings_value(self, settings_key: str) -> Any:
-        """Get settings value from the instance settings.
-
-        This method provides a uniform interface for accessing settings,
-        allowing subclasses to customize settings behavior while maintaining
-        compatibility with the SettingsMixin.
-        """
+    def get_settings(self, settings_key: str) -> Any:
+        check.str_param(settings_key, "settings_key")
         if self._settings and settings_key in self._settings:
             return self._settings.get(settings_key)
         return {}
