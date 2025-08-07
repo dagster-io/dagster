@@ -1,5 +1,18 @@
 # AI Update PR summary
 
+## Step 0: Always Inspect Repository State First
+
+**CRITICAL**: It is essential to disregard any context about what branch you think you are on. ALWAYS start by inspecting the current state of the repository and GT stack to determine where you actually are.
+
+**NEVER assume** you know the current branch or stack position based on previous context or conversation history. The repository state may have changed.
+
+**Required commands to run first**:
+- `git branch --show-current` - Get the actual current branch name
+- `gt ls -s` - Get the actual current stack structure
+- `git status` - Verify repository state
+
+Only after confirming the actual repository state should you proceed with the remaining steps.
+
 ## Step 1: Identify the Previous Branch
 
 First, use `gt ls -s` to view the stack structure. The output shows branches in order, with `◉` marking the current branch and `◯` marking other branches in the stack.
