@@ -67,7 +67,7 @@ from dagster._core.execution.plan.objects import StepFailureData, StepSuccessDat
 from dagster._core.execution.stats import StepEventStatus
 from dagster._core.instance import RUNLESS_JOB_NAME, RUNLESS_RUN_ID
 from dagster._core.loader import LoadingContextForTest
-from dagster._core.remote_representation.origin import (
+from dagster._core.remote_origin import (
     InProcessCodeLocationOrigin,
     RemoteJobOrigin,
     RemoteRepositoryOrigin,

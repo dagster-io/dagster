@@ -53,7 +53,6 @@ from dagster._core.definitions.resource_requirement import (
     ResourceRequirement,
     ensure_requirements_satisfied,
 )
-from dagster._core.definitions.run_request import RunRequest
 from dagster._core.definitions.utils import DEFAULT_IO_MANAGER_KEY, check_valid_name
 from dagster._core.errors import (
     DagsterInvalidConfigError,
@@ -80,6 +79,7 @@ if TYPE_CHECKING:
     from dagster._core.definitions.assets.definition.assets_definition import AssetsDefinition
     from dagster._core.definitions.run_config import RunConfig
     from dagster._core.definitions.run_config_schema import RunConfigSchema
+    from dagster._core.definitions.run_request import RunRequest
     from dagster._core.execution.execute_in_process_result import ExecuteInProcessResult
     from dagster._core.execution.resources_init import InitResourceContext
     from dagster._core.instance import DagsterInstance, DynamicPartitionsStore
@@ -1002,7 +1002,7 @@ class JobDefinition(IHasInternalInit):
         run_config: Optional[Mapping[str, Any]] = None,
         current_time: Optional[datetime] = None,
         dynamic_partitions_store: Optional["DynamicPartitionsStore"] = None,
-    ) -> RunRequest:
+    ) -> "RunRequest":
         """Creates a RunRequest object for a run that processes the given partition.
 
         Args:
@@ -1027,6 +1027,8 @@ class JobDefinition(IHasInternalInit):
         Returns:
             RunRequest: an object that requests a run to process the given partition.
         """
+        from dagster._core.definitions.run_request import RunRequest
+
         if not (self.partitions_def and self.partitioned_config):
             check.failed("Called run_request_for_partition on a non-partitioned job")
 

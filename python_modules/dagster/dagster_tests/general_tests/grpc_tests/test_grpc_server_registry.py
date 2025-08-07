@@ -9,12 +9,12 @@ import pytest
 from dagster._cli.dev import ProxyServerManager
 from dagster._core.errors import DagsterUserCodeProcessError
 from dagster._core.instance import DagsterInstance
-from dagster._core.remote_representation.code_location import GrpcServerCodeLocation
-from dagster._core.remote_representation.grpc_server_registry import GrpcServerRegistry
-from dagster._core.remote_representation.origin import (
+from dagster._core.remote_origin import (
     ManagedGrpcPythonEnvCodeLocationOrigin,
     RegisteredCodeLocationOrigin,
 )
+from dagster._core.remote_representation.code_location import GrpcServerCodeLocation
+from dagster._core.remote_representation.grpc_server_registry import GrpcServerRegistry
 from dagster._core.types.loadable_target_origin import LoadableTargetOrigin
 from dagster._core.workspace.load_target import PythonFileTarget
 from dagster._grpc.constants import GrpcServerCommand

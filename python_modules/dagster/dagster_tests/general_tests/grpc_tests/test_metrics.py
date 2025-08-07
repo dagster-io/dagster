@@ -9,8 +9,7 @@ from typing import Any
 import dagster as dg
 import pytest
 from dagster._core.instance import DagsterInstance
-from dagster._core.remote_representation import RemoteRepositoryOrigin
-from dagster._core.remote_representation.origin import GrpcServerCodeLocationOrigin
+from dagster._core.remote_origin import GrpcServerCodeLocationOrigin, RemoteRepositoryOrigin
 from dagster._grpc.client import DagsterGrpcClient
 from dagster._grpc.server import METRICS_RETRIEVAL_FUNCTIONS, DagsterApiServer, wait_for_grpc_server
 from dagster._grpc.types import SensorExecutionArgs

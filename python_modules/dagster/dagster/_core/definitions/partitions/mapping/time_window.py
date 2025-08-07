@@ -1,6 +1,6 @@
 from collections.abc import Sequence
 from datetime import datetime, timedelta
-from typing import NamedTuple, Optional, cast
+from typing import TYPE_CHECKING, NamedTuple, Optional, cast
 
 import dagster._check as check
 from dagster._annotations import PublicAttr, beta_param
@@ -18,9 +18,11 @@ from dagster._core.definitions.partitions.subset.partitions_subset import Partit
 from dagster._core.definitions.partitions.subset.time_window import TimeWindowPartitionsSubset
 from dagster._core.definitions.partitions.utils.time_window import TimeWindow
 from dagster._core.errors import DagsterInvalidDefinitionError
-from dagster._core.instance import DynamicPartitionsStore
 from dagster._serdes import whitelist_for_serdes
 from dagster._time import add_absolute_time
+
+if TYPE_CHECKING:
+    from dagster._core.instance import DynamicPartitionsStore
 
 
 @whitelist_for_serdes
@@ -155,7 +157,7 @@ class TimeWindowPartitionMapping(
         downstream_partitions_def: Optional[PartitionsDefinition],
         upstream_partitions_def: PartitionsDefinition,
         current_time: Optional[datetime] = None,
-        dynamic_partitions_store: Optional[DynamicPartitionsStore] = None,
+        dynamic_partitions_store: Optional["DynamicPartitionsStore"] = None,
     ) -> UpstreamPartitionsResult:
         with partition_loading_context(current_time, dynamic_partitions_store):
             return self._map_partitions(
@@ -204,7 +206,7 @@ class TimeWindowPartitionMapping(
         upstream_partitions_def: PartitionsDefinition,
         downstream_partitions_def: Optional[PartitionsDefinition],
         current_time: Optional[datetime] = None,
-        dynamic_partitions_store: Optional[DynamicPartitionsStore] = None,
+        dynamic_partitions_store: Optional["DynamicPartitionsStore"] = None,
     ) -> PartitionsSubset:
         """Returns the partitions in the downstream asset that map to the given upstream partitions.
 

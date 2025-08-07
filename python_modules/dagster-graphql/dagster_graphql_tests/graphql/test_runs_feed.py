@@ -5,8 +5,8 @@ from unittest import mock
 
 import pytest
 from dagster._core.execution.backfill import BulkActionStatus, PartitionBackfill
+from dagster._core.remote_origin import RemotePartitionSetOrigin
 from dagster._core.remote_representation.external_data import partition_set_snap_name_for_job_name
-from dagster._core.remote_representation.origin import RemotePartitionSetOrigin
 from dagster._core.storage.dagster_run import DagsterRun, DagsterRunStatus
 from dagster._core.storage.tags import BACKFILL_ID_TAG
 from dagster._core.test_utils import create_run_for_test
