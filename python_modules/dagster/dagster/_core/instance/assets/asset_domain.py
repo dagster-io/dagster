@@ -20,7 +20,10 @@ if TYPE_CHECKING:
     )
     from dagster._core.definitions.asset_key import AssetCheckKey
     from dagster._core.definitions.events import AssetMaterialization
-    from dagster._core.event_api import EventRecordsResult
+    from dagster._core.definitions.partitions.definition.partitions_definition import (
+        PartitionsDefinition,
+    )
+    from dagster._core.event_api import EventLogRecord, EventRecordsResult
     from dagster._core.events import DagsterEventType
     from dagster._core.events.log import EventLogEntry
     from dagster._core.instance import DagsterInstance
@@ -30,7 +33,10 @@ if TYPE_CHECKING:
         AssetRecordsFilter,
         PlannedMaterializationInfo,
     )
-    from dagster._core.storage.partition_status_cache import AssetStatusCacheValue
+    from dagster._core.storage.partition_status_cache import (
+        AssetPartitionStatus,
+        AssetStatusCacheValue,
+    )
 
 
 class AssetDomain:
@@ -494,3 +500,115 @@ class AssetDomain:
         Moved from DagsterInstance.get_minimal_asset_materialization_health_state_for_assets().
         """
         return None
+
+    def get_status_by_partition(
+        self,
+        asset_key: AssetKey,
+        partition_keys: Sequence[str],
+        partitions_def: "PartitionsDefinition",
+    ) -> Optional[Mapping[str, "AssetPartitionStatus"]]:
+        """Get the current status of provided partition_keys for the provided asset.
+        Moved from DagsterInstance.get_status_by_partition().
+
+        Args:
+            asset_key (AssetKey): The asset to get per-partition status for.
+            partition_keys (Sequence[str]): The partitions to get status for.
+            partitions_def (PartitionsDefinition): The PartitionsDefinition of the asset to get
+                per-partition status for.
+
+        Returns:
+            Optional[Mapping[str, AssetPartitionStatus]]: status for each partition key
+
+        """
+        from dagster._core.storage.partition_status_cache import (
+            AssetPartitionStatus,
+            AssetStatusCacheValue,
+            get_and_update_asset_status_cache_value,
+        )
+
+        cached_value = get_and_update_asset_status_cache_value(
+            self._instance, asset_key, partitions_def
+        )
+
+        if isinstance(cached_value, AssetStatusCacheValue):
+            materialized_partitions = cached_value.deserialize_materialized_partition_subsets(
+                partitions_def
+            )
+            failed_partitions = cached_value.deserialize_failed_partition_subsets(partitions_def)
+            in_progress_partitions = cached_value.deserialize_in_progress_partition_subsets(
+                partitions_def
+            )
+
+            status_by_partition = {}
+
+            for partition_key in partition_keys:
+                if partition_key in in_progress_partitions:
+                    status_by_partition[partition_key] = AssetPartitionStatus.IN_PROGRESS
+                elif partition_key in failed_partitions:
+                    status_by_partition[partition_key] = AssetPartitionStatus.FAILED
+                elif partition_key in materialized_partitions:
+                    status_by_partition[partition_key] = AssetPartitionStatus.MATERIALIZED
+                else:
+                    status_by_partition[partition_key] = None
+
+            return status_by_partition
+
+    def get_latest_data_version_record(
+        self,
+        key: AssetKey,
+        is_source: Optional[bool] = None,
+        partition_key: Optional[str] = None,
+        before_cursor: Optional[int] = None,
+        after_cursor: Optional[int] = None,
+    ) -> Optional["EventLogRecord"]:
+        """Get the latest data version record for an asset.
+        Moved from DagsterInstance.get_latest_data_version_record().
+
+        Args:
+            key (AssetKey): The asset key to get the latest data version record for.
+            is_source (Optional[bool]): Whether the asset is a source asset. If True, fetches
+                observations. If False, fetches materializations. If None, fetches materializations
+                first, then observations if no materialization found.
+            partition_key (Optional[str]): The partition key to filter by.
+            before_cursor (Optional[int]): Only return records with storage ID less than this.
+            after_cursor (Optional[int]): Only return records with storage ID greater than this.
+
+        Returns:
+            Optional[EventLogRecord]: The latest data version record, or None if not found.
+        """
+        from dagster._core.storage.event_log.base import AssetRecordsFilter
+
+        records_filter = AssetRecordsFilter(
+            asset_key=key,
+            asset_partitions=[partition_key] if partition_key else None,
+            before_storage_id=before_cursor,
+            after_storage_id=after_cursor,
+        )
+
+        if is_source is True:
+            # this is a source asset, fetch latest observation record
+            return next(
+                iter(self._instance.fetch_observations(records_filter, limit=1).records), None
+            )
+
+        elif is_source is False:
+            # this is not a source asset, fetch latest materialization record
+            return next(
+                iter(self._instance.fetch_materializations(records_filter, limit=1).records), None
+            )
+
+        else:
+            assert is_source is None
+            # if is_source is None, the requested key could correspond to either a source asset or
+            # materializable asset. If there is a non-null materialization, we are dealing with a
+            # materializable asset and should just return that.  If not, we should check for any
+            # observation records that may match.
+
+            materialization = next(
+                iter(self._instance.fetch_materializations(records_filter, limit=1).records), None
+            )
+            if materialization:
+                return materialization
+            return next(
+                iter(self._instance.fetch_observations(records_filter, limit=1).records), None
+            )
