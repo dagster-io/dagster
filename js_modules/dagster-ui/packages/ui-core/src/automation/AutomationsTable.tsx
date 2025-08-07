@@ -7,8 +7,8 @@ import {ObserveAutomationSensorRow} from './ObserveAutomationSensorRow';
 import {VirtualizedAutomationHeader} from './VirtualizedAutomationRow';
 import {VirtualizedAutomationScheduleRow} from './VirtualizedAutomationScheduleRow';
 import {VirtualizedAutomationSensorRow} from './VirtualizedAutomationSensorRow';
-import {useFeatureFlags} from '../app/Flags';
 import {COMMON_COLLATOR} from '../app/Util';
+import {useFeatureFlags} from '../app/useFeatureFlags';
 import {OVERVIEW_COLLAPSED_KEY} from '../overview/OverviewExpansionKey';
 import {makeAutomationKey} from '../sensors/makeSensorKey';
 import {Container, Inner} from '../ui/VirtualizedTable';
@@ -90,7 +90,7 @@ export const AutomationsTable = ({
     getScrollElement: () => parentRef.current,
     estimateSize: (ii: number) => {
       const row = flattened[ii];
-      return row?.type === 'header' ? 32 : 64;
+      return row?.type === 'header' ? 32 : 62;
     },
     overscan: 15,
   });

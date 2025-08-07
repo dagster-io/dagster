@@ -3,7 +3,7 @@ from pathlib import Path
 import pytest
 from dagster._core.errors import DagsterInvariantViolationError
 from dagster._core.utils import make_new_run_id
-from dagster.components.core.tree import ComponentTree
+from dagster.components.core.component_tree import ComponentTree
 from dagster_k8s.component import PipesK8sComponent
 from dagster_k8s.pipes import _DEV_NULL_MESSAGE_WRITER, build_pod_body, get_pod_name
 from dagster_k8s.utils import detect_current_namespace

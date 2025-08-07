@@ -9,13 +9,13 @@ import dagster as dg
 import pytest
 from dagster._api.list_repositories import sync_list_repositories_grpc
 from dagster._core.errors import DagsterUserCodeUnreachableError
-from dagster._core.remote_representation.external_data import SensorExecutionErrorSnap
-from dagster._core.remote_representation.origin import (
+from dagster._core.remote_origin import (
     GrpcServerCodeLocationOrigin,
     RegisteredCodeLocationOrigin,
     RemoteJobOrigin,
     RemoteRepositoryOrigin,
 )
+from dagster._core.remote_representation.external_data import SensorExecutionErrorSnap
 from dagster._core.storage.dagster_run import DagsterRunStatus
 from dagster._core.test_utils import create_run_for_test, environ, new_cwd, poll_for_finished_run
 from dagster._core.types.loadable_target_origin import LoadableTargetOrigin

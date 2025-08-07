@@ -1,1 +1,1 @@
-export const ViewBreadcrumb = (_: {full?: boolean}) => <div>Assets</div>;
+export const ViewBreadcrumb = (_: any) => <div>Assets</div>;

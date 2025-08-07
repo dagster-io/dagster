@@ -21,7 +21,7 @@ if TYPE_CHECKING:
 def _repository_contains_dynamic_partitions_def(
     graphene_info, repository_selector: RepositorySelector, partitions_def_name: str
 ) -> bool:
-    from dagster._core.remote_representation.external_data import (
+    from dagster._core.definitions.partitions.snap import (
         DynamicPartitionsSnap,
         MultiPartitionsSnap,
         PartitionsSnap,

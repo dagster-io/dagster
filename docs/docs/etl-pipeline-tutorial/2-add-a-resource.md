@@ -17,7 +17,7 @@ First, we will need to install the `dagster-duckdb` and `pandas` libraries:
       Install the required dependencies:
 
          ```shell
-         uv pip install dagster-duckdb pandas
+         uv add dagster-duckdb pandas
          ```
 
    </TabItem>

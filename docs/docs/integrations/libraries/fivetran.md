@@ -116,12 +116,14 @@ To select a subset of Fivetran connectors for which your Fivetran assets will be
 
 <CodeExample path="docs_snippets/docs_snippets/integrations/fivetran/select_fivetran_connectors.py" language="python" />
 
-
 ### Load Fivetran assets using a snapshot
 
 Fivetran assets can be loaded using the snapshot of a Fivetran workspace, which allows organizations with large amounts of Fivetran data to speed up their deployment process.
 
-<CodeExample path="docs_snippets/docs_snippets/integrations/fivetran/fivetran_workspace_snapshot.py" language="python" />
+<CodeExample
+  path="docs_snippets/docs_snippets/integrations/fivetran/fivetran_workspace_snapshot.py"
+  language="python"
+/>
 
 To capture the snapshot, the `dagster-fivetran snapshot` CLI can be used.
 
@@ -129,6 +131,30 @@ To capture the snapshot, the `dagster-fivetran snapshot` CLI can be used.
 dagster-fivetran snapshot --python-module my_dagster_package --output-path snapshot.snap
 ```
 
+### Creating Fivetran jobs and schedules
+
+Once you have your Fivetran assets, you can define a job to materialize all of them.
+
+<CodeExample
+  path="docs_snippets/docs_snippets/integrations/fivetran/create_fivetran_all_assets_job.py"
+  language="python"
+/>
+
+You can also define a job for a selection of these assets, or for the assets of a single connector.
+
+<CodeExample
+  path="docs_snippets/docs_snippets/integrations/fivetran/create_fivetran_selection_job.py"
+  language="python"
+/>
+
+Finally, jobs created for your Fivetran assets can be scheduled.
+
+<CodeExample
+  startAfter="start_fivetran_schedule"
+  endBefore="end_fivetran_schedule"
+  path="docs_snippets/docs_snippets/integrations/fivetran/schedule_fivetran_jobs.py"
+  language="python"
+/>
 
 ### Load Fivetran assets from multiple workspaces
 

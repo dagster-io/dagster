@@ -1,0 +1,12 @@
+jaffle_shop:
+  target: snowflake
+  outputs:
+    snowflake:
+      type: snowflake
+      account: "{{ env_var('SNOWFLAKE_ACCOUNT') }}"
+      user: BUILDKITE
+      password: "{{ env_var('SNOWFLAKE_BUILDKITE_PASSWORD') }}"
+      client_session_keep_alive: False
+      database: TESTDB
+      schema: TESTSCHEMA
+      warehouse: BUILDKITE

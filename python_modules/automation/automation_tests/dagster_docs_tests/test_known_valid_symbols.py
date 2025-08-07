@@ -29,11 +29,6 @@ SYMBOL_EXCLUDE_LIST = {
     "dagster.config_mapping",  # Module resolution error
     "dagster.configured",  # Module resolution error
     "dagster.scaffold_with",  # Module resolution error
-    # Components with YAML code snippets that should use .. code-block:: yaml instead
-    "dagster.Component",  # Contains literal YAML with "attributes:" that gets flagged as section header
-    "dagster.DefsFolderComponent",  # Contains literal YAML with "attributes:" that gets flagged as section header
-    "dagster.PythonScriptComponent",  # Contains literal YAML with "attributes:" that gets flagged as section header
-    "dagster.UvRunComponent",  # Contains literal YAML with "attributes:" that gets flagged as section header
     # Invalid section headers that need to be fixed
     "dagster.ExecuteInProcessResult",  # Invalid section header: "This object is returned by:" should be restructured
     "dagster.asset_check",  # Invalid section header: "Example with a DataFrame Output:" should be "Examples:"

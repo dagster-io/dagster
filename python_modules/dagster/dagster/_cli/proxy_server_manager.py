@@ -10,13 +10,13 @@ from typing_extensions import Self
 import dagster._check as check
 from dagster._core.errors import DagsterUserCodeUnreachableError
 from dagster._core.instance import DagsterInstance
+from dagster._core.remote_origin import (
+    GrpcServerCodeLocationOrigin,
+    ManagedGrpcPythonEnvCodeLocationOrigin,
+)
 from dagster._core.remote_representation.grpc_server_registry import (
     GrpcServerRegistry,
     ServerRegistryEntry,
-)
-from dagster._core.remote_representation.origin import (
-    GrpcServerCodeLocationOrigin,
-    ManagedGrpcPythonEnvCodeLocationOrigin,
 )
 from dagster._core.workspace.context import WEBSERVER_GRPC_SERVER_HEARTBEAT_TTL
 from dagster._core.workspace.load_target import WorkspaceLoadTarget

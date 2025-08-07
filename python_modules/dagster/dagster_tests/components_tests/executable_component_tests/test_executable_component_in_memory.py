@@ -4,7 +4,7 @@ from typing import Any, Optional
 import dagster as dg
 from dagster._core.definitions.asset_key import CoercibleToAssetKey
 from dagster._core.definitions.asset_selection import AssetSelection
-from dagster.components.core.tree import ComponentTree
+from dagster.components.core.component_tree import ComponentTree
 from dagster.components.lib.executable_component.component import ExecutableComponent
 from dagster.components.lib.executable_component.function_component import (
     FunctionComponent,

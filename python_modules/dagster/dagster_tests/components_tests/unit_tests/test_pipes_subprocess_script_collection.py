@@ -2,7 +2,7 @@ import importlib
 from pathlib import Path
 
 import dagster as dg
-from dagster.components.core.tree import LegacyAutoloadingComponentTree
+from dagster.components.core.component_tree import LegacyAutoloadingComponentTree
 
 LOCATION_PATH = Path(__file__).parent.parent / "code_locations" / "python_script_location"
 

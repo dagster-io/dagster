@@ -118,6 +118,9 @@ run_launcher:
 telemetry:
   enabled: true
 
+nux:
+  enabled: true
+
 run_monitoring:
   enabled: true
   poll_interval_seconds: 60
@@ -256,6 +259,15 @@ Controls whether Dagster collects anonymized usage statistics.
 
 ```yaml
 telemetry:
+  enabled: false
+```
+
+### `nux`
+
+Controls whether Dagster displays the new-user experience (NUX) to the first user who connects to this Dagster instance.
+
+```yaml
+nux:
   enabled: false
 ```
 

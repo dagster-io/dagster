@@ -1,6 +1,6 @@
 import {
+  BodySmall,
   Box,
-  Caption,
   Checkbox,
   Colors,
   HorizontalControls,
@@ -176,13 +176,13 @@ export const ObserveAutomationSensorRow = forwardRef(
                   </Tooltip>
                 ) : null}
               </Box>
-              <Caption>
+              <BodySmall>
                 {sensorData?.sensorType ? (
                   sensorTypeToLabel[sensorData.sensorType]
                 ) : (
                   <Skeleton $width={80} $height={16} />
                 )}
-              </Caption>
+              </BodySmall>
             </Box>
           </Box>
         }

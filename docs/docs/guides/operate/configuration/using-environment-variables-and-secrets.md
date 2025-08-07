@@ -75,8 +75,8 @@ In this section, we'll demonstrate how to access environment variables once they
 
 To access environment variables in your code, you can either use the [`os.getenv`](https://docs.python.org/3/library/os.html#os.getenv) function or the Dagster <PyObject section="resources" module="dagster" object="EnvVar"/> class.
 
-* **When you use `os.getenv`**, the variable's value is retrieved when Dagster loads the code location and **will** be visible in the UI.
-* **When you use EnvVar**, the variable's value is retrieved at runtime and **won't** be visible in the UI.
+- **When you use `os.getenv`**, the variable's value is retrieved when Dagster loads the code location and **will** be visible in the UI.
+- **When you use EnvVar**, the variable's value is retrieved at runtime and **won't** be visible in the UI.
 
 Using the `EnvVar` approach has a few unique benefits:
 

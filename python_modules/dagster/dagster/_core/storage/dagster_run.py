@@ -12,8 +12,14 @@ import dagster._check as check
 from dagster._annotations import PublicAttr, public
 from dagster._core.definitions.asset_checks.asset_check_spec import AssetCheckKey
 from dagster._core.definitions.events import AssetKey
+from dagster._core.definitions.partitions.subset import (
+    KeyRangesPartitionsSubset,
+    PartitionsSubset,
+    TimeWindowPartitionsSubset,
+)
 from dagster._core.loader import LoadableBy, LoadingContext
 from dagster._core.origin import JobPythonOrigin
+from dagster._core.remote_origin import RemoteJobOrigin
 from dagster._core.storage.tags import (
     ASSET_EVALUATION_ID_TAG,
     AUTO_RETRY_RUN_ID_TAG,
@@ -37,7 +43,6 @@ if TYPE_CHECKING:
     from dagster._core.definitions.schedule_definition import ScheduleDefinition
     from dagster._core.definitions.sensor_definition import SensorDefinition
     from dagster._core.remote_representation.external import RemoteSchedule, RemoteSensor
-    from dagster._core.remote_representation.origin import RemoteJobOrigin
     from dagster._core.scheduler.instigation import InstigatorState
 
 
@@ -295,10 +300,11 @@ class DagsterRun(
             ("parent_run_id", Optional[str]),
             ("job_snapshot_id", Optional[str]),
             ("execution_plan_snapshot_id", Optional[str]),
-            ("remote_job_origin", Optional["RemoteJobOrigin"]),
+            ("remote_job_origin", Optional[RemoteJobOrigin]),
             ("job_code_origin", Optional[JobPythonOrigin]),
             ("has_repository_load_data", bool),
             ("run_op_concurrency", Optional[RunOpConcurrency]),
+            ("partitions_subset", Optional[PartitionsSubset]),
         ],
     )
 ):
@@ -324,6 +330,7 @@ class DagsterRun(
         job_code_origin (Optional[JobPythonOrigin]): The origin of the job code.
         has_repository_load_data (bool): Whether the run has repository load data.
         run_op_concurrency (Optional[RunOpConcurrency]): The op concurrency information for the run.
+        partitions_subset (Optional[PartitionsSubset]): The subset of partitions to execute.
     """
 
     def __new__(
@@ -346,6 +353,7 @@ class DagsterRun(
         job_code_origin: Optional[JobPythonOrigin] = None,
         has_repository_load_data: Optional[bool] = None,
         run_op_concurrency: Optional[RunOpConcurrency] = None,
+        partitions_subset: Optional[PartitionsSubset] = None,
     ):
         check.invariant(
             (root_run_id is not None and parent_run_id is not None)
@@ -371,7 +379,7 @@ class DagsterRun(
 
         # Placing this with the other imports causes a cyclic import
         # https://github.com/dagster-io/dagster/issues/3181
-        from dagster._core.remote_representation.origin import RemoteJobOrigin
+        from dagster._core.remote_origin import RemoteJobOrigin
 
         if status == DagsterRunStatus.QUEUED:
             check.inst_param(
@@ -416,6 +424,13 @@ class DagsterRun(
             run_op_concurrency=check.opt_inst_param(
                 run_op_concurrency, "run_op_concurrency", RunOpConcurrency
             ),
+            # Only support storing time window partitions subsets on the run for now, other
+            # partitions subsets are too big
+            partitions_subset=check.opt_inst_param(
+                partitions_subset,
+                "partitions_subset",
+                (TimeWindowPartitionsSubset, KeyRangesPartitionsSubset),
+            ),
         )
 
     def with_status(self, status: DagsterRunStatus) -> Self:
@@ -431,7 +446,7 @@ class DagsterRun(
         return self._replace(status=status)
 
     def with_job_origin(self, origin: "RemoteJobOrigin") -> Self:
-        from dagster._core.remote_representation.origin import RemoteJobOrigin
+        from dagster._core.remote_origin import RemoteJobOrigin
 
         check.inst_param(origin, "origin", RemoteJobOrigin)
         return self._replace(remote_job_origin=origin)

@@ -66,6 +66,7 @@ yarn build-api-docs          # Build API docs after .rst changes
 - Follow Google-style docstrings
 - **ALWAYS use `@record` from `dagster_shared.record` for data structures, result objects, and immutable classes**
 - Only use `@dataclass` when mutability is specifically required
+- **NEVER use `__all__` in subpackage `__init__.py` files** - only use `__all__` in top-level package `__init__.py` files to define public APIs
 
 ## Code Quality Requirements
 
@@ -103,4 +104,23 @@ yarn build-api-docs          # Build API docs after .rst changes
 
 ## Development Best Practices
 
-- ALWAYS run make ruff and make quick_pyright from repository root directory
+- ALWAYS run make ruff and make quick_pyright from the root of this repository, no matter what your working directory is
+
+## Make Command Guidelines
+
+- Whenever there is an instruction to run a make command, ALWAYS cd to $DAGSTER_GIT_REPO_DIR, as the Makefile is at the root of the repository
+
+## PR Stack Operations
+
+### Finding GitHub Usernames Efficiently
+
+- **Best method**: `gh search commits "FirstName" --author="Full Name" --repo=dagster-io/dagster`
+- **Why effective**: Co-authored commits reveal exact GitHub username format
+- **Alternative**: Check recent PRs or issues for the person's contributions
+
+### Stack Operations Always Use GT
+
+- **Key rule**: When someone mentions "stacking" or "stack", always use `gt` commands first
+- **Reason**: GT is the source of truth for stack metadata and relationships
+- **Primary command**: `gt log` provides comprehensive PR numbers, statuses, and branch relationships
+- **Impact**: Single command reveals entire stack structure vs. manual discovery

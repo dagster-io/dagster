@@ -40,7 +40,7 @@ Here, we define a basic asset in `assets.py` and its configurable parameters in 
 </TabItem>
 <TabItem value="Using ops and jobs">
 
-Here, we define a basic op in `ops.py` and its configurable parameters in `resources.py`. `MyOpConfig` is a subclass of <PyObject section="config" module="dagster" object="Config"/> that holds a single string value representing the name of a user. This config can be accessed through the `config` parameter in the asset body:
+Here, we define a basic op in `ops.py` and its configurable parameters in `resources.py`. `MyOpConfig` is a subclass of <PyObject section="config" module="dagster" object="Config"/> that holds a single string value representing the name of a user. This config can be accessed through the `config` parameter in the op body:
 
 <CodeExample
   path="docs_snippets/docs_snippets/guides/operate/configuration/run_config/op_example/ops.py"
@@ -63,9 +63,7 @@ These examples showcase the most basic config types that can be used. For more i
 
 Configurable parameters for a resource are defined by specifying attributes for a resource class, which subclasses <PyObject section="resources" module="dagster" object="ConfigurableResource"/>. The below resource defines a configurable connection URL, which can be accessed in any methods defined on the resource:
 
-<CodeExample
-  path="docs_snippets/docs_snippets/guides/operate/configuration/run_config/resource_example/resources.py"
-/>
+<CodeExample path="docs_snippets/docs_snippets/guides/operate/configuration/run_config/resource_example/resources.py" />
 
 For more information on using resources, see the [External resources documentation](/guides/build/external-resources).
 

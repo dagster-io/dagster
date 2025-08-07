@@ -96,6 +96,7 @@ from dagster._core.definitions.freshness import InternalFreshnessPolicy
 from dagster._core.definitions.freshness_policy import LegacyFreshnessPolicy
 from dagster._core.definitions.job_definition import JobDefinition
 from dagster._core.definitions.metadata import MetadataValue
+from dagster._core.definitions.metadata.metadata_value import ObjectMetadataValue
 from dagster._core.definitions.partitions.definition import (
     DailyPartitionsDefinition,
     DynamicPartitionsDefinition,
@@ -682,6 +683,9 @@ def composites_job():
     div_four(add_four())
 
 
+class SomeClass: ...
+
+
 @job
 def materialization_job():
     @op
@@ -723,6 +727,7 @@ def materialization_job():
                     ),
                 ),
                 "my job": MetadataValue.job("materialization_job", location_name="test_location"),
+                "some_class": ObjectMetadataValue(SomeClass()),
             },
         )
         yield Output(None)

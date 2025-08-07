@@ -32,12 +32,8 @@ from dagster._core.execution.asset_backfill import (
 )
 from dagster._core.execution.backfill import BulkActionStatus, PartitionBackfill
 from dagster._core.execution.plan.resume_retry import ReexecutionStrategy
-from dagster._core.remote_representation import (
-    CodeLocation,
-    InProcessCodeLocationOrigin,
-    RemoteRepository,
-    RemoteRepositoryOrigin,
-)
+from dagster._core.remote_origin import InProcessCodeLocationOrigin, RemoteRepositoryOrigin
+from dagster._core.remote_representation import CodeLocation, RemoteRepository
 from dagster._core.storage.compute_log_manager import ComputeIOType
 from dagster._core.storage.dagster_run import (
     IN_PROGRESS_RUN_STATUSES,
@@ -2565,7 +2561,17 @@ def test_complex_asset_with_backfill_policy(
         )
     )
 
-    # 1 run for the full range
+    backfill = instance.get_backfill(backfill_id)
+    assert backfill
+    assert backfill.status == BulkActionStatus.REQUESTED
+    assert set(
+        check.not_none(backfill.asset_backfill_data).requested_subset.iterate_asset_partitions()
+    ) == {
+        AssetKeyPartitionKey(asset_with_single_run_backfill_policy.key, partition)
+        for partition in partitions
+    }
+
+    # 1 run for the full range of the upstream partition
     assert instance.get_runs_count() == 1
     wait_for_all_runs_to_start(instance, timeout=30)
     wait_for_all_runs_to_finish(instance, timeout=30)
@@ -2578,6 +2584,22 @@ def test_complex_asset_with_backfill_policy(
             )
         )
     )
+
+    # 1 run for the full range of the downstream partition
+
+    assert instance.get_runs_count() == 2
+    wait_for_all_runs_to_start(instance, timeout=30)
+    wait_for_all_runs_to_finish(instance, timeout=30)
+
+    assert all(
+        not error
+        for error in list(
+            execute_backfill_iteration(
+                workspace_context, get_default_daemon_logger("BackfillDaemon")
+            )
+        )
+    )
+
     backfill = instance.get_backfill(backfill_id)
     assert backfill
     assert backfill.status == BulkActionStatus.COMPLETED_SUCCESS

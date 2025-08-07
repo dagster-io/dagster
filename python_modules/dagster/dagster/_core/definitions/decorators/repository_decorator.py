@@ -33,7 +33,7 @@ if TYPE_CHECKING:
         CacheableAssetsDefinition,
     )
     from dagster._core.definitions.definitions_load_context import DefinitionsLoadContext
-    from dagster.components.core.tree import ComponentTree
+    from dagster.components.core.component_tree import ComponentTree
 
 T = TypeVar("T")
 

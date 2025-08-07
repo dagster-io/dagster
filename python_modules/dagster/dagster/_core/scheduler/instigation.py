@@ -21,7 +21,7 @@ from dagster._core.definitions.run_request import (
 )
 from dagster._core.definitions.selector import InstigatorSelector, RepositorySelector
 from dagster._core.definitions.sensor_definition import SensorType
-from dagster._core.remote_representation.origin import RemoteInstigatorOrigin
+from dagster._core.remote_origin import RemoteInstigatorOrigin
 from dagster._serdes import create_snapshot_id
 from dagster._time import get_current_timestamp, utc_datetime_from_naive
 from dagster._utils import xor

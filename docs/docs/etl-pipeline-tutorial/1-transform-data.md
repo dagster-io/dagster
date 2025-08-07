@@ -40,7 +40,7 @@ Now that we have a dbt project to work with, we need to install both the Dagster
       Install the required dependencies:
 
          ```shell
-         uv pip install dagster-dbt dbt-duckdb
+         uv add dagster-dbt dbt-duckdb
          ```
 
    </TabItem>

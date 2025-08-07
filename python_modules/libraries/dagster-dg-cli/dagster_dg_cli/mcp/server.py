@@ -1,12 +1,13 @@
 import subprocess
 from collections.abc import Sequence
+from typing import Optional
 
 from mcp.server.fastmcp import FastMCP
 
 mcp = FastMCP("dagster-dg-cli")
 
 
-def _subprocess(command: Sequence[str], cwd: str) -> str:
+def _subprocess(command: Sequence[str], cwd: Optional[str] = None) -> str:
     """Execute a subprocess command and return decoded output.
 
     Wrapper around subprocess.check_output that captures both stdout and stderr,
@@ -270,6 +271,34 @@ async def list_dagster_definitions(project_path: str) -> str:
             "dg",
             "list",
             "defs",
+            "--json",
+        ],
+        cwd=project_path,
+    )
+
+
+@mcp.tool()
+async def list_available_integrations(project_path: str) -> str:
+    """Retrieve an index of all available Dagster integrations in the marketplace.
+
+    This provides information on integrations in the marketplace that are available for
+    installation. It is a helpful resource for determine which tools are available, and provides
+    context for determining which integration may be relevant when scaffolding components.
+
+    Args:
+        project_path: Absolute filesystem path to the root directory of your Dagster project
+                     (the directory containing pyproject.toml with [tool.dg] or dg.toml).
+
+    Returns:
+        JSON-formatted metadata about all integrations available for installation, including
+        their name, description, and pypi installation url. This resource is useful for determining
+        which integrations to use when scaffolding pipelines.
+    """
+    return _subprocess(
+        [
+            "dg",
+            "docs",
+            "integrations",
             "--json",
         ],
         cwd=project_path,

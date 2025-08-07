@@ -76,20 +76,23 @@ export const AssetCatalogHorizontalTopAssetsChart = React.memo(
             </div>
           </Box>
           <Box className={styles.table} margin={{vertical: 20}}>
-            {currentPageValues.map(({label, value}, i) => (
-              <React.Fragment key={i}>
-                <Body as="div" color={Colors.textLight()}>
-                  <Link to={assetDetailsPathForKey(tokenToAssetKey(label))}>
-                    <MiddleTruncate text={label} />
-                  </Link>
-                </Body>
-                <Mono color={Colors.textDefault()} className={styles.tableValue}>
-                  {numberFormatter.format(Math.round(value))}
-                </Mono>
-                {/* eslint-disable-next-line @typescript-eslint/no-non-null-assertion */}
-                <DistributionChartRow maxValue={maxValue!} value={Math.round(value)} />
-              </React.Fragment>
-            ))}
+            {currentPageValues.map(({label, value}, i) => {
+              const assetKey = tokenToAssetKey(label.split(' / ').join('/'));
+              return (
+                <React.Fragment key={i}>
+                  <Body as="div" color={Colors.textLight()}>
+                    <Link to={assetDetailsPathForKey(assetKey)}>
+                      <MiddleTruncate text={label} />
+                    </Link>
+                  </Body>
+                  <Mono color={Colors.textDefault()} className={styles.tableValue}>
+                    {numberFormatter.format(Math.round(value))}
+                  </Mono>
+                  {/* eslint-disable-next-line @typescript-eslint/no-non-null-assertion */}
+                  <DistributionChartRow maxValue={maxValue!} value={Math.round(value)} />
+                </React.Fragment>
+              );
+            })}
           </Box>
         </div>
         {totalPages > 1 && (

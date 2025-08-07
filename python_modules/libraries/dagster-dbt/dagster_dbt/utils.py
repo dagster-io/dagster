@@ -1,11 +1,17 @@
 from argparse import Namespace
 from collections.abc import Mapping
-from typing import AbstractSet, Any, cast  # noqa: UP035
+from typing import TYPE_CHECKING, AbstractSet, Any, Optional, cast  # noqa: UP035
 
 import dagster_shared.check as check
+import orjson
 from dagster import AssetKey
 from dagster._utils.names import clean_name_lower
 from packaging import version
+
+from dagster_dbt.compat import DBT_PYTHON_VERSION
+
+if TYPE_CHECKING:
+    from dagster_dbt.core.resource import DbtProject
 
 # dbt resource types that may be considered assets
 ASSET_RESOURCE_TYPES = ["model", "seed", "snapshot"]
@@ -22,11 +28,58 @@ def dagster_name_fn(dbt_resource_props: Mapping[str, Any]) -> str:
     return dbt_resource_props["unique_id"].replace(".", "_").replace("-", "_").replace("*", "_star")
 
 
-def select_unique_ids_from_manifest(
+def select_unique_ids(
     select: str,
     exclude: str,
     selector: str,
+    project: Optional["DbtProject"],
     manifest_json: Mapping[str, Any],
+) -> AbstractSet[str]:
+    """Given dbt selection paramters, return the unique ids of all resources that match that selection."""
+    if DBT_PYTHON_VERSION is not None:
+        return _select_unique_ids_from_manifest(select, exclude, selector, manifest_json)
+    else:
+        project = check.not_none(project, "project must be passed if dbt-core is not installed")
+        return _select_unique_ids_from_cli(select, exclude, selector, project)
+
+
+def _select_unique_ids_from_cli(
+    select: str,
+    exclude: str,
+    selector: str,
+    project: "DbtProject",
+) -> AbstractSet[str]:
+    """Uses the available dbt CLI to list the unique ids of the selected models. This is not recommended if
+    dbt-core is available, as it will be slower than using the manifest.
+    """
+    from dagster_dbt.core.resource import DbtCliResource
+
+    cmd = ["list", "--output", "json"]
+    if select and select != "fqn:*":
+        cmd.append("--select")
+        cmd.append(select)
+    if exclude:
+        cmd.append("--exclude")
+        cmd.append(exclude)
+    if selector:
+        cmd.append("--selector")
+        cmd.append(selector)
+
+    raw_events = DbtCliResource(project_dir=project).cli(cmd)._stream_stdout()  # noqa
+    unique_ids = set()
+    for event in raw_events:
+        if isinstance(event, dict):
+            try:
+                msg = orjson.loads(event.get("info", {}).get("msg", "{}"))
+            except orjson.JSONDecodeError:
+                continue
+            unique_ids.add(msg.get("unique_id"))
+
+    return unique_ids - {None}
+
+
+def _select_unique_ids_from_manifest(
+    select: str, exclude: str, selector: str, manifest_json: Mapping[str, Any]
 ) -> AbstractSet[str]:
     """Method to apply a selection string to an existing manifest.json file."""
     import dbt.graph.cli as graph_cli
@@ -35,7 +88,6 @@ def select_unique_ids_from_manifest(
     from dbt.contracts.graph.nodes import SavedQuery, SemanticModel
     from dbt.contracts.selection import SelectorFile
     from dbt.graph.selector_spec import IndirectSelection, SelectionSpec
-    from dbt.version import __version__ as dbt_version
     from networkx import DiGraph
 
     select_specified = select and select != "fqn:*"
@@ -59,7 +111,7 @@ def select_unique_ids_from_manifest(
             return _DictShim(ret) if isinstance(ret, dict) else ret
 
     unit_tests = {}
-    if version.parse(dbt_version) >= version.parse("1.8.0"):
+    if DBT_PYTHON_VERSION is not None and DBT_PYTHON_VERSION >= version.parse("1.8.0"):
         from dbt.contracts.graph.nodes import UnitTestDefinition
 
         unit_tests = (

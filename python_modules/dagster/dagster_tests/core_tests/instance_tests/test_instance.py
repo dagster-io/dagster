@@ -1,3 +1,4 @@
+import datetime
 import json
 import os
 import re
@@ -17,6 +18,7 @@ from dagster import (
 from dagster._check import CheckError
 from dagster._cli.utils import get_instance_for_cli
 from dagster._core.definitions.assets.definition.asset_spec import AssetExecutionType
+from dagster._core.definitions.partitions.partition_key_range import PartitionKeyRange
 from dagster._core.errors import DagsterHomeNotSetError
 from dagster._core.execution.api import create_execution_plan
 from dagster._core.instance import DagsterInstance, InstanceRef
@@ -34,6 +36,7 @@ from dagster._core.storage.sqlite_storage import (
 from dagster._core.storage.tags import (
     ASSET_PARTITION_RANGE_END_TAG,
     ASSET_PARTITION_RANGE_START_TAG,
+    PARTITION_NAME_TAG,
 )
 from dagster._core.test_utils import (
     TestSecretsLoader,
@@ -277,11 +280,21 @@ def noop_asset():
     pass
 
 
+@dg.asset(partitions_def=dg.DailyPartitionsDefinition(start_date=datetime.datetime(2025, 1, 1)))
+def noop_time_window_asset():
+    pass
+
+
 noop_asset_defs = dg.Definitions(
-    assets=[noop_asset], jobs=[dg.define_asset_job("noop_asset_job", [noop_asset])]
+    assets=[noop_asset, noop_time_window_asset],
+    jobs=[
+        dg.define_asset_job("noop_asset_job", [noop_asset]),
+        dg.define_asset_job("noop_time_window_asset_job", [noop_time_window_asset]),
+    ],
 )
 
 noop_asset_job = noop_asset_defs.resolve_job_def("noop_asset_job")
+noop_time_window_asset_job = noop_asset_defs.resolve_job_def("noop_time_window_asset_job")
 
 
 def test_create_job_snapshot():
@@ -419,6 +432,100 @@ def test_create_run_with_asset_partitions():
             tags={ASSET_PARTITION_RANGE_START_TAG: "bar", ASSET_PARTITION_RANGE_END_TAG: "foo"},
             asset_graph=noop_asset_job.asset_layer.asset_graph,
         )
+
+
+def test_create_run_with_partitioned_asset_stores_partitions_snapshot():
+    with dg.instance_for_test() as instance:
+        execution_plan = create_execution_plan(noop_time_window_asset_job)
+
+        ep_snapshot = snapshot_from_execution_plan(
+            execution_plan, noop_time_window_asset_job.get_job_snapshot_id()
+        )
+
+        # ranged run
+        run = create_run_for_test(
+            instance=instance,
+            job_name="foo",
+            execution_plan_snapshot=ep_snapshot,
+            job_snapshot=noop_time_window_asset_job.get_job_snapshot(),
+            tags={
+                ASSET_PARTITION_RANGE_START_TAG: "2025-1-1",
+                ASSET_PARTITION_RANGE_END_TAG: "2025-1-4",
+            },
+            asset_graph=noop_time_window_asset_job.asset_layer.asset_graph,
+        )
+        partitions_def = noop_time_window_asset_job.asset_layer.asset_graph.get(
+            dg.AssetKey("noop_time_window_asset")
+        ).partitions_def
+        assert partitions_def is not None
+
+        assert run.partitions_subset is not None
+        assert run.partitions_subset == partitions_def.subset_with_partition_keys(
+            partitions_def.get_partition_keys_in_range(
+                PartitionKeyRange(
+                    "2025-1-1",
+                    "2025-1-4",
+                )
+            )
+        )
+
+        # single partition
+        run = create_run_for_test(
+            instance=instance,
+            job_name="foo",
+            execution_plan_snapshot=ep_snapshot,
+            job_snapshot=noop_time_window_asset_job.get_job_snapshot(),
+            tags={
+                PARTITION_NAME_TAG: "2025-1-1",
+            },
+            asset_graph=noop_time_window_asset_job.asset_layer.asset_graph,
+        )
+        partitions_def = noop_time_window_asset_job.asset_layer.asset_graph.get(
+            dg.AssetKey("noop_time_window_asset")
+        ).partitions_def
+        assert partitions_def is not None
+
+        assert run.partitions_subset is not None
+        assert run.partitions_subset == partitions_def.subset_with_partition_keys(
+            partitions_def.get_partition_keys_in_range(
+                PartitionKeyRange(
+                    "2025-1-1",
+                    "2025-1-1",
+                )
+            )
+        )
+
+        # a run created with no partition key but targeting a partitioned asset should not store a
+        # partitions subset
+        run = create_run_for_test(
+            instance=instance,
+            job_name="foo",
+            execution_plan_snapshot=ep_snapshot,
+            job_snapshot=noop_time_window_asset_job.get_job_snapshot(),
+            tags={},
+            asset_graph=noop_time_window_asset_job.asset_layer.asset_graph,
+        )
+        assert run.partitions_subset is None
+
+        # assets with non-time window partitions do not store the partitions definition on the run
+        execution_plan = create_execution_plan(noop_asset_job)
+
+        ep_snapshot = snapshot_from_execution_plan(
+            execution_plan, noop_asset_job.get_job_snapshot_id()
+        )
+
+        run = create_run_for_test(
+            instance=instance,
+            job_name="foo",
+            execution_plan_snapshot=ep_snapshot,
+            job_snapshot=noop_asset_job.get_job_snapshot(),
+            tags={
+                ASSET_PARTITION_RANGE_START_TAG: "foo",
+                ASSET_PARTITION_RANGE_END_TAG: "bar",
+            },
+            asset_graph=noop_asset_job.asset_layer.asset_graph,
+        )
+        assert run.partitions_subset is None
 
 
 def test_get_required_daemon_types():
@@ -855,6 +962,24 @@ def test_report_runless_asset_event() -> None:
         )
         assert len(records) == 1
         assert records[0].status == AssetCheckExecutionRecordStatus.FAILED
+
+
+def test_report_runless_asset_event_freshness_state_change() -> None:
+    """Test that report_runless_asset_event accepts FreshnessStateChange events."""
+    from dagster._core.definitions.freshness import FreshnessState, FreshnessStateChange
+
+    with dg.instance_for_test() as instance:
+        my_asset_key = dg.AssetKey("my_asset")
+        freshness_change = FreshnessStateChange(
+            key=my_asset_key,
+            new_state=FreshnessState.FAIL,
+            previous_state=FreshnessState.UNKNOWN,
+            state_change_timestamp=1234567890.0,
+        )
+
+        # This should not raise an exception - this is the main test
+        # Previously this would have raised DagsterInvariantViolationError
+        instance.report_runless_asset_event(freshness_change)
 
 
 def test_invalid_run_id():

@@ -119,6 +119,18 @@ def _is_sphinx_role_issue(warning_line: str) -> bool:
         if directive_name in sphinx_directives:
             return True
 
+    # Check for RST syntax warnings that contain Sphinx directive content
+    # Format: "RST syntax: .. directive:: content"
+    if "RST syntax: .. " in warning_line:
+        try:
+            # Extract the directive part after "RST syntax: .. "
+            directive_part = warning_line.split("RST syntax: .. ")[1]
+            directive_name = directive_part.split("::")[0].strip()
+            if directive_name in sphinx_directives:
+                return True
+        except (IndexError, AttributeError):
+            pass
+
     # Check for directive option warnings (lines that start with spaces and ":")
     if warning_line.strip().startswith(":") and any(
         opt in warning_line for opt in ["caption", "language", "linenos"]
