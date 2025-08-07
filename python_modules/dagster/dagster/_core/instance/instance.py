@@ -18,6 +18,7 @@ from dagster._core.definitions.events import AssetKey
 from dagster._core.instance.config import DAGSTER_CONFIG_YAML_FILENAME
 from dagster._core.instance.mixins.asset_mixin import AssetMixin
 from dagster._core.instance.mixins.domains_mixin import DomainsMixin
+from dagster._core.instance.mixins.instigator_mixin import InstigatorMixin
 from dagster._core.instance.mixins.runs_mixin import RunsMixin
 from dagster._core.instance.mixins.settings_mixin import SettingsMixin
 from dagster._core.instance.ref import InstanceRef
@@ -29,7 +30,6 @@ from dagster._utils import PrintFn, traced
 
 if TYPE_CHECKING:
     from dagster._core.debug import DebugRunPayload
-    from dagster._core.definitions.run_request import InstigatorType
     from dagster._core.event_api import EventHandlerFn, RunStatusChangeRecordsFilter
     from dagster._core.events import (
         DagsterEvent,
@@ -44,17 +44,9 @@ if TYPE_CHECKING:
         PartitionBackfill,
     )
     from dagster._core.launcher import RunLauncher
-    from dagster._core.remote_representation import HistoricalJob, RemoteSensor
-    from dagster._core.remote_representation.external import RemoteSchedule
+    from dagster._core.remote_representation import HistoricalJob
     from dagster._core.run_coordinator import RunCoordinator
-    from dagster._core.scheduler import Scheduler, SchedulerDebugInfo
-    from dagster._core.scheduler.instigation import (
-        InstigatorState,
-        InstigatorStatus,
-        InstigatorTick,
-        TickData,
-        TickStatus,
-    )
+    from dagster._core.scheduler import Scheduler
     from dagster._core.secrets import SecretsLoader
     from dagster._core.snap import ExecutionPlanSnapshot, JobSnap
     from dagster._core.storage.compute_log_manager import ComputeLogManager
@@ -75,7 +67,9 @@ DagsterInstanceOverrides: TypeAlias = Mapping[str, Any]
 
 
 @public
-class DagsterInstance(SettingsMixin, RunsMixin, AssetMixin, DynamicPartitionsStore, DomainsMixin):
+class DagsterInstance(
+    SettingsMixin, RunsMixin, AssetMixin, InstigatorMixin, DynamicPartitionsStore, DomainsMixin
+):
     """Core abstraction for managing Dagster's access to storage and other resources.
 
     Use DagsterInstance.get() to grab the current DagsterInstance which will load based on
@@ -405,19 +399,7 @@ class DagsterInstance(SettingsMixin, RunsMixin, AssetMixin, DynamicPartitionsSto
     def daemon_cursor_storage(self) -> "DaemonCursorStorage":
         return self._run_storage
 
-    # schedule storage
-
-    @property
-    def schedule_storage(self) -> Optional["ScheduleStorage"]:
-        return self._schedule_storage
-
-    @property
-    def scheduler(self) -> Optional["Scheduler"]:
-        return self._scheduler
-
-    @property
-    def scheduler_class(self) -> Optional[str]:
-        return self.scheduler.__class__.__name__ if self.scheduler else None
+    # schedule storage properties are now in InstigatorMixin
 
     # run coordinator
 
@@ -794,148 +776,11 @@ class DagsterInstance(SettingsMixin, RunsMixin, AssetMixin, DynamicPartitionsSto
     def storage_directory(self) -> str:
         return self.storage_domain.storage_directory()
 
-    def schedules_directory(self) -> str:
-        return self.storage_domain.schedules_directory()
-
     # Runs coordinator
 
     # Run launcher
 
-    # Scheduler
-
-    def start_schedule(self, remote_schedule: "RemoteSchedule") -> "InstigatorState":
-        return self.scheduling_domain.start_schedule(remote_schedule)
-
-    def stop_schedule(
-        self,
-        schedule_origin_id: str,
-        schedule_selector_id: str,
-        remote_schedule: Optional["RemoteSchedule"],
-    ) -> "InstigatorState":
-        return self.scheduling_domain.stop_schedule(
-            schedule_origin_id, schedule_selector_id, remote_schedule
-        )
-
-    def reset_schedule(self, remote_schedule: "RemoteSchedule") -> "InstigatorState":
-        return self.scheduling_domain.reset_schedule(remote_schedule)
-
-    def scheduler_debug_info(self) -> "SchedulerDebugInfo":
-        return self.scheduling_domain.scheduler_debug_info()
-
-    # Schedule / Sensor Storage
-
-    def start_sensor(self, remote_sensor: "RemoteSensor") -> "InstigatorState":
-        return self.scheduling_domain.start_sensor(remote_sensor)
-
-    def stop_sensor(
-        self,
-        instigator_origin_id: str,
-        selector_id: str,
-        remote_sensor: Optional["RemoteSensor"],
-    ) -> "InstigatorState":
-        return self.scheduling_domain.stop_sensor(instigator_origin_id, selector_id, remote_sensor)
-
-    def reset_sensor(self, remote_sensor: "RemoteSensor") -> "InstigatorState":
-        """If the given sensor has a default sensor status, then update the status to
-        `InstigatorStatus.DECLARED_IN_CODE` in instigator storage.
-
-        Args:
-            instance (DagsterInstance): The current instance.
-            remote_sensor (ExternalSensor): The sensor to reset.
-        """
-        return self.scheduling_domain.reset_sensor(remote_sensor)
-
-    @traced
-    def all_instigator_state(
-        self,
-        repository_origin_id: Optional[str] = None,
-        repository_selector_id: Optional[str] = None,
-        instigator_type: Optional["InstigatorType"] = None,
-        instigator_statuses: Optional[set["InstigatorStatus"]] = None,
-    ):
-        return self.scheduling_domain.all_instigator_state(
-            repository_origin_id, repository_selector_id, instigator_type, instigator_statuses
-        )
-
-    @traced
-    def get_instigator_state(self, origin_id: str, selector_id: str) -> Optional["InstigatorState"]:
-        return self.scheduling_domain.get_instigator_state(origin_id, selector_id)
-
-    def add_instigator_state(self, state: "InstigatorState") -> "InstigatorState":
-        return self.scheduling_domain.add_instigator_state(state)
-
-    def update_instigator_state(self, state: "InstigatorState") -> "InstigatorState":
-        return self.scheduling_domain.update_instigator_state(state)
-
-    def delete_instigator_state(self, origin_id: str, selector_id: str) -> None:
-        return self.scheduling_domain.delete_instigator_state(origin_id, selector_id)
-
-    @property
-    def supports_batch_tick_queries(self) -> bool:
-        return self._schedule_storage and self._schedule_storage.supports_batch_queries  # type: ignore  # (possible none)
-
-    @traced
-    def get_batch_ticks(
-        self,
-        selector_ids: Sequence[str],
-        limit: Optional[int] = None,
-        statuses: Optional[Sequence["TickStatus"]] = None,
-    ) -> Mapping[str, Sequence["InstigatorTick"]]:
-        if not self._schedule_storage:
-            return {}
-        return self._schedule_storage.get_batch_ticks(selector_ids, limit, statuses)
-
-    @traced
-    def get_tick(
-        self, origin_id: str, selector_id: str, timestamp: float
-    ) -> Optional["InstigatorTick"]:
-        matches = self._schedule_storage.get_ticks(  # type: ignore  # (possible none)
-            origin_id, selector_id, before=timestamp + 1, after=timestamp - 1, limit=1
-        )
-        return matches[0] if len(matches) else None
-
-    @traced
-    def get_ticks(
-        self,
-        origin_id: str,
-        selector_id: str,
-        before: Optional[float] = None,
-        after: Optional[float] = None,
-        limit: Optional[int] = None,
-        statuses: Optional[Sequence["TickStatus"]] = None,
-    ) -> Sequence["InstigatorTick"]:
-        return self._schedule_storage.get_ticks(  # type: ignore  # (possible none)
-            origin_id,
-            selector_id,
-            before=before,
-            after=after,
-            limit=limit,
-            statuses=statuses,
-        )
-
-    def create_tick(self, tick_data: "TickData") -> "InstigatorTick":
-        return check.not_none(self._schedule_storage).create_tick(tick_data)
-
-    def update_tick(self, tick: "InstigatorTick"):
-        return check.not_none(self._schedule_storage).update_tick(tick)
-
-    def purge_ticks(
-        self,
-        origin_id: str,
-        selector_id: str,
-        before: float,
-        tick_statuses: Optional[Sequence["TickStatus"]] = None,
-    ) -> None:
-        self._schedule_storage.purge_ticks(origin_id, selector_id, before, tick_statuses)  # type: ignore  # (possible none)
-
-    def wipe_all_schedules(self) -> None:
-        if self._scheduler:
-            self._scheduler.wipe(self)  # type: ignore  # (possible none)
-
-        self._schedule_storage.wipe()  # type: ignore  # (possible none)
-
-    def logs_path_for_schedule(self, schedule_origin_id: str) -> str:
-        return self._scheduler.get_logs_path(self, schedule_origin_id)  # type: ignore  # (possible none)
+    # Instigator/schedule/sensor methods are now in InstigatorMixin
 
     def __enter__(self) -> Self:
         return self
@@ -1002,13 +847,7 @@ class DagsterInstance(SettingsMixin, RunsMixin, AssetMixin, DynamicPartitionsSto
         """Gate on a feature to start a thread that monitors for if the run should be canceled."""
         return False
 
-    def get_tick_retention_settings(
-        self, instigator_type: "InstigatorType"
-    ) -> Mapping["TickStatus", int]:
-        return self.scheduling_domain.get_tick_retention_settings(instigator_type)
-
-    def get_tick_termination_check_interval(self) -> Optional[int]:
-        return None
+    # get_tick_retention_settings and get_tick_termination_check_interval are now in InstigatorMixin
 
     def inject_env_vars(self, location_name: Optional[str]) -> None:
         if not self._secrets_loader:
