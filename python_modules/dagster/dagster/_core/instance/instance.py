@@ -4,7 +4,6 @@ import weakref
 from collections import defaultdict
 from collections.abc import Iterable, Mapping, Sequence
 from datetime import datetime
-from functools import cached_property
 from types import TracebackType
 from typing import TYPE_CHECKING, AbstractSet, Any, Callable, Optional, Union, cast  # noqa: UP035
 
@@ -23,6 +22,7 @@ from dagster._core.definitions.freshness import (
     FreshnessStateRecord,
 )
 from dagster._core.instance.config import DAGSTER_CONFIG_YAML_FILENAME
+from dagster._core.instance.domains_mixin import DomainsMixin
 from dagster._core.instance.ref import InstanceRef
 from dagster._core.instance.settings_mixin import SettingsMixin
 from dagster._core.instance.types import DynamicPartitionsStore, InstanceType
@@ -132,7 +132,7 @@ DagsterInstanceOverrides: TypeAlias = Mapping[str, Any]
 
 
 @public
-class DagsterInstance(SettingsMixin, DynamicPartitionsStore):
+class DagsterInstance(SettingsMixin, DynamicPartitionsStore, DomainsMixin):
     """Core abstraction for managing Dagster's access to storage and other resources.
 
     Use DagsterInstance.get() to grab the current DagsterInstance which will load based on
@@ -550,13 +550,13 @@ class DagsterInstance(SettingsMixin, DynamicPartitionsStore):
     def optimize_for_webserver(
         self, statement_timeout: int, pool_recycle: int, max_overflow: int
     ) -> None:
-        self._storage_domain.optimize_for_webserver(statement_timeout, pool_recycle, max_overflow)
+        self.storage_domain.optimize_for_webserver(statement_timeout, pool_recycle, max_overflow)
 
     def reindex(self, print_fn: PrintFn = lambda _: None) -> None:
-        self._storage_domain.reindex(print_fn)
+        self.storage_domain.reindex(print_fn)
 
     def dispose(self) -> None:
-        self._storage_domain.dispose()
+        self.storage_domain.dispose()
         if self._run_coordinator:
             self._run_coordinator.dispose()
         if self._run_launcher:
@@ -685,7 +685,7 @@ class DagsterInstance(SettingsMixin, DynamicPartitionsStore):
         repository_load_data: Optional["RepositoryLoadData"] = None,
     ) -> DagsterRun:
         """Delegate to run domain."""
-        return self._run_domain.create_run_for_job(
+        return self.run_domain.create_run_for_job(
             job_def=job_def,
             execution_plan=execution_plan,
             run_id=run_id,
@@ -701,48 +701,6 @@ class DagsterInstance(SettingsMixin, DynamicPartitionsStore):
             job_code_origin=job_code_origin,
             repository_load_data=repository_load_data,
         )
-
-    @cached_property
-    def _run_domain(self):
-        from dagster._core.instance.runs.run_domain import RunDomain
-
-        return RunDomain(self)
-
-    @cached_property
-    def _asset_domain(self):
-        from dagster._core.instance.assets.asset_domain import AssetDomain
-
-        return AssetDomain(self)
-
-    @cached_property
-    def _event_domain(self):
-        from dagster._core.instance.events.event_domain import EventDomain
-
-        return EventDomain(self)
-
-    @cached_property
-    def _scheduling_domain(self):
-        from dagster._core.instance.scheduling.scheduling_domain import SchedulingDomain
-
-        return SchedulingDomain(self)
-
-    @cached_property
-    def _storage_domain(self):
-        from dagster._core.instance.storage.storage_domain import StorageDomain
-
-        return StorageDomain(self)
-
-    @cached_property
-    def _run_launcher_domain(self):
-        from dagster._core.instance.run_launcher.run_launcher_domain import RunLauncherDomain
-
-        return RunLauncherDomain(self)
-
-    @cached_property
-    def _daemon_domain(self):
-        from dagster._core.instance.daemon.daemon_domain import DaemonDomain
-
-        return DaemonDomain(self)
 
     def create_run(
         self,
@@ -767,7 +725,7 @@ class DagsterInstance(SettingsMixin, DynamicPartitionsStore):
         asset_graph: "BaseAssetGraph",
     ) -> DagsterRun:
         """Create a run with the given parameters."""
-        return self._run_domain.create_run(
+        return self.run_domain.create_run(
             job_name=job_name,
             run_id=run_id,
             run_config=run_config,
@@ -799,7 +757,7 @@ class DagsterInstance(SettingsMixin, DynamicPartitionsStore):
         run_config: Optional[Mapping[str, Any]] = None,
         use_parent_run_tags: bool = False,
     ) -> DagsterRun:
-        return self._run_domain.create_reexecuted_run(
+        return self.run_domain.create_reexecuted_run(
             parent_run=parent_run,
             code_location=code_location,
             remote_job=remote_job,
@@ -825,7 +783,7 @@ class DagsterInstance(SettingsMixin, DynamicPartitionsStore):
         op_selection: Optional[Sequence[str]] = None,
         job_code_origin: Optional[JobPythonOrigin] = None,
     ) -> DagsterRun:
-        return self._run_domain.register_managed_run(
+        return self.run_domain.register_managed_run(
             job_name=job_name,
             run_id=run_id,
             run_config=run_config,
@@ -946,7 +904,7 @@ class DagsterInstance(SettingsMixin, DynamicPartitionsStore):
         of_type: Optional["DagsterEventType"] = None,
         limit: Optional[int] = None,
     ) -> Sequence["EventLogEntry"]:
-        return self._event_domain.logs_after(run_id, cursor, of_type, limit)
+        return self.event_domain.logs_after(run_id, cursor, of_type, limit)
 
     @traced
     def all_logs(
@@ -954,7 +912,7 @@ class DagsterInstance(SettingsMixin, DynamicPartitionsStore):
         run_id: str,
         of_type: Optional[Union["DagsterEventType", set["DagsterEventType"]]] = None,
     ) -> Sequence["EventLogEntry"]:
-        return self._event_domain.all_logs(run_id, of_type)
+        return self.event_domain.all_logs(run_id, of_type)
 
     @traced
     def get_records_for_run(
@@ -965,33 +923,33 @@ class DagsterInstance(SettingsMixin, DynamicPartitionsStore):
         limit: Optional[int] = None,
         ascending: bool = True,
     ) -> "EventLogConnection":
-        return self._event_domain.get_records_for_run(run_id, cursor, of_type, limit, ascending)
+        return self.event_domain.get_records_for_run(run_id, cursor, of_type, limit, ascending)
 
     def watch_event_logs(self, run_id: str, cursor: Optional[str], cb: "EventHandlerFn") -> None:
-        return self._event_domain.watch_event_logs(run_id, cursor, cb)
+        return self.event_domain.watch_event_logs(run_id, cursor, cb)
 
     def end_watch_event_logs(self, run_id: str, cb: "EventHandlerFn") -> None:
-        return self._event_domain.end_watch_event_logs(run_id, cb)
+        return self.event_domain.end_watch_event_logs(run_id, cb)
 
     # asset storage
 
     @traced
     def can_read_asset_status_cache(self) -> bool:
-        return self._asset_domain.can_read_asset_status_cache()
+        return self.asset_domain.can_read_asset_status_cache()
 
     @traced
     def update_asset_cached_status_data(
         self, asset_key: AssetKey, cache_values: "AssetStatusCacheValue"
     ) -> None:
-        self._asset_domain.update_asset_cached_status_data(asset_key, cache_values)
+        self.asset_domain.update_asset_cached_status_data(asset_key, cache_values)
 
     @traced
     def wipe_asset_cached_status(self, asset_keys: Sequence[AssetKey]) -> None:
-        self._asset_domain.wipe_asset_cached_status(asset_keys)
+        self.asset_domain.wipe_asset_cached_status(asset_keys)
 
     @traced
     def all_asset_keys(self) -> Sequence[AssetKey]:
-        return self._asset_domain.all_asset_keys()
+        return self.asset_domain.all_asset_keys()
 
     @public
     @traced
@@ -1011,7 +969,7 @@ class DagsterInstance(SettingsMixin, DynamicPartitionsStore):
         Returns:
             Sequence[AssetKey]: List of asset keys.
         """
-        return self._asset_domain.get_asset_keys(prefix, limit, cursor)
+        return self.asset_domain.get_asset_keys(prefix, limit, cursor)
 
     @public
     @traced
@@ -1021,13 +979,13 @@ class DagsterInstance(SettingsMixin, DynamicPartitionsStore):
         Args:
             asset_key (AssetKey): Asset key to check.
         """
-        return self._asset_domain.has_asset_key(asset_key)
+        return self.asset_domain.has_asset_key(asset_key)
 
     @traced
     def get_latest_materialization_events(
         self, asset_keys: Iterable[AssetKey]
     ) -> Mapping[AssetKey, Optional["EventLogEntry"]]:
-        return self._asset_domain.get_latest_materialization_events(asset_keys)
+        return self.asset_domain.get_latest_materialization_events(asset_keys)
 
     @public
     @traced
@@ -1041,13 +999,13 @@ class DagsterInstance(SettingsMixin, DynamicPartitionsStore):
             Optional[EventLogEntry]: The latest materialization event for the given asset
                 key, or `None` if the asset has not been materialized.
         """
-        return self._asset_domain.get_latest_materialization_event(asset_key)
+        return self.asset_domain.get_latest_materialization_event(asset_key)
 
     @traced
     def get_latest_asset_check_evaluation_record(
         self, asset_check_key: "AssetCheckKey"
     ) -> Optional["AssetCheckExecutionRecord"]:
-        return self._asset_domain.get_latest_asset_check_evaluation_record(asset_check_key)
+        return self.asset_domain.get_latest_asset_check_evaluation_record(asset_check_key)
 
     @traced
     @deprecated(breaking_version="2.0")
@@ -1069,7 +1027,7 @@ class DagsterInstance(SettingsMixin, DynamicPartitionsStore):
         Returns:
             List[EventLogRecord]: List of event log records stored in the event log storage.
         """
-        return self._event_domain.get_event_records(event_records_filter, limit, ascending)
+        return self.event_domain.get_event_records(event_records_filter, limit, ascending)
 
     @public
     @traced
@@ -1093,7 +1051,7 @@ class DagsterInstance(SettingsMixin, DynamicPartitionsStore):
         Returns:
             EventRecordsResult: Object containing a list of event log records and a cursor string
         """
-        return self._asset_domain.fetch_materializations(records_filter, limit, cursor, ascending)
+        return self.asset_domain.fetch_materializations(records_filter, limit, cursor, ascending)
 
     @traced
     def fetch_failed_materializations(
@@ -1116,7 +1074,7 @@ class DagsterInstance(SettingsMixin, DynamicPartitionsStore):
         Returns:
             EventRecordsResult: Object containing a list of event log records and a cursor string
         """
-        return self._asset_domain.fetch_failed_materializations(
+        return self.asset_domain.fetch_failed_materializations(
             records_filter, limit, cursor, ascending
         )
 
@@ -1142,7 +1100,7 @@ class DagsterInstance(SettingsMixin, DynamicPartitionsStore):
         Returns:
             EventRecordsResult: Object containing a list of event log records and a cursor string
         """
-        return self._asset_domain.fetch_planned_materializations(
+        return self.asset_domain.fetch_planned_materializations(
             records_filter, limit, cursor, ascending
         )
 
@@ -1216,7 +1174,7 @@ class DagsterInstance(SettingsMixin, DynamicPartitionsStore):
             Optional[Mapping[str, AssetPartitionStatus]]: status for each partition key
 
         """
-        return self._asset_domain.get_status_by_partition(asset_key, partition_keys, partitions_def)
+        return self.asset_domain.get_status_by_partition(asset_key, partition_keys, partitions_def)
 
     @public
     @traced
@@ -1231,7 +1189,7 @@ class DagsterInstance(SettingsMixin, DynamicPartitionsStore):
         Returns:
             Sequence[AssetRecord]: List of asset records.
         """
-        return self._asset_domain.get_asset_records(asset_keys)
+        return self.asset_domain.get_asset_records(asset_keys)
 
     @traced
     def get_event_tags_for_asset(
@@ -1252,7 +1210,7 @@ class DagsterInstance(SettingsMixin, DynamicPartitionsStore):
         Returns a list of dicts, where each dict is a mapping of tag key to tag value for a
         single event.
         """
-        return self._asset_domain.get_event_tags_for_asset(asset_key, filter_tags, filter_event_id)
+        return self.asset_domain.get_event_tags_for_asset(asset_key, filter_tags, filter_event_id)
 
     @public
     @traced
@@ -1262,7 +1220,7 @@ class DagsterInstance(SettingsMixin, DynamicPartitionsStore):
         Args:
             asset_keys (Sequence[AssetKey]): Asset keys to wipe.
         """
-        self._asset_domain.wipe_assets(asset_keys)
+        self.asset_domain.wipe_assets(asset_keys)
 
     def wipe_asset_partitions(
         self,
@@ -1275,7 +1233,7 @@ class DagsterInstance(SettingsMixin, DynamicPartitionsStore):
             asset_key (AssetKey): Asset key to wipe.
             partition_keys (Sequence[str]): Partition keys to wipe.
         """
-        self._asset_domain.wipe_asset_partitions(asset_key, partition_keys)
+        self.asset_domain.wipe_asset_partitions(asset_key, partition_keys)
 
     @traced
     def get_materialized_partitions(
@@ -1284,9 +1242,7 @@ class DagsterInstance(SettingsMixin, DynamicPartitionsStore):
         before_cursor: Optional[int] = None,
         after_cursor: Optional[int] = None,
     ) -> set[str]:
-        return self._asset_domain.get_materialized_partitions(
-            asset_key, before_cursor, after_cursor
-        )
+        return self.asset_domain.get_materialized_partitions(asset_key, before_cursor, after_cursor)
 
     @traced
     def get_latest_storage_id_by_partition(
@@ -1299,7 +1255,7 @@ class DagsterInstance(SettingsMixin, DynamicPartitionsStore):
 
         Returns a mapping of partition to storage id.
         """
-        return self._storage_domain.get_latest_storage_id_by_partition(
+        return self.storage_domain.get_latest_storage_id_by_partition(
             asset_key, event_type, partitions
         )
 
@@ -1309,7 +1265,7 @@ class DagsterInstance(SettingsMixin, DynamicPartitionsStore):
         asset_key: AssetKey,
         partition: Optional[str] = None,
     ) -> Optional["PlannedMaterializationInfo"]:
-        return self._asset_domain.get_latest_planned_materialization_info(asset_key, partition)
+        return self.asset_domain.get_latest_planned_materialization_info(asset_key, partition)
 
     @public
     @traced
@@ -1319,7 +1275,7 @@ class DagsterInstance(SettingsMixin, DynamicPartitionsStore):
         Args:
             partitions_def_name (str): The name of the `DynamicPartitionsDefinition`.
         """
-        return self._storage_domain.get_dynamic_partitions(partitions_def_name)
+        return self.storage_domain.get_dynamic_partitions(partitions_def_name)
 
     @traced
     def get_paginated_dynamic_partitions(
@@ -1337,7 +1293,7 @@ class DagsterInstance(SettingsMixin, DynamicPartitionsStore):
             ascending (bool): The order of dynamic partitions to return.
             cursor (Optional[str]): Cursor to use for pagination. Defaults to None.
         """
-        return self._storage_domain.get_paginated_dynamic_partitions(
+        return self.storage_domain.get_paginated_dynamic_partitions(
             partitions_def_name, limit, ascending, cursor
         )
 
@@ -1353,7 +1309,7 @@ class DagsterInstance(SettingsMixin, DynamicPartitionsStore):
             partitions_def_name (str): The name of the `DynamicPartitionsDefinition`.
             partition_keys (Sequence[str]): Partition keys to add.
         """
-        return self._storage_domain.add_dynamic_partitions(partitions_def_name, partition_keys)
+        return self.storage_domain.add_dynamic_partitions(partitions_def_name, partition_keys)
 
     @public
     @traced
@@ -1365,7 +1321,7 @@ class DagsterInstance(SettingsMixin, DynamicPartitionsStore):
             partitions_def_name (str): The name of the `DynamicPartitionsDefinition`.
             partition_key (str): Partition key to delete.
         """
-        self._storage_domain.delete_dynamic_partition(partitions_def_name, partition_key)
+        self.storage_domain.delete_dynamic_partition(partitions_def_name, partition_key)
 
     @public
     @traced
@@ -1376,19 +1332,19 @@ class DagsterInstance(SettingsMixin, DynamicPartitionsStore):
             partitions_def_name (str): The name of the `DynamicPartitionsDefinition`.
             partition_key (Sequence[str]): Partition key to check.
         """
-        return self._storage_domain.has_dynamic_partition(partitions_def_name, partition_key)
+        return self.storage_domain.has_dynamic_partition(partitions_def_name, partition_key)
 
     # event subscriptions
 
     def get_handlers(self) -> Sequence[logging.Handler]:
         """Get all logging handlers - delegates to event domain."""
-        return self._event_domain.get_handlers()
+        return self.event_domain.get_handlers()
 
     def should_store_event(self, event: "EventLogEntry") -> bool:
-        return self._event_domain.should_store_event(event)
+        return self.event_domain.should_store_event(event)
 
     def store_event(self, event: "EventLogEntry") -> None:
-        self._event_domain.store_event(event)
+        self.event_domain.store_event(event)
 
     def handle_new_event(
         self,
@@ -1410,10 +1366,10 @@ class DagsterInstance(SettingsMixin, DynamicPartitionsStore):
             event (EventLogEntry): The event to handle.
             batch_metadata (Optional[DagsterEventBatchMetadata]): Metadata for batch writing.
         """
-        return self._event_domain.handle_new_event(event, batch_metadata=batch_metadata)
+        return self.event_domain.handle_new_event(event, batch_metadata=batch_metadata)
 
     def add_event_listener(self, run_id: str, cb) -> None:
-        self._event_domain.add_event_listener(run_id, cb)
+        self.event_domain.add_event_listener(run_id, cb)
 
     def report_engine_event(
         self,
@@ -1426,7 +1382,7 @@ class DagsterInstance(SettingsMixin, DynamicPartitionsStore):
         run_id: Optional[str] = None,
     ) -> "DagsterEvent":
         """Report a EngineEvent that occurred outside of a job execution context."""
-        return self._event_domain.report_engine_event(
+        return self.event_domain.report_engine_event(
             message,
             dagster_run,
             engine_event_data,
@@ -1445,13 +1401,13 @@ class DagsterInstance(SettingsMixin, DynamicPartitionsStore):
         timestamp: Optional[float] = None,
     ) -> None:
         """Takes a DagsterEvent and stores it in persistent storage for the corresponding DagsterRun."""
-        self._event_domain.report_dagster_event(
+        self.event_domain.report_dagster_event(
             dagster_event, run_id, log_level, batch_metadata, timestamp
         )
 
     def report_run_canceling(self, run: DagsterRun, message: Optional[str] = None):
         """Report run canceling event."""
-        return self._event_domain.report_run_canceling(run, message)
+        return self.event_domain.report_run_canceling(run, message)
 
     def report_run_canceled(
         self,
@@ -1459,7 +1415,7 @@ class DagsterInstance(SettingsMixin, DynamicPartitionsStore):
         message: Optional[str] = None,
     ) -> "DagsterEvent":
         """Report run canceled event."""
-        return self._event_domain.report_run_canceled(dagster_run, message)
+        return self.event_domain.report_run_canceled(dagster_run, message)
 
     def report_run_failed(
         self,
@@ -1468,49 +1424,49 @@ class DagsterInstance(SettingsMixin, DynamicPartitionsStore):
         job_failure_data: Optional["JobFailureData"] = None,
     ) -> "DagsterEvent":
         """Report run failed event."""
-        return self._event_domain.report_run_failed(dagster_run, message, job_failure_data)
+        return self.event_domain.report_run_failed(dagster_run, message, job_failure_data)
 
     # directories
 
     def file_manager_directory(self, run_id: str) -> str:
-        return self._storage_domain.file_manager_directory(run_id)
+        return self.storage_domain.file_manager_directory(run_id)
 
     def storage_directory(self) -> str:
-        return self._storage_domain.storage_directory()
+        return self.storage_domain.storage_directory()
 
     def schedules_directory(self) -> str:
-        return self._storage_domain.schedules_directory()
+        return self.storage_domain.schedules_directory()
 
     # Runs coordinator
 
     def submit_run(self, run_id: str, workspace: "BaseWorkspaceRequestContext") -> DagsterRun:
         """Delegate to run launcher domain."""
-        return self._run_launcher_domain.submit_run(run_id, workspace)
+        return self.run_launcher_domain.submit_run(run_id, workspace)
 
     # Run launcher
 
     def launch_run(self, run_id: str, workspace: "BaseWorkspaceRequestContext") -> DagsterRun:
         """Delegate to run launcher domain."""
-        return self._run_launcher_domain.launch_run(run_id, workspace)
+        return self.run_launcher_domain.launch_run(run_id, workspace)
 
     def resume_run(
         self, run_id: str, workspace: "BaseWorkspaceRequestContext", attempt_number: int
     ) -> DagsterRun:
         """Delegate to run launcher domain."""
-        return self._run_launcher_domain.resume_run(run_id, workspace, attempt_number)
+        return self.run_launcher_domain.resume_run(run_id, workspace, attempt_number)
 
     def count_resume_run_attempts(self, run_id: str) -> int:
         """Delegate to run launcher domain."""
-        return self._run_launcher_domain.count_resume_run_attempts(run_id)
+        return self.run_launcher_domain.count_resume_run_attempts(run_id)
 
     def run_will_resume(self, run_id: str) -> bool:
         """Delegate to run launcher domain."""
-        return self._run_launcher_domain.run_will_resume(run_id)
+        return self.run_launcher_domain.run_will_resume(run_id)
 
     # Scheduler
 
     def start_schedule(self, remote_schedule: "RemoteSchedule") -> "InstigatorState":
-        return self._scheduling_domain.start_schedule(remote_schedule)
+        return self.scheduling_domain.start_schedule(remote_schedule)
 
     def stop_schedule(
         self,
@@ -1518,20 +1474,20 @@ class DagsterInstance(SettingsMixin, DynamicPartitionsStore):
         schedule_selector_id: str,
         remote_schedule: Optional["RemoteSchedule"],
     ) -> "InstigatorState":
-        return self._scheduling_domain.stop_schedule(
+        return self.scheduling_domain.stop_schedule(
             schedule_origin_id, schedule_selector_id, remote_schedule
         )
 
     def reset_schedule(self, remote_schedule: "RemoteSchedule") -> "InstigatorState":
-        return self._scheduling_domain.reset_schedule(remote_schedule)
+        return self.scheduling_domain.reset_schedule(remote_schedule)
 
     def scheduler_debug_info(self) -> "SchedulerDebugInfo":
-        return self._scheduling_domain.scheduler_debug_info()
+        return self.scheduling_domain.scheduler_debug_info()
 
     # Schedule / Sensor Storage
 
     def start_sensor(self, remote_sensor: "RemoteSensor") -> "InstigatorState":
-        return self._scheduling_domain.start_sensor(remote_sensor)
+        return self.scheduling_domain.start_sensor(remote_sensor)
 
     def stop_sensor(
         self,
@@ -1539,7 +1495,7 @@ class DagsterInstance(SettingsMixin, DynamicPartitionsStore):
         selector_id: str,
         remote_sensor: Optional["RemoteSensor"],
     ) -> "InstigatorState":
-        return self._scheduling_domain.stop_sensor(instigator_origin_id, selector_id, remote_sensor)
+        return self.scheduling_domain.stop_sensor(instigator_origin_id, selector_id, remote_sensor)
 
     def reset_sensor(self, remote_sensor: "RemoteSensor") -> "InstigatorState":
         """If the given sensor has a default sensor status, then update the status to
@@ -1549,7 +1505,7 @@ class DagsterInstance(SettingsMixin, DynamicPartitionsStore):
             instance (DagsterInstance): The current instance.
             remote_sensor (ExternalSensor): The sensor to reset.
         """
-        return self._scheduling_domain.reset_sensor(remote_sensor)
+        return self.scheduling_domain.reset_sensor(remote_sensor)
 
     @traced
     def all_instigator_state(
@@ -1559,22 +1515,22 @@ class DagsterInstance(SettingsMixin, DynamicPartitionsStore):
         instigator_type: Optional["InstigatorType"] = None,
         instigator_statuses: Optional[set["InstigatorStatus"]] = None,
     ):
-        return self._scheduling_domain.all_instigator_state(
+        return self.scheduling_domain.all_instigator_state(
             repository_origin_id, repository_selector_id, instigator_type, instigator_statuses
         )
 
     @traced
     def get_instigator_state(self, origin_id: str, selector_id: str) -> Optional["InstigatorState"]:
-        return self._scheduling_domain.get_instigator_state(origin_id, selector_id)
+        return self.scheduling_domain.get_instigator_state(origin_id, selector_id)
 
     def add_instigator_state(self, state: "InstigatorState") -> "InstigatorState":
-        return self._scheduling_domain.add_instigator_state(state)
+        return self.scheduling_domain.add_instigator_state(state)
 
     def update_instigator_state(self, state: "InstigatorState") -> "InstigatorState":
-        return self._scheduling_domain.update_instigator_state(state)
+        return self.scheduling_domain.update_instigator_state(state)
 
     def delete_instigator_state(self, origin_id: str, selector_id: str) -> None:
-        return self._scheduling_domain.delete_instigator_state(origin_id, selector_id)
+        return self.scheduling_domain.delete_instigator_state(origin_id, selector_id)
 
     @property
     def supports_batch_tick_queries(self) -> bool:
@@ -1657,17 +1613,17 @@ class DagsterInstance(SettingsMixin, DynamicPartitionsStore):
     # dagster daemon
     def add_daemon_heartbeat(self, daemon_heartbeat: "DaemonHeartbeat") -> None:
         """Called on a regular interval by the daemon."""
-        return self._daemon_domain.add_daemon_heartbeat(daemon_heartbeat)
+        return self.daemon_domain.add_daemon_heartbeat(daemon_heartbeat)
 
     def get_daemon_heartbeats(self) -> Mapping[str, "DaemonHeartbeat"]:
         """Latest heartbeats of all daemon types."""
-        return self._daemon_domain.get_daemon_heartbeats()
+        return self.daemon_domain.get_daemon_heartbeats()
 
     def wipe_daemon_heartbeats(self) -> None:
-        return self._daemon_domain.wipe_daemon_heartbeats()
+        return self.daemon_domain.wipe_daemon_heartbeats()
 
     def get_required_daemon_types(self) -> Sequence[str]:
-        return self._daemon_domain.get_required_daemon_types()
+        return self.daemon_domain.get_required_daemon_types()
 
     def get_daemon_statuses(
         self, daemon_types: Optional[Sequence[str]] = None
@@ -1675,11 +1631,11 @@ class DagsterInstance(SettingsMixin, DynamicPartitionsStore):
         """Get the current status of the daemons. If daemon_types aren't provided, defaults to all
         required types. Returns a dict of daemon type to status.
         """
-        return self._daemon_domain.get_daemon_statuses(daemon_types)
+        return self.daemon_domain.get_daemon_statuses(daemon_types)
 
     @property
     def daemon_skip_heartbeats_without_errors(self) -> bool:
-        return self._daemon_domain.daemon_skip_heartbeats_without_errors
+        return self.daemon_domain.daemon_skip_heartbeats_without_errors
 
     # backfill
     def get_backfills(
@@ -1689,19 +1645,19 @@ class DagsterInstance(SettingsMixin, DynamicPartitionsStore):
         limit: Optional[int] = None,
         status: Optional["BulkActionStatus"] = None,
     ) -> Sequence["PartitionBackfill"]:
-        return self._scheduling_domain.get_backfills(filters, cursor, limit, status)
+        return self.scheduling_domain.get_backfills(filters, cursor, limit, status)
 
     def get_backfills_count(self, filters: Optional["BulkActionsFilter"] = None) -> int:
-        return self._scheduling_domain.get_backfills_count(filters)
+        return self.scheduling_domain.get_backfills_count(filters)
 
     def get_backfill(self, backfill_id: str) -> Optional["PartitionBackfill"]:
-        return self._scheduling_domain.get_backfill(backfill_id)
+        return self.scheduling_domain.get_backfill(backfill_id)
 
     def add_backfill(self, partition_backfill: "PartitionBackfill") -> None:
-        self._scheduling_domain.add_backfill(partition_backfill)
+        self.scheduling_domain.add_backfill(partition_backfill)
 
     def update_backfill(self, partition_backfill: "PartitionBackfill") -> None:
-        self._scheduling_domain.update_backfill(partition_backfill)
+        self.scheduling_domain.update_backfill(partition_backfill)
 
     @property
     def should_start_background_run_thread(self) -> bool:
@@ -1711,7 +1667,7 @@ class DagsterInstance(SettingsMixin, DynamicPartitionsStore):
     def get_tick_retention_settings(
         self, instigator_type: "InstigatorType"
     ) -> Mapping["TickStatus", int]:
-        return self._scheduling_domain.get_tick_retention_settings(instigator_type)
+        return self.scheduling_domain.get_tick_retention_settings(instigator_type)
 
     def get_tick_termination_check_interval(self) -> Optional[int]:
         return None
@@ -1732,7 +1688,7 @@ class DagsterInstance(SettingsMixin, DynamicPartitionsStore):
         before_cursor: Optional[int] = None,
         after_cursor: Optional[int] = None,
     ) -> Optional["EventLogRecord"]:
-        return self._asset_domain.get_latest_data_version_record(
+        return self.asset_domain.get_latest_data_version_record(
             key, is_source, partition_key, before_cursor, after_cursor
         )
 
@@ -1753,7 +1709,7 @@ class DagsterInstance(SettingsMixin, DynamicPartitionsStore):
                 not have a code version explicitly assigned to its definitions, but was
                 materialized, Dagster assigns the run ID as its code version.
         """
-        return self._asset_domain.get_latest_materialization_code_versions(asset_keys)
+        return self.asset_domain.get_latest_materialization_code_versions(asset_keys)
 
     @public
     def report_runless_asset_event(
@@ -1767,7 +1723,7 @@ class DagsterInstance(SettingsMixin, DynamicPartitionsStore):
         ],
     ):
         """Record an event log entry related to assets that does not belong to a Dagster run."""
-        return self._asset_domain.report_runless_asset_event(asset_event)
+        return self.asset_domain.report_runless_asset_event(asset_event)
 
     def _report_runless_asset_event(
         self,
@@ -1780,7 +1736,7 @@ class DagsterInstance(SettingsMixin, DynamicPartitionsStore):
         ],
     ):
         """Use this directly over report_runless_asset_event to emit internal events."""
-        return self._asset_domain._report_runless_asset_event(asset_event)  # noqa: SLF001
+        return self.asset_domain._report_runless_asset_event(asset_event)  # noqa: SLF001
 
     def get_freshness_state_records(
         self, keys: Sequence[AssetKey]
@@ -1826,21 +1782,21 @@ class DagsterInstance(SettingsMixin, DynamicPartitionsStore):
     def get_asset_check_health_state_for_assets(
         self, _asset_keys: Sequence[AssetKey]
     ) -> Optional[Mapping[AssetKey, Optional["AssetCheckHealthState"]]]:
-        return self._asset_domain.get_asset_check_health_state_for_assets(_asset_keys)
+        return self.asset_domain.get_asset_check_health_state_for_assets(_asset_keys)
 
     def get_asset_freshness_health_state_for_assets(
         self, _asset_keys: Sequence[AssetKey]
     ) -> Optional[Mapping[AssetKey, Optional["AssetFreshnessHealthState"]]]:
-        return self._asset_domain.get_asset_freshness_health_state_for_assets(_asset_keys)
+        return self.asset_domain.get_asset_freshness_health_state_for_assets(_asset_keys)
 
     def get_asset_materialization_health_state_for_assets(
         self, _asset_keys: Sequence[AssetKey]
     ) -> Optional[Mapping[AssetKey, Optional["AssetMaterializationHealthState"]]]:
-        return self._asset_domain.get_asset_materialization_health_state_for_assets(_asset_keys)
+        return self.asset_domain.get_asset_materialization_health_state_for_assets(_asset_keys)
 
     def get_minimal_asset_materialization_health_state_for_assets(
         self, asset_keys: Sequence[AssetKey]
     ) -> Optional[Mapping[AssetKey, Optional["MinimalAssetMaterializationHealthState"]]]:
-        return self._asset_domain.get_minimal_asset_materialization_health_state_for_assets(
+        return self.asset_domain.get_minimal_asset_materialization_health_state_for_assets(
             asset_keys
         )
