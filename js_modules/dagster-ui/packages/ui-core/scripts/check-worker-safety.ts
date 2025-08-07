@@ -332,6 +332,26 @@ class WorkerSafetyChecker {
       return false;
     }
 
+    // Not a direct reference if it's part of a qualified name (e.g., dagre.Node)
+    if (ts.isQualifiedName(parent) && parent.right === node) {
+      return false;
+    }
+
+    // Not a direct reference if it's the right side of a property access in a type context
+    if (ts.isPropertyAccessExpression(parent) && parent.name === node) {
+      // Check if this property access is in a type context
+      let typeContext = parent.parent;
+      while (typeContext) {
+        if (ts.isTypeReferenceNode(typeContext) || ts.isTypeNode(typeContext)) {
+          return false;
+        }
+        if (ts.isVariableDeclaration(typeContext) || ts.isPropertySignature(typeContext)) {
+          return false;
+        }
+        typeContext = typeContext.parent;
+      }
+    }
+
     // Not a direct reference if it's being declared as a variable/parameter
     if (ts.isVariableDeclaration(parent) && parent.name === node) {
       return false;
