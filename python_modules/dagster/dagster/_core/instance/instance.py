@@ -1222,36 +1222,7 @@ class DagsterInstance(SettingsMixin, DynamicPartitionsStore):
             Optional[Mapping[str, AssetPartitionStatus]]: status for each partition key
 
         """
-        from dagster._core.storage.partition_status_cache import (
-            AssetPartitionStatus,
-            AssetStatusCacheValue,
-            get_and_update_asset_status_cache_value,
-        )
-
-        cached_value = get_and_update_asset_status_cache_value(self, asset_key, partitions_def)
-
-        if isinstance(cached_value, AssetStatusCacheValue):
-            materialized_partitions = cached_value.deserialize_materialized_partition_subsets(
-                partitions_def
-            )
-            failed_partitions = cached_value.deserialize_failed_partition_subsets(partitions_def)
-            in_progress_partitions = cached_value.deserialize_in_progress_partition_subsets(
-                partitions_def
-            )
-
-            status_by_partition = {}
-
-            for partition_key in partition_keys:
-                if partition_key in in_progress_partitions:
-                    status_by_partition[partition_key] = AssetPartitionStatus.IN_PROGRESS
-                elif partition_key in failed_partitions:
-                    status_by_partition[partition_key] = AssetPartitionStatus.FAILED
-                elif partition_key in materialized_partitions:
-                    status_by_partition[partition_key] = AssetPartitionStatus.MATERIALIZED
-                else:
-                    status_by_partition[partition_key] = None
-
-            return status_by_partition
+        return self._asset_domain.get_status_by_partition(asset_key, partition_keys, partitions_def)
 
     @public
     @traced
@@ -1800,36 +1771,9 @@ class DagsterInstance(SettingsMixin, DynamicPartitionsStore):
         before_cursor: Optional[int] = None,
         after_cursor: Optional[int] = None,
     ) -> Optional["EventLogRecord"]:
-        from dagster._core.storage.event_log.base import AssetRecordsFilter
-
-        records_filter = AssetRecordsFilter(
-            asset_key=key,
-            asset_partitions=[partition_key] if partition_key else None,
-            before_storage_id=before_cursor,
-            after_storage_id=after_cursor,
+        return self._asset_domain.get_latest_data_version_record(
+            key, is_source, partition_key, before_cursor, after_cursor
         )
-
-        if is_source is True:
-            # this is a source asset, fetch latest observation record
-            return next(iter(self.fetch_observations(records_filter, limit=1).records), None)
-
-        elif is_source is False:
-            # this is not a source asset, fetch latest materialization record
-            return next(iter(self.fetch_materializations(records_filter, limit=1).records), None)
-
-        else:
-            assert is_source is None
-            # if is_source is None, the requested key could correspond to either a source asset or
-            # materializable asset. If there is a non-null materialization, we are dealing with a
-            # materializable asset and should just return that.  If not, we should check for any
-            # observation records that may match.
-
-            materialization = next(
-                iter(self.fetch_materializations(records_filter, limit=1).records), None
-            )
-            if materialization:
-                return materialization
-            return next(iter(self.fetch_observations(records_filter, limit=1).records), None)
 
     @public
     def get_latest_materialization_code_versions(
