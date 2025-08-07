@@ -112,7 +112,7 @@ if TYPE_CHECKING:
         AssetCheckExecutionRecord,
         AssetCheckInstanceSupport,
     )
-    from dagster._core.storage.compute_log_manager import ComputeLogManager
+    from dagster._core.storage.compute_log_manager import ComputeIOType, ComputeLogManager
     from dagster._core.storage.daemon_cursor import DaemonCursorStorage
     from dagster._core.storage.event_log import EventLogStorage
     from dagster._core.storage.event_log.base import (
@@ -608,6 +608,148 @@ class DagsterInstance(SettingsMixin, DynamicPartitionsStore):
             self._compute_log_manager = cast("ComputeLogManager", compute_log_manager)
             self._compute_log_manager.register_instance(self)
         return self._compute_log_manager
+
+    # Compute log operations (delegates to ComputeLogDomain)
+
+    def capture_compute_logs(self, log_key: Sequence[str]):
+        """Context manager for capturing the stdout/stderr within the current process.
+
+        Args:
+            log_key: The log key identifying the captured logs
+
+        Returns:
+            Context manager that yields CapturedLogContext
+        """
+        return self._compute_log_domain.capture_logs(log_key)
+
+    def open_compute_log_stream(self, log_key: Sequence[str], io_type: "ComputeIOType"):
+        """Context manager for providing an IO stream for writing logs.
+
+        Args:
+            log_key: The log key identifying the captured logs
+            io_type: Whether to write to stdout or stderr stream
+
+        Returns:
+            Context manager that yields Optional IO stream for writing log bytes
+        """
+        return self._compute_log_domain.open_log_stream(log_key, io_type)
+
+    def is_compute_log_capture_complete(self, log_key: Sequence[str]) -> bool:
+        """Check if log capture for the given log key has completed.
+
+        Args:
+            log_key: The log key identifying the captured logs
+
+        Returns:
+            True if capture is complete, False otherwise
+        """
+        return self._compute_log_domain.is_capture_complete(log_key)
+
+    def get_compute_log_data(
+        self,
+        log_key: Sequence[str],
+        cursor: Optional[str] = None,
+        max_bytes: Optional[int] = None,
+    ):
+        """Get captured log data for the given log key.
+
+        Args:
+            log_key: The log key identifying the captured logs
+            cursor: Optional cursor for pagination through log data
+            max_bytes: Optional limit on the size of data to retrieve
+
+        Returns:
+            CapturedLogData containing log bytes and cursor information
+        """
+        return self._compute_log_domain.get_log_data(log_key, cursor, max_bytes)
+
+    def get_compute_log_metadata(self, log_key: Sequence[str]):
+        """Get metadata for captured logs including external URLs and file paths.
+
+        Args:
+            log_key: The log key identifying the captured logs
+
+        Returns:
+            CapturedLogMetadata with display information about log storage
+        """
+        return self._compute_log_domain.get_log_metadata(log_key)
+
+    def delete_compute_logs(
+        self,
+        log_key: Optional[Sequence[str]] = None,
+        prefix: Optional[Sequence[str]] = None,
+    ) -> None:
+        """Delete captured logs for the given log key or prefix.
+
+        Args:
+            log_key: Specific log key to delete (mutually exclusive with prefix)
+            prefix: Prefix of log keys to delete (mutually exclusive with log_key)
+        """
+        return self._compute_log_domain.delete_logs(log_key=log_key, prefix=prefix)
+
+    def subscribe_to_compute_logs(self, log_key: Sequence[str], cursor: Optional[str] = None):
+        """Subscribe to log updates for real-time log streaming.
+
+        Args:
+            log_key: The log key identifying the captured logs
+            cursor: Optional cursor position to start streaming from
+
+        Returns:
+            CapturedLogSubscription for receiving log updates
+        """
+        return self._compute_log_domain.subscribe(log_key, cursor)
+
+    def unsubscribe_from_compute_logs(self, subscription) -> None:
+        """Unsubscribe from log updates.
+
+        Args:
+            subscription: The subscription object to cancel
+        """
+        return self._compute_log_domain.unsubscribe(subscription)
+
+    def build_compute_log_key_for_run(self, run_id: str, step_key: str) -> Sequence[str]:
+        """Build a log key for a specific run and step.
+
+        Args:
+            run_id: The run ID
+            step_key: The step key within the run
+
+        Returns:
+            Log key sequence identifying this run/step combination
+        """
+        return self._compute_log_domain.build_log_key_for_run(run_id, step_key)
+
+    def get_compute_logs_for_run(self, run_id: str, step_key: str, cursor: Optional[str] = None):
+        """Convenience method to get logs for a specific run and step.
+
+        Args:
+            run_id: The run ID
+            step_key: The step key within the run
+            cursor: Optional cursor for pagination
+
+        Returns:
+            CapturedLogData for the specified run and step
+        """
+        return self._compute_log_domain.get_logs_for_run(run_id, step_key, cursor)
+
+    def cleanup_compute_logs_for_run(self, run_id: str) -> None:
+        """Delete all compute logs for a specific run.
+
+        Args:
+            run_id: The run ID to clean up logs for
+        """
+        return self._compute_log_domain.cleanup_logs_for_run(run_id)
+
+    def get_compute_log_summary(self, log_key: Sequence[str]) -> dict:
+        """Get summary information about captured logs.
+
+        Args:
+            log_key: The log key identifying the captured logs
+
+        Returns:
+            Dictionary containing log summary information
+        """
+        return self._compute_log_domain.get_log_summary(log_key)
 
     def get_settings(self, settings_key: str) -> Any:
         check.str_param(settings_key, "settings_key")
