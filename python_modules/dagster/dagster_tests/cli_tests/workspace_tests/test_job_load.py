@@ -9,7 +9,7 @@ from dagster._cli.workspace.cli_target import (
     repository_options,
 )
 from dagster._core.instance import DagsterInstance
-from dagster._core.remote_representation import RemoteJob
+from dagster._core.remote_representation.external import RemoteJob
 from dagster_shared.cli import WorkspaceOpts, workspace_options
 
 

@@ -91,13 +91,9 @@ if TYPE_CHECKING:
     from dagster._core.execution.stats import RunStepKeyStatsSnapshot
     from dagster._core.launcher import RunLauncher
     from dagster._core.remote_origin import RemoteJobOrigin
-    from dagster._core.remote_representation import (
-        CodeLocation,
-        HistoricalJob,
-        RemoteJob,
-        RemoteSensor,
-    )
-    from dagster._core.remote_representation.external import RemoteSchedule
+    from dagster._core.remote_representation.code_location import CodeLocation
+    from dagster._core.remote_representation.external import RemoteJob, RemoteSchedule, RemoteSensor
+    from dagster._core.remote_representation.historical import HistoricalJob
     from dagster._core.run_coordinator import RunCoordinator
     from dagster._core.scheduler import Scheduler, SchedulerDebugInfo
     from dagster._core.scheduler.instigation import (
@@ -627,7 +623,7 @@ class DagsterInstance(SettingsMixin, DynamicPartitionsStore):
 
     @traced
     def get_historical_job(self, snapshot_id: str) -> "HistoricalJob":
-        from dagster._core.remote_representation import HistoricalJob
+        from dagster._core.remote_representation.historical import HistoricalJob
 
         snapshot = self._run_storage.get_job_snapshot(snapshot_id)
         parent_snapshot = (

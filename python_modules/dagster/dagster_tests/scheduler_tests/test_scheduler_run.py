@@ -18,7 +18,7 @@ from dagster._core.remote_origin import (
     RemoteInstigatorOrigin,
     RemoteRepositoryOrigin,
 )
-from dagster._core.remote_representation import CodeLocation, GrpcServerCodeLocation
+from dagster._core.remote_representation.code_location import CodeLocation, GrpcServerCodeLocation
 from dagster._core.remote_representation.external import RemoteRepository, RemoteSchedule
 from dagster._core.scheduler.instigation import (
     InstigatorState,

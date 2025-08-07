@@ -1077,7 +1077,7 @@ class JobDefinition(IHasInternalInit):
 
     @cached_method
     def get_job_index(self) -> "JobIndex":
-        from dagster._core.remote_representation import JobIndex
+        from dagster._core.remote_representation.job_index import JobIndex
         from dagster._core.snap import JobSnap
 
         return JobIndex(JobSnap.from_job_def(self), self.get_parent_job_snapshot())

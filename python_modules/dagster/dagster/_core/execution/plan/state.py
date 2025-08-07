@@ -229,7 +229,7 @@ def _derive_state_of_past_run(
 ) -> tuple[
     Sequence[str], Mapping[str, Mapping[str, Optional[Sequence[str]]]], set[StepOutputHandle]
 ]:
-    from dagster._core.remote_representation import RemoteExecutionPlan
+    from dagster._core.remote_representation.external import RemoteExecutionPlan
 
     check.inst_param(instance, "instance", DagsterInstance)
     check.opt_inst_param(parent_run, "parent_run", DagsterRun)

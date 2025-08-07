@@ -12,7 +12,7 @@ from dagster._cli.sensor import (
     sensor_stop_command,
 )
 from dagster._cli.utils import validate_dagster_home_is_set, validate_repo_has_defined_sensors
-from dagster._core.remote_representation import RemoteRepository
+from dagster._core.remote_representation.external import RemoteRepository
 from dagster._core.test_utils import environ
 
 from dagster_tests.cli_tests.command_tests.test_cli_commands import sensor_command_contexts

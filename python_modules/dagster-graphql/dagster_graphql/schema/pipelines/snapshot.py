@@ -1,6 +1,6 @@
 import dagster._check as check
 import graphene
-from dagster._core.remote_representation import RepresentedJob
+from dagster._core.remote_representation.represented import RepresentedJob
 
 from dagster_graphql.schema.errors import (
     GraphenePipelineNotFoundError,
