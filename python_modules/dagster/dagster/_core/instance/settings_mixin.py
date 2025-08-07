@@ -1,7 +1,7 @@
 """Settings mixin for DagsterInstance."""
 
 from collections.abc import Mapping, Sequence
-from typing import TYPE_CHECKING, Any, Optional
+from typing import TYPE_CHECKING, Any, Optional, Union
 
 import dagster._check as check
 from dagster._core.instance.config import (
@@ -22,7 +22,9 @@ class SettingsMixin:
     """
 
     # These attributes are provided by DagsterInstance
-    _settings: Any  # Any type to allow custom settings objects - internal repo depends on this
+    _settings: Union[
+        Mapping[str, Any], Any, None
+    ]  # Union to allow custom settings objects - internal repo depends on this
     _run_monitoring_enabled: bool
 
     @property
@@ -42,8 +44,16 @@ class SettingsMixin:
 
     def get_settings(self, settings_key: str) -> Any:
         check.str_param(settings_key, "settings_key")
-        if self._settings and settings_key in self._settings:
-            return self._settings.get(settings_key)
+        if self._settings:
+            # Handle both dictionary-like settings and custom settings objects
+            if hasattr(self._settings, "get") and hasattr(self._settings, "__contains__"):
+                # Dictionary-like interface
+                if settings_key in self._settings:
+                    return self._settings.get(settings_key)
+            else:
+                # Custom settings object - try to get attribute
+                if hasattr(self._settings, settings_key):
+                    return getattr(self._settings, settings_key)
         return {}
 
     def get_backfill_settings(self) -> Mapping[str, Any]:
