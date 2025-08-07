@@ -7,9 +7,11 @@ from collections import defaultdict
 from collections.abc import Iterable, Mapping, Sequence
 from datetime import datetime
 from functools import cached_property
-from tempfile import TemporaryDirectory
 from types import TracebackType
 from typing import TYPE_CHECKING, AbstractSet, Any, Callable, Optional, Union, cast  # noqa: UP035
+
+if TYPE_CHECKING:
+    from tempfile import TemporaryDirectory
 
 import yaml
 from typing_extensions import Self, TypeAlias
@@ -22,7 +24,6 @@ from dagster._core.definitions.freshness import (
     FreshnessStateEvaluation,
     FreshnessStateRecord,
 )
-from dagster._core.errors import DagsterHomeNotSetError, DagsterInvariantViolationError
 from dagster._core.instance.config import DAGSTER_CONFIG_YAML_FILENAME
 from dagster._core.instance.ref import InstanceRef
 from dagster._core.instance.settings_mixin import SettingsMixin
@@ -307,28 +308,9 @@ class DagsterInstance(SettingsMixin, DynamicPartitionsStore):
         Returns:
             DagsterInstance: An ephemeral DagsterInstance.
         """
-        from dagster._core.launcher.sync_in_memory_run_launcher import SyncInMemoryRunLauncher
-        from dagster._core.run_coordinator import DefaultRunCoordinator
-        from dagster._core.storage.event_log import InMemoryEventLogStorage
-        from dagster._core.storage.noop_compute_log_manager import NoOpComputeLogManager
-        from dagster._core.storage.root import LocalArtifactStorage, TemporaryLocalArtifactStorage
-        from dagster._core.storage.runs import InMemoryRunStorage
+        from dagster._core.instance.factory import create_ephemeral_instance
 
-        if tempdir is not None:
-            local_storage = LocalArtifactStorage(tempdir)
-        else:
-            local_storage = TemporaryLocalArtifactStorage()
-
-        return DagsterInstance(
-            instance_type=InstanceType.EPHEMERAL,
-            local_artifact_storage=local_storage,
-            run_storage=InMemoryRunStorage(preload=preload),
-            event_storage=InMemoryEventLogStorage(preload=preload),
-            compute_log_manager=NoOpComputeLogManager(),
-            run_coordinator=DefaultRunCoordinator(),
-            run_launcher=SyncInMemoryRunLauncher(),
-            settings=settings,
-        )
+        return create_ephemeral_instance(tempdir=tempdir, preload=preload, settings=settings)
 
     @public
     @staticmethod
@@ -338,37 +320,9 @@ class DagsterInstance(SettingsMixin, DynamicPartitionsStore):
         Returns:
             DagsterInstance: The current DagsterInstance.
         """
-        dagster_home_path = os.getenv("DAGSTER_HOME")
+        from dagster._core.instance.factory import create_instance_from_dagster_home
 
-        if not dagster_home_path:
-            raise DagsterHomeNotSetError(
-                "The environment variable $DAGSTER_HOME is not set. \nDagster requires this"
-                " environment variable to be set to an existing directory in your filesystem. This"
-                " directory is used to store metadata across sessions, or load the dagster.yaml"
-                " file which can configure storing metadata in an external database.\nYou can"
-                " resolve this error by exporting the environment variable. For example, you can"
-                " run the following command in your shell or include it in your shell configuration"
-                ' file:\n\texport DAGSTER_HOME=~"/dagster_home"\nor PowerShell\n$env:DAGSTER_HOME'
-                " = ($home + '\\dagster_home')or batchset"
-                " DAGSTER_HOME=%UserProfile%/dagster_homeAlternatively, DagsterInstance.ephemeral()"
-                " can be used for a transient instance.\n"
-            )
-
-        dagster_home_path = os.path.expanduser(dagster_home_path)
-
-        if not os.path.isabs(dagster_home_path):
-            raise DagsterInvariantViolationError(
-                f'$DAGSTER_HOME "{dagster_home_path}" must be an absolute path. Dagster requires this '
-                "environment variable to be set to an existing directory in your filesystem."
-            )
-
-        if not (os.path.exists(dagster_home_path) and os.path.isdir(dagster_home_path)):
-            raise DagsterInvariantViolationError(
-                f'$DAGSTER_HOME "{dagster_home_path}" is not a directory or does not exist. Dagster requires this'
-                " environment variable to be set to an existing directory in your filesystem"
-            )
-
-        return DagsterInstance.from_config(dagster_home_path)
+        return create_instance_from_dagster_home()
 
     @public
     @staticmethod
@@ -387,58 +341,24 @@ class DagsterInstance(SettingsMixin, DynamicPartitionsStore):
         Returns:
             DagsterInstance
         """
-        if tempdir is None:
-            created_dir = TemporaryDirectory()
-            i = DagsterInstance.from_ref(
-                InstanceRef.from_dir(created_dir.name, overrides=overrides)
-            )
-            DagsterInstance._TEMP_DIRS[i] = created_dir
-            return i
+        from dagster._core.instance.factory import create_local_temp_instance
 
-        return DagsterInstance.from_ref(InstanceRef.from_dir(tempdir, overrides=overrides))
+        return create_local_temp_instance(tempdir=tempdir, overrides=overrides)
 
     @staticmethod
     def from_config(
         config_dir: str,
         config_filename: str = DAGSTER_CONFIG_YAML_FILENAME,
     ) -> "DagsterInstance":
-        instance_ref = InstanceRef.from_dir(config_dir, config_filename=config_filename)
-        return DagsterInstance.from_ref(instance_ref)
+        from dagster._core.instance.factory import create_instance_from_config
+
+        return create_instance_from_config(config_dir, config_filename)
 
     @staticmethod
     def from_ref(instance_ref: InstanceRef) -> "DagsterInstance":
-        check.inst_param(instance_ref, "instance_ref", InstanceRef)
+        from dagster._core.instance.factory import create_instance_from_ref
 
-        # DagsterInstance doesn't implement ConfigurableClass, but we may still sometimes want to
-        # have custom subclasses of DagsterInstance. This machinery allows for those custom
-        # subclasses to receive additional keyword arguments passed through the config YAML.
-        klass = instance_ref.custom_instance_class or DagsterInstance
-        kwargs = instance_ref.custom_instance_class_config
-
-        unified_storage = instance_ref.storage
-        run_storage = unified_storage.run_storage if unified_storage else instance_ref.run_storage
-        event_storage = (
-            unified_storage.event_log_storage if unified_storage else instance_ref.event_storage
-        )
-        schedule_storage = (
-            unified_storage.schedule_storage if unified_storage else instance_ref.schedule_storage
-        )
-
-        return klass(
-            instance_type=InstanceType.PERSISTENT,
-            local_artifact_storage=instance_ref.local_artifact_storage,
-            run_storage=run_storage,  # type: ignore  # (possible none)
-            event_storage=event_storage,  # type: ignore  # (possible none)
-            schedule_storage=schedule_storage,
-            compute_log_manager=None,  # lazy load
-            scheduler=instance_ref.scheduler,
-            run_coordinator=None,  # lazy load
-            run_launcher=None,  # lazy load
-            settings=instance_ref.settings,
-            secrets_loader=instance_ref.secrets_loader,
-            ref=instance_ref,
-            **kwargs,
-        )
+        return create_instance_from_ref(instance_ref)
 
     # flags
 
