@@ -122,9 +122,9 @@ export function patchCopyToRemoveZeroWidthUnderscores() {
       // codemirror or an input or textarea, this returns "" and we fall
       // through to the default pasteboard content.
       const text =
-        (typeof window !== 'undefined' ? window.getSelection() : '')
-          ?.toString()
-          .replace(/_\u200b/g, '_') || '';
+        (typeof window !== 'undefined'
+          ? window.getSelection()?.toString()?.replace(/_\u200b/g, '_')
+          : '') || '';
 
       if (text.length) {
         event.preventDefault();
