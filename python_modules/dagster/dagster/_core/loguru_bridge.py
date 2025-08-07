@@ -107,7 +107,7 @@ def dagster_context_sink(context: Any) -> Callable[[Any], None]:
 
         log_method = getattr(context.log, log_method_name, None)
 
-        # Context veya log metodu yoksa fallback
+        # Fallback if context or log method is missing  
         if not context or not hasattr(context, "log") or not callable(log_method):
             return
 
