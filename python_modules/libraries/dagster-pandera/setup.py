@@ -40,9 +40,9 @@ setup(
         "pandera>=0.24.0",
     ],
     extras_require={
-        "polars": ["polars>=1"],
+        "polars": ["polars>=1,<=1.32.0"],
         "test": [
-            "polars>=1",
+            "polars>=1,<=1.32.0",
             "pytest",
         ],
     },
