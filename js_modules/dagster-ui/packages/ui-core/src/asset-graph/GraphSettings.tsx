@@ -1,4 +1,5 @@
 import {
+  Body,
   Box,
   Button,
   Icon,
@@ -230,6 +231,8 @@ export const AssetGraphSettingsButton = ({
               setHideEdgesToNodesOutsideQuery={setHideEdgesToNodesOutsideQuery}
               direction={direction}
               setDirection={setDirection}
+              showStubAssets={showStubAssets}
+              setShowStubAssets={setShowStubAssets}
             />
           }
           placement="top"
@@ -269,6 +272,8 @@ export const AssetGraphSettingsMenu = ({
   setHideEdgesToNodesOutsideQuery,
   direction,
   setDirection,
+  showStubAssets,
+  setShowStubAssets,
 }: Omit<Props, 'children'>) => {
   const hasMultipleGroups = (allGroups?.length ?? 0) > 1;
   return (
@@ -287,6 +292,10 @@ export const AssetGraphSettingsMenu = ({
           setHideEdgesToNodesOutsideQuery={setHideEdgesToNodesOutsideQuery}
         />
       ) : null}
+      <ToggleShowStubAssetsMenuItem
+        showStubAssets={showStubAssets}
+        setShowStubAssets={setShowStubAssets}
+      />
     </Menu>
   );
 };
@@ -355,6 +364,35 @@ export const ToggleHideEdgesToNodesOutsideQueryMenuItem = ({
         <Box flex={{direction: 'row', gap: 4, alignItems: 'center'}}>
           {hideEdgesToNodesOutsideQuery ? 'Show' : 'Hide'} neighbor assets outside of selection{' '}
           <KeyboardTag>⌥V</KeyboardTag>
+        </Box>
+      }
+    />
+  );
+};
+
+export const ToggleShowStubAssetsMenuItem = ({
+  showStubAssets,
+  setShowStubAssets,
+}: {
+  showStubAssets: boolean;
+  setShowStubAssets: (showStubAssets: boolean) => void;
+}) => {
+  return (
+    <MenuItem
+      icon={showStubAssets ? <Icon name="visibility" /> : <Icon name="visibility_off" />}
+      onClick={() => setShowStubAssets(!showStubAssets)}
+      text={
+        <Box flex={{direction: 'row', gap: 4, alignItems: 'center'}}>
+          <Body>{showStubAssets ? 'Hide' : 'Show'} stub assets </Body>
+          <div style={{marginLeft: 8}}>
+            <Tooltip
+              content="Stub assets are placeholder assets that Dagster automatically creates to represent dependencies that aren't defined in your current code location. "
+              targetTagName="div"
+            >
+              <Icon name="info" />
+            </Tooltip>
+          </div>
+          <KeyboardTag>⌥S</KeyboardTag>
         </Box>
       }
     />
