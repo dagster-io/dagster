@@ -7,6 +7,7 @@ First, use `gt ls -s` to view the stack structure. The output shows branches in 
 **CRITICAL**: The previous branch is the one that appears immediately AFTER the `◉` (current branch) in the `gt ls -s` output.
 
 Example:
+
 ```
 ◉  feature/current-branch     <- Current branch (HEAD)
 ◯  feature/previous-branch    <- This is the previous branch to use
