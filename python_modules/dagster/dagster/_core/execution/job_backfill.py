@@ -80,7 +80,9 @@ def execute_job_backfill_iteration(
     backfill = cast("PartitionBackfill", instance.get_backfill(backfill.backfill_id))
     if backfill.status == BulkActionStatus.CANCELING:
         all_runs_canceled = cancel_backfill_runs_and_cancellation_complete(
-            instance=instance, backfill_id=backfill.backfill_id
+            instance=instance,
+            backfill_id=backfill.backfill_id,
+            logger=logger,
         )
 
         if all_runs_canceled:
