@@ -1,5 +1,5 @@
 ---
-title: Dagster & dlt (component)
+title: Dagster & dlt (Component)
 sidebar_label: dlt
 description: The dagster-dlt library provides a DltLoadCollectionComponent, which can be used to represent a collection of dlt sources and pipelines as assets in Dagster.
 tags: [dagster-supported, etl]
