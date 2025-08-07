@@ -28,6 +28,8 @@ type Props = {
   setDirection: (d: AssetLayoutDirection) => void;
   hideEdgesToNodesOutsideQuery?: boolean;
   setHideEdgesToNodesOutsideQuery?: (hideEdgesToNodesOutsideQuery: boolean) => void;
+  showStubAssets?: boolean | undefined;
+  setShowStubAssets?: (showStubAssets: boolean) => void;
 };
 
 enum Shortcut {
@@ -272,8 +274,6 @@ export const AssetGraphSettingsMenu = ({
   setHideEdgesToNodesOutsideQuery,
   direction,
   setDirection,
-  showStubAssets,
-  setShowStubAssets,
 }: Omit<Props, 'children'>) => {
   const hasMultipleGroups = (allGroups?.length ?? 0) > 1;
   return (
@@ -292,10 +292,7 @@ export const AssetGraphSettingsMenu = ({
           setHideEdgesToNodesOutsideQuery={setHideEdgesToNodesOutsideQuery}
         />
       ) : null}
-      <ToggleShowStubAssetsMenuItem
-        showStubAssets={showStubAssets}
-        setShowStubAssets={setShowStubAssets}
-      />
+      <ToggleShowStubAssetsMenuItem />
     </Menu>
   );
 };
@@ -370,13 +367,9 @@ export const ToggleHideEdgesToNodesOutsideQueryMenuItem = ({
   );
 };
 
-export const ToggleShowStubAssetsMenuItem = ({
-  showStubAssets,
-  setShowStubAssets,
-}: {
-  showStubAssets: boolean;
-  setShowStubAssets: (showStubAssets: boolean) => void;
-}) => {
+export const ToggleShowStubAssetsMenuItem = () => {
+  const {showStubAssets, setShowStubAssets} = useShowStubAssets();
+
   return (
     <MenuItem
       icon={showStubAssets ? <Icon name="visibility" /> : <Icon name="visibility_off" />}
