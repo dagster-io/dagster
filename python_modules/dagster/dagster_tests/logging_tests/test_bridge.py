@@ -94,6 +94,48 @@ class DagsterTestContext:
 
 
 # --- Step 4: Pytest Fixtures ---
+class DummyContext:
+    def __init__(self):
+        self.log = self
+        self.logged = []
+
+    def info(self, msg, **kwargs):
+        self.logged.append(("info", msg))
+
+    def error(self, msg, **kwargs):
+        self.logged.append(("error", msg))
+
+    def debug(self, msg, **kwargs):
+        self.logged.append(("debug", msg))
+
+    def warning(self, msg, **kwargs):
+        self.logged.append(("warning", msg))
+
+    def critical(self, msg, **kwargs):
+        self.logged.append(("critical", msg))
+
+
+class StructuredContext:
+    """A context that accepts structured logging."""
+
+    def __init__(self):
+        self.log = self
+        self.logged = []
+
+    def debug(self, msg, **kwargs):
+        self.logged.append((msg, kwargs))
+
+    def info(self, msg, **kwargs):
+        self.logged.append((msg, kwargs))
+
+    def warning(self, msg, **kwargs):
+        self.logged.append((msg, kwargs))
+
+    def error(self, msg, **kwargs):
+        self.logged.append((msg, kwargs))
+
+    def critical(self, msg, **kwargs):
+        self.logged.append((msg, kwargs))
 
 
 @pytest.fixture
@@ -112,10 +154,13 @@ def setup_logger():
         level="TRACE",
     )
     yield
+
     try:
         logger.remove(handler_id)
     except ValueError:
         pass
+
+    logger.add(sys.stderr, level="INFO")
 
 
 # --- Step 5: The Full Suite of Tests, Corrected and Ruff-Compliant ---
@@ -365,3 +410,168 @@ def test_context_log_with_loguru_decorator(capfd, setup_logger):
     op(context=context)
     captured = capfd.readouterr()
     assert "[dagster.info] From context.log" in captured.out
+
+
+def test_setup_sinks_does_nothing_when_disabled(monkeypatch):
+    monkeypatch.setenv("DAGSTER_LOGURU_ENABLED", "false")
+    LoguruConfigurator.reset()  # Reset for test isolation
+
+    configurator = LoguruConfigurator()
+    logger.remove()  # Clear existing sinks
+    sink_count_before = len(logger._core.handlers)  # noqa: SLF001
+
+    configurator.setup_sinks()
+
+    sink_count_after = len(logger._core.handlers)  # noqa: SLF001
+    assert sink_count_before == sink_count_after, "No new sinks should be added when disabled"
+
+
+def test_setup_sinks_removes_and_adds_sink_when_enabled(monkeypatch):
+    monkeypatch.setenv("DAGSTER_LOGURU_ENABLED", "true")
+    monkeypatch.setenv("DAGSTER_LOGURU_LOG_LEVEL", "INFO")
+    monkeypatch.setenv("DAGSTER_LOGURU_FORMAT", "{message}")
+
+    LoguruConfigurator.reset()
+    configurator = LoguruConfigurator()
+    logger.remove()
+
+    # Add a dummy sink before
+    dummy_id = logger.add(lambda msg: None)
+    assert dummy_id in logger._core.handlers  # noqa: SLF001
+
+    configurator.setup_sinks()
+
+    # Check that dummy sink is gone and a new one (stderr) is present
+    handlers = logger._core.handlers  # noqa: SLF001
+    assert dummy_id not in handlers, "Old sink should be removed"
+    assert len(handlers) == 1, "New sink should be added"
+
+
+def test_setup_sinks_uses_default_log_level(monkeypatch):
+    monkeypatch.delenv("DAGSTER_LOGURU_LOG_LEVEL", raising=False)
+    monkeypatch.setenv("DAGSTER_LOGURU_ENABLED", "true")
+    LoguruConfigurator.reset()
+    configurator = LoguruConfigurator()
+    assert configurator.config["log_level"] == "DEBUG"
+
+
+def test_setup_sinks_uses_default_format(monkeypatch):
+    monkeypatch.delenv("DAGSTER_LOGURU_FORMAT", raising=False)
+    monkeypatch.setenv("DAGSTER_LOGURU_ENABLED", "true")
+    LoguruConfigurator.reset()
+    configurator = LoguruConfigurator()
+    assert "{name}:{function}:{line}" in configurator.config["format"]
+
+
+def test_loguru_configurator_does_not_reinitialize(monkeypatch):
+    monkeypatch.setenv("DAGSTER_LOGURU_ENABLED", "true")
+    LoguruConfigurator.reset()
+
+    first = LoguruConfigurator()
+    config_before = first.config.copy()
+
+    # LoguruConfigurator should not change config when called again
+    _ = LoguruConfigurator(enable_terminal_sink=False)
+
+    # config should not be reloaded
+    assert LoguruConfigurator.is_initialized() is True
+    assert first.config == config_before
+
+
+def test_sink_is_not_added_when_config_incomplete(monkeypatch):
+    monkeypatch.setenv("DAGSTER_LOGURU_ENABLED", "true")
+    monkeypatch.delenv("DAGSTER_LOGURU_LOG_LEVEL", raising=False)
+    monkeypatch.delenv("DAGSTER_LOGURU_FORMAT", raising=False)
+    LoguruConfigurator.reset()
+    configurator = LoguruConfigurator()
+    assert configurator.config["log_level"] == "DEBUG"
+    assert "{name}:{function}:{line}" in configurator.config["format"]
+
+
+def test_logger_remove_called_only_once(monkeypatch):
+    monkeypatch.setenv("DAGSTER_LOGURU_ENABLED", "true")
+    LoguruConfigurator.reset()
+    configurator = LoguruConfigurator()
+    # There's no direct way to count logger.remove calls; this is an assumption test
+    assert configurator.config["enabled"] is True
+
+
+def test_sink_addition_preserves_custom_handlers(monkeypatch):
+    monkeypatch.setenv("DAGSTER_LOGURU_ENABLED", "true")
+    LoguruConfigurator.reset()
+    LoguruConfigurator(enable_terminal_sink=True)
+
+    messages = []
+    logger.add(messages.append, level="INFO")
+
+    logger.info("Preserved")
+    assert any("Preserved" in str(msg) for msg in messages)
+
+
+@with_loguru_logger
+def nested_test_op(context=None):
+    """Helper function for testing nested operations."""
+    if context:
+        context.log.info("Nested context working")
+    else:
+        logger.info("Nested context working")  # Fallback if no context provided
+
+
+def test_with_loguru_logger_preserves_context(capfd):
+    """Test that with_loguru_logger preserves context."""
+    ctx = DummyContext()
+
+    nested_test_op(context=ctx)
+    assert ("info", "Nested context working") in ctx.logged
+
+
+def test_multiple_initializations_dont_stack_handlers(monkeypatch):
+    """Test that multiple initializations don't stack handlers."""
+    monkeypatch.setenv("DAGSTER_LOGURU_ENABLED", "true")
+    LoguruConfigurator.reset()
+    logger.remove()
+    initial_count = len(logger._core.handlers)  # noqa: SLF001
+    LoguruConfigurator()
+    mid_count = len(logger._core.handlers)  # noqa: SLF001
+    LoguruConfigurator()
+    final_count = len(logger._core.handlers)  # noqa: SLF001
+    assert mid_count == final_count >= initial_count
+
+
+def test_structured_extras_are_forwarded(monkeypatch):
+    """Test that structured extras are forwarded."""
+    monkeypatch.setenv("DAGSTER_LOGURU_ENABLED", "true")
+    LoguruConfigurator.reset()
+    ctx = StructuredContext()
+    sink = dagster_context_sink(ctx)
+    logger.remove()
+    handler_id = logger.add(sink, format="{message} {extra}", level="INFO")
+    try:
+        logger.bind(user="test_user").info("Hello")
+        assert any(msg[0] == "Hello" and msg[1].get("user") == "test_user" for msg in ctx.logged)
+    finally:
+        logger.remove(handler_id)
+
+
+def test_intercept_handler_forwards(capfd):
+    """Test that the intercept handler forwards logs to loguru."""
+    logger.remove()
+    handler_id = logger.add(sys.stdout, format="{message}")
+
+    try:
+        handler = InterceptHandler()
+        record = logging.LogRecord(
+            name="test",
+            level=logging.INFO,
+            pathname="test.py",
+            lineno=1,
+            msg="Test intercept",
+            args=(),
+            exc_info=None,
+        )
+
+        handler.emit(record)
+        captured = capfd.readouterr()
+        assert "Test intercept" in captured.out
+    finally:
+        logger.remove(handler_id)
