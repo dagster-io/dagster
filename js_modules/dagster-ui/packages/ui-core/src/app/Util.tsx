@@ -123,7 +123,10 @@ export function patchCopyToRemoveZeroWidthUnderscores() {
       // through to the default pasteboard content.
       const text =
         (typeof window !== 'undefined'
-          ? window.getSelection()?.toString()?.replace(/_\u200b/g, '_')
+          ? window
+              .getSelection()
+              ?.toString()
+              ?.replace(/_\u200b/g, '_')
           : '') || '';
 
       if (text.length) {
