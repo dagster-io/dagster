@@ -2,6 +2,8 @@ import os
 from collections.abc import Mapping
 from typing import TYPE_CHECKING, Any
 
+from dagster_shared.record import as_dict
+
 if TYPE_CHECKING:
     from dagster._core.storage.dagster_run import DagsterRun
 
@@ -45,8 +47,7 @@ def _check_run_equality(
     pipeline_run: "DagsterRun", candidate_run: "DagsterRun"
 ) -> Mapping[str, tuple[Any, Any]]:
     field_diff: dict[str, tuple[Any, Any]] = {}
-    for field in pipeline_run._fields:
-        expected_value = getattr(pipeline_run, field)
+    for field, expected_value in as_dict(pipeline_run):
         candidate_value = getattr(candidate_run, field)
         if expected_value != candidate_value:
             field_diff[field] = (expected_value, candidate_value)
