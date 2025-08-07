@@ -371,7 +371,7 @@ const InnerLineChartWithComparison = <T,>(props: Props<T>) => {
             {metrics.prevPeriod.aggregateValue
               ? numberFormatterWithMaxFractionDigits(2).format(prevPeriodDisplayValueAndUnit.value)
               : 0}
-            <span> previous period</span>
+            <span> prev period</span>
           </Box>
           <Box flex={{direction: 'row', gap: 4, alignItems: 'center'}}>
             {metrics.pctChange && metrics.pctChange > 0 ? (
