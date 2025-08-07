@@ -67,6 +67,7 @@ yarn build-api-docs          # Build API docs after .rst changes
 - **ALWAYS use `@record` from `dagster_shared.record` for data structures, result objects, and immutable classes**
 - Only use `@dataclass` when mutability is specifically required
 - **NEVER use `__all__` in subpackage `__init__.py` files** - only use `__all__` in top-level package `__init__.py` files to define public APIs
+- **DO NOT create `__init__.py` files for internal subpackages** - use absolute imports instead since we use absolute imports throughout the codebase
 
 ## Code Quality Requirements
 
