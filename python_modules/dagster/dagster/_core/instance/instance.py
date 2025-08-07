@@ -831,6 +831,12 @@ class DagsterInstance(SettingsMixin, DynamicPartitionsStore):
 
         return DaemonDomain(self)
 
+    @cached_property
+    def _compute_log_domain(self):
+        from dagster._core.instance.compute_logs.compute_log_domain import ComputeLogDomain
+
+        return ComputeLogDomain(self)
+
     def create_run(
         self,
         *,
