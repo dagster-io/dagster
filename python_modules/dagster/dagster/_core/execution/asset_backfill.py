@@ -1150,7 +1150,9 @@ async def execute_asset_backfill_iteration(
         from dagster._core.execution.backfill import cancel_backfill_runs_and_cancellation_complete
 
         all_runs_canceled = cancel_backfill_runs_and_cancellation_complete(
-            instance=instance, backfill_id=backfill.backfill_id
+            instance=instance,
+            backfill_id=backfill.backfill_id,
+            logger=logger,
         )
 
         # Update the asset backfill data to contain the newly materialized/failed partitions.
