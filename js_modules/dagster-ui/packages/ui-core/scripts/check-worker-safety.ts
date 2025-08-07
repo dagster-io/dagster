@@ -217,7 +217,11 @@ class WorkerSafetyChecker {
       }
 
       return null;
-    } catch {
+    } catch (error) {
+      console.error(
+        `Error resolving import path for module "${moduleName}" from "${fromFile}":`,
+        error,
+      );
       return null;
     }
   }
