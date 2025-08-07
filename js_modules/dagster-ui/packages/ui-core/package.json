@@ -20,7 +20,7 @@
     "generate-op-selection": "ts-node -O '{\"module\": \"commonjs\"}' ./src/scripts/generateOpSelection.ts && eslint src/op-selection/generated/ --fix -c .eslintrc.js",
     "generate-job-selection": "ts-node -O '{\"module\": \"commonjs\"}' ./src/scripts/generateJobSelection.ts && eslint src/job-selection/generated/ --fix -c .eslintrc.js",
     "generate-automation-selection": "ts-node -O '{\"module\": \"commonjs\"}' ./src/scripts/generateAutomationSelection.ts && eslint src/automation-selection/generated/ --fix -c .eslintrc.js",
-    "check-worker-safety": "tsx ./scripts/check-worker-safety.ts",
+    "check-worker-safety": "tsx ./src/scripts/check-worker-safety.ts",
     "storybook": "storybook dev -p 6006",
     "build-storybook": "storybook build",
     "find-circular-dependencies": "ts-node -O '{\"module\": \"commonjs\"}' ./src/scripts/findCircularDependencies.ts"
