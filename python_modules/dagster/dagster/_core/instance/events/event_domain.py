@@ -1,6 +1,7 @@
 """Event domain implementation - extracted from DagsterInstance."""
 
 import logging
+import logging.config
 import sys
 import warnings
 from collections.abc import Sequence
@@ -8,6 +9,7 @@ from typing import TYPE_CHECKING, Optional, Union
 
 import dagster._check as check
 from dagster._time import get_current_timestamp
+from dagster._utils.warnings import beta_warning
 
 if TYPE_CHECKING:
     from dagster._core.event_api import EventHandlerFn
@@ -20,6 +22,7 @@ if TYPE_CHECKING:
     )
     from dagster._core.events.log import EventLogEntry
     from dagster._core.instance import DagsterInstance
+    from dagster._core.instance.types import _EventListenerLogHandler
     from dagster._core.storage.dagster_run import DagsterRun
     from dagster._core.storage.event_log.base import (
         EventLogConnection,
@@ -408,3 +411,45 @@ class EventDomain:
         )
         self.report_dagster_event(dagster_event, run_id=dagster_run.run_id, log_level=logging.ERROR)
         return dagster_event
+
+    def get_yaml_python_handlers(self) -> Sequence[logging.Handler]:
+        """Get YAML-defined Python logging handlers - moved from DagsterInstance._get_yaml_python_handlers()."""
+        if self._instance._settings:  # noqa: SLF001
+            logging_config = self._instance.get_python_log_dagster_handler_config()
+
+            if logging_config:
+                beta_warning("Handling yaml-defined logging configuration")
+
+            # Handlers can only be retrieved from dictConfig configuration if they are attached
+            # to a logger. We add a dummy logger to the configuration that allows us to access user
+            # defined handlers.
+            handler_names = logging_config.get("handlers", {}).keys()
+
+            dagster_dummy_logger_name = "dagster_dummy_logger"
+
+            processed_dict_conf = {
+                "version": 1,
+                "disable_existing_loggers": False,
+                "loggers": {dagster_dummy_logger_name: {"handlers": handler_names}},
+            }
+            processed_dict_conf.update(logging_config)
+
+            logging.config.dictConfig(processed_dict_conf)
+
+            dummy_logger = logging.getLogger(dagster_dummy_logger_name)
+            return dummy_logger.handlers
+        return []
+
+    def get_event_log_handler(self) -> "_EventListenerLogHandler":
+        """Get event log handler - moved from DagsterInstance._get_event_log_handler()."""
+        from dagster._core.instance.types import _EventListenerLogHandler
+
+        event_log_handler = _EventListenerLogHandler(self._instance)
+        event_log_handler.setLevel(10)
+        return event_log_handler
+
+    def get_handlers(self) -> Sequence[logging.Handler]:
+        """Get all logging handlers - moved from DagsterInstance.get_handlers()."""
+        handlers: list[logging.Handler] = [self.get_event_log_handler()]
+        handlers.extend(self.get_yaml_python_handlers())
+        return handlers
