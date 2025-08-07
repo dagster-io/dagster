@@ -476,6 +476,38 @@ class WorkerSafetyChecker {
         }
       }
 
+      // Check for ternary expressions with typeof checks
+      // Pattern: typeof window !== 'undefined' ? window.something : fallback
+      if (ts.isConditionalExpression(parent)) {
+        const condition = parent.condition;
+
+        // Check if condition is a typeof check
+        if (ts.isBinaryExpression(condition)) {
+          const {left, operatorToken, right} = condition;
+
+          if (
+            (operatorToken.kind === ts.SyntaxKind.ExclamationEqualsEqualsToken ||
+              operatorToken.kind === ts.SyntaxKind.ExclamationEqualsToken) &&
+            ts.isTypeOfExpression(left) &&
+            ts.isStringLiteral(right) &&
+            right.text === 'undefined'
+          ) {
+            // Check if the typeof is checking the same variable as the unsafe usage
+            if (ts.isIdentifier(left.expression)) {
+              const checkedVariable = left.expression.getText();
+              // Only consider it safe if we're in the "true" branch of the ternary
+              // and the checked variable matches the api being used
+              if (
+                checkedVariable === apiName &&
+                parent.whenTrue.getFullText().includes(node.getFullText())
+              ) {
+                return true;
+              }
+            }
+          }
+        }
+      }
+
       parent = parent.parent;
       depth++;
     }
