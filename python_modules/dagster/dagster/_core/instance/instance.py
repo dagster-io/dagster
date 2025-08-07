@@ -609,6 +609,17 @@ class DagsterInstance(SettingsMixin, DynamicPartitionsStore):
             self._compute_log_manager.register_instance(self)
         return self._compute_log_manager
 
+    def _get_settings_value(self, settings_key: str) -> Any:
+        """Get settings value from the instance settings.
+
+        This method provides a uniform interface for accessing settings,
+        allowing subclasses to customize settings behavior while maintaining
+        compatibility with the SettingsMixin.
+        """
+        if self._settings and settings_key in self._settings:
+            return self._settings.get(settings_key)
+        return {}
+
     def upgrade(self, print_fn: Optional[PrintFn] = None) -> None:
         from dagster._core.storage.migration.utils import upgrading_instance
 
