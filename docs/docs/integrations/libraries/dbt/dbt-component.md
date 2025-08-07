@@ -1,5 +1,6 @@
 ---
-title: dbt Component
+title: Dagster & dbt (Component)
+sidebar_label: dbt component
 description: The dagster-dbt library provides a DbtProjectComponent, which can be used to represent dbt models as assets in Dagster.
 tags: [dagster-supported, etl]
 source: https://github.com/dagster-io/dagster/tree/master/python_modules/libraries/dagster-dbt
