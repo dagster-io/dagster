@@ -35,6 +35,15 @@ const UNSAFE_BROWSER_APIS = new Set([
   'cancelAnimationFrame',
 ]);
 
+// Libraries that should not be imported in workers
+const UNSAFE_IMPORTS = new Set([
+  'react',
+  'react-dom',
+  '@apollo/client',
+  'react-router',
+  'react-router-dom',
+]);
+
 interface UnsafeApiUsage {
   file: string;
   line: number;
@@ -43,6 +52,7 @@ interface UnsafeApiUsage {
   workerFile: string;
   message: string;
   dependencyPath: string[];
+  type: 'api' | 'import';
 }
 
 class WorkerSafetyChecker {
@@ -153,6 +163,12 @@ class WorkerSafetyChecker {
           ts.isStringLiteral(node.moduleSpecifier)
         ) {
           const moduleName = node.moduleSpecifier.text;
+
+          // Check for unsafe library imports
+          if (UNSAFE_IMPORTS.has(moduleName) || moduleName.startsWith('react/')) {
+            this.addUnsafeImport(sourceFile, node, moduleName, file, file);
+          }
+
           const resolvedPath = this.resolveImportPath(moduleName, file);
 
           if (resolvedPath && this.isLocalFile(resolvedPath)) {
@@ -241,6 +257,18 @@ class WorkerSafetyChecker {
     const relativeWorker = path.relative(this.projectRoot, workerFile);
 
     const visitNode = (node: ts.Node) => {
+      // Check for unsafe library imports
+      if (
+        ts.isImportDeclaration(node) &&
+        node.moduleSpecifier &&
+        ts.isStringLiteral(node.moduleSpecifier)
+      ) {
+        const moduleName = node.moduleSpecifier.text;
+        if (UNSAFE_IMPORTS.has(moduleName) || moduleName.startsWith('react/')) {
+          this.addUnsafeImport(sourceFile, node, moduleName, filePath, relativeWorker);
+        }
+      }
+
       // Check for unsafe global identifiers - only flag direct references
       if (ts.isIdentifier(node)) {
         const text = node.getText(sourceFile);
@@ -472,6 +500,50 @@ class WorkerSafetyChecker {
       workerFile,
       message,
       dependencyPath: storedPath,
+      type: 'api',
+    });
+  }
+
+  private addUnsafeImport(
+    sourceFile: ts.SourceFile,
+    node: ts.Node,
+    importName: string,
+    file: string,
+    workerFile: string,
+  ): void {
+    const {line, character} = sourceFile.getLineAndCharacterOfPosition(node.getStart());
+
+    // Convert file to relative for display but use absolute for dependency lookup
+    const relativeFile = path.relative(this.projectRoot, file);
+
+    // Create a unique identifier for this error
+    const errorKey = `${relativeFile}:${line + 1}:${character + 1}:import:${importName}:${workerFile}`;
+
+    // Skip if we've already seen this exact error
+    if (this.seenErrors.has(errorKey)) {
+      return;
+    }
+    this.seenErrors.add(errorKey);
+
+    let message = `${importName} should not be imported in worker context`;
+    if (importName === 'react' || importName.startsWith('react/')) {
+      message += ' (increases bundle size and not needed in workers)';
+    } else if (importName === '@apollo/client') {
+      message += ' (GraphQL client not needed in workers)';
+    }
+
+    // Use absolute file path for dependency lookup
+    const storedPath = this.dependencyPaths.get(file) || [file];
+
+    this.unsafeUsages.push({
+      file: relativeFile,
+      line: line + 1,
+      column: character + 1,
+      api: `import ${importName}`,
+      workerFile,
+      message,
+      dependencyPath: storedPath,
+      type: 'import',
     });
   }
 }
