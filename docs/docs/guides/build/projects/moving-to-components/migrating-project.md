@@ -8,7 +8,7 @@ import DgComponentsRc from '@site/docs/partials/\_DgComponentsRc.md';
 
 <DgComponentsRc />
 
-In this guide, we walk through converting an an existing Dagster project that defines a Python package with a single Dagster asset, which is exposed in a top-level `Definitions` object in `my_existing_project/definitions.py`.
+In this guide, we walk through converting an existing Dagster project that defines a Python package with a single Dagster asset, which is exposed in a top-level `Definitions` object in `my_existing_project/definitions.py`.
 
 :::note
 
@@ -199,7 +199,7 @@ Autoloading is provided by a function that returns a `Definitions` object. Becau
 
 To do so, you'll need to modify your `definitions.py` file, or whichever file contains your top-level `Definitions` object.
 
-You will autoload definitions using `load_from_defs_folder`, then merge them with your existing definitions using `Definitions.merge`. You pass `load_defs` the `defs` submodule you just created:
+You will autoload definitions using `load_from_defs_folder`, then merge them with your existing definitions using `Definitions.merge`. You pass `load_from_defs_folder` the `defs` submodule you just created:
 
 <Tabs>
   <TabItem value="before" label="Before">
@@ -222,7 +222,7 @@ Next, add an asset to the new `defs` submodule. Create a file called `my_existin
 
 <CodeExample path="docs_snippets/docs_snippets/guides/dg/migrating-project/15-autoloaded-asset.py" />
 
-### Step 4.2: Confirm the new asset is autoloaded
+### Step 4.3: Confirm the new asset is autoloaded
 
 Finally, confirm the new asset is being autoloaded. If you run `dg list defs` again, you should see both the new `autoloaded_asset` and old `my_asset`:
 
