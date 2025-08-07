@@ -12,7 +12,7 @@ jest.mock('react', () => jest.requireActual('react'));
 // eslint-disable-next-line no-var
 var mockGetJSONForKey: jest.Mock;
 
-jest.mock('../../hooks/useStateWithStorage', () => {
+jest.mock('../../util/getJSONForKey', () => {
   if (!mockGetJSONForKey) {
     mockGetJSONForKey = jest.fn(() => {});
   }
