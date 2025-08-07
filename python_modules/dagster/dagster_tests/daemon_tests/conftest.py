@@ -6,12 +6,11 @@ from typing import Optional, cast
 
 import dagster as dg
 import pytest
-from dagster._core.remote_representation import (
-    CodeLocation,
+from dagster._core.remote_origin import (
     InProcessCodeLocationOrigin,
-    RemoteRepository,
+    ManagedGrpcPythonEnvCodeLocationOrigin,
 )
-from dagster._core.remote_representation.origin import ManagedGrpcPythonEnvCodeLocationOrigin
+from dagster._core.remote_representation import CodeLocation, RemoteRepository
 from dagster._core.test_utils import (
     InProcessTestWorkspaceLoadTarget,
     create_test_daemon_workspace_context,

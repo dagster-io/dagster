@@ -14,7 +14,7 @@ from dagster._core.execution.asset_backfill import (
 )
 from dagster._core.execution.backfill import BulkActionStatus, PartitionBackfill
 from dagster._core.execution.job_backfill import execute_job_backfill_iteration
-from dagster._core.remote_representation.origin import RemotePartitionSetOrigin
+from dagster._core.remote_origin import RemotePartitionSetOrigin
 from dagster._core.storage.dagster_run import DagsterRun, DagsterRunStatus, RunsFilter
 from dagster._core.storage.tags import (
     ASSET_PARTITION_RANGE_END_TAG,

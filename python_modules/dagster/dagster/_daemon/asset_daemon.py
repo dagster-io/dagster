@@ -50,9 +50,9 @@ from dagster._core.execution.submit_asset_runs import (
     submit_asset_run,
 )
 from dagster._core.instance import DagsterInstance
+from dagster._core.remote_origin import RemoteInstigatorOrigin
 from dagster._core.remote_representation import RemoteSensor
 from dagster._core.remote_representation.external import RemoteRepository
-from dagster._core.remote_representation.origin import RemoteInstigatorOrigin
 from dagster._core.scheduler.instigation import (
     InstigatorState,
     InstigatorStatus,

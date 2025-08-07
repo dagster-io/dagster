@@ -43,7 +43,7 @@ from dagster._utils.error import SerializableErrorInfo
 from dagster._utils.merger import merge_dicts
 
 if TYPE_CHECKING:
-    from dagster._core.remote_representation.origin import RemotePartitionSetOrigin
+    from dagster._core.remote_origin import RemotePartitionSetOrigin
 
 # out of abundance of caution, sleep at checkpoints in case we are pinning CPU by submitting lots
 # of jobs all at once

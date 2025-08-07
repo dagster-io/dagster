@@ -72,7 +72,7 @@ if TYPE_CHECKING:
     from dagster._core.definitions.unresolved_asset_job_definition import (
         UnresolvedAssetJobDefinition,
     )
-    from dagster._core.remote_representation.origin import CodeLocationOrigin
+    from dagster._core.remote_origin import CodeLocationOrigin
 
 
 @whitelist_for_serdes
@@ -167,7 +167,7 @@ class SensorEvaluationContext:
     ):
         from dagster._core.definitions.definitions_class import Definitions
         from dagster._core.definitions.repository_definition import RepositoryDefinition
-        from dagster._core.remote_representation.origin import CodeLocationOrigin
+        from dagster._core.remote_origin import CodeLocationOrigin
 
         self._exit_stack = ExitStack()
         self._instance_ref = check.opt_inst_param(instance_ref, "instance_ref", InstanceRef)

@@ -21,8 +21,8 @@ from dagster._core.execution.asset_backfill import (
 )
 from dagster._core.execution.bulk_actions import BulkActionType
 from dagster._core.instance import DynamicPartitionsStore
+from dagster._core.remote_origin import RemotePartitionSetOrigin
 from dagster._core.remote_representation.external_data import job_name_for_partition_set_snap_name
-from dagster._core.remote_representation.origin import RemotePartitionSetOrigin
 from dagster._core.storage.dagster_run import (
     CANCELABLE_RUN_STATUSES,
     NOT_FINISHED_STATUSES,

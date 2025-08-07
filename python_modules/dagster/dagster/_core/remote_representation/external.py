@@ -9,9 +9,9 @@ from typing import TYPE_CHECKING, AbstractSet, Callable, Optional, Union  # noqa
 from dagster_shared.error import DagsterError
 
 import dagster._check as check
-from dagster import AssetSelection
 from dagster._config.snap import ConfigFieldSnap, ConfigSchemaSnapshot
 from dagster._core.definitions.asset_checks.asset_check_spec import AssetCheckKey
+from dagster._core.definitions.asset_selection import AssetSelection
 from dagster._core.definitions.assets.job.asset_job import IMPLICIT_ASSET_JOB_NAME
 from dagster._core.definitions.automation_condition_sensor_definition import (
     DEFAULT_AUTOMATION_CONDITION_SENSOR_NAME,
@@ -39,6 +39,12 @@ from dagster._core.execution.plan.handle import ResolvedFromDynamicStepHandle, S
 from dagster._core.instance import DagsterInstance
 from dagster._core.loader import LoadableBy
 from dagster._core.origin import JobPythonOrigin, RepositoryPythonOrigin
+from dagster._core.remote_origin import (
+    RemoteInstigatorOrigin,
+    RemoteJobOrigin,
+    RemotePartitionSetOrigin,
+    RemoteRepositoryOrigin,
+)
 from dagster._core.remote_representation.external_data import (
     DEFAULT_MODE_NAME,
     AssetCheckNodeSnap,
@@ -66,12 +72,6 @@ from dagster._core.remote_representation.handle import (
     RepositoryHandle,
 )
 from dagster._core.remote_representation.job_index import JobIndex
-from dagster._core.remote_representation.origin import (
-    RemoteInstigatorOrigin,
-    RemoteJobOrigin,
-    RemotePartitionSetOrigin,
-    RemoteRepositoryOrigin,
-)
 from dagster._core.remote_representation.represented import RepresentedJob
 from dagster._core.snap import ExecutionPlanSnapshot
 from dagster._core.snap.job_snapshot import JobSnap

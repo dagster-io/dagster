@@ -58,8 +58,8 @@ if TYPE_CHECKING:
     from dagster._core.execution.plan.plan import ExecutionPlan
     from dagster._core.execution.plan.resume_retry import ReexecutionStrategy
     from dagster._core.instance.instance import DagsterInstance
+    from dagster._core.remote_origin import RemoteJobOrigin
     from dagster._core.remote_representation import CodeLocation, RemoteJob
-    from dagster._core.remote_representation.origin import RemoteJobOrigin
     from dagster._core.snap import ExecutionPlanSnapshot, JobSnap
     from dagster._core.snap.execution_plan_snapshot import (
         ExecutionStepOutputSnap,
@@ -101,7 +101,7 @@ class RunDomain:
     ) -> DagsterRun:
         """Create a run with the given parameters."""
         from dagster._core.definitions.asset_key import AssetCheckKey
-        from dagster._core.remote_representation.origin import RemoteJobOrigin
+        from dagster._core.remote_origin import RemoteJobOrigin
         from dagster._core.snap import ExecutionPlanSnapshot, JobSnap
         from dagster._utils.tags import normalize_tags
 
