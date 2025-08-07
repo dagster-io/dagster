@@ -179,7 +179,8 @@
   "SingleScheduleQuery": "508a47e32ce04ba5be52c66cd592b74147bf98ec85b9f5d0e4db45172bd9a897",
   "SingleSensorQuery": "dbda5ba47d4ba10f8c527c9a7cd45fba0811276441a17a8ac6f173ed588f025b",
   "WorkspaceAssetsQuery": "f8cccee3286a595fc68a04372394aefed44d5ac880b73956a2e95330f3b65ae5",
-  "LocationWorkspaceQuery": "dc3c765d258d59c8c265f45109e72281af380ac95cb06b3e8faf799e7edba7ef",
+  "LocationWorkspaceQuery": "5d21d0e8b4e77431881531cb470781a940ecf33d3f63759ff6d702264687e717",
+  "WorkspaceLatestStateVersionsQuery": "f1ce8eed86770d66db48c8d69383638f4c61ddba7625f396d602292666d868e5",
   "CodeLocationStatusQuery": "5491629a2659feca3a6cf0cc976c6f59c8e78dff1193e07d7850ae4355698b04",
   "LocationWorkspaceAssetsQuery": "3e053c920a3fd3448cf3cb0ee19ab1b643c66ecde751bb81d464b6e75e046d3f",
   "WorkspaceGraphsQuery": "ccbef870f327b56beb0d781a476c8afbbc22ff2621181c8576861daaf7667ecf"

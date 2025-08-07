@@ -17,6 +17,7 @@ import styled from 'styled-components';
 import {RepositoryLocationNonBlockingErrorDialog} from './RepositoryLocationErrorDialog';
 import {WorkspaceRepositoryLocationNode} from './WorkspaceContext/WorkspaceContext';
 import {useCopyToClipboard} from '../app/browser';
+import {useLatestStateVersions} from '../code-location/useLatestStateVersions';
 import {
   NO_RELOAD_PERMISSION_TEXT,
   ReloadRepositoryLocationButton,
@@ -110,6 +111,7 @@ export const LocationStatus = (props: {
 }) => {
   const {locationStatus, locationOrError} = props;
   const [showDialog, setShowDialog] = useState(false);
+  const {latestStateVersions} = useLatestStateVersions();
 
   const reloadFn = useMemo(
     () => buildReloadFnForLocation(locationStatus?.name || ''),
@@ -119,6 +121,20 @@ export const LocationStatus = (props: {
     scope: 'location',
     reloadFn,
   });
+
+  const hasOutdatedStateVersions = useMemo(() => {
+    if (!locationOrError?.stateVersions?.versionInfo || !latestStateVersions) {
+      return false;
+    }
+
+    const currentVersions = locationOrError.stateVersions.versionInfo;
+    const latestVersionsMap = new Map(latestStateVersions.map((info) => [info.name, info.version]));
+
+    return currentVersions.some((currentInfo) => {
+      const latestVersion = latestVersionsMap.get(currentInfo.name);
+      return latestVersion && currentInfo.version !== latestVersion;
+    });
+  }, [locationOrError?.stateVersions?.versionInfo, latestStateVersions]);
 
   if (locationStatus?.loadStatus === 'LOADING') {
     return (
@@ -160,9 +176,16 @@ export const LocationStatus = (props: {
   }
 
   return (
-    <Tag minimal intent="success">
-      Loaded
-    </Tag>
+    <Box flex={{direction: 'row', alignItems: 'center', gap: 8}}>
+      <Tag minimal intent="success">
+        Loaded
+      </Tag>
+      {hasOutdatedStateVersions && (
+        <Tooltip content="State versions are outdated" placement="top">
+          <Icon name="warning" color={Colors.accentYellow()} size={16} />
+        </Tooltip>
+      )}
+    </Box>
   );
 };
 

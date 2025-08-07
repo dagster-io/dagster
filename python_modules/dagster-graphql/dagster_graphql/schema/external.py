@@ -16,7 +16,11 @@ from dagster._core.remote_representation.grpc_server_state_subscriber import (
     LocationStateSubscriber,
 )
 from dagster._core.remote_representation.handle import RepositoryHandle
+<<<<<<< HEAD
 from dagster._core.storage.defs_state.defs_state_info import DefsStateInfo
+=======
+from dagster._core.storage.state.state_versions import StateVersionInfo, StateVersions
+>>>>>>> d7fdd82c60 (Better frontend features for state rendering)
 from dagster._core.workspace.context import WorkspaceProcessContext
 from dagster._core.workspace.workspace import CodeLocationEntry, CodeLocationLoadStatus
 from dagster.components.core.load_defs import PLUGIN_COMPONENT_TYPES_JSON_METADATA_KEY
@@ -55,6 +59,46 @@ class GrapheneDagsterLibraryVersion(graphene.ObjectType):
 
     class Meta:
         name = "DagsterLibraryVersion"
+
+
+class GrapheneStateVersionInfo(graphene.ObjectType):
+    name = graphene.NonNull(graphene.String)
+    version = graphene.Field(graphene.String)
+    createTimestamp = graphene.Field(graphene.Float)
+
+    class Meta:
+        name = "StateVersionInfo"
+
+    def __init__(self, state_version_info: Optional[StateVersionInfo], name: str):
+        self._state_version_info = state_version_info
+        self._name = name
+        super().__init__()
+
+    def resolve_name(self, _):
+        return self._name
+
+    def resolve_version(self, _):
+        return self._state_version_info.version if self._state_version_info else None
+
+    def resolve_createTimestamp(self, _):
+        return self._state_version_info.create_timestamp if self._state_version_info else None
+
+
+class GrapheneStateVersions(graphene.ObjectType):
+    versionInfo = graphene.Field(non_null_list(GrapheneStateVersionInfo))
+
+    class Meta:
+        name = "StateVersions"
+
+    def __init__(self, state_versions: StateVersions):
+        self._state_versions = state_versions
+        super().__init__()
+
+    def resolve_versionInfo(self, _):
+        return [
+            GrapheneStateVersionInfo(state_version_info, key)
+            for key, state_version_info in self._state_versions.version_info.items()
+        ]
 
 
 class GrapheneRepositoryLocationLoadStatus(graphene.Enum):
@@ -202,6 +246,8 @@ class GrapheneWorkspaceLocationEntry(graphene.ObjectType):
 
     featureFlags = non_null_list(GrapheneFeatureFlag)
 
+    stateVersions = graphene.Field(GrapheneStateVersions)
+
     class Meta:
         name = "WorkspaceLocationEntry"
 
@@ -261,6 +307,16 @@ class GrapheneWorkspaceLocationEntry(graphene.ObjectType):
             GrapheneFeatureFlag(name=feature_flag_name.value, enabled=feature_flag_enabled)
             for feature_flag_name, feature_flag_enabled in feature_flags.items()
         ]
+
+    def resolve_stateVersions(self, graphene_info):
+        if not self._location_entry.code_location:
+            return None
+
+        state_versions = self._location_entry.code_location.get_state_versions()
+        if not state_versions:
+            return None
+
+        return GrapheneStateVersions(state_versions)
 
 
 class GrapheneRepository(graphene.ObjectType):
@@ -469,12 +525,17 @@ class GrapheneRepositoryConnection(graphene.ObjectType):
 class GrapheneWorkspace(graphene.ObjectType):
     id = graphene.NonNull(graphene.String)
     locationEntries = non_null_list(GrapheneWorkspaceLocationEntry)
+    latestStateVersions = graphene.Field(GrapheneStateVersions)
 
     class Meta:
         name = "Workspace"
 
     def resolve_id(self, _graphene_info: ResolveInfo):
         return "Workspace"
+
+    def resolve_latestStateVersions(self, graphene_info):
+        state_versions = graphene_info.context.instance.get_latest_state_versions()
+        return GrapheneStateVersions(state_versions) if state_versions else None
 
 
 class GrapheneLocationStateChangeEvent(graphene.ObjectType):

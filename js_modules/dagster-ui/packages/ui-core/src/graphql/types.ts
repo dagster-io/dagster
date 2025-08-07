@@ -5622,6 +5622,18 @@ export type StartScheduleMutation = {
   Output: ScheduleMutationResult;
 };
 
+export type StateVersionInfo = {
+  __typename: 'StateVersionInfo';
+  createTimestamp: Maybe<Scalars['Float']['output']>;
+  name: Scalars['String']['output'];
+  version: Maybe<Scalars['String']['output']>;
+};
+
+export type StateVersions = {
+  __typename: 'StateVersions';
+  versionInfo: Array<StateVersionInfo>;
+};
+
 export type StepEvent = {
   solidHandleID: Maybe<Scalars['String']['output']>;
   stepKey: Maybe<Scalars['String']['output']>;
@@ -6080,6 +6092,7 @@ export type WaitingOnKeysRuleEvaluationData = {
 export type Workspace = {
   __typename: 'Workspace';
   id: Scalars['String']['output'];
+  latestStateVersions: Maybe<StateVersions>;
   locationEntries: Array<WorkspaceLocationEntry>;
 };
 
@@ -6092,6 +6105,7 @@ export type WorkspaceLocationEntry = {
   locationOrLoadError: Maybe<RepositoryLocationOrLoadError>;
   name: Scalars['String']['output'];
   permissions: Array<Permission>;
+  stateVersions: Maybe<StateVersions>;
   updatedTimestamp: Scalars['Float']['output'];
   versionKey: Scalars['String']['output'];
 };
@@ -15524,6 +15538,33 @@ export const buildStartScheduleMutation = (
   };
 };
 
+export const buildStateVersionInfo = (
+  overrides?: Partial<StateVersionInfo>,
+  _relationshipsToOmit: Set<string> = new Set(),
+): {__typename: 'StateVersionInfo'} & StateVersionInfo => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('StateVersionInfo');
+  return {
+    __typename: 'StateVersionInfo',
+    createTimestamp:
+      overrides && overrides.hasOwnProperty('createTimestamp') ? overrides.createTimestamp! : 6.8,
+    name: overrides && overrides.hasOwnProperty('name') ? overrides.name! : 'non',
+    version: overrides && overrides.hasOwnProperty('version') ? overrides.version! : 'impedit',
+  };
+};
+
+export const buildStateVersions = (
+  overrides?: Partial<StateVersions>,
+  _relationshipsToOmit: Set<string> = new Set(),
+): {__typename: 'StateVersions'} & StateVersions => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('StateVersions');
+  return {
+    __typename: 'StateVersions',
+    versionInfo: overrides && overrides.hasOwnProperty('versionInfo') ? overrides.versionInfo! : [],
+  };
+};
+
 export const buildStepEvent = (
   overrides?: Partial<StepEvent>,
   _relationshipsToOmit: Set<string> = new Set(),
@@ -16382,6 +16423,12 @@ export const buildWorkspace = (
   return {
     __typename: 'Workspace',
     id: overrides && overrides.hasOwnProperty('id') ? overrides.id! : 'id',
+    latestStateVersions:
+      overrides && overrides.hasOwnProperty('latestStateVersions')
+        ? overrides.latestStateVersions!
+        : relationshipsToOmit.has('StateVersions')
+          ? ({} as StateVersions)
+          : buildStateVersions({}, relationshipsToOmit),
     locationEntries:
       overrides && overrides.hasOwnProperty('locationEntries') ? overrides.locationEntries! : [],
   };
@@ -16415,6 +16462,12 @@ export const buildWorkspaceLocationEntry = (
           : buildPythonError({}, relationshipsToOmit),
     name: overrides && overrides.hasOwnProperty('name') ? overrides.name! : 'sint',
     permissions: overrides && overrides.hasOwnProperty('permissions') ? overrides.permissions! : [],
+    stateVersions:
+      overrides && overrides.hasOwnProperty('stateVersions')
+        ? overrides.stateVersions!
+        : relationshipsToOmit.has('StateVersions')
+          ? ({} as StateVersions)
+          : buildStateVersions({}, relationshipsToOmit),
     updatedTimestamp:
       overrides && overrides.hasOwnProperty('updatedTimestamp')
         ? overrides.updatedTimestamp!

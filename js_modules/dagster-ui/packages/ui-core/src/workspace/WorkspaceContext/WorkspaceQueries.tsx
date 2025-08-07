@@ -142,6 +142,13 @@ export const PARTIAL_WORKSPACE_LOCATION_NODE_FRAGMENT = gql`
       name
       enabled
     }
+    stateVersions {
+      versionInfo {
+        name
+        version
+        createTimestamp
+      }
+    }
     locationOrLoadError {
       ... on RepositoryLocation {
         id
@@ -252,6 +259,25 @@ export const LOCATION_WORKSPACE_QUERY = gql`
   ${PYTHON_ERROR_FRAGMENT}
 `;
 
+export const WORKSPACE_LATEST_STATE_VERSIONS_QUERY = gql`
+  query WorkspaceLatestStateVersionsQuery {
+    workspaceOrError {
+      ... on Workspace {
+        id
+        latestStateVersions {
+          versionInfo {
+            name
+            version
+            createTimestamp
+          }
+        }
+      }
+      ...PythonErrorFragment
+    }
+  }
+  ${PYTHON_ERROR_FRAGMENT}
+`;
+
 export const CODE_LOCATION_STATUS_QUERY = gql`
   query CodeLocationStatusQuery {
     locationStatusesOrError {
@@ -294,6 +320,13 @@ export const WORKSPACE_LOCATION_NODE_FRAGMENT = gql`
     featureFlags {
       name
       enabled
+    }
+    stateVersions {
+      versionInfo {
+        name
+        version
+        createTimestamp
+      }
     }
     locationOrLoadError {
       ...WorkspaceRepositoryLocation

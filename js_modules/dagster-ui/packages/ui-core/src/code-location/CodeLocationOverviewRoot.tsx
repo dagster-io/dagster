@@ -6,6 +6,7 @@ import {
   Mono,
   SpinnerWithText,
   Table,
+  Tag,
   Tooltip,
   UnstyledButton,
 } from '@dagster-io/ui-components';
@@ -19,6 +20,7 @@ import {createGlobalStyle} from 'styled-components';
 import * as yaml from 'yaml';
 
 import {CodeLocationOverviewSectionHeader} from './CodeLocationOverviewSectionHeader';
+import {useLatestStateVersions} from './useLatestStateVersions';
 import {useCopyToClipboard} from '../app/browser';
 import {TimeFromNow} from '../ui/TimeFromNow';
 import {CodeLocationNotFound} from '../workspace/CodeLocationNotFound';
@@ -44,6 +46,7 @@ interface Props {
 
 export const CodeLocationOverviewRoot = (props: Props) => {
   const {repoAddress, locationStatus, locationEntry} = props;
+  const {latestStateVersions} = useLatestStateVersions();
 
   const {displayMetadata} = locationEntry || {};
   const metadataForDetails: Record<MetadataRowKey, {key: string; value: string} | null> =
@@ -64,6 +67,60 @@ export const CodeLocationOverviewRoot = (props: Props) => {
       ? locationEntry?.locationOrLoadError.dagsterLibraryVersions
       : null;
   }, [locationEntry]);
+
+  const stateVersionsComparison = useMemo(() => {
+    const currentVersions = locationEntry?.stateVersions?.versionInfo || [];
+    const latest = latestStateVersions || [];
+
+    // Create a map of all unique component names from both current and latest
+    const allComponents = new Set<string>();
+    currentVersions.forEach((info) => allComponents.add(info.name));
+    latest.forEach((info) => allComponents.add(info.name));
+
+    // Create maps for easy lookup
+    const currentVersionMap = new Map(
+      currentVersions.map((info) => [info.name, {version: info.version, createTimestamp: info.createTimestamp}])
+    );
+    const latestVersionMap = new Map(
+      latest.map((info) => [info.name, {version: info.version, createTimestamp: info.createTimestamp}])
+    );
+
+    return Array.from(allComponents).map((componentName) => {
+      const currentInfo = currentVersionMap.get(componentName);
+      const latestInfo = latestVersionMap.get(componentName);
+      const isUpToDate = currentInfo?.version === latestInfo?.version;
+
+      return {
+        name: componentName,
+        currentVersion: currentInfo?.version || null,
+        currentTimestamp: currentInfo?.createTimestamp || null,
+        latestVersion: latestInfo?.version || null,
+        latestTimestamp: latestInfo?.createTimestamp || null,
+        isUpToDate,
+      };
+    });
+  }, [locationEntry?.stateVersions?.versionInfo, latestStateVersions]);
+
+  const renderVersionWithTimestamp = (timestamp: number | null, version: string | null) => {
+    if (!timestamp || !version) {
+      return <span>—</span>;
+    }
+    
+    const truncatedVersion = version.substring(0, 8);
+    
+    return (
+      <Box flex={{direction: 'row', alignItems: 'center', gap: 8}}>
+        <Tooltip content={version} placement="top">
+          <Tag intent="primary">
+            <Mono>{truncatedVersion}</Mono>
+          </Tag>
+        </Tooltip>
+        <Tag intent="none">
+          <TimeFromNow unixTimestamp={timestamp} />
+        </Tag>
+      </Box>
+    );
+  };
 
   const copy = useCopyToClipboard();
   const [didCopy, setDidCopy] = useState(false);
@@ -155,6 +212,43 @@ export const CodeLocationOverviewRoot = (props: Props) => {
                   </td>
                   <td>
                     <Mono>{version.version}</Mono>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </Table>
+        </>
+      ) : null}
+      {stateVersionsComparison.length > 0 ? (
+        <>
+          <CodeLocationOverviewSectionHeader label="State Versions" />
+          <Table style={{width: 'auto', tableLayout: 'auto'}}>
+            <thead>
+              <tr>
+                <th style={{width: '200px'}}>Component Name</th>
+                <th style={{width: '250px'}}>Used Version</th>
+                <th style={{width: '250px'}}>Latest Available Version</th>
+                <th style={{width: '40px', textAlign: 'center'}}></th>
+              </tr>
+            </thead>
+            <tbody>
+              {stateVersionsComparison.map((component) => (
+                <tr key={component.name}>
+                  <td style={{width: '200px'}}>
+                    <Mono>{component.name}</Mono>
+                  </td>
+                  <td style={{width: '250px'}}>
+                    {renderVersionWithTimestamp(component.currentTimestamp, component.currentVersion)}
+                  </td>
+                  <td style={{width: '250px'}}>
+                    {renderVersionWithTimestamp(component.latestTimestamp, component.latestVersion)}
+                  </td>
+                  <td style={{width: '40px', textAlign: 'center'}}>
+                    <Icon
+                      name={component.isUpToDate ? 'check_circle' : 'warning'}
+                      color={component.isUpToDate ? Colors.accentGreen() : Colors.accentYellow()}
+                      size={16}
+                    />
                   </td>
                 </tr>
               ))}

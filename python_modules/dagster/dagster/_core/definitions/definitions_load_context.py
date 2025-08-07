@@ -18,7 +18,7 @@ from dagster._core.definitions.metadata.metadata_value import (
 )
 from dagster._core.errors import DagsterInvalidInvocationError, DagsterInvariantViolationError
 from dagster._core.storage.defs_state.base import DefsStateStorage
-from dagster._core.storage.defs_state.defs_state_info import DefsStateInfo
+from dagster._core.storage.defs_state.defs_state_info import DefsKeyStateInfo, DefsStateInfo
 
 if TYPE_CHECKING:
     from dagster._core.definitions.repository_definition import RepositoryLoadData
@@ -69,8 +69,17 @@ class DefinitionsLoadContext:
             self._defs_state_info = (
                 state_storage.get_latest_defs_state_info() if state_storage else None
             )
+<<<<<<< HEAD
         else:
             self._defs_state_info = defs_state_info
+=======
+            # when the state versions are passed in during INITIALIZATION, we add them to the
+            # pending reconstruction metadata so that we can guarantee that they will be available
+            # during reconstruction
+            self._pending_reconstruction_metadata = {
+                k: v.version if v else None for k, v in state_info.info_mapping.items()
+            }
+>>>>>>> d7fdd82c60 (Better frontend features for state rendering)
 
     @classmethod
     def get(cls) -> "DefinitionsLoadContext":
@@ -98,8 +107,24 @@ class DefinitionsLoadContext:
     def add_to_pending_reconstruction_metadata(self, key: str, metadata: Any) -> None:
         self._pending_reconstruction_metadata[key] = metadata
 
+    def add_state_version(self, key: str, version_info: Optional[DefsKeyStateInfo]) -> None:
+        self._pending_state_version_info[key] = version_info
+
     def get_pending_reconstruction_metadata(self) -> Mapping[str, Any]:
-        return self._pending_reconstruction_metadata
+        if self._pending_state_version_info:
+            state_versions = StateVersions(
+                version_info={k: v for k, v in self._pending_state_version_info.items()}
+            )
+            state_versions_metadata = {
+                "STATE_VERSIONS": serialize_value(state_versions),
+            }
+        else:
+            state_versions_metadata = {}
+
+        return {
+            **self._pending_reconstruction_metadata,
+            **state_versions_metadata,
+        }
 
     @property
     def cacheable_asset_data(self) -> Mapping[str, Sequence[AssetsDefinitionCacheableData]]:
@@ -135,9 +160,17 @@ class DefinitionsLoadContext:
             else {}
         )
 
+<<<<<<< HEAD
     @property
     def defs_state_info(self) -> Optional[DefsStateInfo]:
         return self._defs_state_info
+=======
+    @cached_property
+    def state_versions(self) -> Optional[StateVersions]:
+        if self.load_type == DefinitionsLoadType.INITIALIZATION:
+            # in INITIALIZATION mode, state versions are set directly
+            return self._state_info.get_version(key) if self._state_info else None
+>>>>>>> d7fdd82c60 (Better frontend features for state rendering)
 
     @contextmanager
     def temp_state_path(self, key: str) -> Iterator[Optional[Path]]:
@@ -149,13 +182,21 @@ class DefinitionsLoadContext:
                 "This is likely the result of an internal framework error."
             )
         # if no state has ever been written for this key, we return None to indicate that no state is available
+<<<<<<< HEAD
         version = self._defs_state_info.get_version(key) if self._defs_state_info else None
         if version is None:
+=======
+        version_info = self._get_version_info(key)
+        # ensure that any component that attempts to access state versions will
+        # have that attempt logged
+        self.add_state_version(key, version_info)
+        if version_info is None:
+>>>>>>> d7fdd82c60 (Better frontend features for state rendering)
             yield None
             return
         with tempfile.TemporaryDirectory() as temp_dir:
             state_path = Path(temp_dir) / key
-            state_storage.download_state_to_path(key, version, state_path)
+            state_storage.download_state_to_path(key, version_info.version, state_path)
             yield state_path
 
 

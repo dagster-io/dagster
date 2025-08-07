@@ -232,6 +232,15 @@ export type PartialWorkspaceLocationNodeFragment = {
   versionKey: string;
   displayMetadata: Array<{__typename: 'RepositoryMetadata'; key: string; value: string}>;
   featureFlags: Array<{__typename: 'FeatureFlag'; name: string; enabled: boolean}>;
+  stateVersions: {
+    __typename: 'StateVersions';
+    versionInfo: Array<{
+      __typename: 'StateVersionInfo';
+      name: string;
+      version: string | null;
+      createTimestamp: number | null;
+    }>;
+  } | null;
   locationOrLoadError:
     | {
         __typename: 'PythonError';
@@ -811,6 +820,15 @@ export type LocationWorkspaceQuery = {
         versionKey: string;
         displayMetadata: Array<{__typename: 'RepositoryMetadata'; key: string; value: string}>;
         featureFlags: Array<{__typename: 'FeatureFlag'; name: string; enabled: boolean}>;
+        stateVersions: {
+          __typename: 'StateVersions';
+          versionInfo: Array<{
+            __typename: 'StateVersionInfo';
+            name: string;
+            version: string | null;
+            createTimestamp: number | null;
+          }>;
+        } | null;
         locationOrLoadError:
           | {
               __typename: 'PythonError';
@@ -913,6 +931,36 @@ export type LocationWorkspaceQuery = {
           | null;
       }
     | null;
+};
+
+export type WorkspaceLatestStateVersionsQueryVariables = Types.Exact<{[key: string]: never}>;
+
+export type WorkspaceLatestStateVersionsQuery = {
+  __typename: 'Query';
+  workspaceOrError:
+    | {
+        __typename: 'PythonError';
+        message: string;
+        stack: Array<string>;
+        errorChain: Array<{
+          __typename: 'ErrorChainLink';
+          isExplicitLink: boolean;
+          error: {__typename: 'PythonError'; message: string; stack: Array<string>};
+        }>;
+      }
+    | {
+        __typename: 'Workspace';
+        id: string;
+        latestStateVersions: {
+          __typename: 'StateVersions';
+          versionInfo: Array<{
+            __typename: 'StateVersionInfo';
+            name: string;
+            version: string | null;
+            createTimestamp: number | null;
+          }>;
+        } | null;
+      };
 };
 
 export type CodeLocationStatusQueryVariables = Types.Exact<{[key: string]: never}>;
@@ -1056,6 +1104,15 @@ export type WorkspaceLocationNodeFragment = {
   versionKey: string;
   displayMetadata: Array<{__typename: 'RepositoryMetadata'; key: string; value: string}>;
   featureFlags: Array<{__typename: 'FeatureFlag'; name: string; enabled: boolean}>;
+  stateVersions: {
+    __typename: 'StateVersions';
+    versionInfo: Array<{
+      __typename: 'StateVersionInfo';
+      name: string;
+      version: string | null;
+      createTimestamp: number | null;
+    }>;
+  } | null;
   locationOrLoadError:
     | {
         __typename: 'PythonError';
@@ -1499,7 +1556,9 @@ export type WorkspaceRepositoryFragment = {
   displayMetadata: Array<{__typename: 'RepositoryMetadata'; key: string; value: string}>;
 };
 
-export const LocationWorkspaceQueryVersion = 'dc3c765d258d59c8c265f45109e72281af380ac95cb06b3e8faf799e7edba7ef';
+export const LocationWorkspaceQueryVersion = '5d21d0e8b4e77431881531cb470781a940ecf33d3f63759ff6d702264687e717';
+
+export const WorkspaceLatestStateVersionsQueryVersion = 'f1ce8eed86770d66db48c8d69383638f4c61ddba7625f396d602292666d868e5';
 
 export const CodeLocationStatusQueryVersion = '5491629a2659feca3a6cf0cc976c6f59c8e78dff1193e07d7850ae4355698b04';
 

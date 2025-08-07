@@ -1775,6 +1775,7 @@ type WorkspaceLocationEntry {
   versionKey: String!
   permissions: [Permission!]!
   featureFlags: [FeatureFlag!]!
+  stateVersions: StateVersions
 }
 
 union RepositoryLocationOrLoadError = RepositoryLocation | PythonError
@@ -1795,6 +1796,16 @@ type FeatureFlag {
   enabled: Boolean!
 }
 
+type StateVersions {
+  versionInfo: [StateVersionInfo!]!
+}
+
+type StateVersionInfo {
+  name: String!
+  version: String
+  createTimestamp: Float
+}
+
 type ReloadWorkspaceMutation {
   Output: ReloadWorkspaceMutationResult!
 }
@@ -1804,6 +1815,7 @@ union ReloadWorkspaceMutationResult = Workspace | UnauthorizedError | PythonErro
 type Workspace {
   id: String!
   locationEntries: [WorkspaceLocationEntry!]!
+  latestStateVersions: StateVersions
 }
 
 type ShutdownRepositoryLocationMutation {

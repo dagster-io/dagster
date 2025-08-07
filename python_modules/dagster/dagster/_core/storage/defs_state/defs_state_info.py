@@ -1,5 +1,5 @@
 from collections.abc import Mapping
-from typing import Optional
+from typing import Any, Optional
 
 from dagster_shared.record import record
 from dagster_shared.serdes import whitelist_for_serdes
@@ -21,7 +21,35 @@ class DefsKeyStateInfo:
 class DefsStateInfo:
     """All of the information about the state version that will be used to load a given code location."""
 
-    info_mapping: Mapping[str, DefsKeyStateInfo]
+    info_mapping: Mapping[str, Optional[DefsKeyStateInfo]]
+
+    @staticmethod
+    def from_yaml(val: Optional[dict[str, Any]]) -> Optional["DefsStateInfo"]:
+        if val is None:
+            return None
+
+        return DefsStateInfo(
+            info_mapping={
+                key: DefsKeyStateInfo(
+                    version=version_info["version"],
+                    create_timestamp=version_info["create_timestamp"],
+                )
+                if version_info
+                else None
+                for key, version_info in val.items()
+            }
+        )
+
+    def to_yaml(self) -> dict[str, Any]:
+        return {
+            key: {
+                "version": version_info.version,
+                "create_timestamp": version_info.create_timestamp,
+            }
+            if version_info
+            else None
+            for key, version_info in self.info_mapping.items()
+        }
 
     def get_version(self, key: str) -> Optional[str]:
         info = self.info_mapping.get(key)
