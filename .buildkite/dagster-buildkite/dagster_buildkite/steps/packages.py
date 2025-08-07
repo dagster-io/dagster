@@ -27,6 +27,7 @@ from dagster_buildkite.utils import (
     has_storage_test_fixture_changes,
     network_buildkite_container,
     skip_if_not_dagster_dbt_cloud_commit,
+    skip_if_not_dagster_dbt_commit,
 )
 from typing_extensions import TypeAlias
 
@@ -695,14 +696,19 @@ LIBRARY_PACKAGES_WITH_CUSTOM_CONFIG: list[PackageSpec] = [
             f"{deps_factor}-{command_factor}"
             for deps_factor in ["dbt17", "dbt18", "dbt19", "dbt110"]
             for command_factor in ["cloud", "core-main", "core-derived-metadata"]
-        ]
-        + ["dbtfusion-snowflake"],
+        ],
         # dbt-core 1.7's protobuf<5 constraint conflicts with the grpc requirement for Python 3.13
         unsupported_python_versions=(
             lambda tox_factor: [AvailablePythonVersion.V3_13]
             if tox_factor and tox_factor.startswith("dbt17")
             else []
         ),
+    ),
+    PackageSpec(
+        "python_modules/libraries/dagster-dbt/",
+        skip_if=skip_if_not_dagster_dbt_commit,
+        name="dagster-dbt-fusion",
+        pytest_tox_factors=["dbtfusion-snowflake"],
         env_vars=[
             "SNOWFLAKE_ACCOUNT",
             "SNOWFLAKE_USER",
