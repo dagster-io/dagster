@@ -63,11 +63,11 @@ from dagster._core.instance_for_test import (
     instance_for_test as instance_for_test,
 )
 from dagster._core.launcher import RunLauncher
+from dagster._core.remote_origin import InProcessCodeLocationOrigin
 from dagster._core.remote_representation import RemoteRepository
 from dagster._core.remote_representation.code_location import CodeLocation
 from dagster._core.remote_representation.external_data import RepositorySnap
 from dagster._core.remote_representation.handle import RepositoryHandle
-from dagster._core.remote_representation.origin import InProcessCodeLocationOrigin
 from dagster._core.run_coordinator import RunCoordinator, SubmitRunContext
 from dagster._core.secrets import SecretsLoader
 from dagster._core.storage.dagster_run import DagsterRun, DagsterRunStatus, RunsFilter

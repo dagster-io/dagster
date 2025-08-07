@@ -2,23 +2,29 @@ import os
 from abc import ABC, abstractmethod
 from collections.abc import Iterator, Mapping, Sequence
 from contextlib import contextmanager
-from typing import TYPE_CHECKING, Any, NoReturn, Optional, cast
+from typing import TYPE_CHECKING, Any, Final, NoReturn, Optional, cast
 
 from dagster_shared.record import IHaveNew, LegacyNamedTupleMixin, record, record_custom
 
 import dagster._check as check
-from dagster._core.definitions.selector import (
-    InstigatorSelector,
-    PartitionSetSelector,
-    RepositorySelector,
-)
 from dagster._core.errors import DagsterInvariantViolationError, DagsterUserCodeUnreachableError
 from dagster._core.instance.config import DEFAULT_LOCAL_CODE_SERVER_STARTUP_TIMEOUT
-from dagster._core.origin import DEFAULT_DAGSTER_ENTRY_POINT
 from dagster._core.types.loadable_target_origin import LoadableTargetOrigin
 from dagster._serdes import create_snapshot_id, whitelist_for_serdes
 
+DEFAULT_DAGSTER_ENTRY_POINT: Final = ["dagster"]
+
+
+def get_python_environment_entry_point(executable_path: str) -> Sequence[str]:
+    return [executable_path, "-m", "dagster"]
+
+
 if TYPE_CHECKING:
+    from dagster._core.definitions.selector import (
+        InstigatorSelector,
+        PartitionSetSelector,
+        RepositorySelector,
+    )
     from dagster._core.instance import DagsterInstance
     from dagster._core.remote_representation.code_location import (
         CodeLocation,
@@ -26,6 +32,7 @@ if TYPE_CHECKING:
         InProcessCodeLocation,
     )
     from dagster._grpc.client import DagsterGrpcClient
+
 
 # This is a hard-coded name for the special "in-process" location.
 # This is typically only used for test, although we may allow
@@ -393,7 +400,9 @@ class RemoteRepositoryOrigin(LegacyNamedTupleMixin):
     def get_selector_id(self) -> str:
         return create_snapshot_id(self.get_selector())
 
-    def get_selector(self) -> RepositorySelector:
+    def get_selector(self) -> "RepositorySelector":
+        from dagster._core.definitions.selector import RepositorySelector
+
         return RepositorySelector(
             location_name=self.code_location_origin.location_name,
             repository_name=self.repository_name,
@@ -459,7 +468,9 @@ class RemoteInstigatorOrigin(LegacyNamedTupleMixin):
     repository_origin: RemoteRepositoryOrigin
     instigator_name: str
 
-    def get_selector(self) -> InstigatorSelector:
+    def get_selector(self) -> "InstigatorSelector":
+        from dagster._core.definitions.selector import InstigatorSelector
+
         return InstigatorSelector(
             location_name=self.repository_origin.code_location_origin.location_name,
             repository_name=self.repository_origin.repository_name,
@@ -491,7 +502,9 @@ class RemotePartitionSetOrigin:
         return create_snapshot_id(self)
 
     @property
-    def selector(self) -> PartitionSetSelector:
+    def selector(self) -> "PartitionSetSelector":
+        from dagster._core.definitions.selector import PartitionSetSelector
+
         return PartitionSetSelector(
             location_name=self.repository_origin.code_location_origin.location_name,
             repository_name=self.repository_origin.repository_name,

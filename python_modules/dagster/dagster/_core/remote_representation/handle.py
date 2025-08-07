@@ -9,7 +9,7 @@ from dagster._core.code_pointer import ModuleCodePointer
 from dagster._core.definitions.selector import JobSubsetSelector, RepositorySelector
 from dagster._core.errors import DagsterInvariantViolationError
 from dagster._core.origin import RepositoryPythonOrigin
-from dagster._core.remote_representation.origin import (
+from dagster._core.remote_origin import (
     CodeLocationOrigin,
     RegisteredCodeLocationOrigin,
     RemoteRepositoryOrigin,

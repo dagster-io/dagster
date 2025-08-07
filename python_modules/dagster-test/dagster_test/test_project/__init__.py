@@ -15,16 +15,16 @@ from dagster._core.origin import (
     JobPythonOrigin,
     RepositoryPythonOrigin,
 )
+from dagster._core.remote_origin import (
+    RemoteInstigatorOrigin,
+    RemoteJobOrigin,
+    RemoteRepositoryOrigin,
+)
 from dagster._core.remote_representation import (
     GrpcServerCodeLocationOrigin,
     InProcessCodeLocationOrigin,
     RemoteJob,
     RemoteSchedule,
-)
-from dagster._core.remote_representation.origin import (
-    RemoteInstigatorOrigin,
-    RemoteJobOrigin,
-    RemoteRepositoryOrigin,
 )
 from dagster._core.test_utils import in_process_test_workspace
 from dagster._core.types.loadable_target_origin import LoadableTargetOrigin

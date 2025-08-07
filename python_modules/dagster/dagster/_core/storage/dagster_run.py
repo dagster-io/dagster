@@ -19,7 +19,7 @@ from dagster._core.definitions.partitions.subset import (
 )
 from dagster._core.loader import LoadableBy, LoadingContext
 from dagster._core.origin import JobPythonOrigin
-from dagster._core.remote_representation.origin import RemoteJobOrigin
+from dagster._core.remote_origin import RemoteJobOrigin
 from dagster._core.storage.tags import (
     ASSET_EVALUATION_ID_TAG,
     AUTO_RETRY_RUN_ID_TAG,
@@ -375,7 +375,7 @@ class DagsterRun(
 
         # Placing this with the other imports causes a cyclic import
         # https://github.com/dagster-io/dagster/issues/3181
-        from dagster._core.remote_representation.origin import RemoteJobOrigin
+        from dagster._core.remote_origin import RemoteJobOrigin
 
         if status == DagsterRunStatus.QUEUED:
             check.inst_param(
@@ -442,7 +442,7 @@ class DagsterRun(
         return self._replace(status=status)
 
     def with_job_origin(self, origin: "RemoteJobOrigin") -> Self:
-        from dagster._core.remote_representation.origin import RemoteJobOrigin
+        from dagster._core.remote_origin import RemoteJobOrigin
 
         check.inst_param(origin, "origin", RemoteJobOrigin)
         return self._replace(remote_job_origin=origin)

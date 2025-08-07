@@ -6,6 +6,16 @@ It also contains classes that represent historical representations
 that have been persisted. e.g. HistoricalPipeline
 """
 
+from dagster._core.remote_origin import (
+    IN_PROCESS_NAME as IN_PROCESS_NAME,
+    CodeLocationOrigin as CodeLocationOrigin,
+    GrpcServerCodeLocationOrigin as GrpcServerCodeLocationOrigin,
+    InProcessCodeLocationOrigin as InProcessCodeLocationOrigin,
+    ManagedGrpcPythonEnvCodeLocationOrigin as ManagedGrpcPythonEnvCodeLocationOrigin,
+    RemoteInstigatorOrigin as RemoteInstigatorOrigin,
+    RemoteJobOrigin as RemoteJobOrigin,
+    RemoteRepositoryOrigin as RemoteRepositoryOrigin,
+)
 from dagster._core.remote_representation.external import (
     RemoteExecutionPlan as RemoteExecutionPlan,
     RemoteJob as RemoteJob,
@@ -40,16 +50,6 @@ from dagster._core.remote_representation.handle import (
     RepositoryHandle as RepositoryHandle,
 )
 from dagster._core.remote_representation.historical import HistoricalJob as HistoricalJob
-from dagster._core.remote_representation.origin import (
-    IN_PROCESS_NAME as IN_PROCESS_NAME,
-    CodeLocationOrigin as CodeLocationOrigin,
-    GrpcServerCodeLocationOrigin as GrpcServerCodeLocationOrigin,
-    InProcessCodeLocationOrigin as InProcessCodeLocationOrigin,
-    ManagedGrpcPythonEnvCodeLocationOrigin as ManagedGrpcPythonEnvCodeLocationOrigin,
-    RemoteInstigatorOrigin as RemoteInstigatorOrigin,
-    RemoteJobOrigin as RemoteJobOrigin,
-    RemoteRepositoryOrigin as RemoteRepositoryOrigin,
-)
 
 # ruff: isort: split
 from dagster._core.remote_representation.code_location import (

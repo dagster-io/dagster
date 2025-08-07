@@ -29,6 +29,10 @@ from dagster._core.execution.plan.state import KnownExecutionState
 from dagster._core.instance import DagsterInstance
 from dagster._core.instance.types import CachingDynamicPartitionsLoader
 from dagster._core.loader import LoadingContext
+from dagster._core.remote_origin import (
+    GrpcServerCodeLocationOrigin,
+    ManagedGrpcPythonEnvCodeLocationOrigin,
+)
 from dagster._core.remote_representation import (
     CodeLocation,
     CodeLocationOrigin,
@@ -49,10 +53,6 @@ from dagster._core.remote_representation.grpc_server_state_subscriber import (
     LocationStateSubscriber,
 )
 from dagster._core.remote_representation.handle import InstigatorHandle
-from dagster._core.remote_representation.origin import (
-    GrpcServerCodeLocationOrigin,
-    ManagedGrpcPythonEnvCodeLocationOrigin,
-)
 from dagster._core.snap.dagster_types import DagsterTypeSnap
 from dagster._core.snap.mode import ResourceDefSnap
 from dagster._core.snap.node import GraphDefSnap, OpDefSnap

@@ -39,6 +39,12 @@ from dagster._core.execution.plan.handle import ResolvedFromDynamicStepHandle, S
 from dagster._core.instance import DagsterInstance
 from dagster._core.loader import LoadableBy
 from dagster._core.origin import JobPythonOrigin, RepositoryPythonOrigin
+from dagster._core.remote_origin import (
+    RemoteInstigatorOrigin,
+    RemoteJobOrigin,
+    RemotePartitionSetOrigin,
+    RemoteRepositoryOrigin,
+)
 from dagster._core.remote_representation.external_data import (
     DEFAULT_MODE_NAME,
     AssetCheckNodeSnap,
@@ -66,12 +72,6 @@ from dagster._core.remote_representation.handle import (
     RepositoryHandle,
 )
 from dagster._core.remote_representation.job_index import JobIndex
-from dagster._core.remote_representation.origin import (
-    RemoteInstigatorOrigin,
-    RemoteJobOrigin,
-    RemotePartitionSetOrigin,
-    RemoteRepositoryOrigin,
-)
 from dagster._core.remote_representation.represented import RepresentedJob
 from dagster._core.snap import ExecutionPlanSnapshot
 from dagster._core.snap.job_snapshot import JobSnap
