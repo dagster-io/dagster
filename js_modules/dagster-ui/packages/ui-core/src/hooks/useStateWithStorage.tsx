@@ -3,10 +3,10 @@ import * as React from 'react';
 export function getJSONForKey(key: string) {
   let stored = undefined;
   try {
-    if (typeof window === 'undefined') {
-      stored = self.localStorage.getItem(key);
-    } else {
+    if (typeof window !== 'undefined') {
       stored = window.localStorage.getItem(key);
+    } else {
+      stored = self.localStorage.getItem(key);
     }
     if (stored) {
       return JSON.parse(stored);
@@ -55,14 +55,18 @@ export function useStateWithStorage<T>(key: string, validate: (json: any) => T) 
 
   const setStateInner = React.useCallback(
     (next: T | undefined) => {
-      if (next === undefined) {
-        window.localStorage.removeItem(key);
-      } else {
-        window.localStorage.setItem(key, JSON.stringify(next));
+      if (typeof window !== 'undefined') {
+        if (next === undefined) {
+          window.localStorage.removeItem(key);
+        } else {
+          window.localStorage.setItem(key, JSON.stringify(next));
+        }
       }
-      document.removeEventListener(DID_WRITE_LOCALSTORAGE, listener);
-      document.dispatchEvent(new CustomEvent(DID_WRITE_LOCALSTORAGE, {detail: key}));
-      document.addEventListener(DID_WRITE_LOCALSTORAGE, listener);
+      if (typeof document !== 'undefined') {
+        document.removeEventListener(DID_WRITE_LOCALSTORAGE, listener);
+        document.dispatchEvent(new CustomEvent(DID_WRITE_LOCALSTORAGE, {detail: key}));
+        document.addEventListener(DID_WRITE_LOCALSTORAGE, listener);
+      }
 
       setVersion((v) => v + 1);
 

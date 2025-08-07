@@ -20,6 +20,7 @@
     "generate-op-selection": "ts-node -O '{\"module\": \"commonjs\"}' ./src/scripts/generateOpSelection.ts && eslint src/op-selection/generated/ --fix -c .eslintrc.js",
     "generate-job-selection": "ts-node -O '{\"module\": \"commonjs\"}' ./src/scripts/generateJobSelection.ts && eslint src/job-selection/generated/ --fix -c .eslintrc.js",
     "generate-automation-selection": "ts-node -O '{\"module\": \"commonjs\"}' ./src/scripts/generateAutomationSelection.ts && eslint src/automation-selection/generated/ --fix -c .eslintrc.js",
+    "check-worker-safety": "tsx ./scripts/check-worker-safety.ts",
     "storybook": "storybook dev -p 6006",
     "build-storybook": "storybook build",
     "find-circular-dependencies": "ts-node -O '{\"module\": \"commonjs\"}' ./src/scripts/findCircularDependencies.ts"
@@ -61,6 +62,7 @@
     "fake-indexeddb": "^4.0.2",
     "fast-text-encoding": "^1.0.6",
     "fuse.js": "^6.4.2",
+    "glob": "^10.3.10",
     "graphql": "^16.8.1",
     "graphql-codegen-persisted-query-ids": "^0.2.0",
     "highlight.js": "11.6.0",
@@ -178,6 +180,7 @@
     "styled-components": "^5.3.3",
     "ts-node": "10.9.2",
     "ts-prune": "0.10.3",
+    "tsx": "^4.7.0",
     "typescript": "5.5.4",
     "webpack": "^5.94.0"
   },
