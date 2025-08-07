@@ -7,6 +7,7 @@
 **NEVER assume** you know the current branch or stack position based on previous context or conversation history. The repository state may have changed.
 
 **Required commands to run first**:
+
 - `git branch --show-current` - Get the actual current branch name
 - `gt ls -s` - Get the actual current stack structure
 - `git status` - Verify repository state
