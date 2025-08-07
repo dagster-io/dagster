@@ -103,6 +103,7 @@ def dagster_run(
     job_code_origin: Optional[JobPythonOrigin] = None,
     has_repository_load_data: bool = False,
     run_op_concurrency: Optional[RunOpConcurrency] = None,
+    **kwargs,
 ):
     if run_id is None:
         run_id_str = str(uuid4())
@@ -130,6 +131,7 @@ def dagster_run(
         job_code_origin=job_code_origin,
         has_repository_load_data=has_repository_load_data,
         run_op_concurrency=run_op_concurrency,
+        **kwargs,
     )
 
 
