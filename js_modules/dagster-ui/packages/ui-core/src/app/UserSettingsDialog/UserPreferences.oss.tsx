@@ -9,7 +9,6 @@ import {TimezoneSelect} from '../time/TimezoneSelect';
 import {automaticLabel} from '../time/browserTimezone';
 import {useThemeState} from '../useThemeState';
 import {useShowAssetsWithoutDefinitions} from './useShowAssetsWithoutDefinitions';
-import {useShowStubAssets} from './useShowStubAssets';
 
 export const UserPreferences = ({
   onChangeRequiresReload,
@@ -22,7 +21,6 @@ export const UserPreferences = ({
   );
   const {showAssetsWithoutDefinitions, setShowAssetsWithoutDefinitions} =
     useShowAssetsWithoutDefinitions();
-  const {showStubAssets, setShowStubAssets} = useShowStubAssets();
   const {theme, setTheme} = useThemeState();
 
   const initialShortcutsEnabled = React.useRef(shortcutsEnabled);
@@ -58,11 +56,6 @@ export const UserPreferences = ({
     setShowAssetsWithoutDefinitions(checked);
   };
 
-  const toggleShowStubAssets = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const {checked} = e.target;
-    setShowStubAssets(checked);
-  };
-
   return (
     <>
       <Box padding={{bottom: 4}}>
@@ -96,15 +89,6 @@ export const UserPreferences = ({
           format="switch"
           onChange={toggleShowAssetsWithoutDefinitions}
         />
-      </Box>
-      <Box padding={{vertical: 8}} flex={{justifyContent: 'space-between', alignItems: 'center'}}>
-        <Box flex={{direction: 'row', alignItems: 'center'}}>
-          <div>Show stub assets in Catalog</div>
-          <Tooltip content="Stub assets are placeholder assets that Dagster automatically creates to represent dependencies that aren't defined in your current code location. ">
-            <Icon name="info" />
-          </Tooltip>
-        </Box>
-        <Checkbox checked={showStubAssets} format="switch" onChange={toggleShowStubAssets} />
       </Box>
     </>
   );

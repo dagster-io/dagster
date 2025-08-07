@@ -7,6 +7,7 @@ import {
   Popover,
   ProductTour,
   ProductTourPosition,
+  Tooltip,
 } from '@dagster-io/ui-components';
 import {useMemo} from 'react';
 
@@ -14,6 +15,7 @@ import {KeyboardTag} from './KeyboardTag';
 import ShowAndHideNeighborAssetsMP4 from './ShowAndHideNeighborAssets.mp4';
 import {AssetLayoutDirection} from './layout';
 import {ShortcutHandler} from '../app/ShortcutHandler';
+import {useShowStubAssets} from '../app/UserSettingsDialog/useShowStubAssets';
 import {assertUnreachable} from '../app/Util';
 import {useStateWithStorage} from '../hooks/useStateWithStorage';
 
@@ -31,6 +33,7 @@ enum Shortcut {
   Direction = 'Direction',
   ExpandAllGroups = 'ExpandAllGroups',
   HideEdgesToNodesOutsideQuery = 'HideEdgesToNodesOutsideQuery',
+  ShowStubAssets = 'ShowStubAssets',
 }
 
 type ShortcutInfo =
@@ -50,6 +53,12 @@ type ShortcutInfo =
       hideEdgesToNodesOutsideQuery: boolean;
       setHideEdgesToNodesOutsideQuery: (hideEdgesToNodesOutsideQuery: boolean) => void;
       label: React.ReactNode;
+    }
+  | {
+      type: Shortcut.ShowStubAssets;
+      showStubAssets: boolean;
+      setShowStubAssets: (showStubAssets: boolean) => void;
+      label: React.ReactNode;
     };
 
 export const AssetGraphSettingsButton = ({
@@ -62,6 +71,7 @@ export const AssetGraphSettingsButton = ({
   setHideEdgesToNodesOutsideQuery,
 }: Props) => {
   const hasMultipleGroups = (allGroups?.length ?? 0) > 1;
+  const {showStubAssets, setShowStubAssets} = useShowStubAssets();
 
   const shortcuts = useMemo(() => {
     const shortcuts: ShortcutInfo[] = [
@@ -106,6 +116,19 @@ export const AssetGraphSettingsButton = ({
         ),
       });
     }
+    shortcuts.push({
+      type: Shortcut.ShowStubAssets,
+      showStubAssets: !!showStubAssets,
+      setShowStubAssets,
+      label: (
+        <Box flex={{direction: 'row', gap: 4, alignItems: 'center'}}>
+          <div>⌥S</div>-<div>{showStubAssets ? 'Hide' : 'Show'} stub assets in catalog</div>
+          <Tooltip content="Stub assets are placeholder assets that Dagster automatically creates to represent dependencies that aren't defined in your current code location. ">
+            <Icon name="info" />
+          </Tooltip>
+        </Box>
+      ),
+    });
     return shortcuts;
   }, [
     direction,
@@ -115,6 +138,8 @@ export const AssetGraphSettingsButton = ({
     expandedGroups,
     allGroups,
     hideEdgesToNodesOutsideQuery,
+    setShowStubAssets,
+    showStubAssets,
   ]);
 
   const shortcutsJsx = useMemo(() => {
@@ -156,11 +181,28 @@ export const AssetGraphSettingsButton = ({
               <div />
             </ShortcutHandler>
           );
+        case Shortcut.ShowStubAssets:
+          return (
+            <ShortcutHandler
+              key={shortcut.type}
+              onShortcut={() => setShowStubAssets(!showStubAssets)}
+              shortcutFilter={(e) => e.altKey && e.code === 'KeyS'}
+            >
+              <div />
+            </ShortcutHandler>
+          );
         default:
           assertUnreachable(shortcut);
       }
     });
-  }, [shortcuts, direction, hideEdgesToNodesOutsideQuery, setDirection]);
+  }, [
+    shortcuts,
+    setDirection,
+    direction,
+    hideEdgesToNodesOutsideQuery,
+    setShowStubAssets,
+    showStubAssets,
+  ]);
 
   const shortcutLabelJsx = useMemo(
     () => (
