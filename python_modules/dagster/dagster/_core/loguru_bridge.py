@@ -1,3 +1,4 @@
+import inspect
 import logging
 import os
 import sys
@@ -36,12 +37,22 @@ class LoguruConfigurator:
     def __init__(self, enable_terminal_sink: bool = True):
         if LoguruConfigurator._initialized:
             return
-        self.config = self._load_config()
+        self.config = self.load_config()
         if enable_terminal_sink:
-            self._setup_sinks()
+            self.setup_sinks()
         LoguruConfigurator._initialized = True
 
-    def _load_config(self) -> dict[str, Any]:
+    @classmethod
+    def reset(cls) -> None:
+        """Reset the initialization state, primarily for testing purposes."""
+        cls._initialized = False
+
+    @classmethod
+    def is_initialized(cls) -> bool:
+        """Check if the LoguruConfigurator has been initialized."""
+        return cls._initialized
+
+    def load_config(self) -> dict[str, Any]:
         """Loads configuration from environment variables, with sensible defaults."""
         default_format = (
             "<green>{time:HH:mm:ss}</green> | <level>{level: <8}</level> | "
@@ -53,17 +64,20 @@ class LoguruConfigurator:
             "format": os.getenv("DAGSTER_LOGURU_FORMAT", default_format),
         }
 
-    def _setup_sinks(self) -> None:
+    def setup_sinks(self) -> None:
         """Sets up the final Loguru sink to stderr."""
-        if not self.config.get("enabled", False):
-            return
-        logger.remove()
-        logger.add(
-            sys.stderr,
-            level=self.config["log_level"],
-            format=self.config["format"],
-            colorize=True,
-        )
+        if self.config.get("enabled", False):
+            logger.remove()  # only clear sinks if Loguru logging is enabled
+            logger.add(
+                sys.stderr,
+                level=self.config["log_level"],
+                format=self.config["format"],
+                colorize=True,
+            )
+
+    # Keep backward compatibility for tests that might still use the private methods
+    _load_config = load_config
+    _setup_sinks = setup_sinks
 
 
 # Initialize the default sink configuration when the module is first imported.
@@ -71,14 +85,13 @@ loguru_config = LoguruConfigurator()
 
 
 def dagster_context_sink(context: Any) -> Callable[[Any], None]:
-    """Creates a Loguru sink that forwards formatted messages to the Dagster log manager.
-    Useful for capturing 'logger' calls and displaying them in the Dagster UI.
-    """
+    """Creates a Loguru sink that forwards logs to a Dagster context-aware logger."""
 
     def sink(message: Any) -> None:
         record = message.record
         level = record["level"].name
         msg = record["message"]
+        extras = record["extra"] or {}
 
         level_map = {
             "TRACE": "debug",
@@ -89,9 +102,23 @@ def dagster_context_sink(context: Any) -> Callable[[Any], None]:
             "ERROR": "error",
             "CRITICAL": "critical",
         }
+
         log_method_name = level_map.get(level, "info")
-        log_method = getattr(context.log, log_method_name, context.log.info)
-        log_method(msg)
+
+        log_method = getattr(context.log, log_method_name, None)
+
+        # Context veya log metodu yoksa fallback
+        if not context or not hasattr(context, "log") or not callable(log_method):
+            return
+
+        try:
+            sig = inspect.signature(log_method)
+            if any(p.kind == p.VAR_KEYWORD for p in sig.parameters.values()):
+                log_method(msg, **extras)
+            else:
+                log_method(msg)
+        except Exception:
+            log_method(msg)
 
     return sink
 
@@ -117,10 +144,13 @@ def with_loguru_logger(fn: Callable) -> Callable:
             for name in ["debug", "info", "warning", "error", "critical"]
         }
 
-        # Create proxy functions that forward calls to loguru.logger.
-        def make_proxy(level: str) -> Callable[[str], None]:
+        # Create proxy functions that forward calls to loguru.logger AND call the original method.
+        def make_proxy(level: str, original_method: Callable) -> Callable[[str], None]:
             def proxy_fn(msg: str) -> None:
+                # Forward to loguru.logger
                 logger.opt(depth=1).log(level, msg)
+                # Also call the original method to maintain original behavior
+                original_method(msg)
 
             return proxy_fn
 
@@ -132,7 +162,8 @@ def with_loguru_logger(fn: Callable) -> Callable:
             "error": "ERROR",
             "critical": "CRITICAL",
         }.items():
-            setattr(context.log, name, make_proxy(lvl))
+            original = original_log_methods[name]
+            setattr(context.log, name, make_proxy(lvl, original))
 
         try:
             return fn(*args, **kwargs)
