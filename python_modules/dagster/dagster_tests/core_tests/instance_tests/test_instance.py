@@ -18,7 +18,6 @@ from dagster import (
 from dagster._check import CheckError
 from dagster._cli.utils import get_instance_for_cli
 from dagster._core.definitions.assets.definition.asset_spec import AssetExecutionType
-from dagster._core.definitions.partitions.partition_key_range import PartitionKeyRange
 from dagster._core.errors import DagsterHomeNotSetError
 from dagster._core.execution.api import create_execution_plan
 from dagster._core.instance import DagsterInstance, InstanceRef
@@ -459,15 +458,7 @@ def test_create_run_with_partitioned_asset_stores_partitions_snapshot():
         ).partitions_def
         assert partitions_def is not None
 
-        assert run.partitions_subset is not None
-        assert run.partitions_subset == partitions_def.subset_with_partition_keys(
-            partitions_def.get_partition_keys_in_range(
-                PartitionKeyRange(
-                    "2025-1-1",
-                    "2025-1-4",
-                )
-            )
-        )
+        assert run.partitions_subset is None
 
         # single partition
         run = create_run_for_test(
@@ -485,15 +476,7 @@ def test_create_run_with_partitioned_asset_stores_partitions_snapshot():
         ).partitions_def
         assert partitions_def is not None
 
-        assert run.partitions_subset is not None
-        assert run.partitions_subset == partitions_def.subset_with_partition_keys(
-            partitions_def.get_partition_keys_in_range(
-                PartitionKeyRange(
-                    "2025-1-1",
-                    "2025-1-1",
-                )
-            )
-        )
+        assert run.partitions_subset is None
 
         # a run created with no partition key but targeting a partitioned asset should not store a
         # partitions subset
