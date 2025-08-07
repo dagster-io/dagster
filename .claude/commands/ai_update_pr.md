@@ -1,6 +1,30 @@
 # AI Update PR summary
 
-Use `gt ls -s` to determine the last git ref in the stack. View changes for ONLY the current branch with `git diff <previous_branch>..HEAD` where <previous_branch> is the branch immediately below the current branch in the stack. Also view the commit messages for the current branch only with `git log --oneline <previous_branch>..HEAD`. Focus only on changes in the current branch, not the entire stack history. Use this context, alongside any session context from what you know about the changes to write a PR summary in Markdown, of the format
+## Step 1: Identify the Previous Branch
+
+First, use `gt ls -s` to view the stack structure. The output shows branches in order, with `◉` marking the current branch and `◯` marking other branches in the stack.
+
+**CRITICAL**: The previous branch is the one that appears immediately AFTER the `◉` (current branch) in the `gt ls -s` output.
+
+Example:
+```
+◉  feature/current-branch     <- Current branch (HEAD)
+◯  feature/previous-branch    <- This is the previous branch to use
+◯  feature/older-branch       <- NOT this one
+◯  master
+```
+
+In this example, you would use `feature/previous-branch` as the `<previous_branch>`.
+
+## Step 2: Get Changes for Current Branch Only
+
+View changes for ONLY the current branch with `git diff <previous_branch>..HEAD` where `<previous_branch>` is the branch identified in Step 1. Also view the commit messages for the current branch only with `git log --oneline <previous_branch>..HEAD`.
+
+**Verification**: The `git log --oneline <previous_branch>..HEAD` command should typically show only 1-2 commits for the current branch. If it shows many commits, double-check that you identified the correct previous branch.
+
+## Step 3: Write PR Summary
+
+Focus only on changes in the current branch, not the entire stack history. Use this context, alongside any session context from what you know about the changes to write a PR summary in Markdown, of the format
 
 ```md
 ## Summary & Motivation
