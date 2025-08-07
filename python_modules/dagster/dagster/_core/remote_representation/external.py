@@ -9,9 +9,9 @@ from typing import TYPE_CHECKING, AbstractSet, Callable, Optional, Union  # noqa
 from dagster_shared.error import DagsterError
 
 import dagster._check as check
-from dagster import AssetSelection
 from dagster._config.snap import ConfigFieldSnap, ConfigSchemaSnapshot
 from dagster._core.definitions.asset_checks.asset_check_spec import AssetCheckKey
+from dagster._core.definitions.asset_selection import AssetSelection
 from dagster._core.definitions.assets.job.asset_job import IMPLICIT_ASSET_JOB_NAME
 from dagster._core.definitions.automation_condition_sensor_definition import (
     DEFAULT_AUTOMATION_CONDITION_SENSOR_NAME,
