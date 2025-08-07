@@ -10,7 +10,7 @@ from dagster._cli.api import ExecuteRunArgs, ExecuteStepArgs, verify_step
 from dagster._core.execution.plan.state import KnownExecutionState
 from dagster._core.execution.retries import RetryState
 from dagster._core.execution.stats import RunStepKeyStatsSnapshot
-from dagster._core.remote_representation import JobHandle
+from dagster._core.remote_representation.handle import JobHandle
 from dagster._core.storage.dagster_run import DagsterRunStatus
 from dagster._core.test_utils import create_run_for_test, ensure_dagster_tests_import, environ
 from dagster._core.utils import make_new_run_id

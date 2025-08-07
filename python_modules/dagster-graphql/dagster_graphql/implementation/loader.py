@@ -7,7 +7,7 @@ from dagster import (
     DagsterInstance,
     _check as check,
 )
-from dagster._core.remote_representation import RemoteRepository
+from dagster._core.remote_representation.external import RemoteRepository
 from dagster._core.scheduler.instigation import InstigatorState, InstigatorType
 
 
