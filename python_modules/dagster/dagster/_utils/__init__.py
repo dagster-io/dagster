@@ -230,13 +230,6 @@ def list_pull(alist: Iterable[object], key: str) -> Sequence[object]:
     return list(map(lambda elem: get_prop_or_key(elem, key), alist))
 
 
-def all_none(kwargs: Mapping[object, object]) -> bool:
-    for value in kwargs.values():
-        if value is not None:
-            return False
-    return True
-
-
 def check_script(path: str, return_code: int = 0) -> None:
     try:
         subprocess.check_output([sys.executable, path])
