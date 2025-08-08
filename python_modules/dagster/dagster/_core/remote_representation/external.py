@@ -117,11 +117,11 @@ class RemoteRepository:
         elif repository_snap.job_refs is not None:
             self._job_map = {r.name: r for r in repository_snap.job_refs}
             self._deferred_snapshots = True
-            if ref_to_data_fn is None:
-                check.failed(
-                    "ref_to_data_fn is required when RepositorySnap is loaded with deferred"
-                    " snapshots"
-                )
+            # if ref_to_data_fn is None:
+            #     check.failed(
+            #         "ref_to_data_fn is required when RepositorySnap is loaded with deferred"
+            #         " snapshots"
+            #     )
 
             self._ref_to_data_fn = ref_to_data_fn
         else:
@@ -515,8 +515,8 @@ class RemoteJob(RepresentedJob, LoadableBy[JobSubsetSelector, "BaseWorkspaceRequ
         elif job_ref_snap:
             self._active_preset_dict = {ap.name: ap for ap in job_ref_snap.active_presets}
             self._name = job_ref_snap.name
-            if ref_to_data_fn is None:
-                check.failed("ref_to_data_fn must be passed when using deferred snapshots")
+            # if ref_to_data_fn is None:
+            #     check.failed("ref_to_data_fn must be passed when using deferred snapshots")
 
         else:
             check.failed("Expected either job data or ref, got neither")

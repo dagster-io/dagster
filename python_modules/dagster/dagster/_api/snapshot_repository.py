@@ -25,7 +25,8 @@ def sync_get_streaming_external_repositories_data_grpc(
                 remote_repository_origin=RemoteRepositoryOrigin(
                     code_location.origin,
                     repository_name,
-                )
+                ),
+                defer_snapshots=True,
             )
         )
 
