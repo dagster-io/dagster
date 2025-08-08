@@ -1,3 +1,4 @@
+import importlib
 import shutil
 import sys
 import tempfile
@@ -17,7 +18,7 @@ from dagster._core.definitions.metadata.source_code import (
 from dagster._core.test_utils import ensure_dagster_tests_import
 from dagster._utils.env import environ
 from dagster.components.core.component_tree import ComponentTree
-from dagster.components.core.load_defs import build_component_defs
+from dagster.components.core.load_defs import load_defs
 from dagster.components.resolved.core_models import AssetAttributesModel, OpSpec
 from dagster.components.resolved.errors import ResolutionException
 from dagster.components.testing import TestOpCustomization, TestTranslation
@@ -240,7 +241,10 @@ def test_dependency_on_dbt_project():
     )
     project.preparer.prepare(project)
 
-    defs = build_component_defs(DEPENDENCY_ON_DBT_PROJECT_LOCATION_PATH / "defs")
+    defs_root = importlib.import_module(f"{DEPENDENCY_ON_DBT_PROJECT_LOCATION_PATH.name}.defs")
+    defs = load_defs(
+        defs_root=defs_root, project_root=DEPENDENCY_ON_DBT_PROJECT_LOCATION_PATH.parent
+    )
 
     assert AssetKey("downstream_of_customers") in defs.resolve_asset_graph().get_all_asset_keys()
     downstream_of_customers_def = defs.resolve_assets_def("downstream_of_customers")
