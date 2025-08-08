@@ -795,6 +795,26 @@ class GrpcServerCodeLocation(CodeLocation):
                 )
                 for repo_name, repo_data in self._repository_snaps.items()
             }
+            for repo_name, repo in self.remote_repositories.items():
+                from dagster._core.remote_representation import RemoteRepositoryOrigin
+
+                for job in repo.get_all_jobs():
+                    print(
+                        "Job snapshot FOR "
+                        + str(job.name)
+                        + " is "
+                        + str(job.computed_job_snapshot_id)
+                    )
+                    print("re querying")
+                    new_snapshot = deserialize_value(
+                        self.client.external_job(
+                            RemoteRepositoryOrigin(self.origin, repo_name),
+                            job.name,
+                        ).serialized_job_data
+                    )
+                    if job.computed_job_snapshot_id != new_snapshot.job.snapshot_id:
+                        print("SNAPSHOTS DO NOT MATCH!!!")
+
         except:
             self.cleanup()
             raise

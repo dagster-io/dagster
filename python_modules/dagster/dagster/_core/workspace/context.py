@@ -865,6 +865,7 @@ class WorkspaceProcessContext(IWorkspaceProcessContext):
                 warnings.warn(
                     f"Error loading repository location {location_name}:{error.to_string()}"
                 )
+            raise
 
         load_time = get_current_timestamp()
         if isinstance(location, GrpcServerCodeLocation):
