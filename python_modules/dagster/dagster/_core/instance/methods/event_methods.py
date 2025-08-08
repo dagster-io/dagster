@@ -8,6 +8,7 @@ from collections.abc import Sequence
 from typing import TYPE_CHECKING, Optional, Union
 
 import dagster._check as check
+from dagster._core.instance.utils import _get_event_batch_size, _is_batch_writing_enabled
 from dagster._time import get_current_timestamp
 from dagster._utils.warnings import beta_warning
 
@@ -174,16 +175,6 @@ class EventMethods:
             return
         self._event_storage_impl.store_event(event)
 
-    def _is_batch_writing_enabled(self) -> bool:
-        """Check if batch writing is enabled."""
-        return self._get_event_batch_size() > 0
-
-    def _get_event_batch_size(self) -> int:
-        """Get event batch size."""
-        import os
-
-        return int(os.getenv("DAGSTER_EVENT_BATCH_SIZE", "0"))
-
     def handle_new_event(
         self,
         event: "EventLogEntry",
@@ -211,15 +202,12 @@ class EventMethods:
         if not self.should_store_event(event):
             return
 
-        if batch_metadata is None or not self._is_batch_writing_enabled():
+        if batch_metadata is None or not _is_batch_writing_enabled():
             events = [event]
         else:
             batch_id, is_batch_end = batch_metadata.id, batch_metadata.is_end
             self._event_buffer_impl[batch_id].append(event)
-            if (
-                is_batch_end
-                or len(self._event_buffer_impl[batch_id]) == self._get_event_batch_size()
-            ):
+            if is_batch_end or len(self._event_buffer_impl[batch_id]) == _get_event_batch_size():
                 events = self._event_buffer_impl[batch_id]
                 del self._event_buffer_impl[batch_id]
             else:
