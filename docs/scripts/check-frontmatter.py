@@ -33,15 +33,15 @@ if __name__ == "__main__":
     mds_missing_description: list[str] = []
     idx_missing_canonical_url: list[str] = []
     idx_missing_slug: list[str] = []
-    
+
     for md in mds:
         fm: frontmatter.Post = frontmatter.load(md)
         if "index" in md:
             if not fm.get("canonicalUrl"):
-                print(md + " missing canonicalUrl")   # noqa
+                print(md + " missing canonicalUrl")  # noqa
                 idx_missing_canonical_url.append(md)
             if not fm.get("slug"):
-                print(md + " missing slug")   # noqa
+                print(md + " missing slug")  # noqa
                 idx_missing_slug.append(md)
 
         if not fm.get("description"):
