@@ -120,6 +120,8 @@ class PackageSpec:
         timeout_in_minutes (int, optional): Fail after this many minutes.
         queue (BuildkiteQueue, optional): Schedule steps to this queue.
         run_pytest (bool, optional): Whether to run pytest. Enabled by default.
+        splits (int, optional): Number of splits to use when no tox factors are defined.
+            This allows parallelizing tests even when no specific tox factors are specified. Defaults to 1.
     """
 
     directory: str
@@ -137,6 +139,7 @@ class PackageSpec:
     timeout_in_minutes: Optional[int] = None
     queue: Optional[BuildkiteQueue] = None
     run_pytest: bool = True
+    splits: int = 1
     always_run_if: Optional[Callable[[], bool]] = None
     skip_if: Optional[Callable[[], Optional[str]]] = None
 
@@ -188,15 +191,17 @@ class PackageSpec:
                     version_factor = AvailablePythonVersion.to_tox_factor(py_version)
                     if other_factor is None:
                         tox_env = version_factor
+                        splits = self.splits
                     else:
                         tox_env = f"{version_factor}-{other_factor.factor}"
+                        splits = other_factor.splits
 
                     if isinstance(self.pytest_extra_cmds, list):
-                        extra_commands_pre = self.pytest_extra_cmds
+                        base_extra_commands_pre = self.pytest_extra_cmds
                     elif callable(self.pytest_extra_cmds):
-                        extra_commands_pre = self.pytest_extra_cmds(py_version, other_factor)
+                        base_extra_commands_pre = self.pytest_extra_cmds(py_version, other_factor)
                     else:
-                        extra_commands_pre = []
+                        base_extra_commands_pre = []
 
                     dependencies = []
                     if not self.skip_reason:
@@ -205,23 +210,35 @@ class PackageSpec:
                         elif callable(self.pytest_step_dependencies):
                             dependencies = self.pytest_step_dependencies(py_version, other_factor)
 
-                    steps.append(
-                        build_tox_step(
-                            self.directory,
-                            tox_env,
-                            base_label=base_name,
-                            command_type="pytest",
-                            python_version=py_version,
-                            env_vars=self.env_vars,
-                            extra_commands_pre=extra_commands_pre,
-                            dependencies=dependencies,
-                            tox_file=self.tox_file,
-                            timeout_in_minutes=self.timeout_in_minutes,
-                            queue=self.queue,
-                            retries=self.retries,
-                            skip_reason=self.skip_reason,
+                    # Generate multiple steps if splits > 1
+                    for split_index in range(1, splits + 1):
+                        if splits > 1:
+                            split_label = f"{base_name} ({split_index}/{splits})"
+                            pytest_args = [f"--split {split_index}/{splits}"]
+                            extra_commands_pre = base_extra_commands_pre
+                        else:
+                            split_label = base_name
+                            pytest_args = None
+                            extra_commands_pre = base_extra_commands_pre
+
+                        steps.append(
+                            build_tox_step(
+                                self.directory,
+                                tox_env,
+                                base_label=split_label,
+                                command_type="pytest",
+                                python_version=py_version,
+                                env_vars=self.env_vars,
+                                extra_commands_pre=extra_commands_pre,
+                                dependencies=dependencies,
+                                tox_file=self.tox_file,
+                                timeout_in_minutes=self.timeout_in_minutes,
+                                queue=self.queue,
+                                retries=self.retries,
+                                skip_reason=self.skip_reason,
+                                pytest_args=pytest_args,
+                            )
                         )
-                    )
 
         emoji = _PACKAGE_TYPE_TO_EMOJI_MAP[self.package_type]  # type: ignore[index]
         if len(steps) >= 2:
