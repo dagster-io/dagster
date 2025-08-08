@@ -1,9 +1,12 @@
 import subprocess
+from pathlib import Path
 from tempfile import TemporaryDirectory
 from unittest.mock import Mock, patch
 
 import click
 import pytest
+from automation.eval.cli import main as eval_cli
+from click.testing import CliRunner
 from dagster_dg_core.utils import activate_venv
 from dagster_dg_core_tests.utils import (
     ProxyRunner,
@@ -11,6 +14,8 @@ from dagster_dg_core_tests.utils import (
     isolated_example_project_foo_bar,
 )
 from dagster_shared.utils import environ
+from deepeval.evaluate.types import EvaluationResult, TestResult
+from deepeval.test_run import MetricData
 
 
 def test_scaffold_branch_command_success():
@@ -21,8 +26,6 @@ def test_scaffold_branch_command_success():
             runner,
             in_workspace=False,
         ),
-        TemporaryDirectory() as temp_dir,
-        environ({"DAGSTER_GIT_REPO_DIR": ""}),
     ):
         # Mock the subprocess calls to simulate git and gh commands
         with (
@@ -39,7 +42,7 @@ def test_scaffold_branch_command_success():
                 stderr="",
             )
 
-            result = runner.invoke("scaffold", "branch", "my-feature-branch", "--record", temp_dir)
+            result = runner.invoke("scaffold", "branch", "my-feature-branch")
             assert_runner_result(result)
 
             # Verify git commands were called in correct order
@@ -77,7 +80,6 @@ def test_scaffold_branch_command_success():
                 "✅ Successfully created branch and pull request: https://github.com/user/repo/pull/123"
                 in result.output
             )
-            assert "📝 Session recorded:" in result.output
 
 
 def test_scaffold_branch_command_whitespace_branch_name():
@@ -302,3 +304,71 @@ def test_scaffold_branch_command_github_issue_url(github_url):
 
             assert "Creating new branch: fix-issue-123" in result.output
             assert "Created and checked out new branch: fix-issue-123" in result.output
+
+
+def test_record_and_eval_command():
+    # ensure --record output aligned with eval tool expectations
+    with (
+        ProxyRunner.test() as runner,
+        isolated_example_project_foo_bar(
+            runner,
+            in_workspace=False,
+        ),
+        TemporaryDirectory() as temp_dir,
+        environ(
+            {
+                "DAGSTER_GIT_REPO_DIR": "",
+                "OPENAI_API_KEY": "...",
+            }
+        ),
+        patch("dagster_dg_cli.cli.scaffold.branch._run_git_command") as mock_git,
+        patch("dagster_dg_cli.cli.scaffold.branch._run_gh_command") as mock_gh,
+        patch("automation.eval.cli.evaluate") as mock_evaluate,
+    ):
+        # Mock the subprocess calls to simulate git and gh commands
+
+        # Mock git checkout -b command
+        mock_git.return_value = Mock(returncode=0, stdout="", stderr="")
+
+        # Mock gh pr create command
+        mock_gh.return_value = Mock(
+            returncode=0,
+            stdout="https://github.com/user/repo/pull/123",
+            stderr="",
+        )
+
+        mock_evaluate.return_value = EvaluationResult(
+            test_results=[
+                TestResult(
+                    name="Test",
+                    success=True,
+                    conversational=False,
+                    metrics_data=[
+                        MetricData(
+                            name="Test",
+                            threshold=0.5,
+                            score=1.0,
+                            success=True,
+                            strictMode=False,
+                            evaluationModel="testbot",
+                            verboseLogs="test",
+                            evaluationCost=0,
+                        )
+                    ],
+                )
+            ],
+            confident_link=None,
+        )
+
+        result = runner.invoke("scaffold", "branch", "my-feature-branch", "--record", str(temp_dir))
+        assert_runner_result(result)
+        assert "📝 Session recorded:" in result.output
+
+        Path(temp_dir).joinpath("eval.yaml").write_text("""
+metrics:
+  - name: Test
+    criteria: test test
+        """)
+
+        result = CliRunner().invoke(eval_cli, [str(temp_dir)])
+        assert result.exit_code == 0, result.output
