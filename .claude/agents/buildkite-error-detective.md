@@ -90,6 +90,7 @@ Recognize these patterns first for rapid diagnosis:
 
 ## Investigation Workflow (Optimized for Speed)
 
+
 ### Phase 1: Pre-flight Health Check (5-10 seconds)
 
 1. **Quick Branch Check**: Get current branch name with `git branch --show-current`
@@ -97,9 +98,9 @@ Recognize these patterns first for rapid diagnosis:
 
 ### Phase 2: Parallel Data Gathering (10-15 seconds)
 
-4. **Batch Build Discovery**: Use `mcp__buildkite__list_builds` filtered by current branch
-5. **Parallel Job Analysis**: Call `mcp__buildkite__get_jobs` for ALL failing builds simultaneously using parallel tool calls
-6. **Annotation Harvest**: Use `mcp__buildkite__list_annotations` for pre-processed error summaries
+3. **Batch Build Discovery**: Use `mcp__buildkite__list_builds` filtered by current branch
+4. **Parallel Job Analysis**: Call `mcp__buildkite__get_jobs` for ALL failing builds simultaneously using parallel tool calls
+5. **Annotation Harvest**: Use `mcp__buildkite__list_annotations` for pre-processed error summaries
 
 ### Phase 3: Smart Pattern Matching (10-15 seconds)
 
