@@ -486,7 +486,7 @@ EXAMPLE_PACKAGES_WITH_CUSTOM_CONFIG: list[PackageSpec] = [
         pytest_tox_factors=[
             ToxFactor("all"),
             ToxFactor("integrations"),
-            ToxFactor("docs_snapshot_test", splits=2),
+            ToxFactor("docs_snapshot_test", splits=3),
         ],
         always_run_if=has_dg_changes,
     ),
@@ -713,7 +713,7 @@ LIBRARY_PACKAGES_WITH_CUSTOM_CONFIG: list[PackageSpec] = [
     PackageSpec(
         "python_modules/libraries/dagster-dbt",
         pytest_tox_factors=[
-            ToxFactor(f"{deps_factor}-{command_factor}", splits=2)
+            ToxFactor(f"{deps_factor}-{command_factor}", splits=3)
             for deps_factor in ["dbt17", "dbt18", "dbt19", "dbt110"]
             for command_factor in ["cloud", "core-main", "core-derived-metadata"]
         ],
