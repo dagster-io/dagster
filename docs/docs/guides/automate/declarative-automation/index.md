@@ -7,8 +7,8 @@ keywords:
   - automation condition
 sidebar_position: 20
 title: Declarative Automation
-canonicalUrl: "/guides/automate/declarative-automation"
-slug: "/guides/automate/declarative-automation"
+canonicalUrl: '/guides/automate/declarative-automation'
+slug: '/guides/automate/declarative-automation'
 ---
 
 Declarative Automation is a framework that uses information about the status of your assets and their dependencies to launch executions of your assets.

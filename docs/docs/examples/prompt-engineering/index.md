@@ -6,8 +6,8 @@ last_update:
 sidebar_custom_props:
   logo: images/integrations/anthropic.svg
 tags: [code-example]
-canonicalUrl: "/examples/prompt-engineering"
-slug: "/examples/prompt-engineering"
+canonicalUrl: '/examples/prompt-engineering'
+slug: '/examples/prompt-engineering'
 ---
 
 In this example, you'll build a pipeline with Dagster that:
