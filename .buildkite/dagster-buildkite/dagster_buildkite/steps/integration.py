@@ -215,8 +215,8 @@ def daemon_pytest_extra_cmds(version: AvailablePythonVersion, _):
 
 def build_k8s_suite_steps() -> list[TopLevelStepConfiguration]:
     pytest_tox_factors = [
-        ToxFactor("-default"),
-        ToxFactor("-subchart"),
+        ToxFactor("-default", splits=2),
+        ToxFactor("-subchart", splits=2),
         ToxFactor("-default_monitoring"),
         ToxFactor("-subchart_monitoring"),
     ]
