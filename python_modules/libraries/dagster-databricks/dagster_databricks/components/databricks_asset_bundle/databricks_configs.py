@@ -1,10 +1,12 @@
 from collections.abc import Mapping
+from functools import cached_property
 from pathlib import Path
 from typing import Any, Optional, Union
 
 import yaml
 from dagster import get_dagster_logger
-from dagster_shared.record import IHaveNew, record_custom
+from dagster._serdes import whitelist_for_serdes
+from dagster_shared.record import IHaveNew, record, record_custom
 
 logger = get_dagster_logger()
 
@@ -17,6 +19,54 @@ def load_yaml(path: Path) -> Mapping[str, Any]:
     except Exception as e:
         logger.warning(f"Warning: Could not load {path}: {e}")
         return {}
+
+
+def parse_depends_on(depends_on: Optional[list]) -> list[str]:
+    parsed_depends_on = []
+    if depends_on:
+        for dep in depends_on:
+            if isinstance(dep, dict) and "task_key" in dep:
+                parsed_depends_on.append(dep["task_key"])
+            elif isinstance(dep, str):
+                parsed_depends_on.append(dep)
+    return parsed_depends_on
+
+
+@whitelist_for_serdes
+@record
+class DatabricksNotebookTask:
+    task_key: str
+    task_config: Mapping[str, Any]
+    task_parameters: Mapping[str, Any]
+    depends_on: list[str]
+    job_name: str
+    libraries: Optional[list[Mapping[str, Any]]] = None
+
+    @property
+    def task_type(self) -> str:
+        return "notebook"
+
+    @cached_property
+    def task_config(self) -> Mapping[str, Any]:
+        task_config = {}
+        notebook_task = self.task["notebook_task"]
+        task_config["notebook_path"] = notebook_task.get("notebook_path", "")
+        task_config["parameters"] = notebook_task.get("base_parameters", {})
+        return task_config
+
+    @classmethod
+    def from_job_task_config(cls, job_task_config: Mapping[str, Any]) -> "DatabricksNotebookTask":
+        notebook_task = job_task_config["notebook_task"]
+        task_config = {"notebook_path": notebook_task.get("notebook_path", "")}
+        task_parameters = notebook_task.get("base_parameters", {})
+        return DatabricksNotebookTask(
+            task_key=job_task_config["task_key"],
+            task_config=task_config,
+            task_parameters=task_parameters,
+            depends_on=parse_depends_on(job_task_config.get("depends_on", [])),
+            job_name=job_task_config["job_name"],
+            libraries=job_task_config.get("libraries"),
+        )
 
 
 @record_custom
@@ -87,6 +137,20 @@ class DatabricksConfigs(IHaveNew):
             for job_task_config in job_tasks:
                 task_key = job_task_config.get("task_key", "")
                 if not task_key:
+                    continue
+
+                augmented_job_task_config = {**job_task_config, "job_name": job_name}
+
+                if "notebook_task" in job_task_config:
+                    tasks.append(
+                        DatabricksNotebookTask.from_job_task_config(
+                            job_task_config=augmented_job_task_config
+                        )
+                    )
+
+                else:
+                    # Skip unknown task types
+                    logger.warning(f"Warning: Unknown task type for task {task_key}, skipping")
                     continue
 
         return tasks, job_level_parameters
