@@ -112,8 +112,8 @@ class DatabricksConditionTask:
 @record
 class DatabricksSparkPythonTask:
     task_key: str
-    task_config: dict[str, Any]
-    task_parameters: dict[str, Any]
+    task_config: Mapping[str, Any]
+    task_parameters: Mapping[str, Any]
     depends_on: list[str]
     job_name: str
     libraries: Optional[list[Mapping[str, Any]]] = None
