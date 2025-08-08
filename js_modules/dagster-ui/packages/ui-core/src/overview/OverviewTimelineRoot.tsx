@@ -137,8 +137,8 @@ export const OverviewTimelineRoot = ({Header}: Props) => {
       type: automation.type as Automation['type'],
       status:
         automation.type === 'sensor'
-          ? (sensors[automation.name]?.status ?? 'stopped')
-          : (schedules[automation.name]?.status ?? 'stopped'),
+          ? (sensors[automation.name]?.status ?? 'running')
+          : (schedules[automation.name]?.status ?? 'running'),
       tags:
         automation.type === 'sensor'
           ? (sensors[automation.name]?.tags ?? [])
@@ -160,6 +160,8 @@ export const OverviewTimelineRoot = ({Header}: Props) => {
     return Array.from(filterJobSelectionByQuery(jobRows, jobSelection).all);
   }, [automationSelection, automationRows, groupRunsBy, jobSelection, jobRows]);
 
+  console.log({automationRows});
+
   return (
     <>
       <Header refreshState={refreshState} />
@@ -168,7 +170,7 @@ export const OverviewTimelineRoot = ({Header}: Props) => {
         <div style={{flex: 1, display: 'flex', alignItems: 'center'}}>
           {groupRunsBy === 'automation' ? (
             <AutomationSelectionInput
-              items={allAutomations}
+              items={automationRows}
               value={automationSelection}
               onChange={(value) => setAutomationSelection(value)}
             />
