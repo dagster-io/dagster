@@ -241,12 +241,21 @@ def build_node_defs_snapshot(job_def: JobDefinition) -> NodeDefsSnapshot:
     )
 
 
+def _by_name(
+    snap: Union[
+        InputDefSnap,
+        OutputDefSnap,
+    ],
+) -> str:
+    return snap.name
+
+
 def build_graph_def_snap(graph_def: GraphDefinition) -> GraphDefSnap:
     check.inst_param(graph_def, "graph_def", GraphDefinition)
     return GraphDefSnap(
         name=graph_def.name,
-        input_def_snaps=list(map(build_input_def_snap, graph_def.input_defs)),
-        output_def_snaps=list(map(build_output_def_snap, graph_def.output_defs)),
+        input_def_snaps=sorted(map(build_input_def_snap, graph_def.input_defs), key=_by_name),
+        output_def_snaps=sorted(map(build_output_def_snap, graph_def.output_defs), key=_by_name),
         description=graph_def.description,
         tags=graph_def.tags,
         config_field_snap=(
@@ -257,8 +266,14 @@ def build_graph_def_snap(graph_def: GraphDefinition) -> GraphDefSnap:
             else None
         ),
         dep_structure_snapshot=build_dep_structure_snapshot_from_graph_def(graph_def),
-        input_mapping_snaps=list(map(build_input_mapping_snap, graph_def.input_mappings)),
-        output_mapping_snaps=list(map(build_output_mapping_snap, graph_def.output_mappings)),
+        input_mapping_snaps=sorted(
+            map(build_input_mapping_snap, graph_def.input_mappings),
+            key=lambda in_map_snap: in_map_snap.external_input_name,
+        ),
+        output_mapping_snaps=sorted(
+            map(build_output_mapping_snap, graph_def.output_mappings),
+            key=lambda out_map_snap: out_map_snap.external_output_name,
+        ),
         pools=graph_def.pools,
     )
 
@@ -267,11 +282,11 @@ def build_op_def_snap(op_def: OpDefinition) -> OpDefSnap:
     check.inst_param(op_def, "op_def", OpDefinition)
     return OpDefSnap(
         name=op_def.name,
-        input_def_snaps=list(map(build_input_def_snap, op_def.input_defs)),
-        output_def_snaps=list(map(build_output_def_snap, op_def.output_defs)),
+        input_def_snaps=sorted(map(build_input_def_snap, op_def.input_defs), key=_by_name),
+        output_def_snaps=sorted(map(build_output_def_snap, op_def.output_defs), key=_by_name),
         description=op_def.description,
         tags=op_def.tags,
-        required_resource_keys=sorted(list(op_def.required_resource_keys)),
+        required_resource_keys=sorted(op_def.required_resource_keys),
         config_field_snap=(
             snap_from_field("config", op_def.config_field)  # type: ignore  # (possible none)
             if op_def.has_config_field
