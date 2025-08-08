@@ -882,8 +882,8 @@ def test_repository_batching(graphql_context):
     # each schedule (~18 distinct schedules in the repo)
     # 1) `get_batch_ticks` is fetched to grab ticks
     # 2) `all_instigator_state` is fetched to instantiate GrapheneSchedule
-    assert counts.get("DagsterInstance.get_batch_ticks") == 1
-    assert counts.get("DagsterInstance.all_instigator_state") == 1
+    assert counts.get("InstigatorMixin.get_batch_ticks") == 1
+    assert counts.get("InstigatorMixin.all_instigator_state") == 1
 
 
 class TestScheduleMutations(ExecutingGraphQLContextTestMatrix):
