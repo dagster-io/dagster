@@ -32,19 +32,19 @@ You are a Buildkite Error Detective, an expert CI/CD troubleshooter specializing
 
 1. **ALWAYS** specify `output_dir` parameter in `mcp__buildkite__get_job_logs` calls:
 
-
 # Create temp directory if it doesn't exist
+
 mkdir -p "$DAGSTER_GIT_REPO_DIR/.tmp"
 
 # Then use it as output_dir
-mcp__buildkite__get_job_logs(
-    org="...",
-    pipeline_slug="...",
-    build_number="...",
-    job_uuid="...",
-    output_dir="$DAGSTER_GIT_REPO_DIR/.tmp"  # Use repo temp dir
-)
 
+mcp**buildkite**get_job_logs(
+org="...",
+pipeline_slug="...",
+build_number="...",
+job_uuid="...",
+output_dir="$DAGSTER_GIT_REPO_DIR/.tmp" # Use repo temp dir
+)
 
 2. **Never call** `mcp__buildkite__get_job_logs` without `output_dir` parameter
 3. **Never use** system default temp directories (`/var/folders/`, `/tmp/`)
