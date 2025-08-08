@@ -1,6 +1,7 @@
 import os
 import re
 import shlex
+from dataclasses import dataclass
 from typing import Optional
 
 from buildkite_shared.python_version import AvailablePythonVersion
@@ -12,6 +13,18 @@ from buildkite_shared.step_builders.command_step_builder import (
 from buildkite_shared.uv import UV_PIN
 from dagster_buildkite.images.versions import add_test_image
 from dagster_buildkite.utils import make_buildkite_section_header
+
+
+@dataclass
+class ToxFactor:
+    """Represents a tox environment factor for configuration.
+
+    Args:
+        factor: The tox factor name (e.g., "pytest", "integration")
+    """
+
+    factor: str
+
 
 _COMMAND_TYPE_TO_EMOJI_MAP = {
     "pytest": ":pytest:",
