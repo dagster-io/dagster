@@ -110,6 +110,10 @@ yarn build-api-docs          # Build API docs after .rst changes
 
 - Whenever there is an instruction to run a make command, ALWAYS cd to $DAGSTER_GIT_REPO_DIR, as the Makefile is at the root of the repository
 
+## Environment Variables
+
+- **DAGSTER_GIT_REPO_DIR**: Always defined and points to the repository root directory. Use this for any absolute path references in agent configurations or file operations instead of hardcoding user-specific paths.
+
 ## PR Stack Operations
 
 ### Finding GitHub Usernames Efficiently
