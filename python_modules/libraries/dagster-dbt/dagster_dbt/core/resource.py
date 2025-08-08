@@ -704,6 +704,7 @@ class DbtCliResource(ConfigurableResource):
                 context=context,
                 adapter=adapter,
                 cli_version=self._cli_version,
+                dbt_project=updated_params.dbt_project,
             )
 
     def setup_for_execution(self, context: InitResourceContext) -> None:
