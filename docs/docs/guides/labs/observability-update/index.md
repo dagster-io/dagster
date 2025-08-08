@@ -2,6 +2,8 @@
 title: 'Dagster+ Observability update'
 description: An upcoming suite of tools for end-to-end data platform observability
 sidebar_position: 100
+canonicalUrl: "/guides/labs/observability-update"
+slug: "/guides/labs/observability-update"
 ---
 
 :::info

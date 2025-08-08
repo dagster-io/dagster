@@ -2,6 +2,8 @@
 title: 'Dagster GraphQL API'
 description: Dagster exposes a GraphQL API that allows clients to interact with Dagster programmatically
 sidebar_position: 60
+canonicalUrl: "/guides/operate/graphql"
+slug: "/guides/operate/graphql"
 ---
 
 :::note
