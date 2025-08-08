@@ -3,6 +3,9 @@ from typing import TYPE_CHECKING, AbstractSet, Optional  # noqa: UP035
 
 import dagster._check as check
 import graphene
+from dagster._core.definitions.asset_health.asset_materialization_health import (
+    MinimalAssetMaterializationHealthState,
+)
 from dagster._core.definitions.asset_key import AssetKey
 from dagster._core.definitions.partitions.utils import PartitionRangeStatus
 from dagster._core.errors import DagsterUserCodeProcessError
@@ -279,6 +282,7 @@ class GrapheneAsset(graphene.ObjectType):
     definition = graphene.Field("dagster_graphql.schema.asset_graph.GrapheneAssetNode")
     latestEventSortKey = graphene.Field(graphene.ID)
     assetHealth = graphene.Field(GrapheneAssetHealth)
+    latestMaterializationTimestamp = graphene.Field(graphene.String)
 
     class Meta:
         name = "Asset"
@@ -453,6 +457,27 @@ class GrapheneAsset(graphene.ObjectType):
         return GrapheneAssetHealth(
             asset_key=self._asset_key,
             dynamic_partitions_loader=graphene_info.context.dynamic_partitions_loader,
+        )
+
+    async def resolve_latestMaterializationTimestamp(
+        self, graphene_info: ResolveInfo
+    ) -> Optional[int]:
+        min_materialization_state = await MinimalAssetMaterializationHealthState.gen(
+            graphene_info.context, self._asset_key
+        )
+        if min_materialization_state is not None:
+            return (
+                int(min_materialization_state.latest_materialization_timestamp * 1000)
+                if min_materialization_state.latest_materialization_timestamp
+                else None
+            )
+
+        record = await AssetRecord.gen(graphene_info.context, self._asset_key)
+        latest_materialization_event = record.asset_entry.last_materialization if record else None
+        return (
+            int(latest_materialization_event.timestamp * 1000)
+            if latest_materialization_event
+            else None
         )
 
 
