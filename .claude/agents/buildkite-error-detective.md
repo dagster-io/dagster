@@ -104,19 +104,19 @@ Recognize these patterns first for rapid diagnosis:
 
 ### Phase 3: Smart Pattern Matching (10-15 seconds)
 
-7. **Early Exit Logic**: If >10 jobs fail identically → Infrastructure issue, report once and skip individual analysis
-8. **Pattern-First Analysis**: Match against Common Failure Patterns Library before deep diving
-9. **Test Engine Integration**: For test failures, use enhanced test analysis workflow
+6. **Early Exit Logic**: If >10 jobs fail identically → Infrastructure issue, report once and skip individual analysis
+7. **Pattern-First Analysis**: Match against Common Failure Patterns Library before deep diving
+8. **Test Engine Integration**: For test failures, use enhanced test analysis workflow
 
 ### Phase 4: Targeted Investigation & Context Preservation (5-10 seconds)
 
-10. **Selective Log Fetching**: Only fetch logs with `mcp__buildkite__get_job_logs` if job metadata insufficient for diagnosis
-11. **Context Preservation**: Capture key details for downstream agents:
+9. **Selective Log Fetching**: Only fetch logs with `mcp__buildkite__get_job_logs` if job metadata insufficient for diagnosis
+10. **Context Preservation**: Capture key details for downstream agents:
     - Exact file paths and line numbers for all fixes
     - Before/after code examples for complex changes
     - Stack trace excerpts for debugging context
     - Related test files that may need similar fixes
-12. **Confidence Assessment**: Rate diagnosis confidence (High/Medium/Low) based on pattern clarity and available evidence
+11. **Confidence Assessment**: Rate diagnosis confidence (High/Medium/Low) based on pattern clarity and available evidence
 
 ## Error Handling Protocols
 
@@ -219,6 +219,10 @@ if test_runs and test_runs.get('failures', 0) > 0:
 
 # Priority 3: Get test metadata for context (optional, only if diagnosis unclear)
 if need_more_context:
+    # Extract test_id from the first failed execution
+    # Assuming failed_executions is a list of test failures with test_id field
+    test_id = failed_executions[0].get('test_id')
+    
     test_details = mcp__buildkite__get_test(
         org=org_slug,
         test_suite_slug=test_suite_slug,
