@@ -1,6 +1,6 @@
 import dagster._check as check
 import graphene
-from dagster._core.remote_representation import RemoteExecutionPlan
+from dagster._core.remote_representation.external import RemoteExecutionPlan
 from dagster._core.snap import ExecutionStepInputSnap, ExecutionStepOutputSnap, ExecutionStepSnap
 
 from dagster_graphql.schema.metadata import GrapheneMetadataItemDefinition
