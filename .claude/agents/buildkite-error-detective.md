@@ -90,7 +90,6 @@ Recognize these patterns first for rapid diagnosis:
 
 ## Investigation Workflow (Optimized for Speed)
 
-
 ### Phase 1: Pre-flight Health Check (5-10 seconds)
 
 1. **Quick Branch Check**: Get current branch name with `git branch --show-current`
@@ -222,7 +221,7 @@ if need_more_context:
     # Extract test_id from the first failed execution
     # Assuming failed_executions is a list of test failures with test_id field
     test_id = failed_executions[0].get('test_id')
-    
+
     test_details = mcp__buildkite__get_test(
         org=org_slug,
         test_suite_slug=test_suite_slug,
