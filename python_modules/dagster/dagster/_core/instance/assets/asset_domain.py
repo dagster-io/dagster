@@ -8,6 +8,7 @@ from dagster._core.definitions.asset_checks.asset_check_evaluation import AssetC
 from dagster._core.definitions.asset_key import AssetKey
 from dagster._core.definitions.events import AssetObservation
 from dagster._core.definitions.freshness import FreshnessStateChange, FreshnessStateEvaluation
+from dagster._utils import traced
 
 if TYPE_CHECKING:
     from dagster._core.definitions.asset_health.asset_check_health import AssetCheckHealthState
@@ -71,6 +72,7 @@ class AssetDomain:
         """Get all asset keys - moved from DagsterInstance.all_asset_keys()."""
         return self._instance._event_storage.all_asset_keys()  # noqa: SLF001
 
+    @traced
     def get_asset_keys(
         self,
         prefix: Optional[Sequence[str]] = None,
@@ -101,12 +103,14 @@ class AssetDomain:
         """
         return self._instance._event_storage.has_asset_key(asset_key)  # noqa: SLF001
 
+    @traced
     def get_latest_materialization_events(
         self, asset_keys: Iterable["AssetKey"]
     ) -> Mapping["AssetKey", Optional["EventLogEntry"]]:
         """Get latest materialization events - moved from DagsterInstance.get_latest_materialization_events()."""
         return self._instance._event_storage.get_latest_materialization_events(asset_keys)  # noqa: SLF001
 
+    @traced
     def get_latest_materialization_event(self, asset_key: "AssetKey") -> Optional["EventLogEntry"]:
         """Fetch the latest materialization event for the given asset key.
         Moved from DagsterInstance.get_latest_materialization_event().
@@ -122,6 +126,7 @@ class AssetDomain:
             asset_key
         )
 
+    @traced
     def get_latest_asset_check_evaluation_record(
         self, asset_check_key: "AssetCheckKey"
     ) -> Optional["AssetCheckExecutionRecord"]:
@@ -244,6 +249,7 @@ class AssetDomain:
         """
         return self._instance._event_storage.get_asset_records(asset_keys)  # noqa: SLF001
 
+    @traced
     def get_event_tags_for_asset(
         self,
         asset_key: "AssetKey",
@@ -267,6 +273,7 @@ class AssetDomain:
             asset_key, filter_tags, filter_event_id
         )
 
+    @traced
     def get_latest_planned_materialization_info(
         self,
         asset_key: "AssetKey",
@@ -279,6 +286,7 @@ class AssetDomain:
             asset_key, partition
         )
 
+    @traced
     def get_materialized_partitions(
         self,
         asset_key: "AssetKey",
@@ -290,6 +298,7 @@ class AssetDomain:
             asset_key, before_cursor=before_cursor, after_cursor=after_cursor
         )
 
+    @traced
     def get_latest_storage_id_by_partition(
         self,
         asset_key: "AssetKey",
@@ -351,6 +360,7 @@ class AssetDomain:
         has_more = len(records) == limit
         return EventRecordsResult(records, cursor=new_cursor, has_more=has_more)
 
+    @traced
     def get_latest_materialization_code_versions(
         self, asset_keys: Iterable["AssetKey"]
     ) -> Mapping["AssetKey", Optional[str]]:
@@ -501,6 +511,7 @@ class AssetDomain:
         """
         return None
 
+    @traced
     def get_status_by_partition(
         self,
         asset_key: AssetKey,

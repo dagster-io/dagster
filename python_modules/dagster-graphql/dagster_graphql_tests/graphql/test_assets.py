@@ -2464,7 +2464,7 @@ class TestAssetAwareEventLog(ExecutingGraphQLContextTestMatrix):
         assert result.data
         counts = counter.counts()
         assert len(counts) == 1
-        assert counts.get("DagsterInstance.get_asset_records") == 1
+        assert counts.get("AssetMixin.get_asset_records") == 1
 
     def test_batch_empty_list(self, graphql_context: WorkspaceRequestContext):
         traced_counter.set(Counter())
