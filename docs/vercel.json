@@ -1962,6 +1962,38 @@
       "destination": "/guides/build/projects/multiple-projects"
     },
     {
+      "source": "/guides/build/components/integrations/dlt-component-tutorial",
+      "destination": "/integrations/libraries/dlt"
+    },
+    {
+      "source": "/guides/build/components/integrations/sling-component-tutorial",
+      "destination": "/integrations/libraries/sling"
+    },
+    {
+      "source": "/guides/build/components/integrations/fivetran-component-tutorial",
+      "destination": "/integrations/libraries/fivetran"
+    },
+    {
+      "source": "/guides/build/components/integrations/airbyte-cloud-component-tutorial",
+      "destination": "/integrations/libraries/airbyte/airbyte-cloud-component"
+    },
+    {
+      "source": "/guides/build/components/integrations/powerbi-component-tutorial",
+      "destination": "/integrations/libraries/powerbi"
+    },
+    {
+      "source": "/guides/build/components/integrations/snowflake-sql-component-tutorial",
+      "destination": "/integrations/libraries/snowflake/snowflake-sql-component"
+    },
+    {
+      "source": "/guides/build/components/integrations/dbt-component-tutorial",
+      "destination": "/integrations/libraries/dbt/dbt-component"
+    },
+    {
+      "source": "/guides/build/components/integrations",
+      "destination": "/integrations/libraries"
+    },
+    {
       "source": "/guides/preview/",
       "destination": "/guides/labs",
       "permanent": false
