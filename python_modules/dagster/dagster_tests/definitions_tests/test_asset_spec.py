@@ -3,7 +3,7 @@ from typing import cast
 
 import dagster as dg
 import pytest
-from dagster import AutoMaterializePolicy, AutomationCondition
+from dagster import AutomationCondition
 from dagster._check import CheckError
 from pydantic import BaseModel, TypeAdapter
 
@@ -28,20 +28,6 @@ def test_resolve_automation_condition() -> None:
     ac_spec = dg.AssetSpec(key="asset1", automation_condition=AutomationCondition.eager())
     assert isinstance(ac_spec.auto_materialize_policy, dg.AutoMaterializePolicy)
     assert isinstance(ac_spec.automation_condition, dg.AutomationCondition)
-
-    amp_spec = dg.AssetSpec(key="asset1", auto_materialize_policy=AutoMaterializePolicy.eager())
-    assert isinstance(amp_spec.auto_materialize_policy, dg.AutoMaterializePolicy)
-    assert isinstance(amp_spec.automation_condition, dg.AutomationCondition)
-
-    with pytest.raises(
-        dg.DagsterInvariantViolationError,
-        match="both `automation_condition` and `auto_materialize_policy`",
-    ):
-        dg.AssetSpec(
-            key="asset1",
-            automation_condition=AutomationCondition.eager(),
-            auto_materialize_policy=AutoMaterializePolicy.eager(),
-        )
 
 
 def test_replace_attributes_basic() -> None:

@@ -1,0 +1,50 @@
+diff --git a/python_modules/dagster/dagster/_core/definitions/assets/definition/asset_spec.py b/python_modules/dagster/dagster/_core/definitions/assets/definition/asset_spec.py
+index 261c141984..c84b1ebe15 100644
+--- a/python_modules/dagster/dagster/_core/definitions/assets/definition/asset_spec.py
++++ b/python_modules/dagster/dagster/_core/definitions/assets/definition/asset_spec.py
+@@ -105,11 +105,6 @@ def validate_kind_tags(kinds: Optional[AbstractSet[str]]) -> None:
+     breaking_version="1.12.0",
+     additional_warn_text="use the freshness policy abstraction instead.",
+ )
+-@hidden_param(
+-    param="auto_materialize_policy",
+-    breaking_version="1.10.0",
+-    additional_warn_text="use `automation_condition` instead",
+-)
+ @public
+ @record_custom
+ class AssetSpec(IHasInternalInit, IHaveNew, LegacyNamedTupleMixin):
+diff --git a/python_modules/dagster/dagster_tests/definitions_tests/test_asset_spec.py b/python_modules/dagster/dagster_tests/definitions_tests/test_asset_spec.py
+index fcf92373f9..f644c845ef 100644
+--- a/python_modules/dagster/dagster_tests/definitions_tests/test_asset_spec.py
++++ b/python_modules/dagster/dagster_tests/definitions_tests/test_asset_spec.py
+@@ -3,7 +3,7 @@
+ 
+ import dagster as dg
+ import pytest
+-from dagster import AutoMaterializePolicy, AutomationCondition
++from dagster import AutomationCondition
+ from dagster._check import CheckError
+ from pydantic import BaseModel, TypeAdapter
+ 
+@@ -29,20 +29,6 @@ def test_resolve_automation_condition() -> None:
+     assert isinstance(ac_spec.auto_materialize_policy, dg.AutoMaterializePolicy)
+     assert isinstance(ac_spec.automation_condition, dg.AutomationCondition)
+ 
+-    amp_spec = dg.AssetSpec(key="asset1", auto_materialize_policy=AutoMaterializePolicy.eager())
+-    assert isinstance(amp_spec.auto_materialize_policy, dg.AutoMaterializePolicy)
+-    assert isinstance(amp_spec.automation_condition, dg.AutomationCondition)
+-
+-    with pytest.raises(
+-        dg.DagsterInvariantViolationError,
+-        match="both `automation_condition` and `auto_materialize_policy`",
+-    ):
+-        dg.AssetSpec(
+-            key="asset1",
+-            automation_condition=AutomationCondition.eager(),
+-            auto_materialize_policy=AutoMaterializePolicy.eager(),
+-        )
+-
+ 
+ def test_replace_attributes_basic() -> None:
+     spec = dg.AssetSpec(key="foo")

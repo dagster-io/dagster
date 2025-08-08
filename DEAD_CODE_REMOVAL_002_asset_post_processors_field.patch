@@ -1,0 +1,151 @@
+diff --git a/python_modules/libraries/dagster-airlift/dagster_airlift/core/components/airflow_instance/component.py b/python_modules/libraries/dagster-airlift/dagster_airlift/core/components/airflow_instance/component.py
+index 8f0dda457d..bc9e421049 100644
+--- a/python_modules/libraries/dagster-airlift/dagster_airlift/core/components/airflow_instance/component.py
++++ b/python_modules/libraries/dagster-airlift/dagster_airlift/core/components/airflow_instance/component.py
+@@ -1,4 +1,3 @@
+-import textwrap
+ from collections.abc import Iterator, Sequence
+ from dataclasses import dataclass
+ from typing import Annotated, Any, Literal, Optional, Union
+@@ -14,11 +13,7 @@
+ from dagster.components.core.defs_module import DefsFolderComponent, find_components_from_context
+ from dagster.components.resolved.base import resolve_fields
+ from dagster.components.resolved.context import ResolutionContext
+-from dagster.components.resolved.core_models import (
+-    AssetPostProcessor,
+-    ResolvedAssetKey,
+-    ResolvedAssetSpec,
+-)
++from dagster.components.resolved.core_models import ResolvedAssetKey, ResolvedAssetSpec
+ from dagster.components.resolved.model import Resolver
+ from dagster.components.scaffold.scaffold import Scaffolder, ScaffoldRequest, scaffold_with
+ from pydantic import BaseModel
+@@ -197,8 +192,6 @@ class AirflowInstanceComponent(Component, Resolvable):
+     filter: Optional[ResolvedAirflowFilter] = None
+     mappings: Optional[Sequence[AirflowDagMapping]] = None
+     source_code_retrieval_enabled: Optional[bool] = None
+-    # TODO: deprecate and then delete -- schrockn 2025-06-10
+-    asset_post_processors: Optional[Sequence[AssetPostProcessor]] = None
+ 
+     def _get_instance(self) -> dg_airlift_core.AirflowInstance:
+         return dg_airlift_core.AirflowInstance(
+@@ -207,24 +200,6 @@ def _get_instance(self) -> dg_airlift_core.AirflowInstance:
+         )
+ 
+     def build_defs(self, context: ComponentLoadContext) -> Definitions:
+-        if self.asset_post_processors:
+-            raise Exception(
+-                "The asset_post_processors field is deprecated, place your post-processors in the assets"
+-                " field in the top-level post_processing field instead, as in this example:\n"
+-                + textwrap.dedent(
+-                    """
+-                    type: dagster_airlift.core.components.AirflowInstanceComponent
+-
+-                    attributes: ~
+-
+-                    post_processing:
+-                      assets:
+-                        - target: "*"
+-                          attributes:
+-                            group_name: "my_group"
+-                    """
+-                )
+-            )
+         return build_job_based_airflow_defs(
+             airflow_instance=self._get_instance(),
+             mapped_defs=apply_mappings(defs_from_subdirs(context), self.mappings or []),
+diff --git a/python_modules/libraries/dagster-sling/dagster_sling/components/sling_replication_collection/component.py b/python_modules/libraries/dagster-sling/dagster_sling/components/sling_replication_collection/component.py
+index 04351a064e..cd9ef1e823 100644
+--- a/python_modules/libraries/dagster-sling/dagster_sling/components/sling_replication_collection/component.py
++++ b/python_modules/libraries/dagster-sling/dagster_sling/components/sling_replication_collection/component.py
+@@ -1,4 +1,3 @@
+-import textwrap
+ from collections.abc import Iterator, Mapping, Sequence
+ from dataclasses import dataclass, field
+ from functools import cached_property
+@@ -18,7 +17,7 @@
+ from dagster.components.component.component import Component
+ from dagster.components.core.context import ComponentLoadContext
+ from dagster.components.resolved.context import ResolutionContext
+-from dagster.components.resolved.core_models import AssetPostProcessor, OpSpec
++from dagster.components.resolved.core_models import OpSpec
+ from dagster.components.scaffold.scaffold import scaffold_with
+ from dagster.components.utils.translation import TranslationFn, TranslationFnResolver
+ from dagster_shared.utils.warnings import deprecation_warning
+@@ -139,8 +138,6 @@ class SlingReplicationCollectionComponent(Component, Resolvable):
+ 
+     connections: ResolvedSlingConnections = field(default_factory=list)
+     replications: Sequence[SlingReplicationSpecModel] = field(default_factory=list)
+-    # TODO: deprecate and then delete -- schrockn 2025-06-10
+-    asset_post_processors: Optional[Sequence[AssetPostProcessor]] = None
+     resource: Annotated[
+         Optional[SlingResource],
+         Resolver(resolve_resource, model_field_name="sling"),
+@@ -197,25 +194,6 @@ def execute(
+         yield from iterator
+ 
+     def build_defs(self, context: ComponentLoadContext) -> Definitions:
+-        if self.asset_post_processors:
+-            raise Exception(
+-                "The asset_post_processors field is deprecated, place your post-processors in the assets"
+-                " field in the top-level post_processing field instead, as in this example:\n"
+-                + textwrap.dedent(
+-                    """
+-                    type: dagster_sling.SlingReplicationCollectionComponent
+-
+-                    attributes: ~
+-
+-                    post_processing:
+-                      assets:
+-                        - target: "*"
+-                          attributes:
+-                            group_name: "my_group"
+-                    """
+-                )
+-            )
+-
+         return Definitions(
+             assets=[self.build_asset(context, replication) for replication in self.replications],
+         )
+diff --git a/python_modules/libraries/dagster-sling/dagster_sling_tests/test_sling_replication_collection_component.py b/python_modules/libraries/dagster-sling/dagster_sling_tests/test_sling_replication_collection_component.py
+index f929bfdffb..7edf7677cd 100644
+--- a/python_modules/libraries/dagster-sling/dagster_sling_tests/test_sling_replication_collection_component.py
++++ b/python_modules/libraries/dagster-sling/dagster_sling_tests/test_sling_replication_collection_component.py
+@@ -270,37 +270,6 @@ def test_spec_is_available_in_scope() -> None:
+         ]
+ 
+ 
+-def test_asset_post_processors_deprecation_error() -> None:
+-    with create_defs_folder_sandbox() as sandbox:
+-        defs_path = sandbox.scaffold_component(component_cls=SlingReplicationCollectionComponent)
+-        with environ({"HOME": str(defs_path), "SOME_PASSWORD": "password"}):
+-            shutil.copytree(
+-                STUB_LOCATION_PATH / "defs" / "ingest",
+-                defs_path,
+-                dirs_exist_ok=True,
+-            )
+-            shutil.copy(STUB_LOCATION_PATH / "input.csv", defs_path / "input.csv")
+-
+-            with _modify_yaml(defs_path / "replication.yaml") as data:
+-                if "<PLACEHOLDER>" in data["streams"]:
+-                    placeholder_data = data["streams"].pop("<PLACEHOLDER>")
+-                    data["streams"][f"file://{defs_path}/input.csv"] = placeholder_data
+-
+-            with _modify_yaml(defs_path / "defs.yaml") as data:
+-                data["attributes"]["connections"]["DUCKDB"]["instance"] = f"{defs_path}/duckdb"
+-                # Modify defs.yaml to include the deprecated asset_post_processors field
+-                data["attributes"]["asset_post_processors"] = [
+-                    {"target": "*", "attributes": {"group_name": "test_group"}}
+-                ]
+-
+-            with pytest.raises(Exception) as exc_info:
+-                with sandbox.build_all_defs():
+-                    pass
+-
+-            parent_error_message = str(exc_info.value.__cause__)
+-            assert "The asset_post_processors field is deprecated" in parent_error_message
+-
+-
+ def map_spec(spec: AssetSpec) -> AssetSpec:
+     return spec.replace_attributes(tags={"is_custom_spec": "yes"})
+ 
