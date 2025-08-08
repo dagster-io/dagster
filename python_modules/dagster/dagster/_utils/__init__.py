@@ -247,35 +247,6 @@ def check_script(path: str, return_code: int = 0) -> None:
         raise
 
 
-def check_cli_execute_file_job(
-    path: str, pipeline_fn_name: str, env_file: Optional[str] = None
-) -> None:
-    from dagster._core.test_utils import instance_for_test
-
-    with instance_for_test():
-        cli_cmd = [
-            sys.executable,
-            "-m",
-            "dagster",
-            "pipeline",
-            "execute",
-            "-f",
-            path,
-            "-a",
-            pipeline_fn_name,
-        ]
-
-        if env_file:
-            cli_cmd.append("-c")
-            cli_cmd.append(env_file)
-
-        try:
-            subprocess.check_output(cli_cmd)
-        except subprocess.CalledProcessError as cpe:
-            print(cpe)  # noqa: T201
-            raise cpe
-
-
 def safe_tempfile_path_unmanaged() -> str:
     # This gets a valid temporary file path in the safest possible way, although there is still no
     # guarantee that another process will not create a file at this path. The NamedTemporaryFile is
