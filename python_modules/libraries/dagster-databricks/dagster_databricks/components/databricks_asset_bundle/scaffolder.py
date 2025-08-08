@@ -1,10 +1,17 @@
+import os
+
 from dagster.components.component.component_scaffolder import Scaffolder
+from dagster.components.component_scaffolding import scaffold_component
 from dagster.components.scaffold.scaffold import ScaffoldRequest
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 
 class DatabricksAssetBundleScaffoldParams(BaseModel):
-    pass
+    """Parameters for scaffolding DatabricksAssetBundleComponent from Databricks asset bundle."""
+
+    databricks_configs_path: str = Field(
+        description="Path to the databricks.yml config file",
+    )
 
 
 class DatabricksAssetBundleScaffolder(Scaffolder[DatabricksAssetBundleScaffoldParams]):
@@ -13,4 +20,9 @@ class DatabricksAssetBundleScaffolder(Scaffolder[DatabricksAssetBundleScaffoldPa
         return DatabricksAssetBundleScaffoldParams
 
     def scaffold(self, request: ScaffoldRequest[DatabricksAssetBundleScaffoldParams]) -> None:
-        raise NotImplementedError()
+        project_root = request.project_root or os.getcwd()
+        project_root_tmpl = "{{ project_root }}"
+        rel_path = os.path.relpath(request.params.databricks_configs_path, start=project_root)
+        path_str = f"{project_root_tmpl}/{rel_path}"
+
+        scaffold_component(request, {"databricks_configs": path_str})
