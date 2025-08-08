@@ -250,7 +250,9 @@ def _get_snapshot_id(manifest, _):
     )
     def my_dbt_assets(): ...
 
-    job = Definitions(assets=[my_dbt_assets]).resolve_implicit_global_asset_job_def()
+    defs = Definitions(assets=[my_dbt_assets])
+    job = defs.get_implicit_global_asset_job_def()
+
     return job.get_job_snapshot_id()
 
 
@@ -260,9 +262,12 @@ def test_snapshot_id(
     # we dont make strong guarantees about stable ids, but try to have the basic case stable
 
     with multiprocessing.Pool(1) as pool:
-        results = pool.map(partial(_get_snapshot_id, test_jaffle_shop_manifest), range(5))
+        results = pool.map(partial(_get_snapshot_id, test_jaffle_shop_manifest), range(1))
 
     assert len(set(results)) == 1
+
+    # this should only update if the dbt project or asset producing code changes
+    assert results[0] == "86d23be3fbd096f5e55a2289bf9858a1957a371e"
 
 
 @pytest.mark.parametrize("name", [None, "custom"])
