@@ -960,7 +960,7 @@ def test_asset_batching():
             counter = traced_counter.get()
             counts = counter.counts()  # pyright: ignore[reportOptionalMemberAccess]
             assert counts
-            assert counts.get("DagsterInstance.get_run_records") == 1
+            assert counts.get("RunsMixin.get_run_records") == 1
 
             run_ids = [materialization["runOrError"]["id"] for materialization in materializations]
 

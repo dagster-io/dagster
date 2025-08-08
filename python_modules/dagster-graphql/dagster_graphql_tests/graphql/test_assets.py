@@ -1594,7 +1594,7 @@ class TestAssetAwareEventLog(ExecutingGraphQLContextTestMatrix):
         )
 
         counts = counter.counts()
-        assert counts.get("DagsterInstance.get_run_records") == 1
+        assert counts.get("RunsMixin.get_run_records") == 1
 
         assert result.data
         assert result.data["assetNodes"]
