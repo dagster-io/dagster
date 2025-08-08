@@ -471,35 +471,35 @@ class AssetDomain:
 
     def get_asset_check_health_state_for_assets(
         self, asset_keys: Sequence["AssetKey"]
-    ) -> Optional[Mapping["AssetKey", Optional["AssetCheckHealthState"]]]:
+    ) -> Mapping["AssetKey", Optional["AssetCheckHealthState"]]:
         """Get asset check health state for assets.
         Moved from DagsterInstance.get_asset_check_health_state_for_assets().
         """
-        return None
+        return {asset_key: None for asset_key in asset_keys}
 
     def get_asset_freshness_health_state_for_assets(
         self, asset_keys: Sequence["AssetKey"]
-    ) -> Optional[Mapping["AssetKey", Optional["AssetFreshnessHealthState"]]]:
+    ) -> Mapping["AssetKey", Optional["AssetFreshnessHealthState"]]:
         """Get asset freshness health state for assets.
         Moved from DagsterInstance.get_asset_freshness_health_state_for_assets().
         """
-        return None
+        return {asset_key: None for asset_key in asset_keys}
 
     def get_asset_materialization_health_state_for_assets(
         self, asset_keys: Sequence["AssetKey"]
-    ) -> Optional[Mapping["AssetKey", Optional["AssetMaterializationHealthState"]]]:
+    ) -> Mapping["AssetKey", Optional["AssetMaterializationHealthState"]]:
         """Get asset materialization health state for assets.
         Moved from DagsterInstance.get_asset_materialization_health_state_for_assets().
         """
-        return None
+        return {asset_key: None for asset_key in asset_keys}
 
     def get_minimal_asset_materialization_health_state_for_assets(
         self, asset_keys: Sequence["AssetKey"]
-    ) -> Optional[Mapping["AssetKey", Optional["MinimalAssetMaterializationHealthState"]]]:
+    ) -> Mapping["AssetKey", Optional["MinimalAssetMaterializationHealthState"]]:
         """Get minimal asset materialization health state for assets.
         Moved from DagsterInstance.get_minimal_asset_materialization_health_state_for_assets().
         """
-        return None
+        return {asset_key: None for asset_key in asset_keys}
 
     def get_status_by_partition(
         self,
