@@ -9,6 +9,7 @@ import {useGroupTimelineRunsBy} from './useGroupTimelineRunsBy';
 import {RefreshState} from '../app/QueryRefresh';
 import {useTrackPageView} from '../app/analytics';
 import {usePrefixedCacheKey} from '../app/usePrefixedCacheKey';
+import {useAutomations} from '../automation/useAutomations';
 import {filterAutomationSelectionByQuery} from '../automation-selection/AntlrAutomationSelection';
 import {AutomationSelectionInput} from '../automation-selection/input/AutomationSelectionInput';
 import {Automation} from '../automation-selection/input/useAutomationSelectionAutoCompleteProvider';
@@ -98,6 +99,8 @@ export const OverviewTimelineRoot = ({Header}: Props) => {
 
   const [groupRunsBy, setGroupRunsBy] = useGroupTimelineRunsBy();
 
+  const {automations: allAutomations} = useAutomations();
+
   const [jobSelection, setJobSelection] = useQueryAndLocalStoragePersistedState<string>({
     queryKey: 'jobSelection',
     defaults: {jobSelection: ''},
@@ -117,17 +120,33 @@ export const OverviewTimelineRoot = ({Header}: Props) => {
   // Use deferred value to allow paginating quickly with the UI feeling more responsive.
   const {jobs: jobsUnmapped, loading, refreshState} = useDeferredValue(runsForTimelineRet);
 
-  const automations = useMemo(() => {
+  const automationRows = useMemo(() => {
+    const sensors = Object.fromEntries(
+      allAutomations
+        .filter((automation) => automation.type === 'sensor')
+        .map((automation) => [automation.name, automation]),
+    );
+    const schedules = Object.fromEntries(
+      allAutomations
+        .filter((automation) => automation.type === 'schedule')
+        .map((automation) => [automation.name, automation]),
+    );
     return groupRunsByAutomation(jobsUnmapped).map((automation) => ({
       ...automation,
       repo: automation.repoAddress,
       type: automation.type as Automation['type'],
-      status: 'running' as Automation['status'],
-      tags: [] as Automation['tags'],
+      status:
+        automation.type === 'sensor'
+          ? (sensors[automation.name]?.status ?? 'stopped')
+          : (schedules[automation.name]?.status ?? 'stopped'),
+      tags:
+        automation.type === 'sensor'
+          ? (sensors[automation.name]?.tags ?? [])
+          : (schedules[automation.name]?.tags ?? []),
     }));
-  }, [jobsUnmapped]);
+  }, [allAutomations, jobsUnmapped]);
 
-  const jobs = useMemo(() => {
+  const jobRows = useMemo(() => {
     return jobsUnmapped.map((job) => ({
       ...job,
       repo: job.repoAddress,
@@ -136,10 +155,10 @@ export const OverviewTimelineRoot = ({Header}: Props) => {
 
   const rows = useMemo(() => {
     if (groupRunsBy === 'automation') {
-      return Array.from(filterAutomationSelectionByQuery(automations, automationSelection));
+      return Array.from(filterAutomationSelectionByQuery(automationRows, automationSelection));
     }
-    return Array.from(filterJobSelectionByQuery(jobs, jobSelection).all);
-  }, [automationSelection, automations, groupRunsBy, jobSelection, jobs]);
+    return Array.from(filterJobSelectionByQuery(jobRows, jobSelection).all);
+  }, [automationSelection, automationRows, groupRunsBy, jobSelection, jobRows]);
 
   return (
     <>
@@ -149,12 +168,12 @@ export const OverviewTimelineRoot = ({Header}: Props) => {
         <div style={{flex: 1, display: 'flex', alignItems: 'center'}}>
           {groupRunsBy === 'automation' ? (
             <AutomationSelectionInput
-              items={automations}
+              items={allAutomations}
               value={automationSelection}
               onChange={(value) => setAutomationSelection(value)}
             />
           ) : (
-            <JobSelectionInput items={jobs} value={jobSelection} onChange={setJobSelection} />
+            <JobSelectionInput items={jobRows} value={jobSelection} onChange={setJobSelection} />
           )}
         </div>
         <ButtonGroup<HourWindow>
