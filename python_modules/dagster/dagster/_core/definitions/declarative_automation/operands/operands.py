@@ -15,6 +15,8 @@ from dagster._core.definitions.declarative_automation.automation_context import 
 from dagster._core.definitions.declarative_automation.operands.subset_automation_condition import (
     SubsetAutomationCondition,
 )
+from dagster._core.definitions.partitions.snap.snap import PartitionsSnap
+from dagster._core.definitions.partitions.subset.key_ranges import KeyRangesPartitionsSubset
 from dagster._record import record
 from dagster._utils.schedules import reverse_cron_string_iterator
 
@@ -55,10 +57,19 @@ class InitialEvaluationCondition(BuiltinAutomationCondition):
         if previous_requested_subset is None:
             return True
 
-        previous_subset_value_type = type(previous_requested_subset.get_internal_value())
+        previous_subset_value = previous_requested_subset.get_internal_value()
+        previous_subset_value_type = type(previous_subset_value)
 
         current_subset = context.asset_graph_view.get_empty_subset(key=context.root_context.key)
         current_subset_value_type = type(current_subset.get_internal_value())
+        # if we have a key ranges subset, we can compare the partitions snapshot
+        if isinstance(previous_subset_value, KeyRangesPartitionsSubset):
+            current_partitions_snap = (
+                PartitionsSnap.from_def(context.partitions_def) if context.partitions_def else None
+            )
+            previous_partitions_snap = previous_subset_value.partitions_snap
+            return previous_partitions_snap != current_partitions_snap
+
         return previous_subset_value_type != current_subset_value_type
 
     def evaluate(self, context: AutomationContext) -> AutomationResult:

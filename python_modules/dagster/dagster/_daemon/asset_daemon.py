@@ -36,6 +36,7 @@ from dagster._core.definitions.declarative_automation.serialized_objects import 
     AutomationConditionEvaluationWithRunIds,
 )
 from dagster._core.definitions.events import AssetKey
+from dagster._core.definitions.partitions.context import partition_loading_context
 from dagster._core.definitions.repository_definition.valid_definitions import (
     SINGLETON_REPOSITORY_NAME,
 )
@@ -902,13 +903,18 @@ class AssetDaemon(DagsterDaemon):
                     )
                 )
 
-            with AutoMaterializeLaunchContext(
-                tick,
-                sensor,
-                instance,
-                self._logger,
-                tick_retention_settings,
-            ) as tick_context:
+            with (
+                AutoMaterializeLaunchContext(
+                    tick,
+                    sensor,
+                    instance,
+                    self._logger,
+                    tick_retention_settings,
+                ) as tick_context,
+                partition_loading_context(
+                    dynamic_partitions_store=workspace.dynamic_partitions_loader
+                ),
+            ):
                 await self._evaluate_auto_materialize_tick(
                     tick_context,
                     tick,

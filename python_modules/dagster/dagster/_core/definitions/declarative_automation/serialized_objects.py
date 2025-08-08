@@ -15,6 +15,7 @@ from dagster_shared.serdes import whitelist_for_serdes
 from typing_extensions import TypeAlias
 
 from dagster._core.asset_graph_view.asset_graph_view import TemporalContext
+from dagster._core.asset_graph_view.entity_subset import EntitySubset
 from dagster._core.asset_graph_view.serializable_entity_subset import SerializableEntitySubset
 from dagster._core.definitions.asset_key import T_EntityKey
 from dagster._core.definitions.events import AssetKey
@@ -43,15 +44,52 @@ class HistoricalAllPartitionsSubsetSentinel:
     """
 
 
+def _get_maybe_compressed_dynamic_partitions_subset(
+    subset: EntitySubset,
+) -> SerializableEntitySubset:
+    # for DefaultPartitionsSubset on a DynamicPartitionsDefinition, we convert this to a
+    # KeyRangesPartitionsSubset. this is technically a lossy conversion as it's possible
+    # for the set of keys between the start and end of a range to change after serialization
+    # (e.g. if a partition is deleted and then re-added). however, accuracy to that degree
+    # is not necessary given the space savings here.
+
+    # internal_value = subset.get_internal_value()
+    # if isinstance(internal_value, (DefaultPartitionsSubset, AllPartitionsSubset)) and isinstance(
+    #     subset.partitions_def, DynamicPartitionsDefinition
+    # ):
+    #     snap = PartitionsSnap.from_def(subset.partitions_def)
+    #     value = KeyRangesPartitionsSubset(
+    #         partitions_snap=snap,
+    #         key_ranges=internal_value.get_partition_key_ranges(subset.partitions_def),
+    #     )
+    #     return SerializableEntitySubset(key=subset.key, value=value)
+    # else:
+    #     return subset.convert_to_serializable_subset()
+
+    # PUSH-SAFETY: do not compress until the read path is released
+    return subset.convert_to_serializable_subset()
+
+
 def get_serializable_candidate_subset(
-    candidate_subset: Union[SerializableEntitySubset, HistoricalAllPartitionsSubsetSentinel],
+    candidate_subset: EntitySubset,
 ) -> Union[SerializableEntitySubset, HistoricalAllPartitionsSubsetSentinel]:
-    """Do not serialize the candidate subset directly if it is an AllPartitionsSubset."""
-    if isinstance(candidate_subset, SerializableEntitySubset) and isinstance(
-        candidate_subset.value, AllPartitionsSubset
-    ):
+    """Do not serialize the candidate subset directly if it is an AllPartitionsSubset, compress
+    DefaultPartitionsSubset on a DynamicPartitionsDefinition to a KeyRangesPartitionsSubset.
+    """
+    internal_value = candidate_subset.get_internal_value()
+    # for AllPartitionsSubset, we convert this to a HistoricalAllPartitionsSubsetSentinel
+    # that will be deserialized as an AllPartitionsSubset. this is a lossy conversion as
+    # we are not recording the partitions that were in the AllPartitionsSubset at the time
+    # of serialization
+    if isinstance(internal_value, AllPartitionsSubset):
         return HistoricalAllPartitionsSubsetSentinel()
-    return candidate_subset
+    else:
+        return _get_maybe_compressed_dynamic_partitions_subset(candidate_subset)
+
+
+def get_serializable_true_subset(true_subset: EntitySubset) -> SerializableEntitySubset:
+    """Compress DefaultPartitionsSubset on a DynamicPartitionsDefinition to a KeyRangesPartitionsSubset."""
+    return _get_maybe_compressed_dynamic_partitions_subset(true_subset)
 
 
 OperatorType: TypeAlias = Union[Literal["and"], Literal["or"], Literal["not"], Literal["identity"]]
