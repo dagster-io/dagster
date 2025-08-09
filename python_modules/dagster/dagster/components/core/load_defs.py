@@ -1,4 +1,3 @@
-import importlib
 from pathlib import Path
 from types import ModuleType
 from typing import Optional
@@ -12,22 +11,6 @@ from dagster.components.component.component import Component
 from dagster.components.core.component_tree import ComponentTree, LegacyAutoloadingComponentTree
 
 PLUGIN_COMPONENT_TYPES_JSON_METADATA_KEY = "plugin_component_types_json"
-
-
-@deprecated(breaking_version="0.2.0")
-@suppress_dagster_warnings
-def build_component_defs(components_root: Path) -> Definitions:
-    """Build a Definitions object for all the component instances in a given project.
-
-    Args:
-        components_root (Path): The path to the components root. This is a directory containing
-            subdirectories with component instances.
-    """
-    defs_root = importlib.import_module(
-        f"{Path(components_root).parent.name}.{Path(components_root).name}"
-    )
-
-    return load_defs(defs_root=defs_root, project_root=components_root.parent.parent)
 
 
 def get_project_root(defs_root: ModuleType) -> Path:

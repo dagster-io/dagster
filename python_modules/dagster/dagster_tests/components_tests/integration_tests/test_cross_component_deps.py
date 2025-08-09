@@ -1,3 +1,4 @@
+import importlib
 import sys
 from pathlib import Path
 
@@ -11,7 +12,8 @@ CROSS_COMPONENT_DEPENDENCY_PATH = (
 def test_dependency_between_components():
     sys.path.append(str(CROSS_COMPONENT_DEPENDENCY_PATH.parent))
 
-    defs = dg.build_component_defs(CROSS_COMPONENT_DEPENDENCY_PATH / "defs")
+    defs_root = importlib.import_module(f"{CROSS_COMPONENT_DEPENDENCY_PATH.name}.defs")
+    defs = dg.load_defs(defs_root=defs_root, project_root=CROSS_COMPONENT_DEPENDENCY_PATH.parent)
     assert (
         dg.AssetKey("downstream_of_all_my_python_defs")
         in defs.resolve_asset_graph().get_all_asset_keys()
@@ -32,7 +34,12 @@ CROSS_COMPONENT_DEPENDENCY_PATH_CUSTOM_COMPONENT = (
 def test_dependency_between_components_with_custom_component():
     sys.path.append(str(CROSS_COMPONENT_DEPENDENCY_PATH_CUSTOM_COMPONENT.parent))
 
-    defs = dg.build_component_defs(CROSS_COMPONENT_DEPENDENCY_PATH_CUSTOM_COMPONENT / "defs")
+    defs_root = importlib.import_module(
+        f"{CROSS_COMPONENT_DEPENDENCY_PATH_CUSTOM_COMPONENT.name}.defs"
+    )
+    defs = dg.load_defs(
+        defs_root=defs_root, project_root=CROSS_COMPONENT_DEPENDENCY_PATH_CUSTOM_COMPONENT.parent
+    )
     assert (
         dg.AssetKey("downstream_of_all_my_python_defs")
         in defs.resolve_asset_graph().get_all_asset_keys()
@@ -53,7 +60,10 @@ CROSS_COMPONENT_DEPENDENCY_PATH_YAML = (
 def test_dependency_between_components_with_yaml():
     sys.path.append(str(CROSS_COMPONENT_DEPENDENCY_PATH_YAML.parent))
 
-    defs = dg.build_component_defs(CROSS_COMPONENT_DEPENDENCY_PATH_YAML / "defs")
+    defs_root = importlib.import_module(f"{CROSS_COMPONENT_DEPENDENCY_PATH_YAML.name}.defs")
+    defs = dg.load_defs(
+        defs_root=defs_root, project_root=CROSS_COMPONENT_DEPENDENCY_PATH_YAML.parent
+    )
     assert (
         dg.AssetKey("downstream_of_all_my_python_defs")
         in defs.resolve_asset_graph().get_all_asset_keys()
