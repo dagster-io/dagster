@@ -1,11 +1,11 @@
 export function getJSONForKey(key: string) {
   let stored = undefined;
+  if (typeof localStorage === 'undefined') {
+    return undefined;
+  }
+
   try {
-    if (typeof window !== 'undefined') {
-      stored = window.localStorage.getItem(key);
-    } else {
-      stored = self.localStorage.getItem(key);
-    }
+    stored = localStorage.getItem(key);
     if (stored) {
       return JSON.parse(stored);
     }

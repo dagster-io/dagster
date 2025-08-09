@@ -1,0 +1,28 @@
+{
+  "compilerOptions": {
+    "paths": {
+      "shared/*": ["./src/*"]
+    },
+    "target": "es2022",
+    "module": "es2022",
+    "strict": true,
+    "sourceMap": true,
+    "allowJs": true,
+    "jsx": "preserve",
+    "moduleResolution": "node",
+    "forceConsistentCasingInFileNames": true,
+    "noImplicitReturns": true,
+    "noUncheckedIndexedAccess": true,
+    "allowUnreachableCode": true,
+    "allowSyntheticDefaultImports": true,
+    "types": ["jest", "node"],
+    "skipLibCheck": false,
+    "lib": ["es2022", "webworker"],
+    "esModuleInterop": true,
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    "noEmit": true,
+    "noFallthroughCasesInSwitch": true
+  },
+  "include": ["src/**/*.worker.ts", "worker-typings.d.ts"]
+}
