@@ -23,7 +23,11 @@ export const GroupTimelineRunsBySelect = ({value, onSelect}: Props) => {
       onItemSelect={onSelect}
       filterable={false}
     >
-      <Button icon={<Icon name={valueToIcon(value)} />} rightIcon={<Icon name="arrow_drop_down" />}>
+      <Button
+        icon={<Icon name={valueToIcon(value)} />}
+        rightIcon={<Icon name="arrow_drop_down" />}
+        style={{width: 150}}
+      >
         {valueToLabel(value)}
       </Button>
     </Select>
@@ -33,9 +37,9 @@ export const GroupTimelineRunsBySelect = ({value, onSelect}: Props) => {
 const valueToLabel = (value: GroupRunsBy) => {
   switch (value) {
     case 'automation':
-      return 'Automation';
+      return 'Automations';
     case 'job':
-      return 'Job';
+      return 'Jobs';
     default:
       return assertUnreachable(value);
   }
