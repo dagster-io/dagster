@@ -207,6 +207,7 @@ class GrapheneLaunchBackfillParams(graphene.InputObjectType):
     forceSynchronousSubmission = graphene.Boolean()
     title = graphene.String()
     description = graphene.String()
+    runConfig = graphene.InputField(graphene.JSONString)
 
     class Meta:
         name = "LaunchBackfillParams"

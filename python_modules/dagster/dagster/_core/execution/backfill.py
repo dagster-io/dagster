@@ -3,7 +3,7 @@ import os
 from collections.abc import Mapping, Sequence
 from datetime import datetime
 from enum import Enum
-from typing import TYPE_CHECKING, NamedTuple, Optional, Union
+from typing import TYPE_CHECKING, Any, NamedTuple, Optional, Union
 
 from dagster import _check as check
 from dagster._core.definitions import AssetKey
@@ -108,6 +108,7 @@ class PartitionBackfill(
             ("asset_selection", Optional[Sequence[AssetKey]]),
             ("title", Optional[str]),
             ("description", Optional[str]),
+            ("run_config", Optional[Mapping[str, Any]]),
             # fields that are only used by job backfills
             ("partition_set_origin", Optional[RemotePartitionSetOrigin]),
             ("partition_names", Optional[Sequence[str]]),
@@ -134,6 +135,7 @@ class PartitionBackfill(
         asset_selection: Optional[Sequence[AssetKey]] = None,
         title: Optional[str] = None,
         description: Optional[str] = None,
+        run_config: Optional[Mapping[str, Any]] = None,
         partition_set_origin: Optional[RemotePartitionSetOrigin] = None,
         partition_names: Optional[Sequence[str]] = None,
         last_submitted_partition_name: Optional[str] = None,
@@ -169,6 +171,7 @@ class PartitionBackfill(
             ),
             title=check_valid_title(title),
             description=check.opt_str_param(description, "description"),
+            run_config=check.opt_mapping_param(run_config, "run_config", key_type=str),
             partition_set_origin=check.opt_inst_param(
                 partition_set_origin, "partition_set_origin", RemotePartitionSetOrigin
             ),
@@ -441,6 +444,7 @@ class PartitionBackfill(
         all_partitions: bool,
         title: Optional[str],
         description: Optional[str],
+        run_config: Optional[Mapping[str, Any]],
     ) -> "PartitionBackfill":
         """If all the selected assets that have PartitionsDefinitions have the same partitioning, then
         the backfill will target the provided partition_names for all those assets.
@@ -469,6 +473,7 @@ class PartitionBackfill(
             asset_backfill_data=asset_backfill_data,
             title=title,
             description=description,
+            run_config=run_config,
         )
 
     @classmethod
@@ -482,6 +487,7 @@ class PartitionBackfill(
         partitions_by_assets: Sequence[PartitionsByAssetSelector],
         title: Optional[str],
         description: Optional[str],
+        run_config: Optional[Mapping[str, Any]],
     ):
         asset_backfill_data = AssetBackfillData.from_partitions_by_assets(
             asset_graph=asset_graph,
@@ -500,6 +506,7 @@ class PartitionBackfill(
             asset_selection=[selector.asset_key for selector in partitions_by_assets],
             title=title,
             description=description,
+            run_config=run_config,
         )
 
     @classmethod
@@ -512,6 +519,7 @@ class PartitionBackfill(
         asset_graph_subset: AssetGraphSubset,
         title: Optional[str],
         description: Optional[str],
+        run_config: Optional[Mapping[str, Any]],
     ):
         asset_backfill_data = AssetBackfillData.from_asset_graph_subset(
             asset_graph_subset=asset_graph_subset,
@@ -529,6 +537,7 @@ class PartitionBackfill(
             asset_selection=list(asset_graph_subset.asset_keys),
             title=title,
             description=description,
+            run_config=run_config,
         )
 
 
