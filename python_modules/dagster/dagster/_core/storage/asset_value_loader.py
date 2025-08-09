@@ -15,6 +15,7 @@ from dagster._core.definitions.utils import DEFAULT_IO_MANAGER_KEY
 from dagster._core.execution.build_resources import build_resources, get_mapped_resource_config
 from dagster._core.execution.context.input import build_input_context
 from dagster._core.execution.context.output import build_output_context
+from dagster._core.execution.context.system import StepExecutionContext
 from dagster._core.execution.resources_init import get_transitive_required_resource_keys
 from dagster._core.instance import DagsterInstance
 from dagster._core.instance.config import is_dagster_home_set
@@ -83,6 +84,7 @@ class AssetValueLoader:
         partition_key: Optional[str] = None,
         input_definition_metadata: Optional[dict[str, Any]] = None,
         resource_config: Optional[Mapping[str, Any]] = None,
+        step_context: Optional[StepExecutionContext] = None,
         # deprecated
         metadata: Optional[dict[str, Any]] = None,
     ) -> object:
@@ -99,6 +101,8 @@ class AssetValueLoader:
                 (is equivalent to setting the metadata argument in `In` or `AssetIn`).
             resource_config (Optional[Any]): A dictionary of resource configurations to be passed
                 to the :py:class:`IOManager`.
+            step_context (Optional[StepExecutionContext]): The step context to use for loading the asset.
+                Can be provided when calling load_asset_value from a Dagster step.
 
         Returns:
             The contents of an asset as a Python object.
@@ -168,6 +172,7 @@ class AssetValueLoader:
             definition_metadata=normalize_renamed_param(
                 input_definition_metadata, "input_definition_metadata", metadata, "metadata"
             ),
+            step_context=step_context,
         )
 
         return io_manager.load_input(input_context)
