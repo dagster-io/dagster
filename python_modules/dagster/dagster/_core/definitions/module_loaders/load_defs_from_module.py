@@ -21,7 +21,9 @@ def load_definitions_from_modules(
     loggers: Optional[Mapping[str, LoggerDefinition]] = None,
     executor: Optional[Union[Executor, ExecutorDefinition]] = None,
 ) -> Definitions:
-    """Constructs the :py:class:`dagster.Definitions` from the given modules.
+    """Constructs the :py:class:`dagster.Definitions` from the given modules. Automatically
+    discovers all objects defined at module scope that can be passed into the :py:class:`dagster.Definitions`
+    constructor.
 
     Args:
         modules (Iterable[ModuleType]): The Python modules to look for :py:class:`dagster.Definitions` inside.
@@ -53,7 +55,9 @@ def load_definitions_from_module(
     loggers: Optional[Mapping[str, LoggerDefinition]] = None,
     executor: Optional[Union[Executor, ExecutorDefinition]] = None,
 ) -> Definitions:
-    """Constructs the :py:class:`dagster.Definitions` from the given module.
+    """Constructs the :py:class:`dagster.Definitions` from the given module. Automatically
+    discovers all objects defined at module scope that can be passed into the :py:class:`dagster.Definitions`
+    constructor.
 
     Args:
         module (ModuleType): The Python module to look for :py:class:`dagster.Definitions` inside.
@@ -82,6 +86,8 @@ def load_definitions_from_current_module(
     executor: Optional[Union[Executor, ExecutorDefinition]] = None,
 ) -> Definitions:
     """Constructs the :py:class:`dagster.Definitions` from the module where this function is called.
+    Automatically discovers all objects defined at module scope that can be passed into the
+    :py:class:`dagster.Definitions` constructor.
 
     Args:
         resources (Optional[Mapping[str, Any]]):
@@ -114,7 +120,9 @@ def load_definitions_from_package_module(
     loggers: Optional[Mapping[str, LoggerDefinition]] = None,
     executor: Optional[Union[Executor, ExecutorDefinition]] = None,
 ) -> Definitions:
-    """Constructs the :py:class:`dagster.Definitions` from the given package module.
+    """Constructs the :py:class:`dagster.Definitions` from the given package module. Automatically
+    discovers all objects defined at module scope that can be passed into the
+    :py:class:`dagster.Definitions` constructor.
 
     Args:
         package_module (ModuleType):
@@ -148,6 +156,8 @@ def load_definitions_from_package_name(
     executor: Optional[Union[Executor, ExecutorDefinition]] = None,
 ) -> Definitions:
     """Constructs the :py:class:`dagster.Definitions` from the package module for the given package name.
+    Automatically discovers all objects defined at module scope that can be passed into the
+    :py:class:`dagster.Definitions` constructor.
 
     Args:
         package_name (str):
