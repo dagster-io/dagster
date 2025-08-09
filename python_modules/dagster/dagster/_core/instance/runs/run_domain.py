@@ -211,7 +211,7 @@ class RunDomain:
         check.opt_inst_param(remote_job_origin, "remote_job_origin", RemoteJobOrigin)
         check.opt_inst_param(job_code_origin, "job_code_origin", JobPythonOrigin)
 
-        dagster_run = self.construct_run_with_snapshots(
+        dagster_run = self._construct_run_with_snapshots(
             job_name=job_name,
             run_id=run_id,  # type: ignore  # (possible none)
             run_config=run_config,
@@ -235,11 +235,11 @@ class RunDomain:
         dagster_run = self._instance.run_storage.add_run(dagster_run)
 
         if execution_plan_snapshot and not assets_are_externally_managed(dagster_run):
-            self.log_asset_planned_events(dagster_run, execution_plan_snapshot, asset_graph)
+            self._log_asset_planned_events(dagster_run, execution_plan_snapshot, asset_graph)
 
         return dagster_run
 
-    def construct_run_with_snapshots(
+    def _construct_run_with_snapshots(
         self,
         job_name: str,
         run_id: str,
@@ -277,7 +277,7 @@ class RunDomain:
         )
 
         job_snapshot_id = (
-            self.ensure_persisted_job_snapshot(job_snapshot, parent_job_snapshot)
+            self._ensure_persisted_job_snapshot(job_snapshot, parent_job_snapshot)
             if job_snapshot
             else None
         )
@@ -317,7 +317,7 @@ class RunDomain:
             execution_plan_snapshot = execution_plan_snapshot._replace(steps=adjusted_steps)
 
         execution_plan_snapshot_id = (
-            self.ensure_persisted_execution_plan_snapshot(
+            self._ensure_persisted_execution_plan_snapshot(
                 execution_plan_snapshot, job_snapshot_id, step_keys_to_execute
             )
             if execution_plan_snapshot and job_snapshot_id
@@ -552,7 +552,7 @@ class RunDomain:
         # error; at this point, the failed tasks try again to fetch the existing run.
         # https://github.com/dagster-io/dagster/issues/2412
 
-        dagster_run = self.construct_run_with_snapshots(
+        dagster_run = self._construct_run_with_snapshots(
             job_name=job_name,
             run_id=run_id,
             run_config=run_config,
@@ -589,7 +589,7 @@ class RunDomain:
         except DagsterRunAlreadyExists:
             return get_run()
 
-    def ensure_persisted_job_snapshot(
+    def _ensure_persisted_job_snapshot(
         self,
         job_snapshot: "JobSnap",
         parent_job_snapshot: "Optional[JobSnap]",
@@ -618,7 +618,7 @@ class RunDomain:
 
         return job_snapshot_id
 
-    def ensure_persisted_execution_plan_snapshot(
+    def _ensure_persisted_execution_plan_snapshot(
         self,
         execution_plan_snapshot: "ExecutionPlanSnapshot",
         job_snapshot_id: str,
@@ -720,7 +720,7 @@ class RunDomain:
             {key for key in to_reexecute if isinstance(key, AssetCheckKey)},
         )
 
-    def log_asset_planned_events(
+    def _log_asset_planned_events(
         self,
         dagster_run: DagsterRun,
         execution_plan_snapshot: "ExecutionPlanSnapshot",
@@ -736,7 +736,7 @@ class RunDomain:
                 for output in step.outputs:
                     asset_key = check.not_none(output.properties).asset_key
                     if asset_key:
-                        self.log_materialization_planned_event_for_asset(
+                        self._log_materialization_planned_event_for_asset(
                             dagster_run, asset_key, job_name, step, output, asset_graph
                         )
 
@@ -764,7 +764,7 @@ class RunDomain:
                             event, dagster_run.run_id, logging.DEBUG
                         )
 
-    def log_materialization_planned_event_for_asset(
+    def _log_materialization_planned_event_for_asset(
         self,
         dagster_run: DagsterRun,
         asset_key: AssetKey,

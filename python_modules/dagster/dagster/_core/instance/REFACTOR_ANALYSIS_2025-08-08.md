@@ -209,6 +209,20 @@ The DagsterInstance refactor series introduced **multiple unintended business lo
   - Updated calls: `_is_batch_writing_enabled()` and `_get_event_batch_size()` (global scope)
   - Restored original global behavior where all instances share the same batch configuration
 
+#### 5. **Method Delegation Changes - FIXED** ✅
+
+- **Action**: Restored private method names to maintain original API encapsulation
+- **Files Modified**:
+  - `python_modules/dagster/dagster/_core/instance/runs/run_domain.py` - Renamed public methods back to private
+- **Impact**: **RUNTIME BEHAVIOR CHANGE RESOLVED** - API encapsulation restored to original intent
+- **Technical Details**:
+  - Renamed: `construct_run_with_snapshots` → `_construct_run_with_snapshots` (private)
+  - Renamed: `log_asset_planned_events` → `_log_asset_planned_events` (private)
+  - Renamed: `ensure_persisted_job_snapshot` → `_ensure_persisted_job_snapshot` (private)
+  - Renamed: `log_materialization_planned_event_for_asset` → `_log_materialization_planned_event_for_asset` (private)
+  - Updated all internal call sites to use private method names
+  - Restored original encapsulation intent - these methods are implementation details, not public API
+
 ### **Code Quality & Testing** ✅
 
 - **Linting**: All changes passed `make ruff` validation
@@ -224,8 +238,9 @@ The DagsterInstance refactor series introduced **multiple unintended business lo
 5. ✅ **Fix status Union support** - Added string→enum conversion logic in `run_domain.py`
 6. ✅ **Fix assertion runtime change** - Removed added assertion in `launch_run` method
 7. ✅ **Fix event batching scope change** - Restored global batch writing configuration functions
-8. ✅ **Basic testing** - Verified modules import and ruff passes
-9. ✅ **Code quality** - All linting and formatting checks pass
+8. ✅ **Fix method delegation changes** - Restored private method names for proper API encapsulation
+9. ✅ **Basic testing** - Verified modules import and ruff passes
+10. ✅ **Code quality** - All linting and formatting checks pass
 
 ### **Impact Summary**
 
