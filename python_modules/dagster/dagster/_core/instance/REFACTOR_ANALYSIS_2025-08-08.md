@@ -187,6 +187,16 @@ The DagsterInstance refactor series introduced **multiple unintended business lo
   - Added conversion logic: `if isinstance(status, str): status = DagsterRunStatus(status)`
   - Preserved backward compatibility while maintaining type safety
 
+#### 3. **Added Critical Path Assertion - FIXED** ✅
+
+- **Action**: Removed the added `assert run is not None` to restore original behavior
+- **Files Modified**:
+  - `python_modules/dagster/dagster/_core/instance/methods/run_launcher_methods.py:128` - Removed assertion after `check.failed()` call
+- **Impact**: **RUNTIME BEHAVIOR CHANGE RESOLVED** - Exception handling behavior restored to original
+- **Technical Details**:
+  - Removed: `assert run is not None` after `check.failed()` call in `launch_run` method
+  - Restored original edge case exception handling behavior
+
 ### **Code Quality & Testing** ✅
 
 - **Linting**: All changes passed `make ruff` validation
@@ -200,8 +210,9 @@ The DagsterInstance refactor series introduced **multiple unintended business lo
 3. ✅ **Find status string usage** - Verified no immediate string status usage found
 4. ✅ **Fix AbstractSet support** - Restored `AbstractSet` types in all affected method signatures
 5. ✅ **Fix status Union support** - Added string→enum conversion logic in `run_domain.py`
-6. ✅ **Basic testing** - Verified modules import and ruff passes
-7. ✅ **Code quality** - All linting and formatting checks pass
+6. ✅ **Fix assertion runtime change** - Removed added assertion in `launch_run` method
+7. ✅ **Basic testing** - Verified modules import and ruff passes
+8. ✅ **Code quality** - All linting and formatting checks pass
 
 ### **Impact Summary**
 

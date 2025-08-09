@@ -123,9 +123,6 @@ class RunLauncherMethods:
         run = self.get_run_by_id(run_id)
         if run is None:
             check.failed(f"Failed to reload run {run_id}")
-
-        # At this point run cannot be None due to check.failed above
-        assert run is not None
         try:
             self.run_launcher.launch_run(LaunchRunContext(dagster_run=run, workspace=workspace))
         except:
