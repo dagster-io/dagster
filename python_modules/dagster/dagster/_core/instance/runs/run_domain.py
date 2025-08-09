@@ -1,7 +1,7 @@
 import logging
 import warnings
 from collections.abc import Mapping, Sequence, Set
-from typing import TYPE_CHECKING, Any, Optional
+from typing import TYPE_CHECKING, AbstractSet, Any, Optional, Union  # noqa: UP035
 
 import dagster._check as check
 from dagster._core.definitions.asset_checks.asset_check_evaluation import (
@@ -92,9 +92,9 @@ class RunDomain:
         execution_plan_snapshot: Optional["ExecutionPlanSnapshot"],
         job_snapshot: Optional["JobSnap"],
         parent_job_snapshot: Optional["JobSnap"],
-        asset_selection: Optional[Set[AssetKey]],
-        asset_check_selection: Optional[Set["AssetCheckKey"]],
-        resolved_op_selection: Optional[Set[str]],
+        asset_selection: Optional[AbstractSet[AssetKey]],
+        asset_check_selection: Optional[AbstractSet["AssetCheckKey"]],
+        resolved_op_selection: Optional[AbstractSet[str]],
         op_selection: Optional[Sequence[str]],
         remote_job_origin: Optional["RemoteJobOrigin"],
         job_code_origin: Optional[JobPythonOrigin],
@@ -244,7 +244,7 @@ class RunDomain:
         job_name: str,
         run_id: str,
         run_config: Optional[Mapping[str, object]],
-        resolved_op_selection: Optional[Set[str]],
+        resolved_op_selection: Optional[AbstractSet[str]],
         step_keys_to_execute: Optional[Sequence[str]],
         status: Optional[DagsterRunStatus],
         tags: Mapping[str, str],
@@ -253,8 +253,8 @@ class RunDomain:
         job_snapshot: Optional["JobSnap"],
         execution_plan_snapshot: Optional["ExecutionPlanSnapshot"],
         parent_job_snapshot: Optional["JobSnap"],
-        asset_selection: Optional[Set[AssetKey]] = None,
-        asset_check_selection: Optional[Set["AssetCheckKey"]] = None,
+        asset_selection: Optional[AbstractSet[AssetKey]] = None,
+        asset_check_selection: Optional[AbstractSet["AssetCheckKey"]] = None,
         op_selection: Optional[Sequence[str]] = None,
         remote_job_origin: Optional["RemoteJobOrigin"] = None,
         job_code_origin: Optional[JobPythonOrigin] = None,
@@ -529,7 +529,7 @@ class RunDomain:
         job_name: str,
         run_id: str,
         run_config: Optional[Mapping[str, object]],
-        resolved_op_selection: Optional[Set[str]],
+        resolved_op_selection: Optional[AbstractSet[str]],
         step_keys_to_execute: Optional[Sequence[str]],
         tags: Mapping[str, str],
         root_run_id: Optional[str],
@@ -870,13 +870,13 @@ class RunDomain:
         execution_plan: Optional["ExecutionPlan"] = None,
         run_id: Optional[str] = None,
         run_config: Optional[Mapping[str, object]] = None,
-        resolved_op_selection: Optional[Set[str]] = None,
-        status: Optional[DagsterRunStatus] = None,
+        resolved_op_selection: Optional[AbstractSet[str]] = None,
+        status: Optional[Union[DagsterRunStatus, str]] = None,
         tags: Optional[Mapping[str, str]] = None,
         root_run_id: Optional[str] = None,
         parent_run_id: Optional[str] = None,
         op_selection: Optional[Sequence[str]] = None,
-        asset_selection: Optional[Set[AssetKey]] = None,
+        asset_selection: Optional[AbstractSet[AssetKey]] = None,
         remote_job_origin: Optional["RemoteJobOrigin"] = None,
         job_code_origin: Optional[JobPythonOrigin] = None,
         repository_load_data: Optional["RepositoryLoadData"] = None,
@@ -897,6 +897,10 @@ class RunDomain:
         check.opt_set_param(resolved_op_selection, "resolved_op_selection", of_type=str)
         check.opt_list_param(op_selection, "op_selection", of_type=str)
         check.opt_set_param(asset_selection, "asset_selection", of_type=AssetKey)
+
+        # Convert string status to DagsterRunStatus if needed
+        if isinstance(status, str):
+            status = DagsterRunStatus(status)
 
         # op_selection never provided
         if asset_selection or op_selection:
