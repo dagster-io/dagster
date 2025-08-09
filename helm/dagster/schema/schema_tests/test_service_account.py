@@ -164,3 +164,37 @@ def test_standalone_subchart_service_account_annotations(
 
     assert service_account_template.metadata.name == service_account_name
     assert service_account_template.metadata.annotations == service_account_annotations
+
+
+def test_custom_and_default_service_accounts(template: HelmTemplate):
+    custom_service_account_name = "custom-service-account"
+    custom_service_account_annotations = {"custom-key": "custom-value"}
+    custom_service_account_values = DagsterHelmValues.construct(
+        serviceAccount=ServiceAccount.construct(
+            name=custom_service_account_name,
+            create=True,
+            annotations=kubernetes.Annotations.parse_obj(custom_service_account_annotations),
+        )
+    )
+
+    default_service_account_name = "default-service-account"
+    default_service_account_values = DagsterHelmValues.construct(
+        serviceAccount=ServiceAccount.construct(
+            name=default_service_account_name,
+            create=True,
+        )
+    )
+
+    custom_service_account_templates = template.render(custom_service_account_values)
+    default_service_account_templates = template.render(default_service_account_values)
+
+    assert len(custom_service_account_templates) == 1
+    custom_service_account_template = custom_service_account_templates[0]
+    assert custom_service_account_template.metadata.name == custom_service_account_name
+    assert (
+        custom_service_account_template.metadata.annotations == custom_service_account_annotations
+    )
+
+    assert len(default_service_account_templates) == 1
+    default_service_account_template = default_service_account_templates[0]
+    assert default_service_account_template.metadata.name == default_service_account_name
