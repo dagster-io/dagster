@@ -13,15 +13,16 @@ import {useCanSeeConfig} from '../instance/useCanSeeConfig';
 export const QueuedRunsBanners = () => {
   const canSeeConfig = useCanSeeConfig();
 
+  if (!canSeeConfig) {
+    return null;
+  }
   return (
     <Box flex={{direction: 'column', gap: 8}} style={{minWidth: '100%'}} border="bottom">
-      {canSeeConfig && (
-        <Alert
-          intent="info"
-          title={<Link to="/config#run_coordinator">View queue configuration</Link>}
-        />
-      )}
-      {canSeeConfig && <QueueDaemonAlert />}
+      <Alert
+        intent="info"
+        title={<Link to="/config#run_coordinator">View queue configuration</Link>}
+      />
+      <QueueDaemonAlert />
     </Box>
   );
 };
