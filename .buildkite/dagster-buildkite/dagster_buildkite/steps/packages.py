@@ -486,7 +486,7 @@ EXAMPLE_PACKAGES_WITH_CUSTOM_CONFIG: list[PackageSpec] = [
         pytest_tox_factors=[
             ToxFactor("all"),
             ToxFactor("integrations"),
-            ToxFactor("docs_snapshot_test"),
+            ToxFactor("docs_snapshot_test", splits=3),
         ],
         always_run_if=has_dg_changes,
     ),
@@ -642,12 +642,12 @@ LIBRARY_PACKAGES_WITH_CUSTOM_CONFIG: list[PackageSpec] = [
         pytest_tox_factors=[
             ToxFactor("api_tests"),
             ToxFactor("asset_defs_tests"),
-            ToxFactor("cli_tests"),
+            ToxFactor("cli_tests", splits=2),
             ToxFactor("components_tests"),
             ToxFactor("core_tests"),
-            ToxFactor("daemon_sensor_tests"),
-            ToxFactor("daemon_tests"),
-            ToxFactor("declarative_automation_tests"),
+            ToxFactor("daemon_sensor_tests", splits=2),
+            ToxFactor("daemon_tests", splits=2),
+            ToxFactor("declarative_automation_tests", splits=2),
             ToxFactor("definitions_tests"),
             ToxFactor("general_tests"),
             ToxFactor("general_tests_old_protobuf"),
@@ -655,9 +655,9 @@ LIBRARY_PACKAGES_WITH_CUSTOM_CONFIG: list[PackageSpec] = [
             ToxFactor("logging_tests"),
             ToxFactor("model_tests"),
             ToxFactor("scheduler_tests"),
-            ToxFactor("storage_tests"),
-            ToxFactor("storage_tests_sqlalchemy_1_3"),
-            ToxFactor("storage_tests_sqlalchemy_1_4"),
+            ToxFactor("storage_tests", splits=2),
+            ToxFactor("storage_tests_sqlalchemy_1_3", splits=2),
+            ToxFactor("storage_tests_sqlalchemy_1_4", splits=2),
             ToxFactor("utils_tests"),
             ToxFactor("type_signature_tests"),
         ]
@@ -668,16 +668,16 @@ LIBRARY_PACKAGES_WITH_CUSTOM_CONFIG: list[PackageSpec] = [
         "python_modules/dagster-graphql",
         pytest_extra_cmds=dagster_graphql_extra_cmds,
         pytest_tox_factors=[
-            ToxFactor("not_graphql_context_test_suite"),
+            ToxFactor("not_graphql_context_test_suite", splits=2),
             ToxFactor("sqlite_instance_multi_location"),
-            ToxFactor("sqlite_instance_managed_grpc_env"),
-            ToxFactor("sqlite_instance_deployed_grpc_env"),
-            ToxFactor("sqlite_instance_code_server_cli_grpc_env"),
+            ToxFactor("sqlite_instance_managed_grpc_env", splits=2),
+            ToxFactor("sqlite_instance_deployed_grpc_env", splits=2),
+            ToxFactor("sqlite_instance_code_server_cli_grpc_env", splits=2),
             ToxFactor("graphql_python_client"),
             ToxFactor("postgres-graphql_context_variants"),
             ToxFactor("postgres-instance_multi_location"),
-            ToxFactor("postgres-instance_managed_grpc_env"),
-            ToxFactor("postgres-instance_deployed_grpc_env"),
+            ToxFactor("postgres-instance_managed_grpc_env", splits=2),
+            ToxFactor("postgres-instance_deployed_grpc_env", splits=2),
         ],
         unsupported_python_versions=(
             lambda tox_factor: (
@@ -713,7 +713,7 @@ LIBRARY_PACKAGES_WITH_CUSTOM_CONFIG: list[PackageSpec] = [
     PackageSpec(
         "python_modules/libraries/dagster-dbt",
         pytest_tox_factors=[
-            ToxFactor(f"{deps_factor}-{command_factor}")
+            ToxFactor(f"{deps_factor}-{command_factor}", splits=3)
             for deps_factor in ["dbt17", "dbt18", "dbt19", "dbt110"]
             for command_factor in ["cloud", "core-main", "core-derived-metadata"]
         ],
@@ -787,7 +787,7 @@ LIBRARY_PACKAGES_WITH_CUSTOM_CONFIG: list[PackageSpec] = [
     PackageSpec(
         "python_modules/libraries/dagster-dg-cli",
         pytest_tox_factors=[
-            ToxFactor("general"),
+            ToxFactor("general", splits=2),
             ToxFactor("docs"),
             ToxFactor("plus"),
         ],
@@ -931,8 +931,8 @@ LIBRARY_PACKAGES_WITH_CUSTOM_CONFIG: list[PackageSpec] = [
         "python_modules/libraries/dagster-mysql",
         pytest_extra_cmds=mysql_extra_cmds,
         pytest_tox_factors=[
-            ToxFactor("storage_tests"),
-            ToxFactor("storage_tests_sqlalchemy_1_3"),
+            ToxFactor("storage_tests", splits=2),
+            ToxFactor("storage_tests_sqlalchemy_1_3", splits=2),
         ],
         always_run_if=has_storage_test_fixture_changes,
     ),
@@ -971,7 +971,7 @@ LIBRARY_PACKAGES_WITH_CUSTOM_CONFIG: list[PackageSpec] = [
     ),
     PackageSpec(
         "python_modules/libraries/dagstermill",
-        pytest_tox_factors=[ToxFactor("papermill1"), ToxFactor("papermill2")],
+        pytest_tox_factors=[ToxFactor("papermill1", splits=2), ToxFactor("papermill2", splits=2)],
         retries=2,  # Workaround for flaky kernel issues
         unsupported_python_versions=(
             lambda tox_factor: (
@@ -999,6 +999,7 @@ LIBRARY_PACKAGES_WITH_CUSTOM_CONFIG: list[PackageSpec] = [
             AvailablePythonVersion.V3_13,
         ],
         queue=BuildkiteQueue.DOCKER,
+        splits=2,
     ),
     # Runs against live dbt cloud instance, we only want to run on commits and on the
     # nightly build
