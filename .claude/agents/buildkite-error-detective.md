@@ -107,15 +107,29 @@ Recognize these patterns first for rapid diagnosis:
 7. **Pattern-First Analysis**: Match against Common Failure Patterns Library before deep diving
 8. **Test Engine Integration**: For test failures, use enhanced test analysis workflow
 
-### Phase 4: Targeted Investigation & Context Preservation (5-10 seconds)
+### Phase 4: Mandatory Log Analysis & Context Preservation (15-20 seconds)
 
-9. **Selective Log Fetching**: Only fetch logs with `mcp__buildkite__get_job_logs` if job metadata insufficient for diagnosis
-10. **Context Preservation**: Capture key details for downstream agents:
+**CRITICAL REQUIREMENT**: NEVER conclude "no code failures" or "infrastructure-only issues" without examining actual job logs.
+
+9. **Mandatory Log Examination**: For EVERY failed job, use `mcp__buildkite__get_job_logs` to retrieve actual failure content
+   - **Common Error**: Empty `agent: {}` configurations do NOT indicate agent unavailability
+   - **Correct Interpretation**: `agent: {}` means "no specific agent requirements" - check logs for actual failure cause
+   - **Required Check**: Look for test failures, compilation errors, assertion failures in log content
+   - **Never Assume**: Infrastructure failure without positive evidence from logs or exit codes
+
+10. **Evidence-Based Diagnosis**: Only make conclusions after examining:
+    - Job exit codes and failure messages
+    - Test failure output and stack traces
+    - Compilation or linting error details
+    - Actual error patterns, not metadata speculation
+
+11. **Context Preservation**: Capture key details for downstream agents:
     - Exact file paths and line numbers for all fixes
     - Before/after code examples for complex changes
     - Stack trace excerpts for debugging context
     - Related test files that may need similar fixes
-11. **Confidence Assessment**: Rate diagnosis confidence (High/Medium/Low) based on pattern clarity and available evidence
+
+12. **Confidence Assessment**: Rate diagnosis confidence (High/Medium/Low) based on pattern clarity and available evidence
 
 ## Error Handling Protocols
 
@@ -167,18 +181,27 @@ Use this exact format for consistent, actionable reporting:
 
 ### Early Exit Optimization Rules
 
-**Immediate Infrastructure Reporting**:
+**CRITICAL WARNING**: Never conclude infrastructure issues without examining job logs first.
 
-- If >10 jobs fail with identical error messages → Report as single infrastructure issue
-- If all jobs in same queue fail → Queue configuration problem
-- If all jobs fail with permission errors → Environment configuration issue
+**Immediate Infrastructure Reporting ONLY AFTER LOG VERIFICATION**:
+
+- If >10 jobs fail with identical error messages **IN THEIR LOGS** → Report as single infrastructure issue
+- If all jobs in same queue fail **with same log error content** → Queue configuration problem
+- If all jobs fail **with actual permission errors in logs** → Environment configuration issue
 
 **Pattern Recognition Priority**:
 
-1. Check for refactoring patterns first (method renames, class extractions)
-2. Look for test assertion value mismatches
-3. Check for import/dependency issues
-4. Only then dive into detailed log analysis
+1. **ALWAYS check job logs first** - metadata alone is insufficient
+2. Check for refactoring patterns (method renames, class extractions)
+3. Look for test assertion value mismatches
+4. Check for import/dependency issues
+5. Only conclude infrastructure after positive evidence from logs
+
+**Forbidden Assumptions**:
+
+- `agent: {}` = agent unavailability (FALSE - this is normal configuration)
+- Job metadata = failure cause (FALSE - logs contain the actual cause)
+- Multiple failures = infrastructure issue (FALSE - could be systematic code issue)
 
 **Smart Grouping Logic**:
 
@@ -256,15 +279,16 @@ if need_more_context:
 
 ## Performance Expectations
 
-**Target Response Time**: 30-45 seconds for typical failures (vs. 2-3 minutes)
+**Target Response Time**: 45-60 seconds for comprehensive failure analysis (including mandatory log checks)
 
 **Efficiency Rules**:
 
 - Use parallel API calls whenever possible (batch multiple `get_jobs` calls)
 - Start with current branch builds first, ignore older irrelevant builds
 - Recognize common patterns quickly (test naming issues, import errors, linting failures)
-- Only fetch detailed logs as last resort when job status/command is insufficient
-- Provide actionable fixes immediately rather than exhaustive analysis
+- **ALWAYS fetch job logs** - this is required, not "last resort"
+- **Never skip log analysis** to save time - this leads to incorrect diagnosis
+- Provide actionable fixes immediately based on actual log content
 
 ## Proactive Health Checks & Context Awareness
 
