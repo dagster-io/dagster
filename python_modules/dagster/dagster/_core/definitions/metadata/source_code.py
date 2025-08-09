@@ -7,7 +7,7 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Any, Callable, Optional, Union
 
 from dagster_shared.dagster_model import DagsterModel
-from typing_extensions import TypeAlias
+from typing_extensions import Literal, TypeAlias
 
 import dagster._check as check
 from dagster._annotations import beta, public
@@ -29,6 +29,7 @@ if TYPE_CHECKING:
     )
 
 DEFAULT_SOURCE_FILE_KEY = "asset_definition"
+Platform = Literal["github", "gitlab"]
 
 
 @beta
@@ -332,12 +333,27 @@ def _convert_local_path_to_git_path_single_definition(
     )
 
 
-def _build_github_url(url: str, branch: str) -> str:
-    return f"{url}/tree/{branch}"
+def base_git_url(url: str, branch: str, platform: Optional[Platform]) -> str:
+    if platform is None:
+        if "gitlab" in url:
+            platform = "gitlab"
+        elif "github" in url:
+            platform = "github"
+        else:
+            raise ValueError(
+                "Invalid `git_url`."
+                " Unable to infer the source control platform from the `git_url`. Please supply a `platform`."
+            )
 
+    if platform == "gitlab":
+        return f"{url}/-/tree/{branch}"
+    if platform == "github":
+        return f"{url}/tree/{branch}"
 
-def _build_gitlab_url(url: str, branch: str) -> str:
-    return f"{url}/-/tree/{branch}"
+    raise ValueError(
+        "Invalid `platform`."
+        " Only gitlab and github are supported for linking to source control at this time."
+    )
 
 
 @beta
@@ -348,6 +364,7 @@ def link_code_references_to_git(
     git_url: str,
     git_branch: str,
     file_path_mapping: FilePathMapping,
+    platform: Optional[Platform] = None,
 ) -> Sequence[Union["AssetsDefinition", "SourceAsset", "CacheableAssetsDefinition", "AssetSpec"]]:
     """Wrapper function which converts local file path code references to source control URLs
     based on the provided source control URL and branch.
@@ -360,6 +377,8 @@ def link_code_references_to_git(
         git_url (str): The base URL for the source control system. For example,
             "https://github.com/dagster-io/dagster".
         git_branch (str): The branch in the source control system, such as "master".
+        platform (str): The hosting platform for the source control system, "github" or "gitlab". If None, it will
+            be inferred based on `git_url`.
         file_path_mapping (FilePathMapping):
             Specifies the mapping between local file paths and their corresponding paths in a source control repository.
             Simple usage is to provide a `AnchorBasedFilePathMapping` instance, which specifies an anchor file in the
@@ -375,6 +394,7 @@ def link_code_references_to_git(
                         with_source_code_references([my_dbt_assets]),
                         git_url="https://github.com/dagster-io/dagster",
                         git_branch="master",
+                        platform="github",
                         file_path_mapping=AnchorBasedFilePathMapping(
                             local_file_anchor=Path(__file__),
                             file_anchor_path_in_repository="python_modules/my_module/my-module/__init__.py",
@@ -382,19 +402,10 @@ def link_code_references_to_git(
                     )
                 )
     """
-    if "gitlab" in git_url:
-        git_url = _build_gitlab_url(git_url, git_branch)
-    elif "github.com" in git_url:
-        git_url = _build_github_url(git_url, git_branch)
-    else:
-        raise ValueError(
-            "Invalid `git_url`."
-            " Only GitHub and GitLab are supported for linking to source control at this time."
-        )
-
+    base_git_url_ = base_git_url(git_url, git_branch, platform)
     return [
         _convert_local_path_to_git_path_single_definition(
-            base_git_url=git_url,
+            base_git_url=base_git_url_,
             file_path_mapping=file_path_mapping,
             assets_def=assets_def,
         )
