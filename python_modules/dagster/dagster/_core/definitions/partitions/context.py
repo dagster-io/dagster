@@ -3,7 +3,7 @@ from collections.abc import Iterator
 from contextlib import contextmanager
 from contextvars import ContextVar
 from functools import wraps
-from typing import TYPE_CHECKING, Annotated, Any, Callable, Optional
+from typing import TYPE_CHECKING, Annotated, Any, Callable, Optional, TypeVar
 
 from dagster_shared.record import ImportFrom, replace
 
@@ -13,6 +13,9 @@ from dagster._time import get_current_datetime
 
 if TYPE_CHECKING:
     from dagster._core.instance import DynamicPartitionsStore
+
+# Type variable for preserving return type
+T = TypeVar("T")
 
 
 @record
@@ -94,12 +97,14 @@ def partition_loading_context(
         _current_ctx.reset(token)
 
 
-def use_partition_loading_context(func: Callable[..., Any]) -> Callable[..., Any]:
+def use_partition_loading_context(func: Callable[..., T]) -> Callable[..., T]:
     """Decorator for methods that will use the partition loading context."""
 
     @wraps(func)
-    def wrapper(self, *args: Any, **kwargs: Any) -> Any:
+    def wrapper(*args: Any, **kwargs: Any) -> T:
+        # Extract self from args for the context manager
+        self = args[0]
         with partition_loading_context(new_ctx=self._partition_loading_context):
-            return func(self, *args, **kwargs)
+            return func(*args, **kwargs)
 
     return wrapper
