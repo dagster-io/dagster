@@ -1056,14 +1056,19 @@ class SkipOnBackfillInProgressRule(
             AutomationResult,
         )
 
+        # this backfilling subset is aware of the current partitions definitions, and so will
+        # be valid
+        asset_subset = (
+            context.legacy_context.instance_queryer.get_active_backfill_target_asset_graph_subset().get_asset_subset(
+                context.legacy_context.asset_key
+            )
+            or context.asset_graph_view.get_empty_subset(
+                key=context.legacy_context.asset_key
+            ).convert_to_serializable_subset()
+        )
+
         backfilling_subset = ValidAssetSubset.coerce_from_subset(
-            # this backfilling subset is aware of the current partitions definitions, and so will
-            # be valid
-            (
-                context.legacy_context.instance_queryer.get_active_backfill_target_asset_graph_subset()
-            ).get_asset_subset(
-                context.legacy_context.asset_key, context.legacy_context.asset_graph
-            ),
+            asset_subset,
             context.legacy_context.partitions_def,
         )
 
