@@ -220,6 +220,7 @@ class SchedulingMethods:
 
         return reset_state
 
+    @traced
     def all_instigator_state(
         self,
         repository_origin_id: Optional[str] = None,
