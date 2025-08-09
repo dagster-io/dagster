@@ -62,6 +62,8 @@ const pipelineStatusFromMessages = (messages: RunDagsterRunEventFragment[]) => {
         return RunStatus.SUCCESS;
       case 'RunFailureEvent':
         return RunStatus.FAILURE;
+      case 'RunSuccessWithWarningsEvent':
+        return RunStatus.SUCCESS_WITH_WARNINGS;
     }
   }
   return null;

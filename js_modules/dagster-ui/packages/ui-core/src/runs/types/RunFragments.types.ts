@@ -2946,6 +2946,15 @@ export type RunDagsterRunEventFragment_RunSuccessEvent = {
   eventType: Types.DagsterEventType | null;
 };
 
+export type RunDagsterRunEventFragment_RunSuccessWithWarningsEvent = {
+  __typename: 'RunSuccessWithWarningsEvent';
+  message: string;
+  timestamp: string;
+  level: Types.LogLevel;
+  stepKey: string | null;
+  eventType: Types.DagsterEventType | null;
+};
+
 export type RunDagsterRunEventFragment_StepExpectationResultEvent = {
   __typename: 'StepExpectationResultEvent';
   message: string;
@@ -3475,6 +3484,7 @@ export type RunDagsterRunEventFragment =
   | RunDagsterRunEventFragment_RunStartEvent
   | RunDagsterRunEventFragment_RunStartingEvent
   | RunDagsterRunEventFragment_RunSuccessEvent
+  | RunDagsterRunEventFragment_RunSuccessWithWarningsEvent
   | RunDagsterRunEventFragment_StepExpectationResultEvent
   | RunDagsterRunEventFragment_StepWorkerStartedEvent
   | RunDagsterRunEventFragment_StepWorkerStartingEvent;

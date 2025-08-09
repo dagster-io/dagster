@@ -118,6 +118,7 @@ class DagsterEventType(str, Enum):
     STEP_START = "STEP_START"
     STEP_SUCCESS = "STEP_SUCCESS"
     STEP_SKIPPED = "STEP_SKIPPED"
+    STEP_SUCCESS_WITH_WARNINGS = "STEP_SUCCESS_WITH_WARNINGS"
 
     # The process carrying out step execution is starting/started. Shown as a
     # marker start/end in the Dagster UI.
@@ -129,6 +130,7 @@ class DagsterEventType(str, Enum):
     RESOURCE_INIT_STARTED = "RESOURCE_INIT_STARTED"
     RESOURCE_INIT_SUCCESS = "RESOURCE_INIT_SUCCESS"
     RESOURCE_INIT_FAILURE = "RESOURCE_INIT_FAILURE"
+    RESOURCE_INIT_SUCCESS_WITH_WARNINGS = "RESOURCE_INIT_SUCCESS_WITH_WARNINGS"
 
     STEP_UP_FOR_RETRY = "STEP_UP_FOR_RETRY"  # "failed" but want to retry
     STEP_RESTARTED = "STEP_RESTARTED"
@@ -155,6 +157,7 @@ class DagsterEventType(str, Enum):
     RUN_FAILURE = "PIPELINE_FAILURE"
     RUN_CANCELING = "PIPELINE_CANCELING"
     RUN_CANCELED = "PIPELINE_CANCELED"
+    RUN_SUCCESS_WITH_WARNINGS = "PIPELINE_SUCCESS_WITH_WARNINGS"
 
     # Keep these legacy enum values around, to keep back-compatability for user code that might be
     # using these constants to filter event records
@@ -166,6 +169,7 @@ class DagsterEventType(str, Enum):
     PIPELINE_FAILURE = RUN_FAILURE
     PIPELINE_CANCELING = RUN_CANCELING
     PIPELINE_CANCELED = RUN_CANCELED
+    PIPELINE_SUCCESS_WITH_WARNINGS = RUN_SUCCESS_WITH_WARNINGS
 
     OBJECT_STORE_OPERATION = "OBJECT_STORE_OPERATION"
     ASSET_STORE_OPERATION = "ASSET_STORE_OPERATION"
@@ -181,6 +185,7 @@ class DagsterEventType(str, Enum):
     ALERT_START = "ALERT_START"
     ALERT_SUCCESS = "ALERT_SUCCESS"
     ALERT_FAILURE = "ALERT_FAILURE"
+    ALERT_SUCCESS_WITH_WARNINGS = "ALERT_SUCCESS_WITH_WARNINGS"
 
     LOGS_CAPTURED = "LOGS_CAPTURED"
 
@@ -197,6 +202,7 @@ EVENT_TYPE_TO_DISPLAY_STRING = {
     DagsterEventType.PIPELINE_FAILURE: "RUN_FAILURE",
     DagsterEventType.PIPELINE_CANCELING: "RUN_CANCELING",
     DagsterEventType.PIPELINE_CANCELED: "RUN_CANCELED",
+    DagsterEventType.PIPELINE_SUCCESS_WITH_WARNINGS: "RUN_SUCCESS_WITH_WARNINGS",
 }
 
 STEP_EVENTS = {
@@ -215,6 +221,7 @@ STEP_EVENTS = {
     DagsterEventType.LOADED_INPUT,
     DagsterEventType.STEP_RESTARTED,
     DagsterEventType.STEP_UP_FOR_RETRY,
+    DagsterEventType.STEP_SUCCESS_WITH_WARNINGS,
 }
 
 FAILURE_EVENTS = {
@@ -232,6 +239,7 @@ PIPELINE_EVENTS = {
     DagsterEventType.RUN_FAILURE,
     DagsterEventType.RUN_CANCELING,
     DagsterEventType.RUN_CANCELED,
+    DagsterEventType.RUN_SUCCESS_WITH_WARNINGS,
 }
 
 HOOK_EVENTS = {
@@ -244,6 +252,7 @@ ALERT_EVENTS = {
     DagsterEventType.ALERT_START,
     DagsterEventType.ALERT_SUCCESS,
     DagsterEventType.ALERT_FAILURE,
+    DagsterEventType.ALERT_SUCCESS_WITH_WARNINGS,
 }
 
 MARKER_EVENTS = {
@@ -264,6 +273,7 @@ EVENT_TYPE_TO_PIPELINE_RUN_STATUS = {
     DagsterEventType.RUN_STARTING: DagsterRunStatus.STARTING,
     DagsterEventType.RUN_CANCELING: DagsterRunStatus.CANCELING,
     DagsterEventType.RUN_CANCELED: DagsterRunStatus.CANCELED,
+    DagsterEventType.RUN_SUCCESS_WITH_WARNINGS: DagsterRunStatus.SUCCESS_WITH_WARNINGS,
 }
 
 PIPELINE_RUN_STATUS_TO_EVENT_TYPE = {v: k for k, v in EVENT_TYPE_TO_PIPELINE_RUN_STATUS.items()}
@@ -347,6 +357,7 @@ def _validate_event_specific_data(
         DagsterEventType.RESOURCE_INIT_STARTED,
         DagsterEventType.RESOURCE_INIT_SUCCESS,
         DagsterEventType.RESOURCE_INIT_FAILURE,
+        DagsterEventType.RESOURCE_INIT_SUCCESS_WITH_WARNINGS
     ):
         check.inst_param(event_specific_data, "event_specific_data", EngineEventData)
     elif event_type == DagsterEventType.HOOK_ERRORED:
@@ -681,6 +692,12 @@ class DagsterEvent(
     @property
     def is_job_success(self) -> bool:
         return self.event_type == DagsterEventType.RUN_SUCCESS
+
+    @property
+    def is_job_success_with_warnings(self) -> bool:
+        return self.event_type == DagsterEventType.RUN_SUCCESS_WITH_WARNINGS
+
+
 
     @property
     def is_job_failure(self) -> bool:
@@ -1216,6 +1233,14 @@ class DagsterEvent(
     def job_success(job_context: IPlanContext) -> "DagsterEvent":
         return DagsterEvent.from_job(
             DagsterEventType.RUN_SUCCESS,
+            job_context,
+            message=f'Finished execution of run for "{job_context.job_name}".',
+        )
+    
+    @staticmethod
+    def job_success_with_warnings(job_context: IPlanContext) -> "DagsterEvent":
+        return DagsterEvent.from_job(
+            DagsterEventType.RUN_SUCCESS_WITH_WARNINGS,
             job_context,
             message=f'Finished execution of run for "{job_context.job_name}".',
         )

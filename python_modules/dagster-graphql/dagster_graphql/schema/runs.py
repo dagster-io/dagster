@@ -27,9 +27,27 @@ class GrapheneStepEventStatus(graphene.Enum):
     SUCCESS = "SUCCESS"
     FAILURE = "FAILURE"
     IN_PROGRESS = "IN_PROGRESS"
+    SUCCESS_WITH_WARNINGS = "SUCCESS_WITH_WARNINGS"
 
     class Meta:
         name = "StepEventStatus"
+
+
+class GrapheneLaunchPipelineRunSuccessWithWarnings(graphene.Interface):
+    run = graphene.Field(graphene.NonNull("dagster_graphql.schema.pipelines.pipeline.GrapheneRun"))
+    warnings = graphene.List(graphene.NonNull(graphene.String))
+
+    class Meta:
+        name = "LaunchPipelineRunSuccessWithWarnings"
+
+
+class GrapheneLaunchRunSuccessWithWarnings(graphene.ObjectType):
+    run = graphene.Field(graphene.NonNull("dagster_graphql.schema.pipelines.pipeline.GrapheneRun"))
+    warnings = graphene.List(graphene.NonNull(graphene.String))
+
+    class Meta:
+        interfaces = (GrapheneLaunchPipelineRunSuccessWithWarnings,)
+        name = "LaunchRunSuccessWithWarnings"
 
 
 class GrapheneLaunchPipelineRunSuccess(graphene.Interface):
@@ -234,5 +252,7 @@ types = [
     GrapheneRunConfigData,
     GrapheneRunGroup,
     GrapheneRunGroupOrError,
+    GrapheneLaunchPipelineRunSuccessWithWarnings,
+    GrapheneLaunchRunSuccessWithWarnings,
     GrapheneRunGroups,
 ]

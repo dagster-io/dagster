@@ -5,13 +5,13 @@ from typing import AbstractSet, Any, Callable, NamedTuple, Optional, Union, cast
 
 import dagster._check as check
 from dagster._annotations import public
-from dagster._core.definitions import IJob, JobDefinition
+from dagster._core.definitions import IJob, JobDefinition, AssetCheckEvaluation, AssetCheckSeverity
 from dagster._core.definitions.events import AssetKey
 from dagster._core.definitions.job_base import InMemoryJob
 from dagster._core.definitions.reconstruct import ReconstructableJob
 from dagster._core.definitions.repository_definition import RepositoryLoadData
 from dagster._core.errors import DagsterExecutionInterruptedError, DagsterInvariantViolationError
-from dagster._core.events import DagsterEvent, EngineEventData, JobFailureData, RunFailureReason
+from dagster._core.events import DagsterEvent, EngineEventData, JobFailureData, RunFailureReason, DagsterEventType
 from dagster._core.execution.context.system import PlanOrchestrationContext
 from dagster._core.execution.context_creation_job import (
     ExecutionContextManager,
@@ -714,6 +714,19 @@ def create_execution_plan(
         repository_load_data=repository_load_data,
     )
 
+def _has_warn_level_asset_checks(events: list[DagsterEvent]) -> bool:
+    for event in events:
+        if event.event_type == DagsterEventType.ASSET_CHECK_EVALUATION:
+            eval_data = event.event_specific_data
+            if (
+                isinstance(eval_data, AssetCheckEvaluation)
+                and not eval_data.passed
+                and eval_data.severity == AssetCheckSeverity.WARN
+            ):
+                return True
+    return False
+
+
 
 def job_execution_iterator(
     job_context: PlanOrchestrationContext, execution_plan: ExecutionPlan
@@ -731,12 +744,18 @@ def job_execution_iterator(
 
     job_exception_info = None
     job_canceled_info = None
+    asset_events: list[
+        DagsterEvent
+    ] = []
     failed_steps: list[
         DagsterEvent
     ] = []  # A list of failed steps, with the earliest failure event at the front
     generator_closed = False
     try:
         for event in job_context.executor.execute(job_context, execution_plan):
+            if event.event_type == DagsterEventType.ASSET_CHECK_EVALUATION:
+                asset_events.append(event)
+
             if event.is_step_failure:
                 failed_steps.append(event)
             elif event.is_resource_init_failure and event.step_key:
@@ -828,6 +847,8 @@ def job_execution_iterator(
                     failure_reason=RunFailureReason.STEP_FAILURE,
                     first_step_failure_event=failed_steps[0],
                 )
+        elif _has_warn_level_asset_checks(asset_events):
+            event = DagsterEvent.job_success_with_warnings(job_context)
         else:
             event = DagsterEvent.job_success(job_context)
         if not generator_closed:
