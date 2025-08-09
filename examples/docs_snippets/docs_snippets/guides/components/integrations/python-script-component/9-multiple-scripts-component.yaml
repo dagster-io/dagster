@@ -1,0 +1,19 @@
+type: dagster.PythonScriptComponent
+
+attributes:
+  execution:
+    path: process_sales_data.py
+  assets:
+    - key: sales_revenue_report
+      description: "Daily sales revenue report"
+      group_name: "analytics"
+---
+type: dagster.PythonScriptComponent
+
+attributes:
+  execution:
+    path: process_customer_data.py
+  assets:
+    - key: customer_summary_stats
+      description: "Summary statistics for customer data"
+      group_name: "analytics"
