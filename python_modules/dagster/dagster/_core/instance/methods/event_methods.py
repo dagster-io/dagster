@@ -1,4 +1,4 @@
-"""Event domain implementation - extracted from DagsterInstance."""
+"""Event methods implementation - consolidated from EventDomain."""
 
 import logging
 import logging.config
@@ -21,7 +21,7 @@ if TYPE_CHECKING:
         JobFailureData,
     )
     from dagster._core.events.log import EventLogEntry
-    from dagster._core.instance import DagsterInstance
+    from dagster._core.instance.instance import DagsterInstance
     from dagster._core.instance.types import _EventListenerLogHandler
     from dagster._core.storage.dagster_run import DagsterRun
     from dagster._core.storage.event_log.base import (
@@ -31,15 +31,45 @@ if TYPE_CHECKING:
     )
 
 
-class EventDomain:
-    """Domain object encapsulating event-related operations.
+class EventMethods:
+    """Mixin class containing event-related functionality for DagsterInstance.
 
-    This class holds a reference to a DagsterInstance and provides methods
-    for event storage, querying, and streaming.
+    This class provides methods for event storage, querying, and streaming.
+    All methods are implemented as instance methods that DagsterInstance inherits.
     """
 
-    def __init__(self, instance: "DagsterInstance") -> None:
-        self._instance = instance
+    @property
+    def _instance(self) -> "DagsterInstance":
+        """Cast self to DagsterInstance for type-safe access to instance methods and properties."""
+        from dagster._core.instance.instance import DagsterInstance
+
+        return check.inst(self, DagsterInstance)
+
+    # Private member access wrappers with consolidated type: ignore
+    @property
+    def _event_storage_impl(self):
+        """Access to event storage."""
+        return self._instance._event_storage  # noqa: SLF001
+
+    @property
+    def _event_buffer_impl(self):
+        """Access to event buffer."""
+        return self._instance._event_buffer  # noqa: SLF001
+
+    @property
+    def _run_storage_impl(self):
+        """Access to run storage."""
+        return self._instance._run_storage  # noqa: SLF001
+
+    @property
+    def _subscribers_impl(self):
+        """Access to subscribers."""
+        return self._instance._subscribers  # noqa: SLF001
+
+    @property
+    def _settings_impl(self):
+        """Access to settings."""
+        return self._instance._settings  # noqa: SLF001
 
     def logs_after(
         self,
@@ -48,8 +78,8 @@ class EventDomain:
         of_type: Optional["DagsterEventType"] = None,
         limit: Optional[int] = None,
     ) -> Sequence["EventLogEntry"]:
-        """Get logs after cursor - moved from DagsterInstance.logs_after()."""
-        return self._instance._event_storage.get_logs_for_run(  # noqa: SLF001
+        """Get logs after cursor."""
+        return self._event_storage_impl.get_logs_for_run(
             run_id,
             cursor=cursor,
             of_type=of_type,
@@ -61,8 +91,8 @@ class EventDomain:
         run_id: str,
         of_type: Optional[Union["DagsterEventType", set["DagsterEventType"]]] = None,
     ) -> Sequence["EventLogEntry"]:
-        """Get all logs for run - moved from DagsterInstance.all_logs()."""
-        return self._instance._event_storage.get_logs_for_run(run_id, of_type=of_type)  # noqa: SLF001
+        """Get all logs for run."""
+        return self._event_storage_impl.get_logs_for_run(run_id, of_type=of_type)
 
     def get_records_for_run(
         self,
@@ -72,18 +102,18 @@ class EventDomain:
         limit: Optional[int] = None,
         ascending: bool = True,
     ) -> "EventLogConnection":
-        """Get event records for run - moved from DagsterInstance.get_records_for_run()."""
-        return self._instance._event_storage.get_records_for_run(  # noqa: SLF001
+        """Get event records for run."""
+        return self._event_storage_impl.get_records_for_run(
             run_id, cursor, of_type, limit, ascending
         )
 
     def watch_event_logs(self, run_id: str, cursor: Optional[str], cb: "EventHandlerFn") -> None:
-        """Watch event logs - moved from DagsterInstance.watch_event_logs()."""
-        return self._instance._event_storage.watch(run_id, cursor, cb)  # noqa: SLF001
+        """Watch event logs."""
+        return self._event_storage_impl.watch(run_id, cursor, cb)
 
     def end_watch_event_logs(self, run_id: str, cb: "EventHandlerFn") -> None:
-        """End watch event logs - moved from DagsterInstance.end_watch_event_logs()."""
-        return self._instance._event_storage.end_watch(run_id, cb)  # noqa: SLF001
+        """End watch event logs."""
+        return self._event_storage_impl.end_watch(run_id, cb)
 
     def get_event_records(
         self,
@@ -92,7 +122,6 @@ class EventDomain:
         ascending: bool = False,
     ) -> Sequence["EventLogRecord"]:
         """Return a list of event records stored in the event log storage.
-        Moved from DagsterInstance.get_event_records().
 
         Args:
             event_records_filter (Optional[EventRecordsFilter]): the filter by which to filter event
@@ -127,25 +156,23 @@ class EventDomain:
                 "Use fetch_run_status_changes instead of get_event_records to fetch run status change events."
             )
 
-        return self._instance._event_storage.get_event_records(  # noqa: SLF001
-            event_records_filter, limit, ascending
-        )
+        return self._event_storage_impl.get_event_records(event_records_filter, limit, ascending)
 
     def should_store_event(self, event: "EventLogEntry") -> bool:
-        """Check if event should be stored - moved from DagsterInstance.should_store_event()."""
+        """Check if event should be stored."""
         if (
             event.dagster_event is not None
             and event.dagster_event.is_asset_failed_to_materialize
-            and not self._instance._event_storage.can_store_asset_failure_events  # noqa: SLF001
+            and not self._event_storage_impl.can_store_asset_failure_events
         ):
             return False
         return True
 
     def store_event(self, event: "EventLogEntry") -> None:
-        """Store event - moved from DagsterInstance.store_event()."""
+        """Store event."""
         if not self.should_store_event(event):
             return
-        self._instance._event_storage.store_event(event)  # noqa: SLF001
+        self._event_storage_impl.store_event(event)
 
     def _is_batch_writing_enabled(self) -> bool:
         """Check if batch writing is enabled."""
@@ -164,7 +191,6 @@ class EventDomain:
         batch_metadata: Optional["DagsterEventBatchMetadata"] = None,
     ) -> None:
         """Handle a new event by storing it and notifying subscribers.
-        Moved from DagsterInstance.handle_new_event().
 
         Events may optionally be sent with `batch_metadata`. If batch writing is enabled, then
         events sent with `batch_metadata` will not trigger an immediate write. Instead, they will be
@@ -189,21 +215,21 @@ class EventDomain:
             events = [event]
         else:
             batch_id, is_batch_end = batch_metadata.id, batch_metadata.is_end
-            self._instance._event_buffer[batch_id].append(event)  # noqa: SLF001
+            self._event_buffer_impl[batch_id].append(event)
             if (
                 is_batch_end
-                or len(self._instance._event_buffer[batch_id]) == self._get_event_batch_size()  # noqa: SLF001
+                or len(self._event_buffer_impl[batch_id]) == self._get_event_batch_size()
             ):
-                events = self._instance._event_buffer[batch_id]  # noqa: SLF001
-                del self._instance._event_buffer[batch_id]  # noqa: SLF001
+                events = self._event_buffer_impl[batch_id]
+                del self._event_buffer_impl[batch_id]
             else:
                 return
 
         if len(events) == 1:
-            self._instance._event_storage.store_event(events[0])  # noqa: SLF001
+            self._event_storage_impl.store_event(events[0])
         else:
             try:
-                self._instance._event_storage.store_event_batch(events)  # noqa: SLF001
+                self._event_storage_impl.store_event_batch(events)
 
             # Fall back to storing events one by one if writing a batch fails. We catch a generic
             # Exception because that is the parent class of the actually received error,
@@ -215,16 +241,16 @@ class EventDomain:
                     "Falling back to storing multiple single-event storage requests...\n"
                 )
                 for event in events:
-                    self._instance._event_storage.store_event(event)  # noqa: SLF001
+                    self._event_storage_impl.store_event(event)
 
         for event in events:
             run_id = event.run_id
             if (
-                not self._instance._event_storage.handles_run_events_in_store_event  # noqa: SLF001
+                not self._event_storage_impl.handles_run_events_in_store_event
                 and event.is_dagster_event
                 and event.get_dagster_event().is_job_event
             ):
-                self._instance._run_storage.handle_run_event(  # noqa: SLF001
+                self._run_storage_impl.handle_run_event(
                     run_id, event.get_dagster_event(), datetime_from_timestamp(event.timestamp)
                 )
                 run = self._instance.get_run_by_id(run_id)
@@ -248,20 +274,25 @@ class EventDomain:
                             ).lower()
                         },
                     )
-            for sub in self._instance._subscribers[run_id]:  # noqa: SLF001
+            for sub in self._subscribers_impl[run_id]:
                 sub(event)
 
     def _should_retry_run(self, run, run_failure_reason):
         """Helper method to check if run should be retried."""
+        from typing import cast
+
         from dagster._daemon.auto_run_reexecution.auto_run_reexecution import (
             auto_reexecution_should_retry_run,
         )
 
-        return auto_reexecution_should_retry_run(self._instance, run, run_failure_reason)
+        # Cast is safe since this mixin is only used by DagsterInstance
+        return auto_reexecution_should_retry_run(
+            cast("DagsterInstance", self), run, run_failure_reason
+        )
 
     def add_event_listener(self, run_id: str, cb) -> None:
-        """Add event listener - moved from DagsterInstance.add_event_listener()."""
-        self._instance._subscribers[run_id].append(cb)  # noqa: SLF001
+        """Add event listener."""
+        self._subscribers_impl[run_id].append(cb)
 
     def report_engine_event(
         self,
@@ -273,9 +304,7 @@ class EventDomain:
         job_name: Optional[str] = None,
         run_id: Optional[str] = None,
     ) -> "DagsterEvent":
-        """Report a EngineEvent that occurred outside of a job execution context.
-        Moved from DagsterInstance.report_engine_event().
-        """
+        """Report a EngineEvent that occurred outside of a job execution context."""
         from dagster._core.events import DagsterEvent, DagsterEventType, EngineEventData
         from dagster._core.storage.dagster_run import DagsterRun
 
@@ -325,9 +354,7 @@ class EventDomain:
         batch_metadata: Optional["DagsterEventBatchMetadata"] = None,
         timestamp: Optional[float] = None,
     ) -> None:
-        """Takes a DagsterEvent and stores it in persistent storage for the corresponding DagsterRun.
-        Moved from DagsterInstance.report_dagster_event().
-        """
+        """Takes a DagsterEvent and stores it in persistent storage for the corresponding DagsterRun."""
         from dagster._core.events.log import EventLogEntry
 
         event_record = EventLogEntry(
@@ -343,7 +370,7 @@ class EventDomain:
         self.handle_new_event(event_record, batch_metadata=batch_metadata)
 
     def report_run_canceling(self, run: "DagsterRun", message: Optional[str] = None) -> None:
-        """Report run canceling event - moved from DagsterInstance.report_run_canceling()."""
+        """Report run canceling event."""
         from dagster._core.events import DagsterEvent, DagsterEventType
         from dagster._core.storage.dagster_run import DagsterRun
 
@@ -365,7 +392,7 @@ class EventDomain:
         dagster_run: "DagsterRun",
         message: Optional[str] = None,
     ) -> "DagsterEvent":
-        """Report run canceled event - moved from DagsterInstance.report_run_canceled()."""
+        """Report run canceled event."""
         from dagster._core.events import DagsterEvent, DagsterEventType
         from dagster._core.storage.dagster_run import DagsterRun
 
@@ -391,7 +418,7 @@ class EventDomain:
         message: Optional[str] = None,
         job_failure_data: Optional["JobFailureData"] = None,
     ) -> "DagsterEvent":
-        """Report run failed event - moved from DagsterInstance.report_run_failed()."""
+        """Report run failed event."""
         from dagster._core.events import DagsterEvent, DagsterEventType
         from dagster._core.storage.dagster_run import DagsterRun
 
@@ -413,8 +440,8 @@ class EventDomain:
         return dagster_event
 
     def get_yaml_python_handlers(self) -> Sequence[logging.Handler]:
-        """Get YAML-defined Python logging handlers - moved from DagsterInstance._get_yaml_python_handlers()."""
-        if self._instance._settings:  # noqa: SLF001
+        """Get YAML-defined Python logging handlers."""
+        if self._settings_impl:
             logging_config = self._instance.get_python_log_dagster_handler_config()
 
             if logging_config:
@@ -441,15 +468,18 @@ class EventDomain:
         return []
 
     def get_event_log_handler(self) -> "_EventListenerLogHandler":
-        """Get event log handler - moved from DagsterInstance._get_event_log_handler()."""
+        """Get event log handler."""
+        from typing import cast
+
         from dagster._core.instance.types import _EventListenerLogHandler
 
-        event_log_handler = _EventListenerLogHandler(self._instance)
+        # Cast is safe since this mixin is only used by DagsterInstance
+        event_log_handler = _EventListenerLogHandler(cast("DagsterInstance", self))
         event_log_handler.setLevel(10)
         return event_log_handler
 
     def get_handlers(self) -> Sequence[logging.Handler]:
-        """Get all logging handlers - moved from DagsterInstance.get_handlers()."""
+        """Get all logging handlers."""
         handlers: list[logging.Handler] = [self.get_event_log_handler()]
         handlers.extend(self.get_yaml_python_handlers())
         return handlers

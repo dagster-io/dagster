@@ -1,31 +1,69 @@
+from abc import abstractmethod
 from collections.abc import Mapping, Sequence
 from typing import TYPE_CHECKING, Optional
 
 if TYPE_CHECKING:
-    from dagster._core.instance import DagsterInstance
+    from dagster._core.instance.instance import DagsterInstance
+    from dagster._core.run_coordinator.base import RunCoordinator
+    from dagster._core.scheduler.scheduler import Scheduler
+    from dagster._core.storage.runs import RunStorage
     from dagster._daemon.types import DaemonHeartbeat, DaemonStatus
 
 
-class DaemonDomain:
-    """Domain object encapsulating daemon-related operations.
+class DaemonMethods:
+    """Mixin class containing daemon-related functionality for DagsterInstance.
 
-    This class holds a reference to a DagsterInstance and provides methods
-    for daemon management, heartbeats, and status monitoring.
+    This class provides methods for daemon management, heartbeats, and status monitoring.
+    All methods are implemented as instance methods that DagsterInstance inherits.
     """
 
-    def __init__(self, instance: "DagsterInstance") -> None:
-        self._instance = instance
+    # Abstract properties that DagsterInstance provides
+    @property
+    @abstractmethod
+    def run_storage(self) -> "RunStorage": ...
+
+    @property
+    @abstractmethod
+    def is_ephemeral(self) -> bool: ...
+
+    @property
+    @abstractmethod
+    def scheduler(self) -> Optional["Scheduler"]: ...
+
+    @property
+    @abstractmethod
+    def run_coordinator(self) -> "RunCoordinator": ...
+
+    @property
+    @abstractmethod
+    def run_monitoring_enabled(self) -> bool: ...
+
+    @property
+    @abstractmethod
+    def run_retries_enabled(self) -> bool: ...
+
+    @property
+    @abstractmethod
+    def auto_materialize_enabled(self) -> bool: ...
+
+    @property
+    @abstractmethod
+    def auto_materialize_use_sensors(self) -> bool: ...
+
+    @property
+    @abstractmethod
+    def freshness_enabled(self) -> bool: ...
 
     def add_daemon_heartbeat(self, daemon_heartbeat: "DaemonHeartbeat") -> None:
         """Called on a regular interval by the daemon."""
-        self._instance.run_storage.add_daemon_heartbeat(daemon_heartbeat)
+        self.run_storage.add_daemon_heartbeat(daemon_heartbeat)
 
     def get_daemon_heartbeats(self) -> Mapping[str, "DaemonHeartbeat"]:
         """Latest heartbeats of all daemon types."""
-        return self._instance.run_storage.get_daemon_heartbeats()
+        return self.run_storage.get_daemon_heartbeats()
 
     def wipe_daemon_heartbeats(self) -> None:
-        self._instance.run_storage.wipe_daemon_heartbeats()
+        self.run_storage.wipe_daemon_heartbeats()
 
     def get_required_daemon_types(self) -> Sequence[str]:
         from dagster._core.run_coordinator import QueuedRunCoordinator
@@ -43,21 +81,21 @@ class DaemonDomain:
             QueuedRunCoordinatorDaemon,
         )
 
-        if self._instance.is_ephemeral:
+        if self.is_ephemeral:
             return []
 
         daemons = [SensorDaemon.daemon_type(), BackfillDaemon.daemon_type()]
-        if isinstance(self._instance.scheduler, DagsterDaemonScheduler):
+        if isinstance(self.scheduler, DagsterDaemonScheduler):
             daemons.append(SchedulerDaemon.daemon_type())
-        if isinstance(self._instance.run_coordinator, QueuedRunCoordinator):
+        if isinstance(self.run_coordinator, QueuedRunCoordinator):
             daemons.append(QueuedRunCoordinatorDaemon.daemon_type())
-        if self._instance.run_monitoring_enabled:
+        if self.run_monitoring_enabled:
             daemons.append(MonitoringDaemon.daemon_type())
-        if self._instance.run_retries_enabled:
+        if self.run_retries_enabled:
             daemons.append(EventLogConsumerDaemon.daemon_type())
-        if self._instance.auto_materialize_enabled or self._instance.auto_materialize_use_sensors:
+        if self.auto_materialize_enabled or self.auto_materialize_use_sensors:
             daemons.append(AssetDaemon.daemon_type())
-        if self._instance.freshness_enabled:
+        if self.freshness_enabled:
             daemons.append(FreshnessDaemon.daemon_type())
         return daemons
 
@@ -67,12 +105,15 @@ class DaemonDomain:
         """Get the current status of the daemons. If daemon_types aren't provided, defaults to all
         required types. Returns a dict of daemon type to status.
         """
+        from typing import cast
+
         import dagster._check as check
         from dagster._daemon.controller import get_daemon_statuses
 
         check.opt_sequence_param(daemon_types, "daemon_types", of_type=str)
+        # Cast is safe since this mixin is only used by DagsterInstance
         return get_daemon_statuses(
-            self._instance,
+            cast("DagsterInstance", self),
             daemon_types=daemon_types or self.get_required_daemon_types(),
             ignore_errors=True,
         )

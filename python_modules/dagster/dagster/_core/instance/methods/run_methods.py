@@ -1,14 +1,9 @@
-"""RunsMixin for DagsterInstance.
-
-This mixin organizes runs-related surface area and API methods for DagsterInstance.
-Following the architectural pattern, this mixin contains simple implementations that
-primarily delegate to domain objects (run_domain, run_launcher_domain) for complex
-business logic.
-"""
+"""Run methods implementation - consolidated from RunsMixin and RunDomain."""
 
 from collections.abc import Mapping, Sequence, Set
 from datetime import datetime
-from typing import TYPE_CHECKING, Any, Optional, Union, cast
+from functools import cached_property
+from typing import TYPE_CHECKING, Any, Optional, Union
 
 from dagster._core.definitions.events import AssetKey
 from dagster._core.storage.dagster_run import (
@@ -28,40 +23,67 @@ if TYPE_CHECKING:
     from dagster._core.definitions.repository_definition.repository_definition import (
         RepositoryLoadData,
     )
-    from dagster._core.events import DagsterEvent, DagsterEventType, JobFailureData
+    from dagster._core.events import DagsterEvent
     from dagster._core.execution.plan.plan import ExecutionPlan
     from dagster._core.execution.plan.resume_retry import ReexecutionStrategy
     from dagster._core.execution.stats import RunStepKeyStatsSnapshot
     from dagster._core.instance.instance import DagsterInstance
+    from dagster._core.instance.runs.run_domain import RunDomain
     from dagster._core.origin import JobPythonOrigin
     from dagster._core.remote_origin import RemoteJobOrigin
     from dagster._core.remote_representation import CodeLocation, RemoteJob
     from dagster._core.snap import ExecutionPlanSnapshot, JobSnap
     from dagster._core.storage.dagster_run import DagsterRunStatsSnapshot
     from dagster._core.storage.event_log import EventLogStorage
-    from dagster._core.storage.event_log.base import EventLogConnection
     from dagster._core.storage.runs import RunStorage
-    from dagster._core.workspace.context import BaseWorkspaceRequestContext
 
 
-class RunsMixin:
-    """Mixin providing runs-related surface area for DagsterInstance."""
+class RunMethods:
+    """Mixin class containing run-related functionality for DagsterInstance.
 
-    # These attributes are provided by DagsterInstance
-    _run_storage: "RunStorage"
-    _event_storage: "EventLogStorage"
+    This class consolidates run operations from RunsMixin and provides the run_domain
+    property previously in DomainsMixin.
+    """
 
-    # Core Run Retrieval Methods
+    @property
+    def _instance(self) -> "DagsterInstance":
+        """Cast self to DagsterInstance for type-safe access to instance methods and properties."""
+        import dagster._check as check
+        from dagster._core.instance.instance import DagsterInstance
+
+        return check.inst(self, DagsterInstance)
+
+    # Private member access wrappers
+    @property
+    def _run_storage_impl(self) -> "RunStorage":
+        """Access to run storage."""
+        return self._instance._run_storage  # noqa: SLF001
+
+    @property
+    def _event_storage_impl(self) -> "EventLogStorage":
+        """Access to event storage."""
+        return self._instance._event_storage  # noqa: SLF001
+
+    # Domain property - moved from DomainsMixin
+
+    @cached_property
+    def run_domain(self) -> "RunDomain":
+        """Get run domain for complex business logic."""
+        from dagster._core.instance.runs.run_domain import RunDomain
+
+        return RunDomain(self._instance)
+
+    # Core Run Retrieval Methods - moved from RunsMixin
 
     @traced
     def get_run_stats(self, run_id: str) -> "DagsterRunStatsSnapshot":
-        return self._event_storage.get_stats_for_run(run_id)
+        return self._event_storage_impl.get_stats_for_run(run_id)
 
     @traced
     def get_run_step_stats(
         self, run_id: str, step_keys: Optional[Sequence[str]] = None
     ) -> Sequence["RunStepKeyStatsSnapshot"]:
-        return self._event_storage.get_step_stats_for_run(run_id, step_keys)
+        return self._event_storage_impl.get_step_stats_for_run(run_id, step_keys)
 
     @traced
     def get_run_tags(
@@ -70,19 +92,19 @@ class RunsMixin:
         value_prefix: Optional[str] = None,
         limit: Optional[int] = None,
     ) -> Sequence[tuple[str, set[str]]]:
-        return self._run_storage.get_run_tags(
+        return self._run_storage_impl.get_run_tags(
             tag_keys=tag_keys, value_prefix=value_prefix, limit=limit
         )
 
     @traced
     def get_run_tag_keys(self) -> Sequence[str]:
-        return self._run_storage.get_run_tag_keys()
+        return self._run_storage_impl.get_run_tag_keys()
 
     @traced
     def get_run_group(self, run_id: str) -> Optional[tuple[str, Sequence[DagsterRun]]]:
-        return self._run_storage.get_run_group(run_id)
+        return self._run_storage_impl.get_run_group(run_id)
 
-    # Run Creation Methods
+    # Run Creation Methods - moved from RunsMixin
 
     def create_run_for_job(
         self,
@@ -102,7 +124,7 @@ class RunsMixin:
         repository_load_data: Optional["RepositoryLoadData"] = None,
     ) -> DagsterRun:
         """Delegate to run domain."""
-        return cast("DagsterInstance", self).run_domain.create_run_for_job(
+        return self.run_domain.create_run_for_job(
             job_def=job_def,
             execution_plan=execution_plan,
             run_id=run_id,
@@ -142,7 +164,7 @@ class RunsMixin:
         asset_graph: "BaseAssetGraph",
     ) -> DagsterRun:
         """Create a run with the given parameters."""
-        return cast("DagsterInstance", self).run_domain.create_run(
+        return self.run_domain.create_run(
             job_name=job_name,
             run_id=run_id,
             run_config=run_config,
@@ -174,7 +196,7 @@ class RunsMixin:
         run_config: Optional[Mapping[str, Any]] = None,
         use_parent_run_tags: bool = False,
     ) -> DagsterRun:
-        return cast("DagsterInstance", self).run_domain.create_reexecuted_run(
+        return self.run_domain.create_reexecuted_run(
             parent_run=parent_run,
             code_location=code_location,
             remote_job=remote_job,
@@ -200,7 +222,7 @@ class RunsMixin:
         op_selection: Optional[Sequence[str]] = None,
         job_code_origin: Optional["JobPythonOrigin"] = None,
     ) -> DagsterRun:
-        return cast("DagsterInstance", self).run_domain.register_managed_run(
+        return self.run_domain.register_managed_run(
             job_name=job_name,
             run_id=run_id,
             run_config=run_config,
@@ -216,25 +238,25 @@ class RunsMixin:
             job_code_origin=job_code_origin,
         )
 
-    # Run Management Methods
+    # Run Management Methods - moved from RunsMixin
 
     @traced
     def add_run(self, dagster_run: DagsterRun) -> DagsterRun:
-        return self._run_storage.add_run(dagster_run)
+        return self._run_storage_impl.add_run(dagster_run)
 
     @traced
     def handle_run_event(
         self, run_id: str, event: "DagsterEvent", update_timestamp: Optional[datetime] = None
     ) -> None:
-        return self._run_storage.handle_run_event(run_id, event, update_timestamp)
+        return self._run_storage_impl.handle_run_event(run_id, event, update_timestamp)
 
     @traced
     def add_run_tags(self, run_id: str, new_tags: Mapping[str, str]) -> None:
-        return self._run_storage.add_run_tags(run_id, new_tags)
+        return self._run_storage_impl.add_run_tags(run_id, new_tags)
 
     @traced
     def has_run(self, run_id: str) -> bool:
-        return self._run_storage.has_run(run_id)
+        return self._run_storage_impl.has_run(run_id)
 
     @traced
     def get_runs(
@@ -245,7 +267,7 @@ class RunsMixin:
         bucket_by: Optional[Union[JobBucket, TagBucket]] = None,
         ascending: bool = False,
     ) -> Sequence[DagsterRun]:
-        return self._run_storage.get_runs(filters, cursor, limit, bucket_by, ascending)
+        return self._run_storage_impl.get_runs(filters, cursor, limit, bucket_by, ascending)
 
     @traced
     def get_run_ids(
@@ -254,77 +276,13 @@ class RunsMixin:
         cursor: Optional[str] = None,
         limit: Optional[int] = None,
     ) -> Sequence[str]:
-        return self._run_storage.get_run_ids(filters, cursor=cursor, limit=limit)
+        return self._run_storage_impl.get_run_ids(filters, cursor=cursor, limit=limit)
 
     @traced
     def get_runs_count(self, filters: Optional[RunsFilter] = None) -> int:
-        return self._run_storage.get_runs_count(filters)
+        return self._run_storage_impl.get_runs_count(filters)
 
     @traced
     def get_run_partition_data(self, runs_filter: RunsFilter) -> Sequence[RunPartitionData]:
         """Get run partition data for a given partitioned job."""
-        return self._run_storage.get_run_partition_data(runs_filter)
-
-    @traced
-    def get_records_for_run(
-        self,
-        run_id: str,
-        cursor: Optional[str] = None,
-        of_type: Optional[Union["DagsterEventType", set["DagsterEventType"]]] = None,
-        limit: Optional[int] = None,
-        ascending: bool = True,
-    ) -> "EventLogConnection":
-        return cast("DagsterInstance", self).event_domain.get_records_for_run(
-            run_id, cursor, of_type, limit, ascending
-        )
-
-    # State Reporting Methods
-
-    def report_run_canceling(self, run: DagsterRun, message: Optional[str] = None):
-        """Report run canceling event."""
-        return cast("DagsterInstance", self).event_domain.report_run_canceling(run, message)
-
-    def report_run_canceled(
-        self,
-        dagster_run: DagsterRun,
-        message: Optional[str] = None,
-    ) -> "DagsterEvent":
-        """Report run canceled event."""
-        return cast("DagsterInstance", self).event_domain.report_run_canceled(dagster_run, message)
-
-    def report_run_failed(
-        self,
-        dagster_run: DagsterRun,
-        message: Optional[str] = None,
-        job_failure_data: Optional["JobFailureData"] = None,
-    ) -> "DagsterEvent":
-        """Report run failed event."""
-        return cast("DagsterInstance", self).event_domain.report_run_failed(
-            dagster_run, message, job_failure_data
-        )
-
-    # Run Execution Methods
-
-    def submit_run(self, run_id: str, workspace: "BaseWorkspaceRequestContext") -> DagsterRun:
-        """Delegate to run launcher domain."""
-        return cast("DagsterInstance", self).run_launcher_domain.submit_run(run_id, workspace)
-
-    def launch_run(self, run_id: str, workspace: "BaseWorkspaceRequestContext") -> DagsterRun:
-        """Delegate to run launcher domain."""
-        return cast("DagsterInstance", self).run_launcher_domain.launch_run(run_id, workspace)
-
-    def resume_run(
-        self, run_id: str, workspace: "BaseWorkspaceRequestContext", attempt_number: int
-    ) -> DagsterRun:
-        """Delegate to run launcher domain."""
-        return cast("DagsterInstance", self).run_launcher_domain.resume_run(
-            run_id, workspace, attempt_number
-        )
-
-    def count_resume_run_attempts(self, run_id: str) -> int:
-        """Delegate to run launcher domain."""
-        return cast("DagsterInstance", self).run_launcher_domain.count_resume_run_attempts(run_id)
-
-    def run_will_resume(self, run_id: str) -> bool:
-        """Delegate to run launcher domain."""
-        return cast("DagsterInstance", self).run_launcher_domain.run_will_resume(run_id)
+        return self._run_storage_impl.get_run_partition_data(runs_filter)

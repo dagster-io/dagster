@@ -1387,8 +1387,8 @@ def test_repository_batching(graphql_context: WorkspaceRequestContext):
     # each sensor (~5 distinct sensors in the repo)
     # 1) `get_batch_ticks` is called to fetch all the ticks for the sensors
     # 2) `all_instigator_state` is fetched to instantiate GrapheneSensor
-    assert counts.get("InstigatorMixin.get_batch_ticks") == 1
-    assert counts.get("InstigatorMixin.all_instigator_state") == 1
+    assert counts.get("SchedulingMethods.get_batch_ticks") == 1
+    assert counts.get("SchedulingMethods.all_instigator_state") == 1
 
 
 def test_sensor_ticks_filtered(graphql_context: WorkspaceRequestContext):

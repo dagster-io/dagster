@@ -1,4 +1,3 @@
-import logging
 import os
 import weakref
 from collections import defaultdict
@@ -13,46 +12,31 @@ import yaml
 from typing_extensions import Self, TypeAlias
 
 import dagster._check as check
-from dagster._annotations import deprecated, public
-from dagster._core.definitions.events import AssetKey
+from dagster._annotations import public
 from dagster._core.instance.config import DAGSTER_CONFIG_YAML_FILENAME
-from dagster._core.instance.mixins.asset_mixin import AssetMixin
-from dagster._core.instance.mixins.domains_mixin import DomainsMixin
-from dagster._core.instance.mixins.instigator_mixin import InstigatorMixin
-from dagster._core.instance.mixins.runs_mixin import RunsMixin
-from dagster._core.instance.mixins.settings_mixin import SettingsMixin
+from dagster._core.instance.methods.asset_methods import AssetMethods
+from dagster._core.instance.methods.daemon_methods import DaemonMethods
+from dagster._core.instance.methods.event_methods import EventMethods
+from dagster._core.instance.methods.run_launcher_methods import RunLauncherMethods
+from dagster._core.instance.methods.run_methods import RunMethods
+from dagster._core.instance.methods.scheduling_methods import SchedulingMethods
+from dagster._core.instance.methods.settings_methods import SettingsMethods
+from dagster._core.instance.methods.storage_methods import StorageMethods
 from dagster._core.instance.ref import InstanceRef
 from dagster._core.instance.types import DynamicPartitionsStore, InstanceType
 from dagster._core.storage.dagster_run import DagsterRun, RunsFilter
-from dagster._core.types.pagination import PaginatedResults
 from dagster._serdes import ConfigurableClass
 from dagster._utils import PrintFn, traced
 
 if TYPE_CHECKING:
     from dagster._core.debug import DebugRunPayload
     from dagster._core.definitions.asset_checks.asset_check_evaluation import AssetCheckEvaluation
-    from dagster._core.definitions.events import AssetObservation
+    from dagster._core.definitions.events import AssetKey, AssetObservation
     from dagster._core.definitions.freshness import FreshnessStateChange, FreshnessStateEvaluation
     from dagster._core.definitions.partitions.definition import PartitionsDefinition
-    from dagster._core.event_api import (
-        AssetRecordsFilter,
-        EventHandlerFn,
-        RunStatusChangeRecordsFilter,
-    )
-    from dagster._core.events import (
-        AssetMaterialization,
-        DagsterEvent,
-        DagsterEventBatchMetadata,
-        DagsterEventType,
-        EngineEventData,
-    )
+    from dagster._core.event_api import AssetRecordsFilter, RunStatusChangeRecordsFilter
+    from dagster._core.events import AssetMaterialization, DagsterEventType
     from dagster._core.events.log import EventLogEntry
-    from dagster._core.execution.backfill import (
-        BulkActionsFilter,
-        BulkActionStatus,
-        PartitionBackfill,
-    )
-    from dagster._core.instance.assets.asset_domain import AssetDomain
     from dagster._core.launcher import RunLauncher
     from dagster._core.remote_representation import HistoricalJob
     from dagster._core.run_coordinator import RunCoordinator
@@ -63,25 +47,27 @@ if TYPE_CHECKING:
     from dagster._core.storage.daemon_cursor import DaemonCursorStorage
     from dagster._core.storage.dagster_run import JobBucket, RunRecord, TagBucket
     from dagster._core.storage.event_log import EventLogStorage
-    from dagster._core.storage.event_log.base import (
-        AssetRecord,
-        EventLogRecord,
-        EventRecordsFilter,
-        EventRecordsResult,
-    )
+    from dagster._core.storage.event_log.base import AssetRecord, EventRecordsResult
     from dagster._core.storage.partition_status_cache import AssetPartitionStatus
     from dagster._core.storage.root import LocalArtifactStorage
     from dagster._core.storage.runs import RunStorage
     from dagster._core.storage.schedules import ScheduleStorage
     from dagster._core.storage.sql import AlembicVersion
-    from dagster._daemon.types import DaemonHeartbeat, DaemonStatus
 
 DagsterInstanceOverrides: TypeAlias = Mapping[str, Any]
 
 
 @public
 class DagsterInstance(
-    SettingsMixin, RunsMixin, AssetMixin, InstigatorMixin, DynamicPartitionsStore, DomainsMixin
+    SettingsMethods,
+    StorageMethods,
+    DaemonMethods,
+    RunLauncherMethods,
+    EventMethods,
+    SchedulingMethods,
+    AssetMethods,
+    RunMethods,
+    DynamicPartitionsStore,
 ):
     """Core abstraction for managing Dagster's access to storage and other resources.
 
@@ -318,7 +304,7 @@ class DagsterInstance(
         Returns:
             EventRecordsResult: Object containing a list of event log records and a cursor string
         """
-        return self._asset_domain.fetch_materializations(records_filter, limit, cursor, ascending)
+        return AssetMethods.fetch_materializations(self, records_filter, limit, cursor, ascending)
 
     @public
     @traced
@@ -362,7 +348,7 @@ class DagsterInstance(
         Returns:
             Sequence[AssetKey]: List of asset keys.
         """
-        return self._asset_domain.get_asset_keys(prefix, limit, cursor)
+        return AssetMethods.get_asset_keys(self, prefix, limit, cursor)
 
     @public
     @traced
@@ -377,7 +363,7 @@ class DagsterInstance(
         Returns:
             Sequence[AssetRecord]: List of asset records.
         """
-        return self._asset_domain.get_asset_records(asset_keys)
+        return AssetMethods.get_asset_records(self, asset_keys)
 
     @public
     def get_latest_materialization_code_versions(
@@ -396,7 +382,7 @@ class DagsterInstance(
                 not have a code version explicitly assigned to its definitions, but was
                 materialized, Dagster assigns the run ID as its code version.
         """
-        return self._asset_domain.get_latest_materialization_code_versions(asset_keys)
+        return AssetMethods.get_latest_materialization_code_versions(self, asset_keys)
 
     @public
     @traced
@@ -410,7 +396,7 @@ class DagsterInstance(
             Optional[EventLogEntry]: The latest materialization event for the given asset
                 key, or `None` if the asset has not been materialized.
         """
-        return self._asset_domain.get_latest_materialization_event(asset_key)
+        return AssetMethods.get_latest_materialization_event(self, asset_key)
 
     @public
     @traced
@@ -432,7 +418,7 @@ class DagsterInstance(
             Optional[Mapping[str, AssetPartitionStatus]]: status for each partition key
 
         """
-        return self._asset_domain.get_status_by_partition(asset_key, partition_keys, partitions_def)
+        return AssetMethods.get_status_by_partition(self, asset_key, partition_keys, partitions_def)
 
     @public
     @traced
@@ -442,7 +428,7 @@ class DagsterInstance(
         Args:
             asset_key (AssetKey): Asset key to check.
         """
-        return self._asset_domain.has_asset_key(asset_key)
+        return AssetMethods.has_asset_key(self, asset_key)
 
     @public
     def report_runless_asset_event(
@@ -456,7 +442,7 @@ class DagsterInstance(
         ],
     ):
         """Record an event log entry related to assets that does not belong to a Dagster run."""
-        return self._asset_domain.report_runless_asset_event(asset_event)
+        return AssetMethods.report_runless_asset_event(self, asset_event)
 
     @public
     @traced
@@ -466,7 +452,7 @@ class DagsterInstance(
         Args:
             asset_keys (Sequence[AssetKey]): Asset keys to wipe.
         """
-        self._asset_domain.wipe_assets(asset_keys)
+        AssetMethods.wipe_assets(self, asset_keys)
 
     # Run Domain
     # ----------
@@ -588,7 +574,7 @@ class DagsterInstance(
             partitions_def_name (str): The name of the `DynamicPartitionsDefinition`.
             partition_keys (Sequence[str]): Partition keys to add.
         """
-        return self.storage_domain.add_dynamic_partitions(partitions_def_name, partition_keys)
+        return self._event_storage.add_dynamic_partitions(partitions_def_name, partition_keys)
 
     @public
     @traced
@@ -600,7 +586,7 @@ class DagsterInstance(
             partitions_def_name (str): The name of the `DynamicPartitionsDefinition`.
             partition_key (str): Partition key to delete.
         """
-        self.storage_domain.delete_dynamic_partition(partitions_def_name, partition_key)
+        return self._event_storage.delete_dynamic_partition(partitions_def_name, partition_key)
 
     @public
     @traced
@@ -610,7 +596,7 @@ class DagsterInstance(
         Args:
             partitions_def_name (str): The name of the `DynamicPartitionsDefinition`.
         """
-        return self.storage_domain.get_dynamic_partitions(partitions_def_name)
+        return self._event_storage.get_dynamic_partitions(partitions_def_name)
 
     @public
     @traced
@@ -619,9 +605,9 @@ class DagsterInstance(
 
         Args:
             partitions_def_name (str): The name of the `DynamicPartitionsDefinition`.
-            partition_key (Sequence[str]): Partition key to check.
+            partition_key (str): Partition key to check.
         """
-        return self.storage_domain.has_dynamic_partition(partitions_def_name, partition_key)
+        return self._event_storage.has_dynamic_partition(partitions_def_name, partition_key)
 
     # =====================================================================================
     # INTERNAL METHODS
@@ -629,11 +615,6 @@ class DagsterInstance(
 
     # Core Instance Methods
     # ---------------------
-
-    @property
-    def _asset_domain(self):
-        """Access the asset domain. This will be available when mixed with DomainsMixin."""
-        return cast("AssetDomain", getattr(self, "asset_domain"))
 
     @staticmethod
     def from_config(
@@ -759,7 +740,9 @@ class DagsterInstance(
     def daemon_cursor_storage(self) -> "DaemonCursorStorage":
         return self._run_storage
 
-    # schedule storage properties are now in InstigatorMixin
+    @property
+    def scheduler(self) -> Optional["Scheduler"]:
+        return self._scheduler
 
     # run coordinator
 
@@ -832,16 +815,8 @@ class DagsterInstance(
             self._schedule_storage.upgrade()  # type: ignore  # (possible none)
             self._schedule_storage.migrate(print_fn)  # type: ignore  # (possible none)
 
-    def optimize_for_webserver(
-        self, statement_timeout: int, pool_recycle: int, max_overflow: int
-    ) -> None:
-        self.storage_domain.optimize_for_webserver(statement_timeout, pool_recycle, max_overflow)
-
-    def reindex(self, print_fn: PrintFn = lambda _: None) -> None:
-        self.storage_domain.reindex(print_fn)
-
     def dispose(self) -> None:
-        self.storage_domain.dispose()
+        StorageMethods.dispose(self)
         if self._run_coordinator:
             self._run_coordinator.dispose()
         if self._run_launcher:
@@ -900,174 +875,9 @@ class DagsterInstance(
         self._run_storage.wipe()
         self._event_storage.wipe()
 
-    # event storage
-    @traced
-    def logs_after(
-        self,
-        run_id: str,
-        cursor: Optional[int] = None,
-        of_type: Optional["DagsterEventType"] = None,
-        limit: Optional[int] = None,
-    ) -> Sequence["EventLogEntry"]:
-        return self.event_domain.logs_after(run_id, cursor, of_type, limit)
-
-    @traced
-    def all_logs(
-        self,
-        run_id: str,
-        of_type: Optional[Union["DagsterEventType", set["DagsterEventType"]]] = None,
-    ) -> Sequence["EventLogEntry"]:
-        return self.event_domain.all_logs(run_id, of_type)
-
-    def watch_event_logs(self, run_id: str, cursor: Optional[str], cb: "EventHandlerFn") -> None:
-        return self.event_domain.watch_event_logs(run_id, cursor, cb)
-
-    def end_watch_event_logs(self, run_id: str, cb: "EventHandlerFn") -> None:
-        return self.event_domain.end_watch_event_logs(run_id, cb)
-
     # asset storage methods are now in AssetMixin
 
-    @traced
-    @deprecated(breaking_version="2.0")
-    def get_event_records(
-        self,
-        event_records_filter: "EventRecordsFilter",
-        limit: Optional[int] = None,
-        ascending: bool = False,
-    ) -> Sequence["EventLogRecord"]:
-        """Return a list of event records stored in the event log storage.
-
-        Args:
-            event_records_filter (Optional[EventRecordsFilter]): the filter by which to filter event
-                records.
-            limit (Optional[int]): Number of results to get. Defaults to infinite.
-            ascending (Optional[bool]): Sort the result in ascending order if True, descending
-                otherwise. Defaults to descending.
-
-        Returns:
-            List[EventLogRecord]: List of event log records stored in the event log storage.
-        """
-        return self.event_domain.get_event_records(event_records_filter, limit, ascending)
-
-    @traced
-    def get_latest_storage_id_by_partition(
-        self,
-        asset_key: AssetKey,
-        event_type: "DagsterEventType",
-        partitions: Optional[set[str]] = None,
-    ) -> Mapping[str, int]:
-        """Fetch the latest materialzation storage id for each partition for a given asset key.
-
-        Returns a mapping of partition to storage id.
-        """
-        return self.storage_domain.get_latest_storage_id_by_partition(
-            asset_key, event_type, partitions
-        )
-
-    @traced
-    def get_paginated_dynamic_partitions(
-        self,
-        partitions_def_name: str,
-        limit: int,
-        ascending: bool,
-        cursor: Optional[str] = None,
-    ) -> PaginatedResults[str]:
-        """Get a paginatable subset of partition keys for the specified :py:class:`DynamicPartitionsDefinition`.
-
-        Args:
-            partitions_def_name (str): The name of the `DynamicPartitionsDefinition`.
-            limit (int): Maximum number of partition keys to return.
-            ascending (bool): The order of dynamic partitions to return.
-            cursor (Optional[str]): Cursor to use for pagination. Defaults to None.
-        """
-        return self.storage_domain.get_paginated_dynamic_partitions(
-            partitions_def_name, limit, ascending, cursor
-        )
-
-    # event subscriptions
-
-    def get_handlers(self) -> Sequence[logging.Handler]:
-        """Get all logging handlers - delegates to event domain."""
-        return self.event_domain.get_handlers()
-
-    def should_store_event(self, event: "EventLogEntry") -> bool:
-        return self.event_domain.should_store_event(event)
-
-    def store_event(self, event: "EventLogEntry") -> None:
-        self.event_domain.store_event(event)
-
-    def handle_new_event(
-        self,
-        event: "EventLogEntry",
-        *,
-        batch_metadata: Optional["DagsterEventBatchMetadata"] = None,
-    ) -> None:
-        """Handle a new event by storing it and notifying subscribers.
-
-        Events may optionally be sent with `batch_metadata`. If batch writing is enabled, then
-        events sent with `batch_metadata` will not trigger an immediate write. Instead, they will be
-        kept in a batch-specific buffer (identified by `batch_metadata.id`) until either the buffer
-        reaches the event batch size or the end of the batch is reached (signaled by
-        `batch_metadata.is_end`). When this point is reached, all events in the buffer will be sent
-        to the storage layer in a single batch. If an error occurrs during batch writing, then we
-        fall back to iterative individual event writes.
-
-        Args:
-            event (EventLogEntry): The event to handle.
-            batch_metadata (Optional[DagsterEventBatchMetadata]): Metadata for batch writing.
-        """
-        return self.event_domain.handle_new_event(event, batch_metadata=batch_metadata)
-
-    def add_event_listener(self, run_id: str, cb) -> None:
-        self.event_domain.add_event_listener(run_id, cb)
-
-    def report_engine_event(
-        self,
-        message: str,
-        dagster_run: Optional[DagsterRun] = None,
-        engine_event_data: Optional["EngineEventData"] = None,
-        cls: Optional[type[object]] = None,
-        step_key: Optional[str] = None,
-        job_name: Optional[str] = None,
-        run_id: Optional[str] = None,
-    ) -> "DagsterEvent":
-        """Report a EngineEvent that occurred outside of a job execution context."""
-        return self.event_domain.report_engine_event(
-            message,
-            dagster_run,
-            engine_event_data,
-            cls,
-            step_key,
-            job_name,
-            run_id,
-        )
-
-    def report_dagster_event(
-        self,
-        dagster_event: "DagsterEvent",
-        run_id: str,
-        log_level: Union[str, int] = logging.INFO,
-        batch_metadata: Optional["DagsterEventBatchMetadata"] = None,
-        timestamp: Optional[float] = None,
-    ) -> None:
-        """Takes a DagsterEvent and stores it in persistent storage for the corresponding DagsterRun."""
-        self.event_domain.report_dagster_event(
-            dagster_event, run_id, log_level, batch_metadata, timestamp
-        )
-
     # directories
-
-    def file_manager_directory(self, run_id: str) -> str:
-        return self.storage_domain.file_manager_directory(run_id)
-
-    def storage_directory(self) -> str:
-        return self.storage_domain.storage_directory()
-
-    # Runs coordinator
-
-    # Run launcher
-
-    # Instigator/schedule/sensor methods are now in InstigatorMixin
 
     def __enter__(self) -> Self:
         return self
@@ -1080,61 +890,12 @@ class DagsterInstance(
     ) -> None:
         self.dispose()
 
-    # dagster daemon
-    def add_daemon_heartbeat(self, daemon_heartbeat: "DaemonHeartbeat") -> None:
-        """Called on a regular interval by the daemon."""
-        return self.daemon_domain.add_daemon_heartbeat(daemon_heartbeat)
-
-    def get_daemon_heartbeats(self) -> Mapping[str, "DaemonHeartbeat"]:
-        """Latest heartbeats of all daemon types."""
-        return self.daemon_domain.get_daemon_heartbeats()
-
-    def wipe_daemon_heartbeats(self) -> None:
-        return self.daemon_domain.wipe_daemon_heartbeats()
-
-    def get_required_daemon_types(self) -> Sequence[str]:
-        return self.daemon_domain.get_required_daemon_types()
-
-    def get_daemon_statuses(
-        self, daemon_types: Optional[Sequence[str]] = None
-    ) -> Mapping[str, "DaemonStatus"]:
-        """Get the current status of the daemons. If daemon_types aren't provided, defaults to all
-        required types. Returns a dict of daemon type to status.
-        """
-        return self.daemon_domain.get_daemon_statuses(daemon_types)
-
-    @property
-    def daemon_skip_heartbeats_without_errors(self) -> bool:
-        return self.daemon_domain.daemon_skip_heartbeats_without_errors
-
     # backfill
-    def get_backfills(
-        self,
-        filters: Optional["BulkActionsFilter"] = None,
-        cursor: Optional[str] = None,
-        limit: Optional[int] = None,
-        status: Optional["BulkActionStatus"] = None,
-    ) -> Sequence["PartitionBackfill"]:
-        return self.scheduling_domain.get_backfills(filters, cursor, limit, status)
-
-    def get_backfills_count(self, filters: Optional["BulkActionsFilter"] = None) -> int:
-        return self.scheduling_domain.get_backfills_count(filters)
-
-    def get_backfill(self, backfill_id: str) -> Optional["PartitionBackfill"]:
-        return self.scheduling_domain.get_backfill(backfill_id)
-
-    def add_backfill(self, partition_backfill: "PartitionBackfill") -> None:
-        self.scheduling_domain.add_backfill(partition_backfill)
-
-    def update_backfill(self, partition_backfill: "PartitionBackfill") -> None:
-        self.scheduling_domain.update_backfill(partition_backfill)
 
     @property
     def should_start_background_run_thread(self) -> bool:
         """Gate on a feature to start a thread that monitors for if the run should be canceled."""
         return False
-
-    # get_tick_retention_settings and get_tick_termination_check_interval are now in InstigatorMixin
 
     def inject_env_vars(self, location_name: Optional[str]) -> None:
         if not self._secrets_loader:
