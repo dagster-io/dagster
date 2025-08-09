@@ -58,9 +58,17 @@ class TagConcurrencyLimitsCounter:
         for item in in_progress_tagged_items:
             self.update_counters_with_launched_item(item)
 
+    def get_tag_dict(self, item: Union["DagsterRun", "ExecutionStep"]) -> dict[str, str]:
+        from dagster._core.storage.dagster_run import DagsterRun
+
+        if isinstance(item, DagsterRun):
+            return {"dagster/job_name": item.job_name, **item.tags}
+        else:
+            return item.tags
+
     def is_blocked(self, item: Union["DagsterRun", "ExecutionStep"]) -> bool:
         """True if there are in progress item which are blocking this item based on tag limits."""
-        for key, value in item.tags.items():
+        for key, value in self.get_tag_dict(item).items():
             if key in self._key_limits and self._key_counts[key] >= self._key_limits[key]:
                 return True
 
@@ -83,7 +91,7 @@ class TagConcurrencyLimitsCounter:
         self, item: Union["DagsterRun", "ExecutionStep"]
     ) -> None:
         """Add a new in progress item to the counters."""
-        for key, value in item.tags.items():
+        for key, value in self.get_tag_dict(item).items():
             if key in self._key_limits:
                 self._key_counts[key] += 1
 
