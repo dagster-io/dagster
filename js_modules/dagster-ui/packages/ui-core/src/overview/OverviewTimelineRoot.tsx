@@ -160,8 +160,6 @@ export const OverviewTimelineRoot = ({Header}: Props) => {
     return Array.from(filterJobSelectionByQuery(jobRows, jobSelection).all);
   }, [automationSelection, automationRows, groupRunsBy, jobSelection, jobRows]);
 
-  console.log({automationRows});
-
   return (
     <>
       <Header refreshState={refreshState} />
