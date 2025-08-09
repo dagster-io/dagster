@@ -174,6 +174,24 @@ class AssetGraphView(LoadingContext):
         )
         return EntitySubset(self, key=key, value=_ValidatedEntitySubsetValue(value))
 
+    @use_partition_loading_context
+    def get_subset_not_in_graph(
+        self, *, key: T_EntityKey, candidate_subset: EntitySubset[T_EntityKey]
+    ) -> EntitySubset[T_EntityKey]:
+        partitions_def = self._get_partitions_def(key)
+        check.invariant(
+            partitions_def is not None and candidate_subset.is_partitioned,
+            "Both subsets must be partitioned to compute partition keys not in the graph",
+        )
+
+        # intentionally using subset_with_all_partitions and not AllPartitionsSubset here since
+        # the latter always returns the empty set on subtraction
+        missing_subset_value = (
+            candidate_subset.get_internal_subset_value()
+            - check.not_none(partitions_def).subset_with_all_partitions()
+        )
+        return EntitySubset(self, key=key, value=_ValidatedEntitySubsetValue(missing_subset_value))
+
     @cached_method
     @use_partition_loading_context
     def get_empty_subset(self, *, key: T_EntityKey) -> EntitySubset[T_EntityKey]:
