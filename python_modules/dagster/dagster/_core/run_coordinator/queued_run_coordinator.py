@@ -15,8 +15,9 @@ from dagster._config import Array, Field, Noneable, ScalarUnion, Shape
 from dagster._config.config_schema import UserConfigSchema
 from dagster._core.instance import T_DagsterInstance
 from dagster._core.run_coordinator.base import RunCoordinator, SubmitRunContext
-from dagster._core.storage.dagster_run import DagsterRun, DagsterRunStatus
+from dagster._core.storage.dagster_run import DagsterRun, DagsterRunStatus, RunsFilter
 from dagster._serdes import ConfigurableClass, ConfigurableClassData
+from dagster._core.definitions.events import Failure
 
 
 class RunQueueConfig(
@@ -79,6 +80,15 @@ class RunQueueConfig(
         )
 
 
+class QueueTooLongFailure(Failure):
+    def __init__(self, queued_runs_n: int, cancel_queue_at_length: int):
+        description = (
+            "Too many runs queued. Cancelled entire queue.\n"
+            f"{queued_runs_n=} >= {cancel_queue_at_length=}."
+        )
+        super().__init__(description, None, None)
+
+
 class QueuedRunCoordinator(RunCoordinator[T_DagsterInstance], ConfigurableClass):
     """Enqueues runs via the run storage, to be deqeueued by the Dagster Daemon process. Requires
     the Dagster Daemon process to be alive in order for runs to be launched.
@@ -95,6 +105,7 @@ class QueuedRunCoordinator(RunCoordinator[T_DagsterInstance], ConfigurableClass)
         user_code_failure_retry_delay: Optional[int] = None,
         block_op_concurrency_limited_runs: Optional[Mapping[str, Any]] = None,
         inst_data: Optional[ConfigurableClassData] = None,
+        cancel_queue_at_length: Optional[int] = None,
     ):
         self._inst_data: Optional[ConfigurableClassData] = check.opt_inst_param(
             inst_data, "inst_data", ConfigurableClassData
@@ -144,6 +155,11 @@ class QueuedRunCoordinator(RunCoordinator[T_DagsterInstance], ConfigurableClass)
                 "op_concurrency_slot_buffer can only be set if block_op_concurrency_limited_runs "
                 "is enabled",
             )
+        self._cancel_queue_at_length = check.opt_int_param(
+            cancel_queue_at_length,
+            "cancel_queue_at_length",
+            -1,
+        )
         self._logger = logging.getLogger("dagster.run_coordinator.queued_run_coordinator")
         super().__init__()
 
@@ -181,6 +197,10 @@ class QueuedRunCoordinator(RunCoordinator[T_DagsterInstance], ConfigurableClass)
     @property
     def op_concurrency_slot_buffer(self) -> int:
         return self._op_concurrency_slot_buffer
+
+    @property
+    def cancel_queue_at_length(self) -> int:
+        return self._cancel_queue_at_length
 
     @classmethod
     def config_type(cls) -> UserConfigSchema:
@@ -280,6 +300,11 @@ class QueuedRunCoordinator(RunCoordinator[T_DagsterInstance], ConfigurableClass)
                     ),
                 }
             ),
+            "cancel_queue_at_length": Field(
+                config=IntSource,
+                is_required=False,
+                description="Cancel the entire queue if it ever gets larger than this length.",
+            ),
         }
 
     @classmethod
@@ -296,9 +321,26 @@ class QueuedRunCoordinator(RunCoordinator[T_DagsterInstance], ConfigurableClass)
             max_user_code_failure_retries=config_value.get("max_user_code_failure_retries"),
             user_code_failure_retry_delay=config_value.get("user_code_failure_retry_delay"),
             block_op_concurrency_limited_runs=config_value.get("block_op_concurrency_limited_runs"),
+            cancel_queue_at_length=config_value.get("cancel_queue_at_length"),
         )
 
+    def _get_queued_runs(self) -> Sequence[DagsterRun]:
+        return self._instance.get_runs(RunsFilter(statuses=[DagsterRunStatus.QUEUED]))
+
+    def _cancel_queue(self, queued_runs: Optional[Sequence[DagsterRun]] = None):
+        if queued_runs is None:
+            queued_runs = self._get_queued_runs()
+        for run in queued_runs:
+            super().cancel_run(run.run_id)
+
     def submit_run(self, context: SubmitRunContext) -> DagsterRun:
+        if self.cancel_queue_at_length != -1:
+            queued_runs = self._get_queued_runs()
+            queued_runs_n = len(queued_runs)
+            if (queued_runs_n >= self.cancel_queue_at_length):
+                self._cancel_queue(queued_runs)
+                raise QueueTooLongFailure(queued_runs_n, self.cancel_queue_at_length)
+
         dagster_run = context.dagster_run
 
         if dagster_run.status == DagsterRunStatus.NOT_STARTED:
