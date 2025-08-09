@@ -304,14 +304,14 @@ class AutomationCondition(ABC, Generic[T_EntityKey]):
     ) -> Union[Self, T_AutomationCondition]:
         """Replaces all instances of ``old`` across any sub-conditions with ``new``.
 
-        If ``old`` is a string, then conditions with a label matching
+        If ``old`` is a string, then conditions with a label or name matching
         that string will be replaced.
 
         Args:
             old (Union[AutomationCondition, str]): The condition to replace.
             new (AutomationCondition): The condition to replace with.
         """
-        return new if old in [self, self.get_label()] else self
+        return new if old in [self, self.name, self.get_label()] else self
 
     @public
     @staticmethod
