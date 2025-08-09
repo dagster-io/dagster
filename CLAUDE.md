@@ -68,6 +68,70 @@ yarn build-api-docs          # Build API docs after .rst changes
 - Only use `@dataclass` when mutability is specifically required
 - **NEVER use `__all__` in subpackage `__init__.py` files** - only use `__all__` in top-level package `__init__.py` files to define public APIs
 
+## Exception Handling Guidelines
+
+This codebase follows specific norms for exception handling to maintain clean, predictable code:
+
+### General Principles
+
+- **By default, exceptions should NOT be used as control flow**
+- **Do NOT implement "fallback" behavior in catch blocks** - exceptions should bubble up the stack to be handled at appropriate boundaries
+- **Avoid catching broad `Exception` types** unless you have a specific reason
+
+### Acceptable Uses of Exception Handling
+
+1. **Error Boundaries**: Meaningful divisions in software that have sensible default error behavior
+   - CLI commands (top-level exception handlers for user-friendly error messages)
+   - Column analysis operations (individual column failures shouldn't fail entire table analysis)
+2. **API Compatibility**: Compensating for APIs that use exceptions for control flow
+   - When third-party APIs use exceptions to indicate missing keys/values
+   - When database dialects have different capabilities that can't be detected a priori
+3. **Embellishing Exceptions**: Adding context to in-flight exceptions before re-raising
+
+### Implementation Pattern: Encapsulation
+
+When violating exception norms is necessary, **encapsulate the violation within a function**:
+
+```python
+# GOOD: Exception handling encapsulated in helper function
+def _get_bigquery_sample_with_fallback(sql_client, table_name, percentage, limit):
+    """
+    Try BigQuery TABLESAMPLE, fallback for views.
+
+    BigQuery's TABLESAMPLE doesn't work on views, so we use exception handling
+    to detect this case. This is acceptable because there's no reliable way
+    to determine a priori whether a table supports TABLESAMPLE.
+    """
+    try:
+        return sql_client.run_query(f"SELECT * FROM {table_name} TABLESAMPLE...")
+    except Exception:
+        return sql_client.run_query(f"SELECT * FROM {table_name} ORDER BY RAND()...")
+
+# BAD: Exception control flow exposed in main logic
+try:
+    sample_rows = sql_client.run_query(f"SELECT * FROM {table_name} TABLESAMPLE...")
+except Exception:
+    sample_rows = sql_client.run_query(f"SELECT * FROM {table_name} ORDER BY RAND()...")
+```
+
+### Preferred Approach: Proactive Checking
+
+When possible, check conditions that cause errors before making calls:
+
+```python
+# PREFERRED: Check condition beforehand
+if is_view(table_name):
+    return get_view_sample(table_name)
+else:
+    return get_table_sample(table_name)
+
+# AVOID: Using exceptions to discover the condition
+try:
+    return get_table_sample(table_name)  # Will fail on views
+except Exception:
+    return get_view_sample(table_name)
+```
+
 ## Code Quality Requirements
 
 - **MANDATORY**: After any code changes, ALWAYS run `make ruff` to format, lint, and autofix code
