@@ -21,9 +21,11 @@ class ToxFactor:
 
     Args:
         factor: The tox factor name (e.g., "pytest", "integration")
+        splits: Number of parallel splits to generate for this factor (default: 1)
     """
 
     factor: str
+    splits: int = 1
 
 
 _COMMAND_TYPE_TO_EMOJI_MAP = {
@@ -47,6 +49,7 @@ def build_tox_step(
     timeout_in_minutes: Optional[int] = None,
     queue: Optional[BuildkiteQueue] = None,
     skip_reason: Optional[str] = None,
+    pytest_args: Optional[list[str]] = None,
 ) -> CommandStepConfiguration:
     base_label = base_label or os.path.basename(root_dir)
     emoji = _COMMAND_TYPE_TO_EMOJI_MAP[command_type]
@@ -64,6 +67,8 @@ def build_tox_step(
             "-vv",  # extra-verbose
             "-e",
             tox_env,
+            "--" if pytest_args else None,
+            " ".join(pytest_args) if pytest_args else None,
         ],
     )
     tox_command = " ".join(tox_command_parts)
