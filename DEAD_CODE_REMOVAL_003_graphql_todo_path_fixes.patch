@@ -1,0 +1,82 @@
+diff --git a/python_modules/dagster-graphql/dagster_graphql/schema/pipelines/config.py b/python_modules/dagster-graphql/dagster_graphql/schema/pipelines/config.py
+index eb515737c3..2ddb438822 100644
+--- a/python_modules/dagster-graphql/dagster_graphql/schema/pipelines/config.py
++++ b/python_modules/dagster-graphql/dagster_graphql/schema/pipelines/config.py
+@@ -17,6 +17,7 @@
+     RuntimeMismatchErrorData,
+     SelectorTypeErrorData,
+ )
++from dagster._config.stack import get_friendly_path_info
+ from dagster._config.snap import ConfigTypeSnap
+ from dagster._core.remote_representation.represented import RepresentedJob
+ from dagster._utils.error import SerializableErrorInfo
+@@ -26,6 +27,15 @@
+ from dagster_graphql.schema.util import non_null_list
+ 
+ 
++def _path_from_stack(stack):
++    """Convert evaluation stack to GraphQL path list."""
++    _, path = get_friendly_path_info(stack)
++    if not path or path == "root":
++        return []
++    # Convert "root:foo:bar" to ["root", "foo", "bar"]
++    return path.split(":")
++
++
+ class GrapheneEvaluationStackListItemEntry(graphene.ObjectType):
+     list_index = graphene.NonNull(graphene.Int)
+ 
+@@ -150,7 +160,7 @@ def from_dagster_error(
+         if isinstance(error.error_data, RuntimeMismatchErrorData):
+             return GrapheneRuntimeMismatchConfigError(
+                 message=error.message,
+-                path=[],  # TODO: remove
++                path=_path_from_stack(error.stack),
+                 stack=GrapheneEvaluationStack(error.stack),
+                 reason=error.reason.value,
+                 value_rep=error.error_data.value_rep,
+@@ -158,7 +168,7 @@ def from_dagster_error(
+         elif isinstance(error.error_data, MissingFieldErrorData):
+             return GrapheneMissingFieldConfigError(
+                 message=error.message,
+-                path=[],  # TODO: remove
++                path=_path_from_stack(error.stack),
+                 stack=GrapheneEvaluationStack(error.stack),
+                 reason=error.reason.value,
+                 field=GrapheneConfigTypeField(
+@@ -169,7 +179,7 @@ def from_dagster_error(
+         elif isinstance(error.error_data, MissingFieldsErrorData):
+             return GrapheneMissingFieldsConfigError(
+                 message=error.message,
+-                path=[],  # TODO: remove
++                path=_path_from_stack(error.stack),
+                 stack=GrapheneEvaluationStack(error.stack),
+                 reason=error.reason.value,
+                 fields=[
+@@ -184,7 +194,7 @@ def from_dagster_error(
+         elif isinstance(error.error_data, FieldNotDefinedErrorData):
+             return GrapheneFieldNotDefinedConfigError(
+                 message=error.message,
+-                path=[],  # TODO: remove
++                path=_path_from_stack(error.stack),
+                 stack=GrapheneEvaluationStack(error.stack),
+                 reason=error.reason.value,
+                 field_name=error.error_data.field_name,
+@@ -192,7 +202,7 @@ def from_dagster_error(
+         elif isinstance(error.error_data, FieldsNotDefinedErrorData):
+             return GrapheneFieldsNotDefinedConfigError(
+                 message=error.message,
+-                path=[],  # TODO: remove
++                path=_path_from_stack(error.stack),
+                 stack=GrapheneEvaluationStack(error.stack),
+                 reason=error.reason.value,
+                 field_names=error.error_data.field_names,
+@@ -200,7 +210,7 @@ def from_dagster_error(
+         elif isinstance(error.error_data, SelectorTypeErrorData):
+             return GrapheneSelectorTypeConfigError(
+                 message=error.message,
+-                path=[],  # TODO: remove
++                path=_path_from_stack(error.stack),
+                 stack=GrapheneEvaluationStack(error.stack),
+                 reason=error.reason.value,
+                 incoming_fields=error.error_data.incoming_fields,

@@ -1,0 +1,18 @@
+diff --git a/python_modules/dagster/dagster/_utils/__init__.py b/python_modules/dagster/dagster/_utils/__init__.py
+index c061be6a6f..5fbb31fec1 100644
+--- a/python_modules/dagster/dagster/_utils/__init__.py
++++ b/python_modules/dagster/dagster/_utils/__init__.py
+@@ -230,13 +230,6 @@ def list_pull(alist: Iterable[object], key: str) -> Sequence[object]:
+     return list(map(lambda elem: get_prop_or_key(elem, key), alist))
+ 
+ 
+-def all_none(kwargs: Mapping[object, object]) -> bool:
+-    for value in kwargs.values():
+-        if value is not None:
+-            return False
+-    return True
+-
+-
+ def check_script(path: str, return_code: int = 0) -> None:
+     try:
+         subprocess.check_output([sys.executable, path])

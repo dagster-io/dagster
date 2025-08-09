@@ -1,0 +1,131 @@
+diff --git a/python_modules/dagster/dagster/__init__.py b/python_modules/dagster/dagster/__init__.py
+index 4f7541e223..e1c9d5f476 100644
+--- a/python_modules/dagster/dagster/__init__.py
++++ b/python_modules/dagster/dagster/__init__.py
+@@ -664,7 +664,6 @@
+ from dagster.components.core.component_tree import ComponentTree as ComponentTree
+ from dagster.components.core.context import ComponentLoadContext as ComponentLoadContext
+ from dagster.components.core.load_defs import (
+-    build_component_defs as build_component_defs,
+     build_defs_for_component as build_defs_for_component,
+     load_defs as load_defs,
+     load_from_defs_folder as load_from_defs_folder,
+diff --git a/python_modules/dagster/dagster/components/__init__.py b/python_modules/dagster/dagster/components/__init__.py
+index 7ab66e6270..ff3a7b6aca 100644
+--- a/python_modules/dagster/dagster/components/__init__.py
++++ b/python_modules/dagster/dagster/components/__init__.py
+@@ -10,7 +10,6 @@
+ )
+ from dagster.components.core.context import ComponentLoadContext as ComponentLoadContext
+ from dagster.components.core.load_defs import (
+-    build_component_defs as build_component_defs,
+     build_defs_for_component as build_defs_for_component,
+     load_defs as load_defs,
+     load_from_defs_folder as load_from_defs_folder,
+diff --git a/python_modules/dagster/dagster/components/core/load_defs.py b/python_modules/dagster/dagster/components/core/load_defs.py
+index 54659955df..3f03982d7d 100644
+--- a/python_modules/dagster/dagster/components/core/load_defs.py
++++ b/python_modules/dagster/dagster/components/core/load_defs.py
+@@ -1,4 +1,3 @@
+-import importlib
+ from pathlib import Path
+ from types import ModuleType
+ from typing import Optional
+@@ -14,22 +13,6 @@
+ PLUGIN_COMPONENT_TYPES_JSON_METADATA_KEY = "plugin_component_types_json"
+ 
+ 
+-@deprecated(breaking_version="0.2.0")
+-@suppress_dagster_warnings
+-def build_component_defs(components_root: Path) -> Definitions:
+-    """Build a Definitions object for all the component instances in a given project.
+-
+-    Args:
+-        components_root (Path): The path to the components root. This is a directory containing
+-            subdirectories with component instances.
+-    """
+-    defs_root = importlib.import_module(
+-        f"{Path(components_root).parent.name}.{Path(components_root).name}"
+-    )
+-
+-    return load_defs(defs_root=defs_root, project_root=components_root.parent.parent)
+-
+-
+ def get_project_root(defs_root: ModuleType) -> Path:
+     """Find the project root directory containing pyproject.toml or setup.py.
+ 
+diff --git a/python_modules/dagster/dagster_tests/components_tests/integration_tests/test_cross_component_deps.py b/python_modules/dagster/dagster_tests/components_tests/integration_tests/test_cross_component_deps.py
+index 2db2c03d13..f69c34a940 100644
+--- a/python_modules/dagster/dagster_tests/components_tests/integration_tests/test_cross_component_deps.py
++++ b/python_modules/dagster/dagster_tests/components_tests/integration_tests/test_cross_component_deps.py
+@@ -1,3 +1,4 @@
++import importlib
+ import sys
+ from pathlib import Path
+ 
+@@ -11,7 +12,8 @@
+ def test_dependency_between_components():
+     sys.path.append(str(CROSS_COMPONENT_DEPENDENCY_PATH.parent))
+ 
+-    defs = dg.build_component_defs(CROSS_COMPONENT_DEPENDENCY_PATH / "defs")
++    defs_root = importlib.import_module(f"{CROSS_COMPONENT_DEPENDENCY_PATH.name}.defs")
++    defs = dg.load_defs(defs_root=defs_root, project_root=CROSS_COMPONENT_DEPENDENCY_PATH.parent)
+     assert (
+         dg.AssetKey("downstream_of_all_my_python_defs")
+         in defs.resolve_asset_graph().get_all_asset_keys()
+@@ -32,7 +34,12 @@ def test_dependency_between_components():
+ def test_dependency_between_components_with_custom_component():
+     sys.path.append(str(CROSS_COMPONENT_DEPENDENCY_PATH_CUSTOM_COMPONENT.parent))
+ 
+-    defs = dg.build_component_defs(CROSS_COMPONENT_DEPENDENCY_PATH_CUSTOM_COMPONENT / "defs")
++    defs_root = importlib.import_module(
++        f"{CROSS_COMPONENT_DEPENDENCY_PATH_CUSTOM_COMPONENT.name}.defs"
++    )
++    defs = dg.load_defs(
++        defs_root=defs_root, project_root=CROSS_COMPONENT_DEPENDENCY_PATH_CUSTOM_COMPONENT.parent
++    )
+     assert (
+         dg.AssetKey("downstream_of_all_my_python_defs")
+         in defs.resolve_asset_graph().get_all_asset_keys()
+@@ -53,7 +60,10 @@ def test_dependency_between_components_with_custom_component():
+ def test_dependency_between_components_with_yaml():
+     sys.path.append(str(CROSS_COMPONENT_DEPENDENCY_PATH_YAML.parent))
+ 
+-    defs = dg.build_component_defs(CROSS_COMPONENT_DEPENDENCY_PATH_YAML / "defs")
++    defs_root = importlib.import_module(f"{CROSS_COMPONENT_DEPENDENCY_PATH_YAML.name}.defs")
++    defs = dg.load_defs(
++        defs_root=defs_root, project_root=CROSS_COMPONENT_DEPENDENCY_PATH_YAML.parent
++    )
+     assert (
+         dg.AssetKey("downstream_of_all_my_python_defs")
+         in defs.resolve_asset_graph().get_all_asset_keys()
+diff --git a/python_modules/libraries/dagster-dbt/dagster_dbt_tests/components/test_dbt_project_component.py b/python_modules/libraries/dagster-dbt/dagster_dbt_tests/components/test_dbt_project_component.py
+index dd25d55f67..ea48fd5d92 100644
+--- a/python_modules/libraries/dagster-dbt/dagster_dbt_tests/components/test_dbt_project_component.py
++++ b/python_modules/libraries/dagster-dbt/dagster_dbt_tests/components/test_dbt_project_component.py
+@@ -1,3 +1,4 @@
++import importlib
+ import shutil
+ import sys
+ import tempfile
+@@ -17,7 +18,7 @@
+ from dagster._core.test_utils import ensure_dagster_tests_import
+ from dagster._utils.env import environ
+ from dagster.components.core.component_tree import ComponentTree
+-from dagster.components.core.load_defs import build_component_defs
++from dagster.components.core.load_defs import load_defs
+ from dagster.components.resolved.core_models import AssetAttributesModel, OpSpec
+ from dagster.components.resolved.errors import ResolutionException
+ from dagster.components.testing import TestOpCustomization, TestTranslation
+@@ -240,7 +241,10 @@ def test_dependency_on_dbt_project():
+     )
+     project.preparer.prepare(project)
+ 
+-    defs = build_component_defs(DEPENDENCY_ON_DBT_PROJECT_LOCATION_PATH / "defs")
++    defs_root = importlib.import_module(f"{DEPENDENCY_ON_DBT_PROJECT_LOCATION_PATH.name}.defs")
++    defs = load_defs(
++        defs_root=defs_root, project_root=DEPENDENCY_ON_DBT_PROJECT_LOCATION_PATH.parent
++    )
+ 
+     assert AssetKey("downstream_of_customers") in defs.resolve_asset_graph().get_all_asset_keys()
+     downstream_of_customers_def = defs.resolve_assets_def("downstream_of_customers")

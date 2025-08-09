@@ -105,11 +105,6 @@ def validate_kind_tags(kinds: Optional[AbstractSet[str]]) -> None:
     breaking_version="1.12.0",
     additional_warn_text="use the freshness policy abstraction instead.",
 )
-@hidden_param(
-    param="auto_materialize_policy",
-    breaking_version="1.10.0",
-    additional_warn_text="use `automation_condition` instead",
-)
 @public
 @record_custom
 class AssetSpec(IHasInternalInit, IHaveNew, LegacyNamedTupleMixin):
