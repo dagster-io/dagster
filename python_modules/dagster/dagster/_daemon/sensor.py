@@ -1135,7 +1135,7 @@ def _submit_run_requests(
         raw_run_ids_with_requests,
         has_evaluations=len(automation_condition_evaluations) > 0,
     )
-    existing_runs_by_key = _fetch_existing_runs(
+    existing_runs_by_key = fetch_existing_runs(
         instance, remote_sensor, [request for _, request in resolved_run_ids_with_requests]
     )
     check_after_runs_num = instance.get_tick_termination_check_interval()
@@ -1273,7 +1273,7 @@ def get_elapsed(state: InstigatorState) -> Optional[float]:
     )
 
 
-def _fetch_existing_runs(
+def fetch_existing_runs(
     instance: DagsterInstance,
     remote_sensor: RemoteSensor,
     run_requests: Sequence[RunRequest],
