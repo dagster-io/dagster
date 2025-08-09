@@ -31,6 +31,7 @@ import {TimeProvider} from './time/TimeContext';
 import {AssetLiveDataProvider} from '../asset-data/AssetLiveDataProvider';
 import {AssetRunLogObserver} from '../asset-graph/AssetRunLogObserver';
 import {CodeLinkProtocolProvider} from '../code-links/CodeLinkProtocol';
+import {CustomKindIconMappingProvider} from '../graph/CustomKindIcons';
 import {DeploymentStatusProvider, DeploymentStatusType} from '../instance/DeploymentStatusProvider';
 import {InstancePageContext} from '../instance/InstancePageContext';
 import {WorkspaceProvider} from '../workspace/WorkspaceContext/WorkspaceContext';
@@ -187,22 +188,24 @@ export const AppProvider = (props: AppProviderProps) => {
               <CompatRouter>
                 <TimeProvider>
                   <CodeLinkProtocolProvider>
-                    <WorkspaceProvider>
-                      <AssetLiveDataProvider>
-                        <DeploymentStatusProvider include={statusPolling}>
-                          <CustomConfirmationProvider>
-                            <AnalyticsContext.Provider value={analytics}>
-                              <InstancePageContext.Provider value={instancePageValue}>
-                                <LayoutProvider>{props.children}</LayoutProvider>
-                              </InstancePageContext.Provider>
-                            </AnalyticsContext.Provider>
-                          </CustomConfirmationProvider>
-                          <CustomTooltipProvider />
-                          <CustomAlertProvider />
-                          <AssetRunLogObserver />
-                        </DeploymentStatusProvider>
-                      </AssetLiveDataProvider>
-                    </WorkspaceProvider>
+                    <CustomKindIconMappingProvider>
+                      <WorkspaceProvider>
+                        <AssetLiveDataProvider>
+                          <DeploymentStatusProvider include={statusPolling}>
+                            <CustomConfirmationProvider>
+                              <AnalyticsContext.Provider value={analytics}>
+                                <InstancePageContext.Provider value={instancePageValue}>
+                                  <LayoutProvider>{props.children}</LayoutProvider>
+                                </InstancePageContext.Provider>
+                              </AnalyticsContext.Provider>
+                            </CustomConfirmationProvider>
+                            <CustomTooltipProvider />
+                            <CustomAlertProvider />
+                            <AssetRunLogObserver />
+                          </DeploymentStatusProvider>
+                        </AssetLiveDataProvider>
+                      </WorkspaceProvider>
+                    </CustomKindIconMappingProvider>
                   </CodeLinkProtocolProvider>
                 </TimeProvider>
               </CompatRouter>
