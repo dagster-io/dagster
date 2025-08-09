@@ -3,16 +3,19 @@ from collections.abc import Iterator
 from contextlib import contextmanager
 from contextvars import ContextVar
 from functools import wraps
-from typing import TYPE_CHECKING, Annotated, Any, Callable, Optional
+from typing import TYPE_CHECKING, Annotated, Any, Callable, Optional, TypeVar, cast
 
 from dagster_shared.record import ImportFrom, replace
 
+import dagster._check as check
 from dagster._core.definitions.temporal_context import TemporalContext
 from dagster._record import record
 from dagster._time import get_current_datetime
 
 if TYPE_CHECKING:
     from dagster._core.instance import DynamicPartitionsStore
+
+T_Callable = TypeVar("T_Callable", bound=Callable[..., Any])
 
 
 @record
@@ -61,6 +64,21 @@ class PartitionLoadingContext:
 _current_ctx: ContextVar[Optional[PartitionLoadingContext]] = ContextVar(
     "current_partition_loading_context", default=None
 )
+
+
+def require_full_partition_loading_context(func: T_Callable) -> T_Callable:
+    @wraps(func)
+    def wrapper(self, *args: Any, **kwargs: Any) -> Any:
+        current_context = _current_ctx.get()
+        check.invariant(
+            current_context is not None
+            and current_context.effective_dt is not None
+            and current_context.dynamic_partitions_store is not None,
+            "This function can only be called within a partition_loading_context with both a datetime and dynamic_partitions_store set",
+        )
+        return func(self, *args, **kwargs)
+
+    return cast("T_Callable", wrapper)
 
 
 @contextmanager

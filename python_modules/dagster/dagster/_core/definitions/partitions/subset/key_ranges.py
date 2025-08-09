@@ -4,6 +4,7 @@ from typing import Optional
 from dagster_shared.serdes.serdes import deserialize_value
 
 import dagster._check as check
+from dagster._core.definitions.partitions.context import require_full_partition_loading_context
 from dagster._core.definitions.partitions.definition.partitions_definition import (
     PartitionsDefinition,
 )
@@ -21,6 +22,7 @@ class KeyRangesPartitionsSubset(PartitionsSubset):
     key_ranges: Sequence[PartitionKeyRange]
     partitions_snap: PartitionsSnap
 
+    @require_full_partition_loading_context
     def get_partition_keys_not_in_subset(
         self, partitions_def: PartitionsDefinition
     ) -> Iterable[str]:
@@ -43,12 +45,14 @@ class KeyRangesPartitionsSubset(PartitionsSubset):
     ) -> Sequence[PartitionKeyRange]:
         return self.key_ranges
 
+    @require_full_partition_loading_context
     def get_partition_keys(self) -> Iterable[str]:
         keys = []
         for partition_key_range in self.key_ranges:
             keys.extend(self.partitions_definition.get_partition_keys_in_range(partition_key_range))
         return keys
 
+    @require_full_partition_loading_context
     def with_partition_keys(self, partition_keys: Iterable[str]) -> "PartitionsSubset[str]":
         return DefaultPartitionsSubset({*self.get_partition_keys(), *partition_keys})
 
@@ -71,6 +75,7 @@ class KeyRangesPartitionsSubset(PartitionsSubset):
     ) -> bool:
         return True
 
+    @require_full_partition_loading_context
     def __len__(self) -> int:
         return sum(
             [
@@ -79,6 +84,7 @@ class KeyRangesPartitionsSubset(PartitionsSubset):
             ]
         )
 
+    @require_full_partition_loading_context
     def __contains__(self, value) -> bool:
         return value in self.get_partition_keys()
 
