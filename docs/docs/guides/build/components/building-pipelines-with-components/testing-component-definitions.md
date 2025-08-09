@@ -26,7 +26,7 @@ from pathlib import Path
 def my_project_component_defs(component_path) -> tuple[dg.Component, dg.Definitions]:
     # Project root is two parents up from the test file
     project_root = Path(__file__).parent.parent
-    tree = dg.ComponentTree.for_project(project_root=project_root)
+    tree = dg.ComponentTree.for_project(project_root)
     component = tree.load_component_at_path(component_path)
     defs = tree.build_defs_at_path(component_path)
     return component, defs
