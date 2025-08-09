@@ -1,6 +1,6 @@
 import sys
 from abc import abstractmethod
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING, Optional, cast
 
 from dagster import check
 from dagster._core.errors import DagsterInvariantViolationError
@@ -123,6 +123,9 @@ class RunLauncherMethods:
         run = self.get_run_by_id(run_id)
         if run is None:
             check.failed(f"Failed to reload run {run_id}")
+
+        # At this point run cannot be None due to check.failed above
+        run = cast("DagsterRun", run)
         try:
             self.run_launcher.launch_run(LaunchRunContext(dagster_run=run, workspace=workspace))
         except:

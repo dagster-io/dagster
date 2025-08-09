@@ -197,6 +197,18 @@ The DagsterInstance refactor series introduced **multiple unintended business lo
   - Removed: `assert run is not None` after `check.failed()` call in `launch_run` method
   - Restored original edge case exception handling behavior
 
+#### 4. **Event Batching Configuration Scope Change - FIXED** ✅
+
+- **Action**: Restored global module-level functions for event batching configuration
+- **Files Modified**:
+  - `python_modules/dagster/dagster/_core/instance/methods/event_methods.py` - Removed per-instance methods, added imports for global functions
+- **Impact**: **RUNTIME BEHAVIOR CHANGE RESOLVED** - Event batching configuration is now global again (as originally intended)
+- **Technical Details**:
+  - Removed: `self._is_batch_writing_enabled()` and `self._get_event_batch_size()` instance methods
+  - Added: Import of global `_is_batch_writing_enabled` and `_get_event_batch_size` from `utils.py`
+  - Updated calls: `_is_batch_writing_enabled()` and `_get_event_batch_size()` (global scope)
+  - Restored original global behavior where all instances share the same batch configuration
+
 ### **Code Quality & Testing** ✅
 
 - **Linting**: All changes passed `make ruff` validation
@@ -211,8 +223,9 @@ The DagsterInstance refactor series introduced **multiple unintended business lo
 4. ✅ **Fix AbstractSet support** - Restored `AbstractSet` types in all affected method signatures
 5. ✅ **Fix status Union support** - Added string→enum conversion logic in `run_domain.py`
 6. ✅ **Fix assertion runtime change** - Removed added assertion in `launch_run` method
-7. ✅ **Basic testing** - Verified modules import and ruff passes
-8. ✅ **Code quality** - All linting and formatting checks pass
+7. ✅ **Fix event batching scope change** - Restored global batch writing configuration functions
+8. ✅ **Basic testing** - Verified modules import and ruff passes
+9. ✅ **Code quality** - All linting and formatting checks pass
 
 ### **Impact Summary**
 
