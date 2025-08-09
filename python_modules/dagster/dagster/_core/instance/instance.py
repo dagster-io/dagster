@@ -47,7 +47,11 @@ if TYPE_CHECKING:
     from dagster._core.storage.daemon_cursor import DaemonCursorStorage
     from dagster._core.storage.dagster_run import JobBucket, RunRecord, TagBucket
     from dagster._core.storage.event_log import EventLogStorage
-    from dagster._core.storage.event_log.base import AssetRecord, EventRecordsResult
+    from dagster._core.storage.event_log.base import (
+        AssetRecord,
+        EventLogConnection,
+        EventRecordsResult,
+    )
     from dagster._core.storage.partition_status_cache import AssetPartitionStatus
     from dagster._core.storage.root import LocalArtifactStorage
     from dagster._core.storage.runs import RunStorage
@@ -558,6 +562,23 @@ class DagsterInstance(
         return self._event_storage.fetch_run_status_changes(
             records_filter, limit, cursor, ascending
         )
+
+    @traced
+    def get_records_for_run(
+        self,
+        run_id: str,
+        cursor: Optional[str] = None,
+        of_type: Optional[Union["DagsterEventType", set["DagsterEventType"]]] = None,
+        limit: Optional[int] = None,
+        ascending: bool = True,
+    ) -> "EventLogConnection":
+        """Get event records for run.
+
+        NOTE: This method is duplicated here (vs only being in EventMethods) because
+        some Datadog tracing spans specifically expect to find this method on the
+        DagsterInstance class for proper trace attribution.
+        """
+        return EventMethods.get_records_for_run(self, run_id, cursor, of_type, limit, ascending)
 
     # Storage/Partition Domain
     # ------------------------
