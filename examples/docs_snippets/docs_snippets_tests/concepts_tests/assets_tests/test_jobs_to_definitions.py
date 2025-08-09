@@ -5,10 +5,10 @@ from docs_snippets.concepts.assets.jobs_to_definitions import (
 )
 
 
-def test_build_job_doc_snippet():
+def test_build_job_doc_snippet() -> None:
     defs = dg.Definitions(
         assets=[number_asset],
         jobs=[number_asset_job],
     )
 
-    assert defs.get_job_def("number_asset_job").execute_in_process().success
+    assert defs.resolve_job_def("number_asset_job").execute_in_process().success

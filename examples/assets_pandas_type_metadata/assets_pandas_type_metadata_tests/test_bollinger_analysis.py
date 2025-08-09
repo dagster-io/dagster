@@ -9,7 +9,7 @@ from assets_pandas_type_metadata.assets.bollinger_analysis import (
 from assets_pandas_type_metadata.resources.csv_io_manager import LocalCsvIOManager
 
 
-def test_bollinger_analysis():
+def test_bollinger_analysis() -> None:
     bollinger_sda = define_asset_job(
         "bollinger_sda",
         AssetSelection.all(),
@@ -21,5 +21,5 @@ def test_bollinger_analysis():
         },
         jobs=[bollinger_sda],
     )
-    result = defs.get_job_def("bollinger_sda").execute_in_process()
+    result = defs.resolve_job_def("bollinger_sda").execute_in_process()
     assert result.asset_materializations_for_node
