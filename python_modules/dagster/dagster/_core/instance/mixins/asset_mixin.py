@@ -2,7 +2,7 @@ import os
 from collections.abc import Iterable, Mapping, Sequence
 from typing import TYPE_CHECKING, Optional, Union, cast
 
-from dagster._annotations import deprecated, public
+from dagster._annotations import deprecated
 from dagster._utils import traced
 
 if TYPE_CHECKING:
@@ -22,7 +22,6 @@ if TYPE_CHECKING:
         FreshnessStateEvaluation,
         FreshnessStateRecord,
     )
-    from dagster._core.definitions.partitions.definition import PartitionsDefinition
     from dagster._core.event_api import AssetRecordsFilter
     from dagster._core.events import AssetMaterialization
     from dagster._core.events.log import EventLogEntry
@@ -38,10 +37,7 @@ if TYPE_CHECKING:
         EventRecordsResult,
         PlannedMaterializationInfo,
     )
-    from dagster._core.storage.partition_status_cache import (
-        AssetPartitionStatus,
-        AssetStatusCacheValue,
-    )
+    from dagster._core.storage.partition_status_cache import AssetStatusCacheValue
 
 
 class AssetMixin:
@@ -82,85 +78,17 @@ class AssetMixin:
     def all_asset_keys(self) -> Sequence["AssetKey"]:
         return self._asset_domain.all_asset_keys()
 
-    @public
-    @traced
-    def get_asset_keys(
-        self,
-        prefix: Optional[Sequence[str]] = None,
-        limit: Optional[int] = None,
-        cursor: Optional[str] = None,
-    ) -> Sequence["AssetKey"]:
-        """Return a filtered subset of asset keys managed by this instance.
-
-        Args:
-            prefix (Optional[Sequence[str]]): Return only assets having this key prefix.
-            limit (Optional[int]): Maximum number of keys to return.
-            cursor (Optional[str]): Cursor to use for pagination.
-
-        Returns:
-            Sequence[AssetKey]: List of asset keys.
-        """
-        return self._asset_domain.get_asset_keys(prefix, limit, cursor)
-
-    @public
-    @traced
-    def has_asset_key(self, asset_key: "AssetKey") -> bool:
-        """Return true if this instance manages the given asset key.
-
-        Args:
-            asset_key (AssetKey): Asset key to check.
-        """
-        return self._asset_domain.has_asset_key(asset_key)
-
     @traced
     def get_latest_materialization_events(
         self, asset_keys: Iterable["AssetKey"]
     ) -> Mapping["AssetKey", Optional["EventLogEntry"]]:
         return self._asset_domain.get_latest_materialization_events(asset_keys)
 
-    @public
-    @traced
-    def get_latest_materialization_event(self, asset_key: "AssetKey") -> Optional["EventLogEntry"]:
-        """Fetch the latest materialization event for the given asset key.
-
-        Args:
-            asset_key (AssetKey): Asset key to return materialization for.
-
-        Returns:
-            Optional[EventLogEntry]: The latest materialization event for the given asset
-                key, or `None` if the asset has not been materialized.
-        """
-        return self._asset_domain.get_latest_materialization_event(asset_key)
-
     @traced
     def get_latest_asset_check_evaluation_record(
         self, asset_check_key: "AssetCheckKey"
     ) -> Optional["AssetCheckExecutionRecord"]:
         return self._asset_domain.get_latest_asset_check_evaluation_record(asset_check_key)
-
-    @public
-    @traced
-    def fetch_materializations(
-        self,
-        records_filter: Union["AssetKey", "AssetRecordsFilter"],
-        limit: int,
-        cursor: Optional[str] = None,
-        ascending: bool = False,
-    ) -> "EventRecordsResult":
-        """Return a list of materialization records stored in the event log storage.
-
-        Args:
-            records_filter (Union[AssetKey, AssetRecordsFilter]): the filter by which to
-                filter event records.
-            limit (int): Number of results to get.
-            cursor (Optional[str]): Cursor to use for pagination. Defaults to None.
-            ascending (Optional[bool]): Sort the result in ascending order if True, descending
-                otherwise. Defaults to descending.
-
-        Returns:
-            EventRecordsResult: Object containing a list of event log records and a cursor string
-        """
-        return self._asset_domain.fetch_materializations(records_filter, limit, cursor, ascending)
 
     @traced
     def fetch_failed_materializations(
@@ -213,67 +141,6 @@ class AssetMixin:
             records_filter, limit, cursor, ascending
         )
 
-    @public
-    @traced
-    def fetch_observations(
-        self,
-        records_filter: Union["AssetKey", "AssetRecordsFilter"],
-        limit: int,
-        cursor: Optional[str] = None,
-        ascending: bool = False,
-    ) -> "EventRecordsResult":
-        """Return a list of observation records stored in the event log storage.
-
-        Args:
-            records_filter (Optional[Union[AssetKey, AssetRecordsFilter]]): the filter by which to
-                filter event records.
-            limit (int): Number of results to get.
-            cursor (Optional[str]): Cursor to use for pagination. Defaults to None.
-            ascending (Optional[bool]): Sort the result in ascending order if True, descending
-                otherwise. Defaults to descending.
-
-        Returns:
-            EventRecordsResult: Object containing a list of event log records and a cursor string
-        """
-        return self._event_log_storage.fetch_observations(records_filter, limit, cursor, ascending)
-
-    @public
-    @traced
-    def get_status_by_partition(
-        self,
-        asset_key: "AssetKey",
-        partition_keys: Sequence[str],
-        partitions_def: "PartitionsDefinition",
-    ) -> Optional[Mapping[str, "AssetPartitionStatus"]]:
-        """Get the current status of provided partition_keys for the provided asset.
-
-        Args:
-            asset_key (AssetKey): The asset to get per-partition status for.
-            partition_keys (Sequence[str]): The partitions to get status for.
-            partitions_def (PartitionsDefinition): The PartitionsDefinition of the asset to get
-                per-partition status for.
-
-        Returns:
-            Optional[Mapping[str, AssetPartitionStatus]]: status for each partition key
-
-        """
-        return self._asset_domain.get_status_by_partition(asset_key, partition_keys, partitions_def)
-
-    @public
-    @traced
-    def get_asset_records(
-        self, asset_keys: Optional[Sequence["AssetKey"]] = None
-    ) -> Sequence["AssetRecord"]:
-        """Return an `AssetRecord` for each of the given asset keys.
-
-        Args:
-            asset_keys (Optional[Sequence[AssetKey]]): List of asset keys to retrieve records for.
-
-        Returns:
-            Sequence[AssetRecord]: List of asset records.
-        """
-        return self._asset_domain.get_asset_records(asset_keys)
-
     @traced
     def get_event_tags_for_asset(
         self,
@@ -294,16 +161,6 @@ class AssetMixin:
         single event.
         """
         return self._asset_domain.get_event_tags_for_asset(asset_key, filter_tags, filter_event_id)
-
-    @public
-    @traced
-    def wipe_assets(self, asset_keys: Sequence["AssetKey"]) -> None:
-        """Wipes asset event history from the event log for the given asset keys.
-
-        Args:
-            asset_keys (Sequence[AssetKey]): Asset keys to wipe.
-        """
-        self._asset_domain.wipe_assets(asset_keys)
 
     def wipe_asset_partitions(
         self,
@@ -348,39 +205,6 @@ class AssetMixin:
         return self._asset_domain.get_latest_data_version_record(
             key, is_source, partition_key, before_cursor, after_cursor
         )
-
-    @public
-    def get_latest_materialization_code_versions(
-        self, asset_keys: Iterable["AssetKey"]
-    ) -> Mapping["AssetKey", Optional[str]]:
-        """Returns the code version used for the latest materialization of each of the provided
-        assets.
-
-        Args:
-            asset_keys (Iterable[AssetKey]): The asset keys to find latest materialization code
-                versions for.
-
-        Returns:
-            Mapping[AssetKey, Optional[str]]: A dictionary with a key for each of the provided asset
-                keys. The values will be None if the asset has no materializations. If an asset does
-                not have a code version explicitly assigned to its definitions, but was
-                materialized, Dagster assigns the run ID as its code version.
-        """
-        return self._asset_domain.get_latest_materialization_code_versions(asset_keys)
-
-    @public
-    def report_runless_asset_event(
-        self,
-        asset_event: Union[
-            "AssetMaterialization",
-            "AssetObservation",
-            "AssetCheckEvaluation",
-            "FreshnessStateEvaluation",
-            "FreshnessStateChange",
-        ],
-    ):
-        """Record an event log entry related to assets that does not belong to a Dagster run."""
-        return self._asset_domain.report_runless_asset_event(asset_event)
 
     def _report_runless_asset_event(
         self,

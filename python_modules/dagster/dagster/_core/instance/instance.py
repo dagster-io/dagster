@@ -2,7 +2,7 @@ import logging
 import os
 import weakref
 from collections import defaultdict
-from collections.abc import Mapping, Sequence
+from collections.abc import Iterable, Mapping, Sequence
 from types import TracebackType
 from typing import TYPE_CHECKING, Any, Callable, Optional, Union, cast
 
@@ -23,15 +23,24 @@ from dagster._core.instance.mixins.runs_mixin import RunsMixin
 from dagster._core.instance.mixins.settings_mixin import SettingsMixin
 from dagster._core.instance.ref import InstanceRef
 from dagster._core.instance.types import DynamicPartitionsStore, InstanceType
-from dagster._core.storage.dagster_run import DagsterRun
+from dagster._core.storage.dagster_run import DagsterRun, RunsFilter
 from dagster._core.types.pagination import PaginatedResults
 from dagster._serdes import ConfigurableClass
 from dagster._utils import PrintFn, traced
 
 if TYPE_CHECKING:
     from dagster._core.debug import DebugRunPayload
-    from dagster._core.event_api import EventHandlerFn, RunStatusChangeRecordsFilter
+    from dagster._core.definitions.asset_checks.asset_check_evaluation import AssetCheckEvaluation
+    from dagster._core.definitions.events import AssetObservation
+    from dagster._core.definitions.freshness import FreshnessStateChange, FreshnessStateEvaluation
+    from dagster._core.definitions.partitions.definition import PartitionsDefinition
+    from dagster._core.event_api import (
+        AssetRecordsFilter,
+        EventHandlerFn,
+        RunStatusChangeRecordsFilter,
+    )
     from dagster._core.events import (
+        AssetMaterialization,
         DagsterEvent,
         DagsterEventBatchMetadata,
         DagsterEventType,
@@ -43,6 +52,7 @@ if TYPE_CHECKING:
         BulkActionStatus,
         PartitionBackfill,
     )
+    from dagster._core.instance.assets.asset_domain import AssetDomain
     from dagster._core.launcher import RunLauncher
     from dagster._core.remote_representation import HistoricalJob
     from dagster._core.run_coordinator import RunCoordinator
@@ -51,12 +61,15 @@ if TYPE_CHECKING:
     from dagster._core.snap import ExecutionPlanSnapshot, JobSnap
     from dagster._core.storage.compute_log_manager import ComputeLogManager
     from dagster._core.storage.daemon_cursor import DaemonCursorStorage
+    from dagster._core.storage.dagster_run import JobBucket, RunRecord, TagBucket
     from dagster._core.storage.event_log import EventLogStorage
     from dagster._core.storage.event_log.base import (
+        AssetRecord,
         EventLogRecord,
         EventRecordsFilter,
         EventRecordsResult,
     )
+    from dagster._core.storage.partition_status_cache import AssetPartitionStatus
     from dagster._core.storage.root import LocalArtifactStorage
     from dagster._core.storage.runs import RunStorage
     from dagster._core.storage.schedules import ScheduleStorage
@@ -216,7 +229,12 @@ class DagsterInstance(
         # Used for batched event handling
         self._event_buffer: dict[str, list[EventLogEntry]] = defaultdict(list)
 
-    # ctors
+    # =====================================================================================
+    # PUBLIC API METHODS
+    # =====================================================================================
+
+    # Factory Methods
+    # ---------------
 
     @public
     @staticmethod
@@ -274,6 +292,348 @@ class DagsterInstance(
         from dagster._core.instance.factory import create_local_temp_instance
 
         return create_local_temp_instance(tempdir=tempdir, overrides=overrides)
+
+    # Asset Domain
+    # ------------
+
+    @public
+    @traced
+    def fetch_materializations(
+        self,
+        records_filter: Union["AssetKey", "AssetRecordsFilter"],
+        limit: int,
+        cursor: Optional[str] = None,
+        ascending: bool = False,
+    ) -> "EventRecordsResult":
+        """Return a list of materialization records stored in the event log storage.
+
+        Args:
+            records_filter (Union[AssetKey, AssetRecordsFilter]): the filter by which to
+                filter event records.
+            limit (int): Number of results to get.
+            cursor (Optional[str]): Cursor to use for pagination. Defaults to None.
+            ascending (Optional[bool]): Sort the result in ascending order if True, descending
+                otherwise. Defaults to descending.
+
+        Returns:
+            EventRecordsResult: Object containing a list of event log records and a cursor string
+        """
+        return self._asset_domain.fetch_materializations(records_filter, limit, cursor, ascending)
+
+    @public
+    @traced
+    def fetch_observations(
+        self,
+        records_filter: Union["AssetKey", "AssetRecordsFilter"],
+        limit: int,
+        cursor: Optional[str] = None,
+        ascending: bool = False,
+    ) -> "EventRecordsResult":
+        """Return a list of observation records stored in the event log storage.
+
+        Args:
+            records_filter (Optional[Union[AssetKey, AssetRecordsFilter]]): the filter by which to
+                filter event records.
+            limit (int): Number of results to get.
+            cursor (Optional[str]): Cursor to use for pagination. Defaults to None.
+            ascending (Optional[bool]): Sort the result in ascending order if True, descending
+                otherwise. Defaults to descending.
+
+        Returns:
+            EventRecordsResult: Object containing a list of event log records and a cursor string
+        """
+        return self._event_storage.fetch_observations(records_filter, limit, cursor, ascending)
+
+    @public
+    @traced
+    def get_asset_keys(
+        self,
+        prefix: Optional[Sequence[str]] = None,
+        limit: Optional[int] = None,
+        cursor: Optional[str] = None,
+    ) -> Sequence["AssetKey"]:
+        """Return a filtered subset of asset keys managed by this instance.
+
+        Args:
+            prefix (Optional[Sequence[str]]): Return only assets having this key prefix.
+            limit (Optional[int]): Maximum number of keys to return.
+            cursor (Optional[str]): Cursor to use for pagination.
+
+        Returns:
+            Sequence[AssetKey]: List of asset keys.
+        """
+        return self._asset_domain.get_asset_keys(prefix, limit, cursor)
+
+    @public
+    @traced
+    def get_asset_records(
+        self, asset_keys: Optional[Sequence["AssetKey"]] = None
+    ) -> Sequence["AssetRecord"]:
+        """Return an `AssetRecord` for each of the given asset keys.
+
+        Args:
+            asset_keys (Optional[Sequence[AssetKey]]): List of asset keys to retrieve records for.
+
+        Returns:
+            Sequence[AssetRecord]: List of asset records.
+        """
+        return self._asset_domain.get_asset_records(asset_keys)
+
+    @public
+    def get_latest_materialization_code_versions(
+        self, asset_keys: Iterable["AssetKey"]
+    ) -> Mapping["AssetKey", Optional[str]]:
+        """Returns the code version used for the latest materialization of each of the provided
+        assets.
+
+        Args:
+            asset_keys (Iterable[AssetKey]): The asset keys to find latest materialization code
+                versions for.
+
+        Returns:
+            Mapping[AssetKey, Optional[str]]: A dictionary with a key for each of the provided asset
+                keys. The values will be None if the asset has no materializations. If an asset does
+                not have a code version explicitly assigned to its definitions, but was
+                materialized, Dagster assigns the run ID as its code version.
+        """
+        return self._asset_domain.get_latest_materialization_code_versions(asset_keys)
+
+    @public
+    @traced
+    def get_latest_materialization_event(self, asset_key: "AssetKey") -> Optional["EventLogEntry"]:
+        """Fetch the latest materialization event for the given asset key.
+
+        Args:
+            asset_key (AssetKey): Asset key to return materialization for.
+
+        Returns:
+            Optional[EventLogEntry]: The latest materialization event for the given asset
+                key, or `None` if the asset has not been materialized.
+        """
+        return self._asset_domain.get_latest_materialization_event(asset_key)
+
+    @public
+    @traced
+    def get_status_by_partition(
+        self,
+        asset_key: "AssetKey",
+        partition_keys: Sequence[str],
+        partitions_def: "PartitionsDefinition",
+    ) -> Optional[Mapping[str, "AssetPartitionStatus"]]:
+        """Get the current status of provided partition_keys for the provided asset.
+
+        Args:
+            asset_key (AssetKey): The asset to get per-partition status for.
+            partition_keys (Sequence[str]): The partitions to get status for.
+            partitions_def (PartitionsDefinition): The PartitionsDefinition of the asset to get
+                per-partition status for.
+
+        Returns:
+            Optional[Mapping[str, AssetPartitionStatus]]: status for each partition key
+
+        """
+        return self._asset_domain.get_status_by_partition(asset_key, partition_keys, partitions_def)
+
+    @public
+    @traced
+    def has_asset_key(self, asset_key: "AssetKey") -> bool:
+        """Return true if this instance manages the given asset key.
+
+        Args:
+            asset_key (AssetKey): Asset key to check.
+        """
+        return self._asset_domain.has_asset_key(asset_key)
+
+    @public
+    def report_runless_asset_event(
+        self,
+        asset_event: Union[
+            "AssetMaterialization",
+            "AssetObservation",
+            "AssetCheckEvaluation",
+            "FreshnessStateEvaluation",
+            "FreshnessStateChange",
+        ],
+    ):
+        """Record an event log entry related to assets that does not belong to a Dagster run."""
+        return self._asset_domain.report_runless_asset_event(asset_event)
+
+    @public
+    @traced
+    def wipe_assets(self, asset_keys: Sequence["AssetKey"]) -> None:
+        """Wipes asset event history from the event log for the given asset keys.
+
+        Args:
+            asset_keys (Sequence[AssetKey]): Asset keys to wipe.
+        """
+        self._asset_domain.wipe_assets(asset_keys)
+
+    # Run Domain
+    # ----------
+
+    @public
+    @traced
+    def delete_run(self, run_id: str) -> None:
+        """Delete a run and all events generated by that from storage.
+
+        Args:
+            run_id (str): The id of the run to delete.
+        """
+        self._run_storage.delete_run(run_id)
+        self._event_storage.delete_events(run_id)
+
+    @public
+    def get_run_by_id(self, run_id: str) -> Optional[DagsterRun]:
+        """Get a :py:class:`DagsterRun` matching the provided `run_id`.
+
+        Args:
+            run_id (str): The id of the run to retrieve.
+
+        Returns:
+            Optional[DagsterRun]: The run corresponding to the given id. If no run matching the id
+                is found, return `None`.
+        """
+        record = self.get_run_record_by_id(run_id)
+        if record is None:
+            return None
+        return record.dagster_run
+
+    @public
+    @traced
+    def get_run_record_by_id(self, run_id: str) -> Optional["RunRecord"]:
+        """Get a :py:class:`RunRecord` matching the provided `run_id`.
+
+        Args:
+            run_id (str): The id of the run record to retrieve.
+
+        Returns:
+            Optional[RunRecord]: The run record corresponding to the given id. If no run matching
+                the id is found, return `None`.
+        """
+        if not run_id:
+            return None
+        records = self._run_storage.get_run_records(RunsFilter(run_ids=[run_id]), limit=1)
+        if not records:
+            return None
+        return records[0]
+
+    @public
+    @traced
+    def get_run_records(
+        self,
+        filters: Optional["RunsFilter"] = None,
+        limit: Optional[int] = None,
+        order_by: Optional[str] = None,
+        ascending: bool = False,
+        cursor: Optional[str] = None,
+        bucket_by: Optional[Union["JobBucket", "TagBucket"]] = None,
+    ) -> Sequence["RunRecord"]:
+        """Return a list of run records stored in the run storage, sorted by the given column in given order.
+
+        Args:
+            filters (Optional[RunsFilter]): the filter by which to filter runs.
+            limit (Optional[int]): Number of results to get. Defaults to infinite.
+            order_by (Optional[str]): Name of the column to sort by. Defaults to id.
+            ascending (Optional[bool]): Sort the result in ascending order if True, descending
+                otherwise. Defaults to descending.
+
+        Returns:
+            List[RunRecord]: List of run records stored in the run storage.
+        """
+        return self._run_storage.get_run_records(
+            filters, limit, order_by, ascending, cursor, bucket_by
+        )
+
+    # Event Domain
+    # ------------
+
+    @public
+    @traced
+    def fetch_run_status_changes(
+        self,
+        records_filter: Union["DagsterEventType", "RunStatusChangeRecordsFilter"],
+        limit: int,
+        cursor: Optional[str] = None,
+        ascending: bool = False,
+    ) -> "EventRecordsResult":
+        """Return a list of run_status_event records stored in the event log storage.
+
+        Args:
+            records_filter (Optional[Union[DagsterEventType, RunStatusChangeRecordsFilter]]): the
+                filter by which to filter event records.
+            limit (int): Number of results to get.
+            cursor (Optional[str]): Cursor to use for pagination. Defaults to None.
+            ascending (Optional[bool]): Sort the result in ascending order if True, descending
+                otherwise. Defaults to descending.
+
+        Returns:
+            EventRecordsResult: Object containing a list of event log records and a cursor string
+        """
+        return self._event_storage.fetch_run_status_changes(
+            records_filter, limit, cursor, ascending
+        )
+
+    # Storage/Partition Domain
+    # ------------------------
+
+    @public
+    @traced
+    def add_dynamic_partitions(
+        self, partitions_def_name: str, partition_keys: Sequence[str]
+    ) -> None:
+        """Add partitions to the specified :py:class:`DynamicPartitionsDefinition` idempotently.
+        Does not add any partitions that already exist.
+
+        Args:
+            partitions_def_name (str): The name of the `DynamicPartitionsDefinition`.
+            partition_keys (Sequence[str]): Partition keys to add.
+        """
+        return self.storage_domain.add_dynamic_partitions(partitions_def_name, partition_keys)
+
+    @public
+    @traced
+    def delete_dynamic_partition(self, partitions_def_name: str, partition_key: str) -> None:
+        """Delete a partition for the specified :py:class:`DynamicPartitionsDefinition`.
+        If the partition does not exist, exits silently.
+
+        Args:
+            partitions_def_name (str): The name of the `DynamicPartitionsDefinition`.
+            partition_key (str): Partition key to delete.
+        """
+        self.storage_domain.delete_dynamic_partition(partitions_def_name, partition_key)
+
+    @public
+    @traced
+    def get_dynamic_partitions(self, partitions_def_name: str) -> Sequence[str]:
+        """Get the set of partition keys for the specified :py:class:`DynamicPartitionsDefinition`.
+
+        Args:
+            partitions_def_name (str): The name of the `DynamicPartitionsDefinition`.
+        """
+        return self.storage_domain.get_dynamic_partitions(partitions_def_name)
+
+    @public
+    @traced
+    def has_dynamic_partition(self, partitions_def_name: str, partition_key: str) -> bool:
+        """Check if a partition key exists for the :py:class:`DynamicPartitionsDefinition`.
+
+        Args:
+            partitions_def_name (str): The name of the `DynamicPartitionsDefinition`.
+            partition_key (Sequence[str]): Partition key to check.
+        """
+        return self.storage_domain.has_dynamic_partition(partitions_def_name, partition_key)
+
+    # =====================================================================================
+    # INTERNAL METHODS
+    # =====================================================================================
+
+    # Core Instance Methods
+    # ---------------------
+
+    @property
+    def _asset_domain(self):
+        """Access the asset domain. This will be available when mixed with DomainsMixin."""
+        return cast("AssetDomain", getattr(self, "asset_domain"))
 
     @staticmethod
     def from_config(
@@ -589,32 +949,6 @@ class DagsterInstance(
         """
         return self.event_domain.get_event_records(event_records_filter, limit, ascending)
 
-    @public
-    @traced
-    def fetch_run_status_changes(
-        self,
-        records_filter: Union["DagsterEventType", "RunStatusChangeRecordsFilter"],
-        limit: int,
-        cursor: Optional[str] = None,
-        ascending: bool = False,
-    ) -> "EventRecordsResult":
-        """Return a list of run_status_event records stored in the event log storage.
-
-        Args:
-            records_filter (Optional[Union[DagsterEventType, RunStatusChangeRecordsFilter]]): the
-                filter by which to filter event records.
-            limit (int): Number of results to get.
-            cursor (Optional[str]): Cursor to use for pagination. Defaults to None.
-            ascending (Optional[bool]): Sort the result in ascending order if True, descending
-                otherwise. Defaults to descending.
-
-        Returns:
-            EventRecordsResult: Object containing a list of event log records and a cursor string
-        """
-        return self._event_storage.fetch_run_status_changes(
-            records_filter, limit, cursor, ascending
-        )
-
     @traced
     def get_latest_storage_id_by_partition(
         self,
@@ -629,16 +963,6 @@ class DagsterInstance(
         return self.storage_domain.get_latest_storage_id_by_partition(
             asset_key, event_type, partitions
         )
-
-    @public
-    @traced
-    def get_dynamic_partitions(self, partitions_def_name: str) -> Sequence[str]:
-        """Get the set of partition keys for the specified :py:class:`DynamicPartitionsDefinition`.
-
-        Args:
-            partitions_def_name (str): The name of the `DynamicPartitionsDefinition`.
-        """
-        return self.storage_domain.get_dynamic_partitions(partitions_def_name)
 
     @traced
     def get_paginated_dynamic_partitions(
@@ -659,43 +983,6 @@ class DagsterInstance(
         return self.storage_domain.get_paginated_dynamic_partitions(
             partitions_def_name, limit, ascending, cursor
         )
-
-    @public
-    @traced
-    def add_dynamic_partitions(
-        self, partitions_def_name: str, partition_keys: Sequence[str]
-    ) -> None:
-        """Add partitions to the specified :py:class:`DynamicPartitionsDefinition` idempotently.
-        Does not add any partitions that already exist.
-
-        Args:
-            partitions_def_name (str): The name of the `DynamicPartitionsDefinition`.
-            partition_keys (Sequence[str]): Partition keys to add.
-        """
-        return self.storage_domain.add_dynamic_partitions(partitions_def_name, partition_keys)
-
-    @public
-    @traced
-    def delete_dynamic_partition(self, partitions_def_name: str, partition_key: str) -> None:
-        """Delete a partition for the specified :py:class:`DynamicPartitionsDefinition`.
-        If the partition does not exist, exits silently.
-
-        Args:
-            partitions_def_name (str): The name of the `DynamicPartitionsDefinition`.
-            partition_key (str): Partition key to delete.
-        """
-        self.storage_domain.delete_dynamic_partition(partitions_def_name, partition_key)
-
-    @public
-    @traced
-    def has_dynamic_partition(self, partitions_def_name: str, partition_key: str) -> bool:
-        """Check if a partition key exists for the :py:class:`DynamicPartitionsDefinition`.
-
-        Args:
-            partitions_def_name (str): The name of the `DynamicPartitionsDefinition`.
-            partition_key (Sequence[str]): Partition key to check.
-        """
-        return self.storage_domain.has_dynamic_partition(partitions_def_name, partition_key)
 
     # event subscriptions
 
