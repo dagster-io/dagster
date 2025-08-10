@@ -895,3 +895,104 @@ def test_sanitize_labels_regex():
             "data_pipe_graph_abcdefghi_jklmn.raw_data_graph_abcdefghi_jklmn.opqrstuvwxyz"
         ),
     )
+
+
+def test_construct_dagster_k8s_job_preemption_logic(caplog):
+    # Base config, args, job_name
+    base_args = ["foo", "bar"]
+    base_job_name = "test-job"
+
+    # Scenario 1: retry_on_preemption = True
+    cfg_retry_true = DagsterK8sJobConfig(retry_on_preemption=True)
+
+    # 1a: No user-defined backoff_limit or restart_policy
+    job_spec = construct_dagster_k8s_job(cfg_retry_true, base_args, base_job_name).to_dict()
+    assert job_spec["spec"]["backoff_limit"] == 1
+    assert job_spec["spec"]["template"]["spec"]["restart_policy"] == "Never"
+
+    # 1b: User-defined backoff_limit >= 1
+    user_cfg_backoff_2 = UserDefinedDagsterK8sConfig(job_spec_config={"backoff_limit": 2})
+    job_spec = construct_dagster_k8s_job(
+        cfg_retry_true, base_args, base_job_name, user_defined_k8s_config=user_cfg_backoff_2
+    ).to_dict()
+    assert job_spec["spec"]["backoff_limit"] == 2
+    assert job_spec["spec"]["template"]["spec"]["restart_policy"] == "Never"
+
+    # 1c: User-defined backoff_limit = 0 (should warn and set to 1)
+    user_cfg_backoff_0 = UserDefinedDagsterK8sConfig(job_spec_config={"backoff_limit": 0})
+    caplog.clear()
+    job_spec = construct_dagster_k8s_job(
+        cfg_retry_true, base_args, base_job_name, user_defined_k8s_config=user_cfg_backoff_0
+    ).to_dict()
+    assert job_spec["spec"]["backoff_limit"] == 1
+    assert "User defined backoff_limit is 0 but retry_on_preemption is True" in caplog.text
+    assert job_spec["spec"]["template"]["spec"]["restart_policy"] == "Never"
+
+    # 1d: User-defined backoff_limit < 0 (should warn and set to 1)
+    user_cfg_backoff_neg = UserDefinedDagsterK8sConfig(job_spec_config={"backoff_limit": -1})
+    caplog.clear()
+    job_spec = construct_dagster_k8s_job(
+        cfg_retry_true, base_args, base_job_name, user_defined_k8s_config=user_cfg_backoff_neg
+    ).to_dict()
+    assert job_spec["spec"]["backoff_limit"] == 1
+    assert "User defined backoff_limit is -1 but retry_on_preemption is True" in caplog.text
+    assert job_spec["spec"]["template"]["spec"]["restart_policy"] == "Never"
+
+    # 1e: User-defined restart_policy is "OnFailure" (should warn and set to "Never")
+    user_cfg_restart_onfailure = UserDefinedDagsterK8sConfig(
+        pod_spec_config={"restart_policy": "OnFailure"}
+    )
+    caplog.clear()
+    job_spec = construct_dagster_k8s_job(
+        cfg_retry_true,
+        base_args,
+        base_job_name,
+        user_defined_k8s_config=user_cfg_restart_onfailure,
+    ).to_dict()
+    assert job_spec["spec"]["template"]["spec"]["restart_policy"] == "Never"
+    assert "User defined pod_spec_config.restart_policy is 'OnFailure' but retry_on_preemption is True" in caplog.text
+    assert job_spec["spec"]["backoff_limit"] == 1 # Default when not specified by user
+
+    # 1f: User-defined restart_policy is "Never" (should be fine, no warning)
+    user_cfg_restart_never = UserDefinedDagsterK8sConfig(
+        pod_spec_config={"restart_policy": "Never"}
+    )
+    caplog.clear()
+    job_spec = construct_dagster_k8s_job(
+        cfg_retry_true, base_args, base_job_name, user_defined_k8s_config=user_cfg_restart_never
+    ).to_dict()
+    assert job_spec["spec"]["template"]["spec"]["restart_policy"] == "Never"
+    assert not caplog.text # No warnings
+    assert job_spec["spec"]["backoff_limit"] == 1
+
+
+    # Scenario 2: retry_on_preemption = False
+    cfg_retry_false = DagsterK8sJobConfig(retry_on_preemption=False)
+
+    # 2a: No user-defined backoff_limit or restart_policy
+    job_spec = construct_dagster_k8s_job(cfg_retry_false, base_args, base_job_name).to_dict()
+    assert job_spec["spec"]["backoff_limit"] == DEFAULT_K8S_JOB_BACKOFF_LIMIT # Should be 0
+    assert job_spec["spec"]["template"]["spec"]["restart_policy"] == "Never" # Default
+
+    # 2b: User-defined backoff_limit
+    user_cfg_backoff_3 = UserDefinedDagsterK8sConfig(job_spec_config={"backoff_limit": 3})
+    job_spec = construct_dagster_k8s_job(
+        cfg_retry_false, base_args, base_job_name, user_defined_k8s_config=user_cfg_backoff_3
+    ).to_dict()
+    assert job_spec["spec"]["backoff_limit"] == 3 # User value respected
+    assert job_spec["spec"]["template"]["spec"]["restart_policy"] == "Never"
+
+    # 2c: User-defined restart_policy is "OnFailure"
+    user_cfg_restart_onfailure_no_retry = UserDefinedDagsterK8sConfig(
+        pod_spec_config={"restart_policy": "OnFailure"}
+    )
+    caplog.clear()
+    job_spec = construct_dagster_k8s_job(
+        cfg_retry_false,
+        base_args,
+        base_job_name,
+        user_defined_k8s_config=user_cfg_restart_onfailure_no_retry,
+    ).to_dict()
+    assert job_spec["spec"]["template"]["spec"]["restart_policy"] == "OnFailure" # User value respected
+    assert not caplog.text # No warnings
+    assert job_spec["spec"]["backoff_limit"] == DEFAULT_K8S_JOB_BACKOFF_LIMIT
