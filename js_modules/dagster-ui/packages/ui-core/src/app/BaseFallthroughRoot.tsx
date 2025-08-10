@@ -42,26 +42,31 @@ const FinalRedirectOrLoadingRoot = () => {
     return <Redirect to="/locations" />;
   }
 
+  // If there are visible jobs, redirect to overview
   const reposWithVisibleJobs = allRepos.filter((r) => getVisibleJobs(r).length > 0);
-
-  // If we have no repos with jobs, see if we have an asset group and route to it.
-  if (reposWithVisibleJobs.length === 0) {
-    const repoWithAssetGroup = allRepos.find((r) => r.repository.assetGroups.length);
-    if (repoWithAssetGroup) {
-      return (
-        <Redirect
-          to={workspacePath(
-            repoWithAssetGroup.repository.name,
-            repoWithAssetGroup.repositoryLocation.name,
-            // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-            `/asset-groups/${repoWithAssetGroup.repository.assetGroups[0]!.groupName}`,
-          )}
-        />
-      );
-    }
-  }
   if (reposWithVisibleJobs.length > 0) {
     return <Redirect to="/overview" />;
+  }
+
+  // If there are jobs but they are all hidden, route to the overview timeline grouped by automation.
+  const hasAnyJobs = allRepos.some((r) => r.repository.pipelines.length > 0);
+  if (hasAnyJobs) {
+    return <Redirect to="/overview/activity/timeline?groupBy=automation" />;
+   }
+
+  // If we have no repos with jobs, see if we have an asset group and route to it.
+  const repoWithAssetGroup = allRepos.find((r) => r.repository.assetGroups.length);
+  if (repoWithAssetGroup) {
+    return (
+      <Redirect
+        to={workspacePath(
+          repoWithAssetGroup.repository.name,
+          repoWithAssetGroup.repositoryLocation.name,
+          // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+          `/asset-groups/${repoWithAssetGroup.repository.assetGroups[0]!.groupName}`,
+        )}
+      />
+    );
   }
 
   // Ben note: We only reach here if reposWithVisibleJobs === 0 AND there is no asset group.
