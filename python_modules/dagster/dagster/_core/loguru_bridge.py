@@ -105,10 +105,12 @@ def dagster_context_sink(context: Any) -> Callable[[Any], None]:
 
         log_method_name = level_map.get(level, "info")
 
-        log_method = getattr(context.log, log_method_name, None)
+        # Fallback if context or log method is missing
+        if not context or not hasattr(context, "log"):
+            return
 
-        # Fallback if context or log method is missing  
-        if not context or not hasattr(context, "log") or not callable(log_method):
+        log_method = getattr(context.log, log_method_name, None)
+        if not callable(log_method):
             return
 
         try:
@@ -118,6 +120,7 @@ def dagster_context_sink(context: Any) -> Callable[[Any], None]:
             else:
                 log_method(msg)
         except Exception:
+            # best-effort fallback
             log_method(msg)
 
     return sink
@@ -146,11 +149,11 @@ def with_loguru_logger(fn: Callable) -> Callable:
 
         # Create proxy functions that forward calls to loguru.logger AND call the original method.
         def make_proxy(level: str, original_method: Callable) -> Callable[[str], None]:
-            def proxy_fn(msg: str) -> None:
+            def proxy_fn(msg: str, *p_args, **p_kwargs) -> None:
                 # Forward to loguru.logger
                 logger.opt(depth=1).log(level, msg)
                 # Also call the original method to maintain original behavior
-                original_method(msg)
+                original_method(msg, *p_args, **p_kwargs)
 
             return proxy_fn
 
