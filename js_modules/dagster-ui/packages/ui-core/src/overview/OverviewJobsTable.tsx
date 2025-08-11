@@ -2,7 +2,7 @@ import {useVirtualizer} from '@tanstack/react-virtual';
 import {useMemo, useRef} from 'react';
 
 import {OVERVIEW_COLLAPSED_KEY} from './OverviewExpansionKey';
-import {useFeatureFlags} from '../app/Flags';
+import {useFeatureFlags} from '../app/useFeatureFlags';
 import {Container, Inner, TABLE_HEADER_HEIGHT} from '../ui/VirtualizedTable';
 import {findDuplicateRepoNames} from '../ui/findDuplicateRepoNames';
 import {useRepoExpansionState} from '../ui/useRepoExpansionState';

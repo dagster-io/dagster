@@ -40,16 +40,6 @@ from dagster._core.remote_representation.handle import (
     RepositoryHandle as RepositoryHandle,
 )
 from dagster._core.remote_representation.historical import HistoricalJob as HistoricalJob
-from dagster._core.remote_representation.origin import (
-    IN_PROCESS_NAME as IN_PROCESS_NAME,
-    CodeLocationOrigin as CodeLocationOrigin,
-    GrpcServerCodeLocationOrigin as GrpcServerCodeLocationOrigin,
-    InProcessCodeLocationOrigin as InProcessCodeLocationOrigin,
-    ManagedGrpcPythonEnvCodeLocationOrigin as ManagedGrpcPythonEnvCodeLocationOrigin,
-    RemoteInstigatorOrigin as RemoteInstigatorOrigin,
-    RemoteJobOrigin as RemoteJobOrigin,
-    RemoteRepositoryOrigin as RemoteRepositoryOrigin,
-)
 
 # ruff: isort: split
 from dagster._core.remote_representation.code_location import (

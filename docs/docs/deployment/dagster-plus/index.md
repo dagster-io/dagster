@@ -3,6 +3,8 @@ description: Dagster+ is a managed orchestration platform for data engineering, 
 sidebar_class_name: hidden
 sidebar_position: 10
 title: About Dagster+
+canonicalUrl: '/deployment/dagster-plus'
+slug: '/deployment/dagster-plus'
 ---
 
 Dagster+ is a managed orchestration platform built on top of Dagster's open source engine.

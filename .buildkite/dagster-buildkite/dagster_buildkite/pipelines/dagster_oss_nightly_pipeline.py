@@ -7,6 +7,7 @@ from dagster_buildkite.steps.packages import (
     gcp_creds_extra_cmds,
     k8s_extra_cmds,
 )
+from dagster_buildkite.steps.tox import ToxFactor
 
 
 def build_dagster_oss_nightly_steps() -> list[StepConfiguration]:
@@ -16,7 +17,7 @@ def build_dagster_oss_nightly_steps() -> list[StepConfiguration]:
         [
             PackageSpec(
                 "python_modules/libraries/dagster-dbt",
-                pytest_tox_factors=["dbt18-snowflake", "dbt18-bigquery"],
+                pytest_tox_factors=[ToxFactor("dbt18-snowflake"), ToxFactor("dbt18-bigquery")],
                 env_vars=[
                     "SNOWFLAKE_ACCOUNT",
                     "SNOWFLAKE_USER",
@@ -38,7 +39,7 @@ def build_dagster_oss_nightly_steps() -> list[StepConfiguration]:
                     "BUILDKITE_SECRETS_BUCKET",
                 ],
                 pytest_tox_factors=[
-                    "nightly",
+                    ToxFactor("nightly"),
                 ],
                 pytest_extra_cmds=k8s_extra_cmds,
                 always_run_if=lambda: True,

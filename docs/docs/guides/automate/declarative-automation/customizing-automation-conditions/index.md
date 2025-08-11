@@ -2,6 +2,8 @@
 description: Customize Dagster Declarative Automation conditions with operands and operators that you can combine to suite your needs.
 sidebar_position: 10
 title: Customizing automation conditions
+canonicalUrl: '/guides/automate/declarative-automation/customizing-automation-conditions'
+slug: '/guides/automate/declarative-automation/customizing-automation-conditions'
 ---
 
 [Declarative Automation](/guides/automate/declarative-automation) includes pre-built conditions to handle common use cases, such as executing on a periodic schedule or whenever an upstream dependency updates, but the core system is extremely flexible and can be tailored to your specific needs.

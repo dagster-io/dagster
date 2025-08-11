@@ -3,6 +3,8 @@ title: 'Automate'
 description: Learn how to automate your Dagster data pipelines.
 sidebar_class_name: hidden
 sidebar_position: 10
+canonicalUrl: '/guides/automate'
+slug: '/guides/automate'
 ---
 
 Automation is key to building reliable, efficient data pipelines. Dagster offers several ways to automate pipeline execution to fit a variety of needs.

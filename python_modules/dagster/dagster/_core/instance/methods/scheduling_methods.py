@@ -1,9 +1,10 @@
-"""Scheduling domain implementation - extracted from DagsterInstance."""
+"""Scheduling methods implementation - consolidated from SchedulingDomain."""
 
 from collections.abc import Mapping, Sequence
 from typing import TYPE_CHECKING, Optional
 
 import dagster._check as check
+from dagster._utils import traced
 
 if TYPE_CHECKING:
     from dagster._core.definitions.run_request import InstigatorType
@@ -12,27 +13,78 @@ if TYPE_CHECKING:
         BulkActionStatus,
         PartitionBackfill,
     )
-    from dagster._core.instance import DagsterInstance
+    from dagster._core.instance.instance import DagsterInstance
     from dagster._core.remote_representation.external import RemoteSchedule, RemoteSensor
-    from dagster._core.scheduler import SchedulerDebugInfo
-    from dagster._core.scheduler.instigation import InstigatorState, InstigatorStatus, TickStatus
+    from dagster._core.scheduler import Scheduler, SchedulerDebugInfo
+    from dagster._core.scheduler.instigation import (
+        InstigatorState,
+        InstigatorStatus,
+        InstigatorTick,
+        TickData,
+        TickStatus,
+    )
+    from dagster._core.storage.schedules import ScheduleStorage
 
 
-class SchedulingDomain:
-    """Domain object encapsulating scheduling-related operations.
+class SchedulingMethods:
+    """Mixin class containing scheduling-related functionality for DagsterInstance.
 
-    This class holds a reference to a DagsterInstance and provides methods
-    for schedule, sensor, and backfill management.
+    This class provides methods for schedule, sensor, and backfill management.
+    All methods are implemented as instance methods that DagsterInstance inherits.
     """
 
-    def __init__(self, instance: "DagsterInstance") -> None:
-        self._instance = instance
+    @property
+    def _instance(self) -> "DagsterInstance":
+        """Cast self to DagsterInstance for type-safe access to instance methods and properties."""
+        from dagster._core.instance.instance import DagsterInstance
+
+        return check.inst(self, DagsterInstance)
+
+    # Private member access wrappers with consolidated type: ignore
+    @property
+    def _scheduler_impl(self):
+        """Access to scheduler."""
+        return self._instance._scheduler  # noqa: SLF001
+
+    @property
+    def _schedule_storage_impl(self):
+        """Access to schedule storage."""
+        return self._instance._schedule_storage  # noqa: SLF001
+
+    @property
+    def _run_storage_impl(self):
+        """Access to run storage."""
+        return self._instance._run_storage  # noqa: SLF001
+
+    # Public properties for schedule/sensor storage - moved from InstigatorMixin
+
+    @property
+    def schedule_storage(self) -> Optional["ScheduleStorage"]:
+        """Get schedule storage."""
+        return self._schedule_storage_impl
+
+    @property
+    def scheduler(self) -> Optional["Scheduler"]:
+        """Get scheduler."""
+        return self._scheduler_impl
+
+    @property
+    def scheduler_class(self) -> Optional[str]:
+        """Get scheduler class name."""
+        return self.scheduler.__class__.__name__ if self.scheduler else None
+
+    def schedules_directory(self) -> str:
+        """Get schedules directory - delegates to StorageMethods."""
+        # Access the method from StorageMethods mixin
+        from dagster._core.instance.methods.storage_methods import StorageMethods
+
+        return StorageMethods.schedules_directory(self._instance)
 
     def start_schedule(self, remote_schedule: "RemoteSchedule") -> "InstigatorState":
         """Start schedule - moved from DagsterInstance.start_schedule()."""
-        if not self._instance._scheduler:  # noqa: SLF001
+        if not self._scheduler_impl:
             check.failed("Scheduler not available")
-        return self._instance._scheduler.start_schedule(self._instance, remote_schedule)  # noqa: SLF001
+        return self._scheduler_impl.start_schedule(self._instance, remote_schedule)
 
     def stop_schedule(
         self,
@@ -41,17 +93,17 @@ class SchedulingDomain:
         remote_schedule: Optional["RemoteSchedule"] = None,
     ) -> "InstigatorState":
         """Stop schedule - moved from DagsterInstance.stop_schedule()."""
-        if not self._instance._scheduler:  # noqa: SLF001
+        if not self._scheduler_impl:
             check.failed("Scheduler not available")
-        return self._instance._scheduler.stop_schedule(  # noqa: SLF001
+        return self._scheduler_impl.stop_schedule(
             self._instance, schedule_origin_id, schedule_selector_id, remote_schedule
         )
 
     def reset_schedule(self, remote_schedule: "RemoteSchedule") -> "InstigatorState":
         """Reset schedule - moved from DagsterInstance.reset_schedule()."""
-        if not self._instance._scheduler:  # noqa: SLF001
+        if not self._scheduler_impl:
             check.failed("Scheduler not available")
-        return self._instance._scheduler.reset_schedule(self._instance, remote_schedule)  # noqa: SLF001
+        return self._scheduler_impl.reset_schedule(self._instance, remote_schedule)
 
     def start_sensor(self, remote_sensor: "RemoteSensor") -> "InstigatorState":
         """Start sensor - moved from DagsterInstance.start_sensor()."""
@@ -65,7 +117,7 @@ class SchedulingDomain:
         )
         from dagster._time import get_current_timestamp
 
-        stored_state = self._instance.get_instigator_state(
+        stored_state = self.get_instigator_state(
             remote_sensor.get_remote_origin_id(), remote_sensor.selector_id
         )
 
@@ -74,7 +126,7 @@ class SchedulingDomain:
             return computed_state
 
         if not stored_state:
-            return self._instance.add_instigator_state(
+            return self.add_instigator_state(
                 InstigatorState(
                     remote_sensor.get_remote_origin(),
                     InstigatorType.SENSOR,
@@ -88,7 +140,7 @@ class SchedulingDomain:
             )
         else:
             data = cast("SensorInstigatorData", stored_state.instigator_data)
-            return self._instance.update_instigator_state(
+            return self.update_instigator_state(
                 stored_state.with_status(InstigatorStatus.RUNNING).with_data(
                     data.with_sensor_start_timestamp(get_current_timestamp())
                 )
@@ -109,7 +161,7 @@ class SchedulingDomain:
             SensorInstigatorData,
         )
 
-        stored_state = self._instance.get_instigator_state(instigator_origin_id, selector_id)
+        stored_state = self.get_instigator_state(instigator_origin_id, selector_id)
         computed_state: InstigatorState
         if remote_sensor:
             computed_state = remote_sensor.get_current_instigator_state(stored_state)
@@ -121,7 +173,7 @@ class SchedulingDomain:
 
         if not stored_state:
             assert remote_sensor
-            return self._instance.add_instigator_state(
+            return self.add_instigator_state(
                 InstigatorState(
                     remote_sensor.get_remote_origin(),
                     InstigatorType.SENSOR,
@@ -133,9 +185,7 @@ class SchedulingDomain:
                 )
             )
         else:
-            return self._instance.update_instigator_state(
-                stored_state.with_status(InstigatorStatus.STOPPED)
-            )
+            return self.update_instigator_state(stored_state.with_status(InstigatorStatus.STOPPED))
 
     def reset_sensor(self, remote_sensor: "RemoteSensor") -> "InstigatorState":
         """Reset sensor - moved from DagsterInstance.reset_sensor()."""
@@ -146,7 +196,7 @@ class SchedulingDomain:
             SensorInstigatorData,
         )
 
-        stored_state = self._instance.get_instigator_state(
+        stored_state = self.get_instigator_state(
             remote_sensor.get_remote_origin_id(), remote_sensor.selector_id
         )
         new_status = InstigatorStatus.DECLARED_IN_CODE
@@ -157,7 +207,7 @@ class SchedulingDomain:
                 sensor_type=remote_sensor.sensor_type,
             )
 
-            reset_state = self._instance.add_instigator_state(
+            reset_state = self.add_instigator_state(
                 state=InstigatorState(
                     remote_sensor.get_remote_origin(),
                     InstigatorType.SENSOR,
@@ -166,12 +216,11 @@ class SchedulingDomain:
                 )
             )
         else:
-            reset_state = self._instance.update_instigator_state(
-                state=stored_state.with_status(new_status)
-            )
+            reset_state = self.update_instigator_state(state=stored_state.with_status(new_status))
 
         return reset_state
 
+    @traced
     def all_instigator_state(
         self,
         repository_origin_id: Optional[str] = None,
@@ -180,9 +229,9 @@ class SchedulingDomain:
         instigator_statuses: Optional[set["InstigatorStatus"]] = None,
     ) -> Sequence["InstigatorState"]:
         """Get all instigator states - moved from DagsterInstance.all_instigator_state()."""
-        if not self._instance._schedule_storage:  # noqa: SLF001
+        if not self._schedule_storage_impl:
             check.failed("Schedule storage not available")
-        return self._instance._schedule_storage.all_instigator_state(  # noqa: SLF001
+        return self._schedule_storage_impl.all_instigator_state(
             repository_origin_id=repository_origin_id,
             repository_selector_id=repository_selector_id,
             instigator_type=instigator_type,
@@ -191,27 +240,27 @@ class SchedulingDomain:
 
     def get_instigator_state(self, origin_id: str, selector_id: str) -> Optional["InstigatorState"]:
         """Get instigator state - moved from DagsterInstance.get_instigator_state()."""
-        if not self._instance._schedule_storage:  # noqa: SLF001
+        if not self._schedule_storage_impl:
             check.failed("Schedule storage not available")
-        return self._instance._schedule_storage.get_instigator_state(origin_id, selector_id)  # noqa: SLF001
+        return self._schedule_storage_impl.get_instigator_state(origin_id, selector_id)
 
     def add_instigator_state(self, state: "InstigatorState") -> "InstigatorState":
         """Add instigator state - moved from DagsterInstance.add_instigator_state()."""
-        if not self._instance._schedule_storage:  # noqa: SLF001
+        if not self._schedule_storage_impl:
             check.failed("Schedule storage not available")
-        return self._instance._schedule_storage.add_instigator_state(state)  # noqa: SLF001
+        return self._schedule_storage_impl.add_instigator_state(state)
 
     def update_instigator_state(self, state: "InstigatorState") -> "InstigatorState":
         """Update instigator state - moved from DagsterInstance.update_instigator_state()."""
-        if not self._instance._schedule_storage:  # noqa: SLF001
+        if not self._schedule_storage_impl:
             check.failed("Schedule storage not available")
-        return self._instance._schedule_storage.update_instigator_state(state)  # noqa: SLF001
+        return self._schedule_storage_impl.update_instigator_state(state)
 
     def delete_instigator_state(self, origin_id: str, selector_id: str) -> None:
         """Delete instigator state - moved from DagsterInstance.delete_instigator_state()."""
-        if not self._instance._schedule_storage:  # noqa: SLF001
+        if not self._schedule_storage_impl:
             check.failed("Schedule storage not available")
-        return self._instance._schedule_storage.delete_instigator_state(origin_id, selector_id)  # noqa: SLF001
+        return self._schedule_storage_impl.delete_instigator_state(origin_id, selector_id)
 
     def get_backfills(
         self,
@@ -221,40 +270,40 @@ class SchedulingDomain:
         status: Optional["BulkActionStatus"] = None,
     ) -> Sequence["PartitionBackfill"]:
         """Get backfills - moved from DagsterInstance.get_backfills()."""
-        return self._instance._run_storage.get_backfills(  # noqa: SLF001
+        return self._run_storage_impl.get_backfills(
             status=status, cursor=cursor, limit=limit, filters=filters
         )
 
     def get_backfills_count(self, filters: Optional["BulkActionsFilter"] = None) -> int:
         """Get backfills count - moved from DagsterInstance.get_backfills_count()."""
-        return self._instance._run_storage.get_backfills_count(filters=filters)  # noqa: SLF001
+        return self._run_storage_impl.get_backfills_count(filters=filters)
 
     def get_backfill(self, backfill_id: str) -> Optional["PartitionBackfill"]:
         """Get backfill - moved from DagsterInstance.get_backfill()."""
-        return self._instance._run_storage.get_backfill(backfill_id)  # noqa: SLF001
+        return self._run_storage_impl.get_backfill(backfill_id)
 
     def add_backfill(self, partition_backfill: "PartitionBackfill") -> None:
         """Add backfill - moved from DagsterInstance.add_backfill()."""
-        self._instance._run_storage.add_backfill(partition_backfill)  # noqa: SLF001
+        self._run_storage_impl.add_backfill(partition_backfill)
 
     def update_backfill(self, partition_backfill: "PartitionBackfill") -> None:
         """Update backfill - moved from DagsterInstance.update_backfill()."""
-        self._instance._run_storage.update_backfill(partition_backfill)  # noqa: SLF001
+        self._run_storage_impl.update_backfill(partition_backfill)
 
     def wipe_all_schedules(self) -> None:
         """Wipe all schedules - moved from DagsterInstance.wipe_all_schedules()."""
-        if self._instance._scheduler:  # noqa: SLF001
-            self._instance._scheduler.wipe(self._instance)  # noqa: SLF001  # type: ignore
+        if self._scheduler_impl:
+            self._scheduler_impl.wipe(self._instance)  # type: ignore
 
-        if not self._instance._schedule_storage:  # noqa: SLF001
+        if not self._schedule_storage_impl:
             check.failed("Schedule storage not available")
-        self._instance._schedule_storage.wipe()  # noqa: SLF001
+        self._schedule_storage_impl.wipe()
 
     def logs_path_for_schedule(self, schedule_origin_id: str) -> str:
         """Get logs path for schedule - moved from DagsterInstance.logs_path_for_schedule()."""
-        if not self._instance._scheduler:  # noqa: SLF001
+        if not self._scheduler_impl:
             check.failed("Scheduler not available")
-        return self._instance._scheduler.get_logs_path(self._instance, schedule_origin_id)  # noqa: SLF001
+        return self._scheduler_impl.get_logs_path(self._instance, schedule_origin_id)
 
     def scheduler_debug_info(self) -> "SchedulerDebugInfo":
         """Get scheduler debug info - moved from DagsterInstance.scheduler_debug_info()."""
@@ -324,3 +373,73 @@ class SchedulingDomain:
 
         default_tick_settings = get_default_tick_retention_settings(instigator_type)
         return get_tick_retention_settings(tick_settings, default_tick_settings)
+
+    # Tick operations - moved from InstigatorMixin
+
+    @property
+    def supports_batch_tick_queries(self) -> bool:
+        return bool(
+            self._schedule_storage_impl and self._schedule_storage_impl.supports_batch_queries
+        )
+
+    @traced
+    def get_batch_ticks(
+        self,
+        selector_ids: Sequence[str],
+        limit: Optional[int] = None,
+        statuses: Optional[Sequence["TickStatus"]] = None,
+    ) -> Mapping[str, Sequence["InstigatorTick"]]:
+        if not self._schedule_storage_impl:
+            return {}
+        return self._schedule_storage_impl.get_batch_ticks(selector_ids, limit, statuses)
+
+    @traced
+    def get_tick(
+        self, origin_id: str, selector_id: str, timestamp: float
+    ) -> Optional["InstigatorTick"]:
+        if not self._schedule_storage_impl:
+            return None
+        matches = self._schedule_storage_impl.get_ticks(
+            origin_id, selector_id, before=timestamp + 1, after=timestamp - 1, limit=1
+        )
+        return matches[0] if len(matches) else None
+
+    @traced
+    def get_ticks(
+        self,
+        origin_id: str,
+        selector_id: str,
+        before: Optional[float] = None,
+        after: Optional[float] = None,
+        limit: Optional[int] = None,
+        statuses: Optional[Sequence["TickStatus"]] = None,
+    ) -> Sequence["InstigatorTick"]:
+        if not self._schedule_storage_impl:
+            return []
+        return self._schedule_storage_impl.get_ticks(
+            origin_id,
+            selector_id,
+            before=before,
+            after=after,
+            limit=limit,
+            statuses=statuses,
+        )
+
+    def create_tick(self, tick_data: "TickData") -> "InstigatorTick":
+        return check.not_none(self._schedule_storage_impl).create_tick(tick_data)
+
+    def update_tick(self, tick: "InstigatorTick"):
+        return check.not_none(self._schedule_storage_impl).update_tick(tick)
+
+    def purge_ticks(
+        self,
+        origin_id: str,
+        selector_id: str,
+        before: float,
+        tick_statuses: Optional[Sequence["TickStatus"]] = None,
+    ) -> None:
+        if self._schedule_storage_impl:
+            self._schedule_storage_impl.purge_ticks(origin_id, selector_id, before, tick_statuses)
+
+    def get_tick_termination_check_interval(self) -> Optional[int]:
+        return None

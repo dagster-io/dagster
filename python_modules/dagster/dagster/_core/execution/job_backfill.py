@@ -43,7 +43,7 @@ from dagster._utils.error import SerializableErrorInfo
 from dagster._utils.merger import merge_dicts
 
 if TYPE_CHECKING:
-    from dagster._core.remote_representation.origin import RemotePartitionSetOrigin
+    from dagster._core.remote_origin import RemotePartitionSetOrigin
 
 # out of abundance of caution, sleep at checkpoints in case we are pinning CPU by submitting lots
 # of jobs all at once
@@ -80,7 +80,9 @@ def execute_job_backfill_iteration(
     backfill = cast("PartitionBackfill", instance.get_backfill(backfill.backfill_id))
     if backfill.status == BulkActionStatus.CANCELING:
         all_runs_canceled = cancel_backfill_runs_and_cancellation_complete(
-            instance=instance, backfill_id=backfill.backfill_id
+            instance=instance,
+            backfill_id=backfill.backfill_id,
+            logger=logger,
         )
 
         if all_runs_canceled:

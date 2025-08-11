@@ -6,6 +6,8 @@ last_update:
 sidebar_custom_props:
   logo: images/integrations/dbt/dbt.svg
 tags: [code-example]
+canonicalUrl: '/examples/bluesky'
+slug: '/examples/bluesky'
 ---
 
 # Analyzing Bluesky data

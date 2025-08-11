@@ -7,8 +7,8 @@ from typing import TYPE_CHECKING, Optional
 
 import dagster._check as check
 from dagster._core.instance import InstanceRef
+from dagster._core.remote_origin import ManagedGrpcPythonEnvCodeLocationOrigin
 from dagster._core.remote_representation.grpc_server_registry import GrpcServerRegistry
-from dagster._core.remote_representation.origin import ManagedGrpcPythonEnvCodeLocationOrigin
 from dagster._core.types.loadable_target_origin import LoadableTargetOrigin
 from dagster._grpc.__generated__ import dagster_api_pb2
 from dagster._grpc.__generated__.dagster_api_pb2_grpc import DagsterApiServicer

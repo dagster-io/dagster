@@ -1,4 +1,4 @@
-"""Settings mixin for DagsterInstance."""
+"""Settings methods for DagsterInstance."""
 
 from collections.abc import Mapping, Sequence
 from typing import TYPE_CHECKING, Any, Optional
@@ -14,11 +14,12 @@ if TYPE_CHECKING:
     from dagster._core.run_coordinator import RunCoordinator
 
 
-class SettingsMixin:
+class SettingsMethods:
     """Mixin class providing settings capabilities for DagsterInstance.
 
-    This class extracts all settings-related methods and properties from
-    DagsterInstance to improve code organization and maintainability.
+    This class contains all settings-related methods and properties that were
+    previously in SettingsMixin, consolidating the functionality without
+    the need for separate domain classes.
     """
 
     # These attributes are provided by DagsterInstance
