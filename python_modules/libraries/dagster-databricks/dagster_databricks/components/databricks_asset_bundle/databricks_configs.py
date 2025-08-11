@@ -109,7 +109,7 @@ class DatabricksConditionTask:
 @record
 class DatabricksSparkPythonTask:
     task_key: str
-    task_config: Mapping[str, Any]
+    task: Mapping[str, Any]
     task_parameters: Mapping[str, Any]
     depends_on: list[str]
     job_name: str
@@ -132,12 +132,12 @@ class DatabricksSparkPythonTask:
         cls, job_task_config: Mapping[str, Any]
     ) -> "DatabricksSparkPythonTask":
         spark_python_task = job_task_config["spark_python_task"]
-        task_config = {"spark_python_task": spark_python_task}
+        task = {"spark_python_task": spark_python_task}
         # Spark Python tasks use parameters differently
         task_parameters = spark_python_task.get("parameters", [])
         return DatabricksSparkPythonTask(
             task_key=job_task_config["task_key"],
-            task_config=task_config,
+            task=task,
             task_parameters=task_parameters,
             depends_on=parse_depends_on(job_task_config.get("depends_on", [])),
             job_name=job_task_config["job_name"],
