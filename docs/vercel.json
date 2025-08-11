@@ -112,7 +112,7 @@
     },
     {
       "source": "/_apidocs/external-assets-rest",
-      "destination": "/api/dagster/external-assets-rest-api"
+      "destination": "/api/rest-apis/external-assets-rest-api"
     },
     {
       "source": "/_apidocs/repositories",
