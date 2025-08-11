@@ -71,7 +71,7 @@ class DatabricksNotebookTask:
 @record
 class DatabricksConditionTask:
     task_key: str
-    task_config: Mapping[str, Any]
+    task: Mapping[str, Any]
     task_parameters: Mapping[str, Any]
     depends_on: list[str]
     job_name: str
@@ -93,12 +93,12 @@ class DatabricksConditionTask:
     @classmethod
     def from_job_task_config(cls, job_task_config: Mapping[str, Any]) -> "DatabricksConditionTask":
         condition_task = job_task_config["condition_task"]
-        task_config = {"condition_task": condition_task}
+        task = {"condition_task": condition_task}
         # Condition tasks don't have traditional parameters
         task_parameters = {}
         return DatabricksConditionTask(
             task_key=job_task_config["task_key"],
-            task_config=task_config,
+            task=task,
             task_parameters=task_parameters,
             depends_on=parse_depends_on(job_task_config.get("depends_on", [])),
             job_name=job_task_config["job_name"],
