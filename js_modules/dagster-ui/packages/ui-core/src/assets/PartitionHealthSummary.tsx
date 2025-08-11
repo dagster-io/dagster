@@ -26,7 +26,7 @@ export const PartitionHealthSummary = memo((props: Props) => {
   const handlePartitionInteraction = useCallback((selectedPartitions: string[], dimension?: PartitionHealthDimension) => {
     
     if (selectedPartitions.length > 0) {
-      const firstPartition = selectedPartitions.length > 0 ? selectedPartitions[0] : null;
+      const firstPartition = selectedPartitions[0] ?? null;
       const lastPartition = selectedPartitions.length > 0 ? selectedPartitions[selectedPartitions.length - 1] : null;
 
       if (!firstPartition || !lastPartition) {
