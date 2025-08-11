@@ -159,7 +159,7 @@ class DatabricksPythonWheelTask:
         return "python_wheel"
 
     @cached_property
-    def task_config(self) -> Mapping[str, Any]:
+    def task_config_metadata(self) -> Mapping[str, Any]:
         task_config_metadata = {}
         wheel_config = self.task_config["python_wheel_task"]
         task_config_metadata["package_name"] = wheel_config["package_name"]
