@@ -264,11 +264,11 @@
     },
     {
       "source": "/api/dg/dg-cli",
-      "destination": "/api/clis/dg-cli"
+      "destination": "/api/clis/dg-cli/dg-cli-reference"
     },
     {
       "source": "/api/dg/dg-cli-configuration",
-      "destination": "/api/clis/dg-cli-configuration"
+      "destination": "/api/clis/dg-cli/dg-cli-configuration"
     },
     {
       "source": "/deploying/celery",
