@@ -109,7 +109,7 @@ class DatabricksConditionTask:
 @record
 class DatabricksSparkPythonTask:
     task_key: str
-    task: Mapping[str, Any]
+    task_config: Mapping[str, Any]
     task_parameters: Mapping[str, Any]
     depends_on: list[str]
     job_name: str
@@ -121,23 +121,23 @@ class DatabricksSparkPythonTask:
 
     @cached_property
     def task_config(self) -> Mapping[str, Any]:
-        task_config = {}
-        python_config = self.task["spark_python_task"]
-        task_config["python_file"] = python_config["python_file"]
-        task_config["parameters"] = self.task.get("parameters", {})
-        return task_config
+        task_config_metadata = {}
+        python_config = self.task_config["spark_python_task"]
+        task_config_metadata["python_file"] = python_config["python_file"]
+        task_config_metadata["parameters"] = self.task_config.get("parameters", {})
+        return task_config_metadata
 
     @classmethod
     def from_job_task_config(
         cls, job_task_config: Mapping[str, Any]
     ) -> "DatabricksSparkPythonTask":
         spark_python_task = job_task_config["spark_python_task"]
-        task = {"spark_python_task": spark_python_task}
+        task_config = {"spark_python_task": spark_python_task}
         # Spark Python tasks use parameters differently
         task_parameters = spark_python_task.get("parameters", [])
         return DatabricksSparkPythonTask(
             task_key=job_task_config["task_key"],
-            task=task,
+            task_config=task_config,
             task_parameters=task_parameters,
             depends_on=parse_depends_on(job_task_config.get("depends_on", [])),
             job_name=job_task_config["job_name"],
