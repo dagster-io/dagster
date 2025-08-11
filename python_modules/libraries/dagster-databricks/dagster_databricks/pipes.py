@@ -180,11 +180,12 @@ class PipesDatabricksClient(BasePipesDatabricksClient, TreatAsResourceParam):
         self.env = env
         super().__init__(
             client=client,
-            context_injector= check.opt_inst_param(
+            context_injector=check.opt_inst_param(
                 context_injector,
                 "context_injector",
                 PipesContextInjector,
-            ) or PipesDbfsContextInjector(client=client),
+            )
+            or PipesDbfsContextInjector(client=client),
             message_reader=check.opt_inst_param(
                 message_reader,
                 "message_reader",
@@ -592,18 +593,18 @@ class PipesDatabricksServerlessClient(BasePipesDatabricksClient, TreatAsResource
         self.volume_path = volume_path
         super().__init__(
             client=client,
-            context_injector= check.opt_inst_param(
+            context_injector=check.opt_inst_param(
                 context_injector,
                 "context_injector",
                 PipesContextInjector,
-            ) or PipesUnityCatalogVolumesContextInjector(
-                client=client, volume_path=self.volume_path
-            ),
+            )
+            or PipesUnityCatalogVolumesContextInjector(client=client, volume_path=self.volume_path),
             message_reader=check.opt_inst_param(
                 message_reader,
                 "message_reader",
                 PipesMessageReader,
-            ) or PipesUnityCatalogVolumesMessageReader(
+            )
+            or PipesUnityCatalogVolumesMessageReader(
                 client=client,
                 volume_path=self.volume_path,
             ),
