@@ -12,6 +12,7 @@
     "lint": "eslint src/ --ext=.tsx,.ts,.js,.graphql --fix -c .eslintrc.js",
     "lint:ci": "eslint src/ --ext=.tsx,.ts,.js,.graphql -c .eslintrc.js",
     "ts": "tsc -p .",
+    "ts:workers": "tsc -p ./tsconfig.workers.json",
     "generate-graphql": "ts-node -O '{\"module\": \"commonjs\"}' ./src/scripts/generateGraphQLTypes.ts",
     "generate-perms": "ts-node -O '{\"module\": \"commonjs\"}' ./src/scripts/generatePermissions.ts",
     "generate-asset-selection": "ts-node -O '{\"module\": \"commonjs\"}' ./src/scripts/generateAssetSelection.ts && eslint src/asset-selection/generated/ --fix -c .eslintrc.js",
