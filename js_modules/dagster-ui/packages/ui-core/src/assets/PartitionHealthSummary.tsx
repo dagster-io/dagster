@@ -27,7 +27,7 @@ export const PartitionHealthSummary = memo((props: Props) => {
     
     if (selectedPartitions.length > 0) {
       const firstPartition = selectedPartitions[0] ?? null;
-      const lastPartition = selectedPartitions.length > 0 ? selectedPartitions[selectedPartitions.length - 1] : null;
+      const lastPartition = selectedPartitions[selectedPartitions.length - 1] ?? null;
 
       if (!firstPartition || !lastPartition) {
         return;
