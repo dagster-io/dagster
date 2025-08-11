@@ -48,11 +48,11 @@ class DatabricksNotebookTask:
 
     @cached_property
     def task_config_metadata(self) -> Mapping[str, Any]:
-        task_config = {}
+        task_config_metadata = {}
         notebook_task = self.task_config["notebook_task"]
-        task_config["notebook_path"] = notebook_task.get("notebook_path", "")
-        task_config["parameters"] = notebook_task.get("base_parameters", {})
-        return task_config
+        task_config_metadata["notebook_path"] = notebook_task.get("notebook_path", "")
+        task_config_metadata["parameters"] = notebook_task.get("base_parameters", {})
+        return task_config_metadata
 
     @classmethod
     def from_job_task_config(cls, job_task_config: Mapping[str, Any]) -> "DatabricksNotebookTask":
