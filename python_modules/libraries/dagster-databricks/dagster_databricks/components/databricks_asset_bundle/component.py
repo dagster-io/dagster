@@ -73,4 +73,16 @@ class DatabricksAssetBundleComponent(Component, Resolvable):
         )
 
     def build_defs(self, context: ComponentLoadContext) -> Definitions:
-        raise NotImplementedError()
+        # TODO: support job name prefix in multi-asset name
+        # TODO: support multi-notebook job config
+        @dg.multi_asset(
+            name=f"databricks_multi_asset",
+            specs=[self.get_asset_spec(task) for task in self.configs.all_tasks],
+            can_subset=True,
+        )
+        def multi_notebook_job_asset(
+            context: dg.AssetExecutionContext,
+        ):
+            ...
+
+        return Definitions(assets=[multi_notebook_job_asset])
