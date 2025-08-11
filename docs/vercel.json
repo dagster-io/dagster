@@ -586,7 +586,7 @@
     },
     {
       "source": "/dagster-plus/managing-deployments/dagster-cloud-cli",
-      "destination": "/deployment/dagster-plus/management/dagster-cloud-cli"
+      "destination": "/api/clis/dagster-cloud-cli"
     },
     {
       "source": "/dagster-plus/developing-testing/code-locations",
@@ -1415,7 +1415,11 @@
     },
     {
       "source": "/dagster-plus/managing-deployments/dagster-plus-cli",
-      "destination": "/deployment/dagster-plus/management/dagster-cloud-cli"
+      "destination": "/api/clis/dagster-cloud-cli"
+    },
+    {
+      "source": "/deployment/dagster-plus/management/dagster-cloud-cli",
+      "destination": "/api/clis/dagster-cloud-cli"
     },
     {
       "source": "/dagster-plus/references/ci-cd-file-reference",
