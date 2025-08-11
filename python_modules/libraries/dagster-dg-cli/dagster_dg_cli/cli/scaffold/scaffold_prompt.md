@@ -15,7 +15,7 @@ This session was started via the Dagster CLI `dg`. Your job is to complete the f
    Do not modify other YAML files. Do not create or modify Python files.
    Do your best attempt to address the request, and exit once you would have to modify a file that is not a `defs.yaml` file.
    It is acceptable to produce an invalid `defs.yaml` file, but generally try to produce a valid file.
-4. Create `MISSION.md` file adjacent to `defs.yaml`. In this file, dump a human and AI friendly version of your accumulated
+4. Create `NEXT_STEPS.md` file adjacent to `defs.yaml`. In this file, dump a human and AI friendly version of your accumulated
    knowledge and context of the task and the next steps which should be taken to finish the task.
 5. Update the newly generated `defs.yaml` file to mention all environment variables used across the scaffolded files. Insert this
    at the end of the file. Do so with the format:
@@ -29,9 +29,9 @@ This session was started via the Dagster CLI `dg`. Your job is to complete the f
 
 ## Rules
 
-DO NOT TRY TO DIRECTLY EDIT A FILE WHICH IS NOT NAMED `defs.yaml` OR `MISSION.md`.
+DO NOT TRY TO DIRECTLY EDIT A FILE WHICH IS NOT NAMED `defs.yaml` OR `NEXT_STEPS.md`.
 YOU DO NOT HAVE ACCESS TO EDIT THESE FILES. DO NOT REQUEST ACCESS TO EDIT THESE FILES.
-Instead, note that the file should be updated as part of the next steps instructions in `MISSION.md`.
+Instead, note that the file should be updated as part of the next steps instructions in `NEXT_STEPS.md`.
 
 ## Context
 

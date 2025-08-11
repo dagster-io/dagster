@@ -159,10 +159,10 @@ def _allowed_commands_scaffolding() -> list[str]:
         "Replace(**/*defs.yaml)",
         "Update(**/*defs.yaml)",
         "Write(**/*defs.yaml)",
-        "Edit(**/*MISSION.md)",
-        "Replace(**/*MISSION.md)",
-        "Update(**/*MISSION.md)",
-        "Write(**/*MISSION.md)",
+        "Edit(**/*NEXT_STEPS.md)",
+        "Replace(**/*NEXT_STEPS.md)",
+        "Update(**/*NEXT_STEPS.md)",
+        "Write(**/*NEXT_STEPS.md)",
         "Bash(touch:*)",
     ]
 
