@@ -685,9 +685,6 @@ const AssetGraphExplorerWithData = ({
   const {isFullScreen, toggleFullScreen} = useFullScreen();
 
   const toggleFullScreenButton = useMemo(() => {
-    if (viewType === AssetGraphViewType.CATALOG) {
-      return null;
-    }
     return (
       <Tooltip content={isFullScreen ? 'Collapse' : 'Expand'}>
         <Button
@@ -696,7 +693,7 @@ const AssetGraphExplorerWithData = ({
         />
       </Tooltip>
     );
-  }, [viewType, toggleFullScreen, isFullScreen]);
+  }, [toggleFullScreen, isFullScreen]);
 
   const explorer = (
     <SplitPanelContainer
