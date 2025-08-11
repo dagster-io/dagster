@@ -36,7 +36,7 @@ def parse_depends_on(depends_on: Optional[list]) -> list[str]:
 @record
 class DatabricksNotebookTask:
     task_key: str
-    task_config: Mapping[str, Any]
+    task: Mapping[str, Any]
     task_parameters: Mapping[str, Any]
     depends_on: list[str]
     job_name: str
@@ -57,11 +57,11 @@ class DatabricksNotebookTask:
     @classmethod
     def from_job_task_config(cls, job_task_config: Mapping[str, Any]) -> "DatabricksNotebookTask":
         notebook_task = job_task_config["notebook_task"]
-        task_config = {"notebook_path": notebook_task.get("notebook_path", "")}
+        task = {"notebook_path": notebook_task.get("notebook_path", "")}
         task_parameters = notebook_task.get("base_parameters", {})
         return DatabricksNotebookTask(
             task_key=job_task_config["task_key"],
-            task_config=task_config,
+            task=task,
             task_parameters=task_parameters,
             depends_on=parse_depends_on(job_task_config.get("depends_on", [])),
             job_name=job_task_config["job_name"],
