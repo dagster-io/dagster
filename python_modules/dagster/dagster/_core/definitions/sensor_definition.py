@@ -32,7 +32,6 @@ from dagster._core.definitions.instigation_logger import InstigationLogger
 from dagster._core.definitions.job_definition import JobDefinition
 from dagster._core.definitions.metadata import RawMetadataMapping, normalize_metadata
 from dagster._core.definitions.metadata.metadata_value import MetadataValue
-from dagster._core.definitions.partitions.utils import CachingDynamicPartitionsLoader
 from dagster._core.definitions.resource_annotation import get_resource_args
 from dagster._core.definitions.resource_definition import Resources
 from dagster._core.definitions.run_request import (
@@ -56,6 +55,7 @@ from dagster._core.errors import (
 )
 from dagster._core.instance import DagsterInstance
 from dagster._core.instance.ref import InstanceRef
+from dagster._core.instance.types import CachingDynamicPartitionsLoader
 from dagster._core.storage.dagster_run import DagsterRun
 from dagster._serdes import whitelist_for_serdes
 from dagster._time import get_current_datetime
@@ -72,7 +72,7 @@ if TYPE_CHECKING:
     from dagster._core.definitions.unresolved_asset_job_definition import (
         UnresolvedAssetJobDefinition,
     )
-    from dagster._core.remote_representation.origin import CodeLocationOrigin
+    from dagster._core.remote_origin import CodeLocationOrigin
 
 
 @whitelist_for_serdes
@@ -167,7 +167,7 @@ class SensorEvaluationContext:
     ):
         from dagster._core.definitions.definitions_class import Definitions
         from dagster._core.definitions.repository_definition import RepositoryDefinition
-        from dagster._core.remote_representation.origin import CodeLocationOrigin
+        from dagster._core.remote_origin import CodeLocationOrigin
 
         self._exit_stack = ExitStack()
         self._instance_ref = check.opt_inst_param(instance_ref, "instance_ref", InstanceRef)

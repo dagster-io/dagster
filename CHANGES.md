@@ -1,5 +1,25 @@
 # Changelog
 
+## 1.11.5 (core) / 0.27.5 (libraries)
+
+### New
+
+- Static functions on classes decorated with `@template_var` can now optionally accept a `ComponentLoadContext` argument.
+- [dg] A MCP server is available to expose `dg` CLI capabilities to MCP clients. See the `dg mcp` CLI group for details.
+- [dagster-dbt] The `dagster-dbt` package no longer has a dependency on `dbt-core`.
+- [dagster-dbt][preview] Users of the dbt Fusion CLI can now use the `dagster-dbt` package to run dbt commands with no changes to their existing dagster code. This support is still in preview as the format of the log messages produced by the dbt Fusion CLI is still subject to change. Let us know if you notice any incompatibilities.
+- [dagster-databricks] Added a `PipesDatabricksServerlessClient` to support Databricks Serverless jobs with Dagster pipes.
+- [dagster-databricks] Added additional options for cluster configuration (thanks [@jmccartin](https://github.com/jmccartin)!)
+
+### Bugfixes
+
+- Various bugfixes for backfills that target assets which change their partitions definition mid-backfill.
+- [ui] Fixed issue that could cause errors related to the `ObjectMetadataValue` class.
+
+### Documentation
+
+- Added docs for using Spark Connect and Databricks Connect with Dagster.
+
 ## 1.11.4 (core) / 0.27.4 (libraries)
 
 ### New
@@ -3466,7 +3486,7 @@ meta:
 ### Documentation
 
 - Added a link to Dagster University to the [docs landing page](https://docs.dagster.io) 🎓
-- Improved readability of [API docs landing page](https://docs.dagster.io/_apidocs)
+- Improved readability of [API docs landing page](https://docs.dagster.io/api)
 - Removed straggling mention of Dagit from the [Kubernetes OSS deployment guide](https://docs.dagster.io/deployment/guides/kubernetes/deploying-with-helm)
 
 ## 1.5.4 / 0.21.4 (libraries)

@@ -19,15 +19,13 @@ from dagster._core.definitions.data_version import DATA_VERSION_TAG
 from dagster._core.definitions.dependency import NodeHandle
 from dagster._core.definitions.events import UNDEFINED_ASSET_KEY_PATH, AssetLineageInfo
 from dagster._core.definitions.metadata import MetadataValue
+from dagster._core.definitions.partitions.snap import StaticPartitionsSnap
 from dagster._core.events import DagsterEventType, StepMaterializationData
 from dagster._core.execution.backfill import BulkActionsFilter, BulkActionStatus, PartitionBackfill
 from dagster._core.execution.plan.outputs import StepOutputHandle
 from dagster._core.execution.plan.state import KnownExecutionState
 from dagster._core.instance import DagsterInstance, InstanceRef
-from dagster._core.remote_representation.external_data import (
-    StaticPartitionsSnap,
-    partition_set_snap_name_for_job_name,
-)
+from dagster._core.remote_representation.external_data import partition_set_snap_name_for_job_name
 from dagster._core.scheduler.instigation import InstigatorState, InstigatorTick
 from dagster._core.storage.dagster_run import DagsterRunStatus, RunsFilter
 from dagster._core.storage.event_log.migration import migrate_event_log_data
@@ -659,7 +657,7 @@ def test_remote_job_origin_instigator_origin():
 
     legacy_env, klass, repo_klass, location_klass = build_legacy_whitelist_map()
 
-    from dagster._core.remote_representation.origin import (
+    from dagster._core.remote_origin import (
         GrpcServerCodeLocationOrigin,
         RemoteInstigatorOrigin,
         RemoteRepositoryOrigin,
@@ -908,7 +906,7 @@ def test_repo_label_tag_migration():
 
 
 def test_add_bulk_actions_columns():
-    from dagster._core.remote_representation.origin import (
+    from dagster._core.remote_origin import (
         GrpcServerCodeLocationOrigin,
         RemotePartitionSetOrigin,
         RemoteRepositoryOrigin,
@@ -1409,7 +1407,7 @@ def test_add_backfill_tags():
 
 
 def test_add_bulk_actions_job_name_column():
-    from dagster._core.remote_representation.origin import (
+    from dagster._core.remote_origin import (
         GrpcServerCodeLocationOrigin,
         RemotePartitionSetOrigin,
         RemoteRepositoryOrigin,

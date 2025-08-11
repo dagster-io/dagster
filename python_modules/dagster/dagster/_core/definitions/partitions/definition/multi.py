@@ -38,11 +38,11 @@ from dagster._core.errors import (
     DagsterInvalidInvocationError,
     DagsterUnknownPartitionError,
 )
-from dagster._core.instance import DynamicPartitionsStore
 from dagster._core.types.pagination import PaginatedResults
 
 if TYPE_CHECKING:
     from dagster._core.definitions.partitions.subset.partitions_subset import PartitionsSubset
+    from dagster._core.instance import DynamicPartitionsStore
 
 ALLOWED_PARTITION_DIMENSION_TYPES = (
     StaticPartitionsDefinition,
@@ -139,7 +139,7 @@ class MultiPartitionsDefinition(PartitionsDefinition[MultiPartitionKey]):
     def get_partition_keys_in_range(  # pyright: ignore[reportIncompatibleMethodOverride]
         self,
         partition_key_range: PartitionKeyRange,
-        dynamic_partitions_store: Optional[DynamicPartitionsStore] = None,
+        dynamic_partitions_store: Optional["DynamicPartitionsStore"] = None,
     ) -> Sequence[str]:
         with partition_loading_context(dynamic_partitions_store=dynamic_partitions_store):
             start: MultiPartitionKey = self.get_partition_key_from_str(partition_key_range.start)
@@ -233,7 +233,7 @@ class MultiPartitionsDefinition(PartitionsDefinition[MultiPartitionKey]):
     def get_partition_keys(
         self,
         current_time: Optional[datetime] = None,
-        dynamic_partitions_store: Optional[DynamicPartitionsStore] = None,
+        dynamic_partitions_store: Optional["DynamicPartitionsStore"] = None,
     ) -> Sequence[MultiPartitionKey]:
         """Returns a list of MultiPartitionKeys representing the partition keys of the
         PartitionsDefinition.

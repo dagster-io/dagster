@@ -6,6 +6,8 @@ last_update:
 sidebar_custom_props:
   logo: images/integrations/openai.svg
 tags: [code-example]
+canonicalUrl: '/examples/llm-fine-tuning'
+slug: '/examples/llm-fine-tuning'
 ---
 
 # Fine-tune an LLM

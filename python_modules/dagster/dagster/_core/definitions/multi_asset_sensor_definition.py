@@ -39,7 +39,7 @@ from dagster._utils.warnings import deprecation_warning, normalize_renamed_param
 if TYPE_CHECKING:
     from dagster._core.definitions.definitions_class import Definitions
     from dagster._core.definitions.repository_definition import RepositoryDefinition
-    from dagster._core.remote_representation.origin import CodeLocationOrigin
+    from dagster._core.remote_origin import CodeLocationOrigin
     from dagster._core.storage.event_log.base import EventLogRecord
 
 MAX_NUM_UNCONSUMED_EVENTS = 25

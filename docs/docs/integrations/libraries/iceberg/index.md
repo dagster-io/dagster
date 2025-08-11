@@ -9,6 +9,8 @@ sidebar_custom_props:
   logo: images/integrations/iceberg.svg
   community: true
 partnerlink: https://iceberg.apache.org/
+canonicalUrl: '/integrations/libraries/iceberg'
+slug: '/integrations/libraries/iceberg'
 ---
 
 import Preview from '@site/docs/partials/\_Preview.md';

@@ -19,7 +19,7 @@ There are several ways to partition your data in Dagster:
 
 :::note
 
-We recommend limiting the number of partitions for each asset to 25,000 or fewer. Assets with partition counts exceeding this limit will likely have slower load times in the UI.
+We recommend limiting the number of partitions for each asset to 100,000 or fewer. Assets with partition counts exceeding this limit will likely have slower load times in the UI.
 
 :::
 

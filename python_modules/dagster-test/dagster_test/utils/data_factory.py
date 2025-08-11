@@ -22,6 +22,7 @@ from dagster._core.events import (
     ResolvedFromDynamicStepHandle,
     StepHandle,
 )
+from dagster._core.remote_origin import RemoteJobOrigin
 from dagster._core.remote_representation.external import RemoteRepository
 from dagster._core.remote_representation.external_data import (
     JobDataSnap,
@@ -30,7 +31,7 @@ from dagster._core.remote_representation.external_data import (
 )
 from dagster._core.remote_representation.handle import RepositoryHandle
 from dagster._core.storage.dagster_run import RunOpConcurrency
-from dagster._grpc.types import JobPythonOrigin, RemoteJobOrigin, SerializableErrorInfo
+from dagster._grpc.types import JobPythonOrigin, SerializableErrorInfo
 from pydantic import UUID4
 
 
@@ -103,6 +104,7 @@ def dagster_run(
     job_code_origin: Optional[JobPythonOrigin] = None,
     has_repository_load_data: bool = False,
     run_op_concurrency: Optional[RunOpConcurrency] = None,
+    **kwargs,
 ):
     if run_id is None:
         run_id_str = str(uuid4())
@@ -130,6 +132,7 @@ def dagster_run(
         job_code_origin=job_code_origin,
         has_repository_load_data=has_repository_load_data,
         run_op_concurrency=run_op_concurrency,
+        **kwargs,
     )
 
 

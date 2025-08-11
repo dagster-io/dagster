@@ -417,7 +417,8 @@ const LaunchAssetChoosePartitionsDialogBody = ({
       notices.push(
         `Only ${partitionCountString(
           keysFiltered.length,
-        )} failed and missing partitions will be materialized.`,
+          'failed and missing',
+        )} partitions will be materialized.`,
       );
     }
     return notices.join(' ');

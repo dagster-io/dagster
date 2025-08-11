@@ -1150,7 +1150,9 @@ async def execute_asset_backfill_iteration(
         from dagster._core.execution.backfill import cancel_backfill_runs_and_cancellation_complete
 
         all_runs_canceled = cancel_backfill_runs_and_cancellation_complete(
-            instance=instance, backfill_id=backfill.backfill_id
+            instance=instance,
+            backfill_id=backfill.backfill_id,
+            logger=logger,
         )
 
         # Update the asset backfill data to contain the newly materialized/failed partitions.
@@ -1712,7 +1714,7 @@ def _should_backfill_atomic_asset_subset_unit(
         )
 
         if not possibly_waiting_for_parent_subset.is_empty:
-            cant_run_with_parent_reason = _get_cant_run_with_parent_reason(
+            cant_run_because_of_parent_reason = _get_cant_run_because_of_parent_reason(
                 targeted_but_not_materialized_parent_subset,
                 entity_subset_to_filter,
                 asset_graph_view,
@@ -1724,7 +1726,7 @@ def _should_backfill_atomic_asset_subset_unit(
             )
             is_self_dependency = parent_key == asset_key
 
-            if cant_run_with_parent_reason is not None:
+            if cant_run_because_of_parent_reason is not None:
                 # if any parents are also being requested this tick and there is any reason to
                 # believe that any parent can't be materialized with its child subset, then filter out
                 # the whole child subset for now, to ensure that the parent and child aren't submitted
@@ -1736,7 +1738,7 @@ def _should_backfill_atomic_asset_subset_unit(
                     failure_subsets_with_reasons.append(
                         (
                             entity_subset_to_filter.get_internal_value(),
-                            cant_run_with_parent_reason,
+                            cant_run_because_of_parent_reason,
                         )
                     )
                     entity_subset_to_filter = asset_graph_view.get_empty_subset(
@@ -1749,7 +1751,7 @@ def _should_backfill_atomic_asset_subset_unit(
                     failure_subsets_with_reasons.append(
                         (
                             possibly_waiting_for_parent_subset.get_internal_value(),
-                            cant_run_with_parent_reason,
+                            cant_run_because_of_parent_reason,
                         )
                     )
 
@@ -1808,7 +1810,7 @@ def _should_backfill_atomic_asset_subset_unit(
     )
 
 
-def _get_cant_run_with_parent_reason(
+def _get_cant_run_because_of_parent_reason(
     parent_subset: EntitySubset[AssetKey],
     entity_subset_to_filter: EntitySubset[AssetKey],
     asset_graph_view: AssetGraphView,
@@ -1829,8 +1831,45 @@ def _get_cant_run_with_parent_reason(
     partition_mapping = asset_graph.get_partition_mapping(
         candidate_asset_key, parent_asset_key=parent_asset_key
     )
+    is_self_dependency = parent_asset_key == candidate_asset_key
 
-    # First filter out cases where even if the parent was requested this iteration, it wouldn't
+    # first handle the common case where the parent hasn't even been materialized yet, or is
+    # currently being materialized but not requesting the right partitions
+
+    if not (
+        # this check is here to guard against cases where the parent asset has a superset of
+        # the child asset's asset partitions, which will mean that the runs that would be created
+        # would not combine the parent and child assets into a single run. this is not relevant
+        # for self-dependencies, because the parent and child are the same asset.
+        is_self_dependency
+        or (
+            # in the typical case, we will only allow this candidate subset to be requested if
+            # it contains exactly the same partitions as its parent asset for this evaluation,
+            # otherwise they may end up in different runs
+            parent_being_requested_this_tick_subset.get_internal_value()
+            == entity_subset_to_filter.get_internal_value()
+        )
+        or (
+            # for non-subsettable multi-assets, we will not have yet requested the parent asset
+            # partitions, so we just check that we have a matching set of partitions
+            asset_graph_view.get_entity_subset_from_asset_graph_subset(
+                candidate_asset_graph_subset_unit, parent_asset_key
+            ).get_internal_value()
+            == entity_subset_to_filter.get_internal_value()
+        )
+    ):
+        if (
+            len(candidate_asset_graph_subset_unit.asset_keys) == 1
+            and parent_being_requested_this_tick_subset.is_empty
+        ):
+            return f"Waiting for parent {parent_node.key.to_user_string()} to be materialized."
+
+        return (
+            f"parent {parent_node.key.to_user_string()} is requesting a different set of partitions from "
+            f"{candidate_node.key.to_user_string()}, meaning they cannot be grouped together in the same run."
+        )
+
+    # Then filter out cases where even if the parent was requested this iteration, it wouldn't
     # matter, because the parent and child can't execute in the same run
 
     # checks if there is a simple partition mapping between the parent and the child
@@ -1864,8 +1903,6 @@ def _get_cant_run_with_parent_reason(
 
     num_parent_partitions_being_requested_this_tick = parent_being_requested_this_tick_subset.size
 
-    is_self_dependency = parent_asset_key == candidate_asset_key
-
     has_self_dependency = any(
         parent_key == candidate_asset_key for parent_key in candidate_node.parent_keys
     )
@@ -1878,33 +1915,6 @@ def _get_cant_run_with_parent_reason(
         and num_parent_partitions_being_requested_this_tick > 0
     ):
         return "Self-dependant assets cannot be materialized in the same run as other assets."
-
-    if not (
-        # this check is here to guard against cases where the parent asset has a superset of
-        # the child asset's asset partitions, which will mean that the runs that would be created
-        # would not combine the parent and child assets into a single run. this is not relevant
-        # for self-dependencies, because the parent and child are the same asset.
-        is_self_dependency
-        or (
-            # in the typical case, we will only allow this candidate subset to be requested if
-            # it contains exactly the same partitions as its parent asset for this evaluation,
-            # otherwise they may end up in different runs
-            parent_being_requested_this_tick_subset.get_internal_value()
-            == entity_subset_to_filter.get_internal_value()
-        )
-        or (
-            # for non-subsettable multi-assets, we will not have yet requested the parent asset
-            # partitions, so we just check that we have a matching set of partitions
-            asset_graph_view.get_entity_subset_from_asset_graph_subset(
-                candidate_asset_graph_subset_unit, parent_asset_key
-            ).get_internal_value()
-            == entity_subset_to_filter.get_internal_value()
-        )
-    ):
-        return (
-            f"parent {parent_node.key.to_user_string()} is requesting a different set of partitions from "
-            f"{candidate_node.key.to_user_string()}, meaning they cannot be grouped together in the same run."
-        )
 
     if is_self_dependency:
         if parent_node.backfill_policy is None:

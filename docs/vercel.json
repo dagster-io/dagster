@@ -131,6 +131,10 @@
       "destination": "/api/dagster/internals"
     },
     {
+      "source": "/_apidocs",
+      "destination": "/api"
+    },
+    {
       "source": "/sections/api/apidocs/:path*/",
       "destination": "/api",
       "permanent": false
@@ -1958,6 +1962,38 @@
       "destination": "/guides/build/projects/multiple-projects"
     },
     {
+      "source": "/guides/build/components/integrations/dlt-component-tutorial",
+      "destination": "/integrations/libraries/dlt"
+    },
+    {
+      "source": "/guides/build/components/integrations/sling-component-tutorial",
+      "destination": "/integrations/libraries/sling"
+    },
+    {
+      "source": "/guides/build/components/integrations/fivetran-component-tutorial",
+      "destination": "/integrations/libraries/fivetran"
+    },
+    {
+      "source": "/guides/build/components/integrations/airbyte-cloud-component-tutorial",
+      "destination": "/integrations/libraries/airbyte/airbyte-cloud-component"
+    },
+    {
+      "source": "/guides/build/components/integrations/powerbi-component-tutorial",
+      "destination": "/integrations/libraries/powerbi"
+    },
+    {
+      "source": "/guides/build/components/integrations/snowflake-sql-component-tutorial",
+      "destination": "/integrations/libraries/snowflake/snowflake-sql-component"
+    },
+    {
+      "source": "/guides/build/components/integrations/dbt-component-tutorial",
+      "destination": "/integrations/libraries/dbt/dbt-component"
+    },
+    {
+      "source": "/guides/build/components/integrations",
+      "destination": "/integrations/libraries"
+    },
+    {
       "source": "/guides/preview/",
       "destination": "/guides/labs",
       "permanent": false
@@ -3040,11 +3076,15 @@
     },
     {
       "source": "/guides/deploy/instance-configuration",
-      "destination": "/deployment/instance-configuration/oss-instance-configuration"
+      "destination": "/deployment/oss/oss-instance-configuration"
+    },
+    {
+      "source": "/guides/deploy/dagster-instance-configuration",
+      "destination": "/deployment/oss/oss-instance-configuration"
     },
     {
       "source": "/guides/deploy/dagster-yaml",
-      "destination": "/deployment/instance-configuration/dagster-yaml"
+      "destination": "/deployment/oss/dagster-yaml"
     },
     {
       "source": "/guides/deploy/using-environment-variables-and-secrets",
@@ -3121,6 +3161,10 @@
     {
       "source": "/dagster-plus/deployment/deployment-types/hybrid/:path*",
       "destination": "/deployment/dagster-plus/hybrid/:path*"
+    },
+    {
+      "source": "/dagster-plus/deployment/deployment-types/multi-tenancy",
+      "destination": "/deployment/dagster-plus/hybrid/multiple"
     },
     {
       "source": "/dagster-plus/deployment/management/deployments",

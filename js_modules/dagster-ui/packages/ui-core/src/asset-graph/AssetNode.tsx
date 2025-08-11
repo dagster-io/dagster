@@ -6,7 +6,7 @@ import {observeEnabled} from 'shared/app/observeEnabled.oss';
 import styled, {CSSObject} from 'styled-components';
 
 import {ASSET_NODE_HOVER_EXPAND_HEIGHT} from './AssetNode2025';
-import {AssetNodeFacet} from './AssetNodeFacets';
+import {AssetNodeFacet} from './AssetNodeFacetsUtil';
 import {AssetNodeHealthRow} from './AssetNodeHealthRow';
 import {AssetNodeMenuProps, useAssetNodeMenu} from './AssetNodeMenu';
 import {buildAssetNodeStatusContent} from './AssetNodeStatusContent';

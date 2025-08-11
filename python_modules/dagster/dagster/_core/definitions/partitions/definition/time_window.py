@@ -23,7 +23,6 @@ from dagster._core.definitions.partitions.schedule_type import (
 from dagster._core.definitions.partitions.utils.time_window import TimeWindow, TimeWindowCursor
 from dagster._core.definitions.timestamp import TimestampWithTimezone
 from dagster._core.errors import DagsterInvalidDefinitionError
-from dagster._core.instance import DynamicPartitionsStore
 from dagster._core.types.pagination import PaginatedResults
 from dagster._record import IHaveNew, record_custom
 from dagster._serdes import whitelist_for_serdes
@@ -43,6 +42,7 @@ from dagster._utils.schedules import (
 if TYPE_CHECKING:
     from dagster._core.definitions.partitions.subset.partitions_subset import PartitionsSubset
     from dagster._core.definitions.partitions.subset.time_window import TimeWindowPartitionsSubset
+    from dagster._core.instance import DynamicPartitionsStore
 
 
 @whitelist_for_serdes
@@ -275,7 +275,7 @@ class TimeWindowPartitionsDefinition(PartitionsDefinition, IHaveNew):
     def get_partition_keys(
         self,
         current_time: Optional[datetime] = None,
-        dynamic_partitions_store: Optional[DynamicPartitionsStore] = None,
+        dynamic_partitions_store: Optional["DynamicPartitionsStore"] = None,
     ) -> Sequence[str]:
         with partition_loading_context(current_time, dynamic_partitions_store):
             current_timestamp = self._get_current_timestamp()
@@ -920,7 +920,7 @@ class TimeWindowPartitionsDefinition(PartitionsDefinition, IHaveNew):
         )
 
     def get_serializable_unique_identifier(
-        self, dynamic_partitions_store: Optional[DynamicPartitionsStore] = None
+        self, dynamic_partitions_store: Optional["DynamicPartitionsStore"] = None
     ) -> str:
         return hashlib.sha1(self.__repr__().encode("utf-8")).hexdigest()
 

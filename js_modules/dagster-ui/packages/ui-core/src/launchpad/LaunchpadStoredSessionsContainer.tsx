@@ -12,7 +12,7 @@ import {
   useExecutionSessionStorage,
   useInitialDataForMode,
 } from '../app/ExecutionSessionStorage';
-import {useFeatureFlags} from '../app/Flags';
+import {useFeatureFlags} from '../app/useFeatureFlags';
 import {useSetStateUpdateCallback} from '../hooks/useSetStateUpdateCallback';
 import {RepoAddress} from '../workspace/types';
 

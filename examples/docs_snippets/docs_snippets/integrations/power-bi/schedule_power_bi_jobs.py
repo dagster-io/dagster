@@ -27,7 +27,7 @@ power_bi_assets = [
 
 power_bi_assets_job = dg.define_asset_job(
     name="power_bi_assets_job",
-    selection=["my_semantic_model_asset_key"],
+    selection=power_bi_assets,
 )
 
 # start_power_bi_schedule

@@ -9,9 +9,11 @@ from dagster._core.definitions.partitions.definition import (
     MultiPartitionsDefinition,
     StaticPartitionsDefinition,
 )
+from dagster._core.definitions.partitions.snap import PartitionsSnap
 from dagster._core.definitions.partitions.subset import (
     AllPartitionsSubset,
     DefaultPartitionsSubset,
+    KeyRangesPartitionsSubset,
     TimeWindowPartitionsSubset,
 )
 from dagster._core.definitions.partitions.utils import PersistedTimeWindow
@@ -272,6 +274,62 @@ def test_multi_partition_subset_to_range_conversion():
             multi_partitions_def.get_partition_keys_in_range(partition_key_range)
         )
     assert sorted(partition_keys_from_ranges) == sorted(target_partitions)
+
+
+def test_key_ranges_subset():
+    color_partition = dg.StaticPartitionsDefinition(["red", "yellow", "blue", "green", "orange"])
+
+    key_ranges_subset = KeyRangesPartitionsSubset(
+        key_ranges=[
+            dg.PartitionKeyRange("red", "blue"),
+            dg.PartitionKeyRange("orange", "orange"),
+        ],
+        partitions_snap=PartitionsSnap.from_def(color_partition),
+    )
+
+    assert key_ranges_subset.get_partition_keys_not_in_subset(color_partition) == {"green"}
+    assert not key_ranges_subset.is_empty
+    assert key_ranges_subset.partitions_definition == color_partition
+
+    assert key_ranges_subset.get_partition_key_ranges(color_partition) == [
+        dg.PartitionKeyRange("red", "blue"),
+        dg.PartitionKeyRange("orange", "orange"),
+    ]
+
+    assert key_ranges_subset.get_partition_keys() == ["red", "yellow", "blue", "orange"]
+
+    assert key_ranges_subset.with_partition_keys(["green"]) == DefaultPartitionsSubset(
+        {"red", "yellow", "blue", "green", "orange"}
+    )
+
+    assert KeyRangesPartitionsSubset.can_deserialize(
+        color_partition, key_ranges_subset.serialize(), None, None
+    )
+
+    assert (
+        KeyRangesPartitionsSubset.from_serialized(color_partition, key_ranges_subset.serialize())
+        == key_ranges_subset
+    )
+
+    assert "yellow" in key_ranges_subset
+    assert "orange" in key_ranges_subset
+    assert "green" not in key_ranges_subset
+
+    assert len(key_ranges_subset) == 4
+
+    empty_subset = KeyRangesPartitionsSubset(
+        key_ranges=[], partitions_snap=PartitionsSnap.from_def(color_partition)
+    )
+
+    assert empty_subset == key_ranges_subset.empty_subset()
+    assert empty_subset == KeyRangesPartitionsSubset.create_empty_subset(color_partition)
+
+    assert len(empty_subset) == 0
+    assert empty_subset.is_empty
+    assert empty_subset.partitions_definition == color_partition
+    assert empty_subset.get_partition_keys() == []
+    assert empty_subset.get_partition_key_ranges(color_partition) == []
+    assert empty_subset.with_partition_keys(["red"]) == DefaultPartitionsSubset({"red"})
 
 
 def test_multi_partition_subset_to_range_conversion_grouping_choices():

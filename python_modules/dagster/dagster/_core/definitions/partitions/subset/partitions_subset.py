@@ -120,10 +120,3 @@ class PartitionsSubset(ABC, Generic[T_str]):
 
     def to_serializable_subset(self) -> "PartitionsSubset":
         return self
-
-
-class KeyRangesPartitionsSubset(PartitionsSubset):
-    # We will likely want to add this class in the future, but for now we will leave it as an empty
-    # class to reserve the name and make it easier to handle back-compat in the future
-
-    pass
