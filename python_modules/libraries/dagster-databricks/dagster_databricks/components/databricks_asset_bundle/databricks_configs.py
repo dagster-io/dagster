@@ -120,7 +120,7 @@ class DatabricksSparkPythonTask:
         return "spark_python"
 
     @cached_property
-    def task_config(self) -> Mapping[str, Any]:
+    def task_config_metadata(self) -> Mapping[str, Any]:
         task_config_metadata = {}
         python_config = self.task_config["spark_python_task"]
         task_config_metadata["python_file"] = python_config["python_file"]
