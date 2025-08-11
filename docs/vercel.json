@@ -3244,7 +3244,7 @@
     },
     {
       "source": "/guides/labs/dg/dagster-dg-cli",
-      "destination": "/api/clis/dg-cli"
+      "destination": "/api/clis/dg-cli/dg-cli-reference"
     },
     {
       "source": "/guides/labs/create-dagster",
@@ -3292,15 +3292,15 @@
     },
     {
       "source": "/guides/labs/dg/configuring-dg",
-      "destination": "/api/clis/dg-cli-configuration"
+      "destination": "/api/clis/dg-cli/dg-cli-configuration"
     },
     {
       "source": "/api/dagster/dg-cli",
-      "destination": "/api/clis/dg-cli"
+      "destination": "/api/clis/dg-cli/dg-cli-reference"
     },
     {
       "source": "/guides/labs/dg/dagster-definitions",
-      "destination": "/api/clis/dg-cli"
+      "destination": "/api/clis/dg-cli/dg-cli-reference"
     },
     {
       "source": "/guides/labs/dg/using-resources",
@@ -3324,7 +3324,7 @@
     },
     {
       "source": "/guides/labs/dg/configuring-dg",
-      "destination": "/api/clis/dg-cli-configuration"
+      "destination": "/api/clis/dg-cli/dg-cli-configuration"
     },
     {
       "source": "/api/dagster/create-dagster",

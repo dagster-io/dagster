@@ -95,7 +95,7 @@ You can also click the **Scaffold Missing Config** button to generate dummy valu
 </TabItem>
 <TabItem value="Command line">
 
-When executing a job from Dagster's CLI with [`dg launch --job`](/api/clis/dg-cli#cmdoption-dg-launch-job), you can put config in a YAML file:
+When executing a job from Dagster's CLI with [`dg launch --job`](/api/clis/dg-cli/dg-cli-reference#cmdoption-dg-launch-job), you can put config in a YAML file:
 
 ```YAML file=/concepts/configuration/good.yaml
 ops:

@@ -44,7 +44,7 @@ Sensors are defined with the `@sensor` decorator. The following example includes
 
 :::tip
 
-You can scaffold assets and sensors from the command line with the `dg scaffold` command. For more information, see the [`dg` CLI docs](/api/clis/dg-cli#dg-scaffold).
+You can scaffold assets and sensors from the command line with the `dg scaffold` command. For more information, see the [`dg` CLI docs](/api/clis/dg-cli/dg-cli-reference#dg-scaffold).
 
 :::
 

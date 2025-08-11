@@ -66,7 +66,7 @@ Next, you will need to install the `dg` command line tool into your project virt
 ### Step 3.1: Add `dg` configuration
 
 The `dg` command recognizes Dagster projects through the presence of [TOML
-configuration](/api/clis/dg-cli-configuration). This may be either a `pyproject.toml` file with `tool.dg` and `tool.dg.project` sections, or a `dg.toml` file.
+configuration](/api/clis/dg-cli/dg-cli-configuration). This may be either a `pyproject.toml` file with `tool.dg` and `tool.dg.project` sections, or a `dg.toml` file.
 
 <Tabs groupId="package-manager">
     <TabItem value="uv" label="uv">
@@ -233,4 +233,4 @@ Now the project is fully compatible with `dg`!
 ## Next steps
 
 - [Restructure existing definitions](/guides/build/projects/moving-to-components/migrating-definitions)
-- [Add a new definition to your project](/api/clis/dg-cli)
+- [Add a new definition to your project](/api/clis/dg-cli/dg-cli-reference)

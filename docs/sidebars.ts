@@ -228,8 +228,15 @@ const sidebars: SidebarsConfig = {
       link: {type: 'doc', id: 'api/clis/index'},
       items: [
               'api/clis/create-dagster',
-              'api/clis/dg-cli',
-              'api/clis/dg-cli-configuration',
+              {
+                type: 'category',
+                label: 'dg cli',
+                collapsed: true,
+                items: [
+                  'api/clis/dg-cli/dg-cli-reference',
+                  'api/clis/dg-cli/dg-cli-configuration'
+                ]
+              },
               'api/clis/cli',
               {
                 type: 'category',
