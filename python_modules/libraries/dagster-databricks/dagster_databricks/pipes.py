@@ -180,21 +180,10 @@ class PipesDatabricksClient(BasePipesDatabricksClient, TreatAsResourceParam):
         self.env = env
         super().__init__(
             client=client,
-            context_injector=check.opt_inst_param(
-                context_injector,
-                "context_injector",
-                PipesContextInjector,
-            )
-            or PipesDbfsContextInjector(client=client),
-            message_reader=check.opt_inst_param(
-                message_reader,
-                "message_reader",
-                PipesMessageReader,
-            ),
-            poll_interval_seconds=check.numeric_param(
-                poll_interval_seconds, "poll_interval_seconds"
-            ),
-            forward_termination=check.bool_param(forward_termination, "forward_termination"),
+            context_injector=context_injector,
+            message_reader=message_reader,
+            poll_interval_seconds=poll_interval_seconds,
+            forward_termination=forward_termination,
         )
 
     @classmethod
@@ -280,11 +269,12 @@ class PipesDatabricksClient(BasePipesDatabricksClient, TreatAsResourceParam):
             PipesClientCompletedInvocation: Wrapper containing results reported by the external
                 process.
         """
+        context_injector = self.context_injector or PipesDbfsContextInjector(client=self.client)
         message_reader = self.message_reader or self.get_default_message_reader(task)
         with open_pipes_session(
             context=context,
             extras=extras,
-            context_injector=self.context_injector,
+            context_injector=context_injector,
             message_reader=message_reader,
         ) as pipes_session:
             submit_task_dict = task.as_dict()
@@ -593,25 +583,10 @@ class PipesDatabricksServerlessClient(BasePipesDatabricksClient, TreatAsResource
         self.volume_path = volume_path
         super().__init__(
             client=client,
-            context_injector=check.opt_inst_param(
-                context_injector,
-                "context_injector",
-                PipesContextInjector,
-            )
-            or PipesUnityCatalogVolumesContextInjector(client=client, volume_path=self.volume_path),
-            message_reader=check.opt_inst_param(
-                message_reader,
-                "message_reader",
-                PipesMessageReader,
-            )
-            or PipesUnityCatalogVolumesMessageReader(
-                client=client,
-                volume_path=self.volume_path,
-            ),
-            poll_interval_seconds=check.numeric_param(
-                poll_interval_seconds, "poll_interval_seconds"
-            ),
-            forward_termination=check.bool_param(forward_termination, "forward_termination"),
+            context_injector=context_injector,
+            message_reader=message_reader,
+            poll_interval_seconds=poll_interval_seconds,
+            forward_termination=forward_termination,
         )
 
     @classmethod
@@ -641,11 +616,18 @@ class PipesDatabricksServerlessClient(BasePipesDatabricksClient, TreatAsResource
             PipesClientCompletedInvocation: Wrapper containing results reported by the external
                 process.
         """
+        context_injector = self.context_injector or PipesUnityCatalogVolumesContextInjector(
+            client=self.client, volume_path=self.volume_path
+        )
+        message_reader = self.message_reader or PipesUnityCatalogVolumesMessageReader(
+            client=self.client,
+            volume_path=self.volume_path,
+        )
         with open_pipes_session(
             context=context,
             extras=extras,
-            context_injector=self.context_injector,
-            message_reader=self.message_reader,
+            context_injector=context_injector,
+            message_reader=message_reader,
         ) as pipes_session:
             submit_task_dict = task.as_dict()
 
