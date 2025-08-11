@@ -243,7 +243,7 @@ class DatabricksJobTask:
         return task_config_metadata
 
     @classmethod
-    def build_from_job_task_config(cls, job_task_config: Mapping[str, Any]) -> "DatabricksJobTask":
+    def from_job_task_config(cls, job_task_config: Mapping[str, Any]) -> "DatabricksJobTask":
         run_job_task = job_task_config["run_job_task"]
         task_config = {
             "job_id": run_job_task.get("job_id"),
