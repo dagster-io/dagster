@@ -43,6 +43,30 @@ _CONTEXT_FILENAME = "context.json"
 
 
 class BasePipesDatabricksClient(PipesClient):
+    def __init__(
+        self,
+        client: WorkspaceClient,
+        context_injector: Optional[PipesContextInjector] = None,
+        message_reader: Optional[PipesMessageReader] = None,
+        poll_interval_seconds: float = 5,
+        forward_termination: bool = True,
+    ):
+        self.client = client
+        self.context_injector = check.opt_inst_param(
+            context_injector,
+            "context_injector",
+            PipesContextInjector,
+        )
+        self.message_reader = check.opt_inst_param(
+            message_reader,
+            "message_reader",
+            PipesMessageReader,
+        )
+        self.poll_interval_seconds = check.numeric_param(
+            poll_interval_seconds, "poll_interval_seconds"
+        )
+        self.forward_termination = check.bool_param(forward_termination, "forward_termination")
+
     def run(
         self,
         *,
@@ -153,22 +177,24 @@ class PipesDatabricksClient(BasePipesDatabricksClient, TreatAsResourceParam):
         poll_interval_seconds: float = 5,
         forward_termination: bool = True,
     ):
-        self.client = client
         self.env = env
-        self.context_injector = check.opt_inst_param(
-            context_injector,
-            "context_injector",
-            PipesContextInjector,
-        ) or PipesDbfsContextInjector(client=self.client)
-        self.message_reader = check.opt_inst_param(
-            message_reader,
-            "message_reader",
-            PipesMessageReader,
+        super().__init__(
+            client=client,
+            context_injector= check.opt_inst_param(
+                context_injector,
+                "context_injector",
+                PipesContextInjector,
+            ) or PipesDbfsContextInjector(client=client),
+            message_reader=check.opt_inst_param(
+                message_reader,
+                "message_reader",
+                PipesMessageReader,
+            ),
+            poll_interval_seconds=check.numeric_param(
+                poll_interval_seconds, "poll_interval_seconds"
+            ),
+            forward_termination=check.bool_param(forward_termination, "forward_termination"),
         )
-        self.poll_interval_seconds = check.numeric_param(
-            poll_interval_seconds, "poll_interval_seconds"
-        )
-        self.forward_termination = check.bool_param(forward_termination, "forward_termination")
 
     @classmethod
     def _is_dagster_maintained(cls) -> bool:
@@ -563,27 +589,29 @@ class PipesDatabricksServerlessClient(BasePipesDatabricksClient, TreatAsResource
         poll_interval_seconds: float = 5,
         forward_termination: bool = True,
     ):
-        self.client = client
         self.volume_path = volume_path
-        self.context_injector = check.opt_inst_param(
-            context_injector,
-            "context_injector",
-            PipesContextInjector,
-        ) or PipesUnityCatalogVolumesContextInjector(
-            client=self.client, volume_path=self.volume_path
+        super().__init__(
+            client=client,
+            context_injector= check.opt_inst_param(
+                context_injector,
+                "context_injector",
+                PipesContextInjector,
+            ) or PipesUnityCatalogVolumesContextInjector(
+                client=client, volume_path=self.volume_path
+            ),
+            message_reader=check.opt_inst_param(
+                message_reader,
+                "message_reader",
+                PipesMessageReader,
+            ) or PipesUnityCatalogVolumesMessageReader(
+                client=client,
+                volume_path=self.volume_path,
+            ),
+            poll_interval_seconds=check.numeric_param(
+                poll_interval_seconds, "poll_interval_seconds"
+            ),
+            forward_termination=check.bool_param(forward_termination, "forward_termination"),
         )
-        self.message_reader = check.opt_inst_param(
-            message_reader,
-            "message_reader",
-            PipesMessageReader,
-        ) or PipesUnityCatalogVolumesMessageReader(
-            client=self.client,
-            volume_path=self.volume_path,
-        )
-        self.poll_interval_seconds = check.numeric_param(
-            poll_interval_seconds, "poll_interval_seconds"
-        )
-        self.forward_termination = check.bool_param(forward_termination, "forward_termination")
 
     @classmethod
     def _is_dagster_maintained(cls) -> bool:
