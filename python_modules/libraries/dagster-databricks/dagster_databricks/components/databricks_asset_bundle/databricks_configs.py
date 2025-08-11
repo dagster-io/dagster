@@ -188,7 +188,7 @@ class DatabricksPythonWheelTask:
 @record
 class DatabricksSparkJarTask:
     task_key: str
-    task: Mapping[str, Any]
+    task_config: Mapping[str, Any]
     task_parameters: Mapping[str, Any]
     depends_on: list[str]
     job_name: str
@@ -199,22 +199,22 @@ class DatabricksSparkJarTask:
         return "spark_jar"
 
     @cached_property
-    def task_config(self) -> Mapping[str, Any]:
-        task_config = {}
-        jar_config = self.task["spark_jar_task"]
-        task_config["main_class_name"] = jar_config["main_class_name"]
-        task_config["parameters"] = self.task.get("parameters", {})
-        return task_config
+    def task_config_metadata(self) -> Mapping[str, Any]:
+        task_config_metadata = {}
+        jar_config = self.task_config["spark_jar_task"]
+        task_config_metadata["main_class_name"] = jar_config["main_class_name"]
+        task_config_metadata["parameters"] = self.task_config.get("parameters", {})
+        return task_config_metadata
 
     @classmethod
     def from_job_task_config(cls, job_task_config: Mapping[str, Any]) -> "DatabricksSparkJarTask":
         spark_jar_task = job_task_config["spark_jar_task"]
-        task = {"spark_jar_task": spark_jar_task}
+        task_config = {"spark_jar_task": spark_jar_task}
         # Spark JAR tasks use parameters differently
         task_parameters = spark_jar_task.get("parameters", [])
         return DatabricksSparkJarTask(
             task_key=job_task_config["task_key"],
-            task=task,
+            task_config=task_config,
             task_parameters=task_parameters,
             depends_on=parse_depends_on(job_task_config.get("depends_on", [])),
             job_name=job_task_config["job_name"],
