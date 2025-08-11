@@ -24,7 +24,7 @@ Examples of actions include:
 
 :::tip
 
-An alternative to polling with sensors is to push events to Dagster using the [Dagster API](/guides/operate/graphql).
+An alternative to polling with sensors is to push events to Dagster using the [Dagster GraphQL API](/api/graphql).
 
 :::
 
@@ -44,7 +44,7 @@ Sensors are defined with the `@sensor` decorator. The following example includes
 
 :::tip
 
-You can scaffold assets and sensors from the command line with the `dg scaffold` command. For more information, see the [`dg` CLI docs](/api/dg/dg-cli#dg-scaffold).
+You can scaffold assets and sensors from the command line with the `dg scaffold` command. For more information, see the [`dg` CLI docs](/api/clis/dg-cli#dg-scaffold).
 
 :::
 

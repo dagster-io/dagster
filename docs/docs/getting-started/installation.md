@@ -13,7 +13,7 @@ To follow the steps in this guide, you'll need to install [Python 3.9](https://w
 
 :::
 
-To get started with Dagster, you can scaffold a new project with the [`create-dagster` CLI](/api/dg/create-dagster) (recommended), manually create a new project, or update an existing project to install Dagster dependencies.
+To get started with Dagster, you can scaffold a new project with the [`create-dagster` CLI](/api/clis/create-dagster) (recommended), manually create a new project, or update an existing project to install Dagster dependencies.
 
 - [Installation requirements for using the `create-dagster` CLI](#installation-requirements-for-using-the-create-dagster-cli)
 - [Installation requirements for manually creating or updating a project](#installation-requirements-for-manually-creating-or-updating-a-project)

@@ -28,7 +28,7 @@ Dagster+ uses a hierarchical model for RBAC, meaning that the most permissive ro
 - Launcher (Pro plans only)
 - Viewer
 
-For example, the **Admin** user role includes permissions specific to this role and all permissions in the **Editor**, **Launcher**, and **Viewer** user roles. Refer to the [User permissions reference](#user-permissions-reference) for the full list of user permissions in Dagster+. All user roles are enforced both in Dagster+ and the [GraphQL API](/guides/operate/graphql).
+For example, the **Admin** user role includes permissions specific to this role and all permissions in the **Editor**, **Launcher**, and **Viewer** user roles. Refer to the [User permissions reference](#user-permissions-reference) for the full list of user permissions in Dagster+. All user roles are enforced both in Dagster+ and the [GraphQL API](/api/graphql).
 
 :::tip Teams in Dagster+ Pro
 
