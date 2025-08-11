@@ -1,10 +1,15 @@
 ---
-title: 'Dagster & Snowflake with components'
+title: Snowflake SQL component
 description: Execute custom SQL queries in Snowflake with Dagster
-sidebar_position: 402
+tags: [dagster-supported, storage]
+source: https://github.com/dagster-io/dagster/tree/master/python_modules/libraries/dagster-snowflake
+pypi: https://pypi.org/project/dagster-snowflake/
+sidebar_custom_props:
+  logo: images/integrations/snowflake.svg
+partnerlink: https://www.snowflake.com/en/
 ---
 
-Dagster provides a ready-to-use `TemplatedSQLComponent` which can be used alongside the `SnowflakeConnectionComponent` provided by the [dagster-snowflake](/integrations/libraries/snowflake) library to execute SQL queries in Dagster in order to rebuild data assets in your Snowflake instance. This guide will walk you through how to use these components to execute your SQL.
+Dagster provides a ready-to-use `TemplatedSQLComponent` which can be used alongside the `SnowflakeConnectionComponent` provided by the [dagster-snowflake](/api/libraries/dagster-snowflake) library to execute SQL queries in Dagster in order to rebuild data assets in your Snowflake instance. This guide will walk you through how to use these components to execute your SQL.
 
 ## 1. Prepare a Dagster project
 
@@ -40,7 +45,11 @@ First, scaffold a Snowflake connection component:
 
 The scaffold call will generate a connection component configuration:
 
-<CodeExample path="docs_snippets/docs_snippets/guides/components/integrations/snowflake-sql-component/7-connection-component.yaml" title="my_project/defs/snowflake_connection/defs.yaml" language="yaml" />
+<CodeExample
+  path="docs_snippets/docs_snippets/guides/components/integrations/snowflake-sql-component/7-connection-component.yaml"
+  title="my_project/defs/snowflake_connection/defs.yaml"
+  language="yaml"
+/>
 
 <CliInvocationExample path="docs_snippets/docs_snippets/guides/components/integrations/snowflake-sql-component/8-tree.txt" />
 
@@ -50,12 +59,16 @@ You will only need a single connection component in your project for each Snowfl
 
 You can customize the SQL template and define the assets that will be created. Update your `defs.yaml` file with a SQL template and template variables. You can also specify properties for the asset in Dagster, such as a group name and kind tag:
 
-<CodeExample path="docs_snippets/docs_snippets/guides/components/integrations/snowflake-sql-component/9-customized-component.yaml" title="my_project/defs/daily_revenue/defs.yaml" language="yaml" />
+<CodeExample
+  path="docs_snippets/docs_snippets/guides/components/integrations/snowflake-sql-component/9-customized-component.yaml"
+  title="my_project/defs/daily_revenue/defs.yaml"
+  language="yaml"
+/>
 
 You can run `dg list defs` to see the asset corresponding to your component:
 
 <WideContent maxSize={1100}>
-<CliInvocationExample path="docs_snippets/docs_snippets/guides/components/integrations/snowflake-sql-component/10-list-defs.txt" />
+  <CliInvocationExample path="docs_snippets/docs_snippets/guides/components/integrations/snowflake-sql-component/10-list-defs.txt" />
 </WideContent>
 
 ### Using an external SQL file
@@ -64,13 +77,21 @@ Instead of embedding SQL directly in your component configuration, you can store
 
 First, create a SQL file with your query:
 
-<CodeExample path="docs_snippets/docs_snippets/guides/components/integrations/snowflake-sql-component/12-sql-file.sql" title="my_project/defs/daily_revenue/daily_revenue.sql" language="sql" />
+<CodeExample
+  path="docs_snippets/docs_snippets/guides/components/integrations/snowflake-sql-component/12-sql-file.sql"
+  title="my_project/defs/daily_revenue/daily_revenue.sql"
+  language="sql"
+/>
 
 <CliInvocationExample path="docs_snippets/docs_snippets/guides/components/integrations/snowflake-sql-component/14-tree-with-sql.txt" />
 
 Then update your component configuration to reference the external file:
 
-<CodeExample path="docs_snippets/docs_snippets/guides/components/integrations/snowflake-sql-component/13-file-based-component.yaml" title="my_project/defs/daily_revenue/defs.yaml" language="yaml" />
+<CodeExample
+  path="docs_snippets/docs_snippets/guides/components/integrations/snowflake-sql-component/13-file-based-component.yaml"
+  title="my_project/defs/daily_revenue/defs.yaml"
+  language="yaml"
+/>
 
 ## 5. Launch your assets
 

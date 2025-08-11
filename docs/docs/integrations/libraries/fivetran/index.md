@@ -1,10 +1,18 @@
 ---
-title: 'Dagster & Fivetran with components'
+title: Dagster & Fivetran (Component)
+sidebar_label: Fivetran
 description: The dagster-fivetran library provides a FivetranAccountComponent, which can be used to represent Fivetran connectors as assets in Dagster.
-sidebar_position: 400
+tags: [dagster-supported, etl]
+source: https://github.com/dagster-io/dagster/tree/master/python_modules/libraries/dagster-fivetran
+pypi: https://pypi.org/project/dagster-fivetran/
+sidebar_custom_props:
+  logo: images/integrations/fivetran.svg
+partnerlink: https://www.fivetran.com/
+canonicalUrl: '/integrations/libraries/fivetran'
+slug: '/integrations/libraries/fivetran'
 ---
 
-The [dagster-fivetran](/integrations/libraries/fivetran) library provides a `FivetranAccountComponent` which can be used to easily represent Fivetran connectors as assets in Dagster.
+The [`dagster-fivetran` library](/api/libraries/dagster-fivetran) provides a `FivetranAccountComponent` which can be used to easily represent Fivetran connectors as assets in Dagster.
 
 ## 1. Prepare a Dagster project
 
@@ -34,30 +42,42 @@ The scaffold call will generate a `defs.yaml` file:
 
 In its scaffolded form, the `defs.yaml` file contains the configuration for your Fivetran workspace:
 
-<CodeExample path="docs_snippets/docs_snippets/guides/components/integrations/fivetran-component/5-component.yaml" title="my_project/defs/fivetran_ingest/defs.yaml" language="yaml" />
+<CodeExample
+  path="docs_snippets/docs_snippets/guides/components/integrations/fivetran-component/5-component.yaml"
+  title="my_project/defs/fivetran_ingest/defs.yaml"
+  language="yaml"
+/>
 
 You can check the configuration of your component:
 
 <WideContent maxSize={1100}>
-<CliInvocationExample path="docs_snippets/docs_snippets/guides/components/integrations/fivetran-component/6-list-defs.txt" />
+  <CliInvocationExample path="docs_snippets/docs_snippets/guides/components/integrations/fivetran-component/6-list-defs.txt" />
 </WideContent>
 
 ## 3. Select specific connectors
 
 You can select specific Fivetran connectors to include in your component using the `connector_selector` key. This allows you to filter which connectors are represented as assets:
 
-<CodeExample path="docs_snippets/docs_snippets/guides/components/integrations/fivetran-component/7-customized-component.yaml" title="my_project/defs/fivetran_ingest/defs.yaml" language="yaml" />
+<CodeExample
+  path="docs_snippets/docs_snippets/guides/components/integrations/fivetran-component/7-customized-component.yaml"
+  title="my_project/defs/fivetran_ingest/defs.yaml"
+  language="yaml"
+/>
 
 <WideContent maxSize={1100}>
-<CliInvocationExample path="docs_snippets/docs_snippets/guides/components/integrations/fivetran-component/8-list-defs.txt" />
+  <CliInvocationExample path="docs_snippets/docs_snippets/guides/components/integrations/fivetran-component/8-list-defs.txt" />
 </WideContent>
 
 ## 4. Customize Fivetran assets
 
 Properties of the assets emitted by each connector can be customized in the `defs.yaml` file using the `translation` key:
 
-<CodeExample path="docs_snippets/docs_snippets/guides/components/integrations/fivetran-component/9-customized-component.yaml" title="my_project/defs/fivetran_ingest/defs.yaml" language="yaml" />
+<CodeExample
+  path="docs_snippets/docs_snippets/guides/components/integrations/fivetran-component/9-customized-component.yaml"
+  title="my_project/defs/fivetran_ingest/defs.yaml"
+  language="yaml"
+/>
 
 <WideContent maxSize={1100}>
-<CliInvocationExample path="docs_snippets/docs_snippets/guides/components/integrations/fivetran-component/10-list-defs.txt" />
+  <CliInvocationExample path="docs_snippets/docs_snippets/guides/components/integrations/fivetran-component/10-list-defs.txt" />
 </WideContent>
