@@ -3,9 +3,10 @@ from collections.abc import Iterator
 from contextlib import contextmanager
 from contextvars import ContextVar
 from functools import wraps
-from typing import TYPE_CHECKING, Annotated, Any, Callable, Optional
+from typing import TYPE_CHECKING, Annotated, Callable, Optional, Protocol, TypeVar
 
 from dagster_shared.record import ImportFrom, replace
+from typing_extensions import Concatenate, ParamSpec
 
 from dagster._core.definitions.temporal_context import TemporalContext
 from dagster._record import record
@@ -94,11 +95,22 @@ def partition_loading_context(
         _current_ctx.reset(token)
 
 
-def use_partition_loading_context(func: Callable[..., Any]) -> Callable[..., Any]:
+class _HasPartitionLoadingContext(Protocol):
+    _partition_loading_context: PartitionLoadingContext
+
+
+P = ParamSpec("P")
+T_Return = TypeVar("T_Return")
+Self = TypeVar("Self", bound=_HasPartitionLoadingContext)
+
+
+def use_partition_loading_context(
+    func: Callable[Concatenate[Self, P], T_Return],
+) -> Callable[Concatenate[Self, P], T_Return]:
     """Decorator for methods that will use the partition loading context."""
 
     @wraps(func)
-    def wrapper(self, *args: Any, **kwargs: Any) -> Any:
+    def wrapper(self: Self, *args: P.args, **kwargs: P.kwargs) -> T_Return:
         with partition_loading_context(new_ctx=self._partition_loading_context):
             return func(self, *args, **kwargs)
 
