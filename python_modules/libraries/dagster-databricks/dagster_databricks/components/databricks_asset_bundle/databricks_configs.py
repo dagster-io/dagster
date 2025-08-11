@@ -148,8 +148,8 @@ class DatabricksSparkPythonTask:
 @record
 class DatabricksPythonWheelTask:
     task_key: str
-    task_config: dict[str, Any]
-    task_parameters: dict[str, Any]
+    task: Mapping[str, Any]
+    task_parameters: Mapping[str, Any]
     depends_on: list[str]
     job_name: str
     libraries: Optional[list[Mapping[str, Any]]] = None
@@ -172,12 +172,12 @@ class DatabricksPythonWheelTask:
         cls, job_task_config: Mapping[str, Any]
     ) -> "DatabricksPythonWheelTask":
         python_wheel_task = job_task_config["python_wheel_task"]
-        task_config = {"python_wheel_task": python_wheel_task}
+        task = {"python_wheel_task": python_wheel_task}
         # Python wheel tasks use parameters differently
         task_parameters = python_wheel_task.get("parameters", [])
         return DatabricksPythonWheelTask(
             task_key=job_task_config["task_key"],
-            task_config=task_config,
+            task=task,
             task_parameters=task_parameters,
             depends_on=parse_depends_on(job_task_config.get("depends_on", [])),
             job_name=job_task_config["job_name"],
