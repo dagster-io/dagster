@@ -126,7 +126,8 @@ Work load balanced across agents isn't sticky; there's no guarantee the agent th
 
 ```yaml
 # values.yaml
-isolatedAgents: true
+isolatedAgents:
+  enabled: true
 ```
 
 ```shell
