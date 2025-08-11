@@ -3320,7 +3320,7 @@
     },
     {
       "source": "/guides/labs/dg/configuring-dg",
-      "destination": "/api/clis/dg-configuration"
+      "destination": "/api/clis/dg-cli-configuration"
     },
     {
       "source": "/api/dagster/create-dagster",
