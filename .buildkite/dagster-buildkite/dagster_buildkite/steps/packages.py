@@ -634,6 +634,7 @@ LIBRARY_PACKAGES_WITH_CUSTOM_CONFIG: list[PackageSpec] = [
         # test suite also installs a ton of packages in the same environment, which is liable to
         # cause dependency collisions.
         unsupported_python_versions=AvailablePythonVersion.get_all_except_default(),
+        retries=0,
     ),
     PackageSpec("python_modules/dagster-webserver", pytest_extra_cmds=ui_extra_cmds),
     PackageSpec(
