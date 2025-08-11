@@ -24,7 +24,7 @@ For more advanced use cases, it provides:
 
 ## Installation
 
-To use Dagster Components, you'll need to [install the `dg` command line tool](/api/dg). `dg` allows you to quickly scaffold Dagster projects and populate them with components.
+To use Dagster Components, you'll need to [install the `dg` command line tool](/api/clis). `dg` allows you to quickly scaffold Dagster projects and populate them with components.
 
 ## Next steps
 

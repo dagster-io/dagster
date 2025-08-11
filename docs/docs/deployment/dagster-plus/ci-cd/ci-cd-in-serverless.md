@@ -74,7 +74,7 @@ install_requires=[
 
 :::
 
-Next, install the [`dagster-cloud` CLI](/deployment/dagster-plus/management/dagster-cloud-cli/installing-and-configuring) and use its `configure` command to authenticate it to your Dagster+ organization.
+Next, install the [`dagster-cloud` CLI](/api/clis/dagster-cloud-cli/installing-and-configuring) and use its `configure` command to authenticate it to your Dagster+ organization.
 
 **Note:** The CLI requires a recent version of Python 3 and Docker.
 
@@ -83,7 +83,7 @@ pip install dagster-cloud
 dagster-cloud configure
 ```
 
-You can also configure the `dagster-cloud` tool non-interactively; see [the CLI docs](/deployment/dagster-plus/management/dagster-cloud-cli/installing-and-configuring) for more information.
+You can also configure the `dagster-cloud` tool non-interactively; see [the CLI docs](/api/clis/dagster-cloud-cli/installing-and-configuring) for more information.
 
 Finally, deploy your project to Dagster+ using the `serverless` command:
 
