@@ -259,6 +259,18 @@
       "destination": "/api/dagster/pipes"
     },
     {
+      "source": "/api/dg/create-dagster",
+      "destination": "/api/clis/create-dagster"
+    },
+    {
+      "source": "/api/dg/dg-cli",
+      "destination": "/api/clis/dg-cli"
+    },
+    {
+      "source": "/api/dg/dg-cli-configuration",
+      "destination": "/api/clis/dg-cli-configuration"
+    },
+    {
       "source": "/deploying/celery",
       "destination": "/deployment/oss/deployment-options/kubernetes/kubernetes-and-celery"
     },
@@ -3228,11 +3240,11 @@
     },
     {
       "source": "/guides/labs/dg/dagster-dg-cli",
-      "destination": "/api/dg/dg-cli"
+      "destination": "/api/clis/dagster-dg-cli"
     },
     {
       "source": "/guides/labs/create-dagster",
-      "destination": "/api/dg/create-dagster"
+      "destination": "/api/clis/create-dagster"
     },
     {
       "source": "/guides/labs/components/creating-new-component-types",
@@ -3276,15 +3288,15 @@
     },
     {
       "source": "/guides/labs/dg/configuring-dg",
-      "destination": "/api/dg/dg-cli-configuration"
+      "destination": "/api/clis/dg-cli-configuration"
     },
     {
       "source": "/api/dagster/dg-cli",
-      "destination": "/api/dg/dg-cli"
+      "destination": "/api/clis/dg-cli"
     },
     {
       "source": "/guides/labs/dg/dagster-definitions",
-      "destination": "/api/dg/dg-cli"
+      "destination": "/api/clis/dg-cli"
     },
     {
       "source": "/guides/labs/dg/using-resources",
@@ -3308,11 +3320,11 @@
     },
     {
       "source": "/guides/labs/dg/configuring-dg",
-      "destination": "/api/dg/dg-configuration"
+      "destination": "/api/clis/dg-configuration"
     },
     {
       "source": "/api/dagster/create-dagster",
-      "destination": "/api/dg/create-dagster"
+      "destination": "/api/clis/create-dagster"
     },
     {
       "source": "/guides/labs/dg",
