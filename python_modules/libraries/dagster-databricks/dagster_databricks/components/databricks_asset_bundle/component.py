@@ -4,7 +4,7 @@ from functools import cached_property
 from pathlib import Path
 from typing import Annotated
 
-from dagster import AssetSpec, MetadataValue, Resolvable
+from dagster import AssetExecutionContext, AssetSpec, MetadataValue, Resolvable, multi_asset
 from dagster._core.definitions.definitions_class import Definitions
 from dagster.components.component.component import Component
 from dagster.components.core.context import ComponentLoadContext
@@ -75,14 +75,13 @@ class DatabricksAssetBundleComponent(Component, Resolvable):
     def build_defs(self, context: ComponentLoadContext) -> Definitions:
         # TODO: support job name prefix in multi-asset name
         # TODO: support multi-notebook job config
-        @dg.multi_asset(
-            name=f"databricks_multi_asset",
+        @multi_asset(
+            name="databricks_multi_asset",
             specs=[self.get_asset_spec(task) for task in self.configs.all_tasks],
             can_subset=True,
         )
         def multi_notebook_job_asset(
-            context: dg.AssetExecutionContext,
-        ):
-            ...
+            context: AssetExecutionContext,
+        ): ...
 
         return Definitions(assets=[multi_notebook_job_asset])
