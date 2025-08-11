@@ -8,6 +8,8 @@ pypi: https://pypi.org/project/dagster-sling
 sidebar_custom_props:
   logo: images/integrations/sling.png
 partnerlink: https://slingdata.io/
+canonicalUrl: '/integrations/libraries/sling'
+slug: '/integrations/libraries/sling'
 ---
 
 The [dagster-sling](/api/libraries/dagster-sling) library provides a `SlingReplicationCollectionComponent` which can be used to easily represent a collection of [Sling](https://slingdata.io) replications as assets in Dagster.

@@ -8,6 +8,8 @@ pypi: https://pypi.org/project/dagster-dlt/
 sidebar_custom_props:
   logo: images/integrations/dlthub.jpeg
 partnerlink: https://dlthub.com/
+canonicalUrl: '/integrations/libraries/dlt'
+slug: '/integrations/libraries/dlt'
 ---
 
 The [dagster-dlt](/api/libraries/dagster-dlt) library provides a `DltLoadCollectionComponent` which can be used to easily represent a collection of dlt sources and pipelines as assets in Dagster.

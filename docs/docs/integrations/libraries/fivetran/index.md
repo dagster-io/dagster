@@ -8,6 +8,8 @@ pypi: https://pypi.org/project/dagster-fivetran/
 sidebar_custom_props:
   logo: images/integrations/fivetran.svg
 partnerlink: https://www.fivetran.com/
+canonicalUrl: '/integrations/libraries/fivetran'
+slug: '/integrations/libraries/fivetran'
 ---
 
 The [`dagster-fivetran` library](/api/libraries/dagster-fivetran) provides a `FivetranAccountComponent` which can be used to easily represent Fivetran connectors as assets in Dagster.

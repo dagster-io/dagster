@@ -8,6 +8,8 @@ pypi: https://pypi.org/project/dagster-powerbi
 sidebar_custom_props:
   logo: images/integrations/powerbi.svg
 partnerlink: https://learn.microsoft.com/en-us/power-bi/
+canonicalUrl: '/integrations/libraries/powerbi'
+slug: '/integrations/libraries/powerbi'
 ---
 
 The [dagster-powerbi](/integrations/libraries/powerbi) library provides a `PowerBIWorkspaceComponent` which can be used to easily represent Power BI dashboards, reports, semantic models, and data sources as assets in Dagster.
