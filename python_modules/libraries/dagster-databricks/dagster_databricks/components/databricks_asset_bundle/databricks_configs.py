@@ -225,7 +225,7 @@ class DatabricksSparkJarTask:
 @record
 class DatabricksJobTask:
     task_key: str
-    task_config: Mapping[str, Any]
+    task: Mapping[str, Any]
     task_parameters: Mapping[str, Any]
     depends_on: list[str]
     job_name: str
@@ -245,7 +245,7 @@ class DatabricksJobTask:
     @classmethod
     def build_from_job_task_config(cls, job_task_config: Mapping[str, Any]) -> "DatabricksJobTask":
         run_job_task = job_task_config["run_job_task"]
-        task_config = {
+        task = {
             "job_id": run_job_task.get("job_id"),
             "job_parameters": run_job_task.get("job_parameters", {}),
         }
@@ -253,7 +253,7 @@ class DatabricksJobTask:
         task_parameters = run_job_task.get("job_parameters", {})
         return DatabricksJobTask(
             task_key=job_task_config["task_key"],
-            task_config=task_config,
+            task=task,
             task_parameters=task_parameters,
             depends_on=parse_depends_on(job_task_config.get("depends_on", [])),
             job_name=job_task_config["job_name"],
