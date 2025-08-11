@@ -168,7 +168,15 @@
     },
     {
       "source": "/api/cli",
-      "destination": "/api/dagster/cli"
+      "destination": "/api/clis/cli"
+    },
+    {
+      "source": "/guides/operate/graphql",
+      "destination": "/api/graphql"
+    },
+    {
+      "source": "/guides/operate/graphql/graphql-client",
+      "destination": "/api/graphql/graphql-client"
     },
     {
       "source": "/api/definitions",
@@ -1115,11 +1123,11 @@
     },
     {
       "source": "/concepts/webserver/graphql",
-      "destination": "/guides/operate/graphql"
+      "destination": "/api/graphql"
     },
     {
       "source": "/concepts/webserver/graphql-client",
-      "destination": "/guides/operate/graphql/graphql-client"
+      "destination": "/api/graphql/graphql-client"
     },
     {
       "source": "/dagster-plus/deployment",
@@ -2896,7 +2904,7 @@
     },
     {
       "source": "/concepts/dagit/graphql-client",
-      "destination": "/guides/operate/graphql/graphql-client"
+      "destination": "/api/graphql/graphql-client"
     },
     {
       "source": "/concepts/code-locations/workspaces",
