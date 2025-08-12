@@ -29,18 +29,13 @@ function init() {
     async (keys, client: ApolloClient<any>) => {
       const assetKeys = keys.map(tokenToAssetKey);
 
-      let healthResponse;
-      if (observeEnabled()) {
-        healthResponse = await client.query<AssetHealthQuery, AssetHealthQueryVariables>({
-          query: ASSETS_HEALTH_INFO_QUERY,
-          fetchPolicy: 'no-cache',
-          variables: {
-            assetKeys,
-          },
-        });
-      } else {
-        return {};
-      }
+      const healthResponse = await client.query<AssetHealthQuery, AssetHealthQueryVariables>({
+        query: ASSETS_HEALTH_INFO_QUERY,
+        fetchPolicy: 'no-cache',
+        variables: {
+          assetKeys,
+        },
+      });
 
       const assetData = healthResponse.data.assetsOrError;
       if (assetData.__typename === 'PythonError') {
@@ -91,20 +86,33 @@ const memoizedAssetKeys = weakMapMemoize((assetKeys: AssetKeyInput[]) => {
   return assetKeys.map((key) => tokenForAssetKey(key));
 });
 
-export function useAssetsHealthData({
-  assetKeys,
-  thread = 'AssetHealth', // Use AssetHealth to get 250 batch size
-  blockTrace = true,
-  skip = false,
-  loading = false,
-}: {
+type AssetsHealthDataConfig = {
   assetKeys: AssetKeyInput[];
   thread?: LiveDataThreadID;
   blockTrace?: boolean;
   skip?: boolean;
   loading?: boolean;
-}) {
-  const keys = memoizedAssetKeys(observeEnabled() ? assetKeys : EMPTY_ARRAY);
+};
+
+// Get assets health data, with an `observeEnabled` check included to effectively no-op any users
+// who are not gated in.
+export function useAssetsHealthData({assetKeys, ...rest}: AssetsHealthDataConfig) {
+  return useAssetsHealthDataWithoutGateCheck({
+    ...rest,
+    assetKeys: observeEnabled() ? assetKeys : EMPTY_ARRAY,
+  });
+}
+
+// Get assets health data, with no `observeEnabled` check. This allows us to dark launch
+// asset health checking without depending on the `observeEnabled` check.
+export function useAssetsHealthDataWithoutGateCheck({
+  assetKeys,
+  thread = 'AssetHealth', // Use AssetHealth to get 250 batch size
+  blockTrace = true,
+  skip = false,
+  loading = false,
+}: AssetsHealthDataConfig) {
+  const keys = memoizedAssetKeys(assetKeys);
   const result = AssetHealthData.useLiveData(keys, thread, skip);
   useBlockTraceUntilTrue(
     'useAssetsHealthData',
