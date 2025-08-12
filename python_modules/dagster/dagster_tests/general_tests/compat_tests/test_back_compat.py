@@ -24,7 +24,8 @@ from dagster._core.events import DagsterEventType, StepMaterializationData
 from dagster._core.execution.backfill import BulkActionsFilter, BulkActionStatus, PartitionBackfill
 from dagster._core.execution.plan.outputs import StepOutputHandle
 from dagster._core.execution.plan.state import KnownExecutionState
-from dagster._core.instance import DagsterInstance, InstanceRef
+from dagster._core.instance import DagsterInstance
+from dagster._core.instance.ref import InstanceRef
 from dagster._core.remote_representation.external_data import partition_set_snap_name_for_job_name
 from dagster._core.scheduler.instigation import InstigatorState, InstigatorTick
 from dagster._core.storage.dagster_run import DagsterRunStatus, RunsFilter

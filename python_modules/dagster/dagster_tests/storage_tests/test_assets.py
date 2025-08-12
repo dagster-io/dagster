@@ -1,7 +1,8 @@
 import dagster as dg
 import pytest
 from dagster._core.definitions.events import parse_asset_key_string
-from dagster._core.instance import DagsterInstance, InstanceRef
+from dagster._core.instance import DagsterInstance
+from dagster._core.instance.ref import InstanceRef
 from dagster._core.storage.event_log.migration import ASSET_KEY_INDEX_COLS
 from dagster._utils.test import copy_directory
 

@@ -11,7 +11,7 @@ from dagster_shared.cli import python_pointer_options
 
 from dagster._cli.utils import assert_no_remaining_opts
 from dagster._cli.workspace.cli_target import PythonPointerOpts
-from dagster._core.instance import InstanceRef
+from dagster._core.instance.ref import InstanceRef
 from dagster._core.types.loadable_target_origin import LoadableTargetOrigin
 from dagster._core.utils import FuturesAwareThreadPoolExecutor
 from dagster._serdes import deserialize_value

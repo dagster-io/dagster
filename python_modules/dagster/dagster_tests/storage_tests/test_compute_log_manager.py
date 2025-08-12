@@ -7,7 +7,8 @@ from typing import IO, Optional
 import dagster as dg
 import dagster._check as check
 from dagster._core.execution.compute_logs import create_compute_log_file_key
-from dagster._core.instance import InstanceRef, InstanceType
+from dagster._core.instance import InstanceType
+from dagster._core.instance.ref import InstanceRef
 from dagster._core.run_coordinator import DefaultRunCoordinator
 from dagster._core.storage.compute_log_manager import (
     CapturedLogContext,

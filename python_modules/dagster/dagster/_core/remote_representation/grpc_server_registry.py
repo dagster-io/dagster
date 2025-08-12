@@ -7,7 +7,7 @@ from typing_extensions import TypeGuard
 
 import dagster._check as check
 from dagster._core.errors import DagsterUserCodeProcessError, DagsterUserCodeUnreachableError
-from dagster._core.instance import InstanceRef
+from dagster._core.instance.ref import InstanceRef
 from dagster._core.remote_origin import CodeLocationOrigin, ManagedGrpcPythonEnvCodeLocationOrigin
 from dagster._core.types.loadable_target_origin import LoadableTargetOrigin
 from dagster._time import get_current_timestamp

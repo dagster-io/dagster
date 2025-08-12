@@ -5,7 +5,6 @@ from typing import Any
 from typing_extensions import TypeAlias
 
 from dagster._core.instance.instance import DagsterInstance as DagsterInstance
-from dagster._core.instance.ref import InstanceRef as InstanceRef
 from dagster._core.instance.types import (
     CachingDynamicPartitionsLoader as CachingDynamicPartitionsLoader,
     DynamicPartitionsStore as DynamicPartitionsStore,
@@ -29,7 +28,6 @@ __all__ = [
     "DagsterInstance",
     "DagsterInstanceOverrides",
     "DynamicPartitionsStore",
-    "InstanceRef",
     "InstanceType",
     "get_current_timestamp",
 ]

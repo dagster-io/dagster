@@ -38,7 +38,8 @@ from dagster._core.errors import (
     DagsterUserCodeUnreachableError,
     user_code_error_boundary,
 )
-from dagster._core.instance import DagsterInstance, InstanceRef
+from dagster._core.instance import DagsterInstance
+from dagster._core.instance.ref import InstanceRef
 from dagster._core.origin import DEFAULT_DAGSTER_ENTRY_POINT, get_python_environment_entry_point
 from dagster._core.remote_origin import RemoteRepositoryOrigin
 from dagster._core.remote_representation.external_data import (

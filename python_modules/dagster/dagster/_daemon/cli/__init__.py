@@ -10,7 +10,8 @@ from dagster_shared.ipc import interrupt_on_ipc_shutdown_message
 from dagster import __version__ as dagster_version
 from dagster._cli.utils import assert_no_remaining_opts, get_instance_for_cli
 from dagster._cli.workspace.cli_target import workspace_opts_to_load_target
-from dagster._core.instance import DagsterInstance, InstanceRef
+from dagster._core.instance import DagsterInstance
+from dagster._core.instance.ref import InstanceRef
 from dagster._core.telemetry import telemetry_wrapper
 from dagster._daemon.controller import (
     DEFAULT_DAEMON_HEARTBEAT_TOLERANCE_SECONDS,

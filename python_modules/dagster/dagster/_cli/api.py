@@ -28,7 +28,8 @@ from dagster._core.execution.run_metrics_thread import (
     stop_run_metrics_thread,
 )
 from dagster._core.execution.stats import RunStepKeyStatsSnapshot
-from dagster._core.instance import DagsterInstance, InstanceRef
+from dagster._core.instance import DagsterInstance
+from dagster._core.instance.ref import InstanceRef
 from dagster._core.origin import (
     DEFAULT_DAGSTER_ENTRY_POINT,
     JobPythonOrigin,

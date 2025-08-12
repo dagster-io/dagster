@@ -8,8 +8,9 @@ from typing import TYPE_CHECKING, Any, Callable, Optional, TypeVar
 import click
 
 import dagster._check as check
-from dagster._core.instance import DagsterInstance, InstanceRef
+from dagster._core.instance import DagsterInstance
 from dagster._core.instance.config import is_dagster_home_set
+from dagster._core.instance.ref import InstanceRef
 from dagster._core.secrets.env_file import get_env_var_dict
 from dagster._utils.env import environ
 
