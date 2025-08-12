@@ -130,7 +130,11 @@ export function useLatestAssetPartitionMaterializations(
   limit: number,
 ) {
   const {partitionKeys, loading} = useLatestAssetPartitions(assetKey, limit);
-  return useAssetPartitionMaterializations(assetKey, [...partitionKeys].reverse(), loading);
+  return useAssetPartitionMaterializations(
+    assetKey,
+    useMemo(() => [...partitionKeys].reverse(), [partitionKeys]),
+    loading,
+  );
 }
 
 export type RecentAssetEvents = ReturnType<typeof useRecentAssetEvents>;
