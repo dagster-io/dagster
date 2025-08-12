@@ -23,7 +23,7 @@ class TestPostgresRunStorage(TestRunStorage):
         return True
 
     @pytest.fixture(name="instance", scope="function")
-    def instance(self, conn_string):  # pyright: ignore[reportIncompatibleMethodOverride]
+    def instance(self, conn_string):
         PostgresRunStorage.create_clean_storage(conn_string)
 
         with instance_for_test(
@@ -32,7 +32,7 @@ class TestPostgresRunStorage(TestRunStorage):
             yield instance
 
     @pytest.fixture(scope="function", name="storage")
-    def run_storage(self, instance):  # pyright: ignore[reportIncompatibleMethodOverride]
+    def run_storage(self, instance):
         storage = instance.run_storage
         assert isinstance(storage, PostgresRunStorage)
         yield storage
