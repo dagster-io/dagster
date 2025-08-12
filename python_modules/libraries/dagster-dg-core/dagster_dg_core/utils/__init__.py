@@ -392,7 +392,17 @@ class DgClickCommand(DgClickHelpMixin, click.Command):  # pyright: ignore[report
         super().__init__(*args, **kwargs)
 
 
-class DgClickGroup(DgClickHelpMixin, ClickAliasedGroup): ...  # pyright: ignore[reportIncompatibleMethodOverride]
+class DgClickGroup(DgClickHelpMixin, ClickAliasedGroup):  # pyright: ignore[reportIncompatibleMethodOverride]
+    def __init__(self, *args, unlaunched: bool = False, **kwargs):
+        """DgClickGroup with conditional hiding for unlaunched features.
+
+        Args:
+            unlaunched: If True, the group will be hidden unless DG_SHOW_UNLAUNCHED_COMMANDS
+                environment variable is set.
+        """
+        if unlaunched:
+            kwargs["hidden"] = os.getenv("DG_SHOW_UNLAUNCHED_COMMANDS") is None
+        super().__init__(*args, **kwargs)
 
 
 # ########################
