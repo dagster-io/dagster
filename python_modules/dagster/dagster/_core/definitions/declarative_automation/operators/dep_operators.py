@@ -76,7 +76,7 @@ class EntityMatchesCondition(
     ) -> Union[Self, T_AutomationCondition]:
         """Replaces all instances of ``old`` across any sub-conditions with ``new``.
 
-        If ``old`` is a string, then conditions with a label matching
+        If ``old`` is a string, then conditions with a label or name matching
         that string will be replaced.
 
         Args:
@@ -85,7 +85,7 @@ class EntityMatchesCondition(
         """
         return (
             new
-            if old in [self, self.get_label()]
+            if old in [self, self.name, self.get_label()]
             else copy(self, operand=self.operand.replace(old, new))
         )
 
@@ -176,7 +176,7 @@ class DepsAutomationCondition(BuiltinAutomationCondition[T_EntityKey]):
     ) -> Union[Self, T_AutomationCondition]:
         """Replaces all instances of ``old`` across any sub-conditions with ``new``.
 
-        If ``old`` is a string, then conditions with a label matching
+        If ``old`` is a string, then conditions with a label or name matching
         that string will be replaced.
 
         Args:
@@ -185,7 +185,7 @@ class DepsAutomationCondition(BuiltinAutomationCondition[T_EntityKey]):
         """
         return (
             new
-            if old in [self, self.get_label()]
+            if old in [self, self.name, self.get_label()]
             else copy(self, operand=self.operand.replace(old, new))
         )
 
