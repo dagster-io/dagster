@@ -108,11 +108,9 @@ make dev_webapp
 
 During development, you might find these commands useful. Run them from `js_modules/dagster-ui`:
 
-- `yarn ts`: Typescript typechecking
-- `yarn lint`: Linting with autofix
-- `yarn jest`: An interactive Jest test runner that runs only affected tests by default
-
-To run all of them together, run `yarn test`.
+- `make ts`: Typescript typechecking
+- `make lint`: Linting with autofix
+- `make jest`: Test runner that runs the full suite of tests
 
 ## Developing documentation
 
