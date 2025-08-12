@@ -58,7 +58,7 @@ const FinalRedirectOrLoadingRoot = () => {
   const repoWithAssetGroup = allRepos.find((r) => r.repository.assetGroups[0]);
   if (repoWithAssetGroup) {
     const {repository, repositoryLocation} = repoWithAssetGroup;
-    const assetGroup = repoWithAssetGroup.repository.assetGroups[0];
+    const assetGroup = repository.assetGroups[0];
     return (
       <Redirect
         to={workspacePath(
@@ -70,7 +70,9 @@ const FinalRedirectOrLoadingRoot = () => {
     );
   }
 
-  // Ben note: We only reach here if reposWithVisibleJobs === 0 AND there is no asset group.
+  // Ben note: We only reach here if anyReposWithVisibleJobs is false,
+  // hasAnyJobs is false, AND there is no asset group.
+  //
   // In this case, the overview would be blank so we go to the locations page.
   return <Redirect to="/locations" />;
 };
