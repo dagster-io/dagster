@@ -140,7 +140,7 @@ def test_evaluate_sessions_with_cache(mock_evaluate):
     ]
     mock_evaluate.return_value = mock_result
 
-    results = evaluate_sessions(sessions, metric, cached_results)
+    results = evaluate_sessions(sessions, metric, cached_results, [])
 
     assert len(results) == 3
     assert results["session1"]["score"] == 0.8

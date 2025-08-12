@@ -131,7 +131,10 @@ def save_results(eval_dir: Path, metric: Metric, cache: dict[str, dict[str, Any]
 
 
 def evaluate_sessions(
-    sessions: dict[str, dict[str, Any]], metric: Metric, cached_results: dict[str, dict[str, Any]]
+    sessions: dict[str, dict[str, Any]],
+    metric: Metric,
+    cached_results: dict[str, dict[str, Any]],
+    costs: list[float],
 ) -> dict[str, dict[str, Any]]:
     """Evaluate sessions that aren't in cache."""
     # Find uncached sessions
@@ -165,6 +168,8 @@ def evaluate_sessions(
             "reason": metric_result.reason,
             "evaluated_at": datetime.now().isoformat(),
         }
+        if metric_result.evaluation_cost:
+            costs.append(metric_result.evaluation_cost)
 
     return new_cache
 
@@ -174,6 +179,7 @@ def display_results(
     all_results: dict[str, dict[str, dict[str, Any]]],
     metrics: list[Metric],
     show_fields: tuple[str, ...],
+    costs: list[float],
 ) -> None:
     """Display evaluation results in a table."""
     console = Console()
@@ -244,6 +250,9 @@ def display_results(
     console.print(table)
     console.print()  # Add spacing after results
 
+    if costs:
+        console.print(f"Cost of new evals: ${sum(costs):.2f}")
+
 
 @click.command()
 @click.argument("directory")
@@ -256,24 +265,26 @@ def display_results(
 def main(directory: str, show: tuple[str, ...]) -> None:
     """Utility for performing evaluations over ai tool sessions.
 
+    \b
     Expects a directory containing:
     * Session files: <uuid>.json files with the following schema:
       {
-        "input": str,        # Required: The input prompt/question
-        "output": str,       # Required: The AI's response
-        "timestamp": str,    # Required: ISO format timestamp
-        ...                  # Optional: Any additional fields (can be displayed with --show)
+        "input": dict[str, Any],  # Required: The inputs ie {"prompt": ...}
+        "output": dict[str, Any], # Required: The generated outputs
+        "timestamp": str,         # Required: ISO format timestamp
+        ...                       # Other fields can be displayed with --show
       }
 
+    \b
     * Configuration file: eval.yaml with the following schema:
       metrics:
-        - name: str                    # Display name for the metric
-          criteria: str                # Evaluation criteria description
-          evaluation_steps:            # Optional: Specific evaluation steps
+        - name: str         # Display name for the metric
+          criteria: str     # Evaluation criteria description
+          evaluation_steps: # Optional: Specific evaluation steps
             - str
             - str
             ...
-
+    \b
     Example eval.yaml:
       metrics:
         - name: "Accuracy"
@@ -282,8 +293,8 @@ def main(directory: str, show: tuple[str, ...]) -> None:
             - "Check if the response directly answers the question"
             - "Verify factual correctness"
         - name: "Completeness"
-          criteria: "Does the response fully address all aspects of the question?"
-    """
+          criteria: "Does the response address all aspects of the question?"
+    """  # noqa: D301 # \b is click escape for not wrapping single newlines
     eval_dir = Path(directory)
 
     if not eval_dir.exists():
@@ -297,12 +308,13 @@ def main(directory: str, show: tuple[str, ...]) -> None:
 
     # Process each metric
     all_results = {}
+    costs = []
     for metric in config.metrics:
         # Load cache
         cached_results = load_results(eval_dir, metric)
 
         # Evaluate uncached sessions
-        updated_results = evaluate_sessions(sessions, metric, cached_results)
+        updated_results = evaluate_sessions(sessions, metric, cached_results, costs)
 
         # Save updated cache
         if updated_results != cached_results:
@@ -312,7 +324,7 @@ def main(directory: str, show: tuple[str, ...]) -> None:
         all_results[metric.id] = updated_results
 
     # Display results
-    display_results(sessions, all_results, config.metrics, show)
+    display_results(sessions, all_results, config.metrics, show, costs)
 
 
 if __name__ == "__main__":
