@@ -25,4 +25,4 @@ class DatabricksAssetBundleScaffolder(Scaffolder[DatabricksAssetBundleScaffoldPa
         rel_path = os.path.relpath(request.params.databricks_configs_path, start=project_root)
         path_str = f"{project_root_tmpl}/{rel_path}"
 
-        scaffold_component(request, {"databricks_configs": path_str})
+        scaffold_component(request, {"configs": path_str})
