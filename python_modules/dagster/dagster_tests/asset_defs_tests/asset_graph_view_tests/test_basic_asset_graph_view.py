@@ -115,6 +115,18 @@ def test_partitions_definition_valid_subset():
         assert subset.included_time_windows == old_partitions_subset.included_time_windows
         assert subset.partitions_def == current_partitions_def
 
+        new_asset_graph_subset = (
+            asset_graph_view.get_latest_asset_graph_subset_from_serialized_asset_graph_subset(
+                old_asset_graph_subset
+            )
+        )
+
+        assert (
+            new_asset_graph_subset != old_asset_graph_subset
+        )  # because the partitions defs are different
+
+        assert new_asset_graph_subset.partitions_subsets_by_asset_key[asset0.key] == subset
+
 
 @pytest.mark.parametrize(
     "invalid_asset_graph_subset, error_match",

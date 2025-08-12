@@ -2510,7 +2510,9 @@ def test_connected_assets_disconnected_partitions():
         ],
     )
 
-    target_root_subset = asset_backfill_data.get_target_root_asset_graph_subset(instance_queryer)
+    target_root_subset = asset_backfill_data.get_target_root_asset_graph_subset(
+        _get_asset_graph_view(instance, asset_graph, backfill_start_datetime)
+    )
     assert set(target_root_subset.iterate_asset_partitions()) == {
         AssetKeyPartitionKey(asset_key=dg.AssetKey(["foo"]), partition_key="2023-10-05"),
         AssetKeyPartitionKey(asset_key=dg.AssetKey(["foo"]), partition_key="2023-10-03"),
