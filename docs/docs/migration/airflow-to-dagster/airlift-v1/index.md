@@ -3,6 +3,8 @@ description: Airflow allows Dagster to connect to live Airflow instances through
 sidebar_position: 40
 title: Migrate from Airflow to Dagster
 sidebar_label: Migrating with Airlift v1
+canonicalUrl: '/migration/airflow-to-dagster/airlift-v1'
+slug: '/migration/airflow-to-dagster/airlift-v1'
 ---
 
 import UseAirliftComponent from '@site/docs/partials/\_UseAirliftComponent.md';

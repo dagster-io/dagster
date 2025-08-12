@@ -112,7 +112,7 @@
     },
     {
       "source": "/_apidocs/external-assets-rest",
-      "destination": "/api/dagster/external-assets-rest-api"
+      "destination": "/api/rest-apis/external-assets-rest-api"
     },
     {
       "source": "/_apidocs/repositories",
@@ -168,7 +168,15 @@
     },
     {
       "source": "/api/cli",
-      "destination": "/api/dagster/cli"
+      "destination": "/api/clis/cli"
+    },
+    {
+      "source": "/guides/operate/graphql",
+      "destination": "/api/graphql"
+    },
+    {
+      "source": "/guides/operate/graphql/graphql-client",
+      "destination": "/api/graphql/graphql-client"
     },
     {
       "source": "/api/definitions",
@@ -249,6 +257,18 @@
     {
       "source": "/api/python-api/dagster-shell",
       "destination": "/api/dagster/pipes"
+    },
+    {
+      "source": "/api/dg/create-dagster",
+      "destination": "/api/clis/create-dagster"
+    },
+    {
+      "source": "/api/dg/dg-cli",
+      "destination": "/api/clis/dg-cli/dg-cli-reference"
+    },
+    {
+      "source": "/api/dg/dg-cli-configuration",
+      "destination": "/api/clis/dg-cli/dg-cli-configuration"
     },
     {
       "source": "/deploying/celery",
@@ -566,7 +586,7 @@
     },
     {
       "source": "/dagster-plus/managing-deployments/dagster-cloud-cli",
-      "destination": "/deployment/dagster-plus/management/dagster-cloud-cli"
+      "destination": "/api/clis/dagster-cloud-cli"
     },
     {
       "source": "/dagster-plus/developing-testing/code-locations",
@@ -1115,11 +1135,11 @@
     },
     {
       "source": "/concepts/webserver/graphql",
-      "destination": "/guides/operate/graphql"
+      "destination": "/api/graphql"
     },
     {
       "source": "/concepts/webserver/graphql-client",
-      "destination": "/guides/operate/graphql/graphql-client"
+      "destination": "/api/graphql/graphql-client"
     },
     {
       "source": "/dagster-plus/deployment",
@@ -1395,7 +1415,11 @@
     },
     {
       "source": "/dagster-plus/managing-deployments/dagster-plus-cli",
-      "destination": "/deployment/dagster-plus/management/dagster-cloud-cli"
+      "destination": "/api/clis/dagster-cloud-cli"
+    },
+    {
+      "source": "/deployment/dagster-plus/management/dagster-cloud-cli",
+      "destination": "/api/clis/dagster-cloud-cli"
     },
     {
       "source": "/dagster-plus/references/ci-cd-file-reference",
@@ -1960,6 +1984,38 @@
     {
       "source": "/guides/labs/components/managing-multiple-code-locations",
       "destination": "/guides/build/projects/multiple-projects"
+    },
+    {
+      "source": "/guides/build/components/integrations/dlt-component-tutorial",
+      "destination": "/integrations/libraries/dlt"
+    },
+    {
+      "source": "/guides/build/components/integrations/sling-component-tutorial",
+      "destination": "/integrations/libraries/sling"
+    },
+    {
+      "source": "/guides/build/components/integrations/fivetran-component-tutorial",
+      "destination": "/integrations/libraries/fivetran"
+    },
+    {
+      "source": "/guides/build/components/integrations/airbyte-cloud-component-tutorial",
+      "destination": "/integrations/libraries/airbyte/airbyte-cloud-component"
+    },
+    {
+      "source": "/guides/build/components/integrations/powerbi-component-tutorial",
+      "destination": "/integrations/libraries/powerbi"
+    },
+    {
+      "source": "/guides/build/components/integrations/snowflake-sql-component-tutorial",
+      "destination": "/integrations/libraries/snowflake/snowflake-sql-component"
+    },
+    {
+      "source": "/guides/build/components/integrations/dbt-component-tutorial",
+      "destination": "/integrations/libraries/dbt/dbt-component"
+    },
+    {
+      "source": "/guides/build/components/integrations",
+      "destination": "/integrations/libraries"
     },
     {
       "source": "/guides/preview/",
@@ -2864,7 +2920,7 @@
     },
     {
       "source": "/concepts/dagit/graphql-client",
-      "destination": "/guides/operate/graphql/graphql-client"
+      "destination": "/api/graphql/graphql-client"
     },
     {
       "source": "/concepts/code-locations/workspaces",
@@ -3188,11 +3244,11 @@
     },
     {
       "source": "/guides/labs/dg/dagster-dg-cli",
-      "destination": "/api/dg/dg-cli"
+      "destination": "/api/clis/dg-cli/dg-cli-reference"
     },
     {
       "source": "/guides/labs/create-dagster",
-      "destination": "/api/dg/create-dagster"
+      "destination": "/api/clis/create-dagster"
     },
     {
       "source": "/guides/labs/components/creating-new-component-types",
@@ -3236,15 +3292,15 @@
     },
     {
       "source": "/guides/labs/dg/configuring-dg",
-      "destination": "/api/dg/dg-cli-configuration"
+      "destination": "/api/clis/dg-cli/dg-cli-configuration"
     },
     {
       "source": "/api/dagster/dg-cli",
-      "destination": "/api/dg/dg-cli"
+      "destination": "/api/clis/dg-cli/dg-cli-reference"
     },
     {
       "source": "/guides/labs/dg/dagster-definitions",
-      "destination": "/api/dg/dg-cli"
+      "destination": "/api/clis/dg-cli/dg-cli-reference"
     },
     {
       "source": "/guides/labs/dg/using-resources",
@@ -3268,11 +3324,11 @@
     },
     {
       "source": "/guides/labs/dg/configuring-dg",
-      "destination": "/api/dg/dg-configuration"
+      "destination": "/api/clis/dg-cli/dg-cli-configuration"
     },
     {
       "source": "/api/dagster/create-dagster",
-      "destination": "/api/dg/create-dagster"
+      "destination": "/api/clis/create-dagster"
     },
     {
       "source": "/guides/labs/dg",

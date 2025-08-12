@@ -2,6 +2,8 @@
 description: Dagster Components is a new way to structure your Dagster projects that provides an intelligent project layout that supports basic to advanced projects, and a set of easy-to-use component types for common integrations.
 sidebar_position: 30
 title: Components
+canonicalUrl: "/guides/build/components"
+slug: "/guides/build/components"
 ---
 
 import DgComponentsRc from '@site/docs/partials/\_DgComponentsRc.md';
@@ -22,7 +24,7 @@ For more advanced use cases, it provides:
 
 ## Installation
 
-To use Dagster Components, you'll need to [install the `dg` command line tool](/api/dg). `dg` allows you to quickly scaffold Dagster projects and populate them with components.
+To use Dagster Components, you'll need to [install the `dg` command line tool](/api/clis). `dg` allows you to quickly scaffold Dagster projects and populate them with components.
 
 ## Next steps
 

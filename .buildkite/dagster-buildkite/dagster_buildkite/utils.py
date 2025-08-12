@@ -236,6 +236,15 @@ def skip_if_not_dagster_dbt_cloud_commit() -> Optional[str]:
     )
 
 
+def skip_if_not_dagster_dbt_commit() -> Optional[str]:
+    """If no dagster-dbt files are touched, then do NOT run. Even if on master."""
+    return (
+        None
+        if (any("dagster_dbt" in str(path) for path in ChangedFiles.all))
+        else "Not a dagster-dbt commit"
+    )
+
+
 def skip_if_no_helm_changes():
     if message_contains("NO_SKIP"):
         return None

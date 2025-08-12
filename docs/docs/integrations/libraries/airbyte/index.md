@@ -8,6 +8,8 @@ pypi: https://pypi.org/project/dagster-airbyte/
 sidebar_custom_props:
   logo: images/integrations/airbyte.svg
 partnerlink: https://airbyte.com/tutorials/orchestrate-data-ingestion-and-transformation-pipelines
+canonicalUrl: '/integrations/libraries/airbyte'
+slug: '/integrations/libraries/airbyte'
 ---
 
 import DocCardList from '@theme/DocCardList';

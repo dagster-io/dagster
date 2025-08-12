@@ -31,7 +31,7 @@ Before you start, note that:
 
 ## Using the API
 
-In this example, we're using the [GraphQL Python Client](/guides/operate/graphql/graphql-client) to export the Dagster credits metric for all assets for September 2023:
+In this example, we're using the [GraphQL Python Client](/api/graphql/graphql-client) to export the Dagster credits metric for all assets for September 2023:
 
 ```python
 from datetime import datetime

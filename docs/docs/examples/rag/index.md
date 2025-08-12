@@ -6,6 +6,8 @@ last_update:
 sidebar_custom_props:
   logo: images/integrations/pinecone.svg
 tags: [code-example]
+canonicalUrl: '/examples/rag'
+slug: '/examples/rag'
 ---
 
 :::note

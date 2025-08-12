@@ -2,7 +2,7 @@ import {pathHorizontalDiagonal, pathVerticalDiagonal} from '@vx/shape';
 import memoize from 'lodash/memoize';
 
 import {AssetNodeKeyFragment} from './types/AssetNode.types';
-import {COMMON_COLLATOR} from '../app/Util';
+import {COMMON_COLLATOR} from '../app/commonCollator';
 import {
   AssetCheckLiveFragment,
   AssetLatestInfoFragment,

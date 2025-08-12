@@ -262,7 +262,4 @@ export const gqlTypePredicate =
     return node.__typename === typename;
   };
 
-export const COMMON_COLLATOR = new Intl.Collator(
-  typeof navigator !== 'undefined' ? navigator.language : 'en-US',
-  {sensitivity: 'base'},
-);
+export {COMMON_COLLATOR} from './commonCollator';

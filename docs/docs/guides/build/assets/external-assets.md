@@ -101,7 +101,7 @@ curl \
 </TabItem>
 </Tabs>
 
-Refer to the [External assets REST API documentation](/api/dagster/external-assets-rest-api) for more information.
+Refer to the [External assets REST API documentation](/api/rest-apis/external-assets-rest-api) for more information.
 
 ## Modeling a graph of external assets
 
