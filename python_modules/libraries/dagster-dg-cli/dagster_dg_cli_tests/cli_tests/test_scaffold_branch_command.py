@@ -1,4 +1,5 @@
 import subprocess
+from tempfile import TemporaryDirectory
 from unittest.mock import Mock, patch
 
 import click
@@ -9,6 +10,7 @@ from dagster_dg_core_tests.utils import (
     assert_runner_result,
     isolated_example_project_foo_bar,
 )
+from dagster_shared.utils import environ
 
 
 def test_scaffold_branch_command_success():
@@ -18,9 +20,9 @@ def test_scaffold_branch_command_success():
         isolated_example_project_foo_bar(
             runner,
             in_workspace=False,
-            uv_sync=True,
-        ) as project_dir,
-        activate_venv(project_dir / ".venv"),
+        ),
+        TemporaryDirectory() as temp_dir,
+        environ({"DAGSTER_GIT_REPO_DIR": ""}),
     ):
         # Mock the subprocess calls to simulate git and gh commands
         with (
@@ -37,12 +39,13 @@ def test_scaffold_branch_command_success():
                 stderr="",
             )
 
-            result = runner.invoke("scaffold", "branch", "my-feature-branch")
+            result = runner.invoke("scaffold", "branch", "my-feature-branch", "--record", temp_dir)
             assert_runner_result(result)
 
             # Verify git commands were called in correct order
             expected_git_calls = [
                 (["checkout", "-b", "my-feature-branch"],),
+                (["rev-parse", "HEAD"],),
                 (["commit", "--allow-empty", "-m", "Initial commit for my-feature-branch branch"],),
                 (["push", "-u", "origin", "my-feature-branch"],),
             ]
@@ -74,6 +77,7 @@ def test_scaffold_branch_command_success():
                 "✅ Successfully created branch and pull request: https://github.com/user/repo/pull/123"
                 in result.output
             )
+            assert "📝 Session recorded:" in result.output
 
 
 def test_scaffold_branch_command_whitespace_branch_name():
@@ -83,9 +87,7 @@ def test_scaffold_branch_command_whitespace_branch_name():
         isolated_example_project_foo_bar(
             runner,
             in_workspace=False,
-            uv_sync=True,
-        ) as project_dir,
-        activate_venv(project_dir / ".venv"),
+        ),
     ):
         with (
             patch("dagster_dg_cli.cli.scaffold.branch._run_git_command") as mock_git,
@@ -147,9 +149,7 @@ def test_scaffold_branch_command_ai_inference_success():
         isolated_example_project_foo_bar(
             runner,
             in_workspace=False,
-            uv_sync=True,
-        ) as project_dir,
-        activate_venv(project_dir / ".venv"),
+        ),
     ):
         with (
             patch("dagster_dg_cli.cli.scaffold.branch._run_git_command") as mock_git,
@@ -184,6 +184,7 @@ def test_scaffold_branch_command_ai_inference_success():
             # Branch name gets UUID suffix: add-authentication-feature-abcd1234
             expected_git_calls = [
                 (["checkout", "-b", "add-authentication-feature-abcd1234"],),
+                (["rev-parse", "HEAD"],),
                 (
                     [
                         "commit",
@@ -196,6 +197,7 @@ def test_scaffold_branch_command_ai_inference_success():
                 (["add", "-A"],),
                 (["commit", "-m", "First pass at add-authentication-feature-abcd1234"],),
                 (["push"],),
+                (["rev-parse", "HEAD"],),
             ]
             actual_git_calls = [call[0] for call in mock_git.call_args_list]
             assert actual_git_calls == expected_git_calls
@@ -269,6 +271,7 @@ def test_scaffold_branch_command_github_issue_url(github_url):
             # Branch name gets UUID suffix: fix-issue-123-abcd1234
             expected_git_calls = [
                 (["checkout", "-b", "fix-issue-123-abcd1234"],),
+                (["rev-parse", "HEAD"],),
                 (
                     [
                         "commit",
@@ -281,6 +284,7 @@ def test_scaffold_branch_command_github_issue_url(github_url):
                 (["add", "-A"],),
                 (["commit", "-m", "First pass at fix-issue-123-abcd1234"],),
                 (["push"],),
+                (["rev-parse", "HEAD"],),
             ]
             actual_git_calls = [call[0] for call in mock_git.call_args_list]
             assert actual_git_calls == expected_git_calls
