@@ -165,6 +165,7 @@ def create_instance_from_ref(instance_ref: InstanceRef) -> "DagsterInstance":
         run_launcher=None,  # lazy load
         settings=instance_ref.settings,
         secrets_loader=instance_ref.secrets_loader,
+        defs_state_storage=instance_ref.defs_state_storage,
         ref=instance_ref,
         **kwargs,
     )

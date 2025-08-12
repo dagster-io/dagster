@@ -143,6 +143,7 @@ class DagsterInstance(
         schedule_storage: Optional["ScheduleStorage"] = None,
         settings: Optional[Mapping[str, Any]] = None,
         secrets_loader: Optional["SecretsLoader"] = None,
+        defs_state_storage: Optional["DefsStateStorage"] = None,
         ref: Optional[InstanceRef] = None,
         **_kwargs: Any,  # we accept kwargs for forward-compat of custom instances
     ):
@@ -151,7 +152,7 @@ class DagsterInstance(
         from dagster._core.scheduler import Scheduler
         from dagster._core.secrets import SecretsLoader
         from dagster._core.storage.compute_log_manager import ComputeLogManager
-        from dagster._core.storage.defs_state.base import DefsStateStorage
+        from dagster._core.storage.defs_state import DefsStateStorage
         from dagster._core.storage.event_log import EventLogStorage
         from dagster._core.storage.root import LocalArtifactStorage
         from dagster._core.storage.runs import RunStorage
@@ -166,9 +167,6 @@ class DagsterInstance(
 
         self._run_storage = check.inst_param(run_storage, "run_storage", RunStorage)
         self._run_storage.register_instance(self)
-
-        self._defs_state_storage = DefsStateStorage.from_run_storage(self._run_storage)
-        self._defs_state_storage.register_instance(self)
 
         if compute_log_manager:
             self._compute_log_manager = check.inst_param(
@@ -214,6 +212,12 @@ class DagsterInstance(
 
         if self._secrets_loader:
             self._secrets_loader.register_instance(self)
+
+        self._defs_state_storage = check.opt_inst_param(
+            defs_state_storage, "defs_state_storage", DefsStateStorage
+        )
+        if self._defs_state_storage:
+            self._defs_state_storage.register_instance(self)
 
         self._ref = check.opt_inst_param(ref, "ref", InstanceRef)
 
