@@ -1,8 +1,10 @@
 from collections.abc import Iterator
+from typing import Any
 
 from dagster import AssetExecutionContext, AssetMaterialization, ConfigurableResource
 from dagster_shared.utils.cached_method import cached_method
 from databricks.sdk import WorkspaceClient
+from databricks.sdk.service import jobs
 from databricks.sdk.service import compute, jobs
 from pydantic import Field
 
