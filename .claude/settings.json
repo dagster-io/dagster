@@ -6,7 +6,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "python3 $DAGSTER_GIT_REPO_DIR/.claude/hooks/python-ruff-check.py"
+            "command": "python3 .claude/hooks/python-ruff-check.py"
           }
         ]
       }

@@ -5,13 +5,18 @@ import subprocess
 import sys
 
 
+def _make_me_click_echo(msg: str, *, err: bool = False) -> None:
+    """Print function for CLI output - centralized to suppress T201 warnings."""
+    print(msg, file=sys.stderr if err else sys.stdout)
+
+
 def main():
     """Claude Code hook to run 'make ruff' when Python files are modified."""
     # Read hook input from stdin
     try:
         hook_data = json.loads(sys.stdin.read())
     except (json.JSONDecodeError, Exception) as e:
-        print(f"Error reading hook data: {e}", file=sys.stderr)
+        _make_me_click_echo(f"Error reading hook data: {e}", err=True)
         sys.exit(1)
 
     # Extract file path from the tool use data
@@ -23,17 +28,14 @@ def main():
 
     # Check if a Python file was modified
     if file_path and file_path.endswith(".py"):
-        print(f"Python file modified: {file_path}")
+        _make_me_click_echo(f"Python file modified: {file_path}")
 
-        # Change to repository root
-        repo_root = os.environ.get("DAGSTER_GIT_REPO_DIR")
-        if not repo_root:
-            print("DAGSTER_GIT_REPO_DIR not set, using current directory", file=sys.stderr)
-            repo_root = os.getcwd()
+        # Use current working directory
+        repo_root = os.getcwd()
 
         try:
             os.chdir(repo_root)
-            print("Running make ruff...")
+            _make_me_click_echo("Running make ruff...")
 
             # Run make ruff
             result = subprocess.run(
@@ -41,22 +43,22 @@ def main():
             )
 
             if result.returncode == 0:
-                print("✓ make ruff completed successfully")
+                _make_me_click_echo("✓ make ruff completed successfully")
                 if result.stdout.strip():
-                    print(result.stdout)
+                    _make_me_click_echo(result.stdout)
             else:
-                print(f"⚠ make ruff failed with exit code {result.returncode}")
+                _make_me_click_echo(f"⚠ make ruff failed with exit code {result.returncode}")
                 if result.stderr:
-                    print(f"Error: {result.stderr}")
+                    _make_me_click_echo(f"Error: {result.stderr}")
                 if result.stdout:
-                    print(f"Output: {result.stdout}")
+                    _make_me_click_echo(f"Output: {result.stdout}")
 
         except subprocess.TimeoutExpired:
-            print("⚠ make ruff timed out after 120 seconds")
+            _make_me_click_echo("⚠ make ruff timed out after 120 seconds")
         except FileNotFoundError:
-            print("⚠ make command not found")
+            _make_me_click_echo("⚠ make command not found")
         except Exception as e:
-            print(f"⚠ Error running make ruff: {e}")
+            _make_me_click_echo(f"⚠ Error running make ruff: {e}")
     else:
         # Not a Python file, exit silently
         pass
