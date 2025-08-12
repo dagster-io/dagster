@@ -9,7 +9,7 @@ from dagster._annotations import public
 from dagster._core.events import DagsterEvent
 from dagster._core.execution.backfill import BulkActionsFilter, BulkActionStatus, PartitionBackfill
 from dagster._core.execution.telemetry import RunTelemetryData
-from dagster._core.instance import MayHaveInstanceWeakref, T_DagsterInstance
+from dagster._core.instance.types import MayHaveInstanceWeakref, T_DagsterInstance
 from dagster._core.snap import ExecutionPlanSnapshot, JobSnap
 from dagster._core.storage.daemon_cursor import DaemonCursorStorage
 from dagster._core.storage.dagster_run import (

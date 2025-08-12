@@ -10,8 +10,6 @@ from dagster._core.instance.types import (
     CachingDynamicPartitionsLoader as CachingDynamicPartitionsLoader,
     DynamicPartitionsStore as DynamicPartitionsStore,
     InstanceType as InstanceType,
-    MayHaveInstanceWeakref as MayHaveInstanceWeakref,
-    T_DagsterInstance as T_DagsterInstance,
 )
 from dagster._core.instance.utils import (
     RUNLESS_JOB_NAME as RUNLESS_JOB_NAME,
@@ -33,7 +31,5 @@ __all__ = [
     "DynamicPartitionsStore",
     "InstanceRef",
     "InstanceType",
-    "MayHaveInstanceWeakref",
-    "T_DagsterInstance",
     "get_current_timestamp",
 ]

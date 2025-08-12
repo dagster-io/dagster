@@ -10,7 +10,7 @@ from typing_extensions import Self
 import dagster._check as check
 from dagster._annotations import public
 from dagster._core.captured_log_api import LogLineCursor
-from dagster._core.instance import MayHaveInstanceWeakref, T_DagsterInstance
+from dagster._core.instance.types import MayHaveInstanceWeakref, T_DagsterInstance
 from dagster._record import record
 from dagster._serdes import whitelist_for_serdes
 

@@ -3,7 +3,7 @@ from enum import Enum
 from typing import TYPE_CHECKING, NamedTuple, Optional
 
 from dagster._annotations import public
-from dagster._core.instance import MayHaveInstanceWeakref, T_DagsterInstance
+from dagster._core.instance.types import MayHaveInstanceWeakref, T_DagsterInstance
 from dagster._core.origin import JobPythonOrigin
 from dagster._core.storage.dagster_run import DagsterRun
 from dagster._serdes import whitelist_for_serdes
