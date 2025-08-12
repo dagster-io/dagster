@@ -116,18 +116,17 @@ class DagsterWebserver(
 
     async def download_debug_file_endpoint(self, request: Request):
         run_id = request.path_params["run_id"]
-        context = self.make_request_context(request)
+        with self.make_request_context(request) as context:
+            run = context.instance.get_run_by_id(run_id)
+            debug_payload = DebugRunPayload.build(context.instance, run)  # type: ignore  # (possible none)
 
-        run = context.instance.get_run_by_id(run_id)
-        debug_payload = DebugRunPayload.build(context.instance, run)  # type: ignore  # (possible none)
+            result = io.BytesIO()
+            with gzip.GzipFile(fileobj=result, mode="wb") as file:
+                debug_payload.write(file)
 
-        result = io.BytesIO()
-        with gzip.GzipFile(fileobj=result, mode="wb") as file:
-            debug_payload.write(file)
+            result.seek(0)  # be kind, please rewind
 
-        result.seek(0)  # be kind, please rewind
-
-        return StreamingResponse(result, media_type="application/gzip")
+            return StreamingResponse(result, media_type="application/gzip")
 
     async def download_notebook(self, request: Request):
         try:
@@ -140,64 +139,64 @@ class DagsterWebserver(
                 "<code>pip install dagster-webserver[notebook]</code>"
             )
 
-        context = self.make_request_context(request)
-        code_location_name = request.query_params["repoLocName"]
+        with self.make_request_context(request) as context:
+            code_location_name = request.query_params["repoLocName"]
 
-        nb_path = request.query_params["path"]
-        if not nb_path.endswith(".ipynb"):
-            return PlainTextResponse("Invalid Path", status_code=400)
+            nb_path = request.query_params["path"]
+            if not nb_path.endswith(".ipynb"):
+                return PlainTextResponse("Invalid Path", status_code=400)
 
-        # get ipynb content from grpc call
-        notebook_content = context.get_notebook_data(code_location_name, nb_path)
-        check.inst_param(notebook_content, "notebook_content", bytes)
+            # get ipynb content from grpc call
+            notebook_content = context.get_notebook_data(code_location_name, nb_path)
+            check.inst_param(notebook_content, "notebook_content", bytes)
 
-        # parse content to HTML
-        notebook = nbformat.reads(notebook_content, as_version=4)
-        html_exporter = HTMLExporter()
-        (body, resources) = html_exporter.from_notebook_node(notebook)
-        return HTMLResponse("<style>" + resources["inlining"]["css"][0] + "</style>" + body)
+            # parse content to HTML
+            notebook = nbformat.reads(notebook_content, as_version=4)
+            html_exporter = HTMLExporter()
+            (body, resources) = html_exporter.from_notebook_node(notebook)
+            return HTMLResponse("<style>" + resources["inlining"]["css"][0] + "</style>" + body)
 
     async def download_captured_logs_endpoint(self, request: Request):
         [*log_key, file_extension] = request.path_params["path"].split("/")
-        context = self.make_request_context(request)
-        compute_log_manager = context.instance.compute_log_manager
+        with self.make_request_context(request) as context:
+            compute_log_manager = context.instance.compute_log_manager
 
-        if not isinstance(
-            compute_log_manager, (LocalComputeLogManager, CloudStorageComputeLogManager)
-        ):
-            raise HTTPException(
-                404, detail="Compute log manager is not compatible for local downloads"
-            )
+            if not isinstance(
+                compute_log_manager, (LocalComputeLogManager, CloudStorageComputeLogManager)
+            ):
+                raise HTTPException(
+                    404, detail="Compute log manager is not compatible for local downloads"
+                )
 
-        if isinstance(compute_log_manager, CloudStorageComputeLogManager):
-            io_type = ComputeIOType.STDOUT if file_extension == "out" else ComputeIOType.STDERR
-            if compute_log_manager.cloud_storage_has_logs(
-                log_key, io_type
-            ) and not compute_log_manager.has_local_file(log_key, io_type):
-                compute_log_manager.download_from_cloud_storage(log_key, io_type)
-            location = compute_log_manager.local_manager.get_captured_local_path(
-                log_key, file_extension
-            )
-        else:
-            location = compute_log_manager.get_captured_local_path(log_key, file_extension)
+            if isinstance(compute_log_manager, CloudStorageComputeLogManager):
+                io_type = ComputeIOType.STDOUT if file_extension == "out" else ComputeIOType.STDERR
+                if compute_log_manager.cloud_storage_has_logs(
+                    log_key, io_type
+                ) and not compute_log_manager.has_local_file(log_key, io_type):
+                    compute_log_manager.download_from_cloud_storage(log_key, io_type)
+                location = compute_log_manager.local_manager.get_captured_local_path(
+                    log_key, file_extension
+                )
+            else:
+                location = compute_log_manager.get_captured_local_path(log_key, file_extension)
 
-        if not location or not path.exists(location):
-            raise HTTPException(404, detail="No log files available for download")
+            if not location or not path.exists(location):
+                raise HTTPException(404, detail="No log files available for download")
 
-        filebase = "__".join(log_key)
-        return FileResponse(location, filename=f"{filebase}.{file_extension}")
+            filebase = "__".join(log_key)
+            return FileResponse(location, filename=f"{filebase}.{file_extension}")
 
     async def report_asset_materialization_endpoint(self, request: Request) -> JSONResponse:
-        context = self.make_request_context(request)
-        return await handle_report_asset_materialization_request(context, request)
+        with self.make_request_context(request) as context:
+            return await handle_report_asset_materialization_request(context, request)
 
     async def report_asset_check_endpoint(self, request: Request) -> JSONResponse:
-        context = self.make_request_context(request)
-        return await handle_report_asset_check_request(context, request)
+        with self.make_request_context(request) as context:
+            return await handle_report_asset_check_request(context, request)
 
     async def report_asset_observation_endpoint(self, request: Request) -> JSONResponse:
-        context = self.make_request_context(request)
-        return await handle_report_asset_observation_request(context, request)
+        with self.make_request_context(request) as context:
+            return await handle_report_asset_observation_request(context, request)
 
     def index_html_endpoint(self, request: Request):
         """Serves root html."""

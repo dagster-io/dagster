@@ -5,6 +5,7 @@ from enum import Enum
 from typing import TYPE_CHECKING, Any, Generic, Optional, TypeVar, Union, cast
 
 import dagster._check as check
+from dagster._core.workspace.context import BaseWorkspaceRequestContext
 from dagster._serdes import pack_value
 from dagster._utils.error import serializable_error_info_from_exc_info
 from dagster_graphql.implementation.utils import ErrorCapture
@@ -43,7 +44,7 @@ class GraphQLWS(str, Enum):
     STOP = "stop"
 
 
-TRequestContext = TypeVar("TRequestContext")
+TRequestContext = TypeVar("TRequestContext", bound=BaseWorkspaceRequestContext)
 
 
 class GraphQLServer(ABC, Generic[TRequestContext]):
@@ -235,15 +236,15 @@ class GraphQLServer(ABC, Generic[TRequestContext]):
         variables: Optional[dict[str, Any]],
         operation_name: Optional[str],
     ) -> JSONResponse:
-        request_context = self.make_request_context(request)
-        return run(
-            self.gen_graphql_response(
-                request_context=request_context,
-                query=query,
-                variables=variables,
-                operation_name=operation_name,
+        with self.make_request_context(request) as request_context:
+            return run(
+                self.gen_graphql_response(
+                    request_context=request_context,
+                    query=query,
+                    variables=variables,
+                    operation_name=operation_name,
+                )
             )
-        )
 
     async def gen_graphql_response(
         self,
@@ -283,31 +284,31 @@ class GraphQLServer(ABC, Generic[TRequestContext]):
         variables: Optional[dict[str, Any]],
         operation_name: Optional[str],
     ) -> tuple[Optional[Task], Optional[GraphQLFormattedError]]:
-        request_context = self.make_request_context(websocket)
-        try:
-            async_result = await self._graphql_schema.subscribe(
-                query,
-                variables=variables,
-                operation_name=operation_name,
-                context=request_context,
+        with self.make_request_context(websocket) as request_context:
+            try:
+                async_result = await self._graphql_schema.subscribe(
+                    query,
+                    variables=variables,
+                    operation_name=operation_name,
+                    context=request_context,
+                )
+            except GraphQLError as error:
+                error_payload = error.formatted
+                return None, error_payload
+
+            if isinstance(async_result, ExecutionResult):
+                if not async_result.errors:
+                    check.failed(f"Only expect non-async result on error, got {async_result}")
+                handled_errors = self.handle_graphql_errors(async_result.errors)
+                # return only one entry for subscription response
+                return None, handled_errors[0]
+
+            # in the future we should get back async gen directly, back compat for now
+            task = get_event_loop().create_task(
+                _handle_async_results(async_result, operation_id, websocket)
             )
-        except GraphQLError as error:
-            error_payload = error.formatted
-            return None, error_payload
 
-        if isinstance(async_result, ExecutionResult):
-            if not async_result.errors:
-                check.failed(f"Only expect non-async result on error, got {async_result}")
-            handled_errors = self.handle_graphql_errors(async_result.errors)
-            # return only one entry for subscription response
-            return None, handled_errors[0]
-
-        # in the future we should get back async gen directly, back compat for now
-        task = get_event_loop().create_task(
-            _handle_async_results(async_result, operation_id, websocket)
-        )
-
-        return task, None
+            return task, None
 
     def create_asgi_app(
         self,

@@ -17,6 +17,7 @@ from dagster._core.definitions.asset_key import AssetKey
 from dagster._core.definitions.assets.graph.remote_asset_graph import RemoteRepositoryAssetNode
 from dagster._core.definitions.data_time import CachingDataTimeResolver
 from dagster._core.definitions.data_version import CachingStaleStatusResolver
+from dagster._core.definitions.partitions.context import partition_loading_context
 from dagster._core.definitions.selector import (
     JobSelector,
     JobSubsetSelector,
@@ -102,6 +103,8 @@ class BaseWorkspaceRequestContext(LoadingContext):
     into errors.
     """
 
+    _exit_stack: ExitStack
+
     @property
     @abstractmethod
     def instance(self) -> DagsterInstance: ...
@@ -117,6 +120,16 @@ class BaseWorkspaceRequestContext(LoadingContext):
     # implemented here since they require the full CurrentWorkspace
     def get_code_location_entries(self) -> Mapping[str, CodeLocationEntry]:
         return self.get_current_workspace().code_location_entries
+
+    def __enter__(self) -> Self:
+        self._exit_stack = ExitStack()
+        self._exit_stack.enter_context(
+            partition_loading_context(dynamic_partitions_store=self.dynamic_partitions_loader)
+        )
+        return self
+
+    def __exit__(self, exception_type, exception_value, traceback) -> None:
+        self._exit_stack.close()
 
     @property
     def asset_graph(self) -> "RemoteWorkspaceAssetGraph":
