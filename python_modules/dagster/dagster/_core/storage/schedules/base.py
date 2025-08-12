@@ -8,7 +8,7 @@ from dagster._core.definitions.declarative_automation.serialized_objects import 
     AutomationConditionEvaluationWithRunIds,
 )
 from dagster._core.definitions.run_request import InstigatorType
-from dagster._core.instance import MayHaveInstanceWeakref, T_DagsterInstance
+from dagster._core.instance.types import MayHaveInstanceWeakref, T_DagsterInstance
 from dagster._core.scheduler.instigation import (
     AutoMaterializeAssetEvaluationRecord,
     InstigatorState,

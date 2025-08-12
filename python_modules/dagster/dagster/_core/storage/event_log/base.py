@@ -28,8 +28,8 @@ from dagster._core.execution.stats import (
     build_run_stats_from_events,
     build_run_step_stats_from_events,
 )
-from dagster._core.instance import MayHaveInstanceWeakref, T_DagsterInstance
 from dagster._core.instance.config import PoolConfig
+from dagster._core.instance.types import MayHaveInstanceWeakref, T_DagsterInstance
 from dagster._core.loader import LoadableBy, LoadingContext
 from dagster._core.storage.asset_check_execution_record import (
     AssetCheckExecutionRecord,

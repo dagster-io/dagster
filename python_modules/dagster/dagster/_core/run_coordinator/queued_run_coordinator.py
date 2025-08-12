@@ -13,7 +13,7 @@ from dagster import (
 from dagster._builtins import Bool
 from dagster._config import Array, Field, Noneable, ScalarUnion, Shape
 from dagster._config.config_schema import UserConfigSchema
-from dagster._core.instance import T_DagsterInstance
+from dagster._core.instance.types import T_DagsterInstance
 from dagster._core.run_coordinator.base import RunCoordinator, SubmitRunContext
 from dagster._core.storage.dagster_run import DagsterRun, DagsterRunStatus
 from dagster._serdes import ConfigurableClass, ConfigurableClassData

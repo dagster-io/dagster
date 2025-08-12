@@ -22,7 +22,7 @@ from dagster import (
 )
 from dagster._core.errors import DagsterInvariantViolationError
 from dagster._core.events import EngineEventData
-from dagster._core.instance import T_DagsterInstance
+from dagster._core.instance.types import T_DagsterInstance
 from dagster._core.launcher.base import (
     CheckRunHealthResult,
     LaunchRunContext,
