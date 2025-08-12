@@ -405,6 +405,7 @@ def submit_backfill_runs(
         code_location = workspace.get_code_location(location_name)
 
         dagster_run = create_backfill_run(
+            workspace,
             instance,
             code_location,
             remote_job,
@@ -442,6 +443,7 @@ def submit_backfill_runs(
 
 
 def create_backfill_run(
+    request_context: BaseWorkspaceRequestContext,
     instance: DagsterInstance,
     code_location: CodeLocation,
     remote_job: RemoteJob,
@@ -487,6 +489,7 @@ def create_backfill_run(
             return None
         return instance.create_reexecuted_run(
             parent_run=last_run,
+            request_context=request_context,
             code_location=code_location,
             remote_job=remote_job,
             strategy=ReexecutionStrategy.FROM_FAILURE,
