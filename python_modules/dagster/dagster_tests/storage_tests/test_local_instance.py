@@ -13,7 +13,8 @@ from dagster import (
     _check as check,
 )
 from dagster._core.execution.stats import StepEventStatus
-from dagster._core.instance import DagsterInstance, InstanceRef, InstanceType
+from dagster._core.instance import DagsterInstance, InstanceType
+from dagster._core.instance.ref import InstanceRef
 from dagster._core.run_coordinator import DefaultRunCoordinator
 from dagster._core.storage.dagster_run import DagsterRunStatus
 from dagster._core.storage.event_log import SqliteEventLogStorage

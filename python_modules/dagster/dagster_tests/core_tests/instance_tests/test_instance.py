@@ -22,8 +22,9 @@ from dagster._core.definitions.partitions.partition_key_range import PartitionKe
 from dagster._core.definitions.partitions.subset import KeyRangesPartitionsSubset
 from dagster._core.errors import DagsterHomeNotSetError
 from dagster._core.execution.api import create_execution_plan
-from dagster._core.instance import DagsterInstance, InstanceRef
+from dagster._core.instance import DagsterInstance
 from dagster._core.instance.config import DEFAULT_LOCAL_CODE_SERVER_STARTUP_TIMEOUT
+from dagster._core.instance.ref import InstanceRef
 from dagster._core.launcher import LaunchRunContext, RunLauncher
 from dagster._core.remote_representation.external_data import PartitionsSnap
 from dagster._core.secrets.env_file import PerProjectEnvFileLoader

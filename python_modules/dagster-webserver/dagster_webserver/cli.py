@@ -17,7 +17,7 @@ from dagster._cli.workspace.cli_target import (
     WorkspaceOpts,
     workspace_opts_to_load_target,
 )
-from dagster._core.instance import InstanceRef
+from dagster._core.instance.ref import InstanceRef
 from dagster._core.telemetry import START_DAGSTER_WEBSERVER, log_action
 from dagster._core.telemetry_upload import uploading_logging_thread
 from dagster._core.workspace.context import IWorkspaceProcessContext, WorkspaceProcessContext

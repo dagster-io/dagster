@@ -67,7 +67,8 @@ from dagster._core.execution.plan.step import (
     UnresolvedMappedExecutionStep,
 )
 from dagster._core.execution.retries import RetryMode
-from dagster._core.instance import DagsterInstance, InstanceRef
+from dagster._core.instance import DagsterInstance
+from dagster._core.instance.ref import InstanceRef
 from dagster._core.storage.mem_io_manager import mem_io_manager
 from dagster._core.system_config.objects import ResolvedRunConfig
 from dagster._core.utils import toposort

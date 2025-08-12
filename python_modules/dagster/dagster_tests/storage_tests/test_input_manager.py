@@ -4,7 +4,7 @@ import dagster as dg
 import pytest
 from dagster import DagsterInstance, IOManagerDefinition
 from dagster._core.definitions.metadata import MetadataValue
-from dagster._core.instance import InstanceRef
+from dagster._core.instance.ref import InstanceRef
 from dagster._utils.test import wrap_op_in_graph_and_execute
 
 ### input manager tests
