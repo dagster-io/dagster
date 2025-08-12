@@ -18,9 +18,6 @@ export const BaseFallthroughRoot = () => {
   );
 };
 
-const getVisibleJobs = (r: DagsterRepoOption) =>
-  r.repository.pipelines.filter((j) => !isHiddenAssetGroupJob(j.name));
-
 const FinalRedirectOrLoadingRoot = () => {
   const workspaceContext = useContext(WorkspaceContext);
   const {allRepos, loadingNonAssets: loading, locationEntries} = workspaceContext;
@@ -43,8 +40,11 @@ const FinalRedirectOrLoadingRoot = () => {
   }
 
   // If there are visible jobs, redirect to overview
-  const reposWithVisibleJobs = allRepos.filter((r) => getVisibleJobs(r).length > 0);
-  if (reposWithVisibleJobs.length > 0) {
+  const anyVisibleJobs = ({repository}: DagsterRepoOption) => {
+    return repository.pipelines.some(({name}) => !isHiddenAssetGroupJob(name));
+  };
+  const anyReposWithVisibleJobs = allRepos.some((r) => anyVisibleJobs(r));
+  if (anyReposWithVisibleJobs) {
     return <Redirect to="/overview" />;
   }
 
@@ -52,18 +52,19 @@ const FinalRedirectOrLoadingRoot = () => {
   const hasAnyJobs = allRepos.some((r) => r.repository.pipelines.length > 0);
   if (hasAnyJobs) {
     return <Redirect to="/overview/activity/timeline?groupBy=automation" />;
-   }
+  }
 
   // If we have no repos with jobs, see if we have an asset group and route to it.
-  const repoWithAssetGroup = allRepos.find((r) => r.repository.assetGroups.length);
+  const repoWithAssetGroup = allRepos.find((r) => r.repository.assetGroups[0]);
   if (repoWithAssetGroup) {
+    const {repository, repositoryLocation} = repoWithAssetGroup;
+    const assetGroup = repoWithAssetGroup.repository.assetGroups[0];
     return (
       <Redirect
         to={workspacePath(
-          repoWithAssetGroup.repository.name,
-          repoWithAssetGroup.repositoryLocation.name,
-          // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-          `/asset-groups/${repoWithAssetGroup.repository.assetGroups[0]!.groupName}`,
+          repository.name,
+          repositoryLocation.name,
+          `/asset-groups/${assetGroup.groupName}`,
         )}
       />
     );
