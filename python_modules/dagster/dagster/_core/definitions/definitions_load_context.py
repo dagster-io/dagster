@@ -7,6 +7,7 @@ from functools import cached_property
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, ClassVar, Generic, Optional, TypeVar, cast
 
+from dagster_shared.serdes.objects import DefsStateInfo
 from dagster_shared.serdes.serdes import PackableValue, deserialize_value, serialize_value
 
 from dagster._core.definitions.assets.definition.cacheable_assets_definition import (
@@ -18,7 +19,6 @@ from dagster._core.definitions.metadata.metadata_value import (
 )
 from dagster._core.errors import DagsterInvalidInvocationError, DagsterInvariantViolationError
 from dagster._core.storage.defs_state.base import DefsStateStorage
-from dagster._core.storage.defs_state.defs_state_info import DefsStateInfo
 
 if TYPE_CHECKING:
     from dagster._core.definitions.repository_definition import RepositoryLoadData

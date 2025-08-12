@@ -7,6 +7,7 @@ from functools import cached_property
 from typing import TYPE_CHECKING, AbstractSet, Any, Optional, Union, cast  # noqa: UP035
 
 from dagster_shared.libraries import DagsterLibraryRegistry
+from dagster_shared.serdes.objects import DefsStateInfo
 
 import dagster._check as check
 from dagster._check import checked
@@ -47,7 +48,6 @@ from dagster._core.remote_representation.external_data import (
 from dagster._core.remote_representation.grpc_server_registry import GrpcServerRegistry
 from dagster._core.remote_representation.handle import JobHandle, RepositoryHandle
 from dagster._core.snap.execution_plan_snapshot import snapshot_from_execution_plan
-from dagster._core.storage.defs_state.defs_state_info import DefsStateInfo
 from dagster._grpc.impl import (
     get_external_schedule_execution,
     get_external_sensor_execution,
@@ -433,7 +433,9 @@ class InProcessCodeLocation(CodeLocation):
             container_image=self._origin.container_image,
             container_context=self._origin.container_context,
             # for InProcessCodeLocations, we always use the latest available state versions
-            defs_state_info=self._instance.get_latest_defs_state_info(),
+            defs_state_info=self._instance.defs_state_storage.get_latest_defs_state_info()
+            if self._instance.defs_state_storage
+            else None,
         )
 
         self._repository_code_pointer_dict = self._loaded_repositories.code_pointers_by_repo_name

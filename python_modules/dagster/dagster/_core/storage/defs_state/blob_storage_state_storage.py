@@ -3,6 +3,7 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Any, Optional
 
 from dagster_shared import check
+from dagster_shared.serdes.objects import DefsStateInfo
 from dagster_shared.serdes.serdes import deserialize_value, serialize_value
 from typing_extensions import Self
 
@@ -10,7 +11,6 @@ from dagster._config.config_type import ConfigType
 from dagster._config.field import Field
 from dagster._config.field_utils import Permissive, Shape
 from dagster._core.storage.defs_state.base import DEFS_STATE_INFO_CURSOR_KEY, DefsStateStorage
-from dagster._core.storage.defs_state.defs_state_info import DefsStateInfo
 from dagster._serdes.config_class import ConfigurableClass, ConfigurableClassData
 
 if TYPE_CHECKING:
