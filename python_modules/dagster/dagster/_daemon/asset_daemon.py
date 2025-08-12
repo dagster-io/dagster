@@ -36,7 +36,6 @@ from dagster._core.definitions.declarative_automation.serialized_objects import 
     AutomationConditionEvaluationWithRunIds,
 )
 from dagster._core.definitions.events import AssetKey
-from dagster._core.definitions.partitions.context import partition_loading_context
 from dagster._core.definitions.repository_definition.valid_definitions import (
     SINGLETON_REPOSITORY_NAME,
 )
@@ -467,16 +466,35 @@ class AssetDaemon(DagsterDaemon):
         if get_auto_materialize_paused(instance) and not use_auto_materialize_sensors:
             return
 
-        now = get_current_timestamp()
+        with workspace_process_context.create_request_context() as workspace_request_context:
+            self._run_iteration_impl_with_request_context(
+                workspace_process_context,
+                workspace_request_context,
+                instance,
+                threadpool_executor,
+                amp_tick_futures,
+                use_auto_materialize_sensors,
+                debug_crash_flags,
+            )
 
-        workspace = workspace_process_context.create_request_context()
+    def _run_iteration_impl_with_request_context(
+        self,
+        workspace_process_context: IWorkspaceProcessContext,
+        workspace_request_context: BaseWorkspaceRequestContext,
+        instance: DagsterInstance,
+        threadpool_executor: Optional[ThreadPoolExecutor],
+        amp_tick_futures: dict[Optional[str], Future],
+        use_auto_materialize_sensors: bool,
+        debug_crash_flags: SingleInstigatorDebugCrashFlags,
+    ):
+        now = get_current_timestamp()
 
         sensors_and_repos: Sequence[tuple[Optional[RemoteSensor], Optional[RemoteRepository]]] = []
 
         if use_auto_materialize_sensors:
             current_workspace = {
                 location_entry.origin.location_name: location_entry
-                for location_entry in workspace.get_code_location_entries().values()
+                for location_entry in workspace_request_context.get_code_location_entries().values()
             }
 
             eligible_sensors_and_repos = []
@@ -502,7 +520,7 @@ class AssetDaemon(DagsterDaemon):
                 if not get_has_migrated_to_sensors(instance):
                     # Do a one-time migration to create the cursors for each sensor, based on the
                     # existing cursor for the legacy AMP tick
-                    asset_graph = workspace.asset_graph
+                    asset_graph = workspace_request_context.asset_graph
                     pre_sensor_cursor = _get_pre_sensor_auto_materialize_cursor(
                         instance, asset_graph
                     )
@@ -597,7 +615,7 @@ class AssetDaemon(DagsterDaemon):
                 future = threadpool_executor.submit(
                     self._process_auto_materialize_tick,
                     workspace_process_context,
-                    workspace,
+                    workspace_request_context,
                     repo,
                     sensor,
                     debug_crash_flags,
@@ -606,7 +624,7 @@ class AssetDaemon(DagsterDaemon):
             else:
                 self._process_auto_materialize_tick(
                     workspace_process_context,
-                    workspace,
+                    workspace_request_context,
                     repo,
                     sensor,
                     debug_crash_flags,
@@ -903,18 +921,13 @@ class AssetDaemon(DagsterDaemon):
                     )
                 )
 
-            with (
-                AutoMaterializeLaunchContext(
-                    tick,
-                    sensor,
-                    instance,
-                    self._logger,
-                    tick_retention_settings,
-                ) as tick_context,
-                partition_loading_context(
-                    dynamic_partitions_store=workspace.dynamic_partitions_loader
-                ),
-            ):
+            with AutoMaterializeLaunchContext(
+                tick,
+                sensor,
+                instance,
+                self._logger,
+                tick_retention_settings,
+            ) as tick_context:
                 await self._evaluate_auto_materialize_tick(
                     tick_context,
                     tick,
