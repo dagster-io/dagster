@@ -20,7 +20,11 @@ from dagster._core.asset_graph_view.serializable_entity_subset import Serializab
 from dagster._core.definitions.asset_key import T_EntityKey
 from dagster._core.definitions.events import AssetKey
 from dagster._core.definitions.metadata import MetadataMapping, MetadataValue
+from dagster._core.definitions.partitions.definition.dynamic import DynamicPartitionsDefinition
+from dagster._core.definitions.partitions.snap.snap import PartitionsSnap
 from dagster._core.definitions.partitions.subset import AllPartitionsSubset
+from dagster._core.definitions.partitions.subset.default import DefaultPartitionsSubset
+from dagster._core.definitions.partitions.subset.key_ranges import KeyRangesPartitionsSubset
 from dagster._record import record
 from dagster._time import datetime_from_timestamp
 
@@ -53,21 +57,18 @@ def _get_maybe_compressed_dynamic_partitions_subset(
     # (e.g. if a partition is deleted and then re-added). however, accuracy to that degree
     # is not necessary given the space savings here.
 
-    # internal_value = subset.get_internal_value()
-    # if isinstance(internal_value, (DefaultPartitionsSubset, AllPartitionsSubset)) and isinstance(
-    #     subset.partitions_def, DynamicPartitionsDefinition
-    # ):
-    #     snap = PartitionsSnap.from_def(subset.partitions_def)
-    #     value = KeyRangesPartitionsSubset(
-    #         partitions_snap=snap,
-    #         key_ranges=internal_value.get_partition_key_ranges(subset.partitions_def),
-    #     )
-    #     return SerializableEntitySubset(key=subset.key, value=value)
-    # else:
-    #     return subset.convert_to_serializable_subset()
-
-    # PUSH-SAFETY: do not compress until the read path is released
-    return subset.convert_to_serializable_subset()
+    internal_value = subset.get_internal_value()
+    if isinstance(internal_value, (DefaultPartitionsSubset, AllPartitionsSubset)) and isinstance(
+        subset.partitions_def, DynamicPartitionsDefinition
+    ):
+        snap = PartitionsSnap.from_def(subset.partitions_def)
+        value = KeyRangesPartitionsSubset(
+            partitions_snap=snap,
+            key_ranges=internal_value.get_partition_key_ranges(subset.partitions_def),
+        )
+        return SerializableEntitySubset(key=subset.key, value=value)
+    else:
+        return subset.convert_to_serializable_subset()
 
 
 def get_serializable_candidate_subset(
