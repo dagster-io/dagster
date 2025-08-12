@@ -45,7 +45,9 @@ def build_docstring_validation_step() -> GroupLeafStepConfiguration:
     tox_env = f"py{python_version.value.replace('.', '')}"
     return (
         add_test_image(
-            CommandStepBuilder(f":pytest: docstring validation {python_version.value}", retry_automatically=False),
+            CommandStepBuilder(
+                f":pytest: docstring validation {python_version.value}", retry_automatically=False
+            ),
             python_version,
         )
         .run(
