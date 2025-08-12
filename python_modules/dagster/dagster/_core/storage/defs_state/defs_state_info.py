@@ -1,5 +1,5 @@
 from collections.abc import Mapping
-from typing import Optional
+from typing import Any, Optional
 
 from dagster_shared.record import record
 from dagster_shared.serdes import whitelist_for_serdes
@@ -15,6 +15,13 @@ class DefsKeyStateInfo:
     version: str
     create_timestamp: float
 
+    @staticmethod
+    def from_yaml(val: dict[str, Any]) -> "DefsKeyStateInfo":
+        return DefsKeyStateInfo(version=val["version"], create_timestamp=val["create_timestamp"])
+
+    def to_yaml(self) -> dict[str, Any]:
+        return {"version": self.version, "create_timestamp": self.create_timestamp}
+
 
 @whitelist_for_serdes
 @record
@@ -22,10 +29,6 @@ class DefsStateInfo:
     """All of the information about the state version that will be used to load a given code location."""
 
     info_mapping: Mapping[str, DefsKeyStateInfo]
-
-    def get_version(self, key: str) -> Optional[str]:
-        info = self.info_mapping.get(key)
-        return info.version if info else None
 
     @staticmethod
     def add_version(
@@ -36,3 +39,16 @@ class DefsStateInfo:
             return DefsStateInfo(info_mapping={key: new_info})
         else:
             return DefsStateInfo(info_mapping={**current_info.info_mapping, key: new_info})
+
+    @staticmethod
+    def from_yaml(val: dict[str, Any]) -> "DefsStateInfo":
+        return DefsStateInfo(
+            info_mapping={key: DefsKeyStateInfo.from_yaml(info) for key, info in val.items()}
+        )
+
+    def to_yaml(self) -> dict[str, Any]:
+        return {key: info.to_yaml() for key, info in self.info_mapping.items()}
+
+    def get_version(self, key: str) -> Optional[str]:
+        info = self.info_mapping.get(key)
+        return info.version if info else None
