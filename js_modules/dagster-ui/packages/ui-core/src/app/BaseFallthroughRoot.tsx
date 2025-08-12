@@ -55,19 +55,21 @@ const FinalRedirectOrLoadingRoot = () => {
   }
 
   // If we have no repos with jobs, see if we have an asset group and route to it.
-  const repoWithAssetGroup = allRepos.find((r) => r.repository.assetGroups[0]);
+  const repoWithAssetGroup = allRepos.find((r) => r.repository.assetGroups.length);
   if (repoWithAssetGroup) {
     const {repository, repositoryLocation} = repoWithAssetGroup;
-    const assetGroup = repository.assetGroups[0];
-    return (
-      <Redirect
-        to={workspacePath(
-          repository.name,
-          repositoryLocation.name,
-          `/asset-groups/${assetGroup.groupName}`,
-        )}
-      />
-    );
+    const assetGroup = repository.assetGroups[0]; // Should always be non-null from the find()
+    if (assetGroup) {
+      return (
+        <Redirect
+          to={workspacePath(
+            repository.name,
+            repositoryLocation.name,
+            `/asset-groups/${assetGroup.groupName}`,
+          )}
+        />
+      );
+    }
   }
 
   // Ben note: We only reach here if anyReposWithVisibleJobs is false,
