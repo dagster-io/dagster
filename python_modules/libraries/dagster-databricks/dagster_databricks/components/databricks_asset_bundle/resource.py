@@ -50,14 +50,6 @@ class DatabricksWorkspace(ConfigurableResource):
             context.log.info("No tasks selected for execution")
             return
 
-        # TODO: remove and use selected_task_key_to_asset_key_mapping
-        # Create a mapping from asset keys to task keys for dependency resolution
-        asset_to_task_map = {
-            str(asset_key): task_key
-            for task_key, asset_key in selected_task_key_to_asset_key_mapping.items()
-        }
-        context.log.info(f"Asset to task mapping: {asset_to_task_map}")
-
         # Create Databricks SDK task objects only for selected tasks
         databricks_tasks_by_task_key = {}
         for task_key, task in selected_tasks_by_task_key.items():
