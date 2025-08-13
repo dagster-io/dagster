@@ -63,6 +63,10 @@ class DatabricksBaseTask(ABC):
     @abstractmethod
     def from_job_task_config(cls, job_task_config: Mapping[str, Any]) -> Self: ...
 
+    @property
+    @abstractmethod
+    def needs_cluster(self) -> bool: ...
+
 
 @record
 class DatabricksNotebookTask(DatabricksBaseTask):
@@ -91,6 +95,10 @@ class DatabricksNotebookTask(DatabricksBaseTask):
             job_name=job_task_config["job_name"],
             libraries=job_task_config.get("libraries", []),
         )
+
+    @property
+    def needs_cluster(self) -> bool:
+        return True
 
 
 @record
@@ -123,6 +131,10 @@ class DatabricksConditionTask(DatabricksBaseTask):
             libraries=job_task_config.get("libraries", []),
         )
 
+    @property
+    def needs_cluster(self) -> bool:
+        return False
+
 
 @record
 class DatabricksSparkPythonTask(DatabricksBaseTask):
@@ -154,6 +166,10 @@ class DatabricksSparkPythonTask(DatabricksBaseTask):
             job_name=job_task_config["job_name"],
             libraries=job_task_config.get("libraries", []),
         )
+
+    @property
+    def needs_cluster(self) -> bool:
+        return True
 
 
 @record
@@ -188,6 +204,10 @@ class DatabricksPythonWheelTask(DatabricksBaseTask):
             libraries=job_task_config.get("libraries", []),
         )
 
+    @property
+    def needs_cluster(self) -> bool:
+        return True
+
 
 @record
 class DatabricksSparkJarTask(DatabricksBaseTask):
@@ -218,6 +238,10 @@ class DatabricksSparkJarTask(DatabricksBaseTask):
             libraries=job_task_config.get("libraries", []),
         )
 
+    @property
+    def needs_cluster(self) -> bool:
+        return True
+
 
 @record
 class DatabricksJobTask(DatabricksBaseTask):
@@ -247,6 +271,10 @@ class DatabricksJobTask(DatabricksBaseTask):
             job_name=job_task_config["job_name"],
             libraries=job_task_config.get("libraries", []),
         )
+
+    @property
+    def needs_cluster(self) -> bool:
+        return False
 
 
 @record_custom
