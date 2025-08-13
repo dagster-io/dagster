@@ -74,9 +74,9 @@ class DatabricksWorkspace(ConfigurableResource):
             cluster_configs = (
                 {
                     "new_cluster": compute.ClusterSpec(
-                        spark_version=self.spark_version,
-                        node_type_id=self.node_type_id,
-                        num_workers=self.num_workers,
+                        spark_version=configs.custom_configs.spark_version,
+                        node_type_id=configs.custom_configs.node_type_id,
+                        num_workers=configs.custom_configs.num_workers,
                     )
                 }
                 if task.needs_cluster
