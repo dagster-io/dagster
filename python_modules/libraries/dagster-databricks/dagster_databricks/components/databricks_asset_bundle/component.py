@@ -50,6 +50,7 @@ def resolve_databricks_config_path(context: ResolutionContext, model) -> Path:
 
 
 def resolve_custom_configs(context: ResolutionContext, model) -> CustomConfigs:
+    # If model is not a string, it's None, in which case we return an object with default values
     if not isinstance(model, str):
         return CustomConfigs()
     return CustomConfigs.from_custom_configs_path(
