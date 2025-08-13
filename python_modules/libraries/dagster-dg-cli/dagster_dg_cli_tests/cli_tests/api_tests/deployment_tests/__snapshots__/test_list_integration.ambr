@@ -1,0 +1,89 @@
+# serializer version: 1
+# name: TestDeploymentListCommand.test_list_deployments_api_error[0]
+  '''
+  Error querying Dagster Plus API: API Error
+  Error: Failed to list deployments: API Error
+  
+  '''
+# ---
+# name: TestDeploymentListCommand.test_list_deployments_api_error_json_output[0]
+  '''
+  {"error": "API Error"}
+  Error: Failed to list deployments: API Error
+  
+  '''
+# ---
+# name: TestDeploymentListCommand.test_list_deployments_json_output[0]
+  dict({
+    'items': list([
+      dict({
+        'id': 6935,
+        'name': 'uat',
+        'type': 'PRODUCTION',
+      }),
+      dict({
+        'id': 6936,
+        'name': 'excessive',
+        'type': 'PRODUCTION',
+      }),
+      dict({
+        'id': 84915,
+        'name': 'ben-test',
+        'type': 'PRODUCTION',
+      }),
+      dict({
+        'id': 37,
+        'name': 'ecs',
+        'type': 'PRODUCTION',
+      }),
+      dict({
+        'id': 6934,
+        'name': 'staging',
+        'type': 'PRODUCTION',
+      }),
+      dict({
+        'id': 80,
+        'name': 'prod',
+        'type': 'PRODUCTION',
+      }),
+    ]),
+    'total': 6,
+  })
+# ---
+# name: TestDeploymentListCommand.test_list_deployments_no_config[0]
+  '''
+  Usage: list [OPTIONS]
+  Try 'list --help' for help.
+  
+  Error: `dg plus` commands require authentication with Dagster Plus. Run `dg plus login` to authenticate.
+  
+  '''
+# ---
+# name: TestDeploymentListCommand.test_list_deployments_text_output[0]
+  '''
+  Name: uat
+  ID: 6935
+  Type: PRODUCTION
+  
+  Name: excessive
+  ID: 6936
+  Type: PRODUCTION
+  
+  Name: ben-test
+  ID: 84915
+  Type: PRODUCTION
+  
+  Name: ecs
+  ID: 37
+  Type: PRODUCTION
+  
+  Name: staging
+  ID: 6934
+  Type: PRODUCTION
+  
+  Name: prod
+  ID: 80
+  Type: PRODUCTION
+  
+  '''
+# ---

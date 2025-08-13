@@ -44,6 +44,7 @@ setup(
         "mcp; python_version>='3.10'",  # mcp not available for 3.9
         "typer",
     ],
+    extras_require={"test": ["syrupy>=4.0.0"]},
     entry_points={
         "console_scripts": [
             "dg = dagster_dg_cli.cli:main",

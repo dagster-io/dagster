@@ -1,0 +1,5 @@
+success_multiple_deployments:
+  command: "dg plus api deployment list --json"
+
+empty_deployments:
+  command: "dg plus api deployment list --json --org empty-test-org"
