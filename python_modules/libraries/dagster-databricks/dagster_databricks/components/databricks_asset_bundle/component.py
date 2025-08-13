@@ -73,8 +73,6 @@ class DatabricksAssetBundleComponent(Component, Resolvable):
         )
 
     def build_defs(self, context: ComponentLoadContext) -> Definitions:
-        # TODO: support job name prefix in multi-asset name
-        # TODO: support multi-notebook job config
         @multi_asset(
             name="databricks_multi_asset",
             specs=[self.get_asset_spec(task) for task in self.configs.all_tasks],
