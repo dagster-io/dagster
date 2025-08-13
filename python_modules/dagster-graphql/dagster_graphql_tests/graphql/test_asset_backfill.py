@@ -5,6 +5,7 @@ from dagster import AssetKey, Definitions, asset
 from dagster._core.definitions.assets.graph.asset_graph_subset import AssetGraphSubset
 from dagster._core.definitions.partitions.definition import (
     DailyPartitionsDefinition,
+    DynamicPartitionsDefinition,
     HourlyPartitionsDefinition,
     StaticPartitionsDefinition,
 )
@@ -171,6 +172,28 @@ def get_repo_with_non_partitioned_asset() -> RepositoryDefinition:
     def asset2(asset1): ...
 
     return Definitions(assets=[asset1, asset2]).get_repository_def()
+
+
+def get_repo_with_missing_upstream_partition() -> RepositoryDefinition:
+    upstream_partitions_def = StaticPartitionsDefinition(["a", "b"])
+    downstream_partitions_def = StaticPartitionsDefinition(["a", "b", "c"])
+
+    @asset(partitions_def=downstream_partitions_def)
+    def child(parent): ...
+
+    @asset(partitions_def=upstream_partitions_def)
+    def parent(): ...
+
+    return Definitions(assets=[child, parent]).get_repository_def()
+
+
+def get_repo_with_dynamic_partition() -> RepositoryDefinition:
+    dynamic_partitions_def = DynamicPartitionsDefinition(name="dynamic")
+
+    @asset(partitions_def=dynamic_partitions_def)
+    def the_asset(): ...
+
+    return Definitions(assets=[the_asset]).get_repository_def()
 
 
 def get_repo_with_root_assets_different_partitions() -> RepositoryDefinition:
@@ -597,6 +620,60 @@ def test_launch_asset_backfill_with_nonexistent_partition_key():
             )
             assert (
                 "Partition keys `['nonexistent1', 'nonexistent2']` could not be found"
+                in launch_backfill_result.data["launchPartitionBackfill"]["message"]
+            )
+
+
+def test_launch_asset_backfill_with_nonexistent_dynamic_partition_key():
+    repo = get_repo()
+    all_asset_keys = repo.asset_graph.materializable_asset_keys
+
+    with instance_for_test() as instance:
+        instance.add_dynamic_partitions("dynamic_partition", ["a", "b", "c"])
+        with define_out_of_process_context(__file__, "get_repo", instance) as context:
+            # launchPartitionBackfill
+            launch_backfill_result = execute_dagster_graphql(
+                context,
+                LAUNCH_PARTITION_BACKFILL_MUTATION,
+                variables={
+                    "backfillParams": {
+                        "partitionNames": ["b", "nonexistent1", "nonexistent2"],
+                        "assetSelection": [key.to_graphql_input() for key in all_asset_keys],
+                    }
+                },
+            )
+            assert (
+                launch_backfill_result.data["launchPartitionBackfill"]["__typename"]
+                == "PartitionKeysNotFoundError"
+            )
+            assert (
+                "Partition keys `['nonexistent1', 'nonexistent2']` could not be found"
+                in launch_backfill_result.data["launchPartitionBackfill"]["message"]
+            )
+
+
+def test_launch_asset_backfill_with_nonexistent_upstream_partition_key():
+    with instance_for_test() as instance:
+        with define_out_of_process_context(
+            __file__, "get_repo_with_missing_upstream_partition", instance
+        ) as context:
+            # launchPartitionBackfill
+            launch_backfill_result = execute_dagster_graphql(
+                context,
+                LAUNCH_PARTITION_BACKFILL_MUTATION,
+                variables={
+                    "backfillParams": {
+                        "partitionNames": ["a", "b", "c"],
+                        "assetSelection": [{"path": ["child"]}],
+                    }
+                },
+            )
+            assert (
+                launch_backfill_result.data["launchPartitionBackfill"]["__typename"]
+                == "PythonError"
+            )
+            assert (
+                "depends on non-existent partitions: EntitySubset<AssetKey(['parent'])>(DefaultPartitionsSubset(subset={'c'}"
                 in launch_backfill_result.data["launchPartitionBackfill"]["message"]
             )
 

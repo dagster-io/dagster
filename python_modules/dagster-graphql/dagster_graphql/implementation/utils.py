@@ -19,11 +19,14 @@ from typing import (
 )
 
 import dagster._check as check
+from dagster._core.asset_graph_view.asset_graph_view import AssetGraphView
 from dagster._core.definitions.asset_checks.asset_check_spec import AssetCheckKey
 from dagster._core.definitions.assets.graph.remote_asset_graph import RemoteWorkspaceAssetGraph
 from dagster._core.definitions.events import AssetKey
 from dagster._core.definitions.partitions.definition import PartitionsDefinition
 from dagster._core.definitions.selector import GraphSelector, JobSubsetSelector
+from dagster._core.definitions.temporal_context import TemporalContext
+from dagster._core.errors import DagsterInvariantViolationError
 from dagster._core.execution.backfill import PartitionBackfill
 from dagster._utils.caching_instance_queryer import CachingInstanceQueryer
 from dagster._utils.error import serializable_error_info_from_exc_info
@@ -102,6 +105,16 @@ def has_permission_for_asset_graph(
     asset_keys = set(asset_selection or [])
     context = cast("BaseWorkspaceRequestContext", graphene_info.context)
 
+    # if we have the permission for all code locations, no need to check specific asset keys or locations
+    if context.has_permission(permission):
+        return True
+
+    if not any(
+        context.has_permission_for_location(permission, location_name)
+        for location_name in context.code_location_names
+    ):
+        return False
+
     if asset_keys:
         location_names = set()
         for key in asset_keys:
@@ -164,7 +177,6 @@ def assert_valid_job_partition_backfill(
 def assert_valid_asset_partition_backfill(
     graphene_info: "ResolveInfo",
     backfill: PartitionBackfill,
-    dynamic_partitions_store: CachingInstanceQueryer,
     backfill_datetime: datetime,
 ) -> None:
     from dagster_graphql.schema.errors import GraphenePartitionKeysNotFoundError
@@ -172,25 +184,52 @@ def assert_valid_asset_partition_backfill(
     asset_graph = graphene_info.context.asset_graph
     asset_backfill_data = backfill.asset_backfill_data
 
+    asset_graph_view = AssetGraphView(
+        temporal_context=TemporalContext(
+            effective_dt=backfill_datetime,
+            last_event_id=None,
+        ),
+        instance=graphene_info.context.instance,
+        asset_graph=asset_graph,
+    )
+
     if not asset_backfill_data:
         return
 
-    partition_subset_by_asset_key = (
-        asset_backfill_data.target_subset.partitions_subsets_by_asset_key
-    )
+    for asset_key in asset_backfill_data.target_subset.asset_keys:
+        entity_subset = asset_graph_view.get_entity_subset_from_asset_graph_subset(
+            asset_backfill_data.target_subset, asset_key
+        )
 
-    for asset_key, partition_subset in partition_subset_by_asset_key.items():
         partitions_def = asset_graph.get(asset_key).partitions_def
 
         if not partitions_def:
             continue
 
-        invalid_keys = set(partition_subset.get_partition_keys()) - set(
-            partitions_def.get_partition_keys(backfill_datetime, dynamic_partitions_store)
+        invalid_subset = asset_graph_view.get_subset_not_in_graph(
+            key=asset_key, candidate_subset=entity_subset
         )
 
-        if invalid_keys:
-            raise UserFacingGraphQLError(GraphenePartitionKeysNotFoundError(invalid_keys))
+        if not invalid_subset.is_empty:
+            raise UserFacingGraphQLError(
+                GraphenePartitionKeysNotFoundError(
+                    set(invalid_subset.expensively_compute_partition_keys())
+                )
+            )
+
+        for parent_key in asset_graph.get(asset_key).parent_keys:
+            _parent_subset, required_but_nonexistent_subset = (
+                asset_graph_view.compute_parent_subset_and_required_but_nonexistent_subset(
+                    parent_key,
+                    entity_subset,
+                )
+            )
+
+            if not required_but_nonexistent_subset.is_empty:
+                raise DagsterInvariantViolationError(
+                    f"Targeted partition subset {entity_subset}"
+                    f" depends on non-existent partitions: {required_but_nonexistent_subset}"
+                )
 
 
 def _noop(_) -> None:
