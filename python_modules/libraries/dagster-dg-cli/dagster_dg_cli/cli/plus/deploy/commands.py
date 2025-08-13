@@ -18,7 +18,7 @@ from dagster_shared.plus.config import DagsterPlusCliConfig
 from dagster_shared.seven.temp_dir import get_system_temp_directory
 
 from dagster_dg_cli.cli.plus.constants import DgPlusAgentType, DgPlusDeploymentType
-from dagster_dg_cli.cli.plus.deploy_session import (
+from dagster_dg_cli.cli.plus.deploy.deploy_session import (
     build_artifact,
     finish_deploy_session,
     init_deploy_session,
