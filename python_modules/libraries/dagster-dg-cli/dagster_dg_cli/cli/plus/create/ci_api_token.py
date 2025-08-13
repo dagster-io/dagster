@@ -7,7 +7,7 @@ from dagster_dg_core.utils.telemetry import cli_telemetry_wrapper
 from dagster_shared.plus.config import DagsterPlusCliConfig
 
 from dagster_dg_cli.utils.plus import gql
-from dagster_dg_cli.utils.plus.gql_client import DagsterPlusGraphQLClient
+from dagster_dg_cli.utils.plus.gql_client import DagsterPlusGraphQLClient, check_response
 
 
 @click.command(name="ci-api-token", cls=DgClickCommand)
@@ -27,4 +27,5 @@ def create_ci_api_token(description: Optional[str] = None, **global_options: obj
     token_data = gql_client.execute(
         gql.CREATE_AGENT_TOKEN_MUTATION, variables={"description": description}
     )
+    token_data = check_response(token_data, "Failed to create CI API token")
     click.echo(token_data["createAgentToken"]["token"])

@@ -15,7 +15,7 @@ from dagster_dg_core.utils.telemetry import cli_telemetry_wrapper
 from dagster_shared.plus.config import DagsterPlusCliConfig
 
 from dagster_dg_cli.utils.plus import gql
-from dagster_dg_cli.utils.plus.gql_client import DagsterPlusGraphQLClient
+from dagster_dg_cli.utils.plus.gql_client import DagsterPlusGraphQLClient, check_response
 
 
 class EnvVarScope(str, Enum):
@@ -139,7 +139,7 @@ def create_env_command(
     location_suffix = "" if global_ else f" for location {dg_context.project_name}"
     scope_text = f" in {', '.join(sorted(active_scopes))} scope"
 
-    existing_secrets = gql_client.execute(
+    secrets_response = gql_client.execute(
         gql.GET_SECRETS_FOR_SCOPES_QUERY,
         variables={
             "locationName": None if global_ else dg_context.project_name,
@@ -150,7 +150,9 @@ def create_env_command(
             },
             "secretName": env_name,
         },
-    )["secretsOrError"]["secrets"]
+    )
+    secrets_response = check_response(secrets_response, "Failed to query existing secrets")
+    existing_secrets = secrets_response["secretsOrError"]["secrets"]
     if global_:
         existing_secrets = [
             secret for secret in existing_secrets if len(secret["locationNames"]) == 0

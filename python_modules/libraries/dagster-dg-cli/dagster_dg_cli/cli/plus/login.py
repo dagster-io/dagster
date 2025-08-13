@@ -6,7 +6,7 @@ from dagster_dg_core.utils.telemetry import cli_telemetry_wrapper
 from dagster_shared.plus.config import DagsterPlusCliConfig
 
 from dagster_dg_cli.utils.plus.gql import FULL_DEPLOYMENTS_QUERY
-from dagster_dg_cli.utils.plus.gql_client import DagsterPlusGraphQLClient
+from dagster_dg_cli.utils.plus.gql_client import DagsterPlusGraphQLClient, check_response
 
 
 @click.command(name="login", cls=DgClickCommand)
@@ -42,6 +42,7 @@ def login_command() -> None:
 
     gql_client = DagsterPlusGraphQLClient.from_config(config)
     result = gql_client.execute(FULL_DEPLOYMENTS_QUERY)
+    result = check_response(result, "Failed to query deployments")
     deployment_names = [d["deploymentName"] for d in result["fullDeployments"]]
 
     click.echo("Available deployments: " + ", ".join(deployment_names))

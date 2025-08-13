@@ -2,6 +2,7 @@
 
 from dagster_dg_cli.dagster_plus_api.api.asset import DgApiAssetApi
 from dagster_dg_cli.dagster_plus_api.api.deployments import DgApiDeploymentApi
+from dagster_dg_cli.dagster_plus_api.api.runs import DgApiRunApi
 
 
 def get_all_api_classes():
@@ -9,4 +10,5 @@ def get_all_api_classes():
     return [
         DgApiDeploymentApi,
         DgApiAssetApi,
+        DgApiRunApi,
     ]

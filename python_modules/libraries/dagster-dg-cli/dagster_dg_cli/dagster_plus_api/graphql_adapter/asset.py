@@ -4,7 +4,7 @@ from typing import TYPE_CHECKING, Optional
 
 from dagster_shared.plus.config import DagsterPlusCliConfig
 
-from dagster_dg_cli.utils.plus.gql_client import DagsterPlusGraphQLClient
+from dagster_dg_cli.utils.plus.gql_client import DagsterPlusGraphQLClient, check_response
 
 if TYPE_CHECKING:
     from dagster_dg_cli.dagster_plus_api.schemas.asset import DgPlusApiAsset, DgPlusApiAssetList
@@ -100,6 +100,7 @@ def list_dg_plus_api_assets_via_graphql(
         variables["limit"] = limit
 
     result = client.execute(ASSET_RECORDS_QUERY, variables=variables)
+    result = check_response(result, "Failed to execute asset records query")
 
     asset_records_or_error = result.get("assetRecordsOrError", {})
     if asset_records_or_error.get("__typename") == "PythonError":
@@ -115,6 +116,7 @@ def list_dg_plus_api_assets_via_graphql(
     asset_keys = [{"path": record["key"]["path"]} for record in records]
 
     nodes_result = client.execute(ASSET_NODES_QUERY, variables={"assetKeys": asset_keys})
+    nodes_result = check_response(nodes_result, "Failed to execute asset nodes query")
     asset_nodes = nodes_result.get("assetNodes", [])
 
     # Step 3: Transform and combine data
@@ -186,6 +188,7 @@ def get_dg_plus_api_asset_via_graphql(
     variables = {"assetKeys": [{"path": asset_key_parts}]}
 
     result = client.execute(ASSET_NODES_QUERY, variables=variables)
+    result = check_response(result, "Failed to execute asset nodes query")
     asset_nodes = result.get("assetNodes", [])
 
     if not asset_nodes:

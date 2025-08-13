@@ -15,6 +15,24 @@ class DagsterPlusUnauthorizedError(click.ClickException):
     pass
 
 
+def check_response(result: Optional[dict[str, Any]], error_message: str) -> dict[str, Any]:
+    """Check if GraphQL response is None and raise appropriate exception.
+
+    Args:
+        result: The GraphQL response to check
+        error_message: Error message to use if response is None
+
+    Returns:
+        The result if it's not None
+
+    Raises:
+        Exception: If result is None
+    """
+    if result is None:
+        raise Exception(f"{error_message}: No response")
+    return result
+
+
 class DagsterPlusGraphQLClient:
     def __init__(self, url: str, headers: Mapping[str, str]):
         # defer for import performance

@@ -2,7 +2,43 @@
 
 Use the specialized PR Update Expert agent to handle the complete AI-assisted PR workflow with optimized context management.
 
+<<<<<<< HEAD
 Use the Task tool to invoke the `pr-update-expert` subagent:
+=======
+**CRITICAL**: It is essential to disregard any context about what branch you think you are on. ALWAYS start by inspecting the current state of the repository and GT stack to determine where you actually are.
+
+**NEVER assume** you know the current branch or stack position based on previous context or conversation history. The repository state may have changed.
+
+**Required commands to run first (EXECUTE SERIALLY, NOT IN PARALLEL)**:
+
+1. `git branch --show-current` - Get the actual current branch name
+2. `gt ls -s` - Get the actual current stack structure
+3. `git status` - Verify repository state
+4. `gh pr view` - Verify that a PR on gh exists. If it does not, tell user to submit using gt submit.
+5. `gt ls -s` - Verify that branch is being tracked by graphite.
+6. `gt squash --no-interactive` - Squash commits. If there is a merge conflict, tell the user to do it manually and exit
+7. `gt submit --no-interactive` - Submit only this branch.
+
+**CRITICAL**: Execute these commands one at a time, waiting for each to complete before running the next. Do NOT use parallel bash execution as this can cause git index locking issues.
+
+**CRITICAL**: If `gt squash` or `gt submit` encounters merge conflicts, HALT the entire ai_update_pr process immediately. Do NOT attempt to resolve conflicts automatically. Instead:
+
+1. Inform the user about the conflict and which files are affected
+2. Tell them to resolve conflicts manually using `gt add -A` and `gt continue`
+3. Advise them to re-run the ai_update_pr command after resolving conflicts
+4. Do NOT proceed with any further steps until conflicts are resolved
+
+Only after confirming the actual repository state AND successful operations should you proceed with the remaining steps.
+
+## Step 1: Identify the Previous Branch
+
+First, use `gt ls -s` to view the stack structure. The output shows branches in order, with `◉` marking the current branch and `◯` marking other branches in the stack.
+
+**CRITICAL**: The previous branch is the one that appears immediately AFTER the `◉` (current branch) in the `gt ls -s` output.
+
+Example:
+
+> > > > > > > 2760d880dc (Implement dg plus api run events command with comprehensive run API design)
 
 ```
 I'll update your PR using the optimized AI workflow that handles repository analysis, thesis collection, and PR body generation with improved context management.

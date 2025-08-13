@@ -4,7 +4,7 @@ from typing import TYPE_CHECKING, Any, Optional
 
 from dagster_shared.plus.config import DagsterPlusCliConfig
 
-from dagster_dg_cli.utils.plus.gql_client import DagsterPlusGraphQLClient
+from dagster_dg_cli.utils.plus.gql_client import DagsterPlusGraphQLClient, check_response
 
 if TYPE_CHECKING:
     from dagster_dg_cli.dagster_plus_api.schemas.deployment import DeploymentList
@@ -65,6 +65,7 @@ def list_deployments_via_graphql(
     """
     client = DagsterPlusGraphQLClient.from_config(config)
     result = client.execute(LIST_DEPLOYMENTS_QUERY)
+    result = check_response(result, "Failed to execute deployments query")
 
     deployment_list = process_deployments_response(result)
 

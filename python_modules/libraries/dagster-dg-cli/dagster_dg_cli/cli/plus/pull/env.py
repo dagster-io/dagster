@@ -11,7 +11,7 @@ from dagster_dg_core.utils.telemetry import cli_telemetry_wrapper
 from dagster_shared.plus.config import DagsterPlusCliConfig
 
 from dagster_dg_cli.utils.plus.gql import SECRETS_QUERY
-from dagster_dg_cli.utils.plus.gql_client import DagsterPlusGraphQLClient
+from dagster_dg_cli.utils.plus.gql_client import DagsterPlusGraphQLClient, check_response
 
 
 def _get_config_or_error() -> DagsterPlusCliConfig:
@@ -31,6 +31,7 @@ def _get_local_secrets_for_locations(
         SECRETS_QUERY,
         variables={"onlyViewable": True, "scopes": {"localDeploymentScope": True}},
     )
+    result = check_response(result, "Failed to query secrets")
     for secret in result["secretsOrError"]["secrets"]:
         if not secret["localDeploymentScope"]:
             continue

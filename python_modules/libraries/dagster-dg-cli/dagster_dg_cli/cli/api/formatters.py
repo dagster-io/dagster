@@ -1,6 +1,7 @@
 """Output formatters for CLI display."""
 
-from typing import TYPE_CHECKING
+import json
+from typing import TYPE_CHECKING, Any
 
 if TYPE_CHECKING:
     from dagster_dg_cli.dagster_plus_api.schemas.asset import DgPlusApiAsset, DgPlusApiAssetList
@@ -32,17 +33,34 @@ def format_assets(assets: "DgPlusApiAssetList", as_json: bool) -> str:
         return assets.model_dump_json(indent=2)
 
     lines = []
-    for asset in assets.items:
+
+    # Handle empty asset list
+    if not assets.items:
+        lines.append("No assets found.")
+    else:
+        for asset in assets.items:
+            lines.extend(
+                [
+                    f"Asset Key: {asset.asset_key}",
+                    f"ID: {asset.id}",
+                    f"Group: {asset.group_name}",
+                    f"Description: {asset.description or '(none)'}",
+                    f"Kinds: {', '.join(asset.kinds) if asset.kinds else '(none)'}",
+                    "",  # Empty line between assets
+                ]
+            )
+
+    # Add pagination info
+    if assets.cursor or assets.has_more:
         lines.extend(
             [
-                f"Asset Key: {asset.asset_key}",
-                f"ID: {asset.id}",
-                f"Description: {asset.description or 'None'}",
-                f"Group: {asset.group_name}",
-                f"Kinds: {', '.join(asset.kinds) if asset.kinds else 'None'}",
-                "",  # Empty line between assets
+                "Pagination:",
+                f"  Has More: {assets.has_more}",
             ]
         )
+        if assets.cursor:
+            lines.append(f"  Next Cursor: {assets.cursor}")
+        lines.append("")
 
     return "\n".join(lines).rstrip()  # Remove trailing empty line
 
@@ -55,24 +73,46 @@ def format_asset(asset: "DgPlusApiAsset", as_json: bool) -> str:
     lines = [
         f"Asset Key: {asset.asset_key}",
         f"ID: {asset.id}",
-        f"Description: {asset.description or 'None'}",
         f"Group: {asset.group_name}",
-        f"Kinds: {', '.join(asset.kinds) if asset.kinds else 'None'}",
+        f"Description: {asset.description or '(none)'}",
+        f"Kinds: {', '.join(asset.kinds) if asset.kinds else '(none)'}",
     ]
 
     if asset.metadata_entries:
-        lines.append("")
-        lines.append("Metadata:")
+        lines.extend(["", "Metadata:"])
         for entry in asset.metadata_entries:
-            value = entry.get("description", "")
-            for key in ["text", "url", "path", "jsonString", "mdStr"]:
-                if entry.get(key):
-                    value = entry[key]
-                    break
-            for key in ["floatValue", "intValue", "boolValue"]:
-                if entry.get(key) is not None:
-                    value = str(entry[key])
-                    break
-            lines.append(f"  {entry['label']}: {value}")
+            label = entry.get("label", "")
+            description = entry.get("description", "")
+            lines.append(f"  {label}: {description}")
+
+    return "\n".join(lines)
+
+
+def format_run_events(events: list[dict[str, Any]], as_json: bool, run_id: str) -> str:
+    """Format run events for output."""
+    if as_json:
+        return json.dumps({"run_id": run_id, "events": events, "count": len(events)}, indent=2)
+
+    if not events:
+        return f"No events found for run {run_id}"
+
+    # Human-readable table format
+    lines = [
+        f"Events for run {run_id}:",
+        "",
+        f"{'TIMESTAMP':<20} {'TYPE':<20} {'STEP_KEY':<30} {'MESSAGE'[:50]:<50}",
+        f"{'-' * 20} {'-' * 20} {'-' * 30} {'-' * 50}",
+    ]
+
+    for event in events:
+        # Handle None values safely
+        timestamp = (event.get("timestamp") or "")[:19]  # Truncate timestamp
+        event_type = (event.get("eventType") or "")[:20]  # Truncate type
+        step_key = (event.get("stepKey") or "")[:30]  # Truncate step key
+        message = (event.get("message") or "")[:50]  # Truncate message
+
+        lines.append(f"{timestamp:<20} {event_type:<20} {step_key:<30} {message:<50}")
+
+    lines.extend(["", f"Total events: {len(events)}"])
 
     return "\n".join(lines)
