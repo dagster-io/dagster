@@ -31,6 +31,7 @@ def test_scaffold_branch_command_success():
         with (
             patch("dagster_dg_cli.cli.scaffold.branch._run_git_command") as mock_git,
             patch("dagster_dg_cli.cli.scaffold.branch._run_gh_command") as mock_gh,
+            patch("dagster_dg_cli.cli.scaffold.branch.has_remote_origin", return_value=True),
         ):
             # Mock git checkout -b command
             mock_git.return_value = Mock(returncode=0, stdout="", stderr="")
@@ -217,6 +218,7 @@ def test_scaffold_branch_command_ai_inference_success():
             patch("click.prompt") as mock_prompt,
             patch("dagster_dg_cli.cli.scaffold.branch.run_claude") as mock_run_claude,
             patch("dagster_dg_cli.cli.scaffold.branch.run_claude_stream"),
+            patch("dagster_dg_cli.cli.scaffold.branch.has_remote_origin", return_value=True),
             patch("uuid.uuid4") as mock_uuid,
         ):
             # Mock UUID to make branch names predictable
@@ -301,6 +303,7 @@ def test_scaffold_branch_command_github_issue_url(github_url):
             patch("dagster_dg_cli.cli.scaffold.branch._run_gh_command") as mock_gh,
             patch("dagster_dg_cli.cli.scaffold.branch.run_claude") as mock_run_claude,
             patch("dagster_dg_cli.cli.scaffold.branch.run_claude_stream"),
+            patch("dagster_dg_cli.cli.scaffold.branch.has_remote_origin", return_value=True),
             patch("uuid.uuid4") as mock_uuid,
         ):
             # Mock UUID to make branch names predictable
@@ -383,6 +386,7 @@ def test_record_and_eval_command():
         ),
         patch("dagster_dg_cli.cli.scaffold.branch._run_git_command") as mock_git,
         patch("dagster_dg_cli.cli.scaffold.branch._run_gh_command") as mock_gh,
+        patch("dagster_dg_cli.cli.scaffold.branch.has_remote_origin", return_value=True),
         patch("automation.eval.cli.evaluate") as mock_evaluate,
     ):
         # Mock the subprocess calls to simulate git and gh commands
