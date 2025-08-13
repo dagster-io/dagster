@@ -212,7 +212,7 @@ class DatabricksSparkJarTask:
         task_config = {"spark_jar_task": spark_jar_task}
         # Spark JAR tasks use parameters differently
         task_parameters = spark_jar_task.get("parameters", [])
-        return DatabricksSparkJarTask(
+        return cls(
             task_key=job_task_config["task_key"],
             task_config=task_config,
             task_parameters=task_parameters,
