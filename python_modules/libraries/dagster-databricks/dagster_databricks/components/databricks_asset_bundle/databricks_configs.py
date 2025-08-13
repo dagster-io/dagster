@@ -251,7 +251,7 @@ class DatabricksJobTask:
         }
         # For job tasks, parameters are in job_parameters
         task_parameters = run_job_task.get("job_parameters", {})
-        return DatabricksJobTask(
+        return cls(
             task_key=job_task_config["task_key"],
             task_config=task_config,
             task_parameters=task_parameters,
