@@ -92,6 +92,7 @@ def main(
         "python_modules/libraries/dagster-msteams",
         "python_modules/libraries/dagster-mysql",
         "python_modules/libraries/dagster-looker",
+        "python_modules/libraries/dagster-omni",
         "python_modules/libraries/dagster-openai",
         "python_modules/libraries/dagster-pagerduty",
         "python_modules/libraries/dagster-pandas",
