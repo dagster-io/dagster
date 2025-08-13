@@ -1,0 +1,7438 @@
+schema {
+  query: CloudQuery
+  mutation: CloudMutation
+  subscription: CloudSubscription
+}
+
+interface DisplayableEvent {
+  label: String
+  description: String
+  metadataEntries: [MetadataEntry!]!
+}
+
+type EngineEvent implements MessageEvent & DisplayableEvent & StepEvent & MarkerEvent & ErrorEvent {
+  runId: String!
+  message: String!
+  timestamp: String!
+  level: LogLevel!
+  stepKey: String
+  solidHandleID: String
+  eventType: DagsterEventType
+  label: String
+  description: String
+  metadataEntries: [MetadataEntry!]!
+  markerStart: String
+  markerEnd: String
+  error: PythonError
+}
+
+interface MarkerEvent {
+  markerStart: String
+  markerEnd: String
+}
+
+interface ErrorEvent {
+  error: PythonError
+}
+
+enum DagsterEventType {
+  STEP_OUTPUT
+  STEP_INPUT
+  STEP_FAILURE
+  STEP_START
+  STEP_SUCCESS
+  STEP_SKIPPED
+  STEP_WORKER_STARTING
+  STEP_WORKER_STARTED
+  RESOURCE_INIT_STARTED
+  RESOURCE_INIT_SUCCESS
+  RESOURCE_INIT_FAILURE
+  STEP_UP_FOR_RETRY
+  STEP_RESTARTED
+  ASSET_MATERIALIZATION
+  ASSET_MATERIALIZATION_PLANNED
+  ASSET_FAILED_TO_MATERIALIZE
+  ASSET_OBSERVATION
+  STEP_EXPECTATION_RESULT
+  ASSET_CHECK_EVALUATION_PLANNED
+  ASSET_CHECK_EVALUATION
+  ASSET_HEALTH_CHANGED
+  ASSET_WIPED
+  RUN_ENQUEUED
+  RUN_DEQUEUED
+  RUN_STARTING
+  RUN_START
+  RUN_SUCCESS
+  RUN_FAILURE
+  RUN_CANCELING
+  RUN_CANCELED
+  PIPELINE_ENQUEUED
+  PIPELINE_DEQUEUED
+  PIPELINE_STARTING
+  PIPELINE_START
+  PIPELINE_SUCCESS
+  PIPELINE_FAILURE
+  PIPELINE_CANCELING
+  PIPELINE_CANCELED
+  OBJECT_STORE_OPERATION
+  ASSET_STORE_OPERATION
+  LOADED_INPUT
+  HANDLED_OUTPUT
+  ENGINE_EVENT
+  HOOK_COMPLETED
+  HOOK_ERRORED
+  HOOK_SKIPPED
+  ALERT_START
+  ALERT_SUCCESS
+  ALERT_FAILURE
+  LOGS_CAPTURED
+  FRESHNESS_STATE_EVALUATION
+  FRESHNESS_STATE_CHANGE
+}
+
+type ExecutionStepFailureEvent implements MessageEvent & StepEvent & ErrorEvent {
+  runId: String!
+  message: String!
+  timestamp: String!
+  level: LogLevel!
+  stepKey: String
+  solidHandleID: String
+  eventType: DagsterEventType
+  error: PythonError
+  errorSource: ErrorSource
+  failureMetadata: FailureMetadata
+}
+
+enum ErrorSource {
+  FRAMEWORK_ERROR
+  USER_CODE_ERROR
+  UNEXPECTED_ERROR
+  INTERRUPT
+}
+
+type ExecutionStepInputEvent implements MessageEvent & StepEvent {
+  runId: String!
+  message: String!
+  timestamp: String!
+  level: LogLevel!
+  stepKey: String
+  solidHandleID: String
+  eventType: DagsterEventType
+  inputName: String!
+  typeCheck: TypeCheck!
+}
+
+type ExecutionStepOutputEvent implements MessageEvent & StepEvent & DisplayableEvent {
+  runId: String!
+  message: String!
+  timestamp: String!
+  level: LogLevel!
+  stepKey: String
+  solidHandleID: String
+  eventType: DagsterEventType
+  label: String
+  description: String
+  metadataEntries: [MetadataEntry!]!
+  outputName: String!
+  typeCheck: TypeCheck!
+}
+
+type ExecutionStepRestartEvent implements MessageEvent & StepEvent {
+  runId: String!
+  message: String!
+  timestamp: String!
+  level: LogLevel!
+  stepKey: String
+  solidHandleID: String
+  eventType: DagsterEventType
+}
+
+type ExecutionStepSkippedEvent implements MessageEvent & StepEvent {
+  runId: String!
+  message: String!
+  timestamp: String!
+  level: LogLevel!
+  stepKey: String
+  solidHandleID: String
+  eventType: DagsterEventType
+}
+
+type ExecutionStepStartEvent implements MessageEvent & StepEvent {
+  runId: String!
+  message: String!
+  timestamp: String!
+  level: LogLevel!
+  stepKey: String
+  solidHandleID: String
+  eventType: DagsterEventType
+}
+
+type ExecutionStepSuccessEvent implements MessageEvent & StepEvent {
+  runId: String!
+  message: String!
+  timestamp: String!
+  level: LogLevel!
+  stepKey: String
+  solidHandleID: String
+  eventType: DagsterEventType
+}
+
+type ExecutionStepUpForRetryEvent implements MessageEvent & StepEvent & ErrorEvent {
+  runId: String!
+  message: String!
+  timestamp: String!
+  level: LogLevel!
+  stepKey: String
+  solidHandleID: String
+  eventType: DagsterEventType
+  error: PythonError
+  secondsToWait: Int
+}
+
+type ExpectationResult implements DisplayableEvent {
+  label: String
+  description: String
+  metadataEntries: [MetadataEntry!]!
+  success: Boolean!
+}
+
+type FailureMetadata implements DisplayableEvent {
+  label: String
+  description: String
+  metadataEntries: [MetadataEntry!]!
+}
+
+type HandledOutputEvent implements MessageEvent & StepEvent & DisplayableEvent {
+  runId: String!
+  message: String!
+  timestamp: String!
+  level: LogLevel!
+  stepKey: String
+  solidHandleID: String
+  eventType: DagsterEventType
+  label: String
+  description: String
+  metadataEntries: [MetadataEntry!]!
+  outputName: String!
+  managerKey: String!
+}
+
+type HookCompletedEvent implements MessageEvent & StepEvent {
+  runId: String!
+  message: String!
+  timestamp: String!
+  level: LogLevel!
+  stepKey: String
+  solidHandleID: String
+  eventType: DagsterEventType
+}
+
+type HookErroredEvent implements MessageEvent & StepEvent & ErrorEvent {
+  runId: String!
+  message: String!
+  timestamp: String!
+  level: LogLevel!
+  stepKey: String
+  solidHandleID: String
+  eventType: DagsterEventType
+  error: PythonError
+}
+
+type HookSkippedEvent implements MessageEvent & StepEvent {
+  runId: String!
+  message: String!
+  timestamp: String!
+  level: LogLevel!
+  stepKey: String
+  solidHandleID: String
+  eventType: DagsterEventType
+}
+
+type LoadedInputEvent implements MessageEvent & StepEvent & DisplayableEvent {
+  runId: String!
+  message: String!
+  timestamp: String!
+  level: LogLevel!
+  stepKey: String
+  solidHandleID: String
+  eventType: DagsterEventType
+  label: String
+  description: String
+  metadataEntries: [MetadataEntry!]!
+  inputName: String!
+  managerKey: String!
+  upstreamOutputName: String
+  upstreamStepKey: String
+}
+
+enum LogLevel {
+  CRITICAL
+  ERROR
+  INFO
+  WARNING
+  DEBUG
+}
+
+type LogMessageEvent implements MessageEvent {
+  runId: String!
+  message: String!
+  timestamp: String!
+  level: LogLevel!
+  stepKey: String
+  solidHandleID: String
+  eventType: DagsterEventType
+}
+
+interface MessageEvent {
+  runId: String!
+  message: String!
+  timestamp: String!
+  level: LogLevel!
+  stepKey: String
+  solidHandleID: String
+  eventType: DagsterEventType
+}
+
+type MissingRunIdErrorEvent {
+  invalidRunId: String!
+}
+
+type ObjectStoreOperationEvent implements MessageEvent & StepEvent {
+  runId: String!
+  message: String!
+  timestamp: String!
+  level: LogLevel!
+  stepKey: String
+  solidHandleID: String
+  eventType: DagsterEventType
+  operationResult: ObjectStoreOperationResult!
+}
+
+type ObjectStoreOperationResult implements DisplayableEvent {
+  label: String
+  description: String
+  metadataEntries: [MetadataEntry!]!
+  op: ObjectStoreOperationType!
+}
+
+enum ObjectStoreOperationType {
+  SET_OBJECT
+  GET_OBJECT
+  RM_OBJECT
+  CP_OBJECT
+}
+
+type RunCanceledEvent implements MessageEvent & RunEvent & ErrorEvent {
+  runId: String!
+  message: String!
+  timestamp: String!
+  level: LogLevel!
+  stepKey: String
+  solidHandleID: String
+  eventType: DagsterEventType
+  pipelineName: String!
+  error: PythonError
+}
+
+type RunCancelingEvent implements MessageEvent & RunEvent {
+  runId: String!
+  message: String!
+  timestamp: String!
+  level: LogLevel!
+  stepKey: String
+  solidHandleID: String
+  eventType: DagsterEventType
+  pipelineName: String!
+}
+
+type RunDequeuedEvent implements MessageEvent & RunEvent {
+  runId: String!
+  message: String!
+  timestamp: String!
+  level: LogLevel!
+  stepKey: String
+  solidHandleID: String
+  eventType: DagsterEventType
+  pipelineName: String!
+}
+
+type RunEnqueuedEvent implements MessageEvent & RunEvent {
+  runId: String!
+  message: String!
+  timestamp: String!
+  level: LogLevel!
+  stepKey: String
+  solidHandleID: String
+  eventType: DagsterEventType
+  pipelineName: String!
+}
+
+type RunFailureEvent implements MessageEvent & RunEvent & ErrorEvent {
+  runId: String!
+  message: String!
+  timestamp: String!
+  level: LogLevel!
+  stepKey: String
+  solidHandleID: String
+  eventType: DagsterEventType
+  pipelineName: String!
+  error: PythonError
+}
+
+interface RunEvent {
+  pipelineName: String!
+}
+
+interface PipelineRunStepStats {
+  runId: String!
+  stepKey: String!
+  status: StepEventStatus
+  startTime: Float
+  endTime: Float
+  materializations: [MaterializationEvent!]!
+  expectationResults: [ExpectationResult!]!
+}
+
+enum StepEventStatus {
+  SKIPPED
+  SUCCESS
+  FAILURE
+  IN_PROGRESS
+}
+
+type ResourceInitFailureEvent implements MessageEvent & DisplayableEvent & StepEvent & MarkerEvent & ErrorEvent {
+  runId: String!
+  message: String!
+  timestamp: String!
+  level: LogLevel!
+  stepKey: String
+  solidHandleID: String
+  eventType: DagsterEventType
+  label: String
+  description: String
+  metadataEntries: [MetadataEntry!]!
+  markerStart: String
+  markerEnd: String
+  error: PythonError
+}
+
+type ResourceInitStartedEvent implements MessageEvent & DisplayableEvent & StepEvent & MarkerEvent {
+  runId: String!
+  message: String!
+  timestamp: String!
+  level: LogLevel!
+  stepKey: String
+  solidHandleID: String
+  eventType: DagsterEventType
+  label: String
+  description: String
+  metadataEntries: [MetadataEntry!]!
+  markerStart: String
+  markerEnd: String
+}
+
+type ResourceInitSuccessEvent implements MessageEvent & DisplayableEvent & StepEvent & MarkerEvent {
+  runId: String!
+  message: String!
+  timestamp: String!
+  level: LogLevel!
+  stepKey: String
+  solidHandleID: String
+  eventType: DagsterEventType
+  label: String
+  description: String
+  metadataEntries: [MetadataEntry!]!
+  markerStart: String
+  markerEnd: String
+}
+
+type RunStepStats implements PipelineRunStepStats {
+  runId: String!
+  stepKey: String!
+  status: StepEventStatus
+  startTime: Float
+  endTime: Float
+  materializations: [MaterializationEvent!]!
+  expectationResults: [ExpectationResult!]!
+  attempts: [RunMarker!]!
+  markers: [RunMarker!]!
+}
+
+type RunMarker {
+  startTime: Float
+  endTime: Float
+}
+
+type RunStartEvent implements MessageEvent & RunEvent {
+  runId: String!
+  message: String!
+  timestamp: String!
+  level: LogLevel!
+  stepKey: String
+  solidHandleID: String
+  eventType: DagsterEventType
+  pipelineName: String!
+}
+
+type RunStartingEvent implements MessageEvent & RunEvent {
+  runId: String!
+  message: String!
+  timestamp: String!
+  level: LogLevel!
+  stepKey: String
+  solidHandleID: String
+  eventType: DagsterEventType
+  pipelineName: String!
+}
+
+type RunSuccessEvent implements MessageEvent & RunEvent {
+  runId: String!
+  message: String!
+  timestamp: String!
+  level: LogLevel!
+  stepKey: String
+  solidHandleID: String
+  eventType: DagsterEventType
+  pipelineName: String!
+}
+
+interface StepEvent {
+  stepKey: String
+  solidHandleID: String
+}
+
+type StepExpectationResultEvent implements MessageEvent & StepEvent {
+  runId: String!
+  message: String!
+  timestamp: String!
+  level: LogLevel!
+  stepKey: String
+  solidHandleID: String
+  eventType: DagsterEventType
+  expectationResult: ExpectationResult!
+}
+
+type StepWorkerStartedEvent implements MessageEvent & DisplayableEvent & StepEvent & MarkerEvent {
+  runId: String!
+  message: String!
+  timestamp: String!
+  level: LogLevel!
+  stepKey: String
+  solidHandleID: String
+  eventType: DagsterEventType
+  label: String
+  description: String
+  metadataEntries: [MetadataEntry!]!
+  markerStart: String
+  markerEnd: String
+}
+
+type StepWorkerStartingEvent implements MessageEvent & DisplayableEvent & StepEvent & MarkerEvent {
+  runId: String!
+  message: String!
+  timestamp: String!
+  level: LogLevel!
+  stepKey: String
+  solidHandleID: String
+  eventType: DagsterEventType
+  label: String
+  description: String
+  metadataEntries: [MetadataEntry!]!
+  markerStart: String
+  markerEnd: String
+}
+
+type MaterializationEvent implements MessageEvent & StepEvent & DisplayableEvent {
+  runId: String!
+  message: String!
+  timestamp: String!
+  level: LogLevel!
+  stepKey: String
+  solidHandleID: String
+  eventType: DagsterEventType
+  label: String
+  description: String
+  metadataEntries: [MetadataEntry!]!
+  assetKey: AssetKey
+  runOrError: RunOrError!
+  stepStats: RunStepStats!
+  partition: String
+  tags: [EventTag!]!
+  assetLineage: [AssetLineageInfo!]!
+}
+
+type EventTag {
+  key: String!
+  value: String!
+}
+
+type AssetLineageInfo {
+  assetKey: AssetKey!
+  partitions: [String!]!
+}
+
+type ObservationEvent implements MessageEvent & StepEvent & DisplayableEvent {
+  runId: String!
+  message: String!
+  timestamp: String!
+  level: LogLevel!
+  stepKey: String
+  solidHandleID: String
+  eventType: DagsterEventType
+  label: String
+  description: String
+  metadataEntries: [MetadataEntry!]!
+  assetKey: AssetKey
+  runOrError: RunOrError!
+  stepStats: RunStepStats!
+  partition: String
+  tags: [EventTag!]!
+}
+
+type TypeCheck implements DisplayableEvent {
+  label: String
+  description: String
+  metadataEntries: [MetadataEntry!]!
+  success: Boolean!
+}
+
+type AssetMaterializationPlannedEvent implements MessageEvent & RunEvent {
+  runId: String!
+  message: String!
+  timestamp: String!
+  level: LogLevel!
+  stepKey: String
+  solidHandleID: String
+  eventType: DagsterEventType
+  pipelineName: String!
+  assetKey: AssetKey
+  runOrError: RunOrError!
+}
+
+type Asset {
+  id: String!
+  key: AssetKey!
+  assetMaterializations(
+    partitions: [String!]
+    beforeTimestampMillis: String
+    afterTimestampMillis: String
+    limit: Int
+  ): [MaterializationEvent!]!
+  assetObservations(
+    partitions: [String!]
+    beforeTimestampMillis: String
+    afterTimestampMillis: String
+    limit: Int
+  ): [ObservationEvent!]!
+  assetEventHistory(
+    partitions: [String!]
+    beforeTimestampMillis: String
+    afterTimestampMillis: String
+    limit: Int!
+    eventTypeSelectors: [AssetEventHistoryEventTypeSelector!]!
+    cursor: String
+  ): AssetResultEventHistoryConnection!
+  definition: AssetNode
+  latestEventSortKey: ID
+  assetHealth: AssetHealth
+}
+
+type AssetResultEventHistoryConnection {
+  results: [AssetResultEventType!]!
+  cursor: String!
+}
+
+union AssetResultEventType = FailedToMaterializeEvent | MaterializationEvent | ObservationEvent
+
+type FailedToMaterializeEvent implements MessageEvent & StepEvent & DisplayableEvent {
+  runId: String!
+  message: String!
+  timestamp: String!
+  level: LogLevel!
+  stepKey: String
+  solidHandleID: String
+  eventType: DagsterEventType
+  label: String
+  description: String
+  metadataEntries: [MetadataEntry!]!
+  assetKey: AssetKey
+  runOrError: RunOrError!
+  stepStats: RunStepStats!
+  partition: String
+  tags: [EventTag!]!
+  materializationFailureReason: AssetMaterializationFailureReason!
+  materializationFailureType: AssetMaterializationFailureType!
+}
+
+enum AssetMaterializationFailureReason {
+  FAILED_TO_MATERIALIZE
+  UPSTREAM_FAILED_TO_MATERIALIZE
+  RUN_TERMINATED
+  UNKNOWN
+}
+
+enum AssetMaterializationFailureType {
+  FAILED
+  SKIPPED
+}
+
+enum AssetEventHistoryEventTypeSelector {
+  MATERIALIZATION
+  FAILED_TO_MATERIALIZE
+  OBSERVATION
+}
+
+type AssetNode {
+  assetKey: AssetKey!
+  assetMaterializations(
+    partitions: [String!]
+    beforeTimestampMillis: String
+    limit: Int
+  ): [MaterializationEvent!]!
+  assetMaterializationUsedData(timestampMillis: String!): [MaterializationUpstreamDataVersion!]!
+  assetObservations(
+    partitions: [String!]
+    beforeTimestampMillis: String
+    limit: Int
+  ): [ObservationEvent!]!
+  lastAutoMaterializationEvaluationRecord(
+    asOfEvaluationId: ID
+  ): AutoMaterializeAssetEvaluationRecord
+  backfillPolicy: BackfillPolicy
+  changedReasons: [ChangeReason!]!
+  computeKind: String
+  configField: ConfigTypeField
+  dataVersion(partition: String): String
+  dataVersionByPartition(partitions: [String!]): [String]!
+  dependedBy: [AssetDependency!]!
+  dependedByKeys: [AssetKey!]!
+  dependencies: [AssetDependency!]!
+  dependencyKeys: [AssetKey!]!
+  description: String
+  freshnessInfo: AssetFreshnessInfo
+  freshnessPolicy: FreshnessPolicy
+  freshnessStatusInfo: FreshnessStatusInfo
+  internalFreshnessPolicy: InternalFreshnessPolicy
+  autoMaterializePolicy: AutoMaterializePolicy
+  automationCondition: AutomationCondition
+  graphName: String
+  groupName: String!
+  owners: [AssetOwner!]!
+  id: ID!
+  isExecutable: Boolean!
+  isObservable: Boolean!
+  isMaterializable: Boolean!
+  isPartitioned: Boolean!
+  isAutoCreatedStub: Boolean!
+  jobNames: [String!]!
+  jobs: [Pipeline!]!
+  latestMaterializationByPartition(partitions: [String!]): [MaterializationEvent]!
+  latestRunForPartition(partition: String!): Run
+  assetPartitionStatuses: AssetPartitionStatuses!
+  partitionStats: PartitionStats
+  metadataEntries: [MetadataEntry!]!
+  tags: [DefinitionTag!]!
+  kinds: [String!]!
+  op: SolidDefinition
+  opName: String
+  opNames: [String!]!
+  opVersion: String
+  partitionDefinition: PartitionDefinition
+  partitionKeys: [String!]!
+  partitionKeyConnection(limit: Int!, ascending: Boolean!, cursor: String): PartitionKeyConnection
+  partitionKeysByDimension(startIdx: Int, endIdx: Int): [DimensionPartitionKeys!]!
+  pools: [String!]!
+  repository: Repository!
+  requiredResources: [ResourceRequirement!]!
+  staleStatus(partition: String): StaleStatus
+  staleStatusByPartition(partitions: [String!]): [StaleStatus!]!
+  staleCauses(partition: String): [StaleCause!]!
+  staleCausesByPartition(partitions: [String!]): [[StaleCause!]!]
+  type: DagsterType
+  hasMaterializePermission: Boolean!
+  hasReportRunlessAssetEventPermission: Boolean!
+  hasAssetChecks: Boolean!
+  assetChecksOrError(limit: Int, pipeline: PipelineSelector): AssetChecksOrError!
+  currentAutoMaterializeEvaluationId: ID
+  targetingInstigators: [Instigator!]!
+}
+
+type MaterializationUpstreamDataVersion {
+  assetKey: AssetKey!
+  downstreamAssetKey: AssetKey!
+  timestamp: String!
+}
+
+type AutoMaterializeAssetEvaluationRecord {
+  id: ID!
+  evaluationId: ID!
+  numRequested: Int!
+  numSkipped: Int!
+  numDiscarded: Int!
+  rulesWithRuleEvaluations: [AutoMaterializeRuleWithRuleEvaluations!]!
+  timestamp: Float!
+  runIds: [String!]!
+  rules: [AutoMaterializeRule!]
+  assetKey: AssetKey!
+}
+
+type AutoMaterializeRuleWithRuleEvaluations {
+  rule: AutoMaterializeRule!
+  ruleEvaluations: [AutoMaterializeRuleEvaluation!]!
+}
+
+type AutoMaterializeRule {
+  description: String!
+  decisionType: AutoMaterializeDecisionType!
+  className: String!
+}
+
+enum AutoMaterializeDecisionType {
+  MATERIALIZE
+  SKIP
+  DISCARD
+}
+
+type AutoMaterializeRuleEvaluation {
+  partitionKeysOrError: PartitionKeysOrError
+  evaluationData: AutoMaterializeRuleEvaluationData
+}
+
+union PartitionKeysOrError = PartitionKeys | PartitionSubsetDeserializationError
+
+type PartitionKeys {
+  partitionKeys: [String!]!
+}
+
+type PartitionSubsetDeserializationError implements Error {
+  message: String!
+}
+
+union AutoMaterializeRuleEvaluationData =
+  | TextRuleEvaluationData
+  | ParentMaterializedRuleEvaluationData
+  | WaitingOnKeysRuleEvaluationData
+
+type TextRuleEvaluationData {
+  text: String
+}
+
+type ParentMaterializedRuleEvaluationData {
+  updatedAssetKeys: [AssetKey!]
+  willUpdateAssetKeys: [AssetKey!]
+}
+
+type WaitingOnKeysRuleEvaluationData {
+  waitingOnAssetKeys: [AssetKey!]
+}
+
+type BackfillPolicy {
+  maxPartitionsPerRun: Int
+  description: String!
+  policyType: BackfillPolicyType!
+}
+
+enum BackfillPolicyType {
+  SINGLE_RUN
+  MULTI_RUN
+}
+
+enum ChangeReason {
+  NEW
+  CODE_VERSION
+  DEPENDENCIES
+  PARTITIONS_DEFINITION
+  TAGS
+  METADATA
+  REMOVED
+}
+
+type AssetDependency {
+  asset: AssetNode!
+  partitionMapping: PartitionMapping
+}
+
+type PartitionMapping {
+  className: String!
+  description: String!
+}
+
+type AssetFreshnessInfo {
+  currentLagMinutes: Float
+  currentMinutesLate: Float
+  latestMaterializationMinutesLate: Float
+}
+
+type FreshnessPolicy {
+  maximumLagMinutes: Float!
+  cronSchedule: String
+  cronScheduleTimezone: String
+  lastEvaluationTimestamp: String
+}
+
+type FreshnessStatusInfo {
+  freshnessStatus: AssetHealthStatus!
+  freshnessStatusMetadata: AssetHealthFreshnessMeta
+}
+
+enum AssetHealthStatus {
+  HEALTHY
+  WARNING
+  DEGRADED
+  UNKNOWN
+  NOT_APPLICABLE
+}
+
+type AssetHealthFreshnessMeta {
+  lastMaterializedTimestamp: Float
+}
+
+union InternalFreshnessPolicy = TimeWindowFreshnessPolicy | CronFreshnessPolicy
+
+type TimeWindowFreshnessPolicy {
+  failWindowSeconds: Int!
+  warnWindowSeconds: Int
+}
+
+type CronFreshnessPolicy {
+  deadlineCron: String!
+  lowerBoundDeltaSeconds: Int!
+  timezone: String!
+}
+
+type AutoMaterializePolicy {
+  policyType: AutoMaterializePolicyType!
+  maxMaterializationsPerMinute: Int
+  rules: [AutoMaterializeRule!]!
+}
+
+enum AutoMaterializePolicyType {
+  EAGER
+  LAZY
+}
+
+type AutomationCondition {
+  label: String
+  expandedLabel: [String!]!
+}
+
+union AssetOwner = UserAssetOwner | TeamAssetOwner
+
+type UserAssetOwner {
+  email: String!
+}
+
+type TeamAssetOwner {
+  team: String!
+}
+
+union AssetPartitionStatuses =
+  | DefaultPartitionStatuses
+  | MultiPartitionStatuses
+  | TimePartitionStatuses
+
+type DefaultPartitionStatuses {
+  materializedPartitions: [String!]!
+  failedPartitions: [String!]!
+  unmaterializedPartitions: [String!]!
+  materializingPartitions: [String!]!
+}
+
+type MultiPartitionStatuses {
+  ranges: [MaterializedPartitionRangeStatuses2D!]!
+  primaryDimensionName: String!
+}
+
+type MaterializedPartitionRangeStatuses2D {
+  primaryDimStartKey: String!
+  primaryDimEndKey: String!
+  primaryDimStartTime: Float
+  primaryDimEndTime: Float
+  secondaryDim: PartitionStatus1D!
+}
+
+union PartitionStatus1D = TimePartitionStatuses | DefaultPartitionStatuses
+
+type TimePartitionStatuses {
+  ranges: [TimePartitionRangeStatus!]!
+}
+
+type TimePartitionRangeStatus {
+  startTime: Float!
+  endTime: Float!
+  startKey: String!
+  endKey: String!
+  status: PartitionRangeStatus!
+}
+
+enum PartitionRangeStatus {
+  MATERIALIZING
+  MATERIALIZED
+  FAILED
+}
+
+type PartitionStats {
+  numMaterialized: Int!
+  numPartitions: Int!
+  numFailed: Int!
+  numMaterializing: Int!
+}
+
+type DefinitionTag {
+  key: String!
+  value: String!
+}
+
+type PartitionDefinition {
+  description: String!
+  type: PartitionDefinitionType!
+  dimensionTypes: [DimensionDefinitionType!]!
+  name: String
+  fmt: String
+}
+
+enum PartitionDefinitionType {
+  TIME_WINDOW
+  STATIC
+  MULTIPARTITIONED
+  DYNAMIC
+}
+
+type DimensionDefinitionType {
+  name: String!
+  description: String!
+  type: PartitionDefinitionType!
+  isPrimaryDimension: Boolean!
+  dynamicPartitionsDefinitionName: String
+}
+
+type PartitionKeyConnection {
+  results: [String!]!
+  cursor: String!
+  hasMore: Boolean!
+}
+
+type DimensionPartitionKeys {
+  name: String!
+  partitionKeys: [String!]!
+  type: PartitionDefinitionType!
+}
+
+enum StaleStatus {
+  MISSING
+  STALE
+  FRESH
+}
+
+type StaleCause {
+  key: AssetKey!
+  partitionKey: String
+  category: StaleCauseCategory!
+  reason: String!
+  dependency: AssetKey
+  dependencyPartitionKey: String
+}
+
+enum StaleCauseCategory {
+  CODE
+  DATA
+  DEPENDENCIES
+}
+
+union AssetChecksOrError =
+  | AssetChecks
+  | AssetCheckNeedsMigrationError
+  | AssetCheckNeedsUserCodeUpgrade
+  | AssetCheckNeedsAgentUpgradeError
+
+type AssetChecks {
+  checks: [AssetCheck!]!
+}
+
+type AssetCheck {
+  name: String!
+  assetKey: AssetKey!
+  description: String
+  jobNames: [String!]!
+  executionForLatestMaterialization: AssetCheckExecution
+  canExecuteIndividually: AssetCheckCanExecuteIndividually!
+  blocking: Boolean!
+  additionalAssetKeys: [AssetKey!]!
+  automationCondition: AutomationCondition
+}
+
+type AssetCheckExecution {
+  id: String!
+  runId: String!
+  status: AssetCheckExecutionResolvedStatus!
+  evaluation: AssetCheckEvaluation
+  timestamp: Float!
+  stepKey: String
+}
+
+enum AssetCheckExecutionResolvedStatus {
+  IN_PROGRESS
+  SUCCEEDED
+  FAILED
+  EXECUTION_FAILED
+  SKIPPED
+}
+
+type AssetCheckEvaluation {
+  timestamp: Float!
+  checkName: String!
+  assetKey: AssetKey!
+  targetMaterialization: AssetCheckEvaluationTargetMaterializationData
+  metadataEntries: [MetadataEntry!]!
+  severity: AssetCheckSeverity!
+  description: String
+  success: Boolean!
+}
+
+type AssetCheckEvaluationTargetMaterializationData {
+  storageId: ID!
+  runId: String!
+  timestamp: Float!
+}
+
+enum AssetCheckSeverity {
+  WARN
+  ERROR
+}
+
+enum AssetCheckCanExecuteIndividually {
+  CAN_EXECUTE
+  REQUIRES_MATERIALIZATION
+  NEEDS_USER_CODE_UPGRADE
+}
+
+type AssetCheckNeedsMigrationError implements Error {
+  message: String!
+}
+
+type AssetCheckNeedsUserCodeUpgrade implements Error {
+  message: String!
+}
+
+type AssetCheckNeedsAgentUpgradeError implements Error {
+  message: String!
+}
+
+union Instigator = Schedule | Sensor
+
+type AssetHealth {
+  assetHealth: AssetHealthStatus!
+  materializationStatus: AssetHealthStatus!
+  materializationStatusMetadata: AssetHealthMaterializationMeta
+  assetChecksStatus: AssetHealthStatus!
+  assetChecksStatusMetadata: AssetHealthCheckMeta
+  freshnessStatus: AssetHealthStatus!
+  freshnessStatusMetadata: AssetHealthFreshnessMeta
+}
+
+union AssetHealthMaterializationMeta =
+  | AssetHealthMaterializationDegradedPartitionedMeta
+  | AssetHealthMaterializationHealthyPartitionedMeta
+  | AssetHealthMaterializationDegradedNotPartitionedMeta
+
+type AssetHealthMaterializationDegradedPartitionedMeta {
+  numFailedPartitions: Int!
+  numMissingPartitions: Int!
+  totalNumPartitions: Int!
+}
+
+type AssetHealthMaterializationHealthyPartitionedMeta {
+  numMissingPartitions: Int!
+  totalNumPartitions: Int!
+}
+
+type AssetHealthMaterializationDegradedNotPartitionedMeta {
+  failedRunId: String!
+}
+
+union AssetHealthCheckMeta =
+  | AssetHealthCheckDegradedMeta
+  | AssetHealthCheckWarningMeta
+  | AssetHealthCheckUnknownMeta
+
+type AssetHealthCheckDegradedMeta {
+  numFailedChecks: Int!
+  numWarningChecks: Int!
+  totalNumChecks: Int!
+}
+
+type AssetHealthCheckWarningMeta {
+  numWarningChecks: Int!
+  totalNumChecks: Int!
+}
+
+type AssetHealthCheckUnknownMeta {
+  numNotExecutedChecks: Int!
+  totalNumChecks: Int!
+}
+
+enum EvaluationErrorReason {
+  RUNTIME_TYPE_MISMATCH
+  MISSING_REQUIRED_FIELD
+  MISSING_REQUIRED_FIELDS
+  FIELD_NOT_DEFINED
+  FIELDS_NOT_DEFINED
+  SELECTOR_FIELD_ERROR
+}
+
+type EvaluationStack {
+  entries: [EvaluationStackEntry!]!
+}
+
+union EvaluationStackEntry =
+  | EvaluationStackListItemEntry
+  | EvaluationStackPathEntry
+  | EvaluationStackMapKeyEntry
+  | EvaluationStackMapValueEntry
+
+type EvaluationStackListItemEntry {
+  listIndex: Int!
+}
+
+type EvaluationStackPathEntry {
+  fieldName: String!
+}
+
+type EvaluationStackMapKeyEntry {
+  mapKey: GenericScalar!
+}
+
+scalar GenericScalar
+
+type EvaluationStackMapValueEntry {
+  mapKey: GenericScalar!
+}
+
+type FieldNotDefinedConfigError implements PipelineConfigValidationError {
+  message: String!
+  path: [String!]!
+  stack: EvaluationStack!
+  reason: EvaluationErrorReason!
+  fieldName: String!
+}
+
+type FieldsNotDefinedConfigError implements PipelineConfigValidationError {
+  message: String!
+  path: [String!]!
+  stack: EvaluationStack!
+  reason: EvaluationErrorReason!
+  fieldNames: [String!]!
+}
+
+interface IPipelineSnapshot {
+  name: String!
+  description: String
+  pipelineSnapshotId: String!
+  dagsterTypes: [DagsterType!]!
+  dagsterTypeOrError(dagsterTypeName: String!): DagsterTypeOrError!
+  solids: [Solid!]!
+  modes: [Mode!]!
+  solidHandles(parentHandleID: String): [SolidHandle!]!
+  solidHandle(handleID: String!): SolidHandle
+  tags: [PipelineTag!]!
+  metadataEntries: [MetadataEntry!]!
+  runs(cursor: String, limit: Int): [Run!]!
+  schedules: [Schedule!]!
+  sensors: [Sensor!]!
+  parentSnapshotId: String
+  graphName: String!
+}
+
+type Logger {
+  name: String!
+  description: String
+  configField: ConfigTypeField
+}
+
+type MissingFieldConfigError implements PipelineConfigValidationError {
+  message: String!
+  path: [String!]!
+  stack: EvaluationStack!
+  reason: EvaluationErrorReason!
+  field: ConfigTypeField!
+}
+
+type MissingFieldsConfigError implements PipelineConfigValidationError {
+  message: String!
+  path: [String!]!
+  stack: EvaluationStack!
+  reason: EvaluationErrorReason!
+  fields: [ConfigTypeField!]!
+}
+
+type Mode {
+  id: String!
+  name: String!
+  description: String
+  resources: [Resource!]!
+  loggers: [Logger!]!
+}
+
+type Pipeline implements SolidContainer & IPipelineSnapshot {
+  id: ID!
+  name: String!
+  description: String
+  solids: [Solid!]!
+  solidHandle(handleID: String!): SolidHandle
+  solidHandles(parentHandleID: String): [SolidHandle!]!
+  modes: [Mode!]!
+  pipelineSnapshotId: String!
+  dagsterTypes: [DagsterType!]!
+  dagsterTypeOrError(dagsterTypeName: String!): DagsterTypeOrError!
+  tags: [PipelineTag!]!
+  metadataEntries: [MetadataEntry!]!
+  runs(cursor: String, limit: Int): [Run!]!
+  schedules: [Schedule!]!
+  sensors: [Sensor!]!
+  parentSnapshotId: String
+  graphName: String!
+  runTags: [PipelineTag!]!
+  externalJobSource: String
+  presets: [PipelinePreset!]!
+  isJob: Boolean!
+  isAssetJob: Boolean!
+  repository: Repository!
+  partitionKeysOrError(
+    cursor: String
+    limit: Int
+    reverse: Boolean
+    selectedAssetKeys: [AssetKeyInput!]
+  ): PartitionKeys!
+  partition(partitionName: String!, selectedAssetKeys: [AssetKeyInput!]): PartitionTagsAndConfig
+}
+
+type PartitionTagsAndConfig {
+  name: String!
+  jobName: String!
+  runConfigOrError: PartitionRunConfigOrError!
+  tagsOrError: PartitionTagsOrError!
+}
+
+interface PipelineConfigValidationError {
+  message: String!
+  path: [String!]!
+  stack: EvaluationStack!
+  reason: EvaluationErrorReason!
+}
+
+interface PipelineConfigValidationInvalid {
+  pipelineName: String!
+  errors: [PipelineConfigValidationError!]!
+}
+
+type RunConfigValidationInvalid implements PipelineConfigValidationInvalid {
+  pipelineName: String!
+  errors: [PipelineConfigValidationError!]!
+}
+
+union PipelineConfigValidationResult =
+  | InvalidSubsetError
+  | PipelineConfigValidationValid
+  | RunConfigValidationInvalid
+  | PipelineNotFoundError
+  | PythonError
+
+type PipelineConfigValidationValid {
+  pipelineName: String!
+}
+
+type PipelinePreset {
+  name: String!
+  solidSelection: [String!]
+  runConfigYaml: String!
+  mode: String!
+  tags: [PipelineTag!]!
+}
+
+interface PipelineReference {
+  name: String!
+  solidSelection: [String!]
+}
+
+interface PipelineRun {
+  id: ID!
+  runId: String!
+  pipelineSnapshotId: String
+  repositoryOrigin: RepositoryOrigin
+  status: RunStatus!
+  pipeline: PipelineReference!
+  pipelineName: String!
+  jobName: String!
+  solidSelection: [String!]
+  stats: RunStatsSnapshotOrError!
+  stepStats: [RunStepStats!]!
+  capturedLogs(fileKey: String!): CapturedLogs!
+  executionPlan: ExecutionPlan
+  stepKeysToExecute: [String!]
+  runConfigYaml: String!
+  runConfig: RunConfigData!
+  mode: String!
+  tags: [PipelineTag!]!
+  rootRunId: String
+  parentRunId: String
+  canTerminate: Boolean!
+  assets: [Asset!]!
+  eventConnection(afterCursor: String, limit: Int): EventConnection!
+}
+
+type CapturedLogs {
+  logKey: [String!]!
+  stdout: String
+  stderr: String
+  cursor: String
+}
+
+type EventConnection {
+  events: [DagsterRunEvent!]!
+  cursor: String!
+  hasMore: Boolean!
+}
+
+union DagsterRunEvent =
+  | ExecutionStepFailureEvent
+  | ExecutionStepInputEvent
+  | ExecutionStepOutputEvent
+  | ExecutionStepSkippedEvent
+  | ExecutionStepStartEvent
+  | ExecutionStepSuccessEvent
+  | ExecutionStepUpForRetryEvent
+  | ExecutionStepRestartEvent
+  | HealthChangedEvent
+  | LogMessageEvent
+  | ResourceInitFailureEvent
+  | ResourceInitStartedEvent
+  | ResourceInitSuccessEvent
+  | RunFailureEvent
+  | RunStartEvent
+  | RunEnqueuedEvent
+  | RunDequeuedEvent
+  | RunStartingEvent
+  | RunCancelingEvent
+  | RunCanceledEvent
+  | RunSuccessEvent
+  | StepWorkerStartedEvent
+  | StepWorkerStartingEvent
+  | HandledOutputEvent
+  | LoadedInputEvent
+  | LogsCapturedEvent
+  | ObjectStoreOperationEvent
+  | StepExpectationResultEvent
+  | MaterializationEvent
+  | ObservationEvent
+  | FailedToMaterializeEvent
+  | EngineEvent
+  | HookCompletedEvent
+  | HookSkippedEvent
+  | HookErroredEvent
+  | AlertStartEvent
+  | AlertSuccessEvent
+  | AlertFailureEvent
+  | AssetMaterializationPlannedEvent
+  | AssetCheckEvaluationPlannedEvent
+  | AssetCheckEvaluationEvent
+
+type HealthChangedEvent implements MessageEvent & StepEvent & DisplayableEvent {
+  runId: String!
+  message: String!
+  timestamp: String!
+  level: LogLevel!
+  stepKey: String
+  solidHandleID: String
+  eventType: DagsterEventType
+  label: String
+  description: String
+  metadataEntries: [MetadataEntry!]!
+  assetKey: AssetKey
+  runOrError: RunOrError!
+  stepStats: RunStepStats!
+  partition: String
+  tags: [EventTag!]!
+}
+
+type LogsCapturedEvent implements MessageEvent {
+  runId: String!
+  message: String!
+  timestamp: String!
+  level: LogLevel!
+  stepKey: String
+  solidHandleID: String
+  eventType: DagsterEventType
+  fileKey: String!
+  stepKeys: [String!]
+  externalUrl: String
+  externalStdoutUrl: String
+  externalStderrUrl: String
+  shellCmd: LogRetrievalShellCommand
+  pid: Int
+  logKey: String!
+}
+
+type LogRetrievalShellCommand {
+  stdout: String
+  stderr: String
+}
+
+type AlertStartEvent implements MessageEvent & RunEvent {
+  runId: String!
+  message: String!
+  timestamp: String!
+  level: LogLevel!
+  stepKey: String
+  solidHandleID: String
+  eventType: DagsterEventType
+  pipelineName: String!
+}
+
+type AlertSuccessEvent implements MessageEvent & RunEvent {
+  runId: String!
+  message: String!
+  timestamp: String!
+  level: LogLevel!
+  stepKey: String
+  solidHandleID: String
+  eventType: DagsterEventType
+  pipelineName: String!
+}
+
+type AlertFailureEvent implements MessageEvent & RunEvent {
+  runId: String!
+  message: String!
+  timestamp: String!
+  level: LogLevel!
+  stepKey: String
+  solidHandleID: String
+  eventType: DagsterEventType
+  pipelineName: String!
+}
+
+type AssetCheckEvaluationPlannedEvent implements MessageEvent & StepEvent {
+  runId: String!
+  message: String!
+  timestamp: String!
+  level: LogLevel!
+  stepKey: String
+  solidHandleID: String
+  eventType: DagsterEventType
+  assetKey: AssetKey!
+  checkName: String!
+}
+
+type AssetCheckEvaluationEvent implements MessageEvent & StepEvent {
+  runId: String!
+  message: String!
+  timestamp: String!
+  level: LogLevel!
+  stepKey: String
+  solidHandleID: String
+  eventType: DagsterEventType
+  evaluation: AssetCheckEvaluation!
+}
+
+type PipelineRunLogsSubscriptionFailure {
+  message: String!
+  missingRunId: String
+}
+
+union PipelineRunLogsSubscriptionPayload =
+  | PipelineRunLogsSubscriptionSuccess
+  | PipelineRunLogsSubscriptionFailure
+
+type PipelineRunLogsSubscriptionSuccess {
+  run: Run!
+  messages: [DagsterRunEvent!]!
+  hasMorePastEvents: Boolean!
+  cursor: String!
+}
+
+union RunOrError = Run | RunNotFoundError | PythonError
+
+interface PipelineRunStatsSnapshot {
+  id: String!
+  runId: String!
+  stepsSucceeded: Int!
+  stepsFailed: Int!
+  materializations: Int!
+  expectations: Int!
+  enqueuedTime: Float
+  launchTime: Float
+  startTime: Float
+  endTime: Float
+}
+
+union RunStatsSnapshotOrError = RunStatsSnapshot | PythonError
+
+type RunStatsSnapshot implements PipelineRunStatsSnapshot {
+  id: String!
+  runId: String!
+  stepsSucceeded: Int!
+  stepsFailed: Int!
+  materializations: Int!
+  expectations: Int!
+  enqueuedTime: Float
+  launchTime: Float
+  startTime: Float
+  endTime: Float
+}
+
+enum RunStatus {
+  QUEUED
+  NOT_STARTED
+  MANAGED
+  STARTING
+  STARTED
+  SUCCESS
+  FAILURE
+  CANCELING
+  CANCELED
+}
+
+type PipelineSnapshot implements SolidContainer & IPipelineSnapshot & PipelineReference {
+  id: ID!
+  name: String!
+  description: String
+  solids: [Solid!]!
+  solidHandle(handleID: String!): SolidHandle
+  solidHandles(parentHandleID: String): [SolidHandle!]!
+  modes: [Mode!]!
+  pipelineSnapshotId: String!
+  dagsterTypes: [DagsterType!]!
+  dagsterTypeOrError(dagsterTypeName: String!): DagsterTypeOrError!
+  tags: [PipelineTag!]!
+  metadataEntries: [MetadataEntry!]!
+  runs(cursor: String, limit: Int): [Run!]!
+  schedules: [Schedule!]!
+  sensors: [Sensor!]!
+  parentSnapshotId: String
+  graphName: String!
+  solidSelection: [String!]
+  runTags: [PipelineTag!]!
+  externalJobSource: String
+}
+
+union PipelineSnapshotOrError =
+  | PipelineNotFoundError
+  | PipelineSnapshot
+  | PipelineSnapshotNotFoundError
+  | PythonError
+
+type Resource {
+  name: String!
+  description: String
+  configField: ConfigTypeField
+}
+
+type RuntimeMismatchConfigError implements PipelineConfigValidationError {
+  message: String!
+  path: [String!]!
+  stack: EvaluationStack!
+  reason: EvaluationErrorReason!
+  valueRep: String
+}
+
+type Run implements PipelineRun & RunsFeedEntry {
+  id: ID!
+  runId: String!
+  pipelineSnapshotId: String
+  repositoryOrigin: RepositoryOrigin
+  status: RunStatus!
+  pipeline: PipelineReference!
+  pipelineName: String!
+  jobName: String!
+  solidSelection: [String!]
+  stats: RunStatsSnapshotOrError!
+  stepStats: [RunStepStats!]!
+  capturedLogs(fileKey: String!): CapturedLogs!
+  executionPlan: ExecutionPlan
+  stepKeysToExecute: [String!]
+  runConfigYaml: String!
+  runConfig: RunConfigData!
+  mode: String!
+  tags: [PipelineTag!]!
+  rootRunId: String
+  parentRunId: String
+  canTerminate: Boolean!
+  assets: [Asset!]!
+  eventConnection(afterCursor: String, limit: Int): EventConnection!
+  runStatus: RunStatus!
+  creationTime: Float!
+  startTime: Float
+  endTime: Float
+  assetSelection: [AssetKey!]
+  assetCheckSelection: [AssetCheckhandle!]
+  parentPipelineSnapshotId: String
+  resolvedOpSelection: [String!]
+  assetMaterializations: [MaterializationEvent!]!
+  assetChecks: [AssetCheckhandle!]
+  updateTime: Float
+  hasReExecutePermission: Boolean!
+  hasTerminatePermission: Boolean!
+  hasDeletePermission: Boolean!
+  hasConcurrencyKeySlots: Boolean!
+  rootConcurrencyKeys: [String!]
+  allPools: [String!]
+  hasUnconstrainedRootNodes: Boolean!
+  hasRunMetricsEnabled: Boolean!
+  externalJobSource: String
+}
+
+interface RunsFeedEntry {
+  id: ID!
+  runStatus: RunStatus
+  creationTime: Float!
+  startTime: Float
+  endTime: Float
+  tags: [PipelineTag!]!
+  jobName: String
+  assetSelection: [AssetKey!]
+  assetCheckSelection: [AssetCheckhandle!]
+}
+
+type AssetCheckhandle {
+  name: String!
+  assetKey: AssetKey!
+}
+
+type SelectorTypeConfigError implements PipelineConfigValidationError {
+  message: String!
+  path: [String!]!
+  stack: EvaluationStack!
+  reason: EvaluationErrorReason!
+  incomingFields: [String!]!
+}
+
+type UnknownPipeline implements PipelineReference {
+  name: String!
+  solidSelection: [String!]
+}
+
+type AssetConnection {
+  nodes: [Asset!]!
+  cursor: String
+}
+
+union AssetOrError = Asset | AssetNotFoundError
+
+union AssetsOrError = AssetConnection | PythonError
+
+union DeletePipelineRunResult =
+  | DeletePipelineRunSuccess
+  | UnauthorizedError
+  | PythonError
+  | RunNotFoundError
+
+type DeletePipelineRunSuccess {
+  runId: String!
+}
+
+type DeleteRunMutation {
+  Output: DeletePipelineRunResult!
+}
+
+union ExecutionPlanOrError =
+  | ExecutionPlan
+  | RunConfigValidationInvalid
+  | PipelineNotFoundError
+  | InvalidSubsetError
+  | PythonError
+
+type LaunchBackfillMutation {
+  Output: LaunchBackfillResult!
+}
+
+type LaunchRunMutation {
+  Output: LaunchRunResult!
+}
+
+type LaunchMultipleRunsMutation {
+  Output: LaunchMultipleRunsResultOrError!
+}
+
+union LaunchMultipleRunsResultOrError = LaunchMultipleRunsResult | PythonError
+
+type LaunchRunReexecutionMutation {
+  Output: LaunchRunReexecutionResult!
+}
+
+union PipelineOrError = Pipeline | PipelineNotFoundError | InvalidSubsetError | PythonError
+
+type ReloadRepositoryLocationMutation {
+  Output: ReloadRepositoryLocationMutationResult!
+}
+
+union ReloadRepositoryLocationMutationResult =
+  | WorkspaceLocationEntry
+  | ReloadNotSupported
+  | RepositoryLocationNotFound
+  | UnauthorizedError
+  | PythonError
+
+type WorkspaceLocationEntry {
+  id: ID!
+  name: String!
+  locationOrLoadError: RepositoryLocationOrLoadError
+  loadStatus: RepositoryLocationLoadStatus!
+  displayMetadata: [RepositoryMetadata!]!
+  updatedTimestamp: Float!
+  versionKey: String!
+  permissions: [Permission!]!
+  featureFlags: [FeatureFlag!]!
+}
+
+union RepositoryLocationOrLoadError = RepositoryLocation | PythonError
+
+enum RepositoryLocationLoadStatus {
+  LOADING
+  LOADED
+}
+
+type Permission {
+  permission: String!
+  value: Boolean!
+  disabledReason: String
+}
+
+type FeatureFlag {
+  name: String!
+  enabled: Boolean!
+}
+
+type ReloadWorkspaceMutation {
+  Output: ReloadWorkspaceMutationResult!
+}
+
+union ReloadWorkspaceMutationResult = Workspace | UnauthorizedError | PythonError
+
+type Workspace {
+  id: String!
+  locationEntries: [WorkspaceLocationEntry!]!
+}
+
+type ShutdownRepositoryLocationMutation {
+  Output: ShutdownRepositoryLocationMutationResult!
+}
+
+union ShutdownRepositoryLocationMutationResult =
+  | ShutdownRepositoryLocationSuccess
+  | RepositoryLocationNotFound
+  | UnauthorizedError
+  | PythonError
+
+type ShutdownRepositoryLocationSuccess {
+  repositoryLocationName: String!
+}
+
+interface TerminatePipelineExecutionFailure {
+  run: Run!
+  message: String!
+}
+
+interface TerminatePipelineExecutionSuccess {
+  run: Run!
+}
+
+type TerminateRunFailure implements TerminatePipelineExecutionFailure {
+  run: Run!
+  message: String!
+}
+
+type TerminateRunMutation {
+  Output: TerminateRunResult!
+}
+
+union TerminateRunResult =
+  | TerminateRunSuccess
+  | TerminateRunFailure
+  | RunNotFoundError
+  | UnauthorizedError
+  | PythonError
+
+type TerminateRunSuccess implements TerminatePipelineExecutionSuccess {
+  run: Run!
+}
+
+enum TerminateRunPolicy {
+  SAFE_TERMINATE
+  MARK_AS_CANCELED_IMMEDIATELY
+}
+
+enum InstigationTickStatus {
+  STARTED
+  SKIPPED
+  SUCCESS
+  FAILURE
+}
+
+type Schedule {
+  id: ID!
+  name: String!
+  cronSchedule: String!
+  pipelineName: String!
+  solidSelection: [String]
+  mode: String!
+  executionTimezone: String
+  description: String
+  defaultStatus: InstigationStatus!
+  canReset: Boolean!
+  scheduleState: InstigationState!
+  partitionSet: PartitionSet
+  futureTicks(cursor: Float, limit: Int, until: Float): DryRunInstigationTicks!
+  futureTick(tickTimestamp: Int!): DryRunInstigationTick!
+  potentialTickTimestamps(startTimestamp: Float, upperLimit: Int, lowerLimit: Int): [Float!]!
+  assetSelection: AssetSelection
+  tags: [DefinitionTag!]!
+  metadataEntries: [MetadataEntry!]!
+}
+
+enum InstigationStatus {
+  RUNNING
+  STOPPED
+}
+
+type AssetSelection {
+  assetSelectionString: String
+  assetKeys: [AssetKey!]!
+  assetChecks: [AssetCheckhandle!]!
+  assets: [Asset!]!
+  assetsOrError: AssetsOrError!
+}
+
+union ScheduleMutationResult =
+  | PythonError
+  | UnauthorizedError
+  | ScheduleStateResult
+  | ScheduleNotFoundError
+
+union ScheduleOrError = Schedule | ScheduleNotFoundError | PythonError
+
+type Scheduler {
+  schedulerClass: String
+}
+
+union SchedulerOrError = Scheduler | SchedulerNotDefinedError | PythonError
+
+type Schedules {
+  results: [Schedule!]!
+}
+
+union SchedulesOrError = Schedules | RepositoryNotFoundError | PythonError
+
+type ScheduleStateResult {
+  scheduleState: InstigationState!
+}
+
+enum ScheduleStatus {
+  RUNNING
+  STOPPED
+  ENDED
+}
+
+type ScheduleTick {
+  tickId: String!
+  status: InstigationTickStatus!
+  timestamp: Float!
+  tickSpecificData: ScheduleTickSpecificData
+}
+
+type ScheduleTickFailureData {
+  error: PythonError!
+}
+
+union ScheduleTickSpecificData = ScheduleTickSuccessData | ScheduleTickFailureData
+
+type ScheduleTickSuccessData {
+  run: Run
+}
+
+type StartScheduleMutation {
+  Output: ScheduleMutationResult!
+}
+
+type StopRunningScheduleMutation {
+  Output: ScheduleMutationResult!
+}
+
+type ResetScheduleMutation {
+  Output: ScheduleMutationResult!
+}
+
+type AssetKey {
+  path: [String!]!
+}
+
+union LaunchBackfillResult =
+  | LaunchBackfillSuccess
+  | PartitionSetNotFoundError
+  | PartitionKeysNotFoundError
+  | InvalidStepError
+  | InvalidOutputError
+  | RunConfigValidationInvalid
+  | PipelineNotFoundError
+  | RunConflict
+  | UnauthorizedError
+  | PythonError
+  | InvalidSubsetError
+  | PresetNotFoundError
+  | ConflictingExecutionParamsError
+  | NoModeProvidedError
+
+type PartitionKeysNotFoundError implements Error {
+  message: String!
+  partitionKeys: [String!]!
+}
+
+type LaunchBackfillSuccess {
+  backfillId: String!
+  launchedRunIds: [String]
+}
+
+union ConfigTypeOrError =
+  | EnumConfigType
+  | CompositeConfigType
+  | RegularConfigType
+  | PipelineNotFoundError
+  | ConfigTypeNotFoundError
+  | PythonError
+
+type ArrayConfigType implements ConfigType & WrappingConfigType {
+  key: String!
+  description: String
+  recursiveConfigTypes: [ConfigType!]!
+  typeParamKeys: [String!]!
+  isSelector: Boolean!
+  ofType: ConfigType!
+}
+
+type CompositeConfigType implements ConfigType {
+  key: String!
+  description: String
+  recursiveConfigTypes: [ConfigType!]!
+  typeParamKeys: [String!]!
+  isSelector: Boolean!
+  fields: [ConfigTypeField!]!
+}
+
+interface ConfigType {
+  key: String!
+  description: String
+  recursiveConfigTypes: [ConfigType!]!
+  typeParamKeys: [String!]!
+  isSelector: Boolean!
+}
+
+type ConfigTypeField {
+  name: String!
+  description: String
+  configType: ConfigType!
+  configTypeKey: String!
+  isRequired: Boolean!
+  defaultValueAsJson: String
+}
+
+type EnumConfigType implements ConfigType {
+  key: String!
+  description: String
+  recursiveConfigTypes: [ConfigType!]!
+  typeParamKeys: [String!]!
+  isSelector: Boolean!
+  values: [EnumConfigValue!]!
+  givenName: String!
+}
+
+type EnumConfigValue {
+  value: String!
+  description: String
+}
+
+type NullableConfigType implements ConfigType & WrappingConfigType {
+  key: String!
+  description: String
+  recursiveConfigTypes: [ConfigType!]!
+  typeParamKeys: [String!]!
+  isSelector: Boolean!
+  ofType: ConfigType!
+}
+
+type RegularConfigType implements ConfigType {
+  key: String!
+  description: String
+  recursiveConfigTypes: [ConfigType!]!
+  typeParamKeys: [String!]!
+  isSelector: Boolean!
+  givenName: String!
+}
+
+type ScalarUnionConfigType implements ConfigType {
+  key: String!
+  description: String
+  recursiveConfigTypes: [ConfigType!]!
+  typeParamKeys: [String!]!
+  isSelector: Boolean!
+  scalarType: ConfigType!
+  nonScalarType: ConfigType!
+  scalarTypeKey: String!
+  nonScalarTypeKey: String!
+}
+
+interface WrappingConfigType {
+  ofType: ConfigType!
+}
+
+type MapConfigType implements ConfigType {
+  key: String!
+  description: String
+  recursiveConfigTypes: [ConfigType!]!
+  typeParamKeys: [String!]!
+  isSelector: Boolean!
+  keyType: ConfigType!
+  valueType: ConfigType!
+  keyLabelName: String
+}
+
+interface DagsterType {
+  key: String!
+  name: String
+  displayName: String!
+  description: String
+  isNullable: Boolean!
+  isList: Boolean!
+  isBuiltin: Boolean!
+  isNothing: Boolean!
+  inputSchemaType: ConfigType
+  outputSchemaType: ConfigType
+  innerTypes: [DagsterType!]!
+  metadataEntries: [MetadataEntry!]!
+}
+
+union DagsterTypeOrError =
+  | RegularDagsterType
+  | PipelineNotFoundError
+  | DagsterTypeNotFoundError
+  | PythonError
+
+type ListDagsterType implements DagsterType & WrappingDagsterType {
+  key: String!
+  name: String
+  displayName: String!
+  description: String
+  isNullable: Boolean!
+  isList: Boolean!
+  isBuiltin: Boolean!
+  isNothing: Boolean!
+  inputSchemaType: ConfigType
+  outputSchemaType: ConfigType
+  innerTypes: [DagsterType!]!
+  metadataEntries: [MetadataEntry!]!
+  ofType: DagsterType!
+}
+
+type NullableDagsterType implements DagsterType & WrappingDagsterType {
+  key: String!
+  name: String
+  displayName: String!
+  description: String
+  isNullable: Boolean!
+  isList: Boolean!
+  isBuiltin: Boolean!
+  isNothing: Boolean!
+  inputSchemaType: ConfigType
+  outputSchemaType: ConfigType
+  innerTypes: [DagsterType!]!
+  metadataEntries: [MetadataEntry!]!
+  ofType: DagsterType!
+}
+
+type RegularDagsterType implements DagsterType {
+  key: String!
+  name: String
+  displayName: String!
+  description: String
+  isNullable: Boolean!
+  isList: Boolean!
+  isBuiltin: Boolean!
+  isNothing: Boolean!
+  inputSchemaType: ConfigType
+  outputSchemaType: ConfigType
+  innerTypes: [DagsterType!]!
+  metadataEntries: [MetadataEntry!]!
+}
+
+interface WrappingDagsterType {
+  ofType: DagsterType!
+}
+
+type AssetNotFoundError implements Error {
+  message: String!
+}
+
+type ConflictingExecutionParamsError implements Error {
+  message: String!
+}
+
+type ConfigTypeNotFoundError implements Error {
+  message: String!
+  pipeline: Pipeline!
+  configTypeName: String!
+}
+
+type DagsterTypeNotFoundError implements Error {
+  message: String!
+  dagsterTypeName: String!
+}
+
+interface Error {
+  message: String!
+}
+
+type InvalidOutputError {
+  stepKey: String!
+  invalidOutputName: String!
+}
+
+type InvalidPipelineRunsFilterError implements Error {
+  message: String!
+}
+
+type InvalidStepError {
+  invalidStepKey: String!
+}
+
+type InvalidSubsetError implements Error {
+  message: String!
+  pipeline: Pipeline!
+}
+
+type ModeNotFoundError implements Error {
+  message: String!
+  mode: String!
+}
+
+type NoModeProvidedError implements Error {
+  message: String!
+  pipelineName: String!
+}
+
+type PartitionSetNotFoundError implements Error {
+  message: String!
+  partitionSetName: String!
+}
+
+type PipelineNotFoundError implements Error {
+  message: String!
+  pipelineName: String!
+  repositoryName: String!
+  repositoryLocationName: String!
+}
+
+interface PipelineRunConflict {
+  message: String!
+}
+
+type RunConflict implements Error & PipelineRunConflict {
+  message: String!
+}
+
+interface PipelineRunNotFoundError implements Error {
+  runId: String!
+  message: String!
+}
+
+type PipelineSnapshotNotFoundError implements Error {
+  message: String!
+  snapshotId: String!
+}
+
+type PresetNotFoundError implements Error {
+  message: String!
+  preset: String!
+}
+
+type PythonError implements Error {
+  message: String!
+  className: String
+  stack: [String!]!
+  cause: PythonError
+  causes: [PythonError!]!
+  errorChain: [ErrorChainLink!]!
+}
+
+type ErrorChainLink implements Error {
+  message: String!
+  error: PythonError!
+  isExplicitLink: Boolean!
+}
+
+type UnauthorizedError implements Error {
+  message: String!
+}
+
+type ReloadNotSupported implements Error {
+  message: String!
+}
+
+type RepositoryLocationNotFound implements Error {
+  message: String!
+}
+
+type RepositoryNotFoundError implements Error {
+  message: String!
+  repositoryName: String!
+  repositoryLocationName: String!
+}
+
+type ResourceNotFoundError implements Error {
+  message: String!
+  resourceName: String!
+}
+
+type RunGroupNotFoundError implements Error {
+  message: String!
+  runId: String!
+}
+
+type RunNotFoundError implements PipelineRunNotFoundError & Error {
+  runId: String!
+  message: String!
+}
+
+type ScheduleNotFoundError implements Error {
+  message: String!
+  scheduleName: String!
+}
+
+type SchedulerNotDefinedError implements Error {
+  message: String!
+}
+
+type SensorNotFoundError implements Error {
+  message: String!
+  sensorName: String!
+}
+
+type UnsupportedOperationError implements Error {
+  message: String!
+}
+
+type DuplicateDynamicPartitionError implements Error {
+  message: String!
+  partitionsDefName: String!
+  partitionName: String!
+}
+
+type ExecutionPlan {
+  steps: [ExecutionStep!]!
+  artifactsPersisted: Boolean!
+  assetSelection: [String!]!
+}
+
+type ExecutionStep {
+  key: String!
+  inputs: [ExecutionStepInput!]!
+  outputs: [ExecutionStepOutput!]!
+  solidHandleID: String!
+  kind: StepKind!
+  metadata: [MetadataItemDefinition!]!
+}
+
+type ExecutionStepInput {
+  name: String!
+  dependsOn: [ExecutionStep!]!
+}
+
+type ExecutionStepOutput {
+  name: String!
+}
+
+enum StepKind {
+  COMPUTE
+  UNRESOLVED_MAPPED
+  UNRESOLVED_COLLECT
+}
+
+type LocationStateChangeEvent {
+  eventType: LocationStateChangeEventType!
+  message: String!
+  locationName: String!
+  serverId: String
+}
+
+enum LocationStateChangeEventType {
+  LOCATION_UPDATED
+  LOCATION_DISCONNECTED
+  LOCATION_RECONNECTED
+  LOCATION_ERROR
+}
+
+type LocationStateChangeSubscription {
+  event: LocationStateChangeEvent!
+}
+
+union RepositoriesOrError = RepositoryConnection | RepositoryNotFoundError | PythonError
+
+type Repository {
+  id: ID!
+  name: String!
+  location: RepositoryLocation!
+  pipelines: [Pipeline!]!
+  jobs: [Job!]!
+  usedSolids: [UsedSolid!]!
+  usedSolid(name: String!): UsedSolid
+  origin: RepositoryOrigin!
+  partitionSets: [PartitionSet!]!
+  schedules: [Schedule!]!
+  sensors(sensorType: SensorType): [Sensor!]!
+  assetNodes: [AssetNode!]!
+  displayMetadata: [RepositoryMetadata!]!
+  assetGroups: [AssetGroup!]!
+  allTopLevelResourceDetails: [ResourceDetails!]!
+  hasLocationDocs: Boolean!
+  locationDocsJsonOrError: LocationDocsJsonOrError!
+}
+
+type Job implements SolidContainer & IPipelineSnapshot {
+  id: ID!
+  name: String!
+  description: String
+  solids: [Solid!]!
+  solidHandle(handleID: String!): SolidHandle
+  solidHandles(parentHandleID: String): [SolidHandle!]!
+  modes: [Mode!]!
+  pipelineSnapshotId: String!
+  dagsterTypes: [DagsterType!]!
+  dagsterTypeOrError(dagsterTypeName: String!): DagsterTypeOrError!
+  tags: [PipelineTag!]!
+  metadataEntries: [MetadataEntry!]!
+  runs(cursor: String, limit: Int): [Run!]!
+  schedules: [Schedule!]!
+  sensors: [Sensor!]!
+  parentSnapshotId: String
+  graphName: String!
+  runTags: [PipelineTag!]!
+  externalJobSource: String
+  presets: [PipelinePreset!]!
+  isJob: Boolean!
+  isAssetJob: Boolean!
+  repository: Repository!
+  partitionKeysOrError(
+    cursor: String
+    limit: Int
+    reverse: Boolean
+    selectedAssetKeys: [AssetKeyInput!]
+  ): PartitionKeys!
+  partition(partitionName: String!, selectedAssetKeys: [AssetKeyInput!]): PartitionTagsAndConfig
+}
+
+enum SensorType {
+  STANDARD
+  RUN_STATUS
+  ASSET
+  MULTI_ASSET
+  FRESHNESS_POLICY
+  AUTO_MATERIALIZE
+  AUTOMATION
+  UNKNOWN
+}
+
+type AssetGroup {
+  id: String!
+  groupName: String!
+  assetKeys: [AssetKey!]!
+}
+
+type ResourceDetails {
+  id: String!
+  name: String!
+  description: String
+  configFields: [ConfigTypeField!]!
+  configuredValues: [ConfiguredValue!]!
+  isTopLevel: Boolean!
+  nestedResources: [NestedResourceEntry!]!
+  parentResources: [NestedResourceEntry!]!
+  resourceType: String!
+  assetKeysUsing: [AssetKey!]!
+  jobsOpsUsing: [JobWithOps!]!
+  schedulesUsing: [String!]!
+  sensorsUsing: [String!]!
+}
+
+type ConfiguredValue {
+  key: String!
+  value: String!
+  type: ConfiguredValueType!
+}
+
+enum ConfiguredValueType {
+  VALUE
+  ENV_VAR
+}
+
+type NestedResourceEntry {
+  name: String!
+  type: NestedResourceType!
+  resource: ResourceDetails
+}
+
+enum NestedResourceType {
+  ANONYMOUS
+  TOP_LEVEL
+}
+
+type JobWithOps {
+  jobName: String!
+  opHandleIDs: [String!]!
+}
+
+union LocationDocsJsonOrError = LocationDocsJson | PythonError
+
+type LocationDocsJson {
+  json: JSONString!
+}
+
+scalar JSONString
+
+type RepositoryConnection {
+  nodes: [Repository!]!
+}
+
+type RepositoryLocation {
+  id: ID!
+  name: String!
+  isReloadSupported: Boolean!
+  environmentPath: String
+  repositories: [Repository!]!
+  serverId: String
+  dagsterLibraryVersions: [DagsterLibraryVersion!]
+}
+
+type DagsterLibraryVersion {
+  name: String!
+  version: String!
+}
+
+union RepositoryOrError = PythonError | Repository | RepositoryNotFoundError
+
+union WorkspaceLocationEntryOrError = WorkspaceLocationEntry | PythonError
+
+input AssetKeyInput {
+  path: [String!]!
+}
+
+input ExecutionMetadata {
+  tags: [ExecutionTag!]
+  rootRunId: String
+  parentRunId: String
+}
+
+input ExecutionParams {
+  selector: JobOrPipelineSelector!
+  runConfigData: RunConfigData
+  mode: String
+  executionMetadata: ExecutionMetadata
+  stepKeys: [String!]
+  preset: String
+}
+
+input JobOrPipelineSelector {
+  pipelineName: String
+  jobName: String
+  repositoryName: String!
+  repositoryLocationName: String!
+  solidSelection: [String!]
+  assetSelection: [AssetKeyInput!]
+  assetCheckSelection: [AssetCheckHandleInput!]
+}
+
+input AssetCheckHandleInput {
+  assetKey: AssetKeyInput!
+  name: String!
+}
+
+input ExecutionTag {
+  key: String!
+  value: String!
+}
+
+input InstigationSelector {
+  repositoryName: String!
+  repositoryLocationName: String!
+  name: String!
+}
+
+input MarshalledInput {
+  inputName: String!
+  key: String!
+}
+
+input MarshalledOutput {
+  outputName: String!
+  key: String!
+}
+
+input LaunchBackfillParams {
+  selector: PartitionSetSelector
+  partitionNames: [String!]
+  partitionsByAssets: [PartitionsByAssetSelector]
+  reexecutionSteps: [String!]
+  assetSelection: [AssetKeyInput!]
+  fromFailure: Boolean
+  allPartitions: Boolean
+  tags: [ExecutionTag!]
+  forceSynchronousSubmission: Boolean
+  title: String
+  description: String
+}
+
+input PartitionSetSelector {
+  partitionSetName: String!
+  repositorySelector: RepositorySelector!
+}
+
+input PartitionsByAssetSelector {
+  assetKey: AssetKeyInput!
+  partitions: PartitionsSelector
+}
+
+input PartitionsSelector {
+  range: PartitionRangeSelector
+  ranges: [PartitionRangeSelector!]
+}
+
+input PartitionRangeSelector {
+  start: String!
+  end: String!
+}
+
+input RunsFilter {
+  runIds: [String]
+  pipelineName: String
+  tags: [ExecutionTag!]
+  statuses: [RunStatus!]
+  snapshotId: String
+  updatedAfter: Float
+  updatedBefore: Float
+  createdBefore: Float
+  createdAfter: Float
+  mode: String
+}
+
+input PipelineSelector {
+  pipelineName: String!
+  repositoryName: String!
+  repositoryLocationName: String!
+  solidSelection: [String!]
+  assetSelection: [AssetKeyInput!]
+  assetCheckSelection: [AssetCheckHandleInput!]
+}
+
+input RepositorySelector {
+  repositoryName: String!
+  repositoryLocationName: String!
+}
+
+input ResourceSelector {
+  repositoryName: String!
+  repositoryLocationName: String!
+  resourceName: String!
+}
+
+input ScheduleSelector {
+  repositoryName: String!
+  repositoryLocationName: String!
+  scheduleName: String!
+}
+
+input SensorSelector {
+  repositoryName: String!
+  repositoryLocationName: String!
+  sensorName: String!
+}
+
+input StepExecution {
+  stepKey: String!
+  marshalledInputs: [MarshalledInput!]
+  marshalledOutputs: [MarshalledOutput!]
+}
+
+input StepOutputHandle {
+  stepKey: String!
+  outputName: String!
+}
+
+input TagInput {
+  key: String!
+  value: String!
+}
+
+input ReportRunlessAssetEventsParams {
+  eventType: AssetEventType!
+  assetKey: AssetKeyInput!
+  partitionKeys: [String]
+  description: String
+}
+
+enum AssetEventType {
+  ASSET_MATERIALIZATION
+  ASSET_OBSERVATION
+}
+
+input BulkActionsFilter {
+  statuses: [BulkActionStatus!]
+  createdBefore: Float
+  createdAfter: Float
+}
+
+enum BulkActionStatus {
+  REQUESTED
+  COMPLETED
+  FAILED
+  CANCELED
+  CANCELING
+  COMPLETED_SUCCESS
+  COMPLETED_FAILED
+}
+
+type DaemonHealth {
+  id: String!
+  daemonStatus(daemonType: String): DaemonStatus!
+  allDaemonStatuses: [DaemonStatus!]!
+}
+
+type DaemonStatus {
+  daemonType: String!
+  id: ID!
+  required: Boolean!
+  healthy: Boolean
+  lastHeartbeatTime: Float
+  lastHeartbeatErrors: [PythonError!]!
+}
+
+type Instance {
+  id: String!
+  info: String
+  runLauncher: RunLauncher
+  runQueuingSupported: Boolean!
+  runQueueConfig: RunQueueConfig
+  executablePath: String!
+  daemonHealth: DaemonHealth!
+  hasInfo: Boolean!
+  autoMaterializePaused: Boolean!
+  supportsConcurrencyLimits: Boolean!
+  minConcurrencyLimitValue: Int!
+  maxConcurrencyLimitValue: Int!
+  concurrencyLimits: [ConcurrencyKeyInfo!]!
+  concurrencyLimit(concurrencyKey: String): ConcurrencyKeyInfo!
+  useAutoMaterializeSensors: Boolean!
+  poolConfig: PoolConfig
+  freshnessEvaluationEnabled: Boolean!
+}
+
+type RunQueueConfig {
+  maxConcurrentRuns: Int!
+  tagConcurrencyLimitsYaml: String
+  isOpConcurrencyAware: Boolean
+}
+
+type ConcurrencyKeyInfo {
+  concurrencyKey: String!
+  slotCount: Int!
+  claimedSlots: [ClaimedConcurrencySlot!]!
+  pendingSteps: [PendingConcurrencyStep!]!
+  activeSlotCount: Int!
+  activeRunIds: [String!]!
+  pendingStepCount: Int!
+  pendingStepRunIds: [String!]!
+  assignedStepCount: Int!
+  assignedStepRunIds: [String!]!
+  limit: Int
+  usingDefaultLimit: Boolean
+}
+
+type ClaimedConcurrencySlot {
+  runId: String!
+  stepKey: String!
+}
+
+type PendingConcurrencyStep {
+  runId: String!
+  stepKey: String!
+  enqueuedTimestamp: Float!
+  assignedTimestamp: Float
+  priority: Int
+}
+
+type PoolConfig {
+  poolGranularity: String
+  defaultPoolLimit: Int
+  opGranularityRunBuffer: Int
+}
+
+type RunLauncher {
+  name: String!
+}
+
+type DryRunInstigationTick {
+  timestamp: Float
+  evaluationResult: TickEvaluation
+}
+
+type TickEvaluation {
+  dynamicPartitionsRequests: [DynamicPartitionRequest!]
+  runRequests: [RunRequest!]
+  skipReason: String
+  error: PythonError
+  cursor: String
+}
+
+type DynamicPartitionRequest {
+  partitionKeys: [String!]
+  partitionsDefName: String!
+  type: DynamicPartitionsRequestType!
+}
+
+enum DynamicPartitionsRequestType {
+  ADD_PARTITIONS
+  DELETE_PARTITIONS
+}
+
+type RunRequest {
+  runKey: String
+  tags: [PipelineTag!]!
+  runConfigYaml: String!
+  assetSelection: [AssetKey!]
+  assetChecks: [AssetCheckhandle!]
+  jobName: String
+}
+
+type DryRunInstigationTicks {
+  results: [DryRunInstigationTick!]!
+  cursor: Float!
+}
+
+union InstigationTypeSpecificData = SensorData | ScheduleData
+
+type InstigationState {
+  id: ID!
+  selectorId: String!
+  name: String!
+  instigationType: InstigationType!
+  status: InstigationStatus!
+  repositoryName: String!
+  repositoryLocationName: String!
+  repositoryOrigin: RepositoryOrigin!
+  typeSpecificData: InstigationTypeSpecificData
+  runs(limit: Int): [Run!]!
+  runsCount: Int!
+  tick(tickId: ID!): InstigationTick!
+  ticks(
+    dayRange: Int
+    dayOffset: Int
+    limit: Int
+    cursor: String
+    statuses: [InstigationTickStatus!]
+    beforeTimestamp: Float
+    afterTimestamp: Float
+  ): [InstigationTick!]!
+  nextTick: DryRunInstigationTick
+  runningCount: Int!
+  hasStartPermission: Boolean!
+  hasStopPermission: Boolean!
+}
+
+enum InstigationType {
+  SCHEDULE
+  SENSOR
+  AUTO_MATERIALIZE
+}
+
+type InstigationStateNotFoundError implements Error {
+  message: String!
+  name: String!
+}
+
+union InstigationStateOrError = InstigationState | InstigationStateNotFoundError | PythonError
+
+type InstigationStates {
+  results: [InstigationState!]!
+}
+
+union InstigationStatesOrError = InstigationStates | PythonError
+
+type InstigationTick {
+  id: ID!
+  tickId: ID!
+  status: InstigationTickStatus!
+  timestamp: Float!
+  runIds: [String!]!
+  runKeys: [String!]!
+  error: PythonError
+  skipReason: String
+  cursor: String
+  runs: [Run!]!
+  originRunIds: [String!]!
+  logKey: [String!]
+  logEvents: InstigationEventConnection!
+  dynamicPartitionsRequestResults: [DynamicPartitionsRequestResult!]!
+  endTimestamp: Float
+  requestedAssetKeys: [AssetKey!]!
+  requestedAssetMaterializationCount: Int!
+  requestedMaterializationsForAssets: [RequestedMaterializationsForAsset!]!
+  autoMaterializeAssetEvaluationId: ID
+  instigationType: InstigationType!
+}
+
+type InstigationEventConnection {
+  events: [InstigationEvent!]!
+  cursor: String!
+  hasMore: Boolean!
+}
+
+type InstigationEvent {
+  message: String!
+  timestamp: String!
+  level: LogLevel!
+}
+
+type DynamicPartitionsRequestResult {
+  partitionKeys: [String!]
+  partitionsDefName: String!
+  type: DynamicPartitionsRequestType!
+  skippedPartitionKeys: [String!]!
+}
+
+type RequestedMaterializationsForAsset {
+  assetKey: AssetKey!
+  partitionKeys: [String!]!
+}
+
+type ScheduleData {
+  cronSchedule: String!
+  startTimestamp: Float
+}
+
+type SensorData {
+  lastTickTimestamp: Float
+  lastRunKey: String
+  lastCursor: String
+}
+
+interface MetadataEntry {
+  label: String!
+  description: String
+}
+
+type TableColumnLineageMetadataEntry implements MetadataEntry {
+  label: String!
+  description: String
+  lineage: [TableColumnLineageEntry!]!
+}
+
+type TableSchemaMetadataEntry implements MetadataEntry {
+  label: String!
+  description: String
+  schema: TableSchema!
+}
+
+type TableMetadataEntry implements MetadataEntry {
+  label: String!
+  description: String
+  table: Table!
+}
+
+type FloatMetadataEntry implements MetadataEntry {
+  label: String!
+  description: String
+  floatValue: Float
+}
+
+type IntMetadataEntry implements MetadataEntry {
+  label: String!
+  description: String
+  intValue: Int
+  intRepr: String!
+}
+
+type JsonMetadataEntry implements MetadataEntry {
+  label: String!
+  description: String
+  jsonString: String!
+}
+
+type BoolMetadataEntry implements MetadataEntry {
+  label: String!
+  description: String
+  boolValue: Boolean
+}
+
+type MarkdownMetadataEntry implements MetadataEntry {
+  label: String!
+  description: String
+  mdStr: String!
+}
+
+type MetadataItemDefinition {
+  key: String!
+  value: String!
+}
+
+type PathMetadataEntry implements MetadataEntry {
+  label: String!
+  description: String
+  path: String!
+}
+
+type NotebookMetadataEntry implements MetadataEntry {
+  label: String!
+  description: String
+  path: String!
+}
+
+type PythonArtifactMetadataEntry implements MetadataEntry {
+  label: String!
+  description: String
+  module: String!
+  name: String!
+}
+
+type TextMetadataEntry implements MetadataEntry {
+  label: String!
+  description: String
+  text: String!
+}
+
+type UrlMetadataEntry implements MetadataEntry {
+  label: String!
+  description: String
+  url: String!
+}
+
+type PipelineRunMetadataEntry implements MetadataEntry {
+  label: String!
+  description: String
+  runId: String!
+}
+
+type AssetMetadataEntry implements MetadataEntry {
+  label: String!
+  description: String
+  assetKey: AssetKey!
+}
+
+type JobMetadataEntry implements MetadataEntry {
+  label: String!
+  description: String
+  jobName: String!
+  repositoryName: String
+  locationName: String!
+}
+
+type CodeReferencesMetadataEntry implements MetadataEntry {
+  label: String!
+  description: String
+  codeReferences: [SourceLocation!]!
+}
+
+union SourceLocation = LocalFileCodeReference | UrlCodeReference
+
+type LocalFileCodeReference {
+  filePath: String!
+  lineNumber: Int
+  label: String
+}
+
+type UrlCodeReference {
+  url: String!
+  label: String
+}
+
+type NullMetadataEntry implements MetadataEntry {
+  label: String!
+  description: String
+}
+
+type TimestampMetadataEntry implements MetadataEntry {
+  label: String!
+  description: String
+  timestamp: Float!
+}
+
+type PoolMetadataEntry implements MetadataEntry {
+  label: String!
+  description: String
+  pool: String!
+}
+
+type Partition {
+  name: String!
+  partitionSetName: String!
+  solidSelection: [String!]
+  mode: String!
+  runConfigOrError: PartitionRunConfigOrError!
+  tagsOrError: PartitionTagsOrError!
+  runs(filter: RunsFilter, cursor: String, limit: Int): [Run!]!
+  status: RunStatus
+}
+
+type PartitionRunConfig {
+  yaml: String!
+}
+
+union PartitionRunConfigOrError = PartitionRunConfig | PythonError
+
+type Partitions {
+  results: [Partition!]!
+}
+
+type PartitionSet {
+  id: ID!
+  name: String!
+  pipelineName: String!
+  solidSelection: [String!]
+  mode: String!
+  partitionsOrError(cursor: String, limit: Int, reverse: Boolean): PartitionsOrError!
+  partition(partitionName: String!): Partition
+  partitionStatusesOrError: PartitionStatusesOrError!
+  partitionRuns: [PartitionRun!]!
+  repositoryOrigin: RepositoryOrigin!
+  backfills(cursor: String, limit: Int): [PartitionBackfill!]!
+}
+
+type PartitionRun {
+  id: String!
+  partitionName: String!
+  run: Run
+}
+
+type PartitionBackfill implements RunsFeedEntry {
+  id: ID!
+  runStatus: RunStatus!
+  creationTime: Float!
+  startTime: Float
+  endTime: Float
+  tags: [PipelineTag!]!
+  jobName: String
+  assetSelection: [AssetKey!]
+  assetCheckSelection: [AssetCheckhandle!]
+  status: BulkActionStatus!
+  partitionNames: [String!]
+  isValidSerialization: Boolean!
+  numPartitions: Int
+  numCancelable: Int!
+  fromFailure: Boolean!
+  reexecutionSteps: [String!]
+  partitionSetName: String
+  timestamp: Float!
+  endTimestamp: Float
+  partitionSet: PartitionSet
+  runs(limit: Int): [Run!]!
+  unfinishedRuns(limit: Int): [Run!]!
+  cancelableRuns(limit: Int): [Run!]!
+  error: PythonError
+  partitionStatuses: PartitionStatuses
+  partitionStatusCounts: [PartitionStatusCounts!]!
+  partitionsTargetedForAssetKey(assetKey: AssetKeyInput): AssetBackfillTargetPartitions
+  isAssetBackfill: Boolean!
+  assetBackfillData: AssetBackfillData
+  hasCancelPermission: Boolean!
+  hasResumePermission: Boolean!
+  user: String
+  title: String
+  description: String
+  logEvents(cursor: String): InstigationEventConnection!
+}
+
+type AssetBackfillTargetPartitions {
+  ranges: [PartitionKeyRange!]
+  partitionKeys: [String!]
+}
+
+type PartitionKeyRange {
+  start: String!
+  end: String!
+}
+
+type AssetBackfillData {
+  assetBackfillStatuses: [AssetBackfillStatus!]!
+  rootTargetedPartitions: AssetBackfillTargetPartitions
+}
+
+union AssetBackfillStatus = AssetPartitionsStatusCounts | UnpartitionedAssetStatus
+
+type AssetPartitionsStatusCounts {
+  assetKey: AssetKey!
+  numPartitionsTargeted: Int!
+  numPartitionsInProgress: Int!
+  numPartitionsMaterialized: Int!
+  numPartitionsFailed: Int!
+}
+
+type UnpartitionedAssetStatus {
+  assetKey: AssetKey!
+  inProgress: Boolean!
+  materialized: Boolean!
+  failed: Boolean!
+}
+
+union PartitionSetOrError = PartitionSet | PartitionSetNotFoundError | PythonError
+
+type PartitionSets {
+  results: [PartitionSet!]!
+}
+
+union PartitionSetsOrError = PartitionSets | PipelineNotFoundError | PythonError
+
+union PartitionsOrError = Partitions | PythonError
+
+type PartitionStatus {
+  id: String!
+  partitionName: String!
+  runId: String
+  runStatus: RunStatus
+  runDuration: Float
+}
+
+type PartitionStatusCounts {
+  runStatus: RunStatus!
+  count: Int!
+}
+
+type PartitionStatuses {
+  results: [PartitionStatus!]!
+}
+
+union PartitionStatusesOrError = PartitionStatuses | PythonError
+
+type PartitionTags {
+  results: [PipelineTag!]!
+}
+
+union PartitionTagsOrError = PartitionTags | PythonError
+
+type RepositoryOrigin {
+  id: String!
+  repositoryLocationName: String!
+  repositoryName: String!
+  repositoryLocationMetadata: [RepositoryMetadata!]!
+}
+
+type RepositoryMetadata {
+  key: String!
+  value: String!
+}
+
+type RunConfigSchema {
+  rootConfigType: ConfigType!
+  allConfigTypes: [ConfigType!]!
+  isRunConfigValid(runConfigData: RunConfigData): PipelineConfigValidationResult!
+  rootDefaultYaml: String!
+}
+
+union RunConfigSchemaOrError =
+  | RunConfigSchema
+  | PipelineNotFoundError
+  | InvalidSubsetError
+  | ModeNotFoundError
+  | PythonError
+
+union LaunchRunResult =
+  | LaunchRunSuccess
+  | InvalidStepError
+  | InvalidOutputError
+  | RunConfigValidationInvalid
+  | PipelineNotFoundError
+  | RunConflict
+  | UnauthorizedError
+  | PythonError
+  | InvalidSubsetError
+  | PresetNotFoundError
+  | ConflictingExecutionParamsError
+  | NoModeProvidedError
+
+type LaunchMultipleRunsResult {
+  launchMultipleRunsResult: [LaunchRunResult!]!
+}
+
+union LaunchRunReexecutionResult =
+  | LaunchRunSuccess
+  | InvalidStepError
+  | InvalidOutputError
+  | RunConfigValidationInvalid
+  | PipelineNotFoundError
+  | RunConflict
+  | UnauthorizedError
+  | PythonError
+  | InvalidSubsetError
+  | PresetNotFoundError
+  | ConflictingExecutionParamsError
+  | NoModeProvidedError
+
+interface LaunchPipelineRunSuccess {
+  run: Run!
+}
+
+type LaunchRunSuccess implements LaunchPipelineRunSuccess {
+  run: Run!
+}
+
+union RunsOrError = Runs | InvalidPipelineRunsFilterError | PythonError
+
+type Runs implements PipelineRuns {
+  results: [Run!]!
+  count: Int
+}
+
+interface PipelineRuns {
+  results: [Run!]!
+  count: Int
+}
+
+scalar RunConfigData
+
+type RunGroup {
+  rootRunId: String!
+  runs: [Run]
+}
+
+union RunGroupOrError = RunGroup | RunGroupNotFoundError | PythonError
+
+type RunGroups {
+  results: [RunGroup!]!
+}
+
+type Sensor {
+  id: ID!
+  jobOriginId: String!
+  name: String!
+  targets: [Target!]
+  defaultStatus: InstigationStatus!
+  canReset: Boolean!
+  sensorState: InstigationState!
+  minIntervalSeconds: Int!
+  description: String
+  nextTick: DryRunInstigationTick
+  metadata: SensorMetadata!
+  sensorType: SensorType!
+  assetSelection: AssetSelection
+  tags: [DefinitionTag!]!
+  metadataEntries: [MetadataEntry!]!
+}
+
+type Target {
+  pipelineName: String!
+  mode: String!
+  solidSelection: [String!]
+}
+
+type SensorMetadata {
+  assetKeys: [AssetKey!]
+}
+
+union SensorOrError = Sensor | SensorNotFoundError | UnauthorizedError | PythonError
+
+type Sensors {
+  results: [Sensor!]!
+}
+
+union SensorsOrError = Sensors | RepositoryNotFoundError | PythonError
+
+type StopSensorMutationResult {
+  instigationState: InstigationState
+}
+
+union StopSensorMutationResultOrError = StopSensorMutationResult | UnauthorizedError | PythonError
+
+type StopSensorMutation {
+  Output: StopSensorMutationResultOrError!
+}
+
+type SetSensorCursorMutation {
+  Output: SensorOrError!
+}
+
+type ResetSensorMutation {
+  Output: SensorOrError!
+}
+
+type CompositeSolidDefinition implements ISolidDefinition & SolidContainer {
+  name: String!
+  description: String
+  metadata: [MetadataItemDefinition!]!
+  inputDefinitions: [InputDefinition!]!
+  outputDefinitions: [OutputDefinition!]!
+  assetNodes: [AssetNode!]!
+  pools: [String!]!
+  id: ID!
+  solids: [Solid!]!
+  solidHandle(handleID: String!): SolidHandle
+  solidHandles(parentHandleID: String): [SolidHandle!]!
+  modes: [Mode!]!
+  inputMappings: [InputMapping!]!
+  outputMappings: [OutputMapping!]!
+}
+
+type Input {
+  solid: Solid!
+  definition: InputDefinition!
+  dependsOn: [Output!]!
+  isDynamicCollect: Boolean!
+}
+
+type InputDefinition {
+  name: String!
+  description: String
+  type: DagsterType!
+  metadataEntries: [MetadataEntry!]!
+}
+
+type InputMapping {
+  mappedInput: Input!
+  definition: InputDefinition!
+}
+
+interface ISolidDefinition {
+  name: String!
+  description: String
+  metadata: [MetadataItemDefinition!]!
+  inputDefinitions: [InputDefinition!]!
+  outputDefinitions: [OutputDefinition!]!
+  assetNodes: [AssetNode!]!
+  pools: [String!]!
+}
+
+type Output {
+  solid: Solid!
+  definition: OutputDefinition!
+  dependedBy: [Input!]!
+}
+
+type OutputDefinition {
+  name: String!
+  description: String
+  isDynamic: Boolean
+  type: DagsterType!
+  metadataEntries: [MetadataEntry!]!
+}
+
+type OutputMapping {
+  mappedOutput: Output!
+  definition: OutputDefinition!
+}
+
+type ResourceRequirement {
+  resourceKey: String!
+}
+
+type Solid {
+  name: String!
+  definition: ISolidDefinition!
+  inputs: [Input!]!
+  outputs: [Output!]!
+  isDynamicMapped: Boolean!
+}
+
+interface SolidContainer {
+  id: ID!
+  name: String!
+  description: String
+  solids: [Solid!]!
+  solidHandle(handleID: String!): SolidHandle
+  solidHandles(parentHandleID: String): [SolidHandle!]!
+  modes: [Mode!]!
+}
+
+type SolidDefinition implements ISolidDefinition {
+  name: String!
+  description: String
+  metadata: [MetadataItemDefinition!]!
+  inputDefinitions: [InputDefinition!]!
+  outputDefinitions: [OutputDefinition!]!
+  assetNodes: [AssetNode!]!
+  pools: [String!]!
+  configField: ConfigTypeField
+  requiredResources: [ResourceRequirement!]!
+  pool: String
+}
+
+type SolidHandle {
+  handleID: String!
+  solid: Solid!
+  parent: SolidHandle
+  stepStats(limit: Int): SolidStepStatsOrError
+}
+
+union SolidStepStatsOrError = SolidStepStatsConnection | SolidStepStatusUnavailableError
+
+type SolidStepStatsConnection {
+  nodes: [RunStepStats!]!
+}
+
+type SolidStepStatusUnavailableError implements Error {
+  message: String!
+}
+
+type Table {
+  schema: TableSchema!
+  records: [String!]!
+}
+
+type TableSchema {
+  constraints: TableConstraints
+  columns: [TableColumn!]!
+}
+
+type TableColumn {
+  name: String!
+  type: String!
+  description: String
+  constraints: TableColumnConstraints!
+  tags: [DefinitionTag!]!
+}
+
+type TableColumnConstraints {
+  nullable: Boolean!
+  unique: Boolean!
+  other: [String!]!
+}
+
+type TableConstraints {
+  other: [String!]!
+}
+
+type TableColumnDep {
+  assetKey: AssetKey!
+  columnName: String!
+}
+
+type TableColumnLineageEntry {
+  columnName: String!
+  columnDeps: [TableColumnDep!]!
+}
+
+type PipelineTag {
+  key: String!
+  value: String!
+}
+
+type PipelineTagAndValues {
+  key: String!
+  values: [String!]!
+}
+
+type NodeInvocationSite {
+  pipeline: Pipeline!
+  solidHandle: SolidHandle!
+}
+
+type UsedSolid {
+  definition: ISolidDefinition!
+  invocations: [NodeInvocationSite!]!
+}
+
+type StepDurationByJobUsageMetricValue implements UsageMetricValue {
+  startTimestamp: Float!
+  endTimestamp: Float!
+  value: Float!
+  jobName: String
+  repositoryLabel: String
+  percentTotal: Float!
+}
+
+interface UsageMetricValue {
+  startTimestamp: Float!
+  endTimestamp: Float!
+  value: Float!
+}
+
+type StepDurationUsageMetricValue implements UsageMetricValue {
+  startTimestamp: Float!
+  endTimestamp: Float!
+  value: Float!
+}
+
+type CreditUsageByJobMetricValue implements UsageMetricValue {
+  startTimestamp: Float!
+  endTimestamp: Float!
+  value: Float!
+  jobName: String
+  repositoryLabel: String
+  percentTotal: Float!
+}
+
+type CreditUsageMetricValue implements UsageMetricValue {
+  startTimestamp: Float!
+  endTimestamp: Float!
+  value: Float!
+}
+
+type WorkspaceEntry {
+  locationName: String!
+  serializedDeploymentMetadata: String!
+  metadataTimestamp: Float
+  dataUpdatedTimestamp: Float
+  hasOutdatedData: Boolean!
+  canEditCodeLocationPermissions: Boolean!
+  sandboxSavedTimestamp: Float
+  connectionInfo: SandboxConnectionInfo
+  sandboxProxyInfo: SandboxProxyInfo
+}
+
+type SandboxConnectionInfo {
+  username: String!
+  hostname: String!
+  port: Int!
+}
+
+type SandboxProxyInfo {
+  hostname: String!
+  port: Int!
+  authToken: String!
+  minPort: Int
+  maxPort: Int
+  sshPort: Int!
+}
+
+type CloudQuery {
+  version: String!
+  repositoriesOrError(repositorySelector: RepositorySelector): RepositoriesOrError!
+  repositoryOrError(repositorySelector: RepositorySelector!): RepositoryOrError!
+  workspaceOrError: WorkspaceOrError!
+  locationStatusesOrError: WorkspaceLocationStatusEntriesOrError!
+  workspaceLocationEntryOrError(name: String!): WorkspaceLocationEntryOrError
+  pipelineOrError(params: PipelineSelector!): PipelineOrError!
+  resourcesOrError(pipelineSelector: PipelineSelector!): ResourcesOrError!
+  pipelineSnapshotOrError(
+    snapshotId: String
+    activePipelineSelector: PipelineSelector
+  ): PipelineSnapshotOrError!
+  graphOrError(selector: GraphSelector): GraphOrError!
+  scheduler: SchedulerOrError!
+  scheduleOrError(scheduleSelector: ScheduleSelector!): ScheduleOrError!
+  schedulesOrError(
+    repositorySelector: RepositorySelector!
+    scheduleStatus: InstigationStatus
+  ): SchedulesOrError!
+  topLevelResourceDetailsOrError(resourceSelector: ResourceSelector!): ResourceDetailsOrError!
+  allTopLevelResourceDetailsOrError(
+    repositorySelector: RepositorySelector!
+  ): ResourceDetailsListOrError!
+  utilizedEnvVarsOrError(repositorySelector: RepositorySelector!): EnvVarWithConsumersOrError!
+  sensorOrError(sensorSelector: SensorSelector!): SensorOrError!
+  sensorsOrError(
+    repositorySelector: RepositorySelector!
+    sensorStatus: InstigationStatus
+  ): SensorsOrError!
+  instigationStateOrError(
+    instigationSelector: InstigationSelector!
+    id: String
+  ): InstigationStateOrError!
+  instigationStatesOrError(repositoryID: String!): InstigationStatesOrError!
+  partitionSetsOrError(
+    repositorySelector: RepositorySelector!
+    pipelineName: String!
+  ): PartitionSetsOrError!
+  partitionSetOrError(
+    repositorySelector: RepositorySelector!
+    partitionSetName: String
+  ): PartitionSetOrError!
+  pipelineRunsOrError(filter: RunsFilter, cursor: String, limit: Int): RunsOrError!
+  pipelineRunOrError(runId: ID!): RunOrError!
+  runsOrError(filter: RunsFilter, cursor: String, limit: Int): RunsOrError!
+  runOrError(runId: ID!): RunOrError!
+  runsFeedOrError(
+    limit: Int!
+    cursor: String
+    view: RunsFeedView!
+    filter: RunsFilter
+  ): RunsFeedConnectionOrError!
+  runsFeedCountOrError(view: RunsFeedView!, filter: RunsFilter): RunsFeedCountOrError!
+  runTagKeysOrError: RunTagKeysOrError
+  runTagsOrError(tagKeys: [String!], valuePrefix: String, limit: Int): RunTagsOrError
+  runIdsOrError(filter: RunsFilter, cursor: String, limit: Int): RunIdsOrError!
+  runGroupOrError(runId: ID!): RunGroupOrError!
+  isPipelineConfigValid(
+    pipeline: PipelineSelector!
+    mode: String!
+    runConfigData: RunConfigData
+  ): PipelineConfigValidationResult!
+  executionPlanOrError(
+    pipeline: PipelineSelector!
+    mode: String!
+    runConfigData: RunConfigData
+  ): ExecutionPlanOrError!
+  runConfigSchemaOrError(selector: PipelineSelector!, mode: String): RunConfigSchemaOrError!
+  instance: Instance!
+  assetsOrError(
+    prefix: [String!]
+    assetKeys: [AssetKeyInput!]
+    cursor: String
+    limit: Int
+  ): AssetsOrError!
+  assetRecordsOrError(prefix: [String!], cursor: String, limit: Int): AssetRecordsOrError!
+  assetOrError(assetKey: AssetKeyInput!): AssetOrError!
+  assetNodes(
+    group: AssetGroupSelector
+    pipeline: PipelineSelector
+    assetKeys: [AssetKeyInput!]
+    loadMaterializations: Boolean = false
+  ): [AssetNode!]!
+  assetNodeOrError(assetKey: AssetKeyInput!): AssetNodeOrError!
+  assetNodeAdditionalRequiredKeys(assetKeys: [AssetKeyInput!]!): [AssetKey!]!
+  assetNodeDefinitionCollisions(assetKeys: [AssetKeyInput!]!): [AssetNodeDefinitionCollision!]!
+  partitionBackfillOrError(backfillId: String!): PartitionBackfillOrError!
+  assetBackfillPreview(params: AssetBackfillPreviewParams!): [AssetPartitions!]!
+  partitionBackfillsOrError(
+    status: BulkActionStatus
+    cursor: String
+    limit: Int
+    filters: BulkActionsFilter
+  ): PartitionBackfillsOrError!
+  permissions: [Permission!]!
+  canBulkTerminate: Boolean!
+  assetsLatestInfo(assetKeys: [AssetKeyInput!]!): [AssetLatestInfo!]!
+  logsForRun(runId: ID!, afterCursor: String, limit: Int): EventConnectionOrError!
+  capturedLogsMetadata(logKey: [String!]!): CapturedLogsMetadata!
+  capturedLogs(logKey: [String!]!, cursor: String, limit: Int): CapturedLogs!
+  shouldShowNux: Boolean!
+  test: TestFields
+  autoMaterializeAssetEvaluationsOrError(
+    assetKey: AssetKeyInput!
+    limit: Int!
+    cursor: String
+  ): AutoMaterializeAssetEvaluationRecordsOrError
+  truePartitionsForAutomationConditionEvaluationNode(
+    assetKey: AssetKeyInput
+    evaluationId: ID!
+    nodeUniqueId: String
+  ): [String!]!
+  autoMaterializeEvaluationsForEvaluationId(
+    evaluationId: ID!
+  ): AutoMaterializeAssetEvaluationRecordsOrError
+  assetConditionEvaluationForPartition(
+    assetKey: AssetKeyInput
+    evaluationId: ID!
+    partition: String!
+  ): AssetConditionEvaluation
+  assetConditionEvaluationRecordsOrError(
+    assetKey: AssetKeyInput
+    assetCheckKey: AssetCheckHandleInput
+    limit: Int!
+    cursor: String
+  ): AssetConditionEvaluationRecordsOrError
+  assetConditionEvaluationsForEvaluationId(
+    evaluationId: ID!
+  ): AssetConditionEvaluationRecordsOrError
+  autoMaterializeTicks(
+    dayRange: Int
+    dayOffset: Int
+    limit: Int
+    cursor: String
+    statuses: [InstigationTickStatus!]
+    beforeTimestamp: Float
+    afterTimestamp: Float
+  ): [InstigationTick!]!
+  assetCheckExecutions(
+    assetKey: AssetKeyInput!
+    checkName: String!
+    limit: Int!
+    cursor: String
+  ): [AssetCheckExecution!]!
+  workspace: WorkspaceQuery
+  identity: DagsterCloudIdentity!
+  organization: DagsterCloudOrganization!
+  deployments: [DagsterCloudDeployment!]!
+  currentDeployment: DagsterCloudDeployment!
+  deploymentByName(name: String!): DeploymentOrError!
+  fullDeployments: [DagsterCloudDeployment!]!
+  branchDeployments(
+    limit: Int!
+    pullRequestStatus: PullRequestStatus = null
+  ): BranchDeploymentsConnection!
+  getBranchDeploymentName(repoName: String!, branchName: String!): String!
+  deploymentSettings: DeploymentSettings
+  deploymentSettingsSchema: DeploymentSettingsSchema
+  organizationSettings: OrganizationSettings
+  locationSchema: LocationSchema
+  workspaceSchema: WorkspaceSchema
+  locationsAsDocument: LocationsAsDocument
+  locationLoadHistory(
+    limit: Int!
+    locationName: String!
+    cursor: String
+  ): [CodeLocationLoadHistoryEntry!]!
+  assetDiffHistory(limit: Int!, assetKey: AssetKeyInput!, cursor: String): [AssetDiffHistoryEntry!]!
+  alertPoliciesForAsset(assetKey: AssetKeyInput!): [AlertPolicy!]!
+  alertPoliciesForJob(
+    jobName: String!
+    repositoryLocationName: String!
+    repositoryName: String!
+  ): [AlertPolicy!]!
+  alertPoliciesForSchedule(
+    scheduleName: String!
+    repositoryLocationName: String!
+    repositoryName: String!
+  ): [AlertPolicy!]!
+  alertPoliciesForSensor(
+    sensorName: String!
+    repositoryLocationName: String!
+    repositoryName: String!
+  ): [AlertPolicy!]!
+  alertPoliciesForCodeLocation(codeLocationName: String!): [AlertPolicy!]!
+  alertPoliciesAsDocument: AlertPoliciesAsDocument
+  alertPoliciesAsDocumentOrError: AlertPoliciesAsDocumentOrError
+  alertPolicyNotifications(
+    alertPolicyId: String!
+    limit: Int!
+    cursor: String
+  ): AlertNotificationsConnection
+  runNotificationsOrError(runId: String!, limit: Int): RunNotificationsOrError
+  usersOrError: DagsterCloudUsersWithScopedPermissionGrantsOrError!
+  teamPermissions: [DagsterCloudTeamPermissions!]!
+  customRoles: [CustomRole!]!
+  customRoleOrError(customRoleId: String!): CustomRoleOrError
+  apiTokensOrError(tokenType: DagsterCloudApiTokenType!): ApiTokensOrError!
+  agentTokenOrError(tokenId: Int!): AgentTokenOrError!
+  agentTokensOrError: AgentTokensOrError!
+  userTokensOrError(userId: Int!): UserTokensOrError!
+  agents: [Agent!]!
+  activeAgentCategory: ActiveAgentCategory
+  alertPolicies: [AlertPolicy!]!
+  alertPoliciesSchema: AlertPoliciesSchema
+  alertPolicyById(alertPolicyId: String!): AlertPolicy
+  availableSlackChannels: SlackChannelsOrError!
+  catalogViews: [CatalogView!]!
+  pinnedItems: [PinnableItem!]!
+  customerInfo: CustomerInfoOrError!
+  planType: DagsterCloudPlanType!
+  planAllowsAddingMoreUsers: Boolean!
+  queryableMetrics: [QueryableMetrics!]!
+  userCountsByHighestLevel: [UserCount!]!
+  paymentMethodListOrError: StripePaymentMethodListOrError
+  invoiceListOrError: StripeInvoiceListOrError
+  enterpriseContractMetadata: EnterpriseContractMetadataOrError
+  enterpriseUserManagedExpansions(status: String): EnterpriseUserManagedExpansionsOrError
+  onboardingChecklistEntries: OnboardingChecklistEntriesOrError
+  githubSetup: GitHubSetupOrError
+  gitlab: GitlabOrError
+  usageMetrics: UsageMetrics!
+  serverless: Serverless!
+  secretsOrError(
+    scopes: SecretScopesInput
+    onlyViewable: Boolean
+    locationName: String
+    secretName: String
+  ): SecretsOrError
+  localSecretsFileContents: String!
+  nonIsolatedRuns: NonIsolatedRuns!
+  userNuxChecklistEntry(entryKey: String!): UserNuxChecklistEntry
+  auditLog: AuditLogQuery
+  partnerReferrals: PartnerReferrals
+  scimSyncEnabled: Boolean!
+  defaultViewersToCatalogMode: Boolean!
+  reportingMetricsByJob(
+    metricsFilter: JobReportingMetricsFilter
+    metricsSelector: ReportingMetricsSelector!
+    metricsStoreType: MetricsStoreType
+  ): ReportingMetricsOrError!
+  reportingMetricsByAsset(
+    metricsFilter: AssetReportingMetricsFilter
+    metricsSelector: ReportingMetricsSelector!
+    metricsStoreType: MetricsStoreType
+  ): ReportingMetricsOrError!
+  reportingMetricsByAssetGroup(
+    metricsFilter: AssetGroupReportingMetricsFilter
+    metricsSelector: ReportingMetricsSelector!
+  ): ReportingMetricsOrError!
+  reportingMetricsByDeployment(
+    metricsFilter: DeploymentReportingMetricsFilter
+    metricsSelector: ReportingMetricsSelector!
+  ): ReportingMetricsOrError!
+  reportingMetricsByAssetSelection(
+    metricsFilter: AssetSelectionReportingMetricsFilter!
+    metricsSelector: ReportingMetricsSelector!
+    metricsStoreType: MetricsStoreType
+  ): ReportingMetricsOrError!
+  reportingDeploymentSettings: ReportingDeploymentSettings!
+  metricTypesForJob: MetricTypeListOrError!
+  metricTypesForAsset: MetricTypeListOrError!
+  metricTypesForAssetGroup: MetricTypeListOrError!
+  metricTypesForDeployment: MetricTypeListOrError!
+  metricTypesForSpecificJob(
+    timeframeSelector: ReportingMetricsTimeframeSelector!
+    metricsFilter: JobReportingMetricsFilter
+  ): MetricTypeListOrError!
+  metricTypesForSpecificAsset(
+    timeframeSelector: ReportingMetricsTimeframeSelector!
+    metricsFilter: AssetReportingMetricsFilter
+  ): MetricTypeListOrError!
+  metricsTimeRanges: ReportingTimeRanges!
+  reportingMetadata: ReportingDeploymentData!
+  runLevelMetricsForJob(
+    metricsSelector: InsightsRunLevelMetricsSelector!
+    job: QualifiedJob!
+  ): InsightsRunLevelMetricsOrError!
+  materializationLevelMetricsForAsset(
+    metricsSelector: InsightsRunLevelMetricsSelector!
+    assetKey: QualifiedAssetKey!
+  ): InsightsRunLevelMetricsOrError!
+  kpisByAssetSelection(
+    metricsFilters: [AssetSelectionReportingMetricsFilter!]!
+    metricsSelectors: [ReportingMetricsSelector!]!
+    metricsStoreType: MetricsStoreType
+  ): [[KPIEntry]!]!
+  runContainerMetrics(runId: String!): RunContainerMetrics
+  codeServerMetrics(location: String!, fromTime: Float, toTime: Float): CodeServerMetrics
+  search(
+    query: String!
+    assetsFilter: AssetsFilterInput
+    cursor: Int
+    limit: Int
+  ): SearchResultsOrError!
+  searchFieldValues(
+    fieldValueQuery: String!
+    field: SearchAssetDefFields
+    assetNameQuery: String
+    assetsFilter: AssetsFilterInput
+    limit: Int
+  ): SearchResultsCountsOrError!
+  userFavoriteAssets: [AssetKey!]!
+  slaForAsset(assetKey: AssetKeyInput!): AssetSla
+  slasForAssets(assetKeys: [AssetKeyInput!]!): [AssetSla!]!
+  assetSlaTimeline(assetKey: AssetKeyInput!, fromTime: Float!, toTime: Float!): AssetSlaWithTimeline
+  assetsForSlaStates(assetKeys: [AssetKeyInput!]!, slaStates: [SlaState!]!): [AssetKey!]!
+  featureGateValue(featureGate: FeatureGateKey!): GenericScalar!
+}
+
+union WorkspaceOrError = Workspace | PythonError
+
+union WorkspaceLocationStatusEntriesOrError = WorkspaceLocationStatusEntries | PythonError
+
+type WorkspaceLocationStatusEntries {
+  entries: [WorkspaceLocationStatusEntry!]!
+}
+
+type WorkspaceLocationStatusEntry {
+  id: ID!
+  name: String!
+  loadStatus: RepositoryLocationLoadStatus!
+  updateTimestamp: Float!
+  versionKey: String!
+  permissions: [Permission!]!
+}
+
+union ResourcesOrError =
+  | ResourceConnection
+  | PipelineNotFoundError
+  | InvalidSubsetError
+  | PythonError
+
+type ResourceConnection {
+  resources: [Resource!]!
+}
+
+union GraphOrError = Graph | GraphNotFoundError | PythonError
+
+type Graph implements SolidContainer {
+  id: ID!
+  name: String!
+  description: String
+  solids: [Solid!]!
+  solidHandle(handleID: String!): SolidHandle
+  solidHandles(parentHandleID: String): [SolidHandle!]!
+  modes: [Mode!]!
+}
+
+type GraphNotFoundError implements Error {
+  message: String!
+  graphName: String!
+  repositoryName: String!
+  repositoryLocationName: String!
+}
+
+input GraphSelector {
+  graphName: String!
+  repositoryName: String!
+  repositoryLocationName: String!
+}
+
+union ResourceDetailsOrError = ResourceDetails | ResourceNotFoundError | PythonError
+
+union ResourceDetailsListOrError = ResourceDetailsList | RepositoryNotFoundError | PythonError
+
+type ResourceDetailsList {
+  results: [ResourceDetails!]!
+}
+
+union EnvVarWithConsumersOrError = EnvVarWithConsumersList | PythonError
+
+type EnvVarWithConsumersList {
+  results: [EnvVarWithConsumers!]!
+}
+
+type EnvVarWithConsumers {
+  envVarName: String!
+  envVarConsumers: [EnvVarConsumer!]!
+}
+
+type EnvVarConsumer {
+  type: EnvVarConsumerType!
+  name: String!
+}
+
+enum EnvVarConsumerType {
+  RESOURCE
+}
+
+union RunsFeedConnectionOrError = RunsFeedConnection | PythonError
+
+type RunsFeedConnection {
+  results: [RunsFeedEntry!]!
+  cursor: String!
+  hasMore: Boolean!
+}
+
+enum RunsFeedView {
+  ROOTS
+  RUNS
+  BACKFILLS
+}
+
+union RunsFeedCountOrError = RunsFeedCount | PythonError
+
+type RunsFeedCount {
+  count: Int!
+}
+
+union RunTagKeysOrError = PythonError | RunTagKeys
+
+type RunTagKeys {
+  keys: [String!]!
+}
+
+union RunTagsOrError = PythonError | RunTags
+
+type RunTags {
+  tags: [PipelineTagAndValues!]!
+}
+
+union RunIdsOrError = RunIds | InvalidPipelineRunsFilterError | PythonError
+
+type RunIds {
+  results: [String!]!
+}
+
+union AssetRecordsOrError = AssetRecordConnection | PythonError
+
+type AssetRecordConnection {
+  assets: [AssetRecord!]!
+  cursor: String
+}
+
+type AssetRecord {
+  id: String!
+  key: AssetKey!
+}
+
+input AssetGroupSelector {
+  groupName: String!
+  repositoryName: String!
+  repositoryLocationName: String!
+}
+
+union AssetNodeOrError = AssetNode | AssetNotFoundError
+
+type AssetNodeDefinitionCollision {
+  assetKey: AssetKey!
+  repositories: [Repository!]!
+}
+
+union PartitionBackfillOrError = PartitionBackfill | BackfillNotFoundError | PythonError
+
+type BackfillNotFoundError implements Error {
+  message: String!
+  backfillId: String!
+}
+
+type AssetPartitions {
+  assetKey: AssetKey!
+  partitions: AssetBackfillTargetPartitions
+}
+
+input AssetBackfillPreviewParams {
+  partitionNames: [String!]!
+  assetSelection: [AssetKeyInput!]!
+}
+
+union PartitionBackfillsOrError = PartitionBackfills | PythonError
+
+type PartitionBackfills {
+  results: [PartitionBackfill!]!
+}
+
+type AssetLatestInfo {
+  id: ID!
+  assetKey: AssetKey!
+  latestMaterialization: MaterializationEvent
+  unstartedRunIds: [String!]!
+  inProgressRunIds: [String!]!
+  latestRun: Run
+}
+
+union EventConnectionOrError = EventConnection | RunNotFoundError | PythonError
+
+type CapturedLogsMetadata {
+  stdoutDownloadUrl: String
+  stdoutLocation: String
+  stderrDownloadUrl: String
+  stderrLocation: String
+}
+
+type TestFields {
+  alwaysException: String
+  asyncString: String
+}
+
+union AutoMaterializeAssetEvaluationRecordsOrError =
+  | AutoMaterializeAssetEvaluationRecords
+  | AutoMaterializeAssetEvaluationNeedsMigrationError
+
+type AutoMaterializeAssetEvaluationRecords {
+  records: [AutoMaterializeAssetEvaluationRecord!]!
+}
+
+type AutoMaterializeAssetEvaluationNeedsMigrationError implements Error {
+  message: String!
+}
+
+type AssetConditionEvaluation {
+  rootUniqueId: String!
+  evaluationNodes: [AssetConditionEvaluationNode!]!
+}
+
+union AssetConditionEvaluationNode =
+  | UnpartitionedAssetConditionEvaluationNode
+  | PartitionedAssetConditionEvaluationNode
+  | SpecificPartitionAssetConditionEvaluationNode
+
+type UnpartitionedAssetConditionEvaluationNode {
+  uniqueId: String!
+  description: String!
+  entityKey: EntityKey!
+  startTimestamp: Float
+  endTimestamp: Float
+  metadataEntries: [MetadataEntry!]!
+  status: AssetConditionEvaluationStatus!
+  childUniqueIds: [String!]!
+}
+
+union EntityKey = AssetKey | AssetCheckhandle
+
+enum AssetConditionEvaluationStatus {
+  TRUE
+  FALSE
+  SKIPPED
+}
+
+type PartitionedAssetConditionEvaluationNode {
+  uniqueId: String!
+  description: String!
+  entityKey: EntityKey!
+  startTimestamp: Float
+  endTimestamp: Float
+  numTrue: Int!
+  numCandidates: Int
+  childUniqueIds: [String!]!
+}
+
+type SpecificPartitionAssetConditionEvaluationNode {
+  uniqueId: String!
+  description: String!
+  entityKey: EntityKey!
+  metadataEntries: [MetadataEntry!]!
+  status: AssetConditionEvaluationStatus!
+  childUniqueIds: [String!]!
+}
+
+union AssetConditionEvaluationRecordsOrError =
+  | AssetConditionEvaluationRecords
+  | AutoMaterializeAssetEvaluationNeedsMigrationError
+
+type AssetConditionEvaluationRecords {
+  records: [AssetConditionEvaluationRecord!]!
+}
+
+type AssetConditionEvaluationRecord {
+  id: ID!
+  evaluationId: ID!
+  runIds: [String!]!
+  timestamp: Float!
+  assetKey: AssetKey
+  entityKey: EntityKey!
+  numRequested: Int!
+  startTimestamp: Float
+  endTimestamp: Float
+  isLegacy: Boolean!
+  evaluation: AssetConditionEvaluation!
+  rootUniqueId: String!
+  evaluationNodes: [AutomationConditionEvaluationNode!]!
+}
+
+type AutomationConditionEvaluationNode {
+  uniqueId: String!
+  userLabel: String
+  expandedLabel: [String!]!
+  entityKey: EntityKey!
+  startTimestamp: Float
+  endTimestamp: Float
+  numTrue: Int!
+  numCandidates: Int
+  isPartitioned: Boolean!
+  childUniqueIds: [String!]!
+  operatorType: String!
+}
+
+type WorkspaceQuery {
+  workspaceEntries: [WorkspaceEntry!]!
+}
+
+type DagsterCloudIdentity {
+  viewer: DagsterCloudUser
+  currentDeployment: DagsterCloudDeployment
+  permissions: [DagsterCloudPermission!]!
+  featureGates: [DagsterCloudFeatureGate!]!
+}
+
+type DagsterCloudUser {
+  id: ID!
+  userId: Int!
+  email: String!
+  name: String
+  firstName: String
+  lastName: String
+  picture: String
+  isScimProvisioned: Boolean!
+}
+
+type DagsterCloudDeployment {
+  organizationId: Int!
+  organizationName: String!
+  organizationStatus: OrganizationStatus!
+  deploymentId: Int!
+  deploymentName: String!
+  deploymentStatus: DeploymentStatus!
+  deploymentType: DagsterCloudDeploymentType!
+  deploymentSettings: DeploymentSettings!
+  workspaceEntries(agentQueues: [String]): [WorkspaceEntry!]!
+  branchDeploymentGitMetadata: BranchDeploymentGitMetadata
+  latestCommit: DeploymentCommit
+  commits: [DeploymentCommit!]!
+  isBranchDeployment: Boolean!
+  agentType: DeploymentAgentType!
+  parentDeployment: DagsterCloudDeployment
+  canHaveBranchDeployments: Boolean!
+  canEditDeploymentSettings: Boolean!
+  canEditDeploymentPermissions: Boolean!
+  canDeleteDeployment: Boolean!
+  canAccessDeployment: Boolean!
+  editableSecretLocations: EditableSecretLocations!
+}
+
+enum OrganizationStatus {
+  ACTIVE
+  READ_ONLY
+  SUSPENDED
+  PENDING_DELETION
+}
+
+enum DeploymentStatus {
+  ACTIVE
+  PENDING_DELETION
+}
+
+enum DagsterCloudDeploymentType {
+  PRODUCTION
+  BRANCH
+}
+
+type DeploymentSettings {
+  settings: GenericScalar
+}
+
+type BranchDeploymentGitMetadata {
+  branchName: String!
+  repoName: String!
+  branchUrl: String
+  pullRequestUrl: String
+  pullRequestStatus: PullRequestStatus
+  pullRequestNumber: String
+}
+
+enum PullRequestStatus {
+  OPEN
+  CLOSED
+  MERGED
+}
+
+type DeploymentCommit {
+  timestamp: Float!
+  commitHash: String!
+  commitMessage: String
+  commitUrl: String
+  authorName: String
+  authorEmail: String
+  authorAvatarUrl: String
+}
+
+enum DeploymentAgentType {
+  HYBRID
+  SERVERLESS
+}
+
+type EditableSecretLocations {
+  allLocations: Boolean!
+  locationNames: [String]
+}
+
+type DagsterCloudPermission {
+  permission: String!
+  value: Boolean!
+  disabledReason: String
+}
+
+type DagsterCloudFeatureGate {
+  key: FeatureGateKey!
+  value: GenericScalar
+}
+
+enum FeatureGateKey {
+  BILLING_AND_USAGE_ENABLED
+  ONBOARDING_CHECKLIST_ENABLED
+  PRODUCTION_DEPLOYMENT_LIMIT
+  EDITOR_ADMIN_LIMIT
+  ON_HIGH_VELOCITY_CREDIT_MODEL
+  TRIAL_SERVERLESS_USAGE_LIMIT
+  ASSET_HEALTH_LIVE_DATA_KILL_SWITCH
+  SERVERLESS_QUICKSTART_REPO_URL
+  NATIVE_SECRETS_ENABLED
+  INSTANCE_PUBLICLY_VISIBLE
+  ENABLE_AUDIT_LOG_ACCESS
+  ENABLE_ORG_SETTINGS_TEAMS_PAGE
+  ENABLE_SCIM_PROVISIONING_PAGE
+  GITLAB_NUX_ENABLED
+  PRICING_MAY_2023_UI
+  DBT_NUX_UI
+  ENABLE_REPORTING_PAGE
+  ENABLE_INGEST_INSIGHTS_FROM_METADATA
+  SHOW_AUTO_MATERIALIZE_SENSOR_BANNER
+  INSIGHTS_USE_S3_SUBMISSION_PATH_COST_METRICS
+  INSIGHTS_HIDE_GQL_SUBMISSION_PATH_COST_METRICS
+  INSIGHTS_SHOW_BIGQUERY_COST_METRICS
+  INSIGHTS_ENABLE_ALERTS
+  ENABLE_PAGERDUTY_ALERTS
+  BACKFILL_LOG_STORAGE
+  ENABLE_OPT_IN_DEFINITIONS_HISTORY
+  ENABLE_TRACKING_DEFINITIONS_HISTORY
+  ENABLE_CATALOG_VIEWS
+  BACKEND_SEARCH_ENABLED
+  CUSTOM_RBAC_ENABLED
+  VERBOSE_TRACING
+  ENABLE_BACKGROUND_ASSET_WIPE
+  SUMMARIZE_ERROR_WITH_AI
+  VICTORIA_METRICS_ENABLED
+  ENABLE_ASSET_HEALTH_AND_FRESHNESS_ALERTS
+  KPIS_VIEW_ENABLED
+  OBSERVE_DARK_LAUNCH_ENABLED
+  ENABLE_ASSET_HEALTH_QUERIES
+  ENABLE_USER_MANAGED_CREDIT_SEAT_EXPANSIONS
+  ENABLE_DATADOG_INTEGRATION
+  CATALOG_SELECTION_ALERTS
+  CATALOG_HIDE_ASSETS_WITHOUT_DEFINITIONS_BY_DEFAULT
+}
+
+type DagsterCloudOrganization {
+  id: Int!
+  publicId: String!
+  name: String!
+  status: OrganizationStatus!
+  metadata: DagsterCloudOrganizationMetadata!
+  usersOrError: DagsterCloudUserListOrError!
+  accountReview: OrganizationAccountReview
+}
+
+type DagsterCloudOrganizationMetadata {
+  slackAppInstallation: SlackAppInstallation
+  githubAppInstallation: GithubAppInstallation
+}
+
+type SlackAppInstallation {
+  teamId: String!
+  teamName: String!
+}
+
+type GithubAppInstallation {
+  accountName: String
+  settingsUrl: String
+  appId: String!
+  repositories: [GitHubRepo!]!
+  repository(name: String!, owner: String): GitHubRepo
+  repos: [String!]!
+  dbtRepos: [GitHubRepo!]!
+}
+
+type GitHubRepo {
+  name: String!
+  url: String!
+  lastUpdatedTimestamp: Float!
+  dbtProjectConfigPaths(recursive: Boolean = false): [String!]!
+}
+
+union DagsterCloudUserListOrError =
+  | DagsterCloudUserList
+  | CantRemoveAllAdminsError
+  | UserNotFoundError
+  | UnauthorizedError
+  | UserLimitError
+  | PythonError
+
+type DagsterCloudUserList {
+  users: [DagsterCloudUser!]!
+}
+
+type CantRemoveAllAdminsError implements Error {
+  message: String!
+}
+
+type UserNotFoundError implements Error {
+  message: String!
+}
+
+type UserLimitError implements Error {
+  message: String!
+}
+
+type OrganizationAccountReview {
+  status: DagsterCloudAccountReviewStatus!
+}
+
+enum DagsterCloudAccountReviewStatus {
+  LEAD
+  CUSTOMER
+  PENDING_REVIEW
+  APPROVED
+  REJECTED
+  DEACTIVATED
+  CANCEL_REQUESTED
+  CANCELED
+  EXPIRED
+}
+
+union DeploymentOrError =
+  | DagsterCloudDeployment
+  | DeploymentNotFoundError
+  | PythonError
+  | UnauthorizedError
+
+type DeploymentNotFoundError implements Error {
+  message: String!
+}
+
+type BranchDeploymentsConnection {
+  nodes: [DagsterCloudDeployment!]!
+}
+
+type DeploymentSettingsSchema {
+  rootConfigType: ConfigType!
+  allConfigTypes: [ConfigType!]!
+}
+
+type OrganizationSettings {
+  settings: GenericScalar
+}
+
+type LocationSchema {
+  rootConfigType: ConfigType!
+  allConfigTypes: [ConfigType!]!
+}
+
+type WorkspaceSchema {
+  rootConfigType: ConfigType!
+  allConfigTypes: [ConfigType!]!
+}
+
+type LocationsAsDocument {
+  document: GenericScalar
+}
+
+type CodeLocationLoadHistoryEntry {
+  locationName: String!
+  codeLocationDataUploadTimestamp: Float!
+  codeLocationUpdateTriggerTimestamp: Float!
+  loadStatus: DagsterCloudCodeLocationLoadStatus!
+  configDocument: GenericScalar
+  displayMetadata: [RepositoryMetadata!]!
+  diffSummary: CodeLocationDiffSummary
+  error: PythonError
+}
+
+enum DagsterCloudCodeLocationLoadStatus {
+  LOADED
+  ERROR
+}
+
+type CodeLocationDiffSummary {
+  repositoryDiffs: [RepositoryDiffSummary!]!
+}
+
+type RepositoryDiffSummary {
+  repositoryName: String!
+  addedAssets: [AssetKey!]!
+  modifiedAssets: [AssetKey!]!
+  removedAssets: [AssetKey!]!
+}
+
+type AssetDiffHistoryEntry {
+  assetKey: AssetKey!
+  locationName: String!
+  codeLocationDataUploadTimestamp: Float!
+  diffSinceLastLoad: AssetDiff
+  gitCommitHash: String
+  lastLoadGitCommitHash: String
+}
+
+type AssetDiff {
+  changeTypes: [AssetDefinitionChangeType!]!
+  changeDiff: AssetDefinitionDiffDetails
+}
+
+enum AssetDefinitionChangeType {
+  NEW
+  CODE_VERSION
+  DEPENDENCIES
+  PARTITIONS_DEFINITION
+  TAGS
+  METADATA
+  REMOVED
+}
+
+type AssetDefinitionDiffDetails {
+  codeVersion: ValueDiff
+  dependencies: DictDiff
+  partitionsDefinition: ValueDiff
+  tags: DictDiff
+  metadata: DictDiff
+}
+
+type ValueDiff {
+  old: GenericScalar
+  new: GenericScalar
+}
+
+type DictDiff {
+  addedKeys: [GenericScalar!]!
+  changedKeys: [GenericScalar!]!
+  removedKeys: [GenericScalar!]!
+}
+
+type AlertPolicy {
+  id: String!
+  name: String!
+  description: String!
+  tags: [AlertPolicyTag!]
+  eventTypes: [AlertPolicyEventType!]!
+  notificationService: AlertPolicyNotification!
+  enabled: Boolean!
+  alertTargets: [AlertTarget!]!
+  policyOptions: AlertPolicyOptions!
+}
+
+type AlertPolicyTag {
+  key: String!
+  value: String
+}
+
+enum AlertPolicyEventType {
+  JOB_FAILURE
+  JOB_SUCCESS
+  JOB_LONG_RUNNING
+  TICK_FAILURE
+  AGENT_UNAVAILABLE
+  CODE_LOCATION_ERROR
+  ASSET_MATERIALIZATION_SUCCESS
+  ASSET_MATERIALIZATION_FAILURE
+  ASSET_CHECK_PASSED
+  ASSET_CHECK_EXECUTION_FAILURE
+  ASSET_CHECK_SEVERITY_WARN
+  ASSET_CHECK_SEVERITY_ERROR
+  INSIGHTS_CONSUMPTION_EXCEEDED
+  ASSET_FRESHNESS_FAIL
+  ASSET_FRESHNESS_WARN
+  ASSET_FRESHNESS_PASS
+  ASSET_HEALTH_HEALTHY
+  ASSET_HEALTH_WARNING
+  ASSET_HEALTH_DEGRADED
+}
+
+union AlertPolicyNotification =
+  | EmailAlertPolicyNotification
+  | SlackAlertPolicyNotification
+  | EmailOwnersAlertPolicyNotification
+  | MicrosoftTeamsAlertPolicyNotification
+  | PagerdutyAlertPolicyNotification
+
+type EmailAlertPolicyNotification {
+  emailAddresses: [String!]!
+}
+
+type SlackAlertPolicyNotification {
+  slackWorkspaceName: String!
+  slackChannelName: String!
+}
+
+type EmailOwnersAlertPolicyNotification {
+  defaultEmailAddresses: [String!]!
+}
+
+type MicrosoftTeamsAlertPolicyNotification {
+  webhookUrl: String!
+}
+
+type PagerdutyAlertPolicyNotification {
+  integrationKey: String!
+}
+
+union AlertTarget =
+  | AssetGroupTarget
+  | AssetKeyTarget
+  | AssetSelectionTarget
+  | AssetSelectionViewTarget
+  | FavoritesSelectionViewTarget
+  | InsightsDeploymentThresholdTarget
+  | InsightsAssetGroupThresholdTarget
+  | InsightsAssetThresholdTarget
+  | InsightsJobThresholdTarget
+  | CreditLimitTarget
+  | LongRunningJobThresholdTarget
+  | RunResultTarget
+  | ScheduleSensorTarget
+  | CodeLocationTarget
+
+type AssetGroupTarget {
+  assetGroup: String!
+  locationName: String!
+  repoName: String
+}
+
+type AssetKeyTarget {
+  assetKey: AssetKey!
+}
+
+type AssetSelectionTarget {
+  assetSelectionString: String!
+}
+
+type AssetSelectionViewTarget {
+  view: CatalogView
+}
+
+type CatalogView implements PinnableItemInterface {
+  id: String!
+  name: String!
+  description: String!
+  icon: String!
+  creatorId: BigInt!
+  isPrivate: Boolean!
+  selection: CatalogViewSelection!
+}
+
+interface PinnableItemInterface {
+  id: String!
+  name: String!
+  description: String!
+  icon: String!
+  creatorId: BigInt!
+  isPrivate: Boolean!
+  selection: SelectionTypes!
+}
+
+scalar BigInt
+
+union SelectionTypes = CatalogViewSelection | CatalogJobSelection
+
+type CatalogViewSelection {
+  tags: [DefinitionTag!]!
+  kinds: [String!]!
+  owners: [AssetOwner!]!
+  groups: [DefinitionGroup!]!
+  codeLocations: [CodeLocation!]!
+  columns: [String!]!
+  tableNames: [String!]!
+  columnTags: [DefinitionTag!]!
+  querySelection: String
+}
+
+type DefinitionGroup {
+  groupName: String!
+  repositoryName: String!
+  repositoryLocationName: String!
+}
+
+type CodeLocation {
+  repositoryName: String!
+  repositoryLocationName: String!
+}
+
+type CatalogJobSelection {
+  jobNames: [String!]!
+  codeLocationName: String!
+  repositoryName: String!
+}
+
+type FavoritesSelectionViewTarget {
+  userEmail: String!
+  user: DagsterCloudUser
+  assets: [Asset!]!
+}
+
+type InsightsDeploymentThresholdTarget {
+  metricName: String!
+  threshold: Float!
+  selectionPeriodDays: Int!
+  operator: InsightsAlertComparisonOperator!
+}
+
+enum InsightsAlertComparisonOperator {
+  LESS_THAN
+  GREATER_THAN
+}
+
+type InsightsAssetGroupThresholdTarget {
+  metricName: String!
+  threshold: Float!
+  selectionPeriodDays: Int!
+  operator: InsightsAlertComparisonOperator!
+  assetGroup: String!
+  locationName: String!
+  repoName: String
+}
+
+type InsightsAssetThresholdTarget {
+  metricName: String!
+  threshold: Float!
+  selectionPeriodDays: Int!
+  operator: InsightsAlertComparisonOperator!
+  assetKey: AssetKey!
+}
+
+type InsightsJobThresholdTarget {
+  metricName: String!
+  threshold: Float!
+  selectionPeriodDays: Int!
+  operator: InsightsAlertComparisonOperator!
+  jobName: String!
+  locationName: String!
+  repoName: String
+}
+
+type CreditLimitTarget {
+  creditLimit: Int!
+}
+
+type LongRunningJobThresholdTarget {
+  thresholdSeconds: Float!
+  tags: [AlertPolicyTag!]
+  codeLocationNames: [String!]
+  jobs: [AlertQualifiedJob!]
+}
+
+type AlertQualifiedJob {
+  codeLocationName: String!
+  repositoryName: String!
+  jobName: String!
+}
+
+type RunResultTarget {
+  tags: [AlertPolicyTag!]
+  codeLocationNames: [String!]
+  jobs: [AlertQualifiedJob!]
+}
+
+type ScheduleSensorTarget {
+  codeLocationNames: [String!]
+  schedulesSensors: [AlertQualifiedSensorSchedule!]
+  types: [InstigatorType!]
+}
+
+type AlertQualifiedSensorSchedule {
+  codeLocationName: String!
+  repositoryName: String!
+  name: String!
+}
+
+enum InstigatorType {
+  SCHEDULE
+  SENSOR
+  AUTO_MATERIALIZE
+}
+
+type CodeLocationTarget {
+  codeLocationNames: [String!]
+}
+
+type AlertPolicyOptions {
+  consecutiveFailureThreshold: Int
+  includeDescriptionInNotification: Boolean
+  renotifyIntervalMinutes: Int
+}
+
+type AlertPoliciesAsDocument {
+  document: GenericScalar
+}
+
+union AlertPoliciesAsDocumentOrError = AlertPoliciesAsDocument | PythonError | UnauthorizedError
+
+type AlertNotificationsConnection {
+  results: [AlertNotification!]!
+  cursor: String
+  hasMore: Boolean!
+}
+
+union AlertNotification =
+  | JobRunAlertNotification
+  | AssetAlertNotification
+  | TickAlertNotification
+  | AgentAlertNotification
+  | CodeLocationAlertNotification
+  | InsightsAlertNotification
+
+type JobRunAlertNotification {
+  id: String!
+  status: NotificationStatus!
+  sendTimestamp: Float!
+  errorMessage: String
+  alertPolicyId: String
+  jobName: String!
+  codeLocationName: String!
+  repositoryName: String!
+  eventType: AlertPolicyEventType!
+  runId: String
+}
+
+enum NotificationStatus {
+  SUCCESS
+  FAILURE
+}
+
+type AssetAlertNotification {
+  id: String!
+  status: NotificationStatus!
+  sendTimestamp: Float!
+  errorMessage: String
+  alertPolicyId: String
+  assetsEvents: [NotificationAssetEvent!]!
+  codeLocationName: String!
+  repositoryName: String!
+  runId: String
+}
+
+type NotificationAssetEvent {
+  assetKey: AssetKey!
+  eventType: AlertPolicyEventType!
+}
+
+type TickAlertNotification {
+  id: String!
+  status: NotificationStatus!
+  sendTimestamp: Float!
+  errorMessage: String
+  alertPolicyId: String
+  instigatorEvents: [NotificationInstigatorEvent!]!
+}
+
+type NotificationInstigatorEvent {
+  instigatorName: String!
+  repositoryName: String!
+  codeLocationName: String!
+  eventType: AlertPolicyEventType!
+}
+
+type AgentAlertNotification {
+  id: String!
+  status: NotificationStatus!
+  sendTimestamp: Float!
+  errorMessage: String
+  alertPolicyId: String
+}
+
+type CodeLocationAlertNotification {
+  id: String!
+  status: NotificationStatus!
+  sendTimestamp: Float!
+  errorMessage: String
+  alertPolicyId: String
+  codeLocationName: String!
+  failureMessage: String
+}
+
+type InsightsAlertNotification {
+  id: String!
+  status: NotificationStatus!
+  sendTimestamp: Float!
+  errorMessage: String
+  alertPolicyId: String
+  metricName: String!
+  computedValue: Float!
+}
+
+union RunNotificationsOrError = RunNotifications | RunNotificationsExpiredError
+
+type RunNotifications {
+  notifications: [RunNotification!]!
+  alertPolicies: [AlertPolicy!]!
+}
+
+union RunNotification = JobRunAlertNotification | AssetAlertNotification
+
+type RunNotificationsExpiredError implements Error {
+  message: String!
+}
+
+union DagsterCloudUsersWithScopedPermissionGrantsOrError =
+  | DagsterCloudUsersWithScopedPermissionGrants
+  | UnauthorizedError
+  | PythonError
+
+type DagsterCloudUsersWithScopedPermissionGrants {
+  users: [DagsterCloudUserWithScopedPermissionGrants!]!
+  userCountsByHighestLevel: [UserCount!]!
+}
+
+type DagsterCloudUserWithScopedPermissionGrants {
+  id: String!
+  user: DagsterCloudUser
+  organizationPermissionGrant: DagsterCloudScopedPermissionGrant
+  allBranchDeploymentsPermissionGrant: DagsterCloudScopedPermissionGrant
+  deploymentPermissionGrants: [DagsterCloudScopedPermissionGrant!]!
+  licensedRole: PermissionGrant
+}
+
+type DagsterCloudScopedPermissionGrant {
+  id: Int!
+  organizationId: Int!
+  deploymentId: Int
+  grant: PermissionGrant!
+  customRoleId: String
+  locationGrants: [LocationScopedGrant!]!
+  deploymentScope: PermissionDeploymentScope!
+}
+
+enum PermissionGrant {
+  CATALOG_VIEWER
+  VIEWER
+  LAUNCHER
+  EDITOR
+  ADMIN
+  AGENT
+  CUSTOM
+}
+
+type LocationScopedGrant {
+  locationName: String!
+  grant: PermissionGrant!
+  customRoleId: String
+}
+
+enum PermissionDeploymentScope {
+  DEPLOYMENT
+  ORGANIZATION
+  ALL_BRANCH_DEPLOYMENTS
+}
+
+type UserCount {
+  count: Int!
+  userType: PermissionGrant!
+}
+
+type DagsterCloudTeamPermissions {
+  id: String!
+  team: DagsterCloudTeam!
+  organizationPermissionGrant: DagsterCloudScopedPermissionGrant
+  allBranchDeploymentsPermissionGrant: DagsterCloudScopedPermissionGrant
+  deploymentPermissionGrants: [DagsterCloudScopedPermissionGrant!]!
+}
+
+type DagsterCloudTeam {
+  id: String!
+  name: String!
+  members: [DagsterCloudUser!]!
+}
+
+type CustomRole {
+  id: String!
+  name: String!
+  description: String!
+  iconName: String!
+  permissions: [CustomRolePermission!]!
+  deploymentScope: CustomRoleDeploymentScope!
+}
+
+enum CustomRolePermission {
+  EDIT_INSIGHTS_METRICS
+  EDIT_USERS_AND_TEAMS
+  EDIT_CUSTOM_ROLES
+  MANAGE_SSO_AND_SCIM
+  READ_AND_EDIT_AGENT_TOKENS
+  READ_AND_EDIT_ALL_USER_TOKENS
+  MANAGE_BILLING
+  MANAGE_FULL_DEPLOYMENTS
+  READ_AUDIT_LOG
+  EDIT_CODE_LOCATIONS
+  REDEPLOY_CODE_LOCATIONS
+  EDIT_ALERTS
+  TOGGLE_SCHEDULES
+  TOGGLE_SENSORS
+  EDIT_SENSOR_CURSORS
+  EDIT_DEPLOYMENT_SETTINGS
+  EDIT_DEPLOYMENT_PERMISSIONS
+  EDIT_DYNAMIC_PARTITIONS
+  START_AND_STOP_RUNS
+  DELETE_RUNS
+  WIPE_ASSETS
+  READ_SECRET_VALUES
+  EDIT_SECRETS
+  REPORT_ASSET_EVENTS
+  EDIT_CONCURRENCY_LIMITS
+  EDIT_ALL_CATALOG_VIEWS
+  MANAGE_BRANCH_DEPLOYMENTS
+}
+
+enum CustomRoleDeploymentScope {
+  DEPLOYMENT
+  ORGANIZATION
+}
+
+union CustomRoleOrError = CustomRole | CustomRoleNotFoundError | UnauthorizedError | PythonError
+
+type CustomRoleNotFoundError implements Error {
+  message: String!
+}
+
+union ApiTokensOrError = DagsterCloudApiTokens | PythonError | UnauthorizedError
+
+type DagsterCloudApiTokens {
+  tokens: [DagsterCloudApiToken!]!
+}
+
+type DagsterCloudApiToken {
+  id: ID!
+  token: String!
+  tokenType: DagsterCloudApiTokenType!
+  createdBy: DagsterCloudUser!
+  createTimestamp: Float
+  revoked: Boolean!
+  revokedBy: DagsterCloudUser
+  revokeTimestamp: Float
+  description: String
+}
+
+enum DagsterCloudApiTokenType {
+  SCIM
+}
+
+union AgentTokenOrError = DagsterCloudAgentToken | PythonError | UnauthorizedError
+
+type DagsterCloudAgentToken {
+  id: Int!
+  token: String!
+  createdBy: DagsterCloudUser!
+  createTimestamp: Float
+  revoked: Boolean!
+  revokedBy: DagsterCloudUser
+  revokeTimestamp: Float
+  description: String
+  permissions: DagsterCloudScopedPermissionGrants
+}
+
+type DagsterCloudScopedPermissionGrants {
+  organizationPermissionGrant: DagsterCloudScopedPermissionGrant
+  allBranchDeploymentsPermissionGrant: DagsterCloudScopedPermissionGrant
+  deploymentPermissionGrants: [DagsterCloudScopedPermissionGrant!]!
+}
+
+union AgentTokensOrError = DagsterCloudAgentTokens | PythonError | UnauthorizedError
+
+type DagsterCloudAgentTokens {
+  tokens: [DagsterCloudAgentToken!]!
+}
+
+union UserTokensOrError = DagsterCloudUserTokens | PythonError | UnauthorizedError
+
+type DagsterCloudUserTokens {
+  tokens: [DagsterCloudUserToken!]!
+}
+
+type DagsterCloudUserToken {
+  id: Int!
+  token: String!
+  user: DagsterCloudUser!
+  createTimestamp: Float
+  revoked: Boolean!
+  revokedBy: DagsterCloudUser
+  revokeTimestamp: Float
+  description: String
+}
+
+type Agent {
+  id: String!
+  agentLabel: String
+  status: AgentStatus!
+  lastHeartbeatTime: Float!
+  errors: [TimestampedError!]!
+  metadata: [AgentMetadata!]!
+  runWorkerStates: [RunWorkerState!]!
+  codeServerStates: [CloudServerState!]!
+}
+
+enum AgentStatus {
+  RUNNING
+  NOT_RUNNING
+}
+
+type TimestampedError {
+  timestamp: Float
+  error: PythonError!
+}
+
+type AgentMetadata {
+  key: String!
+  value: String
+}
+
+type RunWorkerState {
+  runId: String!
+  run: Run
+  message: String
+  status: WorkerStatus!
+}
+
+enum WorkerStatus {
+  RUNNING
+  NOT_FOUND
+  FAILED
+  SUCCESS
+  UNKNOWN
+}
+
+type CloudServerState {
+  locationName: String
+  status: CloudCodeServerStatus!
+  error: PythonError
+}
+
+enum CloudCodeServerStatus {
+  STARTING
+  RUNNING
+  FAILED
+}
+
+enum ActiveAgentCategory {
+  CONTAINER
+  LOCAL
+  MIXED
+  UNKNOWN
+  NONE
+}
+
+type AlertPoliciesSchema {
+  rootConfigType: ConfigType!
+  allConfigTypes: [ConfigType!]!
+}
+
+union SlackChannelsOrError = SlackChannels | SlackIntegrationError
+
+type SlackChannels {
+  channels: [String!]!
+}
+
+type SlackIntegrationError implements Error {
+  message: String!
+}
+
+union PinnableItem = JobPinnableItem | AssetGroupPinnableItem | CatalogView
+
+type JobPinnableItem implements PinnableItemInterface {
+  id: String!
+  name: String!
+  description: String!
+  icon: String!
+  creatorId: BigInt!
+  isPrivate: Boolean!
+  selection: CatalogJobSelection!
+}
+
+type AssetGroupPinnableItem implements PinnableItemInterface {
+  id: String!
+  name: String!
+  description: String!
+  icon: String!
+  creatorId: BigInt!
+  isPrivate: Boolean!
+  selection: CatalogViewSelection!
+}
+
+union CustomerInfoOrError =
+  | CustomerInfo
+  | CustomerInfoNotFoundError
+  | PythonError
+  | UnauthorizedError
+
+type CustomerInfo {
+  id: String!
+  stripeCustomerId: String
+  stripeSubscription: StripeSubscription
+  stripeCustomer: StripeCustomer
+}
+
+type StripeSubscription {
+  id: String
+  status: DagsterCloudSubscriptionStatus!
+  planType: DagsterCloudPlanType
+  trialStartDate: Float
+  trialEndDate: Float
+  cancelAtPeriodEnd: Boolean!
+  trialServerlessStepDurationUsage: Int!
+  trialServerlessStepDurationLimit: Int!
+  billingPeriodStart: Int!
+  billingPeriodEnd: Int!
+  stepDurationUsage: Int!
+  creditUsage: Int!
+  numFreeCredits: Int!
+  serverlessComputeMinutesUsage: Int!
+  seats: Int!
+  deploymentCount: Int!
+  deploymentLimit: Int!
+  creditLimit: Int!
+}
+
+enum DagsterCloudSubscriptionStatus {
+  ACTIVE
+  PAST_DUE
+  UNPAID
+  CANCELED
+  INCOMPLETE
+  INCOMPLETE_EXPIRED
+  TRIALING
+}
+
+enum DagsterCloudPlanType {
+  STANDARD
+  SOLO
+  TEAM
+  TEAM_V2
+  ENTERPRISE
+  OPPORTUNITY
+  PARTNER
+  UNKNOWN
+}
+
+type StripeCustomer {
+  email: String
+  createdDate: Float!
+  frozenTime: Float
+  taxIDs: [TaxID!]!
+  taxIDExempt: Boolean!
+  needsTaxID: Boolean!
+}
+
+type TaxID {
+  id: String!
+  value: String!
+  type: String!
+}
+
+type CustomerInfoNotFoundError implements Error {
+  message: String!
+}
+
+enum QueryableMetrics {
+  ALL_STEP_DURATION
+  CREDITS
+  SERVERLESS_RUN_DURATION
+}
+
+union StripePaymentMethodListOrError = StripePaymentMethodList | PythonError | UnauthorizedError
+
+type StripePaymentMethodList {
+  paymentMethods: [StripePaymentMethod!]!
+}
+
+type StripePaymentMethod {
+  id: String!
+  cardBrand: String!
+  cardExpMonth: String!
+  cardExpYear: String!
+  cardLast4: String!
+}
+
+union StripeInvoiceListOrError =
+  | StripeInvoiceList
+  | UnknownStripeInvoiceError
+  | PythonError
+  | UnauthorizedError
+
+type StripeInvoiceList {
+  invoices: [StripeInvoice!]!
+}
+
+type StripeInvoice {
+  id: String!
+  created: Float!
+  discount: StripeInvoiceDiscount
+  dueDate: Float
+  items: [StripeInvoiceItem!]!
+  pdfUrl: String
+  periodStart: Float!
+  periodEnd: Float!
+  total: Float!
+  status: StripeInvoiceStatus!
+}
+
+type StripeInvoiceDiscount {
+  coupon: String!
+  amount: Int!
+}
+
+type StripeInvoiceItem {
+  quantity: Int!
+  description: String!
+  total: Int!
+}
+
+enum StripeInvoiceStatus {
+  DRAFT
+  OPEN
+  PAID
+  UNCOLLECTIBLE
+  VOID
+}
+
+type UnknownStripeInvoiceError implements Error {
+  message: String!
+}
+
+union EnterpriseContractMetadataOrError =
+  | EnterpriseContractMetadata
+  | EnterpriseContractMetadataNotFoundError
+  | PythonError
+  | UnauthorizedError
+
+type EnterpriseContractMetadata {
+  creditsDate: Date!
+  creditsUsed: Int!
+  annualCredits: Int
+  creditsContractedWithRollover: Int
+  startDate: Float!
+  endDate: Float!
+  seats: Int
+  perCreditPriceUsd: Float
+  perSeatPriceUsd: Float
+}
+
+scalar Date
+
+type EnterpriseContractMetadataNotFoundError implements Error {
+  message: String!
+}
+
+union EnterpriseUserManagedExpansionsOrError =
+  | EnterpriseUserManagedExpansionsList
+  | PythonError
+  | UnauthorizedError
+
+type EnterpriseUserManagedExpansionsList {
+  expansions: [EnterpriseUserManagedExpansion!]!
+}
+
+type EnterpriseUserManagedExpansion {
+  id: UUID!
+  requestingUserId: Int!
+  numCreditsRequested: Int
+  numSeatsRequested: Int
+  status: EnterpriseUserManagedExpansionStatus!
+  perCreditPriceUsd: Float
+  perSeatPriceUsd: Float
+  createdAt: Float
+  updatedAt: Float
+}
+
+scalar UUID
+
+enum EnterpriseUserManagedExpansionStatus {
+  SUBMITTED
+  COMPLETE
+  ERROR
+}
+
+union OnboardingChecklistEntriesOrError =
+  | OnboardingChecklistEntries
+  | UnauthorizedError
+  | PythonError
+
+type OnboardingChecklistEntries {
+  entries: [OnboardingChecklistEntry!]!
+}
+
+type OnboardingChecklistEntry {
+  entryKey: OnboardingChecklistEntryKey!
+  status: OnboardingChecklistStatus!
+  updateTimestamp: Float
+  metadata: GenericScalar
+}
+
+enum OnboardingChecklistEntryKey {
+  SCHEDULED_DEMO_CALL
+  INVITED_TEAM
+  CHOSE_AGENT_TYPE
+  LAUNCHED_AGENT
+  LOADED_CODE
+  LOADED_CUSTOM_CODE
+  LAUNCHED_RUN
+  FINISHED_SETUP
+  CREATED_BRANCH_DEPLOYMENT
+  PLAN_SELECTED
+  PAYMENT_METHOD_ADDED
+  INVOICE_CREATED
+  INVOICE_PAID
+}
+
+enum OnboardingChecklistStatus {
+  INCOMPLETE
+  COMPLETE
+  SKIPPED
+}
+
+union GitHubSetupOrError = GitHubSetup | UnauthorizedError | PythonError
+
+type GitHubSetup {
+  id: String!
+  availableGitHubAppInstallations: [AvailableGitHubInstallation!]!
+  existingRepoStatus(repoName: String!): ExistingRepoStatus
+  isUserGitHubAuthed: Boolean!
+  creatingRepo: GitHubCreatingRepo
+  branchAgainstRepo: BranchAgainstRepo
+  deployingCode: DeployingCode
+  awaitingGitHubAdminApproval: Boolean!
+}
+
+type AvailableGitHubInstallation {
+  installationId: Int!
+  name: String!
+  settingsUrl: String!
+}
+
+enum ExistingRepoStatus {
+  OK
+  NO_DAGSTER_CLOUD_YAML_AND_PYPROJECT_TOML
+  EXISTING_INSTALL
+  NOT_FOUND
+}
+
+type GitHubCreatingRepo {
+  githubUrl: String
+  repoUrl: String
+  repoName: String
+  locationName: String
+  state: GitHubStepState!
+  step: GitHubCreationStep!
+  errorMessage: String
+  repoCreationTime: Float
+  isImport: Boolean!
+  templateUrl: String
+  isPrivate: Boolean
+}
+
+enum GitHubStepState {
+  NOT_STARTED
+  IN_PROGRESS
+  COMPLETED
+  ERROR
+}
+
+enum GitHubCreationStep {
+  IDLE
+  SETTING_UP_REPO
+  GENERATING_TOKEN
+  SETTING_UP_SECRETS
+}
+
+type BranchAgainstRepo {
+  githubUrl: String
+  repoUrl: String
+  repoName: String
+  locationName: String
+  state: GitHubStepState!
+  step: BranchAgainstRepoStep!
+  pullRequestData: PullRequestData
+  locationEntries: [WorkspaceLocationEntry!]!
+  branchDeploymentStatus: DeployingCode
+  branchDeploymentName: String
+}
+
+enum BranchAgainstRepoStep {
+  SCAFFOLDING_PR
+  PR_CREATED
+  MERGING_PR
+  PR_MERGED
+}
+
+type PullRequestData {
+  pullRequestNumber: Int!
+  pullRequestUrl: String!
+  branchName: String!
+  baseBranch: String!
+  pullRequestStatus: PullRequestStatus
+}
+
+type DeployingCode {
+  state: GitHubStepState!
+  step: CodeDeployStep!
+  githubActionsBuildUrl: String
+  buildUrl: String
+  repoUrl: String
+  errorMessage: String
+  runStartTimestamp: Float
+  deploymentName: String
+}
+
+enum CodeDeployStep {
+  IDLE
+  INITIALIZING
+  DEPLOYING
+  CLEANING_UP
+}
+
+union GitlabOrError = Gitlab | UnauthorizedError | PythonError
+
+type Gitlab {
+  isUserAuthed: Boolean!
+  existingRepoStatus(repoName: String!): ExistingRepoStatus
+  project(name: String!): GitlabProject
+  projects: [GitlabProject!]
+  dbtProjects: [GitlabProject!]
+  creatingRepo: GitHubCreatingRepo
+  branchAgainstRepo: BranchAgainstRepo
+  deployingCode: DeployingCode
+  namespaces: [GitlabNamespace!]
+  username: String
+}
+
+type GitlabProject {
+  id: ID!
+  name: String!
+  namespace: GitlabNamespace!
+  url: String!
+  lastUpdatedTimestamp: Float!
+  dbtProjectConfigPaths(recursive: Boolean = false): [String!]!
+}
+
+type GitlabNamespace {
+  id: ID!
+  namespaceId: ID!
+  name: String!
+}
+
+type UsageMetrics {
+  stepDuration(timeGranularity: TimeGranularity!): StepDurationUsageMetrics!
+  stepDurationByJob(startTimestamp: Float!): StepDurationUsageMetrics!
+  serverlessComputeMinutes(timeGranularity: TimeGranularity!): StepDurationUsageMetrics!
+  serverlessComputeMinutesByJob(startTimestamp: Float!): StepDurationUsageMetrics!
+  dagsterCredits(timeGranularity: TimeGranularity!): StepDurationUsageMetrics!
+  standardCredits(timeGranularity: TimeGranularity!): StepDurationUsageMetrics!
+  highVelocityCredits(timeGranularity: TimeGranularity!): StepDurationUsageMetrics!
+  dagsterCreditsByJob(startTimestamp: Float!): StepDurationUsageMetrics!
+  standardCreditsByJob(startTimestamp: Float!): StepDurationUsageMetrics!
+  highVelocityCreditsByJob(startTimestamp: Float!): StepDurationUsageMetrics!
+}
+
+type StepDurationUsageMetrics {
+  unit: String!
+  timeGranularity: TimeGranularity!
+  metrics: [UsageMetricValue!]!
+}
+
+enum TimeGranularity {
+  DAY
+  MONTH
+}
+
+type Serverless {
+  id: String!
+  isWaitlisted: Boolean!
+  canEnable: Boolean!
+  requiresPaymentCheck: Boolean!
+  status: ServerlessAgentStatus!
+  error: PythonError
+  registryUrl: String
+  registryAllowCustomBase: Boolean
+  awsAuthToken: String
+  awsAccessKeyId: String!
+  awsSecretAccessKey: String!
+  awsRegion: String!
+  stackTotalResourceCount: Int
+  stackCompleteResourceCount: Int
+  stackRetryCount: Int
+  canAccessLogs: Boolean!
+  logStreams(limit: Int!, cursor: ID): ServerlessLogStreamsConnection
+  logStreamEvents(streamID: ID!, limit: Int!, cursor: ID): ServerlessLogEventsConnection
+}
+
+enum ServerlessAgentStatus {
+  ACTIVE
+  INACTIVE
+  PROVISIONING
+  PROVISION_ERROR
+  PROVISION_RETRY_REQUESTED
+  UPDATING
+  UPDATE_ERROR
+  UPDATE_RETRY_REQUESTED
+  DELETING
+  DELETE_ERROR
+}
+
+type ServerlessLogStreamsConnection {
+  streams: [ServerlessLogStream!]!
+  cursor: ID
+  hasMore: Boolean!
+}
+
+type ServerlessLogStream {
+  id: ID!
+  displayName: String!
+  lastEventTime: Float!
+}
+
+type ServerlessLogEventsConnection {
+  events: [ServerlessLogEvent!]!
+  cursor: ID
+  hasMore: Boolean!
+}
+
+type ServerlessLogEvent {
+  timestamp: Float!
+  message: String!
+}
+
+union SecretsOrError = Secrets | UnauthorizedError | PythonError
+
+type Secrets {
+  secrets: [Secret!]!
+}
+
+type Secret {
+  id: String!
+  secretName: String!
+  secretValue: String!
+  updatedBy: DagsterCloudUser
+  updateTimestamp: Float
+  fullDeploymentScope: Boolean!
+  allBranchDeploymentsScope: Boolean!
+  specificBranchDeploymentScope: String
+  localDeploymentScope: Boolean!
+  locationNames: [String!]!
+  canViewSecretValue: Boolean!
+  canEditSecret: Boolean!
+}
+
+input SecretScopesInput {
+  fullDeploymentScope: Boolean
+  allBranchDeploymentsScope: Boolean
+  specificBranchDeploymentScope: String
+  localDeploymentScope: Boolean
+}
+
+type NonIsolatedRuns {
+  showNonIsolatedRunToggle: Boolean!
+  enableNonIsolatedRunToggle: Boolean!
+  nonIsolatedRunToggleMessage: String!
+}
+
+type UserNuxChecklistEntry {
+  entryKey: String!
+  dismissed: Boolean!
+  metadata: GenericScalar
+  updateTimestamp: Float
+}
+
+type AuditLogQuery {
+  enabled: Boolean!
+  auditLogEntries(limit: Int, cursor: String, filters: AuditLogFilters): [AuditLogEntry!]
+}
+
+type AuditLogEntry {
+  id: String!
+  eventType: AuditLogEventType!
+  authorUserEmail: String
+  authorAgentTokenId: String
+  eventMetadata: GenericScalar
+  timestamp: Float!
+  deploymentName: String
+  branchDeploymentName: String
+}
+
+enum AuditLogEventType {
+  CHANGE_USER_PERMISSIONS
+  CREATE_DEPLOYMENT
+  DELETE_DEPLOYMENT
+  CREATE_USER_TOKEN
+  REVOKE_USER_TOKEN
+  CREATE_AGENT_TOKEN
+  REVOKE_AGENT_TOKEN
+  UPDATE_AGENT_TOKEN_PERMISSIONS
+  CREATE_SECRET
+  UPDATE_SECRET
+  DELETE_SECRET
+  LOG_IN
+  IFRAME_LOG_IN
+  UPDATE_SUBSCRIPTION_PLAN
+  UPDATE_SCHEDULE
+  UPDATE_SENSOR
+  MODIFY_ALERT_POLICIES
+  CREATE_ORGANIZATION_SUBDOMAIN
+  DELETE_ORGANIZATION_SUBDOMAIN
+  EDIT_CUSTOMER_ID
+  CREATE_ENT_TRIAL
+  UPDATE_TRIAL_DAYS
+  UPDATE_SUBSCRIPTION_TYPE
+  PUT_REVOKE_TOKEN
+  SET_ACCOUNT_REVIEW
+  REDEPLOY_SERVERLESS_AGENT
+  UPDATE_INTERNAL_ORGANIZATION_SETTINGS
+  UPDATE_AGENT_TYPE
+  SET_AUTO_MATERIALIZE_PAUSED
+  CREATE_CODE_LOCATION
+  UPDATE_CODE_LOCATION
+  DELETE_CODE_LOCATION
+}
+
+input AuditLogFilters {
+  beforeDatetime: Float
+  afterDatetime: Float
+  eventTypes: [AuditLogEventType!]
+  deploymentNames: [String!]
+  userEmails: [String!]
+  isBranchDeployment: Boolean
+}
+
+type PartnerReferrals {
+  referrals: [PartnerReferralEntry!]!
+}
+
+type PartnerReferralEntry {
+  referred: String!
+  createTimestamp: Float!
+}
+
+union ReportingMetricsOrError =
+  | ReportingMetrics
+  | UnauthorizedError
+  | PythonError
+  | ReportingInputError
+
+type ReportingMetrics {
+  metrics: [ReportingEntry]!
+  timestamps: [Float!]!
+}
+
+type ReportingEntry {
+  entity: ReportingObjet!
+  aggregateValue: Float!
+  aggregateValueChange: ReportingAggregateValueChange!
+  values: [Float]!
+}
+
+union ReportingObjet =
+  | ReportingAssetSelection
+  | ReportingAsset
+  | ReportingAssetGroup
+  | ReportingJob
+  | DagsterCloudDeployment
+
+type ReportingAssetSelection {
+  selection: String!
+}
+
+type ReportingAsset {
+  assetKey: AssetKey!
+  assetGroup: String
+  codeLocationName: String!
+  repositoryName: String!
+}
+
+type ReportingAssetGroup {
+  groupName: String!
+  codeLocationName: String!
+  repositoryName: String!
+}
+
+type ReportingJob {
+  jobName: String!
+  codeLocationName: String!
+  repositoryName: String!
+}
+
+type ReportingAggregateValueChange {
+  change: Float!
+  isNewlyAvailable: Boolean!
+}
+
+type ReportingInputError implements Error {
+  message: String!
+}
+
+input JobReportingMetricsFilter {
+  jobs: [QualifiedJob]
+  codeLocations: [RepositoryCodeLocation]
+  limit: Int
+}
+
+input QualifiedJob {
+  codeLocationName: String
+  repositoryName: String
+  jobName: String
+}
+
+input RepositoryCodeLocation {
+  codeLocationName: String
+  repositoryName: String
+}
+
+input ReportingMetricsSelector {
+  after: Float!
+  before: Float!
+  metricName: String!
+  granularity: ReportingMetricsGranularity!
+  aggregationFunction: ReportingAggregationFunction
+  sortTarget: [ReportingSortTarget]
+  sortDirection: [ReportingSortDirection]
+}
+
+enum ReportingMetricsGranularity {
+  HOURLY
+  DAILY
+  WEEKLY
+  MONTHLY
+}
+
+enum ReportingAggregationFunction {
+  SUM
+  AVERAGE
+  P75
+  P90
+  P95
+  P99
+}
+
+enum ReportingSortTarget {
+  NAME
+  CODE_LOCATION_NAME
+  PCT_CHANGE
+  AGGREGATION_VALUE
+}
+
+enum ReportingSortDirection {
+  ASCENDING
+  DESCENDING
+}
+
+enum MetricsStoreType {
+  POSTGRES
+  VICTORIA_METRICS
+}
+
+input AssetReportingMetricsFilter {
+  assets: [QualifiedAssetKey]
+  assetGroups: [QualifiedAssetGroup]
+  codeLocations: [RepositoryCodeLocation]
+  assetSelection: String
+  limit: Int
+}
+
+input QualifiedAssetKey {
+  assetKey: AssetKeyInput!
+}
+
+input QualifiedAssetGroup {
+  codeLocationName: String
+  repositoryName: String
+  assetGroupName: String
+}
+
+input AssetGroupReportingMetricsFilter {
+  assetGroups: [QualifiedAssetGroup]
+  codeLocations: [RepositoryCodeLocation]
+  limit: Int
+}
+
+input DeploymentReportingMetricsFilter {
+  deploymentIds: [Int]
+  limit: Int
+  branchDeployments: Boolean
+}
+
+input AssetSelectionReportingMetricsFilter {
+  assetSelection: String
+  assetKeys: [AssetKeyInput]
+}
+
+type ReportingDeploymentSettings {
+  metadataKeys: [String!]!
+  customizations: [InsightsMetricCustomization!]!
+  costMultipliers: [InsightsMetricCostMultiplier!]!
+}
+
+type InsightsMetricCustomization {
+  id: String!
+  metricKey: String!
+  metricShown: Boolean!
+  customMetricName: String
+  customMetricDescription: String
+  customMetricIcon: String
+}
+
+type InsightsMetricCostMultiplier {
+  id: String!
+  metricKey: String!
+  costMultiplier: Float
+  displayName: String
+}
+
+union MetricTypeListOrError = MetricTypeList | UnauthorizedError | PythonError
+
+type MetricTypeList {
+  id: String!
+  metricTypes: [MetricType]!
+}
+
+type MetricType {
+  id: String!
+  metricName: String!
+  displayName: String!
+  category: String
+  unitType: ReportingUnitType
+  description: String
+  priority: Int
+  defaultDisplayName: String!
+  defaultDescription: String
+  customIcon: String
+  costMultiplier: Float
+  pending: Boolean
+  visible: Boolean
+}
+
+enum ReportingUnitType {
+  INTEGER
+  TIME_MS
+  FLOAT
+}
+
+input ReportingMetricsTimeframeSelector {
+  after: Float
+  before: Float
+}
+
+type ReportingTimeRanges {
+  timeRanges: [ReportingTimeRange!]!
+}
+
+enum ReportingTimeRange {
+  Last7Days
+  Last30Days
+  Last120Days
+  ThisWeek
+  ThisMonth
+}
+
+type ReportingDeploymentData {
+  downsamplingRate: Float
+  latestDataTimestamp: Float
+  availableMetadataKeys: [String]
+}
+
+union InsightsRunLevelMetricsOrError =
+  | InsightsRunLevelMetrics
+  | UnauthorizedError
+  | PythonError
+  | ReportingInputError
+
+type InsightsRunLevelMetrics {
+  entity: ReportingObjet!
+  runsWithoutData: [InsightsEmptyRunEntry]!
+  runsWithData: [InsightsRunEntry]!
+}
+
+type InsightsEmptyRunEntry {
+  runId: String!
+  timestamp: Float!
+}
+
+type InsightsRunEntry {
+  value: Float!
+  runId: String!
+  timestamp: Float!
+}
+
+input InsightsRunLevelMetricsSelector {
+  metricName: String!
+}
+
+type KPIEntry {
+  metric: String!
+  aggregateValue: Float!
+  aggregateValueChange: ReportingAggregateValueChange!
+}
+
+type RunContainerMetrics {
+  cpuPercent: MetricsTimeSeries
+  cpuUsageMs: MetricsTimeSeries
+  cpuUsageRateMs: MetricsTimeSeries
+  cpuLimitMs: MetricsTimeSeries
+  memoryPercent: MetricsTimeSeries
+  memoryUsage: MetricsTimeSeries
+  memoryLimit: MetricsTimeSeries
+}
+
+type MetricsTimeSeries {
+  metricName: String!
+  tags: [String!]!
+  startTimestamp: Float!
+  endTimestamp: Float!
+  points: [MetricsDataPoint!]!
+  unitType: MetricsUnitType
+}
+
+type MetricsDataPoint {
+  timestamp: Float!
+  value: Float!
+}
+
+enum MetricsUnitType {
+  BYTE
+  CPU
+  MILLICORE
+  MEBIBYTE
+  PERCENT
+  REQUEST
+}
+
+type CodeServerMetrics {
+  cpuUsage: MetricsTimeSeries
+  cpuLimit: MetricsTimeSeries
+  cpuPercent: MetricsTimeSeries
+  memoryUsage: MetricsTimeSeries
+  memoryLimit: MetricsTimeSeries
+  memoryPercent: MetricsTimeSeries
+  requestUtilizationPercent: MetricsTimeSeries
+  runningRequests: MetricsTimeSeries
+  queuedRequests: MetricsTimeSeries
+}
+
+union SearchResultsOrError =
+  | SearchResults
+  | SearchResultsNotFoundError
+  | SearchQueryError
+  | UnauthorizedError
+  | PythonError
+
+type SearchResults {
+  results: [AssetSearchResult!]!
+}
+
+type AssetSearchResult {
+  id: ID!
+  key: AssetKey!
+  description: String
+  locationName: String!
+  repositoryName: String!
+  group: String
+  kinds: [String]
+  tags: [DefinitionTag]
+  owners: [AssetOwner]
+  tableName: String
+  columnTags: [DefinitionTag]
+}
+
+type SearchResultsNotFoundError implements Error {
+  message: String!
+}
+
+type SearchQueryError implements Error {
+  message: String!
+}
+
+input AssetsFilterInput {
+  tags: [TagAssetSelectionInput!]!
+  kinds: [String!]!
+  owners: [OwnerAssetSelectionInput!]!
+  groups: [GroupAssetSelectionInput!]!
+  codeLocations: [CodeLocationAssetSelectionInput!]!
+  columns: [String!]!
+  tableNames: [String]
+  columnTags: [TagAssetSelectionInput!]!
+  filteredAssets: [AssetKeyInput!]
+}
+
+input TagAssetSelectionInput {
+  key: String!
+  value: String!
+}
+
+input OwnerAssetSelectionInput {
+  ownerName: String!
+}
+
+input GroupAssetSelectionInput {
+  groupName: String!
+  repositoryName: String = null
+  repositoryLocationName: String = null
+}
+
+input CodeLocationAssetSelectionInput {
+  repositoryName: String!
+  repositoryLocationName: String!
+}
+
+union SearchResultsCountsOrError =
+  | SearchResultCountsByDimension
+  | SearchResultsNotFoundError
+  | SearchQueryError
+  | UnauthorizedError
+  | PythonError
+
+type SearchResultCountsByDimension {
+  owners: [OwnerSearchResultCount!]!
+  tags: [TagSearchResultCount!]!
+  kinds: [StringValueSearchResultCount!]!
+  columns: [StringValueSearchResultCount!]!
+  groups: [AssetGroupSearchResultCount!]!
+  codeLocations: [CodeLocationSearchResultCount!]!
+  tableNames: [StringValueSearchResultCount!]!
+  columnTags: [TagSearchResultCount!]!
+}
+
+type OwnerSearchResultCount {
+  owner: AssetOwner!
+  numResults: Int!
+}
+
+type TagSearchResultCount {
+  tag: DefinitionTag!
+  numResults: Int!
+}
+
+type StringValueSearchResultCount {
+  fieldValue: String!
+  numResults: Int!
+}
+
+type AssetGroupSearchResultCount {
+  repositoryName: String!
+  codeLocationName: String!
+  group: String!
+  numResults: Int!
+}
+
+type CodeLocationSearchResultCount {
+  repositoryName: String!
+  codeLocationName: String!
+  numResults: Int!
+}
+
+enum SearchAssetDefFields {
+  ORGANIZATION_ID
+  DEPLOYMENT_ID
+  SERIALIZATION_VERSION
+  CODE_LOCATION_VERSION
+  NAME
+  ASSET_KEY
+  DESCRIPTION
+  LOCATION_NAME
+  REPOSITORY_NAME
+  GROUP
+  OWNERS
+  TAGS
+  COLUMNS
+  COLUMN_NAMES
+  COLUMN_TAGS
+  KIND
+  GROUP_ADDRESS
+  REPO_ADDRESS
+  TABLE_NAME
+}
+
+type AssetSla {
+  assetKey: AssetKey!
+  state: SlaState!
+  since: Float!
+  reasonMd: String
+  metadataEntries: [MetadataEntry!]!
+}
+
+enum SlaState {
+  PASSING
+  VIOLATING
+  WARNING
+}
+
+type AssetSlaWithTimeline {
+  assetSla: AssetSla!
+  timelineEvents(after: Float!): [SlaTimelineEvent!]
+}
+
+type SlaTimelineEvent {
+  stateChangeTimestamp: Float!
+  prevState: SlaState!
+  newState: SlaState!
+  metadataEntries: [MetadataEntry!]!
+}
+
+type CloudMutation {
+  launchPipelineExecution(executionParams: ExecutionParams!): LaunchRunResult!
+  launchRun(executionParams: ExecutionParams!): LaunchRunResult!
+  launchMultipleRuns(executionParamsList: [ExecutionParams!]!): LaunchMultipleRunsResultOrError!
+  launchPipelineReexecution(
+    executionParams: ExecutionParams
+    reexecutionParams: ReexecutionParams
+  ): LaunchRunReexecutionResult!
+  launchRunReexecution(
+    executionParams: ExecutionParams
+    reexecutionParams: ReexecutionParams
+  ): LaunchRunReexecutionResult!
+  startSchedule(scheduleSelector: ScheduleSelector!): ScheduleMutationResult!
+  stopRunningSchedule(
+    id: String
+    scheduleOriginId: String
+    scheduleSelectorId: String
+  ): ScheduleMutationResult!
+  resetSchedule(scheduleSelector: ScheduleSelector!): ScheduleMutationResult!
+  startSensor(sensorSelector: SensorSelector!): SensorOrError!
+  setSensorCursor(cursor: String, sensorSelector: SensorSelector!): SensorOrError!
+  stopSensor(
+    id: String
+    jobOriginId: String
+    jobSelectorId: String
+  ): StopSensorMutationResultOrError!
+  resetSensor(sensorSelector: SensorSelector!): SensorOrError!
+  sensorDryRun(cursor: String, selectorData: SensorSelector!): SensorDryRunResult!
+  scheduleDryRun(selectorData: ScheduleSelector!, timestamp: Float): ScheduleDryRunResult!
+  terminatePipelineExecution(
+    runId: String!
+    terminatePolicy: TerminateRunPolicy
+  ): TerminateRunResult!
+  terminateRun(runId: String!, terminatePolicy: TerminateRunPolicy): TerminateRunResult!
+  terminateRuns(
+    runIds: [String!]!
+    terminatePolicy: TerminateRunPolicy
+  ): TerminateRunsResultOrError!
+  deletePipelineRun(runId: String!): DeletePipelineRunResult!
+  deleteRun(runId: String!): DeletePipelineRunResult!
+  reloadRepositoryLocation(repositoryLocationName: String!): ReloadRepositoryLocationMutationResult!
+  reloadWorkspace: ReloadWorkspaceMutationResult!
+  shutdownRepositoryLocation(
+    repositoryLocationName: String!
+  ): ShutdownRepositoryLocationMutationResult!
+  wipeAssets(assetPartitionRanges: [PartitionsByAssetSelector!]!): AssetWipeMutationResult!
+  reportRunlessAssetEvents(
+    eventParams: ReportRunlessAssetEventsParams!
+  ): ReportRunlessAssetEventsResult!
+  launchPartitionBackfill(backfillParams: LaunchBackfillParams!): LaunchBackfillResult!
+  resumePartitionBackfill(backfillId: String!): ResumeBackfillResult!
+  reexecutePartitionBackfill(reexecutionParams: ReexecutionParams): LaunchBackfillResult!
+  cancelPartitionBackfill(backfillId: String!): CancelBackfillResult!
+  logTelemetry(
+    action: String!
+    clientId: String!
+    clientTime: String!
+    metadata: String!
+  ): LogTelemetryMutationResult!
+  setNuxSeen: Boolean!
+  addDynamicPartition(
+    partitionKey: String!
+    partitionsDefName: String!
+    repositorySelector: RepositorySelector!
+  ): AddDynamicPartitionResult!
+  deleteDynamicPartitions(
+    partitionKeys: [String!]!
+    partitionsDefName: String!
+    repositorySelector: RepositorySelector!
+  ): DeleteDynamicPartitionsResult!
+  setAutoMaterializePaused(paused: Boolean!): Boolean!
+  setConcurrencyLimit(concurrencyKey: String!, limit: Int!): Boolean!
+  deleteConcurrencyLimit(concurrencyKey: String!): Boolean!
+  freeConcurrencySlotsForRun(runId: String!): Boolean!
+  freeConcurrencySlots(runId: String!, stepKey: String): Boolean!
+  addLocation(location: LocationSelector!): AddLocationMutationResult!
+  updateLocation(location: LocationSelector!): UpdateLocationMutationResult!
+  addOrUpdateLocation(location: LocationSelector!): AddOrUpdateLocationMutationResult!
+  deleteLocation(locationName: String!): DeleteLocationMutationResult!
+  reconcileLocations(locations: [LocationSelector]!): ReconcileLocationsMutationResult!
+  createTemplateRepo(
+    gitProvider: GitProvider
+    isPrivate: Boolean!
+    locationName: String
+    repoName: String!
+    templateUrl: String
+  ): CreateTemplateRepoResult!
+  useExistingRepo(gitProvider: GitProvider, repoName: String!): CreateTemplateRepoResult!
+  scaffoldDagsterInDbtRepo(
+    codeLocationName: String
+    gitProvider: GitProvider
+    repoName: String!
+  ): ScaffoldDagsterInPullRequestResult!
+  mergePullRequest(
+    gitProvider: GitProvider
+    pullRequestNumber: Int!
+    repoName: String!
+  ): MergePullRequestResult!
+  cloneDBTRepo(
+    gitProvider: GitProvider
+    isPrivate: Boolean!
+    repoName: String!
+  ): CloneDBTRepoResult!
+  selectInstallation(accountName: String!): SelectInstallationResult!
+  deselectInstallation: DeselectInstallationResult!
+  restartGitCI(restartBranchCI: Boolean): RestartGitHubActionsRunMutationResult!
+  pingLocation(locationName: String!): PingLocationMutationResult!
+  addLocationFromDocument(document: GenericScalar!): AddLocationFromDocumentMutationResult!
+  updateLocationFromDocument(document: GenericScalar!): UpdateLocationFromDocumentMutationResult!
+  addOrUpdateLocationFromDocument(
+    document: GenericScalar!
+  ): AddOrUpdateLocationFromDocumentMutationResult!
+  reconcileLocationsFromDocument(
+    document: GenericScalar!
+  ): ReconcileLocationsFromDocumentMutationResult!
+  deployLocations(document: GenericScalar!): DeployLocationsMutationResult!
+  createOrUpdateUserPermissions(
+    userPermission: CreateOrUpdateCloudUserPermissionsInput!
+  ): DagsterCloudUserWithScopedPermissionGrantsOrError!
+  removeUserPermissions(
+    userPermission: RemoveUserPermissionsInput!
+  ): DagsterCloudUserWithScopedPermissionGrantsOrError!
+  addUserToOrganization(email: String): AddUserToOrganizationMutationResult!
+  removeUserFromOrganization(email: String): RemoveUserFromOrganizationMutationResult!
+  createAgentToken(description: String): CreateAgentTokenResult!
+  revokeAgentToken(tokenId: Int!): RevokeAgentTokenResult!
+  createUserToken(description: String, userId: Int!): CreateUserTokenResult!
+  revokeUserToken(tokenId: Int!, userId: Int!): RevokeUserTokenResult!
+  editUserTokenDescription(
+    description: String
+    tokenId: Int!
+    userId: Int!
+  ): EditDescUserTokenResult!
+  editAgentTokenDescription(description: String, tokenId: Int!): EditDescAgentTokenResult!
+  createOrUpdateAgentPermissions(
+    agentPermission: CreateOrUpdateCloudAgentPermissionsInput!
+  ): ModifyAgentTokenResult!
+  removeAgentPermissions(agentPermission: RemoveAgentPermissionsInput!): ModifyAgentTokenResult!
+  createApiToken(description: String, tokenType: DagsterCloudApiTokenType!): CreateApiTokenResult!
+  revokeApiToken(tokenId: ID!, tokenType: DagsterCloudApiTokenType!): RevokeApiTokenResult!
+  editApiTokenDescription(
+    description: String
+    tokenId: ID!
+    tokenType: DagsterCloudApiTokenType!
+  ): EditApiTokenDescriptionResult!
+  createDeployment(
+    deploymentAgentType: DeploymentAgentType
+    deploymentName: String!
+    inheritPermsDeploymentId: Int
+  ): CreateDeploymentResult!
+  deleteDeployment(deploymentId: Int!): DeleteDeploymentResult!
+  setDeploymentSettings(
+    deploymentId: Int
+    deploymentSettings: DeploymentSettingsInput!
+  ): SetDeploymentSettingsResult!
+  updateDeploymentSettings(
+    deploymentId: Int
+    deploymentSettings: DeploymentSettingsInput
+  ): SetDeploymentSettingsResult!
+  createOrUpdateBranchDeployment(
+    baseDeploymentName: String
+    branchData: CreateOrUpdateBranchDeploymentInput!
+    commit: DeploymentCommitInput!
+    snapshotBaseCondition: SnapshotBaseDeploymentCondition
+  ): CreateDeploymentResult!
+  updateDeploymentAgentType(
+    deploymentAgentType: DeploymentAgentType
+    deploymentId: Int
+  ): UpdateDeploymentAgentTypeResult!
+  setOrganizationSettings(
+    organizationSettings: OrganizationSettingsInput
+  ): SetOrganizationSettingsResult!
+  updateOrganizationSettings(
+    organizationSettings: OrganizationSettingsInput
+  ): SetOrganizationSettingsResult!
+  reconcileAlertPoliciesFromDocument(document: GenericScalar!): ReconcileAlertPoliciesResult!
+  createOrUpdateAlertPolicyFromDocument(
+    document: GenericScalar!
+  ): CreateOrUpdateAlertPolicyFromDocumentMutationResult!
+  deleteAlertPolicy(alertPolicyName: String!): DeleteAlertPolicyMutationResult!
+  sendSampleNotification(document: GenericScalar!): SendSampleNotificationMutationResult!
+  createOrUpdateCatalogView(
+    description: String!
+    icon: String!
+    id: String
+    isPrivate: Boolean!
+    name: String!
+    selection: CatalogViewSelectionInput!
+  ): CreateOrUpdateCatalogViewMutationResult!
+  deleteCatalogView(id: String): CreateOrUpdateCatalogViewMutationResult!
+  addPinnedCatalogView(catalogViewId: String): AddPinnedItemMutationResult!
+  addPinnedAssetGroup(assetGroupName: String): AddPinnedItemMutationResult!
+  addPinnedJob(
+    codeLocationName: String
+    jobName: String
+    repositoryName: String
+  ): AddPinnedItemMutationResult!
+  removePinnedItem(itemId: String): RemovePinnedItemMutationResult!
+  stripeSetupIntent: StripeSetupIntentMutationResult!
+  removeStripePaymentMethod(paymentMethodId: String!): RemoveStripePaymentMethodMutationResult!
+  updateStripeCustomer(email: String): UpdateStripeCustomerMutationResult!
+  updateStripeCustomerTaxIDs(
+    deletedIds: [String]
+    exempt: Boolean
+    newIds: [TaxIDInput!]
+  ): UpdateStripeCustomerTaxIDsMutationResult!
+  updateStripeSubscription(planType: DagsterCloudPlanType): UpdateStripeSubscriptionMutationResult!
+  cancelStripeSubscription(cancellationNote: String): UpdateStripeSubscriptionMutationResult!
+  createEnterpriseUserManagedExpansion(
+    numCreditsRequested: Int
+    numSeatsRequested: Int
+  ): CreateEnterpriseUserManagedExpansionMutationResult!
+  updateEnterpriseUserManagedExpansionStatus(
+    expansionId: UUID!
+    newStatus: EnterpriseUserManagedExpansionStatus!
+  ): UpdateEnterpriseUserManagedExpansionStatusMutationResult!
+  toggleOnboardingChecklistEntry(
+    entryKey: OnboardingChecklistEntryKey
+    status: OnboardingChecklistStatus
+  ): toggleOnboardingChecklistEntryResult!
+  generateServerlessPexUrl(
+    filenames: [String!]!
+    method: S3ClientMethod!
+  ): [ServerlessPexUploadUrl!]!
+  launchNonIsolatedRun(executionParams: ExecutionParams!): LaunchRunResult!
+  createSecret(
+    locationNames: [String]
+    scopes: SecretScopesInput!
+    secretName: String!
+    secretValue: String!
+  ): CreateOrUpdateSecretResult!
+  updateSecret(
+    locationNames: [String]
+    scopes: SecretScopesInput!
+    secretId: String!
+    secretName: String!
+    secretValue: String!
+  ): CreateOrUpdateSecretResult!
+  deleteSecret(secretId: String!): DeleteSecretResult!
+  syncSecrets(secrets: [SecretInput]!): SyncSecretsResult!
+  createOrUpdateSecretForScopes(
+    locationName: String
+    scopes: SecretScopesInput!
+    secretName: String!
+    secretValue: String!
+  ): CreateOrUpdateSecretResult!
+  markCliEvent(
+    durationSeconds: Float!
+    eventType: CliEventType!
+    message: String
+    success: Boolean
+    tags: [String]
+  ): String
+  dismissUserNuxChecklistEntry(entryKey: String!): UserNuxChecklistEntry!
+  resetLoadedCodeSetupStage: ResetLoadedCodeSetupStageSuccess!
+  createOrUpdateTeam(name: String!): CreateOrUpdateTeamMutationResult!
+  renameTeam(name: String!, teamId: String!): RenameTeamResult!
+  deleteTeam(teamId: String!): DeleteTeamMutationResult!
+  createCustomRole(
+    customRoleDeploymentScope: CustomRoleDeploymentScope!
+    customRolePermissions: [CustomRolePermission!]!
+    description: String!
+    iconName: String!
+    name: String!
+  ): CreateOrUpdateCustomRoleMutationResult!
+  updateCustomRole(
+    customRoleId: String!
+    customRolePermissions: [CustomRolePermission!]!
+    description: String!
+    iconName: String!
+    name: String!
+  ): CreateOrUpdateCustomRoleMutationResult!
+  deleteCustomRole(customRoleId: String!): DeleteCustomRoleMutationResult!
+  addMemberToTeam(memberId: Int!, teamId: String!): AddMemberToTeamMutationResult!
+  removeMemberFromTeam(memberId: Int!, teamId: String!): RemoveMemberFromTeamMutationResult!
+  createOrUpdateTeamPermission(
+    customRoleId: String
+    deploymentId: Int
+    deploymentScope: PermissionDeploymentScope!
+    grant: PermissionGrant!
+    locationGrants: [LocationScopedGrantInput]
+    teamId: String!
+  ): CreateOrUpdateTeamPermissionMutationResult!
+  removeTeamPermission(
+    deploymentId: Int
+    deploymentScope: PermissionDeploymentScope!
+    teamId: String!
+  ): RemoveTeamPermissionMutationResult!
+  setScimSyncEnabled(enabled: Boolean): SetScimSyncEnabledResult!
+  createOrUpdateMetrics(metrics: [MetricInputs]): CreateOrUpdateMetricsResult!
+  createOrUpdateCostMultiplier(
+    costMultiplier: Float
+    metricKey: String!
+  ): UpdateMetricCustomizationsResult!
+  submitCostInformationForMetrics(
+    costInfo: [CostInformation!]
+    end: Float!
+    metricName: String!
+    start: Float!
+  ): CreateOrUpdateMetricsResult!
+  updateReportingDeploymentSettings(
+    metadataKeys: [String!]
+  ): UpdateReportingDeploymentSettingsResult!
+  updateMetricCustomizations(
+    customizations: [InsightsMetricCustomizationInput!]!
+  ): UpdateMetricCustomizationsResult!
+  anomalyDetectionInference(modelVersion: String!, params: GenericScalar!): AnomalyDetectionResult!
+  shareFeedback(input: ShareFeedbackInput!): ShareFeedbackMutationResult!
+  addUserFavoriteAsset(assetKey: AssetKeyInput!): AddOrRemoveUserFavoriteAssetMutationResult!
+  removeUserFavoriteAsset(assetKey: AssetKeyInput!): AddOrRemoveUserFavoriteAssetMutationResult!
+}
+
+input ReexecutionParams {
+  parentRunId: String!
+  strategy: ReexecutionStrategy!
+  extraTags: [ExecutionTag!]
+  useParentRunTags: Boolean
+}
+
+enum ReexecutionStrategy {
+  FROM_ASSET_FAILURE
+  FROM_FAILURE
+  ALL_STEPS
+}
+
+union SensorDryRunResult = PythonError | SensorNotFoundError | DryRunInstigationTick
+
+union ScheduleDryRunResult = DryRunInstigationTick | PythonError | ScheduleNotFoundError
+
+union TerminateRunsResultOrError = TerminateRunsResult | PythonError
+
+type TerminateRunsResult {
+  terminateRunResults: [TerminateRunResult!]!
+}
+
+union AssetWipeMutationResult =
+  | AssetNotFoundError
+  | UnauthorizedError
+  | PythonError
+  | UnsupportedOperationError
+  | AssetWipeSuccess
+
+type AssetWipeSuccess {
+  assetPartitionRanges: [AssetPartitionRange!]!
+}
+
+type AssetPartitionRange {
+  assetKey: AssetKey!
+  partitionRange: PartitionRange
+}
+
+type PartitionRange {
+  start: String!
+  end: String!
+}
+
+union ReportRunlessAssetEventsResult =
+  | UnauthorizedError
+  | PythonError
+  | ReportRunlessAssetEventsSuccess
+
+type ReportRunlessAssetEventsSuccess {
+  assetKey: AssetKey!
+}
+
+union ResumeBackfillResult = ResumeBackfillSuccess | UnauthorizedError | PythonError
+
+type ResumeBackfillSuccess {
+  backfillId: String!
+}
+
+union CancelBackfillResult = CancelBackfillSuccess | UnauthorizedError | PythonError
+
+type CancelBackfillSuccess {
+  backfillId: String!
+}
+
+union LogTelemetryMutationResult = LogTelemetrySuccess | PythonError
+
+type LogTelemetrySuccess {
+  action: String!
+}
+
+union AddDynamicPartitionResult =
+  | AddDynamicPartitionSuccess
+  | UnauthorizedError
+  | PythonError
+  | DuplicateDynamicPartitionError
+
+type AddDynamicPartitionSuccess {
+  partitionsDefName: String!
+  partitionKey: String!
+}
+
+union DeleteDynamicPartitionsResult =
+  | DeleteDynamicPartitionsSuccess
+  | UnauthorizedError
+  | PythonError
+
+type DeleteDynamicPartitionsSuccess {
+  partitionsDefName: String!
+}
+
+union AddLocationMutationResult =
+  | WorkspaceEntry
+  | PythonError
+  | UnauthorizedError
+  | InvalidLocationError
+
+type InvalidLocationError implements Error {
+  message: String!
+  errors: [String]!
+}
+
+input LocationSelector {
+  name: String!
+  image: String
+  pythonFile: String
+  packageName: String
+  moduleName: String
+  workingDirectory: String
+  executablePath: String
+  attribute: String
+  commitHash: String
+  url: String
+  agentQueue: String
+  autoloadDefsModuleName: String
+}
+
+union UpdateLocationMutationResult = WorkspaceEntry | PythonError | UnauthorizedError
+
+union AddOrUpdateLocationMutationResult =
+  | WorkspaceEntry
+  | PythonError
+  | UnauthorizedError
+  | InvalidLocationError
+
+union DeleteLocationMutationResult = DeleteLocationSuccess | PythonError | UnauthorizedError
+
+type DeleteLocationSuccess {
+  locationName: String!
+}
+
+union ReconcileLocationsMutationResult =
+  | ReconcileLocationsSuccess
+  | PythonError
+  | UnauthorizedError
+  | InvalidLocationError
+
+type ReconcileLocationsSuccess {
+  locations: [WorkspaceEntry]!
+}
+
+union CreateTemplateRepoResult =
+  | CreateTemplateRepoSuccess
+  | SetupRepoError
+  | PythonError
+  | UnauthorizedError
+  | GitHubError
+  | InvalidTemplateRepoError
+
+type CreateTemplateRepoSuccess {
+  repoUrl: String!
+}
+
+type SetupRepoError implements Error {
+  message: String!
+}
+
+type GitHubError implements Error {
+  message: String!
+}
+
+type InvalidTemplateRepoError implements Error {
+  message: String!
+}
+
+enum GitProvider {
+  GITHUB
+  GITLAB
+}
+
+union ScaffoldDagsterInPullRequestResult =
+  | ScaffoldDagsterInDbtRepoSuccess
+  | SetupRepoError
+  | PythonError
+  | UnauthorizedError
+  | GitHubError
+  | MissingPermissionsError
+
+type ScaffoldDagsterInDbtRepoSuccess {
+  pullRequestUrl: String!
+  branchName: String!
+}
+
+type MissingPermissionsError implements Error {
+  message: String!
+  url: String!
+}
+
+union MergePullRequestResult =
+  | MergePullRequestSuccess
+  | SetupRepoError
+  | PythonError
+  | UnauthorizedError
+  | GitHubError
+  | MissingPermissionsError
+
+type MergePullRequestSuccess {
+  pullRequestUrl: String!
+}
+
+union CloneDBTRepoResult =
+  | CloneDBTRepoSuccess
+  | SetupRepoError
+  | PythonError
+  | UnauthorizedError
+  | GitHubError
+
+type CloneDBTRepoSuccess {
+  repoUrl: String!
+}
+
+union SelectInstallationResult =
+  | GithubAppInstallation
+  | InstallationNotFoundError
+  | PythonError
+  | UnauthorizedError
+  | GitHubError
+
+type InstallationNotFoundError implements Error {
+  message: String!
+}
+
+union DeselectInstallationResult =
+  | DeselectInstallationSuccess
+  | PythonError
+  | GitHubError
+  | UnauthorizedError
+
+type DeselectInstallationSuccess {
+  ok: Boolean!
+}
+
+union RestartGitHubActionsRunMutationResult =
+  | RestartGitCISuccess
+  | PythonError
+  | GitHubError
+  | UnauthorizedError
+  | RestartGitCIError
+
+type RestartGitCISuccess {
+  ok: Boolean!
+}
+
+type RestartGitCIError implements Error {
+  message: String!
+}
+
+union PingLocationMutationResult = PingLocationSuccess | PythonError
+
+type PingLocationSuccess {
+  locationName: String!
+}
+
+union AddLocationFromDocumentMutationResult =
+  | WorkspaceEntry
+  | PythonError
+  | UnauthorizedError
+  | InvalidLocationError
+  | CodeLocationLimitError
+
+type CodeLocationLimitError implements Error {
+  message: String!
+}
+
+union UpdateLocationFromDocumentMutationResult =
+  | WorkspaceEntry
+  | PythonError
+  | UnauthorizedError
+  | InvalidLocationError
+
+union AddOrUpdateLocationFromDocumentMutationResult =
+  | WorkspaceEntry
+  | PythonError
+  | UnauthorizedError
+  | InvalidLocationError
+
+union ReconcileLocationsFromDocumentMutationResult =
+  | ReconcileLocationsSuccess
+  | PythonError
+  | UnauthorizedError
+  | InvalidLocationError
+
+union DeployLocationsMutationResult =
+  | DeployLocationsSuccess
+  | PythonError
+  | UnauthorizedError
+  | InvalidLocationError
+
+type DeployLocationsSuccess {
+  locations: [WorkspaceEntry]!
+}
+
+union DagsterCloudUserWithScopedPermissionGrantsOrError =
+  | DagsterCloudUserWithScopedPermissionGrants
+  | CantRemoveAllAdminsError
+  | UserNotFoundError
+  | UnauthorizedError
+  | UserLimitError
+  | PythonError
+
+input CreateOrUpdateCloudUserPermissionsInput {
+  email: String!
+  deploymentId: Int
+  grant: PermissionGrant!
+  customRoleId: String
+  locationGrants: [LocationScopedGrantInput]
+  deploymentScope: PermissionDeploymentScope!
+}
+
+input LocationScopedGrantInput {
+  locationName: String!
+  grant: PermissionGrant!
+  customRoleId: String
+}
+
+input RemoveUserPermissionsInput {
+  email: String!
+  deploymentId: Int
+  deploymentScope: PermissionDeploymentScope!
+}
+
+union AddUserToOrganizationMutationResult =
+  | AddUserToOrganizationSuccess
+  | PythonError
+  | UnauthorizedError
+  | UserLimitError
+
+type AddUserToOrganizationSuccess {
+  email: String!
+  userWithGrants: DagsterCloudUserWithScopedPermissionGrants!
+}
+
+union RemoveUserFromOrganizationMutationResult =
+  | RemoveUserFromOrganizationSuccess
+  | PythonError
+  | UnauthorizedError
+  | CantRemoveAllAdminsError
+
+type RemoveUserFromOrganizationSuccess {
+  email: String!
+}
+
+union CreateAgentTokenResult = DagsterCloudAgentToken | UnauthorizedError | PythonError
+
+union RevokeAgentTokenResult =
+  | DagsterCloudAgentToken
+  | DagsterCloudTokenNotFoundError
+  | UnauthorizedError
+  | PythonError
+
+type DagsterCloudTokenNotFoundError implements Error {
+  message: String!
+}
+
+union CreateUserTokenResult = DagsterCloudUserToken | UnauthorizedError | PythonError
+
+union RevokeUserTokenResult =
+  | DagsterCloudUserToken
+  | DagsterCloudTokenNotFoundError
+  | UnauthorizedError
+  | PythonError
+
+union EditDescUserTokenResult =
+  | DagsterCloudUserToken
+  | DagsterCloudTokenNotFoundError
+  | UnauthorizedError
+  | PythonError
+
+union EditDescAgentTokenResult =
+  | DagsterCloudAgentToken
+  | DagsterCloudTokenNotFoundError
+  | UnauthorizedError
+  | PythonError
+
+union ModifyAgentTokenResult = DagsterCloudAgentToken | UnauthorizedError | PythonError
+
+input CreateOrUpdateCloudAgentPermissionsInput {
+  agentTokenId: Int!
+  deploymentId: Int
+  grant: PermissionGrant!
+  deploymentScope: PermissionDeploymentScope!
+}
+
+input RemoveAgentPermissionsInput {
+  agentTokenId: Int!
+  deploymentId: Int
+  deploymentScope: PermissionDeploymentScope!
+}
+
+union CreateApiTokenResult = DagsterCloudApiToken | UnauthorizedError | PythonError
+
+union RevokeApiTokenResult =
+  | DagsterCloudApiToken
+  | DagsterCloudTokenNotFoundError
+  | UnauthorizedError
+  | PythonError
+
+union EditApiTokenDescriptionResult =
+  | DagsterCloudApiToken
+  | DagsterCloudTokenNotFoundError
+  | UnauthorizedError
+  | PythonError
+
+union CreateDeploymentResult =
+  | DagsterCloudDeployment
+  | DeploymentNotFoundError
+  | UnauthorizedError
+  | PythonError
+  | DuplicateDeploymentError
+  | DeploymentLimitError
+
+type DuplicateDeploymentError implements Error {
+  message: String!
+}
+
+type DeploymentLimitError implements Error {
+  message: String!
+}
+
+union DeleteDeploymentResult =
+  | DagsterCloudDeployment
+  | DeploymentNotFoundError
+  | DeleteFinalDeploymentError
+  | UnauthorizedError
+  | PythonError
+
+type DeleteFinalDeploymentError implements Error {
+  message: String!
+}
+
+union SetDeploymentSettingsResult =
+  | DeploymentSettings
+  | DeploymentNotFoundError
+  | DuplicateDeploymentError
+  | DeleteFinalDeploymentError
+  | UnauthorizedError
+  | PythonError
+
+input DeploymentSettingsInput {
+  settings: GenericScalar
+}
+
+input CreateOrUpdateBranchDeploymentInput {
+  repoName: String!
+  branchName: String!
+  branchUrl: String
+  pullRequestUrl: String
+  pullRequestStatus: PullRequestStatus
+  pullRequestNumber: String
+}
+
+input DeploymentCommitInput {
+  commitHash: String!
+  timestamp: Float!
+  commitMessage: String
+  commitUrl: String
+  authorName: String
+  authorEmail: String
+  authorAvatarUrl: String
+}
+
+enum SnapshotBaseDeploymentCondition {
+  ON_CREATE
+  ON_UPDATE
+}
+
+union UpdateDeploymentAgentTypeResult =
+  | DagsterCloudDeployment
+  | DeploymentNotFoundError
+  | UnauthorizedError
+  | PythonError
+
+union SetOrganizationSettingsResult = OrganizationSettings | UnauthorizedError | PythonError
+
+input OrganizationSettingsInput {
+  settings: GenericScalar
+}
+
+union ReconcileAlertPoliciesResult =
+  | ReconcileAlertPoliciesSuccess
+  | PythonError
+  | UnauthorizedError
+  | InvalidAlertPolicyError
+
+type ReconcileAlertPoliciesSuccess {
+  alertPolicies: [AlertPolicy]!
+}
+
+type InvalidAlertPolicyError implements Error {
+  message: String!
+  errors: [String!]!
+}
+
+union CreateOrUpdateAlertPolicyFromDocumentMutationResult =
+  | AlertPolicy
+  | PythonError
+  | UnauthorizedError
+  | InvalidAlertPolicyError
+
+union DeleteAlertPolicyMutationResult = DeleteAlertPolicySuccess | PythonError | UnauthorizedError
+
+type DeleteAlertPolicySuccess {
+  alertPolicyName: String!
+}
+
+union SendSampleNotificationMutationResult =
+  | SendSampleNotificationSuccess
+  | SendSampleNotificationFailure
+  | PythonError
+  | InvalidAlertPolicyError
+  | UnauthorizedError
+
+type SendSampleNotificationSuccess {
+  message: String!
+}
+
+type SendSampleNotificationFailure {
+  message: String!
+}
+
+union CreateOrUpdateCatalogViewMutationResult =
+  | CatalogView
+  | PythonError
+  | UnauthorizedError
+  | SelectionCantBeDeletedError
+  | SelectionNotResolvableError
+
+type SelectionCantBeDeletedError implements Error {
+  message: String!
+}
+
+type SelectionNotResolvableError implements Error {
+  message: String!
+}
+
+input CatalogViewSelectionInput {
+  tags: [TagAssetSelectionInput!]!
+  kinds: [String!]!
+  owners: [OwnerAssetSelectionInput!]!
+  groups: [GroupAssetSelectionInput!]!
+  codeLocations: [CodeLocationAssetSelectionInput!]!
+  columns: [String!]!
+  tableNames: [String]
+  columnTags: [TagAssetSelectionInput!]!
+  querySelection: String = null
+}
+
+union AddPinnedItemMutationResult = AddPinnedItemSuccess | PythonError | UnauthorizedError
+
+type AddPinnedItemSuccess {
+  item: PinnableItem!
+  pinned: Boolean!
+}
+
+union RemovePinnedItemMutationResult = RemovePinnedItemSuccess | PythonError | UnauthorizedError
+
+type RemovePinnedItemSuccess {
+  itemId: String!
+  pinned: Boolean!
+}
+
+union StripeSetupIntentMutationResult =
+  | StripeSetupIntent
+  | PythonError
+  | UnauthorizedError
+  | FailedToSetupStripe
+
+type StripeSetupIntent {
+  clientSecret: String!
+}
+
+type FailedToSetupStripe implements Error {
+  message: String!
+}
+
+union RemoveStripePaymentMethodMutationResult =
+  | RemoveStripePaymentMethodSucceeded
+  | UnknownStripePaymentMethodError
+  | RemoveStripePaymentFailedError
+  | PythonError
+  | UnauthorizedError
+
+type RemoveStripePaymentMethodSucceeded {
+  status: String!
+}
+
+type UnknownStripePaymentMethodError implements Error {
+  message: String!
+}
+
+type RemoveStripePaymentFailedError implements Error {
+  message: String!
+}
+
+union UpdateStripeCustomerMutationResult = StripeCustomer | PythonError | UnauthorizedError
+
+union UpdateStripeCustomerTaxIDsMutationResult =
+  | UpdateCustomerTaxIDError
+  | UpdateCustomerTaxIDSucceeded
+  | PythonError
+  | UnauthorizedError
+
+type UpdateCustomerTaxIDError implements Error {
+  message: String!
+}
+
+type UpdateCustomerTaxIDSucceeded {
+  status: String!
+}
+
+input TaxIDInput {
+  value: String!
+  type: String!
+}
+
+union UpdateStripeSubscriptionMutationResult =
+  | StripeSubscription
+  | PythonError
+  | UnauthorizedError
+  | CustomerPaymentMethodRequired
+  | CustomerPaymentRequired
+  | UpdateStripeSubscriptionFailed
+
+type CustomerPaymentMethodRequired implements Error {
+  message: String!
+}
+
+type CustomerPaymentRequired implements Error {
+  message: String!
+  hostedInvoiceUrl: String!
+}
+
+type UpdateStripeSubscriptionFailed implements Error {
+  message: String!
+}
+
+union CreateEnterpriseUserManagedExpansionMutationResult =
+  | EnterpriseUserManagedExpansion
+  | PythonError
+  | UnauthorizedError
+
+union UpdateEnterpriseUserManagedExpansionStatusMutationResult =
+  | EnterpriseUserManagedExpansion
+  | PythonError
+  | UnauthorizedError
+  | EnterpriseUserManagedExpansionNotFoundError
+
+type EnterpriseUserManagedExpansionNotFoundError implements Error {
+  message: String!
+}
+
+union toggleOnboardingChecklistEntryResult =
+  | OnboardingChecklistEntry
+  | UnauthorizedError
+  | PythonError
+
+type ServerlessPexUploadUrl {
+  url: String
+}
+
+enum S3ClientMethod {
+  GET
+  PUT
+}
+
+union CreateOrUpdateSecretResult =
+  | CreateOrUpdateSecretSuccess
+  | PythonError
+  | UnauthorizedError
+  | TooManySecretsError
+  | InvalidSecretInputError
+  | SecretAlreadyExistsError
+
+type CreateOrUpdateSecretSuccess {
+  secret: Secret!
+}
+
+type TooManySecretsError implements Error {
+  message: String!
+}
+
+type InvalidSecretInputError implements Error {
+  message: String!
+}
+
+type SecretAlreadyExistsError implements Error {
+  message: String!
+}
+
+union DeleteSecretResult = DeleteSecretSuccess | PythonError | UnauthorizedError
+
+type DeleteSecretSuccess {
+  secretId: String!
+}
+
+union SyncSecretsResult =
+  | SyncSecretsSuccess
+  | PythonError
+  | UnauthorizedError
+  | TooManySecretsError
+  | InvalidSecretInputError
+
+type SyncSecretsSuccess {
+  secrets: [Secret]
+  removedSecrets: [String]
+}
+
+input SecretInput {
+  scopes: SecretScopesInput!
+  secretName: String!
+  secretValue: String!
+  locationNames: [String]
+}
+
+enum CliEventType {
+  DEPLOY
+  UPLOAD
+  BUILD
+}
+
+type ResetLoadedCodeSetupStageSuccess {
+  orgId: Int!
+}
+
+union CreateOrUpdateTeamMutationResult = CreateOrUpdateTeamSuccess | PythonError | UnauthorizedError
+
+type CreateOrUpdateTeamSuccess {
+  team: DagsterCloudTeam!
+}
+
+union RenameTeamResult = DagsterCloudTeam | PythonError | UnauthorizedError
+
+union DeleteTeamMutationResult = DeleteTeamSuccess | PythonError | UnauthorizedError
+
+type DeleteTeamSuccess {
+  teamId: String!
+}
+
+union CreateOrUpdateCustomRoleMutationResult =
+  | CreateOrUpdateCustomRoleSuccess
+  | PythonError
+  | UnauthorizedError
+
+type CreateOrUpdateCustomRoleSuccess {
+  customRole: CustomRole!
+}
+
+union DeleteCustomRoleMutationResult =
+  | DeleteCustomRoleSuccess
+  | PythonError
+  | UnauthorizedError
+  | CustomRoleInUseError
+
+type DeleteCustomRoleSuccess {
+  customRoleId: String!
+}
+
+type CustomRoleInUseError implements Error {
+  message: String!
+}
+
+union AddMemberToTeamMutationResult =
+  | AddMemberToTeamSuccess
+  | PythonError
+  | UnauthorizedError
+  | UserLimitError
+
+type AddMemberToTeamSuccess {
+  team: DagsterCloudTeam!
+}
+
+union RemoveMemberFromTeamMutationResult =
+  | RemoveMemberFromTeamSuccess
+  | PythonError
+  | UnauthorizedError
+
+type RemoveMemberFromTeamSuccess {
+  team: DagsterCloudTeam!
+}
+
+union CreateOrUpdateTeamPermissionMutationResult =
+  | CreateOrUpdateTeamPermissionSuccess
+  | PythonError
+  | UnauthorizedError
+  | UserLimitError
+
+type CreateOrUpdateTeamPermissionSuccess {
+  teamPermissions: DagsterCloudTeamPermissions!
+}
+
+union RemoveTeamPermissionMutationResult =
+  | RemoveTeamPermissionSuccess
+  | PythonError
+  | UnauthorizedError
+  | CantRemoveAllAdminsError
+
+type RemoveTeamPermissionSuccess {
+  teamPermissions: DagsterCloudTeamPermissions!
+}
+
+union SetScimSyncEnabledResult = SetScimSyncEnabledSuccess | PythonError | UnauthorizedError
+
+type SetScimSyncEnabledSuccess {
+  enabled: Boolean!
+}
+
+union CreateOrUpdateMetricsResult =
+  | CreateOrUpdateMetricsFailed
+  | PythonError
+  | UnauthorizedError
+  | CreateOrUpdateMetricsSuccess
+
+type CreateOrUpdateMetricsFailed implements Error {
+  message: String!
+}
+
+type CreateOrUpdateMetricsSuccess {
+  status: String!
+}
+
+input MetricInputs {
+  runId: String!
+  stepKey: String
+  codeLocationName: String
+  repositoryName: String
+  assetMetricDefinitions: [AssetMetricInputs]
+  jobMetricDefinitions: [JobMetricInputs]
+}
+
+input AssetMetricInputs {
+  assetKey: String!
+  assetGroup: String
+  partition: String
+  metricValues: [MetricEntryInput]
+}
+
+input MetricEntryInput {
+  metricName: String!
+  metricValue: Float!
+}
+
+input JobMetricInputs {
+  metricValues: [MetricEntryInput]
+}
+
+union UpdateMetricCustomizationsResult =
+  | PythonError
+  | UnauthorizedError
+  | UpdateMetricCustomizationsSuccess
+  | UpdateMetricCustomizationsFailureError
+
+type UpdateMetricCustomizationsSuccess {
+  status: String!
+  customizations: [InsightsMetricCustomization!]!
+  costMultipliers: [InsightsMetricCostMultiplier!]!
+}
+
+type UpdateMetricCustomizationsFailureError {
+  message: String!
+}
+
+input CostInformation {
+  opaqueId: String!
+  cost: Float!
+}
+
+union UpdateReportingDeploymentSettingsResult =
+  | PythonError
+  | UnauthorizedError
+  | UpdateReportingDeploymentSettingsSuccess
+
+type UpdateReportingDeploymentSettingsSuccess {
+  status: String!
+}
+
+input InsightsMetricCustomizationInput {
+  metricKey: String!
+  metricShown: Boolean!
+  customMetricName: String
+  customMetricDescription: String
+  customMetricIcon: String
+}
+
+union AnomalyDetectionResult = AnomalyDetectionSuccess | AnomalyDetectionFailure | PythonError
+
+type AnomalyDetectionSuccess {
+  response: GenericScalar!
+}
+
+type AnomalyDetectionFailure {
+  message: String!
+}
+
+union ShareFeedbackMutationResult =
+  | ShareFeedbackSuccess
+  | ShareFeedbackSubmissionError
+  | PythonError
+
+type ShareFeedbackSuccess {
+  success: Boolean!
+}
+
+type ShareFeedbackSubmissionError implements Error {
+  message: String!
+}
+
+input ShareFeedbackInput {
+  path: String!
+  url: String!
+  subject: String!
+  description: String!
+  priority: String!
+  tags: [String]
+}
+
+union AddOrRemoveUserFavoriteAssetMutationResult = AssetKey | AssetKeyNotFoundError | PythonError
+
+type AssetKeyNotFoundError implements Error {
+  message: String!
+  assetKey: AssetKey!
+}
+
+type CloudSubscription {
+  pipelineRunLogs(runId: ID!, cursor: String): PipelineRunLogsSubscriptionPayload!
+  capturedLogs(logKey: [String!]!, cursor: String): CapturedLogs!
+  locationStateChangeEvents: LocationStateChangeSubscription!
+  assetEvents(eventTypes: [DagsterEventType!]!, offset: Int): DagsterRunEvent
+}
