@@ -27,9 +27,9 @@ Using pipes with Serverless Compute is slightly different. First, you can't spec
 
 Second, we use Volumes for context loading and messaging writing because dbfs is unreliable for Serverless Compute.
 
-<CodeExample path="docs_snippets/docs_snippets/integrations/databricks/dagster_code.py" language="python" />
+<CodeExample path="docs_snippets/docs_snippets/integrations/databricks/dagster_code_serverless.py" language="python" />
 
-<CodeExample path="docs_snippets/docs_snippets/integrations/databricks/databricks_code.py" language="python" />
+<CodeExample path="docs_snippets/docs_snippets/integrations/databricks/databricks_code_serverless.py" language="python" />
 
 ## About Databricks
 
