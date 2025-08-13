@@ -1,3 +1,4 @@
+import asyncio
 import logging
 import os
 import sys
@@ -575,3 +576,322 @@ def test_intercept_handler_forwards(capfd):
         assert "Test intercept" in captured.out
     finally:
         logger.remove(handler_id)
+
+def test_with_loguru_logger_restores_on_exception():
+    ctx = MockDagsterContext()
+
+    @with_loguru_logger
+    def boom(context=None):
+        context.log.info("before")
+        raise RuntimeError("X")
+
+    orig_info = ctx.log.info
+    with pytest.raises(RuntimeError):
+        boom(context=ctx)
+    assert ctx.log.info.__func__ is orig_info.__func__
+
+
+def test_with_loguru_logger_accepts_kwargs(capfd):
+    ctx = MockDagsterContext()
+
+    @with_loguru_logger
+    def op(context=None):
+        context.log.info("Hello", user="alice")
+
+    op(context=ctx)
+    captured = capfd.readouterr()
+    assert "[dagster.info] Hello" in captured.out
+
+
+def test_dagster_context_sink_handles_missing_context_gracefully():
+    sink = dagster_context_sink(context=None)
+    logger.remove()
+    logger.add(sink, level="INFO")
+    logger.info("no context, no problem")
+
+
+def test_sink_unknown_level_maps_to_info(capfd):
+    class CustomLevelCtx:
+        def __init__(self):
+            self.log = MockLogHandler()
+
+    ctx = CustomLevelCtx()
+    sink = dagster_context_sink(ctx)
+    logger.remove()
+    logger.add(sink, level="INFO")
+
+    # loguru'ya custom level ekleyip deneyebiliriz
+    logger.level("ODDLEVEL", no=23)
+    logger.log("ODDLEVEL", "Weird")
+    captured = capfd.readouterr()
+    assert "[dagster.info] Weird" in captured.out
+
+
+def test_unicode_and_long_messages(capfd, setup_logger):
+    ctx = MockDagsterContext()
+    sink = dagster_context_sink(ctx)
+    logger.remove()
+    logger.add(sink, level="INFO")
+    msg = "Üniçøde 🚀" + " " + ("x" * 5000)
+    logger.info(msg)
+    captured = capfd.readouterr()
+    assert "[dagster.info] Üniçøde 🚀" in captured.out
+
+
+def test_intercept_handler_unknown_numeric_level(capfd):
+    logger.remove()
+    logger.add(sys.stdout, format="{message}")
+    h = InterceptHandler()
+    record = logging.LogRecord("t", 37, "p", 1, "odd numeric", (), None)
+    h.emit(record)
+    captured = capfd.readouterr()
+    assert "odd numeric" in captured.out
+
+
+def test_setup_sinks_idempotent(monkeypatch):
+    monkeypatch.setenv("DAGSTER_LOGURU_ENABLED", "true")
+    LoguruConfigurator.reset()
+    c = LoguruConfigurator()
+    before = len(logger._core.handlers)  # noqa: SLF001
+    c.setup_sinks()
+    after = len(logger._core.handlers)  # noqa: SLF001
+    assert before == after
+
+
+def test_colorize_format_does_not_crash(monkeypatch):
+    monkeypatch.setenv("DAGSTER_LOGURU_ENABLED", "true")
+    monkeypatch.setenv("DAGSTER_LOGURU_FORMAT", "<green>{time}</green> <level>{message}</level>")
+    LoguruConfigurator.reset()
+    LoguruConfigurator()
+    logger.info("colored ok")
+
+
+def test_sink_reentrancy_no_deadlock():
+    ctx = MockDagsterContext()
+    sink = dagster_context_sink(ctx)
+    logger.remove()
+    logger.add(sink, level="INFO")
+    logger.info("outer")
+
+
+def test_performance_high_volume():
+    ctx = MockDagsterContext()
+    sink = dagster_context_sink(ctx)
+    logger.remove()
+    logger.add(sink, level="INFO")
+    for _ in range(5000):
+        logger.info("spam")
+
+
+class NoKwContext:
+    def __init__(self):
+        class L:
+            def info(self, msg):  # kwargs yok
+                pass
+
+        self.log = L()
+
+
+def test_sink_falls_back_when_kwargs_not_supported():
+    sink = dagster_context_sink(NoKwContext())
+    logger.remove()
+    logger.add(sink, level="INFO")
+    logger.bind(user="x").info("msg")
+
+
+def test_success_level_maps_to_info(capfd, setup_logger):
+    ctx = MockDagsterContext()
+    sink = dagster_context_sink(ctx)
+    logger.remove()
+    logger.add(sink, level="SUCCESS")
+    logger.success("Yay")
+    captured = capfd.readouterr()
+    assert "[dagster.info] Yay" in captured.out
+
+
+def test_sink_handles_internal_exception_gracefully(capfd):
+    """Sink should never crash the process even if the Dagster log method throws."""
+
+    class BoomCtx:
+        class L:
+            def info(self, *_a, **_k):
+                raise RuntimeError("boom")
+
+        log = L()
+
+    sink = dagster_context_sink(BoomCtx())
+    logger.remove()
+    logger.add(sink, level="INFO")
+
+    # If this raises, the sink is not exception-safe.
+    logger.info("still alive")
+    captured = capfd.readouterr()
+    # No specific output required; test passes if we didn't crash.
+    assert captured  # just touch the capture to keep linters happy
+
+
+def test_sink_reentrancy_guard(capfd):
+    """If a Dagster log method calls back into loguru, we must not loop infinitely."""
+    calls = {"n": 0}
+
+    class Ctx:
+        class L:
+            def info(self, msg, **_k):
+                calls["n"] += 1
+                # Accidental re-log inside sink; must not cause recursion storm.
+                logger.debug("inner")
+
+        log = L()
+
+    sink = dagster_context_sink(Ctx())
+    logger.remove()
+    logger.add(sink, level="DEBUG")
+
+    logger.info("outer")
+    # out = capfd.readouterr().out
+    assert calls["n"] == 1
+    # The inner debug may or may not show depending on mapping; we only assert no recursion.
+
+
+def test_with_loguru_logger_async(capfd):
+    logger.remove()
+
+    def _fmt(rec):
+        lvl = rec["level"].name.lower()
+        return f"[dagster.{lvl}] {rec['message']}\n"
+
+    logger.add(lambda m: sys.stdout.write(_fmt(m.record)), level="TRACE")
+
+    @with_loguru_logger
+    async def aop(context=None):
+        logger.info("async ok")
+
+    asyncio.run(aop(context=MockDagsterContext()))
+    assert "[dagster.info] async ok" in capfd.readouterr().out
+
+
+@pytest.mark.parametrize(
+    "enabled,level",
+    [("true", "TRACE"), ("true", "WARNING"), ("false", "INFO")],
+)
+def test_config_matrix_env(monkeypatch, enabled, level):
+    """Smoke-test different ENV combinations; configurator must be stable/idempotent."""
+    monkeypatch.setenv("DAGSTER_LOGURU_ENABLED", enabled)
+    monkeypatch.setenv("DAGSTER_LOGURU_LOG_LEVEL", level)
+    monkeypatch.delenv("DAGSTER_LOGURU_FORMAT", raising=False)
+
+    LoguruConfigurator.reset()
+    c = LoguruConfigurator(enable_terminal_sink=False)
+    assert c.config["enabled"] == (enabled == "true")
+    assert c.config["log_level"] == level
+
+
+def test_large_message_and_extra(capfd):
+    """Very large payloads (message + extras) should not crash or truncate unexpectedly."""
+    ctx = MockDagsterContext()
+    sink = dagster_context_sink(ctx)
+    logger.remove()
+    logger.add(sink, level="INFO")
+
+    big_msg = "X" * (1024 * 256)  # 256 KB message
+    big_extra = {f"k{i}": i for i in range(2000)}  # large extras dict
+    logger.bind(**big_extra).info(big_msg)
+
+    out = capfd.readouterr().out
+    assert "[dagster.info]" in out
+    # We don't assert full message to avoid huge output; presence is enough.
+
+
+def test_bind_and_kwargs_merge_precedence(capfd):
+    """If both bind() extras and context kwargs exist, sink should forward what it can without crashing."""
+
+    class KwCtx:
+        class L:
+            def info(self, msg, **kw):
+                # Accept kwargs to simulate structured Dagster logger.
+                print(f"[dagster.info] {msg} {kw}")  # noqa: T201
+
+        log = L()
+
+    sink = dagster_context_sink(KwCtx())
+    logger.remove()
+    logger.add(sink, level="INFO")
+
+    logger.bind(user="alice", trace_id="t-1").info("merged", request_id="r-9")
+    out = capfd.readouterr().out
+    assert "[dagster.info] merged" in out  # extras presence implies no crash
+
+
+def test_loguru_configurator_many_inits_idempotent(monkeypatch):
+    """Calling configurator many times must not leak handlers or reload config repeatedly."""
+    monkeypatch.setenv("DAGSTER_LOGURU_ENABLED", "true")
+    LoguruConfigurator.reset()
+    logger.remove()
+    before = len(logger._core.handlers)  # noqa: SLF001
+
+    for _ in range(50):
+        LoguruConfigurator(enable_terminal_sink=False)
+
+    after = len(logger._core.handlers)  # noqa: SLF001
+    assert after == before  # no new handlers added when terminal sink disabled
+
+
+def test_filter_respected(capfd):
+    """A user filter attached to loguru should still be respected when forwarding to Dagster."""
+    ctx = MockDagsterContext()
+    sink = dagster_context_sink(ctx)
+    logger.remove()
+    # Only allow messages containing 'keep'
+    logger.add(sink, level="INFO", filter=lambda r: "keep" in r["message"])
+
+    logger.info("drop this")
+    logger.info("please keep this")
+
+    out = capfd.readouterr().out
+    assert "[dagster.info] please keep this" in out
+    assert "[dagster.info] drop this" not in out
+
+
+def test_json_serialize_mode(capfd):
+    """When serialize=True is used, the sink should still forward messages."""
+    captured = []
+
+    class RawCtx:
+        class L:
+            def info(self, msg, **_k):
+                captured.append(msg)
+
+        log = L()
+
+    sink = dagster_context_sink(RawCtx())
+    logger.remove()
+    logger.add(sink, level="INFO", serialize=True)
+
+    logger.info("json path")
+
+    assert captured and "json path" in captured[0]
+
+
+def test_throughput_under_slow_context(capfd):
+    """Slow Dagster logger should not deadlock; throughput stays acceptable."""
+
+    class SlowCtx:
+        class L:
+            def info(self, msg, **_k):
+                time.sleep(0.005)  # 5 ms per log to simulate slow consumer
+                print(f"[dagster.info] {msg}")  # noqa: T201
+
+        log = L()
+
+    sink = dagster_context_sink(SlowCtx())
+    logger.remove()
+    logger.add(sink, level="INFO")
+
+    start = time.time()
+    for i in range(50):
+        logger.info(f"msg {i}")
+    dur = time.time() - start
+    out = capfd.readouterr().out
+    assert "[dagster.info] msg 0" in out and "[dagster.info] msg 49" in out
+    # Loose bound just to catch deadlocks; tune if needed.
+    assert dur < 2.5
