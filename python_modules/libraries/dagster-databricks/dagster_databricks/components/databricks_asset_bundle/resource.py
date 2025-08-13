@@ -8,6 +8,7 @@ from dagster import (
     ConfigurableResource,
     MaterializeResult,
 )
+from dagster._annotations import preview
 from dagster_shared.utils.cached_method import cached_method
 from databricks.sdk import WorkspaceClient
 from databricks.sdk.service import compute, jobs
@@ -19,6 +20,7 @@ from dagster_databricks.components.databricks_asset_bundle.configs import (
 )
 
 
+@preview
 class DatabricksWorkspace(ConfigurableResource):
     """Represents a workspace in Databricks and provides utilities
     to interact with the Databricks SDK.

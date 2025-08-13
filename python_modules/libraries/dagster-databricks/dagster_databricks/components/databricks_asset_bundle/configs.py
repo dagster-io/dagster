@@ -5,6 +5,7 @@ from typing import Any, Generic, Optional, Union
 
 import yaml
 from dagster import get_dagster_logger
+from dagster._annotations import preview
 from dagster_shared.record import IHaveNew, record, record_custom
 from databricks.sdk.service import jobs
 from typing_extensions import Self, TypeVar
@@ -410,6 +411,7 @@ class DatabricksJobTask(DatabricksBaseTask):
         )
 
 
+@preview
 @record_custom
 class DatabricksConfig(IHaveNew):
     databricks_config_path: Path
@@ -544,6 +546,7 @@ class DatabricksConfig(IHaveNew):
         return job_parameters
 
 
+@preview
 @record_custom
 class CustomConfig(IHaveNew):
     asset_name_prefix: str = "databricks_tasks"
