@@ -99,7 +99,7 @@ setup(
         "tabulate",
         "tomli<3",
         "tqdm<5",
-        'tzdata; platform_system=="Windows"',
+        "tzdata",
         "structlog",
         "sqlalchemy>=1.0,<3",
         "toposort>=1.0",
