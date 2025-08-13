@@ -174,7 +174,7 @@ def test_build_docs_success_in_published_package():
 
         # Install the wheel in the venv
         os.chdir(component_dir)
-        install_to_venv(venv_path, [f"dagster-dg-cli@{wheel_file}", "--no-deps"])
+        install_to_venv(venv_path, [f"dagster-dg-cli@{wheel_file}"])
 
         # Build the docs using the wheel copy of the package
         executable = get_venv_executable(venv_path, "dg")

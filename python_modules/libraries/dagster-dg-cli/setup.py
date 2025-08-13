@@ -37,6 +37,8 @@ setup(
     install_requires=[
         f"dagster-dg-core{pin}",
         f"dagster{pin}",
+        f"dagster-shared{pin}",
+        f"dagster-cloud-cli{pin}",
         "mcp; python_version>='3.10'",  # mcp not available for 3.9
         "typer",
     ],

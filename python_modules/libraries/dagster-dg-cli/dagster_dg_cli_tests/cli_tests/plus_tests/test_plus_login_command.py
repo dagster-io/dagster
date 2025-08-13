@@ -134,7 +134,7 @@ def test_setup_command_web(fixture_name, request: pytest.FixtureRequest):
             "dagster_shared.plus.login_server._generate_nonce",
             mock.Mock(return_value="ABCDEFGH"),
         ),
-        mock.patch("dagster_dg_cli.cli.plus.webbrowser.open", mock.Mock(return_value=True)),
+        mock.patch("dagster_dg_cli.cli.plus.login.webbrowser.open", mock.Mock(return_value=True)),
     ):
         # Send configuration response to CLI endpoint, HTTP response passed back in queue
         q = queue.Queue()
