@@ -577,6 +577,7 @@ def test_intercept_handler_forwards(capfd):
     finally:
         logger.remove(handler_id)
 
+
 def test_with_loguru_logger_restores_on_exception():
     ctx = MockDagsterContext()
 

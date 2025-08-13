@@ -7,6 +7,7 @@ from typing import Any, Callable
 
 from loguru import logger
 
+
 class InterceptHandler(logging.Handler):
     """Forwards standard logging records to Loguru."""
 
@@ -90,7 +91,7 @@ def dagster_context_sink(context: Any) -> Callable[[Any], None]:
         record = message.record
         level = record["level"].name
         msg = record["message"]
-        extras = record["extra"] or {}
+        extras = record["extra"] if isinstance(record.get("extra"), dict) else {}
 
         level_map = {
             "TRACE": "debug",
