@@ -7,7 +7,6 @@ from typing import Any, Callable
 
 from loguru import logger
 
-
 class InterceptHandler(logging.Handler):
     """Forwards standard logging records to Loguru."""
 
@@ -148,12 +147,14 @@ def with_loguru_logger(fn: Callable) -> Callable:
         }
 
         # Create proxy functions that forward calls to loguru.logger AND call the original method.
-        def make_proxy(level: str, original_method: Callable) -> Callable[[str], None]:
+        def make_proxy(level: str, original_method: Callable):
             def proxy_fn(msg: str, *p_args, **p_kwargs) -> None:
-                # Forward to loguru.logger
                 logger.opt(depth=1).log(level, msg)
-                # Also call the original method to maintain original behavior
-                original_method(msg, *p_args, **p_kwargs)
+
+                try:
+                    original_method(msg, *p_args, **p_kwargs)
+                except TypeError:
+                    original_method(msg, *p_args)
 
             return proxy_fn
 
