@@ -17,6 +17,14 @@ Fast automated diagnosis of Buildkite build failures using the specialized build
 - Specific actionable fixes with file paths and line numbers
 - Distinction between functional failures vs. test infrastructure issues
 
+**Process**:
+
+1. **Get PR Status**: Uses `gh` CLI to fetch the current PR's status checks
+2. **Find Failing Builds**: Identifies failing Buildkite builds and extracts build numbers
+3. **Fetch Failure Logs**: Uses Buildkite MCP server to get detailed logs from the most recent failing build
+4. **Analyze Failures**: Examines error patterns and provides diagnosis
+5. **Suggest Solutions**: Recommends specific fixes or next steps
+
 ## Requirements
 
 - **Buildkite MCP Server**: Must be configured with API tokens

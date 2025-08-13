@@ -294,7 +294,7 @@ class OutputMapping(NamedTuple):
             )
 
             @graph(out=GraphOut())
-            def the_graph:
+            def the_graph():
                 return emit_five()
     """
 
