@@ -180,3 +180,33 @@ mutation CreateAgentTokenMutation($description: String) {
     }
 }
 """
+
+RUN_EVENTS_QUERY = """
+query CliRunEventsQuery($runId: ID!, $limit: Int, $afterCursor: String) {
+    logsForRun(runId: $runId, limit: $limit, afterCursor: $afterCursor) {
+        __typename
+        ... on EventConnection {
+            events {
+                __typename
+                ... on MessageEvent {
+                    runId
+                    message
+                    timestamp
+                    level
+                    stepKey
+                    eventType
+                }
+            }
+            cursor
+            hasMore
+        }
+        ... on PythonError {
+            message
+            stack
+        }
+        ... on RunNotFoundError {
+            message
+        }
+    }
+}
+"""

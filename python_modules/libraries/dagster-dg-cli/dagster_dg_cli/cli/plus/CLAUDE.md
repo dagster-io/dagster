@@ -143,3 +143,90 @@ result = client.execute(query)
 - **Schema**: `schema.graphql` (main schema definition)
 - **Queries**: `dagster_dg_cli/utils/plus/gql.py` (common GraphQL queries)
 - **Test**: `test_query.py` (example usage with deployments query)
+
+---
+
+# API Noun Group Structure Standard
+
+This section documents the standard structure for API noun groups (e.g., `run`, `deployment`, `asset`, etc.) in the `dagster_dg_cli/cli/plus/api/` directory.
+
+## Current Structure Pattern
+
+Each API noun currently follows this single-file structure pattern (as seen in `deployment.py`):
+
+```
+api/<noun>.py                  # Single file containing all commands for the noun
+```
+
+## File Structure
+
+Each API noun file contains:
+
+1. **Imports**: Standard imports for Click, DagsterPlusGraphQLClient, configuration
+2. **Utility Functions**: Shared helper functions (like `_get_config_or_error()`)
+3. **Command Functions**: Individual Click command functions for each verb
+4. **Group Definition**: Click group that registers all commands
+
+## Example Structure (from `deployment.py`)
+
+```python
+"""Deployment API commands following GitHub CLI patterns."""
+
+import click
+from dagster_dg_core.utils import DgClickCommand, DgClickGroup
+from dagster_dg_core.utils.telemetry import cli_telemetry_wrapper
+from dagster_shared.plus.config import DagsterPlusCliConfig
+
+def _get_config_or_error() -> DagsterPlusCliConfig:
+    """Shared utility for getting config."""
+    # Implementation here
+
+@click.command(name="list", cls=DgClickCommand, unlaunched=True)
+@click.option("--json", "output_json", is_flag=True)
+@cli_telemetry_wrapper
+def list_deployments_command(output_json: bool) -> None:
+    """List all deployments in the organization."""
+    # Implementation here
+
+@click.group(
+    name="deployment",
+    cls=DgClickGroup,
+    unlaunched=True,
+    commands={
+        "list": list_deployments_command,
+    },
+)
+def deployment_group():
+    """Manage deployments in Dagster Plus."""
+```
+
+## Integration Pattern
+
+Noun groups are registered in `api/cli_group.py`:
+
+```python
+from dagster_dg_cli.cli.plus.api.deployment import deployment_group
+from dagster_dg_cli.cli.plus.api.run import run_group  # To be created
+
+@click.group(
+    name="api",
+    cls=DgClickGroup,
+    unlaunched=True,
+    commands={
+        "deployment": deployment_group,
+        "run": run_group,
+    },
+)
+def api_group():
+    """Make REST-like API calls to Dagster Plus."""
+```
+
+## Key Conventions
+
+1. **File Naming**: `<noun>.py` (e.g., `run.py`, `deployment.py`)
+2. **Group Naming**: `<noun>_group` (e.g., `run_group`, `deployment_group`)
+3. **Command Naming**: `<verb>_<noun>_command` (e.g., `events_run_command`)
+4. **Config Pattern**: Use `_get_config_or_error()` utility function
+5. **Error Handling**: Consistent JSON vs human-readable error output
+6. **Telemetry**: All commands use `@cli_telemetry_wrapper`
+7. **Unlaunched**: All use `unlaunched=True` flag
