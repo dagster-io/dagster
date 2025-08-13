@@ -53,8 +53,7 @@ class DatabricksWorkspace(ConfigurableResource):
         databricks_tasks_by_task_key = {}
         for task_key, task in selected_tasks_by_task_key.items():
             # TODO: support common config
-            parameters = task.task_parameters
-            context.log.info(f"Task {task_key}: parameters={parameters}")
+            context.log.info(f"Task {task_key}: parameters={task.task_parameters}")
 
             # Create the SubmitTask params dictionary
             submit_task_params = {"task_key": task_key}
