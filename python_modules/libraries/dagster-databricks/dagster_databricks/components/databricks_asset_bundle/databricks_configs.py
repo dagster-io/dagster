@@ -59,7 +59,7 @@ class DatabricksNotebookTask:
         notebook_task = job_task_config["notebook_task"]
         task_config = {"notebook_task": notebook_task}
         task_parameters = notebook_task.get("base_parameters", {})
-        return DatabricksNotebookTask(
+        return cls(
             task_key=job_task_config["task_key"],
             task_config=task_config,
             task_parameters=task_parameters,
