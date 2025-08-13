@@ -5,47 +5,55 @@ This document summarizes the GraphQL schema located in `schema.graphql` to provi
 ## Root Types
 
 - **CloudQuery**: Main query root with 50+ fields for data retrieval
-- **CloudMutation**: Mutation root with 30+ operations for data modification  
+- **CloudMutation**: Mutation root with 30+ operations for data modification
 - **CloudSubscription**: Subscription root for real-time updates (runs, alerts, logs)
 
 ## Key Query Operations
 
 ### Deployments & Infrastructure
+
 - `fullDeployments`: Get all deployments with names, IDs, types
 - `currentDeployment`: Current deployment info including agent type
 - `agents`: Agent status and metadata
 - `agentTokensOrError`: Manage agent authentication tokens
 
 ### Runs & Execution
+
 - `pipelineRunsOrError`: Query pipeline runs with filtering
 - `pipelineRunOrError`: Get specific run details
 - `runMetricsOrError`: Run execution metrics and statistics
 
 ### Assets & Data
+
 - `assetNodesOrError`: Asset catalog and lineage information
 - `assetObservationsOrError`: Asset observation data
 - `materializations`: Asset materialization events
 
-### Logs & Events  
+### Logs & Events
+
 - `logsForRunOrError`: Structured logs for pipeline runs
 - `capturedLogsMetadata`: Log capture configuration and status
 
 ### Secrets & Configuration
+
 - `secretsOrError`: Environment secrets management
 - `environmentVariablesOrError`: Environment variable configuration
 
 ## Key Mutation Operations
 
 ### Deployment Management
+
 - `launchPipelineExecution`: Start pipeline runs
 - `terminateRun`: Stop running pipelines
 - `deletePipelineRun`: Remove run records
 
 ### Secrets & Config
+
 - `createOrUpdateSecretForScopes`: Manage deployment secrets
 - `setEnvironmentVariables`: Configure environment variables
 
 ### Agent Tokens
+
 - `createAgentToken`: Generate new agent authentication tokens
 - `revokeAgentToken`: Revoke existing tokens
 
@@ -54,6 +62,7 @@ This document summarizes the GraphQL schema located in `schema.graphql` to provi
 The schema implements a comprehensive event-driven system:
 
 ### Event Interfaces
+
 - `DagsterEvent`: Base event interface (timestamp, runId, message)
 - `MessageEvent`: Events with structured messages
 - `ObjectStoreOperationEvent`: Object storage operation tracking
@@ -61,33 +70,40 @@ The schema implements a comprehensive event-driven system:
 ### Event Categories (30+ types)
 
 **Pipeline Events:**
+
 - `RunStartingEvent`, `RunStartEvent`, `RunSuccessEvent`, `RunFailureEvent`
 - `RunCancelingEvent`, `RunCanceledEvent`
 
 **Step Events:**
+
 - `StepStartEvent`, `StepSuccessEvent`, `StepFailureEvent`
 - `StepSkippedEvent`, `StepRetryEvent`
 
 **Asset Events:**
+
 - `AssetMaterializationEvent`: Asset creation/updates
 - `AssetObservationEvent`: Asset monitoring data
 - `AssetCheckEvaluationEvent`: Asset quality checks
 
 **Resource Events:**
+
 - `EngineEvent`: Execution engine operations
 - `HookErroredEvent`, `HookSkippedEvent`: Hook execution results
 - `ResourceInitStartedEvent`, `ResourceInitFailureEvent`
 
 **Alert Events:**
+
 - `AlertStartEvent`, `AlertSuccessEvent`, `AlertFailureEvent`
 
 ### Event Unions
+
 - `DagsterEventUnion`: Union of all event types for polymorphic queries
 - `StepEvent`: Union of step-specific events
 
 ## Relationship to dagster-graphql
 
 The schemas are **mostly disjoint** but share core Dagster domain types:
+
 - **Plus Schema**: Cloud-specific operations (deployments, agents, cloud infrastructure)
 - **OSS Schema**: Core Dagster types (runs, assets, schedules, sensors)
 - **Shared**: Basic domain objects like PipelineRun, Asset, LogLevel enums
@@ -117,7 +133,7 @@ result = client.execute(query)
 ## Common Query Patterns
 
 1. **List Resources**: `fullDeployments`, `agents`, `secretsOrError`
-2. **Get Details**: `pipelineRunOrError`, `currentDeployment`  
+2. **Get Details**: `pipelineRunOrError`, `currentDeployment`
 3. **Filter/Search**: Most queries support filtering parameters
 4. **Error Handling**: Results use `OrError` pattern with union types for error handling
 5. **Pagination**: Many queries support cursor-based pagination

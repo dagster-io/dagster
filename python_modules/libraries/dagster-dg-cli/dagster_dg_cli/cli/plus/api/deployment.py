@@ -84,12 +84,12 @@ def list_deployments_command(output_json: bool) -> None:
 
 
 @click.group(
-    name="deployments",
+    name="deployment",
     cls=DgClickGroup,
     unlaunched=True,
     commands={
         "list": list_deployments_command,
     },
 )
-def deployments_group():
+def deployment_group():
     """Manage deployments in Dagster Plus."""

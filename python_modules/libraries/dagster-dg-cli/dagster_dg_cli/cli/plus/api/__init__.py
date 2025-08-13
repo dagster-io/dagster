@@ -3,7 +3,7 @@
 import click
 from dagster_dg_core.utils import DgClickGroup
 
-from dagster_dg_cli.cli.plus.api.deployments import deployments_group
+from dagster_dg_cli.cli.plus.api.deployment import deployment_group
 
 
 @click.group(
@@ -11,7 +11,7 @@ from dagster_dg_cli.cli.plus.api.deployments import deployments_group
     cls=DgClickGroup,
     unlaunched=True,
     commands={
-        "deployments": deployments_group,
+        "deployment": deployment_group,
     },
 )
 def api_group():
