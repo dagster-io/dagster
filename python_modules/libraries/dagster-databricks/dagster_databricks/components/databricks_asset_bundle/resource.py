@@ -8,6 +8,7 @@ from pydantic import Field
 
 from dagster_databricks.components.databricks_asset_bundle.configs import (
     DatabricksAssetBundleComponentConfig,
+    parse_libraries,
 )
 
 
@@ -84,10 +85,15 @@ class DatabricksWorkspace(ConfigurableResource):
                         num_workers=config.custom_config.num_workers,
                     )
 
+            libraries_list = parse_libraries(task.libraries)
+            libraries_config = {"libraries": libraries_list} if libraries_list else {}
+            context.log.info(f"Task {task_key} has {len(libraries_list)} libraries configured")
+
             submit_task_params = {
                 **submit_task_params,
                 **task_dependency_config,
                 **cluster_config,
+                **libraries_config,
             }
 
             databricks_task = jobs.SubmitTask(**submit_task_params)
