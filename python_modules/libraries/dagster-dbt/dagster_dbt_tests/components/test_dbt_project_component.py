@@ -256,6 +256,9 @@ def test_dependency_on_dbt_project():
         downstream_of_customers_two_def.asset_deps[AssetKey("downstream_of_customers_two")]
     ) == {AssetKey("customers")}
 
+    assert defs.resolve_job_def("run_customers")
+    assert defs.resolve_schedule_def("run_customers_schedule")
+
 
 def test_spec_is_available_in_scope(dbt_path: Path) -> None:
     defs = build_component_defs_for_test(
