@@ -8,6 +8,17 @@ from dagster import Model, Resolvable, get_dagster_logger
 from dagster_shared.record import IHaveNew, record, record_custom
 from databricks.sdk.service import jobs
 from typing_extensions import Self
+from typing_extensions import TypeVar
+
+DatabricksSdkTaskType = Union[
+    jobs.NotebookTask,
+    jobs.RunJobTask,
+    jobs.PythonWheelTask,
+    jobs.SparkPythonTask,
+    jobs.SparkJarTask,
+    jobs.ConditionTask,
+]
+T_DatabricksSdkTask = TypeVar("T_DatabricksSdkTask", bound=DatabricksSdkTaskType)
 
 logger = get_dagster_logger()
 
@@ -98,7 +109,7 @@ class DatabricksTaskDependsOnConfig:
 
 
 @record
-class DatabricksBaseTask(ABC):
+class DatabricksBaseTask(ABC, Generic[T_DatabricksSdkTask]):
     task_key: str
     task_config: Mapping[str, Any]
     task_parameters: Union[Mapping[str, Any], list[str]]
@@ -121,6 +132,13 @@ class DatabricksBaseTask(ABC):
     @property
     @abstractmethod
     def needs_cluster(self) -> bool: ...
+
+    @property
+    @abstractmethod
+    def submit_task_key(self) -> str: ...
+
+    @abstractmethod
+    def to_databricks_sdk_task(self) -> T_DatabricksSdkTask: ...
 
 
 @record
@@ -154,6 +172,16 @@ class DatabricksNotebookTask(DatabricksBaseTask):
     @property
     def needs_cluster(self) -> bool:
         return True
+
+    @property
+    def submit_task_key(self) -> str:
+        return "notebook_task"
+
+    def to_databricks_sdk_task(self) -> jobs.NotebookTask:
+        return jobs.NotebookTask(
+            notebook_path=self.task_config["notebook_path"],
+            base_parameters=self.task_parameters,
+        )
 
 
 @record
@@ -190,6 +218,21 @@ class DatabricksConditionTask(DatabricksBaseTask):
     def needs_cluster(self) -> bool:
         return False
 
+    @property
+    def submit_task_key(self) -> str:
+        return "condition_task"
+
+    def to_databricks_sdk_task(self) -> jobs.ConditionTask:
+        condition_config = self.task_config["condition_task"]
+        return jobs.ConditionTask(
+            left=condition_config.get("left", ""),
+            op=getattr(
+                jobs.ConditionTaskOp,
+                condition_config.get("op", "EQUAL_TO"),
+            ),
+            right=condition_config.get("right", ""),
+        )
+
 
 @record
 class DatabricksSparkPythonTask(DatabricksBaseTask):
@@ -225,6 +268,16 @@ class DatabricksSparkPythonTask(DatabricksBaseTask):
     @property
     def needs_cluster(self) -> bool:
         return True
+
+    @property
+    def submit_task_key(self) -> str:
+        return "spark_python_task"
+
+    def to_databricks_sdk_task(self) -> jobs.SparkPythonTask:
+        python_config = self.task_config["spark_python_task"]
+        return jobs.SparkPythonTask(
+            python_file=python_config["python_file"], parameters=self.task_parameters
+        )
 
 
 @record
@@ -263,6 +316,18 @@ class DatabricksPythonWheelTask(DatabricksBaseTask):
     def needs_cluster(self) -> bool:
         return True
 
+    @property
+    def submit_task_key(self) -> str:
+        return "python_wheel_task"
+
+    def to_databricks_sdk_task(self) -> jobs.PythonWheelTask:
+        wheel_config = self.task_config["python_wheel_task"]
+        return jobs.PythonWheelTask(
+            package_name=wheel_config["package_name"],
+            entry_point=wheel_config["entry_point"],
+            parameters=self.task_parameters,
+        )
+
 
 @record
 class DatabricksSparkJarTask(DatabricksBaseTask):
@@ -297,6 +362,16 @@ class DatabricksSparkJarTask(DatabricksBaseTask):
     def needs_cluster(self) -> bool:
         return True
 
+    @property
+    def submit_task_key(self) -> str:
+        return "spark_jar_task"
+
+    def to_databricks_sdk_task(self) -> jobs.SparkJarTask:
+        jar_config = self.task_config["spark_jar_task"]
+        return jobs.SparkJarTask(
+            main_class_name=jar_config["main_class_name"], parameters=self.task_parameters
+        )
+
 
 @record
 class DatabricksJobTask(DatabricksBaseTask):
@@ -330,6 +405,16 @@ class DatabricksJobTask(DatabricksBaseTask):
     @property
     def needs_cluster(self) -> bool:
         return False
+
+    @property
+    def submit_task_key(self) -> str:
+        return "run_job_task"
+
+    def to_databricks_sdk_task(self) -> jobs.RunJobTask:
+        return jobs.RunJobTask(
+            job_id=self.task_config["job_id"],
+            job_parameters=self.task_parameters,
+        )
 
 
 @record_custom
