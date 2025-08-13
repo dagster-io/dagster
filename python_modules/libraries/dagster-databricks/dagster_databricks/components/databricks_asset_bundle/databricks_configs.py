@@ -175,7 +175,7 @@ class DatabricksPythonWheelTask:
         task_config = {"python_wheel_task": python_wheel_task}
         # Python wheel tasks use parameters differently
         task_parameters = python_wheel_task.get("parameters", [])
-        return DatabricksPythonWheelTask(
+        return cls(
             task_key=job_task_config["task_key"],
             task_config=task_config,
             task_parameters=task_parameters,
