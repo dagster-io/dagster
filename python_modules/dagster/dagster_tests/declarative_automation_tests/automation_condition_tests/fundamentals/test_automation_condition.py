@@ -206,6 +206,14 @@ def test_replace_automation_conditions() -> None:
     )
 
 
+def test_replace_automation_condition_by_names() -> None:
+    a = AutomationCondition.in_latest_time_window()
+    b = AutomationCondition.missing()
+    c = AutomationCondition.any_deps_match(AutomationCondition.in_progress())
+
+    assert (a & b).replace("missing", c) == a & c
+
+
 def test_replace_automation_condition_since() -> None:
     a = AutomationCondition.in_latest_time_window().with_label("in_latest_time_window")
     b = AutomationCondition.any_deps_match(AutomationCondition.in_progress())

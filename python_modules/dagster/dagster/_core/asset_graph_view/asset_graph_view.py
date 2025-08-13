@@ -174,6 +174,24 @@ class AssetGraphView(LoadingContext):
         )
         return EntitySubset(self, key=key, value=_ValidatedEntitySubsetValue(value))
 
+    @use_partition_loading_context
+    def get_subset_not_in_graph(
+        self, *, key: T_EntityKey, candidate_subset: EntitySubset[T_EntityKey]
+    ) -> EntitySubset[T_EntityKey]:
+        partitions_def = self._get_partitions_def(key)
+        check.invariant(
+            partitions_def is not None and candidate_subset.is_partitioned,
+            "Both subsets must be partitioned to compute partition keys not in the graph",
+        )
+
+        # intentionally using subset_with_all_partitions and not AllPartitionsSubset here since
+        # the latter always returns the empty set on subtraction
+        missing_subset_value = (
+            candidate_subset.get_internal_subset_value()
+            - check.not_none(partitions_def).subset_with_all_partitions()
+        )
+        return EntitySubset(self, key=key, value=_ValidatedEntitySubsetValue(missing_subset_value))
+
     @cached_method
     @use_partition_loading_context
     def get_empty_subset(self, *, key: T_EntityKey) -> EntitySubset[T_EntityKey]:
@@ -194,6 +212,18 @@ class AssetGraphView(LoadingContext):
         return EntitySubset(
             self, key=asset_key, value=_ValidatedEntitySubsetValue(partition_subset_in_range)
         )
+
+    @use_partition_loading_context
+    def get_latest_asset_graph_subset_from_serialized_asset_graph_subset(
+        self, asset_graph_subset: AssetGraphSubset
+    ) -> AssetGraphSubset:
+        # Ensures that all the passed in subsets are valid and up to date with the latest partitions
+        # that are actually in the asset graph
+        entity_subsets = [
+            self.get_entity_subset_from_asset_graph_subset(asset_graph_subset, asset_key)
+            for asset_key in asset_graph_subset.asset_keys
+        ]
+        return AssetGraphSubset.from_entity_subsets(entity_subsets)
 
     @use_partition_loading_context
     def get_entity_subset_from_asset_graph_subset(

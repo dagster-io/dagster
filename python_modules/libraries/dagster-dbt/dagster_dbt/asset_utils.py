@@ -291,12 +291,14 @@ def build_dbt_asset_selection(
         select=dbt_assets_select,
         exclude=dbt_assets_exclude,
         selector=dbt_assets_selector,
+        project=dbt_project,
     ) & DbtManifestAssetSelection.build(
         manifest=manifest,
         dagster_dbt_translator=dagster_dbt_translator,
         select=dbt_select,
         exclude=dbt_exclude or DBT_DEFAULT_EXCLUDE,
         selector=dbt_selector or DBT_DEFAULT_SELECTOR,
+        project=dbt_project,
     )
 
 

@@ -38,6 +38,11 @@ export type ScheduleDryRunMutation = {
             jobName: string | null;
             tags: Array<{__typename: 'PipelineTag'; key: string; value: string}>;
             assetSelection: Array<{__typename: 'AssetKey'; path: Array<string>}> | null;
+            assetChecks: Array<{
+              __typename: 'AssetCheckhandle';
+              name: string;
+              assetKey: {__typename: 'AssetKey'; path: Array<string>};
+            }> | null;
           }> | null;
           error: {
             __typename: 'PythonError';
@@ -64,4 +69,4 @@ export type ScheduleDryRunMutation = {
     | {__typename: 'ScheduleNotFoundError'; scheduleName: string};
 };
 
-export const ScheduleDryRunMutationVersion = 'e3302c9049fc8be5d14fb6bd6d56198083c086c239018f3d564ae9987c28f11b';
+export const ScheduleDryRunMutationVersion = '130e70022d3025cc2ba6c88a553282f2c92335ac0a380cfda0307c663280f1f8';

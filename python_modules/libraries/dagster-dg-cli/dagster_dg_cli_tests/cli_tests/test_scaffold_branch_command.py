@@ -1,14 +1,21 @@
 import subprocess
+from pathlib import Path
+from tempfile import TemporaryDirectory
 from unittest.mock import Mock, patch
 
 import click
 import pytest
+from automation.eval.cli import main as eval_cli
+from click.testing import CliRunner
 from dagster_dg_core.utils import activate_venv
 from dagster_dg_core_tests.utils import (
     ProxyRunner,
     assert_runner_result,
     isolated_example_project_foo_bar,
 )
+from dagster_shared.utils import environ
+from deepeval.evaluate.types import EvaluationResult, TestResult
+from deepeval.test_run import MetricData
 
 
 def test_scaffold_branch_command_success():
@@ -18,9 +25,7 @@ def test_scaffold_branch_command_success():
         isolated_example_project_foo_bar(
             runner,
             in_workspace=False,
-            uv_sync=True,
-        ) as project_dir,
-        activate_venv(project_dir / ".venv"),
+        ),
     ):
         # Mock the subprocess calls to simulate git and gh commands
         with (
@@ -43,6 +48,7 @@ def test_scaffold_branch_command_success():
             # Verify git commands were called in correct order
             expected_git_calls = [
                 (["checkout", "-b", "my-feature-branch"],),
+                (["rev-parse", "HEAD"],),
                 (["commit", "--allow-empty", "-m", "Initial commit for my-feature-branch branch"],),
                 (["push", "-u", "origin", "my-feature-branch"],),
             ]
@@ -83,9 +89,7 @@ def test_scaffold_branch_command_whitespace_branch_name():
         isolated_example_project_foo_bar(
             runner,
             in_workspace=False,
-            uv_sync=True,
-        ) as project_dir,
-        activate_venv(project_dir / ".venv"),
+        ),
     ):
         with (
             patch("dagster_dg_cli.cli.scaffold.branch._run_git_command") as mock_git,
@@ -147,9 +151,7 @@ def test_scaffold_branch_command_ai_inference_success():
         isolated_example_project_foo_bar(
             runner,
             in_workspace=False,
-            uv_sync=True,
-        ) as project_dir,
-        activate_venv(project_dir / ".venv"),
+        ),
     ):
         with (
             patch("dagster_dg_cli.cli.scaffold.branch._run_git_command") as mock_git,
@@ -184,6 +186,7 @@ def test_scaffold_branch_command_ai_inference_success():
             # Branch name gets UUID suffix: add-authentication-feature-abcd1234
             expected_git_calls = [
                 (["checkout", "-b", "add-authentication-feature-abcd1234"],),
+                (["rev-parse", "HEAD"],),
                 (
                     [
                         "commit",
@@ -196,6 +199,7 @@ def test_scaffold_branch_command_ai_inference_success():
                 (["add", "-A"],),
                 (["commit", "-m", "First pass at add-authentication-feature-abcd1234"],),
                 (["push"],),
+                (["rev-parse", "HEAD"],),
             ]
             actual_git_calls = [call[0] for call in mock_git.call_args_list]
             assert actual_git_calls == expected_git_calls
@@ -269,6 +273,7 @@ def test_scaffold_branch_command_github_issue_url(github_url):
             # Branch name gets UUID suffix: fix-issue-123-abcd1234
             expected_git_calls = [
                 (["checkout", "-b", "fix-issue-123-abcd1234"],),
+                (["rev-parse", "HEAD"],),
                 (
                     [
                         "commit",
@@ -281,6 +286,7 @@ def test_scaffold_branch_command_github_issue_url(github_url):
                 (["add", "-A"],),
                 (["commit", "-m", "First pass at fix-issue-123-abcd1234"],),
                 (["push"],),
+                (["rev-parse", "HEAD"],),
             ]
             actual_git_calls = [call[0] for call in mock_git.call_args_list]
             assert actual_git_calls == expected_git_calls
@@ -298,3 +304,71 @@ def test_scaffold_branch_command_github_issue_url(github_url):
 
             assert "Creating new branch: fix-issue-123" in result.output
             assert "Created and checked out new branch: fix-issue-123" in result.output
+
+
+def test_record_and_eval_command():
+    # ensure --record output aligned with eval tool expectations
+    with (
+        ProxyRunner.test() as runner,
+        isolated_example_project_foo_bar(
+            runner,
+            in_workspace=False,
+        ),
+        TemporaryDirectory() as temp_dir,
+        environ(
+            {
+                "DAGSTER_GIT_REPO_DIR": "",
+                "OPENAI_API_KEY": "...",
+            }
+        ),
+        patch("dagster_dg_cli.cli.scaffold.branch._run_git_command") as mock_git,
+        patch("dagster_dg_cli.cli.scaffold.branch._run_gh_command") as mock_gh,
+        patch("automation.eval.cli.evaluate") as mock_evaluate,
+    ):
+        # Mock the subprocess calls to simulate git and gh commands
+
+        # Mock git checkout -b command
+        mock_git.return_value = Mock(returncode=0, stdout="", stderr="")
+
+        # Mock gh pr create command
+        mock_gh.return_value = Mock(
+            returncode=0,
+            stdout="https://github.com/user/repo/pull/123",
+            stderr="",
+        )
+
+        mock_evaluate.return_value = EvaluationResult(
+            test_results=[
+                TestResult(
+                    name="Test",
+                    success=True,
+                    conversational=False,
+                    metrics_data=[
+                        MetricData(
+                            name="Test",
+                            threshold=0.5,
+                            score=1.0,
+                            success=True,
+                            strictMode=False,
+                            evaluationModel="testbot",
+                            verboseLogs="test",
+                            evaluationCost=0,
+                        )
+                    ],
+                )
+            ],
+            confident_link=None,
+        )
+
+        result = runner.invoke("scaffold", "branch", "my-feature-branch", "--record", str(temp_dir))
+        assert_runner_result(result)
+        assert "📝 Session recorded:" in result.output
+
+        Path(temp_dir).joinpath("eval.yaml").write_text("""
+metrics:
+  - name: Test
+    criteria: test test
+        """)
+
+        result = CliRunner().invoke(eval_cli, [str(temp_dir)])
+        assert result.exit_code == 0, result.output

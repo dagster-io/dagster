@@ -91,11 +91,12 @@ export function useRecentAssetEvents(
 export function useAssetPartitionMaterializations(
   assetKey: AssetKey | undefined,
   partitionKeys: string[],
+  loadingPartitions: boolean,
 ) {
   const queryResult = useQuery<AssetPartitionEventsQuery, AssetPartitionEventsQueryVariables>(
     ASSET_PARTITIONS_MATERIALIZATIONS_QUERY,
     {
-      skip: !assetKey,
+      skip: !assetKey || loadingPartitions,
       fetchPolicy: 'cache-and-network',
       variables: {
         assetKey: {path: assetKey ? assetKey.path : []},
@@ -128,8 +129,12 @@ export function useLatestAssetPartitionMaterializations(
   assetKey: AssetKey | undefined,
   limit: number,
 ) {
-  const {partitionKeys} = useLatestAssetPartitions(assetKey, limit);
-  return useAssetPartitionMaterializations(assetKey, [...partitionKeys].reverse());
+  const {partitionKeys, loading} = useLatestAssetPartitions(assetKey, limit);
+  return useAssetPartitionMaterializations(
+    assetKey,
+    useMemo(() => [...partitionKeys].reverse(), [partitionKeys]),
+    loading,
+  );
 }
 
 export type RecentAssetEvents = ReturnType<typeof useRecentAssetEvents>;
