@@ -1,11 +1,11 @@
 from abc import ABC, abstractmethod
 from asyncio import Task, get_event_loop, run
-from collections.abc import AsyncGenerator, Sequence
+from collections.abc import AsyncGenerator, Iterator, Sequence
+from contextlib import AbstractContextManager, contextmanager
 from enum import Enum
 from typing import TYPE_CHECKING, Any, Generic, Optional, TypeVar, Union, cast
 
 import dagster._check as check
-from dagster._core.workspace.context import BaseWorkspaceRequestContext
 from dagster._serdes import pack_value
 from dagster._utils.error import serializable_error_info_from_exc_info
 from dagster_graphql.implementation.utils import ErrorCapture
@@ -44,7 +44,7 @@ class GraphQLWS(str, Enum):
     STOP = "stop"
 
 
-TRequestContext = TypeVar("TRequestContext", bound=BaseWorkspaceRequestContext)
+TRequestContext = TypeVar("TRequestContext", bound=AbstractContextManager)
 
 
 class GraphQLServer(ABC, Generic[TRequestContext]):
@@ -67,7 +67,13 @@ class GraphQLServer(ABC, Generic[TRequestContext]):
     def build_routes(self) -> list[BaseRoute]: ...
 
     @abstractmethod
-    def make_request_context(self, conn: HTTPConnection) -> TRequestContext: ...
+    def _make_request_context(self, conn: HTTPConnection) -> TRequestContext: ...
+
+    @contextmanager
+    def request_context(self, conn: HTTPConnection) -> Iterator[TRequestContext]:
+        """Creates a request context for the given connection and ensures that it is entered before use."""
+        with self._make_request_context(conn) as request_context:
+            yield request_context
 
     def handle_graphql_errors(self, errors: Sequence[GraphQLError]):
         results = []
@@ -236,7 +242,7 @@ class GraphQLServer(ABC, Generic[TRequestContext]):
         variables: Optional[dict[str, Any]],
         operation_name: Optional[str],
     ) -> JSONResponse:
-        with self.make_request_context(request) as request_context:
+        with self.request_context(request) as request_context:
             return run(
                 self.gen_graphql_response(
                     request_context=request_context,
@@ -284,7 +290,7 @@ class GraphQLServer(ABC, Generic[TRequestContext]):
         variables: Optional[dict[str, Any]],
         operation_name: Optional[str],
     ) -> tuple[Optional[Task], Optional[GraphQLFormattedError]]:
-        with self.make_request_context(websocket) as request_context:
+        with self.request_context(websocket) as request_context:
             try:
                 async_result = await self._graphql_schema.subscribe(
                     query,
