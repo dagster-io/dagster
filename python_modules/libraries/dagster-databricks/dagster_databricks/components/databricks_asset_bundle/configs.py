@@ -381,3 +381,21 @@ class DatabricksConfig(IHaveNew):
             job_parameters = job_config["job_parameters"]
 
         return job_parameters
+
+
+@record
+class CustomConfigs:
+    spark_version: str = "13.3.x-scala2.12"
+    node_type_id: str = "i3.xlarge"
+    num_workers: int = 1
+
+    @classmethod
+    def from_custom_configs_path(cls, custom_configs_path: Union[Path, str]) -> "CustomConfigs":
+        custom_configs_path = Path(custom_configs_path)
+        if not custom_configs_path.exists():
+            raise FileNotFoundError(f"Custom config file not found: {custom_configs_path}")
+
+        # Load databricks config
+        custom_configs = load_yaml(custom_configs_path)
+        return cls(**custom_configs)
+

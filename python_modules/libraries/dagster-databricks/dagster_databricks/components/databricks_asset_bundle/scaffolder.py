@@ -1,4 +1,5 @@
 import os
+from typing import Optional
 
 from dagster.components.component.component_scaffolder import Scaffolder
 from dagster.components.component_scaffolding import scaffold_component
@@ -18,6 +19,12 @@ class DatabricksAssetBundleScaffoldParams(BaseModel):
     databricks_workspace_token: str = Field(
         description="The token to access your Databricks workspace.",
     )
+    custom_configs_path: Optional[str] = Field(
+        None,
+        description=(
+            "Path to a custom config file that align with databricks_asset_bundle.configs.CustomConfigs. Optional."
+        ),
+    )
 
 
 class DatabricksAssetBundleScaffolder(Scaffolder[DatabricksAssetBundleScaffoldParams]):
@@ -28,13 +35,20 @@ class DatabricksAssetBundleScaffolder(Scaffolder[DatabricksAssetBundleScaffoldPa
     def scaffold(self, request: ScaffoldRequest[DatabricksAssetBundleScaffoldParams]) -> None:
         project_root = request.project_root or os.getcwd()
         project_root_tmpl = "{{ project_root }}"
-        rel_path = os.path.relpath(request.params.databricks_config_path, start=project_root)
-        path_str = f"{project_root_tmpl}/{rel_path}"
+
+        rel_databricks_config_path = os.path.relpath(request.params.databricks_config_path, start=project_root)
+        databricks_config_path_str = f"{project_root_tmpl}/{rel_databricks_config_path}"
+
+        custom_configs_path_str = None
+        if request.params.custom_configs_path:
+            rel_custom_configs_path = os.path.relpath(request.params.custom_configs_path, start=project_root)
+            custom_configs_path_str = f"{project_root_tmpl}/{rel_custom_configs_path}"
 
         scaffold_component(
             request,
             {
-                "databricks_config_path": path_str,
+                "databricks_config_path": databricks_config_path_str,
+                "custom_configs": custom_configs_path_str,
                 "workspace": {
                     "host": request.params.databricks_workspace_host,
                     "token": request.params.databricks_workspace_token,

@@ -16,6 +16,7 @@ from dagster.components.scaffold.scaffold import scaffold_with
 from dagster_databricks.components.databricks_asset_bundle.configs import (
     DatabricksBaseTask,
     DatabricksConfig,
+    CustomConfigs
 )
 from dagster_databricks.components.databricks_asset_bundle.resource import DatabricksWorkspace
 from dagster_databricks.components.databricks_asset_bundle.scaffolder import (
@@ -48,6 +49,16 @@ def resolve_databricks_config_path(context: ResolutionContext, model) -> Path:
     )
 
 
+def resolve_custom_configs(context: ResolutionContext, model) -> CustomConfigs:
+    if not isinstance(model, str):
+        return CustomConfigs()
+    return CustomConfigs.from_custom_configs_path(
+        context.resolve_source_relative_path(
+            context.resolve_value(model, as_type=str),
+        )
+    )
+
+
 def resolve_databricks_workspace(context: ResolutionContext, model) -> DatabricksWorkspace:
     args = DatabricksWorkspaceArgs.resolve_from_model(context, model)
     return DatabricksWorkspace(
@@ -67,6 +78,21 @@ class DatabricksAssetBundleComponent(Component, Resolvable):
             description="The path to the databricks.yml config file.",
             examples=[
                 "{{ project_root }}/path/to/databricks_yml_config_file",
+            ],
+        ),
+    ]
+    custom_configs: Annotated[
+        CustomConfigs,
+        Resolver(
+            resolve_custom_configs,
+            model_field_type=Optional[str],
+            description=(
+                "The path to a custom config file that align with databricks_asset_bundle.configs.CustomConfigs. "
+                "Optional"
+            ),
+            examples=[
+                "{{ project_root }}/path/to/custom_yml_config_file",
+                None
             ],
         ),
     ]
