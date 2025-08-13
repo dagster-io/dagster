@@ -16,7 +16,16 @@ partnerlink: https://databricks.com/
 
 <PackageInstallInstructions packageName="dagster-databricks" />
 
-## Example
+## All-Purpose Compute Example
+
+<CodeExample path="docs_snippets/docs_snippets/integrations/databricks/dagster_code.py" language="python" />
+
+<CodeExample path="docs_snippets/docs_snippets/integrations/databricks/databricks_code.py" language="python" />
+
+## Serverless Compute Example
+Using pipes with Serverless Compute is slightly different. First, you can't specify library dependencies, you must instead define dagster-pipes as a dependency in the notebook environoment.
+
+Second, we use Volumes for context loading and messaging writing because dbfs is unreliable for Serverless Compute.
 
 <CodeExample path="docs_snippets/docs_snippets/integrations/databricks/dagster_code.py" language="python" />
 
