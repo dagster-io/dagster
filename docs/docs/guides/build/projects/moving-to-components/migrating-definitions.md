@@ -4,10 +4,6 @@ sidebar_position: 560
 title: Autoloading existing Dagster definitions
 ---
 
-import DgComponentsRc from '@site/docs/partials/\_DgComponentsRc.md';
-
-<DgComponentsRc />
-
 :::note
 
 This guide covers using existing Dagster definitions with a `dg`-compatible project. To convert an existing project to use `dg`, see "[Converting an existing project to use `dg`](/guides/build/projects/moving-to-components/migrating-project)".
