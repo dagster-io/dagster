@@ -96,7 +96,7 @@ class DatabricksConditionTask:
         task_config = {"condition_task": condition_task}
         # Condition tasks don't have traditional parameters
         task_parameters = {}
-        return DatabricksConditionTask(
+        return cls(
             task_key=job_task_config["task_key"],
             task_config=task_config,
             task_parameters=task_parameters,
