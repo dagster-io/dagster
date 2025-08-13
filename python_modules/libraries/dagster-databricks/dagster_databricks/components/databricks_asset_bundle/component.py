@@ -36,7 +36,7 @@ def snake_case(name: str) -> str:
 
 @dataclass
 class DatabricksWorkspaceArgs(Resolvable):
-    """Aligns with DbtProject.__new__."""
+    """Aligns with DatabricksWorkspace.__new__"""
 
     host: str
     token: str
@@ -78,7 +78,7 @@ class DatabricksAssetBundleComponent(Component, Resolvable):
             description="The mapping defining a DatabricksWorkspace.",
             examples=[
                 {
-                    "host": "your'host",
+                    "host": "your_host",
                     "token": "your_token",
                 },
             ],
