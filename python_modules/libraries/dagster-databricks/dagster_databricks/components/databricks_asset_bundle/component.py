@@ -101,7 +101,7 @@ class DatabricksAssetBundleComponent(Component, Resolvable):
                 "task_config": MetadataValue.json(task.task_config_metadata),
                 **({"libraries": MetadataValue.json(task.libraries)} if task.libraries else {}),
             },
-            deps=[snake_case(dep_task_key) for dep_task_key in task.depends_on],
+            deps=[snake_case(dep_config.task_key) for dep_config in task.depends_on],
         )
 
     def build_defs(self, context: ComponentLoadContext) -> Definitions:
