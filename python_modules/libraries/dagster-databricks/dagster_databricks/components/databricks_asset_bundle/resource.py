@@ -65,13 +65,6 @@ class DatabricksWorkspace(ConfigurableResource):
             parameters = task.task_parameters
             context.log.info(f"Task {task_key}: parameters={parameters}")
 
-            # TODO: support dependencies
-            # TODO: support cluster configs
-            # TODO: support task creation with Databricks sdk
-            # TODO: create submit task params
-            # TODO: Support Libraries
-            # TODO: support serverless
-
             databricks_task = jobs.SubmitTask(**parameters)
             databricks_tasks_by_task_key[task_key] = databricks_task
 
