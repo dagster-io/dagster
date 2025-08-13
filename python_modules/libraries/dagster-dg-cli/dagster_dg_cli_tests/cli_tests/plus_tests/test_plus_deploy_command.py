@@ -238,7 +238,7 @@ def test_plus_deploy_command_agent_type_from_graphql(
             statedir=DEFAULT_STATEDIR_PATH,
             build_directory=str(project.resolve()),
             dockerfile_path=str((project / "Dockerfile").absolute()),
-            use_editable_dagster=False,
+            use_editable_dagster=True,
             build_strategy=BuildStrategy.docker,
             docker_image_tag=None,
             docker_base_image=None,
@@ -261,7 +261,7 @@ def test_plus_deploy_command_agent_type_from_graphql(
             statedir=DEFAULT_STATEDIR_PATH,
             build_directory=str(project.resolve()),
             dockerfile_path=str((project / "Dockerfile").absolute()),
-            use_editable_dagster=False,
+            use_editable_dagster=True,
             build_strategy=BuildStrategy.docker,
             docker_image_tag=None,
             docker_base_image=None,
@@ -302,7 +302,7 @@ def test_plus_deploy_command_serverless(logged_in_dg_cli_config, project: Path, 
             statedir=DEFAULT_STATEDIR_PATH,
             build_directory=str(project.resolve()),
             dockerfile_path=str((project / "Dockerfile").absolute()),
-            use_editable_dagster=False,
+            use_editable_dagster=True,
             build_strategy=BuildStrategy.docker,
             docker_image_tag=None,
             docker_base_image=None,
@@ -360,7 +360,7 @@ def test_plus_deploy_command_serverless_workspace(logged_in_dg_cli_config, works
                     statedir=DEFAULT_STATEDIR_PATH,
                     build_directory=str(workspace_project_path.resolve()),
                     dockerfile_path=str((workspace_project_path / "Dockerfile").resolve()),
-                    use_editable_dagster=False,
+                    use_editable_dagster=True,
                     build_strategy=BuildStrategy.docker,
                     docker_image_tag=None,
                     docker_base_image=None,
@@ -376,7 +376,7 @@ def test_plus_deploy_command_serverless_workspace(logged_in_dg_cli_config, works
                     statedir=DEFAULT_STATEDIR_PATH,
                     build_directory=str(workspace_other_project_path.resolve()),
                     dockerfile_path=str((workspace_other_project_path / "Dockerfile").resolve()),
-                    use_editable_dagster=False,
+                    use_editable_dagster=True,
                     build_strategy=BuildStrategy.docker,
                     docker_image_tag=None,
                     docker_base_image=None,
@@ -458,7 +458,7 @@ def test_plus_deploy_command_valid_location(logged_in_dg_cli_config, workspace, 
             statedir=DEFAULT_STATEDIR_PATH,
             build_directory=str(workspace_project_path.resolve()),
             dockerfile_path=str((workspace_project_path / "Dockerfile").resolve()),
-            use_editable_dagster=False,
+            use_editable_dagster=True,
             build_strategy=BuildStrategy.docker,
             docker_image_tag=None,
             docker_base_image=None,
@@ -490,7 +490,7 @@ def test_plus_deploy_command_no_login(empty_dg_cli_config, runner, project):
 
 def test_plus_deploy_on_branch(logged_in_dg_cli_config, project, runner, mocker):
     mocker.patch(
-        "dagster_dg_cli.cli.plus.deploy_session.get_local_branch_name",
+        "dagster_dg_cli.cli.plus.deploy.deploy_session.get_local_branch_name",
         return_value="my-branch",
     )
     with mock_external_dagster_cloud_cli_command():
@@ -506,7 +506,7 @@ def test_plus_deploy_on_branch_with_snapshot_base_condition(
     logged_in_dg_cli_config, project, runner, mocker
 ):
     mocker.patch(
-        "dagster_dg_cli.cli.plus.deploy_session.get_local_branch_name",
+        "dagster_dg_cli.cli.plus.deploy.deploy_session.get_local_branch_name",
         return_value="my-branch",
     )
     with mock_external_dagster_cloud_cli_command() as mocked_cloud_cli_commands:
@@ -578,7 +578,7 @@ def test_plus_deploy_on_branch_with_snapshot_base_condition(
 
 def test_plus_deploy_cant_determine_branch(logged_in_dg_cli_config, project, runner, mocker):
     mocker.patch(
-        "dagster_dg_cli.cli.plus.deploy_session.get_local_branch_name",
+        "dagster_dg_cli.cli.plus.deploy.deploy_session.get_local_branch_name",
         return_value=None,
     )
     with mock_external_dagster_cloud_cli_command():
@@ -589,7 +589,7 @@ def test_plus_deploy_cant_determine_branch(logged_in_dg_cli_config, project, run
 
 def test_plus_deploy_main_branch(logged_in_dg_cli_config, project, runner, mocker):
     mocker.patch(
-        "dagster_dg_cli.cli.plus.deploy_session.get_local_branch_name",
+        "dagster_dg_cli.cli.plus.deploy.deploy_session.get_local_branch_name",
         return_value="main",
     )
     with mock_external_dagster_cloud_cli_command():
@@ -600,7 +600,7 @@ def test_plus_deploy_main_branch(logged_in_dg_cli_config, project, runner, mocke
 
 def test_plus_deploy_hybrid_no_build_yaml(logged_in_dg_cli_config, project, runner, mocker):
     mocker.patch(
-        "dagster_dg_cli.cli.plus.deploy_session.get_local_branch_name",
+        "dagster_dg_cli.cli.plus.deploy.deploy_session.get_local_branch_name",
         return_value="main",
     )
     with mock_external_dagster_cloud_cli_command():
@@ -615,12 +615,12 @@ def test_plus_deploy_hybrid_with_yaml_files(
     logged_in_dg_cli_config, project, runner, mocker, build_yaml_file, container_context_yaml_file
 ):
     mocker.patch(
-        "dagster_dg_cli.cli.plus.deploy_session.get_local_branch_name",
+        "dagster_dg_cli.cli.plus.deploy.deploy_session.get_local_branch_name",
         return_value="main",
     )
     with mock_external_dagster_cloud_cli_command() as mocked_cloud_cli_commands:
         with patch(
-            "dagster_dg_cli.cli.plus.deploy_session._build_hybrid_image",
+            "dagster_dg_cli.cli.plus.deploy.deploy_session._build_hybrid_image",
         ):
             result = runner.invoke("plus", "deploy", "--agent-type", "hybrid", "--yes")
             assert not result.exit_code, result.output
@@ -671,7 +671,7 @@ def test_plus_deploy_hybrid_with_workspace_yaml_files(
     workspace_container_context_yaml_file,
 ):
     mocker.patch(
-        "dagster_dg_cli.cli.plus.deploy_session.get_local_branch_name",
+        "dagster_dg_cli.cli.plus.deploy.deploy_session.get_local_branch_name",
         return_value="main",
     )
 
@@ -679,7 +679,7 @@ def test_plus_deploy_hybrid_with_workspace_yaml_files(
         mock_external_dagster_cloud_cli_command() as mocked_cloud_cli_commands,
     ):
         with patch(
-            "dagster_dg_cli.cli.plus.deploy_session._build_hybrid_image",
+            "dagster_dg_cli.cli.plus.deploy.deploy_session._build_hybrid_image",
         ):
             result = runner.invoke("plus", "deploy", "--agent-type", "hybrid", "--yes")
             assert not result.exit_code, result.output
@@ -733,14 +733,14 @@ def test_plus_deploy_hybrid_with_merged_yaml_files(
     workspace_project_container_context_yaml_file,
 ):
     mocker.patch(
-        "dagster_dg_cli.cli.plus.deploy_session.get_local_branch_name",
+        "dagster_dg_cli.cli.plus.deploy.deploy_session.get_local_branch_name",
         return_value="main",
     )
     with (
         mock_external_dagster_cloud_cli_command() as mocked_cloud_cli_commands,
     ):
         with patch(
-            "dagster_dg_cli.cli.plus.deploy_session._build_hybrid_image",
+            "dagster_dg_cli.cli.plus.deploy.deploy_session._build_hybrid_image",
         ):
             result = runner.invoke("plus", "deploy", "--agent-type", "hybrid", "--yes")
             assert not result.exit_code, result.output
@@ -791,7 +791,7 @@ def test_plus_deploy_subcommands(
     logged_in_dg_cli_config, project, runner, mocker, build_yaml_file
 ) -> None:
     mocker.patch(
-        "dagster_dg_cli.cli.plus.deploy_session.get_local_branch_name",
+        "dagster_dg_cli.cli.plus.deploy.deploy_session.get_local_branch_name",
         return_value="main",
     )
 
@@ -821,7 +821,7 @@ def test_plus_deploy_subcommands(
         mocked_cloud_cli_commands.reset_mocks()
 
         with patch(
-            "dagster_dg_cli.cli.plus.deploy_session._build_hybrid_image",
+            "dagster_dg_cli.cli.plus.deploy.deploy_session._build_hybrid_image",
         ):
             result = runner.invoke("plus", "deploy", "build-and-push", "--agent-type", "hybrid")
             assert not result.exit_code, result.output
@@ -832,7 +832,7 @@ def test_plus_deploy_subcommands(
             statedir=DEFAULT_STATEDIR_PATH,
             build_directory=str(project.resolve()),
             dockerfile_path=str((project / "Dockerfile").absolute()),
-            use_editable_dagster=False,
+            use_editable_dagster=True,
             build_strategy=BuildStrategy.docker,
             docker_image_tag=None,
             docker_base_image=None,
@@ -873,7 +873,7 @@ def test_plus_deploy_subcommands_with_location(
     logged_in_dg_cli_config, project, runner, mocker, build_yaml_file
 ) -> None:
     mocker.patch(
-        "dagster_dg_cli.cli.plus.deploy_session.get_local_branch_name",
+        "dagster_dg_cli.cli.plus.deploy.deploy_session.get_local_branch_name",
         return_value="main",
     )
 
@@ -903,7 +903,7 @@ def test_plus_deploy_subcommands_with_location(
         mocked_cloud_cli_commands.reset_mocks()
 
         with patch(
-            "dagster_dg_cli.cli.plus.deploy_session._build_hybrid_image",
+            "dagster_dg_cli.cli.plus.deploy.deploy_session._build_hybrid_image",
         ):
             result = runner.invoke(
                 "plus",
@@ -929,7 +929,7 @@ def test_plus_deploy_subcommands_with_location(
             statedir=DEFAULT_STATEDIR_PATH,
             build_directory=str(project.resolve()),
             dockerfile_path=str((project / "Dockerfile").absolute()),
-            use_editable_dagster=False,
+            use_editable_dagster=True,
             build_strategy=BuildStrategy.docker,
             docker_image_tag=None,
             docker_base_image=None,
@@ -978,14 +978,14 @@ def test_plus_deploy_hybrid_with_build_yaml_scaffold(
     logged_in_dg_cli_config, project, runner, mocker
 ):
     mocker.patch(
-        "dagster_dg_cli.cli.plus.deploy_session.get_local_branch_name",
+        "dagster_dg_cli.cli.plus.deploy.deploy_session.get_local_branch_name",
         return_value="main",
     )
     with mock_external_dagster_cloud_cli_command() as mocked_cloud_cli_commands:
         mock_hybrid_response()
 
         with patch(
-            "dagster_dg_cli.cli.plus.deploy_session._build_hybrid_image",
+            "dagster_dg_cli.cli.plus.deploy.deploy_session._build_hybrid_image",
         ):
             result = runner.invoke("scaffold", "build-artifacts")
             assert not result.exit_code, result.output
@@ -1025,7 +1025,7 @@ def test_plus_deploy_hybrid_with_workspace_build_yaml_scaffold(
     mocker,
 ):
     mocker.patch(
-        "dagster_dg_cli.cli.plus.deploy_session.get_local_branch_name",
+        "dagster_dg_cli.cli.plus.deploy.deploy_session.get_local_branch_name",
         return_value="main",
     )
 
@@ -1035,7 +1035,7 @@ def test_plus_deploy_hybrid_with_workspace_build_yaml_scaffold(
         mock_external_dagster_cloud_cli_command() as mocked_cloud_cli_commands,
     ):
         with patch(
-            "dagster_dg_cli.cli.plus.deploy_session._build_hybrid_image",
+            "dagster_dg_cli.cli.plus.deploy.deploy_session._build_hybrid_image",
         ):
             result = runner.invoke(
                 "scaffold",
