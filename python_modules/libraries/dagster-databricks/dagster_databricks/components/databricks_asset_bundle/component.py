@@ -6,6 +6,7 @@ from pathlib import Path
 from typing import Annotated, Optional, Union
 
 from dagster import AssetExecutionContext, AssetSpec, MetadataValue, Resolvable, multi_asset
+from dagster._annotations import preview
 from dagster._core.definitions.definitions_class import Definitions
 from dagster.components.component.component import Component
 from dagster.components.core.context import ComponentLoadContext
@@ -59,6 +60,7 @@ def resolve_databricks_workspace(context: ResolutionContext, model) -> Databrick
     )
 
 
+@preview
 @scaffold_with(DatabricksAssetBundleScaffolder)
 @dataclass
 class DatabricksAssetBundleComponent(Component, Resolvable):
