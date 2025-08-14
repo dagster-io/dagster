@@ -63,25 +63,22 @@ Focus only on changes in the current branch, not the entire stack history. Use t
 
 Use bullet points sparingly, and do not overuse italics/bold text. Use short sentences.
 
-After generating the PR summary markdown, check if there is a current PR for this branch using `gh pr view` or similar command. If there is no PR, error and tell the user to create a PR first. If there is a PR, update it with the generated summary using `gh pr edit --body "generated_summary"` and also generate a concise, descriptive title based on the summary content and update it using `gh pr edit --title "generated_title"` or similar GitHub CLI command.
-
-Additionally, update the latest commit message in the branch with the contents of the PR summary using `git commit --amend -m "new_commit_message"` where the new commit message is derived from the PR summary title and content.
-
-**CRITICAL - SERIAL EXECUTION REQUIRED**: All git and gh commands in Step 3 must be executed one at a time in this order:
-
-1. `gh pr view` - Check for existing PR
-2. `gh pr edit --title "..."` - Update PR title
-3. `gh pr edit --body "..."` - Update PR body
-4. `git commit --amend -m "..."` - Update commit message
-
-**NEVER execute these commands in parallel** as they can cause git index locking conflicts. Wait for each command to complete before executing the next one. If git lock errors occur, use: `rm -f .git/index.lock && sleep 1` before retrying.
-
-## Step 4: Display Graphite URL
-
-After successfully updating the PR, always display the Graphite URL for easy access:
+After generating the PR summary markdown, use the `dagster-dev update-pr-and-commit` command to atomically update both the GitHub PR and local commit message:
 
 ```bash
-echo "🔗 Graphite PR View: https://app.graphite.dev/github/pr/dagster-io/dagster/[PR_NUMBER]/"
+dagster-dev update-pr-and-commit --title "generated_title" --body "generated_summary"
 ```
 
-Replace `[PR_NUMBER]` with the actual PR number from the `gh pr view` output.
+This command safely handles all PR and commit updates in the correct serial order to prevent git index locking issues. It will:
+
+1. Verify the PR exists (exit with error if not)
+2. Update the PR title
+3. Update the PR body
+4. Update the local commit message (title + body)
+5. Display the Graphite URL
+
+The command automatically handles error checking and provides clear feedback at each step.
+
+## Step 4: Complete
+
+The `dagster-dev update-pr-and-commit` command automatically displays the Graphite URL upon successful completion, so no additional steps are required.
