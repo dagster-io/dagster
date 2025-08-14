@@ -5,6 +5,7 @@ from dagster._core.asset_graph_view.serializable_entity_subset import Serializab
 
 
 def test_union():
+    raise Exception("fail me")
     a_true = SerializableEntitySubset(key=dg.AssetKey("a"), value=True)
     a_false = SerializableEntitySubset(key=dg.AssetKey("a"), value=False)
 

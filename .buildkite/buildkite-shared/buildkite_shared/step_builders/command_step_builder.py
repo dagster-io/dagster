@@ -90,7 +90,7 @@ class CommandStepBuilder:
         self._secrets = {}
         self._kubernetes_secrets = []
         self._docker_settings = None
-        
+
         # Determine retry behavior: if not explicitly set, only retry on master/release branches
         if retry_automatically is None:
             try:
@@ -98,7 +98,7 @@ class CommandStepBuilder:
             except (AssertionError, KeyError):
                 # If BUILDKITE_BRANCH is not set, default to retry (safer fallback)
                 retry_automatically = True
-        
+
         retry: dict[str, Any] = {
             "manual": {"permit_on_passed": True},
         }
