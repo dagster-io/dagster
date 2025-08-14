@@ -319,6 +319,6 @@ export type LaunchpadSessionModeNotFoundFragment = {
   message: string;
 };
 
-export const PipelineExecutionConfigSchemaQueryVersion = 'a6fabdacce7f63c8ecbac472835a022f11de013a5625a8db9155832262035d08';
-
 export const PreviewConfigQueryVersion = 'd6d9fe33524d42b5159e04c018897ec90d991ebe6c2b46e5e5d736fc30f49c77';
+
+export const PipelineExecutionConfigSchemaQueryVersion = 'a6fabdacce7f63c8ecbac472835a022f11de013a5625a8db9155832262035d08';
