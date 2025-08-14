@@ -7,6 +7,10 @@ from tempfile import TemporaryDirectory
 from unittest.mock import Mock, patch
 
 import pytest
+from dagster_dg_core.utils import ensure_dagster_dg_tests_import
+
+ensure_dagster_dg_tests_import()
+
 from dagster_dg_core_tests.utils import (
     ProxyRunner,
     assert_runner_result,
