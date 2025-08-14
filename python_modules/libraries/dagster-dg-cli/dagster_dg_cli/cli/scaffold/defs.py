@@ -105,6 +105,7 @@ class ScaffoldDefsGroup(DgClickGroup):
             name=key.to_typename(),
             context_settings={"help_option_names": ["-h", "--help"]},
             aliases=aliases,
+            help=obj.description or obj.summary,
         )
         @click.argument("defs_path", type=str)
         @click.pass_context
