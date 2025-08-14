@@ -21,7 +21,7 @@ import {
   Tooltip,
 } from 'chart.js';
 import CrosshairPlugin from 'chartjs-plugin-crosshair';
-import React, {memo, useCallback, useMemo, useRef} from 'react';
+import React, {useCallback, useMemo, useRef} from 'react';
 import {Line} from 'react-chartjs-2';
 
 import {TooltipCard} from './InsightsChartShared';
@@ -119,10 +119,26 @@ interface Props<T> {
   unitType: ReportingUnitType;
   openMetricDialog?: (data: MetricDialogData<T>) => void;
   metricName: T;
+  height?: number;
+  width?: number;
 }
 
-const InnerLineChartWithComparison = <T,>(props: Props<T>) => {
-  const {metrics, loading, unitType, openMetricDialog, metricName} = props;
+export const LineChartWithComparison = <T,>(props: Props<T>) => {
+  return (
+    <div className={styles.chartContainer}>
+      <div className={styles.chartHeader}>
+        <Box flex={{direction: 'row', gap: 4, justifyContent: 'space-between'}}>
+          <BodyLarge>{props.metrics.title}</BodyLarge>
+          {props.loading ? <Spinner purpose="body-text" /> : null}
+        </Box>
+      </div>
+      <InnerLineChartWithComparison {...props} />
+    </div>
+  );
+};
+
+export const InnerLineChartWithComparison = <T,>(props: Omit<Props<T>, 'loading'>) => {
+  const {metrics, unitType, openMetricDialog, metricName, height = 160, width} = props;
   const formatDatetime = useFormatDateTime();
   const rgbColors = useRGBColorsForTheme();
 
@@ -349,13 +365,7 @@ const InnerLineChartWithComparison = <T,>(props: Props<T>) => {
   );
 
   return (
-    <div className={styles.chartContainer}>
-      <div className={styles.chartHeader}>
-        <Box flex={{direction: 'row', gap: 4, justifyContent: 'space-between'}}>
-          <BodyLarge>{metrics.title}</BodyLarge>
-          {loading ? <Spinner purpose="body-text" /> : null}
-        </Box>
-      </div>
+    <>
       <Box flex={{direction: 'column', justifyContent: 'space-between'}}>
         <div className={styles.chartCount}>
           {metrics.currentPeriod.aggregateValue
@@ -384,7 +394,7 @@ const InnerLineChartWithComparison = <T,>(props: Props<T>) => {
         </Box>
       </Box>
       <div className={styles.chartWrapper}>
-        <div className={styles.chartGraph}>
+        <div className={styles.chartGraph} style={{height}}>
           <Line
             ref={chartRef}
             data={getDataset(metrics, formatDatetime)}
@@ -392,16 +402,14 @@ const InnerLineChartWithComparison = <T,>(props: Props<T>) => {
             onClick={onClick}
             plugins={[CrosshairPlugin as Plugin<'line'>]}
             updateMode="none"
+            height={height}
+            width={width}
           />
         </div>
       </div>
-    </div>
+    </>
   );
 };
-
-export const LineChartWithComparison = memo(
-  InnerLineChartWithComparison,
-) as typeof InnerLineChartWithComparison;
 
 const unitTypeToLabel: Record<ReportingUnitType, string> = {
   [ReportingUnitType.TIME_MS]: 'ms',
