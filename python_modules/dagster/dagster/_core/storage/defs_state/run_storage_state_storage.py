@@ -33,9 +33,9 @@ class RunStorageStateStorage(DefsStateStorage):
         raise ValueError(f"No state found for key {key} and version {version}")
 
     def set_latest_version(self, key: str, version: str) -> None:
-        self._run_storage.set_cursor_values(
-            {self.INFO_KEY: serialize_value(self.get_updated_defs_state_info(key, version))}
-        )
+        current_info = self.get_latest_defs_state_info()
+        new_info = DefsStateInfo.add_version(current_info, key, version)
+        self._run_storage.set_cursor_values({self.INFO_KEY: serialize_value(new_info)})
 
     def upload_state_from_path(self, key: str, version: str, path: Path) -> None:
         state_key = self._get_state_key(key, version)

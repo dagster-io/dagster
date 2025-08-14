@@ -653,6 +653,7 @@ def def_from_pointer(
         raise DagsterInvariantViolationError(
             f"Error invoking function at {pointer.describe()} with no arguments. "
             "Reconstructable target must be callable with no arguments"
+            f"Got {target}, {pointer.describe()}"
         )
 
     return _check_is_loadable(target())
@@ -817,6 +818,7 @@ def reconstruct_repository_def_from_pointer(
                 if curr_repo_load_data
                 else {},
                 reconstruction_metadata=curr_context.get_pending_reconstruction_metadata(),
+                defs_state_info=curr_context.defs_state_info,
             ),
         )
     else:

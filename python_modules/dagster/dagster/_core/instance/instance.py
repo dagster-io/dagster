@@ -759,7 +759,7 @@ class DagsterInstance(
         return self._run_storage
 
     @property
-    def defs_state_storage(self) -> "DefsStateStorage":
+    def defs_state_storage(self) -> Optional["DefsStateStorage"]:
         return self._defs_state_storage
 
     @property

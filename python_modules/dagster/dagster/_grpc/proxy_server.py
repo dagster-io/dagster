@@ -57,7 +57,7 @@ class DagsterProxyApiServicer(DagsterApiServicer):
         logger: logging.Logger,
         server_heartbeat: bool,
         server_heartbeat_timeout: int,
-        state_info: Optional[DefsStateInfo],
+        defs_state_info: Optional[DefsStateInfo],
     ):
         super().__init__()
 
@@ -92,7 +92,7 @@ class DagsterProxyApiServicer(DagsterApiServicer):
                 container_context=self._container_context,
                 wait_for_processes_on_shutdown=True,
                 additional_timeout_msg="Set from --startup-timeout command line argument. ",
-                state_info=state_info,
+                defs_state_info=defs_state_info,
             )
         )
         self._origin = ManagedGrpcPythonEnvCodeLocationOrigin(

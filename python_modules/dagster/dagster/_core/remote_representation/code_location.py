@@ -400,13 +400,23 @@ class CodeLocation(AbstractContextManager):
     def get_dagster_library_versions(self) -> Optional[Mapping[str, str]]: ...
 
     def get_defs_state_info(self) -> Optional[DefsStateInfo]:
-        # we only support the normal single-repo case
-        repositories = self.get_repositories()
-        if len(repositories) != 1:
+        all_infos = list(
+            filter(
+                None,
+                [repo.repository_snap.defs_state_info for repo in self.get_repositories().values()],
+            )
+        )
+        if len(all_infos) == 0:
             return None
-
-        [repo] = repositories.values()
-        return repo.repository_snap.defs_state_info
+        elif len(all_infos) == 1:
+            return all_infos[0]
+        else:
+            # in theory this would be extremely rare, as having multiple
+            # repositories in the same location has long been deprecated
+            combined_mapping = {}
+            for info in all_infos:
+                combined_mapping.update(info.info_mapping)
+            return DefsStateInfo(info_mapping=combined_mapping)
 
 
 class InProcessCodeLocation(CodeLocation):
@@ -423,7 +433,7 @@ class InProcessCodeLocation(CodeLocation):
             container_image=self._origin.container_image,
             container_context=self._origin.container_context,
             # for InProcessCodeLocations, we always use the latest available state versions
-            state_info=self._instance.defs_state_storage.get_latest_defs_state_info(),
+            defs_state_info=self._instance.get_latest_defs_state_info(),
         )
 
         self._repository_code_pointer_dict = self._loaded_repositories.code_pointers_by_repo_name

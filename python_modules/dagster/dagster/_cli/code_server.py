@@ -173,7 +173,7 @@ def code_server_cli():
     envvar="DAGSTER_INSTANCE_REF",
 )
 @click.option(
-    "--state-info",
+    "--defs-state-info",
     type=click.STRING,
     required=False,
     help="[INTERNAL] Serialized DefsStateInfo to use for accessing the state versions",
@@ -196,7 +196,7 @@ def start_command(
     heartbeat: bool,
     heartbeat_timeout,
     instance_ref: Optional[str],
-    state_info: Optional[str],
+    defs_state_info: Optional[str],
     **other_opts,
 ):
     # deferring for import perf
@@ -266,7 +266,9 @@ def start_command(
         logger=logger,
         server_heartbeat=heartbeat,
         server_heartbeat_timeout=heartbeat_timeout,
-        state_info=deserialize_value(state_info, DefsStateInfo) if state_info else None,
+        defs_state_info=deserialize_value(defs_state_info, DefsStateInfo)
+        if defs_state_info
+        else None,
     )
     server = DagsterGrpcServer(
         server_termination_event=server_termination_event,
