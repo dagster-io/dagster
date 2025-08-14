@@ -11,10 +11,12 @@
 1. `git branch --show-current` - Get the actual current branch name
 2. `gt ls -s` - Get the actual current stack structure
 3. `git status` - Verify repository state
+4. `gh pr view` - Verify that a PR on gh exists. If it does not, tell user to submit using gt submit.
+5. `gt ls -s` - Verify that branch is being tracked by graphite.
+6. `gt squash --no-interactive` - Squash commits. If there is a merge conflict, tell the user to do it manually and exit
+7. `gt submit --no-interactive` - Submit only this branch.
 
 **CRITICAL**: Execute these commands one at a time, waiting for each to complete before running the next. Do NOT use parallel bash execution as this can cause git index locking issues.
-
-Only after confirming the actual repository state should you proceed with the remaining steps.
 
 ## Step 1: Identify the Previous Branch
 
@@ -73,3 +75,13 @@ Additionally, update the latest commit message in the branch with the contents o
 4. `git commit --amend -m "..."` - Update commit message
 
 **NEVER execute these commands in parallel** as they can cause git index locking conflicts. Wait for each command to complete before executing the next one. If git lock errors occur, use: `rm -f .git/index.lock && sleep 1` before retrying.
+
+## Step 4: Display Graphite URL
+
+After successfully updating the PR, always display the Graphite URL for easy access:
+
+```bash
+echo "🔗 Graphite PR View: https://app.graphite.dev/github/pr/dagster-io/dagster/[PR_NUMBER]/"
+```
+
+Replace `[PR_NUMBER]` with the actual PR number from the `gh pr view` output.
