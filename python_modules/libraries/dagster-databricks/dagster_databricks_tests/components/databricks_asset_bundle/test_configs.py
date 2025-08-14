@@ -1,10 +1,10 @@
-from pathlib import Path
-
 from dagster_databricks.components.databricks_asset_bundle.databricks_configs import (
     DatabricksConfigs,
 )
 
-DATABRICKS_CONFIGS_LOCATION_PATH = Path(__file__).parent / "configs" / "databricks.yml"
+from dagster_databricks_tests.components.databricks_asset_bundle.conftest import (
+    DATABRICKS_CONFIGS_LOCATION_PATH,
+)
 
 
 def test_load_databricks_configs():
