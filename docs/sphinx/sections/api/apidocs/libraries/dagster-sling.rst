@@ -8,12 +8,12 @@ For more information on getting started, see the `Dagster & Sling <https://docs.
 
 .. currentmodule:: dagster_sling
 
-Sling component YAML
-====================
+Component YAML
+==============
 
 To use the Sling component, see the `Sling component integration guide <https://docs.dagster.io/integrations/libraries/sling>`_.
 
-When you run ``dg scaffold defs dagster_sling.SlingReplicationCollectionComponent SLING_DEFINITIONS_FOLDER``, the following ``defs.yaml`` configuration file will be created:
+When you scaffold a Sling component definition, the following ``defs.yaml`` configuration file will be created:
 
 .. literalinclude:: ../../../../../../examples/docs_snippets/docs_snippets/integrations/sling/defs.yaml
 

@@ -8,12 +8,12 @@ For more information on getting started, see the `Dagster & dlt <https://docs.da
 
 .. currentmodule:: dagster_dlt
 
-dlt component YAML
-==================
+Component YAML
+==============
 
 To use the dlt component, see the `dlt component integration guide <https://docs.dagster.io/integrations/libraries/dlt>`_.
 
-When you run ``dg scaffold defs dagster_dlt.DltLoadCollectionComponent``, the following ``defs.yaml`` configuration file will be created:
+When you scaffold a dlt component definition, the following ``defs.yaml`` configuration file will be created:
 
 .. literalinclude:: ../../../../../../examples/docs_snippets/docs_snippets/integrations/dlt/defs.yaml
 

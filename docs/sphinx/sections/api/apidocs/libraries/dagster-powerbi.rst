@@ -8,13 +8,12 @@ your other data assets, and how changes to other data assets might impact your P
 
 .. currentmodule:: dagster_powerbi
 
-Power BI component YAML
-=======================
+Component YAML
+==============
 
 To use the Power BI component, see the `Power BI component integration guide <https://docs.dagster.io/integrations/libraries/powerbi>`_.
 
-When you run ``dg scaffold defs dagster_powerbi.PowerBIWorkspaceComponent POWERBI_DEFINITIONS_FOLDER``,
-the following ``defs.yaml`` configuration file will be created:
+When you scaffold a Power BI compnonent definition, the following ``defs.yaml`` configuration file will be created:
 
 .. literalinclude:: ../../../../../../examples/docs_snippets/docs_snippets/integrations/power-bi/defs.yaml
 

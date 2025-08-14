@@ -5,13 +5,12 @@ This library provides a Dagster integration with `Fivetran <https://www.fivetran
 
 .. currentmodule:: dagster_fivetran
 
-Fivetran component YAML
-=======================
+Component YAML
+==============
 
 To use the Fivetran component, see the `Fivetran component integration guide <https://docs.dagster.io/integrations/libraries/fivetran>`_.
 
-When you run ``dg scaffold defs dagster_fivetran.FivetranAccountComponent FIVETRAN_DEFINITIONS_FOLDER --account-id FIVETRAN_ACCOUNT_ID --api-key "{{ env.FIVETRAN_API_KEY }}" --api-secret "{{ env.FIVETRAN_API_SECRET }}"``,
-the following ``defs.yaml`` configuration file will be created:
+When you scaffold a Fivetran component definition, the following ``defs.yaml`` configuration file will be created:
 
 .. literalinclude:: ../../../../../../examples/docs_snippets/docs_snippets/integrations/fivetran/defs.yaml
 

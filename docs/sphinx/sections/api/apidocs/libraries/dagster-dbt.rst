@@ -13,12 +13,12 @@ Related documentation pages: `dbt <https://docs.dagster.io/integrations/librarie
 .. currentmodule:: dagster_dbt
 
 **************************
-dagster-dbt component YAML
+Component YAML
 **************************
 
 To use the dbt component, see the `dbt component integration guide <https://docs.dagster.io/integrations/libraries/dbt/dbt-component>`_.
 
-When you run ``dg scaffold defs dagster_dbt.DbtProjectComponent DBT_DEFINITIONS_FOLDER --project-path YOUR_DBT_PROJECT_PATH``, the following ``defs.yaml`` configuration file will be created:
+When you scaffold a dbt component definition, the following ``defs.yaml`` configuration file will be created:
 
 .. literalinclude:: ../../../../../../examples/docs_snippets/docs_snippets/integrations/dbt/defs.yaml
 
