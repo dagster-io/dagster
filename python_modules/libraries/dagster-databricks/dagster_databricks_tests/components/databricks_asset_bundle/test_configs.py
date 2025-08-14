@@ -10,7 +10,7 @@ DATABRICKS_CONFIGS_LOCATION_PATH = Path(__file__).parent / "configs" / "databric
 def test_load_databricks_configs():
     databricks_configs = DatabricksConfigs(databricks_configs_path=DATABRICKS_CONFIGS_LOCATION_PATH)
     assert databricks_configs.databricks_configs_path == DATABRICKS_CONFIGS_LOCATION_PATH
-    assert len(databricks_configs.tasks) == 3
+    assert len(databricks_configs.tasks) == 4
 
     tasks_iter = iter(databricks_configs.tasks)
     notebook_task = next(tasks_iter)
@@ -21,6 +21,15 @@ def test_load_databricks_configs():
     assert len(notebook_task.depends_on) == 0
     assert notebook_task.job_name == "databricks_pipeline_job"
     assert len(notebook_task.libraries) == 2
+
+    python_wheel_task = next(tasks_iter)
+    assert python_wheel_task.task_type == "python_wheel"
+    assert python_wheel_task.task_key == "stage_documents"
+    assert "python_wheel_task" in python_wheel_task.task_config
+    assert len(python_wheel_task.task_parameters) == 14
+    assert len(python_wheel_task.depends_on) == 1
+    assert python_wheel_task.job_name == "databricks_pipeline_job"
+    assert len(python_wheel_task.libraries) == 2
 
     condition_task = next(tasks_iter)
     assert condition_task.task_type == "condition"

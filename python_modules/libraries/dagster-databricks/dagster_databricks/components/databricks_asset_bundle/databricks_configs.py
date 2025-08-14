@@ -149,7 +149,7 @@ class DatabricksSparkPythonTask:
 class DatabricksPythonWheelTask:
     task_key: str
     task_config: Mapping[str, Any]
-    task_parameters: Mapping[str, Any]
+    task_parameters: list[str]
     depends_on: list[str]
     job_name: str
     libraries: Optional[list[Mapping[str, Any]]] = None

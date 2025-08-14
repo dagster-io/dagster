@@ -47,6 +47,36 @@ resources:
                 package: "pandas"
                 version: "2.0.0"
 
+        # Example 2: Python wheel task with job parameter references in list format
+        - task_key: stage_documents
+          depends_on:
+            - task_key: data_processing_notebook
+          python_wheel_task:
+            package_name: "ml_etl"
+            entry_point: "main"
+            parameters:
+              [
+                "--run_id={{job.parameters.orchestrator_job_run_id}}",
+                "--module=ml_etl.projects.tune.tasks.test_task",
+                "--class=TestTask",
+                "--environment={{job.parameters.environment}}",
+                "--profiler_enabled={{job.parameters.profiler_enabled}}",
+                "--experiment_settings={{job.parameters.experiment_settings}}",
+                "--catalog_map={{job.parameters.catalog_map}}",
+                "--log_level={{job.parameters.log_level}}",
+                "--llm_calls={{job.parameters.llm_calls}}",
+                "--git_sha={{job.parameters.git_sha}}",
+                "--batch_size={{job.parameters.batch_size}}",
+                "--timeout_minutes={{job.parameters.timeout_minutes}}",
+                "--input_table={{ env }}.processed.customer_data",
+                "--output_table={{ env }}.features.customer_features"
+              ]
+          libraries:
+            - whl: "dbfs:/FileStore/wheels/ml_processing-2.1.0-py3-none-any.whl"
+            - pypi:
+                package: "scikit-learn"
+                version: "1.3.0"
+
         # Example 5: Condition task
         - task_key: check_data_quality
           depends_on:
