@@ -163,7 +163,7 @@ class DatabricksPythonWheelTask:
         wheel_config = self.task_config["python_wheel_task"]
         task_config_metadata["package_name"] = wheel_config["package_name"]
         task_config_metadata["entry_point"] = wheel_config["entry_point"]
-        task_config_metadata["parameters"] = self.task_config.get("parameters", {})
+        task_config_metadata["parameters"] = self.task_parameters
         return task_config_metadata
 
     @classmethod
