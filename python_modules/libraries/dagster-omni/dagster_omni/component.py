@@ -1,4 +1,3 @@
-import json
 from pathlib import Path
 from typing import Optional
 
@@ -6,7 +5,7 @@ import dagster as dg
 from dagster import deserialize_value, serialize_value
 from dagster.components.component.state_backed_component import StateBackedComponent
 
-from dagster_omni.objects import OmniDocument, OmniState
+from dagster_omni.objects import OmniDocument, OmniQuery, OmniState
 from dagster_omni.workspace import OmniWorkspace
 
 
@@ -22,48 +21,44 @@ class OmniComponent(StateBackedComponent, dg.Model, dg.Resolvable):
     async def write_state_to_path(self, state_path: Path) -> None:
         """Fetch documents, models, and topics from Omni API and write state to path."""
         state = await self.workspace.fetch_omni_state()
-
-        # Use Dagster's serialization system
-        serialized_state = serialize_value(state)
-
-        with open(state_path, "w") as f:
-            json.dump(serialized_state, f, indent=2)
+        state_path.write_text(serialize_value(state))
 
     def load_state_from_path(self, state_path: Path) -> OmniState:
         """Load state from path using Dagster's deserialization system."""
-        with open(state_path) as f:
-            serialized_data = json.load(f)
+        return deserialize_value(state_path.read_text(), OmniState)
 
-        return deserialize_value(serialized_data, OmniState)
+    def _get_table_dependencies(self, document: OmniDocument) -> list[dg.AssetKey]:
+        """Get unique table dependencies from document's queries."""
+        tables = set()
+        for query in document.queries:
+            if query.query_config and query.query_config.table:
+                tables.add(query.query_config.table)
+        return [dg.AssetKey([table]) for table in tables]
 
-    def get_key_for_query_id(self, state: OmniState, query_id: str) -> Optional[dg.AssetKey]:
-        query = state.get_query_by_id(query_id)
-        if query and query.query_config and query.query_config.table:
+    def get_asset_key_for_query(self, query: OmniQuery) -> Optional[dg.AssetKey]:
+        if query.query_config and query.query_config.table:
             return dg.AssetKey([query.query_config.table])
         return None
 
-    def get_asset_spec(self, obj: OmniDocument, state: OmniState) -> Optional[dg.AssetSpec]:
-        deps = filter(
-            None,
-            [self.get_key_for_query_id(state, query_id) for query_id in obj.query_ids],
+    def get_asset_spec(self, document: OmniDocument) -> Optional[dg.AssetSpec]:
+        deps = list(
+            filter(None, [self.get_asset_key_for_query(query) for query in document.queries])
         )
 
-        if obj.folder is None or obj.folder.path.startswith("sales"):
+        if document.folder is None or document.folder.path.startswith("sales"):
             return None
 
-        prefix = obj.folder.path.split("/") if obj.folder else []
+        prefix = document.folder.path.split("/") if document.folder else []
         return dg.AssetSpec(
-            key=dg.AssetKey([*prefix, obj.name]),
+            key=dg.AssetKey([*prefix, document.name]),
             group_name=prefix[0].replace("-", "_") if prefix else None,
-            tags={label.name: "" for label in obj.labels},
+            tags={label.name: "" for label in document.labels},
             deps=deps,
             metadata={
-                "omni/document_id": obj.identifier,
-                "omni/document_name": obj.name,
-                "omni/document_type": obj.type,
-                "omni/document_scope": obj.scope,
-                "omni/document_connection_id": obj.connection_id,
-                "omni/document_has_dashboard": obj.has_dashboard,
+                "omni/document_id": document.identifier,
+                "omni/document_name": document.name,
+                "omni/document_type": document.type,
+                "omni/document_connection_id": document.connection_id,
             },
             kinds={"omni"},
         )
@@ -74,11 +69,8 @@ class OmniComponent(StateBackedComponent, dg.Model, dg.Resolvable):
         if state_path is None:
             return dg.Definitions()
 
-        with open(state_path) as f:
-            serialized_state = json.load(f)
-
-        state = deserialize_value(serialized_state, OmniState)
+        state = self.load_state_from_path(state_path)
 
         return dg.Definitions(
-            assets=list(filter(None, [self.get_asset_spec(doc, state) for doc in state.documents]))
+            assets=list(filter(None, [self.get_asset_spec(doc) for doc in state.documents]))
         )
