@@ -36,7 +36,11 @@ def scaffold_component(
     yaml_attributes: Optional[Mapping[str, Any]] = None,
 ) -> None:
     if request.scaffold_format == "yaml":
-        with open(request.target_path / "defs.yaml", "w") as f:
+        mode = "a" if request.append else "w"
+        file_path = request.target_path if request.append else request.target_path / "defs.yaml"
+        with open(file_path, mode) as f:
+            if request.append:
+                f.write("---\n")
             component_data = {"type": request.type_name, "attributes": yaml_attributes or {}}
             yaml.dump(
                 component_data, f, Dumper=ComponentDumper, sort_keys=False, default_flow_style=False
@@ -71,6 +75,7 @@ def scaffold_object(
     json_params: Optional[str],
     scaffold_format: str,
     project_root: Optional[Path],
+    append: bool = False,
 ) -> None:
     from dagster.components.component.component import Component
 
@@ -102,10 +107,11 @@ def scaffold_object(
             scaffold_format=cast("ScaffoldFormatOptions", scaffold_format),
             project_root=project_root,
             params=params_model,
+            append=append,
         ),
     )
 
-    if isinstance(obj, type) and issubclass(obj, Component):
+    if isinstance(obj, type) and issubclass(obj, Component) and not append:
         defs_yaml_path = path / "defs.yaml"
         component_py_path = path / "component.py"
         if not (defs_yaml_path.exists() or component_py_path.exists()):
