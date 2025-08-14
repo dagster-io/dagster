@@ -47,6 +47,7 @@ def test_scaffold_branch_command_success():
 
             # Verify git commands were called in correct order
             expected_git_calls = [
+                (["rev-parse", "--git-dir"],),  # Git repository check
                 (["checkout", "-b", "my-feature-branch"],),
                 (["rev-parse", "HEAD"],),
                 (["commit", "--allow-empty", "-m", "Initial commit for my-feature-branch branch"],),
@@ -106,8 +107,9 @@ def test_scaffold_branch_command_whitespace_branch_name():
             assert_runner_result(result)
 
             # Verify the stripped branch name was used
-            first_git_call = mock_git.call_args_list[0][0][0]
-            assert first_git_call == ["checkout", "-b", "my-branch"]
+            # The second git call (after the repo check) should be the checkout with stripped name
+            checkout_git_call = mock_git.call_args_list[1][0][0]
+            assert checkout_git_call == ["checkout", "-b", "my-branch"]
 
 
 def test_run_git_command_git_not_found():
@@ -142,6 +144,62 @@ def test_run_gh_command_command_fails():
             click.ClickException, match="gh command failed: error: not authenticated with GitHub"
         ):
             _run_gh_command(["pr", "create"])
+
+
+def test_check_git_repository_success():
+    """Test _check_git_repository when in a valid git repository."""
+    from dagster_dg_cli.cli.scaffold.branch import _check_git_repository
+
+    with patch("subprocess.run") as mock_run:
+        mock_run.return_value = Mock(returncode=0, stdout=".git", stderr="")
+        # Should not raise an exception when git rev-parse --git-dir succeeds
+        _check_git_repository()
+        mock_run.assert_called_once_with(
+            ["git", "rev-parse", "--git-dir"], capture_output=True, text=True, check=True, cwd=None
+        )
+
+
+def test_check_git_repository_not_a_repo():
+    """Test _check_git_repository when not in a git repository."""
+    from dagster_dg_cli.cli.scaffold.branch import _check_git_repository
+
+    with patch("subprocess.run") as mock_run:
+        error = subprocess.CalledProcessError(128, "git rev-parse --git-dir")
+        error.stderr = "fatal: not a git repository (or any of the parent directories): .git"
+        error.stdout = ""
+        mock_run.side_effect = error
+
+        with pytest.raises(
+            click.ClickException,
+            match="This command must be run within a git repository.\nTo initialize a new git repository, run:\n  git init",
+        ):
+            _check_git_repository()
+
+
+def test_scaffold_branch_command_not_in_git_repo():
+    """Test scaffold branch command fails when not in a git repository."""
+    with (
+        ProxyRunner.test() as runner,
+        isolated_example_project_foo_bar(
+            runner,
+            in_workspace=False,
+        ),
+    ):
+        with patch("dagster_dg_cli.cli.scaffold.branch._run_git_command") as mock_git:
+            # Mock git rev-parse to fail as if not in a git repository
+            error = subprocess.CalledProcessError(128, "git rev-parse --git-dir")
+            error.stderr = "fatal: not a git repository (or any of the parent directories): .git"
+            error.stdout = ""
+            mock_git.side_effect = click.ClickException(
+                f"git command failed: {error.stderr.strip()}"
+            )
+
+            result = runner.invoke("scaffold", "branch", "test-branch")
+
+            # Should fail with git repository check
+            assert result.exit_code != 0
+            assert "This command must be run within a git repository" in result.output
+            assert "git init" in result.output
 
 
 def test_scaffold_branch_command_ai_inference_success():
@@ -185,6 +243,7 @@ def test_scaffold_branch_command_ai_inference_success():
             # With AI scaffolding enabled, additional git calls are made
             # Branch name gets UUID suffix: add-authentication-feature-abcd1234
             expected_git_calls = [
+                (["rev-parse", "--git-dir"],),  # Git repository check
                 (["checkout", "-b", "add-authentication-feature-abcd1234"],),
                 (["rev-parse", "HEAD"],),
                 (
@@ -272,6 +331,7 @@ def test_scaffold_branch_command_github_issue_url(github_url):
             # With AI scaffolding enabled, additional git calls are made
             # Branch name gets UUID suffix: fix-issue-123-abcd1234
             expected_git_calls = [
+                (["rev-parse", "--git-dir"],),  # Git repository check
                 (["checkout", "-b", "fix-issue-123-abcd1234"],),
                 (["rev-parse", "HEAD"],),
                 (

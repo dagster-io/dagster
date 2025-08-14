@@ -64,6 +64,25 @@ def _run_git_command(
         raise click.ClickException(f"git command failed: {e.stderr.strip() or e.stdout.strip()}")
 
 
+def _check_git_repository() -> None:
+    """Check if the current directory is within a git repository.
+
+    Raises:
+        click.ClickException: If not in a git repository with instructions on how to fix it
+    """
+    try:
+        _run_git_command(["rev-parse", "--git-dir"])
+    except click.ClickException as e:
+        if "not a git repository" in str(e).lower():
+            raise click.ClickException(
+                "This command must be run within a git repository.\n"
+                "To initialize a new git repository, run:\n"
+                "  git init"
+            )
+        # Re-raise other git-related errors
+        raise
+
+
 def _run_gh_command(args: list[str]) -> subprocess.CompletedProcess[str]:
     """Run a gh (GitHub CLI) command and return the result.
 
@@ -318,6 +337,9 @@ def scaffold_branch_command(
     **other_options: object,
 ) -> None:
     """Scaffold a new branch."""
+    # Check if we're in a git repository before proceeding
+    _check_git_repository()
+
     cli_config = normalize_cli_config(other_options, click.get_current_context())
     dg_context = DgContext.for_workspace_or_project_environment(target_path, cli_config)
 
