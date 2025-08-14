@@ -46,3 +46,12 @@ resources:
             - pypi:
                 package: "pandas"
                 version: "2.0.0"
+
+        # Example 5: Condition task
+        - task_key: check_data_quality
+          depends_on:
+            - task_key: existing_job_with_references
+          condition_task:
+            op: "GREATER_THAN"
+            left: "{{ tasks.existing_job_with_references.outputs.records_processed }}"
+            right: "{{job.parameters.batch_size}}"

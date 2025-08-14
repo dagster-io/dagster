@@ -38,7 +38,7 @@ class DatabricksNotebookTask:
     task_parameters: Mapping[str, Any]
     depends_on: list[str]
     job_name: str
-    libraries: Optional[list[Mapping[str, Any]]] = None
+    libraries: list[Mapping[str, Any]]
 
     @property
     def task_type(self) -> str:
@@ -63,7 +63,7 @@ class DatabricksNotebookTask:
             task_parameters=task_parameters,
             depends_on=parse_depends_on(job_task_config.get("depends_on", [])),
             job_name=job_task_config["job_name"],
-            libraries=job_task_config.get("libraries"),
+            libraries=job_task_config.get("libraries", []),
         )
 
 
@@ -75,7 +75,7 @@ class DatabricksConditionTask:
     task_parameters: Mapping[str, Any]
     depends_on: list[str]
     job_name: str
-    libraries: Optional[list[Mapping[str, Any]]] = None
+    libraries: list[Mapping[str, Any]]
 
     @property
     def task_type(self) -> str:
@@ -102,7 +102,7 @@ class DatabricksConditionTask:
             task_parameters=task_parameters,
             depends_on=parse_depends_on(job_task_config.get("depends_on", [])),
             job_name=job_task_config["job_name"],
-            libraries=job_task_config.get("libraries"),
+            libraries=job_task_config.get("libraries", []),
         )
 
 
