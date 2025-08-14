@@ -55,3 +55,20 @@ resources:
             op: "GREATER_THAN"
             left: "{{ tasks.existing_job_with_references.outputs.records_processed }}"
             right: "{{job.parameters.batch_size}}"
+
+        # Example 6: Spark Python task
+        - task_key: "hello_world_spark_task"
+          new_cluster:
+            spark_version: "13.3.x-scala2.12"
+            num_workers: 1  # 0 = serverless Spark compute
+            node_type_id: "i3.xlarge"
+            data_security_mode: "SINGLE_USER"
+            runtime_engine: "PHOTON"
+          spark_python_task:
+            python_file: "../spark_example/hello_world_spark.py"
+            parameters:
+              - "Hello from Databricks Bundle!"
+              - "{{ bundle.target }}"
+          libraries:
+            - pypi:
+                package: "pyspark>=3.3.0"
