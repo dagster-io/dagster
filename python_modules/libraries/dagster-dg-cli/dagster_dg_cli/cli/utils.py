@@ -159,12 +159,8 @@ def _workspace_entry_for_project(
     if not dg_context.config.project:
         exit_with_error("Unexpected empty project config.")
 
-    if dg_context.config.project.autoload_defs:
-        key = "autoload_defs_module"
-        module_name = dg_context.defs_module_name
-    else:
-        key = "python_module"
-        module_name = dg_context.code_location_target_module_name
+    key = "python_module"
+    module_name = dg_context.code_location_target_module_name
 
     entry = {
         "working_directory": str(
