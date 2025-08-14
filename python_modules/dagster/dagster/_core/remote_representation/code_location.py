@@ -423,7 +423,7 @@ class InProcessCodeLocation(CodeLocation):
             container_image=self._origin.container_image,
             container_context=self._origin.container_context,
             # for InProcessCodeLocations, we always use the latest available state versions
-            state_info=self._instance.defs_state_storage.get_latest_defs_state_info(),
+            defs_state_info=self._instance.get_latest_defs_state_info(),
         )
 
         self._repository_code_pointer_dict = self._loaded_repositories.code_pointers_by_repo_name

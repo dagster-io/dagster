@@ -60,17 +60,19 @@ def test_state_versions_grpc(entrypoint):
                 f,
             )
 
+        defs_state_storage = instance.defs_state_storage
+        assert defs_state_storage
         # add some pre-existing state, keep track of it
         with tempfile.TemporaryDirectory() as temp_dir:
             p = Path(temp_dir) / "state.json"
             p.write_text("hi")
-            instance.defs_state_storage.upload_state_from_path(
+            defs_state_storage.upload_state_from_path(
                 path=p,
                 key="the_component",
                 version="abcde-12345",
             )
 
-        original_state_versions = instance.defs_state_storage.get_latest_defs_state_info()
+        original_state_versions = defs_state_storage.get_latest_defs_state_info()
         assert original_state_versions and len(original_state_versions.info_mapping) == 1
         assert original_state_versions.get_version("the_component") == "abcde-12345"
 
@@ -78,7 +80,7 @@ def test_state_versions_grpc(entrypoint):
         with tempfile.TemporaryDirectory() as temp_dir:
             p = Path(temp_dir) / "state.json"
             p.write_text("blah")
-            instance.defs_state_storage.upload_state_from_path(
+            defs_state_storage.upload_state_from_path(
                 path=p,
                 key="the_component",
                 version="fghij-67890",
@@ -91,7 +93,7 @@ def test_state_versions_grpc(entrypoint):
             str(project_dir / "src/foo_bar/definitions.py"),
             "--instance-ref",
             dg.serialize_value(instance.get_ref()),
-            "--state-info",
+            "--defs-state-info",
             dg.serialize_value(original_state_versions),
         ]
 
@@ -102,7 +104,7 @@ def test_state_versions_grpc(entrypoint):
             wait_for_grpc_server(process, client, subprocess_args)
             list_repositories_response = sync_list_repositories_grpc(client)
             # should be using the original state versions even though we added new state
-            assert list_repositories_response.state_info == original_state_versions
+            assert list_repositories_response.defs_state_info == original_state_versions
 
             # Get the repository origin from the response
             repo_symbol = list_repositories_response.repository_symbols[0]
