@@ -10,7 +10,7 @@ Fivetran component YAML
 
 To use the Fivetran component, see the `Fivetran component integration guide <https://docs.dagster.io/integrations/libraries/fivetran>`_.
 
-When you run ``dg scaffold defs dagster_fivetran.FivetranAccountComponent FIVETRAN_DEFINITION_FOLDER --account-id FIVETRAN_ACCOUNT_ID --api-key "{{ env.FIVETRAN_API_KEY }}" --api-secret "{{ env.FIVETRAN_API_SECRET }}"``,
+When you run ``dg scaffold defs dagster_fivetran.FivetranAccountComponent FIVETRAN_DEFINITIONS_FOLDER --account-id FIVETRAN_ACCOUNT_ID --api-key "{{ env.FIVETRAN_API_KEY }}" --api-secret "{{ env.FIVETRAN_API_SECRET }}"``,
 the following ``defs.yaml`` configuration file will be created:
 
 .. literalinclude:: ../../../../../../examples/docs_snippets/docs_snippets/integrations/fivetran/defs.yaml
