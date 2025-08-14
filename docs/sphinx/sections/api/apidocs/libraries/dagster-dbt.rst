@@ -18,7 +18,7 @@ dagster-dbt component YAML
 
 To use the dbt component, see the `dbt component integration guide <https://docs.dagster.io/integrations/libraries/dbt/dbt-component>`_.
 
-Scaffolding the dbt component will create the following ``defs.yaml`` configuration file:
+When you run ``dg scaffold defs dagster_dbt.DbtProjectComponent DBT_DEFINITION_FOLDER --project-path "YOUR_DBT_PROJECT_PATH"``, the following ``defs.yaml`` configuration file will be created:
 
 .. literalinclude:: ../../../../../../examples/docs_snippets/docs_snippets/integrations/dbt/defs.yaml
 

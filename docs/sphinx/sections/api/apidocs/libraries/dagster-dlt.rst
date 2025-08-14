@@ -13,7 +13,7 @@ dlt component YAML
 
 To use the dlt component, see the `dlt component integration guide <https://docs.dagster.io/integrations/libraries/dlt>`_.
 
-Scaffolding the dlt component will create the following ``defs.yaml`` configuration file:
+When you run ``dg scaffold defs dagster_dlt.DltLoadCollectionComponent``, the following ``defs.yaml`` configuration file will be created:
 
 .. literalinclude:: ../../../../../../examples/docs_snippets/docs_snippets/integrations/dlt/defs.yaml
 
