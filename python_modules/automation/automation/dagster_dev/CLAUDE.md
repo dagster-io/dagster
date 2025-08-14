@@ -20,7 +20,7 @@ def greet():
     pass
 
 # ✅ GOOD: build_assets.py
-@click.command(name="build-assets") 
+@click.command(name="build-assets")
 def build_assets():
     """Build Dagster assets."""
     pass
