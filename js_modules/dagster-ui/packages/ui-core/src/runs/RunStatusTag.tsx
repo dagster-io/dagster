@@ -1,4 +1,4 @@
-import {Box, CaptionMono, Colors, Popover, Tag} from '@dagster-io/ui-components';
+import {Box, CaptionMono, Colors, Popover, Tag, BaseTagTooltipStyle} from '@dagster-io/ui-components';
 
 import {RunStats} from './RunStats';
 import {RunStatusIndicator} from './RunStatusDots';
@@ -97,12 +97,32 @@ export const RUN_STATUS_COLORS = {
 
 export const RunStatusTag = (props: {status: RunStatus}) => {
   const {status} = props;
+  const statusString = runStatusToString(status);
   return (
     <Tag intent={statusToIntent(status)}>
-      <Box flex={{direction: 'row', alignItems: 'center', gap: 4}}>
-        <RunStatusIndicator status={status} size={10} />
-        <div>{runStatusToString(status)}</div>
-      </Box>
+      <span
+        data-tooltip={statusString}
+        data-tooltip-style={JSON.stringify({
+          ...BaseTagTooltipStyle,
+          backgroundColor: Colors.tooltipBackground(),
+          color: Colors.tooltipText(),
+        })}
+        style={{
+          display: 'inline-block',   
+          maxWidth: 96,              
+          whiteSpace: 'nowrap',
+          overflow: 'hidden',
+          textOverflow: 'ellipsis',
+          verticalAlign: 'middle',
+        }}
+      >
+        <span style={{display: 'inline-block', verticalAlign: 'middle', marginRight: 4}}>
+          <RunStatusIndicator status={status} size={10} />
+        </span>
+        <span style={{verticalAlign: 'middle'}}>
+          {statusString}
+        </span>
+      </span>
     </Tag>
   );
 };
