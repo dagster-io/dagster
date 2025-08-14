@@ -48,6 +48,50 @@ export const AssetLaunchpad = ({
   );
 };
 
+export const BackfillLaunchpad = ({
+  repoAddress,
+  sessionPresets,
+  assetJobName,
+  open,
+  setOpen,
+  onSaveConfig,
+}: {
+  repoAddress: RepoAddress;
+  sessionPresets?: Partial<IExecutionSession>;
+  assetJobName: string;
+  open: boolean;
+  setOpen: (open: boolean) => void;
+  onSaveConfig: (config: any) => void;
+}) => {
+  const title = 'Backfill Launchpad';
+
+  return (
+    <Dialog
+      style={{height: '90vh', width: '80%'}}
+      isOpen={open}
+      canEscapeKeyClose={false}
+      canOutsideClickClose={true}
+      onClose={() => setOpen(false)}
+    >
+      <DialogHeader icon="layers" label={title} />
+      <CodeMirrorInDialogStyle />
+      <LaunchpadAllowedRoot
+        launchpadType="asset"
+        pipelinePath={assetJobName}
+        repoAddress={repoAddress}
+        sessionPresets={
+          {
+            ...sessionPresets,
+            // Store the callback in sessionPresets for now
+            // This is a temporary workaround until we can properly extend the launchpad
+            __onSaveConfig: onSaveConfig,
+          } as any
+        }
+      />
+    </Dialog>
+  );
+};
+
 export const JobOrAssetLaunchpad = (props: {repoAddress: RepoAddress}) => {
   const {repoAddress} = props;
   const {pipelinePath, repoPath} = useParams<{repoPath: string; pipelinePath: string}>();

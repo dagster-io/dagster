@@ -827,15 +827,39 @@ const LaunchpadSession = (props: LaunchpadSessionProps) => {
       />
 
       <LaunchButtonContainer launchpadType={launchpadType}>
-        <LaunchRootExecutionButton
-          title={launchButtonTitle}
-          warning={launchButtonWarning}
-          hasLaunchPermission={canLaunchPipelineExecution}
-          pipelineName={pipeline.name}
-          getVariables={buildExecutionVariables}
-          disabled={preview?.isPipelineConfigValid?.__typename !== 'PipelineConfigValidationValid'}
-          behavior="open"
-        />
+        {(currentSession as any).__onSaveConfig ? (
+          <Button
+            intent="primary"
+            onClick={() => {
+              const onSaveConfig = (currentSession as any).__onSaveConfig;
+              if (onSaveConfig) {
+                onSaveConfig({
+                  runConfigYaml: currentSession.runConfigYaml,
+                  mode: currentSession.mode,
+                  pipelineName: pipeline.name,
+                  repoAddress,
+                });
+              }
+            }}
+            disabled={
+              preview?.isPipelineConfigValid?.__typename !== 'PipelineConfigValidationValid'
+            }
+          >
+            Save Config
+          </Button>
+        ) : (
+          <LaunchRootExecutionButton
+            title={launchButtonTitle}
+            warning={launchButtonWarning}
+            hasLaunchPermission={canLaunchPipelineExecution}
+            pipelineName={pipeline.name}
+            getVariables={buildExecutionVariables}
+            disabled={
+              preview?.isPipelineConfigValid?.__typename !== 'PipelineConfigValidationValid'
+            }
+            behavior="open"
+          />
+        )}
       </LaunchButtonContainer>
     </>
   );

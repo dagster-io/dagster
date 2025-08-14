@@ -59,6 +59,7 @@ import {
   LaunchPartitionBackfillMutationVariables,
 } from '../instance/backfill/types/BackfillUtils.types';
 import {fetchTagsAndConfigForAssetJob} from '../launchpad/ConfigFetch';
+import {BackfillLaunchpad} from '../launchpad/LaunchpadRoot';
 import {TagContainer, TagEditor} from '../launchpad/TagEditor';
 import {tagsWithUIExecutionTags} from '../launchpad/uiExecutionTags';
 import {
@@ -142,6 +143,8 @@ const LaunchAssetChoosePartitionsDialogBody = ({
   const [launching, setLaunching] = useState(false);
   const [tagEditorOpen, setTagEditorOpen] = useState(false);
   const [previewOpen, setPreviewOpen] = useState(false);
+  const [launchpadOpen, setLaunchpadOpen] = useState(false);
+  const [savedConfig, setSavedConfig] = useState<any>(null);
   const [tags, setTags] = useState<PipelineRunTag[]>([]);
 
   const showSingleRunBackfillToggle = useFeatureFlagForCodeLocation(
@@ -318,13 +321,18 @@ const LaunchAssetChoosePartitionsDialogBody = ({
 
   const onLaunchAsBackfill = async () => {
     const backfillTags = tagsWithUIExecutionTags(tags);
-    const backfillParams: LaunchBackfillParams =
+
+    // Add runConfigData if we have saved configuration
+    const runConfigData = savedConfig?.runConfigYaml || undefined;
+
+    const backfillParams = (
       target.type === 'job' && !isHiddenAssetGroupJob(target.jobName)
         ? {
             tags: backfillTags,
             assetSelection: assets.map(asAssetKeyInput),
             partitionNames: keysFiltered,
             fromFailure: false,
+            runConfigData,
             selector: {
               // Todo: Fix after PR #23720 merges
               partitionSetName: `${target.jobName}_partition_set`,
@@ -339,13 +347,16 @@ const LaunchAssetChoosePartitionsDialogBody = ({
               tags: backfillTags,
               assetSelection: assets.map(asAssetKeyInput),
               allPartitions: true,
+              runConfigData,
             }
           : {
               tags: backfillTags,
               assetSelection: assets.map(asAssetKeyInput),
               partitionNames: keysFiltered,
               fromFailure: false,
-            };
+              runConfigData,
+            }
+    ) as LaunchBackfillParams;
 
     const {data: launchBackfillData} = await client.mutate<
       LaunchPartitionBackfillMutation,
@@ -527,6 +538,29 @@ const LaunchAssetChoosePartitionsDialogBody = ({
             </div>
           </Box>
         </ToggleableSection>
+        <ToggleableSection
+          title={
+            <Box flex={{direction: 'row', justifyContent: 'space-between'}}>
+              <Subheading>Config</Subheading>
+              {savedConfig && <span>Config saved</span>}
+            </Box>
+          }
+          isInitiallyOpen={false}
+        >
+          <Box padding={{vertical: 16, horizontal: 20}} flex={{direction: 'column', gap: 12}}>
+            <div>Config will be applied to all backfill runs</div>
+            <Button onClick={() => setLaunchpadOpen(true)} style={{width: 'fit-content'}}>
+              Open config editor
+            </Button>
+            {savedConfig && (
+              <Box padding={{vertical: 12, horizontal: 16}} background={Colors.backgroundLight()}>
+                <div style={{fontFamily: 'monospace', fontSize: '12px', whiteSpace: 'pre-wrap'}}>
+                  {savedConfig.runConfigYaml}
+                </div>
+              </Box>
+            )}
+          </Box>
+        </ToggleableSection>
         {target.type === 'job' && (
           <ToggleableSection
             isInitiallyOpen={true}
@@ -586,6 +620,17 @@ const LaunchAssetChoosePartitionsDialogBody = ({
         keysFiltered={keysFiltered}
         isOpen={previewOpen}
         setOpen={setPreviewOpen}
+      />
+
+      <BackfillLaunchpad
+        repoAddress={repoAddress}
+        assetJobName={target.type === 'job' ? target.jobName : '__ASSET_JOB'}
+        open={launchpadOpen}
+        setOpen={setLaunchpadOpen}
+        onSaveConfig={(config) => {
+          setSavedConfig(config);
+          setLaunchpadOpen(false);
+        }}
       />
 
       {previewNotice && (
