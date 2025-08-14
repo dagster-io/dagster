@@ -288,7 +288,7 @@ const Criteria = React.memo(
 
           return (
             <Body>
-              Last materialized{' '}
+              Last successfully materialized{' '}
               <TimeFromNow unixTimestamp={Number(metadata.lastMaterializedTimestamp)} />
             </Body>
           );
