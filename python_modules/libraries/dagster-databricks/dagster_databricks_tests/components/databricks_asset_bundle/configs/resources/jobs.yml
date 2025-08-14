@@ -60,7 +60,7 @@ resources:
         - task_key: "hello_world_spark_task"
           new_cluster:
             spark_version: "13.3.x-scala2.12"
-            num_workers: 1  # 0 = serverless Spark compute
+            num_workers: 1 # 0 = serverless Spark compute
             node_type_id: "i3.xlarge"
             data_security_mode: "SINGLE_USER"
             runtime_engine: "PHOTON"
