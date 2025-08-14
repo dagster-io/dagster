@@ -5,7 +5,6 @@ from typing import Any, Optional, Union
 
 import yaml
 from dagster import get_dagster_logger
-from dagster._serdes import whitelist_for_serdes
 from dagster_shared.record import IHaveNew, record, record_custom
 
 logger = get_dagster_logger()
@@ -32,7 +31,6 @@ def parse_depends_on(depends_on: Optional[list]) -> list[str]:
     return parsed_depends_on
 
 
-@whitelist_for_serdes
 @record
 class DatabricksNotebookTask:
     task_key: str
