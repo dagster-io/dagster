@@ -105,7 +105,6 @@ class DatabricksConditionTask:
         )
 
 
-@whitelist_for_serdes
 @record
 class DatabricksSparkPythonTask:
     task_key: str
