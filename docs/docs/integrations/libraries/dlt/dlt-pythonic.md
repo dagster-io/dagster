@@ -1,6 +1,6 @@
 ---
-title: Dagster & dlt (Legacy)
-sidebar_label: dlt (Legacy)
+title: Dagster & dlt (Pythonic)
+sidebar_label: dlt (Pythonic)
 description: The dltHub open-source library defines a standardized approach for creating data pipelines that load often messy data sources into well-structured data sets.
 tags: [dagster-supported, etl]
 source: https://github.com/dagster-io/dagster/tree/master/python_modules/libraries/dagster-dlt
