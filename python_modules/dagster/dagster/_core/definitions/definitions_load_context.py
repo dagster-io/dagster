@@ -56,12 +56,12 @@ class DefinitionsLoadContext:
         self,
         load_type: DefinitionsLoadType,
         repository_load_data: Optional["RepositoryLoadData"] = None,
-        defs_state_info: Optional[DefsStateInfo] = None,
     ):
         self._load_type = load_type
         self._repository_load_data = repository_load_data
         self._pending_reconstruction_metadata = {}
 
+        defs_state_info = repository_load_data.defs_state_info if repository_load_data else None
         if load_type == DefinitionsLoadType.INITIALIZATION and defs_state_info is None:
             # defs_state_info is passed in during INITIALIZATION if explicit state versions
             # are provided via CLI arguments, otherwise we use the latest available state info

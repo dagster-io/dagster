@@ -33,6 +33,7 @@ from dagster._core.definitions.definitions_load_context import (
 )
 from dagster._core.definitions.reconstruct import ReconstructableRepository
 from dagster._core.definitions.repository_definition import RepositoryDefinition
+from dagster._core.definitions.repository_definition.repository_definition import RepositoryLoadData
 from dagster._core.errors import (
     DagsterUserCodeLoadError,
     DagsterUserCodeUnreachableError,
@@ -250,7 +251,9 @@ class LoadedRepositories:
         DefinitionsLoadContext.set(
             DefinitionsLoadContext(
                 DefinitionsLoadType.INITIALIZATION,
-                defs_state_info=state_info,
+                repository_load_data=RepositoryLoadData(
+                    defs_state_info=state_info,
+                ),
             )
         )
 
