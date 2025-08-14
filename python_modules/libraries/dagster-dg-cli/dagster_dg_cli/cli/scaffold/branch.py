@@ -299,7 +299,7 @@ def _is_prompt_valid_git_branch_name(prompt: str) -> bool:
     return re.match(r"^[a-zA-Z0-9_.-]+$", prompt) is not None
 
 
-@click.command(name="branch", cls=DgClickCommand, hidden=True)
+@click.command(name="branch", cls=DgClickCommand, unlaunched=True)
 @click.argument("prompt", type=str, nargs=-1)
 @click.option("--disable-progress", is_flag=True, help="Disable progress spinner")
 @click.option(
