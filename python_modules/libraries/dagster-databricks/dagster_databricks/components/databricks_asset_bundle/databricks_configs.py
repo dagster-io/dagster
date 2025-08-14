@@ -202,7 +202,7 @@ class DatabricksSparkJarTask:
         task_config_metadata = {}
         jar_config = self.task_config["spark_jar_task"]
         task_config_metadata["main_class_name"] = jar_config["main_class_name"]
-        task_config_metadata["parameters"] = self.task_config.get("parameters", {})
+        task_config_metadata["parameters"] = self.task_parameters
         return task_config_metadata
 
     @classmethod
