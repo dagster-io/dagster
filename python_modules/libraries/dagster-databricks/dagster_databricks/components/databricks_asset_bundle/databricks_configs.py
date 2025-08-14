@@ -245,10 +245,7 @@ class DatabricksJobTask:
     @classmethod
     def from_job_task_config(cls, job_task_config: Mapping[str, Any]) -> "DatabricksJobTask":
         run_job_task = job_task_config["run_job_task"]
-        task_config = {
-            "job_id": run_job_task.get("job_id"),
-            "job_parameters": run_job_task.get("job_parameters", {}),
-        }
+        task_config = {"run_job_task": run_job_task}
         # For job tasks, parameters are in job_parameters
         task_parameters = run_job_task.get("job_parameters", {})
         return cls(
@@ -257,7 +254,7 @@ class DatabricksJobTask:
             task_parameters=task_parameters,
             depends_on=parse_depends_on(job_task_config.get("depends_on", [])),
             job_name=job_task_config["job_name"],
-            libraries=job_task_config.get("libraries"),
+            libraries=job_task_config.get("libraries", []),
         )
 
 
