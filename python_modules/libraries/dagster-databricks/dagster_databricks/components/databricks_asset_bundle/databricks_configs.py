@@ -221,7 +221,6 @@ class DatabricksSparkJarTask:
         )
 
 
-@whitelist_for_serdes
 @record
 class DatabricksJobTask:
     task_key: str
