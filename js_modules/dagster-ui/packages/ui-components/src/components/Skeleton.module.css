@@ -14,7 +14,7 @@
   position: absolute;
   inset: 0;
   pointer-events: none;
-  background: var(--skeleton-bg);
+  background: var(--skeleton-bg-hover);
 }
 
 .skeleton[data-animate='true']::after {
