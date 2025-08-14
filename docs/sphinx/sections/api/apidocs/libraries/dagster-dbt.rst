@@ -12,6 +12,15 @@ Related documentation pages: `dbt <https://docs.dagster.io/integrations/librarie
 
 .. currentmodule:: dagster_dbt
 
+****************************************
+dagster-dbt component YAML configuration
+****************************************
+
+To use the dbt component, see the `dbt component integration guide <https://docs.dagster.io/integrations/libraries/dbt/dbt-component>`_.
+
+.. literalinclude:: ../../../../../../examples/docs_snippets/docs_snippets/integrations/dbt/defs.yaml
+
+
 ***********
 dagster-dbt
 ***********
