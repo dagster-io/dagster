@@ -5,6 +5,13 @@ This library provides a Dagster integration with `Fivetran <https://www.fivetran
 
 .. currentmodule:: dagster_fivetran
 
+Fivetran component YAML configuration
+=====================================
+
+To install and use the Fivetran component, see the `Fivetran component integration guide <https://docs.dagster.io/integrations/libraries/fivetran>`_.
+
+.. literalinclude:: ../../../../../../examples/docs_snippets/docs_snippets/integrations/fivetran/component.yaml
+
 
 Assets (Fivetran API)
 =====================
