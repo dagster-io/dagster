@@ -184,7 +184,6 @@ class DatabricksPythonWheelTask:
         )
 
 
-@whitelist_for_serdes
 @record
 class DatabricksSparkJarTask:
     task_key: str
