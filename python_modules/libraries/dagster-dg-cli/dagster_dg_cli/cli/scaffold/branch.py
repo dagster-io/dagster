@@ -253,7 +253,7 @@ class InputType(ABC):
 
 
 def get_branch_name_and_pr_title_from_prompt(
-    dg_context: DgContext, user_input: str, input_type: type[InputType]
+    dg_context: DgContext, user_input: str, input_type: InputType
 ) -> tuple[str, str]:
     """Invokes Claude under the hood to generate a reasonable, valid
     git branch name and pull request title based on the user's stated goal.
@@ -286,7 +286,7 @@ class PrintOutputChannel:
 
 
 def scaffold_content_for_prompt(
-    dg_context: DgContext, user_input: str, input_type: type[InputType], use_spinner: bool = True
+    dg_context: DgContext, user_input: str, input_type: InputType, use_spinner: bool = True
 ) -> None:
     """Scaffolds content for the user's prompt."""
     spinner_ctx = (
@@ -396,10 +396,11 @@ def scaffold_branch_command(
         if not prompt_text:
             prompt_text = click.prompt("What would you like to accomplish?")
         assert prompt_text
-        input_type = next(
+        input_type_class = next(
             (input_type for input_type in INPUT_TYPES if input_type.matches(prompt_text)),
             TextInputType,
         )
+        input_type = input_type_class()
 
         spinner_ctx = (
             daggy_spinner_context("Generating branch name and PR title")
