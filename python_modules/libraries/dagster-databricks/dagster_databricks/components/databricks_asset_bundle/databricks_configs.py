@@ -237,8 +237,9 @@ class DatabricksJobTask:
     @cached_property
     def task_config_metadata(self) -> Mapping[str, Any]:
         task_config_metadata = {}
-        task_config_metadata["job_id"] = self.task_config["job_id"]
-        task_config_metadata["job_parameters"] = self.task_config.get("job_parameters", {})
+        job_config = self.task_config["run_job_task"]
+        task_config_metadata["job_id"] = job_config["job_id"]
+        task_config_metadata["job_parameters"] = self.task_parameters
         return task_config_metadata
 
     @classmethod
