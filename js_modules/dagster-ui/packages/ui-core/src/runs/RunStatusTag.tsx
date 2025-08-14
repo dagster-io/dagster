@@ -104,6 +104,7 @@ export const RunStatusTag = (props: {status: RunStatus}) => {
         data-tooltip={statusString}
         data-tooltip-style={JSON.stringify({
           ...BaseTagTooltipStyle,
+          fontSize: 14,
           backgroundColor: Colors.tooltipBackground(),
           color: Colors.tooltipText(),
         })}
@@ -119,7 +120,7 @@ export const RunStatusTag = (props: {status: RunStatus}) => {
         <span style={{display: 'inline-block', verticalAlign: 'middle', marginRight: 4}}>
           <RunStatusIndicator status={status} size={10} />
         </span>
-        <span style={{verticalAlign: 'middle'}}>
+        <span style={{verticalAlign: 'middle', fontSize: 14}}>
           {statusString}
         </span>
       </span>
