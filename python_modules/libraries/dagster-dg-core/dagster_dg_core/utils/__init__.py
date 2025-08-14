@@ -32,6 +32,13 @@ CLI_CONFIG_KEY = "config"
 DG_CLI_MAX_OUTPUT_WIDTH = 120
 
 
+def show_dg_unlaunched_commands() -> bool:
+    """We hide cli commands that we have not launched yet. Override this by setting
+    the DG_SHOW_UNLAUNCHED_COMMANDS environment variable to any value.
+    """
+    return os.getenv("DG_SHOW_UNLAUNCHED_COMMANDS") is not None
+
+
 def is_windows() -> bool:
     return sys.platform == "win32"
 
@@ -388,11 +395,21 @@ class DgClickCommand(DgClickHelpMixin, click.Command):  # pyright: ignore[report
                 environment variable is set.
         """
         if unlaunched:
-            kwargs["hidden"] = os.getenv("DG_SHOW_UNLAUNCHED_COMMANDS") is None
+            kwargs["hidden"] = not show_dg_unlaunched_commands()
         super().__init__(*args, **kwargs)
 
 
-class DgClickGroup(DgClickHelpMixin, ClickAliasedGroup): ...  # pyright: ignore[reportIncompatibleMethodOverride]
+class DgClickGroup(DgClickHelpMixin, ClickAliasedGroup):  # pyright: ignore[reportIncompatibleMethodOverride]
+    def __init__(self, *args, unlaunched: bool = False, **kwargs):
+        """DgClickGroup with conditional hiding for unlaunched features.
+
+        Args:
+            unlaunched: If True, the group will be hidden unless DG_SHOW_UNLAUNCHED_COMMANDS
+                environment variable is set.
+        """
+        if unlaunched:
+            kwargs["hidden"] = not show_dg_unlaunched_commands()
+        super().__init__(*args, **kwargs)
 
 
 # ########################
