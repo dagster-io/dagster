@@ -152,7 +152,7 @@ class DatabricksPythonWheelTask:
     task_parameters: list[str]
     depends_on: list[str]
     job_name: str
-    libraries: Optional[list[Mapping[str, Any]]] = None
+    libraries: list[Mapping[str, Any]]
 
     @property
     def task_type(self) -> str:
@@ -181,7 +181,7 @@ class DatabricksPythonWheelTask:
             task_parameters=task_parameters,
             depends_on=parse_depends_on(job_task_config.get("depends_on", [])),
             job_name=job_task_config["job_name"],
-            libraries=job_task_config.get("libraries"),
+            libraries=job_task_config.get("libraries", []),
         )
 
 
