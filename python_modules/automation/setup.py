@@ -45,6 +45,7 @@ setup(
             "dagster-graphql-client = automation.graphql.python_client.cli:main",
             "dagster-docs = automation.dagster_docs:main",
             "dagster-eval = automation.eval.cli:main",
+            "dagster-dev = automation.dagster_dev.cli:main",
         ]
     },
 )

@@ -52,7 +52,7 @@ Focus only on changes in the current branch, not the entire stack history. Use t
 
 ## Changelog
 
-[End user facing changelog entry, remove this section if no public-facing API was changed and no bug was fixed. Public-facing APIs are identified by the @public decorator. Ignore minor changes. If there are no user-facing changes, remove this section.]
+[End user facing changelog entry, remove this section if no public-facing API was changed and no bug was fixed. Public-facing APIs are identified by the @public decorator. Internal tools like CLIs meant for developer use should not have changelog entries. If there are no user-facing changes, remove this section.]
 ```
 
 Use bullet points sparingly, and do not overuse italics/bold text. Use short sentences.
