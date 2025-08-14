@@ -1,187 +1,129 @@
 import asyncio
-import logging
 import urllib.parse
-from functools import wraps
-from typing import Any, Callable, Optional
+from typing import Any, Optional
 
 import aiohttp
+import dagster as dg
 from aiohttp.client_exceptions import ClientResponseError
+from dagster._utils.backoff import async_backoff, exponential_delay_generator
+from pydantic import Field
 
-from dagster_omni.objects import OmniDocument, OmniPageInfo, OmniQuery, OmniState
-
-
-def exponential_backoff(max_retries: int = 5, base_delay: float = 1.0):
-    """Decorator that adds exponential backoff retry logic for rate limiting errors."""
-
-    def decorator(func: Callable) -> Callable:
-        @wraps(func)
-        async def wrapper(*args, **kwargs):
-            for attempt in range(max_retries):
-                try:
-                    return await func(*args, **kwargs)
-                except ClientResponseError as e:
-                    if e.status == 429 and attempt < max_retries - 1:
-                        delay = base_delay * (2**attempt)
-                        logging.warning(
-                            f"Rate limited, retrying in {delay:.1f}s (attempt {attempt + 1}/{max_retries})"
-                        )
-                        await asyncio.sleep(delay)
-                        continue
-                    raise
-                except aiohttp.ClientError as e:
-                    if attempt < max_retries - 1:
-                        delay = base_delay * (2**attempt)
-                        logging.warning(
-                            f"Network error, retrying in {delay:.1f}s (attempt {attempt + 1}/{max_retries}): {e}"
-                        )
-                        await asyncio.sleep(delay)
-                        continue
-                    raise
-            raise Exception(f"Failed after {max_retries} retries")
-
-        return wrapper
-
-    return decorator
+from dagster_omni.objects import OmniDocument, OmniQuery, OmniWorkspaceData
 
 
-class OmniWorkspace:
+class OmniWorkspace(dg.Resolvable, dg.Model):
     """Handles all interactions with the Omni API to fetch and manage state."""
 
-    def __init__(self, base_url: str, api_key: str):
-        self.base_url = base_url
-        self.api_key = api_key
+    base_url: str = Field(
+        description="The base URL to your Omni instance.", examples=["https://acme.omniapp.co"]
+    )
+    api_key: str = Field(
+        description="The API key to your Omni instance.",
+        examples=['"{{ env.OMNI_API_KEY }}"'],
+        repr=False,
+    )
+    max_retries: int = Field(
+        default=5, description="The maximum number of retries to make when rate-limited."
+    )
+    base_delay: float = Field(
+        default=4.0,
+        description="The base delay for exponential backoff between retries in seconds.",
+    )
 
-    @exponential_backoff(max_retries=5, base_delay=4.0)
-    async def _make_api_request(
-        self, endpoint: str, params: Optional[dict[str, Any]] = None
+    @property
+    def base_api_url(self) -> str:
+        return f"{self.base_url.rstrip('/')}/api/v1"
+
+    def _get_session(self) -> aiohttp.ClientSession:
+        """Create configured session with Bearer token authentication."""
+        headers = {
+            "Accept": "application/json",
+            "Content-Type": "application/json",
+            "Authorization": f"Bearer {self.api_key}",
+        }
+        return aiohttp.ClientSession(headers=headers)
+
+    def _should_retry(self, exc: BaseException) -> bool:
+        """Determine if an exception should trigger a retry."""
+        if isinstance(exc, ClientResponseError):
+            return exc.status == 429 or 500 <= exc.status < 600
+        return isinstance(exc, aiohttp.ClientError)
+
+    def _build_url(self, endpoint: str) -> str:
+        return f"{self.base_url.rstrip('/')}/api/v1/{endpoint.lstrip('/')}"
+
+    async def make_request(
+        self,
+        endpoint: str,
+        params: Optional[dict[str, Any]] = None,
+        headers: Optional[dict[str, str]] = None,
     ) -> dict[str, Any]:
-        """Make a request to the Omni API."""
-        url = f"{self.base_url.rstrip('/')}/api/v1/{endpoint.lstrip('/')}"
+        """Make a GET request to the API with retry logic."""
+        url = self._build_url(endpoint)
         if params:
             url = f"{url}?{urllib.parse.urlencode(params)}"
 
-        async with aiohttp.ClientSession() as session:
-            async with session.get(
-                url=url,
-                headers={
-                    "Accept": "application/json",
-                    "Authorization": f"Bearer {self.api_key}",
-                    "Content-Type": "application/json",
-                },
-            ) as response:
-                response.raise_for_status()
-                return await response.json()
+        async def _make_request():
+            async with self._get_session() as session:
+                request_headers = headers or {}
+                async with session.get(url, headers=request_headers) as response:
+                    response.raise_for_status()
+                    return await response.json()
 
-    async def _fetch_paginated(
-        self,
-        endpoint: str,
-        parse_func: Callable[[dict[str, Any]], Any],
-        base_params: Optional[dict[str, Any]] = None,
-    ) -> list[Any]:
-        """Generic method to fetch paginated data from the Omni API."""
-        items = []
-        next_cursor = None
-
-        while True:
-            params = base_params.copy() if base_params else {}
-            if next_cursor:
-                params["cursor"] = next_cursor
-
-            response = await self._make_api_request(endpoint, params)
-
-            # Parse items from this page
-            for item_data in response.get("records", []):
-                try:
-                    items.append(parse_func(item_data))
-                except (KeyError, TypeError) as e:
-                    logging.warning(f"Failed to parse {endpoint} data {item_data}: {e}")
-                    continue
-
-            # Check if we need to fetch more pages
-            if "pageInfo" not in response:
-                break
-
-            page_info = OmniPageInfo.from_json(response["pageInfo"])
-            if not page_info.has_next_page:
-                break
-
-            next_cursor = page_info.next_cursor
-
-        return items
+        return await async_backoff(
+            _make_request,
+            retry_on=self._should_retry,
+            max_retries=self.max_retries,
+            delay_generator=exponential_delay_generator(base_delay=self.base_delay),
+        )
 
     async def _fetch_document_queries(self, document_identifier: str) -> list[OmniQuery]:
         """Fetch all queries for a specific document."""
         endpoint = f"documents/{document_identifier}/queries"
-        response = await self._make_api_request(endpoint)
+        try:
+            response = await self.make_request(endpoint)
+            return [OmniQuery.from_json(query_data) for query_data in response.get("queries", [])]
+        except ClientResponseError as e:
+            # When a document has no queries, this will return 404
+            if e.status == 404:
+                return []
+            raise
 
-        queries = []
-        for query_data in response.get("queries", []):
-            try:
-                queries.append(OmniQuery.from_json(query_data))
-            except (KeyError, TypeError) as e:
-                logging.warning(
-                    f"Failed to parse query data for document {document_identifier}: {e}"
-                )
-                continue
+    async def _fetch_document_with_queries(self, document_data: dict[str, Any]) -> OmniDocument:
+        """Returns an OmniDocument with its queries embedded."""
+        queries = await self._fetch_document_queries(document_data["identifier"])
+        return OmniDocument.from_json(document_data, queries)
 
-        return queries
-
-    async def _fetch_documents(
-        self, include_deleted: bool = False
-    ) -> tuple[list[OmniDocument], list[OmniQuery]]:
-        """Fetch all documents from the Omni API with their queries."""
-        base_params = {"includeDeleted": "true"} if include_deleted else {}
-
-        # First fetch all documents without queries
-        raw_documents = []
-        all_queries = []
+    async def _fetch_documents(self) -> list[OmniDocument]:
+        """Fetch all documents from the Omni API with their queries embedded."""
+        base_params = {"pageSize": "100"}
+        documents = []
         next_cursor = None
 
         while True:
-            params = base_params.copy() if base_params else {}
+            params = base_params.copy()
             if next_cursor:
                 params["cursor"] = next_cursor
 
-            response = await self._make_api_request("documents", params)
+            response = await self.make_request("documents", params)
 
-            # Process documents from this page
-            for doc_data in response.get("records", []):
-                try:
-                    # Fetch queries for this document
-                    document_identifier = doc_data["identifier"]
-                    queries = await self._fetch_document_queries(document_identifier)
-                    query_ids = [query.id for query in queries]
-                    all_queries.extend(queries)
+            # Fan out the requests to fetch queries for each document in parallel
+            coroutines = [
+                self._fetch_document_with_queries(doc_data)
+                for doc_data in response.get("records", [])
+            ]
+            documents.extend(await asyncio.gather(*coroutines))
 
-                    # Create document with query IDs
-                    document = OmniDocument.from_json(doc_data, query_ids)
-                    raw_documents.append(document)
-                except (KeyError, TypeError) as e:
-                    logging.warning(f"Failed to parse document data {doc_data}: {e}")
-                    continue
-                except Exception as e:
-                    logging.warning(f"Failed to fetch queries for document: {e}")
-                    # Create document without queries
-                    document = OmniDocument.from_json(doc_data, [])
-                    raw_documents.append(document)
-
-            # Check if we need to fetch more pages
-            if "pageInfo" not in response:
+            next_cursor = response.get("pageInfo", {}).get("nextCursor")
+            if not next_cursor:
                 break
 
-            page_info = OmniPageInfo.from_json(response["pageInfo"])
-            if not page_info.has_next_page:
-                break
+        return documents
 
-            next_cursor = page_info.next_cursor
-
-        return raw_documents, all_queries
-
-    async def fetch_omni_state(self, include_deleted: bool = False) -> OmniState:
-        """Fetch all documents and queries from the Omni API.
+    async def fetch_omni_state(self) -> OmniWorkspaceData:
+        """Fetch all documents from the Omni API with queries embedded.
 
         This is the main public method for getting complete Omni state.
         """
-        documents_with_queries, all_queries = await self._fetch_documents(include_deleted)
-
-        return OmniState(documents=documents_with_queries, queries=all_queries)
+        documents = await self._fetch_documents()
+        return OmniWorkspaceData(documents=documents)
