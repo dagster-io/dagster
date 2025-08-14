@@ -3,6 +3,8 @@ from collections.abc import Mapping
 from enum import Enum
 from typing import Any, Callable, Optional, TypedDict
 
+from buildkite_shared.environment import is_feature_branch
+
 DEFAULT_TIMEOUT_IN_MIN = 35
 
 DOCKER_PLUGIN = "docker#v5.10.0"
@@ -82,12 +84,21 @@ class CommandStepBuilder:
         label,
         key: Optional[str] = None,
         timeout_in_minutes: int = DEFAULT_TIMEOUT_IN_MIN,
-        retry_automatically=True,
+        retry_automatically: Optional[bool] = None,
         plugins: Optional[list[dict[str, object]]] = None,
     ):
         self._secrets = {}
         self._kubernetes_secrets = []
         self._docker_settings = None
+        
+        # Determine retry behavior: if not explicitly set, only retry on master/release branches
+        if retry_automatically is None:
+            try:
+                retry_automatically = not is_feature_branch()
+            except (AssertionError, KeyError):
+                # If BUILDKITE_BRANCH is not set, default to retry (safer fallback)
+                retry_automatically = True
+        
         retry: dict[str, Any] = {
             "manual": {"permit_on_passed": True},
         }
