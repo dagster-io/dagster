@@ -5,10 +5,12 @@ This library provides a Dagster integration with `Fivetran <https://www.fivetran
 
 .. currentmodule:: dagster_fivetran
 
-Fivetran component YAML configuration
-=====================================
+Fivetran component YAML
+=======================
 
 To use the Fivetran component, see the `Fivetran component integration guide <https://docs.dagster.io/integrations/libraries/fivetran>`_.
+
+Scaffolding the Fivetran component will create the following ``defs.yaml`` configuration file:
 
 .. literalinclude:: ../../../../../../examples/docs_snippets/docs_snippets/integrations/fivetran/defs.yaml
 

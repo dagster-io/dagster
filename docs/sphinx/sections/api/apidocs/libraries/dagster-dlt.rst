@@ -8,8 +8,8 @@ For more information on getting started, see the `Dagster & dlt <https://docs.da
 
 .. currentmodule:: dagster_dlt
 
-dlt component YAML configuration
-=====================================
+dlt component YAML
+==================
 
 To use the dlt component, see the `dlt component integration guide <https://docs.dagster.io/integrations/libraries/dlt>`_.
 
