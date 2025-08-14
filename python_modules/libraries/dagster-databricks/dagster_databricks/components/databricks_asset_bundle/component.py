@@ -28,12 +28,12 @@ def resolve_databricks_configs(context: ResolutionContext, model) -> DatabricksC
 @scaffold_with(DatabricksAssetBundleScaffolder)
 @dataclass
 class DatabricksAssetBundleComponent(Component, Resolvable):
-    configs: Annotated[
+    databricks_configs: Annotated[
         DatabricksConfigs,
         Resolver(
             resolve_databricks_configs,
             model_field_type=str,
-            description="The path to the databricks.yml config file.",
+            description="The databricks.yml configs.",
             examples=[
                 "{{ project_root }}/path/to/databricks_yml_config_file",
             ],
