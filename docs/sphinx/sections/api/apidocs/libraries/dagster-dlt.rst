@@ -11,7 +11,9 @@ For more information on getting started, see the `Dagster & dlt <https://docs.da
 dlt component YAML configuration
 =====================================
 
-To use the Fivetran component, see the `dlt component integration guide <https://docs.dagster.io/integrations/libraries/dlt>`_.
+To use the dlt component, see the `dlt component integration guide <https://docs.dagster.io/integrations/libraries/dlt>`_.
+
+Scaffolding the dlt component will create the following ``defs.yaml`` configuration file:
 
 .. literalinclude:: ../../../../../../examples/docs_snippets/docs_snippets/integrations/dlt/defs.yaml
 
