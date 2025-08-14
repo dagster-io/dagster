@@ -9,6 +9,7 @@
 ### Bugfixes
 
 - Fixed issue causing `AutomationCondition.replace` to not update built-in sub-conditions that did not have an explicit label.
+- Fixed an issue where assets were considered stubs if they were a stub in any code location.
 - Projects using components no longer cause "job definitions changed while uploading" errors on older agent versions.
 - [dagster-dbt] Fixed a bug that could cause execution to fail if `enable_code_references` was set to `True` on the `DagsterDbtTranslatorSettings`.
 
