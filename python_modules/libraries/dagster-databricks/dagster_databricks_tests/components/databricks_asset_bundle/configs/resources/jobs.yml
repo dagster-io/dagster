@@ -69,7 +69,7 @@ resources:
                 "--batch_size={{job.parameters.batch_size}}",
                 "--timeout_minutes={{job.parameters.timeout_minutes}}",
                 "--input_table={{ env }}.processed.customer_data",
-                "--output_table={{ env }}.features.customer_features"
+                "--output_table={{ env }}.features.customer_features",
               ]
           libraries:
             - whl: "dbfs:/FileStore/wheels/ml_processing-2.1.0-py3-none-any.whl"
