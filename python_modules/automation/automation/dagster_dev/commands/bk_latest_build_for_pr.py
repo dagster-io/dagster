@@ -7,12 +7,17 @@ import sys
 import click
 
 
-@click.command(name="bk-latest-build-for-pr")
-def bk_latest_build_for_pr():
+def get_latest_build_for_pr() -> str:
     """Get the build number for the current PR.
 
     Extracts the Buildkite build number from the current PR's checks.
     Handles error conditions like no PR, no checks, or no Buildkite checks.
+
+    Returns:
+        str: The build number
+
+    Raises:
+        SystemExit: If an error occurs (with error message printed to stderr)
     """
     try:
         # First check if we're on a branch with a PR
@@ -70,7 +75,7 @@ def bk_latest_build_for_pr():
             click.echo(f"Error: Could not extract valid build number from link: {link}", err=True)
             sys.exit(1)
 
-        click.echo(build_number)
+        return build_number
 
     except subprocess.SubprocessError as e:
         click.echo(f"Error: Failed to run gh command: {e}", err=True)
@@ -78,3 +83,14 @@ def bk_latest_build_for_pr():
     except Exception as e:
         click.echo(f"Error: Unexpected error: {e}", err=True)
         sys.exit(1)
+
+
+@click.command(name="bk-latest-build-for-pr")
+def bk_latest_build_for_pr():
+    """Get the build number for the current PR.
+
+    Extracts the Buildkite build number from the current PR's checks.
+    Handles error conditions like no PR, no checks, or no Buildkite checks.
+    """
+    build_number = get_latest_build_for_pr()
+    click.echo(build_number)
