@@ -1,7 +1,0 @@
-type: dagster_fivetran.FivetranAccountComponent
-
-attributes:
-  workspace:
-    account_id: test_account
-    api_key: '{{ env.FIVETRAN_API_KEY }}'
-    api_secret: '{{ env.FIVETRAN_API_SECRET }}'

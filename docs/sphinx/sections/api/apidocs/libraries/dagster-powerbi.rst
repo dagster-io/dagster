@@ -15,7 +15,8 @@ To use the Power BI component, see the `Power BI component integration guide <ht
 
 When you scaffold a Power BI compnonent definition, the following ``defs.yaml`` configuration file will be created:
 
-.. literalinclude:: ../../../../../../examples/docs_snippets/docs_snippets/integrations/power-bi/defs.yaml
+.. literalinclude:: ../../../../../../examples/docs_snippets/docs_snippets/guides/components/integrations/powerbi-component/6-populated-component.yaml
+
 
 Assets (Power BI API)
 =====================
