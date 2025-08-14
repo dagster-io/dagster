@@ -67,7 +67,6 @@ class DatabricksNotebookTask:
         )
 
 
-@whitelist_for_serdes
 @record
 class DatabricksConditionTask:
     task_key: str
