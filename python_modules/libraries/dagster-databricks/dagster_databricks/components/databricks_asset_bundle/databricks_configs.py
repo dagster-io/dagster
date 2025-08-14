@@ -123,7 +123,7 @@ class DatabricksSparkPythonTask:
         task_config_metadata = {}
         python_config = self.task_config["spark_python_task"]
         task_config_metadata["python_file"] = python_config["python_file"]
-        task_config_metadata["parameters"] = self.task_config.get("parameters", {})
+        task_config_metadata["parameters"] = self.task_parameters
         return task_config_metadata
 
     @classmethod
