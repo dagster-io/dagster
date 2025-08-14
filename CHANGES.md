@@ -4,18 +4,18 @@
 
 ### New
 
-- Allow explicit git `platform` selection in `link_code_references_to_git`, thanks [chazmo03](https://github.com/chazmo03)!
+- Allow explicit git `platform` selection in `link_code_references_to_git`, thanks [@chazmo03](https://github.com/chazmo03)!
 
 ### Bugfixes
 
-- Fixed issue causing `AutomationCondition.replace` to not update built-in sub-conditions that did not have an explicit label.
+- Fixed issue causing `AutomationCondition.replace` to not update built-in sub-conditions that did not have an explicit label, thanks [@dschafer](https://github.com/dschafer)!
 - Fixed an issue where assets were considered stubs if they were a stub in any code location.
 - Projects using components no longer cause "job definitions changed while uploading" errors on older agent versions.
 - [dagster-dbt] Fixed a bug that could cause execution to fail if `enable_code_references` was set to `True` on the `DagsterDbtTranslatorSettings`.
 
 ### Documentation
 
-- Updated documentation of `dagster.yaml` to include the `nux` option, thanks [dwisdom0](https://github.com/dwisdom0)!
+- Updated documentation of `dagster.yaml` to include the `nux` option, thanks [@dwisdom0](https://github.com/dwisdom0)!
 
 ### Dagster Plus
 
