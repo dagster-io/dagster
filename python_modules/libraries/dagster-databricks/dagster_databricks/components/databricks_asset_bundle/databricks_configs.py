@@ -229,7 +229,7 @@ class DatabricksJobTask:
     task_parameters: Mapping[str, Any]
     depends_on: list[str]
     job_name: str
-    libraries: Optional[list[Mapping[str, Any]]] = None
+    libraries: list[Mapping[str, Any]]
 
     @property
     def task_type(self) -> str:
