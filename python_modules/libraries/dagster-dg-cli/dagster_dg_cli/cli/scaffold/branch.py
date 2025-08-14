@@ -1,11 +1,14 @@
 import json
+import os
 import re
 import subprocess
 import textwrap
 import uuid
 from abc import ABC
 from contextlib import nullcontext
+from datetime import datetime
 from pathlib import Path
+from typing import Any, Optional
 
 import click
 from dagster_dg_core.config import normalize_cli_config
@@ -13,12 +16,26 @@ from dagster_dg_core.context import DgContext
 from dagster_dg_core.shared_options import dg_global_options, dg_path_options
 from dagster_dg_core.utils import DgClickCommand
 from dagster_dg_core.utils.telemetry import cli_telemetry_wrapper
+from dagster_dg_core.version import __version__ as dg_version
+from dagster_shared.record import as_dict, record
 
 from dagster_dg_cli.utils.claude_utils import run_claude, run_claude_stream
 from dagster_dg_cli.utils.ui import daggy_spinner_context
 
 
-def _run_git_command(args: list[str]) -> subprocess.CompletedProcess[str]:
+def _get_dg_version() -> str:
+    if dg_version == "1!0+dev":
+        dagster_repo = os.getenv("DAGSTER_GIT_REPO_DIR")
+        if dagster_repo:
+            result = _run_git_command(["rev-parse", "HEAD"], cwd=Path(dagster_repo))
+            return result.stdout.strip()
+
+    return dg_version
+
+
+def _run_git_command(
+    args: list[str], cwd: Optional[Path] = None
+) -> subprocess.CompletedProcess[str]:
     """Run a git command and return the result.
 
     Args:
@@ -31,7 +48,13 @@ def _run_git_command(args: list[str]) -> subprocess.CompletedProcess[str]:
         click.ClickException: If git is not found or command fails
     """
     try:
-        result = subprocess.run(["git"] + args, capture_output=True, text=True, check=True)
+        result = subprocess.run(
+            ["git"] + args,
+            capture_output=True,
+            text=True,
+            check=True,
+            cwd=cwd,
+        )
         return result
     except FileNotFoundError:
         raise click.ClickException(
@@ -39,6 +62,25 @@ def _run_git_command(args: list[str]) -> subprocess.CompletedProcess[str]:
         )
     except subprocess.CalledProcessError as e:
         raise click.ClickException(f"git command failed: {e.stderr.strip() or e.stdout.strip()}")
+
+
+def _check_git_repository() -> None:
+    """Check if the current directory is within a git repository.
+
+    Raises:
+        click.ClickException: If not in a git repository with instructions on how to fix it
+    """
+    try:
+        _run_git_command(["rev-parse", "--git-dir"])
+    except click.ClickException as e:
+        if "not a git repository" in str(e).lower():
+            raise click.ClickException(
+                "This command must be run within a git repository.\n"
+                "To initialize a new git repository, run:\n"
+                "  git init"
+            )
+        # Re-raise other git-related errors
+        raise
 
 
 def _run_gh_command(args: list[str]) -> subprocess.CompletedProcess[str]:
@@ -64,17 +106,21 @@ def _run_gh_command(args: list[str]) -> subprocess.CompletedProcess[str]:
         raise click.ClickException(f"gh command failed: {e.stderr.strip() or e.stdout.strip()}")
 
 
-def create_git_branch(branch_name: str) -> None:
+def create_git_branch(branch_name: str) -> str:
     """Create and checkout a new git branch.
 
     Args:
         branch_name: Name of the branch to create
+
+    Returns:
+        The commit hash of the new branch
 
     Raises:
         click.ClickException: If git operations fail
     """
     _run_git_command(["checkout", "-b", branch_name])
     click.echo(f"Created and checked out new branch: {branch_name}")
+    return _run_git_command(["rev-parse", "HEAD"]).stdout.strip()
 
 
 def create_empty_commit(message: str) -> None:
@@ -90,26 +136,43 @@ def create_empty_commit(message: str) -> None:
     click.echo(f"Created empty commit: {message}")
 
 
-def create_content_commit_and_push(message: str) -> None:
+def create_content_commit_and_push(message: str, local_only: bool = False) -> str:
     _run_git_command(["add", "-A"])
     _run_git_command(["commit", "-m", message])
-    _run_git_command(["push"])
+    if not local_only and has_remote_origin():
+        _run_git_command(["push"])
+    return _run_git_command(["rev-parse", "HEAD"]).stdout.strip()
 
 
-def push_branch_and_create_pr(branch_name: str, pr_title: str, pr_body: str) -> str:
+def has_remote_origin() -> bool:
+    """Check if the repository has a remote named 'origin'."""
+    result = subprocess.run(
+        ["git", "remote", "get-url", "origin"], capture_output=True, text=True, check=False
+    )
+    return result.returncode == 0 and bool(result.stdout.strip())
+
+
+def create_branch_and_pr(
+    branch_name: str, pr_title: str, pr_body: str, local_only: bool = False
+) -> str:
     """Push the current branch to remote and create a GitHub pull request.
 
     Args:
         branch_name: Name of the branch to push
         pr_title: Title of the pull request
         pr_body: Body/description of the pull request
+        local_only: If True, skip pushing to remote and creating PR
 
     Returns:
-        URL of the created pull request
+        URL of the created pull request, or empty string if local_only
 
     Raises:
         click.ClickException: If git or gh operations fail
     """
+    if local_only or not has_remote_origin():
+        click.echo(f"Branch {branch_name} created locally (no remote push)")
+        return ""
+
     # Push the branch to remote
     _run_git_command(["push", "-u", "origin", branch_name])
     click.echo(f"Pushed branch {branch_name} to remote")
@@ -271,23 +334,45 @@ def _is_prompt_valid_git_branch_name(prompt: str) -> bool:
     return re.match(r"^[a-zA-Z0-9_.-]+$", prompt) is not None
 
 
-@click.command(name="branch", cls=DgClickCommand, hidden=True)
+@click.command(name="branch", cls=DgClickCommand, unlaunched=True)
 @click.argument("prompt", type=str, nargs=-1)
 @click.option("--disable-progress", is_flag=True, help="Disable progress spinner")
+@click.option(
+    "--local-only",
+    is_flag=True,
+    help="Create branch locally without pushing to remote or creating PR",
+)
+@click.option(
+    "--record",
+    type=Path,
+    help="Directory to write out session information for later analysis.",
+)
 @dg_path_options
 @dg_global_options
 @cli_telemetry_wrapper
 def scaffold_branch_command(
-    prompt: tuple[str, ...], target_path: Path, disable_progress: bool, **other_options: object
+    prompt: tuple[str, ...],
+    target_path: Path,
+    disable_progress: bool,
+    local_only: bool,
+    record: Optional[Path],
+    **other_options: object,
 ) -> None:
     """Scaffold a new branch."""
+    # Check if we're in a git repository before proceeding
+    _check_git_repository()
+
     cli_config = normalize_cli_config(other_options, click.get_current_context())
     dg_context = DgContext.for_workspace_or_project_environment(target_path, cli_config)
 
-    prompt_text = " ".join(prompt)
     ai_scaffolding = False
     input_type = None
 
+    if record and (not record.exists() or not record.is_dir()):
+        raise click.UsageError(f"{record} is not an existing directory")
+
+    prompt_text = " ".join(prompt)
+    generated_outputs = {}
     # If the user input a valid git branch name, bypass AI inference and create the branch directly.
     if prompt_text and _is_prompt_valid_git_branch_name(prompt_text.strip()):
         branch_name = prompt_text.strip()
@@ -302,6 +387,7 @@ def scaffold_branch_command(
             (input_type for input_type in INPUT_TYPES if input_type.matches(prompt_text)),
             TextInputType,
         )
+
         spinner_ctx = (
             daggy_spinner_context("Generating branch name and PR title")
             if not disable_progress
@@ -311,6 +397,8 @@ def scaffold_branch_command(
             branch_name, pr_title = get_branch_name_and_pr_title_from_prompt(
                 dg_context, prompt_text, input_type
             )
+        generated_outputs["branch_name"] = branch_name
+        generated_outputs["pr_title"] = pr_title
         # For generated branch names, add a random suffix to avoid conflicts
         branch_name = branch_name + "-" + str(uuid.uuid4())[:8]
         ai_scaffolding = True
@@ -318,22 +406,81 @@ def scaffold_branch_command(
     click.echo(f"Creating new branch: {branch_name}")
 
     # Create and checkout the new branch
-    create_git_branch(branch_name)
+    branch_base_sha = create_git_branch(branch_name)
 
     # Create an empty commit to enable PR creation
     commit_message = f"Initial commit for {branch_name} branch"
     create_empty_commit(commit_message)
 
-    # Create PR with branch name as title and standard body
-    pr_body = f"This pull request was generated by the Dagster `dg` CLI for branch '{branch_name}'."
+    # Determine if we should work locally only
+    effective_local_only = local_only or not has_remote_origin()
 
-    # Push branch and create PR
-    pr_url = push_branch_and_create_pr(branch_name, pr_title, pr_body)
+    if effective_local_only:
+        click.echo(f"✅ Successfully created branch: {branch_name}")
+        pr_url = ""
+    else:
+        # Create PR with branch name as title and standard body
+        pr_body = (
+            f"This pull request was generated by the Dagster `dg` CLI for branch '{branch_name}'."
+        )
 
-    click.echo(f"✅ Successfully created branch and pull request: {pr_url}")
+        # Push branch and create PR
+        pr_url = create_branch_and_pr(branch_name, pr_title, pr_body, effective_local_only)
 
+        click.echo(f"✅ Successfully created branch and pull request: {pr_url}")
+
+    first_pass_sha = None
     if ai_scaffolding and input_type:
         scaffold_content_for_prompt(
             dg_context, prompt_text, input_type, use_spinner=not disable_progress
         )
-        create_content_commit_and_push(f"First pass at {branch_name}")
+        first_pass_sha = create_content_commit_and_push(
+            f"First pass at {branch_name}", effective_local_only
+        )
+
+    if record:
+        if first_pass_sha:
+            generated_outputs["first_pass_commit"] = _run_git_command(
+                ["git", "show", first_pass_sha]
+            ).stdout.strip()
+
+        session_data = Session(
+            timestamp=datetime.now().isoformat(),
+            dg_version=_get_dg_version(),
+            branch_name=branch_name,
+            pr_title=pr_title,
+            pr_url=pr_url,
+            branch_base_sha=branch_base_sha,
+            first_pass_sha=first_pass_sha,
+            input={
+                "prompt": prompt_text,
+            },
+            output=generated_outputs,
+        )
+        record_path = record / f"{uuid.uuid4()}.json"
+        record_path.write_text(json.dumps(as_dict(session_data), indent=2))
+        click.echo(f"📝 Session recorded: {record_path}")
+
+
+@record
+class Session:
+    """A recorded session of the `scaffold branch` command, useful for evaluating effectiveness."""
+
+    # isoformat
+    timestamp: str
+    # what code was used - semver for published package, commit hash for local development
+    dg_version: str
+    # the name of the branch created (even if AI not used)
+    branch_name: str
+    # the title of the PR created (even if AI not used)
+    pr_title: str
+    # the URL of the PR created. Used to identify the target repo. Empty string if local-only.
+    pr_url: str
+    # the commit hash of the branch base. Used to identify the state of the target repo.
+    branch_base_sha: str
+    # the commit hash of the generated first pass commit, if done.
+    first_pass_sha: Optional[str]
+    # collection of input information
+    input: dict[str, Any]
+    # collection of generated output
+    output: dict[str, Any]

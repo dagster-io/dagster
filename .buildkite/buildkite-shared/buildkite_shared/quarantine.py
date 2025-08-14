@@ -4,6 +4,7 @@ from dataclasses import dataclass
 from functools import lru_cache
 
 import requests
+from buildkite_shared import environment
 
 
 @dataclass(frozen=True)
@@ -62,7 +63,7 @@ def get_buildkite_quarantined_objects(
 def filter_and_print_steps_by_quarantined(
     all_steps, skip_quarantined_steps, mute_quarantined_steps
 ):
-    if skip_quarantined_steps or mute_quarantined_steps:
+    if (skip_quarantined_steps or mute_quarantined_steps) and not environment.run_all_tests():
         filtered_steps, skipped_steps, muted_steps = filter_steps_by_quarantined(
             all_steps, skip_quarantined_steps, mute_quarantined_steps
         )
@@ -78,7 +79,7 @@ def filter_and_print_steps_by_quarantined(
 
 
 def filter_steps_by_quarantined(steps, skip_quarantined_steps, mute_quarantined_steps):
-    if not skip_quarantined_steps and not mute_quarantined_steps:
+    if (not skip_quarantined_steps and not mute_quarantined_steps) or environment.run_all_tests():
         return steps, [], []
 
     filtered_steps = []

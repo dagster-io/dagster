@@ -16,10 +16,10 @@ def instance():
 
 class TestDagsterWebserver(DagsterWebserver):
     def test_req_ctx_endpoint(self, request: Request):
-        ctx = self.make_request_context(request)
-        # instantiate cached property with backref
-        _ = ctx.instance_queryer
-        return JSONResponse({"name": ctx.__class__.__name__})
+        with self.request_context(request) as ctx:
+            # instantiate cached property with backref
+            _ = ctx.instance_queryer
+            return JSONResponse({"name": ctx.__class__.__name__})
 
     def build_routes(self):
         return [

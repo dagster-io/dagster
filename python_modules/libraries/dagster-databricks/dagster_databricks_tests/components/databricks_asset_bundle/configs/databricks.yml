@@ -1,0 +1,30 @@
+# Sample Databricks bundle configuration that demonstrates new features
+# This file shows how the scaffolder extracts libraries, job parameters, and common configuration
+
+bundle:
+  name: databricks_pipeline_example
+
+variables:
+  experiment_settings: "mlflow://databricks"
+  catalog_map: "dev.catalog"
+  log_level: "INFO"
+  llm_calls: "enabled"
+  git_sha: "{{ git_sha }}"
+  output_bucket_name: "my-data-bucket"
+  orchestrator_job_run_id: "{{ run_id }}"
+  environment: "{{ env }}"
+  profiler_enabled: "false"
+
+targets:
+  dev:
+    default: true
+    variables:
+      env: "dev"
+      catalog: "dev"
+  prod:
+    variables:
+      env: "prod"
+      catalog: "prod"
+
+include:
+  - resources/jobs.yml

@@ -1,0 +1,48 @@
+# Example: Jobs with job-level parameters and job parameter references
+# This demonstrates how the scaffolder extracts job-level parameters and preserves references
+
+resources:
+  jobs:
+    databricks_pipeline_job:
+      name: "Databricks Pipeline Job with Job Parameters"
+
+      # Job-level parameters that will be extracted by the scaffolder and component
+      parameters:
+        environment: "{{ env }}"
+        orchestrator_job_run_id: "{{ run_id }}"
+        output_bucket_name: "{{ var.output_bucket_name }}"
+        profiler_enabled: false
+        experiment_settings: "mlflow://databricks"
+        catalog_map: "{{ env }}.catalog"
+        log_level: "INFO"
+        llm_calls: "enabled"
+        git_sha: "{{ git_sha }}"
+        batch_size: 1000
+        timeout_minutes: 30
+
+      tasks:
+        # Example 1: Notebook task with job parameter references
+        - task_key: data_processing_notebook
+          notebook_task:
+            notebook_path: "/Users/{{ workspace_user }}/ml_pipelines/data_processing"
+            base_parameters:
+              input_table: "{{ env }}.raw.customer_data"
+              output_table: "{{ env }}.processed.customer_data"
+              processing_date: "{{ ds }}"
+              # Reference job-level parameters using {{job.parameters.param_name}} syntax
+              environment: "{{job.parameters.environment}}"
+              run_id: "{{job.parameters.orchestrator_job_run_id}}"
+              output_bucket: "{{job.parameters.output_bucket_name}}"
+              profiler_enabled: "{{job.parameters.profiler_enabled}}"
+              experiment_settings: "{{job.parameters.experiment_settings}}"
+              catalog_map: "{{job.parameters.catalog_map}}"
+              log_level: "{{job.parameters.log_level}}"
+              llm_calls: "{{job.parameters.llm_calls}}"
+              git_sha: "{{job.parameters.git_sha}}"
+              batch_size: "{{job.parameters.batch_size}}"
+              timeout_minutes: "{{job.parameters.timeout_minutes}}"
+          libraries:
+            - whl: "dbfs:/FileStore/wheels/data_processing-1.0.0-py3-none-any.whl"
+            - pypi:
+                package: "pandas"
+                version: "2.0.0"
