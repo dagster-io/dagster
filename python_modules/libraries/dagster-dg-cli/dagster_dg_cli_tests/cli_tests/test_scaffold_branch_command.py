@@ -369,6 +369,49 @@ def test_scaffold_branch_command_github_issue_url(github_url):
             assert "Created and checked out new branch: fix-issue-123" in result.output
 
 
+def test_scaffold_branch_command_no_remote_origin():
+    """Test successful branch creation when has_remote_origin is false."""
+    with (
+        ProxyRunner.test() as runner,
+        isolated_example_project_foo_bar(
+            runner,
+            in_workspace=False,
+        ),
+    ):
+        # Mock the subprocess calls to simulate git commands (no gh commands needed)
+        with (
+            patch("dagster_dg_cli.cli.scaffold.branch._run_git_command") as mock_git,
+            patch("dagster_dg_cli.cli.scaffold.branch.has_remote_origin", return_value=False),
+        ):
+            # Mock git checkout -b command
+            mock_git.return_value = Mock(returncode=0, stdout="", stderr="")
+
+            result = runner.invoke("scaffold", "branch", "my-local-branch")
+            assert_runner_result(result)
+
+            # Verify git commands were called (but no push commands)
+            expected_git_calls = [
+                (["rev-parse", "--git-dir"],),  # Git repository check
+                (["checkout", "-b", "my-local-branch"],),
+                (["rev-parse", "HEAD"],),
+                (["commit", "--allow-empty", "-m", "Initial commit for my-local-branch branch"],),
+            ]
+
+            actual_git_calls = [call[0] for call in mock_git.call_args_list]
+            assert actual_git_calls == expected_git_calls
+
+            # Check output messages (no push or PR creation messages)
+            assert "Creating new branch: my-local-branch" in result.output
+            assert "Created and checked out new branch: my-local-branch" in result.output
+            assert (
+                "Created empty commit: Initial commit for my-local-branch branch" in result.output
+            )
+            assert "✅ Successfully created branch: my-local-branch" in result.output
+            # Should not have push or PR messages
+            assert "Pushed branch" not in result.output
+            assert "Created pull request" not in result.output
+
+
 def test_record_and_eval_command():
     # ensure --record output aligned with eval tool expectations
     with (

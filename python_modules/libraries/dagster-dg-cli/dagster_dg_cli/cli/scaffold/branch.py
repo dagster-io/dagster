@@ -152,7 +152,7 @@ def has_remote_origin() -> bool:
     return result.returncode == 0 and bool(result.stdout.strip())
 
 
-def push_branch_and_create_pr(
+def create_branch_and_pr(
     branch_name: str, pr_title: str, pr_body: str, local_only: bool = False
 ) -> str:
     """Push the current branch to remote and create a GitHub pull request.
@@ -425,7 +425,7 @@ def scaffold_branch_command(
         )
 
         # Push branch and create PR
-        pr_url = push_branch_and_create_pr(branch_name, pr_title, pr_body, effective_local_only)
+        pr_url = create_branch_and_pr(branch_name, pr_title, pr_body, effective_local_only)
 
         click.echo(f"✅ Successfully created branch and pull request: {pr_url}")
 
