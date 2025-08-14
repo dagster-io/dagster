@@ -263,7 +263,20 @@ def get_branch_name_and_pr_title_from_prompt(
         _branch_name_prompt(input_type.get_context(user_input)),
         input_type.additional_allowed_tools(),
     )
-    json_output = json.loads(output.strip())
+
+    try:
+        json_output = json.loads(output.strip())
+    except json.JSONDecodeError as e:
+        raise RuntimeError(
+            f"Failed to parse Claude output as JSON: {e}\nRaw output was: {output!r}"
+        ) from e
+
+    if "branch-name" not in json_output or "pr-title" not in json_output:
+        raise RuntimeError(
+            f"Claude output missing required fields 'branch-name' or 'pr-title'\n"
+            f"Raw output was: {output!r}"
+        )
+
     return json_output["branch-name"], json_output["pr-title"]
 
 
