@@ -5,13 +5,19 @@ from typing import AbstractSet, Any, Callable, NamedTuple, Optional, Union, cast
 
 import dagster._check as check
 from dagster._annotations import public
-from dagster._core.definitions import IJob, JobDefinition, AssetCheckEvaluation, AssetCheckSeverity
+from dagster._core.definitions import AssetCheckEvaluation, AssetCheckSeverity, IJob, JobDefinition
 from dagster._core.definitions.events import AssetKey
 from dagster._core.definitions.job_base import InMemoryJob
 from dagster._core.definitions.reconstruct import ReconstructableJob
 from dagster._core.definitions.repository_definition import RepositoryLoadData
 from dagster._core.errors import DagsterExecutionInterruptedError, DagsterInvariantViolationError
-from dagster._core.events import DagsterEvent, EngineEventData, JobFailureData, RunFailureReason, DagsterEventType
+from dagster._core.events import (
+    DagsterEvent,
+    DagsterEventType,
+    EngineEventData,
+    JobFailureData,
+    RunFailureReason,
+)
 from dagster._core.execution.context.system import PlanOrchestrationContext
 from dagster._core.execution.context_creation_job import (
     ExecutionContextManager,
@@ -714,6 +720,7 @@ def create_execution_plan(
         repository_load_data=repository_load_data,
     )
 
+
 def _has_warn_level_asset_checks(events: list[DagsterEvent]) -> bool:
     for event in events:
         if event.event_type == DagsterEventType.ASSET_CHECK_EVALUATION:
@@ -725,7 +732,6 @@ def _has_warn_level_asset_checks(events: list[DagsterEvent]) -> bool:
             ):
                 return True
     return False
-
 
 
 def job_execution_iterator(
@@ -744,9 +750,7 @@ def job_execution_iterator(
 
     job_exception_info = None
     job_canceled_info = None
-    asset_events: list[
-        DagsterEvent
-    ] = []
+    asset_events: list[DagsterEvent] = []
     failed_steps: list[
         DagsterEvent
     ] = []  # A list of failed steps, with the earliest failure event at the front

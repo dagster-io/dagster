@@ -357,7 +357,7 @@ def _validate_event_specific_data(
         DagsterEventType.RESOURCE_INIT_STARTED,
         DagsterEventType.RESOURCE_INIT_SUCCESS,
         DagsterEventType.RESOURCE_INIT_FAILURE,
-        DagsterEventType.RESOURCE_INIT_SUCCESS_WITH_WARNINGS
+        DagsterEventType.RESOURCE_INIT_SUCCESS_WITH_WARNINGS,
     ):
         check.inst_param(event_specific_data, "event_specific_data", EngineEventData)
     elif event_type == DagsterEventType.HOOK_ERRORED:
@@ -696,8 +696,6 @@ class DagsterEvent(
     @property
     def is_job_success_with_warnings(self) -> bool:
         return self.event_type == DagsterEventType.RUN_SUCCESS_WITH_WARNINGS
-
-
 
     @property
     def is_job_failure(self) -> bool:
@@ -1236,7 +1234,7 @@ class DagsterEvent(
             job_context,
             message=f'Finished execution of run for "{job_context.job_name}".',
         )
-    
+
     @staticmethod
     def job_success_with_warnings(job_context: IPlanContext) -> "DagsterEvent":
         return DagsterEvent.from_job(

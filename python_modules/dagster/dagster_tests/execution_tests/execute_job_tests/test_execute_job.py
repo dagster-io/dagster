@@ -48,6 +48,50 @@ def emit_error_job():
     return the_job_fails
 
 
+def build_warn_job():
+    @dg.asset
+    def upstream():
+        return 1
+
+    @dg.asset_check(asset=upstream, name="warn_check")
+    def warn_check(_):
+        return dg.AssetCheckResult(passed=False, severity=dg.AssetCheckSeverity.WARN)
+
+    job = dg.define_asset_job(
+        "the_job_warns",
+        selection=[upstream],
+        executor_def=dg.in_process_executor,
+    )
+
+    defs = dg.Definitions(assets=[upstream], asset_checks=[warn_check], jobs=[job])
+    return defs.get_job_def("the_job_warns")
+
+
+def build_error_and_warn_job():
+    """Job with an asset that raises ERROR and also has a WARN-failing check.
+    Final run status should be FAILURE (ERROR wins over WARN).
+    """
+    @dg.asset
+    def bad_asset():
+        # Simulate a real failure in the asset step
+        raise Exception("boom")
+
+    @dg.asset_check(asset=bad_asset, name="warn_check")
+    def warn_check(_):
+        # Even though this fails at WARN, the asset itself errors.
+        return dg.AssetCheckResult(passed=False, severity=dg.AssetCheckSeverity.WARN)
+
+    # Pin in-process so event/status resolution happens synchronously
+    job = dg.define_asset_job(
+        "the_job_error_and_warn",
+        selection=[bad_asset],
+        executor_def=dg.in_process_executor,
+    )
+
+    defs = dg.Definitions(assets=[bad_asset], asset_checks=[warn_check], jobs=[job])
+    return defs.get_job_def("the_job_error_and_warn")
+
+
 def test_basic_success(instance):
     result = dg.execute_job(dg.reconstructable(emit_job), instance)
     assert result.success
@@ -56,6 +100,20 @@ def test_basic_success(instance):
 def test_no_raise_on_error(instance):
     result = dg.execute_job(dg.reconstructable(emit_error_job), instance)
     assert not result.success
+
+def test_success_with_warnings(instance):
+    result = dg.execute_job(dg.reconstructable(build_warn_job), instance)
+
+    run = instance.get_run_by_id(result.run_id)
+    assert run.status == dg.DagsterRunStatus.SUCCESS_WITH_WARNINGS
+
+
+def test_error_precedence_over_warn(instance):
+    result = dg.execute_job(dg.reconstructable(build_error_and_warn_job), instance)
+
+    assert not result.success
+    run = instance.get_run_by_id(result.run_id)
+    assert run.status == dg.DagsterRunStatus.FAILURE
 
 
 def test_tags_for_run(instance):

@@ -125,6 +125,7 @@ class GrapheneRunSuccessEvent(graphene.ObjectType):
         interfaces = (GrapheneMessageEvent, GrapheneRunEvent)
         name = "RunSuccessEvent"
 
+
 class GrapheneRunSuccessWithWarningsEvent(graphene.ObjectType):
     class Meta:
         interfaces = (GrapheneMessageEvent, GrapheneRunEvent)

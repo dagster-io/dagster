@@ -388,7 +388,7 @@ def from_dagster_event_record(event_record: EventLogEntry, pipeline_name: str) -
     elif dagster_event.event_type in (
         DagsterEventType.RUN_FAILURE,
         DagsterEventType.PIPELINE_FAILURE,
-    ):    
+    ):
         data = dagster_event.job_failure_data
         return GrapheneRunFailureEvent(
             pipelineName=pipeline_name,
