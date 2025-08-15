@@ -17,11 +17,12 @@ import {numberFormatterWithMaxFractionDigits} from '../ui/formatters';
 import {useFormatDateTime} from '../ui/useFormatDateTime';
 import styles from './css/ActivityChart.module.css';
 
-type MetricsDialogData<T> = {
-  after: number;
-  before: number;
+export type ActivityChartMetricsDialogData<T> = {
+  current: {
+    before: number;
+    after: number;
+  };
   metric: T;
-  unit: string;
 };
 
 export type ActivityChartDayData = {
@@ -41,7 +42,7 @@ interface Props<T> {
   metrics: ActivityChartData;
   unit: string;
   loading: boolean;
-  openMetricDialog?: (data: MetricsDialogData<T>) => void;
+  openMetricDialog?: (data: ActivityChartMetricsDialogData<T>) => void;
   metric: T;
 }
 
@@ -95,7 +96,7 @@ interface RowProps<T> {
   color: string;
   hoverColor: string;
   unit: string;
-  onClick?: (data: MetricsDialogData<T>) => void;
+  onClick?: (data: ActivityChartMetricsDialogData<T>) => void;
   metric: T;
 }
 
@@ -175,10 +176,11 @@ const InnerActivityChartRow = <T,>(props: RowProps<T>) => {
                     onClick={() => {
                       if (onClick) {
                         onClick({
-                          before: date / 1000 + index * 60 * 60,
-                          after: date / 1000 + (index - 1) * 60 * 60,
+                          current: {
+                            before: date / 1000 + (index - 1) * 60 * 60,
+                            after: date / 1000 + index * 60 * 60,
+                          },
                           metric,
-                          unit,
                         });
                       }
                     }}
