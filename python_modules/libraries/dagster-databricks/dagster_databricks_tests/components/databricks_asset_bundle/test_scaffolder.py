@@ -66,3 +66,11 @@ def test_scaffold_component_with_params(scaffold_params: dict, is_successful: bo
                 "host": TEST_DATABRICKS_WORKSPACE_HOST,
                 "token": TEST_DATABRICKS_WORKSPACE_TOKEN,
             } == yaml.safe_load(defs_yaml_path.read_text())["attributes"]["workspace"]
+            assert "custom_config_path" in yaml.safe_load(defs_yaml_path.read_text())["attributes"]
+            if "custom_config_path" in scaffold_params:
+                assert (
+                    scaffold_params["custom_config_path"]
+                    in yaml.safe_load(defs_yaml_path.read_text())["attributes"][
+                        "custom_config_path"
+                    ]
+                )
