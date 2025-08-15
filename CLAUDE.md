@@ -105,4 +105,7 @@ yarn build-api-docs          # Build API docs after .rst changes
 - **Primary command**: `gt log` provides comprehensive PR numbers, statuses, and branch relationships
 - **Impact**: Single command reveals entire stack structure vs. manual discovery
 
+### Git Operations
+
+- **NEVER use `git push` directly** - always ask the user before pushing changes to remote
 - Do not automatically do git commit --amend on user's behalf since you lose track of what the agent has done
