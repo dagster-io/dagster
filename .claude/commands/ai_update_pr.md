@@ -37,17 +37,11 @@ In this example, you would use `feature/previous-branch` as the `<previous_branc
 
 ## Step 2: Get Changes for Current Branch Only
 
-**CRITICAL**: Use the correct method to get changes for just the current branch:
-
-1. **First, try `git log --oneline <previous_branch>..HEAD`** to see how many commits are in the current branch
-2. **If there's only 1 commit**: Use `git diff HEAD~1..HEAD` to see the exact changes for that commit
-3. **If there are multiple commits**: Use `git diff <previous_branch>..HEAD` where `<previous_branch>` is from Step 1
+View changes for ONLY the current branch with `git diff <previous_branch>..HEAD` where `<previous_branch>` is the branch identified in Step 1. Also view the commit messages for the current branch only with `git log --oneline <previous_branch>..HEAD`.
 
 **CRITICAL**: Execute these git commands serially (one at a time) to avoid git index locking issues.
 
 **Verification**: The `git log --oneline <previous_branch>..HEAD` command should typically show only 1-2 commits for the current branch. If it shows many commits, double-check that you identified the correct previous branch.
-
-**Common Mistake**: Do NOT use `git diff <previous_branch>..HEAD` if it shows changes from multiple branches in the stack. Always verify you're looking at changes for just the current branch by checking the commit count first.
 
 ## Step 3: Write PR Summary
 
