@@ -38,11 +38,27 @@ class DagsterPlusGraphQLClient:
         # defer for import performance
         from gql import gql
 
-        result = self.client.execute(gql(query), variable_values=dict(variables or {}))
-        value = next(iter(result.values()))
-        if isinstance(value, Mapping):
-            if value.get("__typename") == "UnauthorizedError":
-                raise DagsterPlusUnauthorizedError("Unauthorized: " + value["message"])
-            elif value.get("__typename", "").endswith("Error"):
-                raise click.ClickException("Error: " + value["message"])
-        return result
+        try:
+            result = self.client.execute(gql(query), variable_values=dict(variables or {}))
+
+            # Handle case where result is None or empty
+            if not result:
+                return None
+
+            # Handle case where result has no values
+            if not result.values():
+                return None
+
+            value = next(iter(result.values()))
+            if isinstance(value, Mapping):
+                if value.get("__typename") == "UnauthorizedError":
+                    raise DagsterPlusUnauthorizedError("Unauthorized: " + value["message"])
+                elif value.get("__typename", "").endswith("Error"):
+                    raise click.ClickException("Error: " + value["message"])
+            return result
+        except Exception as e:
+            # Re-raise known exceptions
+            if isinstance(e, (DagsterPlusUnauthorizedError, click.ClickException)):
+                raise
+            # For any other exception, wrap it in a ClickException
+            raise click.ClickException(f"GraphQL execution failed: {e!s}")

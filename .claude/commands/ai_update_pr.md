@@ -18,6 +18,14 @@
 
 **CRITICAL**: Execute these commands one at a time, waiting for each to complete before running the next. Do NOT use parallel bash execution as this can cause git index locking issues.
 
+**CRITICAL**: If `gt squash` or `gt submit` encounters merge conflicts, HALT the entire ai_update_pr process immediately. Do NOT attempt to resolve conflicts automatically. Instead:
+1. Inform the user about the conflict and which files are affected
+2. Tell them to resolve conflicts manually using `gt add -A` and `gt continue` 
+3. Advise them to re-run the ai_update_pr command after resolving conflicts
+4. Do NOT proceed with any further steps until conflicts are resolved
+
+Only after confirming the actual repository state AND successful operations should you proceed with the remaining steps.
+
 ## Step 1: Identify the Previous Branch
 
 First, use `gt ls -s` to view the stack structure. The output shows branches in order, with `◉` marking the current branch and `◯` marking other branches in the stack.
