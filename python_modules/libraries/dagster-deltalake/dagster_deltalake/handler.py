@@ -50,7 +50,12 @@ class DeltalakeBaseArrowTypeHandler(DbTypeHandler[T], Generic[T]):
         metadata = context.definition_metadata or {}
         resource_config = context.resource_config or {}
         reader, delta_params = self.to_arrow(obj=obj)
-        delta_schema = Schema.from_pyarrow(reader.schema)
+        # Handle both pre-1.0 (from_pyarrow) and 1.0+ (from_arrow) deltalake APIs
+        try:
+            delta_schema = Schema.from_arrow(reader.schema)
+        except AttributeError:
+            # Fall back to pre-1.0 API
+            delta_schema = Schema.from_pyarrow(reader.schema)
 
         engine = resource_config.get("writer_engine")
         save_mode = metadata.get("mode")
