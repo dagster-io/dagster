@@ -9,6 +9,7 @@ from copy import deepcopy
 from typing import Any
 from unittest.mock import MagicMock, patch
 
+import dagster._check as check
 import mlflow
 import pandas as pd
 import pytest
@@ -420,11 +421,11 @@ def test_execute_op_with_mlflow_resource():
     @op(required_resource_keys={"mlflow"})
     def op1(_):
         mlflow.log_params(params)
-        run_id_holder["op1_run_id"] = mlflow.active_run().info.run_id
+        run_id_holder["op1_run_id"] = check.not_none(mlflow.active_run()).info.run_id
 
     @op(required_resource_keys={"mlflow"})
     def op2(_, _arg1):
-        run_id_holder["op2_run_id"] = mlflow.active_run().info.run_id
+        run_id_holder["op2_run_id"] = check.not_none(mlflow.active_run()).info.run_id
 
     @job(resource_defs={"mlflow": mlflow_tracking})
     def mlf_job():

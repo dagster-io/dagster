@@ -9,7 +9,9 @@ from itertools import islice
 from os import environ
 from typing import Any, Optional
 
+import dagster._check as check
 import mlflow
+import pandas as pd
 from dagster import Field, Noneable, Permissive, StringSource, resource
 from dagster._annotations import beta
 from dagster._core.definitions.resource_definition import dagster_maintained_resource
@@ -146,14 +148,19 @@ class MlFlow(metaclass=MlflowMeta):
             # in mlflow, will get an empty dataframe if not.
             # Note: Search requests have a lower rate limit than others, so we
             # need to limit/retry searches where possible.
-            current_run_df = backoff(
-                mlflow.search_runs,
-                retry_on=(MlflowException,),
-                kwargs={
-                    "experiment_ids": [experiment.experiment_id],
-                    "filter_string": f"tags.dagster_run_id='{dagster_run_id}'",
-                },
-                max_retries=3,
+            # new output_format param of mlflow.search_runs means return type can vary, check here to make
+            # sure it's a dataframe
+            current_run_df = check.inst(
+                backoff(
+                    mlflow.search_runs,
+                    retry_on=(MlflowException,),
+                    kwargs={
+                        "experiment_ids": [experiment.experiment_id],
+                        "filter_string": f"tags.dagster_run_id='{dagster_run_id}'",
+                    },
+                    max_retries=3,
+                ),
+                pd.DataFrame,
             )
             if not current_run_df.empty:
                 return current_run_df.run_id.values[0]
@@ -183,7 +190,7 @@ class MlFlow(metaclass=MlflowMeta):
                 f"in experiment {self.experiment_name}"
             )
         except Exception as ex:
-            run = mlflow.active_run()
+            run = check.not_none(mlflow.active_run())
             if "is already active" not in str(ex):
                 raise (ex)
             self.log.info(f"Run with id {run.info.run_id} is already active.")
