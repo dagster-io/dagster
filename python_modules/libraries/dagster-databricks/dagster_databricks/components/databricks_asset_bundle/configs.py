@@ -431,6 +431,7 @@ class CustomConfig(IHaveNew):
         return super().__new__(cls, **custom_config)
 
 
-class DatabricksComponentConfigs:
-    databricks_configs: DatabricksConfigs
-    custom_configs: CustomConfigs
+@record
+class DatabricksAssetBundleComponentConfig:
+    databricks_config: DatabricksConfig
+    custom_config: CustomConfig
