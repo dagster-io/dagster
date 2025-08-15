@@ -1,4 +1,6 @@
 from dataclasses import dataclass
+from functools import cached_property
+from pathlib import Path
 from typing import Annotated
 
 from dagster import AssetSpec, Resolvable
@@ -17,28 +19,30 @@ from dagster_databricks.components.databricks_asset_bundle.scaffolder import (
 )
 
 
-def resolve_databricks_configs(context: ResolutionContext, model) -> DatabricksConfigs:
-    return DatabricksConfigs(
-        context.resolve_source_relative_path(
-            context.resolve_value(model, as_type=str),
-        )
+def resolve_databricks_configs_path(context: ResolutionContext, model) -> Path:
+    return context.resolve_source_relative_path(
+        context.resolve_value(model, as_type=str),
     )
 
 
 @scaffold_with(DatabricksAssetBundleScaffolder)
 @dataclass
 class DatabricksAssetBundleComponent(Component, Resolvable):
-    databricks_configs: Annotated[
-        DatabricksConfigs,
+    databricks_configs_path: Annotated[
+        Path,
         Resolver(
-            resolve_databricks_configs,
+            resolve_databricks_configs_path,
             model_field_type=str,
-            description="The databricks.yml configs.",
+            description="The path to the databricks.yml config file.",
             examples=[
                 "{{ project_root }}/path/to/databricks_yml_config_file",
             ],
         ),
     ]
+
+    @cached_property
+    def databricks_configs(self) -> DatabricksConfigs:
+        return DatabricksConfigs(databricks_configs_path=self.databricks_configs_path)
 
     def get_asset_spec(self) -> AssetSpec:
         raise NotImplementedError()
