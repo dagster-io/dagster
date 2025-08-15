@@ -83,6 +83,9 @@ class CodeLocationDeployData(
             ("pex_metadata", Optional[PexMetadata]),
             ("agent_queue", Optional[AgentQueue]),
             ("autoload_defs_module_name", Optional[str]),
+            # the defs_state_info is pre-serialized as the class definition
+            # lives in the main dagster package
+            ("serialized_defs_state_info", Optional[str]),
         ],
     )
 ):
@@ -101,6 +104,7 @@ class CodeLocationDeployData(
         pex_metadata=None,
         agent_queue=None,
         autoload_defs_module_name=None,
+        serialized_defs_state_info=None,
     ):
         check.invariant(
             len(
@@ -129,6 +133,7 @@ class CodeLocationDeployData(
             check.opt_inst_param(pex_metadata, "pex_metadata", PexMetadata),
             check.opt_str_param(agent_queue, "agent_queue"),
             check.opt_str_param(autoload_defs_module_name, "autoload_defs_module_name"),
+            check.opt_str_param(serialized_defs_state_info, "serialized_defs_state_info"),
         )
 
     def with_cloud_context_env(self, cloud_context_env: dict[str, Any]) -> "CodeLocationDeployData":
@@ -145,6 +150,11 @@ class CodeLocationDeployData(
             + (["--port", str(port)] if port else [])
             + (["--socket", str(socket)] if socket else [])
             + (["--enable-metrics"] if metrics_enabled else [])
+            + (
+                ["--defs-state-info", self.serialized_defs_state_info]
+                if self.serialized_defs_state_info
+                else []
+            )
         )
 
     def get_multipex_server_env(self) -> dict[str, str]:
@@ -159,4 +169,9 @@ class CodeLocationDeployData(
                 "grpc",
             ]
             + (["--enable-metrics"] if metrics_enabled else [])
+            + (
+                ["--defs-state-info", self.serialized_defs_state_info]
+                if self.serialized_defs_state_info
+                else []
+            )
         )
