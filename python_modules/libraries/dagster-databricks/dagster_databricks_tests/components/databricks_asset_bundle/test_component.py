@@ -32,7 +32,7 @@ def test_component_asset_spec():
         assert asset_spec.metadata["task_type"].value == task.task_type
         assert asset_spec.metadata["task_config"].value == task.task_config_metadata
         assert asset_spec.deps == [
-            AssetDep(snake_case(dep_task_key)) for dep_task_key in task.depends_on
+            AssetDep(snake_case(dep_config.task_key)) for dep_config in task.depends_on
         ]
         if task.libraries:
             assert asset_spec.metadata["libraries"].value == task.libraries
