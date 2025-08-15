@@ -3,6 +3,7 @@ import sys
 from typing import Any, Optional
 
 import responses
+
 from dagster_dg_cli.utils.plus import gql
 
 PYTHON_VERSION = f"{sys.version_info.major}.{sys.version_info.minor}"

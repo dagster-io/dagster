@@ -21,6 +21,7 @@ from dagster_airlift.constants import (
 from dagster_airlift.core.components.airflow_instance.component import AirflowInstanceComponent
 from dagster_airlift.test import make_instance
 from dagster_airlift.test.test_utils import asset_spec, get_job_from_defs
+
 from dagster_dg_cli.cli import cli
 
 ensure_dagster_tests_import()
