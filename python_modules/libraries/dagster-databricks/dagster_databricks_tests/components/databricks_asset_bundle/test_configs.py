@@ -1,18 +1,18 @@
-from dagster_databricks.components.databricks_asset_bundle.databricks_configs import (
-    DatabricksConfigs,
+from dagster_databricks.components.databricks_asset_bundle.configs import (
+    DatabricksConfig,
 )
 
 from dagster_databricks_tests.components.databricks_asset_bundle.conftest import (
-    DATABRICKS_CONFIGS_LOCATION_PATH,
+    DATABRICKS_CONFIG_LOCATION_PATH,
 )
 
 
-def test_load_databricks_configs():
-    databricks_configs = DatabricksConfigs(databricks_configs_path=DATABRICKS_CONFIGS_LOCATION_PATH)
-    assert databricks_configs.databricks_configs_path == DATABRICKS_CONFIGS_LOCATION_PATH
-    assert len(databricks_configs.tasks) == 6
+def test_load_databrick_configs():
+    databricks_config = DatabricksConfig(databricks_config_path=DATABRICKS_CONFIG_LOCATION_PATH)
+    assert databricks_config.databricks_config_path == DATABRICKS_CONFIG_LOCATION_PATH
+    assert len(databricks_config.tasks) == 6
 
-    tasks_iter = iter(databricks_configs.tasks)
+    tasks_iter = iter(databricks_config.tasks)
     notebook_task = next(tasks_iter)
     assert notebook_task.task_type == "notebook"
     assert notebook_task.task_key == "data_processing_notebook"

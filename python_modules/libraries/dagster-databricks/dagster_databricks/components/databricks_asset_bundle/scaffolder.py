@@ -9,7 +9,7 @@ from pydantic import BaseModel, Field
 class DatabricksAssetBundleScaffoldParams(BaseModel):
     """Parameters for scaffolding DatabricksAssetBundleComponent from Databricks asset bundle."""
 
-    databricks_configs_path: str = Field(
+    databricks_config_path: str = Field(
         description="Path to the databricks.yml config file",
     )
 
@@ -22,7 +22,7 @@ class DatabricksAssetBundleScaffolder(Scaffolder[DatabricksAssetBundleScaffoldPa
     def scaffold(self, request: ScaffoldRequest[DatabricksAssetBundleScaffoldParams]) -> None:
         project_root = request.project_root or os.getcwd()
         project_root_tmpl = "{{ project_root }}"
-        rel_path = os.path.relpath(request.params.databricks_configs_path, start=project_root)
+        rel_path = os.path.relpath(request.params.databricks_config_path, start=project_root)
         path_str = f"{project_root_tmpl}/{rel_path}"
 
-        scaffold_component(request, {"databricks_configs_path": path_str})
+        scaffold_component(request, {"databricks_config_path": path_str})

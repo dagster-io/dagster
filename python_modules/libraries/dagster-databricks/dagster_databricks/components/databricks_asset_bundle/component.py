@@ -11,15 +11,15 @@ from dagster.components.resolved.core_models import ResolutionContext
 from dagster.components.resolved.model import Resolver
 from dagster.components.scaffold.scaffold import scaffold_with
 
-from dagster_databricks.components.databricks_asset_bundle.databricks_configs import (
-    DatabricksConfigs,
+from dagster_databricks.components.databricks_asset_bundle.configs import (
+    DatabricksConfig,
 )
 from dagster_databricks.components.databricks_asset_bundle.scaffolder import (
     DatabricksAssetBundleScaffolder,
 )
 
 
-def resolve_databricks_configs_path(context: ResolutionContext, model) -> Path:
+def resolve_databricks_config_path(context: ResolutionContext, model) -> Path:
     return context.resolve_source_relative_path(
         context.resolve_value(model, as_type=str),
     )
@@ -28,10 +28,10 @@ def resolve_databricks_configs_path(context: ResolutionContext, model) -> Path:
 @scaffold_with(DatabricksAssetBundleScaffolder)
 @dataclass
 class DatabricksAssetBundleComponent(Component, Resolvable):
-    databricks_configs_path: Annotated[
+    databricks_config_path: Annotated[
         Path,
         Resolver(
-            resolve_databricks_configs_path,
+            resolve_databricks_config_path,
             model_field_type=str,
             description="The path to the databricks.yml config file.",
             examples=[
@@ -41,8 +41,8 @@ class DatabricksAssetBundleComponent(Component, Resolvable):
     ]
 
     @cached_property
-    def databricks_configs(self) -> DatabricksConfigs:
-        return DatabricksConfigs(databricks_configs_path=self.databricks_configs_path)
+    def databricks_config(self) -> DatabricksConfig:
+        return DatabricksConfig(databricks_config_path=self.databricks_config_path)
 
     def get_asset_spec(self) -> AssetSpec:
         raise NotImplementedError()

@@ -7,7 +7,7 @@ from dagster_databricks.components.databricks_asset_bundle.component import (
 from pydantic import ValidationError
 
 from dagster_databricks_tests.components.databricks_asset_bundle.conftest import (
-    DATABRICKS_CONFIGS_LOCATION_PATH,
+    DATABRICKS_CONFIG_LOCATION_PATH,
 )
 
 
@@ -15,7 +15,7 @@ from dagster_databricks_tests.components.databricks_asset_bundle.conftest import
     "scaffold_params,is_successful",
     [
         ({}, False),
-        ({"databricks_configs_path": str(DATABRICKS_CONFIGS_LOCATION_PATH)}, True),
+        ({"databricks_config_path": str(DATABRICKS_CONFIG_LOCATION_PATH)}, True),
     ],
     ids=["no_params", "all_required_params"],
 )
@@ -38,8 +38,8 @@ def test_scaffold_component_with_params(scaffold_params: dict, is_successful: bo
             defs_yaml_path = defs_path / "defs.yaml"
             assert defs_yaml_path.exists()
             assert (
-                str(DATABRICKS_CONFIGS_LOCATION_PATH)
+                str(DATABRICKS_CONFIG_LOCATION_PATH)
                 in yaml.safe_load(defs_yaml_path.read_text())["attributes"][
-                    "databricks_configs_path"
+                    "databricks_config_path"
                 ]
             )
