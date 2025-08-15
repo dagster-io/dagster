@@ -268,26 +268,17 @@ mcp__buildkite__get_job_logs(
 
 ## ⚡ Performance Optimization
 
-### Build Number Resolution (ALWAYS use this order)
+### Build Number Resolution (MANDATORY - NO ALTERNATIVES)
 
-1. **GitHub Status API** (fastest, <1 second):
-
-```bash
-gh api repos/dagster-io/dagster/commits/$(git rev-parse HEAD)/statuses \
-  --jq '.[] | select(.target_url | contains("buildkite")) | .target_url' \
-  | head -1 | sed 's|.*/builds/||'
-```
-
-2. **PR Status Checks** (backup, 1-2 seconds):
+**CRITICAL REQUIREMENT**: For ANY build number lookup in the Dagster repository, you MUST ONLY use:
 
 ```bash
-gh pr view --json statusCheckRollup \
-  --jq '.statusCheckRollup[] | select(.targetUrl | contains("buildkite")) | .targetUrl' \
-  | head -1 | sed 's|.*/builds/||'
+dagster-dev bk-latest-build-for-pr
 ```
 
-3. **Branch-based Lookup** (last resort):
-   Use `mcp__buildkite__list_builds` filtered by branch
+**This is the ONLY acceptable method for build number resolution in the Dagster repository. NO fallbacks, NO alternatives, NO exceptions.**
+
+**This command is PURPOSE-BUILT for the Dagster repository and is the definitive source of truth for build numbers.**
 
 ### Parallel API Calls
 
