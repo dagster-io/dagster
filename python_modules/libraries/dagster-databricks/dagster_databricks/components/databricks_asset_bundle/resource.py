@@ -76,9 +76,7 @@ class DatabricksWorkspace(ConfigurableResource):
             cluster_config = {}
             if task.needs_cluster:
                 if config.custom_config.existing_cluster_id:
-                    cluster_config["existing_cluster_id"] = (
-                        config.custom_config.existing_cluster_id
-                    )
+                    cluster_config["existing_cluster_id"] = config.custom_config.existing_cluster_id
                 else:
                     cluster_config["new_cluster"] = compute.ClusterSpec(
                         spark_version=config.custom_config.spark_version,
