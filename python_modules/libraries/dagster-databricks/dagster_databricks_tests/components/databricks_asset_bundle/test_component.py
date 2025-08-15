@@ -10,14 +10,33 @@ from dagster_databricks.components.databricks_asset_bundle.resource import Datab
 
 from dagster_databricks_tests.components.databricks_asset_bundle.conftest import (
     DATABRICKS_CONFIG_LOCATION_PATH,
+CUSTOM_CONFIG_LOCATION_PATH, PARTIAL_CUSTOM_CONFIG_LOCATION_PATH,
     TEST_DATABRICKS_WORKSPACE_HOST,
     TEST_DATABRICKS_WORKSPACE_TOKEN,
 )
 
+from typing import Optional
+from pathlib import Path
+import pytest
 
-def test_component_asset_spec():
+
+@pytest.mark.parametrize(
+    "custom_config_path",
+    [
+        (None),
+        (CUSTOM_CONFIG_LOCATION_PATH),
+        (PARTIAL_CUSTOM_CONFIG_LOCATION_PATH),
+    ],
+    ids=[
+        "no_custom_config",
+        "custom_config",
+        "partial_custom_config",
+    ],
+)
+def test_component_asset_spec(custom_config_path: Optional[Path]):
     component = DatabricksAssetBundleComponent(
         databricks_config_path=DATABRICKS_CONFIG_LOCATION_PATH,
+        custom_config_path=custom_config_path,
         workspace=DatabricksWorkspace(
             host=TEST_DATABRICKS_WORKSPACE_HOST, token=TEST_DATABRICKS_WORKSPACE_TOKEN
         ),
@@ -40,12 +59,26 @@ def test_component_asset_spec():
             assert "libraries" not in asset_spec.metadata
 
 
-def test_load_component(databricks_config_path: str):
+@pytest.mark.parametrize(
+    "custom_config_path",
+    [
+        (None),
+        (CUSTOM_CONFIG_LOCATION_PATH),
+        (PARTIAL_CUSTOM_CONFIG_LOCATION_PATH),
+    ],
+    ids=[
+        "no_custom_config",
+        "custom_config",
+        "partial_custom_config",
+    ],
+)
+def test_load_component(custom_config_path: Optional[Path], databricks_config_path: str):
     with create_defs_folder_sandbox() as sandbox:
         defs_path = sandbox.scaffold_component(
             component_cls=DatabricksAssetBundleComponent,
             scaffold_params={
                 "databricks_config_path": databricks_config_path,
+                "custom_config_path": str(custom_config_path) if custom_config_path else None,
                 "databricks_workspace_host": TEST_DATABRICKS_WORKSPACE_HOST,
                 "databricks_workspace_token": TEST_DATABRICKS_WORKSPACE_TOKEN,
             },

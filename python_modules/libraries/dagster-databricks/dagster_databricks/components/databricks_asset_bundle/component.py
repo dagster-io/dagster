@@ -49,15 +49,13 @@ def resolve_databricks_config_path(context: ResolutionContext, model) -> Path:
     )
 
 
-def resolve_custom_config(context: ResolutionContext, model) -> CustomConfig:
-    # If model is not a string, it's None, in which case we return an object with default values
+def resolve_custom_config_path(context: ResolutionContext, model) -> CustomConfig:
+    # If model is not a string, it's None, in which case we return None
     if not isinstance(model, str):
-        return CustomConfig()
-    return CustomConfig.from_custom_config_path(
-        context.resolve_source_relative_path(
+        return None
+    return context.resolve_source_relative_path(
             context.resolve_value(model, as_type=str),
         )
-    )
 
 
 def resolve_databricks_workspace(context: ResolutionContext, model) -> DatabricksWorkspace:
@@ -82,18 +80,6 @@ class DatabricksAssetBundleComponent(Component, Resolvable):
             ],
         ),
     ]
-    custom_config: Annotated[
-        CustomConfig,
-        Resolver(
-            resolve_custom_config,
-            model_field_type=Optional[str],
-            description=(
-                "The path to a custom config file that align with databricks_asset_bundle.configs.CustomConfig. "
-                "Optional"
-            ),
-            examples=["{{ project_root }}/path/to/custom_yml_config_file", None],
-        ),
-    ]
     workspace: Annotated[
         DatabricksWorkspace,
         Resolver(
@@ -108,10 +94,27 @@ class DatabricksAssetBundleComponent(Component, Resolvable):
             ],
         ),
     ]
+    custom_config_path: Optional[Annotated[
+        Optional[Path],
+        Resolver(
+            resolve_custom_config_path,
+            model_field_type=Optional[str],
+            description=(
+                "The path to a custom config file that align with databricks_asset_bundle.configs.CustomConfig. "
+                "Optional"
+            ),
+            examples=["{{ project_root }}/path/to/custom_yml_config_file", None],
+        ),
+    ]] = None
+
 
     @cached_property
     def databricks_config(self) -> DatabricksConfig:
         return DatabricksConfig(databricks_config_path=self.databricks_config_path)
+
+    @cached_property
+    def custom_config(self) -> CustomConfig:
+        return CustomConfig(custom_config_path=self.custom_config_path)
 
     def get_asset_spec(self, task: DatabricksBaseTask) -> AssetSpec:
         return AssetSpec(
