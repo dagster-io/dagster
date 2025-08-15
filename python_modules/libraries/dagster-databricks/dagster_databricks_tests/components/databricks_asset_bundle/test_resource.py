@@ -20,11 +20,7 @@ from dagster_databricks_tests.components.databricks_asset_bundle.conftest import
         (True, False),
         (True, True),
     ],
-    ids=[
-        "new_cluster_compute_config",
-        "existing_cluster_compute_config",
-        "serverless_config"
-    ],
+    ids=["new_cluster_compute_config", "existing_cluster_compute_config", "serverless_config"],
 )
 @mock.patch("databricks.sdk.service.jobs.SubmitTask", autospec=True)
 def test_load_component(
