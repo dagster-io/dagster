@@ -9,6 +9,7 @@ from dagster_databricks_tests.components.databricks_asset_bundle.conftest import
     DATABRICKS_CONFIG_LOCATION_PATH,
 )
 
+
 def test_component_asset_spec():
     component = DatabricksAssetBundleComponent(
         databricks_config_path=DATABRICKS_CONFIG_LOCATION_PATH
@@ -31,11 +32,11 @@ def test_component_asset_spec():
             assert "libraries" not in asset_spec.metadata
 
 
-def test_load_component(databricks_configs_path: str):
+def test_load_component(databricks_config_path: str):
     with create_defs_folder_sandbox() as sandbox:
         defs_path = sandbox.scaffold_component(
             component_cls=DatabricksAssetBundleComponent,
-            scaffold_params={"databricks_configs_path": databricks_configs_path},
+            scaffold_params={"databricks_config_path": databricks_config_path},
         )
         with sandbox.load_component_and_build_defs(defs_path=defs_path) as (
             component,

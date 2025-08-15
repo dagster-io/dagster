@@ -75,7 +75,7 @@ class DatabricksAssetBundleComponent(Component, Resolvable):
     def build_defs(self, context: ComponentLoadContext) -> Definitions:
         @multi_asset(
             name="databricks_multi_asset",
-            specs=[self.get_asset_spec(task) for task in self.databricks_configs.tasks],
+            specs=[self.get_asset_spec(task) for task in self.databricks_config.tasks],
             can_subset=True,
         )
         def multi_notebook_job_asset(
