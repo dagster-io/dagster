@@ -17,10 +17,50 @@ from dagster_dg_core_tests.utils import (
     isolated_example_project_foo_bar,
 )
 
-from dagster_dg_cli_tests.cli_tests.scaffold.branch.integration.test_git_helpers import (
-    setup_basic_git_repo,
-    setup_git_repo_with_remote,
-)
+
+# Git helper functions
+def setup_basic_git_repo(project_dir):
+    """Initialize a basic git repository in the given directory."""
+    subprocess.run(["git", "init"], cwd=project_dir, check=True, capture_output=True)
+    subprocess.run(["git", "config", "user.name", "Test User"], cwd=project_dir, check=True)
+    subprocess.run(["git", "config", "user.email", "test@example.com"], cwd=project_dir, check=True)
+    # Create initial commit
+    subprocess.run(["git", "add", "."], cwd=project_dir, check=True, capture_output=True)
+    subprocess.run(
+        ["git", "commit", "-m", "Initial commit"], cwd=project_dir, check=True, capture_output=True
+    )
+
+
+def setup_git_repo_with_remote(project_dir, remote_path):
+    """Set up a git repository with a remote."""
+    # First set up basic git repo
+    setup_basic_git_repo(project_dir)
+
+    # Initialize bare remote repository
+    subprocess.run(["git", "init", "--bare"], cwd=remote_path, check=True, capture_output=True)
+
+    # Add remote to local repo
+    subprocess.run(
+        ["git", "remote", "add", "origin", str(remote_path)], cwd=project_dir, check=True
+    )
+
+    # Get the current branch name (could be main or master depending on git version)
+    result = subprocess.run(
+        ["git", "branch", "--show-current"],
+        cwd=project_dir,
+        capture_output=True,
+        text=True,
+        check=True,
+    )
+    current_branch = result.stdout.strip()
+
+    # Push initial commit to remote
+    subprocess.run(
+        ["git", "push", "-u", "origin", current_branch],
+        cwd=project_dir,
+        check=True,
+        capture_output=True,
+    )
 
 
 @contextmanager
@@ -85,7 +125,7 @@ class TestScaffoldBranchCLI:
             assert "feature-with-spaces" in branches.stdout
             assert "  feature-with-spaces  " not in branches.stdout
 
-    @patch("dagster_dg_cli.cli.scaffold.branch._run_gh_command")
+    @patch("dagster_dg_cli.cli.scaffold.branch.git.run_gh_command")
     def test_scaffold_branch_with_pr(self, mock_gh):
         """Test scaffold branch with PR creation."""
         mock_gh.return_value = Mock(

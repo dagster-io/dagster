@@ -3,7 +3,7 @@
 import click
 from dagster_dg_core.utils import DgClickGroup
 
-from dagster_dg_cli.cli.scaffold.branch import scaffold_branch_command
+from dagster_dg_cli.cli.scaffold.branch.command import scaffold_branch_command
 from dagster_dg_cli.cli.scaffold.build_artifacts import scaffold_build_artifacts_command
 from dagster_dg_cli.cli.scaffold.component import scaffold_component_command
 from dagster_dg_cli.cli.scaffold.defs import scaffold_defs_group
