@@ -5,6 +5,7 @@ import {
   CONFIG_EDITOR_GENERATOR_PARTITION_SETS_FRAGMENT,
   CONFIG_EDITOR_GENERATOR_PIPELINE_FRAGMENT,
 } from './ConfigEditorConfigPicker';
+import {LaunchpadConfig} from './LaunchpadSession';
 import {LaunchpadSessionError} from './LaunchpadSessionError';
 import {LaunchpadSessionLoading} from './LaunchpadSessionLoading';
 import {LaunchpadTransientSessionContainer} from './LaunchpadTransientSessionContainer';
@@ -27,6 +28,7 @@ interface Props {
   pipelinePath: string;
   repoAddress: RepoAddress;
   sessionPresets?: Partial<IExecutionSession>;
+  onSaveConfig?: (config: LaunchpadConfig) => void;
 }
 
 const filterDefaultYamlForSubselection = (defaultYaml: string, opNames: Set<string>): string => {
@@ -49,7 +51,7 @@ const filterDefaultYamlForSubselection = (defaultYaml: string, opNames: Set<stri
 export const LaunchpadAllowedRoot = (props: Props) => {
   useTrackPageView();
 
-  const {pipelinePath, repoAddress, launchpadType, sessionPresets} = props;
+  const {pipelinePath, repoAddress, launchpadType, sessionPresets, onSaveConfig} = props;
   const explorerPath = explorerPathFromString(pipelinePath);
   const {pipelineName} = explorerPath;
 
@@ -145,6 +147,7 @@ export const LaunchpadAllowedRoot = (props: Props) => {
         repoAddress={repoAddress}
         sessionPresets={sessionPresets || {}}
         rootDefaultYaml={filteredRootDefaultYaml}
+        onSaveConfig={onSaveConfig}
       />
     );
   } else {
@@ -165,7 +168,7 @@ export const LaunchpadAllowedRoot = (props: Props) => {
   }
 };
 
-const PIPELINE_EXECUTION_ROOT_QUERY = gql`
+export const PIPELINE_EXECUTION_ROOT_QUERY = gql`
   query LaunchpadRootQuery(
     $pipelineName: String!
     $repositoryName: String!
