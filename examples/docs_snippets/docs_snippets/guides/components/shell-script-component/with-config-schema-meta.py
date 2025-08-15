@@ -10,7 +10,7 @@ class ShellCommand(dg.Component, dg.Resolvable):
     @classmethod
     def get_spec(cls) -> dg.ComponentTypeSpec:
         return dg.ComponentTypeSpec(
-            owners=["john.dagster@example.com"],
+            owners=["john@dagster.io"],
             tags=["shell", "script"],
         )
 
