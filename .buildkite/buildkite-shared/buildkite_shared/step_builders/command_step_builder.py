@@ -79,6 +79,18 @@ CommandStepConfiguration = TypedDict(
 class CommandStepBuilder:
     _step: CommandStepConfiguration
 
+    def _should_enable_automatic_retry(self) -> bool:
+        """Determine if automatic retry should be enabled based on branch detection.
+
+        Returns True if automatic retry should be enabled, False otherwise.
+        Enables retries on master/release branches only.
+        """
+        try:
+            return not is_feature_branch()
+        except (AssertionError, KeyError):
+            # If BUILDKITE_BRANCH is not set, default to retry (safer fallback)
+            return True
+
     def __init__(
         self,
         label,
@@ -91,18 +103,15 @@ class CommandStepBuilder:
         self._kubernetes_secrets = []
         self._docker_settings = None
 
-        # Determine retry behavior: if not explicitly set, only retry on master/release branches
-        if retry_automatically is None:
-            try:
-                retry_automatically = not is_feature_branch()
-            except (AssertionError, KeyError):
-                # If BUILDKITE_BRANCH is not set, default to retry (safer fallback)
-                retry_automatically = True
-
         retry: dict[str, Any] = {
             "manual": {"permit_on_passed": True},
         }
-        if retry_automatically:
+        should_retry = (
+            retry_automatically
+            if retry_automatically is not None
+            else self._should_enable_automatic_retry()
+        )
+        if should_retry:
             retry["automatic"] = [
                 # https://buildkite.com/docs/agent/v3#exit-codes
                 {"exit_status": -1, "limit": 2},  # agent lost
@@ -242,15 +251,8 @@ class CommandStepBuilder:
         return self
 
     def with_retry(self, num_retries):
-        # Only set automatic retries if we're not on a feature branch
-        if num_retries is not None and num_retries > 0:
-            try:
-                if not is_feature_branch():
-                    self._step["retry"] = {"automatic": {"limit": num_retries}}
-                # If we are on a feature branch, don't set automatic retries
-            except (AssertionError, KeyError):
-                # If BUILDKITE_BRANCH is not set, default to setting retries (safer fallback)
-                self._step["retry"] = {"automatic": {"limit": num_retries}}
+        if num_retries is not None and num_retries > 0 and self._should_enable_automatic_retry():
+            self._step["retry"] = {"automatic": {"limit": num_retries}}
         return self
 
     def on_queue(self, queue: BuildkiteQueue):
