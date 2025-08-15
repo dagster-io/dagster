@@ -1,3 +1,7 @@
+from pathlib import Path
+from typing import Optional
+
+import pytest
 import os
 
 from dagster import AssetDep, AssetKey, AssetsDefinition
@@ -9,15 +13,12 @@ from dagster_databricks.components.databricks_asset_bundle.component import (
 from dagster_databricks.components.databricks_asset_bundle.resource import DatabricksWorkspace
 
 from dagster_databricks_tests.components.databricks_asset_bundle.conftest import (
+    CUSTOM_CONFIG_LOCATION_PATH,
     DATABRICKS_CONFIG_LOCATION_PATH,
-CUSTOM_CONFIG_LOCATION_PATH, PARTIAL_CUSTOM_CONFIG_LOCATION_PATH,
+    PARTIAL_CUSTOM_CONFIG_LOCATION_PATH,
     TEST_DATABRICKS_WORKSPACE_HOST,
     TEST_DATABRICKS_WORKSPACE_TOKEN,
 )
-
-from typing import Optional
-from pathlib import Path
-import pytest
 
 
 @pytest.mark.parametrize(

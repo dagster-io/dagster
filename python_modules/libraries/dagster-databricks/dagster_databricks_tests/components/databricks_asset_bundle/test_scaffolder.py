@@ -7,8 +7,8 @@ from dagster_databricks.components.databricks_asset_bundle.component import (
 from pydantic import ValidationError
 
 from dagster_databricks_tests.components.databricks_asset_bundle.conftest import (
-    DATABRICKS_CONFIG_LOCATION_PATH,
     CUSTOM_CONFIG_LOCATION_PATH,
+    DATABRICKS_CONFIG_LOCATION_PATH,
     TEST_DATABRICKS_WORKSPACE_HOST,
     TEST_DATABRICKS_WORKSPACE_TOKEN,
 )
@@ -27,13 +27,13 @@ from dagster_databricks_tests.components.databricks_asset_bundle.conftest import
             True,
         ),
         (
-                {
-                    "databricks_config_path": str(DATABRICKS_CONFIG_LOCATION_PATH),
-                    "custom_config_path": str(CUSTOM_CONFIG_LOCATION_PATH),
-                    "databricks_workspace_host": TEST_DATABRICKS_WORKSPACE_HOST,
-                    "databricks_workspace_token": TEST_DATABRICKS_WORKSPACE_TOKEN,
-                },
-                True,
+            {
+                "databricks_config_path": str(DATABRICKS_CONFIG_LOCATION_PATH),
+                "custom_config_path": str(CUSTOM_CONFIG_LOCATION_PATH),
+                "databricks_workspace_host": TEST_DATABRICKS_WORKSPACE_HOST,
+                "databricks_workspace_token": TEST_DATABRICKS_WORKSPACE_TOKEN,
+            },
+            True,
         ),
     ],
     ids=["no_params", "all_required_params", "all_params"],

@@ -54,8 +54,8 @@ def resolve_custom_config_path(context: ResolutionContext, model) -> CustomConfi
     if not isinstance(model, str):
         return None
     return context.resolve_source_relative_path(
-            context.resolve_value(model, as_type=str),
-        )
+        context.resolve_value(model, as_type=str),
+    )
 
 
 def resolve_databricks_workspace(context: ResolutionContext, model) -> DatabricksWorkspace:
@@ -94,19 +94,20 @@ class DatabricksAssetBundleComponent(Component, Resolvable):
             ],
         ),
     ]
-    custom_config_path: Optional[Annotated[
-        Optional[Path],
-        Resolver(
-            resolve_custom_config_path,
-            model_field_type=Optional[str],
-            description=(
-                "The path to a custom config file that align with databricks_asset_bundle.configs.CustomConfig. "
-                "Optional"
+    custom_config_path: Optional[
+        Annotated[
+            Optional[Path],
+            Resolver(
+                resolve_custom_config_path,
+                model_field_type=Optional[str],
+                description=(
+                    "The path to a custom config file that align with databricks_asset_bundle.configs.CustomConfig. "
+                    "Optional"
+                ),
+                examples=["{{ project_root }}/path/to/custom_yml_config_file", None],
             ),
-            examples=["{{ project_root }}/path/to/custom_yml_config_file", None],
-        ),
-    ]] = None
-
+        ]
+    ] = None
 
     @cached_property
     def databricks_config(self) -> DatabricksConfig:
