@@ -1,11 +1,13 @@
+# ruff: noqa: I001
 from pathlib import Path
 from tempfile import TemporaryDirectory
 from typing import Optional
 from unittest import mock
 
 import pytest
-from dagster_dg_cli.cli.utils import DEFAULT_SCHEMA_FOLDER_NAME
 from dagster_dg_core.utils import ensure_dagster_dg_tests_import
+
+from dagster_dg_cli.cli.utils import DEFAULT_SCHEMA_FOLDER_NAME
 
 ensure_dagster_dg_tests_import()
 

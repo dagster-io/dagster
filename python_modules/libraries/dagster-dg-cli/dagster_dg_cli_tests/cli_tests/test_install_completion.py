@@ -10,8 +10,12 @@ def test_install_completion(monkeypatch):
     for shell in ["bash", "cmd", "powershell"]:
         monkeypatch.setenv("SHELL", shell)
         with ProxyRunner.test() as runner, runner.isolated_filesystem():
-            with patch("typer._completion_shared.install") as mock_install:
+            with (
+                patch("typer._completion_shared.install") as mock_install,
+                patch("shellingham.detect_shell") as mock_detect_shell,
+            ):
                 mock_install.return_value = shell, "/some/path"
+                mock_detect_shell.return_value = (shell, "/some/path")
                 result = runner.invoke("--install-completion")
                 if shell in ["cmd", "powershell"]:  # windows shells are not supported
                     assert_runner_result(result, exit_0=False)

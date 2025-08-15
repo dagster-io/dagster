@@ -11,6 +11,7 @@ dagster_dg_cli/cli/scaffold/branch/
 ├── ai.py               # AI interaction and input processing
 ├── git.py              # Git operations and utilities
 ├── models.py           # Data models and record types
+├── diagnostics.py      # Structured diagnostics and logging system
 └── prompts/            # AI prompt templates
     ├── branch_name.md   # Branch name generation prompt
     └── scaffolding.md   # Content scaffolding prompt
@@ -44,8 +45,22 @@ dagster_dg_cli/cli/scaffold/branch/
 
 - **Purpose**: Data structures and record types
 - **Key Classes**: `Session` (record type for session tracking)
-- **Dependencies**: dagster_shared.record
-- **Usage**: Session recording for analysis
+- **Dependencies**: dagster_shared.record, diagnostics.py (imports diagnostics models)
+- **Usage**: Session recording for analysis, exposes diagnostics data models
+
+### diagnostics.py
+
+- **Purpose**: Structured diagnostics and logging system for scaffold operations
+- **Key Classes**: `ClaudeDiagnosticsService`, `DiagnosticsEntry`, `AIInteraction`, `ContextGathering`, `PerformanceMetrics`
+- **Key Functions**: `create_claude_diagnostics_service()`
+- **Dependencies**: dagster_shared.record, json, datetime
+- **Architecture**: Instance-based service (no global singletons)
+- **Features**:
+  - Performance timing with context managers
+  - AI interaction tracking with token counts and duration
+  - Hierarchical logging levels (off, error, info, debug)
+  - JSON-structured output with correlation IDs
+  - Automatic log rotation and file management
 
 ### prompts/
 
@@ -55,10 +70,20 @@ dagster_dg_cli/cli/scaffold/branch/
 
 ## Data Flow
 
-1. **Input Processing**: command.py → ai.py (input type classification)
-2. **AI Generation**: ai.py → prompts/ (template loading) → claude_utils
-3. **Git Operations**: command.py → git.py (branch creation, commits, PR)
-4. **Session Recording**: command.py → models.py (data persistence)
+1. **Diagnostics Initialization**: command.py → diagnostics.py (instance creation with correlation ID)
+2. **Input Processing**: command.py → ai.py (input type classification with diagnostics instance passed)
+3. **AI Generation**: ai.py → prompts/ (template loading) → claude_utils (with diagnostics instance passed)
+4. **Git Operations**: command.py → git.py (branch creation, commits, PR with performance timing)
+5. **Session Recording**: command.py → models.py (data persistence)
+6. **Diagnostics Output**: command.py → diagnostics.py (flush instance to JSON files on completion)
+
+## Diagnostics Data Flow
+
+1. **Service Creation**: `create_claude_diagnostics_service()` creates service instance with correlation ID
+2. **Event Logging**: All modules log events through passed diagnostics instance
+3. **AI Interaction Capture**: claude_utils.py hooks capture all Claude API interactions via passed instance
+4. **Performance Metrics**: Context managers time operations across command execution
+5. **Output Generation**: JSON files written to `.dg/diagnostics/` with structured data
 
 ## Key Patterns
 
@@ -66,13 +91,18 @@ dagster_dg_cli/cli/scaffold/branch/
 - **Template System**: External markdown files for AI prompts enable easy modification
 - **Error Handling**: Consistent `click.ClickException` usage across git operations
 - **Modular Design**: Clear separation between CLI, AI, Git, and data concerns
+- **Diagnostics Pattern**: Instance-based service passed explicitly to avoid global singletons
+- **Correlation Tracking**: All diagnostics events tagged with correlation ID for request tracing
+- **Performance Monitoring**: Context managers and decorators for non-intrusive timing
 
 ## Integration Points
 
 - **External Commands**: `gh` (GitHub CLI), `git`, `dg` commands
-- **AI Service**: Claude via dagster_dg_cli.utils.claude_utils
+- **AI Service**: Claude via dagster_dg_cli.utils.claude_utils (with diagnostics hooks)
 - **UI Components**: daggy_spinner_context for progress indication
 - **Configuration**: DgContext for workspace/project settings
+- **Diagnostics Storage**: `.dg/diagnostics/` directory for structured logging output
+- **CLI Options**: `--diagnostics-level` (off/error/info/debug), `--diagnostics-dir`
 
 ## Package Distribution
 

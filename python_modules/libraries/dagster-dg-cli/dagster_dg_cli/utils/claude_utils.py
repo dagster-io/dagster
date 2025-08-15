@@ -3,9 +3,13 @@ import json
 import os
 import re
 import subprocess
+from datetime import datetime
+from time import perf_counter
 from typing import Any, Optional, Protocol
 
 from dagster_dg_core.context import DgContext
+
+from dagster_dg_cli.cli.scaffold.branch.diagnostics import AIInteraction, ClaudeDiagnosticsService
 
 
 class OutputChannel(Protocol):
@@ -49,6 +53,7 @@ def run_claude(
     dg_context: DgContext,
     prompt: str,
     allowed_tools: list[str],
+    diagnostics: ClaudeDiagnosticsService,
 ) -> str:
     """Run Claude CLI with the given prompt and allowed tools.
 
@@ -66,6 +71,16 @@ def run_claude(
     Raises:
         AssertionError: If Claude CLI is not found on the system
     """
+    diagnostics.debug(
+        "claude_invocation",
+        "Invoking Claude CLI",
+        {
+            "prompt_length": len(prompt),
+            "allowed_tools_count": len(allowed_tools),
+            "allowed_tools": allowed_tools,
+        },
+    )
+
     claude_cmd = find_claude()
     cmd = [
         *claude_cmd,
@@ -74,13 +89,50 @@ def run_claude(
         "--allowedTools",
         ",".join(allowed_tools),
     ]
-    output = subprocess.run(
-        cmd,
-        check=False,
-        capture_output=True,
-        text=True,
-    )
-    return output.stdout
+
+    start_time = perf_counter()
+    try:
+        output = subprocess.run(
+            cmd,
+            check=False,
+            capture_output=True,
+            text=True,
+        )
+        duration_ms = (perf_counter() - start_time) * 1000
+
+        interaction = AIInteraction(
+            correlation_id=diagnostics.correlation_id,
+            timestamp=datetime.now().isoformat(),
+            prompt=prompt,
+            response=output.stdout,
+            token_count=None,  # Not available from CLI
+            tools_used=allowed_tools,
+            duration_ms=duration_ms,
+        )
+        diagnostics.log_ai_interaction(interaction)
+
+        if output.stderr:
+            diagnostics.debug(
+                "claude_stderr",
+                "Claude CLI stderr output",
+                {"stderr": output.stderr},
+            )
+
+        return output.stdout
+    except Exception as e:
+        duration_ms = (perf_counter() - start_time) * 1000
+
+        diagnostics.error(
+            "claude_invocation_failed",
+            "Claude CLI invocation failed",
+            {
+                "error_type": type(e).__name__,
+                "error_message": str(e),
+                "duration_ms": duration_ms,
+                "command": cmd,
+            },
+        )
+        raise
 
 
 def render_claude_content(content_json: dict[str, Any]) -> Optional[str]:
@@ -152,6 +204,7 @@ def run_claude_stream(
     prompt: str,
     allowed_tools: list[str],
     output_channel: OutputChannel,
+    diagnostics: ClaudeDiagnosticsService,
     verbose: bool = False,
 ) -> None:
     """Run Claude CLI with streaming output.
@@ -165,11 +218,22 @@ def run_claude_stream(
         prompt: The prompt to send to Claude
         allowed_tools: List of tool names that Claude is allowed to use
         verbose: If True, display raw JSON output instead of formatted messages
-        spinner: Optional spinner context for displaying output
+        output_channel: Channel to write output to
 
     Raises:
         AssertionError: If Claude CLI is not found on the system
     """
+    diagnostics.debug(
+        "claude_stream_invocation",
+        "Invoking Claude CLI with streaming",
+        {
+            "prompt_length": len(prompt),
+            "allowed_tools_count": len(allowed_tools),
+            "allowed_tools": allowed_tools,
+            "verbose": verbose,
+        },
+    )
+
     claude_cmd = find_claude()
     cmd = [
         *claude_cmd,
@@ -183,20 +247,68 @@ def run_claude_stream(
         "Bash(python:*),WebSearch,WebFetch",
         "--verbose",
     ]
-    process = subprocess.Popen(
-        cmd,
-        stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE,
-        text=True,
-    )
-    assert process.stdout is not None
-    for line in process.stdout:
-        line_json = json.loads(line)
-        if verbose:
-            output_channel.write(json.dumps(line_json, indent=2))
-        else:
-            output = render_claude_output(line_json)
-            if output:
-                output_channel.write(output)
 
-    process.wait()
+    start_time = perf_counter()
+    response_content = []
+
+    try:
+        process = subprocess.Popen(
+            cmd,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            text=True,
+        )
+        assert process.stdout is not None
+
+        for line in process.stdout:
+            line_json = json.loads(line)
+
+            # Collect response content for diagnostics
+            response_content.append(line_json)
+
+            if verbose:
+                output_channel.write(json.dumps(line_json, indent=2))
+            else:
+                output = render_claude_output(line_json)
+                if output:
+                    output_channel.write(output)
+
+        process.wait()
+        duration_ms = (perf_counter() - start_time) * 1000
+
+        # Log the streaming interaction
+        interaction = AIInteraction(
+            correlation_id=diagnostics.correlation_id,
+            timestamp=datetime.now().isoformat(),
+            prompt=prompt,
+            response=f"[STREAMING_RESPONSE_LINES: {len(response_content)}]",
+            token_count=None,  # Not available from CLI
+            tools_used=allowed_tools,
+            duration_ms=duration_ms,
+        )
+        diagnostics.log_ai_interaction(interaction)
+
+        # Log any stderr output
+        if process.stderr:
+            stderr_content = process.stderr.read()
+            if stderr_content:
+                diagnostics.debug(
+                    "claude_stream_stderr",
+                    "Claude CLI streaming stderr output",
+                    {"stderr": stderr_content},
+                )
+
+    except Exception as e:
+        duration_ms = (perf_counter() - start_time) * 1000
+
+        diagnostics.error(
+            "claude_stream_invocation_failed",
+            "Claude CLI streaming invocation failed",
+            {
+                "error_type": type(e).__name__,
+                "error_message": str(e),
+                "duration_ms": duration_ms,
+                "command": cmd,
+            },
+        )
+        raise
