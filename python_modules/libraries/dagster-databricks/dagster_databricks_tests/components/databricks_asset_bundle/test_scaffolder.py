@@ -39,5 +39,7 @@ def test_scaffold_component_with_params(scaffold_params: dict, is_successful: bo
             assert defs_yaml_path.exists()
             assert (
                 str(DATABRICKS_CONFIGS_LOCATION_PATH)
-                in yaml.safe_load(defs_yaml_path.read_text())["attributes"]["databricks_configs_path"]
+                in yaml.safe_load(defs_yaml_path.read_text())["attributes"][
+                    "databricks_configs_path"
+                ]
             )
