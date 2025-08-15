@@ -1,5 +1,6 @@
 from unittest import mock
 
+import pytest
 from dagster import AssetsDefinition, DagsterEventType, materialize
 from dagster.components.testing import create_defs_folder_sandbox
 from dagster_databricks.components.databricks_asset_bundle.component import (
@@ -12,13 +13,30 @@ from dagster_databricks_tests.components.databricks_asset_bundle.conftest import
 )
 
 
+@pytest.mark.parametrize(
+    "use_custom_config_path",
+    [
+        False,
+        True,
+    ],
+    ids=[
+        "no_custom_config",
+        "custom_config",
+    ],
+)
 @mock.patch("databricks.sdk.service.jobs.SubmitTask", autospec=True)
-def test_load_component(mock_submit_task: mock.MagicMock, databricks_config_path: str):
+def test_load_component(
+    mock_submit_task: mock.MagicMock,
+    use_custom_config_path: bool,
+    custom_config_path: str,
+    databricks_config_path: str,
+):
     with create_defs_folder_sandbox() as sandbox:
         defs_path = sandbox.scaffold_component(
             component_cls=DatabricksAssetBundleComponent,
             scaffold_params={
                 "databricks_config_path": databricks_config_path,
+                "custom_config_path": custom_config_path if use_custom_config_path else None,
                 "databricks_workspace_host": TEST_DATABRICKS_WORKSPACE_HOST,
                 "databricks_workspace_token": TEST_DATABRICKS_WORKSPACE_TOKEN,
             },
@@ -62,8 +80,15 @@ def test_load_component(mock_submit_task: mock.MagicMock, databricks_config_path
                 == 4
             )
 
+            cluster_config_key = "existing_cluster_id" if use_custom_config_path else "new_cluster"
             # new_cluster is expected in 4 of the 6 submit tasks we create
             assert (
-                len([call for call in mock_submit_task.mock_calls if "new_cluster" in call.kwargs])
+                len(
+                    [
+                        call
+                        for call in mock_submit_task.mock_calls
+                        if cluster_config_key in call.kwargs
+                    ]
+                )
                 == 4
             )
