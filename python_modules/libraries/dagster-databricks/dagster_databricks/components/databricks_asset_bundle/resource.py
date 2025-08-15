@@ -58,7 +58,7 @@ class DatabricksWorkspace(ConfigurableResource):
             # Create the SubmitTask params dictionary
             submit_task_params = {"task_key": task_key}
 
-            # Convert dependency configs to TaskDependency objects
+            # Convert dependency config to TaskDependency objects
             task_dependencies = [
                 jobs.TaskDependency(task_key=dep_config.task_key, outcome=dep_config.outcome)
                 for dep_config in task.depends_on
