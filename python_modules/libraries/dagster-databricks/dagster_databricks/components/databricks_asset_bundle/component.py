@@ -73,7 +73,7 @@ class DatabricksAssetBundleComponent(Component, Resolvable):
     workspace: Annotated[
         DatabricksWorkspace,
         Resolver(
-            resolve_databricks_workspace(),
+            resolve_databricks_workspace,
             model_field_type=DatabricksWorkspaceArgs.model(),
             description="The mapping defining a DatabricksWorkspace.",
             examples=[
