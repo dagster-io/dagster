@@ -333,7 +333,7 @@ def test_component_docs_using_env(
             )
 
             context.run_command_and_snippet_output(
-                cmd="dg check yaml",
+                cmd="dg check yaml --validate-requirements",
                 snippet_path=SNIPPETS_DIR
                 / f"{context.get_next_snip_number()}-dg-component-check.txt",
                 snippet_replace_regex=[
