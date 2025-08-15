@@ -19,10 +19,10 @@ class DatabricksAssetBundleScaffoldParams(BaseModel):
     databricks_workspace_token: str = Field(
         description="The token to access your Databricks workspace.",
     )
-    custom_configs_path: Optional[str] = Field(
+    custom_config_path: Optional[str] = Field(
         None,
         description=(
-            "Path to a custom config file that align with databricks_asset_bundle.configs.CustomConfigs. Optional."
+            "Path to a custom config file that align with databricks_asset_bundle.configs.CustomConfig. Optional."
         ),
     )
 
@@ -41,18 +41,18 @@ class DatabricksAssetBundleScaffolder(Scaffolder[DatabricksAssetBundleScaffoldPa
         )
         databricks_config_path_str = f"{project_root_tmpl}/{rel_databricks_config_path}"
 
-        custom_configs_path_str = None
-        if request.params.custom_configs_path:
-            rel_custom_configs_path = os.path.relpath(
-                request.params.custom_configs_path, start=project_root
+        custom_config_path_str = None
+        if request.params.custom_config_path:
+            rel_custom_config_path = os.path.relpath(
+                request.params.custom_config_path, start=project_root
             )
-            custom_configs_path_str = f"{project_root_tmpl}/{rel_custom_configs_path}"
+            custom_config_path_str = f"{project_root_tmpl}/{rel_custom_config_path}"
 
         scaffold_component(
             request,
             {
                 "databricks_config_path": databricks_config_path_str,
-                "custom_configs": custom_configs_path_str,
+                "custom_config": custom_config_path_str,
                 "workspace": {
                     "host": request.params.databricks_workspace_host,
                     "token": request.params.databricks_workspace_token,

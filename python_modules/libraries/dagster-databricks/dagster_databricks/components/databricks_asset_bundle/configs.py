@@ -384,17 +384,17 @@ class DatabricksConfig(IHaveNew):
 
 
 @record
-class CustomConfigs:
+class CustomConfig:
     spark_version: str = "13.3.x-scala2.12"
     node_type_id: str = "i3.xlarge"
     num_workers: int = 1
 
     @classmethod
-    def from_custom_configs_path(cls, custom_configs_path: Union[Path, str]) -> "CustomConfigs":
-        custom_configs_path = Path(custom_configs_path)
-        if not custom_configs_path.exists():
-            raise FileNotFoundError(f"Custom config file not found: {custom_configs_path}")
+    def from_custom_config_path(cls, custom_config_path: Union[Path, str]) -> "CustomConfig":
+        custom_config_path = Path(custom_config_path)
+        if not custom_config_path.exists():
+            raise FileNotFoundError(f"Custom config file not found: {custom_config_path}")
 
         # Load databricks config
-        custom_configs = load_yaml(custom_configs_path)
-        return cls(**custom_configs)
+        custom_config = load_yaml(custom_config_path)
+        return cls(**custom_config)
