@@ -25,8 +25,8 @@ The `dg scaffold branch` command is our primary tool for generating feature bran
 ### Phase 1: Core Functionality and Dev Loop
 
 - [x] 1. Structured Diagnostics System (debug visibility)
-- [ ] 2. Input Type System (robust input handling)
-- [ ] 3. Claude Interface Abstraction (reliable AI interactions)
+- [x] 2. Input Type System (robust input handling)
+- [x] 3. Claude Interface Abstraction (reliable AI interactions)
 - [ ] 4. Dynamic Planning System (planning mode)
 - [ ] 5. Basic Agent Context System (project awareness)
 - [ ] 6. Prompt Template System (dynamic docstring injection)

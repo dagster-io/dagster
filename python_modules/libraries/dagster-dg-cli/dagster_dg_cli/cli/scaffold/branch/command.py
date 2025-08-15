@@ -87,6 +87,15 @@ def scaffold_branch_command(
 
     if sys.version_info < (3, 10):
         raise click.ClickException("dg scaffold branch requires Python 3.10 or higher")
+
+    # Basic input validation
+    prompt_text = " ".join(prompt).strip()
+    if not prompt_text:
+        raise click.UsageError("Prompt cannot be empty")
+
+    valid_diagnostics_levels = {"off", "error", "info", "debug"}
+    if diagnostics_level not in valid_diagnostics_levels:
+        raise click.UsageError(f"diagnostics_level must be one of {valid_diagnostics_levels}")
     # Create Claude diagnostics service instance
     diagnostics = create_claude_diagnostics_service(
         level=diagnostics_level,
@@ -104,7 +113,7 @@ def scaffold_branch_command(
             "command_start",
             "Starting scaffold branch command",
             {
-                "prompt": " ".join(prompt),
+                "prompt": prompt_text,
                 "target_path": str(target_path),
                 "local_only": local_only,
                 "diagnostics_level": diagnostics_level,
@@ -125,8 +134,9 @@ def scaffold_branch_command(
         if record and (not record.exists() or not record.is_dir()):
             raise click.UsageError(f"{record} is not an existing directory")
 
-        prompt_text = " ".join(prompt)
+        # prompt_text already defined above from validation
         generated_outputs = {}
+        pr_title = ""  # Initialize pr_title
 
         # If the user input a valid git branch name, bypass AI inference and create the branch directly.
         if prompt_text and is_prompt_valid_git_branch_name(prompt_text.strip()):
@@ -166,22 +176,26 @@ def scaffold_branch_command(
             )
             with spinner_ctx:
                 with diagnostics.time_operation("branch_name_generation", "ai_generation"):
-                    branch_name, pr_title = get_branch_name_and_pr_title_from_prompt(
+                    branch_generation = get_branch_name_and_pr_title_from_prompt(
                         dg_context, prompt_text, input_type, diagnostics
                     )
-            generated_outputs["branch_name"] = branch_name
-            generated_outputs["pr_title"] = pr_title
-            # For generated branch names, add a random suffix to avoid conflicts
-            branch_name = branch_name + "-" + str(uuid.uuid4())[:8]
+            # Update final branch name with suffix to avoid conflicts
+            final_branch_name = branch_generation.original_branch_name + "-" + str(uuid.uuid4())[:8]
+            branch_generation.final_branch_name = final_branch_name
+
+            generated_outputs["branch_name"] = branch_generation.original_branch_name
+            generated_outputs["pr_title"] = branch_generation.pr_title
+            branch_name = final_branch_name
+            pr_title = branch_generation.pr_title
             ai_scaffolding = True
 
             diagnostics.info(
                 "branch_name_generated",
                 "Generated branch name and PR title",
                 {
-                    "original_branch_name": generated_outputs["branch_name"],
-                    "final_branch_name": branch_name,
-                    "pr_title": pr_title,
+                    "original_branch_name": branch_generation.original_branch_name,
+                    "final_branch_name": branch_generation.final_branch_name,
+                    "pr_title": branch_generation.pr_title,
                 },
             )
 
@@ -226,7 +240,6 @@ def scaffold_branch_command(
         if ai_scaffolding and input_type:
             with diagnostics.time_operation("content_scaffolding", "ai_generation"):
                 scaffold_content_for_prompt(
-                    dg_context,
                     prompt_text,
                     input_type,
                     diagnostics,
