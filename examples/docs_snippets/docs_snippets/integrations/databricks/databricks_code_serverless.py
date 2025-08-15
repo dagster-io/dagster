@@ -8,7 +8,7 @@ from dagster_pipes import (
 with open_dagster_pipes(
     context_loader=PipesUnityCatalogVolumesContextLoader(),
     message_writer=PipesUnityCatalogVolumesMessageWriter(),
-    params_loader=PipesDatabricksNotebookWidgetsParamsLoader(dbutils.widgets),
+    params_loader=PipesDatabricksNotebookWidgetsParamsLoader(dbutils.widgets),  # noqa
 ) as pipes:
     # Access the `extras` dict passed when launching the job from Dagster.
     some_parameter_value = pipes.get_extra("some_parameter")

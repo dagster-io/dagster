@@ -1,9 +1,10 @@
 import os
 
 from dagster_databricks.pipes import PipesDatabricksServerlessClient
-import dagster as dg
 from databricks.sdk import WorkspaceClient
 from databricks.sdk.service import jobs
+
+import dagster as dg
 
 pipes_databricks_resource = PipesDatabricksServerlessClient(
     client=WorkspaceClient(
@@ -42,5 +43,5 @@ def databricks_asset(
 def resources():
     return dg.Definitions(
         assets=[databricks_asset],
-        resources={"pipes_databricks": pipes_databricks_resource}
+        resources={"pipes_databricks": pipes_databricks_resource},
     )
