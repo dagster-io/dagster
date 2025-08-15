@@ -36,7 +36,7 @@ class DatabricksWorkspace(ConfigurableResource):
             assets_def.specs_by_key[selected_key] for selected_key in selected_asset_keys
         ]
         selected_task_key_to_asset_key_mapping = {
-            spec.metadata["task_key"]: spec.key for spec in selected_specs
+            spec.metadata["task_key"].value: spec.key for spec in selected_specs
         }
         selected_tasks_by_task_key = {
             task.task_key: task
@@ -57,7 +57,7 @@ class DatabricksWorkspace(ConfigurableResource):
             parameters = task.task_parameters
             context.log.info(f"Task {task_key}: parameters={parameters}")
 
-            databricks_task = jobs.SubmitTask(**parameters)
+            databricks_task = jobs.SubmitTask(task_key)
             databricks_tasks_by_task_key[task_key] = databricks_task
 
         # TODO: implement submit tasks and poll at client level
