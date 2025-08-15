@@ -148,7 +148,7 @@ class DatabricksAssetBundleComponent(Component, Resolvable):
         ).replace("/", "_")
 
         @multi_asset(
-            name=f"databricks_multi_asset_{component_defs_path_as_python_str}",
+            name=f"{self.custom_configs.job_name_prefix}_multi_asset_{component_defs_path_as_python_str}",
             specs=[self.get_asset_spec(task) for task in self.databricks_config.tasks],
             can_subset=True,
         )
