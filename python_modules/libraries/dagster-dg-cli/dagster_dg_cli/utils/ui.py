@@ -3,7 +3,9 @@ import threading
 import time
 from collections.abc import Iterator
 from contextlib import contextmanager
+from typing import Optional
 
+import click
 from yaspin import Spinner, yaspin
 from yaspin.core import Yaspin
 
@@ -11,6 +13,32 @@ from yaspin.core import Yaspin
 DEFAULT_SPINNER_FRAMES = "ଳଢଡଜ"
 DEFAULT_SPINNER_INTERVAL = 0.1  # seconds between spinner frame updates
 DEFAULT_ELLIPSIS_INTERVAL = 0.5  # seconds between ellipsis animation updates
+
+
+def format_duration(seconds: Optional[float]) -> str:
+    """Format duration in a human-readable way."""
+    if seconds is None:
+        return "0s"
+    elif seconds < 60:
+        return f"{seconds:.0f}s"
+    else:
+        minutes = int(seconds // 60)
+        secs = int(seconds % 60)
+        return f"{minutes}m {secs}s" if secs > 0 else f"{minutes}m"
+
+
+def clear_screen(line_count: int, initial: bool) -> None:
+    """Clear previous output and position cursor."""
+    if not initial:
+        click.echo(f"\033[{line_count}A", nl=False)  # Move cursor up
+    click.echo("\033[0J", nl=False)  # Clear from cursor to end of screen
+
+
+def daggy_spinner_char(elapsed_time: float) -> str:
+    """Utility function for getting a daggy-themed spinner character."""
+    spinners = DEFAULT_SPINNER_FRAMES
+    index = int(elapsed_time * 8) % len(spinners)
+    return spinners[index]
 
 
 @contextmanager
