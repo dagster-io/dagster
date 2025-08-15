@@ -80,6 +80,22 @@ def run_claude(
         capture_output=True,
         text=True,
     )
+
+    # Check if the command failed or returned no output
+    if output.returncode != 0:
+        error_msg = f"Claude command failed with return code {output.returncode}"
+        if output.stderr:
+            error_msg += f"\nStderr: {output.stderr}"
+        if output.stdout:
+            error_msg += f"\nStdout: {output.stdout}"
+        raise RuntimeError(error_msg)
+
+    if not output.stdout.strip():
+        error_msg = "Claude command succeeded but returned empty output"
+        if output.stderr:
+            error_msg += f"\nStderr: {output.stderr}"
+        raise RuntimeError(error_msg)
+
     return output.stdout
 
 
