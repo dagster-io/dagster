@@ -9,6 +9,7 @@ import dagster._check as check
 from dagster._core.errors import DagsterUserCodeProcessError, DagsterUserCodeUnreachableError
 from dagster._core.instance import InstanceRef
 from dagster._core.remote_origin import CodeLocationOrigin, ManagedGrpcPythonEnvCodeLocationOrigin
+from dagster._core.storage.defs_state.defs_state_info import DefsStateInfo
 from dagster._core.types.loadable_target_origin import LoadableTargetOrigin
 from dagster._time import get_current_timestamp
 from dagster._utils.error import SerializableErrorInfo, serializable_error_info_from_exc_info
@@ -75,6 +76,7 @@ class GrpcServerRegistry(AbstractContextManager):
         container_image: Optional[str] = None,
         container_context: Optional[dict[str, Any]] = None,
         additional_timeout_msg: Optional[str] = None,
+        defs_state_info: Optional[DefsStateInfo] = None,
     ):
         self.instance_ref = instance_ref
         self.server_command = server_command
@@ -88,6 +90,9 @@ class GrpcServerRegistry(AbstractContextManager):
         self._startup_timeout = check.int_param(startup_timeout, "startup_timeout")
         self._additional_timeout_msg = check.opt_str_param(
             additional_timeout_msg, "additional_timeout_msg"
+        )
+        self._defs_state_info = check.opt_inst_param(
+            defs_state_info, "defs_state_info", DefsStateInfo
         )
 
         self._lock = threading.Lock()
@@ -203,6 +208,7 @@ class GrpcServerRegistry(AbstractContextManager):
                     container_image=self._container_image,
                     container_context=self._container_context,
                     additional_timeout_msg=self._additional_timeout_msg,
+                    defs_state_info=self._defs_state_info,
                 )
                 self._all_processes.append(server_process)
                 self._active_entries[origin_id] = ServerRegistryEntry(

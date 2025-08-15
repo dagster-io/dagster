@@ -27,10 +27,12 @@ class DefsStateInfo:
         info = self.info_mapping.get(key)
         return info.version if info else None
 
-    def with_version(self, key: str, version: str) -> "DefsStateInfo":
-        return DefsStateInfo(
-            info_mapping={
-                **self.info_mapping,
-                key: DefsKeyStateInfo(version=version, create_timestamp=get_current_timestamp()),
-            }
-        )
+    @staticmethod
+    def add_version(
+        current_info: Optional["DefsStateInfo"], key: str, version: str
+    ) -> "DefsStateInfo":
+        new_info = DefsKeyStateInfo(version=version, create_timestamp=get_current_timestamp())
+        if current_info is None:
+            return DefsStateInfo(info_mapping={key: new_info})
+        else:
+            return DefsStateInfo(info_mapping={**current_info.info_mapping, key: new_info})

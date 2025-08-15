@@ -3,8 +3,7 @@ from pathlib import Path
 from typing import TYPE_CHECKING, ClassVar, Optional
 
 from dagster._core.instance import MayHaveInstanceWeakref, T_DagsterInstance
-from dagster._core.storage.defs_state.defs_state_info import DefsKeyStateInfo, DefsStateInfo
-from dagster._time import get_current_timestamp
+from dagster._core.storage.defs_state.defs_state_info import DefsStateInfo
 
 if TYPE_CHECKING:
     from dagster._core.storage.defs_state.run_storage_state_storage import RunStorageStateStorage
@@ -40,26 +39,6 @@ class DefsStateStorage(ABC, MayHaveInstanceWeakref[T_DagsterInstance]):
         """
         info = self.get_latest_defs_state_info()
         return info.get_version(key) if info else None
-
-    def get_updated_defs_state_info(self, key: str, version: str) -> DefsStateInfo:
-        """Returns a new DefsStateInfo with the given key and version.
-
-        Args:
-            key (str): The key of the state to update.
-            version (str): The version of the state to update.
-
-        Returns:
-            DefsStateInfo: The updated DefsStateInfo.
-        """
-        current_data = self.get_latest_defs_state_info()
-        if current_data is None:
-            return DefsStateInfo(
-                info_mapping={
-                    key: DefsKeyStateInfo(version=version, create_timestamp=get_current_timestamp())
-                }
-            )
-        else:
-            return current_data.with_version(key, version)
 
     @abstractmethod
     def get_latest_defs_state_info(self) -> Optional[DefsStateInfo]:
