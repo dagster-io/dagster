@@ -10,7 +10,7 @@ from pathlib import Path
 from time import perf_counter
 from typing import Any, Literal, Optional, Union
 
-from dagster_dg_cli.cli.scaffold.branch.data_models import (
+from dagster_dg_cli.cli.scaffold.branch.models import (
     AIInteraction,
     ContextGathering,
     DiagnosticsEntry,
