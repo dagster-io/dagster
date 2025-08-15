@@ -22,7 +22,7 @@ setup(
     author="Dagster Labs",
     author_email="hello@dagsterlabs.com",
     license="Apache-2.0",
-    description="",  # TODO - fill out description
+    description="Integration with Omni",
     url=("https://github.com/dagster-io/dagster/tree/master/python_modules/libraries/dagster-omni"),
     classifiers=[
         "Programming Language :: Python :: 3.9",
@@ -37,7 +37,7 @@ setup(
     include_package_data=True,
     install_requires=[
         f"dagster{pin}",
-        # TODO - fill in remaining dependencies
+        "aiohttp",
     ],
     zip_safe=False,
 )
