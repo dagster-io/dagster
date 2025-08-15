@@ -88,7 +88,7 @@ def build_repo_wide_ruff_steps() -> list[CommandStepConfiguration]:
             AvailablePythonVersion.get_default(),
         )
         .run(
-            "uv pip install --system -e python_modules/dagster[ruff] -e python_modules/dagster-pipes -e python_modules/libraries/dagster-shared",
+            "uv pip install --system -e python_modules/dagster[ruff] -e python_modules/dagster-pipes -e python_modules/libraries/dagster-shared -e python_modules/dagster-test",
             "make check_ruff",
         )
         .skip_if(skip_if_no_python_changes())

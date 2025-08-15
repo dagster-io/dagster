@@ -30,7 +30,7 @@ unannotated_pyright:
 	python scripts/run-pyright.py --unannotated
 
 ruff:
-	-ruff check --fix .
+	ruff check --fix .
 	ruff format .
 
 check_ruff:
@@ -38,7 +38,7 @@ check_ruff:
 	ruff format --check .
 
 unsafe_ruff:
-	-ruff check --fix --unsafe-fixes .
+	ruff check --fix --unsafe-fixes .
 	ruff format .
 
 check_prettier:
