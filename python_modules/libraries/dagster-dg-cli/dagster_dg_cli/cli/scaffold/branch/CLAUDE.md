@@ -76,18 +76,14 @@ dagster_dg_cli/cli/scaffold/branch/
 
 ## Package Distribution
 
-**CRITICAL**: When adding new `.md` files to this subpackage, you MUST update the MANIFEST.in file at `/python_modules/libraries/dagster-dg-cli/MANIFEST.in` to include them in the package distribution.
+**CRITICAL**: When adding new `.md` files to this subpackage that should NOT be included in the package distribution, you MUST update the `setup.cfg` file at `/python_modules/libraries/dagster-dg-cli/setup.cfg` to add them to the check-manifest ignore list.
 
-**Example**: If you add `new_file.md`, add this line to MANIFEST.in:
-
-```
-include dagster_dg_cli/cli/scaffold/branch/new_file.md
-```
-
-**Why**: The `check-manifest` tool validates that all version-controlled files are included in the source distribution. Missing files will cause CI failures.
-
-**Alternative**: Use recursive include patterns for directories with multiple .md files:
+**Example**: If you add `new_file.md` that should be excluded from distribution, add this line to the `[check-manifest]` ignore section in setup.cfg:
 
 ```
-recursive-include dagster_dg_cli/cli/scaffold/branch *.md
+dagster_dg_cli/cli/scaffold/branch/new_file.md
 ```
+
+**Why**: The `check-manifest` tool validates that all version-controlled files are included in the source distribution. Documentation files like CLAUDE.md are typically excluded from distribution and need to be explicitly ignored to prevent CI failures.
+
+**Pattern**: Use the full relative path from the package root in the ignore list.
