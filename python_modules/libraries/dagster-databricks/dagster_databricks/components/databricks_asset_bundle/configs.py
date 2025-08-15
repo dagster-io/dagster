@@ -259,22 +259,22 @@ class DatabricksJobTask:
 
 
 @record_custom
-class DatabricksConfigs(IHaveNew):
-    databricks_configs_path: Path
+class DatabricksConfig(IHaveNew):
+    databricks_config_path: Path
     tasks: list[Any]
     job_level_parameters: Mapping[str, Any]
 
     def __new__(
         cls,
-        databricks_configs_path: Union[Path, str],
-    ) -> "DatabricksConfigs":
-        databricks_configs_path = Path(databricks_configs_path)
-        if not databricks_configs_path.exists():
-            raise FileNotFoundError(f"Databricks config file not found: {databricks_configs_path}")
+        databricks_config_path: Union[Path, str],
+    ) -> "DatabricksConfig":
+        databricks_config_path = Path(databricks_config_path)
+        if not databricks_config_path.exists():
+            raise FileNotFoundError(f"Databricks config file not found: {databricks_config_path}")
 
         # Load databricks config
-        databricks_config = load_yaml(databricks_configs_path)
-        bundle_dir = databricks_configs_path.parent
+        databricks_config = load_yaml(databricks_config_path)
+        bundle_dir = databricks_config_path.parent
 
         # Extract variables and includes
         includes = databricks_config.get("include", [])
@@ -293,11 +293,11 @@ class DatabricksConfigs(IHaveNew):
                     job_level_parameters.update(resource_job_level_parameters)
 
         if not tasks:
-            raise ValueError(f"No tasks found in databricks config: {databricks_configs_path}")
+            raise ValueError(f"No tasks found in databricks config: {databricks_config_path}")
 
         return super().__new__(
             cls,
-            databricks_configs_path=databricks_configs_path,
+            databricks_config_path=databricks_config_path,
             tasks=tasks,
             job_level_parameters=job_level_parameters,
         )
