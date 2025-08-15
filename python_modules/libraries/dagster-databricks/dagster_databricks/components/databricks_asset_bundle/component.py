@@ -14,7 +14,7 @@ from dagster.components.resolved.model import Resolver
 from dagster.components.scaffold.scaffold import scaffold_with
 
 from dagster_databricks.components.databricks_asset_bundle.configs import (
-    CustomConfigs,
+    CustomConfig,
     DatabricksBaseTask,
     DatabricksConfig,
 )
@@ -49,11 +49,11 @@ def resolve_databricks_config_path(context: ResolutionContext, model) -> Path:
     )
 
 
-def resolve_custom_configs(context: ResolutionContext, model) -> CustomConfigs:
+def resolve_custom_config(context: ResolutionContext, model) -> CustomConfig:
     # If model is not a string, it's None, in which case we return an object with default values
     if not isinstance(model, str):
-        return CustomConfigs()
-    return CustomConfigs.from_custom_configs_path(
+        return CustomConfig()
+    return CustomConfig.from_custom_config_path(
         context.resolve_source_relative_path(
             context.resolve_value(model, as_type=str),
         )
@@ -82,13 +82,13 @@ class DatabricksAssetBundleComponent(Component, Resolvable):
             ],
         ),
     ]
-    custom_configs: Annotated[
-        CustomConfigs,
+    custom_config: Annotated[
+        CustomConfig,
         Resolver(
-            resolve_custom_configs,
+            resolve_custom_config,
             model_field_type=Optional[str],
             description=(
-                "The path to a custom config file that align with databricks_asset_bundle.configs.CustomConfigs. "
+                "The path to a custom config file that align with databricks_asset_bundle.configs.CustomConfig. "
                 "Optional"
             ),
             examples=["{{ project_root }}/path/to/custom_yml_config_file", None],
