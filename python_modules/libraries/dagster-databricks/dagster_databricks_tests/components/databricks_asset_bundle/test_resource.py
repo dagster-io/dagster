@@ -14,29 +14,40 @@ from dagster_databricks_tests.components.databricks_asset_bundle.conftest import
 
 
 @pytest.mark.parametrize(
-    "use_custom_config_path",
+    "use_custom_config_path, is_serverless",
     [
-        False,
-        True,
+        (False, False),
+        (True, False),
+        (True, True),
     ],
     ids=[
         "no_custom_config",
         "custom_config",
+        "serverless_custom_config"
     ],
 )
 @mock.patch("databricks.sdk.service.jobs.SubmitTask", autospec=True)
 def test_load_component(
     mock_submit_task: mock.MagicMock,
     use_custom_config_path: bool,
+    is_serverless: bool,
     custom_config_path: str,
+    serverless_custom_config_path: str,
     databricks_config_path: str,
 ):
     with create_defs_folder_sandbox() as sandbox:
+        config_path = None
+        if use_custom_config_path:
+            if is_serverless:
+                config_path = serverless_custom_config_path
+            else:
+                config_path = custom_config_path
+
         defs_path = sandbox.scaffold_component(
             component_cls=DatabricksAssetBundleComponent,
             scaffold_params={
                 "databricks_config_path": databricks_config_path,
-                "custom_config_path": custom_config_path if use_custom_config_path else None,
+                "custom_config_path": config_path,
                 "databricks_workspace_host": TEST_DATABRICKS_WORKSPACE_HOST,
                 "databricks_workspace_token": TEST_DATABRICKS_WORKSPACE_TOKEN,
             },
@@ -74,8 +85,10 @@ def test_load_component(
                 == 4
             )
 
+            # cluster config is expected in 4 of the 6 submit tasks we create if not using serverless compute,
+            # otherwise not expected.
+            expected_cluster_config_calls = 4 if not is_serverless else 0
             cluster_config_key = "existing_cluster_id" if use_custom_config_path else "new_cluster"
-            # new_cluster is expected in 4 of the 6 submit tasks we create
             assert (
                 len(
                     [
@@ -84,5 +97,5 @@ def test_load_component(
                         if cluster_config_key in call.kwargs
                     ]
                 )
-                == 4
+                == expected_cluster_config_calls
             )

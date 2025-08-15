@@ -8,6 +8,7 @@ import pytest
 DATABRICKS_CONFIG_LOCATION_PATH = Path(__file__).parent / "configs" / "databricks.yml"
 CUSTOM_CONFIG_LOCATION_PATH = Path(__file__).parent / "configs" / "custom.yml"
 PARTIAL_CUSTOM_CONFIG_LOCATION_PATH = Path(__file__).parent / "configs" / "partial_custom.yml"
+SERVERLESS_CUSTOM_CONFIG_LOCATION_PATH = Path(__file__).parent / "configs" / "serverless_custom.yml"
 
 TEST_DATABRICKS_WORKSPACE_HOST = "test_host"
 TEST_DATABRICKS_WORKSPACE_TOKEN = "test_token"
@@ -27,3 +28,10 @@ def custom_config_path() -> Iterator[str]:
         shutil.copytree(CUSTOM_CONFIG_LOCATION_PATH.parent.parent, temp_dir, dirs_exist_ok=True)
         custom_config_path = f"{temp_dir}/configs/custom.yml"
         yield custom_config_path
+
+@pytest.fixture(scope="module")
+def serverless_custom_config_path() -> Iterator[str]:
+    with tempfile.TemporaryDirectory() as temp_dir:
+        shutil.copytree(SERVERLESS_CUSTOM_CONFIG_LOCATION_PATH.parent.parent, temp_dir, dirs_exist_ok=True)
+        serverless_custom_config_path = f"{temp_dir}/configs/serverless_custom.yml"
+        yield serverless_custom_config_path

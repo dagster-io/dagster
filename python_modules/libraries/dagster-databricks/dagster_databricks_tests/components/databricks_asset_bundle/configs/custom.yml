@@ -2,3 +2,4 @@ spark_version: "test_spark_version"
 node_type_id: "test_node_type_id"
 num_workers: 2
 existing_cluster_id: "test_existing_cluster_id"
+is_serverless: False
