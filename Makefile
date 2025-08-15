@@ -37,6 +37,10 @@ check_ruff:
 	ruff check .
 	ruff format --check .
 
+unsafe_ruff:
+	-ruff check --fix --unsafe-fixes .
+	ruff format .
+
 check_prettier:
 #NOTE: excludes symlinked md files
 	prettier `git ls-files \
