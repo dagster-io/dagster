@@ -38,7 +38,7 @@ class DatabricksNotebookTask:
     task_parameters: Mapping[str, Any]
     depends_on: list[str]
     job_name: str
-    libraries: Optional[list[Mapping[str, Any]]] = None
+    libraries: list[Mapping[str, Any]]
 
     @property
     def task_type(self) -> str:
@@ -63,7 +63,198 @@ class DatabricksNotebookTask:
             task_parameters=task_parameters,
             depends_on=parse_depends_on(job_task_config.get("depends_on", [])),
             job_name=job_task_config["job_name"],
-            libraries=job_task_config.get("libraries"),
+            libraries=job_task_config.get("libraries", []),
+        )
+
+
+@record
+class DatabricksConditionTask:
+    task_key: str
+    task_config: Mapping[str, Any]
+    task_parameters: Mapping[str, Any]
+    depends_on: list[str]
+    job_name: str
+    libraries: list[Mapping[str, Any]]
+
+    @property
+    def task_type(self) -> str:
+        return "condition"
+
+    @cached_property
+    def task_config_metadata(self) -> Mapping[str, Any]:
+        task_config_metadata = {}
+        condition_config = self.task_config["condition_task"]
+        task_config_metadata["left"] = condition_config.get("left", "")
+        task_config_metadata["op"] = condition_config.get("op", "EQUAL_TO")
+        task_config_metadata["right"] = condition_config.get("right", "")
+        return task_config_metadata
+
+    @classmethod
+    def from_job_task_config(cls, job_task_config: Mapping[str, Any]) -> "DatabricksConditionTask":
+        condition_task = job_task_config["condition_task"]
+        task_config = {"condition_task": condition_task}
+        # Condition tasks don't have traditional parameters
+        task_parameters = {}
+        return cls(
+            task_key=job_task_config["task_key"],
+            task_config=task_config,
+            task_parameters=task_parameters,
+            depends_on=parse_depends_on(job_task_config.get("depends_on", [])),
+            job_name=job_task_config["job_name"],
+            libraries=job_task_config.get("libraries", []),
+        )
+
+
+@record
+class DatabricksSparkPythonTask:
+    task_key: str
+    task_config: Mapping[str, Any]
+    task_parameters: list[str]
+    depends_on: list[str]
+    job_name: str
+    libraries: list[Mapping[str, Any]]
+
+    @property
+    def task_type(self) -> str:
+        return "spark_python"
+
+    @cached_property
+    def task_config_metadata(self) -> Mapping[str, Any]:
+        task_config_metadata = {}
+        python_config = self.task_config["spark_python_task"]
+        task_config_metadata["python_file"] = python_config["python_file"]
+        task_config_metadata["parameters"] = self.task_parameters
+        return task_config_metadata
+
+    @classmethod
+    def from_job_task_config(
+        cls, job_task_config: Mapping[str, Any]
+    ) -> "DatabricksSparkPythonTask":
+        spark_python_task = job_task_config["spark_python_task"]
+        task_config = {"spark_python_task": spark_python_task}
+        # Spark Python tasks use parameters differently
+        task_parameters = spark_python_task.get("parameters", [])
+        return cls(
+            task_key=job_task_config["task_key"],
+            task_config=task_config,
+            task_parameters=task_parameters,
+            depends_on=parse_depends_on(job_task_config.get("depends_on", [])),
+            job_name=job_task_config["job_name"],
+            libraries=job_task_config.get("libraries", []),
+        )
+
+
+@record
+class DatabricksPythonWheelTask:
+    task_key: str
+    task_config: Mapping[str, Any]
+    task_parameters: list[str]
+    depends_on: list[str]
+    job_name: str
+    libraries: list[Mapping[str, Any]]
+
+    @property
+    def task_type(self) -> str:
+        return "python_wheel"
+
+    @cached_property
+    def task_config_metadata(self) -> Mapping[str, Any]:
+        task_config_metadata = {}
+        wheel_config = self.task_config["python_wheel_task"]
+        task_config_metadata["package_name"] = wheel_config["package_name"]
+        task_config_metadata["entry_point"] = wheel_config["entry_point"]
+        task_config_metadata["parameters"] = self.task_parameters
+        return task_config_metadata
+
+    @classmethod
+    def from_job_task_config(
+        cls, job_task_config: Mapping[str, Any]
+    ) -> "DatabricksPythonWheelTask":
+        python_wheel_task = job_task_config["python_wheel_task"]
+        task_config = {"python_wheel_task": python_wheel_task}
+        # Python wheel tasks use parameters differently
+        task_parameters = python_wheel_task.get("parameters", [])
+        return cls(
+            task_key=job_task_config["task_key"],
+            task_config=task_config,
+            task_parameters=task_parameters,
+            depends_on=parse_depends_on(job_task_config.get("depends_on", [])),
+            job_name=job_task_config["job_name"],
+            libraries=job_task_config.get("libraries", []),
+        )
+
+
+@record
+class DatabricksSparkJarTask:
+    task_key: str
+    task_config: Mapping[str, Any]
+    task_parameters: Mapping[str, Any]
+    depends_on: list[str]
+    job_name: str
+    libraries: list[Mapping[str, Any]]
+
+    @property
+    def task_type(self) -> str:
+        return "spark_jar"
+
+    @cached_property
+    def task_config_metadata(self) -> Mapping[str, Any]:
+        task_config_metadata = {}
+        jar_config = self.task_config["spark_jar_task"]
+        task_config_metadata["main_class_name"] = jar_config["main_class_name"]
+        task_config_metadata["parameters"] = self.task_parameters
+        return task_config_metadata
+
+    @classmethod
+    def from_job_task_config(cls, job_task_config: Mapping[str, Any]) -> "DatabricksSparkJarTask":
+        spark_jar_task = job_task_config["spark_jar_task"]
+        task_config = {"spark_jar_task": spark_jar_task}
+        # Spark JAR tasks use parameters differently
+        task_parameters = spark_jar_task.get("parameters", [])
+        return cls(
+            task_key=job_task_config["task_key"],
+            task_config=task_config,
+            task_parameters=task_parameters,
+            depends_on=parse_depends_on(job_task_config.get("depends_on", [])),
+            job_name=job_task_config["job_name"],
+            libraries=job_task_config.get("libraries", []),
+        )
+
+
+@record
+class DatabricksJobTask:
+    task_key: str
+    task_config: Mapping[str, Any]
+    task_parameters: Mapping[str, Any]
+    depends_on: list[str]
+    job_name: str
+    libraries: list[Mapping[str, Any]]
+
+    @property
+    def task_type(self) -> str:
+        return "run_job"
+
+    @cached_property
+    def task_config_metadata(self) -> Mapping[str, Any]:
+        task_config_metadata = {}
+        job_config = self.task_config["run_job_task"]
+        task_config_metadata["job_id"] = job_config["job_id"]
+        task_config_metadata["job_parameters"] = self.task_parameters
+        return task_config_metadata
+
+    @classmethod
+    def from_job_task_config(cls, job_task_config: Mapping[str, Any]) -> "DatabricksJobTask":
+        run_job_task = job_task_config["run_job_task"]
+        task_config = {"run_job_task": run_job_task}
+        # For job tasks, parameters are in job_parameters
+        task_parameters = run_job_task.get("job_parameters", {})
+        return cls(
+            task_key=job_task_config["task_key"],
+            task_config=task_config,
+            task_parameters=task_parameters,
+            depends_on=parse_depends_on(job_task_config.get("depends_on", [])),
+            job_name=job_task_config["job_name"],
+            libraries=job_task_config.get("libraries", []),
         )
 
 
@@ -142,6 +333,37 @@ class DatabricksConfigs(IHaveNew):
                 if "notebook_task" in job_task_config:
                     tasks.append(
                         DatabricksNotebookTask.from_job_task_config(
+                            job_task_config=augmented_job_task_config
+                        )
+                    )
+                elif "condition_task" in job_task_config:
+                    tasks.append(
+                        DatabricksConditionTask.from_job_task_config(
+                            job_task_config=augmented_job_task_config
+                        )
+                    )
+                elif "spark_python_task" in job_task_config:
+                    tasks.append(
+                        DatabricksSparkPythonTask.from_job_task_config(
+                            job_task_config=augmented_job_task_config
+                        )
+                    )
+
+                elif "python_wheel_task" in job_task_config:
+                    tasks.append(
+                        DatabricksPythonWheelTask.from_job_task_config(
+                            job_task_config=augmented_job_task_config
+                        )
+                    )
+                elif "spark_jar_task" in job_task_config:
+                    tasks.append(
+                        DatabricksSparkJarTask.from_job_task_config(
+                            job_task_config=augmented_job_task_config
+                        )
+                    )
+                elif "run_job_task" in job_task_config:
+                    tasks.append(
+                        DatabricksJobTask.from_job_task_config(
                             job_task_config=augmented_job_task_config
                         )
                     )

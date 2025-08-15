@@ -441,7 +441,7 @@ def scaffold_branch_command(
     if record:
         if first_pass_sha:
             generated_outputs["first_pass_commit"] = _run_git_command(
-                ["git", "show", first_pass_sha]
+                ["show", first_pass_sha]
             ).stdout.strip()
 
         session_data = Session(
