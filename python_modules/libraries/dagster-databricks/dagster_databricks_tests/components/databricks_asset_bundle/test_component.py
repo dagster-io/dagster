@@ -4,15 +4,15 @@ from dagster_databricks.components.databricks_asset_bundle.component import (
 )
 
 from dagster_databricks_tests.components.databricks_asset_bundle.conftest import (
-    DATABRICKS_CONFIGS_LOCATION_PATH,
+    DATABRICKS_CONFIG_LOCATION_PATH,
 )
 
 
 def test_component_asset_spec():
     component = DatabricksAssetBundleComponent(
-        databricks_configs_path=DATABRICKS_CONFIGS_LOCATION_PATH
+        databricks_config_path=DATABRICKS_CONFIG_LOCATION_PATH
     )
-    for task in component.databricks_configs.tasks:
+    for task in component.databricks_config.tasks:
         asset_spec = component.get_asset_spec(task)
         assert asset_spec.key == AssetKey(task.task_key)
         assert asset_spec.description == f"{task.task_key} task from {task.job_name} job"
