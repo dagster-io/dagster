@@ -10,7 +10,7 @@ DATABRICKS_CONFIGS_LOCATION_PATH = Path(__file__).parent / "configs" / "databric
 def test_load_databricks_configs():
     databricks_configs = DatabricksConfigs(databricks_configs_path=DATABRICKS_CONFIGS_LOCATION_PATH)
     assert databricks_configs.databricks_configs_path == DATABRICKS_CONFIGS_LOCATION_PATH
-    assert len(databricks_configs.tasks) == 5
+    assert len(databricks_configs.tasks) == 6
 
     tasks_iter = iter(databricks_configs.tasks)
     notebook_task = next(tasks_iter)
@@ -39,6 +39,15 @@ def test_load_databricks_configs():
     assert len(spark_jar_task.depends_on) == 1
     assert spark_jar_task.job_name == "databricks_pipeline_job"
     assert len(spark_jar_task.libraries) == 2
+
+    job_task = next(tasks_iter)
+    assert job_task.task_type == "run_job"
+    assert job_task.task_key == "existing_job_with_references"
+    assert "run_job_task" in job_task.task_config
+    assert len(job_task.task_parameters) == 14
+    assert len(job_task.depends_on) == 1
+    assert job_task.job_name == "databricks_pipeline_job"
+    assert len(job_task.libraries) == 0
 
     condition_task = next(tasks_iter)
     assert condition_task.task_type == "condition"

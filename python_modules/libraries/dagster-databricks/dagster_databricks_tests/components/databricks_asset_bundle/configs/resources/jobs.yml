@@ -104,6 +104,29 @@ resources:
             - maven:
                 coordinates: "org.apache.spark:spark-streaming_2.12:3.4.0"
 
+        # Example 4: Run existing job with job parameter references
+        - task_key: existing_job_with_references
+          depends_on:
+            - task_key: spark_processing_jar
+          run_job_task:
+            job_id: 123456789
+            job_parameters:
+              input_table: "{{ env }}.processed.transactions"
+              output_table: "{{ env }}.analytics.daily_summary"
+              summary_date: "{{ ds }}"
+              # Reference job-level parameters in job parameters
+              environment: "{{job.parameters.environment}}"
+              run_id: "{{job.parameters.orchestrator_job_run_id}}"
+              output_bucket: "{{job.parameters.output_bucket_name}}"
+              profiler_enabled: "{{job.parameters.profiler_enabled}}"
+              experiment_settings: "{{job.parameters.experiment_settings}}"
+              catalog_map: "{{job.parameters.catalog_map}}"
+              log_level: "{{job.parameters.log_level}}"
+              llm_calls: "{{job.parameters.llm_calls}}"
+              git_sha: "{{job.parameters.git_sha}}"
+              batch_size: "{{job.parameters.batch_size}}"
+              timeout_minutes: "{{job.parameters.timeout_minutes}}"
+
         # Example 5: Condition task
         - task_key: check_data_quality
           depends_on:
