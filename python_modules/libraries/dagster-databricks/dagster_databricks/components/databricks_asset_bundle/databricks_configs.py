@@ -105,6 +105,45 @@ class DatabricksConditionTask:
         )
 
 
+@record
+class DatabricksSparkPythonTask:
+    task_key: str
+    task_config: Mapping[str, Any]
+    task_parameters: list[str]
+    depends_on: list[str]
+    job_name: str
+    libraries: list[Mapping[str, Any]]
+
+    @property
+    def task_type(self) -> str:
+        return "spark_python"
+
+    @cached_property
+    def task_config_metadata(self) -> Mapping[str, Any]:
+        task_config_metadata = {}
+        python_config = self.task_config["spark_python_task"]
+        task_config_metadata["python_file"] = python_config["python_file"]
+        task_config_metadata["parameters"] = self.task_parameters
+        return task_config_metadata
+
+    @classmethod
+    def from_job_task_config(
+        cls, job_task_config: Mapping[str, Any]
+    ) -> "DatabricksSparkPythonTask":
+        spark_python_task = job_task_config["spark_python_task"]
+        task_config = {"spark_python_task": spark_python_task}
+        # Spark Python tasks use parameters differently
+        task_parameters = spark_python_task.get("parameters", [])
+        return cls(
+            task_key=job_task_config["task_key"],
+            task_config=task_config,
+            task_parameters=task_parameters,
+            depends_on=parse_depends_on(job_task_config.get("depends_on", [])),
+            job_name=job_task_config["job_name"],
+            libraries=job_task_config.get("libraries", []),
+        )
+
+
 @record_custom
 class DatabricksConfigs(IHaveNew):
     databricks_configs_path: Path
@@ -186,6 +225,12 @@ class DatabricksConfigs(IHaveNew):
                 elif "condition_task" in job_task_config:
                     tasks.append(
                         DatabricksConditionTask.from_job_task_config(
+                            job_task_config=augmented_job_task_config
+                        )
+                    )
+                elif "spark_python_task" in job_task_config:
+                    tasks.append(
+                        DatabricksSparkPythonTask.from_job_task_config(
                             job_task_config=augmented_job_task_config
                         )
                     )
