@@ -178,6 +178,73 @@ with run_context:
 return SomeResult(run_id=run_context.run_id)
 ```
 
+## Dependency Injection Patterns
+
+### Avoid Optional Dependencies
+
+- **PREFER required dependencies** with no-op behavior when disabled over optional parameters
+- **AVOID `Optional[ComponentType]` parameters** that require null checks at every callsite
+- **Push conditional logic into component implementations** rather than requiring guards at callsites
+
+**❌ Bad - Optional dependency with guards everywhere:**
+
+```python
+def process_data(
+    data: Data,
+    logger: Optional[Logger] = None,
+) -> Result:
+    if logger and logger.level != "off":
+        logger.log("processing_start", "Starting data processing")
+
+    result = transform(data)
+
+    if logger and logger.level != "off":
+        logger.log("processing_complete", "Processing completed")
+
+    return result
+```
+
+**✅ Good - Required dependency with internal no-op handling:**
+
+```python
+def process_data(
+    data: Data,
+    logger: Logger,  # Always required
+) -> Result:
+    logger.log("processing_start", "Starting data processing")  # Component handles "off" internally
+
+    result = transform(data)
+
+    logger.log("processing_complete", "Processing completed")
+
+    return result
+
+class Logger:
+    def log(self, category: str, message: str) -> None:
+        if self.level == "off":
+            return  # No-op when disabled
+        # ... actual logging logic
+```
+
+**Rationale**:
+
+- Eliminates repetitive null checks and conditional logic at every usage site
+- Makes code cleaner and more maintainable
+- Component interface remains consistent regardless of configuration
+- Testing is simplified (can use mock/stub components instead of None)
+- Follows dependency injection principles - dependencies are explicit
+
+**When to use this pattern:**
+
+- Logging/diagnostics components
+- Telemetry/metrics collection
+- Optional feature flags or capabilities
+- Any component that can be "disabled" but is used throughout the codebase
+
+**Exception**: Use `Optional` when the dependency truly may not exist in certain contexts (e.g., a database connection in a dry-run mode).
+
+This pattern complements the existing "Avoid Singleton Patterns" section and reinforces explicit dependency passing.
+
 ## Exception Handling Guidelines
 
 This codebase follows specific norms for exception handling to maintain clean, predictable code:
