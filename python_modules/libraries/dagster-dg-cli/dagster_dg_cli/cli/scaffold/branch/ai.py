@@ -3,11 +3,15 @@
 import json
 from abc import ABC
 from contextlib import nullcontext
+from datetime import datetime
 from pathlib import Path
+from time import perf_counter
 
 import click
 from dagster_dg_core.context import DgContext
 
+from dagster_dg_cli.cli.scaffold.branch.data_models import AIInteraction
+from dagster_dg_cli.cli.scaffold.branch.diagnostics import ClaudeDiagnosticsService
 from dagster_dg_cli.utils.claude_utils import run_claude, run_claude_stream
 from dagster_dg_cli.utils.ui import daggy_spinner_context
 
@@ -128,18 +132,75 @@ INPUT_TYPES = [GithubIssueInputType]
 
 
 def get_branch_name_and_pr_title_from_prompt(
-    dg_context: DgContext, user_input: str, input_type: type[InputType]
+    dg_context: DgContext,
+    user_input: str,
+    input_type: type[InputType],
+    diagnostics: ClaudeDiagnosticsService,
 ) -> tuple[str, str]:
     """Invokes Claude under the hood to generate a reasonable, valid
     git branch name and pull request title based on the user's stated goal.
     """
+    context_str = input_type.get_context(user_input)
+    prompt = load_branch_name_prompt(context_str)
+    allowed_tools = input_type.additional_allowed_tools()
+
+    diagnostics.info(
+        "branch_name_prompt_generation",
+        "Generating branch name and PR title prompt",
+        {
+            "input_type": input_type.__name__,
+            "context_length": len(context_str),
+            "prompt_length": len(prompt),
+            "allowed_tools_count": len(allowed_tools),
+        },
+    )
+
+    start_time = perf_counter()
     output = run_claude(
         dg_context,
-        load_branch_name_prompt(input_type.get_context(user_input)),
-        input_type.additional_allowed_tools(),
+        prompt,
+        allowed_tools,
+        diagnostics,
     )
-    json_output = json.loads(output.strip())
-    return json_output["branch-name"], json_output["pr-title"]
+    duration_ms = (perf_counter() - start_time) * 1000
+
+    interaction = AIInteraction(
+        correlation_id=diagnostics.correlation_id,
+        timestamp=datetime.now().isoformat(),
+        prompt=prompt,
+        response=output,
+        token_count=None,  # Token count not available from current claude_utils
+        tools_used=allowed_tools,
+        duration_ms=duration_ms,
+    )
+    diagnostics.log_ai_interaction(interaction)
+
+    try:
+        json_output = json.loads(output.strip())
+        branch_name = json_output["branch-name"]
+        pr_title = json_output["pr-title"]
+
+        diagnostics.info(
+            "branch_name_parsed",
+            "Successfully parsed branch name and PR title",
+            {
+                "branch_name": branch_name,
+                "pr_title": pr_title,
+            },
+        )
+
+        return branch_name, pr_title
+    except (json.JSONDecodeError, KeyError) as e:
+        diagnostics.error(
+            "branch_name_parse_failed",
+            "Failed to parse branch name response",
+            {
+                "error_type": type(e).__name__,
+                "error_message": str(e),
+                "raw_output": output[:500],  # First 500 chars for debugging
+            },
+        )
+        raise
 
 
 class PrintOutputChannel:
@@ -150,18 +211,75 @@ class PrintOutputChannel:
 
 
 def scaffold_content_for_prompt(
-    dg_context: DgContext, user_input: str, input_type: type[InputType], use_spinner: bool = True
+    dg_context: DgContext,
+    user_input: str,
+    input_type: type[InputType],
+    diagnostics: ClaudeDiagnosticsService,
+    use_spinner: bool = True,
 ) -> None:
     """Scaffolds content for the user's prompt."""
+    context_str = input_type.get_context(user_input)
+    prompt = load_scaffolding_prompt(context_str)
+    allowed_tools = get_allowed_commands_scaffolding() + input_type.additional_allowed_tools()
+
+    diagnostics.info(
+        "content_scaffolding_start",
+        "Starting content scaffolding",
+        {
+            "input_type": input_type.__name__,
+            "context_length": len(context_str),
+            "prompt_length": len(prompt),
+            "allowed_tools_count": len(allowed_tools),
+            "allowed_tools": allowed_tools,
+        },
+    )
+
     spinner_ctx = (
         daggy_spinner_context("Scaffolding")
         if use_spinner
         else nullcontext(enter_result=PrintOutputChannel())
     )
+
+    start_time = perf_counter()
     with spinner_ctx as spinner:
-        run_claude_stream(
-            dg_context,
-            load_scaffolding_prompt(input_type.get_context(user_input)),
-            get_allowed_commands_scaffolding() + input_type.additional_allowed_tools(),
-            output_channel=spinner,
-        )
+        try:
+            run_claude_stream(
+                dg_context,
+                prompt,
+                allowed_tools,
+                output_channel=spinner,
+                diagnostics=diagnostics,
+            )
+            duration_ms = (perf_counter() - start_time) * 1000
+
+            # For streaming operations, we don't have the full response text
+            # but we can log the interaction metadata
+            interaction = AIInteraction(
+                correlation_id=diagnostics.correlation_id,
+                timestamp=datetime.now().isoformat(),
+                prompt=prompt,
+                response="[STREAMING_RESPONSE]",  # Placeholder for streaming
+                token_count=None,
+                tools_used=allowed_tools,
+                duration_ms=duration_ms,
+            )
+            diagnostics.log_ai_interaction(interaction)
+
+            diagnostics.info(
+                "content_scaffolding_completed",
+                "Content scaffolding completed successfully",
+                {"duration_ms": duration_ms},
+            )
+        except Exception as e:
+            duration_ms = (perf_counter() - start_time) * 1000
+
+            diagnostics.error(
+                "content_scaffolding_failed",
+                "Content scaffolding failed",
+                {
+                    "error_type": type(e).__name__,
+                    "error_message": str(e),
+                    "duration_ms": duration_ms,
+                },
+            )
+            raise

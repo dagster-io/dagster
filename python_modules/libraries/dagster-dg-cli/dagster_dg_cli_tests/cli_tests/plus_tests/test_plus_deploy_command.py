@@ -1,3 +1,4 @@
+# ruff: noqa: I001
 import contextlib
 import tempfile
 from collections.abc import Generator
@@ -12,14 +13,18 @@ import yaml
 from dagster_cloud_cli.commands.ci import BuildStrategy
 from dagster_cloud_cli.core.pex_builder.deps import BuildMethod
 from dagster_cloud_cli.types import SnapshotBaseDeploymentCondition
+from dagster_dg_core.utils import ensure_dagster_dg_tests_import, pushd
+from dagster_shared.plus.config import DagsterPlusCliConfig
+
 from dagster_dg_cli.cli.plus.deploy import DEFAULT_STATEDIR_PATH
-from dagster_dg_core.utils import pushd
+
+ensure_dagster_dg_tests_import()
+
 from dagster_dg_core_tests.utils import (
     ProxyRunner,
     assert_runner_result,
     isolated_example_project_foo_bar,
 )
-from dagster_shared.plus.config import DagsterPlusCliConfig
 
 from dagster_dg_cli_tests.cli_tests.plus_tests.utils import (
     PYTHON_VERSION,

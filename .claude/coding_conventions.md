@@ -143,6 +143,92 @@ def my_command():
   2. The original object is not modified
   3. The new instance includes the specified addition/change
 
+## Service Architecture Patterns
+
+### Avoid Singleton Patterns
+
+- **NEVER use global singleton objects for services or stateful components**
+- **ALWAYS pass service instances explicitly as parameters**
+- **Rationale**: Global singletons create hidden dependencies, make testing difficult, and violate dependency injection principles
+
+**❌ Bad - Global singleton pattern:**
+
+```python
+_service: Optional[MyService] = None
+
+def get_service() -> Optional[MyService]:
+    return _service
+
+def initialize_service():
+    global _service
+    _service = MyService()
+
+def some_function():
+    service = get_service()  # Hidden dependency
+```
+
+**✅ Good - Instance-based pattern:**
+
+```python
+def create_service() -> MyService:
+    return MyService()
+
+def some_function(service: MyService):  # Explicit dependency
+    service.do_something()
+```
+
+### Use Literal Types for String Enums
+
+- **ALWAYS use `Literal` types for string constants that represent enums**
+- **ALWAYS create type aliases for reusable literal types**
+
+**✅ Good:**
+
+```python
+from typing import Literal
+
+DiagnosticsLevel = Literal["off", "error", "info", "debug"]
+
+def create_service(level: DiagnosticsLevel = "off") -> MyService:
+    return MyService(level=level)
+```
+
+**❌ Bad:**
+
+```python
+def create_service(level: str = "off") -> MyService:  # No type safety
+    return MyService(level=level)
+```
+
+### Avoid Try/Except for Basic Logic Flow
+
+- **AVOID using try/except blocks for basic control flow when types provide the information**
+- **USE direct logic with type-safe operations**
+
+**❌ Bad - Using try/except for basic logic:**
+
+```python
+try:
+    current_index = level_hierarchy.index(self.level)
+    entry_index = level_hierarchy.index(entry_level)
+    return entry_index <= current_index
+except ValueError:
+    return False
+```
+
+**✅ Good - Direct logic with dictionaries:**
+
+```python
+level_priority = {"error": 0, "info": 1, "debug": 2}
+current_priority = level_priority.get(self.level)
+entry_priority = level_priority.get(entry_level)
+
+if current_priority is None or entry_priority is None:
+    return False
+
+return entry_priority <= current_priority
+```
+
 ## Context Managers
 
 **DO NOT assign unentered context manager objects to intermediate variables** - use them directly as the target of `with`:
