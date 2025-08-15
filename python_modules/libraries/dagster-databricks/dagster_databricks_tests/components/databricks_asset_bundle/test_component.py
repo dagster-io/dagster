@@ -1,4 +1,5 @@
 from dagster import AssetDep, AssetKey
+from dagster.components.testing import create_defs_folder_sandbox
 from dagster_databricks.components.databricks_asset_bundle.component import (
     DatabricksAssetBundleComponent,
     snake_case,
@@ -7,7 +8,6 @@ from dagster_databricks.components.databricks_asset_bundle.component import (
 from dagster_databricks_tests.components.databricks_asset_bundle.conftest import (
     DATABRICKS_CONFIG_LOCATION_PATH,
 )
-
 
 def test_component_asset_spec():
     component = DatabricksAssetBundleComponent(
@@ -29,3 +29,24 @@ def test_component_asset_spec():
             assert asset_spec.metadata["libraries"].value == task.libraries
         else:
             assert "libraries" not in asset_spec.metadata
+
+
+def test_load_component(databricks_configs_path: str):
+    with create_defs_folder_sandbox() as sandbox:
+        defs_path = sandbox.scaffold_component(
+            component_cls=DatabricksAssetBundleComponent,
+            scaffold_params={"databricks_configs_path": databricks_configs_path},
+        )
+        with sandbox.load_component_and_build_defs(defs_path=defs_path) as (
+            component,
+            defs,
+        ):
+            assert isinstance(component, DatabricksAssetBundleComponent)
+            assert defs.resolve_asset_graph().get_all_asset_keys() == {
+                AssetKey(["check_data_quality"]),
+                AssetKey(["data_processing_notebook"]),
+                AssetKey(["existing_job_with_references"]),
+                AssetKey(["hello_world_spark_task"]),
+                AssetKey(["spark_processing_jar"]),
+                AssetKey(["stage_documents"]),
+            }
