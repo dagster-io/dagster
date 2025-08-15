@@ -1,14 +1,13 @@
 from abc import ABC, abstractmethod
 from collections.abc import Mapping
 from pathlib import Path
-from typing import Any, Optional, Union
+from typing import Any, Generic, Optional, Union
 
 import yaml
 from dagster import Model, Resolvable, get_dagster_logger
 from dagster_shared.record import IHaveNew, record, record_custom
 from databricks.sdk.service import jobs
-from typing_extensions import Self
-from typing_extensions import TypeVar
+from typing_extensions import Self, TypeVar
 
 DatabricksSdkTaskType = Union[
     jobs.NotebookTask,
@@ -173,7 +172,7 @@ class DatabricksNotebookTask(DatabricksBaseTask):
 
     def to_databricks_sdk_task(self) -> jobs.NotebookTask:
         return jobs.NotebookTask(
-            notebook_path=self.task_config["notebook_path"],
+            notebook_path=self.task_config["notebook_task"]["notebook_path"],
             base_parameters=self.task_parameters,
         )
 
@@ -406,7 +405,7 @@ class DatabricksJobTask(DatabricksBaseTask):
 
     def to_databricks_sdk_task(self) -> jobs.RunJobTask:
         return jobs.RunJobTask(
-            job_id=self.task_config["job_id"],
+            job_id=self.task_config["run_job_task"]["job_id"],
             job_parameters=self.task_parameters,
         )
 
