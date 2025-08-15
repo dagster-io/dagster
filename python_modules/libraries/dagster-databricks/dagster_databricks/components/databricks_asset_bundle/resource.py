@@ -1,5 +1,5 @@
 from dagster import ConfigurableResource
-from dagster_shared.utils import cached_method
+from dagster_shared.utils.cached_method import cached_method
 from databricks.sdk import WorkspaceClient
 from pydantic import Field
 

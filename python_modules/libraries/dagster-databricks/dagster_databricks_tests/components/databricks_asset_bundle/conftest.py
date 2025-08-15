@@ -7,6 +7,9 @@ import pytest
 
 DATABRICKS_CONFIG_LOCATION_PATH = Path(__file__).parent / "configs" / "databricks.yml"
 
+TEST_DATABRICKS_WORKSPACE_HOST = "test_host"
+TEST_DATABRICKS_WORKSPACE_TOKEN = "test_token"
+
 
 @pytest.fixture(scope="module")
 def databricks_config_path() -> Iterator[str]:
