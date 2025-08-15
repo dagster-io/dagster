@@ -1,10 +1,6 @@
 import textwrap
 
-from dagster_dg_core.utils import ensure_dagster_dg_tests_import
-
-ensure_dagster_dg_tests_import()
-
-from dagster_dg_core_tests.utils import ProxyRunner, assert_runner_result, isolated_components_venv
+from dagster_test.dg_utils.utils import ProxyRunner, assert_runner_result, isolated_components_venv
 
 # ########################
 # ##### COMPONENT TYPE

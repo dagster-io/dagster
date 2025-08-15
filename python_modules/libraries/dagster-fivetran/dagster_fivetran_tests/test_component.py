@@ -1,5 +1,3 @@
-# ruff: noqa: F841 TID252
-
 import copy
 from collections.abc import Iterator, Mapping
 from contextlib import contextmanager

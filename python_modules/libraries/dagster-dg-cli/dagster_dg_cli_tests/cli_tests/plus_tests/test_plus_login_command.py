@@ -1,4 +1,3 @@
-# ruff: noqa: I001
 import json
 import queue
 import tempfile
@@ -13,14 +12,10 @@ import responses
 import tomlkit
 import yaml
 from click.testing import CliRunner
-from dagster_dg_core.utils import ensure_dagster_dg_tests_import
+from dagster_shared.plus.config import DagsterPlusCliConfig
 
 from dagster_dg_cli.cli.plus import plus_group
 from dagster_dg_cli.utils.plus import gql
-
-ensure_dagster_dg_tests_import()
-from dagster_shared.plus.config import DagsterPlusCliConfig
-
 from dagster_dg_cli_tests.cli_tests.plus_tests.utils import mock_gql_response
 
 

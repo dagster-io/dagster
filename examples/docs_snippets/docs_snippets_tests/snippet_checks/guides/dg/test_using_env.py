@@ -9,7 +9,7 @@ from typing import Any, Callable, Optional
 import pytest
 import responses
 from dagster_dg_cli.utils.plus import gql
-from dagster_dg_core.utils import activate_venv, ensure_dagster_dg_tests_import
+from dagster_dg_core.utils import activate_venv
 from pytest_httpserver import HTTPServer
 from werkzeug import Request, Response
 
@@ -25,7 +25,6 @@ from docs_snippets_tests.snippet_checks.utils import (
     isolated_snippet_generation_environment,
 )
 
-ensure_dagster_dg_tests_import()
 from dagster_dg_cli_tests.cli_tests.plus_tests.utils import mock_gql_response, responses
 
 MASK_VENV = (r"Using.*\.venv.*", "")
