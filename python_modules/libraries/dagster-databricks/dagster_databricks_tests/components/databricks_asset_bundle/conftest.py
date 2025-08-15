@@ -29,9 +29,12 @@ def custom_config_path() -> Iterator[str]:
         custom_config_path = f"{temp_dir}/configs/custom.yml"
         yield custom_config_path
 
+
 @pytest.fixture(scope="module")
 def serverless_custom_config_path() -> Iterator[str]:
     with tempfile.TemporaryDirectory() as temp_dir:
-        shutil.copytree(SERVERLESS_CUSTOM_CONFIG_LOCATION_PATH.parent.parent, temp_dir, dirs_exist_ok=True)
+        shutil.copytree(
+            SERVERLESS_CUSTOM_CONFIG_LOCATION_PATH.parent.parent, temp_dir, dirs_exist_ok=True
+        )
         serverless_custom_config_path = f"{temp_dir}/configs/serverless_custom.yml"
         yield serverless_custom_config_path
