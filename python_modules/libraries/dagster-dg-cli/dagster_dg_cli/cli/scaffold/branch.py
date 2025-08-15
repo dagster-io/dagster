@@ -77,7 +77,7 @@ def _check_git_repository() -> None:
             raise click.ClickException(
                 "This command must be run within a git repository.\n"
                 "To initialize a new git repository, run:\n"
-                "  git init"
+                "  git init from your project root directory."
             )
         # Re-raise other git-related errors
         raise
