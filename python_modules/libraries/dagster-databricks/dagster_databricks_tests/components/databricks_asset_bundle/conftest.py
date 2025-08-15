@@ -1,3 +1,18 @@
+import shutil
+import tempfile
+from collections.abc import Iterator
 from pathlib import Path
 
+import pytest
+
 DATABRICKS_CONFIG_LOCATION_PATH = Path(__file__).parent / "configs" / "databricks.yml"
+
+
+@pytest.fixture(scope="module")
+def databricks_configs_path() -> Iterator[str]:
+    with tempfile.TemporaryDirectory() as temp_dir:
+        shutil.copytree(
+            DATABRICKS_CONFIGS_LOCATION_PATH.parent.parent, temp_dir, dirs_exist_ok=True
+        )
+        databricks_configs_path = f"{temp_dir}/configs/databricks.yml"
+        yield databricks_configs_path
