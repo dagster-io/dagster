@@ -251,8 +251,14 @@ class CommandStepBuilder:
         return self
 
     def with_retry(self, num_retries):
+        # Always include manual retry configuration to match constructor behavior
+        retry_config: dict[str, object] = {"manual": {"permit_on_passed": True}}
+
+        # Add automatic retry only when appropriate
         if num_retries is not None and num_retries > 0 and self._should_enable_automatic_retry():
-            self._step["retry"] = {"automatic": {"limit": num_retries}}
+            retry_config["automatic"] = {"limit": num_retries}
+
+        self._step["retry"] = retry_config
         return self
 
     def on_queue(self, queue: BuildkiteQueue):
