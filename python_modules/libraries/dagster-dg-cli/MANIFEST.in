@@ -10,3 +10,6 @@ recursive-exclude dagster_dg_cli/docs/packages/dg-docs-components/node_modules *
 recursive-exclude dagster_dg_cli/docs/packages/dg-docs-site/.next *
 recursive-exclude dagster_dg_cli/docs/packages/dg-docs-site/node_modules *
 include dagster_dg_cli/cli/scaffold/scaffold_prompt.md
+recursive-exclude dagster_dg_cli/cli/plus *.md
+recursive-exclude dagster_dg_cli/dagster_plus_api *.md
+exclude dagster_dg_cli/cli/plus/schema.graphql
