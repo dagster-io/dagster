@@ -134,11 +134,11 @@ class DatabricksAssetBundleComponent(Component, Resolvable):
 
     def build_defs(self, context: ComponentLoadContext) -> Definitions:
         @multi_asset(
-            name=f"{self.custom_configs.job_name_prefix}_multi_asset",
+            name=f"{self.custom_config.asset_name_prefix}_multi_asset",
             specs=[self.get_asset_spec(task) for task in self.databricks_config.tasks],
             can_subset=True,
         )
-        def multi_notebook_job_asset(
+        def databricks_tasks_multi_asset(
             context: AssetExecutionContext,
             databricks: DatabricksWorkspace,
         ):
@@ -151,5 +151,5 @@ class DatabricksAssetBundleComponent(Component, Resolvable):
             )
 
         return Definitions(
-            assets=[multi_notebook_job_asset], resources={"databricks": self.workspace}
+            assets=[databricks_tasks_multi_asset], resources={"databricks": self.workspace}
         )
