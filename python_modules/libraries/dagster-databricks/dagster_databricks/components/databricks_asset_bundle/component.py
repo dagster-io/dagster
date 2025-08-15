@@ -134,7 +134,7 @@ class DatabricksAssetBundleComponent(Component, Resolvable):
 
     def build_defs(self, context: ComponentLoadContext) -> Definitions:
         @multi_asset(
-            name="databricks_multi_asset",
+            name=f"{self.custom_configs.job_name_prefix}_multi_asset",
             specs=[self.get_asset_spec(task) for task in self.databricks_config.tasks],
             can_subset=True,
         )
