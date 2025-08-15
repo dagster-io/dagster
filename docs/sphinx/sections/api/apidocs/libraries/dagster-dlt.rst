@@ -16,7 +16,7 @@ To use the dlt component, see the `dlt component integration guide <https://docs
 When you scaffold a dlt component definition, the following ``defs.yaml`` configuration file will be created:
 
 .. literalinclude:: ../../../../../../examples/docs_snippets/docs_snippets/guides/components/integrations/dlt-component/6-defs.yaml
-
+    :language: yaml
 
 Assets
 ======

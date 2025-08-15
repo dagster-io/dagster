@@ -21,7 +21,7 @@ To use the dbt component, see the `dbt component integration guide <https://docs
 When you scaffold a dbt component definition, the following ``defs.yaml`` configuration file will be created:
 
 .. literalinclude:: ../../../../../../examples/docs_snippets/docs_snippets/guides/components/integrations/dbt-component/7-component.yaml
-
+    :language: yaml
 
 ***********
 dagster-dbt

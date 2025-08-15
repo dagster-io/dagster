@@ -13,7 +13,7 @@ To use the Fivetran component, see the `Fivetran component integration guide <ht
 When you scaffold a Fivetran component definition, the following ``defs.yaml`` configuration file will be created:
 
 .. literalinclude:: ../../../../../../examples/docs_snippets/docs_snippets/guides/components/integrations/fivetran-component/5-component.yaml
-
+    :language: yaml
 
 Assets (Fivetran API)
 =====================
