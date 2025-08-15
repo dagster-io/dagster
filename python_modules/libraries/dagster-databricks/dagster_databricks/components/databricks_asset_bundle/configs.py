@@ -27,8 +27,9 @@ def parse_depends_on(depends_on: Optional[list]) -> list["DatabricksTaskDependsO
         for dep in depends_on:
             if isinstance(dep, dict) and "task_key" in dep:
                 parsed_depends_on.append(
-                    DatabricksTaskDependsOnConfig(task_key=dep["task_key"]),
-                    outcome=dep.get("outcome"),
+                    DatabricksTaskDependsOnConfig(
+                        task_key=dep["task_key"], outcome=dep.get("outcome")
+                    )
                 )
             elif isinstance(dep, str):
                 parsed_depends_on.append(DatabricksTaskDependsOnConfig(task_key=dep), outcome=None)
