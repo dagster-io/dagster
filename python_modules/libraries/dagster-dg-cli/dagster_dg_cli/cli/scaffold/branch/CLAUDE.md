@@ -73,3 +73,17 @@ dagster_dg_cli/cli/scaffold/branch/
 - **AI Service**: Claude via dagster_dg_cli.utils.claude_utils
 - **UI Components**: daggy_spinner_context for progress indication
 - **Configuration**: DgContext for workspace/project settings
+
+## Package Distribution
+
+**CRITICAL**: When adding new `.md` files to this subpackage that should NOT be included in the package distribution, you MUST update the `setup.cfg` file at `/python_modules/libraries/dagster-dg-cli/setup.cfg` to add them to the check-manifest ignore list.
+
+**Example**: If you add `new_file.md` that should be excluded from distribution, add this line to the `[check-manifest]` ignore section in setup.cfg:
+
+```
+dagster_dg_cli/cli/scaffold/branch/new_file.md
+```
+
+**Why**: The `check-manifest` tool validates that all version-controlled files are included in the source distribution. Documentation files like CLAUDE.md are typically excluded from distribution and need to be explicitly ignored to prevent CI failures.
+
+**Pattern**: Use the full relative path from the package root in the ignore list.
