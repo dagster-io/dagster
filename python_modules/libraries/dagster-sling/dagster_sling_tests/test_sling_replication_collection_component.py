@@ -23,11 +23,8 @@ from dagster._core.instance_for_test import instance_for_test
 from dagster._core.test_utils import ensure_dagster_tests_import
 from dagster._utils.env import environ
 from dagster.components.resolved.core_models import AssetAttributesModel, OpSpec
-from dagster.components.testing import (
-    TestOpCustomization,
-    TestTranslation,
-    create_defs_folder_sandbox,
-)
+from dagster.components.testing.test_cases import TestOpCustomization, TestTranslation
+from dagster.components.testing.utils import create_defs_folder_sandbox
 from dagster_shared import check
 from dagster_sling import SlingReplicationCollectionComponent, SlingResource
 from dagster_sling.components.sling_replication_collection.component import (
