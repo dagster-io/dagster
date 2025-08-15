@@ -3,6 +3,7 @@ from collections.abc import Mapping, Sequence
 from typing import TYPE_CHECKING, Any, NamedTuple, Optional
 
 import yaml
+from upath import UPath
 
 import dagster._check as check
 from dagster._annotations import public
@@ -17,6 +18,7 @@ if TYPE_CHECKING:
     from dagster._core.secrets.loader import SecretsLoader
     from dagster._core.storage.base_storage import DagsterStorage
     from dagster._core.storage.compute_log_manager import ComputeLogManager
+    from dagster._core.storage.defs_state.base import DefsStateStorage
     from dagster._core.storage.event_log.base import EventLogStorage
     from dagster._core.storage.root import LocalArtifactStorage
     from dagster._core.storage.runs.base import RunStorage
@@ -37,6 +39,10 @@ def _event_logs_directory(base: str) -> str:
 
 def _schedule_directory(base: str) -> str:
     return os.path.join(base, "schedules")
+
+
+def _defs_state_directory(base: str) -> str:
+    return os.path.join(base, "defs_state")
 
 
 def configurable_class_data(config_field: Mapping[str, Any]) -> ConfigurableClassData:
@@ -206,6 +212,7 @@ class InstanceRef(
             # unified storage field
             ("storage_data", Optional[ConfigurableClassData]),
             ("secrets_loader_data", Optional[ConfigurableClassData]),
+            ("defs_state_storage_data", Optional[ConfigurableClassData]),
         ],
     )
 ):
@@ -228,6 +235,7 @@ class InstanceRef(
         custom_instance_class_data: Optional[ConfigurableClassData] = None,
         storage_data: Optional[ConfigurableClassData] = None,
         secrets_loader_data: Optional[ConfigurableClassData] = None,
+        defs_state_storage_data: Optional[ConfigurableClassData] = None,
     ):
         return super(cls, InstanceRef).__new__(
             cls,
@@ -264,6 +272,9 @@ class InstanceRef(
             storage_data=check.opt_inst_param(storage_data, "storage_data", ConfigurableClassData),
             secrets_loader_data=check.opt_inst_param(
                 secrets_loader_data, "secrets_loader_data", ConfigurableClassData
+            ),
+            defs_state_storage_data=check.opt_inst_param(
+                defs_state_storage_data, "defs_state_storage_data", ConfigurableClassData
             ),
         )
 
@@ -320,6 +331,8 @@ class InstanceRef(
             # so that old clients loading new config don't try to load a class that they
             # don't recognize
             "secrets": None,
+            # For the same reason as `secrets`, this defaults to None
+            "defs_state_storage": None,
             # LEGACY DEFAULTS
             "run_storage": default_run_storage_data,
             "event_log_storage": default_event_log_storage_data,
@@ -449,6 +462,12 @@ class InstanceRef(
             defaults["secrets"],
         )
 
+        defs_state_storage_data = configurable_class_data_or_default(
+            config_value,
+            "defs_state_storage",
+            defaults["defs_state_storage"],
+        )
+
         settings_keys = {
             "telemetry",
             "python_logs",
@@ -479,6 +498,7 @@ class InstanceRef(
             custom_instance_class_data=custom_instance_class_data,
             storage_data=storage_data,
             secrets_loader_data=secrets_loader_data,
+            defs_state_storage_data=defs_state_storage_data,
         )
 
     @staticmethod
@@ -577,6 +597,21 @@ class InstanceRef(
             self.secrets_loader_data.rehydrate(as_type=SecretsLoader)
             if self.secrets_loader_data
             else PerProjectEnvFileLoader()
+        )
+
+    @property
+    def defs_state_storage(self) -> Optional["DefsStateStorage"]:
+        from dagster._core.storage.defs_state.base import DefsStateStorage
+        from dagster._core.storage.defs_state.blob_storage_state_storage import (
+            BlobStorageStateStorage,
+        )
+
+        return (
+            self.defs_state_storage_data.rehydrate(as_type=DefsStateStorage)
+            if self.defs_state_storage_data
+            else BlobStorageStateStorage(
+                UPath(_defs_state_directory(self.local_artifact_storage.base_dir))
+            )
         )
 
     @property

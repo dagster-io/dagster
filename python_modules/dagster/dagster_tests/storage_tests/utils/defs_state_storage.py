@@ -14,7 +14,7 @@ def _version_map(state_info: Optional[DefsStateInfo]) -> Optional[dict[str, str]
     return {k: v.version for k, v in state_info.info_mapping.items()}
 
 
-class TestStateStorage:
+class TestDefsStateStorage:
     """You can extend this class to easily run these set of tests on any state storage. When extending,
     you simply need to override the `state_storage` fixture and return your implementation of
     `StateStorage`.
