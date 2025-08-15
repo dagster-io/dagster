@@ -241,17 +241,17 @@ class CommandStepBuilder:
         self._step["timeout_in_minutes"] = num_minutes
         return self
 
-    # def with_retry(self, num_retries):
-    #     # Only set automatic retries if we're not on a feature branch
-    #     if num_retries is not None and num_retries > 0:
-    #         try:
-    #             if not is_feature_branch():
-    #                 self._step["retry"] = {"automatic": {"limit": num_retries}}
-    #             # If we are on a feature branch, don't set automatic retries
-    #         except (AssertionError, KeyError):
-    #             # If BUILDKITE_BRANCH is not set, default to setting retries (safer fallback)
-    #             self._step["retry"] = {"automatic": {"limit": num_retries}}
-    #     return self
+    def with_retry(self, num_retries):
+        # Only set automatic retries if we're not on a feature branch
+        if num_retries is not None and num_retries > 0:
+            try:
+                if not is_feature_branch():
+                    self._step["retry"] = {"automatic": {"limit": num_retries}}
+                # If we are on a feature branch, don't set automatic retries
+            except (AssertionError, KeyError):
+                # If BUILDKITE_BRANCH is not set, default to setting retries (safer fallback)
+                self._step["retry"] = {"automatic": {"limit": num_retries}}
+        return self
 
     def on_queue(self, queue: BuildkiteQueue):
         self._step["agents"]["queue"] = queue.value  # type: ignore
