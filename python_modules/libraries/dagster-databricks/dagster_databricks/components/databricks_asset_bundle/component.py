@@ -16,6 +16,7 @@ from dagster_databricks.components.databricks_asset_bundle.configs import (
     DatabricksBaseTask,
     DatabricksConfig,
 )
+from dagster_databricks.components.databricks_asset_bundle.resource import DatabricksWorkspace
 from dagster_databricks.components.databricks_asset_bundle.scaffolder import (
     DatabricksAssetBundleScaffolder,
 )
@@ -32,9 +33,25 @@ def snake_case(name: str) -> str:
     return name.lower().strip("_")
 
 
+@dataclass
+class DatabricksWorkspaceArgs(Resolvable):
+    """Aligns with DatabricksWorkspace.__new__."""
+
+    host: str
+    token: str
+
+
 def resolve_databricks_config_path(context: ResolutionContext, model) -> Path:
     return context.resolve_source_relative_path(
         context.resolve_value(model, as_type=str),
+    )
+
+
+def resolve_databricks_workspace(context: ResolutionContext, model) -> DatabricksWorkspace:
+    args = DatabricksWorkspaceArgs.resolve_from_model(context, model)
+    return DatabricksWorkspace(
+        host=args.host,
+        token=args.token,
     )
 
 
@@ -49,6 +66,20 @@ class DatabricksAssetBundleComponent(Component, Resolvable):
             description="The path to the databricks.yml config file.",
             examples=[
                 "{{ project_root }}/path/to/databricks_yml_config_file",
+            ],
+        ),
+    ]
+    workspace: Annotated[
+        DatabricksWorkspace,
+        Resolver(
+            resolve_databricks_workspace,
+            model_field_type=DatabricksWorkspaceArgs.model(),
+            description="The mapping defining a DatabricksWorkspace.",
+            examples=[
+                {
+                    "host": "your_host",
+                    "token": "your_token",
+                },
             ],
         ),
     ]
