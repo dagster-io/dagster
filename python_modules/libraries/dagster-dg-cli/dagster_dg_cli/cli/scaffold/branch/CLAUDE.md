@@ -73,3 +73,21 @@ dagster_dg_cli/cli/scaffold/branch/
 - **AI Service**: Claude via dagster_dg_cli.utils.claude_utils
 - **UI Components**: daggy_spinner_context for progress indication
 - **Configuration**: DgContext for workspace/project settings
+
+## Package Distribution
+
+**CRITICAL**: When adding new `.md` files to this subpackage, you MUST update the MANIFEST.in file at `/python_modules/libraries/dagster-dg-cli/MANIFEST.in` to include them in the package distribution.
+
+**Example**: If you add `new_file.md`, add this line to MANIFEST.in:
+
+```
+include dagster_dg_cli/cli/scaffold/branch/new_file.md
+```
+
+**Why**: The `check-manifest` tool validates that all version-controlled files are included in the source distribution. Missing files will cause CI failures.
+
+**Alternative**: Use recursive include patterns for directories with multiple .md files:
+
+```
+recursive-include dagster_dg_cli/cli/scaffold/branch *.md
+```

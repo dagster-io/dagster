@@ -12,3 +12,4 @@ recursive-exclude dagster_dg_cli/docs/packages/dg-docs-site/node_modules *
 include dagster_dg_cli/cli/scaffold/scaffold_prompt.md
 recursive-include dagster_dg_cli/cli/scaffold/branch/prompts *.md
 include dagster_dg_cli/cli/scaffold/branch/CLAUDE.md
+include dagster_dg_cli/cli/scaffold/branch/dg_scaffold_pr_sequencing_plan.md
