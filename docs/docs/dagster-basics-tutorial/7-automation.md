@@ -1,7 +1,7 @@
 ---
 title: Automation
 description: Automating our pipeline
-sidebar_position: 70
+sidebar_position: 80
 ---
 
 There are several ways to [automate assets](/guides/automate) in Dagster. Dagster supports both scheduled and event-driven pipelines. In this step, we will add a schedule directly to one of our assets and make another asset reactive to upstream changes.
@@ -44,8 +44,8 @@ Run `dg dev` (if it is not already running) and go to the Dagster UI at [http://
 2. Click **Automation**.
 3. Enable the `default_automation_condition_sensor`.
 
-   #TODO Screenshot
+   ![2048 resolution](/images/tutorial/dagster-tutorial/automation-1.png)
 
 4. View your automation events to see if anything is ready to run.
 
-   #TODO Screenshot
+   ![2048 resolution](/images/tutorial/dagster-tutorial/automation-2.png)

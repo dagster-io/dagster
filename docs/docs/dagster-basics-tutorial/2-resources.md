@@ -1,7 +1,7 @@
 ---
 title: Resources
 description: Using resources with assets
-sidebar_position: 20
+sidebar_position: 30
 ---
 
 Right now, our assets represent pointers to files in S3. This is a good first step in building out the asset graph, but it would be better if they represented tables in our database.
@@ -91,12 +91,13 @@ Run `dg check` again to confirm that the assets and resources are configured cor
 
 Back in the UI, your assets will not appear any different, but you can view the resource in the **Definitions** tab:
 
-1. Click **Deployment**, then click "etl-tutorial" to see your deployment.
+1. Click **Deployment**, then click "dagster-tutorial" to see your deployment.
 2. Click **Definitions**.
 3. Navigate to the "Resources" section to view all of your resources and select "duckdb".
 
-#TODO Screenshot
+   ![2048 resolution](/images/tutorial/dagster-tutorial/resource-1.png)
 
-You will see that this resource has three uses, corresponding to our three assets:
 
-#TODO Screenshot
+4. Click on "Uses" for the resource to see the three assets that depend on the resource.
+
+   ![2048 resolution](/images/tutorial/dagster-tutorial/resource-2.png)

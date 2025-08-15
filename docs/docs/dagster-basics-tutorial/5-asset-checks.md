@@ -1,7 +1,7 @@
 ---
 title: Asset checks
 description: Ensuring quality with asset checks
-sidebar_position: 50
+sidebar_position: 60
 ---
 
 When building data applications, it is important to ensure the quality of all underlying entities. In this step, we will add checks to confirm that our assets are producing the data we expect.
@@ -53,7 +53,9 @@ The asset check uses the same `DuckDBResource` resource we defined for our asset
 ## 2. Checking our asset check runs
 
 In the Dagster UI at [http://127.0.0.1:3000](http://127.0.0.1:3000), you should now see an asset check associated with the `orders_by_month` asset:
-#TODO Screenshot
+
+![2048 resolution](/images/tutorial/dagster-tutorial/asset-check-1.png)
+
 
 Asset checks run automatically when an asset is materialized, but you can also execute them manually in the UI:
 
@@ -62,4 +64,4 @@ Asset checks run automatically when an asset is materialized, but you can also e
 3. Select the **Checks** tab.
 4. Click **Execute** for `orders_by_month_check` (assuming the asset has already been materialized).
 
-#TODO Screenshot
+   ![2048 resolution](/images/tutorial/dagster-tutorial/asset-check-2.png)

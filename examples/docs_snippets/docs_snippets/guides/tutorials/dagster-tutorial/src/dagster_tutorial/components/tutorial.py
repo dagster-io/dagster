@@ -1,27 +1,29 @@
 # start_etl_model
 import dagster as dg
 
+
 class ETL(dg.Model):
     url_path: str
     table: str
+
 
 # end_etl_model
 
 # start_tutorial_component
 from dagster_duckdb import DuckDBResource
 
-class Tutorial(dg.Component, dg.Model, dg.Resolvable):
 
+class Tutorial(dg.Component, dg.Model, dg.Resolvable):
     # The interface for the component
     duckdb_database: str
     etl_steps: list[ETL]
 
     def build_defs(self, context: dg.ComponentLoadContext) -> dg.Definitions:
-
         _etl_assets = []
         _etl_asset_checks = []
 
         for etl in self.etl_steps:
+
             @dg.asset(
                 name=f"component_{etl.table}",
             )
@@ -35,14 +37,13 @@ class Tutorial(dg.Component, dg.Model, dg.Resolvable):
                         """
                     )
 
-            _etl_assets.append( _table)
+            _etl_assets.append(_table)
 
         return dg.Definitions(
             assets=_etl_assets,
             asset_checks=_etl_asset_checks,
-            resources={
-                "database": DuckDBResource(database=self.duckdb_database)
-            }
+            resources={"database": DuckDBResource(database=self.duckdb_database)},
         )
-    
+
+
 # end_tutorial_component

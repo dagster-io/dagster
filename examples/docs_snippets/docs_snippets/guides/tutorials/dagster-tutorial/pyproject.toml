@@ -25,5 +25,3 @@ root_module = "dagster_tutorial"
 registry_modules = [
     "dagster_tutorial.components.*",
 ]
-
-

@@ -1,14 +1,14 @@
 ---
 title: Assets
 description: Building your first assets
-sidebar_position: 10
+sidebar_position: 20
 ---
 
 [Software-defined assets](/guides/build/assets) are the primary building blocks in Dagster. They represent the underlying entities in our pipelines, such as database tables, machine learning models, or AI processes. Together, these assets form the data platform. In this first step, we will define the initial assets that represent the data we will work with throughout this tutorial.
 
 ## 1. Scaffold an asset
 
-When building assets, the first step is to scaffold the assets file with the [`dg scaffold` command](/api/clis/dg-cli/dg-cli-reference#dg-scaffold). The `dg` CLI provides several commands to help structure and navigate Dagster projects. For more information, see the [`dg` CLI documentation](/api/clis/dg-cli/dg-cli-reference):
+When building assets, the first step is to scaffold the assets file with the [`dg scaffold` command](/api/clis/dg-cli/dg-cli-reference#dg-scaffold):
 
 <CliInvocationExample path="docs_snippets/docs_snippets/guides/tutorials/dagster-tutorial/commands/dg-scaffold-assets.txt" />
 
@@ -58,20 +58,19 @@ This confirms there are no issues with any of the assets we have defined. As you
 
 Now that our assets are configured and we have verified that the top-level `Definitions` object is valid, we can view the asset catalog in the Dagster UI. Navigate to [http://127.0.0.1:3000](http://127.0.0.1:3000) (or restart `dg dev` if it has been closed) and reload the definitions:
 
-1. Navigate to **Deployment**.
+1. Navigate to **Assets**.
 2. Click **Reload definitions**.
 
-   #TODO Screenshot
+   ![2048 resolution](/images/tutorial/dagster-tutorial/asset-1.png)
 
 You should now see three assets—one for each of the raw files (customers, orders, payments)—being loaded into DuckDB.
 
 To materialize the assets:
 
-1. Click **Assets**, then click **View global asset lineage** to see all assets.
+1. Click **Assets**, then click **View lineage** to see all assets.
 2. Click **Materialize all**.
-3. Navigate to the **Runs** tab and select the most recent run to view the logs.
 
-   #TODO Screenshot
+   ![2048 resolution](/images/tutorial/dagster-tutorial/asset-2.png)
 
 :::tip
 

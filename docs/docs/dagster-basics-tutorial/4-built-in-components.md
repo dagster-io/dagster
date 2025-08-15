@@ -1,7 +1,7 @@
 ---
 title: Built-in components
 description: Using built-in components in your project
-sidebar_position: 40
+sidebar_position: 50
 ---
 
 Defining Dagster objects yourself can be powerful, but you do not always need to write Dagster code directly. [Components](/guides/build/components) provide a way to streamline development by generating Dagster objects for you through an intuitive interface.

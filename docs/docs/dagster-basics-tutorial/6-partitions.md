@@ -1,7 +1,8 @@
 ---
 title: Partitions
 description: Partitioning the data in assets
-sidebar_position: 60
+sidebar_position: 70
+unlisted: true
 ---
 
 [Partitions](/guides/build/partitions-and-backfills/partitioning-assets) are a core abstraction in Dagster that allow you to manage large datasets, process incremental updates, and improve pipeline performance. Assets can be partitioned in several ways:

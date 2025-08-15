@@ -1,14 +1,14 @@
 ---
 title: Custom components
 description: Defining our own components
-sidebar_position: 80
+sidebar_position: 90
 ---
 
 Earlier, we used a built-in component to turn a Python script into an asset. In this final step, we will refactor the original assets in our project using a custom component.
 
 The code for the initial DuckDB assets (`customers`, `orders`, and `payments`) is very similar. Each asset performs the same action—turning an S3 file into a DuckDB table—while differing only in the URL path and table name.
 
-This is a great candidate for a component. We can parameterize the creation of these assets, making it much easier to add new ones in the future.
+This is a great candidate for a [custom component](/guides/build/components/creating-new-components). We can parameterize the creation of these assets, making it much easier to add new ones in the future.
 
 ## 1. Scaffold a custom component
 

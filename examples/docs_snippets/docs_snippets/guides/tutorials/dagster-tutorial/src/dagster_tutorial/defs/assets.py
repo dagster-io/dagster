@@ -19,24 +19,27 @@ def orders() -> str:
 def payments() -> str:
     return "https://raw.githubusercontent.com/dbt-labs/jaffle-shop-classic/refs/heads/main/seeds/raw_payments.csv"
 
+
 # end_define_assets
 
 # Step 2: Define the assets with resources
 # start_define_assets_with_resources
-import dagster as dg
 from dagster_duckdb import DuckDBResource
+
+import dagster as dg
+
 
 @dg.asset
 # highlight-start
 def customers(duckdb: DuckDBResource):
-# highlight-end
+    # highlight-end
 
     url = "https://raw.githubusercontent.com/dbt-labs/jaffle-shop-classic/refs/heads/main/seeds/raw_customers.csv"
     table_name = "customers"
 
     # highlight-start
     with duckdb.get_connection() as conn:
-    # highlight-end
+        # highlight-end
         conn.execute(
             f"""
             create or replace table {table_name} as (
@@ -49,14 +52,14 @@ def customers(duckdb: DuckDBResource):
 @dg.asset
 # highlight-start
 def orders(duckdb: DuckDBResource):
-# highlight-end
+    # highlight-end
 
     url = "https://raw.githubusercontent.com/dbt-labs/jaffle-shop-classic/refs/heads/main/seeds/raw_orders.csv"
     table_name = "orders"
 
     # highlight-start
     with duckdb.get_connection() as conn:
-    # highlight-end
+        # highlight-end
         conn.execute(
             f"""
             create or replace table {table_name} as (
@@ -69,14 +72,14 @@ def orders(duckdb: DuckDBResource):
 @dg.asset
 # highlight-start
 def payments(duckdb: DuckDBResource):
-# highlight-end
+    # highlight-end
 
     url = "https://raw.githubusercontent.com/dbt-labs/jaffle-shop-classic/refs/heads/main/seeds/raw_payments.csv"
     table_name = "payments"
 
     # highlight-start
     with duckdb.get_connection() as conn:
-    # highlight-end
+        # highlight-end
         conn.execute(
             f"""
             create or replace table {table_name} as (
@@ -85,6 +88,7 @@ def payments(duckdb: DuckDBResource):
             """
         )
 
+
 # end_define_assets_with_resources
 
 
@@ -92,13 +96,13 @@ def payments(duckdb: DuckDBResource):
 # start_define_assets_with_dependencies
 ...
 
+
 @dg.asset(
     # highlight-start
     deps=["customers", "orders", "payments"],
     # highlight-end
 )
 def orders_by_month(duckdb: DuckDBResource):
-
     table_name = "orders_by_month"
 
     with duckdb.get_connection() as conn:
@@ -109,6 +113,8 @@ def orders_by_month(duckdb: DuckDBResource):
             );
             """
         )
+
+
 # end_define_assets_with_dependencies
 
 
@@ -116,32 +122,35 @@ def orders_by_month(duckdb: DuckDBResource):
 # start_define_asset_checks
 ...
 
+
 @dg.asset_check(asset="orders_by_month")
 def orders_by_month_check(duckdb: DuckDBResource) -> dg.AssetCheckResult:
-
     with duckdb.get_connection() as conn:
-        row_count = conn.execute("select count(*) from orders_by_month_check").fetchone()[0]
+        row_count = conn.execute(
+            "select count(*) from orders_by_month_check"
+        ).fetchone()[0]
 
     if row_count == 0:
         return dg.AssetCheckResult(
-            passed=False,
-            metadata={"message": "Orders by month check failed"}
+            passed=False, metadata={"message": "Orders by month check failed"}
         )
 
     return dg.AssetCheckResult(
-        passed=True,
-        metadata={"message": "Orders by month check passed"}
+        passed=True, metadata={"message": "Orders by month check passed"}
     )
+
 
 # end_define_asset_checks
 
 
 # Step 5: Define assets with partitions
+# TODO: Not listing for now
 ...
 
 # start_define_monthly_partition
 monthly_partition = dg.MonthlyPartitionsDefinition(start_date="2018-01-01")
 # end_define_monthly_partition
+
 
 # start_define_assets_with_partitions
 @dg.asset(
@@ -168,49 +177,49 @@ def orders_by_month(context: dg.AssetExecutionContext, duckdb: DuckDBResource):
             """
         )
 
+
 # end_define_assets_with_partitions
 
 
 # Step 6: Automation
 # start_automation_cron
 
-# highlight-start
-@dg.asset(
-    automation_condition=dg.AutomationCondition.on_cron("0 0 * * 1"),  
-)
-# highlight-end
-def customers(duckdb: DuckDBResource):
-    ...
-
 
 # highlight-start
 @dg.asset(
-    automation_condition=dg.AutomationCondition.on_cron("0 0 * * 1"),  
+    automation_condition=dg.AutomationCondition.on_cron("0 0 * * 1"),
 )
 # highlight-end
-def orders(duckdb: DuckDBResource):
-    ...
+def customers(duckdb: DuckDBResource): ...
 
 
 # highlight-start
 @dg.asset(
-    automation_condition=dg.AutomationCondition.on_cron("0 0 * * 1"),  
+    automation_condition=dg.AutomationCondition.on_cron("0 0 * * 1"),
 )
 # highlight-end
-def payments(duckdb: DuckDBResource):
-    ...
+def orders(duckdb: DuckDBResource): ...
+
+
+# highlight-start
+@dg.asset(
+    automation_condition=dg.AutomationCondition.on_cron("0 0 * * 1"),
+)
+# highlight-end
+def payments(duckdb: DuckDBResource): ...
+
 
 # end_automation_cron
 
+
 # start_automation_eager
 @dg.asset(
-    partitions_def=monthly_partition,
     deps=["customers", "orders", "payments"],
     # highlight-start
     automation_condition=dg.AutomationCondition.eager(),
     # highlight-end
 )
-def orders_by_month(context: dg.AssetExecutionContext, duckdb: DuckDBResource):
-    ...
+def orders_by_month(context: dg.AssetExecutionContext, duckdb: DuckDBResource): ...
+
 
 # end_automation_eager
