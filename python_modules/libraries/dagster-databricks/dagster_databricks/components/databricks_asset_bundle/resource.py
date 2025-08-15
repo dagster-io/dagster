@@ -68,7 +68,7 @@ class DatabricksWorkspace(ConfigurableResource):
                 jobs.TaskDependency(task_key=dep_config.task_key, outcome=dep_config.outcome)
                 for dep_config in task.depends_on
             ]
-            task_dependency_configs = {"depends_on": task_dependencies} if task_dependencies else {}
+            task_dependency_config = {"depends_on": task_dependencies} if task_dependencies else {}
             context.log.info(f"Task {task_key} depends on: {task_dependencies}")
 
             # Determine cluster configuration based on task type
@@ -86,7 +86,7 @@ class DatabricksWorkspace(ConfigurableResource):
 
             submit_task_params = {
                 **submit_task_params,
-                **task_dependency_configs,
+                **task_dependency_config,
                 **cluster_config,
             }
 
