@@ -1,0 +1,9 @@
+type: dagster.PythonScriptComponent
+
+attributes:
+  execution:
+    path: my_script.py
+  assets:
+    - key: script
+      deps:
+        - customers
