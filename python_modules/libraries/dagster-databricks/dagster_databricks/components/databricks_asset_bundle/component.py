@@ -58,11 +58,6 @@ class DatabricksAssetBundleComponent(Component, Resolvable):
         return DatabricksConfig(databricks_config_path=self.databricks_config_path)
 
     def get_asset_spec(self, task: DatabricksBaseTask) -> AssetSpec:
-        # TODO: support deps
-        # TODO: include compute config metadata
-        # TODO: include job parameters metadata
-        # TODO: include common config metadata
-        # TODO: include table locations metadata
         return AssetSpec(
             key=snake_case(task.task_key),
             description=f"{task.task_key} task from {task.job_name} job",
