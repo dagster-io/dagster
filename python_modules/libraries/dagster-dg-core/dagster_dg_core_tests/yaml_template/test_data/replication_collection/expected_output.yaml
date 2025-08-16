@@ -1,0 +1,42 @@
+# Template with instructions
+connections:  # Optional: Connections details
+replications:  # Optional: List of object items
+  - path: <string>  # Required
+    op:  # Optional: Op details
+      name: <string>  # Optional
+      tags:  # Optional: Tags details
+      description: <string>  # Optional
+      pool: <string>  # Optional
+      backfill_policy:  # Optional: Backfill_Policy details
+        type: <string>  # Optional
+    translation: <string>  # Optional
+    include_metadata:  # Optional: List of string items
+      - <string>
+sling:  # Optional: Resource for interacting with the Sling package. This resource can be used to run Sling replications.
+  connections:  # Optional: List of object items
+    - name: <string>  # Required: The name of the connection, must match the name in your Sling replication configuration.
+      type: <string>  # Required: Type of the source connection, must match the Sling connection types. Use 'file' for local storage.
+      connection_string: <string>  # Optional: The optional connection string for the source database, if not using keyword arguments.
+
+# EXAMPLE VALUES:
+connections:
+  key: "value"
+replications:
+  - path: "example_string"
+    op:
+      name: "example_string"
+      tags:
+        key: "value"
+      description: "example_string"
+      pool: "example_string"
+      backfill_policy:
+        type: "example_string"
+    translation: "example_string"
+    include_metadata:
+      - "example_item_1"
+      - "example_item_2"
+sling:
+  connections:
+    - name: "example_string"
+      type: "example_string"
+      connection_string: "example_string"

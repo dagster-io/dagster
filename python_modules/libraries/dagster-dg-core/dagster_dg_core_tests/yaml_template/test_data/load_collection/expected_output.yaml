@@ -1,0 +1,11 @@
+# Template with instructions
+loads:  # Required: List of object items
+  - pipeline: <string>  # Required
+    source: <string>  # Required
+    translation: <string>  # Optional
+
+# EXAMPLE VALUES:
+loads:
+  - pipeline: "example_string"
+    source: "example_string"
+    translation: "example_string"
