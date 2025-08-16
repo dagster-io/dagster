@@ -1,0 +1,7 @@
+code_servers:
+  local_startup_timeout: 2700  # Increase timeout to 2700 seconds (45 minutes)
+
+# Optional: You can also increase other timeouts if needed
+# run_launcher:
+#   config:
+#     max_startup_timeout: 300
