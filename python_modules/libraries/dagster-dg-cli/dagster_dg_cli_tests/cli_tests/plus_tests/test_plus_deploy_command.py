@@ -1,3 +1,4 @@
+# ruff: noqa: I001 - import order differs between CI and local due to package installation differences
 import contextlib
 import tempfile
 from collections.abc import Generator

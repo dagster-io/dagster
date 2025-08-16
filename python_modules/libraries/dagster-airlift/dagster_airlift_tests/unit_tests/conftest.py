@@ -1,3 +1,4 @@
+# ruff: noqa: I001 - import order differs between CI and local due to package installation differences
 from collections import defaultdict
 from collections.abc import Generator, Mapping, Sequence
 from datetime import datetime, timedelta

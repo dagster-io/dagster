@@ -1,3 +1,4 @@
+# ruff: noqa: I001 - import order differs between CI and local due to package installation differences
 from typing import Callable, Optional
 from unittest import mock
 
