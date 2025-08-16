@@ -341,7 +341,7 @@ class PrintOutputChannel:
 def scaffold_content_for_prompt(
     dg_context: DgContext,
     user_input: str,
-    input_type: type[InputType],
+    input_type: type["InputType"],
     diagnostics: ClaudeDiagnosticsService,
     use_spinner: bool = True,
 ) -> None:
