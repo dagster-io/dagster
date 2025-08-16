@@ -3,6 +3,8 @@ from collections.abc import Sequence
 from functools import cached_property
 from typing import NamedTuple, Optional, Union
 
+from pydantic import Field
+
 from dagster import (
     AssetCheckSpec,
     AssetExecutionContext,
@@ -18,8 +20,6 @@ from dagster._config.pythonic_config.resource import ResourceDependency
 from dagster._core.definitions.definitions_load_context import StateBackedDefinitionsLoader
 from dagster._record import record
 from dagster._utils.cached_method import cached_method
-from pydantic import Field
-
 from dagster_dbt.asset_utils import (
     DBT_DEFAULT_EXCLUDE,
     DBT_DEFAULT_SELECT,

@@ -4,6 +4,7 @@ from unittest.mock import patch
 
 import pytest
 import responses
+
 from dagster import DagsterInstance, SensorResult, build_sensor_context
 from dagster._core.test_utils import freeze_time
 from dagster._serdes import deserialize_value
@@ -13,7 +14,6 @@ from dagster_dbt.cloud_v2.sensor_builder import (
     build_dbt_cloud_polling_sensor,
 )
 from dagster_dbt.utils import clean_name
-
 from dagster_dbt_tests.cloud_v2.conftest import (
     SAMPLE_EMPTY_BATCH_LIST_RUNS_RESPONSE,
     TEST_ACCOUNT_NAME,

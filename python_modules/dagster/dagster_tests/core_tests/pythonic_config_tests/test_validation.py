@@ -1,8 +1,9 @@
 from typing import Optional
 
-import dagster as dg
 import pytest
 from pydantic import ValidationError, validator
+
+import dagster as dg
 
 
 def test_validators_basic() -> None:

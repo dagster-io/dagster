@@ -1,10 +1,9 @@
 from typing import NamedTuple, Optional
 
-from dagster_shared.serdes import deserialize_value
-from dagster_shared.serdes.errors import DeserializationError
-
 import dagster._check as check
 from dagster._serdes import whitelist_for_serdes
+from dagster_shared.serdes import deserialize_value
+from dagster_shared.serdes.errors import DeserializationError
 
 
 @whitelist_for_serdes

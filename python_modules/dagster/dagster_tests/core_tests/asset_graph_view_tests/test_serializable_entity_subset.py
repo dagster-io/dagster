@@ -1,5 +1,6 @@
-import dagster as dg
 import pytest
+
+import dagster as dg
 from dagster._check import CheckError
 from dagster._core.asset_graph_view.serializable_entity_subset import SerializableEntitySubset
 

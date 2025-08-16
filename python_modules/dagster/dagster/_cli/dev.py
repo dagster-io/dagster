@@ -11,14 +11,6 @@ from typing import Optional
 
 import click
 import yaml
-from dagster_shared.cli import workspace_options
-from dagster_shared.ipc import (
-    get_ipc_shutdown_pipe,
-    interrupt_on_ipc_shutdown_message,
-    open_ipc_subprocess,
-    send_ipc_shutdown_message,
-)
-from dagster_shared.serdes import serialize_value
 
 from dagster._annotations import deprecated
 from dagster._cli.proxy_server_manager import ProxyServerManager
@@ -27,6 +19,14 @@ from dagster._cli.workspace.cli_target import WorkspaceOpts, workspace_opts_to_l
 from dagster._core.instance import DagsterInstance
 from dagster._utils.interrupts import setup_interrupt_handlers
 from dagster._utils.log import configure_loggers
+from dagster_shared.cli import workspace_options
+from dagster_shared.ipc import (
+    get_ipc_shutdown_pipe,
+    interrupt_on_ipc_shutdown_message,
+    open_ipc_subprocess,
+    send_ipc_shutdown_message,
+)
+from dagster_shared.serdes import serialize_value
 
 _SUBPROCESS_WAIT_TIMEOUT = 60
 _CHECK_SUBPROCESS_INTERVAL = 5

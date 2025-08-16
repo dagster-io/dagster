@@ -1,8 +1,9 @@
 from collections.abc import Sequence
 from typing import TYPE_CHECKING, AbstractSet, Optional  # noqa: UP035
 
-import dagster._check as check
 import graphene
+
+import dagster._check as check
 from dagster._core.definitions.asset_key import AssetKey
 from dagster._core.definitions.partitions.utils import PartitionRangeStatus
 from dagster._core.errors import DagsterUserCodeProcessError
@@ -31,8 +32,6 @@ from dagster._core.storage.tags import (
 )
 from dagster._core.workspace.permissions import Permissions
 from dagster._utils.tags import get_boolean_tag_value
-from dagster_shared.yaml_utils import dump_run_config_yaml
-
 from dagster_graphql.implementation.events import (
     get_graphene_events_from_records_connection,
     iterate_metadata_entries,
@@ -93,6 +92,7 @@ from dagster_graphql.schema.solids import (
 )
 from dagster_graphql.schema.tags import GraphenePipelineTag
 from dagster_graphql.schema.util import ResolveInfo, get_compute_log_manager, non_null_list
+from dagster_shared.yaml_utils import dump_run_config_yaml
 
 if TYPE_CHECKING:
     from dagster_graphql.schema.asset_graph import GrapheneAssetNode

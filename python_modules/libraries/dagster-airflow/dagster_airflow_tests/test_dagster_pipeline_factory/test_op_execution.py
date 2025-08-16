@@ -22,6 +22,7 @@ from airflow.models.dag import DAG
 from airflow.operators.bash_operator import BashOperator  # type: ignore (airflow 1 compat)
 from airflow.operators.dummy_operator import DummyOperator  # type: ignore (airflow 1 compat)
 from airflow.utils.dates import days_ago
+
 from dagster import DagsterEventType
 from dagster._core.instance.utils import AIRFLOW_EXECUTION_DATE_STR
 from dagster._core.test_utils import instance_for_test

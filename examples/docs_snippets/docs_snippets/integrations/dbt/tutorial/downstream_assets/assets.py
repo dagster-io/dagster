@@ -1,12 +1,12 @@
-# ruff: noqa: I001
 # start_imports
 import os
 
 import duckdb
 import pandas as pd
 import plotly.express as px
-from dagster import MetadataValue, AssetExecutionContext, asset
 from dagster_dbt import DbtCliResource, dbt_assets, get_asset_key_for_model
+
+from dagster import AssetExecutionContext, MetadataValue, asset
 
 from .project import jaffle_shop_project
 

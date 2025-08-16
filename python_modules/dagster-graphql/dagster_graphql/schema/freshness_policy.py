@@ -1,5 +1,6 @@
-import dagster._check as check
 import graphene
+
+import dagster._check as check
 from dagster._core.definitions.freshness_policy import LegacyFreshnessPolicy
 from dagster._time import get_current_datetime
 

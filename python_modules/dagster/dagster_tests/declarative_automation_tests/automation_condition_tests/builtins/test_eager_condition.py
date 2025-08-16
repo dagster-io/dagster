@@ -1,10 +1,10 @@
 import datetime
 
-import dagster as dg
 import pytest
+
+import dagster as dg
 from dagster import AutomationCondition, DagsterInstance
 from dagster._core.definitions.partitions.definition import StaticPartitionsDefinition
-
 from dagster_tests.declarative_automation_tests.scenario_utils.automation_condition_scenario import (
     AutomationConditionScenarioState,
 )

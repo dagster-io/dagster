@@ -1,8 +1,9 @@
 import datetime
 import operator
 
-import dagster as dg
 import pytest
+
+import dagster as dg
 from dagster import AutoMaterializePolicy, AutomationCondition
 from dagster._core.asset_graph_view.serializable_entity_subset import SerializableEntitySubset
 from dagster._core.definitions.asset_selection import AssetSelection
@@ -18,7 +19,6 @@ from dagster._core.definitions.partitions.context import partition_loading_conte
 from dagster._core.definitions.partitions.subset.key_ranges import KeyRangesPartitionsSubset
 from dagster._core.remote_representation.external_data import RepositorySnap
 from dagster_shared.check import CheckError
-
 from dagster_tests.declarative_automation_tests.scenario_utils.automation_condition_scenario import (
     AutomationConditionScenarioState,
 )

@@ -2,12 +2,12 @@ from typing import Any
 from unittest.mock import patch
 
 import pytest
+
 from dagster import op
 from dagster._core.definitions.decorators.job_decorator import job
 from dagster_msteams import MSTeamsResource
 from dagster_msteams.hooks import teams_on_failure, teams_on_success
 from dagster_msteams.resources import msteams_resource
-
 from dagster_msteams_tests.conftest import LEGACY_WEBHOOK_URL, WEBHOOK_URL
 
 TEST_RUN_ID = "b6497149-0b91-41ea-8a0f-442cb1704172"

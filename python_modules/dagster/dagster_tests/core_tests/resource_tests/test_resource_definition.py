@@ -2,8 +2,9 @@ from contextlib import contextmanager
 from enum import Enum as PythonEnum
 from unittest import mock
 
-import dagster as dg
 import pytest
+
+import dagster as dg
 from dagster import DagsterEventType, ResourceDefinition, String
 from dagster._core.definitions.job_base import InMemoryJob
 from dagster._core.definitions.resource_definition import dagster_maintained_resource

@@ -2,11 +2,12 @@ import os
 
 import polars as pl
 import pytest
+from deltalake import DeltaTable
+
 from dagster import Out, graph, op
 from dagster_deltalake import LocalConfig
 from dagster_deltalake.io_manager import WriteMode
 from dagster_deltalake_polars import DeltaLakePolarsIOManager
-from deltalake import DeltaTable
 
 
 @pytest.fixture

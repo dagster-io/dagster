@@ -1,9 +1,9 @@
 from unittest.mock import MagicMock
 
 import responses
+
 from dagster import build_init_resource_context
 from dagster_census import CensusOutput, CensusResource, census_resource
-
 from dagster_census_tests.utils import (
     get_destination_data,
     get_source_data,

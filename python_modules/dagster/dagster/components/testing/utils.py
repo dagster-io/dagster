@@ -10,11 +10,11 @@ from pathlib import Path
 from typing import Callable
 
 import yaml
-from dagster_shared import check
 
 from dagster.components.component_scaffolding import scaffold_object
 from dagster.components.core.component_tree import ComponentTree
 from dagster.components.scaffold.scaffold import ScaffoldFormatOptions
+from dagster_shared import check
 
 """Testing utilities for components."""
 

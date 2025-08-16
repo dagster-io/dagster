@@ -3,8 +3,6 @@ from collections import defaultdict
 from collections.abc import Iterable, Mapping, Sequence
 from typing import TYPE_CHECKING, Annotated, Any, Callable, NamedTuple, Optional, Union
 
-from dagster_shared.record import ImportFrom
-from dagster_shared.utils.cached_method import get_cached_method_cache
 from typing_extensions import Self, TypeAlias
 
 import dagster._check as check
@@ -51,6 +49,8 @@ from dagster._core.instance import DagsterInstance
 from dagster._record import IHaveNew, copy, record_custom, replace
 from dagster._utils.cached_method import cached_method
 from dagster._utils.warnings import disable_dagster_warnings
+from dagster_shared.record import ImportFrom
+from dagster_shared.utils.cached_method import get_cached_method_cache
 
 if TYPE_CHECKING:
     from dagster._core.storage.asset_value_loader import AssetValueLoader

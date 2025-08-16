@@ -7,15 +7,15 @@ from pathlib import Path
 from typing import Optional
 
 import click
+
 import dagster_shared.check as check
 from dagster_cloud_cli.types import SnapshotBaseDeploymentCondition
-from dagster_dg_core.config import DgRawBuildConfig, merge_build_configs
-from dagster_dg_core.context import DgContext
-from dagster_dg_core.utils.git import get_local_branch_name
-
 from dagster_dg_cli.cli.plus.constants import DgPlusAgentType, DgPlusDeploymentType
 from dagster_dg_cli.cli.utils import create_temp_dagster_cloud_yaml_file
 from dagster_dg_cli.utils.plus.build import create_deploy_dockerfile, get_dockerfile_path
+from dagster_dg_core.config import DgRawBuildConfig, merge_build_configs
+from dagster_dg_core.context import DgContext
+from dagster_dg_core.utils.git import get_local_branch_name
 
 
 def _guess_deployment_type(

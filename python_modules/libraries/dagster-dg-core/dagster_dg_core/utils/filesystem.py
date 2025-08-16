@@ -4,12 +4,12 @@ from collections.abc import Sequence
 from pathlib import Path
 from typing import Any, Callable, Optional
 
-from dagster_shared.scaffold import DEFAULT_FILE_EXCLUDE_PATTERNS
 from watchdog.events import FileSystemEvent, FileSystemEventHandler
 from watchdog.observers import Observer
 
 from dagster_dg_core.utils import clear_screen
 from dagster_dg_core.utils.paths import hash_paths
+from dagster_shared.scaffold import DEFAULT_FILE_EXCLUDE_PATTERNS
 
 
 class PathChangeHandler(FileSystemEventHandler):

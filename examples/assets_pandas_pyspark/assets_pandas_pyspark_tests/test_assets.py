@@ -1,7 +1,6 @@
+from assets_pandas_pyspark.assets import spark_asset, table_assets
 from dagster import materialize
 from dagster._core.test_utils import instance_for_test
-
-from assets_pandas_pyspark.assets import spark_asset, table_assets
 
 
 def test_weather_assets():

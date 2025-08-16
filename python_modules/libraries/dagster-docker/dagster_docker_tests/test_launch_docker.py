@@ -8,6 +8,7 @@ import time
 
 import docker
 import pytest
+
 from dagster._core.storage.dagster_run import DagsterRunStatus, RunsFilter
 from dagster._core.test_utils import environ, poll_for_finished_run, poll_for_step_start
 from dagster_docker.docker_run_launcher import (
@@ -15,6 +16,7 @@ from dagster_docker.docker_run_launcher import (
     DOCKER_IMAGE_TAG,
     DockerRunLauncher,
 )
+from dagster_docker_tests import IS_BUILDKITE
 from dagster_shared.yaml_utils import merge_yamls
 from dagster_test.test_project import (
     ReOriginatedExternalJobForTest,
@@ -25,8 +27,6 @@ from dagster_test.test_project import (
     get_test_project_recon_job,
     get_test_project_workspace_and_remote_job,
 )
-
-from dagster_docker_tests import IS_BUILDKITE
 
 
 @pytest.mark.integration

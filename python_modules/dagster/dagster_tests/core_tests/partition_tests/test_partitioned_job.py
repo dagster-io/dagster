@@ -1,8 +1,9 @@
 import json
 from typing import Any
 
-import dagster as dg
 import pytest
+
+import dagster as dg
 from dagster._core.definitions.partitions.partitioned_config import partitioned_config
 from dagster._time import create_datetime
 

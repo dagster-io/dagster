@@ -1,8 +1,9 @@
 import hashlib
 import os
 
-import dagster as dg
 import pytest
+
+import dagster as dg
 from dagster import (
     AssetsDefinition,
     DagsterEventType,

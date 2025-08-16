@@ -1,8 +1,9 @@
 import re
 from collections.abc import Sequence
 
-import dagster as dg
 import pytest
+
+import dagster as dg
 from dagster._check import CheckError
 from dagster._core.definitions.partitions.context import partition_loading_context
 from dagster._core.test_utils import get_paginated_partition_keys

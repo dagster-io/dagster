@@ -1,8 +1,5 @@
 from typing import Any, Optional
 
-from dagster import InitResourceContext, resource
-from dagster._config.pythonic_config import Config, ConfigurableResource
-from dagster._core.definitions.resource_definition import dagster_maintained_resource
 from datahub.emitter.kafka_emitter import (
     DEFAULT_MCE_KAFKA_TOPIC,
     DEFAULT_MCP_KAFKA_TOPIC,
@@ -13,6 +10,10 @@ from datahub.emitter.kafka_emitter import (
 )
 from datahub.emitter.rest_emitter import DatahubRestEmitter
 from pydantic import Field
+
+from dagster import InitResourceContext, resource
+from dagster._config.pythonic_config import Config, ConfigurableResource
+from dagster._core.definitions.resource_definition import dagster_maintained_resource
 
 
 class DatahubRESTEmitterResource(ConfigurableResource):

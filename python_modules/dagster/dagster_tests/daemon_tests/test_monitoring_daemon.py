@@ -6,9 +6,11 @@ from collections.abc import Mapping
 from logging import Logger
 from typing import Any, Optional, cast
 
+import pytest
+from typing_extensions import Self
+
 import dagster as dg
 import dagster._check as check
-import pytest
 from dagster._core.events import DagsterEventType, RunFailureReason
 from dagster._core.instance import DagsterInstance
 from dagster._core.launcher import CheckRunHealthResult, RunLauncher, WorkerStatus
@@ -31,7 +33,6 @@ from dagster._daemon.monitoring.run_monitoring import (
 from dagster._serdes import ConfigurableClass
 from dagster._serdes.config_class import ConfigurableClassData
 from dagster._time import create_datetime
-from typing_extensions import Self
 
 
 class TestRunLauncher(RunLauncher, ConfigurableClass):

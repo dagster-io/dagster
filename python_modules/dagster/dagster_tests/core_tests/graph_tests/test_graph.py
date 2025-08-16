@@ -4,8 +4,9 @@ from datetime import datetime
 from itertools import count
 from typing import Any, Optional
 
-import dagster as dg
 import pytest
+
+import dagster as dg
 from dagster import DagsterInstance, Enum
 from dagster._check import CheckError
 from dagster._time import parse_time_string

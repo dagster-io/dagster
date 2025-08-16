@@ -2,6 +2,8 @@ import os
 from typing import Union
 
 import pandas
+from pyspark.sql import DataFrame as PySparkDataFrame
+
 from dagster import (
     ConfigurableIOManager,
     InputContext,
@@ -11,7 +13,6 @@ from dagster import (
 )
 from dagster_pyspark.resources import PySparkResource
 from dagster_shared.seven.temp_dir import get_system_temp_directory
-from pyspark.sql import DataFrame as PySparkDataFrame
 
 
 class PartitionedParquetIOManager(ConfigurableIOManager):

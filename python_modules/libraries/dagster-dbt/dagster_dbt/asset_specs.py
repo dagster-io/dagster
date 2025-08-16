@@ -2,7 +2,6 @@ from collections.abc import Sequence
 from typing import Optional
 
 from dagster import AssetSpec
-
 from dagster_dbt.asset_utils import (
     DBT_DEFAULT_EXCLUDE,
     DBT_DEFAULT_SELECT,

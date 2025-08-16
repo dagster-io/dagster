@@ -1,11 +1,11 @@
-# ruff: noqa: I001
 # start_python_assets
 import os
 
 import duckdb
 import pandas as pd
-from dagster import AssetExecutionContext, asset
 from dagster_dbt import DbtCliResource, dbt_assets
+
+from dagster import AssetExecutionContext, asset
 
 from .project import jaffle_shop_project
 

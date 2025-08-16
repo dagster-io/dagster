@@ -2,12 +2,12 @@ from argparse import Namespace
 from collections.abc import Mapping
 from typing import TYPE_CHECKING, AbstractSet, Any, Optional, cast  # noqa: UP035
 
-import dagster_shared.check as check
 import orjson
-from dagster import AssetKey
-from dagster._utils.names import clean_name_lower
 from packaging import version
 
+import dagster_shared.check as check
+from dagster import AssetKey
+from dagster._utils.names import clean_name_lower
 from dagster_dbt.compat import DBT_PYTHON_VERSION
 
 if TYPE_CHECKING:

@@ -3,7 +3,6 @@ from typing import Any, Optional
 
 from dagster import AssetKey, JsonMetadataValue, MarkdownMetadataValue
 from dagster._core.definitions.metadata.metadata_value import UrlMetadataValue
-
 from dagster_airlift.constants import PEERED_DAG_MAPPING_METADATA_KEY, SOURCE_CODE_METADATA_KEY
 from dagster_airlift.core.airflow_instance import DagInfo
 

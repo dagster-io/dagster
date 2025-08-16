@@ -1,6 +1,8 @@
 from pathlib import Path
 
 import click
+
+from dagster_dg_cli.scaffold import scaffold_component
 from dagster_dg_core.component import EnvRegistry
 from dagster_dg_core.config import normalize_cli_config
 from dagster_dg_core.context import DgContext
@@ -8,8 +10,6 @@ from dagster_dg_core.shared_options import dg_global_options, dg_path_options
 from dagster_dg_core.utils import DgClickCommand, exit_with_error, snakecase
 from dagster_dg_core.utils.telemetry import cli_telemetry_wrapper
 from dagster_shared.serdes.objects import EnvRegistryKey
-
-from dagster_dg_cli.scaffold import scaffold_component
 
 
 def _parse_component_name(dg_context: DgContext, name: str) -> tuple[str, str]:

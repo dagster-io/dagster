@@ -1,8 +1,9 @@
 import datetime
 import multiprocessing
 
-import dagster as dg
 import pytest
+
+import dagster as dg
 from dagster._core.errors import DagsterUserCodeUnreachableError
 from dagster._core.instance import DagsterInstance
 from dagster._core.instance.ref import InstanceRef
@@ -17,7 +18,6 @@ from dagster._daemon.asset_daemon import (
     set_auto_materialize_paused,
 )
 from dagster._utils import SingleInstigatorDebugCrashFlags, get_terminate_signal
-
 from dagster_tests.declarative_automation_tests.legacy_tests.scenarios.auto_materialize_policy_scenarios import (
     auto_materialize_policy_scenarios,
 )

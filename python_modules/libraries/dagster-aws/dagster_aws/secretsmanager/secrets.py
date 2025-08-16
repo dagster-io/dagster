@@ -2,9 +2,9 @@ from collections.abc import Mapping, Sequence
 from typing import Optional
 
 import boto3.session
+
 import dagster._check as check
 from dagster._annotations import beta
-
 from dagster_aws.utils import construct_boto_client_retry_config
 
 

@@ -4,7 +4,6 @@ from typing import Optional
 
 from dagster import AssetSpec
 from dagster._annotations import beta
-
 from dagster_looker.lkml.asset_utils import (
     build_looker_dashboard_specs,
     build_looker_explore_specs,

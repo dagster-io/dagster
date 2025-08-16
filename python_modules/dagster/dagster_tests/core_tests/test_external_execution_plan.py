@@ -4,8 +4,9 @@ import re
 from collections.abc import Sequence
 from typing import Optional
 
-import dagster as dg
 import pytest
+
+import dagster as dg
 from dagster import DagsterEventType
 from dagster._core.definitions.assets.definition.assets_definition import AssetsDefinition
 from dagster._core.definitions.assets.definition.cacheable_assets_definition import (

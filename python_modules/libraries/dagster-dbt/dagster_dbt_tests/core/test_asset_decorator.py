@@ -6,6 +6,8 @@ from pathlib import Path
 from typing import Any, Optional
 
 import pytest
+from packaging import version
+
 from dagster import (
     AssetKey,
     AutoMaterializePolicy,
@@ -50,8 +52,6 @@ from dagster_dbt.asset_utils import (
 from dagster_dbt.compat import DBT_PYTHON_VERSION
 from dagster_dbt.core.resource import DbtCliResource
 from dagster_dbt.dagster_dbt_translator import DagsterDbtTranslator, DagsterDbtTranslatorSettings
-from packaging import version
-
 from dagster_dbt_tests.dbt_projects import (
     test_dbt_alias_path,
     test_dbt_model_versions_path,

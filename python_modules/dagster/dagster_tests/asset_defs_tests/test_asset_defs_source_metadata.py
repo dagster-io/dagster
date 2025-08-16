@@ -2,8 +2,9 @@ import os
 from pathlib import Path
 from typing import cast
 
-import dagster as dg
 import pytest
+
+import dagster as dg
 from dagster._core.definitions.metadata.source_code import Platform, base_git_url
 
 # path of the `dagster` package on the filesystem

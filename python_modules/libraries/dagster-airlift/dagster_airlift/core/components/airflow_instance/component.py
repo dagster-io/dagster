@@ -2,6 +2,10 @@ from collections.abc import Iterator, Sequence
 from dataclasses import dataclass
 from typing import Annotated, Any, Literal, Optional, Union
 
+from pydantic import BaseModel
+from typing_extensions import TypeAlias
+
+import dagster_airlift.core as dg_airlift_core
 from dagster import Component, ComponentLoadContext, Resolvable
 from dagster._core.definitions.asset_key import AssetKey
 from dagster._core.definitions.assets.definition.asset_spec import (
@@ -16,10 +20,6 @@ from dagster.components.resolved.context import ResolutionContext
 from dagster.components.resolved.core_models import ResolvedAssetKey, ResolvedAssetSpec
 from dagster.components.resolved.model import Resolver
 from dagster.components.scaffold.scaffold import Scaffolder, ScaffoldRequest, scaffold_with
-from pydantic import BaseModel
-from typing_extensions import TypeAlias
-
-import dagster_airlift.core as dg_airlift_core
 from dagster_airlift.core.airflow_instance import AirflowAuthBackend
 from dagster_airlift.core.basic_auth import AirflowBasicAuthBackend
 from dagster_airlift.core.filter import AirflowFilter

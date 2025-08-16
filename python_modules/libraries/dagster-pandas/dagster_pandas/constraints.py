@@ -5,13 +5,14 @@ from functools import wraps
 from typing import Final
 
 import pandas as pd
+from pandas import DataFrame
+
 from dagster import (
     DagsterType,
     TypeCheck,
     _check as check,
 )
 from dagster._annotations import beta
-from pandas import DataFrame
 
 CONSTRAINT_METADATA_KEY: Final = "constraint_metadata"
 

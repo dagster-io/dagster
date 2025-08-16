@@ -2,6 +2,7 @@ from collections.abc import Iterator, Mapping, Sequence
 from typing import Any, Callable, Optional, Union
 
 import dateutil
+
 from dagster import (
     AssetKey,
     AssetMaterialization,
@@ -11,7 +12,6 @@ from dagster import (
     _check as check,
 )
 from dagster._core.definitions.metadata import RawMetadataValue
-
 from dagster_dbt.cloud.types import DbtCloudOutput
 from dagster_dbt.utils import ASSET_RESOURCE_TYPES, default_node_info_to_asset_key
 

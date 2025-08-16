@@ -8,6 +8,9 @@ from typing import Any, Optional, cast
 from urllib.parse import urlencode, urljoin
 
 import requests
+from pydantic import Field
+from requests.exceptions import RequestException
+
 from dagster import (
     ConfigurableResource,
     Failure,
@@ -21,9 +24,6 @@ from dagster import (
 from dagster._annotations import beta
 from dagster._core.definitions.resource_definition import dagster_maintained_resource
 from dagster._utils.merger import deep_merge_dicts
-from pydantic import Field
-from requests.exceptions import RequestException
-
 from dagster_dbt.cloud.types import DbtCloudOutput
 
 DBT_DEFAULT_HOST = "https://cloud.getdbt.com/"

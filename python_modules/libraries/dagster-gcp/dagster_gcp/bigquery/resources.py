@@ -3,6 +3,9 @@ from contextlib import contextmanager
 from datetime import datetime
 from typing import Any, Optional
 
+from google.cloud import bigquery
+from pydantic import Field
+
 from dagster import (
     ConfigurableResource,
     IAttachDifferentObjectToOpContext,
@@ -10,9 +13,6 @@ from dagster import (
     resource,
 )
 from dagster._core.definitions.resource_definition import dagster_maintained_resource
-from google.cloud import bigquery
-from pydantic import Field
-
 from dagster_gcp.bigquery.utils import setup_gcp_creds
 
 

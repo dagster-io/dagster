@@ -2,6 +2,8 @@ from uuid import uuid4
 
 import pytest
 from azure.storage.filedatalake import DataLakeLeaseClient
+from upath import UPath
+
 from dagster import (
     AssetIn,
     AssetKey,
@@ -36,7 +38,6 @@ from dagster_azure.adls2.io_manager import PickledObjectADLS2IOManager, adls2_pi
 from dagster_azure.adls2.resources import adls2_resource
 from dagster_azure.blob import create_blob_client
 from dagster_azure.fakes import fake_adls2_resource
-from upath import UPath
 
 
 def fake_io_manager_factory(io_manager):

@@ -7,11 +7,11 @@ from collections.abc import Iterator
 from contextlib import contextmanager
 from typing import Any, Callable, Optional
 
-import dagster._check as check
 import pytest
 from databricks.sdk import WorkspaceClient
 from databricks.sdk.service import files
 
+import dagster._check as check
 from dagster_databricks.pipes import dbfs_tempdir
 
 DAGSTER_PIPES_WHL_FILENAME = "dagster_pipes-1!0+dev-py3-none-any.whl"

@@ -1,8 +1,9 @@
 import os
 import sys
 
-import dagster as dg
 import pytest
+
+import dagster as dg
 from dagster._core.code_pointer import CodePointer
 from dagster._core.definitions.reconstruct import initialize_repository_def_from_pointer
 from dagster._core.errors import DagsterImportError

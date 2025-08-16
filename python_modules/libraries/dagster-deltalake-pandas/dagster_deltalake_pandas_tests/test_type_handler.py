@@ -3,6 +3,8 @@ from datetime import datetime
 
 import pandas as pd
 import pytest
+from deltalake import DeltaTable
+
 from dagster import (
     AssetExecutionContext,
     AssetIn,
@@ -25,7 +27,6 @@ from dagster._core.definitions.partitions.definition import (
 from dagster._core.definitions.partitions.utils import MultiPartitionKey
 from dagster_deltalake import DELTA_DATE_FORMAT, LocalConfig
 from dagster_deltalake_pandas import DeltaLakePandasIOManager
-from deltalake import DeltaTable
 
 
 @pytest.fixture

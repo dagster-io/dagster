@@ -5,6 +5,7 @@ from collections.abc import Mapping
 from typing import Any
 
 import boto3
+
 from dagster import DagsterEventType
 from dagster._core.storage.dagster_run import DagsterRunStatus
 from dagster._core.storage.tags import DOCKER_IMAGE_TAG

@@ -10,7 +10,6 @@ from dagster._core.definitions.run_status_sensor_definition import (
 )
 from dagster._core.definitions.unresolved_asset_job_definition import UnresolvedAssetJobDefinition
 from dagster._utils.warnings import normalize_renamed_param
-
 from dagster_msteams.adaptive_card import AdaptiveCard
 from dagster_msteams.card import Card
 from dagster_msteams.client import TeamsClient

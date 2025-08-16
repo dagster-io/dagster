@@ -3,6 +3,8 @@ from datetime import datetime
 from enum import Enum
 from typing import Any, Callable, NamedTuple, Optional
 
+from typing_extensions import TypeAlias
+
 from dagster import Failure
 from dagster._core.definitions.asset_key import AssetKey
 from dagster._core.definitions.assets.definition.asset_spec import AssetSpec
@@ -11,10 +13,8 @@ from dagster._record import as_dict, record
 from dagster._utils.cached_method import cached_method
 from dagster._utils.names import clean_name_lower
 from dagster._vendored.dateutil import parser
-from dagster_shared.serdes import whitelist_for_serdes
-from typing_extensions import TypeAlias
-
 from dagster_fivetran.utils import get_fivetran_connector_table_name, metadata_for_table
+from dagster_shared.serdes import whitelist_for_serdes
 
 MIN_TIME_STR = "0001-01-01 00:00:00+00"
 

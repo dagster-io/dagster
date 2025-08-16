@@ -2,6 +2,7 @@ import base64
 import os
 
 import pytest
+
 from dagster import (
     DagsterInstance,
     EnvVar,
@@ -16,7 +17,6 @@ from dagster._core.definitions.data_version import DataVersion
 from dagster._core.definitions.observe import observe
 from dagster._time import get_current_timestamp
 from dagster_gcp import BigQueryResource, bigquery_resource, fetch_last_updated_timestamps
-
 from dagster_gcp_tests.bigquery_tests.conftest import (
     IS_BUILDKITE,
     SHARED_BUILDKITE_BQ_CONFIG,

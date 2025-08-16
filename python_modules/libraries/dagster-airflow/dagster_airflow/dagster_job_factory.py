@@ -3,6 +3,7 @@ from typing import Optional
 
 from airflow.models.connection import Connection
 from airflow.models.dag import DAG
+
 from dagster import (
     GraphDefinition,
     JobDefinition,
@@ -12,7 +13,6 @@ from dagster import (
 from dagster._annotations import superseded
 from dagster._core.instance.utils import IS_AIRFLOW_INGEST_PIPELINE_STR
 from dagster._utils.tags import normalize_tags
-
 from dagster_airflow.airflow_dag_converter import get_graph_definition_args
 from dagster_airflow.resources import (
     make_ephemeral_airflow_db_resource as make_ephemeral_airflow_db_resource,

@@ -11,7 +11,6 @@ from dagster import (
     multi_asset,
 )
 from dagster._utils.warnings import suppress_dagster_warnings
-
 from dagster_dbt.asset_utils import (
     DAGSTER_DBT_EXCLUDE_METADATA_KEY,
     DAGSTER_DBT_SELECT_METADATA_KEY,

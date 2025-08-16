@@ -1,8 +1,9 @@
 from typing import cast
 from unittest.mock import MagicMock
 
-import dagster as dg
 import pytest
+
+import dagster as dg
 from dagster._check import CheckError
 from dagster._core.definitions.assets.graph.asset_graph_subset import AssetGraphSubset
 from dagster._core.definitions.partitions.context import partition_loading_context

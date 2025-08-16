@@ -1,5 +1,6 @@
-import dagster._check as check
 from google.cloud import storage
+
+import dagster._check as check
 
 MAX_KEYS = 1000
 

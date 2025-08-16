@@ -1,8 +1,9 @@
 import sys
 from collections.abc import Iterator
 
-import dagster as dg
 import pytest
+
+import dagster as dg
 from dagster._core.instance import DagsterInstance
 from dagster._core.types.loadable_target_origin import LoadableTargetOrigin
 from dagster._core.workspace.context import WorkspaceProcessContext

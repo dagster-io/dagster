@@ -12,18 +12,6 @@ from dagster._core.definitions.freshness_policy import LegacyFreshnessPolicy
 from dagster._core.definitions.resource_definition import ResourceDefinition
 from dagster._core.execution.context.init import build_init_resource_context
 from dagster._utils.merger import deep_merge_dicts
-from dagster_managed_elements import (
-    ManagedElementCheckResult,
-    ManagedElementDiff,
-    ManagedElementError,
-)
-from dagster_managed_elements.types import (
-    SECRET_MASK_VALUE,
-    ManagedElementReconciler,
-    is_key_secret,
-)
-from dagster_managed_elements.utils import UNSET, diff_dicts
-
 from dagster_airbyte.asset_defs import (
     AirbyteConnectionMetadata,
     AirbyteInstanceCacheableAssetsDefinition,
@@ -41,6 +29,17 @@ from dagster_airbyte.managed.types import (
 )
 from dagster_airbyte.resources import AirbyteResource
 from dagster_airbyte.utils import clean_name, is_basic_normalization_operation
+from dagster_managed_elements import (
+    ManagedElementCheckResult,
+    ManagedElementDiff,
+    ManagedElementError,
+)
+from dagster_managed_elements.types import (
+    SECRET_MASK_VALUE,
+    ManagedElementReconciler,
+    is_key_secret,
+)
+from dagster_managed_elements.utils import UNSET, diff_dicts
 
 
 def gen_configured_stream_json(

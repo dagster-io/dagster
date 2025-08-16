@@ -7,7 +7,6 @@ from dagster import resource
 from dagster._config.pythonic_config import ConfigurableResource
 from dagster._core.definitions.resource_definition import dagster_maintained_resource
 from dagster._utils.cached_method import cached_method
-
 from dagster_azure.adls2.utils import ResourceNotFoundError
 from dagster_azure.blob import FakeBlobServiceClient
 

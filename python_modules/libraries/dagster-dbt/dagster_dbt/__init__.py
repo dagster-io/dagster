@@ -55,9 +55,8 @@ from typing import Any, Final, Tuple  # noqa: F401, UP035
 
 from dagster._annotations import deprecated
 from dagster._utils.warnings import deprecation_warning
-from dagster_shared.libraries import DagsterLibraryRegistry
-
 from dagster_dbt.compat import DBT_PYTHON_VERSION
+from dagster_shared.libraries import DagsterLibraryRegistry
 
 DagsterLibraryRegistry.register("dagster-dbt", __version__)
 

@@ -1,6 +1,6 @@
 import requests
-from dagster import asset, materialize_to_memory
 
+from dagster import asset, materialize_to_memory
 from dagster_aws.rds import RDSResource
 
 

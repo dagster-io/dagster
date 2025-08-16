@@ -1,7 +1,9 @@
 from collections.abc import Sequence
 
-import dagster as dg
 import pytest
+from pydantic import BaseModel, TypeAdapter
+
+import dagster as dg
 from dagster import AutomationCondition
 from dagster.components.resolved.context import ResolutionContext
 from dagster.components.resolved.core_models import (
@@ -9,7 +11,6 @@ from dagster.components.resolved.core_models import (
     apply_post_processor_to_defs,
 )
 from dagster.components.utils import TranslatorResolvingInfo
-from pydantic import BaseModel, TypeAdapter
 
 
 class M(BaseModel):

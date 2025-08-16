@@ -6,7 +6,6 @@ from collections.abc import Iterator
 from typing import Callable, Optional
 
 import dagster._check as check
-
 from automation.docker.dagster_docker import DagsterDockerImage, default_images_path
 from automation.git import git_repo_root
 

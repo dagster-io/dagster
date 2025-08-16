@@ -1,10 +1,9 @@
 from json import JSONDecodeError
 
-from dagster_shared.serdes import deserialize_value
-from dagster_shared.serdes.errors import DeserializationError
-
 import dagster._check as check
 from dagster._core.events import DagsterEvent
+from dagster_shared.serdes import deserialize_value
+from dagster_shared.serdes.errors import DeserializationError
 
 
 def filter_dagster_events_from_cli_logs(log_lines):

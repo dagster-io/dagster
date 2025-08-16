@@ -3,6 +3,7 @@ from typing import Optional
 from unittest import mock
 
 import pytest
+
 from dagster import (
     DagsterInstance,
     DynamicOut,

@@ -3,6 +3,7 @@ from typing import TYPE_CHECKING, Any, Optional, Union, cast
 
 import boto3
 import botocore
+
 import dagster._check as check
 from dagster import DagsterInvariantViolationError, MetadataValue, PipesClient
 from dagster._annotations import public
@@ -17,7 +18,6 @@ from dagster._core.pipes.client import (
     PipesMessageReader,
 )
 from dagster._core.pipes.utils import PipesEnvContextInjector, open_pipes_session
-
 from dagster_aws.pipes.clients.utils import WaiterConfig
 from dagster_aws.pipes.message_readers import PipesCloudWatchLogReader, PipesCloudWatchMessageReader
 

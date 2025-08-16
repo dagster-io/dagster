@@ -8,10 +8,10 @@ from pprint import pprint
 from tempfile import NamedTemporaryFile, mkstemp
 from typing import Any, Optional, Union
 
-import dagster._check as check
 import yaml
 from kubernetes.client.api_client import ApiClient
 
+import dagster._check as check
 from schema.charts.dagster.values import DagsterHelmValues
 from schema.charts.dagster_user_deployments.values import DagsterUserDeploymentsHelmValues
 

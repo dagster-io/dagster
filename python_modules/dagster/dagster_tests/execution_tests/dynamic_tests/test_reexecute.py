@@ -1,8 +1,9 @@
 import time
 from multiprocessing import Process
 
-import dagster as dg
 import pytest
+
+import dagster as dg
 from dagster import AssetSelection, OpExecutionContext, ReexecutionOptions, in_process_executor
 from dagster._core.definitions.assets.graph.asset_graph import AssetGraph
 from dagster._core.instance import DagsterInstance

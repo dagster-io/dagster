@@ -1,4 +1,7 @@
 import pytest
+from numpy import nan
+from pandas import DataFrame
+
 from dagster_pandas.constraints import (
     CategoricalColumnConstraint,
     ColumnDTypeInSetConstraint,
@@ -11,8 +14,6 @@ from dagster_pandas.constraints import (
     StrictColumnsConstraint,
     UniqueColumnConstraint,
 )
-from numpy import nan
-from pandas import DataFrame
 
 NAN_VALUES = [
     nan,

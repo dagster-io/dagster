@@ -4,9 +4,10 @@ import time
 from collections.abc import Mapping
 from typing import Any
 
-import dagster._check as check
 import kubernetes
 import pytest
+
+import dagster._check as check
 from dagster._core.events import DagsterEventType
 from dagster._core.instance import DagsterInstance
 from dagster._core.storage.dagster_run import DagsterRunStatus

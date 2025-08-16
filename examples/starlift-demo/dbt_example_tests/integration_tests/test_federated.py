@@ -5,17 +5,17 @@ from datetime import timedelta
 from typing import Any, Callable
 
 import pytest
+from dbt_example.dagster_defs.constants import (
+    LEGACY_FEDERATED_INSTANCE_NAME,
+    OTHER_TEAM_FEDERATED_INSTANCE_NAME,
+)
+
 from dagster import AssetKey, AssetsDefinition, DagsterInstance, materialize
 from dagster._core.definitions.definitions_class import Definitions
 from dagster._core.test_utils import environ
 from dagster._time import get_current_datetime
 from dagster_airlift.core import AirflowInstance
 from dagster_airlift.test.shared_fixtures import stand_up_airflow, stand_up_dagster
-from dbt_example.dagster_defs.constants import (
-    LEGACY_FEDERATED_INSTANCE_NAME,
-    OTHER_TEAM_FEDERATED_INSTANCE_NAME,
-)
-
 from dbt_example_tests.integration_tests.conftest import makefile_dir
 
 

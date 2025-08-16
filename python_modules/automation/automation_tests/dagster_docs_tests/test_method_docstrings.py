@@ -1,6 +1,7 @@
 """Tests for method docstring validation focusing on parameter handling."""
 
 from automation.dagster_docs.validator import validate_docstring_text
+
 from dagster._annotations import public
 
 

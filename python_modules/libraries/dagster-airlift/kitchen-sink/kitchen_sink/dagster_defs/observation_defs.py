@@ -13,7 +13,6 @@ from dagster_airlift.core import (
     build_defs_from_airflow_instance,
 )
 from dagster_airlift.core.top_level_dag_def_api import assets_with_task_mappings
-
 from kitchen_sink.airflow_instance import local_airflow_instance
 
 

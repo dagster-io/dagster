@@ -2,8 +2,6 @@ from abc import ABC, abstractmethod
 from collections.abc import Sequence
 from typing import AbstractSet, Callable, Optional, cast  # noqa: UP035
 
-from dagster_shared.error import DagsterError
-
 import dagster._check as check
 from dagster._core.definitions import AssetCheckEvaluation, JobDefinition, NodeHandle
 from dagster._core.definitions.events import AssetMaterialization, AssetObservation
@@ -20,6 +18,7 @@ from dagster._core.events import (
 from dagster._core.execution.plan.objects import StepFailureData
 from dagster._core.execution.plan.step import StepKind
 from dagster._core.storage.dagster_run import DagsterRun
+from dagster_shared.error import DagsterError
 
 
 class ExecutionResult(ABC):

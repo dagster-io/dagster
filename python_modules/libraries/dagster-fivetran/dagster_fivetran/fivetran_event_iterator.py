@@ -3,6 +3,8 @@ from collections.abc import Iterator
 from concurrent.futures import ThreadPoolExecutor
 from typing import TYPE_CHECKING, Any, Callable, Union
 
+from typing_extensions import TypeVar
+
 from dagster import (
     AssetExecutionContext,
     AssetMaterialization,
@@ -13,8 +15,6 @@ from dagster import (
 from dagster._annotations import public
 from dagster._core.definitions.metadata.metadata_set import TableMetadataSet
 from dagster._core.utils import imap
-from typing_extensions import TypeVar
-
 from dagster_fivetran.translator import FivetranMetadataSet
 from dagster_fivetran.utils import get_column_schema_for_columns, get_fivetran_connector_table_name
 

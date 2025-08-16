@@ -4,20 +4,10 @@ from datetime import datetime
 from os import PathLike
 from typing import Any, Callable, Generic, Optional, Union
 
-import dagster_shared.seven as seven
-from dagster_shared.record import IHaveNew, LegacyNamedTupleMixin, record, record_custom
-from dagster_shared.serdes.serdes import (
-    FieldSerializer,
-    JsonSerializableValue,
-    PackableValue,
-    UnpackContext,
-    WhitelistMap,
-    pack_value,
-    whitelist_for_serdes,
-)
 from typing_extensions import Self, TypeVar
 
 import dagster._check as check
+import dagster_shared.seven as seven
 from dagster._annotations import PublicAttr, public
 from dagster._core.definitions.asset_key import AssetKey
 from dagster._core.definitions.metadata.table import (
@@ -30,6 +20,16 @@ from dagster._core.definitions.metadata.table import (
     TableSchema as TableSchema,
 )
 from dagster._core.errors import DagsterInvalidMetadata
+from dagster_shared.record import IHaveNew, LegacyNamedTupleMixin, record, record_custom
+from dagster_shared.serdes.serdes import (
+    FieldSerializer,
+    JsonSerializableValue,
+    PackableValue,
+    UnpackContext,
+    WhitelistMap,
+    pack_value,
+    whitelist_for_serdes,
+)
 
 T_Packable = TypeVar("T_Packable", bound=PackableValue, default=PackableValue, covariant=True)
 

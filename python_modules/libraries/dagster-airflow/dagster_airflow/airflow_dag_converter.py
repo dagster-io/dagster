@@ -3,6 +3,7 @@ from typing import TYPE_CHECKING
 
 import airflow
 from airflow.models.dag import DAG
+
 from dagster import (
     DependencyDefinition,
     In,
@@ -16,7 +17,6 @@ from dagster import (
     op,
 )
 from dagster._core.definitions.node_definition import NodeDefinition
-
 from dagster_airflow.utils import (
     is_airflow_2_loaded_in_environment,
     normalized_name,

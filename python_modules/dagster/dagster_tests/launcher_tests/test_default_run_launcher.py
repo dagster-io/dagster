@@ -7,8 +7,9 @@ import time
 from collections.abc import Mapping
 from typing import Any
 
-import dagster as dg
 import pytest
+
+import dagster as dg
 from dagster import (
     DagsterEvent,
     DagsterEventType,

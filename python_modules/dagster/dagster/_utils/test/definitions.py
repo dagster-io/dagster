@@ -2,8 +2,6 @@ from collections.abc import Iterator, Mapping
 from contextlib import contextmanager
 from typing import Any, Optional, TypeVar
 
-from dagster_shared.serdes import serialize_value
-
 from dagster import _check as check
 from dagster._core.definitions.definitions_class import Definitions
 from dagster._core.definitions.definitions_load_context import (
@@ -21,6 +19,7 @@ from dagster.components.definitions import (
     LazyDefinitions as LazyDefinitions,
     definitions as definitions,
 )
+from dagster_shared.serdes import serialize_value
 
 T_Defs = TypeVar("T_Defs", Definitions, RepositoryDefinition)
 

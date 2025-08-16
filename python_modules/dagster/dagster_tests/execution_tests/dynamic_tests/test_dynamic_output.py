@@ -1,9 +1,10 @@
 import gc
 from typing import NamedTuple
 
-import dagster as dg
 import objgraph
 import pytest
+
+import dagster as dg
 from dagster._core.events import DagsterEventType
 
 

@@ -2,8 +2,9 @@
 # deprecations for the current version.
 import re
 
-import dagster as dg
 import pytest
+
+import dagster as dg
 from dagster._core.definitions.metadata import MetadataValue
 
 

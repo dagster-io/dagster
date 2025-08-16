@@ -2,6 +2,7 @@ import time
 from typing import TYPE_CHECKING, Any, Literal, Optional, Union, cast
 
 import boto3
+
 import dagster._check as check
 from dagster import PipesClient
 from dagster._annotations import preview, public
@@ -17,7 +18,6 @@ from dagster._core.pipes.client import (
 )
 from dagster._core.pipes.context import PipesSession
 from dagster._core.pipes.utils import PipesEnvContextInjector, open_pipes_session
-
 from dagster_aws.pipes.clients.utils import WaiterConfig, emr_inject_pipes_env_vars
 from dagster_aws.pipes.message_readers import PipesCloudWatchMessageReader
 

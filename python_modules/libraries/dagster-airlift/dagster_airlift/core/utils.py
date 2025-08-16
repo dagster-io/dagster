@@ -15,7 +15,6 @@ from dagster._core.definitions.job_definition import JobDefinition
 from dagster._core.definitions.utils import VALID_NAME_REGEX
 from dagster._core.errors import DagsterInvariantViolationError
 from dagster._core.storage.tags import EXTERNAL_JOB_SOURCE_TAG_KEY, KIND_PREFIX
-
 from dagster_airlift.constants import (
     AIRFLOW_SOURCE_METADATA_KEY_PREFIX,
     DAG_ID_TAG_KEY,

@@ -3,7 +3,10 @@ import sys
 from collections.abc import Iterable, Mapping, Sequence, Set
 from typing import TYPE_CHECKING, Any, Optional, Union
 
+from packaging.version import Version
+
 import dagster_shared.check as check
+from dagster_dg_core.utils.warnings import emit_warning
 from dagster_shared.error import (
     SerializableErrorInfo,
     make_simple_frames_removed_hint,
@@ -14,9 +17,6 @@ from dagster_shared.serdes.objects.package_entry import (
     EnvRegistryManifest,
     EnvRegistryObjectFeature,
 )
-from packaging.version import Version
-
-from dagster_dg_core.utils.warnings import emit_warning
 
 if TYPE_CHECKING:
     from dagster_dg_core.context import DgContext
@@ -173,9 +173,10 @@ def _load_module_registry_objects(
 # can compute a EnvRegistryManifest from the list[EnvRegistryObjectSnap], but it
 # won't include any modules that register an entry point but don't expose any plugin objects.
 def _fetch_plugin_manifest(entry_points: bool, extra_modules: Sequence[str]) -> EnvRegistryManifest:
-    from dagster.components.list import list_plugins
     from rich.console import Console
     from rich.panel import Panel
+
+    from dagster.components.list import list_plugins
 
     result = list_plugins(entry_points=entry_points, extra_modules=extra_modules)
 

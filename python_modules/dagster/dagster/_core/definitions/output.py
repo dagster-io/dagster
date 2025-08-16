@@ -1,8 +1,6 @@
 import inspect
 from typing import Any, NamedTuple, Optional, TypeVar, Union
 
-from dagster_shared.error import DagsterError
-
 import dagster._check as check
 from dagster._annotations import PublicAttr, deprecated_param, public
 from dagster._core.definitions.inference import InferredOutputProps
@@ -19,6 +17,7 @@ from dagster._core.types.dagster_type import (
     is_dynamic_output_annotation,
     resolve_dagster_type,
 )
+from dagster_shared.error import DagsterError
 
 TOutputDefinition = TypeVar("TOutputDefinition", bound="OutputDefinition")
 TOut = TypeVar("TOut", bound="Out")

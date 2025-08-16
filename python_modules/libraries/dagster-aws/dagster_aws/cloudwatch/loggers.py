@@ -3,6 +3,7 @@ import logging
 from typing import Optional
 
 import boto3
+
 from dagster import (
     Field,
     StringSource,

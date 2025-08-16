@@ -6,6 +6,11 @@ from pathlib import Path
 from typing import AbstractSet, Any, NamedTuple, Optional, TypedDict, Union, cast  # noqa: UP035
 
 import dateutil.parser
+from sqlglot import MappingSchema, exp, parse_one, to_table
+from sqlglot.expressions import normalize_table_name
+from sqlglot.lineage import lineage
+from sqlglot.optimizer import optimize
+
 from dagster import (
     AssetCheckResult,
     AssetCheckSeverity,
@@ -23,11 +28,6 @@ from dagster._core.definitions.asset_checks.asset_check_evaluation import AssetC
 from dagster._core.definitions.asset_key import AssetCheckKey, AssetKey
 from dagster._core.definitions.metadata import TableMetadataSet
 from dagster._utils.warnings import disable_dagster_warnings
-from sqlglot import MappingSchema, exp, parse_one, to_table
-from sqlglot.expressions import normalize_table_name
-from sqlglot.lineage import lineage
-from sqlglot.optimizer import optimize
-
 from dagster_dbt.asset_utils import (
     default_metadata_from_dbt_resource_props,
     get_asset_check_key_for_test,

@@ -1,5 +1,6 @@
 import pytest
 import responses
+
 from dagster import AssetKey, job, op
 from dagster._core.test_utils import instance_for_test
 from dagster_fivetran import FivetranOutput, fivetran_resource, fivetran_resync_op, fivetran_sync_op
@@ -8,7 +9,6 @@ from dagster_fivetran.resources import (
     FIVETRAN_API_VERSION_PATH,
     FIVETRAN_CONNECTOR_PATH,
 )
-
 from dagster_fivetran_tests.deprecated.utils import (
     DEFAULT_CONNECTOR_ID,
     get_complex_sample_connector_schema_config,

@@ -5,9 +5,10 @@ from difflib import SequenceMatcher
 from typing import Any
 from unittest import mock
 
-import dagster as dg
 import pytest
 from click.testing import CliRunner
+
+import dagster as dg
 from dagster._cli.job import job_execute_command
 from dagster._core.definitions.reconstruct import get_ephemeral_repository_name
 from dagster._core.definitions.resource_definition import dagster_maintained_resource

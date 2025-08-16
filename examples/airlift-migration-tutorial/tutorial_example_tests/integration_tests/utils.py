@@ -1,8 +1,9 @@
 import time
 from typing import Union, cast
 
-import dagster._check as check
 import requests
+
+import dagster._check as check
 from dagster._core.definitions.asset_key import AssetCheckKey, AssetKey
 from dagster._core.events.log import EventLogEntry
 from dagster._core.instance import DagsterInstance

@@ -1,9 +1,9 @@
 import json
 
-import dagster as dg
 import pytest
-from dagster_dbt import DbtCliResource, DbtProject, dbt_assets
 
+import dagster as dg
+from dagster_dbt import DbtCliResource, DbtProject, dbt_assets
 from dagster_dbt_tests.dbt_projects import test_fusion_compatible_jaffle_shop_path
 
 

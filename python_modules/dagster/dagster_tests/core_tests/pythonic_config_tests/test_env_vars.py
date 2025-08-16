@@ -1,7 +1,8 @@
 import os
 
-import dagster as dg
 import pytest
+
+import dagster as dg
 from dagster import EnvVar
 from dagster._core.test_utils import environ
 

@@ -4,8 +4,9 @@ from collections.abc import Iterator
 from contextlib import contextmanager
 from typing import Optional
 
-import dagster as dg
 import pytest
+
+import dagster as dg
 from dagster import SensorEvaluationContext, sensor
 from dagster._check import ParameterCheckError
 from dagster._core.definitions.multi_asset_sensor_definition import (
@@ -30,7 +31,6 @@ from dagster._core.workspace.context import WorkspaceProcessContext
 from dagster._core.workspace.load_target import ModuleTarget
 from dagster._time import create_datetime, get_timezone
 from dagster._vendored.dateutil.relativedelta import relativedelta
-
 from dagster_tests.daemon_sensor_tests.test_sensor_run import (
     evaluate_sensors,
     validate_tick,

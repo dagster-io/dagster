@@ -6,6 +6,7 @@
 
 
 import dask.dataframe as dd
+
 from dagster import (
     Any,
     Bool,
@@ -22,7 +23,6 @@ from dagster import (
     TypeCheck,
     dagster_type_loader,
 )
-
 from dagster_dask.utils import DataFrameUtilities, apply_utilities_to_df
 
 WriteCompressionTextOptions = Enum(

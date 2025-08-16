@@ -3,14 +3,6 @@ from contextlib import contextmanager
 from datetime import datetime
 from typing import Any, Optional, Union
 
-from dagster import (
-    ConfigurableIOManager,
-    InputContext,
-    MetadataValue,
-    OutputContext,
-    TableColumn,
-    TableSchema,
-)
 from pandas import (
     DataFrame as PandasDataFrame,
     read_sql,
@@ -19,6 +11,15 @@ from pyspark.sql import DataFrame as SparkDataFrame
 from snowflake.connector.pandas_tools import pd_writer
 from snowflake.sqlalchemy import URL
 from sqlalchemy import create_engine
+
+from dagster import (
+    ConfigurableIOManager,
+    InputContext,
+    MetadataValue,
+    OutputContext,
+    TableColumn,
+    TableSchema,
+)
 
 SNOWFLAKE_DATETIME_FORMAT = "%Y-%m-%d %H:%M:%S"
 

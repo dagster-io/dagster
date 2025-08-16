@@ -3,13 +3,13 @@ from pathlib import Path
 from typing import Any, Optional
 
 import click
+
+from dagster_dg_cli.cli.utils import create_temp_workspace_file
 from dagster_dg_core.config import normalize_cli_config
 from dagster_dg_core.context import DgContext
 from dagster_dg_core.shared_options import dg_global_options, dg_path_options
 from dagster_dg_core.utils import DgClickCommand, DgClickGroup, exit_with_error, pushd
 from dagster_dg_core.utils.telemetry import cli_telemetry_wrapper
-
-from dagster_dg_cli.cli.utils import create_temp_workspace_file
 
 
 @click.group(name="check", cls=DgClickGroup)

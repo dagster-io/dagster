@@ -1,9 +1,10 @@
 import datetime
 from typing import Any
 
-import dagster as dg
 import pytest
 from pytest import fixture
+
+import dagster as dg
 
 
 @fixture

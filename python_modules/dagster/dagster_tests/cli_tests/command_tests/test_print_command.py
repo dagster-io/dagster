@@ -1,8 +1,8 @@
-import dagster as dg
 import pytest
 from click.testing import CliRunner
-from dagster._cli.job import execute_print_command, job_print_command
 
+import dagster as dg
+from dagster._cli.job import execute_print_command, job_print_command
 from dagster_tests.cli_tests.command_tests.test_cli_commands import (
     launch_command_contexts,
     valid_remote_job_target_cli_args,

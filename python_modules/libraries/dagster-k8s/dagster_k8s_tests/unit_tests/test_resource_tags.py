@@ -1,4 +1,5 @@
 import pytest
+
 from dagster import DynamicOut, DynamicOutput, job, op
 from dagster._core.errors import DagsterInvalidConfigError
 from dagster._core.execution.api import create_execution_plan

@@ -2,6 +2,7 @@ import time
 
 import pytest
 import sqlalchemy as db
+
 from dagster_mysql.run_storage import MySQLRunStorage
 
 

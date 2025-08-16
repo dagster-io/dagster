@@ -4,8 +4,6 @@ from collections.abc import Mapping, Sequence
 from subprocess import PIPE, Popen
 from typing import Optional, Union
 
-from dagster_pipes import PipesExtras
-
 from dagster import _check as check
 from dagster._annotations import public
 from dagster._core.definitions.resource_annotation import TreatAsResourceParam
@@ -23,6 +21,7 @@ from dagster._core.pipes.utils import (
     PipesTempFileMessageReader,
     open_pipes_session,
 )
+from dagster_pipes import PipesExtras
 
 
 @public

@@ -1,4 +1,3 @@
-# ruff: noqa: I001 - import order differs between CI and local due to package installation differences
 import json
 import subprocess
 import tempfile
@@ -8,16 +7,8 @@ from typing import Any, Optional
 import pytest
 import responses
 import yaml
-from dagster_aws.ecs.container_context import EcsContainerContext
-from dagster_dg_core.utils import pushd
-from dagster_docker.container_context import DockerContainerContext
-from dagster_k8s.container_context import K8sContainerContext
-from dagster_test.dg_utils.utils import (
-    ProxyRunner,
-    isolated_example_project_foo_bar,
-    isolated_example_workspace,
-)
 
+from dagster_aws.ecs.container_context import EcsContainerContext
 from dagster_dg_cli.cli.plus.constants import DgPlusAgentPlatform
 from dagster_dg_cli.cli.scaffold.github_actions import REGISTRY_INFOS
 from dagster_dg_cli.utils.plus import gql
@@ -25,6 +16,14 @@ from dagster_dg_cli_tests.cli_tests.plus_tests.utils import (
     PYTHON_VERSION,
     mock_gql_response,
     mock_hybrid_response,
+)
+from dagster_dg_core.utils import pushd
+from dagster_docker.container_context import DockerContainerContext
+from dagster_k8s.container_context import K8sContainerContext
+from dagster_test.dg_utils.utils import (
+    ProxyRunner,
+    isolated_example_project_foo_bar,
+    isolated_example_workspace,
 )
 
 

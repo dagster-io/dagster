@@ -7,6 +7,8 @@ from unittest.mock import MagicMock, patch
 
 import pandas
 import pytest
+from pandas import DataFrame, Timestamp
+
 from dagster import (
     AssetExecutionContext,
     AssetIn,
@@ -47,7 +49,6 @@ from dagster_snowflake_pandas.snowflake_pandas_type_handler import (
     _convert_string_to_timestamp,
     _convert_timestamp_to_string,
 )
-from pandas import DataFrame, Timestamp
 
 if TYPE_CHECKING:
     from dagster._core.definitions.metadata.metadata_value import IntMetadataValue

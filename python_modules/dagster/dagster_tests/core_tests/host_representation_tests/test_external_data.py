@@ -1,8 +1,9 @@
 from collections.abc import Sequence
 from datetime import datetime
 
-import dagster as dg
 import pytest
+
+import dagster as dg
 from dagster import AssetsDefinition
 from dagster._check import ParameterCheckError
 from dagster._core.definitions.assets.definition.asset_spec import AssetExecutionType

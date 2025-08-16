@@ -4,6 +4,8 @@ from unittest import mock
 
 import pytest
 from click.testing import CliRunner
+from starlette.testclient import TestClient
+
 from dagster._core.instance import DagsterInstance
 from dagster._core.telemetry import START_DAGSTER_WEBSERVER, UPDATE_REPO_STATS, hash_name
 from dagster._core.test_utils import instance_for_test
@@ -18,7 +20,6 @@ from dagster_webserver.cli import (
     dagster_webserver,
     host_dagster_ui_with_workspace_process_context,
 )
-from starlette.testclient import TestClient
 
 
 @pytest.fixture

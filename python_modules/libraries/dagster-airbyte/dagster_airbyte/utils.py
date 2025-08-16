@@ -9,7 +9,6 @@ from dagster import (
 )
 from dagster._core.definitions.metadata.table import TableColumn, TableSchema
 from dagster._utils.names import clean_name_lower
-
 from dagster_airbyte.types import AirbyteOutput
 
 if TYPE_CHECKING:

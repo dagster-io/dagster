@@ -3,9 +3,9 @@ from functools import cache
 from pathlib import Path
 from typing import Any, Union, cast
 
-import dagster._check as check
 import orjson
 
+import dagster._check as check
 from dagster_dbt.errors import DagsterDbtManifestNotFoundError
 
 DbtManifestParam = Union[Mapping[str, Any], str, Path]

@@ -4,9 +4,10 @@ import urllib.request
 import zipfile
 
 import requests
+from pandas import DataFrame
+
 from dagster import DynamicPartitionsDefinition, Output, asset, get_dagster_logger
 from dagster._time import parse_time_string
-from pandas import DataFrame
 
 releases_partitions_def = DynamicPartitionsDefinition(name="releases")
 

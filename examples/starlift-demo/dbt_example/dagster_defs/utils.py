@@ -8,7 +8,6 @@ from dagster._core.definitions.assets.definition.assets_definition import (
 from dagster._core.definitions.input import In
 from dagster_airlift.core.airflow_instance import AirflowInstance
 from dagster_airlift.core.basic_auth import AirflowBasicAuthBackend
-
 from dbt_example.dagster_defs.constants import (
     AIRFLOW_BASE_URL,
     AIRFLOW_INSTANCE_NAME,

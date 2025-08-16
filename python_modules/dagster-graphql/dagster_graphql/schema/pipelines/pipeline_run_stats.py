@@ -1,7 +1,7 @@
-import dagster._check as check
 import graphene
-from dagster._core.storage.dagster_run import DagsterRunStatsSnapshot
 
+import dagster._check as check
+from dagster._core.storage.dagster_run import DagsterRunStatsSnapshot
 from dagster_graphql.schema.errors import GraphenePythonError
 
 

@@ -1,7 +1,8 @@
 import enum
 
-import dagster as dg
 import pytest
+
+import dagster as dg
 from dagster import Enum
 
 

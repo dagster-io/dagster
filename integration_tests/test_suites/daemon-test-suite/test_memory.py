@@ -4,6 +4,7 @@ import time
 from contextlib import contextmanager
 
 import objgraph
+
 from dagster import RunRequest, job, op, repository, schedule, sensor
 from dagster._core.test_utils import instance_for_test
 from dagster._core.workspace.load_target import PythonFileTarget

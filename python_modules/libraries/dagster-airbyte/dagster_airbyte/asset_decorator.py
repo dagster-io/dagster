@@ -3,7 +3,6 @@ from typing import Any, Callable, Optional
 from dagster import AssetsDefinition, multi_asset
 from dagster._annotations import beta
 from dagster._core.errors import DagsterInvariantViolationError
-
 from dagster_airbyte.resources import AirbyteCloudWorkspace
 from dagster_airbyte.translator import AirbyteMetadataSet, DagsterAirbyteTranslator
 

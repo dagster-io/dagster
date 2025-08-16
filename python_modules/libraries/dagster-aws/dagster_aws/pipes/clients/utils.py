@@ -1,8 +1,9 @@
 from collections.abc import Sequence
 from typing import TYPE_CHECKING, Literal, TypedDict, TypeVar, Union, cast, overload
 
-from dagster._core.pipes.utils import PipesSession
 from typing_extensions import NotRequired
+
+from dagster._core.pipes.utils import PipesSession
 
 if TYPE_CHECKING:
     from mypy_boto3_emr.type_defs import ConfigurationTypeDef as EMRConfigurationUnionTypeDef

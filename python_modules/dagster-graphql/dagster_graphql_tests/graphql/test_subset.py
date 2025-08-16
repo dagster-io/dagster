@@ -3,7 +3,6 @@ from typing import AbstractSet, Any  # noqa: UP035
 
 from dagster._core.workspace.context import WorkspaceRequestContext
 from dagster_graphql.test.utils import GqlResult, execute_dagster_graphql, infer_job_selector
-
 from dagster_graphql_tests.graphql.graphql_context_test_suite import (
     NonLaunchableGraphQLContextTestMatrix,
 )

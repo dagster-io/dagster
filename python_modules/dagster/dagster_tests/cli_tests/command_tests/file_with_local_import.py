@@ -1,5 +1,6 @@
-import dagster as dg
 import dummy_local_file  # noqa: F401 # type: ignore
+
+import dagster as dg
 
 
 @dg.op

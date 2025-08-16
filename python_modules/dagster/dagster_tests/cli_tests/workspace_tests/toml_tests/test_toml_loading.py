@@ -1,9 +1,10 @@
 import textwrap
 from tempfile import NamedTemporaryFile
 
+from pytest import raises
+
 import dagster as dg
 from dagster._core.workspace.load_target import get_origins_from_toml, is_valid_modules_list
-from pytest import raises
 
 
 def test_load_python_module_from_toml():

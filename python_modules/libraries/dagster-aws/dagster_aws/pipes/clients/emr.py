@@ -4,6 +4,7 @@ import time
 from typing import TYPE_CHECKING, Any, Optional, Union, cast
 
 import boto3
+
 import dagster._check as check
 from dagster import MetadataValue, PipesClient
 from dagster._annotations import public
@@ -18,7 +19,6 @@ from dagster._core.pipes.client import (
     PipesMessageReader,
 )
 from dagster._core.pipes.utils import PipesEnvContextInjector, PipesSession, open_pipes_session
-
 from dagster_aws.emr.emr import EMR_CLUSTER_TERMINATED_STATES
 from dagster_aws.pipes.clients.utils import emr_inject_pipes_env_vars
 from dagster_aws.pipes.message_readers import (

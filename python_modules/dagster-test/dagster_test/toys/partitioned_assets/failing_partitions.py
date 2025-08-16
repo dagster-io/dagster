@@ -6,7 +6,6 @@ from dagster._core.definitions.partitions.definition import (
     MultiPartitionsDefinition,
     StaticPartitionsDefinition,
 )
-
 from dagster_test.toys.partitioned_assets.dynamic_asset_partitions import (
     multipartition_w_dynamic_partitions_def,
 )

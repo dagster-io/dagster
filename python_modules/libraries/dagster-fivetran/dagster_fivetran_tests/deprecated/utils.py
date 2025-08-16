@@ -1,8 +1,9 @@
 import base64
 
 import responses
-from dagster._utils.merger import deep_merge_dicts
 from responses import matchers
+
+from dagster._utils.merger import deep_merge_dicts
 
 DEFAULT_CONNECTOR_ID = "some_connector"
 DEFAULT_CONNECTOR_ID_2 = "some_other_connector"

@@ -1,6 +1,11 @@
 import pickle
 from typing import Any, Optional, Union
 
+from google.api_core.exceptions import Forbidden, ServiceUnavailable, TooManyRequests
+from google.cloud import storage
+from pydantic import Field
+from upath import UPath
+
 from dagster import (
     ConfigurableIOManager,
     InputContext,
@@ -15,11 +20,6 @@ from dagster._core.storage.upath_io_manager import UPathIOManager
 from dagster._utils import PICKLE_PROTOCOL
 from dagster._utils.backoff import backoff
 from dagster._utils.cached_method import cached_method
-from google.api_core.exceptions import Forbidden, ServiceUnavailable, TooManyRequests
-from google.cloud import storage
-from pydantic import Field
-from upath import UPath
-
 from dagster_gcp.gcs.resources import GCSResource
 
 DEFAULT_LEASE_DURATION = 60  # One minute

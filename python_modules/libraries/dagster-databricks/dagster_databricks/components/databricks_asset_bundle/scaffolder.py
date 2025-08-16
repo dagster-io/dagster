@@ -1,9 +1,10 @@
 import os
 
+from pydantic import BaseModel, Field
+
 from dagster.components.component.component_scaffolder import Scaffolder
 from dagster.components.component_scaffolding import scaffold_component
 from dagster.components.scaffold.scaffold import ScaffoldRequest
-from pydantic import BaseModel, Field
 
 
 class DatabricksAssetBundleScaffoldParams(BaseModel):

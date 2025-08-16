@@ -1,6 +1,7 @@
 from collections.abc import Generator
 
 import pytest
+
 from dagster_dbt.cloud_v2.resources import DbtCloudWorkspace, get_dagster_adhoc_job_name
 from dagster_dbt.cloud_v2.types import DbtCloudEnvironment, DbtCloudProject
 from dagster_dbt_cloud_kitchen_sink.resources import (

@@ -1,9 +1,10 @@
 from datetime import datetime
 from pathlib import Path
 
-import dagster as dg
 import pytest
 import pytz
+
+import dagster as dg
 from dagster import DagsterEventType, MetadataValue
 from dagster._check import CheckError
 from dagster._core.definitions.metadata import DagsterInvalidMetadata, normalize_metadata

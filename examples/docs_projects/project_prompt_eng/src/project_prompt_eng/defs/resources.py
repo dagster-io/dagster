@@ -1,7 +1,8 @@
-import dagster as dg
 import requests
-from dagster_anthropic import AnthropicResource
 from pydantic import Field
+
+import dagster as dg
+from dagster_anthropic import AnthropicResource
 
 BASE_URL = "https://developer.nrel.gov/api/alt-fuel-stations/v1.json"
 

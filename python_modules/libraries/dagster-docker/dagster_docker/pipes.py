@@ -4,6 +4,7 @@ from typing import Any, Optional, Union
 
 import docker
 import docker.errors
+
 from dagster import (
     OpExecutionContext,
     _check as check,

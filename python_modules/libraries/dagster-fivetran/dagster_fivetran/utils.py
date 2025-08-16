@@ -13,7 +13,6 @@ from dagster._core.definitions.metadata import RawMetadataMapping
 from dagster._core.definitions.metadata.metadata_set import TableMetadataSet
 from dagster._core.definitions.metadata.table import TableColumn, TableSchema
 from dagster._utils.names import clean_name_lower
-
 from dagster_fivetran.types import FivetranOutput
 
 if TYPE_CHECKING:

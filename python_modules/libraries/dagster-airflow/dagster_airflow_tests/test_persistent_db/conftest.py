@@ -12,11 +12,12 @@ from datetime import datetime
 import airflow
 import pytest
 from airflow.utils import db
+from sqlalchemy.exc import OperationalError
+
 from dagster import DagsterInstance
 from dagster._core.test_utils import environ, instance_for_test
 from dagster._utils import file_relative_path
 from dagster_airflow.utils import is_airflow_2_loaded_in_environment
-from sqlalchemy.exc import OperationalError
 
 
 @pytest.fixture(name="docker_compose_file", scope="session")

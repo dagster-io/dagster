@@ -2,8 +2,9 @@ import os
 from collections.abc import Mapping, Sequence
 from typing import Any, NamedTuple, Optional
 
-import dagster._check as check
 import requests
+
+import dagster._check as check
 from dagster._utils.backoff import backoff
 from dagster._utils.merger import merge_dicts
 

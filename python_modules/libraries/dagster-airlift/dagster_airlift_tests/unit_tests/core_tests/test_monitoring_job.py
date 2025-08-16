@@ -1,8 +1,9 @@
 import json
 from datetime import datetime, timedelta, timezone
 
-import dagster._check as check
 import pytest
+
+import dagster._check as check
 from dagster import AssetKey, DagsterInstance
 from dagster._core.definitions import materialize
 from dagster._core.definitions.decorators.asset_decorator import asset
@@ -41,9 +42,8 @@ from dagster_airlift.core.monitoring_job.builder import (
 from dagster_airlift.core.serialization.defs_construction import make_default_dag_asset_key
 from dagster_airlift.core.utils import monitoring_job_name
 from dagster_airlift.test import make_dag_run, make_task_instance
-from dagster_test.utils.definitions_execute_in_process import definitions_execute_job_in_process
-
 from dagster_airlift_tests.unit_tests.conftest import create_defs_and_instance
+from dagster_test.utils.definitions_execute_in_process import definitions_execute_job_in_process
 
 
 def make_dag_key(dag_id: str) -> AssetKey:

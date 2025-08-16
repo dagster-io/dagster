@@ -4,8 +4,9 @@ import time
 from collections import defaultdict
 from collections.abc import Sequence
 
-import dagster as dg
 import pytest
+
+import dagster as dg
 from dagster import Backoff, DagsterEventType, Jitter
 from dagster._core.definitions.events import HookExecutionResult
 from dagster._core.definitions.job_base import InMemoryJob

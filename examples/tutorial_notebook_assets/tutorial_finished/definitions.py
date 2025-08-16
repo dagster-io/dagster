@@ -1,5 +1,6 @@
-from dagster import Definitions, load_assets_from_modules
 from dagstermill import ConfigurableLocalOutputNotebookIOManager
+
+from dagster import Definitions, load_assets_from_modules
 
 from . import assets
 

@@ -4,10 +4,11 @@ from typing import Any, Optional
 
 import jwt
 import requests
+from pydantic import Field
+
 from dagster import ConfigurableResource, resource
 from dagster._annotations import deprecated, public
 from dagster._core.definitions.resource_definition import dagster_maintained_resource
-from pydantic import Field
 
 GET_REPO_ID_QUERY = """
 query get_repo_id($repo_name: String!, $repo_owner: String!) {

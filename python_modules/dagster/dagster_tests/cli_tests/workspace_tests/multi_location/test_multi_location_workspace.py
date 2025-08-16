@@ -1,9 +1,10 @@
 import sys
 from contextlib import ExitStack
 
-import dagster as dg
 import pytest
 import yaml
+
+import dagster as dg
 from dagster._core.remote_representation import GrpcServerCodeLocation
 from dagster._core.workspace.context import WorkspaceProcessContext
 from dagster._core.workspace.load import (

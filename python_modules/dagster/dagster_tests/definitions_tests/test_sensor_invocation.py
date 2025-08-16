@@ -3,8 +3,9 @@ from contextlib import contextmanager
 from typing import cast
 from unittest import mock
 
-import dagster as dg
 import pytest
+
+import dagster as dg
 from dagster import AssetSelection, DagsterInstance, DagsterRunStatus, RunRequest, asset_sensor
 from dagster._core.definitions.metadata import MetadataValue
 from dagster._core.storage.tags import PARTITION_NAME_TAG

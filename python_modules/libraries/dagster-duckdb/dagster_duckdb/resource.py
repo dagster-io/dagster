@@ -2,10 +2,11 @@ from contextlib import contextmanager
 from typing import Any
 
 import duckdb
-from dagster import ConfigurableResource
-from dagster._utils.backoff import backoff
 from packaging.version import Version
 from pydantic import Field
+
+from dagster import ConfigurableResource
+from dagster._utils.backoff import backoff
 
 
 class DuckDBResource(ConfigurableResource):

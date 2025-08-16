@@ -1,15 +1,14 @@
 import textwrap
 from typing import Optional
 
+from dagster.components.component.component import Component
+from dagster.components.scaffold.scaffold import Scaffolder, get_scaffolder
 from dagster_shared.serdes.objects.package_entry import (
     ComponentFeatureData,
     EnvRegistryKey,
     EnvRegistryObjectSnap,
     ScaffoldTargetTypeData,
 )
-
-from dagster.components.component.component import Component
-from dagster.components.scaffold.scaffold import Scaffolder, get_scaffolder
 
 
 def _clean_docstring(docstring: str) -> str:

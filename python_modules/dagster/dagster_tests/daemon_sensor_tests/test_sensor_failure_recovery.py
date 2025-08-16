@@ -1,8 +1,9 @@
 import multiprocessing
 from unittest.mock import patch
 
-import dagster as dg
 import pytest
+
+import dagster as dg
 from dagster._core.definitions.run_request import InstigatorType
 from dagster._core.instance import DagsterInstance
 from dagster._core.scheduler.instigation import InstigatorState, InstigatorStatus, TickStatus
@@ -21,7 +22,6 @@ from dagster._daemon.sensor import execute_sensor_iteration
 from dagster._time import create_datetime, get_timezone
 from dagster._vendored.dateutil.relativedelta import relativedelta
 from dagster_shared.seven import IS_WINDOWS
-
 from dagster_tests.daemon_sensor_tests.conftest import create_workspace_load_target
 from dagster_tests.daemon_sensor_tests.test_sensor_run import wait_for_all_runs_to_start
 

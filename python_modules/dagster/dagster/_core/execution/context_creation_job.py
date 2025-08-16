@@ -17,8 +17,6 @@ from typing import (  # noqa: UP035
     cast,
 )
 
-from dagster_shared.error import DagsterError
-
 import dagster._check as check
 from dagster._core.definitions import ExecutorDefinition, JobDefinition
 from dagster._core.definitions.executor_definition import check_cross_process_constraints
@@ -50,6 +48,7 @@ from dagster._core.system_config.objects import ResolvedRunConfig
 from dagster._loggers import default_loggers, default_system_loggers
 from dagster._utils import EventGenerationManager
 from dagster._utils.error import serializable_error_info_from_exc_info
+from dagster_shared.error import DagsterError
 
 if TYPE_CHECKING:
     from dagster._core.errors import DagsterUserCodeExecutionError

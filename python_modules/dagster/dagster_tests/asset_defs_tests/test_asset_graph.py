@@ -2,8 +2,9 @@ import time
 from datetime import datetime
 from typing import TYPE_CHECKING, Callable, Optional, cast
 
-import dagster as dg
 import pytest
+
+import dagster as dg
 from dagster import AssetsDefinition, AutomationCondition
 from dagster._core.definitions.assets.graph.asset_graph import AssetGraph
 from dagster._core.definitions.assets.graph.asset_graph_subset import AssetGraphSubset

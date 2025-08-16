@@ -3,8 +3,6 @@ from collections.abc import Sequence
 from functools import cached_property
 from typing import TYPE_CHECKING, Union
 
-from dagster_shared import check
-
 from dagster.components.core.context import ComponentLoadContext
 from dagster.components.lib.executable_component.component import ExecutableComponent, OpSpec
 from dagster.components.lib.executable_component.script_utils import (
@@ -12,6 +10,7 @@ from dagster.components.lib.executable_component.script_utils import (
     get_cmd,
     invoke_runner,
 )
+from dagster_shared import check
 
 if TYPE_CHECKING:
     from dagster._core.execution.context.asset_check_execution_context import (

@@ -21,6 +21,8 @@ import warnings
 from collections.abc import Sequence
 from typing import cast
 
+from typing_extensions import TypedDict
+
 from dagster import (
     AssetKey,
     AssetsDefinition,
@@ -39,8 +41,6 @@ from dagster import (
     SourceAsset,
     define_asset_job,
 )
-from typing_extensions import TypedDict
-
 from dagster_test.toys.user_computed_data_versions.external_system import (
     AssetInfo,
     ExternalSystem,

@@ -9,10 +9,9 @@ from collections.abc import Iterator, Mapping, Sequence
 from typing import Any, Callable, Optional, cast
 
 import click
-import dagster_shared.seven as seven
-from dagster_shared.cli import python_pointer_options
 
 import dagster._check as check
+import dagster_shared.seven as seven
 from dagster._cli.utils import assert_no_remaining_opts, get_instance_for_cli
 from dagster._cli.workspace.cli_target import PythonPointerOpts
 from dagster._core.definitions.metadata import MetadataValue
@@ -50,6 +49,7 @@ from dagster._utils.hosted_user_process import recon_job_from_origin
 from dagster._utils.interrupts import capture_interrupts, setup_interrupt_handlers
 from dagster._utils.log import configure_loggers
 from dagster._utils.tags import get_boolean_tag_value
+from dagster_shared.cli import python_pointer_options
 
 
 @click.group(name="api", hidden=True)

@@ -1,9 +1,9 @@
 from typing import Optional, Union
 
-from dagster import ConfigurableResource
 from deltalake import DeltaTable
 from pydantic import Field
 
+from dagster import ConfigurableResource
 from dagster_deltalake.config import AzureConfig, ClientConfig, GcsConfig, LocalConfig, S3Config
 
 

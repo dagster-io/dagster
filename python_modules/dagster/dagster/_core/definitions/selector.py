@@ -1,8 +1,6 @@
 from collections.abc import Iterable, Mapping, Sequence
 from typing import AbstractSet, Any, Optional  # noqa: UP035
 
-from dagster_shared.utils.hash import make_hashable
-
 import dagster._check as check
 from dagster._annotations import public
 from dagster._core.definitions.asset_checks.asset_check_spec import AssetCheckKey
@@ -10,6 +8,7 @@ from dagster._core.definitions.events import AssetKey
 from dagster._core.definitions.repository_definition import SINGLETON_REPOSITORY_NAME
 from dagster._record import IHaveNew, record, record_custom
 from dagster._serdes import create_snapshot_id, whitelist_for_serdes
+from dagster_shared.utils.hash import make_hashable
 
 
 @record_custom

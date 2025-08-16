@@ -1,5 +1,3 @@
-from dagster_shared.libraries import DagsterLibraryRegistry
-
 from dagster_gcp.bigquery.io_manager import (
     BigQueryIOManager as BigQueryIOManager,
     build_bigquery_io_manager as build_bigquery_io_manager,
@@ -40,5 +38,6 @@ from dagster_gcp.gcs.io_manager import (
     gcs_pickle_io_manager as gcs_pickle_io_manager,
 )
 from dagster_gcp.version import __version__
+from dagster_shared.libraries import DagsterLibraryRegistry
 
 DagsterLibraryRegistry.register("dagster-gcp", __version__)

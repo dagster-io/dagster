@@ -5,10 +5,11 @@ import tempfile
 from pathlib import Path
 from typing import Any, Optional, TypeVar
 
+from pydantic import BaseModel
+
 import dagster as dg
 from dagster.components.lib.shim_components.base import ShimScaffolder, TModel
 from dagster.components.scaffold.scaffold import NoParams
-from pydantic import BaseModel
 
 T = TypeVar("T", bound=BaseModel)
 

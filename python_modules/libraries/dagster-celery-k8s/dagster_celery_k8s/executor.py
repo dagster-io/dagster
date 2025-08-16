@@ -4,6 +4,7 @@ import sys
 import time
 
 import kubernetes
+
 from dagster import (
     DagsterEvent,
     DagsterEventType,
@@ -26,6 +27,8 @@ from dagster._utils.error import serializable_error_info_from_exc_info
 from dagster_celery.config import DEFAULT_CONFIG, dict_wrapper
 from dagster_celery.core_execution_loop import DELEGATE_MARKER
 from dagster_celery.defaults import broker_url, result_backend
+from dagster_celery_k8s.config import CELERY_K8S_CONFIG_KEY, celery_k8s_executor_config
+from dagster_celery_k8s.launcher import CeleryK8sRunLauncher
 from dagster_k8s import DagsterK8sJobConfig, construct_dagster_k8s_job
 from dagster_k8s.client import (
     DagsterK8sAPIRetryLimitExceeded,
@@ -41,9 +44,6 @@ from dagster_k8s.job import (
     get_k8s_job_name,
     get_user_defined_k8s_config,
 )
-
-from dagster_celery_k8s.config import CELERY_K8S_CONFIG_KEY, celery_k8s_executor_config
-from dagster_celery_k8s.launcher import CeleryK8sRunLauncher
 
 
 @executor(

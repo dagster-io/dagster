@@ -1,10 +1,15 @@
 from enum import Enum
 from typing import Optional
 
-import dagster
-import dagster as dg
 import pydantic
 import pytest
+from pydantic import (
+    BaseModel,
+    Field as PyField,
+)
+
+import dagster
+import dagster as dg
 from dagster import (
     EnvVar,
     _check as check,
@@ -16,10 +21,6 @@ from dagster._config.type_printer import print_config_type_to_string
 from dagster._core.errors import DagsterInvalidPythonicConfigDefinitionError
 from dagster._core.test_utils import environ
 from dagster._utils.cached_method import cached_method
-from pydantic import (
-    BaseModel,
-    Field as PyField,
-)
 
 
 def test_disallow_config_schema_conflict():

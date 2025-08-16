@@ -10,7 +10,6 @@ from pathlib import Path
 from typing import Any, Optional, Union
 
 import yaml
-from dagster_shared import check
 
 from dagster._annotations import deprecated
 from dagster._core.definitions.definitions_class import Definitions
@@ -20,6 +19,7 @@ from dagster.components.component_scaffolding import scaffold_object
 from dagster.components.core.component_tree import ComponentTree
 from dagster.components.core.defs_module import CompositeYamlComponent, get_component
 from dagster.components.scaffold.scaffold import ScaffoldFormatOptions
+from dagster_shared import check
 
 
 @dataclass

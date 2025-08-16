@@ -2,8 +2,9 @@ from collections.abc import Sequence
 from datetime import datetime
 from typing import Callable, Optional
 
-import dagster as dg
 import pytest
+
+import dagster as dg
 from dagster import AssetExecutionContext
 from dagster._check import CheckError
 from dagster._core.test_utils import get_paginated_partition_keys

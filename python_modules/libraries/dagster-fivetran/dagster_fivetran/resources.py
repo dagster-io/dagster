@@ -10,6 +10,10 @@ from typing import Any, Callable, Optional, Union
 from urllib.parse import urljoin
 
 import requests
+from pydantic import Field
+from requests.auth import HTTPBasicAuth
+from requests.exceptions import RequestException
+
 from dagster import (
     AssetExecutionContext,
     AssetMaterialization,
@@ -32,11 +36,6 @@ from dagster._core.definitions.resource_definition import dagster_maintained_res
 from dagster._record import as_dict, record
 from dagster._utils.cached_method import cached_method
 from dagster._vendored.dateutil import parser
-from dagster_shared.serdes import deserialize_value
-from pydantic import Field
-from requests.auth import HTTPBasicAuth
-from requests.exceptions import RequestException
-
 from dagster_fivetran.constants import (
     FIVETRAN_RECONSTRUCTION_METADATA_KEY_PREFIX,
     FIVETRAN_SNAPSHOT_ENV_VAR_NAME,
@@ -62,6 +61,7 @@ from dagster_fivetran.utils import (
     get_translator_from_fivetran_assets,
     metadata_for_table,
 )
+from dagster_shared.serdes import deserialize_value
 
 FIVETRAN_API_BASE = "https://api.fivetran.com"
 FIVETRAN_API_VERSION = "v1"

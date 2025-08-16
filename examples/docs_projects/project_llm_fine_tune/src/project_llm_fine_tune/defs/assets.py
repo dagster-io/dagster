@@ -4,11 +4,12 @@ from collections import Counter, defaultdict
 from collections.abc import Generator, Iterable
 from textwrap import dedent
 
+import pandas as pd
+from openai import OpenAI
+
 import dagster as dg
 import dagster_duckdb as dg_duckdb
-import pandas as pd
 from dagster_openai import OpenAIResource
-from openai import OpenAI
 
 MODEL_NAME = "gpt-4o-mini-2024-07-18"
 TRAINING_FILE_NUM = 50

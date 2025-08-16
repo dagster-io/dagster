@@ -1,5 +1,4 @@
 from dagster import Field, Permissive, StringSource
-
 from dagster_gcp.dataproc.configs_dataproc_cluster import define_dataproc_cluster_config
 from dagster_gcp.dataproc.configs_dataproc_job import define_dataproc_job_config
 

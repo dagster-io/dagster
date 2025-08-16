@@ -1,5 +1,6 @@
-import dagster as dg
 import pytest
+
+import dagster as dg
 from dagster.components.lib.executable_component.function_component import ExecuteFnMetadata
 from dagster_shared.check import CheckError
 

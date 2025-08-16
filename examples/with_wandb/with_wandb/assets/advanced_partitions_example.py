@@ -1,4 +1,5 @@
 import wandb
+
 from dagster import AssetExecutionContext, AssetIn, StaticPartitionsDefinition, asset
 
 partitions_def = StaticPartitionsDefinition(["red", "orange", "yellow", "blue", "green"])

@@ -1,5 +1,6 @@
-import dagster as dg
 import pytest
+
+import dagster as dg
 from dagster import AssetSelection, DefaultSensorStatus
 from dagster._check import ParameterCheckError
 from dagster._core.definitions.declarative_automation.automation_condition import (

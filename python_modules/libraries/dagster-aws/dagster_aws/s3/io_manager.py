@@ -2,6 +2,9 @@ import io
 import pickle
 from typing import Any, Optional, Union
 
+from pydantic import Field
+from upath import UPath
+
 from dagster import (
     ConfigurableIOManager,
     InputContext,
@@ -16,9 +19,6 @@ from dagster._core.storage.io_manager import dagster_maintained_io_manager
 from dagster._core.storage.upath_io_manager import UPathIOManager
 from dagster._utils import PICKLE_PROTOCOL
 from dagster._utils.cached_method import cached_method
-from pydantic import Field
-from upath import UPath
-
 from dagster_aws.s3.resources import S3Resource
 
 

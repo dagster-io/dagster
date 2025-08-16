@@ -1,9 +1,9 @@
 from collections.abc import Sequence
 
-import dagster._check as check
 import graphene
-from dagster._core.remote_origin import RemoteRepositoryOrigin
 
+import dagster._check as check
+from dagster._core.remote_origin import RemoteRepositoryOrigin
 from dagster_graphql.schema.util import ResolveInfo, non_null_list
 
 

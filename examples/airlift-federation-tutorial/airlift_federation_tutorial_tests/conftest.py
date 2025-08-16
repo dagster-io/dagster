@@ -6,6 +6,7 @@ from contextlib import contextmanager
 from pathlib import Path
 
 import pytest
+
 from dagster_airlift.core import AirflowBasicAuthBackend, AirflowInstance
 from dagster_airlift.test.shared_fixtures import stand_up_airflow, stand_up_dagster
 

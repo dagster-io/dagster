@@ -2,14 +2,14 @@ import os
 import re
 
 import click
-import dagster as dg
 import pytest
 from click import UsageError
 from click.testing import CliRunner
+
+import dagster as dg
 from dagster._cli.job import execute_execute_command, job_execute_command
 from dagster._cli.workspace.cli_target import PythonPointerOpts
 from dagster._core.test_utils import new_cwd
-
 from dagster_tests.cli_tests.command_tests.test_cli_commands import (
     job_python_origin_contexts,
     non_existant_python_origin_target_args,

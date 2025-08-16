@@ -5,8 +5,9 @@ import uuid
 from collections import defaultdict
 from threading import Thread
 
-import dagster as dg
 import pytest
+
+import dagster as dg
 from dagster import AssetsDefinition, DagsterInstance, ResourceDefinition
 from dagster._core.definitions.assets.definition.cacheable_assets_definition import (
     AssetsDefinitionCacheableData,

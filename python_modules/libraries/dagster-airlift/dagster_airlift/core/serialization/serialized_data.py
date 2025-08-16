@@ -10,7 +10,6 @@ from dagster import (
 from dagster._annotations import PublicAttr, beta
 from dagster._record import record
 from dagster._serdes import whitelist_for_serdes
-
 from dagster_airlift.constants import (
     DAG_ID_TAG_KEY,
     DAG_MAPPING_METADATA_KEY,

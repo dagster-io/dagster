@@ -3,6 +3,7 @@ from collections.abc import Mapping
 from unittest import mock
 
 import pytest
+
 from dagster._core.errors import DagsterCodeLocationLoadError, DagsterCodeLocationNotFoundError
 from dagster._core.remote_origin import RegisteredCodeLocationOrigin
 from dagster._core.remote_representation.code_location import CodeLocation

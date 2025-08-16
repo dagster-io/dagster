@@ -4,14 +4,6 @@ from unittest import mock
 
 import kubernetes
 import pytest
-from dagster_k8s.client import (
-    DagsterK8sAPIRetryLimitExceeded,
-    DagsterK8sError,
-    DagsterK8sUnrecoverableAPIError,
-    DagsterKubernetesClient,
-    KubernetesWaitingReasons,
-    WaitForPodState,
-)
 from kubernetes.client.models import (
     V1ContainerState,
     V1ContainerStateRunning,
@@ -25,6 +17,15 @@ from kubernetes.client.models import (
     V1Pod,
     V1PodList,
     V1PodStatus,
+)
+
+from dagster_k8s.client import (
+    DagsterK8sAPIRetryLimitExceeded,
+    DagsterK8sError,
+    DagsterK8sUnrecoverableAPIError,
+    DagsterKubernetesClient,
+    KubernetesWaitingReasons,
+    WaitForPodState,
 )
 
 

@@ -2,9 +2,9 @@ import re
 
 import pytest
 import responses
+
 from dagster import Failure
 from dagster._check import CheckError
-
 from dagster_dbt_tests.cloud.utils import (
     SAMPLE_API_PREFIX,
     SAMPLE_API_V3_PREFIX,

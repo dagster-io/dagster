@@ -4,6 +4,7 @@ from pathlib import Path
 
 import pytest
 import yaml
+
 from dagster import file_relative_path
 from dagster_sling import SlingConnectionResource, SlingResource
 

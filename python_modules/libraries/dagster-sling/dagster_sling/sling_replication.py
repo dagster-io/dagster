@@ -3,8 +3,9 @@ from functools import cache
 from pathlib import Path
 from typing import Any, Optional, Union, cast
 
-import dagster._check as check
 import yaml
+
+import dagster._check as check
 
 SlingReplicationParam = Union[Mapping[str, Any], str, Path]
 

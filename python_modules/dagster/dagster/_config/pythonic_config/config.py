@@ -4,13 +4,6 @@ from enum import Enum
 from functools import cached_property
 from typing import Any, Optional, cast
 
-from dagster_shared.dagster_model.pydantic_compat_layer import (
-    ModelFieldCompat,
-    PydanticUndefined,
-    model_config,
-    model_fields,
-)
-from dagster_shared.utils.cached_method import CACHED_METHOD_CACHE_FIELD
 from pydantic import BaseModel, ConfigDict
 from typing_extensions import TypeVar
 
@@ -37,6 +30,13 @@ from dagster._core.errors import (
     DagsterInvalidInvocationError,
     DagsterInvalidPythonicConfigDefinitionError,
 )
+from dagster_shared.dagster_model.pydantic_compat_layer import (
+    ModelFieldCompat,
+    PydanticUndefined,
+    model_config,
+    model_fields,
+)
+from dagster_shared.utils.cached_method import CACHED_METHOD_CACHE_FIELD
 
 INTERNAL_MARKER = "__internal__"
 

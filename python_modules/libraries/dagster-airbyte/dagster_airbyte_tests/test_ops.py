@@ -3,6 +3,7 @@ from base64 import b64encode
 
 import pytest
 import responses
+
 from dagster import job, op
 from dagster_airbyte import AirbyteOutput, airbyte_resource, airbyte_sync_op
 from dagster_airbyte.resources import AirbyteCloudResource

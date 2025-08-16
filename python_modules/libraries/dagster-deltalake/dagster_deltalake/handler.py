@@ -5,8 +5,6 @@ from typing import TYPE_CHECKING, Any, Generic, Optional, TypeVar, Union, cast
 import pyarrow as pa
 import pyarrow.compute as pc
 import pyarrow.dataset as ds
-from dagster import InputContext, MetadataValue, OutputContext, TableColumn, TableSchema
-from dagster._core.storage.db_io_manager import DbTypeHandler, TablePartitionDimension, TableSlice
 from deltalake import DeltaTable, WriterProperties, write_deltalake
 from deltalake.schema import (
     Field as DeltaField,
@@ -15,6 +13,9 @@ from deltalake.schema import (
 )
 from deltalake.table import FilterLiteralType
 from typing_extensions import TypeAlias
+
+from dagster import InputContext, MetadataValue, OutputContext, TableColumn, TableSchema
+from dagster._core.storage.db_io_manager import DbTypeHandler, TablePartitionDimension, TableSlice
 
 try:
     from pyarrow.parquet import filters_to_expression  # pyarrow >= 10.0.0

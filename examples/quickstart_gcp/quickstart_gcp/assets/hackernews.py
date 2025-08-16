@@ -4,8 +4,9 @@ from io import BytesIO
 import matplotlib.pyplot as plt
 import pandas as pd
 import requests
-from dagster import AssetExecutionContext, MetadataValue, asset
 from wordcloud import STOPWORDS, WordCloud
+
+from dagster import AssetExecutionContext, MetadataValue, asset
 
 
 @asset(group_name="hackernews", compute_kind="HackerNews API")

@@ -3,8 +3,10 @@ import tempfile
 import time
 from threading import Thread
 
-import dagster_pandas as dagster_pd
 import pytest
+from dask.distributed import Scheduler, Worker
+
+import dagster_pandas as dagster_pd
 from dagster import file_relative_path, job, op, reconstructable
 from dagster._core.definitions.input import In
 from dagster._core.definitions.job_definition import JobDefinition
@@ -13,7 +15,6 @@ from dagster._core.execution.api import execute_job, execute_run_iterator
 from dagster._core.test_utils import instance_for_test, nesting_graph
 from dagster._utils import send_interrupt
 from dagster_dask import DataFrame, dask_executor
-from dask.distributed import Scheduler, Worker
 
 
 @op

@@ -5,8 +5,9 @@ import tempfile
 from datetime import datetime
 from typing import Optional
 
-import dagster as dg
 import pytest
+
+import dagster as dg
 from dagster import AssetsDefinition, DagsterInstance, MetadataValue, PartitionsDefinition
 from dagster._core.definitions.assets.graph.asset_graph import AssetGraph
 from dagster._core.definitions.partitions.mapping import UpstreamPartitionsResult

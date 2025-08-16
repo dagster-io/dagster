@@ -8,6 +8,7 @@ from buildkite_shared.step_builders.group_step_builder import (
     GroupStepBuilder,
     GroupStepConfiguration,
 )
+
 from dagster_buildkite.defines import GCP_CREDS_FILENAME, GCP_CREDS_LOCAL_FILE
 from dagster_buildkite.images.versions import (
     BUILDKITE_BUILD_TEST_PROJECT_IMAGE_IMAGE_VERSION,

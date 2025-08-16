@@ -1,10 +1,12 @@
 from typing import ContextManager, Optional, cast  # noqa: UP035
 
-import dagster._check as check
 import sqlalchemy as db
 import sqlalchemy.dialects as db_dialects
 import sqlalchemy.exc as db_exc
 import sqlalchemy.pool as db_pool
+from sqlalchemy.engine import Connection
+
+import dagster._check as check
 from dagster._config.config_schema import UserConfigSchema
 from dagster._core.event_api import EventHandlerFn
 from dagster._core.events.log import EventLogEntry
@@ -25,8 +27,6 @@ from dagster._core.storage.sql import (
     stamp_alembic_rev,
 )
 from dagster._serdes import ConfigurableClass, ConfigurableClassData
-from sqlalchemy.engine import Connection
-
 from dagster_mysql.utils import (
     create_mysql_connection,
     mysql_alembic_config,

@@ -6,10 +6,6 @@ from functools import cached_property
 from pathlib import Path
 from typing import Any, Final, Optional
 
-from dagster_shared.record import record
-from dagster_shared.serdes.serdes import whitelist_for_serdes
-from dagster_shared.seven import resolve_module_pattern
-from dagster_shared.utils.config import get_canonical_defs_module_name
 from packaging.version import Version
 from typing_extensions import Self
 
@@ -44,6 +40,10 @@ from dagster_dg_core.utils import (
     set_toml_node,
 )
 from dagster_dg_core.utils.warnings import emit_warning
+from dagster_shared.record import record
+from dagster_shared.serdes.serdes import whitelist_for_serdes
+from dagster_shared.seven import resolve_module_pattern
+from dagster_shared.utils.config import get_canonical_defs_module_name
 
 # Project
 _DEFAULT_PROJECT_CODE_LOCATION_TARGET_MODULE: Final = "definitions"

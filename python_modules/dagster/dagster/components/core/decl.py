@@ -6,11 +6,6 @@ from functools import cached_property
 from pathlib import Path
 from typing import Generic, Optional, TypeVar, Union
 
-from dagster_shared.record import record
-from dagster_shared.serdes.objects import EnvRegistryKey
-from dagster_shared.seven import load_module_object
-from dagster_shared.yaml_utils import parse_yamls_with_source_position
-from dagster_shared.yaml_utils.source_position import SourcePosition, ValueAndSourcePositionTree
 from pydantic import BaseModel, TypeAdapter
 
 import dagster._check as check
@@ -34,6 +29,11 @@ from dagster.components.core.defs_module import (
     find_defs_or_component_yaml,
 )
 from dagster.components.resolved.core_models import AssetPostProcessor
+from dagster_shared.record import record
+from dagster_shared.serdes.objects import EnvRegistryKey
+from dagster_shared.seven import load_module_object
+from dagster_shared.yaml_utils import parse_yamls_with_source_position
+from dagster_shared.yaml_utils.source_position import SourcePosition, ValueAndSourcePositionTree
 
 T = TypeVar("T", bound=Component)
 

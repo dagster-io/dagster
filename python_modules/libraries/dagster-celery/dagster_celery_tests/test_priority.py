@@ -8,7 +8,6 @@ from collections import OrderedDict
 from dagster._core.storage.dagster_run import RunsFilter
 from dagster._core.test_utils import instance_for_test
 from dagster_celery.tags import DAGSTER_CELERY_RUN_PRIORITY_TAG
-
 from dagster_celery_tests.utils import (
     execute_eagerly_on_celery,
     execute_on_thread,

@@ -1,9 +1,9 @@
-import dagster as dg
 import pytest
+
+import dagster as dg
 from dagster import AutoMaterializeRule
 from dagster._check import ParameterCheckError
 from dagster._core.definitions.auto_materialize_rule_impls import WaitingOnAssetsRuleEvaluationData
-
 from dagster_tests.declarative_automation_tests.scenario_utils.asset_daemon_scenario import (
     AssetDaemonScenario,
     AssetRuleEvaluationSpec,

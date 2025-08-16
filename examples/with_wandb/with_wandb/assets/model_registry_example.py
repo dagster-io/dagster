@@ -1,6 +1,7 @@
 import wandb
-from dagster import AssetIn, Config, asset
 from wandb import Artifact
+
+from dagster import AssetIn, Config, asset
 
 MODEL_NAME = "my_model"
 

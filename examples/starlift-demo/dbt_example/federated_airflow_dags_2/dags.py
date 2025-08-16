@@ -1,5 +1,6 @@
 from airflow import DAG
 from airflow.operators.bash import BashOperator
+
 from dagster._time import get_current_datetime
 
 default_args = {

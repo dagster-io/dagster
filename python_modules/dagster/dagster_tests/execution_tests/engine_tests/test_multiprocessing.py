@@ -2,15 +2,15 @@ import os
 import sys
 import time
 
-import dagster as dg
 import pytest
+
+import dagster as dg
 from dagster._check import CheckError
 from dagster._core.definitions.metadata import MetadataValue
 from dagster._core.events import DagsterEventType
 from dagster._core.execution import execution_result
 from dagster._core.instance import DagsterInstance
 from dagster._utils import safe_tempfile_path, segfault
-
 from dagster_tests.execution_tests.engine_tests.retry_jobs import (
     assert_expected_failure_behavior,
     get_dynamic_job_op_failure,

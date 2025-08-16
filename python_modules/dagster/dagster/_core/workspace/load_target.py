@@ -3,8 +3,6 @@ from abc import ABC, abstractmethod
 from collections.abc import Sequence
 from typing import Optional, Union, cast
 
-from dagster_shared.record import record
-
 from dagster._core.remote_origin import (
     CodeLocationOrigin,
     GrpcServerCodeLocationOrigin,
@@ -18,6 +16,7 @@ from dagster._core.workspace.load import (
     location_origin_from_python_file,
     location_origins_from_yaml_paths,
 )
+from dagster_shared.record import record
 
 
 class WorkspaceLoadTarget(ABC):

@@ -3,8 +3,9 @@ from typing import Any
 
 import numpy as np
 import pandas as pd
-from dagster import AssetIn, asset, build_last_update_freshness_checks
 from scipy import optimize
+
+from dagster import AssetIn, asset, build_last_update_freshness_checks
 
 from .dbt import daily_order_summary_asset_key
 

@@ -2,13 +2,12 @@ from collections.abc import Sequence
 from functools import cached_property
 from typing import Annotated, Callable, Optional, Union
 
-import dagster as dg
 import pydantic
+
+import dagster as dg
 from dagster._core.definitions.job_definition import default_job_io_manager
 from dagster.components.resolved.base import resolve_fields
 from dagster.components.utils.translation import TranslationFn, TranslationFnResolver
-from dagster_shared import check
-
 from dagster_fivetran.asset_defs import build_fivetran_assets_definitions
 from dagster_fivetran.components.workspace_component.scaffolder import (
     FivetranAccountComponentScaffolder,
@@ -19,6 +18,7 @@ from dagster_fivetran.translator import (
     FivetranConnector,
     FivetranConnectorTableProps,
 )
+from dagster_shared import check
 
 
 class ProxyDagsterFivetranTranslator(DagsterFivetranTranslator):

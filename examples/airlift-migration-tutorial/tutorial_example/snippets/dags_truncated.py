@@ -2,6 +2,7 @@
 from pathlib import Path
 
 from airflow import DAG
+
 from dagster_airlift.in_airflow import proxying_to_dagster
 from dagster_airlift.in_airflow.proxied_state import load_proxied_state_from_yaml
 

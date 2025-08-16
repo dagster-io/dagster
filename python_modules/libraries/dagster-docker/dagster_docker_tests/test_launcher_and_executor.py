@@ -2,10 +2,12 @@ import os
 import time
 
 import pytest
+
 from dagster._core.definitions.events import AssetKey
 from dagster._core.storage.dagster_run import DagsterRunStatus
 from dagster._core.test_utils import poll_for_finished_run
 from dagster._utils.merger import merge_dicts
+from dagster_docker_tests import IS_BUILDKITE
 from dagster_shared.yaml_utils import load_yaml_from_path, merge_yamls
 from dagster_test.test_project import (
     ReOriginatedExternalJobForTest,
@@ -16,8 +18,6 @@ from dagster_test.test_project import (
     get_test_project_recon_job,
     get_test_project_workspace_and_remote_job,
 )
-
-from dagster_docker_tests import IS_BUILDKITE
 
 
 @pytest.mark.flaky(max_runs=2)

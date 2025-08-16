@@ -2,7 +2,6 @@ import os
 
 from dagster import Definitions, EnvVar
 from dagster_snowflake_pandas import SnowflakePandasIOManager
-
 from development_to_production.assets.hacker_news_assets import comments, items, stories
 from development_to_production.resources import HNAPIClient
 

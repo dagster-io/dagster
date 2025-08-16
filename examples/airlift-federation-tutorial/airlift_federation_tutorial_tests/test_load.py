@@ -6,6 +6,7 @@ from airlift_federation_tutorial_tests.conftest import (
     metrics_instance,
     warehouse_instance,
 )
+
 from dagster_airlift.in_airflow.gql_queries import VERIFICATION_QUERY
 
 

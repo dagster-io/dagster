@@ -23,7 +23,6 @@ from dagster._core.storage.tags import (
 )
 from dagster._time import get_current_datetime
 from dagster._utils.test.data_versions import materialize_asset
-
 from dagster_test.utils.benchmark import ProfilingSession
 
 DESC = """

@@ -3,13 +3,13 @@ import os
 from functools import cached_property
 from typing import Optional
 
+from packaging.version import Version
+
+from create_dagster.version import __version__
 from dagster_dg_core.context import DgContext
 from dagster_dg_core.utils.warnings import emit_warning
 from dagster_shared.libraries import DagsterPyPiAccessError, get_published_pypi_versions
 from dagster_shared.record import record
-from packaging.version import Version
-
-from create_dagster.version import __version__
 
 CREATE_DAGSTER_UPDATE_CHECK_ENABLED_ENV_VAR = "DAGSTER_DG_UPDATE_CHECK_ENABLED"
 

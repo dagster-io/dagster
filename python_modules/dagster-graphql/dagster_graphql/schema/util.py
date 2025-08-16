@@ -1,6 +1,7 @@
 from typing import cast
 
 import graphene
+
 from dagster._core.storage.compute_log_manager import ComputeLogManager
 from dagster._core.workspace.context import WorkspaceRequestContext
 

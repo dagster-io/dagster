@@ -7,6 +7,7 @@ import pytz
 from _pytest.mark.structures import ParameterSet
 from airflow import __version__ as airflow_version
 from airflow.models import Pool, Variable
+
 from dagster import (
     DagsterInstance,
     JobDefinition,

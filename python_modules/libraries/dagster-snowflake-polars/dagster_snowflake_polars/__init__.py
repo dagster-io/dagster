@@ -1,5 +1,4 @@
 from dagster_shared.libraries import DagsterLibraryRegistry
-
 from dagster_snowflake_polars.snowflake_polars_type_handler import (
     SnowflakePolarsIOManager as SnowflakePolarsIOManager,
     SnowflakePolarsTypeHandler as SnowflakePolarsTypeHandler,

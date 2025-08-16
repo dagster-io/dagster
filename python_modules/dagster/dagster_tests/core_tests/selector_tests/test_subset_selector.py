@@ -1,5 +1,6 @@
-import dagster as dg
 import pytest
+
+import dagster as dg
 from dagster import in_process_executor
 from dagster._core.selector.subset_selector import (
     MAX_NUM,

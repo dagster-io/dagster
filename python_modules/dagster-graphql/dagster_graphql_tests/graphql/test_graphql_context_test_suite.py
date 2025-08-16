@@ -1,10 +1,10 @@
 import inspect
 import sys
 
-import dagster._check as check
 import pytest
-from dagster._core.test_utils import ExplodingRunLauncher
 
+import dagster._check as check
+from dagster._core.test_utils import ExplodingRunLauncher
 from dagster_graphql_tests.graphql.graphql_context_test_suite import (
     GraphQLContextVariant,
     manage_graphql_context,

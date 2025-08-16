@@ -1,5 +1,9 @@
 import hashlib
 
+from google.cloud.bigquery.encryption_configuration import EncryptionConfiguration
+from google.cloud.bigquery.job import LoadJobConfig, QueryJobConfig
+from google.cloud.bigquery.table import TimePartitioning
+
 from dagster import (
     In,
     List,
@@ -9,11 +13,6 @@ from dagster import (
     op,
 )
 from dagster._core.storage.tags import COMPUTE_KIND_TAG
-from dagster_pandas import DataFrame
-from google.cloud.bigquery.encryption_configuration import EncryptionConfiguration
-from google.cloud.bigquery.job import LoadJobConfig, QueryJobConfig
-from google.cloud.bigquery.table import TimePartitioning
-
 from dagster_gcp.bigquery.configs import (
     define_bigquery_create_dataset_config,
     define_bigquery_delete_dataset_config,
@@ -21,6 +20,7 @@ from dagster_gcp.bigquery.configs import (
     define_bigquery_query_config,
 )
 from dagster_gcp.bigquery.types import BigQueryLoadSource
+from dagster_pandas import DataFrame
 
 _START = "start"
 

@@ -1,6 +1,7 @@
 import os
 
 import docker.client
+
 from dagster import (
     DagsterInstance,
     Executor,

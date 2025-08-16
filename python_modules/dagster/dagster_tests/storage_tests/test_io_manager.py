@@ -4,8 +4,9 @@ import time
 from collections.abc import Mapping
 from unittest import mock
 
-import dagster as dg
 import pytest
+
+import dagster as dg
 from dagster import DagsterInstance, IOManagerDefinition, ReexecutionOptions, in_process_executor
 from dagster._check import CheckError
 from dagster._core.definitions.metadata import ArbitraryMetadataMapping

@@ -1,6 +1,5 @@
-from dagster._core.definitions.definitions_class import Definitions
-
 from assets_pandas_type_metadata.definitions import defs
+from dagster._core.definitions.definitions_class import Definitions
 
 
 def test_defs_can_load() -> None:

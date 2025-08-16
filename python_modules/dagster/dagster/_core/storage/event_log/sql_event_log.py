@@ -17,15 +17,13 @@ from typing import (  # noqa: UP035
     cast,
 )
 
-import dagster_shared.seven as seven
 import sqlalchemy as db
 import sqlalchemy.exc as db_exc
-from dagster_shared.serdes import deserialize_values
-from dagster_shared.serdes.errors import DeserializationError
 from sqlalchemy.engine import Connection
 from typing_extensions import TypeAlias
 
 import dagster._check as check
+import dagster_shared.seven as seven
 from dagster._core.assets import AssetDetails
 from dagster._core.definitions.asset_checks.asset_check_spec import AssetCheckKey
 from dagster._core.definitions.data_version import DATA_VERSION_TAG
@@ -109,6 +107,8 @@ from dagster._utils.concurrency import (
     get_max_concurrency_limit_value,
 )
 from dagster._utils.warnings import deprecation_warning
+from dagster_shared.serdes import deserialize_values
+from dagster_shared.serdes.errors import DeserializationError
 
 if TYPE_CHECKING:
     from dagster._core.definitions.asset_checks.asset_check_evaluation import (

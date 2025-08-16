@@ -4,6 +4,7 @@ from pathlib import Path
 from typing import TYPE_CHECKING, cast
 
 import pytest
+
 from dagster_test.dg_utils.utils import ProxyRunner, isolated_example_project_foo_bar
 
 

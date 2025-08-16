@@ -4,6 +4,7 @@ from automation.dagster_docs.public_symbol_utils import (
     get_public_methods_from_class,
     is_valid_public_method,
 )
+
 from dagster._annotations import public
 
 

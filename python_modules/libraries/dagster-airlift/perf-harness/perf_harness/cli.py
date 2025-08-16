@@ -13,7 +13,6 @@ from dagster._core.instance import DagsterInstance
 from dagster._core.test_utils import environ
 from dagster_airlift.core.airflow_instance import AirflowInstance
 from dagster_airlift.test.shared_fixtures import stand_up_airflow
-
 from perf_harness.shared.constants import CONSTANTS_FILE, get_perf_output_file
 from perf_harness.shared.utils import scaffold_proxied_state
 

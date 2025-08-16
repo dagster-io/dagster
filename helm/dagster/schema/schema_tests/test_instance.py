@@ -3,16 +3,6 @@ import tempfile
 
 import pytest
 import yaml
-from dagster._config import process_config, resolve_to_config_type
-from dagster._core.instance.config import dagster_instance_config, retention_config_schema
-from dagster._core.instance.ref import InstanceRef
-from dagster._core.run_coordinator import QueuedRunCoordinator
-from dagster._core.test_utils import environ
-from dagster_aws.s3.compute_log_manager import S3ComputeLogManager
-from dagster_azure.blob.compute_log_manager import AzureBlobComputeLogManager
-from dagster_celery_k8s import CeleryK8sRunLauncher
-from dagster_gcp.gcs.compute_log_manager import GCSComputeLogManager
-from dagster_k8s import K8sRunLauncher
 from kubernetes.client import models
 from schema.charts.dagster.subschema.compute_log_manager import (
     AzureBlobComputeLogManager as AzureBlobComputeLogManagerModel,
@@ -48,6 +38,17 @@ from schema.charts.dagster.subschema.telemetry import Telemetry
 from schema.charts.dagster.values import DagsterHelmValues
 from schema.charts.utils import kubernetes
 from schema.utils.helm_template import HelmTemplate
+
+from dagster._config import process_config, resolve_to_config_type
+from dagster._core.instance.config import dagster_instance_config, retention_config_schema
+from dagster._core.instance.ref import InstanceRef
+from dagster._core.run_coordinator import QueuedRunCoordinator
+from dagster._core.test_utils import environ
+from dagster_aws.s3.compute_log_manager import S3ComputeLogManager
+from dagster_azure.blob.compute_log_manager import AzureBlobComputeLogManager
+from dagster_celery_k8s import CeleryK8sRunLauncher
+from dagster_gcp.gcs.compute_log_manager import GCSComputeLogManager
+from dagster_k8s import K8sRunLauncher
 
 
 def to_camel_case(s: str) -> str:

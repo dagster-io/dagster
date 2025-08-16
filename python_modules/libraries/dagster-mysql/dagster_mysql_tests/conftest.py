@@ -1,6 +1,7 @@
 from urllib.parse import urlparse
 
 import pytest
+
 from dagster._utils import file_relative_path
 from dagster._utils.test.mysql_instance import TestMySQLInstance
 

@@ -1,7 +1,8 @@
 import warnings
 
-import dagster as dg
 import pytest
+
+import dagster as dg
 from dagster import Definitions, schedule
 from dagster._core.definitions.job_definition import JobDefinition
 from dagster_shared.check.functions import CheckError

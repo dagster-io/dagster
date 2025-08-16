@@ -2,10 +2,13 @@ from collections.abc import Iterator, Mapping, Sequence
 from contextlib import contextmanager
 from typing import Any, ContextManager, Optional, cast  # noqa: UP035
 
-import dagster._check as check
 import sqlalchemy as db
 import sqlalchemy.dialects as db_dialects
 import sqlalchemy.pool as db_pool
+from sqlalchemy import event
+from sqlalchemy.engine import Connection
+
+import dagster._check as check
 from dagster._config.config_schema import UserConfigSchema
 from dagster._core.errors import DagsterInvariantViolationError
 from dagster._core.event_api import EventHandlerFn
@@ -31,9 +34,6 @@ from dagster._core.storage.sql import (
 )
 from dagster._core.storage.sqlalchemy_compat import db_select
 from dagster._serdes import ConfigurableClass, ConfigurableClassData, deserialize_value
-from sqlalchemy import event
-from sqlalchemy.engine import Connection
-
 from dagster_postgres.utils import (
     create_pg_connection,
     pg_alembic_config,

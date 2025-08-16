@@ -3,12 +3,6 @@ from collections import defaultdict
 from collections.abc import Iterable, Mapping
 from typing import AbstractSet, Any, Callable, NamedTuple, Optional, Union  # noqa: UP035
 
-from dagster_shared.serdes import (
-    NamedTupleSerializer,
-    SerializableNonScalarKeyMapping,
-    whitelist_for_serdes,
-)
-
 from dagster import _check as check
 from dagster._core.asset_graph_view.entity_subset import EntitySubset
 from dagster._core.asset_graph_view.serializable_entity_subset import SerializableEntitySubset
@@ -17,6 +11,11 @@ from dagster._core.definitions.events import AssetKey, AssetKeyPartitionKey
 from dagster._core.definitions.partitions.definition import TimeWindowPartitionsDefinition
 from dagster._core.definitions.partitions.subset import PartitionsSubset
 from dagster._core.errors import DagsterDefinitionChangedDeserializationError
+from dagster_shared.serdes import (
+    NamedTupleSerializer,
+    SerializableNonScalarKeyMapping,
+    whitelist_for_serdes,
+)
 
 
 class PartitionsSubsetMappingNamedTupleSerializer(NamedTupleSerializer):

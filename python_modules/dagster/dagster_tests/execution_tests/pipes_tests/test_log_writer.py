@@ -1,11 +1,11 @@
 import shutil
 from collections.abc import Iterator
 
-import dagster as dg
 import pytest
+
+import dagster as dg
 from dagster import AssetExecutionContext, DagsterInstance
 from dagster._core.pipes.subprocess import PipesSubprocessClient
-
 from dagster_tests.execution_tests.pipes_tests.utils import temp_script
 
 _PYTHON_EXECUTABLE = shutil.which("python")

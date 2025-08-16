@@ -1,8 +1,7 @@
-from dagster_shared.libraries import DagsterLibraryRegistry
-
 from dagster_airbyte.components.workspace_component.component import (
     AirbyteCloudWorkspaceComponent as AirbyteCloudWorkspaceComponent,
 )
+from dagster_shared.libraries import DagsterLibraryRegistry
 
 try:
     from dagster_airbyte.managed import (

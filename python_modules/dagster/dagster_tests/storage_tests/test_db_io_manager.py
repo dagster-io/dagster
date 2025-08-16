@@ -1,7 +1,8 @@
 from unittest.mock import MagicMock
 
-import dagster as dg
 import pytest
+
+import dagster as dg
 from dagster import InputContext, OutputContext
 from dagster._check import CheckError
 from dagster._core.storage.db_io_manager import (

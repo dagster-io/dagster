@@ -1,7 +1,8 @@
 from typing import cast
 
-import dagster as dg
 import pytest
+
+import dagster as dg
 from dagster import Definitions
 from dagster._core.definitions.repository_definition.repository_data_builder import (
     build_caching_repository_data_from_dict,

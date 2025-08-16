@@ -6,7 +6,6 @@ from dagster._core.definitions.selector import JobSubsetSelector
 from dagster._core.execution.plan.resume_retry import ReexecutionStrategy
 from dagster._core.storage.dagster_run import DagsterRun, RunsFilter
 from dagster._core.workspace.permissions import Permissions
-
 from dagster_graphql.implementation.execution.run_lifecycle import create_valid_pipeline_run
 from dagster_graphql.implementation.external import get_remote_job_or_raise
 from dagster_graphql.implementation.utils import (
@@ -17,7 +16,6 @@ from dagster_graphql.implementation.utils import (
 
 if TYPE_CHECKING:
     from dagster._core.instance import DagsterInstance
-
     from dagster_graphql.schema.runs import GrapheneLaunchRunSuccess
     from dagster_graphql.schema.util import ResolveInfo
 

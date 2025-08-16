@@ -12,10 +12,11 @@ from unittest.mock import MagicMock, patch
 import mlflow
 import pandas as pd
 import pytest
+from mlflow.exceptions import MlflowException
+
 from dagster import op
 from dagster._core.definitions.decorators.job_decorator import job
 from dagster_mlflow.resources import MlFlow, mlflow_tracking
-from mlflow.exceptions import MlflowException
 
 
 @pytest.fixture

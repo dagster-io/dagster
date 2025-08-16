@@ -1,8 +1,9 @@
 import re
 import typing
 
-import dagster as dg
 import pytest
+
+import dagster as dg
 from dagster import DagsterEventType
 from dagster._core.definitions.metadata import MetadataValue
 from dagster._core.types.dagster_type import ListType, resolve_dagster_type

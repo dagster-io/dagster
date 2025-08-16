@@ -1,8 +1,9 @@
 import os
 from tempfile import TemporaryDirectory
 
-import dagster as dg
 import pytest
+
+import dagster as dg
 from dagster._check import CheckError
 from dagster._core.workspace.load import load_workspace_process_context_from_yaml_paths
 from dagster._utils import touch_file

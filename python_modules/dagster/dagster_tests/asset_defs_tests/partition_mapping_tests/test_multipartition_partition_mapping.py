@@ -1,7 +1,8 @@
 from datetime import datetime, timedelta
 
-import dagster as dg
 import pytest
+
+import dagster as dg
 from dagster import AssetExecutionContext, DagsterInstance
 from dagster._check import CheckError
 from dagster._core.definitions.partitions.subset import DefaultPartitionsSubset

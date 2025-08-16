@@ -3,6 +3,7 @@ from datetime import timedelta
 from typing import Callable
 
 import pytest
+
 from dagster import AssetKey, DagsterInstance
 from dagster._time import get_current_datetime
 from dagster_airlift.core.airflow_instance import AirflowInstance

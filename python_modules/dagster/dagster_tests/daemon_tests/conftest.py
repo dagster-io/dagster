@@ -4,8 +4,9 @@ import tempfile
 from collections.abc import Iterator
 from typing import Optional, cast
 
-import dagster as dg
 import pytest
+
+import dagster as dg
 from dagster._core.remote_origin import (
     InProcessCodeLocationOrigin,
     ManagedGrpcPythonEnvCodeLocationOrigin,

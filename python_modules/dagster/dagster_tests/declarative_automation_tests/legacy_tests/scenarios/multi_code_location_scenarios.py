@@ -3,7 +3,6 @@ from collections.abc import Sequence
 import dagster as dg
 from dagster import AssetsDefinition
 from dagster._core.definitions.auto_materialize_policy import AutoMaterializePolicy
-
 from dagster_tests.declarative_automation_tests.legacy_tests.scenarios.basic_scenarios import (
     diamond,
 )

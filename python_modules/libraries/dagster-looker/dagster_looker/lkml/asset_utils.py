@@ -4,9 +4,9 @@ from typing import AbstractSet, Any, NamedTuple  # noqa: UP035
 
 import lkml
 import yaml
+
 from dagster import AssetSpec
 from dagster._core.utils import toposort_flatten
-
 from dagster_looker.lkml.dagster_looker_lkml_translator import (
     DagsterLookerLkmlTranslator,
     LookMLStructureType,

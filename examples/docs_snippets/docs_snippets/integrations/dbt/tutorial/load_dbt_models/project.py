@@ -1,4 +1,3 @@
-# ruff: noqa: I001
 # start_load_project
 from pathlib import Path
 

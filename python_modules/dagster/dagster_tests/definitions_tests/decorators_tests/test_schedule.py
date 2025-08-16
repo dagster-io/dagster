@@ -4,8 +4,9 @@ import re
 import warnings
 from datetime import datetime
 
-import dagster as dg
 import pytest
+
+import dagster as dg
 from dagster._core.errors import ScheduleExecutionError
 from dagster._time import get_current_datetime
 from dagster._utils.merger import merge_dicts

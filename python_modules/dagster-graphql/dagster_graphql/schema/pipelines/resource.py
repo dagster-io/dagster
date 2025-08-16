@@ -1,10 +1,10 @@
 from typing import Callable
 
-import dagster._check as check
 import graphene
+
+import dagster._check as check
 from dagster._config.snap import ConfigTypeSnap
 from dagster._core.snap import ResourceDefSnap
-
 from dagster_graphql.schema.config_types import GrapheneConfigTypeField
 from dagster_graphql.schema.errors import (
     GrapheneInvalidSubsetError,

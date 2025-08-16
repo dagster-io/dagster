@@ -1,5 +1,6 @@
-from dagster import Config, asset
 from pydantic import Field
+
+from dagster import Config, asset
 
 from ..lib import (
     AnomalousEventsDgType,

@@ -1,6 +1,5 @@
 from dagster._core.workspace.context import WorkspaceRequestContext
 from dagster_graphql.test.utils import execute_dagster_graphql, infer_job_selector
-
 from dagster_graphql_tests.graphql.composites_query import (
     COMPOSITES_QUERY,
     COMPOSITES_QUERY_NESTED_DEPENDS_ON_DEPENDS_BY_CORE,

@@ -8,7 +8,6 @@ from dagster._core.definitions.assets.definition.assets_definition import Assets
 from dagster._core.definitions.declarative_automation.automation_condition import (
     AutomationCondition,
 )
-
 from dbt_example.dagster_defs.table_existence_check import build_table_existence_check
 from dbt_example.shared.lakehouse_utils import id_from_path, load_csv_to_duckdb
 

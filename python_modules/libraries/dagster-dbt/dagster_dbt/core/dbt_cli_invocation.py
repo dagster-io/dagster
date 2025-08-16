@@ -11,6 +11,9 @@ from pathlib import Path
 from typing import Any, Final, NamedTuple, Optional, Union, cast
 
 import orjson
+from packaging import version
+from typing_extensions import Literal
+
 from dagster import (
     AssetCheckEvaluation,
     AssetCheckResult,
@@ -23,9 +26,6 @@ from dagster import (
 )
 from dagster._annotations import public
 from dagster._core.errors import DagsterExecutionInterruptedError
-from packaging import version
-from typing_extensions import Literal
-
 from dagster_dbt.compat import BaseAdapter, BaseColumn, BaseRelation
 from dagster_dbt.core.dbt_cli_event import (
     DbtCliEventMessage,

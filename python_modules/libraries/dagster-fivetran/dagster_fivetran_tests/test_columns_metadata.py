@@ -3,6 +3,7 @@ from unittest.mock import MagicMock
 
 import pytest
 import responses
+
 from dagster import AssetExecutionContext, AssetKey, TableColumn, TableSchema
 from dagster._config.field_utils import EnvVar
 from dagster._core.definitions.materialize import materialize
@@ -10,7 +11,6 @@ from dagster._core.definitions.metadata import TableMetadataSet
 from dagster._core.definitions.metadata.table import TableColumnConstraints, TableConstraints
 from dagster._core.test_utils import environ
 from dagster_fivetran import FivetranWorkspace, fivetran_assets
-
 from dagster_fivetran_tests.conftest import (
     SAMPLE_SOURCE_TABLE_COLUMNS_CONFIG,
     TEST_ACCOUNT_ID,

@@ -11,11 +11,6 @@ from collections.abc import Iterable, Mapping, Sequence
 from enum import Enum
 from typing import Any, Final, NamedTuple, Optional, Union, cast
 
-from dagster_shared.serdes.serdes import (
-    FieldSerializer,
-    get_prefix_for_a_serialized,
-    is_whitelisted_for_serdes_object,
-)
 from typing_extensions import Self, TypeAlias
 
 from dagster import _check as check
@@ -109,6 +104,11 @@ from dagster.components.core.defs_module import (
     CompositeYamlComponent,
     DefsFolderComponent,
     PythonFileComponent,
+)
+from dagster_shared.serdes.serdes import (
+    FieldSerializer,
+    get_prefix_for_a_serialized,
+    is_whitelisted_for_serdes_object,
 )
 
 DEFAULT_MODE_NAME = "default"

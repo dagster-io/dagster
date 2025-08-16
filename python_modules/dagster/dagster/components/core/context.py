@@ -6,14 +6,14 @@ from pathlib import Path
 from types import ModuleType
 from typing import TYPE_CHECKING, Any, Optional, TypeVar, Union, overload
 
-from dagster_shared import check
-from dagster_shared.yaml_utils.source_position import SourcePositionTree
 from typing_extensions import Self
 
 from dagster._annotations import PublicAttr, public
 from dagster._core.definitions.definitions_class import Definitions
 from dagster._utils import pushd
 from dagster.components.resolved.context import ResolutionContext
+from dagster_shared import check
+from dagster_shared.yaml_utils.source_position import SourcePositionTree
 
 if TYPE_CHECKING:
     from dagster.components.component.component import Component

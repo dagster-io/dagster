@@ -6,10 +6,11 @@ from collections.abc import Mapping, Sequence
 from enum import Enum
 from typing import AbstractSet, Any, NamedTuple, Optional, Union  # noqa: UP035
 
-import dagster as dg
-import dagster._check as check
 import pydantic
 import pytest
+
+import dagster as dg
+import dagster._check as check
 from dagster._record import IHaveNew, record, record_custom
 from dagster._utils.cached_method import cached_method
 from dagster_shared.check import CheckError

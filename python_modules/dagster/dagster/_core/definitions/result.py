@@ -3,9 +3,6 @@ from datetime import datetime  # noqa
 from os import PathLike  # noqa
 from typing import Any, Generic, Optional, TypeVar
 
-from dagster_shared.check.decorator import checked
-from dagster_shared.record import IHaveNew, LegacyNamedTupleMixin, record_custom
-
 import dagster._check as check
 from dagster._annotations import PublicAttr, public
 from dagster._core.definitions.asset_checks.asset_check_result import AssetCheckResult
@@ -18,6 +15,8 @@ from dagster._core.definitions.metadata import (  # noqa
     TableSchema,
 )
 from dagster._core.definitions.utils import NoValueSentinel
+from dagster_shared.check.decorator import checked
+from dagster_shared.record import IHaveNew, LegacyNamedTupleMixin, record_custom
 
 
 @checked

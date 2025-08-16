@@ -3,11 +3,12 @@ from contextlib import contextmanager
 from typing import Any, Optional, Union
 
 import mysql.connector as mysql
-from dagster import ConfigurableResource
-from dagster._utils.backoff import backoff
 from mysql.connector.abstracts import MySQLConnectionAbstract
 from mysql.connector.pooling import PooledMySQLConnection
 from pydantic import Field
+
+from dagster import ConfigurableResource
+from dagster._utils.backoff import backoff
 
 
 class MySQLResource(ConfigurableResource):

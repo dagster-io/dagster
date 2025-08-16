@@ -11,7 +11,6 @@ from dagster._core.definitions.selector import (
 )
 from dagster._core.scheduler.instigation import InstigatorState, InstigatorStatus
 from dagster._core.workspace.permissions import Permissions
-
 from dagster_graphql.implementation.loader import RepositoryScopedBatchLoader
 from dagster_graphql.implementation.utils import (
     UserFacingGraphQLError,

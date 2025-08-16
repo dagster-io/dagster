@@ -1,9 +1,10 @@
 from collections.abc import Iterator
 from typing import TYPE_CHECKING, Optional, cast
 
-import dagster._check as check
 import docker
 import docker.errors
+
+import dagster._check as check
 from dagster import Field, IntSource, executor
 from dagster._annotations import beta
 from dagster._core.definitions.executor_definition import multiple_process_executor_requirements
@@ -20,10 +21,9 @@ from dagster._core.executor.step_delegating.step_handler.base import (
 )
 from dagster._core.utils import parse_env_var
 from dagster._utils.merger import merge_dicts
-from dagster_shared.serdes.utils import hash_str
-
 from dagster_docker.container_context import DockerContainerContext
 from dagster_docker.utils import DOCKER_CONFIG_SCHEMA, validate_docker_config, validate_docker_image
+from dagster_shared.serdes.utils import hash_str
 
 if TYPE_CHECKING:
     from dagster._core.origin import JobPythonOrigin

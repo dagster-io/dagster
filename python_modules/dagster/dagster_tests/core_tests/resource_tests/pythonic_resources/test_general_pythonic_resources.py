@@ -4,8 +4,14 @@ from collections.abc import Mapping
 from typing import Optional
 from unittest import mock
 
-import dagster as dg
 import pytest
+from pydantic import (
+    Field as PyField,
+    ValidationError,
+    create_model,
+)
+
+import dagster as dg
 from dagster import (
     AssetExecutionContext,
     ConfigurableResource,
@@ -15,11 +21,6 @@ from dagster import (
 from dagster._check import CheckError
 from dagster._config.pythonic_config import ConfigurableResourceFactory
 from dagster._utils.cached_method import cached_method
-from pydantic import (
-    Field as PyField,
-    ValidationError,
-    create_model,
-)
 
 
 def test_basic_structured_resource():

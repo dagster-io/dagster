@@ -2,6 +2,7 @@ from typing import Any, cast
 
 import celery
 from celery import Celery
+
 from dagster import (
     DagsterInstance,
     _check as check,
@@ -12,8 +13,6 @@ from dagster._core.events import EngineEventData
 from dagster._core.execution.api import create_execution_plan, execute_plan_iterator
 from dagster._grpc.types import ExecuteRunArgs, ExecuteStepArgs, ResumeRunArgs
 from dagster._serdes import serialize_value, unpack_value
-from dagster_shared.serdes.serdes import JsonSerializableValue
-
 from dagster_celery.config import (
     TASK_EXECUTE_JOB_NAME,
     TASK_EXECUTE_PLAN_NAME,
@@ -21,6 +20,7 @@ from dagster_celery.config import (
 )
 from dagster_celery.core_execution_loop import DELEGATE_MARKER
 from dagster_celery.executor import CeleryExecutor
+from dagster_shared.serdes.serdes import JsonSerializableValue
 
 
 def create_task(celery_app, **task_kwargs):

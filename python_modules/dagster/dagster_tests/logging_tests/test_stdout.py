@@ -6,8 +6,9 @@ import sys
 import tempfile
 import time
 
-import dagster as dg
 import pytest
+
+import dagster as dg
 from dagster import DagsterEventType
 from dagster._core.execution.compute_logs import should_disable_io_stream_redirect
 from dagster._core.instance import DagsterInstance

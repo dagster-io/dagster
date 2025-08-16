@@ -4,6 +4,7 @@ from collections.abc import Mapping, Sequence
 from typing import Any, Optional
 
 import kubernetes
+
 from dagster import _check as check
 from dagster._cli.api import ExecuteRunArgs
 from dagster._core.events import EngineEventData
@@ -14,7 +15,6 @@ from dagster._core.storage.tags import DOCKER_IMAGE_TAG
 from dagster._grpc.types import ResumeRunArgs
 from dagster._serdes import ConfigurableClass, ConfigurableClassData
 from dagster._utils.error import serializable_error_info_from_exc_info
-
 from dagster_k8s.client import DagsterKubernetesClient
 from dagster_k8s.container_context import K8sContainerContext
 from dagster_k8s.job import DagsterK8sJobConfig, construct_dagster_k8s_job, get_job_name_from_run_id

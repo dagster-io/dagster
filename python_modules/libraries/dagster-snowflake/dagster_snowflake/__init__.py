@@ -1,5 +1,4 @@
 from dagster_shared.libraries import DagsterLibraryRegistry
-
 from dagster_snowflake.components import (
     SnowflakeConnectionComponent as SnowflakeConnectionComponent,
 )

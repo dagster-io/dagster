@@ -1,9 +1,10 @@
 from collections.abc import Sequence
 from typing import Optional
 
-import dagster as dg
 import pytest
 from click.testing import CliRunner
+
+import dagster as dg
 from dagster._cli.definitions import definitions_validate_command
 from dagster._utils import pushd
 

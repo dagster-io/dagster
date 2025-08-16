@@ -2,6 +2,7 @@ import asyncio
 from typing import TYPE_CHECKING, Optional
 
 import graphene
+
 from dagster import _check as check
 from dagster._core.definitions.sensor_definition import SensorType
 from dagster._core.remote_representation import (
@@ -19,7 +20,6 @@ from dagster._core.remote_representation.handle import RepositoryHandle
 from dagster._core.workspace.context import WorkspaceProcessContext
 from dagster._core.workspace.workspace import CodeLocationEntry, CodeLocationLoadStatus
 from dagster.components.core.load_defs import PLUGIN_COMPONENT_TYPES_JSON_METADATA_KEY
-
 from dagster_graphql.implementation.fetch_solids import get_solid, get_solids
 from dagster_graphql.implementation.loader import RepositoryScopedBatchLoader
 from dagster_graphql.implementation.utils import capture_error

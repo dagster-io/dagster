@@ -1,7 +1,6 @@
-from dagster_shared.libraries import DagsterLibraryRegistry
-
 from dagster_datadog.resources import DatadogResource, datadog_resource
 from dagster_datadog.version import __version__
+from dagster_shared.libraries import DagsterLibraryRegistry
 
 DagsterLibraryRegistry.register("dagster-datadog", __version__)
 

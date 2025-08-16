@@ -3,9 +3,9 @@ import os
 from collections.abc import Iterator
 from typing import Any, Callable, NamedTuple, Optional
 
-import dagster._check as check
 import yaml
 
+import dagster._check as check
 from automation.docker.ecr import ecr_image, get_aws_account_id, get_aws_region
 from automation.docker.utils import (
     execute_docker_build,

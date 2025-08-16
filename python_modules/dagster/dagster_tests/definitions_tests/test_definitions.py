@@ -1,7 +1,8 @@
 import json
 
-import dagster as dg
 import pytest
+
+import dagster as dg
 from dagster._core.definitions import Node, create_run_config_schema
 from dagster._core.definitions.dependency import NodeHandle, NodeOutput
 from dagster._core.storage.tags import GLOBAL_CONCURRENCY_TAG

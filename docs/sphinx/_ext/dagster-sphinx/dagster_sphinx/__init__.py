@@ -1,6 +1,16 @@
 from typing import List, Tuple, Type, TypeVar  # noqa: F401, UP035
 
 import docutils.nodes as nodes
+from sphinx.application import Sphinx
+from sphinx.environment import BuildEnvironment
+from sphinx.ext.autodoc import (
+    ClassDocumenter,
+    ObjectMember,
+    Options as AutodocOptions,
+)
+from sphinx.util import logging
+from typing_extensions import Literal, TypeAlias
+
 from dagster._annotations import (
     get_beta_info,
     get_beta_params,
@@ -17,16 +27,6 @@ from dagster._annotations import (
     is_superseded,
 )
 from dagster._record import get_original_class, is_record
-from sphinx.application import Sphinx
-from sphinx.environment import BuildEnvironment
-from sphinx.ext.autodoc import (
-    ClassDocumenter,
-    ObjectMember,
-    Options as AutodocOptions,
-)
-from sphinx.util import logging
-from typing_extensions import Literal, TypeAlias
-
 from dagster_sphinx.configurable import ConfigurableDocumenter
 from dagster_sphinx.docstring_flags import (
     FlagDirective,

@@ -3,6 +3,8 @@ from collections.abc import Sequence
 from pathlib import Path
 from typing import Any, Optional
 
+from pydantic import Field
+
 import dagster._check as check
 from dagster import (
     AssetKey,
@@ -17,8 +19,6 @@ from dagster._core.execution.context.input import InputContext
 from dagster._core.execution.context.output import OutputContext
 from dagster._core.storage.io_manager import dagster_maintained_io_manager, io_manager
 from dagster._utils import mkdir_p
-from pydantic import Field
-
 from dagstermill.factory import _clean_path_for_windows
 
 

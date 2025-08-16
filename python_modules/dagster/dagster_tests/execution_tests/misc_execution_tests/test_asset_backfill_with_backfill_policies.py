@@ -2,8 +2,9 @@ import math
 from contextlib import ExitStack
 from unittest.mock import MagicMock, patch
 
-import dagster as dg
 import pytest
+
+import dagster as dg
 from dagster import BackfillPolicy, DagsterInstance
 from dagster._core.definitions.partitions.context import partition_loading_context
 from dagster._core.execution.asset_backfill import AssetBackfillData, AssetBackfillStatus
@@ -18,7 +19,6 @@ from dagster._time import (
     get_current_timestamp,
     parse_time_string,
 )
-
 from dagster_tests.execution_tests.misc_execution_tests.test_asset_backfill import (
     execute_asset_backfill_iteration_consume_generator,
     get_asset_graph,

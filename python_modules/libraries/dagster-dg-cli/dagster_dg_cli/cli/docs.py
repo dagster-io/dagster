@@ -8,6 +8,10 @@ from pathlib import Path
 from typing import Optional
 
 import click
+from rich.console import Console
+from rich.table import Table
+from yaspin import yaspin
+
 from dagster_dg_core.component import EnvRegistry, EnvRegistryKey
 from dagster_dg_core.config import normalize_cli_config
 from dagster_dg_core.context import DgContext
@@ -15,9 +19,6 @@ from dagster_dg_core.shared_options import dg_global_options, dg_path_options
 from dagster_dg_core.utils import DgClickCommand, DgClickGroup, exit_with_error, pushd
 from dagster_dg_core.utils.telemetry import cli_telemetry_wrapper
 from dagster_shared.serdes.objects.package_entry import json_for_all_components
-from rich.console import Console
-from rich.table import Table
-from yaspin import yaspin
 
 DEV_DOCS_DIR = (
     Path(__file__).parent.parent.parent.parent.parent.parent

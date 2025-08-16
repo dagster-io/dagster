@@ -8,7 +8,6 @@ parse_dataproc_configs.py \
 """
 
 from dagster import Bool, Field, Int, Permissive, Shape, String
-
 from dagster_gcp.dataproc.types_dataproc_cluster import (
     Component,
     ConsumeReservationType,

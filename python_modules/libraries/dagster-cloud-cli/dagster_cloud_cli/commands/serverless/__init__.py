@@ -5,7 +5,6 @@ import subprocess
 from pathlib import Path
 from typing import Optional
 
-from dagster_shared import seven
 from typer import Argument, Option, Typer
 
 from dagster_cloud_cli import docker_utils, gql, pex_utils, ui
@@ -19,6 +18,7 @@ from dagster_cloud_cli.config_utils import (
 from dagster_cloud_cli.core import pex_builder
 from dagster_cloud_cli.types import CliEventTags, CliEventType
 from dagster_cloud_cli.utils import DEFAULT_PYTHON_VERSION, add_options
+from dagster_shared import seven
 
 app = Typer(help="Build and deploy your code to Dagster Cloud.")
 

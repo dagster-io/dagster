@@ -11,6 +11,8 @@ from datetime import datetime
 from typing import Any, Optional, Union
 
 import kubernetes
+from urllib3.exceptions import ReadTimeoutError
+
 from dagster import (
     OpExecutionContext,
     _check as check,
@@ -34,15 +36,6 @@ from dagster._core.pipes.utils import (
     open_pipes_session,
 )
 from dagster._time import parse_time_string
-from dagster_pipes import (
-    DAGSTER_PIPES_CONTEXT_ENV_VAR,
-    DAGSTER_PIPES_MESSAGES_ENV_VAR,
-    PipesDefaultMessageWriter,
-    PipesExtras,
-    encode_env_var,
-)
-from urllib3.exceptions import ReadTimeoutError
-
 from dagster_k8s.client import (
     DEFAULT_WAIT_BETWEEN_ATTEMPTS,
     DagsterKubernetesClient,
@@ -50,6 +43,13 @@ from dagster_k8s.client import (
 )
 from dagster_k8s.models import k8s_model_from_dict, k8s_snake_case_dict
 from dagster_k8s.utils import detect_current_namespace, get_common_labels
+from dagster_pipes import (
+    DAGSTER_PIPES_CONTEXT_ENV_VAR,
+    DAGSTER_PIPES_MESSAGES_ENV_VAR,
+    PipesDefaultMessageWriter,
+    PipesExtras,
+    encode_env_var,
+)
 
 INIT_WAIT_TIMEOUT_FOR_READY = 1800.0  # 30mins
 INIT_WAIT_TIMEOUT_FOR_TERMINATE = 10.0  # 10s

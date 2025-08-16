@@ -2,7 +2,6 @@ from collections import OrderedDict, defaultdict
 
 import dagster._check as check
 from dagster._core.remote_representation import RemoteRepository
-
 from dagster_graphql.implementation.utils import GraphSelector
 
 

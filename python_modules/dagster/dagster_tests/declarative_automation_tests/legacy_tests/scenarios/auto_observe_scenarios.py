@@ -3,7 +3,6 @@ import datetime
 import dagster as dg
 from dagster._core.definitions.auto_materialize_rule import AutoMaterializeRule
 from dagster._time import create_datetime
-
 from dagster_tests.declarative_automation_tests.scenario_utils.base_scenario import (
     AssetReconciliationScenario,
     run_request,

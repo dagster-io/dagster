@@ -1,5 +1,6 @@
-import dagster as dg
 import pytest
+
+import dagster as dg
 from dagster._core.definitions.metadata import MetadataValue
 from dagster._core.definitions.observe import observe
 

@@ -1,6 +1,9 @@
 from collections.abc import Mapping, Sequence
 from typing import Any, Callable, Optional
 
+from dlt.extract.source import DltSource
+from dlt.pipeline.pipeline import Pipeline
+
 from dagster import (
     AssetsDefinition,
     AssetSpec,
@@ -11,9 +14,6 @@ from dagster import (
     multi_asset,
 )
 from dagster._core.errors import DagsterInvariantViolationError
-from dlt.extract.source import DltSource
-from dlt.pipeline.pipeline import Pipeline
-
 from dagster_dlt.constants import META_KEY_PIPELINE, META_KEY_SOURCE, META_KEY_TRANSLATOR
 from dagster_dlt.translator import DagsterDltTranslator, DltResourceTranslatorData
 

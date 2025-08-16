@@ -4,6 +4,7 @@ import tempfile
 
 import pytest
 from botocore.exceptions import ClientError
+
 from dagster import DagsterEventType, job, op
 from dagster._core.instance import DagsterInstance, InstanceRef, InstanceType
 from dagster._core.launcher import DefaultRunLauncher
@@ -15,7 +16,6 @@ from dagster._core.storage.root import LocalArtifactStorage
 from dagster._core.storage.runs import SqliteRunStorage
 from dagster._core.test_utils import ensure_dagster_tests_import, environ, instance_for_test
 from dagster._time import get_current_datetime
-
 from dagster_aws.s3 import S3ComputeLogManager
 
 ensure_dagster_tests_import()

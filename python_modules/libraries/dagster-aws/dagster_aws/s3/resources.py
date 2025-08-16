@@ -1,9 +1,9 @@
 from typing import Any, Optional, TypeVar
 
-from dagster import ConfigurableResource, IAttachDifferentObjectToOpContext, resource
-from dagster._core.definitions.resource_definition import dagster_maintained_resource
 from pydantic import Field
 
+from dagster import ConfigurableResource, IAttachDifferentObjectToOpContext, resource
+from dagster._core.definitions.resource_definition import dagster_maintained_resource
 from dagster_aws.s3.file_manager import S3FileManager
 from dagster_aws.s3.utils import construct_s3_client
 

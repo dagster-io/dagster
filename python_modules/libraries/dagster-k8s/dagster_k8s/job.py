@@ -6,8 +6,9 @@ from collections.abc import Mapping, Sequence
 from enum import Enum
 from typing import Any, NamedTuple, Optional
 
-import dagster._check as check
 import kubernetes
+
+import dagster._check as check
 from dagster import (
     Array,
     BoolSource,
@@ -23,7 +24,6 @@ from dagster._core.utils import parse_env_var
 from dagster._serdes import whitelist_for_serdes
 from dagster._utils.merger import merge_dicts
 from dagster._utils.security import non_secure_md5_hash_str
-
 from dagster_k8s.models import k8s_model_from_dict, k8s_snake_case_dict
 from dagster_k8s.utils import get_common_labels, sanitize_k8s_label
 

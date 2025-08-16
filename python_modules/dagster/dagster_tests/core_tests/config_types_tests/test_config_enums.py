@@ -1,7 +1,8 @@
 from enum import Enum as PythonEnum
 
-import dagster as dg
 import pytest
+
+import dagster as dg
 from dagster import Enum
 from dagster._config import Enum as ConfigEnum
 from dagster._config.validate import validate_config

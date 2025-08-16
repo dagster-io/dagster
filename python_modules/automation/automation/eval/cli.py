@@ -7,12 +7,13 @@ from typing import Any, Optional
 
 import click
 import yaml
-from dagster_shared.record import record
 from deepeval import evaluate
 from deepeval.metrics import GEval
 from deepeval.test_case import LLMTestCase, LLMTestCaseParams
 from rich.console import Console
 from rich.table import Table
+
+from dagster_shared.record import record
 
 
 @record

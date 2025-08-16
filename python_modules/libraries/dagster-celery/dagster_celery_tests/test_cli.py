@@ -1,7 +1,8 @@
 import time
 
-import dagster._check as check
 from click.testing import CliRunner
+
+import dagster._check as check
 from dagster._utils import file_relative_path
 from dagster_celery.cli import main
 

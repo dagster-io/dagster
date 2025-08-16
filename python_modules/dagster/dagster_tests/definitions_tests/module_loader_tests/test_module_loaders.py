@@ -5,8 +5,9 @@ from types import ModuleType
 from typing import Any, cast
 from unittest.mock import MagicMock, patch
 
-import dagster as dg
 import pytest
+
+import dagster as dg
 from dagster._core.definitions.definitions_class import Definitions
 from dagster._core.definitions.module_loaders.object_list import (
     LoadableDagsterDef,

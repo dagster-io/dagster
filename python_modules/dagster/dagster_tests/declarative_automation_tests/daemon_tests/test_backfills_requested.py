@@ -2,7 +2,6 @@ from unittest import mock
 
 import dagster as dg
 from dagster import AutomationCondition
-
 from dagster_tests.declarative_automation_tests.daemon_tests.test_asset_daemon import (
     get_daemon_instance,
 )

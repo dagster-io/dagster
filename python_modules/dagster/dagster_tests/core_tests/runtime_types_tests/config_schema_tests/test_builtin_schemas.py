@@ -1,7 +1,8 @@
 import pickle
 
-import dagster as dg
 import pytest
+
+import dagster as dg
 from dagster._utils.test import get_temp_file_name
 
 

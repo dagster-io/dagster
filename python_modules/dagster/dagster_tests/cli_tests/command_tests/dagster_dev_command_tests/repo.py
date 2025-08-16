@@ -1,7 +1,8 @@
 import os
 
-import dagster as dg
 from bar import foo_op  # requires working_directory  # type: ignore
+
+import dagster as dg
 from dagster import DefaultSensorStatus
 
 

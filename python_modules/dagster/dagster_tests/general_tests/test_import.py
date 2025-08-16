@@ -1,7 +1,8 @@
 import subprocess
 
-import dagster as dg
 import pytest
+
+import dagster as dg
 from dagster_shared.seven import IS_WINDOWS
 
 

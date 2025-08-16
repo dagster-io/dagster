@@ -1,8 +1,9 @@
 import json
 import sys
 
-import dagster._check as check
 import pytest
+
+import dagster._check as check
 from dagster._api.snapshot_job import (
     gen_external_job_subset_grpc,
     sync_get_external_job_subset_grpc,
@@ -14,7 +15,6 @@ from dagster._core.remote_representation.external_data import RemoteJobSubsetRes
 from dagster._core.remote_representation.handle import JobHandle
 from dagster._core.test_utils import environ
 from dagster._utils.error import serializable_error_info_from_exc_info
-
 from dagster_tests.api_tests.utils import get_bar_repo_code_location, get_bar_workspace
 
 

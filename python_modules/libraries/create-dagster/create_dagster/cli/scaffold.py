@@ -3,6 +3,9 @@ from pathlib import Path
 from typing import Optional
 
 import click
+
+from create_dagster.scaffold import scaffold_project, scaffold_workspace
+from create_dagster.version_check import check_create_dagster_up_to_date
 from dagster_dg_core.config import discover_workspace_root, normalize_cli_config
 from dagster_dg_core.context import DgContext
 from dagster_dg_core.shared_options import dg_editable_dagster_options, dg_global_options
@@ -16,9 +19,6 @@ from dagster_dg_core.utils import (
     pushd,
 )
 from dagster_dg_core.utils.telemetry import cli_telemetry_wrapper
-
-from create_dagster.scaffold import scaffold_project, scaffold_workspace
-from create_dagster.version_check import check_create_dagster_up_to_date
 
 
 def _project_package_install_warning_message() -> str:

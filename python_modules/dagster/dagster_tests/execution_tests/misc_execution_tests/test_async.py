@@ -1,10 +1,11 @@
 import asyncio
 from contextlib import asynccontextmanager
 
-import dagster as dg
 import pytest
-from dagster._utils.test import wrap_op_in_graph_and_execute
 from pydantic import PrivateAttr
+
+import dagster as dg
+from dagster._utils.test import wrap_op_in_graph_and_execute
 
 
 def test_aio_op():

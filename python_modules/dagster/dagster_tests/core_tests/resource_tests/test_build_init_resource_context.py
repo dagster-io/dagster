@@ -1,5 +1,6 @@
-import dagster as dg
 import pytest
+
+import dagster as dg
 
 
 def test_build_no_args():

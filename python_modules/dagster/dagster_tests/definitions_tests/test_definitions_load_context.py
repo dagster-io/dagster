@@ -1,8 +1,9 @@
 import json
 from unittest.mock import patch
 
-import dagster as dg
 import pytest
+
+import dagster as dg
 from dagster._core.code_pointer import CodePointer
 from dagster._core.definitions.asset_selection import AssetSelection
 from dagster._core.definitions.definitions_class import Definitions

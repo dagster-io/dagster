@@ -1,8 +1,9 @@
 import asyncio
 import sys
 
-import dagster as dg
 import pytest
+
+import dagster as dg
 from dagster._api.list_repositories import (
     gen_list_repositories_ephemeral_grpc,
     sync_list_repositories_ephemeral_grpc,

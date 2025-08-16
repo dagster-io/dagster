@@ -2,7 +2,6 @@ import asyncio
 from collections.abc import Sequence
 from typing import TYPE_CHECKING, Union
 
-from dagster_shared.serdes import whitelist_for_serdes
 from typing_extensions import Self
 
 import dagster._check as check
@@ -18,6 +17,7 @@ from dagster._core.definitions.declarative_automation.automation_context import 
 from dagster._core.definitions.declarative_automation.operators.utils import has_allow_ignore
 from dagster._core.definitions.declarative_automation.serialized_objects import OperatorType
 from dagster._record import copy, record
+from dagster_shared.serdes import whitelist_for_serdes
 
 if TYPE_CHECKING:
     from dagster._core.definitions.asset_selection import AssetSelection

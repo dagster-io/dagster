@@ -2,8 +2,9 @@ import os
 from typing import Optional
 from unittest import mock
 
-import dagster as dg
 import pytest
+
+import dagster as dg
 from dagster._api.snapshot_sensor import (
     sync_get_external_sensor_execution_data_ephemeral_grpc,
     sync_get_external_sensor_execution_data_grpc,
@@ -13,7 +14,6 @@ from dagster._core.errors import DagsterUserCodeProcessError, DagsterUserCodeUnr
 from dagster._core.remote_representation.external_data import SensorExecutionErrorSnap
 from dagster._grpc.client import ephemeral_grpc_api_client
 from dagster._grpc.types import SensorExecutionArgs
-
 from dagster_tests.api_tests.utils import get_bar_repo_handle
 
 

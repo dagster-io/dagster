@@ -1,5 +1,4 @@
 from dagster_dbt.cloud_v2.resources import DbtCloudCredentials, DbtCloudWorkspace
-
 from dagster_dbt_cloud_kitchen_sink.utils import get_env_var
 
 

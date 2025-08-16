@@ -5,6 +5,7 @@ from buildkite_shared.step_builders.group_step_builder import (
     GroupStepBuilder,
 )
 from buildkite_shared.step_builders.step_builder import StepConfiguration
+
 from dagster_buildkite.images.versions import add_test_image
 from dagster_buildkite.utils import skip_if_no_docs_changes
 

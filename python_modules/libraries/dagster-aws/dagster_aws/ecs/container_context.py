@@ -16,7 +16,6 @@ from dagster._core.container_context import process_shared_container_context_con
 from dagster._core.errors import DagsterInvalidConfigError
 from dagster._core.storage.dagster_run import DagsterRun
 from dagster._core.utils import parse_env_var
-
 from dagster_aws.secretsmanager import get_tagged_secrets
 
 if TYPE_CHECKING:

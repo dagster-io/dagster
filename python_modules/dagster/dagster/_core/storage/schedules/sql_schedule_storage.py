@@ -6,7 +6,6 @@ from typing import Any, Callable, ContextManager, NamedTuple, Optional, TypeVar 
 
 import sqlalchemy as db
 import sqlalchemy.exc as db_exc
-from dagster_shared.serdes import deserialize_value
 from sqlalchemy.engine import Connection
 
 import dagster._check as check
@@ -43,6 +42,7 @@ from dagster._core.storage.sqlalchemy_compat import db_fetch_mappings, db_select
 from dagster._serdes import serialize_value
 from dagster._time import datetime_from_timestamp, get_current_datetime
 from dagster._utils import PrintFn
+from dagster_shared.serdes import deserialize_value
 
 T_NamedTuple = TypeVar("T_NamedTuple", bound=NamedTuple)
 

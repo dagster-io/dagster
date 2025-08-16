@@ -4,6 +4,7 @@ import tempfile
 from unittest import mock
 
 import pytest
+
 from dagster import DagsterEventType, graph, op
 from dagster._core.instance import DagsterInstance, InstanceRef, InstanceType
 from dagster._core.launcher.sync_in_memory_run_launcher import SyncInMemoryRunLauncher

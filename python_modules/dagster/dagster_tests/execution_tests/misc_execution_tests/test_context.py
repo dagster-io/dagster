@@ -1,8 +1,9 @@
 import tempfile
 
+import pytest
+
 import dagster as dg
 import dagster._check as check
-import pytest
 from dagster import (
     AssetCheckExecutionContext,
     AssetExecutionContext,

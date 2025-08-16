@@ -5,6 +5,9 @@ from collections.abc import Iterator, Mapping, Sequence
 from contextlib import contextmanager
 from typing import IO, Any, Optional
 
+from google.cloud import storage
+from typing_extensions import Self
+
 import dagster_shared.seven as seven
 from dagster import (
     Field,
@@ -23,8 +26,6 @@ from dagster._core.storage.local_compute_log_manager import (
 )
 from dagster._serdes import ConfigurableClass, ConfigurableClassData
 from dagster._utils import ensure_dir
-from google.cloud import storage
-from typing_extensions import Self
 
 
 class GCSComputeLogManager(TruncatingCloudStorageComputeLogManager, ConfigurableClass):

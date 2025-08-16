@@ -1,8 +1,9 @@
+from pandas import DataFrame
+
 from dagster import SourceAsset, TableSchema, asset
 from dagster._core.execution.context.compute import AssetExecutionContext
 from dagster._utils import file_relative_path
 from dagster_dbt import DbtCliResource, dbt_assets
-from pandas import DataFrame
 
 DBT_PROJECT_DIR = file_relative_path(__file__, "../../dbt_project")
 dbt_resource = DbtCliResource(project_dir=DBT_PROJECT_DIR)

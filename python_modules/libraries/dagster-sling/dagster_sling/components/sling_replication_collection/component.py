@@ -4,6 +4,9 @@ from functools import cached_property
 from pathlib import Path
 from typing import Annotated, Any, Literal, Optional, Union
 
+from pydantic import BaseModel, ConfigDict, Field
+from typing_extensions import TypeAlias
+
 from dagster import Resolvable, Resolver
 from dagster._core.definitions.assets.definition.asset_spec import AssetSpec
 from dagster._core.definitions.assets.definition.assets_definition import AssetsDefinition
@@ -21,9 +24,6 @@ from dagster.components.resolved.core_models import OpSpec
 from dagster.components.scaffold.scaffold import scaffold_with
 from dagster.components.utils.translation import TranslationFn, TranslationFnResolver
 from dagster_shared.utils.warnings import deprecation_warning
-from pydantic import BaseModel, ConfigDict, Field
-from typing_extensions import TypeAlias
-
 from dagster_sling.asset_decorator import sling_assets
 from dagster_sling.components.sling_replication_collection.scaffolder import (
     SlingReplicationComponentScaffolder,

@@ -3,7 +3,6 @@ import os
 from collections.abc import Mapping, Sequence
 from typing import Any, NamedTuple, Optional
 
-from dagster_shared.error import DagsterError
 from typing_extensions import Self
 
 import dagster._check as check
@@ -21,6 +20,7 @@ from dagster._serdes import ConfigurableClass
 from dagster._serdes.config_class import ConfigurableClassData
 from dagster._time import get_current_timestamp
 from dagster._utils import mkdir_p
+from dagster_shared.error import DagsterError
 
 
 class DagsterSchedulerError(DagsterError):

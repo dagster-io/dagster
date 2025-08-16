@@ -7,6 +7,7 @@ from contextlib import contextmanager
 from typing import TYPE_CHECKING
 
 import boto3
+
 import dagster._check as check
 from dagster._core.pipes.client import PipesContextInjector, PipesParams
 from dagster._core.pipes.utils import PipesEnvContextInjector

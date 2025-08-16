@@ -1,13 +1,6 @@
 from unittest.mock import MagicMock
 
-import dagster as dg
 import pytest
-from dagster._core.pipes import open_pipes_session
-from dagster_gcp.pipes.clients.dataproc_job import (
-    JOB_TYPES_WITH_ARGS,
-    PipesDataprocJobClient,
-    SubmitJobParams,
-)
 from google.cloud.dataproc_v1 import (
     FlinkJob,
     HadoopJob,
@@ -15,6 +8,14 @@ from google.cloud.dataproc_v1 import (
     SparkJob,
     SparkRJob,
     SubmitJobRequest,
+)
+
+import dagster as dg
+from dagster._core.pipes import open_pipes_session
+from dagster_gcp.pipes.clients.dataproc_job import (
+    JOB_TYPES_WITH_ARGS,
+    PipesDataprocJobClient,
+    SubmitJobParams,
 )
 
 

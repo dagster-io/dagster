@@ -1,10 +1,11 @@
 import os
 import sys
 
-import dagster as dg
 import pytest
 from click import UsageError
 from click.testing import CliRunner
+
+import dagster as dg
 from dagster._cli.job import execute_list_command, job_list_command
 from dagster._cli.workspace.cli_target import WorkspaceOpts
 from dagster._core.types.loadable_target_origin import LoadableTargetOrigin

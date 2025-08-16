@@ -1,7 +1,8 @@
 import re
 
-import dagster as dg
 import pytest
+
+import dagster as dg
 
 
 def test_invalid_optional_in_config():

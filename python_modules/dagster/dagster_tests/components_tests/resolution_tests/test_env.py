@@ -1,8 +1,9 @@
 import os
 from dataclasses import dataclass
 
-import dagster as dg
 import pytest
+
+import dagster as dg
 from dagster._utils.env import environ
 from dagster.components.resolved.errors import ResolutionException
 

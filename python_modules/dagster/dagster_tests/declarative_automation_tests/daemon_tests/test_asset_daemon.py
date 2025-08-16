@@ -5,8 +5,9 @@ from contextlib import contextmanager, nullcontext
 from typing import Any, Optional, cast
 from unittest import mock
 
-import dagster as dg
 import pytest
+
+import dagster as dg
 from dagster import AutoMaterializeRule, AutomationCondition, DagsterInstance
 from dagster._core.definitions.asset_daemon_cursor import AssetDaemonCursor
 from dagster._core.definitions.asset_selection import AssetSelection
@@ -41,7 +42,6 @@ from dagster._daemon.asset_daemon import (
     set_auto_materialize_paused,
 )
 from dagster._time import get_current_datetime, get_current_timestamp
-
 from dagster_tests.declarative_automation_tests.legacy_tests.updated_scenarios.basic_scenarios import (
     basic_scenarios,
 )

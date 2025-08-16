@@ -15,8 +15,6 @@ from typing import (  # noqa: UP035
     cast,
 )
 
-from dagster_shared.record import replace
-
 import dagster._check as check
 from dagster._annotations import beta_param, deprecated_param, public
 from dagster._core.definitions.asset_checks.asset_check_spec import AssetCheckSpec
@@ -81,6 +79,7 @@ from dagster._utils.merger import merge_dicts, reverse_dict
 from dagster._utils.security import non_secure_md5_hash_str
 from dagster._utils.tags import normalize_tags
 from dagster._utils.warnings import BetaWarning, PreviewWarning, disable_dagster_warnings
+from dagster_shared.record import replace
 
 if TYPE_CHECKING:
     from dagster._core.definitions.asset_checks.asset_checks_definition import AssetChecksDefinition

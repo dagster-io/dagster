@@ -13,9 +13,12 @@ from pathlib import Path
 from typing import AbstractSet, Any, Optional, Union  # noqa: UP035
 
 import aiohttp
-import dagster._check as check
 import requests
 from aiohttp.client_exceptions import ClientResponseError
+from pydantic import Field, PrivateAttr
+from sqlglot import exp, parse_one
+
+import dagster._check as check
 from dagster import ConfigurableResource
 from dagster._annotations import beta, deprecated, public
 from dagster._core.definitions.assets.definition.asset_spec import AssetSpec
@@ -28,9 +31,6 @@ from dagster._utils.cached_method import cached_method
 from dagster._utils.log import get_dagster_logger
 from dagster._utils.warnings import deprecation_warning
 from dagster_shared.serdes import deserialize_value
-from pydantic import Field, PrivateAttr
-from sqlglot import exp, parse_one
-
 from dagster_sigma.cli import SIGMA_RECON_DATA_PREFIX, SNAPSHOT_ENV_VAR_NAME
 from dagster_sigma.translator import (
     DagsterSigmaTranslator,

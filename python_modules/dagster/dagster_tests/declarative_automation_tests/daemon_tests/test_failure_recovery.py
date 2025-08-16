@@ -1,14 +1,14 @@
 import datetime
 import multiprocessing
 
-import dagster as dg
 import pytest
+
+import dagster as dg
 from dagster._core.instance.ref import InstanceRef
 from dagster._core.instance_for_test import cleanup_test_instance
 from dagster._core.scheduler.instigation import TickStatus
 from dagster._core.test_utils import freeze_time
 from dagster._utils import get_terminate_signal
-
 from dagster_tests.declarative_automation_tests.daemon_tests.test_e2e import (
     _execute_ticks,
     _get_all_sensors,

@@ -1,7 +1,8 @@
+from dagstermill.manager import MANAGER_FOR_NOTEBOOK_INSTANCE
+
 from dagster._core.definitions.dependency import Node
 from dagster._core.definitions.op_definition import OpDefinition
 from dagster._core.system_config.objects import ResolvedRunConfig
-from dagstermill.manager import MANAGER_FOR_NOTEBOOK_INSTANCE
 
 BARE_OUT_OF_JOB_CONTEXT = MANAGER_FOR_NOTEBOOK_INSTANCE.get_context()
 

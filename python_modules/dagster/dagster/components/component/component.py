@@ -4,8 +4,6 @@ from collections.abc import Mapping, Sequence
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Optional
 
-from dagster_shared.record import IHaveNew, record_custom
-from dagster_shared.yaml_utils.source_position import SourcePosition
 from pydantic import BaseModel, TypeAdapter
 from typing_extensions import Self
 
@@ -18,6 +16,8 @@ from dagster.components.component.component_scaffolder import DefaultComponentSc
 from dagster.components.component.template_vars import get_context_free_static_template_vars
 from dagster.components.resolved.base import Resolvable
 from dagster.components.scaffold.scaffold import scaffold_with
+from dagster_shared.record import IHaveNew, record_custom
+from dagster_shared.yaml_utils.source_position import SourcePosition
 
 if TYPE_CHECKING:
     from dagster.components.core.context import ComponentLoadContext

@@ -1,17 +1,16 @@
-# ruff: noqa: I001 - import order differs between CI and local due to package installation differences
 import textwrap
 from pathlib import Path
 
 import responses
+
+from dagster_dg_cli.utils.plus import gql
+from dagster_dg_cli_tests.cli_tests.plus_tests.utils import mock_gql_response
 from dagster_test.dg_utils.utils import (
     ProxyRunner,
     assert_runner_result,
     isolated_example_project_foo_bar,
     match_terminal_box_output,
 )
-
-from dagster_dg_cli.utils.plus import gql
-from dagster_dg_cli_tests.cli_tests.plus_tests.utils import mock_gql_response
 
 # ###############################################################
 # ##### TEST LIST COMMANDS WITH PLUS CONFIGURED ENV VARS

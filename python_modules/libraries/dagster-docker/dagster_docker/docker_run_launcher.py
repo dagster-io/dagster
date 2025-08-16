@@ -2,8 +2,10 @@ import json
 from collections.abc import Mapping
 from typing import Any, Optional
 
-import dagster._check as check
 import docker
+from typing_extensions import Self
+
+import dagster._check as check
 from dagster._core.launcher.base import (
     CheckRunHealthResult,
     LaunchRunContext,
@@ -17,8 +19,6 @@ from dagster._core.utils import parse_env_var
 from dagster._grpc.types import ExecuteRunArgs, ResumeRunArgs
 from dagster._serdes import ConfigurableClass
 from dagster._serdes.config_class import ConfigurableClassData
-from typing_extensions import Self
-
 from dagster_docker.container_context import DockerContainerContext
 from dagster_docker.utils import DOCKER_CONFIG_SCHEMA, validate_docker_config, validate_docker_image
 

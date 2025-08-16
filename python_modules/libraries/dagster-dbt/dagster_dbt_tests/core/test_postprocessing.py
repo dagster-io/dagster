@@ -5,6 +5,7 @@ from typing import Any, cast
 from unittest import mock
 
 import pytest
+
 from dagster import (
     AssetExecutionContext,
     _check as check,
@@ -18,7 +19,6 @@ from dagster_dbt.asset_decorator import dbt_assets
 from dagster_dbt.core.dbt_cli_invocation import DbtCliInvocation, DbtDagsterEventType
 from dagster_dbt.core.dbt_event_iterator import _get_dbt_resource_props_from_event
 from dagster_dbt.core.resource import DbtCliResource
-
 from dagster_dbt_tests.conftest import _create_dbt_invocation
 from dagster_dbt_tests.dbt_projects import test_jaffle_shop_path
 

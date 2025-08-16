@@ -6,6 +6,7 @@ from typing import Any
 
 import pytest
 import responses
+
 from dagster import (
     DagsterInstance,
     Definitions,

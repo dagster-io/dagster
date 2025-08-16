@@ -3,11 +3,11 @@ import time
 from datetime import timedelta
 
 import pytest
+
 from dagster import AssetKey, DagsterInstance
 from dagster._core.definitions.metadata.metadata_value import JsonMetadataValue
 from dagster._core.events.log import EventLogEntry
 from dagster._time import get_current_datetime
-
 from kitchen_sink_tests.integration_tests.conftest import makefile_dir
 
 RAW_METADATA_KEY = "Run Metadata (raw)"

@@ -1,8 +1,8 @@
-import dagster._check as check
 import graphene
+
+import dagster._check as check
 from dagster._core.remote_representation import RemoteExecutionPlan
 from dagster._core.snap import ExecutionStepInputSnap, ExecutionStepOutputSnap, ExecutionStepSnap
-
 from dagster_graphql.schema.metadata import GrapheneMetadataItemDefinition
 from dagster_graphql.schema.util import ResolveInfo, non_null_list
 

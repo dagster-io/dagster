@@ -7,11 +7,7 @@ from enum import Enum
 from importlib.metadata import version
 from typing import IO, Any, Final, Optional
 
-import dagster
-import dagster._check as check
-import dagster_pyspark
 import requests.exceptions
-from dagster._annotations import public
 from databricks.sdk import WorkspaceClient
 from databricks.sdk.core import (
     Config,
@@ -22,7 +18,11 @@ from databricks.sdk.core import (
 )
 from databricks.sdk.service import jobs
 
+import dagster
+import dagster._check as check
 import dagster_databricks
+import dagster_pyspark
+from dagster._annotations import public
 from dagster_databricks.types import DatabricksRunState
 from dagster_databricks.version import __version__
 

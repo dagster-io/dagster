@@ -7,6 +7,7 @@ from urllib.parse import urlparse
 
 import pytest
 import sqlalchemy as db
+
 from dagster import AssetKey, AssetMaterialization, AssetObservation, Output, job, op
 from dagster._core.definitions.data_version import DATA_VERSION_TAG
 from dagster._core.errors import DagsterInvalidInvocationError
@@ -141,6 +142,7 @@ def test_asset_observation_backcompat(conn_string):
 
 def test_jobs_selector_id_migration(conn_string):
     import sqlalchemy as db
+
     from dagster._core.storage.schedules.migration import SCHEDULE_JOBS_SELECTOR_ID
     from dagster._core.storage.schedules.schema import InstigatorsTable, JobTable, JobTickTable
 

@@ -17,6 +17,8 @@ from buildkite_shared.step_builders.step_builder import (
     TopLevelStepConfiguration,
     is_command_step,
 )
+from typing_extensions import TypeAlias
+
 from dagster_buildkite.defines import GCP_CREDS_FILENAME, GCP_CREDS_LOCAL_FILE, GIT_REPO_ROOT
 from dagster_buildkite.steps.test_project import test_project_depends_fn
 from dagster_buildkite.steps.tox import ToxFactor, build_tox_step
@@ -29,7 +31,6 @@ from dagster_buildkite.utils import (
     skip_if_not_dagster_dbt_cloud_commit,
     skip_if_not_dagster_dbt_commit,
 )
-from typing_extensions import TypeAlias
 
 _CORE_PACKAGES = [
     "python_modules/dagster",

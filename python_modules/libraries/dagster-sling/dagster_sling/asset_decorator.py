@@ -12,7 +12,6 @@ from dagster import (
 from dagster._core.definitions.assets.definition.asset_spec import AssetSpec
 from dagster._utils.merger import deep_merge_dicts
 from dagster._utils.security import non_secure_md5_hash_str
-
 from dagster_sling.dagster_sling_translator import DagsterSlingTranslator
 from dagster_sling.sling_replication import SlingReplicationParam, validate_replication
 

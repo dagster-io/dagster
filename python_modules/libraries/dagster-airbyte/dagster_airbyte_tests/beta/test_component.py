@@ -6,6 +6,7 @@ from typing import Any, Callable, Optional
 
 import pytest
 import responses
+
 from dagster import AssetKey
 from dagster._core.definitions.assets.definition.asset_spec import AssetSpec
 from dagster._core.definitions.definitions_class import Definitions
@@ -18,14 +19,13 @@ from dagster.components.testing.utils import create_defs_folder_sandbox
 from dagster_airbyte.components.workspace_component.component import AirbyteCloudWorkspaceComponent
 from dagster_airbyte.resources import AirbyteCloudWorkspace
 from dagster_airbyte.translator import AirbyteConnection
-from dagster_shared.merger import deep_merge_dicts
-
 from dagster_airbyte_tests.beta.conftest import (
     TEST_CLIENT_ID,
     TEST_CLIENT_SECRET,
     TEST_CONNECTION_ID,
     TEST_WORKSPACE_ID,
 )
+from dagster_shared.merger import deep_merge_dicts
 
 ensure_dagster_tests_import()
 

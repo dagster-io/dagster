@@ -2,6 +2,7 @@ from urllib.parse import urlparse
 
 import pytest
 import yaml
+
 from dagster._core.test_utils import ensure_dagster_tests_import, environ, instance_for_test
 from dagster_mysql.run_storage import MySQLRunStorage
 

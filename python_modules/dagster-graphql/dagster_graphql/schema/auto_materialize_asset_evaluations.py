@@ -2,6 +2,7 @@ from collections.abc import Sequence
 from typing import Optional
 
 import graphene
+
 from dagster._core.definitions.auto_materialize_rule_evaluation import AutoMaterializeDecisionType
 from dagster._core.definitions.declarative_automation.legacy.rule_condition import RuleCondition
 from dagster._core.definitions.declarative_automation.serialized_objects import (
@@ -10,7 +11,6 @@ from dagster._core.definitions.declarative_automation.serialized_objects import 
 )
 from dagster._core.definitions.metadata import DagsterAssetMetadataValue
 from dagster._core.scheduler.instigation import AutoMaterializeAssetEvaluationRecord
-
 from dagster_graphql.schema.auto_materialize_policy import GrapheneAutoMaterializeRule
 from dagster_graphql.schema.entity_key import GrapheneAssetKey
 from dagster_graphql.schema.errors import GrapheneError

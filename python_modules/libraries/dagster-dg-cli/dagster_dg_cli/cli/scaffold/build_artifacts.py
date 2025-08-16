@@ -4,12 +4,6 @@ from pathlib import Path
 from typing import Optional
 
 import click
-from dagster_dg_core.config import DgRawCliConfig, normalize_cli_config
-from dagster_dg_core.context import DgContext
-from dagster_dg_core.shared_options import dg_editable_dagster_options, dg_global_options
-from dagster_dg_core.utils import DgClickCommand
-from dagster_dg_core.utils.telemetry import cli_telemetry_wrapper
-from dagster_shared.plus.config import DagsterPlusCliConfig
 
 from dagster_dg_cli.cli.plus.constants import DgPlusAgentPlatform
 from dagster_dg_cli.utils.plus.build import (
@@ -18,6 +12,12 @@ from dagster_dg_cli.utils.plus.build import (
     get_dockerfile_path,
 )
 from dagster_dg_cli.utils.plus.gql_client import DagsterPlusGraphQLClient
+from dagster_dg_core.config import DgRawCliConfig, normalize_cli_config
+from dagster_dg_core.context import DgContext
+from dagster_dg_core.shared_options import dg_editable_dagster_options, dg_global_options
+from dagster_dg_core.utils import DgClickCommand
+from dagster_dg_core.utils.telemetry import cli_telemetry_wrapper
+from dagster_shared.plus.config import DagsterPlusCliConfig
 
 
 def _get_scaffolded_container_context_yaml(agent_platform: DgPlusAgentPlatform) -> Optional[str]:

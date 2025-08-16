@@ -9,6 +9,7 @@ from airflow import (
     __version__ as airflow_version,
 )
 from airflow.models import Connection, TaskInstance
+
 from dagster_airflow import DagsterCloudOperator
 
 if airflow_version >= "2.0.0":

@@ -4,6 +4,7 @@ from pathlib import Path
 from typing import AbstractSet, Callable  # noqa: UP035
 
 import pytest
+
 from dagster import DagsterInstance
 from dagster._core.storage.dagster_run import DagsterRunStatus
 from dagster_airlift.core import AirflowBasicAuthBackend, AirflowInstance

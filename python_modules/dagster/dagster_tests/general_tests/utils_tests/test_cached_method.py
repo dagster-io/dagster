@@ -6,6 +6,7 @@ import random
 from typing import NamedTuple
 
 import objgraph
+
 from dagster_shared.utils.cached_method import (
     CACHED_METHOD_CACHE_FIELD,
     cached_method,

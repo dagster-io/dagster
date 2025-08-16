@@ -6,6 +6,8 @@ from unittest import mock
 
 import objgraph
 import pytest
+from starlette.testclient import TestClient
+
 from dagster import job, op
 from dagster._core.test_utils import environ, instance_for_test
 from dagster._core.workspace.context import WorkspaceProcessContext
@@ -13,7 +15,6 @@ from dagster._core.workspace.load_target import WorkspaceFileTarget
 from dagster._utils import file_relative_path
 from dagster_webserver.graphql import GraphQLWS
 from dagster_webserver.webserver import DagsterWebserver
-from starlette.testclient import TestClient
 
 EVENT_LOG_SUBSCRIPTION = """
     subscription PipelineRunLogsSubscription($runId: ID!) {

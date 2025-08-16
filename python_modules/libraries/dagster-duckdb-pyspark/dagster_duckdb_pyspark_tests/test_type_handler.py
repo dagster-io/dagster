@@ -3,6 +3,11 @@ import os
 import duckdb
 import pandas as pd
 import pytest
+from pyspark.sql import (
+    DataFrame as SparkDF,
+    SparkSession,
+)
+
 from dagster import (
     AssetExecutionContext,
     AssetIn,
@@ -24,10 +29,6 @@ from dagster._core.definitions.partitions.definition import (
 )
 from dagster._core.definitions.partitions.utils import MultiPartitionKey
 from dagster_duckdb_pyspark import DuckDBPySparkIOManager, duckdb_pyspark_io_manager
-from pyspark.sql import (
-    DataFrame as SparkDF,
-    SparkSession,
-)
 
 
 @pytest.fixture

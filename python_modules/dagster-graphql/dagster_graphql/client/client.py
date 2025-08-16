@@ -2,19 +2,19 @@ from collections.abc import Iterable, Mapping, Sequence
 from itertools import chain
 from typing import Any, Optional, Union
 
-import dagster._check as check
 import requests.exceptions
-from dagster import DagsterRunStatus
-from dagster._annotations import deprecated, public
-from dagster._core.definitions.asset_key import AssetKey, CoercibleToAssetKey
-from dagster._core.definitions.run_config import RunConfig, convert_config_input
-from dagster._utils.tags import normalize_tags
 from gql import Client, gql
 from gql.transport import Transport
 from gql.transport.exceptions import TransportServerError
 from gql.transport.requests import RequestsHTTPTransport
 from requests.auth import AuthBase
 
+import dagster._check as check
+from dagster import DagsterRunStatus
+from dagster._annotations import deprecated, public
+from dagster._core.definitions.asset_key import AssetKey, CoercibleToAssetKey
+from dagster._core.definitions.run_config import RunConfig, convert_config_input
+from dagster._utils.tags import normalize_tags
 from dagster_graphql.client.client_queries import (
     CLIENT_GET_REPO_LOCATIONS_NAMES_AND_PIPELINES_QUERY,
     CLIENT_SUBMIT_PIPELINE_RUN_MUTATION,

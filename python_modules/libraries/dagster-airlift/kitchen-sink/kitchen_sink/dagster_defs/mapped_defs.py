@@ -13,7 +13,6 @@ from dagster_airlift.core import (
     load_airflow_dag_asset_specs,
 )
 from dagster_airlift.core.multiple_tasks import targeted_by_multiple_tasks
-
 from kitchen_sink.airflow_instance import local_airflow_instance
 from kitchen_sink.dagster_defs.retries_configured import just_fails, succeeds_on_final_retry
 

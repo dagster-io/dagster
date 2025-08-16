@@ -1,10 +1,10 @@
 import graphene
+
 from dagster._core.definitions.freshness import (
     CronFreshnessPolicy,
     InternalFreshnessPolicy,
     TimeWindowFreshnessPolicy,
 )
-
 from dagster_graphql.schema.asset_health import (
     GrapheneAssetHealthFreshnessMeta,
     GrapheneAssetHealthStatus,

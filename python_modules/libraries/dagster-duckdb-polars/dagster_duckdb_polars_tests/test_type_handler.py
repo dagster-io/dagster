@@ -3,6 +3,7 @@ import os
 import duckdb
 import polars as pl
 import pytest
+
 from dagster import (
     AssetExecutionContext,
     AssetIn,

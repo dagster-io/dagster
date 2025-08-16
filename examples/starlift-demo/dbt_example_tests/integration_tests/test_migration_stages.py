@@ -3,12 +3,12 @@ import os
 import subprocess
 
 import pytest
+from dbt_example.dagster_defs.utils import get_airflow_instance
+
 from dagster import AssetKey, DagsterInstance
 from dagster._core.storage.dagster_run import RunsFilter
 from dagster._time import get_current_timestamp
 from dagster_airlift.constants import DAG_RUN_ID_TAG_KEY
-from dbt_example.dagster_defs.utils import get_airflow_instance
-
 from dbt_example_tests.integration_tests.conftest import makefile_dir
 
 DAG_ID = "rebuild_iris_models"

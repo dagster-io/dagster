@@ -1,8 +1,8 @@
 import responses
+
 from dagster import AssetCheckEvaluation, AssetMaterialization
 from dagster_dbt.cloud_v2.resources import DbtCloudWorkspace
 from dagster_dbt.cloud_v2.run_handler import DbtCloudJobRunResults
-
 from dagster_dbt_tests.cloud_v2.conftest import TEST_RUN_URL, get_sample_run_results_json
 
 

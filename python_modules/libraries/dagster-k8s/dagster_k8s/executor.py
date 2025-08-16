@@ -3,6 +3,7 @@ from collections.abc import Iterator
 from typing import Optional, cast
 
 import kubernetes.config
+
 from dagster import (
     Field,
     IntSource,
@@ -27,7 +28,6 @@ from dagster._core.executor.step_delegating import (
 )
 from dagster._utils.cached_method import cached_method
 from dagster._utils.merger import merge_dicts
-
 from dagster_k8s.client import DagsterKubernetesClient
 from dagster_k8s.container_context import K8sContainerContext
 from dagster_k8s.job import (

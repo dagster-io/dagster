@@ -2,7 +2,6 @@ from typing import Any, Callable, Optional
 
 from dagster import AssetsDefinition, multi_asset
 from dagster._core.errors import DagsterInvariantViolationError
-
 from dagster_fivetran.resources import FivetranWorkspace
 from dagster_fivetran.translator import (
     ConnectorSelectorFn,

@@ -2,6 +2,7 @@ from typing import Optional
 
 import pytest
 import responses
+
 from dagster import AssetCheckEvaluation, AssetExecutionContext, AssetMaterialization, Failure
 from dagster._core.definitions.materialize import materialize
 from dagster._core.test_utils import environ
@@ -9,7 +10,6 @@ from dagster_dbt.asset_utils import DBT_INDIRECT_SELECTION_ENV
 from dagster_dbt.cloud_v2.asset_decorator import dbt_cloud_assets
 from dagster_dbt.cloud_v2.resources import DbtCloudCredentials, DbtCloudWorkspace
 from dagster_dbt.cloud_v2.types import DbtCloudJobRunStatusType
-
 from dagster_dbt_tests.cloud_v2.conftest import (
     SAMPLE_CUSTOM_CREATE_JOB_RESPONSE,
     TEST_ACCOUNT_ID,

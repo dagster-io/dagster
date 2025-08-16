@@ -1,9 +1,9 @@
 from typing import Optional, Union
 
 import boto3
-import dagster._check as check
 from botocore.handlers import disable_signing
 
+import dagster._check as check
 from dagster_aws.utils import construct_boto_client_retry_config
 
 

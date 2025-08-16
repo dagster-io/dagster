@@ -4,6 +4,7 @@ from typing import Optional
 
 import airflow
 from airflow.models.connection import Connection
+
 from dagster import (
     Array,
     DagsterRun,
@@ -14,7 +15,6 @@ from dagster import (
     _check as check,
 )
 from dagster._annotations import superseded
-
 from dagster_airflow.resources.airflow_db import AirflowDatabase
 from dagster_airflow.utils import (
     create_airflow_connections,

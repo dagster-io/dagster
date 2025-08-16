@@ -1,7 +1,8 @@
 import re
 
-import dagster as dg
 import pytest
+
+import dagster as dg
 from dagster import Int
 from dagster._core.test_utils import nesting_graph
 from dagster._core.utility_ops import create_op_with_deps, create_root_op, create_stub_op, input_set

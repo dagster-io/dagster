@@ -2,6 +2,7 @@ import json
 
 import pytest
 from click.testing import CliRunner
+
 from dagster_graphql.cli import ui
 from dagster_graphql.schema.pipelines.status import GrapheneRunStatus
 

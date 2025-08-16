@@ -4,9 +4,11 @@ from pathlib import Path
 from typing import Literal, Optional, get_args
 
 import create_dagster.version_check
-import dagster_shared.check as check
 import pytest
 import tomlkit
+from typing_extensions import TypeAlias
+
+import dagster_shared.check as check
 from dagster_dg_core.shared_options import DEFAULT_EDITABLE_DAGSTER_PROJECTS_ENV_VAR
 from dagster_dg_core.utils import (
     create_toml_node,
@@ -22,7 +24,6 @@ from dagster_test.dg_utils.utils import (
     clear_module_from_cache,
     isolated_example_workspace,
 )
-from typing_extensions import TypeAlias
 
 # ########################
 # ##### WORKSPACE

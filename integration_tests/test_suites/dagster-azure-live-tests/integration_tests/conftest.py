@@ -15,6 +15,7 @@ import pytest
 import requests
 from azure.identity import ClientSecretCredential
 from azure.storage.blob import ContainerClient
+
 from dagster._core.test_utils import environ
 from dagster._time import get_current_timestamp
 from dagster._utils import process_is_alive

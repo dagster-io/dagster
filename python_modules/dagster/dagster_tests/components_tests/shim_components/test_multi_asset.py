@@ -3,7 +3,6 @@ from dagster.components.lib.shim_components.multi_asset import (
     MultiAssetScaffolder,
     MultiAssetScaffoldParams,
 )
-
 from dagster_tests.components_tests.shim_components.shim_test_utils import (
     execute_ruff_compliance_test,
     execute_scaffolder_and_get_symbol,

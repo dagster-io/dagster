@@ -5,6 +5,7 @@ from datetime import datetime
 from queue import Queue
 
 import pytest
+
 from dagster._core.pipes.merge_streams import LogItem, merge_streams
 
 

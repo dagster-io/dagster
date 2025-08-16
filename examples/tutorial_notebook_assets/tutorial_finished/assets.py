@@ -1,6 +1,7 @@
 import pandas as pd
-from dagster import AssetIn, asset, file_relative_path
 from dagstermill import define_dagstermill_asset
+
+from dagster import AssetIn, asset, file_relative_path
 
 
 # fetch the iris dataset

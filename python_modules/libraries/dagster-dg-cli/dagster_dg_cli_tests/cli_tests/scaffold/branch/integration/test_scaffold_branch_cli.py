@@ -7,6 +7,7 @@ from tempfile import TemporaryDirectory
 from unittest.mock import Mock, patch
 
 import pytest
+
 from dagster_test.dg_utils.utils import (
     ProxyRunner,
     assert_runner_result,

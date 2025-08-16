@@ -3,12 +3,13 @@ import os
 from datetime import datetime
 from io import StringIO
 
-import dagster as dg
 import polars as pl
-from dagster_duckdb import DuckDBResource
 from google.oauth2 import service_account
 from googleapiclient.discovery import build
 from pydantic import BaseModel, PrivateAttr
+
+import dagster as dg
+from dagster_duckdb import DuckDBResource
 
 
 class DriveFile(BaseModel):

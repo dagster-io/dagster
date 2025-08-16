@@ -3,6 +3,8 @@ from datetime import datetime
 
 import pyarrow as pa
 import pytest
+from deltalake import DeltaTable
+
 from dagster import (
     AssetExecutionContext,
     AssetIn,
@@ -24,7 +26,6 @@ from dagster._core.definitions.partitions.definition import (
 )
 from dagster._core.definitions.partitions.utils import MultiPartitionKey
 from dagster_deltalake import DELTA_DATE_FORMAT, DeltaLakePyarrowIOManager, LocalConfig
-from deltalake import DeltaTable
 
 
 @pytest.fixture

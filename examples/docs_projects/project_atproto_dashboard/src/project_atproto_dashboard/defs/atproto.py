@@ -1,8 +1,9 @@
 import os
 from typing import TYPE_CHECKING, Optional
 
-import dagster as dg
 from atproto import Client
+
+import dagster as dg
 
 if TYPE_CHECKING:
     from atproto_client import models

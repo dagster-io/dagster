@@ -1,7 +1,8 @@
 from time import sleep
 
-from dagster import Config, In, Int, List, Out, Output, job, op
 from pydantic import Field
+
+from dagster import Config, In, Int, List, Out, Output, job, op
 
 
 @op(

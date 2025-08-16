@@ -3,12 +3,13 @@ import re
 from collections.abc import Generator
 from typing import Any
 
-import dagster as dg
 import pytest
+from pydantic import PrivateAttr
+
+import dagster as dg
 from dagster._check import CheckError
 from dagster._core.execution.context.init import InitResourceContext
 from dagster._core.test_utils import environ
-from pydantic import PrivateAttr
 
 
 def test_basic_pre_teardown_after_execution() -> None:

@@ -11,6 +11,8 @@ import psycopg2.errorcodes
 import psycopg2.extensions
 import sqlalchemy
 import sqlalchemy.exc
+from sqlalchemy.engine import Connection
+
 from dagster import _check as check
 from dagster._core.definitions.policy import Backoff, Jitter, calculate_delay
 
@@ -18,7 +20,6 @@ from dagster._core.definitions.policy import Backoff, Jitter, calculate_delay
 from dagster._core.storage.config import pg_config as pg_config
 from dagster._core.storage.event_log.sql_event_log import SqlDbConnection
 from dagster._core.storage.sql import get_alembic_config
-from sqlalchemy.engine import Connection
 
 T = TypeVar("T")
 

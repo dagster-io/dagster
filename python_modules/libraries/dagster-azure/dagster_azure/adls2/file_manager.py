@@ -10,7 +10,6 @@ from dagster._core.storage.file_manager import (
     TempfileManager,
     check_file_like_obj,
 )
-
 from dagster_azure.adls2.utils import DataLakeServiceClient
 
 

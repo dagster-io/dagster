@@ -17,7 +17,6 @@ from dagster._core.utils import make_new_run_id
 from dagster._core.workspace.context import WorkspaceRequestContext
 from dagster_graphql.client.query import ERROR_FRAGMENT
 from dagster_graphql.test.utils import execute_dagster_graphql, infer_job_selector
-
 from dagster_graphql_tests.graphql.graphql_context_test_suite import (
     ExecutingGraphQLContextTestMatrix,
 )

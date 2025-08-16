@@ -2,8 +2,9 @@ import os
 import sys
 from typing import TYPE_CHECKING, Any, Callable, Optional
 
-import dagster as dg
 import pytest
+
+import dagster as dg
 from dagster import DagsterInstance
 from dagster._config.field import resolve_to_config_type
 from dagster._config.snap import ConfigSchemaSnapshot, snap_from_config_type

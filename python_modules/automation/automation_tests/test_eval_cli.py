@@ -6,6 +6,7 @@ from unittest.mock import MagicMock, patch
 import click
 import pytest
 from automation.eval.cli import Metric, evaluate_sessions, load_config, load_sessions
+
 from dagster_shared.utils import environ
 
 

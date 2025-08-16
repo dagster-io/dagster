@@ -2,6 +2,7 @@ from pathlib import Path
 
 from airflow import DAG
 from airflow.operators.python import PythonOperator
+
 from dagster._time import get_current_datetime_midnight
 from dagster_airlift.in_airflow import proxying_to_dagster
 from dagster_airlift.in_airflow.proxied_state import load_proxied_state_from_yaml

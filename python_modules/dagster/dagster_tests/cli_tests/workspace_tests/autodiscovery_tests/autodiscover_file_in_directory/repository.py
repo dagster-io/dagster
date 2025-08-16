@@ -1,5 +1,6 @@
-import dagster as dg
 from autodiscover_src.jobs import hello_world_job  # type: ignore
+
+import dagster as dg
 
 
 @dg.repository

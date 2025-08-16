@@ -1,5 +1,6 @@
-import dagster as dg
 import dummy_local_file as dummy_local_file  # type: ignore
+
+import dagster as dg
 
 
 @dg.op

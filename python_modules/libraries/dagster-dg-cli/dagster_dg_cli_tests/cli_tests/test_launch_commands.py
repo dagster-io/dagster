@@ -6,6 +6,7 @@ from pathlib import Path
 
 import pytest
 import yaml
+
 from dagster_dg_core.utils import activate_venv
 from dagster_test.dg_utils.utils import ProxyRunner, isolated_example_project_foo_bar
 

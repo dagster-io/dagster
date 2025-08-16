@@ -7,10 +7,10 @@ from pathlib import Path
 
 from airflow import DAG
 from airflow.operators.python import PythonOperator
+
 from dagster._time import get_current_datetime
 from dagster_airlift.in_airflow import proxying_to_dagster
 from dagster_airlift.in_airflow.proxied_state import load_proxied_state_from_yaml
-
 from perf_harness.shared.constants import get_num_dags, get_num_tasks
 
 # End timing for imports

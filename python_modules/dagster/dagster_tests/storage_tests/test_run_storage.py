@@ -2,13 +2,13 @@ import os
 import tempfile
 from contextlib import contextmanager
 
-import dagster as dg
 import pytest
+
+import dagster as dg
 from dagster import DagsterInstance
 from dagster._core.storage.legacy_storage import LegacyRunStorage
 from dagster._core.storage.runs import InMemoryRunStorage, SqliteRunStorage
 from dagster._core.storage.sqlite_storage import DagsterSqliteStorage
-
 from dagster_tests.storage_tests.utils.run_storage import TestRunStorage
 
 

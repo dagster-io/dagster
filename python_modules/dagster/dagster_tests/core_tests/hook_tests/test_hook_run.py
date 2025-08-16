@@ -1,7 +1,8 @@
 from collections import defaultdict
 
-import dagster as dg
 import pytest
+
+import dagster as dg
 from dagster._core.definitions.decorators.hook_decorator import event_list_hook
 from dagster._core.definitions.events import HookExecutionResult
 from dagster._core.execution.context.compute import OpExecutionContext

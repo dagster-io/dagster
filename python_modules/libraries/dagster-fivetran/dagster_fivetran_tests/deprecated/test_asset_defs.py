@@ -2,6 +2,7 @@ from unittest.mock import MagicMock
 
 import pytest
 import responses
+
 from dagster import AssetKey, DagsterStepOutputNotFoundError
 from dagster._core.definitions import materialize
 from dagster._core.definitions.assets.definition.asset_spec import AssetSpec
@@ -18,7 +19,6 @@ from dagster_fivetran.resources import (
     FIVETRAN_CONNECTOR_PATH,
     FivetranResource,
 )
-
 from dagster_fivetran_tests.conftest import TEST_API_KEY, TEST_API_SECRET, TEST_CONNECTOR_ID
 from dagster_fivetran_tests.deprecated.utils import (
     DEFAULT_CONNECTOR_ID,

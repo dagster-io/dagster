@@ -1,9 +1,10 @@
 import json
 from contextlib import contextmanager
 
-import dagster as dg
 import pytest
 from click.testing import CliRunner
+
+import dagster as dg
 from dagster._core.workspace.load_target import EmptyWorkspaceTarget
 from dagster._daemon.cli import run_command
 from dagster._daemon.controller import daemon_controller_from_instance

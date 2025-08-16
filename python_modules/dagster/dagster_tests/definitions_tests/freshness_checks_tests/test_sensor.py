@@ -2,8 +2,9 @@
 import datetime
 import time
 
-import dagster as dg
 import pytest
+
+import dagster as dg
 from dagster import DagsterInstance
 from dagster._check import CheckError
 from dagster._core.definitions.asset_checks.asset_check_evaluation import (

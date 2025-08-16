@@ -5,6 +5,7 @@ import time
 from typing import Any
 
 import psutil
+
 from dagster._utils.interrupts import setup_interrupt_handlers
 from dagster_shared.ipc import (
     get_ipc_shutdown_pipe,

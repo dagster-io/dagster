@@ -2,8 +2,9 @@ import enum
 import os
 from collections.abc import Mapping
 
-import dagster as dg
 import pytest
+
+import dagster as dg
 from dagster._core.test_utils import environ
 
 

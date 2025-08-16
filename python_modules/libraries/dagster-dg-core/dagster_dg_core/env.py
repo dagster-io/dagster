@@ -3,10 +3,10 @@ from collections.abc import Mapping, Sequence
 from pathlib import Path
 from typing import Any, Optional
 
-from dagster_shared import check
 from typing_extensions import Self
 
 from dagster_dg_core.context import DgContext
+from dagster_shared import check
 
 
 def get_specified_env_var_deps(component_data: Mapping[str, Any]) -> set[str]:
@@ -22,8 +22,9 @@ def get_project_specified_env_vars(dg_context: DgContext) -> Mapping[str, Sequen
     if not dg_context.has_defs_path:
         return {}
 
-    from dagster_shared.yaml_utils import parse_yamls_with_source_position
     from yaml.scanner import ScannerError
+
+    from dagster_shared.yaml_utils import parse_yamls_with_source_position
 
     env_vars = defaultdict(list)
 

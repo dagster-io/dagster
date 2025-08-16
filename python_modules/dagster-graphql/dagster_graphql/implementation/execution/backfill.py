@@ -20,8 +20,6 @@ from dagster._core.utils import make_new_backfill_id
 from dagster._core.workspace.permissions import Permissions
 from dagster._time import datetime_from_timestamp, get_current_timestamp
 from dagster._utils.caching_instance_queryer import CachingInstanceQueryer
-from dagster_shared.error import DagsterError
-
 from dagster_graphql.implementation.utils import (
     AssetBackfillPreviewParams,
     BackfillParams,
@@ -30,6 +28,7 @@ from dagster_graphql.implementation.utils import (
     assert_valid_asset_partition_backfill,
     assert_valid_job_partition_backfill,
 )
+from dagster_shared.error import DagsterError
 
 BACKFILL_CHUNK_SIZE = 25
 

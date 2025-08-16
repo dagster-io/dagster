@@ -11,7 +11,6 @@ from dagster import (
 from dagster._core.execution.retries import RetryMode, get_retries_config
 from dagster._grpc.types import ExecuteStepArgs
 from dagster._serdes import pack_value
-
 from dagster_celery.config import DEFAULT_CONFIG, dict_wrapper
 from dagster_celery.defaults import broker_url, result_backend
 

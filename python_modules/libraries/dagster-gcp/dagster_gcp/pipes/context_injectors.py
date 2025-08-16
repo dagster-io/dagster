@@ -6,10 +6,11 @@ from collections.abc import Iterator
 from contextlib import contextmanager
 from typing import Optional
 
+from google.cloud.storage import Client as GCSClient
+
 import dagster._check as check
 from dagster._core.pipes.client import PipesContextInjector, PipesParams
 from dagster_pipes import PipesContextData
-from google.cloud.storage import Client as GCSClient
 
 _CONTEXT_FILENAME = "context.json"
 

@@ -6,11 +6,12 @@ from collections.abc import Mapping
 from pathlib import Path
 from typing import NamedTuple, Optional
 
+from pydantic import BaseModel
+
 from dagster import Scaffolder, scaffold_component
 from dagster._utils import pushd
 from dagster.components.scaffold.scaffold import ScaffoldRequest
 from dagster.components.utils import check
-from pydantic import BaseModel
 
 
 def _format_file_if_ruff_installed(file_path: Path) -> None:

@@ -1,10 +1,11 @@
 from io import BytesIO
 
-import dagster as dg
 import pandas as pd
 import requests
-from dagster_duckdb import DuckDBResource
 from smart_open import open
+
+import dagster as dg
+from dagster_duckdb import DuckDBResource
 
 from ..partitions import monthly_partition
 from ..resources import smart_open_config

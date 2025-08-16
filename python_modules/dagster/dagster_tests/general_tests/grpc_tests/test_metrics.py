@@ -6,8 +6,9 @@ import threading
 import time
 from typing import Any
 
-import dagster as dg
 import pytest
+
+import dagster as dg
 from dagster._core.instance import DagsterInstance
 from dagster._core.remote_origin import GrpcServerCodeLocationOrigin, RemoteRepositoryOrigin
 from dagster._grpc.client import DagsterGrpcClient

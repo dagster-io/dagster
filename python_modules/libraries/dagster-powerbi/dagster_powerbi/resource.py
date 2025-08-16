@@ -8,6 +8,8 @@ from typing import Any, Optional, Union
 from urllib.parse import urlencode
 
 import requests
+from pydantic import Field, PrivateAttr
+
 from dagster import (
     ConfigurableResource,
     Definitions,
@@ -22,8 +24,6 @@ from dagster._time import get_current_timestamp
 from dagster._utils.cached_method import cached_method
 from dagster._utils.security import non_secure_md5_hash_str
 from dagster._utils.warnings import deprecation_warning
-from pydantic import Field, PrivateAttr
-
 from dagster_powerbi.translator import (
     DagsterPowerBITranslator,
     PowerBIContentData,

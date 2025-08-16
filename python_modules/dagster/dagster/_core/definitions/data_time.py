@@ -16,8 +16,6 @@ import datetime
 from collections.abc import Mapping, Sequence
 from typing import AbstractSet, Optional, cast  # noqa: UP035
 
-from dagster_shared.utils.hash import make_hashable
-
 import dagster._check as check
 from dagster._core.definitions.asset_selection import KeysAssetSelection
 from dagster._core.definitions.assets.graph.base_asset_graph import BaseAssetGraph
@@ -36,6 +34,7 @@ from dagster._core.storage.dagster_run import FINISHED_STATUSES, DagsterRunStatu
 from dagster._time import datetime_from_timestamp, get_current_datetime
 from dagster._utils.cached_method import cached_method
 from dagster._utils.caching_instance_queryer import CachingInstanceQueryer
+from dagster_shared.utils.hash import make_hashable
 
 DATA_TIME_METADATA_KEY = "dagster/data_time"
 

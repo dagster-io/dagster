@@ -2,6 +2,7 @@ from gzip import GzipFile
 from typing import Any, Optional
 
 import click
+
 from dagster import DagsterInstance
 from dagster._core.debug import DebugRunPayload
 from dagster._core.workspace.context import (
@@ -11,7 +12,6 @@ from dagster._core.workspace.context import (
 )
 from dagster._core.workspace.workspace import CurrentWorkspace
 from dagster_shared.serdes import deserialize_value
-
 from dagster_webserver.cli import (
     DEFAULT_WEBSERVER_HOST,
     DEFAULT_WEBSERVER_PORT,

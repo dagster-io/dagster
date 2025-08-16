@@ -1,9 +1,10 @@
 from typing import Optional
 
-import dagster as dg
 import requests
 from bs4 import BeautifulSoup
 from langchain_core.documents import Document
+
+import dagster as dg
 
 
 class SitemapScraper(dg.ConfigurableResource):

@@ -8,8 +8,9 @@ from collections.abc import AsyncIterator
 from typing import Optional
 
 import click
-import dagster._check as check
 import uvicorn
+
+import dagster._check as check
 from dagster._annotations import deprecated
 from dagster._cli.utils import assert_no_remaining_opts, get_possibly_temporary_instance_for_cli
 from dagster._cli.workspace.cli_target import (
@@ -27,7 +28,6 @@ from dagster._utils.interrupts import setup_interrupt_handlers
 from dagster._utils.log import configure_loggers
 from dagster_shared.cli import workspace_options
 from dagster_shared.ipc import interrupt_on_ipc_shutdown_message
-
 from dagster_webserver.app import create_app_from_workspace_process_context
 from dagster_webserver.version import __version__
 

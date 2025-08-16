@@ -9,6 +9,9 @@ from typing import Any, Callable, Optional, Union, cast
 
 import nbformat
 import papermill
+from papermill.engines import papermill_engines
+from papermill.iorw import load_notebook_node, write_ipynb
+
 from dagster import (
     In,
     OpDefinition,
@@ -33,9 +36,6 @@ from dagster._utils.error import serializable_error_info_from_exc_info
 from dagster._utils.tags import normalize_tags
 from dagster_shared import seven
 from dagster_shared.seven import get_system_temp_directory
-from papermill.engines import papermill_engines
-from papermill.iorw import load_notebook_node, write_ipynb
-
 from dagstermill.compat import ExecutionError
 from dagstermill.engine import DagstermillEngine
 from dagstermill.errors import DagstermillError

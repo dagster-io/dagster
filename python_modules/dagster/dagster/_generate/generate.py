@@ -3,9 +3,9 @@ from pathlib import Path
 from typing import Optional
 
 import click
-from dagster_shared.scaffold import scaffold_subtree
 
 from dagster.version import __version__ as dagster_version
+from dagster_shared.scaffold import scaffold_subtree
 
 PROJECT_NAME_PLACEHOLDER = "PROJECT_NAME_PLACEHOLDER"
 

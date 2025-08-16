@@ -3,6 +3,7 @@ import dagster as dg
 """Repository of test jobs."""
 
 import pytest
+
 from dagster import Int, multiprocess_executor
 from dagster._check import CheckError
 

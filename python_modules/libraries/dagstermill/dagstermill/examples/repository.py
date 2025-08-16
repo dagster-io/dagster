@@ -2,6 +2,7 @@ import os
 import pickle
 import uuid
 
+import dagstermill
 from dagster import (
     AssetIn,
     AssetSelection,
@@ -26,8 +27,6 @@ from dagster._config.pythonic_config import Config
 from dagster._core.definitions.assets.graph.asset_graph import AssetGraph
 from dagster._core.definitions.utils import DEFAULT_OUTPUT
 from dagster._utils import PICKLE_PROTOCOL, file_relative_path
-
-import dagstermill
 from dagstermill.io_managers import (
     ConfigurableLocalOutputNotebookIOManager,
     local_output_notebook_io_manager,

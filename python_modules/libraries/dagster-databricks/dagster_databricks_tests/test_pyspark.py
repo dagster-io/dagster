@@ -3,6 +3,9 @@ from typing import Any
 from unittest import mock
 
 import pytest
+from pyspark.sql import Row
+from pyspark.sql.types import IntegerType, StringType, StructField, StructType
+
 from dagster import In, Out, execute_job, fs_io_manager, graph, op, reconstructable
 from dagster._core.definitions.no_step_launcher import no_step_launcher
 from dagster._core.test_utils import instance_for_test
@@ -16,8 +19,6 @@ from dagster_databricks.types import (
     DatabricksRunState,
 )
 from dagster_pyspark import DataFrame, pyspark_resource
-from pyspark.sql import Row
-from pyspark.sql.types import IntegerType, StringType, StructField, StructType
 
 S3_BUCKET = "dagster-databricks-tests"
 ADLS2_STORAGE_ACCOUNT = "dagsterdatabrickstests"

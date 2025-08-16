@@ -4,9 +4,10 @@ from collections.abc import Mapping
 from enum import Enum
 from typing import Any, Optional, Union
 
+from typing_extensions import Self
+
 import dagster._check as check
 from dagster._annotations import deprecated, public
-from typing_extensions import Self
 
 MANAGED_ELEMENTS_DEPRECATION_MSG = (
     "Dagster is deprecating support for ingestion-as-code."

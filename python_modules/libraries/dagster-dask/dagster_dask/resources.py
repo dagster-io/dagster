@@ -1,6 +1,7 @@
+from dask.distributed import Client
+
 from dagster import Bool, Field, Int, Permissive, Selector, Shape, String, resource
 from dagster._core.definitions.resource_definition import dagster_maintained_resource
-from dask.distributed import Client
 
 DaskClusterTypes = {
     key: dict(zip(("name", "module", "class"), values))

@@ -2,13 +2,13 @@ import string
 from contextlib import contextmanager, nullcontext
 from typing import Optional
 
-import dagster as dg
 import pytest
 from click.testing import CliRunner
+
+import dagster as dg
 from dagster._cli.job import execute_backfill_command, job_backfill_command
 from dagster._cli.workspace.cli_target import WorkspaceOpts
 from dagster._core.instance import DagsterInstance
-
 from dagster_tests.cli_tests.command_tests.test_cli_commands import (
     BackfillCommandTestContext,
     ParsedCliArgs,

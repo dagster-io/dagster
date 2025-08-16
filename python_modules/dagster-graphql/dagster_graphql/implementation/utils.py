@@ -18,6 +18,8 @@ from typing import (
     overload,
 )
 
+from typing_extensions import ParamSpec, TypeAlias
+
 import dagster._check as check
 from dagster._core.asset_graph_view.asset_graph_view import AssetGraphView
 from dagster._core.definitions.asset_checks.asset_check_spec import AssetCheckKey
@@ -30,11 +32,9 @@ from dagster._core.errors import DagsterInvariantViolationError
 from dagster._core.execution.backfill import PartitionBackfill
 from dagster._utils.caching_instance_queryer import CachingInstanceQueryer
 from dagster._utils.error import serializable_error_info_from_exc_info
-from typing_extensions import ParamSpec, TypeAlias
 
 if TYPE_CHECKING:
     from dagster._core.workspace.context import BaseWorkspaceRequestContext
-
     from dagster_graphql.schema.errors import GrapheneError, GraphenePythonError
     from dagster_graphql.schema.util import ResolveInfo
 

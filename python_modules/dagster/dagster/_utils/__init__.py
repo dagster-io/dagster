@@ -39,7 +39,12 @@ from typing import (  # noqa: UP035
     overload,
 )
 
+from filelock import FileLock
+from typing_extensions import Literal, TypeAlias, TypeGuard
+
+import dagster._check as check
 import dagster_shared.seven as seven
+from dagster._utils.internal_init import IHasInternalInit as IHasInternalInit
 from dagster_shared.ipc import send_interrupt as send_interrupt
 from dagster_shared.libraries import (
     library_version_from_core_version as library_version_from_core_version,
@@ -50,11 +55,6 @@ from dagster_shared.utils.hash import (
     hash_collection as hash_collection,
     make_hashable as make_hashable,
 )
-from filelock import FileLock
-from typing_extensions import Literal, TypeAlias, TypeGuard
-
-import dagster._check as check
-from dagster._utils.internal_init import IHasInternalInit as IHasInternalInit
 
 if TYPE_CHECKING:
     from dagster._core.definitions.definitions_class import Definitions

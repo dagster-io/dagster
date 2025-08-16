@@ -1,8 +1,9 @@
 from collections.abc import Sequence
 from typing import Union, cast
 
-import dagster as dg
 import pytest
+
+import dagster as dg
 
 
 @pytest.mark.parametrize(

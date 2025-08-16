@@ -3,8 +3,9 @@ import sys
 from collections.abc import Iterator
 from typing import Optional, cast
 
-import dagster as dg
 import pytest
+
+import dagster as dg
 from dagster._core.instance import DagsterInstance
 from dagster._core.remote_representation import CodeLocation, RemoteRepository
 from dagster._core.test_utils import SingleThreadPoolExecutor, create_test_daemon_workspace_context

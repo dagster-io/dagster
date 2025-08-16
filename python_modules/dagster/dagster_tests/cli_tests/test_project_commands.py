@@ -2,8 +2,9 @@ import os
 import re
 from pathlib import Path
 
-import dagster as dg
 from click.testing import CliRunner
+
+import dagster as dg
 from dagster._cli.project import (
     from_example_command,
     scaffold_code_location_command,

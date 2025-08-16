@@ -8,7 +8,6 @@ from dagster_graphql.client.query import (
     LAUNCH_PIPELINE_EXECUTION_MUTATION,
 )
 from dagster_graphql.test.utils import GqlResult, execute_dagster_graphql, infer_job_selector
-
 from dagster_graphql_tests.graphql.graphql_context_test_suite import (
     GraphQLContextVariant,
     make_graphql_context_test_suite,

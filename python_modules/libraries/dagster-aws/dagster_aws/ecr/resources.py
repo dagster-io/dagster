@@ -3,6 +3,7 @@ from typing import Optional
 
 import boto3
 from botocore.stub import Stubber
+
 from dagster import ConfigurableResource, resource
 from dagster._annotations import beta
 from dagster._core.definitions.resource_definition import dagster_maintained_resource

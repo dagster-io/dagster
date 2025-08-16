@@ -1,5 +1,4 @@
 from dagster import AutomationConditionSensorDefinition, DefaultSensorStatus, Definitions
-
 from dbt_example.dagster_defs.lakehouse import lakehouse_assets_def, lakehouse_existence_check
 from dbt_example.shared.load_iris import CSV_PATH, DB_PATH, IRIS_COLUMNS
 

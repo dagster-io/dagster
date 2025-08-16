@@ -1,7 +1,8 @@
 from collections.abc import Sequence
 
-import dagster as dg
 import pytest
+
+import dagster as dg
 from dagster import DagsterEventType
 from dagster._annotations import get_deprecated_info, is_deprecated
 from dagster._core.execution.execution_result import ExecutionResult

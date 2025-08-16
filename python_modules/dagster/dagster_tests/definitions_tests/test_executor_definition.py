@@ -1,8 +1,9 @@
 import multiprocessing
 from os import path
 
-import dagster as dg
 import pytest
+
+import dagster as dg
 from dagster import (
     DagsterInstance,
     ExecutorRequirement,

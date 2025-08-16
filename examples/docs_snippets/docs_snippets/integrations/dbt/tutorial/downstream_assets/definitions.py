@@ -1,8 +1,8 @@
-# ruff: noqa: I001
 # start_defs
 
-from dagster import Definitions
 from dagster_dbt import DbtCliResource
+
+from dagster import Definitions
 
 from .assets import jaffle_shop_dbt_assets, order_count_chart, raw_customers
 from .project import jaffle_shop_project

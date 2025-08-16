@@ -1,7 +1,8 @@
 from collections import defaultdict
 
-import dagster as dg
 import pytest
+
+import dagster as dg
 from dagster import AssetMaterialization, Nothing
 from dagster._core.execution.api import create_execution_plan
 

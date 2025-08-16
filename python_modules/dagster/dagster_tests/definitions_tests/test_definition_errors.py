@@ -1,7 +1,8 @@
 import re
 
-import dagster as dg
 import pytest
+
+import dagster as dg
 from dagster._check import ParameterCheckError
 from dagster._core.utility_ops import create_stub_op
 

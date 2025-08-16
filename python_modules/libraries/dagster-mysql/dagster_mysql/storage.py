@@ -8,7 +8,6 @@ from dagster._core.storage.event_log import EventLogStorage
 from dagster._core.storage.runs import RunStorage
 from dagster._core.storage.schedules import ScheduleStorage
 from dagster._serdes import ConfigurableClass, ConfigurableClassData
-
 from dagster_mysql.event_log import MySQLEventLogStorage
 from dagster_mysql.run_storage import MySQLRunStorage
 from dagster_mysql.schedule_storage import MySQLScheduleStorage

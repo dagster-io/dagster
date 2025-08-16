@@ -7,7 +7,6 @@ from dagster._core.definitions.events import AssetMaterialization
 from dagster._core.events.log import EventLogEntry
 from dagster._core.instance import DagsterInstance
 from dagster._core.storage.branching.branching_io_manager import BranchingIOManager
-
 from dagster_tests.storage_tests.branching_io_manager_tests.utils import (
     LOG,
     AssetBasedInMemoryIOManager,

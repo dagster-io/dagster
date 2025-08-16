@@ -7,11 +7,11 @@ from pathlib import Path
 from typing import TYPE_CHECKING
 
 import pytest
+from typer.testing import CliRunner
+
 from dagster_dbt.cli.app import app
 from dagster_dbt.dbt_core_version import DBT_CORE_VERSION_UPPER_BOUND
 from dagster_dbt.errors import DagsterDbtManifestNotFoundError
-from typer.testing import CliRunner
-
 from dagster_dbt_tests.dbt_projects import test_jaffle_shop_path
 
 if TYPE_CHECKING:

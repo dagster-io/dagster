@@ -2,12 +2,13 @@ import os
 from typing import Any
 
 import pytest
+from databricks.sdk import WorkspaceClient
+from databricks.sdk.service import jobs
+
 from dagster import AssetExecutionContext, asset, materialize
 from dagster._core.errors import DagsterPipesExecutionError
 from dagster_databricks._test_utils import databricks_client, databricks_notebook_path  # noqa: F401
 from dagster_databricks.pipes import PipesDatabricksServerlessClient
-from databricks.sdk import WorkspaceClient
-from databricks.sdk.service import jobs
 
 IS_BUILDKITE = os.getenv("BUILDKITE") is not None
 IS_WORKSPACE = os.getenv("DATABRICKS_HOST") is not None

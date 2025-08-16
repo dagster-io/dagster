@@ -12,6 +12,7 @@ from airlift_federation_tutorial.constants import (
     CUSTOMERS_TABLE_NAME,
     DUCKDB_PATH,
 )
+
 from dagster._time import get_current_datetime_midnight
 
 

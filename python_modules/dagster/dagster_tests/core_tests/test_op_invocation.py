@@ -2,8 +2,9 @@ import asyncio
 from datetime import datetime
 from functools import partial
 
-import dagster as dg
 import pytest
+
+import dagster as dg
 from dagster._core.definitions.partitions.utils import get_time_partitions_def
 from dagster._core.errors import DagsterInvalidPropertyError
 from dagster._core.execution.context.compute import AssetExecutionContext, OpExecutionContext

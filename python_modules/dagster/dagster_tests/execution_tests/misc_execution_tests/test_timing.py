@@ -1,8 +1,9 @@
 import sys
 import time
 
-import dagster as dg
 import pytest
+
+import dagster as dg
 
 
 @pytest.mark.skipif(

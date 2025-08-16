@@ -3,8 +3,6 @@ import zlib
 from collections.abc import Mapping, Sequence
 from typing import AbstractSet, Any, NamedTuple, Optional  # noqa: UP035
 
-from dagster_shared.serdes.serdes import SetToSequenceFieldSerializer
-
 import dagster._check as check
 from dagster._core.code_pointer import CodePointer
 from dagster._core.definitions.asset_checks.asset_check_spec import AssetCheckKey
@@ -20,6 +18,7 @@ from dagster._core.remote_representation.external_data import (
 )
 from dagster._serdes import serialize_value, whitelist_for_serdes
 from dagster._utils.error import SerializableErrorInfo
+from dagster_shared.serdes.serdes import SetToSequenceFieldSerializer
 
 
 @whitelist_for_serdes(

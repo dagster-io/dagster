@@ -1,9 +1,10 @@
 from collections.abc import Sequence
 from typing import Union, cast
 
+import pytest
+
 import dagster as dg
 import dagster._check as check
-import pytest
 from dagster import AssetsDefinition
 from dagster._core.definitions.asset_selection import AssetSelection
 from dagster._core.definitions.assets.definition.cacheable_assets_definition import (
@@ -20,7 +21,6 @@ from dagster._core.definitions.reconstruct import ReconstructableRepository
 from dagster._core.definitions.repository_definition import RepositoryLoadData
 from dagster._utils.test.definitions import scoped_definitions_load_context
 from dagster.components.definitions import lazy_repository
-
 from dagster_tests.general_tests.test_repository import (
     define_empty_job,
     define_simple_job,

@@ -1,4 +1,5 @@
 import pytest
+
 from dagster import build_op_context, op
 from dagster_gcp.gcs.resources import GCSResource, gcs_resource
 

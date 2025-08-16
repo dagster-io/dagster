@@ -1,9 +1,10 @@
 from collections.abc import Sequence
 from typing import Annotated, Optional
 
+from pydantic import BaseModel
+
 import dagster as dg
 from dagster import ResolutionContext
-from pydantic import BaseModel
 
 
 def resolve_val1(context: ResolutionContext, val1) -> int:

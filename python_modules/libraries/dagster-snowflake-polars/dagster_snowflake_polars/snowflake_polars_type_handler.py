@@ -2,6 +2,7 @@ from collections.abc import Mapping, Sequence
 from typing import Optional
 
 import polars as pl
+
 from dagster import InputContext, MetadataValue, OutputContext, TableColumn, TableSchema, io_manager
 from dagster._annotations import beta
 from dagster._core.definitions.metadata import RawMetadataValue, TableMetadataSet

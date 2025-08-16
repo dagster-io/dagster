@@ -5,8 +5,6 @@ from datetime import datetime
 from functools import lru_cache, reduce
 from typing import TYPE_CHECKING, Optional, Union, cast
 
-from dagster_shared.check.functions import CheckError
-
 import dagster._check as check
 from dagster._annotations import public
 from dagster._core.definitions.partitions.context import (
@@ -39,6 +37,7 @@ from dagster._core.errors import (
     DagsterUnknownPartitionError,
 )
 from dagster._core.types.pagination import PaginatedResults
+from dagster_shared.check.functions import CheckError
 
 if TYPE_CHECKING:
     from dagster._core.definitions.partitions.subset.partitions_subset import PartitionsSubset

@@ -3,8 +3,9 @@ import os
 from pathlib import Path
 from typing import Any
 
-import dagster as dg
 import pytest
+
+import dagster as dg
 from dagster._core.definitions.definitions_class import Definitions
 from dagster._core.definitions.metadata.source_code import (
     AnchorBasedFilePathMapping,
@@ -18,7 +19,6 @@ from dagster._core.execution.context.asset_execution_context import AssetExecuti
 from dagster_dbt import DbtCliResource, DbtProject
 from dagster_dbt.asset_decorator import dbt_assets
 from dagster_dbt.dagster_dbt_translator import DagsterDbtTranslator, DagsterDbtTranslatorSettings
-
 from dagster_dbt_tests.dbt_projects import test_jaffle_shop_path
 
 JAFFLE_SHOP_ROOT_PATH = os.path.normpath(test_jaffle_shop_path)

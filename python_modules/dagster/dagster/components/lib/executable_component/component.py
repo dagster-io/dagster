@@ -3,8 +3,6 @@ from collections.abc import Generator, Iterable
 from functools import cached_property
 from typing import Any, Optional, TypeVar, Union
 
-from dagster_shared import check
-
 from dagster._config.field import Field
 from dagster._core.definitions.asset_checks.asset_check_result import AssetCheckResult
 from dagster._core.definitions.asset_checks.asset_checks_definition import AssetChecksDefinition
@@ -24,6 +22,7 @@ from dagster.components.resolved.core_models import (
     ResolvedAssetSpec,
 )
 from dagster.components.resolved.model import Model
+from dagster_shared import check
 
 T = TypeVar("T", bound=Union[MaterializeResult, AssetCheckResult])
 

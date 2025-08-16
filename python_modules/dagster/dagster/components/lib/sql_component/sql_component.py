@@ -3,7 +3,6 @@ from collections.abc import Iterable, Mapping
 from pathlib import Path
 from typing import Annotated, Any, Optional, Union
 
-from dagster_shared import check
 from pydantic import BaseModel, Field
 
 from dagster._annotations import preview, public
@@ -15,6 +14,7 @@ from dagster.components.lib.executable_component.component import ExecutableComp
 from dagster.components.lib.sql_component.sql_client import SQLClient
 from dagster.components.resolved.core_models import OpSpec
 from dagster.components.resolved.model import Resolver
+from dagster_shared import check
 
 
 @public

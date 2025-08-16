@@ -1,6 +1,7 @@
 from unittest.mock import MagicMock
 
 import pytest
+
 from dagster import AssetExecutionContext
 from dagster._core.code_pointer import CodePointer
 from dagster._core.definitions.assets.definition.asset_spec import AssetSpec
@@ -21,7 +22,6 @@ from dagster_tableau.asset_utils import parse_tableau_external_and_materializabl
 from dagster_tableau.assets import build_tableau_materializable_assets_definition
 from dagster_tableau.resources import TableauCloudWorkspace, load_tableau_asset_specs
 from dagster_tableau.translator import DagsterTableauTranslator, TableauTranslatorData
-
 from dagster_tableau_tests.conftest import (
     FAKE_CONNECTED_APP_CLIENT_ID,
     FAKE_CONNECTED_APP_SECRET_ID,

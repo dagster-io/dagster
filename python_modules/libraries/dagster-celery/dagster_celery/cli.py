@@ -5,16 +5,16 @@ from collections.abc import Mapping
 from typing import Any, Optional
 
 import click
-import dagster._check as check
 from celery.utils.nodenames import default_nodename, host_format
+
+import dagster._check as check
 from dagster._config import post_process_config, validate_config
 from dagster._core.errors import DagsterInvalidConfigError
 from dagster._core.instance import DagsterInstance
 from dagster._utils import mkdir_p
-from dagster_shared.yaml_utils import load_yaml_from_path
-
 from dagster_celery.executor import CeleryExecutor, celery_executor
 from dagster_celery.make_app import make_app
+from dagster_shared.yaml_utils import load_yaml_from_path
 
 
 def create_worker_cli_group():

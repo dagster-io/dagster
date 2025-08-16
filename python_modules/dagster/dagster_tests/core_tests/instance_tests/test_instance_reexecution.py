@@ -1,7 +1,8 @@
 import os
 
-import dagster as dg
 import pytest
+
+import dagster as dg
 from dagster._core.errors import DagsterInvalidSubsetError
 from dagster._core.events import DagsterEventType
 from dagster._core.execution.plan.resume_retry import ReexecutionStrategy

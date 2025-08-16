@@ -1,5 +1,6 @@
 import pytest
 import responses
+
 from dagster._core.code_pointer import CodePointer
 from dagster._core.definitions.definitions_class import Definitions
 from dagster._core.definitions.reconstruct import (
@@ -8,7 +9,6 @@ from dagster._core.definitions.reconstruct import (
 )
 from dagster._utils.test.definitions import definitions
 from dagster_dbt.cloud_v2.resources import DbtCloudCredentials, DbtCloudWorkspace
-
 from dagster_dbt_tests.cloud_v2.conftest import (
     TEST_ACCESS_URL,
     TEST_ACCOUNT_ID,

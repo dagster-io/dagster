@@ -3,6 +3,10 @@ from collections.abc import Mapping
 from typing import Any, Literal, Optional
 
 import great_expectations as ge
+from great_expectations.render.renderer import ValidationResultsPageRenderer
+from great_expectations.render.view import DefaultMarkdownPageView
+from pydantic import Field
+
 from dagster import (
     ConfigurableResource,
     ExpectationResult,
@@ -23,9 +27,6 @@ from dagster._core.execution.context.init import InitResourceContext
 from dagster._core.storage.tags import COMPUTE_KIND_TAG
 from dagster._core.types.dagster_type import DagsterType
 from dagster_pandas import DataFrame
-from great_expectations.render.renderer import ValidationResultsPageRenderer
-from great_expectations.render.view import DefaultMarkdownPageView
-from pydantic import Field
 
 
 @beta

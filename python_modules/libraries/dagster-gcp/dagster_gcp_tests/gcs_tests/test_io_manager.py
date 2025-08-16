@@ -1,6 +1,9 @@
 import pickle
 
 import pytest
+from google.cloud import storage
+from upath import UPath
+
 from dagster import (
     AssetsDefinition,
     DagsterInstance,
@@ -40,8 +43,6 @@ from dagster_gcp.gcs.io_manager import (
     gcs_pickle_io_manager,
 )
 from dagster_gcp.gcs.resources import gcs_resource
-from google.cloud import storage
-from upath import UPath
 
 
 @resource

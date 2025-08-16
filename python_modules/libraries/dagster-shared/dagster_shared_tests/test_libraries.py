@@ -3,8 +3,9 @@ import subprocess
 import warnings
 from pathlib import Path
 
-import dagster_shared
 import pytest
+
+import dagster_shared
 from dagster_shared.libraries import (
     DagsterLibraryRegistry,
     check_dagster_package_version,

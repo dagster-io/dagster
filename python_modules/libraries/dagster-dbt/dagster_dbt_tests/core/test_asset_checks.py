@@ -2,6 +2,7 @@ import os
 from typing import Any, Optional, cast
 
 import pytest
+
 from dagster import (
     AssetCheckEvaluation,
     AssetCheckKey,
@@ -25,7 +26,6 @@ from dagster_dbt.asset_decorator import dbt_assets
 from dagster_dbt.asset_utils import DAGSTER_DBT_UNIQUE_ID_METADATA_KEY
 from dagster_dbt.core.resource import DbtCliResource
 from dagster_dbt.dagster_dbt_translator import DagsterDbtTranslator, DagsterDbtTranslatorSettings
-
 from dagster_dbt_tests.dbt_projects import test_asset_checks_path, test_dbt_alias_path
 
 pytest.importorskip("dbt.version", "1.6")

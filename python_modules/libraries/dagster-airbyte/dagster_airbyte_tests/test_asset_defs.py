@@ -1,5 +1,6 @@
 import pytest
 import responses
+
 from dagster import (
     AssetKey,
     AutoMaterializePolicy,
@@ -14,7 +15,6 @@ from dagster._core.definitions.metadata import MetadataValue
 from dagster._core.definitions.source_asset import SourceAsset
 from dagster._core.events import StepMaterializationData
 from dagster_airbyte import AirbyteCloudResource, airbyte_resource, build_airbyte_assets
-
 from dagster_airbyte_tests.utils import get_sample_connection_json, get_sample_job_json
 
 

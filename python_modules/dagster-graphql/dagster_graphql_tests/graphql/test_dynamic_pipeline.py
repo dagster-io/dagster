@@ -9,7 +9,6 @@ from dagster_graphql.test.utils import (
     execute_dagster_graphql_and_finish_runs,
     infer_job_selector,
 )
-
 from dagster_graphql_tests.graphql.utils import (
     get_all_logs_for_finished_run_via_subscription,
     step_did_fail,

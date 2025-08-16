@@ -4,8 +4,9 @@ from typing import Any, Literal, Union
 
 from azure.identity import DefaultAzureCredential
 from azure.storage.blob import BlobServiceClient
-from dagster import Config, ConfigurableResource
 from pydantic import Field
+
+from dagster import Config, ConfigurableResource
 
 
 class AzureBlobStorageSASTokenCredential(Config):

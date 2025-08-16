@@ -4,6 +4,7 @@ from collections.abc import Iterator, Mapping, Sequence
 from typing import Any, Optional, cast
 
 import boto3
+
 from dagster import (
     DagsterInvariantViolationError,
     DagsterRun,
@@ -28,7 +29,6 @@ from dagster._core.executor.step_delegating import (
 )
 from dagster._utils.backoff import backoff
 from dagster._utils.merger import deep_merge_dicts
-
 from dagster_aws.ecs.container_context import EcsContainerContext
 from dagster_aws.ecs.launcher import STOPPED_STATUSES, EcsRunLauncher
 from dagster_aws.ecs.tasks import (

@@ -3,6 +3,8 @@ import logging
 from collections.abc import Mapping, Sequence
 from typing import AbstractSet  # noqa: UP035
 
+from pytest import fixture
+
 import dagster as dg
 from dagster import DagsterInstance
 from dagster._core.definitions.asset_daemon_cursor import AssetDaemonCursor
@@ -13,7 +15,6 @@ from dagster._core.definitions.automation_tick_evaluation_context import (
     AutomationTickEvaluationContext,
 )
 from dagster._core.definitions.external_asset import create_external_asset_from_source_asset
-from pytest import fixture
 
 
 def get_auto_observe_run_requests(

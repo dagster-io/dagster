@@ -6,6 +6,8 @@ from dataclasses import dataclass
 from enum import Enum
 from typing import Optional, TypedDict, Union, cast
 
+from pydantic import Field
+
 from dagster import OutputContext
 from dagster._config.pythonic_config import ConfigurableIOManagerFactory
 from dagster._core.definitions.partitions.utils import TimeWindow
@@ -16,7 +18,6 @@ from dagster._core.storage.db_io_manager import (
     TablePartitionDimension,
     TableSlice,
 )
-from pydantic import Field
 
 if sys.version_info >= (3, 11):
     from typing import NotRequired

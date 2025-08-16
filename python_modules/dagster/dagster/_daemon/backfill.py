@@ -8,8 +8,6 @@ from concurrent.futures import Future, ThreadPoolExecutor
 from contextlib import contextmanager
 from typing import TYPE_CHECKING, Optional, cast
 
-from dagster_shared.error import DagsterError
-
 import dagster._check as check
 from dagster._core.definitions.instigation_logger import InstigationLogger
 from dagster._core.definitions.partitions.context import partition_loading_context
@@ -27,6 +25,7 @@ from dagster._daemon.utils import DaemonErrorCapture
 from dagster._time import datetime_from_timestamp, get_current_datetime, get_current_timestamp
 from dagster._utils import return_as_list
 from dagster._utils.error import SerializableErrorInfo
+from dagster_shared.error import DagsterError
 
 if TYPE_CHECKING:
     from dagster._core.instance import DagsterInstance

@@ -1,5 +1,4 @@
 import dagster as dg
-
 from dagster_tests.declarative_automation_tests.scenario_utils.base_scenario import (
     AssetReconciliationScenario,
     asset_def,

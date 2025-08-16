@@ -7,6 +7,8 @@ from collections.abc import Iterator, Sequence
 from contextlib import contextmanager
 from typing import IO, Callable, Optional
 
+from google.cloud.storage import Client as GCSClient
+
 import dagster._check as check
 from dagster._core.pipes.client import PipesParams
 from dagster._core.pipes.utils import (
@@ -15,7 +17,6 @@ from dagster._core.pipes.utils import (
     PipesLogReader,
 )
 from dagster_pipes import PipesBlobStoreMessageWriter
-from google.cloud.storage import Client as GCSClient
 
 
 def _can_read_from_gcs(client: GCSClient, bucket: Optional[str], key: Optional[str]):

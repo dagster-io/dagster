@@ -1,4 +1,5 @@
 import pytest
+
 from dagster._core.definitions.asset_key import AssetKey
 from dagster._core.definitions.assets.definition.asset_spec import AssetSpec
 from dagster._core.definitions.metadata.metadata_value import MetadataValue

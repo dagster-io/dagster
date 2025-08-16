@@ -1,6 +1,5 @@
 import dagster as dg
 from dagster._core.definitions.executor_definition import in_process_executor
-
 from dagster_tests.declarative_automation_tests.legacy_tests.scenarios.active_run_scenarios import (
     active_run_scenarios,
 )

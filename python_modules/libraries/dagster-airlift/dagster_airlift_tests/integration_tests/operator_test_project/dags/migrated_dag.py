@@ -2,6 +2,7 @@ import logging
 from datetime import datetime
 
 from airflow import DAG
+
 from dagster_airlift.in_airflow.task_proxy_operator import DefaultProxyTaskToDagsterOperator
 
 logging.basicConfig()

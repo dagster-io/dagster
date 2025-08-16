@@ -4,6 +4,7 @@ import time
 
 import kubernetes
 import pytest
+
 from dagster import (
     DagsterEventType,
     _check as check,
@@ -24,7 +25,6 @@ from dagster_test.test_project import (
     get_test_project_docker_image,
     get_test_project_environments_path,
 )
-
 from tests.utils import _wait_k8s_job_to_delete
 
 

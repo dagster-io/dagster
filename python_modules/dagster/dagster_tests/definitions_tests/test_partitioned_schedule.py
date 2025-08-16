@@ -1,7 +1,8 @@
 from datetime import datetime
 
-import dagster as dg
 import pytest
+
+import dagster as dg
 from dagster._core.test_utils import freeze_time
 from dagster._time import create_datetime, parse_time_string
 

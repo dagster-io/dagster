@@ -4,8 +4,9 @@ import json
 from abc import ABC, abstractmethod
 from typing import Any, Callable, Optional
 
-import dagster as dg
 import pytest
+
+import dagster as dg
 from dagster import Definitions
 from dagster._config.pythonic_config import ConfigurableResourceFactory
 from dagster._core.execution.context.init import InitResourceContext

@@ -1,9 +1,6 @@
 from collections.abc import Iterable
 from typing import TYPE_CHECKING, Optional, Union
 
-from dagster_shared import record
-from dagster_shared.serdes import whitelist_for_serdes
-
 import dagster._check as check
 from dagster._core.asset_graph_view.serializable_entity_subset import SerializableEntitySubset
 from dagster._core.definitions.asset_health.asset_health import AssetHealthStatus
@@ -15,6 +12,8 @@ from dagster._core.loader import LoadableBy, LoadingContext
 from dagster._core.storage.dagster_run import RunRecord
 from dagster._core.storage.event_log.base import AssetRecord
 from dagster._core.storage.partition_status_cache import get_partition_subsets
+from dagster_shared import record
+from dagster_shared.serdes import whitelist_for_serdes
 
 if TYPE_CHECKING:
     from dagster._core.workspace.context import BaseWorkspaceRequestContext

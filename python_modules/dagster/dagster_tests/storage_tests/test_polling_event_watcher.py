@@ -4,6 +4,8 @@ from collections.abc import Mapping
 from contextlib import contextmanager
 from typing import Any, Callable, Optional
 
+from typing_extensions import Self
+
 import dagster as dg
 import dagster._check as check
 from dagster._core.events import DagsterEventType, EngineEventData
@@ -11,7 +13,6 @@ from dagster._core.storage.event_log import SqliteEventLogStorage, SqlPollingEve
 from dagster._core.storage.event_log.base import EventLogCursor
 from dagster._core.utils import make_new_run_id
 from dagster._serdes.config_class import ConfigurableClassData
-from typing_extensions import Self
 
 
 class SqlitePollingEventLogStorage(SqliteEventLogStorage):

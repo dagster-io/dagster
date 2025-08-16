@@ -4,6 +4,7 @@ import os
 from typing import Optional
 
 import requests
+
 from dagster import (
     AssetExecutionContext,
     AssetKey,

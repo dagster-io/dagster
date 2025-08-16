@@ -1,5 +1,6 @@
-import dagster as dg
 import pytest
+
+import dagster as dg
 from dagster import AssetKey
 
 # While it's not trivial to achieve, slashes can ponentially sneak into asset keys

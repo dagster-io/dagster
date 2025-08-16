@@ -2,8 +2,9 @@ import re
 import sys
 from unittest import mock
 
-import dagster as dg
 import pytest
+
+import dagster as dg
 from dagster import AssetSelection
 
 

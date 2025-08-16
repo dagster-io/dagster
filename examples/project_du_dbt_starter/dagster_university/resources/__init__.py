@@ -1,6 +1,7 @@
 import os
 
 import boto3
+
 import dagster as dg
 from dagster_duckdb import DuckDBResource
 

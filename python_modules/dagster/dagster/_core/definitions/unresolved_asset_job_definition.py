@@ -4,8 +4,6 @@ from datetime import datetime
 from itertools import groupby
 from typing import TYPE_CHECKING, AbstractSet, Any, Optional, Union  # noqa: UP035
 
-from dagster_shared.record import IHaveNew, record_custom, replace
-
 import dagster._check as check
 from dagster._annotations import deprecated, deprecated_param, public
 from dagster._core.definitions import AssetKey
@@ -28,6 +26,7 @@ from dagster._core.definitions.run_request import RunRequest
 from dagster._core.errors import DagsterInvalidDefinitionError
 from dagster._core.instance import DynamicPartitionsStore
 from dagster._utils.tags import normalize_tags
+from dagster_shared.record import IHaveNew, record_custom, replace
 
 if TYPE_CHECKING:
     from dagster._core.definitions import JobDefinition

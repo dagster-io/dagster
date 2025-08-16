@@ -7,6 +7,8 @@ import tempfile
 
 import pytest
 import sqlalchemy as db
+from sqlalchemy import inspect
+
 from dagster import (
     AssetKey,
     AssetMaterialization,
@@ -33,7 +35,6 @@ from dagster._core.utils import make_new_run_id
 from dagster._daemon.types import DaemonHeartbeat
 from dagster._time import get_current_timestamp
 from dagster._utils import file_relative_path
-from sqlalchemy import inspect
 
 
 def get_columns(instance, table_name: str):

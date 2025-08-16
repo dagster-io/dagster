@@ -1,9 +1,10 @@
 from dataclasses import dataclass
 from typing import Annotated
 
+from pydantic import BaseModel
+
 import dagster as dg
 from dagster.components.resolved.base import _get_annotations, _get_resolver
-from pydantic import BaseModel
 
 
 def test_inheritance_dataclass() -> None:

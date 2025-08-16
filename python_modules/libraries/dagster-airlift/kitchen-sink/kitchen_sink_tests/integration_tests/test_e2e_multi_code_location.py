@@ -1,6 +1,6 @@
 import pytest
-from dagster import AssetKey
 
+from dagster import AssetKey
 from kitchen_sink_tests.integration_tests.conftest import (
     ExpectedMat,
     makefile_dir,

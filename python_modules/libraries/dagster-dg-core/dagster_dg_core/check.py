@@ -3,6 +3,11 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Any, NamedTuple, Optional
 
 import click
+from yaml.scanner import ScannerError
+
+from dagster_dg_core.component import EnvRegistry, get_specified_env_var_deps, get_used_env_vars
+from dagster_dg_core.context import DgContext
+from dagster_dg_core.utils.check_utils import error_dict_to_formatted_error
 from dagster_shared.serdes.objects import EnvRegistryKey
 from dagster_shared.yaml_utils import parse_yamls_with_source_position
 from dagster_shared.yaml_utils.source_position import (
@@ -11,11 +16,6 @@ from dagster_shared.yaml_utils.source_position import (
     SourcePositionTree,
     ValueAndSourcePositionTree,
 )
-from yaml.scanner import ScannerError
-
-from dagster_dg_core.component import EnvRegistry, get_specified_env_var_deps, get_used_env_vars
-from dagster_dg_core.context import DgContext
-from dagster_dg_core.utils.check_utils import error_dict_to_formatted_error
 
 if TYPE_CHECKING:  # defer for import performance
     from jsonschema import ValidationError

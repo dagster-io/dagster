@@ -5,6 +5,7 @@ from pathlib import Path
 from typing import Any, Callable, Optional, Union
 
 import pytest
+
 from dagster import AssetKey
 from dagster._core.definitions.assets.definition.asset_spec import AssetSpec
 from dagster._core.definitions.definitions_class import Definitions

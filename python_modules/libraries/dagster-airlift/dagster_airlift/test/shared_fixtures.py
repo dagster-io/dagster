@@ -12,10 +12,10 @@ from typing import Any, Callable, Optional
 import psutil
 import pytest
 import requests
+
 from dagster._core.test_utils import environ
 from dagster._time import get_current_timestamp
 from dagster._utils import process_is_alive
-
 from dagster_airlift.core.airflow_instance import AirflowInstance
 from dagster_airlift.core.basic_auth import AirflowBasicAuthBackend
 

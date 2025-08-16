@@ -6,7 +6,6 @@ from dagster._core.definitions.assets.definition.asset_spec import (
     AssetExecutionType,
 )
 from dagster._time import parse_time_string
-
 from dagster_tests.declarative_automation_tests.scenario_utils.scenario_state import (
     MultiAssetSpec,
     ScenarioSpec,

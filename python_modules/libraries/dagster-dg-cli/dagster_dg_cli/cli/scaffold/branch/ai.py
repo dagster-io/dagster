@@ -8,12 +8,12 @@ from pathlib import Path
 from time import perf_counter
 
 import click
-from dagster_dg_core.context import DgContext
 
 from dagster_dg_cli.cli.scaffold.branch.data_models import AIInteraction
 from dagster_dg_cli.cli.scaffold.branch.diagnostics import ClaudeDiagnosticsService
 from dagster_dg_cli.utils.claude_utils import run_claude, run_claude_stream
 from dagster_dg_cli.utils.ui import daggy_spinner_context
+from dagster_dg_core.context import DgContext
 
 MAX_TURNS = 20
 

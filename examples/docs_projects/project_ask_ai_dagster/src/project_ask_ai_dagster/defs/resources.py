@@ -1,6 +1,5 @@
 import dagster as dg
 from dagster_openai import OpenAIResource
-
 from project_ask_ai_dagster.defs.github import github_resource
 from project_ask_ai_dagster.defs.io_managers import document_io_manager
 from project_ask_ai_dagster.defs.pinecone import pinecone_resource

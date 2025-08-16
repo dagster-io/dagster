@@ -5,6 +5,7 @@ from contextlib import contextmanager
 from unittest import mock
 
 import pytest
+
 from dagster import AssetKey, Definitions
 from dagster._core.definitions.materialize import materialize
 from dagster._core.execution.context.asset_execution_context import AssetExecutionContext
@@ -13,7 +14,6 @@ from dagster.components.lib.sql_component.sql_component import SqlComponent, Tem
 from dagster.components.testing import create_defs_folder_sandbox
 from dagster_snowflake.components.sql_component.component import SnowflakeConnectionComponent
 from dagster_snowflake.constants import SNOWFLAKE_PARTNER_CONNECTION_IDENTIFIER
-
 from dagster_snowflake_tests.utils import create_mock_connector
 
 

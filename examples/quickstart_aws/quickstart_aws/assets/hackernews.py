@@ -6,6 +6,7 @@ from io import BytesIO, StringIO
 import matplotlib.pyplot as plt
 import pandas as pd
 import requests
+
 from dagster import AssetExecutionContext, MaterializeResult, MetadataValue, asset
 from dagster_aws.s3 import S3Resource
 

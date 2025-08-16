@@ -4,8 +4,9 @@ import tempfile
 import time
 from threading import Thread
 
-import dagster as dg
 import pytest
+
+import dagster as dg
 from dagster import DagsterEventType
 from dagster._core.definitions.executor_definition import in_process_executor
 from dagster._core.definitions.job_base import InMemoryJob

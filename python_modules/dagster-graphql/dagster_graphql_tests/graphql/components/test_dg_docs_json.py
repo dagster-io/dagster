@@ -81,7 +81,6 @@ def get_components_repo() -> RepositoryDefinition:
     ) as mock_discover_entry_point_package_objects:
         import dagster_test.components
         from dagster.components.core.package_entry import get_package_objects_in_module
-
         from dagster_graphql_tests.graphql.components import defs as defs
 
         objects = {}

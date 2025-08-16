@@ -2,8 +2,9 @@
 import warnings
 from typing import Tuple  # noqa: UP035
 
-import dagster as dg
 import pytest
+
+import dagster as dg
 from dagster import Field as LegacyDagsterField
 from dagster._config.pythonic_config import ConfigurableResourceFactory
 from dagster._core.errors import (

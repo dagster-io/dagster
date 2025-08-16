@@ -38,13 +38,12 @@ from dagster_graphql.test.utils import (
     infer_repository_selector,
     main_repo_location_name,
 )
-from dagster_shared.seven import get_system_temp_directory
-
 from dagster_graphql_tests.graphql.graphql_context_test_suite import (
     ExecutingGraphQLContextTestMatrix,
     ReadonlyGraphQLContextTestMatrix,
 )
 from dagster_graphql_tests.graphql.repo import get_workspace_process_context
+from dagster_shared.seven import get_system_temp_directory
 
 PARTITION_PROGRESS_QUERY = """
   query PartitionProgressQuery($backfillId: String!) {

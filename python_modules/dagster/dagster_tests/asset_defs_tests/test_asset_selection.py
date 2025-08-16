@@ -4,8 +4,10 @@ from functools import reduce
 from inspect import isclass
 from typing import AbstractSet, Union  # noqa: UP035
 
-import dagster as dg
 import pytest
+from typing_extensions import TypeAlias
+
+import dagster as dg
 from dagster._core.definitions import AssetSelection
 from dagster._core.definitions.asset_selection import (
     AllAssetCheckSelection,
@@ -40,7 +42,6 @@ from dagster._core.remote_representation.handle import RepositoryHandle
 from dagster._core.selector.subset_selector import MAX_NUM
 from dagster_shared.check import CheckError
 from dagster_shared.serdes.serdes import _WHITELIST_MAP
-from typing_extensions import TypeAlias
 
 earth = dg.SourceAsset(["celestial", "earth"], group_name="planets")
 

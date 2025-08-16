@@ -1,4 +1,5 @@
 import pytest
+
 from dagster._check import CheckError
 from dagster._core.storage.db_io_manager import TableSlice
 from dagster_snowflake_pyspark.constants import SNOWFLAKE_PARTNER_CONNECTION_IDENTIFIER_PYSPARK

@@ -6,10 +6,13 @@ import time
 import traceback
 from concurrent.futures import ThreadPoolExecutor
 
-import dagster as dg
 import pytest
 import sqlalchemy
 import sqlalchemy as db
+from sqlalchemy import __version__ as sqlalchemy_version
+from sqlalchemy.engine import Connection
+
+import dagster as dg
 from dagster import DagsterInstance
 from dagster._core.events import EngineEventData, SerializableErrorInfo, StepRetryData
 from dagster._core.execution.stats import (
@@ -31,9 +34,6 @@ from dagster._core.storage.sqlalchemy_compat import db_select
 from dagster._core.storage.sqlite_storage import DagsterSqliteStorage
 from dagster._core.utils import make_new_run_id
 from dagster._utils.test import ConcurrencyEnabledSqliteTestEventLogStorage
-from sqlalchemy import __version__ as sqlalchemy_version
-from sqlalchemy.engine import Connection
-
 from dagster_tests.storage_tests.utils.event_log_storage import (
     TestEventLogStorage,
     _synthesize_events,

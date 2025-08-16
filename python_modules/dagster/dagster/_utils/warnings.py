@@ -1,5 +1,6 @@
 from typing import TypeVar
 
+from dagster._core.decorator_utils import Decoratable, apply_context_manager_decorator
 from dagster_shared.utils.warnings import (
     BetaWarning as BetaWarning,
     ConfigArgumentWarning as ConfigArgumentWarning,
@@ -13,8 +14,6 @@ from dagster_shared.utils.warnings import (
     preview_warning as preview_warning,
     supersession_warning as supersession_warning,
 )
-
-from dagster._core.decorator_utils import Decoratable, apply_context_manager_decorator
 
 T_Decoratable = TypeVar("T_Decoratable", bound=Decoratable)
 

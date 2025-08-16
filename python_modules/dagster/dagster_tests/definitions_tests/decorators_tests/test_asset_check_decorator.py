@@ -2,8 +2,9 @@ import re
 from collections.abc import Iterable
 from typing import Any, NamedTuple, Optional
 
-import dagster as dg
 import pytest
+
+import dagster as dg
 from dagster import (
     AssetCheckResult,
     AssetCheckSeverity,

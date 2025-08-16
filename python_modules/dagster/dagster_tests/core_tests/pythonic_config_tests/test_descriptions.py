@@ -1,8 +1,9 @@
 from typing import Annotated
 
+from pydantic import Field
+
 import dagster as dg
 from dagster._config.config_type import ConfigTypeKind
-from pydantic import Field
 
 
 def test_new_config_descriptions_and_defaults():

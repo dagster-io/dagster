@@ -2,8 +2,6 @@ from collections.abc import Sequence
 from dataclasses import dataclass
 from typing import Annotated, Literal, Optional, Union
 
-from dagster_shared.record import as_dict, record
-
 from dagster._core.definitions.asset_checks.asset_check_factories.metadata_bounds_checks import (
     build_metadata_bounds_checks,
 )
@@ -20,6 +18,7 @@ from dagster.components.resolved.base import Resolvable
 from dagster.components.resolved.context import ResolutionContext
 from dagster.components.resolved.core_models import ResolvedAssetKey
 from dagster.components.resolved.model import Resolver
+from dagster_shared.record import as_dict, record
 
 
 def _resolve_asset_check_severity(context: ResolutionContext, model) -> AssetCheckSeverity:

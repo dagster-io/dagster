@@ -7,7 +7,6 @@ Spark deployment contexts and configuration.
 """
 
 from dagster import Field, StringSource
-
 from dagster_spark.configs_spark import spark_config
 from dagster_spark.types import SparkDeployMode
 

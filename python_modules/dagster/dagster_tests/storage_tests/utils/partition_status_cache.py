@@ -1,7 +1,8 @@
 import time
 
-import dagster as dg
 import pytest
+
+import dagster as dg
 from dagster import AssetKey, BackfillPolicy, DagsterEventType, PartitionsDefinition
 from dagster._core.definitions.assets.graph.asset_graph import AssetGraph
 from dagster._core.events import AssetMaterializationPlannedData, StepMaterializationData
@@ -19,7 +20,6 @@ from dagster._core.storage.tags import (
 from dagster._core.test_utils import create_run_for_test
 from dagster._core.utils import make_new_run_id
 from dagster._utils import Counter, traced_counter
-
 from dagster_tests.storage_tests.utils.event_log_storage import create_and_delete_test_runs
 
 

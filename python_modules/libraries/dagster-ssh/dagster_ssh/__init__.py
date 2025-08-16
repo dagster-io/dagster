@@ -1,5 +1,4 @@
 from dagster_shared.libraries import DagsterLibraryRegistry
-
 from dagster_ssh.resources import SSHResource, ssh_resource
 from dagster_ssh.version import __version__
 

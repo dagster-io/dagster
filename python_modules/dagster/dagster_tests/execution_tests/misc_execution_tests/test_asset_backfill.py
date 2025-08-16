@@ -4,8 +4,9 @@ from collections.abc import Iterable, Mapping, Sequence
 from typing import AbstractSet, NamedTuple, Optional, Union, cast  # noqa: UP035
 from unittest.mock import MagicMock, patch
 
-import dagster as dg
 import pytest
+
+import dagster as dg
 from dagster import (
     AssetKey,
     AssetsDefinition,
@@ -49,7 +50,6 @@ from dagster._core.test_utils import environ, freeze_time, mock_workspace_from_r
 from dagster._time import create_datetime, get_current_datetime, get_current_timestamp
 from dagster._utils import Counter, traced_counter
 from dagster._utils.caching_instance_queryer import CachingInstanceQueryer
-
 from dagster_tests.declarative_automation_tests.legacy_tests.scenarios.asset_graphs import (
     child_with_two_parents_with_identical_partitions,
     matching_partitions_with_different_subsets,

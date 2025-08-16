@@ -1,10 +1,11 @@
 import re
 from typing import Union
 
-import dagster._check as check
 import docutils.nodes as nodes
-from dagster._annotations import BetaInfo, DeprecatedInfo, PreviewInfo, SupersededInfo
 from sphinx.util.docutils import SphinxDirective
+
+import dagster._check as check
+from dagster._annotations import BetaInfo, DeprecatedInfo, PreviewInfo, SupersededInfo
 
 # ########################
 # ##### AUTODOC

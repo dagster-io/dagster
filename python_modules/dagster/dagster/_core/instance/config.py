@@ -4,8 +4,6 @@ from collections.abc import Mapping, Sequence
 from enum import Enum
 from typing import TYPE_CHECKING, Any, Optional, cast
 
-from dagster_shared.yaml_utils import load_yaml_from_globs
-
 import dagster._check as check
 from dagster._builtins import Bool, String
 from dagster._config import (
@@ -27,6 +25,7 @@ from dagster._record import record
 from dagster._serdes import class_from_code_pointer
 from dagster._utils.concurrency import get_max_concurrency_limit_value
 from dagster._utils.merger import merge_dicts
+from dagster_shared.yaml_utils import load_yaml_from_globs
 
 if TYPE_CHECKING:
     from dagster._core.definitions.run_request import InstigatorType

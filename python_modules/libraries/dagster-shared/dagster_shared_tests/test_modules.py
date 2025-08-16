@@ -2,6 +2,7 @@ from dataclasses import dataclass
 from typing import Optional, Union
 
 import pytest
+
 from dagster_shared.seven import resolve_module_pattern
 
 

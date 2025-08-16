@@ -7,6 +7,7 @@ Create Date: 2024-11-14 22:19:46.456731
 """
 
 from alembic import op
+
 from dagster._core.storage.migration.utils import has_index, has_table
 
 # revision identifiers, used by Alembic.

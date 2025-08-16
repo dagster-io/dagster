@@ -3,7 +3,6 @@ from typing import Any, Callable, Optional
 from dagster import AssetsDefinition, multi_asset
 from dagster._annotations import beta
 from dagster._core.errors import DagsterInvariantViolationError
-
 from dagster_dbt.asset_utils import (
     DAGSTER_DBT_EXCLUDE_METADATA_KEY,
     DAGSTER_DBT_SELECT_METADATA_KEY,

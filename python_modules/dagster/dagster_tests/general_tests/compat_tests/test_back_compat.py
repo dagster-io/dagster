@@ -10,9 +10,10 @@ from enum import Enum
 from gzip import GzipFile
 from typing import NamedTuple, Optional, Union
 
-import dagster as dg
 import pytest
 import sqlalchemy as db
+
+import dagster as dg
 from dagster import _check as check
 from dagster._cli.debug import DebugRunPayload
 from dagster._core.definitions.data_version import DATA_VERSION_TAG

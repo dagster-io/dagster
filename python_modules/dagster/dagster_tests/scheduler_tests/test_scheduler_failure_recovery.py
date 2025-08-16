@@ -4,6 +4,7 @@ from concurrent.futures import ThreadPoolExecutor
 from signal import Signals
 
 import pytest
+
 from dagster._core.instance import DagsterInstance
 from dagster._core.instance.ref import InstanceRef
 from dagster._core.remote_representation.external import RemoteRepository
@@ -21,7 +22,6 @@ from dagster._time import create_datetime, get_current_datetime
 from dagster._utils import DebugCrashFlags, get_terminate_signal
 from dagster._vendored.dateutil.relativedelta import relativedelta
 from dagster_shared.seven import IS_WINDOWS
-
 from dagster_tests.scheduler_tests.conftest import workspace_load_target
 from dagster_tests.scheduler_tests.test_scheduler_run import (
     evaluate_schedules,

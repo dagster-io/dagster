@@ -2,8 +2,9 @@
 from dataclasses import dataclass
 from pathlib import Path
 
-import dagster as dg
 import duckdb
+
+import dagster as dg
 from dagster import ComponentLoadContext
 
 

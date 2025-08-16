@@ -5,12 +5,11 @@ import sys
 from collections.abc import Iterable, Sequence
 from types import ModuleType
 
+from dagster.components.scaffold.scaffold import has_scaffolder
+from dagster.components.utils import format_error_message
 from dagster_shared.error import DagsterError, DagsterUnresolvableSymbolError
 from dagster_shared.serdes.objects import EnvRegistryKey
 from dagster_shared.seven import load_module_object
-
-from dagster.components.scaffold.scaffold import has_scaffolder
-from dagster.components.utils import format_error_message
 
 PACKAGE_ENTRY_ATTR = "__dg_package_entry__"
 DG_PLUGIN_ENTRY_POINT_GROUP = "dagster_dg_cli.registry_modules"

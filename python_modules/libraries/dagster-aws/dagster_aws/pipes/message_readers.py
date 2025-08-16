@@ -11,8 +11,9 @@ from threading import Event, Thread
 from typing import IO, TYPE_CHECKING, Any, Callable, Optional, cast
 
 import boto3
-import dagster._check as check
 from botocore.exceptions import ClientError
+
+import dagster._check as check
 from dagster import DagsterInvariantViolationError
 from dagster._core.pipes.client import PipesLaunchedData, PipesMessageReader, PipesParams
 from dagster._core.pipes.context import PipesMessageHandler

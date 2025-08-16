@@ -2,11 +2,12 @@ import json
 import os
 from typing import Any, ClassVar, Optional
 
-import dagster as dg
 import pytesseract
 import requests
 from pdf2image import convert_from_path
 from PIL import Image, ImageEnhance, ImageFilter
+
+import dagster as dg
 
 
 class PDFTextExtractor(dg.ConfigurableResource):

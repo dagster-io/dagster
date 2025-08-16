@@ -1,10 +1,10 @@
 from typing import Optional
 
-import dagster._check as check
 import graphene
+
+import dagster._check as check
 from dagster._core.definitions.events import AssetKey
 from dagster._utils.error import SerializableErrorInfo
-
 from dagster_graphql.schema.util import ResolveInfo, non_null_list
 
 

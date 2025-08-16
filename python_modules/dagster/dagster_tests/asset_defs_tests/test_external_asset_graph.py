@@ -4,8 +4,9 @@ import sys
 import time
 from unittest import mock
 
-import dagster as dg
 import pytest
+
+import dagster as dg
 from dagster import DagsterInstance
 from dagster._core.definitions.auto_materialize_policy import AutoMaterializePolicy
 from dagster._core.definitions.backfill_policy import BackfillPolicy

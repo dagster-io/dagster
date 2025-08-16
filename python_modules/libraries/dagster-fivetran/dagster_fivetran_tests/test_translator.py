@@ -1,6 +1,7 @@
 from typing import Callable
 
 import responses
+
 from dagster._config.field_utils import EnvVar
 from dagster._core.definitions.assets.definition.asset_spec import AssetSpec
 from dagster._core.test_utils import environ
@@ -9,7 +10,6 @@ from dagster_fivetran import (
     FivetranConnectorTableProps,
     FivetranWorkspace,
 )
-
 from dagster_fivetran_tests.conftest import TEST_ACCOUNT_ID, TEST_API_KEY, TEST_API_SECRET
 
 

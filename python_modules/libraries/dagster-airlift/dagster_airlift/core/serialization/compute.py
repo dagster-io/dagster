@@ -5,7 +5,6 @@ from typing import TYPE_CHECKING, AbstractSet, Callable, Optional  # noqa: UP035
 
 from dagster import AssetKey, AssetSpec
 from dagster._record import record
-
 from dagster_airlift.core.airflow_instance import AirflowInstance, DagInfo
 from dagster_airlift.core.dag_asset import get_leaf_assets_for_dag
 from dagster_airlift.core.filter import AirflowFilter

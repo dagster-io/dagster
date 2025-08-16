@@ -4,6 +4,9 @@ from contextlib import contextmanager
 from typing import Any, Optional, cast
 
 import duckdb
+from packaging.version import Version
+from pydantic import Field
+
 from dagster import IOManagerDefinition, OutputContext, io_manager
 from dagster._config.pythonic_config import ConfigurableIOManagerFactory
 from dagster._core.definitions.partitions.utils import TimeWindow
@@ -16,8 +19,6 @@ from dagster._core.storage.db_io_manager import (
 )
 from dagster._core.storage.io_manager import dagster_maintained_io_manager
 from dagster._utils.backoff import backoff
-from packaging.version import Version
-from pydantic import Field
 
 DUCKDB_DATETIME_FORMAT = "%Y-%m-%d %H:%M:%S"
 

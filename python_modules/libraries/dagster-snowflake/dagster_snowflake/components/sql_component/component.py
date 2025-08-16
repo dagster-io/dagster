@@ -1,13 +1,13 @@
 from functools import cached_property
 from typing import Any, cast
 
+from pydantic import BaseModel, create_model
+
 import dagster as dg
 from dagster._annotations import preview, public
 from dagster._core.definitions.definitions_class import Definitions
 from dagster.components.core.context import ComponentLoadContext
 from dagster.components.lib.sql_component.sql_client import SQLClient
-from pydantic import BaseModel, create_model
-
 from dagster_snowflake.resources import SnowflakeResource
 
 

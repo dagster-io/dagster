@@ -1,8 +1,9 @@
 import asyncio
 from collections.abc import Generator
 
-import dagster as dg
 import pytest
+
+import dagster as dg
 from dagster import AssetExecutionContext
 from dagster._core.definitions.observe import observe
 from dagster._core.storage.asset_check_execution_record import AssetCheckExecutionRecordStatus

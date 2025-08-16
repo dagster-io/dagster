@@ -6,7 +6,6 @@ from dagster._core.definitions.events import AssetKey
 from dagster._core.events import StepMaterializationData
 from dagster._core.storage.dagster_run import DagsterRunStatus
 from dagster._time import create_datetime
-
 from dagster_tests.declarative_automation_tests.scenario_utils.base_scenario import (
     AssetReconciliationScenario,
     asset_def,

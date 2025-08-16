@@ -4,6 +4,7 @@ from typing import Any
 from uuid import uuid4
 
 import pytest
+
 from dagster._core.definitions.reconstruct import ReconstructableRepository
 from dagster._core.execution.api import execute_job
 from dagster._core.storage.dagster_run import DagsterRunStatus
@@ -14,7 +15,6 @@ from dagster._grpc.types import CancelExecutionRequest
 from dagster._utils import file_relative_path, safe_tempfile_path
 from dagster_graphql.client.query import LAUNCH_PIPELINE_EXECUTION_MUTATION
 from dagster_graphql.test.utils import execute_dagster_graphql, infer_job_selector
-
 from dagster_graphql_tests.graphql.graphql_context_test_suite import (
     GraphQLContextVariant,
     ReadonlyGraphQLContextTestMatrix,

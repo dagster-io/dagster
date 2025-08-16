@@ -3,6 +3,7 @@ import tempfile
 
 import pytest
 from airflow.models import DagBag, Variable
+
 from dagster_airflow import make_dagster_job_from_airflow_dag, make_ephemeral_airflow_db_resource
 
 DAG_RUN_CONF_DAG = """

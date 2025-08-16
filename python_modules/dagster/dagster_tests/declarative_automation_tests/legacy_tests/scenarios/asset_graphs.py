@@ -1,6 +1,5 @@
 import dagster as dg
 from dagster import BackfillPolicy
-
 from dagster_tests.declarative_automation_tests.scenario_utils.base_scenario import asset_def
 
 fanned_out_partitions_def = dg.StaticPartitionsDefinition(["a_1", "a_2", "a_3"])

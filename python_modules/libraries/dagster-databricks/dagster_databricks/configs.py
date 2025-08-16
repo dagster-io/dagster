@@ -11,6 +11,15 @@ See:
 
 from typing import Any
 
+from databricks.sdk.service.compute import (
+    AwsAvailability,
+    DataSecurityMode,
+    DiskTypeEbsVolumeType,
+    GcpAvailability,
+    InstancePoolAzureAttributesAvailability,
+    RuntimeEngine,
+)
+
 from dagster import (
     Array,
     Bool,
@@ -24,14 +33,6 @@ from dagster import (
     Selector,
     Shape,
     String,
-)
-from databricks.sdk.service.compute import (
-    AwsAvailability,
-    DataSecurityMode,
-    DiskTypeEbsVolumeType,
-    GcpAvailability,
-    InstancePoolAzureAttributesAvailability,
-    RuntimeEngine,
 )
 
 

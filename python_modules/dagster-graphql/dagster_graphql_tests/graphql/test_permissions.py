@@ -1,8 +1,9 @@
 import functools
 from unittest.mock import Mock
 
-import dagster._check as check
 import pytest
+
+import dagster._check as check
 from dagster._core.workspace.permissions import (
     EDITOR_PERMISSIONS,
     VIEWER_PERMISSIONS,
@@ -19,7 +20,6 @@ from dagster_graphql.implementation.utils import (
 )
 from dagster_graphql.schema.util import ResolveInfo
 from dagster_graphql.test.utils import execute_dagster_graphql
-
 from dagster_graphql_tests.graphql.graphql_context_test_suite import (
     NonLaunchableGraphQLContextTestMatrix,
 )

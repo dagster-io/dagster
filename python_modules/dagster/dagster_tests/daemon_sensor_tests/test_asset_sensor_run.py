@@ -3,7 +3,6 @@ from dagster._core.scheduler.instigation import TickStatus
 from dagster._core.test_utils import freeze_time
 from dagster._time import create_datetime, get_timezone
 from dagster._vendored.dateutil.relativedelta import relativedelta
-
 from dagster_tests.daemon_sensor_tests.test_run_status_sensors import (
     instance_with_single_code_location_multiple_repos_with_sensors,
 )

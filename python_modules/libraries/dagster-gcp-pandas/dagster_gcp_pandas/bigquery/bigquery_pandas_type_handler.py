@@ -2,6 +2,7 @@ from collections.abc import Sequence
 from typing import Optional
 
 import pandas as pd
+
 from dagster import InputContext, MetadataValue, OutputContext, TableColumn, TableSchema
 from dagster._core.definitions.metadata import TableMetadataSet
 from dagster._core.storage.db_io_manager import DbTypeHandler, TableSlice

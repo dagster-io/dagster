@@ -3,7 +3,6 @@ from unittest import mock
 
 from dagster import EventLogRecord, EventRecordsResult, GraphDefinition, build_sensor_context
 from dagster._core.test_utils import instance_for_test
-
 from project_fully_featured.sensors.hn_tables_updated_sensor import make_hn_tables_updated_sensor
 
 

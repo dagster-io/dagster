@@ -2,8 +2,9 @@ import os
 import subprocess
 import sys
 
-import dagster_shared.seven as seven
 import pytest
+
+import dagster_shared.seven as seven
 from dagster._utils.env import environ
 
 IS_BUILDKITE = os.getenv("BUILDKITE") is not None

@@ -2,8 +2,9 @@ import re
 from collections.abc import Sequence
 from typing import TYPE_CHECKING, Union, cast
 
-import dagster as dg
 import pytest
+
+import dagster as dg
 from dagster import AssetKey
 from dagster._core.definitions.auto_materialize_policy import AutoMaterializePolicy
 

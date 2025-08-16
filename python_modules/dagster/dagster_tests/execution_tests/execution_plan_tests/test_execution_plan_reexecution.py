@@ -1,9 +1,10 @@
 import os
 import pickle
 
+import pytest
+
 import dagster as dg
 import dagster._check as check
-import pytest
 from dagster._core.definitions.executor_definition import in_process_executor
 from dagster._core.definitions.job_base import InMemoryJob
 from dagster._core.events import get_step_output_event

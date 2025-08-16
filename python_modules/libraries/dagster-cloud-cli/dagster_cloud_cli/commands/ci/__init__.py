@@ -12,8 +12,6 @@ from typing import Annotated, Any, Optional, cast
 import click
 import typer
 import yaml
-from dagster_shared import check
-from dagster_shared.utils import remove_none_recursively
 from jinja2 import TemplateSyntaxError
 from typer import Typer
 
@@ -49,6 +47,8 @@ from dagster_cloud_cli.core.pex_builder import (
 from dagster_cloud_cli.gql import DagsterPlusDeploymentAgentType
 from dagster_cloud_cli.types import CliEventTags, CliEventType, SnapshotBaseDeploymentCondition
 from dagster_cloud_cli.utils import DEFAULT_PYTHON_VERSION
+from dagster_shared import check
+from dagster_shared.utils import remove_none_recursively
 
 app = Typer(help="Commands for deploying code to Dagster+ from any CI/CD environment")
 

@@ -2,6 +2,7 @@ import os
 from typing import Any
 
 import pytest
+
 from dagster import AssetExecutionContext, AssetKey
 from dagster._core.definitions.metadata.metadata_set import TableMetadataSet
 from dagster_dbt.asset_decorator import dbt_assets

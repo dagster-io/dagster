@@ -3,8 +3,9 @@ import re
 import string
 import typing
 
-import dagster as dg
 import pytest
+
+import dagster as dg
 from dagster import Int, Set
 from dagster._check import ParameterCheckError
 from dagster._config import (

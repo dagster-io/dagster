@@ -4,6 +4,7 @@ from typing import Any
 
 from airflow import DAG
 from airflow.operators.python import PythonOperator
+
 from dagster._time import get_current_datetime_midnight
 from dagster_airlift.in_airflow import DefaultProxyTaskToDagsterOperator, proxying_to_dagster
 from dagster_airlift.in_airflow.dagster_run_utils import (

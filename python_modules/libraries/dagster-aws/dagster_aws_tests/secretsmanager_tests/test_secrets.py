@@ -3,7 +3,6 @@ import os
 
 from dagster._core.execution.context.init import build_init_resource_context
 from dagster._core.test_utils import environ
-
 from dagster_aws.secretsmanager import (
     SecretsManagerSecretsResource,
     get_secrets_from_arns,

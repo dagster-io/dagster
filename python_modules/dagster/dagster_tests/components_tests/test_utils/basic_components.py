@@ -8,8 +8,9 @@ from collections.abc import Mapping
 from dataclasses import dataclass
 from typing import Annotated, Any
 
-from dagster.components.core.context import ComponentLoadContext
 from pydantic import BaseModel, ConfigDict
+
+from dagster.components.core.context import ComponentLoadContext
 
 
 def _inner_error():

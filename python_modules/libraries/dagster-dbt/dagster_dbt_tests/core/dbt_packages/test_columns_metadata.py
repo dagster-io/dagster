@@ -4,6 +4,9 @@ import subprocess
 from typing import Any, Optional, cast
 
 import pytest
+from pytest_mock import MockFixture
+from sqlglot import Dialect
+
 from dagster import (
     AssetExecutionContext,
     AssetKey,
@@ -18,9 +21,6 @@ from dagster._core.definitions.metadata import TableMetadataSet
 from dagster._core.definitions.metadata.table import TableColumnConstraints
 from dagster_dbt.asset_decorator import dbt_assets
 from dagster_dbt.core.resource import DbtCliResource
-from pytest_mock import MockFixture
-from sqlglot import Dialect
-
 from dagster_dbt_tests.conftest import _create_dbt_invocation
 from dagster_dbt_tests.dbt_projects import (
     test_dependencies_path,

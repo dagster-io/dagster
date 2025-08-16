@@ -4,6 +4,7 @@ from contextlib import ExitStack
 from unittest import mock
 
 import pytest
+
 from dagster import job, op, repository
 from dagster._core.remote_representation.code_location import GrpcServerCodeLocation
 from dagster._core.test_utils import instance_for_test

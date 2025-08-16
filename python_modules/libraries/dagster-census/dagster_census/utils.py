@@ -1,7 +1,6 @@
 from collections.abc import Sequence
 
 from dagster import AssetMaterialization
-
 from dagster_census.types import CensusOutput
 
 

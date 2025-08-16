@@ -7,6 +7,7 @@ from unittest import mock
 import pytest
 from airflow import __version__ as airflow_version
 from airflow.models import Connection
+
 from dagster_airflow import make_dagster_definitions_from_airflow_dags_path
 
 LOAD_CONNECTION_DAG_FILE_AIRFLOW_2_CONTENTS = """

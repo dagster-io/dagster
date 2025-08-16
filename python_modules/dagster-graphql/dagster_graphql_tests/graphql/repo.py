@@ -12,6 +12,8 @@ from copy import deepcopy
 from datetime import timedelta
 from typing import Optional, TypeVar, Union
 
+from typing_extensions import Literal, Never
+
 from dagster import (
     Any,
     AssetCheckKey,
@@ -133,7 +135,6 @@ from dagster_graphql.test.utils import (
     main_repo_name,
 )
 from dagster_shared.seven import get_system_temp_directory
-from typing_extensions import Literal, Never
 
 T = TypeVar("T")
 

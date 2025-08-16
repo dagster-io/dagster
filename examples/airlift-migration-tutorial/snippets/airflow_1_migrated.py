@@ -1,6 +1,10 @@
 import os
 from pathlib import Path
 
+# Code also invoked from Airflow
+from tutorial_example.shared.export_duckdb_to_csv import ExportDuckDbToCsvArgs, export_duckdb_to_csv
+from tutorial_example.shared.load_csv_to_duckdb import LoadCsvToDuckDbArgs, load_csv_to_duckdb
+
 from dagster import (
     AssetExecutionContext,
     AssetsDefinition,
@@ -12,10 +16,6 @@ from dagster import (
 from dagster._time import get_current_datetime_midnight
 from dagster_airlift.core import assets_with_task_mappings
 from dagster_dbt import DbtCliResource, DbtProject, dbt_assets
-
-# Code also invoked from Airflow
-from tutorial_example.shared.export_duckdb_to_csv import ExportDuckDbToCsvArgs, export_duckdb_to_csv
-from tutorial_example.shared.load_csv_to_duckdb import LoadCsvToDuckDbArgs, load_csv_to_duckdb
 
 PARTITIONS_DEF = DailyPartitionsDefinition(start_date=get_current_datetime_midnight())
 

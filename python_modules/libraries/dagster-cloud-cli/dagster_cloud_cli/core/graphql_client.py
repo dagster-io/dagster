@@ -7,7 +7,6 @@ from email.utils import mktime_tz, parsedate_tz
 from typing import Any, Callable, Optional
 
 import requests
-from dagster_shared import check
 from requests.adapters import HTTPAdapter
 from requests.exceptions import (
     ConnectionError as RequestsConnectionError,
@@ -22,6 +21,7 @@ from dagster_cloud_cli.core.errors import (
 )
 from dagster_cloud_cli.core.headers.auth import DagsterCloudInstanceScope
 from dagster_cloud_cli.core.headers.impl import get_dagster_cloud_api_headers
+from dagster_shared import check
 
 DEFAULT_RETRIES = 6
 DEFAULT_BACKOFF_FACTOR = 0.5

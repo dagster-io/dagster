@@ -1,6 +1,6 @@
-import dagster as dg
 import pytest
 
+import dagster as dg
 from dagster_tests.definitions_tests.decorators_tests.test_asset_check_decorator import (
     execute_assets_and_checks,
 )

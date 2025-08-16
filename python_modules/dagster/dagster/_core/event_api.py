@@ -4,7 +4,6 @@ from datetime import datetime
 from enum import Enum
 from typing import Callable, Literal, NamedTuple, Optional, Union
 
-from dagster_shared.seven import json
 from typing_extensions import TypeAlias
 
 import dagster._check as check
@@ -13,6 +12,7 @@ from dagster._core.definitions.events import AssetKey, AssetMaterialization, Ass
 from dagster._core.events import EVENT_TYPE_TO_PIPELINE_RUN_STATUS, DagsterEventType
 from dagster._core.events.log import EventLogEntry
 from dagster._serdes import whitelist_for_serdes
+from dagster_shared.seven import json
 
 EventHandlerFn: TypeAlias = Callable[[EventLogEntry, str], None]
 

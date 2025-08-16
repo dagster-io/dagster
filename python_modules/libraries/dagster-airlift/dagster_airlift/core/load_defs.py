@@ -10,7 +10,6 @@ from dagster._core.definitions.assets.definition.asset_spec import map_asset_spe
 from dagster._core.definitions.definitions_load_context import StateBackedDefinitionsLoader
 from dagster._core.definitions.external_asset import external_asset_from_spec
 from dagster._core.definitions.sensor_definition import DefaultSensorStatus
-
 from dagster_airlift.core.airflow_instance import AirflowInstance
 from dagster_airlift.core.filter import AirflowFilter
 from dagster_airlift.core.job_builder import construct_dag_jobs

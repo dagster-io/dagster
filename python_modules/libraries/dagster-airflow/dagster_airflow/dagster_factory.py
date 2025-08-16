@@ -4,6 +4,7 @@ from typing import Optional
 
 from airflow.models.connection import Connection
 from airflow.models.dagbag import DagBag
+
 from dagster import (
     Definitions,
     JobDefinition,
@@ -12,7 +13,6 @@ from dagster import (
     _check as check,
 )
 from dagster._annotations import superseded
-
 from dagster_airflow.dagster_job_factory import make_dagster_job_from_airflow_dag
 from dagster_airflow.dagster_schedule_factory import (
     _is_dag_is_schedule,

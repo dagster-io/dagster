@@ -1,7 +1,7 @@
-import dagster as dg
 import pytest
-from dagster import AutomationCondition, DagsterInstance
 
+import dagster as dg
+from dagster import AutomationCondition, DagsterInstance
 from dagster_tests.declarative_automation_tests.scenario_utils.automation_condition_scenario import (
     AutomationConditionScenarioState,
 )

@@ -11,6 +11,9 @@ from typing import Optional, Union
 import jwt
 import requests
 import tableauserverclient as TSC
+from pydantic import Field, PrivateAttr
+from tableauserverclient.server.endpoint.auth_endpoint import Auth
+
 from dagster import (
     AssetExecutionContext,
     AssetObservation,
@@ -27,9 +30,6 @@ from dagster._annotations import beta, beta_param, superseded
 from dagster._core.definitions.definitions_load_context import StateBackedDefinitionsLoader
 from dagster._record import record
 from dagster._utils.cached_method import cached_method
-from pydantic import Field, PrivateAttr
-from tableauserverclient.server.endpoint.auth_endpoint import Auth
-
 from dagster_tableau.asset_utils import (
     create_data_source_asset_event,
     create_view_asset_event,

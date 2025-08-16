@@ -1,8 +1,9 @@
 # mypy: disable-error-code=return-value
 from datetime import datetime
 
-import dagster as dg
 import pytest
+
+import dagster as dg
 from dagster._core.events import DagsterEventType
 from dagster._core.execution.execute_in_process_result import ExecuteInProcessResult
 

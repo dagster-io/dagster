@@ -1,8 +1,9 @@
 # ruff: noqa: D416, UP006, UP035
 from typing import Any, Dict, List, Optional, Tuple
 
-import dagster as dg
 import pytest
+
+import dagster as dg
 from dagster._core.definitions.inference import infer_input_props, infer_output_props
 from dagster._core.types.dagster_type import DagsterTypeKind
 from dagster._utils.test import wrap_op_in_graph_and_execute

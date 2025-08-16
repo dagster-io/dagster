@@ -2,14 +2,13 @@ import sys
 from collections.abc import Mapping
 from typing import Optional, Union
 
-import dagster._check as check
 import graphene
 import yaml
-from dagster._core.storage.dagster_run import RunsFilter
-from dagster._utils.error import serializable_error_info_from_exc_info
-from dagster_shared.yaml_utils import load_run_config_yaml
 from graphene.types.generic import GenericScalar
 
+import dagster._check as check
+from dagster._core.storage.dagster_run import RunsFilter
+from dagster._utils.error import serializable_error_info_from_exc_info
 from dagster_graphql.implementation.fetch_runs import get_run_ids, get_runs, get_runs_count
 from dagster_graphql.implementation.utils import UserFacingGraphQLError
 from dagster_graphql.schema.backfill import pipeline_execution_error_types
@@ -20,6 +19,7 @@ from dagster_graphql.schema.errors import (
 )
 from dagster_graphql.schema.tags import GraphenePipelineTagAndValues
 from dagster_graphql.schema.util import ResolveInfo, non_null_list
+from dagster_shared.yaml_utils import load_run_config_yaml
 
 
 class GrapheneStepEventStatus(graphene.Enum):

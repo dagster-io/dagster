@@ -1,8 +1,6 @@
 from collections.abc import Iterable, Sequence
 from typing import Optional
 
-from dagster_shared.serdes.serdes import deserialize_value
-
 import dagster._check as check
 from dagster._core.definitions.partitions.context import require_full_partition_loading_context
 from dagster._core.definitions.partitions.definition.partitions_definition import (
@@ -14,6 +12,7 @@ from dagster._core.definitions.partitions.subset.default import DefaultPartition
 from dagster._core.definitions.partitions.subset.partitions_subset import PartitionsSubset
 from dagster._record import record
 from dagster._serdes import serialize_value, whitelist_for_serdes
+from dagster_shared.serdes.serdes import deserialize_value
 
 
 @whitelist_for_serdes

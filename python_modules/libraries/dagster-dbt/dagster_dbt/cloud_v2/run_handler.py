@@ -1,6 +1,8 @@
 from collections.abc import Iterator, Mapping, Sequence
 from typing import Any, Optional, Union
 
+from dateutil import parser
+
 from dagster import (
     AssetCheckEvaluation,
     AssetCheckResult,
@@ -12,8 +14,6 @@ from dagster import (
 )
 from dagster._annotations import beta
 from dagster._record import record
-from dateutil import parser
-
 from dagster_dbt.asset_utils import build_dbt_specs, get_asset_check_key_for_test
 from dagster_dbt.cloud_v2.client import DbtCloudWorkspaceClient
 from dagster_dbt.cloud_v2.types import DbtCloudJobRunStatusType, DbtCloudRun

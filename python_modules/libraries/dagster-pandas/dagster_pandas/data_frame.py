@@ -1,4 +1,5 @@
 import pandas as pd
+
 from dagster import (
     DagsterInvariantViolationError,
     DagsterType,
@@ -16,7 +17,6 @@ from dagster._annotations import beta
 from dagster._config import Selector
 from dagster._core.definitions.metadata import normalize_metadata
 from dagster._utils import dict_without_keys
-
 from dagster_pandas.constraints import (
     CONSTRAINT_METADATA_KEY,
     ColumnDTypeFnConstraint,

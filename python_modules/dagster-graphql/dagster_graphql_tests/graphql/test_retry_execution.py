@@ -19,8 +19,6 @@ from dagster_graphql.test.utils import (
     infer_job_selector,
     main_repo_location_name,
 )
-from dagster_shared.seven.temp_dir import get_system_temp_directory
-
 from dagster_graphql_tests.graphql.graphql_context_test_suite import (
     ExecutingGraphQLContextTestMatrix,
     ReadonlyGraphQLContextTestMatrix,
@@ -41,6 +39,7 @@ from dagster_graphql_tests.graphql.utils import (
     step_did_succeed_in_records,
     step_started,
 )
+from dagster_shared.seven.temp_dir import get_system_temp_directory
 
 
 def first_event_of_type(logs, message_type):

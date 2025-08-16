@@ -6,6 +6,10 @@ from typing import Any, Union, cast
 
 import pydantic
 import pytest
+from packaging import version
+from pydantic import ValidationError
+from pytest_mock import MockerFixture
+
 from dagster import In, Nothing, Out, job, materialize, op
 from dagster._core.definitions.metadata.metadata_value import FloatMetadataValue, TextMetadataValue
 from dagster._core.errors import DagsterExecutionInterruptedError
@@ -18,10 +22,6 @@ from dagster_dbt.core.resource import DbtCliResource
 from dagster_dbt.dagster_dbt_translator import DagsterDbtTranslator, DagsterDbtTranslatorSettings
 from dagster_dbt.dbt_project import DbtProject
 from dagster_dbt.errors import DagsterDbtCliRuntimeError, DagsterDbtProfilesDirectoryNotFoundError
-from packaging import version
-from pydantic import ValidationError
-from pytest_mock import MockerFixture
-
 from dagster_dbt_tests.dbt_projects import (
     test_dbt_source_freshness_path,
     test_exceptions_path,

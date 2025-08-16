@@ -6,6 +6,7 @@ from airflow import __version__ as airflow_version
 from airflow.models.dag import DAG
 from airflow.operators.bash_operator import BashOperator  # type: ignore
 from airflow.utils.dates import days_ago
+
 from dagster import DagsterEventType
 from dagster._core.instance.utils import AIRFLOW_EXECUTION_DATE_STR
 from dagster._core.storage.compute_log_manager import ComputeIOType

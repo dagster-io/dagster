@@ -5,6 +5,10 @@ from functools import wraps
 from typing import Any, Callable, Optional, TypeVar, Union, overload
 
 import click
+from typing_extensions import ParamSpec
+
+from dagster_dg_core.config import DgCliConfig, load_dg_user_file_config
+from dagster_dg_core.version import __version__
 from dagster_shared.telemetry import (
     TelemetrySettings,
     get_or_set_instance_id,
@@ -12,10 +16,6 @@ from dagster_shared.telemetry import (
     log_telemetry_action as shared_log_telemetry_action,
 )
 from dagster_shared.utils.config import does_dg_config_file_exist
-from typing_extensions import ParamSpec
-
-from dagster_dg_core.config import DgCliConfig, load_dg_user_file_config
-from dagster_dg_core.version import __version__
 
 
 def get_telemetry_enabled_for_cli() -> bool:

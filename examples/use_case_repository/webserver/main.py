@@ -2,9 +2,10 @@ import os
 
 import frontmatter
 import markdown
-from dagster import file_relative_path
 from flask import Flask, abort, render_template_string
 from pygments.formatters import HtmlFormatter
+
+from dagster import file_relative_path
 
 app = Flask(__name__)
 

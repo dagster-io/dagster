@@ -1,8 +1,7 @@
+from components_yaml_checks_dsl.definitions import defs
 from dagster._core.definitions.asset_checks.asset_check_spec import AssetCheckSpec
 from dagster._core.definitions.asset_key import AssetCheckKey, AssetKey
 from dagster._core.definitions.definitions_class import Definitions
-
-from components_yaml_checks_dsl.definitions import defs
 
 
 def checks_specs_by_key(defs: Definitions) -> dict[str, AssetCheckSpec]:

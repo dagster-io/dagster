@@ -1,6 +1,8 @@
 from typing import Any
 
 import pytest
+from pyspark.sql import SparkSession
+
 from dagster import job, multiprocess_executor, op, reconstructable
 from dagster._core.execution.api import execute_job
 from dagster._core.test_utils import instance_for_test
@@ -10,7 +12,6 @@ from dagster_pyspark import (
     lazy_pyspark_resource,
     pyspark_resource,
 )
-from pyspark.sql import SparkSession
 
 
 def assert_job_runs_with_resource(resource_def):

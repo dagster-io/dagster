@@ -9,10 +9,11 @@ from contextlib import contextmanager
 from pathlib import Path
 from typing import Any, Optional
 
-import dagster._check as check
 import docker
 import pytest
 import requests
+
+import dagster._check as check
 from dagster._core.definitions.asset_key import AssetKey
 from dagster._core.storage.dagster_run import DagsterRunStatus
 from dagster._utils import (

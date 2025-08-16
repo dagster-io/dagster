@@ -1,5 +1,3 @@
-from dagster_shared.libraries import DagsterLibraryRegistry
-
 from dagster_graphql.client import (
     DagsterGraphQLClient as DagsterGraphQLClient,
     DagsterGraphQLClientError as DagsterGraphQLClientError,
@@ -10,5 +8,6 @@ from dagster_graphql.client import (
     ShutdownRepositoryLocationStatus as ShutdownRepositoryLocationStatus,
 )
 from dagster_graphql.version import __version__ as __version__
+from dagster_shared.libraries import DagsterLibraryRegistry
 
 DagsterLibraryRegistry.register("dagster-graphql", __version__)

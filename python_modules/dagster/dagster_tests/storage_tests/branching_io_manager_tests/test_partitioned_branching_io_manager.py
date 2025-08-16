@@ -6,7 +6,6 @@ import dagster as dg
 from dagster import AssetExecutionContext, DagsterInstance
 from dagster._core.execution.context.compute import OpExecutionContext
 from dagster._core.storage.branching.branching_io_manager import BranchingIOManager
-
 from dagster_tests.storage_tests.branching_io_manager_tests.utils import (
     AssetBasedInMemoryIOManager,
     DefinitionsRunner,

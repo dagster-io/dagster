@@ -1,8 +1,9 @@
 import tempfile
 
-import dagster as dg
 import pytest
 from click.testing import CliRunner
+
+import dagster as dg
 from dagster._cli.asset import asset_wipe_cache_command, asset_wipe_command
 from dagster._core.storage.partition_status_cache import AssetStatusCacheValue
 from dagster_shared.seven import json

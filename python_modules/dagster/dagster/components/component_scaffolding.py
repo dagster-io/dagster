@@ -5,9 +5,6 @@ from typing import Any, Optional, cast
 
 import click
 import yaml
-from dagster_shared import check
-from dagster_shared.serdes.objects import EnvRegistryKey
-from dagster_shared.seven import load_module_object
 from pydantic import BaseModel, TypeAdapter
 
 from dagster.components.scaffold.scaffold import (
@@ -17,6 +14,9 @@ from dagster.components.scaffold.scaffold import (
     ScaffoldRequest,
     get_scaffolder,
 )
+from dagster_shared import check
+from dagster_shared.serdes.objects import EnvRegistryKey
+from dagster_shared.seven import load_module_object
 
 
 class ComponentDumper(yaml.Dumper):

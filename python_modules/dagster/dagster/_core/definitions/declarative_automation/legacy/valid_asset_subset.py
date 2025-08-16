@@ -2,8 +2,6 @@ import operator
 from dataclasses import replace
 from typing import AbstractSet, Any, Callable, Optional  # noqa: UP035
 
-from dagster_shared.serdes import whitelist_for_serdes
-
 from dagster._core.asset_graph_view.serializable_entity_subset import (
     EntitySubsetSerializer,
     SerializableEntitySubset,
@@ -15,6 +13,7 @@ from dagster._core.definitions.partitions.subset import (
     AllPartitionsSubset,
     TimeWindowPartitionsSubset,
 )
+from dagster_shared.serdes import whitelist_for_serdes
 
 
 @whitelist_for_serdes(serializer=EntitySubsetSerializer, storage_field_names={"key": "asset_key"})

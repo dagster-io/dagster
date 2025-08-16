@@ -6,6 +6,7 @@ from io import BytesIO
 import matplotlib.pyplot as plt
 import pandas as pd
 import requests
+
 from dagster import AssetExecutionContext, MaterializeResult, MetadataValue, asset
 
 

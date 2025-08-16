@@ -1,5 +1,4 @@
 from dagster import repository
-
 from dagster_webserver_tests.stress.dag_gen import generate_job
 
 

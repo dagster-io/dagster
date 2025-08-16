@@ -2,6 +2,7 @@ import subprocess
 from pathlib import Path
 
 import yaml
+
 from dagster_airlift.in_airflow.proxied_state import load_proxied_state_from_yaml
 from dagster_airlift.test import configured_airflow_home
 

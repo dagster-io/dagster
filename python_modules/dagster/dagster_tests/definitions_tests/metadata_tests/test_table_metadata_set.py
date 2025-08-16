@@ -1,5 +1,6 @@
-import dagster as dg
 import pytest
+
+import dagster as dg
 from dagster._check import CheckError
 from dagster._core.definitions.metadata import TableMetadataSet
 from dagster._core.test_utils import ignore_warning, raise_exception_on_warnings
