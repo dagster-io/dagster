@@ -76,11 +76,17 @@ def test_load_databrick_config():
 
 
 @pytest.mark.parametrize(
-    "custom_config_path, spark_version, node_type_id, num_workers",
+    "test_custom_config_path, spark_version, node_type_id, num_workers, existing_cluster_id",
     [
-        (None, "13.3.x-scala2.12", "i3.xlarge", 1),
-        (CUSTOM_CONFIG_LOCATION_PATH, "test_spark_version", "test_node_type_id", 2),
-        (PARTIAL_CUSTOM_CONFIG_LOCATION_PATH, "test_spark_version", "i3.xlarge", 1),
+        (None, "13.3.x-scala2.12", "i3.xlarge", 1, None),
+        (
+            CUSTOM_CONFIG_LOCATION_PATH,
+            "test_spark_version",
+            "test_node_type_id",
+            2,
+            "test_existing_cluster_id",
+        ),
+        (PARTIAL_CUSTOM_CONFIG_LOCATION_PATH, "test_spark_version", "i3.xlarge", 1, None),
     ],
     ids=[
         "no_custom_config",
@@ -89,9 +95,14 @@ def test_load_databrick_config():
     ],
 )
 def test_load_custom_config_from_path(
-    custom_config_path: Optional[Path], spark_version: str, node_type_id: str, num_workers: int
+    test_custom_config_path: Optional[Path],
+    spark_version: str,
+    node_type_id: str,
+    num_workers: int,
+    existing_cluster_id: Optional[str],
 ):
-    custom_config = CustomConfig(custom_config_path=custom_config_path)
+    custom_config = CustomConfig(custom_config_path=test_custom_config_path)
     assert custom_config.spark_version == spark_version
     assert custom_config.node_type_id == node_type_id
     assert custom_config.num_workers == num_workers
+    assert custom_config.existing_cluster_id == existing_cluster_id
