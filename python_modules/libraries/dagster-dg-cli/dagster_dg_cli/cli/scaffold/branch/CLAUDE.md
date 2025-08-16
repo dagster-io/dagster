@@ -176,6 +176,6 @@ dagster_dg_cli/cli/scaffold/branch/new_file.md
 
 ## @record Usage
 
-All data models in this subpackage use the `@record` decorator from `dagster_shared.record` instead of standard `@dataclass`. 
+All data models in this subpackage use the `@record` decorator from `dagster_shared.record` instead of standard `@dataclass`.
 
 **For comprehensive guidance on `@record` usage, patterns, and best practices, see the main documentation in `/python_modules/libraries/dagster-shared/CLAUDE.md`**

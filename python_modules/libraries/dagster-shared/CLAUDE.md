@@ -13,6 +13,7 @@ The `dagster_shared` library provides foundational utilities and patterns used a
 The `@record` decorator is a core utility in the Dagster codebase that provides immutable, functional-style data structures. It is used instead of standard `@dataclass` throughout the codebase for better performance and immutability guarantees.
 
 **Import Pattern:**
+
 ```python
 from dagster_shared.record import record
 
@@ -28,6 +29,7 @@ class MyDataModel:
 **CRITICAL**: The `@record` decorator does **NOT** provide a `.replace()` method like `@dataclass`. This is a common source of confusion and type errors.
 
 **❌ WRONG - replace() method does not exist:**
+
 ```python
 @record
 class Plan:
@@ -39,8 +41,9 @@ updated_plan = current_plan.replace(metadata=new_metadata)
 ```
 
 **✅ CORRECT - Create new instance explicitly:**
+
 ```python
-@record  
+@record
 class Plan:
     title: str
     metadata: dict[str, Any]
@@ -58,6 +61,7 @@ updated_plan = Plan(
 ### Common Patterns
 
 **Updating nested dictionaries:**
+
 ```python
 updated_plan = Plan(
     title=current_plan.title,
@@ -72,6 +76,7 @@ updated_plan = Plan(
 ```
 
 **Updating lists:**
+
 ```python
 updated_plan = Plan(
     title=current_plan.title,
@@ -81,6 +86,7 @@ updated_plan = Plan(
 ```
 
 **Conditional updates:**
+
 ```python
 updated_metadata = current_plan.metadata
 if some_condition:
@@ -93,6 +99,7 @@ updated_plan = Plan(
 ```
 
 **Updating single fields:**
+
 ```python
 # When only updating one field, still create a new instance
 updated_plan = Plan(
@@ -128,6 +135,7 @@ The `@record` decorator provides several performance benefits over standard `@da
 **Error**: `Cannot access attribute "replace" for class "MyRecord"`
 
 **Solution**: Use explicit instance creation instead:
+
 ```python
 # Instead of this:
 new_obj = old_obj.replace(field=new_value)
@@ -143,6 +151,7 @@ new_obj = MyRecord(
 **Error**: Attempting to modify fields directly
 
 **Solution**: Remember that `@record` instances are immutable:
+
 ```python
 # Instead of this:
 obj.field = new_value  # Will raise AttributeError
