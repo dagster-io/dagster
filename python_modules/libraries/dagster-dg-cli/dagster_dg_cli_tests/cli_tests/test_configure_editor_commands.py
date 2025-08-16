@@ -1,3 +1,4 @@
+# ruff: noqa: I001 - import order differs between CI and local due to package installation differences
 from pathlib import Path
 from tempfile import TemporaryDirectory
 from typing import Optional
