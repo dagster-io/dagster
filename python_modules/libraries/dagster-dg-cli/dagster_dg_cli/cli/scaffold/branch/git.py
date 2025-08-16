@@ -6,12 +6,11 @@ from pathlib import Path
 from typing import Optional
 
 import click
+from dagster_dg_core.version import __version__ as dg_version
 
 
 def get_dg_version() -> str:
     """Get the current dg version, using git commit hash for development versions."""
-    from dagster_dg_core.version import __version__ as dg_version
-
     if dg_version == "1!0+dev":
         dagster_repo = os.getenv("DAGSTER_GIT_REPO_DIR")
         if dagster_repo:
