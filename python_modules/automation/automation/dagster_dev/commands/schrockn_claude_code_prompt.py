@@ -103,6 +103,80 @@ def get_buildkite_status(cwd, branch):
         return ""
 
 
+def get_pr_status_emoji(cwd, branch):
+    """Get PR status emoji based on GitHub PR state."""
+    try:
+        os.chdir(cwd)
+        debug_print(f"Getting PR status for branch: {branch}")
+
+        # Get PR status using GitHub CLI
+        status_result = subprocess.run(
+            [
+                "gh",
+                "pr",
+                "view",
+                branch,
+                "--json",
+                "mergeable,reviewDecision,mergeStateStatus,state,isDraft",
+            ],
+            capture_output=True,
+            text=True,
+            timeout=10,
+            check=False,
+        )
+
+        if status_result.returncode != 0:
+            debug_print(f"gh pr view failed: {status_result.stderr}")
+            return ""
+
+        pr_data = json.loads(status_result.stdout)
+        debug_print(f"PR status data: {pr_data}")
+
+        mergeable = pr_data.get("mergeable", "")
+        review_decision = pr_data.get("reviewDecision", "")
+        merge_state_status = pr_data.get("mergeStateStatus", "")
+        state = pr_data.get("state", "")
+        is_draft = pr_data.get("isDraft", False)
+
+        # PR is closed/merged
+        if state != "OPEN":
+            return ""
+
+        # Priority order for status determination:
+        # 1. Draft state (work in progress)
+        if is_draft:
+            debug_print("PR is in draft state")
+            return "🚧"
+
+        # 2. Merge conflicts (highest priority for non-draft)
+        if mergeable == "CONFLICTING":
+            debug_print("PR has merge conflicts")
+            return "🔀"
+
+        # 3. Changes requested
+        if review_decision == "CHANGES_REQUESTED":
+            debug_print("PR has changes requested")
+            return "📝"
+
+        # 4. Approved and ready to merge
+        if review_decision == "APPROVED" and mergeable == "MERGEABLE":
+            debug_print("PR is approved and ready to merge")
+            return "✅"
+
+        # 5. Blocked for other reasons
+        if merge_state_status == "BLOCKED":
+            debug_print("PR is blocked")
+            return "🚫"
+
+        # 6. Published but waiting for reviewers (default state)
+        debug_print("PR is published and waiting for review")
+        return "👀"
+
+    except Exception as e:
+        debug_print(f"Error getting PR status: {e}")
+        return ""
+
+
 def get_graphite_pr_url(cwd, branch):
     """Get Graphite PR URL for the current branch if it exists."""
     try:
@@ -897,6 +971,10 @@ def process_statusline_data(input_data):
         except Exception as e:
             debug_print(f"Failed to get current branch: {e}")
 
+        # Get PR status emoji
+        pr_status_emoji = get_pr_status_emoji(cwd, current_branch) if current_branch else ""
+        debug_print(f"PR status emoji result: '{pr_status_emoji}'")
+
         # Get Buildkite status
         bk_status = get_buildkite_status(cwd, current_branch) if current_branch else ""
         debug_print(f"Buildkite status result: '{bk_status}' (empty={not bool(bk_status)})")
@@ -951,8 +1029,14 @@ def process_statusline_data(input_data):
             f"\033[38;5;208m{grouped_model_info}\033[0m"  # Orange grouped model info
         )
 
-        # Add Graphite PR URL if available (in purple/magenta color)
-        pr_colored = f"\033[35m 🔗 {pr_url}\033[0m" if pr_url else ""
+        # Add Graphite PR URL with status emoji if available (in purple/magenta color)
+        if pr_url:
+            if pr_status_emoji:
+                pr_colored = f"\033[35m {pr_status_emoji} {pr_url}\033[0m"
+            else:
+                pr_colored = f"\033[35m {pr_url}\033[0m"
+        else:
+            pr_colored = ""
 
         # Add Buildkite status if available (in blue color, positioned after PR)
         bk_colored = f" \033[34m{bk_status}\033[0m" if bk_status else ""
