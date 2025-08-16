@@ -3,7 +3,7 @@ import tempfile
 from collections.abc import Iterator, Mapping
 from contextlib import contextmanager
 from pathlib import Path
-from typing import Any, Literal, Optional
+from typing import Any, Literal, Optional, Union, get_args, get_origin
 
 import click
 from dagster.components.core.defs_module import ComponentFileModel
