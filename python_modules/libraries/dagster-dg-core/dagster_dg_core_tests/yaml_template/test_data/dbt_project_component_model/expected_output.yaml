@@ -1,0 +1,17 @@
+# Template with instructions
+project: unknown  # Required: The path to the dbt project or a mapping defining a DbtProject
+op: unknown  # Optional: Op related arguments to set on the generated @dbt_assets
+translation: unknown  # Optional
+select: string  # Optional: The dbt selection string for models in the project you want to include.
+exclude: string  # Optional: The dbt selection string for models in the project you want to exclude.
+translation_settings: unknown  # Optional: Allows enabling or disabling various features for translating dbt models in to Dagster assets.
+prepare_if_dev: unknown  # Optional: Whether to prepare the dbt project every time in `dagster dev` or `dg` cli calls.
+
+# EXAMPLE VALUES:
+project: "unknown_value"
+op: "unknown_value"
+translation: "unknown_value"
+select: "example_string"
+exclude: "example_string"
+translation_settings: "unknown_value"
+prepare_if_dev: "unknown_value"
