@@ -1165,6 +1165,10 @@ def define_sensors():
         )
 
     @sensor(job_name="no_config_job")
+    def run_key_sensor(_):
+        return RunRequest(run_key="the_key")
+
+    @sensor(job_name="no_config_job")
     def always_error_sensor(_):
         raise Exception("OOPS")
 
@@ -1278,6 +1282,7 @@ def define_sensors():
 
     return [
         always_no_config_sensor_with_tags_and_metadata,
+        run_key_sensor,
         always_error_sensor,
         once_no_config_sensor,
         never_no_config_sensor,

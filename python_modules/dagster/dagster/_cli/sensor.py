@@ -35,6 +35,7 @@ from dagster._core.scheduler.instigation import (
     InstigatorStatus,
     SensorInstigatorData,
 )
+from dagster._daemon.sensor import fetch_existing_runs
 from dagster._utils import PrintFn
 from dagster._utils.error import serializable_error_info_from_exc_info
 
@@ -307,14 +308,31 @@ def execute_preview_command(
             else:
                 print_fn(f"Sensor returned false for {sensor.name}, skipping")
         else:
-            print_fn(
-                "Sensor returning run requests for {num} run(s):\n\n{run_requests}".format(
-                    num=len(sensor_runtime_data.run_requests),
-                    run_requests="\n".join(
-                        dump_run_config_yaml(run_request.run_config)
-                        for run_request in sensor_runtime_data.run_requests
-                    ),
+            existing_runs = fetch_existing_runs(instance, sensor, sensor_runtime_data.run_requests)
+            skipped_run_requests = []
+            returned_run_requests = []
+
+            for run_request in sensor_runtime_data.run_requests:
+                if run_request.run_key in existing_runs:
+                    skipped_run_requests.append(run_request)
+                else:
+                    returned_run_requests.append(run_request)
+
+            if skipped_run_requests:
+                rr_string = "\n".join(
+                    dump_run_config_yaml(run_request.run_config)
+                    for run_request in skipped_run_requests
                 )
+                print_fn(
+                    f"Skipping run requests for {len(skipped_run_requests)} run(s) that already have runs matching their run_keys:\n\n{rr_string}"
+                )
+
+            rr_string = "\n".join(
+                dump_run_config_yaml(run_request.run_config)
+                for run_request in returned_run_requests
+            )
+            print_fn(
+                f"Sensor returning run requests for {len(returned_run_requests)} run(s):\n\n{rr_string}"
             )
 
 

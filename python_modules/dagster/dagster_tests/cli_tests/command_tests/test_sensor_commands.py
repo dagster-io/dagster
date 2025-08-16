@@ -2,6 +2,7 @@ import re
 from unittest import mock
 
 import click
+import dagster as dg
 import pytest
 from click.testing import CliRunner
 from dagster._cli.sensor import (
@@ -13,6 +14,7 @@ from dagster._cli.sensor import (
 )
 from dagster._cli.utils import validate_dagster_home_is_set, validate_repo_has_defined_sensors
 from dagster._core.remote_representation import RemoteRepository
+from dagster._core.storage.tags import RUN_KEY_TAG, SENSOR_NAME_TAG
 from dagster._core.test_utils import environ
 
 from dagster_tests.cli_tests.command_tests.test_cli_commands import sensor_command_contexts
@@ -115,6 +117,27 @@ def test_sensor_preview(gen_sensor_args):
 
             assert result.exit_code == 0
             assert result.output == "Sensor returning run requests for 1 run(s):\n\nfoo: FOO\n\n"
+
+            # create a run with the same run key to simulate this getting launched
+            instance._run_storage.add_run(  # noqa
+                dg.DagsterRun(
+                    job_name="baz",
+                    run_id="123",
+                    tags={RUN_KEY_TAG: "the_key", SENSOR_NAME_TAG: "foo_sensor"},
+                )
+            )
+
+            # run again, we'll skip
+            result = runner.invoke(
+                sensor_preview_command,
+                cli_args + ["foo_sensor"],
+            )
+
+            assert result.exit_code == 0
+            assert (
+                result.output
+                == "Skipping run requests for 1 run(s) that already have runs matching their run_keys:\n\nfoo: FOO\n\nSensor returning run requests for 0 run(s):\n\n\n"
+            )
 
 
 @pytest.mark.parametrize("gen_sensor_args", sensor_command_contexts())
