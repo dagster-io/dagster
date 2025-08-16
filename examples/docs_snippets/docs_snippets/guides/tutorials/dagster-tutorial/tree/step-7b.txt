@@ -1,0 +1,16 @@
+src
+└── dagster_tutorial
+    ├── __init__.py
+    ├── components
+    │   ├── __init__.py
+    │   └── tutorial.py
+    ├── definitions.py
+    └── defs
+        ├── __init__.py
+        ├── assets.py
+        ├── my_script.py
+        ├── resources.py
+        ├── script
+        │   └── defs.yaml
+        └── tutorial   # NEW
+            └── defs.yaml
