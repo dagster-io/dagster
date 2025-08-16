@@ -823,3 +823,27 @@ dt > a > a.hash-link {
     margin-right: max(calc(-40vw + 1650px * 0.4), -55px);
   }
 }
+
+// Context menu for the navbar logo
+.navbar-logo-menu {
+  list-style: none;
+  margin: 0;
+  padding: 0.25rem 0;
+  background: var(--ifm-dropdown-background-color);
+  border: 1px solid var(--ifm-dropdown-border-color);
+  border-radius: var(--ifm-dropdown-border-radius);
+  box-shadow: var(--ifm-dropdown-shadow);
+  z-index: 1000;
+}
+
+.navbar-logo-menu li a {
+  display: block;
+  padding: 0.25rem 0.75rem;
+  color: var(--ifm-font-color-base);
+  text-decoration: none;
+}
+
+.navbar-logo-menu li a:hover {
+  background: var(--ifm-dropdown-hover-background-color);
+}
+
