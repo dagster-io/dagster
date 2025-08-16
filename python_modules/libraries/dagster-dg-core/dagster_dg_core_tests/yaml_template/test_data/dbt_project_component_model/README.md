@@ -20,6 +20,7 @@ If the DbtProjectComponent schema changes, you can regenerate the schema file by
 ```
 
 This will use the command:
+
 ```bash
 dg utils inspect-component dagster_dbt.DbtProjectComponent --component-schema
 ```
@@ -47,6 +48,7 @@ with open('expected_output.yaml', 'w') as f:
 ## Test Purpose
 
 This test validates that the YAML template converter can handle complex, real-world JSON schemas with:
+
 - Nested object definitions (`$defs`)
 - Schema references (`$ref`)
 - Multiple type unions (`anyOf`)

@@ -10,7 +10,7 @@ class TestComplexDbtProjectSchema:
         # Load schema from external file
         test_data_dir = Path(__file__).parent / "test_data" / "dbt_project_component_model"
         schema_file = test_data_dir / "schema.json"
-        
+
         with open(schema_file) as f:
             schema = json.load(f)
 
