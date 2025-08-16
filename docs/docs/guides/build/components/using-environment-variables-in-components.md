@@ -4,10 +4,6 @@ description: Use environment variables to configure components locally and in Da
 sidebar_position: 100
 ---
 
-import DgComponentsRc from '@site/docs/partials/\_DgComponentsRc.md';
-
-<DgComponentsRc />
-
 With `dg` and components, you can easily configure components depending on the environment in which they are run. To demonstrate this, we'll walk through setting up an example ELT pipeline with a Sling component which reads Snowflake credentials from environment variables.
 
 :::tip

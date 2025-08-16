@@ -4,10 +4,6 @@ sidebar_position: 550
 title: Converting an existing project
 ---
 
-import DgComponentsRc from '@site/docs/partials/\_DgComponentsRc.md';
-
-<DgComponentsRc />
-
 In this guide, we walk through converting an existing Dagster project that defines a Python package with a single Dagster asset, which is exposed in a top-level `Definitions` object in `my_existing_project/definitions.py`.
 
 :::note
