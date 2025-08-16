@@ -437,6 +437,7 @@ class DagsterApiServer(DagsterApiServicer):
                 self._instance = self._exit_stack.enter_context(
                     get_instance_for_cli(instance_ref=instance_ref)
                 )
+
                 self._instance.inject_env_vars(location_name)
 
             self._loaded_repositories: Optional[LoadedRepositories] = LoadedRepositories(

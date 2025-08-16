@@ -46,6 +46,7 @@ if TYPE_CHECKING:
     from dagster._core.storage.compute_log_manager import ComputeLogManager
     from dagster._core.storage.daemon_cursor import DaemonCursorStorage
     from dagster._core.storage.dagster_run import JobBucket, RunRecord, TagBucket
+    from dagster._core.storage.defs_state.base import DefsStateStorage
     from dagster._core.storage.event_log import EventLogStorage
     from dagster._core.storage.event_log.base import (
         AssetRecord,
@@ -150,6 +151,7 @@ class DagsterInstance(
         from dagster._core.scheduler import Scheduler
         from dagster._core.secrets import SecretsLoader
         from dagster._core.storage.compute_log_manager import ComputeLogManager
+        from dagster._core.storage.defs_state.base import DefsStateStorage
         from dagster._core.storage.event_log import EventLogStorage
         from dagster._core.storage.root import LocalArtifactStorage
         from dagster._core.storage.runs import RunStorage
@@ -164,6 +166,9 @@ class DagsterInstance(
 
         self._run_storage = check.inst_param(run_storage, "run_storage", RunStorage)
         self._run_storage.register_instance(self)
+
+        self._defs_state_storage = DefsStateStorage.from_run_storage(self._run_storage)
+        self._defs_state_storage.register_instance(self)
 
         if compute_log_manager:
             self._compute_log_manager = check.inst_param(
@@ -754,6 +759,10 @@ class DagsterInstance(
         return self._run_storage
 
     @property
+    def defs_state_storage(self) -> "DefsStateStorage":
+        return self._defs_state_storage
+
+    @property
     def event_log_storage(self) -> "EventLogStorage":
         return self._event_storage
 
@@ -901,6 +910,9 @@ class DagsterInstance(
     # directories
 
     def __enter__(self) -> Self:
+        from dagster._core.storage.defs_state.base import DefsStateStorage
+
+        DefsStateStorage.set_current(self._defs_state_storage)
         return self
 
     def __exit__(
@@ -909,6 +921,9 @@ class DagsterInstance(
         _exception_value: Optional[BaseException],
         _traceback: Optional[TracebackType],
     ) -> None:
+        from dagster._core.storage.defs_state.base import DefsStateStorage
+
+        DefsStateStorage.set_current(None)
         self.dispose()
 
     # backfill
