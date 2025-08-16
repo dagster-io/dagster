@@ -13,7 +13,7 @@ import click
 from dagster_dg_core.context import DgContext
 
 from dagster_dg_cli.cli.scaffold.branch.claude.client import ClaudeClient
-from dagster_dg_cli.cli.scaffold.branch.diagnostics import ClaudeDiagnosticsService
+from dagster_dg_cli.cli.scaffold.branch.claude.diagnostics import ClaudeDiagnostics
 from dagster_dg_cli.utils.ui import daggy_spinner_context
 
 
@@ -32,7 +32,7 @@ MAX_TURNS = 20
 
 def invoke_anthropic_api_direct(
     prompt: str,
-    diagnostics: ClaudeDiagnosticsService,
+    diagnostics: ClaudeDiagnostics,
     operation_name: str,
 ) -> str:
     """Invoke Anthropic API directly to get a single string result.
@@ -140,7 +140,7 @@ def load_prompt_template(prompt_filename: str, context: str) -> str:
 def get_branch_name(
     context: str,
     input_type: type["InputType"],
-    diagnostics: ClaudeDiagnosticsService,
+    diagnostics: ClaudeDiagnostics,
 ) -> str:
     """Generate a git branch name from context.
 
@@ -162,7 +162,7 @@ def get_branch_name(
 def get_pr_title(
     context: str,
     input_type: type["InputType"],
-    diagnostics: ClaudeDiagnosticsService,
+    diagnostics: ClaudeDiagnostics,
 ) -> str:
     """Generate a PR title from context.
 
@@ -284,7 +284,7 @@ def get_branch_name_and_pr_title_from_prompt(
     dg_context: DgContext,
     user_input: str,
     input_type: type["InputType"],
-    diagnostics: ClaudeDiagnosticsService,
+    diagnostics: ClaudeDiagnostics,
 ) -> BranchNameGeneration:
     """Invokes Claude under the hood to generate a reasonable, valid
     git branch name and pull request title based on the user's stated goal.
@@ -342,7 +342,7 @@ def scaffold_content_for_prompt(
     dg_context: DgContext,
     user_input: str,
     input_type: type["InputType"],
-    diagnostics: ClaudeDiagnosticsService,
+    diagnostics: ClaudeDiagnostics,
     use_spinner: bool = True,
 ) -> None:
     """Scaffolds content for the user's prompt."""
