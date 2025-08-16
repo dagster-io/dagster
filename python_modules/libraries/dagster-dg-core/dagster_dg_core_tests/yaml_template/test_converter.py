@@ -4,19 +4,14 @@ from dagster_dg_core.yaml_template.converter import YamlTemplate
 
 class TestBasicTypes:
     def test_simple_string_property(self):
-        schema = {
-            "type": "object",
-            "properties": {
-                "name": {"type": "string"}
-            }
-        }
+        schema = {"type": "object", "properties": {"name": {"type": "string"}}}
         result = YamlTemplate.from_json_schema(schema).to_string()
         expected = (
             "# Template with instructions\n"
             "name: string  # Optional\n"
             "\n"
             "# EXAMPLE VALUES:\n"
-            "name: \"example_string\""
+            'name: "Jane Doe"'
         )
         assert result == expected
 
@@ -24,9 +19,7 @@ class TestBasicTypes:
         schema = {
             "type": "object",
             "required": ["name"],
-            "properties": {
-                "name": {"type": "string"}
-            }
+            "properties": {"name": {"type": "string"}},
         }
         result = YamlTemplate.from_json_schema(schema).to_string()
         expected = (
@@ -34,34 +27,20 @@ class TestBasicTypes:
             "name: string  # Required\n"
             "\n"
             "# EXAMPLE VALUES:\n"
-            "name: \"example_string\""
+            'name: "Jane Doe"'
         )
         assert result == expected
 
     def test_integer_property(self):
-        schema = {
-            "type": "object",
-            "properties": {
-                "age": {"type": "integer"}
-            }
-        }
+        schema = {"type": "object", "properties": {"age": {"type": "integer"}}}
         result = YamlTemplate.from_json_schema(schema).to_string()
         expected = (
-            "# Template with instructions\n"
-            "age: integer  # Optional\n"
-            "\n"
-            "# EXAMPLE VALUES:\n"
-            "age: 42"
+            "# Template with instructions\nage: integer  # Optional\n\n# EXAMPLE VALUES:\nage: 30"
         )
         assert result == expected
 
     def test_number_property(self):
-        schema = {
-            "type": "object",
-            "properties": {
-                "score": {"type": "number"}
-            }
-        }
+        schema = {"type": "object", "properties": {"score": {"type": "number"}}}
         result = YamlTemplate.from_json_schema(schema).to_string()
         expected = (
             "# Template with instructions\n"
@@ -73,12 +52,7 @@ class TestBasicTypes:
         assert result == expected
 
     def test_boolean_property(self):
-        schema = {
-            "type": "object",
-            "properties": {
-                "active": {"type": "boolean"}
-            }
-        }
+        schema = {"type": "object", "properties": {"active": {"type": "boolean"}}}
         result = YamlTemplate.from_json_schema(schema).to_string()
         expected = (
             "# Template with instructions\n"
@@ -95,9 +69,7 @@ class TestConstraints:
         schema = {
             "type": "object",
             "required": ["name"],
-            "properties": {
-                "name": {"type": "string", "minLength": 3}
-            }
+            "properties": {"name": {"type": "string", "minLength": 3}},
         }
         result = YamlTemplate.from_json_schema(schema).to_string()
         expected = (
@@ -105,68 +77,48 @@ class TestConstraints:
             "name: string  # Required: Minimum length 3\n"
             "\n"
             "# EXAMPLE VALUES:\n"
-            "name: \"example_string\""
+            'name: "Jane Doe"'
         )
         assert result == expected
 
     def test_string_with_max_length(self):
-        schema = {
-            "type": "object",
-            "properties": {
-                "code": {"type": "string", "maxLength": 10}
-            }
-        }
+        schema = {"type": "object", "properties": {"code": {"type": "string", "maxLength": 10}}}
         result = YamlTemplate.from_json_schema(schema).to_string()
         expected = (
             "# Template with instructions\n"
             "code: string  # Optional: Maximum length 10\n"
             "\n"
             "# EXAMPLE VALUES:\n"
-            "code: \"example\""
+            'code: "example"'
         )
         assert result == expected
 
     def test_string_with_format(self):
-        schema = {
-            "type": "object",
-            "properties": {
-                "email": {"type": "string", "format": "email"}
-            }
-        }
+        schema = {"type": "object", "properties": {"email": {"type": "string", "format": "email"}}}
         result = YamlTemplate.from_json_schema(schema).to_string()
         expected = (
             "# Template with instructions\n"
             "email: string  # Optional: Valid email format\n"
             "\n"
             "# EXAMPLE VALUES:\n"
-            "email: \"user@example.com\""
+            'email: "user@example.com"'
         )
         assert result == expected
 
     def test_integer_with_minimum(self):
-        schema = {
-            "type": "object",
-            "properties": {
-                "age": {"type": "integer", "minimum": 0}
-            }
-        }
+        schema = {"type": "object", "properties": {"age": {"type": "integer", "minimum": 0}}}
         result = YamlTemplate.from_json_schema(schema).to_string()
         expected = (
             "# Template with instructions\n"
             "age: integer  # Optional: Must be >= 0\n"
             "\n"
             "# EXAMPLE VALUES:\n"
-            "age: 42"
+            "age: 30"
         )
         assert result == expected
 
     def test_integer_with_maximum(self):
-        schema = {
-            "type": "object",
-            "properties": {
-                "priority": {"type": "integer", "maximum": 10}
-            }
-        }
+        schema = {"type": "object", "properties": {"priority": {"type": "integer", "maximum": 10}}}
         result = YamlTemplate.from_json_schema(schema).to_string()
         expected = (
             "# Template with instructions\n"
@@ -180,9 +132,7 @@ class TestConstraints:
     def test_number_with_minimum_and_maximum(self):
         schema = {
             "type": "object",
-            "properties": {
-                "rating": {"type": "number", "minimum": 0.0, "maximum": 5.0}
-            }
+            "properties": {"rating": {"type": "number", "minimum": 0.0, "maximum": 5.0}},
         }
         result = YamlTemplate.from_json_schema(schema).to_string()
         expected = (
@@ -197,9 +147,7 @@ class TestConstraints:
     def test_string_with_pattern(self):
         schema = {
             "type": "object",
-            "properties": {
-                "code": {"type": "string", "pattern": "^[A-Z]{3}-\\d{3}$"}
-            }
+            "properties": {"code": {"type": "string", "pattern": "^[A-Z]{3}-\\d{3}$"}},
         }
         result = YamlTemplate.from_json_schema(schema).to_string()
         expected = (
@@ -207,7 +155,7 @@ class TestConstraints:
             "code: string  # Optional: Must match pattern: ^[A-Z]{3}-\\d{3}$\n"
             "\n"
             "# EXAMPLE VALUES:\n"
-            "code: \"ABC-123\""
+            'code: "ABC-123"'
         )
         assert result == expected
 
@@ -216,12 +164,7 @@ class TestArrays:
     def test_simple_array(self):
         schema = {
             "type": "object",
-            "properties": {
-                "tags": {
-                    "type": "array",
-                    "items": {"type": "string"}
-                }
-            }
+            "properties": {"tags": {"type": "array", "items": {"type": "string"}}},
         }
         result = YamlTemplate.from_json_schema(schema).to_string()
         expected = (
@@ -231,8 +174,8 @@ class TestArrays:
             "\n"
             "# EXAMPLE VALUES:\n"
             "tags:\n"
-            "  - \"example_item_1\"\n"
-            "  - \"example_item_2\""
+            '  - "example_item_1"\n'
+            '  - "example_item_2"'
         )
         assert result == expected
 
@@ -240,12 +183,7 @@ class TestArrays:
         schema = {
             "type": "object",
             "required": ["roles"],
-            "properties": {
-                "roles": {
-                    "type": "array",
-                    "items": {"type": "string"}
-                }
-            }
+            "properties": {"roles": {"type": "array", "items": {"type": "string"}}},
         }
         result = YamlTemplate.from_json_schema(schema).to_string()
         expected = (
@@ -255,21 +193,15 @@ class TestArrays:
             "\n"
             "# EXAMPLE VALUES:\n"
             "roles:\n"
-            "  - \"example_item_1\"\n"
-            "  - \"example_item_2\""
+            '  - "admin"\n'
+            '  - "developer"'
         )
         assert result == expected
 
     def test_array_with_min_items(self):
         schema = {
             "type": "object",
-            "properties": {
-                "items": {
-                    "type": "array",
-                    "items": {"type": "string"},
-                    "minItems": 2
-                }
-            }
+            "properties": {"items": {"type": "array", "items": {"type": "string"}, "minItems": 2}},
         }
         result = YamlTemplate.from_json_schema(schema).to_string()
         expected = (
@@ -279,21 +211,15 @@ class TestArrays:
             "\n"
             "# EXAMPLE VALUES:\n"
             "items:\n"
-            "  - \"example_item_1\"\n"
-            "  - \"example_item_2\""
+            '  - "example_item_1"\n'
+            '  - "example_item_2"'
         )
         assert result == expected
 
     def test_array_with_max_items(self):
         schema = {
             "type": "object",
-            "properties": {
-                "items": {
-                    "type": "array",
-                    "items": {"type": "integer"},
-                    "maxItems": 3
-                }
-            }
+            "properties": {"items": {"type": "array", "items": {"type": "integer"}, "maxItems": 3}},
         }
         result = YamlTemplate.from_json_schema(schema).to_string()
         expected = (
@@ -303,8 +229,8 @@ class TestArrays:
             "\n"
             "# EXAMPLE VALUES:\n"
             "items:\n"
-            "  - 1\n"
-            "  - 2"
+            "  - 42\n"
+            "  - 42"
         )
         assert result == expected
 
@@ -316,12 +242,9 @@ class TestNestedObjects:
             "properties": {
                 "address": {
                     "type": "object",
-                    "properties": {
-                        "street": {"type": "string"},
-                        "city": {"type": "string"}
-                    }
+                    "properties": {"street": {"type": "string"}, "city": {"type": "string"}},
                 }
-            }
+            },
         }
         result = YamlTemplate.from_json_schema(schema).to_string()
         expected = (
@@ -332,8 +255,8 @@ class TestNestedObjects:
             "\n"
             "# EXAMPLE VALUES:\n"
             "address:\n"
-            "  street: \"example_string\"\n"
-            "  city: \"example_string\""
+            '  street: "123 Main St"\n'
+            '  city: "Boston"'
         )
         assert result == expected
 
@@ -347,10 +270,10 @@ class TestNestedObjects:
                     "required": ["name"],
                     "properties": {
                         "name": {"type": "string"},
-                        "email": {"type": "string", "format": "email"}
-                    }
+                        "email": {"type": "string", "format": "email"},
+                    },
                 }
-            }
+            },
         }
         result = YamlTemplate.from_json_schema(schema).to_string()
         expected = (
@@ -361,8 +284,8 @@ class TestNestedObjects:
             "\n"
             "# EXAMPLE VALUES:\n"
             "user:\n"
-            "  name: \"example_string\"\n"
-            "  email: \"user@example.com\""
+            '  name: "Jane Doe"\n'
+            '  email: "user@example.com"'
         )
         assert result == expected
 
@@ -376,19 +299,16 @@ class TestComplexScenarios:
                 "name": {"type": "string", "minLength": 1},
                 "age": {"type": "integer", "minimum": 0},
                 "email": {"type": "string", "format": "email"},
-                "roles": {
-                    "type": "array",
-                    "items": {"type": "string"}
-                },
+                "roles": {"type": "array", "items": {"type": "string"}},
                 "address": {
                     "type": "object",
                     "properties": {
                         "street": {"type": "string"},
                         "city": {"type": "string"},
-                        "zip": {"type": "string"}
-                    }
-                }
-            }
+                        "zip": {"type": "string"},
+                    },
+                },
+            },
         }
         result = YamlTemplate.from_json_schema(schema).to_string()
         expected = (
@@ -404,16 +324,16 @@ class TestComplexScenarios:
             "  zip: string  # Optional\n"
             "\n"
             "# EXAMPLE VALUES:\n"
-            "name: \"Jane Doe\"\n"
+            'name: "Jane Doe"\n'
             "age: 30\n"
-            "email: \"user@example.com\"\n"
+            'email: "user@example.com"\n'
             "roles:\n"
-            "  - \"admin\"\n"
-            "  - \"developer\"\n"
+            '  - "admin"\n'
+            '  - "developer"\n'
             "address:\n"
-            "  street: \"123 Main St\"\n"
-            "  city: \"Boston\"\n"
-            "  zip: \"02101\""
+            '  street: "123 Main St"\n'
+            '  city: "Boston"\n'
+            '  zip: "02101"'
         )
         assert result == expected
 
@@ -428,11 +348,11 @@ class TestComplexScenarios:
                         "required": ["name"],
                         "properties": {
                             "name": {"type": "string"},
-                            "department": {"type": "string"}
-                        }
-                    }
+                            "department": {"type": "string"},
+                        },
+                    },
                 }
-            }
+            },
         }
         result = YamlTemplate.from_json_schema(schema).to_string()
         expected = (
@@ -443,10 +363,10 @@ class TestComplexScenarios:
             "\n"
             "# EXAMPLE VALUES:\n"
             "employees:\n"
-            "  - name: \"example_string\"\n"
-            "    department: \"example_string\"\n"
-            "  - name: \"example_string\"\n"
-            "    department: \"example_string\""
+            '  - name: "example_string"\n'
+            '    department: "example_string"\n'
+            '  - name: "example_string"\n'
+            '    department: "example_string"'
         )
         assert result == expected
 
@@ -477,19 +397,14 @@ class TestComplexScenarios:
 
 class TestErrorHandling:
     def test_unsupported_type(self):
-        schema = {
-            "type": "object",
-            "properties": {
-                "unknown": {"type": "unknown_type"}
-            }
-        }
+        schema = {"type": "object", "properties": {"unknown": {"type": "unknown_type"}}}
         result = YamlTemplate.from_json_schema(schema).to_string()
         expected = (
             "# Template with instructions\n"
             "unknown: unknown_type  # Optional\n"
             "\n"
             "# EXAMPLE VALUES:\n"
-            "unknown: \"unknown_value\""
+            'unknown: "unknown_value"'
         )
         assert result == expected
 
@@ -507,12 +422,7 @@ class TestDescriptions:
     def test_property_with_description(self):
         schema = {
             "type": "object",
-            "properties": {
-                "name": {
-                    "type": "string",
-                    "description": "The user's full name"
-                }
-            }
+            "properties": {"name": {"type": "string", "description": "The user's full name"}},
         }
         result = YamlTemplate.from_json_schema(schema).to_string()
         expected = (
@@ -520,7 +430,7 @@ class TestDescriptions:
             "name: string  # Optional: The user's full name\n"
             "\n"
             "# EXAMPLE VALUES:\n"
-            "name: \"example_string\""
+            'name: "Jane Doe"'
         )
         assert result == expected
 
@@ -530,20 +440,13 @@ class TestYamlTemplateClass:
         schema = {
             "type": "object",
             "required": ["name"],
-            "properties": {
-                "name": {"type": "string"}
-            }
+            "properties": {"name": {"type": "string"}},
         }
         template = YamlTemplate.from_json_schema(schema)
         assert isinstance(template, YamlTemplate)
-    
+
     def test_str_method(self):
-        schema = {
-            "type": "object",
-            "properties": {
-                "name": {"type": "string"}
-            }
-        }
+        schema = {"type": "object", "properties": {"name": {"type": "string"}}}
         template = YamlTemplate.from_json_schema(schema)
         result = str(template)
         expected = (
@@ -551,17 +454,12 @@ class TestYamlTemplateClass:
             "name: string  # Optional\n"
             "\n"
             "# EXAMPLE VALUES:\n"
-            "name: \"example_string\""
+            'name: "Jane Doe"'
         )
         assert result == expected
-    
+
     def test_to_string_method(self):
-        schema = {
-            "type": "object",
-            "properties": {
-                "name": {"type": "string"}
-            }
-        }
+        schema = {"type": "object", "properties": {"name": {"type": "string"}}}
         template = YamlTemplate.from_json_schema(schema)
         result = template.to_string()
         expected = (
@@ -569,10 +467,9 @@ class TestYamlTemplateClass:
             "name: string  # Optional\n"
             "\n"
             "# EXAMPLE VALUES:\n"
-            "name: \"example_string\""
+            'name: "Jane Doe"'
         )
         assert result == expected
-    
 
     def test_object_property_with_description(self):
         schema = {
@@ -581,11 +478,9 @@ class TestYamlTemplateClass:
                 "address": {
                     "type": "object",
                     "description": "User's home address",
-                    "properties": {
-                        "street": {"type": "string"}
-                    }
+                    "properties": {"street": {"type": "string"}},
                 }
-            }
+            },
         }
         result = YamlTemplate.from_json_schema(schema).to_string()
         expected = (
@@ -595,6 +490,6 @@ class TestYamlTemplateClass:
             "\n"
             "# EXAMPLE VALUES:\n"
             "address:\n"
-            "  street: \"example_string\""
+            '  street: "123 Main St"'
         )
         assert result == expected
