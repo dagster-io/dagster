@@ -1,3 +1,4 @@
+import json
 import textwrap
 
 from dagster_test.dg_utils.utils import ProxyRunner, assert_runner_result, isolated_components_venv
@@ -168,6 +169,27 @@ def test_utils_inspect_component_type_flag_fields_success():
             """).strip()
         )
 
+        result = runner.invoke(
+            "utils",
+            "inspect-component",
+            "dagster_test.components.SimplePipesScriptComponent",
+            "--defs-yaml-schema",
+        )
+        assert_runner_result(result)
+        # Check that the output contains the ComponentFileModel structure
+        output_json = json.loads(result.output.strip())
+        assert "properties" in output_json
+        assert "type" in output_json["properties"]
+        assert "attributes" in output_json["properties"]
+        assert "template_vars_module" in output_json["properties"]
+        assert "requirements" in output_json["properties"]
+        assert "post_processing" in output_json["properties"]
+        # Check that type is constrained to the specific component
+        assert (
+            output_json["properties"]["type"]["const"]
+            == "dagster_test.components.SimplePipesScriptComponent"
+        )
+
 
 def test_utils_inspect_component_type_multiple_flags_fails() -> None:
     with (
@@ -183,7 +205,26 @@ def test_utils_inspect_component_type_multiple_flags_fails() -> None:
         )
         assert_runner_result(result, exit_0=False)
         assert (
-            "Only one of --description, --scaffold-params-schema, and --component-schema can be specified."
+            "Only one of --description, --scaffold-params-schema, --component-schema, and --defs-yaml-schema can be specified."
+            in result.output
+        )
+
+
+def test_utils_inspect_component_type_defs_yaml_schema_with_other_flags_fails() -> None:
+    with (
+        ProxyRunner.test(use_fixed_test_components=True) as runner,
+        isolated_components_venv(runner),
+    ):
+        result = runner.invoke(
+            "utils",
+            "inspect-component",
+            "dagster_test.components.SimplePipesScriptComponent",
+            "--component-schema",
+            "--defs-yaml-schema",
+        )
+        assert_runner_result(result, exit_0=False)
+        assert (
+            "Only one of --description, --scaffold-params-schema, --component-schema, and --defs-yaml-schema can be specified."
             in result.output
         )
 
