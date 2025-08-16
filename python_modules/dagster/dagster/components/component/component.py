@@ -17,11 +17,18 @@ from dagster._core.definitions.utils import validate_component_owner
 from dagster.components.component.component_scaffolder import DefaultComponentScaffolder
 from dagster.components.component.template_vars import get_context_free_static_template_vars
 from dagster.components.resolved.base import Resolvable
+from dagster.components.resolved.model import Model
 from dagster.components.scaffold.scaffold import scaffold_with
 
 if TYPE_CHECKING:
     from dagster.components.core.context import ComponentLoadContext
     from dagster.components.core.decl import ComponentDecl
+
+
+class _Empty(Model):
+    """Represents a model that should explicitly have no fields set."""
+
+    pass
 
 
 @public
@@ -255,7 +262,7 @@ class Component(ABC):
         if cls_from_get_schema:
             return cls_from_get_schema
 
-        return None
+        return _Empty
 
     @classmethod
     def get_additional_scope(cls) -> Mapping[str, Any]:
