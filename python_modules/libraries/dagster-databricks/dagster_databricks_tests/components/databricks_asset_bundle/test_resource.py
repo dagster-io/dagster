@@ -53,6 +53,7 @@ def test_load_component(
             defs,
         ):
             databricks_assets = next(iter(defs.assets))
+            assert component.custom_config.asset_name_prefix in databricks_assets.node_def.name
 
             result = materialize(
                 [databricks_assets],

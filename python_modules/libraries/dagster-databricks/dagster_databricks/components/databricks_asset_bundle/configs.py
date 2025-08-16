@@ -546,6 +546,7 @@ class DatabricksConfig(IHaveNew):
 
 @record_custom
 class CustomConfig(IHaveNew):
+    asset_name_prefix: str = "databricks_tasks"
     spark_version: str = "13.3.x-scala2.12"
     node_type_id: str = "i3.xlarge"
     num_workers: int = 1
