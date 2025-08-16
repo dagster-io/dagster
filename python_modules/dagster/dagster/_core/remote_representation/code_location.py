@@ -31,7 +31,6 @@ from dagster._core.remote_origin import (
     GrpcServerCodeLocationOrigin,
     InProcessCodeLocationOrigin,
 )
-from dagster._core.remote_representation import RemoteJobSubsetResult
 from dagster._core.remote_representation.external import (
     RemoteExecutionPlan,
     RemoteJob,
@@ -39,6 +38,7 @@ from dagster._core.remote_representation.external import (
 )
 from dagster._core.remote_representation.external_data import (
     PartitionNamesSnap,
+    RemoteJobSubsetResult,
     RepositorySnap,
     ScheduleExecutionErrorSnap,
     SensorExecutionErrorSnap,
@@ -64,7 +64,7 @@ from dagster._utils.merger import merge_dicts
 if TYPE_CHECKING:
     from dagster._core.definitions.schedule_definition import ScheduleExecutionData
     from dagster._core.definitions.sensor_definition import SensorExecutionData
-    from dagster._core.remote_representation import (
+    from dagster._core.remote_representation.external_data import (
         PartitionConfigSnap,
         PartitionExecutionErrorSnap,
         PartitionSetExecutionParamSnap,

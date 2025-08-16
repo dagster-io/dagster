@@ -38,7 +38,7 @@ if TYPE_CHECKING:
     from dagster._core.events import AssetMaterialization, DagsterEventType
     from dagster._core.events.log import EventLogEntry
     from dagster._core.launcher import RunLauncher
-    from dagster._core.remote_representation import HistoricalJob
+    from dagster._core.remote_representation.historical import HistoricalJob
     from dagster._core.run_coordinator import RunCoordinator
     from dagster._core.scheduler import Scheduler
     from dagster._core.secrets import SecretsLoader
@@ -867,7 +867,7 @@ class DagsterInstance(
 
     @traced
     def get_historical_job(self, snapshot_id: str) -> "HistoricalJob":
-        from dagster._core.remote_representation import HistoricalJob
+        from dagster._core.remote_representation.historical import HistoricalJob
 
         snapshot = self._run_storage.get_job_snapshot(snapshot_id)
         parent_snapshot = (

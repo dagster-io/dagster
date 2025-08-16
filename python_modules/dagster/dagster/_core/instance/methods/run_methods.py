@@ -31,7 +31,8 @@ if TYPE_CHECKING:
     from dagster._core.instance.runs.run_domain import RunDomain
     from dagster._core.origin import JobPythonOrigin
     from dagster._core.remote_origin import RemoteJobOrigin
-    from dagster._core.remote_representation import CodeLocation, RemoteJob
+    from dagster._core.remote_representation.code_location import CodeLocation
+    from dagster._core.remote_representation.external import RemoteJob
     from dagster._core.snap import ExecutionPlanSnapshot, JobSnap
     from dagster._core.storage.dagster_run import DagsterRunStatsSnapshot
     from dagster._core.storage.event_log import EventLogStorage

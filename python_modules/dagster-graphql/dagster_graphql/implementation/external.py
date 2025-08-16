@@ -6,8 +6,7 @@ import dagster._check as check
 from dagster._config import validate_config_from_snap
 from dagster._core.definitions.selector import JobSubsetSelector, RepositorySelector
 from dagster._core.execution.plan.state import KnownExecutionState
-from dagster._core.remote_representation import RemoteJob
-from dagster._core.remote_representation.external import RemoteExecutionPlan
+from dagster._core.remote_representation.external import RemoteExecutionPlan, RemoteJob
 from dagster._core.workspace.context import BaseWorkspaceRequestContext, WorkspaceRequestContext
 from dagster._utils.error import serializable_error_info_from_exc_info
 

@@ -1,6 +1,6 @@
 import dagster as dg
 from dagster._core.instance import DagsterInstance, InstanceRef
-from dagster._core.remote_representation import RemoteExecutionPlan
+from dagster._core.remote_representation.external import RemoteExecutionPlan
 from dagster._core.snap import create_execution_plan_snapshot_id
 from dagster._utils.test import copy_directory
 

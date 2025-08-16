@@ -33,7 +33,8 @@ from dagster._core.execution.asset_backfill import (
 from dagster._core.execution.backfill import BulkActionStatus, PartitionBackfill
 from dagster._core.execution.plan.resume_retry import ReexecutionStrategy
 from dagster._core.remote_origin import InProcessCodeLocationOrigin, RemoteRepositoryOrigin
-from dagster._core.remote_representation import CodeLocation, RemoteRepository
+from dagster._core.remote_representation.code_location import CodeLocation
+from dagster._core.remote_representation.external import RemoteRepository
 from dagster._core.storage.compute_log_manager import ComputeIOType
 from dagster._core.storage.dagster_run import (
     IN_PROGRESS_RUN_STATUSES,

@@ -10,7 +10,8 @@ from dagster._core.remote_origin import (
     InProcessCodeLocationOrigin,
     ManagedGrpcPythonEnvCodeLocationOrigin,
 )
-from dagster._core.remote_representation import CodeLocation, RemoteRepository
+from dagster._core.remote_representation.code_location import CodeLocation
+from dagster._core.remote_representation.external import RemoteRepository
 from dagster._core.test_utils import (
     InProcessTestWorkspaceLoadTarget,
     create_test_daemon_workspace_context,

@@ -17,7 +17,8 @@ from dagster._core.execution.backfill import (
 from dagster._core.execution.plan.resume_retry import ReexecutionStrategy
 from dagster._core.execution.plan.state import KnownExecutionState
 from dagster._core.instance import DagsterInstance
-from dagster._core.remote_representation import CodeLocation, RemoteJob, RemotePartitionSet
+from dagster._core.remote_representation.code_location import CodeLocation
+from dagster._core.remote_representation.external import RemoteJob, RemotePartitionSet
 from dagster._core.remote_representation.external_data import PartitionSetExecutionParamSnap
 from dagster._core.storage.dagster_run import (
     NOT_FINISHED_STATUSES,

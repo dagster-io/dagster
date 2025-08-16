@@ -64,8 +64,8 @@ from dagster._core.instance_for_test import (
 )
 from dagster._core.launcher import RunLauncher
 from dagster._core.remote_origin import InProcessCodeLocationOrigin
-from dagster._core.remote_representation import RemoteRepository
 from dagster._core.remote_representation.code_location import CodeLocation
+from dagster._core.remote_representation.external import RemoteRepository
 from dagster._core.remote_representation.external_data import RepositorySnap
 from dagster._core.remote_representation.handle import RepositoryHandle
 from dagster._core.run_coordinator import RunCoordinator, SubmitRunContext
