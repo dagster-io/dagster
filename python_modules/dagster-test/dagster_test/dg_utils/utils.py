@@ -121,6 +121,7 @@ def isolated_dg_venv(runner: Union[CliRunner, "ProxyRunner"]) -> Iterator[Path]:
                 "libraries/dagster-dg-core",
                 "libraries/dagster-shared",
                 "libraries/dagster-cloud-cli",
+                "dagster-test",
             ],
         )
 
@@ -722,7 +723,7 @@ COMPONENT_INTEGRATION_TEST_DIR = (
 
 @contextlib.contextmanager
 def create_project_from_components(
-    runner: ProxyRunner,
+    runner: "ProxyRunner",
     *src_paths: str,
     local_component_defn_to_inject: Optional[Path] = None,
     in_workspace: bool = True,
