@@ -18,7 +18,8 @@ from claude_code_sdk.types import (
     UserMessage,
 )
 
-from dagster_dg_cli.cli.scaffold.branch.claude.diagnostics import AIInteraction, ClaudeDiagnostics
+from dagster_dg_cli.cli.scaffold.branch.claude.diagnostics import ClaudeDiagnostics
+from dagster_dg_cli.cli.scaffold.branch.models import AIInteraction
 
 
 class OutputChannel(Protocol):
