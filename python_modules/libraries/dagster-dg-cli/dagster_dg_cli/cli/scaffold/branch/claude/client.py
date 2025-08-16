@@ -27,6 +27,7 @@ class ClaudeClient:
     - Type coercion for common issues (int/float mismatches)
     - Cost and conversation tracking
     - Clean error handling and reporting
+    - Multi-turn conversation support for planning sessions
     """
 
     def __init__(self, diagnostics: ClaudeDiagnostics):
@@ -39,6 +40,8 @@ class ClaudeClient:
         self.total_cost_usd = 0.0
         self.total_tokens = 0
         self.conversation_history: list[SDKMessage] = []
+        self.planning_session_active: bool = False
+        self.planning_context: Optional[dict[str, Any]] = None
 
     def invoke(
         self,
@@ -132,7 +135,121 @@ class ClaudeClient:
             "total_tokens": self.total_tokens,
             "conversation_length": len(self.conversation_history),
             "timestamp": datetime.now().isoformat(),
+            "planning_session_active": self.planning_session_active,
         }
+
+    def start_planning_session(self, context: dict[str, Any]) -> None:
+        """Start a multi-turn planning session.
+
+        Args:
+            context: Planning context including user input, project info, etc.
+        """
+        self.planning_session_active = True
+        self.planning_context = context
+
+        self.diagnostics.info(
+            "planning_session_started",
+            "Started multi-turn planning session",
+            {
+                "context_keys": list(context.keys()),
+                "conversation_length": len(self.conversation_history),
+            },
+        )
+
+    def end_planning_session(self) -> dict[str, Any]:
+        """End the current planning session and return session summary.
+
+        Returns:
+            Summary of the planning session including conversation history
+        """
+        if not self.planning_session_active:
+            self.diagnostics.warning(
+                "planning_session_end_without_start",
+                "Attempted to end planning session that was not active",
+                {},
+            )
+            return {}
+
+        session_summary = {
+            "conversation_turns": len(self.conversation_history),
+            "total_cost": self.total_cost_usd,
+            "session_context": self.planning_context,
+            "ended_at": datetime.now().isoformat(),
+        }
+
+        self.planning_session_active = False
+        self.planning_context = None
+
+        self.diagnostics.info(
+            "planning_session_ended",
+            "Ended multi-turn planning session",
+            session_summary,
+        )
+
+        return session_summary
+
+    def invoke_planning_turn(
+        self,
+        prompt: str,
+        allowed_tools: list[str],
+        output_channel: "OutputChannel",
+        continue_conversation: bool = True,
+    ) -> list[SDKMessage]:
+        """Invoke Claude for a planning conversation turn.
+
+        This method is specifically designed for multi-turn planning conversations
+        where context from previous turns should be maintained.
+
+        Args:
+            prompt: The prompt for this turn
+            allowed_tools: List of tool names that Claude is allowed to use
+            output_channel: Channel to stream output to
+            continue_conversation: Whether to maintain conversation context
+
+        Returns:
+            List of validated SDKMessage objects from Claude CLI output
+        """
+        if not self.planning_session_active:
+            self.diagnostics.warning(
+                "planning_turn_without_session",
+                "Planning turn invoked without active session",
+                {"prompt_length": len(prompt)},
+            )
+
+        self.diagnostics.debug(
+            "planning_turn_start",
+            "Starting planning conversation turn",
+            {
+                "prompt_length": len(prompt),
+                "conversation_turns": len(self.conversation_history),
+                "continue_conversation": continue_conversation,
+            },
+        )
+
+        # For planning turns, we may want to include previous context
+        effective_prompt = prompt
+        if continue_conversation and self.planning_context:
+            # Add planning context to the prompt
+            context_summary = "\n".join(
+                [
+                    "Previous planning context:",
+                    f"- User input: {self.planning_context.get('user_input', 'N/A')}",
+                    f"- Project patterns: {len(self.planning_context.get('codebase_patterns', {}))} patterns detected",
+                    f"- Available components: {len(self.planning_context.get('existing_components', []))} components",
+                    "",
+                    "Current request:",
+                ]
+            )
+            effective_prompt = context_summary + effective_prompt
+
+        # Use the standard invoke method but with planning-specific context
+        return self.invoke(
+            prompt=effective_prompt,
+            allowed_tools=allowed_tools,
+            output_channel=output_channel,
+            disallowed_tools=["Bash(python:*)", "WebSearch", "WebFetch"],
+            verbose=False,
+        )
 
 
 class OutputChannel(Protocol):

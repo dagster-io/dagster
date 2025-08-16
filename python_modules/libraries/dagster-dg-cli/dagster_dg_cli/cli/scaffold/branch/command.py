@@ -37,6 +37,13 @@ from dagster_dg_cli.cli.scaffold.branch.git import (
     run_git_command,
 )
 from dagster_dg_cli.cli.scaffold.branch.models import Session
+from dagster_dg_cli.cli.scaffold.branch.planning import (
+    PlanGenerator,
+    PlanningContext,
+    PlanRenderer,
+    get_user_plan_approval,
+)
+from dagster_dg_cli.cli.scaffold.branch.project_analysis import ProjectAnalyzer
 from dagster_dg_cli.utils.ui import daggy_spinner_context
 
 
@@ -52,6 +59,11 @@ def is_prompt_valid_git_branch_name(prompt: str) -> bool:
     "--local-only",
     is_flag=True,
     help="Create branch locally without pushing to remote or creating PR",
+)
+@click.option(
+    "--plan-only",
+    is_flag=True,
+    help="Generate implementation plan only, do not execute changes",
 )
 @click.option(
     "--record",
@@ -77,6 +89,7 @@ def scaffold_branch_command(
     target_path: Path,
     disable_progress: bool,
     local_only: bool,
+    plan_only: bool,
     record: Optional[Path],
     diagnostics_level: DiagnosticsLevel,
     diagnostics_dir: Optional[Path],
@@ -112,6 +125,7 @@ def scaffold_branch_command(
                 "prompt": prompt_text,
                 "target_path": str(target_path),
                 "local_only": local_only,
+                "plan_only": plan_only,
                 "diagnostics_level": diagnostics_level,
             },
         )
@@ -164,6 +178,85 @@ def scaffold_branch_command(
                     "prompt_length": len(prompt_text),
                 },
             )
+
+            # If plan-only mode, generate and review plan before proceeding
+            if plan_only:
+                with diagnostics.time_operation("planning_mode", "planning"):
+                    from dagster_dg_cli.cli.scaffold.branch.claude.client import ClaudeClient
+
+                    claude_client = ClaudeClient(diagnostics)
+                    project_analyzer = ProjectAnalyzer(diagnostics)
+                    plan_generator = PlanGenerator(claude_client, diagnostics)
+
+                    # Analyze project to gather context
+                    click.echo("🔍 Analyzing project structure and patterns...")
+                    project_analysis = project_analyzer.analyze_project(dg_context)
+
+                    # Create planning context
+                    planning_context = PlanningContext(
+                        user_input=prompt_text,
+                        dg_context=dg_context,
+                        codebase_patterns=project_analyzer.get_planning_context_summary(
+                            project_analysis
+                        ),
+                        existing_components=project_analysis.available_components,
+                        project_structure={
+                            "root_path": str(dg_context.root_path),
+                            "component_patterns": len(project_analysis.component_patterns),
+                        },
+                    )
+
+                    # Generate initial plan
+                    click.echo("🎯 Generating implementation plan...")
+                    spinner_ctx = (
+                        daggy_spinner_context("Generating plan")
+                        if not disable_progress
+                        else nullcontext()
+                    )
+                    with spinner_ctx:
+                        initial_plan = plan_generator.generate_initial_plan(planning_context)
+
+                    # Interactive plan review and refinement
+                    plan_renderer = PlanRenderer()
+                    current_plan = initial_plan
+                    max_refinement_rounds = 3
+                    refinement_count = 0
+
+                    while refinement_count < max_refinement_rounds:
+                        approved, feedback = get_user_plan_approval(current_plan, plan_renderer)
+
+                        if approved:
+                            click.echo(
+                                "✅ Plan approved! Use --plan-only=false to execute this plan."
+                            )
+                            diagnostics.info(
+                                "plan_approved",
+                                "User approved the implementation plan",
+                                {
+                                    "plan_title": current_plan.title,
+                                    "steps_count": len(current_plan.steps),
+                                    "refinement_rounds": refinement_count,
+                                },
+                            )
+                            return
+                        elif feedback:
+                            # Refine the plan
+                            click.echo("🔄 Refining plan based on your feedback...")
+                            spinner_ctx = (
+                                daggy_spinner_context("Refining plan")
+                                if not disable_progress
+                                else nullcontext()
+                            )
+                            with spinner_ctx:
+                                current_plan = plan_generator.refine_plan(current_plan, feedback)
+                            refinement_count += 1
+                        else:
+                            # User cancelled
+                            return
+
+                    click.echo("⚠️  Maximum refinement rounds reached. Final plan:")
+                    click.echo(plan_renderer.render_plan(current_plan))
+                    return
 
             spinner_ctx = (
                 daggy_spinner_context("Generating branch name and PR title")

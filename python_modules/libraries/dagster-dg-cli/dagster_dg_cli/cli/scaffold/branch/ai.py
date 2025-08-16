@@ -197,29 +197,20 @@ def load_scaffolding_prompt(user_input: str) -> str:
 
 def get_allowed_commands_scaffolding() -> list[str]:
     """Get the list of allowed commands for scaffolding operations."""
-    return [
-        "Bash(dg scaffold defs:*)",
-        "Bash(dg list defs:*)",
-        "Bash(dg list components:*)",
-        "Bash(dg docs component:*)",
-        "Bash(dg check yaml:*)",
-        "Bash(dg check defs:*)",
-        "Bash(dg list env:*)",
-        "Bash(dg utils inspect-component:*)",
-        "Bash(dg docs integrations:*)",
-        "Bash(uv add:*)",
-        "Bash(uv sync:*)",
-        # update yaml files
-        "Edit(**/*defs.yaml)",
-        "Replace(**/*defs.yaml)",
-        "Update(**/*defs.yaml)",
-        "Write(**/*defs.yaml)",
-        "Edit(**/*NEXT_STEPS.md)",
-        "Replace(**/*NEXT_STEPS.md)",
-        "Update(**/*NEXT_STEPS.md)",
-        "Write(**/*NEXT_STEPS.md)",
-        "Bash(touch:*)",
-    ]
+    from dagster_dg_cli.cli.scaffold.branch.constants import ALLOWED_COMMANDS_SCAFFOLDING
+
+    return ALLOWED_COMMANDS_SCAFFOLDING.copy()
+
+
+def get_allowed_commands_planning() -> list[str]:
+    """Get the list of allowed commands for planning operations.
+
+    Planning operations need to analyze the codebase but should not
+    make any modifications. This returns a read-only subset of tools.
+    """
+    from dagster_dg_cli.cli.scaffold.branch.constants import ALLOWED_COMMANDS_PLANNING
+
+    return ALLOWED_COMMANDS_PLANNING.copy()
 
 
 class InputType(ABC):
