@@ -16,21 +16,25 @@ Examine the codebase to identify:
 ## Specific Areas to Analyze
 
 ### Component Patterns
+
 - Examine existing `defs.yaml` files to understand component usage
 - Look for patterns in asset definitions, job configurations, and resource setup
 - Identify preferred component types and configuration styles
 
 ### Code Organization
+
 - Analyze directory structure and file naming conventions
 - Look for patterns in how similar functionality is grouped
 - Identify where different types of code (assets, ops, resources) are placed
 
-### Integration Examples  
+### Integration Examples
+
 - Find examples of external system integrations
 - Look for patterns in environment variable usage
 - Identify common dependency management approaches
 
 ### Configuration Styles
+
 - Examine YAML structure and organization patterns
 - Look for conventions in component attribute naming
 - Identify patterns in environment variable and secret management

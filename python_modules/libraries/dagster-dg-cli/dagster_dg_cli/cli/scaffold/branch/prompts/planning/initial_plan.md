@@ -3,6 +3,7 @@
 You are an expert Dagster developer tasked with creating a detailed implementation plan for a user's request. Your goal is to generate a comprehensive, structured plan that someone could follow to implement the requested feature or change.
 
 ## User Request
+
 {user_input}
 
 ## Project Context
@@ -38,6 +39,7 @@ Generate a structured implementation plan that includes:
 ## Response Format
 
 Structure your response as a detailed implementation plan with:
+
 - Clear step-by-step breakdown
 - Specific files to analyze and modify
 - Dependency relationships between steps
