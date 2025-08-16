@@ -1,0 +1,47 @@
+type: "dagster_sling.SlingReplicationCollectionComponent"
+attributes:
+  connections:
+  replications:
+    -
+      path: "example_string"
+      op:
+        name: "example_string"
+        tags:
+          key: "value"
+        description: "example_string"
+        pool: "example_string"
+        backfill_policy:
+          type: "example_string"
+      translation:
+        deps:
+          - "example_string"
+        description: "example_string"
+        metadata:
+          key: "value"
+        group_name: "example_string"
+        skippable: true
+        code_version: "example_string"
+        owners:
+          - "example_string"
+        tags:
+          key: "value"
+        kinds:
+          - "example_string"
+        automation_condition: "example_string"
+        partitions_def:
+          type: "example_string"
+          start_date: "example_string"
+          end_date: "example_string"
+          timezone: "example_string"
+          minute_offset: 1
+        key: "example_string"
+        key_prefix:
+          - "example_string"
+      include_metadata:
+        - "example_string"
+  sling:
+    connections:
+      -
+        name: "example_string"
+        type: "example_string"
+        connection_string: "example_string"

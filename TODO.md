@@ -1,0 +1,2 @@
+- Support top-level fields (e.g. post-processing) better
+- Union fields (e.g. partitions_defs)
