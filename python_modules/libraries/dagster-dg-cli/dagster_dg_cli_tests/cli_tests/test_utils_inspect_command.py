@@ -373,54 +373,91 @@ def test_generate_defs_yaml_schema_complete_output():
     # Parse the JSON string back to dictionary for easier assertion
     parsed_output = json.loads(json_output)
 
-    # Assert against the expected dictionary structure
-    expected_dict = {
-        "$defs": {
-            "ComponentRequirementsModel": {
-                "description": "Describes dependencies for a component to load.",
-                "properties": {
-                    "env": {
-                        "anyOf": [{"items": {"type": "string"}, "type": "array"}, {"type": "null"}],
-                        "default": None,
-                        "title": "Env",
-                    }
-                },
-                "title": "ComponentRequirementsModel",
-                "type": "object",
-            }
-        },
-        "additionalProperties": False,
-        "properties": {
-            "type": {
-                "const": "example.TrivialExample",
-                "default": "example.TrivialExample",
-                "title": "Type",
-                "type": "string",
-            },
-            "attributes": {
-                "type": "object",
-                "properties": {"config_path": {"type": "string", "title": "Config Path"}},
-                "required": ["config_path"],
-                "additionalProperties": False,
-                "title": "TrivialExampleModel",
-            },
-            "template_vars_module": {
-                "anyOf": [{"type": "string"}, {"type": "null"}],
-                "default": None,
-                "title": "Template Vars Module",
-            },
-            "requirements": {
-                "anyOf": [{"$ref": "#/$defs/ComponentRequirementsModel"}, {"type": "null"}],
-                "default": None,
-            },
-            "post_processing": {
-                "anyOf": [{"additionalProperties": True, "type": "object"}, {"type": "null"}],
-                "default": None,
-                "title": "Post Processing",
-            },
-        },
-        "title": "exampleTrivialExampleComponentFileModel",
-        "type": "object",
-    }
+    # Verify the core structure is present
+    assert "properties" in parsed_output
+    assert "type" in parsed_output["properties"]
+    assert "attributes" in parsed_output["properties"]
+    assert "post_processing" in parsed_output["properties"]
 
-    assert parsed_output == expected_dict
+    # Verify type is constrained to the specific component
+    assert parsed_output["properties"]["type"]["const"] == component_type
+    assert parsed_output["properties"]["type"]["default"] == component_type
+
+    # Verify attributes contains the component-specific schema
+    assert parsed_output["properties"]["attributes"] == trivial_schema
+
+    # Verify post_processing has the ComponentPostProcessingModel structure
+    post_processing = parsed_output["properties"]["post_processing"]
+    assert "anyOf" in post_processing
+    assert len(post_processing["anyOf"]) == 2
+    assert post_processing["anyOf"][1] == {"type": "null"}  # nullable
+
+    # Verify the ComponentPostProcessingModel schema structure
+    post_processing_obj = post_processing["anyOf"][0]
+    assert post_processing_obj["type"] == "object"
+    assert "assets" in post_processing_obj["properties"]
+
+    # Verify the assets field contains AssetPostProcessorModel items
+    assets_field = post_processing_obj["properties"]["assets"]
+    assert (
+        "anyOf" in assets_field
+    )  # Assets field is now a Union[tuple[AssetPostProcessor], None, str]
+
+    # Find the array option in the anyOf
+    array_option = None
+    for option in assets_field["anyOf"]:
+        if option.get("type") == "array":
+            array_option = option
+            break
+
+    assert array_option is not None, "Should have an array option in assets anyOf"
+    assert "items" in array_option
+    assert "$ref" in array_option["items"]  # Items should be a reference to AssetPostProcessorModel
+
+    # Verify AssetPostProcessorModel is in $defs and has the correct structure
+    assert "$defs" in parsed_output
+    asset_post_processor_ref = array_option["items"]["$ref"]
+    model_name = asset_post_processor_ref.split("/")[
+        -1
+    ]  # Extract model name from #/$defs/ModelName
+    assert model_name in parsed_output["$defs"]
+
+    asset_post_processor = parsed_output["$defs"][model_name]
+    assert "target" in asset_post_processor["properties"]
+    assert "operation" in asset_post_processor["properties"]
+    assert "attributes" in asset_post_processor["properties"]
+
+    # Verify that attributes references AssetsDefUpdateKwargsModel
+    attributes_field = asset_post_processor["properties"]["attributes"]
+    assert "anyOf" in attributes_field  # attributes is also a union
+
+    # Find the AssetsDefUpdateKwargsModel reference
+    kwargs_ref = None
+    for option in attributes_field["anyOf"]:
+        if "$ref" in option and "AssetsDefUpdateKwargsModel" in option["$ref"]:
+            kwargs_ref = option["$ref"]
+            break
+
+    assert kwargs_ref is not None, "Should reference AssetsDefUpdateKwargsModel"
+    kwargs_model_name = kwargs_ref.split("/")[-1]
+    assert kwargs_model_name in parsed_output["$defs"]
+
+    # Verify AssetsDefUpdateKwargs has all the expected fields including unions
+    kwargs_schema = parsed_output["$defs"][kwargs_model_name]
+    assert "deps" in kwargs_schema["properties"]
+    assert "metadata" in kwargs_schema["properties"]
+    assert "tags" in kwargs_schema["properties"]
+    assert "owners" in kwargs_schema["properties"]
+    assert "partitions_def" in kwargs_schema["properties"]
+
+    # Verify partitions_def has the correct union structure
+    partitions_def = kwargs_schema["properties"]["partitions_def"]
+    assert "anyOf" in partitions_def
+    # Should have references to all partition definition models plus string option
+    partition_refs = [opt for opt in partitions_def["anyOf"] if "$ref" in opt]
+    assert len(partition_refs) >= 5  # At least 5 partition definition types
+
+    # Verify $defs contains partition definition models
+    assert "$defs" in parsed_output
+    assert "HourlyPartitionsDefinitionModel" in parsed_output["$defs"]
+    assert "DailyPartitionsDefinitionModel" in parsed_output["$defs"]

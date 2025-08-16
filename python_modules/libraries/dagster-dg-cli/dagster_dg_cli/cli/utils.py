@@ -160,8 +160,113 @@ def _serialize_json_schema(schema: Mapping[str, Any]) -> str:
     return json.dumps(schema, indent=4)
 
 
+def _extract_model_field_type_from_annotation(annotation) -> Any:
+    """Extract model_field_type from TypeAlias annotations with Resolver metadata.
+
+    For annotations like:
+    TypeAlias = Annotated[SomeType, Resolver(..., model_field_type=SomeModel)]
+
+    Returns the model_field_type value.
+    """
+    if hasattr(annotation, "__metadata__"):
+        for metadata in annotation.__metadata__:
+            if hasattr(metadata, "model_field_type"):
+                return metadata.model_field_type
+    return None
+
+
+def _resolve_schema_with_type_aliases(model_cls) -> dict[str, Any]:
+    """Generate JSON schema for a Pydantic model, resolving TypeAlias fields with their model_field_type.
+
+    This navigates the resolver annotation system to replace TypeAlias fields
+    with their proper schema definitions from model_field_type.
+    """
+    from typing import get_args, get_origin
+
+    # Generate base schema
+    base_schema = model_cls.model_json_schema()
+
+    # Check each field for TypeAlias with resolver annotations
+    for field_name, field_info in model_cls.model_fields.items():
+        field_annotation = field_info.annotation
+
+        # Handle Optional[T] and similar wrapper types
+        origin = get_origin(field_annotation)
+        if origin is not None:
+            args = get_args(field_annotation)
+            if len(args) > 0:
+                # For Optional[T], Union[T, None], etc., check the first non-None type
+                for arg in args:
+                    if arg is not type(None):
+                        model_field_type = _extract_model_field_type_from_annotation(arg)
+                        if model_field_type:
+                            # Replace the field schema with the model_field_type schema
+                            if callable(model_field_type):
+                                # If it's a model class, get its schema
+                                resolved_schema = model_field_type.model_json_schema()
+                            else:
+                                # If it's already a schema dict or union type, use it directly
+                                resolved_schema = model_field_type
+
+                            # Handle array fields like Optional[Sequence[AssetPostProcessor]]
+                            if field_name in base_schema.get("properties", {}):
+                                current_field = base_schema["properties"][field_name]
+                                if "anyOf" in current_field:
+                                    # Find the array type in the anyOf
+                                    for any_of_option in current_field["anyOf"]:
+                                        if any_of_option.get("type") == "array":
+                                            any_of_option["items"] = resolved_schema
+                                            break
+                                else:
+                                    base_schema["properties"][field_name] = resolved_schema
+
+                            # Merge any $defs from the resolved schema
+                            if isinstance(resolved_schema, dict) and "$defs" in resolved_schema:
+                                if "$defs" not in base_schema:
+                                    base_schema["$defs"] = {}
+                                base_schema["$defs"].update(resolved_schema["$defs"])
+                        break
+        else:
+            # Direct TypeAlias annotation
+            model_field_type = _extract_model_field_type_from_annotation(field_annotation)
+            if model_field_type:
+                if callable(model_field_type):
+                    resolved_schema = model_field_type.model_json_schema()
+                else:
+                    resolved_schema = model_field_type
+
+                base_schema["properties"][field_name] = resolved_schema
+
+                # Merge any $defs from the resolved schema
+                if isinstance(resolved_schema, dict) and "$defs" in resolved_schema:
+                    if "$defs" not in base_schema:
+                        base_schema["$defs"] = {}
+                    base_schema["$defs"].update(resolved_schema["$defs"])
+
+    return base_schema
+
+
 def _generate_defs_yaml_schema(component_type_str: str, entry_snap) -> dict[str, Any]:
-    """Generate ComponentFileModel schema for a specific component type."""
+    """Generate ComponentFileModel schema for a specific component type.
+
+    This function navigates the Dagster resolved system to extract proper JSON schemas:
+
+    **Navigating Type Aliases with Resolvers:**
+    - When encountering types like ResolvedAssetAttributes, look for the type alias definition
+    - ResolvedAssetAttributes: TypeAlias = Annotated[Mapping[str, Any], Resolver(..., model_field_type=...)]
+    - The resolver's model_field_type parameter contains the actual Pydantic model to use for schema generation
+    - Access it via: ResolvedAssetAttributes.__metadata__[0].model_field_type or AssetsDefUpdateKwargs.model()
+
+    **Working with Resolvable Classes:**
+    - Classes inheriting from Resolvable (like AssetsDefUpdateKwargs) have a .model() method
+    - This returns a Pydantic model that can generate proper JSON schemas via .model_json_schema()
+    - The generated model contains runtime-resolvable fields converted to proper types
+
+    **Avoiding Circular Dependencies:**
+    - Some models like ComponentPostProcessingModel can't generate schemas due to callable resolvers
+    - Instead, manually compose schemas using the underlying models (AssetPostProcessorModel, AssetsDefUpdateKwargs)
+    - Access the resolved model through: AssetsDefUpdateKwargs.model().model_json_schema()
+    """
     # Use the component schema from entry_snap if available, otherwise use generic mapping
     attributes_schema = entry_snap.component_schema
 
@@ -191,6 +296,35 @@ def _generate_defs_yaml_schema(component_type_str: str, entry_snap) -> dict[str,
     # If we have a component schema, replace the generic attributes with the specific one
     if attributes_schema:
         base_schema["properties"]["attributes"] = attributes_schema
+
+    # Replace the generic post_processing field with ComponentPostProcessingModel schema
+    # Use the resolver navigation approach to properly handle TypeAlias chains
+    from dagster.components.core.defs_module import ComponentPostProcessingModel
+
+    try:
+        # Navigate the resolver chain: ComponentPostProcessingModel -> AssetPostProcessor -> AssetPostProcessorModel -> ResolvedAssetAttributes -> AssetsDefUpdateKwargs
+        post_processing_model_cls = ComponentPostProcessingModel.model()
+        post_processing_schema = _resolve_schema_with_type_aliases(post_processing_model_cls)
+
+        base_schema["properties"]["post_processing"] = {
+            "anyOf": [post_processing_schema, {"type": "null"}],
+            "default": None,
+            "title": "Post Processing",
+        }
+
+        # Merge any $defs from the resolved schema
+        if "$defs" in post_processing_schema:
+            if "$defs" not in base_schema:
+                base_schema["$defs"] = {}
+            base_schema["$defs"].update(post_processing_schema["$defs"])
+
+    except Exception:
+        # Fallback to a basic schema if resolver navigation fails
+        base_schema["properties"]["post_processing"] = {
+            "anyOf": [{"additionalProperties": True, "type": "object"}, {"type": "null"}],
+            "default": None,
+            "title": "Post Processing",
+        }
 
     return base_schema
 
