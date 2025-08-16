@@ -6,7 +6,7 @@ from pathlib import Path
 from typing import Any, Literal, Optional
 
 import click
-from dagster.components.core.defs_module import ComponentRequirementsModel
+from dagster.components.core.defs_module import ComponentFileModel
 from dagster_dg_core.component import EnvRegistry, all_components_schema_from_dg_context
 from dagster_dg_core.config import (
     DgRawBuildConfig,
@@ -31,7 +31,6 @@ from dagster_shared import check
 from dagster_shared.serdes.objects import EnvRegistryKey
 from packaging.version import Version
 from pydantic import create_model
-from pydantic._internal._config import ConfigDict
 
 DEFAULT_SCHEMA_FOLDER_NAME = ".dg"
 
@@ -166,15 +165,24 @@ def _generate_defs_yaml_schema(component_type_str: str, entry_snap) -> dict[str,
     # Use the component schema from entry_snap if available, otherwise use generic mapping
     attributes_schema = entry_snap.component_schema
 
+    # Get field definitions from ComponentFileModel to stay in sync
+    base_fields = ComponentFileModel.model_fields
+
+    # Create field definitions for the specialized model, deriving from ComponentFileModel
+    specialized_fields = {}
+    for field_name, field_info in base_fields.items():
+        if field_name == "type":
+            # Specialize the type field to be constrained to the specific component type
+            specialized_fields[field_name] = (Literal[component_type_str], component_type_str)
+        else:
+            # Use the original field definition
+            specialized_fields[field_name] = (field_info.annotation, field_info.default)
+
     # Create a specialized ComponentFileModel with the specific component type
     specialized_model = create_model(
         f"{component_type_str.replace('.', '')}ComponentFileModel",
-        type=(Literal[component_type_str], component_type_str),
-        attributes=(Optional[dict[str, Any]], None),
-        template_vars_module=(Optional[str], None),
-        requirements=(Optional[ComponentRequirementsModel], None),
-        post_processing=(Optional[Mapping[str, Any]], None),
-        __config__=ConfigDict(extra="forbid"),
+        __config__=ComponentFileModel.model_config,
+        **specialized_fields,
     )
 
     # Generate the base schema and enhance with component-specific attributes
