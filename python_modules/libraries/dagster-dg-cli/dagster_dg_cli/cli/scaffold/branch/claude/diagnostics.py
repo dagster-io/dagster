@@ -21,7 +21,7 @@ from dagster_dg_cli.cli.scaffold.branch.data_models import (
 DiagnosticsLevel = Literal["off", "error", "info", "debug"]
 
 
-class ClaudeDiagnosticsService:
+class ClaudeDiagnostics:
     """Central diagnostics service for scaffold branch operations."""
 
     def __init__(
@@ -279,10 +279,10 @@ def create_claude_diagnostics_service(
     level: DiagnosticsLevel = "off",
     output_dir: Optional[Union[str, Path]] = None,
     correlation_id: Optional[str] = None,
-) -> ClaudeDiagnosticsService:
+) -> ClaudeDiagnostics:
     """Create a new Claude diagnostics service instance."""
     output_path = Path(output_dir) if output_dir else None
-    return ClaudeDiagnosticsService(
+    return ClaudeDiagnostics(
         level=level,
         output_dir=output_path,
         correlation_id=correlation_id,

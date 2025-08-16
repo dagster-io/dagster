@@ -22,7 +22,7 @@ from dagster_dg_cli.cli.scaffold.branch.ai import (
     get_branch_name_and_pr_title_from_prompt,
     scaffold_content_for_prompt,
 )
-from dagster_dg_cli.cli.scaffold.branch.diagnostics import (
+from dagster_dg_cli.cli.scaffold.branch.claude.diagnostics import (
     DiagnosticsLevel,
     create_claude_diagnostics_service,
 )
