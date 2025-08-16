@@ -666,7 +666,7 @@ class PipesDatabricksServerlessClient(BasePipesDatabricksClient, TreatAsResource
 def volumes_tempdir(files_client: files.FilesAPI, volume_path: str) -> Iterator[str]:
     dirname = "".join(random.choices(string.ascii_letters, k=30))
     tempdir = f"{volume_path}/tmp/{dirname}"
-    files_client.create_directory(tempdir)  # pyright: ignore
+    files_client.create_directory(tempdir)
     try:
         yield tempdir
     finally:
@@ -682,7 +682,7 @@ def delete_volume_directory_recursive(volumes_client: files.FilesAPI, directory_
         directory_path: Path to directory
     """
     # List all contents in the directory
-    contents = list(volumes_client.list_directory_contents(directory_path))  # pyright: ignore
+    contents = list(volumes_client.list_directory_contents(directory_path))
 
     # Delete each item recursively
     for item in contents:
@@ -695,7 +695,7 @@ def delete_volume_directory_recursive(volumes_client: files.FilesAPI, directory_
             volumes_client.delete(item_path)
 
     # Finally delete the empty directory
-    volumes_client.delete_directory(directory_path)  # pyright: ignore
+    volumes_client.delete_directory(directory_path)
 
 
 class PipesUnityCatalogVolumesContextInjector(PipesContextInjector):
@@ -782,7 +782,7 @@ class PipesUnityCatalogVolumesMessageReader(PipesBlobStoreMessageReader):
         """Check if the messages directory exists and is readable."""
         try:
             # The API returns an error if there is no directory at the specified path
-            self.files_client.list_directory_contents(params["path"])  # pyright: ignore
+            self.files_client.list_directory_contents(params["path"])
             return True
         except Exception:
             return False
