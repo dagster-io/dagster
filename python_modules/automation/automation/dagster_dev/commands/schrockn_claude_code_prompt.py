@@ -1073,6 +1073,13 @@ def schrockn_claude_code_prompt(debug):
     - Graphite PR URL if available (colored purple)
     - Buildkite build status if available (colored blue)
 
+    To activate this status line, add to ~/.claude/settings.json:
+    {
+        "statusline": {
+            "command": "dagster-dev schrockn-claude-code-prompt"
+        }
+    }
+
     Example JSON input:
     {
         "model": {"display_name": "Sonnet 4", "id": "claude-sonnet-4"},
