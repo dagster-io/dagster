@@ -373,7 +373,6 @@ def test_use_historical_all_partitions_subset_sentinel() -> None:
     )
 
 
-@pytest.mark.skip(reason="PUSH-SAFETY: do not compress until the read path is released")
 def test_use_key_ranges_partitions_subset() -> None:
     @dg.asset(
         partitions_def=dg.DynamicPartitionsDefinition(name="some_def"),
