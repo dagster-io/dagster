@@ -4,8 +4,9 @@ from collections.abc import Generator
 from functools import partial
 from typing import Any
 
-import dagster as dg
 import pytest
+
+import dagster as dg
 from dagster import Nothing
 from dagster._check import CheckError
 from dagster._core.types.dagster_type import Int, String

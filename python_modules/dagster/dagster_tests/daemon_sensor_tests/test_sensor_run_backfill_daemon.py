@@ -1,7 +1,8 @@
 import os
 
-import dagster as dg
 import pytest
+
+import dagster as dg
 from dagster import DagsterInstance, sensor
 from dagster._core.definitions.assets.graph.asset_graph_subset import AssetGraphSubset
 from dagster._core.definitions.events import AssetKeyPartitionKey
@@ -9,7 +10,6 @@ from dagster._core.definitions.run_request import InstigatorType, RunRequest
 from dagster._core.scheduler.instigation import InstigatorState, InstigatorStatus, TickStatus
 from dagster._core.test_utils import create_test_daemon_workspace_context, load_remote_repo
 from dagster._core.workspace.load_target import ModuleTarget
-
 from dagster_tests.daemon_sensor_tests.test_sensor_run import evaluate_sensors, validate_tick
 
 dynamic_partitions_def = dg.DynamicPartitionsDefinition(name="abc")

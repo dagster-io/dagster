@@ -5,12 +5,6 @@ import tempfile
 
 import nbformat
 import pytest
-from dagster import execute_job, job
-from dagster._check import CheckError
-from dagster._core.definitions.reconstruct import ReconstructableJob
-from dagster._core.storage.tags import COMPUTE_KIND_TAG
-from dagster._core.test_utils import instance_for_test
-from dagster._utils import file_relative_path, safe_tempfile_path
 from dagstermill import DagstermillError
 from dagstermill.compat import ExecutionError
 from dagstermill.examples.repository import custom_io_mgr_key_job
@@ -18,6 +12,13 @@ from dagstermill.factory import define_dagstermill_op
 from dagstermill.test_utils import cleanup_result_notebook, exec_for_test, get_path
 from jupyter_client.kernelspec import NoSuchKernel
 from nbconvert.preprocessors import ExecutePreprocessor
+
+from dagster import execute_job, job
+from dagster._check import CheckError
+from dagster._core.definitions.reconstruct import ReconstructableJob
+from dagster._core.storage.tags import COMPUTE_KIND_TAG
+from dagster._core.test_utils import instance_for_test
+from dagster._utils import file_relative_path, safe_tempfile_path
 
 DAGSTER_PANDAS_PRESENT = importlib.util.find_spec("dagster_pandas") is not None
 SKLEARN_PRESENT = importlib.util.find_spec("sklearn") is not None
@@ -528,8 +529,9 @@ def test_failure(capsys):
 
 @pytest.mark.notebook_test
 def test_hello_world_graph():
-    from dagster import reconstructable
     from dagstermill.examples.repository import build_hello_world_job
+
+    from dagster import reconstructable
 
     with instance_for_test() as instance:
         result = None

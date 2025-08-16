@@ -2,8 +2,8 @@ from collections.abc import Mapping
 from typing import TYPE_CHECKING, Any, Optional
 
 import graphene
-from dagster._core.definitions.selector import SensorSelector
 
+from dagster._core.definitions.selector import SensorSelector
 from dagster_graphql.implementation.utils import capture_error
 from dagster_graphql.schema.errors import GraphenePythonError, GrapheneSensorNotFoundError
 from dagster_graphql.schema.inputs import GrapheneSensorSelector

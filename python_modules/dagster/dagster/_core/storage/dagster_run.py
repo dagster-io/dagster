@@ -5,7 +5,6 @@ from enum import Enum
 from functools import cached_property
 from typing import TYPE_CHECKING, AbstractSet, Any, NamedTuple, Optional, Union  # noqa: UP035
 
-from dagster_shared.serdes import NamedTupleSerializer, whitelist_for_serdes
 from typing_extensions import Self
 
 import dagster._check as check
@@ -38,6 +37,7 @@ from dagster._core.storage.tags import (
 from dagster._core.utils import make_new_run_id
 from dagster._record import IHaveNew, record_custom
 from dagster._utils.tags import get_boolean_tag_value
+from dagster_shared.serdes import NamedTupleSerializer, whitelist_for_serdes
 
 if TYPE_CHECKING:
     from dagster._core.definitions.schedule_definition import ScheduleDefinition

@@ -1,5 +1,3 @@
-from dagster_shared.libraries import DagsterLibraryRegistry
-
 from dagster_pyspark.resources import (
     LazyPySparkResource,
     PySparkResource,
@@ -8,6 +6,7 @@ from dagster_pyspark.resources import (
 )
 from dagster_pyspark.types import DataFrame
 from dagster_pyspark.version import __version__
+from dagster_shared.libraries import DagsterLibraryRegistry
 
 DagsterLibraryRegistry.register("dagster-pyspark", __version__)
 

@@ -1,8 +1,9 @@
 import sys
 import time
 
-import dagster as dg
 import pytest
+
+import dagster as dg
 from dagster._core.errors import DagsterLaunchFailedError
 from dagster._core.storage.dagster_run import DagsterRunStatus
 from dagster._core.storage.tags import GRPC_INFO_TAG
@@ -15,7 +16,6 @@ from dagster._grpc.server import GrpcServerProcess
 from dagster._utils import find_free_port
 from dagster._utils.merger import merge_dicts
 from dagster_shared import seven
-
 from dagster_tests.launcher_tests.test_default_run_launcher import (
     math_diamond,
     sleepy_job,

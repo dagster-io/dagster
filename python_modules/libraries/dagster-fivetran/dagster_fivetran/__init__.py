@@ -1,5 +1,3 @@
-from dagster_shared.libraries import DagsterLibraryRegistry
-
 from dagster_fivetran.asset_decorator import fivetran_assets as fivetran_assets
 from dagster_fivetran.asset_defs import (
     build_fivetran_assets as build_fivetran_assets,
@@ -26,6 +24,7 @@ from dagster_fivetran.translator import (
 )
 from dagster_fivetran.types import FivetranOutput as FivetranOutput
 from dagster_fivetran.version import __version__ as __version__
+from dagster_shared.libraries import DagsterLibraryRegistry
 
 try:
     from dagster_fivetran.managed import (

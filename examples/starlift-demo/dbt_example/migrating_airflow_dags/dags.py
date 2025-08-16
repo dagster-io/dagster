@@ -5,11 +5,12 @@ from pathlib import Path
 from airflow import DAG
 from airflow.models.operator import BaseOperator
 from airflow.operators.bash import BashOperator
+from dbt_example.shared.lakehouse_utils import get_min_value, load_csv_to_duckdb
+from dbt_example.shared.load_iris import CSV_PATH, DB_PATH, IRIS_COLUMNS
+
 from dagster._time import get_current_datetime
 from dagster_airlift.in_airflow import proxying_to_dagster
 from dagster_airlift.in_airflow.proxied_state import load_proxied_state_from_yaml
-from dbt_example.shared.lakehouse_utils import get_min_value, load_csv_to_duckdb
-from dbt_example.shared.load_iris import CSV_PATH, DB_PATH, IRIS_COLUMNS
 
 default_args = {
     "owner": "airflow",

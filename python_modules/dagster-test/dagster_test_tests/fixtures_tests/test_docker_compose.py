@@ -3,6 +3,7 @@ import subprocess
 
 import pytest
 import yaml
+
 from dagster_test.fixtures.docker_compose import (
     connect_container_to_network,
     disconnect_container_from_network,

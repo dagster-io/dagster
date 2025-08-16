@@ -2,11 +2,12 @@ from collections.abc import Sequence
 from contextlib import contextmanager
 from typing import Any, Optional, Union
 
+from pydantic import PrivateAttr
+
 import dagster as dg
 from dagster import AssetKey, DagsterInstance, Definitions, InputContext, OutputContext
 from dagster._core.definitions.events import CoercibleToAssetKey
 from dagster._core.execution.context.init import InitResourceContext
-from pydantic import PrivateAttr
 
 
 class DefinitionsRunner:

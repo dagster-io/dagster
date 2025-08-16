@@ -1,8 +1,9 @@
 import datetime
 from typing import cast
 
-import dagster as dg
 import pytest
+
+import dagster as dg
 from dagster._core.storage.tags import PARTITION_NAME_TAG
 
 

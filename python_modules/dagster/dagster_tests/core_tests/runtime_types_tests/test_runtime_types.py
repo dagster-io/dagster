@@ -1,5 +1,6 @@
-import dagster as dg
 import pytest
+
+import dagster as dg
 from dagster._core.types.dagster_type import (
     ALL_RUNTIME_BUILTINS,
     DagsterTypeKind,

@@ -1,18 +1,17 @@
-# ruff: noqa: I001 - import order differs between CI and local due to package installation differences
 import tempfile
 from pathlib import Path
 
 import pytest
 import responses
+
+from dagster_dg_cli.utils.plus import gql
+from dagster_dg_cli_tests.cli_tests.plus_tests.utils import mock_gql_response
 from dagster_test.dg_utils.utils import (
     ProxyRunner,
     isolated_example_project_foo_bar,
     isolated_example_workspace,
     set_env_var,
 )
-
-from dagster_dg_cli.utils.plus import gql
-from dagster_dg_cli_tests.cli_tests.plus_tests.utils import mock_gql_response
 
 ########################################################
 # PULL ENV COMMAND

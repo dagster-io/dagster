@@ -3,6 +3,7 @@ from contextlib import contextmanager
 
 import kubernetes
 import pytest
+
 from dagster import AssetExecutionContext, asset, materialize
 from dagster._core.instance import DagsterInstance
 from dagster._core.pipes.client import PipesContextInjector

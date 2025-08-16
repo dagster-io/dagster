@@ -1,12 +1,13 @@
 from pathlib import Path
 from typing import Optional
 
-import dagster as dg
 import pytest
+from pydantic import BaseModel, ValidationError
+
+import dagster as dg
 from dagster._core.test_utils import ensure_dagster_tests_import
 from dagster.components.component_scaffolding import parse_params_model, scaffold_object
 from dagster.components.scaffold.scaffold import NoParams
-from pydantic import BaseModel, ValidationError
 
 ensure_dagster_tests_import()
 

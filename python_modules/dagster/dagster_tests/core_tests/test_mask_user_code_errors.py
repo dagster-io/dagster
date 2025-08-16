@@ -5,8 +5,9 @@ import time
 import traceback
 from typing import Any, Callable
 
-import dagster as dg
 import pytest
+
+import dagster as dg
 from dagster._core.definitions.timestamp import TimestampWithTimezone
 from dagster._core.errors import (
     DagsterUserCodeExecutionError,
@@ -16,7 +17,6 @@ from dagster._core.errors import (
 from dagster._core.test_utils import environ
 from dagster._utils.error import serializable_error_info_from_exc_info
 from dagster_shared.error import SerializableErrorInfo
-
 from dagster_tests.api_tests.utils import get_bar_repo_handle
 
 

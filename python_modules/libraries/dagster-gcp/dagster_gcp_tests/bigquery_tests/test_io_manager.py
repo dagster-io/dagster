@@ -3,6 +3,7 @@ import os
 from datetime import datetime
 
 import pytest
+
 from dagster import InputContext, OutputContext, asset, materialize
 from dagster._core.definitions.partitions.utils import TimeWindow
 from dagster._core.storage.db_io_manager import DbTypeHandler, TablePartitionDimension, TableSlice
@@ -11,7 +12,6 @@ from dagster_gcp.bigquery.io_manager import (
     _get_cleanup_statement,
     build_bigquery_io_manager,
 )
-
 from dagster_gcp_tests.bigquery_tests.conftest import (
     IS_BUILDKITE,
     SHARED_BUILDKITE_BQ_CONFIG,

@@ -1,6 +1,7 @@
 from typing import Any
 
 import pytest
+
 from dagster import AssetKey, AssetsDefinition, asset
 from dagster_dbt import get_asset_key_for_model, get_asset_keys_by_output_name_for_source
 from dagster_dbt.asset_decorator import dbt_assets

@@ -5,12 +5,12 @@ from collections.abc import Iterator, Mapping, Sequence
 from pathlib import Path
 from typing import Any, Callable, Literal, Optional, cast
 
-from dagster import AssetKey, AssetSpec
-from dagster._annotations import beta, public, superseded
-from dagster._utils.warnings import supersession_warning
 from sqlglot import ParseError, exp, parse_one, to_table
 from sqlglot.optimizer import Scope, build_scope, optimize
 
+from dagster import AssetKey, AssetSpec
+from dagster._annotations import beta, public, superseded
+from dagster._utils.warnings import supersession_warning
 from dagster_looker.lkml.liquid_utils import best_effort_render_liquid_sql
 from dagster_looker.lkml.sqlglot_utils import custom_bigquery_dialect_inst
 

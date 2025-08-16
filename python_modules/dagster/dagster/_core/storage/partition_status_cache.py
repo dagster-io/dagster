@@ -2,9 +2,6 @@ from collections.abc import Iterable, Sequence
 from enum import Enum
 from typing import TYPE_CHECKING, NamedTuple, Optional
 
-from dagster_shared.serdes import deserialize_value
-from dagster_shared.serdes.errors import DeserializationError
-
 from dagster import (
     AssetKey,
     DagsterInstance,
@@ -31,6 +28,8 @@ from dagster._core.storage.tags import (
     get_dimension_from_partition_tag,
 )
 from dagster._serdes import whitelist_for_serdes
+from dagster_shared.serdes import deserialize_value
+from dagster_shared.serdes.errors import DeserializationError
 
 if TYPE_CHECKING:
     from dagster._core.storage.event_log.base import AssetRecord

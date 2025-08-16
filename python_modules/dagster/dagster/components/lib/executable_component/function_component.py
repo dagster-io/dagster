@@ -3,7 +3,6 @@ from collections.abc import Iterable
 from functools import cached_property
 from typing import Annotated, Any, Callable, Literal, Optional, Union
 
-from dagster_shared import check
 from typing_extensions import TypeAlias
 
 from dagster._config.field import Field
@@ -20,6 +19,7 @@ from dagster.components.core.context import ComponentLoadContext
 from dagster.components.lib.executable_component.component import ExecutableComponent, OpSpec
 from dagster.components.resolved.context import ResolutionContext
 from dagster.components.resolved.model import Resolver
+from dagster_shared import check
 
 
 def resolve_callable(context: ResolutionContext, model: str) -> Callable:

@@ -3,9 +3,9 @@ import re
 
 import pytest
 import responses
+
 from dagster import Failure, build_init_resource_context
 from dagster_fivetran import FivetranOutput, fivetran_resource
-
 from dagster_fivetran_tests.deprecated.utils import (
     DEFAULT_CONNECTOR_ID,
     get_complex_sample_connector_schema_config,

@@ -4,8 +4,9 @@ import time
 from collections.abc import Mapping
 from unittest import mock
 
-import dagster as dg
 import pytest
+
+import dagster as dg
 from dagster import DagsterInstance
 from dagster._core.definitions.assets.graph.asset_graph_differ import (
     AssetDefinitionChangeType,

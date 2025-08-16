@@ -1,10 +1,10 @@
 import sys
 from collections.abc import Callable
 
-import dagster as dg
 import pytest
-from dagster.components.core.context import ComponentLoadContext
 
+import dagster as dg
+from dagster.components.core.context import ComponentLoadContext
 from dagster_tests.components_tests.utils import load_context_and_component_for_test
 
 

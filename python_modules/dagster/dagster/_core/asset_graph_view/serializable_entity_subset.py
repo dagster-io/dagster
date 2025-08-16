@@ -3,7 +3,6 @@ from collections.abc import Sequence
 from dataclasses import dataclass, replace
 from typing import Any, Callable, Generic, Optional, Union
 
-from dagster_shared.serdes.serdes import DataclassSerializer, whitelist_for_serdes
 from typing_extensions import Self
 
 import dagster._check as check
@@ -17,6 +16,7 @@ from dagster._core.definitions.partitions.subset import (
     PartitionsSubset,
     TimeWindowPartitionsSubset,
 )
+from dagster_shared.serdes.serdes import DataclassSerializer, whitelist_for_serdes
 
 EntitySubsetValue = Union[bool, PartitionsSubset]
 

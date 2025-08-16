@@ -2,6 +2,7 @@ from collections.abc import Sequence
 from typing import Any, Literal, NamedTuple, Union
 
 import pytest
+
 from dagster_shared.match import match_type
 
 

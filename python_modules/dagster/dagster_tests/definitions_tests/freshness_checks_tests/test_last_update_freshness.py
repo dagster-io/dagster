@@ -2,8 +2,9 @@
 import datetime
 import json
 
-import dagster as dg
 import pytest
+
+import dagster as dg
 from dagster._check import CheckError
 from dagster._core.definitions.asset_checks.asset_check_factories.utils import (
     unique_id_from_asset_and_check_keys,
@@ -15,7 +16,6 @@ from dagster._core.test_utils import freeze_time
 from dagster._time import create_datetime
 from dagster._utils.security import non_secure_md5_hash_str
 from dagster._vendored.dateutil.relativedelta import relativedelta
-
 from dagster_tests.definitions_tests.freshness_checks_tests.conftest import (
     add_new_event,
     assert_check_result,

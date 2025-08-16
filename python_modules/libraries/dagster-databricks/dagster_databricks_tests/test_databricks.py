@@ -1,10 +1,13 @@
 from importlib.metadata import version
 from unittest import mock
 
+import pytest
+from databricks.sdk.service import compute, jobs
+from pytest_mock import MockerFixture
+
 import dagster
 import dagster_databricks
 import dagster_pyspark
-import pytest
 from dagster import build_op_context
 from dagster_databricks import DatabricksClientResource
 from dagster_databricks.databricks import (
@@ -15,8 +18,6 @@ from dagster_databricks.databricks import (
     WorkspaceClientFactory,
 )
 from dagster_databricks.resources import AzureServicePrincipalCredentials, OauthCredentials
-from databricks.sdk.service import compute, jobs
-from pytest_mock import MockerFixture
 
 HOST = "https://uksouth.azuredatabricks.net"
 TOKEN = "super-secret-token"

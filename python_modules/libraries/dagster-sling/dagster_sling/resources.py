@@ -12,6 +12,8 @@ from subprocess import PIPE, STDOUT, Popen
 from typing import IO, Any, AnyStr, Optional, Union
 
 import sling
+from pydantic import Field
+
 from dagster import (
     AssetExecutionContext,
     AssetMaterialization,
@@ -25,8 +27,6 @@ from dagster import (
 from dagster._annotations import public
 from dagster._core.definitions.metadata import TableMetadataSet
 from dagster._utils.env import environ
-from pydantic import Field
-
 from dagster_sling.asset_decorator import (
     METADATA_KEY_REPLICATION_CONFIG,
     METADATA_KEY_TRANSLATOR,

@@ -10,6 +10,9 @@ from subprocess import check_output
 from typing import Any, Optional, Union, cast
 
 import yaml
+from packaging import version
+from pydantic import Field, ValidationInfo, field_validator, model_validator
+
 from dagster import (
     AssetExecutionContext,
     ConfigurableResource,
@@ -19,9 +22,6 @@ from dagster import (
 from dagster._annotations import public
 from dagster._core.execution.context.init import InitResourceContext
 from dagster._utils import pushd
-from packaging import version
-from pydantic import Field, ValidationInfo, field_validator, model_validator
-
 from dagster_dbt.asset_utils import (
     DBT_INDIRECT_SELECTION_ENV,
     get_updated_cli_invocation_params_for_context,

@@ -5,9 +5,16 @@ from datetime import datetime, timedelta
 from pathlib import Path
 from typing import Any, Optional, cast
 
-import dagster as dg
 import fsspec
 import pytest
+from fsspec.asyn import AsyncFileSystem
+from pydantic import (
+    Field as PydanticField,
+    PrivateAttr,
+)
+from upath import UPath
+
+import dagster as dg
 from dagster import (
     AssetExecutionContext,
     InitResourceContext,
@@ -21,12 +28,6 @@ from dagster._core.definitions.partitions.definition import (
     HourlyPartitionsDefinition,
 )
 from dagster._core.events import HandledOutputData
-from fsspec.asyn import AsyncFileSystem
-from pydantic import (
-    Field as PydanticField,
-    PrivateAttr,
-)
-from upath import UPath
 
 
 class DummyIOManager(dg.UPathIOManager):

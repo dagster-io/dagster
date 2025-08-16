@@ -1,7 +1,6 @@
 from collections.abc import Mapping
 from typing import Any, Callable, Optional, Union, cast
 
-from dagster_shared.record import copy, record
 from typing_extensions import Self
 
 import dagster._check as check
@@ -30,6 +29,7 @@ from dagster._core.definitions.schedule_definition import (
 )
 from dagster._core.definitions.unresolved_asset_job_definition import UnresolvedAssetJobDefinition
 from dagster._core.errors import DagsterInvalidDefinitionError
+from dagster_shared.record import copy, record
 
 
 @record

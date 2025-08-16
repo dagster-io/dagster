@@ -1,8 +1,8 @@
 import numpy as np
 import pandas as pd
-from dagster import asset
 
 from assets_dbt_python.utils import random_data
+from dagster import asset
 
 
 @asset(compute_kind="random")

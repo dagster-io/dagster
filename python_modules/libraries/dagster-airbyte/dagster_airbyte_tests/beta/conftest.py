@@ -4,6 +4,7 @@ from unittest.mock import patch
 
 import pytest
 import responses
+
 from dagster_airbyte.resources import (
     AIRBYTE_CONFIGURATION_API_BASE,
     AIRBYTE_CONFIGURATION_API_VERSION,

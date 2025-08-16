@@ -1,7 +1,8 @@
 import string
 
-import dagster as dg
 import pytest
+
+import dagster as dg
 from dagster._api.snapshot_partition import (
     sync_get_external_partition_config_grpc,
     sync_get_external_partition_names_grpc,

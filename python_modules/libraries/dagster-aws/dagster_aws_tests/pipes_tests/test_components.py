@@ -21,8 +21,6 @@ from dagster._core.instance_for_test import instance_for_test
 from dagster._core.pipes.subprocess import PipesSubprocessClient
 from dagster._core.pipes.utils import PipesEnvContextInjector
 from dagster._core.storage.asset_check_execution_record import AssetCheckExecutionRecordStatus
-from dagster_pipes import _make_message
-
 from dagster_aws.pipes import (
     PipesCloudWatchLogReader,
     PipesCloudWatchMessageReader,
@@ -31,6 +29,7 @@ from dagster_aws.pipes import (
     PipesS3MessageReader,
 )
 from dagster_aws_tests.pipes_tests.utils import _PYTHON_EXECUTABLE, _S3_TEST_BUCKET
+from dagster_pipes import _make_message
 
 if TYPE_CHECKING:
     from mypy_boto3_logs import CloudWatchLogsClient

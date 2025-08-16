@@ -4,8 +4,9 @@ import sys
 import time
 from contextlib import ExitStack
 
-import dagster as dg
 import pytest
+
+import dagster as dg
 from dagster._utils import process_is_alive, safe_tempfile_path
 from dagster_shared.ipc import (
     interrupt_ipc_subprocess,

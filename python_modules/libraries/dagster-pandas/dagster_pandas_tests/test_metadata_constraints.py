@@ -1,3 +1,5 @@
+from pandas import DataFrame
+
 from dagster_pandas.constraints import (
     CONSTRAINT_METADATA_KEY,
     ColumnAggregateConstraintWithMetadata,
@@ -12,7 +14,6 @@ from dagster_pandas.constraints import (
     MultiConstraintWithMetadata,
     StrictColumnsWithMetadata,
 )
-from pandas import DataFrame
 
 
 def basic_validation_function(inframe):

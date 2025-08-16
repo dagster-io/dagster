@@ -1,4 +1,5 @@
 import pytest
+
 from dagster_wandb.utils.errors import (
     WandbArtifactsIOManagerError,
     raise_on_empty_configuration,

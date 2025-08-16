@@ -8,8 +8,6 @@ This package provides:
     to execute an arbitrary task in Databricks.
 """
 
-from dagster_shared.libraries import DagsterLibraryRegistry
-
 from dagster_databricks.databricks import (
     DatabricksClient as DatabricksClient,
     DatabricksError as DatabricksError,
@@ -35,5 +33,6 @@ from dagster_databricks.resources import (
     databricks_client as databricks_client,
 )
 from dagster_databricks.version import __version__
+from dagster_shared.libraries import DagsterLibraryRegistry
 
 DagsterLibraryRegistry.register("dagster-databricks", __version__)

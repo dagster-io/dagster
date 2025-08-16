@@ -3,8 +3,9 @@ from collections.abc import Mapping, Sequence
 from typing import Optional, Union
 from unittest import mock
 
-import dagster as dg
 import pytest
+
+import dagster as dg
 from dagster._core.definitions.reconstruct import ReconstructableJob
 
 

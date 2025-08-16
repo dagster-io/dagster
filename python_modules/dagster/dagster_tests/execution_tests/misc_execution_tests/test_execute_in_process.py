@@ -1,5 +1,6 @@
-import dagster as dg
 import pytest
+
+import dagster as dg
 from dagster._core.errors import DagsterMaxRetriesExceededError
 from dagster._core.execution.context.op_execution_context import OpExecutionContext
 

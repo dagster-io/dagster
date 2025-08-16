@@ -4,14 +4,13 @@ from collections.abc import Mapping
 from enum import Enum
 from typing import TYPE_CHECKING, Optional
 
-from dagster_shared.serdes import whitelist_for_serdes
-
 import dagster._check as check
 from dagster._config.field import Field
 from dagster._config.field_utils import Selector
 from dagster._core.errors import DagsterRunNotFoundError
 from dagster._core.storage.tags import MAX_RETRIES_TAG, RETRY_ON_ASSET_OR_OP_FAILURE_TAG
 from dagster._utils.tags import get_boolean_tag_value
+from dagster_shared.serdes import whitelist_for_serdes
 
 if TYPE_CHECKING:
     from dagster._core.events import RunFailureReason

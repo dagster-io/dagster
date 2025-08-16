@@ -4,6 +4,7 @@ from typing import Optional
 from unittest import mock
 
 import pytest
+
 from dagster import (
     AssetCheckKey,
     AssetKey,
@@ -41,7 +42,6 @@ from dagster_airlift.core.sensor.sensor_builder import (
 )
 from dagster_airlift.core.top_level_dag_def_api import assets_with_task_mappings
 from dagster_airlift.test import make_dag_run, make_instance
-
 from dagster_airlift_tests.unit_tests.conftest import (
     assert_expected_key_order,
     build_and_invoke_sensor,

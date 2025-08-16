@@ -4,6 +4,7 @@ from typing import Any, Optional
 
 import kubernetes.config
 import kubernetes.watch
+
 from dagster import (
     Enum as DagsterEnum,
     Field,
@@ -18,7 +19,6 @@ from dagster import (
 from dagster._annotations import beta
 from dagster._core.errors import DagsterExecutionInterruptedError
 from dagster._utils.merger import merge_dicts
-
 from dagster_k8s.client import DEFAULT_JOB_POD_COUNT, DagsterKubernetesClient, k8s_api_retry
 from dagster_k8s.container_context import K8sContainerContext
 from dagster_k8s.job import (

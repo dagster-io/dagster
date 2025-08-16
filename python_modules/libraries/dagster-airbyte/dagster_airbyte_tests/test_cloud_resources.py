@@ -5,6 +5,7 @@ from unittest import mock
 
 import pytest
 import responses
+
 from dagster import Failure
 from dagster_airbyte import AirbyteCloudResource, AirbyteJobStatusType, AirbyteOutput
 

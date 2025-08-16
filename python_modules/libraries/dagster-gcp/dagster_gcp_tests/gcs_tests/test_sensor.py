@@ -4,6 +4,7 @@ from typing import Optional
 from unittest import mock
 
 import pytest
+
 from dagster_gcp.gcs.sensor import get_gcs_keys
 
 

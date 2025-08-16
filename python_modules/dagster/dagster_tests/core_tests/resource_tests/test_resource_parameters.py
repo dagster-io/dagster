@@ -1,8 +1,9 @@
 import sys
 from typing import Any
 
-import dagster as dg
 import pytest
+
+import dagster as dg
 from dagster import ResourceDefinition
 from dagster._check import ParameterCheckError
 

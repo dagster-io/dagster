@@ -6,9 +6,11 @@ from contextlib import contextmanager
 from pathlib import Path
 from typing import Any, Optional, Union, cast
 
-import dagster._check as check
 import graphene
 import yaml
+from typing_extensions import Protocol, TypeAlias, TypedDict
+
+import dagster._check as check
 from dagster._core.definitions.asset_key import AssetKey
 from dagster._core.definitions.assets.job.asset_job import IMPLICIT_ASSET_JOB_NAME
 from dagster._core.instance import DagsterInstance
@@ -16,8 +18,6 @@ from dagster._core.remote_representation.external import RemoteRepository
 from dagster._core.test_utils import wait_for_runs_to_finish
 from dagster._core.workspace.context import WorkspaceProcessContext, WorkspaceRequestContext
 from dagster._core.workspace.load_target import PythonFileTarget, WorkspaceFileTarget
-from typing_extensions import Protocol, TypeAlias, TypedDict
-
 from dagster_graphql import __file__ as dagster_graphql_init_py
 from dagster_graphql.schema import create_schema
 

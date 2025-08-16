@@ -1,6 +1,5 @@
 import dagster as dg
 from dagster._api.notebook_data import sync_get_streaming_external_notebook_data_grpc
-
 from dagster_tests.api_tests.utils import get_bar_repo_code_location
 
 

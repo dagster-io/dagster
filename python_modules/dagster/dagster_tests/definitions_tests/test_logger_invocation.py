@@ -1,7 +1,8 @@
 import logging
 
-import dagster as dg
 import pytest
+
+import dagster as dg
 from dagster._core.utils import coerce_valid_log_level
 
 

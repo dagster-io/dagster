@@ -3,15 +3,15 @@ import time
 from contextlib import ExitStack
 from unittest import mock
 
-import dagster as dg
 import pytest
+
+import dagster as dg
 from dagster._core.execution.plan.instance_concurrency_context import (
     INITIAL_INTERVAL_VALUE,
     STEP_UP_BASE,
     InstanceConcurrencyContext,
 )
 from dagster._core.utils import make_new_run_id
-
 from dagster_tests.execution_tests.misc_execution_tests.conftest import CUSTOM_SLEEP_INTERVAL
 
 

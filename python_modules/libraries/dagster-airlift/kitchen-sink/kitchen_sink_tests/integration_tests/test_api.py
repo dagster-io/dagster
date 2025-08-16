@@ -3,6 +3,16 @@ from typing import TYPE_CHECKING, cast
 
 import pytest
 import requests
+from kitchen_sink.airflow_instance import (
+    AIRFLOW_BASE_URL,
+    AIRFLOW_INSTANCE_NAME,
+    EXPECTED_NUM_DAGS,
+    PASSWORD,
+    USERNAME,
+    local_airflow_instance,
+)
+from pytest_mock import MockFixture
+
 from dagster import Definitions
 from dagster._core.definitions.assets.definition.asset_spec import AssetSpec
 from dagster._core.definitions.assets.definition.assets_definition import AssetsDefinition
@@ -17,15 +27,6 @@ from dagster_airlift.core.filter import AirflowFilter
 from dagster_airlift.core.serialization.serialized_data import Dataset
 from dagster_airlift.core.top_level_dag_def_api import assets_with_dag_mappings
 from dagster_airlift.test.test_utils import asset_spec
-from kitchen_sink.airflow_instance import (
-    AIRFLOW_BASE_URL,
-    AIRFLOW_INSTANCE_NAME,
-    EXPECTED_NUM_DAGS,
-    PASSWORD,
-    USERNAME,
-    local_airflow_instance,
-)
-from pytest_mock import MockFixture
 
 if TYPE_CHECKING:
     from dagster._core.definitions.assets.definition.assets_definition import AssetsDefinition

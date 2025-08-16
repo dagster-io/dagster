@@ -5,8 +5,9 @@ from concurrent.futures import ThreadPoolExecutor
 from contextlib import contextmanager
 from typing import Any, NamedTuple, Optional, cast
 
-import dagster as dg
 import pytest
+
+import dagster as dg
 from dagster import (
     DagsterRunStatus,
     _check as check,
@@ -24,7 +25,6 @@ from dagster._core.workspace.context import WorkspaceProcessContext
 from dagster._core.workspace.load_target import WorkspaceFileTarget, WorkspaceLoadTarget
 from dagster._time import get_current_datetime
 from dagster._vendored.dateutil.relativedelta import relativedelta
-
 from dagster_tests.daemon_sensor_tests.conftest import create_workspace_load_target
 from dagster_tests.daemon_sensor_tests.test_sensor_run import (
     daily_partitioned_job,

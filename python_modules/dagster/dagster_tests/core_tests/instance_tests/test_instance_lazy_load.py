@@ -1,13 +1,14 @@
 from collections.abc import Mapping
 from typing import Any, Optional
 
-import dagster as dg
 import pytest
+from typing_extensions import Self
+
+import dagster as dg
 from dagster._core.run_coordinator.default_run_coordinator import DefaultRunCoordinator
 from dagster._core.storage.noop_compute_log_manager import NoOpComputeLogManager
 from dagster._serdes import ConfigurableClass
 from dagster._serdes.config_class import ConfigurableClassData
-from typing_extensions import Self
 
 
 class InitFailRunLauncher(dg.DefaultRunLauncher, ConfigurableClass):

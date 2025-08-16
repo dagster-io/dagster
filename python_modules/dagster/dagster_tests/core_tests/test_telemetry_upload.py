@@ -2,10 +2,11 @@ import logging
 import os
 from unittest import mock
 
-import dagster as dg
 import pytest
 import responses
 from click.testing import CliRunner
+
+import dagster as dg
 from dagster._cli.job import job_execute_command
 from dagster._core.telemetry_upload import get_dagster_telemetry_url, upload_logs
 from dagster._core.test_utils import environ

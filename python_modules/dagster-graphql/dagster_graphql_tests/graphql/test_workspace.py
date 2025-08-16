@@ -4,6 +4,7 @@ from typing import Any
 from unittest import mock
 
 import pytest
+
 from dagster import file_relative_path
 from dagster._core.remote_origin import ManagedGrpcPythonEnvCodeLocationOrigin
 from dagster._core.remote_representation.feature_flags import CodeLocationFeatureFlags
@@ -13,12 +14,11 @@ from dagster._core.workspace.load import location_origins_from_yaml_paths
 from dagster.version import __version__ as dagster_version
 from dagster_graphql.test.utils import execute_dagster_graphql, main_repo_location_name
 from dagster_graphql.version import __version__ as dagster_graphql_version
-from dagster_shared.version import __version__ as dagster_shared_version
-
 from dagster_graphql_tests.graphql.graphql_context_test_suite import (
     GraphQLContextVariant,
     make_graphql_context_test_suite,
 )
+from dagster_shared.version import __version__ as dagster_shared_version
 
 LOCATION_ENTRY_FRAGMENT = """
 fragment locationEntryFragment on WorkspaceLocationEntry {

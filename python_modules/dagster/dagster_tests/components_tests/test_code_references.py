@@ -1,8 +1,9 @@
 import tempfile
 from pathlib import Path
 
-import dagster as dg
 import pytest
+
+import dagster as dg
 from dagster._core.definitions.assets.definition.cacheable_assets_definition import (
     CacheableAssetsDefinition,
 )

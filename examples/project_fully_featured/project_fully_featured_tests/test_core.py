@@ -8,7 +8,6 @@ from dagster import (
     mem_io_manager,
 )
 from dagster_pyspark import pyspark_resource
-
 from project_fully_featured.assets import core
 from project_fully_featured.resources.hn_resource import HNSnapshotClient
 from project_fully_featured.resources.parquet_io_manager import LocalPartitionedParquetIOManager

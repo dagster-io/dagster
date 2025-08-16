@@ -12,8 +12,9 @@ from contextlib import contextmanager
 from typing import Any, Optional
 
 import click
-import dagster._check as check
 import yaml
+
+import dagster._check as check
 from dagster._utils import file_relative_path, mkdir_p
 from dagster._utils.merger import deep_merge_dicts
 

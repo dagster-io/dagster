@@ -8,6 +8,9 @@ import uuid
 from contextlib import contextmanager
 from typing import Optional, TypedDict
 
+from wandb import Artifact
+from wandb.data_types import WBValue
+
 from dagster import (
     Field,
     InitResourceContext,
@@ -20,9 +23,6 @@ from dagster import (
     io_manager,
 )
 from dagster._core.storage.io_manager import dagster_maintained_io_manager
-from wandb import Artifact
-from wandb.data_types import WBValue
-
 from dagster_wandb.resources import WANDB_CLOUD_HOST
 from dagster_wandb.utils.errors import (
     WandbArtifactsIOManagerError,

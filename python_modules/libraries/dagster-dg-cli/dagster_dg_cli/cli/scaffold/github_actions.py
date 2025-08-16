@@ -4,15 +4,15 @@ from pathlib import Path
 from typing import Callable, NamedTuple, Optional, cast
 
 import click
+
+from dagster_dg_cli.cli.plus.constants import DgPlusAgentType
+from dagster_dg_cli.utils.plus.build import get_agent_type, get_dockerfile_path, merge_build_configs
 from dagster_dg_core.config import DgRawCliConfig, normalize_cli_config
 from dagster_dg_core.context import DgContext
 from dagster_dg_core.shared_options import dg_global_options
 from dagster_dg_core.utils import DgClickCommand, exit_with_error
 from dagster_dg_core.utils.telemetry import cli_telemetry_wrapper
 from dagster_shared.plus.config import DagsterPlusCliConfig
-
-from dagster_dg_cli.cli.plus.constants import DgPlusAgentType
-from dagster_dg_cli.utils.plus.build import get_agent_type, get_dockerfile_path, merge_build_configs
 
 
 def get_cli_version_or_main() -> str:

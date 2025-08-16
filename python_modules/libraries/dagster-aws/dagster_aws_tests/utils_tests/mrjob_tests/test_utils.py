@@ -3,8 +3,8 @@ import time
 from datetime import datetime, timedelta
 
 import botocore
-from dagster._vendored.dateutil.tz import tzutc
 
+from dagster._vendored.dateutil.tz import tzutc
 from dagster_aws.utils.mrjob.utils import (
     _boto3_now,
     _client_error_code,

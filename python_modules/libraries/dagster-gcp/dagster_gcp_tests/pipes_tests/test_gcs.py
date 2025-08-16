@@ -2,17 +2,17 @@ import json
 import uuid
 from typing import Optional
 
-import dagster as dg
 import pytest
+from google.cloud.storage import Client as GCSClient
+
+import dagster as dg
 from dagster_gcp.pipes import PipesGCSContextInjector, PipesGCSMessageReader
+from dagster_gcp_tests.pipes_tests.utils import _PYTHON_EXECUTABLE
 from dagster_pipes import (
     PIPES_PROTOCOL_VERSION,
     PIPES_PROTOCOL_VERSION_FIELD,
     PipesGCSMessageWriter,
 )
-from google.cloud.storage import Client as GCSClient
-
-from dagster_gcp_tests.pipes_tests.utils import _PYTHON_EXECUTABLE
 
 
 def test_message_writer(gcs_bucket: str, gcs_client: GCSClient):

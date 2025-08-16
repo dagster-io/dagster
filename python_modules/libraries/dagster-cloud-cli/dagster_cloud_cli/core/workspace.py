@@ -1,10 +1,9 @@
 import os
 from typing import Any, NamedTuple, Optional
 
+from dagster_cloud_cli.core.agent_queue import AgentQueue
 from dagster_shared import check
 from dagster_shared.serdes import whitelist_for_serdes
-
-from dagster_cloud_cli.core.agent_queue import AgentQueue
 
 # Python 3.8 is EOL and support will be removed soon.
 # Dagster 1.9 onwards there is no support for 3.8 so we use an older base image.

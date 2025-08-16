@@ -3,10 +3,11 @@ import textwrap
 from typing import Optional
 
 import pandas as pd
+from pydantic import Field
+
 from dagster import AssetKey, ConfigurableIOManager, TableSchemaMetadataValue
 from dagster._core.definitions.metadata import MetadataValue
 from dagster._utils.cached_method import cached_method
-from pydantic import Field
 
 
 class LocalCsvIOManager(ConfigurableIOManager):

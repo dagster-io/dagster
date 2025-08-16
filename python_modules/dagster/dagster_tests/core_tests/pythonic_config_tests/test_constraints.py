@@ -1,6 +1,7 @@
-import dagster as dg
 import pytest
 from pydantic import Field, ValidationError, conlist, constr
+
+import dagster as dg
 
 
 def test_str_min_length() -> None:

@@ -7,21 +7,6 @@ from functools import cached_property
 from queue import Queue
 from typing import TYPE_CHECKING, Any, Literal, Optional, TypedDict, Union, cast
 
-from dagster_pipes import (
-    DAGSTER_PIPES_CONTEXT_ENV_VAR,
-    DAGSTER_PIPES_MESSAGES_ENV_VAR,
-    Method,
-    PipesContextData,
-    PipesDataProvenance,
-    PipesException,
-    PipesExtras,
-    PipesMessage,
-    PipesOpenedData,
-    PipesParams,
-    PipesTimeWindow,
-    _env_var_to_cli_argument,
-    encode_param,
-)
 from typing_extensions import TypeAlias
 
 import dagster._check as check
@@ -51,6 +36,21 @@ from dagster._utils.error import (
     ExceptionInfo,
     SerializableErrorInfo,
     serializable_error_info_from_exc_info,
+)
+from dagster_pipes import (
+    DAGSTER_PIPES_CONTEXT_ENV_VAR,
+    DAGSTER_PIPES_MESSAGES_ENV_VAR,
+    Method,
+    PipesContextData,
+    PipesDataProvenance,
+    PipesException,
+    PipesExtras,
+    PipesMessage,
+    PipesOpenedData,
+    PipesParams,
+    PipesTimeWindow,
+    _env_var_to_cli_argument,
+    encode_param,
 )
 
 if TYPE_CHECKING:

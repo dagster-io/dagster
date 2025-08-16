@@ -1,11 +1,11 @@
 from typing import TYPE_CHECKING, Any, Optional
 
-import dagster._check as check
 import graphene
+
+import dagster._check as check
 from dagster._core.remote_representation import RepresentedJob
 from dagster._core.remote_representation.external_data import DEFAULT_MODE_NAME
 from dagster._core.snap.snap_to_yaml import default_values_yaml_from_type_snap
-
 from dagster_graphql.implementation.run_config_schema import resolve_is_run_config_valid
 from dagster_graphql.implementation.utils import capture_error
 from dagster_graphql.schema.config_types import GrapheneConfigType, to_config_type

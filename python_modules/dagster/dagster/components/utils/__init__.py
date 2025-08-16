@@ -9,10 +9,10 @@ from types import ModuleType
 from typing import TypeVar
 
 import click
-from dagster_shared.error import DagsterError
 
 from dagster import _check as check
 from dagster.components.utils.translation import TranslatorResolvingInfo as TranslatorResolvingInfo
+from dagster_shared.error import DagsterError
 
 T = TypeVar("T")
 

@@ -6,14 +6,14 @@ from collections.abc import Mapping, Sequence
 from typing import Any, Optional, cast
 
 import requests
-from dagster import Failure, MetadataValue, get_dagster_logger
-from dagster._annotations import beta
-from dagster._utils.cached_method import cached_method
-from dagster_shared.dagster_model import DagsterModel
 from pydantic import Field
 from requests.exceptions import RequestException
 
+from dagster import Failure, MetadataValue, get_dagster_logger
+from dagster._annotations import beta
+from dagster._utils.cached_method import cached_method
 from dagster_dbt.cloud_v2.types import DbtCloudJobRunStatusType, DbtCloudRun
+from dagster_shared.dagster_model import DagsterModel
 
 DAGSTER_DBT_CLOUD_LIST_JOBS_INDIVIDUAL_REQUEST_LIMIT = int(
     os.getenv("DAGSTER_DBT_CLOUD_LIST_JOBS_INDIVIDUAL_REQUEST_LIMIT", "100")

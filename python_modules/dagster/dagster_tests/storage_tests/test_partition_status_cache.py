@@ -1,6 +1,6 @@
-import dagster as dg
 import pytest
 
+import dagster as dg
 from dagster_tests.storage_tests.utils.partition_status_cache import TestPartitionStatusCache
 
 

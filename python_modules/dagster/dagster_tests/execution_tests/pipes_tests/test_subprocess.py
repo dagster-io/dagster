@@ -9,8 +9,9 @@ from multiprocessing import Process
 from pathlib import Path
 from tempfile import NamedTemporaryFile
 
-import dagster as dg
 import pytest
+
+import dagster as dg
 from dagster._core.definitions.data_version import (
     DATA_VERSION_IS_USER_PROVIDED_TAG,
     DATA_VERSION_TAG,
@@ -23,7 +24,6 @@ from dagster._core.storage.asset_check_execution_record import AssetCheckExecuti
 from dagster._utils import process_is_alive
 from dagster._utils.env import environ
 from dagster_pipes import DagsterPipesError
-
 from dagster_tests.execution_tests.pipes_tests.utils import temp_script
 
 _PYTHON_EXECUTABLE = shutil.which("python")

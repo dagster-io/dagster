@@ -20,10 +20,9 @@ from collections.abc import Iterator
 from contextlib import contextmanager
 from typing import TYPE_CHECKING, Any, Callable, Optional
 
-from dagster_shared.error import DagsterError
-
 import dagster._check as check
 from dagster._utils.interrupts import raise_interrupts_as
+from dagster_shared.error import DagsterError
 
 if TYPE_CHECKING:
     from dagster._core.log_manager import DagsterLogManager

@@ -1,5 +1,6 @@
-import dagster as dg
 import pytest
+
+import dagster as dg
 from dagster._core.storage.tags import RESUME_RETRY_TAG, RETRY_STRATEGY_TAG
 
 

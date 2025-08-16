@@ -15,7 +15,6 @@ from dagster._core.definitions.asset_checks.asset_check_evaluation import AssetC
 from dagster._core.definitions.asset_key import AssetKey
 from dagster._core.definitions.partitions.definition import TimeWindowPartitionsDefinition
 from dagster._time import datetime_from_timestamp, get_current_timestamp
-
 from dagster_airlift.constants import (
     AIRFLOW_RUN_ID_METADATA_KEY,
     AIRFLOW_TASK_INSTANCE_LOGICAL_DATE_METADATA_KEY,

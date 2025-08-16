@@ -11,7 +11,6 @@ from dagster import (
 from dagster._core.definitions.run_request import RunRequest
 from dagster._core.definitions.schedule_definition import ScheduleEvaluationContext
 from dagster._utils.partitions import DEFAULT_DATE_FORMAT
-
 from dagster_test.toys.longitudinal import longitudinal
 from dagster_test.toys.many_events import many_events
 from dagster_test.toys.simple_config import simple_config_job

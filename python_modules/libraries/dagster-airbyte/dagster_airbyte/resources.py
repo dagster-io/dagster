@@ -10,6 +10,9 @@ from datetime import datetime, timedelta
 from typing import Any, Callable, Optional, cast
 
 import requests
+from pydantic import Field, PrivateAttr
+from requests.exceptions import RequestException
+
 from dagster import (
     AssetExecutionContext,
     AssetMaterialization,
@@ -30,10 +33,6 @@ from dagster._core.definitions.resource_definition import dagster_maintained_res
 from dagster._record import record
 from dagster._utils.cached_method import cached_method
 from dagster._utils.merger import deep_merge_dicts
-from dagster_shared.dagster_model import DagsterModel
-from pydantic import Field, PrivateAttr
-from requests.exceptions import RequestException
-
 from dagster_airbyte.translator import (
     AirbyteConnection,
     AirbyteConnectionTableProps,
@@ -50,6 +49,7 @@ from dagster_airbyte.utils import (
     get_airbyte_connection_table_name,
     get_translator_from_airbyte_assets,
 )
+from dagster_shared.dagster_model import DagsterModel
 
 AIRBYTE_REST_API_BASE = "https://api.airbyte.com"
 AIRBYTE_REST_API_VERSION = "v1"

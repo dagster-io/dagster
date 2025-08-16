@@ -1,8 +1,3 @@
-from dagster import (
-    DagsterInvariantViolationError,
-    _check as check,
-)
-from dagster._annotations import beta
 from pandas import DataFrame, Timestamp
 from pandas.core.dtypes.common import (
     is_bool_dtype,
@@ -12,6 +7,11 @@ from pandas.core.dtypes.common import (
     is_string_dtype,
 )
 
+from dagster import (
+    DagsterInvariantViolationError,
+    _check as check,
+)
+from dagster._annotations import beta
 from dagster_pandas.constraints import (
     CategoricalColumnConstraint,
     ColumnDTypeFnConstraint,

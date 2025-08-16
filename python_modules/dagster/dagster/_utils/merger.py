@@ -1,9 +1,8 @@
 from collections.abc import Mapping
 from typing import Any, TypeVar
 
-from dagster_shared.merger import deep_merge_dicts as deep_merge_dicts
-
 import dagster._check as check
+from dagster_shared.merger import deep_merge_dicts as deep_merge_dicts
 
 K = TypeVar("K")
 V = TypeVar("V")

@@ -24,8 +24,6 @@ from dagster._core.definitions.metadata.source_code import (
 from dagster._core.definitions.partitions.definition import PartitionsDefinition
 from dagster._utils.tags import is_valid_tag_key
 from dagster.components.resolved.base import Resolvable
-from dagster_shared import check
-
 from dagster_dbt.asset_utils import (
     DAGSTER_DBT_MANIFEST_METADATA_KEY,
     DAGSTER_DBT_PROJECT_METADATA_KEY,
@@ -44,6 +42,7 @@ from dagster_dbt.asset_utils import (
     get_upstream_unique_ids,
     has_self_dependency,
 )
+from dagster_shared import check
 
 if TYPE_CHECKING:
     from dagster_dbt.dbt_project import DbtProject

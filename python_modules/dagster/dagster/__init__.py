@@ -72,13 +72,6 @@ sys.meta_path.insert(
 # ##### DYNAMIC IMPORTS
 # ########################
 
-from dagster_shared.error import DagsterError as DagsterError
-from dagster_shared.libraries import DagsterLibraryRegistry
-from dagster_shared.serdes import (
-    deserialize_value as deserialize_value,
-    serialize_value as serialize_value,
-)
-
 import dagster.components as components  # noqa: F401
 from dagster._builtins import (
     Any as Any,
@@ -699,6 +692,12 @@ from dagster.components.testing import (
 )
 from dagster.components.testing.utils import component_defs as component_defs
 from dagster.version import __version__ as __version__
+from dagster_shared.error import DagsterError as DagsterError
+from dagster_shared.libraries import DagsterLibraryRegistry
+from dagster_shared.serdes import (
+    deserialize_value as deserialize_value,
+    serialize_value as serialize_value,
+)
 
 DagsterLibraryRegistry.register("dagster", __version__)
 

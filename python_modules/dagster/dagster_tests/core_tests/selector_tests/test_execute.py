@@ -1,8 +1,8 @@
 import re
 
-import dagster as dg
 import pytest
 
+import dagster as dg
 from dagster_tests.core_tests.selector_tests.test_subset_selector import (
     foo_job,
     get_asset_selection_job,

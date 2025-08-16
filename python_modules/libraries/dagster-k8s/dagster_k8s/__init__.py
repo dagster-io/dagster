@@ -1,5 +1,3 @@
-from dagster_shared.libraries import DagsterLibraryRegistry
-
 from dagster_k8s.executor import k8s_job_executor as k8s_job_executor
 from dagster_k8s.job import (
     DagsterK8sJobConfig as DagsterK8sJobConfig,
@@ -16,5 +14,6 @@ from dagster_k8s.pipes import (
     PipesK8sPodLogsMessageReader as PipesK8sPodLogsMessageReader,
 )
 from dagster_k8s.version import __version__ as __version__
+from dagster_shared.libraries import DagsterLibraryRegistry
 
 DagsterLibraryRegistry.register("dagster-k8s", __version__)

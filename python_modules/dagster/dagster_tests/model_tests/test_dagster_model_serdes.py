@@ -5,6 +5,8 @@ Pydantic 1 and 2, while the general_tests do not.
 """
 
 import pytest
+from pydantic import Field
+
 from dagster_shared.dagster_model import DagsterModel
 from dagster_shared.serdes.errors import SerializationError
 from dagster_shared.serdes.serdes import (
@@ -13,7 +15,6 @@ from dagster_shared.serdes.serdes import (
     pack_value,
     unpack_value,
 )
-from pydantic import Field
 
 
 def test_pydantic_alias():

@@ -1,7 +1,8 @@
 from inspect import Parameter, signature
 
-import dagster as dagster
 import pytest
+
+import dagster as dagster
 from dagster._config.pythonic_config.type_check_utils import safe_is_subclass
 from dagster._utils import IHasInternalInit
 from dagster._utils.test import get_all_direct_subclasses_of_marker

@@ -4,8 +4,9 @@ import warnings
 from abc import abstractmethod
 from typing import Annotated, NamedTuple, get_type_hints
 
-import dagster as dg
 import pytest
+
+import dagster as dg
 from dagster._annotations import (
     PUBLIC,
     PublicAttr,
@@ -31,7 +32,6 @@ from dagster._annotations import (
     superseded,
 )
 from dagster._check import CheckError
-
 from dagster_tests.general_tests.utils_tests.utils import assert_no_warnings
 
 

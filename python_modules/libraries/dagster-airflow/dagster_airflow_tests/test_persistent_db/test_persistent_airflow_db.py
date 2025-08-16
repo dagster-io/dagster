@@ -6,6 +6,7 @@ import pytest
 import pytz
 from airflow import __version__ as airflow_version
 from airflow.models import Variable
+
 from dagster import (
     DagsterInstance,
     JobDefinition,

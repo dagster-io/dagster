@@ -4,8 +4,9 @@ from collections.abc import Generator, Iterator
 from contextlib import contextmanager
 from typing import Callable
 
-import dagster as dg
 import pytest
+
+import dagster as dg
 from dagster import AssetKey, DagsterEventType, DagsterInstance
 from dagster._core.definitions.freshness import FreshnessState, InternalFreshnessPolicy
 from dagster._core.events import StepMaterializationData
@@ -13,7 +14,6 @@ from dagster._core.storage.dagster_run import make_new_run_id
 from dagster._core.test_utils import create_test_daemon_workspace_context, freeze_time
 from dagster._core.workspace.context import IWorkspaceProcessContext
 from dagster._daemon.freshness import FreshnessDaemon
-
 from dagster_tests.freshness_tests.utils import create_target_from_fn_and_local_scope
 
 

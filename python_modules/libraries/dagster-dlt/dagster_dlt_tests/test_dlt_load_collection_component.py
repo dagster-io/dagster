@@ -10,6 +10,7 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Any, Callable, Optional, cast
 
 import pytest
+
 from dagster import AssetKey
 from dagster._core.definitions import materialize
 from dagster._core.definitions.assets.definition.asset_spec import AssetSpec

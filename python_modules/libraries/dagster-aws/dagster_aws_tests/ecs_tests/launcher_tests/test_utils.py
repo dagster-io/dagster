@@ -3,7 +3,6 @@ from dagster._core.remote_origin import (
     RemoteJobOrigin,
     RemoteRepositoryOrigin,
 )
-
 from dagster_aws.ecs.utils import get_task_definition_family, sanitize_family, sanitize_tag
 
 

@@ -6,7 +6,6 @@ from dagster._core.definitions.run_request import InstigatorType
 from dagster._core.scheduler.instigation import InstigatorState, InstigatorStatus, TickStatus
 from dagster._core.test_utils import create_test_daemon_workspace_context, load_remote_repo
 from dagster._core.workspace.load_target import ModuleTarget
-
 from dagster_tests.daemon_sensor_tests.test_sensor_run import evaluate_sensors, validate_tick
 
 

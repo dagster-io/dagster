@@ -2,8 +2,9 @@ import datetime
 import tempfile
 from logging import Logger
 
-import dagster as dg
 import pytest
+
+import dagster as dg
 from dagster._core.instance import DagsterInstance
 from dagster._core.storage.dagster_run import DagsterRunStatus
 from dagster._core.test_utils import (

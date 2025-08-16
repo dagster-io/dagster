@@ -6,6 +6,7 @@ from unittest import mock
 
 import pytest
 import sqlalchemy  # noqa: F401
+
 from dagster import (
     DagsterInstance,
     DagsterResourceFunctionError,
@@ -24,7 +25,6 @@ from dagster._core.test_utils import environ
 from dagster._time import get_current_timestamp
 from dagster_snowflake import SnowflakeResource, fetch_last_updated_timestamps, snowflake_resource
 from dagster_snowflake.constants import SNOWFLAKE_PARTNER_CONNECTION_IDENTIFIER
-
 from dagster_snowflake_tests.utils import create_mock_connector
 
 IS_BUILDKITE = os.getenv("BUILDKITE") is not None

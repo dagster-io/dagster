@@ -9,6 +9,8 @@ from typing import Any, Optional
 
 import boto3
 from botocore.exceptions import ClientError
+from typing_extensions import Self
+
 from dagster import (
     Array,
     DagsterRunStatus,
@@ -35,8 +37,6 @@ from dagster._grpc.types import ExecuteRunArgs
 from dagster._serdes import ConfigurableClass
 from dagster._serdes.config_class import ConfigurableClassData
 from dagster._utils.backoff import backoff
-from typing_extensions import Self
-
 from dagster_aws.ecs.container_context import (
     SHARED_ECS_SCHEMA,
     SHARED_TASK_DEFINITION_FIELDS,

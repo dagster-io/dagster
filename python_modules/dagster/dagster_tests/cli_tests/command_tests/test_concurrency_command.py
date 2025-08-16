@@ -1,8 +1,9 @@
 import tempfile
 
-import dagster as dg
 import pytest
 from click.testing import CliRunner
+
+import dagster as dg
 from dagster._cli.instance import get_concurrency, set_concurrency
 
 

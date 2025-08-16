@@ -26,7 +26,6 @@ from dagster._core.definitions.assets.definition.cacheable_assets_definition imp
 )
 from dagster._core.definitions.metadata import RawMetadataMapping
 from dagster._core.execution.context.init import build_init_resource_context
-
 from dagster_dbt.asset_specs import build_dbt_asset_specs
 from dagster_dbt.asset_utils import (
     DAGSTER_DBT_UNIQUE_ID_METADATA_KEY,

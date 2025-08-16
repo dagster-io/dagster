@@ -1,14 +1,13 @@
 from typing import TYPE_CHECKING
 
-import dagster._check as check
-from dagster._core.definitions.selector import RepositorySelector, ResourceSelector
 from graphene import ResolveInfo
 
+import dagster._check as check
+from dagster._core.definitions.selector import RepositorySelector, ResourceSelector
 from dagster_graphql.implementation.utils import UserFacingGraphQLError
 
 if TYPE_CHECKING:
     from dagster._core.remote_representation.code_location import CodeLocation
-
     from dagster_graphql.schema.resources import (
         GrapheneResourceDetails,
         GrapheneResourceDetailsList,

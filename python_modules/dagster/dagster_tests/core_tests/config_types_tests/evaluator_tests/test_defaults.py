@@ -1,5 +1,6 @@
-import dagster as dg
 import pytest
+
+import dagster as dg
 from dagster._check import CheckError, ParameterCheckError
 from dagster._config import ConfigType, ConfigTypeKind, post_process_config, resolve_to_config_type
 

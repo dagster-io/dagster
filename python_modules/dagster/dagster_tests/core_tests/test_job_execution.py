@@ -2,8 +2,9 @@ import uuid
 import warnings
 from collections.abc import Mapping, Sequence
 
-import dagster as dg
 import pytest
+
+import dagster as dg
 from dagster import (
     _check as check,
     job,

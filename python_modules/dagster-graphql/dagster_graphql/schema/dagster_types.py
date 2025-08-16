@@ -1,10 +1,10 @@
 from typing import TYPE_CHECKING, Any, Callable, Optional, Union
 
 import graphene
-from dagster._config.snap import ConfigTypeSnap
-from dagster._core.types.dagster_type import DagsterTypeKind
 from typing_extensions import TypeAlias
 
+from dagster._config.snap import ConfigTypeSnap
+from dagster._core.types.dagster_type import DagsterTypeKind
 from dagster_graphql.implementation.events import iterate_metadata_entries
 from dagster_graphql.schema.config_types import (
     GrapheneConfigType,

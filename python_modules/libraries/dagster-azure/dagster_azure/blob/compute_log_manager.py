@@ -4,9 +4,11 @@ from contextlib import contextmanager
 from datetime import datetime, timedelta, timezone
 from typing import IO, Any, Optional
 
-import dagster_shared.seven as seven
 from azure.identity import ClientSecretCredential, DefaultAzureCredential
 from azure.storage.blob import BlobSasPermissions, BlobServiceClient, UserDelegationKey
+from typing_extensions import Self
+
+import dagster_shared.seven as seven
 from dagster import (
     Field,
     Noneable,
@@ -30,8 +32,6 @@ from dagster._core.storage.local_compute_log_manager import (
 )
 from dagster._serdes import ConfigurableClass, ConfigurableClassData
 from dagster._utils import ensure_dir
-from typing_extensions import Self
-
 from dagster_azure.blob.utils import create_blob_client, generate_blob_sas
 
 

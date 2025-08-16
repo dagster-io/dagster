@@ -1,6 +1,7 @@
 from pathlib import Path
 
 import duckdb
+
 from dagster import AssetCheckResult, AssetChecksDefinition, AssetKey, asset_check
 
 

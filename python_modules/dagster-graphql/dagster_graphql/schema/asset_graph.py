@@ -2,6 +2,8 @@ from collections.abc import Sequence
 from typing import TYPE_CHECKING, Any, Optional, Union, cast
 
 import graphene
+from packaging import version
+
 from dagster import (
     AssetKey,
     _check as check,
@@ -57,8 +59,6 @@ from dagster._core.storage.tags import KIND_PREFIX
 from dagster._core.utils import is_valid_email
 from dagster._core.workspace.permissions import Permissions
 from dagster._time import get_current_datetime
-from packaging import version
-
 from dagster_graphql.implementation.events import iterate_metadata_entries
 from dagster_graphql.implementation.fetch_asset_checks import has_asset_checks
 from dagster_graphql.implementation.fetch_assets import (

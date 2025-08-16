@@ -3,6 +3,7 @@ from collections.abc import Iterator, Mapping, Sequence, Set
 from typing import Any, Union
 
 import tableauserverclient as TSC
+
 from dagster import (
     AssetKey,
     AssetObservation,
@@ -10,7 +11,6 @@ from dagster import (
     Output,
     _check as check,
 )
-
 from dagster_tableau.translator import (
     TableauDataSourceMetadataSet,
     TableauTagSet,

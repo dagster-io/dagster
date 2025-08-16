@@ -1,5 +1,3 @@
-from dagster_shared.libraries import DagsterLibraryRegistry
-
 from dagster_docker.docker_executor import docker_executor as docker_executor
 from dagster_docker.docker_run_launcher import DockerRunLauncher as DockerRunLauncher
 from dagster_docker.ops import (
@@ -11,5 +9,6 @@ from dagster_docker.pipes import (
     PipesDockerLogsMessageReader as PipesDockerLogsMessageReader,
 )
 from dagster_docker.version import __version__
+from dagster_shared.libraries import DagsterLibraryRegistry
 
 DagsterLibraryRegistry.register("dagster-docker", __version__)

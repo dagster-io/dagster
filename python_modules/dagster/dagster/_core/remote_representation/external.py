@@ -6,8 +6,6 @@ from functools import cached_property
 from threading import RLock
 from typing import TYPE_CHECKING, AbstractSet, Callable, Optional, Union  # noqa: UP035
 
-from dagster_shared.error import DagsterError
-
 import dagster._check as check
 from dagster._config.snap import ConfigFieldSnap, ConfigSchemaSnapshot
 from dagster._core.definitions.asset_checks.asset_check_spec import AssetCheckKey
@@ -80,6 +78,7 @@ from dagster._core.utils import toposort
 from dagster._serdes import create_snapshot_id
 from dagster._utils.cached_method import cached_method
 from dagster._utils.schedules import schedule_execution_time_iterator
+from dagster_shared.error import DagsterError
 
 if TYPE_CHECKING:
     from dagster._core.definitions.assets.graph.remote_asset_graph import RemoteRepositoryAssetGraph

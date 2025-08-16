@@ -5,8 +5,6 @@ from http.server import BaseHTTPRequestHandler, HTTPServer
 from typing import Optional
 from urllib import parse
 
-from dagster_shared.plus.config import DagsterPlusCliConfig
-from dagster_shared.plus.login_server import start_login_server
 from typer import Argument, Context, Option, Typer
 
 from dagster_cloud_cli import gql, ui
@@ -16,6 +14,8 @@ from dagster_cloud_cli.config_utils import (
     read_config,
     write_config,
 )
+from dagster_shared.plus.config import DagsterPlusCliConfig
+from dagster_shared.plus.login_server import start_login_server
 
 app = Typer(help="Configure the Dagster Cloud CLI.")
 

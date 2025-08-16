@@ -1,7 +1,8 @@
 from datetime import timedelta
 
-import dagster as dg
 import pytest
+
+import dagster as dg
 from dagster._check import CheckError, ParameterCheckError
 from dagster._core.definitions.assets.definition.asset_spec import apply_freshness_policy
 from dagster._core.definitions.decorators.asset_decorator import asset
@@ -12,7 +13,6 @@ from dagster._core.definitions.freshness import (
     TimeWindowFreshnessPolicy,
 )
 from dagster_shared.serdes.utils import SerializableTimeDelta
-
 from dagster_tests.core_tests.host_representation_tests.test_external_data import (
     _get_asset_node_snaps_from_definitions,
 )

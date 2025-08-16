@@ -3,7 +3,6 @@ import subprocess
 from typing import Any, Optional, Union
 
 import pytest
-from dagster_k8s.models import k8s_model_from_dict, k8s_snake_case_dict
 from kubernetes import client as k8s_client
 from kubernetes.client import models
 from schema.charts.dagster.subschema.global_ import Global
@@ -18,6 +17,7 @@ from schema.charts.dagster_user_deployments.values import DagsterUserDeployments
 from schema.charts.utils import kubernetes
 from schema.utils.helm_template import HelmTemplate
 
+from dagster_k8s.models import k8s_model_from_dict, k8s_snake_case_dict
 from schema_tests.utils import create_complex_user_deployment, create_simple_user_deployment
 
 

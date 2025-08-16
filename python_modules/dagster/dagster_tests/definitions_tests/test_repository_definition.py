@@ -1,8 +1,9 @@
 from collections import defaultdict
 from typing import TYPE_CHECKING
 
-import dagster as dg
 import pytest
+
+import dagster as dg
 from dagster import JobDefinition, ResourceDefinition, in_process_executor
 from dagster._check import CheckError
 from dagster._core.definitions.executor_definition import multi_or_in_process_executor

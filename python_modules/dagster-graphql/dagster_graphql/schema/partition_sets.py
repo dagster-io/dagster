@@ -1,8 +1,9 @@
 from collections.abc import Sequence
 from typing import TYPE_CHECKING, AbstractSet, Optional, cast  # noqa: UP035
 
-import dagster._check as check
 import graphene
+
+import dagster._check as check
 from dagster._core.definitions.asset_key import AssetKey
 from dagster._core.definitions.partitions.definition import MultiPartitionsDefinition
 from dagster._core.definitions.partitions.snap import (
@@ -21,7 +22,6 @@ from dagster._core.remote_representation.external_data import (
 from dagster._core.storage.dagster_run import RunsFilter
 from dagster._core.storage.tags import PARTITION_NAME_TAG, PARTITION_SET_TAG
 from dagster._utils.merger import merge_dicts
-
 from dagster_graphql.implementation.fetch_partition_sets import (
     get_partition_by_name,
     get_partition_config,

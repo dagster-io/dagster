@@ -5,6 +5,9 @@ from dataclasses import dataclass
 from functools import cached_property
 from typing import TYPE_CHECKING, NamedTuple, Optional
 
+from dagster._core.definitions.asset_key import EntityKey, T_EntityKey
+from dagster._core.definitions.assets.graph.base_asset_graph import BaseAssetGraph
+from dagster._core.definitions.events import AssetKey
 from dagster_shared.serdes.serdes import (
     FieldSerializer,
     JsonSerializableValue,
@@ -16,10 +19,6 @@ from dagster_shared.serdes.serdes import (
     unpack_value,
     whitelist_for_serdes,
 )
-
-from dagster._core.definitions.asset_key import EntityKey, T_EntityKey
-from dagster._core.definitions.assets.graph.base_asset_graph import BaseAssetGraph
-from dagster._core.definitions.events import AssetKey
 
 if TYPE_CHECKING:
     from dagster._core.definitions.declarative_automation.serialized_objects import (

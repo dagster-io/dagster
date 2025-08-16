@@ -3,8 +3,6 @@ from collections.abc import Mapping
 from types import FunctionType
 from typing import TYPE_CHECKING, Any, Callable, NamedTuple, Optional, TypeVar, Union
 
-from dagster_shared.error import DagsterError
-
 import dagster._check as check
 from dagster._annotations import PublicAttr, deprecated_param, public, superseded
 from dagster._core.definitions.events import AssetKey
@@ -21,6 +19,7 @@ from dagster._core.types.dagster_type import (  # BuiltinScalarDagsterType,
     DagsterType,
     resolve_dagster_type,
 )
+from dagster_shared.error import DagsterError
 
 if TYPE_CHECKING:
     from dagster._core.execution.context.input import InputContext

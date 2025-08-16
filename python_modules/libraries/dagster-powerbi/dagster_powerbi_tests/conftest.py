@@ -2,6 +2,7 @@ from collections.abc import Iterator
 
 import pytest
 import responses
+
 from dagster_powerbi.resource import BASE_API_URL, generate_data_source_id
 from dagster_powerbi.translator import PowerBIContentData, PowerBIContentType, PowerBIWorkspaceData
 

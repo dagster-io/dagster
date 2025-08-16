@@ -3,12 +3,13 @@ import re
 from collections.abc import Mapping
 from typing import Any, TypeVar
 
-import dagster._check as check
 import kubernetes
 import kubernetes.client.models
-from dagster._vendored.dateutil.parser import parse
 from kubernetes.client.api_client import ApiClient
 from kubernetes.client.configuration import Configuration
+
+import dagster._check as check
+from dagster._vendored.dateutil.parser import parse
 
 # Unclear what the correct type is to use for a bound here.
 T_KubernetesModel = TypeVar("T_KubernetesModel")

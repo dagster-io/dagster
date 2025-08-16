@@ -4,6 +4,7 @@ from typing import TYPE_CHECKING, cast
 import duckdb
 import pandas as pd
 import pytest
+
 from dagster import (
     AssetExecutionContext,
     AssetIn,

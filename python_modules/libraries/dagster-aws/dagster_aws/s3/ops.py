@@ -15,7 +15,6 @@ from dagster import (
     op,
 )
 from dagster._core.types.dagster_type import PythonObjectDagsterType
-
 from dagster_aws.s3.file_manager import S3FileHandle
 
 

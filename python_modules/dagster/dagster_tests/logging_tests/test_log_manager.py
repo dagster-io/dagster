@@ -3,8 +3,9 @@ import sys
 import textwrap
 from typing import Optional
 
-import dagster as dg
 import pytest
+
+import dagster as dg
 from dagster._core.definitions.dependency import NodeHandle
 from dagster._core.errors import user_code_error_boundary
 from dagster._core.execution.plan.objects import ErrorSource, StepFailureData

@@ -1,8 +1,9 @@
 import operator
 from typing import Optional
 
-import dagster as dg
 import pytest
+
+import dagster as dg
 from dagster import DagsterInstance
 from dagster._core.asset_graph_view.asset_graph_view import AssetGraphView, SerializableEntitySubset
 

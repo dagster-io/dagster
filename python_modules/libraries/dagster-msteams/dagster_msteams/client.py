@@ -2,8 +2,9 @@ from collections.abc import Mapping
 from typing import Optional, cast
 from urllib.parse import urlparse
 
-import dagster._check as check
 from requests import codes, exceptions, post
+
+import dagster._check as check
 
 
 class TeamsClient:

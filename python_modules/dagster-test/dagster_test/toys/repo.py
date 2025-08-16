@@ -9,7 +9,6 @@ warnings.simplefilter("ignore", category=PreviewWarning)
 warnings.simplefilter("ignore", category=BetaWarning)
 
 from dagster import AssetMaterialization, Output, graph, load_assets_from_modules, op, repository
-
 from dagster_test.toys import big_honkin_asset_graph as big_honkin_asset_graph_module
 from dagster_test.toys.asset_checks import get_checks_and_assets
 from dagster_test.toys.asset_sensors import get_asset_sensors_repo

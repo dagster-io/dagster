@@ -3,6 +3,7 @@ from typing import Any
 
 import pytest
 import responses
+
 from dagster import (
     AssetKey,
     EnvVar,
@@ -23,7 +24,6 @@ from dagster._core.execution.with_resources import with_resources
 from dagster._core.instance_for_test import environ
 from dagster_airbyte import AirbyteCloudResource, AirbyteResource, airbyte_resource
 from dagster_airbyte.asset_defs import AirbyteConnectionMetadata, load_assets_from_airbyte_instance
-
 from dagster_airbyte_tests.utils import (
     get_destination_with_database_and_schema_json,
     get_destination_without_database_and_schema_json,

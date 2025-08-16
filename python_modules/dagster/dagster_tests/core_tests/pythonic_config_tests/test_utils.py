@@ -1,6 +1,7 @@
 import sys
 
 import pytest
+
 from dagster._utils.typing_api import is_closed_python_optional_type
 
 

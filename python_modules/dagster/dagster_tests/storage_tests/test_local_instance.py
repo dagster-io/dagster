@@ -5,9 +5,12 @@ import time
 import types
 from concurrent.futures import ThreadPoolExecutor
 
-import dagster as dg
 import pytest
 import yaml
+from packaging import version
+from sqlalchemy import __version__ as sqlalchemy_version
+
+import dagster as dg
 from dagster import (
     DagsterEventType,
     _check as check,
@@ -21,8 +24,6 @@ from dagster._core.storage.local_compute_log_manager import LocalComputeLogManag
 from dagster._core.storage.root import LocalArtifactStorage
 from dagster._core.storage.runs import SqliteRunStorage
 from dagster._core.test_utils import environ
-from packaging import version
-from sqlalchemy import __version__ as sqlalchemy_version
 
 
 def test_fs_stores():

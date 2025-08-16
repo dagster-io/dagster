@@ -1,6 +1,8 @@
 from collections.abc import Sequence
 from typing import TYPE_CHECKING, Any, Callable, Optional, Union
 
+from slack_sdk.web.client import WebClient
+
 from dagster import DefaultSensorStatus
 from dagster._annotations import deprecated_param
 from dagster._core.definitions import GraphDefinition, JobDefinition
@@ -10,7 +12,6 @@ from dagster._core.definitions.run_status_sensor_definition import (
 )
 from dagster._core.definitions.unresolved_asset_job_definition import UnresolvedAssetJobDefinition
 from dagster._utils.warnings import normalize_renamed_param
-from slack_sdk.web.client import WebClient
 
 if TYPE_CHECKING:
     from dagster._core.definitions.selector import (

@@ -8,6 +8,7 @@ from contextlib import contextmanager
 from typing import Any, Callable, Optional, Union
 
 import boto3
+
 from dagster import (
     AssetMaterialization,
     Bool,

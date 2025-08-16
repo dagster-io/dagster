@@ -1,12 +1,12 @@
 from collections.abc import Sequence
 
-import dagster as dg
 import pytest
+
+import dagster as dg
 from dagster import AutomationCondition
 from dagster._core.definitions.asset_selection import AssetSelection
 from dagster._core.definitions.declarative_automation.automation_context import AutomationContext
 from dagster._core.definitions.events import AssetKeyPartitionKey
-
 from dagster_tests.declarative_automation_tests.scenario_utils.automation_condition_scenario import (
     AutomationConditionScenarioState,
 )

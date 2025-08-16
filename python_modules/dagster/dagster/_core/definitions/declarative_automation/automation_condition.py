@@ -4,7 +4,6 @@ from collections.abc import Mapping, Sequence, Set
 from functools import cached_property
 from typing import TYPE_CHECKING, Generic, Optional, TypeVar, Union
 
-from dagster_shared.serdes.serdes import is_whitelisted_for_serdes_object
 from typing_extensions import Self
 
 import dagster._check as check
@@ -37,6 +36,7 @@ from dagster._time import get_current_timestamp
 from dagster._utils.schedules import is_valid_cron_schedule
 from dagster._utils.security import non_secure_md5_hash_str
 from dagster._utils.warnings import disable_dagster_warnings
+from dagster_shared.serdes.serdes import is_whitelisted_for_serdes_object
 
 if TYPE_CHECKING:
     from dagster._core.definitions.auto_materialize_policy import AutoMaterializePolicy

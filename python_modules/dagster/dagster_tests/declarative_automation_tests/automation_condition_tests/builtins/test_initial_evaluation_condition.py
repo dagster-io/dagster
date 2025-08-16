@@ -1,8 +1,9 @@
 from collections.abc import Sequence
 from typing import Optional
 
-import dagster as dg
 import pytest
+
+import dagster as dg
 from dagster._core.definitions.declarative_automation.automation_condition_tester import (
     EvaluateAutomationConditionsResult,
 )

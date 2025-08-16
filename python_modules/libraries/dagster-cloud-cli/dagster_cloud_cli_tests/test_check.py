@@ -1,8 +1,9 @@
 import os
 import tempfile
 
-from dagster_cloud_cli.entrypoint import app
 from typer.testing import CliRunner, Result
+
+from dagster_cloud_cli.entrypoint import app
 
 EMPTY_DAGSTER_CLOUD_YAML = """
 """

@@ -2,6 +2,7 @@ from pathlib import Path
 
 import pytest
 import yaml
+
 from dagster_airlift.in_airflow.proxied_state import (
     AirflowProxiedState,
     DagProxiedState,

@@ -1,7 +1,7 @@
-import dagster as dg
 import pytest
-from dagster.components.core.component_tree import ComponentTree
 
+import dagster as dg
+from dagster.components.core.component_tree import ComponentTree
 from dagster_tests.components_tests.integration_tests.component_loader import chdir as chdir
 
 

@@ -1,15 +1,14 @@
 from collections.abc import Iterable
 from typing import TYPE_CHECKING, Optional
 
-from dagster_shared import record
-from dagster_shared.serdes import whitelist_for_serdes
-
 import dagster._check as check
 from dagster._core.definitions.asset_health.asset_health import AssetHealthStatus
 from dagster._core.definitions.asset_key import AssetKey
 from dagster._core.definitions.freshness import FreshnessState, FreshnessStateRecord
 from dagster._core.loader import LoadableBy, LoadingContext
 from dagster._core.storage.event_log.base import AssetRecord
+from dagster_shared import record
+from dagster_shared.serdes import whitelist_for_serdes
 
 if TYPE_CHECKING:
     from dagster._core.workspace.context import BaseWorkspaceRequestContext

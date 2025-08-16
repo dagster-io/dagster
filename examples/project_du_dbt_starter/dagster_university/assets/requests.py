@@ -1,9 +1,10 @@
 import base64
 
-import dagster as dg
 import matplotlib.pyplot as plt
-from dagster_duckdb import DuckDBResource
 from smart_open import open
+
+import dagster as dg
+from dagster_duckdb import DuckDBResource
 
 from . import constants
 

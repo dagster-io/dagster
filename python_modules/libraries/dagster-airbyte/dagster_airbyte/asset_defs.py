@@ -8,6 +8,7 @@ from itertools import chain
 from typing import Any, Callable, NamedTuple, Optional, Union, cast
 
 import yaml
+
 from dagster import (
     AssetExecutionContext,
     AssetKey,
@@ -32,7 +33,6 @@ from dagster._core.definitions.metadata.table import TableSchema
 from dagster._core.errors import DagsterInvalidDefinitionError, DagsterInvalidInvocationError
 from dagster._core.execution.context.init import build_init_resource_context
 from dagster._utils.merger import merge_dicts
-
 from dagster_airbyte.asset_decorator import airbyte_assets
 from dagster_airbyte.resources import (
     AirbyteCloudResource,

@@ -1,7 +1,5 @@
 from typing import TYPE_CHECKING, Optional
 
-from dagster_shared.serdes import whitelist_for_serdes
-
 from dagster._core.definitions.asset_key import AssetKey
 from dagster._core.definitions.auto_materialize_rule import AutoMaterializeRule
 from dagster._core.definitions.declarative_automation.automation_condition import (
@@ -10,6 +8,7 @@ from dagster._core.definitions.declarative_automation.automation_condition impor
 )
 from dagster._record import record
 from dagster._utils.security import non_secure_md5_hash_str
+from dagster_shared.serdes import whitelist_for_serdes
 
 if TYPE_CHECKING:
     from dagster._core.definitions.declarative_automation.automation_context import (

@@ -3,6 +3,7 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Optional
 
 import kubernetes
+
 from dagster import __version__ as dagster_version
 
 if TYPE_CHECKING:

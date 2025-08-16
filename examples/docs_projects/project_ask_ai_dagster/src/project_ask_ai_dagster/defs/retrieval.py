@@ -1,6 +1,5 @@
 import dagster as dg
 from dagster_openai import OpenAIResource
-
 from project_ask_ai_dagster.defs.ingestion import (
     docs_embedding,
     github_discussions_embeddings,

@@ -1,5 +1,7 @@
 import inspect
 
+from starlette.testclient import TestClient
+
 from dagster import DagsterInstance
 from dagster._core.definitions.asset_checks.asset_check_evaluation import AssetCheckEvaluation
 from dagster._core.definitions.asset_checks.asset_check_spec import AssetCheckKey
@@ -15,7 +17,6 @@ from dagster_webserver.external_assets import (
     ReportAssetMatParam,
     ReportAssetObsParam,
 )
-from starlette.testclient import TestClient
 
 
 def test_report_asset_materialization_endpoint(instance: DagsterInstance, test_client: TestClient):

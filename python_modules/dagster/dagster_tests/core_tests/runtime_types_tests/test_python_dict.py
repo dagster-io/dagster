@@ -1,8 +1,9 @@
 # ruff: noqa: UP006
 import typing
 
-import dagster as dg
 import pytest
+
+import dagster as dg
 from dagster._utils.test import wrap_op_in_graph_and_execute
 
 

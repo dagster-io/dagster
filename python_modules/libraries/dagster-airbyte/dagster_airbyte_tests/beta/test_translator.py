@@ -1,11 +1,11 @@
 import responses
+
 from dagster._core.definitions.assets.definition.asset_spec import AssetSpec
 from dagster._core.definitions.metadata.metadata_set import TableMetadataSet
 from dagster._core.definitions.tags import has_kind
 from dagster_airbyte import AirbyteCloudWorkspace, DagsterAirbyteTranslator
 from dagster_airbyte.translator import AirbyteConnectionTableProps, AirbyteMetadataSet
 from dagster_airbyte.utils import generate_table_schema
-
 from dagster_airbyte_tests.beta.conftest import (
     TEST_AIRBYTE_CONNECTION_TABLE_PROPS,
     TEST_CLIENT_ID,

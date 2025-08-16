@@ -2,6 +2,8 @@ from collections.abc import Generator
 from contextlib import contextmanager
 from typing import TYPE_CHECKING, Any, Optional, cast
 
+from pydantic import Field
+
 from dagster import (
     Config,
     Field as LegacyDagsterField,
@@ -11,8 +13,6 @@ from dagster._annotations import beta
 from dagster._core.definitions.resource_definition import dagster_maintained_resource
 from dagster._core.test_utils import environ
 from dagster._utils.merger import merge_dicts
-from pydantic import Field
-
 from dagster_aws.ssm.parameters import (
     construct_ssm_client,
     get_parameters_by_name,
@@ -23,6 +23,7 @@ from dagster_aws.utils import ResourceWithBoto3Configuration
 
 if TYPE_CHECKING:
     import botocore
+
     from dagster._config.field_utils import Shape
 
 

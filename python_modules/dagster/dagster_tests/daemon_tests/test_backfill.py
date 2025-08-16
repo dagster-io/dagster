@@ -10,9 +10,10 @@ from pathlib import Path
 from typing import cast
 from unittest import mock
 
+import pytest
+
 import dagster as dg
 import dagster._check as check
-import pytest
 from dagster import AssetExecutionContext, DagsterInstance
 from dagster._core.definitions.asset_selection import AssetSelection
 from dagster._core.definitions.assets.graph.asset_graph_subset import AssetGraphSubset

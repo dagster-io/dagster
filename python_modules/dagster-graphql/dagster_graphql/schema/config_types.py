@@ -1,10 +1,10 @@
 from typing import AbstractSet, Callable, Optional, Union  # noqa: UP035
 
-import dagster._check as check
 import graphene
+
+import dagster._check as check
 from dagster._config import ConfigTypeKind
 from dagster._core.snap import ConfigFieldSnap, ConfigTypeSnap
-
 from dagster_graphql.schema.util import ResolveInfo, non_null_list
 
 GrapheneConfigTypeUnion = Union[

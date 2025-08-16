@@ -4,8 +4,10 @@ from contextlib import contextmanager
 from typing import IO, Any, Optional
 
 import boto3
-import dagster_shared.seven as seven
 from botocore.errorfactory import ClientError
+from typing_extensions import Self
+
+import dagster_shared.seven as seven
 from dagster import (
     Field,
     Permissive,
@@ -24,7 +26,6 @@ from dagster._core.storage.local_compute_log_manager import (
 )
 from dagster._serdes import ConfigurableClass, ConfigurableClassData
 from dagster._utils import ensure_dir
-from typing_extensions import Self
 
 POLLING_INTERVAL = 5
 

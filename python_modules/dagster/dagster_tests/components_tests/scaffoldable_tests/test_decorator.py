@@ -1,5 +1,6 @@
-import dagster as dg
 import pytest
+
+import dagster as dg
 from dagster.components.scaffold.scaffold import get_scaffolder, has_scaffolder
 from dagster_shared.check import CheckError
 

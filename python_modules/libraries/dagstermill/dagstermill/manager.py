@@ -43,7 +43,6 @@ from dagster._core.utils import make_new_run_id
 from dagster._loggers import colored_console_logger
 from dagster._serdes import unpack_value
 from dagster._utils import EventGenerationManager
-
 from dagstermill.context import DagstermillExecutionContext, DagstermillRuntimeExecutionContext
 from dagstermill.errors import DagstermillError
 from dagstermill.serialize import PICKLE_PROTOCOL

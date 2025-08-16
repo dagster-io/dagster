@@ -2,8 +2,9 @@
 from collections.abc import Iterator, Sequence
 from typing import Optional
 
-import dagster as dg
 import pytest
+
+import dagster as dg
 from dagster._core.definitions.asset_checks.asset_check_spec import AssetCheckSeverity
 from dagster._core.definitions.asset_selection import AssetSelection
 from dagster._core.definitions.assets.definition.assets_definition import AssetsDefinition

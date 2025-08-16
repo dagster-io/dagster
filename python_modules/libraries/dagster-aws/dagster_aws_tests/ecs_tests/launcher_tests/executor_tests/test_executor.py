@@ -16,7 +16,6 @@ from dagster._core.test_utils import create_run_for_test, in_process_test_worksp
 from dagster._core.types.loadable_target_origin import LoadableTargetOrigin
 from dagster._grpc.types import ExecuteStepArgs
 from dagster._utils.hosted_user_process import remote_job_from_recon_job
-
 from dagster_aws.ecs.executor import _ECS_EXECUTOR_CONFIG_SCHEMA, ecs_executor
 
 

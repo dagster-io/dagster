@@ -4,6 +4,7 @@ from unittest import mock
 import click
 import pytest
 from click.testing import CliRunner
+
 from dagster._cli.schedule import (
     schedule_list_command,
     schedule_logs_command,
@@ -15,7 +16,6 @@ from dagster._cli.schedule import (
 from dagster._cli.utils import validate_dagster_home_is_set, validate_repo_has_defined_schedules
 from dagster._core.remote_representation import RemoteRepository
 from dagster._core.test_utils import environ
-
 from dagster_tests.cli_tests.command_tests.test_cli_commands import (
     schedule_command_contexts,
     scheduler_instance,

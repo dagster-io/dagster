@@ -1,7 +1,8 @@
 import hashlib
 
-import dagster as dg
 import pytest
+
+import dagster as dg
 from dagster import (
     AssetKey,
     AssetsDefinition,

@@ -2,8 +2,6 @@ import os
 from pathlib import Path
 
 import click
-from dagster_dg_core.shared_options import dg_global_options, dg_path_options
-from dagster_dg_core.utils import DG_CLI_MAX_OUTPUT_WIDTH, DgClickGroup
 
 from dagster_dg_cli.cli.check import check_group
 from dagster_dg_cli.cli.dev import dev_command
@@ -15,6 +13,8 @@ from dagster_dg_cli.cli.plus import plus_group
 from dagster_dg_cli.cli.scaffold import scaffold_group
 from dagster_dg_cli.cli.utils import utils_group
 from dagster_dg_cli.version import __version__
+from dagster_dg_core.shared_options import dg_global_options, dg_path_options
+from dagster_dg_core.utils import DG_CLI_MAX_OUTPUT_WIDTH, DgClickGroup
 
 
 def create_dg_cli():

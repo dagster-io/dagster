@@ -1,8 +1,9 @@
 import warnings
 from datetime import datetime
 
-import dagster as dg
 import pytest
+
+import dagster as dg
 from dagster import job
 from dagster._core.storage.tags import PARTITION_NAME_TAG
 from dagster._core.test_utils import environ

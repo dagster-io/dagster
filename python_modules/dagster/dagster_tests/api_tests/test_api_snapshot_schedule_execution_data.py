@@ -3,8 +3,9 @@ import time
 from typing import Optional
 from unittest import mock
 
-import dagster as dg
 import pytest
+
+import dagster as dg
 from dagster._api.snapshot_schedule import (
     sync_get_external_schedule_execution_data_ephemeral_grpc,
     sync_get_external_schedule_execution_data_grpc,
@@ -16,7 +17,6 @@ from dagster._core.remote_representation.external_data import ScheduleExecutionE
 from dagster._grpc.client import ephemeral_grpc_api_client
 from dagster._grpc.types import ExternalScheduleExecutionArgs
 from dagster._time import get_current_datetime
-
 from dagster_tests.api_tests.utils import get_bar_repo_handle
 
 

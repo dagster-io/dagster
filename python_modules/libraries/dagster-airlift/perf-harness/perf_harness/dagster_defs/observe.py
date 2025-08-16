@@ -6,7 +6,6 @@ from dagster_airlift.core import (
     assets_with_task_mappings,
     build_defs_from_airflow_instance,
 )
-
 from perf_harness.dagster_defs.constants import (
     AIRFLOW_BASE_URL,
     AIRFLOW_INSTANCE_NAME,

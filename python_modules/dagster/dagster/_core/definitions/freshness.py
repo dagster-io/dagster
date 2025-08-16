@@ -4,8 +4,6 @@ from datetime import datetime, timedelta
 from enum import Enum
 from typing import TYPE_CHECKING, Any, Optional, Union
 
-from dagster_shared.serdes.utils import SerializableTimeDelta
-
 from dagster._core.definitions.asset_key import AssetKey
 from dagster._core.loader import LoadableBy, LoadingContext
 from dagster._record import IHaveNew, record, record_custom
@@ -13,6 +11,7 @@ from dagster._serdes import deserialize_value, whitelist_for_serdes
 from dagster._time import datetime_from_timestamp, get_timezone
 from dagster._utils import check
 from dagster._utils.schedules import get_smallest_cron_interval, is_valid_cron_string
+from dagster_shared.serdes.utils import SerializableTimeDelta
 
 if TYPE_CHECKING:
     from dagster._core.events.log import EventLogEntry

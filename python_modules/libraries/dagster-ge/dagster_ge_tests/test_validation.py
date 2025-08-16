@@ -1,4 +1,6 @@
 import pytest
+from pandas import read_csv
+
 from dagster import In, Output, graph, op
 from dagster._core.definitions.metadata.metadata_value import MarkdownMetadataValue
 from dagster._core.execution.context.op_execution_context import OpExecutionContext
@@ -8,7 +10,6 @@ from dagster_pyspark import (
     DataFrame as DagsterPySparkDataFrame,
     pyspark_resource,
 )
-from pandas import read_csv
 
 
 @op(ins={"res": In()})

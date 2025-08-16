@@ -3,14 +3,14 @@ from pathlib import Path
 from typing import Optional
 
 import click
-from dagster_dg_core.config import DgRawBuildConfig, merge_build_configs
-from dagster_dg_core.context import DgContext
-from dagster_shared import check
-from dagster_shared.plus.config import DagsterPlusCliConfig
 
 from dagster_dg_cli.cli.plus.constants import DgPlusAgentPlatform, DgPlusAgentType
 from dagster_dg_cli.utils.plus.gql import DEPLOYMENT_INFO_QUERY
 from dagster_dg_cli.utils.plus.gql_client import DagsterPlusGraphQLClient
+from dagster_dg_core.config import DgRawBuildConfig, merge_build_configs
+from dagster_dg_core.context import DgContext
+from dagster_shared import check
+from dagster_shared.plus.config import DagsterPlusCliConfig
 
 
 def get_dockerfile_path(

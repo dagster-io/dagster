@@ -3,6 +3,7 @@ from typing import Any, Callable
 
 import pytest
 import responses
+
 from dagster import (
     DagsterExecutionInterruptedError,
     Failure,
@@ -12,7 +13,6 @@ from dagster import (
 from dagster._core.definitions.metadata import MetadataValue
 from dagster_airbyte import AirbyteJobStatusType, AirbyteOutput, AirbyteResource, airbyte_resource
 from dagster_airbyte.utils import generate_materializations
-
 from dagster_airbyte_tests.utils import (
     get_sample_connection_json,
     get_sample_job_json,

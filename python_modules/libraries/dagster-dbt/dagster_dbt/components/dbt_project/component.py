@@ -16,7 +16,6 @@ from dagster.components.resolved.core_models import OpSpec, ResolutionContext
 from dagster.components.resolved.model import Resolver
 from dagster.components.scaffold.scaffold import scaffold_with
 from dagster.components.utils.translation import TranslationFn, TranslationFnResolver
-
 from dagster_dbt.asset_decorator import dbt_assets
 from dagster_dbt.asset_utils import DBT_DEFAULT_EXCLUDE, DBT_DEFAULT_SELECT, get_node
 from dagster_dbt.components.dbt_project.scaffolder import DbtProjectComponentScaffolder

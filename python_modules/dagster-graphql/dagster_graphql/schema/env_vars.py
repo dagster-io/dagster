@@ -1,8 +1,8 @@
 from collections.abc import Sequence
 
 import graphene
-from dagster._core.remote_representation.external_data import EnvVarConsumer
 
+from dagster._core.remote_representation.external_data import EnvVarConsumer
 from dagster_graphql.schema.errors import GraphenePythonError
 from dagster_graphql.schema.util import non_null_list
 

@@ -1,8 +1,6 @@
 from collections.abc import Sequence
 
 from dagster._core.storage.db_io_manager import DbTypeHandler
-from dagster_shared.libraries import DagsterLibraryRegistry
-
 from dagster_deltalake.config import (
     AzureConfig as AzureConfig,
     GcsConfig as GcsConfig,
@@ -22,6 +20,7 @@ from dagster_deltalake.io_manager import (
 )
 from dagster_deltalake.resource import DeltaTableResource as DeltaTableResource
 from dagster_deltalake.version import __version__
+from dagster_shared.libraries import DagsterLibraryRegistry
 
 
 class DeltaLakePyarrowIOManager(DeltaLakeIOManager):

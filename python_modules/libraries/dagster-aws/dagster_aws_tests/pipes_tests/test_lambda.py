@@ -2,9 +2,9 @@ import base64
 import json
 
 import pytest
+
 from dagster import asset, materialize, open_pipes_session
 from dagster._core.pipes.utils import PipesEnvContextInjector
-
 from dagster_aws.pipes import PipesLambdaClient, PipesLambdaLogsMessageReader, PipesS3MessageReader
 from dagster_aws_tests.pipes_tests.fake_lambda import (
     LOG_TAIL_LIMIT,

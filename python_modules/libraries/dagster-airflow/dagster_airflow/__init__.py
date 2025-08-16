@@ -1,5 +1,4 @@
 from airflow.plugins_manager import AirflowPlugin
-from dagster_shared.libraries import DagsterLibraryRegistry
 
 from dagster_airflow.dagster_asset_factory import (
     load_assets_from_airflow_dag as load_assets_from_airflow_dag,
@@ -24,6 +23,7 @@ from dagster_airflow.resources import (
     make_persistent_airflow_db_resource as make_persistent_airflow_db_resource,
 )
 from dagster_airflow.version import __version__ as __version__
+from dagster_shared.libraries import DagsterLibraryRegistry
 
 DagsterLibraryRegistry.register("dagster-airflow", __version__)
 

@@ -4,6 +4,7 @@ from unittest.mock import MagicMock
 
 import pytest
 import responses
+
 from dagster._config.field_utils import EnvVar
 from dagster._core.definitions.assets.definition.asset_spec import AssetSpec
 from dagster._core.test_utils import environ
@@ -11,7 +12,6 @@ from dagster_shared.check import CheckError
 from dagster_tableau import TableauCloudWorkspace, TableauServerWorkspace, load_tableau_asset_specs
 from dagster_tableau.asset_utils import parse_tableau_external_and_materializable_asset_specs
 from dagster_tableau.translator import DagsterTableauTranslator, TableauTranslatorData
-
 from dagster_tableau_tests.conftest import (
     TEST_DATA_SOURCE_ID,
     TEST_EMBEDDED_DATA_SOURCE_ID,

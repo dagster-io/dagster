@@ -1,7 +1,8 @@
 import sys
 
-import dagster as dg
 import pytest
+
+import dagster as dg
 
 
 def test_op_def_direct():

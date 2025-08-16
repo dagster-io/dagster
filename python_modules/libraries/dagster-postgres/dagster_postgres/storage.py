@@ -8,7 +8,6 @@ from dagster._core.storage.event_log import EventLogStorage
 from dagster._core.storage.runs import RunStorage
 from dagster._core.storage.schedules import ScheduleStorage
 from dagster._serdes import ConfigurableClass, ConfigurableClassData
-
 from dagster_postgres.event_log import PostgresEventLogStorage
 from dagster_postgres.run_storage import PostgresRunStorage
 from dagster_postgres.schedule_storage import PostgresScheduleStorage

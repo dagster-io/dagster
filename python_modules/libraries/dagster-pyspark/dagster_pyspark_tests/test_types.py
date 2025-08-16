@@ -1,4 +1,6 @@
 import pytest
+from pyspark.sql import Row, SparkSession
+
 from dagster import file_relative_path
 from dagster._core.definitions.decorators import op
 from dagster._core.definitions.input import In
@@ -9,7 +11,6 @@ from dagster_pyspark import (
     lazy_pyspark_resource,
     pyspark_resource,
 )
-from pyspark.sql import Row, SparkSession
 
 spark = SparkSession.builder.getOrCreate()  # type: ignore
 

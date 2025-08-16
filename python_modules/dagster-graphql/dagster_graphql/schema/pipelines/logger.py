@@ -1,9 +1,9 @@
 from typing import Callable
 
-import dagster._check as check
 import graphene
-from dagster._core.snap import ConfigTypeSnap, LoggerDefSnap
 
+import dagster._check as check
+from dagster._core.snap import ConfigTypeSnap, LoggerDefSnap
 from dagster_graphql.schema.config_types import GrapheneConfigTypeField
 from dagster_graphql.schema.util import ResolveInfo
 

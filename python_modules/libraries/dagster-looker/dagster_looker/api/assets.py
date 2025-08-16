@@ -4,7 +4,6 @@ from typing import TYPE_CHECKING, Optional, Union, cast
 from dagster import AssetExecutionContext, AssetsDefinition, Failure, multi_asset
 from dagster._annotations import beta
 from dagster._utils.warnings import deprecation_warning
-
 from dagster_looker.api.dagster_looker_api_translator import (
     DagsterLookerApiTranslator,
     LookerApiTranslatorStructureData,

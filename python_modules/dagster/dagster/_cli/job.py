@@ -6,9 +6,6 @@ from collections.abc import Iterator, Mapping, Sequence
 from typing import Any, Callable, Optional, TypeVar
 
 import click
-from dagster_shared.cli import python_pointer_options, workspace_options
-from dagster_shared.seven import IS_WINDOWS, JSONDecodeError, json
-from dagster_shared.yaml_utils import dump_run_config_yaml
 
 import dagster._check as check
 from dagster import __version__ as dagster_version
@@ -80,6 +77,9 @@ from dagster._utils.indenting_printer import IndentingPrinter
 from dagster._utils.interrupts import capture_interrupts
 from dagster._utils.merger import merge_dicts
 from dagster._utils.tags import normalize_tags
+from dagster_shared.cli import python_pointer_options, workspace_options
+from dagster_shared.seven import IS_WINDOWS, JSONDecodeError, json
+from dagster_shared.yaml_utils import dump_run_config_yaml
 
 T = TypeVar("T")
 

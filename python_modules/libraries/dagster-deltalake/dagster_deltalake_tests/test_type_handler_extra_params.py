@@ -2,9 +2,10 @@ import os
 
 import pyarrow as pa
 import pytest
+from deltalake import DeltaTable
+
 from dagster import Out, graph, op
 from dagster_deltalake import DeltaLakePyarrowIOManager, LocalConfig, WriterEngine
-from deltalake import DeltaTable
 
 
 @pytest.fixture

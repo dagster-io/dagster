@@ -1,9 +1,10 @@
 from datetime import date, datetime
 from typing import Optional
 
+import pytest
+
 import dagster as dg
 import dagster._check as check
-import pytest
 from dagster import (
     AssetExecutionContext,
     AssetsDefinition,

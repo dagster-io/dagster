@@ -8,7 +8,6 @@ from dagster import (
     _check as check,
 )
 from dagster._annotations import beta
-
 from dagster_airlift.core.utils import metadata_for_dag_mapping, metadata_for_task_mapping
 
 

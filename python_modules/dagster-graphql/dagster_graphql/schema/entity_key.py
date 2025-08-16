@@ -1,7 +1,7 @@
 import graphene
+
 from dagster._core.definitions.asset_checks.asset_check_spec import AssetCheckKey
 from dagster._core.definitions.asset_key import AssetKey, EntityKey
-
 from dagster_graphql.schema.util import non_null_list
 
 

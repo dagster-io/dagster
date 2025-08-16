@@ -6,6 +6,9 @@ from functools import wraps
 from typing import Optional, Union
 from weakref import WeakKeyDictionary
 
+from openai import Client
+from pydantic import Field, PrivateAttr
+
 from dagster import (
     AssetExecutionContext,
     AssetKey,
@@ -16,8 +19,6 @@ from dagster import (
 from dagster._annotations import public
 from dagster._core.errors import DagsterInvariantViolationError
 from dagster._core.execution.context.asset_check_execution_context import AssetCheckExecutionContext
-from openai import Client
-from pydantic import Field, PrivateAttr
 
 
 class ApiEndpointClassesEnum(Enum):

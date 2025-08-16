@@ -1,7 +1,8 @@
 import tempfile
 
-import dagster as dg
 import pytest
+
+import dagster as dg
 
 CUSTOM_SLEEP_INTERVAL = 3
 

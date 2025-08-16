@@ -5,11 +5,11 @@ from contextlib import contextmanager
 from pathlib import Path
 from typing import Optional, Union
 
-import dagster as dg
 import pytest
+
+import dagster as dg
 from dagster._utils import pushd
 from dagster.components.core.component_tree import ComponentTree, LegacyAutoloadingComponentTree
-
 from dagster_tests.components_tests.utils import create_project_from_components
 
 

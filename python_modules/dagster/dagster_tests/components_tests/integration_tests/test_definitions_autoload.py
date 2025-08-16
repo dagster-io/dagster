@@ -3,8 +3,9 @@ import textwrap
 from pathlib import Path
 from typing import Union
 
-import dagster as dg
 import pytest
+
+import dagster as dg
 from dagster._utils.env import environ
 from dagster.components.core.component_tree import (
     ComponentTree,
@@ -14,7 +15,6 @@ from dagster.components.core.component_tree import (
 from dagster.components.core.decl import ComponentDecl, DefsFolderDecl, PythonFileDecl, YamlFileDecl
 from dagster.components.core.defs_module import ComponentPath, CompositeYamlComponent
 from dagster_shared import check
-
 from dagster_tests.components_tests.integration_tests.component_loader import (
     chdir as chdir,
     sync_load_test_component_defs,

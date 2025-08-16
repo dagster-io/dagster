@@ -1,7 +1,7 @@
-# ruff: noqa: I001
 # start_dbt_assets
-from dagster import AssetExecutionContext
 from dagster_dbt import DbtCliResource, dbt_assets
+
+from dagster import AssetExecutionContext
 
 from .project import jaffle_shop_project
 

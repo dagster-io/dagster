@@ -1,7 +1,6 @@
 from collections.abc import Mapping, Sequence
 from typing import Annotated, Any, Callable, Literal, Optional, Union
 
-from dagster_shared.record import record
 from typing_extensions import TypeAlias
 
 import dagster._check as check
@@ -24,6 +23,7 @@ from dagster._core.definitions.partitions.definition import (
 from dagster.components.resolved.base import Resolvable, resolve_fields
 from dagster.components.resolved.context import ResolutionContext
 from dagster.components.resolved.model import Injected, Model, Resolver
+from dagster_shared.record import record
 
 
 def _resolve_asset_key(context: ResolutionContext, key: str) -> AssetKey:

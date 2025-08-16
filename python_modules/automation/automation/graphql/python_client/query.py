@@ -2,8 +2,8 @@ import os
 from datetime import datetime
 
 import click
-import dagster_graphql
 
+import dagster_graphql
 from automation.graphql.python_client.utils import (
     LegacyQueryHistoryInfo,
     are_queries_compatible,

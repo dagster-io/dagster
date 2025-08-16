@@ -1,6 +1,6 @@
 import requests
-from dagster._annotations import beta
 
+from dagster._annotations import beta
 from dagster_airlift.core.airflow_instance import AirflowAuthBackend
 
 

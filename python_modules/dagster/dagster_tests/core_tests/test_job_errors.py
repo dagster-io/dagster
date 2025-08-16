@@ -1,7 +1,8 @@
 import re
 
-import dagster as dg
 import pytest
+
+import dagster as dg
 from dagster import _check as check
 from dagster._core.definitions.metadata import MetadataValue
 from dagster._utils.test import wrap_op_in_graph_and_execute

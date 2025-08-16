@@ -8,14 +8,6 @@ from types import ModuleType
 from typing import Any, Callable, Optional, Union, overload
 from unittest import mock
 
-from dagster_shared import check
-from dagster_shared.record import record
-from dagster_shared.utils.cached_method import get_cached_method_cache, make_cached_method_cache_key
-from dagster_shared.utils.config import (
-    discover_config_file,
-    get_canonical_defs_module_name,
-    load_toml_as_dict,
-)
 from typing_extensions import Self, TypeVar
 
 from dagster._core.definitions.definitions_class import Definitions
@@ -37,6 +29,14 @@ from dagster.components.core.defs_module import (
 )
 from dagster.components.resolved.context import ResolutionContext
 from dagster.components.utils import get_path_from_module
+from dagster_shared import check
+from dagster_shared.record import record
+from dagster_shared.utils.cached_method import get_cached_method_cache, make_cached_method_cache_key
+from dagster_shared.utils.config import (
+    discover_config_file,
+    get_canonical_defs_module_name,
+    load_toml_as_dict,
+)
 
 PLUGIN_COMPONENT_TYPES_JSON_METADATA_KEY = "plugin_component_types_json"
 

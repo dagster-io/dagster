@@ -22,8 +22,6 @@ from dagster._grpc.client import DEFAULT_SENSOR_GRPC_TIMEOUT
 from dagster._record import record
 from dagster._serdes import deserialize_value, serialize_value
 from dagster._time import datetime_from_timestamp, get_current_datetime
-from dagster_shared.serdes import whitelist_for_serdes
-
 from dagster_dbt.cloud_v2.resources import DbtCloudWorkspace
 from dagster_dbt.cloud_v2.run_handler import (
     COMPLETED_AT_TIMESTAMP_METADATA_KEY,
@@ -32,6 +30,7 @@ from dagster_dbt.cloud_v2.run_handler import (
 from dagster_dbt.cloud_v2.types import DbtCloudRun
 from dagster_dbt.dagster_dbt_translator import DagsterDbtTranslator
 from dagster_dbt.utils import clean_name
+from dagster_shared.serdes import whitelist_for_serdes
 
 MAIN_LOOP_TIMEOUT_SECONDS = DEFAULT_SENSOR_GRPC_TIMEOUT - 20
 DEFAULT_DBT_CLOUD_SENSOR_INTERVAL_SECONDS = 30

@@ -1,6 +1,7 @@
 from typing import TYPE_CHECKING, Annotated, Optional
 
 import pytest
+
 from dagster_shared.check import CheckError
 from dagster_shared.check.builder import ImportFrom
 from dagster_shared.check.decorator import checked

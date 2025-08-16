@@ -1,8 +1,6 @@
 from collections.abc import Mapping
 from typing import Callable, NamedTuple, Optional, Union
 
-from dagster_shared.serdes import deserialize_value, serialize_value, whitelist_for_serdes
-
 import dagster._check as check
 from dagster._annotations import PublicAttr, public
 from dagster._core.definitions.asset_checks.asset_check_evaluation import AssetCheckEvaluation
@@ -16,6 +14,7 @@ from dagster._utils.log import (
     StructuredLoggerMessage,
     construct_single_handler_logger,
 )
+from dagster_shared.serdes import deserialize_value, serialize_value, whitelist_for_serdes
 
 
 @whitelist_for_serdes(

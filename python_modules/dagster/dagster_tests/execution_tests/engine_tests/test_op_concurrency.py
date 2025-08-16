@@ -1,8 +1,9 @@
 import threading
 import time
 
-import dagster as dg
 import pytest
+
+import dagster as dg
 from dagster import in_process_executor
 from dagster._core.definitions.asset_selection import AssetSelection
 from dagster._core.definitions.job_definition import JobDefinition
@@ -13,7 +14,6 @@ from dagster._core.instance import DagsterInstance
 from dagster._core.storage.dagster_run import DagsterRunStatus
 from dagster._core.test_utils import poll_for_finished_run
 from dagster._core.workspace.context import WorkspaceRequestContext
-
 from dagster_tests.execution_tests.engine_tests.test_step_delegating_executor import (
     test_step_delegating_executor,
 )

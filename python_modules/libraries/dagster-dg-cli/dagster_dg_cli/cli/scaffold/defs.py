@@ -5,6 +5,12 @@ from typing import Any, Optional, cast
 
 import click
 from click.core import ParameterSource
+
+from dagster_dg_cli.scaffold import (
+    ScaffoldFormatOptions,
+    scaffold_inline_component,
+    scaffold_registry_object,
+)
 from dagster_dg_core.component import EnvRegistry
 from dagster_dg_core.config import (
     get_config_from_cli_context,
@@ -28,12 +34,6 @@ from dagster_shared import check
 from dagster_shared.error import DagsterUnresolvableSymbolError
 from dagster_shared.serdes.objects import EnvRegistryKey, EnvRegistryObjectSnap
 from dagster_shared.seven import load_module_object
-
-from dagster_dg_cli.scaffold import (
-    ScaffoldFormatOptions,
-    scaffold_inline_component,
-    scaffold_registry_object,
-)
 
 # These commands are not dynamically generated, but perhaps should be.
 HARDCODED_COMMANDS = {"component"}
@@ -362,8 +362,9 @@ def _core_scaffold(
     scaffold_format: ScaffoldFormatOptions,
     json_params: Optional[Mapping[str, Any]] = None,
 ) -> None:
-    from dagster.components.core.package_entry import is_scaffoldable_object_key
     from pydantic import ValidationError
+
+    from dagster.components.core.package_entry import is_scaffoldable_object_key
 
     if not is_scaffoldable_object_key(object_key):
         exit_with_error(f"Scaffoldable object type `{object_key.to_typename()}` not found.")

@@ -10,7 +10,6 @@ from dagster.components.core.context import ComponentLoadContext
 from dagster.components.resolved.core_models import ResolutionContext
 from dagster.components.resolved.model import Resolver
 from dagster.components.scaffold.scaffold import scaffold_with
-
 from dagster_databricks.components.databricks_asset_bundle.configs import DatabricksConfig
 from dagster_databricks.components.databricks_asset_bundle.scaffolder import (
     DatabricksAssetBundleScaffolder,

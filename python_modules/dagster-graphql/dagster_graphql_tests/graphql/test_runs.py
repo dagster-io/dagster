@@ -4,6 +4,7 @@ import time
 
 import pytest
 import yaml
+
 from dagster import AssetMaterialization, Output, define_asset_job, job, op, repository
 from dagster._core.definitions.decorators.asset_decorator import asset
 from dagster._core.definitions.dependency import NodeHandle
@@ -23,7 +24,6 @@ from dagster_graphql.test.utils import (
     execute_dagster_graphql,
     infer_job_selector,
 )
-
 from dagster_graphql_tests.graphql.graphql_context_test_suite import (
     ExecutingGraphQLContextTestMatrix,
     ReadonlyGraphQLContextTestMatrix,

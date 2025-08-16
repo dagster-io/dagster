@@ -4,8 +4,9 @@ import tempfile
 import threading
 import time
 
-import dagster as dg
 import pytest
+
+import dagster as dg
 from dagster import AssetsDefinition
 from dagster._core.definitions.assets.definition.cacheable_assets_definition import (
     AssetsDefinitionCacheableData,
@@ -24,7 +25,6 @@ from dagster._core.test_utils import environ
 from dagster._utils.merger import merge_dicts
 from dagster._utils.test.definitions import scoped_definitions_load_context
 from dagster.components.definitions import lazy_repository
-
 from dagster_tests.execution_tests.engine_tests.retry_jobs import (
     assert_expected_failure_behavior,
     get_dynamic_job_op_failure,

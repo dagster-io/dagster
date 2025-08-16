@@ -9,12 +9,6 @@ from pathlib import Path
 from typing import Optional
 
 import click
-from dagster_dg_core.config import normalize_cli_config
-from dagster_dg_core.context import DgContext
-from dagster_dg_core.shared_options import dg_global_options, dg_path_options
-from dagster_dg_core.utils import DgClickCommand
-from dagster_dg_core.utils.telemetry import cli_telemetry_wrapper
-from dagster_shared.record import as_dict
 
 from dagster_dg_cli.cli.scaffold.branch.ai import (
     INPUT_TYPES,
@@ -38,6 +32,12 @@ from dagster_dg_cli.cli.scaffold.branch.git import (
 )
 from dagster_dg_cli.cli.scaffold.branch.models import Session
 from dagster_dg_cli.utils.ui import daggy_spinner_context
+from dagster_dg_core.config import normalize_cli_config
+from dagster_dg_core.context import DgContext
+from dagster_dg_core.shared_options import dg_global_options, dg_path_options
+from dagster_dg_core.utils import DgClickCommand
+from dagster_dg_core.utils.telemetry import cli_telemetry_wrapper
+from dagster_shared.record import as_dict
 
 
 def is_prompt_valid_git_branch_name(prompt: str) -> bool:

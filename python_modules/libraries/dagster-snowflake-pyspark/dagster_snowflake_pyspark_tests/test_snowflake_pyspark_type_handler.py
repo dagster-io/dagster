@@ -6,6 +6,10 @@ from typing import Any
 from unittest.mock import patch
 
 import pytest
+from pyspark.sql import DataFrame
+from pyspark.sql.functions import col, to_date
+from pyspark.sql.types import LongType, StringType, StructField, StructType
+
 from dagster import (
     AssetExecutionContext,
     AssetIn,
@@ -42,9 +46,6 @@ from dagster_snowflake_pyspark import (
     SnowflakePySparkTypeHandler,
     snowflake_pyspark_io_manager,
 )
-from pyspark.sql import DataFrame
-from pyspark.sql.functions import col, to_date
-from pyspark.sql.types import LongType, StringType, StructField, StructType
 
 resource_config = {
     "database": "database_abc",

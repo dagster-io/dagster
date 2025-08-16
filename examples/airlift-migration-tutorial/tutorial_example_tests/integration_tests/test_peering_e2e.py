@@ -1,6 +1,7 @@
 from pathlib import Path
 
 import pytest
+
 from dagster import AssetKey, DagsterInstance
 
 from .utils import poll_for_materialization, start_run_and_wait_for_completion

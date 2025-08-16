@@ -4,6 +4,7 @@ from collections.abc import Generator
 import pytest
 import requests
 from airlift_federation_tutorial_tests.conftest import ORIG_DEFS_FILE, makefile_dir, replace_file
+
 from dagster_airlift.in_airflow.gql_queries import ASSET_NODES_QUERY
 from dagster_airlift.test.shared_fixtures import stand_up_dagster
 

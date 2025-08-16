@@ -7,6 +7,8 @@ from datetime import datetime
 from typing import Callable, Optional, Union
 from uuid import uuid4
 
+from pydantic import UUID4
+
 from dagster import (
     AssetCheckKey,
     AssetKey,
@@ -32,7 +34,6 @@ from dagster._core.remote_representation.external_data import (
 from dagster._core.remote_representation.handle import RepositoryHandle
 from dagster._core.storage.dagster_run import RunOpConcurrency
 from dagster._grpc.types import JobPythonOrigin, SerializableErrorInfo
-from pydantic import UUID4
 
 
 def event_log(

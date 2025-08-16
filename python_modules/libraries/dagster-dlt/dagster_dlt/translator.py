@@ -2,13 +2,14 @@ from collections.abc import Iterable, Mapping, Sequence
 from dataclasses import dataclass
 from typing import Any, Callable, Optional, Union
 
+from dlt.common.destination import Destination
+from dlt.extract.resource import DltResource
+from dlt.pipeline.pipeline import Pipeline
+
 from dagster import AssetKey, AssetSpec, AutoMaterializePolicy, AutomationCondition
 from dagster._annotations import public, superseded
 from dagster._record import record
 from dagster._utils.warnings import supersession_warning
-from dlt.common.destination import Destination
-from dlt.extract.resource import DltResource
-from dlt.pipeline.pipeline import Pipeline
 
 
 @record

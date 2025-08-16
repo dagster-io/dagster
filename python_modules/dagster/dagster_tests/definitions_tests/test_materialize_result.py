@@ -2,8 +2,9 @@ import asyncio
 from collections.abc import Generator
 from typing import Any
 
-import dagster as dg
 import pytest
+
+import dagster as dg
 from dagster import AssetExecutionContext, InputContext, OutputContext
 from dagster._core.storage.asset_check_execution_record import AssetCheckExecutionRecordStatus
 

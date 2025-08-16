@@ -2,6 +2,7 @@ import subprocess
 from pathlib import Path
 
 import pytest
+
 from dagster_dg_core.utils import get_venv_executable, resolve_local_venv
 from dagster_test.dg_utils.utils import (
     ProxyRunner,

@@ -1,8 +1,9 @@
 from collections.abc import Sequence
 from typing import Optional
 
-import dagster._check as check
 import graphene
+
+import dagster._check as check
 from dagster import DefaultSensorStatus
 from dagster._core.definitions.selector import SensorSelector
 from dagster._core.definitions.sensor_definition import SensorType
@@ -11,7 +12,6 @@ from dagster._core.remote_representation import RemoteSensor, TargetSnap
 from dagster._core.remote_representation.external import CompoundID
 from dagster._core.scheduler.instigation import InstigatorState, InstigatorStatus
 from dagster._core.workspace.permissions import Permissions
-
 from dagster_graphql.implementation.events import iterate_metadata_entries
 from dagster_graphql.implementation.fetch_sensors import (
     get_sensor_next_tick,

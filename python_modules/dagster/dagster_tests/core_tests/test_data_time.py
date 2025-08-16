@@ -4,8 +4,9 @@ from collections import defaultdict
 from typing import NamedTuple, Optional
 from unittest import mock
 
-import dagster as dg
 import pytest
+
+import dagster as dg
 from dagster import AssetSelection, DagsterEventType, DagsterInstance
 from dagster._core.asset_graph_view.asset_graph_view import AssetGraphView, TemporalContext
 from dagster._core.definitions.assets.graph.asset_graph import AssetGraph

@@ -3,6 +3,7 @@ from pathlib import Path
 
 import boto3
 import pytest
+
 from dagster._core.test_utils import environ
 from dagster_test.fixtures import docker_compose_cm, network_name_from_yml
 

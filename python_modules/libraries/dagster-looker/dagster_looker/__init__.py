@@ -1,5 +1,3 @@
-from dagster_shared.libraries import DagsterLibraryRegistry
-
 from dagster_looker.api.assets import (
     build_looker_pdt_assets_definitions as build_looker_pdt_assets_definitions,
 )
@@ -21,5 +19,6 @@ from dagster_looker.lkml.dagster_looker_lkml_translator import (
     LookMLStructureType as LookMLStructureType,
 )
 from dagster_looker.version import __version__ as __version__
+from dagster_shared.libraries import DagsterLibraryRegistry
 
 DagsterLibraryRegistry.register("dagster-looker", __version__)

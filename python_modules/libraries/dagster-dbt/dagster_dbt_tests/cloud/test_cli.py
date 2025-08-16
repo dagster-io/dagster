@@ -1,8 +1,8 @@
 import pytest
 import responses
-from dagster_dbt.cloud.cli import DAGSTER_DBT_COMPILE_RUN_ID_ENV_VAR, app
 from typer.testing import CliRunner
 
+from dagster_dbt.cloud.cli import DAGSTER_DBT_COMPILE_RUN_ID_ENV_VAR, app
 from dagster_dbt_tests.cloud.utils import (
     DBT_CLOUD_ACCOUNT_ID,
     DBT_CLOUD_EMEA_HOST,

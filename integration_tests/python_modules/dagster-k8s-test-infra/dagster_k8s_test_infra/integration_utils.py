@@ -7,6 +7,7 @@ from collections.abc import Mapping, Sequence
 from typing import Any, Optional
 
 import requests
+
 from dagster._utils.merger import merge_dicts
 
 IS_BUILDKITE = os.getenv("BUILDKITE") is not None

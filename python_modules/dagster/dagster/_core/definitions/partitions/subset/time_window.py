@@ -4,8 +4,6 @@ from datetime import datetime
 from functools import cached_property
 from typing import TYPE_CHECKING, Any, NamedTuple, Optional, Union, cast
 
-from dagster_shared.serdes import NamedTupleSerializer
-
 import dagster._check as check
 from dagster._annotations import public
 from dagster._core.definitions.partitions.context import partition_loading_context
@@ -21,6 +19,7 @@ from dagster._core.definitions.partitions.utils.time_window import PersistedTime
 from dagster._core.definitions.timestamp import TimestampWithTimezone
 from dagster._core.errors import DagsterInvalidDeserializationVersionError
 from dagster._serdes import whitelist_for_serdes
+from dagster_shared.serdes import NamedTupleSerializer
 
 if TYPE_CHECKING:
     from dagster._core.definitions.partitions.subset.all import AllPartitionsSubset

@@ -1,5 +1,6 @@
-import dagster as dg
 import pytest
+
+import dagster as dg
 from dagster._core.instance.config import PoolGranularity, dagster_instance_config
 from dagster._core.test_utils import environ
 

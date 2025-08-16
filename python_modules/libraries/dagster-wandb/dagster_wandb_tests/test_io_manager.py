@@ -4,6 +4,8 @@ from unittest.mock import ANY, MagicMock, patch
 import pytest
 import wandb
 from callee import EndsWith, Regex
+from wandb import Artifact
+
 from dagster import (
     AssetKey,
     DagsterRunMetadataValue,
@@ -16,7 +18,6 @@ from dagster import (
 )
 from dagster_wandb import WandbArtifactsIOManagerError, wandb_artifacts_io_manager, wandb_resource
 from dagster_wandb.io_manager import UNIT_TEST_RUN_ID
-from wandb import Artifact
 
 DAGSTER_RUN_ID = UNIT_TEST_RUN_ID
 DAGSTER_RUN_ID_SHORT = DAGSTER_RUN_ID[0:8]

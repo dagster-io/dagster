@@ -1,6 +1,5 @@
 from dagster import AssetSpec, Definitions
 from dagster_airlift.core import assets_with_task_mappings, build_defs_from_airflow_instance
-
 from kitchen_sink.airflow_instance import local_airflow_instance
 
 defs = build_defs_from_airflow_instance(

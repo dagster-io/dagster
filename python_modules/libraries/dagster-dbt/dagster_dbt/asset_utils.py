@@ -33,7 +33,6 @@ from dagster._core.definitions.metadata import TableMetadataSet
 from dagster._core.errors import DagsterInvalidPropertyError
 from dagster._core.types.dagster_type import Nothing
 from dagster._record import ImportFrom, record
-
 from dagster_dbt.dbt_project import DbtProject
 from dagster_dbt.metadata_set import DbtMetadataSet
 from dagster_dbt.utils import ASSET_RESOURCE_TYPES, dagster_name_fn, select_unique_ids

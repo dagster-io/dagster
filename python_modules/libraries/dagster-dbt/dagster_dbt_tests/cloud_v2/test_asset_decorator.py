@@ -3,6 +3,7 @@ from typing import Any, Optional, Union
 
 import pytest
 import responses
+
 from dagster import AssetExecutionContext, AssetKey, AssetSpec, OpExecutionContext
 from dagster._core.errors import DagsterInvariantViolationError
 from dagster_dbt import DbtProject
@@ -10,9 +11,8 @@ from dagster_dbt.asset_utils import build_dbt_specs
 from dagster_dbt.cloud_v2.asset_decorator import dbt_cloud_assets
 from dagster_dbt.cloud_v2.resources import DbtCloudWorkspace
 from dagster_dbt.dagster_dbt_translator import DagsterDbtTranslator
-from dagster_shared.check.functions import ParameterCheckError
-
 from dagster_dbt_tests.cloud_v2.conftest import get_sample_manifest_json
+from dagster_shared.check.functions import ParameterCheckError
 
 
 def test_asset_defs(

@@ -3,6 +3,7 @@ from typing import AbstractSet, Optional  # noqa: UP035
 
 from airflow.models.connection import Connection
 from airflow.models.dag import DAG
+
 from dagster import (
     AssetKey,
     AssetsDefinition,
@@ -14,7 +15,6 @@ from dagster import (
 from dagster._annotations import superseded
 from dagster._core.definitions.graph_definition import create_adjacency_lists
 from dagster._utils.schedules import is_valid_cron_schedule
-
 from dagster_airflow.dagster_job_factory import make_dagster_job_from_airflow_dag
 from dagster_airflow.utils import DagsterAirflowError, normalized_name
 

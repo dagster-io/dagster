@@ -1,5 +1,6 @@
-import dagster as dg
 import pytest
+
+import dagster as dg
 from dagster import DagsterInstance
 from dagster._core.definitions.job_base import InMemoryJob
 from dagster._core.execution.api import create_execution_plan

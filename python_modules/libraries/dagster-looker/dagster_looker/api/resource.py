@@ -2,6 +2,11 @@ from collections.abc import Mapping, Sequence
 from concurrent.futures import ThreadPoolExecutor
 from typing import TYPE_CHECKING, Any, Optional, Union, cast
 
+from looker_sdk import init40
+from looker_sdk.rtl.api_settings import ApiSettings, SettingsConfig
+from looker_sdk.sdk.api40.methods import Looker40SDK
+from pydantic import Field
+
 from dagster import (
     AssetSpec,
     ConfigurableResource,
@@ -14,11 +19,6 @@ from dagster._record import record
 from dagster._utils.cached_method import cached_method
 from dagster._utils.log import get_dagster_logger
 from dagster._utils.warnings import deprecation_warning
-from looker_sdk import init40
-from looker_sdk.rtl.api_settings import ApiSettings, SettingsConfig
-from looker_sdk.sdk.api40.methods import Looker40SDK
-from pydantic import Field
-
 from dagster_looker.api.dagster_looker_api_translator import (
     DagsterLookerApiTranslator,
     LookerApiTranslatorStructureData,

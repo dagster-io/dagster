@@ -1,5 +1,6 @@
 import pytest
 import responses
+
 from dagster import AssetKey, EnvVar
 from dagster._core.definitions.assets.definition.asset_spec import AssetSpec
 from dagster._core.definitions.metadata.table import TableColumn, TableSchema
@@ -11,7 +12,6 @@ from dagster_fivetran.asset_defs import (
     FivetranConnectorTableProps,
     load_assets_from_fivetran_instance,
 )
-
 from dagster_fivetran_tests.deprecated.utils import mock_responses
 
 

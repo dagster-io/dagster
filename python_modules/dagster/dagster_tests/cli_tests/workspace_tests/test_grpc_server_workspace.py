@@ -1,8 +1,9 @@
 from contextlib import ExitStack
 
-import dagster as dg
 import pytest
 import yaml
+
+import dagster as dg
 from dagster._check import CheckError
 from dagster._core.errors import DagsterUserCodeUnreachableError
 from dagster._core.remote_origin import GrpcServerCodeLocationOrigin

@@ -2,10 +2,10 @@ import copy
 
 import pytest
 from airflow.operators.python import PythonOperator
+
 from dagster_airlift.in_airflow import proxying_to_dagster
 from dagster_airlift.in_airflow.base_asset_operator import BaseDagsterAssetsOperator
 from dagster_airlift.in_airflow.proxied_state import AirflowProxiedState
-
 from dagster_airlift_tests.unit_tests.in_airflow_tests.conftest import (
     build_dags_dict_given_structure,
 )

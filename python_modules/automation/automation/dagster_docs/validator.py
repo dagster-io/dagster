@@ -7,8 +7,6 @@ import sys
 from pathlib import Path
 from typing import Any, Optional
 
-from dagster._annotations import is_public
-from dagster_shared.record import record
 from sphinx.ext.napoleon import GoogleDocstring
 from sphinx.util.docutils import docutils_namespace
 
@@ -23,6 +21,8 @@ from automation.dagster_docs.docstring_rules import (
 )
 from automation.dagster_docs.docstring_rules.section_header_rule import SECTION_HEADER_PATTERN
 from automation.dagster_docs.public_symbol_utils import get_public_methods_from_class
+from dagster._annotations import is_public
+from dagster_shared.record import record
 
 
 def extract_section_headers_from_docstring(docstring: str) -> list[str]:

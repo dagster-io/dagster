@@ -9,13 +9,14 @@ import kubernetes.client
 import kubernetes.client.rest
 import six
 import urllib3.exceptions
+from kubernetes.client.api_client import ApiClient
+from kubernetes.client.models import V1Job, V1JobStatus
+
 from dagster import (
     DagsterInstance,
     _check as check,
 )
 from dagster._core.storage.dagster_run import DagsterRunStatus
-from kubernetes.client.api_client import ApiClient
-from kubernetes.client.models import V1Job, V1JobStatus
 
 try:
     from kubernetes.client.models import EventsV1Event  # noqa

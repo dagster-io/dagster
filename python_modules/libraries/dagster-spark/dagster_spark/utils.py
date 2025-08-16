@@ -2,7 +2,6 @@ import itertools
 import os
 
 import dagster._check as check
-
 from dagster_spark.types import SparkOpError
 
 

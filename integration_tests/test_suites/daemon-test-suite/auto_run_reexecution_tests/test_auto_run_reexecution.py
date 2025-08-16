@@ -4,6 +4,7 @@ from collections.abc import Sequence
 from typing import cast
 from unittest.mock import PropertyMock, patch
 
+from auto_run_reexecution_tests.utils import foo, get_foo_job_handle
 from dagster import DagsterEvent, DagsterEventType, DagsterInstance, EventLogEntry
 from dagster._core.errors import DagsterUserCodeUnreachableError
 from dagster._core.events import JobFailureData, RunFailureReason
@@ -30,8 +31,6 @@ from dagster._daemon.auto_run_reexecution.auto_run_reexecution import (
     get_reexecution_strategy,
 )
 from dagster._daemon.auto_run_reexecution.event_log_consumer import EventLogConsumerDaemon
-
-from auto_run_reexecution_tests.utils import foo, get_foo_job_handle
 
 logger = logging.getLogger("dagster.test_auto_run_reexecution")
 

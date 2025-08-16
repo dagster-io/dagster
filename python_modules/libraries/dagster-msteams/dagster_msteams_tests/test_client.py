@@ -4,7 +4,6 @@ from dagster_msteams.adaptive_card import AdaptiveCard
 from dagster_msteams.card import Card
 from dagster_msteams.client import TeamsClient
 from dagster_msteams.utils import MSTeamsHyperlink, build_message_with_link
-
 from dagster_msteams_tests.conftest import LEGACY_WEBHOOK_URL, WEBHOOK_URL
 
 

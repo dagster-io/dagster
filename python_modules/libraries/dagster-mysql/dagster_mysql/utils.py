@@ -14,12 +14,13 @@ import mysql.connector.errorcode as mysql_errorcode
 import sqlalchemy as db
 import sqlalchemy.exc as db_exc
 from alembic.config import Config
-from dagster import _check as check
-from dagster._core.storage.config import MySqlStorageConfig
-from dagster._core.storage.sql import get_alembic_config
 from mysql.connector.pooling import PooledMySQLConnection
 from sqlalchemy.engine import Connection
 from typing_extensions import TypeAlias
+
+from dagster import _check as check
+from dagster._core.storage.config import MySqlStorageConfig
+from dagster._core.storage.sql import get_alembic_config
 
 T = TypeVar("T")
 

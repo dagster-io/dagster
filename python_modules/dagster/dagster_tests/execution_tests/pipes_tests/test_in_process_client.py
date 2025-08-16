@@ -1,10 +1,10 @@
-import dagster as dg
 import pytest
+
+import dagster as dg
 from dagster import AssetExecutionContext, OpExecutionContext
 from dagster._core.definitions.asset_checks.asset_check_spec import AssetCheckSeverity
 from dagster._core.execution.context.compute import AssetCheckExecutionContext
 from dagster_pipes import DagsterPipesError, PipesContext
-
 from dagster_tests.execution_tests.pipes_tests.in_process_client import InProcessPipesClient
 
 

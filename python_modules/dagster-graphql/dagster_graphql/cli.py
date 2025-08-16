@@ -5,9 +5,10 @@ from typing import Optional
 from urllib.parse import urljoin, urlparse
 
 import click
+import requests
+
 import dagster._check as check
 import dagster_shared.seven as seven
-import requests
 from dagster._cli.utils import (
     assert_no_remaining_opts,
     get_instance_for_cli,
@@ -20,11 +21,10 @@ from dagster._cli.workspace.cli_target import (
 from dagster._core.workspace.context import WorkspaceProcessContext
 from dagster._utils import DEFAULT_WORKSPACE_YAML_FILENAME
 from dagster._utils.log import get_stack_trace_array
-from dagster_shared.cli import WorkspaceOpts, workspace_options
-
 from dagster_graphql.client.query import LAUNCH_PIPELINE_EXECUTION_MUTATION
 from dagster_graphql.schema import create_schema
 from dagster_graphql.version import __version__
+from dagster_shared.cli import WorkspaceOpts, workspace_options
 
 
 def create_dagster_graphql_cli():

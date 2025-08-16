@@ -1,7 +1,8 @@
 import re
 
-import dagster as dg
 import pytest
+
+import dagster as dg
 
 
 def test_coerce_asset_key():

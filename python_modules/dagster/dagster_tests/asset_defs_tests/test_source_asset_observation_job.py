@@ -1,7 +1,8 @@
 from typing import Optional
 
-import dagster as dg
 import pytest
+
+import dagster as dg
 from dagster._core.definitions.data_version import extract_data_version_from_entry
 from dagster._core.definitions.definitions_class import Definitions
 from dagster._core.definitions.events import AssetKey

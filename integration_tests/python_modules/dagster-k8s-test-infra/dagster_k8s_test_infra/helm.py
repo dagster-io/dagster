@@ -6,16 +6,16 @@ import subprocess
 import time
 from contextlib import ExitStack, contextmanager
 
-import dagster._check as check
 import kubernetes
 import pytest
 import requests
 import yaml
+
+import dagster._check as check
 from dagster._utils import find_free_port, git_repository_root
 from dagster._utils.merger import merge_dicts
 from dagster_aws.utils import ensure_dagster_aws_tests_import
 from dagster_k8s.client import DagsterKubernetesClient
-
 from dagster_k8s_test_infra.integration_utils import (
     IS_BUILDKITE,
     check_output,

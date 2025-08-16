@@ -1,5 +1,7 @@
 from typing import Any
 
+from pydantic import Field
+
 from dagster import (
     Bool,
     Config,
@@ -8,11 +10,9 @@ from dagster import (
     op,
 )
 from dagster._annotations import beta
-from dagster_shared.seven import json
-from pydantic import Field
-
 from dagster_gcp.dataproc.configs import define_dataproc_submit_job_config
 from dagster_gcp.dataproc.resources import TWENTY_MINUTES, DataprocResource
+from dagster_shared.seven import json
 
 # maintain the old config schema because of the nested job_config schema
 DATAPROC_CONFIG_SCHEMA = {

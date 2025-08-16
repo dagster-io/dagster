@@ -8,8 +8,9 @@ from typing import Optional
 from airflow import __version__ as airflow_version
 from airflow.models.connection import Connection
 from airflow.settings import LOG_FORMAT
-from dagster._core.definitions.utils import VALID_NAME_REGEX
 from packaging import version
+
+from dagster._core.definitions.utils import VALID_NAME_REGEX
 
 
 def is_airflow_2_loaded_in_environment(version_to_check: str = "2.0.0") -> bool:

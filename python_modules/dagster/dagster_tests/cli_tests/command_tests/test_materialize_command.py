@@ -1,7 +1,8 @@
 from typing import Optional
 
-import dagster as dg
 from click.testing import CliRunner
+
+import dagster as dg
 from dagster._cli.asset import asset_materialize_command
 
 

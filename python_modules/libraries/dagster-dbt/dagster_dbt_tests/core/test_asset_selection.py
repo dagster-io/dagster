@@ -5,6 +5,7 @@ from typing import TYPE_CHECKING, Any, Optional, cast
 from unittest import mock
 
 import pytest
+
 from dagster._core.definitions.assets.graph.asset_graph import AssetGraph
 from dagster._core.definitions.events import AssetKey
 from dagster._record import replace

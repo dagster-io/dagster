@@ -14,8 +14,6 @@ from typing import (  # noqa: UP035
     cast,
 )
 
-from dagster_shared.dagster_model.pydantic_compat_layer import model_fields
-from dagster_shared.error import DagsterError
 from pydantic import BaseModel
 from typing_extensions import TypeAlias, TypeGuard, get_args, get_origin
 
@@ -57,6 +55,8 @@ from dagster._core.storage.io_manager import IOManagerDefinition
 from dagster._record import record
 from dagster._utils.cached_method import cached_method
 from dagster._utils.typing_api import is_closed_python_optional_type
+from dagster_shared.dagster_model.pydantic_compat_layer import model_fields
+from dagster_shared.error import DagsterError
 
 T_Self = TypeVar("T_Self", bound="ConfigurableResourceFactory")
 ResourceId: TypeAlias = int

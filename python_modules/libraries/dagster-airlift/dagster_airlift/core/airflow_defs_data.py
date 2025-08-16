@@ -10,7 +10,6 @@ from dagster._core.definitions.repository_definition.repository_definition impor
     RepositoryDefinition,
 )
 from dagster._record import record
-
 from dagster_airlift.core.airflow_instance import AirflowInstance
 from dagster_airlift.core.serialization.compute import (
     AirliftMetadataMappingInfo,

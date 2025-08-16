@@ -3,6 +3,7 @@ import time
 from typing import TYPE_CHECKING, Any, Optional, Union, cast
 
 import boto3
+
 import dagster._check as check
 from dagster import DagsterInvariantViolationError, PipesClient
 from dagster._annotations import public
@@ -19,7 +20,6 @@ from dagster._core.pipes.client import (
 from dagster._core.pipes.context import PipesSession
 from dagster._core.pipes.utils import PipesEnvContextInjector, open_pipes_session
 from dagster._utils.merger import deep_merge_dicts
-
 from dagster_aws.pipes.message_readers import PipesCloudWatchLogReader, PipesCloudWatchMessageReader
 
 if TYPE_CHECKING:

@@ -1,5 +1,6 @@
-import dagster._check as check
 import graphene
+
+import dagster._check as check
 from dagster._core.definitions.selector import ResourceSelector
 from dagster._core.remote_representation.external import RemoteResource
 from dagster._core.remote_representation.external_data import (
@@ -8,7 +9,6 @@ from dagster._core.remote_representation.external_data import (
     ResourceJobUsageEntry,
     ResourceValueSnap,
 )
-
 from dagster_graphql.schema.config_types import GrapheneConfigTypeField
 from dagster_graphql.schema.entity_key import GrapheneAssetKey
 from dagster_graphql.schema.errors import (

@@ -3,7 +3,15 @@ from pathlib import Path
 from typing import Optional
 
 import click
+
 from dagster_cloud_cli.types import SnapshotBaseDeploymentCondition
+from dagster_dg_cli.cli.plus.constants import DgPlusAgentType, DgPlusDeploymentType
+from dagster_dg_cli.cli.plus.deploy_session import (
+    build_artifact,
+    finish_deploy_session,
+    init_deploy_session,
+)
+from dagster_dg_cli.utils.plus.build import get_agent_type
 from dagster_dg_core.config import DgRawCliConfig, normalize_cli_config
 from dagster_dg_core.context import DgContext
 from dagster_dg_core.shared_options import (
@@ -16,14 +24,6 @@ from dagster_dg_core.utils import DgClickCommand, DgClickGroup, not_none
 from dagster_dg_core.utils.telemetry import cli_telemetry_wrapper
 from dagster_shared.plus.config import DagsterPlusCliConfig
 from dagster_shared.seven.temp_dir import get_system_temp_directory
-
-from dagster_dg_cli.cli.plus.constants import DgPlusAgentType, DgPlusDeploymentType
-from dagster_dg_cli.cli.plus.deploy_session import (
-    build_artifact,
-    finish_deploy_session,
-    init_deploy_session,
-)
-from dagster_dg_cli.utils.plus.build import get_agent_type
 
 DEFAULT_STATEDIR_PATH = os.path.join(get_system_temp_directory(), "dg-build-state")
 

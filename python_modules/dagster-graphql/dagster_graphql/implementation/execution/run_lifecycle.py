@@ -12,7 +12,6 @@ from dagster._core.storage.tags import RESUME_RETRY_TAG
 from dagster._core.utils import make_new_run_id
 from dagster._core.workspace.context import BaseWorkspaceRequestContext
 from dagster._utils.merger import merge_dicts
-
 from dagster_graphql.implementation.external import (
     ensure_valid_config,
     get_remote_execution_plan_or_raise,

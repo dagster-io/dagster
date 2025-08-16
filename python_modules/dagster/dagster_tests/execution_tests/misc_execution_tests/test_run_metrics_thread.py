@@ -2,12 +2,13 @@ import logging
 import time
 from unittest.mock import MagicMock, patch
 
+from pytest import fixture, mark
+
 import dagster as dg
 import dagster._core.execution.run_metrics_thread as run_metrics_thread
 from dagster import DagsterInstance, DagsterRun
 from dagster._core.execution.telemetry import RunTelemetryData
 from dagster._utils.container import UNCONSTRAINED_CGROUP_MEMORY_LIMIT
-from pytest import fixture, mark
 
 
 @fixture()

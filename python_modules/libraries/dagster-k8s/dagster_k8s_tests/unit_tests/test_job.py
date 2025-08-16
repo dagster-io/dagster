@@ -1,6 +1,7 @@
 import re
 
 import pytest
+
 from dagster import (
     __version__ as dagster_version,
     graph,

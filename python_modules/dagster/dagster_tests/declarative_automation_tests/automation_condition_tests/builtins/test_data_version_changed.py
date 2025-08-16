@@ -1,7 +1,8 @@
 from typing import Optional
 
-import dagster as dg
 import pytest
+
+import dagster as dg
 from dagster import AutomationCondition, DagsterInstance
 from dagster._core.definitions.data_version import DATA_VERSION_TAG
 

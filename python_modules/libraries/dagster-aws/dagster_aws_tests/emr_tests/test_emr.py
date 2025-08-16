@@ -6,9 +6,9 @@ import time
 from unittest import mock
 
 import pytest
-from dagster._utils.test import create_test_pipeline_execution_context
 from moto import mock_emr
 
+from dagster._utils.test import create_test_pipeline_execution_context
 from dagster_aws.emr import EmrClusterState, EmrError, EmrJobRunner
 from dagster_aws.utils.mrjob.utils import _boto3_now
 

@@ -10,6 +10,10 @@ from collections.abc import Iterator, Mapping, Sequence
 from contextlib import ExitStack, contextmanager
 from typing import Any, Literal, Optional, TextIO, Union
 
+from databricks.sdk import WorkspaceClient
+from databricks.sdk.service import files, jobs
+from pydantic import Field
+
 import dagster._check as check
 from dagster._core.definitions.metadata import RawMetadataMapping
 from dagster._core.definitions.resource_annotation import TreatAsResourceParam
@@ -30,9 +34,6 @@ from dagster._core.pipes.utils import (
     open_pipes_session,
 )
 from dagster_pipes import PipesBlobStoreMessageWriter, PipesContextData, PipesExtras, PipesParams
-from databricks.sdk import WorkspaceClient
-from databricks.sdk.service import files, jobs
-from pydantic import Field
 
 _CONTEXT_FILENAME = "context.json"
 

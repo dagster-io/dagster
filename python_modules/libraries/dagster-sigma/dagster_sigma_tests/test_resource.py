@@ -7,9 +7,9 @@ import pytest
 import responses
 from aiohttp import ClientResponseError, hdrs
 from aioresponses import aioresponses
+
 from dagster_sigma import SigmaBaseUrl, SigmaOrganization
 from dagster_sigma.resource import SigmaFilter, _inode_from_url
-
 from dagster_sigma_tests.utils import get_requests
 
 

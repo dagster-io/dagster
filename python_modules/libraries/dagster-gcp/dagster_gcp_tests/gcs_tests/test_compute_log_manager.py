@@ -5,6 +5,8 @@ from typing import cast
 from unittest import mock
 
 import pytest
+from google.cloud import storage
+
 from dagster import DagsterEventType, job, op
 from dagster._core.instance import DagsterInstance, InstanceType
 from dagster._core.instance.ref import InstanceRef
@@ -17,7 +19,6 @@ from dagster._core.storage.runs import SqliteRunStorage
 from dagster._core.test_utils import ensure_dagster_tests_import, environ, instance_for_test
 from dagster._time import get_current_datetime
 from dagster_gcp.gcs import GCSComputeLogManager
-from google.cloud import storage
 
 ensure_dagster_tests_import()
 from dagster_tests.storage_tests.test_compute_log_manager import TestComputeLogManager

@@ -1,6 +1,7 @@
 from unittest import mock
 
 import pytest
+
 from dagster import reconstructable
 from dagster._check import CheckError
 from dagster._core.definitions.decorators.job_decorator import job

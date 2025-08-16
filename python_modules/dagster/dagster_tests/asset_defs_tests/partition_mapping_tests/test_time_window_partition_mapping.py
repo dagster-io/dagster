@@ -3,8 +3,9 @@ from datetime import datetime, timezone
 from typing import Optional
 from unittest.mock import MagicMock
 
-import dagster as dg
 import pytest
+
+import dagster as dg
 from dagster import TimeWindowPartitionMapping, TimeWindowPartitionsDefinition
 from dagster._core.definitions.partitions.context import partition_loading_context
 from dagster._core.definitions.partitions.subset import (

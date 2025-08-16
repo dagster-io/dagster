@@ -19,6 +19,11 @@ from typing import (
 
 import click
 from click.core import ParameterSource
+from typing_extensions import Never, NotRequired, Required, Self, TypeAlias, TypeGuard
+
+from dagster_dg_core.error import DgError, DgValidationError
+from dagster_dg_core.utils import exit_with_error, get_toml_node, has_toml_node, modify_toml
+from dagster_dg_core.utils.warnings import DgWarningIdentifier, emit_warning
 from dagster_shared.match import match_type
 from dagster_shared.merger import deep_merge_dicts
 from dagster_shared.plus.config import load_config
@@ -31,11 +36,6 @@ from dagster_shared.utils.config import (
     does_dg_config_file_exist,
     get_dg_config_path,
 )
-from typing_extensions import Never, NotRequired, Required, Self, TypeAlias, TypeGuard
-
-from dagster_dg_core.error import DgError, DgValidationError
-from dagster_dg_core.utils import exit_with_error, get_toml_node, has_toml_node, modify_toml
-from dagster_dg_core.utils.warnings import DgWarningIdentifier, emit_warning
 
 if TYPE_CHECKING:
     import tomlkit

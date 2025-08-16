@@ -3,8 +3,6 @@ import sys
 from collections.abc import Iterator, Mapping, Sequence
 from typing import Optional, Union
 
-from dagster_shared.error import DagsterError
-
 import dagster._check as check
 from dagster._config import Field, process_config
 from dagster._core.definitions.executor_definition import (
@@ -28,6 +26,7 @@ from dagster._core.storage.dagster_run import DagsterRun, DagsterRunStatus
 from dagster._loggers import default_system_loggers
 from dagster._utils import ensure_single_item
 from dagster._utils.error import serializable_error_info_from_exc_info
+from dagster_shared.error import DagsterError
 
 
 def _get_host_mode_executor(

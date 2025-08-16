@@ -1,7 +1,8 @@
 import pytest
+from pydantic import ValidationError
+
 from dagster_shared.dagster_model import DagsterModel
 from dagster_shared.utils.cached_method import CACHED_METHOD_CACHE_FIELD, cached_method
-from pydantic import ValidationError
 
 
 def test_runtime_typecheck() -> None:

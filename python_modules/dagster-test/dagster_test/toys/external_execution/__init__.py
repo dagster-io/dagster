@@ -1,9 +1,10 @@
 import os
 import sys
 
+from pydantic import Field
+
 from dagster import AssetExecutionContext, Config, Definitions, asset
 from dagster._core.pipes.subprocess import PipesSubprocessClient
-from pydantic import Field
 
 # Add package container to path
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))

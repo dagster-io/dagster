@@ -1,5 +1,8 @@
 from typing import TYPE_CHECKING, Optional
 
+from databricks.sdk.service import jobs
+from pydantic import Field
+
 from dagster import (
     In,
     Nothing,
@@ -9,8 +12,6 @@ from dagster import (
 )
 from dagster._core.definitions.op_definition import OpDefinition
 from dagster._core.storage.tags import COMPUTE_KIND_TAG
-from databricks.sdk.service import jobs
-from pydantic import Field
 
 DEFAULT_POLL_INTERVAL_SECONDS = 10
 # wait at most 24 hours by default for run execution

@@ -4,8 +4,9 @@ import threading
 import time
 from unittest import mock
 
-import dagster as dg
 import pytest
+
+import dagster as dg
 from dagster._cli.dev import ProxyServerManager
 from dagster._core.errors import DagsterUserCodeProcessError
 from dagster._core.instance import DagsterInstance

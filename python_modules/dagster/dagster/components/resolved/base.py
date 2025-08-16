@@ -7,8 +7,6 @@ from types import GenericAlias
 from typing import Annotated, Any, Final, Literal, Optional, TypeVar, Union, get_args, get_origin
 
 import yaml
-from dagster_shared.record import get_record_annotations, get_record_defaults, is_record, record
-from dagster_shared.yaml_utils import try_parse_yaml_with_source_position
 from pydantic import BaseModel, PydanticSchemaGenerationError, create_model
 from pydantic.fields import Field, FieldInfo
 from typing_extensions import TypeGuard
@@ -19,6 +17,8 @@ from dagster._utils.pydantic_yaml import _parse_and_populate_model_with_annotate
 from dagster.components.resolved.context import ResolutionContext
 from dagster.components.resolved.errors import ResolutionException
 from dagster.components.resolved.model import Model, Resolver
+from dagster_shared.record import get_record_annotations, get_record_defaults, is_record, record
+from dagster_shared.yaml_utils import try_parse_yaml_with_source_position
 
 try:
     # this type only exists in python 3.10+

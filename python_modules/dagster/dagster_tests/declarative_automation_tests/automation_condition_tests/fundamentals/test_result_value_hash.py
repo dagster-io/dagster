@@ -1,8 +1,8 @@
-import dagster as dg
 import pytest
+
+import dagster as dg
 from dagster import AutomationCondition as SC
 from dagster._core.definitions.asset_selection import AssetSelection
-
 from dagster_tests.declarative_automation_tests.scenario_utils.automation_condition_scenario import (
     AutomationConditionScenarioState,
 )

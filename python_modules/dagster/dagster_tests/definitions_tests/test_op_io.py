@@ -5,8 +5,9 @@ from typing import (  # noqa:UP035
     Iterator as TypingIterator,
 )
 
-import dagster as dg
 import pytest
+
+import dagster as dg
 from dagster._legacy import InputDefinition, OutputDefinition
 
 

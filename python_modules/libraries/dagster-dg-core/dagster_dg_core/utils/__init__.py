@@ -15,10 +15,10 @@ from typing import TYPE_CHECKING, Any, Literal, Optional, TextIO, TypeVar, Union
 
 import click
 from click_aliases import ClickAliasedGroup
-from dagster_shared.utils import environ
 from typing_extensions import Never, TypeAlias
 
 from dagster_dg_core.error import DgError
+from dagster_shared.utils import environ
 
 if TYPE_CHECKING:
     import tomlkit

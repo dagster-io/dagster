@@ -3,11 +3,11 @@ from uuid import uuid4
 
 import boto3
 import pytest
+
 from dagster import asset, materialize, open_pipes_session
 from dagster._core.execution.context.compute import AssetExecutionContext
 from dagster._core.instance_for_test import instance_for_test
 from dagster._core.pipes.utils import PipesEnvContextInjector
-
 from dagster_aws.pipes import PipesCloudWatchMessageReader, PipesEMRServerlessClient
 from dagster_aws_tests.pipes_tests.utils import _MOTO_SERVER_URL
 

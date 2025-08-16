@@ -6,9 +6,11 @@ from contextlib import closing, contextmanager
 from datetime import datetime
 from typing import Any, Optional, Union
 
-import dagster._check as check
 from cryptography.hazmat.backends import default_backend
 from cryptography.hazmat.primitives import serialization
+from pydantic import Field, model_validator, validator
+
+import dagster._check as check
 from dagster import (
     ConfigurableResource,
     IAttachDifferentObjectToOpContext,
@@ -20,8 +22,6 @@ from dagster._core.definitions.resource_definition import dagster_maintained_res
 from dagster._core.storage.event_log.sql_event_log import SqlDbConnection
 from dagster._utils.cached_method import cached_method
 from dagster.components.lib.sql_component.sql_client import SQLClient
-from pydantic import Field, model_validator, validator
-
 from dagster_snowflake.constants import (
     SNOWFLAKE_PARTNER_CONNECTION_IDENTIFIER,
     SNOWFLAKE_PARTNER_CONNECTION_IDENTIFIER_SQLALCHEMY,

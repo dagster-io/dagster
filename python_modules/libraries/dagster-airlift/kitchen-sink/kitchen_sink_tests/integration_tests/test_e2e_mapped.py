@@ -2,6 +2,8 @@ import time
 from datetime import timedelta
 
 import pytest
+from kitchen_sink.airflow_instance import local_airflow_instance
+
 from dagster import AssetKey, DagsterInstance, DagsterRunStatus
 from dagster._core.definitions import materialize
 from dagster._core.definitions.asset_selection import AssetSelection
@@ -10,8 +12,6 @@ from dagster._core.events.log import EventLogEntry
 from dagster._core.storage.dagster_run import RunsFilter
 from dagster._time import get_current_datetime, get_current_datetime_midnight
 from dagster_airlift.in_airflow.base_asset_operator import DAG_RUN_ID_TAG_KEY
-from kitchen_sink.airflow_instance import local_airflow_instance
-
 from kitchen_sink_tests.integration_tests.conftest import (
     makefile_dir,
     poll_for_airflow_run_existence_and_completion,

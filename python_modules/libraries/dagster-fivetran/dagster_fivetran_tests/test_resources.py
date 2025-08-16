@@ -4,6 +4,7 @@ from unittest.mock import MagicMock
 
 import pytest
 import responses
+
 from dagster import AssetExecutionContext, AssetKey, Failure
 from dagster._config.field_utils import EnvVar
 from dagster._core.definitions.materialize import materialize
@@ -11,7 +12,6 @@ from dagster._core.test_utils import environ
 from dagster._vendored.dateutil import parser
 from dagster_fivetran import FivetranOutput, FivetranWorkspace, fivetran_assets
 from dagster_fivetran.translator import MIN_TIME_STR, FivetranConnectorSetupStateType
-
 from dagster_fivetran_tests.conftest import (
     FIVETRAN_API_BASE,
     FIVETRAN_API_VERSION,

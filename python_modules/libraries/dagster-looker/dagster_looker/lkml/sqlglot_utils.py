@@ -1,9 +1,10 @@
-from dagster import _check as check
 from sqlglot import (
     Dialect,
     Dialects,
     expressions as exp,
 )
+
+from dagster import _check as check
 
 bq = Dialects.BIGQUERY
 

@@ -2,8 +2,9 @@ import re
 import sys
 import types
 
-import dagster as dg
 import pytest
+
+import dagster as dg
 from dagster._core.code_pointer import FileCodePointer
 from dagster._core.definitions.reconstruct import ReconstructableJob
 from dagster._core.origin import (

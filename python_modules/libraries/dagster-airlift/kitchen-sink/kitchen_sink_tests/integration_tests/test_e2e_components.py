@@ -1,5 +1,7 @@
 from datetime import datetime, timedelta
 
+from kitchen_sink.airflow_instance import local_airflow_instance
+
 from dagster._core.definitions.asset_key import AssetKey
 from dagster._core.definitions.metadata.metadata_value import TimestampMetadataValue
 from dagster._core.definitions.run_config import RunConfig
@@ -13,8 +15,6 @@ from dagster_airlift.core.monitoring_job.builder import MonitoringConfig, monito
 from dagster_airlift.core.utils import monitoring_job_name
 from dagster_airlift.test.test_utils import asset_spec
 from dagster_test.utils.definitions_execute_in_process import definitions_execute_job_in_process
-from kitchen_sink.airflow_instance import local_airflow_instance
-
 from kitchen_sink_tests.integration_tests.conftest import (
     poll_for_airflow_run_existence_and_completion,
 )

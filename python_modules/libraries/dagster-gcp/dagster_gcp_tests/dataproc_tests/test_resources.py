@@ -5,6 +5,7 @@ from unittest import mock
 
 import httplib2
 import pytest
+
 from dagster import RunConfig, job
 from dagster_gcp import (
     DataprocOpConfig,

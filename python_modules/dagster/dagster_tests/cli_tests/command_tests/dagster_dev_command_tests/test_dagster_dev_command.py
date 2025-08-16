@@ -12,6 +12,7 @@ import psutil
 import pytest
 import requests
 import yaml
+
 from dagster._cli.utils import TMP_DAGSTER_HOME_PREFIX
 from dagster._core.events import DagsterEventType
 from dagster._core.instance import DagsterInstance
@@ -26,7 +27,6 @@ from dagster_shared.ipc import (
     open_ipc_subprocess,
     send_ipc_shutdown_message,
 )
-
 from dagster_tests.cli_tests.command_tests.test_definitions_validate_command import (
     INVALID_PROJECT_PATH_WITH_EXCEPTION,
 )

@@ -14,7 +14,6 @@ from typing import (  # noqa: UP035
     cast,
 )
 
-from dagster_shared.serdes import NamedTupleSerializer
 from typing_extensions import Self
 
 import dagster._check as check
@@ -43,6 +42,7 @@ from dagster._core.definitions.utils import DEFAULT_OUTPUT, check_valid_name
 from dagster._core.storage.tags import MULTIDIMENSIONAL_PARTITION_PREFIX, REPORTING_USER_TAG
 from dagster._record import IHaveNew, record_custom
 from dagster._serdes import whitelist_for_serdes
+from dagster_shared.serdes import NamedTupleSerializer
 
 if TYPE_CHECKING:
     from dagster._core.execution.context.output import OutputContext

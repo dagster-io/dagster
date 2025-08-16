@@ -9,8 +9,9 @@ from contextlib import contextmanager
 from pathlib import Path
 from typing import Callable, Optional
 
-import dagster as dg
 import pytest
+
+import dagster as dg
 from dagster._core.test_utils import ensure_dagster_tests_import
 from dagster._utils import pushd
 from dagster.components.core.package_entry import (

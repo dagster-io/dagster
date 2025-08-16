@@ -3,8 +3,6 @@ from collections.abc import Iterator, Sequence
 from contextlib import ExitStack
 from typing import Optional, cast
 
-from dagster_shared.error import DagsterError
-
 import dagster._check as check
 from dagster._core.definitions import Failure, HookExecutionResult, RetryRequested
 from dagster._core.errors import (
@@ -28,6 +26,7 @@ from dagster._core.execution.plan.objects import (
 )
 from dagster._core.execution.plan.plan import ExecutionPlan
 from dagster._utils.error import SerializableErrorInfo, serializable_error_info_from_exc_info
+from dagster_shared.error import DagsterError
 
 
 def inner_plan_execution_iterator(

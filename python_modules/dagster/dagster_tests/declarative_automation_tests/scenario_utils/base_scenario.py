@@ -10,9 +10,10 @@ from collections.abc import Iterable, Mapping, Sequence
 from typing import AbstractSet, NamedTuple, Optional, Union  # noqa: UP035
 from unittest import mock
 
+import pytest
+
 import dagster as dg
 import dagster._check as check
-import pytest
 from dagster import AssetKey, AssetSelection, DagsterInstance, Nothing
 from dagster._core.definitions.asset_daemon_cursor import AssetDaemonCursor
 from dagster._core.definitions.assets.graph.asset_graph import AssetGraph

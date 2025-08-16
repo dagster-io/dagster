@@ -4,8 +4,6 @@ from pathlib import Path
 from typing import Any, Optional
 
 import yaml
-from dagster_shared import check
-from dagster_shared.serdes.serdes import deserialize_value
 from typer import Argument, Option, Typer
 
 from dagster_cloud_cli import gql, ui
@@ -18,6 +16,8 @@ from dagster_cloud_cli.config_utils import (
 from dagster_cloud_cli.core.graphql_client import DagsterCloudGraphQLClient
 from dagster_cloud_cli.core.workspace import CodeLocationDeployData
 from dagster_cloud_cli.utils import add_options
+from dagster_shared import check
+from dagster_shared.serdes.serdes import deserialize_value
 
 DEFAULT_LOCATIONS_YAML_FILENAME = "locations.yaml"
 

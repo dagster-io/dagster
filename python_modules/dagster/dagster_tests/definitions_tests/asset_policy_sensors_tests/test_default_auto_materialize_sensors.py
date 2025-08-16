@@ -1,5 +1,6 @@
-import dagster as dg
 import pytest
+
+import dagster as dg
 from dagster import AutoMaterializePolicy
 from dagster._core.definitions.asset_selection import AssetSelection
 from dagster._core.definitions.sensor_definition import SensorType

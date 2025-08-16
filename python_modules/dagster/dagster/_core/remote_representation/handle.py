@@ -2,8 +2,6 @@ import sys
 from collections.abc import Mapping
 from typing import TYPE_CHECKING, Optional
 
-from dagster_shared.serdes import whitelist_for_serdes
-
 import dagster._check as check
 from dagster._core.code_pointer import ModuleCodePointer
 from dagster._core.definitions.selector import JobSubsetSelector, RepositorySelector
@@ -15,6 +13,7 @@ from dagster._core.remote_origin import (
     RemoteRepositoryOrigin,
 )
 from dagster._record import record
+from dagster_shared.serdes import whitelist_for_serdes
 
 if TYPE_CHECKING:
     from dagster._core.remote_representation.code_location import CodeLocation

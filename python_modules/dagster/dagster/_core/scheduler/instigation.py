@@ -3,7 +3,6 @@ from dataclasses import dataclass
 from enum import Enum
 from typing import AbstractSet, Any, Generic, NamedTuple, Optional, Union  # noqa: UP035
 
-from dagster_shared.serdes import EnumSerializer, deserialize_value, whitelist_for_serdes
 from typing_extensions import TypeAlias
 
 import dagster._check as check
@@ -27,6 +26,7 @@ from dagster._time import get_current_timestamp, utc_datetime_from_naive
 from dagster._utils import xor
 from dagster._utils.error import SerializableErrorInfo
 from dagster._utils.merger import merge_dicts
+from dagster_shared.serdes import EnumSerializer, deserialize_value, whitelist_for_serdes
 
 InstigatorData: TypeAlias = Union["ScheduleInstigatorData", "SensorInstigatorData"]
 

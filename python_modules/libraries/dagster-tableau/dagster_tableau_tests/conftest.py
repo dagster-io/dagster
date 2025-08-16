@@ -4,6 +4,7 @@ import uuid
 from unittest.mock import MagicMock, PropertyMock, patch
 
 import pytest
+
 from dagster_tableau.translator import TableauContentData, TableauContentType, TableauWorkspaceData
 
 FAKE_CONNECTED_APP_CLIENT_ID = uuid.uuid4().hex

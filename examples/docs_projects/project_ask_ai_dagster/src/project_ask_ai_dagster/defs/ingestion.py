@@ -1,10 +1,10 @@
 import hashlib
 import time
 
-import dagster as dg
-from dagster_openai import OpenAIResource
 from langchain_core.documents import Document
 
+import dagster as dg
+from dagster_openai import OpenAIResource
 from project_ask_ai_dagster.defs.github import GithubResource
 from project_ask_ai_dagster.defs.pinecone import PineconeResource
 from project_ask_ai_dagster.defs.scraper import SitemapScraper

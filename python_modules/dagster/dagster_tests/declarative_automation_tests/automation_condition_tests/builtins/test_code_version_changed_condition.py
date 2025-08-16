@@ -1,6 +1,6 @@
 import pytest
-from dagster import AutomationCondition
 
+from dagster import AutomationCondition
 from dagster_tests.declarative_automation_tests.scenario_utils.automation_condition_scenario import (
     AutomationConditionScenarioState,
 )

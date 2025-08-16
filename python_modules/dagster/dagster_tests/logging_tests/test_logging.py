@@ -6,8 +6,9 @@ import threading
 from contextlib import contextmanager
 from functools import partial
 
-import dagster as dg
 import pytest
+
+import dagster as dg
 from dagster import _check as check
 from dagster._core.definitions import NodeHandle
 from dagster._core.execution.plan.objects import StepFailureData

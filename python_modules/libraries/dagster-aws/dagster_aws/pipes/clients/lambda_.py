@@ -3,6 +3,7 @@ from collections.abc import Mapping
 from typing import Any, Optional, Union
 
 import boto3
+
 from dagster import PipesClient
 from dagster._annotations import public
 from dagster._core.definitions.resource_annotation import TreatAsResourceParam
@@ -14,7 +15,6 @@ from dagster._core.pipes.client import (
     PipesMessageReader,
 )
 from dagster._core.pipes.utils import open_pipes_session
-
 from dagster_aws.pipes.context_injectors import PipesLambdaEventContextInjector
 from dagster_aws.pipes.message_readers import PipesLambdaLogsMessageReader
 

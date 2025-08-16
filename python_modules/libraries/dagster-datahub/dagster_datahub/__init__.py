@@ -1,5 +1,3 @@
-from dagster_shared.libraries import DagsterLibraryRegistry
-
 from dagster_datahub.resources import (
     DatahubConnection,
     DatahubKafkaEmitterResource,
@@ -8,6 +6,7 @@ from dagster_datahub.resources import (
     datahub_rest_emitter,
 )
 from dagster_datahub.version import __version__
+from dagster_shared.libraries import DagsterLibraryRegistry
 
 DagsterLibraryRegistry.register("dagster-datahub", __version__)
 

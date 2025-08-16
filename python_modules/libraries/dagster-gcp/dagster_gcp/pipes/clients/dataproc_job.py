@@ -3,6 +3,11 @@ import time
 from collections.abc import Mapping, Sequence
 from typing import Any, Optional, TypedDict, Union
 
+from google.api_core.retry import Retry
+from google.cloud.dataproc_v1 import JobControllerClient
+from google.cloud.dataproc_v1.types.jobs import Job, JobStatus, SubmitJobRequest
+from typing_extensions import NotRequired
+
 import dagster._check as check
 from dagster import PipesClient
 from dagster._annotations import preview, public
@@ -18,10 +23,6 @@ from dagster._core.pipes.client import (
 )
 from dagster._core.pipes.context import PipesSession
 from dagster._core.pipes.utils import PipesEnvContextInjector, open_pipes_session
-from google.api_core.retry import Retry
-from google.cloud.dataproc_v1 import JobControllerClient
-from google.cloud.dataproc_v1.types.jobs import Job, JobStatus, SubmitJobRequest
-from typing_extensions import NotRequired
 
 SERVICE_NAME = "Dataproc"
 

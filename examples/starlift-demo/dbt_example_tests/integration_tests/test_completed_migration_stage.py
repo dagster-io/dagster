@@ -1,13 +1,13 @@
 import os
 
 import pytest
+
 from dagster import (
     DagsterInstance,
     _check as check,
     materialize,
 )
 from dagster._core.definitions.assets.definition.assets_definition import AssetsDefinition
-
 from dbt_example_tests.integration_tests.conftest import makefile_dir
 
 

@@ -4,16 +4,16 @@ from collections.abc import Iterator, Mapping
 from typing import Any
 
 import pytest
+
 from dagster import DagsterInstance, DagsterRunStatus, file_relative_path, instance_for_test
 from dagster._core.workspace.context import WorkspaceProcessContext, WorkspaceRequestContext
 from dagster._core.workspace.load_target import PythonFileTarget
 from dagster._daemon import execute_run_monitoring_iteration
 from dagster_celery.defaults import broker_url
-from dagster_shared import seven
-
 from dagster_celery_tests.repo_runner import crashy_job, exity_job, noop_job, sleepy_job
 from dagster_celery_tests.utils import start_celery_worker
 from dagster_celery_tests.utils_launcher import poll_for_finished_run, poll_for_step_start
+from dagster_shared import seven
 
 
 @pytest.fixture(scope="function")

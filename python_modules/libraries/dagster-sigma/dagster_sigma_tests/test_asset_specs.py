@@ -4,6 +4,7 @@ from tempfile import TemporaryDirectory
 import pytest
 import responses
 from click.testing import CliRunner
+
 from dagster._core.code_pointer import CodePointer
 from dagster._core.definitions import materialize
 from dagster._core.definitions.asset_key import AssetKey

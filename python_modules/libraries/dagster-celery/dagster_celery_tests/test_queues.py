@@ -2,7 +2,6 @@ import threading
 import time
 
 from dagster._core.test_utils import instance_for_test
-
 from dagster_celery_tests.utils import execute_on_thread, start_celery_worker
 
 

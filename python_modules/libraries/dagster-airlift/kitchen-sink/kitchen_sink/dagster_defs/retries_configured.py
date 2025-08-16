@@ -1,4 +1,5 @@
 import requests
+
 from dagster import AssetExecutionContext, asset
 from dagster._core.storage.tags import (
     AUTO_RETRY_RUN_ID_TAG,

@@ -14,6 +14,7 @@ from airlift_federation_tutorial.constants import (
     METRICS_SCHEMA,
     METRICS_TABLE_NAME,
 )
+
 from dagster._time import get_current_datetime_midnight
 
 

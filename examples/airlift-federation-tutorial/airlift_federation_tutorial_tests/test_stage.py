@@ -10,6 +10,7 @@ from airlift_federation_tutorial_tests.conftest import (
     makefile_dir,
     replace_file,
 )
+
 from dagster_airlift.in_airflow.gql_queries import ASSET_NODES_QUERY
 from dagster_airlift.test.shared_fixtures import stand_up_dagster
 

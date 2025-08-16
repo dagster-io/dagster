@@ -1,7 +1,8 @@
 from typing import Any
 
-import dagster as dg
 import pytest
+
+import dagster as dg
 
 
 def test_dict_input():

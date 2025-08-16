@@ -6,6 +6,7 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 import responses
+
 from dagster import AssetExecutionContext, AssetKey, EnvVar, Failure, materialize
 from dagster._core.events import DagsterEventType
 from dagster._core.test_utils import environ
@@ -19,7 +20,6 @@ from dagster_airbyte.resources import (
 from dagster_airbyte.translator import AirbyteJobStatusType
 from dagster_airbyte.types import AirbyteOutput
 from dagster_airbyte.utils import clean_name
-
 from dagster_airbyte_tests.beta.conftest import (
     SAMPLE_CONNECTION_DETAILS,
     TEST_ACCESS_TOKEN,

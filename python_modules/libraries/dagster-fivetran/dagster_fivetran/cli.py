@@ -1,4 +1,5 @@
 import click
+
 from dagster import _check as check
 from dagster._cli.utils import assert_no_remaining_opts
 from dagster._cli.workspace.cli_target import (
@@ -13,13 +14,12 @@ from dagster._core.definitions.repository_definition.repository_definition impor
 from dagster._utils.env import environ
 from dagster._utils.hosted_user_process import recon_repository_from_origin
 from dagster._utils.warnings import beta_warning
-from dagster_shared.cli import python_pointer_options
-from dagster_shared.serdes.utils import serialize_value
-
 from dagster_fivetran.constants import (
     FIVETRAN_RECONSTRUCTION_METADATA_KEY_PREFIX,
     FIVETRAN_SNAPSHOT_ENV_VAR_NAME,
 )
+from dagster_shared.cli import python_pointer_options
+from dagster_shared.serdes.utils import serialize_value
 
 try:
     from dagster_managed_elements.cli import apply_cmd, check_cmd

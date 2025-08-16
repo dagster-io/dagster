@@ -1,5 +1,6 @@
-import dagster as dg
 import pytest
+
+import dagster as dg
 from dagster._core.definitions.utils import MAX_TITLE_LENGTH, check_valid_title, is_valid_title
 from dagster._utils.tags import is_valid_strict_tag_value, is_valid_tag_key
 

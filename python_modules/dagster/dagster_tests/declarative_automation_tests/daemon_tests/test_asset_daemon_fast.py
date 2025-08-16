@@ -1,7 +1,7 @@
-import dagster as dg
 import pytest
-from dagster import AssetSelection, DagsterInstance
 
+import dagster as dg
+from dagster import AssetSelection, DagsterInstance
 from dagster_tests.declarative_automation_tests.legacy_tests.scenarios.scenarios import (
     ASSET_RECONCILIATION_SCENARIOS,
 )

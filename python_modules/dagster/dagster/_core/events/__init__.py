@@ -18,12 +18,6 @@ from typing import (  # noqa: F401, UP035
     cast,
 )
 
-from dagster_shared.serdes.serdes import (
-    EnumSerializer,
-    UnpackContext,
-    is_whitelisted_for_serdes_object,
-)
-
 import dagster._check as check
 from dagster._annotations import public
 from dagster._core.definitions import (
@@ -71,6 +65,11 @@ from dagster._utils.error import (
     truncate_event_error_info,
 )
 from dagster._utils.timing import format_duration
+from dagster_shared.serdes.serdes import (
+    EnumSerializer,
+    UnpackContext,
+    is_whitelisted_for_serdes_object,
+)
 
 if TYPE_CHECKING:
     from dagster._core.definitions.events import ObjectStoreOperation

@@ -6,8 +6,6 @@ from contextlib import AbstractContextManager
 from functools import cached_property
 from typing import TYPE_CHECKING, AbstractSet, Any, Optional, Union, cast  # noqa: UP035
 
-from dagster_shared.libraries import DagsterLibraryRegistry
-
 import dagster._check as check
 from dagster._check import checked
 from dagster._core.code_pointer import CodePointer
@@ -60,6 +58,7 @@ from dagster._grpc.types import GetCurrentImageResult, GetCurrentRunsResult
 from dagster._record import copy
 from dagster._serdes import deserialize_value
 from dagster._utils.merger import merge_dicts
+from dagster_shared.libraries import DagsterLibraryRegistry
 
 if TYPE_CHECKING:
     from dagster._core.definitions.schedule_definition import ScheduleExecutionData

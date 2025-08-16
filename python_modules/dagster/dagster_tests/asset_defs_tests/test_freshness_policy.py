@@ -1,8 +1,9 @@
 import datetime
 import os
 
-import dagster as dg
 import pytest
+
+import dagster as dg
 from dagster._check import ParameterCheckError
 from dagster._core.definitions.freshness_policy import LegacyFreshnessPolicy
 from dagster._core.errors import DagsterInvalidDefinitionError

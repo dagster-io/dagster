@@ -5,6 +5,7 @@ from unittest.mock import MagicMock
 import pytest
 import responses
 from click.testing import CliRunner
+
 from dagster import Failure
 from dagster._config.field_utils import EnvVar
 from dagster._core.code_pointer import CodePointer
@@ -25,7 +26,6 @@ from dagster_fivetran import (
 )
 from dagster_fivetran.asset_defs import build_fivetran_assets_definitions
 from dagster_fivetran.translator import FivetranMetadataSet
-
 from dagster_fivetran_tests.conftest import (
     TEST_ACCOUNT_ID,
     TEST_ANOTHER_ACCOUNT_ID,

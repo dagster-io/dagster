@@ -3,8 +3,9 @@ import datetime
 import tempfile
 from collections.abc import Sequence
 
-import dagster as dg
 import pytest
+
+import dagster as dg
 from dagster import (
     AssetExecutionContext,
     AssetsDefinition,

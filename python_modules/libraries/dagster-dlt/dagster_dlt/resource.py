@@ -2,6 +2,12 @@ from collections.abc import Iterator, Mapping
 from datetime import datetime, timezone
 from typing import Any, Optional, Union
 
+from dlt.common.pipeline import LoadInfo
+from dlt.common.schema import Schema
+from dlt.extract.resource import DltResource
+from dlt.extract.source import DltSource
+from dlt.pipeline.pipeline import Pipeline
+
 from dagster import (
     AssetExecutionContext,
     AssetMaterialization,
@@ -15,12 +21,6 @@ from dagster import (
 from dagster._annotations import public
 from dagster._core.definitions.metadata.metadata_set import TableMetadataSet
 from dagster._core.definitions.metadata.table import TableColumn, TableSchema
-from dlt.common.pipeline import LoadInfo
-from dlt.common.schema import Schema
-from dlt.extract.resource import DltResource
-from dlt.extract.source import DltSource
-from dlt.pipeline.pipeline import Pipeline
-
 from dagster_dlt.constants import META_KEY_PIPELINE, META_KEY_SOURCE, META_KEY_TRANSLATOR
 from dagster_dlt.dlt_event_iterator import DltEventIterator, DltEventType
 from dagster_dlt.translator import DagsterDltTranslator, DltResourceTranslatorData

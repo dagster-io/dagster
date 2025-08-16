@@ -1,9 +1,9 @@
 from typing import Any
 
 import pytest
+
 from dagster_graphql import DagsterGraphQLClientError, ReloadRepositoryLocationStatus
 from dagster_graphql.test.utils import main_repo_location_name
-
 from dagster_graphql_tests.client_tests.conftest import MockClient, python_client_test_suite
 from dagster_graphql_tests.graphql.graphql_context_test_suite import (
     GraphQLContextVariant,

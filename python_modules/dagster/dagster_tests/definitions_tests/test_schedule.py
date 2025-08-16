@@ -1,8 +1,9 @@
 import warnings
 from datetime import datetime
 
-import dagster as dg
 import pytest
+
+import dagster as dg
 from dagster._core.definitions.metadata.metadata_value import MetadataValue
 from dagster._core.definitions.partitions.partitioned_schedule import (
     UnresolvedPartitionedAssetScheduleDefinition,

@@ -3,6 +3,10 @@ from collections.abc import Generator, Sequence
 from contextlib import contextmanager
 from typing import Optional, cast
 
+from google.api_core.exceptions import NotFound
+from google.cloud import bigquery
+from pydantic import Field
+
 from dagster import IOManagerDefinition, OutputContext, io_manager
 from dagster._annotations import beta
 from dagster._config.pythonic_config import ConfigurableIOManagerFactory
@@ -15,10 +19,6 @@ from dagster._core.storage.db_io_manager import (
     TableSlice,
 )
 from dagster._core.storage.io_manager import dagster_maintained_io_manager
-from google.api_core.exceptions import NotFound
-from google.cloud import bigquery
-from pydantic import Field
-
 from dagster_gcp.bigquery.utils import setup_gcp_creds
 
 BIGQUERY_DATETIME_FORMAT = "%Y-%m-%d %H:%M:%S"

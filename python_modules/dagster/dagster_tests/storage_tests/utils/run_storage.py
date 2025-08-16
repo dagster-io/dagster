@@ -7,8 +7,9 @@ from datetime import datetime, timedelta, timezone
 from typing import Optional
 from uuid import uuid4
 
-import dagster as dg
 import pytest
+
+import dagster as dg
 from dagster._core.errors import DagsterRunAlreadyExists, DagsterSnapshotDoesNotExist
 from dagster._core.events import DagsterEvent, DagsterEventType, JobFailureData, RunFailureReason
 from dagster._core.execution.backfill import BulkActionsFilter, BulkActionStatus, PartitionBackfill

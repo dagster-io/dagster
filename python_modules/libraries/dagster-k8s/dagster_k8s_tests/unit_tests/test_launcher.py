@@ -3,6 +3,11 @@ from unittest import mock
 
 import kubernetes
 import pytest
+from kubernetes import __version__ as kubernetes_version
+from kubernetes.client.models.v1_job import V1Job
+from kubernetes.client.models.v1_job_status import V1JobStatus
+from kubernetes.client.models.v1_object_meta import V1ObjectMeta
+
 from dagster import DagsterRunStatus, job, reconstructable
 from dagster._core.launcher import LaunchRunContext
 from dagster._core.launcher.base import WorkerStatus
@@ -19,10 +24,6 @@ from dagster._utils.hosted_user_process import remote_job_from_recon_job
 from dagster._utils.merger import merge_dicts
 from dagster_k8s import K8sRunLauncher
 from dagster_k8s.job import DAGSTER_PG_PASSWORD_ENV_VAR, get_job_name_from_run_id
-from kubernetes import __version__ as kubernetes_version
-from kubernetes.client.models.v1_job import V1Job
-from kubernetes.client.models.v1_job_status import V1JobStatus
-from kubernetes.client.models.v1_object_meta import V1ObjectMeta
 
 if kubernetes_version >= "13":
     from kubernetes.client.models.core_v1_event import CoreV1Event

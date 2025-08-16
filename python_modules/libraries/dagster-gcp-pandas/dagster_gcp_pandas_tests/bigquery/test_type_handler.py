@@ -7,6 +7,8 @@ from typing import TYPE_CHECKING, Optional, cast
 import pandas as pd
 import pandas_gbq
 import pytest
+from google.cloud import bigquery
+
 from dagster import (
     AssetExecutionContext,
     AssetIn,
@@ -31,7 +33,6 @@ from dagster._core.definitions.partitions.definition import (
 )
 from dagster._core.definitions.partitions.utils import MultiPartitionKey
 from dagster_gcp_pandas import BigQueryPandasIOManager, bigquery_pandas_io_manager
-from google.cloud import bigquery
 
 if TYPE_CHECKING:
     from dagster._core.definitions.metadata.metadata_value import IntMetadataValue

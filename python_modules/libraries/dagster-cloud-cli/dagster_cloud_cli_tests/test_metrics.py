@@ -5,13 +5,14 @@ from unittest.mock import ANY, call
 import freezegun
 import pytest
 import typer
+from typer.testing import CliRunner
+
 from dagster_cloud_cli import ui
 from dagster_cloud_cli.commands import metrics
 from dagster_cloud_cli.config_utils import dagster_cloud_options
 from dagster_cloud_cli.entrypoint import app
 from dagster_cloud_cli.types import CliEventTags, CliEventType
 from dagster_cloud_cli.utils import add_options
-from typer.testing import CliRunner
 
 
 @pytest.mark.parametrize(

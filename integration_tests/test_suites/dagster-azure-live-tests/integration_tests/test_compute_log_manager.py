@@ -5,6 +5,7 @@ from typing import Callable
 import pytest
 from azure.identity import ClientSecretCredential
 from azure.storage.blob import BlobClient, ContainerClient
+
 from dagster import (
     DagsterEventType,
     DagsterInstance,

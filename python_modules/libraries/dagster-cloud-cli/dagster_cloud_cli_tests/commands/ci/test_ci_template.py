@@ -1,10 +1,11 @@
 import pathlib
 
 import yaml
+from typer.testing import CliRunner
+
 from dagster_cloud_cli.config.models import ProcessedDagsterCloudConfig
 from dagster_cloud_cli.entrypoint import app
 from dagster_cloud_cli_tests.conftest import create_template_file
-from typer.testing import CliRunner
 
 DAGSTER_CLOUD_YAML_JINJA = """
 defaults:

@@ -1,8 +1,9 @@
 import re
 
+import pytest
+
 import dagster as dg
 import dagster._check as check
-import pytest
 from dagster._api.snapshot_execution_plan import (
     gen_external_execution_plan_grpc,
     sync_get_external_execution_plan_grpc,
@@ -13,7 +14,6 @@ from dagster._core.instance import DagsterInstance
 from dagster._core.remote_representation.external import RemoteExecutionPlan
 from dagster._core.remote_representation.handle import JobHandle
 from dagster._core.snap.execution_plan_snapshot import ExecutionPlanSnapshot
-
 from dagster_tests.api_tests.utils import get_bar_repo_code_location, get_bar_workspace
 
 

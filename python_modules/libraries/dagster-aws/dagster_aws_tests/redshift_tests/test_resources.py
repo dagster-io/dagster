@@ -5,9 +5,9 @@ from unittest import mock
 import boto3
 import psycopg2
 import pytest
+
 from dagster._core.definitions.decorators import op
 from dagster._utils.test import wrap_op_in_graph_and_execute
-
 from dagster_aws.redshift import (
     FakeRedshiftClient,
     FakeRedshiftClientResource,

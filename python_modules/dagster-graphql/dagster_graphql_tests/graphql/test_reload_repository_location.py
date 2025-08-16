@@ -10,7 +10,6 @@ from dagster._core.types.loadable_target_origin import LoadableTargetOrigin
 from dagster._core.workspace.load import location_origins_from_yaml_paths
 from dagster._grpc.types import ListRepositoriesResponse
 from dagster_graphql.test.utils import execute_dagster_graphql, main_repo_location_name
-
 from dagster_graphql_tests.graphql.graphql_context_test_suite import (
     GraphQLContextVariant,
     ReadonlyGraphQLContextTestMatrix,

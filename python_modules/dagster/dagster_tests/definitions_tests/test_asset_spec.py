@@ -1,11 +1,12 @@
 from collections.abc import Sequence
 from typing import cast
 
-import dagster as dg
 import pytest
+from pydantic import BaseModel, TypeAdapter
+
+import dagster as dg
 from dagster import AutoMaterializePolicy, AutomationCondition
 from dagster._check import CheckError
-from pydantic import BaseModel, TypeAdapter
 
 
 def test_validate_asset_owner() -> None:

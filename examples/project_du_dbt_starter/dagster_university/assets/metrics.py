@@ -1,11 +1,12 @@
 import base64
 
-import dagster as dg
 import geopandas as gpd
 import matplotlib.pyplot as plt
 import pandas as pd
-from dagster_duckdb import DuckDBResource
 from smart_open import open
+
+import dagster as dg
+from dagster_duckdb import DuckDBResource
 
 from ..partitions import weekly_partition
 from . import constants

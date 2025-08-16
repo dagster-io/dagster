@@ -4,8 +4,9 @@ import json
 import time
 from collections.abc import Iterator
 
-import dagster as dg
 import pytest
+
+import dagster as dg
 from dagster._check import CheckError
 from dagster._core.definitions.asset_checks.asset_check_factories.utils import (
     unique_id_from_asset_and_check_keys,
@@ -18,7 +19,6 @@ from dagster._core.test_utils import freeze_time
 from dagster._time import create_datetime, get_timezone
 from dagster._utils.env import environ
 from dagster._utils.security import non_secure_md5_hash_str
-
 from dagster_tests.definitions_tests.freshness_checks_tests.conftest import (
     add_new_event,
     assert_check_result,

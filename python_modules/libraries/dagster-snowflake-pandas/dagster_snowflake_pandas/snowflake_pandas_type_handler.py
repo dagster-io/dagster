@@ -3,13 +3,14 @@ from typing import Optional
 
 import numpy as np
 import pandas as pd
+from snowflake.connector.pandas_tools import write_pandas
+
 from dagster import InputContext, MetadataValue, OutputContext, TableColumn, TableSchema
 from dagster._core.definitions.metadata import RawMetadataValue, TableMetadataSet
 from dagster._core.errors import DagsterInvariantViolationError
 from dagster._core.storage.db_io_manager import DbTypeHandler, TableSlice
 from dagster_snowflake import build_snowflake_io_manager
 from dagster_snowflake.snowflake_io_manager import SnowflakeDbClient, SnowflakeIOManager
-from snowflake.connector.pandas_tools import write_pandas
 
 
 def _table_exists(table_slice: TableSlice, connection):

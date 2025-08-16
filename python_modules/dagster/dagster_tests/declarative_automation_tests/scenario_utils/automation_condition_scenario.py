@@ -22,7 +22,6 @@ from dagster._core.definitions.declarative_automation.serialized_objects import 
 )
 from dagster._core.definitions.events import AssetKeyPartitionKey, CoercibleToAssetKey
 from dagster._core.test_utils import freeze_time
-
 from dagster_tests.declarative_automation_tests.scenario_utils.scenario_state import ScenarioState
 
 

@@ -1,7 +1,8 @@
 import sys
 
-import dagster as dg
 import pytest
+
+import dagster as dg
 from dagster._core.types.loadable_target_origin import LoadableTargetOrigin
 from dagster._grpc.client import DagsterGrpcClient
 from dagster._grpc.server import GrpcServerProcess

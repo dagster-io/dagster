@@ -4,6 +4,7 @@ import sys
 import time
 
 import pytest
+
 from dagster._core.execution.compute_logs import should_disable_io_stream_redirect
 from dagster._core.storage.compute_log_manager import ComputeIOType
 from dagster._core.test_utils import environ

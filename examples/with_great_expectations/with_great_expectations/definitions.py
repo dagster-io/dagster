@@ -1,7 +1,6 @@
 from dagster import Definitions
 from dagster._utils import file_relative_path
 from dagster_ge.factory import GEContextResource
-
 from with_great_expectations.ge_demo import payroll_data
 
 defs = Definitions(

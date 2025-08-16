@@ -1,6 +1,7 @@
 from typing import NamedTuple
 
 import pytest
+
 from dagster_shared.utils.hash import hash_collection
 
 

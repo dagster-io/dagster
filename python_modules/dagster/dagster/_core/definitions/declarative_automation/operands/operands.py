@@ -2,9 +2,6 @@ import datetime
 from collections.abc import Mapping, Set
 from typing import TYPE_CHECKING, Optional
 
-from dagster_shared.serdes import whitelist_for_serdes
-from dagster_shared.serdes.utils import SerializableTimeDelta
-
 from dagster._core.asset_graph_view.entity_subset import EntitySubset
 from dagster._core.definitions.asset_key import AssetCheckKey, AssetKey
 from dagster._core.definitions.declarative_automation.automation_condition import (
@@ -19,6 +16,8 @@ from dagster._core.definitions.partitions.snap.snap import PartitionsSnap
 from dagster._core.definitions.partitions.subset.key_ranges import KeyRangesPartitionsSubset
 from dagster._record import record
 from dagster._utils.schedules import reverse_cron_string_iterator
+from dagster_shared.serdes import whitelist_for_serdes
+from dagster_shared.serdes.utils import SerializableTimeDelta
 
 if TYPE_CHECKING:
     from dagster._core.storage.dagster_run import RunRecord

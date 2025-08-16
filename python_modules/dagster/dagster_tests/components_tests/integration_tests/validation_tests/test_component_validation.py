@@ -1,4 +1,7 @@
 import pytest
+from pydantic import ValidationError
+from yaml.scanner import ScannerError
+
 from dagster._core.test_utils import ensure_dagster_tests_import
 from dagster.components.core.component_tree import ComponentTreeException
 from dagster.components.resolved.context import ResolutionException
@@ -8,9 +11,6 @@ from dagster_test.components.test_utils.test_cases import (
     ComponentValidationTestCase,
     msg_includes_all_of,
 )
-from pydantic import ValidationError
-from yaml.scanner import ScannerError
-
 from dagster_tests.components_tests.integration_tests.component_loader import (
     sync_load_test_component_defs,
 )

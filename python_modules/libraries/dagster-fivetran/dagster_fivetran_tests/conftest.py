@@ -4,6 +4,7 @@ from unittest.mock import patch
 
 import pytest
 import responses
+
 from dagster_fivetran.resources import (
     FIVETRAN_API_BASE,
     FIVETRAN_API_VERSION,

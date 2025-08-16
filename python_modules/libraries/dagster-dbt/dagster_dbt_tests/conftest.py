@@ -5,9 +5,9 @@ from pathlib import Path
 from typing import Any, Optional
 
 import pytest
+
 from dagster_dbt import DbtCliResource
 from dagster_dbt.core.resource import DbtCliInvocation
-
 from dagster_dbt_tests.dbt_projects import (
     test_asset_checks_path,
     test_asset_key_exceptions_path,

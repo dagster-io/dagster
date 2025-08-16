@@ -1,5 +1,6 @@
-import dagster as dg
 import pytest
+
+import dagster as dg
 from dagster import AssetSelection
 from dagster._core.definitions.unresolved_asset_job_definition import UnresolvedAssetJobDefinition
 

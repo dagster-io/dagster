@@ -4,8 +4,11 @@ from collections.abc import Iterator
 from contextlib import ExitStack, contextmanager
 from typing import Any, Optional
 
-import dagster._check as check
 import pytest
+from databricks.sdk import WorkspaceClient
+from databricks.sdk.service import compute, jobs
+
+import dagster._check as check
 from dagster import AssetExecutionContext, asset, materialize
 from dagster._core.errors import DagsterPipesExecutionError
 from dagster_databricks._test_utils import (
@@ -14,8 +17,6 @@ from dagster_databricks._test_utils import (
     upload_dagster_pipes_whl,
 )
 from dagster_databricks.pipes import PipesDatabricksClient, PipesDbfsMessageReader
-from databricks.sdk import WorkspaceClient
-from databricks.sdk.service import compute, jobs
 
 IS_BUILDKITE = os.getenv("BUILDKITE") is not None
 IS_WORKSPACE = os.getenv("DATABRICKS_HOST") is not None

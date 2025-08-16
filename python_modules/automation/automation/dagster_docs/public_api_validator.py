@@ -5,9 +5,8 @@ import re
 from pathlib import Path
 from typing import Optional, Union
 
-from dagster_shared.record import record
-
 from automation.dagster_docs.public_packages import get_public_dagster_packages
+from dagster_shared.record import record
 
 
 @record

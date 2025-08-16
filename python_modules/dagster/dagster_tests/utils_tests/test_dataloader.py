@@ -5,6 +5,7 @@ from functools import cached_property
 from unittest import mock
 
 import pytest
+
 from dagster._core.loader import LoadableBy, LoadingContext
 from dagster._utils.aiodataloader import DataLoader
 from dagster_shared.record import record

@@ -2,13 +2,12 @@ from collections.abc import Iterable, Mapping
 from functools import cached_property
 from typing import TYPE_CHECKING, AbstractSet, Optional, Sequence, Union  # noqa: UP035
 
-from dagster_shared.record import record
-
 import dagster._check as check
 from dagster._core.definitions.asset_checks.asset_check_spec import AssetCheckKey
 from dagster._core.definitions.asset_key import AssetKey, EntityKey
 from dagster._core.definitions.dependency import NodeHandle, NodeInputHandle, NodeOutputHandle
 from dagster._core.definitions.graph_definition import GraphDefinition
+from dagster_shared.record import record
 
 if TYPE_CHECKING:
     from dagster._core.definitions.assets.definition.assets_definition import AssetsDefinition

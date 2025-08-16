@@ -6,7 +6,6 @@ from dagster import (
     AssetExecutionContext,
     _check as check,
 )
-
 from project_fully_featured.resources.hn_resource import HNClient
 
 

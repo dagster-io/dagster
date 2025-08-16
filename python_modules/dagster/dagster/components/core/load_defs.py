@@ -3,13 +3,12 @@ from pathlib import Path
 from types import ModuleType
 from typing import Optional
 
-from dagster_shared.serdes.objects.package_entry import json_for_all_components
-
 from dagster._annotations import deprecated, public
 from dagster._core.definitions.definitions_class import Definitions
 from dagster._utils.warnings import suppress_dagster_warnings
 from dagster.components.component.component import Component
 from dagster.components.core.component_tree import ComponentTree, LegacyAutoloadingComponentTree
+from dagster_shared.serdes.objects.package_entry import json_for_all_components
 
 PLUGIN_COMPONENT_TYPES_JSON_METADATA_KEY = "plugin_component_types_json"
 

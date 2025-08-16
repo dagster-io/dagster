@@ -6,9 +6,8 @@ import threading
 from typing import Optional
 
 import click
-import dagster_shared.seven as seven
-from dagster_shared.cli import python_pointer_options
 
+import dagster_shared.seven as seven
 from dagster._cli.utils import assert_no_remaining_opts
 from dagster._cli.workspace.cli_target import PythonPointerOpts
 from dagster._core.instance import InstanceRef
@@ -17,6 +16,7 @@ from dagster._core.utils import FuturesAwareThreadPoolExecutor
 from dagster._serdes import deserialize_value
 from dagster._utils.interrupts import setup_interrupt_handlers
 from dagster._utils.log import configure_loggers
+from dagster_shared.cli import python_pointer_options
 
 
 def get_default_proxy_server_heartbeat_timeout():

@@ -4,6 +4,7 @@ from collections.abc import Generator
 from pathlib import Path
 
 import pytest
+
 from dagster._core.test_utils import environ
 from dagster_airlift.test.shared_fixtures import stand_up_airflow
 

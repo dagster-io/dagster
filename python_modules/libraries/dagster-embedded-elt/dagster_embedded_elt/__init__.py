@@ -1,7 +1,6 @@
 from dagster._utils.warnings import deprecation_warning
-from dagster_shared.libraries import DagsterLibraryRegistry
-
 from dagster_embedded_elt.version import __version__
+from dagster_shared.libraries import DagsterLibraryRegistry
 
 deprecation_warning(
     "The `dagster-embedded-elt` library",

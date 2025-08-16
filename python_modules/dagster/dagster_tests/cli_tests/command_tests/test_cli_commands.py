@@ -6,9 +6,11 @@ from contextlib import contextmanager
 from typing import Any, ContextManager, Iterator, NoReturn, Optional  # noqa: UP035
 from unittest import mock
 
-import dagster as dg
 import pytest
 from click.testing import CliRunner
+from typing_extensions import TypeAlias
+
+import dagster as dg
 from dagster import in_process_executor
 from dagster._cli import ENV_PREFIX, cli
 from dagster._cli.job import job_execute_command
@@ -24,7 +26,6 @@ from dagster._core.types.loadable_target_origin import LoadableTargetOrigin
 from dagster._grpc.server import GrpcServerProcess
 from dagster._utils.merger import merge_dicts
 from dagster.version import __version__
-from typing_extensions import TypeAlias
 
 ParsedCliArgs: TypeAlias = dict[str, Any]
 

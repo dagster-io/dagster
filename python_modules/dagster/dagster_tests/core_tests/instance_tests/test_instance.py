@@ -8,9 +8,11 @@ from pathlib import Path
 from typing import Any, Optional
 from unittest.mock import MagicMock, patch
 
-import dagster as dg
 import pytest
 import yaml
+from typing_extensions import Self
+
+import dagster as dg
 from dagster import (
     _check as check,
     seven,
@@ -52,8 +54,6 @@ from dagster._daemon.controller import create_daemons_from_instance
 from dagster._serdes import ConfigurableClass, deserialize_value
 from dagster._serdes.config_class import ConfigurableClassData
 from dagster._utils import file_relative_path
-from typing_extensions import Self
-
 from dagster_tests.api_tests.utils import get_bar_workspace
 
 

@@ -1,5 +1,6 @@
-import dagster as dg
 from pydantic import BaseModel
+
+import dagster as dg
 
 
 class MyNewComponentSchema(BaseModel):

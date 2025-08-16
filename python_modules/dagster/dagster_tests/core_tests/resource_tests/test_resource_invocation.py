@@ -1,7 +1,8 @@
 from contextlib import contextmanager
 
-import dagster as dg
 import pytest
+
+import dagster as dg
 
 
 def test_resource_invocation_no_arg():

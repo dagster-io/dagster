@@ -1,5 +1,6 @@
-import dagster as dg
 import pytest
+
+import dagster as dg
 
 
 def test_basic_op_with_config():

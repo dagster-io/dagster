@@ -8,14 +8,13 @@ from pathlib import Path
 from types import ModuleType
 from typing import Callable, Optional, Union, cast
 
-from dagster_shared.record import IHaveNew, LegacyNamedTupleMixin, record, record_custom
-from dagster_shared.seven import get_import_error_message, import_module_from_path
-from dagster_shared.utils.hash import hash_collection
-
 import dagster._check as check
 from dagster._core.errors import DagsterImportError, DagsterInvariantViolationError
 from dagster._serdes import whitelist_for_serdes
 from dagster._utils import alter_sys_path
+from dagster_shared.record import IHaveNew, LegacyNamedTupleMixin, record, record_custom
+from dagster_shared.seven import get_import_error_message, import_module_from_path
+from dagster_shared.utils.hash import hash_collection
 
 
 class CodePointer(ABC):

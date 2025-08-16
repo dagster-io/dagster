@@ -1,7 +1,6 @@
 import os
 
 from dagster_pipes import open_dagster_pipes
-
 from dagster_test.toys.external_execution.numbers_example.util import (
     compute_data_version,
     store_asset_value,

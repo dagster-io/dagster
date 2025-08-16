@@ -1,8 +1,9 @@
 import sys
 
+import pytest
+
 import dagster as dg
 import dagster._check as check
-import pytest
 from dagster._check import CheckError
 from dagster._core.code_pointer import ModuleCodePointer
 from dagster._core.origin import (

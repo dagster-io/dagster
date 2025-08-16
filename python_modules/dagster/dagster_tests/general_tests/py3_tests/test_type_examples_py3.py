@@ -6,8 +6,9 @@ import pickle
 import tempfile
 import time
 
-import dagster as dg
 import pytest
+
+import dagster as dg
 from dagster import (
     Any,
     Bool,

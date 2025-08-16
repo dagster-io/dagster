@@ -6,9 +6,9 @@ from pathlib import Path
 from typing import Callable, Union
 
 import click
-from dagster._record import IHaveNew, record, record_custom
 
 from automation.dagster_docs.validator import validate_symbol_docstring
+from dagster._record import IHaveNew, record, record_custom
 
 
 @record_custom

@@ -1,6 +1,7 @@
+from pandas import DataFrame
+
 from dagster import MetadataValue, TableColumn, TableSchema
 from dagster_pandas.data_frame import create_table_schema_metadata_from_dataframe
-from pandas import DataFrame
 
 
 def test_create_table_schema_metadata_from_dataframe():

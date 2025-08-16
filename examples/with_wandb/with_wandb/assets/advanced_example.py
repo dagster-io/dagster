@@ -1,7 +1,8 @@
 import wandb
+from wandb import Artifact
+
 from dagster import AssetExecutionContext, AssetIn, asset
 from dagster_wandb import WandbArtifactConfiguration
-from wandb import Artifact
 
 wandb_artifact_configuration: WandbArtifactConfiguration = {
     "description": "My **Markdown** description",

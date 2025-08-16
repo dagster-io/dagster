@@ -2,8 +2,6 @@ import enum
 from collections.abc import Iterable
 from typing import NamedTuple, Optional, cast
 
-from dagster_shared.serdes import deserialize_value
-
 import dagster._check as check
 from dagster._core.definitions.asset_checks.asset_check_evaluation import AssetCheckEvaluation
 from dagster._core.definitions.asset_key import AssetCheckKey
@@ -12,6 +10,7 @@ from dagster._core.loader import LoadableBy, LoadingContext
 from dagster._core.storage.dagster_run import DagsterRunStatus, RunRecord
 from dagster._serdes import whitelist_for_serdes
 from dagster._time import utc_datetime_from_naive
+from dagster_shared.serdes import deserialize_value
 
 
 class AssetCheckInstanceSupport(enum.Enum):

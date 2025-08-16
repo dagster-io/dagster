@@ -1,5 +1,6 @@
 import pytest
 import responses
+
 from dagster import AssetSpec, EnvVar
 from dagster._core.definitions.tags import has_kind
 from dagster._core.errors import DagsterInvariantViolationError
@@ -15,7 +16,6 @@ from dagster_airbyte.translator import (
     AirbyteMetadataSet,
     DagsterAirbyteTranslator,
 )
-
 from dagster_airbyte_tests.beta.conftest import (
     TEST_ANOTHER_WORKSPACE_ID,
     TEST_CLIENT_ID,

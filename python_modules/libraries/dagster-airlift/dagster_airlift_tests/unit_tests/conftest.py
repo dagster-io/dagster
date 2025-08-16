@@ -1,10 +1,10 @@
-# ruff: noqa: I001 - import order differs between CI and local due to package installation differences
 from collections import defaultdict
 from collections.abc import Generator, Mapping, Sequence
 from datetime import datetime, timedelta
 from typing import Any, Optional, Union
 
 import pytest
+
 from dagster import (
     AssetKey,
     AssetObservation,

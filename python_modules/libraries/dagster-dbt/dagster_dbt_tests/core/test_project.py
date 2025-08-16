@@ -1,11 +1,11 @@
 import multiprocessing
 
 import pytest
+
 from dagster._core.test_utils import environ
 from dagster._utils.test import copy_directory
 from dagster_dbt.dbt_manifest import validate_manifest
 from dagster_dbt.dbt_project import DbtProject
-
 from dagster_dbt_tests.dbt_projects import test_jaffle_shop_path
 
 

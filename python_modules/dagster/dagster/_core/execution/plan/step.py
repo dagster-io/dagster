@@ -3,7 +3,6 @@ from collections.abc import Mapping, Sequence
 from enum import Enum
 from typing import TYPE_CHECKING, NamedTuple, Optional, Union, cast
 
-from dagster_shared.serdes import EnumSerializer, whitelist_for_serdes
 from typing_extensions import TypeGuard
 
 import dagster._check as check
@@ -19,6 +18,7 @@ from dagster._core.execution.plan.inputs import (
 )
 from dagster._core.execution.plan.outputs import StepOutput
 from dagster._utils.merger import merge_dicts
+from dagster_shared.serdes import EnumSerializer, whitelist_for_serdes
 
 if TYPE_CHECKING:
     from dagster._core.definitions.dependency import NodeHandle

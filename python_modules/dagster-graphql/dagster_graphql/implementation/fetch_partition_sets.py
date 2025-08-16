@@ -16,10 +16,9 @@ from dagster._core.storage.tags import (
     TagType,
     get_tag_type,
 )
-from dagster_shared.yaml_utils import dump_run_config_yaml
-
 from dagster_graphql.implementation.utils import apply_cursor_limit_reverse
 from dagster_graphql.schema.util import ResolveInfo
+from dagster_shared.yaml_utils import dump_run_config_yaml
 
 if TYPE_CHECKING:
     from dagster_graphql.schema.errors import GraphenePartitionSetNotFoundError

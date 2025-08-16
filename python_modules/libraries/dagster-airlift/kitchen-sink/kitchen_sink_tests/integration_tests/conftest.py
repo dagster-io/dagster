@@ -7,6 +7,7 @@ from pathlib import Path
 from typing import NamedTuple, Union
 
 import pytest
+
 from dagster import AssetKey, DagsterInstance
 from dagster._core.events.log import EventLogEntry
 from dagster._core.test_utils import environ

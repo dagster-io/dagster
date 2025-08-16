@@ -3,7 +3,6 @@ from collections.abc import Mapping, Sequence
 from typing import TYPE_CHECKING, Optional, Tuple  # noqa: F401, UP035
 
 import coloredlogs
-from dagster_shared import seven
 
 from dagster._config import Field
 from dagster._core.definitions.logger_definition import LoggerDefinition, logger
@@ -15,6 +14,7 @@ from dagster._core.log_manager import (
 from dagster._core.utils import coerce_valid_log_level
 from dagster._serdes import pack_value
 from dagster._utils.log import create_console_logger
+from dagster_shared import seven
 
 if TYPE_CHECKING:
     from dagster._core.execution.context.logger import InitLoggerContext

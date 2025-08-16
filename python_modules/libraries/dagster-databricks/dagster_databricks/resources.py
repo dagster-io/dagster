@@ -1,9 +1,9 @@
 from typing import Any, Optional
 
-from dagster import Config, ConfigurableResource, IAttachDifferentObjectToOpContext, resource
-from dagster._core.definitions.resource_definition import dagster_maintained_resource
 from pydantic import Field, model_validator
 
+from dagster import Config, ConfigurableResource, IAttachDifferentObjectToOpContext, resource
+from dagster._core.definitions.resource_definition import dagster_maintained_resource
 from dagster_databricks.databricks import DatabricksClient
 
 

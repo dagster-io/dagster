@@ -1,5 +1,6 @@
-import dagster as dg
 import pytest
+
+import dagster as dg
 from dagster._core.definitions.metadata.metadata_set import UriMetadataSet
 from dagster._core.test_utils import raise_exception_on_warnings
 

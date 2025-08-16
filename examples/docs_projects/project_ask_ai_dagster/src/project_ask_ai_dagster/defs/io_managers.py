@@ -1,8 +1,9 @@
 import json
 import os
 
-import dagster as dg
 from langchain_core.documents import Document
+
+import dagster as dg
 
 
 # start_io_manager

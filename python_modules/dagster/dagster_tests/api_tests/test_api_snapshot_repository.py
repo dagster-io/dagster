@@ -2,8 +2,9 @@ import asyncio
 import sys
 from contextlib import contextmanager
 
-import dagster as dg
 import pytest
+
+import dagster as dg
 from dagster import job
 from dagster._api.snapshot_repository import (
     gen_streaming_external_repositories_data_grpc,
@@ -29,7 +30,6 @@ from dagster._core.types.loadable_target_origin import LoadableTargetOrigin
 from dagster._utils.env import environ
 from dagster_shared.serdes.serdes import get_storage_fields
 from dagster_shared.serdes.utils import hash_str
-
 from dagster_tests.api_tests.utils import get_bar_repo_code_location
 
 

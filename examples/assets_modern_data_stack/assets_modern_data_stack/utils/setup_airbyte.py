@@ -7,9 +7,10 @@ import random
 from collections.abc import Mapping
 from typing import Any
 
-import dagster._check as check
 import numpy as np
 import pandas as pd
+
+import dagster._check as check
 from dagster_airbyte import AirbyteResource
 from dagster_postgres.utils import get_conn_string
 

@@ -3,6 +3,7 @@ from pathlib import Path
 
 import pytest
 import responses
+
 from dagster import materialize
 from dagster._config.field_utils import EnvVar
 from dagster._core.code_pointer import CodePointer
@@ -26,7 +27,6 @@ from dagster_powerbi import PowerBIWorkspace
 from dagster_powerbi.assets import build_semantic_model_refresh_asset_definition
 from dagster_powerbi.resource import BASE_API_URL, PowerBIToken, load_powerbi_asset_specs
 from dagster_powerbi.translator import DagsterPowerBITranslator, PowerBITranslatorData
-
 from dagster_powerbi_tests.conftest import SAMPLE_SEMANTIC_MODEL
 
 

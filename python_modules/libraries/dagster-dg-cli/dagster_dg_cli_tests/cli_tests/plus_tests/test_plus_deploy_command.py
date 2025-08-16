@@ -1,4 +1,3 @@
-# ruff: noqa: I001 - import order differs between CI and local due to package installation differences
 import contextlib
 import tempfile
 from collections.abc import Generator
@@ -10,22 +9,22 @@ from unittest.mock import patch
 import pytest
 import responses
 import yaml
+
 from dagster_cloud_cli.commands.ci import BuildStrategy
 from dagster_cloud_cli.core.pex_builder.deps import BuildMethod
 from dagster_cloud_cli.types import SnapshotBaseDeploymentCondition
+from dagster_dg_cli.cli.plus.deploy import DEFAULT_STATEDIR_PATH
+from dagster_dg_cli_tests.cli_tests.plus_tests.utils import (
+    PYTHON_VERSION,
+    mock_hybrid_response,
+    mock_serverless_response,
+)
 from dagster_dg_core.utils import pushd
 from dagster_shared.plus.config import DagsterPlusCliConfig
 from dagster_test.dg_utils.utils import (
     ProxyRunner,
     assert_runner_result,
     isolated_example_project_foo_bar,
-)
-
-from dagster_dg_cli.cli.plus.deploy import DEFAULT_STATEDIR_PATH
-from dagster_dg_cli_tests.cli_tests.plus_tests.utils import (
-    PYTHON_VERSION,
-    mock_hybrid_response,
-    mock_serverless_response,
 )
 
 

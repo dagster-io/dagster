@@ -1,6 +1,7 @@
 import pandas as pd
-from dagster import AssetIn, asset
 from pandas import DataFrame, Series
+
+from dagster import AssetIn, asset
 
 
 @asset(

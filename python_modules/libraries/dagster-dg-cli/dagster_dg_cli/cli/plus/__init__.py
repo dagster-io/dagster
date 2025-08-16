@@ -7,6 +7,11 @@ from pathlib import Path
 from typing import Any, Optional
 
 import click
+
+from dagster_dg_cli.cli.plus.deploy import deploy_group
+from dagster_dg_cli.utils.plus import gql
+from dagster_dg_cli.utils.plus.gql import FULL_DEPLOYMENTS_QUERY, SECRETS_QUERY
+from dagster_dg_cli.utils.plus.gql_client import DagsterPlusGraphQLClient
 from dagster_dg_core.config import normalize_cli_config
 from dagster_dg_core.context import DgContext
 from dagster_dg_core.env import ProjectEnvVars
@@ -14,11 +19,6 @@ from dagster_dg_core.shared_options import dg_global_options, dg_path_options
 from dagster_dg_core.utils import DgClickCommand, DgClickGroup
 from dagster_dg_core.utils.telemetry import cli_telemetry_wrapper
 from dagster_shared.plus.config import DagsterPlusCliConfig
-
-from dagster_dg_cli.cli.plus.deploy import deploy_group
-from dagster_dg_cli.utils.plus import gql
-from dagster_dg_cli.utils.plus.gql import FULL_DEPLOYMENTS_QUERY, SECRETS_QUERY
-from dagster_dg_cli.utils.plus.gql_client import DagsterPlusGraphQLClient
 
 
 @click.command(name="login", cls=DgClickCommand)

@@ -6,7 +6,6 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Callable, Optional, Union
 
-from dagster_shared.dagster_model import DagsterModel
 from typing_extensions import Literal, TypeAlias
 
 import dagster._check as check
@@ -17,6 +16,7 @@ from dagster._core.definitions.metadata.metadata_set import (
 )
 from dagster._core.definitions.metadata.metadata_value import MetadataValue
 from dagster._serdes import whitelist_for_serdes
+from dagster_shared.dagster_model import DagsterModel
 
 if TYPE_CHECKING:
     from dagster._core.definitions.assets.definition.assets_definition import (

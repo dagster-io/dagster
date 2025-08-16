@@ -47,14 +47,13 @@ from dagster_airlift.core.serialization.serialized_data import (
 )
 from dagster_airlift.core.utils import is_task_mapped_asset_spec, metadata_for_task_mapping
 from dagster_airlift.test import asset_spec, make_instance
-from dagster_shared.serdes import deserialize_value
-from dagster_test.utils.definitions_execute_in_process import get_job_from_defs
-
 from dagster_airlift_tests.unit_tests.conftest import (
     assert_dependency_structure_in_assets,
     fully_loaded_repo_from_airflow_asset_graph,
     load_definitions_airflow_asset_graph,
 )
+from dagster_shared.serdes import deserialize_value
+from dagster_test.utils.definitions_execute_in_process import get_job_from_defs
 
 
 @executor  # pyright: ignore[reportCallIssue,reportArgumentType]

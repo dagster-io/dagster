@@ -7,7 +7,6 @@ from contextlib import ExitStack
 from enum import Enum
 from typing import TYPE_CHECKING, Any, Callable, Optional, TypeVar, Union, cast
 
-from dagster_shared.record import IHaveNew, record_custom
 from typing_extensions import TypeAlias
 
 import dagster._check as check
@@ -63,6 +62,7 @@ from dagster._utils import IHasInternalInit, normalize_to_repository
 from dagster._utils.merger import merge_dicts
 from dagster._utils.tags import normalize_tags
 from dagster._utils.warnings import deprecation_warning, normalize_renamed_param
+from dagster_shared.record import IHaveNew, record_custom
 
 if TYPE_CHECKING:
     from dagster import ResourceDefinition

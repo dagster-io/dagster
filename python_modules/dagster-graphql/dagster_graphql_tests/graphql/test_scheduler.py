@@ -4,6 +4,7 @@ import sys
 import time
 
 import pytest
+
 from dagster._core.remote_origin import InProcessCodeLocationOrigin, RemoteRepositoryOrigin
 from dagster._core.remote_representation.external import CompoundID
 from dagster._core.scheduler.instigation import (
@@ -25,7 +26,6 @@ from dagster_graphql.test.utils import (
     main_repo_location_name,
     main_repo_name,
 )
-
 from dagster_graphql_tests.graphql.graphql_context_test_suite import (
     ExecutingGraphQLContextTestMatrix,
     ReadonlyGraphQLContextTestMatrix,

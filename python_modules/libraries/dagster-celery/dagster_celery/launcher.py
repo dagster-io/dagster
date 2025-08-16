@@ -2,6 +2,8 @@ from collections.abc import Mapping
 from typing import TYPE_CHECKING, Any, Optional
 
 from celery import Celery
+from typing_extensions import Self, override
+
 from dagster import (
     DagsterInstance,
     DagsterRun,
@@ -21,8 +23,6 @@ from dagster._core.launcher import (
 )
 from dagster._grpc.types import ExecuteRunArgs, ResumeRunArgs
 from dagster._serdes import ConfigurableClass, ConfigurableClassData, pack_value
-from typing_extensions import Self, override
-
 from dagster_celery.config import DEFAULT_CONFIG, TASK_EXECUTE_JOB_NAME, TASK_RESUME_JOB_NAME
 from dagster_celery.defaults import task_default_queue
 from dagster_celery.make_app import make_app
@@ -35,6 +35,7 @@ from dagster_celery.tasks import create_execute_job_task, create_resume_job_task
 
 if TYPE_CHECKING:
     from celery.result import AsyncResult
+
     from dagster._config import UserConfigSchema
 
 

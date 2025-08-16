@@ -1,7 +1,8 @@
 import tempfile
 
-import dagster as dg
 import pytest
+
+import dagster as dg
 from dagster._core.workspace.context import WorkspaceProcessContext
 from dagster._core.workspace.load_target import PythonFileTarget
 

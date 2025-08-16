@@ -2,9 +2,10 @@ from collections.abc import Generator
 from pathlib import Path
 
 import pytest
+from dbt_example.dagster_defs.constants import AIRFLOW_BASE_URL
+
 from dagster import Definitions
 from dagster._core.test_utils import environ
-from dbt_example.dagster_defs.constants import AIRFLOW_BASE_URL
 
 
 @pytest.fixture

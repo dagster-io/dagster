@@ -1,7 +1,8 @@
 import tempfile
 
-import dagster as dg
 import pytest
+
+import dagster as dg
 from dagster import DagsterInstance, IOManagerDefinition
 from dagster._core.definitions.metadata import MetadataValue
 from dagster._core.instance import InstanceRef

@@ -2,8 +2,10 @@ from collections import namedtuple
 from collections.abc import Sequence
 from typing import Callable
 
-import dagster._check as check
 import graphene
+from graphene.types.generic import GenericScalar
+
+import dagster._check as check
 from dagster._config import (
     EvaluationError as DagsterEvaluationError,
     EvaluationStackListItemEntry,
@@ -20,8 +22,6 @@ from dagster._config import (
 from dagster._config.snap import ConfigTypeSnap
 from dagster._core.remote_representation.represented import RepresentedJob
 from dagster._utils.error import SerializableErrorInfo
-from graphene.types.generic import GenericScalar
-
 from dagster_graphql.schema.config_types import GrapheneConfigTypeField
 from dagster_graphql.schema.util import non_null_list
 

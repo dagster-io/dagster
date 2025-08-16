@@ -4,6 +4,7 @@ from typing import Optional
 
 import pytest
 import responses
+
 from dagster import (
     AssetKey,
     AssetSelection,
@@ -25,7 +26,6 @@ from dagster_dbt import (
 )
 from dagster_dbt.cloud.asset_defs import DAGSTER_DBT_COMPILE_RUN_ID_ENV_VAR
 from dagster_dbt.cloud.resources import DbtCloudClient
-
 from dagster_dbt_tests.cloud.utils import (
     DBT_CLOUD_ACCOUNT_ID,
     DBT_CLOUD_API_TOKEN,

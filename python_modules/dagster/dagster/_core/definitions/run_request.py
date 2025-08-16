@@ -2,8 +2,6 @@ from collections.abc import Mapping, Sequence
 from enum import Enum
 from typing import TYPE_CHECKING, Any, NamedTuple, Optional, Union
 
-from dagster_shared.serdes import whitelist_for_serdes
-
 import dagster._check as check
 from dagster._annotations import PublicAttr, public
 from dagster._core.definitions.asset_checks.asset_check_evaluation import AssetCheckEvaluation
@@ -29,6 +27,7 @@ from dagster._core.storage.tags import (
 from dagster._record import IHaveNew, LegacyNamedTupleMixin, record_custom
 from dagster._utils.error import SerializableErrorInfo
 from dagster._utils.tags import normalize_tags
+from dagster_shared.serdes import whitelist_for_serdes
 
 if TYPE_CHECKING:
     from dagster._core.definitions.job_definition import JobDefinition

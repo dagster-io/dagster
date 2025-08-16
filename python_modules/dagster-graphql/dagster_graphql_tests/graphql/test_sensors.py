@@ -3,6 +3,7 @@ import os
 import sys
 
 import pytest
+
 from dagster._core.definitions.run_request import InstigatorType
 from dagster._core.definitions.sensor_definition import SensorType
 from dagster._core.remote_origin import InProcessCodeLocationOrigin, RemoteRepositoryOrigin
@@ -33,7 +34,6 @@ from dagster_graphql.test.utils import (
     main_repo_location_name,
     main_repo_name,
 )
-
 from dagster_graphql_tests.graphql.graphql_context_test_suite import (
     ExecutingGraphQLContextTestMatrix,
     NonLaunchableGraphQLContextTestMatrix,

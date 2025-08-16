@@ -4,6 +4,8 @@ import pandera.polars as pa
 import pandera.typing as pa_typing
 import polars as pl
 import pytest
+from pandera.api.pandas.model_config import BaseConfig
+
 from dagster import DagsterType, TypeCheck, check_dagster_type
 from dagster._core.definitions.metadata import TableSchemaMetadataValue
 from dagster._core.definitions.metadata.table import (
@@ -13,7 +15,6 @@ from dagster._core.definitions.metadata.table import (
     TableSchema,
 )
 from dagster_pandera import pandera_schema_to_dagster_type
-from pandera.api.pandas.model_config import BaseConfig
 
 # ########################
 # ##### FIXTURES

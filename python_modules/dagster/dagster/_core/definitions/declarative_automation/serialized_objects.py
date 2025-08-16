@@ -11,7 +11,6 @@ from typing import (  # noqa: UP035
     Union,
 )
 
-from dagster_shared.serdes import whitelist_for_serdes
 from typing_extensions import TypeAlias
 
 from dagster._core.asset_graph_view.asset_graph_view import TemporalContext
@@ -23,6 +22,7 @@ from dagster._core.definitions.metadata import MetadataMapping, MetadataValue
 from dagster._core.definitions.partitions.subset import AllPartitionsSubset
 from dagster._record import record
 from dagster._time import datetime_from_timestamp
+from dagster_shared.serdes import whitelist_for_serdes
 
 if TYPE_CHECKING:
     from dagster._core.definitions.declarative_automation.automation_condition import (

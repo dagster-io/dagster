@@ -30,7 +30,6 @@ from dagster._core.execution.context.init import build_init_resource_context
 from dagster._core.utils import imap
 from dagster._utils.log import get_dagster_logger
 from dagster._utils.names import clean_name_lower
-
 from dagster_fivetran.asset_decorator import fivetran_assets
 from dagster_fivetran.resources import DEFAULT_POLL_INTERVAL, FivetranResource, FivetranWorkspace
 from dagster_fivetran.translator import (

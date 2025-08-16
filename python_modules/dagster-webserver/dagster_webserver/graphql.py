@@ -5,11 +5,6 @@ from contextlib import AbstractContextManager, contextmanager
 from enum import Enum
 from typing import TYPE_CHECKING, Any, Generic, Optional, TypeVar, Union, cast
 
-import dagster._check as check
-from dagster._serdes import pack_value
-from dagster._utils.error import serializable_error_info_from_exc_info
-from dagster_graphql.implementation.utils import ErrorCapture
-from dagster_shared.seven import json
 from graphene import Schema
 from graphql import GraphQLError, GraphQLFormattedError
 from graphql.execution import ExecutionResult
@@ -22,6 +17,11 @@ from starlette.responses import HTMLResponse, JSONResponse, PlainTextResponse
 from starlette.routing import BaseRoute
 from starlette.websockets import WebSocket, WebSocketDisconnect, WebSocketState
 
+import dagster._check as check
+from dagster._serdes import pack_value
+from dagster._utils.error import serializable_error_info_from_exc_info
+from dagster_graphql.implementation.utils import ErrorCapture
+from dagster_shared.seven import json
 from dagster_webserver.templates.graphiql import TEMPLATE
 
 if TYPE_CHECKING:

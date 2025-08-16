@@ -13,7 +13,6 @@ from dagster_sigma.translator import (
     SigmaWorkbook,
     SigmaWorkbookTranslatorData,
 )
-
 from dagster_sigma_tests.conftest import (
     SAMPLE_DATASET_DATA,
     SAMPLE_DATASET_INODE,

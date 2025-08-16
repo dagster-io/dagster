@@ -4,6 +4,8 @@ import tempfile
 from contextlib import contextmanager
 
 import pytest
+from typer.testing import CliRunner
+
 from dagster_cloud_cli.commands.ci import (
     DEFAULT_HYBRID_AGENT_HEARTBEAT_TIMEOUT,
     DEFAULT_SERVERLESS_AGENT_HEARTBEAT_TIMEOUT,
@@ -12,7 +14,6 @@ from dagster_cloud_cli.entrypoint import app
 from dagster_cloud_cli.gql import DagsterPlusDeploymentAgentType
 from dagster_cloud_cli.types import CliEventTags
 from dagster_cloud_cli.utils import DEFAULT_PYTHON_VERSION
-from typer.testing import CliRunner
 
 DAGSTER_CLOUD_YAML = """
 locations:

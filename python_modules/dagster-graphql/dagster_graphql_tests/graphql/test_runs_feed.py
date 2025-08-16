@@ -4,6 +4,7 @@ from typing import Optional
 from unittest import mock
 
 import pytest
+
 from dagster._core.execution.backfill import BulkActionStatus, PartitionBackfill
 from dagster._core.remote_origin import RemotePartitionSetOrigin
 from dagster._core.remote_representation.external_data import partition_set_snap_name_for_job_name
@@ -14,7 +15,6 @@ from dagster._core.utils import make_new_backfill_id
 from dagster._time import get_current_timestamp
 from dagster_graphql.implementation.fetch_runs import RunsFeedCursor
 from dagster_graphql.test.utils import execute_dagster_graphql, main_repo_location_name
-
 from dagster_graphql_tests.graphql.graphql_context_test_suite import (
     ExecutingGraphQLContextTestMatrix,
 )

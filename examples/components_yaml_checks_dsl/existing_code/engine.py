@@ -5,6 +5,9 @@ from typing import Any
 import jsonschema
 import numpy as np
 import pandas as pd
+from git import Optional
+from sklearn.linear_model import LinearRegression
+
 from dagster import (
     AssetCheckResult,
     AssetKey,
@@ -15,8 +18,6 @@ from dagster import (
     asset_check,
     build_column_schema_change_checks,
 )
-from git import Optional
-from sklearn.linear_model import LinearRegression
 
 # Schema for validating check DSL entries
 CHECK_SCHEMA = {

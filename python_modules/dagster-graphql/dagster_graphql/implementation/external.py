@@ -10,7 +10,6 @@ from dagster._core.remote_representation import RemoteJob
 from dagster._core.remote_representation.external import RemoteExecutionPlan
 from dagster._core.workspace.context import BaseWorkspaceRequestContext, WorkspaceRequestContext
 from dagster._utils.error import serializable_error_info_from_exc_info
-
 from dagster_graphql.implementation.utils import UserFacingGraphQLError
 
 if TYPE_CHECKING:

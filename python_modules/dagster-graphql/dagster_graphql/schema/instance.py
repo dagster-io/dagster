@@ -1,9 +1,10 @@
 import sys
 from typing import TYPE_CHECKING
 
-import dagster._check as check
 import graphene
 import yaml
+
+import dagster._check as check
 from dagster._core.instance import DagsterInstance
 from dagster._core.instance.config import PoolConfig
 from dagster._core.launcher.base import RunLauncher
@@ -15,7 +16,6 @@ from dagster._utils.concurrency import (
     PendingStepInfo,
     get_max_concurrency_limit_value,
 )
-
 from dagster_graphql.schema.errors import GraphenePythonError
 from dagster_graphql.schema.util import ResolveInfo, non_null_list
 

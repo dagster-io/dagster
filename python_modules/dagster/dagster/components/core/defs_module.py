@@ -5,8 +5,6 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Optional, TypeVar, Union
 
-from dagster_shared.record import record
-from dagster_shared.yaml_utils.source_position import SourcePosition
 from pydantic import BaseModel, ConfigDict, TypeAdapter
 
 import dagster._check as check
@@ -34,6 +32,8 @@ from dagster.components.resolved.base import Resolvable
 from dagster.components.resolved.context import ResolutionContext
 from dagster.components.resolved.core_models import AssetPostProcessor, post_process_defs
 from dagster.components.resolved.model import Model
+from dagster_shared.record import record
+from dagster_shared.yaml_utils.source_position import SourcePosition
 
 if TYPE_CHECKING:
     from dagster.components.core.decl import ComponentDecl

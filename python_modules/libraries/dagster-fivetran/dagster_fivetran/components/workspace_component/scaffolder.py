@@ -1,9 +1,10 @@
 from typing import Optional
 
+from pydantic import BaseModel
+
 from dagster.components.component.component_scaffolder import Scaffolder
 from dagster.components.component_scaffolding import scaffold_component
 from dagster.components.scaffold.scaffold import ScaffoldRequest
-from pydantic import BaseModel
 
 
 class FivetranScaffolderParams(BaseModel):

@@ -1,11 +1,11 @@
 from collections.abc import Mapping
 from typing import Any, Optional
 
+from typing_extensions import Self
+
 from dagster._core.events import EngineEventData
 from dagster._core.storage.dagster_run import DagsterRun
 from dagster._serdes.config_class import ConfigurableClassData
-from typing_extensions import Self
-
 from dagster_aws.ecs.container_context import EcsContainerContext
 from dagster_aws.ecs.launcher import EcsRunLauncher
 

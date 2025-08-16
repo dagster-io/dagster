@@ -1,7 +1,7 @@
-import dagster as dg
 import pytest
-from dagster._core.definitions.events import AssetKeyPartitionKey
 
+import dagster as dg
+from dagster._core.definitions.events import AssetKeyPartitionKey
 from dagster_tests.declarative_automation_tests.automation_condition_tests.builtins.test_dep_condition import (
     get_hardcoded_condition,
 )

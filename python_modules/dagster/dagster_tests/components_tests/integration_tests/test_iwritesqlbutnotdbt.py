@@ -1,6 +1,5 @@
 import dagster as dg
 from dagster_shared import check
-
 from dagster_tests.components_tests.integration_tests.component_loader import (
     chdir as chdir,
     load_test_component_defs,

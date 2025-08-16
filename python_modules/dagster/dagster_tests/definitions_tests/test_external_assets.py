@@ -1,8 +1,9 @@
 from collections.abc import Iterable
 from typing import AbstractSet  # noqa: UP035
 
-import dagster as dg
 import pytest
+
+import dagster as dg
 from dagster import (
     AssetExecutionContext,
     AssetKey,

@@ -6,6 +6,7 @@ from typing import Any, Callable, Optional
 import pytest
 import responses
 import yaml
+
 from dagster import AssetKey
 from dagster._core.definitions.assets.definition.asset_spec import AssetSpec
 from dagster._core.definitions.definitions_class import Definitions
@@ -16,8 +17,6 @@ from dagster.components.testing.utils import create_defs_folder_sandbox
 from dagster_fivetran.components.workspace_component.component import FivetranAccountComponent
 from dagster_fivetran.resources import FivetranWorkspace
 from dagster_fivetran.translator import FivetranConnector
-from dagster_shared.merger import deep_merge_dicts
-
 from dagster_fivetran_tests.conftest import (
     EXTRA_TEST_CONNECTOR_ID,
     EXTRA_TEST_CONNECTOR_NAME,
@@ -28,6 +27,7 @@ from dagster_fivetran_tests.conftest import (
     TEST_CONNECTOR_NAME,
     TEST_GROUP_ID,
 )
+from dagster_shared.merger import deep_merge_dicts
 
 
 @contextmanager

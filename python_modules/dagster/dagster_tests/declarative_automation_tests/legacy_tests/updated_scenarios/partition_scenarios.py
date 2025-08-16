@@ -7,7 +7,6 @@ from dagster._core.definitions.auto_materialize_rule_impls import (
 )
 from dagster._core.definitions.timestamp import TimestampWithTimezone
 from dagster._record import copy
-
 from dagster_tests.declarative_automation_tests.scenario_utils.asset_daemon_scenario import (
     AssetDaemonScenario,
     AssetRuleEvaluationSpec,

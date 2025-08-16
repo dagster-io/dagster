@@ -1,11 +1,5 @@
 import pytest
 import yaml
-from dagster._core.instance.config import (
-    backfills_daemon_config,
-    schedules_daemon_config,
-    sensors_daemon_config,
-)
-from dagster_k8s.models import k8s_model_from_dict, k8s_snake_case_dict
 from kubernetes import client as k8s_client
 from kubernetes.client import models
 from schema.charts.dagster.subschema.daemon import (
@@ -24,6 +18,12 @@ from schema.charts.dagster_user_deployments.subschema.user_deployments import Us
 from schema.charts.utils import kubernetes
 from schema.utils.helm_template import HelmTemplate
 
+from dagster._core.instance.config import (
+    backfills_daemon_config,
+    schedules_daemon_config,
+    sensors_daemon_config,
+)
+from dagster_k8s.models import k8s_model_from_dict, k8s_snake_case_dict
 from schema_tests.utils import create_simple_user_deployment
 
 

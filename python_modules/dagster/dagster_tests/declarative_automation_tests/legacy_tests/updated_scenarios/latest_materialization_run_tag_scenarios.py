@@ -1,6 +1,5 @@
 import dagster as dg
 from dagster import AutoMaterializePolicy, AutoMaterializeRule
-
 from dagster_tests.declarative_automation_tests.scenario_utils.asset_daemon_scenario import (
     AssetDaemonScenario,
 )

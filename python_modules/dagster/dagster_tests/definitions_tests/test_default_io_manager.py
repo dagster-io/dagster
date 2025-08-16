@@ -1,5 +1,6 @@
-import dagster as dg
 import pytest
+
+import dagster as dg
 from dagster._core.definitions.assets.graph.asset_graph import AssetGraph
 from dagster._core.storage.fs_io_manager import PickledObjectFilesystemIOManager
 from dagster._core.test_utils import environ

@@ -2,8 +2,9 @@ import importlib
 import sys
 from pathlib import Path
 
-import dagster as dg
 import pytest
+
+import dagster as dg
 from dagster.components.core.component_tree import ComponentTree
 from dagster.components.core.context import ComponentLoadContext
 from dagster.components.core.decl import (

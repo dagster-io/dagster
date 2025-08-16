@@ -3,7 +3,6 @@ from typing import TYPE_CHECKING
 
 from dagster._core.definitions.selector import RepositorySelector
 from dagster._core.workspace.permissions import Permissions
-
 from dagster_graphql.implementation.utils import (
     UserFacingGraphQLError,
     assert_permission_for_location,

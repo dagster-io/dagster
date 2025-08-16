@@ -1,3 +1,5 @@
+from pyspark.sql import DataFrame as NativeSparkDataFrame
+
 from dagster import (
     Any,
     Bool,
@@ -14,7 +16,6 @@ from dagster import (
 )
 from dagster._config import Selector
 from dagster._utils import dict_without_keys
-from pyspark.sql import DataFrame as NativeSparkDataFrame
 
 WriteModeOptions = Enum(
     "WriteMode",

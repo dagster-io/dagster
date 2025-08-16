@@ -11,8 +11,6 @@ from typing import (  # noqa: UP035
     overload,
 )
 
-from dagster_shared.serdes import whitelist_for_serdes
-
 import dagster._check as check
 from dagster._annotations import (
     PublicAttr,
@@ -42,6 +40,7 @@ from dagster._record import IHaveNew, LegacyNamedTupleMixin, record_custom
 from dagster._utils.internal_init import IHasInternalInit
 from dagster._utils.tags import normalize_tags
 from dagster._utils.warnings import disable_dagster_warnings
+from dagster_shared.serdes import whitelist_for_serdes
 
 if TYPE_CHECKING:
     from dagster._core.definitions.assets.definition.assets_definition import AssetsDefinition

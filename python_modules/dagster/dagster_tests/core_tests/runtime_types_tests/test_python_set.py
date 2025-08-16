@@ -1,8 +1,9 @@
 # ruff: noqa: UP006
 import typing
 
-import dagster as dg
 import pytest
+
+import dagster as dg
 from dagster._core.types.dagster_type import resolve_dagster_type
 from dagster._core.types.python_set import create_typed_runtime_set
 from dagster._utils.test import wrap_op_in_graph_and_execute

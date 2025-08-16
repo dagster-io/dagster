@@ -6,10 +6,10 @@ import time
 import uuid
 from contextlib import contextmanager
 
-import dagster._check as check
 import kubernetes
-from dagster._utils import safe_tempfile_path
 
+import dagster._check as check
+from dagster._utils import safe_tempfile_path
 from dagster_k8s_test_infra.cluster import ClusterConfig
 from dagster_k8s_test_infra.integration_utils import check_output, which_, within_docker
 

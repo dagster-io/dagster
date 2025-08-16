@@ -2,8 +2,6 @@ import asyncio
 from abc import abstractmethod
 from typing import TYPE_CHECKING, AbstractSet, Any, Optional, Sequence  # noqa: UP035
 
-from dagster_shared.serdes import whitelist_for_serdes
-
 import dagster._check as check
 from dagster._core.definitions.asset_key import AssetCheckKey, AssetKey
 from dagster._core.definitions.assets.graph.base_asset_graph import BaseAssetGraph, BaseAssetNode
@@ -19,6 +17,7 @@ from dagster._core.definitions.declarative_automation.operators.dep_operators im
 from dagster._core.definitions.declarative_automation.serialized_objects import OperatorType
 from dagster._record import copy, record
 from dagster._utils.security import non_secure_md5_hash_str
+from dagster_shared.serdes import whitelist_for_serdes
 
 if TYPE_CHECKING:
     from dagster._core.definitions.asset_selection import AssetSelection

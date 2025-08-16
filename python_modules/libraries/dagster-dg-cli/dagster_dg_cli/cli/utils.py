@@ -6,6 +6,8 @@ from pathlib import Path
 from typing import Any, Optional
 
 import click
+from packaging.version import Version
+
 from dagster_dg_core.component import EnvRegistry, all_components_schema_from_dg_context
 from dagster_dg_core.config import (
     DgRawBuildConfig,
@@ -28,7 +30,6 @@ from dagster_dg_core.utils.editor import (
 from dagster_dg_core.utils.telemetry import cli_telemetry_wrapper
 from dagster_shared import check
 from dagster_shared.serdes.objects import EnvRegistryKey
-from packaging.version import Version
 
 DEFAULT_SCHEMA_FOLDER_NAME = ".dg"
 

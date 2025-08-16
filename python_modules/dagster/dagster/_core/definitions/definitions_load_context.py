@@ -4,8 +4,6 @@ from enum import Enum
 from functools import cached_property
 from typing import TYPE_CHECKING, Any, ClassVar, Generic, Optional, TypeVar, cast
 
-from dagster_shared.serdes.serdes import PackableValue, deserialize_value, serialize_value
-
 from dagster._core.definitions.assets.definition.cacheable_assets_definition import (
     AssetsDefinitionCacheableData,
 )
@@ -14,6 +12,7 @@ from dagster._core.definitions.metadata.metadata_value import (
     CodeLocationReconstructionMetadataValue,
 )
 from dagster._core.errors import DagsterInvariantViolationError
+from dagster_shared.serdes.serdes import PackableValue, deserialize_value, serialize_value
 
 if TYPE_CHECKING:
     from dagster._core.definitions.repository_definition import RepositoryLoadData

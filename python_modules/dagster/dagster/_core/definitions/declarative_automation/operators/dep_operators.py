@@ -2,7 +2,6 @@ from abc import abstractmethod
 from collections.abc import Sequence
 from typing import TYPE_CHECKING, AbstractSet, Any, Generic, Optional, Union  # noqa: UP035
 
-from dagster_shared.serdes import whitelist_for_serdes
 from typing_extensions import Self
 
 import dagster._check as check
@@ -20,6 +19,7 @@ from dagster._core.definitions.declarative_automation.automation_context import 
 from dagster._core.definitions.declarative_automation.serialized_objects import OperatorType
 from dagster._record import copy, record
 from dagster._utils.security import non_secure_md5_hash_str
+from dagster_shared.serdes import whitelist_for_serdes
 
 if TYPE_CHECKING:
     from dagster._core.definitions.asset_selection import AssetSelection

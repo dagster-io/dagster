@@ -1,6 +1,7 @@
 from unittest import mock
 
 import pytest
+
 from dagster import (
     DagsterEvent,
     DagsterInstance,
@@ -42,10 +43,11 @@ from dagster_test.toys.sleepy import sleepy
 from dagster_test.toys.software_defined_assets import software_defined_assets
 
 ensure_dagster_tests_import()
+from slack_sdk.web.client import WebClient
+
 from dagster_tests.execution_tests.engine_tests.test_step_delegating_executor import (
     test_step_delegating_executor,
 )
-from slack_sdk.web.client import WebClient
 
 
 @pytest.fixture(name="instance")

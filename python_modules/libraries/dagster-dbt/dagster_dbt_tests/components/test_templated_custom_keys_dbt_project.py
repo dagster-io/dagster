@@ -4,6 +4,7 @@ from collections.abc import Iterator
 from pathlib import Path
 
 import pytest
+
 from dagster import AssetKey
 from dagster._core.test_utils import ensure_dagster_tests_import
 from dagster._utils.env import environ

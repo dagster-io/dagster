@@ -1,11 +1,11 @@
 import pytest
 import yaml
+from pydantic import ValidationError
+
 from dagster.components.testing import create_defs_folder_sandbox
 from dagster_databricks.components.databricks_asset_bundle.component import (
     DatabricksAssetBundleComponent,
 )
-from pydantic import ValidationError
-
 from dagster_databricks_tests.components.databricks_asset_bundle.conftest import (
     DATABRICKS_CONFIG_LOCATION_PATH,
 )

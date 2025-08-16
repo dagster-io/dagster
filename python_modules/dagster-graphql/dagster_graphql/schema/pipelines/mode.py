@@ -1,10 +1,10 @@
 from typing import Callable
 
-import dagster._check as check
 import graphene
+
+import dagster._check as check
 from dagster._config.snap import ConfigTypeSnap
 from dagster._core.snap import ModeDefSnap
-
 from dagster_graphql.schema.pipelines.logger import GrapheneLogger
 from dagster_graphql.schema.pipelines.resource import GrapheneResource
 from dagster_graphql.schema.util import ResolveInfo, non_null_list

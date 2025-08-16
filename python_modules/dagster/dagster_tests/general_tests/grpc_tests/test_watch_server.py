@@ -1,7 +1,8 @@
 import time
 
-import dagster as dg
 import pytest
+
+import dagster as dg
 from dagster._grpc.client import DagsterGrpcClient
 from dagster._grpc.constants import GrpcServerCommand
 from dagster._grpc.server import open_server_process

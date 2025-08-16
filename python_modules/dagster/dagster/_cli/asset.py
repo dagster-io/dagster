@@ -1,7 +1,6 @@
 from typing import Optional
 
 import click
-from dagster_shared.cli import python_pointer_options
 
 import dagster._check as check
 from dagster._cli.job import get_run_config_from_cli_opts
@@ -30,6 +29,7 @@ from dagster._core.storage.tags import (
 from dagster._core.telemetry import telemetry_wrapper
 from dagster._utils.hosted_user_process import recon_job_from_origin, recon_repository_from_origin
 from dagster._utils.interrupts import capture_interrupts
+from dagster_shared.cli import python_pointer_options
 
 
 @click.group(name="asset")

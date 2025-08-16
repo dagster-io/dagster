@@ -1,6 +1,7 @@
 import uuid
 
 import responses
+
 from dagster_powerbi import PowerBIWorkspace
 from dagster_powerbi.resource import (
     BASE_API_URL,

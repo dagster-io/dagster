@@ -8,9 +8,8 @@ from dagster._core.definitions.assets.definition.asset_spec import AssetSpec
 from dagster._core.definitions.metadata.metadata_set import NamespacedMetadataSet, TableMetadataSet
 from dagster._record import record
 from dagster._utils.cached_method import cached_method
-from dagster_shared.serdes import whitelist_for_serdes
-
 from dagster_airbyte.utils import generate_table_schema, get_airbyte_connection_table_name
+from dagster_shared.serdes import whitelist_for_serdes
 
 
 class AirbyteJobStatusType(str, Enum):

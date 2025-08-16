@@ -5,8 +5,9 @@ import subprocess
 import sys
 import time
 
-import dagster as dg
 import pytest
+
+import dagster as dg
 from dagster._api.list_repositories import sync_list_repositories_grpc
 from dagster._core.errors import DagsterUserCodeUnreachableError
 from dagster._core.remote_origin import (

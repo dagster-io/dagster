@@ -1,8 +1,8 @@
 from typing import Optional
 
 import click
-import dagster._check as check
 
+import dagster._check as check
 from automation.docker.dagster_docker import DagsterDockerImage
 from automation.docker.ecr import ensure_ecr_login
 from automation.docker.image_defs import get_image, list_images

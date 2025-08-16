@@ -38,8 +38,10 @@ if TYPE_CHECKING:
     except ImportError:
         pass
 
-import dagster._check as check
 import pandera.errors as pa_errors
+from typing_extensions import TypeAlias
+
+import dagster._check as check
 from dagster import (
     DagsterType,
     TableColumn,
@@ -51,10 +53,8 @@ from dagster import (
 )
 from dagster._annotations import beta
 from dagster._core.definitions.metadata import MetadataValue
-from dagster_shared.libraries import DagsterLibraryRegistry
-from typing_extensions import TypeAlias
-
 from dagster_pandera.version import __version__
+from dagster_shared.libraries import DagsterLibraryRegistry
 
 # Set up valid classes based on available imports
 if pa_pd and pa_pl and pl:

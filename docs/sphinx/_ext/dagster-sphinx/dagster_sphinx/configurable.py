@@ -3,6 +3,8 @@ import json
 import textwrap
 from typing import Any, Union, cast
 
+from sphinx.ext.autodoc import DataDocumenter
+
 import dagster._check as check
 from dagster import BoolSource, Field, IntSource, StringSource
 from dagster._config.config_type import (
@@ -21,7 +23,6 @@ from dagster._config.pythonic_config import (
 )
 from dagster._core.definitions.configurable import ConfigurableDefinition
 from dagster._serdes import ConfigurableClass
-from sphinx.ext.autodoc import DataDocumenter
 
 
 def type_repr(config_type: ConfigType) -> str:

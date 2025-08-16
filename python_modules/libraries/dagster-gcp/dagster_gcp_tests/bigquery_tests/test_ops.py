@@ -7,6 +7,9 @@ import google
 import google.api_core.exceptions
 import pandas as pd
 import pytest
+from google.cloud import bigquery
+from google.cloud.exceptions import NotFound
+
 from dagster import DagsterExecutionStepExecutionError, List, Nothing, job, op
 from dagster._config import process_config, validate_config
 from dagster._core.definitions import create_run_config_schema
@@ -21,8 +24,6 @@ from dagster_gcp import (
     import_gcs_paths_to_bq,
 )
 from dagster_pandas import DataFrame
-from google.cloud import bigquery
-from google.cloud.exceptions import NotFound
 
 
 def dataset_exists(name):

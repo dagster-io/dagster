@@ -1,11 +1,11 @@
 import datetime
 
 import pytest
+
 from dagster_airlift.core import AirflowBasicAuthBackend, AirflowInstance
 from dagster_airlift.core.filter import AirflowFilter
-from dagster_shared.error import DagsterError
-
 from dagster_airlift_tests.integration_tests.conftest import assert_link_exists
+from dagster_shared.error import DagsterError
 
 
 def test_airflow_instance(airflow_instance: None) -> None:

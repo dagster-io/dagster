@@ -10,6 +10,8 @@ from dataclasses import dataclass, field
 from typing import AbstractSet, NamedTuple, Optional, Union, cast  # noqa: UP035
 from unittest import mock
 
+from typing_extensions import Self
+
 import dagster as dg
 from dagster import (
     AssetExecutionContext,
@@ -46,8 +48,6 @@ from dagster._core.types.loadable_target_origin import LoadableTargetOrigin
 from dagster._core.utils import make_new_run_id
 from dagster._time import datetime_from_timestamp, get_current_datetime, parse_time_string
 from dagster_shared.serdes.utils import create_snapshot_id
-from typing_extensions import Self
-
 from dagster_tests.declarative_automation_tests.scenario_utils.base_scenario import run_request
 
 FAIL_TAG = "test/fail"

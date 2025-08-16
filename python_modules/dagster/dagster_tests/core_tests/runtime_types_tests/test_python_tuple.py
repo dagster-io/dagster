@@ -1,8 +1,9 @@
 # ruff: noqa: UP006, UP035
 from typing import Tuple
 
-import dagster as dg
 import pytest
+
+import dagster as dg
 from dagster._core.types.python_tuple import create_typed_tuple
 from dagster._utils.test import wrap_op_in_graph_and_execute
 

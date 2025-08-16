@@ -20,7 +20,6 @@ from dagster._core.storage.event_log import SqliteEventLogStorage
 from dagster._core.storage.root import LocalArtifactStorage
 from dagster._core.storage.runs import SqliteRunStorage
 from dagster._core.test_utils import environ
-
 from dagster_tests.storage_tests.utils.compute_log_manager import TestComputeLogManager
 
 
@@ -171,13 +170,14 @@ from contextlib import contextmanager
 from typing import Any
 
 import pytest
+from typing_extensions import Self
+
 from dagster._core.events import DagsterEventType
 from dagster._core.storage.compute_log_manager import CapturedLogContext, ComputeIOType
 from dagster._core.storage.local_compute_log_manager import LocalComputeLogManager
 from dagster._core.storage.noop_compute_log_manager import NoOpComputeLogManager
 from dagster._serdes import ConfigurableClassData
 from dagster._time import get_current_datetime
-from typing_extensions import Self
 
 
 def test_compute_log_manager_instance():

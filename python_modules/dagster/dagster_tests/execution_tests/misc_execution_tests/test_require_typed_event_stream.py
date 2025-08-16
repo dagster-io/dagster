@@ -1,8 +1,9 @@
 from collections.abc import Iterator
 from contextlib import contextmanager
 
-import dagster as dg
 import pytest
+
+import dagster as dg
 from dagster import OpExecutionContext
 from dagster._utils.test import wrap_op_in_graph_and_execute
 

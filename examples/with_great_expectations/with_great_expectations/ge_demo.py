@@ -1,7 +1,8 @@
+from pandas import read_csv
+
 from dagster import Config, job, op
 from dagster._utils import file_relative_path
 from dagster_ge.factory import ge_validation_op_factory
-from pandas import read_csv
 
 
 class GEOpConfig(Config):

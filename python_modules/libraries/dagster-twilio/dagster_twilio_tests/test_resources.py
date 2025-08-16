@@ -1,10 +1,11 @@
 import os
 
 import pytest
+from twilio.base.exceptions import TwilioRestException
+
 from dagster import op
 from dagster._utils.test import wrap_op_in_graph_and_execute
 from dagster_twilio import TwilioResource, twilio_resource
-from twilio.base.exceptions import TwilioRestException
 
 
 @pytest.fixture(name="twilio_resource_option", params=[True, False])

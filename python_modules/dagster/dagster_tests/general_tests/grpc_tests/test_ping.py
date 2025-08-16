@@ -7,10 +7,11 @@ import threading
 import time
 from unittest import mock
 
+import pytest
+
 import dagster as dg
 import dagster._check as check
 import dagster_shared.seven as seven
-import pytest
 from dagster._core.errors import DagsterUserCodeUnreachableError
 from dagster._core.utils import FuturesAwareThreadPoolExecutor
 from dagster._grpc.client import DagsterGrpcClient, ephemeral_grpc_api_client

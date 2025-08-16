@@ -14,8 +14,6 @@ from contextlib import ExitStack
 from types import TracebackType
 from typing import AbstractSet, Any, Optional, cast  # noqa: UP035
 
-from dagster_shared.serdes import deserialize_value
-
 import dagster._check as check
 from dagster._core.definitions.asset_daemon_cursor import (
     AssetDaemonCursor,
@@ -81,6 +79,7 @@ from dagster._daemon.utils import DaemonErrorCapture
 from dagster._serdes import serialize_value
 from dagster._time import get_current_datetime, get_current_timestamp
 from dagster._utils import SingleInstigatorDebugCrashFlags, check_for_debug_crash
+from dagster_shared.serdes import deserialize_value
 
 _LEGACY_PRE_SENSOR_AUTO_MATERIALIZE_CURSOR_KEY = "ASSET_DAEMON_CURSOR"
 _PRE_SENSOR_AUTO_MATERIALIZE_CURSOR_KEY = "ASSET_DAEMON_CURSOR_NEW"

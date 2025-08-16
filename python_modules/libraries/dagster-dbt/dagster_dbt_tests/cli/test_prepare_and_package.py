@@ -7,10 +7,11 @@ from typing import TYPE_CHECKING, cast
 
 import pytest
 import yaml
+from typer.testing import CliRunner
+
 from dagster import AssetsDefinition, materialize
 from dagster_dbt.cli.app import app
 from dagster_dbt.core.resource import DbtCliResource
-from typer.testing import CliRunner
 
 if TYPE_CHECKING:
     from dagster_dbt.dbt_project import DbtProject

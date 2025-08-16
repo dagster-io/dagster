@@ -1,7 +1,6 @@
 import time
 
 import dagster as dg
-
 from dagster_tests.execution_tests.engine_tests.test_step_delegating_executor import (
     test_step_delegating_executor,
 )

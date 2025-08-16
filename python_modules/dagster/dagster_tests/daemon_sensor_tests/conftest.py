@@ -4,8 +4,9 @@ from collections.abc import Iterator
 from typing import Optional
 from unittest import mock
 
-import dagster as dg
 import pytest
+
+import dagster as dg
 from dagster._core.instance import DagsterInstance
 from dagster._core.remote_representation.external import RemoteRepository
 from dagster._core.test_utils import (

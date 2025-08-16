@@ -1,7 +1,8 @@
 from typing import cast
 
-import dagster as dg
 import pytest
+
+import dagster as dg
 from dagster import AssetExecutionContext, AssetSelection
 
 

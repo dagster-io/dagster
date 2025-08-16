@@ -3,6 +3,7 @@ from typing import Optional
 from unittest import mock
 
 import pytest
+
 from dagster._utils.container import CGroupVersion, retrieve_containerized_utilization_metrics
 from dagster._utils.env import environ
 

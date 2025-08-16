@@ -2,6 +2,9 @@ from collections.abc import Mapping
 from enum import Enum
 from typing import Any, Optional, Union
 
+from looker_sdk.sdk.api40.methods import Looker40SDK
+from looker_sdk.sdk.api40.models import Dashboard, DashboardFilter, LookmlModelExplore, User
+
 from dagster import (
     AssetKey,
     AssetSpec,
@@ -11,8 +14,6 @@ from dagster._annotations import deprecated, public
 from dagster._core.definitions.metadata.metadata_value import MetadataValue
 from dagster._record import record
 from dagster._utils.log import get_dagster_logger
-from looker_sdk.sdk.api40.methods import Looker40SDK
-from looker_sdk.sdk.api40.models import Dashboard, DashboardFilter, LookmlModelExplore, User
 
 logger = get_dagster_logger("dagster_looker")
 

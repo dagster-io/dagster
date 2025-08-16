@@ -4,9 +4,10 @@ from datetime import datetime, timedelta
 from random import Random
 from typing import Union
 
-from dagster import ConfigurableResource
 from faker import Faker
 from pydantic import Field
+
+from dagster import ConfigurableResource
 
 # This file holds a resource you'll use in the tutorial
 # You won't need to use this file/class until the Connecting to External Services section of the tutorial (Part 6).

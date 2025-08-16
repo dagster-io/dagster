@@ -10,7 +10,6 @@ from dagster import (
 )
 from dagster._annotations import beta
 from dagster._record import record
-
 from dagster_dbt.cloud_v2.client import DbtCloudWorkspaceClient
 from dagster_dbt.cloud_v2.run_handler import DbtCloudJobRunHandler, DbtCloudJobRunResults
 from dagster_dbt.dagster_dbt_translator import DagsterDbtTranslator

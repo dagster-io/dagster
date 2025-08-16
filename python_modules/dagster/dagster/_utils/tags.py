@@ -5,11 +5,10 @@ from collections.abc import Mapping, Sequence
 from typing import TYPE_CHECKING, Any, Optional, Union
 
 import dagster_shared.seven as seven
-from dagster_shared.utils import get_boolean_string_value
-
 from dagster import _check as check
 from dagster._core.errors import DagsterInvalidDefinitionError
 from dagster._core.storage.tags import SYSTEM_TAG_PREFIX, USER_EDITABLE_SYSTEM_TAGS
+from dagster_shared.utils import get_boolean_string_value
 
 if TYPE_CHECKING:
     from dagster._core.execution.plan.step import ExecutionStep

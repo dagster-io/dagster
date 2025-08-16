@@ -1,12 +1,13 @@
 import dask.dataframe as dd
 import pytest
+from dask.dataframe.utils import assert_eq
+
 from dagster import file_relative_path, op
 from dagster._core.definitions.input import In
 from dagster._utils.test import wrap_op_in_graph_and_execute
 from dagster_dask import DataFrame
 from dagster_dask.data_frame import DataFrameReadTypes
 from dagster_dask.utils import DataFrameUtilities
-from dask.dataframe.utils import assert_eq
 
 
 def create_dask_df():

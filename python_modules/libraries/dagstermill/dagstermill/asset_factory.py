@@ -24,7 +24,6 @@ from dagster._core.definitions.events import CoercibleToAssetKey, CoercibleToAss
 from dagster._core.execution.context.compute import OpExecutionContext
 from dagster._core.storage.tags import COMPUTE_KIND_TAG
 from dagster._utils.tags import normalize_tags
-
 from dagstermill.factory import _clean_path_for_windows, execute_notebook
 
 

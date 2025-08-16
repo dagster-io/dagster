@@ -1,8 +1,9 @@
 from pathlib import Path
 from typing import cast
 
-import dagster as dg
 import pytest
+
+import dagster as dg
 from dagster import ComponentLoadContext
 from dagster._core.remote_representation.external_data import RepositorySnap
 from dagster.components.core.component_tree import ComponentTree, LegacyAutoloadingComponentTree

@@ -5,6 +5,7 @@ from collections.abc import Sequence
 from typing import Any, NamedTuple, Optional, Union
 
 import click
+
 import dagster._check as check
 
 

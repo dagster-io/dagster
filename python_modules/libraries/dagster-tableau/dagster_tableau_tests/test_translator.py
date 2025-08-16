@@ -2,7 +2,6 @@ from dagster._core.definitions.asset_key import AssetKey
 from dagster._core.definitions.assets.definition.asset_spec import AssetSpec
 from dagster_tableau import DagsterTableauTranslator
 from dagster_tableau.translator import TableauTranslatorData, TableauWorkspaceData
-
 from dagster_tableau_tests.conftest import (
     TEST_DATA_SOURCE_ID,
     TEST_EMBEDDED_DATA_SOURCE_ID,

@@ -2,8 +2,8 @@ import json
 
 from airflow.models import BaseOperator
 from airflow.utils.decorators import apply_defaults
-from dagster._annotations import superseded
 
+from dagster._annotations import superseded
 from dagster_airflow.hooks.dagster_hook import DagsterHook
 from dagster_airflow.links.dagster_link import LINK_FMT, DagsterLink
 from dagster_airflow.utils import is_airflow_2_loaded_in_environment

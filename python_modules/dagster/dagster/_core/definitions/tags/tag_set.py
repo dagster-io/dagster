@@ -1,11 +1,11 @@
 from typing import Any, Literal, cast
 
-from dagster_shared.dagster_model.pydantic_compat_layer import model_fields
 from typing_extensions import TypeVar, get_args, get_origin
 
 from dagster import _check as check
 from dagster._core.definitions.metadata.metadata_set import NamespacedKVSet
 from dagster._utils.typing_api import is_closed_python_optional_type
+from dagster_shared.dagster_model.pydantic_compat_layer import model_fields
 
 T_NamespacedTagSet = TypeVar("T_NamespacedTagSet", bound="NamespacedTagSet")
 

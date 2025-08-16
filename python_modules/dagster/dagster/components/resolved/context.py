@@ -5,7 +5,6 @@ from collections.abc import Mapping, Sequence
 from pathlib import Path
 from typing import Any, Optional, TypeVar, Union, overload
 
-from dagster_shared.yaml_utils.source_position import SourcePositionTree
 from pydantic import BaseModel
 
 from dagster._annotations import public
@@ -14,6 +13,7 @@ from dagster._core.definitions.declarative_automation.automation_condition impor
 )
 from dagster._record import copy, record
 from dagster.components.resolved.errors import ResolutionException
+from dagster_shared.yaml_utils.source_position import SourcePositionTree
 
 T = TypeVar("T")
 

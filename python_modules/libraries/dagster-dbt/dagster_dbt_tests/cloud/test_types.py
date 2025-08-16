@@ -1,5 +1,4 @@
 from dagster_dbt import DbtCloudOutput
-
 from dagster_dbt_tests.cloud.utils import sample_run_details, sample_run_results
 
 

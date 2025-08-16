@@ -4,15 +4,15 @@ from collections.abc import Mapping
 from contextlib import contextmanager
 from typing import Any, Optional
 
-import dagster._check as check
 import yaml
-from dagster import ConfigurableResource, IAttachDifferentObjectToOpContext, resource
-from dagster._annotations import beta
-from dagster._core.definitions.resource_definition import dagster_maintained_resource
 from googleapiclient.discovery import build
 from oauth2client.client import GoogleCredentials
 from pydantic import Field
 
+import dagster._check as check
+from dagster import ConfigurableResource, IAttachDifferentObjectToOpContext, resource
+from dagster._annotations import beta
+from dagster._core.definitions.resource_definition import dagster_maintained_resource
 from dagster_gcp.dataproc.configs import define_dataproc_create_cluster_config
 from dagster_gcp.dataproc.types import DataprocError
 

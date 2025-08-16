@@ -2,9 +2,10 @@ import datetime
 import os
 from pathlib import Path
 
-import dagster_shared.check as check
 import pytest
 import yaml
+
+import dagster_shared.check as check
 from dagster_shared.yaml_utils import (
     dump_run_config_yaml,
     load_run_config_yaml,

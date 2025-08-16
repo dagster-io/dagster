@@ -1,5 +1,4 @@
 from dagster_databricks.components.databricks_asset_bundle.configs import DatabricksConfig
-
 from dagster_databricks_tests.components.databricks_asset_bundle.conftest import (
     DATABRICKS_CONFIG_LOCATION_PATH,
 )

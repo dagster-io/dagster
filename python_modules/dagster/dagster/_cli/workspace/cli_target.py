@@ -7,9 +7,6 @@ from typing import Any, Callable, Optional, TypeVar, cast
 
 import click
 from click import UsageError
-from dagster_shared.cli import ClickOption, PythonPointerOpts, WorkspaceOpts, apply_click_params
-from dagster_shared.seven import JSONDecodeError, json
-from dagster_shared.yaml_utils import load_yaml_from_glob_list
 from typing_extensions import Never, Self
 
 import dagster._check as check
@@ -47,6 +44,9 @@ from dagster._grpc.utils import get_loadable_targets
 from dagster._record import record
 from dagster._utils.error import serializable_error_info_from_exc_info
 from dagster.components.definitions import LazyDefinitions
+from dagster_shared.cli import ClickOption, PythonPointerOpts, WorkspaceOpts, apply_click_params
+from dagster_shared.seven import JSONDecodeError, json
+from dagster_shared.yaml_utils import load_yaml_from_glob_list
 
 logger = logging.getLogger("dagster")
 WORKSPACE_TARGET_WARNING = (

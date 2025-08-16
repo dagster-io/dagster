@@ -11,9 +11,10 @@ from contextlib import ExitStack, contextmanager
 from typing import Optional, cast
 from unittest import mock
 
-import dagster as dg
 import pytest
 import sqlalchemy as db
+
+import dagster as dg
 from dagster import (
     DagsterInstance,
     JobDefinition,

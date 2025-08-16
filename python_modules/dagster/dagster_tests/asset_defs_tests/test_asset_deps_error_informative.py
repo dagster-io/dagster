@@ -3,8 +3,9 @@ import sys
 import time
 from unittest import mock
 
-import dagster as dg
 import pytest
+
+import dagster as dg
 from dagster import Definitions
 from dagster._core.definitions.resolved_asset_deps import resolve_similar_asset_names
 

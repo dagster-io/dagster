@@ -2,6 +2,8 @@ import re
 from collections.abc import Iterator, Sequence
 from typing import TYPE_CHECKING, Any, Optional, Union, cast
 
+from typing_extensions import TypeVar
+
 from dagster import (
     AssetMaterialization,
     MaterializeResult,
@@ -17,7 +19,6 @@ from dagster._core.definitions.metadata.table import (
 )
 from dagster._core.execution.context.asset_execution_context import AssetExecutionContext
 from dagster._core.execution.context.op_execution_context import OpExecutionContext
-from typing_extensions import TypeVar
 
 if TYPE_CHECKING:
     from dagster_sling.resources import SlingResource

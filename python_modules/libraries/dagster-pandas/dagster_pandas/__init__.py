@@ -1,5 +1,3 @@
-from dagster_shared.libraries import DagsterLibraryRegistry
-
 from dagster_pandas.constraints import (
     ColumnWithMetadataException,
     ConstraintWithMetadata,
@@ -24,6 +22,7 @@ from dagster_pandas.data_frame import (
 )
 from dagster_pandas.validation import PandasColumn
 from dagster_pandas.version import __version__
+from dagster_shared.libraries import DagsterLibraryRegistry
 
 DagsterLibraryRegistry.register("dagster-pandas", __version__)
 

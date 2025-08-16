@@ -11,16 +11,6 @@ from contextlib import contextmanager
 from threading import Event, Thread
 from typing import IO, Optional, TypeVar, Union
 
-from dagster_pipes import (
-    PIPES_PROTOCOL_VERSION_FIELD,
-    PipesContextData,
-    PipesDefaultContextLoader,
-    PipesDefaultMessageWriter,
-    PipesExtras,
-    PipesOpenedData,
-    PipesParams,
-)
-
 from dagster import (
     OpExecutionContext,
     _check as check,
@@ -35,6 +25,15 @@ from dagster._core.pipes.context import (
     build_external_execution_context_data,
 )
 from dagster._utils import tail_file
+from dagster_pipes import (
+    PIPES_PROTOCOL_VERSION_FIELD,
+    PipesContextData,
+    PipesDefaultContextLoader,
+    PipesDefaultMessageWriter,
+    PipesExtras,
+    PipesOpenedData,
+    PipesParams,
+)
 
 TCursor = TypeVar("TCursor")
 

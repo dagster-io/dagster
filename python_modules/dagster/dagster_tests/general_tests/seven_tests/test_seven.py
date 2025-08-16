@@ -5,8 +5,9 @@ import tempfile
 from abc import ABC
 from functools import update_wrapper
 
-import dagster as dg
 import pytest
+
+import dagster as dg
 from dagster._core.types.dagster_type import ListType
 from dagster_shared import seven
 from dagster_shared.seven import is_subclass

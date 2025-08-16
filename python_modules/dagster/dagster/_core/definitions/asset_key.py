@@ -3,13 +3,12 @@ from collections.abc import Mapping, Sequence
 from functools import cached_property
 from typing import TYPE_CHECKING, Any, NamedTuple, Optional, TypeVar, Union
 
-import dagster_shared.seven as seven
-from dagster_pipes import to_assey_key_path
-
 import dagster._check as check
+import dagster_shared.seven as seven
 from dagster._annotations import PublicAttr, public
 from dagster._record import IHaveNew, record_custom
 from dagster._serdes import whitelist_for_serdes
+from dagster_pipes import to_assey_key_path
 
 ASSET_KEY_SPLIT_REGEX = re.compile("[^a-zA-Z0-9_]")
 ASSET_KEY_DELIMITER = "/"

@@ -8,6 +8,7 @@ from typing import TYPE_CHECKING
 import boto3
 import botocore
 import pytest
+
 from dagster import asset, materialize
 from dagster._core.definitions.asset_checks.asset_check_spec import AssetCheckKey, AssetCheckSpec
 from dagster._core.definitions.data_version import (
@@ -19,7 +20,6 @@ from dagster._core.definitions.metadata import MarkdownMetadataValue
 from dagster._core.execution.context.compute import AssetExecutionContext
 from dagster._core.instance_for_test import instance_for_test
 from dagster._core.storage.asset_check_execution_record import AssetCheckExecutionRecordStatus
-
 from dagster_aws.pipes import PipesCloudWatchMessageReader, PipesECSClient
 from dagster_aws.pipes.clients.ecs import WaiterConfig
 from dagster_aws_tests.pipes_tests.fake_ecs import LocalECSMockClient

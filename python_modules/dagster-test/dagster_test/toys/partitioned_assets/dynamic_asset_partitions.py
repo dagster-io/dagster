@@ -1,4 +1,5 @@
 import click
+
 from dagster import AssetSelection, DagsterInstance, asset, define_asset_job
 from dagster._core.definitions.partitions.definition import (
     DailyPartitionsDefinition,

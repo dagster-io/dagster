@@ -1,10 +1,13 @@
 from collections.abc import Sequence
 from typing import ContextManager, Optional  # noqa: UP035
 
-import dagster._check as check
 import sqlalchemy as db
 import sqlalchemy.dialects as db_dialects
 import sqlalchemy.pool as db_pool
+from sqlalchemy import event
+from sqlalchemy.engine import Connection
+
+import dagster._check as check
 from dagster._config.config_schema import UserConfigSchema
 from dagster._core.definitions.asset_key import EntityKey
 from dagster._core.definitions.declarative_automation.serialized_objects import (
@@ -26,9 +29,6 @@ from dagster._core.storage.sql import (
 )
 from dagster._serdes import ConfigurableClass, ConfigurableClassData, serialize_value
 from dagster._time import get_current_datetime
-from sqlalchemy import event
-from sqlalchemy.engine import Connection
-
 from dagster_postgres.utils import (
     create_pg_connection,
     pg_alembic_config,

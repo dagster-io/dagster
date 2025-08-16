@@ -11,6 +11,7 @@ from typing import Any
 from unittest import mock
 
 import pytest
+
 from dagster.components.utils import format_error_message
 from dagster_dg_core.utils import activate_venv, set_toml_node
 from dagster_test.dg_utils.utils import (

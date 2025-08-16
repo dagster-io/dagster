@@ -3,10 +3,11 @@ from collections.abc import Sequence
 from pathlib import Path
 from typing import Optional
 
-import dagster as dg
 import duckdb
-from dagster import ComponentLoadContext
 from pydantic import BaseModel
+
+import dagster as dg
+from dagster import ComponentLoadContext
 
 
 class DuckDbScaffolderParams(BaseModel):

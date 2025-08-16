@@ -7,7 +7,6 @@ from dagster._core.definitions.auto_materialize_rule_evaluation import (
     ParentUpdatedRuleEvaluationData,
 )
 from dagster._time import create_datetime
-
 from dagster_tests.declarative_automation_tests.legacy_tests.scenarios.partition_scenarios import (
     hourly_partitions_def,
     two_partitions_partitions_def,

@@ -4,6 +4,7 @@ from unittest import mock
 
 import kubernetes
 import pytest
+
 from dagster_k8s.pipes import PipesK8sPodLogsMessageReader, _is_kube_timestamp
 
 

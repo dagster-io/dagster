@@ -5,11 +5,10 @@ from collections.abc import Sequence
 from typing import Any, Optional
 
 import requests
+
 from dagster._annotations import beta, public
 from dagster._core.definitions.utils import check_valid_name
 from dagster._time import get_current_datetime
-from dagster_shared.error import DagsterError
-
 from dagster_airlift.core.filter import AirflowFilter
 from dagster_airlift.core.runtime_representations import DagRun, TaskInstance
 from dagster_airlift.core.serialization.serialized_data import (
@@ -19,6 +18,7 @@ from dagster_airlift.core.serialization.serialized_data import (
     DatasetProducingTask,
     TaskInfo,
 )
+from dagster_shared.error import DagsterError
 
 TERMINAL_STATES = {"success", "failed", "canceled"}
 # This limits the number of task ids that we attempt to query from airflow's task instance rest API at a given time.

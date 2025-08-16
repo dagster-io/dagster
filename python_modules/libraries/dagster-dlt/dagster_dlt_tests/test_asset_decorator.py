@@ -4,6 +4,10 @@ from typing import Any, Optional
 import dlt
 import duckdb
 import pytest
+from dlt import Pipeline
+from dlt.common.destination import Destination
+from dlt.extract.resource import DltResource
+
 from dagster import (
     AssetExecutionContext,
     AssetKey,
@@ -32,15 +36,11 @@ from dagster._core.definitions.tags import build_kind_tag, has_kind
 from dagster._core.errors import DagsterInvariantViolationError
 from dagster_dlt import DagsterDltResource, DagsterDltTranslator, dlt_assets
 from dagster_dlt.translator import DltResourceTranslatorData
-from dagster_shared import check
-from dlt import Pipeline
-from dlt.common.destination import Destination
-from dlt.extract.resource import DltResource
-
 from dagster_dlt_tests.dlt_test_sources.duckdb_with_transformer import (
     pipeline,
     pipeline as dlt_source,
 )
+from dagster_shared import check
 
 
 def test_example_pipeline_asset_keys(dlt_pipeline: Pipeline) -> None:

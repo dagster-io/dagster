@@ -4,9 +4,10 @@ from pathlib import Path
 from typing import Any, Optional, Union
 
 import yaml
+from typing_extensions import Self
+
 from dagster import get_dagster_logger
 from dagster_shared.record import IHaveNew, record, record_custom
-from typing_extensions import Self
 
 logger = get_dagster_logger()
 

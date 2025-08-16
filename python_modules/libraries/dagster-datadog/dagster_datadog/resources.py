@@ -1,8 +1,9 @@
+from datadog import DogStatsd, api, initialize, statsd
+from pydantic import Field
+
 from dagster import ConfigurableResource, resource
 from dagster._annotations import beta
 from dagster._core.definitions.resource_definition import dagster_maintained_resource
-from datadog import DogStatsd, api, initialize, statsd
-from pydantic import Field
 
 
 class DatadogClient:

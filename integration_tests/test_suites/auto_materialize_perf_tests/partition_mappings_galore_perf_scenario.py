@@ -1,6 +1,7 @@
 from collections.abc import Sequence
 from typing import Optional, Union, cast
 
+from auto_materialize_perf_tests.perf_scenario import ActivityHistory, PerfScenario
 from dagster import (
     AssetDep,
     AssetsDefinition,
@@ -20,8 +21,6 @@ from dagster._core.storage.tags import (
     ASSET_PARTITION_RANGE_START_TAG,
 )
 from dagster._time import parse_time_string
-
-from auto_materialize_perf_tests.perf_scenario import ActivityHistory, PerfScenario
 
 
 def asset_def(

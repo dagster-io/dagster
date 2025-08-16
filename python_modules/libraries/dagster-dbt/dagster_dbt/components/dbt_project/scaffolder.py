@@ -2,12 +2,13 @@ import os
 from pathlib import Path
 from typing import Optional
 
+from pydantic import BaseModel, Field
+
 import dagster._check as check
 from dagster._core.errors import DagsterInvalidInvocationError
 from dagster.components.component.component_scaffolder import Scaffolder
 from dagster.components.component_scaffolding import scaffold_component
 from dagster.components.scaffold.scaffold import ScaffoldRequest
-from pydantic import BaseModel, Field
 
 
 class DbtScaffoldParams(BaseModel):

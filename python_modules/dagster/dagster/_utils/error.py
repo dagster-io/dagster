@@ -7,12 +7,12 @@ import uuid
 from types import TracebackType
 from typing import Optional, Union
 
-from dagster_shared.error import SerializableErrorInfo
 from typing_extensions import TypeAlias
 
 import dagster._check as check
 from dagster._core.errors import DagsterUserCodeExecutionError
 from dagster._serdes import serialize_value
+from dagster_shared.error import SerializableErrorInfo
 
 ExceptionInfo: TypeAlias = Union[
     tuple[type[BaseException], BaseException, TracebackType],

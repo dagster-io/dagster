@@ -1,8 +1,9 @@
 from collections.abc import Mapping, Sequence
 from typing import Any, Optional, cast
 
-import dagster._check as check
 import graphene
+
+import dagster._check as check
 from dagster import AssetCheckKey
 from dagster._core.definitions.assets.graph.remote_asset_graph import RemoteAssetGraph
 from dagster._core.definitions.events import AssetKey
@@ -20,7 +21,6 @@ from dagster._core.remote_representation.external import CompoundID
 from dagster._core.scheduler.instigation import InstigatorStatus, InstigatorType
 from dagster._core.storage.event_log.base import AssetRecord
 from dagster._core.workspace.permissions import Permissions
-
 from dagster_graphql.implementation.execution.backfill import get_asset_backfill_preview
 from dagster_graphql.implementation.external import (
     fetch_location_entry,

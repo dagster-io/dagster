@@ -17,7 +17,6 @@ from dagster._core.storage.tags import BACKFILL_ID_TAG, TagType, get_tag_type
 from dagster._record import copy, record
 from dagster._time import datetime_from_timestamp
 from dagster._utils.warnings import disable_dagster_warnings
-
 from dagster_graphql.implementation.external import ensure_valid_config, get_remote_job_or_raise
 
 if TYPE_CHECKING:

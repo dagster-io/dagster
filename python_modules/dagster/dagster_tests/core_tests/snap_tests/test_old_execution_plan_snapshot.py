@@ -1,5 +1,6 @@
-import dagster as dg
 import pytest
+
+import dagster as dg
 from dagster._core.execution.plan.plan import ExecutionPlan
 from dagster._core.snap.execution_plan_snapshot import ExecutionPlanSnapshot
 

@@ -23,8 +23,9 @@ from typing import (
     Union,
 )
 
-import dagster_shared.check as check
 import pytest
+
+import dagster_shared.check as check
 from dagster_shared.check import (
     CheckError,
     ElementCheckError,

@@ -2,8 +2,8 @@ from collections.abc import Mapping
 from typing import TYPE_CHECKING, Any
 
 import graphene
-from dagster._core.definitions.selector import ScheduleSelector
 
+from dagster._core.definitions.selector import ScheduleSelector
 from dagster_graphql.implementation.utils import capture_error
 from dagster_graphql.schema.errors import GraphenePythonError, GrapheneScheduleNotFoundError
 from dagster_graphql.schema.inputs import GrapheneScheduleSelector

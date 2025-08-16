@@ -4,7 +4,6 @@ from dagster._core.definitions.auto_materialize_rule_evaluation import (
     ParentUpdatedRuleEvaluationData,
 )
 from dagster._core.definitions.auto_materialize_rule_impls import SkipOnRunInProgressRule
-
 from dagster_tests.declarative_automation_tests.scenario_utils.asset_daemon_scenario import (
     AssetDaemonScenario,
     AssetRuleEvaluationSpec,

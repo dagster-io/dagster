@@ -5,6 +5,11 @@ from io import StringIO
 from typing import Optional
 
 import paramiko
+from paramiko.client import SSHClient
+from paramiko.config import SSH_PORT
+from pydantic import Field, PrivateAttr
+from sshtunnel import SSHTunnelForwarder
+
 from dagster import (
     BoolSource,
     Field as DagsterField,
@@ -18,10 +23,6 @@ from dagster._config.pythonic_config import ConfigurableResource
 from dagster._core.definitions.resource_definition import dagster_maintained_resource
 from dagster._core.execution.context.init import InitResourceContext
 from dagster._utils import mkdir_p
-from paramiko.client import SSHClient
-from paramiko.config import SSH_PORT
-from pydantic import Field, PrivateAttr
-from sshtunnel import SSHTunnelForwarder
 
 
 def key_from_str(key_str):

@@ -10,12 +10,13 @@ from os import environ
 from typing import Any, Optional
 
 import mlflow
+from mlflow.entities.run_status import RunStatus
+from mlflow.exceptions import MlflowException
+
 from dagster import Field, Noneable, Permissive, StringSource, resource
 from dagster._annotations import beta
 from dagster._core.definitions.resource_definition import dagster_maintained_resource
 from dagster._utils.backoff import backoff
-from mlflow.entities.run_status import RunStatus
-from mlflow.exceptions import MlflowException
 
 CONFIG_SCHEMA = {
     "experiment_name": Field(StringSource, is_required=True, description="MlFlow experiment name."),

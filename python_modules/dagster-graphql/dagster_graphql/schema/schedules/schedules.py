@@ -2,13 +2,13 @@ import time
 from collections.abc import Sequence
 from typing import Optional
 
-import dagster._check as check
 import graphene
+
+import dagster._check as check
 from dagster import DefaultScheduleStatus
 from dagster._core.remote_representation import RemoteSchedule
 from dagster._core.scheduler.instigation import InstigatorState, InstigatorStatus
 from dagster._time import get_current_timestamp
-
 from dagster_graphql.implementation.events import iterate_metadata_entries
 from dagster_graphql.implementation.loader import RepositoryScopedBatchLoader
 from dagster_graphql.schema.asset_selections import GrapheneAssetSelection

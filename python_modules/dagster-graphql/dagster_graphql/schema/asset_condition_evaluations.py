@@ -4,6 +4,7 @@ from collections.abc import Sequence
 from typing import Optional, Union
 
 import graphene
+
 from dagster._core.asset_graph_view.serializable_entity_subset import SerializableEntitySubset
 from dagster._core.definitions.asset_key import AssetKey
 from dagster._core.definitions.declarative_automation.serialized_objects import (
@@ -11,7 +12,6 @@ from dagster._core.definitions.declarative_automation.serialized_objects import 
     AutomationConditionSnapshot,
 )
 from dagster._core.scheduler.instigation import AutoMaterializeAssetEvaluationRecord
-
 from dagster_graphql.implementation.events import iterate_metadata_entries
 from dagster_graphql.schema.auto_materialize_asset_evaluations import (
     GrapheneAutoMaterializeAssetEvaluationNeedsMigrationError,

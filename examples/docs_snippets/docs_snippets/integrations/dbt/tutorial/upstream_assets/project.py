@@ -1,4 +1,3 @@
-# ruff: noqa: I001
 from pathlib import Path
 
 from dagster_dbt import DbtProject

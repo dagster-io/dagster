@@ -7,6 +7,11 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Any, Optional
 
 import click
+from rich.console import Console
+from rich.text import Text
+
+from dagster_dg_cli.utils.plus import gql
+from dagster_dg_cli.utils.plus.gql_client import DagsterPlusGraphQLClient
 from dagster_dg_core.component import EnvRegistry
 from dagster_dg_core.config import normalize_cli_config
 from dagster_dg_core.context import DgContext
@@ -24,11 +29,6 @@ from dagster_shared.serdes.objects.definition_metadata import (
     DgSensorMetadata,
 )
 from dagster_shared.utils.warnings import disable_dagster_warnings
-from rich.console import Console
-from rich.text import Text
-
-from dagster_dg_cli.utils.plus import gql
-from dagster_dg_cli.utils.plus.gql_client import DagsterPlusGraphQLClient
 
 if TYPE_CHECKING:
     from rich.table import Table

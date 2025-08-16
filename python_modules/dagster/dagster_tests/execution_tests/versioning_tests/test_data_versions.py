@@ -3,8 +3,9 @@ from datetime import datetime, timedelta
 from random import randint
 from unittest import mock
 
-import dagster as dg
 import pytest
+
+import dagster as dg
 from dagster import DagsterInstance
 from dagster._core.definitions.data_version import (
     DATA_VERSION_TAG,
@@ -38,7 +39,6 @@ from dagster._utils.test.data_versions import (
     materialize_assets,
     materialize_twice,
 )
-
 from dagster_tests.core_tests.instance_tests.test_instance_data_versions import (
     create_test_event_log_entry,
 )

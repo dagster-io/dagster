@@ -2,6 +2,9 @@ from dataclasses import dataclass
 from functools import cached_property
 from typing import Annotated, Any, Callable, Optional, Union
 
+from pydantic import BaseModel
+from typing_extensions import TypeAlias
+
 import dagster as dg
 from dagster._core.definitions.asset_key import CoercibleToAssetKeyPrefix
 from dagster._core.definitions.assets.definition.asset_spec import AssetSpec
@@ -17,11 +20,6 @@ from dagster.components.resolved.core_models import (
     ResolvedAssetKey,
 )
 from dagster.components.utils import TranslatorResolvingInfo
-from dagster_shared import check
-from dagster_shared.record import record
-from pydantic import BaseModel
-from typing_extensions import TypeAlias
-
 from dagster_powerbi.resource import (
     PowerBIServicePrincipal,
     PowerBIToken,
@@ -35,6 +33,8 @@ from dagster_powerbi.translator import (
     PowerBITagSet,
     PowerBITranslatorData,
 )
+from dagster_shared import check
+from dagster_shared.record import record
 
 
 class PowerBITokenModel(Model):

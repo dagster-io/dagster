@@ -1,10 +1,10 @@
 import os
 
 import pytest
+
 from dagster import RunConfig
 from dagster._utils import file_relative_path
 from dagster_ge.factory import GEContextResource
-
 from with_great_expectations.definitions import defs
 from with_great_expectations.ge_demo import GEOpConfig, payroll_data
 

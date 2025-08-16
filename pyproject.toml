@@ -277,6 +277,9 @@ builtins-ignorelist = ["id"]
 
 [tool.ruff.lint.isort]
 
+# Define first-party packages to ensure consistent import ordering between CI and local environments
+known-first-party = ["dagster", "dagster_*", "dagit"]
+
 # Combine multiple `from foo import bar as baz` statements with the same source
 # (`foo`) into a single statement.
 combine-as-imports = true

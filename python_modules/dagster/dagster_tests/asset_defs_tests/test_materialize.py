@@ -3,8 +3,9 @@ import pickle
 import re
 from tempfile import TemporaryDirectory
 
-import dagster as dg
 import pytest
+
+import dagster as dg
 from dagster import AssetExecutionContext, MetadataValue, ResourceDefinition
 from dagster._core.test_utils import ignore_warning, raise_exception_on_warnings
 

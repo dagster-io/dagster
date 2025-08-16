@@ -3,14 +3,6 @@ from collections.abc import Iterator, Mapping, Sequence
 from contextlib import contextmanager
 from typing import TYPE_CHECKING, Any, Optional, Union
 
-from dagster_pipes import (
-    DagsterPipesError,
-    PipesContextData,
-    PipesExtras,
-    PipesOpenedData,
-    PipesParams,
-)
-
 import dagster._check as check
 from dagster._annotations import public
 from dagster._core.definitions.asset_checks.asset_check_result import AssetCheckResult
@@ -19,6 +11,13 @@ from dagster._core.definitions.result import MaterializeResult
 from dagster._core.execution.context.asset_execution_context import AssetExecutionContext
 from dagster._core.execution.context.op_execution_context import OpExecutionContext
 from dagster._core.pipes.context import PipesExecutionResult, PipesLaunchedData, PipesSession
+from dagster_pipes import (
+    DagsterPipesError,
+    PipesContextData,
+    PipesExtras,
+    PipesOpenedData,
+    PipesParams,
+)
 
 if TYPE_CHECKING:
     from dagster._core.pipes.context import PipesMessageHandler

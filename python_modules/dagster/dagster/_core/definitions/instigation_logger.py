@@ -7,13 +7,12 @@ from collections.abc import Mapping, Sequence
 from contextlib import ExitStack
 from typing import IO, TYPE_CHECKING, Any, Optional
 
-from dagster_shared import seven
-
 from dagster._core.log_manager import LOG_RECORD_METADATA_ATTR
 from dagster._core.storage.compute_log_manager import ComputeIOType, ComputeLogManager
 from dagster._core.utils import coerce_valid_log_level
 from dagster._utils.error import serializable_error_info_from_exc_info
 from dagster._utils.log import create_console_logger
+from dagster_shared import seven
 
 if TYPE_CHECKING:
     from dagster._core.instance import DagsterInstance

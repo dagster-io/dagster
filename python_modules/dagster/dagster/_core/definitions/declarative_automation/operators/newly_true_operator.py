@@ -1,8 +1,6 @@
 from collections.abc import Sequence
 from typing import Optional
 
-from dagster_shared.serdes import whitelist_for_serdes
-
 from dagster._core.asset_graph_view.entity_subset import EntitySubset
 from dagster._core.asset_graph_view.serializable_entity_subset import SerializableEntitySubset
 from dagster._core.definitions.asset_key import T_EntityKey
@@ -13,6 +11,7 @@ from dagster._core.definitions.declarative_automation.automation_condition impor
 )
 from dagster._core.definitions.declarative_automation.automation_context import AutomationContext
 from dagster._record import record
+from dagster_shared.serdes import whitelist_for_serdes
 
 
 @whitelist_for_serdes

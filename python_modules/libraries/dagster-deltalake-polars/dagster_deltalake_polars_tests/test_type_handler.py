@@ -3,6 +3,8 @@ from datetime import datetime
 
 import polars as pl
 import pytest
+from deltalake import DeltaTable
+
 from dagster import (
     AssetExecutionContext,
     AssetIn,
@@ -24,7 +26,6 @@ from dagster._core.definitions.partitions.utils import MultiPartitionKey
 from dagster_deltalake import DELTA_DATE_FORMAT, LocalConfig
 from dagster_deltalake.io_manager import WriteMode
 from dagster_deltalake_polars import DeltaLakePolarsIOManager
-from deltalake import DeltaTable
 
 
 @pytest.fixture

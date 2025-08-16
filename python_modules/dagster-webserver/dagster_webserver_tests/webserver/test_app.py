@@ -2,6 +2,8 @@ import gc
 
 import objgraph
 import pytest
+from starlette.testclient import TestClient
+
 from dagster import (
     __version__ as dagster_version,
     job,
@@ -14,7 +16,6 @@ from dagster_graphql.version import __version__ as dagster_graphql_version
 from dagster_shared.seven import json
 from dagster_webserver.graphql import GraphQLWS
 from dagster_webserver.version import __version__ as dagster_webserver_version
-from starlette.testclient import TestClient
 
 EVENT_LOG_SUBSCRIPTION = """
 subscription PipelineRunLogsSubscription($runId: ID!) {

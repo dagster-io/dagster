@@ -4,7 +4,6 @@ from typing import TYPE_CHECKING, Optional, Union
 import dagster._check as check
 from dagster._core.definitions.asset_key import AssetCheckKey, AssetKey, EntityKey
 from dagster._core.scheduler.instigation import AutoMaterializeAssetEvaluationRecord
-
 from dagster_graphql.schema.asset_condition_evaluations import (
     GrapheneAssetConditionEvaluation,
     GrapheneAssetConditionEvaluationRecord,

@@ -4,7 +4,6 @@ import dagster as dg
 from dagster import AssetSelection
 from dagster._core.definitions.auto_materialize_rule import AutoMaterializeRule
 from dagster._core.definitions.auto_materialize_rule_evaluation import TextRuleEvaluationData
-
 from dagster_tests.declarative_automation_tests.scenario_utils.base_scenario import (
     AssetEvaluationSpec,
     AssetReconciliationScenario,

@@ -1,4 +1,5 @@
 import graphene
+
 from dagster._core.definitions.partitions.mapping import PartitionMapping
 
 

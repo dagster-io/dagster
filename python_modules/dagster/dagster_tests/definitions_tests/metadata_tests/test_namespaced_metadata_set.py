@@ -1,10 +1,11 @@
 from typing import Optional, Union
 
-import dagster as dg
 import pytest
+from pydantic import ValidationError
+
+import dagster as dg
 from dagster._check import CheckError
 from dagster._core.definitions.metadata import NamespacedMetadataSet
-from pydantic import ValidationError
 
 
 def test_extract_primitive_coercion():

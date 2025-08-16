@@ -19,15 +19,6 @@ from collections.abc import Mapping, Sequence
 from functools import wraps
 from typing import TYPE_CHECKING, Any, Callable, Optional, TypeVar, Union, overload
 
-from dagster_shared.telemetry import (
-    DAGSTER_HOME_FALLBACK,
-    TelemetryEntry,
-    TelemetrySettings,
-    dagster_home_if_set,
-    get_or_set_instance_id,
-    log_telemetry_action,
-    write_telemetry_log_line,
-)
 from typing_extensions import ParamSpec
 
 import dagster._check as check
@@ -45,6 +36,15 @@ from dagster._core.execution.context.system import PlanOrchestrationContext
 from dagster._core.execution.plan.objects import StepSuccessData
 from dagster._core.instance import DagsterInstance
 from dagster._utils.merger import merge_dicts
+from dagster_shared.telemetry import (
+    DAGSTER_HOME_FALLBACK,
+    TelemetryEntry,
+    TelemetrySettings,
+    dagster_home_if_set,
+    get_or_set_instance_id,
+    log_telemetry_action,
+    write_telemetry_log_line,
+)
 
 if TYPE_CHECKING:
     from dagster._core.remote_representation.external import (

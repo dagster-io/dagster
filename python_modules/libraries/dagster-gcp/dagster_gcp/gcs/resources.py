@@ -1,10 +1,10 @@
 from typing import Any, Optional
 
-from dagster import ConfigurableResource, IAttachDifferentObjectToOpContext, resource
-from dagster._core.definitions.resource_definition import dagster_maintained_resource
 from google.cloud import storage
 from pydantic import Field
 
+from dagster import ConfigurableResource, IAttachDifferentObjectToOpContext, resource
+from dagster._core.definitions.resource_definition import dagster_maintained_resource
 from dagster_gcp.gcs.file_manager import GCSFileManager
 
 

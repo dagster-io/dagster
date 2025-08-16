@@ -1,9 +1,6 @@
 from copy import deepcopy
 from typing import Any
 
-from dagster_shared import check
-from dagster_shared.utils import remove_none_recursively
-
 from dagster_cloud_cli.config.list_merge_strategies import (
     deduplicate,
     get_list_merger_for_identifiable_dicts,
@@ -11,6 +8,8 @@ from dagster_cloud_cli.config.list_merge_strategies import (
     replace,
 )
 from dagster_cloud_cli.config.models import DagsterCloudYaml, Location, ProcessedDagsterCloudConfig
+from dagster_shared import check
+from dagster_shared.utils import remove_none_recursively
 
 
 class DagsterCloudConfigDefaultsMerger:

@@ -1,4 +1,5 @@
 import pandas as pd
+
 from dagster import AssetExecutionContext, DailyPartitionsDefinition, MetadataValue, asset
 from dagster_dbt import DbtCliResource, dbt_assets, get_asset_key_for_model
 

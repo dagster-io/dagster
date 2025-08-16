@@ -26,6 +26,9 @@ import tomlkit
 import tomlkit.items
 from click.testing import CliRunner, Result
 from create_dagster.cli import cli as create_dagster_cli
+from packaging.version import Version
+from typing_extensions import Self, TypeAlias
+
 from dagster_dg_core.config import detect_dg_config_file_format
 from dagster_dg_core.utils import (
     DG_CLI_MAX_OUTPUT_WIDTH,
@@ -43,8 +46,6 @@ from dagster_dg_core.utils import (
     pushd,
     set_toml_node,
 )
-from packaging.version import Version
-from typing_extensions import Self, TypeAlias
 
 STANDARD_TEST_COMPONENT_MODULE = "dagster_test.components"
 

@@ -11,9 +11,11 @@ from tempfile import TemporaryDirectory
 from types import TracebackType
 from typing import Any, Iterable, Mapping, Optional, TypeVar, Union  # noqa: UP035
 
-import dagster as dg
 import tomlkit
 from click.testing import Result
+from pydantic import TypeAdapter
+
+import dagster as dg
 from dagster import Component
 from dagster._utils import alter_sys_path, pushd
 from dagster._utils.pydantic_yaml import enrich_validation_errors_with_source_position
@@ -26,7 +28,6 @@ from dagster.components.resolved.core_models import post_process_defs
 from dagster.components.utils import ensure_loadable_path
 from dagster_shared import check
 from dagster_shared.yaml_utils import parse_yaml_with_source_position
-from pydantic import TypeAdapter
 
 T = TypeVar("T")
 T_Component = TypeVar("T_Component", bound=Component)

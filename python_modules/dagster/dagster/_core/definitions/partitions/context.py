@@ -5,13 +5,13 @@ from contextvars import ContextVar
 from functools import wraps
 from typing import TYPE_CHECKING, Annotated, Callable, Optional, Protocol, TypeVar
 
-from dagster_shared.record import ImportFrom, replace
 from typing_extensions import Concatenate, ParamSpec
 
 import dagster._check as check
 from dagster._core.definitions.temporal_context import TemporalContext
 from dagster._record import record
 from dagster._time import get_current_datetime
+from dagster_shared.record import ImportFrom, replace
 
 if TYPE_CHECKING:
     from dagster._core.instance import DynamicPartitionsStore

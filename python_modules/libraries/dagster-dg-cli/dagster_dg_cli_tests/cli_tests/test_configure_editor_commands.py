@@ -1,13 +1,12 @@
-# ruff: noqa: I001 - import order differs between CI and local due to package installation differences
 from pathlib import Path
 from tempfile import TemporaryDirectory
 from typing import Optional
 from unittest import mock
 
 import pytest
-from dagster_test.dg_utils.utils import ProxyRunner, isolated_example_project_foo_bar
 
 from dagster_dg_cli.cli.utils import DEFAULT_SCHEMA_FOLDER_NAME
+from dagster_test.dg_utils.utils import ProxyRunner, isolated_example_project_foo_bar
 
 
 def mock_vscode_cli_command(editor, args: list[str]) -> bytes:

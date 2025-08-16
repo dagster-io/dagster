@@ -1,12 +1,12 @@
-import dagster as dg
 import pytest
+
+import dagster as dg
 from dagster import AutomationCondition, DagsterInstance
 from dagster._core.definitions.events import AssetKeyPartitionKey
 from dagster._core.events import DagsterEventType
 from dagster._core.execution.api import create_execution_plan
 from dagster._core.storage.dagster_run import DagsterRunStatus
 from dagster._core.utils import make_new_run_id
-
 from dagster_tests.declarative_automation_tests.scenario_utils.automation_condition_scenario import (
     AutomationConditionScenarioState,
 )

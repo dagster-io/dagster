@@ -2,9 +2,8 @@ from collections.abc import Iterator
 from contextlib import contextmanager
 from typing import Optional
 
-import dagster_shared.seven as seven
-
 import dagster._check as check
+import dagster_shared.seven as seven
 
 
 def format_duration(milliseconds: float) -> str:

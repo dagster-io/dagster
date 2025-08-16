@@ -2,11 +2,11 @@ from collections.abc import Sequence
 from dataclasses import dataclass
 from typing import Annotated, Literal, Optional, Union
 
-import dagster as dg
 import pytest
+
+import dagster as dg
 from dagster.components.core.context import ComponentLoadContext
 from dagster.components.resolved.errors import ResolutionException
-
 from dagster_tests.components_tests.utils import load_component_for_test
 
 

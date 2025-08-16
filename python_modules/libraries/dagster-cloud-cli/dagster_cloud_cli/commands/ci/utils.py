@@ -1,10 +1,9 @@
 from contextlib import contextmanager
 from typing import Any, Optional
 
-from dagster_shared import check
-
 from dagster_cloud_cli import gql
 from dagster_cloud_cli.config_utils import get_user_token
+from dagster_shared import check
 
 
 @contextmanager

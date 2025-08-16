@@ -4,6 +4,7 @@ from urllib.parse import unquote, urlparse
 import pytest
 import sqlalchemy as db
 import yaml
+
 from dagster._core.instance import DagsterInstance
 from dagster._core.instance.ref import InstanceRef
 from dagster._core.test_utils import instance_for_test

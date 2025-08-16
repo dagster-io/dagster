@@ -4,6 +4,10 @@ import sys
 from collections.abc import AsyncIterator, Mapping, Sequence
 from typing import TYPE_CHECKING, Any, List, Optional, Tuple, Union  # noqa: F401, UP035
 
+from starlette.concurrency import (
+    run_in_threadpool,  # can provide this indirectly if we dont want starlette dep in dagster-graphql
+)
+
 # re-exports
 import dagster._check as check
 from dagster._annotations import deprecated
@@ -20,9 +24,6 @@ from dagster._core.instance import DagsterInstance
 from dagster._core.storage.dagster_run import CANCELABLE_RUN_STATUSES
 from dagster._core.workspace.permissions import Permissions
 from dagster._utils.error import serializable_error_info_from_exc_info
-from starlette.concurrency import (
-    run_in_threadpool,  # can provide this indirectly if we dont want starlette dep in dagster-graphql
-)
 
 if TYPE_CHECKING:
     from dagster_graphql.schema.errors import (
@@ -43,7 +44,6 @@ from dagster_graphql.implementation.utils import assert_permission, assert_permi
 
 if TYPE_CHECKING:
     from dagster._core.storage.compute_log_manager import CapturedLogData
-
     from dagster_graphql.schema.errors import GrapheneRunNotFoundError
     from dagster_graphql.schema.logs.compute_logs import GrapheneCapturedLogs
     from dagster_graphql.schema.pipelines.subscription import (

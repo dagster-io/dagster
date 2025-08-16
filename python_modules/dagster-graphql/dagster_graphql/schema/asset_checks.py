@@ -1,8 +1,9 @@
 from collections.abc import Sequence
 from typing import Optional, Union, cast
 
-import dagster._check as check
 import graphene
+
+import dagster._check as check
 from dagster import EventLogEntry
 from dagster._core.definitions.asset_checks.asset_check_evaluation import (
     AssetCheckEvaluation,
@@ -19,7 +20,6 @@ from dagster._core.storage.asset_check_execution_record import (
     AssetCheckExecutionRecord,
     AssetCheckExecutionResolvedStatus,
 )
-
 from dagster_graphql.implementation.events import iterate_metadata_entries
 from dagster_graphql.schema.auto_materialize_policy import GrapheneAutoMaterializePolicy
 from dagster_graphql.schema.automation_condition import GrapheneAutomationCondition

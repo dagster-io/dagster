@@ -1,8 +1,9 @@
 import os
 import sys
 
-import dagster._check as check
 import pytest
+
+import dagster._check as check
 from dagster import (
     ConfigurableResource,
     IOManagerDefinition,

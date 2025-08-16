@@ -2,9 +2,9 @@ from datetime import datetime
 from typing import Any, Optional, cast
 
 import boto3
+
 import dagster._check as check
 from dagster._annotations import deprecated
-
 from dagster_aws._stubs import ObjectTypeDef
 
 

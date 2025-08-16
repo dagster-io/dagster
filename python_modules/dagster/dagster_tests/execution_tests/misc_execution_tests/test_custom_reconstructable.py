@@ -1,8 +1,9 @@
 import os
 import sys
 
-import dagster as dg
 import pytest
+
+import dagster as dg
 from dagster._core.definitions import ReconstructableJob
 
 

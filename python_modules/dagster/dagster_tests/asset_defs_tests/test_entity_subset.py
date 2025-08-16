@@ -1,8 +1,9 @@
 import datetime
 from typing import Optional
 
-import dagster as dg
 import pytest
+
+import dagster as dg
 from dagster import DagsterInstance
 from dagster._core.asset_graph_view.serializable_entity_subset import SerializableEntitySubset
 from dagster._core.definitions.declarative_automation.legacy.valid_asset_subset import (

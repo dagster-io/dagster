@@ -1,7 +1,8 @@
 import click
-import dagster as dg
 import pytest
 from click.testing import CliRunner
+
+import dagster as dg
 from dagster._cli.utils import assert_no_remaining_opts
 from dagster._cli.workspace.cli_target import (
     RepositoryOpts,

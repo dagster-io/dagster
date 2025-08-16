@@ -5,6 +5,8 @@ from typing import Any, Optional, cast
 
 import psycopg2
 import psycopg2.extensions
+from pydantic import Field
+
 from dagster import (
     ConfigurableResource,
     _check as check,
@@ -13,7 +15,6 @@ from dagster import (
 )
 from dagster._annotations import deprecated
 from dagster._core.definitions.resource_definition import dagster_maintained_resource
-from pydantic import Field
 
 
 class RedshiftError(Exception):

@@ -2,8 +2,9 @@ from collections.abc import Mapping, Sequence
 from functools import lru_cache
 from typing import TYPE_CHECKING, Optional, Union
 
-import dagster._check as check
 import graphene
+
+import dagster._check as check
 from dagster._core.definitions import NodeHandle
 from dagster._core.remote_representation import RepresentedJob
 from dagster._core.remote_representation.external import RemoteJob
@@ -12,7 +13,6 @@ from dagster._core.snap import DependencyStructureIndex, GraphDefSnap, OpDefSnap
 from dagster._core.snap.node import InputMappingSnap, OutputMappingSnap
 from dagster._core.storage.dagster_run import RunsFilter
 from dagster._core.storage.tags import COMPUTE_KIND_TAG, LEGACY_COMPUTE_KIND_TAG
-
 from dagster_graphql.implementation.events import iterate_metadata_entries
 from dagster_graphql.schema.config_types import GrapheneConfigTypeField
 from dagster_graphql.schema.dagster_types import (
