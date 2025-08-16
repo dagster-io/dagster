@@ -74,7 +74,7 @@ class DatabricksWorkspace(ConfigurableResource):
 
             # Determine cluster configuration based on task type
             cluster_config = {}
-            if task.needs_cluster:
+            if task.needs_cluster and not config.custom_config.is_serverless:
                 if config.custom_config.existing_cluster_id:
                     cluster_config["existing_cluster_id"] = config.custom_config.existing_cluster_id
                 else:

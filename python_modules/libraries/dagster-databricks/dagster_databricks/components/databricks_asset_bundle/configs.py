@@ -417,6 +417,7 @@ class CustomConfig(IHaveNew):
     node_type_id: str = "i3.xlarge"
     num_workers: int = 1
     existing_cluster_id: Optional[str] = None
+    is_serverless: bool = False
 
     def __new__(cls, custom_config_path: Optional[Union[Path, str]] = None) -> "CustomConfig":
         custom_config = {}
