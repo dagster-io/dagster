@@ -1,0 +1,6 @@
+{
+    "additionalProperties": false,
+    "properties": {},
+    "title": "DefsFolderComponentYamlSchemaModel",
+    "type": "object"
+}
