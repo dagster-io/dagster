@@ -1,12 +1,14 @@
 import os
 from typing import Optional
 
+from dagster._annotations import preview
 from dagster.components.component.component_scaffolder import Scaffolder
 from dagster.components.component_scaffolding import scaffold_component
 from dagster.components.scaffold.scaffold import ScaffoldRequest
 from pydantic import BaseModel, Field
 
 
+@preview
 class DatabricksAssetBundleScaffoldParams(BaseModel):
     """Parameters for scaffolding DatabricksAssetBundleComponent from Databricks asset bundle."""
 
@@ -27,6 +29,7 @@ class DatabricksAssetBundleScaffoldParams(BaseModel):
     )
 
 
+@preview
 class DatabricksAssetBundleScaffolder(Scaffolder[DatabricksAssetBundleScaffoldParams]):
     @classmethod
     def get_scaffold_params(cls) -> type[DatabricksAssetBundleScaffoldParams]:
