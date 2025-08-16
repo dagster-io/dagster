@@ -12,38 +12,25 @@ def get_example_value_for_type(
     constraints = constraints or {}
 
     if schema_type == "string":
-        # Property-specific examples for better UX (but not for array items)
-        if not is_array_item and property_name == "name":
-            return "Jane Doe"
-        elif not is_array_item and property_name == "street":
-            return "123 Main St"
-        elif not is_array_item and property_name == "city":
-            return "Boston"
-        elif not is_array_item and property_name == "zip":
-            return "02101"
-        elif format_hint == "email":
+        # Standard JSON Schema format hints (RFC 3339, RFC 5321, etc.)
+        if format_hint == "email":
             return "user@example.com"
         elif format_hint == "date":
             return "2023-12-31"
         elif format_hint == "uri":
             return "https://example.com"
+        # JSON Schema pattern constraint
         elif "pattern" in constraints:
-            pattern = constraints["pattern"]
-            if pattern == "^[A-Z]{3}-\\d{3}$":
-                return "ABC-123"
-            else:
-                return "pattern_match"
+            return "pattern_match"
         else:
+            # JSON Schema length constraints
             max_length = constraints.get("maxLength")
             if max_length and max_length <= 10:
                 return "example"
             return "example_string"
 
     elif schema_type == "integer":
-        # Property-specific examples (but not for array items)
-        if not is_array_item and property_name == "age":
-            return 30
-
+        # JSON Schema numeric range constraints
         minimum = constraints.get("minimum")
         maximum = constraints.get("maximum")
 
@@ -57,6 +44,7 @@ def get_example_value_for_type(
             return 42
 
     elif schema_type == "number":
+        # JSON Schema numeric range constraints
         minimum = constraints.get("minimum")
         maximum = constraints.get("maximum")
 
@@ -81,12 +69,15 @@ def get_constraint_description(schema_type: str, constraints: dict[str, Any]) ->
     parts = []
 
     if schema_type == "string":
+        # JSON Schema string length constraints
         if "minLength" in constraints:
             parts.append(f"Minimum length {constraints['minLength']}")
         if "maxLength" in constraints:
             parts.append(f"Maximum length {constraints['maxLength']}")
+        # JSON Schema pattern constraint
         if "pattern" in constraints:
             parts.append(f"Must match pattern: {constraints['pattern']}")
+        # JSON Schema format constraints (standard formats only)
         if "format" in constraints:
             format_descriptions = {
                 "email": "Valid email format",
@@ -101,6 +92,7 @@ def get_constraint_description(schema_type: str, constraints: dict[str, Any]) ->
             )
 
     elif schema_type in ("integer", "number"):
+        # JSON Schema numeric range constraints
         minimum = constraints.get("minimum")
         maximum = constraints.get("maximum")
 
@@ -112,6 +104,7 @@ def get_constraint_description(schema_type: str, constraints: dict[str, Any]) ->
             parts.append(f"Must be <= {maximum}")
 
     elif schema_type == "array":
+        # JSON Schema array length constraints
         if "minItems" in constraints:
             parts.append(f"minimum {constraints['minItems']} items")
         if "maxItems" in constraints:
@@ -125,17 +118,7 @@ def get_object_description(property_name: str, schema: dict[str, Any]) -> str:
     if "description" in schema:
         return schema["description"]
 
-    # Generate generic descriptions based on property name
-    name_descriptions = {
-        "address": "Address details",
-        "user": "User details",
-        "config": "Configuration settings",
-        "metadata": "Metadata information",
-        "settings": "Settings configuration",
-        "options": "Options configuration",
-    }
-
-    return name_descriptions.get(property_name, f"{property_name.title()} details")
+    return f"{property_name.title()} details"
 
 
 def get_array_description(items_schema: dict[str, Any]) -> str:
