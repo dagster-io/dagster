@@ -60,8 +60,18 @@ def get_example_value_for_type(
     elif schema_type == "boolean":
         return True
 
+    elif schema_type == "object":
+        return {}
+
+    elif schema_type == "array":
+        return []
+
+    elif schema_type == "null":
+        return None
+
     else:
-        return "unknown_value"
+        # For any other types (like custom types), return a placeholder
+        return f"<{schema_type}_value>"
 
 
 def get_constraint_description(schema_type: str, constraints: dict[str, Any]) -> str:
@@ -135,7 +145,9 @@ def format_yaml_value(value: Any, indent_level: int = 0) -> str:
     """Format a value as YAML with proper indentation."""
     indent = "  " * indent_level
 
-    if isinstance(value, str):
+    if value is None:
+        return "null"
+    elif isinstance(value, str):
         return f'"{value}"'
     elif isinstance(value, bool):
         return str(value).lower()

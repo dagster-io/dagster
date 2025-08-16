@@ -1,17 +1,40 @@
 # Template with instructions
-project: unknown  # Required: The path to the dbt project or a mapping defining a DbtProject
-op: unknown  # Optional: Op related arguments to set on the generated @dbt_assets
-translation: unknown  # Optional
-select: string  # Optional: The dbt selection string for models in the project you want to include.
-exclude: string  # Optional: The dbt selection string for models in the project you want to exclude.
-translation_settings: unknown  # Optional: Allows enabling or disabling various features for translating dbt models in to Dagster assets.
-prepare_if_dev: unknown  # Optional: Whether to prepare the dbt project every time in `dagster dev` or `dg` cli calls.
+project: <string>  # Required: The path to the dbt project or a mapping defining a DbtProject
+op:  # Optional: Op related arguments to set on the generated @dbt_assets
+  name: <string>  # Optional
+  tags:  # Optional: Tags details
+  description: <string>  # Optional
+  pool: <string>  # Optional
+  backfill_policy:  # Optional: Backfill_Policy details
+    type: <string>  # Optional
+translation: <string>  # Optional
+select: <string>  # Optional: The dbt selection string for models in the project you want to include.
+exclude: <string>  # Optional: The dbt selection string for models in the project you want to exclude.
+translation_settings:  # Optional: Allows enabling or disabling various features for translating dbt models in to Dagster assets.
+  enable_asset_checks: <boolean>  # Optional
+  enable_duplicate_source_asset_keys: <boolean>  # Optional
+  enable_code_references: <boolean>  # Optional
+  enable_dbt_selection_by_name: <boolean>  # Optional
+  enable_source_tests_as_checks: <boolean>  # Optional
+prepare_if_dev: <boolean>  # Optional: Whether to prepare the dbt project every time in `dagster dev` or `dg` cli calls.
 
 # EXAMPLE VALUES:
-project: "unknown_value"
-op: "unknown_value"
-translation: "unknown_value"
+project: "example_string"
+op:
+  name: "example_string"
+  tags:
+    key: "value"
+  description: "example_string"
+  pool: "example_string"
+  backfill_policy:
+    type: "example_string"
+translation: "example_string"
 select: "example_string"
 exclude: "example_string"
-translation_settings: "unknown_value"
-prepare_if_dev: "unknown_value"
+translation_settings:
+  enable_asset_checks: true
+  enable_duplicate_source_asset_keys: true
+  enable_code_references: true
+  enable_dbt_selection_by_name: true
+  enable_source_tests_as_checks: true
+prepare_if_dev: true
