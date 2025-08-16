@@ -3,9 +3,10 @@ import tempfile
 from collections.abc import Iterator, Mapping
 from contextlib import contextmanager
 from pathlib import Path
-from typing import Any, Optional
+from typing import Any, Literal, Optional
 
 import click
+from dagster.components.core.defs_module import ComponentFileModel
 from dagster_dg_core.component import EnvRegistry, all_components_schema_from_dg_context
 from dagster_dg_core.config import (
     DgRawBuildConfig,
@@ -29,6 +30,7 @@ from dagster_dg_core.utils.telemetry import cli_telemetry_wrapper
 from dagster_shared import check
 from dagster_shared.serdes.objects import EnvRegistryKey
 from packaging.version import Version
+from pydantic import create_model
 
 DEFAULT_SCHEMA_FOLDER_NAME = ".dg"
 
@@ -96,6 +98,7 @@ def configure_editor_command(
 @click.option("--description", is_flag=True, default=False)
 @click.option("--scaffold-params-schema", is_flag=True, default=False)
 @click.option("--component-schema", is_flag=True, default=False)
+@click.option("--defs-yaml-schema", is_flag=True, default=False)
 @dg_path_options
 @dg_global_options
 @cli_telemetry_wrapper
@@ -104,6 +107,7 @@ def inspect_component_type_command(
     description: bool,
     scaffold_params_schema: bool,
     component_schema: bool,
+    defs_yaml_schema: bool,
     target_path: Path,
     **global_options: object,
 ) -> None:
@@ -114,9 +118,9 @@ def inspect_component_type_command(
     component_key = EnvRegistryKey.from_typename(component_type)
     if not registry.has(component_key):
         exit_with_error(generate_missing_registry_object_error_message(component_type))
-    elif sum([description, scaffold_params_schema, component_schema]) > 1:
+    elif sum([description, scaffold_params_schema, component_schema, defs_yaml_schema]) > 1:
         exit_with_error(
-            "Only one of --description, --scaffold-params-schema, and --component-schema can be specified."
+            "Only one of --description, --scaffold-params-schema, --component-schema, and --defs-yaml-schema can be specified."
         )
 
     entry_snap = registry.get(component_key)
@@ -135,6 +139,9 @@ def inspect_component_type_command(
             click.echo(_serialize_json_schema(entry_snap.component_schema))
         else:
             click.echo("No component schema defined.")
+    elif defs_yaml_schema:
+        defs_schema = _generate_defs_yaml_schema(component_type, entry_snap)
+        click.echo(_serialize_json_schema(defs_schema))
     # print all available metadata
     else:
         click.echo(component_type)
@@ -151,6 +158,41 @@ def inspect_component_type_command(
 
 def _serialize_json_schema(schema: Mapping[str, Any]) -> str:
     return json.dumps(schema, indent=4)
+
+
+def _generate_defs_yaml_schema(component_type_str: str, entry_snap) -> dict[str, Any]:
+    """Generate ComponentFileModel schema for a specific component type."""
+    # Use the component schema from entry_snap if available, otherwise use generic mapping
+    attributes_schema = entry_snap.component_schema
+
+    # Get field definitions from ComponentFileModel to stay in sync
+    base_fields = ComponentFileModel.model_fields
+
+    # Create field definitions for the specialized model, deriving from ComponentFileModel
+    specialized_fields = {}
+    for field_name, field_info in base_fields.items():
+        if field_name == "type":
+            # Specialize the type field to be constrained to the specific component type
+            specialized_fields[field_name] = (Literal[component_type_str], component_type_str)
+        else:
+            # Use the original field definition
+            specialized_fields[field_name] = (field_info.annotation, field_info.default)
+
+    # Create a specialized ComponentFileModel with the specific component type
+    specialized_model = create_model(
+        f"{component_type_str.replace('.', '')}ComponentFileModel",
+        __config__=ComponentFileModel.model_config,
+        **specialized_fields,
+    )
+
+    # Generate the base schema and enhance with component-specific attributes
+    base_schema = specialized_model.model_json_schema()
+
+    # If we have a component schema, replace the generic attributes with the specific one
+    if attributes_schema:
+        base_schema["properties"]["attributes"] = attributes_schema
+
+    return base_schema
 
 
 def _workspace_entry_for_project(
