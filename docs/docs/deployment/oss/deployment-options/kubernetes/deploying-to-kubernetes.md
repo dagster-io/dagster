@@ -122,7 +122,7 @@ The `values.yaml` file contains configuration options you can set for your deplo
 To deploy your project, you'll need to set the following options:
 
 - `dagster-user-deployments.deployments.name`, which should be a unique name for your deployment
-- `dagster-user-deployments.deployments.image.name` and `dagster-user-deployments.deployments.image.tag`, which should be set to match the Docker image from Step 1
+- `dagster-user-deployments.deployments.image.repository` and `dagster-user-deployments.deployments.image.tag`, which should be set to match the Docker image from Step 1
 - `dagster-user-deployments.deployments.dagsterApiGrpcArgs`, which should be set to the arguments you would pass to `dagster api grpc` to [run a gRPC server for your project](/deployment/code-locations/workspace-yaml#grpc-server).
 
 If you are following this guide on your local machine, you will also need to set `pullPolicy: IfNotPresent`. This will use the local version of the image built in Step 1. However, in production use cases when your Docker images are pushed to image registries, this value should remain `pullPolicy: Always`.
@@ -133,7 +133,7 @@ If you are following this guide on your local machine, you will also need to set
   title="Minimal changes to make to values.yaml"
 />
 
-In this example, the image `name` and `tag` are set to `iris_analysis` and `1` to match the image that was pushed in Step 1. To run the gPRC server, the path to the Dagster project needs to be specified, so `--python-file` and `/iris_analysis/definitions.py` are set for `dagsterApiGrpcArgs`.
+In this example, the image `repository` and `tag` are set to `iris_analysis` and `1` to match the image that was pushed in Step 1. To run the gPRC server, the path to the Dagster project needs to be specified, so `--python-file` and `/iris_analysis/definitions.py` are set for `dagsterApiGrpcArgs`.
 
 ## Step 5: Install the Helm chart
 
