@@ -9,9 +9,9 @@ from datetime import datetime
 from time import perf_counter
 from typing import Any, Optional, Protocol
 
+from dagster_dg_cli.cli.scaffold.branch.claude.diagnostics import AIInteraction, ClaudeDiagnostics
 from dagster_dg_cli.cli.scaffold.branch.claude.parsing import parse_sdk_message
 from dagster_dg_cli.cli.scaffold.branch.claude.rendering import render_claude_output
-from dagster_dg_cli.cli.scaffold.branch.diagnostics import AIInteraction, ClaudeDiagnosticsService
 from dagster_dg_cli.cli.scaffold.branch.validation import (
     ClaudeErrorResult,
     ClaudeSuccessResult,
@@ -29,7 +29,7 @@ class ClaudeClient:
     - Clean error handling and reporting
     """
 
-    def __init__(self, diagnostics: ClaudeDiagnosticsService):
+    def __init__(self, diagnostics: ClaudeDiagnostics):
         """Initialize the Claude interface.
 
         Args:
@@ -187,7 +187,7 @@ def find_claude() -> list[str]:
 def invoke_claude_direct(
     prompt: str,
     allowed_tools: list[str],
-    diagnostics: ClaudeDiagnosticsService,
+    diagnostics: ClaudeDiagnostics,
     output_channel: OutputChannel,
     disallowed_tools: Optional[list[str]],
     verbose: bool,
