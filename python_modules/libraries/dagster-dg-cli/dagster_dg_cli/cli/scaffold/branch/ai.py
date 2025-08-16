@@ -67,7 +67,7 @@ def invoke_anthropic_api_direct(
         client = anthropic.Anthropic(api_key=api_key)
 
         response = client.messages.create(
-            model="claude-3-5-sonnet-20241022",
+            model="claude-3-haiku-20240307",
             max_tokens=100,  # Short responses for branch names/titles
             temperature=0.0,  # Deterministic output
             messages=[{"role": "user", "content": prompt}],
