@@ -44,6 +44,7 @@ class JsonSchemaConverter:
         self.schema = schema
         self.required_fields = set(schema.get("required", []))
         self.properties = schema.get("properties", {})
+        self.definitions = schema.get("$defs", {})
 
     def generate_template_section(self) -> str:
         """Generate the template instructions section."""
@@ -72,12 +73,57 @@ class JsonSchemaConverter:
 
         return "\n".join(lines)
 
+    def _resolve_ref(self, ref_path: str) -> dict[str, Any]:
+        """Resolve a $ref path to its definition."""
+        if ref_path.startswith("#/$defs/"):
+            def_name = ref_path[8:]  # Remove "#/$defs/" prefix
+            return self.definitions.get(def_name, {})
+        # For now, only handle $defs references
+        return {}
+
     def _generate_property_template_lines(
         self, prop_name: str, prop_schema: dict[str, Any], indent_level: int
     ) -> list[str]:
         """Generate template lines for a single property."""
         indent = "  " * indent_level
-        prop_type = prop_schema.get("type", "unknown")
+
+        # Handle $ref schemas
+        if "$ref" in prop_schema:
+            ref_schema = self._resolve_ref(prop_schema["$ref"])
+            if ref_schema:
+                # Merge any properties from the original schema (like description)
+                merged_schema = {**ref_schema}
+                for key in ["description", "title", "default"]:
+                    if key in prop_schema:
+                        merged_schema[key] = prop_schema[key]
+                return self._generate_property_template_lines(
+                    prop_name, merged_schema, indent_level
+                )
+
+        # Handle anyOf schemas - use the first non-null type for template generation
+        if "anyOf" in prop_schema:
+            for any_schema in prop_schema["anyOf"]:
+                # Handle $ref within anyOf
+                resolved_schema = any_schema
+                if "$ref" in any_schema:
+                    ref_schema = self._resolve_ref(any_schema["$ref"])
+                    if ref_schema:
+                        resolved_schema = ref_schema
+
+                if resolved_schema.get("type") != "null":
+                    # Use the description and title from the original schema if available
+                    merged_schema = {**resolved_schema}
+                    if "description" in prop_schema:
+                        merged_schema["description"] = prop_schema["description"]
+                    if "title" in prop_schema:
+                        merged_schema["title"] = prop_schema["title"]
+                    return self._generate_property_template_lines(
+                        prop_name, merged_schema, indent_level
+                    )
+            # If all are null, treat as null type
+            prop_type = "null"
+        else:
+            prop_type = prop_schema.get("type", "unknown")
 
         # Build comment parts
         comment_parts = []
@@ -181,12 +227,14 @@ class JsonSchemaConverter:
                 # Restore original required fields
                 self.required_fields = old_required
             else:
-                # Array of primitives
-                lines.append(f"{indent}  - {items_type}")
+                # Array of primitives - use <type> format for clarity
+                type_display = f"<{items_type}>" if items_type != "unknown" else items_type
+                lines.append(f"{indent}  - {type_display}")
 
         else:
-            # Primitive type
-            lines.append(f"{indent}{prop_name}: {prop_type}{comment}")
+            # Primitive type - use <type> format for clarity
+            type_display = f"<{prop_type}>" if prop_type != "unknown" else prop_type
+            lines.append(f"{indent}{prop_name}: {type_display}{comment}")
 
         return lines
 
@@ -197,6 +245,29 @@ class JsonSchemaConverter:
         is_array_item: bool = False,
     ) -> Any:
         """Generate an example value for a property based on its schema."""
+        # Handle $ref schemas
+        if "$ref" in prop_schema:
+            ref_schema = self._resolve_ref(prop_schema["$ref"])
+            if ref_schema:
+                return self._generate_example_value(ref_schema, property_name, is_array_item)
+
+        # Handle anyOf schemas - use the first non-null type
+        if "anyOf" in prop_schema:
+            for any_schema in prop_schema["anyOf"]:
+                # Handle $ref within anyOf
+                resolved_schema = any_schema
+                if "$ref" in any_schema:
+                    ref_schema = self._resolve_ref(any_schema["$ref"])
+                    if ref_schema:
+                        resolved_schema = ref_schema
+
+                if resolved_schema.get("type") != "null":
+                    return self._generate_example_value(
+                        resolved_schema, property_name, is_array_item
+                    )
+            # If all are null, return null
+            return None
+
         prop_type = prop_schema.get("type", "unknown")
 
         if prop_type == "object":
@@ -208,6 +279,16 @@ class JsonSchemaConverter:
                 example_obj[nested_name] = self._generate_example_value(
                     nested_schema, property_name=nested_name, is_array_item=is_array_item
                 )
+
+            # If no properties but additionalProperties is allowed, add an example key-value pair
+            if not nested_properties and prop_schema.get("additionalProperties"):
+                # Generate a contextual example based on property name
+                if property_name == "tags":
+                    example_obj["key"] = "value"
+                elif property_name == "metadata":
+                    example_obj["example_key"] = "example_value"
+                else:
+                    example_obj["key"] = "value"
 
             return example_obj
 
