@@ -37,6 +37,7 @@ setup(
     install_requires=[
         f"dagster-dg-core{pin}",
         f"dagster{pin}",
+        "anthropic",
         "mcp; python_version>='3.10'",  # mcp not available for 3.9
         "pydantic>=2.0",
         "typer",
