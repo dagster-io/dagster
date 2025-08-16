@@ -14,6 +14,7 @@ from dagster.components.scaffold.scaffold import scaffold_with
 
 from dagster_databricks.components.databricks_asset_bundle.configs import (
     CustomConfig,
+    DatabricksAssetBundleComponentConfig,
     DatabricksBaseTask,
     DatabricksConfig,
 )
@@ -143,7 +144,10 @@ class DatabricksAssetBundleComponent(Component, Resolvable):
         ):
             """Multi-asset that runs multiple notebooks as a single Databricks job."""
             yield from databricks.submit_and_poll(
-                tasks=self.databricks_config.tasks, context=context
+                config=DatabricksAssetBundleComponentConfig(
+                    databricks_config=self.databricks_config, custom_config=self.custom_config
+                ),
+                context=context,
             )
 
         return Definitions(

@@ -1,11 +1,14 @@
 from collections.abc import Iterator
-from typing import Any
 
 from dagster import AssetExecutionContext, AssetMaterialization, ConfigurableResource
 from dagster_shared.utils.cached_method import cached_method
 from databricks.sdk import WorkspaceClient
-from databricks.sdk.service import jobs
+from databricks.sdk.service import compute, jobs
 from pydantic import Field
+
+from dagster_databricks.components.databricks_asset_bundle.configs import (
+    DatabricksAssetBundleComponentConfig,
+)
 
 
 class DatabricksWorkspace(ConfigurableResource):
@@ -24,8 +27,10 @@ class DatabricksWorkspace(ConfigurableResource):
         )
 
     def submit_and_poll(
-        self, tasks: Any, context: AssetExecutionContext
+        self, config: DatabricksAssetBundleComponentConfig, context: AssetExecutionContext
     ) -> Iterator[AssetMaterialization]:
+        tasks = config.databricks_config.tasks
+
         # Get selected asset keys that are being materialized
         assets_def = context.assets_def
         selected_asset_keys = context.selected_asset_keys
@@ -64,10 +69,26 @@ class DatabricksWorkspace(ConfigurableResource):
                 jobs.TaskDependency(task_key=dep_config.task_key, outcome=dep_config.outcome)
                 for dep_config in task.depends_on
             ]
+            task_dependency_config = {"depends_on": task_dependencies} if task_dependencies else {}
             context.log.info(f"Task {task_key} depends on: {task_dependencies}")
+
+            # Determine cluster configuration based on task type
+            cluster_config = (
+                {
+                    "new_cluster": compute.ClusterSpec(
+                        spark_version=config.custom_config.spark_version,
+                        node_type_id=config.custom_config.node_type_id,
+                        num_workers=config.custom_config.num_workers,
+                    )
+                }
+                if task.needs_cluster
+                else {}
+            )
+
             submit_task_params = {
                 **submit_task_params,
-                **({"depends_on": task_dependencies} if task_dependencies else {}),
+                **task_dependency_config,
+                **cluster_config,
             }
 
             databricks_task = jobs.SubmitTask(**submit_task_params)
