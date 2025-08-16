@@ -163,7 +163,7 @@ class ClaudeClient:
             Summary of the planning session including conversation history
         """
         if not self.planning_session_active:
-            self.diagnostics.warning(
+            self.diagnostics.info(
                 "planning_session_end_without_start",
                 "Attempted to end planning session that was not active",
                 {},
@@ -210,7 +210,7 @@ class ClaudeClient:
             List of validated SDKMessage objects from Claude CLI output
         """
         if not self.planning_session_active:
-            self.diagnostics.warning(
+            self.diagnostics.info(
                 "planning_turn_without_session",
                 "Planning turn invoked without active session",
                 {"prompt_length": len(prompt)},

@@ -287,13 +287,19 @@ class PlanGenerator:
 
         # For now, return the current plan with updated metadata
         # Full refinement parsing will be implemented later
-        refined_plan = current_plan.replace(
+        refined_plan = Plan(
+            title=current_plan.title,
+            summary=current_plan.summary,
+            steps=current_plan.steps,
+            risks=current_plan.risks,
+            prerequisites=current_plan.prerequisites,
+            success_criteria=current_plan.success_criteria,
             metadata={
                 **current_plan.metadata,
                 "refinement_method": "claude_refinement",
                 "refinement_messages": len(messages),
                 "user_feedback": user_feedback,
-            }
+            },
         )
 
         self.diagnostics.info(
