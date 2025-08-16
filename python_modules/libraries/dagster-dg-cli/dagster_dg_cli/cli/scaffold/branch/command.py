@@ -22,6 +22,7 @@ from dagster_dg_cli.cli.scaffold.branch.ai import (
     get_branch_name_and_pr_title_from_prompt,
     scaffold_content_for_prompt,
 )
+from dagster_dg_cli.cli.scaffold.branch.claude.client import ClaudeClient
 from dagster_dg_cli.cli.scaffold.branch.claude.diagnostics import (
     DiagnosticsLevel,
     create_claude_diagnostics_service,
@@ -37,6 +38,11 @@ from dagster_dg_cli.cli.scaffold.branch.git import (
     run_git_command,
 )
 from dagster_dg_cli.cli.scaffold.branch.models import Session
+from dagster_dg_cli.cli.scaffold.branch.planning import (
+    PlanGenerator,
+    PlanningContext,
+    get_user_plan_approval,
+)
 from dagster_dg_cli.utils.ui import daggy_spinner_context
 
 
@@ -69,6 +75,18 @@ def is_prompt_valid_git_branch_name(prompt: str) -> bool:
     type=Path,
     help="Directory to write diagnostics files (default: <system temp directory>/dg/diagnostics).",
 )
+@click.option(
+    "--planning-model",
+    type=str,
+    default="opus",
+    help="Model to use for planning phase (default: opus). Options: opus, sonnet, haiku.",
+)
+@click.option(
+    "--execution-model",
+    type=str,
+    default="sonnet",
+    help="Model to use for execution phase (default: sonnet). Options: opus, sonnet, haiku.",
+)
 @dg_path_options
 @dg_global_options
 @cli_telemetry_wrapper
@@ -80,6 +98,8 @@ def scaffold_branch_command(
     record: Optional[Path],
     diagnostics_level: DiagnosticsLevel,
     diagnostics_dir: Optional[Path],
+    planning_model: str,
+    execution_model: str,
     **other_options: object,
 ) -> None:
     """Scaffold a new branch."""
@@ -91,6 +111,13 @@ def scaffold_branch_command(
     valid_diagnostics_levels = {"off", "error", "info", "debug"}
     if diagnostics_level not in valid_diagnostics_levels:
         raise click.UsageError(f"diagnostics_level must be one of {valid_diagnostics_levels}")
+
+    # Validate model selections
+    valid_models = {"opus", "sonnet", "haiku"}
+    if planning_model not in valid_models:
+        raise click.UsageError(f"planning_model must be one of {valid_models}")
+    if execution_model not in valid_models:
+        raise click.UsageError(f"execution_model must be one of {valid_models}")
 
     # Create Claude diagnostics service instance
     diagnostics = create_claude_diagnostics_service(
@@ -113,6 +140,8 @@ def scaffold_branch_command(
                 "target_path": str(target_path),
                 "local_only": local_only,
                 "diagnostics_level": diagnostics_level,
+                "planning_model": planning_model,
+                "execution_model": execution_model,
             },
         )
 
@@ -165,6 +194,86 @@ def scaffold_branch_command(
                 },
             )
 
+            # Always start with planning phase
+            with diagnostics.time_operation("planning_mode", "planning"):
+                claude_client = ClaudeClient(diagnostics, model=planning_model)
+                plan_generator = PlanGenerator(claude_client, diagnostics)
+
+                # Create planning context
+                planning_context = PlanningContext(
+                    user_input=prompt_text,
+                    dg_context=dg_context,
+                    codebase_patterns={},
+                    existing_components=[],
+                    project_structure={
+                        "root_path": str(dg_context.root_path),
+                    },
+                )
+
+                # Generate initial plan
+                click.echo("🎯 Generating implementation plan...")
+                click.echo(
+                    f'📋 Request: "{prompt_text[:60]}{"..." if len(prompt_text) > 60 else ""}"'
+                )
+                click.echo(
+                    f"🤖 Planning Model: {planning_model} (reasoning-focused for complex planning)"
+                )
+                click.echo(f"📁 Project: {dg_context.root_path}")
+                click.echo(f"⚙️  Input Type: {input_type.__name__}")
+                spinner_ctx = (
+                    daggy_spinner_context("Generating plan")
+                    if not disable_progress
+                    else nullcontext()
+                )
+                with spinner_ctx:
+                    initial_plan = plan_generator.generate_initial_plan(planning_context)
+
+                # Interactive plan review and refinement
+                current_plan = initial_plan
+                max_refinement_rounds = 3
+                refinement_count = 0
+
+                while refinement_count < max_refinement_rounds:
+                    approved, feedback = get_user_plan_approval(current_plan)
+
+                    if approved:
+                        click.echo("✅ Plan approved! Proceeding with implementation...")
+                        diagnostics.info(
+                            "plan_approved",
+                            "User approved the implementation plan",
+                            {
+                                "plan_content_length": len(current_plan.markdown_content),
+                                "refinement_rounds": refinement_count,
+                            },
+                        )
+                        break  # Exit the planning loop and proceed to execution
+                    elif feedback:
+                        # Refine the plan
+                        click.echo("🔄 Refining plan based on your feedback...")
+                        spinner_ctx = (
+                            daggy_spinner_context("Refining plan")
+                            if not disable_progress
+                            else nullcontext()
+                        )
+                        with spinner_ctx:
+                            current_plan = plan_generator.refine_plan(current_plan, feedback)
+                        refinement_count += 1
+                    else:
+                        # User cancelled
+                        return
+                else:
+                    # Maximum refinement rounds reached
+                    click.echo("⚠️  Maximum refinement rounds reached. Final plan:")
+                    click.echo(current_plan.markdown_content)
+
+                    # Ask user if they want to proceed anyway
+                    if not click.confirm("Would you like to proceed with this plan?"):
+                        return
+
+            # Proceed with execution after plan approval
+            click.echo("\n🚀 Beginning implementation...")
+
+            # Generate branch name and PR title for execution
             spinner_ctx = (
                 daggy_spinner_context("Generating branch name and PR title")
                 if not disable_progress
@@ -173,11 +282,20 @@ def scaffold_branch_command(
             with spinner_ctx:
                 with diagnostics.time_operation("branch_name_generation", "ai_generation"):
                     branch_generation = get_branch_name_and_pr_title_from_prompt(
-                        dg_context, prompt_text, input_type, diagnostics
+                        dg_context, prompt_text, input_type, diagnostics, model=execution_model
                     )
             # Update final branch name with suffix to avoid conflicts
             final_branch_name = branch_generation.original_branch_name + "-" + str(uuid.uuid4())[:8]
-            branch_generation.final_branch_name = final_branch_name
+
+            # Create updated branch generation with final name (records are frozen)
+            from dagster_dg_cli.cli.scaffold.branch.ai import BranchNameGeneration
+
+            branch_generation = BranchNameGeneration(
+                original_branch_name=branch_generation.original_branch_name,
+                final_branch_name=final_branch_name,
+                pr_title=branch_generation.pr_title,
+                generation_metadata=branch_generation.generation_metadata,
+            )
 
             generated_outputs["branch_name"] = branch_generation.original_branch_name
             generated_outputs["pr_title"] = branch_generation.pr_title
@@ -241,6 +359,7 @@ def scaffold_branch_command(
                     input_type,
                     diagnostics,
                     use_spinner=not disable_progress,
+                    model=execution_model,
                 )
             with diagnostics.time_operation("content_commit", "git_operations"):
                 first_pass_sha = create_content_commit_and_push(

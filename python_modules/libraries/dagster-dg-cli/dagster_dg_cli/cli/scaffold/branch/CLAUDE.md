@@ -24,7 +24,8 @@ dagster_dg_cli/cli/scaffold/branch/
     ├── branch_name.md       # Branch name generation prompt
     ├── branch_name_only.md  # Branch name only generation
     ├── pr_title_only.md     # PR title only generation
-    └── scaffolding.md       # Content scaffolding prompt
+    ├── best_practices.md           # Best practices for scaffolding
+    └── scaffolding_instructions.md  # Content scaffolding instructions
 ```
 
 ## Module Responsibilities
@@ -117,7 +118,8 @@ dagster_dg_cli/cli/scaffold/branch/
 - **branch_name.md**: Template for generating branch names and PR titles
 - **branch_name_only.md**: Template for generating branch names only
 - **pr_title_only.md**: Template for generating PR titles only
-- **scaffolding.md**: Template for content scaffolding operations
+- **best_practices.md**: Best practices and guidelines for scaffolding operations
+- **scaffolding_instructions.md**: Step-by-step content scaffolding instructions
 
 ## Data Flow
 
@@ -173,3 +175,9 @@ dagster_dg_cli/cli/scaffold/branch/new_file.md
 **Why**: The `check-manifest` tool validates that all version-controlled files are included in the source distribution. Documentation files like CLAUDE.md are typically excluded from distribution and need to be explicitly ignored to prevent CI failures.
 
 **Pattern**: Use the full relative path from the package root in the ignore list.
+
+## @record Usage
+
+All data models in this subpackage use the `@record` decorator from `dagster_shared.record` instead of standard `@dataclass`.
+
+**For comprehensive guidance on `@record` usage, patterns, and best practices, see the main documentation in `/python_modules/libraries/dagster-shared/CLAUDE.md`**

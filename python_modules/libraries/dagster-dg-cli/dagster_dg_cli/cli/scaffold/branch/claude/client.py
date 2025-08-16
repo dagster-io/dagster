@@ -27,18 +27,23 @@ class ClaudeClient:
     - Type coercion for common issues (int/float mismatches)
     - Cost and conversation tracking
     - Clean error handling and reporting
+    - Multi-turn conversation support for planning sessions
     """
 
-    def __init__(self, diagnostics: ClaudeDiagnostics):
+    def __init__(self, diagnostics: ClaudeDiagnostics, model: str = "sonnet"):
         """Initialize the Claude interface.
 
         Args:
             diagnostics: Diagnostics service for logging
+            model: Model to use (opus, sonnet, haiku)
         """
         self.diagnostics = diagnostics
+        self.model = model
         self.total_cost_usd = 0.0
         self.total_tokens = 0
         self.conversation_history: list[SDKMessage] = []
+        self.planning_session_active: bool = False
+        self.planning_context: Optional[dict[str, Any]] = None
 
     def invoke(
         self,
@@ -80,6 +85,7 @@ class ClaudeClient:
             output_channel=output_channel,
             disallowed_tools=disallowed_tools,
             verbose=verbose,
+            model=self.model,
         )
 
         # Track conversation history - messages are always collected
@@ -132,7 +138,121 @@ class ClaudeClient:
             "total_tokens": self.total_tokens,
             "conversation_length": len(self.conversation_history),
             "timestamp": datetime.now().isoformat(),
+            "planning_session_active": self.planning_session_active,
         }
+
+    def start_planning_session(self, context: dict[str, Any]) -> None:
+        """Start a multi-turn planning session.
+
+        Args:
+            context: Planning context including user input, project info, etc.
+        """
+        self.planning_session_active = True
+        self.planning_context = context
+
+        self.diagnostics.info(
+            "planning_session_started",
+            "Started multi-turn planning session",
+            {
+                "context_keys": list(context.keys()),
+                "conversation_length": len(self.conversation_history),
+            },
+        )
+
+    def end_planning_session(self) -> dict[str, Any]:
+        """End the current planning session and return session summary.
+
+        Returns:
+            Summary of the planning session including conversation history
+        """
+        if not self.planning_session_active:
+            self.diagnostics.info(
+                "planning_session_end_without_start",
+                "Attempted to end planning session that was not active",
+                {},
+            )
+            return {}
+
+        session_summary = {
+            "conversation_turns": len(self.conversation_history),
+            "total_cost": self.total_cost_usd,
+            "session_context": self.planning_context,
+            "ended_at": datetime.now().isoformat(),
+        }
+
+        self.planning_session_active = False
+        self.planning_context = None
+
+        self.diagnostics.info(
+            "planning_session_ended",
+            "Ended multi-turn planning session",
+            session_summary,
+        )
+
+        return session_summary
+
+    def invoke_planning_turn(
+        self,
+        prompt: str,
+        allowed_tools: list[str],
+        output_channel: "OutputChannel",
+        continue_conversation: bool = True,
+    ) -> list[SDKMessage]:
+        """Invoke Claude for a planning conversation turn.
+
+        This method is specifically designed for multi-turn planning conversations
+        where context from previous turns should be maintained.
+
+        Args:
+            prompt: The prompt for this turn
+            allowed_tools: List of tool names that Claude is allowed to use
+            output_channel: Channel to stream output to
+            continue_conversation: Whether to maintain conversation context
+
+        Returns:
+            List of validated SDKMessage objects from Claude CLI output
+        """
+        if not self.planning_session_active:
+            self.diagnostics.info(
+                "planning_turn_without_session",
+                "Planning turn invoked without active session",
+                {"prompt_length": len(prompt)},
+            )
+
+        self.diagnostics.debug(
+            "planning_turn_start",
+            "Starting planning conversation turn",
+            {
+                "prompt_length": len(prompt),
+                "conversation_turns": len(self.conversation_history),
+                "continue_conversation": continue_conversation,
+            },
+        )
+
+        # For planning turns, we may want to include previous context
+        effective_prompt = prompt
+        if continue_conversation and self.planning_context:
+            # Add planning context to the prompt
+            context_summary = "\n".join(
+                [
+                    "Previous planning context:",
+                    f"- User input: {self.planning_context.get('user_input', 'N/A')}",
+                    f"- Project patterns: {len(self.planning_context.get('codebase_patterns', {}))} patterns detected",
+                    f"- Available components: {len(self.planning_context.get('existing_components', []))} components",
+                    "",
+                    "Current request:",
+                ]
+            )
+            effective_prompt = context_summary + effective_prompt
+
+        # Use the standard invoke method but with planning-specific context
+        return self.invoke(
+            prompt=effective_prompt,
+            allowed_tools=allowed_tools,
+            output_channel=output_channel,
+            disallowed_tools=["Bash(python:*)", "WebSearch", "WebFetch"],
+            verbose=False,
+        )
 
 
 class OutputChannel(Protocol):
@@ -191,6 +311,7 @@ def invoke_claude_direct(
     output_channel: OutputChannel,
     disallowed_tools: Optional[list[str]],
     verbose: bool,
+    model: str = "sonnet",
 ) -> list[SDKMessage]:
     """Unified Claude CLI invocation with optional streaming.
 
@@ -204,6 +325,7 @@ def invoke_claude_direct(
         output_channel: Channel to stream output to (use NullOutputChannel to discard output)
         disallowed_tools: List of tool names that Claude is NOT allowed to use
         verbose: If True and streaming, display raw JSON instead of formatted messages
+        model: Model to use (opus, sonnet, haiku)
 
     Returns:
         List of validated SDKMessage objects from Claude CLI output
@@ -221,6 +343,7 @@ def invoke_claude_direct(
             "always_streaming": True,
             "verbose": verbose,
             "disallowed_tools": disallowed_tools,
+            "model": model,
         },
     )
 
@@ -234,6 +357,8 @@ def invoke_claude_direct(
         "--output-format",
         "stream-json",
         "--verbose",
+        "--model",
+        model,
     ]
 
     # Add disallowed tools if specified
@@ -276,6 +401,7 @@ def invoke_claude_direct(
         # Check process return code
         if process.returncode != 0:
             stderr_content = process.stderr.read() if process.stderr else "No stderr"
+
             diagnostics.error(
                 "claude_process_failed",
                 "Claude CLI process failed",
@@ -285,9 +411,23 @@ def invoke_claude_direct(
                     "command": cmd,
                 },
             )
-            raise RuntimeError(
-                f"Claude CLI failed with return code {process.returncode}: {stderr_content}"
-            )
+
+            # Check for specific API error patterns and provide user-friendly error messages
+            stderr_lower = stderr_content.lower()
+            if "overloaded" in stderr_lower or "500" in stderr_content:
+                raise RuntimeError(
+                    "🚨 Claude API is currently overloaded. Please try again in a few minutes. "
+                    "The service is experiencing high demand and temporarily unavailable."
+                )
+            elif "api_error" in stderr_lower or "api error" in stderr_lower:
+                raise RuntimeError(
+                    f"🚨 Claude API Error occurred. Please check your connection and try again. "
+                    f"Details: {stderr_content}"
+                )
+            else:
+                raise RuntimeError(
+                    f"Claude CLI failed with return code {process.returncode}: {stderr_content}"
+                )
 
         # Log the interaction with collected content
         interaction = AIInteraction(

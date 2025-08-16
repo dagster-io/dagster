@@ -3,6 +3,8 @@
 import json
 from typing import Any, Optional
 
+import typer
+
 from dagster_dg_cli.cli.scaffold.branch.validation import (
     ClaudeAssistantMessage,
     ClaudeErrorResult,
@@ -25,9 +27,6 @@ def render_claude_content(content_json: dict[str, Any]) -> Optional[str]:
     Returns:
         Formatted string representation of the content, or None if no formatting needed
     """
-    # Import typer dynamically to defer import costs
-    import typer
-
     content_type = content_json.get("type")
     if content_type == "tool_use":
         if content_json.get("name") == "Bash":
