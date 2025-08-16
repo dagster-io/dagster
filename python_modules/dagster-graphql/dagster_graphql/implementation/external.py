@@ -7,6 +7,7 @@ from dagster._config import validate_config_from_snap
 from dagster._core.definitions.selector import JobSubsetSelector, RepositorySelector
 from dagster._core.execution.plan.state import KnownExecutionState
 from dagster._core.remote_representation import RemoteJob
+from dagster._core.remote_representation.code_location import is_implicit_asset_job_name
 from dagster._core.remote_representation.external import RemoteExecutionPlan
 from dagster._core.workspace.context import BaseWorkspaceRequestContext, WorkspaceRequestContext
 from dagster._utils.error import serializable_error_info_from_exc_info
@@ -50,9 +51,9 @@ def _get_remote_job_or_raise(
     from dagster_graphql.schema.pipelines.pipeline import GraphenePipeline
 
     ctx = graphene_info.context
-    if not ctx.has_job(selector):
-        raise UserFacingGraphQLError(GraphenePipelineNotFoundError(selector=selector))
-    elif ignore_subset or not selector.is_subset_selection:
+    if ignore_subset or not selector.is_subset_selection:
+        if not ctx.has_job(selector):
+            raise UserFacingGraphQLError(GraphenePipelineNotFoundError(selector=selector))
         remote_job = ctx.get_full_job(selector)
     else:
         code_location = ctx.get_code_location(selector.location_name)
@@ -60,13 +61,19 @@ def _get_remote_job_or_raise(
             remote_job = code_location.get_job(selector)
         except Exception:
             error_info = serializable_error_info_from_exc_info(sys.exc_info())
+            # include the full job in the response if its not __ASSET_JOB, since the
+            # __ASSET_JOB snapshot is large and not very useful
             raise UserFacingGraphQLError(
                 GrapheneInvalidSubsetError(
                     message="{message}{cause_message}".format(
                         message=error_info.message,
                         cause_message=f"\n{error_info.cause.message}" if error_info.cause else "",
                     ),
-                    pipeline=GraphenePipeline(ctx.get_full_job(selector)),
+                    pipeline=(
+                        GraphenePipeline(ctx.get_full_job(selector))
+                        if not is_implicit_asset_job_name(selector.job_name)
+                        else None
+                    ),
                 )
             )
 
