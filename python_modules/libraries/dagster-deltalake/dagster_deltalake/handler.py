@@ -50,7 +50,12 @@ class DeltalakeBaseArrowTypeHandler(DbTypeHandler[T], Generic[T]):
         metadata = context.definition_metadata or {}
         resource_config = context.resource_config or {}
         reader, delta_params = self.to_arrow(obj=obj)
-        delta_schema = Schema.from_pyarrow(reader.schema)
+        # Handle both pre-1.0 (from_pyarrow) and 1.0+ (from_arrow) deltalake APIs
+        try:
+            delta_schema = Schema.from_arrow(reader.schema)
+        except AttributeError:
+            # Fall back to pre-1.0 API
+            delta_schema = Schema.from_pyarrow(reader.schema)
 
         engine = resource_config.get("writer_engine")
         save_mode = metadata.get("mode")
@@ -87,21 +92,28 @@ class DeltalakeBaseArrowTypeHandler(DbTypeHandler[T], Generic[T]):
         # legacy parameter
         overwrite_schema = metadata.get("overwrite_schema") or overwrite_schema
 
-        write_deltalake(
-            table_or_uri=connection.table_uri,
-            data=reader,
-            storage_options=connection.storage_options,
-            mode=main_save_mode,
-            partition_filters=partition_filters,
-            partition_by=partition_columns,
-            engine=engine,
-            schema_mode="overwrite" if overwrite_schema else None,
-            custom_metadata=metadata.get("custom_metadata") or main_custom_metadata,
-            writer_properties=WriterProperties(**writerprops)  # type: ignore
-            if writerprops is not None
-            else writerprops,
+        # Build write_deltalake arguments
+        write_args = {
+            "table_or_uri": connection.table_uri,
+            "data": reader,
+            "storage_options": connection.storage_options,
+            "mode": main_save_mode,
+            "partition_by": partition_columns,
+            "engine": engine,
+            "schema_mode": "overwrite" if overwrite_schema else None,
+            "custom_metadata": metadata.get("custom_metadata") or main_custom_metadata,
             **delta_params,
-        )
+        }
+
+        # Only pass partition_filters for pyarrow engine
+        if partition_filters is not None and engine == "pyarrow":
+            write_args["partition_filters"] = partition_filters
+
+        # Add writer_properties if provided
+        if writerprops is not None:
+            write_args["writer_properties"] = WriterProperties(**writerprops)  # type: ignore
+
+        write_deltalake(**write_args)
 
         # TODO make stats computation configurable on type handler
         dt = DeltaTable(connection.table_uri, storage_options=connection.storage_options)
