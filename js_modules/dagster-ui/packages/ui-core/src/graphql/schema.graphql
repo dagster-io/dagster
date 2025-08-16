@@ -2578,6 +2578,7 @@ input LaunchBackfillParams {
   forceSynchronousSubmission: Boolean
   title: String
   description: String
+  runConfigData: RunConfigData
 }
 
 input PartitionSetSelector {

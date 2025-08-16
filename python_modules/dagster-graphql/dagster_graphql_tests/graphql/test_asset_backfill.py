@@ -1403,3 +1403,84 @@ def test_get_backfills_with_filters():
                 BACKFILLS_WITH_FILTERS_QUERY,
                 variables={"filters": {"statuses": ["REQUESTED"]}},
             )
+
+
+def test_launch_asset_backfill_with_run_config_data():
+    """Test that asset backfill can be launched with runConfigData."""
+    repo = get_repo()
+    all_asset_keys = repo.asset_graph.materializable_asset_keys
+
+    with instance_for_test() as instance:
+        with define_out_of_process_context(__file__, "get_repo", instance) as context:
+            # Test with runConfigData containing various configuration options
+            run_config_data = {
+                "ops": {
+                    "asset1": {"config": {"some_param": "test_value", "another_param": 42}},
+                    "asset2": {"config": {"nested_config": {"key": "value"}}},
+                },
+                "resources": {"some_resource": {"config": {"resource_param": "resource_value"}}},
+            }
+
+            launch_backfill_result = execute_dagster_graphql(
+                context,
+                LAUNCH_PARTITION_BACKFILL_MUTATION,
+                variables={
+                    "backfillParams": {
+                        "partitionNames": ["a", "b"],
+                        "assetSelection": [key.to_graphql_input() for key in all_asset_keys],
+                        "runConfigData": run_config_data,
+                    }
+                },
+            )
+
+            backfill_id, asset_backfill_data = _get_backfill_data(
+                launch_backfill_result, instance, repo
+            )
+
+            # Verify the backfill was created successfully
+            assert asset_backfill_data.target_subset.asset_keys == all_asset_keys
+
+            # Verify the runConfigData was stored correctly
+            backfill = instance.get_backfill(backfill_id)
+            assert backfill is not None
+            assert backfill.run_config == run_config_data
+
+            # Test that the backfill can be queried and shows the correct configuration
+            single_backfill_result = execute_dagster_graphql(
+                context, SINGLE_BACKFILL_QUERY, variables={"backfillId": backfill_id}
+            )
+            assert not single_backfill_result.errors
+            assert single_backfill_result.data
+
+
+def test_launch_asset_backfill_with_empty_run_config_data():
+    """Test that asset backfill can be launched with empty runConfigData."""
+    repo = get_repo()
+    all_asset_keys = repo.asset_graph.materializable_asset_keys
+
+    with instance_for_test() as instance:
+        with define_out_of_process_context(__file__, "get_repo", instance) as context:
+            # Test with empty runConfigData
+            launch_backfill_result = execute_dagster_graphql(
+                context,
+                LAUNCH_PARTITION_BACKFILL_MUTATION,
+                variables={
+                    "backfillParams": {
+                        "partitionNames": ["a", "b"],
+                        "assetSelection": [key.to_graphql_input() for key in all_asset_keys],
+                        "runConfigData": {},
+                    }
+                },
+            )
+
+            backfill_id, asset_backfill_data = _get_backfill_data(
+                launch_backfill_result, instance, repo
+            )
+
+            # Verify the backfill was created successfully
+            assert asset_backfill_data.target_subset.asset_keys == all_asset_keys
+
+            # Verify the runConfigData was stored correctly
+            backfill = instance.get_backfill(backfill_id)
+            assert backfill is not None
+            assert backfill.run_config == {}
