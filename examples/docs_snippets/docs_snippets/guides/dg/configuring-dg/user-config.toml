@@ -1,18 +1,22 @@
 [cli]
-# (bool, optional) Specifies whether the `dg` cache is disabled.
-#
-# Defaults to `false`.
-disable_cache = false
-
-# (string, optional) Specifies the directory where the `dg` cache is stored.
-#
-# Defaults to a platform-specific cache directory.
-cache_dir = "/path/to/my-cache"
 
 # (bool, optional) Specifies whether to use verbose output.
 # 
 # Defaults to `false`.
 verbose = false
+
+# (list[str], optional) Specifies a list of warning IDs to suppress. Full list of warning IDs can be
+# found here:
+suppress_warnings = [
+    "autoload_defs_with_definitions_py",
+    "cli_config_in_workspace_project",
+    "deprecated_user_config_location",
+    "deprecated_python_environment",
+    "deprecated_dagster_dg_library_entry_point",
+    "missing_dg_plugin_module_in_manifest",
+    "project_and_activated_venv_mismatch",
+    "create_dagster_outdated",
+]
 
 # Telemetry-related settings.
 [cli.telemetry]
