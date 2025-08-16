@@ -2,7 +2,7 @@ import re
 from dataclasses import dataclass
 from functools import cached_property
 from pathlib import Path
-from typing import Annotated
+from typing import Annotated, Optional
 
 from dagster import AssetExecutionContext, AssetSpec, MetadataValue, Resolvable, multi_asset
 from dagster._core.definitions.definitions_class import Definitions
@@ -13,6 +13,7 @@ from dagster.components.resolved.model import Resolver
 from dagster.components.scaffold.scaffold import scaffold_with
 
 from dagster_databricks.components.databricks_asset_bundle.configs import (
+    CustomConfig,
     DatabricksBaseTask,
     DatabricksConfig,
 )
@@ -42,6 +43,15 @@ class DatabricksWorkspaceArgs(Resolvable):
 
 
 def resolve_databricks_config_path(context: ResolutionContext, model) -> Path:
+    return context.resolve_source_relative_path(
+        context.resolve_value(model, as_type=str),
+    )
+
+
+def resolve_custom_config_path(context: ResolutionContext, model) -> CustomConfig:
+    # If model is not a string, it's None, in which case we return None
+    if not isinstance(model, str):
+        return None
     return context.resolve_source_relative_path(
         context.resolve_value(model, as_type=str),
     )
@@ -83,10 +93,28 @@ class DatabricksAssetBundleComponent(Component, Resolvable):
             ],
         ),
     ]
+    custom_config_path: Optional[
+        Annotated[
+            Optional[Path],
+            Resolver(
+                resolve_custom_config_path,
+                model_field_type=Optional[str],
+                description=(
+                    "The path to a custom config file that align with databricks_asset_bundle.configs.CustomConfig. "
+                    "Optional"
+                ),
+                examples=["{{ project_root }}/path/to/custom_yml_config_file", None],
+            ),
+        ]
+    ] = None
 
     @cached_property
     def databricks_config(self) -> DatabricksConfig:
         return DatabricksConfig(databricks_config_path=self.databricks_config_path)
+
+    @cached_property
+    def custom_config(self) -> CustomConfig:
+        return CustomConfig(custom_config_path=self.custom_config_path)
 
     def get_asset_spec(self, task: DatabricksBaseTask) -> AssetSpec:
         return AssetSpec(
