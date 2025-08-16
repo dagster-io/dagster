@@ -1,5 +1,20 @@
 # Template with instructions
-# No properties defined
+type: <string>  # Optional
+attributes:  # Optional: Attributes details
+template_vars_module: <string>  # Optional
+requirements:  # Optional: Describes dependencies for a component to load.
+  env:  # Optional: List of string items
+    - <string>
+post_processing:  # Optional: Post_Processing details
 
 # EXAMPLE VALUES:
-# No example values available
+type: "example_string"
+attributes:
+{}
+template_vars_module: "example_string"
+requirements:
+  env:
+    - "example_item_1"
+    - "example_item_2"
+post_processing:
+  key: "value"

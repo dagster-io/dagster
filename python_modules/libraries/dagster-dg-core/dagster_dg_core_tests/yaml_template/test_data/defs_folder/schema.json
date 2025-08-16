@@ -1,6 +1,79 @@
 {
+    "$defs": {
+        "ComponentRequirementsModel": {
+            "description": "Describes dependencies for a component to load.",
+            "properties": {
+                "env": {
+                    "anyOf": [
+                        {
+                            "items": {
+                                "type": "string"
+                            },
+                            "type": "array"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ],
+                    "default": null,
+                    "title": "Env"
+                }
+            },
+            "title": "ComponentRequirementsModel",
+            "type": "object"
+        }
+    },
     "additionalProperties": false,
-    "properties": {},
-    "title": "DefsFolderComponentYamlSchemaModel",
+    "properties": {
+        "type": {
+            "const": "dagster.DefsFolderComponent",
+            "default": "dagster.DefsFolderComponent",
+            "title": "Type",
+            "type": "string"
+        },
+        "attributes": {
+            "additionalProperties": false,
+            "properties": {},
+            "title": "DefsFolderComponentYamlSchemaModel",
+            "type": "object"
+        },
+        "template_vars_module": {
+            "anyOf": [
+                {
+                    "type": "string"
+                },
+                {
+                    "type": "null"
+                }
+            ],
+            "default": null,
+            "title": "Template Vars Module"
+        },
+        "requirements": {
+            "anyOf": [
+                {
+                    "$ref": "#/$defs/ComponentRequirementsModel"
+                },
+                {
+                    "type": "null"
+                }
+            ],
+            "default": null
+        },
+        "post_processing": {
+            "anyOf": [
+                {
+                    "additionalProperties": true,
+                    "type": "object"
+                },
+                {
+                    "type": "null"
+                }
+            ],
+            "default": null,
+            "title": "Post Processing"
+        }
+    },
+    "title": "dagsterDefsFolderComponentComponentFileModel",
     "type": "object"
 }

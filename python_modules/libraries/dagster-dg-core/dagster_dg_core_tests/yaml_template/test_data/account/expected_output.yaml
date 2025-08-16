@@ -1,24 +1,40 @@
 # Template with instructions
-workspace:  # Required: This class represents a Fivetran workspace and provides utilities
+type: <string>  # Optional
+attributes:  # Optional: Attributes details
+  workspace:  # Required: This class represents a Fivetran workspace and provides utilities
 to interact with Fivetran APIs.
-  account_id: <string>  # Required: The Fivetran account ID.
-  api_key: <string>  # Required: The Fivetran API key to use for this resource.
-  api_secret: <string>  # Required: The Fivetran API secret to use for this resource.
-  snapshot_path: <string>  # Optional: Path to a snapshot file to load Fivetran data from,rather than fetching it from the Fivetran API.
-  request_max_retries: <integer>  # Optional: The maximum number of times requests to the Fivetran API should be retried before failing.
-  request_retry_delay: <number>  # Optional: Time (in seconds) to wait between each request retry.
-  disable_schedule_on_trigger: <boolean>  # Optional: Whether to disable the schedule of a connector when it is synchronized using this resource.Defaults to True.
-connector_selector: <string>  # Optional
-translation: <string>  # Optional
+    account_id: <string>  # Required: The Fivetran account ID.
+    api_key: <string>  # Required: The Fivetran API key to use for this resource.
+    api_secret: <string>  # Required: The Fivetran API secret to use for this resource.
+    snapshot_path: <string>  # Optional: Path to a snapshot file to load Fivetran data from,rather than fetching it from the Fivetran API.
+    request_max_retries: <integer>  # Optional: The maximum number of times requests to the Fivetran API should be retried before failing.
+    request_retry_delay: <number>  # Optional: Time (in seconds) to wait between each request retry.
+    disable_schedule_on_trigger: <boolean>  # Optional: Whether to disable the schedule of a connector when it is synchronized using this resource.Defaults to True.
+  connector_selector: <string>  # Optional
+  translation: <string>  # Optional
+template_vars_module: <string>  # Optional
+requirements:  # Optional: Describes dependencies for a component to load.
+  env:  # Optional: List of string items
+    - <string>
+post_processing:  # Optional: Post_Processing details
 
 # EXAMPLE VALUES:
-workspace:
-  account_id: "example_string"
-  api_key: "example_string"
-  api_secret: "example_string"
-  snapshot_path: "example_string"
-  request_max_retries: 42
-  request_retry_delay: 3.14
-  disable_schedule_on_trigger: true
-connector_selector: "example_string"
-translation: "example_string"
+type: "example_string"
+attributes:
+  workspace:
+    account_id: "example_string"
+    api_key: "example_string"
+    api_secret: "example_string"
+    snapshot_path: "example_string"
+    request_max_retries: 42
+    request_retry_delay: 3.14
+    disable_schedule_on_trigger: true
+  connector_selector: "example_string"
+  translation: "example_string"
+template_vars_module: "example_string"
+requirements:
+  env:
+    - "example_item_1"
+    - "example_item_2"
+post_processing:
+  key: "value"

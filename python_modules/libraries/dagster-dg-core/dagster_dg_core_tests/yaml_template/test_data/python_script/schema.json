@@ -1,201 +1,9 @@
 {
     "$defs": {
-        "AssetCheckSpecKwargsModel": {
-            "additionalProperties": false,
+        "ComponentRequirementsModel": {
+            "description": "Describes dependencies for a component to load.",
             "properties": {
-                "name": {
-                    "title": "Name",
-                    "type": "string"
-                },
-                "asset": {
-                    "description": "A unique identifier for the asset.",
-                    "title": "Asset",
-                    "type": "string"
-                },
-                "additional_deps": {
-                    "anyOf": [
-                        {
-                            "items": {
-                                "type": "string"
-                            },
-                            "type": "array"
-                        },
-                        {
-                            "type": "string"
-                        },
-                        {
-                            "type": "null"
-                        }
-                    ],
-                    "default": null,
-                    "title": "Additional Deps"
-                },
-                "description": {
-                    "anyOf": [
-                        {
-                            "type": "string"
-                        },
-                        {
-                            "type": "null"
-                        }
-                    ],
-                    "default": null,
-                    "title": "Description"
-                },
-                "blocking": {
-                    "anyOf": [
-                        {
-                            "type": "boolean"
-                        },
-                        {
-                            "type": "string"
-                        }
-                    ],
-                    "default": false,
-                    "title": "Blocking"
-                },
-                "metadata": {
-                    "anyOf": [
-                        {
-                            "additionalProperties": true,
-                            "type": "object"
-                        },
-                        {
-                            "type": "string"
-                        },
-                        {
-                            "type": "null"
-                        }
-                    ],
-                    "default": null,
-                    "title": "Metadata"
-                },
-                "automation_condition": {
-                    "anyOf": [
-                        {
-                            "type": "string"
-                        },
-                        {
-                            "type": "null"
-                        }
-                    ],
-                    "default": null,
-                    "title": "Automation Condition"
-                }
-            },
-            "required": [
-                "name",
-                "asset"
-            ],
-            "title": "AssetCheckSpecKwargsModel",
-            "type": "object"
-        },
-        "AssetSpecKwargsModel": {
-            "additionalProperties": false,
-            "properties": {
-                "deps": {
-                    "anyOf": [
-                        {
-                            "items": {
-                                "type": "string"
-                            },
-                            "type": "array"
-                        },
-                        {
-                            "type": "string"
-                        },
-                        {
-                            "type": "null"
-                        }
-                    ],
-                    "default": null,
-                    "description": "The asset keys for the upstream assets that this asset depends on.",
-                    "examples": [
-                        [
-                            "my_database/my_schema/upstream_table"
-                        ]
-                    ],
-                    "title": "Deps"
-                },
-                "description": {
-                    "anyOf": [
-                        {
-                            "type": "string"
-                        },
-                        {
-                            "type": "null"
-                        }
-                    ],
-                    "default": null,
-                    "description": "Human-readable description of the asset.",
-                    "examples": [
-                        "Refined sales data"
-                    ],
-                    "title": "Description"
-                },
-                "metadata": {
-                    "anyOf": [
-                        {
-                            "additionalProperties": true,
-                            "type": "object"
-                        },
-                        {
-                            "type": "string"
-                        }
-                    ],
-                    "default": "__DAGSTER_UNSET_DEFAULT__",
-                    "description": "Additional metadata for the asset.",
-                    "title": "Metadata"
-                },
-                "group_name": {
-                    "anyOf": [
-                        {
-                            "type": "string"
-                        },
-                        {
-                            "type": "null"
-                        }
-                    ],
-                    "default": null,
-                    "description": "Used to organize assets into groups, defaults to 'default'.",
-                    "examples": [
-                        "staging"
-                    ],
-                    "title": "Group Name"
-                },
-                "skippable": {
-                    "anyOf": [
-                        {
-                            "type": "boolean"
-                        },
-                        {
-                            "type": "null"
-                        },
-                        {
-                            "type": "string"
-                        }
-                    ],
-                    "default": null,
-                    "description": "Whether this asset can be omitted during materialization, causing downstream dependencies to skip.",
-                    "title": "Skippable"
-                },
-                "code_version": {
-                    "anyOf": [
-                        {
-                            "type": "string"
-                        },
-                        {
-                            "type": "null"
-                        }
-                    ],
-                    "default": null,
-                    "description": "A version representing the code that produced the asset. Increment this value when the code changes.",
-                    "examples": [
-                        "3"
-                    ],
-                    "title": "Code Version"
-                },
-                "owners": {
+                "env": {
                     "anyOf": [
                         {
                             "items": {
@@ -205,507 +13,780 @@
                         },
                         {
                             "type": "null"
-                        },
-                        {
-                            "type": "string"
                         }
                     ],
                     "default": null,
-                    "description": "A list of strings representing owners of the asset. Each string can be a user's email address, or a team name prefixed with `team:`, e.g. `team:finops`.",
-                    "examples": [
-                        [
-                            "team:analytics",
-                            "nelson@hooli.com"
-                        ]
-                    ],
-                    "title": "Owners"
-                },
-                "tags": {
-                    "anyOf": [
-                        {
-                            "additionalProperties": {
-                                "type": "string"
-                            },
-                            "type": "object"
-                        },
-                        {
-                            "type": "string"
-                        }
-                    ],
-                    "default": "__DAGSTER_UNSET_DEFAULT__",
-                    "description": "Tags for filtering and organizing.",
-                    "examples": [
-                        {
-                            "team": "analytics",
-                            "tier": "prod"
-                        }
-                    ],
-                    "title": "Tags"
-                },
-                "kinds": {
-                    "anyOf": [
-                        {
-                            "items": {
-                                "type": "string"
-                            },
-                            "type": "array"
-                        },
-                        {
-                            "type": "string"
-                        }
-                    ],
-                    "default": "__DAGSTER_UNSET_DEFAULT__",
-                    "description": "A list of strings representing the kinds of the asset. These will be made visible in the Dagster UI.",
-                    "examples": [
-                        [
-                            "snowflake"
-                        ]
-                    ],
-                    "title": "Kinds"
-                },
-                "automation_condition": {
-                    "anyOf": [
-                        {
-                            "type": "string"
-                        },
-                        {
-                            "type": "null"
-                        }
-                    ],
-                    "default": null,
-                    "description": "The condition under which the asset will be automatically materialized.",
-                    "title": "Automation Condition"
-                },
-                "partitions_def": {
-                    "anyOf": [
-                        {
-                            "$ref": "#/$defs/HourlyPartitionsDefinitionModel"
-                        },
-                        {
-                            "$ref": "#/$defs/DailyPartitionsDefinitionModel"
-                        },
-                        {
-                            "$ref": "#/$defs/WeeklyPartitionsDefinitionModel"
-                        },
-                        {
-                            "$ref": "#/$defs/TimeWindowPartitionsDefinitionModel"
-                        },
-                        {
-                            "$ref": "#/$defs/StaticPartitionsDefinitionModel"
-                        },
-                        {
-                            "type": "string"
-                        }
-                    ],
-                    "default": null,
-                    "description": "The partitions definition for the asset.",
-                    "title": "Partitions Def"
-                },
-                "key": {
-                    "description": "A unique identifier for the asset.",
-                    "title": "Key",
-                    "type": "string"
+                    "title": "Env"
                 }
             },
-            "required": [
-                "key"
-            ],
-            "title": "AssetSpecKwargsModel",
-            "type": "object"
-        },
-        "DailyPartitionsDefinitionModel": {
-            "additionalProperties": false,
-            "properties": {
-                "type": {
-                    "const": "daily",
-                    "default": "daily",
-                    "title": "Type",
-                    "type": "string"
-                },
-                "start_date": {
-                    "title": "Start Date",
-                    "type": "string"
-                },
-                "end_date": {
-                    "anyOf": [
-                        {
-                            "type": "string"
-                        },
-                        {
-                            "type": "null"
-                        }
-                    ],
-                    "default": null,
-                    "title": "End Date"
-                },
-                "timezone": {
-                    "anyOf": [
-                        {
-                            "type": "string"
-                        },
-                        {
-                            "type": "null"
-                        }
-                    ],
-                    "default": null,
-                    "title": "Timezone"
-                },
-                "minute_offset": {
-                    "default": 0,
-                    "title": "Minute Offset",
-                    "type": "integer"
-                },
-                "hour_offset": {
-                    "default": 0,
-                    "title": "Hour Offset",
-                    "type": "integer"
-                }
-            },
-            "required": [
-                "start_date"
-            ],
-            "title": "DailyPartitionsDefinitionModel",
-            "type": "object"
-        },
-        "HourlyPartitionsDefinitionModel": {
-            "additionalProperties": false,
-            "properties": {
-                "type": {
-                    "const": "hourly",
-                    "default": "hourly",
-                    "title": "Type",
-                    "type": "string"
-                },
-                "start_date": {
-                    "title": "Start Date",
-                    "type": "string"
-                },
-                "end_date": {
-                    "anyOf": [
-                        {
-                            "type": "string"
-                        },
-                        {
-                            "type": "null"
-                        }
-                    ],
-                    "default": null,
-                    "title": "End Date"
-                },
-                "timezone": {
-                    "anyOf": [
-                        {
-                            "type": "string"
-                        },
-                        {
-                            "type": "null"
-                        }
-                    ],
-                    "default": null,
-                    "title": "Timezone"
-                },
-                "minute_offset": {
-                    "default": 0,
-                    "title": "Minute Offset",
-                    "type": "integer"
-                }
-            },
-            "required": [
-                "start_date"
-            ],
-            "title": "HourlyPartitionsDefinitionModel",
-            "type": "object"
-        },
-        "MultiRunBackfillPolicyModel": {
-            "additionalProperties": false,
-            "properties": {
-                "type": {
-                    "const": "multi_run",
-                    "default": "multi_run",
-                    "title": "Type",
-                    "type": "string"
-                },
-                "max_partitions_per_run": {
-                    "default": 1,
-                    "title": "Max Partitions Per Run",
-                    "type": "integer"
-                }
-            },
-            "title": "MultiRunBackfillPolicyModel",
-            "type": "object"
-        },
-        "ScriptSpecModel": {
-            "additionalProperties": false,
-            "properties": {
-                "name": {
-                    "anyOf": [
-                        {
-                            "type": "string"
-                        },
-                        {
-                            "type": "null"
-                        }
-                    ],
-                    "default": null,
-                    "title": "Name"
-                },
-                "tags": {
-                    "anyOf": [
-                        {
-                            "additionalProperties": true,
-                            "type": "object"
-                        },
-                        {
-                            "type": "string"
-                        },
-                        {
-                            "type": "null"
-                        }
-                    ],
-                    "default": null,
-                    "title": "Tags"
-                },
-                "description": {
-                    "anyOf": [
-                        {
-                            "type": "string"
-                        },
-                        {
-                            "type": "null"
-                        }
-                    ],
-                    "default": null,
-                    "title": "Description"
-                },
-                "pool": {
-                    "anyOf": [
-                        {
-                            "type": "string"
-                        },
-                        {
-                            "type": "null"
-                        }
-                    ],
-                    "default": null,
-                    "title": "Pool"
-                },
-                "backfill_policy": {
-                    "anyOf": [
-                        {
-                            "$ref": "#/$defs/SingleRunBackfillPolicyModel"
-                        },
-                        {
-                            "$ref": "#/$defs/MultiRunBackfillPolicyModel"
-                        },
-                        {
-                            "type": "string"
-                        }
-                    ],
-                    "default": null,
-                    "title": "Backfill Policy"
-                },
-                "type": {
-                    "anyOf": [
-                        {
-                            "const": "script",
-                            "type": "string"
-                        },
-                        {
-                            "type": "string"
-                        }
-                    ],
-                    "default": "script",
-                    "title": "Type"
-                },
-                "path": {
-                    "title": "Path",
-                    "type": "string"
-                },
-                "args": {
-                    "anyOf": [
-                        {
-                            "items": {
-                                "type": "string"
-                            },
-                            "type": "array"
-                        },
-                        {
-                            "type": "string"
-                        },
-                        {
-                            "type": "null"
-                        }
-                    ],
-                    "default": null,
-                    "title": "Args"
-                }
-            },
-            "required": [
-                "path"
-            ],
-            "title": "ScriptSpecModel",
-            "type": "object"
-        },
-        "SingleRunBackfillPolicyModel": {
-            "additionalProperties": false,
-            "properties": {
-                "type": {
-                    "const": "single_run",
-                    "default": "single_run",
-                    "title": "Type",
-                    "type": "string"
-                }
-            },
-            "title": "SingleRunBackfillPolicyModel",
-            "type": "object"
-        },
-        "StaticPartitionsDefinitionModel": {
-            "additionalProperties": false,
-            "properties": {
-                "type": {
-                    "const": "static",
-                    "default": "static",
-                    "title": "Type",
-                    "type": "string"
-                },
-                "partition_keys": {
-                    "items": {
-                        "type": "string"
-                    },
-                    "title": "Partition Keys",
-                    "type": "array"
-                }
-            },
-            "required": [
-                "partition_keys"
-            ],
-            "title": "StaticPartitionsDefinitionModel",
-            "type": "object"
-        },
-        "TimeWindowPartitionsDefinitionModel": {
-            "additionalProperties": false,
-            "properties": {
-                "type": {
-                    "const": "time_window",
-                    "default": "time_window",
-                    "title": "Type",
-                    "type": "string"
-                },
-                "start_date": {
-                    "title": "Start Date",
-                    "type": "string"
-                },
-                "end_date": {
-                    "anyOf": [
-                        {
-                            "type": "string"
-                        },
-                        {
-                            "type": "null"
-                        }
-                    ],
-                    "default": null,
-                    "title": "End Date"
-                },
-                "timezone": {
-                    "anyOf": [
-                        {
-                            "type": "string"
-                        },
-                        {
-                            "type": "null"
-                        }
-                    ],
-                    "default": null,
-                    "title": "Timezone"
-                },
-                "fmt": {
-                    "title": "Fmt",
-                    "type": "string"
-                },
-                "cron_schedule": {
-                    "title": "Cron Schedule",
-                    "type": "string"
-                }
-            },
-            "required": [
-                "start_date",
-                "fmt",
-                "cron_schedule"
-            ],
-            "title": "TimeWindowPartitionsDefinitionModel",
-            "type": "object"
-        },
-        "WeeklyPartitionsDefinitionModel": {
-            "additionalProperties": false,
-            "properties": {
-                "type": {
-                    "const": "weekly",
-                    "default": "weekly",
-                    "title": "Type",
-                    "type": "string"
-                },
-                "start_date": {
-                    "title": "Start Date",
-                    "type": "string"
-                },
-                "end_date": {
-                    "anyOf": [
-                        {
-                            "type": "string"
-                        },
-                        {
-                            "type": "null"
-                        }
-                    ],
-                    "default": null,
-                    "title": "End Date"
-                },
-                "timezone": {
-                    "anyOf": [
-                        {
-                            "type": "string"
-                        },
-                        {
-                            "type": "null"
-                        }
-                    ],
-                    "default": null,
-                    "title": "Timezone"
-                },
-                "minute_offset": {
-                    "default": 0,
-                    "title": "Minute Offset",
-                    "type": "integer"
-                },
-                "hour_offset": {
-                    "default": 0,
-                    "title": "Hour Offset",
-                    "type": "integer"
-                },
-                "day_offset": {
-                    "default": 0,
-                    "title": "Day Offset",
-                    "type": "integer"
-                }
-            },
-            "required": [
-                "start_date"
-            ],
-            "title": "WeeklyPartitionsDefinitionModel",
+            "title": "ComponentRequirementsModel",
             "type": "object"
         }
     },
     "additionalProperties": false,
     "properties": {
-        "assets": {
-            "anyOf": [
-                {
-                    "items": {
-                        "$ref": "#/$defs/AssetSpecKwargsModel"
+        "type": {
+            "const": "dagster.PythonScriptComponent",
+            "default": "dagster.PythonScriptComponent",
+            "title": "Type",
+            "type": "string"
+        },
+        "attributes": {
+            "$defs": {
+                "AssetCheckSpecKwargsModel": {
+                    "additionalProperties": false,
+                    "properties": {
+                        "name": {
+                            "title": "Name",
+                            "type": "string"
+                        },
+                        "asset": {
+                            "description": "A unique identifier for the asset.",
+                            "title": "Asset",
+                            "type": "string"
+                        },
+                        "additional_deps": {
+                            "anyOf": [
+                                {
+                                    "items": {
+                                        "type": "string"
+                                    },
+                                    "type": "array"
+                                },
+                                {
+                                    "type": "string"
+                                },
+                                {
+                                    "type": "null"
+                                }
+                            ],
+                            "default": null,
+                            "title": "Additional Deps"
+                        },
+                        "description": {
+                            "anyOf": [
+                                {
+                                    "type": "string"
+                                },
+                                {
+                                    "type": "null"
+                                }
+                            ],
+                            "default": null,
+                            "title": "Description"
+                        },
+                        "blocking": {
+                            "anyOf": [
+                                {
+                                    "type": "boolean"
+                                },
+                                {
+                                    "type": "string"
+                                }
+                            ],
+                            "default": false,
+                            "title": "Blocking"
+                        },
+                        "metadata": {
+                            "anyOf": [
+                                {
+                                    "additionalProperties": true,
+                                    "type": "object"
+                                },
+                                {
+                                    "type": "string"
+                                },
+                                {
+                                    "type": "null"
+                                }
+                            ],
+                            "default": null,
+                            "title": "Metadata"
+                        },
+                        "automation_condition": {
+                            "anyOf": [
+                                {
+                                    "type": "string"
+                                },
+                                {
+                                    "type": "null"
+                                }
+                            ],
+                            "default": null,
+                            "title": "Automation Condition"
+                        }
                     },
-                    "type": "array"
+                    "required": [
+                        "name",
+                        "asset"
+                    ],
+                    "title": "AssetCheckSpecKwargsModel",
+                    "type": "object"
                 },
+                "AssetSpecKwargsModel": {
+                    "additionalProperties": false,
+                    "properties": {
+                        "deps": {
+                            "anyOf": [
+                                {
+                                    "items": {
+                                        "type": "string"
+                                    },
+                                    "type": "array"
+                                },
+                                {
+                                    "type": "string"
+                                },
+                                {
+                                    "type": "null"
+                                }
+                            ],
+                            "default": null,
+                            "description": "The asset keys for the upstream assets that this asset depends on.",
+                            "examples": [
+                                [
+                                    "my_database/my_schema/upstream_table"
+                                ]
+                            ],
+                            "title": "Deps"
+                        },
+                        "description": {
+                            "anyOf": [
+                                {
+                                    "type": "string"
+                                },
+                                {
+                                    "type": "null"
+                                }
+                            ],
+                            "default": null,
+                            "description": "Human-readable description of the asset.",
+                            "examples": [
+                                "Refined sales data"
+                            ],
+                            "title": "Description"
+                        },
+                        "metadata": {
+                            "anyOf": [
+                                {
+                                    "additionalProperties": true,
+                                    "type": "object"
+                                },
+                                {
+                                    "type": "string"
+                                }
+                            ],
+                            "default": "__DAGSTER_UNSET_DEFAULT__",
+                            "description": "Additional metadata for the asset.",
+                            "title": "Metadata"
+                        },
+                        "group_name": {
+                            "anyOf": [
+                                {
+                                    "type": "string"
+                                },
+                                {
+                                    "type": "null"
+                                }
+                            ],
+                            "default": null,
+                            "description": "Used to organize assets into groups, defaults to 'default'.",
+                            "examples": [
+                                "staging"
+                            ],
+                            "title": "Group Name"
+                        },
+                        "skippable": {
+                            "anyOf": [
+                                {
+                                    "type": "boolean"
+                                },
+                                {
+                                    "type": "null"
+                                },
+                                {
+                                    "type": "string"
+                                }
+                            ],
+                            "default": null,
+                            "description": "Whether this asset can be omitted during materialization, causing downstream dependencies to skip.",
+                            "title": "Skippable"
+                        },
+                        "code_version": {
+                            "anyOf": [
+                                {
+                                    "type": "string"
+                                },
+                                {
+                                    "type": "null"
+                                }
+                            ],
+                            "default": null,
+                            "description": "A version representing the code that produced the asset. Increment this value when the code changes.",
+                            "examples": [
+                                "3"
+                            ],
+                            "title": "Code Version"
+                        },
+                        "owners": {
+                            "anyOf": [
+                                {
+                                    "items": {
+                                        "type": "string"
+                                    },
+                                    "type": "array"
+                                },
+                                {
+                                    "type": "null"
+                                },
+                                {
+                                    "type": "string"
+                                }
+                            ],
+                            "default": null,
+                            "description": "A list of strings representing owners of the asset. Each string can be a user's email address, or a team name prefixed with `team:`, e.g. `team:finops`.",
+                            "examples": [
+                                [
+                                    "team:analytics",
+                                    "nelson@hooli.com"
+                                ]
+                            ],
+                            "title": "Owners"
+                        },
+                        "tags": {
+                            "anyOf": [
+                                {
+                                    "additionalProperties": {
+                                        "type": "string"
+                                    },
+                                    "type": "object"
+                                },
+                                {
+                                    "type": "string"
+                                }
+                            ],
+                            "default": "__DAGSTER_UNSET_DEFAULT__",
+                            "description": "Tags for filtering and organizing.",
+                            "examples": [
+                                {
+                                    "team": "analytics",
+                                    "tier": "prod"
+                                }
+                            ],
+                            "title": "Tags"
+                        },
+                        "kinds": {
+                            "anyOf": [
+                                {
+                                    "items": {
+                                        "type": "string"
+                                    },
+                                    "type": "array"
+                                },
+                                {
+                                    "type": "string"
+                                }
+                            ],
+                            "default": "__DAGSTER_UNSET_DEFAULT__",
+                            "description": "A list of strings representing the kinds of the asset. These will be made visible in the Dagster UI.",
+                            "examples": [
+                                [
+                                    "snowflake"
+                                ]
+                            ],
+                            "title": "Kinds"
+                        },
+                        "automation_condition": {
+                            "anyOf": [
+                                {
+                                    "type": "string"
+                                },
+                                {
+                                    "type": "null"
+                                }
+                            ],
+                            "default": null,
+                            "description": "The condition under which the asset will be automatically materialized.",
+                            "title": "Automation Condition"
+                        },
+                        "partitions_def": {
+                            "anyOf": [
+                                {
+                                    "$ref": "#/$defs/HourlyPartitionsDefinitionModel"
+                                },
+                                {
+                                    "$ref": "#/$defs/DailyPartitionsDefinitionModel"
+                                },
+                                {
+                                    "$ref": "#/$defs/WeeklyPartitionsDefinitionModel"
+                                },
+                                {
+                                    "$ref": "#/$defs/TimeWindowPartitionsDefinitionModel"
+                                },
+                                {
+                                    "$ref": "#/$defs/StaticPartitionsDefinitionModel"
+                                },
+                                {
+                                    "type": "string"
+                                }
+                            ],
+                            "default": null,
+                            "description": "The partitions definition for the asset.",
+                            "title": "Partitions Def"
+                        },
+                        "key": {
+                            "description": "A unique identifier for the asset.",
+                            "title": "Key",
+                            "type": "string"
+                        }
+                    },
+                    "required": [
+                        "key"
+                    ],
+                    "title": "AssetSpecKwargsModel",
+                    "type": "object"
+                },
+                "DailyPartitionsDefinitionModel": {
+                    "additionalProperties": false,
+                    "properties": {
+                        "type": {
+                            "const": "daily",
+                            "default": "daily",
+                            "title": "Type",
+                            "type": "string"
+                        },
+                        "start_date": {
+                            "title": "Start Date",
+                            "type": "string"
+                        },
+                        "end_date": {
+                            "anyOf": [
+                                {
+                                    "type": "string"
+                                },
+                                {
+                                    "type": "null"
+                                }
+                            ],
+                            "default": null,
+                            "title": "End Date"
+                        },
+                        "timezone": {
+                            "anyOf": [
+                                {
+                                    "type": "string"
+                                },
+                                {
+                                    "type": "null"
+                                }
+                            ],
+                            "default": null,
+                            "title": "Timezone"
+                        },
+                        "minute_offset": {
+                            "default": 0,
+                            "title": "Minute Offset",
+                            "type": "integer"
+                        },
+                        "hour_offset": {
+                            "default": 0,
+                            "title": "Hour Offset",
+                            "type": "integer"
+                        }
+                    },
+                    "required": [
+                        "start_date"
+                    ],
+                    "title": "DailyPartitionsDefinitionModel",
+                    "type": "object"
+                },
+                "HourlyPartitionsDefinitionModel": {
+                    "additionalProperties": false,
+                    "properties": {
+                        "type": {
+                            "const": "hourly",
+                            "default": "hourly",
+                            "title": "Type",
+                            "type": "string"
+                        },
+                        "start_date": {
+                            "title": "Start Date",
+                            "type": "string"
+                        },
+                        "end_date": {
+                            "anyOf": [
+                                {
+                                    "type": "string"
+                                },
+                                {
+                                    "type": "null"
+                                }
+                            ],
+                            "default": null,
+                            "title": "End Date"
+                        },
+                        "timezone": {
+                            "anyOf": [
+                                {
+                                    "type": "string"
+                                },
+                                {
+                                    "type": "null"
+                                }
+                            ],
+                            "default": null,
+                            "title": "Timezone"
+                        },
+                        "minute_offset": {
+                            "default": 0,
+                            "title": "Minute Offset",
+                            "type": "integer"
+                        }
+                    },
+                    "required": [
+                        "start_date"
+                    ],
+                    "title": "HourlyPartitionsDefinitionModel",
+                    "type": "object"
+                },
+                "MultiRunBackfillPolicyModel": {
+                    "additionalProperties": false,
+                    "properties": {
+                        "type": {
+                            "const": "multi_run",
+                            "default": "multi_run",
+                            "title": "Type",
+                            "type": "string"
+                        },
+                        "max_partitions_per_run": {
+                            "default": 1,
+                            "title": "Max Partitions Per Run",
+                            "type": "integer"
+                        }
+                    },
+                    "title": "MultiRunBackfillPolicyModel",
+                    "type": "object"
+                },
+                "ScriptSpecModel": {
+                    "additionalProperties": false,
+                    "properties": {
+                        "name": {
+                            "anyOf": [
+                                {
+                                    "type": "string"
+                                },
+                                {
+                                    "type": "null"
+                                }
+                            ],
+                            "default": null,
+                            "title": "Name"
+                        },
+                        "tags": {
+                            "anyOf": [
+                                {
+                                    "additionalProperties": true,
+                                    "type": "object"
+                                },
+                                {
+                                    "type": "string"
+                                },
+                                {
+                                    "type": "null"
+                                }
+                            ],
+                            "default": null,
+                            "title": "Tags"
+                        },
+                        "description": {
+                            "anyOf": [
+                                {
+                                    "type": "string"
+                                },
+                                {
+                                    "type": "null"
+                                }
+                            ],
+                            "default": null,
+                            "title": "Description"
+                        },
+                        "pool": {
+                            "anyOf": [
+                                {
+                                    "type": "string"
+                                },
+                                {
+                                    "type": "null"
+                                }
+                            ],
+                            "default": null,
+                            "title": "Pool"
+                        },
+                        "backfill_policy": {
+                            "anyOf": [
+                                {
+                                    "$ref": "#/$defs/SingleRunBackfillPolicyModel"
+                                },
+                                {
+                                    "$ref": "#/$defs/MultiRunBackfillPolicyModel"
+                                },
+                                {
+                                    "type": "string"
+                                }
+                            ],
+                            "default": null,
+                            "title": "Backfill Policy"
+                        },
+                        "type": {
+                            "anyOf": [
+                                {
+                                    "const": "script",
+                                    "type": "string"
+                                },
+                                {
+                                    "type": "string"
+                                }
+                            ],
+                            "default": "script",
+                            "title": "Type"
+                        },
+                        "path": {
+                            "title": "Path",
+                            "type": "string"
+                        },
+                        "args": {
+                            "anyOf": [
+                                {
+                                    "items": {
+                                        "type": "string"
+                                    },
+                                    "type": "array"
+                                },
+                                {
+                                    "type": "string"
+                                },
+                                {
+                                    "type": "null"
+                                }
+                            ],
+                            "default": null,
+                            "title": "Args"
+                        }
+                    },
+                    "required": [
+                        "path"
+                    ],
+                    "title": "ScriptSpecModel",
+                    "type": "object"
+                },
+                "SingleRunBackfillPolicyModel": {
+                    "additionalProperties": false,
+                    "properties": {
+                        "type": {
+                            "const": "single_run",
+                            "default": "single_run",
+                            "title": "Type",
+                            "type": "string"
+                        }
+                    },
+                    "title": "SingleRunBackfillPolicyModel",
+                    "type": "object"
+                },
+                "StaticPartitionsDefinitionModel": {
+                    "additionalProperties": false,
+                    "properties": {
+                        "type": {
+                            "const": "static",
+                            "default": "static",
+                            "title": "Type",
+                            "type": "string"
+                        },
+                        "partition_keys": {
+                            "items": {
+                                "type": "string"
+                            },
+                            "title": "Partition Keys",
+                            "type": "array"
+                        }
+                    },
+                    "required": [
+                        "partition_keys"
+                    ],
+                    "title": "StaticPartitionsDefinitionModel",
+                    "type": "object"
+                },
+                "TimeWindowPartitionsDefinitionModel": {
+                    "additionalProperties": false,
+                    "properties": {
+                        "type": {
+                            "const": "time_window",
+                            "default": "time_window",
+                            "title": "Type",
+                            "type": "string"
+                        },
+                        "start_date": {
+                            "title": "Start Date",
+                            "type": "string"
+                        },
+                        "end_date": {
+                            "anyOf": [
+                                {
+                                    "type": "string"
+                                },
+                                {
+                                    "type": "null"
+                                }
+                            ],
+                            "default": null,
+                            "title": "End Date"
+                        },
+                        "timezone": {
+                            "anyOf": [
+                                {
+                                    "type": "string"
+                                },
+                                {
+                                    "type": "null"
+                                }
+                            ],
+                            "default": null,
+                            "title": "Timezone"
+                        },
+                        "fmt": {
+                            "title": "Fmt",
+                            "type": "string"
+                        },
+                        "cron_schedule": {
+                            "title": "Cron Schedule",
+                            "type": "string"
+                        }
+                    },
+                    "required": [
+                        "start_date",
+                        "fmt",
+                        "cron_schedule"
+                    ],
+                    "title": "TimeWindowPartitionsDefinitionModel",
+                    "type": "object"
+                },
+                "WeeklyPartitionsDefinitionModel": {
+                    "additionalProperties": false,
+                    "properties": {
+                        "type": {
+                            "const": "weekly",
+                            "default": "weekly",
+                            "title": "Type",
+                            "type": "string"
+                        },
+                        "start_date": {
+                            "title": "Start Date",
+                            "type": "string"
+                        },
+                        "end_date": {
+                            "anyOf": [
+                                {
+                                    "type": "string"
+                                },
+                                {
+                                    "type": "null"
+                                }
+                            ],
+                            "default": null,
+                            "title": "End Date"
+                        },
+                        "timezone": {
+                            "anyOf": [
+                                {
+                                    "type": "string"
+                                },
+                                {
+                                    "type": "null"
+                                }
+                            ],
+                            "default": null,
+                            "title": "Timezone"
+                        },
+                        "minute_offset": {
+                            "default": 0,
+                            "title": "Minute Offset",
+                            "type": "integer"
+                        },
+                        "hour_offset": {
+                            "default": 0,
+                            "title": "Hour Offset",
+                            "type": "integer"
+                        },
+                        "day_offset": {
+                            "default": 0,
+                            "title": "Day Offset",
+                            "type": "integer"
+                        }
+                    },
+                    "required": [
+                        "start_date"
+                    ],
+                    "title": "WeeklyPartitionsDefinitionModel",
+                    "type": "object"
+                }
+            },
+            "additionalProperties": false,
+            "properties": {
+                "assets": {
+                    "anyOf": [
+                        {
+                            "items": {
+                                "$ref": "#/$defs/AssetSpecKwargsModel"
+                            },
+                            "type": "array"
+                        },
+                        {
+                            "type": "string"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ],
+                    "default": null,
+                    "title": "Assets"
+                },
+                "checks": {
+                    "anyOf": [
+                        {
+                            "items": {
+                                "$ref": "#/$defs/AssetCheckSpecKwargsModel"
+                            },
+                            "type": "array"
+                        },
+                        {
+                            "type": "string"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ],
+                    "default": null,
+                    "title": "Checks"
+                },
+                "execution": {
+                    "anyOf": [
+                        {
+                            "$ref": "#/$defs/ScriptSpecModel"
+                        },
+                        {
+                            "type": "string"
+                        }
+                    ],
+                    "title": "Execution"
+                }
+            },
+            "required": [
+                "execution"
+            ],
+            "title": "PythonScriptComponentModel",
+            "type": "object"
+        },
+        "template_vars_module": {
+            "anyOf": [
                 {
                     "type": "string"
                 },
@@ -714,41 +795,33 @@
                 }
             ],
             "default": null,
-            "title": "Assets"
+            "title": "Template Vars Module"
         },
-        "checks": {
+        "requirements": {
             "anyOf": [
                 {
-                    "items": {
-                        "$ref": "#/$defs/AssetCheckSpecKwargsModel"
-                    },
-                    "type": "array"
+                    "$ref": "#/$defs/ComponentRequirementsModel"
                 },
                 {
-                    "type": "string"
+                    "type": "null"
+                }
+            ],
+            "default": null
+        },
+        "post_processing": {
+            "anyOf": [
+                {
+                    "additionalProperties": true,
+                    "type": "object"
                 },
                 {
                     "type": "null"
                 }
             ],
             "default": null,
-            "title": "Checks"
-        },
-        "execution": {
-            "anyOf": [
-                {
-                    "$ref": "#/$defs/ScriptSpecModel"
-                },
-                {
-                    "type": "string"
-                }
-            ],
-            "title": "Execution"
+            "title": "Post Processing"
         }
     },
-    "required": [
-        "execution"
-    ],
-    "title": "PythonScriptComponentModel",
+    "title": "dagsterPythonScriptComponentComponentFileModel",
     "type": "object"
 }

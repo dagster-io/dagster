@@ -69,11 +69,11 @@ def main(component_name: str, test_dir_name: Optional[str] = None):
 
     click.echo(f"Regenerating schema for {component_name}...")
     click.echo(f"Test directory: {test_dir}")
-    click.echo(f"Using command: dg utils inspect-component {component_name} --component-schema")
+    click.echo(f"Using command: dg utils inspect-component {component_name} --defs-yaml-schema")
 
     # Generate the schema
     schema_output = run_command(
-        ["dg", "utils", "inspect-component", component_name, "--component-schema"],
+        ["dg", "utils", "inspect-component", component_name, "--defs-yaml-schema"],
         cwd=str(repo_root.resolve()),
     )
 
@@ -101,52 +101,6 @@ def main(component_name: str, test_dir_name: Optional[str] = None):
         f.write(template.to_string())
 
     click.echo(f"Expected output file generated at: {expected_output_file}")
-
-    # Create README.md file
-    readme_file = test_dir / "README.md"
-    component_display_name = component_name.split(".")[-1]
-    readme_content = f"""# {component_display_name} Test Data
-
-This directory contains test data for validating the YAML template conversion of the {component_name} JSON schema.
-
-## Files
-
-- **`schema.json`**: The JSON schema for the {component_display_name}, extracted using the `dg` CLI command
-- **`expected_output.yaml`**: The expected YAML template output when processing the schema through the converter
-- **`README.md`**: This documentation file
-
-## Usage
-
-### Regenerating the Schema and Expected Output
-
-To regenerate both the schema and expected output, run from the test_data directory:
-
-```bash
-python ../regenerate_schema.py {component_name}
-```
-
-This will:
-1. Use `dg utils inspect-component {component_name} --component-schema` to extract the JSON schema
-2. Process the schema through the YAML template converter
-3. Update both `schema.json` and `expected_output.yaml`
-
-## Test Purpose
-
-This test validates that the YAML template converter can handle the {component_name} schema, ensuring proper handling of:
-
-- Complex nested structures
-- Schema references (`$ref`) 
-- Multiple type unions (`anyOf`)
-- Various constraint types
-- Arrays and objects
-
-The test ensures the converter generates useful YAML templates for LLM consumption.
-"""
-
-    with open(readme_file, "w") as f:
-        f.write(readme_content)
-
-    click.echo(f"README file generated at: {readme_file}")
     click.echo("Done!")
 
 

@@ -1,233 +1,10 @@
 {
     "$defs": {
-        "AssetSpecUpdateKwargsModel": {
-            "additionalProperties": false,
+        "ComponentRequirementsModel": {
+            "description": "Describes dependencies for a component to load.",
             "properties": {
-                "deps": {
+                "env": {
                     "anyOf": [
-                        {
-                            "items": {
-                                "type": "string"
-                            },
-                            "type": "array"
-                        },
-                        {
-                            "type": "string"
-                        },
-                        {
-                            "type": "null"
-                        }
-                    ],
-                    "default": null,
-                    "description": "The asset keys for the upstream assets that this asset depends on.",
-                    "examples": [
-                        [
-                            "my_database/my_schema/upstream_table"
-                        ]
-                    ],
-                    "title": "Deps"
-                },
-                "description": {
-                    "anyOf": [
-                        {
-                            "type": "string"
-                        },
-                        {
-                            "type": "null"
-                        }
-                    ],
-                    "default": null,
-                    "description": "Human-readable description of the asset.",
-                    "examples": [
-                        "Refined sales data"
-                    ],
-                    "title": "Description"
-                },
-                "metadata": {
-                    "anyOf": [
-                        {
-                            "additionalProperties": true,
-                            "type": "object"
-                        },
-                        {
-                            "type": "string"
-                        }
-                    ],
-                    "default": "__DAGSTER_UNSET_DEFAULT__",
-                    "description": "Additional metadata for the asset.",
-                    "title": "Metadata"
-                },
-                "group_name": {
-                    "anyOf": [
-                        {
-                            "type": "string"
-                        },
-                        {
-                            "type": "null"
-                        }
-                    ],
-                    "default": null,
-                    "description": "Used to organize assets into groups, defaults to 'default'.",
-                    "examples": [
-                        "staging"
-                    ],
-                    "title": "Group Name"
-                },
-                "skippable": {
-                    "anyOf": [
-                        {
-                            "type": "boolean"
-                        },
-                        {
-                            "type": "null"
-                        },
-                        {
-                            "type": "string"
-                        }
-                    ],
-                    "default": null,
-                    "description": "Whether this asset can be omitted during materialization, causing downstream dependencies to skip.",
-                    "title": "Skippable"
-                },
-                "code_version": {
-                    "anyOf": [
-                        {
-                            "type": "string"
-                        },
-                        {
-                            "type": "null"
-                        }
-                    ],
-                    "default": null,
-                    "description": "A version representing the code that produced the asset. Increment this value when the code changes.",
-                    "examples": [
-                        "3"
-                    ],
-                    "title": "Code Version"
-                },
-                "owners": {
-                    "anyOf": [
-                        {
-                            "items": {
-                                "type": "string"
-                            },
-                            "type": "array"
-                        },
-                        {
-                            "type": "null"
-                        },
-                        {
-                            "type": "string"
-                        }
-                    ],
-                    "default": null,
-                    "description": "A list of strings representing owners of the asset. Each string can be a user's email address, or a team name prefixed with `team:`, e.g. `team:finops`.",
-                    "examples": [
-                        [
-                            "team:analytics",
-                            "nelson@hooli.com"
-                        ]
-                    ],
-                    "title": "Owners"
-                },
-                "tags": {
-                    "anyOf": [
-                        {
-                            "additionalProperties": {
-                                "type": "string"
-                            },
-                            "type": "object"
-                        },
-                        {
-                            "type": "string"
-                        }
-                    ],
-                    "default": "__DAGSTER_UNSET_DEFAULT__",
-                    "description": "Tags for filtering and organizing.",
-                    "examples": [
-                        {
-                            "team": "analytics",
-                            "tier": "prod"
-                        }
-                    ],
-                    "title": "Tags"
-                },
-                "kinds": {
-                    "anyOf": [
-                        {
-                            "items": {
-                                "type": "string"
-                            },
-                            "type": "array"
-                        },
-                        {
-                            "type": "string"
-                        }
-                    ],
-                    "default": "__DAGSTER_UNSET_DEFAULT__",
-                    "description": "A list of strings representing the kinds of the asset. These will be made visible in the Dagster UI.",
-                    "examples": [
-                        [
-                            "snowflake"
-                        ]
-                    ],
-                    "title": "Kinds"
-                },
-                "automation_condition": {
-                    "anyOf": [
-                        {
-                            "type": "string"
-                        },
-                        {
-                            "type": "null"
-                        }
-                    ],
-                    "default": null,
-                    "description": "The condition under which the asset will be automatically materialized.",
-                    "title": "Automation Condition"
-                },
-                "partitions_def": {
-                    "anyOf": [
-                        {
-                            "$ref": "#/$defs/HourlyPartitionsDefinitionModel"
-                        },
-                        {
-                            "$ref": "#/$defs/DailyPartitionsDefinitionModel"
-                        },
-                        {
-                            "$ref": "#/$defs/WeeklyPartitionsDefinitionModel"
-                        },
-                        {
-                            "$ref": "#/$defs/TimeWindowPartitionsDefinitionModel"
-                        },
-                        {
-                            "$ref": "#/$defs/StaticPartitionsDefinitionModel"
-                        },
-                        {
-                            "type": "string"
-                        }
-                    ],
-                    "default": null,
-                    "description": "The partitions definition for the asset.",
-                    "title": "Partitions Def"
-                },
-                "key": {
-                    "anyOf": [
-                        {
-                            "type": "string"
-                        },
-                        {
-                            "type": "null"
-                        }
-                    ],
-                    "default": null,
-                    "title": "Key"
-                },
-                "key_prefix": {
-                    "anyOf": [
-                        {
-                            "type": "string"
-                        },
                         {
                             "items": {
                                 "type": "string"
@@ -239,392 +16,688 @@
                         }
                     ],
                     "default": null,
-                    "description": "Prefix the existing asset key with the provided value.",
-                    "title": "Key Prefix"
+                    "title": "Env"
                 }
             },
-            "title": "AssetSpecUpdateKwargsModel",
-            "type": "object"
-        },
-        "DailyPartitionsDefinitionModel": {
-            "additionalProperties": false,
-            "properties": {
-                "type": {
-                    "const": "daily",
-                    "default": "daily",
-                    "title": "Type",
-                    "type": "string"
-                },
-                "start_date": {
-                    "title": "Start Date",
-                    "type": "string"
-                },
-                "end_date": {
-                    "anyOf": [
-                        {
-                            "type": "string"
-                        },
-                        {
-                            "type": "null"
-                        }
-                    ],
-                    "default": null,
-                    "title": "End Date"
-                },
-                "timezone": {
-                    "anyOf": [
-                        {
-                            "type": "string"
-                        },
-                        {
-                            "type": "null"
-                        }
-                    ],
-                    "default": null,
-                    "title": "Timezone"
-                },
-                "minute_offset": {
-                    "default": 0,
-                    "title": "Minute Offset",
-                    "type": "integer"
-                },
-                "hour_offset": {
-                    "default": 0,
-                    "title": "Hour Offset",
-                    "type": "integer"
-                }
-            },
-            "required": [
-                "start_date"
-            ],
-            "title": "DailyPartitionsDefinitionModel",
-            "type": "object"
-        },
-        "FivetranConnectorSelectorById": {
-            "properties": {
-                "by_id": {
-                    "description": "A list of connector IDs to include in the collection.",
-                    "items": {
-                        "type": "string"
-                    },
-                    "title": "By Id",
-                    "type": "array"
-                }
-            },
-            "required": [
-                "by_id"
-            ],
-            "title": "FivetranConnectorSelectorById",
-            "type": "object"
-        },
-        "FivetranConnectorSelectorByName": {
-            "properties": {
-                "by_name": {
-                    "description": "A list of connector names to include in the collection.",
-                    "items": {
-                        "type": "string"
-                    },
-                    "title": "By Name",
-                    "type": "array"
-                }
-            },
-            "required": [
-                "by_name"
-            ],
-            "title": "FivetranConnectorSelectorByName",
-            "type": "object"
-        },
-        "FivetranWorkspace": {
-            "description": "This class represents a Fivetran workspace and provides utilities\nto interact with Fivetran APIs.",
-            "properties": {
-                "account_id": {
-                    "description": "The Fivetran account ID.",
-                    "title": "Account Id",
-                    "type": "string"
-                },
-                "api_key": {
-                    "description": "The Fivetran API key to use for this resource.",
-                    "title": "Api Key",
-                    "type": "string"
-                },
-                "api_secret": {
-                    "description": "The Fivetran API secret to use for this resource.",
-                    "title": "Api Secret",
-                    "type": "string"
-                },
-                "snapshot_path": {
-                    "anyOf": [
-                        {
-                            "type": "string"
-                        },
-                        {
-                            "type": "null"
-                        }
-                    ],
-                    "default": null,
-                    "description": "Path to a snapshot file to load Fivetran data from,rather than fetching it from the Fivetran API.",
-                    "title": "Snapshot Path"
-                },
-                "request_max_retries": {
-                    "default": 3,
-                    "description": "The maximum number of times requests to the Fivetran API should be retried before failing.",
-                    "title": "Request Max Retries",
-                    "type": "integer"
-                },
-                "request_retry_delay": {
-                    "default": 0.25,
-                    "description": "Time (in seconds) to wait between each request retry.",
-                    "title": "Request Retry Delay",
-                    "type": "number"
-                },
-                "disable_schedule_on_trigger": {
-                    "default": true,
-                    "description": "Whether to disable the schedule of a connector when it is synchronized using this resource.Defaults to True.",
-                    "title": "Disable Schedule On Trigger",
-                    "type": "boolean"
-                }
-            },
-            "required": [
-                "account_id",
-                "api_key",
-                "api_secret"
-            ],
-            "title": "FivetranWorkspace",
-            "type": "object"
-        },
-        "HourlyPartitionsDefinitionModel": {
-            "additionalProperties": false,
-            "properties": {
-                "type": {
-                    "const": "hourly",
-                    "default": "hourly",
-                    "title": "Type",
-                    "type": "string"
-                },
-                "start_date": {
-                    "title": "Start Date",
-                    "type": "string"
-                },
-                "end_date": {
-                    "anyOf": [
-                        {
-                            "type": "string"
-                        },
-                        {
-                            "type": "null"
-                        }
-                    ],
-                    "default": null,
-                    "title": "End Date"
-                },
-                "timezone": {
-                    "anyOf": [
-                        {
-                            "type": "string"
-                        },
-                        {
-                            "type": "null"
-                        }
-                    ],
-                    "default": null,
-                    "title": "Timezone"
-                },
-                "minute_offset": {
-                    "default": 0,
-                    "title": "Minute Offset",
-                    "type": "integer"
-                }
-            },
-            "required": [
-                "start_date"
-            ],
-            "title": "HourlyPartitionsDefinitionModel",
-            "type": "object"
-        },
-        "StaticPartitionsDefinitionModel": {
-            "additionalProperties": false,
-            "properties": {
-                "type": {
-                    "const": "static",
-                    "default": "static",
-                    "title": "Type",
-                    "type": "string"
-                },
-                "partition_keys": {
-                    "items": {
-                        "type": "string"
-                    },
-                    "title": "Partition Keys",
-                    "type": "array"
-                }
-            },
-            "required": [
-                "partition_keys"
-            ],
-            "title": "StaticPartitionsDefinitionModel",
-            "type": "object"
-        },
-        "TimeWindowPartitionsDefinitionModel": {
-            "additionalProperties": false,
-            "properties": {
-                "type": {
-                    "const": "time_window",
-                    "default": "time_window",
-                    "title": "Type",
-                    "type": "string"
-                },
-                "start_date": {
-                    "title": "Start Date",
-                    "type": "string"
-                },
-                "end_date": {
-                    "anyOf": [
-                        {
-                            "type": "string"
-                        },
-                        {
-                            "type": "null"
-                        }
-                    ],
-                    "default": null,
-                    "title": "End Date"
-                },
-                "timezone": {
-                    "anyOf": [
-                        {
-                            "type": "string"
-                        },
-                        {
-                            "type": "null"
-                        }
-                    ],
-                    "default": null,
-                    "title": "Timezone"
-                },
-                "fmt": {
-                    "title": "Fmt",
-                    "type": "string"
-                },
-                "cron_schedule": {
-                    "title": "Cron Schedule",
-                    "type": "string"
-                }
-            },
-            "required": [
-                "start_date",
-                "fmt",
-                "cron_schedule"
-            ],
-            "title": "TimeWindowPartitionsDefinitionModel",
-            "type": "object"
-        },
-        "WeeklyPartitionsDefinitionModel": {
-            "additionalProperties": false,
-            "properties": {
-                "type": {
-                    "const": "weekly",
-                    "default": "weekly",
-                    "title": "Type",
-                    "type": "string"
-                },
-                "start_date": {
-                    "title": "Start Date",
-                    "type": "string"
-                },
-                "end_date": {
-                    "anyOf": [
-                        {
-                            "type": "string"
-                        },
-                        {
-                            "type": "null"
-                        }
-                    ],
-                    "default": null,
-                    "title": "End Date"
-                },
-                "timezone": {
-                    "anyOf": [
-                        {
-                            "type": "string"
-                        },
-                        {
-                            "type": "null"
-                        }
-                    ],
-                    "default": null,
-                    "title": "Timezone"
-                },
-                "minute_offset": {
-                    "default": 0,
-                    "title": "Minute Offset",
-                    "type": "integer"
-                },
-                "hour_offset": {
-                    "default": 0,
-                    "title": "Hour Offset",
-                    "type": "integer"
-                },
-                "day_offset": {
-                    "default": 0,
-                    "title": "Day Offset",
-                    "type": "integer"
-                }
-            },
-            "required": [
-                "start_date"
-            ],
-            "title": "WeeklyPartitionsDefinitionModel",
+            "title": "ComponentRequirementsModel",
             "type": "object"
         }
     },
     "additionalProperties": false,
     "properties": {
-        "workspace": {
-            "anyOf": [
-                {
-                    "$ref": "#/$defs/FivetranWorkspace"
-                },
-                {
-                    "type": "string"
-                }
-            ],
-            "title": "Workspace"
+        "type": {
+            "const": "dagster_fivetran.FivetranAccountComponent",
+            "default": "dagster_fivetran.FivetranAccountComponent",
+            "title": "Type",
+            "type": "string"
         },
-        "connector_selector": {
-            "anyOf": [
-                {
-                    "type": "string"
+        "attributes": {
+            "$defs": {
+                "AssetSpecUpdateKwargsModel": {
+                    "additionalProperties": false,
+                    "properties": {
+                        "deps": {
+                            "anyOf": [
+                                {
+                                    "items": {
+                                        "type": "string"
+                                    },
+                                    "type": "array"
+                                },
+                                {
+                                    "type": "string"
+                                },
+                                {
+                                    "type": "null"
+                                }
+                            ],
+                            "default": null,
+                            "description": "The asset keys for the upstream assets that this asset depends on.",
+                            "examples": [
+                                [
+                                    "my_database/my_schema/upstream_table"
+                                ]
+                            ],
+                            "title": "Deps"
+                        },
+                        "description": {
+                            "anyOf": [
+                                {
+                                    "type": "string"
+                                },
+                                {
+                                    "type": "null"
+                                }
+                            ],
+                            "default": null,
+                            "description": "Human-readable description of the asset.",
+                            "examples": [
+                                "Refined sales data"
+                            ],
+                            "title": "Description"
+                        },
+                        "metadata": {
+                            "anyOf": [
+                                {
+                                    "additionalProperties": true,
+                                    "type": "object"
+                                },
+                                {
+                                    "type": "string"
+                                }
+                            ],
+                            "default": "__DAGSTER_UNSET_DEFAULT__",
+                            "description": "Additional metadata for the asset.",
+                            "title": "Metadata"
+                        },
+                        "group_name": {
+                            "anyOf": [
+                                {
+                                    "type": "string"
+                                },
+                                {
+                                    "type": "null"
+                                }
+                            ],
+                            "default": null,
+                            "description": "Used to organize assets into groups, defaults to 'default'.",
+                            "examples": [
+                                "staging"
+                            ],
+                            "title": "Group Name"
+                        },
+                        "skippable": {
+                            "anyOf": [
+                                {
+                                    "type": "boolean"
+                                },
+                                {
+                                    "type": "null"
+                                },
+                                {
+                                    "type": "string"
+                                }
+                            ],
+                            "default": null,
+                            "description": "Whether this asset can be omitted during materialization, causing downstream dependencies to skip.",
+                            "title": "Skippable"
+                        },
+                        "code_version": {
+                            "anyOf": [
+                                {
+                                    "type": "string"
+                                },
+                                {
+                                    "type": "null"
+                                }
+                            ],
+                            "default": null,
+                            "description": "A version representing the code that produced the asset. Increment this value when the code changes.",
+                            "examples": [
+                                "3"
+                            ],
+                            "title": "Code Version"
+                        },
+                        "owners": {
+                            "anyOf": [
+                                {
+                                    "items": {
+                                        "type": "string"
+                                    },
+                                    "type": "array"
+                                },
+                                {
+                                    "type": "null"
+                                },
+                                {
+                                    "type": "string"
+                                }
+                            ],
+                            "default": null,
+                            "description": "A list of strings representing owners of the asset. Each string can be a user's email address, or a team name prefixed with `team:`, e.g. `team:finops`.",
+                            "examples": [
+                                [
+                                    "team:analytics",
+                                    "nelson@hooli.com"
+                                ]
+                            ],
+                            "title": "Owners"
+                        },
+                        "tags": {
+                            "anyOf": [
+                                {
+                                    "additionalProperties": {
+                                        "type": "string"
+                                    },
+                                    "type": "object"
+                                },
+                                {
+                                    "type": "string"
+                                }
+                            ],
+                            "default": "__DAGSTER_UNSET_DEFAULT__",
+                            "description": "Tags for filtering and organizing.",
+                            "examples": [
+                                {
+                                    "team": "analytics",
+                                    "tier": "prod"
+                                }
+                            ],
+                            "title": "Tags"
+                        },
+                        "kinds": {
+                            "anyOf": [
+                                {
+                                    "items": {
+                                        "type": "string"
+                                    },
+                                    "type": "array"
+                                },
+                                {
+                                    "type": "string"
+                                }
+                            ],
+                            "default": "__DAGSTER_UNSET_DEFAULT__",
+                            "description": "A list of strings representing the kinds of the asset. These will be made visible in the Dagster UI.",
+                            "examples": [
+                                [
+                                    "snowflake"
+                                ]
+                            ],
+                            "title": "Kinds"
+                        },
+                        "automation_condition": {
+                            "anyOf": [
+                                {
+                                    "type": "string"
+                                },
+                                {
+                                    "type": "null"
+                                }
+                            ],
+                            "default": null,
+                            "description": "The condition under which the asset will be automatically materialized.",
+                            "title": "Automation Condition"
+                        },
+                        "partitions_def": {
+                            "anyOf": [
+                                {
+                                    "$ref": "#/$defs/HourlyPartitionsDefinitionModel"
+                                },
+                                {
+                                    "$ref": "#/$defs/DailyPartitionsDefinitionModel"
+                                },
+                                {
+                                    "$ref": "#/$defs/WeeklyPartitionsDefinitionModel"
+                                },
+                                {
+                                    "$ref": "#/$defs/TimeWindowPartitionsDefinitionModel"
+                                },
+                                {
+                                    "$ref": "#/$defs/StaticPartitionsDefinitionModel"
+                                },
+                                {
+                                    "type": "string"
+                                }
+                            ],
+                            "default": null,
+                            "description": "The partitions definition for the asset.",
+                            "title": "Partitions Def"
+                        },
+                        "key": {
+                            "anyOf": [
+                                {
+                                    "type": "string"
+                                },
+                                {
+                                    "type": "null"
+                                }
+                            ],
+                            "default": null,
+                            "title": "Key"
+                        },
+                        "key_prefix": {
+                            "anyOf": [
+                                {
+                                    "type": "string"
+                                },
+                                {
+                                    "items": {
+                                        "type": "string"
+                                    },
+                                    "type": "array"
+                                },
+                                {
+                                    "type": "null"
+                                }
+                            ],
+                            "default": null,
+                            "description": "Prefix the existing asset key with the provided value.",
+                            "title": "Key Prefix"
+                        }
+                    },
+                    "title": "AssetSpecUpdateKwargsModel",
+                    "type": "object"
                 },
-                {
-                    "$ref": "#/$defs/FivetranConnectorSelectorByName"
+                "DailyPartitionsDefinitionModel": {
+                    "additionalProperties": false,
+                    "properties": {
+                        "type": {
+                            "const": "daily",
+                            "default": "daily",
+                            "title": "Type",
+                            "type": "string"
+                        },
+                        "start_date": {
+                            "title": "Start Date",
+                            "type": "string"
+                        },
+                        "end_date": {
+                            "anyOf": [
+                                {
+                                    "type": "string"
+                                },
+                                {
+                                    "type": "null"
+                                }
+                            ],
+                            "default": null,
+                            "title": "End Date"
+                        },
+                        "timezone": {
+                            "anyOf": [
+                                {
+                                    "type": "string"
+                                },
+                                {
+                                    "type": "null"
+                                }
+                            ],
+                            "default": null,
+                            "title": "Timezone"
+                        },
+                        "minute_offset": {
+                            "default": 0,
+                            "title": "Minute Offset",
+                            "type": "integer"
+                        },
+                        "hour_offset": {
+                            "default": 0,
+                            "title": "Hour Offset",
+                            "type": "integer"
+                        }
+                    },
+                    "required": [
+                        "start_date"
+                    ],
+                    "title": "DailyPartitionsDefinitionModel",
+                    "type": "object"
                 },
-                {
-                    "$ref": "#/$defs/FivetranConnectorSelectorById"
+                "FivetranConnectorSelectorById": {
+                    "properties": {
+                        "by_id": {
+                            "description": "A list of connector IDs to include in the collection.",
+                            "items": {
+                                "type": "string"
+                            },
+                            "title": "By Id",
+                            "type": "array"
+                        }
+                    },
+                    "required": [
+                        "by_id"
+                    ],
+                    "title": "FivetranConnectorSelectorById",
+                    "type": "object"
+                },
+                "FivetranConnectorSelectorByName": {
+                    "properties": {
+                        "by_name": {
+                            "description": "A list of connector names to include in the collection.",
+                            "items": {
+                                "type": "string"
+                            },
+                            "title": "By Name",
+                            "type": "array"
+                        }
+                    },
+                    "required": [
+                        "by_name"
+                    ],
+                    "title": "FivetranConnectorSelectorByName",
+                    "type": "object"
+                },
+                "FivetranWorkspace": {
+                    "description": "This class represents a Fivetran workspace and provides utilities\nto interact with Fivetran APIs.",
+                    "properties": {
+                        "account_id": {
+                            "description": "The Fivetran account ID.",
+                            "title": "Account Id",
+                            "type": "string"
+                        },
+                        "api_key": {
+                            "description": "The Fivetran API key to use for this resource.",
+                            "title": "Api Key",
+                            "type": "string"
+                        },
+                        "api_secret": {
+                            "description": "The Fivetran API secret to use for this resource.",
+                            "title": "Api Secret",
+                            "type": "string"
+                        },
+                        "snapshot_path": {
+                            "anyOf": [
+                                {
+                                    "type": "string"
+                                },
+                                {
+                                    "type": "null"
+                                }
+                            ],
+                            "default": null,
+                            "description": "Path to a snapshot file to load Fivetran data from,rather than fetching it from the Fivetran API.",
+                            "title": "Snapshot Path"
+                        },
+                        "request_max_retries": {
+                            "default": 3,
+                            "description": "The maximum number of times requests to the Fivetran API should be retried before failing.",
+                            "title": "Request Max Retries",
+                            "type": "integer"
+                        },
+                        "request_retry_delay": {
+                            "default": 0.25,
+                            "description": "Time (in seconds) to wait between each request retry.",
+                            "title": "Request Retry Delay",
+                            "type": "number"
+                        },
+                        "disable_schedule_on_trigger": {
+                            "default": true,
+                            "description": "Whether to disable the schedule of a connector when it is synchronized using this resource.Defaults to True.",
+                            "title": "Disable Schedule On Trigger",
+                            "type": "boolean"
+                        }
+                    },
+                    "required": [
+                        "account_id",
+                        "api_key",
+                        "api_secret"
+                    ],
+                    "title": "FivetranWorkspace",
+                    "type": "object"
+                },
+                "HourlyPartitionsDefinitionModel": {
+                    "additionalProperties": false,
+                    "properties": {
+                        "type": {
+                            "const": "hourly",
+                            "default": "hourly",
+                            "title": "Type",
+                            "type": "string"
+                        },
+                        "start_date": {
+                            "title": "Start Date",
+                            "type": "string"
+                        },
+                        "end_date": {
+                            "anyOf": [
+                                {
+                                    "type": "string"
+                                },
+                                {
+                                    "type": "null"
+                                }
+                            ],
+                            "default": null,
+                            "title": "End Date"
+                        },
+                        "timezone": {
+                            "anyOf": [
+                                {
+                                    "type": "string"
+                                },
+                                {
+                                    "type": "null"
+                                }
+                            ],
+                            "default": null,
+                            "title": "Timezone"
+                        },
+                        "minute_offset": {
+                            "default": 0,
+                            "title": "Minute Offset",
+                            "type": "integer"
+                        }
+                    },
+                    "required": [
+                        "start_date"
+                    ],
+                    "title": "HourlyPartitionsDefinitionModel",
+                    "type": "object"
+                },
+                "StaticPartitionsDefinitionModel": {
+                    "additionalProperties": false,
+                    "properties": {
+                        "type": {
+                            "const": "static",
+                            "default": "static",
+                            "title": "Type",
+                            "type": "string"
+                        },
+                        "partition_keys": {
+                            "items": {
+                                "type": "string"
+                            },
+                            "title": "Partition Keys",
+                            "type": "array"
+                        }
+                    },
+                    "required": [
+                        "partition_keys"
+                    ],
+                    "title": "StaticPartitionsDefinitionModel",
+                    "type": "object"
+                },
+                "TimeWindowPartitionsDefinitionModel": {
+                    "additionalProperties": false,
+                    "properties": {
+                        "type": {
+                            "const": "time_window",
+                            "default": "time_window",
+                            "title": "Type",
+                            "type": "string"
+                        },
+                        "start_date": {
+                            "title": "Start Date",
+                            "type": "string"
+                        },
+                        "end_date": {
+                            "anyOf": [
+                                {
+                                    "type": "string"
+                                },
+                                {
+                                    "type": "null"
+                                }
+                            ],
+                            "default": null,
+                            "title": "End Date"
+                        },
+                        "timezone": {
+                            "anyOf": [
+                                {
+                                    "type": "string"
+                                },
+                                {
+                                    "type": "null"
+                                }
+                            ],
+                            "default": null,
+                            "title": "Timezone"
+                        },
+                        "fmt": {
+                            "title": "Fmt",
+                            "type": "string"
+                        },
+                        "cron_schedule": {
+                            "title": "Cron Schedule",
+                            "type": "string"
+                        }
+                    },
+                    "required": [
+                        "start_date",
+                        "fmt",
+                        "cron_schedule"
+                    ],
+                    "title": "TimeWindowPartitionsDefinitionModel",
+                    "type": "object"
+                },
+                "WeeklyPartitionsDefinitionModel": {
+                    "additionalProperties": false,
+                    "properties": {
+                        "type": {
+                            "const": "weekly",
+                            "default": "weekly",
+                            "title": "Type",
+                            "type": "string"
+                        },
+                        "start_date": {
+                            "title": "Start Date",
+                            "type": "string"
+                        },
+                        "end_date": {
+                            "anyOf": [
+                                {
+                                    "type": "string"
+                                },
+                                {
+                                    "type": "null"
+                                }
+                            ],
+                            "default": null,
+                            "title": "End Date"
+                        },
+                        "timezone": {
+                            "anyOf": [
+                                {
+                                    "type": "string"
+                                },
+                                {
+                                    "type": "null"
+                                }
+                            ],
+                            "default": null,
+                            "title": "Timezone"
+                        },
+                        "minute_offset": {
+                            "default": 0,
+                            "title": "Minute Offset",
+                            "type": "integer"
+                        },
+                        "hour_offset": {
+                            "default": 0,
+                            "title": "Hour Offset",
+                            "type": "integer"
+                        },
+                        "day_offset": {
+                            "default": 0,
+                            "title": "Day Offset",
+                            "type": "integer"
+                        }
+                    },
+                    "required": [
+                        "start_date"
+                    ],
+                    "title": "WeeklyPartitionsDefinitionModel",
+                    "type": "object"
                 }
+            },
+            "additionalProperties": false,
+            "properties": {
+                "workspace": {
+                    "anyOf": [
+                        {
+                            "$ref": "#/$defs/FivetranWorkspace"
+                        },
+                        {
+                            "type": "string"
+                        }
+                    ],
+                    "title": "Workspace"
+                },
+                "connector_selector": {
+                    "anyOf": [
+                        {
+                            "type": "string"
+                        },
+                        {
+                            "$ref": "#/$defs/FivetranConnectorSelectorByName"
+                        },
+                        {
+                            "$ref": "#/$defs/FivetranConnectorSelectorById"
+                        }
+                    ],
+                    "default": null,
+                    "title": "Connector Selector"
+                },
+                "translation": {
+                    "anyOf": [
+                        {
+                            "type": "string"
+                        },
+                        {
+                            "$ref": "#/$defs/AssetSpecUpdateKwargsModel"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ],
+                    "default": null,
+                    "title": "Translation"
+                }
+            },
+            "required": [
+                "workspace"
             ],
-            "default": null,
-            "title": "Connector Selector"
+            "title": "FivetranAccountComponentModel",
+            "type": "object"
         },
-        "translation": {
+        "template_vars_module": {
             "anyOf": [
                 {
                     "type": "string"
-                },
-                {
-                    "$ref": "#/$defs/AssetSpecUpdateKwargsModel"
                 },
                 {
                     "type": "null"
                 }
             ],
             "default": null,
-            "title": "Translation"
+            "title": "Template Vars Module"
+        },
+        "requirements": {
+            "anyOf": [
+                {
+                    "$ref": "#/$defs/ComponentRequirementsModel"
+                },
+                {
+                    "type": "null"
+                }
+            ],
+            "default": null
+        },
+        "post_processing": {
+            "anyOf": [
+                {
+                    "additionalProperties": true,
+                    "type": "object"
+                },
+                {
+                    "type": "null"
+                }
+            ],
+            "default": null,
+            "title": "Post Processing"
         }
     },
-    "required": [
-        "workspace"
-    ],
-    "title": "FivetranAccountComponentModel",
+    "title": "dagster_fivetranFivetranAccountComponentComponentFileModel",
     "type": "object"
 }

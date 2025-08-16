@@ -1,233 +1,10 @@
 {
     "$defs": {
-        "AssetSpecUpdateKwargsModel": {
-            "additionalProperties": false,
+        "ComponentRequirementsModel": {
+            "description": "Describes dependencies for a component to load.",
             "properties": {
-                "deps": {
+                "env": {
                     "anyOf": [
-                        {
-                            "items": {
-                                "type": "string"
-                            },
-                            "type": "array"
-                        },
-                        {
-                            "type": "string"
-                        },
-                        {
-                            "type": "null"
-                        }
-                    ],
-                    "default": null,
-                    "description": "The asset keys for the upstream assets that this asset depends on.",
-                    "examples": [
-                        [
-                            "my_database/my_schema/upstream_table"
-                        ]
-                    ],
-                    "title": "Deps"
-                },
-                "description": {
-                    "anyOf": [
-                        {
-                            "type": "string"
-                        },
-                        {
-                            "type": "null"
-                        }
-                    ],
-                    "default": null,
-                    "description": "Human-readable description of the asset.",
-                    "examples": [
-                        "Refined sales data"
-                    ],
-                    "title": "Description"
-                },
-                "metadata": {
-                    "anyOf": [
-                        {
-                            "additionalProperties": true,
-                            "type": "object"
-                        },
-                        {
-                            "type": "string"
-                        }
-                    ],
-                    "default": "__DAGSTER_UNSET_DEFAULT__",
-                    "description": "Additional metadata for the asset.",
-                    "title": "Metadata"
-                },
-                "group_name": {
-                    "anyOf": [
-                        {
-                            "type": "string"
-                        },
-                        {
-                            "type": "null"
-                        }
-                    ],
-                    "default": null,
-                    "description": "Used to organize assets into groups, defaults to 'default'.",
-                    "examples": [
-                        "staging"
-                    ],
-                    "title": "Group Name"
-                },
-                "skippable": {
-                    "anyOf": [
-                        {
-                            "type": "boolean"
-                        },
-                        {
-                            "type": "null"
-                        },
-                        {
-                            "type": "string"
-                        }
-                    ],
-                    "default": null,
-                    "description": "Whether this asset can be omitted during materialization, causing downstream dependencies to skip.",
-                    "title": "Skippable"
-                },
-                "code_version": {
-                    "anyOf": [
-                        {
-                            "type": "string"
-                        },
-                        {
-                            "type": "null"
-                        }
-                    ],
-                    "default": null,
-                    "description": "A version representing the code that produced the asset. Increment this value when the code changes.",
-                    "examples": [
-                        "3"
-                    ],
-                    "title": "Code Version"
-                },
-                "owners": {
-                    "anyOf": [
-                        {
-                            "items": {
-                                "type": "string"
-                            },
-                            "type": "array"
-                        },
-                        {
-                            "type": "null"
-                        },
-                        {
-                            "type": "string"
-                        }
-                    ],
-                    "default": null,
-                    "description": "A list of strings representing owners of the asset. Each string can be a user's email address, or a team name prefixed with `team:`, e.g. `team:finops`.",
-                    "examples": [
-                        [
-                            "team:analytics",
-                            "nelson@hooli.com"
-                        ]
-                    ],
-                    "title": "Owners"
-                },
-                "tags": {
-                    "anyOf": [
-                        {
-                            "additionalProperties": {
-                                "type": "string"
-                            },
-                            "type": "object"
-                        },
-                        {
-                            "type": "string"
-                        }
-                    ],
-                    "default": "__DAGSTER_UNSET_DEFAULT__",
-                    "description": "Tags for filtering and organizing.",
-                    "examples": [
-                        {
-                            "team": "analytics",
-                            "tier": "prod"
-                        }
-                    ],
-                    "title": "Tags"
-                },
-                "kinds": {
-                    "anyOf": [
-                        {
-                            "items": {
-                                "type": "string"
-                            },
-                            "type": "array"
-                        },
-                        {
-                            "type": "string"
-                        }
-                    ],
-                    "default": "__DAGSTER_UNSET_DEFAULT__",
-                    "description": "A list of strings representing the kinds of the asset. These will be made visible in the Dagster UI.",
-                    "examples": [
-                        [
-                            "snowflake"
-                        ]
-                    ],
-                    "title": "Kinds"
-                },
-                "automation_condition": {
-                    "anyOf": [
-                        {
-                            "type": "string"
-                        },
-                        {
-                            "type": "null"
-                        }
-                    ],
-                    "default": null,
-                    "description": "The condition under which the asset will be automatically materialized.",
-                    "title": "Automation Condition"
-                },
-                "partitions_def": {
-                    "anyOf": [
-                        {
-                            "$ref": "#/$defs/HourlyPartitionsDefinitionModel"
-                        },
-                        {
-                            "$ref": "#/$defs/DailyPartitionsDefinitionModel"
-                        },
-                        {
-                            "$ref": "#/$defs/WeeklyPartitionsDefinitionModel"
-                        },
-                        {
-                            "$ref": "#/$defs/TimeWindowPartitionsDefinitionModel"
-                        },
-                        {
-                            "$ref": "#/$defs/StaticPartitionsDefinitionModel"
-                        },
-                        {
-                            "type": "string"
-                        }
-                    ],
-                    "default": null,
-                    "description": "The partitions definition for the asset.",
-                    "title": "Partitions Def"
-                },
-                "key": {
-                    "anyOf": [
-                        {
-                            "type": "string"
-                        },
-                        {
-                            "type": "null"
-                        }
-                    ],
-                    "default": null,
-                    "title": "Key"
-                },
-                "key_prefix": {
-                    "anyOf": [
-                        {
-                            "type": "string"
-                        },
                         {
                             "items": {
                                 "type": "string"
@@ -239,548 +16,844 @@
                         }
                     ],
                     "default": null,
-                    "description": "Prefix the existing asset key with the provided value.",
-                    "title": "Key Prefix"
+                    "title": "Env"
                 }
             },
-            "title": "AssetSpecUpdateKwargsModel",
-            "type": "object"
-        },
-        "DailyPartitionsDefinitionModel": {
-            "additionalProperties": false,
-            "properties": {
-                "type": {
-                    "const": "daily",
-                    "default": "daily",
-                    "title": "Type",
-                    "type": "string"
-                },
-                "start_date": {
-                    "title": "Start Date",
-                    "type": "string"
-                },
-                "end_date": {
-                    "anyOf": [
-                        {
-                            "type": "string"
-                        },
-                        {
-                            "type": "null"
-                        }
-                    ],
-                    "default": null,
-                    "title": "End Date"
-                },
-                "timezone": {
-                    "anyOf": [
-                        {
-                            "type": "string"
-                        },
-                        {
-                            "type": "null"
-                        }
-                    ],
-                    "default": null,
-                    "title": "Timezone"
-                },
-                "minute_offset": {
-                    "default": 0,
-                    "title": "Minute Offset",
-                    "type": "integer"
-                },
-                "hour_offset": {
-                    "default": 0,
-                    "title": "Hour Offset",
-                    "type": "integer"
-                }
-            },
-            "required": [
-                "start_date"
-            ],
-            "title": "DailyPartitionsDefinitionModel",
-            "type": "object"
-        },
-        "HourlyPartitionsDefinitionModel": {
-            "additionalProperties": false,
-            "properties": {
-                "type": {
-                    "const": "hourly",
-                    "default": "hourly",
-                    "title": "Type",
-                    "type": "string"
-                },
-                "start_date": {
-                    "title": "Start Date",
-                    "type": "string"
-                },
-                "end_date": {
-                    "anyOf": [
-                        {
-                            "type": "string"
-                        },
-                        {
-                            "type": "null"
-                        }
-                    ],
-                    "default": null,
-                    "title": "End Date"
-                },
-                "timezone": {
-                    "anyOf": [
-                        {
-                            "type": "string"
-                        },
-                        {
-                            "type": "null"
-                        }
-                    ],
-                    "default": null,
-                    "title": "Timezone"
-                },
-                "minute_offset": {
-                    "default": 0,
-                    "title": "Minute Offset",
-                    "type": "integer"
-                }
-            },
-            "required": [
-                "start_date"
-            ],
-            "title": "HourlyPartitionsDefinitionModel",
-            "type": "object"
-        },
-        "MultiRunBackfillPolicyModel": {
-            "additionalProperties": false,
-            "properties": {
-                "type": {
-                    "const": "multi_run",
-                    "default": "multi_run",
-                    "title": "Type",
-                    "type": "string"
-                },
-                "max_partitions_per_run": {
-                    "default": 1,
-                    "title": "Max Partitions Per Run",
-                    "type": "integer"
-                }
-            },
-            "title": "MultiRunBackfillPolicyModel",
-            "type": "object"
-        },
-        "OpSpecModel": {
-            "additionalProperties": false,
-            "properties": {
-                "name": {
-                    "anyOf": [
-                        {
-                            "type": "string"
-                        },
-                        {
-                            "type": "null"
-                        }
-                    ],
-                    "default": null,
-                    "title": "Name"
-                },
-                "tags": {
-                    "anyOf": [
-                        {
-                            "additionalProperties": true,
-                            "type": "object"
-                        },
-                        {
-                            "type": "string"
-                        },
-                        {
-                            "type": "null"
-                        }
-                    ],
-                    "default": null,
-                    "title": "Tags"
-                },
-                "description": {
-                    "anyOf": [
-                        {
-                            "type": "string"
-                        },
-                        {
-                            "type": "null"
-                        }
-                    ],
-                    "default": null,
-                    "title": "Description"
-                },
-                "pool": {
-                    "anyOf": [
-                        {
-                            "type": "string"
-                        },
-                        {
-                            "type": "null"
-                        }
-                    ],
-                    "default": null,
-                    "title": "Pool"
-                },
-                "backfill_policy": {
-                    "anyOf": [
-                        {
-                            "$ref": "#/$defs/SingleRunBackfillPolicyModel"
-                        },
-                        {
-                            "$ref": "#/$defs/MultiRunBackfillPolicyModel"
-                        },
-                        {
-                            "type": "string"
-                        }
-                    ],
-                    "default": null,
-                    "title": "Backfill Policy"
-                }
-            },
-            "title": "OpSpecModel",
-            "type": "object"
-        },
-        "SingleRunBackfillPolicyModel": {
-            "additionalProperties": false,
-            "properties": {
-                "type": {
-                    "const": "single_run",
-                    "default": "single_run",
-                    "title": "Type",
-                    "type": "string"
-                }
-            },
-            "title": "SingleRunBackfillPolicyModel",
-            "type": "object"
-        },
-        "SlingConnectionResource": {
-            "additionalProperties": true,
-            "description": "A representation of a connection to a database or file to be used by Sling. This resource can be used as a source or a target for a Sling syncs.\n\nReference the Sling docs for more information on possible connection types and parameters: https://docs.slingdata.io/connections\n\nThe name of the connection is passed to Sling and must match the name of the connection provided in the replication configuration: https://docs.slingdata.io/sling-cli/run/configuration/replication\nYou may provide either a connection string or keyword arguments for the connection.\n\nExamples:\n    Creating a Sling Connection for a file, such as CSV or JSON:\n\n    .. code-block:: python\n\n         source = SlingConnectionResource(name=\"MY_FILE\", type=\"file\")\n\n    Create a Sling Connection for a Postgres database, using a connection string:\n\n    .. code-block:: python\n\n        postgres_conn = SlingConnectionResource(name=\"MY_POSTGRES\", type=\"postgres\", connection_string=EnvVar(\"POSTGRES_CONNECTION_STRING\"))\n        mysql_conn = SlingConnectionResource(name=\"MY_MYSQL\", type=\"mysql\", connection_string=\"mysql://user:password@host:port/schema\")\n\n    Create a Sling Connection for a Postgres or Snowflake database, using keyword arguments:\n\n    .. code-block::python\n\n        postgres_conn = SlingConnectionResource(\n            name=\"MY_OTHER_POSRGRES\",\n            type=\"postgres\",\n            host=\"host\",\n            user=\"hunter42\",\n            password=EnvVar(\"POSTGRES_PASSWORD\")\n        )\n\n        snowflake_conn = SlingConnectionResource(\n            name=\"MY_SNOWFLAKE\",\n            type=\"snowflake\",\n            host=EnvVar(\"SNOWFLAKE_HOST\"),\n            user=EnvVar(\"SNOWFLAKE_USER\"),\n            database=EnvVar(\"SNOWFLAKE_DATABASE\"),\n            password=EnvVar(\"SNOWFLAKE_PASSWORD\"),\n            role=EnvVar(\"SNOWFLAKE_ROLE\")\n        )",
-            "properties": {
-                "name": {
-                    "description": "The name of the connection, must match the name in your Sling replication configuration.",
-                    "title": "Name",
-                    "type": "string"
-                },
-                "type": {
-                    "description": "Type of the source connection, must match the Sling connection types. Use 'file' for local storage.",
-                    "title": "Type",
-                    "type": "string"
-                },
-                "connection_string": {
-                    "anyOf": [
-                        {
-                            "type": "string"
-                        },
-                        {
-                            "type": "null"
-                        }
-                    ],
-                    "default": null,
-                    "description": "The optional connection string for the source database, if not using keyword arguments.",
-                    "title": "Connection String"
-                }
-            },
-            "required": [
-                "name",
-                "type"
-            ],
-            "title": "SlingConnectionResource",
-            "type": "object"
-        },
-        "SlingConnectionResourcePropertiesModel": {
-            "additionalProperties": true,
-            "description": "Properties of a Sling connection resource.",
-            "properties": {
-                "type": {
-                    "description": "Type of the source connection, must match the Sling connection types. Use 'file' for local storage.",
-                    "title": "Type",
-                    "type": "string"
-                },
-                "connection_string": {
-                    "anyOf": [
-                        {
-                            "type": "string"
-                        },
-                        {
-                            "type": "null"
-                        }
-                    ],
-                    "default": null,
-                    "description": "The optional connection string for the source database, if not using keyword arguments.",
-                    "title": "Connection String"
-                }
-            },
-            "required": [
-                "type"
-            ],
-            "title": "SlingConnectionResourcePropertiesModel",
-            "type": "object"
-        },
-        "SlingReplicationSpecModelModel": {
-            "additionalProperties": false,
-            "properties": {
-                "path": {
-                    "title": "Path",
-                    "type": "string"
-                },
-                "op": {
-                    "anyOf": [
-                        {
-                            "$ref": "#/$defs/OpSpecModel"
-                        },
-                        {
-                            "type": "string"
-                        },
-                        {
-                            "type": "null"
-                        }
-                    ],
-                    "default": null,
-                    "title": "Op"
-                },
-                "translation": {
-                    "anyOf": [
-                        {
-                            "type": "string"
-                        },
-                        {
-                            "$ref": "#/$defs/AssetSpecUpdateKwargsModel"
-                        },
-                        {
-                            "type": "null"
-                        }
-                    ],
-                    "default": null,
-                    "title": "Translation"
-                },
-                "include_metadata": {
-                    "anyOf": [
-                        {
-                            "items": {
-                                "enum": [
-                                    "column_metadata",
-                                    "row_count"
-                                ],
-                                "type": "string"
-                            },
-                            "type": "array"
-                        },
-                        {
-                            "type": "string"
-                        }
-                    ],
-                    "default": "__DAGSTER_UNSET_DEFAULT__",
-                    "title": "Include Metadata"
-                }
-            },
-            "required": [
-                "path"
-            ],
-            "title": "SlingReplicationSpecModelModel",
-            "type": "object"
-        },
-        "SlingResource": {
-            "description": "Resource for interacting with the Sling package. This resource can be used to run Sling replications.\n\nArgs:\n    connections (List[SlingConnectionResource]): A list of connections to use for the replication.\n\nExamples:\n    .. code-block:: python\n\n        from dagster_etl.sling import SlingResource, SlingConnectionResource\n\n        sling_resource = SlingResource(\n            connections=[\n                SlingConnectionResource(\n                    name=\"MY_POSTGRES\",\n                    type=\"postgres\",\n                    connection_string=EnvVar(\"POSTGRES_CONNECTION_STRING\"),\n                ),\n                SlingConnectionResource(\n                    name=\"MY_SNOWFLAKE\",\n                    type=\"snowflake\",\n                    host=EnvVar(\"SNOWFLAKE_HOST\"),\n                    user=EnvVar(\"SNOWFLAKE_USER\"),\n                    database=EnvVar(\"SNOWFLAKE_DATABASE\"),\n                    password=EnvVar(\"SNOWFLAKE_PASSWORD\"),\n                    role=EnvVar(\"SNOWFLAKE_ROLE\"),\n                ),\n            ]\n        )",
-            "properties": {
-                "connections": {
-                    "default": [],
-                    "items": {
-                        "$ref": "#/$defs/SlingConnectionResource"
-                    },
-                    "title": "Connections",
-                    "type": "array"
-                }
-            },
-            "title": "SlingResource",
-            "type": "object"
-        },
-        "StaticPartitionsDefinitionModel": {
-            "additionalProperties": false,
-            "properties": {
-                "type": {
-                    "const": "static",
-                    "default": "static",
-                    "title": "Type",
-                    "type": "string"
-                },
-                "partition_keys": {
-                    "items": {
-                        "type": "string"
-                    },
-                    "title": "Partition Keys",
-                    "type": "array"
-                }
-            },
-            "required": [
-                "partition_keys"
-            ],
-            "title": "StaticPartitionsDefinitionModel",
-            "type": "object"
-        },
-        "TimeWindowPartitionsDefinitionModel": {
-            "additionalProperties": false,
-            "properties": {
-                "type": {
-                    "const": "time_window",
-                    "default": "time_window",
-                    "title": "Type",
-                    "type": "string"
-                },
-                "start_date": {
-                    "title": "Start Date",
-                    "type": "string"
-                },
-                "end_date": {
-                    "anyOf": [
-                        {
-                            "type": "string"
-                        },
-                        {
-                            "type": "null"
-                        }
-                    ],
-                    "default": null,
-                    "title": "End Date"
-                },
-                "timezone": {
-                    "anyOf": [
-                        {
-                            "type": "string"
-                        },
-                        {
-                            "type": "null"
-                        }
-                    ],
-                    "default": null,
-                    "title": "Timezone"
-                },
-                "fmt": {
-                    "title": "Fmt",
-                    "type": "string"
-                },
-                "cron_schedule": {
-                    "title": "Cron Schedule",
-                    "type": "string"
-                }
-            },
-            "required": [
-                "start_date",
-                "fmt",
-                "cron_schedule"
-            ],
-            "title": "TimeWindowPartitionsDefinitionModel",
-            "type": "object"
-        },
-        "WeeklyPartitionsDefinitionModel": {
-            "additionalProperties": false,
-            "properties": {
-                "type": {
-                    "const": "weekly",
-                    "default": "weekly",
-                    "title": "Type",
-                    "type": "string"
-                },
-                "start_date": {
-                    "title": "Start Date",
-                    "type": "string"
-                },
-                "end_date": {
-                    "anyOf": [
-                        {
-                            "type": "string"
-                        },
-                        {
-                            "type": "null"
-                        }
-                    ],
-                    "default": null,
-                    "title": "End Date"
-                },
-                "timezone": {
-                    "anyOf": [
-                        {
-                            "type": "string"
-                        },
-                        {
-                            "type": "null"
-                        }
-                    ],
-                    "default": null,
-                    "title": "Timezone"
-                },
-                "minute_offset": {
-                    "default": 0,
-                    "title": "Minute Offset",
-                    "type": "integer"
-                },
-                "hour_offset": {
-                    "default": 0,
-                    "title": "Hour Offset",
-                    "type": "integer"
-                },
-                "day_offset": {
-                    "default": 0,
-                    "title": "Day Offset",
-                    "type": "integer"
-                }
-            },
-            "required": [
-                "start_date"
-            ],
-            "title": "WeeklyPartitionsDefinitionModel",
+            "title": "ComponentRequirementsModel",
             "type": "object"
         }
     },
     "additionalProperties": false,
     "properties": {
-        "connections": {
-            "anyOf": [
-                {
-                    "additionalProperties": {
-                        "$ref": "#/$defs/SlingConnectionResourcePropertiesModel"
+        "type": {
+            "const": "dagster_sling.SlingReplicationCollectionComponent",
+            "default": "dagster_sling.SlingReplicationCollectionComponent",
+            "title": "Type",
+            "type": "string"
+        },
+        "attributes": {
+            "$defs": {
+                "AssetSpecUpdateKwargsModel": {
+                    "additionalProperties": false,
+                    "properties": {
+                        "deps": {
+                            "anyOf": [
+                                {
+                                    "items": {
+                                        "type": "string"
+                                    },
+                                    "type": "array"
+                                },
+                                {
+                                    "type": "string"
+                                },
+                                {
+                                    "type": "null"
+                                }
+                            ],
+                            "default": null,
+                            "description": "The asset keys for the upstream assets that this asset depends on.",
+                            "examples": [
+                                [
+                                    "my_database/my_schema/upstream_table"
+                                ]
+                            ],
+                            "title": "Deps"
+                        },
+                        "description": {
+                            "anyOf": [
+                                {
+                                    "type": "string"
+                                },
+                                {
+                                    "type": "null"
+                                }
+                            ],
+                            "default": null,
+                            "description": "Human-readable description of the asset.",
+                            "examples": [
+                                "Refined sales data"
+                            ],
+                            "title": "Description"
+                        },
+                        "metadata": {
+                            "anyOf": [
+                                {
+                                    "additionalProperties": true,
+                                    "type": "object"
+                                },
+                                {
+                                    "type": "string"
+                                }
+                            ],
+                            "default": "__DAGSTER_UNSET_DEFAULT__",
+                            "description": "Additional metadata for the asset.",
+                            "title": "Metadata"
+                        },
+                        "group_name": {
+                            "anyOf": [
+                                {
+                                    "type": "string"
+                                },
+                                {
+                                    "type": "null"
+                                }
+                            ],
+                            "default": null,
+                            "description": "Used to organize assets into groups, defaults to 'default'.",
+                            "examples": [
+                                "staging"
+                            ],
+                            "title": "Group Name"
+                        },
+                        "skippable": {
+                            "anyOf": [
+                                {
+                                    "type": "boolean"
+                                },
+                                {
+                                    "type": "null"
+                                },
+                                {
+                                    "type": "string"
+                                }
+                            ],
+                            "default": null,
+                            "description": "Whether this asset can be omitted during materialization, causing downstream dependencies to skip.",
+                            "title": "Skippable"
+                        },
+                        "code_version": {
+                            "anyOf": [
+                                {
+                                    "type": "string"
+                                },
+                                {
+                                    "type": "null"
+                                }
+                            ],
+                            "default": null,
+                            "description": "A version representing the code that produced the asset. Increment this value when the code changes.",
+                            "examples": [
+                                "3"
+                            ],
+                            "title": "Code Version"
+                        },
+                        "owners": {
+                            "anyOf": [
+                                {
+                                    "items": {
+                                        "type": "string"
+                                    },
+                                    "type": "array"
+                                },
+                                {
+                                    "type": "null"
+                                },
+                                {
+                                    "type": "string"
+                                }
+                            ],
+                            "default": null,
+                            "description": "A list of strings representing owners of the asset. Each string can be a user's email address, or a team name prefixed with `team:`, e.g. `team:finops`.",
+                            "examples": [
+                                [
+                                    "team:analytics",
+                                    "nelson@hooli.com"
+                                ]
+                            ],
+                            "title": "Owners"
+                        },
+                        "tags": {
+                            "anyOf": [
+                                {
+                                    "additionalProperties": {
+                                        "type": "string"
+                                    },
+                                    "type": "object"
+                                },
+                                {
+                                    "type": "string"
+                                }
+                            ],
+                            "default": "__DAGSTER_UNSET_DEFAULT__",
+                            "description": "Tags for filtering and organizing.",
+                            "examples": [
+                                {
+                                    "team": "analytics",
+                                    "tier": "prod"
+                                }
+                            ],
+                            "title": "Tags"
+                        },
+                        "kinds": {
+                            "anyOf": [
+                                {
+                                    "items": {
+                                        "type": "string"
+                                    },
+                                    "type": "array"
+                                },
+                                {
+                                    "type": "string"
+                                }
+                            ],
+                            "default": "__DAGSTER_UNSET_DEFAULT__",
+                            "description": "A list of strings representing the kinds of the asset. These will be made visible in the Dagster UI.",
+                            "examples": [
+                                [
+                                    "snowflake"
+                                ]
+                            ],
+                            "title": "Kinds"
+                        },
+                        "automation_condition": {
+                            "anyOf": [
+                                {
+                                    "type": "string"
+                                },
+                                {
+                                    "type": "null"
+                                }
+                            ],
+                            "default": null,
+                            "description": "The condition under which the asset will be automatically materialized.",
+                            "title": "Automation Condition"
+                        },
+                        "partitions_def": {
+                            "anyOf": [
+                                {
+                                    "$ref": "#/$defs/HourlyPartitionsDefinitionModel"
+                                },
+                                {
+                                    "$ref": "#/$defs/DailyPartitionsDefinitionModel"
+                                },
+                                {
+                                    "$ref": "#/$defs/WeeklyPartitionsDefinitionModel"
+                                },
+                                {
+                                    "$ref": "#/$defs/TimeWindowPartitionsDefinitionModel"
+                                },
+                                {
+                                    "$ref": "#/$defs/StaticPartitionsDefinitionModel"
+                                },
+                                {
+                                    "type": "string"
+                                }
+                            ],
+                            "default": null,
+                            "description": "The partitions definition for the asset.",
+                            "title": "Partitions Def"
+                        },
+                        "key": {
+                            "anyOf": [
+                                {
+                                    "type": "string"
+                                },
+                                {
+                                    "type": "null"
+                                }
+                            ],
+                            "default": null,
+                            "title": "Key"
+                        },
+                        "key_prefix": {
+                            "anyOf": [
+                                {
+                                    "type": "string"
+                                },
+                                {
+                                    "items": {
+                                        "type": "string"
+                                    },
+                                    "type": "array"
+                                },
+                                {
+                                    "type": "null"
+                                }
+                            ],
+                            "default": null,
+                            "description": "Prefix the existing asset key with the provided value.",
+                            "title": "Key Prefix"
+                        }
                     },
+                    "title": "AssetSpecUpdateKwargsModel",
                     "type": "object"
                 },
-                {
-                    "type": "string"
-                }
-            ],
-            "default": "__DAGSTER_UNSET_DEFAULT__",
-            "title": "Connections"
-        },
-        "replications": {
-            "anyOf": [
-                {
-                    "items": {
-                        "$ref": "#/$defs/SlingReplicationSpecModelModel"
+                "DailyPartitionsDefinitionModel": {
+                    "additionalProperties": false,
+                    "properties": {
+                        "type": {
+                            "const": "daily",
+                            "default": "daily",
+                            "title": "Type",
+                            "type": "string"
+                        },
+                        "start_date": {
+                            "title": "Start Date",
+                            "type": "string"
+                        },
+                        "end_date": {
+                            "anyOf": [
+                                {
+                                    "type": "string"
+                                },
+                                {
+                                    "type": "null"
+                                }
+                            ],
+                            "default": null,
+                            "title": "End Date"
+                        },
+                        "timezone": {
+                            "anyOf": [
+                                {
+                                    "type": "string"
+                                },
+                                {
+                                    "type": "null"
+                                }
+                            ],
+                            "default": null,
+                            "title": "Timezone"
+                        },
+                        "minute_offset": {
+                            "default": 0,
+                            "title": "Minute Offset",
+                            "type": "integer"
+                        },
+                        "hour_offset": {
+                            "default": 0,
+                            "title": "Hour Offset",
+                            "type": "integer"
+                        }
                     },
-                    "type": "array"
+                    "required": [
+                        "start_date"
+                    ],
+                    "title": "DailyPartitionsDefinitionModel",
+                    "type": "object"
                 },
-                {
-                    "type": "string"
+                "HourlyPartitionsDefinitionModel": {
+                    "additionalProperties": false,
+                    "properties": {
+                        "type": {
+                            "const": "hourly",
+                            "default": "hourly",
+                            "title": "Type",
+                            "type": "string"
+                        },
+                        "start_date": {
+                            "title": "Start Date",
+                            "type": "string"
+                        },
+                        "end_date": {
+                            "anyOf": [
+                                {
+                                    "type": "string"
+                                },
+                                {
+                                    "type": "null"
+                                }
+                            ],
+                            "default": null,
+                            "title": "End Date"
+                        },
+                        "timezone": {
+                            "anyOf": [
+                                {
+                                    "type": "string"
+                                },
+                                {
+                                    "type": "null"
+                                }
+                            ],
+                            "default": null,
+                            "title": "Timezone"
+                        },
+                        "minute_offset": {
+                            "default": 0,
+                            "title": "Minute Offset",
+                            "type": "integer"
+                        }
+                    },
+                    "required": [
+                        "start_date"
+                    ],
+                    "title": "HourlyPartitionsDefinitionModel",
+                    "type": "object"
+                },
+                "MultiRunBackfillPolicyModel": {
+                    "additionalProperties": false,
+                    "properties": {
+                        "type": {
+                            "const": "multi_run",
+                            "default": "multi_run",
+                            "title": "Type",
+                            "type": "string"
+                        },
+                        "max_partitions_per_run": {
+                            "default": 1,
+                            "title": "Max Partitions Per Run",
+                            "type": "integer"
+                        }
+                    },
+                    "title": "MultiRunBackfillPolicyModel",
+                    "type": "object"
+                },
+                "OpSpecModel": {
+                    "additionalProperties": false,
+                    "properties": {
+                        "name": {
+                            "anyOf": [
+                                {
+                                    "type": "string"
+                                },
+                                {
+                                    "type": "null"
+                                }
+                            ],
+                            "default": null,
+                            "title": "Name"
+                        },
+                        "tags": {
+                            "anyOf": [
+                                {
+                                    "additionalProperties": true,
+                                    "type": "object"
+                                },
+                                {
+                                    "type": "string"
+                                },
+                                {
+                                    "type": "null"
+                                }
+                            ],
+                            "default": null,
+                            "title": "Tags"
+                        },
+                        "description": {
+                            "anyOf": [
+                                {
+                                    "type": "string"
+                                },
+                                {
+                                    "type": "null"
+                                }
+                            ],
+                            "default": null,
+                            "title": "Description"
+                        },
+                        "pool": {
+                            "anyOf": [
+                                {
+                                    "type": "string"
+                                },
+                                {
+                                    "type": "null"
+                                }
+                            ],
+                            "default": null,
+                            "title": "Pool"
+                        },
+                        "backfill_policy": {
+                            "anyOf": [
+                                {
+                                    "$ref": "#/$defs/SingleRunBackfillPolicyModel"
+                                },
+                                {
+                                    "$ref": "#/$defs/MultiRunBackfillPolicyModel"
+                                },
+                                {
+                                    "type": "string"
+                                }
+                            ],
+                            "default": null,
+                            "title": "Backfill Policy"
+                        }
+                    },
+                    "title": "OpSpecModel",
+                    "type": "object"
+                },
+                "SingleRunBackfillPolicyModel": {
+                    "additionalProperties": false,
+                    "properties": {
+                        "type": {
+                            "const": "single_run",
+                            "default": "single_run",
+                            "title": "Type",
+                            "type": "string"
+                        }
+                    },
+                    "title": "SingleRunBackfillPolicyModel",
+                    "type": "object"
+                },
+                "SlingConnectionResource": {
+                    "additionalProperties": true,
+                    "description": "A representation of a connection to a database or file to be used by Sling. This resource can be used as a source or a target for a Sling syncs.\n\nReference the Sling docs for more information on possible connection types and parameters: https://docs.slingdata.io/connections\n\nThe name of the connection is passed to Sling and must match the name of the connection provided in the replication configuration: https://docs.slingdata.io/sling-cli/run/configuration/replication\nYou may provide either a connection string or keyword arguments for the connection.\n\nExamples:\n    Creating a Sling Connection for a file, such as CSV or JSON:\n\n    .. code-block:: python\n\n         source = SlingConnectionResource(name=\"MY_FILE\", type=\"file\")\n\n    Create a Sling Connection for a Postgres database, using a connection string:\n\n    .. code-block:: python\n\n        postgres_conn = SlingConnectionResource(name=\"MY_POSTGRES\", type=\"postgres\", connection_string=EnvVar(\"POSTGRES_CONNECTION_STRING\"))\n        mysql_conn = SlingConnectionResource(name=\"MY_MYSQL\", type=\"mysql\", connection_string=\"mysql://user:password@host:port/schema\")\n\n    Create a Sling Connection for a Postgres or Snowflake database, using keyword arguments:\n\n    .. code-block::python\n\n        postgres_conn = SlingConnectionResource(\n            name=\"MY_OTHER_POSRGRES\",\n            type=\"postgres\",\n            host=\"host\",\n            user=\"hunter42\",\n            password=EnvVar(\"POSTGRES_PASSWORD\")\n        )\n\n        snowflake_conn = SlingConnectionResource(\n            name=\"MY_SNOWFLAKE\",\n            type=\"snowflake\",\n            host=EnvVar(\"SNOWFLAKE_HOST\"),\n            user=EnvVar(\"SNOWFLAKE_USER\"),\n            database=EnvVar(\"SNOWFLAKE_DATABASE\"),\n            password=EnvVar(\"SNOWFLAKE_PASSWORD\"),\n            role=EnvVar(\"SNOWFLAKE_ROLE\")\n        )",
+                    "properties": {
+                        "name": {
+                            "description": "The name of the connection, must match the name in your Sling replication configuration.",
+                            "title": "Name",
+                            "type": "string"
+                        },
+                        "type": {
+                            "description": "Type of the source connection, must match the Sling connection types. Use 'file' for local storage.",
+                            "title": "Type",
+                            "type": "string"
+                        },
+                        "connection_string": {
+                            "anyOf": [
+                                {
+                                    "type": "string"
+                                },
+                                {
+                                    "type": "null"
+                                }
+                            ],
+                            "default": null,
+                            "description": "The optional connection string for the source database, if not using keyword arguments.",
+                            "title": "Connection String"
+                        }
+                    },
+                    "required": [
+                        "name",
+                        "type"
+                    ],
+                    "title": "SlingConnectionResource",
+                    "type": "object"
+                },
+                "SlingConnectionResourcePropertiesModel": {
+                    "additionalProperties": true,
+                    "description": "Properties of a Sling connection resource.",
+                    "properties": {
+                        "type": {
+                            "description": "Type of the source connection, must match the Sling connection types. Use 'file' for local storage.",
+                            "title": "Type",
+                            "type": "string"
+                        },
+                        "connection_string": {
+                            "anyOf": [
+                                {
+                                    "type": "string"
+                                },
+                                {
+                                    "type": "null"
+                                }
+                            ],
+                            "default": null,
+                            "description": "The optional connection string for the source database, if not using keyword arguments.",
+                            "title": "Connection String"
+                        }
+                    },
+                    "required": [
+                        "type"
+                    ],
+                    "title": "SlingConnectionResourcePropertiesModel",
+                    "type": "object"
+                },
+                "SlingReplicationSpecModelModel": {
+                    "additionalProperties": false,
+                    "properties": {
+                        "path": {
+                            "title": "Path",
+                            "type": "string"
+                        },
+                        "op": {
+                            "anyOf": [
+                                {
+                                    "$ref": "#/$defs/OpSpecModel"
+                                },
+                                {
+                                    "type": "string"
+                                },
+                                {
+                                    "type": "null"
+                                }
+                            ],
+                            "default": null,
+                            "title": "Op"
+                        },
+                        "translation": {
+                            "anyOf": [
+                                {
+                                    "type": "string"
+                                },
+                                {
+                                    "$ref": "#/$defs/AssetSpecUpdateKwargsModel"
+                                },
+                                {
+                                    "type": "null"
+                                }
+                            ],
+                            "default": null,
+                            "title": "Translation"
+                        },
+                        "include_metadata": {
+                            "anyOf": [
+                                {
+                                    "items": {
+                                        "enum": [
+                                            "column_metadata",
+                                            "row_count"
+                                        ],
+                                        "type": "string"
+                                    },
+                                    "type": "array"
+                                },
+                                {
+                                    "type": "string"
+                                }
+                            ],
+                            "default": "__DAGSTER_UNSET_DEFAULT__",
+                            "title": "Include Metadata"
+                        }
+                    },
+                    "required": [
+                        "path"
+                    ],
+                    "title": "SlingReplicationSpecModelModel",
+                    "type": "object"
+                },
+                "SlingResource": {
+                    "description": "Resource for interacting with the Sling package. This resource can be used to run Sling replications.\n\nArgs:\n    connections (List[SlingConnectionResource]): A list of connections to use for the replication.\n\nExamples:\n    .. code-block:: python\n\n        from dagster_etl.sling import SlingResource, SlingConnectionResource\n\n        sling_resource = SlingResource(\n            connections=[\n                SlingConnectionResource(\n                    name=\"MY_POSTGRES\",\n                    type=\"postgres\",\n                    connection_string=EnvVar(\"POSTGRES_CONNECTION_STRING\"),\n                ),\n                SlingConnectionResource(\n                    name=\"MY_SNOWFLAKE\",\n                    type=\"snowflake\",\n                    host=EnvVar(\"SNOWFLAKE_HOST\"),\n                    user=EnvVar(\"SNOWFLAKE_USER\"),\n                    database=EnvVar(\"SNOWFLAKE_DATABASE\"),\n                    password=EnvVar(\"SNOWFLAKE_PASSWORD\"),\n                    role=EnvVar(\"SNOWFLAKE_ROLE\"),\n                ),\n            ]\n        )",
+                    "properties": {
+                        "connections": {
+                            "default": [],
+                            "items": {
+                                "$ref": "#/$defs/SlingConnectionResource"
+                            },
+                            "title": "Connections",
+                            "type": "array"
+                        }
+                    },
+                    "title": "SlingResource",
+                    "type": "object"
+                },
+                "StaticPartitionsDefinitionModel": {
+                    "additionalProperties": false,
+                    "properties": {
+                        "type": {
+                            "const": "static",
+                            "default": "static",
+                            "title": "Type",
+                            "type": "string"
+                        },
+                        "partition_keys": {
+                            "items": {
+                                "type": "string"
+                            },
+                            "title": "Partition Keys",
+                            "type": "array"
+                        }
+                    },
+                    "required": [
+                        "partition_keys"
+                    ],
+                    "title": "StaticPartitionsDefinitionModel",
+                    "type": "object"
+                },
+                "TimeWindowPartitionsDefinitionModel": {
+                    "additionalProperties": false,
+                    "properties": {
+                        "type": {
+                            "const": "time_window",
+                            "default": "time_window",
+                            "title": "Type",
+                            "type": "string"
+                        },
+                        "start_date": {
+                            "title": "Start Date",
+                            "type": "string"
+                        },
+                        "end_date": {
+                            "anyOf": [
+                                {
+                                    "type": "string"
+                                },
+                                {
+                                    "type": "null"
+                                }
+                            ],
+                            "default": null,
+                            "title": "End Date"
+                        },
+                        "timezone": {
+                            "anyOf": [
+                                {
+                                    "type": "string"
+                                },
+                                {
+                                    "type": "null"
+                                }
+                            ],
+                            "default": null,
+                            "title": "Timezone"
+                        },
+                        "fmt": {
+                            "title": "Fmt",
+                            "type": "string"
+                        },
+                        "cron_schedule": {
+                            "title": "Cron Schedule",
+                            "type": "string"
+                        }
+                    },
+                    "required": [
+                        "start_date",
+                        "fmt",
+                        "cron_schedule"
+                    ],
+                    "title": "TimeWindowPartitionsDefinitionModel",
+                    "type": "object"
+                },
+                "WeeklyPartitionsDefinitionModel": {
+                    "additionalProperties": false,
+                    "properties": {
+                        "type": {
+                            "const": "weekly",
+                            "default": "weekly",
+                            "title": "Type",
+                            "type": "string"
+                        },
+                        "start_date": {
+                            "title": "Start Date",
+                            "type": "string"
+                        },
+                        "end_date": {
+                            "anyOf": [
+                                {
+                                    "type": "string"
+                                },
+                                {
+                                    "type": "null"
+                                }
+                            ],
+                            "default": null,
+                            "title": "End Date"
+                        },
+                        "timezone": {
+                            "anyOf": [
+                                {
+                                    "type": "string"
+                                },
+                                {
+                                    "type": "null"
+                                }
+                            ],
+                            "default": null,
+                            "title": "Timezone"
+                        },
+                        "minute_offset": {
+                            "default": 0,
+                            "title": "Minute Offset",
+                            "type": "integer"
+                        },
+                        "hour_offset": {
+                            "default": 0,
+                            "title": "Hour Offset",
+                            "type": "integer"
+                        },
+                        "day_offset": {
+                            "default": 0,
+                            "title": "Day Offset",
+                            "type": "integer"
+                        }
+                    },
+                    "required": [
+                        "start_date"
+                    ],
+                    "title": "WeeklyPartitionsDefinitionModel",
+                    "type": "object"
                 }
-            ],
-            "default": "__DAGSTER_UNSET_DEFAULT__",
-            "title": "Replications"
+            },
+            "additionalProperties": false,
+            "properties": {
+                "connections": {
+                    "anyOf": [
+                        {
+                            "additionalProperties": {
+                                "$ref": "#/$defs/SlingConnectionResourcePropertiesModel"
+                            },
+                            "type": "object"
+                        },
+                        {
+                            "type": "string"
+                        }
+                    ],
+                    "default": "__DAGSTER_UNSET_DEFAULT__",
+                    "title": "Connections"
+                },
+                "replications": {
+                    "anyOf": [
+                        {
+                            "items": {
+                                "$ref": "#/$defs/SlingReplicationSpecModelModel"
+                            },
+                            "type": "array"
+                        },
+                        {
+                            "type": "string"
+                        }
+                    ],
+                    "default": "__DAGSTER_UNSET_DEFAULT__",
+                    "title": "Replications"
+                },
+                "sling": {
+                    "anyOf": [
+                        {
+                            "$ref": "#/$defs/SlingResource"
+                        },
+                        {
+                            "type": "null"
+                        },
+                        {
+                            "type": "string"
+                        }
+                    ],
+                    "default": null,
+                    "title": "Sling"
+                }
+            },
+            "title": "SlingReplicationCollectionComponentModel",
+            "type": "object"
         },
-        "sling": {
+        "template_vars_module": {
             "anyOf": [
                 {
-                    "$ref": "#/$defs/SlingResource"
+                    "type": "string"
                 },
                 {
                     "type": "null"
-                },
-                {
-                    "type": "string"
                 }
             ],
             "default": null,
-            "title": "Sling"
+            "title": "Template Vars Module"
+        },
+        "requirements": {
+            "anyOf": [
+                {
+                    "$ref": "#/$defs/ComponentRequirementsModel"
+                },
+                {
+                    "type": "null"
+                }
+            ],
+            "default": null
+        },
+        "post_processing": {
+            "anyOf": [
+                {
+                    "additionalProperties": true,
+                    "type": "object"
+                },
+                {
+                    "type": "null"
+                }
+            ],
+            "default": null,
+            "title": "Post Processing"
         }
     },
-    "title": "SlingReplicationCollectionComponentModel",
+    "title": "dagster_slingSlingReplicationCollectionComponentComponentFileModel",
     "type": "object"
 }

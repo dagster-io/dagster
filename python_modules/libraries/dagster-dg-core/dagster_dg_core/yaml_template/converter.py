@@ -74,23 +74,32 @@ class JsonSchemaConverter:
 
         return "\n".join(lines)
 
-    def _resolve_ref(self, ref_path: str) -> dict[str, Any]:
+    def _resolve_ref(
+        self, ref_path: str, local_definitions: Optional[dict[str, Any]] = None
+    ) -> dict[str, Any]:
         """Resolve a $ref path to its definition."""
         if ref_path.startswith("#/$defs/"):
             def_name = ref_path[8:]  # Remove "#/$defs/" prefix
+            # First check local definitions, then fall back to global definitions
+            if local_definitions and def_name in local_definitions:
+                return local_definitions[def_name]
             return self.definitions.get(def_name, {})
         # For now, only handle $defs references
         return {}
 
     def _generate_property_template_lines(
-        self, prop_name: str, prop_schema: dict[str, Any], indent_level: int
+        self,
+        prop_name: str,
+        prop_schema: dict[str, Any],
+        indent_level: int,
+        local_definitions: Optional[dict[str, Any]] = None,
     ) -> list[str]:
         """Generate template lines for a single property."""
         indent = "  " * indent_level
 
         # Handle $ref schemas
         if "$ref" in prop_schema:
-            ref_schema = self._resolve_ref(prop_schema["$ref"])
+            ref_schema = self._resolve_ref(prop_schema["$ref"], local_definitions)
             if ref_schema:
                 # Merge any properties from the original schema (like description)
                 merged_schema = {**ref_schema}
@@ -98,7 +107,7 @@ class JsonSchemaConverter:
                     if key in prop_schema:
                         merged_schema[key] = prop_schema[key]
                 return self._generate_property_template_lines(
-                    prop_name, merged_schema, indent_level
+                    prop_name, merged_schema, indent_level, local_definitions
                 )
 
         # Handle anyOf schemas - use the first non-null type for template generation
@@ -107,7 +116,7 @@ class JsonSchemaConverter:
                 # Handle $ref within anyOf
                 resolved_schema = any_schema
                 if "$ref" in any_schema:
-                    ref_schema = self._resolve_ref(any_schema["$ref"])
+                    ref_schema = self._resolve_ref(any_schema["$ref"], local_definitions)
                     if ref_schema:
                         resolved_schema = ref_schema
 
@@ -119,7 +128,7 @@ class JsonSchemaConverter:
                     if "title" in prop_schema:
                         merged_schema["title"] = prop_schema["title"]
                     return self._generate_property_template_lines(
-                        prop_name, merged_schema, indent_level
+                        prop_name, merged_schema, indent_level, local_definitions
                     )
             # If all are null, treat as null type
             prop_type = "null"
@@ -146,7 +155,7 @@ class JsonSchemaConverter:
             # Handle $ref in array items for description
             resolved_items_schema = items_schema
             if "$ref" in items_schema:
-                ref_schema = self._resolve_ref(items_schema["$ref"])
+                ref_schema = self._resolve_ref(items_schema["$ref"], local_definitions)
                 if ref_schema:
                     resolved_items_schema = ref_schema
 
@@ -182,13 +191,20 @@ class JsonSchemaConverter:
             nested_properties = prop_schema.get("properties", {})
             nested_required = set(prop_schema.get("required", []))
 
+            # Merge local definitions from this object schema with parent local definitions
+            nested_local_definitions = {}
+            if local_definitions:
+                nested_local_definitions.update(local_definitions)
+            if "$defs" in prop_schema:
+                nested_local_definitions.update(prop_schema["$defs"])
+
             for nested_name, nested_schema in nested_properties.items():
                 # Temporarily update required fields for nested processing
                 old_required = self.required_fields
                 self.required_fields = nested_required
 
                 nested_lines = self._generate_property_template_lines(
-                    nested_name, nested_schema, indent_level + 1
+                    nested_name, nested_schema, indent_level + 1, nested_local_definitions
                 )
                 lines.extend(nested_lines)
 
@@ -201,7 +217,7 @@ class JsonSchemaConverter:
 
             # Handle $ref in array items
             if "$ref" in items_schema:
-                ref_schema = self._resolve_ref(items_schema["$ref"])
+                ref_schema = self._resolve_ref(items_schema["$ref"], local_definitions)
                 if ref_schema:
                     items_schema = ref_schema
 
@@ -220,7 +236,7 @@ class JsonSchemaConverter:
                 first_property = True
                 for nested_name, nested_schema in nested_properties.items():
                     nested_lines = self._generate_property_template_lines(
-                        nested_name, nested_schema, indent_level + 1
+                        nested_name, nested_schema, indent_level + 1, local_definitions
                     )
                     if nested_lines and first_property:
                         # First property gets the "- " prefix
@@ -259,13 +275,16 @@ class JsonSchemaConverter:
         prop_schema: dict[str, Any],
         property_name: Optional[str] = None,
         is_array_item: bool = False,
+        local_definitions: Optional[dict[str, Any]] = None,
     ) -> Any:
         """Generate an example value for a property based on its schema."""
         # Handle $ref schemas
         if "$ref" in prop_schema:
-            ref_schema = self._resolve_ref(prop_schema["$ref"])
+            ref_schema = self._resolve_ref(prop_schema["$ref"], local_definitions)
             if ref_schema:
-                return self._generate_example_value(ref_schema, property_name, is_array_item)
+                return self._generate_example_value(
+                    ref_schema, property_name, is_array_item, local_definitions
+                )
 
         # Handle anyOf schemas - use the first non-null type
         if "anyOf" in prop_schema:
@@ -273,13 +292,13 @@ class JsonSchemaConverter:
                 # Handle $ref within anyOf
                 resolved_schema = any_schema
                 if "$ref" in any_schema:
-                    ref_schema = self._resolve_ref(any_schema["$ref"])
+                    ref_schema = self._resolve_ref(any_schema["$ref"], local_definitions)
                     if ref_schema:
                         resolved_schema = ref_schema
 
                 if resolved_schema.get("type") != "null":
                     return self._generate_example_value(
-                        resolved_schema, property_name, is_array_item
+                        resolved_schema, property_name, is_array_item, local_definitions
                     )
             # If all are null, return null
             return None
@@ -290,10 +309,20 @@ class JsonSchemaConverter:
             example_obj = {}
             nested_properties = prop_schema.get("properties", {})
 
+            # Merge local definitions from this object schema with parent local definitions
+            nested_local_definitions = {}
+            if local_definitions:
+                nested_local_definitions.update(local_definitions)
+            if "$defs" in prop_schema:
+                nested_local_definitions.update(prop_schema["$defs"])
+
             for nested_name, nested_schema in nested_properties.items():
-                # For array items or nested objects, pass the is_array_item flag
+                # For array items or nested objects, pass the is_array_item flag and local definitions
                 example_obj[nested_name] = self._generate_example_value(
-                    nested_schema, property_name=nested_name, is_array_item=is_array_item
+                    nested_schema,
+                    property_name=nested_name,
+                    is_array_item=is_array_item,
+                    local_definitions=nested_local_definitions,
                 )
 
             # If no properties but additionalProperties is allowed, add an example key-value pair
@@ -313,7 +342,7 @@ class JsonSchemaConverter:
 
             # Handle $ref in array items
             if "$ref" in items_schema:
-                ref_schema = self._resolve_ref(items_schema["$ref"])
+                ref_schema = self._resolve_ref(items_schema["$ref"], local_definitions)
                 if ref_schema:
                     items_schema = ref_schema
 
@@ -322,7 +351,10 @@ class JsonSchemaConverter:
             if items_type == "object":
                 # Array of objects - generate 1 example item with array item flag
                 example_item = self._generate_example_value(
-                    items_schema, property_name=None, is_array_item=True
+                    items_schema,
+                    property_name=None,
+                    is_array_item=True,
+                    local_definitions=local_definitions,
                 )
                 return [example_item]
             else:

@@ -1,11 +1,27 @@
 # Template with instructions
-loads:  # Required: List of object items
-  - pipeline: <string>  # Required
-    source: <string>  # Required
-    translation: <string>  # Optional
+type: <string>  # Optional
+attributes:  # Optional: Attributes details
+  loads:  # Required: List of object items
+    - pipeline: <string>  # Required
+      source: <string>  # Required
+      translation: <string>  # Optional
+template_vars_module: <string>  # Optional
+requirements:  # Optional: Describes dependencies for a component to load.
+  env:  # Optional: List of string items
+    - <string>
+post_processing:  # Optional: Post_Processing details
 
 # EXAMPLE VALUES:
-loads:
-  - pipeline: "example_string"
-    source: "example_string"
-    translation: "example_string"
+type: "example_string"
+attributes:
+  loads:
+    - pipeline: "example_string"
+      source: "example_string"
+      translation: "example_string"
+template_vars_module: "example_string"
+requirements:
+  env:
+    - "example_item_1"
+    - "example_item_2"
+post_processing:
+  key: "value"

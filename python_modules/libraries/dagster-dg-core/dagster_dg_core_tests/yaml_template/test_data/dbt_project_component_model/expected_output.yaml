@@ -1,40 +1,56 @@
 # Template with instructions
-project: <string>  # Required: The path to the dbt project or a mapping defining a DbtProject
-op:  # Optional: Op related arguments to set on the generated @dbt_assets
-  name: <string>  # Optional
-  tags:  # Optional: Tags details
-  description: <string>  # Optional
-  pool: <string>  # Optional
-  backfill_policy:  # Optional: Backfill_Policy details
-    type: <string>  # Optional
-translation: <string>  # Optional
-select: <string>  # Optional: The dbt selection string for models in the project you want to include.
-exclude: <string>  # Optional: The dbt selection string for models in the project you want to exclude.
-translation_settings:  # Optional: Allows enabling or disabling various features for translating dbt models in to Dagster assets.
-  enable_asset_checks: <boolean>  # Optional
-  enable_duplicate_source_asset_keys: <boolean>  # Optional
-  enable_code_references: <boolean>  # Optional
-  enable_dbt_selection_by_name: <boolean>  # Optional
-  enable_source_tests_as_checks: <boolean>  # Optional
-prepare_if_dev: <boolean>  # Optional: Whether to prepare the dbt project every time in `dagster dev` or `dg` cli calls.
+type: <string>  # Optional
+attributes:  # Optional: Attributes details
+  project: <string>  # Required: The path to the dbt project or a mapping defining a DbtProject
+  op:  # Optional: Op related arguments to set on the generated @dbt_assets
+    name: <string>  # Optional
+    tags:  # Optional: Tags details
+    description: <string>  # Optional
+    pool: <string>  # Optional
+    backfill_policy:  # Optional: Backfill_Policy details
+      type: <string>  # Optional
+  translation: <string>  # Optional
+  select: <string>  # Optional: The dbt selection string for models in the project you want to include.
+  exclude: <string>  # Optional: The dbt selection string for models in the project you want to exclude.
+  translation_settings:  # Optional: Allows enabling or disabling various features for translating dbt models in to Dagster assets.
+    enable_asset_checks: <boolean>  # Optional
+    enable_duplicate_source_asset_keys: <boolean>  # Optional
+    enable_code_references: <boolean>  # Optional
+    enable_dbt_selection_by_name: <boolean>  # Optional
+    enable_source_tests_as_checks: <boolean>  # Optional
+  prepare_if_dev: <boolean>  # Optional: Whether to prepare the dbt project every time in `dagster dev` or `dg` cli calls.
+template_vars_module: <string>  # Optional
+requirements:  # Optional: Describes dependencies for a component to load.
+  env:  # Optional: List of string items
+    - <string>
+post_processing:  # Optional: Post_Processing details
 
 # EXAMPLE VALUES:
-project: "example_string"
-op:
-  name: "example_string"
-  tags:
-    key: "value"
-  description: "example_string"
-  pool: "example_string"
-  backfill_policy:
-    type: "example_string"
-translation: "example_string"
-select: "example_string"
-exclude: "example_string"
-translation_settings:
-  enable_asset_checks: true
-  enable_duplicate_source_asset_keys: true
-  enable_code_references: true
-  enable_dbt_selection_by_name: true
-  enable_source_tests_as_checks: true
-prepare_if_dev: true
+type: "example_string"
+attributes:
+  project: "example_string"
+  op:
+    name: "example_string"
+    tags:
+      key: "value"
+    description: "example_string"
+    pool: "example_string"
+    backfill_policy:
+      type: "example_string"
+  translation: "example_string"
+  select: "example_string"
+  exclude: "example_string"
+  translation_settings:
+    enable_asset_checks: true
+    enable_duplicate_source_asset_keys: true
+    enable_code_references: true
+    enable_dbt_selection_by_name: true
+    enable_source_tests_as_checks: true
+  prepare_if_dev: true
+template_vars_module: "example_string"
+requirements:
+  env:
+    - "example_item_1"
+    - "example_item_2"
+post_processing:
+  key: "value"
