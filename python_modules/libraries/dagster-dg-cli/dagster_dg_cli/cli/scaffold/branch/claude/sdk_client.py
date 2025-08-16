@@ -18,7 +18,7 @@ from claude_code_sdk.types import (
     UserMessage,
 )
 
-from dagster_dg_cli.cli.scaffold.branch.diagnostics import AIInteraction, ClaudeDiagnosticsService
+from dagster_dg_cli.cli.scaffold.branch.claude.diagnostics import AIInteraction, ClaudeDiagnostics
 
 
 class OutputChannel(Protocol):
@@ -40,7 +40,7 @@ class NullOutputChannel:
 class ClaudeSDKClient:
     """Claude Code SDK integration with diagnostics and output streaming."""
 
-    def __init__(self, diagnostics: ClaudeDiagnosticsService):
+    def __init__(self, diagnostics: ClaudeDiagnostics):
         """Initialize the Claude SDK client.
 
         Args:
