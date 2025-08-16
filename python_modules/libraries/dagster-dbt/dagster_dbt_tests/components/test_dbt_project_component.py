@@ -20,7 +20,7 @@ from dagster.components.core.component_tree import ComponentTree
 from dagster.components.core.load_defs import build_component_defs
 from dagster.components.resolved.core_models import AssetAttributesModel, OpSpec
 from dagster.components.resolved.errors import ResolutionException
-from dagster.components.testing import TestOpCustomization, TestTranslation
+from dagster.components.testing.test_cases import TestOpCustomization, TestTranslation
 from dagster_dbt import DbtProject, DbtProjectComponent
 from dagster_dbt.cli.app import project_app_typer_click_object
 from dagster_dbt.components.dbt_project.component import get_projects_from_dbt_component

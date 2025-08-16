@@ -63,10 +63,7 @@ yarn build-api-docs          # Build API docs after .rst changes
 
 ## Code Style
 
-- Follow Google-style docstrings
-- **ALWAYS use `@record` from `dagster_shared.record` for data structures, result objects, and immutable classes**
-- Only use `@dataclass` when mutability is specifically required
-- **NEVER use `__all__` in subpackage `__init__.py` files** - only use `__all__` in top-level package `__init__.py` files to define public APIs
+- **See [.claude/coding_conventions.md](./.claude/coding_conventions.md) for all code style and convention guidelines**
 
 ## Code Quality Requirements
 
@@ -84,23 +81,6 @@ yarn build-api-docs          # Build API docs after .rst changes
 
 - DO NOT search for Python code (.py files) inside of .tox folders. These are temporary environments and this will only cause confusion.
 - Always search for package dependencies in setup.py files only. This is the current source of truth for dependencies in this repository.
-
-## Linting and Code Style
-
-- In CLI scripts, use `# noqa: T201` to mark print statements as OK to use since CLIs require printing to stdout
-
-## CLI Development Guidelines
-
-- Note that click MUST be used to building cli tools
-
-## Project Compatibility
-
-- Code must be compatible with Python version 3.9 and later
-- For CLI output, use `click.echo()` instead of `print()` - this ensures proper output handling in CLI contexts and testing
-
-## Import Guidelines
-
-- Use top-level imports unless you need conditional imports or have performance concerns requiring lazy loading
 
 ## Make Command Guidelines
 

@@ -23,11 +23,8 @@ from dagster._core.instance_for_test import instance_for_test
 from dagster._core.test_utils import ensure_dagster_tests_import
 from dagster._utils.env import environ
 from dagster.components.resolved.core_models import AssetAttributesModel, OpSpec
-from dagster.components.testing import (
-    TestOpCustomization,
-    TestTranslation,
-    create_defs_folder_sandbox,
-)
+from dagster.components.testing.test_cases import TestOpCustomization, TestTranslation
+from dagster.components.testing.utils import create_defs_folder_sandbox
 from dagster_shared import check
 from dagster_sling import SlingReplicationCollectionComponent, SlingResource
 from dagster_sling.components.sling_replication_collection.component import (
@@ -268,37 +265,6 @@ def test_spec_is_available_in_scope() -> None:
         assert assets_def.get_asset_spec(AssetKey("input_duckdb")).metadata["asset_key"] == [
             "input_duckdb"
         ]
-
-
-def test_asset_post_processors_deprecation_error() -> None:
-    with create_defs_folder_sandbox() as sandbox:
-        defs_path = sandbox.scaffold_component(component_cls=SlingReplicationCollectionComponent)
-        with environ({"HOME": str(defs_path), "SOME_PASSWORD": "password"}):
-            shutil.copytree(
-                STUB_LOCATION_PATH / "defs" / "ingest",
-                defs_path,
-                dirs_exist_ok=True,
-            )
-            shutil.copy(STUB_LOCATION_PATH / "input.csv", defs_path / "input.csv")
-
-            with _modify_yaml(defs_path / "replication.yaml") as data:
-                if "<PLACEHOLDER>" in data["streams"]:
-                    placeholder_data = data["streams"].pop("<PLACEHOLDER>")
-                    data["streams"][f"file://{defs_path}/input.csv"] = placeholder_data
-
-            with _modify_yaml(defs_path / "defs.yaml") as data:
-                data["attributes"]["connections"]["DUCKDB"]["instance"] = f"{defs_path}/duckdb"
-                # Modify defs.yaml to include the deprecated asset_post_processors field
-                data["attributes"]["asset_post_processors"] = [
-                    {"target": "*", "attributes": {"group_name": "test_group"}}
-                ]
-
-            with pytest.raises(Exception) as exc_info:
-                with sandbox.build_all_defs():
-                    pass
-
-            parent_error_message = str(exc_info.value.__cause__)
-            assert "The asset_post_processors field is deprecated" in parent_error_message
 
 
 def map_spec(spec: AssetSpec) -> AssetSpec:

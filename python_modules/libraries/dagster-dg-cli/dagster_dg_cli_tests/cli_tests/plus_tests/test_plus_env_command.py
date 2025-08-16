@@ -1,10 +1,12 @@
+# ruff: noqa: I001
 import tempfile
 from pathlib import Path
 
 import pytest
 import responses
-from dagster_dg_cli.utils.plus import gql
 from dagster_dg_core.utils import ensure_dagster_dg_tests_import
+
+from dagster_dg_cli.utils.plus import gql
 
 ensure_dagster_dg_tests_import()
 

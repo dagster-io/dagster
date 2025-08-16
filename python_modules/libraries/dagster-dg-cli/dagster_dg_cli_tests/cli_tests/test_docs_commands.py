@@ -11,6 +11,7 @@ from dagster_graphql.client.client import DagsterGraphQLClient
 
 ensure_dagster_dg_tests_import()
 
+# ruff: noqa: I001
 import json
 import os
 import subprocess
@@ -20,7 +21,6 @@ from unittest import mock
 
 import requests
 import yaml
-from dagster_dg_cli.cli import docs
 from dagster_dg_core.utils import activate_venv
 from dagster_dg_core_tests.utils import (
     ProxyRunner,
@@ -33,6 +33,8 @@ from dagster_dg_core_tests.utils import (
     launch_dev_command,
     wait_for_projects_loaded,
 )
+
+from dagster_dg_cli.cli import docs
 
 # ########################
 # ##### COMPONENT TYPE

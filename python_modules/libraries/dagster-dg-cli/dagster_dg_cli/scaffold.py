@@ -122,6 +122,7 @@ def scaffold_registry_object(
     scaffold_params: Optional[Mapping[str, Any]],
     dg_context: "DgContext",
     scaffold_format: ScaffoldFormatOptions,
+    append: bool = False,
 ) -> None:
     from dagster.components.component_scaffolding import scaffold_object
 
@@ -131,4 +132,5 @@ def scaffold_registry_object(
         json.dumps(scaffold_params) if scaffold_params else None,
         scaffold_format,
         dg_context.root_path,
+        append,
     )

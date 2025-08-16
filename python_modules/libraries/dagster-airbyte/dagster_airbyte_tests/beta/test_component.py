@@ -15,7 +15,8 @@ from dagster._core.test_utils import ensure_dagster_tests_import
 from dagster._utils import alter_sys_path
 from dagster._utils.env import environ
 from dagster.components.core.component_tree import ComponentTree
-from dagster.components.testing import TestTranslation, create_defs_folder_sandbox
+from dagster.components.testing.test_cases import TestTranslation
+from dagster.components.testing.utils import create_defs_folder_sandbox
 from dagster_airbyte.components.workspace_component.component import AirbyteCloudWorkspaceComponent
 from dagster_airbyte.resources import AirbyteCloudWorkspace
 from dagster_airbyte.translator import AirbyteConnection
