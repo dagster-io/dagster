@@ -8,17 +8,7 @@ from time import perf_counter
 from typing import Any, Optional, Protocol
 
 # typer and pydantic imports moved to functions to defer import costs
-
 from dagster_dg_cli.cli.scaffold.branch.diagnostics import AIInteraction, ClaudeDiagnosticsService
-from dagster_dg_cli.cli.scaffold.branch.validation import (
-    ClaudeAssistantMessage,
-    ClaudeErrorResult,
-    ClaudeSuccessResult,
-    ClaudeSystemInit,
-    ClaudeUserMessage,
-    MCPServer,
-    SDKMessage,
-)
 from dagster_dg_core.context import DgContext
 
 
