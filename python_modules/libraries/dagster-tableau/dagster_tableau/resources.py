@@ -351,7 +351,6 @@ class BaseTableauClient:
                         connectionType
                         schema
                         isEmbedded
-                        tableType
                         fullName
                         projectName
                         database {
@@ -359,7 +358,7 @@ class BaseTableauClient:
                             name
                             projectName
                         }
-                    }   
+                    }
                     parentPublishedDatasources {
                         luid
                         name
@@ -541,9 +540,9 @@ class BaseTableauWorkspace(ConfigurableResource):
                         )
                     """
                     Lineage formation depends on the availability of published data sources.
-                    If published data sources are available (i.e., parentPublishedDatasources exists and is not empty), 
+                    If published data sources are available (i.e., parentPublishedDatasources exists and is not empty),
                     it means you can form the lineage by using the luid of those published sources.
-                    If the published data sources are missing, 
+                    If the published data sources are missing,
                     you create assets for embedded data sources by using their id.
                     """
                     for embedded_data_source_data in sheet_data.get(
