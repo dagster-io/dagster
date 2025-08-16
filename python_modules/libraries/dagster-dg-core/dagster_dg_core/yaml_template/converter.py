@@ -17,7 +17,7 @@ class YamlTemplate:
         self._example_section = example_section
 
     @staticmethod
-    def from_json_schema(schema: dict[str, Any]) -> "YamlTemplate":
+    def from_json_schema(schema: Any) -> "YamlTemplate":
         """Create a YamlTemplate from a JSON Schema dictionary."""
         if not isinstance(schema, dict):
             raise TypeError("Schema must be a dictionary")
