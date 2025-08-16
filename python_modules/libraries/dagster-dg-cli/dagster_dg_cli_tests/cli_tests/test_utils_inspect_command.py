@@ -274,9 +274,31 @@ def test_utils_inspect_component_type_multiple_flags_fails() -> None:
         )
         assert_runner_result(result, exit_0=False)
         assert (
-            "Only one of --description, --scaffold-params-schema, --defs-yaml-json-schema, --defs-yaml-schema, and --defs-yaml-example-values can be specified."
+            "Only one of --description, --scaffold-params-schema, --component-schema, --defs-yaml-json-schema, --defs-yaml-schema, --defs-yaml-example-values, and --template can be specified."
             in result.output
         )
+
+
+def test_utils_inspect_component_type_template_flag_success() -> None:
+    with (
+        ProxyRunner.test(use_fixed_test_components=True) as runner,
+        isolated_components_venv(runner),
+    ):
+        result = runner.invoke(
+            "utils",
+            "inspect-component",
+            "dagster_test.components.SimplePipesScriptComponent",
+            "--template",
+        )
+        assert_runner_result(result)
+
+        # Should contain template headers and structure
+        assert "# Template for SimplePipesScriptComponent" in result.output
+        assert "# Example Values:" in result.output
+        assert "asset_key:" in result.output or "filename:" in result.output
+
+        # Should show type annotations with comments
+        assert "string #" in result.output
 
 
 def test_utils_inspect_component_type_defs_yaml_flags_with_other_flags_fails() -> None:
@@ -294,7 +316,7 @@ def test_utils_inspect_component_type_defs_yaml_flags_with_other_flags_fails() -
         )
         assert_runner_result(result, exit_0=False)
         assert (
-            "Only one of --description, --scaffold-params-schema, --defs-yaml-json-schema, --defs-yaml-schema, and --defs-yaml-example-values can be specified."
+            "Only one of --description, --scaffold-params-schema, --component-schema, --defs-yaml-json-schema, --defs-yaml-schema, --defs-yaml-example-values, and --template can be specified."
             in result.output
         )
 
@@ -308,7 +330,7 @@ def test_utils_inspect_component_type_defs_yaml_flags_with_other_flags_fails() -
         )
         assert_runner_result(result, exit_0=False)
         assert (
-            "Only one of --description, --scaffold-params-schema, --defs-yaml-json-schema, --defs-yaml-schema, and --defs-yaml-example-values can be specified."
+            "Only one of --description, --scaffold-params-schema, --component-schema, --defs-yaml-json-schema, --defs-yaml-schema, --defs-yaml-example-values, and --template can be specified."
             in result.output
         )
 
@@ -322,7 +344,27 @@ def test_utils_inspect_component_type_defs_yaml_flags_with_other_flags_fails() -
         )
         assert_runner_result(result, exit_0=False)
         assert (
-            "Only one of --description, --scaffold-params-schema, --defs-yaml-json-schema, --defs-yaml-schema, and --defs-yaml-example-values can be specified."
+            "Only one of --description, --scaffold-params-schema, --component-schema, --defs-yaml-json-schema, --defs-yaml-schema, --defs-yaml-example-values, and --template can be specified."
+            in result.output
+        )
+
+
+def test_utils_inspect_component_type_template_multiple_flags_fails() -> None:
+    """Test that template flag conflicts with other flags."""
+    with (
+        ProxyRunner.test(use_fixed_test_components=True) as runner,
+        isolated_components_venv(runner),
+    ):
+        result = runner.invoke(
+            "utils",
+            "inspect-component",
+            "dagster_test.components.SimplePipesScriptComponent",
+            "--template",
+            "--component-schema",
+        )
+        assert_runner_result(result, exit_0=False)
+        assert (
+            "Only one of --description, --scaffold-params-schema, --component-schema, --defs-yaml-json-schema, --defs-yaml-schema, --defs-yaml-example-values, and --template can be specified."
             in result.output
         )
 
