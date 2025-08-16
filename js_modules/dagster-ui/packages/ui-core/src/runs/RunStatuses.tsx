@@ -8,10 +8,10 @@ export const inProgressStatuses = new Set([
   RunStatus.CANCELING,
 ]);
 
-export const successStatuses = new Set([RunStatus.SUCCESS]);
+export const successStatuses = new Set([RunStatus.SUCCESS, RunStatus.SUCCESS_WITH_WARNINGS]);
 
 export const failedStatuses = new Set([RunStatus.FAILURE, RunStatus.CANCELED]);
 
-export const doneStatuses = new Set([RunStatus.FAILURE, RunStatus.SUCCESS, RunStatus.CANCELED]);
+export const doneStatuses = new Set([RunStatus.FAILURE, RunStatus.SUCCESS, RunStatus.CANCELED, RunStatus.SUCCESS_WITH_WARNINGS]);
 
 export const cancelableStatuses = new Set([RunStatus.QUEUED, RunStatus.STARTED]);

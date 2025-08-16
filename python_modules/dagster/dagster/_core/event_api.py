@@ -82,6 +82,7 @@ RunStatusChangeEventType: TypeAlias = Literal[
     DagsterEventType.RUN_STARTING,
     DagsterEventType.RUN_CANCELING,
     DagsterEventType.RUN_CANCELED,
+    DagsterEventType.RUN_SUCCESS_WITH_WARNINGS,
 ]
 AssetEventType: TypeAlias = Literal[
     DagsterEventType.ASSET_MATERIALIZATION,
