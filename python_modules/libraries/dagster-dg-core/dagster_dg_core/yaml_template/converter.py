@@ -1,6 +1,7 @@
 from typing import Any, Optional
 
 from dagster_dg_core.yaml_template.template_format import (
+    clean_description,
     format_dict_as_yaml,
     get_array_description,
     get_constraint_description,
@@ -136,12 +137,20 @@ class JsonSchemaConverter:
 
         # Add description if present
         if "description" in prop_schema:
-            comment_parts.append(prop_schema["description"])
+            comment_parts.append(clean_description(prop_schema["description"]))
         elif prop_type == "object":
             comment_parts.append(get_object_description(prop_name, prop_schema))
         elif prop_type == "array":
             items_schema = prop_schema.get("items", {})
-            array_desc = get_array_description(items_schema)
+
+            # Handle $ref in array items for description
+            resolved_items_schema = items_schema
+            if "$ref" in items_schema:
+                ref_schema = self._resolve_ref(items_schema["$ref"])
+                if ref_schema:
+                    resolved_items_schema = ref_schema
+
+            array_desc = get_array_description(resolved_items_schema)
             comment_parts.append(array_desc)
 
         # Add constraints
@@ -189,6 +198,13 @@ class JsonSchemaConverter:
         elif prop_type == "array":
             lines.append(f"{indent}{prop_name}:{comment}")
             items_schema = prop_schema.get("items", {})
+
+            # Handle $ref in array items
+            if "$ref" in items_schema:
+                ref_schema = self._resolve_ref(items_schema["$ref"])
+                if ref_schema:
+                    items_schema = ref_schema
+
             items_type = items_schema.get("type", "unknown")
 
             if items_type == "object":
@@ -294,14 +310,21 @@ class JsonSchemaConverter:
 
         elif prop_type == "array":
             items_schema = prop_schema.get("items", {})
+
+            # Handle $ref in array items
+            if "$ref" in items_schema:
+                ref_schema = self._resolve_ref(items_schema["$ref"])
+                if ref_schema:
+                    items_schema = ref_schema
+
             items_type = items_schema.get("type", "unknown")
 
             if items_type == "object":
-                # Array of objects - generate 2 example items with array item flag
+                # Array of objects - generate 1 example item with array item flag
                 example_item = self._generate_example_value(
                     items_schema, property_name=None, is_array_item=True
                 )
-                return [example_item, example_item]
+                return [example_item]
             else:
                 # Array of primitives - generate different example values
                 format_hint = items_schema.get("format")
@@ -317,7 +340,7 @@ class JsonSchemaConverter:
                         property_name=property_name,
                         is_array_item=True,
                     )
-                    return [example_item, example_item]
+                    return [example_item]
 
         else:
             # Primitive type

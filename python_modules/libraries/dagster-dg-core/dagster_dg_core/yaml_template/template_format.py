@@ -141,6 +141,18 @@ def get_array_description(items_schema: dict[str, Any]) -> str:
         return f"List of {items_type} items"
 
 
+def clean_description(description: str) -> str:
+    """Clean up a description for use in YAML templates."""
+    if not description:
+        return description
+
+    # Split by double newline to get paragraphs
+    paragraphs = description.split("\n\n")
+    first_paragraph = paragraphs[0].strip()
+
+    return first_paragraph
+
+
 def format_yaml_value(value: Any, indent_level: int = 0) -> str:
     """Format a value as YAML with proper indentation."""
     indent = "  " * indent_level

@@ -229,7 +229,6 @@ class TestArrays:
             "\n"
             "# EXAMPLE VALUES:\n"
             "items:\n"
-            "  - 42\n"
             "  - 42"
         )
         assert result == expected
@@ -363,8 +362,6 @@ class TestComplexScenarios:
             "\n"
             "# EXAMPLE VALUES:\n"
             "employees:\n"
-            '  - name: "example_string"\n'
-            '    department: "example_string"\n'
             '  - name: "example_string"\n'
             '    department: "example_string"'
         )
