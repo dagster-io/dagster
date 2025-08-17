@@ -3,10 +3,9 @@ import tempfile
 from collections.abc import Iterator, Mapping
 from contextlib import contextmanager
 from pathlib import Path
-from typing import Any, Literal, Optional, Union, get_args, get_origin
+from typing import Any, Optional
 
 import click
-from dagster.components.core.defs_module import ComponentFileModel
 from dagster_dg_core.component import EnvRegistry, all_components_schema_from_dg_context
 from dagster_dg_core.config import (
     DgRawBuildConfig,
@@ -30,7 +29,6 @@ from dagster_dg_core.utils.telemetry import cli_telemetry_wrapper
 from dagster_shared import check
 from dagster_shared.serdes.objects import EnvRegistryKey
 from packaging.version import Version
-from pydantic import create_model
 
 DEFAULT_SCHEMA_FOLDER_NAME = ".dg"
 
@@ -98,7 +96,7 @@ def configure_editor_command(
 @click.option("--description", is_flag=True, default=False)
 @click.option("--scaffold-params-schema", is_flag=True, default=False)
 @click.option("--component-schema", is_flag=True, default=False)
-@click.option("--defs-yaml-schema", is_flag=True, default=False)
+@click.option("--defs-yaml-template", is_flag=True, default=False)
 @dg_path_options
 @dg_global_options
 @cli_telemetry_wrapper
@@ -107,7 +105,7 @@ def inspect_component_type_command(
     description: bool,
     scaffold_params_schema: bool,
     component_schema: bool,
-    defs_yaml_schema: bool,
+    defs_yaml_template: bool,
     target_path: Path,
     **global_options: object,
 ) -> None:
@@ -118,9 +116,9 @@ def inspect_component_type_command(
     component_key = EnvRegistryKey.from_typename(component_type)
     if not registry.has(component_key):
         exit_with_error(generate_missing_registry_object_error_message(component_type))
-    elif sum([description, scaffold_params_schema, component_schema, defs_yaml_schema]) > 1:
+    elif sum([description, scaffold_params_schema, component_schema, defs_yaml_template]) > 1:
         exit_with_error(
-            "Only one of --description, --scaffold-params-schema, --component-schema, and --defs-yaml-schema can be specified."
+            "Only one of --description, --scaffold-params-schema, --component-schema, and --defs-yaml-template can be specified."
         )
 
     entry_snap = registry.get(component_key)
@@ -139,9 +137,9 @@ def inspect_component_type_command(
             click.echo(_serialize_json_schema(entry_snap.component_schema))
         else:
             click.echo("No component schema defined.")
-    elif defs_yaml_schema:
-        defs_schema = _generate_defs_yaml_schema(component_type, entry_snap)
-        click.echo(_serialize_json_schema(defs_schema))
+    elif defs_yaml_template:
+        defs_template = _generate_defs_yaml_template(component_type, entry_snap)
+        click.echo(defs_template)
     # print all available metadata
     else:
         click.echo(component_type)
@@ -160,173 +158,18 @@ def _serialize_json_schema(schema: Mapping[str, Any]) -> str:
     return json.dumps(schema, indent=4)
 
 
-def _extract_model_field_type_from_annotation(annotation) -> Any:
-    """Extract model_field_type from TypeAlias annotations with Resolver metadata.
+def _generate_defs_yaml_template(component_type_str: str, entry_snap) -> str:
+    """Generate YAML template for a component's defs.yaml file.
 
-    For annotations like:
-    TypeAlias = Annotated[SomeType, Resolver(..., model_field_type=SomeModel)]
-
-    Returns the model_field_type value.
+    Uses the existing generate_sample_yaml utility to create a proper template
+    that users can copy and modify for their component configuration.
     """
-    if hasattr(annotation, "__metadata__"):
-        for metadata in annotation.__metadata__:
-            if hasattr(metadata, "model_field_type"):
-                return metadata.model_field_type
-    return None
+    from dagster_shared.yaml_utils.sample_yaml import generate_sample_yaml
 
+    # Use the component's existing schema, or empty schema if none available
+    component_schema = entry_snap.component_schema or {}
 
-def _resolve_schema_with_type_aliases(model_cls) -> dict[str, Any]:
-    """Generate JSON schema for a Pydantic model, resolving TypeAlias fields with their model_field_type.
-
-    This navigates the resolver annotation system to replace TypeAlias fields
-    with their proper schema definitions from model_field_type.
-    """
-    from typing import get_args, get_origin
-
-    # Generate base schema
-    base_schema = model_cls.model_json_schema()
-
-    # Check each field for TypeAlias with resolver annotations
-    for field_name, field_info in model_cls.model_fields.items():
-        field_annotation = field_info.annotation
-
-        # Handle Optional[T] and similar wrapper types
-        origin = get_origin(field_annotation)
-        if origin is not None:
-            args = get_args(field_annotation)
-            if len(args) > 0:
-                # For Optional[T], Union[T, None], etc., check the first non-None type
-                for arg in args:
-                    if arg is not type(None):
-                        model_field_type = _extract_model_field_type_from_annotation(arg)
-                        if model_field_type:
-                            # Replace the field schema with the model_field_type schema
-                            if callable(model_field_type):
-                                # If it's a model class, get its schema
-                                resolved_schema = model_field_type.model_json_schema()
-                            else:
-                                # If it's already a schema dict or union type, use it directly
-                                resolved_schema = model_field_type
-
-                            # Handle array fields like Optional[Sequence[AssetPostProcessor]]
-                            if field_name in base_schema.get("properties", {}):
-                                current_field = base_schema["properties"][field_name]
-                                if "anyOf" in current_field:
-                                    # Find the array type in the anyOf
-                                    for any_of_option in current_field["anyOf"]:
-                                        if any_of_option.get("type") == "array":
-                                            any_of_option["items"] = resolved_schema
-                                            break
-                                else:
-                                    base_schema["properties"][field_name] = resolved_schema
-
-                            # Merge any $defs from the resolved schema
-                            if isinstance(resolved_schema, dict) and "$defs" in resolved_schema:
-                                if "$defs" not in base_schema:
-                                    base_schema["$defs"] = {}
-                                base_schema["$defs"].update(resolved_schema["$defs"])
-                        break
-        else:
-            # Direct TypeAlias annotation
-            model_field_type = _extract_model_field_type_from_annotation(field_annotation)
-            if model_field_type:
-                if callable(model_field_type):
-                    resolved_schema = model_field_type.model_json_schema()
-                else:
-                    resolved_schema = model_field_type
-
-                base_schema["properties"][field_name] = resolved_schema
-
-                # Merge any $defs from the resolved schema
-                if isinstance(resolved_schema, dict) and "$defs" in resolved_schema:
-                    if "$defs" not in base_schema:
-                        base_schema["$defs"] = {}
-                    base_schema["$defs"].update(resolved_schema["$defs"])
-
-    return base_schema
-
-
-def _generate_defs_yaml_schema(component_type_str: str, entry_snap) -> dict[str, Any]:
-    """Generate ComponentFileModel schema for a specific component type.
-
-    This function navigates the Dagster resolved system to extract proper JSON schemas:
-
-    **Navigating Type Aliases with Resolvers:**
-    - When encountering types like ResolvedAssetAttributes, look for the type alias definition
-    - ResolvedAssetAttributes: TypeAlias = Annotated[Mapping[str, Any], Resolver(..., model_field_type=...)]
-    - The resolver's model_field_type parameter contains the actual Pydantic model to use for schema generation
-    - Access it via: ResolvedAssetAttributes.__metadata__[0].model_field_type or AssetsDefUpdateKwargs.model()
-
-    **Working with Resolvable Classes:**
-    - Classes inheriting from Resolvable (like AssetsDefUpdateKwargs) have a .model() method
-    - This returns a Pydantic model that can generate proper JSON schemas via .model_json_schema()
-    - The generated model contains runtime-resolvable fields converted to proper types
-
-    **Avoiding Circular Dependencies:**
-    - Some models like ComponentPostProcessingModel can't generate schemas due to callable resolvers
-    - Instead, manually compose schemas using the underlying models (AssetPostProcessorModel, AssetsDefUpdateKwargs)
-    - Access the resolved model through: AssetsDefUpdateKwargs.model().model_json_schema()
-    """
-    # Use the component schema from entry_snap if available, otherwise use generic mapping
-    attributes_schema = entry_snap.component_schema
-
-    # Get field definitions from ComponentFileModel to stay in sync
-    base_fields = ComponentFileModel.model_fields
-
-    # Create field definitions for the specialized model, deriving from ComponentFileModel
-    specialized_fields = {}
-    for field_name, field_info in base_fields.items():
-        if field_name == "type":
-            # Specialize the type field to be constrained to the specific component type
-            specialized_fields[field_name] = (Literal[component_type_str], component_type_str)
-        else:
-            # Use the original field definition
-            specialized_fields[field_name] = (field_info.annotation, field_info.default)
-
-    # Create a specialized ComponentFileModel with the specific component type
-    specialized_model = create_model(
-        f"{component_type_str.replace('.', '')}ComponentFileModel",
-        __config__=ComponentFileModel.model_config,
-        **specialized_fields,
-    )
-
-    # Generate the base schema and enhance with component-specific attributes
-    base_schema = specialized_model.model_json_schema()
-
-    # If we have a component schema, replace the generic attributes with the specific one
-    if attributes_schema:
-        base_schema["properties"]["attributes"] = attributes_schema
-
-    # Replace the generic post_processing field with ComponentPostProcessingModel schema
-    # Use the resolver navigation approach to properly handle TypeAlias chains
-    from dagster.components.core.defs_module import ComponentPostProcessingModel
-
-    try:
-        # Navigate the resolver chain: ComponentPostProcessingModel -> AssetPostProcessor -> AssetPostProcessorModel -> ResolvedAssetAttributes -> AssetsDefUpdateKwargs
-        post_processing_model_cls = ComponentPostProcessingModel.model()
-        post_processing_schema = _resolve_schema_with_type_aliases(post_processing_model_cls)
-
-        base_schema["properties"]["post_processing"] = {
-            "anyOf": [post_processing_schema, {"type": "null"}],
-            "default": None,
-            "title": "Post Processing",
-        }
-
-        # Merge any $defs from the resolved schema
-        if "$defs" in post_processing_schema:
-            if "$defs" not in base_schema:
-                base_schema["$defs"] = {}
-            base_schema["$defs"].update(post_processing_schema["$defs"])
-
-    except Exception:
-        # Fallback to a basic schema if resolver navigation fails
-        base_schema["properties"]["post_processing"] = {
-            "anyOf": [{"additionalProperties": True, "type": "object"}, {"type": "null"}],
-            "default": None,
-            "title": "Post Processing",
-        }
-
-    return base_schema
+    return generate_sample_yaml(component_type_str, component_schema)
 
 
 def _workspace_entry_for_project(
