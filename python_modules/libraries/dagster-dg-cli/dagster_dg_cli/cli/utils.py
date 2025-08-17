@@ -100,7 +100,7 @@ def configure_editor_command(
 @click.argument("component_type", type=str)
 @click.option("--description", is_flag=True, default=False)
 @click.option("--scaffold-params-schema", is_flag=True, default=False)
-@click.option("--component-schema", is_flag=True, default=False)
+@click.option("--defs-yaml-json-schema", is_flag=True, default=False)
 @click.option(
     "--defs-yaml-schema",
     is_flag=True,
@@ -125,7 +125,7 @@ def inspect_component_type_command(
     component_type: str,
     description: bool,
     scaffold_params_schema: bool,
-    component_schema: bool,
+    defs_yaml_json_schema: bool,
     defs_yaml_schema: bool,
     defs_yaml_example_values: bool,
     target_path: Path,
@@ -143,7 +143,7 @@ def inspect_component_type_command(
             [
                 description,
                 scaffold_params_schema,
-                component_schema,
+                defs_yaml_json_schema,
                 defs_yaml_schema,
                 defs_yaml_example_values,
             ]
@@ -151,7 +151,7 @@ def inspect_component_type_command(
         > 1
     ):
         exit_with_error(
-            "Only one of --description, --scaffold-params-schema, --component-schema, --defs-yaml-schema, and --defs-yaml-example-values can be specified."
+            "Only one of --description, --scaffold-params-schema, --defs-yaml-json-schema, --defs-yaml-schema, and --defs-yaml-example-values can be specified."
         )
 
     entry_snap = registry.get(component_key)
@@ -165,11 +165,9 @@ def inspect_component_type_command(
             click.echo(_serialize_json_schema(entry_snap.scaffolder_schema))
         else:
             click.echo("No scaffold params schema defined.")
-    elif component_schema:
-        if entry_snap.component_schema:
-            click.echo(_serialize_json_schema(entry_snap.component_schema))
-        else:
-            click.echo("No component schema defined.")
+    elif defs_yaml_json_schema:
+        json_schema = _generate_defs_yaml_json_schema(component_type, entry_snap)
+        click.echo(_serialize_json_schema(json_schema))
     elif defs_yaml_schema:
         schema_template = _generate_defs_yaml_schema(component_type, entry_snap)
         click.echo(schema_template)
@@ -223,6 +221,35 @@ def _generate_defs_yaml_example_values(component_type_str: str, entry_snap) -> s
     component_schema = entry_snap.component_schema or {}
 
     return generate_defs_yaml_example_values(component_type_str, component_schema)
+
+
+def _generate_defs_yaml_json_schema(component_type_str: str, entry_snap) -> dict[str, Any]:
+    """Generate JSON schema for a complete defs.yaml file.
+
+    Creates a JSON schema that includes all top-level defs.yaml fields (type, attributes,
+    template_vars_module, requirements, post_processing) with the component's attributes
+    schema merged into the attributes property.
+    """
+    from dagster.components.core.defs_module import ComponentFileModel
+
+    # Get the base ComponentFileModel schema
+    base_schema = ComponentFileModel.model_json_schema()
+
+    # Get the component's attributes schema if available
+    component_schema = entry_snap.component_schema or {}
+
+    # If we have a component schema, use it for the attributes property
+    if component_schema:
+        base_schema["properties"]["attributes"] = component_schema
+
+        # If the component schema has required fields, make attributes required
+        if component_schema.get("required"):
+            if "required" not in base_schema:
+                base_schema["required"] = ["type"]
+            if "attributes" not in base_schema["required"]:
+                base_schema["required"].append("attributes")
+
+    return base_schema
 
 
 def _workspace_entry_for_project(
