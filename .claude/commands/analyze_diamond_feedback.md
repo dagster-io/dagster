@@ -27,12 +27,13 @@ Fetches all comments for the PR associated with the current branch, identifies f
 
 ### Step 3: Identify Diamond Comments
 
-- Filter comments where the author login contains "diamond" (case-insensitive)
-- Look for specific Diamond markers in comment body:
-  - Comments starting with "Diamond Analysis" or similar
-  - Bot-like formatting patterns
-  - Automated feedback indicators
-- Extract the Diamond feedback content
+- **Diamond operates as @graphite-app[bot]** - look for this username specifically
+- Filter comments where the author login is "graphite-app" or contains "graphite-app[bot]"
+- Diamond provides:
+  - Code review suggestions with inline comments on specific lines
+  - Empty review bodies (actual feedback is in review comments)
+  - Comments marked "_Spotted by Diamond_" at the end
+- Extract the Diamond feedback content from review comments, not just top-level reviews
 
 ### Step 4: Analyze Diamond Feedback
 
@@ -135,11 +136,17 @@ gh pr view $PR_NUMBER --json comments,reviews --jq '
   }
 }'
 
-# Filter for Diamond comments
+# Filter for Diamond comments (corrected jq syntax)
 gh pr view $PR_NUMBER --json comments,reviews --jq '
-(.comments[] + .reviews[]) |
-select(.author.login | ascii_downcase | contains("diamond")) |
-{author: .author.login, body: .body, created: .createdAt, id: .id}
+(.comments + .reviews)[] |
+select(.author.login | contains("graphite-app")) |
+{author: .author.login, body: .body, created: (.createdAt // .submittedAt), id: .id}
+'
+
+# Get Diamond review comments (inline suggestions)
+gh api repos/OWNER/REPO/pulls/$PR_NUMBER/comments --jq '
+.[] | select(.user.login | contains("graphite-app")) |
+{author: .user.login, body: .body, path: .path, line: .line, created: .created_at}
 '
 
 # Mark comments as resolved
