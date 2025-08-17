@@ -1,5 +1,6 @@
 """AI interaction and input type handling for scaffold branch command."""
 
+import asyncio
 import os
 from abc import ABC
 from contextlib import nullcontext
@@ -12,7 +13,7 @@ import anthropic
 import click
 from dagster_dg_core.context import DgContext
 
-from dagster_dg_cli.cli.scaffold.branch.claude.client import ClaudeClient
+from dagster_dg_cli.cli.scaffold.branch.claude.sdk_client import ClaudeSDKClient
 from dagster_dg_cli.cli.scaffold.branch.diagnostics import ClaudeDiagnosticsService
 from dagster_dg_cli.utils.ui import daggy_spinner_context
 
@@ -345,14 +346,14 @@ def scaffold_content_for_prompt(
     diagnostics: ClaudeDiagnosticsService,
     use_spinner: bool = True,
 ) -> None:
-    """Scaffolds content for the user's prompt."""
+    """Scaffolds content for the user's prompt using Claude Code SDK."""
     context_str = input_type.get_context(user_input)
     prompt = load_scaffolding_prompt(context_str)
     allowed_tools = get_allowed_commands_scaffolding() + input_type.additional_allowed_tools()
 
     diagnostics.info(
         "content_scaffolding_start",
-        "Starting content scaffolding",
+        "Starting content scaffolding with Claude Code SDK",
         {
             "input_type": input_type.__name__,
             "context_length": len(context_str),
@@ -371,28 +372,36 @@ def scaffold_content_for_prompt(
     start_time = perf_counter()
     with spinner_ctx as spinner:
         try:
-            claude_interface = ClaudeClient(diagnostics)
-            claude_interface.invoke(
-                prompt=prompt,
-                allowed_tools=allowed_tools,
-                output_channel=spinner,
-                disallowed_tools=["Bash(python:*)", "WebSearch", "WebFetch"],
-                verbose=False,
+            claude_sdk = ClaudeSDKClient(diagnostics)
+
+            # Run the async SDK operation
+            messages = asyncio.run(
+                claude_sdk.scaffold_with_streaming(
+                    prompt=prompt,
+                    allowed_tools=allowed_tools,
+                    output_channel=spinner,
+                    disallowed_tools=["Bash(python:*)", "WebSearch", "WebFetch"],
+                    verbose=False,
+                )
             )
+
             duration_ms = (perf_counter() - start_time) * 1000
 
-            # AI interaction is already logged by invoke_claude
+            # AI interaction is already logged by SDK client
             diagnostics.info(
                 "content_scaffolding_completed",
-                "Content scaffolding completed successfully",
-                {"duration_ms": duration_ms},
+                "Content scaffolding completed successfully with SDK",
+                {
+                    "duration_ms": duration_ms,
+                    "messages_count": len(messages),
+                },
             )
         except Exception as e:
             duration_ms = (perf_counter() - start_time) * 1000
 
             diagnostics.error(
                 "content_scaffolding_failed",
-                "Content scaffolding failed",
+                "Content scaffolding failed with SDK",
                 {
                     "error_type": type(e).__name__,
                     "error_message": str(e),

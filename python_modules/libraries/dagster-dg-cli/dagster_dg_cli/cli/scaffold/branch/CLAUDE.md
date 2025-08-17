@@ -66,10 +66,8 @@ dagster_dg_cli/cli/scaffold/branch/
 
 ### validation.py
 
-- **Purpose**: Claude SDK message validation and type definitions
-- **Responsibilities**: Type safety for Claude CLI integration, message validation
-- **Dependencies**: dagster_shared.record
-- **Usage**: Ensures compatibility with Claude Code SDK message formats
+- **Purpose**: REMOVED - Official Claude SDK types are used directly
+- **Migration**: Replaced with official claude-code-sdk message types
 
 ### diagnostics.py
 
@@ -83,28 +81,19 @@ dagster_dg_cli/cli/scaffold/branch/
   - JSON-structured output with correlation IDs
   - Automatic log rotation and file management
 
-### claude/ (Claude CLI Integration Subsystem)
+### claude/ (Claude Code SDK Integration Subsystem)
 
-#### claude/client.py
+#### claude/sdk_client.py
 
-- **Purpose**: Low-level Claude CLI execution and process management
-- **Responsibilities**: CLI process orchestration, retry logic, cost tracking, conversation management
-- **Dependencies**: subprocess, json, diagnostics.py, parsing.py, rendering.py, validation.py
-- **Features**: Automatic retry logic, type coercion, cost tracking, conversation history
+- **Purpose**: Claude Code SDK integration wrapper
+- **Responsibilities**: SDK orchestration, diagnostics integration, output streaming
+- **Dependencies**: claude-code-sdk, diagnostics.py
+- **Features**: Async streaming, official SDK types, automatic error handling, cost tracking
 
-#### claude/parsing.py
-
-- **Purpose**: SDK message parsing and validation
-- **Responsibilities**: Converting raw Claude CLI output to structured message objects
-- **Dependencies**: validation.py for message types
-- **Usage**: Transforms CLI stdout/stderr into type-safe message objects
-
-#### claude/rendering.py
-
-- **Purpose**: Output formatting and rendering for Claude responses
-- **Responsibilities**: Clean presentation of Claude responses to users
-- **Dependencies**: validation.py for message types
-- **Usage**: User-facing output formatting and display
+#### Removed Files (Migrated to SDK):
+- **claude/client.py**: REMOVED - Replaced with SDK calls (~332 lines → ~200 lines)  
+- **claude/parsing.py**: REMOVED - SDK handles message parsing automatically
+- **claude/rendering.py**: REMOVED - SDK provides built-in message formatting
 
 ### ui/
 
@@ -123,8 +112,8 @@ dagster_dg_cli/cli/scaffold/branch/
 
 1. **Diagnostics Initialization**: command.py → diagnostics.py (instance creation with correlation ID)
 2. **Input Processing**: command.py → ai.py (input type classification with diagnostics instance passed)
-3. **AI Generation**: ai.py → prompts/ (template loading) → claude/ subsystem (structured Claude CLI interaction)
-4. **Claude CLI Execution**: claude/client.py → claude/parsing.py → validation.py (message validation) → claude/rendering.py
+3. **AI Generation**: ai.py → prompts/ (template loading) → claude/ subsystem (Claude Code SDK interaction)
+4. **Claude SDK Execution**: claude/sdk_client.py → claude-code-sdk (official SDK) → streaming output
 5. **Git Operations**: command.py → git.py (branch creation, commits, PR with performance timing)
 6. **Session Recording**: command.py → models.py (data persistence)
 7. **Diagnostics Output**: command.py → diagnostics.py (flush instance to JSON files on completion)
@@ -133,9 +122,9 @@ dagster_dg_cli/cli/scaffold/branch/
 
 1. **Service Creation**: `create_claude_diagnostics_service()` creates service instance with correlation ID
 2. **Event Logging**: All modules log events through passed diagnostics instance
-3. **AI Interaction Capture**: claude/client.py captures all Claude CLI interactions with structured message parsing
+3. **AI Interaction Capture**: claude/sdk_client.py captures all Claude SDK interactions with official message types
 4. **Performance Metrics**: Context managers time operations across command execution
-5. **Message Validation**: validation.py ensures type safety for all Claude SDK messages
+5. **Message Validation**: claude-code-sdk provides built-in type safety with official message types
 6. **Output Generation**: JSON files written to `.dg/diagnostics/` with structured data
 
 ## Key Patterns
@@ -144,8 +133,8 @@ dagster_dg_cli/cli/scaffold/branch/
 - **Template System**: External markdown files for AI prompts enable easy modification
 - **Error Handling**: Consistent `click.ClickException` usage across git operations
 - **Modular Design**: Clear separation between CLI, AI, Git, and data concerns
-- **Claude CLI Abstraction**: claude/ subsystem provides reliable, type-safe Claude CLI integration
-- **Message Validation**: Strong typing with validation.py ensures Claude SDK compatibility
+- **Claude SDK Integration**: claude/ subsystem provides reliable, type-safe Claude Code SDK integration
+- **Official Types**: Uses official claude-code-sdk message types for guaranteed compatibility
 - **Diagnostics Pattern**: Instance-based service passed explicitly to avoid global singletons
 - **Correlation Tracking**: All diagnostics events tagged with correlation ID for request tracing
 - **Performance Monitoring**: Context managers and decorators for non-intrusive timing
@@ -153,12 +142,12 @@ dagster_dg_cli/cli/scaffold/branch/
 ## Integration Points
 
 - **External Commands**: `gh` (GitHub CLI), `git`, `dg` commands
-- **AI Service**: Claude CLI via claude/ subsystem (type-safe message handling)
+- **AI Service**: Claude Code SDK via claude/ subsystem (official SDK integration)
 - **UI Components**: daggy_spinner_context for progress indication
 - **Configuration**: DgContext for workspace/project settings
 - **Diagnostics Storage**: `.dg/diagnostics/` directory for structured logging output
 - **CLI Options**: `--diagnostics-level` (off/error/info/debug), `--diagnostics-dir`
-- **SDK Compatibility**: validation.py provides Claude Code SDK message types for proper integration
+- **SDK Compatibility**: claude-code-sdk provides official message types for guaranteed integration
 
 ## Package Distribution
 
