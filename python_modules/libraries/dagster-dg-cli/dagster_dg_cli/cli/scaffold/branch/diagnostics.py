@@ -210,6 +210,31 @@ class ClaudeDiagnosticsService:
         )
 
     @contextmanager
+    def time_operation(self, operation: str, phase: str) -> Generator[None, None, None]:
+        """Context manager for timing operations and logging performance metrics.
+
+        Args:
+            operation: Name of the operation being timed
+            phase: Phase or category of the operation
+
+        Yields:
+            None
+        """
+        start_time = perf_counter()
+        try:
+            yield
+        finally:
+            duration_ms = (perf_counter() - start_time) * 1000
+            metrics = PerformanceMetrics(
+                correlation_id=self.correlation_id,
+                timestamp=datetime.now().isoformat(),
+                operation=operation,
+                duration_ms=duration_ms,
+                phase=phase,
+            )
+            self.log_performance(metrics)
+
+    @contextmanager
     def claude_operation_error_boundary(
         self, *, operation_name: str, error_code: str, error_message: str, **additional_context: Any
     ) -> Generator[None, None, None]:
