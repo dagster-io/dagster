@@ -2,6 +2,7 @@
 
 from unittest.mock import patch
 
+from automation.dagster_dev.commands.diff_summarizer import ChangeType, SmartDiffSummary
 from click.testing import CliRunner
 
 
@@ -34,12 +35,19 @@ class TestAiReviewSummarize:
         with patch(
             "automation.dagster_dev.commands.ai_review_summarize.get_smart_diff_summary"
         ) as mock_diff:
-            mock_diff.return_value = {
-                "summary": "Test summary",
-                "confidence": 0.8,
-                "change_type": "feature",
-                "files_changed": ["test.py"],
-            }
+            mock_diff.return_value = SmartDiffSummary(
+                change_category=ChangeType.NEW_FEATURE,
+                files_changed=1,
+                additions=10,
+                deletions=2,
+                functions=[],
+                classes=[],
+                imports=[],
+                key_implementation_details="Test details",
+                api_changes=[],
+                summary_confidence=0.8,
+                needs_detailed_review=False,
+            )
 
             from automation.dagster_dev.commands.ai_review_summarize import ai_review_summarize
 

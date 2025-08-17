@@ -1,7 +1,7 @@
 """Simple smoke tests for ai-review-analyze command."""
 
-import tempfile
-from unittest.mock import patch
+import json
+from unittest.mock import MagicMock, patch
 
 from click.testing import CliRunner
 
@@ -26,18 +26,28 @@ class TestAiReviewAnalyzeSmoke:
 
         assert result.exit_code == 0
         assert "ai-review-analyze" in result.output
-        assert "--output" in result.output
-        assert "--stack-only" in result.output
+        assert "--human" in result.output
+        assert "--json" in result.output
+        assert "--minimal" in result.output
 
-    def test_missing_output_parameter(self):
-        """Test that output parameter is required."""
+    def test_command_execution_without_errors(self):
+        """Test command executes without argument parsing errors."""
         from automation.dagster_dev.commands.ai_review_analyze import ai_review_analyze
 
         runner = CliRunner()
-        result = runner.invoke(ai_review_analyze, [])
+        result = runner.invoke(ai_review_analyze, ["--json"])
 
-        assert result.exit_code != 0
-        assert "Missing option '--output'" in result.output
+        # Command may succeed or fail depending on environment,
+        # but it shouldn't crash due to argument parsing issues
+        if result.exit_code == 0:
+            # Success - verify it produces JSON
+            import json
+
+            data = json.loads(result.output)
+            assert isinstance(data, dict)
+        else:
+            # Failure should be graceful with error message
+            assert "Error" in result.output
 
     @patch("automation.dagster_dev.commands.ai_review_analyze.subprocess.run")
     def test_subprocess_error_handling(self, mock_run):
@@ -49,11 +59,10 @@ class TestAiReviewAnalyzeSmoke:
         from automation.dagster_dev.commands.ai_review_analyze import ai_review_analyze
 
         runner = CliRunner()
-        with tempfile.NamedTemporaryFile(suffix=".json") as tmp:
-            result = runner.invoke(ai_review_analyze, ["--output", tmp.name])
+        result = runner.invoke(ai_review_analyze, ["--json"])
 
-            assert result.exit_code == 1
-            assert "Error" in result.output
+        assert result.exit_code == 1
+        assert "Error" in result.output
 
     def test_valid_flags_accepted(self):
         """Test that valid command flags are accepted."""
@@ -65,5 +74,52 @@ class TestAiReviewAnalyzeSmoke:
 
         assert result.exit_code == 0
         # Check that key flags are documented
-        assert "--stack-only" in result.output
-        assert "--output" in result.output
+        assert "--minimal" in result.output
+        assert "--human" in result.output
+        assert "--json" in result.output
+
+    @patch("automation.dagster_dev.commands.ai_review_analyze.subprocess.run")
+    def test_full_command_with_mocked_dependencies(self, mock_run):
+        """Test command with all dependencies properly mocked."""
+        # Mock all subprocess calls that the command makes
+        mock_responses = {
+            ("git", "branch", "--show-current"): "test-branch\n",
+            (
+                "dagster-dev",
+                "gt-stack",
+                "--current-only",
+            ): '[{"name": "test-branch", "is_current": true}]',
+            ("dagster-dev", "gt-stack"): '[{"name": "test-branch", "is_current": true}]',
+            ("git", "diff", "--stat", "master..test-branch"): "1 file changed, 5 insertions(+)\n",
+            ("git", "diff", "master..test-branch"): "+added line\n",
+            ("git", "log", "--oneline", "master..test-branch"): "abc123 test commit\n",
+            ("gh", "pr", "view", "--json", "number", "--jq", ".number"): "123\n",
+            ("git", "status", "--porcelain"): "",
+            ("gt", "log", "--stack"): "abc123 test commit\n",
+        }
+
+        def side_effect(cmd, **kwargs):
+            cmd_key = tuple(cmd)
+            mock_result = MagicMock()
+            if cmd_key in mock_responses:
+                mock_result.stdout = mock_responses[cmd_key]
+                mock_result.returncode = 0
+                return mock_result
+            else:
+                # Default response for unknown commands
+                mock_result.stdout = ""
+                mock_result.returncode = 0
+                return mock_result
+
+        mock_run.side_effect = side_effect
+
+        from automation.dagster_dev.commands.ai_review_analyze import ai_review_analyze
+
+        runner = CliRunner()
+        result = runner.invoke(ai_review_analyze, ["--json"])
+
+        assert result.exit_code == 0
+        # Should produce valid JSON output
+        output_data = json.loads(result.output)
+        assert "current_branch" in output_data
+        assert "repository_state" in output_data
