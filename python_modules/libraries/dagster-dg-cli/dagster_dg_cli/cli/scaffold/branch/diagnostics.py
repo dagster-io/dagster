@@ -8,7 +8,7 @@ from contextlib import contextmanager
 from datetime import datetime
 from pathlib import Path
 from time import perf_counter
-from typing import Any, Literal, Optional, Union
+from typing import Any, Literal, Optional, Union, get_args
 
 from dagster_dg_cli.cli.scaffold.branch.models import (
     AIInteraction,
@@ -19,6 +19,9 @@ from dagster_dg_cli.cli.scaffold.branch.models import (
 
 # Type alias for diagnostics levels
 DiagnosticsLevel = Literal["off", "error", "info", "debug"]
+
+# Valid diagnostics levels extracted from the Literal type
+VALID_DIAGNOSTICS_LEVELS = get_args(DiagnosticsLevel)
 
 
 class ClaudeDiagnosticsService:
