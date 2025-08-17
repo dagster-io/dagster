@@ -210,21 +210,37 @@ class ClaudeDiagnosticsService:
         )
 
     @contextmanager
-    def time_operation(self, operation: str, phase: str = "default") -> Generator[None, None, None]:
-        """Context manager for timing operations."""
+    def claude_operation_error_boundary(
+        self, *, operation_name: str, error_code: str, error_message: str, **additional_context: Any
+    ) -> Generator[None, None, None]:
+        """Context manager for Claude operations that handles timing and error logging.
+
+        Args:
+            operation_name: Name of the operation for diagnostics
+            error_code: Specific error code to log on failure
+            error_message: Human-readable error message
+            **additional_context: Additional context to include in error logs
+
+        Raises:
+            Re-raises any exception after logging it
+        """
         start_time = perf_counter()
         try:
             yield
-        finally:
+        except Exception as e:
             duration_ms = (perf_counter() - start_time) * 1000
-            metrics = PerformanceMetrics(
-                correlation_id=self.correlation_id,
-                timestamp=datetime.now().isoformat(),
-                operation=operation,
-                duration_ms=duration_ms,
-                phase=phase,
+
+            self.error(
+                error_code,
+                error_message,
+                {
+                    "error_type": type(e).__name__,
+                    "error_message": str(e),
+                    "duration_ms": duration_ms,
+                    **additional_context,
+                },
             )
-            self.log_performance(metrics)
+            raise
 
     def flush(self) -> Optional[Path]:
         """Finalize the diagnostics file with session end timestamp."""

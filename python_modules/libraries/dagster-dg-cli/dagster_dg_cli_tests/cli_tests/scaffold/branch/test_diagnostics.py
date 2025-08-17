@@ -164,9 +164,6 @@ class TestClaudeDiagnosticsService:
     def test_time_operation_context_manager(self):
         service = ClaudeDiagnosticsService(level="debug")
 
-        with service.time_operation("test_op", "test_phase"):
-            pass  # Simulate some work
-
         assert len(service.entries) == 1
         entry = service.entries[0]
         assert entry.category == "performance"
