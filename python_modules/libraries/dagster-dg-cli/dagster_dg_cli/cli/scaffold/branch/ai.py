@@ -12,8 +12,8 @@ import click
 from dagster_dg_core.context import DgContext
 from dagster_shared.record import record
 
-from dagster_dg_cli.cli.scaffold.branch.claude.sdk_client import ClaudeSDKClient
 from dagster_dg_cli.cli.scaffold.branch.claude.diagnostics import ClaudeDiagnostics
+from dagster_dg_cli.cli.scaffold.branch.claude.sdk_client import ClaudeSDKClient
 from dagster_dg_cli.utils.ui import daggy_spinner_context
 
 
