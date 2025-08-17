@@ -8,7 +8,6 @@ from pathlib import Path
 from time import perf_counter
 from typing import Any
 
-import anthropic
 import click
 from dagster_dg_core.context import DgContext
 from dagster_shared.record import record
@@ -56,6 +55,9 @@ def invoke_anthropic_api_direct(
     )
 
     try:
+        # Lazy import to avoid performance regression
+        import anthropic
+
         # Get API key from environment
         api_key = os.environ.get("ANTHROPIC_API_KEY")
         if not api_key:
