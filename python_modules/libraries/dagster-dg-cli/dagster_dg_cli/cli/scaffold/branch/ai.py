@@ -374,14 +374,15 @@ def scaffold_content_for_prompt(
         try:
             claude_sdk = ClaudeSDKClient(diagnostics)
 
-            # Run the async SDK operation
+            # Run the async SDK operation with verbose mode for debug diagnostics
+            verbose_mode = diagnostics.level == "debug"
             messages = asyncio.run(
                 claude_sdk.scaffold_with_streaming(
                     prompt=prompt,
                     allowed_tools=allowed_tools,
                     output_channel=spinner,
                     disallowed_tools=["Bash(python:*)", "WebSearch", "WebFetch"],
-                    verbose=False,
+                    verbose=verbose_mode,
                 )
             )
 
