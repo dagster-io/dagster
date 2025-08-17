@@ -14,7 +14,7 @@ from dagster_dg_core.context import DgContext
 from dagster_dg_core.shared_options import dg_global_options, dg_path_options
 from dagster_dg_core.utils import DgClickCommand
 from dagster_dg_core.utils.telemetry import cli_telemetry_wrapper
-from dagster_shared.record import as_dict
+from dagster_shared.record import as_dict, replace
 
 from dagster_dg_cli.cli.scaffold.branch.ai import (
     INPUT_TYPES,
@@ -23,6 +23,7 @@ from dagster_dg_cli.cli.scaffold.branch.ai import (
     scaffold_content_for_prompt,
 )
 from dagster_dg_cli.cli.scaffold.branch.diagnostics import (
+    VALID_DIAGNOSTICS_LEVELS,
     DiagnosticsLevel,
     create_claude_diagnostics_service,
 )
@@ -60,7 +61,7 @@ def is_prompt_valid_git_branch_name(prompt: str) -> bool:
 )
 @click.option(
     "--diagnostics-level",
-    type=click.Choice(["off", "error", "info", "debug"]),
+    type=click.Choice(VALID_DIAGNOSTICS_LEVELS),
     default="off",
     help="Enable structured diagnostics logging at specified level (default: off).",
 )
@@ -93,9 +94,8 @@ def scaffold_branch_command(
     if not prompt_text:
         raise click.UsageError("Prompt cannot be empty")
 
-    valid_diagnostics_levels = {"off", "error", "info", "debug"}
-    if diagnostics_level not in valid_diagnostics_levels:
-        raise click.UsageError(f"diagnostics_level must be one of {valid_diagnostics_levels}")
+    # DiagnosticsLevel is already validated by click.Choice, so this check is redundant
+    # but kept for explicit validation in case of programmatic usage
     # Create Claude diagnostics service instance
     diagnostics = create_claude_diagnostics_service(
         level=diagnostics_level,
@@ -181,7 +181,7 @@ def scaffold_branch_command(
                     )
             # Update final branch name with suffix to avoid conflicts
             final_branch_name = branch_generation.original_branch_name + "-" + str(uuid.uuid4())[:8]
-            branch_generation.final_branch_name = final_branch_name
+            branch_generation = replace(branch_generation, final_branch_name=final_branch_name)
 
             generated_outputs["branch_name"] = branch_generation.original_branch_name
             generated_outputs["pr_title"] = branch_generation.pr_title

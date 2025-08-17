@@ -4,7 +4,6 @@ import asyncio
 import os
 from abc import ABC
 from contextlib import nullcontext
-from dataclasses import dataclass
 from pathlib import Path
 from time import perf_counter
 from typing import Any
@@ -12,13 +11,14 @@ from typing import Any
 import anthropic
 import click
 from dagster_dg_core.context import DgContext
+from dagster_shared.record import record
 
 from dagster_dg_cli.cli.scaffold.branch.claude.sdk_client import ClaudeSDKClient
 from dagster_dg_cli.cli.scaffold.branch.diagnostics import ClaudeDiagnosticsService
 from dagster_dg_cli.utils.ui import daggy_spinner_context
 
 
-@dataclass
+@record
 class BranchNameGeneration:
     """Branch name generation result."""
 
