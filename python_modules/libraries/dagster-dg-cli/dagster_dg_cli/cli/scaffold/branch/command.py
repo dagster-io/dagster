@@ -82,7 +82,11 @@ def scaffold_branch_command(
     diagnostics_dir: Optional[Path],
     **other_options: object,
 ) -> None:
-    """Scaffold a new branch."""
+    """Scaffold a new branch (requires Python 3.10+)."""
+    import sys
+
+    if sys.version_info < (3, 10):
+        raise click.ClickException("dg scaffold branch requires Python 3.10 or higher")
     # Create Claude diagnostics service instance
     diagnostics = create_claude_diagnostics_service(
         level=diagnostics_level,
