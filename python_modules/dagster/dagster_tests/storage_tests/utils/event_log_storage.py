@@ -484,7 +484,7 @@ class TestEventLogStorage:
     def supports_get_logs_for_all_runs_by_log_id(self):
         return True
 
-    def supports_multiple_event_type_queries(self):
+    def supports_multiple_event_type_queries(self) -> bool:
         return True
 
     def set_default_op_concurrency(self, instance, storage, limit):

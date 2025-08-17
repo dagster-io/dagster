@@ -42,8 +42,8 @@ def _timing_to_metadata(timings: Sequence[Mapping[str, Any]]) -> Mapping[str, Ra
             continue
 
         # dateutil does not properly expose its modules to static checkers
-        started_at = dateutil.parser.isoparse(timing["started_at"])  # type: ignore
-        completed_at = dateutil.parser.isoparse(timing["completed_at"])  # type: ignore
+        started_at = dateutil.parser.isoparse(timing["started_at"])
+        completed_at = dateutil.parser.isoparse(timing["completed_at"])
         duration = completed_at - started_at
         metadata.update(
             {
