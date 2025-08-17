@@ -1,4 +1,5 @@
-type: "dagster_test.components.simple_pipes_script_asset.SimplePipesScriptComponent"
+type: "my.SimpleComponent"
 attributes:
-  asset_key: "example_string"
-  filename: "example_string"
+  name: "example_string"
+  count: 1
+  enabled: true

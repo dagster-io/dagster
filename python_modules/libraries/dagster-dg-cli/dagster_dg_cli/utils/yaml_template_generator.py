@@ -35,23 +35,34 @@ def _get_example_value(
     # Handle anyOf schemas by preferring non-string types over string types
     # Do this BEFORE using schema examples to ensure we show the true underlying data structure
     if "anyOf" in field_schema:
+        ref_options = []
         non_string_options = []
         string_options = []
 
         for option in field_schema["anyOf"]:
             if option.get("type") == "null":
                 continue
+            elif "$ref" in option:
+                ref_options.append(option)
             elif option.get("type") == "string":
                 string_options.append(option)
             else:
                 non_string_options.append(option)
 
-        # Prefer non-string types (array, object, etc.) over string types
-        # String types are typically for templating, but we want to show the actual data structure
-        if non_string_options:
-            return _get_example_value(non_string_options[0], full_schema)
-        elif string_options:
-            return _get_example_value(string_options[0], full_schema)
+        # For union types with multiple $ref objects, use the first complex $ref option
+        if len(ref_options) > 1:
+            # Find the first $ref that resolves to a complex object with properties
+            for ref_option in ref_options:
+                ref_schema = _resolve_ref(ref_option["$ref"], full_schema)
+                if ref_schema and ref_schema.get("properties"):
+                    return _get_example_value(ref_schema, full_schema)
+            # Fall back to first $ref if none have properties
+            return _get_example_value(ref_options[0], full_schema)
+
+        # Prefer $ref options, then non-string types, then string types
+        all_options = ref_options + non_string_options + string_options
+        if all_options:
+            return _get_example_value(all_options[0], full_schema)
 
         # If all options are null, return null
         return None
@@ -136,6 +147,39 @@ def _generate_example_section(component_type: str, schema: dict[str, Any]) -> st
     return "\n".join(lines)
 
 
+def _generate_union_type_schema(
+    lines: list[str],
+    field_name: str,
+    ref_options: list[dict[str, Any]],
+    required_text: str,
+    description: str,
+    full_schema: dict[str, Any],
+    indent: str = "",
+) -> None:
+    """Generate schema documentation for union types with multiple $ref objects."""
+    lines.append(f"{indent}{field_name}:  # {required_text}: {description}")
+    lines.append(f"{indent}  # Choose one of the following types:")
+
+    for i, option in enumerate(ref_options, 1):
+        ref_path = option["$ref"]
+        ref_name = ref_path.split("/")[-1]
+        ref_schema = _resolve_ref(ref_path, full_schema)
+
+        if ref_schema and ref_schema.get("properties"):
+            lines.append(f"{indent}  # Option {i} - {ref_name}:")
+            sub_required = set(ref_schema.get("required", []))
+            for sub_field_name, sub_field_schema in ref_schema["properties"].items():
+                _add_field_lines(
+                    lines,
+                    f"# {sub_field_name}",
+                    sub_field_schema,
+                    sub_required,
+                    full_schema,
+                    indent + "  ",
+                )
+            lines.append(f"{indent}  #")
+
+
 def _get_field_type_description(field_schema: dict[str, Any]) -> str:
     """Get a user-friendly type description for a field schema."""
     # Handle anyOf schemas
@@ -187,9 +231,19 @@ def _add_field_lines(
             _add_field_lines(lines, field_name, ref_schema, required_fields, full_schema, indent)
             return
 
-    # Handle anyOf schemas - check for complex nested objects
+    # Handle anyOf schemas - check for union types with multiple $ref objects
     if "anyOf" in field_schema:
-        # Check if any anyOf option is a complex object that should be expanded
+        # Collect all $ref options (potential union type)
+        ref_options = [option for option in field_schema["anyOf"] if "$ref" in option]
+
+        # If we have multiple $ref options, treat as union type
+        if len(ref_options) > 1:
+            _generate_union_type_schema(
+                lines, field_name, ref_options, required_text, description, full_schema, indent
+            )
+            return
+
+        # Check if any anyOf option is a complex object that should be expanded (existing logic)
         complex_option = None
         for option in field_schema["anyOf"]:
             if option.get("type") == "array":
