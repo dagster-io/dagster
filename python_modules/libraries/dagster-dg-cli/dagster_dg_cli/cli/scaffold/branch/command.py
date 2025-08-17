@@ -22,12 +22,12 @@ from dagster_dg_cli.cli.scaffold.branch.ai import (
     get_branch_name_and_pr_title_from_prompt,
     scaffold_content_for_prompt,
 )
-from dagster_dg_cli.cli.scaffold.branch.claude.client import ClaudeClient
 from dagster_dg_cli.cli.scaffold.branch.claude.diagnostics import (
     VALID_DIAGNOSTICS_LEVELS,
     DiagnosticsLevel,
     create_claude_diagnostics_service,
 )
+from dagster_dg_cli.cli.scaffold.branch.claude.sdk_client import ClaudeSDKClient
 from dagster_dg_cli.cli.scaffold.branch.git import (
     check_git_repository,
     create_branch_and_pr,
@@ -267,7 +267,7 @@ def execute_scaffold_branch_command(
 
         # Always start with planning phase
         with diagnostics.time_operation("planning_mode", "planning"):
-            claude_client = ClaudeClient(diagnostics, model=planning_model)
+            claude_client = ClaudeSDKClient(diagnostics)
             plan_generator = PlanGenerator(claude_client, diagnostics)
 
             # Create planning context
@@ -283,18 +283,14 @@ def execute_scaffold_branch_command(
 
             # Generate initial plan
             click.echo("🎯 Generating implementation plan...")
-            click.echo(
-                f'📋 Request: "{prompt_text[:60]}{"..." if len(prompt_text) > 60 else ""}"'
-            )
+            click.echo(f'📋 Request: "{prompt_text[:60]}{"..." if len(prompt_text) > 60 else ""}"')
             click.echo(
                 f"🤖 Planning Model: {planning_model} (reasoning-focused for complex planning)"
             )
             click.echo(f"📁 Project: {dg_context.root_path}")
             click.echo(f"⚙️  Input Type: {input_type.__name__}")
             spinner_ctx = (
-                daggy_spinner_context("Generating plan")
-                if not disable_progress
-                else nullcontext()
+                daggy_spinner_context("Generating plan") if not disable_progress else nullcontext()
             )
             with spinner_ctx:
                 initial_plan = plan_generator.generate_initial_plan(planning_context)

@@ -5,17 +5,18 @@ implementation plans before code execution, enables plan review and refinement,
 and provides bidirectional communication with Claude for interactive sessions.
 """
 
+import asyncio
 from typing import Any, Optional
 
 import click
+from claude_code_sdk.types import AssistantMessage, TextBlock
 from dagster_dg_core.context import DgContext
 from dagster_shared.record import record
 
 from dagster_dg_cli.cli.scaffold.branch.ai import PrintOutputChannel
-from dagster_dg_cli.cli.scaffold.branch.claude.client import ClaudeClient
 from dagster_dg_cli.cli.scaffold.branch.claude.diagnostics import ClaudeDiagnostics
+from dagster_dg_cli.cli.scaffold.branch.claude.sdk_client import ClaudeSDKClient
 from dagster_dg_cli.cli.scaffold.branch.constants import ALLOWED_COMMANDS_PLANNING
-from dagster_dg_cli.cli.scaffold.branch.validation import ClaudeSuccessResult
 
 
 @record
@@ -53,7 +54,7 @@ class PlanningContext:
 class PlanGenerator:
     """Main orchestrator for plan generation and refinement."""
 
-    def __init__(self, claude_client: ClaudeClient, diagnostics: ClaudeDiagnostics):
+    def __init__(self, claude_client: ClaudeSDKClient, diagnostics: ClaudeDiagnostics):
         """Initialize the plan generator.
 
         Args:
@@ -89,12 +90,14 @@ class PlanGenerator:
         allowed_tools = ALLOWED_COMMANDS_PLANNING.copy()
 
         # Use Claude to generate structured plan as markdown
-        messages = self.claude_client.invoke(
-            prompt=prompt,
-            allowed_tools=allowed_tools,
-            output_channel=PrintOutputChannel(),
-            disallowed_tools=["Bash(python:*)", "WebSearch", "WebFetch"],
-            verbose=False,
+        messages = asyncio.run(
+            self.claude_client.scaffold_with_streaming(
+                prompt=prompt,
+                allowed_tools=allowed_tools,
+                output_channel=PrintOutputChannel(),
+                disallowed_tools=["Bash(python:*)", "WebSearch", "WebFetch"],
+                verbose=False,
+            )
         )
 
         # Extract the plan content from Claude's response
@@ -143,12 +146,14 @@ class PlanGenerator:
 
         allowed_tools = ALLOWED_COMMANDS_PLANNING.copy()
 
-        messages = self.claude_client.invoke(
-            prompt=prompt,
-            allowed_tools=allowed_tools,
-            output_channel=PrintOutputChannel(),
-            disallowed_tools=["Bash(python:*)", "WebSearch", "WebFetch"],
-            verbose=False,
+        messages = asyncio.run(
+            self.claude_client.scaffold_with_streaming(
+                prompt=prompt,
+                allowed_tools=allowed_tools,
+                output_channel=PrintOutputChannel(),
+                disallowed_tools=["Bash(python:*)", "WebSearch", "WebFetch"],
+                verbose=False,
+            )
         )
 
         # Extract refined plan content from Claude's response
@@ -257,7 +262,7 @@ Provide the complete updated plan in the same markdown format as before."""
             {"message_count": len(messages)},
         )
 
-        # Look specifically for ClaudeSuccessResult and extract the result property
+        # Look specifically for AssistantMessage and extract the text content
         plan_content = None
         success_result_found = False
         success_message = None
@@ -272,49 +277,54 @@ Provide the complete updated plan in the same markdown format as before."""
                 },
             )
 
-            if isinstance(message, ClaudeSuccessResult):
+            if isinstance(message, AssistantMessage):
                 success_result_found = True
                 success_message = message  # Store for metadata display
-                if message.result and message.result.strip():
-                    plan_content = message.result.strip()
+                # Extract text from TextBlock content
+                text_content = ""
+                for block in message.content:
+                    if isinstance(block, TextBlock):
+                        text_content += block.text
+
+                if text_content and text_content.strip():
+                    plan_content = text_content.strip()
                     self.diagnostics.info(
                         "plan_success_result_found",
-                        f"Found ClaudeSuccessResult with {len(plan_content)} chars of content",
+                        f"Found AssistantMessage with {len(plan_content)} chars of content",
                         {
-                            "duration_ms": message.duration_ms,
-                            "num_turns": message.num_turns,
-                            "total_cost_usd": message.total_cost_usd,
+                            "message_index": i,
+                            "content_blocks": len(message.content),
                         },
                     )
                     break  # Found what we need, stop processing
                 else:
                     self.diagnostics.error(
                         "plan_success_result_empty",
-                        "Found ClaudeSuccessResult but result field is empty",
+                        "Found AssistantMessage but text content is empty",
                         {"message_index": i},
                     )
 
-        # If we didn't find ClaudeSuccessResult, error and exit
+        # If we didn't find AssistantMessage, error and exit
         if not success_result_found:
             message_types = [type(msg).__name__ for msg in messages]
             self.diagnostics.error(
                 "plan_no_success_result",
-                "No ClaudeSuccessResult found in Claude response",
+                "No AssistantMessage found in Claude response",
                 {
                     "message_count": len(messages),
                     "message_types": message_types,
                 },
             )
             raise Exception(
-                f"Expected ClaudeSuccessResult from Claude CLI but got {len(messages)} message(s) "
-                f"of types: {message_types}. This indicates a problem with Claude CLI communication "
-                f"or model response. Check your Claude CLI installation and try again."
+                f"Expected AssistantMessage from Claude SDK but got {len(messages)} message(s) "
+                f"of types: {message_types}. This indicates a problem with Claude SDK communication "
+                f"or model response. Check your Claude SDK installation and try again."
             )
 
-        # If we found ClaudeSuccessResult but no content, error and exit
+        # If we found AssistantMessage but no content, error and exit
         if not plan_content:
             raise Exception(
-                "Found ClaudeSuccessResult but the result field was empty. "
+                "Found AssistantMessage but the text content was empty. "
                 "Claude generated a response but provided no plan content."
             )
 
@@ -324,9 +334,8 @@ Provide the complete updated plan in the same markdown format as before."""
         if success_message:
             click.echo("✅ Plan generated successfully!")
             click.echo(f"📊 Response: {len(plan_content):,} characters")
-            click.echo(
-                f"⏱️  Duration: {success_message.duration_ms / 1000:.1f}s • Cost: ${success_message.total_cost_usd:.4f} • {success_message.num_turns} Claude API calls"
-            )
+            # Note: Duration, cost, and API call metrics are tracked by the SDK client
+            click.echo("⏱️  Plan generation completed via Claude SDK")
 
         self.diagnostics.debug(
             "plan_extraction_result",
@@ -340,7 +349,7 @@ Provide the complete updated plan in the same markdown format as before."""
         # Final validation - this should not happen since we validated above, but just in case
         if not combined_content or len(combined_content) < 100:
             raise Exception(
-                f"ClaudeSuccessResult contained only {len(combined_content)} characters of content, "
+                f"AssistantMessage contained only {len(combined_content)} characters of content, "
                 f"which is too short for a meaningful plan. Expected at least 100 characters."
             )
 
