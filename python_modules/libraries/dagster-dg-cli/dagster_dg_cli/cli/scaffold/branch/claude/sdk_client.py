@@ -85,10 +85,16 @@ class ClaudeSDKClient:
             },
         )
 
-        start_time = perf_counter()
         collected_messages: list[Message] = []
 
-        try:
+        with self.diagnostics.claude_operation_error_boundary(
+            operation_name="claude_sdk_scaffold",
+            error_code="claude_sdk_scaffold_failed",
+            error_message="Claude SDK scaffolding operation failed",
+            prompt_length=len(prompt),
+        ):
+            start_time = perf_counter()
+
             # Configure SDK options
             options = ClaudeCodeOptions(
                 allowed_tools=allowed_tools,
@@ -140,21 +146,6 @@ class ClaudeSDKClient:
             )
 
             return collected_messages
-
-        except Exception as e:
-            duration_ms = (perf_counter() - start_time) * 1000
-
-            self.diagnostics.error(
-                "claude_sdk_scaffold_failed",
-                "Claude SDK scaffolding operation failed",
-                {
-                    "error_type": type(e).__name__,
-                    "error_message": str(e),
-                    "duration_ms": duration_ms,
-                    "prompt_length": len(prompt),
-                },
-            )
-            raise
 
     def _format_content_blocks(self, blocks: list) -> list[str]:
         """Format content blocks into debug strings.

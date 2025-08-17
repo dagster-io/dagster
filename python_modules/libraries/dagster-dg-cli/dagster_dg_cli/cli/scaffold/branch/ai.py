@@ -54,18 +54,21 @@ def invoke_anthropic_api_direct(
         {"prompt_length": len(prompt)},
     )
 
-    try:
+    # Get API key from environment
+    api_key = os.environ.get("ANTHROPIC_API_KEY")
+    if not api_key:
+        raise ValueError("ANTHROPIC_API_KEY environment variable is required for direct API calls")
+
+    with diagnostics.claude_operation_error_boundary(
+        operation_name=operation_name,
+        error_code=f"{operation_name}_generation_failed",
+        error_message=f"Failed to generate {operation_name} via Anthropic API",
+        prompt_length=len(prompt),
+    ):
+        start_time = perf_counter()
+
         # Lazy import to avoid performance regression
         import anthropic
-
-        # Get API key from environment
-        api_key = os.environ.get("ANTHROPIC_API_KEY")
-        if not api_key:
-            raise ValueError(
-                "ANTHROPIC_API_KEY environment variable is required for direct API calls"
-            )
-
-        start_time = perf_counter()
 
         client = anthropic.Anthropic(api_key=api_key)
 
@@ -111,18 +114,6 @@ def invoke_anthropic_api_direct(
         )
 
         return result
-
-    except Exception as e:
-        diagnostics.error(
-            f"{operation_name}_generation_failed",
-            f"Failed to generate {operation_name} via Anthropic API",
-            {
-                "error_type": type(e).__name__,
-                "error_message": str(e),
-                "prompt_length": len(prompt),
-            },
-        )
-        raise
 
 
 def load_prompt_template(prompt_filename: str, context: str) -> str:
@@ -370,9 +361,13 @@ def scaffold_content_for_prompt(
         else nullcontext(enter_result=PrintOutputChannel())
     )
 
-    start_time = perf_counter()
     with spinner_ctx as spinner:
-        try:
+        with diagnostics.claude_operation_error_boundary(
+            operation_name="content_scaffolding",
+            error_code="content_scaffolding_failed",
+            error_message="Content scaffolding failed with SDK",
+        ):
+            start_time = perf_counter()
             claude_sdk = ClaudeSDKClient(diagnostics)
 
             # Run the async SDK operation with verbose mode for debug diagnostics
@@ -398,16 +393,3 @@ def scaffold_content_for_prompt(
                     "messages_count": len(messages),
                 },
             )
-        except Exception as e:
-            duration_ms = (perf_counter() - start_time) * 1000
-
-            diagnostics.error(
-                "content_scaffolding_failed",
-                "Content scaffolding failed with SDK",
-                {
-                    "error_type": type(e).__name__,
-                    "error_message": str(e),
-                    "duration_ms": duration_ms,
-                },
-            )
-            raise
