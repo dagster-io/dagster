@@ -175,16 +175,47 @@ def test_utils_inspect_component_type_flag_fields_success():
             "--defs-yaml-template",
         )
         assert_runner_result(result)
-        # Check that the output contains the expected YAML template structure
+        # Check that the output contains the expected comprehensive template structure
         output_yaml = result.output.strip()
-        assert "type: dagster_test.components.SimplePipesScriptComponent" in output_yaml
-        assert "attributes:" in output_yaml
-        # Check that it's valid YAML
-        import yaml
+        assert "# Template with instructions" in output_yaml
+        assert "type: <string>  # Optional" in output_yaml
+        assert "attributes:  # Optional: Attributes details" in output_yaml
+        assert "asset_key: <string>  # Required:" in output_yaml
+        assert "filename: <string>  # Required:" in output_yaml
+        assert "# EXAMPLE VALUES:" in output_yaml
+        assert 'type: "dagster_test.components.SimplePipesScriptComponent"' in output_yaml
+        assert 'asset_key: "example_string"' in output_yaml
+        assert 'filename: "example_string"' in output_yaml
 
-        parsed_yaml = yaml.safe_load(output_yaml)
-        assert parsed_yaml["type"] == "dagster_test.components.SimplePipesScriptComponent"
-        assert "attributes" in parsed_yaml
+
+def test_utils_inspect_component_type_defs_yaml_template_full_output():
+    with (
+        ProxyRunner.test(use_fixed_test_components=True) as runner,
+        isolated_components_venv(runner),
+    ):
+        result = runner.invoke(
+            "utils",
+            "inspect-component",
+            "dagster_test.components.SimplePipesScriptComponent",
+            "--defs-yaml-template",
+        )
+        assert_runner_result(result)
+        assert (
+            result.output.strip()
+            == textwrap.dedent("""
+            # Template with instructions
+            type: <string>  # Optional
+            attributes:  # Optional: Attributes details
+              asset_key: <string>  # Required: 
+              filename: <string>  # Required: 
+
+            # EXAMPLE VALUES:
+            type: "dagster_test.components.SimplePipesScriptComponent"
+            attributes:
+              asset_key: "example_string"
+              filename: "example_string"
+        """).strip()
+        )
 
 
 def test_utils_inspect_component_type_multiple_flags_fails() -> None:

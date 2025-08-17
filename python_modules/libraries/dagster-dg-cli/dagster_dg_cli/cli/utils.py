@@ -30,6 +30,8 @@ from dagster_shared import check
 from dagster_shared.serdes.objects import EnvRegistryKey
 from packaging.version import Version
 
+from dagster_dg_cli.utils.yaml_template_generator import generate_comprehensive_defs_yaml_template
+
 DEFAULT_SCHEMA_FOLDER_NAME = ".dg"
 
 
@@ -159,17 +161,16 @@ def _serialize_json_schema(schema: Mapping[str, Any]) -> str:
 
 
 def _generate_defs_yaml_template(component_type_str: str, entry_snap) -> str:
-    """Generate YAML template for a component's defs.yaml file.
+    """Generate comprehensive YAML template for a component's defs.yaml file.
 
-    Uses the existing generate_sample_yaml utility to create a proper template
-    that users can copy and modify for their component configuration.
+    Uses the enhanced template generator to create a detailed template with
+    schema documentation and example values that users can copy and modify
+    for their component configuration.
     """
-    from dagster_shared.yaml_utils.sample_yaml import generate_sample_yaml
-
     # Use the component's existing schema, or empty schema if none available
     component_schema = entry_snap.component_schema or {}
 
-    return generate_sample_yaml(component_type_str, component_schema)
+    return generate_comprehensive_defs_yaml_template(component_type_str, component_schema)
 
 
 def _workspace_entry_for_project(
