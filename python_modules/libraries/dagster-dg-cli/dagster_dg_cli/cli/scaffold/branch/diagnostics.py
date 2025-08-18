@@ -235,7 +235,7 @@ class ClaudeDiagnosticsService:
             self.log_performance(metrics)
 
     @contextmanager
-    def claude_operation_error_boundary(
+    def claude_operation(
         self, *, operation_name: str, error_code: str, error_message: str, **additional_context: Any
     ) -> Generator[None, None, None]:
         """Context manager for Claude operations that handles timing and comprehensive logging.

@@ -53,7 +53,7 @@ def invoke_anthropic_api_direct(
     if not api_key:
         raise ValueError("ANTHROPIC_API_KEY environment variable is required for direct API calls")
 
-    with diagnostics.claude_operation_error_boundary(
+    with diagnostics.claude_operation(
         operation_name=operation_name,
         error_code=f"{operation_name}_generation_failed",
         error_message=f"Failed to generate {operation_name} via Anthropic API",
@@ -328,7 +328,7 @@ def scaffold_content_for_prompt(
     )
 
     with spinner_ctx as spinner:
-        with diagnostics.claude_operation_error_boundary(
+        with diagnostics.claude_operation(
             operation_name="content_scaffolding",
             error_code="content_scaffolding_failed",
             error_message="Content scaffolding failed with SDK",
