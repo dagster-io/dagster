@@ -264,9 +264,9 @@ def get_branch_name_and_pr_title_from_prompt(
     context_str = input_type.get_context(user_input)
 
     diagnostics.info(
-        "branch_name_and_title_generation_start",
-        "Starting branch name and PR title generation",
-        {
+        category="branch_name_and_title_generation_start",
+        message="Starting branch name and PR title generation",
+        data={
             "input_type": input_type.__name__,
             "context_length": len(context_str),
         },
@@ -281,9 +281,9 @@ def get_branch_name_and_pr_title_from_prompt(
     duration_ms = (perf_counter() - start_time) * 1000
 
     diagnostics.info(
-        "branch_name_and_title_generated",
-        "Successfully generated branch name and PR title",
-        {
+        category="branch_name_and_title_generated",
+        message="Successfully generated branch name and PR title",
+        data={
             "branch_name": branch_name,
             "pr_title": pr_title,
             "duration_ms": duration_ms,

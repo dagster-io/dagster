@@ -61,7 +61,9 @@ class TestClaudeDiagnosticsService:
     def test_log_creates_entry(self):
         service = ClaudeDiagnostics(level="info")
 
-        service.log("info", "test_category", "test message", {"key": "value"})
+        service.log(
+            level="info", category="test_category", message="test message", data={"key": "value"}
+        )
 
         assert len(service.entries) == 1
         entry = service.entries[0]
@@ -74,7 +76,7 @@ class TestClaudeDiagnosticsService:
     def test_log_does_not_create_entry_when_level_too_low(self):
         service = ClaudeDiagnostics(level="error")
 
-        service.log("info", "test_category", "test message")
+        service.log(level="info", category="test_category", message="test message")
 
         assert len(service.entries) == 0
 
@@ -88,7 +90,7 @@ class TestClaudeDiagnosticsService:
             "normal_key": "normal_value",
         }
 
-        service.log("info", "test", "message", test_data)
+        service.log(level="info", category="test", message="message", data=test_data)
 
         entry = service.entries[0]
         # Data should be logged as-is without sanitization
@@ -178,9 +180,9 @@ class TestClaudeDiagnosticsService:
     def test_convenience_methods(self):
         service = ClaudeDiagnostics(level="debug")
 
-        service.error("test_cat", "error message")
-        service.info("test_cat", "info message")
-        service.debug("test_cat", "debug message")
+        service.error(category="test_cat", message="error message")
+        service.info(category="test_cat", message="info message")
+        service.debug(category="test_cat", message="debug message")
 
         assert len(service.entries) == 3
         assert service.entries[0].level == "error"
@@ -192,7 +194,7 @@ class TestClaudeDiagnosticsService:
             output_dir = Path(temp_dir)
             service = ClaudeDiagnostics(level="info", output_dir=output_dir)
 
-            service.info("test", "test message", {"key": "value"})
+            service.info(category="test", message="test message", data={"key": "value"})
 
             output_path = service.flush()
 

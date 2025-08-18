@@ -80,6 +80,7 @@ class ClaudeDiagnostics:
 
     def log(
         self,
+        *,
         level: DiagnosticsLevel,
         category: str,
         message: str,
@@ -253,8 +254,8 @@ class ClaudeDiagnostics:
         """
         # Log operation start
         self.info(
-            f"{operation_name}_start",
-            f"Starting {operation_name}",
+            category=f"{operation_name}_start",
+            message=f"Starting {operation_name}",
         )
 
         start_time = perf_counter()
@@ -263,17 +264,17 @@ class ClaudeDiagnostics:
             # Log successful completion
             duration_ms = (perf_counter() - start_time) * 1000
             self.info(
-                f"{operation_name}_success",
-                f"Successfully completed {operation_name}",
-                {"duration_ms": duration_ms},
+                category=f"{operation_name}_success",
+                message=f"Successfully completed {operation_name}",
+                data={"duration_ms": duration_ms},
             )
         except Exception as e:
             duration_ms = (perf_counter() - start_time) * 1000
 
             self.error(
-                error_code,
-                error_message,
-                {
+                category=error_code,
+                message=error_message,
+                data={
                     "error_type": type(e).__name__,
                     "error_message": str(e),
                     "duration_ms": duration_ms,
@@ -321,17 +322,17 @@ class ClaudeDiagnostics:
 
         return self._output_file
 
-    def error(self, category: str, message: str, data: Optional[dict[str, Any]] = None) -> None:
+    def error(self, *, category: str, message: str, data: Optional[dict[str, Any]] = None) -> None:
         """Log an error-level entry."""
-        self.log("error", category, message, data)
+        self.log(level="error", category=category, message=message, data=data)
 
-    def info(self, category: str, message: str, data: Optional[dict[str, Any]] = None) -> None:
+    def info(self, *, category: str, message: str, data: Optional[dict[str, Any]] = None) -> None:
         """Log an info-level entry."""
-        self.log("info", category, message, data)
+        self.log(level="info", category=category, message=message, data=data)
 
-    def debug(self, category: str, message: str, data: Optional[dict[str, Any]] = None) -> None:
+    def debug(self, *, category: str, message: str, data: Optional[dict[str, Any]] = None) -> None:
         """Log a debug-level entry."""
-        self.log("debug", category, message, data)
+        self.log(level="debug", category=category, message=message, data=data)
 
 
 def create_claude_diagnostics_service(
