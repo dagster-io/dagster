@@ -47,7 +47,7 @@ def build_tox_step(
     dependencies: Optional[list[str]] = None,
     retries: Optional[int] = None,
     timeout_in_minutes: Optional[int] = None,
-    queue: Optional[BuildkiteQueue] = None,
+    queue: BuildkiteQueue = BuildkiteQueue.KUBERNETES_EKS,
     skip_reason: Optional[str] = None,
     pytest_args: Optional[list[str]] = None,
 ) -> CommandStepConfiguration:
@@ -90,8 +90,7 @@ def build_tox_step(
         .skip_if(skip_reason)
     )
 
-    if queue:
-        step_builder.on_queue(queue)
+    step_builder.on_queue(queue)
 
     return step_builder.build()
 

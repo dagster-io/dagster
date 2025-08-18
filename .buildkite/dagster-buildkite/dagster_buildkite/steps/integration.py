@@ -239,7 +239,7 @@ def build_integration_suite_steps(
     directory: str,
     pytest_tox_factors: Optional[list[ToxFactor]],
     pytest_extra_cmds: Optional[PytestExtraCommandsFunction] = None,
-    queue=None,
+    queue: BuildkiteQueue = BuildkiteQueue.KUBERNETES_EKS,
     always_run_if: Optional[Callable[[], bool]] = None,
     unsupported_python_versions: Optional[
         Union[list[AvailablePythonVersion], UnsupportedVersionsFunction]

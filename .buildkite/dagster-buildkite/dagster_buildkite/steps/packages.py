@@ -137,7 +137,7 @@ class PackageSpec:
     tox_file: Optional[str] = None
     retries: Optional[int] = None
     timeout_in_minutes: Optional[int] = None
-    queue: Optional[BuildkiteQueue] = None
+    queue: BuildkiteQueue = BuildkiteQueue.KUBERNETES_EKS
     run_pytest: bool = True
     splits: int = 1
     always_run_if: Optional[Callable[[], bool]] = None
