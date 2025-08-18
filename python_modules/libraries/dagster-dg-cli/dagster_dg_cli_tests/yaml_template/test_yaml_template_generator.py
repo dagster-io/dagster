@@ -36,28 +36,26 @@ class TestYamlTemplateGenerator:
         schema = model_cls.model_json_schema()
         return schema
 
-    def test_simple_component_template(self):
-        """Test generation of a simple component template with basic types."""
-        # Simple schema with basic properties
-        schema = {
-            "type": "object",
-            "properties": {
-                "name": {"type": "string", "description": "The component name"},
-                "count": {"type": "integer"},
-                "enabled": {"type": "boolean"},
-            },
-            "required": ["name"],
-        }
+    def test_simple_pipes_script_component_template(self):
+        """Test generation of SimplePipesScriptComponent template using actual component class."""
+        from dagster_test.components import SimplePipesScriptComponent
+
+        # Get schema from the actual component class
+        schema = self.get_component_schema(SimplePipesScriptComponent)
 
         # Test schema generation
-        schema_result = generate_defs_yaml_schema("my.SimpleComponent", schema)
+        schema_result = generate_defs_yaml_schema(
+            "dagster_test.components.simple_pipes_script_asset.SimplePipesScriptComponent", schema
+        )
         expected_schema = self.load_expected_schema("simple_example")
         assert schema_result.strip() == expected_schema, (
             f"Generated schema does not match expected output.\n\nGenerated:\n{schema_result}\n\nExpected:\n{expected_schema}"
         )
 
         # Test example values generation
-        example_result = generate_defs_yaml_example_values("my.SimpleComponent", schema)
+        example_result = generate_defs_yaml_example_values(
+            "dagster_test.components.simple_pipes_script_asset.SimplePipesScriptComponent", schema
+        )
         expected_example = self.load_expected_example("simple_example")
         assert example_result.strip() == expected_example, (
             f"Generated example values do not match expected output.\n\nGenerated:\n{example_result}\n\nExpected:\n{expected_example}"
