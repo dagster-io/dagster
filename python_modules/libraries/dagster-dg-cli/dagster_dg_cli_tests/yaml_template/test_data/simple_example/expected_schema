@@ -1,6 +1,5 @@
 # Template with instructions
-type: my.SimpleComponent  # Required
+type: dagster_test.components.simple_pipes_script_asset.SimplePipesScriptComponent  # Required
 attributes:  # Optional: Attributes details
-  name: <string>  # Required: The component name
-  count: <integer>  # Optional: 
-  enabled: <boolean>  # Optional: 
+  asset_key: <string>  # Required: 
+  filename: <string>  # Required: 

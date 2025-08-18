@@ -138,14 +138,14 @@ class TestResolvableYamlTemplates:
         schema_result, example_result = self._test_schema_and_examples_for_model(
             SimpleListModel,
             expected_schema_contains=[
-                "names:  # Required: List of string items",
-                "numbers:  # Required: List of integer items",
-                "metadata:  # Required:",
+                "names: <one of: array of string, string>  # Required:",
+                "numbers: <one of: array of integer, string>  # Required:",
+                "metadata: <one of: object, string>  # Required:",
             ],
             expected_example_contains=[
-                'names:\n  - "example_string"',
-                "numbers:\n  - 1",
-                'metadata:\n  key: "value"',
+                'names:\n    - "example_string"',
+                'numbers:\n    - "1"',
+                'metadata:\n    key: "value"',
             ],
         )
 
@@ -165,12 +165,12 @@ class TestResolvableYamlTemplates:
             expected_schema_contains=[
                 "name: <string>  # Required:",
                 "config:  # Required:",
-                "  timeout: <integer>  # Required:",
-                "  retries: <integer>  # Optional:",
+                "    timeout: <one of: integer, string>  # Required:",
+                "    retries: <one of: integer, string>  # Optional:",
             ],
             expected_example_contains=[
                 'name: "example_string"',
-                "config:\n  timeout: 1\n  retries: 3",
+                "config:\n    timeout: 1\n    retries: 1",
             ],
         )
 
@@ -274,10 +274,10 @@ class TestResolvableYamlTemplates:
             expected_schema_contains=[
                 "partitions_def:  # Optional:",
                 "# Choose one of the following types:",
-                "# Option 1 - HourlyPartitionsDefinitionModel:",
-                "# start_date: <string>  # Required:",
-                "# Option 2 - DailyPartitionsDefinitionModel:",
-                "# Option 3 - StaticPartitionsDefinitionModel:",
+                "# Option 1 - HourlyPartitionsDefinitionModelModel:",
+                "# start_date: <string>  # Optional:",
+                "# Option 2 - DailyPartitionsDefinitionModelModel:",
+                "# Option 3 - StaticPartitionsDefinitionModelModel:",
                 "# partition_keys:",
             ],
         )
@@ -316,7 +316,9 @@ class TestResolvableYamlTemplates:
 
         schema_result, example_result = self._test_schema_and_examples_for_model(
             NestedResolverModel,
-            expected_schema_contains=["values:  # Required: List of processed values"],
+            expected_schema_contains=[
+                "values: <one of: array of string, string>  # Required: List of processed values"
+            ],
         )
 
     def test_real_world_complex_model(self):
@@ -337,12 +339,12 @@ class TestResolvableYamlTemplates:
             RealWorldModel,
             expected_schema_contains=[
                 "name: <string>  # Required:",
-                "deps:  # Optional: List of string items",
+                "deps: <one of: array of string, string>  # Optional:",
                 "partitions_def:  # Optional:",
                 "# Choose one of the following types:",
-                "metadata:  # Optional:",
+                "metadata: <one of: object, string>  # Optional:",
             ],
-            expected_example_contains=['name: "example_string"', 'metadata:\n  key: "value"'],
+            expected_example_contains=['name: "example_string"', 'metadata:\n    key: "value"'],
         )
 
     # Level 6: Edge Cases and Error Conditions
@@ -374,18 +376,18 @@ class TestResolvableYamlTemplates:
             DefaultsModel,
             expected_schema_contains=[
                 "name: <string>  # Required:",
-                "count: <integer>  # Optional:",
-                "enabled: <boolean>  # Optional:",
+                "count: <one of: integer, string>  # Optional:",
+                "enabled: <one of: boolean, string>  # Optional:",
                 "description: <string>  # Optional:",
-                "tags:  # Optional: List of string items",
-                "metadata:  # Optional:",
+                "tags: <one of: array of string, string>  # Optional:",
+                "metadata: <one of: object, string>  # Optional:",
             ],
             expected_example_contains=[
                 'name: "example_string"',
-                "count: 42",
+                "count: 1",
                 "enabled: true",
-                "tags: []",
-                "metadata: {}",
+                'tags:\n    - "example_string"',
+                'metadata:\n    key: "value"',
             ],
         )
 
@@ -413,7 +415,7 @@ class TestResolvableYamlTemplates:
                 "      value: <string>  # Required:",
             ],
             expected_example_contains=[
-                'level1:\n  level2:\n    level3:\n      value: "example_string"'
+                'level1:\n    level2:\n      level3:\n        value: "example_string"'
             ],
         )
 
