@@ -154,17 +154,6 @@ def execute_scaffold_branch_command(
     prompt_text,
     diagnostics,
 ):
-    diagnostics.info(
-        "command_start",
-        "Starting scaffold branch command",
-        {
-            "prompt": prompt_text,
-            "target_path": str(target_path),
-            "local_only": local_only,
-            "diagnostics_level": diagnostics_level,
-        },
-    )
-
     # Check if we're in a git repository before proceeding
     with diagnostics.time_operation("git_repository_check", "validation"):
         check_git_repository()
@@ -338,13 +327,4 @@ def execute_scaffold_branch_command(
             {"record_path": str(record_path)},
         )
 
-    diagnostics.info(
-        "command_completed",
-        "Scaffold branch command completed successfully",
-        {
-            "branch_name": branch_name,
-            "pr_url": pr_url,
-            "ai_scaffolding": ai_scaffolding,
-            "first_pass_sha": first_pass_sha,
-        },
-    )
+    # Success logging is handled by claude_operation_error_boundary

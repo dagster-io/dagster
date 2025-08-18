@@ -74,17 +74,6 @@ class ClaudeSDKClient:
         Raises:
             Exception: If the SDK operation fails
         """
-        self.diagnostics.debug(
-            "claude_sdk_scaffold_start",
-            "Starting Claude Code SDK scaffolding operation",
-            {
-                "prompt_length": len(prompt),
-                "allowed_tools_count": len(allowed_tools),
-                "allowed_tools": allowed_tools,
-                "verbose": verbose,
-            },
-        )
-
         collected_messages: list[Message] = []
 
         with self.diagnostics.claude_operation_error_boundary(
@@ -133,17 +122,6 @@ class ClaudeSDKClient:
                 duration_ms=duration_ms,
             )
             self.diagnostics.log_ai_interaction(interaction)
-
-            self.diagnostics.info(
-                "claude_sdk_scaffold_success",
-                "Claude SDK scaffolding operation completed successfully",
-                {
-                    "messages_returned": len(collected_messages),
-                    "total_cost_usd": self.total_cost_usd,
-                    "total_tokens": self.total_tokens,
-                    "duration_ms": duration_ms,
-                },
-            )
 
             return collected_messages
 
