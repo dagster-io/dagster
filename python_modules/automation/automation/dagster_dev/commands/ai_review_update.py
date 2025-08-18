@@ -186,9 +186,9 @@ def update_pr(
     All operations are executed serially to prevent git index locking issues.
 
     Examples:
-        dagster-dev update-pr-and-commit --title "Fix bug" --body "This fixes the issue with..."
-        dagster-dev update-pr-and-commit --title "New feature" --body "Adds support for..." --commit-title "feat: New feature"
-        dagster-dev update-pr-and-commit --auto-prepare --title "Fix" --body "..."
+        dagster-dev ai-review-update --title "Fix bug" --body "This fixes the issue with..."
+        dagster-dev ai-review-update --title "New feature" --body "Adds support for..." --commit-title "feat: New feature"
+        dagster-dev ai-review-update --auto-prepare --title "Fix" --body "..."
     """
     click.echo("🔄 Updating PR and commit message...")
 
