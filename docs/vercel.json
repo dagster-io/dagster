@@ -589,6 +589,10 @@
       "destination": "/api/clis/dagster-cloud-cli"
     },
     {
+      "source": "/deployment/dagster-plus/management/dagster-cloud-cli",
+      "destination": "/api/clis/dagster-cloud-cli"
+    },
+    {
       "source": "/dagster-plus/developing-testing/code-locations",
       "destination": "/deployment/code-locations"
     },
@@ -3068,7 +3072,7 @@
     },
     {
       "source": "/api/python-api/external-assets-rest-api",
-      "destination": "/api/dagster/external-assets-rest-api"
+      "destination": "/api/rest-apis/external-assets-rest-api"
     },
     {
       "source": "/api/python-api/graphs",

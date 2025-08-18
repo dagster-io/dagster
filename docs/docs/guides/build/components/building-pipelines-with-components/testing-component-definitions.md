@@ -63,4 +63,4 @@ def test_function_component_execution() -> None:
     assert dg.materialize(defs.get_assets_def("some_asset")).success
 ```
 
-See [Unit Testing Assets and Ops](https://docs.dagster.io/guides/test/unit-testing-assets-and-ops) for more information about testing definitions.
+See [Unit Testing Assets and Ops](/guides/test/unit-testing-assets-and-ops) for more information about testing definitions.
