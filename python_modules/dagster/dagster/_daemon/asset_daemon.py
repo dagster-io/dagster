@@ -920,13 +920,16 @@ class AssetDaemon(DagsterDaemon):
                     )
                 )
 
-            with AutoMaterializeLaunchContext(
-                tick,
-                sensor,
-                instance,
-                self._logger,
-                tick_retention_settings,
-            ) as tick_context:
+            with (
+                AutoMaterializeLaunchContext(
+                    tick,
+                    sensor,
+                    instance,
+                    self._logger,
+                    tick_retention_settings,
+                ) as tick_context,
+                workspace,
+            ):
                 await self._evaluate_auto_materialize_tick(
                     tick_context,
                     tick,
