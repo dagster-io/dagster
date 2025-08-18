@@ -343,7 +343,7 @@ class TestDiagnosticsDataModels:
 
     def test_claude_operation_error_boundary_success_logging(self):
         """Test that the error boundary logs start and success messages automatically."""
-        service = ClaudeDiagnosticsService(level="info")
+        service = ClaudeDiagnostics(level="info")
 
         with service.claude_operation(
             operation_name="test_operation",
@@ -369,7 +369,7 @@ class TestDiagnosticsDataModels:
 
     def test_claude_operation_error_boundary_error_logging(self):
         """Test that the error boundary logs errors when exceptions occur."""
-        service = ClaudeDiagnosticsService(level="info")
+        service = ClaudeDiagnostics(level="info")
 
         try:
             with service.claude_operation(
