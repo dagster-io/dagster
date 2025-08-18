@@ -287,6 +287,7 @@ def execute_scaffold_branch_command(
     if ai_scaffolding and input_type:
         # Import scaffold_content_for_prompt only when we need it
         from dagster_dg_cli.cli.scaffold.branch.ai import scaffold_content_for_prompt
+
         with diagnostics.time_operation("content_scaffolding", "ai_generation"):
             scaffold_content_for_prompt(
                 prompt_text,
