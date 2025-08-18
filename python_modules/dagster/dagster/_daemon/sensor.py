@@ -1241,6 +1241,7 @@ def _submit_backfill_request(
             # would need to add these as params to RunRequest
             title=None,
             description=None,
+            run_config=run_request.run_config,
         )
     )
     return SubmitRunRequestResult(
