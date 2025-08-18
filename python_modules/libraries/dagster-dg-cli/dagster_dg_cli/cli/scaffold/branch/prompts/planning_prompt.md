@@ -2,9 +2,17 @@
 
 You are in **PLANNING MODE**. Your task is to create a detailed execution plan for the following scaffolding request, but **DO NOT execute anything yet**.
 
+## User Request
+
+**"{user_input}"**
+
 ## Your Mission
 
-Analyze the user's request and create a comprehensive plan showing exactly what you would do if given permission to execute. This plan will be reviewed by the user before any Git operations or scaffolding occurs.
+Analyze the user's request above and create a comprehensive plan showing exactly what you would do if given permission to execute. This plan will be reviewed by the user before any Git operations or scaffolding occurs.
+
+## Context Information
+
+**Available Components:** {available_components}{codebase_info}{project_info}
 
 ## Required Plan Format
 
