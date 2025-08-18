@@ -16,7 +16,7 @@ from dagster_dg_core.utils import DgClickCommand
 from dagster_dg_core.utils.telemetry import cli_telemetry_wrapper
 from dagster_shared.record import as_dict, replace
 
-from dagster_dg_cli.cli.scaffold.branch.diagnostics import (
+from dagster_dg_cli.cli.scaffold.branch.claude.diagnostics import (
     VALID_DIAGNOSTICS_LEVELS,
     DiagnosticsLevel,
     create_claude_diagnostics_service,
@@ -164,6 +164,7 @@ def execute_scaffold_branch_command(
 
     ai_scaffolding = False
     input_type = None
+    scaffold_content_for_prompt = None
 
     if record and (not record.exists() or not record.is_dir()):
         raise click.UsageError(f"{record} is not an existing directory")
