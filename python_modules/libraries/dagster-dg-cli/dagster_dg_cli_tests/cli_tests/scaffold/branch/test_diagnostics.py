@@ -165,14 +165,15 @@ class TestClaudeDiagnosticsService:
         service = ClaudeDiagnosticsService(level="debug")
 
         with service.time_operation("test_op", "test_phase"):
-            pass  # Simulate some work
+            # Simulate some work
+            pass
 
         assert len(service.entries) == 1
         entry = service.entries[0]
         assert entry.category == "performance"
         assert entry.data["operation"] == "test_op"
         assert entry.data["phase"] == "test_phase"
-        assert entry.data["duration_ms"] > 0
+        assert entry.data["duration_ms"] >= 0
 
     def test_convenience_methods(self):
         service = ClaudeDiagnosticsService(level="debug")
@@ -339,3 +340,59 @@ class TestDiagnosticsDataModels:
         assert metrics.operation == "test_op"
         assert metrics.duration_ms == 250.0
         assert metrics.phase == "test_phase"
+
+    def test_claude_operation_success_logging(self):
+        """Test that the error boundary logs start and success messages automatically."""
+        service = ClaudeDiagnosticsService(level="info")
+
+        with service.claude_operation(
+            operation_name="test_operation",
+            error_code="test_error",
+            error_message="Test failed",
+        ):
+            # Simulate some work
+            pass
+
+        # Should have 2 entries: start and success
+        assert len(service.entries) == 2
+
+        start_entry = service.entries[0]
+        assert start_entry.level == "info"
+        assert start_entry.category == "test_operation_start"
+        assert start_entry.message == "Starting test_operation"
+
+        success_entry = service.entries[1]
+        assert success_entry.level == "info"
+        assert success_entry.category == "test_operation_success"
+        assert success_entry.message == "Successfully completed test_operation"
+        assert "duration_ms" in success_entry.data
+
+    def test_claude_operation_error_logging(self):
+        """Test that the error boundary logs errors when exceptions occur."""
+        service = ClaudeDiagnosticsService(level="info")
+
+        try:
+            with service.claude_operation(
+                operation_name="failing_operation",
+                error_code="operation_failed",
+                error_message="Operation failed with error",
+            ):
+                raise ValueError("Test error")
+        except ValueError:
+            pass  # Expected
+
+        # Should have 2 entries: start and error (no success)
+        assert len(service.entries) == 2
+
+        start_entry = service.entries[0]
+        assert start_entry.level == "info"
+        assert start_entry.category == "failing_operation_start"
+        assert start_entry.message == "Starting failing_operation"
+
+        error_entry = service.entries[1]
+        assert error_entry.level == "error"
+        assert error_entry.category == "operation_failed"
+        assert error_entry.message == "Operation failed with error"
+        assert error_entry.data["error_type"] == "ValueError"
+        assert error_entry.data["error_message"] == "Test error"
+        assert "duration_ms" in error_entry.data

@@ -74,21 +74,16 @@ class ClaudeSDKClient:
         Raises:
             Exception: If the SDK operation fails
         """
-        self.diagnostics.debug(
-            "claude_sdk_scaffold_start",
-            "Starting Claude Code SDK scaffolding operation",
-            {
-                "prompt_length": len(prompt),
-                "allowed_tools_count": len(allowed_tools),
-                "allowed_tools": allowed_tools,
-                "verbose": verbose,
-            },
-        )
-
-        start_time = perf_counter()
         collected_messages: list[Message] = []
 
-        try:
+        with self.diagnostics.claude_operation(
+            operation_name="claude_sdk_scaffold",
+            error_code="claude_sdk_scaffold_failed",
+            error_message="Claude SDK scaffolding operation failed",
+            prompt_length=len(prompt),
+        ):
+            start_time = perf_counter()
+
             # Configure SDK options
             options = ClaudeCodeOptions(
                 allowed_tools=allowed_tools,
@@ -128,33 +123,7 @@ class ClaudeSDKClient:
             )
             self.diagnostics.log_ai_interaction(interaction)
 
-            self.diagnostics.info(
-                "claude_sdk_scaffold_success",
-                "Claude SDK scaffolding operation completed successfully",
-                {
-                    "messages_returned": len(collected_messages),
-                    "total_cost_usd": self.total_cost_usd,
-                    "total_tokens": self.total_tokens,
-                    "duration_ms": duration_ms,
-                },
-            )
-
             return collected_messages
-
-        except Exception as e:
-            duration_ms = (perf_counter() - start_time) * 1000
-
-            self.diagnostics.error(
-                "claude_sdk_scaffold_failed",
-                "Claude SDK scaffolding operation failed",
-                {
-                    "error_type": type(e).__name__,
-                    "error_message": str(e),
-                    "duration_ms": duration_ms,
-                    "prompt_length": len(prompt),
-                },
-            )
-            raise
 
     def _format_content_blocks(self, blocks: list) -> list[str]:
         """Format content blocks into debug strings.

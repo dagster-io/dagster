@@ -210,8 +210,16 @@ class ClaudeDiagnosticsService:
         )
 
     @contextmanager
-    def time_operation(self, operation: str, phase: str = "default") -> Generator[None, None, None]:
-        """Context manager for timing operations."""
+    def time_operation(self, operation: str, phase: str) -> Generator[None, None, None]:
+        """Context manager for timing operations and logging performance metrics.
+
+        Args:
+            operation: Name of the operation being timed
+            phase: Phase or category of the operation
+
+        Yields:
+            None
+        """
         start_time = perf_counter()
         try:
             yield
@@ -225,6 +233,54 @@ class ClaudeDiagnosticsService:
                 phase=phase,
             )
             self.log_performance(metrics)
+
+    @contextmanager
+    def claude_operation(
+        self, *, operation_name: str, error_code: str, error_message: str, **additional_context: Any
+    ) -> Generator[None, None, None]:
+        """Context manager for Claude operations that handles timing and comprehensive logging.
+
+        Automatically logs operation start, success, and errors with consistent formatting.
+
+        Args:
+            operation_name: Name of the operation for diagnostics
+            error_code: Specific error code to log on failure
+            error_message: Human-readable error message
+            **additional_context: Additional context to include in error logs
+
+        Raises:
+            Re-raises any exception after logging it
+        """
+        # Log operation start
+        self.info(
+            f"{operation_name}_start",
+            f"Starting {operation_name}",
+        )
+
+        start_time = perf_counter()
+        try:
+            yield
+            # Log successful completion
+            duration_ms = (perf_counter() - start_time) * 1000
+            self.info(
+                f"{operation_name}_success",
+                f"Successfully completed {operation_name}",
+                {"duration_ms": duration_ms},
+            )
+        except Exception as e:
+            duration_ms = (perf_counter() - start_time) * 1000
+
+            self.error(
+                error_code,
+                error_message,
+                {
+                    "error_type": type(e).__name__,
+                    "error_message": str(e),
+                    "duration_ms": duration_ms,
+                    **additional_context,
+                },
+            )
+            raise
 
     def flush(self) -> Optional[Path]:
         """Finalize the diagnostics file with session end timestamp."""
