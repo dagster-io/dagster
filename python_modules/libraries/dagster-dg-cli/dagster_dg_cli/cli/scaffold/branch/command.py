@@ -16,12 +16,6 @@ from dagster_dg_core.utils import DgClickCommand
 from dagster_dg_core.utils.telemetry import cli_telemetry_wrapper
 from dagster_shared.record import as_dict, replace
 
-from dagster_dg_cli.cli.scaffold.branch.ai import (
-    INPUT_TYPES,
-    TextInputType,
-    get_branch_name_and_pr_title_from_prompt,
-    scaffold_content_for_prompt,
-)
 from dagster_dg_cli.cli.scaffold.branch.diagnostics import (
     VALID_DIAGNOSTICS_LEVELS,
     DiagnosticsLevel,
@@ -38,6 +32,10 @@ from dagster_dg_cli.cli.scaffold.branch.git import (
     run_git_command,
 )
 from dagster_dg_cli.cli.scaffold.branch.models import Session
+from dagster_dg_cli.utils.claude_utils import (
+    get_claude_sdk_unavailable_message,
+    is_claude_sdk_available,
+)
 from dagster_dg_cli.utils.ui import daggy_spinner_context
 
 
@@ -148,6 +146,18 @@ def scaffold_branch_command(
             branch_name = prompt_text.strip()
             pr_title = branch_name
         else:
+            # Check if Claude Code SDK is available before proceeding with AI operations
+            if not is_claude_sdk_available():
+                raise click.ClickException(get_claude_sdk_unavailable_message())
+
+            # Import AI modules only when needed and available
+            from dagster_dg_cli.cli.scaffold.branch.ai import (
+                INPUT_TYPES,
+                TextInputType,
+                get_branch_name_and_pr_title_from_prompt,
+                scaffold_content_for_prompt,
+            )
+
             # Otherwise, use AI to infer the branch name and PR title. Try to match the input to a known
             # input type so we can gather more context.
             if not prompt_text:
@@ -238,6 +248,7 @@ def scaffold_branch_command(
 
         first_pass_sha = None
         if ai_scaffolding and input_type:
+            # scaffold_content_for_prompt was imported above when AI was available
             with diagnostics.time_operation("content_scaffolding", "ai_generation"):
                 scaffold_content_for_prompt(
                     prompt_text,

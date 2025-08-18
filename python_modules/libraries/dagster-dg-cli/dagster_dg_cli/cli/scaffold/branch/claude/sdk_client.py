@@ -46,8 +46,6 @@ class ClaudeSDKClient:
         Args:
             diagnostics: Diagnostics service for logging
         """
-        # SDK is now imported directly, so no availability check needed
-
         self.diagnostics = diagnostics
         self.total_cost_usd = 0.0
         self.total_tokens = 0
