@@ -345,7 +345,7 @@ class TestDiagnosticsDataModels:
         """Test that the error boundary logs start and success messages automatically."""
         service = ClaudeDiagnosticsService(level="info")
 
-        with service.claude_operation_error_boundary(
+        with service.claude_operation(
             operation_name="test_operation",
             error_code="test_error",
             error_message="Test failed",
@@ -372,7 +372,7 @@ class TestDiagnosticsDataModels:
         service = ClaudeDiagnosticsService(level="info")
 
         try:
-            with service.claude_operation_error_boundary(
+            with service.claude_operation(
                 operation_name="failing_operation",
                 error_code="operation_failed",
                 error_message="Operation failed with error",

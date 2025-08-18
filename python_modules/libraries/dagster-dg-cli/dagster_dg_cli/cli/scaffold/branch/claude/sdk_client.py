@@ -76,7 +76,7 @@ class ClaudeSDKClient:
         """
         collected_messages: list[Message] = []
 
-        with self.diagnostics.claude_operation_error_boundary(
+        with self.diagnostics.claude_operation(
             operation_name="claude_sdk_scaffold",
             error_code="claude_sdk_scaffold_failed",
             error_message="Claude SDK scaffolding operation failed",
