@@ -264,6 +264,40 @@ with run_context:
 return SomeResult(run_id=run_context.run_id)
 ```
 
+## Check Methods for Validation and Assertions
+
+**ALWAYS prefer Dagster's `check` methods over raw assertions or manual validation** when validating types, nullness, and other conditions:
+
+```python
+import dagster._check as check
+
+# ✅ GOOD: Using check methods
+result = check.not_none(optional_value)
+validated_list = check.list_param(items, "items")
+valid_str = check.str_param(name, "name")
+
+# ❌ BAD: Using raw assertions
+assert optional_value is not None
+result = optional_value
+```
+
+**Benefits of check methods:**
+
+- **Cannot be disabled**: Unlike `assert` statements, check methods cannot be disabled with `python -O` optimization
+- **Better error messages**: Provide clear, contextual error messages with parameter names
+- **Type safety**: Help type checkers understand the validated types
+- **Consistent API**: Uniform validation interface across the codebase
+- **Runtime safety**: Always execute validation regardless of Python optimization settings
+
+**Common check methods:**
+
+- `check.not_none(value)` - Validates non-null values and returns typed result
+- `check.str_param(value, "param_name")` - Validates string parameters
+- `check.list_param(value, "param_name")` - Validates list parameters
+- `check.dict_param(value, "param_name")` - Validates dictionary parameters
+- `check.bool_param(value, "param_name")` - Validates boolean parameters
+- `check.opt_str_param(value, "param_name")` - Validates optional string parameters
+
 ## Exception Handling Guidelines
 
 This codebase follows specific norms for exception handling to maintain clean, predictable code:
