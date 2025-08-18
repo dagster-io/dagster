@@ -15,7 +15,7 @@ The `dagster-gcp` library provides two ways to interact with BigQuery tables:
 - [Resource](/guides/build/external-resources): The resource allows you to directly run SQL queries against tables within an asset's compute function. Available resources: <PyObject section="libraries" module="dagster_gcp" object="BigQueryResource" />
 - [I/O manager](/guides/build/io-managers): The I/O manager transfers the responsibility of storing and loading DataFrames as BigQuery tables to Dagster. Available I/O managers: <PyObject section="libraries" module="dagster_gcp_pandas" object="BigQueryPandasIOManager" />, <PyObject section="libraries" module="dagster_gcp_pyspark" object="BigQueryPySparkIOManager" />
 
-This tutorial is divided into two sections to demonstrate the differences between the BigQuery resource and the BigQuery I/O manager. Each section will create the same assets, but the first section will use the BigQuery resource to store data in BigQuery, whereas the second section will use the BigQuery I/O manager. When writing your own assets, you may choose one or the other (or both) approaches depending on your storage requirements. {/* See [When to use I/O managers](/guides/build/io-managers/#when-to-use-io-managers) to learn more about when to use I/O managers and when to use resources. */}
+This tutorial is divided into two sections to demonstrate the differences between the BigQuery resource and the BigQuery I/O manager. Each section will create the same assets, but the first section will use the BigQuery resource to store data in BigQuery, whereas the second section will use the BigQuery I/O manager. When writing your own assets, you may choose one or the other (or both) approaches depending on your storage requirements. {/* See [When to use I/O managers](/guides/build/io-managers#when-to-use-io-managers) to learn more about when to use I/O managers and when to use resources. */}
 
 In [Option 1](#option-1-using-the-bigquery-resource) you will:
 
@@ -129,7 +129,7 @@ While using an I/O manager is not required, you may want to use an I/O manager t
 - You want your data to be loaded in memory so that you can interact with it using Python.
 - You'd like to have Dagster manage how you store the data and load it as an input in downstream assets.
 
-{/* TODO fix link: Using an I/O manager is not required, and you can reference [When to use I/O managers](/guides/build/io-managers/#when-to-use-io-managers) to learn more. */}
+{/* TODO fix link: Using an I/O manager is not required, and you can reference [When to use I/O managers](/guides/build/io-managers#when-to-use-io-managers) to learn more. */}
 
 This section of the guide focuses on storing and loading Pandas DataFrames in BigQuery, but Dagster also supports using PySpark DataFrames with BigQuery. The concepts from this guide apply to working with PySpark DataFrames, and you can learn more about setting up and using the BigQuery I/O manager with PySpark DataFrames in the [reference guide](/integrations/libraries/gcp/bigquery/reference).
 
