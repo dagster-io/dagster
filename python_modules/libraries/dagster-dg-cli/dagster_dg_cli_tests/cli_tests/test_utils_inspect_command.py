@@ -1,3 +1,4 @@
+import json
 import textwrap
 
 from dagster_test.dg_utils.utils import ProxyRunner, assert_runner_result, isolated_components_venv
@@ -141,32 +142,39 @@ def test_utils_inspect_component_type_flag_fields_success():
             "utils",
             "inspect-component",
             "dagster_test.components.SimplePipesScriptComponent",
-            "--component-schema",
+            "--defs-yaml-json-schema",
         )
         assert_runner_result(result)
-        assert result.output.strip().endswith(
-            textwrap.dedent("""
-                {
-                    "additionalProperties": false,
-                    "properties": {
-                        "asset_key": {
-                            "title": "Asset Key",
-                            "type": "string"
-                        },
-                        "filename": {
-                            "title": "Filename",
-                            "type": "string"
-                        }
-                    },
-                    "required": [
-                        "asset_key",
-                        "filename"
-                    ],
-                    "title": "SimplePipesScriptComponentModel",
-                    "type": "object"
-                }
-            """).strip()
-        )
+        # Check key parts of the complete defs.yaml schema
+        output_json = json.loads(result.output.strip())
+
+        # Verify top-level structure
+        assert output_json["type"] == "object"
+        assert not output_json["additionalProperties"]
+        assert "type" in output_json["required"]
+        assert "attributes" in output_json["required"]
+
+        # Verify all expected top-level properties exist
+        expected_properties = {
+            "type",
+            "attributes",
+            "template_vars_module",
+            "requirements",
+            "post_processing",
+        }
+        assert set(output_json["properties"].keys()) == expected_properties
+
+        # Verify the attributes section contains the component schema
+        attributes_schema = output_json["properties"]["attributes"]
+        assert not attributes_schema["additionalProperties"]
+        assert attributes_schema["properties"]["asset_key"]["type"] == "string"
+        assert attributes_schema["properties"]["filename"]["type"] == "string"
+        assert set(attributes_schema["required"]) == {"asset_key", "filename"}
+
+        # Verify the requirements section has the expected structure
+        requirements_schema = output_json["properties"]["requirements"]
+        assert "$ref" in requirements_schema["anyOf"][0]
+        assert "#/$defs/ComponentRequirementsModel" in requirements_schema["anyOf"][0]["$ref"]
 
         # Test --defs-yaml-schema flag
         result = runner.invoke(
@@ -266,7 +274,7 @@ def test_utils_inspect_component_type_multiple_flags_fails() -> None:
         )
         assert_runner_result(result, exit_0=False)
         assert (
-            "Only one of --description, --scaffold-params-schema, --component-schema, --defs-yaml-schema, and --defs-yaml-example-values can be specified."
+            "Only one of --description, --scaffold-params-schema, --defs-yaml-json-schema, --defs-yaml-schema, and --defs-yaml-example-values can be specified."
             in result.output
         )
 
@@ -281,12 +289,12 @@ def test_utils_inspect_component_type_defs_yaml_flags_with_other_flags_fails() -
             "utils",
             "inspect-component",
             "dagster_test.components.SimplePipesScriptComponent",
-            "--component-schema",
+            "--defs-yaml-json-schema",
             "--defs-yaml-schema",
         )
         assert_runner_result(result, exit_0=False)
         assert (
-            "Only one of --description, --scaffold-params-schema, --component-schema, --defs-yaml-schema, and --defs-yaml-example-values can be specified."
+            "Only one of --description, --scaffold-params-schema, --defs-yaml-json-schema, --defs-yaml-schema, and --defs-yaml-example-values can be specified."
             in result.output
         )
 
@@ -300,7 +308,7 @@ def test_utils_inspect_component_type_defs_yaml_flags_with_other_flags_fails() -
         )
         assert_runner_result(result, exit_0=False)
         assert (
-            "Only one of --description, --scaffold-params-schema, --component-schema, --defs-yaml-schema, and --defs-yaml-example-values can be specified."
+            "Only one of --description, --scaffold-params-schema, --defs-yaml-json-schema, --defs-yaml-schema, and --defs-yaml-example-values can be specified."
             in result.output
         )
 
@@ -314,7 +322,7 @@ def test_utils_inspect_component_type_defs_yaml_flags_with_other_flags_fails() -
         )
         assert_runner_result(result, exit_0=False)
         assert (
-            "Only one of --description, --scaffold-params-schema, --component-schema, --defs-yaml-schema, and --defs-yaml-example-values can be specified."
+            "Only one of --description, --scaffold-params-schema, --defs-yaml-json-schema, --defs-yaml-schema, and --defs-yaml-example-values can be specified."
             in result.output
         )
 
