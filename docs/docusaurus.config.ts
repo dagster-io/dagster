@@ -39,7 +39,7 @@ const config: Config = {
           keywords: {boost: 75},
           content: {boost: 2},
         },
-        excludeRoutes: ['/tags', '/tags/**/*', 'about/**/*', '/migration/upgrading'],
+        excludeRoutes: ['/tags', '/tags/**/*', '/about/**/*', '/migration/upgrading'],
       },
     ],
   ],
