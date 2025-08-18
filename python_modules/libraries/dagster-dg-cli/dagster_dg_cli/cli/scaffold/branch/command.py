@@ -16,12 +16,6 @@ from dagster_dg_core.utils import DgClickCommand
 from dagster_dg_core.utils.telemetry import cli_telemetry_wrapper
 from dagster_shared.record import as_dict, replace
 
-from dagster_dg_cli.cli.scaffold.branch.ai import (
-    INPUT_TYPES,
-    TextInputType,
-    get_branch_name_and_pr_title_from_prompt,
-    scaffold_content_for_prompt,
-)
 from dagster_dg_cli.cli.scaffold.branch.claude.diagnostics import (
     VALID_DIAGNOSTICS_LEVELS,
     DiagnosticsLevel,
