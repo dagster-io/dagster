@@ -1,9 +1,8 @@
+import os
 from pathlib import Path
 from typing import Optional
 
 import pytest
-import os
-
 from dagster import AssetDep, AssetKey, AssetsDefinition
 from dagster.components.testing import create_defs_folder_sandbox
 from dagster_databricks.components.databricks_asset_bundle.component import (
