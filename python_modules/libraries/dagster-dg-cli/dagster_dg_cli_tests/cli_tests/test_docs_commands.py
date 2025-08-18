@@ -1,4 +1,3 @@
-# ruff: noqa: I001 - import order differs between CI and local due to package installation differences
 import json
 import os
 import subprocess
@@ -11,6 +10,7 @@ from unittest import mock
 import pytest
 import requests
 import yaml
+from dagster_dg_cli.cli import docs
 from dagster_dg_core.utils import activate_venv, get_venv_executable, install_to_venv
 from dagster_graphql.client.client import DagsterGraphQLClient
 from dagster_test.dg_utils.utils import (
@@ -24,8 +24,6 @@ from dagster_test.dg_utils.utils import (
     launch_dev_command,
     wait_for_projects_loaded,
 )
-
-from dagster_dg_cli.cli import docs
 
 # ########################
 # ##### COMPONENT TYPE

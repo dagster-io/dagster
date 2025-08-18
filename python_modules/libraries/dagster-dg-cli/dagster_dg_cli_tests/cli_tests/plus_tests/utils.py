@@ -1,10 +1,8 @@
-# ruff: noqa: I001 - import order differs between CI and local due to package installation differences
 import json
 import sys
 from typing import Any, Optional
 
 import responses
-
 from dagster_dg_cli.utils.plus import gql
 
 PYTHON_VERSION = f"{sys.version_info.major}.{sys.version_info.minor}"
