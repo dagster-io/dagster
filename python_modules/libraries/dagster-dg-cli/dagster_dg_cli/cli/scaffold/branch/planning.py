@@ -6,9 +6,8 @@ and provides bidirectional communication with Claude for interactive sessions.
 """
 
 import asyncio
-from typing import Any, Optional
+from typing import Any
 
-import click
 from claude_code_sdk.types import AssistantMessage, TextBlock
 from dagster_dg_core.context import DgContext
 from dagster_shared.record import record
@@ -54,15 +53,17 @@ class PlanningContext:
 class PlanGenerator:
     """Main orchestrator for plan generation and refinement."""
 
-    def __init__(self, claude_client: ClaudeSDKClient, diagnostics: ClaudeDiagnostics):
+    def __init__(self, claude_client: ClaudeSDKClient, diagnostics: ClaudeDiagnostics, state_manager):
         """Initialize the plan generator.
 
         Args:
             claude_client: Client for AI interactions
             diagnostics: Diagnostics service for logging
+            state_manager: State manager for UI events
         """
         self.claude_client = claude_client
         self.diagnostics = diagnostics
+        self.state_manager = state_manager
 
     def generate_initial_plan(self, context: PlanningContext) -> GeneratedPlan:
         """Generate initial implementation plan from user input.
@@ -332,10 +333,16 @@ Provide the complete updated plan in the same markdown format as before."""
 
         # Display success summary to user
         if success_message:
-            click.echo("✅ Plan generated successfully!")
-            click.echo(f"📊 Response: {len(plan_content):,} characters")
-            # Note: Duration, cost, and API call metrics are tracked by the SDK client
-            click.echo("⏱️  Plan generation completed via Claude SDK")
+            from dagster_dg_cli.cli.scaffold.branch.ui import create_status_message
+            self.state_manager.emit_event(create_status_message(
+                "success", "✅ Plan generated successfully!"
+            ))
+            self.state_manager.emit_event(create_status_message(
+                "info", f"📊 Response: {len(plan_content):,} characters"
+            ))
+            self.state_manager.emit_event(create_status_message(
+                "info", "⏱️  Plan generation completed via Claude SDK"
+            ))
 
         self.diagnostics.debug(
             "plan_extraction_result",
@@ -356,46 +363,3 @@ Provide the complete updated plan in the same markdown format as before."""
         return combined_content
 
 
-def get_user_plan_approval(plan: GeneratedPlan) -> tuple[bool, Optional[str]]:
-    """Get user approval for a generated plan.
-
-    Args:
-        plan: The plan to review
-
-    Returns:
-        Tuple of (approved, feedback) where approved indicates if the user
-        approved the plan, and feedback contains refinement suggestions
-    """
-    click.echo("\n" + "=" * 60)
-    click.echo("IMPLEMENTATION PLAN REVIEW")
-    click.echo("=" * 60)
-    click.echo("")
-
-    # Display the plan content directly
-    click.echo(plan.markdown_content)
-
-    click.echo("")
-    click.echo("=" * 60)
-
-    while True:
-        choice = click.prompt(
-            "Plan Review Options:\n"
-            "  [a]pprove - Execute this plan as-is\n"
-            "  [r]efine - Provide feedback to improve the plan\n"
-            "  [c]ancel - Cancel the operation\n\n"
-            "Your choice",
-            type=click.Choice(["a", "r", "c", "approve", "refine", "cancel"], case_sensitive=False),
-            default="approve",
-        ).lower()
-
-        if choice in ("a", "approve"):
-            return True, None
-        elif choice in ("r", "refine"):
-            feedback = click.prompt(
-                "\nWhat would you like to change about this plan?\n"
-                "Be specific about steps, files, or approaches you'd like modified",
-                type=str,
-            )
-            return False, feedback
-        elif choice in ("c", "cancel"):
-            raise click.ClickException("Operation cancelled by user")

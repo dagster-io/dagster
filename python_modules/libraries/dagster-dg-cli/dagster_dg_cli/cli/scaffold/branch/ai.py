@@ -311,10 +311,23 @@ class PrintOutputChannel:
         click.echo(text)
 
 
+class EventOutputChannel:
+    """Output channel that emits events through state manager."""
+
+    def __init__(self, event_emitter):
+        """Initialize with event emitter callback."""
+        self.event_emitter = event_emitter
+
+    def write(self, text: str) -> None:
+        from dagster_dg_cli.cli.scaffold.branch.ui import create_status_message
+        self.event_emitter(create_status_message("info", text))
+
+
 def scaffold_content_for_prompt(
     user_input: str,
     input_type: type["InputType"],
     diagnostics: ClaudeDiagnostics,
+    event_emitter,
     use_spinner: bool = True,
     model: str = "sonnet",
 ) -> None:
@@ -323,11 +336,12 @@ def scaffold_content_for_prompt(
     prompt = load_scaffolding_prompt(context_str)
     allowed_tools = get_allowed_commands_scaffolding() + input_type.additional_allowed_tools()
 
-    spinner_ctx = (
-        daggy_spinner_context("Scaffolding")
-        if use_spinner
-        else nullcontext(enter_result=PrintOutputChannel())
-    )
+    # Choose output channel based on spinner preference
+    if use_spinner:
+        spinner_ctx = daggy_spinner_context("Scaffolding")
+    else:
+        output_channel = EventOutputChannel(event_emitter)
+        spinner_ctx = nullcontext(enter_result=output_channel)
 
     with spinner_ctx as spinner:
         with diagnostics.claude_operation(

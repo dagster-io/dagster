@@ -8,6 +8,8 @@ from typing import Optional
 import click
 from dagster_dg_core.version import __version__ as dg_version
 
+from dagster_dg_cli.cli.scaffold.branch.ui import create_status_message
+
 
 def get_dg_version() -> str:
     """Get the current dg version, using git commit hash for development versions."""
@@ -94,11 +96,12 @@ def run_gh_command(args: list[str]) -> subprocess.CompletedProcess[str]:
         raise click.ClickException(f"gh command failed: {e.stderr.strip() or e.stdout.strip()}")
 
 
-def create_git_branch(branch_name: str) -> str:
+def create_git_branch(branch_name: str, event_emitter) -> str:
     """Create and checkout a new git branch.
 
     Args:
         branch_name: Name of the branch to create
+        event_emitter: Callback function to emit status messages
 
     Returns:
         The commit hash of the new branch
@@ -107,21 +110,25 @@ def create_git_branch(branch_name: str) -> str:
         click.ClickException: If git operations fail
     """
     run_git_command(["checkout", "-b", branch_name])
-    click.echo(f"Created and checked out new branch: {branch_name}")
+    
+    event_emitter(create_status_message("info", f"Created and checked out new branch: {branch_name}"))
+    
     return run_git_command(["rev-parse", "HEAD"]).stdout.strip()
 
 
-def create_empty_commit(message: str) -> None:
+def create_empty_commit(message: str, event_emitter) -> None:
     """Create an empty git commit.
 
     Args:
         message: Commit message
+        event_emitter: Callback function to emit status messages
 
     Raises:
         click.ClickException: If git operations fail
     """
     run_git_command(["commit", "--allow-empty", "-m", message])
-    click.echo(f"Created empty commit: {message}")
+    
+    event_emitter(create_status_message("info", f"Created empty commit: {message}"))
 
 
 def create_content_commit_and_push(message: str, local_only: bool = False) -> str:
@@ -153,7 +160,7 @@ def has_remote_origin() -> bool:
 
 
 def create_branch_and_pr(
-    branch_name: str, pr_title: str, pr_body: str, local_only: bool = False
+    branch_name: str, pr_title: str, pr_body: str, event_emitter, local_only: bool = False
 ) -> str:
     """Push the current branch to remote and create a GitHub pull request.
 
@@ -162,6 +169,7 @@ def create_branch_and_pr(
         pr_title: Title of the pull request
         pr_body: Body/description of the pull request
         local_only: If True, skip pushing to remote and creating PR
+        event_emitter: Callback function to emit status messages
 
     Returns:
         URL of the created pull request, or empty string if local_only
@@ -170,16 +178,20 @@ def create_branch_and_pr(
         click.ClickException: If git or gh operations fail
     """
     if local_only or not has_remote_origin():
-        click.echo(f"Branch {branch_name} created locally (no remote push)")
+        message = f"Branch {branch_name} created locally (no remote push)"
+        event_emitter(create_status_message("info", message))
         return ""
 
     # Push the branch to remote
     run_git_command(["push", "-u", "origin", branch_name])
-    click.echo(f"Pushed branch {branch_name} to remote")
+    push_message = f"Pushed branch {branch_name} to remote"
+    event_emitter(create_status_message("info", push_message))
 
     # Create the pull request
     result = run_gh_command(["pr", "create", "--title", pr_title, "--body", pr_body])
 
     pr_url = result.stdout.strip()
-    click.echo(f"Created pull request: {pr_url}")
+    pr_message = f"Created pull request: {pr_url}"
+    event_emitter(create_status_message("success", pr_message))
+    
     return pr_url

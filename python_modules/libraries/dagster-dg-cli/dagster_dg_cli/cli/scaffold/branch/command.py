@@ -3,7 +3,6 @@
 import json
 import re
 import uuid
-from contextlib import nullcontext
 from datetime import datetime
 from pathlib import Path
 from typing import Optional
@@ -33,10 +32,14 @@ from dagster_dg_cli.cli.scaffold.branch.git import (
     run_git_command,
 )
 from dagster_dg_cli.cli.scaffold.branch.models import Session
-from dagster_dg_cli.cli.scaffold.branch.planning import (
-    PlanGenerator,
-    PlanningContext,
-    get_user_plan_approval,
+from dagster_dg_cli.cli.scaffold.branch.planning import PlanGenerator, PlanningContext
+from dagster_dg_cli.cli.scaffold.branch.ui import (
+    ClickScaffoldUI,
+    DiagnosticsUpdate,
+    ProgressEvent,
+    ScaffoldStateManager,
+    UIState,
+    create_status_message,
 )
 from dagster_dg_cli.utils.claude_utils import (
     get_claude_sdk_unavailable_message,
@@ -128,12 +131,6 @@ def scaffold_branch_command(
         output_dir=diagnostics_dir,
     )
 
-    # Inform user where diagnostics will be written if enabled
-    if diagnostics_level != "off":
-        click.echo(
-            f"🔍 Diagnostics enabled at level '{diagnostics_level}' - streaming to: {diagnostics.output_file}"
-        )
-
     try:
         with diagnostics.claude_operation_error_boundary(
             operation_name="scaffold_branch_command",
@@ -165,8 +162,6 @@ def scaffold_branch_command(
         raise
     finally:
         # Always flush diagnostics on exit
-        if diagnostics_level != "off":
-            click.echo(f"🔍 Flushing diagnostics... Entries count: {len(diagnostics.entries)}")
         diagnostics_output = diagnostics.flush()
         if diagnostics_output and diagnostics_level != "off":
             click.echo(f"🔍 Diagnostics written to: {diagnostics_output}")
@@ -186,18 +181,68 @@ def execute_scaffold_branch_command(
     planning_model,
     execution_model,
 ):
-    diagnostics.info(
-        "command_start",
-        "Starting scaffold branch command",
-        {
-            "prompt": prompt_text,
-            "target_path": str(target_path),
-            "local_only": local_only,
-            "diagnostics_level": diagnostics_level,
-            "planning_model": planning_model,
-            "execution_model": execution_model,
-        },
-    )
+    # Create UI and state manager
+    ui = ClickScaffoldUI(disable_progress=disable_progress)
+    state_manager = ScaffoldStateManager(ui)
+    
+    try:
+        # Initialize state
+        state_manager.update_state(
+            ui_state=UIState.INITIAL,
+            prompt=prompt_text,
+            diagnostics_enabled=(diagnostics_level != "off"),
+            planning_model=planning_model,
+            execution_model=execution_model,
+        )
+        
+        # Emit diagnostics info
+        if diagnostics_level != "off":
+            state_manager.emit_event(DiagnosticsUpdate(
+                enabled=True,
+                output_path=str(diagnostics.output_file)
+            ))
+        
+        diagnostics.info(
+            "command_start",
+            "Starting scaffold branch command",
+            {
+                "prompt": prompt_text,
+                "target_path": str(target_path),
+                "local_only": local_only,
+                "diagnostics_level": diagnostics_level,
+                "planning_model": planning_model,
+                "execution_model": execution_model,
+            },
+        )
+        
+        _execute_scaffold_logic(
+            target_path,
+            local_only,
+            record,
+            diagnostics_level,
+            other_options,
+            prompt_text,
+            diagnostics,
+            planning_model,
+            execution_model,
+            state_manager,
+        )
+        
+    finally:
+        state_manager.cleanup()
+
+def _execute_scaffold_logic(
+    target_path,
+    local_only,
+    record,
+    diagnostics_level,
+    other_options,
+    prompt_text,
+    diagnostics,
+    planning_model,
+    execution_model,
+    state_manager,
+):
 
     # Check if we're in a git repository before proceeding
     with diagnostics.time_operation("git_repository_check", "validation"):
@@ -206,6 +251,9 @@ def execute_scaffold_branch_command(
     cli_config = normalize_cli_config(other_options, click.get_current_context())
     with diagnostics.time_operation("context_creation", "initialization"):
         dg_context = DgContext.for_workspace_or_project_environment(target_path, cli_config)
+    
+    # Update state with project info
+    state_manager.update_state(project_path=str(dg_context.root_path))
 
     ai_scaffolding = False
     input_type = None
@@ -241,7 +289,7 @@ def execute_scaffold_branch_command(
         # Otherwise, use AI to infer the branch name and PR title. Try to match the input to a known
         # input type so we can gather more context.
         if not prompt_text:
-            prompt_text = click.prompt("What would you like to accomplish?")
+            prompt_text = state_manager.ui.get_user_input("What would you like to accomplish?")
         assert prompt_text
 
         with diagnostics.time_operation("input_type_detection", "ai_preprocessing"):
@@ -249,6 +297,9 @@ def execute_scaffold_branch_command(
                 (input_type for input_type in INPUT_TYPES if input_type.matches(prompt_text)),
                 TextInputType,
             )
+
+        # Update state with input type info  
+        state_manager.update_state(input_type_name=input_type.__name__)
 
         diagnostics.info(
             category="input_type_detected",
@@ -260,9 +311,11 @@ def execute_scaffold_branch_command(
         )
 
         # Always start with planning phase
+        state_manager.update_state(ui_state=UIState.PLANNING)
+        
         with diagnostics.time_operation("planning_mode", "planning"):
             claude_client = ClaudeSDKClient(diagnostics)
-            plan_generator = PlanGenerator(claude_client, diagnostics)
+            plan_generator = PlanGenerator(claude_client, diagnostics, state_manager)
 
             # Create planning context
             planning_context = PlanningContext(
@@ -275,30 +328,32 @@ def execute_scaffold_branch_command(
                 },
             )
 
-            # Generate initial plan
-            click.echo("🎯 Generating implementation plan...")
-            click.echo(f'📋 Request: "{prompt_text[:60]}{"..." if len(prompt_text) > 60 else ""}"')
-            click.echo(
-                f"🤖 Planning Model: {planning_model} (reasoning-focused for complex planning)"
-            )
-            click.echo(f"📁 Project: {dg_context.root_path}")
-            click.echo(f"⚙️  Input Type: {input_type.__name__}")
-            spinner_ctx = (
-                daggy_spinner_context("Generating plan") if not disable_progress else nullcontext()
-            )
-            with spinner_ctx:
-                initial_plan = plan_generator.generate_initial_plan(planning_context)
+            # Start plan generation
+            state_manager.emit_event(ProgressEvent(
+                operation_id="planning",
+                operation_name="Generating plan",
+                status="started"
+            ))
+            
+            initial_plan = plan_generator.generate_initial_plan(planning_context)
+            
+            state_manager.emit_event(ProgressEvent(
+                operation_id="planning",
+                operation_name="Generating plan", 
+                status="completed"
+            ))
 
             # Interactive plan review and refinement
             current_plan = initial_plan
             max_refinement_rounds = 3
             refinement_count = 0
 
+            state_manager.update_state(ui_state=UIState.PLAN_REVIEW)
+
             while refinement_count < max_refinement_rounds:
-                approved, feedback = get_user_plan_approval(current_plan)
+                approved, feedback = state_manager.ui.get_plan_approval(current_plan.markdown_content)
 
                 if approved:
-                    click.echo("✅ Plan approved! Proceeding with implementation...")
                     diagnostics.info(
                         "plan_approved",
                         "User approved the implementation plan",
@@ -310,41 +365,54 @@ def execute_scaffold_branch_command(
                     break  # Exit the planning loop and proceed to execution
                 elif feedback:
                     # Refine the plan
-                    click.echo("🔄 Refining plan based on your feedback...")
-                    spinner_ctx = (
-                        daggy_spinner_context("Refining plan")
-                        if not disable_progress
-                        else nullcontext()
-                    )
-                    with spinner_ctx:
-                        current_plan = plan_generator.refine_plan(current_plan, feedback)
+                    state_manager.emit_event(ProgressEvent(
+                        operation_id="plan_refinement",
+                        operation_name="Refining plan",
+                        status="started"
+                    ))
+                    
+                    current_plan = plan_generator.refine_plan(current_plan, feedback)
                     refinement_count += 1
+                    
+                    state_manager.emit_event(ProgressEvent(
+                        operation_id="plan_refinement", 
+                        operation_name="Refining plan",
+                        status="completed"
+                    ))
                 else:
                     # User cancelled
                     return
             else:
                 # Maximum refinement rounds reached
-                click.echo("⚠️  Maximum refinement rounds reached. Final plan:")
-                click.echo(current_plan.markdown_content)
-
+                state_manager.emit_event(create_status_message(
+                    "warning", 
+                    "⚠️  Maximum refinement rounds reached. Final plan:",
+                ))
+                
                 # Ask user if they want to proceed anyway
-                if not click.confirm("Would you like to proceed with this plan?"):
+                if not state_manager.ui.confirm_action("Would you like to proceed with this plan?"):
                     return
 
         # Proceed with execution after plan approval
-        click.echo("\n🚀 Beginning implementation...")
+        state_manager.update_state(ui_state=UIState.EXECUTING)
 
         # Generate branch name and PR title for execution
-        spinner_ctx = (
-            daggy_spinner_context("Generating branch name and PR title")
-            if not disable_progress
-            else nullcontext()
-        )
-        with spinner_ctx:
-            with diagnostics.time_operation("branch_name_generation", "ai_generation"):
-                branch_generation = get_branch_name_and_pr_title_from_prompt(
-                    dg_context, prompt_text, input_type, diagnostics, model=execution_model
-                )
+        state_manager.emit_event(ProgressEvent(
+            operation_id="branch_generation",
+            operation_name="Generating branch name and PR title",
+            status="started"
+        ))
+        
+        with diagnostics.time_operation("branch_name_generation", "ai_generation"):
+            branch_generation = get_branch_name_and_pr_title_from_prompt(
+                dg_context, prompt_text, input_type, diagnostics, model=execution_model
+            )
+        
+        state_manager.emit_event(ProgressEvent(
+            operation_id="branch_generation",
+            operation_name="Generating branch name and PR title", 
+            status="completed"
+        ))
         # Update final branch name with suffix to avoid conflicts
         final_branch_name = branch_generation.original_branch_name + "-" + str(uuid.uuid4())[:8]
         branch_generation = replace(branch_generation, final_branch_name=final_branch_name)
@@ -354,6 +422,9 @@ def execute_scaffold_branch_command(
         branch_name = final_branch_name
         pr_title = branch_generation.pr_title
         ai_scaffolding = True
+
+        # Update state with branch info
+        state_manager.update_state(branch_name=branch_name, pr_title=pr_title)
 
         diagnostics.info(
             category="branch_name_generated",
@@ -365,16 +436,14 @@ def execute_scaffold_branch_command(
             },
         )
 
-    click.echo(f"Creating new branch: {branch_name}")
-
     # Create and checkout the new branch
     with diagnostics.time_operation("git_branch_creation", "git_operations"):
-        branch_base_sha = create_git_branch(branch_name)
+        branch_base_sha = create_git_branch(branch_name, state_manager.emit_event)
 
         # Create an empty commit to enable PR creation
     commit_message = f"Initial commit for {branch_name} branch"
     with diagnostics.time_operation("empty_commit_creation", "git_operations"):
-        create_empty_commit(commit_message)
+        create_empty_commit(commit_message, state_manager.emit_event)
 
         # Determine if we should work locally only
     effective_local_only = local_only or not has_remote_origin()
@@ -390,8 +459,10 @@ def execute_scaffold_branch_command(
     )
 
     if effective_local_only:
-        click.echo(f"✅ Successfully created branch: {branch_name}")
         pr_url = ""
+        state_manager.emit_event(create_status_message(
+            "success", f"✅ Successfully created branch: {branch_name}"
+        ))
     else:
         # Create PR with branch name as title and standard body
         pr_body = (
@@ -400,9 +471,10 @@ def execute_scaffold_branch_command(
 
         # Push branch and create PR
         with diagnostics.time_operation("pr_creation", "git_operations"):
-            pr_url = create_branch_and_pr(branch_name, pr_title, pr_body, effective_local_only)
-
-        click.echo(f"✅ Successfully created branch and pull request: {pr_url}")
+            pr_url = create_branch_and_pr(branch_name, pr_title, pr_body, state_manager.emit_event, effective_local_only)
+    
+    # Update state with PR URL
+    state_manager.update_state(pr_url=pr_url)
 
     first_pass_sha = None
     if ai_scaffolding and input_type:
@@ -414,7 +486,8 @@ def execute_scaffold_branch_command(
                 prompt_text,
                 input_type,
                 diagnostics,
-                use_spinner=not disable_progress,
+                state_manager.emit_event,
+                use_spinner=not state_manager.ui.disable_progress,
                 model=execution_model,
             )
         with diagnostics.time_operation("content_commit", "git_operations"):
@@ -443,12 +516,17 @@ def execute_scaffold_branch_command(
         )
         record_path = record / f"{uuid.uuid4()}.json"
         record_path.write_text(json.dumps(as_dict(session_data), indent=2))
-        click.echo(f"📝 Session recorded: {record_path}")
+        state_manager.emit_event(create_status_message(
+            "info", f"📝 Session recorded: {record_path}"
+        ))
 
         diagnostics.info(
             category="session_recorded",
             message="Session data recorded to file",
             data={"record_path": str(record_path)},
         )
+    
+    # Mark as completed
+    state_manager.update_state(ui_state=UIState.COMPLETED)
 
     # Success logging is handled by claude_operation_error_boundary
