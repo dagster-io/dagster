@@ -1,0 +1,4 @@
+type: "dagster_test.components.simple_pipes_script_asset.SimplePipesScriptComponent"
+attributes:
+  asset_key: "example_string"
+  filename: "example_string"

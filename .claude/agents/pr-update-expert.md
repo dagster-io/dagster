@@ -103,6 +103,7 @@ dagster-dev ai-review-update --auto-prepare --title "[user thesis]" --body "[gen
 **Critical Requirements:**
 
 - Use user's thesis directly for title (grammar-corrected)
+- **IMPORTANT**: Truncate title to 72 characters maximum (long titles are bad for humans)
 - Never use template variables like `{generated_title}`
 - Ensure proper markdown escaping in body content
 - Handle multi-line content appropriately

@@ -30,6 +30,11 @@ from dagster_shared import check
 from dagster_shared.serdes.objects import EnvRegistryKey
 from packaging.version import Version
 
+from dagster_dg_cli.utils.yaml_template_generator import (
+    generate_defs_yaml_example_values,
+    generate_defs_yaml_schema,
+)
+
 DEFAULT_SCHEMA_FOLDER_NAME = ".dg"
 
 
@@ -96,6 +101,23 @@ def configure_editor_command(
 @click.option("--description", is_flag=True, default=False)
 @click.option("--scaffold-params-schema", is_flag=True, default=False)
 @click.option("--component-schema", is_flag=True, default=False)
+@click.option(
+    "--defs-yaml-schema",
+    is_flag=True,
+    default=False,
+    help="Generate LLM-optimized YAML template with inline documentation and type hints. "
+    "Unlike JSON schemas designed for validation, this YAML format includes human-readable "
+    "annotations and structured documentation that LLMs can better parse and understand. "
+    "Includes Required/Optional annotations, plain English type descriptions, field "
+    "descriptions inline with properties, and serves as both documentation and code "
+    "generation scaffold optimized for AI consumption.",
+)
+@click.option(
+    "--defs-yaml-example-values",
+    is_flag=True,
+    default=False,
+    help="Generate YAML example values optimized for LLM understanding and code generation",
+)
 @dg_path_options
 @dg_global_options
 @cli_telemetry_wrapper
@@ -104,6 +126,8 @@ def inspect_component_type_command(
     description: bool,
     scaffold_params_schema: bool,
     component_schema: bool,
+    defs_yaml_schema: bool,
+    defs_yaml_example_values: bool,
     target_path: Path,
     **global_options: object,
 ) -> None:
@@ -114,9 +138,20 @@ def inspect_component_type_command(
     component_key = EnvRegistryKey.from_typename(component_type)
     if not registry.has(component_key):
         exit_with_error(generate_missing_registry_object_error_message(component_type))
-    elif sum([description, scaffold_params_schema, component_schema]) > 1:
+    elif (
+        sum(
+            [
+                description,
+                scaffold_params_schema,
+                component_schema,
+                defs_yaml_schema,
+                defs_yaml_example_values,
+            ]
+        )
+        > 1
+    ):
         exit_with_error(
-            "Only one of --description, --scaffold-params-schema, and --component-schema can be specified."
+            "Only one of --description, --scaffold-params-schema, --component-schema, --defs-yaml-schema, and --defs-yaml-example-values can be specified."
         )
 
     entry_snap = registry.get(component_key)
@@ -135,6 +170,12 @@ def inspect_component_type_command(
             click.echo(_serialize_json_schema(entry_snap.component_schema))
         else:
             click.echo("No component schema defined.")
+    elif defs_yaml_schema:
+        schema_template = _generate_defs_yaml_schema(component_type, entry_snap)
+        click.echo(schema_template)
+    elif defs_yaml_example_values:
+        example_values = _generate_defs_yaml_example_values(component_type, entry_snap)
+        click.echo(example_values)
     # print all available metadata
     else:
         click.echo(component_type)
@@ -151,6 +192,37 @@ def inspect_component_type_command(
 
 def _serialize_json_schema(schema: Mapping[str, Any]) -> str:
     return json.dumps(schema, indent=4)
+
+
+def _generate_defs_yaml_schema(component_type_str: str, entry_snap) -> str:
+    """Generate LLM-optimized YAML template for a component's defs.yaml file.
+
+    Creates a template with inline documentation and type hints optimized for AI
+    understanding and code generation, separate from JSON schemas used for validation.
+
+    Args:
+        component_type_str: The component type identifier
+        entry_snap: Component registry entry containing schema information
+
+    Returns:
+        A YAML template string with inline documentation and LLM-optimized annotations
+    """
+    # Use the component's existing schema, or empty schema if none available
+    component_schema = entry_snap.component_schema or {}
+
+    return generate_defs_yaml_schema(component_type_str, component_schema)
+
+
+def _generate_defs_yaml_example_values(component_type_str: str, entry_snap) -> str:
+    """Generate YAML example values for a component's defs.yaml file.
+
+    Creates example values with sample data that users can copy and modify
+    for their component configuration.
+    """
+    # Use the component's existing schema, or empty schema if none available
+    component_schema = entry_snap.component_schema or {}
+
+    return generate_defs_yaml_example_values(component_type_str, component_schema)
 
 
 def _workspace_entry_for_project(

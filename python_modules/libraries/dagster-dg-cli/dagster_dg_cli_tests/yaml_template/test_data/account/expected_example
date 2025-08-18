@@ -1,0 +1,38 @@
+type: "dagster_fivetran.FivetranAccountComponent"
+attributes:
+  workspace:
+    account_id: "example_string"
+    api_key: "example_string"
+    api_secret: "example_string"
+    snapshot_path: "example_string"
+    request_max_retries: 1
+    request_retry_delay: 1.0
+    disable_schedule_on_trigger: true
+  connector_selector:
+    by_name:
+      - "example_string"
+  translation:
+    deps:
+      - "example_string"
+    description: "example_string"
+    metadata:
+      key: "value"
+    group_name: "example_string"
+    skippable: true
+    code_version: "example_string"
+    owners:
+      - "example_string"
+    tags:
+      key: "value"
+    kinds:
+      - "example_string"
+    automation_condition: "example_string"
+    partitions_def:
+      type: "example_string"
+      start_date: "example_string"
+      end_date: "example_string"
+      timezone: "example_string"
+      minute_offset: 1
+    key: "example_string"
+    key_prefix:
+      - "example_string"
