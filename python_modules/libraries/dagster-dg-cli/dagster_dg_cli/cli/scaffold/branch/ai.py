@@ -348,4 +348,4 @@ def scaffold_content_for_prompt(
             )
 
             # AI interaction is already logged by SDK client
-            # Success logging is handled by claude_operation_error_boundary
+            # Success logging is handled by claude_operation

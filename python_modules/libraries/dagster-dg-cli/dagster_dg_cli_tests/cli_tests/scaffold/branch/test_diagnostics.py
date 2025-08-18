@@ -341,7 +341,7 @@ class TestDiagnosticsDataModels:
         assert metrics.duration_ms == 250.0
         assert metrics.phase == "test_phase"
 
-    def test_claude_operation_error_boundary_success_logging(self):
+    def test_claude_operation_success_logging(self):
         """Test that the error boundary logs start and success messages automatically."""
         service = ClaudeDiagnosticsService(level="info")
 
@@ -367,7 +367,7 @@ class TestDiagnosticsDataModels:
         assert success_entry.message == "Successfully completed test_operation"
         assert "duration_ms" in success_entry.data
 
-    def test_claude_operation_error_boundary_error_logging(self):
+    def test_claude_operation_error_logging(self):
         """Test that the error boundary logs errors when exceptions occur."""
         service = ClaudeDiagnosticsService(level="info")
 

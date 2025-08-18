@@ -107,7 +107,7 @@ def scaffold_branch_command(
         )
 
     try:
-        with diagnostics.claude_operation_error_boundary(
+        with diagnostics.claude_operation(
             operation_name="scaffold_branch_command",
             error_code="command_failed",
             error_message="Scaffold branch command failed",
@@ -328,4 +328,4 @@ def execute_scaffold_branch_command(
             {"record_path": str(record_path)},
         )
 
-    # Success logging is handled by claude_operation_error_boundary
+    # Success logging is handled by claude_operation
