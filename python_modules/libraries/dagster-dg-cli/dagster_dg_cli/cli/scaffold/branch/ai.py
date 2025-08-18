@@ -14,6 +14,11 @@ from dagster_shared.record import record
 
 from dagster_dg_cli.cli.scaffold.branch.claude.diagnostics import ClaudeDiagnostics
 from dagster_dg_cli.cli.scaffold.branch.claude.sdk_client import ClaudeSDKClient
+from dagster_dg_cli.cli.scaffold.branch.constants import (
+    ALLOWED_COMMANDS_PLANNING,
+    ALLOWED_COMMANDS_SCAFFOLDING,
+    ModelType,
+)
 from dagster_dg_cli.utils.ui import daggy_spinner_context
 
 
@@ -113,6 +118,7 @@ def get_branch_name(
     context: str,
     input_type: type["InputType"],
     diagnostics: ClaudeDiagnostics,
+    model: ModelType = "sonnet",
 ) -> str:
     """Generate a git branch name from context.
 
@@ -135,6 +141,7 @@ def get_pr_title(
     context: str,
     input_type: type["InputType"],
     diagnostics: ClaudeDiagnostics,
+    model: ModelType = "sonnet",
 ) -> str:
     """Generate a PR title from context.
 
@@ -162,36 +169,30 @@ def load_scaffolding_prompt(user_input: str) -> str:
     Returns:
         The full scaffolding prompt
     """
-    prompt_path = Path(__file__).parent / "prompts" / "scaffolding.md"
-    template = prompt_path.read_text()
+    prompts_dir = Path(__file__).parent / "prompts"
+
+    # Load and concatenate the two prompt files
+    best_practices = (prompts_dir / "best_practices.md").read_text()
+    scaffolding_instructions = (prompts_dir / "scaffolding_instructions.md").read_text()
+
+    # Concatenate with proper spacing
+    template = best_practices + "\n\n" + scaffolding_instructions
+
     return template + "\n" + user_input
 
 
 def get_allowed_commands_scaffolding() -> list[str]:
     """Get the list of allowed commands for scaffolding operations."""
-    return [
-        "Bash(dg scaffold defs:*)",
-        "Bash(dg list defs:*)",
-        "Bash(dg list components:*)",
-        "Bash(dg docs component:*)",
-        "Bash(dg check yaml:*)",
-        "Bash(dg check defs:*)",
-        "Bash(dg list env:*)",
-        "Bash(dg utils inspect-component:*)",
-        "Bash(dg docs integrations:*)",
-        "Bash(uv add:*)",
-        "Bash(uv sync:*)",
-        # update yaml files
-        "Edit(**/*defs.yaml)",
-        "Replace(**/*defs.yaml)",
-        "Update(**/*defs.yaml)",
-        "Write(**/*defs.yaml)",
-        "Edit(**/*NEXT_STEPS.md)",
-        "Replace(**/*NEXT_STEPS.md)",
-        "Update(**/*NEXT_STEPS.md)",
-        "Write(**/*NEXT_STEPS.md)",
-        "Bash(touch:*)",
-    ]
+    return ALLOWED_COMMANDS_SCAFFOLDING.copy()
+
+
+def get_allowed_commands_planning() -> list[str]:
+    """Get the list of allowed commands for planning operations.
+
+    Planning operations need to analyze the codebase but should not
+    make any modifications. This returns a read-only subset of tools.
+    """
+    return ALLOWED_COMMANDS_PLANNING.copy()
 
 
 class InputType(ABC):
@@ -257,6 +258,7 @@ def get_branch_name_and_pr_title_from_prompt(
     user_input: str,
     input_type: type["InputType"],
     diagnostics: ClaudeDiagnostics,
+    model: ModelType = "sonnet",
 ) -> BranchNameGeneration:
     """Invokes Claude under the hood to generate a reasonable, valid
     git branch name and pull request title based on the user's stated goal.
@@ -275,8 +277,8 @@ def get_branch_name_and_pr_title_from_prompt(
     start_time = perf_counter()
 
     # Generate branch name and PR title separately for reliability
-    branch_name = get_branch_name(context_str, input_type, diagnostics)
-    pr_title = get_pr_title(context_str, input_type, diagnostics)
+    branch_name = get_branch_name(context_str, input_type, diagnostics, model)
+    pr_title = get_pr_title(context_str, input_type, diagnostics, model)
 
     duration_ms = (perf_counter() - start_time) * 1000
 
@@ -312,9 +314,10 @@ class PrintOutputChannel:
 
 def scaffold_content_for_prompt(
     user_input: str,
-    input_type: type["InputType"],
+    input_type: type[InputType],
     diagnostics: ClaudeDiagnostics,
     use_spinner: bool = True,
+    model: ModelType = "sonnet",
 ) -> None:
     """Scaffolds content for the user's prompt using Claude Code SDK."""
     context_str = input_type.get_context(user_input)
