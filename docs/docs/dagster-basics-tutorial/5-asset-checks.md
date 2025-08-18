@@ -48,6 +48,7 @@ The asset check uses the same `DuckDBResource` resource we defined for our asset
     AssetCheck["Asset Check"] -.-> Resource
     Resource -.-> DuckDB
 ```
+
 :::
 
 ## 2. Checking our asset check runs
@@ -55,7 +56,6 @@ The asset check uses the same `DuckDBResource` resource we defined for our asset
 In the Dagster UI at [http://127.0.0.1:3000](http://127.0.0.1:3000), you should now see an asset check associated with the `orders_by_month` asset:
 
 ![2048 resolution](/images/tutorial/dagster-tutorial/asset-check-1.png)
-
 
 Asset checks run automatically when an asset is materialized, but you can also execute them manually in the UI:
 

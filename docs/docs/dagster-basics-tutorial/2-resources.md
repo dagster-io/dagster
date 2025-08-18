@@ -97,7 +97,6 @@ Back in the UI, your assets will not appear any different, but you can view the 
 
    ![2048 resolution](/images/tutorial/dagster-tutorial/resource-1.png)
 
-
 4. Click on "Uses" for the resource to see the three assets that depend on the resource.
 
    ![2048 resolution](/images/tutorial/dagster-tutorial/resource-2.png)

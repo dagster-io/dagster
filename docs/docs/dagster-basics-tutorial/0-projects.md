@@ -4,7 +4,7 @@ description: The Dagster project
 sidebar_position: 10
 ---
 
-Dagster follows standard Python conventions, and most work in Dagster begins with creating a Python package called a project. This is where you’ll define your pipelines as well as any Python dependencies your project requires.  
+Dagster follows standard Python conventions, and most work in Dagster begins with creating a Python package called a project. This is where you’ll define your pipelines as well as any Python dependencies your project requires.
 
 To streamline project creation, Dagster provides the [`create-dagster` CLI](/api/clis/create-dagster), which quickly scaffolds everything you need.
 
@@ -123,22 +123,22 @@ Your new Dagster project should have the following structure:
    </TabItem>
 </Tabs>
 
-* `pyproject.toml` - defines the metadata and Python dependencies for the project
-* `src` directory - will contain code for the project
-* `src/definitions.py` - defines the main Dagster project object
-* `tests` directory - will contain tests for the project
+- `pyproject.toml` - defines the metadata and Python dependencies for the project
+- `src` directory - will contain code for the project
+- `src/definitions.py` - defines the main Dagster project object
+- `tests` directory - will contain tests for the project
 
 ## 2: Start Dagster webserver
 
-When you initialize a project with `create-dagster`, the `dagster-dg-cli` library is installed. This provides the `dg` CLI, which includes several commands to help you structure and navigate Dagster projects. For more details, see the [`dg` CLI documentation](/api/clis/dg-cli/dg-cli-reference).  
+When you initialize a project with `create-dagster`, the `dagster-dg-cli` library is installed. This provides the `dg` CLI, which includes several commands to help you structure and navigate Dagster projects. For more details, see the [`dg` CLI documentation](/api/clis/dg-cli/dg-cli-reference).
 
-Use the following command to launch the Dagster UI locally:  
+Use the following command to launch the Dagster UI locally:
 
 <CliInvocationExample contents="dg dev" />
 
-Then, open your browser to [http://127.0.0.1:3000](http://127.0.0.1:3000).  
+Then, open your browser to [http://127.0.0.1:3000](http://127.0.0.1:3000).
 
-At this point, the project will be empty, but you’ll continue adding to it throughout the tutorial.  
+At this point, the project will be empty, but you’ll continue adding to it throughout the tutorial.
 
 ![2048 resolution](/images/tutorial/dagster-tutorial/project.png)
 

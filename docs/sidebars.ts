@@ -27,7 +27,7 @@ const sidebars: SidebarsConfig = {
     },
     {
       type: 'category',
-      label: 'Dagster basics tutorial',
+      label: 'Tutorial',
       collapsed: false,
       link: {type: 'doc', id: 'dagster-basics-tutorial/index'},
       items: [
