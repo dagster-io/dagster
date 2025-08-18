@@ -10,8 +10,15 @@ attributes:  # Optional: Attributes details
     request_retry_delay: <number>  # Optional: Time (in seconds) to wait between each request retry.
     disable_schedule_on_trigger: <boolean>  # Optional: Whether to disable the schedule of a connector when it is synchronized using this resource.Defaults to True.
   connector_selector:  # Optional: 
-    by_name:  # Required: List of string items
+    # Choose one of the following types:
+    # Option 1 - FivetranConnectorSelectorByName:
+    # by_name:  # Optional: List of string items
       - <string>
+    #
+    # Option 2 - FivetranConnectorSelectorById:
+    # by_id:  # Optional: List of string items
+      - <string>
+    #
   translation:  # Optional: 
     deps: <one of: array of string, string>  # Optional: The asset keys for the upstream assets that this asset depends on.
     description: <string>  # Optional: Human-readable description of the asset.
@@ -24,10 +31,43 @@ attributes:  # Optional: Attributes details
     kinds: <one of: array of string, string>  # Optional: A list of strings representing the kinds of the asset. These will be made visible in the Dagster UI.
     automation_condition: <string>  # Optional: The condition under which the asset will be automatically materialized.
     partitions_def:  # Optional: The partitions definition for the asset.
-      type: <string>  # Optional: 
-      start_date: <string>  # Required: 
-      end_date: <string>  # Optional: 
-      timezone: <string>  # Optional: 
-      minute_offset: <integer>  # Optional: 
+      # Choose one of the following types:
+      # Option 1 - HourlyPartitionsDefinitionModel:
+      # type: <string>  # Optional: 
+      # start_date: <string>  # Optional: 
+      # end_date: <string>  # Optional: 
+      # timezone: <string>  # Optional: 
+      # minute_offset: <integer>  # Optional: 
+      #
+      # Option 2 - DailyPartitionsDefinitionModel:
+      # type: <string>  # Optional: 
+      # start_date: <string>  # Optional: 
+      # end_date: <string>  # Optional: 
+      # timezone: <string>  # Optional: 
+      # minute_offset: <integer>  # Optional: 
+      # hour_offset: <integer>  # Optional: 
+      #
+      # Option 3 - WeeklyPartitionsDefinitionModel:
+      # type: <string>  # Optional: 
+      # start_date: <string>  # Optional: 
+      # end_date: <string>  # Optional: 
+      # timezone: <string>  # Optional: 
+      # minute_offset: <integer>  # Optional: 
+      # hour_offset: <integer>  # Optional: 
+      # day_offset: <integer>  # Optional: 
+      #
+      # Option 4 - TimeWindowPartitionsDefinitionModel:
+      # type: <string>  # Optional: 
+      # start_date: <string>  # Optional: 
+      # end_date: <string>  # Optional: 
+      # timezone: <string>  # Optional: 
+      # fmt: <string>  # Optional: 
+      # cron_schedule: <string>  # Optional: 
+      #
+      # Option 5 - StaticPartitionsDefinitionModel:
+      # type: <string>  # Optional: 
+      # partition_keys:  # Optional: List of string items
+        - <string>
+      #
     key: <string>  # Optional: 
     key_prefix: <one of: string, array of string>  # Optional: Prefix the existing asset key with the provided value.
