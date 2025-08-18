@@ -125,9 +125,9 @@ def scaffold_branch_command(
     except Exception as e:
         if diagnostics:
             diagnostics.error(
-                "command_failed",
-                "Scaffold branch command failed",
-                {
+                category="command_failed",
+                message="Scaffold branch command failed",
+                data={
                     "error_type": type(e).__name__,
                     "error_message": str(e),
                 },
@@ -175,9 +175,9 @@ def execute_scaffold_branch_command(
     # If the user input a valid git branch name, bypass AI inference and create the branch directly.
     if prompt_text and is_prompt_valid_git_branch_name(prompt_text.strip()):
         diagnostics.info(
-            "branch_name_direct",
-            "Using prompt as direct branch name",
-            {"branch_name": prompt_text.strip()},
+            category="branch_name_direct",
+            message="Using prompt as direct branch name",
+            data={"branch_name": prompt_text.strip()},
         )
         branch_name = prompt_text.strip()
         pr_title = branch_name
@@ -206,9 +206,9 @@ def execute_scaffold_branch_command(
             )
 
         diagnostics.info(
-            "input_type_detected",
-            "Detected input type for prompt",
-            {
+            category="input_type_detected",
+            message="Detected input type for prompt",
+            data={
                 "input_type": input_type.__name__,
                 "prompt_length": len(prompt_text),
             },
@@ -235,9 +235,9 @@ def execute_scaffold_branch_command(
         ai_scaffolding = True
 
         diagnostics.info(
-            "branch_name_generated",
-            "Generated branch name and PR title",
-            {
+            category="branch_name_generated",
+            message="Generated branch name and PR title",
+            data={
                 "original_branch_name": branch_generation.original_branch_name,
                 "final_branch_name": branch_generation.final_branch_name,
                 "pr_title": branch_generation.pr_title,
@@ -259,9 +259,9 @@ def execute_scaffold_branch_command(
     effective_local_only = local_only or not has_remote_origin()
 
     diagnostics.info(
-        "branch_mode",
-        "Determined branch creation mode",
-        {
+        category="branch_mode",
+        message="Determined branch creation mode",
+        data={
             "local_only_flag": local_only,
             "has_remote": has_remote_origin(),
             "effective_local_only": effective_local_only,
@@ -324,9 +324,9 @@ def execute_scaffold_branch_command(
         click.echo(f"📝 Session recorded: {record_path}")
 
         diagnostics.info(
-            "session_recorded",
-            "Session data recorded to file",
-            {"record_path": str(record_path)},
+            category="session_recorded",
+            message="Session data recorded to file",
+            data={"record_path": str(record_path)},
         )
 
     # Success logging is handled by claude_operation_error_boundary
