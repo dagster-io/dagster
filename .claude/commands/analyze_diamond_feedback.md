@@ -77,9 +77,10 @@ Generate a structured plan with:
 
 ### Step 8: Mark Comments as Resolved
 
-- Use `gh pr review <pr-number> --comment --body "✅ Resolved: [reason]"` to add resolution comments
-- For review comments, reply directly to the specific comment thread
-- Use `gh pr comment <pr-number> --body "✅ Resolved Diamond feedback: [summary]"` for general resolutions
+- **Reply to individual review comments**: Use `gh api repos/OWNER/REPO/pulls/PR_NUMBER/comments` with `--field in_reply_to=COMMENT_ID` to reply to specific Diamond comments
+- **Get review thread IDs**: Query GraphQL to get thread IDs for Diamond review comments
+- **Resolve conversations**: Use GraphQL `resolveReviewThread` mutation with thread IDs to mark conversations as resolved (equivalent to clicking "Resolve conversation" button)
+- **Mark general comments**: Use `gh pr comment` for overall resolution summary
 - Provide feedback on which comments were marked resolved
 
 ### Step 9: Create Action Plan
@@ -149,7 +150,45 @@ gh api repos/OWNER/REPO/pulls/$PR_NUMBER/comments --jq '
 {author: .user.login, body: .body, path: .path, line: .line, created: .created_at}
 '
 
-# Mark comments as resolved
+# Reply to individual review comments
+gh api repos/OWNER/REPO/pulls/$PR_NUMBER/comments -X POST --field body="✅ Resolved: [reason]" --field in_reply_to=$COMMENT_ID
+
+# Get review thread IDs for resolving conversations
+gh api graphql -f query='
+query {
+  repository(owner: "OWNER", name: "REPO") {
+    pullRequest(number: PR_NUMBER) {
+      reviewThreads(first: 50) {
+        nodes {
+          id
+          isResolved
+          comments(first: 10) {
+            nodes {
+              id
+              databaseId
+              author {
+                login
+              }
+              body
+            }
+          }
+        }
+      }
+    }
+  }
+}'
+
+# Resolve review thread conversations (equivalent to clicking "Resolve conversation")
+gh api graphql -f query='
+mutation {
+  resolveReviewThread(input: {threadId: "THREAD_ID"}) {
+    thread {
+      id
+      isResolved
+    }
+  }
+}'
+
+# Mark general comments as resolved
 gh pr comment $PR_NUMBER --body "✅ Resolved Diamond feedback: Issue no longer applies"
-gh pr review $PR_NUMBER --comment --body "✅ Resolved: Code has been updated per feedback"
 ```
