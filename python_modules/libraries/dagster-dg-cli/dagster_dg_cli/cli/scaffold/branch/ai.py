@@ -19,7 +19,6 @@ from dagster_dg_cli.cli.scaffold.branch.constants import (
     ALLOWED_COMMANDS_SCAFFOLDING,
     ModelType,
 )
-from dagster_dg_cli.cli.scaffold.branch.diagnostics import ClaudeDiagnosticsService
 from dagster_dg_cli.utils.ui import daggy_spinner_context
 
 
@@ -118,7 +117,7 @@ def load_prompt_template(prompt_filename: str, context: str) -> str:
 def get_branch_name(
     context: str,
     input_type: type["InputType"],
-    diagnostics: ClaudeDiagnosticsService,
+    diagnostics: ClaudeDiagnostics,
     model: ModelType = "sonnet",
 ) -> str:
     """Generate a git branch name from context.
@@ -141,7 +140,7 @@ def get_branch_name(
 def get_pr_title(
     context: str,
     input_type: type["InputType"],
-    diagnostics: ClaudeDiagnosticsService,
+    diagnostics: ClaudeDiagnostics,
     model: ModelType = "sonnet",
 ) -> str:
     """Generate a PR title from context.
@@ -258,7 +257,7 @@ def get_branch_name_and_pr_title_from_prompt(
     dg_context: DgContext,
     user_input: str,
     input_type: type["InputType"],
-    diagnostics: ClaudeDiagnosticsService,
+    diagnostics: ClaudeDiagnostics,
     model: ModelType = "sonnet",
 ) -> BranchNameGeneration:
     """Invokes Claude under the hood to generate a reasonable, valid
@@ -315,8 +314,8 @@ class PrintOutputChannel:
 
 def scaffold_content_for_prompt(
     user_input: str,
-    input_type: type["InputType"],
-    diagnostics: ClaudeDiagnosticsService,
+    input_type: type[InputType],
+    diagnostics: ClaudeDiagnostics,
     use_spinner: bool = True,
     model: ModelType = "sonnet",
 ) -> None:

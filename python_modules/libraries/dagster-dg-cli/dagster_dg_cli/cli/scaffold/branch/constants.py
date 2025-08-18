@@ -4,10 +4,10 @@ This module contains constants that are shared across different modules
 to avoid circular dependencies.
 """
 
-from typing import Literal, TypeAlias, get_args
+from typing import Literal, get_args
 
 # Type alias for valid AI model names
-ModelType: TypeAlias = Literal["opus", "sonnet", "haiku"]
+ModelType = Literal["opus", "sonnet", "haiku"]
 
 # Allowed commands for different operation types
 
