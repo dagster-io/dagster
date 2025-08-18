@@ -17,7 +17,7 @@
   background: var(--skeleton-bg-hover);
 }
 
-.skeleton[data-animate='true']::after {
+.skeleton.animated::after {
   background: linear-gradient(
     90deg,
     var(--skeleton-bg) 0%,

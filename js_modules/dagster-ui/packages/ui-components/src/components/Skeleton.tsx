@@ -1,3 +1,4 @@
+import clsx from 'clsx';
 import React from 'react';
 
 import {Colors} from './Color';
@@ -19,5 +20,5 @@ export const Skeleton = ({$height, $width, $animate = true, style}: Props) => {
     ...style,
   } as React.CSSProperties;
 
-  return <div className={styles.skeleton} style={allStyles} data-animate={$animate} />;
+  return <div className={clsx(styles.skeleton, $animate && styles.animated)} style={allStyles} />;
 };
