@@ -4,11 +4,8 @@ from typing import TYPE_CHECKING, Optional
 import graphene
 from dagster import _check as check
 from dagster._core.definitions.sensor_definition import SensorType
-from dagster._core.remote_representation import (
-    CodeLocation,
-    GrpcServerCodeLocation,
-    RemoteRepository,
-)
+from dagster._core.remote_representation.code_location import CodeLocation, GrpcServerCodeLocation
+from dagster._core.remote_representation.external import RemoteRepository
 from dagster._core.remote_representation.feature_flags import get_feature_flags_for_location
 from dagster._core.remote_representation.grpc_server_state_subscriber import (
     LocationStateChangeEvent,

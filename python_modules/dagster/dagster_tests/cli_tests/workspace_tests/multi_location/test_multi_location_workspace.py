@@ -4,7 +4,7 @@ from contextlib import ExitStack
 import dagster as dg
 import pytest
 import yaml
-from dagster._core.remote_representation import GrpcServerCodeLocation
+from dagster._core.remote_representation.code_location import GrpcServerCodeLocation
 from dagster._core.workspace.context import WorkspaceProcessContext
 from dagster._core.workspace.load import (
     load_workspace_process_context_from_yaml_paths,

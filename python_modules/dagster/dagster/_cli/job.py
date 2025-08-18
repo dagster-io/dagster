@@ -54,16 +54,13 @@ from dagster._core.execution.execution_result import ExecutionResult
 from dagster._core.execution.job_backfill import create_backfill_run
 from dagster._core.instance import DagsterInstance
 from dagster._core.origin import JobPythonOrigin
-from dagster._core.remote_representation import (
-    CodeLocation,
-    RemoteJob,
-    RemoteRepository,
-    RepositoryHandle,
-)
+from dagster._core.remote_representation.code_location import CodeLocation
+from dagster._core.remote_representation.external import RemoteJob, RemoteRepository
 from dagster._core.remote_representation.external_data import (
     PartitionNamesSnap,
     PartitionSetExecutionParamSnap,
 )
+from dagster._core.remote_representation.handle import RepositoryHandle
 from dagster._core.snap import JobSnap, NodeInvocationSnap
 from dagster._core.storage.dagster_run import DagsterRun
 from dagster._core.storage.tags import (

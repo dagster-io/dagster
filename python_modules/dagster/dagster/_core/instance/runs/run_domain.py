@@ -60,7 +60,8 @@ if TYPE_CHECKING:
     from dagster._core.execution.plan.resume_retry import ReexecutionStrategy
     from dagster._core.instance.instance import DagsterInstance
     from dagster._core.remote_origin import RemoteJobOrigin
-    from dagster._core.remote_representation import CodeLocation, RemoteJob
+    from dagster._core.remote_representation.code_location import CodeLocation
+    from dagster._core.remote_representation.external import RemoteJob
     from dagster._core.snap import ExecutionPlanSnapshot, JobSnap
     from dagster._core.snap.execution_plan_snapshot import (
         ExecutionStepOutputSnap,
@@ -427,7 +428,8 @@ class RunDomain:
         from dagster._core.execution.backfill import BulkActionStatus
         from dagster._core.execution.plan.resume_retry import ReexecutionStrategy
         from dagster._core.execution.plan.state import KnownExecutionState
-        from dagster._core.remote_representation import CodeLocation, RemoteJob
+        from dagster._core.remote_representation.code_location import CodeLocation
+        from dagster._core.remote_representation.external import RemoteJob
 
         check.inst_param(parent_run, "parent_run", DagsterRun)
         check.inst_param(code_location, "code_location", CodeLocation)

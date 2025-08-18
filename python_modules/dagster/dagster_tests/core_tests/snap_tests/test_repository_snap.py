@@ -1,8 +1,8 @@
 import dagster as dg
 from dagster._core.definitions.resource_definition import ResourceDefinition
 from dagster._core.execution.context.init import InitResourceContext
-from dagster._core.remote_representation import JobDataSnap
 from dagster._core.remote_representation.external_data import (
+    JobDataSnap,
     NestedResource,
     NestedResourceType,
     RepositorySnap,
