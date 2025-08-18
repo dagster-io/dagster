@@ -1,4 +1,4 @@
-"""Data models for scaffold branch command."""
+"""Data models for scaffold branch command and diagnostics."""
 
 from typing import Any, Optional
 
@@ -27,3 +27,50 @@ class Session:
     input: dict[str, Any]
     # collection of generated output
     output: dict[str, Any]
+
+
+@record
+class DiagnosticsEntry:
+    """Individual diagnostics log entry."""
+
+    correlation_id: str
+    timestamp: str
+    level: str
+    category: str
+    message: str
+    data: dict[str, Any]
+
+
+@record
+class AIInteraction:
+    """Record of AI interaction with Claude."""
+
+    correlation_id: str
+    timestamp: str
+    prompt: str
+    response: str
+    token_count: Optional[int]
+    tools_used: list[str]
+    duration_ms: float
+
+
+@record
+class ContextGathering:
+    """Record of context gathering operations."""
+
+    correlation_id: str
+    timestamp: str
+    files_analyzed: list[str]
+    patterns_detected: list[str]
+    decisions_made: dict[str, Any]
+
+
+@record
+class PerformanceMetrics:
+    """Performance timing data for operations."""
+
+    correlation_id: str
+    timestamp: str
+    operation: str
+    duration_ms: float
+    phase: str

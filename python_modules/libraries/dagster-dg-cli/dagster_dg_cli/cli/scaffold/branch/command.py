@@ -14,15 +14,10 @@ from dagster_dg_core.context import DgContext
 from dagster_dg_core.shared_options import dg_global_options, dg_path_options
 from dagster_dg_core.utils import DgClickCommand
 from dagster_dg_core.utils.telemetry import cli_telemetry_wrapper
-from dagster_shared.record import as_dict
+from dagster_shared.record import as_dict, replace
 
-from dagster_dg_cli.cli.scaffold.branch.ai import (
-    INPUT_TYPES,
-    TextInputType,
-    get_branch_name_and_pr_title_from_prompt,
-    scaffold_content_for_prompt,
-)
 from dagster_dg_cli.cli.scaffold.branch.diagnostics import (
+    VALID_DIAGNOSTICS_LEVELS,
     DiagnosticsLevel,
     create_claude_diagnostics_service,
 )
@@ -37,6 +32,10 @@ from dagster_dg_cli.cli.scaffold.branch.git import (
     run_git_command,
 )
 from dagster_dg_cli.cli.scaffold.branch.models import Session
+from dagster_dg_cli.utils.claude_utils import (
+    get_claude_sdk_unavailable_message,
+    is_claude_sdk_available,
+)
 from dagster_dg_cli.utils.ui import daggy_spinner_context
 
 
@@ -60,7 +59,7 @@ def is_prompt_valid_git_branch_name(prompt: str) -> bool:
 )
 @click.option(
     "--diagnostics-level",
-    type=click.Choice(["off", "error", "info", "debug"]),
+    type=click.Choice(VALID_DIAGNOSTICS_LEVELS),
     default="off",
     help="Enable structured diagnostics logging at specified level (default: off).",
 )
@@ -87,6 +86,14 @@ def scaffold_branch_command(
 
     if sys.version_info < (3, 10):
         raise click.ClickException("dg scaffold branch requires Python 3.10 or higher")
+
+    # Basic input validation
+    prompt_text = " ".join(prompt).strip()
+    if not prompt_text:
+        raise click.UsageError("Prompt cannot be empty")
+
+    # DiagnosticsLevel is already validated by click.Choice, so this check is redundant
+    # but kept for explicit validation in case of programmatic usage
     # Create Claude diagnostics service instance
     diagnostics = create_claude_diagnostics_service(
         level=diagnostics_level,
@@ -104,7 +111,7 @@ def scaffold_branch_command(
             "command_start",
             "Starting scaffold branch command",
             {
-                "prompt": " ".join(prompt),
+                "prompt": prompt_text,
                 "target_path": str(target_path),
                 "local_only": local_only,
                 "diagnostics_level": diagnostics_level,
@@ -125,8 +132,9 @@ def scaffold_branch_command(
         if record and (not record.exists() or not record.is_dir()):
             raise click.UsageError(f"{record} is not an existing directory")
 
-        prompt_text = " ".join(prompt)
+        # prompt_text already defined above from validation
         generated_outputs = {}
+        pr_title = ""  # Initialize pr_title
 
         # If the user input a valid git branch name, bypass AI inference and create the branch directly.
         if prompt_text and is_prompt_valid_git_branch_name(prompt_text.strip()):
@@ -138,6 +146,18 @@ def scaffold_branch_command(
             branch_name = prompt_text.strip()
             pr_title = branch_name
         else:
+            # Check if Claude Code SDK is available before proceeding with AI operations
+            if not is_claude_sdk_available():
+                raise click.ClickException(get_claude_sdk_unavailable_message())
+
+            # Import AI modules only when needed and available
+            from dagster_dg_cli.cli.scaffold.branch.ai import (
+                INPUT_TYPES,
+                TextInputType,
+                get_branch_name_and_pr_title_from_prompt,
+                scaffold_content_for_prompt,
+            )
+
             # Otherwise, use AI to infer the branch name and PR title. Try to match the input to a known
             # input type so we can gather more context.
             if not prompt_text:
@@ -166,22 +186,26 @@ def scaffold_branch_command(
             )
             with spinner_ctx:
                 with diagnostics.time_operation("branch_name_generation", "ai_generation"):
-                    branch_name, pr_title = get_branch_name_and_pr_title_from_prompt(
+                    branch_generation = get_branch_name_and_pr_title_from_prompt(
                         dg_context, prompt_text, input_type, diagnostics
                     )
-            generated_outputs["branch_name"] = branch_name
-            generated_outputs["pr_title"] = pr_title
-            # For generated branch names, add a random suffix to avoid conflicts
-            branch_name = branch_name + "-" + str(uuid.uuid4())[:8]
+            # Update final branch name with suffix to avoid conflicts
+            final_branch_name = branch_generation.original_branch_name + "-" + str(uuid.uuid4())[:8]
+            branch_generation = replace(branch_generation, final_branch_name=final_branch_name)
+
+            generated_outputs["branch_name"] = branch_generation.original_branch_name
+            generated_outputs["pr_title"] = branch_generation.pr_title
+            branch_name = final_branch_name
+            pr_title = branch_generation.pr_title
             ai_scaffolding = True
 
             diagnostics.info(
                 "branch_name_generated",
                 "Generated branch name and PR title",
                 {
-                    "original_branch_name": generated_outputs["branch_name"],
-                    "final_branch_name": branch_name,
-                    "pr_title": pr_title,
+                    "original_branch_name": branch_generation.original_branch_name,
+                    "final_branch_name": branch_generation.final_branch_name,
+                    "pr_title": branch_generation.pr_title,
                 },
             )
 
@@ -224,9 +248,9 @@ def scaffold_branch_command(
 
         first_pass_sha = None
         if ai_scaffolding and input_type:
+            # scaffold_content_for_prompt was imported above when AI was available
             with diagnostics.time_operation("content_scaffolding", "ai_generation"):
                 scaffold_content_for_prompt(
-                    dg_context,
                     prompt_text,
                     input_type,
                     diagnostics,
