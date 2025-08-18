@@ -1,3 +1,4 @@
+import os
 import re
 from dataclasses import dataclass
 from functools import cached_property
@@ -73,8 +74,12 @@ class DatabricksAssetBundleComponent(Component, Resolvable):
         )
 
     def build_defs(self, context: ComponentLoadContext) -> Definitions:
+        component_defs_path_as_python_str = str(
+            os.path.relpath(context.defs_module_path, start=context.project_root)
+        ).replace("/", "_")
+
         @multi_asset(
-            name="databricks_multi_asset",
+            name=f"databricks_multi_asset_{component_defs_path_as_python_str}",
             specs=[self.get_asset_spec(task) for task in self.databricks_config.tasks],
             can_subset=True,
         )

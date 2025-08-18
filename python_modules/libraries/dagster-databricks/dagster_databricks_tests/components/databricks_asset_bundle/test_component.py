@@ -1,3 +1,5 @@
+import os
+
 from dagster import AssetDep, AssetKey
 from dagster.components.testing import create_defs_folder_sandbox
 from dagster_databricks.components.databricks_asset_bundle.component import (
@@ -42,7 +44,12 @@ def test_load_component(databricks_config_path: str):
             component,
             defs,
         ):
-            assert isinstance(component, DatabricksAssetBundleComponent)
+            databricks_assets = next(iter(defs.assets))
+            test_component_defs_path_as_python_str = str(
+                os.path.relpath(sandbox.defs_folder_path, start=sandbox.project_root)
+            ).replace("/", "_")
+            assert test_component_defs_path_as_python_str in databricks_assets.node_def.name
+
             assert defs.resolve_asset_graph().get_all_asset_keys() == {
                 AssetKey(["check_data_quality"]),
                 AssetKey(["data_processing_notebook"]),
