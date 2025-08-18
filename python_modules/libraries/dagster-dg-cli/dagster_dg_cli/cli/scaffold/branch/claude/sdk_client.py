@@ -246,9 +246,9 @@ class ClaudeSDKClient:
                 self.total_cost_usd = cost
 
             self.diagnostics.debug(
-                "claude_sdk_usage_update",
-                "Updated SDK usage statistics",
-                {
+                category="claude_sdk_usage_update",
+                message="Updated SDK usage statistics",
+                data={
                     "session_cost_usd": cost,
                     "total_cost_usd": self.total_cost_usd,
                     "num_turns": message.num_turns,
