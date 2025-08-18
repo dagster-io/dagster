@@ -48,12 +48,6 @@ def invoke_anthropic_api_direct(
     Raises:
         ValueError: If no valid string result can be extracted
     """
-    diagnostics.debug(
-        f"{operation_name}_generation",
-        f"Generating {operation_name} via Anthropic API",
-        {"prompt_length": len(prompt)},
-    )
-
     # Get API key from environment
     api_key = os.environ.get("ANTHROPIC_API_KEY")
     if not api_key:
@@ -65,8 +59,6 @@ def invoke_anthropic_api_direct(
         error_message=f"Failed to generate {operation_name} via Anthropic API",
         prompt_length=len(prompt),
     ):
-        start_time = perf_counter()
-
         # Lazy import to avoid performance regression
         import anthropic
 
@@ -78,8 +70,6 @@ def invoke_anthropic_api_direct(
             temperature=0.0,  # Deterministic output
             messages=[{"role": "user", "content": prompt}],
         )
-
-        duration_ms = (perf_counter() - start_time) * 1000
 
         # Extract text content from response
         if not response.content:
@@ -100,18 +90,6 @@ def invoke_anthropic_api_direct(
 
         if not result.strip():
             raise ValueError(f"Empty {operation_name} returned from Anthropic API")
-
-        diagnostics.info(
-            f"{operation_name}_generated",
-            f"Successfully generated {operation_name} via Anthropic API",
-            {
-                operation_name: result,
-                "duration_ms": duration_ms,
-                "tokens_used": response.usage.input_tokens + response.usage.output_tokens
-                if response.usage
-                else None,
-            },
-        )
 
         return result
 
@@ -343,18 +321,6 @@ def scaffold_content_for_prompt(
     prompt = load_scaffolding_prompt(context_str)
     allowed_tools = get_allowed_commands_scaffolding() + input_type.additional_allowed_tools()
 
-    diagnostics.info(
-        "content_scaffolding_start",
-        "Starting content scaffolding with Claude Code SDK",
-        {
-            "input_type": input_type.__name__,
-            "context_length": len(context_str),
-            "prompt_length": len(prompt),
-            "allowed_tools_count": len(allowed_tools),
-            "allowed_tools": allowed_tools,
-        },
-    )
-
     spinner_ctx = (
         daggy_spinner_context("Scaffolding")
         if use_spinner
@@ -367,12 +333,11 @@ def scaffold_content_for_prompt(
             error_code="content_scaffolding_failed",
             error_message="Content scaffolding failed with SDK",
         ):
-            start_time = perf_counter()
             claude_sdk = ClaudeSDKClient(diagnostics)
 
             # Run the async SDK operation with verbose mode for debug diagnostics
             verbose_mode = diagnostics.level == "debug"
-            messages = asyncio.run(
+            asyncio.run(
                 claude_sdk.scaffold_with_streaming(
                     prompt=prompt,
                     allowed_tools=allowed_tools,
@@ -382,14 +347,5 @@ def scaffold_content_for_prompt(
                 )
             )
 
-            duration_ms = (perf_counter() - start_time) * 1000
-
             # AI interaction is already logged by SDK client
-            diagnostics.info(
-                "content_scaffolding_completed",
-                "Content scaffolding completed successfully with SDK",
-                {
-                    "duration_ms": duration_ms,
-                    "messages_count": len(messages),
-                },
-            )
+            # Success logging is handled by claude_operation_error_boundary

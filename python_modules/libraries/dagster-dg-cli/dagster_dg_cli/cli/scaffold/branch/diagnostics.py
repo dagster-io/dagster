@@ -238,7 +238,9 @@ class ClaudeDiagnosticsService:
     def claude_operation_error_boundary(
         self, *, operation_name: str, error_code: str, error_message: str, **additional_context: Any
     ) -> Generator[None, None, None]:
-        """Context manager for Claude operations that handles timing and error logging.
+        """Context manager for Claude operations that handles timing and comprehensive logging.
+
+        Automatically logs operation start, success, and errors with consistent formatting.
 
         Args:
             operation_name: Name of the operation for diagnostics
@@ -249,9 +251,22 @@ class ClaudeDiagnosticsService:
         Raises:
             Re-raises any exception after logging it
         """
+        # Log operation start
+        self.info(
+            f"{operation_name}_start",
+            f"Starting {operation_name}",
+        )
+
         start_time = perf_counter()
         try:
             yield
+            # Log successful completion
+            duration_ms = (perf_counter() - start_time) * 1000
+            self.info(
+                f"{operation_name}_success",
+                f"Successfully completed {operation_name}",
+                {"duration_ms": duration_ms},
+            )
         except Exception as e:
             duration_ms = (perf_counter() - start_time) * 1000
 
