@@ -77,13 +77,25 @@ Generate a structured plan with:
 
 ### Step 8: Mark Comments as Resolved
 
-- **Reply to individual review comments**: Use `gh api repos/OWNER/REPO/pulls/PR_NUMBER/comments` with `--field in_reply_to=COMMENT_ID` to reply to specific Diamond comments
-- **Get review thread IDs**: Query GraphQL to get thread IDs for Diamond review comments
-- **Resolve conversations**: Use GraphQL `resolveReviewThread` mutation with thread IDs to mark conversations as resolved (equivalent to clicking "Resolve conversation" button)
-- **Mark general comments**: Use `gh pr comment` for overall resolution summary
-- Provide feedback on which comments were marked resolved
+⚠️ **CRITICAL**: Only GraphQL can resolve review thread conversations. Regular PR comments DO NOT resolve the Diamond feedback threads.
 
-### Step 9: Create Action Plan
+**Required Steps:**
+
+1. **Get review thread IDs**: Query GraphQL to find Diamond review thread IDs
+2. **Resolve conversations**: Use GraphQL `resolveReviewThread` mutation - this is the ONLY way to mark conversations as resolved (equivalent to clicking "Resolve conversation" button in GitHub UI)
+3. **Optional**: Add summary comment using `gh pr comment` for documentation
+
+**What DOESN'T work:**
+
+- ❌ `gh pr comment` - only adds comments, doesn't resolve conversations
+- ❌ `gh api repos/.../pulls/.../comments` - can't resolve review threads
+- ❌ Replying to individual comments - doesn't mark conversation as resolved
+
+**What DOES work:**
+
+- ✅ GraphQL `resolveReviewThread` mutation - the only method that actually resolves conversations
+
+### Step 9: Generate Final Action Plan
 
 - Generate plan only for remaining valid, accepted comments
 - Prioritize by severity and complexity
@@ -107,7 +119,7 @@ Generate a structured plan with:
 
 - `gh` CLI tool must be authenticated
 - Internet connectivity for GitHub API calls
-- Access to the dagster-io/dagster repository
+- Access to the repository being reviewed
 
 ## Implementation Details
 
@@ -139,9 +151,8 @@ gh pr view $PR_NUMBER --json comments,reviews --jq '
 
 # Filter for Diamond comments (corrected jq syntax)
 gh pr view $PR_NUMBER --json comments,reviews --jq '
-(.comments + .reviews)[] |
-select(.author.login | contains("graphite-app")) |
-{author: .author.login, body: .body, created: (.createdAt // .submittedAt), id: .id}
+(.comments[] | select(.author.login | contains("graphite-app")) | {author: .author.login, body: .body, created: .createdAt, id: .id}),
+(.reviews[] | select(.author.login | contains("graphite-app")) | {author: .author.login, body: .body, created: .submittedAt, id: .id})
 '
 
 # Get Diamond review comments (inline suggestions)
@@ -153,11 +164,12 @@ gh api repos/OWNER/REPO/pulls/$PR_NUMBER/comments --jq '
 # Reply to individual review comments
 gh api repos/OWNER/REPO/pulls/$PR_NUMBER/comments -X POST --field body="✅ Resolved: [reason]" --field in_reply_to=$COMMENT_ID
 
-# Get review thread IDs for resolving conversations
+# Step 1: Get Diamond review thread IDs for resolving conversations
+# This finds all review threads and identifies which ones contain Diamond comments
 gh api graphql -f query='
-query {
-  repository(owner: "OWNER", name: "REPO") {
-    pullRequest(number: PR_NUMBER) {
+query($owner: String!, $name: String!, $pr: Int!) {
+  repository(owner: $owner, name: $name) {
+    pullRequest(number: $pr) {
       reviewThreads(first: 50) {
         nodes {
           id
@@ -176,18 +188,42 @@ query {
       }
     }
   }
-}'
+}' -f owner=OWNER -f name=REPO -F pr=PR_NUMBER
 
-# Resolve review thread conversations (equivalent to clicking "Resolve conversation")
+# Step 2: Filter for Diamond threads and extract thread IDs
+# Use jq to find threads containing Diamond comments (graphite-app author)
+gh api graphql -f query='...' | jq '
+.data.repository.pullRequest.reviewThreads.nodes[] |
+select(.comments.nodes[] | .author.login | contains("graphite-app")) |
+{threadId: .id, isResolved: .isResolved, diamondComment: (.comments.nodes[] | select(.author.login | contains("graphite-app")) | .body)}
+'
+
+# Step 3: Resolve specific Diamond review thread conversations
+# This is equivalent to clicking "Resolve conversation" button in GitHub UI
 gh api graphql -f query='
-mutation {
-  resolveReviewThread(input: {threadId: "THREAD_ID"}) {
+mutation($threadId: ID!) {
+  resolveReviewThread(input: {threadId: $threadId}) {
     thread {
       id
       isResolved
     }
   }
-}'
+}' -f threadId="THREAD_ID_FROM_STEP_2"
+
+# Step 4: Batch resolve multiple Diamond threads
+# Process multiple thread IDs at once
+for thread_id in "THREAD_ID_1" "THREAD_ID_2" "THREAD_ID_3"; do
+  gh api graphql -f query='
+  mutation($threadId: ID!) {
+    resolveReviewThread(input: {threadId: $threadId}) {
+      thread {
+        id
+        isResolved
+      }
+    }
+  }' -f threadId="$thread_id"
+  echo "Resolved thread: $thread_id"
+done
 
 # Mark general comments as resolved
 gh pr comment $PR_NUMBER --body "✅ Resolved Diamond feedback: Issue no longer applies"
