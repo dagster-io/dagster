@@ -168,8 +168,7 @@ class ClaudeSDKClient:
         content_blocks = []
         for block in blocks:
             if isinstance(block, TextBlock):
-                text_preview = block.text[:100] + "..." if len(block.text) > 100 else block.text
-                content_blocks.append(f"TextBlock({text_preview!r})")
+                content_blocks.append(f"TextBlock({block.text!r})")
             elif isinstance(block, ToolUseBlock):
                 content_blocks.append(f"ToolUseBlock(name={block.name!r}, id={block.id!r})")
             elif isinstance(block, ToolResultBlock):
@@ -177,10 +176,7 @@ class ClaudeSDKClient:
                     f"ToolResultBlock(tool_use_id={block.tool_use_id!r}, is_error={block.is_error})"
                 )
             elif isinstance(block, ThinkingBlock):
-                thinking_preview = (
-                    block.thinking[:100] + "..." if len(block.thinking) > 100 else block.thinking
-                )
-                content_blocks.append(f"ThinkingBlock({thinking_preview!r})")
+                content_blocks.append(f"ThinkingBlock({block.thinking!r})")
             else:
                 content_blocks.append(f"{type(block).__name__}")
         return content_blocks
@@ -220,10 +216,7 @@ class ClaudeSDKClient:
 
         elif isinstance(message, UserMessage):
             if isinstance(message.content, str):
-                content_preview = (
-                    message.content[:100] + "..." if len(message.content) > 100 else message.content
-                )
-                user_info = f" content={content_preview!r}"
+                user_info = f" content={message.content!r}"
             else:
                 content_blocks = self._format_content_blocks(message.content)
                 user_info = f" content=[{', '.join(content_blocks)}]"
@@ -234,10 +227,7 @@ class ClaudeSDKClient:
             if message.total_cost_usd is not None:
                 result_info += f" cost_usd={message.total_cost_usd:.4f}"
             if message.result:
-                result_preview = (
-                    message.result[:100] + "..." if len(message.result) > 100 else message.result
-                )
-                result_info += f" result={result_preview!r}"
+                result_info += f" result={message.result!r}"
             return f"[DEBUG] {message_type}{result_info}\n"
 
         else:
