@@ -297,7 +297,7 @@ async def list_available_integrations(project_path: str) -> str:
     return _subprocess(
         [
             "dg",
-            "docs",
+            "utils",
             "integrations",
             "--json",
         ],
