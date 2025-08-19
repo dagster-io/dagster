@@ -1,6 +1,7 @@
 from dagster import AssetDep, AssetKey
 from dagster_databricks.components.databricks_asset_bundle.component import (
     DatabricksAssetBundleComponent,
+    snake_case,
 )
 
 from dagster_databricks_tests.components.databricks_asset_bundle.conftest import (
