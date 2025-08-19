@@ -56,20 +56,16 @@ class TestSnakecase:
         """Test naming scenarios that commonly occur in component scaffolding."""
         # Common framework component names
         test_cases = [
-            (
-                "DatabricksJobComponent",
-                "databricks_job_component",
-            ),  # Current: databricks_job_component ✓
-            ("SnowflakeIOManager", "snowflake_i_o_manager"),  # Current: snowflake_i_o_manager
-            ("BigQueryAssetLoader", "big_query_asset_loader"),  # Current: big_query_asset_loader ✓
-            ("S3FileSystem", "s3_file_system"),  # Current: s3_file_system
-            ("GCSStorage", "g_c_s_storage"),  # Current: g_c_s_storage
-            ("AWSCredentials", "a_w_s_credentials"),  # Current: a_w_s_credentials
+            ("DatabricksJobComponent", "databricks_job_component"),
+            ("SnowflakeIOManager", "snowflake_i_o_manager"),
+            ("BigQueryAssetLoader", "big_query_asset_loader"),
+            ("S3FileSystem", "s3_file_system"),
+            ("GCSStorage", "g_c_s_storage"),
+            ("AWSCredentials", "a_w_s_credentials"),
         ]
 
-        for input_name, expected in test_cases:
+        for input_name, _expected in test_cases:
             actual = snakecase(input_name)
-            # Verify the current behavior works without crashing
             assert isinstance(actual, str)
             assert len(actual) > 0
 
