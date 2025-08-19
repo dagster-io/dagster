@@ -21,7 +21,8 @@ from dagster_dg_cli.cli.scaffold.branch.claude.diagnostics import (
     DiagnosticsLevel,
     create_claude_diagnostics_service,
 )
-from dagster_dg_cli.cli.scaffold.branch.claude.sdk_client import ClaudeSDKClient
+
+# Lazy import of ClaudeSDKClient to avoid docs build failures when claude_code_sdk is not available
 from dagster_dg_cli.cli.scaffold.branch.constants import VALID_MODELS
 from dagster_dg_cli.cli.scaffold.branch.git import (
     check_git_repository,
@@ -39,6 +40,7 @@ from dagster_dg_cli.cli.scaffold.branch.planning import (
     PlanningContext,
     get_user_plan_approval,
 )
+from dagster_dg_cli.cli.scaffold.branch.version_utils import ensure_claude_sdk_python_version
 from dagster_dg_cli.utils.claude_utils import (
     get_claude_sdk_unavailable_message,
     is_claude_sdk_available,
@@ -103,11 +105,6 @@ def scaffold_branch_command(
     **other_options: object,
 ) -> None:
     """Scaffold a new branch (requires Python 3.10+)."""
-    import sys
-
-    if sys.version_info < (3, 10):
-        raise click.ClickException("dg scaffold branch requires Python 3.10 or higher")
-
     # Basic input validation
     prompt_text = " ".join(prompt).strip()
     if not prompt_text:
@@ -260,6 +257,10 @@ def execute_scaffold_branch_command(
 
         # Always start with planning phase
         with diagnostics.time_operation("planning_mode", "planning"):
+            ensure_claude_sdk_python_version()
+
+            from dagster_dg_cli.cli.scaffold.branch.claude.sdk_client import ClaudeSDKClient
+
             claude_client = ClaudeSDKClient(diagnostics)
             plan_generator = PlanGenerator(claude_client, diagnostics)
 
