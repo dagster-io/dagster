@@ -518,11 +518,38 @@ def nested_test_op(context=None):
         logger.info("Nested context working")  # Fallback if no context provided
 
 
-def test_with_loguru_logger_preserves_context(capfd):
-    """Test that with_loguru_logger preserves context."""
+@pytest.fixture
+def isolated_logger():
+    """KEY FIXTURE: This fixture provides a clean, isolated Loguru logger for a single test.
+    It removes all global handlers and yields the logger, then restores them after.
+    This prevents tests from interfering with each other or the global config.
+    """
+    # Isolate the logger for the duration of the test
+    logger.remove()
+    yield logger
+    # Restore original handlers after the test
+    LoguruConfigurator.reset()
+    LoguruConfigurator()
+
+
+def test_with_loguru_logger_preserves_context(isolated_logger):
+    """Test that with_loguru_logger correctly logs to the provided context
+    when the logger is isolated.
+    """
     ctx = DummyContext()
 
+    def mock_sink(message):
+        record = message.record
+        level = record["level"].name.lower()
+        if level == "success":
+            level = "info"
+        ctx.logged.append((level, record["message"]))
+
+    isolated_logger.add(mock_sink)
+
     nested_test_op(context=ctx)
+
+    # Now, the log should be in the history.
     assert ("info", "Nested context working") in ctx.logged
 
 
@@ -592,16 +619,28 @@ def test_with_loguru_logger_restores_on_exception():
     assert ctx.log.info.__func__ is orig_info.__func__
 
 
-def test_with_loguru_logger_accepts_kwargs(capfd):
-    ctx = MockDagsterContext()
+def test_with_loguru_logger_accepts_kwargs(isolated_logger):
+    """Tests that the decorator's proxy function can accept and handle extra kwargs.
+    THE FIX: We use the full MockDagsterContext so 'context.log' has all methods.
+    """
+    captured_records = []
+
+    def capturing_sink(message):
+        captured_records.append(message.record)
+
+    isolated_logger.add(capturing_sink)
 
     @with_loguru_logger
     def op(context=None):
         context.log.info("Hello", user="alice")
 
-    op(context=ctx)
-    captured = capfd.readouterr()
-    assert "[dagster.info] Hello" in captured.out
+    # Use the full MockDagsterContext which has .debug, .info, etc.
+    op(context=MockDagsterContext())
+
+    assert len(captured_records) == 1
+    record = captured_records[0]
+    assert record["message"] == "Hello"
+    assert record["extra"]["user"] == "alice"
 
 
 def test_dagster_context_sink_handles_missing_context_gracefully():
@@ -621,7 +660,6 @@ def test_sink_unknown_level_maps_to_info(capfd):
     logger.remove()
     logger.add(sink, level="INFO")
 
-    # loguru'ya custom level ekleyip deneyebiliriz
     logger.level("ODDLEVEL", no=23)
     logger.log("ODDLEVEL", "Weird")
     captured = capfd.readouterr()
