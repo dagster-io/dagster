@@ -6,11 +6,15 @@ sidebar_position: 60
 
 When building data applications, it is important to ensure the quality of all underlying entities. In this step, we will add checks to confirm that our assets are producing the data we expect.
 
+In Dagster, these quality measures are called [asset checks](/guides/test/asset-checks) and are defined in a similar way to assets. When an asset is materialized, asset checks also execute and verify that certain criteria are met based on the logic within the check.
+
+<p align="center">
+  <img src="/images/tutorial/dagster-tutorial/overviews/asset-checks.png" alt="2048 resolution" width="75%" />
+</p>
+
 ## 1. Define an asset check
 
-In Dagster, you define [asset checks](/guides/test/asset-checks) the same way you define assets. Asset checks run when an asset is materialized and verify that certain criteria are met based on the logic within the check.
-
-To create one, define a function and decorate it with the <PyObject section="asset-checks" module="dagster" object="asset_check" decorator />. Within the asset check, set the `asset` parameter to indicate which asset the check runs against.
+To create an asset check, define a function and decorate it with the <PyObject section="asset-checks" module="dagster" object="asset_check" decorator />. Within the asset check, set the `asset` parameter to indicate which asset the check runs against.
 
 Here, we will create an asset check for the `orders_by_month` asset to ensure that there are rows in the underlying DuckDB table:
 

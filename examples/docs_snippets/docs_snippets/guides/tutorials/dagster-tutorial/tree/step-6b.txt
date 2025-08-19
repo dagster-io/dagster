@@ -8,9 +8,7 @@ src
     └── defs
         ├── __init__.py
         ├── assets.py
-        ├── my_script.py
         ├── resources.py
-        ├── script
-        │   └── defs.yaml
+        ├── schedules.py
         └── tutorial   # NEW
             └── defs.yaml

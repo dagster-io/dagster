@@ -6,7 +6,15 @@ sidebar_position: 30
 
 Right now, our assets represent pointers to files in S3. This is a good first step in building out the asset graph, but it would be better if they represented tables in our database.
 
-In this step, we will load that data into [DuckDB](https://duckdb.org), an analytical database. Since the same database will be used across all three assets, rather than adding the connection logic to each asset, we will use a [resource](/guides/build/external-resources) to centralize the connection in a single object that can be shared across all Dagster objects.
+In this step, we will load that data into [DuckDB](https://duckdb.org), an analytical database and our assets will instead be representations of DuckDB tables.
+
+Since the same database will be used across all three assets, rather than adding the connection logic to each asset, we will use a [resource](/guides/build/external-resources) to centralize the connection in a single object that can be shared across all Dagster objects.
+
+Resources are Dagster objects much like assets, however they are not executed as `Ops`. Some Dagster abstractions in the `Definitions` layer compliment other objects without being able to be directly executed.
+
+<p align="center">
+  <img src="/images/tutorial/dagster-tutorial/overviews/resources.png" alt="2048 resolution" width="50%" />
+</p>
 
 ## 1. Define the DuckDB resource
 

@@ -6,6 +6,12 @@ sidebar_position: 20
 
 [Software-defined assets](/guides/build/assets) are the primary building blocks in Dagster. They represent the underlying entities in our pipelines, such as database tables, machine learning models, or AI processes. Together, these assets form the data platform. In this first step, we will define the initial assets that represent the data we will work with throughout this tutorial.
 
+All Dagster objects, such as assets, are added to the `Definitions` that was created when we initialized the project. The assets are then executed as lower level `Ops` within the context of the project environment.
+
+<p align="center">
+  <img src="/images/tutorial/dagster-tutorial/overviews/assets.png" alt="2048 resolution" width="50%" />
+</p>
+
 ## 1. Scaffold an asset
 
 When building assets, the first step is to scaffold the assets file with the [`dg scaffold` command](/api/clis/dg-cli/dg-cli-reference#dg-scaffold):

@@ -20,12 +20,11 @@ class Tutorial(dg.Component, dg.Model, dg.Resolvable):
 
     def build_defs(self, context: dg.ComponentLoadContext) -> dg.Definitions:
         _etl_assets = []
-        _etl_asset_checks = []
 
         for etl in self.etl_steps:
 
             @dg.asset(
-                name=f"component_{etl.table}",
+                name=etl.table,
             )
             def _table(database: DuckDBResource):
                 with database.get_connection() as conn:
@@ -41,8 +40,7 @@ class Tutorial(dg.Component, dg.Model, dg.Resolvable):
 
         return dg.Definitions(
             assets=_etl_assets,
-            asset_checks=_etl_asset_checks,
-            resources={"database": DuckDBResource(database=self.duckdb_database)},
+            resources={"duckdb": DuckDBResource(database=self.duckdb_database)},
         )
 
 

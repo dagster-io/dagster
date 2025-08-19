@@ -1,14 +1,20 @@
 ---
-title: Custom components
+title: Components
 description: Defining our own components
 sidebar_position: 90
 ---
 
-Earlier, we used a built-in component to turn a Python script into an asset. In this final step, we will refactor the original assets in our project using a custom component.
+So far we have built out everything via `Definitions`. But this is not the only way to include `Definitions` in a Dagster project.
 
-The code for the initial DuckDB assets (`customers`, `orders`, and `payments`) is very similar. Each asset performs the same action—turning an S3 file into a DuckDB table—while differing only in the URL path and table name.
+If we think about the code for our three assets (`customers`, `orders`, and `payments`), it is all very similar. Each asset performs the same action, turning an S3 file into a DuckDB table while differing only in the URL path and table name.
 
-This is a great candidate for a [custom component](/guides/build/components/creating-new-components). We can parameterize the creation of these assets, making it much easier to add new ones in the future.
+These assets are a great candidate for a [component](/guides/build/components/creating-new-components). Components generate `Definitions` through a configuration layer. There are built-in components that let you integrate with common workflows (such as turning Python scripts into assets) or with popular tools like [dbt](https://www.getdbt.com/) or [Fivetran](https://www.fivetran.com/). There are also custom components that let you define your own specific use cases.
+
+Here we will use a custom component to streamline the development of our assets and replace their `Definitions` in our project with a `Component` which can generate them instead.
+
+<p align="center">
+  <img src="/images/tutorial/dagster-tutorial/overviews/components.png" alt="2048 resolution" width="75%" />
+</p>
 
 ## 1. Scaffold a custom component
 
@@ -18,7 +24,7 @@ First, scaffold a custom component using `dg`:
 
 This adds a new directory, `components`, within `src/dagster_tutorial`:
 
-<CliInvocationExample path="docs_snippets/docs_snippets/guides/tutorials/dagster-tutorial/tree/step-7a.txt" />
+<CliInvocationExample path="docs_snippets/docs_snippets/guides/tutorials/dagster-tutorial/tree/step-6a.txt" />
 
 This directory contains the files needed to define the custom component.
 
@@ -62,7 +68,7 @@ Run `dg check` to ensure that the component code is correct.
 
 If we list our components again, we will see that the custom component is now registered:
 
-<CliInvocationExample path="docs_snippets/docs_snippets/guides/tutorials/dagster-tutorial/commands/dg-list-components.txt" />
+<CliInvocationExample path="docs_snippets/docs_snippets/guides/tutorials/dagster-tutorial/commands/dg-list-components-custom.txt" />
 
 We can now scaffold it just like any other component:
 
@@ -70,14 +76,14 @@ We can now scaffold it just like any other component:
 
 This adds a new directory, `tutorials`, within `defs`:
 
-<CliInvocationExample path="docs_snippets/docs_snippets/guides/tutorials/dagster-tutorial/tree/step-7b.txt" />
+<CliInvocationExample path="docs_snippets/docs_snippets/guides/tutorials/dagster-tutorial/tree/step-6b.txt" />
 
 ## 4. Configure the component
 
 Set the configuration in the YAML file created when the component was scaffolded:
 
 <CodeExample
-  path="docs_snippets/docs_snippets/guides/tutorials/dagster-tutorial/src/dagster_tutorial/defs/tutorial/defs.yaml"
+  path="docs_snippets/docs_snippets/guides/tutorials/dagster-tutorial/src/dagster_tutorial/components/defs.yaml"
   language="yaml"
   title="src/dagster_tutorial/defs/tutorial/defs.yaml"
 />

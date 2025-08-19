@@ -4,9 +4,13 @@ description: The Dagster project
 sidebar_position: 10
 ---
 
-Dagster follows standard Python conventions, and most work in Dagster begins with creating a Python package called a project. This is where you’ll define your pipelines as well as any Python dependencies your project requires.
+Dagster follows standard Python conventions, and most work in Dagster begins by creating a Python package called a _project_. This is where you’ll define your pipelines as well as any dependencies within project.
 
-To streamline project creation, Dagster provides the [`create-dagster` CLI](/api/clis/create-dagster), which quickly scaffolds everything you need.
+To streamline project creation, Dagster provides the [`create-dagster` CLI](/api/clis/create-dagster), which quickly scaffolds a Python package containing a Dagster `Definitions` object. When we initialize the project the `Definitions` will not contain any other Dagster objects.
+
+<p align="center">
+  <img src="/images/tutorial/dagster-tutorial/overviews/definitions.png" alt="2048 resolution" width="50%" />
+</p>
 
 ## 1: Scaffold a Dagster project
 
