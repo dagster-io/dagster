@@ -75,7 +75,7 @@ class DatabricksAssetBundleComponent(Component, Resolvable):
 
     def build_defs(self, context: ComponentLoadContext) -> Definitions:
         component_defs_path_as_python_str = str(
-            os.path.relpath(context.defs_module_path, start=context.project_root)
+            os.path.relpath(context.component_path.file_path, start=context.project_root)
         ).replace("/", "_")
 
         @multi_asset(
