@@ -89,6 +89,7 @@ def create_and_launch_partition_backfill(
 ) -> Union["GrapheneLaunchBackfillSuccess", "GraphenePartitionSetNotFoundError"]:
     from dagster_graphql.schema.backfill import GrapheneLaunchBackfillSuccess
     from dagster_graphql.schema.errors import GraphenePartitionSetNotFoundError
+    from dagster_graphql.schema.runs import parse_run_config_input
 
     backfill_id = make_new_backfill_id()
     backfill_timestamp = get_current_timestamp()
@@ -124,6 +125,12 @@ def create_and_launch_partition_backfill(
     tags = {**tags, **graphene_info.context.get_viewer_tags()}
 
     title = check_valid_title(backfill_params.get("title"))
+    parsed_run_config = (
+        parse_run_config_input(backfill_params["runConfigData"], raise_on_error=False)
+        if "runConfigData" in backfill_params
+        else None
+    )
+    run_config = parsed_run_config if isinstance(parsed_run_config, dict) else None
 
     if backfill_params.get("selector") is not None:  # job backfill
         partition_set_selector = backfill_params["selector"]
@@ -181,6 +188,7 @@ def create_and_launch_partition_backfill(
             asset_selection=asset_selection,
             title=title,
             description=backfill_params.get("description"),
+            run_config=run_config,
         )
         assert_valid_job_partition_backfill(
             graphene_info,
@@ -237,6 +245,7 @@ def create_and_launch_partition_backfill(
             all_partitions=backfill_params.get("allPartitions", False),
             title=title,
             description=backfill_params.get("description"),
+            run_config=run_config,
         )
         assert_valid_asset_partition_backfill(
             graphene_info,
@@ -273,6 +282,7 @@ def create_and_launch_partition_backfill(
             partitions_by_assets=partitions_by_assets,
             title=title,
             description=backfill_params.get("description"),
+            run_config=run_config,
         )
         assert_valid_asset_partition_backfill(
             graphene_info,
@@ -386,6 +396,7 @@ def retry_partition_backfill(
             backfill_timestamp=get_current_timestamp(),
             title=f"Re-execution of {backfill.title}" if backfill.title else None,
             description=backfill.description,
+            run_config=backfill.run_config,
         )
     else:  # job backfill
         partition_set_origin = check.not_none(backfill.partition_set_origin)
