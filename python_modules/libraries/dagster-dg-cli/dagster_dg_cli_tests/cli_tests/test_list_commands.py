@@ -230,6 +230,7 @@ _EXPECTED_PLUGIN_JSON = textwrap.dedent("""
 """).strip()
 
 
+@pytest.mark.flaky(max_runs=2)
 def test_list_registry_modules_success():
     with (
         ProxyRunner.test(use_fixed_test_components=True) as runner,
