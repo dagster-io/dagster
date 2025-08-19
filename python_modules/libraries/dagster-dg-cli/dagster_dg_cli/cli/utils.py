@@ -33,7 +33,9 @@ from dagster_shared import check
 from dagster_shared.record import record, replace
 from dagster_shared.serdes.objects import EnvRegistryKey
 from packaging.version import Version
+from rich.console import Console
 from rich.live import Live
+from rich.table import Table
 from rich.text import Text
 
 from dagster_dg_cli.utils.ui import DAGGY_SPINNER_FRAMES, format_duration
@@ -554,3 +556,45 @@ def refresh_component_state(
         tree = ComponentTree.for_project(dg_context.root_path)
         defs_state_keys = set(defs_state_key) if defs_state_key else None
         asyncio.run(_refresh_component_state_impl(tree, defs_state_keys))
+
+
+@utils_group.command(
+    name="integrations",
+    cls=DgClickCommand,
+)
+@click.option(
+    "--json",
+    "output_json",
+    is_flag=True,
+    default=False,
+    help="Output as JSON.",
+)
+@cli_telemetry_wrapper
+def integrations_docs_command(output_json: bool) -> None:
+    """View an index of available Dagster integrations."""
+    import requests  # defer for import perf
+
+    response = requests.get("https://dagster-marketplace.vercel.app/api/integrations/index.json")
+    response.raise_for_status()
+
+    payload = response.json()
+    if output_json:
+        click.echo(json.dumps(payload, indent=2))
+        return
+
+    console = Console()
+    table = Table(border_style="dim", show_lines=True)
+    table.add_column("Name")
+    table.add_column("Description")
+    table.add_column("PyPI")
+
+    for integration in payload:
+        # filter out incomplete entries
+        if integration.get("name") and integration.get("description") and integration.get("pypi"):
+            table.add_row(
+                integration["name"],
+                integration["description"],
+                integration["pypi"],
+            )
+
+    console.print(table)
