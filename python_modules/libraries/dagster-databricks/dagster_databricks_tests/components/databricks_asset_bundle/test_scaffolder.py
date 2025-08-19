@@ -7,7 +7,6 @@ from dagster_databricks.components.databricks_asset_bundle.component import (
 from pydantic import ValidationError
 
 from dagster_databricks_tests.components.databricks_asset_bundle.conftest import (
-    CUSTOM_CONFIG_LOCATION_PATH,
     DATABRICKS_CONFIG_LOCATION_PATH,
     TEST_DATABRICKS_WORKSPACE_HOST,
     TEST_DATABRICKS_WORKSPACE_TOKEN,
@@ -26,17 +25,8 @@ from dagster_databricks_tests.components.databricks_asset_bundle.conftest import
             },
             True,
         ),
-        (
-            {
-                "databricks_config_path": str(DATABRICKS_CONFIG_LOCATION_PATH),
-                "custom_config_path": str(CUSTOM_CONFIG_LOCATION_PATH),
-                "databricks_workspace_host": TEST_DATABRICKS_WORKSPACE_HOST,
-                "databricks_workspace_token": TEST_DATABRICKS_WORKSPACE_TOKEN,
-            },
-            True,
-        ),
     ],
-    ids=["no_params", "all_required_params", "all_params"],
+    ids=["no_params", "all_required_params"],
 )
 def test_scaffold_component_with_params(scaffold_params: dict, is_successful: bool):
     with create_defs_folder_sandbox() as sandbox:
@@ -66,11 +56,3 @@ def test_scaffold_component_with_params(scaffold_params: dict, is_successful: bo
                 "host": TEST_DATABRICKS_WORKSPACE_HOST,
                 "token": TEST_DATABRICKS_WORKSPACE_TOKEN,
             } == yaml.safe_load(defs_yaml_path.read_text())["attributes"]["workspace"]
-            assert "custom_config_path" in yaml.safe_load(defs_yaml_path.read_text())["attributes"]
-            if "custom_config_path" in scaffold_params:
-                assert (
-                    scaffold_params["custom_config_path"]
-                    in yaml.safe_load(defs_yaml_path.read_text())["attributes"][
-                        "custom_config_path"
-                    ]
-                )

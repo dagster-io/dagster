@@ -1,3 +1,0 @@
-spark_version: "test_spark_version"
-node_type_id: "test_node_type_id"
-num_workers: 2

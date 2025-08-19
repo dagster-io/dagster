@@ -6,8 +6,6 @@ from pathlib import Path
 import pytest
 
 DATABRICKS_CONFIG_LOCATION_PATH = Path(__file__).parent / "configs" / "databricks.yml"
-CUSTOM_CONFIG_LOCATION_PATH = Path(__file__).parent / "configs" / "custom.yml"
-PARTIAL_CUSTOM_CONFIG_LOCATION_PATH = Path(__file__).parent / "configs" / "partial_custom.yml"
 
 TEST_DATABRICKS_WORKSPACE_HOST = "test_host"
 TEST_DATABRICKS_WORKSPACE_TOKEN = "test_token"

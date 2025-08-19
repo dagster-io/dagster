@@ -14,8 +14,8 @@ from dagster.components.resolved.model import Resolver
 from dagster.components.scaffold.scaffold import scaffold_with
 
 from dagster_databricks.components.databricks_asset_bundle.configs import (
-    CustomConfig,
     DatabricksBaseTask,
+    DatabricksClusterConfig,
     DatabricksConfig,
 )
 from dagster_databricks.components.databricks_asset_bundle.resource import DatabricksWorkspace
@@ -43,19 +43,36 @@ class DatabricksWorkspaceArgs(Resolvable):
     token: str
 
 
+@dataclass
+class DatabricksClusterConfigArgs(Resolvable):
+    """Aligns with DatabricksClusterConfig."""
+
+    spark_version: Optional[str] = None
+    node_type_id: Optional[str] = None
+    num_workers: Optional[int] = None
+
+
 def resolve_databricks_config_path(context: ResolutionContext, model) -> Path:
     return context.resolve_source_relative_path(
         context.resolve_value(model, as_type=str),
     )
 
 
-def resolve_custom_config_path(context: ResolutionContext, model) -> CustomConfig:
-    # If model is not a string, it's None, in which case we return None
-    if not isinstance(model, str):
-        return None
-    return context.resolve_source_relative_path(
-        context.resolve_value(model, as_type=str),
-    )
+def resolve_cluster_config(context: ResolutionContext, model) -> DatabricksClusterConfig:
+    if not model:
+        return DatabricksClusterConfig()
+
+    args = DatabricksClusterConfigArgs.resolve_from_model(context, model)
+
+    kwargs = {}  # use optionally splatted kwargs to avoid redefining default value
+    if args.spark_version:
+        kwargs["spark_version"] = args.spark_version
+    if args.node_type_id:
+        kwargs["node_type_id"] = args.node_type_id
+    if args.spark_version:
+        kwargs["num_workers"] = args.num_workers
+
+    return DatabricksClusterConfig(**kwargs)
 
 
 def resolve_databricks_workspace(context: ResolutionContext, model) -> DatabricksWorkspace:
@@ -94,28 +111,32 @@ class DatabricksAssetBundleComponent(Component, Resolvable):
             ],
         ),
     ]
-    custom_config_path: Optional[
-        Annotated[
-            Optional[Path],
-            Resolver(
-                resolve_custom_config_path,
-                model_field_type=Optional[str],
-                description=(
-                    "The path to a custom config file that align with databricks_asset_bundle.configs.CustomConfig. "
-                    "Optional"
-                ),
-                examples=["{{ project_root }}/path/to/custom_yml_config_file", None],
+    cluster_config: Annotated[
+        DatabricksClusterConfig,
+        Resolver(
+            resolve_cluster_config,
+            model_field_type=Optional[DatabricksClusterConfigArgs.model()],
+            description=(
+                "A mapping defining a databricks_asset_bundle.configs.ClusterConfig. Optional."
             ),
-        ]
-    ] = None
+            examples=[
+                {
+                    "spark_version": "test_spark_version",
+                    "node_type_id": "node_type_id",
+                    "num_workers": 1,
+                },
+                None,
+            ],
+        ),
+    ]
 
     @cached_property
     def databricks_config(self) -> DatabricksConfig:
         return DatabricksConfig(databricks_config_path=self.databricks_config_path)
 
     @cached_property
-    def custom_config(self) -> CustomConfig:
-        return CustomConfig(custom_config_path=self.custom_config_path)
+    def custom_config(self) -> DatabricksClusterConfig:
+        return DatabricksClusterConfig(custom_config_path=self.custom_config_path)
 
     def get_asset_spec(self, task: DatabricksBaseTask) -> AssetSpec:
         return AssetSpec(

@@ -3,7 +3,7 @@ from typing import Optional
 
 import pytest
 from dagster_databricks.components.databricks_asset_bundle.configs import (
-    CustomConfig,
+    DatabricksClusterConfig,
     DatabricksConfig,
 )
 
@@ -91,7 +91,7 @@ def test_load_databrick_config():
 def test_load_custom_config_from_path(
     custom_config_path: Optional[Path], spark_version: str, node_type_id: str, num_workers: int
 ):
-    custom_config = CustomConfig(custom_config_path=custom_config_path)
+    custom_config = DatabricksClusterConfig(custom_config_path=custom_config_path)
     assert custom_config.spark_version == spark_version
     assert custom_config.node_type_id == node_type_id
     assert custom_config.num_workers == num_workers
