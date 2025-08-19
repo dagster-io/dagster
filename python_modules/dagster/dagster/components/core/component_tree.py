@@ -1,4 +1,5 @@
 import importlib
+import uuid
 from collections import defaultdict
 from collections.abc import Sequence
 from contextlib import contextmanager
@@ -10,7 +11,11 @@ from unittest import mock
 
 from dagster_shared import check
 from dagster_shared.record import IHaveNew, record
-from dagster_shared.utils.cached_method import get_cached_method_cache, make_cached_method_cache_key
+from dagster_shared.utils.cached_method import (
+    cached_method,
+    get_cached_method_cache,
+    make_cached_method_cache_key,
+)
 from dagster_shared.utils.config import (
     discover_config_file,
     get_canonical_defs_module_name,
@@ -20,7 +25,6 @@ from typing_extensions import Self, TypeVar
 
 from dagster._core.definitions.definitions_class import Definitions
 from dagster._core.errors import DagsterInvalidDefinitionError
-from dagster._utils.cached_method import cached_method
 from dagster.components.component.component import Component
 from dagster.components.core.context import ComponentDeclLoadContext, ComponentLoadContext
 from dagster.components.core.decl import (
@@ -43,7 +47,8 @@ PLUGIN_COMPONENT_TYPES_JSON_METADATA_KEY = "plugin_component_types_json"
 
 TComponent = TypeVar("TComponent", bound=Component)
 
-ResolvableToComponentPath = Union[Path, ComponentPath, str]
+_ComponentPathTuple = tuple[str, Optional[Union[int, str]]]
+ResolvableToComponentPath = Union[Path, ComponentPath, str, _ComponentPathTuple]
 
 
 def resolve_to_component_path(path: ResolvableToComponentPath) -> ComponentPath:
@@ -51,8 +56,12 @@ def resolve_to_component_path(path: ResolvableToComponentPath) -> ComponentPath:
         return ComponentPath(file_path=Path(path), instance_key=None)
     elif isinstance(path, Path):
         return ComponentPath(file_path=path, instance_key=None)
-    else:
+    elif isinstance(path, ComponentPath):
         return path
+    elif isinstance(path, tuple):
+        return ComponentPath(file_path=Path(path[0]), instance_key=path[1])
+    else:
+        raise ValueError(f"Invalid path: {path}")
 
 
 def _get_canonical_path_string(root_path: Path, path: Path) -> str:
@@ -64,7 +73,7 @@ def _get_canonical_path_string(root_path: Path, path: Path) -> str:
 
 def _get_canonical_component_path(
     root_path: Path, path: ResolvableToComponentPath
-) -> tuple[str, Optional[Union[int, str]]]:
+) -> _ComponentPathTuple:
     resolved_path = resolve_to_component_path(path)
     return _get_canonical_path_string(
         root_path, resolved_path.file_path
@@ -94,6 +103,31 @@ class ComponentTreeStateTracker:
         self._component_load_dependents_dict = defaultdict(set)
         self._component_defs_dependents_dict = defaultdict(set)
         self._component_defs_state_key_dict = dict()
+        self._cache_keys = dict()
+
+    def get_cache_key(
+        self, defs_module_path: Path, component_path: ResolvableToComponentPath
+    ) -> str:
+        canonical_path = _get_canonical_component_path(defs_module_path, component_path)
+        cache_path = canonical_path[0]
+        if cache_path not in self._cache_keys:
+            self._cache_keys[cache_path] = str(uuid.uuid4())
+        return self._cache_keys[cache_path]
+
+    def invalidate_cache_key(
+        self, defs_module_path: Path, component_path: ResolvableToComponentPath
+    ) -> None:
+        """Invalidates the cache key for a given component path."""
+        canonical_path = _get_canonical_component_path(defs_module_path, component_path)
+        cache_path = canonical_path[0]
+        if cache_path in self._cache_keys:
+            del self._cache_keys[cache_path]
+            # todo: better graph traversal
+            for dep_path in {
+                *self._component_load_dependents_dict[canonical_path],
+                *self._component_defs_dependents_dict[canonical_path],
+            }:
+                self.invalidate_cache_key(defs_module_path, dep_path)
 
     def mark_component_load_dependency(
         self, defs_module_path: Path, from_path: ComponentPath, to_path: ResolvableToComponentPath
@@ -178,7 +212,7 @@ class ComponentTree(IHaveNew):
     terminate_autoloading_on_keyword_files: Optional[bool] = None
 
     @cached_property
-    def component_tree_state_tracker(self) -> ComponentTreeStateTracker:
+    def state_tracker(self) -> ComponentTreeStateTracker:
         return ComponentTreeStateTracker()
 
     @contextmanager
@@ -263,8 +297,8 @@ class ComponentTree(IHaveNew):
 
         return cls(defs_module=defs_module, project_root=path_within_project)
 
-    @cached_property
-    def decl_load_context(self):
+    @cached_method
+    def _decl_load_context(self, _cache_key: str) -> ComponentDeclLoadContext:
         return ComponentDeclLoadContext(
             component_path=ComponentPath(file_path=self.defs_module_path, instance_key=None),
             project_root=self.project_root,
@@ -275,22 +309,44 @@ class ComponentTree(IHaveNew):
             component_tree=self,
         )
 
-    @cached_property
-    def load_context(self):
+    @property
+    def decl_load_context(self):
+        return self._decl_load_context(
+            _cache_key=self.state_tracker.get_cache_key(
+                self.defs_module_path, self.defs_module_path
+            )
+        )
+
+    @cached_method
+    def _load_context(self, _cache_key: str) -> ComponentLoadContext:
         return ComponentLoadContext.from_decl_load_context(
             self.decl_load_context, self.find_root_decl()
         )
 
-    @cached_method
-    def find_root_decl(self) -> ComponentDecl:
-        return check.not_none(build_component_decl_from_context(self.decl_load_context))
+    @property
+    def load_context(self):
+        return self._load_context(
+            _cache_key=self.state_tracker.get_cache_key(
+                self.defs_module_path, self.defs_module_path
+            )
+        )
 
-    @cached_method
     def load_root_component(self) -> Component:
         return self.load_structural_component_at_path(self.defs_module_path)
 
     @cached_method
-    def build_defs(self) -> Definitions:
+    def _find_root_decl(self, _cache_key: str) -> ComponentDecl:
+        return check.not_none(build_component_decl_from_context(self.decl_load_context))
+
+    def find_root_decl(self) -> ComponentDecl:
+        return self._find_root_decl(
+            _cache_key=self.state_tracker.get_cache_key(
+                self.defs_module_path, self.defs_module_path
+            )
+        )
+
+    @cached_method
+    def _build_defs(self, _cache_key: str) -> Definitions:
         from dagster.components.core.load_defs import get_library_json_enriched_defs
 
         return Definitions.merge(
@@ -298,13 +354,18 @@ class ComponentTree(IHaveNew):
             get_library_json_enriched_defs(self),
         )
 
-    @cached_method
+    def build_defs(self) -> Definitions:
+        return self._build_defs(
+            _cache_key=self.state_tracker.get_cache_key(
+                self.defs_module_path, self.defs_module_path
+            )
+        )
+
     def _component_decl_tree(self) -> Sequence[tuple[ComponentPath, ComponentDecl]]:
         """Constructs or returns the full component declaration tree from cache."""
         root_decl = self.find_root_decl()
         return list(root_decl.iterate_path_component_decl_pairs())
 
-    @cached_method
     def _component_decl_at_posix_path(
         self, defs_path_posix: str, instance_key: Optional[Union[int, str]]
     ) -> Optional[tuple[Path, ComponentDecl]]:
@@ -319,7 +380,7 @@ class ComponentTree(IHaveNew):
 
     @cached_method
     def _component_and_context_at_posix_path(
-        self, defs_path_posix: str, instance_key: Optional[Union[int, str]]
+        self, defs_path_posix: str, instance_key: Optional[Union[int, str]], _cache_key: str
     ) -> Optional[ComponentWithContext]:
         with self.augment_component_tree_exception(
             ComponentPath(file_path=Path(defs_path_posix), instance_key=instance_key),
@@ -339,14 +400,14 @@ class ComponentTree(IHaveNew):
 
     @cached_method
     def _defs_at_posix_path(
-        self, defs_path_posix: str, instance_key: Optional[Union[int, str]]
+        self, defs_path_posix: str, instance_key: Optional[Union[int, str]], _cache_key: str
     ) -> Optional[Definitions]:
         with self.augment_component_tree_exception(
             ComponentPath(file_path=Path(defs_path_posix), instance_key=instance_key),
             lambda path: f"Error while building definitions for {path}",
         ):
             component_info = self._component_and_context_at_posix_path(
-                defs_path_posix, instance_key
+                defs_path_posix, instance_key, _cache_key
             )
             if component_info is None:
                 return None
@@ -383,9 +444,7 @@ class ComponentTree(IHaveNew):
             from_path: The path to the component that depends on the component at `to_path`.
             to_path: The path to the component that the component at `from_path` depends on.
         """
-        self.component_tree_state_tracker.mark_component_load_dependency(
-            self.defs_module_path, from_path, to_path
-        )
+        self.state_tracker.mark_component_load_dependency(self.defs_module_path, from_path, to_path)
 
     def mark_component_defs_dependency(
         self, from_path: ComponentPath, to_path: ResolvableToComponentPath
@@ -397,9 +456,7 @@ class ComponentTree(IHaveNew):
             from_path: The path to the component that depends on the defs of the component at `to_path`.
             to_path: The path to the component that the component at `from_path` depends on.
         """
-        self.component_tree_state_tracker.mark_component_defs_dependency(
-            self.defs_module_path, from_path, to_path
-        )
+        self.state_tracker.mark_component_defs_dependency(self.defs_module_path, from_path, to_path)
 
     def mark_component_defs_state_key(
         self, component_path: ComponentPath, defs_state_key: str
@@ -410,7 +467,7 @@ class ComponentTree(IHaveNew):
             component_path: The path to the component to mark the state key for.
             defs_state_key: The state key to mark.
         """
-        self.component_tree_state_tracker.mark_component_defs_state_key(
+        self.state_tracker.mark_component_defs_state_key(
             self.defs_module_path, component_path, defs_state_key
         )
 
@@ -460,7 +517,8 @@ class ComponentTree(IHaveNew):
             Component: The component loaded from the given path.
         """
         component = self._component_and_context_at_posix_path(
-            *_get_canonical_component_path(self.defs_module_path, defs_path)
+            *_get_canonical_component_path(self.defs_module_path, defs_path),
+            _cache_key=self.state_tracker.get_cache_key(self.defs_module_path, defs_path),
         )
         if component is None:
             raise Exception(f"No component found for path {defs_path}")
@@ -478,7 +536,8 @@ class ComponentTree(IHaveNew):
             Definitions: The definitions loaded from the given path.
         """
         defs = self._defs_at_posix_path(
-            *_get_canonical_component_path(self.defs_module_path, defs_path)
+            *_get_canonical_component_path(self.defs_module_path, defs_path),
+            _cache_key=self.state_tracker.get_cache_key(self.defs_module_path, defs_path),
         )
         if defs is None:
             raise Exception(f"No definitions found for path {defs_path}")
@@ -502,7 +561,11 @@ class ComponentTree(IHaveNew):
         cache = get_cached_method_cache(self, "_component_and_context_at_posix_path")
         canonical_path = _get_canonical_component_path(self.defs_module_path, path)
         key = make_cached_method_cache_key(
-            {"defs_path_posix": canonical_path[0], "instance_key": canonical_path[1]}
+            {
+                "defs_path_posix": canonical_path[0],
+                "instance_key": canonical_path[1],
+                "_cache_key": self.state_tracker.get_cache_key(self.defs_module_path, path),
+            }
         )
         return key in cache
 
@@ -510,7 +573,11 @@ class ComponentTree(IHaveNew):
         cache = get_cached_method_cache(self, "_defs_at_posix_path")
         canonical_path = _get_canonical_component_path(self.defs_module_path, path)
         key = make_cached_method_cache_key(
-            {"defs_path_posix": canonical_path[0], "instance_key": canonical_path[1]}
+            {
+                "defs_path_posix": canonical_path[0],
+                "instance_key": canonical_path[1],
+                "_cache_key": self.state_tracker.get_cache_key(self.defs_module_path, path),
+            }
         )
         return key in cache
 
@@ -642,7 +709,7 @@ class TestComponentTree(ComponentTree):
     def defs_module_path(self) -> Path:
         return Path.cwd()
 
-    @cached_property
+    @property
     def decl_load_context(self):
         return ComponentDeclLoadContext(
             component_path=ComponentPath(file_path=self.defs_module_path, instance_key=None),
@@ -654,7 +721,7 @@ class TestComponentTree(ComponentTree):
             component_tree=self,
         )
 
-    @cached_property
+    @property
     def load_context(self):
         component_decl = mock.Mock()
         component_decl.iterate_child_component_decls = mock.Mock(return_value=[])
@@ -667,7 +734,7 @@ class LegacyAutoloadingComponentTree(ComponentTree):
     test and load_defs codepaths.
     """
 
-    @cached_property
+    @property
     def decl_load_context(self):
         return ComponentDeclLoadContext(
             component_path=ComponentPath(file_path=self.defs_module_path, instance_key=None),
