@@ -47,7 +47,6 @@ def emit_error_job():
 
     return the_job_fails
 
-
 def build_warn_job():
     @dg.asset
     def upstream():
