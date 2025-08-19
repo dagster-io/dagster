@@ -96,7 +96,7 @@ check_manifest:
 	check-manifest python_modules/dagster-webserver
 	check-manifest python_modules/dagster-graphql
 	ls python_modules/libraries | xargs -n 1 -Ipkg check-manifest python_modules/libraries/pkg
-
+w
 ready_dagster_dg_docs_for_publish:
 	rm -rf python_modules/libraries/dagster-dg-cli/dagster_dg_cli/docs/packages
 	mkdir -p python_modules/libraries/dagster-dg-cli/dagster_dg_cli/docs/packages

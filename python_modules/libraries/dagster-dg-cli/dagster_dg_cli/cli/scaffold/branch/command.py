@@ -108,7 +108,7 @@ def scaffold_branch_command(
     # Basic input validation
     prompt_text = " ".join(prompt).strip()
     if not prompt_text:
-        raise click.UsageError("Prompt cannot be empty")
+        prompt_text = click.prompt("What would you like to accomplish?")
 
     # DiagnosticsLevel is already validated by click.Choice, so this check is redundant
     # but kept for explicit validation in case of programmatic usage
