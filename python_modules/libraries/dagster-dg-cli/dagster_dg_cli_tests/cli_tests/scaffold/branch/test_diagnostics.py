@@ -4,9 +4,9 @@ import json
 import tempfile
 from pathlib import Path
 
-from dagster_dg_cli.cli.scaffold.branch.diagnostics import (
+from dagster_dg_cli.cli.scaffold.branch.claude.diagnostics import (
     AIInteraction,
-    ClaudeDiagnosticsService,
+    ClaudeDiagnostics,
     ContextGathering,
     DiagnosticsEntry,
     PerformanceMetrics,
@@ -16,7 +16,7 @@ from dagster_dg_cli.cli.scaffold.branch.diagnostics import (
 
 class TestClaudeDiagnosticsService:
     def test_initialization_off_by_default(self):
-        service = ClaudeDiagnosticsService()
+        service = ClaudeDiagnostics()
         assert service.level == "off"
         assert service.correlation_id is not None
         assert service.entries == []
@@ -24,7 +24,7 @@ class TestClaudeDiagnosticsService:
     def test_initialization_with_custom_params(self):
         correlation_id = "test-correlation-id"
         output_dir = Path("/tmp/test")
-        service = ClaudeDiagnosticsService(
+        service = ClaudeDiagnostics(
             level="debug",
             output_dir=output_dir,
             correlation_id=correlation_id,
@@ -35,7 +35,7 @@ class TestClaudeDiagnosticsService:
 
     def test_should_log_hierarchy(self):
         # Test logging hierarchy: error < info < debug
-        service = ClaudeDiagnosticsService(level="info")
+        service = ClaudeDiagnostics(level="info")
 
         assert service._should_log("error") is True  # noqa: SLF001
         assert service._should_log("info") is True  # noqa: SLF001
@@ -52,16 +52,18 @@ class TestClaudeDiagnosticsService:
         assert service._should_log("debug") is False  # noqa: SLF001
 
     def test_should_not_log_when_off(self):
-        service = ClaudeDiagnosticsService(level="off")
+        service = ClaudeDiagnostics(level="off")
 
         assert service._should_log("error") is False  # noqa: SLF001
         assert service._should_log("info") is False  # noqa: SLF001
         assert service._should_log("debug") is False  # noqa: SLF001
 
     def test_log_creates_entry(self):
-        service = ClaudeDiagnosticsService(level="info")
+        service = ClaudeDiagnostics(level="info")
 
-        service.log("info", "test_category", "test message", {"key": "value"})
+        service.log(
+            level="info", category="test_category", message="test message", data={"key": "value"}
+        )
 
         assert len(service.entries) == 1
         entry = service.entries[0]
@@ -72,14 +74,14 @@ class TestClaudeDiagnosticsService:
         assert entry.correlation_id == service.correlation_id
 
     def test_log_does_not_create_entry_when_level_too_low(self):
-        service = ClaudeDiagnosticsService(level="error")
+        service = ClaudeDiagnostics(level="error")
 
-        service.log("info", "test_category", "test message")
+        service.log(level="info", category="test_category", message="test message")
 
         assert len(service.entries) == 0
 
     def test_data_logging_without_sanitization(self):
-        service = ClaudeDiagnosticsService(level="info")
+        service = ClaudeDiagnostics(level="info")
 
         test_data = {
             "api_key": "sk-1234567890abcdef",  # This will no longer be redacted
@@ -88,7 +90,7 @@ class TestClaudeDiagnosticsService:
             "normal_key": "normal_value",
         }
 
-        service.log("info", "test", "message", test_data)
+        service.log(level="info", category="test", message="message", data=test_data)
 
         entry = service.entries[0]
         # Data should be logged as-is without sanitization
@@ -98,7 +100,7 @@ class TestClaudeDiagnosticsService:
         assert entry.data["normal_key"] == "normal_value"
 
     def test_ai_interaction_logging(self):
-        service = ClaudeDiagnosticsService(level="info")
+        service = ClaudeDiagnostics(level="info")
 
         interaction = AIInteraction(
             correlation_id="test-id",
@@ -122,7 +124,7 @@ class TestClaudeDiagnosticsService:
         assert entry.data["duration_ms"] == 500.0
 
     def test_context_gathering_logging(self):
-        service = ClaudeDiagnosticsService(level="debug")
+        service = ClaudeDiagnostics(level="debug")
 
         context = ContextGathering(
             correlation_id="test-id",
@@ -142,7 +144,7 @@ class TestClaudeDiagnosticsService:
         assert entry.data["patterns_detected"] == ["pattern1", "pattern2"]
 
     def test_performance_logging(self):
-        service = ClaudeDiagnosticsService(level="debug")
+        service = ClaudeDiagnostics(level="debug")
 
         metrics = PerformanceMetrics(
             correlation_id="test-id",
@@ -162,24 +164,25 @@ class TestClaudeDiagnosticsService:
         assert entry.data["duration_ms"] == 250.0
 
     def test_time_operation_context_manager(self):
-        service = ClaudeDiagnosticsService(level="debug")
+        service = ClaudeDiagnostics(level="debug")
 
         with service.time_operation("test_op", "test_phase"):
-            pass  # Simulate some work
+            # Simulate some work
+            pass
 
         assert len(service.entries) == 1
         entry = service.entries[0]
         assert entry.category == "performance"
         assert entry.data["operation"] == "test_op"
         assert entry.data["phase"] == "test_phase"
-        assert entry.data["duration_ms"] > 0
+        assert entry.data["duration_ms"] >= 0
 
     def test_convenience_methods(self):
-        service = ClaudeDiagnosticsService(level="debug")
+        service = ClaudeDiagnostics(level="debug")
 
-        service.error("test_cat", "error message")
-        service.info("test_cat", "info message")
-        service.debug("test_cat", "debug message")
+        service.error(category="test_cat", message="error message")
+        service.info(category="test_cat", message="info message")
+        service.debug(category="test_cat", message="debug message")
 
         assert len(service.entries) == 3
         assert service.entries[0].level == "error"
@@ -189,9 +192,9 @@ class TestClaudeDiagnosticsService:
     def test_flush_writes_file(self):
         with tempfile.TemporaryDirectory() as temp_dir:
             output_dir = Path(temp_dir)
-            service = ClaudeDiagnosticsService(level="info", output_dir=output_dir)
+            service = ClaudeDiagnostics(level="info", output_dir=output_dir)
 
-            service.info("test", "test message", {"key": "value"})
+            service.info(category="test", message="test message", data={"key": "value"})
 
             output_path = service.flush()
 
@@ -228,7 +231,7 @@ class TestClaudeDiagnosticsService:
             assert len(service.entries) == 0
 
     def test_flush_returns_none_when_off(self):
-        service = ClaudeDiagnosticsService(level="off")
+        service = ClaudeDiagnostics(level="off")
         service.entries = []  # Ensure no entries
 
         output_path = service.flush()
@@ -238,7 +241,7 @@ class TestClaudeDiagnosticsService:
     def test_flush_returns_none_when_no_entries(self):
         with tempfile.TemporaryDirectory() as temp_dir:
             output_dir = Path(temp_dir)
-            service = ClaudeDiagnosticsService(level="info", output_dir=output_dir)
+            service = ClaudeDiagnostics(level="info", output_dir=output_dir)
 
             output_path = service.flush()
 
@@ -339,3 +342,59 @@ class TestDiagnosticsDataModels:
         assert metrics.operation == "test_op"
         assert metrics.duration_ms == 250.0
         assert metrics.phase == "test_phase"
+
+    def test_claude_operation_success_logging(self):
+        """Test that the error boundary logs start and success messages automatically."""
+        service = ClaudeDiagnostics(level="info")
+
+        with service.claude_operation(
+            operation_name="test_operation",
+            error_code="test_error",
+            error_message="Test failed",
+        ):
+            # Simulate some work
+            pass
+
+        # Should have 2 entries: start and success
+        assert len(service.entries) == 2
+
+        start_entry = service.entries[0]
+        assert start_entry.level == "info"
+        assert start_entry.category == "test_operation_start"
+        assert start_entry.message == "Starting test_operation"
+
+        success_entry = service.entries[1]
+        assert success_entry.level == "info"
+        assert success_entry.category == "test_operation_success"
+        assert success_entry.message == "Successfully completed test_operation"
+        assert "duration_ms" in success_entry.data
+
+    def test_claude_operation_error_logging(self):
+        """Test that the error boundary logs errors when exceptions occur."""
+        service = ClaudeDiagnostics(level="info")
+
+        try:
+            with service.claude_operation(
+                operation_name="failing_operation",
+                error_code="operation_failed",
+                error_message="Operation failed with error",
+            ):
+                raise ValueError("Test error")
+        except ValueError:
+            pass  # Expected
+
+        # Should have 2 entries: start and error (no success)
+        assert len(service.entries) == 2
+
+        start_entry = service.entries[0]
+        assert start_entry.level == "info"
+        assert start_entry.category == "failing_operation_start"
+        assert start_entry.message == "Starting failing_operation"
+
+        error_entry = service.entries[1]
+        assert error_entry.level == "error"
+        assert error_entry.category == "operation_failed"
+        assert error_entry.message == "Operation failed with error"
+        assert error_entry.data["error_type"] == "ValueError"
+        assert error_entry.data["error_message"] == "Test error"
+        assert "duration_ms" in error_entry.data

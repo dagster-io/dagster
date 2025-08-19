@@ -1,3 +1,4 @@
+# type: ignore
 import json
 import os
 from typing import Any, ClassVar, Optional

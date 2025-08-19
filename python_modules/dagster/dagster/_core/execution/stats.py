@@ -98,15 +98,15 @@ def build_run_stats_from_events(
             end_time = event.timestamp
 
     return DagsterRunStatsSnapshot(
-        run_id,
-        steps_succeeded,
-        steps_failed,
-        materializations,
-        expectations,
-        enqueued_time,
-        launch_time,
-        start_time,
-        end_time,
+        run_id=run_id,
+        steps_succeeded=steps_succeeded,
+        steps_failed=steps_failed,
+        materializations=materializations,
+        expectations=expectations,
+        enqueued_time=enqueued_time,
+        launch_time=launch_time,
+        start_time=start_time,
+        end_time=end_time,
     )
 
 

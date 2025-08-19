@@ -8,17 +8,12 @@ import tempfile
 import textwrap
 from pathlib import Path
 from typing import Any
+from unittest import mock
 
 import pytest
 from dagster.components.utils import format_error_message
-from dagster_dg_core.utils import activate_venv, ensure_dagster_dg_tests_import, set_toml_node
-
-ensure_dagster_dg_tests_import()
-
-from unittest import mock
-
-from dagster_dg_core.utils import ensure_dagster_dg_tests_import
-from dagster_dg_core_tests.utils import (
+from dagster_dg_core.utils import activate_venv, set_toml_node
+from dagster_test.dg_utils.utils import (
     ProxyRunner,
     assert_runner_result,
     fixed_panel_width,

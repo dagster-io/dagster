@@ -26,8 +26,7 @@ from dagster_dg_core.utils import (
 )
 from dagster_dg_core.utils.warnings import DgWarningIdentifier
 from dagster_shared.utils.config import get_default_dg_user_config_path
-
-from dagster_dg_core_tests.utils import (
+from dagster_test.dg_utils.utils import (
     ConfigFileType,
     ProxyRunner,
     assert_runner_result,

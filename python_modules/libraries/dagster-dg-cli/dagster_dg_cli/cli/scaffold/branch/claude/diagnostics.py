@@ -8,9 +8,9 @@ from contextlib import contextmanager
 from datetime import datetime
 from pathlib import Path
 from time import perf_counter
-from typing import Any, Literal, Optional, Union
+from typing import Any, Literal, Optional, Union, get_args
 
-from dagster_dg_cli.cli.scaffold.branch.data_models import (
+from dagster_dg_cli.cli.scaffold.branch.models import (
     AIInteraction,
     ContextGathering,
     DiagnosticsEntry,
@@ -20,8 +20,11 @@ from dagster_dg_cli.cli.scaffold.branch.data_models import (
 # Type alias for diagnostics levels
 DiagnosticsLevel = Literal["off", "error", "info", "debug"]
 
+# Valid diagnostics levels extracted from the Literal type
+VALID_DIAGNOSTICS_LEVELS = get_args(DiagnosticsLevel)
 
-class ClaudeDiagnosticsService:
+
+class ClaudeDiagnostics:
     """Central diagnostics service for scaffold branch operations."""
 
     def __init__(
@@ -77,6 +80,7 @@ class ClaudeDiagnosticsService:
 
     def log(
         self,
+        *,
         level: DiagnosticsLevel,
         category: str,
         message: str,
@@ -207,8 +211,16 @@ class ClaudeDiagnosticsService:
         )
 
     @contextmanager
-    def time_operation(self, operation: str, phase: str = "default") -> Generator[None, None, None]:
-        """Context manager for timing operations."""
+    def time_operation(self, operation: str, phase: str) -> Generator[None, None, None]:
+        """Context manager for timing operations and logging performance metrics.
+
+        Args:
+            operation: Name of the operation being timed
+            phase: Phase or category of the operation
+
+        Yields:
+            None
+        """
         start_time = perf_counter()
         try:
             yield
@@ -222,6 +234,54 @@ class ClaudeDiagnosticsService:
                 phase=phase,
             )
             self.log_performance(metrics)
+
+    @contextmanager
+    def claude_operation(
+        self, *, operation_name: str, error_code: str, error_message: str, **additional_context: Any
+    ) -> Generator[None, None, None]:
+        """Context manager for Claude operations that handles timing and comprehensive logging.
+
+        Automatically logs operation start, success, and errors with consistent formatting.
+
+        Args:
+            operation_name: Name of the operation for diagnostics
+            error_code: Specific error code to log on failure
+            error_message: Human-readable error message
+            **additional_context: Additional context to include in error logs
+
+        Raises:
+            Re-raises any exception after logging it
+        """
+        # Log operation start
+        self.info(
+            category=f"{operation_name}_start",
+            message=f"Starting {operation_name}",
+        )
+
+        start_time = perf_counter()
+        try:
+            yield
+            # Log successful completion
+            duration_ms = (perf_counter() - start_time) * 1000
+            self.info(
+                category=f"{operation_name}_success",
+                message=f"Successfully completed {operation_name}",
+                data={"duration_ms": duration_ms},
+            )
+        except Exception as e:
+            duration_ms = (perf_counter() - start_time) * 1000
+
+            self.error(
+                category=error_code,
+                message=error_message,
+                data={
+                    "error_type": type(e).__name__,
+                    "error_message": str(e),
+                    "duration_ms": duration_ms,
+                    **additional_context,
+                },
+            )
+            raise
 
     def flush(self) -> Optional[Path]:
         """Finalize the diagnostics file with session end timestamp."""
@@ -262,27 +322,27 @@ class ClaudeDiagnosticsService:
 
         return self._output_file
 
-    def error(self, category: str, message: str, data: Optional[dict[str, Any]] = None) -> None:
+    def error(self, *, category: str, message: str, data: Optional[dict[str, Any]] = None) -> None:
         """Log an error-level entry."""
-        self.log("error", category, message, data)
+        self.log(level="error", category=category, message=message, data=data)
 
-    def info(self, category: str, message: str, data: Optional[dict[str, Any]] = None) -> None:
+    def info(self, *, category: str, message: str, data: Optional[dict[str, Any]] = None) -> None:
         """Log an info-level entry."""
-        self.log("info", category, message, data)
+        self.log(level="info", category=category, message=message, data=data)
 
-    def debug(self, category: str, message: str, data: Optional[dict[str, Any]] = None) -> None:
+    def debug(self, *, category: str, message: str, data: Optional[dict[str, Any]] = None) -> None:
         """Log a debug-level entry."""
-        self.log("debug", category, message, data)
+        self.log(level="debug", category=category, message=message, data=data)
 
 
 def create_claude_diagnostics_service(
     level: DiagnosticsLevel = "off",
     output_dir: Optional[Union[str, Path]] = None,
     correlation_id: Optional[str] = None,
-) -> ClaudeDiagnosticsService:
+) -> ClaudeDiagnostics:
     """Create a new Claude diagnostics service instance."""
     output_path = Path(output_dir) if output_dir else None
-    return ClaudeDiagnosticsService(
+    return ClaudeDiagnostics(
         level=level,
         output_dir=output_path,
         correlation_id=correlation_id,

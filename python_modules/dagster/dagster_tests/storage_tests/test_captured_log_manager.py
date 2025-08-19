@@ -28,7 +28,7 @@ class TestLocalComputeLogManager(TestComputeLogManager):
     __test__ = True
 
     @pytest.fixture(name="compute_log_manager")
-    def compute_log_manager(self):  # pyright: ignore[reportIncompatibleMethodOverride]
+    def compute_log_manager(self):
         with tempfile.TemporaryDirectory() as tmpdir_path:
             return LocalComputeLogManager(tmpdir_path)
 

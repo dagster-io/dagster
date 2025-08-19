@@ -12,7 +12,7 @@ Related Guides:
 
 * `Using Dagster with Snowflake <https://docs.dagster.io/integrations/libraries/snowflake>`_
 * `Snowflake I/O manager reference <https://docs.dagster.io/integrations/libraries/snowflake/reference>`_
-* `Transitioning data pipelines from development to production <https://docs.dagster.io/guides/deploy/dev-to-prod>`_
+* `Transitioning data pipelines from development to production <https://docs.dagster.io/guides/operate/dev-to-prod>`_
 * `Testing against production with Dagster+ Branch Deployments <https://docs.dagster.io/deployment/dagster-plus/ci-cd/branch-deployments>`_
 
 

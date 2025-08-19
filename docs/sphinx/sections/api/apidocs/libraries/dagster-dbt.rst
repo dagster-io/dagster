@@ -8,7 +8,7 @@ data assets that depend on specific dbt models, or to define the computation req
 the sources that your dbt models depend on.
 
 Related documentation pages: `dbt <https://docs.dagster.io/integrations/libraries/dbt>`_ and
-`dbt Cloud <https://docs.dagster.io/integrations/dbt-cloud>`_.
+`dbt Cloud <https://docs.dagster.io/integrations/libraries/dbt/dbt-cloud>`_.
 
 .. currentmodule:: dagster_dbt
 

@@ -32,7 +32,7 @@ class TestMySQLEventLogStorage(TestEventLogStorage):
     __test__ = True
 
     @pytest.fixture(name="instance", scope="function")
-    def instance(self, conn_string):  # pyright: ignore[reportIncompatibleMethodOverride]
+    def instance(self, conn_string):
         MySQLEventLogStorage.create_clean_storage(conn_string)
 
         with instance_for_test(
@@ -44,7 +44,7 @@ class TestMySQLEventLogStorage(TestEventLogStorage):
         return False
 
     @pytest.fixture(scope="function", name="storage")
-    def event_log_storage(self, instance):  # pyright: ignore[reportIncompatibleMethodOverride]
+    def event_log_storage(self, instance):
         event_log_storage = instance.event_log_storage
         assert isinstance(event_log_storage, MySQLEventLogStorage)
         yield event_log_storage

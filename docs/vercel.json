@@ -589,6 +589,10 @@
       "destination": "/api/clis/dagster-cloud-cli"
     },
     {
+      "source": "/deployment/dagster-plus/management/dagster-cloud-cli",
+      "destination": "/api/clis/dagster-cloud-cli"
+    },
+    {
       "source": "/dagster-plus/developing-testing/code-locations",
       "destination": "/deployment/code-locations"
     },
@@ -646,7 +650,7 @@
     },
     {
       "source": "/integrations/airlift/reference",
-      "destination": "/migration/airflow-to-dagster/migration-reference"
+      "destination": "/migration/airflow-to-dagster/airlift-v1/migration-reference"
     },
     {
       "source": "/integrations/libraries/airlift/federation-tutorial/observe",
@@ -2915,6 +2919,78 @@
       "destination": "/guides/monitor/insights"
     },
     {
+      "source": "/dagster-cloud/managing-deployments/branch-deployments",
+      "destination": "/deployment/dagster-plus/ci-cd/branch-deployments"
+    },
+    {
+      "source": "/dagster-cloud/account/managing-users/managing-teams",
+      "destination": "/deployment/dagster-plus/authentication-and-access-control/rbac/teams"
+    },
+    {
+      "source": "/dagster-cloud/managing-deployments/alerts/microsoft-teams",
+      "destination": "/guides/monitor/alerts/configuring-an-alert-notification-service"
+    },
+    {
+      "source": "/dagster-cloud/managing-deployments/alerts/pagerduty",
+      "destination": "/guides/monitor/alerts/configuring-an-alert-notification-service"
+    },
+    {
+      "source": "/dagster-cloud/account/managing-users/managing-user-roles-permissions",
+      "destination": "/deployment/dagster-plus/authentication-and-access-control/rbac/user-roles-permissions"
+    },
+    {
+      "source": "/dagster-cloud/managing-deployments/alerts/email",
+      "destination": "/guides/monitor/alerts/configuring-an-alert-notification-service"
+    },
+    {
+      "source": "/dagster-cloud/account/authentication/utilizing-scim-provisioning",
+      "destination": "/deployment/dagster-plus/authentication-and-access-control/scim"
+    },
+    {
+      "source": "/dagster-cloud/deployment/agents/amazon-ecs/configuration-reference",
+      "destination": "/deployment/dagster-plus/hybrid/amazon-ecs/configuration-reference"
+    },
+    {
+      "source": "/dagster-cloud/deployment/agents/running-multiple-agents",
+      "destination": "/deployment/dagster-plus/hybrid/multiple"
+    },
+    {
+      "source": "/dagster-cloud/managing-deployments/branch-deployments/using-branch-deployments-with-github",
+      "destination": "/deployment/dagster-plus/ci-cd/branch-deployments/setting-up-branch-deployments"
+    },
+    {
+      "source": "/dagster-cloud/managing-deployments/alerts/slack",
+      "destination": "/guides/monitor/alerts/configuring-an-alert-notification-service"
+    },
+    {
+      "source": "/dagster-cloud/managing-deployments/branch-deployments/using-branch-deployments-with-gitlab",
+      "destination": "/deployment/dagster-plus/ci-cd/branch-deployments/setting-up-branch-deployments"
+    },
+    {
+      "source": "/dagster-cloud/managing-deployments/setting-up-alerts",
+      "destination": "/guides/monitor/alerts/configuring-an-alert-notification-service"
+    },
+    {
+      "source": "/dagster-cloud/managing-deployments/alerts/managing-alerts-cli",
+      "destination": "/guides/monitor/alerts/creating-alerts"
+    },
+    {
+      "source": "/dagster-cloud/managing-deployments/alerts",
+      "destination": "/guides/monitor/alerts"
+    },
+    {
+      "source": "/dagster-cloud/managing-deployments/alerts/managing-alerts-in-ui",
+      "destination": "/guides/monitor/alerts/creating-alerts"
+    },
+    {
+      "source": "/dagster-cloud/managing-deployments/managing-deployments",
+      "destination": "/deployment/dagster-plus/full-deployments"
+    },
+    {
+      "source": "/dagster-cloud/managing-deployments/environment-variables-and-secrets",
+      "destination": "/deployment/dagster-plus/management/environment-variables"
+    },
+    {
       "source": "/concepts/dagster-pipes/pyspark",
       "destination": "/guides/build/external-pipelines/pyspark-pipeline"
     },
@@ -2996,7 +3072,7 @@
     },
     {
       "source": "/api/python-api/external-assets-rest-api",
-      "destination": "/api/dagster/external-assets-rest-api"
+      "destination": "/api/rest-apis/external-assets-rest-api"
     },
     {
       "source": "/api/python-api/graphs",
