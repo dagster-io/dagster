@@ -12,7 +12,12 @@ The agent will:
 
 1. **Repository Analysis**: Execute `dagster-dev ai-review-analyze --json --minimal --smart-summary` for optimized state checking
 2. **Thesis Management**: Handle existing thesis detection and interactive collection
-3. **AI Analysis**: Generate structured PR summaries with human-AI content separation
+3. **AI Analysis**: Generate structured PR summaries with human-AI content separation, adapting detail level based on change complexity:
+   - **Simple changes** (single-line fixes, typos, minor tweaks): Single concise bullet point
+   - **Technical fixes** (import reorganization, compatibility fixes, lazy loading): Single high-level summary of the approach, avoid granular file-by-file breakdowns
+   - **Medium changes** (function additions, config updates, isolated features): Brief summary with key points
+   - **Complex changes** (architectural changes, multiple classes/functions, cross-cutting concerns): Expansive analysis with detailed breakdown
+   - **Large but simple changes** (file splits, refactoring without logic changes): Brief summary focusing on structural changes rather than line count
 4. **Atomic Updates**: Execute `dagster-dev ai-review-update --auto-prepare` with proper escaping
 
 ## Key Benefits
