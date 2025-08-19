@@ -407,7 +407,7 @@ def _build_fivetran_assets_from_metadata(
     poll_timeout: Optional[float],
     fetch_column_metadata: bool,
     translator: Optional[type[DagsterFivetranTranslator]] = None,
-    tags: Optional[Mapping[str, Any]] = None, 
+    tags: Optional[Mapping[str, Any]] = None,
 ) -> AssetsDefinition:
     metadata = cast("Mapping[str, Any]", assets_defn_meta.extra_metadata)
     connector_id = cast("str", metadata["connector_id"])
@@ -609,7 +609,7 @@ def load_assets_from_fivetran_instance(
     poll_timeout: Optional[float] = None,
     fetch_column_metadata: bool = True,
     translator: Optional[type[DagsterFivetranTranslator]] = None,
-    tags: Optional[Mapping[str, Any]] = None, 
+    tags: Optional[Mapping[str, Any]] = None,
 ) -> CacheableAssetsDefinition:
     """Loads Fivetran connector assets from a configured FivetranResource instance. This fetches information
     about defined connectors at initialization time, and will error on workspace load if the Fivetran
