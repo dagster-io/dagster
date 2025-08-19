@@ -134,10 +134,6 @@ class DatabricksAssetBundleComponent(Component, Resolvable):
     def databricks_config(self) -> DatabricksConfig:
         return DatabricksConfig(databricks_config_path=self.databricks_config_path)
 
-    @cached_property
-    def custom_config(self) -> DatabricksClusterConfig:
-        return DatabricksClusterConfig(custom_config_path=self.custom_config_path)
-
     def get_asset_spec(self, task: DatabricksBaseTask) -> AssetSpec:
         return AssetSpec(
             key=snake_case(task.task_key),
