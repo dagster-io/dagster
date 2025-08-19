@@ -171,10 +171,39 @@ def camelcase(string: str) -> str:
 
 
 def snakecase(string: str) -> str:
-    # Add an underscore before capital letters and lower the case
-    string = re.sub(r"(?<!^)(?=[A-Z])", "_", string).lower()
+    """Convert a string to snake_case.
+
+    This function handles consecutive uppercase letters more gracefully than the naive approach.
+    For example: "ACMEDatabricksJobComponent" -> "acme_databricks_job_component"
+    Rather than: "ACMEDatabricksJobComponent" -> "a_c_m_e_databricks_job_component"
+    """
+    if not string:
+        return string
+
+    # First, handle sequences of uppercase letters followed by lowercase letters
+    # This matches patterns like "ACME" in "ACMEDatabricks" -> "ACME_Databricks"
+    # The pattern (?<![A-Z])([A-Z]+)(?=[A-Z][a-z]) matches:
+    # - One or more uppercase letters ([A-Z]+)
+    # - That are followed by an uppercase letter then lowercase ((?=[A-Z][a-z]))
+    # - But not preceded by another uppercase letter ((?<![A-Z]))
+    string = re.sub(r"([A-Z]+)(?=[A-Z][a-z])", r"\1_", string)
+
+    # Add underscores before uppercase letters that follow lowercase letters or numbers
+    # This handles the transition from lowercase/numbers to uppercase
+    string = re.sub(r"([a-z0-9])([A-Z])", r"\1_\2", string)
+
+    # Convert to lowercase
+    string = string.lower()
+
     # Replace any non-alphanumeric characters with underscores
     string = re.sub(r"[^a-z0-9_]", "_", string)
+
+    # Clean up multiple consecutive underscores
+    string = re.sub(r"_+", "_", string)
+
+    # Remove leading/trailing underscores
+    string = string.strip("_")
+
     return string
 
 
