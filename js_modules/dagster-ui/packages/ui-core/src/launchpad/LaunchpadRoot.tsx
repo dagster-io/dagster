@@ -2,12 +2,18 @@ import {Dialog, DialogHeader} from '@dagster-io/ui-components';
 import {CodeMirrorInDialogStyle} from '@dagster-io/ui-components/editor';
 import {Redirect, useParams} from 'react-router-dom';
 
-import {LaunchpadAllowedRoot} from './LaunchpadAllowedRoot';
+import {useQuery} from '../apollo-client';
+import {LaunchpadAllowedRoot, PIPELINE_EXECUTION_ROOT_QUERY} from './LaunchpadAllowedRoot';
+import {LaunchpadConfig} from './LaunchpadSession';
+import {LaunchpadSessionError} from './LaunchpadSessionError';
+import {LaunchpadSessionLoading} from './LaunchpadSessionLoading';
+import {LaunchpadTransientSessionContainer} from './LaunchpadTransientSessionContainer';
 import {IExecutionSession} from '../app/ExecutionSessionStorage';
 import {usePermissionsForLocation} from '../app/Permissions';
 import {__ASSET_JOB_PREFIX} from '../asset-graph/Utils';
 import {useBlockTraceUntilTrue} from '../performance/TraceContext';
 import {RepoAddress} from '../workspace/types';
+import {LaunchpadRootQuery, LaunchpadRootQueryVariables} from './types/LaunchpadAllowedRoot.types';
 
 // ########################
 // ##### LAUNCHPAD ROOTS
@@ -43,6 +49,83 @@ export const AssetLaunchpad = ({
         pipelinePath={assetJobName}
         repoAddress={repoAddress}
         sessionPresets={sessionPresets}
+      />
+    </Dialog>
+  );
+};
+
+export const BackfillLaunchpad = ({
+  repoAddress,
+  sessionPresets,
+  assetJobName,
+  open,
+  setOpen,
+  onSaveConfig,
+  savedConfig,
+}: {
+  repoAddress: RepoAddress;
+  sessionPresets?: Partial<IExecutionSession>;
+  assetJobName: string;
+  open: boolean;
+  setOpen: (open: boolean) => void;
+  onSaveConfig: (config: LaunchpadConfig) => void;
+  savedConfig?: LaunchpadConfig | null;
+}) => {
+  const title = 'Config Editor';
+
+  const result = useQuery<LaunchpadRootQuery, LaunchpadRootQueryVariables>(
+    PIPELINE_EXECUTION_ROOT_QUERY,
+    {
+      variables: {
+        repositoryName: repoAddress.name,
+        repositoryLocationName: repoAddress.location,
+        pipelineName: assetJobName,
+      },
+    },
+  );
+
+  if (result?.loading) {
+    return <LaunchpadSessionLoading />;
+  }
+
+  const pipelineOrError = result?.data?.pipelineOrError;
+  const partitionSetsOrError = result?.data?.partitionSetsOrError;
+  if (
+    pipelineOrError?.__typename !== 'Pipeline' ||
+    partitionSetsOrError?.__typename !== 'PartitionSets'
+  ) {
+    return (
+      <LaunchpadSessionError
+        icon="error"
+        title="Error loading base asset job"
+        description={
+          pipelineOrError?.__typename === 'PythonError' ? pipelineOrError.message : 'Unknown error'
+        }
+      />
+    );
+  }
+
+  // Use the saved config's runConfigYaml as rootDefaultYaml if available
+  const rootDefaultYaml = savedConfig?.runConfigYaml;
+
+  return (
+    <Dialog
+      style={{height: '90vh', width: '80%', minWidth: '1000px'}}
+      isOpen={open}
+      canEscapeKeyClose={false}
+      canOutsideClickClose={false}
+      onClose={() => setOpen(false)}
+    >
+      <DialogHeader icon="layers" label={title} />
+      <CodeMirrorInDialogStyle />
+      <LaunchpadTransientSessionContainer
+        launchpadType="asset"
+        pipeline={pipelineOrError}
+        partitionSets={partitionSetsOrError}
+        repoAddress={repoAddress}
+        sessionPresets={sessionPresets || {}}
+        rootDefaultYaml={rootDefaultYaml}
+        onSaveConfig={onSaveConfig}
       />
     </Dialog>
   );
