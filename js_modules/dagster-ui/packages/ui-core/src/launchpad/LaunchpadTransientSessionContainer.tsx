@@ -1,6 +1,6 @@
 import {useState} from 'react';
 
-import LaunchpadSession, {LaunchpadConfig} from './LaunchpadSession';
+import LaunchpadSession from './LaunchpadSession';
 import {LaunchpadType} from './types';
 import {
   LaunchpadSessionPartitionSetsFragment,
@@ -23,19 +23,11 @@ interface Props {
   repoAddress: RepoAddress;
   sessionPresets: Partial<IExecutionSession>;
   rootDefaultYaml: string | undefined;
-  onSaveConfig?: (config: LaunchpadConfig) => void;
 }
 
 export const LaunchpadTransientSessionContainer = (props: Props) => {
-  const {
-    launchpadType,
-    pipeline,
-    partitionSets,
-    repoAddress,
-    sessionPresets,
-    rootDefaultYaml,
-    onSaveConfig,
-  } = props;
+  const {launchpadType, pipeline, partitionSets, repoAddress, sessionPresets, rootDefaultYaml} =
+    props;
 
   const {flagDisableAutoLoadDefaults} = useFeatureFlags();
   const initialData = useInitialDataForMode(
@@ -69,7 +61,6 @@ export const LaunchpadTransientSessionContainer = (props: Props) => {
       partitionSets={partitionSets}
       repoAddress={repoAddress}
       rootDefaultYaml={rootDefaultYaml}
-      onSaveConfig={onSaveConfig}
     />
   );
 };
