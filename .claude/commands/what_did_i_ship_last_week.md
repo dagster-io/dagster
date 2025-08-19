@@ -17,7 +17,7 @@ Generate a comprehensive, impact-focused report of commits and contributions mad
 
 ## What it does
 
-1. **Calculate Date Range**: Determines the start of business Monday of the previous week (9 AM) through now
+1. **Calculate Date Range**: Determines Monday 12:01 AM through Sunday 11:59 PM of the previous week
 2. **Query All Dagster Repos**: Searches commits across:
    - `dagster-io/dagster` (main OSS repo)
    - `dagster-io/internal` (internal repo)
@@ -205,10 +205,10 @@ The generated report follows a model-driven approach with these sections:
 
 The command calculates the previous week as:
 
-- **Start**: Monday of the previous week at 9:00 AM local time
-- **End**: Current date/time
-- If today is Sunday, treats the just-completed week as "previous week"
-- If today is Monday before 9 AM, includes the previous Friday-Sunday in the report
+- **Start**: Monday of the previous week at 12:01 AM local time
+- **End**: Sunday of the previous week at 11:59 PM local time
+- Previous week = the complete Monday-Sunday week before this current week
+- For example, if today is Tuesday Aug 19, previous week = Monday Aug 11 12:01 AM through Sunday Aug 17 11:59 PM
 
 ## GitHub API Optimization
 

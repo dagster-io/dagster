@@ -257,22 +257,28 @@ def fetch_pr_details(repo: str, pr_number: int) -> Optional[PRInfo]:
 
 
 def calculate_previous_week() -> tuple[datetime, datetime]:
-    """Calculate the start and end times for the previous week."""
+    """Calculate the start and end times for the previous week.
+
+    Previous week = Monday 12:01 AM to Sunday 11:59 PM of the week before this one.
+    """
     now = datetime.now()
     current_dow = now.weekday()  # 0=Monday, 6=Sunday
 
-    if current_dow == 6:  # Sunday
-        days_back = 6
-    elif current_dow == 0 and now.hour < 9:  # Monday before 9 AM
-        days_back = 7
-    else:
-        days_back = current_dow + 6
+    # Calculate days back to get to Monday of previous week
+    # If today is Monday (0), we want to go back 7 days to last Monday
+    # If today is Tuesday (1), we want to go back 8 days to last Monday
+    # etc.
+    days_back_to_prev_monday = current_dow + 7
 
-    # Start of previous Monday at 9 AM
-    start_date = now - timedelta(days=days_back)
-    start_time = start_date.replace(hour=9, minute=0, second=0, microsecond=0)
+    # Start of previous week Monday at 12:01 AM
+    start_date = now - timedelta(days=days_back_to_prev_monday)
+    start_time = start_date.replace(hour=0, minute=1, second=0, microsecond=0)
 
-    return start_time, now
+    # End of previous week Sunday at 11:59 PM
+    end_date = start_date + timedelta(days=6)  # 6 days after Monday = Sunday
+    end_time = end_date.replace(hour=23, minute=59, second=59, microsecond=999999)
+
+    return start_time, end_time
 
 
 def categorize_commit(message: str) -> str:
