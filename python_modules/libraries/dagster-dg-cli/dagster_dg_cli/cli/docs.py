@@ -143,7 +143,14 @@ def build_docs_command(
 
         with yaspin(text="Building docs", color="blue") as spinner:
             spinner.start()
-            subprocess.check_output(["yarn", "build"])
+            try:
+                subprocess.check_output(["yarn", "build"], stderr=subprocess.STDOUT, text=True)
+            except subprocess.CalledProcessError as e:
+                spinner.fail("✗")
+                click.echo(f"Error building docs (exit code {e.returncode}):")
+                click.echo(f"Command: {' '.join(e.cmd)}")
+                click.echo(f"Output:\n{e.output}")
+                raise
             spinner.ok("✓")
 
         Path(output_dir).mkdir(parents=True, exist_ok=True)
