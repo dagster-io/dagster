@@ -407,6 +407,7 @@ def _build_fivetran_assets_from_metadata(
     poll_timeout: Optional[float],
     fetch_column_metadata: bool,
     translator: Optional[type[DagsterFivetranTranslator]] = None,
+    tags: Optional[Mapping[str, Any]] = None, 
 ) -> AssetsDefinition:
     metadata = cast("Mapping[str, Any]", assets_defn_meta.extra_metadata)
     connector_id = cast("str", metadata["connector_id"])
@@ -434,7 +435,7 @@ def _build_fivetran_assets_from_metadata(
         group_name=assets_defn_meta.group_name,
         poll_interval=poll_interval,
         poll_timeout=poll_timeout,
-        asset_tags=build_kind_tag(storage_kind) if storage_kind else None,
+        asset_tags={**(build_kind_tag(storage_kind) if storage_kind else {}), **(tags or {})},
         fetch_column_metadata=fetch_column_metadata,
         infer_missing_tables=False,
         op_tags=None,
@@ -457,6 +458,7 @@ class FivetranInstanceCacheableAssetsDefinition(CacheableAssetsDefinition):
         poll_timeout: Optional[float],
         fetch_column_metadata: bool,
         translator: Optional[type[DagsterFivetranTranslator]] = None,
+        tags: Optional[Mapping[str, Any]] = None,
     ):
         self._fivetran_resource_def = fivetran_resource_def
         if isinstance(fivetran_resource_def, FivetranResource):
@@ -487,6 +489,7 @@ class FivetranInstanceCacheableAssetsDefinition(CacheableAssetsDefinition):
         self._poll_timeout = poll_timeout
         self._fetch_column_metadata = fetch_column_metadata
         self._translator = translator
+        self._tags = tags
 
         contents = hashlib.sha1()
         contents.update(",".join(key_prefix).encode("utf-8"))
@@ -578,6 +581,7 @@ class FivetranInstanceCacheableAssetsDefinition(CacheableAssetsDefinition):
                 poll_timeout=self._poll_timeout,
                 fetch_column_metadata=self._fetch_column_metadata,
                 translator=self._translator,
+                tags=self._tags,
             )
             for meta in data
         ]
@@ -605,6 +609,7 @@ def load_assets_from_fivetran_instance(
     poll_timeout: Optional[float] = None,
     fetch_column_metadata: bool = True,
     translator: Optional[type[DagsterFivetranTranslator]] = None,
+    tags: Optional[Mapping[str, Any]] = None, 
 ) -> CacheableAssetsDefinition:
     """Loads Fivetran connector assets from a configured FivetranResource instance. This fetches information
     about defined connectors at initialization time, and will error on workspace load if the Fivetran
@@ -706,6 +711,7 @@ def load_assets_from_fivetran_instance(
         poll_timeout=poll_timeout,
         fetch_column_metadata=fetch_column_metadata,
         translator=translator,
+        tags=tags,
     )
 
 
