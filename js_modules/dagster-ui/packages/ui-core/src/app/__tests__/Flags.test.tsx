@@ -12,7 +12,7 @@ jest.mock('react', () => jest.requireActual('react'));
 // eslint-disable-next-line no-var
 var mockGetJSONForKey: jest.Mock;
 
-jest.mock('../../hooks/useStateWithStorage', () => {
+jest.mock('../../util/getJSONForKey', () => {
   if (!mockGetJSONForKey) {
     mockGetJSONForKey = jest.fn(() => {});
   }
@@ -81,7 +81,8 @@ describe('Feature Flags with In-Memory Cache and BroadcastChannel', () => {
 
   it('should react to changes in feature flags across contexts', () => {
     jest.isolateModules(() => {
-      const {useFeatureFlags, setFeatureFlags} = require('../Flags');
+      const {setFeatureFlags} = require('../Flags');
+      const {useFeatureFlags} = require('../useFeatureFlags');
       const {result} = renderHook(() => useFeatureFlags());
 
       expect(result.current[FeatureFlag.__TestFlagDefaultNone]).toBe(false); // Default
@@ -103,7 +104,8 @@ describe('Feature Flags with In-Memory Cache and BroadcastChannel', () => {
 
   it('should handle unset state correctly', () => {
     jest.isolateModules(() => {
-      const {useFeatureFlags, setFeatureFlags} = require('../Flags');
+      const {setFeatureFlags} = require('../Flags');
+      const {useFeatureFlags} = require('../useFeatureFlags');
       const {result} = renderHook(() => useFeatureFlags());
 
       expect(result.current[FeatureFlag.__TestFlagDefaultNone]).toBe(false); // Default

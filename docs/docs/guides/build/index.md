@@ -3,6 +3,8 @@ description: Create and manage Dagster data pipelines with projects, assets, res
 sidebar_class_name: hidden
 title: Build pipelines
 sidebar_position: 10
+canonicalUrl: "/guides/build"
+slug: "/guides/build"
 ---
 
 import DocCardList from '@theme/DocCardList';

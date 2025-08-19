@@ -3,16 +3,21 @@ from collections.abc import Iterator
 from contextlib import contextmanager
 from contextvars import ContextVar
 from functools import wraps
-from typing import TYPE_CHECKING, Annotated, Any, Callable, Optional
+from typing import TYPE_CHECKING, Annotated, Callable, Optional, Protocol, TypeVar
 
 from dagster_shared.record import ImportFrom, replace
+from typing_extensions import Concatenate, ParamSpec
 
+import dagster._check as check
 from dagster._core.definitions.temporal_context import TemporalContext
 from dagster._record import record
 from dagster._time import get_current_datetime
 
 if TYPE_CHECKING:
     from dagster._core.instance import DynamicPartitionsStore
+
+P = ParamSpec("P")
+T_Return = TypeVar("T_Return")
 
 
 @record
@@ -63,6 +68,21 @@ _current_ctx: ContextVar[Optional[PartitionLoadingContext]] = ContextVar(
 )
 
 
+def require_full_partition_loading_context(func: Callable[P, T_Return]) -> Callable[P, T_Return]:
+    @wraps(func)
+    def wrapper(*args: P.args, **kwargs: P.kwargs) -> T_Return:
+        current_context = _current_ctx.get()
+        check.invariant(
+            current_context is not None
+            and current_context.effective_dt is not None
+            and current_context.dynamic_partitions_store is not None,
+            "This function can only be called within a partition_loading_context with both a datetime and dynamic_partitions_store set",
+        )
+        return func(*args, **kwargs)
+
+    return wrapper
+
+
 @contextmanager
 def partition_loading_context(
     effective_dt: Optional[datetime.datetime] = None,
@@ -94,11 +114,20 @@ def partition_loading_context(
         _current_ctx.reset(token)
 
 
-def use_partition_loading_context(func: Callable[..., Any]) -> Callable[..., Any]:
+class _HasPartitionLoadingContext(Protocol):
+    _partition_loading_context: PartitionLoadingContext
+
+
+Self = TypeVar("Self", bound=_HasPartitionLoadingContext)
+
+
+def use_partition_loading_context(
+    func: Callable[Concatenate[Self, P], T_Return],
+) -> Callable[Concatenate[Self, P], T_Return]:
     """Decorator for methods that will use the partition loading context."""
 
     @wraps(func)
-    def wrapper(self, *args: Any, **kwargs: Any) -> Any:
+    def wrapper(self: Self, *args: P.args, **kwargs: P.kwargs) -> T_Return:
         with partition_loading_context(new_ctx=self._partition_loading_context):
             return func(self, *args, **kwargs)
 

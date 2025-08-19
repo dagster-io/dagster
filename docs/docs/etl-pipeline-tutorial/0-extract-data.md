@@ -10,7 +10,7 @@ In the first step in our pipeline, we will use [software-defined assets](/guides
 
 We will start by writing our ingestion assets. Assets serve as the building blocks for our platform in Dagster and represent the underlying entities in our pipelines (such as tables, datasets, or machine learning models). Assets take dependencies on other assets to build out the full graph of our data platform and define its lineage.
 
-When building assets, the first step is to scaffold the assets file with the [`dg scaffold` command](/api/dg/dg-cli#dg-scaffold). The `dg` CLI provides a number of commands to help structure and navigate Dagster projects. For more information, see the [`dg` CLI documentation](/api/dg/dg-cli):
+When building assets, the first step is to scaffold the assets file with the [`dg scaffold` command](/api/clis/dg-cli/dg-cli-reference#dg-scaffold). The `dg` CLI provides a number of commands to help structure and navigate Dagster projects. For more information, see the [`dg` CLI documentation](/api/clis/dg-cli/dg-cli-reference):
 
 <CliInvocationExample path="docs_snippets/docs_snippets/guides/tutorials/etl_tutorial/commands/dg-scaffold-assets.txt" />
 
@@ -98,7 +98,7 @@ In Dagster, all the objects we define (such as assets) need to be associated wit
 
 This `Definitions` object loads the `etl_tutorial` module and automatically discovers all the assets and other Dagster objects we define. There is no need to explicitly include any references to assets as they are created. However, it is a good practice to check that the `Definitions` object can be loaded without error as we add Dagster objects.
 
-We can use `dg` to ensure that everything we define in our module is loading correctly and that our project is deployable. Here we can use the [`dg check defs`](/api/dg/dg-cli#dg-check) command:
+We can use `dg` to ensure that everything we define in our module is loading correctly and that our project is deployable. Here we can use the [`dg check defs`](/api/clis/dg-cli/dg-cli-reference#dg-check) command:
 
 <CliInvocationExample path="docs_snippets/docs_snippets/guides/tutorials/etl_tutorial/commands/dg-check-defs.txt" />
 
@@ -125,7 +125,7 @@ To materialize the assets:
 
 :::tip
 
-You can also materialize assets from the command line with [`dg` launch](/api/dg/dg-cli#dg-launch). You will need to pass an asset selection -- in this case, `*` selects all assets:
+You can also materialize assets from the command line with [`dg` launch](/api/clis/dg-cli/dg-cli-reference#dg-launch). You will need to pass an asset selection -- in this case, `*` selects all assets:
 
 <CliInvocationExample contents='dg launch --assets "*"' />
 

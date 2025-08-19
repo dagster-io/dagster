@@ -9,10 +9,10 @@ import pytest
 from dagster._core.definitions.selector import JobSubsetSelector
 from dagster._core.events import DagsterEvent, DagsterEventType
 from dagster._core.instance import DagsterInstance
+from dagster._core.remote_origin import ManagedGrpcPythonEnvCodeLocationOrigin
 from dagster._core.remote_representation.code_location import GrpcServerCodeLocation
 from dagster._core.remote_representation.external import RemoteJob
 from dagster._core.remote_representation.handle import JobHandle, RepositoryHandle
-from dagster._core.remote_representation.origin import ManagedGrpcPythonEnvCodeLocationOrigin
 from dagster._core.storage.dagster_run import IN_PROGRESS_RUN_STATUSES, DagsterRunStatus
 from dagster._core.storage.tags import PRIORITY_TAG
 from dagster._core.test_utils import (
@@ -1626,7 +1626,7 @@ class QueuedRunCoordinatorDaemonTests(ABC):
 
 class TestQueuedRunCoordinatorDaemon(QueuedRunCoordinatorDaemonTests):
     @pytest.fixture
-    def instance(self, run_coordinator_config, concurrency_config):  # pyright: ignore[reportIncompatibleMethodOverride]
+    def instance(self, run_coordinator_config, concurrency_config):
         overrides = {
             "concurrency": concurrency_config,
             "run_coordinator": {

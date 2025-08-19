@@ -17,7 +17,9 @@ export function isTimeseriesDimension(dimension: PartitionHealthDimension) {
 export function isTimeseriesPartition(aPartitionKey = '') {
   return /\d{4}-\d{2}-\d{2}/.test(aPartitionKey); // cheak trick for now
 }
-
+export function isTimeBasedPartition(dimension: PartitionHealthDimension): boolean {
+  return dimension.type === PartitionDefinitionType.TIME_WINDOW; // check with type
+}
 /*
 This function takes the health of several assets and returns a single health object in which SUCCESS
 means that all the assets were in a SUCCESS state for that partition and SUCCESS_MISSING means only

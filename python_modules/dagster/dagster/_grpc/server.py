@@ -40,6 +40,7 @@ from dagster._core.errors import (
 )
 from dagster._core.instance import DagsterInstance, InstanceRef
 from dagster._core.origin import DEFAULT_DAGSTER_ENTRY_POINT, get_python_environment_entry_point
+from dagster._core.remote_origin import RemoteRepositoryOrigin
 from dagster._core.remote_representation.external_data import (
     JobDataSnap,
     PartitionExecutionErrorSnap,
@@ -49,7 +50,6 @@ from dagster._core.remote_representation.external_data import (
     ScheduleExecutionErrorSnap,
     SensorExecutionErrorSnap,
 )
-from dagster._core.remote_representation.origin import RemoteRepositoryOrigin
 from dagster._core.snap.execution_plan_snapshot import ExecutionPlanSnapshotErrorData
 from dagster._core.types.loadable_target_origin import (
     LoadableTargetOrigin,

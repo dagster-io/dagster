@@ -26,6 +26,7 @@ from dagster._core.definitions.declarative_automation.serialized_objects import 
     AutomationConditionSnapshot,
     OperatorType,
     get_serializable_candidate_subset,
+    get_serializable_true_subset,
 )
 from dagster._core.definitions.partitions.subset import (
     AllPartitionsSubset,
@@ -304,14 +305,14 @@ class AutomationCondition(ABC, Generic[T_EntityKey]):
     ) -> Union[Self, T_AutomationCondition]:
         """Replaces all instances of ``old`` across any sub-conditions with ``new``.
 
-        If ``old`` is a string, then conditions with a label matching
+        If ``old`` is a string, then conditions with a label or name matching
         that string will be replaced.
 
         Args:
             old (Union[AutomationCondition, str]): The condition to replace.
             new (AutomationCondition): The condition to replace with.
         """
-        return new if old in [self, self.get_label()] else self
+        return new if old in [self, self.name, self.get_label()] else self
 
     @public
     @staticmethod
@@ -861,10 +862,8 @@ class AutomationResult(Generic[T_EntityKey]):
         if not self.condition.requires_cursor:
             return None
         return AutomationConditionNodeCursor(
-            true_subset=self.get_serializable_subset(),
-            candidate_subset=get_serializable_candidate_subset(
-                self._context.candidate_subset.convert_to_serializable_subset()
-            ),
+            true_subset=get_serializable_true_subset(self.true_subset),
+            candidate_subset=get_serializable_candidate_subset(self._context.candidate_subset),
             subsets_with_metadata=self._subsets_with_metadata,
             metadata=self._metadata,
             extra_state=self._extra_state,
@@ -874,10 +873,8 @@ class AutomationResult(Generic[T_EntityKey]):
     def serializable_evaluation(self) -> AutomationConditionEvaluation:
         return AutomationConditionEvaluation(
             condition_snapshot=self.condition.get_node_snapshot(self.condition_unique_id),
-            true_subset=self.get_serializable_subset(),
-            candidate_subset=get_serializable_candidate_subset(
-                self._context.candidate_subset.convert_to_serializable_subset()
-            ),
+            true_subset=get_serializable_true_subset(self.true_subset),
+            candidate_subset=get_serializable_candidate_subset(self._context.candidate_subset),
             subsets_with_metadata=self._subsets_with_metadata,
             metadata=self._metadata,
             start_timestamp=self._start_timestamp,

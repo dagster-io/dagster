@@ -384,7 +384,7 @@ def create_ci_api_token(description: Optional[str] = None, **global_options: obj
 @click.group(
     name="plus",
     cls=DgClickGroup,
-    hidden=True,
+    unlaunched=True,
     commands={
         "create": plus_create_group,
         "login": login_command,

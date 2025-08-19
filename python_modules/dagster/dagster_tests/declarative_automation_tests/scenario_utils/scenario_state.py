@@ -34,8 +34,8 @@ from dagster._core.definitions.repository_definition.valid_definitions import (
 )
 from dagster._core.execution.api import create_execution_plan
 from dagster._core.instance import DagsterInstance
+from dagster._core.remote_origin import InProcessCodeLocationOrigin
 from dagster._core.remote_representation.external_data import RepositorySnap
-from dagster._core.remote_representation.origin import InProcessCodeLocationOrigin
 from dagster._core.storage.tags import PARTITION_NAME_TAG
 from dagster._core.test_utils import (
     InProcessTestWorkspaceLoadTarget,

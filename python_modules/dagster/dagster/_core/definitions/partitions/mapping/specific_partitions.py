@@ -1,6 +1,6 @@
 from collections.abc import Sequence
 from datetime import datetime
-from typing import NamedTuple, Optional
+from typing import TYPE_CHECKING, NamedTuple, Optional
 
 from dagster._annotations import PublicAttr
 from dagster._core.definitions.partitions.context import partition_loading_context
@@ -10,8 +10,10 @@ from dagster._core.definitions.partitions.mapping.partition_mapping import (
     UpstreamPartitionsResult,
 )
 from dagster._core.definitions.partitions.subset.partitions_subset import PartitionsSubset
-from dagster._core.instance import DynamicPartitionsStore
 from dagster._serdes import whitelist_for_serdes
+
+if TYPE_CHECKING:
+    from dagster._core.instance import DynamicPartitionsStore
 
 
 @whitelist_for_serdes
@@ -54,7 +56,7 @@ class SpecificPartitionsPartitionMapping(
         downstream_partitions_def: Optional[PartitionsDefinition],
         upstream_partitions_def: PartitionsDefinition,
         current_time: Optional[datetime] = None,
-        dynamic_partitions_store: Optional[DynamicPartitionsStore] = None,
+        dynamic_partitions_store: Optional["DynamicPartitionsStore"] = None,
     ) -> UpstreamPartitionsResult:
         with partition_loading_context(current_time, dynamic_partitions_store):
             return UpstreamPartitionsResult(
@@ -70,7 +72,7 @@ class SpecificPartitionsPartitionMapping(
         upstream_partitions_def: PartitionsDefinition,
         downstream_partitions_def: PartitionsDefinition,
         current_time: Optional[datetime] = None,
-        dynamic_partitions_store: Optional[DynamicPartitionsStore] = None,
+        dynamic_partitions_store: Optional["DynamicPartitionsStore"] = None,
     ) -> PartitionsSubset:
         with partition_loading_context(current_time, dynamic_partitions_store):
             # if any of the partition keys in this partition mapping are contained within the upstream

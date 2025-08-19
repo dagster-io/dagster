@@ -87,8 +87,15 @@ filterwarnings = [
   "ignore::pytest.PytestCollectionWarning",
 ]
 
+markers = [
+  "unit: Fast unit tests with no external dependencies",
+  "integration: Tests requiring real git operations or other I/O",
+  "e2e: End-to-end tests requiring GitHub authentication",
+  "slow: Tests that take more than 1 second",
+]
+
 timeout = 240
-addopts = "-ra --force-flaky --max-runs=2 --no-success-flaky-report"
+addopts = "-ra"
 
 # ########################
 # ##### RUFF

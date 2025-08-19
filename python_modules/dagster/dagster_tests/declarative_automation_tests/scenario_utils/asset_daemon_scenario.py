@@ -32,10 +32,7 @@ from dagster._core.definitions.events import AssetKeyPartitionKey, CoercibleToAs
 from dagster._core.definitions.repository_definition.valid_definitions import (
     SINGLETON_REPOSITORY_NAME,
 )
-from dagster._core.remote_representation.origin import (
-    RemoteInstigatorOrigin,
-    RemoteRepositoryOrigin,
-)
+from dagster._core.remote_origin import RemoteInstigatorOrigin, RemoteRepositoryOrigin
 from dagster._core.scheduler.instigation import SensorInstigatorData, TickStatus
 from dagster._core.storage.tags import PARTITION_NAME_TAG
 from dagster._core.test_utils import freeze_time, wait_for_futures

@@ -9,6 +9,8 @@ sidebar_custom_props:
   logo: images/integrations/deltalake.svg
   community: true
 partnerlink: https://delta.io/
+canonicalUrl: '/integrations/libraries/deltalake'
+slug: '/integrations/libraries/deltalake'
 ---
 
 <p>{frontMatter.description}</p>

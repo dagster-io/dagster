@@ -34,6 +34,7 @@ from dagster_dbt.core.dbt_cli_event import (
 )
 from dagster_dbt.core.dbt_event_iterator import DbtDagsterEventType, DbtEventIterator
 from dagster_dbt.dagster_dbt_translator import DagsterDbtTranslator
+from dagster_dbt.dbt_project import DbtProject
 from dagster_dbt.errors import DagsterDbtCliRuntimeError
 
 PARTIAL_PARSE_FILE_NAME = "partial_parse.msgpack"
@@ -80,6 +81,7 @@ class DbtCliInvocation:
     Args:
         process (subprocess.Popen): The process running the dbt command.
         manifest (Mapping[str, Any]): The dbt manifest blob.
+        project (Optional[DbtProject]): The dbt project.
         project_dir (Path): The path to the dbt project.
         target_path (Path): The path to the dbt target folder.
         raise_on_error (bool): Whether to raise an exception if the dbt command fails.
@@ -92,6 +94,7 @@ class DbtCliInvocation:
     target_path: Path
     raise_on_error: bool
     cli_version: version.Version
+    project: Optional[DbtProject] = field(default=None)
     context: Optional[Union[OpExecutionContext, AssetExecutionContext]] = field(
         default=None, repr=False
     )
@@ -147,6 +150,7 @@ class DbtCliInvocation:
         context: Optional[Union[OpExecutionContext, AssetExecutionContext]],
         adapter: Optional[BaseAdapter],
         cli_version: version.Version,
+        dbt_project: Optional[DbtProject] = None,
     ) -> "DbtCliInvocation":
         # Attempt to take advantage of partial parsing. If there is a `partial_parse.msgpack` in
         # in the target folder, then copy it to the dynamic target path.
@@ -183,6 +187,7 @@ class DbtCliInvocation:
         dbt_cli_invocation = cls(
             process=process,
             manifest=manifest,
+            project=dbt_project,
             dagster_dbt_translator=dagster_dbt_translator,
             project_dir=project_dir,
             target_path=target_path,
@@ -287,6 +292,7 @@ class DbtCliInvocation:
                 dagster_dbt_translator=self.dagster_dbt_translator,
                 context=self.context,
                 target_path=self.target_path,
+                project=self.project,
             )
 
     @public

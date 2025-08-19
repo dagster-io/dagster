@@ -1,4 +1,3 @@
-import logging
 import os
 from pathlib import Path
 from typing import Optional
@@ -9,12 +8,6 @@ from dagster.components.component.component_scaffolder import Scaffolder
 from dagster.components.component_scaffolding import scaffold_component
 from dagster.components.scaffold.scaffold import ScaffoldRequest
 from pydantic import BaseModel, Field
-
-# dbt.cli.main adds a handler to the root logger, restore original handlers to prevent logspew
-existing_root_logger_handlers = [*logging.getLogger().handlers]
-
-
-logging.getLogger().handlers = existing_root_logger_handlers
 
 
 class DbtScaffoldParams(BaseModel):

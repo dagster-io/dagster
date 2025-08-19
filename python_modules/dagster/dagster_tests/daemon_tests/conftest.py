@@ -6,12 +6,12 @@ from typing import Optional, cast
 
 import dagster as dg
 import pytest
-from dagster._core.remote_representation import (
-    CodeLocation,
+from dagster._core.remote_origin import (
     InProcessCodeLocationOrigin,
-    RemoteRepository,
+    ManagedGrpcPythonEnvCodeLocationOrigin,
 )
-from dagster._core.remote_representation.origin import ManagedGrpcPythonEnvCodeLocationOrigin
+from dagster._core.remote_representation.code_location import CodeLocation
+from dagster._core.remote_representation.external import RemoteRepository
 from dagster._core.test_utils import (
     InProcessTestWorkspaceLoadTarget,
     create_test_daemon_workspace_context,
@@ -136,6 +136,31 @@ def partitions_defs_changes_location_1_fixture(
 ) -> Iterator[WorkspaceProcessContext]:
     with create_test_daemon_workspace_context(
         workspace_load_target=partitions_def_changes_workspace_1_load_target(),
+        instance=instance_module_scoped,
+    ) as workspace_context:
+        yield workspace_context
+
+
+def run_config_assets_workspace_1_load_target(attribute=None):
+    return InProcessTestWorkspaceLoadTarget(
+        InProcessCodeLocationOrigin(
+            loadable_target_origin=LoadableTargetOrigin(
+                executable_path=sys.executable,
+                module_name="dagster_tests.daemon_tests.test_locations.run_config_assets_workspace",
+                working_directory=os.getcwd(),
+                attribute=attribute,
+            ),
+            location_name="run_config_assets",
+        )
+    )
+
+
+@pytest.fixture(name="run_config_assets_workspace_context", scope="module")
+def run_config_assets_workspace_context(
+    instance_module_scoped,
+) -> Iterator[WorkspaceProcessContext]:
+    with create_test_daemon_workspace_context(
+        workspace_load_target=run_config_assets_workspace_1_load_target(),
         instance=instance_module_scoped,
     ) as workspace_context:
         yield workspace_context

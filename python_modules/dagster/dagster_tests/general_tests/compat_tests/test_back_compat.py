@@ -657,7 +657,7 @@ def test_remote_job_origin_instigator_origin():
 
     legacy_env, klass, repo_klass, location_klass = build_legacy_whitelist_map()
 
-    from dagster._core.remote_representation.origin import (
+    from dagster._core.remote_origin import (
         GrpcServerCodeLocationOrigin,
         RemoteInstigatorOrigin,
         RemoteRepositoryOrigin,
@@ -906,7 +906,7 @@ def test_repo_label_tag_migration():
 
 
 def test_add_bulk_actions_columns():
-    from dagster._core.remote_representation.origin import (
+    from dagster._core.remote_origin import (
         GrpcServerCodeLocationOrigin,
         RemotePartitionSetOrigin,
         RemoteRepositoryOrigin,
@@ -1407,7 +1407,7 @@ def test_add_backfill_tags():
 
 
 def test_add_bulk_actions_job_name_column():
-    from dagster._core.remote_representation.origin import (
+    from dagster._core.remote_origin import (
         GrpcServerCodeLocationOrigin,
         RemotePartitionSetOrigin,
         RemoteRepositoryOrigin,

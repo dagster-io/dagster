@@ -28,10 +28,8 @@ def check_group():
     "--watch", is_flag=True, help="Watch for changes to the component files and re-validate them."
 )
 @click.option(
-    "--validate-requirements",
-    "--no-validate-requirements",
-    is_flag=True,
-    default=True,
+    "--validate-requirements/--no-validate-requirements",
+    default=False,
     help="Validate environment variables in requirements for all components in the given module.",
 )
 @dg_global_options

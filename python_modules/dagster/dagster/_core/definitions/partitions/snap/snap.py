@@ -6,28 +6,37 @@ for that.
 
 from abc import ABC, abstractmethod
 from collections.abc import Sequence
-from typing import Optional
+from typing import TYPE_CHECKING, Optional
 
 from typing_extensions import Self
 
 from dagster import _check as check
-from dagster._core.definitions.partitions.definition import (
-    DynamicPartitionsDefinition,
-    MultiPartitionsDefinition,
-    PartitionsDefinition,
-    StaticPartitionsDefinition,
-    TimeWindowPartitionsDefinition,
-)
 from dagster._core.definitions.partitions.schedule_type import ScheduleType
 from dagster._core.errors import DagsterInvalidDefinitionError
 from dagster._record import IHaveNew, record, record_custom
 from dagster._serdes import whitelist_for_serdes
 from dagster._time import datetime_from_timestamp
 
+if TYPE_CHECKING:
+    from dagster._core.definitions.partitions.definition import (
+        DynamicPartitionsDefinition,
+        MultiPartitionsDefinition,
+        PartitionsDefinition,
+        StaticPartitionsDefinition,
+        TimeWindowPartitionsDefinition,
+    )
+
 
 class PartitionsSnap(ABC):
     @classmethod
-    def from_def(cls, partitions_def: PartitionsDefinition) -> "PartitionsSnap":
+    def from_def(cls, partitions_def: "PartitionsDefinition") -> "PartitionsSnap":
+        from dagster._core.definitions.partitions.definition import (
+            DynamicPartitionsDefinition,
+            MultiPartitionsDefinition,
+            StaticPartitionsDefinition,
+            TimeWindowPartitionsDefinition,
+        )
+
         if isinstance(partitions_def, TimeWindowPartitionsDefinition):
             return TimeWindowPartitionsSnap.from_def(partitions_def)
         elif isinstance(partitions_def, StaticPartitionsDefinition):
@@ -43,7 +52,7 @@ class PartitionsSnap(ABC):
             )
 
     @abstractmethod
-    def get_partitions_definition(self) -> PartitionsDefinition: ...
+    def get_partitions_definition(self) -> "PartitionsDefinition": ...
 
 
 @whitelist_for_serdes(storage_name="ExternalTimeWindowPartitionsDefinitionData")
@@ -65,7 +74,9 @@ class TimeWindowPartitionsSnap(PartitionsSnap):
     day_offset: Optional[int] = None
 
     @classmethod
-    def from_def(cls, partitions_def: TimeWindowPartitionsDefinition) -> Self:  # pyright: ignore[reportIncompatibleMethodOverride]
+    def from_def(cls, partitions_def: "TimeWindowPartitionsDefinition") -> Self:  # pyright: ignore[reportIncompatibleMethodOverride]
+        from dagster._core.definitions.partitions.definition import TimeWindowPartitionsDefinition
+
         check.inst_param(partitions_def, "partitions_def", TimeWindowPartitionsDefinition)
         return cls(
             cron_schedule=partitions_def.cron_schedule,
@@ -77,6 +88,8 @@ class TimeWindowPartitionsSnap(PartitionsSnap):
         )
 
     def get_partitions_definition(self):
+        from dagster._core.definitions.partitions.definition import TimeWindowPartitionsDefinition
+
         if self.cron_schedule is not None:
             return TimeWindowPartitionsDefinition(
                 cron_schedule=self.cron_schedule,
@@ -133,11 +146,15 @@ class StaticPartitionsSnap(PartitionsSnap, IHaveNew):
         )
 
     @classmethod
-    def from_def(cls, partitions_def: StaticPartitionsDefinition) -> Self:  # pyright: ignore[reportIncompatibleMethodOverride]
+    def from_def(cls, partitions_def: "StaticPartitionsDefinition") -> Self:  # pyright: ignore[reportIncompatibleMethodOverride]
+        from dagster._core.definitions.partitions.definition import StaticPartitionsDefinition
+
         check.inst_param(partitions_def, "partitions_def", StaticPartitionsDefinition)
         return cls(partition_keys=partitions_def.get_partition_keys())
 
     def get_partitions_definition(self):
+        from dagster._core.definitions.partitions.definition import StaticPartitionsDefinition
+
         # v1.4 made `StaticPartitionsDefinition` error if given duplicate keys. This caused
         # host process errors for users who had not upgraded their user code to 1.4 and had dup
         # keys, since the host process `StaticPartitionsDefinition` would throw an error.
@@ -164,7 +181,9 @@ class MultiPartitionsSnap(PartitionsSnap):
     partition_dimensions: Sequence[PartitionDimensionSnap]
 
     @classmethod
-    def from_def(cls, partitions_def: MultiPartitionsDefinition) -> Self:  # pyright: ignore[reportIncompatibleMethodOverride]
+    def from_def(cls, partitions_def: "MultiPartitionsDefinition") -> Self:  # pyright: ignore[reportIncompatibleMethodOverride]
+        from dagster._core.definitions.partitions.definition import MultiPartitionsDefinition
+
         check.inst_param(partitions_def, "partitions_def", MultiPartitionsDefinition)
 
         return cls(
@@ -178,6 +197,8 @@ class MultiPartitionsSnap(PartitionsSnap):
         )
 
     def get_partitions_definition(self):
+        from dagster._core.definitions.partitions.definition import MultiPartitionsDefinition
+
         return MultiPartitionsDefinition(
             {
                 partition_dimension.name: (
@@ -194,7 +215,9 @@ class DynamicPartitionsSnap(PartitionsSnap):
     name: str
 
     @classmethod
-    def from_def(cls, partitions_def: DynamicPartitionsDefinition) -> Self:  # pyright: ignore[reportIncompatibleMethodOverride]
+    def from_def(cls, partitions_def: "DynamicPartitionsDefinition") -> Self:  # pyright: ignore[reportIncompatibleMethodOverride]
+        from dagster._core.definitions.partitions.definition import DynamicPartitionsDefinition
+
         check.inst_param(partitions_def, "partitions_def", DynamicPartitionsDefinition)
         if partitions_def.name is None:
             raise DagsterInvalidDefinitionError(
@@ -203,4 +226,6 @@ class DynamicPartitionsSnap(PartitionsSnap):
         return cls(name=partitions_def.name)
 
     def get_partitions_definition(self):
+        from dagster._core.definitions.partitions.definition import DynamicPartitionsDefinition
+
         return DynamicPartitionsDefinition(name=self.name)

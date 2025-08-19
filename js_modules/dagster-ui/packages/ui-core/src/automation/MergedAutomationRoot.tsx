@@ -9,12 +9,12 @@ import {
   Subtitle1,
   Tooltip,
 } from '@dagster-io/ui-components';
-import {useContext, useMemo} from 'react';
+import {useMemo} from 'react';
 
 import {AutomationBulkActionMenu} from './AutomationBulkActionMenu';
 import {AutomationTabs} from './AutomationTabs';
 import {AutomationsTable} from './AutomationsTable';
-import {buildAutomationRepoBuckets} from './buildAutomationRepoBuckets';
+import {useAutomations} from './useAutomations';
 import {useTrackPageView} from '../app/analytics';
 import {useAutoMaterializeSensorFlag} from '../assets/AutoMaterializeSensorFlag';
 import {filterAutomationSelectionByQuery} from '../automation-selection/AntlrAutomationSelection';
@@ -23,44 +23,22 @@ import {useDocumentTitle} from '../hooks/useDocumentTitle';
 import {useQueryPersistedState} from '../hooks/useQueryPersistedState';
 import {useSelectionReducer} from '../hooks/useSelectionReducer';
 import {filterPermissionedInstigationState} from '../instigation/filterPermissionedInstigationState';
-import {visibleRepoKeys} from '../overview/visibleRepoKeys';
 import {makeAutomationKey} from '../sensors/makeSensorKey';
 import {CheckAllBox} from '../ui/CheckAllBox';
-import {WorkspaceContext} from '../workspace/WorkspaceContext/WorkspaceContext';
-import {repoAddressAsHumanString} from '../workspace/repoAddressAsString';
 
 export const MergedAutomationRoot = () => {
   useTrackPageView();
   useDocumentTitle('Automation');
 
-  const {
-    allRepos,
-    loadingNonAssets: workspaceLoading,
-    data: cachedData,
-  } = useContext(WorkspaceContext);
-
   const automaterializeSensorsFlagState = useAutoMaterializeSensorFlag();
 
-  const repoBuckets = useMemo(() => {
-    const cachedEntries = Object.values(cachedData).filter(
-      (location): location is Extract<typeof location, {__typename: 'WorkspaceLocationEntry'}> =>
-        location.__typename === 'WorkspaceLocationEntry',
-    );
-    const visibleKeys = visibleRepoKeys(allRepos);
-    return buildAutomationRepoBuckets(cachedEntries).filter(({repoAddress}) =>
-      visibleKeys.has(repoAddressAsHumanString(repoAddress)),
-    );
-  }, [cachedData, allRepos]);
+  const {automations, repoBuckets, loading: workspaceLoading} = useAutomations();
 
   const [selection, setSelection] = useQueryPersistedState<string>({
     queryKey: 'selection',
     defaults: {selection: ''},
     behavior: 'push',
   });
-
-  const automations = useMemo(() => {
-    return repoBuckets.flatMap((bucket) => [...bucket.schedules, ...bucket.sensors]);
-  }, [repoBuckets]);
 
   const filtered = useMemo(() => {
     return filterAutomationSelectionByQuery(automations, selection);

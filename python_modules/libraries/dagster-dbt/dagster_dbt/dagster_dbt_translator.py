@@ -28,6 +28,7 @@ from dagster_shared import check
 
 from dagster_dbt.asset_utils import (
     DAGSTER_DBT_MANIFEST_METADATA_KEY,
+    DAGSTER_DBT_PROJECT_METADATA_KEY,
     DAGSTER_DBT_TRANSLATOR_METADATA_KEY,
     DAGSTER_DBT_UNIQUE_ID_METADATA_KEY,
     default_asset_check_fn,
@@ -104,7 +105,7 @@ class DagsterDbtTranslator:
         """Returns an AssetSpec representing a specific dbt resource."""
         # memoize resolution for a given manifest & unique_id
         # since we recursively call get_asset_spec for dependencies
-        memo_id = (id(manifest), unique_id)
+        memo_id = (id(manifest), unique_id, id(project))
 
         # Don't initialize this in the constructor in case a subclass does not call __init__
         if not hasattr(self, "_resolved_specs"):
@@ -170,6 +171,7 @@ class DagsterDbtTranslator:
                 DAGSTER_DBT_MANIFEST_METADATA_KEY: DbtManifestWrapper(manifest=manifest),
                 DAGSTER_DBT_TRANSLATOR_METADATA_KEY: self,
                 DAGSTER_DBT_UNIQUE_ID_METADATA_KEY: resource_props["unique_id"],
+                **({DAGSTER_DBT_PROJECT_METADATA_KEY: project} if project else {}),
             }
         )
         if self.settings.enable_code_references:

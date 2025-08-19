@@ -21,7 +21,7 @@ const iconMap: Record<(typeof automationSelectionSyntaxSupportedAttributes)[numb
 export type Automation = {
   name: string;
   repo: RepoAddress;
-  type: 'schedule' | 'sensor';
+  type: 'schedule' | 'sensor' | 'legacy-amp' | 'manual';
   status: 'running' | 'stopped';
   tags: {key: string; value?: string | null}[];
 };

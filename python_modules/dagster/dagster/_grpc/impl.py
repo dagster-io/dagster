@@ -36,6 +36,7 @@ from dagster._core.events import DagsterEvent, EngineEventData
 from dagster._core.execution.api import create_execution_plan, execute_run_iterator
 from dagster._core.instance import DagsterInstance
 from dagster._core.instance.ref import InstanceRef
+from dagster._core.remote_origin import CodeLocationOrigin
 from dagster._core.remote_representation.external_data import (
     JobDataSnap,
     PartitionConfigSnap,
@@ -49,7 +50,6 @@ from dagster._core.remote_representation.external_data import (
     SensorExecutionErrorSnap,
     job_name_for_partition_set_snap_name,
 )
-from dagster._core.remote_representation.origin import CodeLocationOrigin
 from dagster._core.snap.execution_plan_snapshot import snapshot_from_execution_plan
 from dagster._core.storage.dagster_run import DagsterRun
 from dagster._grpc.types import ExecuteExternalJobArgs, ExecutionPlanSnapshotArgs

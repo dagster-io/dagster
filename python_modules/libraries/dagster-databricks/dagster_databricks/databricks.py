@@ -123,7 +123,7 @@ class WorkspaceClientFactory:
                 # environment or ~/.databrickscfg file
                 c = Config(
                     host=host,
-                    credentials_strategy=DefaultCredentials(),
+                    credentials_strategy=DefaultCredentials(),  # type: ignore
                     **product_info,  # pyright: ignore[reportArgumentType]
                 )
             else:
@@ -131,7 +131,7 @@ class WorkspaceClientFactory:
                 # environment, as long as no values are provided for those attributes (including None)
                 c = Config(
                     host=host,
-                    credentials_strategy=DefaultCredentials(),
+                    credentials_strategy=DefaultCredentials(),  # type: ignore
                     **product_info,  # pyright: ignore[reportArgumentType]
                 )
         else:

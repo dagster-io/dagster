@@ -12,7 +12,8 @@ RUN pip install \
     -e python_modules/dagster-pipes \
     -e python_modules/libraries/dagster-shared \
     -e python_modules/libraries/dagster-postgres \
-    -e python_modules/libraries/dagster-docker
+    -e python_modules/libraries/dagster-docker \
+    tzdata
 
 # Add repository code
 

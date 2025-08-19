@@ -16,6 +16,10 @@ def is_release_branch(branch_name: str = safe_getenv("BUILDKITE_BRANCH")) -> boo
     return branch_name.startswith("release-")
 
 
+def run_all_tests() -> bool:
+    return message_contains("NO_SKIP") or os.getenv("NO_SKIP") == "true"
+
+
 def message_contains(substring: str) -> bool:
     return any(
         substring in message

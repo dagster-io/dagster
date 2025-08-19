@@ -10,6 +10,7 @@ import packaging.version
 import yaml
 from buildkite_shared.environment import is_feature_branch, message_contains
 from buildkite_shared.git import ChangedFiles
+from buildkite_shared.packages import run_all_tests
 from buildkite_shared.step_builders.step_builder import StepConfiguration
 
 BUILD_CREATOR_EMAIL_TO_SLACK_CHANNEL_MAP = {
@@ -140,7 +141,7 @@ def get_commit(rev):
 
 
 def skip_if_no_python_changes(overrides: Optional[Sequence[str]] = None):
-    if message_contains("NO_SKIP"):
+    if run_all_tests():
         return None
 
     if not is_feature_branch():
@@ -158,7 +159,7 @@ def skip_if_no_python_changes(overrides: Optional[Sequence[str]] = None):
 
 
 def skip_if_no_pyright_requirements_txt_changes():
-    if message_contains("NO_SKIP"):
+    if run_all_tests():
         return None
 
     if not is_feature_branch():
@@ -171,7 +172,7 @@ def skip_if_no_pyright_requirements_txt_changes():
 
 
 def skip_if_no_yaml_changes():
-    if message_contains("NO_SKIP"):
+    if run_all_tests():
         return None
 
     if not is_feature_branch():
@@ -184,7 +185,7 @@ def skip_if_no_yaml_changes():
 
 
 def skip_if_no_non_docs_markdown_changes():
-    if message_contains("NO_SKIP"):
+    if run_all_tests():
         return None
 
     if not is_feature_branch():
@@ -236,8 +237,17 @@ def skip_if_not_dagster_dbt_cloud_commit() -> Optional[str]:
     )
 
 
+def skip_if_not_dagster_dbt_commit() -> Optional[str]:
+    """If no dagster-dbt files are touched, then do NOT run. Even if on master."""
+    return (
+        None
+        if (any("dagster_dbt" in str(path) for path in ChangedFiles.all))
+        else "Not a dagster-dbt commit"
+    )
+
+
 def skip_if_no_helm_changes():
-    if message_contains("NO_SKIP"):
+    if run_all_tests():
         return None
 
     if not is_feature_branch():
@@ -251,7 +261,7 @@ def skip_if_no_helm_changes():
 
 
 def skip_if_no_docs_changes():
-    if message_contains("NO_SKIP"):
+    if run_all_tests():
         return None
 
     if message_contains("BUILDKITE_DOCS"):

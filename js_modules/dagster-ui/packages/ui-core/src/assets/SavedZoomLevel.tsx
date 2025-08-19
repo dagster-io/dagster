@@ -1,7 +1,7 @@
 import {MutableRefObject, useEffect} from 'react';
 
 import {SVGViewportRef} from '../graph/SVGViewport';
-import {getJSONForKey} from '../hooks/useStateWithStorage';
+import {getJSONForKey} from '../util/getJSONForKey';
 
 const LINEAGE_GRAPH_ZOOM_LEVEL = 'lineageGraphZoomLevel';
 

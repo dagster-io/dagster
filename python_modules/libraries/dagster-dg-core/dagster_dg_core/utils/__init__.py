@@ -32,6 +32,13 @@ CLI_CONFIG_KEY = "config"
 DG_CLI_MAX_OUTPUT_WIDTH = 120
 
 
+def show_dg_unlaunched_commands() -> bool:
+    """We hide cli commands that we have not launched yet. Override this by setting
+    the DG_SHOW_UNLAUNCHED_COMMANDS environment variable to any value.
+    """
+    return os.getenv("DG_SHOW_UNLAUNCHED_COMMANDS") is not None
+
+
 def is_windows() -> bool:
     return sys.platform == "win32"
 
@@ -207,16 +214,6 @@ def modify_toml_as_dict(path: Path) -> Iterator[dict[str, Any]]:  # unwrap gets 
     path.write_text(tomlkit.dumps(toml_dict))
 
 
-def ensure_dagster_dg_tests_import() -> None:
-    from dagster_dg_core import __file__ as dagster_dg_init_py
-
-    dagster_dg_package_root = (Path(dagster_dg_init_py) / ".." / "..").resolve()
-    assert (dagster_dg_package_root / "dagster_dg_core_tests").exists(), (
-        "Could not find dagster_dg_core_tests where expected"
-    )
-    sys.path.append(dagster_dg_package_root.as_posix())
-
-
 def hash_directory_metadata(
     hasher: Hash,
     path: Union[str, Path],
@@ -379,10 +376,30 @@ class DgClickHelpMixin:
         rich_format_help(obj=self, ctx=context, markup_mode="rich")
 
 
-class DgClickCommand(DgClickHelpMixin, click.Command): ...  # pyright: ignore[reportIncompatibleMethodOverride]
+class DgClickCommand(DgClickHelpMixin, click.Command):  # pyright: ignore[reportIncompatibleMethodOverride]
+    def __init__(self, *args, unlaunched: bool = False, **kwargs):
+        """DgClickCommand with conditional hiding for unlaunched features.
+
+        Args:
+            unlaunched: If True, the command will be hidden unless DG_SHOW_UNLAUNCHED_COMMANDS
+                environment variable is set.
+        """
+        if unlaunched:
+            kwargs["hidden"] = not show_dg_unlaunched_commands()
+        super().__init__(*args, **kwargs)
 
 
-class DgClickGroup(DgClickHelpMixin, ClickAliasedGroup): ...  # pyright: ignore[reportIncompatibleMethodOverride]
+class DgClickGroup(DgClickHelpMixin, ClickAliasedGroup):  # pyright: ignore[reportIncompatibleMethodOverride]
+    def __init__(self, *args, unlaunched: bool = False, **kwargs):
+        """DgClickGroup with conditional hiding for unlaunched features.
+
+        Args:
+            unlaunched: If True, the group will be hidden unless DG_SHOW_UNLAUNCHED_COMMANDS
+                environment variable is set.
+        """
+        if unlaunched:
+            kwargs["hidden"] = not show_dg_unlaunched_commands()
+        super().__init__(*args, **kwargs)
 
 
 # ########################

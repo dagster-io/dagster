@@ -14,7 +14,7 @@ import styled from 'styled-components';
 
 import {Inner, Row} from './VirtualizedTable';
 import {AppContext} from '../app/AppContext';
-import {useFeatureFlags} from '../app/Flags';
+import {useFeatureFlags} from '../app/useFeatureFlags';
 import {isHiddenAssetGroupJob} from '../asset-graph/Utils';
 import {useStateWithStorage} from '../hooks/useStateWithStorage';
 import {LeftNavItem} from '../nav/LeftNavItem';

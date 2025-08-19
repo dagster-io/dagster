@@ -5,5 +5,6 @@
    :glob:
 
    sections/api/apidocs/dagster/*
-   sections/api/apidocs/dg/*
+   sections/api/apidocs/clis/*
+   sections/api/apidocs/clis/**/*
    sections/api/apidocs/libraries/*

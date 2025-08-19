@@ -22,8 +22,8 @@ partnerlink: https://kubernetes.io/
 
 ## Deploying to Kubernetes?
 
-- Deploying to Dagster+: Use with a Dagster+ Hybrid deployment, the Kubernetes agent executes Dagster jobs on a Kubernetes cluster. Checkout the [Dagster+ Kubernetes Agent](https://docs.dagster.io/dagster-plus/deployment/deployment-types/hybrid/kubernetes) guide for more information.
-- Deploying to Open Source: Visit the [Deploying Dagster to Kubernetes](https://docs.dagster.io/guides/deploy/deployment-options/kubernetes) guide for more information.
+- Deploying to Dagster+: Use with a Dagster+ Hybrid deployment, the Kubernetes agent executes Dagster jobs on a Kubernetes cluster. Checkout the [Dagster+ Kubernetes Agent](/deployment/dagster-plus/hybrid/kubernetes) guide for more information.
+- Deploying to Open Source: Visit the [Deploying Dagster to Kubernetes](/deployment/oss/deployment-options/kubernetes) guide for more information.
 
 ## About Kubernetes
 

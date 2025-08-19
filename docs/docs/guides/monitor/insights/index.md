@@ -2,6 +2,8 @@
 title: Dagster+ Insights
 description: Using Dagster+ Insights, you can gain visibility into historical usage and cost metrics such as Dagster+ run duration, credit usage, and failures, and define your own custom metrics, such as the number of rows processed by an asset.
 sidebar_position: 30
+canonicalUrl: '/guides/monitor/insights'
+slug: '/guides/monitor/insights'
 ---
 
 import DagsterPlus from '@site/docs/partials/\_DagsterPlus.md';

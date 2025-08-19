@@ -168,7 +168,7 @@ To load the `workspace.yaml` file from a different folder, use the `-w` argument
 dagster dev -w path/to/workspace.yaml
 ```
 
-When `dagster dev` is run, Dagster will load all the code locations defined by the workspace file. For more information and examples, see the [CLI reference](/api/dagster/cli#dagster-dev).
+When `dagster dev` is run, Dagster will load all the code locations defined by the workspace file. For more information and examples, see the [CLI reference](/api/clis/cli#dagster-dev).
 
 If a code location can't be loaded - for example, due to a syntax error or other unrecoverable error - a warning message will display in the Dagster UI. You'll be directed to a status page with a descriptive error and stack trace for any locations Dagster was unable to load.
 
@@ -246,7 +246,7 @@ dagster api grpc --python-file /path/to/file.py --working-directory /var/my_work
 </TabItem>
 </Tabs>
 
-Refer to the [API docs](/api/dagster/cli#dagster-api-grpc) for the full list of options that can be set when running a new gRPC server.
+Refer to the [API docs](/api/clis/cli#dagster-api-grpc) for the full list of options that can be set when running a new gRPC server.
 
 Then, in your workspace file, configure a new gRPC server code location to load:
 

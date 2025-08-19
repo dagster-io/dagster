@@ -34,6 +34,7 @@ def test_import_cli_perf():
         "fsspec",
         "requests",
         "jinja2",
+        "pytest",
     ]
     expensive_imports = [
         f"`{lib}`"
@@ -76,6 +77,7 @@ def test_import_perf():
         "fsspec",
         "jinja2",
         "requests",
+        "pytest",
     ]
     expensive_imports = [f"`{lib}`" for lib in expensive_library if lib in import_profile]
 

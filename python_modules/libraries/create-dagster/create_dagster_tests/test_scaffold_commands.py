@@ -11,23 +11,18 @@ from dagster_dg_core.shared_options import DEFAULT_EDITABLE_DAGSTER_PROJECTS_ENV
 from dagster_dg_core.utils import (
     create_toml_node,
     discover_git_root,
-    ensure_dagster_dg_tests_import,
     get_toml_node,
     has_toml_node,
     modify_toml_as_dict,
 )
 from dagster_shared.libraries import get_published_pypi_versions
-from typing_extensions import TypeAlias
-
-ensure_dagster_dg_tests_import()
-
-from dagster_dg_core.utils import ensure_dagster_dg_tests_import
-from dagster_dg_core_tests.utils import (
+from dagster_test.dg_utils.utils import (
     ProxyRunner,
     assert_runner_result,
     clear_module_from_cache,
     isolated_example_workspace,
 )
+from typing_extensions import TypeAlias
 
 # ########################
 # ##### WORKSPACE

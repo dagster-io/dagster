@@ -341,7 +341,9 @@ import sinks from '../icon-svgs/sinks.svg';
 import slack from '../icon-svgs/slack.svg';
 import slack_color from '../icon-svgs/slack_color.svg';
 import snapshot from '../icon-svgs/snapshot.svg';
+import sort_asc from '../icon-svgs/sort_asc.svg';
 import sort_by_alpha from '../icon-svgs/sort_by_alpha.svg';
+import sort_desc from '../icon-svgs/sort_desc.svg';
 import source from '../icon-svgs/source.svg';
 import source_asset from '../icon-svgs/source_asset.svg';
 import speed from '../icon-svgs/speed.svg';
@@ -760,6 +762,8 @@ export const Icons = {
   slack_color,
   snapshot,
   sort_by_alpha,
+  sort_asc,
+  sort_desc,
   source,
   source_asset,
   speed,

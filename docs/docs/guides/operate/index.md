@@ -3,6 +3,8 @@ description: Learn about Dagster configuration, the Dagster GraphQL API and clie
 sidebar_class_name: hidden
 title: Operating pipelines
 sidebar_position: 10
+canonicalUrl: '/guides/operate'
+slug: '/guides/operate'
 ---
 
 import DocCardList from '@theme/DocCardList';

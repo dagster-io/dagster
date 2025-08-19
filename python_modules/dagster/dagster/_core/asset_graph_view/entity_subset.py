@@ -7,6 +7,7 @@ from typing import (  # noqa: UP035
     Generic,
     Literal,
     NamedTuple,
+    Optional,
     TypeVar,
     Union,
 )
@@ -20,6 +21,9 @@ from dagster._core.asset_graph_view.serializable_entity_subset import (
 )
 from dagster._core.definitions.asset_key import AssetCheckKey, EntityKey, T_EntityKey
 from dagster._core.definitions.events import AssetKey, AssetKeyPartitionKey
+from dagster._core.definitions.partitions.definition.partitions_definition import (
+    PartitionsDefinition,
+)
 from dagster._core.definitions.partitions.subset import PartitionsSubset
 from dagster._utils.cached_method import cached_method
 
@@ -56,6 +60,10 @@ class EntitySubset(Generic[T_EntityKey]):
     @property
     def key(self) -> T_EntityKey:
         return self._key
+
+    @property
+    def partitions_def(self) -> Optional[PartitionsDefinition]:
+        return self._asset_graph_view.asset_graph.get(self._key).partitions_def
 
     def convert_to_serializable_subset(self) -> SerializableEntitySubset[T_EntityKey]:
         return SerializableEntitySubset(key=self._key, value=self._value)

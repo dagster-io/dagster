@@ -105,7 +105,7 @@ class TestPartitionStatusCache:
         )
         assert set(materialized_keys) == {"2022-02-02"}
         counts = traced_counter.get().counts()  # pyright: ignore[reportOptionalMemberAccess]
-        assert counts.get("DagsterInstance.get_materialized_partitions") == 1
+        assert counts.get("AssetMethods.get_materialized_partitions") == 1
 
     def test_get_cached_partition_status_by_asset(self, instance):
         partitions_def = dg.DailyPartitionsDefinition(start_date="2022-01-01")
@@ -148,7 +148,7 @@ class TestPartitionStatusCache:
         assert len(materialized_keys) == 1
         assert "2022-02-01" in materialized_keys
         counts = traced_counter.get().counts()  # pyright: ignore[reportOptionalMemberAccess]
-        assert counts.get("DagsterInstance.get_materialized_partitions") == 1
+        assert counts.get("AssetMethods.get_materialized_partitions") == 1
 
         asset_job.execute_in_process(instance=instance, partition_key="2022-02-02")
 

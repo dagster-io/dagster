@@ -34,6 +34,19 @@ SYMBOL_EXCLUDE_LIST = {
     "dagster.asset_check",  # Invalid section header: "Example with a DataFrame Output:" should be "Examples:"
     # Non-standard section header formatting (uses bold/italic formatting)
     "dagster.file_relative_path",  # Uses "**Examples**:" instead of "Examples:"
+    # MetadataValue classes with syntax errors in docstring code blocks
+    "dagster.BoolMetadataValue.job",  # Syntax error at line 4, column 19: invalid syntax. Perhaps you forgot a comma?
+    "dagster.CodeReferencesMetadataValue.job",  # Syntax error at line 4, column 19: invalid syntax. Perhaps you forgot a comma?
+    "dagster.DagsterAssetMetadataValue.job",  # Syntax error at line 4, column 19: invalid syntax. Perhaps you forgot a comma?
+    "dagster.DagsterJobMetadataValue.job",  # Syntax error at line 4, column 19: invalid syntax. Perhaps you forgot a comma?
+    "dagster.DagsterRunMetadataValue.job",  # Syntax error at line 4, column 19: invalid syntax. Perhaps you forgot a comma?
+    "dagster.FloatMetadataValue.job",  # Syntax error at line 4, column 19: invalid syntax. Perhaps you forgot a comma?
+    "dagster.IntMetadataValue.job",  # Syntax error at line 4, column 19: invalid syntax. Perhaps you forgot a comma?
+    "dagster.JsonMetadataValue.job",  # Syntax error at line 4, column 19: invalid syntax. Perhaps you forgot a comma?
+    "dagster.MarkdownMetadataValue.job",  # Syntax error at line 4, column 19: invalid syntax. Perhaps you forgot a comma?
+    "dagster.MetadataValue.job",  # Syntax error at line 4, column 19: invalid syntax. Perhaps you forgot a comma?
+    "dagster.NotebookMetadataValue.job",  # Syntax error at line 4, column 19: invalid syntax. Perhaps you forgot a comma?
+    "dagster.NullMetadataValue.job",  # Syntax error at line 4, column 19: invalid syntax. Perhaps you forgot a comma?
 }
 
 

@@ -3,7 +3,7 @@ import * as React from 'react';
 import ReactDOM from 'react-dom';
 import styled from 'styled-components';
 
-import {getJSONForKey} from '../hooks/useStateWithStorage';
+import {getJSONForKey} from '../util/getJSONForKey';
 
 export const SHORTCUTS_STORAGE_KEY = 'keyboard-shortcuts-enabled';
 

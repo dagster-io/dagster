@@ -23,12 +23,16 @@ setup(
         "pandas",
         "pathspec",
         "pytablereader",
+        "pydantic",
+        "pyyaml",
         "requests",
+        "rich",
         "twine>=1.15.0",
         "sphinx",
         "virtualenv>=20.27.0",
         "urllib3",
         "watchdog",
+        "deepeval",
     ],
     extras_require={
         "buildkite": [
@@ -40,6 +44,8 @@ setup(
             "dagster-image = automation.docker.cli:main",
             "dagster-graphql-client = automation.graphql.python_client.cli:main",
             "dagster-docs = automation.dagster_docs:main",
+            "dagster-eval = automation.eval.cli:main",
+            "dagster-dev = automation.dagster_dev.cli:main",
         ]
     },
 )

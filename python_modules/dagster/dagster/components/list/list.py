@@ -287,6 +287,7 @@ def _get_source(
                 str(Path(ref.source).relative_to(dg_context.root_path))
                 for ref in code_ref_metadata.code_references
                 if isinstance(ref, LocalFileCodeReference)
+                and Path(ref.source).is_relative_to(dg_context.root_path)
             ),
             None,
         )

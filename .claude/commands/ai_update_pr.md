@@ -1,62 +1,68 @@
-# AI Update PR summary
+# AI Update PR (Subagent-Optimized)
 
-## Step 0: Always Inspect Repository State First
+Use the specialized PR Update Expert agent to handle the complete AI-assisted PR workflow with optimized context management.
 
-**CRITICAL**: It is essential to disregard any context about what branch you think you are on. ALWAYS start by inspecting the current state of the repository and GT stack to determine where you actually are.
-
-**NEVER assume** you know the current branch or stack position based on previous context or conversation history. The repository state may have changed.
-
-**Required commands to run first**:
-
-- `git branch --show-current` - Get the actual current branch name
-- `gt ls -s` - Get the actual current stack structure
-- `git status` - Verify repository state
-
-Only after confirming the actual repository state should you proceed with the remaining steps.
-
-## Step 1: Identify the Previous Branch
-
-First, use `gt ls -s` to view the stack structure. The output shows branches in order, with `◉` marking the current branch and `◯` marking other branches in the stack.
-
-**CRITICAL**: The previous branch is the one that appears immediately AFTER the `◉` (current branch) in the `gt ls -s` output.
-
-Example:
+Use the Task tool to invoke the `pr-update-expert` subagent:
 
 ```
-◉  feature/current-branch     <- Current branch (HEAD)
-◯  feature/previous-branch    <- This is the previous branch to use
-◯  feature/older-branch       <- NOT this one
-◯  master
+I'll update your PR using the optimized AI workflow that handles repository analysis, thesis collection, and PR body generation with improved context management.
 ```
 
-In this example, you would use `feature/previous-branch` as the `<previous_branch>`.
+The agent will:
 
-## Step 2: Get Changes for Current Branch Only
+1. **Repository Analysis**: Execute `dagster-dev ai-review-analyze --json --minimal --smart-summary` for optimized state checking
+2. **Thesis Management**: Handle existing thesis detection and interactive collection
+3. **AI Analysis**: Generate structured PR summaries with human-AI content separation, adapting detail level based on change complexity:
 
-View changes for ONLY the current branch with `git diff <previous_branch>..HEAD` where `<previous_branch>` is the branch identified in Step 1. Also view the commit messages for the current branch only with `git log --oneline <previous_branch>..HEAD`.
+   **CRITICAL BREVITY REQUIREMENTS:**
+   - **NEVER replicate diff content** - summaries should capture intent, not implementation details
+   - **Maximum 2-3 sentences** for simple to medium changes
+   - **Focus on WHY and WHAT, not HOW** - avoid line-by-line analysis
+   - **Default to concise** - err on the side of too brief rather than too verbose
 
-**Verification**: The `git log --oneline <previous_branch>..HEAD` command should typically show only 1-2 commits for the current branch. If it shows many commits, double-check that you identified the correct previous branch.
+   **Complexity Guidelines:**
+   - **Simple changes** (single-line fixes, typos, minor tweaks): 1 sentence maximum
+   - **Technical fixes** (import reorganization, compatibility fixes, lazy loading): 1-2 sentences describing the high-level approach, NO file-by-file breakdowns
+   - **Medium changes** (function additions, config updates, isolated features): 2-3 sentences with key impact points
+   - **Complex changes** (architectural changes, multiple classes/functions, cross-cutting concerns): Brief paragraph focusing on architectural decisions, not implementation specifics
+   - **Large but simple changes** (file splits, refactoring without logic changes): 1-2 sentences about structural intent, ignore line counts
 
-## Step 3: Write PR Summary
+4. **Atomic Updates**: Execute `dagster-dev ai-review-update --auto-prepare` with proper escaping
 
-Focus only on changes in the current branch, not the entire stack history. Use this context, alongside any session context from what you know about the changes to write a PR summary in Markdown, of the format
+## Anti-Patterns to Avoid
 
-```md
-## Summary & Motivation
+**❌ NEVER DO THIS:**
 
-[Brief summary of changes here, including code sample, if a new API was added, etc.]
+- File-by-file change listings ("Updated file X to do Y, modified file Z to include W...")
+- Line-by-line diff recreation ("Added import X, changed function Y from A to B...")
+- Verbose implementation details that mirror the actual code changes
+- Long bullet lists describing every small modification
 
-## How I Tested These Changes
+**✅ INSTEAD DO THIS:**
 
-[Very brief summary of test plan here, e.g. "New unit tests.", "New integration tests.", "Existing test suite." This can be a single sentence.]
+- High-level purpose statements ("Improves error handling in authentication flow")
+- Impact-focused descriptions ("Enables lazy loading to reduce startup time")
+- Intent-based summaries ("Refactors validation logic for better maintainability")
 
-## Changelog
+## Key Benefits
 
-[End user facing changelog entry, remove this section if no public-facing API was changed and no bug was fixed. Public-facing APIs are identified by the @public decorator. Ignore minor changes. If there are no user-facing changes, remove this section.]
-```
+- **Cost Optimization**: Smart diff summarization reduces token usage by 78%
+- **Context Isolation**: PR workflow complexity handled in specialized agent context
+- **Performance**: Single consolidated commands with intelligent analysis reduce overhead
+- **User Experience**: Same interface, dramatically improved backend efficiency
+- **Reliability**: Specialized error handling and validation logic
+- **Scalability**: Caching system for repeat operations
 
-Use bullet points sparingly, and do not overuse italics/bold text. Use short sentences.
+## Commit Title Guidelines
 
-After generating the PR summary markdown, check if there is a current PR for this branch using `gh pr view` or similar command. If there is no PR, error and tell the user to create a PR first. If there is a PR, update it with the generated summary using `gh pr edit --body "generated_summary"` and also generate a concise, descriptive title based on the summary content and update it using `gh pr edit --title "generated_title"` or similar GitHub CLI command.
+**Maximum length**: 72 characters
 
-Additionally, update the latest commit message in the branch with the contents of the PR summary using `git commit --amend -m "new_commit_message"` where the new commit message is derived from the PR summary title and content.
+**Suggested formats**:
+
+- `Optimize /ai_update_pr with ai-review commands and user thesis input`
+- `Add ai-review commands for optimized /ai_update_pr performance`
+- `Improve /ai_update_pr efficiency with new ai-review- commands`
+
+**Enforce with**: git commit --amend to shorten overly long titles before pushing.
+
+The user experience remains identical while benefiting from optimized context management and specialized PR workflow expertise.

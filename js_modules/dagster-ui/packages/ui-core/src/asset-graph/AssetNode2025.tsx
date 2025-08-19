@@ -13,7 +13,8 @@ import {
   AssetNodeContainer,
   AssetNodeRowBox,
 } from './AssetNode';
-import {AssetNodeFacet, labelForFacet} from './AssetNodeFacets';
+import {labelForFacet} from './AssetNodeFacets';
+import {AssetNodeFacet} from './AssetNodeFacetsUtil';
 import {AssetNodeFreshnessRow, AssetNodeFreshnessRowOld} from './AssetNodeFreshnessRow';
 import {AssetNodeHealthRow} from './AssetNodeHealthRow';
 import {assetNodeLatestEventContent, buildAssetNodeStatusContent} from './AssetNodeStatusContent';

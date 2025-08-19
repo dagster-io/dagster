@@ -5,7 +5,7 @@ from typing import Optional, Union, cast
 
 from dagster_shared.record import record
 
-from dagster._core.remote_representation.origin import (
+from dagster._core.remote_origin import (
     CodeLocationOrigin,
     GrpcServerCodeLocationOrigin,
     InProcessCodeLocationOrigin,

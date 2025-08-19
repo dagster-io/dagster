@@ -8,6 +8,7 @@ from dagster._core.definitions.metadata.metadata_value import (
 )
 from dagster_shared.check import CheckError
 from dagster_shared.record import copy
+from dagster_shared.serdes.utils import create_snapshot_id
 
 
 def test_op_instance_tags():
@@ -143,6 +144,8 @@ def test_instance_metadata_value():
     v3 = dg.deserialize_value(dg.serialize_value(v), ObjectMetadataValue)
     assert v3.class_name == "Foo"
     assert v3.instance is None  # instance lost in serialization
+
+    assert create_snapshot_id(v2) == create_snapshot_id(v3)
 
 
 def test_serialized_time_entry():

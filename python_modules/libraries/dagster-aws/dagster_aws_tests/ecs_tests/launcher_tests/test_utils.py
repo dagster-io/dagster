@@ -1,4 +1,4 @@
-from dagster._core.remote_representation.origin import (
+from dagster._core.remote_origin import (
     RegisteredCodeLocationOrigin,
     RemoteJobOrigin,
     RemoteRepositoryOrigin,

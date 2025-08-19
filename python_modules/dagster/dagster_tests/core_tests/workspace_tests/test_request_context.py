@@ -4,12 +4,12 @@ from unittest import mock
 
 import pytest
 from dagster._core.errors import DagsterCodeLocationLoadError, DagsterCodeLocationNotFoundError
+from dagster._core.remote_origin import RegisteredCodeLocationOrigin
 from dagster._core.remote_representation.code_location import CodeLocation
 from dagster._core.remote_representation.feature_flags import (
     CodeLocationFeatureFlags,
     get_feature_flags_for_location,
 )
-from dagster._core.remote_representation.origin import RegisteredCodeLocationOrigin
 from dagster._core.workspace.context import WorkspaceRequestContext
 from dagster._core.workspace.workspace import (
     CodeLocationEntry,

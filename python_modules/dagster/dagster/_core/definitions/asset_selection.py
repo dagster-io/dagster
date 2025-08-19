@@ -6,6 +6,7 @@ from collections.abc import Iterable, Sequence
 from functools import reduce
 from typing import AbstractSet, Optional, Union, cast  # noqa: UP035
 
+from dagster_shared.error import DagsterError
 from dagster_shared.serdes import whitelist_for_serdes
 from typing_extensions import TypeAlias, TypeGuard
 
@@ -547,7 +548,7 @@ class AssetSelection(ABC):
             tag_str = string[len("tag:") :]
             return cls.tag_string(tag_str)
 
-        check.failed(f"Invalid selection string: {string}")
+        raise DagsterError(f"Invalid selection string: {string}")
 
     @classmethod
     def from_coercible(cls, selection: CoercibleToAssetSelection) -> "AssetSelection":
@@ -578,7 +579,7 @@ class AssetSelection(ABC):
         ):
             return cls.assets(*cast("Sequence[AssetKey]", selection))
         else:
-            check.failed(
+            raise DagsterError(
                 "selection argument must be one of str, Sequence[str], Sequence[AssetKey],"
                 " Sequence[AssetsDefinition], Sequence[SourceAsset], AssetSelection. Was"
                 f" {type(selection)}."

@@ -5,7 +5,7 @@ from unittest import mock
 
 import pytest
 from dagster import file_relative_path
-from dagster._core.remote_representation import ManagedGrpcPythonEnvCodeLocationOrigin
+from dagster._core.remote_origin import ManagedGrpcPythonEnvCodeLocationOrigin
 from dagster._core.remote_representation.feature_flags import CodeLocationFeatureFlags
 from dagster._core.test_utils import environ
 from dagster._core.types.loadable_target_origin import LoadableTargetOrigin
@@ -357,7 +357,9 @@ class TestLoadWorkspace(BaseTestSuite):
             mock_fetch.side_effect = Exception("boom")
 
             result = execute_dagster_graphql(
-                graphql_context, LOCATION_ENTRY_QUERY, {"name": main_repo_location_name()}
+                graphql_context,
+                LOCATION_ENTRY_QUERY,
+                {"name": main_repo_location_name()},
             )
             assert result
             assert result.data["workspaceLocationEntryOrError"]

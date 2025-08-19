@@ -16,8 +16,8 @@ from dagster._core.definitions.sensor_definition import SensorType
 from dagster._core.execution.backfill import PartitionBackfill
 from dagster._core.instance import DagsterInstance
 from dagster._core.instance.ref import InstanceRef
+from dagster._core.remote_origin import InProcessCodeLocationOrigin
 from dagster._core.remote_representation.external import RemoteSensor
-from dagster._core.remote_representation.origin import InProcessCodeLocationOrigin
 from dagster._core.scheduler.instigation import (
     InstigatorState,
     InstigatorTick,
@@ -836,3 +836,49 @@ def test_observable_source_asset_is_not_backfilled() -> None:
             assert len(runs) == 0
             backfills = _get_backfills_for_latest_ticks(context)
             assert len(backfills) == 0
+
+
+def test_dynamic_partitions() -> None:
+    with (
+        get_grpc_workspace_request_context("dynamic_partitions_on_missing") as context,
+        get_threadpool_executor() as executor,
+    ):
+        time = datetime.datetime(2024, 8, 16, 1, 35)
+        with freeze_time(time):
+            _execute_ticks(context, executor)  # pyright: ignore[reportArgumentType]
+            runs = _get_runs_for_latest_ticks(context)
+            assert len(runs) == 0
+
+        context.instance.add_dynamic_partitions("dynamic", ["a", "b", "c"])
+        context.instance.report_runless_asset_event(dg.AssetMaterialization("A", partition="a"))
+        context.instance.report_runless_asset_event(dg.AssetMaterialization("A", partition="b"))
+
+        time += datetime.timedelta(hours=1)
+        with freeze_time(time):
+            _execute_ticks(context, executor)  # pyright: ignore[reportArgumentType]
+            runs = _get_runs_for_latest_ticks(context)
+            assert len(runs) == 1
+            assert runs[0].asset_selection == {dg.AssetKey("A")}
+            assert runs[0].tags["dagster/partition"] == "c"
+
+        time += datetime.timedelta(minutes=1)
+        with freeze_time(time):
+            _execute_ticks(context, executor)  # pyright: ignore[reportArgumentType]
+            runs = _get_runs_for_latest_ticks(context)
+            assert len(runs) == 0
+
+        # add new partition
+        time += datetime.timedelta(minutes=1)
+        context.instance.add_dynamic_partitions("dynamic", ["d"])
+        with freeze_time(time):
+            _execute_ticks(context, executor)  # pyright: ignore[reportArgumentType]
+            runs = _get_runs_for_latest_ticks(context)
+            assert len(runs) == 1
+
+        # delete a partition that we just added, should not cause errors
+        time += datetime.timedelta(minutes=1)
+        context.instance.delete_dynamic_partition("dynamic", "d")
+        with freeze_time(time):
+            _execute_ticks(context, executor)  # pyright: ignore[reportArgumentType]
+            runs = _get_runs_for_latest_ticks(context)
+            assert len(runs) == 0

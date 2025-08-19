@@ -8,6 +8,8 @@ pypi: https://pypi.org/project/dagster-duckdb/
 sidebar_custom_props:
   logo: images/integrations/duckdb.svg
 partnerlink: https://duckdb.org/
+canonicalUrl: '/integrations/libraries/duckdb'
+slug: '/integrations/libraries/duckdb'
 ---
 
 <p>{frontMatter.description}</p>

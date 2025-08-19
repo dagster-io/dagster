@@ -653,8 +653,8 @@ class OpExecutionContext(AbstractComputeExecutionContext):
                 @multi_asset(
                     outs={
                         "first_asset": AssetOut(key=["my_assets", "first_asset"]),
-                        "second_asset": AssetOut(key=["my_assets", "second_asset"])
-                    }
+                        "second_asset": AssetOut(key=["my_assets", "second_asset"]),
+                    },
                     partitions_def=partitions_def,
                 )
                 def a_multi_asset(context: AssetExecutionContext):
@@ -670,7 +670,7 @@ class OpExecutionContext(AbstractComputeExecutionContext):
                 @asset(
                     partitions_def=partitions_def,
                     ins={
-                        "self_dependent_asset": AssetIn(partition_mapping=TimeWindowPartitionMapping(start_offset=-1, end_offset=-1))
+                        "self_dependent_asset": AssetIn(partition_mapping=TimeWindowPartitionMapping(start_offset=-1, end_offset=-1)),
                     }
                 )
                 def self_dependent_asset(context: AssetExecutionContext, self_dependent_asset):
@@ -723,8 +723,8 @@ class OpExecutionContext(AbstractComputeExecutionContext):
                 @multi_asset(
                     outs={
                         "first_asset": AssetOut(key=["my_assets", "first_asset"]),
-                        "second_asset": AssetOut(key=["my_assets", "second_asset"])
-                    }
+                        "second_asset": AssetOut(key=["my_assets", "second_asset"]),
+                    },
                     partitions_def=partitions_def,
                 )
                 def a_multi_asset(context: AssetExecutionContext):
@@ -743,7 +743,7 @@ class OpExecutionContext(AbstractComputeExecutionContext):
                 @asset(
                     partitions_def=partitions_def,
                     ins={
-                        "self_dependent_asset": AssetIn(partition_mapping=TimeWindowPartitionMapping(start_offset=-1, end_offset=-1))
+                        "self_dependent_asset": AssetIn(partition_mapping=TimeWindowPartitionMapping(start_offset=-1, end_offset=-1)),
                     }
                 )
                 def self_dependent_asset(context: AssetExecutionContext, self_dependent_asset):
@@ -793,8 +793,8 @@ class OpExecutionContext(AbstractComputeExecutionContext):
                 @multi_asset(
                     outs={
                         "first_asset": AssetOut(key=["my_assets", "first_asset"]),
-                        "second_asset": AssetOut(key=["my_assets", "second_asset"])
-                    }
+                        "second_asset": AssetOut(key=["my_assets", "second_asset"]),
+                    },
                     partitions_def=partitions_def,
                 )
                 def a_multi_asset(context: AssetExecutionContext):
@@ -810,7 +810,7 @@ class OpExecutionContext(AbstractComputeExecutionContext):
                 @asset(
                     partitions_def=partitions_def,
                     ins={
-                        "self_dependent_asset": AssetIn(partition_mapping=TimeWindowPartitionMapping(start_offset=-1, end_offset=-1))
+                        "self_dependent_asset": AssetIn(partition_mapping=TimeWindowPartitionMapping(start_offset=-1, end_offset=-1)),
                     }
                 )
                 def self_dependent_asset(context: AssetExecutionContext, self_dependent_asset):
@@ -857,8 +857,8 @@ class OpExecutionContext(AbstractComputeExecutionContext):
 
                 @asset(
                     ins={
-                        "upstream_asset": AssetIn(partition_mapping=TimeWindowPartitionMapping(start_offset=-1, end_offset=-1))
-                    }
+                        "upstream_asset": AssetIn(partition_mapping=TimeWindowPartitionMapping(start_offset=-1, end_offset=-1)),
+                    },
                     partitions_def=partitions_def,
                 )
                 def another_asset(context: AssetExecutionContext, upstream_asset):
@@ -872,7 +872,7 @@ class OpExecutionContext(AbstractComputeExecutionContext):
                 @asset(
                     partitions_def=partitions_def,
                     ins={
-                        "self_dependent_asset": AssetIn(partition_mapping=TimeWindowPartitionMapping(start_offset=-1, end_offset=-1))
+                        "self_dependent_asset": AssetIn(partition_mapping=TimeWindowPartitionMapping(start_offset=-1, end_offset=-1)),
                     }
                 )
                 def self_dependent_asset(context: AssetExecutionContext, self_dependent_asset):
@@ -916,7 +916,7 @@ class OpExecutionContext(AbstractComputeExecutionContext):
                 @asset(
                     partitions_def=partitions_def,
                     ins={
-                        "self_dependent_asset": AssetIn(partition_mapping=TimeWindowPartitionMapping(start_offset=-1, end_offset=-1))
+                        "self_dependent_asset": AssetIn(partition_mapping=TimeWindowPartitionMapping(start_offset=-1, end_offset=-1)),
                     }
                 )
                 def self_dependent_asset(context: AssetExecutionContext, self_dependent_asset):
@@ -955,8 +955,8 @@ class OpExecutionContext(AbstractComputeExecutionContext):
                 @multi_asset(
                     outs={
                         "first_asset": AssetOut(key=["my_assets", "first_asset"]),
-                        "second_asset": AssetOut(key=["my_assets", "second_asset"])
-                    }
+                        "second_asset": AssetOut(key=["my_assets", "second_asset"]),
+                    },
                     partitions_def=partitions_def,
                 )
                 def a_multi_asset(context: AssetExecutionContext):
@@ -1049,8 +1049,8 @@ class OpExecutionContext(AbstractComputeExecutionContext):
                 @multi_asset(
                     outs={
                         "first_asset": AssetOut(key=["my_assets", "first_asset"]),
-                        "second_asset": AssetOut(key=["my_assets", "second_asset"])
-                    }
+                        "second_asset": AssetOut(key=["my_assets", "second_asset"]),
+                    },
                     partitions_def=partitions_def,
                 )
                 def a_multi_asset(context: AssetExecutionContext):
@@ -1066,7 +1066,7 @@ class OpExecutionContext(AbstractComputeExecutionContext):
                 @asset(
                     partitions_def=partitions_def,
                     ins={
-                        "self_dependent_asset": AssetIn(partition_mapping=TimeWindowPartitionMapping(start_offset=-1, end_offset=-1))
+                        "self_dependent_asset": AssetIn(partition_mapping=TimeWindowPartitionMapping(start_offset=-1, end_offset=-1)),
                     }
                 )
                 def self_dependent_asset(context: AssetExecutionContext, self_dependent_asset):
@@ -1115,8 +1115,8 @@ class OpExecutionContext(AbstractComputeExecutionContext):
 
                 @asset(
                     ins={
-                        "upstream_asset": AssetIn(partition_mapping=TimeWindowPartitionMapping(start_offset=-1, end_offset=-1))
-                    }
+                        "upstream_asset": AssetIn(partition_mapping=TimeWindowPartitionMapping(start_offset=-1, end_offset=-1)),
+                    },
                     partitions_def=partitions_def,
                 )
                 def another_asset(context: AssetExecutionContext, upstream_asset):
@@ -1130,7 +1130,7 @@ class OpExecutionContext(AbstractComputeExecutionContext):
                 @asset(
                     partitions_def=partitions_def,
                     ins={
-                        "self_dependent_asset": AssetIn(partition_mapping=TimeWindowPartitionMapping(start_offset=-1, end_offset=-1))
+                        "self_dependent_asset": AssetIn(partition_mapping=TimeWindowPartitionMapping(start_offset=-1, end_offset=-1)),
                     }
                 )
                 def self_dependent_asset(context: AssetExecutionContext, self_dependent_asset):
@@ -1188,8 +1188,8 @@ class OpExecutionContext(AbstractComputeExecutionContext):
 
                 @asset(
                     ins={
-                        "upstream_asset": AssetIn(partition_mapping=TimeWindowPartitionMapping(start_offset=-1, end_offset=-1))
-                    }
+                        "upstream_asset": AssetIn(partition_mapping=TimeWindowPartitionMapping(start_offset=-1, end_offset=-1)),
+                    },
                     partitions_def=partitions_def,
                 )
                 def another_asset(context: AssetExecutionContext, upstream_asset):
@@ -1206,7 +1206,7 @@ class OpExecutionContext(AbstractComputeExecutionContext):
                 @asset(
                     partitions_def=partitions_def,
                     ins={
-                        "self_dependent_asset": AssetIn(partition_mapping=TimeWindowPartitionMapping(start_offset=-1, end_offset=-1))
+                        "self_dependent_asset": AssetIn(partition_mapping=TimeWindowPartitionMapping(start_offset=-1, end_offset=-1)),
                     }
                 )
                 def self_dependent_asset(context: AssetExecutionContext, self_dependent_asset):

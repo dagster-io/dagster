@@ -1,4 +1,4 @@
-dg check yaml
+dg check yaml --validate-requirements
 
 /.../ingestion/src/ingestion/defs/ingest_files/defs.yaml:1 - requirements.env Component uses environment variables that are not specified in the component file: SNOWFLAKE_ACCOUNT, SNOWFLAKE_DATABASE, SNOWFLAKE_PASSWORD, SNOWFLAKE_USER
      | 

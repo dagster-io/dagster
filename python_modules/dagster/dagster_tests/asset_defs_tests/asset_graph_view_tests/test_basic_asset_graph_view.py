@@ -36,6 +36,49 @@ def test_basic_construction_and_identity() -> None:
     assert asset_graph_view_t0.asset_graph.get_all_asset_keys() == {an_asset.key}
 
 
+def test_not_in_graph_partitions():
+    xy = dg.StaticPartitionsDefinition(["x", "y"])
+    dynamic = dg.DynamicPartitionsDefinition(name="dynamic_partition")
+
+    @dg.asset(partitions_def=xy)
+    def the_asset() -> None: ...
+
+    @dg.asset(partitions_def=dynamic)
+    def the_dynamic_asset() -> None: ...
+
+    defs = dg.Definitions([the_asset, the_dynamic_asset])
+
+    with DagsterInstance.ephemeral() as instance:
+        instance.add_dynamic_partitions("dynamic_partition", ["a", "b", "c"])
+        asset_graph_view = AssetGraphView.for_test(defs, instance)
+
+        candidate_subset = asset_graph_view.get_asset_subset_from_asset_partitions(
+            key=the_asset.key,
+            asset_partitions={
+                AssetKeyPartitionKey(the_asset.key, "x"),
+                AssetKeyPartitionKey(the_asset.key, "a"),
+                AssetKeyPartitionKey(the_asset.key, "b"),
+            },
+        )
+
+        assert asset_graph_view.get_subset_not_in_graph(
+            key=the_asset.key, candidate_subset=candidate_subset
+        ).expensively_compute_partition_keys() == {"a", "b"}
+
+        dynamic_candidate_subset = asset_graph_view.get_asset_subset_from_asset_partitions(
+            key=the_dynamic_asset.key,
+            asset_partitions={
+                AssetKeyPartitionKey(the_dynamic_asset.key, "c"),
+                AssetKeyPartitionKey(the_dynamic_asset.key, "d"),
+                AssetKeyPartitionKey(the_dynamic_asset.key, "e"),
+            },
+        )
+
+        assert asset_graph_view.get_subset_not_in_graph(
+            key=the_dynamic_asset.key, candidate_subset=dynamic_candidate_subset
+        ).expensively_compute_partition_keys() == {"d", "e"}
+
+
 def test_upstream_non_existent_partitions():
     xy = dg.StaticPartitionsDefinition(["x", "y"])
     zx = dg.StaticPartitionsDefinition(["z", "x"])
@@ -114,6 +157,18 @@ def test_partitions_definition_valid_subset():
         subset = cast("TimeWindowPartitionsSubset", entity_subset.get_internal_subset_value())
         assert subset.included_time_windows == old_partitions_subset.included_time_windows
         assert subset.partitions_def == current_partitions_def
+
+        new_asset_graph_subset = (
+            asset_graph_view.get_latest_asset_graph_subset_from_serialized_asset_graph_subset(
+                old_asset_graph_subset
+            )
+        )
+
+        assert (
+            new_asset_graph_subset != old_asset_graph_subset
+        )  # because the partitions defs are different
+
+        assert new_asset_graph_subset.partitions_subsets_by_asset_key[asset0.key] == subset
 
 
 @pytest.mark.parametrize(

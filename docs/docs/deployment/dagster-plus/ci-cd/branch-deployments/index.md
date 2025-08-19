@@ -2,6 +2,8 @@
 description: With Branch Deployments, Dagster+ creates a corresponding branch deployment for each pull request to show what production will look like after the change is merged.
 sidebar_position: 7300
 title: Branch deployments
+canonicalUrl: '/deployment/dagster-plus/ci-cd/branch-deployments'
+slug: '/deployment/dagster-plus/ci-cd/branch-deployments'
 ---
 
 import DagsterPlus from '@site/docs/partials/\_DagsterPlus.md';

@@ -3,7 +3,8 @@ import os
 import re
 from typing import Optional
 
-from buildkite_shared.environment import is_release_branch, message_contains, safe_getenv
+from buildkite_shared.environment import is_release_branch, safe_getenv
+from buildkite_shared.packages import run_all_tests
 from buildkite_shared.quarantine import (
     filter_and_print_steps_by_quarantined,
     get_buildkite_quarantined_objects,
@@ -78,7 +79,11 @@ def build_dagster_oss_main_steps() -> list[StepConfiguration]:
     # Trigger a build on the internal pipeline for dagster PRs.
     # master/release branches always trigger
     # Feature branches only trigger if [INTERNAL_BRANCH=<branch>] is in the commit message
-    if not oss_contribution and not os.getenv("CI_DISABLE_INTEGRATION_TESTS"):
+    if (
+        not oss_contribution
+        and not os.getenv("CI_DISABLE_INTEGRATION_TESTS")
+        and not os.getenv("TRIGGERED_BY_INTERNAL")
+    ):
         if branch_name == "master" or is_release_branch(branch_name):
             pipeline_name = "internal"
             trigger_branch = branch_name  # build on matching internal release branch
@@ -97,7 +102,7 @@ def build_dagster_oss_main_steps() -> list[StepConfiguration]:
             oss_compat_slim = _get_setting("OSS_COMPAT_SLIM") or not (
                 _get_setting("INTERNAL_BRANCH")
                 or _get_setting("BUILDKITE_FOLDER_BRANCH")
-                or message_contains("NO_SKIP")
+                or run_all_tests()
             )
 
         dagster_commit_hash = safe_getenv("BUILDKITE_COMMIT")

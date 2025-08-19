@@ -7,14 +7,15 @@ from dagster._core.remote_representation.external_data import RepositoryErrorSna
 from dagster._serdes import deserialize_value
 
 if TYPE_CHECKING:
-    from dagster._core.remote_representation import CodeLocation
+    from dagster._core.remote_representation.code_location import CodeLocation
     from dagster._grpc.client import DagsterGrpcClient
 
 
 def sync_get_streaming_external_repositories_data_grpc(
     api_client: "DagsterGrpcClient", code_location: "CodeLocation"
 ) -> Mapping[str, RepositorySnap]:
-    from dagster._core.remote_representation import CodeLocation, RemoteRepositoryOrigin
+    from dagster._core.remote_origin import RemoteRepositoryOrigin
+    from dagster._core.remote_representation.code_location import CodeLocation
 
     check.inst_param(code_location, "code_location", CodeLocation)
 
@@ -49,7 +50,8 @@ def sync_get_streaming_external_repositories_data_grpc(
 async def gen_streaming_external_repositories_data_grpc(
     api_client: "DagsterGrpcClient", code_location: "CodeLocation"
 ) -> Mapping[str, RepositorySnap]:
-    from dagster._core.remote_representation import CodeLocation, RemoteRepositoryOrigin
+    from dagster._core.remote_origin import RemoteRepositoryOrigin
+    from dagster._core.remote_representation.code_location import CodeLocation
 
     check.inst_param(code_location, "code_location", CodeLocation)
 

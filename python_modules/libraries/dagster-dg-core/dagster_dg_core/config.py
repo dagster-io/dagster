@@ -1,6 +1,5 @@
 import functools
 import textwrap
-import warnings
 from collections.abc import Iterator, Mapping, Sequence
 from contextlib import contextmanager
 from dataclasses import dataclass, field
@@ -232,33 +231,14 @@ def merge_container_context_configs(
 class DgProjectConfig:
     root_module: str
     defs_module: Optional[str] = None
-    autoload_defs: bool = False
     code_location_target_module: Optional[str] = None
     code_location_name: Optional[str] = None
     registry_modules: list[str] = field(default_factory=list)
 
     @classmethod
     def from_raw(cls, raw: "DgRawProjectConfig") -> Self:
-        if raw.get("autoload_defs"):
-            warnings.warn(
-                "Using autoload_defs in pyproject.toml is deprecated, and will be removed in dagster 1.11.0."
-                " Use a definitions.py file with @definitions and load_project_defs instead:\n"
-                + textwrap.dedent(
-                    """
-                    from pathlib import Path
-
-                    from dagster import definitions, load_from_defs_folder
-
-
-                    @definitions
-                    def defs():
-                        return load_from_defs_folder(project_root=Path(__file__).parent.parent.parent)
-                    """
-                )
-            )
         return cls(
             root_module=raw["root_module"],
-            autoload_defs=raw.get("autoload_defs", DgProjectConfig.autoload_defs),
             defs_module=raw.get("defs_module", DgProjectConfig.defs_module),
             code_location_name=raw.get("code_location_name", DgProjectConfig.code_location_name),
             code_location_target_module=raw.get(
@@ -273,7 +253,6 @@ class DgProjectConfig:
 
 class DgRawProjectConfig(TypedDict):
     root_module: Required[str]
-    autoload_defs: NotRequired[bool]
     defs_module: NotRequired[str]
     code_location_target_module: NotRequired[str]
     code_location_name: NotRequired[str]
@@ -582,15 +561,6 @@ class _DgConfigValidator:
                         "Module patterns must consist of '.'-separated segments that are either "
                         "valid Python identifiers or wildcards ('*')."
                     )
-        if "code_location_target_module" in section and section.get("autoload_defs"):
-            autoload_defs_key = self._get_full_key("project.autoload_defs")
-            code_location_target_module_key = self._get_full_key(
-                "project.code_location_target_module"
-            )
-            raise DgValidationError(
-                f"Cannot specify `{code_location_target_module_key}` when `{autoload_defs_key}` is True. These options are mutually exclusive."
-                " Please set `autoload_defs` to False or remove the `code_location_target_module`."
-            )
 
     def _validate_file_config_workspace_section(self, section: object) -> None:
         if not isinstance(section, dict):

@@ -3,7 +3,7 @@ import re
 from collections.abc import Mapping
 from typing import Any
 
-from dagster._core.remote_representation.origin import RemoteJobOrigin
+from dagster._core.remote_origin import RemoteJobOrigin
 
 from dagster_aws.ecs.tasks import DagsterEcsTaskDefinitionConfig
 

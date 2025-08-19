@@ -14,7 +14,7 @@ from dagster._core.definitions.assets.graph.asset_graph_differ import (
     DictDiff,
     ValueDiff,
 )
-from dagster._core.remote_representation.origin import InProcessCodeLocationOrigin
+from dagster._core.remote_origin import InProcessCodeLocationOrigin
 from dagster._core.types.loadable_target_origin import LoadableTargetOrigin
 from dagster._core.workspace.context import WorkspaceRequestContext
 from dagster._core.workspace.workspace import (

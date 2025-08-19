@@ -1,27 +1,21 @@
 .container {
   background-color: var(--color-background-default);
-  padding: 20px;
   color: var(--color-text-default);
   width: 100%;
-  max-width: 800px;
+  height: 480px;
   display: flex;
   flex-direction: column;
-  gap: 12px;
-  padding: 16px 24px;
+  padding: 16px 8px;
   border-radius: 12px;
   border: 1px solid var(--color-keyline-default);
+  overflow: hidden;
 }
 
-.table {
-  width: 100%;
-  border-collapse: collapse;
-  margin-top: 20px;
-  font-size: 14px;
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
-  gap: 12px;
-}
-
-.tableValue {
-  text-align: right;
+.emptyState {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  color: var(--color-text-lighter);
 }

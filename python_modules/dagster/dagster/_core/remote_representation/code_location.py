@@ -26,7 +26,11 @@ from dagster._core.execution.api import create_execution_plan
 from dagster._core.execution.plan.state import KnownExecutionState
 from dagster._core.instance import DagsterInstance
 from dagster._core.origin import RepositoryPythonOrigin
-from dagster._core.remote_representation import RemoteJobSubsetResult
+from dagster._core.remote_origin import (
+    CodeLocationOrigin,
+    GrpcServerCodeLocationOrigin,
+    InProcessCodeLocationOrigin,
+)
 from dagster._core.remote_representation.external import (
     RemoteExecutionPlan,
     RemoteJob,
@@ -34,6 +38,7 @@ from dagster._core.remote_representation.external import (
 )
 from dagster._core.remote_representation.external_data import (
     PartitionNamesSnap,
+    RemoteJobSubsetResult,
     RepositorySnap,
     ScheduleExecutionErrorSnap,
     SensorExecutionErrorSnap,
@@ -41,11 +46,6 @@ from dagster._core.remote_representation.external_data import (
 )
 from dagster._core.remote_representation.grpc_server_registry import GrpcServerRegistry
 from dagster._core.remote_representation.handle import JobHandle, RepositoryHandle
-from dagster._core.remote_representation.origin import (
-    CodeLocationOrigin,
-    GrpcServerCodeLocationOrigin,
-    InProcessCodeLocationOrigin,
-)
 from dagster._core.snap.execution_plan_snapshot import snapshot_from_execution_plan
 from dagster._grpc.impl import (
     get_external_schedule_execution,
@@ -64,7 +64,7 @@ from dagster._utils.merger import merge_dicts
 if TYPE_CHECKING:
     from dagster._core.definitions.schedule_definition import ScheduleExecutionData
     from dagster._core.definitions.sensor_definition import SensorExecutionData
-    from dagster._core.remote_representation import (
+    from dagster._core.remote_representation.external_data import (
         PartitionConfigSnap,
         PartitionExecutionErrorSnap,
         PartitionSetExecutionParamSnap,

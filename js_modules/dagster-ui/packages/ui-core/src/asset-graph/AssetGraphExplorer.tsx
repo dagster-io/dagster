@@ -49,7 +49,7 @@ import {AssetGraphLayout, GroupLayout} from './layout';
 import {AssetGraphFetchScope, useAssetGraphData, useFullAssetGraphData} from './useAssetGraphData';
 import {AssetLocation, useFindAssetLocation} from './useFindAssetLocation';
 import {useFullScreen, useFullScreenAllowedView} from '../app/AppTopNav/AppTopNavContext';
-import {useFeatureFlags} from '../app/Flags';
+import {useFeatureFlags} from '../app/useFeatureFlags';
 import {AssetLiveDataRefreshButton} from '../asset-data/AssetLiveDataProvider';
 import {LaunchAssetExecutionButton} from '../assets/LaunchAssetExecutionButton';
 import {AssetKey} from '../assets/types';
@@ -685,9 +685,6 @@ const AssetGraphExplorerWithData = ({
   const {isFullScreen, toggleFullScreen} = useFullScreen();
 
   const toggleFullScreenButton = useMemo(() => {
-    if (viewType === AssetGraphViewType.CATALOG) {
-      return null;
-    }
     return (
       <Tooltip content={isFullScreen ? 'Collapse' : 'Expand'}>
         <Button
@@ -696,7 +693,7 @@ const AssetGraphExplorerWithData = ({
         />
       </Tooltip>
     );
-  }, [viewType, toggleFullScreen, isFullScreen]);
+  }, [toggleFullScreen, isFullScreen]);
 
   const explorer = (
     <SplitPanelContainer

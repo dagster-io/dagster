@@ -408,7 +408,6 @@ const MERGE_BOOLEAN_KEYS = [
   'isExecutable',
   'isObservable',
   'isMaterializable',
-  'isAutoCreatedStub',
 ] as const;
 
 const combineAssetDefinitions = weakMapMemoize(

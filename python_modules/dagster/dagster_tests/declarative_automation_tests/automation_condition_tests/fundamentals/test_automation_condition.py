@@ -4,6 +4,7 @@ import operator
 import dagster as dg
 import pytest
 from dagster import AutoMaterializePolicy, AutomationCondition
+from dagster._core.asset_graph_view.serializable_entity_subset import SerializableEntitySubset
 from dagster._core.definitions.asset_selection import AssetSelection
 from dagster._core.definitions.declarative_automation.automation_context import AutomationContext
 from dagster._core.definitions.declarative_automation.operators import (
@@ -13,6 +14,8 @@ from dagster._core.definitions.declarative_automation.operators import (
 from dagster._core.definitions.declarative_automation.serialized_objects import (
     HistoricalAllPartitionsSubsetSentinel,
 )
+from dagster._core.definitions.partitions.context import partition_loading_context
+from dagster._core.definitions.partitions.subset.key_ranges import KeyRangesPartitionsSubset
 from dagster._core.remote_representation.external_data import RepositorySnap
 from dagster_shared.check import CheckError
 
@@ -206,6 +209,14 @@ def test_replace_automation_conditions() -> None:
     )
 
 
+def test_replace_automation_condition_by_names() -> None:
+    a = AutomationCondition.in_latest_time_window()
+    b = AutomationCondition.missing()
+    c = AutomationCondition.any_deps_match(AutomationCondition.in_progress())
+
+    assert (a & b).replace("missing", c) == a & c
+
+
 def test_replace_automation_condition_since() -> None:
     a = AutomationCondition.in_latest_time_window().with_label("in_latest_time_window")
     b = AutomationCondition.any_deps_match(AutomationCondition.in_progress())
@@ -360,3 +371,45 @@ def test_use_historical_all_partitions_subset_sentinel() -> None:
         .serializable_evaluation.candidate_subset,
         HistoricalAllPartitionsSubsetSentinel,
     )
+
+
+def test_use_key_ranges_partitions_subset() -> None:
+    @dg.asset(
+        partitions_def=dg.DynamicPartitionsDefinition(name="some_def"),
+        # using this weird condition to make a predictable non-AllPartitionsSubset candidate subset
+        automation_condition=dg.AutomationCondition.missing() & dg.AutomationCondition.missing(),
+    )
+    def A(): ...
+
+    defs = dg.Definitions(assets=[A])
+    instance = dg.DagsterInstance.ephemeral()
+    instance.add_dynamic_partitions("some_def", ["a", "b", "c", "d", "e"])
+    for partition in ["a", "c", "e"]:
+        instance.report_runless_asset_event(
+            dg.AssetMaterialization(asset_key=dg.AssetKey("A"), partition=partition)
+        )
+
+    current_time = datetime.datetime(2024, 8, 16, 4, 35)
+    result = dg.evaluate_automation_conditions(
+        defs=defs, instance=instance, evaluation_time=current_time
+    )
+    assert result.total_requested == 2
+
+    with partition_loading_context(effective_dt=current_time, dynamic_partitions_store=instance):
+        # outer AND condition
+        serializable_evaluation = result.results[0].serializable_evaluation
+        assert isinstance(serializable_evaluation.true_subset.value, KeyRangesPartitionsSubset)
+        assert serializable_evaluation.true_subset.value.get_partition_keys() == ["b", "d"]
+
+        assert isinstance(
+            serializable_evaluation.candidate_subset, HistoricalAllPartitionsSubsetSentinel
+        )
+
+        # inner missing condition (second operand)
+        serializable_evaluation = result.results[0].child_results[1].serializable_evaluation
+        assert isinstance(serializable_evaluation.true_subset.value, KeyRangesPartitionsSubset)
+        assert serializable_evaluation.true_subset.value.get_partition_keys() == ["b", "d"]
+
+        assert isinstance(serializable_evaluation.candidate_subset, SerializableEntitySubset)
+        assert isinstance(serializable_evaluation.candidate_subset.value, KeyRangesPartitionsSubset)
+        assert serializable_evaluation.candidate_subset.value.get_partition_keys() == ["b", "d"]

@@ -2,9 +2,10 @@ import logging
 import sys
 import weakref
 from abc import abstractmethod
+from collections import defaultdict
 from collections.abc import Sequence
 from enum import Enum
-from typing import TYPE_CHECKING, Generic, Optional
+from typing import TYPE_CHECKING, AbstractSet, Generic, Mapping, Optional, Union  # noqa: UP035
 
 from typing_extensions import Protocol, TypeVar, runtime_checkable
 
@@ -12,10 +13,15 @@ import dagster._check as check
 from dagster._core.errors import DagsterInvariantViolationError
 from dagster._core.log_manager import get_log_record_metadata
 from dagster._core.types.pagination import PaginatedResults
+from dagster._record import record
 from dagster._utils.cached_method import cached_method
 from dagster._utils.error import serializable_error_info_from_exc_info
 
 if TYPE_CHECKING:
+    from dagster._core.definitions.dynamic_partitions_request import (
+        AddDynamicPartitionsRequest,
+        DeleteDynamicPartitionsRequest,
+    )
     from dagster._core.instance.instance import DagsterInstance
 
 
@@ -162,3 +168,77 @@ class CachingDynamicPartitionsLoader(DynamicPartitionsStore):
     @cached_method
     def has_dynamic_partition(self, partitions_def_name: str, partition_key: str) -> bool:
         return self._instance.has_dynamic_partition(partitions_def_name, partition_key)
+
+
+@record
+class DynamicPartitionsStoreAfterRequests(DynamicPartitionsStore):
+    """Represents the dynamic partitions that will be in the contained DynamicPartitionsStore
+    after the contained requests are satisfied.
+    """
+
+    wrapped_dynamic_partitions_store: DynamicPartitionsStore
+    added_partition_keys_by_partitions_def_name: Mapping[str, AbstractSet[str]]
+    deleted_partition_keys_by_partitions_def_name: Mapping[str, AbstractSet[str]]
+
+    @staticmethod
+    def from_requests(
+        wrapped_dynamic_partitions_store: DynamicPartitionsStore,
+        dynamic_partitions_requests: Sequence[
+            Union["AddDynamicPartitionsRequest", "DeleteDynamicPartitionsRequest"]
+        ],
+    ) -> "DynamicPartitionsStoreAfterRequests":
+        from dagster._core.definitions.dynamic_partitions_request import (
+            AddDynamicPartitionsRequest,
+            DeleteDynamicPartitionsRequest,
+        )
+
+        added_partition_keys_by_partitions_def_name: dict[str, set[str]] = defaultdict(set)
+        deleted_partition_keys_by_partitions_def_name: dict[str, set[str]] = defaultdict(set)
+
+        for req in dynamic_partitions_requests:
+            name = req.partitions_def_name
+            if isinstance(req, AddDynamicPartitionsRequest):
+                added_partition_keys_by_partitions_def_name[name].update(set(req.partition_keys))
+            elif isinstance(req, DeleteDynamicPartitionsRequest):
+                deleted_partition_keys_by_partitions_def_name[name].update(set(req.partition_keys))
+            else:
+                check.failed(f"Unexpected request type: {req}")
+
+        return DynamicPartitionsStoreAfterRequests(
+            wrapped_dynamic_partitions_store=wrapped_dynamic_partitions_store,
+            added_partition_keys_by_partitions_def_name=added_partition_keys_by_partitions_def_name,
+            deleted_partition_keys_by_partitions_def_name=deleted_partition_keys_by_partitions_def_name,
+        )
+
+    @cached_method
+    def get_dynamic_partitions(self, partitions_def_name: str) -> Sequence[str]:
+        partition_keys = set(
+            self.wrapped_dynamic_partitions_store.get_dynamic_partitions(partitions_def_name)
+        )
+        added_partition_keys = self.added_partition_keys_by_partitions_def_name.get(
+            partitions_def_name, set()
+        )
+        deleted_partition_keys = self.deleted_partition_keys_by_partitions_def_name.get(
+            partitions_def_name, set()
+        )
+        return list((partition_keys | added_partition_keys) - deleted_partition_keys)
+
+    @cached_method
+    def get_paginated_dynamic_partitions(
+        self, partitions_def_name: str, limit: int, ascending: bool, cursor: Optional[str] = None
+    ) -> PaginatedResults[str]:
+        partition_keys = self.get_dynamic_partitions(partitions_def_name)
+        return PaginatedResults.create_from_sequence(
+            seq=partition_keys, limit=limit, ascending=ascending, cursor=cursor
+        )
+
+    def has_dynamic_partition(self, partitions_def_name: str, partition_key: str) -> bool:
+        return partition_key not in self.deleted_partition_keys_by_partitions_def_name.get(
+            partitions_def_name, set()
+        ) and (
+            partition_key
+            in self.added_partition_keys_by_partitions_def_name.get(partitions_def_name, set())
+            or self.wrapped_dynamic_partitions_store.has_dynamic_partition(
+                partitions_def_name, partition_key
+            )
+        )

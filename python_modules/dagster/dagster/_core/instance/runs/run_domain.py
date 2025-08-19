@@ -9,6 +9,7 @@ from dagster._core.definitions.asset_checks.asset_check_evaluation import (
 )
 from dagster._core.definitions.events import AssetKey
 from dagster._core.definitions.partitions.partition_key_range import PartitionKeyRange
+from dagster._core.definitions.partitions.utils.time_window import TimeWindow
 from dagster._core.errors import (
     DagsterInvalidSubsetError,
     DagsterInvariantViolationError,
@@ -58,8 +59,9 @@ if TYPE_CHECKING:
     from dagster._core.execution.plan.plan import ExecutionPlan
     from dagster._core.execution.plan.resume_retry import ReexecutionStrategy
     from dagster._core.instance.instance import DagsterInstance
-    from dagster._core.remote_representation import CodeLocation, RemoteJob
-    from dagster._core.remote_representation.origin import RemoteJobOrigin
+    from dagster._core.remote_origin import RemoteJobOrigin
+    from dagster._core.remote_representation.code_location import CodeLocation
+    from dagster._core.remote_representation.external import RemoteJob
     from dagster._core.snap import ExecutionPlanSnapshot, JobSnap
     from dagster._core.snap.execution_plan_snapshot import (
         ExecutionStepOutputSnap,
@@ -101,7 +103,7 @@ class RunDomain:
     ) -> DagsterRun:
         """Create a run with the given parameters."""
         from dagster._core.definitions.asset_key import AssetCheckKey
-        from dagster._core.remote_representation.origin import RemoteJobOrigin
+        from dagster._core.remote_origin import RemoteJobOrigin
         from dagster._core.snap import ExecutionPlanSnapshot, JobSnap
         from dagster._utils.tags import normalize_tags
 
@@ -280,6 +282,8 @@ class RunDomain:
             if job_snapshot
             else None
         )
+        partitions_definition = None
+
         # ensure that all asset outputs list their execution type, even if the snapshot was
         # created on an older version before it was being set
         if execution_plan_snapshot and asset_graph:
@@ -291,6 +295,12 @@ class RunDomain:
                     adjusted_output = output
 
                     if asset_key and asset_graph.has(asset_key):
+                        if partitions_definition is None:
+                            # this assumes that if one partitioned asset is in a run, all other partitioned
+                            # assets in the run have the same partitions definition.
+                            asset_node = asset_graph.get(asset_key)
+                            partitions_definition = asset_node.partitions_def
+
                         if (
                             output.properties is not None
                             and output.properties.asset_execution_type is None
@@ -326,6 +336,60 @@ class RunDomain:
         else:
             run_op_concurrency = None
 
+        # Calculate partitions_subset for time window partitions
+        partitions_subset = None
+        if partitions_definition is not None:
+            from dagster._core.definitions.partitions.definition import DynamicPartitionsDefinition
+            from dagster._core.definitions.partitions.definition.time_window import (
+                TimeWindowPartitionsDefinition,
+            )
+            from dagster._core.definitions.partitions.subset import KeyRangesPartitionsSubset
+            from dagster._core.remote_representation.external_data import PartitionsSnap
+
+            partition_tag = tags.get(PARTITION_NAME_TAG)
+            partition_key_range = (
+                PartitionKeyRange(
+                    tags[ASSET_PARTITION_RANGE_START_TAG],
+                    tags[ASSET_PARTITION_RANGE_END_TAG],
+                )
+                if (
+                    tags.get(ASSET_PARTITION_RANGE_START_TAG) is not None
+                    and tags.get(ASSET_PARTITION_RANGE_END_TAG) is not None
+                )
+                else None
+            )
+            if partition_tag is not None or partition_key_range is not None:
+                if partition_tag is not None and partition_key_range is not None:
+                    raise DagsterInvariantViolationError(
+                        f"Cannot have {ASSET_PARTITION_RANGE_START_TAG} or"
+                        f" {ASSET_PARTITION_RANGE_END_TAG} tags set along with"
+                        f" {PARTITION_NAME_TAG}"
+                    )
+                if partition_tag is not None:
+                    partition_key_range = PartitionKeyRange(partition_tag, partition_tag)
+            if partition_key_range is not None:
+                # only store certain subsets that can be represented compactly
+                if isinstance(partitions_definition, TimeWindowPartitionsDefinition):
+                    start_window = partitions_definition.time_window_for_partition_key(
+                        partition_key_range.start
+                    )
+                    end_window = partitions_definition.time_window_for_partition_key(
+                        partition_key_range.end
+                    )
+                    partitions_subset = partitions_definition.get_partition_subset_in_time_window(
+                        TimeWindow(start_window.start, end_window.end)
+                    ).to_serializable_subset()
+
+                    # only store the subset of time window partitions, since those can be compressed efficiently
+                elif (
+                    isinstance(partitions_definition, DynamicPartitionsDefinition)
+                    and partitions_definition.name is not None
+                ):
+                    partitions_subset = KeyRangesPartitionsSubset(
+                        key_ranges=[partition_key_range],
+                        partitions_snap=PartitionsSnap.from_def(partitions_definition),
+                    )
+
         return DagsterRun(
             job_name=job_name,
             run_id=run_id,
@@ -346,6 +410,7 @@ class RunDomain:
             has_repository_load_data=execution_plan_snapshot is not None
             and execution_plan_snapshot.repository_load_data is not None,
             run_op_concurrency=run_op_concurrency,
+            partitions_subset=partitions_subset,
         )
 
     def create_reexecuted_run(
@@ -363,7 +428,8 @@ class RunDomain:
         from dagster._core.execution.backfill import BulkActionStatus
         from dagster._core.execution.plan.resume_retry import ReexecutionStrategy
         from dagster._core.execution.plan.state import KnownExecutionState
-        from dagster._core.remote_representation import CodeLocation, RemoteJob
+        from dagster._core.remote_representation.code_location import CodeLocation
+        from dagster._core.remote_representation.external import RemoteJob
 
         check.inst_param(parent_run, "parent_run", DagsterRun)
         check.inst_param(code_location, "code_location", CodeLocation)

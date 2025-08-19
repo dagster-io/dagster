@@ -8,7 +8,6 @@ from typing_extensions import TypeAlias
 from dagster_dg_core.utils import format_multiline_str
 
 DgWarningIdentifier: TypeAlias = Literal[
-    "autoload_defs_with_definitions_py",
     "cli_config_in_workspace_project",
     "deprecated_user_config_location",
     "deprecated_python_environment",

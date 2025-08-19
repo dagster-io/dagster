@@ -2,6 +2,8 @@
 description: Build Dagster pipelines using modular components.
 sidebar_position: 20
 title: Building pipelines with components
+canonicalUrl: "/guides/build/components/building-pipelines-with-components"
+slug: "/guides/build/components/building-pipelines-with-components"
 ---
 
 :::note

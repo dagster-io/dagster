@@ -2,6 +2,8 @@
 description: Use dagster-airlift to migrate an Airflow DAG to Dagster at the task level..
 sidebar_position: 30
 title: Migrate from Airflow to Dagster at the task level
+canonicalUrl: '/migration/airflow-to-dagster/airlift-v1/task-level-migration'
+slug: '/migration/airflow-to-dagster/airlift-v1/task-level-migration'
 ---
 
 import UseAirliftComponent from '@site/docs/partials/\_UseAirliftComponent.md';

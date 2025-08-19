@@ -6,8 +6,9 @@ import dagster._check as check
 from dagster._core.definitions.asset_key import AssetKey
 from dagster._core.definitions.selector import RepositorySelector
 from dagster._core.errors import DagsterUserCodeProcessError
-from dagster._core.remote_representation import RemotePartitionSet, RepositoryHandle
+from dagster._core.remote_representation.external import RemotePartitionSet
 from dagster._core.remote_representation.external_data import PartitionExecutionErrorSnap
+from dagster._core.remote_representation.handle import RepositoryHandle
 from dagster._core.storage.dagster_run import DagsterRunStatus, RunPartitionData, RunsFilter
 from dagster._core.storage.tags import (
     PARTITION_NAME_TAG,

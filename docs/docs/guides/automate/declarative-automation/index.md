@@ -7,6 +7,8 @@ keywords:
   - automation condition
 sidebar_position: 20
 title: Declarative Automation
+canonicalUrl: '/guides/automate/declarative-automation'
+slug: '/guides/automate/declarative-automation'
 ---
 
 Declarative Automation is a framework that uses information about the status of your assets and their dependencies to launch executions of your assets.
@@ -15,7 +17,7 @@ Not sure what automation method to use? Check out the [automation overview](/gui
 
 :::note
 
-To use Declarative Automation, you will need to enable the default **[automation condition sensor](automation-condition-sensors)** in the UI, which evaluates automation conditions and launches runs in response to their statuses. To do so, navigate to **Automation**, find the desired code location, and toggle on the **default_automation_condition_sensor** sensor.
+To use Declarative Automation, you will need to enable the default **[automation condition sensor](/guides/automate/declarative-automation/automation-condition-sensors)** in the UI, which evaluates automation conditions and launches runs in response to their statuses. To do so, navigate to **Automation**, find the desired code location, and toggle on the **default_automation_condition_sensor** sensor.
 
 :::
 
@@ -90,7 +92,7 @@ In the example below, as soon as all hourly partitions of the upstream asset are
 - For **time-partitioned** assets, this condition will only request the _latest_ time partition of the asset.
 - This condition will only consider partitions that were added to the asset after the condition was enabled.
 
-To customize this behavior, see the [customizing on_missing](customizing-automation-conditions/customizing-on-missing-condition) guide.
+To customize this behavior, see the [customizing on_missing](/guides/automate/declarative-automation/customizing-automation-conditions/customizing-on-missing-condition) guide.
 
 </TabItem>
 

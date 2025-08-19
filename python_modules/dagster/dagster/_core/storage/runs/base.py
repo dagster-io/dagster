@@ -25,7 +25,7 @@ from dagster._daemon.types import DaemonHeartbeat
 from dagster._utils import PrintFn
 
 if TYPE_CHECKING:
-    from dagster._core.remote_representation.origin import RemoteJobOrigin
+    from dagster._core.remote_origin import RemoteJobOrigin
 
 
 class RunGroupInfo(TypedDict):

@@ -40,7 +40,7 @@ class SnowflakePolarsTypeHandler(DbTypeHandler[pl.DataFrame]):
                     return [SnowflakePolarsTypeHandler()]
 
             @asset(
-                key_prefix=["my_schema"]  # will be used as the schema in snowflake
+                key_prefix=["my_schema"],  # will be used as the schema in snowflake
             )
             def my_table() -> pl.DataFrame:  # the name of the asset will be the table name
                 ...
@@ -153,7 +153,7 @@ class SnowflakePolarsIOManager(SnowflakeIOManager):
             import polars as pl
 
             @asset(
-                key_prefix=["my_schema"]  # will be used as the schema in snowflake
+                key_prefix=["my_schema"],  # will be used as the schema in snowflake
             )
             def my_table() -> pl.DataFrame:  # the name of the asset will be the table name
                 ...
@@ -161,7 +161,7 @@ class SnowflakePolarsIOManager(SnowflakeIOManager):
             defs = Definitions(
                 assets=[my_table],
                 resources={
-                    "io_manager": SnowflakePolarsIOManager(database="MY_DATABASE", account=EnvVar("SNOWFLAKE_ACCOUNT"), ...)
+                    "io_manager": SnowflakePolarsIOManager(database="MY_DATABASE", account=EnvVar("SNOWFLAKE_ACCOUNT"))
                 }
             )
 
@@ -173,7 +173,7 @@ class SnowflakePolarsIOManager(SnowflakeIOManager):
             defs = Definitions(
                 assets=[my_table],
                 resources={
-                    "io_manager": SnowflakePolarsIOManager(database="my_database", schema="my_schema", ...)
+                    "io_manager": SnowflakePolarsIOManager(database="my_database", schema="my_schema")
                 }
             )
 
@@ -185,7 +185,7 @@ class SnowflakePolarsIOManager(SnowflakeIOManager):
         .. code-block:: python
 
             @asset(
-                key_prefix=["my_schema"]  # will be used as the schema in snowflake
+                key_prefix=["my_schema"],  # will be used as the schema in snowflake
             )
             def my_table() -> pl.DataFrame:
                 ...
@@ -257,7 +257,7 @@ def snowflake_polars_io_manager(init_context):
             import polars as pl
 
             @asset(
-                key_prefix=["my_schema"]  # will be used as the schema in snowflake
+                key_prefix=["my_schema"],  # will be used as the schema in snowflake
             )
             def my_table() -> pl.DataFrame:  # the name of the asset will be the table name
                 ...
@@ -267,8 +267,7 @@ def snowflake_polars_io_manager(init_context):
                 resources={
                     "io_manager": snowflake_polars_io_manager.configured({
                         "database": "my_database",
-                        "account" : {"env": "SNOWFLAKE_ACCOUNT"},
-                        ...
+                        "account": {"env": "SNOWFLAKE_ACCOUNT"}
                     })
                 }
             )
@@ -281,7 +280,7 @@ def snowflake_polars_io_manager(init_context):
             defs = Definitions(
                 assets=[my_table],
                 resources={"io_manager": snowflake_polars_io_manager.configured(
-                    {"database": "my_database", "schema": "my_schema", ...} # will be used as the schema
+                    {"database": "my_database", "schema": "my_schema"} # will be used as the schema
                 )}
             )
 
@@ -293,7 +292,7 @@ def snowflake_polars_io_manager(init_context):
         .. code-block:: python
 
             @asset(
-                key_prefix=["my_schema"]  # will be used as the schema in snowflake
+                key_prefix=["my_schema"],  # will be used as the schema in snowflake
             )
             def my_table() -> pl.DataFrame:
                 ...

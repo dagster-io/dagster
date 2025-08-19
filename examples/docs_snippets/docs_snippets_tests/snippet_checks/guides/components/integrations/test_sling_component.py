@@ -5,6 +5,7 @@ from contextlib import ExitStack
 from pathlib import Path
 from typing import Any, Optional
 
+import pytest
 from dagster_dg_core.utils import activate_venv
 
 from dagster._utils.env import environ
@@ -33,6 +34,7 @@ SNIPPETS_DIR = (
 )
 
 
+@pytest.mark.flaky(max_runs=2)
 def test_components_docs_sling_workspace(
     update_snippets: bool,
 ) -> None:

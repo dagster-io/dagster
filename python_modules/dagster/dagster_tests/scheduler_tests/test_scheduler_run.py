@@ -12,15 +12,14 @@ import pytest
 from dagster import AssetExecutionContext, AssetKey, DefaultScheduleStatus, schedule
 from dagster._core.definitions.run_request import RunRequest
 from dagster._core.instance import DagsterInstance
-from dagster._core.remote_representation import (
-    CodeLocation,
-    GrpcServerCodeLocation,
+from dagster._core.remote_origin import (
     GrpcServerCodeLocationOrigin,
+    ManagedGrpcPythonEnvCodeLocationOrigin,
     RemoteInstigatorOrigin,
     RemoteRepositoryOrigin,
 )
+from dagster._core.remote_representation.code_location import CodeLocation, GrpcServerCodeLocation
 from dagster._core.remote_representation.external import RemoteRepository, RemoteSchedule
-from dagster._core.remote_representation.origin import ManagedGrpcPythonEnvCodeLocationOrigin
 from dagster._core.scheduler.instigation import (
     InstigatorState,
     InstigatorStatus,

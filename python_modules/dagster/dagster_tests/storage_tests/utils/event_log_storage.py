@@ -67,7 +67,7 @@ from dagster._core.execution.plan.objects import StepFailureData, StepSuccessDat
 from dagster._core.execution.stats import StepEventStatus
 from dagster._core.instance import RUNLESS_JOB_NAME, RUNLESS_RUN_ID
 from dagster._core.loader import LoadingContextForTest
-from dagster._core.remote_representation.origin import (
+from dagster._core.remote_origin import (
     InProcessCodeLocationOrigin,
     RemoteJobOrigin,
     RemoteRepositoryOrigin,
@@ -484,7 +484,7 @@ class TestEventLogStorage:
     def supports_get_logs_for_all_runs_by_log_id(self):
         return True
 
-    def supports_multiple_event_type_queries(self):
+    def supports_multiple_event_type_queries(self) -> bool:
         return True
 
     def set_default_op_concurrency(self, instance, storage, limit):

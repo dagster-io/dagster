@@ -10,7 +10,7 @@ your data warehouse.
 
 Related Guides:
 
-* `Using Dagster with Snowflake guide <https://docs.dagster.io/integrations/snowflake>`_
+* `Using Dagster with Snowflake guides <https://docs.dagster.io/integrations/libraries/snowflake>`_
 * `Snowflake I/O manager reference <https://docs.dagster.io/integrations/libraries/snowflake/reference>`_
 
 .. currentmodule:: dagster_snowflake_pandas

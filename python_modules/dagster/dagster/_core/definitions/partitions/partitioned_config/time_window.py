@@ -86,10 +86,17 @@ def hourly_partitioned_config(
 
     .. code-block:: python
 
-        @hourly_partitioned_config(start_date=datetime(2022, 03, 12))
+        from datetime import datetime
+        from dagster import hourly_partitioned_config
+
+        @hourly_partitioned_config(start_date=datetime(2022, 3, 12))
+        def my_hourly_partitioned_config(start: datetime, end: datetime):
+            return {"start": start.strftime("%Y-%m-%d %H:%M"), "end": end.strftime("%Y-%m-%d %H:%M")}
         # creates partitions (2022-03-12-00:00, 2022-03-12-01:00), (2022-03-12-01:00, 2022-03-12-02:00), ...
 
-        @hourly_partitioned_config(start_date=datetime(2022, 03, 12), minute_offset=15)
+        @hourly_partitioned_config(start_date=datetime(2022, 3, 12), minute_offset=15)
+        def my_offset_hourly_partitioned_config(start: datetime, end: datetime):
+            return {"start": start.strftime("%Y-%m-%d %H:%M"), "end": end.strftime("%Y-%m-%d %H:%M")}
         # creates partitions (2022-03-12-00:15, 2022-03-12-01:15), (2022-03-12-01:15, 2022-03-12-02:15), ...
     """
 
@@ -163,10 +170,17 @@ def daily_partitioned_config(
 
     .. code-block:: python
 
+        from datetime import datetime
+        from dagster import daily_partitioned_config
+
         @daily_partitioned_config(start_date="2022-03-12")
+        def my_partitioned_config(start: datetime, end: datetime):
+            return {"start": start.strftime("%Y-%m-%d"), "end": end.strftime("%Y-%m-%d")}
         # creates partitions (2022-03-12-00:00, 2022-03-13-00:00), (2022-03-13-00:00, 2022-03-14-00:00), ...
 
         @daily_partitioned_config(start_date="2022-03-12", minute_offset=15, hour_offset=16)
+        def my_offset_partitioned_config(start: datetime, end: datetime):
+            return {"start": start.strftime("%Y-%m-%d"), "end": end.strftime("%Y-%m-%d")}
         # creates partitions (2022-03-12-16:15, 2022-03-13-16:15), (2022-03-13-16:15, 2022-03-14-16:15), ...
     """
 
@@ -247,10 +261,17 @@ def weekly_partitioned_config(
 
     .. code-block:: python
 
+        from datetime import datetime
+        from dagster import weekly_partitioned_config
+
         @weekly_partitioned_config(start_date="2022-03-12")
+        def my_weekly_partitioned_config(start: datetime, end: datetime):
+            return {"start": start.strftime("%Y-%m-%d"), "end": end.strftime("%Y-%m-%d")}
         # creates partitions (2022-03-13-00:00, 2022-03-20-00:00), (2022-03-20-00:00, 2022-03-27-00:00), ...
 
         @weekly_partitioned_config(start_date="2022-03-12", minute_offset=15, hour_offset=3, day_offset=6)
+        def my_offset_weekly_partitioned_config(start: datetime, end: datetime):
+            return {"start": start.strftime("%Y-%m-%d"), "end": end.strftime("%Y-%m-%d")}
         # creates partitions (2022-03-12-03:15, 2022-03-19-03:15), (2022-03-19-03:15, 2022-03-26-03:15), ...
     """
 
@@ -330,10 +351,17 @@ def monthly_partitioned_config(
 
     .. code-block:: python
 
+        from datetime import datetime
+        from dagster import monthly_partitioned_config
+
         @monthly_partitioned_config(start_date="2022-03-12")
+        def my_monthly_partitioned_config(start: datetime, end: datetime):
+            return {"start": start.strftime("%Y-%m-%d"), "end": end.strftime("%Y-%m-%d")}
         # creates partitions (2022-04-01-00:00, 2022-05-01-00:00), (2022-05-01-00:00, 2022-06-01-00:00), ...
 
         @monthly_partitioned_config(start_date="2022-03-12", minute_offset=15, hour_offset=3, day_offset=5)
+        def my_offset_monthly_partitioned_config(start: datetime, end: datetime):
+            return {"start": start.strftime("%Y-%m-%d"), "end": end.strftime("%Y-%m-%d")}
         # creates partitions (2022-04-05-03:15, 2022-05-05-03:15), (2022-05-05-03:15, 2022-06-05-03:15), ...
     """
 

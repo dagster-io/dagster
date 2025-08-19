@@ -39,7 +39,7 @@ In order to make spin-up more efficient, `dagster-airlift` caches the state of t
 
 ## Automating changes to code locations
 
-If changes to your Airflow instance are controlled by a CI/CD process, you can use the Dagster GraphQL client to add a step to automatically trigger a redeploy of the relevant code location. To learn more, see the [Dagster GraphQL client docs](/guides/operate/graphql/graphql-client).
+If changes to your Airflow instance are controlled by a CI/CD process, you can use the Dagster GraphQL client to add a step to automatically trigger a redeploy of the relevant code location. To learn more, see the [Dagster GraphQL client docs](/api/graphql/graphql-client).
 
 ## Peering to multiple Airflow instances
 

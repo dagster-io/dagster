@@ -8,9 +8,20 @@ data assets that depend on specific dbt models, or to define the computation req
 the sources that your dbt models depend on.
 
 Related documentation pages: `dbt <https://docs.dagster.io/integrations/libraries/dbt>`_ and
-`dbt Cloud <https://docs.dagster.io/integrations/dbt-cloud>`_.
+`dbt Cloud <https://docs.dagster.io/integrations/libraries/dbt/dbt-cloud>`_.
 
 .. currentmodule:: dagster_dbt
+
+**************************
+Component YAML
+**************************
+
+To use the dbt component, see the `dbt component integration guide <https://docs.dagster.io/integrations/libraries/dbt/dbt-component>`_.
+
+When you scaffold a dbt component definition, the following ``defs.yaml`` configuration file will be created:
+
+.. literalinclude:: ../../../../../../examples/docs_snippets/docs_snippets/guides/components/integrations/dbt-component/7-component.yaml
+    :language: yaml
 
 ***********
 dagster-dbt

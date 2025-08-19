@@ -14,7 +14,9 @@ from dagster_snowflake.resources import SnowflakeResource
 @public
 @preview
 class SnowflakeConnectionComponentBase(dg.Component, dg.Resolvable, dg.Model, SQLClient):
-    """A component that represents a Snowflake connection."""
+    """A component that represents a Snowflake connection. Use this component if you are
+    also using the TemplatedSqlComponent to execute SQL queries, and need to connect to Snowflake.
+    """
 
     @cached_property
     def _snowflake_resource(self) -> SnowflakeResource:
