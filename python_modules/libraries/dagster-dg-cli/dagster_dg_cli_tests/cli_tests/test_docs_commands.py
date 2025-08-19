@@ -11,7 +11,7 @@ import pytest
 import requests
 import yaml
 from dagster_dg_cli.cli import docs
-from dagster_dg_core.utils import activate_venv, get_venv_executable, install_to_venv
+from dagster_dg_core.utils import activate_venv, get_venv_executable, install_to_venv, pushd
 from dagster_graphql.client.client import DagsterGraphQLClient
 from dagster_test.dg_utils.utils import (
     ProxyRunner,
@@ -31,9 +31,10 @@ from dagster_test.dg_utils.utils import (
 
 
 @pytest.mark.parametrize("get_port", [None, find_free_port])
-def test_docs_component_type_success(get_port: Optional[Callable]):
+def test_docs_component_type_success(tmp_path, get_port: Optional[Callable]):
     port = get_port() if get_port else None
     with (
+        pushd(tmp_path),
         ProxyRunner.test(use_fixed_test_components=True) as runner,
         isolated_components_venv(
             runner,
