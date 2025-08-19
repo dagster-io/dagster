@@ -1,4 +1,5 @@
 from collections.abc import Iterator
+from typing import TYPE_CHECKING
 
 from dagster import AssetExecutionContext, AssetMaterialization, ConfigurableResource
 from dagster_shared.utils.cached_method import cached_method
@@ -6,9 +7,10 @@ from databricks.sdk import WorkspaceClient
 from databricks.sdk.service import compute, jobs
 from pydantic import Field
 
-from dagster_databricks.components.databricks_asset_bundle.configs import (
-    DatabricksAssetBundleComponentConfig,
-)
+if TYPE_CHECKING:
+    from dagster_databricks.components.databricks_asset_bundle.component import (
+        DatabricksAssetBundleComponent,
+    )
 
 
 class DatabricksWorkspace(ConfigurableResource):
@@ -27,9 +29,9 @@ class DatabricksWorkspace(ConfigurableResource):
         )
 
     def submit_and_poll(
-        self, config: DatabricksAssetBundleComponentConfig, context: AssetExecutionContext
+        self, component: "DatabricksAssetBundleComponent", context: AssetExecutionContext
     ) -> Iterator[AssetMaterialization]:
-        tasks = config.databricks_config.tasks
+        tasks = component.databricks_config.tasks
 
         # Get selected asset keys that are being materialized
         assets_def = context.assets_def
@@ -75,9 +77,9 @@ class DatabricksWorkspace(ConfigurableResource):
             cluster_config = (
                 {
                     "new_cluster": compute.ClusterSpec(
-                        spark_version=config.custom_config.spark_version,
-                        node_type_id=config.custom_config.node_type_id,
-                        num_workers=config.custom_config.num_workers,
+                        spark_version=component.cluster_config.spark_version,
+                        node_type_id=component.cluster_config.node_type_id,
+                        num_workers=component.cluster_config.num_workers,
                     )
                 }
                 if task.needs_cluster
