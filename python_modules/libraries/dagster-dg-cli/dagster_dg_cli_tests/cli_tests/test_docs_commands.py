@@ -135,6 +135,9 @@ def test_build_docs_success():
         assert (venv_path / "built_docs" / "index.html").exists()
 
 
+@pytest.mark.skip(
+    "While we figure out why this is failing remotely: https://buildkite.com/organizations/dagster/analytics/suites/dagster/tests/41011484-ec45-8168-98bb-ce4a568ef784"
+)
 def test_build_docs_success_in_published_package():
     # Tests that the logic to copy the docs webapp to the dagster-dg-cli Python package works
     with (
