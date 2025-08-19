@@ -12,9 +12,7 @@ These assets are a great candidate for a [component](/guides/build/components/cr
 
 Here we will use a custom component to streamline the development of our assets and replace their `Definitions` in our project with a `Component` which can generate them instead.
 
-<p align="center">
-  <img src="/images/tutorial/dagster-tutorial/overviews/components.png" alt="2048 resolution" width="75%" />
-</p>
+![2048 resolution](/images/tutorial/dagster-tutorial/overviews/components.png)
 
 ## 1. Scaffold a custom component
 

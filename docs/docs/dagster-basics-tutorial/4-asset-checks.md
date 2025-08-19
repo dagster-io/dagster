@@ -8,9 +8,7 @@ When building data applications, it is important to ensure the quality of all un
 
 In Dagster, these quality measures are called [asset checks](/guides/test/asset-checks) and are defined in a similar way to assets. When an asset is materialized, asset checks also execute and verify that certain criteria are met based on the logic within the check.
 
-<p align="center">
-  <img src="/images/tutorial/dagster-tutorial/overviews/asset-checks.png" alt="2048 resolution" width="75%" />
-</p>
+![2048 resolution](/images/tutorial/dagster-tutorial/overviews/asset-checks.png)
 
 ## 1. Define an asset check
 

@@ -27,9 +27,7 @@ Dagster’s programming model is built on three layers that work together: `Comp
 - **Ops: The low-level execution unit**
   At the lowest layer are `Ops` (short for “operations”). `Ops` are simple Python functions that represent the most basic unit of computation in Dagster.
 
-<p align="center">
-  <img src="/images/tutorial/dagster-tutorial/overviews/overview-1.png" alt="2048 resolution" width="25%" />
-</p>
+![2048 resolution](/images/tutorial/dagster-tutorial/overviews/overview-1.png)
 
 If you’d like to dive deeper into specific Dagster features and how they interact, check out our [Concepts page](/getting-started/concepts).
 

@@ -8,9 +8,7 @@ Right now, we have several assets that are independent of each other. In most da
 
 We will add another asset to our `Definitions` and link it to the assets we had previously defined.
 
-<p align="center">
-  <img src="/images/tutorial/dagster-tutorial/overviews/dependencies.png" alt="2048 resolution" width="75%" />
-</p>
+![2048 resolution](/images/tutorial/dagster-tutorial/overviews/dependencies.png)
 
 ## 1. Create a downstream asset
 

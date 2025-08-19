@@ -8,9 +8,7 @@ There are several ways to [automate assets](/guides/automate) in Dagster. Dagste
 
 Similar to resources, schedules exist within the `Definitions` layer though they are not directly executed as `Ops`.
 
-<p align="center">
-  <img src="/images/tutorial/dagster-tutorial/overviews/schedules.png" alt="2048 resolution" width="75%" />
-</p>
+![2048 resolution](/images/tutorial/dagster-tutorial/overviews/schedules.png)
 
 ## 1. Scheduled assets
 

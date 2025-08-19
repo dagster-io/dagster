@@ -8,9 +8,7 @@ Dagster follows standard Python conventions, and most work in Dagster begins by 
 
 To streamline project creation, Dagster provides the [`create-dagster` CLI](/api/clis/create-dagster), which quickly scaffolds a Python package containing a Dagster `Definitions` object. When we initialize the project the `Definitions` will not contain any other Dagster objects.
 
-<p align="center">
-  <img src="/images/tutorial/dagster-tutorial/overviews/definitions.png" alt="2048 resolution" width="50%" />
-</p>
+![2048 resolution](/images/tutorial/dagster-tutorial/overviews/definitions.png)
 
 ## 1: Scaffold a Dagster project
 

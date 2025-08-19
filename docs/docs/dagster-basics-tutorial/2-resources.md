@@ -12,9 +12,7 @@ Since the same database will be used across all three assets, rather than adding
 
 Resources are Dagster objects much like assets, however they are not executed as `Ops`. Some Dagster abstractions in the `Definitions` layer compliment other objects without being able to be directly executed.
 
-<p align="center">
-  <img src="/images/tutorial/dagster-tutorial/overviews/resources.png" alt="2048 resolution" width="50%" />
-</p>
+![2048 resolution](/images/tutorial/dagster-tutorial/overviews/resources.png)
 
 ## 1. Define the DuckDB resource
 

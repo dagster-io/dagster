@@ -8,9 +8,7 @@ sidebar_position: 20
 
 All Dagster objects, such as assets, are added to the `Definitions` that was created when we initialized the project. The assets are then executed as lower level `Ops` within the context of the project environment.
 
-<p align="center">
-  <img src="/images/tutorial/dagster-tutorial/overviews/assets.png" alt="2048 resolution" width="50%" />
-</p>
+![2048 resolution](/images/tutorial/dagster-tutorial/overviews/assets.png)
 
 ## 1. Scaffold an asset
 
