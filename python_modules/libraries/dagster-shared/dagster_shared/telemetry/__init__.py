@@ -300,8 +300,8 @@ def _get_telemetry_instance_id() -> Optional[str]:
 def _set_telemetry_instance_id() -> str:
     import yaml
 
-    click.secho(TELEMETRY_TEXT)
-    click.secho(SLACK_PROMPT)
+    click.secho(TELEMETRY_TEXT, err=True)
+    click.secho(SLACK_PROMPT, err=True)
 
     telemetry_id_path = os.path.join(get_or_create_dir_from_dagster_home(TELEMETRY_STR), "id.yaml")
     instance_id = str(uuid.uuid4())

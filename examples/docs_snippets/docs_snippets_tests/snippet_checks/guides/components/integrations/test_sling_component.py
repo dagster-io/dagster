@@ -34,7 +34,6 @@ SNIPPETS_DIR = (
 )
 
 
-@pytest.mark.flaky(max_runs=2)
 def test_components_docs_sling_workspace(
     update_snippets: bool,
 ) -> None:
@@ -74,6 +73,9 @@ def test_components_docs_sling_workspace(
             cmd="dg scaffold defs dagster_sling.SlingReplicationCollectionComponent sling_ingest",
             snippet_path=SNIPPETS_DIR
             / f"{context.get_next_snip_number()}-scaffold-sling-component.txt",
+            snippet_replace_regex=[
+                (r"Downloading sling binary.*\n", ""),
+            ],
         )
 
         # Tree the project
