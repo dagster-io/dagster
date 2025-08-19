@@ -925,7 +925,7 @@ def upload_to_gist(content: str, filename: str = "weekly_shipping_report.md") ->
             f.write(content)
             temp_file = f.name
 
-        cmd = ["gh", "gist", "create", temp_file, "--filename", filename, "--public"]
+        cmd = ["gh", "gist", "create", temp_file, "--filename", filename]
         result = run_command(cmd)
 
         os.unlink(temp_file)  # Clean up temp file

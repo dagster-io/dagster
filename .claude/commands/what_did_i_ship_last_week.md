@@ -13,7 +13,7 @@ Generate a comprehensive, impact-focused report of commits and contributions mad
 - Uses the current git user's email for commit attribution
 - Searches across all Dagster repositories (`dagster`, `internal`, `dagster-compass`)
 - Generates a detailed, impact-focused report
-- Uploads the report to a public GitHub Gist
+- Uploads the report to a private GitHub Gist
 
 ## What it does
 
@@ -25,7 +25,7 @@ Generate a comprehensive, impact-focused report of commits and contributions mad
 3. **Parallel Execution**: Fetches commit data from all repos simultaneously for speed
 4. **Impact Analysis**: Analyzes commits accurately, distinguishing between features, bug fixes, and routine maintenance
 5. **Generate Report**: Creates a model-driven markdown report focusing on project impact
-6. **Upload to Gist**: Always uploads the report to a public GitHub Gist
+6. **Upload to Gist**: Always uploads the report to a private GitHub Gist
 
 ## Optimizations Implemented
 
@@ -59,7 +59,7 @@ Generate a comprehensive, impact-focused report of commits and contributions mad
 
 ## Output
 
-The command generates a model-driven markdown report and uploads it to a public GitHub Gist. The report includes:
+The command generates a model-driven markdown report and uploads it to a private GitHub Gist. The report includes:
 
 - **Impact Summary**: Accurate categorization of work organized by project area (features, fixes, maintenance, etc.)
 - **Significant Changes**: Key accomplishments with honest assessment of their scope and impact
@@ -231,7 +231,7 @@ When run from within a repository:
 ## Example Usage
 
 ```bash
-# Generate impact-focused weekly report and upload to gist
+# Generate impact-focused weekly report and upload to private gist
 /what_did_i_ship_last_week
 ```
 
