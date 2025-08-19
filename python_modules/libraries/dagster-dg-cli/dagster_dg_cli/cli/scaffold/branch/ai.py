@@ -13,12 +13,12 @@ from dagster_dg_core.context import DgContext
 from dagster_shared.record import record
 
 from dagster_dg_cli.cli.scaffold.branch.claude.diagnostics import ClaudeDiagnostics
-from dagster_dg_cli.cli.scaffold.branch.claude.sdk_client import ClaudeSDKClient
 from dagster_dg_cli.cli.scaffold.branch.constants import (
     ALLOWED_COMMANDS_PLANNING,
     ALLOWED_COMMANDS_SCAFFOLDING,
     ModelType,
 )
+from dagster_dg_cli.cli.scaffold.branch.version_utils import ensure_claude_sdk_python_version
 from dagster_dg_cli.utils.ui import daggy_spinner_context
 
 
@@ -320,6 +320,10 @@ def scaffold_content_for_prompt(
     model: ModelType = "sonnet",
 ) -> None:
     """Scaffolds content for the user's prompt using Claude Code SDK."""
+    ensure_claude_sdk_python_version()
+
+    from dagster_dg_cli.cli.scaffold.branch.claude.sdk_client import ClaudeSDKClient
+
     context_str = input_type.get_context(user_input)
     prompt = load_scaffolding_prompt(context_str)
     allowed_tools = get_allowed_commands_scaffolding() + input_type.additional_allowed_tools()
