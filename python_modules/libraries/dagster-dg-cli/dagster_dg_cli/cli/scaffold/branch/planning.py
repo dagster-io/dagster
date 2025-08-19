@@ -6,17 +6,19 @@ and provides bidirectional communication with Claude for interactive sessions.
 """
 
 import asyncio
-from typing import Any, Optional
+from typing import TYPE_CHECKING, Any, Optional
 
 import click
-from claude_code_sdk.types import AssistantMessage, TextBlock
 from dagster_dg_core.context import DgContext
 from dagster_shared.record import record
 
 from dagster_dg_cli.cli.scaffold.branch.ai import PrintOutputChannel
 from dagster_dg_cli.cli.scaffold.branch.claude.diagnostics import ClaudeDiagnostics
-from dagster_dg_cli.cli.scaffold.branch.claude.sdk_client import ClaudeSDKClient
 from dagster_dg_cli.cli.scaffold.branch.constants import ALLOWED_COMMANDS_PLANNING
+from dagster_dg_cli.cli.scaffold.branch.version_utils import ensure_claude_sdk_python_version
+
+if TYPE_CHECKING:
+    from dagster_dg_cli.cli.scaffold.branch.claude.sdk_client import ClaudeSDKClient
 
 
 @record
@@ -54,7 +56,7 @@ class PlanningContext:
 class PlanGenerator:
     """Main orchestrator for plan generation and refinement."""
 
-    def __init__(self, claude_client: ClaudeSDKClient, diagnostics: ClaudeDiagnostics):
+    def __init__(self, claude_client: "ClaudeSDKClient", diagnostics: ClaudeDiagnostics):
         """Initialize the plan generator.
 
         Args:
@@ -256,6 +258,10 @@ Provide the complete updated plan in the same markdown format as before."""
         Returns:
             The plan content as markdown text
         """
+        ensure_claude_sdk_python_version()
+
+        from claude_code_sdk.types import AssistantMessage, TextBlock
+
         self.diagnostics.debug(
             category="plan_extraction_start",
             message="Extracting plan from Claude messages",
