@@ -1167,4 +1167,3 @@ def defensively_unpack_execution_plan_snapshot_query(
         return deserialize_value(decoded_str, (ExecutionPlanSnapshot, JobSnap))
     except JSONDecodeError:
         _warn("Could not parse json in snapshot table.")
-        return None
