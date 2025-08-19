@@ -1,6 +1,7 @@
-from dagster import AssetKey
+from dagster import AssetDep, AssetKey
 from dagster_databricks.components.databricks_asset_bundle.component import (
     DatabricksAssetBundleComponent,
+    snake_case,
 )
 
 from dagster_databricks_tests.components.databricks_asset_bundle.conftest import (
@@ -21,6 +22,9 @@ def test_component_asset_spec():
         assert asset_spec.metadata["task_key"].value == task.task_key
         assert asset_spec.metadata["task_type"].value == task.task_type
         assert asset_spec.metadata["task_config"].value == task.task_config_metadata
+        assert asset_spec.deps == [
+            AssetDep(snake_case(dep_task_key)) for dep_task_key in task.depends_on
+        ]
         if task.libraries:
             assert asset_spec.metadata["libraries"].value == task.libraries
         else:
