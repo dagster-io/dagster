@@ -16,42 +16,31 @@ from dagster.components.core.context import ComponentLoadContext
 if TYPE_CHECKING:
     from pydantic import BaseModel
 
-_STATE_KEY_ATTR = "__state_key__"
-
-
-def _set_state_key(
-    component: "StateBackedComponent", context: ComponentLoadContext
-) -> "StateBackedComponent":
-    key = context.path.relative_to(context.defs_module_path).as_posix().replace("/", "_")
-    setattr(component, _STATE_KEY_ATTR, key)
-    return component
-
-
-def _get_state_key(component: "StateBackedComponent") -> str:
-    return getattr(component, _STATE_KEY_ATTR)
-
 
 class StateBackedComponent(Component):
     @classmethod
     def load(cls, attributes: Optional["BaseModel"], context: "ComponentLoadContext") -> Self:
-        # When loading the component, we compute a state key and stash it on the component
-        # so that we don't need to keep track of the ComponentLoadContext later on.
+        """Loads the component and marks its defs_state_key on the component tree."""
         loaded_component = super().load(attributes, context)
-        _set_state_key(loaded_component, context)
+        context.component_tree.mark_component_defs_state_key(
+            defs_state_key=loaded_component.get_defs_state_key(),
+            component_path=context.component_path,
+        )
         return loaded_component
 
-    def get_state_key(self) -> str:
-        return _get_state_key(self)
+    def get_defs_state_key(self) -> str:
+        """Returns a key that uniquely identifies the state for this component."""
+        return self.__class__.__name__
 
     def build_defs(self, context: ComponentLoadContext) -> Definitions:
-        key = self.get_state_key()
+        key = self.get_defs_state_key()
 
         with DefinitionsLoadContext.get().temp_state_path(key) as state_path:
             return self.build_defs_from_state(context, state_path=state_path)
 
     async def refresh_state(self) -> None:
         """Rebuilds the state for this component and persists it to the current StateStore."""
-        key = self.get_state_key()
+        key = self.get_defs_state_key()
         state_storage = DefsStateStorage.get_current()
         if state_storage is None:
             raise DagsterInvalidInvocationError(

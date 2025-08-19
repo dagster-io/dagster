@@ -462,7 +462,7 @@ def _complete_component_refresh(
 async def _refresh_component(
     component: "StateBackedComponent", statuses: dict[str, ComponentStateRefreshStatus]
 ) -> None:
-    key = component.get_state_key()
+    key = component.get_defs_state_key()
     start_time = time.time()
     statuses[key] = ComponentStateRefreshStatus(status="refreshing", start_time=start_time)
 
@@ -474,35 +474,45 @@ async def _refresh_component(
 
 
 def _get_components_to_refresh(
-    tree: "ComponentTree", defs_keys: Optional[set[str]]
+    tree: "ComponentTree", defs_state_keys: Optional[set[str]]
 ) -> list["StateBackedComponent"]:
     from dagster.components.component.state_backed_component import StateBackedComponent
 
     state_backed_components = tree.get_all_components(of_type=StateBackedComponent)
-    defs_keys = defs_keys or {component.get_state_key() for component in state_backed_components}
+    defs_state_keys = defs_state_keys or {
+        component.get_defs_state_key() for component in state_backed_components
+    }
 
     components = [
         component
         for component in tree.get_all_components(of_type=StateBackedComponent)
-        if component.get_state_key() in defs_keys
+        if component.get_defs_state_key() in defs_state_keys
     ]
-    missing_defs_keys = defs_keys - {component.get_state_key() for component in components}
+    missing_defs_keys = defs_state_keys - {
+        component.get_defs_state_key() for component in components
+    }
     if missing_defs_keys:
-        click.echo("Error: The following defs-keys were not found:")
+        click.echo("Error: The following defs state keys were not found:")
         for key in sorted(missing_defs_keys):
             click.echo(f"  {key}")
-        exit_with_error("One or more specified defs-keys were not found.")
+        click.echo("Available defs state keys:")
+        for key in sorted(
+            [component.get_defs_state_key() for component in state_backed_components]
+        ):
+            click.echo(f"  {key}")
+        exit_with_error("One or more specified defs state keys were not found.")
 
     return components
 
 
 async def _refresh_component_state_impl(
     tree: "ComponentTree",
-    defs_keys: Optional[set[str]],
+    defs_state_keys: Optional[set[str]],
 ) -> None:
-    components = _get_components_to_refresh(tree, defs_keys)
+    components = _get_components_to_refresh(tree, defs_state_keys)
     statuses = {
-        component.get_state_key(): ComponentStateRefreshStatus.default() for component in components
+        component.get_defs_state_key(): ComponentStateRefreshStatus.default()
+        for component in components
     }
 
     tasks = [
@@ -523,14 +533,14 @@ async def _refresh_component_state_impl(
 @dg_path_options
 @dg_global_options
 @click.option(
-    "--defs-key",
+    "--defs-state-key",
     multiple=True,
-    help="Only refresh components with the specified defs-key. Can be specified multiple times.",
+    help="Only refresh components with the specified defs state key. Can be specified multiple times.",
 )
 @cli_telemetry_wrapper
 def refresh_component_state(
     target_path: Path,
-    defs_key: tuple[str, ...],
+    defs_state_key: tuple[str, ...],
     **other_opts: object,
 ) -> None:
     """Refresh the component state for the current project."""
@@ -542,5 +552,5 @@ def refresh_component_state(
 
     with get_possibly_temporary_instance_for_cli("dg utils refresh-component-state"):
         tree = ComponentTree.for_project(dg_context.root_path)
-        defs_keys = set(defs_key) if defs_key else None
-        asyncio.run(_refresh_component_state_impl(tree, defs_keys))
+        defs_state_keys = set(defs_state_key) if defs_state_key else None
+        asyncio.run(_refresh_component_state_impl(tree, defs_state_keys))

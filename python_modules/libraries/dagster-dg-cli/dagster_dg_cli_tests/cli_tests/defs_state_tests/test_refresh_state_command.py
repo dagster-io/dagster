@@ -49,7 +49,7 @@ def test_refresh_state_command():
 
         latest_state_info = state_storage.get_latest_defs_state_info()
         assert latest_state_info is not None
-        assert latest_state_info.info_mapping.keys() == {"the_component"}
+        assert latest_state_info.info_mapping.keys() == {"SampleStateBackedComponent"}
 
         # write another local component defs.yaml, this one will fail to write state
         component_dir = project_dir / "src/foo_bar/defs/the_component_fails"
@@ -62,7 +62,10 @@ def test_refresh_state_command():
             yaml.dump(
                 {
                     "type": ".local.SampleStateBackedComponent",
-                    "attributes": {"fail_write": True},
+                    "attributes": {
+                        "fail_write": True,
+                        "defs_state_key_id": "second",
+                    },
                 },
                 f,
             )
@@ -73,10 +76,10 @@ def test_refresh_state_command():
 
         new_latest_state_info = state_storage.get_latest_defs_state_info()
         assert new_latest_state_info is not None
-        assert new_latest_state_info.info_mapping.keys() == {"the_component"}
+        assert new_latest_state_info.info_mapping.keys() == {"SampleStateBackedComponent"}
         assert (
-            new_latest_state_info.info_mapping["the_component"].version
-            != latest_state_info.info_mapping["the_component"].version
+            new_latest_state_info.info_mapping["SampleStateBackedComponent"].version
+            != latest_state_info.info_mapping["SampleStateBackedComponent"].version
         )
 
 
@@ -100,7 +103,12 @@ def test_refresh_state_command_with_defs_key_filter():
         )
         with (component1_dir / "defs.yaml").open("w") as f:
             yaml.dump(
-                {"type": ".local.SampleStateBackedComponent"},
+                {
+                    "type": ".local.SampleStateBackedComponent",
+                    "attributes": {
+                        "defs_state_key_id": "first",
+                    },
+                },
                 f,
             )
 
@@ -112,38 +120,53 @@ def test_refresh_state_command_with_defs_key_filter():
         )
         with (component2_dir / "defs.yaml").open("w") as f:
             yaml.dump(
-                {"type": ".local.SampleStateBackedComponent"},
+                {
+                    "type": ".local.SampleStateBackedComponent",
+                    "attributes": {
+                        "defs_state_key_id": "second",
+                    },
+                },
                 f,
             )
 
         # Refresh only component1
-        result = runner.invoke("utils", "refresh-component-state", "--defs-key", "component1")
+        result = runner.invoke(
+            "utils",
+            "refresh-component-state",
+            "--defs-state-key",
+            "SampleStateBackedComponent[first]",
+        )
         assert_runner_result(result)
 
         # Verify only component1 was refreshed
         latest_state_info = state_storage.get_latest_defs_state_info()
         assert latest_state_info is not None
-        assert latest_state_info.info_mapping.keys() == {"component1"}
+        assert latest_state_info.info_mapping.keys() == {"SampleStateBackedComponent[first]"}
 
         # Refresh both components using multiple --defs-key flags
         result = runner.invoke(
             "utils",
             "refresh-component-state",
-            "--defs-key",
-            "component1",
-            "--defs-key",
-            "component2",
+            "--defs-state-key",
+            "SampleStateBackedComponent[first]",
+            "--defs-state-key",
+            "SampleStateBackedComponent[second]",
         )
         assert_runner_result(result)
 
         # Verify both components were refreshed
         latest_state_info = state_storage.get_latest_defs_state_info()
         assert latest_state_info is not None
-        assert latest_state_info.info_mapping.keys() == {"component1", "component2"}
+        assert latest_state_info.info_mapping.keys() == {
+            "SampleStateBackedComponent[first]",
+            "SampleStateBackedComponent[second]",
+        }
 
         # Test with non-existent defs-key
-        result = runner.invoke("utils", "refresh-component-state", "--defs-key", "nonexistent")
+        result = runner.invoke(
+            "utils", "refresh-component-state", "--defs-state-key", "nonexistent"
+        )
         assert result.exit_code == 1
-        assert "The following defs-keys were not found:" in result.output
+        assert "The following defs state keys were not found:" in result.output
         assert "nonexistent" in result.output
-        assert "Available defs-keys:" in result.output
+        assert "Available defs state keys:" in result.output

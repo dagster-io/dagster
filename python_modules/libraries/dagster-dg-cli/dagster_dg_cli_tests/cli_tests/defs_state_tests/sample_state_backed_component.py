@@ -7,6 +7,13 @@ from dagster.components.component.state_backed_component import StateBackedCompo
 
 class SampleStateBackedComponent(StateBackedComponent, dg.Model, dg.Resolvable):
     fail_write: bool = False
+    defs_state_key_id: Optional[str] = None
+
+    def get_defs_state_key(self) -> str:
+        default_key = super().get_defs_state_key()
+        if self.defs_state_key_id is None:
+            return default_key
+        return f"{default_key}[{self.defs_state_key_id}]"
 
     def build_defs_from_state(
         self, context: dg.ComponentLoadContext, state_path: Optional[Path]

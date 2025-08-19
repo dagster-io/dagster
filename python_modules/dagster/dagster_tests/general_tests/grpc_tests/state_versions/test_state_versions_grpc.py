@@ -59,13 +59,13 @@ def setup_test_environment(project_dir, instance):
         p.write_text("hi")
         defs_state_storage.upload_state_from_path(
             path=p,
-            key="the_component",
+            key="SampleStateBackedComponent",
             version="abcde-12345",
         )
 
     original_state_versions = defs_state_storage.get_latest_defs_state_info()
     assert original_state_versions and len(original_state_versions.info_mapping) == 1
-    assert original_state_versions.get_version("the_component") == "abcde-12345"
+    assert original_state_versions.get_version("SampleStateBackedComponent") == "abcde-12345"
 
     # add some new state with a different value, should NOT use this
     with tempfile.TemporaryDirectory() as temp_dir:
@@ -73,7 +73,7 @@ def setup_test_environment(project_dir, instance):
         p.write_text("blah")
         defs_state_storage.upload_state_from_path(
             path=p,
-            key="the_component",
+            key="SampleStateBackedComponent",
             version="fghij-67890",
         )
 
