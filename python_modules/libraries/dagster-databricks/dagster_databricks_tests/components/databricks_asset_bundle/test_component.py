@@ -1,5 +1,4 @@
 import os
-from pathlib import Path
 from typing import Optional
 
 import pytest
@@ -7,11 +6,11 @@ from dagster import AssetDep, AssetKey, AssetsDefinition
 from dagster.components.testing import create_defs_folder_sandbox
 from dagster_databricks.components.databricks_asset_bundle.component import (
     DatabricksAssetBundleComponent,
+    DatabricksClusterConfigArgs,
     snake_case,
-    DatabricksClusterConfigArgs
 )
-from dagster_databricks.components.databricks_asset_bundle.resource import DatabricksWorkspace
 from dagster_databricks.components.databricks_asset_bundle.configs import DatabricksClusterConfig
+from dagster_databricks.components.databricks_asset_bundle.resource import DatabricksWorkspace
 
 from dagster_databricks_tests.components.databricks_asset_bundle.conftest import (
     DATABRICKS_CONFIG_LOCATION_PATH,
@@ -19,7 +18,9 @@ from dagster_databricks_tests.components.databricks_asset_bundle.conftest import
     TEST_DATABRICKS_WORKSPACE_TOKEN,
 )
 
-CLUSTER_CONFIG = DatabricksClusterConfigArgs(spark_version="test_spark_version", node_type_id="test_node_type_id", num_workers=2)
+CLUSTER_CONFIG = DatabricksClusterConfigArgs(
+    spark_version="test_spark_version", node_type_id="test_node_type_id", num_workers=2
+)
 
 PARTIAL_CLUSTER_CONFIG = DatabricksClusterConfigArgs(spark_version="test_spark_version")
 

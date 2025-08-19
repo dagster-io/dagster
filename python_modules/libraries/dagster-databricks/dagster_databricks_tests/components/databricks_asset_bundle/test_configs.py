@@ -1,16 +1,7 @@
-from pathlib import Path
-from typing import Optional
-
-import pytest
-from dagster_databricks.components.databricks_asset_bundle.configs import (
-    DatabricksClusterConfig,
-    DatabricksConfig,
-)
+from dagster_databricks.components.databricks_asset_bundle.configs import DatabricksConfig
 
 from dagster_databricks_tests.components.databricks_asset_bundle.conftest import (
-    CUSTOM_CONFIG_LOCATION_PATH,
     DATABRICKS_CONFIG_LOCATION_PATH,
-    PARTIAL_CUSTOM_CONFIG_LOCATION_PATH,
 )
 
 
@@ -73,25 +64,3 @@ def test_load_databrick_config():
     assert len(spark_python_task.depends_on) == 0
     assert spark_python_task.job_name == "databricks_pipeline_job"
     assert len(spark_python_task.libraries) == 1
-
-
-@pytest.mark.parametrize(
-    "custom_config_path, spark_version, node_type_id, num_workers",
-    [
-        (None, "13.3.x-scala2.12", "i3.xlarge", 1),
-        (CUSTOM_CONFIG_LOCATION_PATH, "test_spark_version", "test_node_type_id", 2),
-        (PARTIAL_CUSTOM_CONFIG_LOCATION_PATH, "test_spark_version", "i3.xlarge", 1),
-    ],
-    ids=[
-        "no_custom_config",
-        "custom_config",
-        "partial_custom_config",
-    ],
-)
-def test_load_custom_config_from_path(
-    custom_config_path: Optional[Path], spark_version: str, node_type_id: str, num_workers: int
-):
-    custom_config = DatabricksClusterConfig(custom_config_path=custom_config_path)
-    assert custom_config.spark_version == spark_version
-    assert custom_config.node_type_id == node_type_id
-    assert custom_config.num_workers == num_workers
