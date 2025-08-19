@@ -22,7 +22,7 @@ from dagster._core.remote_origin import (
     RemoteJobOrigin,
     RemoteRepositoryOrigin,
 )
-from dagster._core.remote_representation import RemoteJob, RemoteSchedule
+from dagster._core.remote_representation.external import RemoteJob, RemoteSchedule
 from dagster._core.test_utils import in_process_test_workspace
 from dagster._core.types.loadable_target_origin import LoadableTargetOrigin
 from dagster._serdes import create_snapshot_id

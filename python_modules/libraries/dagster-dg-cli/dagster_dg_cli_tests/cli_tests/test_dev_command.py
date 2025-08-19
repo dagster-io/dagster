@@ -3,17 +3,9 @@ import textwrap
 from pathlib import Path
 
 import pytest
-from dagster_dg_core.utils import (
-    activate_venv,
-    discover_git_root,
-    ensure_dagster_dg_tests_import,
-    is_windows,
-    pushd,
-)
-
-ensure_dagster_dg_tests_import()
-
-from dagster_dg_core_tests.utils import (
+from dagster_dg_core.utils import activate_venv, discover_git_root, is_windows, pushd
+from dagster_test.components.test_utils.test_cases import BASIC_INVALID_VALUE, BASIC_MISSING_VALUE
+from dagster_test.dg_utils.utils import (
     ProxyRunner,
     assert_projects_loaded_and_exit,
     assert_runner_result,
@@ -24,7 +16,6 @@ from dagster_dg_core_tests.utils import (
     isolated_example_workspace,
     launch_dev_command,
 )
-from dagster_test.components.test_utils.test_cases import BASIC_INVALID_VALUE, BASIC_MISSING_VALUE
 
 
 @pytest.mark.skipif(is_windows(), reason="Temporarily skipping (signal issues in CLI)..")
@@ -136,7 +127,9 @@ def test_dev_project_context_success():
     is_windows() == "Windows", reason="Temporarily skipping (signal issues in CLI).."
 )
 def test_dev_has_options_of_dagster_dev():
+    # ruff: noqa: I001 - import order differs between CI and local due to package installation differences
     from dagster._cli.dev import dev_command as dagster_dev_command
+
     from dagster_dg_cli.cli import dev_command as dev_command
 
     exclude_dagster_dev_params = {

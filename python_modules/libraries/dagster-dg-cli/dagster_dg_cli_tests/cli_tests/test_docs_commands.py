@@ -1,28 +1,19 @@
-import threading
-from typing import Callable, Optional
-
-import pytest
-from dagster_dg_core.utils import (
-    ensure_dagster_dg_tests_import,
-    get_venv_executable,
-    install_to_venv,
-)
-from dagster_graphql.client.client import DagsterGraphQLClient
-
-ensure_dagster_dg_tests_import()
-
+# ruff: noqa: I001 - import order differs between CI and local due to package installation differences
 import json
 import os
 import subprocess
+import threading
 import time
 from pathlib import Path
+from typing import Callable, Optional
 from unittest import mock
 
+import pytest
 import requests
 import yaml
-from dagster_dg_cli.cli import docs
-from dagster_dg_core.utils import activate_venv
-from dagster_dg_core_tests.utils import (
+from dagster_dg_core.utils import activate_venv, get_venv_executable, install_to_venv
+from dagster_graphql.client.client import DagsterGraphQLClient
+from dagster_test.dg_utils.utils import (
     ProxyRunner,
     assert_projects_loaded_and_exit,
     assert_runner_result,
@@ -33,6 +24,8 @@ from dagster_dg_core_tests.utils import (
     launch_dev_command,
     wait_for_projects_loaded,
 )
+
+from dagster_dg_cli.cli import docs
 
 # ########################
 # ##### COMPONENT TYPE

@@ -15,12 +15,12 @@ from dagster._core.remote_origin import (
     ManagedGrpcPythonEnvCodeLocationOrigin,
     RemoteRepositoryOrigin,
 )
-from dagster._core.remote_representation import RepositorySnap
 from dagster._core.remote_representation.external import RemoteRepository
 from dagster._core.remote_representation.external_data import (
     DISABLE_FAST_EXTRACT_ENV_VAR,
     JobDataSnap,
     JobRefSnap,
+    RepositorySnap,
     extract_serialized_job_snap_from_serialized_job_data_snap,
 )
 from dagster._core.remote_representation.handle import RepositoryHandle

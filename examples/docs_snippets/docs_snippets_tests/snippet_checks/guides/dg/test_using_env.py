@@ -9,7 +9,8 @@ from typing import Any, Callable, Optional
 import pytest
 import responses
 from dagster_dg_cli.utils.plus import gql
-from dagster_dg_core.utils import activate_venv, ensure_dagster_dg_tests_import
+from dagster_dg_cli_tests.cli_tests.plus_tests.utils import mock_gql_response, responses
+from dagster_dg_core.utils import activate_venv
 from pytest_httpserver import HTTPServer
 from werkzeug import Request, Response
 
@@ -24,9 +25,6 @@ from docs_snippets_tests.snippet_checks.guides.components.utils import (
 from docs_snippets_tests.snippet_checks.utils import (
     isolated_snippet_generation_environment,
 )
-
-ensure_dagster_dg_tests_import()
-from dagster_dg_cli_tests.cli_tests.plus_tests.utils import mock_gql_response, responses
 
 MASK_VENV = (r"Using.*\.venv.*", "")
 REMOVE_EXCESS_DESCRIPTION_ROW = (r"\n│\s+│\s+│\s+│\s+│.*│\n", "\n")
@@ -333,7 +331,7 @@ def test_component_docs_using_env(
             )
 
             context.run_command_and_snippet_output(
-                cmd="dg check yaml",
+                cmd="dg check yaml --validate-requirements",
                 snippet_path=SNIPPETS_DIR
                 / f"{context.get_next_snip_number()}-dg-component-check.txt",
                 snippet_replace_regex=[

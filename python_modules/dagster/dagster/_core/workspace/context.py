@@ -35,14 +35,10 @@ from dagster._core.remote_origin import (
     GrpcServerCodeLocationOrigin,
     ManagedGrpcPythonEnvCodeLocationOrigin,
 )
-from dagster._core.remote_representation import (
-    CodeLocation,
-    GrpcServerCodeLocation,
+from dagster._core.remote_representation.code_location import CodeLocation, GrpcServerCodeLocation
+from dagster._core.remote_representation.external import (
     RemoteExecutionPlan,
     RemoteJob,
-    RepositoryHandle,
-)
-from dagster._core.remote_representation.external import (
     RemoteRepository,
     RemoteSchedule,
     RemoteSensor,
@@ -53,7 +49,7 @@ from dagster._core.remote_representation.grpc_server_state_subscriber import (
     LocationStateChangeEventType,
     LocationStateSubscriber,
 )
-from dagster._core.remote_representation.handle import InstigatorHandle
+from dagster._core.remote_representation.handle import InstigatorHandle, RepositoryHandle
 from dagster._core.snap.dagster_types import DagsterTypeSnap
 from dagster._core.snap.mode import ResourceDefSnap
 from dagster._core.snap.node import GraphDefSnap, OpDefSnap
@@ -79,7 +75,7 @@ from dagster._utils.error import SerializableErrorInfo, serializable_error_info_
 
 if TYPE_CHECKING:
     from dagster._core.definitions.assets.graph.remote_asset_graph import RemoteWorkspaceAssetGraph
-    from dagster._core.remote_representation import (
+    from dagster._core.remote_representation.external_data import (
         PartitionConfigSnap,
         PartitionExecutionErrorSnap,
         PartitionNamesSnap,

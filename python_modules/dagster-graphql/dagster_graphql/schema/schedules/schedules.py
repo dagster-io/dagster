@@ -5,7 +5,7 @@ from typing import Optional
 import dagster._check as check
 import graphene
 from dagster import DefaultScheduleStatus
-from dagster._core.remote_representation import RemoteSchedule
+from dagster._core.remote_representation.external import RemoteSchedule
 from dagster._core.scheduler.instigation import InstigatorState, InstigatorStatus
 from dagster._time import get_current_timestamp
 

@@ -155,8 +155,8 @@ class MlFlow(metaclass=MlflowMeta):
                 },
                 max_retries=3,
             )
-            if not current_run_df.empty:
-                return current_run_df.run_id.values[0]
+            if not current_run_df.empty:  # type: ignore
+                return current_run_df.run_id.values[0]  # type: ignore
 
     def _set_active_run(self, run_id=None):
         """This method sets the active run to be that of the specified
@@ -186,7 +186,7 @@ class MlFlow(metaclass=MlflowMeta):
             run = mlflow.active_run()
             if "is already active" not in str(ex):
                 raise (ex)
-            self.log.info(f"Run with id {run.info.run_id} is already active.")
+            self.log.info(f"Run with id {run.info.run_id} is already active.")  # type: ignore
 
     def _set_all_tags(self):
         """Method collects dagster_run_id plus all env variables/tags that have been

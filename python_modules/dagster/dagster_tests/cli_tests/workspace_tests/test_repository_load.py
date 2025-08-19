@@ -10,7 +10,7 @@ from dagster._cli.workspace.cli_target import (
     repository_options,
 )
 from dagster._core.instance import DagsterInstance
-from dagster._core.remote_representation import RemoteRepository
+from dagster._core.remote_representation.external import RemoteRepository
 from dagster._core.workspace.context import WorkspaceRequestContext
 from dagster_shared.cli import WorkspaceOpts, workspace_options
 

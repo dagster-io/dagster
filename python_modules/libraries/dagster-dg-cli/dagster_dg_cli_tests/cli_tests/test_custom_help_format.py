@@ -2,16 +2,8 @@ import textwrap
 
 import click
 from click.testing import CliRunner
-from dagster_dg_core.utils import (
-    DgClickCommand,
-    DgClickGroup,
-    ensure_dagster_dg_tests_import,
-    set_option_help_output_group,
-)
-
-ensure_dagster_dg_tests_import()
-
-from dagster_dg_core_tests.utils import (
+from dagster_dg_core.utils import DgClickCommand, DgClickGroup, set_option_help_output_group
+from dagster_test.dg_utils.utils import (
     ProxyRunner,
     assert_runner_result,
     fixed_panel_width,

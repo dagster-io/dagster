@@ -1,11 +1,12 @@
+from abc import ABC, abstractmethod
 from collections.abc import Mapping
-from functools import cached_property
 from pathlib import Path
 from typing import Any, Optional, Union
 
 import yaml
 from dagster import get_dagster_logger
 from dagster_shared.record import IHaveNew, record, record_custom
+from typing_extensions import Self
 
 logger = get_dagster_logger()
 
@@ -32,19 +33,34 @@ def parse_depends_on(depends_on: Optional[list]) -> list[str]:
 
 
 @record
-class DatabricksNotebookTask:
+class DatabricksBaseTask(ABC):
     task_key: str
     task_config: Mapping[str, Any]
-    task_parameters: Mapping[str, Any]
+    task_parameters: Union[Mapping[str, Any], list[str]]
     depends_on: list[str]
     job_name: str
     libraries: list[Mapping[str, Any]]
 
     @property
+    @abstractmethod
+    def task_type(self) -> str: ...
+
+    @property
+    @abstractmethod
+    def task_config_metadata(self) -> Mapping[str, Any]: ...
+
+    @classmethod
+    @abstractmethod
+    def from_job_task_config(cls, job_task_config: Mapping[str, Any]) -> Self: ...
+
+
+@record
+class DatabricksNotebookTask(DatabricksBaseTask):
+    @property
     def task_type(self) -> str:
         return "notebook"
 
-    @cached_property
+    @property
     def task_config_metadata(self) -> Mapping[str, Any]:
         task_config_metadata = {}
         notebook_task = self.task_config["notebook_task"]
@@ -68,19 +84,12 @@ class DatabricksNotebookTask:
 
 
 @record
-class DatabricksConditionTask:
-    task_key: str
-    task_config: Mapping[str, Any]
-    task_parameters: Mapping[str, Any]
-    depends_on: list[str]
-    job_name: str
-    libraries: list[Mapping[str, Any]]
-
+class DatabricksConditionTask(DatabricksBaseTask):
     @property
     def task_type(self) -> str:
         return "condition"
 
-    @cached_property
+    @property
     def task_config_metadata(self) -> Mapping[str, Any]:
         task_config_metadata = {}
         condition_config = self.task_config["condition_task"]
@@ -106,19 +115,12 @@ class DatabricksConditionTask:
 
 
 @record
-class DatabricksSparkPythonTask:
-    task_key: str
-    task_config: Mapping[str, Any]
-    task_parameters: list[str]
-    depends_on: list[str]
-    job_name: str
-    libraries: list[Mapping[str, Any]]
-
+class DatabricksSparkPythonTask(DatabricksBaseTask):
     @property
     def task_type(self) -> str:
         return "spark_python"
 
-    @cached_property
+    @property
     def task_config_metadata(self) -> Mapping[str, Any]:
         task_config_metadata = {}
         python_config = self.task_config["spark_python_task"]
@@ -145,19 +147,12 @@ class DatabricksSparkPythonTask:
 
 
 @record
-class DatabricksPythonWheelTask:
-    task_key: str
-    task_config: Mapping[str, Any]
-    task_parameters: list[str]
-    depends_on: list[str]
-    job_name: str
-    libraries: list[Mapping[str, Any]]
-
+class DatabricksPythonWheelTask(DatabricksBaseTask):
     @property
     def task_type(self) -> str:
         return "python_wheel"
 
-    @cached_property
+    @property
     def task_config_metadata(self) -> Mapping[str, Any]:
         task_config_metadata = {}
         wheel_config = self.task_config["python_wheel_task"]
@@ -185,19 +180,12 @@ class DatabricksPythonWheelTask:
 
 
 @record
-class DatabricksSparkJarTask:
-    task_key: str
-    task_config: Mapping[str, Any]
-    task_parameters: Mapping[str, Any]
-    depends_on: list[str]
-    job_name: str
-    libraries: list[Mapping[str, Any]]
-
+class DatabricksSparkJarTask(DatabricksBaseTask):
     @property
     def task_type(self) -> str:
         return "spark_jar"
 
-    @cached_property
+    @property
     def task_config_metadata(self) -> Mapping[str, Any]:
         task_config_metadata = {}
         jar_config = self.task_config["spark_jar_task"]
@@ -222,19 +210,12 @@ class DatabricksSparkJarTask:
 
 
 @record
-class DatabricksJobTask:
-    task_key: str
-    task_config: Mapping[str, Any]
-    task_parameters: Mapping[str, Any]
-    depends_on: list[str]
-    job_name: str
-    libraries: list[Mapping[str, Any]]
-
+class DatabricksJobTask(DatabricksBaseTask):
     @property
     def task_type(self) -> str:
         return "run_job"
 
-    @cached_property
+    @property
     def task_config_metadata(self) -> Mapping[str, Any]:
         task_config_metadata = {}
         job_config = self.task_config["run_job_task"]
@@ -259,22 +240,22 @@ class DatabricksJobTask:
 
 
 @record_custom
-class DatabricksConfigs(IHaveNew):
-    databricks_configs_path: Path
-    tasks: list[Any]
+class DatabricksConfig(IHaveNew):
+    databricks_config_path: Path
+    tasks: list[DatabricksBaseTask]
     job_level_parameters: Mapping[str, Any]
 
     def __new__(
         cls,
-        databricks_configs_path: Union[Path, str],
-    ) -> "DatabricksConfigs":
-        databricks_configs_path = Path(databricks_configs_path)
-        if not databricks_configs_path.exists():
-            raise FileNotFoundError(f"Databricks config file not found: {databricks_configs_path}")
+        databricks_config_path: Union[Path, str],
+    ) -> "DatabricksConfig":
+        databricks_config_path = Path(databricks_config_path)
+        if not databricks_config_path.exists():
+            raise FileNotFoundError(f"Databricks config file not found: {databricks_config_path}")
 
         # Load databricks config
-        databricks_config = load_yaml(databricks_configs_path)
-        bundle_dir = databricks_configs_path.parent
+        databricks_config = load_yaml(databricks_config_path)
+        bundle_dir = databricks_config_path.parent
 
         # Extract variables and includes
         includes = databricks_config.get("include", [])
@@ -293,11 +274,11 @@ class DatabricksConfigs(IHaveNew):
                     job_level_parameters.update(resource_job_level_parameters)
 
         if not tasks:
-            raise ValueError(f"No tasks found in databricks config: {databricks_configs_path}")
+            raise ValueError(f"No tasks found in databricks config: {databricks_config_path}")
 
         return super().__new__(
             cls,
-            databricks_configs_path=databricks_configs_path,
+            databricks_config_path=databricks_config_path,
             tasks=tasks,
             job_level_parameters=job_level_parameters,
         )

@@ -2454,6 +2454,7 @@ export type LaunchBackfillParams = {
   partitionNames?: InputMaybe<Array<Scalars['String']['input']>>;
   partitionsByAssets?: InputMaybe<Array<InputMaybe<PartitionsByAssetSelector>>>;
   reexecutionSteps?: InputMaybe<Array<Scalars['String']['input']>>;
+  runConfigData?: InputMaybe<Scalars['RunConfigData']['input']>;
   selector?: InputMaybe<PartitionSetSelector>;
   tags?: InputMaybe<Array<ExecutionTag>>;
   title?: InputMaybe<Scalars['String']['input']>;
@@ -10256,6 +10257,8 @@ export const buildLaunchBackfillParams = (
         : [],
     reexecutionSteps:
       overrides && overrides.hasOwnProperty('reexecutionSteps') ? overrides.reexecutionSteps! : [],
+    runConfigData:
+      overrides && overrides.hasOwnProperty('runConfigData') ? overrides.runConfigData! : 'sit',
     selector:
       overrides && overrides.hasOwnProperty('selector')
         ? overrides.selector!

@@ -214,16 +214,6 @@ def modify_toml_as_dict(path: Path) -> Iterator[dict[str, Any]]:  # unwrap gets 
     path.write_text(tomlkit.dumps(toml_dict))
 
 
-def ensure_dagster_dg_tests_import() -> None:
-    from dagster_dg_core import __file__ as dagster_dg_init_py
-
-    dagster_dg_package_root = (Path(dagster_dg_init_py) / ".." / "..").resolve()
-    assert (dagster_dg_package_root / "dagster_dg_core_tests").exists(), (
-        "Could not find dagster_dg_core_tests where expected"
-    )
-    sys.path.append(dagster_dg_package_root.as_posix())
-
-
 def hash_directory_metadata(
     hasher: Hash,
     path: Union[str, Path],

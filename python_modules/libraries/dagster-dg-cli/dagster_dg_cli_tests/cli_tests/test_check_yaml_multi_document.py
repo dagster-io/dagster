@@ -9,12 +9,12 @@ These tests verify that:
 3. Valid multi-document files work correctly
 """
 
-from dagster_dg_core_tests.utils import (
+from dagster_test.components.test_utils.test_cases import BASIC_COMPONENT_TYPE_FILEPATH
+from dagster_test.dg_utils.utils import (
     ProxyRunner,
     assert_runner_result,
     create_project_from_components,
 )
-from dagster_test.components.test_utils.test_cases import BASIC_COMPONENT_TYPE_FILEPATH
 
 
 def test_check_yaml_multi_document_validation_error_in_second_document():

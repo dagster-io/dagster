@@ -1,26 +1,22 @@
+import json
+import os
 from pathlib import Path
 from tempfile import TemporaryDirectory
 
 import pytest
-from dagster_dg_core.utils import ensure_dagster_dg_tests_import, pushd
+from dagster_dg_core.utils import pushd
+from dagster_shared.telemetry import (
+    cleanup_telemetry_logger,
+    get_or_create_dir_from_dagster_home,
+    get_telemetry_logger,
+)
 from dagster_test.components.test_utils.test_cases import BASIC_INVALID_VALUE, BASIC_VALID_VALUE
-
-ensure_dagster_dg_tests_import()
-
-import json
-import os
-
-from dagster_dg_core_tests.utils import (
+from dagster_test.dg_utils.utils import (
     ProxyRunner,
     crawl_cli_commands,
     create_project_from_components,
     isolated_example_project_foo_bar,
     modify_environment_variable,
-)
-from dagster_shared.telemetry import (
-    cleanup_telemetry_logger,
-    get_or_create_dir_from_dagster_home,
-    get_telemetry_logger,
 )
 
 NO_TELEMETRY_COMMANDS = {

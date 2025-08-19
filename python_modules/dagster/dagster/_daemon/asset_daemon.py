@@ -51,8 +51,7 @@ from dagster._core.execution.submit_asset_runs import (
 )
 from dagster._core.instance import DagsterInstance
 from dagster._core.remote_origin import RemoteInstigatorOrigin
-from dagster._core.remote_representation import RemoteSensor
-from dagster._core.remote_representation.external import RemoteRepository
+from dagster._core.remote_representation.external import RemoteRepository, RemoteSensor
 from dagster._core.scheduler.instigation import (
     InstigatorState,
     InstigatorStatus,
@@ -921,13 +920,16 @@ class AssetDaemon(DagsterDaemon):
                     )
                 )
 
-            with AutoMaterializeLaunchContext(
-                tick,
-                sensor,
-                instance,
-                self._logger,
-                tick_retention_settings,
-            ) as tick_context:
+            with (
+                AutoMaterializeLaunchContext(
+                    tick,
+                    sensor,
+                    instance,
+                    self._logger,
+                    tick_retention_settings,
+                ) as tick_context,
+                workspace,
+            ):
                 await self._evaluate_auto_materialize_tick(
                     tick_context,
                     tick,
@@ -1182,6 +1184,7 @@ class AssetDaemon(DagsterDaemon):
                         },
                         title=f"Run for Declarative Automation evaluation ID {evaluation_id}",
                         description=None,
+                        run_config=run_request.run_config,
                     )
                 )
             return reserved_run_id, check.not_none(asset_graph_subset.asset_keys)
