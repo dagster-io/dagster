@@ -27,8 +27,17 @@ DEV_DOCS_DIR = (
     / "dg-docs-site"
 )
 DOCS_DIR = Path(__file__).parent.parent / "docs" / "packages" / "dg-docs-site"
+DOCS_WORKSPACE_ROOT = Path(__file__).parent.parent / "docs"
+DEV_WORKSPACE_ROOT = (
+    Path(__file__).parent.parent.parent.parent.parent.parent / "js_modules" / "dagster-ui"
+)
 ACTIVE_DOCS_DIR = (
     DOCS_DIR if DOCS_DIR.exists() and (DOCS_DIR / "package.json").exists() else DEV_DOCS_DIR
+)
+ACTIVE_WORKSPACE_ROOT = (
+    DOCS_WORKSPACE_ROOT
+    if DOCS_DIR.exists() and (DOCS_DIR / "package.json").exists()
+    else DEV_WORKSPACE_ROOT
 )
 
 DOCS_JSON_PATH = ACTIVE_DOCS_DIR / "contents" / "generated.json"
@@ -136,15 +145,28 @@ def build_docs_command(
         with yaspin(text="Verifying docs dependencies", color="blue") as spinner:
             yes = subprocess.Popen(["yes", "y"], stdout=subprocess.PIPE)
             try:
-                subprocess.check_output(["yarn", "install"], stdin=yes.stdout)
+                subprocess.run(
+                    ["yarn", "install"],
+                    stdin=yes.stdout,
+                    capture_output=True,
+                    text=True,
+                    check=True,
+                )
+                spinner.ok("✓")
+            except subprocess.CalledProcessError:
+                spinner.fail("❌")
+                raise
             finally:
                 yes.terminate()
-            spinner.ok("✓")
 
         with yaspin(text="Building docs", color="blue") as spinner:
             spinner.start()
-            subprocess.check_output(["yarn", "build"])
-            spinner.ok("✓")
+            try:
+                subprocess.run(["yarn", "build"], capture_output=True, text=True, check=True)
+                spinner.ok("✓")
+            except subprocess.CalledProcessError:
+                spinner.fail("❌")
+                raise
 
         Path(output_dir).mkdir(parents=True, exist_ok=True)
         shutil.copytree(ACTIVE_DOCS_DIR / "out", output_dir, dirs_exist_ok=True)
