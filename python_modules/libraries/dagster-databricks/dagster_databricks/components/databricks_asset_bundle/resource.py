@@ -53,10 +53,23 @@ class DatabricksWorkspace(ConfigurableResource):
         databricks_tasks_by_task_key = {}
         for task_key, task in selected_tasks_by_task_key.items():
             # TODO: support common config
-            parameters = task.task_parameters
-            context.log.info(f"Task {task_key}: parameters={parameters}")
+            context.log.info(f"Task {task_key}: parameters={task.task_parameters}")
 
-            databricks_task = jobs.SubmitTask(task_key)
+            # Create the SubmitTask params dictionary
+            submit_task_params = {"task_key": task_key}
+
+            # Convert dependency config to TaskDependency objects
+            task_dependencies = [
+                jobs.TaskDependency(task_key=dep_config.task_key, outcome=dep_config.outcome)
+                for dep_config in task.depends_on
+            ]
+            context.log.info(f"Task {task_key} depends on: {task_dependencies}")
+            submit_task_params = {
+                **submit_task_params,
+                **({"depends_on": task_dependencies} if task_dependencies else {}),
+            }
+
+            databricks_task = jobs.SubmitTask(**submit_task_params)
             databricks_tasks_by_task_key[task_key] = databricks_task
 
         # TODO: implement submit tasks and poll at client level

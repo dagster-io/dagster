@@ -1,3 +1,5 @@
+from unittest import mock
+
 from dagster import AssetsDefinition, DagsterEventType, materialize
 from dagster.components.testing import create_defs_folder_sandbox
 from dagster_databricks.components.databricks_asset_bundle.component import (
@@ -10,7 +12,8 @@ from dagster_databricks_tests.components.databricks_asset_bundle.conftest import
 )
 
 
-def test_load_component(databricks_config_path: str):
+@mock.patch("databricks.sdk.service.jobs.SubmitTask", autospec=True)
+def test_load_component(mock_submit_task: mock.MagicMock, databricks_config_path: str):
     with create_defs_folder_sandbox() as sandbox:
         defs_path = sandbox.scaffold_component(
             component_cls=DatabricksAssetBundleComponent,
@@ -47,3 +50,13 @@ def test_load_component(databricks_config_path: str):
             }
             assert len(materialized_asset_keys) == 6
             assert databricks_assets.keys == materialized_asset_keys
+            assert mock_submit_task.call_count == 6
+
+            # task_key is expected in every submit tasks
+            assert all(call for call in mock_submit_task.mock_calls if "task_key" in call.kwargs)
+
+            # depends_on is expected in 4 of the 6 submit tasks we create
+            assert (
+                len([call for call in mock_submit_task.mock_calls if "depends_on" in call.kwargs])
+                == 4
+            )
