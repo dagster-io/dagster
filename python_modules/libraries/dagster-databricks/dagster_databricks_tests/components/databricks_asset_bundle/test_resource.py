@@ -20,8 +20,8 @@ from dagster_databricks_tests.components.databricks_asset_bundle.conftest import
         True,
     ],
     ids=[
-        "no_custom_config",
-        "custom_config",
+        "no_cluster_config",
+        "existing_cluster_config",
     ],
 )
 @mock.patch("databricks.sdk.service.jobs.SubmitTask", autospec=True)
