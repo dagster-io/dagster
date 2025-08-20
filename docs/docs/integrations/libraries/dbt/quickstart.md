@@ -166,7 +166,7 @@ Next, create a `_source.yml` file that points dbt to the upstream `raw_customers
 <CodeExample
   path="docs_snippets/docs_snippets/guides/etl/transform-dbt/basic-dbt-project/models/example/_source.yml"
   language="yaml"
-  title="dagster_dbt_quickstart/src/basic-dbt-project/models/example/source.yml_"
+  title="dagster_dbt_quickstart/src/basic-dbt-project/models/example/_source.yml"
 />
 
 ![Screenshot of dbt lineage](/images/integrations/dbt/dbt-lineage-1.png)
@@ -187,7 +187,7 @@ You may also have assets that depend on the output of dbt models. Within the `as
 
 ## Scheduling dbt models
 
-You can schedule you dbt models using Dagster [schedules](/guides/automate/schedules). First scaffold a schedule:
+You can schedule your dbt models using Dagster [schedules](/guides/automate/schedules). First scaffold a schedule:
 
 ```bash
 dg scaffold defs dagster.schedule schedules.py

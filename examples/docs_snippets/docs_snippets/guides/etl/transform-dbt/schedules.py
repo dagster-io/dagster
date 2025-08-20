@@ -3,7 +3,7 @@ from typing import Union
 import dagster as dg
 
 
-@dg.schedule(cron_schedule="@daily", target="0 0 * * *")
+@dg.schedule(cron_schedule="@daily", target="*")
 def schedules(
     context: dg.ScheduleEvaluationContext,
 ) -> Union[dg.RunRequest, dg.SkipReason]:
