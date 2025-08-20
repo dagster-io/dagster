@@ -42,7 +42,7 @@ def test_load_component(
                 "type": "dagster_databricks.components.databricks_asset_bundle.component.DatabricksAssetBundleComponent",
                 "attributes": {
                     "databricks_config_path": databricks_config_path,
-                    "cluster_config": {"existing_cluster_id": "test"}
+                    "cluster_config": {"existing_cluster_id": "test_existing_cluster_id"}
                     if use_existing_cluster
                     else None,
                     "workspace": {
