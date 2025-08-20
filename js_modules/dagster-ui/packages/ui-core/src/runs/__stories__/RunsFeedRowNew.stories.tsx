@@ -1,10 +1,10 @@
 import {Meta} from '@storybook/react';
 
-import {RunStatus, buildRun} from '../../graphql/types';
+import {RunStatus, buildPipelineTag, buildRun} from '../../graphql/types';
 import {StorybookProvider} from '../../testing/StorybookProvider';
+import {defaultMocks} from '../../testing/defaultMocks';
 import {DagsterTag} from '../RunTag';
 import {RunsFeedRow, RunsFeedTableHeader} from '../RunsFeedRowNew';
-import {defaultMocks} from '../../testing/defaultMocks';
 
 // eslint-disable-next-line import/no-default-export
 export default {
@@ -23,23 +23,21 @@ const RunRowWrapper = ({children}: {children: React.ReactNode}) => (
 const createRunWithDynamicTags = (specificTags: Array<{key: string; value: string}>) => {
   const fakerRun = defaultMocks.Run();
   const dynamicTags = fakerRun.tags();
-  
+
   return buildRun({
     id: fakerRun.id(),
     jobName: fakerRun.jobName(),
     runStatus: RunStatus.SUCCESS,
     creationTime: Date.now() / 1000 - Math.random() * 7200, // Random time in last 2 hours
     tags: [
-      ...dynamicTags.map((tag) => ({key: tag.key, value: tag.value})),
-      ...specificTags,
+      ...dynamicTags.map((tag) => buildPipelineTag({key: tag.key, value: tag.value})),
+      ...specificTags.map((tag) => buildPipelineTag({key: tag.key, value: tag.value})),
     ],
   });
 };
 
 export const ManualRun = () => {
-  const entry = createRunWithDynamicTags([
-    {key: DagsterTag.User, value: 'john.doe@example.com'},
-  ]);
+  const entry = createRunWithDynamicTags([{key: DagsterTag.User, value: 'john.doe@example.com'}]);
 
   return (
     <StorybookProvider>
@@ -51,9 +49,7 @@ export const ManualRun = () => {
 };
 
 export const ScheduledRun = () => {
-  const entry = createRunWithDynamicTags([
-    {key: DagsterTag.ScheduleName, value: 'daily_etl_schedule'},
-  ]);
+  const entry = createRunWithDynamicTags([{key: DagsterTag.ScheduleName, value: 'daily_etl_schedule'}]);
 
   return (
     <StorybookProvider>
@@ -65,9 +61,7 @@ export const ScheduledRun = () => {
 };
 
 export const SensorRun = () => {
-  const entry = createRunWithDynamicTags([
-    {key: DagsterTag.SensorName, value: 's3_file_sensor'},
-  ]);
+  const entry = createRunWithDynamicTags([{key: DagsterTag.SensorName, value: 's3_file_sensor'}]);
 
   return (
     <StorybookProvider>
@@ -116,7 +110,7 @@ export const PurelyDynamicRun = () => {
     jobName: fakerRun.jobName(),
     runStatus: RunStatus.SUCCESS,
     creationTime: Date.now() / 1000 - Math.random() * 7200,
-    tags: fakerRun.tags().map((tag) => ({key: tag.key, value: tag.value})),
+    tags: fakerRun.tags().map((tag) => buildPipelineTag({key: tag.key, value: tag.value})),
   });
 
   return (
