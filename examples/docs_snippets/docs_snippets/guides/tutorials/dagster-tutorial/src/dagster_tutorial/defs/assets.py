@@ -102,14 +102,26 @@ def payments(duckdb: DuckDBResource):
     deps=["customers", "orders", "payments"],
     # highlight-end
 )
-def orders_by_month(duckdb: DuckDBResource):
-    table_name = "orders_by_month"
+def orders_aggregation(duckdb: DuckDBResource):
+    table_name = "orders_aggregation"
 
     with duckdb.get_connection() as conn:
         conn.execute(
             f"""
-            create table if not exists {table_name} (
-                ...
+            create or replace table {table_name} as (
+                select
+                    c.id as customer_id,
+                    c.first_name,
+                    c.last_name,
+                    count(distinct o.id) as total_orders,
+                    count(distinct p.id) as total_payments,
+                    coalesce(sum(p.amount), 0) as total_amount_spent
+                from customers c
+                left join orders o
+                    on c.id = o.user_id
+                left join payments p
+                    on o.id = p.order_id
+                group by 1, 2, 3
             );
             """
         )
@@ -123,20 +135,19 @@ def orders_by_month(duckdb: DuckDBResource):
 ...
 
 
-@dg.asset_check(asset="orders_by_month")
-def orders_by_month_check(duckdb: DuckDBResource) -> dg.AssetCheckResult:
+@dg.asset_check(asset="orders_aggregation")
+def orders_aggregation_check(duckdb: DuckDBResource) -> dg.AssetCheckResult:
+    table_name = "orders_aggregation"
     with duckdb.get_connection() as conn:
-        row_count = conn.execute(
-            "select count(*) from orders_by_month_check"
-        ).fetchone()[0]
+        row_count = conn.execute(f"select count(*) from {table_name}").fetchone()[0]
 
     if row_count == 0:
         return dg.AssetCheckResult(
-            passed=False, metadata={"message": "Orders by month check failed"}
+            passed=False, metadata={"message": "Order aggregation check failed"}
         )
 
     return dg.AssetCheckResult(
-        passed=True, metadata={"message": "Orders by month check passed"}
+        passed=True, metadata={"message": "Order aggregation check passed"}
     )
 
 

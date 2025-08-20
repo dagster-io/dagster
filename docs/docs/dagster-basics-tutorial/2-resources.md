@@ -4,7 +4,7 @@ description: Using resources with assets
 sidebar_position: 30
 ---
 
-Right now, our assets represent pointers to files in S3. This is a good first step in building out the asset graph, but it would be better if they represented tables in our database.
+Right now, our assets represent pointers to files in [S3](https://aws.amazon.com/s3/). This is a good first step in building out the asset graph, but it would be better if they represented tables in our database.
 
 In this step, we will load that data into [DuckDB](https://duckdb.org), an analytical database and our assets will instead be representations of DuckDB tables.
 
@@ -55,29 +55,6 @@ Within this file, we will define a `DuckDBResource` from the `dagster-duckdb` li
 />
 
 Here, we are setting the key `duckdb` to the `DuckDBResource` we just defined. Any Dagster object that uses this resource key will use the underlying DuckDB connection.
-
-```mermaid
-%%{
-  init: {
-    'theme': 'base',
-    'themeVariables': {
-      'primaryColor': '#4F43DD',
-      'primaryTextColor': '#FFFFFF',
-      'primaryBorderColor': '#231F1B',
-      'lineColor': '#DEDDFF',
-      'secondaryColor': '#BDBAB7',
-      'tertiaryColor': '#FFFFFF'
-    }
-  }
-}%%
-  graph LR
-    style DuckDB fill:#BDBAB7,stroke:#BDBAB7,stroke-width:2px
-
-    Customers -.-> Resource
-    Orders -.-> Resource
-    Payments -.-> Resource
-    Resource -.-> DuckDB
-```
 
 ## 2. Add a resource to our assets
 

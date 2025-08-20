@@ -87,6 +87,7 @@ Set the configuration in the YAML file created when the component was scaffolded
 />
 
 :::info
+
 Before running `dg check` again, remove the `customers`, `orders`, and `payments` assets from `assets.py` and the `resource.py` file. The component is not responsible for generating these objects (otherwise there duplicate keys).
 
 <CliInvocationExample path="docs_snippets/docs_snippets/guides/tutorials/dagster-tutorial/tree/step-6b.txt" />
@@ -96,3 +97,13 @@ Before running `dg check` again, remove the `customers`, `orders`, and `payments
 ## 5. Materialize the assets
 
 In the Dagster UI at [http://127.0.0.1:3000](http://127.0.0.1:3000), you will see that the asset graph looks the same as before.
+
+## Summary
+
+Congratulations! You've just built a fully functional, end-to-end data platform—one. This is no small feat! You've laid the foundation for a scalable, maintainable, and observable data platform.
+
+## Recommended next steps
+
+- Join our [Slack community](https://dagster.io/slack).
+- Continue learning with [Dagster University](https://courses.dagster.io) courses.
+- Start a [free trial of Dagster+](https://dagster.cloud/signup) for your own project.
