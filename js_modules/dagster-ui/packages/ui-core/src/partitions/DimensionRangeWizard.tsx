@@ -99,7 +99,9 @@ export const DimensionRangeWizard = ({
           $active={selectState === 'failed_and_missing'}
           onClick={() => {
             setSelectState('failed_and_missing');
-            setSelected(getMissingPartitions(health, partitionKeys));
+            const failedPartitions = getFailedPartitions(health, partitionKeys);
+            const missingPartitions = getMissingPartitions(health, partitionKeys);
+            setSelected([...new Set([...failedPartitions, ...missingPartitions])]);
           }}
         >
           All failed and missing
