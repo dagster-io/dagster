@@ -85,12 +85,14 @@ class DatabricksAssetBundleComponent(Component, Resolvable):
             ],
         ),
     ]
-    cluster_config: Optional[
+    compute_config: Optional[
         Annotated[
             ResolvedDatabricksClusterConfig,
             Resolver.default(
                 model_field_type=ResolvedDatabricksClusterConfig,
-                description="A mapping defining a databricks_asset_bundle.configs.ClusterConfig. Optional.",
+                description=(
+                    "A mapping defining a databricks_asset_bundle.configs.ResolvedDatabricksClusterConfig. Optional."
+                ),
                 examples=[
                     {
                         "spark_version": "test_spark_version",

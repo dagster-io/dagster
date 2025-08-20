@@ -45,7 +45,7 @@ PARTIAL_CLUSTER_CONFIG = {"spark_version": "test_spark_version"}
 def test_component_asset_spec(cluster_config: Optional[Mapping[str, Any]]):
     component = DatabricksAssetBundleComponent(
         databricks_config_path=DATABRICKS_CONFIG_LOCATION_PATH,
-        cluster_config=cluster_config,
+        compute_config=cluster_config,
         workspace=DatabricksWorkspace(
             host=TEST_DATABRICKS_WORKSPACE_HOST, token=TEST_DATABRICKS_WORKSPACE_TOKEN
         ),
@@ -82,7 +82,7 @@ def test_load_component(databricks_config_path: str):
             component,
             defs,
         ):
-            assert component.cluster_config == ResolvedDatabricksClusterConfig()
+            assert component.compute_config == ResolvedDatabricksClusterConfig()
 
             assets = list(defs.assets or [])
             assert len(assets) == 1
