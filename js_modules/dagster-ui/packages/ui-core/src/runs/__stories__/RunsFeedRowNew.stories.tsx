@@ -1,9 +1,10 @@
 import {Meta} from '@storybook/react';
 
-import {RunStatus, buildPipelineTag, buildRun} from '../../graphql/types';
+import {RunStatus, buildRun} from '../../graphql/types';
 import {StorybookProvider} from '../../testing/StorybookProvider';
 import {DagsterTag} from '../RunTag';
 import {RunsFeedRow, RunsFeedTableHeader} from '../RunsFeedRowNew';
+import {defaultMocks} from '../../testing/defaultMocks';
 
 // eslint-disable-next-line import/no-default-export
 export default {
@@ -18,14 +19,28 @@ const RunRowWrapper = ({children}: {children: React.ReactNode}) => (
   </div>
 );
 
-// Manual run launched by a user
+// Helper to create run with dynamic faker tags plus specific overrides
+const createRunWithDynamicTags = (specificTags: Array<{key: string; value: string}>) => {
+  const fakerRun = defaultMocks.Run();
+  const dynamicTags = fakerRun.tags();
+  
+  return buildRun({
+    id: fakerRun.id(),
+    jobName: fakerRun.jobName(),
+    runStatus: RunStatus.SUCCESS,
+    creationTime: Date.now() / 1000 - Math.random() * 7200, // Random time in last 2 hours
+    tags: [
+      ...dynamicTags.map((tag) => ({key: tag.key, value: tag.value})),
+      ...specificTags,
+    ],
+  });
+};
+
 export const ManualRun = () => {
-  const entry = buildRun({
-    runStatus: RunStatus.SUCCESS,
-    id: 'manual-run-123',
-    jobName: 'my_data_pipeline',
-    tags: [buildPipelineTag({key: DagsterTag.User, value: 'alice@company.com'})],
-  });
+  const entry = createRunWithDynamicTags([
+    {key: DagsterTag.User, value: 'john.doe@example.com'},
+  ]);
+
   return (
     <StorybookProvider>
       <RunRowWrapper>
@@ -35,14 +50,11 @@ export const ManualRun = () => {
   );
 };
 
-// Scheduled run
 export const ScheduledRun = () => {
-  const entry = buildRun({
-    runStatus: RunStatus.SUCCESS,
-    id: 'scheduled-run-456',
-    jobName: 'daily_etl_job',
-    tags: [buildPipelineTag({key: DagsterTag.ScheduleName, value: 'daily_etl_schedule'})],
-  });
+  const entry = createRunWithDynamicTags([
+    {key: DagsterTag.ScheduleName, value: 'daily_etl_schedule'},
+  ]);
+
   return (
     <StorybookProvider>
       <RunRowWrapper>
@@ -52,14 +64,11 @@ export const ScheduledRun = () => {
   );
 };
 
-// Sensor-triggered run
 export const SensorRun = () => {
-  const entry = buildRun({
-    runStatus: RunStatus.STARTED,
-    id: 'sensor-run-789',
-    jobName: 'file_processing_job',
-    tags: [buildPipelineTag({key: DagsterTag.SensorName, value: 's3_file_sensor'})],
-  });
+  const entry = createRunWithDynamicTags([
+    {key: DagsterTag.SensorName, value: 's3_file_sensor'},
+  ]);
+
   return (
     <StorybookProvider>
       <RunRowWrapper>
@@ -69,17 +78,28 @@ export const SensorRun = () => {
   );
 };
 
-// Run launched by a backfill
+export const DeclarativeAutomation = () => {
+  const entry = createRunWithDynamicTags([
+    {key: DagsterTag.Automaterialize, value: 'true'},
+    {key: DagsterTag.AutomationCondition, value: 'true'},
+    {key: DagsterTag.SensorName, value: 'default_automation_condition_sensor'},
+  ]);
+
+  return (
+    <StorybookProvider>
+      <RunRowWrapper>
+        <RunsFeedRow entry={entry} />
+      </RunRowWrapper>
+    </StorybookProvider>
+  );
+};
+
 export const BackfillLaunchedRun = () => {
-  const entry = buildRun({
-    runStatus: RunStatus.SUCCESS,
-    id: '97ddc9fd-5f96-4a62-8395-76d514ed47e9',
-    jobName: '__ASSET_JOB',
-    tags: [
-      buildPipelineTag({key: DagsterTag.Backfill, value: 'fwfelkfm'}),
-      buildPipelineTag({key: DagsterTag.User, value: 'anil@dagsterlabs.com'}),
-    ],
-  });
+  const entry = createRunWithDynamicTags([
+    {key: DagsterTag.Backfill, value: 'fwfelkfm'},
+    {key: DagsterTag.User, value: 'anil@dagsterlabs.com'},
+  ]);
+
   return (
     <StorybookProvider>
       <RunRowWrapper>
@@ -89,132 +109,20 @@ export const BackfillLaunchedRun = () => {
   );
 };
 
-// Declarative automation run
-export const DeclarativeAutomationRun = () => {
+export const PurelyDynamicRun = () => {
+  const fakerRun = defaultMocks.Run();
   const entry = buildRun({
+    id: fakerRun.id(),
+    jobName: fakerRun.jobName(),
     runStatus: RunStatus.SUCCESS,
-    id: 'automation-run-101',
-    jobName: '__ASSET_JOB',
-    tags: [
-      buildPipelineTag({key: DagsterTag.Automaterialize, value: 'true'}),
-      buildPipelineTag({key: DagsterTag.AutomationCondition, value: 'true'}),
-      buildPipelineTag({key: DagsterTag.SensorName, value: 'default_automation_condition_sensor'}),
-    ],
+    creationTime: Date.now() / 1000 - Math.random() * 7200,
+    tags: fakerRun.tags().map((tag) => ({key: tag.key, value: tag.value})),
   });
+
   return (
     <StorybookProvider>
       <RunRowWrapper>
         <RunsFeedRow entry={entry} />
-      </RunRowWrapper>
-    </StorybookProvider>
-  );
-};
-
-// All examples together with different creation times
-export const AllLaunchTypes = () => {
-  const now = Date.now() / 1000;
-  const runs = [
-    buildRun({
-      runStatus: RunStatus.SUCCESS,
-      id: 'manual-1',
-      jobName: 'user_pipeline',
-      creationTime: now - 30, // 30 seconds ago
-      tags: [buildPipelineTag({key: DagsterTag.User, value: 'alice@company.com'})],
-    }),
-    buildRun({
-      runStatus: RunStatus.SUCCESS,
-      id: 'scheduled-1',
-      jobName: 'daily_job',
-      creationTime: now - 300, // 5 minutes ago
-      tags: [buildPipelineTag({key: DagsterTag.ScheduleName, value: 'daily_schedule'})],
-    }),
-    buildRun({
-      runStatus: RunStatus.STARTED,
-      id: 'sensor-1',
-      jobName: 'reactive_job',
-      creationTime: now - 7200, // 2 hours ago
-      tags: [buildPipelineTag({key: DagsterTag.SensorName, value: 'file_sensor'})],
-    }),
-    buildRun({
-      runStatus: RunStatus.SUCCESS,
-      id: 'backfill-1',
-      jobName: '__ASSET_JOB',
-      creationTime: now - 172800, // 2 days ago
-      tags: [
-        buildPipelineTag({key: DagsterTag.Backfill, value: 'abc123'}),
-        buildPipelineTag({key: DagsterTag.User, value: 'bob@company.com'}),
-      ],
-    }),
-    buildRun({
-      runStatus: RunStatus.SUCCESS,
-      id: 'automation-1',
-      jobName: '__ASSET_JOB',
-      creationTime: now - 1209600, // 2 weeks ago
-      tags: [
-        buildPipelineTag({key: DagsterTag.Automaterialize, value: 'true'}),
-        buildPipelineTag({key: DagsterTag.AutomationCondition, value: 'true'}),
-      ],
-    }),
-  ];
-
-  return (
-    <StorybookProvider>
-      <RunRowWrapper>
-        {runs.map((entry) => (
-          <RunsFeedRow key={entry.id} entry={entry} />
-        ))}
-      </RunRowWrapper>
-    </StorybookProvider>
-  );
-};
-
-// Time formatting examples
-export const TimeRangeExamples = () => {
-  const now = Date.now() / 1000;
-  const runs = [
-    buildRun({
-      runStatus: RunStatus.SUCCESS,
-      id: 'recent-1',
-      jobName: 'recent_job',
-      creationTime: now - 17, // 17 seconds ago
-      tags: [buildPipelineTag({key: DagsterTag.User, value: 'user@example.com'})],
-    }),
-    buildRun({
-      runStatus: RunStatus.SUCCESS,
-      id: 'recent-2',
-      jobName: 'recent_job',
-      creationTime: now - 300, // 5 minutes ago
-      tags: [buildPipelineTag({key: DagsterTag.User, value: 'user@example.com'})],
-    }),
-    buildRun({
-      runStatus: RunStatus.SUCCESS,
-      id: 'recent-3',
-      jobName: 'recent_job',
-      creationTime: now - 7200, // 2 hours ago
-      tags: [buildPipelineTag({key: DagsterTag.User, value: 'user@example.com'})],
-    }),
-    buildRun({
-      runStatus: RunStatus.SUCCESS,
-      id: 'recent-4',
-      jobName: 'recent_job',
-      creationTime: now - 172800, // 2 days ago
-      tags: [buildPipelineTag({key: DagsterTag.User, value: 'user@example.com'})],
-    }),
-    buildRun({
-      runStatus: RunStatus.SUCCESS,
-      id: 'recent-5',
-      jobName: 'recent_job',
-      creationTime: now - 1209600, // 2 weeks ago
-      tags: [buildPipelineTag({key: DagsterTag.User, value: 'user@example.com'})],
-    }),
-  ];
-
-  return (
-    <StorybookProvider>
-      <RunRowWrapper>
-        {runs.map((entry) => (
-          <RunsFeedRow key={entry.id} entry={entry} />
-        ))}
       </RunRowWrapper>
     </StorybookProvider>
   );

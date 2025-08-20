@@ -107,6 +107,51 @@ export const defaultMocks = {
   RunOrError: () => ({
     __typename: 'Run',
   }),
+  Run: () => ({
+    id: randomId,
+    jobName: hyphenatedName,
+    tags: () => {
+      const tagCount = faker.datatype.number({min: 5, max: 12}); // Average ~8.5 tags based on production data
+      return [...new Array(tagCount)].map(() => ({
+        key: faker.random.arrayElement([
+          'dagster/agent_id',
+          'dagster/git_commit_hash',
+          'dagster/image',
+          'dagster/from_ui',
+          'environment',
+          'team',
+          'partition_date',
+          'retry_count',
+          'priority',
+          'source_system',
+          'file_size',
+          'materialization_count',
+          'backfill_range',
+          'total_partitions',
+          'trigger_file',
+          'data_version',
+        ]),
+        value: faker.random.arrayElement([
+          faker.datatype.uuid().slice(0, 8),
+          faker.git.commitSha().slice(0, 12),
+          `${faker.internet.domainName()}/${hyphenatedName()}:${faker.system.semver()}`,
+          faker.datatype.boolean().toString(),
+          faker.random.arrayElement(['production', 'staging', 'development']),
+          faker.random.arrayElement(['data-engineering', 'analytics', 'ml-ops']),
+          faker.date.recent().toISOString().slice(0, 10),
+          faker.datatype.number({min: 0, max: 3}).toString(),
+          faker.random.arrayElement(['high', 'medium', 'low']),
+          faker.random.arrayElement(['external_api', 'file_system', 'database']),
+          faker.datatype.number({min: 1024, max: 10485760}).toString(),
+          faker.datatype.number({min: 1, max: 100}).toString(),
+          `${faker.date.past().toISOString().slice(0, 10)}:${faker.date.recent().toISOString().slice(0, 10)}`,
+          faker.datatype.number({min: 1, max: 50}).toString(),
+          faker.system.filePath(),
+          faker.datatype.number().toString(),
+        ]),
+      }));
+    },
+  }),
   PartitionsOrError: () => ({
     __typename: 'Partitions',
   }),

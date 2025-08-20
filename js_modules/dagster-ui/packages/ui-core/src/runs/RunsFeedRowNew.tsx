@@ -1,4 +1,5 @@
-import {Box, Tag} from '@dagster-io/ui-components';
+import {Box, Button, Icon, Menu, MenuItem, Popover, Tag} from '@dagster-io/ui-components';
+import {useState} from 'react';
 
 import {DagsterTag} from './RunTag';
 import {RunsFeedTableEntryFragment} from './types/RunsFeedTableEntryFragment.types';
@@ -117,12 +118,102 @@ const CreatedAtCell = ({entry}: {entry: RunsFeedTableEntryFragment}) => {
   return <Box style={{color: '#64748b', fontSize: '14px'}}>{createdAtText}</Box>;
 };
 
+const TagsCell = ({entry}: {entry: RunsFeedTableEntryFragment}) => {
+  const [isOpen, setIsOpen] = useState(false);
+  const tags = entry.tags || [];
+
+  const copyAllTags = () => {
+    const tagText = tags.map((tag) => `${tag.key}: ${tag.value}`).join('\n');
+    navigator.clipboard.writeText(tagText);
+  };
+
+  const copyTag = (key: string, value: string) => {
+    navigator.clipboard.writeText(`${key}: ${value}`);
+  };
+
+  const runIdShort = entry.id.slice(0, 8);
+
+  return (
+    <Popover
+      isOpen={isOpen}
+      onInteraction={setIsOpen}
+      placement="bottom-end"
+      content={
+        <Box style={{minWidth: '320px', padding: '12px'}}>
+          {/* Header */}
+          <Box
+            style={{
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              marginBottom: '12px',
+              paddingBottom: '8px',
+              borderBottom: '1px solid #e1e5e9',
+            }}
+          >
+            <Box style={{display: 'flex', alignItems: 'center', gap: '6px'}}>
+              <Icon name="tag" size={16} />
+              <span style={{fontWeight: 500}}>Tags</span>
+            </Box>
+            <Box style={{color: '#64748b', fontSize: '12px'}}>#{runIdShort}</Box>
+          </Box>
+
+          {/* Tags List */}
+          <Box style={{display: 'flex', flexDirection: 'column', gap: '4px', marginBottom: '12px'}}>
+            {tags.map((tag, index) => (
+              <Box
+                key={index}
+                style={{
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
+                  padding: '4px 0',
+                }}
+              >
+                <Box style={{display: 'flex', justifyContent: 'space-between', width: '100%'}}>
+                  <Box style={{fontWeight: 500, color: '#374151'}}>{tag.key}:</Box>
+                  <Box style={{color: '#6b7280', marginLeft: '12px'}}>{tag.value}</Box>
+                </Box>
+                <Popover
+                  content={
+                    <Menu>
+                      <MenuItem
+                        text="Copy tag"
+                        onClick={() => copyTag(tag.key, tag.value)}
+                        icon="copy"
+                      />
+                    </Menu>
+                  }
+                  placement="left"
+                >
+                  <Button
+                    icon="more_horiz"
+                    style={{marginLeft: '8px', minWidth: 'auto', padding: '2px'}}
+                    onClick={(e) => e.stopPropagation()}
+                  />
+                </Popover>
+              </Box>
+            ))}
+          </Box>
+
+          {/* Copy All Button */}
+          <Button onClick={copyAllTags} style={{width: '100%'}} intent="none">
+            Copy all
+          </Button>
+        </Box>
+      }
+    >
+      <Button icon="tag" style={{minWidth: 'auto', padding: '4px'}} />
+    </Popover>
+  );
+};
+
 export const RunsFeedRow = ({entry}: {entry: RunsFeedTableEntryFragment}) => {
   return (
     <Box
       style={{
         display: 'grid',
-        gridTemplateColumns: '1fr 120px',
+        gridTemplateColumns: '1fr 120px 40px',
         gap: '12px',
         padding: '8px 12px',
         borderBottom: '1px solid #e1e5e9',
@@ -131,6 +222,7 @@ export const RunsFeedRow = ({entry}: {entry: RunsFeedTableEntryFragment}) => {
     >
       <LaunchedByCell entry={entry} />
       <CreatedAtCell entry={entry} />
+      <TagsCell entry={entry} />
     </Box>
   );
 };
@@ -140,7 +232,7 @@ export const RunsFeedTableHeader = () => {
     <Box
       style={{
         display: 'grid',
-        gridTemplateColumns: '1fr 120px',
+        gridTemplateColumns: '1fr 120px 40px',
         gap: '12px',
         padding: '8px 12px',
         borderBottom: '2px solid #d1d5db',
@@ -150,6 +242,7 @@ export const RunsFeedTableHeader = () => {
     >
       <Box>Launched by</Box>
       <Box>Created at</Box>
+      <Box>Tags</Box>
     </Box>
   );
 };
