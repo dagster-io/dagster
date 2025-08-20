@@ -30,13 +30,6 @@ def test_load_component(
     databricks_config_path: str,
 ):
     with create_defs_folder_sandbox() as sandbox:
-        config_path = None
-        if use_custom_config_path:
-            if is_serverless:
-                config_path = serverless_custom_config_path
-            else:
-                config_path = custom_config_path
-
         defs_path = sandbox.scaffold_component(
             component_cls=DatabricksAssetBundleComponent,
             scaffold_params={
@@ -48,11 +41,15 @@ def test_load_component(
                 "type": "dagster_databricks.components.databricks_asset_bundle.component.DatabricksAssetBundleComponent",
                 "attributes": {
                     "databricks_config_path": databricks_config_path,
-                    **(
-                        {"compute_config": {"existing_cluster_id": "test_existing_cluster_id"}}
-                        if use_existing_cluster
-                        else {}
-                    ),
+                    "compute_config": {
+                        **(
+                            {"existing_cluster_id": "test_existing_cluster_id"}
+                            if use_existing_cluster
+                            else {}
+                        ),
+                        **({"is_serverless": True} if is_serverless else {}),
+                    },
+
                     "workspace": {
                         "host": TEST_DATABRICKS_WORKSPACE_HOST,
                         "token": TEST_DATABRICKS_WORKSPACE_TOKEN,
