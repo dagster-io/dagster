@@ -80,7 +80,10 @@ class DatabricksWorkspace(ConfigurableResource):
 
             # Determine cluster configuration based on task type
             compute_config = {}
-            if task.needs_cluster and not component.cluster_config.is_serverless:
+            if task.needs_cluster and not (
+                hasattr(component.compute_config, "is_serverless")
+                and component.compute_config.is_serverless
+            ):
                 if isinstance(component.compute_config, ResolvedDatabricksExistingClusterConfig):
                     compute_config["existing_cluster_id"] = (
                         component.compute_config.existing_cluster_id

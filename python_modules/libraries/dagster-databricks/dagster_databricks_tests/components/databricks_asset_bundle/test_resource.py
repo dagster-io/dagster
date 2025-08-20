@@ -18,9 +18,13 @@ from dagster_databricks_tests.components.databricks_asset_bundle.conftest import
     [
         (False, False),
         (True, False),
-        (True, True),
+        (False, True),
     ],
-    ids=["new_cluster_compute_config", "existing_cluster_compute_config", "serverless_config"],
+    ids=[
+        "new_cluster_compute_config",
+        "existing_cluster_compute_config",
+        "serverless_compute_config",
+    ],
 )
 @mock.patch("databricks.sdk.service.jobs.SubmitTask", autospec=True)
 def test_load_component(
@@ -49,7 +53,6 @@ def test_load_component(
                         ),
                         **({"is_serverless": True} if is_serverless else {}),
                     },
-
                     "workspace": {
                         "host": TEST_DATABRICKS_WORKSPACE_HOST,
                         "token": TEST_DATABRICKS_WORKSPACE_TOKEN,

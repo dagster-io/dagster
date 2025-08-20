@@ -18,6 +18,7 @@ from dagster_databricks.components.databricks_asset_bundle.configs import (
     DatabricksConfig,
     ResolvedDatabricksExistingClusterConfig,
     ResolvedDatabricksNewClusterConfig,
+    ResolvedDatabricksServerlessConfig,
 )
 from dagster_databricks.components.databricks_asset_bundle.resource import DatabricksWorkspace
 from dagster_databricks.components.databricks_asset_bundle.scaffolder import (
@@ -88,15 +89,22 @@ class DatabricksAssetBundleComponent(Component, Resolvable):
     ]
     compute_config: Optional[
         Annotated[
-            Union[ResolvedDatabricksNewClusterConfig, ResolvedDatabricksExistingClusterConfig],
+            Union[
+                ResolvedDatabricksNewClusterConfig,
+                ResolvedDatabricksExistingClusterConfig,
+                ResolvedDatabricksServerlessConfig,
+            ],
             Resolver.default(
                 model_field_type=Union[
-                    ResolvedDatabricksNewClusterConfig, ResolvedDatabricksExistingClusterConfig
+                    ResolvedDatabricksNewClusterConfig,
+                    ResolvedDatabricksExistingClusterConfig,
+                    ResolvedDatabricksServerlessConfig,
                 ],
                 description=(
                     "A mapping defining a Databricks compute config. "
-                    "Allowed types are databricks_asset_bundle.configs.ResolvedDatabricksNewClusterConfig "
-                    "and databricks_asset_bundle.configs.ResolvedDatabricksExistingClusterConfig. Optional."
+                    "Allowed types are databricks_asset_bundle.configs.ResolvedDatabricksNewClusterConfig, "
+                    "databricks_asset_bundle.configs.ResolvedDatabricksExistingClusterConfig and "
+                    "databricks_asset_bundle.configs.ResolvedDatabricksServerlessConfig. Optional."
                 ),
                 examples=[
                     {
@@ -106,6 +114,9 @@ class DatabricksAssetBundleComponent(Component, Resolvable):
                     },
                     {
                         "existing_cluster_id": "existing_cluster_id",
+                    },
+                    {
+                        "is_serverless": True,
                     },
                 ],
             ),

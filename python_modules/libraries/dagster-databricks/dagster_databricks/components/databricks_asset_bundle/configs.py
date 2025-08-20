@@ -419,3 +419,7 @@ class ResolvedDatabricksNewClusterConfig(Resolvable, Model):
 
 class ResolvedDatabricksExistingClusterConfig(Resolvable, Model):
     existing_cluster_id: str
+
+
+class ResolvedDatabricksServerlessConfig(Resolvable, Model):
+    is_serverless: bool
