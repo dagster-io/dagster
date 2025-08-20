@@ -1,0 +1,49 @@
+from dagster import AssetsDefinition, DagsterEventType, materialize
+from dagster.components.testing import create_defs_folder_sandbox
+from dagster_databricks.components.databricks_asset_bundle.component import (
+    DatabricksAssetBundleComponent,
+)
+
+from dagster_databricks_tests.components.databricks_asset_bundle.conftest import (
+    TEST_DATABRICKS_WORKSPACE_HOST,
+    TEST_DATABRICKS_WORKSPACE_TOKEN,
+)
+
+
+def test_load_component(databricks_config_path: str):
+    with create_defs_folder_sandbox() as sandbox:
+        defs_path = sandbox.scaffold_component(
+            component_cls=DatabricksAssetBundleComponent,
+            scaffold_params={
+                "databricks_config_path": databricks_config_path,
+                "databricks_workspace_host": TEST_DATABRICKS_WORKSPACE_HOST,
+                "databricks_workspace_token": TEST_DATABRICKS_WORKSPACE_TOKEN,
+            },
+        )
+        with sandbox.load_component_and_build_defs(defs_path=defs_path) as (
+            component,
+            defs,
+        ):
+            assert isinstance(component, DatabricksAssetBundleComponent)
+
+            assets = list(defs.assets or [])
+            assert len(assets) == 1
+            databricks_assets = assets[0]
+            assert isinstance(databricks_assets, AssetsDefinition)
+
+            result = materialize(
+                [databricks_assets],
+                resources={"databricks": component.workspace},
+            )
+            assert result.success
+            asset_materializations = [
+                event
+                for event in result.all_events
+                if event.event_type_value == DagsterEventType.ASSET_MATERIALIZATION
+            ]
+            assert len(asset_materializations) == 6
+            materialized_asset_keys = {
+                asset_materialization.asset_key for asset_materialization in asset_materializations
+            }
+            assert len(materialized_asset_keys) == 6
+            assert databricks_assets.keys == materialized_asset_keys

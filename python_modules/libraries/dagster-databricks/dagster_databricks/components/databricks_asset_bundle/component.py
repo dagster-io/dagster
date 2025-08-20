@@ -116,6 +116,13 @@ class DatabricksAssetBundleComponent(Component, Resolvable):
         )
         def multi_notebook_job_asset(
             context: AssetExecutionContext,
-        ): ...
+            databricks: DatabricksWorkspace,
+        ):
+            """Multi-asset that runs multiple notebooks as a single Databricks job."""
+            yield from databricks.submit_and_poll(
+                tasks=self.databricks_config.tasks, context=context
+            )
 
-        return Definitions(assets=[multi_notebook_job_asset])
+        return Definitions(
+            assets=[multi_notebook_job_asset], resources={"databricks": self.workspace}
+        )
