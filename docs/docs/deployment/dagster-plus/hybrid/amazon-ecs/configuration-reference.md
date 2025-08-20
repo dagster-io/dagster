@@ -14,7 +14,7 @@ This reference describes the various configuration options Dagster+ currently su
 
 ## Per-agent configuration
 
-We expose `AgentMemory`, `AgentCpu` fields in the Cloud Formation templates to configure the resources that the Dagster+ agent can use.
+We expose `AgentMemory`, and `AgentCpu` fields in the Cloud Formation templates to configure the resources that the Dagster+ agent can use.
 
 ## Per-location configuration
 

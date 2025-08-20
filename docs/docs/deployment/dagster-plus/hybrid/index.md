@@ -44,10 +44,10 @@ If you're not sure which agent to use, we recommend the [Dagster+ Kubernetes age
 
 The Dagster+ agent acts as a message relay and executor that picks up messages from Dagster+ and launches or queries your user code.
 
-#### Infrastructure Management
+#### Infrastructure management
 
 - Launches and manages code servers for each code location
--Launches run workers (new containers/processes) when runs need to be executed
+- Launches run workers (new containers/processes) when runs need to be executed
 - Acts as the run launcher, spinning up isolated tasks/pods/processes for each run
 
 #### Communication
@@ -78,8 +78,8 @@ You can do the following to make your Dagster+ Hybrid deployment more secure:
 - [Disable log forwarding](/deployment/dagster-plus/management/customizing-agent-settings#disabling-compute-logs)
 - [Manage tokens](/deployment/dagster-plus/management/tokens/agent-tokens)
 
-### Recommended Compute Resources for New Dagster+ Deployment
+### Recommended compute resources for new Dagster+ deployment
 
 - Agent: 256 CPU, 1024 memory
-- Code Server: 256 CPU, 1024 memory
+- Code server: 256 CPU, 1024 memory
 - Runs: 4 vCPU cores, 8-16 GB of RAM depending on the workload

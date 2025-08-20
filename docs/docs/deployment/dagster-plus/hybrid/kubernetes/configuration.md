@@ -20,7 +20,7 @@ You can also view the chart values on [ArtifactHub](https://artifacthub.io/packa
 
 ## Agent configuration
 
-The [`dagsterCloudAgent`](https://artifacthub.io/packages/helm/dagster-cloud/dagster-cloud-agent?modal=values) value of the helm chart provides the ability to add configuration to the Dagster+ agent.
+The [`dagsterCloudAgent`](https://artifacthub.io/packages/helm/dagster-cloud/dagster-cloud-agent?modal=values) value of the Helm chart provides the ability to add configuration to the Dagster+ agent.
 
 The following `values.yaml` example file shows how to configure the resources for a Dagster+ agent:
 
