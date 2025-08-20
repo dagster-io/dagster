@@ -14,7 +14,7 @@ from dagster_databricks_tests.components.databricks_asset_bundle.conftest import
 
 
 @pytest.mark.parametrize(
-    "use_custom_config_path",
+    "use_existing_cluster",
     [
         False,
         True,
@@ -27,8 +27,7 @@ from dagster_databricks_tests.components.databricks_asset_bundle.conftest import
 @mock.patch("databricks.sdk.service.jobs.SubmitTask", autospec=True)
 def test_load_component(
     mock_submit_task: mock.MagicMock,
-    use_custom_config_path: bool,
-    custom_config_path: str,
+    use_existing_cluster: bool,
     databricks_config_path: str,
 ):
     with create_defs_folder_sandbox() as sandbox:
@@ -36,9 +35,21 @@ def test_load_component(
             component_cls=DatabricksAssetBundleComponent,
             scaffold_params={
                 "databricks_config_path": databricks_config_path,
-                "custom_config_path": custom_config_path if use_custom_config_path else None,
                 "databricks_workspace_host": TEST_DATABRICKS_WORKSPACE_HOST,
                 "databricks_workspace_token": TEST_DATABRICKS_WORKSPACE_TOKEN,
+            },
+            defs_yaml_contents={
+                "type": "dagster_databricks.components.databricks_asset_bundle.component.DatabricksAssetBundleComponent",
+                "attributes": {
+                    "databricks_config_path": databricks_config_path,
+                    "cluster_config": {"existing_cluster_id": "test"}
+                    if use_existing_cluster
+                    else None,
+                    "workspace": {
+                        "host": TEST_DATABRICKS_WORKSPACE_HOST,
+                        "token": TEST_DATABRICKS_WORKSPACE_TOKEN,
+                    },
+                },
             },
         )
 
@@ -80,7 +91,7 @@ def test_load_component(
                 == 4
             )
 
-            cluster_config_key = "existing_cluster_id" if use_custom_config_path else "new_cluster"
+            cluster_config_key = "existing_cluster_id" if use_existing_cluster else "new_cluster"
             # new_cluster is expected in 4 of the 6 submit tasks we create
             assert (
                 len(
