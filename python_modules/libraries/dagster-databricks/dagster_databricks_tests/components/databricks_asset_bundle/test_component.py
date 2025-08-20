@@ -6,15 +6,21 @@ from dagster_databricks.components.databricks_asset_bundle.component import (
     DatabricksAssetBundleComponent,
     snake_case,
 )
+from dagster_databricks.components.databricks_asset_bundle.resource import DatabricksWorkspace
 
 from dagster_databricks_tests.components.databricks_asset_bundle.conftest import (
     DATABRICKS_CONFIG_LOCATION_PATH,
+    TEST_DATABRICKS_WORKSPACE_HOST,
+    TEST_DATABRICKS_WORKSPACE_TOKEN,
 )
 
 
 def test_component_asset_spec():
     component = DatabricksAssetBundleComponent(
-        databricks_config_path=DATABRICKS_CONFIG_LOCATION_PATH
+        databricks_config_path=DATABRICKS_CONFIG_LOCATION_PATH,
+        workspace=DatabricksWorkspace(
+            host=TEST_DATABRICKS_WORKSPACE_HOST, token=TEST_DATABRICKS_WORKSPACE_TOKEN
+        ),
     )
     for task in component.databricks_config.tasks:
         asset_spec = component.get_asset_spec(task)
@@ -38,7 +44,11 @@ def test_load_component(databricks_config_path: str):
     with create_defs_folder_sandbox() as sandbox:
         defs_path = sandbox.scaffold_component(
             component_cls=DatabricksAssetBundleComponent,
-            scaffold_params={"databricks_config_path": databricks_config_path},
+            scaffold_params={
+                "databricks_config_path": databricks_config_path,
+                "databricks_workspace_host": TEST_DATABRICKS_WORKSPACE_HOST,
+                "databricks_workspace_token": TEST_DATABRICKS_WORKSPACE_TOKEN,
+            },
         )
         with sandbox.load_component_and_build_defs(defs_path=defs_path) as (
             component,
