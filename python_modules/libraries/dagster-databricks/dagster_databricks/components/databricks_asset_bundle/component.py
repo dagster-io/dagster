@@ -9,7 +9,7 @@ from dagster import AssetExecutionContext, AssetSpec, MetadataValue, Resolvable,
 from dagster._core.definitions.definitions_class import Definitions
 from dagster.components.component.component import Component
 from dagster.components.core.context import ComponentLoadContext
-from dagster.components.resolved.core_models import ResolutionContext
+from dagster.components.resolved.core_models import OpSpec, ResolutionContext
 from dagster.components.resolved.model import Resolver
 from dagster.components.scaffold.scaffold import scaffold_with
 
@@ -122,6 +122,17 @@ class DatabricksAssetBundleComponent(Component, Resolvable):
             ),
         ]
     ] = field(default_factory=ResolvedDatabricksNewClusterConfig)
+    op: Annotated[
+        Optional[OpSpec],
+        Resolver.default(
+            description="Op related arguments to set on the generated @multi_asset",
+            examples=[
+                {
+                    "name": "some_op",
+                },
+            ],
+        ),
+    ] = None
 
     @cached_property
     def databricks_config(self) -> DatabricksConfig:
@@ -148,7 +159,9 @@ class DatabricksAssetBundleComponent(Component, Resolvable):
         ).replace("/", "_")
 
         @multi_asset(
-            name=f"{self.custom_config.asset_name_prefix}_multi_asset_{component_defs_path_as_python_str}",
+            name=self.op.name
+            if self.op
+            else f"databricks_tasks_multi_asset_{component_defs_path_as_python_str}",
             specs=[self.get_asset_spec(task) for task in self.databricks_config.tasks],
             can_subset=True,
         )

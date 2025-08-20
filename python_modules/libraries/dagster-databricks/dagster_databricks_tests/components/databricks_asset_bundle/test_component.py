@@ -67,7 +67,18 @@ def test_component_asset_spec(compute_config: Optional[ResolvedDatabricksNewClus
             assert "libraries" not in asset_spec.metadata
 
 
-def test_load_component(databricks_config_path: str):
+@pytest.mark.parametrize(
+    "custom_op_name",
+    [
+        None,
+        "test_op_name",
+    ],
+    ids=[
+        "no_custom_op_name",
+        "custom_op_name",
+    ],
+)
+def test_load_component(custom_op_name: Optional[str], databricks_config_path: str):
     with create_defs_folder_sandbox() as sandbox:
         defs_path = sandbox.scaffold_component(
             component_cls=DatabricksAssetBundleComponent,
@@ -75,6 +86,18 @@ def test_load_component(databricks_config_path: str):
                 "databricks_config_path": databricks_config_path,
                 "databricks_workspace_host": TEST_DATABRICKS_WORKSPACE_HOST,
                 "databricks_workspace_token": TEST_DATABRICKS_WORKSPACE_TOKEN,
+            },
+            defs_yaml_contents={
+                "type": "dagster_databricks.components.databricks_asset_bundle.component.DatabricksAssetBundleComponent",
+                "attributes": {
+                    "databricks_config_path": databricks_config_path,
+                    "cluster_config": {},
+                    "op": {"name": "test_op_name"} if custom_op_name else None,
+                    "workspace": {
+                        "host": TEST_DATABRICKS_WORKSPACE_HOST,
+                        "token": TEST_DATABRICKS_WORKSPACE_TOKEN,
+                    },
+                },
             },
         )
         with sandbox.load_component_and_build_defs(defs_path=defs_path) as (
@@ -92,7 +115,11 @@ def test_load_component(databricks_config_path: str):
             test_component_defs_path_as_python_str = str(
                 os.path.relpath(sandbox.defs_folder_path, start=sandbox.project_root)
             ).replace("/", "_")
-            assert test_component_defs_path_as_python_str in databricks_assets.node_def.name
+            test_op_name = (
+                custom_op_name if custom_op_name else test_component_defs_path_as_python_str
+            )
+
+            assert test_op_name in databricks_assets.node_def.name
 
             assert defs.resolve_asset_graph().get_all_asset_keys() == {
                 AssetKey(["check_data_quality"]),
