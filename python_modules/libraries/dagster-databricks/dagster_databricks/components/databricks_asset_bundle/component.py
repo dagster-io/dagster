@@ -94,13 +94,19 @@ class DatabricksAssetBundleComponent(Component, Resolvable):
                     ResolvedDatabricksNewClusterConfig, ResolvedDatabricksExistingClusterConfig
                 ],
                 description=(
-                    "A mapping defining a databricks_asset_bundle.configs.ResolvedDatabricksNewClusterConfig. Optional."
+                    "A mapping defining a Databricks compute config. "
+                    "Allowed types are databricks_asset_bundle.configs.ResolvedDatabricksNewClusterConfig "
+                    "and databricks_asset_bundle.configs.ResolvedDatabricksExistingClusterConfig. "
+                    "Optional."
                 ),
                 examples=[
                     {
                         "spark_version": "test_spark_version",
                         "node_type_id": "node_type_id",
                         "num_workers": 1,
+                    },
+                    {
+                        "existing_cluster_id": "existing_cluster_id",
                     },
                 ],
             ),
