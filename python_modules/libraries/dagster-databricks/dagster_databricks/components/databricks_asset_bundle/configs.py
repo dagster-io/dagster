@@ -558,6 +558,7 @@ class ResolvedDatabricksNewClusterConfig(Resolvable, Model):
     num_workers: int = 1
 
 
+@preview
 class ResolvedDatabricksExistingClusterConfig(Resolvable, Model):
     existing_cluster_id: str
 
