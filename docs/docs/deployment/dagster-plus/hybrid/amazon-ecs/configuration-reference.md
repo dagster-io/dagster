@@ -12,6 +12,10 @@ This guide is applicable to Dagster+.
 
 This reference describes the various configuration options Dagster+ currently supports for [Amazon ECS agents](/deployment/dagster-plus/hybrid/amazon-ecs).
 
+## Per-agent configuration
+
+We expose `AgentMemory`, and `AgentCpu` fields in the Cloud Formation templates to configure the resources that the Dagster+ agent can use.
+
 ## Per-location configuration
 
 When [adding a code location](/deployment/code-locations) to Dagster+ with an Amazon ECS agent, you can use the `container_context` key on the location configuration to add additional ECS-specific configuration that will be applied to any ECS tasks associated with that code location.
