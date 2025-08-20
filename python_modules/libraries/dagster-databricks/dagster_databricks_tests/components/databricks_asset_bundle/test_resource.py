@@ -50,7 +50,7 @@ def test_load_component(mock_submit_task: mock.MagicMock, databricks_config_path
             }
             assert len(materialized_asset_keys) == 6
             assert databricks_assets.keys == materialized_asset_keys
-            mock_submit_task.call_count == 6
+            assert mock_submit_task.call_count == 6
 
             # task_key is expected in every submit tasks
             assert all(call for call in mock_submit_task.mock_calls if "task_key" in call.kwargs)
