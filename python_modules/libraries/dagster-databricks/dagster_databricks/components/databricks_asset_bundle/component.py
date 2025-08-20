@@ -69,7 +69,7 @@ def resolve_cluster_config(context: ResolutionContext, model) -> DatabricksClust
         kwargs["spark_version"] = args.spark_version
     if args.node_type_id:
         kwargs["node_type_id"] = args.node_type_id
-    if args.spark_version:
+    if args.num_workers:
         kwargs["num_workers"] = args.num_workers
 
     return DatabricksClusterConfig(**kwargs)
