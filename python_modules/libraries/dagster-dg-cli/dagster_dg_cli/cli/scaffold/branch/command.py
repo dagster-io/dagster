@@ -284,7 +284,7 @@ def execute_scaffold_branch_command(
                 f"🤖 Planning Model: {planning_model} (reasoning-focused for complex planning)"
             )
             click.echo(f"📁 Project: {dg_context.root_path}")
-            click.echo(f"⚙️  Input Type: {input_type.__name__}")
+
             with enter_waiting_phase(
                 "Generating plan", spin=not disable_progress
             ) as output_channel:
