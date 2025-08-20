@@ -146,6 +146,7 @@ def build_repo_wide_pyright_steps() -> list[StepConfiguration]:
                     "make pyright",
                 )
                 .skip_if(skip_if_no_python_changes(overrides=["pyright"]))
+                # Run on a larger instance
                 .on_queue(BuildkiteQueue.DOCKER)
                 .build(),
                 add_test_image(
