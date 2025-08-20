@@ -47,7 +47,7 @@ def build_tox_step(
     dependencies: Optional[list[str]] = None,
     retries: Optional[int] = None,
     timeout_in_minutes: Optional[int] = None,
-    queue: BuildkiteQueue = BuildkiteQueue.KUBERNETES_EKS,
+    queue: BuildkiteQueue = BuildkiteQueue.MEDIUM,
     skip_reason: Optional[str] = None,
     pytest_args: Optional[list[str]] = None,
 ) -> CommandStepConfiguration:

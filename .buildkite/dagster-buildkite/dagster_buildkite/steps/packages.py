@@ -137,7 +137,7 @@ class PackageSpec:
     tox_file: Optional[str] = None
     retries: Optional[int] = None
     timeout_in_minutes: Optional[int] = None
-    queue: BuildkiteQueue = BuildkiteQueue.KUBERNETES_EKS
+    queue: BuildkiteQueue = BuildkiteQueue.MEDIUM
     run_pytest: bool = True
     splits: int = 1
     always_run_if: Optional[Callable[[], bool]] = None
@@ -635,6 +635,7 @@ LIBRARY_PACKAGES_WITH_CUSTOM_CONFIG: list[PackageSpec] = [
         # cause dependency collisions.
         unsupported_python_versions=AvailablePythonVersion.get_all_except_default(),
         retries=0,
+        queue=BuildkiteQueue.KUBERNETES_EKS,
     ),
     PackageSpec("python_modules/dagster-webserver", pytest_extra_cmds=ui_extra_cmds),
     PackageSpec(
