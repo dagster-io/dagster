@@ -101,7 +101,7 @@ export const DimensionRangeWizard = ({
             setSelectState('failed_and_missing');
             const failedPartitions = getFailedPartitions(health, partitionKeys);
             const missingPartitions = getMissingPartitions(health, partitionKeys);
-            setSelected([...new Set([...failedPartitions, ...missingPartitions])]);
+            setSelected(Array.from(new Set([...failedPartitions, ...missingPartitions])));
           }}
         >
           All failed and missing
