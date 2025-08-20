@@ -28,11 +28,11 @@ The following `values.yaml` example file shows how to configure the resources fo
 dagsterCloudAgent:
   resources:
     requests:
-      cpu: "1000m"
-      memory: "2Gi"
+      cpu: '1000m'
+      memory: '2Gi'
     limits:
-      cpu: "2000m"
-      memory: "4Gi"
+      cpu: '2000m'
+      memory: '4Gi'
 ```
 
 ## Per-deployment configuration
