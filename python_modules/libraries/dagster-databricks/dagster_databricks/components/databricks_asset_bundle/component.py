@@ -16,7 +16,7 @@ from dagster.components.scaffold.scaffold import scaffold_with
 from dagster_databricks.components.databricks_asset_bundle.configs import (
     DatabricksBaseTask,
     DatabricksConfig,
-    ResolvedDatabricksClusterConfig,
+    ResolvedDatabricksNewClusterConfig,
 )
 from dagster_databricks.components.databricks_asset_bundle.resource import DatabricksWorkspace
 from dagster_databricks.components.databricks_asset_bundle.scaffolder import (
@@ -87,11 +87,11 @@ class DatabricksAssetBundleComponent(Component, Resolvable):
     ]
     compute_config: Optional[
         Annotated[
-            ResolvedDatabricksClusterConfig,
+            ResolvedDatabricksNewClusterConfig,
             Resolver.default(
-                model_field_type=ResolvedDatabricksClusterConfig,
+                model_field_type=ResolvedDatabricksNewClusterConfig,
                 description=(
-                    "A mapping defining a databricks_asset_bundle.configs.ResolvedDatabricksClusterConfig. Optional."
+                    "A mapping defining a databricks_asset_bundle.configs.ResolvedDatabricksNewClusterConfig. Optional."
                 ),
                 examples=[
                     {
@@ -102,7 +102,7 @@ class DatabricksAssetBundleComponent(Component, Resolvable):
                 ],
             ),
         ]
-    ] = field(default_factory=ResolvedDatabricksClusterConfig)
+    ] = field(default_factory=ResolvedDatabricksNewClusterConfig)
 
     @cached_property
     def databricks_config(self) -> DatabricksConfig:

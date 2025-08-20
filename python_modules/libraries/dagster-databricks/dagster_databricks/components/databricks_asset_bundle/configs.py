@@ -383,7 +383,7 @@ class DatabricksConfig(IHaveNew):
         return job_parameters
 
 
-class ResolvedDatabricksClusterConfig(Resolvable, Model):
+class ResolvedDatabricksNewClusterConfig(Resolvable, Model):
     spark_version: str = "13.3.x-scala2.12"
     node_type_id: str = "i3.xlarge"
     num_workers: int = 1

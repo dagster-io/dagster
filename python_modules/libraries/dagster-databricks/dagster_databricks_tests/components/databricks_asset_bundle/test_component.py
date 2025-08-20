@@ -10,7 +10,7 @@ from dagster_databricks.components.databricks_asset_bundle.component import (
     snake_case,
 )
 from dagster_databricks.components.databricks_asset_bundle.configs import (
-    ResolvedDatabricksClusterConfig,
+    ResolvedDatabricksNewClusterConfig,
 )
 from dagster_databricks.components.databricks_asset_bundle.resource import DatabricksWorkspace
 
@@ -82,7 +82,7 @@ def test_load_component(databricks_config_path: str):
             component,
             defs,
         ):
-            assert component.compute_config == ResolvedDatabricksClusterConfig()
+            assert component.compute_config == ResolvedDatabricksNewClusterConfig()
 
             assets = list(defs.assets or [])
             assert len(assets) == 1
