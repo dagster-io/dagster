@@ -1,5 +1,14 @@
 set -euo pipefail
 
+# in k8s this runs in a different container than post-checkout, so also
+# need to export here
+if [ -n "${KUBERNETES_PORT-}" ]; then
+    export DAGSTER_GIT_REPO_DIR="$(cd ../; pwd)/dagster"
+
+    export PYTEST_ADDOPTS="-c $(pwd)/pyproject.toml"
+    echo "running on pod: $POD_NAME, node: $NODE_NAME"
+fi
+
 export DAGSTER_GIT_REPO_DIR=/workdir
 
 if [ -z "${PYTEST_CURRENT_TEST:-}" ]; then
