@@ -20,8 +20,8 @@ from dagster_databricks_tests.components.databricks_asset_bundle.conftest import
         True,
     ],
     ids=[
-        "no_cluster_config",
-        "existing_cluster_config",
+        "new_cluster_compute_config",
+        "existing_cluster_compute_config",
     ],
 )
 @mock.patch("databricks.sdk.service.jobs.SubmitTask", autospec=True)
@@ -42,9 +42,11 @@ def test_load_component(
                 "type": "dagster_databricks.components.databricks_asset_bundle.component.DatabricksAssetBundleComponent",
                 "attributes": {
                     "databricks_config_path": databricks_config_path,
-                    "cluster_config": {"existing_cluster_id": "test_existing_cluster_id"}
-                    if use_existing_cluster
-                    else None,
+                    **(
+                        {"compute_config": {"existing_cluster_id": "test_existing_cluster_id"}}
+                        if use_existing_cluster
+                        else {}
+                    ),
                     "workspace": {
                         "host": TEST_DATABRICKS_WORKSPACE_HOST,
                         "token": TEST_DATABRICKS_WORKSPACE_TOKEN,

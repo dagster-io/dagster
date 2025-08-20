@@ -76,12 +76,12 @@ class DatabricksWorkspace(ConfigurableResource):
             # Determine cluster configuration based on task type
             compute_config = {}
             if task.needs_cluster:
-                if component.compute_config.existing_cluster_id:
-                    cluster_config["existing_cluster_id"] = (
+                if hasattr(component.compute_config, "existing_cluster_id"):
+                    compute_config["existing_cluster_id"] = (
                         component.compute_config.existing_cluster_id
                     )
                 else:
-                    cluster_config["new_cluster"] = compute.ClusterSpec(
+                    compute_config["new_cluster"] = compute.ClusterSpec(
                         spark_version=component.compute_config.spark_version,
                         node_type_id=component.compute_config.node_type_id,
                         num_workers=component.compute_config.num_workers,
