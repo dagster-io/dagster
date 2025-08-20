@@ -1,5 +1,4 @@
 import os
-from collections.abc import Mapping
 from typing import Any, Optional
 
 import pytest
@@ -20,21 +19,21 @@ from dagster_databricks_tests.components.databricks_asset_bundle.conftest import
     TEST_DATABRICKS_WORKSPACE_TOKEN,
 )
 
-CLUSTER_CONFIG = {
+NEW_CLUSTER_CONFIG = {
     "spark_version": "test_spark_version",
     "node_type_id": "test_node_type_id",
     "num_workers": 2,
 }
 
-PARTIAL_CLUSTER_CONFIG = {"spark_version": "test_spark_version"}
+PARTIAL_NEW_CLUSTER_CONFIG = {"spark_version": "test_spark_version"}
 
 
 @pytest.mark.parametrize(
-    "cluster_config",
+    "compute_config",
     [
-        (None),
-        (CLUSTER_CONFIG),
-        (PARTIAL_CLUSTER_CONFIG),
+        ({}),
+        (NEW_CLUSTER_CONFIG),
+        (PARTIAL_NEW_CLUSTER_CONFIG),
     ],
     ids=[
         "no_cluster_config",
@@ -42,10 +41,10 @@ PARTIAL_CLUSTER_CONFIG = {"spark_version": "test_spark_version"}
         "partial_cluster_config",
     ],
 )
-def test_component_asset_spec(cluster_config: Optional[Mapping[str, Any]]):
+def test_component_asset_spec(compute_config: Optional[ResolvedDatabricksNewClusterConfig]):
     component = DatabricksAssetBundleComponent(
         databricks_config_path=DATABRICKS_CONFIG_LOCATION_PATH,
-        compute_config=cluster_config,
+        compute_config=compute_config,
         workspace=DatabricksWorkspace(
             host=TEST_DATABRICKS_WORKSPACE_HOST, token=TEST_DATABRICKS_WORKSPACE_TOKEN
         ),
@@ -82,6 +81,7 @@ def test_load_component(databricks_config_path: str):
             component,
             defs,
         ):
+            assert isinstance(component, DatabricksAssetBundleComponent)
             assert component.compute_config == ResolvedDatabricksNewClusterConfig()
 
             assets = list(defs.assets or [])
