@@ -111,8 +111,7 @@ export const defaultMocks = {
     id: randomId,
     jobName: hyphenatedName,
     tags: () => {
-      const tagCount = faker.datatype.number({min: 5, max: 12}); // Average ~8.5 tags based on production data
-      return [...new Array(tagCount)].map(() => ({
+      const baseTags = [...new Array(faker.datatype.number({min: 5, max: 12}))].map(() => ({
         key: faker.random.arrayElement([
           'dagster/agent_id',
           'dagster/git_commit_hash',
@@ -150,6 +149,39 @@ export const defaultMocks = {
           faker.datatype.number().toString(),
         ]),
       }));
+
+      // 80% chance to add launch type tags for realistic distribution
+      const launchTags = [];
+      if (faker.datatype.number({min: 1, max: 10}) <= 8) {
+        const launchType = faker.random.arrayElement(['user', 'schedule', 'sensor', 'automation', 'backfill']);
+        
+        switch (launchType) {
+          case 'user':
+            launchTags.push({key: 'user', value: faker.internet.email()});
+            break;
+          case 'schedule':
+            launchTags.push({key: 'dagster/schedule_name', value: `${hyphenatedName()}_schedule`});
+            break;
+          case 'sensor':
+            launchTags.push({key: 'dagster/sensor_name', value: `${hyphenatedName()}_sensor`});
+            break;
+          case 'automation':
+            launchTags.push(
+              {key: 'dagster/auto_materialize', value: 'true'},
+              {key: 'dagster/from_automation_condition', value: 'true'},
+              {key: 'dagster/sensor_name', value: 'default_automation_condition_sensor'},
+            );
+            break;
+          case 'backfill':
+            launchTags.push(
+              {key: 'dagster/backfill', value: faker.random.alphaNumeric(8)},
+              {key: 'user', value: faker.internet.email()},
+            );
+            break;
+        }
+      }
+
+      return [...baseTags, ...launchTags];
     },
   }),
   PartitionsOrError: () => ({
