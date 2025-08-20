@@ -11,9 +11,13 @@ from dagster_shared import check
 
 from dagster_airbyte.asset_defs import build_airbyte_assets_definitions
 from dagster_airbyte.components.workspace_component.scaffolder import (
-    AirbyteCloudWorkspaceComponentScaffolder,
+    AirbyteWorkspaceComponentScaffolder,
 )
-from dagster_airbyte.resources import AirbyteCloudWorkspace
+from dagster_airbyte.resources import (
+    AIRBYTE_CLOUD_CONFIGURATION_API_BASE_URL,
+    AIRBYTE_CLOUD_REST_API_BASE_URL,
+    AirbyteWorkspace,
+)
 from dagster_airbyte.translator import (
     AirbyteConnection,
     AirbyteConnectionTableProps,
@@ -32,13 +36,51 @@ class ProxyDagsterAirbyteTranslator(DagsterAirbyteTranslator):
         return spec
 
 
-class AirbyteCloudWorkspaceModel(dg.Model):
-    workspace_id: Annotated[str, pydantic.Field(..., description="The Airbyte Cloud workspace ID.")]
+class AirbyteWorkspaceModel(dg.Model):
+    rest_api_base_url: Annotated[
+        str,
+        pydantic.Field(
+            default=AIRBYTE_CLOUD_REST_API_BASE_URL,
+            description=(
+                "The base URL for the Airbyte REST API. "
+                "For Airbyte Cloud, leave this as the default. "
+                "For self-managed Airbyte, this is usually <your Airbyte host>/api/public/v1."
+            ),
+        ),
+    ]
+    configuration_api_base_url: Annotated[
+        str,
+        pydantic.Field(
+            default=AIRBYTE_CLOUD_CONFIGURATION_API_BASE_URL,
+            description=(
+                "The base URL for the Airbyte Configuration API. "
+                "For Airbyte Cloud, leave this as the default. "
+                "For self-managed Airbyte, this is usually <your Airbyte host>/api/v1."
+            ),
+        ),
+    ]
+    workspace_id: Annotated[str, pydantic.Field(..., description="The Airbyte workspace ID.")]
     client_id: Annotated[
-        str, pydantic.Field(..., description="Client ID used to authenticate to Airbyte Cloud.")
+        Optional[str],
+        pydantic.Field(None, description="Client ID used to authenticate to Airbyte."),
     ]
     client_secret: Annotated[
-        str, pydantic.Field(..., description="Client secret used to authenticate to Airbyte Cloud.")
+        Optional[str],
+        pydantic.Field(None, description="Client secret used to authenticate to Airbyte."),
+    ]
+    username: Annotated[
+        Optional[str],
+        pydantic.Field(
+            None,
+            description="Username used to authenticate to Airbyte. Used for self-managed Airbyte with basic auth.",
+        ),
+    ]
+    password: Annotated[
+        Optional[str],
+        pydantic.Field(
+            None,
+            description="Password used to authenticate to Airbyte. Used for self-managed Airbyte with basic auth.",
+        ),
     ]
 
 
@@ -70,18 +112,18 @@ def resolve_connection_selector(
         check.failed(f"Unknown connection target type: {type(model)}")
 
 
-@dg.scaffold_with(AirbyteCloudWorkspaceComponentScaffolder)
-class AirbyteCloudWorkspaceComponent(dg.Component, dg.Model, dg.Resolvable):
-    """Loads Airbyte Cloud connections from a given Airbyte Cloud workspace as Dagster assets.
-    Materializing these assets will trigger a sync of the Airbyte Cloud connection, enabling
-    you to schedule Airbyte Cloud syncs using Dagster.
+@dg.scaffold_with(AirbyteWorkspaceComponentScaffolder)
+class AirbyteWorkspaceComponent(dg.Component, dg.Model, dg.Resolvable):
+    """Loads Airbyte connections from a given Airbyte workspace as Dagster assets.
+    Materializing these assets will trigger a sync of the Airbyte connection, enabling
+    you to schedule Airbyte syncs using Dagster.
     """
 
     workspace: Annotated[
-        AirbyteCloudWorkspace,
+        AirbyteWorkspace,
         dg.Resolver(
-            lambda context, model: AirbyteCloudWorkspace(
-                **resolve_fields(model, AirbyteCloudWorkspace, context)
+            lambda context, model: AirbyteWorkspace(
+                **resolve_fields(model, AirbyteWorkspace, context)
             )
         ),
     ]
@@ -92,7 +134,7 @@ class AirbyteCloudWorkspaceComponent(dg.Component, dg.Model, dg.Resolvable):
             model_field_type=Union[
                 str, AirbyteConnectionSelectorByName, AirbyteConnectionSelectorById
             ],
-            description="Function used to select Airbyte Cloud connections to pull into Dagster.",
+            description="Function used to select Airbyte connections to pull into Dagster.",
         ),
     ] = None
     translation: Optional[
@@ -102,11 +144,11 @@ class AirbyteCloudWorkspaceComponent(dg.Component, dg.Model, dg.Resolvable):
         ]
     ] = pydantic.Field(
         None,
-        description="Function used to translate Airbyte Cloud connection table properties into Dagster asset specs.",
+        description="Function used to translate Airbyte connection table properties into Dagster asset specs.",
     )
 
     @cached_property
-    def workspace_resource(self) -> AirbyteCloudWorkspace:
+    def workspace_resource(self) -> AirbyteWorkspace:
         return self.workspace
 
     @cached_property

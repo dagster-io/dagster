@@ -2,7 +2,7 @@ import responses
 from dagster._core.definitions.assets.definition.asset_spec import AssetSpec
 from dagster._core.definitions.metadata.metadata_set import TableMetadataSet
 from dagster._core.definitions.tags import has_kind
-from dagster_airbyte import AirbyteCloudWorkspace, DagsterAirbyteTranslator
+from dagster_airbyte import AirbyteWorkspace, DagsterAirbyteTranslator
 from dagster_airbyte.translator import AirbyteConnectionTableProps, AirbyteMetadataSet
 from dagster_airbyte.utils import generate_table_schema
 
@@ -25,7 +25,7 @@ from dagster_airbyte_tests.beta.conftest import (
 def test_airbyte_workspace_data_to_table_props(
     fetch_workspace_data_api_mocks: responses.RequestsMock,
 ) -> None:
-    resource = AirbyteCloudWorkspace(
+    resource = AirbyteWorkspace(
         workspace_id=TEST_WORKSPACE_ID,
         client_id=TEST_CLIENT_ID,
         client_secret=TEST_CLIENT_SECRET,
@@ -42,7 +42,7 @@ def test_airbyte_workspace_data_to_table_props(
 def test_translator_asset_spec(
     fetch_workspace_data_api_mocks: responses.RequestsMock,
 ) -> None:
-    resource = AirbyteCloudWorkspace(
+    resource = AirbyteWorkspace(
         workspace_id=TEST_WORKSPACE_ID,
         client_id=TEST_CLIENT_ID,
         client_secret=TEST_CLIENT_SECRET,
@@ -84,7 +84,7 @@ class MyCustomTranslator(DagsterAirbyteTranslator):
 def test_custom_translator(
     fetch_workspace_data_api_mocks: responses.RequestsMock,
 ) -> None:
-    resource = AirbyteCloudWorkspace(
+    resource = AirbyteWorkspace(
         workspace_id=TEST_WORKSPACE_ID,
         client_id=TEST_CLIENT_ID,
         client_secret=TEST_CLIENT_SECRET,
