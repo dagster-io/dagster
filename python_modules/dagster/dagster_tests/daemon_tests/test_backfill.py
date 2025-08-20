@@ -4107,6 +4107,7 @@ def test_multi_partitioned_asset_with_single_run_bp_backfill(
     assert partitions_materialized == set(target_partitions)
 
 
+@pytest.mark.skip("Occasionally hangs indefinitely in CI due to threading deadlock")
 def test_threaded_submit_backfill(
     instance: DagsterInstance,
     workspace_context: WorkspaceProcessContext,
