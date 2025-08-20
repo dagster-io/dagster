@@ -272,20 +272,25 @@ const ReportEventDialogBody = ({
             displayedHealth={assetHealth}
             displayedPartitionDefinition={assetPartitionDef}
           />
-          <Box padding={{vertical: 8, horizontal: 20}} flex={{direction: 'column', gap: 8}}>
-            <Checkbox
-              data-testid={testId('failed-only-checkbox')}
-              label="Report only failed partitions within selection"
-              checked={filterFailed}
-              onChange={() => setFilterFailed(!filterFailed)}
-            />
-            <Checkbox
-              data-testid={testId('missing-only-checkbox')}
-              label="Report only missing partitions within selection"
-              checked={filterMissing}
-              onChange={() => setFilterMissing(!filterMissing)}
-            />
-          </Box>
+          {/* Only show the failed and missing filters for multi-dimensional partitions */}
+          {/* because DimensionRangeWizards will set quickSelectButtons to false for multi-dimensional partitions */}
+          {/* so this is the only way for the user to filter to failed and missing partitions */}
+          {selections.length > 1 && (
+            <Box padding={{vertical: 8, horizontal: 20}} flex={{direction: 'column', gap: 8}}>
+              <Checkbox
+                data-testid={testId('failed-only-checkbox')}
+                label="Report only failed partitions within selection"
+                checked={filterFailed}
+                onChange={() => setFilterFailed(!filterFailed)}
+              />
+              <Checkbox
+                data-testid={testId('missing-only-checkbox')}
+                label="Report only missing partitions within selection"
+                checked={filterMissing}
+                onChange={() => setFilterMissing(!filterMissing)}
+              />
+            </Box>
+          )}
         </ToggleableSection>
       ) : undefined}
 
