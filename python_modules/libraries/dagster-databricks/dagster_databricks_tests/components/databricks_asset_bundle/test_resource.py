@@ -23,6 +23,7 @@ def test_load_component(mock_submit_task: mock.MagicMock, databricks_config_path
                 "databricks_workspace_token": TEST_DATABRICKS_WORKSPACE_TOKEN,
             },
         )
+
         with sandbox.load_component_and_build_defs(defs_path=defs_path) as (
             component,
             defs,
