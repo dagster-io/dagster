@@ -1,6 +1,7 @@
 """Main scaffold branch command implementation."""
 
 import json
+import os
 import re
 import uuid
 from contextlib import nullcontext
@@ -41,10 +42,7 @@ from dagster_dg_cli.cli.scaffold.branch.planning import (
     get_user_plan_approval,
 )
 from dagster_dg_cli.cli.scaffold.branch.version_utils import ensure_claude_sdk_python_version
-from dagster_dg_cli.utils.claude_utils import (
-    get_claude_sdk_unavailable_message,
-    is_claude_sdk_available,
-)
+from dagster_dg_cli.utils.claude_utils import is_claude_sdk_available
 from dagster_dg_cli.utils.ui import daggy_spinner_context
 
 
@@ -223,9 +221,16 @@ def execute_scaffold_branch_command(
         branch_name = prompt_text.strip()
         pr_title = branch_name
     else:
-        # Check if Claude Code SDK is available before proceeding with AI operations
+        # Check if Claude Code SDK and api key are available before proceeding with AI operations
         if not is_claude_sdk_available():
-            raise click.ClickException(get_claude_sdk_unavailable_message())
+            raise click.ClickException(
+                "claude_code_sdk is required for AI scaffolding functionality. "
+                "Install with: pip install claude-code-sdk>=0.0.19"
+            )
+        if not os.getenv("ANTHROPIC_API_KEY"):
+            raise click.ClickException(
+                "ANTHROPIC_API_KEY environment variable is required for AI scaffolding functionality"
+            )
 
         # Import AI modules only when needed and available
         from dagster_dg_cli.cli.scaffold.branch.ai import (
