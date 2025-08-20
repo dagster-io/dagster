@@ -5,10 +5,10 @@ from dagster._core.definitions.tags import has_kind
 from dagster._core.errors import DagsterInvariantViolationError
 from dagster._core.test_utils import environ
 from dagster_airbyte import (
-    AirbyteCloudWorkspace,
+    AirbyteWorkspace,
     airbyte_assets,
     build_airbyte_assets_definitions,
-    load_airbyte_cloud_asset_specs,
+    load_airbyte_asset_specs,
 )
 from dagster_airbyte.translator import (
     AirbyteConnectionTableProps,
@@ -29,7 +29,7 @@ from dagster_airbyte_tests.beta.conftest import (
 def test_fetch_airbyte_workspace_data(
     fetch_workspace_data_api_mocks: responses.RequestsMock,
 ) -> None:
-    resource = AirbyteCloudWorkspace(
+    resource = AirbyteWorkspace(
         workspace_id=TEST_WORKSPACE_ID,
         client_id=TEST_CLIENT_ID,
         client_secret=TEST_CLIENT_SECRET,
@@ -46,13 +46,13 @@ def test_translator_spec(
     with environ(
         {"AIRBYTE_CLIENT_ID": TEST_CLIENT_ID, "AIRBYTE_CLIENT_SECRET": TEST_CLIENT_SECRET}
     ):
-        resource = AirbyteCloudWorkspace(
+        resource = AirbyteWorkspace(
             workspace_id=TEST_WORKSPACE_ID,
             client_id=EnvVar("AIRBYTE_CLIENT_ID"),
             client_secret=EnvVar("AIRBYTE_CLIENT_SECRET"),
         )
 
-        all_assets = load_airbyte_cloud_asset_specs(resource)
+        all_assets = load_airbyte_asset_specs(resource)
         all_assets_keys = [asset.key for asset in all_assets]
 
         # 1 table for the connection
@@ -73,25 +73,25 @@ def test_connection_selector(
     with environ(
         {"AIRBYTE_CLIENT_ID": TEST_CLIENT_ID, "AIRBYTE_CLIENT_SECRET": TEST_CLIENT_SECRET}
     ):
-        workspace = AirbyteCloudWorkspace(
+        workspace = AirbyteWorkspace(
             workspace_id=TEST_WORKSPACE_ID,
             client_id=EnvVar("AIRBYTE_CLIENT_ID"),
             client_secret=EnvVar("AIRBYTE_CLIENT_SECRET"),
         )
 
         # Test with no selector (should include all connections)
-        all_assets = load_airbyte_cloud_asset_specs(workspace=workspace)
+        all_assets = load_airbyte_asset_specs(workspace=workspace)
         assert len(all_assets) == 2  # Based on the mock data
 
         # Test with selector that matches the connection
-        matching_assets = load_airbyte_cloud_asset_specs(
+        matching_assets = load_airbyte_asset_specs(
             workspace=workspace,
             connection_selector_fn=lambda connection: connection.name == "Postgres To Snowflake",
         )
         assert len(matching_assets) == 2  # Should still get all assets from the matching connection
 
         # Test with selector that doesn't match any connections
-        no_matching_assets = load_airbyte_cloud_asset_specs(
+        no_matching_assets = load_airbyte_asset_specs(
             workspace=workspace,
             connection_selector_fn=lambda connection: connection.name == "non_existent_connection",
         )
@@ -104,7 +104,7 @@ def test_cached_load_spec_single_resource(
     with environ(
         {"AIRBYTE_CLIENT_ID": TEST_CLIENT_ID, "AIRBYTE_CLIENT_SECRET": TEST_CLIENT_SECRET}
     ):
-        workspace = AirbyteCloudWorkspace(
+        workspace = AirbyteWorkspace(
             workspace_id=TEST_WORKSPACE_ID,
             client_id=EnvVar("AIRBYTE_CLIENT_ID"),
             client_secret=EnvVar("AIRBYTE_CLIENT_SECRET"),
@@ -125,13 +125,13 @@ def test_cached_load_spec_multiple_resources(
     with environ(
         {"AIRBYTE_CLIENT_ID": TEST_CLIENT_ID, "AIRBYTE_CLIENT_SECRET": TEST_CLIENT_SECRET}
     ):
-        workspace = AirbyteCloudWorkspace(
+        workspace = AirbyteWorkspace(
             workspace_id=TEST_WORKSPACE_ID,
             client_id=EnvVar("AIRBYTE_CLIENT_ID"),
             client_secret=EnvVar("AIRBYTE_CLIENT_SECRET"),
         )
 
-        another_workspace = AirbyteCloudWorkspace(
+        another_workspace = AirbyteWorkspace(
             workspace_id=TEST_ANOTHER_WORKSPACE_ID,
             client_id=EnvVar("AIRBYTE_CLIENT_ID"),
             client_secret=EnvVar("AIRBYTE_CLIENT_SECRET"),
@@ -153,7 +153,7 @@ def test_cached_load_spec_with_asset_factory(
     with environ(
         {"AIRBYTE_CLIENT_ID": TEST_CLIENT_ID, "AIRBYTE_CLIENT_SECRET": TEST_CLIENT_SECRET}
     ):
-        workspace = AirbyteCloudWorkspace(
+        workspace = AirbyteWorkspace(
             workspace_id=TEST_WORKSPACE_ID,
             client_id=EnvVar("AIRBYTE_CLIENT_ID"),
             client_secret=EnvVar("AIRBYTE_CLIENT_SECRET"),
@@ -180,7 +180,7 @@ def test_translator_custom_metadata(
     with environ(
         {"AIRBYTE_CLIENT_ID": TEST_CLIENT_ID, "AIRBYTE_CLIENT_SECRET": TEST_CLIENT_SECRET}
     ):
-        workspace = AirbyteCloudWorkspace(
+        workspace = AirbyteWorkspace(
             workspace_id=TEST_WORKSPACE_ID,
             client_id=EnvVar("AIRBYTE_CLIENT_ID"),
             client_secret=EnvVar("AIRBYTE_CLIENT_SECRET"),
@@ -209,7 +209,7 @@ def test_translator_custom_group_name_with_asset_factory(
     with environ(
         {"AIRBYTE_CLIENT_ID": TEST_CLIENT_ID, "AIRBYTE_CLIENT_SECRET": TEST_CLIENT_SECRET}
     ):
-        workspace = AirbyteCloudWorkspace(
+        workspace = AirbyteWorkspace(
             workspace_id=TEST_WORKSPACE_ID,
             client_id=EnvVar("AIRBYTE_CLIENT_ID"),
             client_secret=EnvVar("AIRBYTE_CLIENT_SECRET"),
@@ -230,7 +230,7 @@ def test_translator_invariant_group_name_with_asset_decorator(
     with environ(
         {"AIRBYTE_CLIENT_ID": TEST_CLIENT_ID, "AIRBYTE_CLIENT_SECRET": TEST_CLIENT_SECRET}
     ):
-        workspace = AirbyteCloudWorkspace(
+        workspace = AirbyteWorkspace(
             workspace_id=TEST_WORKSPACE_ID,
             client_id=EnvVar("AIRBYTE_CLIENT_ID"),
             client_secret=EnvVar("AIRBYTE_CLIENT_SECRET"),

@@ -9,16 +9,18 @@ import responses
 from dagster import AssetKey
 from dagster._core.definitions.assets.definition.asset_spec import AssetSpec
 from dagster._core.definitions.definitions_class import Definitions
-from dagster._core.test_utils import ensure_dagster_tests_import
 from dagster._utils import alter_sys_path
 from dagster._utils.env import environ
 from dagster.components.core.component_tree import ComponentTree
 from dagster.components.testing.test_cases import TestTranslation
 from dagster.components.testing.utils import create_defs_folder_sandbox
-from dagster_airbyte.components.workspace_component.component import AirbyteCloudWorkspaceComponent
-from dagster_airbyte.resources import AirbyteCloudWorkspace
+from dagster_airbyte import AirbyteWorkspace
+from dagster_airbyte.components.workspace_component.component import AirbyteWorkspaceComponent
 from dagster_airbyte.translator import AirbyteConnection
 from dagster_shared.merger import deep_merge_dicts
+
+# ensure_dagster_tests_import()
+from dagster_test.dg_utils.utils import ProxyRunner, isolated_example_project_foo_bar
 
 from dagster_airbyte_tests.beta.conftest import (
     TEST_CLIENT_ID,
@@ -26,11 +28,6 @@ from dagster_airbyte_tests.beta.conftest import (
     TEST_CONNECTION_ID,
     TEST_WORKSPACE_ID,
 )
-
-ensure_dagster_tests_import()
-
-
-from dagster_test.dg_utils.utils import ProxyRunner, isolated_example_project_foo_bar
 
 
 @contextmanager
@@ -46,22 +43,22 @@ def setup_airbyte_ready_project() -> Iterator[None]:
 @contextmanager
 def setup_airbyte_component(
     defs_yaml_contents: dict[str, Any],
-) -> Iterator[tuple[AirbyteCloudWorkspaceComponent, Definitions]]:
+) -> Iterator[tuple[AirbyteWorkspaceComponent, Definitions]]:
     """Sets up a components project with an airbyte component based on provided params."""
     with create_defs_folder_sandbox() as sandbox:
         defs_path = sandbox.scaffold_component(
-            component_cls=AirbyteCloudWorkspaceComponent, defs_yaml_contents=defs_yaml_contents
+            component_cls=AirbyteWorkspaceComponent, defs_yaml_contents=defs_yaml_contents
         )
         with sandbox.load_component_and_build_defs(defs_path=defs_path) as (
             component,
             defs,
         ):
-            assert isinstance(component, AirbyteCloudWorkspaceComponent)
+            assert isinstance(component, AirbyteWorkspaceComponent)
             yield component, defs
 
 
 BASIC_AIRBYTE_COMPONENT_BODY = {
-    "type": "dagster_airbyte.AirbyteCloudWorkspaceComponent",
+    "type": "dagster_airbyte.AirbyteWorkspaceComponent",
     "attributes": {
         "workspace": {
             "client_id": "{{ env.AIRBYTE_CLIENT_ID }}",
@@ -155,8 +152,8 @@ def test_custom_filter_fn_python(
     filter_fn: Callable[[AirbyteConnection], bool],
     num_assets: int,
 ) -> None:
-    defs = AirbyteCloudWorkspaceComponent(
-        workspace=AirbyteCloudWorkspace(
+    defs = AirbyteWorkspaceComponent(
+        workspace=AirbyteWorkspace(
             client_id=TEST_CLIENT_ID,
             client_secret=TEST_CLIENT_SECRET,
             workspace_id=TEST_WORKSPACE_ID,

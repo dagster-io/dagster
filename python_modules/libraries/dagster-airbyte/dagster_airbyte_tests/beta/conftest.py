@@ -1,3 +1,4 @@
+import base64
 from collections.abc import Iterator, Mapping
 from typing import Any
 from unittest.mock import patch
@@ -5,17 +6,22 @@ from unittest.mock import patch
 import pytest
 import responses
 from dagster_airbyte.resources import (
-    AIRBYTE_CONFIGURATION_API_BASE,
-    AIRBYTE_CONFIGURATION_API_VERSION,
-    AIRBYTE_REST_API_BASE,
-    AIRBYTE_REST_API_VERSION,
+    AIRBYTE_CLOUD_CONFIGURATION_API_BASE_URL,
+    AIRBYTE_CLOUD_REST_API_BASE_URL,
 )
 from dagster_airbyte.translator import AirbyteConnectionTableProps, AirbyteJobStatusType
 from dagster_airbyte.types import AirbyteOutput
 
+TEST_OSS_REST_API_BASE = "http://localhost:8000/api/public/v1"
+TEST_OSS_CONFIG_API_BASE = "http://localhost:8000/api/v1"
+
 TEST_WORKSPACE_ID = "some_workspace_id"
 TEST_CLIENT_ID = "some_client_id"
 TEST_CLIENT_SECRET = "some_client_secret"
+
+TEST_USERNAME = "some_username"
+TEST_PASSWORD = "some_password"
+TEST_BASIC_AUTH_B64 = base64.b64encode(f"{TEST_USERNAME}:{TEST_PASSWORD}".encode()).decode("utf-8")
 
 TEST_ANOTHER_WORKSPACE_ID = "some_other_workspace_id"
 
@@ -210,7 +216,7 @@ def base_api_mocks_fixture() -> Iterator[responses.RequestsMock]:
     with responses.RequestsMock() as response:
         response.add(
             method=responses.POST,
-            url=f"{AIRBYTE_REST_API_BASE}/{AIRBYTE_REST_API_VERSION}/applications/token",
+            url=f"{AIRBYTE_CLOUD_REST_API_BASE_URL}/applications/token",
             json=SAMPLE_ACCESS_TOKEN,
             status=201,
         )
@@ -225,19 +231,19 @@ def fetch_workspace_data_api_mocks_fixture(
 ) -> Iterator[responses.RequestsMock]:
     base_api_mocks.add(
         method=responses.GET,
-        url=f"{AIRBYTE_REST_API_BASE}/{AIRBYTE_REST_API_VERSION}/connections",
+        url=f"{AIRBYTE_CLOUD_REST_API_BASE_URL}/connections",
         json=SAMPLE_CONNECTIONS,
         status=200,
     )
     base_api_mocks.add(
         method=responses.POST,
-        url=f"{AIRBYTE_CONFIGURATION_API_BASE}/{AIRBYTE_CONFIGURATION_API_VERSION}/connections/get",
+        url=f"{AIRBYTE_CLOUD_CONFIGURATION_API_BASE_URL}/connections/get",
         json=SAMPLE_CONNECTION_DETAILS,
         status=200,
     )
     base_api_mocks.add(
         method=responses.GET,
-        url=f"{AIRBYTE_REST_API_BASE}/{AIRBYTE_REST_API_VERSION}/destinations/{TEST_DESTINATION_ID}",
+        url=f"{AIRBYTE_CLOUD_REST_API_BASE_URL}/destinations/{TEST_DESTINATION_ID}",
         json=SAMPLE_DESTINATION_DETAILS,
         status=200,
     )
@@ -252,19 +258,19 @@ def all_api_mocks_fixture(
 ) -> Iterator[responses.RequestsMock]:
     fetch_workspace_data_api_mocks.add(
         method=responses.POST,
-        url=f"{AIRBYTE_REST_API_BASE}/{AIRBYTE_REST_API_VERSION}/jobs",
+        url=f"{AIRBYTE_CLOUD_REST_API_BASE_URL}/jobs",
         json=SAMPLE_JOB_RESPONSE_RUNNING,
         status=200,
     )
     fetch_workspace_data_api_mocks.add(
         method=responses.GET,
-        url=f"{AIRBYTE_REST_API_BASE}/{AIRBYTE_REST_API_VERSION}/jobs/{TEST_JOB_ID}",
+        url=f"{AIRBYTE_CLOUD_REST_API_BASE_URL}/jobs/{TEST_JOB_ID}",
         json=SAMPLE_JOB_RESPONSE_RUNNING,
         status=200,
     )
     fetch_workspace_data_api_mocks.add(
         method=responses.DELETE,
-        url=f"{AIRBYTE_REST_API_BASE}/{AIRBYTE_REST_API_VERSION}/jobs/{TEST_JOB_ID}",
+        url=f"{AIRBYTE_CLOUD_REST_API_BASE_URL}/jobs/{TEST_JOB_ID}",
         json=SAMPLE_JOB_RESPONSE_RUNNING,
         status=200,
     )
@@ -273,7 +279,7 @@ def all_api_mocks_fixture(
 
 @pytest.fixture(name="airbyte_cloud_sync_and_poll")
 def sync_and_poll_fixture():
-    with patch("dagster_airbyte.resources.AirbyteCloudClient.sync_and_poll") as mocked_function:
+    with patch("dagster_airbyte.resources.AirbyteClient.sync_and_poll") as mocked_function:
         # Airbyte output where all synced tables match the workspace data that was used to create the assets def
         expected_airbyte_output = AirbyteOutput(
             connection_details=SAMPLE_CONNECTION_DETAILS,
