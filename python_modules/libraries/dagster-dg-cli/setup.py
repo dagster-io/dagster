@@ -42,6 +42,7 @@ setup(
         "mcp; python_version>='3.10'",  # mcp not available for 3.9
         "typer",
         "textual",
+        "textual-web",
     ],
     entry_points={
         "console_scripts": [
