@@ -1,15 +1,17 @@
 import os
-from typing import Optional
+from collections.abc import Mapping
+from typing import Any, Optional
 
 import pytest
 from dagster import AssetDep, AssetKey, AssetsDefinition
 from dagster.components.testing import create_defs_folder_sandbox
 from dagster_databricks.components.databricks_asset_bundle.component import (
     DatabricksAssetBundleComponent,
-    DatabricksClusterConfigArgs,
     snake_case,
 )
-from dagster_databricks.components.databricks_asset_bundle.configs import DatabricksClusterConfig
+from dagster_databricks.components.databricks_asset_bundle.configs import (
+    ResolvedDatabricksClusterConfig,
+)
 from dagster_databricks.components.databricks_asset_bundle.resource import DatabricksWorkspace
 
 from dagster_databricks_tests.components.databricks_asset_bundle.conftest import (
@@ -18,11 +20,13 @@ from dagster_databricks_tests.components.databricks_asset_bundle.conftest import
     TEST_DATABRICKS_WORKSPACE_TOKEN,
 )
 
-CLUSTER_CONFIG = DatabricksClusterConfigArgs(
-    spark_version="test_spark_version", node_type_id="test_node_type_id", num_workers=2
-)
+CLUSTER_CONFIG = {
+    "spark_version": "test_spark_version",
+    "node_type_id": "test_node_type_id",
+    "num_workers": 2,
+}
 
-PARTIAL_CLUSTER_CONFIG = DatabricksClusterConfigArgs(spark_version="test_spark_version")
+PARTIAL_CLUSTER_CONFIG = {"spark_version": "test_spark_version"}
 
 
 @pytest.mark.parametrize(
@@ -38,7 +42,7 @@ PARTIAL_CLUSTER_CONFIG = DatabricksClusterConfigArgs(spark_version="test_spark_v
         "partial_cluster_config",
     ],
 )
-def test_component_asset_spec(cluster_config: Optional[DatabricksClusterConfigArgs]):
+def test_component_asset_spec(cluster_config: Optional[Mapping[str, Any]]):
     component = DatabricksAssetBundleComponent(
         databricks_config_path=DATABRICKS_CONFIG_LOCATION_PATH,
         cluster_config=cluster_config,
@@ -78,7 +82,7 @@ def test_load_component(databricks_config_path: str):
             component,
             defs,
         ):
-            assert component.cluster_config == DatabricksClusterConfig()
+            assert component.cluster_config == ResolvedDatabricksClusterConfig()
 
             assets = list(defs.assets or [])
             assert len(assets) == 1

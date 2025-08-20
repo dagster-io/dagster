@@ -38,7 +38,7 @@ class DatabricksAssetBundleScaffolder(Scaffolder[DatabricksAssetBundleScaffoldPa
             request,
             {
                 "databricks_config_path": databricks_config_path_str,
-                "cluster_config": None,
+                "cluster_config": {},
                 "workspace": {
                     "host": request.params.databricks_workspace_host,
                     "token": request.params.databricks_workspace_token,

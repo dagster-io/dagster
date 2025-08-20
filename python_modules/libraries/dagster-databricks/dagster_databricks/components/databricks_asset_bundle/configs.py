@@ -4,7 +4,7 @@ from pathlib import Path
 from typing import Any, Optional, Union
 
 import yaml
-from dagster import get_dagster_logger
+from dagster import Model, Resolvable, get_dagster_logger
 from dagster_shared.record import IHaveNew, record, record_custom
 from typing_extensions import Self
 
@@ -383,8 +383,7 @@ class DatabricksConfig(IHaveNew):
         return job_parameters
 
 
-@record
-class DatabricksClusterConfig:
+class ResolvedDatabricksClusterConfig(Resolvable, Model):
     spark_version: str = "13.3.x-scala2.12"
     node_type_id: str = "i3.xlarge"
     num_workers: int = 1

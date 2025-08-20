@@ -3,7 +3,7 @@ import re
 from dataclasses import dataclass
 from functools import cached_property
 from pathlib import Path
-from typing import Annotated, Optional
+from typing import Annotated
 
 from dagster import AssetExecutionContext, AssetSpec, MetadataValue, Resolvable, multi_asset
 from dagster._core.definitions.definitions_class import Definitions
@@ -15,8 +15,8 @@ from dagster.components.scaffold.scaffold import scaffold_with
 
 from dagster_databricks.components.databricks_asset_bundle.configs import (
     DatabricksBaseTask,
-    DatabricksClusterConfig,
     DatabricksConfig,
+    ResolvedDatabricksClusterConfig,
 )
 from dagster_databricks.components.databricks_asset_bundle.resource import DatabricksWorkspace
 from dagster_databricks.components.databricks_asset_bundle.scaffolder import (
@@ -43,36 +43,10 @@ class DatabricksWorkspaceArgs(Resolvable):
     token: str
 
 
-@dataclass
-class DatabricksClusterConfigArgs(Resolvable):
-    """Aligns with DatabricksClusterConfig."""
-
-    spark_version: Optional[str] = None
-    node_type_id: Optional[str] = None
-    num_workers: Optional[int] = None
-
-
 def resolve_databricks_config_path(context: ResolutionContext, model) -> Path:
     return context.resolve_source_relative_path(
         context.resolve_value(model, as_type=str),
     )
-
-
-def resolve_cluster_config(context: ResolutionContext, model) -> DatabricksClusterConfig:
-    if not model:
-        return DatabricksClusterConfig()
-
-    args = DatabricksClusterConfigArgs.resolve_from_model(context, model)
-
-    kwargs = {}  # use optionally splatted kwargs to avoid redefining default value
-    if args.spark_version:
-        kwargs["spark_version"] = args.spark_version
-    if args.node_type_id:
-        kwargs["node_type_id"] = args.node_type_id
-    if args.num_workers:
-        kwargs["num_workers"] = args.num_workers
-
-    return DatabricksClusterConfig(**kwargs)
 
 
 def resolve_databricks_workspace(context: ResolutionContext, model) -> DatabricksWorkspace:
@@ -112,13 +86,9 @@ class DatabricksAssetBundleComponent(Component, Resolvable):
         ),
     ]
     cluster_config: Annotated[
-        DatabricksClusterConfig,
-        Resolver(
-            resolve_cluster_config,
-            model_field_type=Optional[DatabricksClusterConfigArgs.model()],
-            description=(
-                "A mapping defining a databricks_asset_bundle.configs.ClusterConfig. Optional."
-            ),
+        ResolvedDatabricksClusterConfig,
+        Resolver.default(
+            description="A mapping defining a databricks_asset_bundle.configs.ClusterConfig. Optional.",
             examples=[
                 {
                     "spark_version": "test_spark_version",
