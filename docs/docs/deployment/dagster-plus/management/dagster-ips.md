@@ -7,7 +7,7 @@ title: Dagster+ IP addresses
 
 The Dagster+ web interface, CLI, and GraphQL API use [AWS Cloudfront's content delivery network](https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/LocationsOfEdgeServers.html).
 
-## IP Addresses
+## IP addresses
 
 The Dagster+ agent interacts with the following IP addresses:
 
