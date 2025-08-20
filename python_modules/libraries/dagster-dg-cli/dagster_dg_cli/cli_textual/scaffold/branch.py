@@ -5,42 +5,19 @@ from typing import Optional
 import click
 from dagster_dg_core.shared_options import dg_global_options, dg_path_options
 from dagster_dg_core.utils import DgClickCommand
-from textual import on
-from textual.app import App
-from textual.containers import Container
-from textual.widgets import Input
+
+from dagster_dg_cli.cli_textual.branch_description_app import BranchDescriptionApp
 
 
-class BranchDescriptionApp(App):
-    """Simple Textual app with a text input at the top."""
-
-    def compose(self):
-        """Create child widgets for the app."""
-        with Container():
-            yield Input(placeholder="Enter branch description...", id="description_input")
-
-    def on_mount(self):
-        """Called when app starts."""
-        self.query_one("#description_input", Input).focus()
-
-    @on(Input.Submitted)
-    def on_input_submitted(self, event: Input.Submitted):
-        """Handle when user presses Enter in the input."""
-        description = event.value.strip()
-        if description:
-            click.echo(f"Description: {description}")
-        self.exit(description if description else None)
-
-
-def launch_web_interface() -> Optional[str]:
-    """Print the textual run command for the web interface."""
+def print_web_serve_command() -> Optional[str]:
+    """Print the serve_app.py command for the web interface."""
     import os
 
-    # Get the absolute path to the web_branch_app.py file
+    # Get the absolute path to the serve_app.py file
     current_dir = os.path.dirname(__file__)
-    web_app_path = os.path.join(os.path.dirname(current_dir), "web_branch_app.py")
+    serve_app_path = os.path.join(os.path.dirname(current_dir), "serve_app.py")
 
-    click.echo(f"python -m textual run --dev {web_app_path}")
+    click.echo(f"python {serve_app_path}")
     return None
 
 
@@ -55,7 +32,7 @@ def launch_web_interface() -> Optional[str]:
 def scaffold_branch_command(
     description: Optional[str],
     web: bool,
-    **kwargs,
+    **_kwargs,
 ) -> None:
     """Scaffold a new branch using Textual interface.
 
@@ -64,7 +41,7 @@ def scaffold_branch_command(
     if description is None:
         if web:
             # Print web interface command and exit
-            launch_web_interface()
+            print_web_serve_command()
             return
         else:
             # Launch terminal interface
