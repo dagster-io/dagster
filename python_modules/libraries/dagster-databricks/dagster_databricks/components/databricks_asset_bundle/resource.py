@@ -48,7 +48,6 @@ class DatabricksWorkspace(ConfigurableResource):
 
         if not selected_tasks_by_task_key:
             context.log.info("No tasks selected for execution")
-            yield
 
         # Create Databricks SDK task objects only for selected tasks
         databricks_tasks_by_task_key = {}

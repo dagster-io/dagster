@@ -1,4 +1,4 @@
-from dagster import DagsterEventType, materialize
+from dagster import AssetsDefinition, DagsterEventType, materialize
 from dagster.components.testing import create_defs_folder_sandbox
 from dagster_databricks.components.databricks_asset_bundle.component import (
     DatabricksAssetBundleComponent,
@@ -24,7 +24,12 @@ def test_load_component(databricks_config_path: str):
             component,
             defs,
         ):
-            databricks_assets = next(iter(defs.assets))
+            assert isinstance(component, DatabricksAssetBundleComponent)
+
+            assets = list(defs.assets or [])
+            assert len(assets) == 1
+            databricks_assets = assets[0]
+            assert isinstance(databricks_assets, AssetsDefinition)
 
             result = materialize(
                 [databricks_assets],
