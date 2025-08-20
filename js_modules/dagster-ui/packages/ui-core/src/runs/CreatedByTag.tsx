@@ -54,6 +54,8 @@ const pluckTagFromList = (tags: RunTagsFragment[]): TagType => {
     switch (key) {
       case DagsterTag.Automaterialize:
         return {type: 'automation-condition', tag};
+      case DagsterTag.AutomationCondition:
+        return {type: 'automation-condition', tag};
       case DagsterTag.CreatedBy: {
         // Backwards compatibility
         if (tag.value === 'auto_materialize') {
