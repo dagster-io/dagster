@@ -257,6 +257,7 @@ export const AssetPartitions = ({
                 selections.map((r, idx) => (idx === timeDimensionIdx ? {...r, selectedKeys} : r)),
               )
             }
+            showQuickSelectButtons={false}
           />
         </Box>
       )}

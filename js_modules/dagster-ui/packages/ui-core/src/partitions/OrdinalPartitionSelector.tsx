@@ -30,6 +30,7 @@ export const OrdinalPartitionSelector = ({
   health,
   placeholder,
   mode = 'multiple',
+  disabled,
 }: {
   allPartitions: string[];
   selectedPartitions: string[];
@@ -39,6 +40,7 @@ export const OrdinalPartitionSelector = ({
   isDynamic: boolean;
   placeholder?: string;
   mode?: 'single' | 'multiple';
+  disabled?: boolean;
 }) => {
   const dotForPartitionKey = React.useCallback(
     (partitionKey: string) => {
@@ -173,6 +175,7 @@ export const OrdinalPartitionSelector = ({
         return tags;
       }}
       searchPlaceholder="Filter partitions"
+      disabled={disabled}
     />
   );
 };

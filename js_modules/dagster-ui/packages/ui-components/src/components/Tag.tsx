@@ -62,6 +62,7 @@ interface Props extends Omit<React.ComponentProps<typeof BlueprintTag>, 'icon' |
   icon?: IconName | 'spinner';
   rightIcon?: IconName | 'spinner';
   tooltipText?: string;
+  disabled?: boolean;
 }
 
 interface IconOrSpinnerProps {

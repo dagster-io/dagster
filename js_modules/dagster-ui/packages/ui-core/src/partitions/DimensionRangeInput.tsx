@@ -11,11 +11,13 @@ export const DimensionRangeInput = ({
   onChange,
   partitionKeys,
   isTimeseries,
+  disabled,
 }: {
   value: string[];
   onChange: (partitionNames: string[]) => void;
   partitionKeys: string[];
   isTimeseries: boolean;
+  disabled?: boolean;
 }) => {
   const [valueString, setValueString] = React.useState('');
 
@@ -64,6 +66,7 @@ export const DimensionRangeInput = ({
       }}
       onKeyDown={onKeyDown}
       onBlur={tryCommit}
+      disabled={disabled}
       rightElement={
         <ClearButton
           style={{display: valueString.length ? 'initial' : 'none'}}
