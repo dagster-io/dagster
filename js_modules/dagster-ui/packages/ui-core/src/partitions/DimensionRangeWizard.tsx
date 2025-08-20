@@ -35,7 +35,7 @@ export const DimensionRangeWizard = ({
 
   // For multi-dimensional partitions, this is set to false because filtering by failed or missing
   // partitions only makes sense when applied across all dimensions simultaneously.
-  // This dialog is also used to backfill jobs and in that case we
+  // This dialog is also used to backfill jobs and in that case we also set it to false.
   showQuickSelectButtons: boolean;
 }) => {
   const isTimeseries = dimensionType === PartitionDefinitionType.TIME_WINDOW;
