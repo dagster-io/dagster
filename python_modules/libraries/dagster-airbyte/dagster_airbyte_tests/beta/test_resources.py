@@ -73,15 +73,15 @@ def assert_api_call(
         assert object_id in call.request.body.decode()
     if method:
         assert method == call.request.method
-    match auth_method:
-        case AuthMethod.BEARER:
-            assert "Authorization" in call.request.headers
-            assert call.request.headers["Authorization"] == f"Bearer {TEST_ACCESS_TOKEN}"
-        case AuthMethod.BASIC:
-            assert "Authorization" in call.request.headers
-            assert call.request.headers["Authorization"] == f"Basic {TEST_BASIC_AUTH_B64}"
-        case AuthMethod.NO_AUTH:
-            assert "Authorization" not in call.request.headers
+
+    if auth_method == AuthMethod.BEARER:
+        assert "Authorization" in call.request.headers
+        assert call.request.headers["Authorization"] == f"Bearer {TEST_ACCESS_TOKEN}"
+    elif auth_method == AuthMethod.BASIC:
+        assert "Authorization" in call.request.headers
+        assert call.request.headers["Authorization"] == f"Basic {TEST_BASIC_AUTH_B64}"
+    else:
+        assert "Authorization" not in call.request.headers
 
 
 def assert_cloud_rest_api_call(
