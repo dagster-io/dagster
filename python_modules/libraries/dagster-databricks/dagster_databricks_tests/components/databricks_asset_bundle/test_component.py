@@ -91,7 +91,7 @@ def test_load_component(custom_op_name: Optional[str], databricks_config_path: s
                 "type": "dagster_databricks.components.databricks_asset_bundle.component.DatabricksAssetBundleComponent",
                 "attributes": {
                     "databricks_config_path": databricks_config_path,
-                    "cluster_config": {},
+                    "compute_config": {},
                     "op": {"name": "test_op_name"} if custom_op_name else None,
                     "workspace": {
                         "host": TEST_DATABRICKS_WORKSPACE_HOST,
