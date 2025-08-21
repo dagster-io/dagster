@@ -1,10 +1,10 @@
 from abc import ABC, abstractmethod
 from collections.abc import Mapping
 from pathlib import Path
-from typing import Any, Generic, Optional, Union
+from typing import Any, Generic, Optional, Union, cast
 
 import yaml
-from dagster import Model, Resolvable, get_dagster_logger
+from dagster import Model, Resolvable, get_dagster_logger, _check as check
 from dagster_shared.record import IHaveNew, record, record_custom
 from databricks.sdk.service import jobs
 from typing_extensions import Self, TypeVar
@@ -173,7 +173,7 @@ class DatabricksNotebookTask(DatabricksBaseTask):
     def to_databricks_sdk_task(self) -> jobs.NotebookTask:
         return jobs.NotebookTask(
             notebook_path=self.task_config["notebook_task"]["notebook_path"],
-            base_parameters=self.task_parameters,
+            base_parameters=check.is_dict(self.task_parameters),
         )
 
 
@@ -269,7 +269,7 @@ class DatabricksSparkPythonTask(DatabricksBaseTask):
     def to_databricks_sdk_task(self) -> jobs.SparkPythonTask:
         python_config = self.task_config["spark_python_task"]
         return jobs.SparkPythonTask(
-            python_file=python_config["python_file"], parameters=self.task_parameters
+            python_file=python_config["python_file"], parameters=check.is_list(self.task_parameters)
         )
 
 
@@ -318,7 +318,7 @@ class DatabricksPythonWheelTask(DatabricksBaseTask):
         return jobs.PythonWheelTask(
             package_name=wheel_config["package_name"],
             entry_point=wheel_config["entry_point"],
-            parameters=self.task_parameters,
+            parameters=check.is_list(self.task_parameters),
         )
 
 
@@ -362,7 +362,7 @@ class DatabricksSparkJarTask(DatabricksBaseTask):
     def to_databricks_sdk_task(self) -> jobs.SparkJarTask:
         jar_config = self.task_config["spark_jar_task"]
         return jobs.SparkJarTask(
-            main_class_name=jar_config["main_class_name"], parameters=self.task_parameters
+            main_class_name=jar_config["main_class_name"], parameters=check.is_list(self.task_parameters)
         )
 
 
@@ -406,7 +406,7 @@ class DatabricksJobTask(DatabricksBaseTask):
     def to_databricks_sdk_task(self) -> jobs.RunJobTask:
         return jobs.RunJobTask(
             job_id=self.task_config["run_job_task"]["job_id"],
-            job_parameters=self.task_parameters,
+            job_parameters=check.is_dict(self.task_parameters),
         )
 
 
