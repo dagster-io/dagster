@@ -84,21 +84,23 @@ resources:
           spark_jar_task:
             main_class_name: "com.company.etl.DataProcessor"
             parameters:
-              input_table: "{{ env }}.raw.transactions"
-              output_table: "{{ env }}.processed.transactions"
-              processing_date: "{{ ds }}"
-              # Mix of direct values and job parameter references
-              environment: "{{job.parameters.environment}}"
-              run_id: "{{job.parameters.orchestrator_job_run_id}}"
-              output_bucket: "{{job.parameters.output_bucket_name}}"
-              profiler_enabled: "{{job.parameters.profiler_enabled}}"
-              batch_size: "{{job.parameters.batch_size}}"
-              timeout_minutes: "{{job.parameters.timeout_minutes}}"
-              experiment_settings: "{{job.parameters.experiment_settings}}"
-              catalog_map: "{{job.parameters.catalog_map}}"
-              log_level: "{{job.parameters.log_level}}"
-              llm_calls: "{{job.parameters.llm_calls}}"
-              git_sha: "{{job.parameters.git_sha}}"
+              [
+                "--input_table={{ env }}.raw.transactions",
+                "--output_table={{ env }}.processed.transactions",
+                "--processing_date={{ ds }}",
+                # Mix of direct values and job parameter references
+                "--environment={{job.parameters.environment}}",
+                "--run_id={{job.parameters.orchestrator_job_run_id}}",
+                "--output_bucket={{job.parameters.output_bucket_name}}",
+                "--profiler_enabled={{job.parameters.profiler_enabled}}",
+                "--batch_size={{job.parameters.batch_size}}",
+                "--timeout_minutes={{job.parameters.timeout_minutes}}",
+                "--experiment_settings={{job.parameters.experiment_settings}}",
+                "--catalog_map={{job.parameters.catalog_map}}",
+                "--log_level={{job.parameters.log_level}}",
+                "--llm_calls={{job.parameters.llm_calls}}",
+                "--git_sha={{job.parameters.git_sha}}",
+              ]
           libraries:
             - jar: "dbfs:/FileStore/jars/data_processor-1.0.0.jar"
             - maven:
