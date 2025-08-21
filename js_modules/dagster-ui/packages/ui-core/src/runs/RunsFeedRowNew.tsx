@@ -164,7 +164,7 @@ const CreatedAtCell = ({entry}: {entry: RunsFeedTableEntryFragment}) => {
 
 const TagsCell = ({entry}: {entry: RunsFeedTableEntryFragment}) => {
   const [isOpen, setIsOpen] = useState(false);
-  const tags = (entry.tags || []).sort((a, b) => {
+  const tags = (entry.tags || []).slice().sort((a, b) => {
     const keyA = a.key.startsWith('dagster/') ? a.key.replace('dagster/', '') : a.key;
     const keyB = b.key.startsWith('dagster/') ? b.key.replace('dagster/', '') : b.key;
     return keyA.localeCompare(keyB);

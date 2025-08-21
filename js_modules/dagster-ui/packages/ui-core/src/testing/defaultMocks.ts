@@ -148,7 +148,7 @@ export const defaultMocks = {
     ]);
     
     const now = Date.now() / 1000;
-    const creationTime = now - faker.datatype.number({min: 60, max: 86400});
+    const creationTime = now - faker.datatype.number({min: 10, max: 7200}); // 10 seconds to 2 hours ago
     
     let startTime = null;
     let endTime = null;
@@ -156,16 +156,16 @@ export const defaultMocks = {
     // Set times based on status to ensure logical consistency
     if (status === RunStatus.SUCCESS || status === RunStatus.FAILURE) {
       // Completed runs should have both start and end times
-      const runDuration = faker.datatype.number({min: 30, max: 1800}); // 30 seconds to 30 minutes
-      endTime = now - faker.datatype.number({min: 10, max: 300}); // ended 10s to 5min ago
+      const runDuration = faker.datatype.number({min: 15, max: 900}); // 15 seconds to 15 minutes
+      endTime = now - faker.datatype.number({min: 5, max: 180}); // ended 5s to 3min ago
       startTime = endTime - runDuration;
     } else if (status === RunStatus.STARTED) {
       // Started runs have start time but no end time
-      startTime = now - faker.datatype.number({min: 30, max: 1800}); // started 30s to 30min ago
+      startTime = now - faker.datatype.number({min: 10, max: 600}); // started 10s to 10min ago
     } else if (status === RunStatus.STARTING || status === RunStatus.CANCELING) {
       // These might have start times
       startTime = faker.datatype.boolean() 
-        ? now - faker.datatype.number({min: 5, max: 60})
+        ? now - faker.datatype.number({min: 2, max: 30}) // started 2s to 30s ago
         : null;
     }
     // QUEUED, NOT_STARTED, CANCELED typically have no start/end times
