@@ -87,6 +87,8 @@ Dagster provides a variety of abstractions for building and orchestrating data p
 
 An <PyObject section="assets" module="dagster" object="asset" /> represents a logical unit of data such as a table, dataset, or machine learning model. Assets can have dependencies on other assets, forming the data lineage for your pipelines. As the core abstraction in Dagster, assets can interact with many other Dagster entities to facilitate certain tasks. When you define an asset, either with the <PyObject section="assets" module="dagster" object="asset" decorator /> decorator or via a [component](/guides/build/components), the definition is automatically added to a top-level <PyObject section="definitions" module="dagster" object="Definitions" /> object.
 
+To dive deeper into how assets shape the way you design your data platform, [check out our deep-dive on assets](https://dagster.io/blog/software-defined-assets).
+
 | Concept                     | Relationship                                                        |
 | --------------------------- | ------------------------------------------------------------------- |
 | [asset check](#asset-check) | `asset` may use an `asset check`                                    |
