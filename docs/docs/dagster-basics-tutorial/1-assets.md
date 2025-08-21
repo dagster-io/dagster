@@ -4,27 +4,27 @@ description: Building your first assets
 sidebar_position: 20
 ---
 
-[Software-defined assets](/guides/build/assets) are the primary building blocks in Dagster. They represent the underlying entities in our pipelines, such as database tables, machine learning models, or AI processes. Together, these assets form the data platform. In this first step, we will define the initial assets that represent the data we will work with throughout this tutorial.
+[Software-defined assets](/guides/build/assets) are the primary building blocks in Dagster. They represent the underlying entities in our pipelines, such as database tables, machine learning models, or AI processes. Together, these assets form the data platform. In this step, you will define the initial assets that represent the data you will work with throughout this tutorial.
 
-All Dagster objects, such as assets, are added to the `Definitions` that was created when we initialized the project. The assets are then executed as lower level `Ops` within the context of the project environment.
+All Dagster objects, such as assets, are added to the `Definitions` object that was created when you initialized your project. The assets are then executed as lower level `Ops` within the context of the project environment.
 
 ![2048 resolution](/images/tutorial/dagster-tutorial/overviews/assets.png)
 
-## 1. Scaffold an asset
+## 1. Scaffold an assets file
 
-When building assets, the first step is to scaffold the assets file with the [`dg scaffold` command](/api/clis/dg-cli/dg-cli-reference#dg-scaffold):
+When building assets, the first step is to scaffold an assets file with the [`dg scaffold` command](/api/clis/dg-cli/dg-cli-reference#dg-scaffold):
 
 <CliInvocationExample path="docs_snippets/docs_snippets/guides/tutorials/dagster-tutorial/commands/dg-scaffold-assets.txt" />
 
-This adds a file called `assets.py` to the `dagster-tutorial` module, which will contain our asset code. Using `dg` to create the file ensures it is placed where Dagster can automatically discover it:
+This adds a file called `assets.py` to the `dagster-tutorial` module, which will contain your asset code. Using `dg` to create the file ensures it is placed where Dagster can automatically discover it:
 
 <CliInvocationExample path="docs_snippets/docs_snippets/guides/tutorials/dagster-tutorial/tree/assets.txt" />
 
 ## 2. Define the assets
 
-Now that we have the assets file, we can define our asset code. You define an asset using the <PyObject section="assets" module="dagster" object="asset" decorator />. Any function with this decorator will be treated as an asset and included in the Dagster asset graph.
+Now that you have an assets file, you can define your asset code. You define an asset using the <PyObject section="assets" module="dagster" object="asset" decorator /> decorator. Any function with this decorator will be treated as an asset and included in the Dagster asset graph.
 
-We will create one asset for each of the three source files we are using:
+You will create one asset for each of the three source files used in this tutorial:
 
 - [raw_customers.csv](https://raw.githubusercontent.com/dbt-labs/jaffle-shop-classic/refs/heads/main/seeds/raw_customers.csv)
 - [raw_orders.csv](https://raw.githubusercontent.com/dbt-labs/jaffle-shop-classic/refs/heads/main/seeds/raw_orders.csv)
@@ -40,9 +40,9 @@ We will create one asset for each of the three source files we are using:
 
 For now, these assets will simply represent the underlying files. Next, we will discuss how Dagster knows to load them.
 
-## 3. Dagster definitions
+## 3. Check definitions
 
-In Dagster, all defined objects (such as assets) need to be associated with a top-level <PyObject section="definitions" module="dagster" object="Definitions" /> object in order to be deployed. When we first created our project with `uvx create project`, a `definitions.py` file was also created:
+In Dagster, all defined objects (such as assets) need to be associated with a top-level <PyObject section="definitions" module="dagster" object="Definitions" /> object in order to be deployed. When you first created your project with `uvx create project`, a `definitions.py` file was also created:
 
 <CodeExample
   path="docs_snippets/docs_snippets/guides/tutorials/dagster-tutorial/src/dagster_tutorial/definitions.py"
@@ -52,22 +52,23 @@ In Dagster, all defined objects (such as assets) need to be associated with a to
 
 This `Definitions` object loads the `dagster-tutorial` module and automatically discovers all assets and other Dagster objects. There is no need to explicitly reference assets as they are created. However, it is good practice to check that the `Definitions` object can be loaded without error as new Dagster objects are added.
 
-We can use `dg` to ensure everything in our module loads correctly and that our project is deployable. Here, we will use the [`dg check defs`](/api/clis/dg-cli/dg-cli-reference#dg-check) command:
+You can use the [`dg check defs`](/api/clis/dg-cli/dg-cli-reference#dg-check) command to ensure everything in your module loads correctly, and that your project is deployable:
 
 <CliInvocationExample path="docs_snippets/docs_snippets/guides/tutorials/dagster-tutorial/commands/dg-check-defs.txt" />
 
-This confirms there are no issues with any of the assets we have defined. As you develop your Dagster project, it is a good habit to run `dg check` to ensure everything works as expected.
+This confirms there are no issues with any of the assets you have defined. As you develop your Dagster project, it is a good habit to run `dg check` to ensure everything works as expected.
 
 ## 4. Materialize the assets
 
-Now that our assets are configured and we have verified that the top-level `Definitions` object is valid, we can view the asset catalog in the Dagster UI. Navigate to [http://127.0.0.1:3000](http://127.0.0.1:3000) (or restart `dg dev` if it has been closed) and reload the definitions:
+Now that your assets are configured and you have verified that the top-level `Definitions` object is valid, you can view the asset catalog in the Dagster UI and reload the definitions:
 
-1. Navigate to **Assets**.
-2. Click **Reload definitions**.
+1. In a browser, navigate to [http://127.0.0.1:3000](http://127.0.0.1:3000), or restart `dg dev` if it has been closed.
+2. Navigate to **Assets**.
+3. Click **Reload definitions**.
 
    ![2048 resolution](/images/tutorial/dagster-tutorial/asset-1.png)
 
-You should now see three assets—one for each of the raw files (customers, orders, payments)—being loaded into DuckDB.
+You should now see three assets, one for each of the raw files (customers, orders, payments) being loaded into DuckDB.
 
 To materialize the assets:
 

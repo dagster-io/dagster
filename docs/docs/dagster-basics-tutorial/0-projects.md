@@ -4,13 +4,13 @@ description: The Dagster project
 sidebar_position: 10
 ---
 
-Dagster follows standard Python conventions, and most work in Dagster begins by creating a Python package called a _project_. This is where you’ll define your pipelines as well as any dependencies within project.
+Dagster follows standard Python conventions, and most work in Dagster begins by creating a Python package called a [project](/guides/build/projects). This is where you’ll define your pipelines, as well as any dependencies within your project.
 
-To streamline project creation, Dagster provides the [`create-dagster` CLI](/api/clis/create-dagster), which quickly scaffolds a Python package containing a Dagster `Definitions` object. When we initialize the project the `Definitions` will not contain any other Dagster objects.
+To streamline project creation, Dagster provides the [`create-dagster` CLI](/api/clis/create-dagster), which quickly scaffolds a Python package containing a Dagster `Definitions` object. When you scaffold the project, the `Definitions` object will not contain any other Dagster objects.
 
 ![2048 resolution](/images/tutorial/dagster-tutorial/overviews/definitions.png)
 
-## 1: Scaffold a Dagster project
+## 1. Scaffold a Dagster project
 
 <Tabs groupId="package-manager">
    <TabItem value="uv" label="uv">
@@ -20,7 +20,7 @@ To streamline project creation, Dagster provides the [`create-dagster` CLI](/api
          uvx -U create-dagster project dagster-tutorial
          ```
 
-      2. Respond `y` to the prompt to run `uv sync` after scaffolding
+      2. Respond `y` to the prompt to run `uv sync` after scaffolding:
 
          ![Responding y to uv sync prompt](/images/getting-started/quickstart/uv_sync_yes.png)
 
@@ -88,6 +88,8 @@ To streamline project creation, Dagster provides the [`create-dagster` CLI](/api
    </TabItem>
 </Tabs>
 
+### Dagster project structure
+
 Your new Dagster project should have the following structure:
 
 <Tabs groupId="package-manager">
@@ -125,12 +127,12 @@ Your new Dagster project should have the following structure:
    </TabItem>
 </Tabs>
 
-- `pyproject.toml` - defines the metadata and Python dependencies for the project
-- `src` directory - will contain code for the project
-- `src/definitions.py` - defines the main Dagster project object
-- `tests` directory - will contain tests for the project
+- `pyproject.toml` defines the metadata and Python dependencies for the project.
+- The `src` directory will contain code for the project.
+- `src/definitions.py` defines the main Dagster project object.
+- The `tests` directory will contain tests for the project.
 
-## 2: Start Dagster webserver
+## 2. Start the Dagster webserver
 
 When you initialize a project with `create-dagster`, the `dagster-dg-cli` library is installed. This provides the `dg` CLI, which includes several commands to help you structure and navigate Dagster projects. For more details, see the [`dg` CLI documentation](/api/clis/dg-cli/dg-cli-reference).
 
@@ -138,10 +140,15 @@ Use the following command to launch the Dagster UI locally:
 
 <CliInvocationExample contents="dg dev" />
 
-Then, open your browser to [http://127.0.0.1:3000](http://127.0.0.1:3000).
+Then, in a browser, navigate to [http://127.0.0.1:3000](http://127.0.0.1:3000).
 
-At this point, the project will be empty, but you’ll continue adding to it throughout the tutorial.
+At this point, your project will be empty, but you’ll continue adding to it throughout the tutorial.
 
 ![2048 resolution](/images/tutorial/dagster-tutorial/project.png)
 
-As you develop with Dagster, it’s often useful to run `dg dev` to view your project.
+
+:::tip
+
+As you develop with Dagster, it’s often useful to periodically run `dg dev` to view your project.
+
+:::

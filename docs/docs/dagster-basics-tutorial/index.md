@@ -1,6 +1,6 @@
 ---
-title: Build a Dagster Pipeline
-description: Learn how to build a pipeline with Dagster
+title: Dagster basics tutorial
+description: Learn about Dagster basics, such as projects, assets, resources, asset dependencies, asset checks, automation, and components.
 last_update:
   author: Dennis Hume
 sidebar_class_name: hidden
@@ -8,28 +8,24 @@ canonicalUrl: '/dagster-basics-tutorial'
 slug: '/dagster-basics-tutorial'
 ---
 
-# Build your first Dagster pipeline
 
-In this tutorial, you’ll learn how to build a Dagster pipeline from the ground up. We will start with the fundamental concepts and progress to higher level abstractions that showcase the power the Dagster.
+In this tutorial, you will learn about core Dagster features and use them to build a working data pipeline. We will start with the fundamental concepts and progress to higher level abstractions that showcase the power of Dagster.
 
-By the end, you’ll have a clear understanding of Dagster’s core features and how they work together to create data workflows.
+By the end, you will be ready to build your own data pipelines and explore more advanced features and integrations.
 
-## Dagster Layers
+## Dagster's programming model
 
-Dagster’s programming model is built on three layers that work together: `Components`, `Definitions`, and `Ops`. Each layer has a different level of abstraction and purpose, and together they let you move smoothly from high-level configuration to low-level execution.
+Dagster’s programming model is built on three concepts that work together: `Components`, `Definitions`, and `Ops`. Each concept has a different level of abstraction and purpose, and together they let you move smoothly from high-level configuration to low-level execution.
 
-- **Components: Build Definitions programmatically**
-  `Components` sit one layer above `Definitions`. They are like factories that generate one or more `Definitions` based on configuration you provide. This allows you to avoid repetitive code by producing multiple `Definitions` automatically from a common pattern.
+- **`Components`** generate one or more `Definitions` based on configuration you provide. This allows you to avoid repetitive code by producing multiple `Definitions` automatically from a common pattern.
 
-- **Definitions: Describe what something is and how it works**
-  `Definitions` are the building blocks of Dagster. They combine metadata (what the entity represents) with a Python function (how it behaves). `Definitions` are what you actually execute in a Dagster job or run.
+- **`Definitions`** are the building blocks of Dagster. `Definitions` combine metadata (what the entity, such an asset, represents) with a Python function called an `Op` (how the entity behaves). `Definitions` are what you actually execute in a Dagster job or run.
 
-- **Ops: The low-level execution unit**
-  At the lowest layer are `Ops` (short for “operations”). `Ops` are simple Python functions that represent the most basic unit of computation in Dagster.
+- **`Ops`**, short for "operations", are the lowest-level execution units. They are Python functions that represent the most basic unit of computation in Dagster.
 
 ![2048 resolution](/images/tutorial/dagster-tutorial/overviews/overview-1.png)
 
-If you’d like to dive deeper into specific Dagster features and how they interact, check out our [Concepts page](/getting-started/concepts).
+If you’d like to learn about the full set of Dagster features and how they interact with each other, check out our [Concepts page](/getting-started/concepts).
 
 ## Prerequisites
 

@@ -1,16 +1,16 @@
 ---
 title: Components
-description: Defining our own components
+description: Defining custom components
 sidebar_position: 90
 ---
 
-So far we have built out everything via `Definitions`. But this is not the only way to include `Definitions` in a Dagster project.
+So far, we have built our pipeline out of existing `Definitions`, but this is not the only way to include `Definitions` in a Dagster project.
 
-If we think about the code for our three assets (`customers`, `orders`, and `payments`), it is all very similar. Each asset performs the same action, turning an S3 file into a DuckDB table while differing only in the URL path and table name.
+If we think about the code for our three assets (`customers`, `orders`, and `payments`), it is all very similar. Each asset performs the same action, turning an S3 file into a DuckDB table, while differing only in the URL path and table name.
 
-These assets are a great candidate for a [component](/guides/build/components/creating-new-components). Components generate `Definitions` through a configuration layer. There are built-in components that let you integrate with common workflows (such as turning Python scripts into assets) or with popular tools like [dbt](https://www.getdbt.com/) or [Fivetran](https://www.fivetran.com/). There are also custom components that let you define your own specific use cases.
+These assets are a great candidate for a [custom component](/guides/build/components/creating-new-components). Components generate `Definitions` through a configuration layer. There are built-in components that let you integrate with common workflows (such as turning Python scripts into assets), or with popular tools like [dbt](https://www.getdbt.com/) or [Fivetran](https://www.fivetran.com/). With custom components, you can define your own specific use cases.
 
-Here we will use a custom component to streamline the development of our assets and replace their `Definitions` in our project with a `Component` which can generate them instead.
+In this step, you will use a custom component to streamline the development of similar assets and replace their `Definitions` in your project with a `Component` that can generate them instead.
 
 ![2048 resolution](/images/tutorial/dagster-tutorial/overviews/components.png)
 
@@ -28,12 +28,12 @@ This directory contains the files needed to define the custom component.
 
 ## 2. Define the custom component
 
-When designing a component, keep its interface in mind. In this case, the assets that our component will create share the following attributes:
+When designing a component, keep its interface in mind. In this case, the assets that the component will create share the following attributes:
 
 - A DuckDB database shared across all assets.
 - A list of ETL assets, each with a URL path and a table name.
 
-The first step is to create a `dg.Model` for our ETL assets. These are similar to [Pydantic](https://docs.pydantic.dev/) models. This model will contain the two attributes that define an asset:
+The first step is to create a `dg.Model` for the ETL assets. These are similar to [Pydantic](https://docs.pydantic.dev/) models. This model will contain the two attributes that define an asset:
 
 <CodeExample
   path="docs_snippets/docs_snippets/guides/tutorials/dagster-tutorial/src/dagster_tutorial/components/tutorial.py"
@@ -43,14 +43,14 @@ The first step is to create a `dg.Model` for our ETL assets. These are similar t
   title="src/etl_tutorial/components/tutorial.py"
 />
 
-Next, add the interface to the `dg.Component` class. In this case, there will be a single attribute for the DuckDB database and a list of the `ETL` models we just defined:
+Next, add the interface to the `dg.Component` class. In this case, there will be a single attribute for the DuckDB database and a list of the `ETL` models you just defined:
 
 ```python
     duckdb_database: str
     etl_steps: list[ETL]
 ```
 
-The rest of the code will look very similar to the asset definitions we wrote earlier. The `build_defs` method constructs a `Definitions` object containing all the Dagster objects created by the component. Based on the interface defined at the class level, we will generate multiple ETL assets. The final Dagster object to include is the `resource` that the assets rely on, which can also be set via an attribute.
+The rest of the code will look very similar to the asset definitions you wrote earlier. The `build_defs` method constructs a `Definitions` object containing all the Dagster objects created by the component. Based on the interface defined at the class level, you will generate multiple ETL assets. The final Dagster object to include is the `resource` that the assets rely on, which can also be set with an attribute.
 
 <CodeExample
   path="docs_snippets/docs_snippets/guides/tutorials/dagster-tutorial/src/dagster_tutorial/components/tutorial.py"
@@ -62,13 +62,13 @@ The rest of the code will look very similar to the asset definitions we wrote ea
 
 Run `dg check` to ensure that the component code is correct.
 
-## 3. Scaffold the component
+## 3. Scaffold the component definition
 
-If we list our components again, we will see that the custom component is now registered:
+If you list your components again, you should see that the custom component is now registered:
 
 <CliInvocationExample path="docs_snippets/docs_snippets/guides/tutorials/dagster-tutorial/commands/dg-list-components-custom.txt" />
 
-We can now scaffold it just like any other component:
+You can now scaffold definitions from it just like any other component:
 
 <CliInvocationExample path="docs_snippets/docs_snippets/guides/tutorials/dagster-tutorial/commands/dg-scaffold-custom-component.txt" />
 
@@ -78,7 +78,7 @@ This adds a new directory, `tutorials`, within `defs`:
 
 ## 4. Configure the component
 
-Set the configuration in the YAML file created when the component was scaffolded:
+To configure the component, update the YAML file created when you scaffolded a definition from the component:
 
 <CodeExample
   path="docs_snippets/docs_snippets/guides/tutorials/dagster-tutorial/src/dagster_tutorial/components/defs.yaml"
@@ -96,11 +96,11 @@ Before running `dg check` again, remove the `customers`, `orders`, and `payments
 
 ## 5. Materialize the assets
 
-In the Dagster UI at [http://127.0.0.1:3000](http://127.0.0.1:3000), you will see that the asset graph looks the same as before.
+When you materialize your assets in the Dagster UI at [http://127.0.0.1:3000/assets](http://127.0.0.1:3000/assets), you should see that the asset graph looks the same as before.
 
 ## Summary
 
-Congratulations! You've just built a fully functional, end-to-end data platform—one. This is no small feat! You've laid the foundation for a scalable, maintainable, and observable data platform.
+Congratulations! You've just built a fully functional, end-to-end data pipeline. This is no small feat! You've laid the foundation for a scalable, maintainable, and observable data platform.
 
 ## Recommended next steps
 
