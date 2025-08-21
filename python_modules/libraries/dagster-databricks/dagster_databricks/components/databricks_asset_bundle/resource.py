@@ -74,12 +74,12 @@ class DatabricksWorkspace(ConfigurableResource):
             context.log.info(f"Task {task_key} depends on: {task_dependencies}")
 
             # Determine cluster configuration based on task type
-            cluster_config = (
+            compute_config = (
                 {
                     "new_cluster": compute.ClusterSpec(
-                        spark_version=component.cluster_config.spark_version,
-                        node_type_id=component.cluster_config.node_type_id,
-                        num_workers=component.cluster_config.num_workers,
+                        spark_version=component.compute_config.spark_version,
+                        node_type_id=component.compute_config.node_type_id,
+                        num_workers=component.compute_config.num_workers,
                     )
                 }
                 if task.needs_cluster
@@ -89,7 +89,7 @@ class DatabricksWorkspace(ConfigurableResource):
             submit_task_params = {
                 **submit_task_params,
                 **task_dependency_config,
-                **cluster_config,
+                **compute_config,
             }
 
             databricks_task = jobs.SubmitTask(**submit_task_params)
