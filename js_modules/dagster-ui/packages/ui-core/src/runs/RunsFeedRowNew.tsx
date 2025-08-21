@@ -1,8 +1,21 @@
-import {Box, Button, Icon, Menu, MenuItem, Popover, Tag} from '@dagster-io/ui-components';
+import {
+  Box,
+  Button,
+  Colors,
+  Icon,
+  Menu,
+  MenuItem,
+  Popover,
+  Spinner,
+  Tag,
+} from '@dagster-io/ui-components';
 import {useState} from 'react';
 
+import {formatElapsedTimeWithoutMsec} from '../app/Util';
 import {DagsterTag} from './RunTag';
+import {TimeElapsed} from './TimeElapsed';
 import {RunsFeedTableEntryFragment} from './types/RunsFeedTableEntryFragment.types';
+import {RunStatus} from '../graphql/types';
 
 type LaunchType =
   | {type: 'manual'; user: string}
@@ -208,12 +221,122 @@ const TagsCell = ({entry}: {entry: RunsFeedTableEntryFragment}) => {
   );
 };
 
+const StatusCell = ({entry}: {entry: RunsFeedTableEntryFragment}) => {
+  const status = entry.runStatus;
+
+  // Determine icon, color, and text based on status
+  const getStatusConfig = (status: RunStatus) => {
+    switch (status) {
+      case RunStatus.SUCCESS:
+        return {
+          icon: 'run_success' as const,
+          color: Colors.accentGreen(),
+          text: 'Success',
+          showDuration: true,
+          showOnlyDuration: true,
+        };
+      case RunStatus.STARTED:
+        return {
+          color: Colors.accentBlue(),
+          text: 'Started',
+          showDuration: true,
+          showOnlyDuration: true,
+          useSpinner: true,
+        };
+      case RunStatus.FAILURE:
+        return {
+          icon: 'run_failed' as const,
+          color: Colors.accentRed(),
+          text: 'Failure',
+          showDuration: true,
+          showOnlyDuration: true,
+        };
+      case RunStatus.QUEUED:
+        return {
+          icon: 'hourglass_bottom' as const,
+          color: Colors.textLight(),
+          text: 'Queued',
+          showDuration: false,
+        };
+      case RunStatus.STARTING:
+        return {
+          color: Colors.accentBlue(),
+          text: 'Starting',
+          showDuration: false,
+          useSpinner: true,
+        };
+      case RunStatus.NOT_STARTED:
+        return {
+          icon: 'status' as const,
+          color: Colors.textLight(),
+          text: 'Not started',
+          showDuration: false,
+        };
+      case RunStatus.CANCELING:
+        return {
+          color: Colors.accentBlue(),
+          text: 'Cancelling',
+          showDuration: false,
+          useSpinner: true,
+        };
+      case RunStatus.CANCELED:
+        return {
+          icon: 'run_canceled' as const,
+          color: Colors.textLight(),
+          text: 'Cancelled',
+          showDuration: false,
+        };
+      default:
+        return {
+          icon: 'status' as const,
+          color: Colors.textLight(),
+          text: 'Unknown',
+          showDuration: false,
+        };
+    }
+  };
+
+  const config = getStatusConfig(status);
+
+  // For SUCCESS, STARTED, FAILURE - show icon + duration in status text style
+  if (config.showOnlyDuration && config.showDuration) {
+    return (
+      <Box style={{display: 'flex', alignItems: 'center', gap: '6px'}}>
+        {config.useSpinner ? (
+          <Spinner purpose="caption-text" />
+        ) : config.icon ? (
+          <Icon name={config.icon} data-kyle="asdfasdf" color={config.color} size={16} />
+        ) : null}
+        <Box style={{color: config.color, fontSize: '14px', fontWeight: 500, fontVariantNumeric: 'tabular-nums'}}>
+          {entry.startTime
+            ? entry.endTime
+              ? formatElapsedTimeWithoutMsec((entry.endTime - entry.startTime) * 1000)
+              : formatElapsedTimeWithoutMsec((Date.now() / 1000 - entry.startTime) * 1000)
+            : '–'}
+        </Box>
+      </Box>
+    );
+  }
+
+  // For other statuses - show icon + text (no duration)
+  return (
+    <Box style={{display: 'flex', alignItems: 'center', gap: '6px'}}>
+      {config.useSpinner ? (
+        <Spinner purpose="caption-text" />
+      ) : config.icon ? (
+        <Icon name={config.icon} color={config.color} size={16} />
+      ) : null}
+      <Box style={{color: config.color, fontSize: '14px', fontWeight: 500}}>{config.text}</Box>
+    </Box>
+  );
+};
+
 export const RunsFeedRow = ({entry}: {entry: RunsFeedTableEntryFragment}) => {
   return (
     <Box
       style={{
         display: 'grid',
-        gridTemplateColumns: '1fr 120px 40px',
+        gridTemplateColumns: '1fr 120px 120px 40px',
         gap: '12px',
         padding: '8px 12px',
         borderBottom: '1px solid #e1e5e9',
@@ -222,6 +345,7 @@ export const RunsFeedRow = ({entry}: {entry: RunsFeedTableEntryFragment}) => {
     >
       <LaunchedByCell entry={entry} />
       <CreatedAtCell entry={entry} />
+      <StatusCell entry={entry} />
       <TagsCell entry={entry} />
     </Box>
   );
@@ -232,7 +356,7 @@ export const RunsFeedTableHeader = () => {
     <Box
       style={{
         display: 'grid',
-        gridTemplateColumns: '1fr 120px 40px',
+        gridTemplateColumns: '1fr 120px 120px 40px',
         gap: '12px',
         padding: '8px 12px',
         borderBottom: '2px solid #d1d5db',
@@ -242,6 +366,7 @@ export const RunsFeedTableHeader = () => {
     >
       <Box>Launched by</Box>
       <Box>Created at</Box>
+      <Box>Status</Box>
       <Box>Tags</Box>
     </Box>
   );

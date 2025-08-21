@@ -1,6 +1,6 @@
 import faker from 'faker';
 
-import {RepositoryLocationLoadStatus} from '../graphql/types';
+import {RepositoryLocationLoadStatus, RunStatus} from '../graphql/types';
 
 export const hyphenatedName = (wordCount = 2) =>
   faker.random.words(wordCount).replace(/ /g, '-').toLowerCase();
@@ -110,6 +110,24 @@ export const defaultMocks = {
   Run: () => ({
     id: randomId,
     jobName: hyphenatedName,
+    runStatus: faker.random.arrayElement([
+      RunStatus.SUCCESS,
+      RunStatus.SUCCESS, // Weight SUCCESS more heavily
+      RunStatus.STARTED,
+      RunStatus.FAILURE,
+      RunStatus.QUEUED,
+      RunStatus.STARTING,
+      RunStatus.NOT_STARTED,
+      RunStatus.CANCELING,
+      RunStatus.CANCELED,
+    ]),
+    creationTime: Date.now() / 1000 - faker.datatype.number({min: 60, max: 86400}),
+    startTime: faker.datatype.boolean()
+      ? Date.now() / 1000 - faker.datatype.number({min: 60, max: 3600})
+      : null,
+    endTime: faker.datatype.boolean()
+      ? Date.now() / 1000 - faker.datatype.number({min: 30, max: 1800})
+      : null,
     tags: () => {
       const baseTags = [...new Array(faker.datatype.number({min: 5, max: 12}))].map(() => ({
         key: faker.random.arrayElement([
@@ -153,8 +171,14 @@ export const defaultMocks = {
       // 80% chance to add launch type tags for realistic distribution
       const launchTags = [];
       if (faker.datatype.number({min: 1, max: 10}) <= 8) {
-        const launchType = faker.random.arrayElement(['user', 'schedule', 'sensor', 'automation', 'backfill']);
-        
+        const launchType = faker.random.arrayElement([
+          'user',
+          'schedule',
+          'sensor',
+          'automation',
+          'backfill',
+        ]);
+
         switch (launchType) {
           case 'user':
             launchTags.push({key: 'user', value: faker.internet.email()});
@@ -174,7 +198,7 @@ export const defaultMocks = {
             break;
           case 'backfill':
             launchTags.push(
-              {key: 'dagster/backfill', value: faker.random.alphaNumeric(8)},
+              {key: 'dagster/backfill', value: faker.datatype.uuid().slice(0, 8)},
               {key: 'user', value: faker.internet.email()},
             );
             break;
