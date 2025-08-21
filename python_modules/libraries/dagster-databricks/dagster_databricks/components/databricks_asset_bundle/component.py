@@ -160,7 +160,10 @@ class DatabricksAssetBundleComponent(Component, Resolvable):
                 ),
                 **({"libraries": MetadataValue.json(task.libraries)} if task.libraries else {}),
             },
-            deps=[snake_case(dep_config.task_key) for dep_config in task.depends_on or []],
+            deps=[
+                self.get_asset_spec(DatabricksTaskAssetSpecData(task_key=dep_config.task_key)).key
+                for dep_config in task.depends_on
+            or []],
         )
 
     def build_defs(self, context: ComponentLoadContext) -> Definitions:
