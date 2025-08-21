@@ -206,8 +206,19 @@ const TagsCell = ({entry}: {entry: RunsFeedTableEntryFragment}) => {
                   placement="left"
                 >
                   <Button
-                    icon="more_horiz"
-                    style={{marginLeft: '8px', minWidth: 'auto', padding: '2px'}}
+                    icon={<Icon name="more_horiz" />}
+                    intent="none"
+                    style={{
+                      marginLeft: '8px',
+                      minWidth: 'auto',
+                      width: '32px',
+                      height: '32px',
+                      padding: '4px',
+                      border: 'none',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center'
+                    }}
                     onClick={(e) => e.stopPropagation()}
                   />
                 </Popover>
