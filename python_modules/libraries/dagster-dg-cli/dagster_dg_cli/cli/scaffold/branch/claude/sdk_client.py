@@ -10,12 +10,7 @@ from claude_code_sdk.types import (
     ClaudeCodeOptions,
     Message,
     ResultMessage,
-    SystemMessage,
     TextBlock,
-    ThinkingBlock,
-    ToolResultBlock,
-    ToolUseBlock,
-    UserMessage,
 )
 
 from dagster_dg_cli.cli.scaffold.branch.claude.diagnostics import AIInteraction, ClaudeDiagnostics
@@ -98,8 +93,7 @@ class ClaudeSDKClient:
 
                 # Stream output to channel
                 if verbose:
-                    debug_output = self._format_message_for_debug(message)
-                    output_channel.write(debug_output)
+                    output_channel.write(f"[DEBUG] {message}")
                 else:
                     # Format message for user-friendly output
                     formatted_output = self._format_message_for_output(message)
@@ -124,86 +118,6 @@ class ClaudeSDKClient:
             self.diagnostics.log_ai_interaction(interaction)
 
             return collected_messages
-
-    def _format_content_blocks(self, blocks: list) -> list[str]:
-        """Format content blocks into debug strings.
-
-        Args:
-            blocks: List of content blocks to format
-
-        Returns:
-            List of formatted block descriptions
-        """
-        content_blocks = []
-        for block in blocks:
-            if isinstance(block, TextBlock):
-                content_blocks.append(f"TextBlock({block.text!r})")
-            elif isinstance(block, ToolUseBlock):
-                content_blocks.append(
-                    f"ToolUseBlock(name={block.name!r}, input={block.input!r}, id={block.id!r})",
-                )
-            elif isinstance(block, ToolResultBlock):
-                content_blocks.append(
-                    f"ToolResultBlock(tool_use_id={block.tool_use_id!r}, is_error={block.is_error})"
-                )
-            elif isinstance(block, ThinkingBlock):
-                content_blocks.append(f"ThinkingBlock({block.thinking!r})")
-            else:
-                content_blocks.append(f"{type(block).__name__}")
-        return content_blocks
-
-    def _format_message_for_debug(self, message: Message) -> str:
-        """Format SDK message for debug output.
-
-        Args:
-            message: SDK message object
-
-        Returns:
-            Debug string representation
-        """
-        message_type = type(message).__name__
-
-        # Handle different SDK message types with specific debug formatting
-        if isinstance(message, AssistantMessage):
-            content_blocks = self._format_content_blocks(message.content)
-            content_summary = f" content=[{', '.join(content_blocks)}]"
-            return f"[DEBUG] {message_type} model={message.model!r}{content_summary}\n"
-
-        elif isinstance(message, SystemMessage):
-            system_info = f" subtype={message.subtype!r}"
-            if "cwd" in message.data:
-                system_info += f" cwd={message.data['cwd']!r}"
-            if "model" in message.data:
-                system_info += f" model={message.data['model']!r}"
-            if "permissionMode" in message.data:
-                system_info += f" permissionMode={message.data['permissionMode']!r}"
-            if message.data.get("tools"):
-                tools = message.data["tools"]
-                tools_preview = f"{len(tools)} tools" + (
-                    f" ({', '.join(tools[:3])}...)" if len(tools) > 3 else f" ({', '.join(tools)})"
-                )
-                system_info += f" tools=[{tools_preview}]"
-            return f"[DEBUG] {message_type}{system_info}\n"
-
-        elif isinstance(message, UserMessage):
-            if isinstance(message.content, str):
-                user_info = f" content={message.content!r}"
-            else:
-                content_blocks = self._format_content_blocks(message.content)
-                user_info = f" content=[{', '.join(content_blocks)}]"
-            return f"[DEBUG] {message_type}{user_info}\n"
-
-        elif isinstance(message, ResultMessage):
-            result_info = f" subtype={message.subtype!r} duration_ms={message.duration_ms} num_turns={message.num_turns}"
-            if message.total_cost_usd is not None:
-                result_info += f" cost_usd={message.total_cost_usd:.4f}"
-            if message.result:
-                result_info += f" result={message.result!r}"
-            return f"[DEBUG] {message_type}{result_info}\n"
-
-        else:
-            # Generic fallback for unknown message types
-            return f"[DEBUG] {message_type} - {message!r}\n"
 
     def _format_message_for_output(self, message: Message) -> Optional[str]:
         """Format SDK message for user-friendly output.
