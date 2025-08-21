@@ -1197,10 +1197,8 @@ class AirbyteWorkspace(ConfigurableResource):
         has_password = values.get("password") is not None
 
         check.invariant(
-
             configuration_api_is_cloud == rest_api_is_cloud,
             "Invalid config: Configuration API and REST API must both be either Airbyte Cloud or self-managed.",
-
         )
 
         if rest_api_is_cloud or configuration_api_is_cloud:
