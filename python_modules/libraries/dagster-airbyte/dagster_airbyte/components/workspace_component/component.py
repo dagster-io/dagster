@@ -82,6 +82,30 @@ class AirbyteWorkspaceModel(dg.Model):
             description="Password used to authenticate to Airbyte. Used for self-managed Airbyte with basic auth.",
         ),
     ]
+    request_max_retries: Annotated[
+        int,
+        pydantic.Field(
+            default=3,
+            description=(
+                "The maximum number of times requests to the Airbyte API should be retried "
+                "before failing."
+            ),
+        ),
+    ]
+    request_retry_delay: Annotated[
+        float,
+        pydantic.Field(
+            default=0.25,
+            description="Time (in seconds) to wait between each request retry.",
+        ),
+    ]
+    request_timeout: Annotated[
+        int,
+        pydantic.Field(
+            default=15,
+            description="Time (in seconds) after which the requests to Airbyte are declared timed out.",
+        ),
+    ]
 
 
 class AirbyteConnectionSelectorByName(dg.Model):
