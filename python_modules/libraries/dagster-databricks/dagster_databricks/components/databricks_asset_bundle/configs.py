@@ -108,6 +108,16 @@ class DatabricksTaskDependsOnConfig:
 
 
 @record
+class DatabricksTaskAssetSpecData:
+    task_key: str
+    depends_on: Optional[list[DatabricksTaskDependsOnConfig]]
+    job_name: Optional[str]
+    libraries: Optional[list[Mapping[str, Any]]]
+    task_type: Optional[str]
+    task_config_metadata: Optional[Mapping[str, Any]]
+
+
+@record
 class DatabricksBaseTask(ABC, Generic[T_DatabricksSdkTask]):
     task_key: str
     task_config: Mapping[str, Any]
@@ -138,6 +148,16 @@ class DatabricksBaseTask(ABC, Generic[T_DatabricksSdkTask]):
 
     @abstractmethod
     def to_databricks_sdk_task(self) -> T_DatabricksSdkTask: ...
+
+    def to_databricks_task_spec_data(self) -> DatabricksTaskAssetSpecData:
+        return DatabricksTaskAssetSpecData(
+            task_key=self.task_key,
+            depends_on=self.depends_on,
+            job_name=self.job_name,
+            libraries=self.libraries,
+            task_type=self.task_type,
+            task_config_metadata=self.task_config_metadata,
+        )
 
 
 @record

@@ -15,8 +15,8 @@ from dagster.components.resolved.model import Resolver
 from dagster.components.scaffold.scaffold import scaffold_with
 
 from dagster_databricks.components.databricks_asset_bundle.configs import (
-    DatabricksBaseTask,
     DatabricksConfig,
+    DatabricksTaskAssetSpecData,
     ResolvedDatabricksExistingClusterConfig,
     ResolvedDatabricksNewClusterConfig,
     ResolvedDatabricksServerlessConfig,
@@ -140,19 +140,19 @@ class DatabricksAssetBundleComponent(Component, Resolvable):
     def databricks_config(self) -> DatabricksConfig:
         return DatabricksConfig(databricks_config_path=self.databricks_config_path)
 
-    def get_asset_spec(self, task: DatabricksBaseTask) -> AssetSpec:
+    def get_asset_spec(self, data: DatabricksTaskAssetSpecData) -> AssetSpec:
         return AssetSpec(
-            key=snake_case(task.task_key),
-            description=f"{task.task_key} task from {task.job_name} job",
-            kinds={"databricks", task.task_type},
+            key=snake_case(data.task_key),
+            description=f"{data.task_key} task from {data.job_name} job",
+            kinds={"databricks", data.task_type},
             skippable=True,
             metadata={
-                "task_key": MetadataValue.text(task.task_key),
-                "task_type": MetadataValue.text(task.task_type),
-                "task_config": MetadataValue.json(task.task_config_metadata),
-                **({"libraries": MetadataValue.json(task.libraries)} if task.libraries else {}),
+                "task_key": MetadataValue.text(data.task_key),
+                "task_type": MetadataValue.text(data.task_type),
+                "task_config": MetadataValue.json(data.task_config_metadata),
+                **({"libraries": MetadataValue.json(data.libraries)} if data.libraries else {}),
             },
-            deps=[snake_case(dep_config.task_key) for dep_config in task.depends_on],
+            deps=[snake_case(dep_config.task_key) for dep_config in data.depends_on],
         )
 
     def build_defs(self, context: ComponentLoadContext) -> Definitions:
@@ -164,7 +164,10 @@ class DatabricksAssetBundleComponent(Component, Resolvable):
             name=self.op.name
             if self.op
             else f"databricks_tasks_multi_asset_{component_defs_path_as_python_str}",
-            specs=[self.get_asset_spec(task) for task in self.databricks_config.tasks],
+            specs=[
+                self.get_asset_spec(data=task.to_databricks_task_spec_data())
+                for task in self.databricks_config.tasks
+            ],
             can_subset=True,
         )
         def databricks_tasks_multi_asset(
