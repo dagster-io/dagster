@@ -172,7 +172,7 @@ class ClaudeDiagnostics:
                 "prompt_length": len(interaction.prompt),
                 "response_length": len(interaction.response),
                 "token_count": interaction.token_count,
-                "tools_used": interaction.tools_used,
+                "allowed_tools": interaction.allowed_tools,
                 "duration_ms": interaction.duration_ms,
             },
         )
