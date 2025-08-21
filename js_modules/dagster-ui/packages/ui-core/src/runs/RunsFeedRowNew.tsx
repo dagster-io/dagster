@@ -109,19 +109,26 @@ const detectLaunchType = (entry: RunsFeedTableEntryFragment): LaunchType => {
 const LaunchedByCell = ({entry}: {entry: RunsFeedTableEntryFragment}) => {
   const launchType = detectLaunchType(entry);
 
+  const renderLaunchInfo = (iconName: string, text: string) => (
+    <Box style={{display: 'flex', alignItems: 'center', gap: '6px'}}>
+      <Icon name={iconName} size={16} />
+      <span>{text}</span>
+    </Box>
+  );
+
   switch (launchType.type) {
     case 'manual':
-      return <Tag icon="account_circle">{launchType.user}</Tag>;
+      return renderLaunchInfo('account_circle', launchType.user);
     case 'schedule':
-      return <Tag icon="schedule">{launchType.name}</Tag>;
+      return renderLaunchInfo('schedule', launchType.name);
     case 'sensor':
-      return <Tag icon="sensors">{launchType.name}</Tag>;
+      return renderLaunchInfo('sensors', launchType.name);
     case 'automation':
-      return <Tag icon="automation_condition">Declarative automation</Tag>;
+      return renderLaunchInfo('automation_condition', 'Declarative automation');
     case 'backfill-launched':
-      return <Tag icon="settings_backup_restore">Backfill ({launchType.backfillId})</Tag>;
+      return renderLaunchInfo('settings_backup_restore', `Backfill (${launchType.backfillId})`);
     default:
-      return <Tag icon="account_circle">Manual</Tag>;
+      return renderLaunchInfo('account_circle', 'Manual');
   }
 };
 
@@ -378,7 +385,7 @@ export const RunsFeedRow = ({entry}: {entry: RunsFeedTableEntryFragment}) => {
     <Box
       style={{
         display: 'grid',
-        gridTemplateColumns: '1fr 120px 120px 40px 40px',
+        gridTemplateColumns: '1fr 120px 40px 150px 40px',
         gap: '12px',
         padding: '8px 12px',
         borderBottom: '1px solid #e1e5e9',
@@ -387,8 +394,8 @@ export const RunsFeedRow = ({entry}: {entry: RunsFeedTableEntryFragment}) => {
     >
       <LaunchedByCell entry={entry} />
       <CreatedAtCell entry={entry} />
-      <StatusCell entry={entry} />
       <TagsCell entry={entry} />
+      <StatusCell entry={entry} />
       <MoreActionsCell entry={entry} />
     </Box>
   );
@@ -399,7 +406,7 @@ export const RunsFeedTableHeader = () => {
     <Box
       style={{
         display: 'grid',
-        gridTemplateColumns: '1fr 120px 120px 40px 40px',
+        gridTemplateColumns: '1fr 120px 40px 150px 40px',
         gap: '12px',
         padding: '8px 12px',
         borderBottom: '2px solid #d1d5db',
@@ -409,8 +416,8 @@ export const RunsFeedTableHeader = () => {
     >
       <Box>Launched by</Box>
       <Box>Created at</Box>
-      <Box>Status</Box>
       <Box>Tags</Box>
+      <Box>Status</Box>
       <Box></Box>
     </Box>
   );
