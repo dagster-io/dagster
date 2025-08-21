@@ -1,5 +1,5 @@
 from collections.abc import Iterator, Mapping
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, Union
 
 from dagster import (
     AssetExecutionContext,
@@ -7,6 +7,7 @@ from dagster import (
     AssetMaterialization,
     ConfigurableResource,
     MaterializeResult,
+    _check as check
 )
 from dagster_shared.utils.cached_method import cached_method
 from databricks.sdk import WorkspaceClient
@@ -43,7 +44,7 @@ class DatabricksWorkspace(ConfigurableResource):
 
     def submit_and_poll(
         self, component: "DatabricksAssetBundleComponent", context: AssetExecutionContext
-    ) -> Iterator[AssetMaterialization]:
+    ) -> Iterator[Union[AssetMaterialization, MaterializeResult]]:
         tasks = component.databricks_config.tasks
 
         # Get selected asset keys that are being materialized
@@ -126,22 +127,26 @@ class DatabricksWorkspace(ConfigurableResource):
         }
 
         job_run = self._submit_job(params=job_submit_params)
-        context.log.info(f"Databricks job submitted with run ID: {job_run.run_id}")
+        run_id = check.not_none(job_run.run_id)
+        job_id = check.not_none(job_run.job_id)
+        context.log.info(f"Databricks job submitted with run ID: {run_id}")
 
         # Build Databricks job run URL
         workspace_url = self.host.rstrip("/")
-        job_run_url = f"{workspace_url}/jobs/{job_run.job_id}/runs/{job_run.run_id}"
+        job_run_url = f"{workspace_url}/jobs/{job_id}/runs/{run_id}"
         context.log.info(f"Databricks job run URL: {job_run_url}")
 
-        final_run = self._poll_run(run_id=job_run.run_id)
-        context.log.info(f"Job completed with overall state: {final_run.state.result_state}")
+        final_run = self._poll_run(run_id=run_id)
+        final_run_state = check.not_none(final_run.state)
+        final_run_tasks = check.not_none(final_run.tasks)
+        context.log.info(f"Job completed with overall state: {final_run_state.result_state}")
         context.log.info(f"View job details: {job_run_url}")
 
         # Get individual task run states
-        for run_task in final_run.tasks:
+        for run_task in final_run_tasks:
             task_key = run_task.task_key
             task_state = (
-                run_task.state.result_state.value if run_task.state.result_state else "UNKNOWN"
+                run_task.state.result_state.value if run_task.state and run_task.state.result_state else "UNKNOWN"
             )
 
             # Build task-specific URL (task tab within the job run)

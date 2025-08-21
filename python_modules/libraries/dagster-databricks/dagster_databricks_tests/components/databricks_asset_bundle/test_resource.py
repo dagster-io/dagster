@@ -43,7 +43,7 @@ def test_load_component(
     databricks_config_path: str,
 ):
     mock_get_run_fn.return_value = Run(
-        run_id="test_run_id",
+        run_id=12345,
         state=RunState(result_state=RunResultState.SUCCESS),
         tasks=[
             RunTask(
