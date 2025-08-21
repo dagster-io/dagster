@@ -212,17 +212,14 @@ class ClaudeSDKClient:
         Returns:
             Formatted string for output, or None if no output needed
         """
+        import typer  # deferred for perf
+
         if isinstance(message, AssistantMessage):
-            # Extract text content from assistant messages
+            # show progress as dim text
             for block in message.content:
                 if isinstance(block, TextBlock):
-                    return block.text + "\n"
+                    return typer.style(block.text + "\n", dim=True)
             return None
-        elif isinstance(message, ResultMessage):
-            # Show result information
-            if message.result:
-                return f"✅ Operation completed: {message.result}\n"
-            return "✅ Operation completed\n"
         else:
             # For other message types, return nothing to avoid noise
             return None

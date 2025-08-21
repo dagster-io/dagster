@@ -249,7 +249,7 @@ Provide the complete updated plan in the same markdown format as before."""
         """
         ensure_claude_sdk_python_version()
 
-        from claude_code_sdk.types import AssistantMessage, TextBlock
+        from claude_code_sdk.types import ResultMessage
 
         self.diagnostics.debug(
             category="plan_extraction_start",
@@ -257,10 +257,10 @@ Provide the complete updated plan in the same markdown format as before."""
             data={"message_count": len(messages)},
         )
 
-        # Look specifically for AssistantMessage and extract the text content
+        # Look specifically for ResultMessage and extract the text content
         plan_content = None
         success_result_found = False
-        success_message = None
+        result_message = None
 
         for i, message in enumerate(messages):
             self.diagnostics.debug(
@@ -272,30 +272,23 @@ Provide the complete updated plan in the same markdown format as before."""
                 },
             )
 
-            if isinstance(message, AssistantMessage):
+            if isinstance(message, ResultMessage):
                 success_result_found = True
-                success_message = message  # Store for metadata display
-                # Extract text from TextBlock content
-                text_content = ""
-                for block in message.content:
-                    if isinstance(block, TextBlock):
-                        text_content += block.text
-
-                if text_content and text_content.strip():
-                    plan_content = text_content.strip()
+                result_message = message
+                if message.result and message.result.strip():
+                    plan_content = message.result.strip()
                     self.diagnostics.info(
                         category="plan_success_result_found",
-                        message=f"Found AssistantMessage with {len(plan_content)} chars of content",
+                        message=f"Found ResultMessage with {len(plan_content)} chars of content",
                         data={
                             "message_index": i,
-                            "content_blocks": len(message.content),
                         },
                     )
                     break  # Found what we need, stop processing
                 else:
                     self.diagnostics.error(
                         category="plan_success_result_empty",
-                        message="Found AssistantMessage but text content is empty",
+                        message="Found ResultMessage but result is empty",
                         data={"message_index": i},
                     )
 
@@ -304,33 +297,33 @@ Provide the complete updated plan in the same markdown format as before."""
             message_types = [type(msg).__name__ for msg in messages]
             self.diagnostics.error(
                 category="plan_no_success_result",
-                message="No AssistantMessage found in Claude response",
+                message="No ResultMessage found in Claude response",
                 data={
                     "message_count": len(messages),
                     "message_types": message_types,
                 },
             )
             raise Exception(
-                f"Expected AssistantMessage from Claude SDK but got {len(messages)} message(s) "
+                f"Expected ResultMessage from Claude SDK but got {len(messages)} message(s) "
                 f"of types: {message_types}. This indicates a problem with Claude SDK communication "
                 f"or model response. Check your Claude SDK installation and try again."
             )
 
-        # If we found AssistantMessage but no content, error and exit
+        # If we found ResultMessage but no content, error and exit
         if not plan_content:
             raise Exception(
-                "Found AssistantMessage but the text content was empty. "
+                "Found ResultMessage but the text content was empty. "
                 "Claude generated a response but provided no plan content."
             )
 
         combined_content = plan_content
 
         # Display success summary to user
-        if success_message:
-            output_channel.write("✅ Plan generated successfully!")
-            output_channel.write(f"📊 Response: {len(plan_content):,} characters")
-            # Note: Duration, cost, and API call metrics are tracked by the SDK client
-            output_channel.write("⏱️  Plan generation completed via Claude SDK")
+        if result_message:
+            output_channel.write("✅ Plan generation completed:")
+            output_channel.write(f" * {len(plan_content):,} characters")
+            output_channel.write(f" * ${result_message.total_cost_usd:.2f}")
+            output_channel.write(f" * {result_message.duration_ms:,}ms")
 
         self.diagnostics.debug(
             category="plan_extraction_result",
