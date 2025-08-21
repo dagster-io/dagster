@@ -1,5 +1,5 @@
 import os
-from typing import Any, Optional
+from typing import Optional
 
 import pytest
 from dagster import AssetDep, AssetKey, AssetsDefinition
