@@ -83,8 +83,7 @@ resources:
             - task_key: stage_documents
           spark_jar_task:
             main_class_name: "com.company.etl.DataProcessor"
-            parameters:
-              [
+            parameters: [
                 "--input_table={{ env }}.raw.transactions",
                 "--output_table={{ env }}.processed.transactions",
                 "--processing_date={{ ds }}",
