@@ -1,9 +1,9 @@
 import os
 import re
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from functools import cached_property
 from pathlib import Path
-from typing import Annotated
+from typing import Annotated, Optional
 
 from dagster import AssetExecutionContext, AssetSpec, MetadataValue, Resolvable, multi_asset
 from dagster._core.definitions.definitions_class import Definitions
@@ -16,6 +16,7 @@ from dagster.components.scaffold.scaffold import scaffold_with
 from dagster_databricks.components.databricks_asset_bundle.configs import (
     DatabricksBaseTask,
     DatabricksConfig,
+    ResolvedDatabricksNewClusterConfig,
 )
 from dagster_databricks.components.databricks_asset_bundle.resource import DatabricksWorkspace
 from dagster_databricks.components.databricks_asset_bundle.scaffolder import (
@@ -84,6 +85,24 @@ class DatabricksAssetBundleComponent(Component, Resolvable):
             ],
         ),
     ]
+    compute_config: Optional[
+        Annotated[
+            ResolvedDatabricksNewClusterConfig,
+            Resolver.default(
+                model_field_type=ResolvedDatabricksNewClusterConfig,
+                description=(
+                    "A mapping defining a databricks_asset_bundle.configs.ResolvedDatabricksNewClusterConfig. Optional."
+                ),
+                examples=[
+                    {
+                        "spark_version": "test_spark_version",
+                        "node_type_id": "node_type_id",
+                        "num_workers": 1,
+                    },
+                ],
+            ),
+        ]
+    ] = field(default_factory=ResolvedDatabricksNewClusterConfig)
 
     @cached_property
     def databricks_config(self) -> DatabricksConfig:
