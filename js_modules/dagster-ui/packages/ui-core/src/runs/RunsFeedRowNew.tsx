@@ -215,7 +215,20 @@ const TagsCell = ({entry}: {entry: RunsFeedTableEntryFragment}) => {
         </Box>
       }
     >
-      <Button icon="tag" style={{minWidth: 'auto', padding: '4px'}} />
+      <Button 
+        icon={<Icon name="data_object" />} 
+        intent="none"
+        style={{
+          minWidth: 'auto', 
+          width: '32px', 
+          height: '32px', 
+          padding: '4px', 
+          border: 'none',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center'
+        }} 
+      />
     </Popover>
   );
 };
@@ -340,8 +353,18 @@ const StatusCell = ({entry}: {entry: RunsFeedTableEntryFragment}) => {
 const MoreActionsCell = ({entry: _entry}: {entry: RunsFeedTableEntryFragment}) => {
   return (
     <Button
-      icon="more_horiz"
-      style={{minWidth: 'auto', padding: '4px'}}
+      icon={<Icon name="more_horiz" />}
+      intent="none"
+      style={{
+        minWidth: 'auto', 
+        width: '32px', 
+        height: '32px', 
+        padding: '4px', 
+        border: 'none',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center'
+      }}
       onClick={(e) => {
         e.stopPropagation();
         // TODO: Implement more actions menu
