@@ -9,9 +9,10 @@ import {
   Spinner,
   Tag,
 } from '@dagster-io/ui-components';
-import {useState} from 'react';
+import {useState, useEffect} from 'react';
 
 import {DagsterTag} from './RunTag';
+import {RunStats} from './RunStats';
 import {formatElapsedTimeWithoutMsec} from '../app/Util';
 import {RunsFeedTableEntryFragment} from './types/RunsFeedTableEntryFragment.types';
 import {RunStatus} from '../graphql/types';
@@ -129,6 +130,29 @@ const LaunchedByCell = ({entry}: {entry: RunsFeedTableEntryFragment}) => {
       return renderLaunchInfo('settings_backup_restore', `Backfill (${launchType.backfillId})`);
     default:
       return renderLaunchInfo('account_circle', 'Manual');
+  }
+};
+
+const getStatusName = (status: RunStatus): string => {
+  switch (status) {
+    case RunStatus.SUCCESS:
+      return 'Success';
+    case RunStatus.STARTED:
+      return 'Started';
+    case RunStatus.FAILURE:
+      return 'Failure';
+    case RunStatus.QUEUED:
+      return 'Queued';
+    case RunStatus.STARTING:
+      return 'Starting';
+    case RunStatus.NOT_STARTED:
+      return 'Not started';
+    case RunStatus.CANCELING:
+      return 'Cancelling';
+    case RunStatus.CANCELED:
+      return 'Cancelled';
+    default:
+      return 'Unknown';
   }
 };
 
@@ -252,7 +276,19 @@ const TagsCell = ({entry}: {entry: RunsFeedTableEntryFragment}) => {
 };
 
 const StatusCell = ({entry}: {entry: RunsFeedTableEntryFragment}) => {
+  const [isOpen, setIsOpen] = useState(false);
+  const [currentTime, setCurrentTime] = useState(Date.now());
   const status = entry.runStatus;
+  
+  // Update current time every second for started runs
+  useEffect(() => {
+    if (status === RunStatus.STARTED) {
+      const interval = setInterval(() => {
+        setCurrentTime(Date.now());
+      }, 1000);
+      return () => clearInterval(interval);
+    }
+  }, [status]);
 
   // Determine icon, color, and text based on status
   const getStatusConfig = (status: RunStatus) => {
@@ -327,43 +363,198 @@ const StatusCell = ({entry}: {entry: RunsFeedTableEntryFragment}) => {
   };
 
   const config = getStatusConfig(status);
+  const runIdShort = entry.id.slice(0, 8);
+  
+  // Mock data for steps (always 3 expected, random 0-3 completed)
+  const stepsCompleted = Math.floor(Math.random() * 4); // 0, 1, 2, or 3
+  const stepsExpected = 3;
+  
+  // Assets materialized based on assetSelection length
+  const assetsExpected = entry.assetSelection?.length || 0;
+  const assetsCompleted = assetsExpected > 0 ? Math.floor(Math.random() * (assetsExpected + 1)) : 0;
+  
+  // Asset checks based on assetCheckSelection length
+  const checksExpected = entry.assetCheckSelection?.length || 0;
+  const checksCompleted = checksExpected > 0 ? Math.floor(Math.random() * (checksExpected + 1)) : 0;
 
-  // For SUCCESS, STARTED, FAILURE - show icon + duration in status text style
-  if (config.showOnlyDuration && config.showDuration) {
+  const getTagVariant = (completed: number, expected: number) => {
+    if (expected === 0) return 'default';
+    if (completed >= expected) return 'green';
+    return 'red';
+  };
+
+  const renderStatusContent = () => {
+    if (config.showOnlyDuration && config.showDuration) {
+      return (
+        <Box style={{display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%'}}>
+          <Box style={{width: '16px', display: 'flex', alignItems: 'center', justifyContent: 'flex-start'}}>
+            {config.useSpinner ? (
+              <Box style={{margin: 'auto'}} className="spinner-wrapper">
+                <style>{`.spinner-wrapper svg path { stroke: ${config.color} !important; }`}</style>
+                <Spinner purpose="body-text" />
+              </Box>
+            ) : config.icon ? (
+              <Icon name={config.icon} size={16} style={{margin: 'auto', backgroundColor: config.color}} />
+            ) : null}
+          </Box>
+          <Box
+            style={{
+              color: config.color,
+              fontSize: '14px',
+              fontWeight: 400,
+              lineHeight: '20px',
+              fontVariantNumeric: 'tabular-nums',
+              width: '6em',
+              textAlign: 'right',
+            }}
+          >
+            {entry.startTime
+              ? entry.endTime
+                ? formatElapsedTimeWithoutMsec((entry.endTime - entry.startTime) * 1000)
+                : formatElapsedTimeWithoutMsec((currentTime / 1000 - entry.startTime) * 1000)
+              : '–'}
+          </Box>
+        </Box>
+      );
+    }
+
     return (
-      <Box style={{display: 'flex', alignItems: 'center', gap: '6px'}}>
-        {config.useSpinner ? (
-          <Spinner purpose="caption-text" />
-        ) : config.icon ? (
-          <Icon name={config.icon} data-kyle="asdfasdf" color={config.color} size={16} />
-        ) : null}
-        <Box
+      <Box style={{display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%'}}>
+        <Box style={{width: '16px', display: 'flex', alignItems: 'center', justifyContent: 'flex-start'}}>
+          {config.useSpinner ? (
+            <Box style={{margin: 'auto'}} className="spinner-wrapper">
+              <style>{`.spinner-wrapper svg path { stroke: ${config.color} !important; }`}</style>
+              <Spinner purpose="body-text" />
+            </Box>
+          ) : config.icon ? (
+            <Icon name={config.icon} size={16} style={{margin: 'auto', backgroundColor: config.color}} />
+          ) : null}
+        </Box>
+        <Box 
           style={{
-            color: config.color,
-            fontSize: '14px',
-            fontWeight: 500,
-            fontVariantNumeric: 'tabular-nums',
+            color: config.color, 
+            fontSize: '14px', 
+            fontWeight: 400,
+            lineHeight: '20px',
+            width: '6em',
+            textAlign: 'right',
           }}
         >
-          {entry.startTime
-            ? entry.endTime
-              ? formatElapsedTimeWithoutMsec((entry.endTime - entry.startTime) * 1000)
-              : formatElapsedTimeWithoutMsec((Date.now() / 1000 - entry.startTime) * 1000)
-            : '–'}
+          {config.text}
         </Box>
       </Box>
     );
-  }
+  };
 
-  // For other statuses - show icon + text (no duration)
   return (
-    <Box style={{display: 'flex', alignItems: 'center', gap: '6px'}}>
-      {config.useSpinner ? (
-        <Spinner purpose="caption-text" />
-      ) : config.icon ? (
-        <Icon name={config.icon} color={config.color} size={16} />
-      ) : null}
-      <Box style={{color: config.color, fontSize: '14px', fontWeight: 500}}>{config.text}</Box>
+    <Box style={{display: 'flex', justifyContent: 'flex-end'}}>
+      <Popover
+        isOpen={isOpen}
+        onInteraction={setIsOpen}
+        placement="bottom-end"
+        content={
+          <Box style={{minWidth: '320px', padding: '12px'}}>
+          {/* Header */}
+          <Box
+            style={{
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              marginBottom: '12px',
+              paddingBottom: '8px',
+              borderBottom: '1px solid #e1e5e9',
+            }}
+          >
+            <Box style={{display: 'flex', alignItems: 'center', gap: '6px'}}>
+              <Icon name="status" size={16} />
+              <span style={{fontWeight: 500}}>{getStatusName(status)}</span>
+            </Box>
+            <Box style={{color: '#64748b', fontSize: '12px'}}>#{runIdShort}</Box>
+          </Box>
+
+          {/* Job name section */}
+          {entry.jobName && (
+            <Box
+              style={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                marginBottom: '12px',
+              }}
+            >
+              <Box style={{fontWeight: 500, color: '#374151'}}>Job name:</Box>
+              <Tag intent="none">{entry.jobName}</Tag>
+            </Box>
+          )}
+
+          {/* Steps executed */}
+          <Box
+            style={{
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              marginBottom: '12px',
+            }}
+          >
+            <Box style={{fontWeight: 500, color: '#374151'}}>Steps executed:</Box>
+            <Tag intent={getTagVariant(stepsCompleted, stepsExpected)}>
+              {stepsCompleted}/{stepsExpected}
+            </Tag>
+          </Box>
+
+          {/* Assets materialized */}
+          <Box
+            style={{
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              marginBottom: '12px',
+            }}
+          >
+            <Box style={{fontWeight: 500, color: '#374151'}}>Assets materialized:</Box>
+            <Tag intent={getTagVariant(assetsCompleted, assetsExpected)}>
+              {assetsCompleted}/{assetsExpected}
+            </Tag>
+          </Box>
+
+          {/* Asset checks evaluated */}
+          <Box
+            style={{
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              marginBottom: '12px',
+            }}
+          >
+            <Box style={{fontWeight: 500, color: '#374151'}}>Asset checks evaluated:</Box>
+            <Tag intent={getTagVariant(checksCompleted, checksExpected)}>
+              {checksCompleted}/{checksExpected}
+            </Tag>
+          </Box>
+
+          {/* View selection button */}
+          <Button style={{width: '100%'}} intent="none">
+            View selection
+          </Button>
+        </Box>
+      }
+    >
+      <Button
+        onClick={() => setIsOpen(true)}
+        intent="none"
+        style={{
+          minWidth: 'auto',
+          width: 'auto',
+          height: '32px',
+          padding: '0 12px',
+          border: 'none',
+          background: 'transparent',
+          borderRadius: '6px',
+        }}
+      >
+        {renderStatusContent()}
+      </Button>
+    </Popover>
     </Box>
   );
 };
@@ -428,7 +619,7 @@ export const RunsFeedTableHeader = () => {
       <Box>Launched by</Box>
       <Box>Created at</Box>
       <Box>Tags</Box>
-      <Box>Status</Box>
+      <Box style={{textAlign: 'right', paddingRight: '12px'}}>Status</Box>
       <Box></Box>
     </Box>
   );
