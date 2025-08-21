@@ -99,6 +99,12 @@ def test_load_component(
                 == 4
             )
 
+            # libraries is expected in 4 of the 6 submit tasks we create
+            assert (
+                len([call for call in mock_submit_task.mock_calls if "libraries" in call.kwargs])
+                == 4
+            )
+
             # cluster config is expected in 4 of the 6 submit tasks we create if not using serverless compute,
             # otherwise not expected.
             expected_cluster_config_calls = 4 if not is_serverless else 0
