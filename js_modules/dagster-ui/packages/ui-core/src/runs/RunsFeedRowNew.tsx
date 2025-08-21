@@ -9,7 +9,7 @@ import {
   Spinner,
   Tag,
 } from '@dagster-io/ui-components';
-import {useState, useEffect} from 'react';
+import {useState, useEffect, useMemo} from 'react';
 
 import {DagsterTag} from './RunTag';
 import {RunStats} from './RunStats';
@@ -111,9 +111,9 @@ const LaunchedByCell = ({entry}: {entry: RunsFeedTableEntryFragment}) => {
   const launchType = detectLaunchType(entry);
 
   const renderLaunchInfo = (iconName: string, text: string) => (
-    <Box style={{display: 'flex', alignItems: 'center', gap: '6px'}}>
-      <Icon name={iconName} size={16} />
-      <span>{text}</span>
+    <Box style={{display: 'flex', alignItems: 'center', gap: '6px', width: '248px', paddingRight: '12px', borderRight: '1px solid #d1d5db'}}>
+      <Icon name={iconName} size={16} color={Colors.accentBlue()} />
+      <span style={{overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap'}} title={text}>{text}</span>
     </Box>
   );
 
@@ -158,7 +158,7 @@ const getStatusName = (status: RunStatus): string => {
 
 const CreatedAtCell = ({entry}: {entry: RunsFeedTableEntryFragment}) => {
   const createdAtText = formatTimeAgo(entry.creationTime);
-  return <Box style={{color: '#64748b', fontSize: '14px'}}>{createdAtText}</Box>;
+  return <Box style={{color: '#64748b', fontSize: '14px', width: '88px', paddingRight: '12px', borderRight: '1px solid #d1d5db'}}>{createdAtText}</Box>;
 };
 
 const TagsCell = ({entry}: {entry: RunsFeedTableEntryFragment}) => {
@@ -177,11 +177,12 @@ const TagsCell = ({entry}: {entry: RunsFeedTableEntryFragment}) => {
   const runIdShort = entry.id.slice(0, 8);
 
   return (
-    <Popover
-      isOpen={isOpen}
-      onInteraction={setIsOpen}
-      placement="bottom-end"
-      content={
+    <Box style={{width: '76px'}}>
+      <Popover
+        isOpen={isOpen}
+        onInteraction={setIsOpen}
+        placement="bottom-end"
+        content={
         <Box style={{minWidth: '320px', padding: '12px'}}>
           {/* Header */}
           <Box
@@ -251,14 +252,14 @@ const TagsCell = ({entry}: {entry: RunsFeedTableEntryFragment}) => {
           </Box>
 
           {/* Copy All Button */}
-          <Button onClick={copyAllTags} style={{width: '100%'}} intent="none">
+          <Button onClick={copyAllTags} style={{border: '1px solid #d1d5db'}} intent="none">
             Copy all
           </Button>
         </Box>
       }
     >
       <Button 
-        icon={<Icon name="data_object" />} 
+        icon={<Icon name="data_object" style={{backgroundColor: Colors.accentBlue()}} />} 
         intent="none"
         style={{
           minWidth: 'auto', 
@@ -272,6 +273,7 @@ const TagsCell = ({entry}: {entry: RunsFeedTableEntryFragment}) => {
         }} 
       />
     </Popover>
+    </Box>
   );
 };
 
@@ -365,22 +367,38 @@ const StatusCell = ({entry}: {entry: RunsFeedTableEntryFragment}) => {
   const config = getStatusConfig(status);
   const runIdShort = entry.id.slice(0, 8);
   
-  // Mock data for steps (always 3 expected, random 0-3 completed)
-  const stepsCompleted = Math.floor(Math.random() * 4); // 0, 1, 2, or 3
-  const stepsExpected = 3;
-  
-  // Assets materialized based on assetSelection length
-  const assetsExpected = entry.assetSelection?.length || 0;
-  const assetsCompleted = assetsExpected > 0 ? Math.floor(Math.random() * (assetsExpected + 1)) : 0;
-  
-  // Asset checks based on assetCheckSelection length
-  const checksExpected = entry.assetCheckSelection?.length || 0;
-  const checksCompleted = checksExpected > 0 ? Math.floor(Math.random() * (checksExpected + 1)) : 0;
+  // Memoize mock data so it doesn't change on every render (especially for Started runs)
+  const mockData = useMemo(() => {
+    // Debug: Log the actual data
+    console.log('assetSelection:', entry.assetSelection);
+    console.log('assetCheckSelection:', entry.assetCheckSelection);
+    
+    // Mock data for steps (always 3 expected, random 0-3 completed)
+    const stepsCompleted = Math.floor(Math.random() * 4); // 0, 1, 2, or 3
+    const stepsExpected = 3;
+    
+    // Assets materialized - use real data from GraphQL with fallback for mocking
+    const assetsExpected = entry.assetSelection?.length || Math.floor(Math.random() * 6) + 1; // 1-6 fallback
+    const assetsCompleted = Math.floor(Math.random() * (assetsExpected + 1));
+    
+    // Asset checks - use real data from GraphQL with fallback for mocking
+    const checksExpected = entry.assetCheckSelection?.length || Math.floor(Math.random() * 4) + 1; // 1-4 fallback  
+    const checksCompleted = Math.floor(Math.random() * (checksExpected + 1));
+    
+    return {
+      stepsCompleted,
+      stepsExpected,
+      assetsExpected,
+      assetsCompleted,
+      checksExpected,
+      checksCompleted,
+    };
+  }, [entry.id, entry.assetSelection?.length, entry.assetCheckSelection?.length]); // Only recalculate if entry ID or selection lengths change
 
   const getTagVariant = (completed: number, expected: number) => {
-    if (expected === 0) return 'default';
-    if (completed >= expected) return 'green';
-    return 'red';
+    if (expected === 0) return 'none';
+    if (completed >= expected) return 'success';
+    return 'danger';
   };
 
   const renderStatusContent = () => {
@@ -466,7 +484,14 @@ const StatusCell = ({entry}: {entry: RunsFeedTableEntryFragment}) => {
             }}
           >
             <Box style={{display: 'flex', alignItems: 'center', gap: '6px'}}>
-              <Icon name="status" size={16} />
+              {config.useSpinner ? (
+                <Box className="spinner-wrapper">
+                  <style>{`.spinner-wrapper svg path { stroke: ${config.color} !important; }`}</style>
+                  <Spinner purpose="body-text" />
+                </Box>
+              ) : config.icon ? (
+                <Icon name={config.icon} size={16} style={{backgroundColor: config.color}} />
+              ) : null}
               <span style={{fontWeight: 500}}>{getStatusName(status)}</span>
             </Box>
             <Box style={{color: '#64748b', fontSize: '12px'}}>#{runIdShort}</Box>
@@ -497,8 +522,8 @@ const StatusCell = ({entry}: {entry: RunsFeedTableEntryFragment}) => {
             }}
           >
             <Box style={{fontWeight: 500, color: '#374151'}}>Steps executed:</Box>
-            <Tag intent={getTagVariant(stepsCompleted, stepsExpected)}>
-              {stepsCompleted}/{stepsExpected}
+            <Tag intent={getTagVariant(mockData.stepsCompleted, mockData.stepsExpected)}>
+              {mockData.stepsCompleted}/{mockData.stepsExpected}
             </Tag>
           </Box>
 
@@ -512,8 +537,8 @@ const StatusCell = ({entry}: {entry: RunsFeedTableEntryFragment}) => {
             }}
           >
             <Box style={{fontWeight: 500, color: '#374151'}}>Assets materialized:</Box>
-            <Tag intent={getTagVariant(assetsCompleted, assetsExpected)}>
-              {assetsCompleted}/{assetsExpected}
+            <Tag intent={getTagVariant(mockData.assetsCompleted, mockData.assetsExpected)}>
+              {mockData.assetsCompleted}/{mockData.assetsExpected}
             </Tag>
           </Box>
 
@@ -527,13 +552,13 @@ const StatusCell = ({entry}: {entry: RunsFeedTableEntryFragment}) => {
             }}
           >
             <Box style={{fontWeight: 500, color: '#374151'}}>Asset checks evaluated:</Box>
-            <Tag intent={getTagVariant(checksCompleted, checksExpected)}>
-              {checksCompleted}/{checksExpected}
+            <Tag intent={getTagVariant(mockData.checksCompleted, mockData.checksExpected)}>
+              {mockData.checksCompleted}/{mockData.checksExpected}
             </Tag>
           </Box>
 
           {/* View selection button */}
-          <Button style={{width: '100%'}} intent="none">
+          <Button style={{border: '1px solid #d1d5db'}} intent="none">
             View selection
           </Button>
         </Box>
@@ -586,19 +611,27 @@ export const RunsFeedRow = ({entry}: {entry: RunsFeedTableEntryFragment}) => {
   return (
     <Box
       style={{
-        display: 'grid',
-        gridTemplateColumns: '1fr 120px 40px 150px 40px',
-        gap: '12px',
+        display: 'flex',
+        justifyContent: 'space-between',
         padding: '8px 12px',
         borderBottom: '1px solid #e1e5e9',
         alignItems: 'center',
+        backgroundColor: 'var(--color-background-default)',
+        height: '56px',
       }}
     >
-      <LaunchedByCell entry={entry} />
-      <CreatedAtCell entry={entry} />
-      <TagsCell entry={entry} />
-      <StatusCell entry={entry} />
-      <MoreActionsCell entry={entry} />
+      {/* Left group: Launched by, Created at, Tags */}
+      <Box style={{display: 'flex', alignItems: 'center', gap: '12px'}}>
+        <LaunchedByCell entry={entry} />
+        <CreatedAtCell entry={entry} />
+        <TagsCell entry={entry} />
+      </Box>
+      
+      {/* Right group: Status, More actions */}
+      <Box style={{display: 'flex', alignItems: 'center', gap: '24px'}}>
+        <StatusCell entry={entry} />
+        <MoreActionsCell entry={entry} />
+      </Box>
     </Box>
   );
 };
@@ -607,20 +640,27 @@ export const RunsFeedTableHeader = () => {
   return (
     <Box
       style={{
-        display: 'grid',
-        gridTemplateColumns: '1fr 120px 40px 150px 40px',
-        gap: '12px',
+        display: 'flex',
+        justifyContent: 'space-between',
         padding: '8px 12px',
         borderBottom: '2px solid #d1d5db',
         fontWeight: 600,
         backgroundColor: '#f9fafb',
+        alignItems: 'center',
       }}
     >
-      <Box>Launched by</Box>
-      <Box>Created at</Box>
-      <Box>Tags</Box>
-      <Box style={{textAlign: 'right', paddingRight: '12px'}}>Status</Box>
-      <Box></Box>
+      {/* Left group headers */}
+      <Box style={{display: 'flex', alignItems: 'center', gap: '12px'}}>
+        <Box>Launched by</Box>
+        <Box>Created at</Box>
+        <Box>Tags</Box>
+      </Box>
+      
+      {/* Right group headers */}
+      <Box style={{display: 'flex', alignItems: 'center', gap: '12px'}}>
+        <Box>Status</Box>
+        <Box></Box>
+      </Box>
     </Box>
   );
 };

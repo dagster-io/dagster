@@ -17,6 +17,15 @@ export const defaultMocks = {
   Asset: () => ({
     id: randomId,
   }),
+  AssetKey: () => ({
+    path: faker.random.words(faker.datatype.number({min: 1, max: 3})).split(' '),
+  }),
+  AssetCheck: () => ({
+    name: hyphenatedName(),
+    assetKey: {
+      path: faker.random.words(faker.datatype.number({min: 1, max: 3})).split(' '),
+    },
+  }),
   AssetNode: () => ({
     id: randomId,
     opName: hyphenatedName,
@@ -106,6 +115,24 @@ export const defaultMocks = {
   }),
   RunOrError: () => ({
     __typename: 'Run',
+  }),
+  RunsFeedEntry: () => ({
+    __typename: 'Run',
+    assetSelection: () => {
+      const count = faker.datatype.number({min: 0, max: 8});
+      return [...new Array(count)].map(() => ({
+        path: faker.random.words(faker.datatype.number({min: 1, max: 3})).split(' '),
+      }));
+    },
+    assetCheckSelection: () => {
+      const count = faker.datatype.number({min: 0, max: 5});
+      return [...new Array(count)].map(() => ({
+        name: hyphenatedName(),
+        assetKey: {
+          path: faker.random.words(faker.datatype.number({min: 1, max: 3})).split(' '),
+        },
+      }));
+    },
   }),
   Run: () => ({
     id: randomId,
@@ -206,6 +233,21 @@ export const defaultMocks = {
       }
 
       return [...baseTags, ...launchTags];
+    },
+    assetSelection: () => {
+      const count = faker.datatype.number({min: 0, max: 8});
+      return [...new Array(count)].map(() => ({
+        path: faker.random.words(faker.datatype.number({min: 1, max: 3})).split(' '),
+      }));
+    },
+    assetCheckSelection: () => {
+      const count = faker.datatype.number({min: 0, max: 5});
+      return [...new Array(count)].map(() => ({
+        name: hyphenatedName(),
+        assetKey: {
+          path: faker.random.words(faker.datatype.number({min: 1, max: 3})).split(' '),
+        },
+      }));
     },
   }),
   PartitionsOrError: () => ({
