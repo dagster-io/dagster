@@ -143,13 +143,17 @@ class DatabricksAssetBundleComponent(Component, Resolvable):
     def get_asset_spec(self, data: DatabricksTaskAssetSpecData) -> AssetSpec:
         return AssetSpec(
             key=snake_case(data.task_key),
-            description=f"{data.task_key} task from {data.job_name} job",
-            kinds={"databricks", data.task_type},
+            description=f"{data.task_key} task from {data.job_name if data.job_name else 'unknown'} job",
+            kinds={"databricks", *([data.task_type] if data.task_type else [])},
             skippable=True,
             metadata={
                 "task_key": MetadataValue.text(data.task_key),
-                "task_type": MetadataValue.text(data.task_type),
-                "task_config": MetadataValue.json(data.task_config_metadata),
+                **({"task_type": MetadataValue.text(data.task_type)} if data.task_type else {}),
+                **(
+                    {"task_config": MetadataValue.json(data.task_config_metadata)}
+                    if data.task_config_metadata
+                    else {}
+                ),
                 **({"libraries": MetadataValue.json(data.libraries)} if data.libraries else {}),
             },
             deps=[snake_case(dep_config.task_key) for dep_config in data.depends_on],

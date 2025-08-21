@@ -110,11 +110,11 @@ class DatabricksTaskDependsOnConfig:
 @record
 class DatabricksTaskAssetSpecData:
     task_key: str
-    depends_on: Optional[list[DatabricksTaskDependsOnConfig]]
-    job_name: Optional[str]
-    libraries: Optional[list[Mapping[str, Any]]]
-    task_type: Optional[str]
-    task_config_metadata: Optional[Mapping[str, Any]]
+    depends_on: Optional[list[DatabricksTaskDependsOnConfig]] = None
+    job_name: Optional[str] = None
+    libraries: Optional[list[Mapping[str, Any]]] = None
+    task_type: Optional[str] = None
+    task_config_metadata: Optional[Mapping[str, Any]] = None
 
 
 @record
