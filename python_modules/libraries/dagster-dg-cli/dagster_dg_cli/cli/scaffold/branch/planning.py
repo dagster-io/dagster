@@ -12,8 +12,8 @@ import click
 from dagster_dg_core.context import DgContext
 from dagster_shared.record import record
 
-from dagster_dg_cli.cli.scaffold.branch.ai import PrintOutputChannel
 from dagster_dg_cli.cli.scaffold.branch.claude.diagnostics import ClaudeDiagnostics
+from dagster_dg_cli.cli.scaffold.branch.claude.sdk_client import OutputChannel
 from dagster_dg_cli.cli.scaffold.branch.constants import ALLOWED_COMMANDS_PLANNING
 from dagster_dg_cli.cli.scaffold.branch.version_utils import ensure_claude_sdk_python_version
 
@@ -48,8 +48,6 @@ class PlanningContext:
 
     user_input: str
     dg_context: DgContext
-    codebase_patterns: dict[str, Any]
-    existing_components: list[str]
     project_structure: dict[str, Any]
 
 
@@ -66,7 +64,11 @@ class PlanGenerator:
         self.claude_client = claude_client
         self.diagnostics = diagnostics
 
-    def generate_initial_plan(self, context: PlanningContext) -> GeneratedPlan:
+    def generate_initial_plan(
+        self,
+        context: PlanningContext,
+        output_channel: OutputChannel,
+    ) -> GeneratedPlan:
         """Generate initial implementation plan from user input.
 
         Args:
@@ -83,7 +85,6 @@ class PlanGenerator:
             message="Starting initial plan generation",
             data={
                 "user_input_length": len(context.user_input),
-                "available_components": len(context.existing_components),
             },
         )
 
@@ -96,14 +97,14 @@ class PlanGenerator:
             self.claude_client.scaffold_with_streaming(
                 prompt=prompt,
                 allowed_tools=allowed_tools,
-                output_channel=PrintOutputChannel(),
+                output_channel=output_channel,
                 disallowed_tools=["Bash(python:*)", "WebSearch", "WebFetch"],
                 verbose=False,
             )
         )
 
         # Extract the plan content from Claude's response
-        plan_content = self._extract_plan_from_messages(messages)
+        plan_content = self._extract_plan_from_messages(messages, output_channel)
 
         plan = GeneratedPlan(
             markdown_content=plan_content,
@@ -125,7 +126,12 @@ class PlanGenerator:
 
         return plan
 
-    def refine_plan(self, current_plan: GeneratedPlan, user_feedback: str) -> GeneratedPlan:
+    def refine_plan(
+        self,
+        current_plan: GeneratedPlan,
+        user_feedback: str,
+        output_channel: OutputChannel,
+    ) -> GeneratedPlan:
         """Refine existing plan based on user feedback.
 
         Args:
@@ -152,14 +158,14 @@ class PlanGenerator:
             self.claude_client.scaffold_with_streaming(
                 prompt=prompt,
                 allowed_tools=allowed_tools,
-                output_channel=PrintOutputChannel(),
+                output_channel=output_channel,
                 disallowed_tools=["Bash(python:*)", "WebSearch", "WebFetch"],
                 verbose=False,
             )
         )
 
         # Extract refined plan content from Claude's response
-        refined_content = self._extract_plan_from_messages(messages)
+        refined_content = self._extract_plan_from_messages(messages, output_channel)
 
         refined_plan = GeneratedPlan(
             markdown_content=refined_content,
@@ -196,31 +202,14 @@ class PlanGenerator:
         prompt_path = Path(__file__).parent / "prompts" / "planning_prompt.md"
         template = prompt_path.read_text()
 
-        # Prepare template variables
-        available_components_text = (
-            ", ".join(context.existing_components)
-            if context.existing_components
-            else "None detected"
-        )
-
-        codebase_info = ""
-        if context.codebase_patterns:
-            pattern_summary = [f"- {k}: {v}" for k, v in context.codebase_patterns.items()][
-                :5
-            ]  # Limit to top 5
-            if pattern_summary:
-                codebase_info = "\n\nCodebase Patterns:\n" + "\n".join(pattern_summary)
-
-        project_info = ""
+        context_info = ""
         if context.project_structure:
-            project_info = f"\n\nProject Structure Overview: {context.project_structure}"
+            context_info = f"\n\nProject Structure Overview: {context.project_structure}"
 
         # Format template with actual values
         return template.format(
             user_input=context.user_input,
-            available_components=available_components_text,
-            codebase_info=codebase_info,
-            project_info=project_info,
+            context_info=context_info,
         )
 
     def _create_refinement_prompt(self, current_plan: GeneratedPlan, user_feedback: str) -> str:
@@ -249,7 +238,7 @@ Please generate an improved version of the implementation plan that addresses th
 
 Provide the complete updated plan in the same markdown format as before."""
 
-    def _extract_plan_from_messages(self, messages: list) -> str:
+    def _extract_plan_from_messages(self, messages: list, output_channel: OutputChannel) -> str:
         """Extract plan content from Claude's response messages.
 
         Args:
@@ -338,10 +327,10 @@ Provide the complete updated plan in the same markdown format as before."""
 
         # Display success summary to user
         if success_message:
-            click.echo("✅ Plan generated successfully!")
-            click.echo(f"📊 Response: {len(plan_content):,} characters")
+            output_channel.write("✅ Plan generated successfully!")
+            output_channel.write(f"📊 Response: {len(plan_content):,} characters")
             # Note: Duration, cost, and API call metrics are tracked by the SDK client
-            click.echo("⏱️  Plan generation completed via Claude SDK")
+            output_channel.write("⏱️  Plan generation completed via Claude SDK")
 
         self.diagnostics.debug(
             category="plan_extraction_result",

@@ -3,7 +3,8 @@
 import asyncio
 import os
 from abc import ABC
-from contextlib import nullcontext
+from collections.abc import Iterator
+from contextlib import contextmanager
 from pathlib import Path
 from time import perf_counter
 from typing import Any
@@ -13,6 +14,7 @@ from dagster_dg_core.context import DgContext
 from dagster_shared.record import record
 
 from dagster_dg_cli.cli.scaffold.branch.claude.diagnostics import ClaudeDiagnostics
+from dagster_dg_cli.cli.scaffold.branch.claude.sdk_client import OutputChannel
 from dagster_dg_cli.cli.scaffold.branch.constants import (
     ALLOWED_COMMANDS_PLANNING,
     ALLOWED_COMMANDS_SCAFFOLDING,
@@ -312,6 +314,21 @@ class PrintOutputChannel:
         click.echo(text)
 
 
+@contextmanager
+def enter_waiting_phase(phase_name: str, spin: bool = True) -> Iterator[OutputChannel]:
+    """Enter a phase of non interactivity where we wait for the CLI agent to complete its work.
+
+    This yields an OutputChannel that coordinates with a loading indicator unless spin is disabled.
+    """
+    if spin:
+        with daggy_spinner_context(phase_name) as spinner:
+            yield spinner
+    else:
+        channel = PrintOutputChannel()
+        channel.write(phase_name)
+        yield channel
+
+
 def scaffold_content_for_prompt(
     user_input: str,
     input_type: type[InputType],
@@ -328,13 +345,7 @@ def scaffold_content_for_prompt(
     prompt = load_scaffolding_prompt(context_str)
     allowed_tools = get_allowed_commands_scaffolding() + input_type.additional_allowed_tools()
 
-    spinner_ctx = (
-        daggy_spinner_context("Scaffolding")
-        if use_spinner
-        else nullcontext(enter_result=PrintOutputChannel())
-    )
-
-    with spinner_ctx as spinner:
+    with enter_waiting_phase("Scaffolding", spin=use_spinner) as channel:
         with diagnostics.claude_operation(
             operation_name="content_scaffolding",
             error_code="content_scaffolding_failed",
@@ -348,7 +359,7 @@ def scaffold_content_for_prompt(
                 claude_sdk.scaffold_with_streaming(
                     prompt=prompt,
                     allowed_tools=allowed_tools,
-                    output_channel=spinner,
+                    output_channel=channel,
                     disallowed_tools=["Bash(python:*)", "WebSearch", "WebFetch"],
                     verbose=verbose_mode,
                 )

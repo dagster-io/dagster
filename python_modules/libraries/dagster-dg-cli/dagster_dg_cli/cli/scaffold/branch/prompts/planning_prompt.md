@@ -12,7 +12,7 @@ Analyze the user's request above and create a comprehensive plan showing exactly
 
 ## Context Information
 
-**Available Components:** {available_components}{codebase_info}{project_info}
+{context_info}
 
 ## Required Plan Format
 
