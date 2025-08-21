@@ -35,6 +35,7 @@ There is very little you need to change about the schedule that has been scaffol
 ## 2. Enable automation
 
 To enable automation:
+
 1. Run `dg dev` (if it is not already running) and navigate to the Dagster UI at [http://127.0.0.1:3000](http://127.0.0.1:3000).
 2. Navigate to **Assets**.
 3. Click **Reload definitions**.

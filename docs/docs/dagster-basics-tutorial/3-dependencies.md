@@ -27,6 +27,7 @@ To link the assets together, set the `deps` parameter within the asset decorator
 ## 2. Materialize the assets
 
 To view the updated asset graph:
+
 1. In a browser, navigate to [http://127.0.0.1:3000](http://127.0.0.1:3000), or restart `dg dev` if it has been closed.
 2. Navigate to **Assets**.
 3. Click **Reload definitions**.
