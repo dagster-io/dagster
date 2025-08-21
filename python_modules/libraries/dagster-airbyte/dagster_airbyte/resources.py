@@ -1185,35 +1185,40 @@ class AirbyteWorkspace(ConfigurableResource):
 
     @model_validator(mode="before")
     def validate_authentication(cls, values):
-        if values.get("rest_api_base_url", AIRBYTE_CLOUD_REST_API_BASE_URL).startswith(
-            AIRBYTE_CLOUD_REST_API_BASE
-        ) or values.get(
+        rest_api_is_cloud = values.get(
+            "rest_api_base_url", AIRBYTE_CLOUD_REST_API_BASE_URL
+        ).startswith(AIRBYTE_CLOUD_REST_API_BASE)
+        configuration_api_is_cloud = values.get(
             "configuration_api_base_url", AIRBYTE_CLOUD_CONFIGURATION_API_BASE_URL
-        ).startswith(AIRBYTE_CLOUD_CONFIGURATION_API_BASE):
+        ).startswith(AIRBYTE_CLOUD_CONFIGURATION_API_BASE)
+        has_client_id = values.get("client_id") is not None
+        has_client_secret = values.get("client_secret") is not None
+        has_username = values.get("username") is not None
+        has_password = values.get("password") is not None
+
+        check.invariant(
+            configuration_api_is_cloud == rest_api_is_cloud,
+            "Invalid config: onfiguration API and REST API must both be either Airbyte Cloud or self-managed.",
+        )
+
+        if rest_api_is_cloud or configuration_api_is_cloud:
             check.invariant(
-                values.get("client_id") is not None and values.get("client_secret") is not None,
+                has_client_id and has_client_secret,
                 "Missing config: both client_id and client_secret are required for Airbyte authentication.",
             )
         else:
             check.invariant(
-                (values.get("username") is None) == (values.get("password") is None),
+                has_username == has_password,
                 "Missing config: both username and password are required for Airbyte authentication.",
             )
 
             check.invariant(
-                (values.get("client_id") is None) == (values.get("client_secret") is None),
+                has_client_id == has_client_secret,
                 "Missing config: both client_id and client_secret are required for Airbyte authentication.",
             )
 
-            has_client_creds = (
-                values.get("client_id") is not None or values.get("client_secret") is not None
-            )
-            has_user_creds = (
-                values.get("username") is not None or values.get("password") is not None
-            )
-
             check.invariant(
-                not (has_client_creds and has_user_creds),
+                not ((has_client_id or has_client_secret) and (has_username or has_password)),
                 "Invalid config: cannot provide both client_id/client_secret and username/password for Airbyte authentication.",
             )
         return values
