@@ -24,7 +24,7 @@ The code below creates an asset check for the `orders_aggregation` asset to ensu
   title="src/dagster_tutorial/defs/assets.py"
 />
 
-This asset check queries the table directly to determine if the data is valid. Based on the query result, it sets the <PyObject section="asset-checks" module="dagster" object="AssetCheckResult" /> to pass or fail.
+This asset check queries the table directly to determine if the data is valid. Based on the query result, it sets the <PyObject section="asset-checks" module="dagster" object="AssetCheckResult" /> to `True` or `False`.
 
 :::info
 

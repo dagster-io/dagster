@@ -7,7 +7,7 @@ src
     ├── definitions.py
     └── defs
         ├── __init__.py
-        ├── assets.py
+        ├── assets.py   # UPDATED
         ├── schedules.py
-        └── tutorial   # NEW
+        └── tutorial
             └── defs.yaml

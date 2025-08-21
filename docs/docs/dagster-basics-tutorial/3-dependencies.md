@@ -27,6 +27,7 @@ To link the assets together, set the `deps` parameter within the asset decorator
 ## 2. Materialize the assets
 
 To view the updated asset graph:
+
 1. In a browser, navigate to [http://127.0.0.1:3000](http://127.0.0.1:3000), or restart `dg dev` if it has been closed.
 2. Navigate to **Assets**.
 3. Click **Reload definitions**.
@@ -36,7 +37,6 @@ To view the updated asset graph:
 :::tip Asset selection
 
 In Dagster, [asset selection](/guides/build/assets/asset-selection-syntax) syntax provides a powerful and flexible way to specify exactly which assets to materialize, observe, or run in a job. You can select assets explicitly by their key (for example, `customers`) or use wildcard patterns and hierarchical paths to target groups of related assets.
-
 
 To select all assets downstream of `customers`, use `key:"customers"+`. You can also chain selectors with logical operators to combine multiple sets.
 

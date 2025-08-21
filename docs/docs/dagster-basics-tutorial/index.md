@@ -8,7 +8,6 @@ canonicalUrl: '/dagster-basics-tutorial'
 slug: '/dagster-basics-tutorial'
 ---
 
-
 In this tutorial, you will learn about core Dagster features and use them to build a working data pipeline. We will start with the fundamental concepts and progress to higher level abstractions that showcase the power of Dagster.
 
 By the end, you will be ready to build your own data pipelines and explore more advanced features and integrations.

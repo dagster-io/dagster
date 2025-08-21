@@ -32,17 +32,15 @@ There is very little you need to change about the schedule that has been scaffol
 
 ## 2. Enable automation
 
-
 To enable automation:
 
-1. Run `dg dev` (if it is not already running) and navigate to the Dagster UI at [http://127.0.0.1:3000](http://127.0.0.1:3000). 
+1. Run `dg dev` (if it is not already running) and navigate to the Dagster UI at [http://127.0.0.1:3000](http://127.0.0.1:3000).
 2. Navigate to **Assets**.
 3. Click **Reload definitions**.
 4. Click **Automation**.
-3. Enable the `default_automation_condition_sensor`.
 
    ![2048 resolution](/images/tutorial/dagster-tutorial/automation-1.png)
 
-4. View your automation events to see if anything is ready to run.
+5. View your automation events to see if anything is ready to run.
 
    ![2048 resolution](/images/tutorial/dagster-tutorial/automation-2.png)

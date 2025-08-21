@@ -8,9 +8,9 @@ So far, we have built our pipeline out of existing `Definitions`, but this is no
 
 If we think about the code for our three assets (`customers`, `orders`, and `payments`), it is all very similar. Each asset performs the same action, turning an S3 file into a DuckDB table, while differing only in the URL path and table name.
 
-These assets are a great candidate for a [custom component](/guides/build/components/creating-new-components). Components generate `Definitions` through a configuration layer. There are built-in components that let you integrate with common workflows (such as turning Python scripts into assets), or with popular tools like [dbt](https://www.getdbt.com/) or [Fivetran](https://www.fivetran.com/). With custom components, you can define your own specific use cases.
+These assets are a great candidate for a [custom component](/guides/build/components/creating-new-components). Components generate `Definitions` through a configuration layer. There are built-in components that let you integrate with common workflows (such as turning Python scripts into assets), or with popular tools like [dbt](/integrations/libraries/dbt/dbt-component) or [Fivetran](/integrations/libraries/fivetran). With custom components, you can define your own specific use cases.
 
-In this step, you will use a custom component to streamline the development of similar assets and replace their `Definitions` in your project with a `Component` that can generate them instead.
+In this step, you will use a custom component to streamline the development of similar assets and replace their `Definitions` in your project with a Component that can generate them from a a YAML configuration file instead.
 
 ![2048 resolution](/images/tutorial/dagster-tutorial/overviews/components.png)
 
@@ -33,7 +33,9 @@ When designing a component, keep its interface in mind. In this case, the assets
 - A DuckDB database shared across all assets.
 - A list of ETL assets, each with a URL path and a table name.
 
-The first step is to create a `dg.Model` for the ETL assets. These are similar to [Pydantic](https://docs.pydantic.dev/) models. This model will contain the two attributes that define an asset:
+The first step is to create a `dg.Model` for the ETL assets. `dg.Model` turns any class that inherits from it into a [Pydantic](https://docs.pydantic.dev/) model. This model is then used to implement the YAML interface from the component.
+
+This model will contain the two attributes that define an asset:
 
 <CodeExample
   path="docs_snippets/docs_snippets/guides/tutorials/dagster-tutorial/src/dagster_tutorial/components/tutorial.py"
@@ -60,7 +62,9 @@ The rest of the code will look very similar to the asset definitions you wrote e
   title="src/etl_tutorial/components/tutorial.py"
 />
 
-Run `dg check` to ensure that the component code is correct.
+Run the check again to ensure that the component code is correct:
+
+<CliInvocationExample path="docs_snippets/docs_snippets/guides/tutorials/dagster-tutorial/commands/dg-check-defs.txt" />
 
 ## 3. Scaffold the component definition
 
@@ -86,15 +90,13 @@ To configure the component, update the YAML file created when you scaffolded a d
   title="src/dagster_tutorial/defs/tutorial/defs.yaml"
 />
 
-:::info
+## 5. Remove the old definitions
 
-Before running `dg check` again, remove the `customers`, `orders`, and `payments` assets from `assets.py` and the `resource.py` file. The component is not responsible for generating these objects (otherwise there duplicate keys).
+Before running `dg check` again, remove the `customers`, `orders`, and `payments` assets from `assets.py` and the `resource.py` file. The component is now responsible for generating these objects (otherwise there will be duplicate keys in the asset lineage).
 
-<CliInvocationExample path="docs_snippets/docs_snippets/guides/tutorials/dagster-tutorial/tree/step-6b.txt" />
+<CliInvocationExample path="docs_snippets/docs_snippets/guides/tutorials/dagster-tutorial/tree/step-6c.txt" />
 
-:::
-
-## 5. Materialize the assets
+## 6. Materialize the assets
 
 When you materialize your assets in the Dagster UI at [http://127.0.0.1:3000/assets](http://127.0.0.1:3000/assets), you should see that the asset graph looks the same as before.
 

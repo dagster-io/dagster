@@ -26,9 +26,9 @@ Now that you have an assets file, you can define your asset code. You define an 
 
 You will create one asset for each of the three source files used in this tutorial:
 
-- [raw_customers.csv](https://raw.githubusercontent.com/dbt-labs/jaffle-shop-classic/refs/heads/main/seeds/raw_customers.csv)
-- [raw_orders.csv](https://raw.githubusercontent.com/dbt-labs/jaffle-shop-classic/refs/heads/main/seeds/raw_orders.csv)
-- [raw_payments.csv](https://raw.githubusercontent.com/dbt-labs/jaffle-shop-classic/refs/heads/main/seeds/raw_payments.csv)
+- raw_customers.csv
+- raw_orders.csv
+- raw_payments.csv
 
 <CodeExample
   path="docs_snippets/docs_snippets/guides/tutorials/dagster-tutorial/src/dagster_tutorial/defs/assets.py"
@@ -68,7 +68,7 @@ Now that your assets are configured and you have verified that the top-level `De
 
    ![2048 resolution](/images/tutorial/dagster-tutorial/asset-1.png)
 
-You should now see three assets, one for each of the raw files (customers, orders, payments) being loaded into DuckDB.
+You should now see three assets, one for each of the raw files (customers, orders, payments).
 
 To materialize the assets:
 

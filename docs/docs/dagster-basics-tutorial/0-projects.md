@@ -146,7 +146,6 @@ At this point, your project will be empty, but you’ll continue adding to it th
 
 ![2048 resolution](/images/tutorial/dagster-tutorial/project.png)
 
-
 :::tip
 
 As you develop with Dagster, it’s often useful to periodically run `dg dev` to view your project.
