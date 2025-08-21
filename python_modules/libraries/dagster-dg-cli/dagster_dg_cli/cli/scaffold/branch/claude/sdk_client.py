@@ -118,7 +118,7 @@ class ClaudeSDKClient:
                 prompt=prompt,
                 response=f"[SDK_STREAMED: {len(collected_messages)} messages]",
                 token_count=self.total_tokens,
-                tools_used=allowed_tools,
+                allowed_tools=allowed_tools,
                 duration_ms=duration_ms,
             )
             self.diagnostics.log_ai_interaction(interaction)
@@ -139,7 +139,9 @@ class ClaudeSDKClient:
             if isinstance(block, TextBlock):
                 content_blocks.append(f"TextBlock({block.text!r})")
             elif isinstance(block, ToolUseBlock):
-                content_blocks.append(f"ToolUseBlock(name={block.name!r}, id={block.id!r})")
+                content_blocks.append(
+                    f"ToolUseBlock(name={block.name!r}, input={block.input!r}, id={block.id!r})",
+                )
             elif isinstance(block, ToolResultBlock):
                 content_blocks.append(
                     f"ToolResultBlock(tool_use_id={block.tool_use_id!r}, is_error={block.is_error})"
