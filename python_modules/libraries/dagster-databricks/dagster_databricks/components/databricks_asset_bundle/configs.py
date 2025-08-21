@@ -81,7 +81,7 @@ def parse_libraries(libraries: Optional[list[Mapping[str, Any]]]) -> list[jobs.c
                 )
             )
         else:
-            logger.log.warning(f"Unknown library type: {lib}")
+            logger.warning(f"Unknown library type: {lib}")
     return libraries_list
 
 
