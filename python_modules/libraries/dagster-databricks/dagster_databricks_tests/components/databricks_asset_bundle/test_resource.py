@@ -14,20 +14,23 @@ from dagster_databricks_tests.components.databricks_asset_bundle.conftest import
 
 
 @pytest.mark.parametrize(
-    "use_existing_cluster",
+    "use_existing_cluster, is_serverless",
     [
-        False,
-        True,
+        (False, False),
+        (True, False),
+        (False, True),
     ],
     ids=[
         "new_cluster_compute_config",
         "existing_cluster_compute_config",
+        "serverless_compute_config",
     ],
 )
 @mock.patch("databricks.sdk.service.jobs.SubmitTask", autospec=True)
 def test_load_component(
     mock_submit_task: mock.MagicMock,
     use_existing_cluster: bool,
+    is_serverless: bool,
     databricks_config_path: str,
 ):
     with create_defs_folder_sandbox() as sandbox:
@@ -42,11 +45,14 @@ def test_load_component(
                 "type": "dagster_databricks.components.databricks_asset_bundle.component.DatabricksAssetBundleComponent",
                 "attributes": {
                     "databricks_config_path": databricks_config_path,
-                    **(
-                        {"compute_config": {"existing_cluster_id": "test_existing_cluster_id"}}
-                        if use_existing_cluster
-                        else {}
-                    ),
+                    "compute_config": {
+                        **(
+                            {"existing_cluster_id": "test_existing_cluster_id"}
+                            if use_existing_cluster
+                            else {}
+                        ),
+                        **({"is_serverless": True} if is_serverless else {}),
+                    },
                     "workspace": {
                         "host": TEST_DATABRICKS_WORKSPACE_HOST,
                         "token": TEST_DATABRICKS_WORKSPACE_TOKEN,
@@ -93,8 +99,10 @@ def test_load_component(
                 == 4
             )
 
+            # cluster config is expected in 4 of the 6 submit tasks we create if not using serverless compute,
+            # otherwise not expected.
+            expected_cluster_config_calls = 4 if not is_serverless else 0
             cluster_config_key = "existing_cluster_id" if use_existing_cluster else "new_cluster"
-            # new_cluster is expected in 4 of the 6 submit tasks we create
             assert (
                 len(
                     [
@@ -103,5 +111,5 @@ def test_load_component(
                         if cluster_config_key in call.kwargs
                     ]
                 )
-                == 4
+                == expected_cluster_config_calls
             )

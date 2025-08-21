@@ -10,6 +10,7 @@ from pydantic import Field
 from dagster_databricks.components.databricks_asset_bundle.configs import (
     ResolvedDatabricksExistingClusterConfig,
     ResolvedDatabricksNewClusterConfig,
+    ResolvedDatabricksServerlessConfig,
 )
 
 if TYPE_CHECKING:
@@ -80,7 +81,10 @@ class DatabricksWorkspace(ConfigurableResource):
 
             # Determine cluster configuration based on task type
             compute_config = {}
-            if task.needs_cluster:
+            if task.needs_cluster and not (
+                isinstance(component.compute_config, ResolvedDatabricksServerlessConfig)
+                and component.compute_config.is_serverless
+            ):
                 if isinstance(component.compute_config, ResolvedDatabricksExistingClusterConfig):
                     compute_config["existing_cluster_id"] = (
                         component.compute_config.existing_cluster_id
