@@ -18,7 +18,7 @@ from claude_code_sdk.types import (
     UserMessage,
 )
 
-from dagster_dg_cli.cli.scaffold.branch.diagnostics import AIInteraction, ClaudeDiagnosticsService
+from dagster_dg_cli.cli.scaffold.branch.claude.diagnostics import AIInteraction, ClaudeDiagnostics
 
 
 class OutputChannel(Protocol):
@@ -40,7 +40,7 @@ class NullOutputChannel:
 class ClaudeSDKClient:
     """Claude Code SDK integration with diagnostics and output streaming."""
 
-    def __init__(self, diagnostics: ClaudeDiagnosticsService):
+    def __init__(self, diagnostics: ClaudeDiagnostics):
         """Initialize the Claude SDK client.
 
         Args:
@@ -74,21 +74,16 @@ class ClaudeSDKClient:
         Raises:
             Exception: If the SDK operation fails
         """
-        self.diagnostics.debug(
-            "claude_sdk_scaffold_start",
-            "Starting Claude Code SDK scaffolding operation",
-            {
-                "prompt_length": len(prompt),
-                "allowed_tools_count": len(allowed_tools),
-                "allowed_tools": allowed_tools,
-                "verbose": verbose,
-            },
-        )
-
-        start_time = perf_counter()
         collected_messages: list[Message] = []
 
-        try:
+        with self.diagnostics.claude_operation(
+            operation_name="claude_sdk_scaffold",
+            error_code="claude_sdk_scaffold_failed",
+            error_message="Claude SDK scaffolding operation failed",
+            prompt_length=len(prompt),
+        ):
+            start_time = perf_counter()
+
             # Configure SDK options
             options = ClaudeCodeOptions(
                 allowed_tools=allowed_tools,
@@ -128,33 +123,7 @@ class ClaudeSDKClient:
             )
             self.diagnostics.log_ai_interaction(interaction)
 
-            self.diagnostics.info(
-                "claude_sdk_scaffold_success",
-                "Claude SDK scaffolding operation completed successfully",
-                {
-                    "messages_returned": len(collected_messages),
-                    "total_cost_usd": self.total_cost_usd,
-                    "total_tokens": self.total_tokens,
-                    "duration_ms": duration_ms,
-                },
-            )
-
             return collected_messages
-
-        except Exception as e:
-            duration_ms = (perf_counter() - start_time) * 1000
-
-            self.diagnostics.error(
-                "claude_sdk_scaffold_failed",
-                "Claude SDK scaffolding operation failed",
-                {
-                    "error_type": type(e).__name__,
-                    "error_message": str(e),
-                    "duration_ms": duration_ms,
-                    "prompt_length": len(prompt),
-                },
-            )
-            raise
 
     def _format_content_blocks(self, blocks: list) -> list[str]:
         """Format content blocks into debug strings.
@@ -277,9 +246,9 @@ class ClaudeSDKClient:
                 self.total_cost_usd = cost
 
             self.diagnostics.debug(
-                "claude_sdk_usage_update",
-                "Updated SDK usage statistics",
-                {
+                category="claude_sdk_usage_update",
+                message="Updated SDK usage statistics",
+                data={
                     "session_cost_usd": cost,
                     "total_cost_usd": self.total_cost_usd,
                     "num_turns": message.num_turns,

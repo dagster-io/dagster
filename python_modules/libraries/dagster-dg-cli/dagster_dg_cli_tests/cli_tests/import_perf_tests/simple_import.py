@@ -1,6 +1,4 @@
-# ruff: noqa: I001 - import order differs between CI and local due to package installation differences
 import click
-
 from dagster_dg_cli.cli import create_dg_cli
 
 

@@ -271,6 +271,7 @@ const buildExternalAssetQueryItem = (asset: {
     hasMaterializePermission: false,
     graphName: '',
     opVersion: null,
+    hasAssetChecks: false,
     hasReportRunlessAssetEventPermission: false,
     pools: [],
     internalFreshnessPolicy: null,

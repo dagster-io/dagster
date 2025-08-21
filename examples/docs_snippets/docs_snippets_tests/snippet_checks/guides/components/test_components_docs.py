@@ -51,6 +51,7 @@ _MASK_EMPTY_WARNINGS = (r"\n +warnings.warn\(message\)\n", "")
 
 
 @pytest.mark.parametrize("package_manager", ["pip", "uv"])
+@pytest.mark.flaky(max_runs=2)
 def test_components_docs_index(
     package_manager: DgTestPackageManager, update_snippets: bool
 ) -> None:

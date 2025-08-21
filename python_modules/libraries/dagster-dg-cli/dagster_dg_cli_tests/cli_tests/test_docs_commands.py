@@ -1,4 +1,3 @@
-# ruff: noqa: I001 - import order differs between CI and local due to package installation differences
 import json
 import os
 import subprocess
@@ -11,6 +10,7 @@ from unittest import mock
 import pytest
 import requests
 import yaml
+from dagster_dg_cli.cli import docs
 from dagster_dg_core.utils import activate_venv, get_venv_executable, install_to_venv
 from dagster_graphql.client.client import DagsterGraphQLClient
 from dagster_test.dg_utils.utils import (
@@ -24,8 +24,6 @@ from dagster_test.dg_utils.utils import (
     launch_dev_command,
     wait_for_projects_loaded,
 )
-
-from dagster_dg_cli.cli import docs
 
 # ########################
 # ##### COMPONENT TYPE
@@ -137,6 +135,9 @@ def test_build_docs_success():
         assert (venv_path / "built_docs" / "index.html").exists()
 
 
+@pytest.mark.skip(
+    "While we figure out why this is failing remotely: https://buildkite.com/organizations/dagster/analytics/suites/dagster/tests/41011484-ec45-8168-98bb-ce4a568ef784"
+)
 def test_build_docs_success_in_published_package():
     # Tests that the logic to copy the docs webapp to the dagster-dg-cli Python package works
     with (

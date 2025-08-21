@@ -232,7 +232,7 @@ _EXPECTED_PLUGIN_JSON = textwrap.dedent("""
 
 def test_list_registry_modules_success():
     with (
-        ProxyRunner.test(use_fixed_test_components=True) as runner,
+        ProxyRunner.test(use_fixed_test_components=True, mix_stderr=False) as runner,
         isolated_components_venv(runner),
     ):
         with fixed_panel_width(width=120):

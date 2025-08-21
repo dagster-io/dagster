@@ -95,7 +95,7 @@ markers = [
 ]
 
 timeout = 240
-addopts = "-ra --force-flaky --max-runs=2 --no-success-flaky-report"
+addopts = "-ra"
 
 # ########################
 # ##### RUFF

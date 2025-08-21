@@ -18,15 +18,3 @@ def is_claude_sdk_available() -> bool:
         return True
     except ImportError:
         return False
-
-
-def get_claude_sdk_unavailable_message() -> str:
-    """Get a helpful error message when Claude Code SDK is not available.
-
-    Returns:
-        Error message with installation instructions
-    """
-    return (
-        "claude_code_sdk is required for AI scaffolding functionality. "
-        "Install with: pip install claude-code-sdk>=0.0.19"
-    )

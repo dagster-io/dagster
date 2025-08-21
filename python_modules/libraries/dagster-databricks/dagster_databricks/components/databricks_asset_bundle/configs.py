@@ -21,15 +21,25 @@ def load_yaml(path: Path) -> Mapping[str, Any]:
         return {}
 
 
-def parse_depends_on(depends_on: Optional[list]) -> list[str]:
+def parse_depends_on(depends_on: Optional[list]) -> list["DatabricksTaskDependsOnConfig"]:
     parsed_depends_on = []
     if depends_on:
         for dep in depends_on:
             if isinstance(dep, dict) and "task_key" in dep:
-                parsed_depends_on.append(dep["task_key"])
+                parsed_depends_on.append(
+                    DatabricksTaskDependsOnConfig(
+                        task_key=dep["task_key"], outcome=dep.get("outcome")
+                    )
+                )
             elif isinstance(dep, str):
-                parsed_depends_on.append(dep)
+                parsed_depends_on.append(DatabricksTaskDependsOnConfig(task_key=dep, outcome=None))
     return parsed_depends_on
+
+
+@record
+class DatabricksTaskDependsOnConfig:
+    task_key: str
+    outcome: Optional[str]
 
 
 @record
@@ -37,7 +47,7 @@ class DatabricksBaseTask(ABC):
     task_key: str
     task_config: Mapping[str, Any]
     task_parameters: Union[Mapping[str, Any], list[str]]
-    depends_on: list[str]
+    depends_on: list[DatabricksTaskDependsOnConfig]
     job_name: str
     libraries: list[Mapping[str, Any]]
 

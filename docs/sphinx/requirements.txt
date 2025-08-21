@@ -1,2 +1,3 @@
   sphinx>=8,<9
   sphinx_toolbox
+  claude_code_sdk

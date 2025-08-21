@@ -1,4 +1,3 @@
-# ruff: noqa: I001 - import order differs between CI and local due to package installation differences
 import json
 import queue
 import tempfile
@@ -13,10 +12,10 @@ import responses
 import tomlkit
 import yaml
 from click.testing import CliRunner
-from dagster_shared.plus.config import DagsterPlusCliConfig
-
 from dagster_dg_cli.cli.plus import plus_group
 from dagster_dg_cli.utils.plus import gql
+from dagster_shared.plus.config import DagsterPlusCliConfig
+
 from dagster_dg_cli_tests.cli_tests.plus_tests.utils import mock_gql_response
 
 
