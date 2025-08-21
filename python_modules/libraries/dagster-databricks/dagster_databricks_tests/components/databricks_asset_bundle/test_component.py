@@ -36,9 +36,9 @@ PARTIAL_NEW_CLUSTER_CONFIG = {"spark_version": "test_spark_version"}
         (PARTIAL_NEW_CLUSTER_CONFIG),
     ],
     ids=[
-        "no_cluster_config",
-        "cluster_config",
-        "partial_cluster_config",
+        "no_new_cluster_config",
+        "new_cluster_config",
+        "partial_new_cluster_config",
     ],
 )
 def test_component_asset_spec(compute_config: Optional[ResolvedDatabricksNewClusterConfig]):
