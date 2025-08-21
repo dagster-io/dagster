@@ -1,10 +1,15 @@
 from abc import ABC, abstractmethod
 from collections.abc import Mapping
 from pathlib import Path
-from typing import Any, Generic, Optional, Union, cast
+from typing import Any, Generic, Optional, Union
 
 import yaml
-from dagster import Model, Resolvable, get_dagster_logger, _check as check
+from dagster import (
+    Model,
+    Resolvable,
+    _check as check,
+    get_dagster_logger,
+)
 from dagster_shared.record import IHaveNew, record, record_custom
 from databricks.sdk.service import jobs
 from typing_extensions import Self, TypeVar
@@ -362,7 +367,8 @@ class DatabricksSparkJarTask(DatabricksBaseTask):
     def to_databricks_sdk_task(self) -> jobs.SparkJarTask:
         jar_config = self.task_config["spark_jar_task"]
         return jobs.SparkJarTask(
-            main_class_name=jar_config["main_class_name"], parameters=check.is_list(self.task_parameters)
+            main_class_name=jar_config["main_class_name"],
+            parameters=check.is_list(self.task_parameters),
         )
 
 
