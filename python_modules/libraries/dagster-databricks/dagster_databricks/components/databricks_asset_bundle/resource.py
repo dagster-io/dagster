@@ -1,7 +1,5 @@
 from collections.abc import Iterator, Mapping
-from typing import Any
-from collections.abc import Iterator
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 from dagster import (
     AssetExecutionContext,
@@ -123,7 +121,7 @@ class DatabricksWorkspace(ConfigurableResource):
 
         # Prepare job submission parameters
         job_submit_params = {
-            "run_name": f"{self.job_name_prefix}_{context.run_id}",
+            "run_name": f"{assets_def.node_def.name}_{context.run_id}",
             "tasks": databricks_tasks,
         }
 
