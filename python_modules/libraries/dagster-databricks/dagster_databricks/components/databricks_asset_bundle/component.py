@@ -139,7 +139,8 @@ class DatabricksAssetBundleComponent(Component, Resolvable):
         ):
             """Multi-asset that runs multiple notebooks as a single Databricks job."""
             yield from databricks.submit_and_poll(
-                tasks=self.databricks_config.tasks, context=context
+                component=self,
+                context=context,
             )
 
         return Definitions(

@@ -61,3 +61,9 @@ def test_load_component(mock_submit_task: mock.MagicMock, databricks_config_path
                 len([call for call in mock_submit_task.mock_calls if "depends_on" in call.kwargs])
                 == 4
             )
+
+            # new_cluster is expected in 4 of the 6 submit tasks we create
+            assert (
+                len([call for call in mock_submit_task.mock_calls if "new_cluster" in call.kwargs])
+                == 4
+            )
