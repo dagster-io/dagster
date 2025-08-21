@@ -11,9 +11,8 @@ import {
 } from '@dagster-io/ui-components';
 import {useState} from 'react';
 
-import {formatElapsedTimeWithoutMsec} from '../app/Util';
 import {DagsterTag} from './RunTag';
-import {TimeElapsed} from './TimeElapsed';
+import {formatElapsedTimeWithoutMsec} from '../app/Util';
 import {RunsFeedTableEntryFragment} from './types/RunsFeedTableEntryFragment.types';
 import {RunStatus} from '../graphql/types';
 
@@ -307,7 +306,14 @@ const StatusCell = ({entry}: {entry: RunsFeedTableEntryFragment}) => {
         ) : config.icon ? (
           <Icon name={config.icon} data-kyle="asdfasdf" color={config.color} size={16} />
         ) : null}
-        <Box style={{color: config.color, fontSize: '14px', fontWeight: 500, fontVariantNumeric: 'tabular-nums'}}>
+        <Box
+          style={{
+            color: config.color,
+            fontSize: '14px',
+            fontWeight: 500,
+            fontVariantNumeric: 'tabular-nums',
+          }}
+        >
           {entry.startTime
             ? entry.endTime
               ? formatElapsedTimeWithoutMsec((entry.endTime - entry.startTime) * 1000)
@@ -331,12 +337,25 @@ const StatusCell = ({entry}: {entry: RunsFeedTableEntryFragment}) => {
   );
 };
 
+const MoreActionsCell = ({entry: _entry}: {entry: RunsFeedTableEntryFragment}) => {
+  return (
+    <Button
+      icon="more_horiz"
+      style={{minWidth: 'auto', padding: '4px'}}
+      onClick={(e) => {
+        e.stopPropagation();
+        // TODO: Implement more actions menu
+      }}
+    />
+  );
+};
+
 export const RunsFeedRow = ({entry}: {entry: RunsFeedTableEntryFragment}) => {
   return (
     <Box
       style={{
         display: 'grid',
-        gridTemplateColumns: '1fr 120px 120px 40px',
+        gridTemplateColumns: '1fr 120px 120px 40px 40px',
         gap: '12px',
         padding: '8px 12px',
         borderBottom: '1px solid #e1e5e9',
@@ -347,6 +366,7 @@ export const RunsFeedRow = ({entry}: {entry: RunsFeedTableEntryFragment}) => {
       <CreatedAtCell entry={entry} />
       <StatusCell entry={entry} />
       <TagsCell entry={entry} />
+      <MoreActionsCell entry={entry} />
     </Box>
   );
 };
@@ -356,7 +376,7 @@ export const RunsFeedTableHeader = () => {
     <Box
       style={{
         display: 'grid',
-        gridTemplateColumns: '1fr 120px 120px 40px',
+        gridTemplateColumns: '1fr 120px 120px 40px 40px',
         gap: '12px',
         padding: '8px 12px',
         borderBottom: '2px solid #d1d5db',
@@ -368,6 +388,7 @@ export const RunsFeedTableHeader = () => {
       <Box>Created at</Box>
       <Box>Status</Box>
       <Box>Tags</Box>
+      <Box></Box>
     </Box>
   );
 };
