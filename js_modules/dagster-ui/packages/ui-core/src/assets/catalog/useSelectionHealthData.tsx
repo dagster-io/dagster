@@ -56,7 +56,7 @@ export const SelectionHealthDataProvider = ({children}: {children: React.ReactNo
         newSelections.add(selection);
         return newSelections;
       });
-      const registry = getSelectionRegistery(selection, registries);
+      const registry = getSelectionRegistry(selection, registries);
       const unwatch = registry.watchSelection(setHealthData, setFilterData);
       forceRerender();
       return () => {
@@ -70,7 +70,7 @@ export const SelectionHealthDataProvider = ({children}: {children: React.ReactNo
   return (
     <SelectionHealthDataContext.Provider value={{watchSelection}}>
       {Array.from(selections).map((selection) => {
-        const registry = getSelectionRegistery(selection, registries);
+        const registry = getSelectionRegistry(selection, registries);
         return (
           <SelectionHealthDataObserver
             key={selection}
@@ -235,7 +235,7 @@ export class SelectionRegistry {
   }
 }
 
-function getSelectionRegistery(
+function getSelectionRegistry(
   selection: string,
   registries: Record<string, SelectionRegistry>,
 ): SelectionRegistry {
