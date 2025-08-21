@@ -352,6 +352,7 @@ export type WorkspaceAssetFragment = {
   isExecutable: boolean;
   isPartitioned: boolean;
   isAutoCreatedStub: boolean;
+  hasAssetChecks: boolean;
   computeKind: string | null;
   hasMaterializePermission: boolean;
   hasReportRunlessAssetEventPermission: boolean;
@@ -418,6 +419,7 @@ export type WorkspaceRepositoryAssetsFragment = {
     isExecutable: boolean;
     isPartitioned: boolean;
     isAutoCreatedStub: boolean;
+    hasAssetChecks: boolean;
     computeKind: string | null;
     hasMaterializePermission: boolean;
     hasReportRunlessAssetEventPermission: boolean;
@@ -492,6 +494,7 @@ export type WorkspaceLocationAssetsFragment = {
       isExecutable: boolean;
       isPartitioned: boolean;
       isAutoCreatedStub: boolean;
+      hasAssetChecks: boolean;
       computeKind: string | null;
       hasMaterializePermission: boolean;
       hasReportRunlessAssetEventPermission: boolean;
@@ -637,6 +640,7 @@ export type WorkspaceLocationFragment = {
       isExecutable: boolean;
       isPartitioned: boolean;
       isAutoCreatedStub: boolean;
+      hasAssetChecks: boolean;
       computeKind: string | null;
       hasMaterializePermission: boolean;
       hasReportRunlessAssetEventPermission: boolean;
@@ -730,6 +734,7 @@ export type WorkspaceLocationAssetsEntryFragment = {
             isExecutable: boolean;
             isPartitioned: boolean;
             isAutoCreatedStub: boolean;
+            hasAssetChecks: boolean;
             computeKind: string | null;
             hasMaterializePermission: boolean;
             hasReportRunlessAssetEventPermission: boolean;
@@ -990,6 +995,7 @@ export type LocationWorkspaceAssetsQuery = {
                   isExecutable: boolean;
                   isPartitioned: boolean;
                   isAutoCreatedStub: boolean;
+                  hasAssetChecks: boolean;
                   computeKind: string | null;
                   hasMaterializePermission: boolean;
                   hasReportRunlessAssetEventPermission: boolean;
@@ -1155,6 +1161,7 @@ export type WorkspaceLocationNodeFragment = {
             isExecutable: boolean;
             isPartitioned: boolean;
             isAutoCreatedStub: boolean;
+            hasAssetChecks: boolean;
             computeKind: string | null;
             hasMaterializePermission: boolean;
             hasReportRunlessAssetEventPermission: boolean;
@@ -1305,6 +1312,7 @@ export type WorkspaceRepositoryLocationFragment = {
       isExecutable: boolean;
       isPartitioned: boolean;
       isAutoCreatedStub: boolean;
+      hasAssetChecks: boolean;
       computeKind: string | null;
       hasMaterializePermission: boolean;
       hasReportRunlessAssetEventPermission: boolean;
@@ -1446,6 +1454,7 @@ export type WorkspaceRepositoryFragment = {
     isExecutable: boolean;
     isPartitioned: boolean;
     isAutoCreatedStub: boolean;
+    hasAssetChecks: boolean;
     computeKind: string | null;
     hasMaterializePermission: boolean;
     hasReportRunlessAssetEventPermission: boolean;
@@ -1503,4 +1512,4 @@ export const LocationWorkspaceQueryVersion = 'dc3c765d258d59c8c265f45109e72281af
 
 export const CodeLocationStatusQueryVersion = '5491629a2659feca3a6cf0cc976c6f59c8e78dff1193e07d7850ae4355698b04';
 
-export const LocationWorkspaceAssetsQueryVersion = '3e053c920a3fd3448cf3cb0ee19ab1b643c66ecde751bb81d464b6e75e046d3f';
+export const LocationWorkspaceAssetsQueryVersion = '61195fc88cb53d325132085b835ac95f0315c431e9a80a86dddd51815ef4c77f';
