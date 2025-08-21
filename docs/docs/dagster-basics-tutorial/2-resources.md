@@ -38,6 +38,9 @@ First, install the `dagster-duckdb` library:
 
 Next, scaffold a resources file:
 
+
+Next, scaffold a resources file:
+
 <CliInvocationExample path="docs_snippets/docs_snippets/guides/tutorials/dagster-tutorial/commands/dg-scaffold-resources.txt" />
 
 This adds a generic resources file to your project. The `resources.py` file is now part of the `dagster-tutorial` module:
