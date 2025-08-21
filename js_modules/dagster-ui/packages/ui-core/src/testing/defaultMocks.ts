@@ -134,10 +134,8 @@ export const defaultMocks = {
       }));
     },
   }),
-  Run: () => ({
-    id: randomId,
-    jobName: hyphenatedName,
-    runStatus: faker.random.arrayElement([
+  Run: () => {
+    const status = faker.random.arrayElement([
       RunStatus.SUCCESS,
       RunStatus.SUCCESS, // Weight SUCCESS more heavily
       RunStatus.STARTED,
@@ -147,15 +145,39 @@ export const defaultMocks = {
       RunStatus.NOT_STARTED,
       RunStatus.CANCELING,
       RunStatus.CANCELED,
-    ]),
-    creationTime: Date.now() / 1000 - faker.datatype.number({min: 60, max: 86400}),
-    startTime: faker.datatype.boolean()
-      ? Date.now() / 1000 - faker.datatype.number({min: 60, max: 3600})
-      : null,
-    endTime: faker.datatype.boolean()
-      ? Date.now() / 1000 - faker.datatype.number({min: 30, max: 1800})
-      : null,
-    tags: () => {
+    ]);
+    
+    const now = Date.now() / 1000;
+    const creationTime = now - faker.datatype.number({min: 60, max: 86400});
+    
+    let startTime = null;
+    let endTime = null;
+    
+    // Set times based on status to ensure logical consistency
+    if (status === RunStatus.SUCCESS || status === RunStatus.FAILURE) {
+      // Completed runs should have both start and end times
+      const runDuration = faker.datatype.number({min: 30, max: 1800}); // 30 seconds to 30 minutes
+      endTime = now - faker.datatype.number({min: 10, max: 300}); // ended 10s to 5min ago
+      startTime = endTime - runDuration;
+    } else if (status === RunStatus.STARTED) {
+      // Started runs have start time but no end time
+      startTime = now - faker.datatype.number({min: 30, max: 1800}); // started 30s to 30min ago
+    } else if (status === RunStatus.STARTING || status === RunStatus.CANCELING) {
+      // These might have start times
+      startTime = faker.datatype.boolean() 
+        ? now - faker.datatype.number({min: 5, max: 60})
+        : null;
+    }
+    // QUEUED, NOT_STARTED, CANCELED typically have no start/end times
+    
+    return {
+      id: randomId,
+      jobName: hyphenatedName,
+      runStatus: status,
+      creationTime,
+      startTime,
+      endTime,
+      tags: () => {
       const baseTags = [...new Array(faker.datatype.number({min: 5, max: 12}))].map(() => ({
         key: faker.random.arrayElement([
           'dagster/agent_id',
@@ -232,24 +254,25 @@ export const defaultMocks = {
         }
       }
 
-      return [...baseTags, ...launchTags];
-    },
-    assetSelection: () => {
-      const count = faker.datatype.number({min: 0, max: 8});
-      return [...new Array(count)].map(() => ({
-        path: faker.random.words(faker.datatype.number({min: 1, max: 3})).split(' '),
-      }));
-    },
-    assetCheckSelection: () => {
-      const count = faker.datatype.number({min: 0, max: 5});
-      return [...new Array(count)].map(() => ({
-        name: hyphenatedName(),
-        assetKey: {
+        return [...baseTags, ...launchTags];
+      },
+      assetSelection: () => {
+        const count = faker.datatype.number({min: 0, max: 8});
+        return [...new Array(count)].map(() => ({
           path: faker.random.words(faker.datatype.number({min: 1, max: 3})).split(' '),
-        },
-      }));
-    },
-  }),
+        }));
+      },
+      assetCheckSelection: () => {
+        const count = faker.datatype.number({min: 0, max: 5});
+        return [...new Array(count)].map(() => ({
+          name: hyphenatedName(),
+          assetKey: {
+            path: faker.random.words(faker.datatype.number({min: 1, max: 3})).split(' '),
+          },
+        }));
+      },
+    };
+  },
   PartitionsOrError: () => ({
     __typename: 'Partitions',
   }),
