@@ -3,7 +3,7 @@ import re
 from dataclasses import dataclass, field
 from functools import cached_property
 from pathlib import Path
-from typing import Annotated, Optional
+from typing import Annotated, Optional, Union
 
 from dagster import AssetExecutionContext, AssetSpec, MetadataValue, Resolvable, multi_asset
 from dagster._core.definitions.definitions_class import Definitions
@@ -16,6 +16,7 @@ from dagster.components.scaffold.scaffold import scaffold_with
 from dagster_databricks.components.databricks_asset_bundle.configs import (
     DatabricksBaseTask,
     DatabricksConfig,
+    ResolvedDatabricksExistingClusterConfig,
     ResolvedDatabricksNewClusterConfig,
 )
 from dagster_databricks.components.databricks_asset_bundle.resource import DatabricksWorkspace
@@ -87,17 +88,24 @@ class DatabricksAssetBundleComponent(Component, Resolvable):
     ]
     compute_config: Optional[
         Annotated[
-            ResolvedDatabricksNewClusterConfig,
+            Union[ResolvedDatabricksNewClusterConfig, ResolvedDatabricksExistingClusterConfig],
             Resolver.default(
-                model_field_type=ResolvedDatabricksNewClusterConfig,
+                model_field_type=Union[
+                    ResolvedDatabricksNewClusterConfig, ResolvedDatabricksExistingClusterConfig
+                ],
                 description=(
-                    "A mapping defining a databricks_asset_bundle.configs.ResolvedDatabricksNewClusterConfig. Optional."
+                    "A mapping defining a Databricks compute config. "
+                    "Allowed types are databricks_asset_bundle.configs.ResolvedDatabricksNewClusterConfig "
+                    "and databricks_asset_bundle.configs.ResolvedDatabricksExistingClusterConfig. Optional."
                 ),
                 examples=[
                     {
                         "spark_version": "test_spark_version",
                         "node_type_id": "node_type_id",
                         "num_workers": 1,
+                    },
+                    {
+                        "existing_cluster_id": "existing_cluster_id",
                     },
                 ],
             ),

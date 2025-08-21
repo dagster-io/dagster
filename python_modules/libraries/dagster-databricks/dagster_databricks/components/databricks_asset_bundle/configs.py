@@ -415,3 +415,7 @@ class ResolvedDatabricksNewClusterConfig(Resolvable, Model):
     spark_version: str = "13.3.x-scala2.12"
     node_type_id: str = "i3.xlarge"
     num_workers: int = 1
+
+
+class ResolvedDatabricksExistingClusterConfig(Resolvable, Model):
+    existing_cluster_id: str

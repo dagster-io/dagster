@@ -7,6 +7,11 @@ from databricks.sdk import WorkspaceClient
 from databricks.sdk.service import compute, jobs
 from pydantic import Field
 
+from dagster_databricks.components.databricks_asset_bundle.configs import (
+    ResolvedDatabricksExistingClusterConfig,
+    ResolvedDatabricksNewClusterConfig,
+)
+
 if TYPE_CHECKING:
     from dagster_databricks.components.databricks_asset_bundle.component import (
         DatabricksAssetBundleComponent,
@@ -74,17 +79,18 @@ class DatabricksWorkspace(ConfigurableResource):
             context.log.info(f"Task {task_key} depends on: {task_dependencies}")
 
             # Determine cluster configuration based on task type
-            compute_config = (
-                {
-                    "new_cluster": compute.ClusterSpec(
-                        spark_version=component.compute_config.spark_version,  # pyright: ignore
-                        node_type_id=component.compute_config.node_type_id,  # pyright: ignore
-                        num_workers=component.compute_config.num_workers,  # pyright: ignore
+            compute_config = {}
+            if task.needs_cluster:
+                if isinstance(component.compute_config, ResolvedDatabricksExistingClusterConfig):
+                    compute_config["existing_cluster_id"] = (
+                        component.compute_config.existing_cluster_id
                     )
-                }
-                if task.needs_cluster
-                else {}
-            )
+                elif isinstance(component.compute_config, ResolvedDatabricksNewClusterConfig):
+                    compute_config["new_cluster"] = compute.ClusterSpec(
+                        spark_version=component.compute_config.spark_version,
+                        node_type_id=component.compute_config.node_type_id,
+                        num_workers=component.compute_config.num_workers,
+                    )
 
             submit_task_params = {
                 **submit_task_params,

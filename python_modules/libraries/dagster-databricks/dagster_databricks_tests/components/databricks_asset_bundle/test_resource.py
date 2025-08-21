@@ -1,5 +1,6 @@
 from unittest import mock
 
+import pytest
 from dagster import AssetsDefinition, DagsterEventType, materialize
 from dagster.components.testing import create_defs_folder_sandbox
 from dagster_databricks.components.databricks_asset_bundle.component import (
@@ -12,8 +13,23 @@ from dagster_databricks_tests.components.databricks_asset_bundle.conftest import
 )
 
 
+@pytest.mark.parametrize(
+    "use_existing_cluster",
+    [
+        False,
+        True,
+    ],
+    ids=[
+        "new_cluster_compute_config",
+        "existing_cluster_compute_config",
+    ],
+)
 @mock.patch("databricks.sdk.service.jobs.SubmitTask", autospec=True)
-def test_load_component(mock_submit_task: mock.MagicMock, databricks_config_path: str):
+def test_load_component(
+    mock_submit_task: mock.MagicMock,
+    use_existing_cluster: bool,
+    databricks_config_path: str,
+):
     with create_defs_folder_sandbox() as sandbox:
         defs_path = sandbox.scaffold_component(
             component_cls=DatabricksAssetBundleComponent,
@@ -21,6 +37,21 @@ def test_load_component(mock_submit_task: mock.MagicMock, databricks_config_path
                 "databricks_config_path": databricks_config_path,
                 "databricks_workspace_host": TEST_DATABRICKS_WORKSPACE_HOST,
                 "databricks_workspace_token": TEST_DATABRICKS_WORKSPACE_TOKEN,
+            },
+            defs_yaml_contents={
+                "type": "dagster_databricks.components.databricks_asset_bundle.component.DatabricksAssetBundleComponent",
+                "attributes": {
+                    "databricks_config_path": databricks_config_path,
+                    **(
+                        {"compute_config": {"existing_cluster_id": "test_existing_cluster_id"}}
+                        if use_existing_cluster
+                        else {}
+                    ),
+                    "workspace": {
+                        "host": TEST_DATABRICKS_WORKSPACE_HOST,
+                        "token": TEST_DATABRICKS_WORKSPACE_TOKEN,
+                    },
+                },
             },
         )
 
@@ -62,8 +93,15 @@ def test_load_component(mock_submit_task: mock.MagicMock, databricks_config_path
                 == 4
             )
 
+            cluster_config_key = "existing_cluster_id" if use_existing_cluster else "new_cluster"
             # new_cluster is expected in 4 of the 6 submit tasks we create
             assert (
-                len([call for call in mock_submit_task.mock_calls if "new_cluster" in call.kwargs])
+                len(
+                    [
+                        call
+                        for call in mock_submit_task.mock_calls
+                        if cluster_config_key in call.kwargs
+                    ]
+                )
                 == 4
             )
