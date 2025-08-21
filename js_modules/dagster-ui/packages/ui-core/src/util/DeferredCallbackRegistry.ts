@@ -10,10 +10,11 @@ export class DeferredCallbackRegistry<TCallbacks extends Record<string, (...args
     this.targetFn = fn;
 
     // Execute all queued callbacks
-    while (this.queue.length > 0) {
-      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-      const callbacks = this.queue.shift()!;
-
+    while (true) {
+      const callbacks = this.queue.shift();
+      if (!callbacks) {
+        break;
+      }
       fn(callbacks);
     }
   }
