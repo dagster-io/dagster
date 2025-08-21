@@ -9,13 +9,14 @@ from dagster_shared.serdes import whitelist_for_serdes
 import dagster._check as check
 from dagster._config.field import Field
 from dagster._config.field_utils import Selector
-from dagster._core.storage.dagster_run import DagsterRun, DagsterRunStatus
+from dagster._core.errors import DagsterRunNotFoundError
 from dagster._core.storage.tags import MAX_RETRIES_TAG, RETRY_ON_ASSET_OR_OP_FAILURE_TAG
 from dagster._utils.tags import get_boolean_tag_value
 
 if TYPE_CHECKING:
     from dagster._core.events import RunFailureReason
     from dagster._core.instance import DagsterInstance
+    from dagster._core.storage.dagster_run import DagsterRun
 
 
 def get_retries_config():
@@ -80,7 +81,7 @@ class RetryState:
 
 
 def auto_reexecution_should_retry_run(
-    instance: "DagsterInstance", run: DagsterRun, run_failure_reason: Optional["RunFailureReason"]
+    instance: "DagsterInstance", run: "DagsterRun", run_failure_reason: Optional["RunFailureReason"]
 ):
     """Determines if a run will be retried by the automatic reexcution system.
     A run will retry if:
@@ -115,6 +116,7 @@ def auto_reexecution_should_retry_run(
     run itself, just that max_retries + 1 runs could be launched in total if a manual retry is timed to cause this condition (unlikely).
     """
     from dagster._core.events import RunFailureReason
+    from dagster._core.storage.dagster_run import DagsterRunStatus
 
     if run.status != DagsterRunStatus.FAILURE:
         return False
@@ -136,7 +138,11 @@ def auto_reexecution_should_retry_run(
             warnings.warn(f"Error parsing int from tag {MAX_RETRIES_TAG}, won't retry the run.")
             return False
     if max_retries > 0:
-        run_group = instance.get_run_group(run.run_id)
+        try:
+            run_group = instance.get_run_group(run.run_id)
+        except DagsterRunNotFoundError:
+            # can happen if either this run or the root run in the run group was deleted
+            return False
         if run_group is not None:
             _, run_group_iter = run_group
             # since the original run is in the run group, the number of retries launched

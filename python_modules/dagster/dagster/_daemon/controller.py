@@ -25,9 +25,10 @@ from dagster._daemon.daemon import (
     SchedulerDaemon,
     SensorDaemon,
 )
+from dagster._daemon.freshness import FreshnessDaemon
 from dagster._daemon.run_coordinator.queued_run_coordinator_daemon import QueuedRunCoordinatorDaemon
 from dagster._daemon.types import DaemonHeartbeat, DaemonStatus
-from dagster._grpc.server import INCREASE_TIMEOUT_DAGSTER_YAML_MSG, GrpcServerCommand
+from dagster._grpc.constants import INCREASE_TIMEOUT_DAGSTER_YAML_MSG, GrpcServerCommand
 from dagster._time import get_current_datetime, get_current_timestamp
 from dagster._utils.interrupts import raise_interrupts_as
 from dagster._utils.log import configure_loggers
@@ -378,6 +379,8 @@ def create_daemon_of_type(daemon_type: str, instance: DagsterInstance) -> Dagste
                 else DEFAULT_DAEMON_INTERVAL_SECONDS
             ),
         )
+    elif daemon_type == FreshnessDaemon.daemon_type():
+        return FreshnessDaemon()
     else:
         raise Exception(f"Unexpected daemon type {daemon_type}")
 

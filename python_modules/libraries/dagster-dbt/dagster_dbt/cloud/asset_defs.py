@@ -11,7 +11,7 @@ from dagster import (
     AssetKey,
     AssetsDefinition,
     AutoMaterializePolicy,
-    FreshnessPolicy,
+    LegacyFreshnessPolicy,
     MetadataValue,
     PartitionsDefinition,
     ResourceDefinition,
@@ -19,8 +19,8 @@ from dagster import (
     with_resources,
 )
 from dagster._annotations import beta, beta_param
-from dagster._core.definitions.asset_spec import AssetSpec
-from dagster._core.definitions.cacheable_assets import (
+from dagster._core.definitions.assets.definition.asset_spec import AssetSpec
+from dagster._core.definitions.assets.definition.cacheable_assets_definition import (
     AssetsDefinitionCacheableData,
     CacheableAssetsDefinition,
 )
@@ -52,7 +52,9 @@ class DbtCloudCacheableAssetsDefinition(CacheableAssetsDefinition):
         job_id: int,
         node_info_to_asset_key: Callable[[Mapping[str, Any]], AssetKey],
         node_info_to_group_fn: Callable[[Mapping[str, Any]], Optional[str]],
-        node_info_to_freshness_policy_fn: Callable[[Mapping[str, Any]], Optional[FreshnessPolicy]],
+        node_info_to_freshness_policy_fn: Callable[
+            [Mapping[str, Any]], Optional[LegacyFreshnessPolicy]
+        ],
         node_info_to_auto_materialize_policy_fn: Callable[
             [Mapping[str, Any]], Optional[AutoMaterializePolicy]
         ],
@@ -373,10 +375,10 @@ class DbtCloudCacheableAssetsDefinition(CacheableAssetsDefinition):
                     for spec in specs
                 },
             },
-            freshness_policies_by_output_name={
-                spec.key.to_python_identifier(): spec.freshness_policy
+            legacy_freshness_policies_by_output_name={
+                spec.key.to_python_identifier(): spec.legacy_freshness_policy
                 for spec in specs
-                if spec.freshness_policy
+                if spec.legacy_freshness_policy
             },
             auto_materialize_policies_by_output_name={
                 spec.key.to_python_identifier(): spec.auto_materialize_policy
@@ -419,9 +421,9 @@ class DbtCloudCacheableAssetsDefinition(CacheableAssetsDefinition):
                     ].get(id),
                     deps=(cacheable_data.internal_asset_deps or {}).get(id),
                     metadata=(cacheable_data.metadata_by_output_name or {}).get(id),
-                    freshness_policy=(cacheable_data.freshness_policies_by_output_name or {}).get(
-                        id
-                    ),
+                    legacy_freshness_policy=(
+                        cacheable_data.legacy_freshness_policies_by_output_name or {}
+                    ).get(id),
                     auto_materialize_policy=(
                         cacheable_data.auto_materialize_policies_by_output_name or {}
                     ).get(id),
@@ -545,7 +547,7 @@ def load_assets_from_dbt_cloud_job(
         [Mapping[str, Any]], Optional[str]
     ] = default_group_from_dbt_resource_props,
     node_info_to_freshness_policy_fn: Callable[
-        [Mapping[str, Any]], Optional[FreshnessPolicy]
+        [Mapping[str, Any]], Optional[LegacyFreshnessPolicy]
     ] = default_freshness_policy_fn,
     node_info_to_auto_materialize_policy_fn: Callable[
         [Mapping[str, Any]], Optional[AutoMaterializePolicy]

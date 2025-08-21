@@ -10,15 +10,11 @@ import {
   AssetGraphLiveQueryVariables,
 } from '../../asset-data/types/AssetBaseDataProvider.types';
 import {
-  AssetGraphQuery,
-  AssetGraphQueryVariables,
-} from '../../asset-graph/types/useAssetGraphData.types';
-import {ASSET_GRAPH_QUERY} from '../../asset-graph/useAssetGraphData';
-import {
   AssetKeyInput,
   buildAssetKey,
   buildAssetLatestInfo,
   buildAssetNode,
+  buildAssetRecordConnection,
 } from '../../graphql/types';
 import {buildQueryMock} from '../../testing/mocking';
 import {WorkspaceProvider} from '../../workspace/WorkspaceContext/WorkspaceContext';
@@ -30,8 +26,8 @@ import {
   LatestMaterializationTimestamp,
   RootWorkspaceWithOneLocation,
 } from '../__fixtures__/AssetViewDefinition.fixtures';
-
-import '../../../jest/mocks/ComputeGraphData.worker';
+import {AssetRecordsQuery, AssetRecordsQueryVariables} from '../types/useAllAssets.types';
+import {ASSET_RECORDS_QUERY} from '../useAllAssets';
 
 // This file must be mocked because Jest can't handle `import.meta.url`.
 jest.mock('../../graph/asyncGraphLayout', () => ({}));
@@ -68,11 +64,11 @@ describe('AssetView', () => {
             mockLiveData('sda_asset'),
             mockLiveData('observable_source_asset'),
             mockLiveData('non_sda_asset'),
-            buildQueryMock<AssetGraphQuery, AssetGraphQueryVariables>({
-              query: ASSET_GRAPH_QUERY,
-              variables: {},
+            buildQueryMock<AssetRecordsQuery, AssetRecordsQueryVariables>({
+              query: ASSET_RECORDS_QUERY,
+              variableMatcher: () => true,
               data: {
-                assetNodes: [buildAssetNode()],
+                assetRecordsOrError: buildAssetRecordConnection({assets: []}),
               },
             }),
           ]}
@@ -96,6 +92,7 @@ describe('AssetView', () => {
       await act(() => render(<Test path="/sda_asset" assetKey={{path: ['sda_asset']}} />));
       await waitFor(async () => {
         expect(await screen.findByText('Materialize')).toBeVisible();
+        expect(await screen.findByTestId('materialize-button')).toBeEnabled();
       });
     });
 
@@ -106,10 +103,11 @@ describe('AssetView', () => {
       expect(await screen.findByText('Observe')).toBeVisible();
     });
 
-    it('shows no button for a non-software defined asset', async () => {
+    it('shows a disabled button for a non-software defined asset', async () => {
       render(<Test path="/non_sda_asset" assetKey={{path: ['non_sda_asset']}} />);
       expect(screen.queryByText('Observe')).toBeNull();
-      expect(screen.queryByText('Materialize')).toBeNull();
+      expect(screen.queryByText('Materialize')).toBeVisible();
+      expect(await screen.findByTestId('materialize-button')).toBeDisabled();
     });
   });
 

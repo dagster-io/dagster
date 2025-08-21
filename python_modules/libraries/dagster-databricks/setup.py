@@ -30,12 +30,12 @@ setup(
     ],
     packages=find_packages(exclude=["dagster_databricks_tests*"]),
     include_package_data=True,
-    python_requires=">=3.9,<3.13",
+    python_requires=">=3.9,<3.14",
     install_requires=[
         f"dagster{pin}",
         f"dagster-pipes{pin}",
         f"dagster-pyspark{pin}",
-        "databricks-sdk<=0.17.0",  # dbt-databricks is pinned to this version
+        "databricks-sdk>=0.41,<0.61.0",  # dbt-databricks is pinned to this version
     ],
     zip_safe=False,
 )

@@ -114,3 +114,8 @@ class RepresentedJob(ABC):
 
     def get_graph_name(self) -> str:
         return self._job_index.job_snapshot.graph_def_name
+
+    # Job properties
+    @abstractmethod
+    def get_external_job_source(self) -> Optional[str]:
+        pass

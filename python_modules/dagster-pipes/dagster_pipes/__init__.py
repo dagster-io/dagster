@@ -485,10 +485,15 @@ class _PipesLoggerHandler(logging.Handler):
 
 
 def _pipes_exc_from_tb(tb: TracebackException):
+    if sys.version_info >= (3, 13):
+        name = tb.exc_type_str.split(".")[-1]
+    else:
+        name = tb.exc_type.__name__ if tb.exc_type is not None else None
+
     return PipesException(
         message="".join(list(tb.format_exception_only())),
         stack=tb.stack.format(),
-        name=tb.exc_type.__name__ if tb.exc_type is not None else None,
+        name=name,
         cause=_pipes_exc_from_tb(tb.__cause__) if tb.__cause__ else None,
         context=_pipes_exc_from_tb(tb.__context__) if tb.__context__ else None,
     )
@@ -1405,6 +1410,58 @@ class PipesDbfsMessageWriter(PipesBlobStoreMessageWriter):
                 category=DagsterPipesWarning,
             )
             return {}
+
+
+# #########################################
+# ##### IO - Databricks Serverless
+# #########################################
+
+
+class PipesUnityCatalogVolumesContextLoader(PipesContextLoader):
+    """Context loader that reads context from a JSON file on Unity Catalog Volumes."""
+
+    @contextmanager
+    def load_context(self, params: PipesParams) -> Iterator[PipesContextData]:
+        path = _assert_env_param_type(params, "path", str, self.__class__)
+        with open(path) as f:
+            yield json.load(f)
+
+
+class PipesUnityCatalogVolumesMessageWriter(PipesBlobStoreMessageWriter):
+    """Message writer that writes messages by periodically writing message chunks
+    to a directory on Unity Catalog Volumes.
+    """
+
+    def make_channel(
+        self,
+        params: PipesParams,
+    ) -> "PipesBufferedFilesystemMessageWriterChannel":
+        path = _assert_env_param_type(params, "path", str, self.__class__)
+        return PipesBufferedFilesystemMessageWriterChannel(
+            path=path,
+            interval=self.interval,
+        )
+
+
+DAGSTER_PIPES_CONTEXT_WIDGET_KEY = DAGSTER_PIPES_CONTEXT_ENV_VAR
+DAGSTER_PIPES_MESSAGES_WIDGET_KEY = DAGSTER_PIPES_MESSAGES_ENV_VAR
+
+
+class PipesDatabricksNotebookWidgetsParamsLoader(PipesParamsLoader):
+    """Params loader that extracts params from widgets (base params) in a Databricks Notebook."""
+
+    def __init__(self, widgets: Any):
+        self.widgets = widgets
+
+    def is_dagster_pipes_process(self) -> bool:
+        # use the presence of the pipes context to discern if we are in a pipes process
+        return self.widgets.get(DAGSTER_PIPES_CONTEXT_WIDGET_KEY) is not None
+
+    def load_context_params(self) -> PipesParams:
+        return decode_param(self.widgets.get(DAGSTER_PIPES_CONTEXT_WIDGET_KEY))
+
+    def load_messages_params(self) -> PipesParams:
+        return decode_param(self.widgets.get(DAGSTER_PIPES_MESSAGES_WIDGET_KEY))
 
 
 # ########################

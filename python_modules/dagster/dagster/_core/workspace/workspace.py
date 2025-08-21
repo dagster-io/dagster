@@ -7,8 +7,9 @@ from dagster._record import ImportFrom, record
 from dagster._utils.error import SerializableErrorInfo
 
 if TYPE_CHECKING:
-    from dagster._core.definitions.remote_asset_graph import RemoteWorkspaceAssetGraph
-    from dagster._core.remote_representation import CodeLocation, CodeLocationOrigin
+    from dagster._core.definitions.assets.graph.remote_asset_graph import RemoteWorkspaceAssetGraph
+    from dagster._core.remote_origin import CodeLocationOrigin
+    from dagster._core.remote_representation.code_location import CodeLocation
 
 
 # For locations that are loaded asynchronously
@@ -19,9 +20,15 @@ class CodeLocationLoadStatus(Enum):
 
 @record
 class CodeLocationEntry:
-    origin: Annotated["CodeLocationOrigin", ImportFrom("dagster._core.remote_representation")]
+    origin: Annotated[
+        "CodeLocationOrigin",
+        ImportFrom("dagster._core.remote_origin"),
+    ]
     code_location: Optional[
-        Annotated["CodeLocation", ImportFrom("dagster._core.remote_representation")]
+        Annotated[
+            "CodeLocation",
+            ImportFrom("dagster._core.remote_representation.code_location"),
+        ]
     ]
     load_error: Optional[SerializableErrorInfo]
     load_status: CodeLocationLoadStatus
@@ -48,7 +55,9 @@ class CurrentWorkspace:
 
     @cached_property
     def asset_graph(self) -> "RemoteWorkspaceAssetGraph":
-        from dagster._core.definitions.remote_asset_graph import RemoteWorkspaceAssetGraph
+        from dagster._core.definitions.assets.graph.remote_asset_graph import (
+            RemoteWorkspaceAssetGraph,
+        )
 
         return RemoteWorkspaceAssetGraph.build(self)
 

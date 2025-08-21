@@ -2,6 +2,7 @@ import {Meta} from '@storybook/react';
 
 import {Box} from '../Box';
 import {Button, JoinedButtons} from '../Button';
+import {Colors} from '../Color';
 import {Group} from '../Group';
 import {Icon} from '../Icon';
 import {Menu, MenuItem} from '../Menu';
@@ -23,6 +24,16 @@ export const Default = () => {
         Button
       </Button>
       <Button icon={<Icon name="cached" />} />
+      <Box
+        background={Colors.backgroundLight()}
+        padding={16}
+        flex={{direction: 'column', alignItems: 'stretch'}}
+        style={{width: 320}}
+      >
+        <Button>
+          <div style={{width: '100%', textAlign: 'center'}}>Full-width Flex Child</div>
+        </Button>
+      </Box>
     </Group>
   );
 };

@@ -17,6 +17,8 @@ from dagster import (
     sensor,
 )
 from dagster._core.code_pointer import CodePointer
+from dagster._core.definitions.assets.definition.asset_dep import AssetDep
+from dagster._core.definitions.job_definition import JobDefinition
 from dagster._core.definitions.reconstruct import initialize_repository_def_from_pointer
 from dagster._utils.test.definitions import (
     definitions,
@@ -25,8 +27,10 @@ from dagster._utils.test.definitions import (
 )
 from dagster_airlift.constants import TASK_MAPPING_METADATA_KEY
 from dagster_airlift.core import assets_with_task_mappings, build_defs_from_airflow_instance
+from dagster_airlift.core.airflow_defs_data import AirflowDefinitionsData
 from dagster_airlift.core.filter import AirflowFilter
 from dagster_airlift.core.load_defs import (
+    build_job_based_airflow_defs,
     enrich_airflow_mapped_assets,
     load_airflow_dag_asset_specs,
 )
@@ -37,12 +41,14 @@ from dagster_airlift.core.serialization.compute import (
 )
 from dagster_airlift.core.serialization.defs_construction import make_default_dag_asset_key
 from dagster_airlift.core.serialization.serialized_data import (
+    DagHandle,
     SerializedAirflowDefinitionsData,
     TaskHandle,
 )
 from dagster_airlift.core.utils import is_task_mapped_asset_spec, metadata_for_task_mapping
-from dagster_airlift.test import make_instance
+from dagster_airlift.test import asset_spec, make_instance
 from dagster_shared.serdes import deserialize_value
+from dagster_test.utils.definitions_execute_in_process import get_job_from_defs
 
 from dagster_airlift_tests.unit_tests.conftest import (
     assert_dependency_structure_in_assets,
@@ -444,7 +450,7 @@ def test_multiple_tasks_to_single_asset_metadata() -> None:
     assert defs.assets
     assert len(list(defs.assets)) == 3  # two dags and one asset
 
-    assert defs.get_asset_graph().assets_def_for_key(AssetKey("an_asset")).specs_by_key[
+    assert defs.resolve_asset_graph().assets_def_for_key(AssetKey("an_asset")).specs_by_key[
         AssetKey("an_asset")
     ].metadata[TASK_MAPPING_METADATA_KEY] == [
         {"dag_id": "dag1", "task_id": "task1"},
@@ -655,7 +661,7 @@ def test_double_instance() -> None:
 
     defs = Definitions.merge(defs_one, defs_two)
 
-    all_specs = {spec.key: spec for spec in defs.get_all_asset_specs()}
+    all_specs = {spec.key: spec for spec in defs.resolve_all_asset_specs()}
 
     assert set(all_specs.keys()) == {
         make_default_dag_asset_key("instance_one", "dag1"),
@@ -671,10 +677,10 @@ def test_enrich() -> None:
         source_code_retrieval_enabled=None,
     )
     assert len(airflow_assets) == 1
-    assets_def = next(iter(airflow_assets))
-    assert assets_def.key == AssetKey("a")
+    spec = next(iter(airflow_assets))
+    assert isinstance(spec, AssetSpec)
+    assert spec.key == AssetKey("a")
     # Asset metadata properties have been glommed onto the asset
-    spec = next(iter(assets_def.specs))
     assert spec.metadata["Dag ID"] == "dag"
 
 
@@ -725,3 +731,145 @@ def test_filtering() -> None:
         retrieval_filter=AirflowFilter(airflow_tags=["first", "second"]),
     )
     assert len(dag_assets) == 1
+
+
+def test_load_datasets() -> None:
+    """Test automatic loading of datasets."""
+    task_structure = {
+        "producer1": ["producing_task"],
+        "producer2": ["producing_task"],
+        "consumer1": ["task"],
+        "consumer2": ["task"],
+    }
+    # Dataset is produced and consumed by multiple tasks
+    dataset_info = [
+        {
+            "uri": "s3://dataset-bucket/example1.csv",
+            "producing_tasks": [
+                {"dag_id": "producer1", "task_id": "producing_task"},
+                {"dag_id": "producer2", "task_id": "producing_task"},
+            ],
+            "consuming_dags": ["consumer1", "consumer2"],
+        },
+        {
+            "uri": "s3://dataset-bucket/example2.csv",
+            "producing_tasks": [
+                {"dag_id": "consumer1", "task_id": "task"},
+            ],
+            "consuming_dags": [],
+        },
+    ]
+    af_instance = make_instance(
+        dag_and_task_structure=task_structure,
+        dataset_construction_info=dataset_info,
+    )
+    # Add an additional spec to the same task as the dataset
+    spec = AssetSpec(
+        key="a", metadata=metadata_for_task_mapping(task_id="producing_task", dag_id="producer1")
+    )
+
+    defs = build_defs_from_airflow_instance(
+        airflow_instance=af_instance,
+        defs=Definitions(assets=[spec]),
+    )
+    Definitions.validate_loadable(defs)
+
+    definitions_data = AirflowDefinitionsData(
+        airflow_instance=af_instance,
+        resolved_repository=defs.get_repository_def(),
+    )
+    assert definitions_data.mapped_asset_keys_by_task_handle == {
+        TaskHandle(dag_id="producer1", task_id="producing_task"): {
+            AssetKey("example1"),
+            AssetKey("a"),
+        },
+        TaskHandle(dag_id="producer2", task_id="producing_task"): {AssetKey("example1")},
+        TaskHandle(dag_id="consumer1", task_id="task"): {AssetKey("example2")},
+    }
+    example1_spec = asset_spec("example1", defs)
+    assert example1_spec
+    assert example1_spec.deps == []
+    example2_spec = asset_spec("example2", defs)
+    assert example2_spec
+    assert example2_spec.deps == [AssetDep("example1")]
+
+    # Filter down to just producer1. Only example1 should be included
+    defs = build_defs_from_airflow_instance(
+        airflow_instance=af_instance,
+        retrieval_filter=AirflowFilter(dag_id_ilike="producer1"),
+        defs=Definitions(assets=[spec]),
+    )
+    Definitions.validate_loadable(defs)
+    assert asset_spec("example1", defs)
+    assert not asset_spec("example2", defs)
+
+
+def test_load_job_defs() -> None:
+    """Test job-based loader."""
+    task_structure = {
+        "producer1": ["producing_task"],
+        "producer2": ["producing_task"],
+        "consumer1": ["task"],
+        "consumer2": ["task"],
+    }
+    # Dataset is produced and consumed by multiple tasks
+    dataset_info = [
+        {
+            "uri": "s3://dataset-bucket/example1.csv",
+            "producing_tasks": [
+                {"dag_id": "producer1", "task_id": "producing_task"},
+                {"dag_id": "producer2", "task_id": "producing_task"},
+            ],
+            "consuming_dags": ["consumer1", "consumer2"],
+        },
+        {
+            "uri": "s3://dataset-bucket/example2.csv",
+            "producing_tasks": [
+                {"dag_id": "consumer1", "task_id": "task"},
+            ],
+            "consuming_dags": [],
+        },
+    ]
+    af_instance = make_instance(
+        dag_and_task_structure=task_structure,
+        dataset_construction_info=dataset_info,
+    )
+    # Add an additional spec to the same task as the dataset
+    spec = AssetSpec(
+        key="a", metadata=metadata_for_task_mapping(task_id="producing_task", dag_id="producer1")
+    )
+
+    # Add an additional materializable asset to the same task
+    @asset(metadata=metadata_for_task_mapping(task_id="producing_task", dag_id="producer1"))
+    def b():
+        pass
+
+    defs = build_job_based_airflow_defs(
+        airflow_instance=af_instance,
+        mapped_defs=Definitions(assets=[spec, b]),
+    )
+    Definitions.validate_loadable(defs)
+    assert isinstance(get_job_from_defs("producer1", defs), JobDefinition)
+    assert isinstance(get_job_from_defs("producer2", defs), JobDefinition)
+    assert isinstance(get_job_from_defs("consumer1", defs), JobDefinition)
+    assert isinstance(get_job_from_defs("consumer2", defs), JobDefinition)
+
+    airflow_defs_data = AirflowDefinitionsData(
+        airflow_instance=af_instance,
+        resolved_repository=defs.get_repository_def(),
+    )
+
+    repo = defs.get_repository_def()
+
+    assert airflow_defs_data.airflow_mapped_jobs_by_dag_handle == {
+        DagHandle(dag_id="producer1"): repo.get_job("producer1"),
+        DagHandle(dag_id="producer2"): repo.get_job("producer2"),
+        DagHandle(dag_id="consumer1"): repo.get_job("consumer1"),
+        DagHandle(dag_id="consumer2"): repo.get_job("consumer2"),
+    }
+    assert airflow_defs_data.assets_per_job == {
+        "producer1": {AssetKey("example1"), AssetKey("a"), AssetKey("b")},
+        "producer2": {AssetKey("example1")},
+        "consumer1": {AssetKey("example2")},
+        "consumer2": set(),
+    }

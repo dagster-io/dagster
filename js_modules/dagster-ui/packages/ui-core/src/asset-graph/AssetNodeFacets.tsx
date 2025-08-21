@@ -1,18 +1,8 @@
 import {useMemo} from 'react';
 
+import {AssetNodeFacet} from './AssetNodeFacetsUtil';
 import {assertUnreachable} from '../app/Util';
 import {useStateWithStorage} from '../hooks/useStateWithStorage';
-
-export enum AssetNodeFacet {
-  UnsyncedTag = 'unsynced-tag',
-  Description = 'description',
-  Owner = 'owner',
-  LatestEvent = 'latest-event',
-  Checks = 'checks',
-  Freshness = 'freshness',
-  Status = 'status',
-  KindTag = 'kind-tag',
-}
 
 export const AllAssetNodeFacets = [
   AssetNodeFacet.UnsyncedTag,
@@ -23,15 +13,16 @@ export const AllAssetNodeFacets = [
   AssetNodeFacet.LatestEvent,
   AssetNodeFacet.Status,
   AssetNodeFacet.KindTag,
+  AssetNodeFacet.Automation,
 ];
 
 export const AssetNodeFacetDefaults = [
   AssetNodeFacet.UnsyncedTag,
   AssetNodeFacet.Checks,
-  AssetNodeFacet.Freshness,
   AssetNodeFacet.LatestEvent,
   AssetNodeFacet.Status,
   AssetNodeFacet.KindTag,
+  AssetNodeFacet.Automation,
 ];
 
 function validateSavedFacets(input: any) {
@@ -65,6 +56,8 @@ export function labelForFacet(facet: AssetNodeFacet) {
       return 'Kind tag';
     case AssetNodeFacet.UnsyncedTag:
       return 'Sync status tags';
+    case AssetNodeFacet.Automation:
+      return 'Automation';
     default:
       assertUnreachable(facet);
   }

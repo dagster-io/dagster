@@ -9,17 +9,23 @@ from contextlib import contextmanager
 from pathlib import Path
 from tempfile import TemporaryDirectory
 from types import TracebackType
-from typing import Any, Iterable, Optional, TypeVar, Union  # noqa: UP035
+from typing import Any, Iterable, Mapping, Optional, TypeVar, Union  # noqa: UP035
 
+import dagster as dg
 import tomlkit
 from click.testing import Result
-from dagster import Definitions
+from dagster import Component
 from dagster._utils import alter_sys_path, pushd
 from dagster._utils.pydantic_yaml import enrich_validation_errors_with_source_position
-from dagster.components import Component, ComponentLoadContext
+from dagster.components.core.component_tree import ComponentTree
+from dagster.components.core.defs_module import (
+    asset_post_processor_list_from_post_processing_dict,
+    context_with_injected_scope,
+)
+from dagster.components.resolved.core_models import post_process_defs
 from dagster.components.utils import ensure_loadable_path
 from dagster_shared import check
-from dagster_shared.yaml_utils import parse_yaml_with_source_positions
+from dagster_shared.yaml_utils import parse_yaml_with_source_position
 from pydantic import TypeAdapter
 
 T = TypeVar("T")
@@ -27,15 +33,19 @@ T_Component = TypeVar("T_Component", bound=Component)
 
 
 def load_context_and_component_for_test(
-    component_type: type[T_Component], attrs: Union[str, dict[str, Any]]
-) -> tuple[ComponentLoadContext, T_Component]:
-    context = ComponentLoadContext.for_test()
-    context = context.with_rendering_scope(component_type.get_additional_scope())
+    component_type: type[T_Component],
+    attrs: Union[str, dict[str, Any]],
+    template_vars_module: Optional[str] = None,
+) -> tuple[dg.ComponentLoadContext, T_Component]:
+    context = ComponentTree.for_test().load_context
     model_cls = check.not_none(
         component_type.get_model_cls(), "Component must have schema for direct test"
     )
+
+    context = context_with_injected_scope(context, component_type, template_vars_module)
+
     if isinstance(attrs, str):
-        source_positions = parse_yaml_with_source_positions(attrs)
+        source_positions = parse_yaml_with_source_position(attrs)
         with enrich_validation_errors_with_source_position(
             source_positions.source_position_tree, []
         ):
@@ -54,10 +64,17 @@ def load_component_for_test(
 
 
 def build_component_defs_for_test(
-    component_type: type[Component], attrs: dict[str, Any]
-) -> Definitions:
+    component_type: type[dg.Component],
+    attrs: dict[str, Any],
+    post_processing: Optional[Mapping[str, Any]] = None,
+) -> dg.Definitions:
     context, component = load_context_and_component_for_test(component_type, attrs)
-    return component.build_defs(context)
+    return post_process_defs(
+        component.build_defs(context),
+        asset_post_processor_list_from_post_processing_dict(
+            context.resolution_context, post_processing
+        ),
+    )
 
 
 def generate_component_lib_pyproject_toml(name: str, is_project: bool = False) -> str:
@@ -75,7 +92,7 @@ def generate_component_lib_pyproject_toml(name: str, is_project: bool = False) -
         ]
 
         [project.entry-points]
-        "dagster_dg.plugin" = {{ {pkg_name} = "{pkg_name}.lib" }}
+        "dagster_dg_cli.registry_modules" = {{ {pkg_name} = "{pkg_name}.lib" }}
     """)
     if is_project:
         return base + textwrap.dedent(f"""
@@ -95,6 +112,7 @@ def temp_code_location_bar() -> Iterator[None]:
     with TemporaryDirectory() as tmpdir, pushd(tmpdir):
         Path("bar/bar/lib").mkdir(parents=True)
         Path("bar/bar/components").mkdir(parents=True)
+        Path("bar/bar/defs").mkdir(parents=True)
         with open("bar/pyproject.toml", "w") as f:
             f.write(generate_component_lib_pyproject_toml("bar", is_project=True))
         Path("bar/bar/__init__.py").touch()
@@ -131,7 +149,7 @@ def create_project_from_components(
     """Scaffolds a project with the given components in a temporary directory,
     injecting the provided local component defn into each component's __init__.py.
     """
-    location_name = f"my_location_{str(random.random()).replace('.', '')}"
+    location_name = f"my_location_{random.randint(0, 2**32 - 1)}"
 
     # Using mkdtemp instead of TemporaryDirectory so that the directory is accessible
     # from launched procsses (such as duckdb)
@@ -201,7 +219,7 @@ def print_exception_info(
 # ##### TOML MANIPULATION
 # ########################
 
-# Copied from dagster-dg
+# Copied from dagster-dg-core
 
 
 @contextmanager

@@ -17,6 +17,8 @@ from typing import (  # noqa: UP035
     cast,
 )
 
+from dagster_shared.error import DagsterError
+
 import dagster._check as check
 from dagster._core.definitions import ExecutorDefinition, JobDefinition
 from dagster._core.definitions.executor_definition import check_cross_process_constraints
@@ -25,7 +27,6 @@ from dagster._core.definitions.repository_definition.repository_definition impor
     RepositoryDefinition,
 )
 from dagster._core.definitions.resource_definition import ScopedResourcesBuilder
-from dagster._core.errors import DagsterError, DagsterUserCodeExecutionError
 from dagster._core.events import DagsterEvent, RunFailureReason
 from dagster._core.execution.context.logger import InitLoggerContext
 from dagster._core.execution.context.system import (
@@ -44,7 +45,6 @@ from dagster._core.execution.resources_init import (
 from dagster._core.execution.retries import RetryMode
 from dagster._core.executor.init import InitExecutorContext
 from dagster._core.instance import DagsterInstance
-from dagster._core.log_manager import DagsterLogManager
 from dagster._core.storage.dagster_run import DagsterRun
 from dagster._core.system_config.objects import ResolvedRunConfig
 from dagster._loggers import default_loggers, default_system_loggers
@@ -52,13 +52,20 @@ from dagster._utils import EventGenerationManager
 from dagster._utils.error import serializable_error_info_from_exc_info
 
 if TYPE_CHECKING:
+    from dagster._core.errors import DagsterUserCodeExecutionError
     from dagster._core.execution.plan.outputs import StepOutputHandle
     from dagster._core.executor.base import Executor
+
+    # Import within functions so that we can mock the class in tests using freeze_time.
+    # Essentially, we want to be able to control the timestamp of the log records.
+    from dagster._core.log_manager import DagsterLogManager
 
 
 def initialize_console_manager(
     dagster_run: Optional[DagsterRun], instance: Optional[DagsterInstance] = None
-) -> DagsterLogManager:
+) -> "DagsterLogManager":
+    from dagster._core.log_manager import DagsterLogManager
+
     # initialize default colored console logger
     loggers = []
     for logger_def, logger_config in default_system_loggers(instance):
@@ -458,7 +465,9 @@ def scoped_job_context(
 
 def create_log_manager(
     context_creation_data: ContextCreationData,
-) -> DagsterLogManager:
+) -> "DagsterLogManager":
+    from dagster._core.log_manager import DagsterLogManager
+
     check.inst_param(context_creation_data, "context_creation_data", ContextCreationData)
 
     job_def, resolved_run_config, dagster_run = (
@@ -506,7 +515,7 @@ def create_log_manager(
 
 def create_context_free_log_manager(
     instance: DagsterInstance, dagster_run: DagsterRun
-) -> DagsterLogManager:
+) -> "DagsterLogManager":
     """In the event of pipeline initialization failure, we want to be able to log the failure
     without a dependency on the PlanExecutionContext to initialize DagsterLogManager.
 
@@ -514,6 +523,8 @@ def create_context_free_log_manager(
         dagster_run (PipelineRun)
         pipeline_def (JobDefinition)
     """
+    from dagster._core.log_manager import DagsterLogManager
+
     check.inst_param(instance, "instance", DagsterInstance)
     check.inst_param(dagster_run, "dagster_run", DagsterRun)
 

@@ -93,12 +93,15 @@ export const placeholderTextForItems = (base: string, items: GraphQueryItem[]) =
 
   if (seed === 0) {
     const example = ranked.sort((a, b) => b.outcount - a.outcount)[0];
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     placeholder = `${placeholder} (ex: ${key(example!.name)}${traversal('down')})`;
   } else if (seed === 1) {
     const example = ranked.sort((a, b) => b.outcount - a.outcount)[0];
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     placeholder = `${placeholder} (ex: ${key(example!.name)}${traversal('down', 1)})`;
   } else if (seed === 2) {
     const example = ranked.sort((a, b) => b.incount - a.incount)[0];
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     placeholder = `${placeholder} (ex: ${traversal('up', 2)}${key(example!.name)})`;
   }
   return placeholder;
@@ -158,6 +161,7 @@ const buildSuggestions = (
       : [];
 
   // No need to show a match if our string exactly matches the one suggestion.
+  // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
   if (matching.length === 1 && matching[0]!.name.toLowerCase() === lastElementLower) {
     return [];
   }
@@ -184,6 +188,7 @@ export const GraphQueryInput = React.memo(
 
     const [, prefix, lastElementName, suffix] = lastClause || [];
     const suggestions = React.useMemo(
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
       () => buildSuggestions(lastElementName!, props.items, suffix!),
       [lastElementName, props.items, suffix],
     );
@@ -207,6 +212,7 @@ export const GraphQueryInput = React.memo(
       if (!suggestions[nextIdx]) {
         return;
       }
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
       const nextText = suggestions[nextIdx]!.name;
 
       if (nextIdx !== active.idx || nextText !== active.text) {
@@ -241,6 +247,7 @@ export const GraphQueryInput = React.memo(
         e.preventDefault();
         let idx = (active ? active.idx : -1) + shift;
         idx = Math.max(0, Math.min(idx, suggestions.length - 1));
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
         setActive({text: suggestions[idx]!.name, idx});
       }
 

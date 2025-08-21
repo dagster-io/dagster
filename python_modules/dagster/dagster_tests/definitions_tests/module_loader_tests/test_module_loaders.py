@@ -8,16 +8,6 @@ from unittest.mock import MagicMock, patch
 import dagster as dg
 import pytest
 from dagster._core.definitions.definitions_class import Definitions
-from dagster._core.definitions.module_loaders.load_assets_from_modules import (
-    load_assets_from_modules,
-)
-from dagster._core.definitions.module_loaders.load_defs_from_module import (
-    load_definitions_from_current_module,
-    load_definitions_from_module,
-    load_definitions_from_modules,
-    load_definitions_from_package_module,
-    load_definitions_from_package_name,
-)
 from dagster._core.definitions.module_loaders.object_list import (
     LoadableDagsterDef,
     ModuleScopedDagsterDefs,
@@ -221,7 +211,7 @@ def test_load_from_definitions_from_modules(
     with optional_pytest_raise(
         error_expected=error_expected, exception_cls=dg.DagsterInvalidDefinitionError
     ):
-        defs = load_definitions_from_modules([module_fake])
+        defs = dg.load_definitions_from_modules([module_fake])
         obj_ids = {id(obj) for obj in all_loadable_objects_from_defs(defs)}
         expected_obj_ids = {id(obj) for obj in objects.values()}
         assert len(obj_ids) == len(expected_obj_ids)
@@ -235,7 +225,7 @@ def test_load_from_definitions_from_module(
     with optional_pytest_raise(
         error_expected=error_expected, exception_cls=dg.DagsterInvalidDefinitionError
     ):
-        defs = load_definitions_from_module(module_fake)
+        defs = dg.load_definitions_from_module(module_fake)
         obj_ids = {id(obj) for obj in all_loadable_objects_from_defs(defs)}
         expected_obj_ids = {id(obj) for obj in objects.values()}
         assert len(obj_ids) == len(expected_obj_ids)
@@ -252,7 +242,7 @@ def test_load_from_definitions_from_current_module(
     with optional_pytest_raise(
         error_expected=error_expected, exception_cls=dg.DagsterInvalidDefinitionError
     ):
-        defs = load_definitions_from_current_module()
+        defs = dg.load_definitions_from_current_module()
         obj_ids = {id(obj) for obj in all_loadable_objects_from_defs(defs)}
         expected_obj_ids = {id(obj) for obj in objects.values()}
         assert len(obj_ids) == len(expected_obj_ids)
@@ -270,7 +260,7 @@ def test_load_from_definitions_from_package_module(
     with optional_pytest_raise(
         error_expected=error_expected, exception_cls=dg.DagsterInvalidDefinitionError
     ):
-        defs = load_definitions_from_package_module(package_fake)
+        defs = dg.load_definitions_from_package_module(package_fake)
         obj_ids = {id(obj) for obj in all_loadable_objects_from_defs(defs)}
         expected_obj_ids = {id(obj) for obj in objects.values()}
         assert len(obj_ids) == len(expected_obj_ids)
@@ -294,7 +284,7 @@ def test_load_from_definitions_from_package_name(
     with optional_pytest_raise(
         error_expected=error_expected, exception_cls=dg.DagsterInvalidDefinitionError
     ):
-        defs = load_definitions_from_package_name(package_name_fake)
+        defs = dg.load_definitions_from_package_name(package_name_fake)
         obj_ids = {id(obj) for obj in all_loadable_objects_from_defs(defs)}
         expected_obj_ids = {id(obj) for obj in objects.values()}
         assert len(obj_ids) == len(expected_obj_ids)
@@ -305,10 +295,10 @@ def test_load_with_resources() -> None:
     def my_resource(): ...
 
     module_fake = build_module_fake("foo", {"my_resource": my_resource})
-    defs = load_definitions_from_module(module_fake)
+    defs = dg.load_definitions_from_module(module_fake)
     assert len(all_loadable_objects_from_defs(defs)) == 0
     assert len(defs.resources or {}) == 0
-    defs = load_definitions_from_module(module_fake, resources={"foo": my_resource})
+    defs = dg.load_definitions_from_module(module_fake, resources={"foo": my_resource})
     assert len(defs.resources or {}) == 1
 
 
@@ -317,10 +307,10 @@ def test_load_with_logger_defs() -> None:
     def my_logger(init_context) -> logging.Logger: ...
 
     module_fake = build_module_fake("foo", {"my_logger": my_logger})
-    defs = load_definitions_from_module(module_fake)
+    defs = dg.load_definitions_from_module(module_fake)
     assert len(all_loadable_objects_from_defs(defs)) == 0
     assert len(defs.resources or {}) == 0
-    defs = load_definitions_from_module(module_fake, resources={"foo": my_logger})
+    defs = dg.load_definitions_from_module(module_fake, resources={"foo": my_logger})
     assert len(defs.resources or {}) == 1
 
 
@@ -329,10 +319,10 @@ def test_load_with_executor() -> None:
     def my_executor(init_context) -> dg.Executor: ...
 
     module_fake = build_module_fake("foo", {"my_executor": my_executor})
-    defs = load_definitions_from_module(module_fake)
+    defs = dg.load_definitions_from_module(module_fake)
     assert len(all_loadable_objects_from_defs(defs)) == 0
     assert defs.executor is None
-    defs = load_definitions_from_module(module_fake, executor=my_executor)
+    defs = dg.load_definitions_from_module(module_fake, executor=my_executor)
     assert (
         defs.executor is not None
         and cast("dg.ExecutorDefinition", defs.executor).name == "my_executor"
@@ -346,12 +336,12 @@ def test_asset_loader_optional_spec_loading() -> None:
     spec = dg.AssetSpec("other_asset")
 
     module_fake = build_module_fake("foo", {"my_asset": my_asset, "other_asset": spec})
-    assets = load_assets_from_modules([module_fake], key_prefix="prefix")
+    assets = dg.load_assets_from_modules([module_fake], key_prefix="prefix")
     assert len(assets) == 1
     assert isinstance(assets[0], dg.AssetsDefinition)
     assert assets[0].key.path == ["prefix", "my_asset"]
 
-    assets = load_assets_from_modules([module_fake], key_prefix="prefix", include_specs=True)
+    assets = dg.load_assets_from_modules([module_fake], key_prefix="prefix", include_specs=True)
     assert len(assets) == 2
     assert (
         len(
@@ -375,7 +365,7 @@ def test_asset_loader_optional_spec_loading() -> None:
         == 1
     )
 
-    assets = load_assets_from_modules(
+    assets = dg.load_assets_from_modules(
         [module_fake], key_prefix="prefix", source_key_prefix="other_prefix", include_specs=True
     )
     assert len(assets) == 2
@@ -401,3 +391,50 @@ def test_asset_loader_optional_spec_loading() -> None:
         )
         == 1
     )
+
+
+def test_spec_collision():
+    foo_module = build_module_fake(
+        "foo",
+        {
+            "spec": dg.AssetSpec(
+                "a",
+                automation_condition=dg.AutomationCondition.newly_missing(),
+            )
+        },
+    )
+    bar_module = build_module_fake(
+        "bar",
+        {
+            "spec": dg.AssetSpec(  # intentionally recreate a separate instance of same obj
+                "a",
+                automation_condition=dg.AutomationCondition.newly_missing(),
+            )
+        },
+    )
+
+    defs = dg.load_definitions_from_modules([foo_module, bar_module])
+    assert defs.resolve_all_asset_specs() == [
+        dg.AssetSpec(
+            "a",
+            group_name="default",  # added during construction
+            automation_condition=dg.AutomationCondition.newly_missing(),
+        )
+    ]
+
+    bad_module = build_module_fake(
+        "bad",
+        {
+            "spec": dg.AssetSpec(
+                "a",
+                group_name="bad",
+                automation_condition=dg.AutomationCondition.newly_missing(),
+            )
+        },
+    )
+
+    with pytest.raises(
+        dg.DagsterInvalidDefinitionError,
+        match="Asset key a is defined multiple times",
+    ):
+        dg.load_definitions_from_modules([foo_module, bar_module, bad_module])

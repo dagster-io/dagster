@@ -1,10 +1,7 @@
 import dagster as dg
-from dagster._core.definitions.asset_graph import AssetGraph
-from dagster._core.definitions.asset_job import IMPLICIT_ASSET_JOB_NAME, build_asset_job
+from dagster._core.definitions.assets.graph.asset_graph import AssetGraph
+from dagster._core.definitions.assets.job.asset_job import IMPLICIT_ASSET_JOB_NAME, build_asset_job
 from dagster._core.definitions.repository_definition.repository_data import CachingRepositoryData
-from dagster._core.definitions.repository_definition.repository_definition import (
-    RepositoryDefinition,
-)
 
 
 @dg.asset(automation_condition=dg.AutomationCondition.initial_evaluation())
@@ -29,6 +26,7 @@ repo_data = CachingRepositoryData(
     top_level_resources={},
     utilized_env_vars={},
     unresolved_partitioned_asset_schedules={},
+    component_tree=None,
 )
-repo = RepositoryDefinition("repo", repository_data=repo_data)
+repo = dg.RepositoryDefinition("repo", repository_data=repo_data)
 assert repo.schedule_defs == []

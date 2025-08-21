@@ -13,11 +13,14 @@ from dagster._core.definitions.declarative_automation.serialized_objects import 
     AutomationConditionNodeSnapshot,
     HistoricalAllPartitionsSubsetSentinel,
 )
-from dagster._core.definitions.partition import PartitionsDefinition, StaticPartitionsDefinition
+from dagster._core.definitions.partitions.definition import (
+    PartitionsDefinition,
+    StaticPartitionsDefinition,
+)
 from dagster._core.definitions.run_request import InstigatorType
 from dagster._core.definitions.sensor_definition import SensorType
 from dagster._core.instance import DagsterInstance
-from dagster._core.remote_representation.origin import RemoteInstigatorOrigin
+from dagster._core.remote_origin import RemoteInstigatorOrigin
 from dagster._core.scheduler.instigation import (
     InstigatorState,
     InstigatorStatus,
@@ -206,7 +209,22 @@ class TestAutoMaterializeTicks(ExecutingGraphQLContextTestMatrix):
         assert ticks[0]["timestamp"] == success_2.timestamp
 
 
-FRAGMENTS = """
+ENTITY_FRAGMENT = """
+fragment entityKeyFragment on EntityKey {
+    ... on AssetKey {
+        path
+    }
+    ... on AssetCheckhandle {
+        name
+        assetKey {
+            path
+        }
+    }
+}
+"""
+FRAGMENTS = (
+    ENTITY_FRAGMENT
+    + """
 fragment evaluationFields on AssetConditionEvaluation {
     rootUniqueId
     evaluationNodes {
@@ -217,6 +235,9 @@ fragment evaluationFields on AssetConditionEvaluation {
             status
             uniqueId
             childUniqueIds
+            entityKey {
+                ...entityKeyFragment
+            }
         }
         ... on PartitionedAssetConditionEvaluationNode {
             description
@@ -225,16 +246,23 @@ fragment evaluationFields on AssetConditionEvaluation {
             numTrue
             uniqueId
             childUniqueIds
+            entityKey {
+                ...entityKeyFragment
+            }
         }
         ... on SpecificPartitionAssetConditionEvaluationNode {
             description
             status
             uniqueId
             childUniqueIds
+            entityKey {
+                ...entityKeyFragment
+            }
         }
     }
 }
 """
+)
 
 AUTO_MATERIALIZE_POLICY_SENSORS_QUERY = """
 query GetEvaluationsQuery($assetKey: AssetKeyInput!) {
@@ -315,7 +343,9 @@ query GetEvaluationsForEvaluationIdQuery($evaluationId: ID!) {
 """
 )
 
-QUERY = """
+QUERY = (
+    ENTITY_FRAGMENT
+    + """
 query GetEvaluationsQuery($assetKey: AssetKeyInput!, $limit: Int!, $cursor: String) {
     assetConditionEvaluationRecordsOrError(assetKey: $assetKey, limit: $limit, cursor: $cursor) {
         ... on AssetConditionEvaluationRecords {
@@ -328,6 +358,7 @@ query GetEvaluationsQuery($assetKey: AssetKeyInput!, $limit: Int!, $cursor: Stri
                 }
                 rootUniqueId
                 evaluationNodes {
+                    operatorType
                     userLabel
                     expandedLabel
                     startTimestamp
@@ -335,12 +366,16 @@ query GetEvaluationsQuery($assetKey: AssetKeyInput!, $limit: Int!, $cursor: Stri
                     numTrue
                     uniqueId
                     childUniqueIds
+                    entityKey {
+                        ...entityKeyFragment
+                    }
                 }
             }
         }
     }
 }
 """
+)
 
 TRUE_PARTITIONS_QUERY = """
 query GetTruePartitions($assetKey: AssetKeyInput!, $evaluationId: ID!, $nodeUniqueId: String!) {
@@ -692,6 +727,7 @@ class TestAssetConditionEvaluations(ExecutingGraphQLContextTestMatrix):
             "(NOT (in_progress))",
         ]
         assert rootNode["numTrue"] == 0
+        assert rootNode["operatorType"] == "and"
         assert len(rootNode["childUniqueIds"]) == 5
 
         def _get_node(id):

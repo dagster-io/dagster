@@ -4,15 +4,16 @@ from typing import Any, Callable, Optional, Union
 from typing_extensions import TypeAlias
 
 from dagster import _check as check
+from dagster._annotations import public
 from dagster._config import UserConfigSchema
 from dagster._core.decorator_utils import format_docstring_for_description
-from dagster._core.definitions.asset_check_result import AssetCheckResult
-from dagster._core.definitions.asset_check_spec import AssetCheckSpec
-from dagster._core.definitions.asset_checks import AssetChecksDefinition
-from dagster._core.definitions.asset_dep import AssetDep, CoercibleToAssetDep
-from dagster._core.definitions.asset_in import AssetIn, CoercibleToAssetIn
+from dagster._core.definitions.asset_checks.asset_check_result import AssetCheckResult
+from dagster._core.definitions.asset_checks.asset_check_spec import AssetCheckSpec
+from dagster._core.definitions.asset_checks.asset_checks_definition import AssetChecksDefinition
 from dagster._core.definitions.asset_key import AssetCheckKey
-from dagster._core.definitions.assets import AssetsDefinition
+from dagster._core.definitions.assets.definition.asset_dep import AssetDep, CoercibleToAssetDep
+from dagster._core.definitions.assets.definition.assets_definition import AssetsDefinition
+from dagster._core.definitions.assets.job.asset_in import AssetIn, CoercibleToAssetIn
 from dagster._core.definitions.declarative_automation.automation_condition import (
     AutomationCondition,
 )
@@ -91,11 +92,12 @@ def _build_asset_check_named_ins(
 
     return build_and_validate_named_ins(
         fn=fn,
-        asset_ins=all_ins,
         deps=all_deps.values(),
+        passed_asset_ins=all_ins,
     )
 
 
+@public
 def asset_check(
     *,
     asset: Union[CoercibleToAssetKey, AssetsDefinition, SourceAsset],
@@ -112,6 +114,7 @@ def asset_check(
     retry_policy: Optional[RetryPolicy] = None,
     metadata: Optional[Mapping[str, Any]] = None,
     automation_condition: Optional[AutomationCondition[AssetCheckKey]] = None,
+    pool: Optional[str] = None,
 ) -> Callable[[AssetCheckFunction], AssetChecksDefinition]:
     """Create a definition for how to execute an asset check.
 
@@ -149,6 +152,7 @@ def asset_check(
         metadata (Optional[Mapping[str, Any]]): A dictionary of static metadata for the check.
         automation_condition (Optional[AutomationCondition]): An AutomationCondition which determines
             when this check should be executed.
+        pool (Optional[str]): A string that identifies the concurrency pool that governs this asset check's execution.
 
     Produces an :py:class:`AssetChecksDefinition` object.
 
@@ -246,7 +250,8 @@ def asset_check(
             asset_in_map={},
             asset_out_map={},
             execution_type=None,
-            pool=None,
+            pool=pool,
+            hooks=None,
         )
 
         builder = DecoratorAssetsDefinitionBuilder(
@@ -278,6 +283,7 @@ MultiAssetCheckFunctionReturn: TypeAlias = Iterable[AssetCheckResult]
 MultiAssetCheckFunction: TypeAlias = Callable[..., MultiAssetCheckFunctionReturn]
 
 
+@public
 def multi_asset_check(
     *,
     name: Optional[str] = None,
@@ -291,6 +297,7 @@ def multi_asset_check(
     retry_policy: Optional[RetryPolicy] = None,
     config_schema: Optional[UserConfigSchema] = None,
     ins: Optional[Mapping[str, CoercibleToAssetIn]] = None,
+    pool: Optional[str] = None,
 ) -> Callable[[Callable[..., Any]], AssetChecksDefinition]:
     """Defines a set of asset checks that can be executed together with the same op.
 
@@ -316,7 +323,7 @@ def multi_asset_check(
             keys, based on the context.selected_asset_check_keys argument. Defaults to False.
         ins (Optional[Mapping[str, Union[AssetKey, AssetIn]]]): A mapping from input name to AssetIn depended upon by
             a given asset check. If an AssetKey is provided, it will be converted to an AssetIn with the same key.
-
+        pool (Optional[str]): A string that identifies the concurrency pool that governs this multi asset check's execution.
 
     Examples:
         .. code-block:: python
@@ -362,12 +369,12 @@ def multi_asset_check(
 
         named_ins_by_asset_key = build_and_validate_named_ins(
             fn=fn,
-            asset_ins={
+            deps=all_deps_by_key.values(),
+            passed_asset_ins={
                 inp_name: AssetIn.from_coercible(coercible) for inp_name, coercible in ins.items()
             }
             if ins
             else {},
-            deps=all_deps_by_key.values(),
         )
         validate_named_ins_subset_of_deps(named_ins_by_asset_key, all_deps_by_key)
 
@@ -384,6 +391,7 @@ def multi_asset_check(
                 },
                 config_schema=config_schema,
                 retry_policy=retry_policy,
+                pool=pool,
             )(fn)
 
         return AssetChecksDefinition.create(

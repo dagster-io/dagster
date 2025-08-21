@@ -1,17 +1,11 @@
-from dagster import (
-    AssetIn,
-    DailyPartitionsDefinition,
-    Definitions,
-    TimeWindowPartitionMapping,
-    asset,
-)
+import dagster as dg
 
 
-@asset(
-    partitions_def=DailyPartitionsDefinition("2023-01-01"),
+@dg.asset(
+    partitions_def=dg.DailyPartitionsDefinition("2023-01-01"),
     ins={
-        "error_def_asset": AssetIn(
-            partition_mapping=TimeWindowPartitionMapping(start_offset=-1, end_offset=-1)
+        "error_def_asset": dg.AssetIn(
+            partition_mapping=dg.TimeWindowPartitionMapping(start_offset=-1, end_offset=-1)
         )
     },
 )
@@ -19,4 +13,4 @@ def error_def_asset():  # missing error_def_asset param
     return 1
 
 
-defs = Definitions([error_def_asset])
+defs = dg.Definitions([error_def_asset])

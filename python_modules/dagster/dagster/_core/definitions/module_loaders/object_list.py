@@ -1,26 +1,31 @@
 from collections import defaultdict
 from collections.abc import Iterable, Mapping, Sequence
-from functools import cached_property
+from functools import cached_property, reduce
 from types import ModuleType
 from typing import Any, Callable, Optional, Union, cast, get_args
 
-from dagster._core.definitions.asset_checks import AssetChecksDefinition, has_only_asset_checks
+from dagster._core.definitions.asset_checks.asset_checks_definition import (
+    AssetChecksDefinition,
+    has_only_asset_checks,
+)
 from dagster._core.definitions.asset_key import AssetKey, CoercibleToAssetKeyPrefix
-from dagster._core.definitions.asset_spec import AssetSpec
-from dagster._core.definitions.assets import AssetsDefinition
+from dagster._core.definitions.assets.definition.asset_spec import AssetSpec
+from dagster._core.definitions.assets.definition.assets_definition import AssetsDefinition
+from dagster._core.definitions.assets.definition.cacheable_assets_definition import (
+    CacheableAssetsDefinition,
+)
 from dagster._core.definitions.backfill_policy import BackfillPolicy
-from dagster._core.definitions.cacheable_assets import CacheableAssetsDefinition
 from dagster._core.definitions.declarative_automation.automation_condition import (
     AutomationCondition,
 )
-from dagster._core.definitions.freshness_policy import FreshnessPolicy
+from dagster._core.definitions.freshness_policy import LegacyFreshnessPolicy
 from dagster._core.definitions.job_definition import JobDefinition
 from dagster._core.definitions.module_loaders.utils import (
     find_objects_in_module_of_types,
     key_iterator,
     replace_keys_in_asset,
 )
-from dagster._core.definitions.partitioned_schedule import (
+from dagster._core.definitions.partitions.partitioned_schedule import (
     UnresolvedPartitionedAssetScheduleDefinition,
 )
 from dagster._core.definitions.schedule_definition import ScheduleDefinition
@@ -145,9 +150,20 @@ class ModuleScopedDagsterDefs:
         for key, asset_objects in self.asset_objects_by_key.items():
             # In certain cases, we allow asset specs to collide because we know we aren't loading them.
             # If there is more than one asset_object in the list for a given key, and the objects do not refer to the same asset_object in memory, we have a collision.
-            num_distinct_objects_for_key = len(
-                set(id(asset_object) for asset_object in asset_objects)
-            )
+
+            # special handling for conflicting AssetSpecs since they are tuples and we can compare them with == and
+            # dedupe at least those that dont contain nested complex objects
+            if asset_objects and all(isinstance(obj, AssetSpec) for obj in asset_objects):
+                first = asset_objects[0]
+                num_distinct_objects_for_key = reduce(
+                    lambda count, obj: count + int(obj != first),
+                    asset_objects,
+                    1,
+                )
+            else:
+                num_distinct_objects_for_key = len(
+                    set(id(asset_object) for asset_object in asset_objects)
+                )
             if len(asset_objects) > 1 and num_distinct_objects_for_key > 1:
                 asset_objects_str = ", ".join(
                     set(self.module_name_by_id[id(asset_object)] for asset_object in asset_objects)
@@ -338,7 +354,7 @@ class DagsterObjectsList:
         key_prefix: Optional[CoercibleToAssetKeyPrefix],
         source_key_prefix: Optional[CoercibleToAssetKeyPrefix],
         group_name: Optional[str],
-        freshness_policy: Optional[FreshnessPolicy],
+        legacy_freshness_policy: Optional[LegacyFreshnessPolicy],
         automation_condition: Optional[AutomationCondition],
         backfill_policy: Optional[BackfillPolicy],
     ) -> "DagsterObjectsList":
@@ -354,7 +370,7 @@ class DagsterObjectsList:
                 new_asset = dagster_def.map_asset_specs(
                     _spec_mapper_disallow_group_override(group_name, automation_condition)
                 ).with_attributes(
-                    backfill_policy=backfill_policy, freshness_policy=freshness_policy
+                    backfill_policy=backfill_policy, legacy_freshness_policy=legacy_freshness_policy
                 )
                 return_list.append(
                     new_asset.coerce_to_checks_def()
@@ -373,7 +389,7 @@ class DagsterObjectsList:
                 return_list.append(
                     dagster_def.with_attributes_for_all(
                         group_name,
-                        freshness_policy=freshness_policy,
+                        legacy_freshness_policy=legacy_freshness_policy,
                         auto_materialize_policy=automation_condition.as_auto_materialize_policy()
                         if automation_condition
                         else None,

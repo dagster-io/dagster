@@ -1,7 +1,7 @@
-import {themes as prismThemes} from 'prism-react-renderer';
-import type {Config} from '@docusaurus/types';
-import type * as Preset from '@docusaurus/preset-classic';
 import DagsterVersions from './dagsterVersions.json';
+import type * as Preset from '@docusaurus/preset-classic';
+import type {Config} from '@docusaurus/types';
+import {themes as prismThemes} from 'prism-react-renderer';
 
 const DagsterVersionsDropdownItems = Object.entries(DagsterVersions).splice(0, 5);
 
@@ -27,6 +27,7 @@ const config: Config = {
     require.resolve('./src/plugins/scoutos'),
     require.resolve('./src/plugins/segment'),
     require.resolve('./src/plugins/sidebar-scroll-into-view'),
+    require.resolve('./src/plugins/llms-txt'),
     // Enable local search when not in a Vercel production instance
     process.env.VERCEL_ENV !== 'production' && [
       require.resolve('docusaurus-lunr-search'),
@@ -38,7 +39,7 @@ const config: Config = {
           keywords: {boost: 75},
           content: {boost: 2},
         },
-        excludeRoutes: ['/api/python-api/**/*', '/about/changelog', '/guides/migrate/version-migration'],
+        excludeRoutes: ['/tags', '/tags/**/*', '/about/**/*', '/migration/upgrading'],
       },
     ],
   ],
@@ -88,7 +89,7 @@ const config: Config = {
       },
       items: [
         {
-          label: 'Docs',
+          label: 'User guide',
           type: 'doc',
           docId: 'intro',
           position: 'left',
@@ -100,15 +101,21 @@ const config: Config = {
           position: 'left',
         },
         {
-          label: 'Integrations',
+          label: 'Deployment',
           type: 'doc',
-          docId: 'integrations/libraries/index',
+          docId: 'deployment/index',
           position: 'left',
         },
         {
-          label: 'Dagster+',
+          label: 'Migration',
           type: 'doc',
-          docId: 'dagster-plus/index',
+          docId: 'migration/index',
+          position: 'left',
+        },
+        {
+          label: 'Integrations',
+          type: 'doc',
+          docId: 'integrations/libraries/index',
           position: 'left',
         },
         {
@@ -200,7 +207,7 @@ const config: Config = {
           lastVersion: 'current',
           versions: {
             current: {
-              label: 'Latest (1.10.12)',
+              label: 'Latest (1.11.6)',
               path: '/',
             },
           },

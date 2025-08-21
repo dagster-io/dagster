@@ -26,7 +26,7 @@ setup(
         "duckdb!=0.3.3, <= 6.0.0",  # missing wheels
         "pandas",
         "pyarrow>=4.0.0",
-        "pyspark",
+        "pyspark<4",
         "requests",
         "gcsfs",
         "fsspec",

@@ -11,15 +11,15 @@ from dagster import (
     Int,
     Out,
     Output,
-    StaticPartitionsDefinition,
     asset,
     graph,
     job,
     op,
     resource,
 )
-from dagster._core.definitions.assets import AssetsDefinition
+from dagster._core.definitions.assets.definition.assets_definition import AssetsDefinition
 from dagster._core.definitions.definitions_class import Definitions
+from dagster._core.definitions.partitions.definition import StaticPartitionsDefinition
 from dagster._core.definitions.source_asset import SourceAsset
 from dagster._core.definitions.unresolved_asset_job_definition import define_asset_job
 
@@ -166,7 +166,7 @@ def define_assets_job(bucket):
             "io_manager": s3_pickle_io_manager.configured({"s3_bucket": bucket}),
             "s3": s3_test_resource,
         },
-    ).get_job_def("assets")
+    ).resolve_job_def("assets")
 
 
 def test_s3_pickle_io_manager_asset_execution(mock_s3_bucket):

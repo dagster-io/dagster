@@ -1,19 +1,23 @@
 import datetime
 import operator
 
+import dagster as dg
 import pytest
-from dagster import AutoMaterializePolicy, AutomationCondition, Definitions, asset
+from dagster import AutoMaterializePolicy, AutomationCondition
+from dagster._core.asset_graph_view.serializable_entity_subset import SerializableEntitySubset
 from dagster._core.definitions.asset_selection import AssetSelection
-from dagster._core.definitions.declarative_automation.automation_condition import AutomationResult
 from dagster._core.definitions.declarative_automation.automation_context import AutomationContext
 from dagster._core.definitions.declarative_automation.operators import (
     AndAutomationCondition,
     OrAutomationCondition,
 )
+from dagster._core.definitions.declarative_automation.serialized_objects import (
+    HistoricalAllPartitionsSubsetSentinel,
+)
+from dagster._core.definitions.partitions.context import partition_loading_context
+from dagster._core.definitions.partitions.subset.key_ranges import KeyRangesPartitionsSubset
 from dagster._core.remote_representation.external_data import RepositorySnap
-from dagster._serdes import serialize_value
 from dagster_shared.check import CheckError
-from dagster_shared.serdes import deserialize_value
 
 from dagster_tests.declarative_automation_tests.scenario_utils.automation_condition_scenario import (
     AutomationConditionScenarioState,
@@ -90,37 +94,37 @@ def test_serialize_definitions_with_asset_condition() -> None:
         )
     )
 
-    @asset(auto_materialize_policy=amp)
+    @dg.asset(auto_materialize_policy=amp)
     def my_asset() -> int:
         return 0
 
-    serialized = serialize_value(amp)
+    serialized = dg.serialize_value(amp)
     assert isinstance(serialized, str)
 
-    serialized = serialize_value(
-        RepositorySnap.from_def(Definitions(assets=[my_asset]).get_repository_def())
+    serialized = dg.serialize_value(
+        RepositorySnap.from_def(dg.Definitions(assets=[my_asset]).get_repository_def())
     )
     assert isinstance(serialized, str)
 
 
 def test_serialize_definitions_with_user_code_asset_condition() -> None:
-    class MyAutomationCondition(AutomationCondition):
-        def evaluate(self, context: AutomationContext) -> AutomationResult:
-            return AutomationResult(
+    class MyAutomationCondition(dg.AutomationCondition):
+        def evaluate(self, context: AutomationContext) -> dg.AutomationResult:
+            return dg.AutomationResult(
                 context, context.asset_graph_view.get_full_subset(key=context.key)
             )
 
     automation_condition = AutomationCondition.eager() | MyAutomationCondition()
 
-    @asset(automation_condition=automation_condition)
+    @dg.asset(automation_condition=automation_condition)
     def my_asset() -> int:
         return 0
 
-    serialized = serialize_value(
-        RepositorySnap.from_def(Definitions(assets=[my_asset]).get_repository_def())
+    serialized = dg.serialize_value(
+        RepositorySnap.from_def(dg.Definitions(assets=[my_asset]).get_repository_def())
     )
     assert isinstance(serialized, str)
-    deserialized = deserialize_value(serialized)
+    deserialized = dg.deserialize_value(serialized)
     assert isinstance(deserialized, RepositorySnap)
     external_assets = deserialized.asset_nodes
     assert len(external_assets) == 1
@@ -132,8 +136,8 @@ def test_serialize_definitions_with_user_code_asset_condition() -> None:
 def test_deserialize_definitions_with_asset_condition() -> None:
     serialized = """{"__class__": "AutoMaterializePolicy", "asset_condition": {"__class__": "AndAssetCondition", "operands": [{"__class__": "RuleCondition", "rule": {"__class__": "MaterializeOnParentUpdatedRule", "updated_parent_filter": null}}, {"__class__": "NotAssetCondition", "operand": {"__class__": "NotAssetCondition", "operand": {"__class__": "RuleCondition", "rule": {"__class__": "MaterializeOnCronRule", "all_partitions": false, "cron_schedule": "0 * * * *", "timezone": "UTC"}}}}]}, "max_materializations_per_minute": null, "rules": {"__frozenset__": []}, "time_window_partition_scope_minutes": 1e-06}"""
 
-    deserialized = deserialize_value(serialized, AutoMaterializePolicy)
-    assert isinstance(deserialized, AutoMaterializePolicy)
+    deserialized = dg.deserialize_value(serialized, dg.AutoMaterializePolicy)
+    assert isinstance(deserialized, dg.AutoMaterializePolicy)
 
 
 def test_label_automation_condition() -> None:
@@ -205,6 +209,14 @@ def test_replace_automation_conditions() -> None:
     )
 
 
+def test_replace_automation_condition_by_names() -> None:
+    a = AutomationCondition.in_latest_time_window()
+    b = AutomationCondition.missing()
+    c = AutomationCondition.any_deps_match(AutomationCondition.in_progress())
+
+    assert (a & b).replace("missing", c) == a & c
+
+
 def test_replace_automation_condition_since() -> None:
     a = AutomationCondition.in_latest_time_window().with_label("in_latest_time_window")
     b = AutomationCondition.any_deps_match(AutomationCondition.in_progress())
@@ -220,6 +232,15 @@ def test_replace_automation_condition_since() -> None:
     assert AutomationCondition.eager() != AutomationCondition.eager().replace(
         "handled", AutomationCondition.newly_updated()
     )
+
+
+def test_replace_automation_condition_with_label() -> None:
+    a = (
+        AutomationCondition.eager()
+        .replace("newly_updated", AutomationCondition.data_version_changed())
+        .with_label("eager_respecting_data_version")
+    )
+    assert a.get_label() == "eager_respecting_data_version"
 
 
 @pytest.mark.parametrize("method", ["allow", "ignore"])
@@ -322,3 +343,73 @@ def test_consolidate_automation_conditions(op, cond) -> None:
             ]
         )
     )
+
+
+def test_use_historical_all_partitions_subset_sentinel() -> None:
+    @dg.asset(partitions_def=dg.StaticPartitionsDefinition(["a", "b", "c"]))
+    def A(): ...
+
+    @dg.asset(
+        deps=[A],
+        automation_condition=~dg.AutomationCondition.any_deps_match(
+            dg.AutomationCondition.missing()
+        ),
+    )
+    def B(): ...
+
+    defs = dg.Definitions(assets=[A, B])
+    instance = dg.DagsterInstance.ephemeral()
+    result = dg.evaluate_automation_conditions(
+        defs=defs, instance=instance, evaluation_time=datetime.datetime(2024, 8, 16, 4, 35)
+    )
+    assert result.total_requested == 0
+    assert isinstance(
+        result.results[0]
+        .child_results[0]
+        .child_results[0]
+        .child_results[0]
+        .serializable_evaluation.candidate_subset,
+        HistoricalAllPartitionsSubsetSentinel,
+    )
+
+
+def test_use_key_ranges_partitions_subset() -> None:
+    @dg.asset(
+        partitions_def=dg.DynamicPartitionsDefinition(name="some_def"),
+        # using this weird condition to make a predictable non-AllPartitionsSubset candidate subset
+        automation_condition=dg.AutomationCondition.missing() & dg.AutomationCondition.missing(),
+    )
+    def A(): ...
+
+    defs = dg.Definitions(assets=[A])
+    instance = dg.DagsterInstance.ephemeral()
+    instance.add_dynamic_partitions("some_def", ["a", "b", "c", "d", "e"])
+    for partition in ["a", "c", "e"]:
+        instance.report_runless_asset_event(
+            dg.AssetMaterialization(asset_key=dg.AssetKey("A"), partition=partition)
+        )
+
+    current_time = datetime.datetime(2024, 8, 16, 4, 35)
+    result = dg.evaluate_automation_conditions(
+        defs=defs, instance=instance, evaluation_time=current_time
+    )
+    assert result.total_requested == 2
+
+    with partition_loading_context(effective_dt=current_time, dynamic_partitions_store=instance):
+        # outer AND condition
+        serializable_evaluation = result.results[0].serializable_evaluation
+        assert isinstance(serializable_evaluation.true_subset.value, KeyRangesPartitionsSubset)
+        assert serializable_evaluation.true_subset.value.get_partition_keys() == ["b", "d"]
+
+        assert isinstance(
+            serializable_evaluation.candidate_subset, HistoricalAllPartitionsSubsetSentinel
+        )
+
+        # inner missing condition (second operand)
+        serializable_evaluation = result.results[0].child_results[1].serializable_evaluation
+        assert isinstance(serializable_evaluation.true_subset.value, KeyRangesPartitionsSubset)
+        assert serializable_evaluation.true_subset.value.get_partition_keys() == ["b", "d"]
+
+        assert isinstance(serializable_evaluation.candidate_subset, SerializableEntitySubset)
+        assert isinstance(serializable_evaluation.candidate_subset.value, KeyRangesPartitionsSubset)
+        assert serializable_evaluation.candidate_subset.value.get_partition_keys() == ["b", "d"]

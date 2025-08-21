@@ -29,7 +29,7 @@ class DuckDBPolarsTypeHandler(DbTypeHandler[pl.DataFrame]):
             def my_table() -> pl.DataFrame:  # the name of the asset will be the table name
                 ...
 
-            defs = Definitions(
+            Definitions(
                 assets=[my_table],
                 resources={"io_manager": MyDuckDBIOManager(database="my_db.duckdb")}
             )
@@ -106,7 +106,7 @@ Examples:
         def my_table() -> pl.DataFrame:  # the name of the asset will be the table name
             ...
 
-        defs = Definitions(
+        Definitions(
             assets=[my_table],
             resources={"io_manager": duckdb_polars_io_manager.configured({"database": "my_db.duckdb"})}
         )
@@ -116,7 +116,7 @@ Examples:
 
     .. code-block:: python
 
-        defs = Definitions(
+        Definitions(
             assets=[my_table],
             resources={"io_manager": duckdb_polars_io_manager.configured({"database": "my_db.duckdb", "schema": "my_schema"})}
         )
@@ -186,7 +186,7 @@ class DuckDBPolarsIOManager(DuckDBIOManager):
             def my_table() -> pl.DataFrame:  # the name of the asset will be the table name
                 ...
 
-            defs = Definitions(
+            Definitions(
                 assets=[my_table],
                 resources={"io_manager": DuckDBPolarsIOManager(database="my_db.duckdb")}
             )
@@ -196,7 +196,7 @@ class DuckDBPolarsIOManager(DuckDBIOManager):
 
     .. code-block:: python
 
-        defs = Definitions(
+        Definitions(
             assets=[my_table],
             resources={"io_manager": DuckDBPolarsIOManager(database="my_db.duckdb", schema="my_schema")}
         )

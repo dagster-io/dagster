@@ -1,21 +1,24 @@
 from collections.abc import Sequence
-from typing import AbstractSet, Optional, cast  # noqa: UP035
+from typing import TYPE_CHECKING, AbstractSet, Optional, cast  # noqa: UP035
 
 import dagster._check as check
 import graphene
-from dagster import MultiPartitionsDefinition
 from dagster._core.definitions.asset_key import AssetKey
-from dagster._core.errors import DagsterUserCodeProcessError
-from dagster._core.remote_representation import RemoteJob, RemotePartitionSet, RepositoryHandle
-from dagster._core.remote_representation.external_data import (
+from dagster._core.definitions.partitions.definition import MultiPartitionsDefinition
+from dagster._core.definitions.partitions.snap import (
     DynamicPartitionsSnap,
     MultiPartitionsSnap,
-    PartitionExecutionErrorSnap,
     PartitionsSnap,
     StaticPartitionsSnap,
     TimeWindowPartitionsSnap,
+)
+from dagster._core.errors import DagsterUserCodeProcessError
+from dagster._core.remote_representation.external import RemoteJob, RemotePartitionSet
+from dagster._core.remote_representation.external_data import (
+    PartitionExecutionErrorSnap,
     job_name_for_partition_set_snap_name,
 )
+from dagster._core.remote_representation.handle import RepositoryHandle
 from dagster._core.storage.dagster_run import RunsFilter
 from dagster._core.storage.tags import PARTITION_NAME_TAG, PARTITION_SET_TAG
 from dagster._utils.merger import merge_dicts
@@ -45,6 +48,9 @@ from dagster_graphql.schema.pipelines.status import GrapheneRunStatus
 from dagster_graphql.schema.repository_origin import GrapheneRepositoryOrigin
 from dagster_graphql.schema.tags import GraphenePipelineTag
 from dagster_graphql.schema.util import ResolveInfo, non_null_list
+
+if TYPE_CHECKING:
+    from dagster._core.definitions.partitions.definition.multi import MultiPartitionsDefinition
 
 
 class GrapheneAddDynamicPartitionSuccess(graphene.ObjectType):

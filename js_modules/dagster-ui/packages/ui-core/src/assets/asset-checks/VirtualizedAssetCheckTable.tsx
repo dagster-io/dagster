@@ -41,6 +41,7 @@ export const VirtualizedAssetCheckTable = ({assetNode, rows}: Props) => {
         <VirtualizedAssetCheckHeader />
         <Inner $totalHeight={totalHeight}>
           {items.map(({index, key, size, start}) => {
+            // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
             const row: AssetCheckTableFragment = rows[index]!;
             return (
               <VirtualizedAssetCheckRow
@@ -154,6 +155,7 @@ export const ASSET_CHECK_TABLE_FRAGMENT = gql`
     name
     description
     canExecuteIndividually
+    blocking
     automationCondition {
       label
       expandedLabel

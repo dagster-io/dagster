@@ -5,7 +5,8 @@ from contextlib import ExitStack
 from typing import TYPE_CHECKING, AbstractSet, Any, NamedTuple, Optional, Union, cast  # noqa: UP035
 
 import dagster._check as check
-from dagster._core.definitions.assets import AssetsDefinition
+from dagster._annotations import public
+from dagster._core.definitions.assets.definition.assets_definition import AssetsDefinition
 from dagster._core.definitions.composition import PendingNodeInvocation
 from dagster._core.definitions.dependency import Node, NodeHandle
 from dagster._core.definitions.events import (
@@ -17,7 +18,13 @@ from dagster._core.definitions.events import (
 from dagster._core.definitions.hook_definition import HookDefinition
 from dagster._core.definitions.job_definition import JobDefinition
 from dagster._core.definitions.op_definition import OpDefinition
-from dagster._core.definitions.partition_key_range import PartitionKeyRange
+from dagster._core.definitions.partitions.context import partition_loading_context
+from dagster._core.definitions.partitions.definition import TimeWindowPartitionsDefinition
+from dagster._core.definitions.partitions.partition_key_range import PartitionKeyRange
+from dagster._core.definitions.partitions.utils import (
+    TimeWindow,
+    has_one_dimension_time_window_partitioning,
+)
 from dagster._core.definitions.repository_definition import RepositoryDefinition
 from dagster._core.definitions.resource_definition import (
     IContainsGenerator,
@@ -27,17 +34,13 @@ from dagster._core.definitions.resource_definition import (
 )
 from dagster._core.definitions.resource_requirement import ensure_requirements_satisfied
 from dagster._core.definitions.step_launcher import StepLauncher
-from dagster._core.definitions.time_window_partitions import (
-    TimeWindow,
-    TimeWindowPartitionsDefinition,
-    has_one_dimension_time_window_partitioning,
-)
 from dagster._core.errors import (
     DagsterInvalidInvocationError,
     DagsterInvalidPropertyError,
     DagsterInvariantViolationError,
 )
 from dagster._core.execution.build_resources import build_resources, wrap_resources_for_execution
+from dagster._core.execution.context.asset_check_execution_context import AssetCheckExecutionContext
 from dagster._core.execution.context.compute import AssetExecutionContext, OpExecutionContext
 from dagster._core.execution.context.system import StepExecutionContext, TypeCheckContext
 from dagster._core.instance import DagsterInstance
@@ -49,7 +52,10 @@ from dagster._utils.merger import merge_dicts
 
 if TYPE_CHECKING:
     from dagster._core.definitions.decorators.op_decorator import DecoratedOpFunction
-    from dagster._core.definitions.multi_dimensional_partitions import MultiPartitionsDefinition
+    from dagster._core.definitions.partitions.definition import (
+        MultiPartitionsDefinition,
+        TimeWindowPartitionsDefinition,
+    )
 
 
 def _property_msg(prop_name: str, method_name: str) -> str:
@@ -520,10 +526,8 @@ class DirectOpExecutionContext(OpExecutionContext, BaseDirectExecutionContext):
                 "Cannot access partition_keys for a non-partitioned run"
             )
 
-        return partitions_def.get_partition_keys_in_range(
-            key_range,
-            dynamic_partitions_store=self.instance,
-        )
+        with partition_loading_context(dynamic_partitions_store=self.instance):
+            return partitions_def.get_partition_keys_in_range(key_range)
 
     @property
     def partition_key_range(self) -> PartitionKeyRange:
@@ -778,6 +782,65 @@ class DirectOpExecutionContext(OpExecutionContext, BaseDirectExecutionContext):
         self._execution_properties.typed_event_stream_error_message = error_message
 
 
+class DirectAssetCheckExecutionContext(AssetCheckExecutionContext, BaseDirectExecutionContext):
+    def __init__(self, op_execution_context: DirectOpExecutionContext):
+        self._op_execution_context = op_execution_context
+
+    def bind(  # pyright: ignore[reportIncompatibleMethodOverride]
+        self,
+        op_def: OpDefinition,
+        pending_invocation: Optional[PendingNodeInvocation[OpDefinition]],
+        assets_def: Optional[AssetsDefinition],
+        config_from_args: Optional[Mapping[str, Any]],
+        resources_from_args: Optional[Mapping[str, Any]],
+    ) -> "DirectAssetCheckExecutionContext":
+        if assets_def is None:
+            raise DagsterInvariantViolationError(
+                "DirectAssetCheckExecutionContext can only be used to invoke an asset check."
+            )
+        if self._op_execution_context._per_invocation_properties is not None:  # noqa: SLF001
+            raise DagsterInvalidInvocationError(
+                f"This context is currently being used to execute {self.op_execution_context.alias}."
+                " The context cannot be used to execute another asset until"
+                f" {self.op_execution_context.alias} has finished executing."
+            )
+
+        self._op_execution_context = self._op_execution_context.bind(
+            op_def=op_def,
+            pending_invocation=pending_invocation,
+            assets_def=assets_def,
+            config_from_args=config_from_args,
+            resources_from_args=resources_from_args,
+        )
+
+        return self
+
+    def unbind(self):
+        self._op_execution_context.unbind()
+
+    @property
+    def per_invocation_properties(self) -> PerInvocationProperties:
+        return self.op_execution_context.per_invocation_properties
+
+    @property
+    def is_bound(self) -> bool:
+        return self.op_execution_context.is_bound
+
+    @property
+    def execution_properties(self) -> DirectExecutionProperties:
+        return self.op_execution_context.execution_properties
+
+    @property
+    def op_execution_context(self) -> DirectOpExecutionContext:
+        return self._op_execution_context
+
+    def for_type(self, dagster_type: DagsterType) -> TypeCheckContext:
+        return self.op_execution_context.for_type(dagster_type)
+
+    def observe_output(self, output_name: str, mapping_key: Optional[str] = None) -> None:
+        self.op_execution_context.observe_output(output_name=output_name, mapping_key=mapping_key)
+
+
 class DirectAssetExecutionContext(AssetExecutionContext, BaseDirectExecutionContext):
     """The ``context`` object available as the first argument to an asset's compute function when
     being invoked directly. Can also be used as a context manager.
@@ -868,6 +931,7 @@ def _validate_resource_requirements(
                 ensure_requirements_satisfied(resource_defs, [requirement])
 
 
+@public
 def build_op_context(
     resources: Optional[Mapping[str, Any]] = None,
     op_config: Any = None,
@@ -935,6 +999,40 @@ def build_op_context(
     )
 
 
+@public
+def build_asset_check_context(
+    resources: Optional[Mapping[str, Any]] = None,
+    resources_config: Optional[Mapping[str, Any]] = None,
+    asset_config: Optional[Mapping[str, Any]] = None,
+    instance: Optional[DagsterInstance] = None,
+) -> DirectAssetCheckExecutionContext:
+    """Builds an asset check execution context from provided parameters.
+
+    Args:
+        resources (Optional[Dict[str, Any]]): The resources to provide to the context. These can be
+            either values or resource definitions.
+        resources_config (Optional[Mapping[str, Any]]): The config to provide to the resources.
+        asset_config (Optional[Mapping[str, Any]]): The config to provide to the asset.
+        instance (Optional[DagsterInstance]): The dagster instance configured for the context.
+            Defaults to DagsterInstance.ephemeral().
+
+    Examples:
+        .. code-block:: python
+
+            context = build_asset_check_context()
+            asset_check_to_invoke(context)
+    """
+    op_context = build_op_context(
+        op_config=asset_config,
+        resources=resources,
+        resources_config=resources_config,
+        instance=instance,
+    )
+
+    return DirectAssetCheckExecutionContext(op_execution_context=op_context)
+
+
+@public
 def build_asset_context(
     resources: Optional[Mapping[str, Any]] = None,
     resources_config: Optional[Mapping[str, Any]] = None,

@@ -1,0 +1,3 @@
+dg check yaml
+
+All component YAML validated successfully.

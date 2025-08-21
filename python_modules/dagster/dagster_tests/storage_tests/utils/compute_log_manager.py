@@ -6,6 +6,7 @@ import time
 import pytest
 from dagster._core.execution.compute_logs import should_disable_io_stream_redirect
 from dagster._core.storage.compute_log_manager import ComputeIOType
+from dagster._core.test_utils import environ
 from dagster._time import get_current_datetime
 
 
@@ -129,6 +130,25 @@ class TestComputeLogManager:
             assert not read_manager.cloud_storage_has_logs(log_key, ComputeIOType.STDOUT)
             assert read_manager.cloud_storage_has_logs(log_key, ComputeIOType.STDERR, partial=True)
             assert read_manager.cloud_storage_has_logs(log_key, ComputeIOType.STDERR, partial=True)
+
+    def test_truncation(self, write_manager, read_manager):
+        from dagster._core.storage.cloud_storage_compute_log_manager import (
+            TruncatingCloudStorageComputeLogManager,
+        )
+
+        if not isinstance(write_manager, TruncatingCloudStorageComputeLogManager) or not isinstance(
+            read_manager, TruncatingCloudStorageComputeLogManager
+        ):
+            pytest.skip("does not support truncation")
+        with environ({"DAGSTER_TRUNCATE_COMPUTE_LOGS_UPLOAD_BYTES": "5"}):
+            now = get_current_datetime()
+            log_key = ["truncating", "log", "key", now.strftime("%Y_%m_%d__%H_%M_%S")]
+            with write_manager.capture_logs(log_key):
+                print("hello stdout")  # noqa: T201
+                print("hello stderr", file=sys.stderr)  # noqa: T201
+            log_data = read_manager.get_log_data(log_key)
+            assert log_data.stdout == b"hello"
+            assert log_data.stderr == b"hello"
 
     @pytest.mark.skipif(
         should_disable_io_stream_redirect(), reason="compute logs disabled for win / py3.6+"

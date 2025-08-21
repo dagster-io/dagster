@@ -1,5 +1,6 @@
 import {Box, Colors, Icon, MiddleTruncate, UnstyledButton} from '@dagster-io/ui-components';
 import * as React from 'react';
+import {observeEnabled} from 'shared/app/observeEnabled.oss';
 import styled from 'styled-components';
 
 import {StatusDot, StatusDotNode} from './StatusDot';
@@ -9,6 +10,7 @@ import {
   FolderNodeNonAssetType,
   getDisplayName,
 } from './util';
+import {AssetHealthSummary} from '../../assets/AssetHealthSummary';
 import {ExplorerPath} from '../../pipelines/PipelinePathUtils';
 import {AssetGroup} from '../AssetGraphExplorer';
 import {AssetNodeMenuProps, useAssetNodeMenu} from '../AssetNodeMenu';
@@ -39,7 +41,7 @@ export const AssetSidebarNode = (props: AssetSidebarNodeProps) => {
 
   const elementRef = React.useRef<HTMLDivElement | null>(null);
 
-  const showArrow = !isAssetNode;
+  const showArrow = !isAssetNode && !('openAlways' in node && node.openAlways);
 
   return (
     <Box ref={elementRef} padding={{left: 8, right: 12}}>
@@ -124,7 +126,15 @@ const AssetSidebarAssetLabel = ({
       <FocusableLabelContainer
         isSelected={isSelected}
         isLastSelected={isLastSelected}
-        icon={<StatusDot node={node} />}
+        icon={
+          observeEnabled() ? (
+            <div style={{marginLeft: -8, marginRight: -8}}>
+              <AssetHealthSummary iconOnly assetKey={node.assetKey} />
+            </div>
+          ) : (
+            <StatusDot node={node} />
+          )
+        }
         text={getDisplayName(node)}
       />
       <ExpandMore onClick={triggerContextMenu}>
@@ -134,7 +144,6 @@ const AssetSidebarAssetLabel = ({
     </ContextMenuWrapper>
   );
 };
-
 const AssetSidebarGroupLabel = ({
   node,
   isSelected,
@@ -206,6 +215,7 @@ const FocusableLabelContainer = ({
       ref={ref}
       style={{
         gridTemplateColumns: icon ? 'auto minmax(0, 1fr)' : 'minmax(0, 1fr)',
+        gridTemplateRows: 'minmax(0, 1fr)',
         ...(isSelected ? {background: Colors.backgroundBlue()} : {}),
       }}
     >

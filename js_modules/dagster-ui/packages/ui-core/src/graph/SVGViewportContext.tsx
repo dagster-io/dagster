@@ -2,6 +2,7 @@ import React, {Dispatch, SetStateAction, createContext, useContext, useMemo, use
 
 import {DETAIL_ZOOM} from './SVGConsts';
 import {usePartialSetStateUpdateCallback} from '../hooks/useSetStateUpdateCallback';
+import {useStateWithStorage} from '../hooks/useStateWithStorage';
 
 interface SVGViewportState {
   x: number;
@@ -22,10 +23,17 @@ interface SVGViewportContextType {
 const SVGViewportContext = createContext<SVGViewportContextType | null>(null);
 
 export const SVGViewportProvider = ({children}: {children: React.ReactNode}) => {
+  const [defaultZoom, setDefaultZoom] = useStateWithStorage('defaultZoom', (value) => {
+    if (typeof value !== 'number') {
+      return DETAIL_ZOOM;
+    }
+    return value;
+  });
+
   const [viewportState, setViewportState] = useState<SVGViewportState>({
     x: 0,
     y: 0,
-    scale: DETAIL_ZOOM,
+    scale: defaultZoom,
     minScale: 0,
     isClickHeld: false,
     isExporting: false,
@@ -34,6 +42,10 @@ export const SVGViewportProvider = ({children}: {children: React.ReactNode}) => 
   const [viewportStateRef, mergeViewportState] = usePartialSetStateUpdateCallback(
     viewportState,
     (partial) => {
+      if (partial.scale !== undefined) {
+        // Update the default zoom to whatever the user last set the zoom to
+        setDefaultZoom(partial.scale);
+      }
       setViewportState((prev) => ({...prev, ...partial}));
     },
   );

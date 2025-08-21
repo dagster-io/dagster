@@ -20,6 +20,7 @@ export type PipelineExplorerRootQuery = {
         description: string | null;
         pipelineSnapshotId: string;
         parentSnapshotId: string | null;
+        externalJobSource: string | null;
         metadataEntries: Array<
           | {
               __typename: 'AssetMetadataEntry';
@@ -472,6 +473,7 @@ export type PipelineExplorerRootQuery = {
             }>;
           };
         }>;
+        tags: Array<{__typename: 'PipelineTag'; key: string; value: string}>;
         modes: Array<{
           __typename: 'Mode';
           id: string;
@@ -1610,4 +1612,4 @@ export type PipelineExplorerRootQuery = {
       };
 };
 
-export const PipelineExplorerRootQueryVersion = 'af14b2b7c62f4777e5ad61a9fa8140dd715700c8754c3bd990a00a3420c9a61b';
+export const PipelineExplorerRootQueryVersion = '3ee9aa3624890ae0f68accec25d47f4ab0a2103bcfd980f5638e27453e6c4a48';

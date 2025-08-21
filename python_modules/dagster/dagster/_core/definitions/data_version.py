@@ -6,11 +6,17 @@ from typing import TYPE_CHECKING, Callable, Final, NamedTuple, Optional, Union
 
 from dagster import _check as check
 from dagster._annotations import beta, deprecated
+from dagster._core.definitions.partitions.context import (
+    PartitionLoadingContext,
+    use_partition_loading_context,
+)
+from dagster._core.definitions.temporal_context import TemporalContext
 from dagster._core.loader import LoadingContext
+from dagster._time import get_current_datetime
 from dagster._utils.cached_method import cached_method
 
 if TYPE_CHECKING:
-    from dagster._core.definitions.base_asset_graph import BaseAssetGraph
+    from dagster._core.definitions.assets.graph.base_asset_graph import BaseAssetGraph
     from dagster._core.definitions.events import (
         AssetKey,
         AssetKeyPartitionKey,
@@ -374,11 +380,20 @@ class CachingStaleStatusResolver:
         loading_context: LoadingContext,
         instance_queryer: Optional["CachingInstanceQueryer"] = None,
     ):
-        from dagster._core.definitions.base_asset_graph import BaseAssetGraph
+        from dagster._core.definitions.assets.graph.base_asset_graph import BaseAssetGraph
 
         self._instance = instance
         self._instance_queryer = instance_queryer
         self._loading_context = loading_context
+        self._partition_loading_context = PartitionLoadingContext(
+            temporal_context=TemporalContext(
+                effective_dt=get_current_datetime(), last_event_id=None
+            ),
+            dynamic_partitions_store=None,
+        ).updated(
+            effective_dt=self._instance_queryer.evaluation_time if self._instance_queryer else None,
+            dynamic_partitions_store=self._instance_queryer or self._instance,
+        )
         if isinstance(asset_graph, BaseAssetGraph):
             self._asset_graph = asset_graph
             self._asset_graph_load_fn = None
@@ -386,11 +401,13 @@ class CachingStaleStatusResolver:
             self._asset_graph = None
             self._asset_graph_load_fn = asset_graph
 
+    @use_partition_loading_context
     def get_status(self, key: "AssetKey", partition_key: Optional[str] = None) -> StaleStatus:
         from dagster._core.definitions.events import AssetKeyPartitionKey
 
         return self._get_status(key=AssetKeyPartitionKey(key, partition_key))
 
+    @use_partition_loading_context
     def get_stale_causes(
         self, key: "AssetKey", partition_key: Optional[str] = None
     ) -> Sequence[StaleCause]:
@@ -398,6 +415,7 @@ class CachingStaleStatusResolver:
 
         return self._get_stale_causes(key=AssetKeyPartitionKey(key, partition_key))
 
+    @use_partition_loading_context
     def get_stale_root_causes(
         self, key: "AssetKey", partition_key: Optional[str] = None
     ) -> Sequence[StaleCause]:
@@ -405,6 +423,7 @@ class CachingStaleStatusResolver:
 
         return self._get_stale_root_causes(key=AssetKeyPartitionKey(key, partition_key))
 
+    @use_partition_loading_context
     def get_current_data_version(
         self, key: "AssetKey", partition_key: Optional[str] = None
     ) -> DataVersion:
@@ -452,7 +471,9 @@ class CachingStaleStatusResolver:
         dep_asset = self.asset_graph.get(dep_key.asset_key)
         if dep_key.partition_key is None:
             current_data_version = self._get_current_data_version(key=dep_key)
-            return provenance.input_data_versions[dep_key.asset_key] != current_data_version
+            return self._data_versions_differ(
+                provenance.input_data_versions[dep_key.asset_key], current_data_version
+            )
         else:
             cursor = provenance.input_storage_ids[dep_key.asset_key]
             updated_record = self._instance.get_latest_data_version_record(
@@ -474,9 +495,37 @@ class CachingStaleStatusResolver:
                     else None
                 )
                 updated_version = extract_data_version_from_entry(updated_record.event_log_entry)
-                return previous_version != updated_version
+                return self._data_versions_differ(previous_version, updated_version)
             else:
                 return False
+
+    def _data_versions_differ(
+        self, prev_data_version: Optional[DataVersion], curr_data_version: Optional[DataVersion]
+    ) -> bool:
+        # We special case this to handle a complex niche scenario:
+        #
+        # - Data version system uses
+        #     - INITIAL for assets that are assumed to have a value despite no recorded data version
+        #       (external assets are always assumed to have a value)
+        #     - NULL for assets that are assumed to have no value (dagster-managed assets that have
+        #       never been materialized)
+        # - Suppose we have an asset X and two code locs, A and B. Asset X is defined as a
+        #   materializable asset in A and external asset in B.
+        # - Because there is no record for the asset, the framework generates a default data version.
+        #     - In A, this will be NULL (because it is a dagster-managed asset with no materialization)
+        #     - In B, this will be INITIAL (because it is an external asset assumed to have a value)
+        # - This discrepancy is fine until you introduce another asset Y that depends on X in code
+        #   location B. When you materialize Y (in code loc B), it will save X's data version as
+        #   INITIAL in the data provenance
+        # - Now when we compare the version of X on Y provenance (INITIAL) to the current version in
+        #   this code (NULL), they will look different, though X was never changed.
+        #
+        # To mitigate this, we treat the case where the previous data version is
+        # DEFAULT_DATA_VERSION and current data version is NULL_DATA_VERSION as unchanged.
+        if prev_data_version == DEFAULT_DATA_VERSION and curr_data_version == NULL_DATA_VERSION:
+            return False
+        else:
+            return prev_data_version != curr_data_version
 
     def _get_stale_causes_materialized(self, key: "AssetKeyPartitionKey") -> Iterator[StaleCause]:
         from dagster._core.definitions.events import AssetKeyPartitionKey
@@ -683,9 +732,9 @@ class CachingStaleStatusResolver:
     def _get_partition_dependencies(
         self, *, key: "AssetKeyPartitionKey"
     ) -> Sequence["AssetKeyPartitionKey"]:
-        from dagster import AllPartitionMapping
         from dagster._core.definitions.events import AssetKeyPartitionKey
-        from dagster._core.definitions.time_window_partitions import TimeWindowPartitionsDefinition
+        from dagster._core.definitions.partitions.definition import TimeWindowPartitionsDefinition
+        from dagster._core.definitions.partitions.mapping import AllPartitionMapping
 
         asset_deps = self.asset_graph.get(key.asset_key).parent_keys
 
@@ -708,11 +757,7 @@ class CachingStaleStatusResolver:
             else:
                 upstream_partition_keys = list(
                     self.asset_graph.get_parent_partition_keys_for_child(
-                        key.partition_key,
-                        dep_asset_key,
-                        key.asset_key,
-                        dynamic_partitions_store=self._instance,
-                        current_time=self.instance_queryer.evaluation_time,
+                        key.partition_key, dep_asset_key, key.asset_key
                     ).partitions_subset.get_partition_keys()
                 )
                 if len(upstream_partition_keys) < SKIP_PARTITION_DATA_VERSION_DEPENDENCY_THRESHOLD:
@@ -726,8 +771,6 @@ class CachingStaleStatusResolver:
 
     def _exceeds_self_partition_limit(self, asset_key: "AssetKey") -> bool:
         return (
-            check.not_none(self.asset_graph.get(asset_key).partitions_def).get_num_partitions(
-                dynamic_partitions_store=self._instance
-            )
+            check.not_none(self.asset_graph.get(asset_key).partitions_def).get_num_partitions()
             >= SKIP_PARTITION_DATA_VERSION_SELF_DEPENDENCY_THRESHOLD
         )

@@ -13,6 +13,7 @@ import {
   InstigationStatesQuery,
   InstigationStatesQueryVariables,
 } from './types/InstigationStatesQuery.types';
+import {TagIcon} from '../graph/OpTags';
 import {InstigationStatus} from '../graphql/types';
 import {INSTIGATION_STATE_BASE_FRAGMENT} from '../instigation/InstigationStateBaseFragment';
 import {InstigationStateFragment} from '../instigation/types/InstigationUtils.types';
@@ -29,12 +30,12 @@ export const LeftNavItem = React.forwardRef(
   (props: LeftNavItemProps, ref: React.ForwardedRef<HTMLDivElement>) => {
     const {active, item} = props;
     const {label, leftIcon, path, repoAddress, schedules, sensors} = item;
-
     const [showDialog, setShowDialog] = React.useState(false);
     const repositoryId = useRepository(repoAddress)?.repository.id;
 
     useQuery<InstigationStatesQuery, InstigationStatesQueryVariables>(INSTIGATION_STATES_QUERY, {
       variables: {
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
         repositoryID: repositoryId!,
       },
       skip: !repositoryId,
@@ -75,6 +76,7 @@ export const LeftNavItem = React.forwardRef(
 
         if (scheduleCount) {
           if (scheduleCount === 1) {
+            // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
             const schedule = schedules[0]!;
             const {cronSchedule, executionTimezone} = schedule;
             return (
@@ -92,7 +94,8 @@ export const LeftNavItem = React.forwardRef(
 
         return sensorCount === 1 ? (
           <div>
-            Sensor: <strong>{sensors[0]!.name}</strong>
+            {/* eslint-disable-next-line @typescript-eslint/no-non-null-assertion */}
+            <strong>{sensors[0]!.name}</strong>
           </div>
         ) : (
           `${sensorCount} sensors`
@@ -118,9 +121,11 @@ export const LeftNavItem = React.forwardRef(
         }
 
         const path = scheduleCount
-          ? `/schedules/${schedules[0]!.name}`
+          ? // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+            `/schedules/${schedules[0]!.name}`
           : sensorCount
-            ? `/sensors/${sensors[0]!.name}`
+            ? // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+              `/sensors/${sensors[0]!.name}`
             : null;
 
         return path ? <Link to={workspacePathFromAddress(repoAddress, path)}>{icon}</Link> : null;
@@ -187,7 +192,11 @@ export const LeftNavItem = React.forwardRef(
         {sensorFragmentSubscriptions}
         {scheduleFragmentSubscriptions}
         <Item $active={active} to={path}>
-          <Icon name={leftIcon} color={active ? Colors.accentBlue() : Colors.textDefault()} />
+          {leftIcon === 'airflow' ? (
+            <TagIcon label="airflow" />
+          ) : (
+            <Icon name={leftIcon} color={active ? Colors.accentBlue() : Colors.textDefault()} />
+          )}
           {label}
         </Item>
         {rightIcon}

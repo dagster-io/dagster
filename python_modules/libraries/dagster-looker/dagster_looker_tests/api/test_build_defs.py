@@ -169,7 +169,7 @@ def test_build_defs_with_pdts(
         resources={resource_key: looker_resource},
     )
 
-    assert len(defs.get_all_asset_specs()) == 5
+    assert len(defs.resolve_all_asset_specs()) == 5
 
     sdk = looker_resource.get_sdk()
 
@@ -207,7 +207,7 @@ def test_custom_asset_specs(
         for asset in Definitions(
             assets=[*load_looker_asset_specs(looker_resource, CustomDagsterLookerApiTranslator())],
         )
-        .get_asset_graph()
+        .resolve_asset_graph()
         .assets_defs
         if not asset.is_auto_created_stub
     )
@@ -244,7 +244,7 @@ def test_custom_asset_specs_legacy(
                     *load_looker_asset_specs(looker_resource, CustomDagsterLookerApiTranslator)
                 ],
             )
-            .get_asset_graph()
+            .resolve_asset_graph()
             .assets_defs
             if not asset.is_auto_created_stub
         )

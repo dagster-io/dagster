@@ -1,16 +1,16 @@
 import os
 import sys
 from collections.abc import Iterator
-from typing import Optional, cast
+from typing import TYPE_CHECKING, Optional, cast
 
+import dagster as dg
 import pytest
 from dagster._core.instance import DagsterInstance
-from dagster._core.remote_representation import CodeLocation, RemoteRepository
-from dagster._core.test_utils import (
-    SingleThreadPoolExecutor,
-    create_test_daemon_workspace_context,
-    instance_for_test,
-)
+from dagster._core.remote_representation.external import RemoteRepository
+
+if TYPE_CHECKING:
+    from dagster._core.remote_representation.code_location import CodeLocation
+from dagster._core.test_utils import SingleThreadPoolExecutor, create_test_daemon_workspace_context
 from dagster._core.types.loadable_target_origin import LoadableTargetOrigin
 from dagster._core.workspace.context import WorkspaceProcessContext
 from dagster._core.workspace.load_target import ModuleTarget
@@ -26,8 +26,8 @@ def submit_executor(request):
 
 
 @pytest.fixture(name="instance_session_scoped", scope="session")
-def instance_session_scoped_fixture() -> Iterator[DagsterInstance]:
-    with instance_for_test(
+def instance_session_scoped_fixture() -> Iterator[dg.DagsterInstance]:
+    with dg.instance_for_test(
         overrides={
             "run_launcher": {"module": "dagster._core.test_utils", "class": "MockedRunLauncher"},
         },
@@ -39,14 +39,14 @@ def instance_session_scoped_fixture() -> Iterator[DagsterInstance]:
 @pytest.fixture(name="instance_module_scoped", scope="module")
 def instance_module_scoped_fixture(
     instance_session_scoped: DagsterInstance,
-) -> Iterator[DagsterInstance]:
+) -> Iterator[dg.DagsterInstance]:
     instance_session_scoped.wipe()
     instance_session_scoped.wipe_all_schedules()
     yield instance_session_scoped
 
 
 @pytest.fixture(name="instance", scope="function")
-def instance_fixture(instance_session_scoped: DagsterInstance) -> Iterator[DagsterInstance]:
+def instance_fixture(instance_session_scoped: DagsterInstance) -> Iterator[dg.DagsterInstance]:
     instance_session_scoped.wipe()
     instance_session_scoped.wipe_all_schedules()
     yield instance_session_scoped

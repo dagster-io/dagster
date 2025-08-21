@@ -1,4 +1,4 @@
-from dagster import Definitions
+import dagster as dg
 from dagster._core.types.loadable_target_origin import LoadableTargetOrigin
 
 assert LoadableTargetOrigin.get() is not None, "LoadableTargetOrigin is not available from context"
@@ -12,4 +12,4 @@ assert (
     == "dagster_tests.general_tests.loadable_target_origin_context.loadable_target_origin_test_repo"
 )
 
-defs = Definitions()
+defs = dg.Definitions()

@@ -50,8 +50,8 @@ MAX_TITLE_LENGTH = 100
 if TYPE_CHECKING:
     from dagster._core.definitions.asset_key import AssetKey
     from dagster._core.definitions.asset_selection import AssetSelection
+    from dagster._core.definitions.assets.graph.base_asset_graph import BaseAssetGraph
     from dagster._core.definitions.auto_materialize_policy import AutoMaterializePolicy
-    from dagster._core.definitions.base_asset_graph import BaseAssetGraph
     from dagster._core.definitions.declarative_automation.automation_condition import (
         AutomationCondition,
     )

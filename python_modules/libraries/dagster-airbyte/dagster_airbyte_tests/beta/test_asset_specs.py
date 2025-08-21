@@ -1,10 +1,12 @@
+import pytest
 import responses
-from dagster._config.field_utils import EnvVar
-from dagster._core.definitions.asset_spec import AssetSpec
+from dagster import AssetSpec, EnvVar
 from dagster._core.definitions.tags import has_kind
+from dagster._core.errors import DagsterInvariantViolationError
 from dagster._core.test_utils import environ
 from dagster_airbyte import (
     AirbyteCloudWorkspace,
+    airbyte_assets,
     build_airbyte_assets_definitions,
     load_airbyte_cloud_asset_specs,
 )
@@ -63,6 +65,37 @@ def test_translator_spec(
 
         first_asset_metadata = next(asset.metadata for asset in all_assets)
         assert AirbyteMetadataSet.extract(first_asset_metadata).connection_id == TEST_CONNECTION_ID
+
+
+def test_connection_selector(
+    fetch_workspace_data_api_mocks: responses.RequestsMock,
+) -> None:
+    with environ(
+        {"AIRBYTE_CLIENT_ID": TEST_CLIENT_ID, "AIRBYTE_CLIENT_SECRET": TEST_CLIENT_SECRET}
+    ):
+        workspace = AirbyteCloudWorkspace(
+            workspace_id=TEST_WORKSPACE_ID,
+            client_id=EnvVar("AIRBYTE_CLIENT_ID"),
+            client_secret=EnvVar("AIRBYTE_CLIENT_SECRET"),
+        )
+
+        # Test with no selector (should include all connections)
+        all_assets = load_airbyte_cloud_asset_specs(workspace=workspace)
+        assert len(all_assets) == 2  # Based on the mock data
+
+        # Test with selector that matches the connection
+        matching_assets = load_airbyte_cloud_asset_specs(
+            workspace=workspace,
+            connection_selector_fn=lambda connection: connection.name == "Postgres To Snowflake",
+        )
+        assert len(matching_assets) == 2  # Should still get all assets from the matching connection
+
+        # Test with selector that doesn't match any connections
+        no_matching_assets = load_airbyte_cloud_asset_specs(
+            workspace=workspace,
+            connection_selector_fn=lambda connection: connection.name == "non_existent_connection",
+        )
+        assert len(no_matching_assets) == 0  # Should get no assets
 
 
 def test_cached_load_spec_single_resource(
@@ -164,7 +197,7 @@ def test_translator_custom_metadata(
         assert has_kind(asset_spec.tags, TEST_DESTINATION_TYPE)
 
 
-class MyAssetFactoryCustomTranslator(DagsterAirbyteTranslator):
+class MyCustomTranslatorWithGroupName(DagsterAirbyteTranslator):
     def get_asset_spec(self, data: AirbyteConnectionTableProps) -> AssetSpec:  # pyright: ignore[reportIncompatibleMethodOverride]
         default_spec = super().get_asset_spec(data)
         return default_spec.replace_attributes(group_name="my_group_name")
@@ -183,9 +216,35 @@ def test_translator_custom_group_name_with_asset_factory(
         )
 
         my_airbyte_assets = build_airbyte_assets_definitions(
-            workspace=workspace, dagster_airbyte_translator=MyAssetFactoryCustomTranslator()
+            workspace=workspace, dagster_airbyte_translator=MyCustomTranslatorWithGroupName()
         )
 
         first_assets_def = next(assets_def for assets_def in my_airbyte_assets)
         first_asset_spec = next(asset_spec for asset_spec in first_assets_def.specs)
         assert first_asset_spec.group_name == "my_group_name"
+
+
+def test_translator_invariant_group_name_with_asset_decorator(
+    fetch_workspace_data_api_mocks: responses.RequestsMock,
+) -> None:
+    with environ(
+        {"AIRBYTE_CLIENT_ID": TEST_CLIENT_ID, "AIRBYTE_CLIENT_SECRET": TEST_CLIENT_SECRET}
+    ):
+        workspace = AirbyteCloudWorkspace(
+            workspace_id=TEST_WORKSPACE_ID,
+            client_id=EnvVar("AIRBYTE_CLIENT_ID"),
+            client_secret=EnvVar("AIRBYTE_CLIENT_SECRET"),
+        )
+
+        with pytest.raises(
+            DagsterInvariantViolationError,
+            match="Cannot set group_name parameter on airbyte_assets",
+        ):
+
+            @airbyte_assets(
+                connection_id=TEST_CONNECTION_ID,
+                workspace=workspace,
+                group_name="my_asset_decorator_group_name",
+                dagster_airbyte_translator=MyCustomTranslatorWithGroupName(),
+            )
+            def my_airbyte_assets(): ...

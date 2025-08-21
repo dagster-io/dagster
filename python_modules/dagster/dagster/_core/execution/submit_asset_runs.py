@@ -1,3 +1,4 @@
+import asyncio
 import logging
 import sys
 import time
@@ -5,15 +6,15 @@ from collections.abc import Sequence
 from typing import AbstractSet, NamedTuple, Optional  # noqa: UP035
 
 import dagster._check as check
-from dagster._core.definitions.asset_job import IMPLICIT_ASSET_JOB_NAME
 from dagster._core.definitions.asset_key import EntityKey
+from dagster._core.definitions.assets.graph.remote_asset_graph import RemoteWorkspaceAssetGraph
+from dagster._core.definitions.assets.job.asset_job import IMPLICIT_ASSET_JOB_NAME
 from dagster._core.definitions.events import AssetKey
-from dagster._core.definitions.remote_asset_graph import RemoteWorkspaceAssetGraph
 from dagster._core.definitions.run_request import RunRequest
 from dagster._core.definitions.selector import JobSubsetSelector
 from dagster._core.errors import DagsterInvalidSubsetError, DagsterUserCodeProcessError
 from dagster._core.instance import DagsterInstance
-from dagster._core.remote_representation import RemoteExecutionPlan, RemoteJob
+from dagster._core.remote_representation.external import RemoteExecutionPlan, RemoteJob
 from dagster._core.snap import ExecutionPlanSnapshot
 from dagster._core.storage.dagster_run import DagsterRun, DagsterRunStatus
 from dagster._core.workspace.context import BaseWorkspaceRequestContext, IWorkspaceProcessContext
@@ -54,7 +55,7 @@ def _get_execution_plan_entity_keys(
     return output_entity_keys
 
 
-def _get_job_execution_data_from_run_request(
+async def get_job_execution_data_from_run_request(
     asset_graph: RemoteWorkspaceAssetGraph,
     run_request: RunRequest,
     instance: DagsterInstance,
@@ -87,35 +88,30 @@ def _get_job_execution_data_from_run_request(
         asset_selection=run_request.asset_selection,
         asset_check_selection=run_request.asset_check_keys,
         op_selection=None,
+        run_config=run_request.run_config or {},
     )
 
     if pipeline_selector not in run_request_execution_data_cache:
-        code_location = workspace.get_code_location(handle.location_name)
-        remote_job = code_location.get_job(pipeline_selector)
-
-        remote_execution_plan = code_location.get_execution_plan(
-            remote_job,
-            {},
-            step_keys_to_execute=None,
-            known_state=None,
-            instance=instance,
+        remote_job, remote_execution_plan = await asyncio.gather(
+            RemoteJob.gen(workspace, pipeline_selector),
+            RemoteExecutionPlan.gen(workspace, pipeline_selector),
         )
-
         run_request_execution_data_cache[pipeline_selector] = RunRequestExecutionData(
-            remote_job,
-            remote_execution_plan,
+            check.not_none(remote_job),
+            check.not_none(remote_execution_plan),
         )
 
     return run_request_execution_data_cache[pipeline_selector]
 
 
-def _create_asset_run(
+async def _create_asset_run(
     run_id: Optional[str],
     run_request: RunRequest,
     run_request_index: int,
     instance: DagsterInstance,
     run_request_execution_data_cache: dict[JobSubsetSelector, RunRequestExecutionData],
     workspace_process_context: IWorkspaceProcessContext,
+    workspace: BaseWorkspaceRequestContext,
     debug_crash_flags: SingleInstigatorDebugCrashFlags,
     logger: logging.Logger,
 ) -> DagsterRun:
@@ -134,11 +130,8 @@ def _create_asset_run(
 
         # retry until the execution plan targets the asset selection
         try:
-            # create a new request context for each run in case the code location server
-            # is swapped out in the middle of the submission process
-            workspace = workspace_process_context.create_request_context()
             asset_graph = workspace.asset_graph
-            execution_data = _get_job_execution_data_from_run_request(
+            execution_data = await get_job_execution_data_from_run_request(
                 asset_graph,
                 run_request,
                 instance,
@@ -201,7 +194,7 @@ def _create_asset_run(
                 run_id=run_id,
                 resolved_op_selection=None,
                 op_selection=None,
-                run_config={},
+                run_config=run_request.run_config or {},
                 step_keys_to_execute=None,
                 tags=run_request.tags,
                 root_run_id=None,
@@ -238,12 +231,13 @@ def _create_asset_run(
     )
 
 
-def submit_asset_run(
+async def submit_asset_run(
     run_id: Optional[str],
     run_request: RunRequest,
     run_request_index: int,
     instance: DagsterInstance,
     workspace_process_context: IWorkspaceProcessContext,
+    workspace: BaseWorkspaceRequestContext,
     run_request_execution_data_cache: dict[JobSubsetSelector, RunRequestExecutionData],
     debug_crash_flags: SingleInstigatorDebugCrashFlags,
     logger: logging.Logger,
@@ -252,7 +246,6 @@ def submit_asset_run(
     submits the existing run. If the run does not exist, creates a new run and submits it, ensuring
     that the created run targets the given asset selection.
     """
-    check.invariant(not run_request.run_config, "Asset run requests have no custom run config")
     entity_keys: Sequence[EntityKey] = [
         *(run_request.asset_selection or []),
         *(run_request.asset_check_keys or []),
@@ -278,13 +271,14 @@ def submit_asset_run(
             )
             run_to_submit = existing_run
     else:
-        run_to_submit = _create_asset_run(
+        run_to_submit = await _create_asset_run(
             run_id,
             run_request,
             run_request_index,
             instance,
             run_request_execution_data_cache,
             workspace_process_context,
+            workspace,
             debug_crash_flags,
             logger,
         )

@@ -33,7 +33,8 @@ import {BasicInstigationStateFragment} from '../overview/types/BasicInstigationS
 import {RUN_TIME_FRAGMENT} from '../runs/RunUtils';
 import {CronTag} from '../schedules/CronTag';
 import {SCHEDULE_ASSET_SELECTIONS_QUERY} from '../schedules/ScheduleAssetSelectionsQuery';
-import {SCHEDULE_SWITCH_FRAGMENT, ScheduleSwitch} from '../schedules/ScheduleSwitch';
+import {ScheduleSwitch} from '../schedules/ScheduleSwitch';
+import {SCHEDULE_SWITCH_FRAGMENT} from '../schedules/ScheduleSwitchFragment';
 import {errorDisplay} from '../schedules/SchedulesTable';
 import {TimestampDisplay} from '../schedules/TimestampDisplay';
 import {
@@ -187,6 +188,7 @@ export const VirtualizedScheduleRow = (props: ScheduleRowProps) => {
                   >
                     Next tick:&nbsp;
                     <TimestampDisplay
+                      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
                       timestamp={scheduleData.scheduleState.nextTick.timestamp!}
                       timezone={scheduleData.executionTimezone}
                       timeFormat={{showSeconds: false, showTimezone: true}}

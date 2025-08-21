@@ -2,7 +2,7 @@ from typing import Any
 
 import pytest
 from dagster import AssetCheckKey, AssetKey, AssetsDefinition
-from dagster._core.definitions.asset_graph import AssetGraph
+from dagster._core.definitions.assets.graph.asset_graph import AssetGraph
 from dagster_dbt import build_dbt_asset_selection
 from dagster_dbt.asset_decorator import dbt_assets
 
@@ -30,6 +30,7 @@ ALL_ASSET_KEYS = {
         "raw_orders",
         "raw_payments",
         "stg_customers",
+        "stg_customers_again",
         "stg_orders",
         "stg_payments",
         "raw_fail_tests_model",

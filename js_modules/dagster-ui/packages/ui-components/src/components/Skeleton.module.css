@@ -1,37 +1,40 @@
 .skeleton {
-    display: block;
-    min-height: 1.5em;
-    border-radius: 6px;
-    position: relative;
-    overflow: hidden;
-    contain: paint layout style size;
-    isolation: isolate;
-    background: var(--skeleton-bg);
+  display: block;
+  min-height: 10px;
+  border-radius: 6px;
+  position: relative;
+  overflow: hidden;
+  contain: paint layout style size;
+  isolation: isolate;
+  background: var(--skeleton-bg);
+}
+
+.skeleton::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: var(--skeleton-bg-hover);
+}
+
+.skeleton.animated::after {
+  background: linear-gradient(
+    90deg,
+    var(--skeleton-bg) 0%,
+    var(--skeleton-bg-hover) 50%,
+    var(--skeleton-bg) 100%
+  );
+  animation: shimmer 1.4s ease infinite;
+  will-change: transform;
+  contain: paint layout style size;
+  isolation: isolate;
+}
+
+@keyframes shimmer {
+  0% {
+    transform: translateX(-100%);
   }
-  
-  .skeleton::after {
-    content: '';
-    position: absolute;
-    inset: 0;
-    background: linear-gradient(
-      90deg,
-      var(--skeleton-bg) 0%,
-      var(--skeleton-bg-hover) 50%,
-      var(--skeleton-bg) 100%
-    );
-    animation: shimmer 1.4s ease infinite;
-    will-change: transform;
-    contain: paint layout style size;
-    isolation: isolate;
-    pointer-events: none;
+  100% {
+    transform: translateX(100%);
   }
-  
-  @keyframes shimmer {
-    0% {
-      transform: translateX(-100%);
-    }
-    100% {
-      transform: translateX(100%);
-    }
-  }
-  
+}

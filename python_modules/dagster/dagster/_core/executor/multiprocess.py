@@ -285,7 +285,8 @@ class MultiprocessExecutor(Executor):
                             active_execution.handle_event(failure_or_retry_event)
                             yield failure_or_retry_event
                             empty_iters.append(key)
-                            errors[crash.pid] = serializable_error
+                            if failure_or_retry_event.is_step_failure:
+                                errors[crash.pid] = serializable_error
                         except StopIteration:
                             empty_iters.append(key)
 

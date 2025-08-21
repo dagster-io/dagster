@@ -1,3 +1,8 @@
+## 1.0.20 (August 19, 2025)
+
+- Disallow TypeScript non-null assertions.
+- Guard against importing `dayjs` extensions directly from `dayjs`, to ensure that our configurations are used.
+
 ## 1.0.19 (January 7, 2025)
 
 - Added custom rule to autocorrect `shared` paths to avoid internal build failures.

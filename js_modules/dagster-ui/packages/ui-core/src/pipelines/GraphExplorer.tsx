@@ -9,7 +9,6 @@ import {
 } from '@dagster-io/ui-components';
 import qs from 'qs';
 import {useEffect, useMemo, useState} from 'react';
-import {FeatureFlag} from 'shared/app/FeatureFlags.oss';
 import styled from 'styled-components';
 
 import {EmptyDAGNotice, EntirelyFilteredDAGNotice, LoadingNotice} from './GraphNotices';
@@ -18,7 +17,6 @@ import {SIDEBAR_ROOT_CONTAINER_FRAGMENT} from './SidebarContainerOverview';
 import {SidebarRoot} from './SidebarRoot';
 import {gql} from '../apollo-client';
 import {OpGraphSelectionInput} from './OpGraphSelectionInput';
-import {featureEnabled} from '../app/Flags';
 import {GraphExplorerFragment, GraphExplorerSolidHandleFragment} from './types/GraphExplorer.types';
 import {filterByQuery} from '../app/GraphQueryImpl';
 import {Route} from '../app/Route';
@@ -27,12 +25,12 @@ import {OP_GRAPH_OP_FRAGMENT, OpGraph} from '../graph/OpGraph';
 import {useOpLayout} from '../graph/asyncGraphLayout';
 import {filterOpSelectionByQuery} from '../op-selection/AntlrOpSelection';
 import {OpNameOrPath} from '../ops/OpNameOrPath';
-import {GraphQueryInput} from '../ui/GraphQueryInput';
 import {RepoAddress} from '../workspace/types';
 
 export interface GraphExplorerOptions {
   explodeComposites: boolean;
   preferAssetRendering: boolean;
+  isExternal?: boolean;
 }
 
 interface GraphExplorerProps {
@@ -113,6 +111,7 @@ export const GraphExplorer = (props: GraphExplorerProps) => {
 
     window.requestAnimationFrame(() => {
       handleAdjustPath((opNames) => {
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
         const last = 'name' in arg ? arg.name : arg.path[arg.path.length - 1]!;
         opNames[opNames.length - 1] = last;
         opNames.push('');
@@ -162,12 +161,9 @@ export const GraphExplorer = (props: GraphExplorerProps) => {
 
   const queryResultOps = useMemo(() => {
     if (solidsQueryEnabled) {
-      if (featureEnabled(FeatureFlag.flagSelectionSyntax)) {
-        return filterOpSelectionByQuery(solids, opsQuery);
-      }
-      return filterByQuery(solids, opsQuery);
+      return filterOpSelectionByQuery(solids, opsQuery);
     }
-    return {all: solids, focus: []};
+    return filterByQuery(solids, opsQuery);
   }, [opsQuery, solids, solidsQueryEnabled]);
 
   const highlightedOps = useMemo(
@@ -202,21 +198,11 @@ export const GraphExplorer = (props: GraphExplorerProps) => {
         <ErrorBoundary region="op graph">
           {solidsQueryEnabled ? (
             <QueryOverlay>
-              {featureEnabled(FeatureFlag.flagSelectionSyntax) ? (
-                <OpGraphSelectionInput
-                  items={solids}
-                  value={explorerPath.opsQuery}
-                  onChange={handleQueryChange}
-                />
-              ) : (
-                <GraphQueryInput
-                  items={solids}
-                  value={explorerPath.opsQuery}
-                  placeholder="Type an op subset…"
-                  popoverPosition="bottom-left"
-                  onChange={handleQueryChange}
-                />
-              )}
+              <OpGraphSelectionInput
+                items={solids}
+                value={explorerPath.opsQuery}
+                onChange={handleQueryChange}
+              />
             </QueryOverlay>
           ) : breadcrumbs.length > 1 ? (
             <BreadcrumbsOverlay>
@@ -290,6 +276,7 @@ export const GraphExplorer = (props: GraphExplorerProps) => {
               onEnterSubgraph={handleEnterCompositeSolid}
               onLeaveSubgraph={handleLeaveCompositeSolid}
               layout={layout}
+              isExternal={options.isExternal}
             />
           )}
         </ErrorBoundary>
@@ -308,6 +295,7 @@ export const GraphExplorer = (props: GraphExplorerProps) => {
                 onEnterSubgraph={handleEnterCompositeSolid}
                 onClickOp={handleClickOp}
                 repoAddress={repoAddress}
+                isExternal={options.isExternal}
                 {...qs.parse(location.search || '', {ignoreQueryPrefix: true})}
               />
             )}

@@ -4,6 +4,7 @@ import dagster._check as check
 from dagster._core.remote_representation.job_index import JobIndex
 from dagster._core.remote_representation.represented import RepresentedJob
 from dagster._core.snap import JobSnap
+from dagster._core.storage.tags import EXTERNAL_JOB_SOURCE_TAG_KEY
 
 
 class HistoricalJob(RepresentedJob):
@@ -46,3 +47,6 @@ class HistoricalJob(RepresentedJob):
     @property
     def computed_job_snapshot_id(self):
         return self._job_index.job_snapshot_id
+
+    def get_external_job_source(self) -> Optional[str]:
+        return self._job_index.job_snapshot.tags.get(EXTERNAL_JOB_SOURCE_TAG_KEY)

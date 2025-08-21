@@ -1,5 +1,6 @@
 from collections.abc import Generator, Sequence
 from contextlib import contextmanager, suppress
+from enum import Enum
 from typing import Any, Optional, cast
 
 from dagster_cloud_cli.core.graphql_client import (
@@ -119,8 +120,28 @@ query CliAgentStatus {
 """
 
 
+class DagsterPlusDeploymentAgentType(Enum):
+    SERVERLESS = "SERVERLESS"
+    HYBRID = "HYBRID"
+
+
 def fetch_agent_status(client: DagsterCloudGraphQLClient) -> list[Any]:
     return client.execute(AGENT_STATUS_QUERY)["data"]["agents"]
+
+
+AGENT_TYPE_QUERY = """
+query DeploymentInfoQuery {
+	currentDeployment {
+        agentType
+    }
+}
+"""
+
+
+def fetch_agent_type(client: DagsterCloudGraphQLClient) -> DagsterPlusDeploymentAgentType:
+    return DagsterPlusDeploymentAgentType(
+        client.execute(AGENT_TYPE_QUERY)["data"]["currentDeployment"]["agentType"]
+    )
 
 
 WORKSPACE_ENTRIES_QUERY = """
@@ -196,6 +217,9 @@ mutation CliAddOrUpdateLocation($document: GenericScalar!) {
         }
         ... on InvalidLocationError {
             errors
+        }
+        ... on UnauthorizedError {
+            message
         }
     }
 }
@@ -721,14 +745,14 @@ query CliGetRunStatus($runId: ID!) {
 
 
 def run_status(client: DagsterCloudGraphQLClient, run_id: str) -> Any:
-    data = client.execute(
+    result = client.execute(
         GET_RUN_STATUS_QUERY,
         variable_values={"runId": run_id},
     )["data"]
-    if data["runOrError"]["__typename"] != "Run":
-        return None
+    if result["runOrError"]["__typename"] != "Run" or result["runOrError"]["status"] is None:
+        raise Exception(f"Unable to fetch run status: {result}")
 
-    return data["runOrError"]["status"]
+    return result["runOrError"]["status"]
 
 
 MARK_CLI_EVENT_MUTATION = """
@@ -754,7 +778,7 @@ def mark_cli_event(
     message: Optional[str] = None,
 ) -> Any:
     with suppress(Exception):
-        res = client.execute(
+        result = client.execute(
             MARK_CLI_EVENT_MUTATION,
             variable_values={
                 "eventType": event_type.name,
@@ -764,7 +788,7 @@ def mark_cli_event(
                 "message": message,
             },
         )
-        return res["data"]["markCliEvent"] == "ok"
+        return result["data"]["markCliEvent"] == "ok"
 
 
 GET_DEPLOYMENT_BY_NAME_QUERY = """

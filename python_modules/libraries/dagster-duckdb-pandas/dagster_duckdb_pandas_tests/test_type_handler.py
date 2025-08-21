@@ -8,14 +8,9 @@ from dagster import (
     AssetExecutionContext,
     AssetIn,
     AssetKey,
-    DailyPartitionsDefinition,
     Definitions,
-    DynamicPartitionsDefinition,
     MetadataValue,
-    MultiPartitionKey,
-    MultiPartitionsDefinition,
     Out,
-    StaticPartitionsDefinition,
     TimeWindowPartitionMapping,
     asset,
     graph,
@@ -24,6 +19,13 @@ from dagster import (
     op,
 )
 from dagster._check import CheckError
+from dagster._core.definitions.partitions.definition import (
+    DailyPartitionsDefinition,
+    DynamicPartitionsDefinition,
+    MultiPartitionsDefinition,
+    StaticPartitionsDefinition,
+)
+from dagster._core.definitions.partitions.utils import MultiPartitionKey
 from dagster_duckdb_pandas import DuckDBPandasIOManager, duckdb_pandas_io_manager
 
 if TYPE_CHECKING:
@@ -120,7 +122,7 @@ def test_io_manager_asset_metadata(tmp_path) -> None:
         },
     )
 
-    res = defs.get_implicit_global_asset_job_def().execute_in_process()
+    res = defs.resolve_implicit_global_asset_job_def().execute_in_process()
     assert res.success
 
     mats = res.get_asset_materialization_events()

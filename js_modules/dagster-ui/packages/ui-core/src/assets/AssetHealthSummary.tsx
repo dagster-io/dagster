@@ -4,23 +4,22 @@ import {
   Body,
   Box,
   Colors,
+  HoverButton,
   Icon,
   IconName,
   Popover,
   Skeleton,
   SubtitleLarge,
   Tag,
-  UnstyledButton,
   ifPlural,
 } from '@dagster-io/ui-components';
-import dayjs from 'dayjs';
-import React, {useMemo} from 'react';
+import React, {useCallback, useMemo} from 'react';
 import {Link} from 'react-router-dom';
-import {FeatureFlag} from 'shared/app/FeatureFlags.oss';
+import {observeEnabled} from 'shared/app/observeEnabled.oss';
 
 import {assetDetailsPathForKey} from './assetDetailsPathForKey';
-import {featureEnabled} from '../app/Flags';
 import {assertUnreachable} from '../app/Util';
+import {useTrackEvent} from '../app/analytics';
 import {useAssetHealthData} from '../asset-data/AssetHealthDataProvider';
 import {
   AssetHealthCheckDegradedMetaFragment,
@@ -32,12 +31,15 @@ import {
   AssetHealthMaterializationDegradedPartitionedMetaFragment,
   AssetHealthMaterializationHealthyPartitionedMetaFragment,
 } from '../asset-data/types/AssetHealthDataProvider.types';
+import {StatusCase} from '../asset-graph/AssetNodeStatusContent';
+import {StatusCaseDot} from '../asset-graph/sidebar/util';
 import {AssetHealthStatus, AssetKeyInput} from '../graphql/types';
+import {TimeFromNow} from '../ui/TimeFromNow';
 import {numberFormatter} from '../ui/formatters';
 
 export const AssetHealthSummary = React.memo(
   ({assetKey, iconOnly}: {assetKey: {path: string[]}; iconOnly?: boolean}) => {
-    if (!featureEnabled(FeatureFlag.flagUseNewObserveUIs)) {
+    if (!observeEnabled()) {
       return null;
     }
 
@@ -57,9 +59,9 @@ const AssetHealthSummaryImpl = React.memo(
     function content() {
       if (iconOnly) {
         return (
-          <UnstyledButton style={{display: 'flex', alignItems: 'center', padding: 8}}>
+          <HoverButton style={{padding: 8}}>
             <Icon name={iconName} color={iconColor} />
-          </UnstyledButton>
+          </HoverButton>
         );
       }
       return (
@@ -70,6 +72,13 @@ const AssetHealthSummaryImpl = React.memo(
     }
 
     if (!liveData) {
+      if (iconOnly) {
+        return (
+          <div style={{padding: 11}}>
+            <StatusCaseDot statusCase={StatusCase.LOADING} />
+          </div>
+        );
+      }
       return <Skeleton $width={iconOnly ? 16 : 60} $height={16} />;
     }
 
@@ -152,15 +161,26 @@ const Criteria = React.memo(
   }) => {
     const {subStatusIconName, iconColor, textColor} = statusToIconAndColor[status ?? 'undefined'];
 
+    const trackEvent = useTrackEvent();
+    const onClick = useCallback(
+      (name: string) => () => {
+        trackEvent('asset-health-summary-click', {name});
+      },
+      [trackEvent],
+    );
+
     const derivedExplanation = useMemo(() => {
       switch (metadata?.__typename) {
         case 'AssetHealthCheckUnknownMeta':
           if (metadata.numNotExecutedChecks > 0) {
             return (
               <Body>
-                <Link to={assetDetailsPathForKey(assetKey, {view: 'checks'})}>
+                <Link
+                  to={assetDetailsPathForKey(assetKey, {view: 'checks'})}
+                  onClick={onClick('checks-unknown')}
+                >
                   {numberFormatter.format(metadata.numNotExecutedChecks)} /{' '}
-                  {numberFormatter.format(metadata.totalNumChecks)} check{' '}
+                  {numberFormatter.format(metadata.totalNumChecks)} check
                   {ifPlural(metadata.totalNumChecks, '', 's')} not executed
                 </Link>
               </Body>
@@ -171,7 +191,10 @@ const Criteria = React.memo(
           if (metadata.numWarningChecks > 0 && metadata.numFailedChecks > 0) {
             return (
               <Body>
-                <Link to={assetDetailsPathForKey(assetKey, {view: 'checks'})}>
+                <Link
+                  to={assetDetailsPathForKey(assetKey, {view: 'checks'})}
+                  onClick={onClick('checks-degraded-all')}
+                >
                   {numberFormatter.format(metadata.numWarningChecks)}/
                   {numberFormatter.format(metadata.totalNumChecks)} check
                   {ifPlural(metadata.totalNumChecks, '', 's')} warning,{' '}
@@ -185,7 +208,10 @@ const Criteria = React.memo(
           if (metadata.numWarningChecks > 0) {
             return (
               <Body>
-                <Link to={assetDetailsPathForKey(assetKey, {view: 'checks'})}>
+                <Link
+                  to={assetDetailsPathForKey(assetKey, {view: 'checks'})}
+                  onClick={onClick('checks-degraded-warning')}
+                >
                   {numberFormatter.format(metadata.numWarningChecks)}/
                   {numberFormatter.format(metadata.totalNumChecks)} check
                   {ifPlural(metadata.totalNumChecks, '', 's')} warning
@@ -195,7 +221,10 @@ const Criteria = React.memo(
           }
           return (
             <Body>
-              <Link to={assetDetailsPathForKey(assetKey, {view: 'checks'})}>
+              <Link
+                to={assetDetailsPathForKey(assetKey, {view: 'checks'})}
+                onClick={onClick('checks-degraded-failed')}
+              >
                 {numberFormatter.format(metadata.numFailedChecks)}/
                 {numberFormatter.format(metadata.totalNumChecks)} check
                 {ifPlural(metadata.totalNumChecks, '', 's')} failed
@@ -205,7 +234,10 @@ const Criteria = React.memo(
         case 'AssetHealthCheckWarningMeta':
           return (
             <Body>
-              <Link to={assetDetailsPathForKey(assetKey, {view: 'checks'})}>
+              <Link
+                to={assetDetailsPathForKey(assetKey, {view: 'checks'})}
+                onClick={onClick('checks-warning')}
+              >
                 {numberFormatter.format(metadata.numWarningChecks)}/
                 {numberFormatter.format(metadata.totalNumChecks)} check
                 {ifPlural(metadata.totalNumChecks, '', 's')} warning
@@ -215,7 +247,10 @@ const Criteria = React.memo(
         case 'AssetHealthMaterializationDegradedNotPartitionedMeta':
           return (
             <Body>
-              <Link to={`/runs/${metadata.failedRunId}`}>
+              <Link
+                to={`/runs/${metadata.failedRunId}`}
+                onClick={onClick('materialization-degraded-not-partitioned')}
+              >
                 Materialization failed in run {metadata.failedRunId.split('-').shift()}
               </Link>
             </Body>
@@ -223,7 +258,10 @@ const Criteria = React.memo(
         case 'AssetHealthMaterializationDegradedPartitionedMeta':
           return (
             <Body>
-              <Link to={assetDetailsPathForKey(assetKey, {view: 'partitions'})}>
+              <Link
+                to={assetDetailsPathForKey(assetKey, {view: 'partitions', status: 'FAILED'})}
+                onClick={onClick('degraded-partitioned')}
+              >
                 Materialization failed in {numberFormatter.format(metadata.numFailedPartitions)} out
                 of {numberFormatter.format(metadata.totalNumPartitions)} partition
                 {ifPlural(metadata.totalNumPartitions, '', 's')}
@@ -233,7 +271,10 @@ const Criteria = React.memo(
         case 'AssetHealthMaterializationHealthyPartitionedMeta':
           return (
             <Body>
-              <Link to={assetDetailsPathForKey(assetKey, {view: 'partitions'})}>
+              <Link
+                to={assetDetailsPathForKey(assetKey, {view: 'partitions', status: 'MISSING'})}
+                onClick={onClick('healthy-missing-partitioned')}
+              >
                 Materialization missing in {numberFormatter.format(metadata.numMissingPartitions)}{' '}
                 out of {numberFormatter.format(metadata.totalNumPartitions)} partition
                 {ifPlural(metadata.totalNumPartitions, '', 's')}
@@ -247,7 +288,8 @@ const Criteria = React.memo(
 
           return (
             <Body>
-              Last materialized {dayjs(Number(metadata.lastMaterializedTimestamp * 1000)).fromNow()}{' '}
+              Last successfully materialized{' '}
+              <TimeFromNow unixTimestamp={Number(metadata.lastMaterializedTimestamp)} />
             </Body>
           );
         case undefined:
@@ -255,64 +297,66 @@ const Criteria = React.memo(
         default:
           assertUnreachable(metadata);
       }
-    }, [metadata, assetKey]);
+    }, [metadata, assetKey, onClick]);
 
-    const text = useMemo(() => {
+    const {text, shouldDim} = useMemo(() => {
       switch (type) {
         case 'materialization':
           switch (status) {
             case AssetHealthStatus.DEGRADED:
-              return 'Failed to materialize';
+              return {text: 'Execution failed', shouldDim: false};
             case AssetHealthStatus.HEALTHY:
-              return 'Successfully materialized';
+              return {text: 'Successfully executed', shouldDim: false};
             case AssetHealthStatus.WARNING:
-            case AssetHealthStatus.NOT_APPLICABLE:
-            case AssetHealthStatus.UNKNOWN:
+              return {text: 'Execution warning', shouldDim: false};
             case undefined:
-              return 'No materializations';
+            case AssetHealthStatus.NOT_APPLICABLE:
+              return {text: 'No executions', shouldDim: true};
+            case AssetHealthStatus.UNKNOWN:
+              return {text: 'Execution status unknown', shouldDim: true};
             default:
               assertUnreachable(status);
           }
         case 'freshness':
           switch (status) {
             case AssetHealthStatus.HEALTHY:
-              return 'Freshness policy passing';
+              return {text: 'Freshness policy passing', shouldDim: false};
             case AssetHealthStatus.DEGRADED:
-              return 'Freshness policy failed';
+              return {text: 'Freshness policy failed', shouldDim: false};
             case AssetHealthStatus.WARNING:
-              return 'Freshness policy warning';
+              return {text: 'Freshness policy warning', shouldDim: false};
             case undefined:
             case AssetHealthStatus.NOT_APPLICABLE:
-              return 'No freshness policy defined';
+              return {text: 'No freshness policy defined', shouldDim: true};
             case AssetHealthStatus.UNKNOWN:
-              return 'Freshness policy not evaluated';
+              return {text: 'Freshness policy not evaluated', shouldDim: false};
             default:
               assertUnreachable(status);
           }
         case 'checks':
           switch (status) {
             case AssetHealthStatus.HEALTHY:
-              return 'All checks passed';
+              return {text: 'All checks passed', shouldDim: false};
             case AssetHealthStatus.DEGRADED:
               if (metadata && 'numFailedChecks' in metadata && 'totalNumChecks' in metadata) {
                 if (metadata.numFailedChecks === metadata.totalNumChecks) {
-                  return 'All checks failed';
+                  return {text: 'All checks failed', shouldDim: false};
                 }
-                return 'Some checks failed';
+                return {text: 'Some checks failed', shouldDim: false};
               }
-              return 'Checks failed';
+              return {text: 'Checks failed', shouldDim: false};
             case AssetHealthStatus.WARNING:
               if (metadata && 'numWarningChecks' in metadata && 'totalNumChecks' in metadata) {
                 if (metadata.numWarningChecks === metadata.totalNumChecks) {
-                  return 'All checks failed';
+                  return {text: 'All checks failed', shouldDim: false};
                 }
               }
-              return 'Some checks failed';
-            case AssetHealthStatus.NOT_APPLICABLE:
-              return 'No checks defined';
-            case AssetHealthStatus.UNKNOWN:
+              return {text: 'Some checks failed', shouldDim: false};
             case undefined:
-              return 'No checks evaluated';
+            case AssetHealthStatus.NOT_APPLICABLE:
+              return {text: 'No checks defined', shouldDim: true};
+            case AssetHealthStatus.UNKNOWN:
+              return {text: 'No checks evaluated', shouldDim: false};
             default:
               assertUnreachable(status);
           }
@@ -328,6 +372,7 @@ const Criteria = React.memo(
           rowGap: 2,
           padding: '4px 12px',
           alignItems: 'center',
+          opacity: shouldDim ? 0.5 : 1,
         }}
       >
         <Icon name={subStatusIconName} color={iconColor} style={{paddingTop: 2}} />

@@ -7,11 +7,11 @@ import {
   MiddleTruncate,
   Tag,
 } from '@dagster-io/ui-components';
-import dayjs from 'dayjs';
 import {Link} from 'react-router-dom';
 import {UserDisplay} from 'shared/runs/UserDisplay.oss';
 import styled from 'styled-components';
 
+import {TimeFromNow} from '../../ui/TimeFromNow';
 import {AssetDefinedInMultipleReposNotice} from '../AssetDefinedInMultipleReposNotice';
 import {AttributeAndValue} from './Common';
 import {CodeLink, getCodeReferenceKey} from '../../code-links/CodeLink';
@@ -60,6 +60,7 @@ export const DefinitionSection = ({
         <Tag icon="asset_group">
           <Link
             to={workspacePathFromAddress(
+              // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
               repoAddress!,
               `/asset-groups/${cachedOrLiveAssetNode.groupName}`,
             )}
@@ -73,12 +74,14 @@ export const DefinitionSection = ({
         <Box flex={{direction: 'column'}}>
           <AssetDefinedInMultipleReposNotice
             assetKey={cachedOrLiveAssetNode.assetKey}
+            // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
             loadedFromRepo={repoAddress!}
           />
+          {/* eslint-disable-next-line @typescript-eslint/no-non-null-assertion */}
           <RepositoryLink repoAddress={repoAddress!} />
           {location && (
             <Caption color={Colors.textLighter()}>
-              Loaded {dayjs.unix(location.updatedTimestamp).fromNow()}
+              Loaded <TimeFromNow unixTimestamp={location.updatedTimestamp} />
             </Caption>
           )}
         </Box>

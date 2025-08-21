@@ -3,17 +3,16 @@ from docs_snippets_tests.snippet_checks.guides.components.utils import (
     DAGSTER_ROOT,
     EDITABLE_DIR,
     MASK_EDITABLE_DAGSTER,
+    MASK_USING_ENVIRONMENT,
     format_multiline,
-    isolated_snippet_generation_environment,
+    make_project_scaffold_mask,
 )
 from docs_snippets_tests.snippet_checks.utils import (
     _run_command,
-    check_file,
     compare_tree_output,
-    create_file,
+    isolated_snippet_generation_environment,
     re_ignore_after,
     re_ignore_before,
-    run_command_and_snippet_output,
 )
 
 DG_SNIPPETS_DIR = (
@@ -26,37 +25,51 @@ DG_SNIPPETS_DIR = (
     / "workspace"
 )
 MASK_MY_WORKSPACE = (r"\/.*?\/dagster-workspace", "/.../dagster-workspace")
+MASK_USING_LOG_MESSAGE = (r"\nUsing[\s\S]*", "\n...")
 
 
 def test_dg_docs_workspace(update_snippets: bool) -> None:
-    with isolated_snippet_generation_environment() as get_next_snip_number:
-        # Scaffold workspace
-        # TODO: Make this use "active" python environment in docs followup
-        run_command_and_snippet_output(
-            cmd='echo "project-1\n" | dg init --use-editable-dagster --workspace --python-environment uv_managed dagster-workspace',
-            snippet_path=DG_SNIPPETS_DIR / f"{get_next_snip_number()}-dg-init.txt",
-            update_snippets=update_snippets,
+    with isolated_snippet_generation_environment(
+        should_update_snippets=update_snippets,
+        snapshot_base_dir=DG_SNIPPETS_DIR,
+        global_snippet_replace_regexes=[
+            MASK_EDITABLE_DAGSTER,
+            MASK_MY_WORKSPACE,
+            MASK_USING_LOG_MESSAGE,
+        ],
+    ) as context:
+        context.run_command_and_snippet_output(
+            cmd="create-dagster workspace dagster-workspace --use-editable-dagster && cd dagster-workspace",
+            snippet_path=f"{context.get_next_snip_number()}-dg-scaffold-workspace.txt",
+            print_cmd="uvx create-dagster workspace dagster-workspace && cd dagster-workspace",
+            input_str="y\n",
+            ignore_output=True,
+        )
+
+        context.run_command_and_snippet_output(
+            cmd="source deployments/local/.venv/bin/activate",
+            snippet_path=f"{context.get_next_snip_number()}-activate-workspace-venv.txt",
+            ignore_output=True,
+        )
+
+        context.run_command_and_snippet_output(
+            cmd="create-dagster project projects/project-1 --use-editable-dagster ",
+            snippet_path=f"{context.get_next_snip_number()}-dg-scaffold-project.txt",
+            print_cmd="uvx create-dagster project projects/project-1",
             snippet_replace_regex=[
                 MASK_EDITABLE_DAGSTER,
-                MASK_MY_WORKSPACE,
-                (r"\nUsing[\s\S]*", "\n..."),
-                (r"\nUsing[\s\S]*", "\n..."),
-                (
-                    r"of your Dagster project: ",
-                    "of your Dagster project: project-1\n",
-                ),
+                MASK_USING_ENVIRONMENT,
             ],
-            print_cmd="dg init --workspace dagster-workspace --python-environment uv_managed",
+            input_str="y\n",
         )
 
         # Remove files we don't want to show up in the tree
         _run_command(r"find . -type d -name __pycache__ -exec rm -r {} \+")
         _run_command(r"find . -type d -name project_1.egg-info -exec rm -r {} \+")
 
-        run_command_and_snippet_output(
-            cmd="cd dagster-workspace && tree",
-            snippet_path=DG_SNIPPETS_DIR / f"{get_next_snip_number()}-tree.txt",
-            update_snippets=update_snippets,
+        context.run_command_and_snippet_output(
+            cmd="tree",
+            snippet_path=f"{context.get_next_snip_number()}-tree.txt",
             # Remove --sort size from tree output, sadly OSX and Linux tree
             # sort differently when using alpha sort
             snippet_replace_regex=[
@@ -64,10 +77,9 @@ def test_dg_docs_workspace(update_snippets: bool) -> None:
             ],
             custom_comparison_fn=compare_tree_output,
         )
-        check_file(
+        context.check_file(
             "dg.toml",
-            DG_SNIPPETS_DIR / f"{get_next_snip_number()}-dg.toml",
-            update_snippets=update_snippets,
+            DG_SNIPPETS_DIR / f"{context.get_next_snip_number()}-dg.toml",
             snippet_replace_regex=[
                 (r"\[workspace\.scaffold_project_options\]\n", ""),
                 (r"use_editable_dagster = true\n", ""),
@@ -75,10 +87,10 @@ def test_dg_docs_workspace(update_snippets: bool) -> None:
         )
 
         # Validate project toml
-        check_file(
+        context.check_file(
             "projects/project-1/pyproject.toml",
-            DG_SNIPPETS_DIR / f"{get_next_snip_number()}-project-pyproject.toml",
-            update_snippets=update_snippets,
+            DG_SNIPPETS_DIR
+            / f"{context.get_next_snip_number()}-project-pyproject.toml",
             snippet_replace_regex=[
                 re_ignore_before("[tool.dg]"),
                 re_ignore_after('root_module = "project_1"'),
@@ -86,44 +98,19 @@ def test_dg_docs_workspace(update_snippets: bool) -> None:
         )
 
         # Scaffold new project
-        run_command_and_snippet_output(
-            cmd="dg scaffold project projects/project-2 --python-environment uv_managed --use-editable-dagster",
-            snippet_path=DG_SNIPPETS_DIR
-            / f"{get_next_snip_number()}-scaffold-project.txt",
-            update_snippets=update_snippets,
+        context.run_command_and_snippet_output(
+            cmd="create-dagster project projects/project-2 --use-editable-dagster",
+            snippet_path=f"{context.get_next_snip_number()}-scaffold-project.txt",
+            print_cmd="uvx create-dagster project projects/project-2",
             snippet_replace_regex=[
                 MASK_EDITABLE_DAGSTER,
-                MASK_MY_WORKSPACE,
-                (r"\nUsing[\s\S]*", "\n..."),
+                MASK_USING_ENVIRONMENT,
             ],
-            print_cmd="dg scaffold project projects/project-2 --python-environment uv_managed",
+            input_str="y\n",
         )
 
         # List projects
-        run_command_and_snippet_output(
+        context.run_command_and_snippet_output(
             cmd="dg list project",
-            snippet_path=DG_SNIPPETS_DIR / f"{get_next_snip_number()}-project-list.txt",
-            update_snippets=update_snippets,
+            snippet_path=f"{context.get_next_snip_number()}-project-list.txt",
         )
-
-        # Create workspace.yaml file
-        create_file(
-            "workspace.yaml",
-            format_multiline("""
-                load_from:
-                  - python_file:
-                      relative_path: projects/project-1/src/project_1/definitions.py
-                      location_name: project_1
-                      executable_path: projects/project-1/.venv/bin/python
-                  - python_file:
-                      relative_path: projects/project-2/src/project_2/definitions.py
-                      location_name: project_2
-                      executable_path: projects/project-2/.venv/bin/python
-            """),
-            DG_SNIPPETS_DIR / f"{get_next_snip_number()}-workspace.yaml",
-        )
-
-        # Ensure dagster loads
-        output = _run_command("uv tool run dagster definitions validate")
-        assert "Validation successful for code location project_1" in output
-        assert "Validation successful for code location project_2" in output

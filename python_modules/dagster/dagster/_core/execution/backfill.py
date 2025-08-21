@@ -1,13 +1,15 @@
-from collections.abc import Iterator, Mapping, Sequence
+import logging
+import os
+from collections.abc import Mapping, Sequence
 from datetime import datetime
 from enum import Enum
-from typing import TYPE_CHECKING, NamedTuple, Optional, Union
+from typing import TYPE_CHECKING, Any, NamedTuple, Optional, Union
 
 from dagster import _check as check
 from dagster._core.definitions import AssetKey
-from dagster._core.definitions.asset_graph_subset import AssetGraphSubset
-from dagster._core.definitions.base_asset_graph import BaseAssetGraph
-from dagster._core.definitions.partition import PartitionsSubset
+from dagster._core.definitions.assets.graph.asset_graph_subset import AssetGraphSubset
+from dagster._core.definitions.assets.graph.base_asset_graph import BaseAssetGraph
+from dagster._core.definitions.partitions.subset import PartitionsSubset
 from dagster._core.definitions.run_request import RunRequest
 from dagster._core.definitions.selector import PartitionsByAssetSelector
 from dagster._core.definitions.utils import check_valid_title
@@ -19,8 +21,8 @@ from dagster._core.execution.asset_backfill import (
 )
 from dagster._core.execution.bulk_actions import BulkActionType
 from dagster._core.instance import DynamicPartitionsStore
+from dagster._core.remote_origin import RemotePartitionSetOrigin
 from dagster._core.remote_representation.external_data import job_name_for_partition_set_snap_name
-from dagster._core.remote_representation.origin import RemotePartitionSetOrigin
 from dagster._core.storage.dagster_run import (
     CANCELABLE_RUN_STATUSES,
     NOT_FINISHED_STATUSES,
@@ -35,7 +37,7 @@ from dagster._utils.error import SerializableErrorInfo
 if TYPE_CHECKING:
     from dagster._core.instance import DagsterInstance
 
-MAX_RUNS_CANCELED_PER_ITERATION = 50
+CANCELABLE_RUNS_BATCH_SIZE = int(os.getenv("DAGSTER_BACKFILL_CANCEL_RUNS_BATCH_SIZE", "500"))
 
 
 @whitelist_for_serdes
@@ -106,6 +108,7 @@ class PartitionBackfill(
             ("asset_selection", Optional[Sequence[AssetKey]]),
             ("title", Optional[str]),
             ("description", Optional[str]),
+            ("run_config", Optional[Mapping[str, Any]]),
             # fields that are only used by job backfills
             ("partition_set_origin", Optional[RemotePartitionSetOrigin]),
             ("partition_names", Optional[Sequence[str]]),
@@ -132,6 +135,7 @@ class PartitionBackfill(
         asset_selection: Optional[Sequence[AssetKey]] = None,
         title: Optional[str] = None,
         description: Optional[str] = None,
+        run_config: Optional[Mapping[str, Any]] = None,
         partition_set_origin: Optional[RemotePartitionSetOrigin] = None,
         partition_names: Optional[Sequence[str]] = None,
         last_submitted_partition_name: Optional[str] = None,
@@ -167,6 +171,7 @@ class PartitionBackfill(
             ),
             title=check_valid_title(title),
             description=check.opt_str_param(description, "description"),
+            run_config=check.opt_mapping_param(run_config, "run_config", key_type=str),
             partition_set_origin=check.opt_inst_param(
                 partition_set_origin, "partition_set_origin", RemotePartitionSetOrigin
             ),
@@ -439,6 +444,7 @@ class PartitionBackfill(
         all_partitions: bool,
         title: Optional[str],
         description: Optional[str],
+        run_config: Optional[Mapping[str, Any]],
     ) -> "PartitionBackfill":
         """If all the selected assets that have PartitionsDefinitions have the same partitioning, then
         the backfill will target the provided partition_names for all those assets.
@@ -467,6 +473,7 @@ class PartitionBackfill(
             asset_backfill_data=asset_backfill_data,
             title=title,
             description=description,
+            run_config=run_config,
         )
 
     @classmethod
@@ -480,6 +487,7 @@ class PartitionBackfill(
         partitions_by_assets: Sequence[PartitionsByAssetSelector],
         title: Optional[str],
         description: Optional[str],
+        run_config: Optional[Mapping[str, Any]],
     ):
         asset_backfill_data = AssetBackfillData.from_partitions_by_assets(
             asset_graph=asset_graph,
@@ -498,6 +506,7 @@ class PartitionBackfill(
             asset_selection=[selector.asset_key for selector in partitions_by_assets],
             title=title,
             description=description,
+            run_config=run_config,
         )
 
     @classmethod
@@ -510,6 +519,7 @@ class PartitionBackfill(
         asset_graph_subset: AssetGraphSubset,
         title: Optional[str],
         description: Optional[str],
+        run_config: Optional[Mapping[str, Any]],
     ):
         asset_backfill_data = AssetBackfillData.from_asset_graph_subset(
             asset_graph_subset=asset_graph_subset,
@@ -527,51 +537,61 @@ class PartitionBackfill(
             asset_selection=list(asset_graph_subset.asset_keys),
             title=title,
             description=description,
+            run_config=run_config,
         )
 
 
 def cancel_backfill_runs_and_cancellation_complete(
-    instance: "DagsterInstance", backfill_id: str
-) -> Iterator[Union[None, bool]]:
-    """Cancels MAX_RUNS_CANCELED_PER_ITERATION runs associated with the backfill_id. Ensures that
-    all runs for the backfill are in a terminal state before indicating that the backfill can be marked
-    CANCELED.
-    Yields a boolean indicating the backfill can be considered canceled (ie all runs are canceled).
+    instance: "DagsterInstance", backfill_id: str, logger: logging.Logger
+) -> bool:
+    """Cancels all cancelable runs associated with the backfill_id. Ensures that
+    all runs for the backfill are in a terminal state before indicating that the backfill can be
+    marked CANCELED. Yields a boolean indicating the backfill can be considered canceled
+    (ie all runs are canceled).
     """
     if not instance.run_coordinator:
         check.failed("The instance must have a run coordinator in order to cancel runs")
 
-    # Query for cancelable runs, enforcing a limit on the number of runs to cancel in an iteration
-    # as canceling runs incurs cost
-    runs_to_cancel_in_iteration = instance.run_storage.get_run_ids(
-        filters=RunsFilter(
-            statuses=CANCELABLE_RUN_STATUSES,
-            tags={
-                BACKFILL_ID_TAG: backfill_id,
-            },
-        ),
-        limit=MAX_RUNS_CANCELED_PER_ITERATION,
-    )
+    canceled_any_runs = False
 
-    yield None
+    while True:
+        # Query for cancelable runs, enforcing a limit on the number of runs to cancel in an iteration
+        # as canceling runs incurs cost
+        runs_to_cancel_in_iteration = instance.run_storage.get_runs(
+            filters=RunsFilter(
+                statuses=CANCELABLE_RUN_STATUSES,
+                tags={
+                    BACKFILL_ID_TAG: backfill_id,
+                },
+            ),
+            limit=CANCELABLE_RUNS_BATCH_SIZE,
+            ascending=True,
+        )
+        if not runs_to_cancel_in_iteration:
+            break
 
-    if runs_to_cancel_in_iteration:
+        canceled_any_runs = True
+        for run in runs_to_cancel_in_iteration:
+            run_id = run.run_id
+            logger.info(f"Terminating submitted run {run_id}")
+            # calling cancel_run will immediately set its status to CANCELING or CANCELED,
+            # ensuring that it will not be returned in the next loop
+            instance.run_coordinator.cancel_run(run_id)
+
+    if canceled_any_runs:
         # since we are canceling some runs in this iteration, we know that there is more work to do.
         # Either cancelling more runs, or waiting for the canceled runs to get to a terminal state
-        work_done = False
-        for run_id in runs_to_cancel_in_iteration:
-            instance.run_coordinator.cancel_run(run_id)
-            yield None
-    else:
-        # If there are no runs to cancel, check if there are any runs still in progress. If there are,
-        # then we want to wait for them to reach a terminal state before the backfill is marked CANCELED.
-        run_waiting_to_cancel = instance.get_run_ids(
-            RunsFilter(
-                tags={BACKFILL_ID_TAG: backfill_id},
-                statuses=NOT_FINISHED_STATUSES,
-            ),
-            limit=1,
-        )
-        work_done = len(run_waiting_to_cancel) == 0
+        return False
 
-    yield work_done
+    # If there are no runs to cancel, check if there are any runs still in progress. If there are,
+    # then we want to wait for them to reach a terminal state before the backfill is marked CANCELED.
+    run_waiting_to_cancel = instance.get_run_ids(
+        RunsFilter(
+            tags={BACKFILL_ID_TAG: backfill_id},
+            statuses=NOT_FINISHED_STATUSES,
+        ),
+        limit=1,
+    )
+    work_done = len(run_waiting_to_cancel) == 0
+
+    return work_done

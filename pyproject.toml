@@ -12,8 +12,9 @@
 
 [tool.pyright]
 
+typeCheckingMode = "standard"
+
 include = [
-  ".buildkite/dagster-buildkite",
   "docs/sphinx/_ext/dagster-sphinx",
   "python_modules",
   "examples",
@@ -33,6 +34,10 @@ exclude = [
   ".git",
   "**/.venv*",
   "**/build",
+]
+
+extraPaths = [
+  ".buildkite/buildkite-shared"
 ]
 
 # These two settings point pyright to a python environment to resolve imports against. This virtual
@@ -80,6 +85,13 @@ filterwarnings = [
   "ignore::DeprecationWarning",
   "ignore::UserWarning",
   "ignore::pytest.PytestCollectionWarning",
+]
+
+markers = [
+  "unit: Fast unit tests with no external dependencies",
+  "integration: Tests requiring real git operations or other I/O",
+  "e2e: End-to-end tests requiring GitHub authentication",
+  "slow: Tests that take more than 1 second",
 ]
 
 timeout = 240
@@ -223,6 +235,9 @@ select = [
   "PLE",
   "PLW",
 
+  # Packages have __init__.py files
+  "INP001",
+
   # (no commented out code) keep commented out code blocks out of the codebase
   # "ERA001",
 
@@ -283,6 +298,18 @@ ban-relative-imports = "all"
 "**/alembic/versions/*.py" = ["D"]
 "examples/docs_snippets/docs_snippets/guides/etl/transform-dbt/dbt_definitions*.py" = ["I001"]
 
+# Modules where it is expected for there to be no __init.py__
+"**/*test*/**/" = ["INP001"]
+"**/setup.py" = ["INP001"]
+"**/conftest.py" = ["INP001"]
+"examples/**" = ["INP001"]
+"docs/**" = ["INP001"]
+"**/scripts/**" = ["INP001"]
+"python_modules/dagster/dagster/_core/storage/alembic/env.py" = ["INP001"]
+"python_modules/libraries/dagster-airlift/kitchen-sink/**" = ["INP001"]
+# There is an __init__.py.tmpl
+"python_modules/dagster/dagster/_generate/templates/REPO_NAME_PLACEHOLDER/REPO_NAME_PLACEHOLDER/assets.py" = ["INP001"]
+
 [tool.ruff.lint.pydocstyle]
 
 # Enforce google-style docstrings. This is equivalent to ignoring a large number of pydocstyle (D)
@@ -295,3 +322,5 @@ exclude = ["examples/docs_snippets/docs_snippets/guides/etl/transform-dbt/dbt_de
 
 [tool.dagster]
 module_name = "dagster_test.toys.repo"
+
+

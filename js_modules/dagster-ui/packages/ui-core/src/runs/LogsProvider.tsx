@@ -35,7 +35,6 @@ export type LogFilter = {
   levels: {[key: string]: boolean};
   focusedTime: number;
   sinceTime: number;
-  hideNonMatches: boolean;
 };
 
 export interface LogsProviderLogs {
@@ -173,6 +172,7 @@ const useLogsProviderWithSubscription = (runId: string) => {
       const queuedLogs = [...queue.current];
       queue.current = [];
       const queuedMessages = queuedLogs.flatMap((log) => log.messages);
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
       const lastLog = queuedLogs[queuedLogs.length - 1]!;
       const hasMore = lastLog.hasMorePastEvents;
       const cursor = lastLog.cursor;

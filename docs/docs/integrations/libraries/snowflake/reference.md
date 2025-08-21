@@ -1,6 +1,6 @@
 ---
 title: 'dagster-snowflake integration reference'
-description: Store your Dagster assets in Snowflak
+description: Store your Dagster assets in Snowflake
 sidebar_position: 300
 ---
 
@@ -57,7 +57,7 @@ Currently, the Dagster's Snowflake integration only supports encrypted private k
 
 ### Executing custom SQL commands
 
-Using a [Snowflake resource](/api/libraries/dagster-snowflake#resource), you can execute custom SQL queries on a Snowflake database:
+Using a [Snowflake resource](/api/libraries/dagster-snowflake#dagster_snowflake.SnowflakeResource), you can execute custom SQL queries on a Snowflake database:
 
 <CodeExample path="docs_snippets/docs_snippets/integrations/snowflake/resource.py" startAfter="start" endBefore="end" />
 
@@ -215,7 +215,7 @@ When storing a Pandas DataFrame with the Snowflake I/O manager, the I/O manager 
 
 :::note
 
-Prior to `dagster-snowflake` version `0.19.0` the Snowflake I/O manager converted all timestamp data to strings before loading the data in Snowflake, and did the opposite conversion when fetching a DataFrame from Snowflake. If you have used a version of `dagster-snowflake` prior to version `0.19.0`, see the [Migration Guide](/guides/migrate/version-migration#extension-libraries) for information about migrating database tables.
+Prior to `dagster-snowflake` version `0.19.0` the Snowflake I/O manager converted all timestamp data to strings before loading the data in Snowflake, and did the opposite conversion when fetching a DataFrame from Snowflake. If you have used a version of `dagster-snowflake` prior to version `0.19.0`, see the [Dagster version upgrade guide](/migration/upgrading#extension-libraries) for information about migrating database tables.
 
 :::
 

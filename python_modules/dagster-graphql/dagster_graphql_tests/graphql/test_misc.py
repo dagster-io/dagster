@@ -150,7 +150,7 @@ def define_circular_dependency_job():
 
 
 @repository  # pyright: ignore[reportArgumentType]
-def test_repository():
+def the_test_repository():
     return {"jobs": {"circular_dependency_job": define_circular_dependency_job}}
 
 

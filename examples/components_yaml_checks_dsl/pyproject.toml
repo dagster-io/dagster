@@ -1,6 +1,6 @@
 [project]
 name = "components_yaml_checks_dsl"
-requires-python = ">=3.9,<3.13"
+requires-python = ">=3.9,<3.14"
 version = "0.1.0"
 dependencies = [
     "dagster",
@@ -10,7 +10,7 @@ dependencies = [
 ]
 
 [project.entry-points]
-"dagster_dg.library" = { components_yaml_checks_dsl = "components_yaml_checks_dsl.lib"}
+"dagster_dg_cli.registry_modules" = { components_yaml_checks_dsl = "components_yaml_checks_dsl.lib"}
 
 [dependency-groups]
 dev = [
@@ -27,7 +27,6 @@ directory_type = "project"
 
 [tool.dg.project]
 root_module = "components_yaml_checks_dsl"
-python_environment = "persistent_uv"
 
 [tool.setuptools.packages.find]
 exclude=["components_yaml_checks_dsl_tests"]
@@ -39,7 +38,8 @@ dagster = { path = '/Users/schrockn/code/dagster/python_modules/dagster', editab
 dagster-pipes = { path = '/Users/schrockn/code/dagster/python_modules/dagster-pipes', editable = true }
 dagster-webserver = { path = '/Users/schrockn/code/dagster/python_modules/dagster-webserver', editable = true }
 dagster-airbyte = { path = '/Users/schrockn/code/dagster/python_modules/libraries/dagster-airbyte', editable = true }
-dagster-dg = { path = '/Users/schrockn/code/dagster/python_modules/libraries/dagster-dg', editable = true }
+dagster-dg-core = { path = '/Users/schrockn/code/dagster/python_modules/libraries/dagster-dg-core', editable = true }
+dagster-dg-cli = { path = '/Users/schrockn/code/dagster/python_modules/libraries/dagster-dg-cli', editable = true }
 dagster-dask = { path = '/Users/schrockn/code/dagster/python_modules/libraries/dagster-dask', editable = true }
 dagster-github = { path = '/Users/schrockn/code/dagster/python_modules/libraries/dagster-github', editable = true }
 dagster-snowflake = { path = '/Users/schrockn/code/dagster/python_modules/libraries/dagster-snowflake', editable = true }
@@ -63,7 +63,6 @@ dagster-managed-elements = { path = '/Users/schrockn/code/dagster/python_modules
 dagster-snowflake-pandas = { path = '/Users/schrockn/code/dagster/python_modules/libraries/dagster-snowflake-pandas', editable = true }
 dagster-embedded-elt = { path = '/Users/schrockn/code/dagster/python_modules/libraries/dagster-embedded-elt', editable = true }
 dagster-powerbi = { path = '/Users/schrockn/code/dagster/python_modules/libraries/dagster-powerbi', editable = true }
-dagster-components = { path = '/Users/schrockn/code/dagster/python_modules/libraries/dagster-components', editable = true }
 dagster-pandera = { path = '/Users/schrockn/code/dagster/python_modules/libraries/dagster-pandera', editable = true }
 dagster-datadog = { path = '/Users/schrockn/code/dagster/python_modules/libraries/dagster-datadog', editable = true }
 dagster-celery-k8s = { path = '/Users/schrockn/code/dagster/python_modules/libraries/dagster-celery-k8s', editable = true }

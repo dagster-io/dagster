@@ -34,6 +34,7 @@ export const AutomationDetailsSection = ({
           isJob
           showIcon
           pipelineName={jobName}
+          // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
           pipelineHrefContext={repoAddress!}
         />
       )),
@@ -42,6 +43,7 @@ export const AutomationDetailsSection = ({
       label: 'Sensors',
       children: assetNode ? (
         sensors.length > 0 ? (
+          // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
           <ScheduleOrSensorTag repoAddress={repoAddress!} sensors={sensors} showSwitch={false} />
         ) : null
       ) : (
@@ -53,6 +55,7 @@ export const AutomationDetailsSection = ({
       children: assetNode ? (
         schedules.length > 0 && (
           <ScheduleOrSensorTag
+            // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
             repoAddress={repoAddress!}
             schedules={schedules}
             showSwitch={false}
@@ -76,8 +79,8 @@ export const AutomationDetailsSection = ({
       label: 'Automation condition',
       children: assetNode?.automationCondition?.label ? (
         <EvaluationUserLabel
-          userLabel={assetNode?.automationCondition.label}
-          expandedLabel={assetNode?.automationCondition.expandedLabel}
+          userLabel={assetNode.automationCondition.label}
+          expandedLabel={assetNode.automationCondition.expandedLabel}
         />
       ) : null,
     },

@@ -1,7 +1,29 @@
-[build-system]
-requires = ["setuptools"]
-build-backend = "setuptools.build_meta"
+[project]
+name = "project_prompt_eng"
+version = "0.0.1"
+description = "Project Prompt Engineering"
+readme = "README.md"
+requires-python = ">=3.9"
+dependencies = [
+    "dagster",
+    "dagster-dg-cli",
+    "dagster-anthropic",
+    "pydantic",
+    "requests",
+]
 
-[tool.dagster]
-module_name = "project_prompt_eng.definitions"
-code_location_name = "project_prompt_eng"
+[project.optional-dependencies]
+dev = [
+    "ruff",
+    "pytest",
+    "dagster-webserver",
+]
+
+[tool.dg]
+directory_type = "project"
+
+[tool.dg.project]
+root_module = "project_prompt_eng"
+
+[tool.dg.project.python_environment]
+active = true

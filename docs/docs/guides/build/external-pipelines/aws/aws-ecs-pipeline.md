@@ -4,31 +4,44 @@ description: "Learn to integrate Dagster Pipes with AWS ECS to launch external c
 sidebar_position: 100
 ---
 
-This article covers how to use [Dagster Pipes](/guides/build/external-pipelines/) with [AWS ECS](https://aws.amazon.com/ecs/).
+import ScaffoldProject from '@site/docs/partials/\_ScaffoldProject.md';
+
+This article covers how to use [Dagster Pipes](/guides/build/external-pipelines) with [AWS ECS](https://aws.amazon.com/ecs).
 
 The [dagster-aws](/api/libraries/dagster-aws) integration library provides the <PyObject section="libraries" object="pipes.PipesECSClient" module="dagster_aws" /> resource which can be used to launch AWS ECS tasks from Dagster assets and ops. Dagster can receive regular events like logs, asset checks, or asset materializations from jobs launched with this client. Using it requires minimal code changes on the task side.
 
-<details>
-  <summary>Prerequisites</summary>
+## Prerequisites
 
-    - **In the Dagster environment**, you'll need to:
+To run the examples, you'll need to:
 
-    - Install the following packages:
+- Create a new Dagster project:
+  <ScaffoldProject />
+- Install the necessary Python libraries:
 
-        ```shell
-        pip install dagster dagster-webserver dagster-aws
-        ```
+<Tabs groupId="package-manager">
+   <TabItem value="uv" label="uv">
+      Install the required dependencies:
 
-        Refer to the [Dagster installation guide](/getting-started/installation) for more info.
+         ```shell
+         uv add dagster-aws
+         ```
 
-    - **Configure AWS authentication credentials.** If you don't have this set up already, refer to the [boto3 quickstart](https://boto3.amazonaws.com/v1/documentation/api/latest/guide/quickstart.html).
+   </TabItem>
 
-    - **In AWS**, you'll need:
+   <TabItem value="pip" label="pip">
+      Install the required dependencies:
 
-    - An existing AWS account
-    - An AWS ECS task. To receive logs and events from a task container, it must have `"logDriver"` set to `"awslogs"` in `"logConfiguration"`.
+         ```shell
+         pip install dagster-aws
+         ```
 
-</details>
+   </TabItem>
+</Tabs>
+
+- Configure AWS authentication credentials. If you don't have this set up already, refer to the [boto3 quickstart](https://boto3.amazonaws.com/v1/documentation/api/latest/guide/quickstart.html).
+- In AWS, you'll need:
+  - An existing AWS account
+  - An AWS ECS task. To receive logs and events from a task container, it must have `"logDriver"` set to `"awslogs"` in `"logConfiguration"`
 
 
 ## Step 1: Install the dagster-pipes module in your ECS environment
@@ -58,16 +71,24 @@ The metadata format shown above (`{"raw_value": value, "type": type}`) is part o
 
 ## Step 3: Create an asset using the PipesECSClient to launch the task
 
+import ScaffoldAsset from '@site/docs/partials/\_ScaffoldAsset.md';
+
+<ScaffoldAsset />
+
 In the Dagster asset/op code, use the `PipesECSClient` resource to launch the job:
 
-<CodeExample path="docs_snippets/docs_snippets/guides/dagster/dagster_pipes/ecs/dagster_code.py" startAfter="start_asset_marker" endBefore="=end_asset_marker" />
+<CodeExample path="docs_snippets/docs_snippets/guides/dagster/dagster_pipes/ecs/dagster_code.py" title="src/<project_name>/defs/assets.py" />
 
 This will launch the AWS ECS task and wait until it reaches `"STOPPED"` status. If any of the tasks's containers fail, the Dagster process will raise an exception. If the Dagster process is interrupted while the task is still running, the task will be terminated.
 
 ## Step 4: Create Dagster definitions
 
+import ScaffoldResource from '@site/docs/partials/\_ScaffoldResource.md';
+
+<ScaffoldResource />
+
 Next, add the `PipesECSClient` resource to your project's <PyObject section="definitions" module="dagster" object="Definitions" /> object:
 
-<CodeExample path="docs_snippets/docs_snippets/guides/dagster/dagster_pipes/ecs/dagster_code.py" startAfter="start_definitions_marker" endBefore="=end_definitions_marker" />
+<CodeExample path="docs_snippets/docs_snippets/guides/dagster/dagster_pipes/ecs/resources.py" title="src/<project_name>/defs/resources.py" />
 
 Dagster will now be able to launch the AWS ECS task from the `ecs_pipes_asset` asset, and receive logs and events from the task. If using the default `message_reader` `PipesCloudwatchLogReader`, logs will be read from the Cloudwatch log group specified in the container `"logConfiguration"` field definition. Logs from all containers in the task will be read.

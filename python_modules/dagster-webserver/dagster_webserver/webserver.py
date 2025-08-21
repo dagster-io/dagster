@@ -75,7 +75,7 @@ class DagsterWebserver(
     def relative_path(self, rel: str) -> str:
         return path.join(path.dirname(__file__), rel)
 
-    def make_request_context(self, conn: HTTPConnection) -> BaseWorkspaceRequestContext:
+    def _make_request_context(self, conn: HTTPConnection) -> BaseWorkspaceRequestContext:
         return self._process_context.create_request_context(conn)
 
     def build_middleware(self) -> list[Middleware]:
@@ -116,18 +116,17 @@ class DagsterWebserver(
 
     async def download_debug_file_endpoint(self, request: Request):
         run_id = request.path_params["run_id"]
-        context = self.make_request_context(request)
+        with self.request_context(request) as context:
+            run = context.instance.get_run_by_id(run_id)
+            debug_payload = DebugRunPayload.build(context.instance, run)  # type: ignore  # (possible none)
 
-        run = context.instance.get_run_by_id(run_id)
-        debug_payload = DebugRunPayload.build(context.instance, run)  # type: ignore  # (possible none)
+            result = io.BytesIO()
+            with gzip.GzipFile(fileobj=result, mode="wb") as file:
+                debug_payload.write(file)
 
-        result = io.BytesIO()
-        with gzip.GzipFile(fileobj=result, mode="wb") as file:
-            debug_payload.write(file)
+            result.seek(0)  # be kind, please rewind
 
-        result.seek(0)  # be kind, please rewind
-
-        return StreamingResponse(result, media_type="application/gzip")
+            return StreamingResponse(result, media_type="application/gzip")
 
     async def download_notebook(self, request: Request):
         try:
@@ -140,109 +139,112 @@ class DagsterWebserver(
                 "<code>pip install dagster-webserver[notebook]</code>"
             )
 
-        context = self.make_request_context(request)
-        code_location_name = request.query_params["repoLocName"]
+        with self.request_context(request) as context:
+            code_location_name = request.query_params["repoLocName"]
 
-        nb_path = request.query_params["path"]
-        if not nb_path.endswith(".ipynb"):
-            return PlainTextResponse("Invalid Path", status_code=400)
+            nb_path = request.query_params["path"]
+            if not nb_path.endswith(".ipynb"):
+                return PlainTextResponse("Invalid Path", status_code=400)
 
-        # get ipynb content from grpc call
-        notebook_content = context.get_notebook_data(code_location_name, nb_path)
-        check.inst_param(notebook_content, "notebook_content", bytes)
+            # get ipynb content from grpc call
+            notebook_content = context.get_notebook_data(code_location_name, nb_path)
+            check.inst_param(notebook_content, "notebook_content", bytes)
 
-        # parse content to HTML
-        notebook = nbformat.reads(notebook_content, as_version=4)
-        html_exporter = HTMLExporter()
-        (body, resources) = html_exporter.from_notebook_node(notebook)
-        return HTMLResponse("<style>" + resources["inlining"]["css"][0] + "</style>" + body)
+            # parse content to HTML
+            notebook = nbformat.reads(notebook_content, as_version=4)
+            html_exporter = HTMLExporter()
+            (body, resources) = html_exporter.from_notebook_node(notebook)
+            return HTMLResponse("<style>" + resources["inlining"]["css"][0] + "</style>" + body)
 
     async def download_captured_logs_endpoint(self, request: Request):
         [*log_key, file_extension] = request.path_params["path"].split("/")
-        context = self.make_request_context(request)
-        compute_log_manager = context.instance.compute_log_manager
+        with self.request_context(request) as context:
+            compute_log_manager = context.instance.compute_log_manager
 
-        if not isinstance(
-            compute_log_manager, (LocalComputeLogManager, CloudStorageComputeLogManager)
-        ):
-            raise HTTPException(
-                404, detail="Compute log manager is not compatible for local downloads"
-            )
+            if not isinstance(
+                compute_log_manager,
+                (LocalComputeLogManager, CloudStorageComputeLogManager),
+            ):
+                raise HTTPException(
+                    404,
+                    detail="Compute log manager is not compatible for local downloads",
+                )
 
-        if isinstance(compute_log_manager, CloudStorageComputeLogManager):
-            io_type = ComputeIOType.STDOUT if file_extension == "out" else ComputeIOType.STDERR
-            if compute_log_manager.cloud_storage_has_logs(
-                log_key, io_type
-            ) and not compute_log_manager.has_local_file(log_key, io_type):
-                compute_log_manager.download_from_cloud_storage(log_key, io_type)
-            location = compute_log_manager.local_manager.get_captured_local_path(
-                log_key, file_extension
-            )
-        else:
-            location = compute_log_manager.get_captured_local_path(log_key, file_extension)
+            if isinstance(compute_log_manager, CloudStorageComputeLogManager):
+                io_type = ComputeIOType.STDOUT if file_extension == "out" else ComputeIOType.STDERR
+                if compute_log_manager.cloud_storage_has_logs(
+                    log_key, io_type
+                ) and not compute_log_manager.has_local_file(log_key, io_type):
+                    compute_log_manager.download_from_cloud_storage(log_key, io_type)
+                location = compute_log_manager.local_manager.get_captured_local_path(
+                    log_key, file_extension
+                )
+            else:
+                location = compute_log_manager.get_captured_local_path(log_key, file_extension)
 
-        if not location or not path.exists(location):
-            raise HTTPException(404, detail="No log files available for download")
+            if not location or not path.exists(location):
+                raise HTTPException(404, detail="No log files available for download")
 
-        filebase = "__".join(log_key)
-        return FileResponse(location, filename=f"{filebase}.{file_extension}")
+            filebase = "__".join(log_key)
+            return FileResponse(location, filename=f"{filebase}.{file_extension}")
 
     async def report_asset_materialization_endpoint(self, request: Request) -> JSONResponse:
-        context = self.make_request_context(request)
-        return await handle_report_asset_materialization_request(context, request)
+        with self.request_context(request) as context:
+            return await handle_report_asset_materialization_request(context, request)
 
     async def report_asset_check_endpoint(self, request: Request) -> JSONResponse:
-        context = self.make_request_context(request)
-        return await handle_report_asset_check_request(context, request)
+        with self.request_context(request) as context:
+            return await handle_report_asset_check_request(context, request)
 
     async def report_asset_observation_endpoint(self, request: Request) -> JSONResponse:
-        context = self.make_request_context(request)
-        return await handle_report_asset_observation_request(context, request)
+        with self.request_context(request) as context:
+            return await handle_report_asset_observation_request(context, request)
 
     def index_html_endpoint(self, request: Request):
         """Serves root html."""
         index_path = self.relative_path("webapp/build/index.html")
 
-        context = self.make_request_context(request)
+        with self.request_context(request) as context:
+            run_storage_id = None
+            if isinstance(context.instance.run_storage, SqlRunStorage):
+                run_storage_id = context.instance.run_storage.get_run_storage_id()
 
-        run_storage_id = None
-        if isinstance(context.instance.run_storage, SqlRunStorage):
-            run_storage_id = context.instance.run_storage.get_run_storage_id()
+            try:
+                with open(index_path, encoding="utf8") as f:
+                    rendered_template = f.read()
+                    nonce = uuid.uuid4().hex
+                    headers = {
+                        **{"Content-Security-Policy": self.make_csp_header(nonce)},
+                        **self.make_security_headers(),
+                    }
+                    content = (
+                        rendered_template.replace(
+                            "BUILDTIME_ASSETPREFIX_REPLACE_ME",
+                            f"{self._app_path_prefix}",
+                        )
+                        .replace("__PATH_PREFIX__", self._app_path_prefix)
+                        .replace("__INSTANCE_ID__", run_storage_id or "")
+                        .replace(
+                            '"__TELEMETRY_ENABLED__"',
+                            str(context.instance.telemetry_enabled).lower(),
+                        )
+                        .replace("NONCE-PLACEHOLDER", nonce)
+                    )
 
-        try:
-            with open(index_path, encoding="utf8") as f:
-                rendered_template = f.read()
-                nonce = uuid.uuid4().hex
-                headers = {
-                    **{"Content-Security-Policy": self.make_csp_header(nonce)},
-                    **self.make_security_headers(),
-                }
-                content = (
-                    rendered_template.replace(
-                        "BUILDTIME_ASSETPREFIX_REPLACE_ME", f"{self._app_path_prefix}"
-                    )
-                    .replace("__PATH_PREFIX__", self._app_path_prefix)
-                    .replace("__INSTANCE_ID__", run_storage_id or "")
-                    .replace(
-                        '"__TELEMETRY_ENABLED__"', str(context.instance.telemetry_enabled).lower()
-                    )
-                    .replace("NONCE-PLACEHOLDER", nonce)
+                    if self._live_data_poll_rate:
+                        content = content.replace(
+                            "__LIVE_DATA_POLL_RATE__", str(self._live_data_poll_rate)
+                        )
+                    return HTMLResponse(content, headers=headers)
+            except FileNotFoundError:
+                raise Exception(
+                    """
+                    Can't find webapp files.
+                    If you are using dagster-webserver, then probably it's a corrupted installation or a bug.
+                    However, if you are developing dagster-webserver locally, your problem can be fixed by running
+                    "make rebuild_ui" in the project root.
+                    """
                 )
-
-                if self._live_data_poll_rate:
-                    content = content.replace(
-                        "__LIVE_DATA_POLL_RATE__", str(self._live_data_poll_rate)
-                    )
-                return HTMLResponse(content, headers=headers)
-        except FileNotFoundError:
-            raise Exception(
-                """
-                Can't find webapp files.
-                If you are using dagster-webserver, then probably it's a corrupted installation or a bug.
-                However, if you are developing dagster-webserver locally, your problem can be fixed by running
-                "make rebuild_ui" in the project root.
-                """
-            )
 
     def build_static_routes(self):
         def _static_file(path, file_path):

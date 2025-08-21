@@ -70,6 +70,34 @@ You can use Dagster to orchestrate the materialization of Looker PDTs. To model 
 
 <CodeExample path="docs_snippets/docs_snippets/integrations/looker/materializing-looker-pdts.py" />
 
+### Creating Looker jobs
+
+Once you have your Looker assets for your PDTs, you can define a job to materialize all of them.
+
+<CodeExample
+  startAfter="start_looker_all_assets_job"
+  endBefore="end_looker_all_assets_job"
+  path="docs_snippets/docs_snippets/integrations/looker/create_looker_all_assets_job.py"
+  language="python"
+/>
+
+You can also define a job for a selection of these assets.
+
+<CodeExample
+  startAfter="start_looker_selection_job"
+  endBefore="end_looker_selection_job"
+  path="docs_snippets/docs_snippets/integrations/looker/create_looker_selection_job.py"
+  language="python"
+/>
+
+Finally, jobs created for your Looker assets can be scheduled.
+
+<CodeExample
+  startAfter="start_looker_schedule"
+  endBefore="end_looker_schedule"
+  path="docs_snippets/docs_snippets/integrations/looker/schedule_looker_jobs.py"
+  language="python"
+/>
 
 ## Customize upstream dependencies
 
@@ -78,9 +106,9 @@ By default, Dagster sets upstream dependencies when generating asset specs for y
 The below example defines `my_upstream_asset` as an upstream dependency of `my_looker_view`:
 
 <CodeExample
-    startAfter="start_upstream_asset"
-    endBefore="end_upstream_asset"
-    path="docs_snippets/docs_snippets/integrations/looker/customize_upstream_dependencies.py"
+  startAfter="start_upstream_asset"
+  endBefore="end_upstream_asset"
+  path="docs_snippets/docs_snippets/integrations/looker/customize_upstream_dependencies.py"
 />
 
 Note that `super()` is called in each of the overridden methods to generate the default asset spec. It is best practice to generate the default asset spec before customizing it.
@@ -93,5 +121,5 @@ Note that `super()` is called in each of the overridden methods to generate the 
 
 - [`dagster-looker` API reference](/api/libraries/dagster-looker)
 - [Asset definitions](/guides/build/assets/defining-assets)
-- [Resources](/guides/build/external-resources/)
-- [Using environment variables and secrets](/guides/deploy/using-environment-variables-and-secrets)
+- [Resources](/guides/build/external-resources)
+- [Using environment variables and secrets](/guides/operate/configuration/using-environment-variables-and-secrets)

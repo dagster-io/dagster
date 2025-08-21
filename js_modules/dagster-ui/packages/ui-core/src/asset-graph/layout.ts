@@ -1,6 +1,6 @@
 import * as dagre from 'dagre';
 
-import {AssetNodeFacet} from './AssetNodeFacets';
+import {AssetNodeFacet} from './AssetNodeFacetsUtil';
 import {GraphData, GraphId, GraphNode, groupIdForNode, isGroupId} from './Utils';
 import type {IBounds, IPoint} from '../graph/common';
 import {ChangeReason} from '../graphql/types';
@@ -248,6 +248,7 @@ export const layoutAssetGraphImpl = (
     if (!isGroupId(id)) {
       nodes[id] = {id, bounds};
     } else if (!expandedGroupsSet.has(id)) {
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
       const group = groups[id]!;
       group.bounds = bounds;
     }
@@ -262,6 +263,7 @@ export const layoutAssetGraphImpl = (
       const nodeLayout = nodes[node.id];
       if (nodeLayout && node.definition.groupName) {
         const groupId = groupIdForNode(node);
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
         const group = groups[groupId]!;
         group.bounds =
           group.bounds.width === 0
@@ -378,9 +380,14 @@ export const getAssetNodeDimensions = (def: {
 };
 
 export const getAssetNodeDimensions2025 = (facets: Set<AssetNodeFacet>) => {
-  let height = 50; // box padding + border + name
+  let height = 0;
 
-  height += ASSET_NODE_STATUS_ROW_HEIGHT * facets.size;
+  if (facets.size === 0) {
+    height = 60;
+  } else {
+    height = 50; // box padding + border + name
+    height += ASSET_NODE_STATUS_ROW_HEIGHT * facets.size;
+  }
 
   return {width: ASSET_NODE_WIDTH, height};
 };

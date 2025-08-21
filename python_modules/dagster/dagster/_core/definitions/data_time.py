@@ -20,7 +20,7 @@ from dagster_shared.utils.hash import make_hashable
 
 import dagster._check as check
 from dagster._core.definitions.asset_selection import KeysAssetSelection
-from dagster._core.definitions.base_asset_graph import BaseAssetGraph
+from dagster._core.definitions.assets.graph.base_asset_graph import BaseAssetGraph
 from dagster._core.definitions.data_version import (
     DATA_VERSION_TAG,
     DataVersion,
@@ -28,10 +28,8 @@ from dagster._core.definitions.data_version import (
 )
 from dagster._core.definitions.events import AssetKey, AssetKeyPartitionKey
 from dagster._core.definitions.freshness_policy import FreshnessMinutes
-from dagster._core.definitions.time_window_partitions import (
-    TimeWindowPartitionsDefinition,
-    TimeWindowPartitionsSubset,
-)
+from dagster._core.definitions.partitions.definition import TimeWindowPartitionsDefinition
+from dagster._core.definitions.partitions.subset import TimeWindowPartitionsSubset
 from dagster._core.errors import DagsterInvariantViolationError
 from dagster._core.event_api import EventLogRecord
 from dagster._core.storage.dagster_run import FINISHED_STATUSES, DagsterRunStatus, RunsFilter
@@ -87,9 +85,7 @@ class CachingDataTimeResolver:
         partition_subset = partitions_def.empty_subset().with_partition_keys(
             partition_key
             for partition_key in self._instance_queryer.get_materialized_partitions(asset_key)
-            if partitions_def.has_partition_key(
-                partition_key, current_time=self._instance_queryer.evaluation_time
-            )
+            if partitions_def.has_partition_key(partition_key)
         )
 
         if not isinstance(partition_subset, TimeWindowPartitionsSubset):
@@ -127,9 +123,7 @@ class CachingDataTimeResolver:
         net_new_partitions = {
             partition_key
             for partition_key in (partitions - prev_partitions)
-            if partitions_def.has_partition_key(
-                partition_key, current_time=self._instance_queryer.evaluation_time
-            )
+            if partitions_def.has_partition_key(partition_key)
         }
 
         # there are new materializations, but they don't fill any new partitions
@@ -539,7 +533,7 @@ class CachingDataTimeResolver:
         evaluation_time: datetime.datetime,
     ) -> Optional[FreshnessMinutes]:
         asset = self.asset_graph.get(asset_key)
-        if asset.freshness_policy is None:
+        if asset.legacy_freshness_policy is None:
             raise DagsterInvariantViolationError(
                 "Cannot calculate minutes late for asset without a FreshnessPolicy"
             )
@@ -549,7 +543,7 @@ class CachingDataTimeResolver:
         else:
             current_data_time = self.get_current_data_time(asset_key, current_time=evaluation_time)
 
-        return asset.freshness_policy.minutes_overdue(
+        return asset.legacy_freshness_policy.minutes_overdue(
             data_time=current_data_time,
             evaluation_time=evaluation_time,
         )

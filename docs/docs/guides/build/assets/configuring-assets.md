@@ -1,6 +1,7 @@
 ---
-title: Configuring assets in the UI
+description: Make assets configurable in the Dagster UI by defining a run configuration schema that inherits from the Dagster Config class.
 sidebar_position: 400
+title: Configuring assets in the UI
 ---
 
 The Dagster UI is commonly used to manually materialize assets, backfill historical data, debug a production issue, or some other one-off task.
@@ -9,7 +10,7 @@ You'll often want to be able to adjust parameters when materializing assets, whi
 
 :::note
 
-This article assume familiarity with [assets](/guides/build/assets) and [Pydantic](https://docs.pydantic.dev/latest/).
+This article assume familiarity with [assets](/guides/build/assets) and [Pydantic](https://docs.pydantic.dev/latest).
 
 :::
 
@@ -20,7 +21,7 @@ For an asset to be configurable, first define a [run configuration schema](/guid
 
 For example, you want to allow your team to change the lookback time window for the computation that materializes an asset:
 
-<CodeExample path="docs_snippets/docs_snippets/guides/data-modeling/configuring-assets/config-schema.py" language="python" />
+<CodeExample path="docs_snippets/docs_snippets/guides/data-modeling/configuring-assets/config-schema.py" language="python" title="src/<project_name>/defs/assets.py" />
 
 ## Specifying config using the Dagster UI
 
@@ -42,5 +43,5 @@ This will open the Launchpad, where you can scaffold the config, customize its v
 
 ## Next steps
 
-- Learn more about Dagster [assets](/guides/build/assets/)
+- Learn more about Dagster [assets](/guides/build/assets)
 - Connect to external [APIs](/guides/build/external-resources/connecting-to-apis) and [databases](/guides/build/external-resources/connecting-to-databases) with resources

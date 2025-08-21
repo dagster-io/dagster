@@ -6,7 +6,7 @@ import {useCopyToClipboard} from '../app/browser';
 
 interface CopyIconButtonProps {
   value: string | (() => string);
-  iconSize?: 16 | 20 | 24;
+  iconSize?: 12 | 16 | 20 | 24;
   iconColor?: string;
 }
 

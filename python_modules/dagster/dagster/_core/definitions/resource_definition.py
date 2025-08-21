@@ -54,6 +54,7 @@ ResourceFunction: TypeAlias = Union[
 ]
 
 
+@public
 @beta_param(param="version")
 class ResourceDefinition(AnonymousConfigurableDefinition, IHasInternalInit):
     """Core class for defining resources.
@@ -372,6 +373,7 @@ def resource(
 ) -> Callable[[ResourceFunction], "ResourceDefinition"]: ...
 
 
+@public
 @beta_param(param="version")
 def resource(
     config_schema: Union[ResourceFunction, CoercableToConfigSchema] = None,
@@ -415,6 +417,7 @@ def resource(
     return _wrap
 
 
+@public
 def make_values_resource(**kwargs: Any) -> ResourceDefinition:
     """A helper function that creates a ``ResourceDefinition`` to take in user-defined values.
 

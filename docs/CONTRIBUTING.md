@@ -4,6 +4,8 @@
 
 ### Links
 
+#### Use full paths instead of relative links
+
 Docusaurus doesn't always render relative links correctly, which can result in users seeing intermittent 404s when accessing those links. Use full paths instead of relative links, like this:
 
 ```
@@ -15,6 +17,12 @@ instead of this:
 ```
 For more information, see "[Defining assets](defining-assets)".
 ```
+
+#### Use non-trailing slash links to Dagster docs
+
+e.g. use `/guides/build/assets/defining-assets` instead of `/guides/build/assets/defining-assets/`.
+
+**Context:** Links to Dagster docs with trailing slashes automatically redirect to non-trailing slash links. While that's helpful for docs links we don't control, too many redirects on our own pages can confuse search engines and cause SEO issues.
 
 ### Partials
 
@@ -45,8 +53,9 @@ import Deprecated from '@site/docs/partials/\_Deprecated.md';
 API documentation lives in reStructuredText files in the [/docs/sphinx/sections/api/apidocs](https://github.com/dagster-io/dagster/tree/master/docs/sphinx/sections/api/apidocs) directory. These files reference modules, classes, and methods from Python files in the [python_modules](https://github.com/dagster-io/dagster/tree/master/python_modules) directory (mainly the `dagster`, `dagster-pipes`, and `libraries` directories). When the API docs are built, Sphinx populates them with the docstrings from those modules, classes, and methods.
 
 When you make changes to the API, you may need to do some or all of the following:
-* Add or update docstrings in Python files
-* Update reStructuredText files to reference new modules, classes, or methods
+
+- Add or update docstrings in Python files
+- Update reStructuredText files to reference new modules, classes, or methods
 
 #### Formatting API documentation
 
@@ -65,30 +74,39 @@ H3 heading
 
 ## Formatting
 
-### PyObject references
+### Linking to API docs with `PyObject`
 
-To create a link to the Python API docs, use the `PyObject` component. Previously, we were able to parse the Sphinx search index to determine the section that the module resides. As we no longer have this, a `section` prop was added to the component:
-
-Before:
+To create a link to the Python API docs, use the [`PyObject` component](https://github.com/dagster-io/dagster/blob/master/docs/src/components/PyObject.tsx). The following `PyObject` will result in a URL of `https://docs.dagster.io/api/dagster/assets#dagster.MaterializeResult`:
 
 ```
-<PyObject
-  module="dagster"
-  object="MaterializeResult"
-/>
+<PyObject module="dagster" section="assets" object="MaterializeResult" />
 ```
 
-After:
+Note that if the class name is different from the module, you will need to prepend the class name to the object:
 
 ```
-<PyObject
-  section="assets"
-  module="dagster"
-  object="MaterializeResult"
-/>
+<PyObject module="dagster_aws" section="libraries" object="s3.s3_pickle_io_manager" />
 ```
 
-Note that the `method` property causes the build to break -- use `object` instead, and prepend the class name to the method, if it is different from the module.
+#### Properties
+
+Required properties:
+
+- `module`: The module name
+- `section`: The section name in the docs (i.e. the name of the page)
+- `object`: The class or method
+
+Optional properties:
+
+- pluralize
+- displayText
+- decorator
+
+The following example creates a link like this: [@assets](https://docs.dagster.io/api/dagster/assets#dagster.asset):
+
+```
+<PyObject module="dagster" section="assets" object="asset" decorator pluralize />
+```
 
 ### Images
 
@@ -206,7 +224,9 @@ You can optionally include [additional properties](https://github.com/dagster-io
 The `path` is relative to the `./examples/` directory for maximum flexibility; it is sometimes useful to be able to reference the fully-featured projects in `/examples/`. However, if you're writing new example code for docs that consists of one or a few short scripts to demonstrate the use of a single feature, you should put that code in the `/examples/docs_snippets/docs_snippets/` directory.
 
 At minimum, all `.py` files in the `docs_snippets` directory are tested by attempting to load the Python files.
-You can write additional tests for them in the `docs_snippets_test` folder. See the folder for more information.
+You can write additional tests for them in the `docs_snippets_test` folder. See that folder for more information.
+
+You can also write tests to regenerate and test CLI snippets in the `docs_snippets_test/snippet_checks` folder. See that folder for more information.
 
 To type-check the code snippets during development, run the following command from the Dagster root folder.
 This will run `pyright` on all new/changed files relative to the master branch.
@@ -272,7 +292,7 @@ Some CLI invocations may be brief enough that we don't want to include them in a
 <CliInvocationExample contents="uv add dagster-sling" />
 ```
 
-For more information on testing the CLI commands used in docs, see [the README in docs tests](../../examples/docs_snippets/docs_snippets_tests/snippet_checks/README.md).
+For more information on testing the CLI commands used in docs, see [the README in docs tests](../examples/docs_snippets/docs_snippets_tests/snippet_checks/README.md).
 
 ### Code reference links
 
@@ -334,7 +354,7 @@ Use `**strong**` to emphasize content in tabs. Do not use Markdown headings, sin
 
 #### Synced tabs
 
-Groups of tabs can be synced by using the `groupId` parameter.
+Groups of tabs can be synced with the `groupId` parameter:
 
 ```html
 <Tabs groupId="operating-systems">
@@ -348,15 +368,29 @@ Groups of tabs can be synced by using the `groupId` parameter.
 </Tabs>
 ```
 
-For more information refer to the [Docusaurus documentation](https://docusaurus.io/docs/markdown-features/tabs#syncing-tab-choices).
+For more information, see the [Docusaurus documentation](https://docusaurus.io/docs/markdown-features/tabs#syncing-tab-choices).
 
 ## Front matter
 
 Each Docusaurus doc can include [front matter](https://docusaurus.io/docs/markdown-features#front-matter), which is metadata about the doc. For a list of accepted fields, see the [Docusaurus docs](https://docusaurus.io/docs/api/plugins/@docusaurus/plugin-content-docs#markdown-front-matter).
 
+### Descriptions
+
+The llms-txt plugin recreates llms.txt and llms-full.txt in the `build` folder every time `yarn build` is run. This plugin appends each page's title and front matter description to llms.txt, and the entire contents of each page to llms-full.txt.
+
+### Canonical URL
+
+Since we have `trailingSlash: false` set in `vercel.json`, canonical URLs for docs do not include a trailing slash. However, by default, Docusaurus includes a trailing slash for index page URLs, which can harm SEO for the docs site. To get around this, we set the `canonicalUrl` in the front matter of index pages.
+
+### Slug
+
+We set the slug in the front matter of index pages so the slug that is displayed in a browser for index pages is the same as the canonical URL.
+
 ### Integrations pages front matter
 
-Integrations pages use the following front matter:
+The front matter for integration pages (e.g. [Databricks](https://docs.dagster.io/integrations/libraries/databricks) or [Delta Lake](https://docs.dagster.io/integrations/libraries/deltalake/)) is aligned with the public API that is used in the integrations marketplace -- please check with the @dagster-io/docs team before changing it.
+
+Dagster-supported integrations pages use the following front matter:
 
 ```
 title: Dagster & CoolIntegration
@@ -385,4 +419,4 @@ sidebar_custom_props:
 
 [Tags](https://docusaurus.io/docs/create-doc#doc-tags) can be defined inline or in [tags.yml](https://github.com/dagster-io/dagster/blob/master/docs/docs/tags.yml). Tags defined in tags.yml allow creation of tag landing pages, like https://docs.dagster.io/tags/integrations/etl. If you create a new kind of tag, be sure to update tags.yml so a landing page is created for the tag.
 
-
+The `sidebar_custom_props` values are used to render the doc cards on the integrations index page.

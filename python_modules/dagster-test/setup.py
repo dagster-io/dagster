@@ -16,14 +16,14 @@ setup(
     ],
     packages=find_packages(exclude=["dagster_test_tests*"]),
     include_package_data=True,
-    python_requires=">=3.9,<3.13",
+    python_requires=">=3.9,<3.14",
     install_requires=[
         "dagster",
         "rich",
     ],
     extras_require={
         # Eventually we sholud remove this as an extra and just include it in the main package
-        "pyspark": ["pyspark"],
+        "pyspark": ["pyspark<4"],
     },
     zip_safe=False,
 )

@@ -4,12 +4,12 @@ from typing import TYPE_CHECKING, Any, Optional, cast
 
 import dagster._check as check
 from dagster._annotations import deprecated_param, public
-from dagster._core.definitions.assets import AssetsDefinition
+from dagster._core.definitions.assets.definition.assets_definition import AssetsDefinition
 from dagster._core.definitions.events import AssetKey, CoercibleToAssetKey
 from dagster._core.definitions.job_definition import (
     default_job_io_manager_with_fs_io_manager_schema,
 )
-from dagster._core.definitions.partition_key_range import PartitionKeyRange
+from dagster._core.definitions.partitions.partition_key_range import PartitionKeyRange
 from dagster._core.definitions.resource_definition import ResourceDefinition
 from dagster._core.definitions.utils import DEFAULT_IO_MANAGER_KEY
 from dagster._core.execution.build_resources import build_resources, get_mapped_resource_config
@@ -26,6 +26,7 @@ if TYPE_CHECKING:
     from dagster._core.storage.io_manager import IOManager
 
 
+@public
 class AssetValueLoader:
     """Caches resource definitions that are used to load asset values across multiple load
     invocations.

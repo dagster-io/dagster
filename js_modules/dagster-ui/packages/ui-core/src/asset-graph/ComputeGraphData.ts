@@ -3,9 +3,9 @@ import {filterAssetSelectionByQuery} from 'shared/asset-selection/filterAssetSel
 
 import {ComputeGraphDataMessageType} from './ComputeGraphData.types';
 import {GraphData, buildGraphData, toGraphId} from './Utils';
-import {AssetNodeForGraphQueryFragment} from './types/useAssetGraphData.types';
 import {GraphDataState} from './useAssetGraphData';
 import {doesFilterArrayMatchValueArray} from '../ui/Filters/doesFilterArrayMatchValueArray';
+import {WorkspaceAssetFragment} from '../workspace/WorkspaceContext/types/WorkspaceQueries.types';
 
 export function computeGraphData({
   repoFilteredNodes,
@@ -57,26 +57,29 @@ export function computeGraphData({
   };
 }
 
-const removeEdgesToHiddenAssets = (
-  graphData: GraphData,
-  allNodes: AssetNodeForGraphQueryFragment[],
-) => {
+const removeEdgesToHiddenAssets = (graphData: GraphData, allNodes: WorkspaceAssetFragment[]) => {
   const allNodesById = groupBy(allNodes, (n) => toGraphId(n.assetKey));
   const notSourceAsset = (id: string) => !!allNodesById[id];
 
   for (const node of Object.keys(graphData.upstream)) {
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     for (const edge of Object.keys(graphData.upstream[node]!)) {
       if (!graphData.nodes[edge] && notSourceAsset(node)) {
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
         delete graphData.upstream[node]![edge];
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
         delete graphData.downstream[edge]![node];
       }
     }
   }
 
   for (const node of Object.keys(graphData.downstream)) {
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     for (const edge of Object.keys(graphData.downstream[node]!)) {
       if (!graphData.nodes[edge] && notSourceAsset(node)) {
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
         delete graphData.upstream[edge]![node];
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
         delete graphData.downstream[node]![edge];
       }
     }

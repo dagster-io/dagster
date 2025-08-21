@@ -3,7 +3,6 @@ from typing import Any, Optional
 
 from dagster import (
     AssetIn,
-    DailyPartitionsDefinition,
     OpExecutionContext,
     RepositoryDefinition,
     TimeWindowPartitionMapping,
@@ -17,17 +16,25 @@ from dagster._core.definitions.data_version import DATA_VERSION_TAG, DataVersion
 from dagster._core.definitions.decorators.source_asset_decorator import observable_source_asset
 from dagster._core.definitions.definitions_class import Definitions
 from dagster._core.definitions.events import AssetKey, Output
-from dagster._core.definitions.partition import StaticPartitionsDefinition
+from dagster._core.definitions.partitions.definition import (
+    DailyPartitionsDefinition,
+    DynamicPartitionsDefinition,
+    StaticPartitionsDefinition,
+)
 from dagster._core.definitions.unresolved_asset_job_definition import define_asset_job
 from dagster._core.test_utils import instance_for_test, wait_for_runs_to_finish
 from dagster._core.workspace.context import WorkspaceRequestContext
 from dagster_graphql.test.utils import (
     define_out_of_process_context,
+    ensure_dagster_graphql_tests_import,
     execute_dagster_graphql,
     infer_job_selector,
     infer_repository_selector,
     materialize_assets,
+    temp_workspace_file,
 )
+
+ensure_dagster_graphql_tests_import()
 
 from dagster_graphql_tests.graphql.test_assets import (
     GET_ASSET_DATA_VERSIONS,
@@ -89,6 +96,7 @@ def test_stale_status():
             assert materialize_assets(context)
             wait_for_runs_to_finish(context.instance)
 
+        with define_out_of_process_context(__file__, "get_repo_v1", instance) as context:
             result = _fetch_data_versions(context, repo)
             foo = _get_asset_node(result, "foo")
             assert foo["dataVersion"] is not None
@@ -98,6 +106,7 @@ def test_stale_status():
             assert materialize_assets(context, asset_selection=[AssetKey(["foo"])])
             wait_for_runs_to_finish(context.instance)
 
+        with define_out_of_process_context(__file__, "get_repo_v1", instance) as context:
             result = _fetch_data_versions(context, repo)
             bar = _get_asset_node(result, "bar")
             assert bar["dataVersion"] is not None
@@ -115,6 +124,8 @@ def test_stale_status():
 def get_repo_partitioned():
     partitions_def = StaticPartitionsDefinition(["alpha", "beta"])
 
+    dynamic_partitions_def = DynamicPartitionsDefinition(name="dynamic")
+
     class FooConfig(Config):
         prefix: str = "ok"
 
@@ -128,17 +139,23 @@ def get_repo_partitioned():
     def bar(context: OpExecutionContext, foo) -> Output[bool]:
         return Output(True, data_version=DataVersion(f"ok_bar_{context.partition_key}"))
 
+    @asset(partitions_def=dynamic_partitions_def)
+    def dynamic_asset(context: OpExecutionContext):
+        return Output(True, data_version=DataVersion(f"ok_dynamic_asset_{context.partition_key}"))
+
     @repository
     def repo():
-        return [foo, bar]
+        return [foo, bar, dynamic_asset]
 
     return repo
 
 
 def test_stale_status_partitioned():
     with instance_for_test(synchronous_run_coordinator=True) as instance:
+        instance.add_dynamic_partitions("dynamic", ["alpha", "beta"])
+
         with define_out_of_process_context(__file__, "get_repo_partitioned", instance) as context:
-            for key in ["foo", "bar"]:
+            for key in ["foo", "bar", "dynamic_asset"]:
                 result = _fetch_partition_data_versions(context, AssetKey([key]))
                 node = _get_asset_node(result)
                 assert node["dataVersion"] is None
@@ -151,11 +168,14 @@ def test_stale_status_partitioned():
                 assert node["staleCausesByPartition"] == [[], []]
 
             assert materialize_assets(
-                context, [AssetKey(["foo"]), AssetKey(["bar"])], ["alpha", "beta"]
+                context,
+                [AssetKey(["foo"]), AssetKey(["bar"]), AssetKey("dynamic_asset")],
+                ["alpha", "beta"],
             )
             wait_for_runs_to_finish(context.instance)
 
-            for key in ["foo", "bar"]:
+        with define_out_of_process_context(__file__, "get_repo_partitioned", instance) as context:
+            for key in ["foo", "bar", "dynamic_asset"]:
                 result = _fetch_partition_data_versions(context, AssetKey([key]), "alpha")
                 node = _get_asset_node(result)
                 assert node["dataVersion"] == f"ok_{key}_alpha"
@@ -173,6 +193,7 @@ def test_stale_status_partitioned():
             )
             wait_for_runs_to_finish(context.instance)
 
+        with define_out_of_process_context(__file__, "get_repo_partitioned", instance) as context:
             result = _fetch_partition_data_versions(context, AssetKey(["foo"]), "alpha")
             foo = _get_asset_node(result, "foo")
             assert foo["dataVersion"] == "from_config_foo_alpha"
@@ -214,6 +235,51 @@ def test_stale_status_partitioned():
                 ]
                 for key in ["beta", "alpha"]
             ]
+
+
+def get_cross_repo_test_repo1():
+    @asset
+    def foo():
+        pass
+
+    @repository
+    def repo1():
+        return [foo]
+
+    return repo1
+
+
+def get_cross_repo_test_repo2():
+    @asset(deps=["foo"])
+    def bar():
+        pass
+
+    @repository
+    def repo2():
+        return [bar]
+
+    return repo2
+
+
+def test_cross_repo_dependency():
+    with (
+        instance_for_test(synchronous_run_coordinator=True) as instance,
+        temp_workspace_file(
+            [
+                ("repo1", __file__, "get_cross_repo_test_repo1"),
+                ("repo2", __file__, "get_cross_repo_test_repo2"),
+            ]
+        ) as workspace_file,
+        define_out_of_process_context(workspace_file, None, instance) as context,
+    ):
+        # Materialize the downstream asset. Provenance will store the version of foo as INITIAL.
+        assert materialize_assets(context, [AssetKey(["bar"])], location_name="repo2")
+        wait_for_runs_to_finish(context.instance)
+
+        repo2 = get_cross_repo_test_repo2()
+        result = _fetch_data_versions(context, repo2, location_name="repo2")
+        bar = _get_asset_node(result, "bar")
+        assert bar["staleStatus"] == "FRESH"
 
 
 def test_data_version_from_tags():
@@ -340,8 +406,14 @@ def test_source_asset_job_name():
             assert "bar_job" in bar_jobs
 
 
-def _fetch_data_versions(context: WorkspaceRequestContext, repo: RepositoryDefinition):
-    selector = infer_job_selector(context, repo.get_implicit_asset_job_names()[0])
+def _fetch_data_versions(
+    context: WorkspaceRequestContext,
+    repo: RepositoryDefinition,
+    location_name: Optional[str] = None,
+):
+    selector = infer_job_selector(
+        context, repo.get_implicit_asset_job_names()[0], location_name=location_name
+    )
     return execute_dagster_graphql(
         context,
         GET_ASSET_DATA_VERSIONS,

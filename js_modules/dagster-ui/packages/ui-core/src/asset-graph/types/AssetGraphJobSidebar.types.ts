@@ -15,6 +15,7 @@ export type AssetGraphSidebarQuery = {
         id: string;
         pipelineSnapshotId: string;
         parentSnapshotId: string | null;
+        externalJobSource: string | null;
         name: string;
         description: string | null;
         metadataEntries: Array<
@@ -185,6 +186,7 @@ export type AssetGraphSidebarQuery = {
             }
           | {__typename: 'UrlMetadataEntry'; url: string; label: string; description: string | null}
         >;
+        tags: Array<{__typename: 'PipelineTag'; key: string; value: string}>;
         modes: Array<{
           __typename: 'Mode';
           id: string;
@@ -1323,4 +1325,4 @@ export type AssetGraphSidebarQuery = {
       };
 };
 
-export const AssetGraphSidebarQueryVersion = '724ef0733b9b187ffd012e40c02c3b3a5e32967dbcae46e2024b15dfd5bf0271';
+export const AssetGraphSidebarQueryVersion = '4f2dbdd2f880492b69e02fb600314bfe6e0c76d95e5d0c63184b2736db7c1aa3';

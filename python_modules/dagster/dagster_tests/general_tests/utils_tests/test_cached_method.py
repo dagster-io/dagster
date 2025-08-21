@@ -6,7 +6,11 @@ import random
 from typing import NamedTuple
 
 import objgraph
-from dagster_shared.utils.cached_method import CACHED_METHOD_CACHE_FIELD, cached_method
+from dagster_shared.utils.cached_method import (
+    CACHED_METHOD_CACHE_FIELD,
+    cached_method,
+    get_cached_method_cache,
+)
 
 
 def test_cached_method() -> None:
@@ -168,3 +172,31 @@ def test_async_cached_method() -> None:
     assert asyncio.run(obj2.my_method(arg1="a")) == ("a", 5)
     assert asyncio.run(obj2.my_method(arg1="b")) == ("b", 5)
     assert obj2.calls == ["a", "b"]
+
+
+def test_cached_property():
+    class Bar: ...
+
+    class Foo:
+        @property
+        @cached_method
+        def bomp(self):
+            return Bar()
+
+    f = Foo()
+    assert f.bomp is f.bomp
+
+
+def test_explicit_test() -> None:
+    class EnclosingClass:
+        @cached_method
+        def boop(self) -> int:
+            return 1
+
+    inst = EnclosingClass()
+
+    assert get_cached_method_cache(inst, "boop") == {}
+
+    assert inst.boop() == 1
+
+    assert next(iter(get_cached_method_cache(inst, "boop").values())) == 1

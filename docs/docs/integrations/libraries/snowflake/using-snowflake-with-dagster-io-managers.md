@@ -4,7 +4,7 @@ description: 'Learn to integrate Snowflake with Dagster using a Snowflake I/O ma
 sidebar_position: 100
 ---
 
-This tutorial focuses on how to store and load Dagster's [asset definitions](/guides/build/assets/defining-assets) in Snowflake by using a Snowflake I/O manager. An [**I/O manager**](/guides/build/io-managers/) transfers the responsibility of storing and loading DataFrames as Snowflake tables to Dagster.
+This tutorial focuses on how to store and load Dagster's [asset definitions](/guides/build/assets/defining-assets) in Snowflake by using a Snowflake I/O manager. An [**I/O manager**](/guides/build/io-managers) transfers the responsibility of storing and loading DataFrames as Snowflake tables to Dagster.
 
 By the end of the tutorial, you will:
 
@@ -40,7 +40,7 @@ To complete this tutorial, you'll need:
     export SNOWFLAKE_PASSWORD=<your password>
     ```
 
-    Refer to the [Using environment variables and secrets guide](/guides/deploy/using-environment-variables-and-secrets) for more info.
+    Refer to the [Using environment variables and secrets guide](/guides/operate/configuration/using-environment-variables-and-secrets) for more info.
 
     For more information on authenticating with a private key, see [Authenticating with a private key](/integrations/libraries/snowflake/reference#authenticating-using-a-private-key) in the Snowflake reference guide.
 

@@ -5,6 +5,7 @@ from contextlib import contextmanager
 from typing import Optional
 
 import click
+from dagster_shared.cli import workspace_options
 from dagster_shared.yaml_utils import dump_run_config_yaml
 
 from dagster import (
@@ -25,11 +26,10 @@ from dagster._cli.workspace.cli_target import (
     get_repository_from_cli_opts,
     get_workspace_from_cli_opts,
     repository_options,
-    workspace_options,
 )
 from dagster._core.definitions.run_request import InstigatorType
 from dagster._core.instance import DagsterInstance
-from dagster._core.remote_representation import RemoteRepository
+from dagster._core.remote_representation.external import RemoteRepository
 from dagster._core.scheduler.instigation import (
     InstigatorState,
     InstigatorStatus,

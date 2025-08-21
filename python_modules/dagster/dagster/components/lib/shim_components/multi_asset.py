@@ -1,33 +1,31 @@
 import textwrap
-from typing import Any, Optional
+from typing import Optional
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
 from dagster._core.definitions.asset_key import AssetKey
 from dagster._core.definitions.decorators.asset_decorator import multi_asset
 from dagster.components.lib.shim_components.base import ShimScaffolder
-from dagster.components.scaffold.scaffold import scaffold_with
+from dagster.components.scaffold.scaffold import ScaffoldRequest, scaffold_with
 
 
 class MultiAssetScaffoldParams(BaseModel):
-    asset_key: Optional[list[str]] = Field(
-        default=None, description="Optional list of asset keys to use in specs"
-    )
+    asset_key: Optional[list[str]] = None
 
 
-class MultiAssetScaffolder(ShimScaffolder):
+class MultiAssetScaffolder(ShimScaffolder[MultiAssetScaffoldParams]):
     @classmethod
-    def get_scaffold_params(cls) -> Optional[type[BaseModel]]:
+    def get_scaffold_params(cls) -> type[MultiAssetScaffoldParams]:
         return MultiAssetScaffoldParams
 
-    def get_text(self, filename: str, params: Any) -> str:
+    def get_text(self, request: ScaffoldRequest[MultiAssetScaffoldParams]) -> str:
         asset_keys = (
-            params.asset_key
-            if isinstance(params, MultiAssetScaffoldParams) and params.asset_key
+            request.params.asset_key
+            if request.params and request.params.asset_key
             # Default to two sample assets based on the filename
             else [
-                f"{filename}/first_asset",
-                f"{filename}/second_asset",
+                f"{request.target_path.stem}/first_asset",
+                f"{request.target_path.stem}/second_asset",
             ]
         )
 
@@ -48,7 +46,7 @@ class MultiAssetScaffolder(ShimScaffolder):
 {specs_str}
                 ]
             )
-            def {filename}(context: dg.AssetExecutionContext):
+            def {request.target_path.stem}(context: dg.AssetExecutionContext):
                 ...
             """
         )

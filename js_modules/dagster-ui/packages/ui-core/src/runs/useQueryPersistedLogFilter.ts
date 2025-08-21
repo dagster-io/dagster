@@ -21,7 +21,6 @@ export const DefaultQuerystring: {[key: string]: string} = {
   steps: '*',
   logs: '',
   levels: levelsToQuery(DefaultLogLevels),
-  hideNonMatches: 'true',
   focusedTime: '',
 };
 
@@ -44,12 +43,10 @@ export const DefaultQuerystring: {[key: string]: string} = {
 export const decodeRunPageFilters = (qs: qs.ParsedQs) => {
   const logsQuery = typeof qs['logs'] === 'string' ? qs['logs'] : '';
   const focusedTimeQuery = typeof qs['focusedTime'] === 'string' ? qs['focusedTime'] : '';
-  const hideNonMatchesQuery = typeof qs['hideNonMatches'] === 'string' ? qs['hideNonMatches'] : '';
   const levelsQuery = typeof qs['levels'] === 'string' ? qs['levels'] : '';
 
   const logValues = logsQuery.split(DELIMITER);
   const focusedTime = focusedTimeQuery && !logsQuery ? Number(focusedTimeQuery) : null;
-  const hideNonMatches = hideNonMatchesQuery === 'true';
 
   const providers = getRunFilterProviders();
   const logQuery = logValues.map((token) => tokenizedValueFromString(token, providers));
@@ -59,7 +56,6 @@ export const decodeRunPageFilters = (qs: qs.ParsedQs) => {
   return {
     sinceTime: 0,
     focusedTime,
-    hideNonMatches,
     logQuery,
     levels: levelsValues
       .map((level) => level.toUpperCase())
@@ -80,7 +76,6 @@ export function encodeRunPageFilters(filter: LogFilter) {
   );
 
   return {
-    hideNonMatches: filter.hideNonMatches ? 'true' : 'false',
     focusedTime: String(filter.focusedTime || ''),
     logs: logQueryTokenStrings.join(DELIMITER),
     levels: levelsToQuery(Object.keys(filter.levels).filter((key) => !!filter.levels[key])),

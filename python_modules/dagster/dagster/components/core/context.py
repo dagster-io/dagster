@@ -1,71 +1,104 @@
-import contextlib
-import contextvars
 import dataclasses
 import importlib
 from collections.abc import Mapping
 from dataclasses import dataclass
 from pathlib import Path
 from types import ModuleType
-from typing import Any, Union
+from typing import TYPE_CHECKING, Any, Optional, TypeVar, Union, overload
 
+from dagster_shared import check
 from dagster_shared.yaml_utils.source_position import SourcePositionTree
+from typing_extensions import Self
 
-from dagster._annotations import PublicAttr, preview, public
+from dagster._annotations import PublicAttr, public
 from dagster._core.definitions.definitions_class import Definitions
-from dagster._core.errors import DagsterError
 from dagster._utils import pushd
 from dagster.components.resolved.context import ResolutionContext
-from dagster.components.utils import get_path_from_module
+
+if TYPE_CHECKING:
+    from dagster.components.component.component import Component
+    from dagster.components.core.component_tree import ComponentTree
+    from dagster.components.core.decl import ComponentDecl
+    from dagster.components.core.defs_module import ComponentPath
+
+
+RESOLUTION_CONTEXT_STASH_KEY = "component_load_context"
+
+T = TypeVar("T")
 
 
 @public
-@preview(emit_runtime_warning=False)
-@dataclass
-class ComponentLoadContext:
-    """Context for loading a single component."""
+@dataclass(frozen=True)
+class ComponentDeclLoadContext:
+    """Context object that provides environment and path information during loading of
+    ComponentDecls. This context is automatically created and passed to ComponentDecl
+    objects when loading a project's defs folder. Each Python module or folder in the
+    defs directory receives a unique context instance that provides access to project
+    structure, paths, and utilities.
 
-    path: PublicAttr[Path]
+    Args:
+        path: The filesystem path of the component decl currently being loaded.
+            For a file: ``/path/to/project/src/project/defs/my_component.py``
+            For a directory: ``/path/to/project/src/project/defs/my_component/``
+        project_root: The root directory of the Dagster project, typically containing
+            ``pyproject.toml`` or ``setup.py``. Example: ``/path/to/project``
+        defs_module_path: The filesystem path to the root defs folder.
+            Example: ``/path/to/project/src/project/defs``
+        defs_module_name: The Python module name for the root defs folder, used for
+            import resolution. Typically follows the pattern ``"project_name.defs"``.
+            Example: ``"my_project.defs"``
+        resolution_context: The resolution context used by the component templating
+            system for parameter resolution and variable substitution.
+        component_tree: The component tree that contains the component decl currently being loaded.
+        terminate_autoloading_on_keyword_files: Controls whether autoloading stops
+            when encountering ``definitions.py`` or ``component.py`` files.
+            **Deprecated**: This parameter will be removed after version 1.11.
+
+                )
+
+    Note:
+        This context is automatically provided by Dagster's autoloading system and
+        should not be instantiated manually in most cases. For testing purposes,
+        use ``ComponentTree.for_test().decl_load_context`` to create a test instance.
+
+    See Also:
+        - :py:func:`dagster.definitions`: Decorator that receives this context
+        - :py:class:`dagster.Definitions`: The object typically returned by context-using functions
+        - :py:class:`dagster.components.resolved.context.ResolutionContext`: Underlying resolution context
+        - :py:class:`dagster.ComponentLoadContext`: Context available when instantiating Components
+    """
+
     project_root: PublicAttr[Path]
     defs_module_path: PublicAttr[Path]
     defs_module_name: PublicAttr[str]
     resolution_context: PublicAttr[ResolutionContext]
+    component_tree: "ComponentTree"
+    terminate_autoloading_on_keyword_files: bool
+    component_path: PublicAttr["ComponentPath"]
 
-    @staticmethod
-    def current() -> "ComponentLoadContext":
-        context = active_component_load_context.get()
-        if context is None:
-            raise DagsterError(
-                "No active component load context, `ComponentLoadContext.current()` must be called inside of a component's `build_defs` method"
-            )
-        return context
+    @property
+    def path(self) -> Path:
+        return self.component_path.file_path
 
-    @staticmethod
-    def for_module(defs_module: ModuleType, project_root: Path) -> "ComponentLoadContext":
-        path = get_path_from_module(defs_module)
-        return ComponentLoadContext(
-            path=path,
-            project_root=project_root,
-            defs_module_path=path,
-            defs_module_name=defs_module.__name__,
-            resolution_context=ResolutionContext.default(),
+    def __post_init__(self):
+        object.__setattr__(
+            self,
+            "resolution_context",
+            self.resolution_context.with_stashed_value(RESOLUTION_CONTEXT_STASH_KEY, self),
         )
 
     @staticmethod
-    def for_test() -> "ComponentLoadContext":
-        return ComponentLoadContext(
-            path=Path.cwd(),
-            project_root=Path.cwd(),
-            defs_module_path=Path.cwd(),
-            defs_module_name="test",
-            resolution_context=ResolutionContext.default(),
+    def from_resolution_context(
+        resolution_context: ResolutionContext,
+    ) -> "ComponentDeclLoadContext":
+        return check.inst(
+            resolution_context.stash.get(RESOLUTION_CONTEXT_STASH_KEY), ComponentDeclLoadContext
         )
 
-    def _with_resolution_context(
-        self, resolution_context: ResolutionContext
-    ) -> "ComponentLoadContext":
+    def _with_resolution_context(self, resolution_context: ResolutionContext) -> "Self":
         return dataclasses.replace(self, resolution_context=resolution_context)
 
-    def with_rendering_scope(self, rendering_scope: Mapping[str, Any]) -> "ComponentLoadContext":
+    def with_rendering_scope(self, rendering_scope: Mapping[str, Any]) -> "Self":
         return self._with_resolution_context(
             self.resolution_context.with_scope(
                 **rendering_scope,
@@ -75,15 +108,13 @@ class ComponentLoadContext:
             )
         )
 
-    def with_source_position_tree(
-        self, source_position_tree: SourcePositionTree
-    ) -> "ComponentLoadContext":
+    def with_source_position_tree(self, source_position_tree: SourcePositionTree) -> "Self":
         return self._with_resolution_context(
             self.resolution_context.with_source_position_tree(source_position_tree)
         )
 
-    def for_path(self, path: Path) -> "ComponentLoadContext":
-        return dataclasses.replace(self, path=path)
+    def for_component_path(self, component_path: "ComponentPath") -> "Self":
+        return dataclasses.replace(self, component_path=component_path)
 
     def defs_relative_module_name(self, path: Path) -> str:
         """Returns the name of the python module at the given path, relative to the project root."""
@@ -107,18 +138,6 @@ class ComponentLoadContext:
             if type_str.startswith(".")
             else type_str
         )
-
-    def load_defs(self, module: ModuleType) -> Definitions:
-        """Builds the set of Dagster definitions for a component module.
-
-        This is useful for resolving dependencies on other components.
-        """
-        # FIXME: This should go through the component loader system
-        # to allow for this value to be cached and more selectively
-        # loaded. This is just a temporary hack to keep tests passing.
-        from dagster.components.core.load_defs import load_defs
-
-        return load_defs(module, self.project_root)
 
     def load_defs_relative_python_module(self, path: Path) -> ModuleType:
         """Load a python module relative to the defs's context path. This is useful for loading code
@@ -145,16 +164,147 @@ class ComponentLoadContext:
         """
         return importlib.import_module(self.defs_relative_module_name(path))
 
+    @overload
+    def load_component_at_path(
+        self, defs_path: Union[Path, "ComponentPath", str]
+    ) -> "Component": ...
+    @overload
+    def load_component_at_path(
+        self, defs_path: Union[Path, "ComponentPath", str], expected_type: type[T]
+    ) -> T: ...
 
-active_component_load_context: contextvars.ContextVar[Union[ComponentLoadContext, None]] = (
-    contextvars.ContextVar("active_component_load_context", default=None)
-)
+    def load_component_at_path(
+        self, defs_path: Union[Path, "ComponentPath", str], expected_type: Optional[type[T]] = None
+    ) -> Any:
+        """Loads a component from the given path.
+
+        Args:
+            defs_path: Path to the component to load. If relative, resolves relative to the defs root.
+
+        Returns:
+            Component: The component loaded from the given path.
+        """
+        self.component_tree.mark_component_load_dependency(
+            from_path=self.component_path, to_path=defs_path
+        )
+        return self.component_tree.load_component_at_path(defs_path, expected_type)  # type: ignore[reportIncompatibleArgumentType]
+
+    def load_structural_component_at_path(
+        self, defs_path: Union[Path, "ComponentPath"]
+    ) -> "Component":
+        """Loads a component from the given path.
+
+        Args:
+            defs_path: Path to the component to load. If relative, resolves relative to the defs root.
+
+        Returns:
+            Component: The component loaded from the given path.
+        """
+        self.component_tree.mark_component_load_dependency(
+            from_path=self.component_path, to_path=defs_path
+        )
+        return self.component_tree.load_structural_component_at_path(defs_path)
 
 
-@contextlib.contextmanager
-def use_component_load_context(component_load_context: ComponentLoadContext):
-    token = active_component_load_context.set(component_load_context)
-    try:
-        yield
-    finally:
-        active_component_load_context.reset(token)
+@public
+@dataclass(frozen=True)
+class ComponentLoadContext(ComponentDeclLoadContext):
+    """Context object that provides environment and path information during component loading.
+    This context is automatically created and passed to component definitions when loading
+    a project's defs folder. Each Python module or folder in the defs directory receives
+    a unique context instance that provides access to the underlying ComponentDecl,
+    project structure, paths, and utilities for dynamic component instantiation.
+
+    The context enables components to:
+    - Access project and module path information
+    - Load other modules and definitions within the project
+    - Resolve relative imports and module names
+    - Access templating and resolution capabilities
+
+    Args:
+        path: The filesystem path of the component currently being loaded.
+            For a file: ``/path/to/project/src/project/defs/my_component.py``
+            For a directory: ``/path/to/project/src/project/defs/my_component/``
+        project_root: The root directory of the Dagster project, typically containing
+            ``pyproject.toml`` or ``setup.py``. Example: ``/path/to/project``
+        defs_module_path: The filesystem path to the root defs folder.
+            Example: ``/path/to/project/src/project/defs``
+        defs_module_name: The Python module name for the root defs folder, used for
+            import resolution. Typically follows the pattern ``"project_name.defs"``.
+            Example: ``"my_project.defs"``
+        resolution_context: The resolution context used by the component templating
+            system for parameter resolution and variable substitution.
+        component_tree: The component tree that contains the component currently being loaded.
+        terminate_autoloading_on_keyword_files: Controls whether autoloading stops
+            when encountering ``definitions.py`` or ``component.py`` files.
+            **Deprecated**: This parameter will be removed after version 1.11.
+        component_decl: The associated ComponentDecl to the component being loaded.
+
+    Note:
+        This context is automatically provided by Dagster's autoloading system and
+        should not be instantiated manually in most cases. For testing purposes,
+        use ``ComponentTree.for_test().load_context`` to create a test instance.
+
+    See Also:
+        - :py:func:`dagster.definitions`: Decorator that receives this context
+        - :py:class:`dagster.Definitions`: The object typically returned by context-using functions
+        - :py:class:`dagster.components.resolved.context.ResolutionContext`: Underlying resolution context
+        - :py:class:`dagster.ComponentDeclLoadContext`: Context available when loading ComponentDecls
+    """
+
+    component_decl: "ComponentDecl"
+
+    @staticmethod
+    def from_decl_load_context(
+        decl_load_context: ComponentDeclLoadContext,
+        component_decl: "ComponentDecl",
+    ) -> "ComponentLoadContext":
+        """Augments a ComponentDeclLoadContext with the ComponentDecl being loaded.
+
+        Args:
+            decl_load_context: The ComponentDeclLoadContext to augment.
+            component_decl: The ComponentDecl being loaded.
+
+        Returns:
+            ComponentLoadContext: An augmented context which can be used to
+            load and build definitions for the component.
+        """
+        return ComponentLoadContext(
+            component_path=decl_load_context.component_path,
+            project_root=decl_load_context.project_root,
+            defs_module_path=decl_load_context.defs_module_path,
+            defs_module_name=decl_load_context.defs_module_name,
+            resolution_context=decl_load_context.resolution_context,
+            component_tree=decl_load_context.component_tree,
+            terminate_autoloading_on_keyword_files=decl_load_context.terminate_autoloading_on_keyword_files,
+            component_decl=component_decl,
+        )
+
+    def build_defs_at_path(self, defs_path: Union[Path, "ComponentPath"]) -> Definitions:
+        """Builds definitions from the given defs subdirectory. Currently
+        does not incorporate postprocessing from parent defs modules.
+
+        Args:
+            defs_path: Path to the defs module to load. If relative, resolves relative to the defs root.
+
+        Returns:
+            Definitions: The definitions loaded from the given path.
+        """
+        self.component_tree.mark_component_defs_dependency(
+            from_path=self.component_path, to_path=defs_path
+        )
+        return self.component_tree.build_defs_at_path(defs_path)
+
+    def for_path(self, path: Path) -> "Self":
+        """Creates a new context for the given path.
+
+        Args:
+            path: The filesystem path to create a new context for.
+
+        Returns:
+            ComponentLoadContext: A new context for the given path.
+        """
+        from dagster.components.core.defs_module import ComponentPath
+
+        component_path = ComponentPath(file_path=path)
+        return self.for_component_path(component_path)

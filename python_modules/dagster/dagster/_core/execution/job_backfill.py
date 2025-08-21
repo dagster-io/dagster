@@ -5,8 +5,8 @@ from concurrent.futures import ThreadPoolExecutor
 from typing import TYPE_CHECKING, Any, Callable, Optional, Union, cast
 
 import dagster._check as check
-from dagster._core.definitions.partition import PartitionsDefinition
-from dagster._core.definitions.partition_key_range import PartitionKeyRange
+from dagster._core.definitions.partitions.definition import PartitionsDefinition
+from dagster._core.definitions.partitions.partition_key_range import PartitionKeyRange
 from dagster._core.definitions.selector import JobSubsetSelector
 from dagster._core.errors import DagsterBackfillFailedError, DagsterInvariantViolationError
 from dagster._core.execution.backfill import (
@@ -17,7 +17,8 @@ from dagster._core.execution.backfill import (
 from dagster._core.execution.plan.resume_retry import ReexecutionStrategy
 from dagster._core.execution.plan.state import KnownExecutionState
 from dagster._core.instance import DagsterInstance
-from dagster._core.remote_representation import CodeLocation, RemoteJob, RemotePartitionSet
+from dagster._core.remote_representation.code_location import CodeLocation
+from dagster._core.remote_representation.external import RemoteJob, RemotePartitionSet
 from dagster._core.remote_representation.external_data import PartitionSetExecutionParamSnap
 from dagster._core.storage.dagster_run import (
     NOT_FINISHED_STATUSES,
@@ -43,7 +44,7 @@ from dagster._utils.error import SerializableErrorInfo
 from dagster._utils.merger import merge_dicts
 
 if TYPE_CHECKING:
-    from dagster._core.remote_representation.origin import RemotePartitionSetOrigin
+    from dagster._core.remote_origin import RemotePartitionSetOrigin
 
 # out of abundance of caution, sleep at checkpoints in case we are pinning CPU by submitting lots
 # of jobs all at once
@@ -65,7 +66,7 @@ def execute_job_backfill_iteration(
     debug_crash_flags: Optional[Mapping[str, int]],
     instance: DagsterInstance,
     submit_threadpool_executor: Optional[ThreadPoolExecutor] = None,
-) -> Iterable[Optional[SerializableErrorInfo]]:
+) -> Optional[SerializableErrorInfo]:
     if not backfill.last_submitted_partition_name:
         logger.info(f"Starting job backfill for {backfill.backfill_id}")
     else:
@@ -79,15 +80,11 @@ def execute_job_backfill_iteration(
     # refetch in case the backfill status has changed
     backfill = cast("PartitionBackfill", instance.get_backfill(backfill.backfill_id))
     if backfill.status == BulkActionStatus.CANCELING:
-        for all_runs_canceled in cancel_backfill_runs_and_cancellation_complete(
-            instance=instance, backfill_id=backfill.backfill_id
-        ):
-            yield None
-
-        if not isinstance(all_runs_canceled, bool):  # pyright: ignore[reportPossiblyUnboundVariable]
-            check.failed(
-                "Expected cancel_backfill_runs_and_cancellation_complete to return a boolean"
-            )
+        all_runs_canceled = cancel_backfill_runs_and_cancellation_complete(
+            instance=instance,
+            backfill_id=backfill.backfill_id,
+            logger=logger,
+        )
 
         if all_runs_canceled:
             instance.update_backfill(
@@ -112,18 +109,19 @@ def execute_job_backfill_iteration(
         check_for_debug_crash(debug_crash_flags, "BEFORE_SUBMIT")
 
         if chunk:
-            for _run_id in submit_backfill_runs(
-                instance,
-                lambda: workspace_process_context.create_request_context(),
-                backfill,
-                chunk,
-                submit_threadpool_executor,
-            ):
-                yield None
-                # before submitting, refetch the backfill job to check for status changes
-                backfill = cast("PartitionBackfill", instance.get_backfill(backfill.backfill_id))
-                if backfill.status != BulkActionStatus.REQUESTED:
-                    return
+            list(
+                submit_backfill_runs(
+                    instance,
+                    lambda: workspace_process_context.create_request_context(),
+                    backfill,
+                    chunk,
+                    submit_threadpool_executor,
+                )
+            )
+            # after each chunk, refetch the backfill job to check for status changes
+            backfill = cast("PartitionBackfill", instance.get_backfill(backfill.backfill_id))
+            if backfill.status != BulkActionStatus.REQUESTED:
+                return
 
         check_for_debug_crash(debug_crash_flags, "AFTER_SUBMIT")
 
@@ -131,7 +129,6 @@ def execute_job_backfill_iteration(
             # refetch, in case the backfill was updated in the meantime
             backfill = cast("PartitionBackfill", instance.get_backfill(backfill.backfill_id))
             instance.update_backfill(backfill.with_partition_checkpoint(checkpoint))
-            yield None
             time.sleep(CHECKPOINT_INTERVAL)
         else:
             unfinished_runs = instance.get_runs(
@@ -174,7 +171,6 @@ def execute_job_backfill_iteration(
                         get_current_timestamp()
                     )
                 )
-            yield None
 
 
 def _get_partition_set(
@@ -206,7 +202,6 @@ def _get_partition_set(
 def _subdivide_partition_key_range(
     partitions_def: PartitionsDefinition,
     partition_key_range: PartitionKeyRange,
-    instance: DagsterInstance,
     max_range_size: Optional[int],
 ) -> Sequence[PartitionKeyRange]:
     """Take a partition key range and subdivide it into smaller ranges of size max_range_size. This
@@ -216,9 +211,7 @@ def _subdivide_partition_key_range(
     if max_range_size is None:
         return [partition_key_range]
     else:
-        keys = partitions_def.get_partition_keys_in_range(
-            partition_key_range, dynamic_partitions_store=instance
-        )
+        keys = partitions_def.get_partition_keys_in_range(partition_key_range)
         chunks = [keys[i : i + max_range_size] for i in range(0, len(keys), max_range_size)]
         return [PartitionKeyRange(start=chunk[0], end=chunk[-1]) for chunk in chunks]
 
@@ -273,7 +266,6 @@ def _get_partitions_chunk(
                         start=run.tags[ASSET_PARTITION_RANGE_START_TAG],
                         end=run.tags[ASSET_PARTITION_RANGE_END_TAG],
                     ),
-                    instance,
                 )
             )
         elif run.tags.get(PARTITION_NAME_TAG):
@@ -295,14 +287,12 @@ def _get_partitions_chunk(
         ]
         partitions_def = partition_set.get_partitions_definition()
         partitions_subset = partitions_def.subset_with_partition_keys(to_submit)
-        partition_key_ranges = partitions_subset.get_partition_key_ranges(
-            partitions_def, dynamic_partitions_store=instance
-        )
+        partition_key_ranges = partitions_subset.get_partition_key_ranges(partitions_def)
         subdivided_ranges = [
             sr
             for r in partition_key_ranges
             for sr in _subdivide_partition_key_range(
-                partitions_def, r, instance, backfill_policy.max_partitions_per_run
+                partitions_def, r, backfill_policy.max_partitions_per_run
             )
         ]
         ranges_to_launch = subdivided_ranges[:chunk_size]
@@ -363,6 +353,7 @@ def submit_backfill_runs(
             job_name=partition_set.job_name,
             op_selection=None,
             asset_selection=backfill_job.asset_selection,
+            run_config=backfill_job.run_config,
         )
         remote_job = code_location.get_job(pipeline_selector)
     else:
@@ -388,7 +379,16 @@ def submit_backfill_runs(
     tags_by_key_or_range: Mapping[Union[str, PartitionKeyRange], Mapping[str, str]]
     run_config_by_key_or_range: Mapping[Union[str, PartitionKeyRange], Mapping[str, Any]]
     if isinstance(partition_names_or_ranges[0], PartitionKeyRange):
-        run_config = partition_set_execution_data.partition_data[0].run_config
+        partition_set_run_config = partition_set_execution_data.partition_data[0].run_config
+
+        if partition_set_run_config and backfill_job.run_config:
+            raise DagsterInvariantViolationError(
+                "Cannot specify both partition-scoped run config and backfill-scoped run config. This can happen "
+                "if you explicitly set a PartitionSet on your job and also specify run config when launching a backfill.",
+            )
+
+        run_config = partition_set_run_config or backfill_job.run_config or {}
+
         tags = {
             k: v
             for k, v in partition_set_execution_data.partition_data[0].tags.items()
@@ -405,7 +405,8 @@ def submit_backfill_runs(
         }
     else:
         run_config_by_key_or_range = {
-            pd.name: pd.run_config for pd in partition_set_execution_data.partition_data
+            pd.name: pd.run_config or backfill_job.run_config or {}
+            for pd in partition_set_execution_data.partition_data
         }
         tags_by_key_or_range = {
             pd.name: pd.tags for pd in partition_set_execution_data.partition_data

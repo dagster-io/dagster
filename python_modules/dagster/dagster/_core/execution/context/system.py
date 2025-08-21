@@ -12,7 +12,7 @@ from typing import TYPE_CHECKING, AbstractSet, Any, NamedTuple, Optional, Union,
 
 import dagster._check as check
 from dagster._annotations import public
-from dagster._core.definitions.assets import AssetsDefinition
+from dagster._core.definitions.assets.definition.assets_definition import AssetsDefinition
 from dagster._core.definitions.dependency import OpNode
 from dagster._core.definitions.events import AssetKey, AssetLineageInfo, CoercibleToAssetKey
 from dagster._core.definitions.hook_definition import HookDefinition
@@ -20,9 +20,19 @@ from dagster._core.definitions.job_base import IJob
 from dagster._core.definitions.job_definition import JobDefinition
 from dagster._core.definitions.metadata import RawMetadataValue
 from dagster._core.definitions.op_definition import OpDefinition
-from dagster._core.definitions.partition import PartitionsDefinition, PartitionsSubset
-from dagster._core.definitions.partition_key_range import PartitionKeyRange
-from dagster._core.definitions.partition_mapping import infer_partition_mapping
+from dagster._core.definitions.partitions.context import partition_loading_context
+from dagster._core.definitions.partitions.definition import (
+    MultiPartitionsDefinition,
+    PartitionsDefinition,
+    TimeWindowPartitionsDefinition,
+)
+from dagster._core.definitions.partitions.partition_key_range import PartitionKeyRange
+from dagster._core.definitions.partitions.subset import PartitionsSubset
+from dagster._core.definitions.partitions.utils import (
+    TimeWindow,
+    has_one_dimension_time_window_partitioning,
+    infer_partition_mapping,
+)
 from dagster._core.definitions.policy import RetryPolicy
 from dagster._core.definitions.reconstruct import ReconstructableJob
 from dagster._core.definitions.repository_definition.repository_definition import (
@@ -30,11 +40,6 @@ from dagster._core.definitions.repository_definition.repository_definition impor
 )
 from dagster._core.definitions.resource_definition import ScopedResourcesBuilder
 from dagster._core.definitions.step_launcher import StepLauncher
-from dagster._core.definitions.time_window_partitions import (
-    TimeWindow,
-    TimeWindowPartitionsDefinition,
-    has_one_dimension_time_window_partitioning,
-)
 from dagster._core.errors import DagsterInvariantViolationError
 from dagster._core.execution.context.data_version_cache import (
     DataVersionCache,
@@ -63,7 +68,7 @@ from dagster._core.types.dagster_type import DagsterType
 if TYPE_CHECKING:
     from dagster._core.definitions.data_version import DataVersion
     from dagster._core.definitions.dependency import NodeHandle
-    from dagster._core.definitions.multi_dimensional_partitions import MultiPartitionsDefinition
+    from dagster._core.definitions.partitions.definition import TimeWindowPartitionsDefinition
     from dagster._core.definitions.resource_definition import Resources
     from dagster._core.execution.context.hook import HookContext
     from dagster._core.execution.plan.plan import ExecutionPlan
@@ -396,7 +401,7 @@ class PlanExecutionContext(IPlanContext):
 def is_step_in_asset_graph_layer(step: ExecutionStep, job_def: JobDefinition) -> bool:
     """Whether this step is aware of the asset graph definition layer inferred by presence of asset info on outputs."""
     for output in step.step_outputs:
-        asset_key = job_def.asset_layer.asset_key_for_output(step.node_handle, output.name)
+        asset_key = job_def.asset_layer.get_asset_key_for_node_output(step.node_handle, output.name)
         if asset_key is not None:
             return True
     return False
@@ -600,8 +605,8 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
         else:
             upstream_output = artificial_output_context
 
-        asset_key = self.job_def.asset_layer.asset_key_for_input(
-            node_handle=self.node_handle, input_name=name
+        asset_key = self.job_def.asset_layer.get_asset_key_for_node_input(
+            inner_node_handle=self.node_handle, input_name=name
         )
         asset_partitions_subset = (
             self.asset_partitions_subset_for_input(name)
@@ -750,9 +755,10 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
                     f"Attempted to add metadata for partition key '{partition_key}' without a partitions definition."
                 )
 
-            targeted_partitions = self.assets_def.partitions_def.get_partition_keys_in_range(
-                partition_key_range=self.partition_key_range
-            )
+            with partition_loading_context(dynamic_partitions_store=self.instance):
+                targeted_partitions = self.assets_def.partitions_def.get_partition_keys_in_range(
+                    partition_key_range=self.partition_key_range
+                )
             if partition_key not in targeted_partitions:
                 raise DagsterInvariantViolationError(
                     f"Attempted to add metadata for partition key '{partition_key}' that is not being targeted."
@@ -876,15 +882,16 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
         """
         return (
             self.is_op_in_graph
-            and self.job_def.asset_layer.assets_defs_by_node_handle.get(self.node_handle)
-            is not None
+            and self.job_def.asset_layer.get_assets_def_for_node(self.node_handle) is not None
         )
 
     @property
     def is_asset_check_step(self) -> bool:
         """Whether this step corresponds to at least one asset check."""
         return any(
-            self.job_def.asset_layer.asset_check_key_for_output(self.node_handle, output.name)
+            self.job_def.asset_layer.get_asset_check_key_for_node_output(
+                self.node_handle, output.name
+            )
             for output in self.step.step_outputs
         )
 
@@ -925,8 +932,10 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
         output_keys: set[AssetKey] = set()
         asset_layer = self.job_def.asset_layer
         for step_output in self.step.step_outputs:
-            asset_key = asset_layer.asset_key_for_output(self.node_handle, step_output.name)
-            if asset_key is None or asset_key not in asset_layer.asset_keys_for_node(
+            asset_key = asset_layer.get_asset_key_for_node_output(
+                self.node_handle, step_output.name
+            )
+            if asset_key is None or asset_key not in asset_layer.get_selected_entity_keys_for_node(
                 self.node_handle
             ):
                 continue
@@ -947,7 +956,7 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
 
     @cached_property
     def assets_def(self) -> Optional[AssetsDefinition]:
-        return self.job_def.asset_layer.assets_def_for_node(self.node_handle)
+        return self.job_def.asset_layer.get_assets_def_for_node(self.node_handle)
 
     @cached_property
     def asset_partitions_def(self) -> Optional[PartitionsDefinition]:
@@ -965,10 +974,7 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
 
     @property
     def partition_key(self) -> str:
-        from dagster._core.definitions.multi_dimensional_partitions import (
-            MultiPartitionsDefinition,
-            get_multipartition_key_from_tags,
-        )
+        from dagster._core.definitions.partitions.utils import get_multipartition_key_from_tags
 
         if not self.has_partitions:
             raise DagsterInvariantViolationError(
@@ -998,10 +1004,7 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
 
     @property
     def partition_key_range(self) -> PartitionKeyRange:
-        from dagster._core.definitions.multi_dimensional_partitions import (
-            MultiPartitionsDefinition,
-            get_multipartition_key_from_tags,
-        )
+        from dagster._core.definitions.partitions.utils import get_multipartition_key_from_tags
 
         if not self.has_partitions:
             raise DagsterInvariantViolationError(
@@ -1031,7 +1034,7 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
 
     def has_asset_partitions_for_input(self, input_name: str) -> bool:
         asset_layer = self.job_def.asset_layer
-        upstream_asset_key = asset_layer.asset_key_for_input(self.node_handle, input_name)
+        upstream_asset_key = asset_layer.get_asset_key_for_node_input(self.node_handle, input_name)
 
         return (
             upstream_asset_key is not None
@@ -1044,16 +1047,16 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
 
         asset_layer = self.job_def.asset_layer
         upstream_asset_key = check.not_none(
-            asset_layer.asset_key_for_input(self.node_handle, input_name)
+            asset_layer.get_asset_key_for_node_input(self.node_handle, input_name)
         )
         upstream_asset_partitions_def = check.not_none(
             asset_layer.get(upstream_asset_key).partitions_def
         )
 
-        partition_key_ranges = subset.get_partition_key_ranges(
-            partitions_def=cast("PartitionsDefinition", upstream_asset_partitions_def),
-            dynamic_partitions_store=self.instance,
-        )
+        with partition_loading_context(dynamic_partitions_store=self.instance):
+            partition_key_ranges = subset.get_partition_key_ranges(
+                partitions_def=cast("PartitionsDefinition", upstream_asset_partitions_def),
+            )
 
         if len(partition_key_ranges) != 1:
             check.failed(
@@ -1067,38 +1070,36 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
         self, input_name: str, *, require_valid_partitions: bool = True
     ) -> PartitionsSubset:
         asset_layer = self.job_def.asset_layer
-        assets_def = asset_layer.assets_def_for_node(self.node_handle)
-        upstream_asset_key = asset_layer.asset_key_for_input(self.node_handle, input_name)
+        assets_def = asset_layer.get_assets_def_for_node(self.node_handle)
+        upstream_asset_key = asset_layer.get_asset_key_for_node_input(self.node_handle, input_name)
 
         if upstream_asset_key is not None:
             upstream_asset_partitions_def = asset_layer.get(upstream_asset_key).partitions_def
 
             if upstream_asset_partitions_def is not None:
                 partitions_def = self.asset_partitions_def if assets_def else None
-                partitions_subset = (
-                    partitions_def.empty_subset().with_partition_key_range(
-                        partitions_def,
-                        self.partition_key_range,
-                        dynamic_partitions_store=self.instance,
+                with partition_loading_context(dynamic_partitions_store=self.instance):
+                    partitions_subset = (
+                        partitions_def.empty_subset().with_partition_key_range(
+                            partitions_def, self.partition_key_range
+                        )
+                        if partitions_def
+                        else None
                     )
-                    if partitions_def
-                    else None
-                )
-                partition_mapping = infer_partition_mapping(
-                    asset_layer.partition_mapping_for_node_input(
-                        self.node_handle, upstream_asset_key
-                    ),
-                    partitions_def,
-                    upstream_asset_partitions_def,
-                )
-                mapped_partitions_result = (
-                    partition_mapping.get_upstream_mapped_partitions_result_for_partitions(
-                        partitions_subset,
+                    partition_mapping = infer_partition_mapping(
+                        assets_def.get_partition_mapping_for_dep(upstream_asset_key)
+                        if assets_def
+                        else None,
                         partitions_def,
                         upstream_asset_partitions_def,
-                        dynamic_partitions_store=self.instance,
                     )
-                )
+                    mapped_partitions_result = (
+                        partition_mapping.get_upstream_mapped_partitions_result_for_partitions(
+                            partitions_subset,
+                            partitions_def,
+                            upstream_asset_partitions_def,
+                        )
+                    )
 
                 if (
                     require_valid_partitions
@@ -1126,7 +1127,7 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
             )
 
     def _partitions_def_for_output(self, output_name: str) -> Optional[PartitionsDefinition]:
-        asset_key = self.job_def.asset_layer.asset_key_for_output(
+        asset_key = self.job_def.asset_layer.get_asset_key_for_node_output(
             node_handle=self.node_handle, output_name=output_name
         )
         if asset_key:
@@ -1231,7 +1232,7 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
           MultiPartitionsDefinition with one time-partitioned dimension.
         """
         asset_layer = self.job_def.asset_layer
-        upstream_asset_key = asset_layer.asset_key_for_input(self.node_handle, input_name)
+        upstream_asset_key = asset_layer.get_asset_key_for_node_input(self.node_handle, input_name)
 
         if upstream_asset_key is None:
             raise ValueError(f"The input '{input_name}' has no corresponding asset")
@@ -1281,7 +1282,7 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
         asset_layer = self.job_def.asset_layer
         if asset_layer is None:
             return False
-        asset_key = asset_layer.asset_key_for_output(self.node_handle, output_name)
+        asset_key = asset_layer.get_asset_key_for_node_output(self.node_handle, output_name)
         if asset_key is None:
             return False
         return asset_layer.get(asset_key).is_observable
@@ -1290,7 +1291,7 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
     def selected_output_names(self) -> AbstractSet[str]:
         """Get the output names that correspond to the current selection of assets this execution is expected to materialize."""
         # map selected asset keys to the output names they correspond to
-        assets_def = self.job_def.asset_layer.assets_def_for_node(self.node_handle)
+        assets_def = self.job_def.asset_layer.get_assets_def_for_node(self.node_handle)
         if assets_def is not None:
             computation = check.not_none(assets_def.computation)
 
@@ -1310,6 +1311,7 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
             return self.op.output_dict.keys()
 
 
+@public
 class TypeCheckContext:
     """The ``context`` object available to a type check function on a DagsterType."""
 
@@ -1343,6 +1345,7 @@ class TypeCheckContext:
         return self._log
 
 
+@public
 class DagsterTypeLoaderContext(StepExecutionContext):
     """The context object provided to a :py:class:`@dagster_type_loader <dagster_type_loader>`-decorated function during execution.
 

@@ -1,12 +1,9 @@
 import click
-from dagster import (
-    AssetSelection,
-    DagsterInstance,
+from dagster import AssetSelection, DagsterInstance, asset, define_asset_job
+from dagster._core.definitions.partitions.definition import (
     DailyPartitionsDefinition,
     DynamicPartitionsDefinition,
     MultiPartitionsDefinition,
-    asset,
-    define_asset_job,
 )
 
 customers_partitions_def = DynamicPartitionsDefinition(name="customers")

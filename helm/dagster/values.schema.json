@@ -2,6 +2,7 @@
     "$defs": {
         "Affinity": {
             "$ref": "https://kubernetesjsonschema.dev/v1.18.0/_definitions.json#/definitions/io.k8s.api.core.v1.Affinity",
+            "additionalProperties": true,
             "title": "Affinity",
             "type": "object"
         },
@@ -40,6 +41,7 @@
                 "secretCredential": {
                     "anyOf": [
                         {
+                            "additionalProperties": true,
                             "type": "object"
                         },
                         {
@@ -52,6 +54,7 @@
                 "defaultAzureCredential": {
                     "anyOf": [
                         {
+                            "additionalProperties": true,
                             "type": "object"
                         },
                         {
@@ -138,6 +141,43 @@
             "title": "AzureBlobComputeLogManager",
             "type": "object"
         },
+        "Backfills": {
+            "properties": {
+                "useThreads": {
+                    "title": "Usethreads",
+                    "type": "boolean"
+                },
+                "numWorkers": {
+                    "anyOf": [
+                        {
+                            "type": "integer"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ],
+                    "default": null,
+                    "title": "Numworkers"
+                },
+                "numSubmitWorkers": {
+                    "anyOf": [
+                        {
+                            "type": "integer"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ],
+                    "default": null,
+                    "title": "Numsubmitworkers"
+                }
+            },
+            "required": [
+                "useThreads"
+            ],
+            "title": "Backfills",
+            "type": "object"
+        },
         "BlockOpConcurrencyLimitedRuns": {
             "properties": {
                 "enabled": {
@@ -190,6 +230,7 @@
                     "type": "string"
                 },
                 "configSource": {
+                    "additionalProperties": true,
                     "title": "Configsource",
                     "type": "object"
                 },
@@ -383,6 +424,7 @@
                 "configSource": {
                     "anyOf": [
                         {
+                            "additionalProperties": true,
                             "type": "object"
                         },
                         {
@@ -617,6 +659,7 @@
                     "type": "string"
                 },
                 "config": {
+                    "additionalProperties": true,
                     "title": "Config",
                     "type": "object"
                 }
@@ -741,6 +784,7 @@
                     "$ref": "#/$defs/Annotations"
                 },
                 "runMonitoring": {
+                    "additionalProperties": true,
                     "title": "Runmonitoring",
                     "type": "object"
                 },
@@ -752,6 +796,17 @@
                 },
                 "schedules": {
                     "$ref": "#/$defs/Schedules"
+                },
+                "backfills": {
+                    "anyOf": [
+                        {
+                            "$ref": "#/$defs/Backfills"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ],
+                    "default": null
                 },
                 "schedulerName": {
                     "anyOf": [
@@ -1585,6 +1640,7 @@
         },
         "PodSecurityContext": {
             "$ref": "https://kubernetesjsonschema.dev/v1.18.0/_definitions.json#/definitions/io.k8s.api.core.v1.PodSecurityContext",
+            "additionalProperties": true,
             "title": "PodSecurityContext",
             "type": "object"
         },
@@ -1614,6 +1670,7 @@
                     "type": "string"
                 },
                 "postgresqlParams": {
+                    "additionalProperties": true,
                     "title": "Postgresqlparams",
                     "type": "object"
                 },
@@ -1701,6 +1758,7 @@
                 "dagsterHandlerConfig": {
                     "anyOf": [
                         {
+                            "additionalProperties": true,
                             "type": "object"
                         },
                         {
@@ -1941,6 +1999,7 @@
         },
         "Resources": {
             "$ref": "https://kubernetesjsonschema.dev/v1.18.0/_definitions.json#/definitions/io.k8s.api.core.v1.ResourceRequirements",
+            "additionalProperties": true,
             "title": "Resources",
             "type": "object"
         },
@@ -2079,6 +2138,7 @@
                 "containerConfig": {
                     "anyOf": [
                         {
+                            "additionalProperties": true,
                             "type": "object"
                         },
                         {
@@ -2091,6 +2151,7 @@
                 "podSpecConfig": {
                     "anyOf": [
                         {
+                            "additionalProperties": true,
                             "type": "object"
                         },
                         {
@@ -2103,6 +2164,7 @@
                 "podTemplateSpecMetadata": {
                     "anyOf": [
                         {
+                            "additionalProperties": true,
                             "type": "object"
                         },
                         {
@@ -2115,6 +2177,7 @@
                 "jobSpecConfig": {
                     "anyOf": [
                         {
+                            "additionalProperties": true,
                             "type": "object"
                         },
                         {
@@ -2127,6 +2190,7 @@
                 "jobMetadata": {
                     "anyOf": [
                         {
+                            "additionalProperties": true,
                             "type": "object"
                         },
                         {
@@ -2422,6 +2486,7 @@
                 "uploadExtraArgs": {
                     "anyOf": [
                         {
+                            "additionalProperties": true,
                             "type": "object"
                         },
                         {
@@ -2592,6 +2657,7 @@
         },
         "SecurityContext": {
             "$ref": "https://kubernetesjsonschema.dev/v1.18.0/_definitions.json#/definitions/io.k8s.api.core.v1.SecurityContext",
+            "additionalProperties": true,
             "title": "SecurityContext",
             "type": "object"
         },
@@ -2837,6 +2903,7 @@
         "Tolerations": {
             "$ref": "https://kubernetesjsonschema.dev/v1.18.0/_definitions.json#/definitions/io.k8s.api.core.v1.PodSpec/properties/tolerations",
             "items": {
+                "additionalProperties": true,
                 "type": "object"
             },
             "title": "Tolerations",
@@ -3743,6 +3810,7 @@
         "additionalInstanceConfig": {
             "anyOf": [
                 {
+                    "additionalProperties": true,
                     "type": "object"
                 },
                 {

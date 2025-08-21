@@ -136,11 +136,11 @@ def test_fetch_tableau_workspace_data(
     }
     resource = clazz(**resource_args)  # type: ignore
 
-    response = resource.fetch_tableau_workspace_data()
+    response = resource.get_or_fetch_workspace_data()
 
     assert get_workbooks.call_count == 1
     assert get_workbook.call_count == 1
-    assert response.data_sources_by_id.__len__() == 2
+    assert response.data_sources_by_id.__len__() == 3
     assert (
         response.data_sources_by_id.get("0f5660c7-2b05-4ff0-90ce-3199226956c6").properties.get(  # type: ignore
             "name"

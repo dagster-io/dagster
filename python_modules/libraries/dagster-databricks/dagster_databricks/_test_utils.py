@@ -40,7 +40,6 @@ def upload_dagster_pipes_whl(databricks_client: WorkspaceClient) -> Iterator[str
     with dbfs_tempdir(dbfs_client) as tempdir:
         path = os.path.join(f"dbfs:{tempdir}", DAGSTER_PIPES_WHL_FILENAME)
         subprocess.check_call(
-            # ["dbfs", "cp", "--overwrite", f"dist/{DAGSTER_PIPES_WHL_FILENAME}", DAGSTER_PIPES_WHL_PATH]
             ["dbfs", "cp", "--overwrite", f"dist/{DAGSTER_PIPES_WHL_FILENAME}", path]
         )
         os.chdir(orig_wd)
@@ -53,6 +52,11 @@ def databricks_client() -> WorkspaceClient:
         host=os.environ["DATABRICKS_HOST"],
         token=os.environ["DATABRICKS_TOKEN"],
     )
+
+
+@pytest.fixture
+def databricks_notebook_path() -> str:
+    return os.environ["DATABRICKS_NOTEBOOK_PATH"]
 
 
 @contextmanager

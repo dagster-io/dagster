@@ -1,12 +1,9 @@
-from typing import Optional, Union
+from collections.abc import Mapping, Sequence
+from typing import Any, Optional
 
-from typing_extensions import TypeAlias
-
-from dagster_shared.record import record
-from dagster_shared.serdes import whitelist_for_serdes
+from dagster_shared.record import as_dict, record
 
 
-@whitelist_for_serdes
 @record
 class DgAssetMetadata:
     key: str
@@ -15,28 +12,38 @@ class DgAssetMetadata:
     group: Optional[str]
     description: Optional[str]
     automation_condition: Optional[str]
+    tags: Sequence[str]
+    is_executable: bool
+    source: Optional[str]
+    owners: Optional[Sequence[str]]
 
 
-@whitelist_for_serdes
 @record
 class DgSensorMetadata:
     name: str
+    source: Optional[str]
 
 
-@whitelist_for_serdes
 @record
 class DgScheduleMetadata:
     name: str
     cron_schedule: str
+    source: Optional[str]
 
 
-@whitelist_for_serdes
 @record
 class DgJobMetadata:
     name: str
+    description: Optional[str]
+    source: Optional[str]
 
 
-@whitelist_for_serdes
+@record
+class DgResourceMetadata:
+    name: str
+    type: str
+
+
 @record
 class DgAssetCheckMetadata:
     key: str
@@ -44,12 +51,35 @@ class DgAssetCheckMetadata:
     name: str
     additional_deps: list[str]
     description: Optional[str]
+    source: Optional[str]
 
 
-DgDefinitionMetadata: TypeAlias = Union[
-    DgAssetMetadata,
-    DgSensorMetadata,
-    DgScheduleMetadata,
-    DgJobMetadata,
-    DgAssetCheckMetadata,
-]
+@record
+class DgDefinitionMetadata:
+    assets: list[DgAssetMetadata]
+    asset_checks: list[DgAssetCheckMetadata]
+    jobs: list[DgJobMetadata]
+    resources: list[DgResourceMetadata]
+    schedules: list[DgScheduleMetadata]
+    sensors: list[DgSensorMetadata]
+
+    def to_dict(self) -> Mapping[str, Sequence[Mapping[str, Any]]]:
+        return {
+            "assets": [as_dict(asset) for asset in self.assets],
+            "asset_checks": [as_dict(asset_check) for asset_check in self.asset_checks],
+            "jobs": [as_dict(job) for job in self.jobs],
+            "resources": [as_dict(resource) for resource in self.resources],
+            "schedules": [as_dict(schedule) for schedule in self.schedules],
+            "sensors": [as_dict(sensor) for sensor in self.sensors],
+        }
+
+    @property
+    def is_empty(self) -> bool:
+        return (
+            not self.assets
+            and not self.asset_checks
+            and not self.jobs
+            and not self.resources
+            and not self.schedules
+            and not self.sensors
+        )

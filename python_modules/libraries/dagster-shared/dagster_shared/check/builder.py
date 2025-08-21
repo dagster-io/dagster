@@ -30,6 +30,7 @@ NoneType = type(None)
 
 _contextual_ns: ContextVar[Mapping[str, type]] = ContextVar("_contextual_ns", default={})
 INJECTED_DEFAULT_VALS_LOCAL_VAR = "__injected_defaults__"
+INJECTED_CHECK_VAR = "__injected_check__"
 
 
 class ImportFrom(NamedTuple):
@@ -124,11 +125,18 @@ class EvalContext(NamedTuple):
                     globalns=self.get_merged_ns(),
                     localns={},
                 )
-            else:
+            elif sys.version_info < (3, 12, 4):
                 return ref._evaluate(  # noqa
                     globalns=self.get_merged_ns(),
                     localns={},
                     recursive_guard=frozenset(),
+                )
+            else:  # type_params added in 3.12.4
+                return ref._evaluate(  # noqa
+                    globalns=self.get_merged_ns(),
+                    localns={},
+                    recursive_guard=frozenset(),
+                    type_params=(),
                 )
         except NameError as e:
             raise CheckError(
@@ -234,7 +242,7 @@ def _name(target: Optional[TypeOrTupleOfTypes]) -> str:
         return "None"
 
     if target is NoneType:
-        return "check.NoneType"
+        return f"{INJECTED_CHECK_VAR}.NoneType"
 
     if isinstance(target, tuple):
         return f"({', '.join(_name(tup_type) for tup_type in target)})"
@@ -291,13 +299,13 @@ def build_check_call_str(
     # scalars
     if origin is None:
         if ttype is str:
-            return f'{name} if isinstance({name}, str) else check.str_param({name}, "{name}")'
+            return f'{name} if isinstance({name}, str) else {INJECTED_CHECK_VAR}.str_param({name}, "{name}")'
         elif ttype is float:
-            return f'{name} if isinstance({name}, float) else check.float_param({name}, "{name}")'
+            return f'{name} if isinstance({name}, float) else {INJECTED_CHECK_VAR}.float_param({name}, "{name}")'
         elif ttype is int:
-            return f'{name} if isinstance({name}, int) else check.int_param({name}, "{name}")'
+            return f'{name} if isinstance({name}, int) else {INJECTED_CHECK_VAR}.int_param({name}, "{name}")'
         elif ttype is bool:
-            return f'{name} if isinstance({name}, bool) else check.bool_param({name}, "{name}")'
+            return f'{name} if isinstance({name}, bool) else {INJECTED_CHECK_VAR}.bool_param({name}, "{name}")'
         elif ttype is Any:
             return name  # no-op
 
@@ -305,15 +313,13 @@ def build_check_call_str(
         inst_type = _coerce_type(ttype, eval_ctx)
         if inst_type:
             it = _name(inst_type)
-            return (
-                f'{name} if isinstance({name}, {it}) else check.inst_param({name}, "{name}", {it})'
-            )
+            return f'{name} if isinstance({name}, {it}) else {INJECTED_CHECK_VAR}.inst_param({name}, "{name}", {it})'
         else:
             return name  # no-op
     elif origin is Literal:
-        return f'check.literal_param({name}, "{name}", {args})'
+        return f'{INJECTED_CHECK_VAR}.literal_param({name}, "{name}", {args})'
     elif origin is Callable or origin is collections.abc.Callable:
-        return f'check.callable_param({name}, "{name}")'
+        return f'{INJECTED_CHECK_VAR}.callable_param({name}, "{name}")'
     else:
         if _is_annotated(origin, args):
             _process_annotated(ttype, args, eval_ctx)
@@ -324,19 +330,19 @@ def build_check_call_str(
 
         # containers
         if origin is list:
-            return f'check.list_param({name}, "{name}", {_name(single)})'
+            return f'{INJECTED_CHECK_VAR}.list_param({name}, "{name}", {_name(single)})'
         elif origin is dict:
-            return f'check.dict_param({name}, "{name}", {_name(pair_left)}, {_name(pair_right)})'
+            return f'{INJECTED_CHECK_VAR}.dict_param({name}, "{name}", {_name(pair_left)}, {_name(pair_right)})'
         elif origin is set:
-            return f'check.set_param({name}, "{name}", {_name(single)})'
+            return f'{INJECTED_CHECK_VAR}.set_param({name}, "{name}", {_name(single)})'
         elif origin is collections.abc.Sequence:
-            return f'check.sequence_param({name}, "{name}", {_name(single)})'
+            return f'{INJECTED_CHECK_VAR}.sequence_param({name}, "{name}", {_name(single)})'
         elif origin is collections.abc.Iterable:
-            return f'check.iterable_param({name}, "{name}", {_name(single)})'
+            return f'{INJECTED_CHECK_VAR}.iterable_param({name}, "{name}", {_name(single)})'
         elif origin is collections.abc.Mapping:
-            return f'check.mapping_param({name}, "{name}", {_name(pair_left)}, {_name(pair_right)})'
+            return f'{INJECTED_CHECK_VAR}.mapping_param({name}, "{name}", {_name(pair_left)}, {_name(pair_right)})'
         elif origin is collections.abc.Set:
-            return f'check.set_param({name}, "{name}", {_name(single)})'
+            return f'{INJECTED_CHECK_VAR}.set_param({name}, "{name}", {_name(single)})'
         elif origin in (UnionType, Union):
             # optional
             if pair_right is type(None):
@@ -344,19 +350,19 @@ def build_check_call_str(
                 # optional scalar
                 if inner_origin is None:
                     if pair_left is str:
-                        return f'{name} if {name} is None or isinstance({name}, str) else check.opt_str_param({name}, "{name}")'
+                        return f'{name} if {name} is None or isinstance({name}, str) else {INJECTED_CHECK_VAR}.opt_str_param({name}, "{name}")'
                     elif pair_left is float:
-                        return f'{name} if {name} is None or isinstance({name}, float) else check.opt_float_param({name}, "{name}")'
+                        return f'{name} if {name} is None or isinstance({name}, float) else {INJECTED_CHECK_VAR}.opt_float_param({name}, "{name}")'
                     elif pair_left is int:
-                        return f'{name} if {name} is None or isinstance({name}, int) else check.opt_int_param({name}, "{name}")'
+                        return f'{name} if {name} is None or isinstance({name}, int) else {INJECTED_CHECK_VAR}.opt_int_param({name}, "{name}")'
                     elif pair_left is bool:
-                        return f'{name} if {name} is None or isinstance({name}, bool) else check.opt_bool_param({name}, "{name}")'
+                        return f'{name} if {name} is None or isinstance({name}, bool) else {INJECTED_CHECK_VAR}.opt_bool_param({name}, "{name}")'
 
                     # fallback to opt_inst
                     inst_type = _coerce_type(pair_left, eval_ctx)
                     it = _name(inst_type)
                     if inst_type:
-                        return f'{name} if {name} is None or isinstance({name}, {it}) else check.opt_inst_param({name}, "{name}", {it})'
+                        return f'{name} if {name} is None or isinstance({name}, {it}) else {INJECTED_CHECK_VAR}.opt_inst_param({name}, "{name}", {it})'
                     else:
                         return name  # no-op
 
@@ -366,38 +372,38 @@ def build_check_call_str(
                     inner_pair_left, inner_pair_right = _container_pair_args(inner_args, eval_ctx)
                     inner_single = _container_single_arg(inner_args, eval_ctx)
                     if inner_origin is list:
-                        return f'{name} if {name} is None else check.opt_nullable_list_param({name}, "{name}", {_name(inner_single)})'
+                        return f'{name} if {name} is None else {INJECTED_CHECK_VAR}.opt_nullable_list_param({name}, "{name}", {_name(inner_single)})'
                     elif inner_origin is dict:
-                        return f'{name} if {name} is None else check.opt_nullable_dict_param({name}, "{name}", {_name(inner_pair_left)}, {_name(inner_pair_right)})'
+                        return f'{name} if {name} is None else {INJECTED_CHECK_VAR}.opt_nullable_dict_param({name}, "{name}", {_name(inner_pair_left)}, {_name(inner_pair_right)})'
                     elif inner_origin is set:
-                        return f'{name} if {name} is None else check.opt_nullable_set_param({name}, "{name}", {_name(inner_single)})'
+                        return f'{name} if {name} is None else {INJECTED_CHECK_VAR}.opt_nullable_set_param({name}, "{name}", {_name(inner_single)})'
                     elif inner_origin is collections.abc.Sequence:
-                        return f'{name} if {name} is None else check.opt_nullable_sequence_param({name}, "{name}", {_name(inner_single)})'
+                        return f'{name} if {name} is None else {INJECTED_CHECK_VAR}.opt_nullable_sequence_param({name}, "{name}", {_name(inner_single)})'
                     elif inner_origin is collections.abc.Iterable:
-                        return f'{name} if {name} is None else check.opt_nullable_iterable_param({name}, "{name}", {_name(inner_single)})'
+                        return f'{name} if {name} is None else {INJECTED_CHECK_VAR}.opt_nullable_iterable_param({name}, "{name}", {_name(inner_single)})'
                     elif inner_origin is collections.abc.Mapping:
-                        return f'{name} if {name} is None else check.opt_nullable_mapping_param({name}, "{name}", {_name(inner_pair_left)}, {_name(inner_pair_right)})'
+                        return f'{name} if {name} is None else {INJECTED_CHECK_VAR}.opt_nullable_mapping_param({name}, "{name}", {_name(inner_pair_left)}, {_name(inner_pair_right)})'
                     elif inner_origin is collections.abc.Set:
-                        return f'{name} if {name} is None else check.opt_nullable_set_param({name}, "{name}", {_name(inner_single)})'
+                        return f'{name} if {name} is None else {INJECTED_CHECK_VAR}.opt_nullable_set_param({name}, "{name}", {_name(inner_single)})'
                     elif is_record(inner_origin):
                         it = _name(inner_origin)
-                        return f'{name} if {name} is None or isinstance({name}, {it}) else check.opt_inst_param({name}, "{name}", {it})'
+                        return f'{name} if {name} is None or isinstance({name}, {it}) else {INJECTED_CHECK_VAR}.opt_inst_param({name}, "{name}", {it})'
                     elif inner_origin is Callable or inner_origin is collections.abc.Callable:
-                        return f'{name} if {name} is None else check.opt_callable_param({name}, "{name}")'
+                        return f'{name} if {name} is None else {INJECTED_CHECK_VAR}.opt_callable_param({name}, "{name}")'
 
             # union
             else:
                 tuple_types = _coerce_type(ttype, eval_ctx)
                 if tuple_types is not None:
                     tt_name = _name(tuple_types)
-                    return f'{name} if isinstance({name}, {tt_name}) else check.inst_param({name}, "{name}", {tt_name})'
+                    return f'{name} if isinstance({name}, {tt_name}) else {INJECTED_CHECK_VAR}.inst_param({name}, "{name}", {tt_name})'
 
         # origin is some other type, assume ttype is Generic representation
         else:
             inst_type = _coerce_type(ttype, eval_ctx)
             if inst_type:
                 it = _name(inst_type)
-                return f'{name} if isinstance({name}, {it}) else check.inst_param({name}, "{name}", {it})'
+                return f'{name} if isinstance({name}, {it}) else {INJECTED_CHECK_VAR}.inst_param({name}, "{name}", {it})'
 
         failed(f"Unhandled {ttype}")
 

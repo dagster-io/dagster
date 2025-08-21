@@ -2,10 +2,10 @@ import {
   Box,
   Button,
   FontFamily,
-  Heading,
   Icon,
   MetadataTableWIP,
   PageHeader,
+  Subtitle1,
   Tag,
   Tooltip,
 } from '@dagster-io/ui-components';
@@ -120,11 +120,11 @@ export const SensorDetails = ({
     <>
       <PageHeader
         title={
-          <Heading style={{display: 'flex', flexDirection: 'row', gap: 4}}>
+          <Subtitle1 style={{display: 'flex', flexDirection: 'row', gap: 4}}>
             <Link to="/automation">Automation</Link>
             <span>/</span>
             {name}
-          </Heading>
+          </Subtitle1>
         }
         icon="sensors"
         tags={
@@ -175,6 +175,7 @@ export const SensorDetails = ({
             <tr>
               <td>Next tick</td>
               <td>
+                {/* eslint-disable-next-line @typescript-eslint/no-non-null-assertion */}
                 <TimestampDisplay timestamp={sensor.nextTick.timestamp!} timeFormat={TIME_FORMAT} />
               </td>
             </tr>

@@ -2,13 +2,12 @@ import asyncio
 import random
 from collections.abc import Iterable
 from functools import cached_property
-from typing import NamedTuple
 from unittest import mock
 
 import pytest
 from dagster._core.loader import LoadableBy, LoadingContext
 from dagster._utils.aiodataloader import DataLoader
-from dagster_shared.dagster_model import DagsterModel
+from dagster_shared.record import record
 
 
 class Context:
@@ -17,7 +16,8 @@ class Context:
         return ThingLoader()
 
 
-class Thing(DagsterModel):
+@record
+class Thing:
     key: str
     batch_keys: list[str]
 
@@ -140,15 +140,6 @@ def test_bad_load_fn():
     asyncio.run(_test())
 
 
-class LoadableThing(NamedTuple("_LoadableThing", [("key", str), ("val", int)]), LoadableBy[str]):
-    @classmethod
-    def _blocking_batch_load(  # pyright: ignore[reportIncompatibleMethodOverride]
-        cls, keys: Iterable[str], context: mock.MagicMock
-    ) -> list["LoadableThing"]:
-        context.query(keys)
-        return [LoadableThing(key, random.randint(0, 100000)) for key in keys]
-
-
 class BasicLoadingContext(LoadingContext):
     def __init__(self):
         self._loaders = {}
@@ -161,6 +152,21 @@ class BasicLoadingContext(LoadingContext):
     @property
     def instance(self) -> mock.MagicMock:
         return self._mock_instance
+
+
+@record(kw_only=False)
+class LoadableThing(LoadableBy[str, BasicLoadingContext]):
+    key: str
+    val: int
+
+    @classmethod
+    def _blocking_batch_load(
+        cls,
+        keys: Iterable[str],
+        context: BasicLoadingContext,
+    ) -> list["LoadableThing"]:
+        context.instance.query(keys)
+        return [LoadableThing(key, random.randint(0, 100000)) for key in keys]
 
 
 def test_sync_loadable_by() -> None:

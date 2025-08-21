@@ -1,6 +1,7 @@
 from typing import Optional
 
 import click
+from dagster_shared.cli import python_pointer_options
 
 import dagster._check as check
 from dagster._cli.job import get_run_config_from_cli_opts
@@ -12,12 +13,12 @@ from dagster._cli.utils import (
 from dagster._cli.workspace.cli_target import (
     PythonPointerOpts,
     get_repository_python_origin_from_cli_opts,
-    python_pointer_options,
     run_config_option,
 )
 from dagster._core.definitions.asset_selection import AssetSelection
 from dagster._core.definitions.backfill_policy import BackfillPolicyType
 from dagster._core.definitions.events import AssetKey
+from dagster._core.definitions.partitions.context import partition_loading_context
 from dagster._core.errors import DagsterInvalidSubsetError, DagsterUnknownPartitionError
 from dagster._core.execution.api import execute_job
 from dagster._core.instance import DagsterInstance
@@ -52,6 +53,19 @@ def asset_cli():
 @run_config_option(name="config", command_name="materialize")
 @python_pointer_options
 def asset_materialize_command(
+    select: str,
+    partition: Optional[str],
+    partition_range: Optional[str],
+    config: tuple[str, ...],
+    config_json: Optional[str],
+    **other_opts: object,
+) -> None:
+    asset_materialize_command_impl(
+        select, partition, partition_range, config, config_json, **other_opts
+    )
+
+
+def asset_materialize_command_impl(
     select: str,
     partition: Optional[str],
     partition_range: Optional[str],
@@ -110,6 +124,9 @@ def execute_materialize_command(
         JobPythonOrigin(implicit_job_def.name, repository_origin=repository_origin)
     )
 
+    with partition_loading_context(dynamic_partitions_store=instance) as ctx:
+        context = ctx
+
     if partition and partition_range:
         check.failed("Cannot specify both --partition and --partition-range options. Use only one.")
 
@@ -122,7 +139,7 @@ def execute_materialize_command(
 
         try:
             implicit_job_def.validate_partition_key(
-                partition, selected_asset_keys=asset_keys, dynamic_partitions_store=instance
+                partition, selected_asset_keys=asset_keys, context=context
             )
             tags = implicit_job_def.get_tags_for_partition_key(
                 partition, selected_asset_keys=asset_keys
@@ -149,14 +166,10 @@ def execute_materialize_command(
                 )
         try:
             implicit_job_def.validate_partition_key(
-                partition_range_start,
-                selected_asset_keys=asset_keys,
-                dynamic_partitions_store=instance,
+                partition_range_start, selected_asset_keys=asset_keys, context=context
             )
             implicit_job_def.validate_partition_key(
-                check.not_none(partition_range_end),
-                selected_asset_keys=asset_keys,
-                dynamic_partitions_store=instance,
+                check.not_none(partition_range_end), selected_asset_keys=asset_keys, context=context
             )
         except DagsterUnknownPartitionError:
             raise DagsterInvalidSubsetError(

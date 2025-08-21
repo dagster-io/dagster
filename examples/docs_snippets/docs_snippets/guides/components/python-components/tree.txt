@@ -1,0 +1,11 @@
+cd src/hello_world && tree
+
+.
+├── __init__.py
+├── definitions.py
+├── defs
+│   ├── __init__.py
+│   └── jdbt
+│       └── component.py
+└── lib
+    └── __init__.py

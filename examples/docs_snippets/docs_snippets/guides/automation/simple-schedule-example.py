@@ -9,19 +9,13 @@ def customer_data(): ...
 def sales_report(): ...
 
 
-daily_refresh_job = dg.define_asset_job(
-    "daily_refresh", selection=["customer_data", "sales_report"]
-)
-
 # highlight-start
 daily_schedule = dg.ScheduleDefinition(
-    job=daily_refresh_job,
+    name="daily_refresh",
     cron_schedule="0 0 * * *",  # Runs at midnight daily
+    target=[customer_data, sales_report],
 )
 # highlight-end
 
-defs = dg.Definitions(
-    assets=[customer_data, sales_report],
-    jobs=[daily_refresh_job],
-    schedules=[daily_schedule],
-)
+
+defs = dg.Definitions(schedules=[daily_schedule])

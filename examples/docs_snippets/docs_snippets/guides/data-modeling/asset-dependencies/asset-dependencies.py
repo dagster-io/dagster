@@ -2,8 +2,7 @@ def execute_query(query):
     del query
 
 
-# start_marker
-
+# start_basic_dependencies
 import dagster as dg
 
 
@@ -19,6 +18,10 @@ def shopping_list() -> None:
     execute_query("CREATE TABLE shopping_list AS SELECT * FROM sugary_cereals")
 
 
+# end_basic_dependencies
+
+
+# start_code_location_one_asset_decorator
 import json
 
 import dagster as dg
@@ -30,8 +33,10 @@ def code_location_1_asset():
         json.dump(5, f)
 
 
-defs = dg.Definitions(assets=[code_location_1_asset])
+# end_code_location_one_asset_decorator
 
+
+# start_code_location_two_asset_decorator
 import json
 
 import dagster as dg
@@ -46,4 +51,4 @@ def code_location_2_asset():
         json.dump(x + 6, f)
 
 
-defs = dg.Definitions(assets=[code_location_2_asset])
+# end_code_location_two_asset_decorator

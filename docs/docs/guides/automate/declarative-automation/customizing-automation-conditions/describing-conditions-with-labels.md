@@ -1,19 +1,21 @@
 ---
-title: 'Describing conditions with labels'
-sidebar_position: 300
+description: Attach descriptive labels to sub-conditions in the AutomationCondition tree using the with_label() method.
+sidebar_position: 500
+title: Describing conditions with labels
 ---
+
+import ScaffoldAsset from '@site/docs/partials/\_ScaffoldAsset.md';
+
+<ScaffoldAsset />
 
 When there are a large number of sub-conditions that make up an <PyObject section="assets" module="dagster" object="AutomationCondition" />, it can be difficult to understand and troubleshoot the condition. To make conditions easier to understand, you can attach labels to sub-conditions, which will then be displayed in the Dagster UI.
 
 Arbitrary string labels can be attached to any node in the <PyObject section="assets" module="dagster" object="AutomationCondition" /> tree by using the `with_label()` method, allowing you to describe the purpose of a specific sub-condition. For example:
 
-```python
-from dagster import AutomationCondition
-
-in_progress_or_failed_deps = AutomationCondition.any_deps_match(
-    AutomationCondition.in_progress() | AutomationCondition.failed()
-).with_label("Any deps in progress or failed")
-```
+<CodeExample
+  path="docs_snippets/docs_snippets/concepts/declarative_automation/condition_labels.py"
+  title="src/<project_name>/defs/assets.py"
+/>
 
 Then, when viewing evaluation results in the UI, the label will display next to the condition:
 

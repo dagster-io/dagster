@@ -30,9 +30,9 @@ setup(
     ],
     packages=find_packages(exclude=["dagster_deltalake_tests*"]),
     include_package_data=True,
-    python_requires=">=3.9,<3.13",
+    python_requires=">=3.9,<3.14",
     install_requires=[
-        "deltalake>=0.25.0",
+        "deltalake>=0.25.0,<1",
         f"dagster{pin}",
     ],
     extras_require={

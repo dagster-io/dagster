@@ -1,7 +1,7 @@
 Snowflake with PySpark (dagster-snowflake-pyspark)
 --------------------------------------------------
 
-This library provides an integration with the `Snowflake <https://www.snowflake.com/>`_ data
+This library provides an integration with the `Snowflake <https://www.snowflake.com>`_ data
 warehouse and PySpark data processing library.
 
 To use this library, you should first ensure that you have an appropriate `Snowflake user
@@ -10,7 +10,7 @@ your data warehouse.
 
 Related Guides:
 
-* `Using Dagster with Snowflake guide <https://docs.dagster.io/integrations/libraries/snowflake/>`_
+* `Using Dagster with Snowflake guide <https://docs.dagster.io/integrations/libraries/snowflake>`_
 * `Snowflake I/O manager reference <https://docs.dagster.io/integrations/libraries/snowflake/reference>`_
 
 

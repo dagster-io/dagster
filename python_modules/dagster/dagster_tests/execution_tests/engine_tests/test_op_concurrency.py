@@ -1,13 +1,14 @@
 import threading
 import time
 
+import dagster as dg
 import pytest
-from dagster import Failure, RetryPolicy, graph, in_process_executor, job, op, repository
-from dagster._core.definitions.events import AssetKey, AssetMaterialization
+from dagster import in_process_executor
+from dagster._core.definitions.asset_selection import AssetSelection
 from dagster._core.definitions.job_definition import JobDefinition
-from dagster._core.definitions.reconstruct import reconstructable
 from dagster._core.events import DagsterEventType
-from dagster._core.execution.api import execute_job, execute_run_iterator
+from dagster._core.execution.api import execute_run_iterator
+from dagster._core.execution.context.asset_check_execution_context import AssetCheckExecutionContext
 from dagster._core.instance import DagsterInstance
 from dagster._core.storage.dagster_run import DagsterRunStatus
 from dagster._core.test_utils import poll_for_finished_run
@@ -18,38 +19,38 @@ from dagster_tests.execution_tests.engine_tests.test_step_delegating_executor im
 )
 
 
-@op(pool="foo")
+@dg.op(pool="foo")
 def should_never_execute(_x):
     assert False  # this should never execute
 
 
-@op(pool="foo")
+@dg.op(pool="foo")
 def throw_error():
     raise Exception("bad programmer")
 
 
-@graph
+@dg.graph
 def error_graph():
     should_never_execute(throw_error())
 
 
-@op(pool="foo")
+@dg.op(pool="foo")
 def simple_op(context):
     time.sleep(0.1)
     foo_info = context.instance.event_log_storage.get_concurrency_info("foo")
     return {"active": foo_info.active_slot_count, "pending": foo_info.pending_step_count}
 
 
-@op(pool="foo")
+@dg.op(pool="foo")
 def second_op(context, _):
     time.sleep(0.1)
     foo_info = context.instance.event_log_storage.get_concurrency_info("foo")
     metadata = {"active": foo_info.active_slot_count, "pending": foo_info.pending_step_count}
-    context.log_event(AssetMaterialization(asset_key="foo_slot", metadata=metadata))
+    context.log_event(dg.AssetMaterialization(asset_key="foo_slot", metadata=metadata))
     return metadata
 
 
-@graph
+@dg.graph
 def parallel_graph():
     simple_op()
     simple_op()
@@ -58,7 +59,7 @@ def parallel_graph():
     simple_op()
 
 
-@graph
+@dg.graph
 def two_tier_graph():
     second_op(simple_op())
     second_op(simple_op())
@@ -66,18 +67,18 @@ def two_tier_graph():
     second_op(simple_op())
 
 
-@op(pool="foo", retry_policy=RetryPolicy(max_retries=1))
+@dg.op(pool="foo", retry_policy=dg.RetryPolicy(max_retries=1))
 def retry_op():
-    raise Failure("I fail")
+    raise dg.Failure("I fail")
 
 
-@job(executor_def=in_process_executor)
+@dg.job(executor_def=in_process_executor)
 def retry_job():
     retry_op()
     simple_op()
 
 
-@job
+@dg.job
 def simple_job():
     simple_op()
 
@@ -105,7 +106,30 @@ two_tier_job_step_delegating = two_tier_graph.to_job(
 )
 
 
-@repository
+def define_parallel_asset_check_job():
+    asset_checks = []
+    for i in range(5):
+
+        @dg.asset_check(asset="some_asset", name=f"check_{i}", pool="foo")
+        def _check(context: AssetCheckExecutionContext):
+            foo_info = context.instance.event_log_storage.get_concurrency_info("foo")
+            metadata = {
+                "active": foo_info.active_slot_count,
+                "pending": foo_info.pending_step_count,
+            }
+            return dg.AssetCheckResult(passed=True, metadata=metadata)
+
+        asset_checks.append(_check)
+
+    asset_job = dg.define_asset_job(
+        name="parallel_asset_check_job", selection=AssetSelection.all_asset_checks()
+    )
+    return dg.Definitions(asset_checks=asset_checks, jobs=[asset_job]).resolve_job_def(
+        asset_job.name
+    )
+
+
+@dg.repository
 def concurrency_repo():
     return [
         error_job_multiprocess,
@@ -154,19 +178,24 @@ def define_simple_job():
     return simple_job
 
 
-recon_error_inprocess = reconstructable(define_error_inprocess_job)
-recon_error_multiprocess = reconstructable(define_error_multiprocess_job)
-recon_error_stepdelegating = reconstructable(define_error_stepdelegating_job)
-recon_parallel_inprocess = reconstructable(define_parallel_inprocess_job)
-recon_parallel_multiprocess = reconstructable(define_parallel_multiprocess_job)
-recon_parallel_stepdelegating = reconstructable(define_parallel_stepdelegating_job)
-recon_retry_job = reconstructable(define_retry_job)
-recon_simple_job = reconstructable(define_simple_job)
+recon_error_inprocess = dg.reconstructable(define_error_inprocess_job)
+recon_error_multiprocess = dg.reconstructable(define_error_multiprocess_job)
+recon_error_stepdelegating = dg.reconstructable(define_error_stepdelegating_job)
+recon_parallel_inprocess = dg.reconstructable(define_parallel_inprocess_job)
+recon_parallel_multiprocess = dg.reconstructable(define_parallel_multiprocess_job)
+recon_parallel_stepdelegating = dg.reconstructable(define_parallel_stepdelegating_job)
+recon_retry_job = dg.reconstructable(define_retry_job)
+recon_simple_job = dg.reconstructable(define_simple_job)
+recon_parallel_asset_check_job = dg.reconstructable(define_parallel_asset_check_job)
 
 
 @pytest.fixture(
     name="parallel_recon_job",
-    params=[recon_parallel_inprocess, recon_parallel_multiprocess, recon_parallel_stepdelegating],
+    params=[
+        recon_parallel_inprocess,
+        recon_parallel_multiprocess,
+        recon_parallel_stepdelegating,
+    ],
 )
 def parallel_recon_job_fixture(request):
     return request.param
@@ -228,7 +257,7 @@ def test_parallel_concurrency(instance, parallel_recon_job):
     assert foo_info.pending_step_count == 0
     assert foo_info.assigned_step_count == 0
 
-    with execute_job(parallel_recon_job, instance=instance) as result:
+    with dg.execute_job(parallel_recon_job, instance=instance) as result:
         assert result.success
         ordered_node_names = [
             event.node_name for event in result.all_events if event.is_successful_output
@@ -258,7 +287,7 @@ def test_concurrency_blocked_events(instance, parallel_recon_job_not_inprocess):
     foo_info = instance.event_log_storage.get_concurrency_info("foo")
     assert foo_info.slot_count == 1
 
-    with execute_job(parallel_recon_job_not_inprocess, instance=instance) as result:
+    with dg.execute_job(parallel_recon_job_not_inprocess, instance=instance) as result:
         assert _has_concurrency_blocked_event(result.all_events, "foo")
 
 
@@ -270,7 +299,7 @@ def test_error_concurrency(instance, error_recon_job):
     assert foo_info.pending_step_count == 0
     assert foo_info.assigned_step_count == 0
 
-    with execute_job(error_recon_job, instance=instance) as result:
+    with dg.execute_job(error_recon_job, instance=instance) as result:
         assert not result.success
 
     # job failures release any claimed slots
@@ -289,7 +318,7 @@ def test_multi_slot_concurrency(instance, parallel_recon_job_not_inprocess):
     assert foo_info.pending_step_count == 0
     assert foo_info.assigned_step_count == 0
 
-    with execute_job(parallel_recon_job_not_inprocess, instance=instance) as result:
+    with dg.execute_job(parallel_recon_job_not_inprocess, instance=instance) as result:
         assert result.success
         ordered_node_names = [
             event.node_name for event in result.all_events if event.is_successful_output
@@ -327,7 +356,9 @@ def test_multi_run_concurrency(instance, workspace, two_tier_job_def):
     assert run_two.status == DagsterRunStatus.SUCCESS
 
     records = [
-        *instance.fetch_materializations(AssetKey(["foo_slot"]), ascending=True, limit=5000).records
+        *instance.fetch_materializations(
+            dg.AssetKey(["foo_slot"]), ascending=True, limit=5000
+        ).records
     ]
     max_active = 0
     for record in records:
@@ -353,7 +384,7 @@ def test_retry_concurrency_release(instance):
     assert foo_info.assigned_step_count == 0
 
     events = []
-    with execute_job(recon_retry_job, instance=instance) as result:
+    with dg.execute_job(recon_retry_job, instance=instance) as result:
         for event in result.all_events:
             if event.step_key and event.event_type_value in (
                 DagsterEventType.STEP_START.value,
@@ -409,3 +440,31 @@ def test_multiprocess_simple_job_has_blocked_message(instance):
 
     assert not timed_out
     assert has_blocked_message
+
+
+def test_multi_slot_asset_check(instance: DagsterInstance):
+    instance.event_log_storage.set_concurrency_slots("foo", 3)
+    foo_info = instance.event_log_storage.get_concurrency_info("foo")
+
+    assert foo_info.slot_count == 3
+    assert foo_info.active_slot_count == 0
+    assert foo_info.pending_step_count == 0
+    assert foo_info.assigned_step_count == 0
+
+    with dg.execute_job(recon_parallel_asset_check_job, instance=instance) as result:
+        assert result.success
+        evals = [
+            e.event_specific_data
+            for e in result.all_events
+            if e.event_type == DagsterEventType.ASSET_CHECK_EVALUATION
+        ]
+
+        # 5 steps, but the max active at any time is 3
+        assert max([e.metadata["active"].value for e in evals]) <= 3  # type: ignore
+        assert max([e.metadata["active"].value for e in evals]) > 1  # type: ignore
+
+    # job successes release any claimed slots
+    assert foo_info.slot_count == 3
+    assert foo_info.active_slot_count == 0
+    assert foo_info.pending_step_count == 0
+    assert foo_info.assigned_step_count == 0

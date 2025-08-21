@@ -8,15 +8,15 @@ from dagster import (
     AssetKey,
     AssetSelection,
     AutoMaterializePolicy,
-    DailyPartitionsDefinition,
-    FreshnessPolicy,
+    LegacyFreshnessPolicy,
     MetadataValue,
     asset,
     define_asset_job,
     file_relative_path,
 )
 from dagster._config.field_utils import EnvVar
-from dagster._core.definitions.asset_graph import AssetGraph
+from dagster._core.definitions.assets.graph.asset_graph import AssetGraph
+from dagster._core.definitions.partitions.definition import DailyPartitionsDefinition
 from dagster._core.test_utils import environ, instance_for_test
 from dagster_dbt import (
     DagsterDbtCloudJobInvariantViolationError,
@@ -458,7 +458,7 @@ def test_custom_freshness_policy(dbt_cloud, dbt_cloud_service):
     dbt_cloud_cacheable_assets = load_assets_from_dbt_cloud_job(
         dbt_cloud=dbt_cloud,
         job_id=DBT_CLOUD_JOB_ID,
-        node_info_to_freshness_policy_fn=lambda node_info: FreshnessPolicy(
+        node_info_to_freshness_policy_fn=lambda node_info: LegacyFreshnessPolicy(
             maximum_lag_minutes=len(node_info["name"])
         ),
     )
@@ -467,8 +467,8 @@ def test_custom_freshness_policy(dbt_cloud, dbt_cloud_service):
         dbt_assets_definition_cacheable_data
     )
 
-    assert dbt_cloud_assets[0].freshness_policies_by_key == {
-        key: FreshnessPolicy(maximum_lag_minutes=len(key.path[-1]))
+    assert dbt_cloud_assets[0].legacy_freshness_policies_by_key == {
+        key: LegacyFreshnessPolicy(maximum_lag_minutes=len(key.path[-1]))
         for key in dbt_cloud_assets[0].keys
     }
 

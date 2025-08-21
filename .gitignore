@@ -4,7 +4,8 @@ __pycache__/
 *$py.class
 
 # Claude context file
-CLAUDE.md
+CLAUDE.local.md
+.claude/settings.local.json
 # C extensions
 *.so
 
@@ -24,6 +25,8 @@ wheels/
 *.egg-info/
 .installed.cfg
 *.egg
+
+!docs/docs/guides/build
 
 # PyInstaller
 #  Usually these files are written by a python script from a template
@@ -80,8 +83,8 @@ celerybeat-schedule
 *.sage.py
 
 # dotenv
-.env
-.envrc
+.env*
+!.env.example
 
 # virtualenv
 .direnv/
@@ -169,6 +172,9 @@ pythonenv*/
 # DuckDB
 *.duckdb
 
+# Cursorrules
+.cursor
+
 # PyRight config
 pyrightconfig*
 
@@ -183,3 +189,7 @@ exponent.txt
 
 # google cloud storage emulater
 .cloudstorage/
+
+# personal claude files
+.claude/**/*.local.md
+.claude/.local

@@ -11,6 +11,7 @@ from typing import (  # noqa: UP035
 )
 
 import dagster._check as check
+from dagster._annotations import public
 from dagster._core.decorator_utils import format_docstring_for_description
 from dagster._core.definitions.config import ConfigMapping
 from dagster._core.definitions.graph_definition import GraphDefinition
@@ -24,7 +25,8 @@ from dagster._utils.tags import normalize_tags
 
 if TYPE_CHECKING:
     from dagster._core.definitions.executor_definition import ExecutorDefinition
-    from dagster._core.definitions.partition import PartitionedConfig, PartitionsDefinition
+    from dagster._core.definitions.partitions.definition import PartitionsDefinition
+    from dagster._core.definitions.partitions.partitioned_config import PartitionedConfig
     from dagster._core.definitions.run_config import RunConfig
 
 
@@ -143,6 +145,7 @@ def job(
 ) -> _Job: ...
 
 
+@public
 def job(
     compose_fn: Optional[Callable[..., Any]] = None,
     *,

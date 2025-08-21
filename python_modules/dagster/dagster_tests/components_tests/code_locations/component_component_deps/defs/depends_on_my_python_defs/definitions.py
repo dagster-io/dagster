@@ -1,22 +1,16 @@
-from typing import TYPE_CHECKING, cast
+from pathlib import Path
 
 import dagster as dg
-from component_component_deps.defs import my_python_defs  # type:ignore
 from dagster.components.core.context import ComponentLoadContext
 
-if TYPE_CHECKING:
-    from collections.abc import Sequence
 
-    from dagster._core.definitions.assets import AssetsDefinition
+@dg.definitions
+def defs(context: ComponentLoadContext) -> dg.Definitions:
+    @dg.asset(
+        deps=context.component_tree.build_defs_at_path(
+            Path("my_python_defs")
+        ).resolve_all_asset_specs()
+    )
+    def downstream_of_all_my_python_defs(): ...
 
-ctx = ComponentLoadContext.current()
-
-assets_from_my_python_defs = cast(
-    "Sequence[AssetsDefinition]",
-    ctx.load_defs(my_python_defs).assets,
-)
-
-
-@dg.asset(deps=assets_from_my_python_defs)
-def downstream_of_all_my_python_defs():
-    pass
+    return dg.Definitions(assets=[downstream_of_all_my_python_defs])

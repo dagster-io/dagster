@@ -8,7 +8,6 @@ from dagster_pipes import to_assey_key_path
 
 import dagster._check as check
 from dagster._annotations import PublicAttr, public
-from dagster._core.errors import DagsterInvariantViolationError
 from dagster._record import IHaveNew, record_custom
 from dagster._serdes import whitelist_for_serdes
 
@@ -17,7 +16,7 @@ ASSET_KEY_DELIMITER = "/"
 ASSET_KEY_ESCAPE_CHARACTER = "\\"
 
 if TYPE_CHECKING:
-    from dagster._core.definitions.assets import AssetsDefinition
+    from dagster._core.definitions.assets.definition.assets_definition import AssetsDefinition
     from dagster._core.definitions.source_asset import SourceAsset
 
 
@@ -30,6 +29,7 @@ def parse_asset_key_string(s: str) -> Sequence[str]:
     checked=False,
     field_to_new_mapping={"parts": "path"},
 )
+@public
 class AssetKey(IHaveNew):
     """Object representing the structure of an asset key.  Takes in a sanitized string, list of
     strings, or tuple of strings.
@@ -158,7 +158,7 @@ class AssetKey(IHaveNew):
     def from_coercible_or_definition(
         arg: Union["CoercibleToAssetKey", "AssetsDefinition", "SourceAsset"],
     ) -> "AssetKey":
-        from dagster._core.definitions.assets import AssetsDefinition
+        from dagster._core.definitions.assets.definition.assets_definition import AssetsDefinition
         from dagster._core.definitions.source_asset import SourceAsset
 
         if isinstance(arg, AssetsDefinition):
@@ -174,21 +174,6 @@ class AssetKey(IHaveNew):
     def with_prefix(self, prefix: "CoercibleToAssetKeyPrefix") -> "AssetKey":
         prefix = key_prefix_from_coercible(prefix)
         return AssetKey(list(prefix) + list(self.path))
-
-    if not TYPE_CHECKING:
-        # hide these from type checker so it doesn't believe AssetKey is iterable/indexable
-        def __iter__(self):
-            raise DagsterInvariantViolationError(
-                "You have attempted to iterate a single AssetKey object. "
-                "As of 1.9, this behavior is disallowed because it is likely unintentional and a bug."
-            )
-
-        def __getitem__(self, _):
-            raise DagsterInvariantViolationError(
-                "You have attempted to index directly in to the AssetKey object. "
-                "As of 1.9, this behavior is disallowed because it is likely unintentional and a bug. "
-                "Use asset_key.path instead to access the list of key components."
-            )
 
 
 CoercibleToAssetKey = Union[AssetKey, str, Sequence[str]]
@@ -216,6 +201,7 @@ def key_prefix_from_coercible(key_prefix: CoercibleToAssetKeyPrefix) -> Sequence
         check.failed(f"Unexpected type for key_prefix: {type(key_prefix)}")
 
 
+@public
 @whitelist_for_serdes(old_storage_names={"AssetCheckHandle"})
 class AssetCheckKey(NamedTuple):
     """Check names are expected to be unique per-asset. Thus, this combination of asset key and
@@ -276,7 +262,7 @@ def entity_key_from_db_string(db_string: str) -> EntityKey:
 def asset_keys_from_defs_and_coercibles(
     assets: Sequence[Union["AssetsDefinition", CoercibleToAssetKey]],
 ) -> Sequence[AssetKey]:
-    from dagster._core.definitions.assets import AssetsDefinition
+    from dagster._core.definitions.assets.definition.assets_definition import AssetsDefinition
 
     result: list[AssetKey] = []
     for el in assets:

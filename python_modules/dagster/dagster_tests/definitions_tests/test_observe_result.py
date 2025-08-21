@@ -1,33 +1,17 @@
 import asyncio
 from collections.abc import Generator
 
+import dagster as dg
 import pytest
-from dagster import (
-    AssetCheckResult,
-    AssetCheckSpec,
-    AssetExecutionContext,
-    AssetKey,
-    AssetSpec,
-    IOManager,
-    StaticPartitionsDefinition,
-    asset,
-    build_op_context,
-    instance_for_test,
-    multi_observable_source_asset,
-    observable_source_asset,
-)
-from dagster._core.definitions.asset_check_spec import AssetCheckKey
+from dagster import AssetExecutionContext
 from dagster._core.definitions.observe import observe
-from dagster._core.definitions.result import ObserveResult
-from dagster._core.errors import DagsterInvariantViolationError, DagsterStepOutputNotFoundError
-from dagster._core.execution.context.invocation import build_asset_context
 from dagster._core.storage.asset_check_execution_record import AssetCheckExecutionRecordStatus
 
 
 def test_observe_result_asset():
-    @observable_source_asset()
+    @dg.observable_source_asset()
     def ret_untyped(context: AssetExecutionContext):
-        return ObserveResult(metadata={"one": 1}, tags={"foo": "bar"})
+        return dg.ObserveResult(metadata={"one": 1}, tags={"foo": "bar"})
 
     result = observe([ret_untyped])
     assert result.success
@@ -37,54 +21,54 @@ def test_observe_result_asset():
     assert observations[0].tags["foo"] == "bar"
 
     # key mismatch
-    @observable_source_asset()
+    @dg.observable_source_asset()
     def ret_mismatch(context: AssetExecutionContext):
-        return ObserveResult(
+        return dg.ObserveResult(
             asset_key="random",
             metadata={"one": 1},
         )
 
     # core execution
     with pytest.raises(
-        DagsterInvariantViolationError,
+        dg.DagsterInvariantViolationError,
         match="Asset key random not found in AssetsDefinition",
     ):
         observe([ret_mismatch])
 
 
 def test_return_observe_result_with_asset_checks():
-    with instance_for_test() as instance:
+    with dg.instance_for_test() as instance:
 
-        @multi_observable_source_asset(
-            specs=[AssetSpec("ret_checks")],
-            check_specs=[AssetCheckSpec(name="foo_check", asset=AssetKey("ret_checks"))],
+        @dg.multi_observable_source_asset(
+            specs=[dg.AssetSpec("ret_checks")],
+            check_specs=[dg.AssetCheckSpec(name="foo_check", asset=dg.AssetKey("ret_checks"))],
         )
         def ret_checks(context: AssetExecutionContext):
-            return ObserveResult(
+            return dg.ObserveResult(
                 check_results=[
-                    AssetCheckResult(check_name="foo_check", metadata={"one": 1}, passed=True)
+                    dg.AssetCheckResult(check_name="foo_check", metadata={"one": 1}, passed=True)
                 ]
             )
 
         # core execution
         observe([ret_checks], instance=instance)
         asset_check_executions = instance.event_log_storage.get_asset_check_execution_history(
-            AssetCheckKey(asset_key=ret_checks.key, name="foo_check"),
+            dg.AssetCheckKey(asset_key=ret_checks.key, name="foo_check"),
             limit=1,
         )
         assert len(asset_check_executions) == 1
         assert asset_check_executions[0].status == AssetCheckExecutionRecordStatus.SUCCEEDED
 
         # direct invocation
-        context = build_asset_context()
+        context = dg.build_asset_context()
         direct_results = ret_checks(context)
         assert direct_results
 
 
 def test_multi_asset_observe_result():
-    @multi_observable_source_asset(specs=[AssetSpec("one"), AssetSpec("two")])
+    @dg.multi_observable_source_asset(specs=[dg.AssetSpec("one"), dg.AssetSpec("two")])
     def outs_multi_asset():
-        return ObserveResult(asset_key="one", metadata=({"foo": "bar"})), ObserveResult(
+        return dg.ObserveResult(asset_key="one", metadata=({"foo": "bar"})), dg.ObserveResult(
             asset_key="two", metadata={"baz": "qux"}
         )
 
@@ -94,16 +78,16 @@ def test_multi_asset_observe_result():
     assert res[0].metadata["foo"] == "bar"  # pyright: ignore[reportIndexIssue]
     assert res[1].metadata["baz"] == "qux"  # pyright: ignore[reportIndexIssue]
 
-    @multi_observable_source_asset(
+    @dg.multi_observable_source_asset(
         specs=[
-            AssetSpec(["prefix", "one"]),
-            AssetSpec(["prefix", "two"]),
+            dg.AssetSpec(["prefix", "one"]),
+            dg.AssetSpec(["prefix", "two"]),
         ]
     )
     def specs_multi_asset():
-        return ObserveResult(asset_key=["prefix", "one"], metadata={"foo": "bar"}), ObserveResult(
-            asset_key=["prefix", "two"], metadata={"baz": "qux"}
-        )
+        return dg.ObserveResult(
+            asset_key=["prefix", "one"], metadata={"foo": "bar"}
+        ), dg.ObserveResult(asset_key=["prefix", "two"], metadata={"baz": "qux"})
 
     assert observe([specs_multi_asset]).success
 
@@ -116,13 +100,13 @@ def test_yield_materialization_multi_asset():
     #
     # yield successful
     #
-    @multi_observable_source_asset(specs=[AssetSpec("one"), AssetSpec("two")])
+    @dg.multi_observable_source_asset(specs=[dg.AssetSpec("one"), dg.AssetSpec("two")])
     def multi():
-        yield ObserveResult(
+        yield dg.ObserveResult(
             asset_key="one",
             metadata={"one": 1},
         )
-        yield ObserveResult(
+        yield dg.ObserveResult(
             asset_key="two",
             metadata={"two": 2},
         )
@@ -140,16 +124,16 @@ def test_yield_materialization_multi_asset():
     #
     # missing a non optional out
     #
-    @multi_observable_source_asset(specs=[AssetSpec("one"), AssetSpec("two")])
+    @dg.multi_observable_source_asset(specs=[dg.AssetSpec("one"), dg.AssetSpec("two")])
     def missing():
-        yield ObserveResult(
+        yield dg.ObserveResult(
             asset_key="one",
             metadata={"one": 1},
         )
 
     # currently a less than ideal error
     with pytest.raises(
-        DagsterStepOutputNotFoundError,
+        dg.DagsterStepOutputNotFoundError,
         match=(
             'Core compute for op "missing" did not return an output for non-optional output "two"'
         ),
@@ -157,7 +141,7 @@ def test_yield_materialization_multi_asset():
         observe([missing])
 
     with pytest.raises(
-        DagsterInvariantViolationError,
+        dg.DagsterInvariantViolationError,
         match='Invocation of op "missing" did not return an output for non-optional output "two"',
     ):
         list(missing())  # pyright: ignore[reportArgumentType]
@@ -165,17 +149,17 @@ def test_yield_materialization_multi_asset():
     #
     # missing asset_key
     #
-    @multi_observable_source_asset(specs=[AssetSpec("one"), AssetSpec("two")])
+    @dg.multi_observable_source_asset(specs=[dg.AssetSpec("one"), dg.AssetSpec("two")])
     def no_key():
-        yield ObserveResult(
+        yield dg.ObserveResult(
             metadata={"one": 1},
         )
-        yield ObserveResult(
+        yield dg.ObserveResult(
             metadata={"two": 2},
         )
 
     with pytest.raises(
-        DagsterInvariantViolationError,
+        dg.DagsterInvariantViolationError,
         match=(
             "ObserveResult did not include asset_key and it can not be inferred. Specify which"
             " asset_key, options are:"
@@ -184,7 +168,7 @@ def test_yield_materialization_multi_asset():
         observe([no_key])
 
     with pytest.raises(
-        DagsterInvariantViolationError,
+        dg.DagsterInvariantViolationError,
         match=(
             "ObserveResult did not include asset_key and it can not be inferred. Specify which"
             " asset_key, options are:"
@@ -195,14 +179,14 @@ def test_yield_materialization_multi_asset():
     #
     # return tuple success
     #
-    @multi_observable_source_asset(specs=[AssetSpec("one"), AssetSpec("two")])
+    @dg.multi_observable_source_asset(specs=[dg.AssetSpec("one"), dg.AssetSpec("two")])
     def ret_multi():
         return (
-            ObserveResult(
+            dg.ObserveResult(
                 asset_key="one",
                 metadata={"one": 1},
             ),
-            ObserveResult(
+            dg.ObserveResult(
                 asset_key="two",
                 metadata={"two": 2},
             ),
@@ -221,14 +205,14 @@ def test_yield_materialization_multi_asset():
     #
     # return list error
     #
-    @multi_observable_source_asset(specs=[AssetSpec("one"), AssetSpec("two")])
+    @dg.multi_observable_source_asset(specs=[dg.AssetSpec("one"), dg.AssetSpec("two")])
     def ret_list():
         return [
-            ObserveResult(
+            dg.ObserveResult(
                 asset_key="one",
                 metadata={"one": 1},
             ),
-            ObserveResult(
+            dg.ObserveResult(
                 asset_key="two",
                 metadata={"two": 2},
             ),
@@ -236,7 +220,7 @@ def test_yield_materialization_multi_asset():
 
     # not the best
     with pytest.raises(
-        DagsterInvariantViolationError,
+        dg.DagsterInvariantViolationError,
         match=(
             "When using multiple outputs, either yield each output, or return a tuple containing a"
             " value for each output."
@@ -245,7 +229,7 @@ def test_yield_materialization_multi_asset():
         observe([ret_list])
 
     with pytest.raises(
-        DagsterInvariantViolationError,
+        dg.DagsterInvariantViolationError,
         match=(
             "When using multiple outputs, either yield each output, or return a tuple containing a"
             " value for each output."
@@ -258,7 +242,7 @@ def test_observe_result_output_typing():
     # Test that the return annotation ObserveResult is interpreted as a Nothing type, since we
     # coerce returned ObserveResults to Output(None)
 
-    class TestingIOManager(IOManager):
+    class TestingIOManager(dg.IOManager):
         def handle_output(self, context, obj):
             assert context.dagster_type.is_nothing
             return None
@@ -266,54 +250,54 @@ def test_observe_result_output_typing():
         def load_input(self, context):
             return 1
 
-    @observable_source_asset()
-    def asset_with_type_annotation() -> ObserveResult:
-        return ObserveResult(metadata={"foo": "bar"})
+    @dg.observable_source_asset()
+    def asset_with_type_annotation() -> dg.ObserveResult:
+        return dg.ObserveResult(metadata={"foo": "bar"})
 
     assert observe(
         [asset_with_type_annotation], resources={"io_manager": TestingIOManager()}
     ).success
 
-    @multi_observable_source_asset(specs=[AssetSpec("one"), AssetSpec("two")])
-    def multi_asset_with_outs_and_type_annotation() -> tuple[ObserveResult, ObserveResult]:
-        return ObserveResult(asset_key="one"), ObserveResult(asset_key="two")
+    @dg.multi_observable_source_asset(specs=[dg.AssetSpec("one"), dg.AssetSpec("two")])
+    def multi_asset_with_outs_and_type_annotation() -> tuple[dg.ObserveResult, dg.ObserveResult]:
+        return dg.ObserveResult(asset_key="one"), dg.ObserveResult(asset_key="two")
 
     assert observe(
         [multi_asset_with_outs_and_type_annotation], resources={"io_manager": TestingIOManager()}
     ).success
 
-    @multi_observable_source_asset(specs=[AssetSpec("one"), AssetSpec("two")])
-    def multi_asset_with_specs_and_type_annotation() -> tuple[ObserveResult, ObserveResult]:
-        return ObserveResult(asset_key="one"), ObserveResult(asset_key="two")
+    @dg.multi_observable_source_asset(specs=[dg.AssetSpec("one"), dg.AssetSpec("two")])
+    def multi_asset_with_specs_and_type_annotation() -> tuple[dg.ObserveResult, dg.ObserveResult]:
+        return dg.ObserveResult(asset_key="one"), dg.ObserveResult(asset_key="two")
 
     assert observe(
         [multi_asset_with_specs_and_type_annotation], resources={"io_manager": TestingIOManager()}
     ).success
 
-    @multi_observable_source_asset(specs=[AssetSpec("one"), AssetSpec("two")])
+    @dg.multi_observable_source_asset(specs=[dg.AssetSpec("one"), dg.AssetSpec("two")])
     def multi_asset_with_specs_and_no_type_annotation():
-        return ObserveResult(asset_key="one"), ObserveResult(asset_key="two")
+        return dg.ObserveResult(asset_key="one"), dg.ObserveResult(asset_key="two")
 
     assert observe(
         [multi_asset_with_specs_and_no_type_annotation],
         resources={"io_manager": TestingIOManager()},
     ).success
 
-    @multi_observable_source_asset(
-        specs=[AssetSpec("with_checks")],
+    @dg.multi_observable_source_asset(
+        specs=[dg.AssetSpec("with_checks")],
         check_specs=[
-            AssetCheckSpec(name="check_one", asset="with_checks"),
-            AssetCheckSpec(name="check_two", asset="with_checks"),
+            dg.AssetCheckSpec(name="check_one", asset="with_checks"),
+            dg.AssetCheckSpec(name="check_two", asset="with_checks"),
         ],
     )
-    def with_checks(context: AssetExecutionContext) -> ObserveResult:
-        return ObserveResult(
+    def with_checks(context: AssetExecutionContext) -> dg.ObserveResult:
+        return dg.ObserveResult(
             check_results=[
-                AssetCheckResult(
+                dg.AssetCheckResult(
                     check_name="check_one",
                     passed=True,
                 ),
-                AssetCheckResult(
+                dg.AssetCheckResult(
                     check_name="check_two",
                     passed=True,
                 ),
@@ -325,30 +309,30 @@ def test_observe_result_output_typing():
         resources={"io_manager": TestingIOManager()},
     ).success
 
-    @multi_observable_source_asset(
+    @dg.multi_observable_source_asset(
         specs=[
-            AssetSpec("asset_one"),
-            AssetSpec("asset_two"),
+            dg.AssetSpec("asset_one"),
+            dg.AssetSpec("asset_two"),
         ],
         check_specs=[
-            AssetCheckSpec(name="check_one", asset="asset_one"),
-            AssetCheckSpec(name="check_two", asset="asset_two"),
+            dg.AssetCheckSpec(name="check_one", asset="asset_one"),
+            dg.AssetCheckSpec(name="check_two", asset="asset_two"),
         ],
     )
-    def multi_checks(context: AssetExecutionContext) -> tuple[ObserveResult, ObserveResult]:
-        return ObserveResult(
+    def multi_checks(context: AssetExecutionContext) -> tuple[dg.ObserveResult, dg.ObserveResult]:
+        return dg.ObserveResult(
             asset_key="asset_one",
             check_results=[
-                AssetCheckResult(
+                dg.AssetCheckResult(
                     check_name="check_one",
                     passed=True,
                     asset_key="asset_one",
                 ),
             ],
-        ), ObserveResult(
+        ), dg.ObserveResult(
             asset_key="asset_two",
             check_results=[
-                AssetCheckResult(
+                dg.AssetCheckResult(
                     check_name="check_two",
                     passed=True,
                     asset_key="asset_two",
@@ -367,7 +351,7 @@ def test_observe_result_output_typing():
     " https://github.com/dagster-io/dagster/pull/16906"
 )
 def test_generator_return_type_annotation():
-    class TestingIOManager(IOManager):
+    class TestingIOManager(dg.IOManager):
         def handle_output(self, context, obj):
             assert context.dagster_type.is_nothing
             return None
@@ -375,18 +359,18 @@ def test_generator_return_type_annotation():
         def load_input(self, context):
             return 1
 
-    @asset
-    def generator_asset() -> Generator[ObserveResult, None, None]:
-        yield ObserveResult(metadata={"foo": "bar"})
+    @dg.asset
+    def generator_asset() -> Generator[dg.ObserveResult, None, None]:
+        yield dg.ObserveResult(metadata={"foo": "bar"})
 
     observe([generator_asset], resources={"io_manager": TestingIOManager()})
 
 
 def test_observe_result_generators():
-    @multi_observable_source_asset(specs=[AssetSpec("one"), AssetSpec("two")])
+    @dg.multi_observable_source_asset(specs=[dg.AssetSpec("one"), dg.AssetSpec("two")])
     def generator_specs_multi_asset():
-        yield ObserveResult(asset_key="one", metadata={"foo": "bar"})
-        yield ObserveResult(asset_key="two", metadata={"baz": "qux"})
+        yield dg.ObserveResult(asset_key="one", metadata={"foo": "bar"})
+        yield dg.ObserveResult(asset_key="two", metadata={"baz": "qux"})
 
     result = observe([generator_specs_multi_asset])
     assert result.success
@@ -400,10 +384,10 @@ def test_observe_result_generators():
     assert result[0].metadata["foo"] == "bar"
     assert result[1].metadata["baz"] == "qux"
 
-    @multi_observable_source_asset(specs=[AssetSpec("one"), AssetSpec("two")])
+    @dg.multi_observable_source_asset(specs=[dg.AssetSpec("one"), dg.AssetSpec("two")])
     def generator_outs_multi_asset():
-        yield ObserveResult(asset_key="one", metadata={"foo": "bar"})
-        yield ObserveResult(asset_key="two", metadata={"baz": "qux"})
+        yield dg.ObserveResult(asset_key="one", metadata={"foo": "bar"})
+        yield dg.ObserveResult(asset_key="two", metadata={"baz": "qux"})
 
     result = observe([generator_outs_multi_asset])
     assert result.success
@@ -417,9 +401,9 @@ def test_observe_result_generators():
     assert result[0].metadata["foo"] == "bar"
     assert result[1].metadata["baz"] == "qux"
 
-    @multi_observable_source_asset(specs=[AssetSpec("one"), AssetSpec("two")])
+    @dg.multi_observable_source_asset(specs=[dg.AssetSpec("one"), dg.AssetSpec("two")])
     async def async_specs_multi_asset():
-        return ObserveResult(asset_key="one", metadata={"foo": "bar"}), ObserveResult(
+        return dg.ObserveResult(asset_key="one", metadata={"foo": "bar"}), dg.ObserveResult(
             asset_key="two", metadata={"baz": "qux"}
         )
 
@@ -435,10 +419,10 @@ def test_observe_result_generators():
     assert result[0].metadata["foo"] == "bar"
     assert result[1].metadata["baz"] == "qux"
 
-    @multi_observable_source_asset(specs=[AssetSpec("one"), AssetSpec("two")])
+    @dg.multi_observable_source_asset(specs=[dg.AssetSpec("one"), dg.AssetSpec("two")])
     async def async_gen_specs_multi_asset():
-        yield ObserveResult(asset_key="one", metadata={"foo": "bar"})
-        yield ObserveResult(asset_key="two", metadata={"baz": "qux"})
+        yield dg.ObserveResult(asset_key="one", metadata={"foo": "bar"})
+        yield dg.ObserveResult(asset_key="two", metadata={"baz": "qux"})
 
     result = observe([async_gen_specs_multi_asset])
     assert result.success
@@ -460,12 +444,12 @@ def test_observe_result_generators():
 
 
 def test_observe_result_with_partitions():
-    @multi_observable_source_asset(
-        specs=[AssetSpec("partitioned_asset")],
-        partitions_def=StaticPartitionsDefinition(["red", "blue", "yellow"]),
+    @dg.multi_observable_source_asset(
+        specs=[dg.AssetSpec("partitioned_asset")],
+        partitions_def=dg.StaticPartitionsDefinition(["red", "blue", "yellow"]),
     )
-    def partitioned_asset(context: AssetExecutionContext) -> ObserveResult:
-        return ObserveResult(metadata={"key": context.partition_key})
+    def partitioned_asset(context: AssetExecutionContext) -> dg.ObserveResult:
+        return dg.ObserveResult(metadata={"key": context.partition_key})
 
     result = observe([partitioned_asset], partition_key="red")
     assert result.success
@@ -475,14 +459,14 @@ def test_observe_result_with_partitions():
 
 
 def test_observe_result_with_partitions_direct_invocation():
-    @multi_observable_source_asset(
-        specs=[AssetSpec("partitioned_asset")],
-        partitions_def=StaticPartitionsDefinition(["red", "blue", "yellow"]),
+    @dg.multi_observable_source_asset(
+        specs=[dg.AssetSpec("partitioned_asset")],
+        partitions_def=dg.StaticPartitionsDefinition(["red", "blue", "yellow"]),
     )
-    def partitioned_asset(context: AssetExecutionContext) -> ObserveResult:
-        return ObserveResult(metadata={"key": context.partition_key})
+    def partitioned_asset(context: AssetExecutionContext) -> dg.ObserveResult:
+        return dg.ObserveResult(metadata={"key": context.partition_key})
 
-    context = build_op_context(partition_key="red")
+    context = dg.build_op_context(partition_key="red")
 
     res = partitioned_asset(context)
     assert res.metadata["key"] == "red"  # pyright: ignore[reportAttributeAccessIssue]

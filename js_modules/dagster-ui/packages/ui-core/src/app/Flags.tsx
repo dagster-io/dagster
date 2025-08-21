@@ -1,8 +1,7 @@
-import {useEffect, useState} from 'react';
 import {DEFAULT_FEATURE_FLAG_VALUES} from 'shared/app/DefaultFeatureFlags.oss';
 import {FeatureFlag} from 'shared/app/FeatureFlags.oss';
 
-import {getJSONForKey} from '../hooks/useStateWithStorage';
+import {getJSONForKey} from '../util/getJSONForKey';
 
 export const DAGSTER_FLAGS_KEY = 'DAGSTER_FLAGS';
 
@@ -17,6 +16,10 @@ type FeatureFlagMap = Partial<Record<FeatureFlag, boolean>>;
  * In-memory cache for feature flags, excludes default values.
  */
 let currentFeatureFlags: FeatureFlagMap = {};
+
+export const getCurrentFeatureFlags = (): FeatureFlagMap => {
+  return currentFeatureFlags;
+};
 
 /**
  * Initialize the in-memory cache by loading from localStorage and handling migration.
@@ -52,7 +55,7 @@ export const setFeatureFlagsInternal = (flags: FeatureFlagMap) => {
 };
 
 // Initialize the BroadcastChannel
-const featureFlagsChannel = new BroadcastChannel('feature-flags');
+export const featureFlagsChannel = new BroadcastChannel('feature-flags');
 
 // Initialize feature flags on module load
 initializeFeatureFlags();
@@ -75,6 +78,7 @@ export const getFeatureFlagsWithDefaults = (): FeatureFlagMap => {
  */
 export const featureEnabled = (flag: FeatureFlag): boolean => {
   if (flag in currentFeatureFlags) {
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     return currentFeatureFlags[flag]!;
   }
 
@@ -83,57 +87,14 @@ export const featureEnabled = (flag: FeatureFlag): boolean => {
 };
 
 /**
- * Hook to access feature flags within React components.
- * Returns a flag map with resolved values (considering defaults).
- */
-export const useFeatureFlags = (): Readonly<Record<FeatureFlag, boolean>> => {
-  const [flags, setFlags] = useState<Record<FeatureFlag, boolean>>(() => {
-    const allFlags: Partial<Record<FeatureFlag, boolean>> = {};
-
-    for (const flag in FeatureFlag) {
-      const key = flag as FeatureFlag;
-      if (key in currentFeatureFlags) {
-        allFlags[key] = currentFeatureFlags[key];
-      } else {
-        allFlags[key] = DEFAULT_FEATURE_FLAG_VALUES[key] ?? false;
-      }
-    }
-    return allFlags as Record<FeatureFlag, boolean>;
-  });
-
-  useEffect(() => {
-    const handleFlagsChange = () => {
-      const allFlags: Partial<Record<FeatureFlag, boolean>> = {};
-
-      for (const flag in FeatureFlag) {
-        const key = flag as FeatureFlag;
-        if (key in currentFeatureFlags) {
-          allFlags[key] = currentFeatureFlags[key];
-        } else {
-          allFlags[key] = DEFAULT_FEATURE_FLAG_VALUES[key] ?? false;
-        }
-      }
-      setFlags(allFlags as Record<FeatureFlag, boolean>);
-    };
-
-    // Listen for messages from the BroadcastChannel
-    featureFlagsChannel.addEventListener('message', handleFlagsChange);
-
-    return () => {
-      featureFlagsChannel.removeEventListener('message', handleFlagsChange);
-    };
-  }, []);
-
-  return flags;
-};
-
-/**
  * Function to update feature flags.
  * Updates the in-memory cache, persists to localStorage, and broadcasts the change.
  */
-export const setFeatureFlags = (flags: FeatureFlagMap) => {
+export const setFeatureFlags = (flags: FeatureFlagMap, broadcast: boolean = true) => {
   setFeatureFlagsInternal(flags);
-  featureFlagsChannel.postMessage('updated');
+  if (broadcast) {
+    featureFlagsChannel.postMessage('updated');
+  }
 };
 
 export const toggleFeatureFlag = (flag: FeatureFlag) => {

@@ -14,7 +14,7 @@ from dagster import (
     _check as check,
     sensor,
 )
-from dagster._annotations import preview
+from dagster._annotations import beta
 from dagster._core.definitions.repository_definition.repository_definition import (
     RepositoryDefinition,
 )
@@ -148,7 +148,7 @@ def sorted_asset_events(
     ]
 
 
-@preview
+@beta
 def build_dbt_cloud_polling_sensor(
     *,
     workspace: DbtCloudWorkspace,
@@ -174,6 +174,10 @@ def build_dbt_cloud_polling_sensor(
     @sensor(
         name=clean_name(
             f"{workspace.account_name}_{workspace.project_name}_{workspace.environment_name}__run_status_sensor"
+        ),
+        description=(
+            f"dbt Cloud polling sensor for dbt Cloud workspace for account {workspace.account_name}, "
+            f"project {workspace.project_name} and environment {workspace.environment_name}"
         ),
         minimum_interval_seconds=minimum_interval_seconds,
         default_status=default_sensor_status or DefaultSensorStatus.RUNNING,

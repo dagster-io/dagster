@@ -10,33 +10,14 @@ from collections.abc import Iterable, Mapping, Sequence
 from typing import AbstractSet, NamedTuple, Optional, Union  # noqa: UP035
 from unittest import mock
 
+import dagster as dg
 import dagster._check as check
 import pytest
-from dagster import (
-    AssetIn,
-    AssetKey,
-    AssetOut,
-    AssetsDefinition,
-    AssetSelection,
-    DagsterInstance,
-    DataVersion,
-    Field,
-    Nothing,
-    Output,
-    PartitionMapping,
-    PartitionsDefinition,
-    RunRequest,
-    SourceAsset,
-    asset,
-    materialize_to_memory,
-    multi_asset,
-    observable_source_asset,
-    repository,
-)
-from dagster._core.definitions.asset_checks import AssetChecksDefinition
+from dagster import AssetKey, AssetSelection, DagsterInstance, Nothing
 from dagster._core.definitions.asset_daemon_cursor import AssetDaemonCursor
-from dagster._core.definitions.asset_graph import AssetGraph
-from dagster._core.definitions.asset_graph_subset import AssetGraphSubset
+from dagster._core.definitions.assets.graph.asset_graph import AssetGraph
+from dagster._core.definitions.assets.graph.asset_graph_subset import AssetGraphSubset
+from dagster._core.definitions.assets.graph.base_asset_graph import BaseAssetGraph
 from dagster._core.definitions.auto_materialize_policy import AutoMaterializePolicy
 from dagster._core.definitions.auto_materialize_rule import AutoMaterializeRule
 from dagster._core.definitions.auto_materialize_rule_evaluation import (
@@ -47,20 +28,16 @@ from dagster._core.definitions.auto_materialize_rule_evaluation import (
 from dagster._core.definitions.automation_tick_evaluation_context import (
     AutomationTickEvaluationContext,
 )
-from dagster._core.definitions.base_asset_graph import BaseAssetGraph
-from dagster._core.definitions.data_version import DataVersionsByPartition
 from dagster._core.definitions.events import CoercibleToAssetKey
-from dagster._core.definitions.freshness_policy import FreshnessPolicy
 from dagster._core.definitions.observe import observe
-from dagster._core.definitions.partition import PartitionsSubset, ScheduleType
-from dagster._core.definitions.time_window_partitions import get_time_partitions_def
+from dagster._core.definitions.partitions.schedule_type import ScheduleType
+from dagster._core.definitions.partitions.subset import PartitionsSubset
+from dagster._core.definitions.partitions.utils import get_time_partitions_def
 from dagster._core.definitions.timestamp import TimestampWithTimezone
-from dagster._core.events import AssetMaterializationPlannedData, DagsterEvent, DagsterEventType
-from dagster._core.events.log import EventLogEntry
+from dagster._core.events import AssetMaterializationPlannedData, DagsterEventType
 from dagster._core.execution.asset_backfill import AssetBackfillData
 from dagster._core.execution.backfill import BulkActionStatus, PartitionBackfill
-from dagster._core.remote_representation.origin import InProcessCodeLocationOrigin
-from dagster._core.storage.dagster_run import DagsterRun
+from dagster._core.remote_origin import InProcessCodeLocationOrigin
 from dagster._core.test_utils import (
     InProcessTestWorkspaceLoadTarget,
     create_test_daemon_workspace_context,
@@ -73,9 +50,9 @@ from dagster._utils import SingleInstigatorDebugCrashFlags
 
 
 class RunSpec(NamedTuple):
-    asset_keys: Sequence[AssetKey]
+    asset_keys: Sequence[dg.AssetKey]
     partition_key: Optional[str] = None
-    failed_asset_keys: Optional[Sequence[AssetKey]] = None
+    failed_asset_keys: Optional[Sequence[dg.AssetKey]] = None
     is_observation: bool = False
 
 
@@ -123,23 +100,25 @@ class AssetReconciliationScenario(
         "_AssetReconciliationScenario",
         [
             ("unevaluated_runs", Sequence[RunSpec]),
-            ("assets", Optional[Sequence[Union[SourceAsset, AssetsDefinition]]]),
-            ("asset_checks", Optional[Sequence[AssetChecksDefinition]]),
+            ("assets", Optional[Sequence[Union[dg.SourceAsset, dg.AssetsDefinition]]]),
+            ("asset_checks", Optional[Sequence[dg.AssetChecksDefinition]]),
             ("between_runs_delta", Optional[datetime.timedelta]),
             ("evaluation_delta", Optional[datetime.timedelta]),
             ("cursor_from", Optional["AssetReconciliationScenario"]),
             ("current_time", Optional[datetime.datetime]),
-            ("asset_selection", Optional[AssetSelection]),
+            ("asset_selection", Optional[dg.AssetSelection]),
             (
                 "active_backfill_targets",
-                Optional[Sequence[Union[Mapping[AssetKey, PartitionsSubset], Sequence[AssetKey]]]],
+                Optional[
+                    Sequence[Union[Mapping[dg.AssetKey, PartitionsSubset], Sequence[dg.AssetKey]]]
+                ],
             ),
-            ("dagster_runs", Optional[Sequence[DagsterRun]]),
-            ("event_log_entries", Optional[Sequence[EventLogEntry]]),
-            ("expected_run_requests", Optional[Sequence[RunRequest]]),
+            ("dagster_runs", Optional[Sequence[dg.DagsterRun]]),
+            ("event_log_entries", Optional[Sequence[dg.EventLogEntry]]),
+            ("expected_run_requests", Optional[Sequence[dg.RunRequest]]),
             (
                 "code_locations",
-                Optional[Mapping[str, Sequence[Union[SourceAsset, AssetsDefinition]]]],
+                Optional[Mapping[str, Sequence[Union[dg.SourceAsset, dg.AssetsDefinition]]]],
             ),
             ("expected_evaluations", Optional[Sequence[AssetEvaluationSpec]]),
             ("requires_respect_materialization_data_versions", bool),
@@ -151,21 +130,21 @@ class AssetReconciliationScenario(
     def __new__(
         cls,
         unevaluated_runs: Sequence[RunSpec],
-        assets: Optional[Sequence[Union[SourceAsset, AssetsDefinition]]],
-        asset_checks: Optional[Sequence[AssetChecksDefinition]] = None,
+        assets: Optional[Sequence[Union[dg.SourceAsset, dg.AssetsDefinition]]],
+        asset_checks: Optional[Sequence[dg.AssetChecksDefinition]] = None,
         between_runs_delta: Optional[datetime.timedelta] = None,
         evaluation_delta: Optional[datetime.timedelta] = None,
         cursor_from: Optional["AssetReconciliationScenario"] = None,
         current_time: Optional[datetime.datetime] = None,
-        asset_selection: Optional[AssetSelection] = None,
+        asset_selection: Optional[dg.AssetSelection] = None,
         active_backfill_targets: Optional[
-            Sequence[Union[Mapping[AssetKey, PartitionsSubset], Sequence[AssetKey]]]
+            Sequence[Union[Mapping[dg.AssetKey, PartitionsSubset], Sequence[dg.AssetKey]]]
         ] = None,
-        dagster_runs: Optional[Sequence[DagsterRun]] = None,
-        event_log_entries: Optional[Sequence[EventLogEntry]] = None,
-        expected_run_requests: Optional[Sequence[RunRequest]] = None,
+        dagster_runs: Optional[Sequence[dg.DagsterRun]] = None,
+        event_log_entries: Optional[Sequence[dg.EventLogEntry]] = None,
+        expected_run_requests: Optional[Sequence[dg.RunRequest]] = None,
         code_locations: Optional[
-            Mapping[str, Sequence[Union[SourceAsset, AssetsDefinition]]]
+            Mapping[str, Sequence[Union[dg.SourceAsset, dg.AssetsDefinition]]]
         ] = None,
         expected_evaluations: Optional[Sequence[AssetEvaluationSpec]] = None,
         requires_respect_materialization_data_versions: bool = False,
@@ -177,10 +156,10 @@ class AssetReconciliationScenario(
         assets_with_implicit_policies = assets
         if assets and all(
             (
-                isinstance(a, AssetsDefinition)
+                isinstance(a, dg.AssetsDefinition)
                 and all(spec.auto_materialize_policy is None for spec in a.specs)
             )
-            or isinstance(a, SourceAsset)
+            or isinstance(a, dg.SourceAsset)
             for a in assets
         ):
             asset_graph = AssetGraph.from_assets([*assets, *(asset_checks or [])])
@@ -250,7 +229,7 @@ class AssetReconciliationScenario(
 
         with freeze_time(test_time):
 
-            @repository  # pyright: ignore[reportArgumentType]
+            @dg.repository  # pyright: ignore[reportArgumentType]
             def repo():
                 return self.assets
 
@@ -259,7 +238,7 @@ class AssetReconciliationScenario(
                 instance.add_run(dagster_run)
                 # make sure to log the planned events
                 for asset_key in dagster_run.asset_selection:  # pyright: ignore[reportOptionalIterable]
-                    event = DagsterEvent(
+                    event = dg.DagsterEvent(
                         event_type_value=DagsterEventType.ASSET_MATERIALIZATION_PLANNED.value,
                         job_name=dagster_run.job_name,
                         event_specific_data=AssetMaterializationPlannedData(
@@ -311,7 +290,7 @@ class AssetReconciliationScenario(
 
             if self.cursor_from is not None:
 
-                @repository  # pyright: ignore[reportArgumentType]
+                @dg.repository  # pyright: ignore[reportArgumentType]
                 def prior_repo():
                     return self.cursor_from.assets  # pyright: ignore[reportOptionalMemberAccess]
 
@@ -351,7 +330,7 @@ class AssetReconciliationScenario(
                         assets=[
                             a
                             for a in self.assets  # pyright: ignore[reportOptionalIterable]
-                            if isinstance(a, SourceAsset) and a.key in run.asset_keys
+                            if isinstance(a, dg.SourceAsset) and a.key in run.asset_keys
                         ],
                     )
                 else:
@@ -384,7 +363,7 @@ class AssetReconciliationScenario(
                     asset_graph = workspace.asset_graph
 
             with mock.patch.object(
-                DagsterInstance,
+                dg.DagsterInstance,
                 "auto_materialize_respect_materialization_data_versions",
                 new=lambda: self.respect_materialization_data_versions,  # pyright: ignore[reportAttributeAccessIssue]
             ):
@@ -455,9 +434,7 @@ class AssetReconciliationScenario(
                     )
                 else:
                     all_assets = [
-                        asset
-                        for assets in check.not_none(self.code_locations).values()
-                        for asset in assets
+                        a for assets in check.not_none(self.code_locations).values() for a in assets
                     ]
                     do_run(
                         asset_keys=run.asset_keys,
@@ -494,17 +471,14 @@ class AssetReconciliationScenario(
                 )
 
                 try:
-                    list(
-                        AssetDaemon(  # noqa: SLF001
-                            settings=instance.get_auto_materialize_settings(),
-                            pre_sensor_interval_seconds=42,
-                        )._run_iteration_impl(
-                            workspace_context,
-                            threadpool_executor=None,
-                            amp_tick_futures={},
-                            debug_crash_flags=(debug_crash_flags or {}),
-                            submit_threadpool_executor=None,
-                        )
+                    AssetDaemon(  # noqa: SLF001
+                        settings=instance.get_auto_materialize_settings(),
+                        pre_sensor_interval_seconds=42,
+                    )._run_iteration_impl(
+                        workspace_context,
+                        threadpool_executor=None,
+                        amp_tick_futures={},
+                        debug_crash_flags=(debug_crash_flags or {}),
                     )
 
                     if self.expected_error_message:
@@ -520,17 +494,17 @@ class AssetReconciliationScenario(
 
 
 def do_run(
-    asset_keys: Sequence[AssetKey],
+    asset_keys: Sequence[dg.AssetKey],
     partition_key: Optional[str],
-    all_assets: Sequence[Union[SourceAsset, AssetsDefinition]],
+    all_assets: Sequence[Union[dg.SourceAsset, dg.AssetsDefinition]],
     instance: DagsterInstance,
-    failed_asset_keys: Optional[Sequence[AssetKey]] = None,
+    failed_asset_keys: Optional[Sequence[dg.AssetKey]] = None,
     tags: Optional[Mapping[str, str]] = None,
 ) -> None:
-    assets_in_run: list[Union[SourceAsset, AssetsDefinition]] = []
+    assets_in_run: list[Union[dg.SourceAsset, dg.AssetsDefinition]] = []
     asset_keys_set = set(asset_keys)
     for a in all_assets:
-        if isinstance(a, SourceAsset):
+        if isinstance(a, dg.SourceAsset):
             assets_in_run.append(a)
         else:
             selected_keys = asset_keys_set.intersection(a.keys)
@@ -545,7 +519,7 @@ def do_run(
                         a.keys - selected_keys, selected_asset_check_keys=None
                     ).to_source_assets()
                 )
-    materialize_to_memory(
+    dg.materialize_to_memory(
         instance=instance,
         partition_key=partition_key,
         assets=assets_in_run,
@@ -584,17 +558,17 @@ FAIL_TAG = "test/fail"
 
 
 def run_request(
-    asset_keys: Union[AssetKey, Sequence[CoercibleToAssetKey]],
+    asset_keys: Union[dg.AssetKey, Sequence[CoercibleToAssetKey]],
     partition_key: Optional[str] = None,
     fail_keys: Optional[Sequence[str]] = None,
     tags: Optional[Mapping[str, str]] = None,
-) -> RunRequest:
-    if isinstance(asset_keys, AssetKey):
+) -> dg.RunRequest:
+    if isinstance(asset_keys, dg.AssetKey):
         asset_selection = [asset_keys]
     else:
         asset_selection = [AssetKey.from_coercible(key) for key in asset_keys]
 
-    return RunRequest(
+    return dg.RunRequest(
         asset_selection=asset_selection,
         partition_key=partition_key,
         tags={**(tags or {}), **({FAIL_TAG: json.dumps(fail_keys)} if fail_keys else {})},
@@ -603,14 +577,14 @@ def run_request(
 
 def asset_def(
     key: str,
-    deps: Optional[Union[list[str], Mapping[str, Optional[PartitionMapping]]]] = None,
-    partitions_def: Optional[PartitionsDefinition] = None,
-    freshness_policy: Optional[FreshnessPolicy] = None,
-    auto_materialize_policy: Optional[AutoMaterializePolicy] = None,
+    deps: Optional[Union[list[str], Mapping[str, Optional[dg.PartitionMapping]]]] = None,
+    partitions_def: Optional[dg.PartitionsDefinition] = None,
+    legacy_freshness_policy: Optional[dg.LegacyFreshnessPolicy] = None,
+    auto_materialize_policy: Optional[dg.AutoMaterializePolicy] = None,
     code_version: Optional[str] = None,
-    config_schema: Optional[Mapping[str, Field]] = None,
+    config_schema: Optional[Mapping[str, dg.Field]] = None,
     **asset_def_kwargs,
-) -> AssetsDefinition:
+) -> dg.AssetsDefinition:
     if deps is None:
         non_argument_deps = None
         ins = None
@@ -620,17 +594,17 @@ def asset_def(
     else:
         non_argument_deps = None
         ins = {
-            dep: AssetIn(partition_mapping=partition_mapping, dagster_type=Nothing)
+            dep: dg.AssetIn(partition_mapping=partition_mapping, dagster_type=Nothing)
             for dep, partition_mapping in deps.items()
         }
 
-    @asset(
+    @dg.asset(
         name=key,
         partitions_def=partitions_def,
         deps=non_argument_deps,
         ins=ins,
-        config_schema=config_schema or {"fail": Field(bool, default_value=False)},
-        freshness_policy=freshness_policy,
+        config_schema=config_schema or {"fail": dg.Field(bool, default_value=False)},
+        legacy_freshness_policy=legacy_freshness_policy,
         auto_materialize_policy=auto_materialize_policy,
         code_version=code_version,
         **asset_def_kwargs,
@@ -648,8 +622,8 @@ def multi_asset_def(
     keys: list[str],
     deps: Optional[Union[list[str], Mapping[str, set[str]]]] = None,
     can_subset: bool = False,
-    freshness_policies: Optional[Mapping[str, FreshnessPolicy]] = None,
-) -> AssetsDefinition:
+    legacy_freshness_policies: Optional[Mapping[str, dg.LegacyFreshnessPolicy]] = None,
+) -> dg.AssetsDefinition:
     if deps is None:
         non_argument_deps = None
         internal_asset_deps = None
@@ -658,13 +632,15 @@ def multi_asset_def(
         internal_asset_deps = None
     else:
         non_argument_deps = list(set().union(*deps.values()) - set(deps.keys()))
-        internal_asset_deps = {k: {AssetKey(vv) for vv in v} for k, v in deps.items()}
+        internal_asset_deps = {k: {dg.AssetKey(vv) for vv in v} for k, v in deps.items()}
 
-    @multi_asset(
+    @dg.multi_asset(
         outs={
-            key: AssetOut(
+            key: dg.AssetOut(
                 is_required=not can_subset,
-                freshness_policy=freshness_policies.get(key) if freshness_policies else None,
+                legacy_freshness_policy=legacy_freshness_policies.get(key)
+                if legacy_freshness_policies
+                else None,
             )
             for key in keys
         },
@@ -676,27 +652,27 @@ def multi_asset_def(
     def _assets(context):
         for output in keys:
             if output in context.op_execution_context.selected_output_names:
-                yield Output(output, output)
+                yield dg.Output(output, output)
 
     return _assets
 
 
 def observable_source_asset_def(
-    key: str, partitions_def: Optional[PartitionsDefinition] = None, minutes_to_change: int = 0
+    key: str, partitions_def: Optional[dg.PartitionsDefinition] = None, minutes_to_change: int = 0
 ):
-    def _data_version() -> DataVersion:
+    def _data_version() -> dg.DataVersion:
         return (
-            DataVersion(str(get_current_datetime().minute // minutes_to_change))
+            dg.DataVersion(str(get_current_datetime().minute // minutes_to_change))
             if minutes_to_change
-            else DataVersion(str(random.random()))
+            else dg.DataVersion(str(random.random()))
         )
 
-    @observable_source_asset(name=key, partitions_def=partitions_def)
+    @dg.observable_source_asset(name=key, partitions_def=partitions_def)
     def _observable():
         if partitions_def is None:
             return _data_version()
         else:
-            return DataVersionsByPartition(
+            return dg.DataVersionsByPartition(
                 {partition: _data_version() for partition in partitions_def.get_partition_keys()}
             )
 
@@ -704,8 +680,8 @@ def observable_source_asset_def(
 
 
 def with_auto_materialize_policy(
-    assets_defs: Sequence[AssetsDefinition], auto_materialize_policy: AutoMaterializePolicy
-) -> Sequence[AssetsDefinition]:
+    assets_defs: Sequence[dg.AssetsDefinition], auto_materialize_policy: AutoMaterializePolicy
+) -> Sequence[dg.AssetsDefinition]:
     """Note: this should be implemented in core dagster at some point, and this implementation is
     a lazy hack.
     """
@@ -721,7 +697,7 @@ def with_auto_materialize_policy(
 
 def get_implicit_auto_materialize_policy(
     asset_key: AssetKey, asset_graph: BaseAssetGraph
-) -> Optional[AutoMaterializePolicy]:
+) -> Optional[dg.AutoMaterializePolicy]:
     """For backcompat with pre-auto materialize policy graphs, assume a default scope of 1 day."""
     auto_materialize_policy = asset_graph.get(asset_key).auto_materialize_policy
     if auto_materialize_policy is None:
@@ -740,9 +716,9 @@ def get_implicit_auto_materialize_policy(
             AutoMaterializeRule.skip_on_required_but_nonexistent_parents(),
             AutoMaterializeRule.skip_on_backfill_in_progress(),
         }
-        if not bool(asset_graph.get_downstream_freshness_policies(asset_key=asset_key)):
+        if not bool(asset_graph.get_downstream_legacy_freshness_policies(asset_key=asset_key)):
             rules.add(AutoMaterializeRule.materialize_on_parent_updated())
-        return AutoMaterializePolicy(
+        return dg.AutoMaterializePolicy(
             rules=rules,
             max_materializations_per_minute=max_materializations_per_minute,
         )
@@ -750,17 +726,17 @@ def get_implicit_auto_materialize_policy(
 
 
 def with_implicit_auto_materialize_policies(
-    assets_defs: Sequence[Union[SourceAsset, AssetsDefinition]],
+    assets_defs: Sequence[Union[dg.SourceAsset, dg.AssetsDefinition]],
     asset_graph: BaseAssetGraph,
-    targeted_assets: Optional[AbstractSet[AssetKey]] = None,
-) -> Sequence[AssetsDefinition]:
+    targeted_assets: Optional[AbstractSet[dg.AssetKey]] = None,
+) -> Sequence[dg.AssetsDefinition]:
     """Accepts a list of assets, adding implied auto-materialize policies to targeted assets
     if policies do not exist.
     """
     ret = []
     for assets_def in assets_defs:
         if (
-            isinstance(assets_def, AssetsDefinition)
+            isinstance(assets_def, dg.AssetsDefinition)
             and not assets_def.auto_materialize_policies_by_key
         ):
             targeted_keys = (

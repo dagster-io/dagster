@@ -15,7 +15,7 @@ import dagster._check as check
 from dagster._core.errors import DagsterUserCodeUnreachableError
 from dagster._core.events import EngineEventData
 from dagster._core.instance import DagsterInstance
-from dagster._core.remote_representation.origin import RemoteRepositoryOrigin
+from dagster._core.remote_origin import RemoteRepositoryOrigin
 from dagster._core.types.loadable_target_origin import LoadableTargetOrigin
 from dagster._grpc.__generated__ import DagsterApiStub, dagster_api_pb2
 from dagster._grpc.server import GrpcServerProcess
@@ -311,6 +311,16 @@ class DagsterGrpcClient:
         res = self._query("GetServerId", dagster_api_pb2.Empty, timeout=timeout)
         return res.server_id
 
+    async def gen_execution_plan_snapshot(
+        self, execution_plan_snapshot_args: ExecutionPlanSnapshotArgs
+    ) -> str:
+        res = await self._gen_query(
+            "ExecutionPlanSnapshot",
+            dagster_api_pb2.ExecutionPlanSnapshotRequest,
+            serialized_execution_plan_snapshot_args=serialize_value(execution_plan_snapshot_args),
+        )
+        return res.serialized_execution_plan_snapshot
+
     def execution_plan_snapshot(
         self, execution_plan_snapshot_args: ExecutionPlanSnapshotArgs
     ) -> str:
@@ -387,6 +397,16 @@ class DagsterGrpcClient:
         )
 
         return "".join([chunk.serialized_chunk for chunk in chunks])
+
+    async def gen_external_pipeline_subset(
+        self, pipeline_subset_snapshot_args: JobSubsetSnapshotArgs
+    ) -> str:
+        res = await self._gen_query(
+            "ExternalPipelineSubsetSnapshot",
+            dagster_api_pb2.ExternalPipelineSubsetSnapshotRequest,
+            serialized_pipeline_subset_snapshot_args=serialize_value(pipeline_subset_snapshot_args),
+        )
+        return res.serialized_external_pipeline_subset_result
 
     def external_pipeline_subset(self, pipeline_subset_snapshot_args: JobSubsetSnapshotArgs) -> str:
         check.inst_param(
@@ -554,14 +574,12 @@ class DagsterGrpcClient:
         # (2), while
         # the client may pass a timeout argument via the
         # `sensor_execution_args` object. If the timeout is passed from the client, we use that value irrespective of what the other timeout values may be set to.
-        timeout = (
-            sensor_execution_args.timeout
-            if sensor_execution_args.timeout is not None
-            else DEFAULT_SENSOR_GRPC_TIMEOUT
+        sensor_execution_args = sensor_execution_args.with_default_timeout(
+            DEFAULT_SENSOR_GRPC_TIMEOUT
         )
 
         custom_timeout_message = (
-            f"The sensor tick timed out due to taking longer than {timeout} seconds to execute the"
+            f"The sensor tick timed out due to taking longer than {sensor_execution_args.timeout} seconds to execute the"
             " sensor function. One way to avoid this error is to break up the sensor work into"
             " chunks, using cursors to let subsequent sensor calls pick up where the previous call"
             " left off."
@@ -571,7 +589,9 @@ class DagsterGrpcClient:
             return self._query(
                 "SyncExternalSensorExecution",
                 dagster_api_pb2.ExternalSensorExecutionRequest,
-                timeout=timeout,
+                timeout=check.not_none(
+                    sensor_execution_args.timeout
+                ),  # This shouldn't be possible to be None, but the type checker doesn't know that.
                 serialized_external_sensor_execution_args=serialize_value(sensor_execution_args),
                 custom_timeout_message=custom_timeout_message,
             ).serialized_sensor_result
@@ -582,7 +602,9 @@ class DagsterGrpcClient:
                     self._streaming_query(
                         "ExternalSensorExecution",
                         dagster_api_pb2.ExternalSensorExecutionRequest,
-                        timeout=timeout,
+                        timeout=check.not_none(
+                            sensor_execution_args.timeout
+                        ),  # This shouldn't be possible to be None, but the type checker doesn't know that.
                         serialized_external_sensor_execution_args=serialize_value(
                             sensor_execution_args
                         ),

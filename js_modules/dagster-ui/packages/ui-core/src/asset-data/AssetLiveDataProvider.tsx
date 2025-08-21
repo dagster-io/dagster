@@ -1,19 +1,21 @@
-import uniq from 'lodash/uniq';
-import React, {useCallback, useMemo, useRef} from 'react';
+import React, {useCallback, useMemo} from 'react';
+import {useAssetLiveDataProviderChangeSignal} from 'shared/asset-data/_useAssetLiveDataProviderChangeSignal.oss';
 
+import {
+  AssetAutomationData,
+  __resetForJest as __resetAutomationData,
+} from './AssetAutomationDataProvider';
 import {AssetBaseData, __resetForJest as __resetBaseData} from './AssetBaseDataProvider';
 import {AssetHealthData, __resetForJest as __resetHealthData} from './AssetHealthDataProvider';
 import {
   AssetStaleStatusData,
   __resetForJest as __resetStaleData,
 } from './AssetStaleStatusDataProvider';
-import {observeAssetEventsInRuns} from '../asset-graph/AssetRunLogObserver';
 import {LiveDataForNodeWithStaleData, tokenForAssetKey} from '../asset-graph/Utils';
+import {SelectionHealthDataProvider} from '../assets/catalog/useSelectionHealthData';
 import {AssetKeyInput} from '../graphql/types';
 import {LiveDataPollRateContext} from '../live-data-provider/LiveDataProvider';
 import {LiveDataThreadID} from '../live-data-provider/LiveDataThread';
-import {SUBSCRIPTION_MAX_POLL_RATE} from '../live-data-provider/util';
-import {useDidLaunchEvent} from '../runs/RunUtils';
 
 export function useAssetLiveData(assetKey: AssetKeyInput, thread: LiveDataThreadID = 'default') {
   const key = tokenForAssetKey(assetKey);
@@ -87,86 +89,27 @@ export function useAssetsLiveData(
 }
 
 export const AssetLiveDataProvider = ({children}: {children: React.ReactNode}) => {
-  const [allObservedKeys, setAllObservedKeys] = React.useState<AssetKeyInput[]>([]);
-
-  const staleKeysObserved = useRef<string[]>([]);
-  const baseKeysObserved = useRef<string[]>([]);
-  const healthKeysObserved = useRef<string[]>([]);
-
-  React.useEffect(() => {
-    const onSubscriptionsChanged = () => {
-      const keys = Array.from(
-        new Set([
-          ...staleKeysObserved.current,
-          ...baseKeysObserved.current,
-          ...healthKeysObserved.current,
-        ]),
-      );
-      setAllObservedKeys(keys.map((key) => ({path: key.split('/')})));
-    };
-
-    AssetStaleStatusData.manager.setOnSubscriptionsChangedCallback((keys) => {
-      staleKeysObserved.current = keys;
-      onSubscriptionsChanged();
-    });
-    AssetBaseData.manager.setOnSubscriptionsChangedCallback((keys) => {
-      baseKeysObserved.current = keys;
-      onSubscriptionsChanged();
-    });
-    AssetHealthData.manager.setOnSubscriptionsChangedCallback((keys) => {
-      healthKeysObserved.current = keys;
-      onSubscriptionsChanged();
-    });
-  }, []);
-
   const pollRate = React.useContext(LiveDataPollRateContext);
 
   React.useEffect(() => {
     AssetStaleStatusData.manager.setPollRate(pollRate);
     AssetBaseData.manager.setPollRate(pollRate);
     AssetHealthData.manager.setPollRate(pollRate);
+    AssetAutomationData.manager.setPollRate(pollRate);
   }, [pollRate]);
 
-  useDidLaunchEvent(() => {
-    AssetStaleStatusData.manager.invalidateCache();
-    AssetBaseData.manager.invalidateCache();
-    AssetHealthData.manager.invalidateCache();
-  }, SUBSCRIPTION_MAX_POLL_RATE);
-
-  React.useEffect(() => {
-    const assetKeyTokens = new Set(allObservedKeys.map(tokenForAssetKey));
-    const dataForObservedKeys = allObservedKeys
-      .map((key) => AssetBaseData.manager.getCacheEntry(tokenForAssetKey(key))!)
-      .filter((n) => n);
-
-    const assetStepKeys = new Set(dataForObservedKeys.flatMap((n) => n.opNames));
-
-    const runInProgressId = uniq(
-      dataForObservedKeys.flatMap((p) => [...p.unstartedRunIds, ...p.inProgressRunIds]),
-    ).sort();
-
-    const unobserve = observeAssetEventsInRuns(runInProgressId, (events) => {
-      if (
-        events.some(
-          (e) =>
-            (e.assetKey && assetKeyTokens.has(tokenForAssetKey(e.assetKey))) ||
-            (e.stepKey && assetStepKeys.has(e.stepKey)),
-        )
-      ) {
-        AssetBaseData.manager.invalidateCache();
-        AssetStaleStatusData.manager.invalidateCache();
-        AssetHealthData.manager.invalidateCache();
-      }
-    });
-    return unobserve;
-  }, [allObservedKeys]);
+  useAssetLiveDataProviderChangeSignal();
 
   return (
-    <AssetHealthData.LiveDataProvider>
-      <AssetBaseData.LiveDataProvider>
-        <AssetStaleStatusData.LiveDataProvider>{children}</AssetStaleStatusData.LiveDataProvider>
-      </AssetBaseData.LiveDataProvider>
-    </AssetHealthData.LiveDataProvider>
+    <AssetAutomationData.LiveDataProvider>
+      <AssetHealthData.LiveDataProvider>
+        <AssetBaseData.LiveDataProvider>
+          <AssetStaleStatusData.LiveDataProvider>
+            <SelectionHealthDataProvider>{children}</SelectionHealthDataProvider>
+          </AssetStaleStatusData.LiveDataProvider>
+        </AssetBaseData.LiveDataProvider>
+      </AssetHealthData.LiveDataProvider>
+    </AssetAutomationData.LiveDataProvider>
   );
 };
 
@@ -178,4 +121,5 @@ export function __resetForJest() {
   __resetBaseData();
   __resetStaleData();
   __resetHealthData();
+  __resetAutomationData();
 }

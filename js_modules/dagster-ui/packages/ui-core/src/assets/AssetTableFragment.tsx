@@ -1,3 +1,4 @@
+import {FRESHNESS_POLICY_FRAGMENT} from './FreshnessPolicyFragment';
 import {gql} from '../apollo-client';
 
 export const ASSET_TABLE_DEFINITION_FRAGMENT = gql`
@@ -10,6 +11,8 @@ export const ASSET_TABLE_DEFINITION_FRAGMENT = gql`
     isObservable
     isExecutable
     isPartitioned
+    isAutoCreatedStub
+    hasAssetChecks
     computeKind
     hasMaterializePermission
     hasReportRunlessAssetEventPermission
@@ -17,10 +20,7 @@ export const ASSET_TABLE_DEFINITION_FRAGMENT = gql`
       path
     }
     internalFreshnessPolicy {
-      ... on TimeWindowFreshnessPolicy {
-        failWindowSeconds
-        warnWindowSeconds
-      }
+      ...FreshnessPolicyFragment
     }
     partitionDefinition {
       description
@@ -58,6 +58,8 @@ export const ASSET_TABLE_DEFINITION_FRAGMENT = gql`
       }
     }
   }
+
+  ${FRESHNESS_POLICY_FRAGMENT}
 `;
 
 export const ASSET_TABLE_FRAGMENT = gql`

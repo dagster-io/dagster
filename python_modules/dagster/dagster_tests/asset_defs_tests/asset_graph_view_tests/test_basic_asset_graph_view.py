@@ -1,39 +1,27 @@
 from typing import cast
 
+import dagster as dg
 import pytest
-from dagster import (
-    AssetDep,
-    DailyPartitionsDefinition,
-    Definitions,
-    IdentityPartitionMapping,
-    TimeWindow,
-    TimeWindowPartitionsDefinition,
-    asset,
-)
 from dagster._core.asset_graph_view.asset_graph_view import AssetGraphView
-from dagster._core.definitions.asset_check_spec import AssetCheckSpec
-from dagster._core.definitions.asset_graph_subset import AssetGraphSubset
+from dagster._core.definitions.assets.graph.asset_graph_subset import AssetGraphSubset
 from dagster._core.definitions.events import AssetKeyPartitionKey
-from dagster._core.definitions.partition import (
-    DEFAULT_DATE_FORMAT,
+from dagster._core.definitions.partitions.context import partition_loading_context
+from dagster._core.definitions.partitions.subset import (
     AllPartitionsSubset,
-    StaticPartitionsDefinition,
-)
-from dagster._core.definitions.partition_mapping import LastPartitionMapping, StaticPartitionMapping
-from dagster._core.definitions.time_window_partitions import (
-    PersistedTimeWindow,
     TimeWindowPartitionsSubset,
 )
+from dagster._core.definitions.partitions.utils import PersistedTimeWindow
 from dagster._core.instance import DagsterInstance
-from dagster._time import create_datetime, get_current_datetime
+from dagster._time import create_datetime
+from dagster._utils.partitions import DEFAULT_DATE_FORMAT
 from dagster_shared.check import CheckError
 
 
 def test_basic_construction_and_identity() -> None:
-    @asset
+    @dg.asset
     def an_asset() -> None: ...
 
-    defs = Definitions([an_asset])
+    defs = dg.Definitions([an_asset])
     instance = DagsterInstance.ephemeral()
     effective_dt = create_datetime(2020, 1, 1)
     last_event_id = 928348343
@@ -48,20 +36,63 @@ def test_basic_construction_and_identity() -> None:
     assert asset_graph_view_t0.asset_graph.get_all_asset_keys() == {an_asset.key}
 
 
-def test_upstream_non_existent_partitions():
-    xy = StaticPartitionsDefinition(["x", "y"])
-    zx = StaticPartitionsDefinition(["z", "x"])
+def test_not_in_graph_partitions():
+    xy = dg.StaticPartitionsDefinition(["x", "y"])
+    dynamic = dg.DynamicPartitionsDefinition(name="dynamic_partition")
 
-    @asset(partitions_def=xy)
+    @dg.asset(partitions_def=xy)
+    def the_asset() -> None: ...
+
+    @dg.asset(partitions_def=dynamic)
+    def the_dynamic_asset() -> None: ...
+
+    defs = dg.Definitions([the_asset, the_dynamic_asset])
+
+    with DagsterInstance.ephemeral() as instance:
+        instance.add_dynamic_partitions("dynamic_partition", ["a", "b", "c"])
+        asset_graph_view = AssetGraphView.for_test(defs, instance)
+
+        candidate_subset = asset_graph_view.get_asset_subset_from_asset_partitions(
+            key=the_asset.key,
+            asset_partitions={
+                AssetKeyPartitionKey(the_asset.key, "x"),
+                AssetKeyPartitionKey(the_asset.key, "a"),
+                AssetKeyPartitionKey(the_asset.key, "b"),
+            },
+        )
+
+        assert asset_graph_view.get_subset_not_in_graph(
+            key=the_asset.key, candidate_subset=candidate_subset
+        ).expensively_compute_partition_keys() == {"a", "b"}
+
+        dynamic_candidate_subset = asset_graph_view.get_asset_subset_from_asset_partitions(
+            key=the_dynamic_asset.key,
+            asset_partitions={
+                AssetKeyPartitionKey(the_dynamic_asset.key, "c"),
+                AssetKeyPartitionKey(the_dynamic_asset.key, "d"),
+                AssetKeyPartitionKey(the_dynamic_asset.key, "e"),
+            },
+        )
+
+        assert asset_graph_view.get_subset_not_in_graph(
+            key=the_dynamic_asset.key, candidate_subset=dynamic_candidate_subset
+        ).expensively_compute_partition_keys() == {"d", "e"}
+
+
+def test_upstream_non_existent_partitions():
+    xy = dg.StaticPartitionsDefinition(["x", "y"])
+    zx = dg.StaticPartitionsDefinition(["z", "x"])
+
+    @dg.asset(partitions_def=xy)
     def up_asset() -> None: ...
 
-    @asset(
-        deps=[AssetDep(up_asset, partition_mapping=IdentityPartitionMapping())],
+    @dg.asset(
+        deps=[dg.AssetDep(up_asset, partition_mapping=dg.IdentityPartitionMapping())],
         partitions_def=zx,
     )
     def down_asset(): ...
 
-    defs = Definitions([up_asset, down_asset])
+    defs = dg.Definitions([up_asset, down_asset])
 
     with DagsterInstance.ephemeral() as instance:
         asset_graph_view = AssetGraphView.for_test(defs, instance)
@@ -88,25 +119,25 @@ def test_upstream_non_existent_partitions():
         assert required_but_nonexistent_subset.is_empty
 
 
-current_partitions_def = DailyPartitionsDefinition(start_date="2022-01-01")
+current_partitions_def = dg.DailyPartitionsDefinition(start_date="2022-01-01")
 
 
-@asset(partitions_def=current_partitions_def)
+@dg.asset(partitions_def=current_partitions_def)
 def asset0(): ...
 
 
-defs = Definitions([asset0])
+defs = dg.Definitions([asset0])
 
 
 def test_partitions_definition_valid_subset():
     # partition subset that is still valid because it is a subset of the current one
-    old_partitions_def = DailyPartitionsDefinition(start_date="2023-01-01")
+    old_partitions_def = dg.DailyPartitionsDefinition(start_date="2023-01-01")
     old_partitions_subset = TimeWindowPartitionsSubset(
         partitions_def=old_partitions_def,
         num_partitions=None,
         included_time_windows=[
             PersistedTimeWindow.from_public_time_window(
-                TimeWindow(start=create_datetime(2023, 1, 1), end=create_datetime(2023, 3, 1)),
+                dg.TimeWindow(start=create_datetime(2023, 1, 1), end=create_datetime(2023, 3, 1)),
                 "UTC",
             )
         ],
@@ -127,6 +158,18 @@ def test_partitions_definition_valid_subset():
         assert subset.included_time_windows == old_partitions_subset.included_time_windows
         assert subset.partitions_def == current_partitions_def
 
+        new_asset_graph_subset = (
+            asset_graph_view.get_latest_asset_graph_subset_from_serialized_asset_graph_subset(
+                old_asset_graph_subset
+            )
+        )
+
+        assert (
+            new_asset_graph_subset != old_asset_graph_subset
+        )  # because the partitions defs are different
+
+        assert new_asset_graph_subset.partitions_subsets_by_asset_key[asset0.key] == subset
+
 
 @pytest.mark.parametrize(
     "invalid_asset_graph_subset, error_match",
@@ -135,11 +178,11 @@ def test_partitions_definition_valid_subset():
             AssetGraphSubset(
                 partitions_subsets_by_asset_key={
                     asset0.key: TimeWindowPartitionsSubset(
-                        partitions_def=DailyPartitionsDefinition(start_date="2021-01-01"),
+                        partitions_def=dg.DailyPartitionsDefinition(start_date="2021-01-01"),
                         num_partitions=None,
                         included_time_windows=[
                             PersistedTimeWindow.from_public_time_window(
-                                TimeWindow(
+                                dg.TimeWindow(
                                     start=create_datetime(2021, 1, 1),
                                     end=create_datetime(2021, 3, 1),
                                 ),
@@ -159,7 +202,7 @@ def test_partitions_definition_valid_subset():
             AssetGraphSubset(
                 partitions_subsets_by_asset_key={
                     asset0.key: TimeWindowPartitionsSubset(
-                        partitions_def=DailyPartitionsDefinition(
+                        partitions_def=dg.DailyPartitionsDefinition(
                             start_date="2021-01-01", timezone="US/Pacific"
                         ),
                         num_partitions=None,
@@ -173,7 +216,7 @@ def test_partitions_definition_valid_subset():
             AssetGraphSubset(
                 partitions_subsets_by_asset_key={
                     asset0.key: TimeWindowPartitionsSubset(
-                        partitions_def=TimeWindowPartitionsDefinition(
+                        partitions_def=dg.TimeWindowPartitionsDefinition(
                             start="2021-01-01",
                             fmt=DEFAULT_DATE_FORMAT,
                             cron_schedule="* * * * *",
@@ -189,7 +232,7 @@ def test_partitions_definition_valid_subset():
             AssetGraphSubset(
                 partitions_subsets_by_asset_key={
                     asset0.key: TimeWindowPartitionsSubset(
-                        partitions_def=TimeWindowPartitionsDefinition(
+                        partitions_def=dg.TimeWindowPartitionsDefinition(
                             start="2021-01-01-UTC",
                             cron_schedule="0 0 * * *",
                             fmt="%Y-%m-%d-%Z",
@@ -215,21 +258,16 @@ def test_partitions_definition_invalid_subset(invalid_asset_graph_subset, error_
 
 
 def test_all_partitions_subset_changes():
-    current_partitions_def = StaticPartitionsDefinition(["FOO", "BAR"])
+    current_partitions_def = dg.StaticPartitionsDefinition(["FOO", "BAR"])
 
-    @asset(partitions_def=current_partitions_def)
+    @dg.asset(partitions_def=current_partitions_def)
     def asset1(): ...
 
-    defs = Definitions([asset1])
-    effective_dt = get_current_datetime()
-    with DagsterInstance.ephemeral() as instance:
-        asset_graph_view = AssetGraphView.for_test(defs, instance, effective_dt)
+    defs = dg.Definitions([asset1])
+    with DagsterInstance.ephemeral() as instance, partition_loading_context(None, instance) as ctx:
+        asset_graph_view = AssetGraphView.for_test(defs, instance, ctx.effective_dt)
 
-        stored_partitions_subset = AllPartitionsSubset(
-            current_partitions_def,
-            dynamic_partitions_store=instance,
-            current_time=asset_graph_view.effective_dt,
-        )
+        stored_partitions_subset = AllPartitionsSubset(current_partitions_def, ctx)
         assert (
             asset_graph_view.get_entity_subset_from_asset_graph_subset(
                 AssetGraphSubset(
@@ -244,12 +282,8 @@ def test_all_partitions_subset_changes():
 
         # fails if the underlying partitions def for an AllPartitionsSubset changes at all
 
-        old_partitions_def = StaticPartitionsDefinition(["FOO", "BAR", "BAZ"])
-        old_partitions_subset = AllPartitionsSubset(
-            old_partitions_def,
-            dynamic_partitions_store=instance,
-            current_time=asset_graph_view.effective_dt,
-        )
+        old_partitions_def = dg.StaticPartitionsDefinition(["FOO", "BAR", "BAZ"])
+        old_partitions_subset = AllPartitionsSubset(old_partitions_def, ctx)
 
         with pytest.raises(
             CheckError,
@@ -266,25 +300,27 @@ def test_all_partitions_subset_changes():
 
 
 def test_partitions_def_changes():
-    static_partitions_def = StaticPartitionsDefinition(["FOO", "BAR"])
+    static_partitions_def = dg.StaticPartitionsDefinition(["FOO", "BAR"])
 
-    @asset(partitions_def=static_partitions_def)
+    @dg.asset(partitions_def=static_partitions_def)
     def asset1(): ...
 
-    @asset
+    @dg.asset
     def unpartitioned_asset():
         pass
 
-    defs = Definitions([asset1, unpartitioned_asset])
+    defs = dg.Definitions([asset1, unpartitioned_asset])
     with DagsterInstance.ephemeral() as instance:
         asset_graph_view = AssetGraphView.for_test(defs, instance)
-        old_partitions_def = DailyPartitionsDefinition(start_date="2023-01-01")
+        old_partitions_def = dg.DailyPartitionsDefinition(start_date="2023-01-01")
         old_partitions_subset = TimeWindowPartitionsSubset(
             partitions_def=old_partitions_def,
             num_partitions=None,
             included_time_windows=[
                 PersistedTimeWindow.from_public_time_window(
-                    TimeWindow(start=create_datetime(2023, 1, 1), end=create_datetime(2023, 3, 1)),
+                    dg.TimeWindow(
+                        start=create_datetime(2023, 1, 1), end=create_datetime(2023, 3, 1)
+                    ),
                     "UTC",
                 )
             ],
@@ -320,21 +356,21 @@ def test_partitions_def_changes():
 def test_subset_traversal_static_partitions() -> None:
     number_keys = {"1", "2", "3"}
     letter_keys = {"a", "b", "c"}
-    number_static_partitions_def = StaticPartitionsDefinition(list(number_keys))
-    letter_static_partitions_def = StaticPartitionsDefinition(list(letter_keys))
-    mapping = StaticPartitionMapping({"1": "a", "2": "b", "3": "c"})
+    number_static_partitions_def = dg.StaticPartitionsDefinition(list(number_keys))
+    letter_static_partitions_def = dg.StaticPartitionsDefinition(list(letter_keys))
+    mapping = dg.StaticPartitionMapping({"1": "a", "2": "b", "3": "c"})
 
-    @asset(partitions_def=number_static_partitions_def)
+    @dg.asset(partitions_def=number_static_partitions_def)
     def up_numbers() -> None: ...
 
-    @asset(
-        deps=[AssetDep(up_numbers, partition_mapping=mapping)],
+    @dg.asset(
+        deps=[dg.AssetDep(up_numbers, partition_mapping=mapping)],
         partitions_def=letter_static_partitions_def,
-        check_specs=[AssetCheckSpec("down", asset="down_letters")],
+        check_specs=[dg.AssetCheckSpec("down", asset="down_letters")],
     )
     def down_letters(): ...
 
-    defs = Definitions([up_numbers, down_letters])
+    defs = dg.Definitions([up_numbers, down_letters])
     instance = DagsterInstance.ephemeral()
 
     asset_graph_view_t0 = AssetGraphView.for_test(defs, instance)
@@ -399,12 +435,12 @@ def test_subset_traversal_static_partitions() -> None:
 
 def test_only_partition_keys() -> None:
     number_keys = {"1", "2", "3"}
-    number_static_partitions_def = StaticPartitionsDefinition(list(number_keys))
+    number_static_partitions_def = dg.StaticPartitionsDefinition(list(number_keys))
 
-    @asset(partitions_def=number_static_partitions_def)
+    @dg.asset(partitions_def=number_static_partitions_def)
     def up_numbers() -> None: ...
 
-    defs = Definitions([up_numbers])
+    defs = dg.Definitions([up_numbers])
     instance = DagsterInstance.ephemeral()
 
     asset_graph_view_t0 = AssetGraphView.for_test(defs, instance)
@@ -424,16 +460,16 @@ def test_only_partition_keys() -> None:
 
 
 def test_downstream_of_unpartitioned_partition_mapping() -> None:
-    @asset
+    @dg.asset
     def unpartitioned() -> None: ...
 
-    @asset(
-        partitions_def=StaticPartitionsDefinition(["a", "b", "c"]),
-        deps=[AssetDep(unpartitioned, partition_mapping=LastPartitionMapping())],
+    @dg.asset(
+        partitions_def=dg.StaticPartitionsDefinition(["a", "b", "c"]),
+        deps=[dg.AssetDep(unpartitioned, partition_mapping=dg.LastPartitionMapping())],
     )
     def downstream() -> None: ...
 
-    defs = Definitions([downstream, unpartitioned])
+    defs = dg.Definitions([downstream, unpartitioned])
     instance = DagsterInstance.ephemeral()
     asset_graph_view = AssetGraphView.for_test(defs, instance)
 
@@ -461,15 +497,15 @@ def test_downstream_of_unpartitioned_partition_mapping() -> None:
 
 
 def test_upstream_of_unpartitioned_partition_mapping() -> None:
-    @asset(partitions_def=StaticPartitionsDefinition(["a", "b", "c"]))
+    @dg.asset(partitions_def=dg.StaticPartitionsDefinition(["a", "b", "c"]))
     def upstream() -> None: ...
 
-    @asset(
-        deps=[AssetDep(upstream, partition_mapping=LastPartitionMapping())],
+    @dg.asset(
+        deps=[dg.AssetDep(upstream, partition_mapping=dg.LastPartitionMapping())],
     )
     def unpartitioned() -> None: ...
 
-    defs = Definitions([upstream, unpartitioned])
+    defs = dg.Definitions([upstream, unpartitioned])
     instance = DagsterInstance.ephemeral()
     asset_graph_view = AssetGraphView.for_test(defs, instance)
 

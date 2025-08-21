@@ -1,5 +1,5 @@
 from dagster._core.definitions.asset_key import AssetKey, CoercibleToAssetKey
-from dagster._core.definitions.asset_spec import AssetSpec
+from dagster._core.definitions.assets.definition.asset_spec import AssetSpec
 from dagster_airlift.constants import TASK_MAPPING_METADATA_KEY
 from dagster_airlift.core.airflow_instance import DagInfo
 from dagster_airlift.core.filter import AirflowFilter
@@ -140,6 +140,7 @@ def test_fetched_airflow_data() -> None:
                 airlift_asset_spec("asset2", "dag1", "task2"),
             ]
         ),
+        datasets=[],
     )
 
     all_mapped_tasks = fetched_airflow_data.all_mapped_tasks

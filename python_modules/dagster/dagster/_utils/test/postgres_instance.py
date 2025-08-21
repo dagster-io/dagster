@@ -35,14 +35,14 @@ class TestPostgresInstance:
 
         return get_conn_string(
             **dict(  # pyright: ignore[reportArgumentType]
-                dict(  # pyright: ignore[reportArgumentType]
-                    username="test",  # pyright: ignore[reportArgumentType]
-                    password="test",  # pyright: ignore[reportArgumentType]
-                    hostname=TestPostgresInstance.get_hostname(env_name=env_name),  # pyright: ignore[reportArgumentType]
-                    db_name="test",  # pyright: ignore[reportArgumentType]
-                ),  # pyright: ignore[reportArgumentType]
-                **kwargs,  # pyright: ignore[reportArgumentType]
-            )  # pyright: ignore[reportArgumentType]
+                dict(
+                    username="test",
+                    password="test",
+                    hostname=TestPostgresInstance.get_hostname(env_name=env_name),
+                    db_name="test",
+                ),
+                **kwargs,
+            )
         )
 
     @staticmethod

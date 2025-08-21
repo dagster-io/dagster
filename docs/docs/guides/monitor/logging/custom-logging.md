@@ -1,6 +1,7 @@
 ---
-title: "Customizing Dagster's built-in loggers"
+description: Custom loggers are used to alter the structure of the logs being produced by your Dagster pipelines.
 sidebar_position: 100
+title: Customizing Dagster's built-in loggers
 ---
 
 Custom loggers are used to alter the structure of the logs being produced by your Dagster pipelines. For example, JSON logs can be produced to more easily be processed by log management systems. For a list of all built-in loggers, see the [API documentation](/api/dagster/loggers#built-in-loggers).
@@ -37,7 +38,7 @@ The following example shows how to add the custom logger to your code location d
 
 ### Add the custom logger to your ops-based jobs
 
-Configuring a ops job to use the custom logger slightly differs from the asset job example. The following example shows how:
+Configuring an ops job to use the custom logger slightly differs from the asset job example. The following example shows how:
 
 <CodeExample
   path="docs_snippets/docs_snippets/guides/monitor-alert/custom-logging/ops-job-example.py"

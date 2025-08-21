@@ -13,9 +13,9 @@ import {Link} from 'react-router-dom';
 import {ScheduleAndSensorDialog} from './ScheduleAndSensorDialog';
 import {ScheduleSwitch} from '../schedules/ScheduleSwitch';
 import {humanCronString} from '../schedules/humanCronString';
-import {ScheduleSwitchFragment} from '../schedules/types/ScheduleSwitch.types';
+import {ScheduleSwitchFragment} from '../schedules/types/ScheduleSwitchFragment.types';
 import {SensorSwitch} from '../sensors/SensorSwitch';
-import {SensorSwitchFragment} from '../sensors/types/SensorSwitch.types';
+import {SensorSwitchFragment} from '../sensors/types/SensorSwitchFragment.types';
 import {RepoAddress} from '../workspace/types';
 import {workspacePathFromAddress} from '../workspace/workspacePath';
 
@@ -67,6 +67,7 @@ export const ScheduleOrSensorTag = ({
   if (scheduleCount) {
     return (
       <MatchingSchedule
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
         schedule={schedules[0]!}
         repoAddress={repoAddress}
         showSwitch={showSwitch}
@@ -76,6 +77,7 @@ export const ScheduleOrSensorTag = ({
 
   if (sensorCount) {
     return (
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
       <MatchingSensor sensor={sensors[0]!} repoAddress={repoAddress} showSwitch={showSwitch} />
     );
   }

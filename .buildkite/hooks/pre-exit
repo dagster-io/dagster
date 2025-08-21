@@ -1,1 +1,1 @@
-. ./.buildkite/scripts/docker_prune.sh
+. ./.buildkite/buildkite-shared/buildkite_shared/scripts/docker_prune.sh

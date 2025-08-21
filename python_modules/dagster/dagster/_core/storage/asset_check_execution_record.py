@@ -5,7 +5,7 @@ from typing import NamedTuple, Optional, cast
 from dagster_shared.serdes import deserialize_value
 
 import dagster._check as check
-from dagster._core.definitions.asset_check_evaluation import AssetCheckEvaluation
+from dagster._core.definitions.asset_checks.asset_check_evaluation import AssetCheckEvaluation
 from dagster._core.definitions.asset_key import AssetCheckKey
 from dagster._core.events.log import DagsterEventType, EventLogEntry
 from dagster._core.loader import LoadableBy, LoadingContext

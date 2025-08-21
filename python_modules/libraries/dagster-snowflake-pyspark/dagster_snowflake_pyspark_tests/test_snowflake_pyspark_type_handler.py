@@ -10,16 +10,11 @@ from dagster import (
     AssetExecutionContext,
     AssetIn,
     AssetKey,
-    DailyPartitionsDefinition,
     Definitions,
-    DynamicPartitionsDefinition,
     EnvVar,
     IOManagerDefinition,
     MetadataValue,
-    MultiPartitionKey,
-    MultiPartitionsDefinition,
     Out,
-    StaticPartitionsDefinition,
     TableColumn,
     TableSchema,
     TimeWindowPartitionMapping,
@@ -32,6 +27,13 @@ from dagster import (
     materialize,
     op,
 )
+from dagster._core.definitions.partitions.definition import (
+    DailyPartitionsDefinition,
+    DynamicPartitionsDefinition,
+    MultiPartitionsDefinition,
+    StaticPartitionsDefinition,
+)
+from dagster._core.definitions.partitions.utils import MultiPartitionKey
 from dagster._core.storage.db_io_manager import TableSlice
 from dagster_snowflake import build_snowflake_io_manager
 from dagster_snowflake.resources import SnowflakeResource
@@ -205,7 +207,7 @@ def test_io_manager_asset_metadata(spark) -> None:
             assets=[my_spark_df], resources={"io_manager": pythonic_snowflake_io_manager}
         )
 
-        res = defs.get_implicit_global_asset_job_def().execute_in_process()
+        res = defs.resolve_implicit_global_asset_job_def().execute_in_process()
         assert res.success
 
         mats = res.get_asset_materialization_events()

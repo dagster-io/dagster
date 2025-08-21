@@ -1,7 +1,9 @@
-import {FeatureFlag} from 'shared/app/FeatureFlags.oss';
+import {observeEnabled} from 'shared/app/observeEnabled.oss';
 
 import {ApolloClient, gql, useApolloClient} from '../apollo-client';
-import {featureEnabled} from '../app/Flags';
+import {showCustomAlert} from '../app/CustomAlertProvider';
+import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
+import {PythonErrorInfo} from '../app/PythonErrorInfo';
 import {tokenForAssetKey, tokenToAssetKey} from '../asset-graph/Utils';
 import {AssetKeyInput} from '../graphql/types';
 import {liveDataFactory} from '../live-data-provider/Factory';
@@ -14,6 +16,11 @@ import {
 } from './types/AssetHealthDataProvider.types';
 import {weakMapMemoize} from '../util/weakMapMemoize';
 
+const BATCH_SIZE = 250;
+const PARALLEL_FETCHES = 4;
+
+const EMPTY_ARRAY: any[] = [];
+
 function init() {
   return liveDataFactory(
     () => {
@@ -22,40 +29,49 @@ function init() {
     async (keys, client: ApolloClient<any>) => {
       const assetKeys = keys.map(tokenToAssetKey);
 
-      let healthResponse;
-      if (featureEnabled(FeatureFlag.flagUseNewObserveUIs)) {
-        healthResponse = await client.query<AssetHealthQuery, AssetHealthQueryVariables>({
-          query: ASSETS_HEALTH_INFO_QUERY,
-          fetchPolicy: 'no-cache',
-          variables: {
-            assetKeys,
-          },
-        });
-      } else {
-        healthResponse = {data: {assetNodes: [] as AssetHealthFragment[]}};
-      }
-
-      const {data} = healthResponse;
-
-      const result: Record<string, AssetHealthFragment> = Object.fromEntries(
-        data.assetNodes.map((node) => [tokenForAssetKey(node.assetKey), node]),
-      );
-
-      // External assets are not included in the health response, so as a workaround we add them with a null assetHealth
-      keys.forEach((key) => {
-        if (!result[key]) {
-          result[key] = {
-            __typename: 'AssetNode',
-            assetKey: {
-              __typename: 'AssetKey',
-              ...tokenToAssetKey(key),
-            },
-            assetHealth: null,
-          };
-        }
+      const healthResponse = await client.query<AssetHealthQuery, AssetHealthQueryVariables>({
+        query: ASSETS_HEALTH_INFO_QUERY,
+        fetchPolicy: 'no-cache',
+        variables: {
+          assetKeys,
+        },
       });
-      return result;
+
+      const assetData = healthResponse.data.assetsOrError;
+      if (assetData.__typename === 'PythonError') {
+        showCustomAlert({
+          title: 'An error occurred',
+          body: <PythonErrorInfo error={assetData} />,
+        });
+        return {};
+      } else if (assetData.__typename === 'AssetConnection') {
+        const result: Record<string, AssetHealthFragment> = Object.fromEntries(
+          assetData.nodes.map((node) => [tokenForAssetKey(node.key), node]),
+        );
+        // provide null values for any keys that do not have results returned by the query
+        keys.forEach((key) => {
+          if (!result[key]) {
+            result[key] = {
+              __typename: 'Asset',
+              key: {
+                __typename: 'AssetKey',
+                ...tokenToAssetKey(key),
+              },
+              assetMaterializations: [],
+              assetHealth: null,
+            };
+          }
+        });
+        return result;
+      } else {
+        showCustomAlert({
+          title: 'An unknown error occurred',
+        });
+        return {};
+      }
     },
+    BATCH_SIZE,
+    PARALLEL_FETCHES,
   );
 }
 export const AssetHealthData = init();
@@ -70,30 +86,62 @@ const memoizedAssetKeys = weakMapMemoize((assetKeys: AssetKeyInput[]) => {
   return assetKeys.map((key) => tokenForAssetKey(key));
 });
 
-export function useAssetsHealthData(
-  assetKeys: AssetKeyInput[],
-  thread: LiveDataThreadID = 'AssetHealth', // Use AssetHealth to get 250 batch size
-) {
+type AssetsHealthDataConfig = {
+  assetKeys: AssetKeyInput[];
+  thread?: LiveDataThreadID;
+  blockTrace?: boolean;
+  skip?: boolean;
+  loading?: boolean;
+};
+
+// Get assets health data, with an `observeEnabled` check included to effectively no-op any users
+// who are not gated in.
+export function useAssetsHealthData({assetKeys, ...rest}: AssetsHealthDataConfig) {
+  return useAssetsHealthDataWithoutGateCheck({
+    ...rest,
+    assetKeys: observeEnabled() ? assetKeys : EMPTY_ARRAY,
+  });
+}
+
+// Get assets health data, with no `observeEnabled` check. This allows us to dark launch
+// asset health checking without depending on the `observeEnabled` check.
+export function useAssetsHealthDataWithoutGateCheck({
+  assetKeys,
+  thread = 'AssetHealth', // Use AssetHealth to get 250 batch size
+  blockTrace = true,
+  skip = false,
+  loading = false,
+}: AssetsHealthDataConfig) {
   const keys = memoizedAssetKeys(assetKeys);
-  const result = AssetHealthData.useLiveData(keys, thread);
+  const result = AssetHealthData.useLiveData(keys, thread, skip);
   useBlockTraceUntilTrue(
     'useAssetsHealthData',
-    !!(Object.keys(result.liveDataByNode).length === assetKeys.length),
+    !loading && (!blockTrace || !!(Object.keys(result.liveDataByNode).length === assetKeys.length)),
+    {skip},
   );
   return result;
 }
 
 export const ASSETS_HEALTH_INFO_QUERY = gql`
   query AssetHealthQuery($assetKeys: [AssetKeyInput!]!) {
-    assetNodes(assetKeys: $assetKeys) {
-      id
-      ...AssetHealthFragment
+    assetsOrError(assetKeys: $assetKeys) {
+      ... on AssetConnection {
+        nodes {
+          id
+          ...AssetHealthFragment
+        }
+      }
+      ...PythonErrorFragment
     }
   }
 
-  fragment AssetHealthFragment on AssetNode {
-    assetKey {
+  fragment AssetHealthFragment on Asset {
+    key {
       path
+    }
+
+    assetMaterializations(limit: 1) {
+      timestamp
     }
 
     assetHealth {
@@ -151,6 +199,7 @@ export const ASSETS_HEALTH_INFO_QUERY = gql`
   fragment AssetHealthFreshnessMetaFragment on AssetHealthFreshnessMeta {
     lastMaterializedTimestamp
   }
+  ${PYTHON_ERROR_FRAGMENT}
 `;
 
 // For tests

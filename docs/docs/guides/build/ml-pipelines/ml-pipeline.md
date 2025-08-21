@@ -1,6 +1,6 @@
 ---
 title: "Building machine learning pipelines with Dagster"
-description: This guide illustrates how to use Dagster to operationalize your machine learning pipeline
+description: Deploying and maintaining your machine learning pipelines in production using Dagster.
 ---
 
 In this guide, we’ll walk you through how to take your machine learning models and deploy and maintain them in production using Dagster, reliably and efficiently.
@@ -52,7 +52,7 @@ We also transformed the dataframes into NumPy arrays and removed `nan` values to
 
 ### Training the model
 
-At this point, we have `X_train`, `y_train`, `X_test`, and `y_test` ready to go for our model. To train our model, we can use any number of models from libraries like [sklearn](https://scikit-learn.org/), [TensorFlow](https://www.tensorflow.org/), and [PyTorch](https://pytorch.org/).
+At this point, we have `X_train`, `y_train`, `X_test`, and `y_test` ready to go for our model. To train our model, we can use any number of models from libraries like [sklearn](https://scikit-learn.org), [TensorFlow](https://www.tensorflow.org), and [PyTorch](https://pytorch.org).
 
 In our example, we will train an [XGBoost model](https://xgboost.readthedocs.io/en/stable/python/python_api.html#xgboost.XGBRegressor) to predict a numerical value.
 

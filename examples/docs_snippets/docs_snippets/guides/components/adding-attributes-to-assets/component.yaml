@@ -1,7 +1,0 @@
-type: dagster.components.DefsFolderComponent
-
-attributes:
-  asset_post_processors:
-    - target: "*"
-      attributes:
-        group_name: "team_a"

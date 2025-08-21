@@ -5,21 +5,12 @@ from contextlib import contextmanager, nullcontext
 from typing import Any, Optional, cast
 from unittest import mock
 
+import dagster as dg
 import pytest
-from dagster import (
-    AssetKey,
-    AssetSpec,
-    AutoMaterializeRule,
-    AutomationCondition,
-    DagsterInstance,
-    instance_for_test,
-)
+from dagster import AutoMaterializeRule, AutomationCondition, DagsterInstance
 from dagster._core.definitions.asset_daemon_cursor import AssetDaemonCursor
 from dagster._core.definitions.asset_selection import AssetSelection
 from dagster._core.definitions.auto_materialize_policy import AutoMaterializePolicy
-from dagster._core.definitions.automation_condition_sensor_definition import (
-    AutomationConditionSensorDefinition,
-)
 from dagster._core.definitions.sensor_definition import DefaultSensorStatus
 from dagster._core.scheduler.instigation import (
     InstigatorStatus,
@@ -50,7 +41,6 @@ from dagster._daemon.asset_daemon import (
     set_auto_materialize_paused,
 )
 from dagster._time import get_current_datetime, get_current_timestamp
-from dagster_shared.serdes import deserialize_value, serialize_value
 
 from dagster_tests.declarative_automation_tests.legacy_tests.updated_scenarios.basic_scenarios import (
     basic_scenarios,
@@ -88,12 +78,12 @@ from dagster_tests.declarative_automation_tests.scenario_utils.scenario_state im
 def get_daemon_instance(
     paused: bool = False,
     extra_overrides: Optional[Mapping[str, Any]] = None,
-) -> Generator[DagsterInstance, None, None]:
+) -> Generator[dg.DagsterInstance, None, None]:
     with mock.patch(
         "dagster._core.instance.DagsterInstance.get_tick_termination_check_interval",
         return_value=1,
     ):
-        with instance_for_test(
+        with dg.instance_for_test(
             overrides=extra_overrides,
             synchronous_run_launcher=True,
             synchronous_run_coordinator=True,
@@ -155,8 +145,8 @@ daemon_scenarios = [*basic_scenarios, *partition_scenarios, *mid_iteration_termi
 # Additional repo with assets that should be not be included in the evaluation
 extra_definitions = ScenarioSpec(
     [
-        AssetSpec("extra_asset1", auto_materialize_policy=AutoMaterializePolicy.eager()),
-        AssetSpec(
+        dg.AssetSpec("extra_asset1", auto_materialize_policy=AutoMaterializePolicy.eager()),
+        dg.AssetSpec(
             "extra_asset2",
             deps=["extra_asset1"],
             auto_materialize_policy=AutoMaterializePolicy.eager(),
@@ -165,12 +155,12 @@ extra_definitions = ScenarioSpec(
 )
 
 other_repo_definitions = ScenarioSpec(
-    asset_specs=[AssetSpec("asset1", auto_materialize_policy=AutoMaterializePolicy.eager())]
+    asset_specs=[dg.AssetSpec("asset1", auto_materialize_policy=AutoMaterializePolicy.eager())]
 )
 
 
 second_asset_in_our_repo = ScenarioSpec(
-    asset_specs=[AssetSpec("asset2", deps=["asset1"])]
+    asset_specs=[dg.AssetSpec("asset2", deps=["asset1"])]
 ).with_additional_repositories([other_repo_definitions])
 
 
@@ -398,7 +388,7 @@ def test_daemon_skip_env_var() -> None:
 
         with environ(
             {
-                SKIP_DECLARATIVE_AUTOMATION_KEYS_ENV_VAR: f"{AssetKey(['A']).to_user_string()},{AssetKey(['B']).to_user_string()}"
+                SKIP_DECLARATIVE_AUTOMATION_KEYS_ENV_VAR: f"{dg.AssetKey(['A']).to_user_string()},{dg.AssetKey(['B']).to_user_string()}"
             }
         ):
             state = daemon_scenario.evaluate_daemon(instance)
@@ -418,7 +408,7 @@ def test_daemon_skip_env_var() -> None:
         assert len(runs) == 0
 
         with environ(
-            {SKIP_DECLARATIVE_AUTOMATION_KEYS_ENV_VAR: f"{AssetKey(['B']).to_user_string()}"}
+            {SKIP_DECLARATIVE_AUTOMATION_KEYS_ENV_VAR: f"{dg.AssetKey(['B']).to_user_string()}"}
         ):
             state = daemon_scenario.evaluate_daemon(instance)
 
@@ -433,19 +423,19 @@ def test_daemon_skip_env_var() -> None:
 
         assert len(runs) == 2
 
-        assert len(instance.fetch_materializations(AssetKey(["A"]), limit=1000).records) == 2
+        assert len(instance.fetch_materializations(dg.AssetKey(["A"]), limit=1000).records) == 2
 
         # No materializations for B due to the env var
-        assert len(instance.fetch_materializations(AssetKey(["B"]), limit=1000).records) == 0
+        assert len(instance.fetch_materializations(dg.AssetKey(["B"]), limit=1000).records) == 0
 
 
-three_assets = ScenarioSpec(asset_specs=[AssetSpec("A"), AssetSpec("B"), AssetSpec("C")])
+three_assets = ScenarioSpec(asset_specs=[dg.AssetSpec("A"), dg.AssetSpec("B"), dg.AssetSpec("C")])
 
 daemon_sensor_scenario = AssetDaemonScenario(
     id="simple_daemon_scenario",
     initial_spec=three_assets.with_sensors(
         [
-            AutomationConditionSensorDefinition(
+            dg.AutomationConditionSensorDefinition(
                 name="auto_materialize_sensor_a",
                 target=AssetSelection.assets("A"),
                 default_status=DefaultSensorStatus.RUNNING,
@@ -453,7 +443,7 @@ daemon_sensor_scenario = AssetDaemonScenario(
                     "foo_tag": "bar_val",
                 },
             ),
-            AutomationConditionSensorDefinition(
+            dg.AutomationConditionSensorDefinition(
                 name="auto_materialize_sensor_b",
                 target=AssetSelection.assets("B"),
                 default_status=DefaultSensorStatus.STOPPED,
@@ -566,7 +556,7 @@ def test_auto_materialize_sensor_transition():
 
         instance.daemon_cursor_storage.set_cursor_values(
             {
-                _PRE_SENSOR_AUTO_MATERIALIZE_CURSOR_KEY: serialize_value(
+                _PRE_SENSOR_AUTO_MATERIALIZE_CURSOR_KEY: dg.serialize_value(
                     dataclasses.replace(
                         AssetDaemonCursor.empty(), evaluation_id=pre_sensor_evaluation_id
                     )
@@ -621,7 +611,7 @@ single_daemon_sensor_scenario = AssetDaemonScenario(
     id="simplest_daemon_scenario",
     initial_spec=three_assets.with_sensors(
         [
-            AutomationConditionSensorDefinition(
+            dg.AutomationConditionSensorDefinition(
                 name="named_sensor",
                 target=AssetSelection.assets("C"),
                 default_status=DefaultSensorStatus.RUNNING,
@@ -645,7 +635,7 @@ def test_auto_materialize_sensor_name_transition() -> None:
         assert instance.schedule_storage is not None
 
         # copy over the state from the old scenario
-        for state in deserialize_value(instigator_state_str, as_type=list):
+        for state in dg.deserialize_value(instigator_state_str, as_type=list):
             # we update the code location origin from the insitigator state string to ensure that it
             # lines up with the current-day origin
             updated_state = state._replace(
@@ -729,7 +719,7 @@ def test_auto_materialize_sensor_ticks(num_threads):
 
             instance.daemon_cursor_storage.set_cursor_values(
                 {
-                    _PRE_SENSOR_AUTO_MATERIALIZE_CURSOR_KEY: serialize_value(
+                    _PRE_SENSOR_AUTO_MATERIALIZE_CURSOR_KEY: dg.serialize_value(
                         dataclasses.replace(
                             AssetDaemonCursor.empty(),
                             evaluation_id=pre_sensor_evaluation_id,

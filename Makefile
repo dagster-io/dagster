@@ -30,42 +30,33 @@ unannotated_pyright:
 	python scripts/run-pyright.py --unannotated
 
 ruff:
-	-ruff check --fix .
+	ruff check --fix .
 	ruff format .
 
 check_ruff:
 	ruff check .
 	ruff format --check .
 
-install_editable_uv_tools:
-	# Install dg cli editably
-	uv tool install -e python_modules/libraries/dagster-dg \
-	  --with-editable python_modules/libraries/dagster-shared \
-	  --with-editable python_modules/libraries/dagster-cloud-cli \
-	  --reinstall
-
-	# Install dagster cli editably as a tool with dagster-webserver
-	# (for when `dg dev` invokes `uv tool run dagster dev`)
-	uv tool install -e python_modules/dagster \
-	  --with-editable python_modules/dagster-webserver \
-	  --with-editable python_modules/dagster-graphql \
-	  --with-editable python_modules/dagster-pipes \
-	  --with-editable python_modules/libraries/dagster-shared \
-	  --reinstall
+unsafe_ruff:
+	ruff check --fix --unsafe-fixes .
+	ruff format .
 
 check_prettier:
-#NOTE:  excludes README.md because it's a symlink
+#NOTE: excludes symlinked md files
 	prettier `git ls-files \
 	'python_modules/*.yml' 'python_modules/*.yaml' 'helm/*.yml' 'helm/*.yaml' \
-	':!:helm/**/templates/*.yml' ':!:helm/**/templates/*.yaml' '*.md' ':!:docs/*.md' \
-	':!:python_modules/libraries/dagster-components/dagster_components_tests/integration_tests/integration_test_defs/**/*.yaml' \
-	':!:README.md'` --check
+	'*.md' '.claude/*.md' \
+	':!:docs/*.md' ':!:helm/**/templates/*.yml' ':!:helm/**/templates/*.yaml' \
+	':!:README.md' ':!:GEMINI.md'` \
+	--check
 
 prettier:
 	prettier `git ls-files \
 	'python_modules/*.yml' 'python_modules/*.yaml' 'helm/*.yml' 'helm/*.yaml' \
-	':!:helm/**/templates/*.yml' ':!:helm/**/templates/*.yaml' '*.md' ':!:docs/*.md' \
-	':!:README.md'` --write
+	'*.md' '.claude/*.md' \
+	':!:docs/*.md' ':!:helm/**/templates/*.yml' ':!:helm/**/templates/*.yaml' \
+	':!:README.md' ':!:GEMINI.md'` \
+	--write
 
 install_dev_python_modules:
 	python scripts/install_dev_python_modules.py -q
@@ -107,11 +98,14 @@ check_manifest:
 	ls python_modules/libraries | xargs -n 1 -Ipkg check-manifest python_modules/libraries/pkg
 
 ready_dagster_dg_docs_for_publish:
-	rm -rf python_modules/libraries/dagster-dg/dagster_dg/docs/packages
-	mkdir -p python_modules/libraries/dagster-dg/dagster_dg/docs/packages
-	cp -r js_modules/dagster-ui/packages/dg-docs-components python_modules/libraries/dagster-dg/dagster_dg/docs/packages
-	cp -r js_modules/dagster-ui/packages/dg-docs-site python_modules/libraries/dagster-dg/dagster_dg/docs/packages
-	rm -rf python_modules/libraries/dagster-dg/dagster_dg/docs/packages/dg-docs-components/.next
-	rm -rf python_modules/libraries/dagster-dg/dagster_dg/docs/packages/dg-docs-site/.next
-	rm -rf python_modules/libraries/dagster-dg/dagster_dg/docs/packages/dg-docs-components/node_modules
-	rm -rf python_modules/libraries/dagster-dg/dagster_dg/docs/packages/dg-docs-site/node_modules
+	rm -rf python_modules/libraries/dagster-dg-cli/dagster_dg_cli/docs/packages
+	mkdir -p python_modules/libraries/dagster-dg-cli/dagster_dg_cli/docs/packages
+	cp -r js_modules/dagster-ui/packages/dg-docs-components python_modules/libraries/dagster-dg-cli/dagster_dg_cli/docs/packages
+	cp -r js_modules/dagster-ui/packages/dg-docs-site python_modules/libraries/dagster-dg-cli/dagster_dg_cli/docs/packages
+	rm -rf python_modules/libraries/dagster-dg-cli/dagster_dg_cli/docs/packages/dg-docs-components/.next
+	rm -rf python_modules/libraries/dagster-dg-cli/dagster_dg_cli/docs/packages/dg-docs-site/.next
+	rm -rf python_modules/libraries/dagster-dg-cli/dagster_dg_cli/docs/packages/dg-docs-components/node_modules
+	rm -rf python_modules/libraries/dagster-dg-cli/dagster_dg_cli/docs/packages/dg-docs-site/node_modules
+
+format_docs:
+	cd docs; yarn format

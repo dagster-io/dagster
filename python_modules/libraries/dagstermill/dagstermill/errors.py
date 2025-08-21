@@ -1,4 +1,4 @@
-from dagster._core.errors import DagsterError
+from dagster_shared.error import DagsterError
 
 
 class DagstermillError(DagsterError):

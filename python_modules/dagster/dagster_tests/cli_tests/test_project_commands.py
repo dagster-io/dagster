@@ -2,8 +2,8 @@ import os
 import re
 from pathlib import Path
 
+import dagster as dg
 from click.testing import CliRunner
-from dagster import file_relative_path
 from dagster._cli.project import (
     from_example_command,
     scaffold_code_location_command,
@@ -12,7 +12,7 @@ from dagster._cli.project import (
 )
 from dagster._core.workspace.load_target import get_origins_from_toml
 from dagster._generate.download import AVAILABLE_EXAMPLES, EXAMPLES_TO_IGNORE, _get_url_for_version
-from dagster._generate.generate import _should_skip_file
+from dagster_shared.scaffold import should_skip_scaffolded_file
 
 
 def test_project_scaffold_command_fails_when_dir_path_exists():
@@ -143,14 +143,14 @@ def test_from_example_command_default_name():
 
 def test_available_examples_in_sync_with_example_folder():
     # ensure the list of AVAILABLE_EXAMPLES is in sync with the example folder minus EXAMPLES_TO_IGNORE
-    example_folder = Path(file_relative_path(__file__, "../../../../examples"))
+    example_folder = Path(dg.file_relative_path(__file__, "../../../../examples"))
     available_examples_in_folder = [
         e
         for e in os.listdir(example_folder)
         if (
             Path(example_folder / e).exists()
             and e not in EXAMPLES_TO_IGNORE
-            and not _should_skip_file(e)
+            and not should_skip_scaffolded_file(e)
         )
     ]
     assert set(available_examples_in_folder) == set(AVAILABLE_EXAMPLES)

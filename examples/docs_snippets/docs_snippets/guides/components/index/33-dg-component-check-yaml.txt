@@ -1,3 +1,0 @@
-dg check yaml
-
-All components validated successfully.

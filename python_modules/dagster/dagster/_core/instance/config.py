@@ -365,6 +365,14 @@ def backfills_daemon_config() -> Field:
                 is_required=False,
                 description="How many threads to use to process multiple backfills in parallel",
             ),
+            "num_submit_workers": Field(
+                int,
+                is_required=False,
+                description=(
+                    "How many threads to use to submit runs from backfills. Can be used to"
+                    " decrease latency for backfill run submission."
+                ),
+            ),
         },
         is_required=False,
     )
@@ -599,6 +607,7 @@ def dagster_instance_config_schema() -> Mapping[str, Field]:
                 ),
             }
         ),
+        "freshness": Field({"enabled": Field(Bool)}, is_required=False),
         "concurrency": get_concurrency_config(),
     }
 

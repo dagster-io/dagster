@@ -29,18 +29,15 @@ from dagster import (
     BackfillPolicy,
     Bool,
     DagsterInstance,
-    DailyPartitionsDefinition,
     DataVersion,
     DefaultScheduleStatus,
     DefaultSensorStatus,
     DynamicOut,
     DynamicOutput,
-    DynamicPartitionsDefinition,
     Enum,
     EnumValue,
     ExpectationResult,
     Field,
-    HourlyPartitionsDefinition,
     In,
     Int,
     IOManager,
@@ -55,7 +52,6 @@ from dagster import (
     ScheduleDefinition,
     SensorResult,
     SourceAsset,
-    StaticPartitionsDefinition,
     String,
     TableColumn,
     TableColumnConstraints,
@@ -63,13 +59,11 @@ from dagster import (
     TableRecord,
     TableSchema,
     TimeWindowPartitionMapping,
-    WeeklyPartitionsDefinition,
     _check as check,
     asset,
     asset_check,
     asset_sensor,
     dagster_type_loader,
-    daily_partitioned_config,
     define_asset_job,
     graph,
     graph_asset,
@@ -84,10 +78,9 @@ from dagster import (
     run_failure_sensor,
     run_status_sensor,
     schedule,
-    static_partitioned_config,
     usable_as_dagster_type,
 )
-from dagster._core.definitions.asset_spec import AssetSpec
+from dagster._core.definitions.assets.definition.asset_spec import AssetSpec
 from dagster._core.definitions.automation_condition_sensor_definition import (
     AutomationConditionSensorDefinition,
 )
@@ -100,11 +93,23 @@ from dagster._core.definitions.events import Failure
 from dagster._core.definitions.executor_definition import in_process_executor
 from dagster._core.definitions.external_asset import external_asset_from_spec
 from dagster._core.definitions.freshness import InternalFreshnessPolicy
-from dagster._core.definitions.freshness_policy import FreshnessPolicy
+from dagster._core.definitions.freshness_policy import LegacyFreshnessPolicy
 from dagster._core.definitions.job_definition import JobDefinition
 from dagster._core.definitions.metadata import MetadataValue
-from dagster._core.definitions.multi_dimensional_partitions import MultiPartitionsDefinition
-from dagster._core.definitions.partition import PartitionedConfig
+from dagster._core.definitions.metadata.metadata_value import ObjectMetadataValue
+from dagster._core.definitions.partitions.definition import (
+    DailyPartitionsDefinition,
+    DynamicPartitionsDefinition,
+    HourlyPartitionsDefinition,
+    MultiPartitionsDefinition,
+    StaticPartitionsDefinition,
+    WeeklyPartitionsDefinition,
+)
+from dagster._core.definitions.partitions.partitioned_config import (
+    PartitionedConfig,
+    daily_partitioned_config,
+    static_partitioned_config,
+)
 from dagster._core.definitions.reconstruct import ReconstructableRepository
 from dagster._core.definitions.sensor_definition import (
     RunRequest,
@@ -117,7 +122,7 @@ from dagster._core.errors import DagsterInvalidDefinitionError
 from dagster._core.log_manager import coerce_valid_log_level
 from dagster._core.remote_representation.external import RemoteRepository
 from dagster._core.storage.dagster_run import DagsterRunStatus
-from dagster._core.storage.tags import RESUME_RETRY_TAG
+from dagster._core.storage.tags import EXTERNAL_JOB_SOURCE_TAG_KEY, RESUME_RETRY_TAG
 from dagster._core.workspace.context import WorkspaceProcessContext, WorkspaceRequestContext
 from dagster._core.workspace.load_target import PythonFileTarget
 from dagster._utils import file_relative_path, segfault
@@ -678,6 +683,9 @@ def composites_job():
     div_four(add_four())
 
 
+class SomeClass: ...
+
+
 @job
 def materialization_job():
     @op
@@ -719,6 +727,7 @@ def materialization_job():
                     ),
                 ),
                 "my job": MetadataValue.job("materialization_job", location_name="test_location"),
+                "some_class": ObjectMetadataValue(SomeClass()),
             },
         )
         yield Output(None)
@@ -883,6 +892,11 @@ def tagged_job():
         return "Hello"
 
     simple_op()
+
+
+@job(tags={EXTERNAL_JOB_SOURCE_TAG_KEY: "airflow"})
+def some_external_job():
+    pass
 
 
 @resource
@@ -1688,7 +1702,7 @@ def req_config_job():
 
 @asset(
     owners=["user@dagsterlabs.com", "team:team1"],
-    internal_freshness_policy=InternalFreshnessPolicy.time_window(
+    freshness_policy=InternalFreshnessPolicy.time_window(
         fail_window=timedelta(minutes=10), warn_window=timedelta(minutes=5)
     ),
 )
@@ -1701,7 +1715,12 @@ def asset_2():
     raise Exception("foo")
 
 
-@asset(deps=[AssetKey("asset_2")])
+@asset(
+    deps=[AssetKey("asset_2")],
+    freshness_policy=InternalFreshnessPolicy.time_window(
+        fail_window=timedelta(minutes=10), warn_window=timedelta(minutes=5)
+    ),
+)
 def asset_3():
     yield Output(7)
 
@@ -1822,7 +1841,7 @@ def fresh_diamond_right(fresh_diamond_top):
 
 
 @asset(
-    freshness_policy=FreshnessPolicy(maximum_lag_minutes=30),
+    legacy_freshness_policy=LegacyFreshnessPolicy(maximum_lag_minutes=30),
     auto_materialize_policy=AutoMaterializePolicy.lazy(),
 )
 def fresh_diamond_bottom(fresh_diamond_left, fresh_diamond_right):
@@ -2172,6 +2191,7 @@ def define_standard_jobs() -> Sequence[JobDefinition]:
         static_partitioned_job,
         tagged_job,
         two_ins_job,
+        some_external_job,
     ]
 
 

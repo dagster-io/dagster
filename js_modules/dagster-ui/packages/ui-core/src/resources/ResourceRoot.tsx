@@ -14,6 +14,7 @@ import {
   PageHeader,
   SplitPanelContainer,
   Subheading,
+  Subtitle1,
   Table,
   Tag,
   Tooltip,
@@ -123,7 +124,7 @@ export const ResourceRoot = (props: Props) => {
   return (
     <Page style={{height: '100%', overflow: 'hidden'}}>
       <PageHeader
-        title={<Heading>{displayName}</Heading>}
+        title={<Subtitle1>{displayName}</Subtitle1>}
         tags={
           <Tag icon="resource">
             Resource in <RepositoryLink repoAddress={repoAddress} />
@@ -311,10 +312,12 @@ const ResourceConfig = (props: {
               resourceDetails.configFields.map((field) => {
                 const defaultValue = field.defaultValueAsJson;
                 const type = configuredValues.hasOwnProperty(field.name)
-                  ? configuredValues[field.name]!.type
+                  ? // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+                    configuredValues[field.name]!.type
                   : null;
                 const actualValue = configuredValues.hasOwnProperty(field.name)
-                  ? configuredValues[field.name]!.value
+                  ? // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+                    configuredValues[field.name]!.value
                   : defaultValue;
 
                 const isDefault = type === 'VALUE' && defaultValue === actualValue;

@@ -1,0 +1,27 @@
+import dagster as dg
+
+{% if model -%}
+class {{ name }}(dg.Component, dg.Model, dg.Resolvable):
+    """COMPONENT SUMMARY HERE.
+
+    COMPONENT DESCRIPTION HERE.
+    """
+{% else -%}
+class {{ name }}(dg.Component, dg.Resolvable):
+    """COMPONENT SUMMARY HERE.
+
+    COMPONENT DESCRIPTION HERE.
+    """
+{% endif -%}
+{% if model %}
+    # added fields here will define params when instantiated in Python, and yaml schema via Resolvable
+{% else %}
+    def __init__(
+        self,
+        # added params here define needed arguments when instantiated in Python, and yaml schema via Resolvable
+    ):
+        pass
+{% endif %}
+    def build_defs(self, context: dg.ComponentLoadContext) -> dg.Definitions:
+        # Add definition construction logic here.
+        return dg.Definitions()

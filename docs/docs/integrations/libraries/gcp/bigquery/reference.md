@@ -17,7 +17,7 @@ This reference page provides information for working with features that are not 
 
 ## Providing credentials as configuration
 
-In most cases, you will authenticate with Google Cloud Project (GCP) using one of the methods outlined in the [GCP documentation](https://cloud.google.com/docs/authentication/provide-credentials-adc). However, in some cases you may find that you need to provide authentication credentials directly to the BigQuery I/O manager. For example, if you are using [Dagster+ Serverless](/dagster-plus/deployment/deployment-types/serverless) you cannot upload a credential file, so must provide your credentials as an environment variable.
+In most cases, you will authenticate with Google Cloud Project (GCP) using one of the methods outlined in the [GCP documentation](https://cloud.google.com/docs/authentication/provide-credentials-adc). However, in some cases you may find that you need to provide authentication credentials directly to the BigQuery I/O manager. For example, if you are using [Dagster+ Serverless](/deployment/dagster-plus/serverless) you cannot upload a credential file, so must provide your credentials as an environment variable.
 
 You can provide credentials directly to the BigQuery I/O manager by using the `gcp_credentials` configuration value. The BigQuery I/O manager will create a temporary file to store the credential and will set `GOOGLE_APPLICATION_CREDENTIALS` to point to this file. When the Dagster run is completed, the temporary file is deleted and `GOOGLE_APPLICATION_CREDENTIALS` is unset.
 
@@ -27,7 +27,7 @@ To avoid issues with newline characters in the GCP credential key, you must base
 cat ~/.gcp/key.json | base64
 ```
 
-Then you can [set an environment variable](/guides/deploy/using-environment-variables-and-secrets) in your Dagster deployment (for example `GCP_CREDS`) to the encoded key and provide it to the BigQuery I/O manager:
+Then you can [set an environment variable](/guides/operate/configuration/using-environment-variables-and-secrets) in your Dagster deployment (for example `GCP_CREDS`) to the encoded key and provide it to the BigQuery I/O manager:
 
 <CodeExample
   path="docs_snippets/docs_snippets/integrations/bigquery/reference/config_auth.py"
@@ -71,7 +71,7 @@ SELECT *
 
 When the `partition_expr` value is injected into this statement, the resulting SQL query must follow BigQuery's SQL syntax. Refer to the [BigQuery documentation](https://cloud.google.com/bigquery/docs/reference/standard-sql/query-syntax) for more information.
 
-When materializing the above assets, a partition must be selected, as described in [Materializing partitioned assets](/todo). In this example, the query used when materializing the `Iris-setosa` partition of the above assets would be:
+When materializing the above assets, a partition must be selected, as described in the [Partitioning assets](/guides/build/partitions-and-backfills/partitioning-assets#materializing-partitioned-assets) documentation. In this example, the query used when materializing the `Iris-setosa` partition of the above assets would be:
 
 ```sql
 SELECT *
@@ -246,7 +246,7 @@ If you work with both Pandas and PySpark DataFrames and want a single I/O manage
 
 ## Executing custom SQL commands with the BigQuery resource
 
-In addition to the BigQuery I/O manager, Dagster also provides a BigQuery [resource](/guides/build/external-resources/) for executing custom SQL queries.
+In addition to the BigQuery I/O manager, Dagster also provides a BigQuery [resource](/guides/build/external-resources) for executing custom SQL queries.
 
 <CodeExample path="docs_snippets/docs_snippets/integrations/bigquery/reference/resource.py" />
 

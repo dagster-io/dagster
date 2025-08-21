@@ -1,6 +1,5 @@
 import {Box, Caption, Colors, Icon, MiddleTruncate} from '@dagster-io/ui-components';
 import dayjs from 'dayjs';
-import relativeTime from 'dayjs/plugin/relativeTime';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
 import styled from 'styled-components';
@@ -16,8 +15,9 @@ import {
 import {Timestamp} from '../app/time/Timestamp';
 import {displayNameForAssetKey} from '../asset-graph/Utils';
 import {AssetKeyInput} from '../graphql/types';
+import {TimeFromNow} from '../ui/TimeFromNow';
 
-dayjs.extend(relativeTime);
+import '../util/dayjsExtensions';
 
 export const AssetMaterializationUpstreamTable = ({
   data,
@@ -187,7 +187,7 @@ export const TimeSinceWithOverdueColor = ({
 
   return relativeTo === 'now' ? (
     <span style={{color: isOverdue ? Colors.textRed() : Colors.textLight()}}>
-      ({dayjs(timestamp).fromNow()})
+      <TimeFromNow unixTimestamp={timestamp / 1000} />
     </span>
   ) : (
     <span style={{color: isOverdue ? Colors.textRed() : Colors.textLight()}}>

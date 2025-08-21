@@ -94,12 +94,17 @@ class WorkspaceClientFactory:
                 host=host,
                 client_id=oauth_client_id,
                 client_secret=oauth_client_secret,
-                credentials_provider=oauth_service_principal,
-                **product_info,
+                credentials_strategy=oauth_service_principal,
+                **product_info,  # pyright: ignore[reportArgumentType]
             )
         elif auth_type == AuthTypeEnum.PAT:
             host = self._resolve_host(host)
-            c = Config(host=host, token=token, credentials_provider=pat_auth, **product_info)
+            c = Config(
+                host=host,
+                token=token,
+                credentials_strategy=pat_auth,
+                **product_info,  # pyright: ignore[reportArgumentType]
+            )
         elif auth_type == AuthTypeEnum.AZURE_CLIENT_SECRET:
             host = self._resolve_host(host)
             c = Config(
@@ -107,8 +112,8 @@ class WorkspaceClientFactory:
                 azure_client_id=azure_client_id,
                 azure_client_secret=azure_client_secret,
                 azure_tenant_id=azure_tenant_id,
-                credentials_provider=azure_service_principal,
-                **product_info,
+                credentials_strategy=azure_service_principal,
+                **product_info,  # pyright: ignore[reportArgumentType]
             )
         elif auth_type == AuthTypeEnum.DEFAULT:
             # Can be used to automatically read credentials from environment or ~/.databrickscfg file. This is common
@@ -116,11 +121,19 @@ class WorkspaceClientFactory:
             if host is not None:
                 # This allows for explicit override of the host, while letting other credentials be read from the
                 # environment or ~/.databrickscfg file
-                c = Config(host=host, credentials_provider=DefaultCredentials(), **product_info)  # type: ignore  # (bad stubs)
+                c = Config(
+                    host=host,
+                    credentials_strategy=DefaultCredentials(),  # type: ignore
+                    **product_info,  # pyright: ignore[reportArgumentType]
+                )
             else:
                 # The initialization machinery in the Config object will look for the host and other auth info in the
                 # environment, as long as no values are provided for those attributes (including None)
-                c = Config(credentials_provider=DefaultCredentials(), **product_info)  # type: ignore  # (bad stubs)
+                c = Config(
+                    host=host,
+                    credentials_strategy=DefaultCredentials(),  # type: ignore
+                    **product_info,  # pyright: ignore[reportArgumentType]
+                )
         else:
             raise ValueError(f"Unexpected auth type {auth_type}")
         self.config = c

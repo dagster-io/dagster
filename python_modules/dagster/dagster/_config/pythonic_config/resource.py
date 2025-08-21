@@ -15,11 +15,12 @@ from typing import (  # noqa: UP035
 )
 
 from dagster_shared.dagster_model.pydantic_compat_layer import model_fields
+from dagster_shared.error import DagsterError
 from pydantic import BaseModel
 from typing_extensions import TypeAlias, TypeGuard, get_args, get_origin
 
 import dagster._check as check
-from dagster._annotations import deprecated
+from dagster._annotations import deprecated, public
 from dagster._config.field import Field as DagsterField
 from dagster._config.field_utils import config_dictionary_from_values
 from dagster._config.pythonic_config.attach_other_object_to_context import (
@@ -50,12 +51,9 @@ from dagster._core.definitions.resource_definition import (
     has_at_least_one_parameter,
 )
 from dagster._core.definitions.resource_requirement import ResourceRequirement
-from dagster._core.errors import (
-    DagsterError,
-    DagsterInvalidConfigError,
-    DagsterInvalidDefinitionError,
-)
+from dagster._core.errors import DagsterInvalidConfigError, DagsterInvalidDefinitionError
 from dagster._core.execution.context.init import InitResourceContext, build_init_resource_context
+from dagster._core.storage.io_manager import IOManagerDefinition
 from dagster._record import record
 from dagster._utils.cached_method import cached_method
 from dagster._utils.typing_api import is_closed_python_optional_type
@@ -180,7 +178,7 @@ class ConfigurableResourceFactory(
 
     * An existing class from a third-party library that the user does not control.
     * A complex class that requires substantial internal state management or itself requires arguments beyond its config values.
-    * A class with expensive initialization that should not be invoked on code location load, but rather lazily on first use in an op or asset during a run.
+    * A class with expensive initialization that should not be invoked on project load, but rather lazily on first use in an op or asset during a run.
     * A class that you desire to be a plain Python class, rather than a Pydantic class, for whatever reason.
 
     This class is a subclass of both :py:class:`ResourceDefinition` and :py:class:`Config`, and
@@ -591,6 +589,7 @@ class ConfigurableResourceFactory(
             yield value
 
 
+@public
 class ConfigurableResource(ConfigurableResourceFactory[TResValue]):
     """Base class for Dagster resources that utilize structured config.
 
@@ -629,7 +628,7 @@ class ConfigurableResource(ConfigurableResourceFactory[TResValue]):
     .. code-block:: python
 
         class WriterResource(ConfigurableResource):
-            str: prefix
+            prefix: str
 
             def create_resource(self, context: InitResourceContext) -> Writer:
                 # Writer is pre-existing class defined else
@@ -1042,3 +1041,39 @@ class PartialResourceDependencyRequirement(ResourceRequirement):
                 f"Failed to resolve resource nested at {self.class_name}.{self.attr_name}. "
                 "Any partially configured, nested resources must be provided as a top level resource."
             )
+
+
+def _get_class_name(cls: type) -> str:
+    """Returns the fully qualified class name of the given class."""
+    return str(cls)[8:-2]
+
+
+def get_resource_type_name(resource: ResourceDefinition) -> str:
+    """Returns a string that can be used to identify the type of a resource.
+    For class-based resources, this is the fully qualified class name.
+    For Pythonic resources, this is the module name and resource function name.
+    """
+    from dagster._config.pythonic_config.io_manager import (
+        ConfigurableIOManagerFactoryResourceDefinition,
+    )
+
+    if type(resource) in (ResourceDefinition, IOManagerDefinition):
+        original_resource_fn = (
+            resource._hardcoded_resource_type  # noqa: SLF001
+            if resource._hardcoded_resource_type  # noqa: SLF001
+            else resource.resource_fn
+        )
+        module_name = check.not_none(inspect.getmodule(original_resource_fn)).__name__
+        resource_type = f"{module_name}.{original_resource_fn.__name__}"
+    # if it's a Pythonic resource, get the underlying Pythonic class name
+    elif isinstance(
+        resource,
+        (
+            ConfigurableResourceFactoryResourceDefinition,
+            ConfigurableIOManagerFactoryResourceDefinition,
+        ),
+    ):
+        resource_type = _get_class_name(resource.configurable_resource_cls)
+    else:
+        resource_type = _get_class_name(type(resource))
+    return resource_type

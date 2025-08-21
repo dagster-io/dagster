@@ -29,6 +29,7 @@ from dagster._core.definitions.metadata import (
     MetadataValue,
     TableColumnLineageMetadataValue,
 )
+from dagster._core.definitions.metadata.metadata_value import ObjectMetadataValue
 from dagster._core.definitions.metadata.source_code import LocalFileCodeReference
 from dagster._core.events import (
     DagsterEventType,
@@ -37,9 +38,12 @@ from dagster._core.events import (
     StepExpectationResultData,
 )
 from dagster._core.events.log import EventLogEntry
+from dagster._core.storage.event_log.base import EventLogConnection
 
 if TYPE_CHECKING:
-    from dagster._core.definitions.asset_check_evaluation import AssetCheckEvaluationPlanned
+    from dagster._core.definitions.asset_checks.asset_check_evaluation import (
+        AssetCheckEvaluationPlanned,
+    )
     from dagster._core.execution.plan.inputs import StepInputData
     from dagster._core.execution.plan.outputs import StepOutputData
 
@@ -209,6 +213,9 @@ def iterate_metadata_entries(metadata: Mapping[str, MetadataValue]) -> Iterator[
             yield GrapheneTimestampMetadataEntry(label=key, timestamp=value.value)
         elif isinstance(value, PoolMetadataValue):
             yield GraphenePoolMetadataEntry(label=key, pool=value.pool)
+        elif isinstance(value, ObjectMetadataValue):
+            # x-process available value is just class name, so treat as text
+            yield GrapheneTextMetadataEntry(label=key, text=value.value)
         else:
             # skip rest for now
             check.not_implemented(f"{type(value)} unsupported metadata entry for now")
@@ -240,7 +247,9 @@ def from_dagster_event_record(event_record: EventLogEntry, pipeline_name: str) -
         GrapheneExecutionStepSuccessEvent,
         GrapheneExecutionStepUpForRetryEvent,
         GrapheneExpectationResult,
+        GrapheneFailedToMaterializeEvent,
         GrapheneHandledOutputEvent,
+        GrapheneHealthChangedEvent,
         GrapheneHookCompletedEvent,
         GrapheneHookErroredEvent,
         GrapheneHookSkippedEvent,
@@ -309,12 +318,17 @@ def from_dagster_event_record(event_record: EventLogEntry, pipeline_name: str) -
         return GrapheneObservationEvent(
             event=event_record,
         )
+    elif dagster_event.event_type == DagsterEventType.ASSET_FAILED_TO_MATERIALIZE:
+        return GrapheneFailedToMaterializeEvent(event=event_record)
+    elif dagster_event.event_type == DagsterEventType.ASSET_HEALTH_CHANGED:
+        return GrapheneHealthChangedEvent(event=event_record)
     elif dagster_event.event_type == DagsterEventType.ASSET_MATERIALIZATION_PLANNED:
         return GrapheneAssetMaterializationPlannedEvent(event=event_record)
     elif dagster_event.event_type == DagsterEventType.STEP_EXPECTATION_RESULT:
         data = cast("StepExpectationResultData", dagster_event.event_specific_data)
         return GrapheneStepExpectationResultEvent(
-            expectation_result=GrapheneExpectationResult(data.expectation_result), **basic_params
+            expectation_result=GrapheneExpectationResult(data.expectation_result),
+            **basic_params,
         )
     elif dagster_event.event_type == DagsterEventType.STEP_FAILURE:
         data = dagster_event.step_failure_data
@@ -513,6 +527,22 @@ def from_event_record(event_record: EventLogEntry, pipeline_name: str) -> Any:
         return from_dagster_event_record(event_record, pipeline_name)
     else:
         return GrapheneLogMessageEvent(**construct_basic_params(event_record))
+
+
+def get_graphene_events_from_records_connection(
+    instance, connection: EventLogConnection, job_name: str
+):
+    show_failed_to_materialize = instance.can_read_asset_failure_events()
+    events = []
+    for el_record in connection.records:
+        if (
+            show_failed_to_materialize
+            or el_record.event_log_entry.dagster_event_type
+            != DagsterEventType.ASSET_FAILED_TO_MATERIALIZE
+        ):
+            events.append(from_event_record(el_record.event_log_entry, job_name))
+
+    return events
 
 
 def construct_basic_params(event_record: EventLogEntry) -> Any:

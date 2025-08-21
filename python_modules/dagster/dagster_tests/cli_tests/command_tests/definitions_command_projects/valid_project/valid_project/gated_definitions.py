@@ -1,12 +1,12 @@
 import os
 
-from dagster import Definitions, asset, define_asset_job
+import dagster as dg
 
 if os.getenv("DAGSTER_IS_DEFS_VALIDATION_CLI"):
 
-    @asset
+    @dg.asset
     def my_gated_asset() -> None: ...
 
-    my_gated_job = define_asset_job(name="my_gated_job", selection="my_gated_asset")
+    my_gated_job = dg.define_asset_job(name="my_gated_job", selection="my_gated_asset")
 
-    defs = Definitions(assets=[my_gated_asset], jobs=[my_gated_job])
+    defs = dg.Definitions(assets=[my_gated_asset], jobs=[my_gated_job])

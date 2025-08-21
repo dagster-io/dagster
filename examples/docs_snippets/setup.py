@@ -32,6 +32,7 @@ setup(
             "pandera",
             "pexpect",
             "plotly",
+            "pyspark",
             "pytest",
             "requests",
             "scikit-learn",
@@ -39,6 +40,8 @@ setup(
             "slack_sdk",
             "syrupy",
             "xgboost",
+            "apache-airflow<3.0.0",
+            "pytest-httpserver",
         ],
     },
 )

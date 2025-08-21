@@ -1,11 +1,9 @@
 import {Box, Button, Icon, Skeleton, Tooltip} from '@dagster-io/ui-components';
 import {useVirtualizer} from '@tanstack/react-virtual';
 import * as React from 'react';
-import {FeatureFlag} from 'shared/app/FeatureFlags.oss';
 
 import {AssetSidebarNode} from './AssetSidebarNode';
 import {FolderNodeType, getDisplayName, nodePathKey} from './util';
-import {featureEnabled} from '../../app/Flags';
 import {LayoutContext} from '../../app/LayoutProvider';
 import {AssetKey} from '../../assets/types';
 import {useQueryAndLocalStoragePersistedState} from '../../hooks/useQueryAndLocalStoragePersistedState';
@@ -73,11 +71,7 @@ export const AssetGraphExplorerSidebar = React.memo(
           const path = JSON.parse(id);
           let nextOpsQuery = explorerPath.opsQuery.trim();
           if (explorerPath.opsQuery.trim()) {
-            if (featureEnabled(FeatureFlag.flagSelectionSyntax)) {
-              nextOpsQuery = `key:\"${tokenForAssetKey({path})}\"`;
-            } else {
-              nextOpsQuery = `\"${tokenForAssetKey({path})}\"`;
-            }
+            nextOpsQuery = `key:\"${tokenForAssetKey({path})}\"`;
           } else {
             nextOpsQuery = '*';
           }
@@ -126,7 +120,9 @@ export const AssetGraphExplorerSidebar = React.memo(
           )
           .sort((a, b) =>
             COLLATOR.compare(
+              // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
               getDisplayName(graphData.nodes[a]!),
+              // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
               getDisplayName(graphData.nodes[b]!),
             ),
           ),
@@ -164,9 +160,11 @@ export const AssetGraphExplorerSidebar = React.memo(
           locationName: codeLocation,
           groups: {},
         };
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
         if (!codeLocationNodes[codeLocation]!.groups[groupId]!) {
           groupsCount += 1;
         }
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
         codeLocationNodes[codeLocation]!.groups[groupId] = codeLocationNodes[codeLocation]!.groups[
           groupId
         ] || {
@@ -175,13 +173,19 @@ export const AssetGraphExplorerSidebar = React.memo(
           repositoryName,
           repositoryLocationName: locationName,
         };
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
         codeLocationNodes[codeLocation]!.groups[groupId]!.assets.push(node);
       });
       const codeLocationsCount = Object.keys(codeLocationNodes).length;
       Object.entries(codeLocationNodes)
         .sort(([_1, a], [_2, b]) => COLLATOR.compare(a.locationName, b.locationName))
         .forEach(([locationName, locationNode]) => {
-          folderNodes.push({locationName, id: locationName, level: 1});
+          folderNodes.push({
+            locationName,
+            id: locationName,
+            level: 1,
+            openAlways: codeLocationsCount === 1,
+          });
           if (openNodes.has(locationName) || codeLocationsCount === 1) {
             Object.entries(locationNode.groups)
               .sort(([_1, a], [_2, b]) => COLLATOR.compare(a.groupName, b.groupName))
@@ -324,6 +328,7 @@ export const AssetGraphExplorerSidebar = React.memo(
             values={React.useMemo(() => {
               return allAssetKeys.map((key) => ({
                 value: JSON.stringify(key.path),
+                // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
                 label: key.path[key.path.length - 1]!,
               }));
             }, [allAssetKeys])}
@@ -352,6 +357,7 @@ export const AssetGraphExplorerSidebar = React.memo(
                   indexOfLastSelectedNodeRef.current = nextIndex;
                   e.preventDefault();
                   const nextNode =
+                    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
                     renderedNodes[(nextIndex + renderedNodes.length) % renderedNodes.length]!;
                   setSelectedNode(nextNode);
                   selectNode(e, nextNode.id);
@@ -375,44 +381,48 @@ export const AssetGraphExplorerSidebar = React.memo(
             >
               <Inner $totalHeight={totalHeight}>
                 {items.map(({index, key, size, start}) => {
+                  // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
                   const node = renderedNodes[index]!;
-                  const isCodelocationNode = 'locationName' in node;
+                  const isCodeLocationNode = 'locationName' in node;
                   const isGroupNode = 'groupNode' in node;
-                  const row = !isCodelocationNode && !isGroupNode ? graphData.nodes[node.id] : node;
+                  const row = !isCodeLocationNode && !isGroupNode ? graphData.nodes[node.id] : node;
                   const isSelected =
                     selectedNode?.id === node.id || selectedNodes.includes(row as GraphNode);
                   return (
-                    <Row $height={size} $start={start} key={key} data-key={key}>
-                      <AssetSidebarNode
-                        isOpen={openNodes.has(nodePathKey(node))}
-                        fullAssetGraphData={fullAssetGraphData}
-                        node={row!}
-                        level={node.level}
-                        isLastSelected={lastSelectedNode?.id === node.id}
-                        isSelected={isSelected}
-                        toggleOpen={() => {
-                          setOpenNodes((nodes) => {
-                            const openNodes = new Set(nodes);
-                            const isOpen = openNodes.has(nodePathKey(node));
-                            if (isOpen) {
-                              openNodes.delete(nodePathKey(node));
-                            } else {
-                              openNodes.add(nodePathKey(node));
-                            }
-                            return openNodes;
-                          });
-                        }}
-                        selectNode={(e, id) => {
-                          selectNode(e, id);
-                        }}
-                        selectThisNode={(e) => {
-                          setSelectedNode(node);
-                          selectNode(e, node.id);
-                        }}
-                        explorerPath={explorerPath}
-                        onChangeExplorerPath={onChangeExplorerPath}
-                        onFilterToGroup={onFilterToGroup}
-                      />
+                    <Row $height={size} $start={start} key={key}>
+                      <div data-index={index} ref={rowVirtualizer.measureElement}>
+                        <AssetSidebarNode
+                          isOpen={openNodes.has(nodePathKey(node))}
+                          fullAssetGraphData={fullAssetGraphData}
+                          // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+                          node={row!}
+                          level={node.level}
+                          isLastSelected={lastSelectedNode?.id === node.id}
+                          isSelected={isSelected}
+                          toggleOpen={() => {
+                            setOpenNodes((nodes) => {
+                              const openNodes = new Set(nodes);
+                              const isOpen = openNodes.has(nodePathKey(node));
+                              if (isOpen) {
+                                openNodes.delete(nodePathKey(node));
+                              } else {
+                                openNodes.add(nodePathKey(node));
+                              }
+                              return openNodes;
+                            });
+                          }}
+                          selectNode={(e, id) => {
+                            selectNode(e, id);
+                          }}
+                          selectThisNode={(e) => {
+                            setSelectedNode(node);
+                            selectNode(e, node.id);
+                          }}
+                          explorerPath={explorerPath}
+                          onChangeExplorerPath={onChangeExplorerPath}
+                          onFilterToGroup={onFilterToGroup}
+                        />
+                      </div>
                     </Row>
                   );
                 })}

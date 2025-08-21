@@ -13,7 +13,7 @@ import pick from 'lodash/pick';
 import uniq from 'lodash/uniq';
 import React, {useContext, useState} from 'react';
 import {Link} from 'react-router-dom';
-import {FeatureFlag} from 'shared/app/FeatureFlags.oss';
+import {observeEnabled} from 'shared/app/observeEnabled.oss';
 import {MaterializeButton} from 'shared/assets/MaterializeButton.oss';
 import {useLaunchWithTelemetry} from 'shared/launchpad/useLaunchWithTelemetry.oss';
 
@@ -45,7 +45,6 @@ import {CloudOSSContext} from '../app/CloudOSSContext';
 import {showCustomAlert} from '../app/CustomAlertProvider';
 import {useConfirmation} from '../app/CustomConfirmationProvider';
 import {IExecutionSession} from '../app/ExecutionSessionStorage';
-import {featureEnabled} from '../app/Flags';
 import {DEFAULT_DISABLED_REASON} from '../app/Permissions';
 import {
   displayNameForAssetKey,
@@ -113,7 +112,10 @@ type Asset =
       isObservable: boolean;
     };
 
-export type AssetsInScope = {all: Asset[]; skipAllTerm?: boolean} | {selected: Asset[]};
+export type AssetsInScope =
+  | {all: Asset[]; skipAllTerm?: boolean}
+  | {selected: Asset[]}
+  | {single: Asset | null};
 
 type LaunchOption = {
   assetKeys: AssetKey[];
@@ -134,8 +136,11 @@ export const ERROR_INVALID_ASSET_SELECTION =
   ` the same code location and share a partition space, or form a connected` +
   ` graph in which root assets share the same partitioning.`;
 
-function materializationDisabledReason(all: Asset[], materializable: Asset[]) {
+function materializationDisabledReason(all: Asset[], materializable: Asset[], isSingle?: boolean) {
   if (!all.length) {
+    if (isSingle) {
+      return 'Asset does not have a definition';
+    }
     return 'Select one or more assets to materialize';
   }
   if (all.some((a) => !a.hasMaterializePermission)) {
@@ -153,8 +158,11 @@ function materializationDisabledReason(all: Asset[], materializable: Asset[]) {
   return null;
 }
 
-function observationDisabledReason(all: Asset[], observable: Asset[]) {
+function observationDisabledReason(all: Asset[], observable: Asset[], isSingle?: boolean) {
   if (!all.length) {
+    if (isSingle) {
+      return 'Asset does not have a definition';
+    }
     return 'Select one or more assets to observe';
   }
   if (all.some((a) => !a.hasMaterializePermission)) {
@@ -168,7 +176,11 @@ function observationDisabledReason(all: Asset[], observable: Asset[]) {
 
 export function optionsForExecuteButton(
   assets: Asset[],
-  {skipAllTerm, isSelection}: {skipAllTerm?: boolean; isSelection?: boolean},
+  {
+    skipAllTerm,
+    isSelection,
+    isSingle,
+  }: {skipAllTerm?: boolean; isSelection?: boolean; isSingle?: boolean},
 ): {materializeOption: LaunchOption; observeOption: LaunchOption} {
   const materializable = assets.filter((a) => !a.isObservable && a.isExecutable);
   const observable = assets.filter((a) => a.isObservable && a.isExecutable);
@@ -177,12 +189,8 @@ export function optionsForExecuteButton(
   return {
     materializeOption: {
       assetKeys: materializable.map((a) => a.assetKey),
-      disabledReason: materializationDisabledReason(assets, materializable),
-      icon: (
-        <Icon
-          name={featureEnabled(FeatureFlag.flagUseNewObserveUIs) ? 'execute' : 'materialization'}
-        />
-      ),
+      disabledReason: materializationDisabledReason(assets, materializable, isSingle),
+      icon: <Icon name={observeEnabled() ? 'execute' : 'materialization'} />,
       label: isSelection
         ? `Materialize selected${countIfPluralOrNotAll(materializable, assets)}${ellipsis}`
         : materializable.length > 1 && !skipAllTerm
@@ -191,7 +199,7 @@ export function optionsForExecuteButton(
     },
     observeOption: {
       assetKeys: observable.map((a) => a.assetKey),
-      disabledReason: observationDisabledReason(assets, observable),
+      disabledReason: observationDisabledReason(assets, observable, isSingle),
       icon: <Icon name="observation" />,
       label: isSelection
         ? `Observe selected${countIfPluralOrNotAll(observable, assets)}`
@@ -242,14 +250,24 @@ export const LaunchAssetExecutionButton = ({
   const [assets, {materializeOption, observeOption}] =
     'selected' in scope
       ? [scope.selected, optionsForExecuteButton(scope.selected, {isSelection: true})]
-      : [scope.all, optionsForExecuteButton(scope.all, {skipAllTerm: scope.skipAllTerm})];
+      : 'single' in scope
+        ? [
+            scope.single ? [scope.single] : [],
+            optionsForExecuteButton(scope.single ? [scope.single] : [], {isSingle: true}),
+          ]
+        : [scope.all, optionsForExecuteButton(scope.all, {skipAllTerm: scope.skipAllTerm})];
 
   const [firstOption, firstAction, secondOption, secondAction] =
     materializeOption.disabledReason && !observeOption.disabledReason
       ? [observeOption, observe.onClick, materializeOption, materialize.onClick]
       : [materializeOption, materialize.onClick, observeOption, observe.onClick];
 
-  if (firstOption.disabledReason) {
+  if (
+    firstOption.disabledReason &&
+    (!additionalDropdownOptions ||
+      !additionalDropdownOptions.some((option) => !('disabled' in option) || !option.disabled))
+  ) {
+    // If all options are disabled, just show the button with no dropdown.
     return (
       <Tooltip content={firstOption.disabledReason} position="bottom-right">
         <Button
@@ -264,6 +282,8 @@ export const LaunchAssetExecutionButton = ({
     );
   }
 
+  const canLaunch = firstOption.assetKeys.length > 0 && !firstOption.disabledReason;
+
   return (
     <>
       <CalculateUnsyncedDialog
@@ -274,7 +294,11 @@ export const LaunchAssetExecutionButton = ({
       />
       <Box flex={{alignItems: 'center'}}>
         <Tooltip
-          content="Shift+click to add configuration"
+          content={
+            firstOption.disabledReason
+              ? firstOption.disabledReason
+              : 'Shift+click to add configuration'
+          }
           placement="left"
           useDisabledButtonTooltipFix
         >
@@ -282,7 +306,7 @@ export const LaunchAssetExecutionButton = ({
             <UnstyledButton
               style={{padding: 4}}
               onClick={(e) => firstAction(firstOption.assetKeys, e)}
-              disabled={!firstOption.assetKeys.length}
+              disabled={!canLaunch}
             >
               {firstOption.icon}
             </UnstyledButton>
@@ -296,18 +320,12 @@ export const LaunchAssetExecutionButton = ({
                 borderBottomRightRadius: 0,
                 borderRight: `1px solid rgba(255,255,255,0.2)`,
               }}
-              disabled={!firstOption.assetKeys.length}
+              disabled={!canLaunch}
               icon={
                 loading ? (
                   <Spinner purpose="body-text" />
                 ) : (
-                  <Icon
-                    name={
-                      featureEnabled(FeatureFlag.flagUseNewObserveUIs)
-                        ? 'execute'
-                        : 'materialization'
-                    }
-                  />
+                  <Icon name={observeEnabled() ? 'execute' : 'materialization'} />
                 )
               }
             >
@@ -346,13 +364,15 @@ export const LaunchAssetExecutionButton = ({
                     onClick={() => setShowCalculatingUnsyncedDialog(true)}
                   />
                 ) : null}
-                <MenuItem
-                  text="Open launchpad"
-                  icon="open_in_new"
-                  onClick={(e: React.MouseEvent<any>) => {
-                    materialize.onClick(firstOption.assetKeys, e, true);
-                  }}
-                />
+                {canLaunch ? (
+                  <MenuItem
+                    text="Open launchpad"
+                    icon="open_in_new"
+                    onClick={(e: React.MouseEvent<any>) => {
+                      materialize.onClick(firstOption.assetKeys, e, true);
+                    }}
+                  />
+                ) : null}
                 {additionalDropdownOptions?.map((option) => {
                   if (!('label' in option)) {
                     return option;
@@ -688,6 +708,7 @@ function getAnchorAssetForPartitionMappedBackfill(assets: LaunchAssetExecutionAs
   if (
     first &&
     !partitionedRoots.every((r) =>
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
       partitionDefinitionsEqual(first.partitionDefinition!, r.partitionDefinition!),
     )
   ) {

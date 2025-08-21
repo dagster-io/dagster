@@ -1,1 +1,1 @@
-dg init .
+create-dagster project .

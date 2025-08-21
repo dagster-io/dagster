@@ -31,7 +31,7 @@ export const LogsScrollingTable = (props: Props) => {
   const parentRef = useRef<HTMLDivElement>(null);
   const pinToBottom = useRef(true);
 
-  const {filteredNodes, textMatchNodes} = filterLogs(logs, filter, filterStepKeys);
+  const filteredNodes = filterLogs(logs, filter, filterStepKeys);
 
   const virtualizer = useVirtualizer({
     count: filteredNodes.length,
@@ -104,10 +104,9 @@ export const LogsScrollingTable = (props: Props) => {
     return (
       <Inner $totalHeight={totalHeight}>
         {items.map(({index, key, size, start}) => {
+          // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
           const node = filteredNodes[index]!;
-          const textMatch = textMatchNodes.includes(node);
-          const focusedTimeMatch = Number(node.timestamp) === filter.focusedTime;
-          const highlighted = textMatch || focusedTimeMatch;
+          const highlighted = Number(node.timestamp) === filter.focusedTime;
 
           const row =
             node.__typename === 'LogMessageEvent' ? (

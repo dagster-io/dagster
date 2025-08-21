@@ -1,9 +1,11 @@
 from abc import ABC, abstractmethod
 from collections.abc import Mapping, Sequence
+from datetime import datetime
 from typing import TYPE_CHECKING, Optional, Union
 
 from typing_extensions import TypedDict
 
+from dagster._annotations import public
 from dagster._core.events import DagsterEvent
 from dagster._core.execution.backfill import BulkActionsFilter, BulkActionStatus, PartitionBackfill
 from dagster._core.execution.telemetry import RunTelemetryData
@@ -23,7 +25,7 @@ from dagster._daemon.types import DaemonHeartbeat
 from dagster._utils import PrintFn
 
 if TYPE_CHECKING:
-    from dagster._core.remote_representation.origin import RemoteJobOrigin
+    from dagster._core.remote_origin import RemoteJobOrigin
 
 
 class RunGroupInfo(TypedDict):
@@ -31,6 +33,7 @@ class RunGroupInfo(TypedDict):
     runs: Sequence[DagsterRun]
 
 
+@public
 class RunStorage(ABC, MayHaveInstanceWeakref[T_DagsterInstance], DaemonCursorStorage):
     """Abstract base class for storing pipeline run history.
 
@@ -55,7 +58,15 @@ class RunStorage(ABC, MayHaveInstanceWeakref[T_DagsterInstance], DaemonCursorSto
         """
 
     @abstractmethod
-    def handle_run_event(self, run_id: str, event: DagsterEvent) -> None:
+    def add_historical_run(
+        self, dagster_run: DagsterRun, run_creation_time: datetime
+    ) -> DagsterRun:
+        """Add a historical run to storage."""
+
+    @abstractmethod
+    def handle_run_event(
+        self, run_id: str, event: DagsterEvent, update_timestamp: Optional[datetime] = None
+    ) -> None:
         """Update run storage in accordance to a pipeline run related DagsterEvent.
 
         Args:

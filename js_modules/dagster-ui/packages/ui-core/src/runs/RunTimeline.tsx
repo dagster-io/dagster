@@ -13,6 +13,7 @@ import {
   useViewport,
 } from '@dagster-io/ui-components';
 import {useVirtualizer} from '@tanstack/react-virtual';
+import dayjs from 'dayjs';
 import * as React from 'react';
 import {useMemo} from 'react';
 import {Link} from 'react-router-dom';
@@ -38,6 +39,8 @@ import {RepoRow} from '../workspace/VirtualizedWorkspaceTable';
 import {repoAddressAsURLString} from '../workspace/repoAddressAsString';
 import {repoAddressFromPath} from '../workspace/repoAddressFromPath';
 import {RepoAddress} from '../workspace/types';
+
+import '../util/dayjsExtensions';
 
 const ROW_HEIGHT = 32;
 const TIME_HEADER_HEIGHT = 32;
@@ -96,6 +99,7 @@ export const RunTimeline = (props: Props) => {
           const {repoAddress} = row;
           const repoKey = repoAddressAsURLString(repoAddress);
           accum[repoKey] = accum[repoKey] || [];
+          // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
           accum[repoKey]!.push(row);
           return accum;
         },
@@ -156,6 +160,7 @@ export const RunTimeline = (props: Props) => {
 
   const expandedRepos = repoOrder.filter((repoKey) => expandedKeys.includes(repoKey));
   const expandedJobCount = expandedRepos.reduce(
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     (accum, repoKey) => accum + buckets[repoKey]!.length,
     0,
   );
@@ -184,7 +189,9 @@ export const RunTimeline = (props: Props) => {
           <Container ref={parentRef}>
             <Inner $totalHeight={totalHeight}>
               {items.map(({index, key, size, start}) => {
+                // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
                 const row: RowType = flattened[index]!;
+                // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
                 const type = row!.type;
                 if (type === 'header') {
                   const repoKey = repoAddressAsURLString(row.repoAddress);
@@ -197,6 +204,7 @@ export const RunTimeline = (props: Props) => {
                       top={start}
                       repoAddress={row.repoAddress}
                       isDuplicateRepoName={!!(repoName && duplicateRepoNames.has(repoName))}
+                      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
                       rows={buckets[repoKey]!}
                       onToggle={onToggle}
                       onToggleAll={onToggleAll}
@@ -627,7 +635,7 @@ const RunTimelineRow = ({
   return (
     <TimelineRowContainer $height={height} $start={top}>
       <RowName>
-        <RunTimelineRowIcon type={row.type} />
+        <RunTimelineRowIcon type={row.runs[0]?.externalJobSource ? 'airflow' : row.type} />
         <div style={{width: LABEL_WIDTH}}>
           {row.path ? (
             <Link to={row.path}>
@@ -646,6 +654,7 @@ const RunTimelineRow = ({
           const runCount = runs.length;
           return (
             <RunChunk
+              // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
               key={batch.runs[0]!.id}
               $background={mergeStatusToBackground(batch.runs)}
               $multiple={runCount > 1}
@@ -809,7 +818,7 @@ interface RunHoverContentProps {
   batch: RunBatch<TimelineRun>;
 }
 
-const RunHoverContent = (props: RunHoverContentProps) => {
+export const RunHoverContent = (props: RunHoverContentProps) => {
   const {row, batch} = props;
   const count = batch.runs.length;
   const parentRef = React.useRef<HTMLDivElement | null>(null);
@@ -826,15 +835,16 @@ const RunHoverContent = (props: RunHoverContentProps) => {
   const height = Math.min(count * ROW_HEIGHT, 240);
 
   return (
-    <Box style={{width: '260px'}}>
+    <Box style={{width: '300px'}}>
       <Box padding={12} border="bottom" flex={{direction: 'row', gap: 8, alignItems: 'center'}}>
-        <RunTimelineRowIcon type={row.type} />
+        <RunTimelineRowIcon type={row.runs[0]?.externalJobSource ? 'airflow' : row.type} />
         <HoverContentRowName>{row.name}</HoverContentRowName>
       </Box>
       <div style={{height, overflowY: 'hidden'}}>
         <Container ref={parentRef}>
           <Inner $totalHeight={totalHeight}>
             {items.map(({index, key, size, start}) => {
+              // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
               const run = batch.runs[index]!;
               return (
                 <Row key={key} $height={size} $start={start}>
@@ -849,21 +859,21 @@ const RunHoverContent = (props: RunHoverContentProps) => {
                       {run.status === 'SCHEDULED' ? (
                         'Scheduled'
                       ) : (
-                        <Link to={`/runs/${run.id}`}>
-                          <Mono>{run.id.slice(0, 8)}</Mono>
-                        </Link>
+                        <Link to={`/runs/${run.id}`}>{dayjs(run.startTime).fromNow()}</Link>
                       )}
                     </Box>
-                    <Mono>
+                    <div>
                       {run.status === 'SCHEDULED' ? (
                         <TimestampDisplay timestamp={run.startTime / 1000} />
                       ) : (
-                        <TimeElapsed
-                          startUnix={run.startTime / 1000}
-                          endUnix={run.endTime / 1000}
-                        />
+                        <Mono>
+                          <TimeElapsed
+                            startUnix={run.startTime / 1000}
+                            endUnix={run.endTime / 1000}
+                          />
+                        </Mono>
                       )}
-                    </Mono>
+                    </div>
                   </Box>
                 </Row>
               );

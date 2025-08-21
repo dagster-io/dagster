@@ -24,7 +24,7 @@ except ImportError:
 from dagster_deltalake.io_manager import DELTA_DATE_FORMAT, DELTA_DATETIME_FORMAT, TableConnection
 
 if TYPE_CHECKING:
-    from dagster._core.definitions.time_window_partitions import TimeWindow
+    from dagster._core.definitions.partitions.utils import TimeWindow
 
 T = TypeVar("T")
 ArrowTypes: TypeAlias = Union[pa.Table, pa.RecordBatchReader]

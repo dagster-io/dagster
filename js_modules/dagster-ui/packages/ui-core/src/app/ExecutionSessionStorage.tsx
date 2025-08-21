@@ -4,11 +4,12 @@ import * as React from 'react';
 import {AppContext} from './AppContext';
 import {AssetCheck, AssetKeyInput} from '../graphql/types';
 import {useSetStateUpdateCallback} from '../hooks/useSetStateUpdateCallback';
-import {getJSONForKey, useStateWithStorage} from '../hooks/useStateWithStorage';
+import {useStateWithStorage} from '../hooks/useStateWithStorage';
 import {
   LaunchpadSessionPartitionSetsFragment,
   LaunchpadSessionPipelineFragment,
 } from '../launchpad/types/LaunchpadAllowedRoot.types';
+import {getJSONForKey} from '../util/getJSONForKey';
 import {buildRepoAddress} from '../workspace/buildRepoAddress';
 import {RepoAddress} from '../workspace/types';
 
@@ -81,6 +82,7 @@ export function applyRemoveSession(data: IStorageData, key: string) {
   delete next.sessions[key];
   if (next.current === key) {
     const remaining = Object.keys(next.sessions);
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     next.current = remaining[idx] || remaining[idx - 1] || remaining[0]!;
   }
   return next;
@@ -91,6 +93,7 @@ export function applyChangesToSession(
   key: string,
   changes: IExecutionSessionChanges,
 ) {
+  // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
   const saved = data.sessions[key]!;
   if (changes.runConfigYaml && changes.runConfigYaml !== saved.runConfigYaml && saved.runId) {
     changes.configChangedSinceRun = true;
@@ -156,6 +159,7 @@ const buildValidator =
     }
 
     if (!data.sessions[data.current]) {
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
       data.current = Object.keys(data.sessions)[0]!;
     }
 
@@ -217,6 +221,7 @@ export const useInvalidateConfigsForRepo = () => {
           const data: IStorageData | undefined = getJSONForKey(key);
           if (data) {
             const withBase = Object.keys(data.sessions).filter(
+              // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
               (sessionKey) => data.sessions[sessionKey]!.base !== null,
             );
             if (withBase.length) {
@@ -258,9 +263,11 @@ export const useInitialDataForMode = (
       return {
         base: {
           type: 'preset',
+          // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
           presetName: presetsForMode[0]!.name,
           tags: null,
         },
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
         runConfigYaml: presetsForMode[0]!.runConfigYaml,
       };
     }
@@ -269,6 +276,7 @@ export const useInitialDataForMode = (
       return {
         base: {
           type: 'op-job-partition-set',
+          // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
           partitionsSetName: partitionSetsForMode[0]!.name,
           partitionName: null,
           tags: null,

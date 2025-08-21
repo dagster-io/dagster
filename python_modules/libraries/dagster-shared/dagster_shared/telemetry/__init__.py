@@ -10,14 +10,8 @@ from logging.handlers import RotatingFileHandler
 from typing import Callable, NamedTuple, Optional
 
 import click
-import yaml
 
-from dagster_shared.libraries import core_version_from_library_version
 from dagster_shared.version import __version__
-
-OS_DESC = platform.platform()
-OS_PLATFORM = platform.system()
-
 
 MAX_BYTES = 10485760  # 10 MB = 10 * 1024 * 1024 bytes
 
@@ -96,7 +90,14 @@ class TelemetrySettings(NamedTuple):
     run_storage_id: Optional[str]
 
 
-def _get_telemetry_logger() -> logging.Logger:
+def _get_rotating_file_handler(logger: logging.Logger) -> Optional[RotatingFileHandler]:
+    return next(
+        iter(handler for handler in logger.handlers if isinstance(handler, RotatingFileHandler)),
+        None,
+    )
+
+
+def get_telemetry_logger() -> logging.Logger:
     # If a concurrently running process deleted the logging directory since the
     # last action, we need to make sure to re-create the directory
     # (the logger does not do this itself.)
@@ -105,13 +106,17 @@ def _get_telemetry_logger() -> logging.Logger:
     logging_file_path = os.path.join(dagster_home_path, "event.log")
     logger = logging.getLogger("dagster_telemetry_logger")
 
-    # If the file we were writing to has been overwritten, dump the existing logger and re-open the stream.
-    if not os.path.exists(logging_file_path) and len(logger.handlers) > 0:
-        handler = next(iter(logger.handlers))
-        handler.close()
-        logger.removeHandler(handler)
+    # Don't propagate to the root logger
+    logger.propagate = False
 
-    if len(logger.handlers) == 0:
+    # If the file we were writing to has been overwritten, dump the existing handler and re-open the stream.
+    if not os.path.exists(logging_file_path):
+        handler = _get_rotating_file_handler(logger)
+        if handler:
+            handler.close()
+            logger.removeHandler(handler)
+
+    if not _get_rotating_file_handler(logger):
         handler = RotatingFileHandler(
             logging_file_path,
             maxBytes=MAX_BYTES,
@@ -124,8 +129,20 @@ def _get_telemetry_logger() -> logging.Logger:
 
 
 def write_telemetry_log_line(log_line: object) -> None:
-    logger = _get_telemetry_logger()
+    logger = get_telemetry_logger()
     logger.info(json.dumps(log_line))
+
+
+# For use in test teardown
+def cleanup_telemetry_logger() -> None:
+    logger = logging.getLogger("dagster_telemetry_logger")
+
+    handler = _get_rotating_file_handler(logger)
+    if not handler:
+        return
+
+    handler.close()
+    logger.removeHandler(handler)
 
 
 class TelemetryEntry(
@@ -179,6 +196,9 @@ class TelemetryEntry(
         elapsed_time: Optional[str] = None,
         run_storage_id: Optional[str] = None,
     ):
+        OS_DESC = platform.platform()
+        OS_PLATFORM = platform.system()
+
         return super().__new__(
             cls,
             action=action,
@@ -188,7 +208,7 @@ class TelemetryEntry(
             instance_id=instance_id,
             python_version=get_python_version(),
             metadata=metadata or {},
-            dagster_version=core_version_from_library_version(__version__) or "None",
+            dagster_version=__version__ or "None",
             os_desc=OS_DESC,
             os_platform=OS_PLATFORM,
             run_storage_id=run_storage_id or "",
@@ -229,6 +249,8 @@ def get_telemetry_enabled_from_dagster_yaml() -> bool:
     """Lightweight check to see if telemetry is enabled by checking $DAGSTER_HOME/dagster.yaml,
     without needing to load the entire Dagster instance.
     """
+    import yaml
+
     dagster_home_path = dagster_home_if_set()
     if dagster_home_path is None:
         return True
@@ -257,6 +279,8 @@ def get_or_set_instance_id() -> str:
 
 # Gets the instance_id at $DAGSTER_HOME/.telemetry/id.yaml
 def _get_telemetry_instance_id() -> Optional[str]:
+    import yaml
+
     telemetry_id_path = os.path.join(get_or_create_dir_from_dagster_home(TELEMETRY_STR), "id.yaml")
     if not os.path.exists(telemetry_id_path):
         return
@@ -274,8 +298,10 @@ def _get_telemetry_instance_id() -> Optional[str]:
 
 # Sets the instance_id at $DAGSTER_HOME/.telemetry/id.yaml
 def _set_telemetry_instance_id() -> str:
-    click.secho(TELEMETRY_TEXT)
-    click.secho(SLACK_PROMPT)
+    import yaml
+
+    click.secho(TELEMETRY_TEXT, err=True)
+    click.secho(SLACK_PROMPT, err=True)
 
     telemetry_id_path = os.path.join(get_or_create_dir_from_dagster_home(TELEMETRY_STR), "id.yaml")
     instance_id = str(uuid.uuid4())

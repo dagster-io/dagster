@@ -1,88 +1,96 @@
-import {BodyLarge, BodySmall, Box, Colors, MiddleTruncate} from '@dagster-io/ui-components';
-import {BarElement, CategoryScale, Chart as ChartJS, Legend, LinearScale, Tooltip} from 'chart.js';
-import React from 'react';
-import {Bar} from 'react-chartjs-2';
+import {
+  BodyLarge,
+  Box,
+  Button,
+  Icon,
+  Menu,
+  MenuItem,
+  Popover,
+  Spinner,
+} from '@dagster-io/ui-components';
+import {memo, useMemo, useState} from 'react';
 
 import styles from './AssetCatalogTopAssetsChart.module.css';
+import {AssetCatalogTopAssetsList} from './AssetCatalogTopAssetsList';
+import {ReportingUnitType} from '../../insights/types';
 
-ChartJS.register(CategoryScale, LinearScale, BarElement, Tooltip, Legend);
+interface Props {
+  header: string;
+  datasets: {labels: string[]; data: number[]};
+  unitLabel: string;
+  loading: boolean;
+  unitType: ReportingUnitType;
+}
 
-const assets = [
-  'stitch/salesforce/account',
-  'fivetran/linear/team_project',
-  'purina/staging/product__asset_observations',
-  'purina/staging/cloud_product__teams_users',
-  'fivetran/linear/attachment_metadata',
-  'stitch/elementl_cloud_prod/customer_info',
-  'stitch/elementl_cloud_prod/deployment_settings',
-  'stitch/elementl_cloud_prod/users',
-  'stitch/stripe_prod_v3/plans',
-  'stitch/salesforce/account',
-];
+export const AssetCatalogTopAssetsChart = memo(
+  ({header, datasets, unitType, unitLabel, loading}: Props) => {
+    const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc');
 
-const options = {
-  scales: {
-    y: {
-      beginAtZero: true,
-      grid: {color: '#333', borderDash: [4, 4]},
-    },
-    x: {grid: {display: false}, ticks: {display: false}},
-  },
-  plugins: {
-    legend: {display: false},
-  },
-};
+    const {data, labels} = datasets;
 
-export const AssetCatalogTopAssetsChart = React.memo(
-  ({
-    header,
-    datasets,
-    unitType,
-  }: {
-    header: string;
-    datasets: {labels: string[]; data: number[]};
-    unitType: string;
-  }) => {
-    const chartConfig = {
-      labels: datasets.labels,
-      datasets: [
-        {
-          label: unitType,
-          data: datasets.data,
-          backgroundColor: '#b095f9',
-          borderRadius: 0,
-        },
-      ],
-    };
+    const values = useMemo(() => {
+      return labels
+        .map((label, i) => ({
+          label,
+          value: data[i] ?? 0,
+        }))
+        .filter(({value}) => value !== 0)
+        .sort((a, b) => (sortDirection === 'asc' ? a.value - b.value : b.value - a.value));
+    }, [data, labels, sortDirection]);
 
     return (
       <div className={styles.container}>
-        <BodyLarge>{header}</BodyLarge>
-        <Box border="bottom">
-          <Bar data={chartConfig} options={options} />
+        <Box
+          flex={{direction: 'row', gap: 12, justifyContent: 'space-between', alignItems: 'center'}}
+          padding={{bottom: 12, horizontal: 12}}
+        >
+          <BodyLarge>{header}</BodyLarge>
+          {loading ? (
+            <Spinner purpose="body-text" />
+          ) : (
+            <Popover
+              placement="bottom-end"
+              content={
+                <Menu>
+                  <MenuItem
+                    text="Low to high"
+                    icon="sort_asc"
+                    onClick={() => setSortDirection('asc')}
+                    active={sortDirection === 'asc'}
+                  />
+                  <MenuItem
+                    text="High to low"
+                    icon="sort_desc"
+                    onClick={() => setSortDirection('desc')}
+                    active={sortDirection === 'desc'}
+                  />
+                </Menu>
+              }
+            >
+              <Button
+                icon={<Icon name={sortDirection === 'asc' ? 'sort_asc' : 'sort_desc'} />}
+                rightIcon={<Icon name="expand_more" />}
+              >
+                {sortDirection === 'asc' ? 'Low to high' : 'High to low'}
+              </Button>
+            </Popover>
+          )}
         </Box>
-        <div>
-          <Box
-            flex={{direction: 'row', justifyContent: 'space-between', gap: 12}}
-            style={{color: Colors.textLighter()}}
-            border="bottom"
-            padding={{vertical: 8}}
-          >
-            <BodySmall>Asset</BodySmall>
-            <BodySmall>Count</BodySmall>
-          </Box>
-          <div className={styles.table}>
-            {assets.map((asset, i) => (
-              <React.Fragment key={i}>
-                <BodySmall as="div">
-                  <MiddleTruncate text={asset} />
-                </BodySmall>
-                <BodySmall>190</BodySmall>
-              </React.Fragment>
-            ))}
+        {values.length ? (
+          <AssetCatalogTopAssetsList
+            values={values}
+            unitType={unitType}
+            unitLabel={unitLabel}
+            key={sortDirection} // Reset to first page when sort changes
+          />
+        ) : loading ? null : (
+          <div className={styles.emptyState}>
+            No reported events for this metric in this time range.
           </div>
-        </div>
+        )}
       </div>
     );
   },
 );
+
+AssetCatalogTopAssetsChart.displayName = 'AssetCatalogTopAssetsChart';

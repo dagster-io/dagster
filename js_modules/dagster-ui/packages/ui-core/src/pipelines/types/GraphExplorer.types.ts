@@ -4533,6 +4533,7 @@ export type GraphExplorerFragment_PipelineSnapshot = {
   description: string | null;
   pipelineSnapshotId: string;
   parentSnapshotId: string | null;
+  externalJobSource: string | null;
   metadataEntries: Array<
     | {
         __typename: 'AssetMetadataEntry';
@@ -4681,6 +4682,7 @@ export type GraphExplorerFragment_PipelineSnapshot = {
       }
     | {__typename: 'UrlMetadataEntry'; url: string; label: string; description: string | null}
   >;
+  tags: Array<{__typename: 'PipelineTag'; key: string; value: string}>;
   modes: Array<{
     __typename: 'Mode';
     id: string;

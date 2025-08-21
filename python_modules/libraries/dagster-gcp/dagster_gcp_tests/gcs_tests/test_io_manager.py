@@ -12,7 +12,6 @@ from dagster import (
     Int,
     Out,
     ResourceDefinition,
-    StaticPartitionsDefinition,
     asset,
     build_input_context,
     build_output_context,
@@ -24,6 +23,7 @@ from dagster import (
 )
 from dagster._core.definitions.definitions_class import Definitions
 from dagster._core.definitions.job_base import InMemoryJob
+from dagster._core.definitions.partitions.definition import StaticPartitionsDefinition
 from dagster._core.definitions.source_asset import SourceAsset
 from dagster._core.definitions.unresolved_asset_job_definition import define_asset_job
 from dagster._core.events import DagsterEventType
@@ -230,7 +230,7 @@ def test_asset_io_manager(gcs_bucket):
         },
         jobs=[define_asset_job("my_asset_job")],
     )
-    asset_job = defs.get_job_def("my_asset_job")
+    asset_job = defs.resolve_job_def("my_asset_job")
 
     result = asset_job.execute_in_process(partition_key="apple")
     assert result.success

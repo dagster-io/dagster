@@ -16,8 +16,8 @@ from dagster._core.definitions import (
     NodeHandle,
     Output,
 )
-from dagster._core.definitions.asset_check_spec import AssetCheckKey
-from dagster._core.definitions.asset_layer import AssetLayer
+from dagster._core.definitions.asset_checks.asset_check_spec import AssetCheckKey
+from dagster._core.definitions.assets.job.asset_layer import AssetLayer
 from dagster._core.definitions.op_definition import OpComputeFunction
 from dagster._core.definitions.result import AssetResult, MaterializeResult, ObserveResult
 from dagster._core.errors import DagsterExecutionStepExecutionError, DagsterInvariantViolationError
@@ -64,7 +64,10 @@ def create_step_outputs(
 
     step_outputs: list[StepOutput] = []
     for name, output_def in node.definition.output_dict.items():
-        asset_key = asset_layer.asset_key_for_output(handle, name)
+        asset_key = asset_layer.get_asset_key_for_node_output(handle, name)
+        asset_check_key = asset_layer.get_asset_check_key_for_node_output(handle, name)
+
+        selected_entity_keys = asset_layer.get_selected_entity_keys_for_node(handle)
         asset_node = asset_layer.asset_graph.get(asset_key) if asset_key else None
 
         step_outputs.append(
@@ -77,11 +80,11 @@ def create_step_outputs(
                     is_dynamic=output_def.is_dynamic,
                     is_asset=asset_key is not None,
                     should_materialize_DEPRECATED=output_def.name in config_output_names,
-                    asset_key=asset_node.key
-                    if asset_node and asset_node.key in asset_layer.asset_keys_for_node(handle)
-                    else None,
+                    asset_key=asset_key if asset_key in selected_entity_keys else None,
                     is_asset_partitioned=bool(asset_node.partitions_def) if asset_node else False,
-                    asset_check_key=asset_layer.asset_check_key_for_output(handle, name),
+                    asset_check_key=asset_check_key
+                    if asset_check_key in selected_entity_keys
+                    else None,
                     asset_execution_type=asset_node.execution_type if asset_node else None,
                 ),
             )
@@ -191,7 +194,7 @@ def execute_core_compute(
         elif isinstance(step_output, AssetResult):
             asset_key = (
                 step_output.asset_key
-                or step_context.job_def.asset_layer.asset_key_for_node(step_context.node_handle)
+                or step_context.job_def.asset_layer.get_asset_key_for_node(step_context.node_handle)
             )
             emitted_result_names.add(
                 step_context.job_def.asset_layer.asset_graph.get(
@@ -200,21 +203,17 @@ def execute_core_compute(
             )
             # Check results embedded in MaterializeResult are counted
             for check_result in step_output.check_results or []:
-                handle = check_result.to_asset_check_evaluation(step_context).asset_check_key
-                output_name = step_context.job_def.asset_layer.get_output_name_for_asset_check(
-                    handle
-                )
+                key = check_result.to_asset_check_evaluation(step_context).asset_check_key
+                output_name = step_context.job_def.asset_layer.get_op_output_name(key)
                 emitted_result_names.add(output_name)
         elif isinstance(step_output, AssetCheckResult):
             if step_output.asset_key and step_output.check_name:
-                handle = AssetCheckKey(step_output.asset_key, step_output.check_name)
+                key = AssetCheckKey(step_output.asset_key, step_output.check_name)
             else:
-                handle = step_output.to_asset_check_evaluation(step_context).asset_check_key
-            handle = step_context.job_def.asset_layer.node_output_handles_by_asset_check_key.get(
-                handle
-            )
-            if handle:
-                emitted_result_names.add(handle.output_name)
+                key = step_output.to_asset_check_evaluation(step_context).asset_check_key
+            output_name = step_context.job_def.asset_layer.get_op_output_name(key)
+            if output_name:
+                emitted_result_names.add(output_name)
 
     expected_op_output_names = {
         output.name

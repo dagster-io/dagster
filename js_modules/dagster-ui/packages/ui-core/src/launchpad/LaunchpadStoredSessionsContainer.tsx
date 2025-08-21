@@ -12,7 +12,7 @@ import {
   useExecutionSessionStorage,
   useInitialDataForMode,
 } from '../app/ExecutionSessionStorage';
-import {useFeatureFlags} from '../app/Flags';
+import {useFeatureFlags} from '../app/useFeatureFlags';
 import {useSetStateUpdateCallback} from '../hooks/useSetStateUpdateCallback';
 import {RepoAddress} from '../workspace/types';
 
@@ -40,6 +40,7 @@ export const LaunchpadStoredSessionsContainer = (props: Props) => {
     onSave((data) => applyCreateSession(data, initialDataForMode));
   };
 
+  // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
   const currentSession = data.sessions[data.current]!;
 
   const onSaveSession = useSetStateUpdateCallback<IExecutionSessionChanges>(

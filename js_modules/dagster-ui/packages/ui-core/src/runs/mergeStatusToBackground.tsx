@@ -49,6 +49,7 @@ export const mergeStatusToBackground = (runs: TimelineRun[]) => {
 
   if (statusArr.length === 1) {
     const [element] = statusArr;
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     return statusToColor(element!);
   }
 

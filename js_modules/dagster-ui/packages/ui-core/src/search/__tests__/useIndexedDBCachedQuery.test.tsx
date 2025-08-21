@@ -183,7 +183,9 @@ describe('useIndexedDBCachedQuery', () => {
             expect(mockFn1).toHaveBeenCalledTimes(1);
             expect(mockFn2).not.toHaveBeenCalled();
 
+            // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
             expect(result1!.data).toEqual(result2!.data);
+            // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
             expect(result1!.loading).toEqual(result2!.loading);
           });
         });

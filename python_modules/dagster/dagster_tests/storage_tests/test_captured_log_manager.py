@@ -5,13 +5,12 @@ from collections.abc import Generator, Mapping, Sequence
 from contextlib import contextmanager
 from typing import Any
 
+import dagster as dg
 import pytest
-from dagster import job, op
 from dagster._core.events import DagsterEventType
 from dagster._core.storage.compute_log_manager import CapturedLogContext, ComputeIOType
 from dagster._core.storage.local_compute_log_manager import LocalComputeLogManager
 from dagster._core.storage.noop_compute_log_manager import NoOpComputeLogManager
-from dagster._core.test_utils import instance_for_test
 from dagster._serdes import ConfigurableClassData
 from dagster._time import get_current_datetime
 from typing_extensions import Self
@@ -20,7 +19,7 @@ from dagster_tests.storage_tests.utils.compute_log_manager import TestComputeLog
 
 
 def test_compute_log_manager_instance():
-    with instance_for_test() as instance:
+    with dg.instance_for_test() as instance:
         assert instance.compute_log_manager
         assert instance.compute_log_manager._instance  # noqa: SLF001
 
@@ -29,7 +28,7 @@ class TestLocalComputeLogManager(TestComputeLogManager):
     __test__ = True
 
     @pytest.fixture(name="compute_log_manager")
-    def compute_log_manager(self):  # pyright: ignore[reportIncompatibleMethodOverride]
+    def compute_log_manager(self):
         with tempfile.TemporaryDirectory() as tmpdir_path:
             return LocalComputeLogManager(tmpdir_path)
 
@@ -58,16 +57,16 @@ class ExternalTestComputeLogManager(NoOpComputeLogManager):
 
 
 def test_external_compute_log_manager():
-    @op
+    @dg.op
     def my_op():
         print("hello out")  # noqa: T201
         print("hello error", file=sys.stderr)  # noqa: T201
 
-    @job
+    @dg.job
     def my_job():
         my_op()
 
-    with instance_for_test(
+    with dg.instance_for_test(
         overrides={
             "compute_logs": {
                 "module": "dagster_tests.storage_tests.test_compute_log_manager",

@@ -1,20 +1,20 @@
 from contextlib import ExitStack
 
+import dagster as dg
 import pytest
 import yaml
 from dagster._check import CheckError
 from dagster._core.errors import DagsterUserCodeUnreachableError
-from dagster._core.remote_representation import GrpcServerCodeLocationOrigin
-from dagster._core.test_utils import environ, instance_for_test
+from dagster._core.remote_origin import GrpcServerCodeLocationOrigin
+from dagster._core.test_utils import environ
 from dagster._core.workspace.load import location_origins_from_config
 from dagster._grpc.server import GrpcServerProcess
-from dagster._utils import file_relative_path
 from dagster_shared import seven
 
 
 @pytest.fixture
 def instance():
-    with instance_for_test() as instance:
+    with dg.instance_for_test() as instance:
         yield instance
 
 
@@ -43,7 +43,7 @@ load_from:
             origins = location_origins_from_config(
                 yaml.safe_load(workspace_yaml),
                 # fake out as if it were loaded by a yaml file in this directory
-                file_relative_path(__file__, "not_a_real.yaml"),
+                dg.file_relative_path(__file__, "not_a_real.yaml"),
             )
 
             with ExitStack() as stack:
@@ -97,7 +97,7 @@ def test_grpc_server_env_vars():
 
         origins = location_origins_from_config(
             yaml.safe_load(valid_yaml),
-            file_relative_path(__file__, "not_a_real.yaml"),
+            dg.file_relative_path(__file__, "not_a_real.yaml"),
         )
 
         assert len(origins) == 2
@@ -133,7 +133,7 @@ load_from:
         origins = location_origins_from_config(
             yaml.safe_load(ssl_yaml),
             # fake out as if it were loaded by a yaml file in this directory
-            file_relative_path(__file__, "not_a_real.yaml"),
+            dg.file_relative_path(__file__, "not_a_real.yaml"),
         )
         origin = next(iter(origins.values()))
         assert origin.use_ssl  # pyright: ignore[reportAttributeAccessIssue]
@@ -145,6 +145,23 @@ load_from:
                 assert False
         except DagsterUserCodeUnreachableError:
             pass
+
+
+def test_port_range(instance):
+    with environ({"DAGSTER_PORT_RANGE": "12345-12399"}):
+        with GrpcServerProcess(
+            instance_ref=instance.get_ref(), force_port=True, wait_on_exit=True
+        ) as server_process:
+            assert server_process.port
+            assert server_process.port >= 12345
+            assert server_process.port <= 12399
+
+    with pytest.raises(Exception, match="DAGSTER_PORT_RANGE must be of the form"):
+        with environ({"DAGSTER_PORT_RANGE": "wat"}):
+            with GrpcServerProcess(
+                instance_ref=instance.get_ref(), force_port=True, wait_on_exit=True
+            ) as server_process:
+                pass
 
 
 def test_grpc_server_workspace(instance):
@@ -171,7 +188,7 @@ load_from:
             origins = location_origins_from_config(
                 yaml.safe_load(workspace_yaml),
                 # fake out as if it were loaded by a yaml file in this directory
-                file_relative_path(__file__, "not_a_real.yaml"),
+                dg.file_relative_path(__file__, "not_a_real.yaml"),
             )
 
             with ExitStack() as stack:
@@ -211,5 +228,5 @@ load_from:
         location_origins_from_config(
             yaml.safe_load(workspace_yaml),
             # fake out as if it were loaded by a yaml file in this directory
-            file_relative_path(__file__, "not_a_real.yaml"),
+            dg.file_relative_path(__file__, "not_a_real.yaml"),
         )

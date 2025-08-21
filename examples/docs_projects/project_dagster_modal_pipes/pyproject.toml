@@ -1,7 +1,35 @@
-[build-system]
-requires = ["setuptools"]
-build-backend = "setuptools.build_meta"
+[project]
+name = "project_dagster_modal_pipes"
+version = "0.0.1"
+description = "Project Modal"
+readme = "README.md"
+requires-python = ">=3.9"
+dependencies = [
+    "dagster",
+    "dagster-dg-cli",
+    "dagster-aws",
+    "dagster-modal>=0.0.2",
+    "dagster-openai",
+    "feedparser",
+    "ffmpeg-python",
+    "modal",
+    "openai",
+    "tiktoken",
+    "yagmail",
+]
 
-[tool.dagster]
-module_name = "project_dagster_modal_pipes.definitions"
-code_location_name = "project_dagster_modal_pipes"
+[project.optional-dependencies]
+dev = [
+    "pytest",
+    "ruff",
+    "dagster-webserver",
+]
+
+[tool.dg]
+directory_type = "project"
+
+[tool.dg.project]
+root_module = "project_dagster_modal_pipes"
+
+[tool.dg.project.python_environment]
+active = true

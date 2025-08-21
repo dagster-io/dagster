@@ -1,6 +1,7 @@
 ---
-title: 'Data freshness checks'
+description: Dagster freshness checks provide a way to identify data assets that are overdue for an update.
 sidebar_position: 300
+title: Data freshness checks
 ---
 
 import Beta from '@site/docs/partials/\_Beta.md';
@@ -48,6 +49,7 @@ The example below defines a freshness check on an asset that fails if the asset'
 <CodeExample
   path="docs_snippets/docs_snippets/guides/data-assets/quality-testing/freshness-checks/materializable-asset-freshness-check.py"
   language="python"
+  title="src/<project_name>/defs/assets.py"
 />
 
 ## External asset freshness \{#external-assets}
@@ -61,6 +63,7 @@ The example below defines a freshness check and adds a schedule to run the check
 <CodeExample
   path="docs_snippets/docs_snippets/guides/data-assets/quality-testing/freshness-checks/external-asset-freshness-check.py"
   language="python"
+  title="src/<project_name>/defs/assets.py"
 />
 
 ### Testing freshness with anomaly detection \{#anomaly-detection}
@@ -74,6 +77,7 @@ Instead of applying policies on an asset-by-asset basis, Dagster+ Pro users can 
 <CodeExample
   path="docs_snippets/docs_snippets/guides/data-assets/quality-testing/freshness-checks/anomaly-detection.py"
   language="python"
+  title="src/<project_name>/defs/assets.py"
 />
 
 :::note
@@ -86,9 +90,9 @@ If the asset hasn't been updated enough times, the check will pass with a messag
 Freshness check alerts are a Dagster+ feature.
 :::
 
-In Dagster+, you can set up alerts to notify you when assets are overdue for an update. Refer to the [Dagster+ alerting guide](/dagster-plus/features/alerts) for more information.
+In Dagster+, you can set up alerts to notify you when assets are overdue for an update. Refer to the [Dagster+ alerting guide](/guides/monitor/alerts) for more information.
 
 ## Next steps
 
 - Explore more [asset checks](/guides/test/asset-checks)
-- Explore how to [raise alerts when assets are overdue](/dagster-plus/features/alerts) (Dagster+ Pro)
+- Explore how to [raise alerts when assets are overdue](/guides/monitor/alerts) (Dagster+ Pro)

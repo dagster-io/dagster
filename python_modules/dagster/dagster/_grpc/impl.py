@@ -12,15 +12,15 @@ from dagster_shared.serdes import whitelist_for_serdes
 
 import dagster._check as check
 from dagster._core.definitions import ScheduleEvaluationContext
-from dagster._core.definitions.asset_check_spec import AssetCheckKey
+from dagster._core.definitions.asset_checks.asset_check_spec import AssetCheckKey
 from dagster._core.definitions.events import AssetKey
 from dagster._core.definitions.job_definition import JobDefinition
-from dagster._core.definitions.multi_dimensional_partitions import MultiPartitionsDefinition
-from dagster._core.definitions.partition import (
+from dagster._core.definitions.partitions.definition import (
     DynamicPartitionsDefinition,
-    PartitionedConfig,
+    MultiPartitionsDefinition,
     PartitionsDefinition,
 )
+from dagster._core.definitions.partitions.partitioned_config import PartitionedConfig
 from dagster._core.definitions.reconstruct import ReconstructableJob, ReconstructableRepository
 from dagster._core.definitions.repository_definition import RepositoryDefinition
 from dagster._core.definitions.sensor_definition import SensorEvaluationContext
@@ -36,6 +36,7 @@ from dagster._core.events import DagsterEvent, EngineEventData
 from dagster._core.execution.api import create_execution_plan, execute_run_iterator
 from dagster._core.instance import DagsterInstance
 from dagster._core.instance.ref import InstanceRef
+from dagster._core.remote_origin import CodeLocationOrigin
 from dagster._core.remote_representation.external_data import (
     JobDataSnap,
     PartitionConfigSnap,
@@ -49,7 +50,6 @@ from dagster._core.remote_representation.external_data import (
     SensorExecutionErrorSnap,
     job_name_for_partition_set_snap_name,
 )
-from dagster._core.remote_representation.origin import CodeLocationOrigin
 from dagster._core.snap.execution_plan_snapshot import snapshot_from_execution_plan
 from dagster._core.storage.dagster_run import DagsterRun
 from dagster._grpc.types import ExecuteExternalJobArgs, ExecutionPlanSnapshotArgs
@@ -577,6 +577,15 @@ def get_notebook_data(notebook_path):
             " '.ipynb'."
         )
 
-    with open(os.path.abspath(notebook_path), "rb") as f:
+    requested_path = os.path.abspath(notebook_path)
+    working_dir = os.path.abspath(os.getcwd())
+
+    common_prefix = os.path.commonpath([requested_path, working_dir])
+    if common_prefix != working_dir:
+        raise Exception(
+            "Access denied. Notebook path must be within the current working directory."
+        )
+
+    with open(requested_path, "rb") as f:
         content = f.read()
         return content

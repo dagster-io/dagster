@@ -1,50 +1,49 @@
 import tempfile
 
+import dagster as dg
 import pytest
 from click.testing import CliRunner
-from dagster import AssetKey, AssetMaterialization, Output, job, op
 from dagster._cli.asset import asset_wipe_cache_command, asset_wipe_command
 from dagster._core.storage.partition_status_cache import AssetStatusCacheValue
-from dagster._core.test_utils import instance_for_test
 from dagster_shared.seven import json
 
 
 @pytest.fixture(name="instance_runner")
 def mock_instance_runner():
     with tempfile.TemporaryDirectory() as dagster_home_temp:
-        with instance_for_test(
+        with dg.instance_for_test(
             temp_dir=dagster_home_temp,
         ) as instance:
             runner = CliRunner(env={"DAGSTER_HOME": dagster_home_temp})
             yield instance, runner
 
 
-@op
+@dg.op
 def op_one(_):
-    yield AssetMaterialization(asset_key=AssetKey("asset_1"))
-    yield Output(1)
+    yield dg.AssetMaterialization(asset_key=dg.AssetKey("asset_1"))
+    yield dg.Output(1)
 
 
-@op
+@dg.op
 def op_two(_):
-    yield AssetMaterialization(asset_key=AssetKey("asset_2"))
-    yield AssetMaterialization(asset_key=AssetKey(["path", "to", "asset_3"]))
-    yield AssetMaterialization(asset_key=AssetKey(("path", "to", "asset_4")))
-    yield Output(1)
+    yield dg.AssetMaterialization(asset_key=dg.AssetKey("asset_2"))
+    yield dg.AssetMaterialization(asset_key=dg.AssetKey(["path", "to", "asset_3"]))
+    yield dg.AssetMaterialization(asset_key=dg.AssetKey(("path", "to", "asset_4")))
+    yield dg.Output(1)
 
 
-@op
+@dg.op
 def op_normalization(_):
-    yield AssetMaterialization(asset_key="path/to-asset_5")
-    yield Output(1)
+    yield dg.AssetMaterialization(asset_key="path/to-asset_5")
+    yield dg.Output(1)
 
 
-@job
+@dg.job
 def job_one():
     op_one()
 
 
-@job
+@dg.job
 def job_two():
     op_one()
     op_two()
@@ -158,8 +157,8 @@ def test_asset_single_wipe_cache(instance_runner):
     instance, runner = instance_runner
     job_one.execute_in_process(instance=instance)
     job_two.execute_in_process(instance=instance)
-    asset_1 = AssetKey("asset_1")
-    asset_2 = AssetKey("asset_2")
+    asset_1 = dg.AssetKey("asset_1")
+    asset_2 = dg.AssetKey("asset_2")
 
     dummy_cache_value = AssetStatusCacheValue(1, "foo", "bar")
     for key in [asset_1, asset_2]:
@@ -178,9 +177,9 @@ def test_asset_multi_wipe_cache(instance_runner):
     instance, runner = instance_runner
     job_one.execute_in_process(instance=instance)
     job_two.execute_in_process(instance=instance)
-    asset_1 = AssetKey("asset_1")
-    asset_2 = AssetKey("asset_2")
-    asset_3 = AssetKey(["path", "to", "asset_3"])
+    asset_1 = dg.AssetKey("asset_1")
+    asset_2 = dg.AssetKey("asset_2")
+    asset_3 = dg.AssetKey(["path", "to", "asset_3"])
 
     dummy_cache_value = AssetStatusCacheValue(1, "foo", "bar")
     for key in [asset_1, asset_2, asset_3]:
@@ -203,8 +202,8 @@ def test_asset_multi_wipe_cache(instance_runner):
 def test_asset_wipe_all_cache_status_values(instance_runner):
     instance, runner = instance_runner
     job_two.execute_in_process(instance=instance)
-    asset_2 = AssetKey("asset_2")
-    asset_3 = AssetKey(["path", "to", "asset_3"])
+    asset_2 = dg.AssetKey("asset_2")
+    asset_3 = dg.AssetKey(["path", "to", "asset_3"])
 
     dummy_cache_value = AssetStatusCacheValue(1, "foo", "bar")
     for key in [asset_2, asset_3]:

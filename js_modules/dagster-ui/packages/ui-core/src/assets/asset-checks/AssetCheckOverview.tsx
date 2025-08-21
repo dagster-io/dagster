@@ -5,9 +5,11 @@ import {
   Colors,
   ExternalAnchorButton,
   FontFamily,
+  Icon,
   NonIdealState,
   Subtitle1,
   Subtitle2,
+  Tooltip,
 } from '@dagster-io/ui-components';
 import {useMemo} from 'react';
 import {Link} from 'react-router-dom';
@@ -44,12 +46,16 @@ export const AssetCheckOverview = ({
       executions
         .filter((e) => e.evaluation)
         .map((e) => ({
+          // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
           metadataEntries: e.evaluation!.metadataEntries,
+          // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
           timestamp: `${Math.round(e.evaluation!.timestamp * 1000)}`,
         }))
         .map((e) => ({latest: e, all: [e], timestamp: e.timestamp})),
     [executions],
   );
+
+  const {blocking} = selectedCheck;
 
   return (
     <Box
@@ -61,6 +67,28 @@ export const AssetCheckOverview = ({
         header={<Subtitle1>About</Subtitle1>}
         arrowSide="right"
       >
+        <Box flex={{direction: 'row', gap: 4, alignItems: 'center'}} padding={{top: 12}}>
+          <Icon
+            name={blocking ? 'shield_check' : 'shield'}
+            color={blocking ? Colors.accentYellow() : Colors.accentPrimary()}
+          />
+          <Caption>
+            This is a <strong>{blocking ? 'blocking' : 'non-blocking'}</strong> asset check.
+          </Caption>
+          <Tooltip
+            placement="top"
+            display="block"
+            content={
+              <div style={{width: 300}}>
+                {blocking
+                  ? 'A blocking check prevents downstream asset materializations if the check fails.'
+                  : 'A non-blocking check allows downstream asset materializations to proceed regardless of the check result.'}
+              </div>
+            }
+          >
+            <Icon name="info" color={Colors.accentGray()} size={12} />
+          </Tooltip>
+        </Box>
         <Box padding={{top: 12}} flex={{gap: 12, direction: 'column'}}>
           {selectedCheck.description ? (
             <Description description={selectedCheck.description} maxHeight={260} />

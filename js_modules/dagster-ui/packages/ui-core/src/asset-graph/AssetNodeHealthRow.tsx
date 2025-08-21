@@ -38,10 +38,10 @@ export const AssetNodeHealthRow = ({
           <AssetLatestRunSpinner liveData={liveData} purpose="caption-text" />
           <span style={{color: Colors.textBlue()}}>
             {numMaterializing === 1
-              ? `Materializing 1 partition...`
+              ? `Executing 1 partition...`
               : numMaterializing
-                ? `Materializing ${numMaterializing} partitions...`
-                : `Materializing...`}
+                ? `Executing ${numMaterializing} partitions...`
+                : `Executing...`}
           </span>
         </Box>
         {!numMaterializing || numMaterializing === 1 ? (

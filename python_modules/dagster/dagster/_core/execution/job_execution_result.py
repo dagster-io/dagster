@@ -15,6 +15,7 @@ from dagster._core.storage.dagster_run import DagsterRun
 from dagster._core.types.dagster_type import DagsterType
 
 
+@public
 class JobExecutionResult(ExecutionResult):
     """Result object returned by :py:func:`dagster.execute_job`.
 

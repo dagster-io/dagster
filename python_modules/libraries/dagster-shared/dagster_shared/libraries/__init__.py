@@ -1,10 +1,8 @@
 import json
 import socket
-import urllib.request
 import warnings
 from collections.abc import Mapping
 from typing import Any
-from urllib.error import HTTPError, URLError
 
 from packaging.version import Version
 
@@ -46,19 +44,19 @@ def check_dagster_package_version(library_name: str, library_version: str) -> No
     from dagster_shared.version import __version__
 
     parsed_lib_version = parse_package_version(library_version)
-    if parsed_lib_version.release[0] < 1:
+    if parsed_lib_version.release[0] >= 1:
         if library_version != __version__:
             message = (
-                f"Found version mismatch between `dagster-shared` ({__version__}) "
+                f"Found version mismatch between `dagster-shared` ({__version__})"
                 f"and `{library_name}` ({library_version})"
             )
             warnings.warn(message)
     else:
-        expected_version = core_version_from_library_version(__version__)
-        if library_version != expected_version:
+        target_version = library_version_from_core_version(__version__)
+        if library_version != target_version:
             message = (
                 f"Found version mismatch between `dagster-shared` ({__version__}) "
-                f"expected library version ({expected_version}) "
+                f"expected library version ({target_version}) "
                 f"and `{library_name}` ({library_version})."
             )
             warnings.warn(message)
@@ -111,7 +109,12 @@ class DagsterPyPiAccessError(Exception):
 
 
 def get_pypi_package_data(pkg_name: str, timeout: float = 5.0) -> dict[str, Any]:
+    # defer for import performance
+    import urllib.request
+    from urllib.error import HTTPError, URLError
+
     url = f"https://pypi.org/pypi/{pkg_name}/json"
+
     try:
         with urllib.request.urlopen(url, timeout=timeout) as response:
             if response.status != 200:

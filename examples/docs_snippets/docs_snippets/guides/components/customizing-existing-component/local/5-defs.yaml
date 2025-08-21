@@ -1,0 +1,5 @@
+type: my_project.defs.my_sling_sync.component.CustomSlingReplicationComponent
+
+attributes:
+  replications:
+    - path: replication.yaml

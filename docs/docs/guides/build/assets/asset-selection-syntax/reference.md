@@ -1,6 +1,7 @@
 ---
-title: "Asset selection syntax reference"
+description: The Dagster asset selection syntax allows you to construct asset selection queries using filters, layers, operands, and functions.
 sidebar_position: 100
+title: Asset selection syntax reference
 ---
 
 This page contains a full list of the filters, layers, operands, and functions you can use to construct your own asset selection queries. For a list of common queries, see "[Asset selection examples](/guides/build/assets/asset-selection-syntax/examples)".
@@ -23,6 +24,7 @@ Filters allow you to narrow your asset selection using specific criteria.
 | **Column tag** | `column_tag: "my_tag"` | Selects assets tagged with `my_tag`. | Dagster+ only |
 | **Columns** | `columns: "my_column"` | Selects assets with a column named `my_column`. | Dagster+ only |
 | **Table name** | `table_name: "my_table"` | Selects assets with a table named `my_table`. | Dagster+ only |
+| **Asset health status** | `status: "DEGRADED"` | Selects assets with a given [asset health status](/guides/labs/observability-update/asset-health). Options are `"HEALTHY"`, `"WARNING"`, `"DEGRADED"`, `"UNKNOWN"`, or `"NOT_APPLICABLE"` | Dagster+ only (requires [Observability early access](/guides/labs/observability-update)) |
 
 
 :::info Wildcard matching
@@ -37,7 +39,7 @@ The `changed_in_branch` filter selects assets that have been changed for a speci
 
 :::info
 
-The `changed_in_branch` filter is only available in [Dagster+ branch deployments](/dagster-plus/features/ci-cd/branch-deployments/).
+The `changed_in_branch` filter is only available in [Dagster+ branch deployments](/deployment/dagster-plus/ci-cd/branch-deployments).
 
 :::
 

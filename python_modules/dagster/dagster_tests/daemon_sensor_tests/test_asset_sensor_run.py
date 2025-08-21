@@ -1,4 +1,4 @@
-from dagster import materialize
+import dagster as dg
 from dagster._core.scheduler.instigation import TickStatus
 from dagster._core.test_utils import freeze_time
 from dagster._time import create_datetime, get_timezone
@@ -42,7 +42,7 @@ def test_monitor_source_asset_sensor(executor):
 
             freeze_datetime = freeze_datetime + relativedelta(seconds=60)
         with freeze_time(freeze_datetime):
-            materialize([a_source_asset], instance=instance)
+            dg.materialize([a_source_asset], instance=instance)
 
             evaluate_sensors(workspace_ctx, executor)
 

@@ -30,7 +30,12 @@ def local_env_fixture() -> Generator[None, None, None]:
         }
     ):
         yield
-    subprocess.run(["make", "wipe"], cwd=makefile_dir(), check=True)
+
+    subprocess.run(
+        ["make", "wipe"],
+        cwd=makefile_dir(),
+        check=False,  # fail open on cleanup issues
+    )
 
 
 @pytest.fixture(name="dags_dir")

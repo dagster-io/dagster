@@ -6,7 +6,7 @@ import styled from 'styled-components';
 import {SVGSaveZoomLevel, useLastSavedZoomLevel} from './SavedZoomLevel';
 import {assetDetailsPathForKey} from './assetDetailsPathForKey';
 import {AssetKey, AssetViewParams} from './types';
-import {useFeatureFlags} from '../app/Flags';
+import {useFeatureFlags} from '../app/useFeatureFlags';
 import {AssetEdges} from '../asset-graph/AssetEdges';
 import {AssetGraphBackgroundContextMenu} from '../asset-graph/AssetGraphBackgroundContextMenu';
 import {MINIMAL_SCALE} from '../asset-graph/AssetGraphExplorer';
@@ -47,6 +47,7 @@ const AssetNodeLineageGraphInner = ({
     Object.values(assetGraphData.nodes).forEach((node) => {
       const groupId = groupIdForNode(node);
       groupedAssets[groupId] = groupedAssets[groupId] || [];
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
       groupedAssets[groupId]!.push(node);
     });
     return {allGroups: Object.keys(groupedAssets), groupedAssets};
@@ -149,6 +150,7 @@ const AssetNodeLineageGraphInner = ({
               .map((group) => (
                 <foreignObject {...group.bounds} key={group.id}>
                   <ExpandedGroupNode
+                    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
                     group={{...group, assets: groupedAssets[group.id]!}}
                     minimal={scale < MINIMAL_SCALE}
                     setHighlighted={setHighlighted}
@@ -164,6 +166,7 @@ const AssetNodeLineageGraphInner = ({
 
                 const contextMenuProps = {
                   graphData: assetGraphData,
+                  // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
                   node: graphNode!,
                 };
 

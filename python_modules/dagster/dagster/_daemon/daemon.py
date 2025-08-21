@@ -354,13 +354,17 @@ class BackfillDaemon(DagsterDaemon):
         self._threadpool_executor: Optional[InheritContextThreadPoolExecutor] = None
         self._submit_threadpool_executor: Optional[InheritContextThreadPoolExecutor] = None
 
-        if settings.get("use_threads"):
-            self._threadpool_executor = self._exit_stack.enter_context(
-                InheritContextThreadPoolExecutor(
-                    max_workers=settings.get("num_workers"),
-                    thread_name_prefix="backfill_daemon_worker",
+        # Backfill daemon is enabled by default for reasons explained at:
+        # https://github.com/dagster-io/dagster/pull/30189#issuecomment-2930805760
+        if settings.get("use_threads", True):
+            num_workers = settings.get("num_workers", 4)
+            if num_workers:
+                self._threadpool_executor = self._exit_stack.enter_context(
+                    InheritContextThreadPoolExecutor(
+                        max_workers=settings.get("num_workers"),
+                        thread_name_prefix="backfill_daemon_worker",
+                    )
                 )
-            )
 
             num_submit_workers = settings.get("num_submit_workers")
             if num_submit_workers:

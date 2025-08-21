@@ -8,6 +8,8 @@ pypi: https://pypi.org/project/dagster-gcp/
 sidebar_custom_props:
   logo: images/integrations/gcp-bigquery.svg
 partnerlink: https://cloud.google.com/bigquery
+canonicalUrl: '/integrations/libraries/gcp/bigquery'
+slug: '/integrations/libraries/gcp/bigquery'
 ---
 
 import Beta from '@site/docs/partials/\_Beta.md';

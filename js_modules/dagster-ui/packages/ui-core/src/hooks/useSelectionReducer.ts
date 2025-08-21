@@ -1,4 +1,4 @@
-import {useReducer} from 'react';
+import {useLayoutEffect, useReducer} from 'react';
 
 type State = {
   checkedIds: Set<string>;
@@ -11,11 +11,19 @@ type Action =
       type: 'toggle-slice';
       payload: {checked: boolean; id: string; allIds: string[]};
     }
-  | {type: 'toggle-all'; payload: {checked: boolean; allIds: string[]}};
+  | {type: 'toggle-all'; payload: {checked: boolean; allIds: string[]}}
+  | {type: 'set-all-ids'; payload: {allIds: string[]}};
 
 const reducer = (state: State, action: Action): State => {
-  const copy = new Set(Array.from(state.checkedIds));
+  const copy = new Set(state.checkedIds);
   switch (action.type) {
+    case 'set-all-ids': {
+      const allIdsSet = new Set(action.payload.allIds);
+      return {
+        checkedIds: new Set(Array.from(state.checkedIds).filter((id) => allIdsSet.has(id))),
+        lastCheckedId: state.lastCheckedId,
+      };
+    }
     case 'toggle-one': {
       const {checked, id} = action.payload;
       if (checked) {
@@ -37,6 +45,7 @@ const reducer = (state: State, action: Action): State => {
       }
 
       const [start, end] = [indexOfLast, indexOfChecked].sort();
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
       allIds.slice(start, end! + 1).forEach((id) => {
         if (checked) {
           copy.add(id);
@@ -68,6 +77,10 @@ const initialState: State = {
 
 export function useSelectionReducer(allIds: string[]) {
   const [state, dispatch] = useReducer(reducer, initialState);
+
+  useLayoutEffect(() => {
+    dispatch({type: 'set-all-ids', payload: {allIds}});
+  }, [allIds]);
 
   const onToggleFactory = (id: string) => (values: {checked: boolean; shiftKey: boolean}) => {
     const {checked, shiftKey} = values;

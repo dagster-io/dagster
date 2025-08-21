@@ -1,7 +1,8 @@
 ---
-title: 'Managing user settings in the Dagster UI'
-sidebar_label: 'User settings in the UI'
+description: The user settings page in the Dagster UI allows you to define settings like your timezone and theme and enable experimental features.
+sidebar_label: User settings in the UI
 sidebar_position: 30
+title: Managing user settings in the Dagster UI
 ---
 
 The **User settings** page in the [Dagster UI](/guides/operate/webserver) allows you to define settings like your timezone and theme and enable experimental features.

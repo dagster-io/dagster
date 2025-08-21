@@ -1,12 +1,12 @@
 import sys
 import time
 
+import dagster as dg
 import pytest
-from dagster import file_relative_path
 from dagster._core.errors import DagsterLaunchFailedError
 from dagster._core.storage.dagster_run import DagsterRunStatus
 from dagster._core.storage.tags import GRPC_INFO_TAG
-from dagster._core.test_utils import instance_for_test, poll_for_finished_run, poll_for_step_start
+from dagster._core.test_utils import poll_for_finished_run, poll_for_step_start
 from dagster._core.types.loadable_target_origin import LoadableTargetOrigin
 from dagster._core.utils import make_new_run_id
 from dagster._core.workspace.context import WorkspaceProcessContext
@@ -24,11 +24,11 @@ from dagster_tests.launcher_tests.test_default_run_launcher import (
 
 
 def test_run_always_finishes():
-    with instance_for_test() as instance:
+    with dg.instance_for_test() as instance:
         loadable_target_origin = LoadableTargetOrigin(
             executable_path=sys.executable,
             attribute="nope",
-            python_file=file_relative_path(__file__, "test_default_run_launcher.py"),
+            python_file=dg.file_relative_path(__file__, "test_default_run_launcher.py"),
         )
         with GrpcServerProcess(
             instance_ref=instance.get_ref(),
@@ -85,11 +85,11 @@ def test_run_always_finishes():
 
 def test_run_from_pending_repository():
     run_id = make_new_run_id()
-    with instance_for_test() as instance:
+    with dg.instance_for_test() as instance:
         loadable_target_origin = LoadableTargetOrigin(
             executable_path=sys.executable,
             attribute="pending",
-            python_file=file_relative_path(__file__, "pending_repository.py"),
+            python_file=dg.file_relative_path(__file__, "pending_repository.py"),
         )
         with GrpcServerProcess(
             instance_ref=instance.get_ref(),
@@ -198,11 +198,11 @@ def test_run_from_pending_repository():
 
 
 def test_terminate_after_shutdown():
-    with instance_for_test() as instance:
+    with dg.instance_for_test() as instance:
         with WorkspaceProcessContext(
             instance,
             PythonFileTarget(
-                python_file=file_relative_path(__file__, "test_default_run_launcher.py"),
+                python_file=dg.file_relative_path(__file__, "test_default_run_launcher.py"),
                 attribute="nope",
                 working_directory=None,
                 location_name="test",
@@ -256,11 +256,11 @@ def test_terminate_after_shutdown():
 
 
 def test_server_down():
-    with instance_for_test() as instance:
+    with dg.instance_for_test() as instance:
         loadable_target_origin = LoadableTargetOrigin(
             executable_path=sys.executable,
             attribute="nope",
-            python_file=file_relative_path(__file__, "test_default_run_launcher.py"),
+            python_file=dg.file_relative_path(__file__, "test_default_run_launcher.py"),
         )
 
         with GrpcServerProcess(

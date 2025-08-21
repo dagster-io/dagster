@@ -1,13 +1,16 @@
 from collections.abc import Mapping
-from typing import Any, Optional
+from typing import Any, Optional, Union
 
 import pytest
 import responses
-from dagster import AssetKey
+from dagster import AssetExecutionContext, AssetKey, AssetSpec, OpExecutionContext
+from dagster._core.errors import DagsterInvariantViolationError
+from dagster_dbt import DbtProject
 from dagster_dbt.asset_utils import build_dbt_specs
 from dagster_dbt.cloud_v2.asset_decorator import dbt_cloud_assets
 from dagster_dbt.cloud_v2.resources import DbtCloudWorkspace
 from dagster_dbt.dagster_dbt_translator import DagsterDbtTranslator
+from dagster_shared.check.functions import ParameterCheckError
 
 from dagster_dbt_tests.cloud_v2.conftest import get_sample_manifest_json
 
@@ -35,9 +38,6 @@ def test_asset_defs(
     assert "dbtcloud" in first_asset_kinds
     assert "dbt" not in first_asset_kinds
 
-    # Clearing cache for other tests
-    workspace.load_specs.cache_clear()
-
 
 class MyCustomTranslator(DagsterDbtTranslator):
     # DagsterDbtTranslator doesn't have a `get_asset_spec` method yet.
@@ -58,14 +58,53 @@ def test_asset_defs_with_custom_metadata(
     assert "custom" in asset_spec.metadata
     assert asset_spec.metadata["custom"] == "metadata"
 
-    # Clearing cache for other tests
-    workspace.load_specs.cache_clear()
+
+class MyCustomTranslatorWithGroupName(DagsterDbtTranslator):
+    def get_asset_spec(
+        self,
+        manifest: Mapping[str, Any],
+        unique_id: str,
+        project: Optional[DbtProject],
+    ) -> AssetSpec:
+        default_spec = super().get_asset_spec(
+            manifest=manifest, unique_id=unique_id, project=project
+        )
+        return default_spec.replace_attributes(group_name="my_group_name")
+
+
+def test_translator_invariant_group_name_with_asset_decorator(
+    workspace: DbtCloudWorkspace,
+    asset_decorator_group_name_api_mocks: responses.RequestsMock,
+) -> None:
+    with pytest.raises(
+        DagsterInvariantViolationError,
+        match="Cannot set group_name parameter on dbt_cloud_assets",
+    ):
+
+        @dbt_cloud_assets(
+            workspace=workspace,
+            group_name="my_asset_decorator_group_name",
+            dagster_dbt_translator=MyCustomTranslatorWithGroupName(),
+        )
+        def my_dbt_cloud_assets(): ...
 
 
 @pytest.mark.parametrize(
-    ["select", "exclude", "expected_dbt_resource_names"],
+    "context_type",
+    [
+        OpExecutionContext,
+        AssetExecutionContext,
+    ],
+    ids=[
+        "dbt_cloud_cli_selection_with_op_execution_context",
+        "dbt_cloud_cli_selection_with_asset_execution_context",
+    ],
+)
+@pytest.mark.parametrize(
+    ["select", "exclude", "selector", "expected_dbt_resource_names"],
     [
         (
+            None,
             None,
             None,
             {
@@ -82,6 +121,7 @@ def test_asset_defs_with_custom_metadata(
         (
             "raw_customers stg_customers",
             None,
+            None,
             {
                 "raw_customers",
                 "stg_customers",
@@ -89,6 +129,7 @@ def test_asset_defs_with_custom_metadata(
         ),
         (
             "raw_customers+",
+            None,
             None,
             {
                 "raw_customers",
@@ -98,6 +139,7 @@ def test_asset_defs_with_custom_metadata(
         ),
         (
             "resource_type:model",
+            None,
             None,
             {
                 "stg_customers",
@@ -110,6 +152,7 @@ def test_asset_defs_with_custom_metadata(
         (
             "raw_customers+,resource_type:model",
             None,
+            None,
             {
                 "stg_customers",
                 "customers",
@@ -118,6 +161,7 @@ def test_asset_defs_with_custom_metadata(
         (
             None,
             "orders",
+            None,
             {
                 "raw_customers",
                 "raw_orders",
@@ -131,6 +175,7 @@ def test_asset_defs_with_custom_metadata(
         (
             None,
             "raw_customers+",
+            None,
             {
                 "raw_orders",
                 "raw_payments",
@@ -142,6 +187,7 @@ def test_asset_defs_with_custom_metadata(
         (
             None,
             "raw_customers stg_customers",
+            None,
             {
                 "raw_orders",
                 "raw_payments",
@@ -154,6 +200,7 @@ def test_asset_defs_with_custom_metadata(
         (
             None,
             "resource_type:model",
+            None,
             {
                 "raw_customers",
                 "raw_orders",
@@ -163,6 +210,7 @@ def test_asset_defs_with_custom_metadata(
         (
             None,
             "tag:does-not-exist",
+            None,
             {
                 "raw_customers",
                 "raw_orders",
@@ -172,6 +220,15 @@ def test_asset_defs_with_custom_metadata(
                 "stg_payments",
                 "customers",
                 "orders",
+            },
+        ),
+        (
+            "",
+            None,
+            "raw_customer_child_models",
+            {
+                "stg_customers",
+                "customers",
             },
         ),
     ],
@@ -186,17 +243,21 @@ def test_asset_defs_with_custom_metadata(
         "--exclude raw_customers stg_customers",
         "--exclude resource_type:model",
         "--exclude tag:does-not-exist",
+        "--selector raw_customer_child_models",
     ],
 )
 def test_selections(
     workspace: DbtCloudWorkspace,
     fetch_workspace_data_api_mocks: responses.RequestsMock,
+    context_type: Union[type[AssetExecutionContext], type[OpExecutionContext]],
     select: Optional[str],
     exclude: Optional[str],
+    selector: Optional[str],
     expected_dbt_resource_names: set[str],
 ) -> None:
     select = select or "fqn:*"
     exclude = exclude or ""
+    selector = selector or ""
 
     expected_asset_keys = {AssetKey(key) for key in expected_dbt_resource_names}
     expected_specs, _ = build_dbt_specs(
@@ -204,7 +265,7 @@ def test_selections(
         translator=DagsterDbtTranslator(),
         select=select,
         exclude=exclude,
-        selector=None,
+        selector=selector,
         io_manager_key=None,
         project=None,
     )
@@ -213,11 +274,44 @@ def test_selections(
         workspace=workspace,
         select=select,
         exclude=exclude,
+        selector=selector,
     )
-    def my_dbt_assets(): ...
+    def my_dbt_assets(context: context_type): ...  # pyright: ignore
 
     assert len(my_dbt_assets.keys) == len(expected_specs)
     assert my_dbt_assets.keys == {spec.key for spec in expected_specs}
     assert my_dbt_assets.keys == expected_asset_keys
     assert my_dbt_assets.op.tags.get("dagster_dbt/select") == select
     assert my_dbt_assets.op.tags.get("dagster_dbt/exclude") == exclude
+    assert my_dbt_assets.op.tags.get("dagster_dbt/selector") == selector
+
+
+def test_dbt_cloud_asset_selection_selector_invalid(
+    workspace: DbtCloudWorkspace,
+    fetch_workspace_data_api_mocks: responses.RequestsMock,
+) -> None:
+    with pytest.raises(ParameterCheckError):
+
+        @dbt_cloud_assets(
+            workspace=workspace,
+            select="stg_customers",
+            selector="raw_customer_child_models",
+        )
+        def selected_dbt_assets(): ...
+
+    with pytest.raises(ParameterCheckError):
+
+        @dbt_cloud_assets(
+            workspace=workspace,
+            exclude="stg_customers",
+            selector="raw_customer_child_models",
+        )
+        def selected_dbt_assets(): ...
+
+    with pytest.raises(ValueError):
+
+        @dbt_cloud_assets(
+            workspace=workspace,
+            selector="fake_selector_does_not_exist",
+        )
+        def selected_dbt_assets(): ...

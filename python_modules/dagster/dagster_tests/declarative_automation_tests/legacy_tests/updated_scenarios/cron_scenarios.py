@@ -1,5 +1,6 @@
+import dagster as dg
 import pytest
-from dagster import AutoMaterializePolicy, AutoMaterializeRule
+from dagster import AutoMaterializeRule
 from dagster._check import ParameterCheckError
 from dagster._core.definitions.auto_materialize_rule_impls import WaitingOnAssetsRuleEvaluationData
 
@@ -28,7 +29,7 @@ def get_cron_policy(
     max_materializations_per_minute: int = 1,
     use_cron_skip_rule: bool = False,
 ):
-    return AutoMaterializePolicy(
+    return dg.AutoMaterializePolicy(
         rules={
             AutoMaterializeRule.materialize_on_cron(cron_schedule, cron_timezone, all_partitions),
             AutoMaterializeRule.skip_on_not_all_parents_updated_since_cron(
@@ -77,7 +78,7 @@ cron_scenarios = [
         id="basic_hourly_cron_unpartitioned_rule_added_later",
         initial_spec=one_asset.with_asset_properties(
             # this policy will never materialize the asset
-            auto_materialize_policy=AutoMaterializePolicy(
+            auto_materialize_policy=dg.AutoMaterializePolicy(
                 rules={AutoMaterializeRule.skip_on_parent_missing()}
             )
         ).with_current_time("2023-11-11T11:11"),
@@ -92,7 +93,7 @@ cron_scenarios = [
         # back to the original policy which never materializes
         .with_current_time_advanced(seconds=30)
         .with_asset_properties(
-            auto_materialize_policy=AutoMaterializePolicy(
+            auto_materialize_policy=dg.AutoMaterializePolicy(
                 rules={AutoMaterializeRule.skip_on_parent_missing()}
             )
         )

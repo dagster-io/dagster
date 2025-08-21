@@ -9,7 +9,7 @@ from dagster._core.definitions.graph_definition import GraphDefinition
 from dagster._core.definitions.job_definition import JobDefinition
 from dagster._core.definitions.logger_definition import LoggerDefinition
 from dagster._core.definitions.metadata import RawMetadataValue, normalize_metadata
-from dagster._core.definitions.partitioned_schedule import (
+from dagster._core.definitions.partitions.partitioned_schedule import (
     UnresolvedPartitionedAssetScheduleDefinition,
 )
 from dagster._core.definitions.repository_definition import (
@@ -28,11 +28,12 @@ from dagster._core.definitions.unresolved_asset_job_definition import Unresolved
 from dagster._core.errors import DagsterInvalidDefinitionError
 
 if TYPE_CHECKING:
-    from dagster._core.definitions.cacheable_assets import (
+    from dagster._core.definitions.assets.definition.cacheable_assets_definition import (
         AssetsDefinitionCacheableData,
         CacheableAssetsDefinition,
     )
     from dagster._core.definitions.definitions_load_context import DefinitionsLoadContext
+    from dagster.components.core.component_tree import ComponentTree
 
 T = TypeVar("T")
 
@@ -56,6 +57,7 @@ class _Repository:
         default_logger_defs: Optional[Mapping[str, LoggerDefinition]] = None,
         top_level_resources: Optional[Mapping[str, ResourceDefinition]] = None,
         resource_key_mapping: Optional[Mapping[int, str]] = None,
+        component_tree: Optional["ComponentTree"] = None,
     ):
         self.name = check.opt_str_param(name, "name")
         self.description = check.opt_str_param(description, "description")
@@ -74,6 +76,7 @@ class _Repository:
         self.resource_key_mapping = check.opt_mapping_param(
             resource_key_mapping, "resource_key_mapping", key_type=int, value_type=str
         )
+        self.component_tree = component_tree
 
     def __call__(
         self,
@@ -83,7 +86,9 @@ class _Repository:
         ],
     ) -> RepositoryDefinition:
         from dagster._core.definitions import AssetsDefinition, SourceAsset
-        from dagster._core.definitions.cacheable_assets import CacheableAssetsDefinition
+        from dagster._core.definitions.assets.definition.cacheable_assets_definition import (
+            CacheableAssetsDefinition,
+        )
         from dagster._core.definitions.definitions_load_context import (
             DefinitionsLoadContext,
             DefinitionsLoadType,
@@ -148,6 +153,7 @@ class _Repository:
                 default_executor_def=self.default_executor_def,
                 default_logger_defs=self.default_logger_defs,
                 top_level_resources=self.top_level_resources,
+                component_tree=self.component_tree,
             )
             repository_load_data = (
                 RepositoryLoadData(
@@ -233,6 +239,7 @@ def repository(
     default_executor_def: Optional[ExecutorDefinition] = ...,
     default_logger_defs: Optional[Mapping[str, LoggerDefinition]] = ...,
     _top_level_resources: Optional[Mapping[str, ResourceDefinition]] = ...,
+    _component_tree: Optional["ComponentTree"] = ...,
 ) -> _Repository: ...
 
 
@@ -250,6 +257,7 @@ def repository(
     default_executor_def: Optional[ExecutorDefinition] = None,
     default_logger_defs: Optional[Mapping[str, LoggerDefinition]] = None,
     _top_level_resources: Optional[Mapping[str, ResourceDefinition]] = None,
+    _component_tree: Optional["ComponentTree"] = None,
 ) -> Union[RepositoryDefinition, _Repository]:
     """Create a repository from the decorated function.
 
@@ -267,7 +275,7 @@ def repository(
 
         {
             'jobs': Dict[str, Callable[[], JobDefinition]],
-            'schedules': Dict[str, Callable[[], ScheduleDefinition]]
+            'schedules': Dict[str, Callable[[], ScheduleDefinition]],
             'sensors': Dict[str, Callable[[], SensorDefinition]]
         }
 
@@ -311,7 +319,7 @@ def repository(
             def some_sensor():
                 if foo():
                     yield RunRequest(
-                        run_key= ...,
+                        run_key=...,
                         run_config={
                             'ops': {'return_n': {'config': {'n': bar()}}}
                         }
@@ -340,7 +348,7 @@ def repository(
                     'team': 'Team A',
                     'repository_version': '1.2.3',
                     'environment': 'production',
-             })
+                })
             def simple_repository():
                 return [simple_job, some_sensor, my_schedule]
 
@@ -408,4 +416,5 @@ def repository(
         default_executor_def=default_executor_def,
         default_logger_defs=default_logger_defs,
         top_level_resources=_top_level_resources,
+        component_tree=_component_tree,
     )

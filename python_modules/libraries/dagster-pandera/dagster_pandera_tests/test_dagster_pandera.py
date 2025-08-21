@@ -1,7 +1,7 @@
 import re
 
 import pandas as pd
-import pandera as pa
+import pandera.pandas as pa
 import pandera.typing as pa_typing
 import pytest
 from dagster import DagsterType, TypeCheck, check_dagster_type

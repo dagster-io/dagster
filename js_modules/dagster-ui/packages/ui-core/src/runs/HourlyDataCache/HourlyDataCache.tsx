@@ -148,7 +148,9 @@ export class HourlyDataCache<T> {
     if (!this.cache.has(hour)) {
       this.cache.set(hour, []);
     }
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     this.cache.get(hour)!.push({start, end, data});
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     this.cache.set(hour, this.mergeIntervals(this.cache.get(hour)!));
   }
 
@@ -160,6 +162,7 @@ export class HourlyDataCache<T> {
   getHourData(s: number): T[] {
     const hour = Math.floor(s / ONE_HOUR_S);
     if (this.cache.has(hour)) {
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
       return this.cache.get(hour)!.flatMap((interval) => interval.data);
     }
     return [];
@@ -174,7 +177,9 @@ export class HourlyDataCache<T> {
     const hour = Math.floor(s / ONE_HOUR_S);
     if (
       this.cache.has(hour) &&
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
       this.cache.get(hour)!.length === 1 &&
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
       this.cache.get(hour)![0]!.end - this.cache.get(hour)![0]!.start === ONE_HOUR_S
     ) {
       return [];
@@ -186,6 +191,7 @@ export class HourlyDataCache<T> {
     let currentStart = hourStart;
 
     if (this.cache.has(hour)) {
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
       for (const {start: cachedStart, end: cachedEnd} of this.cache.get(hour)!) {
         if (cachedStart > currentStart) {
           missingIntervals.push([currentStart, cachedStart]);
@@ -216,6 +222,7 @@ export class HourlyDataCache<T> {
     }
 
     if (this.cache.has(startHour)) {
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
       const intervals = this.cache.get(startHour)!;
       let currentStart = start;
 
@@ -246,9 +253,11 @@ export class HourlyDataCache<T> {
     }
 
     intervals.sort((a, b) => a.start - b.start);
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     const mergedIntervals: Array<TimeWindow<T>> = [intervals[0]!];
 
     for (const current of intervals.slice(1)) {
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
       const lastMerged = mergedIntervals[mergedIntervals.length - 1]!;
 
       if (current.start <= lastMerged.end) {

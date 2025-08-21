@@ -3,7 +3,7 @@ import re
 from collections.abc import Mapping
 from typing import Any
 
-from dagster._core.remote_representation.origin import RemoteJobOrigin
+from dagster._core.remote_origin import RemoteJobOrigin
 
 from dagster_aws.ecs.tasks import DagsterEcsTaskDefinitionConfig
 
@@ -158,6 +158,9 @@ def is_transient_task_stopped_reason(stopped_reason: str) -> bool:
         "Unexpected EC2 error while attempting to Create Network Interface" in stopped_reason
         and "AuthFailure" in stopped_reason
     ):
+        return True
+
+    if "The Service Discovery instance could not be registered" in stopped_reason:
         return True
 
     return False

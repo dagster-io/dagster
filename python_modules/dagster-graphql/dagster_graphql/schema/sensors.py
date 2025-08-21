@@ -7,8 +7,8 @@ from dagster import DefaultSensorStatus
 from dagster._core.definitions.selector import SensorSelector
 from dagster._core.definitions.sensor_definition import SensorType
 from dagster._core.errors import DagsterInvariantViolationError
-from dagster._core.remote_representation import RemoteSensor, TargetSnap
-from dagster._core.remote_representation.external import CompoundID
+from dagster._core.remote_representation.external import CompoundID, RemoteSensor
+from dagster._core.remote_representation.external_data import TargetSnap
 from dagster._core.scheduler.instigation import InstigatorState, InstigatorStatus
 from dagster._core.workspace.permissions import Permissions
 

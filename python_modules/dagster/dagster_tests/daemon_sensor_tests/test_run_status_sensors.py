@@ -5,32 +5,26 @@ from concurrent.futures import ThreadPoolExecutor
 from contextlib import contextmanager
 from typing import Any, NamedTuple, Optional, cast
 
+import dagster as dg
 import pytest
 from dagster import (
     DagsterRunStatus,
     _check as check,
-    file_relative_path,
 )
 from dagster._core.definitions.instigation_logger import get_instigation_log_records
 from dagster._core.definitions.run_status_sensor_definition import RunStatusSensorCursor
 from dagster._core.definitions.sensor_definition import SensorType
-from dagster._core.events import DagsterEvent, DagsterEventType
-from dagster._core.events.log import EventLogEntry
+from dagster._core.events import DagsterEventType
 from dagster._core.instance import DagsterInstance
 from dagster._core.log_manager import LOG_RECORD_METADATA_ATTR
-from dagster._core.remote_representation import CodeLocation, RemoteRepository
+from dagster._core.remote_representation.code_location import CodeLocation
+from dagster._core.remote_representation.external import RemoteRepository
 from dagster._core.scheduler.instigation import SensorInstigatorData, TickStatus
-from dagster._core.test_utils import (
-    create_test_daemon_workspace_context,
-    environ,
-    freeze_time,
-    instance_for_test,
-)
+from dagster._core.test_utils import create_test_daemon_workspace_context, environ, freeze_time
 from dagster._core.workspace.context import WorkspaceProcessContext
 from dagster._core.workspace.load_target import WorkspaceFileTarget, WorkspaceLoadTarget
 from dagster._time import get_current_datetime
 from dagster._vendored.dateutil.relativedelta import relativedelta
-from dagster_shared.serdes import deserialize_value
 
 from dagster_tests.daemon_sensor_tests.conftest import create_workspace_load_target
 from dagster_tests.daemon_sensor_tests.test_sensor_run import (
@@ -47,17 +41,17 @@ from dagster_tests.daemon_sensor_tests.test_sensor_run import (
 
 
 @pytest.fixture(name="instance_module_scoped", scope="module")
-def instance_module_scoped_fixture() -> Iterator[DagsterInstance]:
+def instance_module_scoped_fixture() -> Iterator[dg.DagsterInstance]:
     # Overridden from conftest.py, uses DefaultRunLauncher since we care about
     # runs actually completing for run status sensors.
     # Still uses DefaultRunCoordinator, since we don't need to check dequeuing logic.
-    with instance_for_test(synchronous_run_coordinator=True) as instance:
+    with dg.instance_for_test(synchronous_run_coordinator=True) as instance:
         yield instance
 
 
 @contextmanager
 def instance_with_sensors(overrides=None, attribute="the_repo", synchronous_run_coordinator=False):
-    with instance_for_test(
+    with dg.instance_for_test(
         overrides=overrides, synchronous_run_coordinator=synchronous_run_coordinator
     ) as instance:
         with create_test_daemon_workspace_context(
@@ -79,7 +73,7 @@ def instance_with_sensors(overrides=None, attribute="the_repo", synchronous_run_
 
 
 class CodeLocationInfoForSensorTest(NamedTuple):
-    instance: DagsterInstance
+    instance: dg.DagsterInstance
     context: WorkspaceProcessContext
     repositories: dict[str, RemoteRepository]
     code_location: CodeLocation
@@ -94,7 +88,7 @@ def instance_with_single_code_location_multiple_repos_with_sensors(
     overrides: Optional[Mapping[str, Any]] = None,
     workspace_load_target: Optional[WorkspaceLoadTarget] = None,
     synchronous_run_coordinator=False,
-) -> Iterator[tuple[DagsterInstance, WorkspaceProcessContext, dict[str, RemoteRepository]]]:
+) -> Iterator[tuple[dg.DagsterInstance, WorkspaceProcessContext, dict[str, RemoteRepository]]]:
     with instance_with_multiple_code_locations(
         overrides, workspace_load_target, synchronous_run_coordinator=synchronous_run_coordinator
     ) as many_tuples:
@@ -113,7 +107,7 @@ def instance_with_multiple_code_locations(
     workspace_load_target=None,
     synchronous_run_coordinator=False,
 ) -> Iterator[dict[str, CodeLocationInfoForSensorTest]]:
-    with instance_for_test(
+    with dg.instance_for_test(
         overrides, synchronous_run_coordinator=synchronous_run_coordinator
     ) as instance:
         with create_test_daemon_workspace_context(
@@ -575,7 +569,7 @@ def test_run_failure_sensor_overfetch(
                 assert len(last_non_matching_run_storage_records) == 1
 
                 assert (
-                    deserialize_value(
+                    dg.deserialize_value(
                         check.not_none(ticks[0].cursor), RunStatusSensorCursor
                     ).record_id
                     == last_non_matching_run_storage_records[0].storage_id
@@ -609,7 +603,7 @@ def test_run_failure_sensor_overfetch(
                 assert len(last_matching_run_storage_records) == 1
 
                 assert (
-                    deserialize_value(
+                    dg.deserialize_value(
                         check.not_none(ticks[0].cursor), RunStatusSensorCursor
                     ).record_id
                     == last_matching_run_storage_records[0].storage_id
@@ -783,13 +777,13 @@ def test_run_failure_sensor_empty_run_records(
             with freeze_time(freeze_datetime):
                 # create a mismatch between event storage and run storage
                 instance.event_log_storage.store_event(
-                    EventLogEntry(
+                    dg.EventLogEntry(
                         error_info=None,
                         level="debug",
                         user_message="",
                         run_id="fake_run_id",
                         timestamp=time.time(),
-                        dagster_event=DagsterEvent(
+                        dagster_event=dg.DagsterEvent(
                             DagsterEventType.PIPELINE_FAILURE.value,
                             "foo",
                         ),
@@ -824,7 +818,7 @@ def test_all_code_locations_run_status_sensor(executor: Optional[ThreadPoolExecu
 
     # we have no good api for compositing load targets so forced to use a workspace file
     workspace_load_target = WorkspaceFileTarget(
-        [file_relative_path(__file__, "daemon_sensor_defs_test_workspace.yaml")]
+        [dg.file_relative_path(__file__, "daemon_sensor_defs_test_workspace.yaml")]
     )
 
     # the name of the location by default is the fully-qualified module name
@@ -912,7 +906,7 @@ def test_all_code_location_run_failure_sensor(executor: Optional[ThreadPoolExecu
 
     # we have no good api for compositing load targets so forced to use a workspace file
     workspace_load_target = WorkspaceFileTarget(
-        [file_relative_path(__file__, "daemon_sensor_defs_test_workspace.yaml")]
+        [dg.file_relative_path(__file__, "daemon_sensor_defs_test_workspace.yaml")]
     )
 
     # the name of the location by default is the fully-qualified module name
@@ -1000,7 +994,7 @@ def test_cross_code_location_run_status_sensor(executor: Optional[ThreadPoolExec
 
     # we have no good api for compositing load targets so forced to use a workspace file
     workspace_load_target = WorkspaceFileTarget(
-        [file_relative_path(__file__, "daemon_sensor_defs_test_workspace.yaml")]
+        [dg.file_relative_path(__file__, "daemon_sensor_defs_test_workspace.yaml")]
     )
 
     # the name of the location by default is the fully-qualified module name
@@ -1100,7 +1094,7 @@ def test_cross_code_location_job_selector_on_defs_run_status_sensor(
 
     # we have no good api for compositing load targets so forced to use a workspace file
     workspace_load_target = WorkspaceFileTarget(
-        [file_relative_path(__file__, "daemon_sensor_defs_test_workspace.yaml")]
+        [dg.file_relative_path(__file__, "daemon_sensor_defs_test_workspace.yaml")]
     )
 
     # the name of the location by default is the fully-qualified module name
@@ -1252,7 +1246,7 @@ def test_code_location_scoped_run_status_sensor(executor: Optional[ThreadPoolExe
 
     # we have no good api for compositing load targets so forced to use a workspace file
     workspace_load_target = WorkspaceFileTarget(
-        [file_relative_path(__file__, "code_location_scoped_test_workspace.yaml")]
+        [dg.file_relative_path(__file__, "code_location_scoped_test_workspace.yaml")]
     )
 
     # the name of the location by default is the fully-qualified module name

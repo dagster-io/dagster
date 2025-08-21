@@ -13,16 +13,16 @@ from dagster import (
     AssetKey,
     AssetOut,
     AutoMaterializePolicy,
-    FreshnessPolicy,
+    LegacyFreshnessPolicy,
     Nothing,
     Output,
     ResourceDefinition,
     SourceAsset,
     _check as check,
 )
-from dagster._annotations import beta
+from dagster._annotations import beta, deprecated_param
 from dagster._core.definitions import AssetsDefinition, multi_asset
-from dagster._core.definitions.cacheable_assets import (
+from dagster._core.definitions.assets.definition.cacheable_assets_definition import (
     AssetsDefinitionCacheableData,
     CacheableAssetsDefinition,
 )
@@ -40,7 +40,11 @@ from dagster_airbyte.resources import (
     AirbyteResource,
     BaseAirbyteResource,
 )
-from dagster_airbyte.translator import AirbyteMetadataSet, DagsterAirbyteTranslator
+from dagster_airbyte.translator import (
+    AirbyteConnection,
+    AirbyteMetadataSet,
+    DagsterAirbyteTranslator,
+)
 from dagster_airbyte.types import AirbyteTableMetadata
 from dagster_airbyte.utils import (
     clean_name,
@@ -68,7 +72,7 @@ def _build_airbyte_asset_defn_metadata(
     group_name: Optional[str] = None,
     io_manager_key: Optional[str] = None,
     schema_by_table_name: Optional[Mapping[str, TableSchema]] = None,
-    freshness_policy: Optional[FreshnessPolicy] = None,
+    legacy_freshness_policy: Optional[LegacyFreshnessPolicy] = None,
     auto_materialize_policy: Optional[AutoMaterializePolicy] = None,
 ) -> AssetsDefinitionCacheableData:
     asset_key_prefix = (
@@ -157,8 +161,10 @@ def _build_airbyte_asset_defn_metadata(
                 for table in tables
             }
         ),
-        freshness_policies_by_output_name=(
-            {output: freshness_policy for output in outputs} if freshness_policy else None
+        legacy_freshness_policies_by_output_name=(
+            {output: legacy_freshness_policy for output in outputs}
+            if legacy_freshness_policy
+            else None
         ),
         auto_materialize_policies_by_output_name=(
             {output: auto_materialize_policy for output in outputs}
@@ -198,9 +204,9 @@ def _build_airbyte_assets_from_metadata(
                     else None
                 ),
                 io_manager_key=io_manager_key,
-                freshness_policy=(
-                    assets_defn_meta.freshness_policies_by_output_name.get(k)
-                    if assets_defn_meta.freshness_policies_by_output_name
+                legacy_freshness_policy=(
+                    assets_defn_meta.legacy_freshness_policies_by_output_name.get(k)
+                    if assets_defn_meta.legacy_freshness_policies_by_output_name
                     else None
                 ),
                 dagster_type=Nothing,
@@ -245,6 +251,7 @@ def _build_airbyte_assets_from_metadata(
     return _assets
 
 
+@deprecated_param(param="legacy_freshness_policy", breaking_version="1.12.0")
 def build_airbyte_assets(
     connection_id: str,
     destination_tables: Sequence[str],
@@ -256,7 +263,7 @@ def build_airbyte_assets(
     deps: Optional[Iterable[Union[CoercibleToAssetKey, AssetsDefinition, SourceAsset]]] = None,
     upstream_assets: Optional[set[AssetKey]] = None,
     schema_by_table_name: Optional[Mapping[str, TableSchema]] = None,
-    freshness_policy: Optional[FreshnessPolicy] = None,
+    legacy_freshness_policy: Optional[LegacyFreshnessPolicy] = None,
     stream_to_asset_map: Optional[Mapping[str, str]] = None,
     auto_materialize_policy: Optional[AutoMaterializePolicy] = None,
 ) -> Sequence[AssetsDefinition]:
@@ -278,7 +285,7 @@ def build_airbyte_assets(
         deps (Optional[Sequence[Union[AssetsDefinition, SourceAsset, str, AssetKey]]]):
             A list of assets to add as sources.
         upstream_assets (Optional[Set[AssetKey]]): Deprecated, use deps instead. A list of assets to add as sources.
-        freshness_policy (Optional[FreshnessPolicy]): A freshness policy to apply to the assets
+        legacy_freshness_policy (Optional[LegacyFreshnessPolicy]): A legacy freshness policy to apply to the assets
         stream_to_asset_map (Optional[Mapping[str, str]]): A mapping of an Airbyte stream name to a Dagster asset.
             This allows the use of the "prefix" setting in Airbyte with special characters that aren't valid asset names.
         auto_materialize_policy (Optional[AutoMaterializePolicy]): An auto materialization policy to apply to the assets.
@@ -325,7 +332,7 @@ def build_airbyte_assets(
                     ),
                 }
             ),
-            freshness_policy=freshness_policy,
+            legacy_freshness_policy=legacy_freshness_policy,
             auto_materialize_policy=auto_materialize_policy,
         )
         for table in tables
@@ -588,7 +595,7 @@ class AirbyteCoreCacheableAssetsDefinition(CacheableAssetsDefinition):
         connection_filter: Optional[Callable[[AirbyteConnectionMetadata], bool]],
         connection_to_asset_key_fn: Optional[Callable[[AirbyteConnectionMetadata, str], AssetKey]],
         connection_to_freshness_policy_fn: Optional[
-            Callable[[AirbyteConnectionMetadata], Optional[FreshnessPolicy]]
+            Callable[[AirbyteConnectionMetadata], Optional[LegacyFreshnessPolicy]]
         ],
         connection_to_auto_materialize_policy_fn: Optional[
             Callable[[AirbyteConnectionMetadata], Optional[AutoMaterializePolicy]]
@@ -671,7 +678,7 @@ class AirbyteCoreCacheableAssetsDefinition(CacheableAssetsDefinition):
                 ),
                 schema_by_table_name=schema_by_table_name,
                 table_to_asset_key_fn=table_to_asset_key,
-                freshness_policy=self._connection_to_freshness_policy_fn(connection),
+                legacy_freshness_policy=self._connection_to_freshness_policy_fn(connection),
                 auto_materialize_policy=self._connection_to_auto_materialize_policy_fn(connection),
             )
 
@@ -704,7 +711,7 @@ class AirbyteInstanceCacheableAssetsDefinition(AirbyteCoreCacheableAssetsDefinit
         connection_filter: Optional[Callable[[AirbyteConnectionMetadata], bool]],
         connection_to_asset_key_fn: Optional[Callable[[AirbyteConnectionMetadata, str], AssetKey]],
         connection_to_freshness_policy_fn: Optional[
-            Callable[[AirbyteConnectionMetadata], Optional[FreshnessPolicy]]
+            Callable[[AirbyteConnectionMetadata], Optional[LegacyFreshnessPolicy]]
         ],
         connection_to_auto_materialize_policy_fn: Optional[
             Callable[[AirbyteConnectionMetadata], Optional[AutoMaterializePolicy]]
@@ -818,7 +825,7 @@ class AirbyteYAMLCacheableAssetsDefinition(AirbyteCoreCacheableAssetsDefinition)
         connection_directories: Optional[Sequence[str]],
         connection_to_asset_key_fn: Optional[Callable[[AirbyteConnectionMetadata, str], AssetKey]],
         connection_to_freshness_policy_fn: Optional[
-            Callable[[AirbyteConnectionMetadata], Optional[FreshnessPolicy]]
+            Callable[[AirbyteConnectionMetadata], Optional[LegacyFreshnessPolicy]]
         ],
         connection_to_auto_materialize_policy_fn: Optional[
             Callable[[AirbyteConnectionMetadata], Optional[AutoMaterializePolicy]]
@@ -910,7 +917,7 @@ def load_assets_from_airbyte_instance(
         Callable[[AirbyteConnectionMetadata, str], AssetKey]
     ] = None,
     connection_to_freshness_policy_fn: Optional[
-        Callable[[AirbyteConnectionMetadata], Optional[FreshnessPolicy]]
+        Callable[[AirbyteConnectionMetadata], Optional[LegacyFreshnessPolicy]]
     ] = None,
     connection_to_auto_materialize_policy_fn: Optional[
         Callable[[AirbyteConnectionMetadata], Optional[AutoMaterializePolicy]]
@@ -1035,6 +1042,7 @@ def build_airbyte_assets_definitions(
     *,
     workspace: AirbyteCloudWorkspace,
     dagster_airbyte_translator: Optional[DagsterAirbyteTranslator] = None,
+    connection_selector_fn: Optional[Callable[[AirbyteConnection], bool]] = None,
 ) -> Sequence[AssetsDefinition]:
     """The list of AssetsDefinition for all connections in the Airbyte workspace.
 
@@ -1043,6 +1051,8 @@ def build_airbyte_assets_definitions(
         dagster_airbyte_translator (Optional[DagsterAirbyteTranslator], optional): The translator to use
             to convert Airbyte content into :py:class:`dagster.AssetSpec`.
             Defaults to :py:class:`DagsterAirbyteTranslator`.
+        connection_selector_fn (Optional[Callable[[AirbyteConnection], bool]]): A function that allows for filtering
+            which Airbyte connection assets are created for.
 
     Returns:
         List[AssetsDefinition]: The list of AssetsDefinition for all connections in the Airbyte workspace.
@@ -1061,7 +1071,6 @@ def build_airbyte_assets_definitions(
                 client_id=dg.EnvVar("AIRBYTE_CLOUD_CLIENT_ID"),
                 client_secret=dg.EnvVar("AIRBYTE_CLOUD_CLIENT_SECRET"),
             )
-
 
             airbyte_assets = build_airbyte_assets_definitions(workspace=workspace)
 
@@ -1096,7 +1105,6 @@ def build_airbyte_assets_definitions(
                 client_secret=dg.EnvVar("AIRBYTE_CLOUD_CLIENT_SECRET"),
             )
 
-
             airbyte_assets = build_airbyte_assets_definitions(
                 workspace=workspace,
                 dagster_airbyte_translator=CustomDagsterAirbyteTranslator()
@@ -1106,11 +1114,37 @@ def build_airbyte_assets_definitions(
                 assets=airbyte_assets,
                 resources={"airbyte": airbyte_workspace},
             )
+
+        Filter connections by name:
+
+        .. code-block:: python
+
+            from dagster_airbyte import AirbyteCloudWorkspace, build_airbyte_assets_definitions
+
+            import dagster as dg
+
+            airbyte_workspace = AirbyteCloudWorkspace(
+                workspace_id=dg.EnvVar("AIRBYTE_CLOUD_WORKSPACE_ID"),
+                client_id=dg.EnvVar("AIRBYTE_CLOUD_CLIENT_ID"),
+                client_secret=dg.EnvVar("AIRBYTE_CLOUD_CLIENT_SECRET"),
+            )
+
+            airbyte_assets = build_airbyte_assets_definitions(
+                workspace=workspace,
+                connection_selector_fn=lambda connection: connection.name in ["connection1", "connection2"]
+            )
+
+            defs = dg.Definitions(
+                assets=airbyte_assets,
+                resources={"airbyte": airbyte_workspace},
+            )
     """
     dagster_airbyte_translator = dagster_airbyte_translator or DagsterAirbyteTranslator()
+    connection_selector_fn = connection_selector_fn or (lambda connection: True)
 
     all_asset_specs = workspace.load_asset_specs(
-        dagster_airbyte_translator=dagster_airbyte_translator
+        dagster_airbyte_translator=dagster_airbyte_translator,
+        connection_selector_fn=connection_selector_fn,
     )
 
     connections = {
@@ -1127,7 +1161,7 @@ def build_airbyte_assets_definitions(
         @airbyte_assets(
             connection_id=connection_id,
             workspace=workspace,
-            name=clean_name(connection_name),
+            name=f"airbyte_{clean_name(connection_name)}",
             dagster_airbyte_translator=dagster_airbyte_translator,
         )
         def _asset_fn(context: AssetExecutionContext, airbyte: AirbyteCloudWorkspace):

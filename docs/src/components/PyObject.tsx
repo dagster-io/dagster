@@ -30,7 +30,7 @@ export const PyObject: React.FunctionComponent<{
   }
 
   let href = `/api/dagster/${section}#${module}.${object}`;
-  if (section === 'libraries' || section === 'dagster_dg')  {
+  if (section === 'libraries' || section === 'dagster_dg') {
     const _package = module.replace(/_/g, '-');
     href = `/api/${section}/${_package}#${module}.${object}`;
   }

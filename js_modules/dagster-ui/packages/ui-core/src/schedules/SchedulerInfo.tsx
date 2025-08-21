@@ -15,6 +15,7 @@ export const SchedulerInfo = ({daemonHealth, ...boxProps}: Props) => {
       (daemon) => daemon.daemonType === 'SCHEDULER',
     );
     if (schedulerHealths.length > 0) {
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
       const schedulerHealth = schedulerHealths[0]!;
       healthy = schedulerHealth.required && schedulerHealth.healthy;
     }

@@ -20,7 +20,7 @@ setup(
     author="Dagster Labs",
     author_email="hello@dagsterlabs.com",
     license="Apache-2.0",
-    description="Shared code between dagster and dagster-dg.",
+    description="Shared code between dagster and dagster-dg-core.",
     url=(
         "https://github.com/dagster-io/dagster/tree/master/python_modules/libraries/dagster-shared"
     ),
@@ -29,6 +29,7 @@ setup(
         "Programming Language :: Python :: 3.10",
         "Programming Language :: Python :: 3.11",
         "Programming Language :: Python :: 3.12",
+        "Programming Language :: Python :: 3.13",
         "License :: OSI Approved :: Apache Software License",
         "Operating System :: OS Independent",
     ],
@@ -38,11 +39,15 @@ setup(
         "PyYAML>=5.1",
         "packaging>=20.9",
         "pydantic>=2,<3.0.0",
-        "typing_extensions>=4.10.0,<5",
+        "typing_extensions>=4.11.0,<5",
         "tomlkit",
     ],
     extras_require={
-        "test": ["pytest"],
+        "test": [
+            "pytest",
+            "buildkite-test-collector",
+            "flaky",
+        ],
     },
     zip_safe=False,
 )

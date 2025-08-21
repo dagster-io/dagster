@@ -1,6 +1,6 @@
 import datetime
 
-from dagster import Field, PartitionKeyRange, StringSource
+import dagster as dg
 from dagster._core.definitions.asset_selection import AssetSelection
 from dagster._core.definitions.auto_materialize_policy import AutoMaterializePolicy
 from dagster._core.definitions.auto_materialize_rule import AutoMaterializeRule
@@ -12,8 +12,6 @@ from dagster._core.definitions.auto_materialize_rule_evaluation import (
 from dagster._core.definitions.auto_materialize_rule_impls import (
     DiscardOnMaxMaterializationsExceededRule,
 )
-from dagster._core.definitions.events import AssetKey
-from dagster._core.definitions.freshness_policy import FreshnessPolicy
 from dagster._time import create_datetime
 
 from dagster_tests.declarative_automation_tests.legacy_tests.scenarios.asset_graphs import (
@@ -52,7 +50,7 @@ lazy_assets_nothing_dep = [
         "asset3",
         ["asset2"],
         auto_materialize_policy=AutoMaterializePolicy.lazy(),
-        freshness_policy=FreshnessPolicy(maximum_lag_minutes=60),
+        legacy_freshness_policy=dg.LegacyFreshnessPolicy(maximum_lag_minutes=60),
     ),
 ]
 single_lazy_asset = [asset_def("asset1", auto_materialize_policy=AutoMaterializePolicy.lazy())]
@@ -60,12 +58,20 @@ single_lazy_asset_with_freshness_policy = [
     asset_def(
         "asset1",
         auto_materialize_policy=AutoMaterializePolicy.lazy(),
-        freshness_policy=FreshnessPolicy(maximum_lag_minutes=60),
+        legacy_freshness_policy=dg.LegacyFreshnessPolicy(maximum_lag_minutes=60),
     )
 ]
 overlapping_freshness_inf = diamond + [
-    asset_def("asset5", ["asset3"], freshness_policy=FreshnessPolicy(maximum_lag_minutes=30)),
-    asset_def("asset6", ["asset4"], freshness_policy=FreshnessPolicy(maximum_lag_minutes=99999999)),
+    asset_def(
+        "asset5",
+        ["asset3"],
+        legacy_freshness_policy=dg.LegacyFreshnessPolicy(maximum_lag_minutes=30),
+    ),
+    asset_def(
+        "asset6",
+        ["asset4"],
+        legacy_freshness_policy=dg.LegacyFreshnessPolicy(maximum_lag_minutes=99999999),
+    ),
 ]
 vee = [
     asset_def("A"),
@@ -117,7 +123,7 @@ non_auto_to_lazy = [
         "auto",
         ["non_auto"],
         auto_materialize_policy=AutoMaterializePolicy.lazy(),
-        freshness_policy=FreshnessPolicy(maximum_lag_minutes=60),
+        legacy_freshness_policy=dg.LegacyFreshnessPolicy(maximum_lag_minutes=60),
     ),
 ]
 
@@ -149,7 +155,7 @@ error_asset = [
     asset_def(
         "error_asset",
         config_schema={
-            "foo": Field(StringSource, default_value={"env": "VAR_THAT_DOES_NOT_EXIST"}),
+            "foo": dg.Field(dg.StringSource, default_value={"env": "VAR_THAT_DOES_NOT_EXIST"}),
         },
     )
 ]
@@ -207,12 +213,7 @@ auto_materialize_policy_scenarios = {
         current_time=create_datetime(year=2013, month=1, day=7, hour=4),
         expected_run_requests=[
             # with default scope, only the last partition is materialized
-            run_request(
-                asset_keys=["hourly"],
-                partition_key=hourly_partitions_def.get_last_partition_key(
-                    current_time=create_datetime(year=2013, month=1, day=7, hour=4)
-                ),
-            )
+            run_request(asset_keys=["hourly"], partition_key="2013-01-07-03:00")
         ],
     ),
     "auto_materialize_policy_hourly_to_daily_partitions_never_materialized": (
@@ -228,7 +229,7 @@ auto_materialize_policy_scenarios = {
             expected_run_requests=[
                 run_request(asset_keys=["hourly"], partition_key=partition_key)
                 for partition_key in hourly_partitions_def.get_partition_keys_in_range(
-                    PartitionKeyRange(start="2013-01-05-04:00", end="2013-01-07-03:00")
+                    dg.PartitionKeyRange(start="2013-01-05-04:00", end="2013-01-07-03:00")
                 )
             ],
             expected_evaluations=[
@@ -241,7 +242,9 @@ auto_materialize_policy_scenarios = {
                                 evaluation_data=None,
                             ),
                             hourly_partitions_def.get_partition_keys_in_range(
-                                PartitionKeyRange(start="2013-01-05-0:00", end="2013-01-07-03:00")
+                                dg.PartitionKeyRange(
+                                    start="2013-01-05-0:00", end="2013-01-07-03:00"
+                                )
                             ),
                         ),
                         (
@@ -250,7 +253,9 @@ auto_materialize_policy_scenarios = {
                                 evaluation_data=None,
                             ),
                             hourly_partitions_def.get_partition_keys_in_range(
-                                PartitionKeyRange(start="2013-01-05-00:00", end="2013-01-05-03:00")
+                                dg.PartitionKeyRange(
+                                    start="2013-01-05-00:00", end="2013-01-05-03:00"
+                                )
                             ),
                         ),
                     ],
@@ -275,7 +280,7 @@ auto_materialize_policy_scenarios = {
             expected_run_requests=[
                 run_request(asset_keys=["hourly"], partition_key=partition_key)
                 for partition_key in hourly_partitions_def.get_partition_keys_in_range(
-                    PartitionKeyRange(start="2013-01-05-04:00", end="2013-01-07-03:00")
+                    dg.PartitionKeyRange(start="2013-01-05-04:00", end="2013-01-07-03:00")
                 )
             ],
         )
@@ -327,7 +332,7 @@ auto_materialize_policy_scenarios = {
                             evaluation_data=None,
                         ),
                         hourly_partitions_def.get_partition_keys_in_range(
-                            PartitionKeyRange(start="2013-01-05-0:00", end="2013-01-05-04:00")
+                            dg.PartitionKeyRange(start="2013-01-05-0:00", end="2013-01-05-04:00")
                         ),
                     ),
                     (
@@ -336,7 +341,7 @@ auto_materialize_policy_scenarios = {
                             evaluation_data=None,
                         ),
                         hourly_partitions_def.get_partition_keys_in_range(
-                            PartitionKeyRange(start="2013-01-05-00:00", end="2013-01-05-03:00")
+                            dg.PartitionKeyRange(start="2013-01-05-00:00", end="2013-01-05-03:00")
                         ),
                     ),
                 ],
@@ -371,7 +376,7 @@ auto_materialize_policy_scenarios = {
                             evaluation_data=None,
                         ),
                         hourly_partitions_def.get_partition_keys_in_range(
-                            PartitionKeyRange(start="2013-01-05-0:00", end="2013-01-05-04:00")
+                            dg.PartitionKeyRange(start="2013-01-05-0:00", end="2013-01-05-04:00")
                         ),
                     ),
                 ],
@@ -403,7 +408,7 @@ auto_materialize_policy_scenarios = {
                         AutoMaterializeRuleEvaluation(
                             AutoMaterializeRule.materialize_on_parent_updated().to_snapshot(),
                             evaluation_data=ParentUpdatedRuleEvaluationData(
-                                updated_asset_keys=frozenset({AssetKey("asset1")}),
+                                updated_asset_keys=frozenset({dg.AssetKey("asset1")}),
                                 will_update_asset_keys=frozenset(),
                             ),
                         ),
@@ -419,8 +424,8 @@ auto_materialize_policy_scenarios = {
                         AutoMaterializeRuleEvaluation(
                             AutoMaterializeRule.materialize_on_parent_updated().to_snapshot(),
                             evaluation_data=ParentUpdatedRuleEvaluationData(
-                                updated_asset_keys=frozenset({AssetKey("asset2")}),
-                                will_update_asset_keys=frozenset({AssetKey("asset3")}),
+                                updated_asset_keys=frozenset({dg.AssetKey("asset2")}),
+                                will_update_asset_keys=frozenset({dg.AssetKey("asset3")}),
                             ),
                         ),
                         None,
@@ -449,7 +454,7 @@ auto_materialize_policy_scenarios = {
                         AutoMaterializeRuleEvaluation(
                             AutoMaterializeRule.materialize_on_parent_updated().to_snapshot(),
                             evaluation_data=ParentUpdatedRuleEvaluationData(
-                                updated_asset_keys=frozenset({AssetKey("asset2")}),
+                                updated_asset_keys=frozenset({dg.AssetKey("asset2")}),
                                 will_update_asset_keys=frozenset(),
                             ),
                         ),
@@ -459,7 +464,7 @@ auto_materialize_policy_scenarios = {
                         AutoMaterializeRuleEvaluation(
                             AutoMaterializeRule.skip_on_parent_outdated().to_snapshot(),
                             evaluation_data=WaitingOnAssetsRuleEvaluationData(
-                                waiting_on_asset_keys=frozenset({AssetKey("asset3")})
+                                waiting_on_asset_keys=frozenset({dg.AssetKey("asset3")})
                             ),
                         ),
                         None,
@@ -560,7 +565,7 @@ auto_materialize_policy_scenarios = {
                                     AutoMaterializeRule.materialize_on_parent_updated().to_snapshot(),
                                     evaluation_data=ParentUpdatedRuleEvaluationData(
                                         updated_asset_keys=frozenset(
-                                            {AssetKey("C"), AssetKey("root2")}
+                                            {dg.AssetKey("C"), dg.AssetKey("root2")}
                                         ),
                                         will_update_asset_keys=frozenset(),
                                     ),
@@ -572,7 +577,7 @@ auto_materialize_policy_scenarios = {
                                 AutoMaterializeRuleEvaluation(
                                     AutoMaterializeRule.skip_on_parent_outdated().to_snapshot(),
                                     evaluation_data=WaitingOnAssetsRuleEvaluationData(
-                                        waiting_on_asset_keys=frozenset({AssetKey("A")})
+                                        waiting_on_asset_keys=frozenset({dg.AssetKey("A")})
                                     ),
                                 ),
                                 None,
@@ -593,7 +598,7 @@ auto_materialize_policy_scenarios = {
                                 AutoMaterializeRule.materialize_on_parent_updated().to_snapshot(),
                                 evaluation_data=ParentUpdatedRuleEvaluationData(
                                     updated_asset_keys=frozenset(
-                                        {AssetKey("C"), AssetKey("root2")}
+                                        {dg.AssetKey("C"), dg.AssetKey("root2")}
                                     ),
                                     will_update_asset_keys=frozenset(),
                                 ),
@@ -605,7 +610,7 @@ auto_materialize_policy_scenarios = {
                             AutoMaterializeRuleEvaluation(
                                 AutoMaterializeRule.skip_on_parent_outdated().to_snapshot(),
                                 evaluation_data=WaitingOnAssetsRuleEvaluationData(
-                                    waiting_on_asset_keys=frozenset({AssetKey("B")})
+                                    waiting_on_asset_keys=frozenset({dg.AssetKey("B")})
                                 ),
                             ),
                             None,
@@ -627,7 +632,7 @@ auto_materialize_policy_scenarios = {
                         AutoMaterializeRuleEvaluation(
                             AutoMaterializeRule.materialize_on_parent_updated().to_snapshot(),
                             evaluation_data=ParentUpdatedRuleEvaluationData(
-                                updated_asset_keys=frozenset({AssetKey("B")}),
+                                updated_asset_keys=frozenset({dg.AssetKey("B")}),
                                 will_update_asset_keys=frozenset(),
                             ),
                         ),
@@ -643,8 +648,8 @@ auto_materialize_policy_scenarios = {
                         AutoMaterializeRuleEvaluation(
                             AutoMaterializeRule.materialize_on_parent_updated().to_snapshot(),
                             evaluation_data=ParentUpdatedRuleEvaluationData(
-                                updated_asset_keys=frozenset({AssetKey("root2")}),
-                                will_update_asset_keys=frozenset({AssetKey("C")}),
+                                updated_asset_keys=frozenset({dg.AssetKey("root2")}),
+                                will_update_asset_keys=frozenset({dg.AssetKey("C")}),
                             ),
                         ),
                         None,
@@ -845,7 +850,7 @@ auto_materialize_policy_scenarios = {
                         AutoMaterializeRuleEvaluation(
                             AutoMaterializeRule.skip_on_required_but_nonexistent_parents().to_snapshot(),
                             evaluation_data=WaitingOnAssetsRuleEvaluationData(
-                                frozenset({AssetKey("asset1")})
+                                frozenset({dg.AssetKey("asset1")})
                             ),
                         ),
                         # Assert that we discard on required but nonexistent parents
@@ -867,7 +872,7 @@ auto_materialize_policy_scenarios = {
                         AutoMaterializeRuleEvaluation(
                             AutoMaterializeRule.materialize_on_parent_updated().to_snapshot(),
                             evaluation_data=ParentUpdatedRuleEvaluationData(
-                                frozenset({AssetKey("asset1"), AssetKey("asset2")}),
+                                frozenset({dg.AssetKey("asset1"), dg.AssetKey("asset2")}),
                                 will_update_asset_keys=frozenset(),
                             ),
                         ),
@@ -877,7 +882,7 @@ auto_materialize_policy_scenarios = {
                         AutoMaterializeRuleEvaluation(
                             AutoMaterializeRule.materialize_on_parent_updated().to_snapshot(),
                             evaluation_data=ParentUpdatedRuleEvaluationData(
-                                frozenset({AssetKey("asset2")}),
+                                frozenset({dg.AssetKey("asset2")}),
                                 will_update_asset_keys=frozenset(),
                             ),
                         ),
@@ -930,7 +935,7 @@ auto_materialize_policy_scenarios = {
                         AutoMaterializeRuleEvaluation(
                             AutoMaterializeRule.materialize_on_parent_updated().to_snapshot(),
                             evaluation_data=ParentUpdatedRuleEvaluationData(
-                                frozenset({AssetKey("asset1"), AssetKey("asset2")}),
+                                frozenset({dg.AssetKey("asset1"), dg.AssetKey("asset2")}),
                                 will_update_asset_keys=frozenset(),
                             ),
                         ),
@@ -942,7 +947,7 @@ auto_materialize_policy_scenarios = {
                         AutoMaterializeRuleEvaluation(
                             AutoMaterializeRule.materialize_on_parent_updated().to_snapshot(),
                             evaluation_data=ParentUpdatedRuleEvaluationData(
-                                frozenset({AssetKey("asset2")}),
+                                frozenset({dg.AssetKey("asset2")}),
                                 will_update_asset_keys=frozenset(),
                             ),
                         ),

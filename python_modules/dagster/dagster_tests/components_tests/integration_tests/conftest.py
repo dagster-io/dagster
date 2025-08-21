@@ -1,12 +1,15 @@
+from collections.abc import Iterator
+
 import pytest
+from dagster.components.core.component_tree import ComponentTree
 
 from dagster_tests.components_tests.integration_tests.component_loader import (
-    load_test_component_defs,
+    construct_component_tree_for_test,
 )
 
 
 @pytest.fixture
-def defs(request):
+def component_tree(request: pytest.FixtureRequest) -> Iterator[ComponentTree]:
     component_path = request.param
-    with load_test_component_defs(component_path) as defs:
-        yield defs
+    with construct_component_tree_for_test(component_path) as tree:
+        yield tree

@@ -1,4 +1,5 @@
 import os
+import time
 import warnings
 from dataclasses import dataclass
 from functools import lru_cache
@@ -22,7 +23,7 @@ class TestId:
 
 
 @lru_cache
-def buildkite_quarantined_tests() -> set[TestId]:
+def buildkite_quarantined_tests(annotation) -> set[TestId]:
     quarantined_tests = set()
 
     if os.getenv("BUILDKITE") or os.getenv("LOCAL_BUILDKITE_QUARANTINE"):
@@ -38,22 +39,41 @@ def buildkite_quarantined_tests() -> set[TestId]:
             suite_slug = os.getenv("BUILDKITE_TEST_SUITE_SLUG")
 
             headers = {"Authorization": f"Bearer {token}"}
-            url = f"https://api.buildkite.com/v2/analytics/organizations/{org_slug}/suites/{suite_slug}/tests/muted"
+            url = f"https://api.buildkite.com/v2/analytics/organizations/{org_slug}/suites/{suite_slug}/tests/{annotation}"
 
-            response = requests.get(url, headers=headers)
-            response.raise_for_status()
+            start_time = time.time()
+            timeout = 10
 
-            for test in response.json():
-                scope = test.get("scope", "")
-                name = test.get("name", "")
-                quarantined_test = TestId(scope, name)
+            while url and time.time() - start_time < timeout:
+                response = requests.get(url, headers=headers)
+                response.raise_for_status()
 
-                quarantined_tests.add(quarantined_test)
+                for test in response.json():
+                    scope = test.get("scope", "")
+                    name = test.get("name", "")
+                    quarantined_test = TestId(scope, name)
+
+                    quarantined_tests.add(quarantined_test)
+
+                link_header = response.headers.get("Link", "")
+                next_url = None
+                for part in link_header.split(","):
+                    if 'rel="next"' in part:
+                        next_url = part[part.find("<") + 1 : part.find(">")]
+                        break
+
+                url = next_url
 
         except Exception as e:
             print(e)  # noqa
 
     return quarantined_tests
+
+
+def pytest_addoption(parser):
+    parser.addoption(
+        "--split", action="store", default=None, help="Split test selection (e.g., 0/3)"
+    )
 
 
 def pytest_configure(config):
@@ -75,7 +95,9 @@ def pytest_runtest_setup(item):
     # We pull this list of tests at the beginning of each pytest session and add soft xfail markers to each
     # quarantined test.
     try:
-        if buildkite_quarantined_tests():
+        muted = buildkite_quarantined_tests("muted")
+        skipped = buildkite_quarantined_tests("skipped")
+        if muted or skipped:
             # https://github.com/buildkite/test-collector-python/blob/6fba081a2844d6bdec8607942eee48a03d60cd40/src/buildkite_test_collector/pytest_plugin/buildkite_plugin.py#L22-L27
             chunks = item.nodeid.split("::")
             scope = "::".join(chunks[:-1])
@@ -83,8 +105,10 @@ def pytest_runtest_setup(item):
 
             test = TestId(scope, name)
 
-            if test in buildkite_quarantined_tests():
+            if test in muted:
                 item.add_marker(pytest.mark.xfail(reason="Test muted in Buildkite.", strict=False))
+            if test in skipped:
+                item.add_marker(pytest.skip(reason="Test skipped in Buildkite."))
     except Exception as e:
         print(e)  # noqa
 
@@ -95,3 +119,42 @@ def pytest_runtest_setup(item):
 
     except StopIteration:
         pass
+
+
+@pytest.hookimpl(trylast=True)
+def pytest_collection_modifyitems(config, items):
+    """Split pytest collection.
+
+    Example usage:
+
+    pytest --split 1/2 # run half the tests
+    pytest --split 2/2 # run the other half the tests
+    """
+    split_option = config.getoption("--split")
+    if not split_option:
+        return
+
+    try:
+        k, n = map(int, split_option.split("/"))
+    except ValueError:
+        raise pytest.UsageError(
+            "--split must be in the form numerator/denominator (e.g. --split=1/3)"
+        )
+
+    if k <= 0:
+        raise pytest.UsageError("--split numerator must be > 0")
+
+    if k > n:
+        raise pytest.UsageError("--split numerator must be smaller than denominator")
+
+    total = len(items)
+    start = total * (k - 1) // n
+    end = total * k // n
+
+    selected = items[start:end]
+    deselected = items[:start] + items[end:]
+
+    if deselected:
+        config.hook.pytest_deselected(items=deselected)
+
+    items[:] = selected

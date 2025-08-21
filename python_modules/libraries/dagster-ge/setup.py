@@ -29,12 +29,17 @@ setup(
     ],
     packages=find_packages(exclude=["dagster_ge_tests*"]),
     include_package_data=True,
-    python_requires=">=3.10,<3.13",
+    python_requires=">=3.10,<3.14",
     install_requires=[
         f"dagster{pin}",
         f"dagster-pandas{pin}",
         "pandas",
         "great_expectations>=0.17.15,<1.0.0",  # need to migrate from DataContext
     ],
+    extras_require={
+        "test": [
+            "great-expectations>=0.18.22",  # lower bound to test version for consistent snapshots
+        ],
+    },
     zip_safe=False,
 )

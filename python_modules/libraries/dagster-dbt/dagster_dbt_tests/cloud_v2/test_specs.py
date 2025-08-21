@@ -45,11 +45,8 @@ def test_load_asset_specs(
     assert "dbtcloud" in first_asset_kinds
     assert "dbt" not in first_asset_kinds
 
-    # Clearing cache for other tests
-    workspace.load_specs.cache_clear()
 
-
-def test_load_asset_specs_selection(
+def test_load_asset_specs_select(
     workspace: DbtCloudWorkspace,
     fetch_workspace_data_api_mocks: responses.RequestsMock,
 ) -> None:
@@ -67,11 +64,8 @@ def test_load_asset_specs_selection(
     assert "dbtcloud" in first_asset_kinds
     assert "dbt" not in first_asset_kinds
 
-    # Clearing cache for other tests
-    workspace.load_specs.cache_clear()
 
-
-def test_load_asset_specs_exclusion(
+def test_load_asset_specs_exclude(
     workspace: DbtCloudWorkspace,
     fetch_workspace_data_api_mocks: responses.RequestsMock,
 ) -> None:
@@ -89,8 +83,26 @@ def test_load_asset_specs_exclusion(
     assert "dbtcloud" in first_asset_kinds
     assert "dbt" not in first_asset_kinds
 
-    # Clearing cache for other tests
-    workspace.load_specs.cache_clear()
+
+def test_load_asset_specs_selector(
+    workspace: DbtCloudWorkspace,
+    fetch_workspace_data_api_mocks: responses.RequestsMock,
+) -> None:
+    all_assets = load_dbt_cloud_asset_specs(
+        workspace=workspace, selector="raw_customer_child_models"
+    )
+    all_assets_keys = [asset.key for asset in all_assets]
+
+    # 5 dbt models
+    assert len(all_assets) == 2
+    assert len(all_assets_keys) == 2
+
+    # Sanity check outputs
+    first_asset_key = next(key for key in sorted(all_assets_keys))
+    assert first_asset_key.path == ["customers"]
+    first_asset_kinds = next(spec.kinds for spec in sorted(all_assets))
+    assert "dbtcloud" in first_asset_kinds
+    assert "dbt" not in first_asset_kinds
 
 
 def test_load_check_specs(
@@ -109,11 +121,8 @@ def test_load_check_specs(
     assert first_check_key.name == "not_null_customers_customer_id"
     assert first_check_key.asset_key.path == ["customers"]
 
-    # Clearing cache for other tests
-    workspace.load_specs.cache_clear()
 
-
-def test_load_check_specs_selection(
+def test_load_check_specs_select(
     workspace: DbtCloudWorkspace,
     fetch_workspace_data_api_mocks: responses.RequestsMock,
 ) -> None:
@@ -129,11 +138,8 @@ def test_load_check_specs_selection(
     assert first_check_key.name == "not_null_customers_customer_id"
     assert first_check_key.asset_key.path == ["customers"]
 
-    # Clearing cache for other tests
-    workspace.load_specs.cache_clear()
 
-
-def test_load_check_specs_exclusion(
+def test_load_check_specs_exclude(
     workspace: DbtCloudWorkspace,
     fetch_workspace_data_api_mocks: responses.RequestsMock,
 ) -> None:
@@ -152,5 +158,21 @@ def test_load_check_specs_exclusion(
     )
     assert first_check_key.asset_key.path == ["orders"]
 
-    # Clearing cache for other tests
-    workspace.load_specs.cache_clear()
+
+def test_load_check_specs_selector(
+    workspace: DbtCloudWorkspace,
+    fetch_workspace_data_api_mocks: responses.RequestsMock,
+) -> None:
+    all_checks = load_dbt_cloud_check_specs(
+        workspace=workspace, selector="raw_customer_child_models"
+    )
+    all_checks_keys = [check.key for check in all_checks]
+
+    # 4 dbt tests
+    assert len(all_checks) == 4
+    assert len(all_checks_keys) == 4
+
+    # Sanity check outputs
+    first_check_key = next(key for key in sorted(all_checks_keys))
+    assert first_check_key.name == "not_null_customers_customer_id"
+    assert first_check_key.asset_key.path == ["customers"]

@@ -16,15 +16,15 @@ export const useVisibleFeatureFlagRows = (): FeatureFlagRow[] => [
     flagType: FeatureFlag.flagAssetNodeFacets,
   },
   {
+    key: 'Display integrations marketplace',
+    flagType: FeatureFlag.flagMarketplace,
+  },
+  {
     key: 'Disable WebSockets',
     flagType: FeatureFlag.flagDisableWebsockets,
   },
   {
     key: 'Disable automatically loading default config in launchpad',
     flagType: FeatureFlag.flagDisableAutoLoadDefaults,
-  },
-  {
-    key: 'Docs in app (experimental)',
-    flagType: FeatureFlag.flagDocsInApp,
   },
 ];

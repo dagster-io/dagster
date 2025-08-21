@@ -2,9 +2,9 @@ import {
   Box,
   Code,
   Group,
-  Heading,
   MetadataTableWIP,
   PageHeader,
+  Subtitle1,
   Tag,
 } from '@dagster-io/ui-components';
 import {Link} from 'react-router-dom';
@@ -45,11 +45,11 @@ export const ScheduleDetails = (props: {
     <>
       <PageHeader
         title={
-          <Heading style={{display: 'flex', flexDirection: 'row', gap: 4}}>
+          <Subtitle1 style={{display: 'flex', flexDirection: 'row', gap: 4}}>
             <Link to="/automation">Automation</Link>
             <span>/</span>
             {name}
-          </Heading>
+          </Subtitle1>
         }
         tags={
           <Tag icon="schedule">
@@ -97,6 +97,7 @@ export const ScheduleDetails = (props: {
               <td>Next tick</td>
               <td>
                 <TimestampDisplay
+                  // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
                   timestamp={futureTicks.results[0].timestamp!}
                   timezone={executionTimezone}
                   timeFormat={TIME_FORMAT}

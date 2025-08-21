@@ -23,4 +23,6 @@ export type AssetViewParams = {
   default_range?: string;
   column?: string;
   showAllEvents?: boolean;
+  status?: string;
+  'asset-selection'?: string;
 };

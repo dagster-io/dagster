@@ -4,28 +4,9 @@ from functools import reduce
 from inspect import isclass
 from typing import AbstractSet, Union  # noqa: UP035
 
+import dagster as dg
 import pytest
-from dagster import (
-    AssetIn,
-    AssetOut,
-    AssetSpec,
-    DailyPartitionsDefinition,
-    Definitions,
-    DimensionPartitionMapping,
-    IdentityPartitionMapping,
-    MultiPartitionMapping,
-    MultiPartitionsDefinition,
-    SourceAsset,
-    StaticPartitionsDefinition,
-    TimeWindowPartitionMapping,
-    asset,
-    asset_check,
-    multi_asset,
-    observable_source_asset,
-)
 from dagster._core.definitions import AssetSelection
-from dagster._core.definitions.asset_check_spec import AssetCheckKey
-from dagster._core.definitions.asset_graph import AssetGraph
 from dagster._core.definitions.asset_selection import (
     AllAssetCheckSelection,
     AllSelection,
@@ -51,74 +32,72 @@ from dagster._core.definitions.asset_selection import (
     TableNameAssetSelection,
     UpstreamAssetSelection,
 )
-from dagster._core.definitions.assets import AssetsDefinition
-from dagster._core.definitions.base_asset_graph import BaseAssetGraph
-from dagster._core.definitions.events import AssetKey
+from dagster._core.definitions.assets.graph.asset_graph import AssetGraph
+from dagster._core.definitions.assets.graph.base_asset_graph import BaseAssetGraph
 from dagster._core.remote_representation.external import RemoteRepository
 from dagster._core.remote_representation.external_data import RepositorySnap
 from dagster._core.remote_representation.handle import RepositoryHandle
 from dagster._core.selector.subset_selector import MAX_NUM
-from dagster._serdes import deserialize_value
 from dagster_shared.check import CheckError
 from dagster_shared.serdes.serdes import _WHITELIST_MAP
 from typing_extensions import TypeAlias
 
-earth = SourceAsset(["celestial", "earth"], group_name="planets")
+earth = dg.SourceAsset(["celestial", "earth"], group_name="planets")
 
 
-@asset(ins={"earth": AssetIn(key=AssetKey(["celestial", "earth"]))}, group_name="ladies")
+@dg.asset(ins={"earth": dg.AssetIn(key=dg.AssetKey(["celestial", "earth"]))}, group_name="ladies")
 def alice(earth):
     return "alice"
 
 
-@asset(group_name="gentlemen")
+@dg.asset(group_name="gentlemen")
 def bob(alice):
     return "bob"
 
 
-@asset(group_name="ladies")
+@dg.asset(group_name="ladies")
 def candace(alice):
     return "candace"
 
 
-@asset(group_name="gentlemen")
+@dg.asset(group_name="gentlemen")
 def danny(candace):
     return "danny"
 
 
-@asset(group_name="gentlemen")
+@dg.asset(group_name="gentlemen")
 def edgar(danny):
     return "edgar"
 
 
-@asset(group_name="ladies")
+@dg.asset(group_name="ladies")
 def fiona(danny):
     return "fiona"
 
 
-@asset(group_name="gentlemen")
+@dg.asset(group_name="gentlemen")
 def george(bob, fiona):
     return "george"
 
 
-@multi_asset(
+@dg.multi_asset(
     group_name="robots",
     outs={
-        "rosie": AssetOut(),
-        "r2d2": AssetOut(),
-        "walle": AssetOut(),
+        "rosie": dg.AssetOut(),
+        "r2d2": dg.AssetOut(),
+        "walle": dg.AssetOut(),
     },
 )
 def robots() -> tuple[str, str, str]:
     return "rosie", "r2d2", "walle"
 
 
-@multi_asset(
+@dg.multi_asset(
     group_name="aliens",
     outs={
-        "zorg": AssetOut(),
-        "zapp": AssetOut(),
-        "zort": AssetOut(),
+        "zorg": dg.AssetOut(),
+        "zapp": dg.AssetOut(),
+        "zort": dg.AssetOut(),
     },
     can_subset=True,
 )
@@ -126,23 +105,38 @@ def aliens() -> tuple[str, str, str]:
     return "zorg", "zapp", "zort"
 
 
-@asset(key_prefix="animals")
+@dg.asset(key_prefix="animals")
 def zebra():
     return "zebra"
 
 
-_AssetList: TypeAlias = Iterable[Union[AssetsDefinition, SourceAsset]]
+_AssetList: TypeAlias = Iterable[Union[dg.AssetsDefinition, dg.SourceAsset]]
 
 
 @pytest.fixture
 def all_assets() -> _AssetList:
-    return [earth, alice, bob, candace, danny, edgar, fiona, george, robots, aliens, zebra]
+    return [
+        earth,
+        alice,
+        bob,
+        candace,
+        danny,
+        edgar,
+        fiona,
+        george,
+        robots,
+        aliens,
+        zebra,
+    ]
 
 
-def _asset_keys_of(assets_defs: _AssetList) -> AbstractSet[AssetKey]:
+def _asset_keys_of(assets_defs: _AssetList) -> AbstractSet[dg.AssetKey]:
     return reduce(
         operator.or_,
-        [item.keys if isinstance(item, AssetsDefinition) else {item.key} for item in assets_defs],
+        [
+            item.keys if isinstance(item, dg.AssetsDefinition) else {item.key}
+            for item in assets_defs
+        ],
         set(),
     )
 
@@ -181,7 +175,7 @@ def test_asset_selection_groups(all_assets: _AssetList):
 
 
 def test_asset_selection_keys(all_assets: _AssetList):
-    sel = AssetSelection.keys(AssetKey("alice"), AssetKey("bob"))
+    sel = AssetSelection.keys(dg.AssetKey("alice"), dg.AssetKey("bob"))
     assert sel.resolve(all_assets) == _asset_keys_of({alice, bob})
     assert str(sel) == 'key:"alice" or key:"bob"'
 
@@ -228,7 +222,7 @@ def test_asset_selection_key_substring(all_assets: _AssetList):
 
 
 def test_select_source_asset_keys():
-    a = SourceAsset("a")
+    a = dg.SourceAsset("a")
     selection = AssetSelection.keys(a.key)
     assert selection.resolve([a]) == {a.key}
 
@@ -295,7 +289,7 @@ def test_asset_selection_required_multi_asset_neighbors(all_assets: _AssetList):
 
     # aliens are subsettable, so no expansion from required_multi_asset_neighbors
     sel = AssetSelection.assets("zorg").required_multi_asset_neighbors()
-    assert sel.resolve(all_assets) == {AssetKey("zorg")}
+    assert sel.resolve(all_assets) == {dg.AssetKey("zorg")}
 
 
 def test_asset_selection_upstream(all_assets: _AssetList):
@@ -339,15 +333,15 @@ def test_asset_selection_source_assets(all_assets: _AssetList):
 
 
 def test_roots():
-    @asset
+    @dg.asset
     def a():
         pass
 
-    @asset
+    @dg.asset
     def b(a):
         pass
 
-    @asset
+    @dg.asset
     def c(b):
         pass
 
@@ -358,17 +352,17 @@ def test_roots():
 
 
 def test_materializable() -> None:
-    source_upstream = SourceAsset("source_upstream")
+    source_upstream = dg.SourceAsset("source_upstream")
 
-    @observable_source_asset
+    @dg.observable_source_asset
     def obs_source_upstream() -> None:
         pass
 
-    @asset
+    @dg.asset
     def b(source_upstream, obs_source_upstream):
         pass
 
-    @asset
+    @dg.asset
     def c(b):
         pass
 
@@ -401,15 +395,15 @@ def test_materializable() -> None:
 
 
 def test_sources():
-    @asset
+    @dg.asset
     def a():
         pass
 
-    @asset
+    @dg.asset
     def b(a):
         pass
 
-    @asset
+    @dg.asset
     def c(b):
         pass
 
@@ -421,31 +415,32 @@ def test_sources():
     "partitions_def,partition_mapping",
     [
         (
-            DailyPartitionsDefinition(start_date="2020-01-01"),
-            TimeWindowPartitionMapping(start_offset=-1, end_offset=-1),
+            dg.DailyPartitionsDefinition(start_date="2020-01-01"),
+            dg.TimeWindowPartitionMapping(start_offset=-1, end_offset=-1),
         ),
         (
-            MultiPartitionsDefinition(
+            dg.MultiPartitionsDefinition(
                 {
-                    "time": DailyPartitionsDefinition(start_date="2020-01-01"),
-                    "abc": StaticPartitionsDefinition(["a", "b", "c"]),
+                    "time": dg.DailyPartitionsDefinition(start_date="2020-01-01"),
+                    "abc": dg.StaticPartitionsDefinition(["a", "b", "c"]),
                 }
             ),
-            MultiPartitionMapping(
+            dg.MultiPartitionMapping(
                 {
-                    "time": DimensionPartitionMapping(
-                        "time", TimeWindowPartitionMapping(start_offset=-1, end_offset=-1)
+                    "time": dg.DimensionPartitionMapping(
+                        "time",
+                        dg.TimeWindowPartitionMapping(start_offset=-1, end_offset=-1),
                     ),
-                    "abc": DimensionPartitionMapping("abc", IdentityPartitionMapping()),
+                    "abc": dg.DimensionPartitionMapping("abc", dg.IdentityPartitionMapping()),
                 }
             ),
         ),
     ],
 )
 def test_self_dep(partitions_def, partition_mapping):
-    @asset(
+    @dg.asset(
         partitions_def=partitions_def,
-        ins={"a": AssetIn(partition_mapping=partition_mapping)},
+        ins={"a": dg.AssetIn(partition_mapping=partition_mapping)},
     )
     def a(a): ...
 
@@ -457,10 +452,10 @@ def test_self_dep(partitions_def, partition_mapping):
 
 
 def test_from_coercible_multi_asset():
-    @multi_asset(outs={"asset1": AssetOut(), "asset2": AssetOut()})
+    @dg.multi_asset(outs={"asset1": dg.AssetOut(), "asset2": dg.AssetOut()})
     def my_multi_asset(): ...
 
-    @asset
+    @dg.asset
     def other_asset(): ...
 
     assert (
@@ -470,15 +465,15 @@ def test_from_coercible_multi_asset():
 
 
 def test_from_coercible_tuple():
-    @asset
+    @dg.asset
     def foo(): ...
 
-    @asset
+    @dg.asset
     def bar(): ...
 
     assert AssetSelection.from_coercible((foo, bar)).resolve([foo, bar]) == {
-        AssetKey("foo"),
-        AssetKey("bar"),
+        dg.AssetKey("foo"),
+        dg.AssetKey("bar"),
     }
 
 
@@ -511,11 +506,11 @@ def test_multi_operand_selection():
 def test_asset_selection_type_checking():
     valid_asset_selection = AssetSelection.assets("foo")
     valid_asset_selection_sequence = [valid_asset_selection]
-    valid_asset_key = AssetKey("bar")
+    valid_asset_key = dg.AssetKey("bar")
     valid_asset_key_sequence = [valid_asset_key]
     valid_string_sequence = ["string"]
     valid_string_sequence_sequence = [valid_string_sequence]
-    valid_asset_check_key = AssetCheckKey(asset_key=valid_asset_key, name="test_name")
+    valid_asset_check_key = dg.AssetCheckKey(asset_key=valid_asset_key, name="test_name")
     valid_asset_check_key_sequence = [valid_asset_check_key]
 
     invalid_argument = "invalid_argument"
@@ -601,14 +596,14 @@ def test_all_asset_selection_subclasses_serializable():
     asset_selection_subclasses = []
     for attr in dir(asset_selection_module):
         value = getattr(asset_selection_module, attr)
-        if isclass(value) and issubclass(value, AssetSelection):
+        if isclass(value) and issubclass(value, dg.AssetSelection):
             asset_selection_subclasses.append(value)
 
     assert len(asset_selection_subclasses) > 5
 
     for asset_selection_subclass in asset_selection_subclasses:
         if asset_selection_subclass not in [
-            AssetSelection,
+            dg.AssetSelection,
             asset_selection_module.ChainedAssetSelection,
             asset_selection_module.OperandListAssetSelection,
         ]:
@@ -616,19 +611,19 @@ def test_all_asset_selection_subclasses_serializable():
 
 
 def test_to_serializable_asset_selection():
-    class UnserializableAssetSelection(AssetSelection):
+    class UnserializableAssetSelection(dg.AssetSelection):
         def resolve_inner(
             self, asset_graph: BaseAssetGraph, allow_missing: bool
-        ) -> AbstractSet[AssetKey]:
-            return asset_graph.materializable_asset_keys - {AssetKey("asset2")}
+        ) -> AbstractSet[dg.AssetKey]:
+            return asset_graph.materializable_asset_keys - {dg.AssetKey("asset2")}
 
-    @asset
+    @dg.asset
     def asset1(): ...
 
-    @asset
+    @dg.asset
     def asset2(): ...
 
-    @asset_check(asset=asset1)  # pyright: ignore[reportArgumentType]
+    @dg.asset_check(asset=asset1)  # pyright: ignore[reportArgumentType]
     def check1(): ...
 
     asset_graph = AssetGraph.from_assets([asset1, asset2, check1])
@@ -713,10 +708,10 @@ def test_to_serializable_asset_selection():
 
 def test_to_string_basic():
     assert str(AssetSelection.assets("foo")) == 'key:"foo"'
-    assert str(AssetSelection.assets(AssetKey(["foo", "bar"]))) == 'key:"foo/bar"'
+    assert str(AssetSelection.assets(dg.AssetKey(["foo", "bar"]))) == 'key:"foo/bar"'
     assert str(AssetSelection.assets("foo", "bar")) == 'key:"foo" or key:"bar"'
     assert (
-        str(AssetSelection.assets(AssetKey(["foo", "bar"]), AssetKey("baz")))
+        str(AssetSelection.assets(dg.AssetKey(["foo", "bar"]), dg.AssetKey("baz")))
         == 'key:"foo/bar" or key:"baz"'
     )
 
@@ -726,10 +721,41 @@ def test_to_string_basic():
     assert (
         str(AssetSelection.groups("marketing", "finance")) == 'group:"marketing" or group:"finance"'
     )
+    assert str(AssetSelection.groups()) == "group:<null>"
+    assert str(AssetSelection.groups("")) == 'group:""'
+    assert str(AssetSelection.kind(None)) == "kind:<null>"
+    assert str(AssetSelection.kind("")) == 'kind:""'
+    assert str(AssetSelection.tag("", "")) == 'tag:""'
+    assert str(AssetSelection.owner(None)) == "owner:<null>"
+    assert str(AssetSelection.owner("")) == 'owner:""'
+    assert str(CodeLocationAssetSelection(selected_code_location=None)) == "code_location:<null>"
+    assert str(ColumnAssetSelection(selected_column=None)) == "column:<null>"
+    assert str(ColumnAssetSelection(selected_column="")) == 'column:""'
+    assert str(ColumnTagAssetSelection(key="fake", value="")) == 'column_tag:"fake"'
+    assert str(ColumnTagAssetSelection(key="", value="")) == 'column_tag:""'
+    assert str(TableNameAssetSelection(selected_table_name=None)) == "table_name:<null>"
+    assert str(TableNameAssetSelection(selected_table_name="")) == 'table_name:""'
+    assert (
+        str(ChangedInBranchAssetSelection(selected_changed_in_branch=None))
+        == "changed_in_branch:<null>"
+    )
+    assert (
+        str(ChangedInBranchAssetSelection(selected_changed_in_branch="")) == 'changed_in_branch:""'
+    )
+    assert AssetSelection.from_string("kind:dbt").to_selection_str() == 'kind:"dbt"'
+    assert AssetSelection.from_string("owner:dbt").to_selection_str() == 'owner:"dbt"'
+    assert AssetSelection.from_string("tag:foo=bar").to_selection_str() == 'tag:"foo"="bar"'
+    assert AssetSelection.from_string("tag:foo").to_selection_str() == 'tag:"foo"'
+    assert AssetSelection.from_string("key:prefix/thing").to_selection_str() == 'key:"prefix/thing"'
+    assert (
+        AssetSelection.from_string('key:"prefix/thing*"').to_selection_str()
+        == 'key:"prefix/thing*"'
+    )
+    assert AssetSelection.from_string("column:foo").to_selection_str() == 'column:"foo"'
 
 
 def test_to_string_binary_operators():
-    foo_bar = AssetSelection.assets(AssetKey(["foo", "bar"]))
+    foo_bar = AssetSelection.assets(dg.AssetKey(["foo", "bar"]))
     baz = AssetSelection.assets("baz")
     bork = AssetSelection.assets("bork")
     assert str(foo_bar | baz) == 'key:"foo/bar" or key:"baz"'
@@ -781,7 +807,7 @@ def test_empty_namedtuple_truthy():
 
 def test_deserialize_old_all_asset_selection():
     old_serialized_value = '{"__class__": "AllSelection"}'
-    new_unserialized_value = deserialize_value(old_serialized_value, AllSelection)
+    new_unserialized_value = dg.deserialize_value(old_serialized_value, AllSelection)
     assert not new_unserialized_value.include_sources
 
 
@@ -823,55 +849,56 @@ def test_from_string():
 
 
 def test_tag():
-    @multi_asset(
+    @dg.multi_asset(
         specs=[
-            AssetSpec("asset1", tags={"foo": "fooval"}),
-            AssetSpec("asset2", tags={"foo": "fooval2"}),
-            AssetSpec("asset3", tags={"foo": "fooval", "bar": "barval"}),
-            AssetSpec("asset4", tags={"bar": "barval"}),
+            dg.AssetSpec("asset1", tags={"foo": "fooval"}),
+            dg.AssetSpec("asset2", tags={"foo": "fooval2"}),
+            dg.AssetSpec("asset3", tags={"foo": "fooval", "bar": "barval"}),
+            dg.AssetSpec("asset4", tags={"bar": "barval"}),
         ]
     )
     def assets(): ...
 
     assert AssetSelection.tag("foo", "fooval").resolve([assets]) == {
-        AssetKey(k) for k in ["asset1", "asset3"]
+        dg.AssetKey(k) for k in ["asset1", "asset3"]
     }
+    assert AssetSelection.tag("foo", "").resolve([assets]) == set()
 
 
 def test_tag_string():
-    @multi_asset(
+    @dg.multi_asset(
         specs=[
-            AssetSpec("asset1", tags={"foo": "fooval"}),
-            AssetSpec("asset2", tags={"foo": "fooval2"}),
-            AssetSpec("asset3", tags={"foo": "fooval", "bar": "barval"}),
-            AssetSpec("asset4", tags={"bar": "barval"}),
-            AssetSpec("asset5", tags={"baz": ""}),
-            AssetSpec("asset6", tags={"baz": "", "bar": "barval"}),
+            dg.AssetSpec("asset1", tags={"foo": "fooval"}),
+            dg.AssetSpec("asset2", tags={"foo": "fooval2"}),
+            dg.AssetSpec("asset3", tags={"foo": "fooval", "bar": "barval"}),
+            dg.AssetSpec("asset4", tags={"bar": "barval"}),
+            dg.AssetSpec("asset5", tags={"baz": ""}),
+            dg.AssetSpec("asset6", tags={"baz": "", "bar": "barval"}),
         ]
     )
     def assets(): ...
 
     assert AssetSelection.tag_string("foo=fooval").resolve([assets]) == {
-        AssetKey("asset1"),
-        AssetKey("asset3"),
+        dg.AssetKey("asset1"),
+        dg.AssetKey("asset3"),
     }
     assert AssetSelection.tag_string("foo").resolve([assets]) == set()
     assert AssetSelection.tag_string("baz").resolve([assets]) == {
-        AssetKey("asset5"),
-        AssetKey("asset6"),
+        dg.AssetKey("asset5"),
+        dg.AssetKey("asset6"),
     }
 
 
 def test_key_wildcard():
-    @multi_asset(
+    @dg.multi_asset(
         specs=[
-            AssetSpec("asset1"),
-            AssetSpec("asset2"),
-            AssetSpec("asset3"),
-            AssetSpec("asset4"),
-            AssetSpec(["prefix", "asset1"]),
-            AssetSpec(["prefix", "asset2"]),
-            AssetSpec(["prefix", "asset3"]),
+            dg.AssetSpec("asset1"),
+            dg.AssetSpec("asset2"),
+            dg.AssetSpec("asset3"),
+            dg.AssetSpec("asset4"),
+            dg.AssetSpec(["prefix", "asset1"]),
+            dg.AssetSpec(["prefix", "asset2"]),
+            dg.AssetSpec(["prefix", "asset3"]),
         ]
     )
     def assets(): ...
@@ -879,44 +906,65 @@ def test_key_wildcard():
     assert KeyWildCardAssetSelection(selected_key_wildcard="asset").resolve([assets]) == set()
 
     assert KeyWildCardAssetSelection(selected_key_wildcard="asset1").resolve([assets]) == {
-        AssetKey("asset1"),
+        dg.AssetKey("asset1"),
     }
 
     assert KeyWildCardAssetSelection(selected_key_wildcard="prefix/*").resolve([assets]) == {
-        AssetKey(["prefix", "asset1"]),
-        AssetKey(["prefix", "asset2"]),
-        AssetKey(["prefix", "asset3"]),
+        dg.AssetKey(["prefix", "asset1"]),
+        dg.AssetKey(["prefix", "asset2"]),
+        dg.AssetKey(["prefix", "asset3"]),
     }
 
     assert KeyWildCardAssetSelection(selected_key_wildcard="*/asset*").resolve([assets]) == {
-        AssetKey(["prefix", "asset1"]),
-        AssetKey(["prefix", "asset2"]),
-        AssetKey(["prefix", "asset3"]),
+        dg.AssetKey(["prefix", "asset1"]),
+        dg.AssetKey(["prefix", "asset2"]),
+        dg.AssetKey(["prefix", "asset3"]),
     }
 
 
 def test_owner() -> None:
-    @multi_asset(
+    @dg.multi_asset(
         specs=[
-            AssetSpec("asset1", owners=["owner1@owner.com"]),
-            AssetSpec("asset2", owners=["owner2@owner.com"]),
-            AssetSpec("asset3", owners=["owner1@owner.com"]),
-            AssetSpec("asset4", owners=["owner2@owner.com"]),
+            dg.AssetSpec("asset1", owners=["owner1@owner.com"]),
+            dg.AssetSpec("asset2", owners=["owner2@owner.com"]),
+            dg.AssetSpec("asset3", owners=["owner1@owner.com"]),
+            dg.AssetSpec("asset4", owners=["owner2@owner.com"]),
         ]
     )
     def assets(): ...
 
     assert AssetSelection.owner("owner1@owner.com").resolve([assets]) == {
-        AssetKey("asset1"),
-        AssetKey("asset3"),
+        dg.AssetKey("asset1"),
+        dg.AssetKey("asset3"),
+    }
+
+
+def test_kind() -> None:
+    @dg.multi_asset(
+        specs=[
+            dg.AssetSpec("asset1", kinds={"my_kind"}),
+            dg.AssetSpec("asset2", kinds={""}),
+            dg.AssetSpec("asset3"),
+        ]
+    )
+    def assets(): ...
+
+    assert AssetSelection.kind("my_kind").resolve([assets]) == {
+        dg.AssetKey("asset1"),
+    }
+    assert AssetSelection.kind("").resolve([assets]) == {
+        dg.AssetKey("asset2"),
+    }
+    assert AssetSelection.kind(None).resolve([assets]) == {
+        dg.AssetKey("asset3"),
     }
 
 
 def test_code_location() -> None:
-    @asset
+    @dg.asset
     def my_asset(): ...
 
-    defs = Definitions(assets=[my_asset])
+    defs = dg.Definitions(assets=[my_asset])
 
     # Selection can be instantiated.
     selection = CodeLocationAssetSelection(selected_code_location="code_location1")
@@ -941,7 +989,7 @@ def test_code_location() -> None:
     assert selection.resolve_inner(
         remote_repo.asset_graph,
         allow_missing=False,
-    ) == {AssetKey("my_asset")}
+    ) == {dg.AssetKey("my_asset")}
 
     other_repo_handle = RepositoryHandle.for_test(
         location_name="code_location2",
@@ -967,11 +1015,11 @@ def test_code_location() -> None:
     assert selection.resolve_inner(
         remote_repo.asset_graph,
         allow_missing=False,
-    ) == {AssetKey("my_asset")}
+    ) == {dg.AssetKey("my_asset")}
 
 
 def test_column() -> None:
-    @asset
+    @dg.asset
     def my_asset(): ...
 
     # Selection can be instantiated.
@@ -983,7 +1031,7 @@ def test_column() -> None:
 
 
 def test_status() -> None:
-    @asset
+    @dg.asset
     def my_asset(): ...
 
     # Selection can be instantiated.
@@ -995,7 +1043,7 @@ def test_status() -> None:
 
 
 def test_table_name() -> None:
-    @asset
+    @dg.asset
     def my_asset(): ...
 
     # Selection can be instantiated.
@@ -1007,7 +1055,7 @@ def test_table_name() -> None:
 
 
 def test_column_tag() -> None:
-    @asset
+    @dg.asset
     def my_asset(): ...
 
     # Selection can be instantiated.
@@ -1019,7 +1067,7 @@ def test_column_tag() -> None:
 
 
 def test_changed_in_branch() -> None:
-    @asset
+    @dg.asset
     def my_asset(): ...
 
     # Selection can be instantiated.

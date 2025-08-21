@@ -18,8 +18,8 @@ def merge_dicts(*args: Mapping[Any, Any]) -> dict[Any, Any]:
     contains the value from the dictionary that comes latest in the list.
     """
     check.is_tuple(args, of_type=dict)
-    if len(args) < 2:
-        check.failed(f"Expected 2 or more args to merge_dicts, found {len(args)}")
+    if len(args) == 0:
+        check.failed(f"Expected 1 or more args to merge_dicts, found {len(args)}")
 
     result: dict[object, object] = {}
     for arg in args:

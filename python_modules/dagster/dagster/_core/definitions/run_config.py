@@ -14,7 +14,7 @@ from typing_extensions import TypeAlias
 
 from dagster._annotations import public
 from dagster._config import ALL_CONFIG_BUILTINS, ConfigType, Field, Permissive, Selector, Shape
-from dagster._core.definitions.asset_layer import AssetLayer
+from dagster._core.definitions.assets.job.asset_layer import AssetLayer
 from dagster._core.definitions.configurable import ConfigurableDefinition
 from dagster._core.definitions.definition_config_schema import IDefinitionConfigSchema
 from dagster._core.definitions.dependency import (
@@ -43,7 +43,7 @@ from dagster._core.types.dagster_type import ALL_RUNTIME_BUILTINS, construct_dag
 from dagster._utils import check
 
 if TYPE_CHECKING:
-    from dagster._core.definitions.assets import AssetsDefinition
+    from dagster._core.definitions.assets.definition.assets_definition import AssetsDefinition
 
 
 def define_resource_dictionary_cls(
@@ -225,7 +225,7 @@ def get_inputs_field(
                 asset_layer.asset_graph.executable_asset_keys
                 or asset_layer.asset_graph.asset_check_keys
             )
-            and asset_layer.asset_key_for_input(handle, name)
+            and asset_layer.get_asset_key_for_node_input(handle, name)
             and not has_upstream
         ):
             input_field = None
@@ -602,6 +602,7 @@ def _convert_config_classes(configs: dict[str, Any]) -> dict[str, Any]:
     return _convert_config_classes_inner(configs)
 
 
+@public
 class RunConfig:
     """Container for all the configuration that can be passed to a run. Accepts Pythonic definitions
     for op and asset config and resources and converts them under the hood to the appropriate config dictionaries.

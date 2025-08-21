@@ -11,7 +11,7 @@ from dagster._core.definitions import (
     NodeOutput,
     OpDefinition,
 )
-from dagster._core.definitions.asset_layer import AssetLayer
+from dagster._core.definitions.assets.job.asset_layer import AssetLayer
 from dagster._core.definitions.composition import MappedInputPlaceholder
 from dagster._core.definitions.dependency import (
     BlockingAssetChecksDependencyDefinition,
@@ -389,6 +389,9 @@ class _PlanBuilder:
         if input_def.dagster_type.is_nothing:
             return None
 
+        if job_def.graph.input_has_default(input_name):
+            return None
+
         # Otherwise we throw an error.
         raise DagsterInvariantViolationError(
             f"In top-level graph of {self.job_def.describe_target()}, input {input_name} "
@@ -419,7 +422,7 @@ def get_step_input_source(
         not node.container_maps_input(input_handle.input_name)
     ):
         # can only load from source asset if assets defs are available
-        if asset_layer.asset_key_for_input(handle, input_handle.input_name):
+        if asset_layer.get_asset_key_for_node_input(handle, input_handle.input_name):
             return FromLoadableAsset()
         elif input_def.input_manager_key:
             return FromInputManager(node_handle=handle, input_name=input_name)
@@ -603,7 +606,9 @@ def _step_input_source_from_blocking_asset_checks_dep_def(
             check.invariant(f"Expected NodeOutput, got {node_output}")
 
     if source_to_load_from is None:
-        asset_key_for_input = asset_layer.asset_key_for_input(node_handle, input_handle.input_name)
+        asset_key_for_input = asset_layer.get_asset_key_for_node_input(
+            node_handle, input_handle.input_name
+        )
         if asset_key_for_input:
             source_to_load_from = FromLoadableAsset(node_handle=node_handle, input_name=input_name)
             sources.append(source_to_load_from)

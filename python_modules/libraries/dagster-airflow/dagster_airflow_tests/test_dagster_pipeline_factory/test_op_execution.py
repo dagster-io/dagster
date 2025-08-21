@@ -10,7 +10,9 @@ import pytest
 from airflow import __version__ as airflow_version
 
 if airflow_version >= "2.0.0":
-    from airflow.providers.apache.spark.operators.spark_submit import SparkSubmitOperator
+    from airflow.providers.apache.spark.operators.spark_submit import (  # type: ignore
+        SparkSubmitOperator,
+    )
 else:
     from airflow.contrib.operators.spark_submit_operator import (  # type: ignore (airflow 1 compat)
         SparkSubmitOperator,
@@ -21,7 +23,7 @@ from airflow.operators.bash_operator import BashOperator  # type: ignore (airflo
 from airflow.operators.dummy_operator import DummyOperator  # type: ignore (airflow 1 compat)
 from airflow.utils.dates import days_ago
 from dagster import DagsterEventType
-from dagster._core.instance import AIRFLOW_EXECUTION_DATE_STR
+from dagster._core.instance.utils import AIRFLOW_EXECUTION_DATE_STR
 from dagster._core.test_utils import instance_for_test
 from dagster._time import get_current_datetime
 from dagster_airflow import make_dagster_job_from_airflow_dag

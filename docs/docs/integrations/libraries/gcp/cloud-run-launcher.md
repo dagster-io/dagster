@@ -7,6 +7,7 @@ source: https://github.com/dagster-io/community-integrations/tree/main/libraries
 pypi: https://pypi.org/project/dagster-contrib-gcp/
 sidebar_custom_props:
   logo: images/integrations/gcp.svg
+  community: true
 partnerlink:
 ---
 

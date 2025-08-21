@@ -1,28 +1,17 @@
 import inspect
 import os
+import sys
 from abc import ABC
 from collections import namedtuple
-from collections.abc import Mapping
+from collections.abc import Iterator, Mapping
 from functools import partial
-from typing import (  # noqa: UP035
-    TYPE_CHECKING,
-    Any,
-    Callable,
-    Generic,
-    Iterator,
-    NamedTuple,
-    Optional,
-    Tuple,  # noqa: F401
-    Type,  # noqa: F401
-    TypeVar,
-    Union,
-    overload,
-)
+from typing import TYPE_CHECKING, Any, Callable, NamedTuple, Optional, TypeVar, Union, overload
 
 from typing_extensions import Self, dataclass_transform
 
 import dagster_shared.check as check
 from dagster_shared.check.builder import (
+    INJECTED_CHECK_VAR,
     INJECTED_DEFAULT_VALS_LOCAL_VAR,
     EvalContext,
     build_args_and_assignment_strs,
@@ -76,6 +65,15 @@ def _get_field_set_and_defaults(
                     "If you are trying to set a function as a default value "
                     "you will have to override __new__.",
                 )
+                if "pydantic" in sys.modules:
+                    from pydantic.fields import FieldInfo
+
+                    check.invariant(
+                        not isinstance(attr_val, FieldInfo),
+                        "pydantic.Field is not supported as a default value for @record fields."
+                        " For Resolved subclasses, you may provide additional field metadata"
+                        " through the Resolver: Annotated[..., Resolver.default(description=...)].",
+                    )
                 defaults[name] = attr_val
                 last_defaulted_field = name
                 continue
@@ -125,8 +123,12 @@ def _namedtuple_record_transform(
     if checked:
         eval_ctx = EvalContext.capture_from_frame(
             1 + decorator_frames,
-            # inject default values in to the local namespace for reference in generated __new__
-            add_to_local_ns={INJECTED_DEFAULT_VALS_LOCAL_VAR: defaults},
+            add_to_local_ns={
+                # inject default values in to the local namespace for reference in generated __new__
+                INJECTED_DEFAULT_VALS_LOCAL_VAR: defaults,
+                # as well as a ref to the check module
+                INJECTED_CHECK_VAR: check,
+            },
         )
         generated_new = JitCheckedNew(
             field_set,
@@ -265,6 +267,26 @@ def record(
     Args:
         checked: Whether or not to generate runtime type checked construction (default True).
         kw_only: Whether or not the generated __new__ is kwargs only (default True).
+
+    Example:
+        @record
+        class Person:
+            name: str
+            age: int
+
+        # Create instance
+        person = Person(name="Alice", age=30)
+
+        # Create modified copy using replace()
+        older_person = replace(person, age=31)
+
+        # Add items to lists using replace()
+        @record
+        class TaskList:
+            items: list[str]
+
+        tasks = TaskList(items=["task1"])
+        updated_tasks = replace(tasks, items=[*tasks.items, "task2"])
     """
     if cls:
         return _namedtuple_record_transform(
@@ -306,23 +328,33 @@ def record_custom(
     checked: bool = True,
     field_to_new_mapping: Optional[Mapping[str, str]] = None,
 ) -> Union[TType, Callable[[TType], TType]]:
-    """Variant of the record decorator to use to opt out of the dataclass_transform decorator behavior.
-    This is done when overriding __new__ so that the type checker knows that is what is used.
+    """Variant of the record decorator to use when overriding __new__.
 
-    @record_custom
-    class Coerced(IHaveNew):
-        name: str
+    Example:
+        @record_custom
+        class MyRecord(IHaveNew):
+            name: str
+            value: int
 
-        def __new__(cls, name: Optional[str] = None)
-            if not name:
-                name = "bob"
+            def __new__(cls, name: str, value: int = 42):
+                # Custom logic here
+                if not name:
+                    name = "default"
+                return super().__new__(
+                    cls,
+                    name=name,
+                    value=value,
+                )
 
-            return super().__new__(
-                cls,
-                name=name,
-            )
+    Important requirements:
+    - Must inherit from IHaveNew
+    - Must define a custom __new__ method
+    - Must call super().__new__(cls, **kwargs) with keyword arguments
+    - Keyword arguments must match the field names exactly
+    - Cannot be used with @record inheritance
 
-
+    This approach is useful when you need custom validation, default value logic,
+    or type coercion in the constructor that can't be handled with simple defaults.
 
     It would have been cool if we could do that with an argument and @overload but
     from https://peps.python.org/pep-0681/ "When applied to an overload,
@@ -420,6 +452,38 @@ def replace(obj: TVal, **kwargs) -> TVal:
     new values specified by keyword args.
 
     This emulates the behavior of namedtuple _replace.
+
+    Example:
+        @record
+        class Config:
+            timeout: int
+            retries: int
+
+        config = Config(timeout=30, retries=3)
+
+        # Update single field
+        faster_config = replace(config, timeout=10)
+
+        # Update multiple fields
+        production_config = replace(config, timeout=60, retries=5)
+
+        # Add items to lists (use spread operator to avoid mutation)
+        @record
+        class Results:
+            errors: list[str]
+            warnings: list[str]
+
+        results = Results(errors=[], warnings=["deprecated API"])
+
+        # Add new error
+        updated_results = replace(results, errors=[*results.errors, "network timeout"])
+
+        # Add multiple items
+        final_results = replace(
+            updated_results,
+            errors=[*updated_results.errors, "connection failed"],
+            warnings=[*updated_results.warnings, "slow query"]
+        )
     """
     check.invariant(is_record(obj))
     cls = obj.__class__
@@ -446,11 +510,14 @@ class LegacyNamedTupleMixin(ABC):
         value: Union[bool, PartitionsSubset]
     """
 
-    def _replace(self, **kwargs):
+    def _replace(self, **kwargs) -> Self:
         return replace(self, **kwargs)
 
-    def _asdict(self):
+    def _asdict(self) -> Mapping[str, Any]:
         return as_dict(self)
+
+    def __iter__(self) -> Iterator:
+        return tuple.__iter__(self)  # type: ignore
 
 
 class JitCheckedNew:
@@ -489,10 +556,6 @@ class JitCheckedNew:
         # update the context with callsite locals/globals to resolve
         # ForwardRefs that were unavailable at definition time.
         self._eval_ctx.update_from_frame(1 + self._new_frames)
-
-        # ensure check is in scope
-        if "check" not in self._eval_ctx.global_ns:
-            self._eval_ctx.global_ns["check"] = check
 
         # we are double-memoizing this to handle some confusing mro issues
         # in which the _nt_base's __new__ method is not on the critical
@@ -618,17 +681,3 @@ def _pydantic_core_schema(cls, source: Any, handler):
     from pydantic_core import core_schema
 
     return core_schema.is_instance_schema(cls)
-
-
-TRecord = TypeVar("TRecord")
-
-
-class NamedTupleAdapter(Generic[TRecord]):
-    def _asdict(self: TRecord) -> Mapping[str, Any]:
-        return as_dict(self)
-
-    def _replace(self: TRecord, **kwargs) -> TRecord:
-        return replace(self, **kwargs)
-
-    def __iter__(self) -> Iterator:
-        return tuple.__iter__(self)  # type: ignore

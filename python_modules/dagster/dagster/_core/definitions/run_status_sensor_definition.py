@@ -15,6 +15,7 @@ from dagster._annotations import beta_param, deprecated_param, public
 from dagster._core.definitions.graph_definition import GraphDefinition
 from dagster._core.definitions.instigation_logger import InstigationLogger
 from dagster._core.definitions.job_definition import JobDefinition
+from dagster._core.definitions.metadata import RawMetadataMapping
 from dagster._core.definitions.repository_definition import RepositoryDefinition
 from dagster._core.definitions.resource_annotation import get_resource_args
 from dagster._core.definitions.scoped_resources_builder import Resources, ScopedResourcesBuilder
@@ -123,6 +124,7 @@ class RunStatusSensorCursor(
         return deserialize_value(json_str, RunStatusSensorCursor)
 
 
+@public
 class RunStatusSensorContext:
     """The ``context`` object available to a decorated function of ``run_status_sensor``."""
 
@@ -295,6 +297,7 @@ class RunStatusSensorContext:
         )
 
 
+@public
 class RunFailureSensorContext(RunStatusSensorContext):
     """The ``context`` object available to a decorated function of ``run_failure_sensor``.
 
@@ -332,6 +335,7 @@ class RunFailureSensorContext(RunStatusSensorContext):
         return [cast("DagsterEvent", record.event_log_entry.dagster_event) for record in records]
 
 
+@public
 @beta_param(param="repository_def")
 def build_run_status_sensor_context(
     sensor_name: str,
@@ -431,7 +435,7 @@ def run_failure_sensor(
     request_jobs: Optional[Sequence[ExecutableDefinition]] = None,
     monitor_all_repositories: bool = False,
     tags: Optional[Mapping[str, str]] = None,
-    metadata: Optional[Mapping[str, object]] = None,
+    metadata: Optional[RawMetadataMapping] = None,
 ) -> Callable[
     [RunFailureSensorEvaluationFn],
     SensorDefinition,
@@ -443,6 +447,7 @@ def run_failure_sensor(
     breaking_version="2.0",
     additional_warn_text="Use `monitored_jobs` instead.",
 )
+@public
 @deprecated_param(
     param="monitor_all_repositories",
     breaking_version="2.0",
@@ -482,7 +487,7 @@ def run_failure_sensor(
     request_jobs: Optional[Sequence[ExecutableDefinition]] = None,
     monitor_all_repositories: Optional[bool] = None,
     tags: Optional[Mapping[str, str]] = None,
-    metadata: Optional[Mapping[str, object]] = None,
+    metadata: Optional[RawMetadataMapping] = None,
 ) -> Union[
     SensorDefinition,
     Callable[
@@ -578,6 +583,7 @@ def run_failure_sensor(
     return inner
 
 
+@public
 class RunStatusSensorDefinition(SensorDefinition):
     """Define a sensor that reacts to a given status of job execution, where the decorated
     function will be evaluated when a run is at the given status.
@@ -633,7 +639,7 @@ class RunStatusSensorDefinition(SensorDefinition):
         request_job: Optional[ExecutableDefinition] = None,
         request_jobs: Optional[Sequence[ExecutableDefinition]] = None,
         tags: Optional[Mapping[str, str]] = None,
-        metadata: Optional[Mapping[str, object]] = None,
+        metadata: Optional[RawMetadataMapping] = None,
         required_resource_keys: Optional[set[str]] = None,
     ):
         from dagster._core.definitions.selector import (
@@ -1025,6 +1031,7 @@ class RunStatusSensorDefinition(SensorDefinition):
     breaking_version="2.0",
     additional_warn_text="Use `monitored_jobs` instead.",
 )
+@public
 @deprecated_param(
     param="monitor_all_repositories",
     breaking_version="2.0",
@@ -1065,7 +1072,7 @@ def run_status_sensor(
     request_jobs: Optional[Sequence[ExecutableDefinition]] = None,
     monitor_all_repositories: Optional[bool] = None,
     tags: Optional[Mapping[str, str]] = None,
-    metadata: Optional[Mapping[str, object]] = None,
+    metadata: Optional[RawMetadataMapping] = None,
 ) -> Callable[
     [RunStatusSensorEvaluationFunction],
     RunStatusSensorDefinition,

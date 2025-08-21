@@ -1,35 +1,31 @@
 import os
-from typing import List
 
-from dagster_buildkite.package_spec import PackageSpec
-from dagster_buildkite.python_version import AvailablePythonVersion
-from dagster_buildkite.step_builder import CommandStepBuilder
-from dagster_buildkite.utils import (
-    BuildkiteLeafStep,
-    BuildkiteStep,
-    CommandStep,
-    GroupStep,
-    has_helm_changes,
-    is_command_step,
-    skip_if_no_helm_changes,
+from buildkite_shared.python_version import AvailablePythonVersion
+from buildkite_shared.step_builders.command_step_builder import (
+    CommandStepBuilder,
+    CommandStepConfiguration,
 )
+from buildkite_shared.step_builders.group_step_builder import (
+    GroupLeafStepConfiguration,
+    GroupStepBuilder,
+)
+from buildkite_shared.step_builders.step_builder import StepConfiguration, is_command_step
+from dagster_buildkite.images.versions import add_test_image
+from dagster_buildkite.steps.packages import PackageSpec
+from dagster_buildkite.utils import has_helm_changes, skip_if_no_helm_changes
 
 
-def build_helm_steps() -> List[BuildkiteStep]:
+def build_helm_steps() -> list[StepConfiguration]:
     package_spec = PackageSpec(
         os.path.join("helm", "dagster", "schema"),
-        unsupported_python_versions=[
-            # run helm schema tests only once, on the latest python version
-            AvailablePythonVersion.V3_9,
-            AvailablePythonVersion.V3_10,
-            AvailablePythonVersion.V3_11,
-        ],
+        # run helm schema tests only once, on the latest python version
+        unsupported_python_versions=AvailablePythonVersion.get_all()[:-1],
         name="dagster-helm",
         retries=2,
         always_run_if=has_helm_changes,
     )
 
-    steps: List[BuildkiteLeafStep] = []
+    steps: list[GroupLeafStepConfiguration] = []
     steps += _build_lint_steps(package_spec)
     pkg_steps = package_spec.build_steps()
     assert len(pkg_steps) == 1
@@ -39,41 +35,47 @@ def build_helm_steps() -> List[BuildkiteStep]:
     steps.append(pkg_steps[0])
 
     return [
-        GroupStep(
-            group=":helm: helm",
+        GroupStepBuilder(
+            name=":helm: helm",
             key="helm",
             steps=steps,
-        )
+        ).build()
     ]
 
 
-def _build_lint_steps(package_spec) -> List[CommandStep]:
+def _build_lint_steps(package_spec) -> list[CommandStepConfiguration]:
     return [
-        CommandStepBuilder("dagster-json-schema")
+        add_test_image(
+            CommandStepBuilder("dagster-json-schema"),
+            AvailablePythonVersion.get_default(),
+        )
         .run(
             "pip install -e helm/dagster/schema",
             "dagster-helm schema apply",
             "git diff --exit-code",
         )
-        .with_skip(skip_if_no_helm_changes() and package_spec.skip_reason)
-        .on_test_image(AvailablePythonVersion.get_default())
+        .skip_if(skip_if_no_helm_changes() and package_spec.skip_reason)
         .build(),
-        CommandStepBuilder(":lint-roller: dagster")
+        add_test_image(
+            CommandStepBuilder(":lint-roller: dagster"),
+            AvailablePythonVersion.get_default(),
+        )
         .run(
             "helm lint helm/dagster --with-subcharts --strict",
         )
-        .with_skip(skip_if_no_helm_changes() or package_spec.skip_reason)
-        .on_test_image(AvailablePythonVersion.get_default())
+        .skip_if(skip_if_no_helm_changes() or package_spec.skip_reason)
         .with_retry(2)
         .build(),
-        CommandStepBuilder("dagster dependency build")
+        add_test_image(
+            CommandStepBuilder("dagster dependency build"),
+            AvailablePythonVersion.get_default(),
+        )
         # https://github.com/dagster-io/dagster/issues/8167
         .run(
             "helm repo add bitnami-pre-2022"
             " https://raw.githubusercontent.com/bitnami/charts/eb5f9a9513d987b519f0ecd732e7031241c50328/bitnami",
             "helm dependency build helm/dagster",
         )
-        .with_skip(skip_if_no_helm_changes() and package_spec.skip_reason)
-        .on_test_image(AvailablePythonVersion.get_default())
+        .skip_if(skip_if_no_helm_changes() and package_spec.skip_reason)
         .build(),
     ]

@@ -456,22 +456,40 @@ def k8s_instance(kubeconfig_file):
         yield instance
 
 
-def test_step_handler(kubeconfig_file, k8s_instance):
+@pytest.mark.parametrize("deployment_name", ["test-deployment", None])
+@pytest.mark.parametrize("use_owner_reference", [True, False])
+def test_step_handler(
+    kubeconfig_file, k8s_instance, deployment_name: str, use_owner_reference: bool
+):
     mock_k8s_client_batch_api = mock.MagicMock()
+    mock_k8s_client_core_api = mock.MagicMock()
+
+    metadata = mock.Mock()
+    metadata.name = "bar"
+    metadata.uid = "123"
+    mock_k8s_client_core_api.read_namespaced_pod.return_value = mock.Mock(metadata=metadata)
+
     handler = K8sStepHandler(
         image="bizbuz",
         container_context=K8sContainerContext(
             namespace="foo",
+            env_vars=["DAGSTER_CLOUD_DEPLOYMENT_NAME=test-deployment"] if deployment_name else [],
         ),
         load_incluster_config=False,
         kubeconfig_file=kubeconfig_file,
         k8s_client_batch_api=mock_k8s_client_batch_api,
+        k8s_client_core_api=mock_k8s_client_core_api,
+        enable_owner_references=use_owner_reference,
     )
+
+    # Mock the _detect_current_name_and_uid method to return the expected values
+    if use_owner_reference:
+        handler._detect_current_name_and_uid = mock.MagicMock(return_value=("bar", "123"))  # noqa: SLF001
 
     recon_job = reconstructable(bar)
     loadable_target_origin = LoadableTargetOrigin(python_file=__file__, attribute="bar_repo")
 
-    with instance_for_test() as instance:
+    with instance_for_test() as instance, environ({"HOSTNAME": "bar"}):
         with in_process_test_workspace(instance, loadable_target_origin) as workspace:
             location = workspace.get_code_location(workspace.code_location_names[0])
             repo_handle = RepositoryHandle.from_location(
@@ -510,12 +528,18 @@ def test_step_handler(kubeconfig_file, k8s_instance):
     assert method_name == "create_namespaced_job"
     assert kwargs["body"].spec.template.spec.containers[0].image == "bizbuz"
     assert kwargs["body"].spec.template.spec.automount_service_account_token
+    if use_owner_reference:
+        assert kwargs["body"].metadata.owner_references[0].name == "bar"
+        assert kwargs["body"].metadata.owner_references[0].uid == "123"
+        assert kwargs["body"].metadata.owner_references[0].api_version == "v1"
+        assert kwargs["body"].metadata.owner_references[0].kind == "Pod"
 
     # appropriate labels applied
     labels = kwargs["body"].spec.template.metadata.labels
     assert labels["dagster/code-location"] == "in_process"
     assert labels["dagster/job"] == "bar"
     assert labels["dagster/run-id"] == run.run_id
+    assert labels.get("dagster/deployment-name") == deployment_name
 
 
 def test_step_handler_user_defined_config(kubeconfig_file, k8s_instance):

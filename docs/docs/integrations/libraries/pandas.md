@@ -93,7 +93,6 @@ To tie this back to our example, let's say that we want to validate that the amo
   endBefore="end_custom_col"
 />
 
-
 ## About Pandas
 
 **Pandas** is a popular Python package that provides data structures designed to make working with "relational" or "labeled" data both easy and intuitive. Pandas aims to be the fundamental high-level building block for doing practical, real-world data analysis in Python.

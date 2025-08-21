@@ -1,1 +1,1 @@
-export const CreateCatalogViewButton = () => null;
+export const CreateCatalogViewButton = (_: any) => null;

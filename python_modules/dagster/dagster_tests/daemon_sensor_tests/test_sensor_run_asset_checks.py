@@ -1,16 +1,7 @@
 import os
 
-from dagster import (
-    AssetCheckKey,
-    AssetSelection,
-    DagsterInstance,
-    DailyPartitionsDefinition,
-    Definitions,
-    RunRequest,
-    asset,
-    asset_check,
-    sensor,
-)
+import dagster as dg
+from dagster import AssetSelection, DagsterInstance, sensor
 from dagster._core.definitions.run_request import InstigatorType
 from dagster._core.scheduler.instigation import InstigatorState, InstigatorStatus, TickStatus
 from dagster._core.test_utils import create_test_daemon_workspace_context, load_remote_repo
@@ -19,25 +10,25 @@ from dagster._core.workspace.load_target import ModuleTarget
 from dagster_tests.daemon_sensor_tests.test_sensor_run import evaluate_sensors, validate_tick
 
 
-@asset(partitions_def=DailyPartitionsDefinition(start_date="2024-01-01"))
+@dg.asset(partitions_def=dg.DailyPartitionsDefinition(start_date="2024-01-01"))
 def asset_one(): ...
 
 
-@asset(partitions_def=DailyPartitionsDefinition(start_date="2024-02-01"))
+@dg.asset(partitions_def=dg.DailyPartitionsDefinition(start_date="2024-02-01"))
 def asset_two(): ...
 
 
-@asset_check(asset=asset_two)
+@dg.asset_check(asset=asset_two)
 def check1():
     raise NotImplementedError()
 
 
 @sensor(asset_selection=AssetSelection.checks(check1))
 def asset_check_run_request_sensor():
-    return RunRequest(asset_check_keys=[AssetCheckKey(asset_two.key, "check1")])
+    return dg.RunRequest(asset_check_keys=[dg.AssetCheckKey(asset_two.key, "check1")])
 
 
-defs = Definitions(
+defs = dg.Definitions(
     assets=[asset_one, asset_two],
     asset_checks=[check1],
     sensors=[asset_check_run_request_sensor],

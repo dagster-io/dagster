@@ -2,7 +2,7 @@ import contextlib
 from collections.abc import Generator, Sequence
 from typing import Optional, TypeVar
 
-from dagster_shared.yaml_utils import parse_yaml_with_source_positions
+from dagster_shared.yaml_utils import parse_yaml_with_source_position
 from dagster_shared.yaml_utils.source_position import (
     KeyPath,
     SourcePositionTree,
@@ -93,7 +93,7 @@ def parse_yaml_file_to_pydantic(cls: type[T], src: str, filename: str = "<string
             Pydantic2+, errors will include context information about the position in the document
             that the model corresponds to.
     """
-    parsed = parse_yaml_with_source_positions(src, filename)
+    parsed = parse_yaml_with_source_position(src, filename)
     return _parse_and_populate_model_with_annotated_errors(
         cls=cls, obj_parse_root=parsed, obj_key_path_prefix=[]
     )
@@ -160,7 +160,7 @@ def parse_yaml_file_to_pydantic_sequence(
             Pydantic2+, errors will include context information about the position in the document
             that the model corresponds to.
     """
-    parsed = parse_yaml_with_source_positions(src, filename)
+    parsed = parse_yaml_with_source_position(src, filename)
 
     if not isinstance(parsed.value, list):
         raise DagsterInvariantViolationError(

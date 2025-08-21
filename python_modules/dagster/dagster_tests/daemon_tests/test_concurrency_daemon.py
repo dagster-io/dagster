@@ -2,6 +2,7 @@ import datetime
 import tempfile
 from logging import Logger
 
+import dagster as dg
 import pytest
 from dagster._core.instance import DagsterInstance
 from dagster._core.storage.dagster_run import DagsterRunStatus
@@ -9,7 +10,6 @@ from dagster._core.test_utils import (
     create_run_for_test,
     create_test_daemon_workspace_context,
     freeze_time,
-    instance_for_test,
 )
 from dagster._core.workspace.context import WorkspaceProcessContext
 from dagster._core.workspace.load_target import EmptyWorkspaceTarget
@@ -21,7 +21,7 @@ from dagster._time import create_datetime
 @pytest.fixture
 def instance():
     with tempfile.TemporaryDirectory() as temp_dir:
-        with instance_for_test(
+        with dg.instance_for_test(
             overrides={
                 "event_log_storage": {
                     "module": "dagster.utils.test",

@@ -1,0 +1,5 @@
+# Template with instructions
+type: dagster_test.components.simple_pipes_script_asset.SimplePipesScriptComponent  # Required
+attributes:  # Optional: Attributes details
+  asset_key: <string>  # Required: 
+  filename: <string>  # Required: 

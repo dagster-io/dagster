@@ -207,6 +207,7 @@ class GrapheneLaunchBackfillParams(graphene.InputObjectType):
     forceSynchronousSubmission = graphene.Boolean()
     title = graphene.String()
     description = graphene.String()
+    runConfigData = graphene.InputField(GrapheneRunConfigData)
 
     class Meta:
         name = "LaunchBackfillParams"
@@ -227,7 +228,7 @@ class GrapheneRunlessAssetEventType(graphene.Enum):
         elif self == GrapheneRunlessAssetEventType.ASSET_OBSERVATION:
             return DagsterEventType.ASSET_OBSERVATION
         else:
-            check.assert_never(self)
+            check.failed(f"unhandled type {self}")
 
 
 class GrapheneReportRunlessAssetEventsParams(graphene.InputObjectType):
@@ -319,6 +320,7 @@ class GrapheneExecutionParams(graphene.InputObjectType):
 
 
 class GrapheneReexecutionStrategy(graphene.Enum):
+    FROM_ASSET_FAILURE = "FROM_ASSET_FAILURE"
     FROM_FAILURE = "FROM_FAILURE"
     ALL_STEPS = "ALL_STEPS"
 

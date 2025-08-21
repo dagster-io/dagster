@@ -1,14 +1,16 @@
 from collections.abc import Iterable, Mapping, Sequence
+from datetime import datetime
 from typing import TYPE_CHECKING, AbstractSet, Optional, Union  # noqa: UP035
 
 from dagster import _check as check
 from dagster._config.config_schema import UserConfigSchema
-from dagster._core.definitions.asset_check_spec import AssetCheckKey
+from dagster._core.definitions.asset_checks.asset_check_spec import AssetCheckKey
 from dagster._core.definitions.asset_key import EntityKey
 from dagster._core.definitions.declarative_automation.serialized_objects import (
     AutomationConditionEvaluationWithRunIds,
 )
 from dagster._core.definitions.events import AssetKey
+from dagster._core.definitions.freshness import FreshnessStateRecord
 from dagster._core.event_api import EventHandlerFn
 from dagster._core.storage.asset_check_execution_record import (
     AssetCheckExecutionRecord,
@@ -35,7 +37,7 @@ from dagster._utils import PrintFn
 from dagster._utils.concurrency import ConcurrencyClaimStatus, ConcurrencyKeyInfo
 
 if TYPE_CHECKING:
-    from dagster._core.definitions.asset_check_spec import AssetCheckKey
+    from dagster._core.definitions.asset_checks.asset_check_spec import AssetCheckKey
     from dagster._core.definitions.run_request import InstigatorType
     from dagster._core.event_api import AssetRecordsFilter, RunStatusChangeRecordsFilter
     from dagster._core.events import DagsterEvent, DagsterEventType
@@ -47,7 +49,7 @@ if TYPE_CHECKING:
     )
     from dagster._core.execution.stats import RunStepKeyStatsSnapshot
     from dagster._core.instance import DagsterInstance
-    from dagster._core.remote_representation.origin import RemoteJobOrigin
+    from dagster._core.remote_origin import RemoteJobOrigin
     from dagster._core.scheduler.instigation import (
         AutoMaterializeAssetEvaluationRecord,
         InstigatorState,
@@ -198,8 +200,15 @@ class LegacyRunStorage(RunStorage, ConfigurableClass):
     def add_run(self, dagster_run: "DagsterRun") -> "DagsterRun":
         return self._storage.run_storage.add_run(dagster_run)
 
-    def handle_run_event(self, run_id: str, event: "DagsterEvent") -> None:
-        return self._storage.run_storage.handle_run_event(run_id, event)
+    def add_historical_run(
+        self, dagster_run: "DagsterRun", run_creation_time: datetime
+    ) -> "DagsterRun":
+        return self._storage.run_storage.add_historical_run(dagster_run, run_creation_time)
+
+    def handle_run_event(
+        self, run_id: str, event: "DagsterEvent", update_timestamp: Optional[datetime] = None
+    ) -> None:
+        return self._storage.run_storage.handle_run_event(run_id, event, update_timestamp)
 
     def get_runs(  # pyright: ignore[reportIncompatibleMethodOverride]
         self,
@@ -545,6 +554,11 @@ class LegacyEventLogStorage(EventLogStorage, ConfigurableClass):
         self, asset_keys: Optional[Sequence["AssetKey"]] = None
     ) -> Iterable[AssetRecord]:
         return self._storage.event_log_storage.get_asset_records(asset_keys)
+
+    def get_freshness_state_records(
+        self, keys: Sequence["AssetKey"]
+    ) -> Mapping["AssetKey", FreshnessStateRecord]:
+        return self._storage.event_log_storage.get_freshness_state_records(keys)
 
     def get_asset_check_summary_records(
         self, asset_check_keys: Sequence["AssetCheckKey"]

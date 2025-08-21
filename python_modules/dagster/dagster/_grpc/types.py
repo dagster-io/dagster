@@ -7,20 +7,16 @@ from dagster_shared.serdes.serdes import SetToSequenceFieldSerializer
 
 import dagster._check as check
 from dagster._core.code_pointer import CodePointer
-from dagster._core.definitions.asset_check_spec import AssetCheckKey
+from dagster._core.definitions.asset_checks.asset_check_spec import AssetCheckKey
 from dagster._core.definitions.events import AssetKey
 from dagster._core.execution.plan.state import KnownExecutionState
 from dagster._core.execution.retries import RetryMode
 from dagster._core.instance.ref import InstanceRef
 from dagster._core.origin import JobPythonOrigin, get_python_environment_entry_point
+from dagster._core.remote_origin import CodeLocationOrigin, RemoteJobOrigin, RemoteRepositoryOrigin
 from dagster._core.remote_representation.external_data import (
     DEFAULT_MODE_NAME,
     job_name_for_partition_set_snap_name,
-)
-from dagster._core.remote_representation.origin import (
-    CodeLocationOrigin,
-    RemoteJobOrigin,
-    RemoteRepositoryOrigin,
 )
 from dagster._serdes import serialize_value, whitelist_for_serdes
 from dagster._utils.error import SerializableErrorInfo
@@ -678,6 +674,12 @@ class SensorExecutionArgs(
             ),
             last_completion_time=normalized_last_tick_completion_time,
         )
+
+    def with_default_timeout(self, timeout: int) -> "SensorExecutionArgs":
+        """If the timeout is not explicitly set, provides a default timeout which is used for the sensor execution."""
+        if self.timeout is None:
+            return self._replace(timeout=timeout)
+        return self
 
 
 @whitelist_for_serdes

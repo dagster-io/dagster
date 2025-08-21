@@ -1,17 +1,23 @@
 ---
 title: 'Using dbt with Dagster+'
 description: Deploy your dbt & Dagster project in Dagster+.
+sidebar_position: 300
+canonicalUrl: '/integrations/libraries/dbt/using-dbt-with-dagster-plus'
+slug: '/integrations/libraries/dbt/using-dbt-with-dagster-plus'
 ---
 
 Using a dbt project in Dagster+ allows you to automatically load your dbt models as Dagster assets. This can be be done with both deployment options in Dagster+: Serverless and Hybrid.
 
-[Learn more about deployment options in Dagster+](/dagster-plus/deployment/deployment-types/).
+[Learn more about deployment options in Dagster+](/deployment/dagster-plus).
 
 ## Serverless deployments
 
-If you have a Serverless deployment, you can directly import an existing dbt project in Dagster+ when adding a new code location.
+If you have a Serverless deployment, you can directly import an existing dbt project in Dagster+ when adding a new code location. This can be done with:
 
-For more information, see "[Using dbt with Serverless deployments in Dagster+](/integrations/libraries/dbt/using-dbt-with-dagster-plus/serverless)".
+- An existing dbt project that is not already using Dagster, or
+- A Dagster project in which your dbt project is included
+
+For more information, see "[Importing a dbt project to Dagster+ Serverless](/integrations/libraries/dbt/using-dbt-with-dagster-plus/serverless)".
 
 ## Hybrid deployments
 

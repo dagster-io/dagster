@@ -5,6 +5,7 @@ from contextlib import contextmanager
 from typing import Callable, Optional
 
 import click
+from dagster_shared.cli import workspace_options
 
 from dagster import (
     DagsterInvariantViolationError,
@@ -21,11 +22,10 @@ from dagster._cli.workspace.cli_target import (
     WorkspaceOpts,
     get_repository_from_cli_opts,
     repository_options,
-    workspace_options,
 )
 from dagster._core.definitions.run_request import InstigatorType
 from dagster._core.instance import DagsterInstance
-from dagster._core.remote_representation import RemoteRepository
+from dagster._core.remote_representation.external import RemoteRepository
 from dagster._core.scheduler.instigation import InstigatorStatus
 from dagster._core.scheduler.scheduler import DagsterDaemonScheduler
 from dagster._utils import PrintFn

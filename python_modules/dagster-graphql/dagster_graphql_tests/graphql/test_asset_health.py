@@ -7,12 +7,16 @@ from dagster_graphql_tests.graphql.graphql_context_test_suite import (
 
 GET_ASSET_HEALTH = """
 query GetAssetHealth($assetKey: AssetKeyInput!) {
-    assetNodes(assetKeys: [$assetKey]) {
-        assetHealth {
-            assetHealth
-            materializationStatus
-            assetChecksStatus
-            freshnessStatus
+    assetsOrError(assetKeys: [$assetKey]) {
+        ... on AssetConnection {
+            nodes {
+                assetHealth {
+                    assetHealth
+                    materializationStatus
+                    assetChecksStatus
+                    freshnessStatus
+                }
+            }
         }
     }
 }
@@ -23,8 +27,8 @@ query GetAssetHealth($assetKey: AssetKeyInput!) {
 class TestAssetHealth(ExecutingGraphQLContextTestMatrix):
     def test_asset_health_status(self, graphql_context: WorkspaceRequestContext):
         instance = graphql_context.instance
-        assert not instance.dagster_observe_supported()
+        assert not instance.dagster_asset_health_queries_supported()
         res = execute_dagster_graphql(
             graphql_context, GET_ASSET_HEALTH, variables={"assetKey": {"path": ["asset_1"]}}
         )
-        assert res.data == {"assetNodes": [{"assetHealth": None}]}
+        assert res.data == {"assetsOrError": {"nodes": [{"assetHealth": None}]}}

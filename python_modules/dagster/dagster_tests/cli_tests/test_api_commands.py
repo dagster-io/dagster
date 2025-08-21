@@ -1,24 +1,19 @@
 import os
 from unittest import mock
 
+import dagster as dg
 import pytest
 from click.testing import CliRunner
-from dagster import DagsterEventType, job, op, reconstructable
+from dagster import DagsterEventType
 from dagster._cli import api
 from dagster._cli.api import ExecuteRunArgs, ExecuteStepArgs, verify_step
 from dagster._core.execution.plan.state import KnownExecutionState
 from dagster._core.execution.retries import RetryState
 from dagster._core.execution.stats import RunStepKeyStatsSnapshot
-from dagster._core.remote_representation import JobHandle
+from dagster._core.remote_representation.handle import JobHandle
 from dagster._core.storage.dagster_run import DagsterRunStatus
-from dagster._core.test_utils import (
-    create_run_for_test,
-    ensure_dagster_tests_import,
-    environ,
-    instance_for_test,
-)
+from dagster._core.test_utils import create_run_for_test, ensure_dagster_tests_import, environ
 from dagster._core.utils import make_new_run_id
-from dagster._serdes import serialize_value
 
 ensure_dagster_tests_import()
 from dagster_tests.api_tests.utils import get_bar_repo_handle, get_foo_job_handle
@@ -38,7 +33,7 @@ def runner_execute_run(runner, cli_args):
 
 
 def test_execute_run():
-    with instance_for_test(
+    with dg.instance_for_test(
         overrides={
             "compute_logs": {
                 "module": "dagster._core.storage.noop_compute_log_manager",
@@ -55,7 +50,7 @@ def test_execute_run():
                 job_code_origin=job_handle.get_python_origin(),
             )
 
-            input_json = serialize_value(
+            input_json = dg.serialize_value(
                 ExecuteRunArgs(
                     job_origin=job_handle.get_python_origin(),
                     run_id=run.run_id,
@@ -75,24 +70,24 @@ def test_execute_run():
             assert result.exit_code == 0
 
 
-@op
+@dg.op
 def needs_env_var():
     if os.getenv("FOO") != "BAR":
         raise Exception("Missing env var")
 
 
-@job
+@dg.job
 def needs_env_var_job():
     needs_env_var()
 
 
 def test_execute_run_with_secrets_loader(capfd):
-    recon_job = reconstructable(needs_env_var_job)
+    recon_job = dg.reconstructable(needs_env_var_job)
     runner = CliRunner()
 
     # Restore original env after test
     with environ({"FOO": None}):  # pyright: ignore[reportArgumentType]
-        with instance_for_test(
+        with dg.instance_for_test(
             overrides={
                 "compute_logs": {
                     "module": "dagster._core.storage.noop_compute_log_manager",
@@ -113,7 +108,7 @@ def test_execute_run_with_secrets_loader(capfd):
                 job_code_origin=recon_job.get_python_origin(),
             )
 
-            input_json = serialize_value(
+            input_json = dg.serialize_value(
                 ExecuteRunArgs(
                     job_origin=recon_job.get_python_origin(),
                     run_id=run.run_id,
@@ -133,7 +128,7 @@ def test_execute_run_with_secrets_loader(capfd):
             assert "STEP_SUCCESS" in err, f"no match, result: {err}"
 
     # Without a secrets loader the run fails due to missing env var
-    with instance_for_test(
+    with dg.instance_for_test(
         overrides={
             "compute_logs": {
                 "module": "dagster._core.storage.noop_compute_log_manager",
@@ -147,7 +142,7 @@ def test_execute_run_with_secrets_loader(capfd):
             job_code_origin=recon_job.get_python_origin(),
         )
 
-        input_json = serialize_value(
+        input_json = dg.serialize_value(
             ExecuteRunArgs(
                 job_origin=recon_job.get_python_origin(),
                 run_id=run.run_id,
@@ -170,7 +165,7 @@ def test_execute_run_with_secrets_loader(capfd):
 
 
 def test_execute_run_fail_job():
-    with instance_for_test(
+    with dg.instance_for_test(
         overrides={
             "compute_logs": {
                 "module": "dagster._core.storage.noop_compute_log_manager",
@@ -188,7 +183,7 @@ def test_execute_run_fail_job():
                 job_code_origin=job_handle.get_python_origin(),
             )
 
-            input_json = serialize_value(
+            input_json = dg.serialize_value(
                 ExecuteRunArgs(
                     job_origin=job_handle.get_python_origin(),
                     run_id=run.run_id,
@@ -210,7 +205,7 @@ def test_execute_run_fail_job():
                 job_code_origin=job_handle.get_python_origin(),
             )
 
-            input_json_raise_on_failure = serialize_value(
+            input_json_raise_on_failure = dg.serialize_value(
                 ExecuteRunArgs(
                     job_origin=job_handle.get_python_origin(),
                     run_id=run.run_id,
@@ -232,7 +227,7 @@ def test_execute_run_fail_job():
 
                 run = create_run_for_test(instance, job_name="foo")
 
-                input_json_raise_on_failure = serialize_value(
+                input_json_raise_on_failure = dg.serialize_value(
                     ExecuteRunArgs(
                         job_origin=job_handle.get_python_origin(),
                         run_id=run.run_id,
@@ -247,7 +242,7 @@ def test_execute_run_fail_job():
 
 
 def test_execute_run_cannot_load():
-    with instance_for_test(
+    with dg.instance_for_test(
         overrides={
             "compute_logs": {
                 "module": "dagster._core.storage.noop_compute_log_manager",
@@ -259,7 +254,7 @@ def test_execute_run_cannot_load():
         with get_foo_job_handle(instance) as job_handle:
             runner = CliRunner()
 
-            input_json = serialize_value(
+            input_json = dg.serialize_value(
                 ExecuteRunArgs(
                     job_origin=job_handle.get_python_origin(),
                     run_id=run_id,
@@ -293,7 +288,7 @@ def runner_execute_step(runner: CliRunner, cli_args, env=None):
 
 
 def test_execute_step_success():
-    with instance_for_test(
+    with dg.instance_for_test(
         overrides={
             "compute_logs": {
                 "module": "dagster._core.storage.noop_compute_log_manager",
@@ -329,7 +324,7 @@ def test_execute_step_success():
 
 
 def test_execute_step_print_serialized_events():
-    with instance_for_test(
+    with dg.instance_for_test(
         overrides={
             "compute_logs": {
                 "module": "dagster._core.storage.noop_compute_log_manager",
@@ -366,12 +361,12 @@ def test_execute_step_print_serialized_events():
 
 
 def test_execute_step_with_secrets_loader():
-    recon_job = reconstructable(needs_env_var_job)
+    recon_job = dg.reconstructable(needs_env_var_job)
     runner = CliRunner()
 
     # Restore original env after test
     with environ({"FOO": None}):  # pyright: ignore[reportArgumentType]
-        with instance_for_test(
+        with dg.instance_for_test(
             overrides={
                 "compute_logs": {
                     "module": "dagster._core.storage.noop_compute_log_manager",
@@ -426,7 +421,7 @@ def test_execute_step_with_secrets_loader():
 
 
 def test_execute_step_with_env():
-    with instance_for_test(
+    with dg.instance_for_test(
         overrides={
             "compute_logs": {
                 "module": "dagster._core.storage.noop_compute_log_manager",
@@ -460,7 +455,7 @@ def test_execute_step_with_env():
 
 
 def test_execute_step_non_compressed():
-    with instance_for_test(
+    with dg.instance_for_test(
         overrides={
             "compute_logs": {
                 "module": "dagster._core.storage.noop_compute_log_manager",
@@ -484,7 +479,7 @@ def test_execute_step_non_compressed():
                 instance_ref=instance.get_ref(),
             )
 
-            result = runner_execute_step(runner, [serialize_value(args)])
+            result = runner_execute_step(runner, [dg.serialize_value(args)])
 
         assert "STEP_SUCCESS" in result.stdout
 
@@ -498,7 +493,7 @@ def test_execute_step_non_compressed():
     ],
 )
 def test_execute_step_run_already_finished_or_canceling(status):
-    with instance_for_test(
+    with dg.instance_for_test(
         overrides={
             "compute_logs": {
                 "module": "dagster._core.storage.noop_compute_log_manager",
@@ -523,7 +518,7 @@ def test_execute_step_run_already_finished_or_canceling(status):
                 instance_ref=instance.get_ref(),
             )
 
-            runner_execute_step(runner, [serialize_value(args)])
+            runner_execute_step(runner, [dg.serialize_value(args)])
 
         all_logs = instance.all_logs(run.run_id)
 
@@ -536,7 +531,7 @@ def test_execute_step_run_already_finished_or_canceling(status):
 
 
 def test_execute_step_1():
-    with instance_for_test(
+    with dg.instance_for_test(
         overrides={
             "compute_logs": {
                 "module": "dagster._core.storage.noop_compute_log_manager",
@@ -569,7 +564,7 @@ def test_execute_step_1():
 
 
 def test_execute_step_verify_step():
-    with instance_for_test(
+    with dg.instance_for_test(
         overrides={
             "compute_logs": {
                 "module": "dagster._core.storage.noop_compute_log_manager",
@@ -626,7 +621,7 @@ def test_execute_step_verify_step():
 
 @mock.patch("dagster.cli.api.verify_step")
 def test_execute_step_verify_step_framework_error(mock_verify_step):
-    with instance_for_test(
+    with dg.instance_for_test(
         overrides={
             "compute_logs": {
                 "module": "dagster._core.storage.noop_compute_log_manager",

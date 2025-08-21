@@ -1,100 +1,150 @@
-from typing import Callable, Generic, TypeVar
+import inspect
+from typing import Callable, Generic, Optional, TypeVar, Union, cast
 
-from dagster._annotations import preview, public
+from dagster._annotations import public
 from dagster._core.definitions.definitions_class import Definitions
 from dagster._core.definitions.repository_definition.repository_definition import (
     RepositoryDefinition,
 )
 from dagster._core.errors import DagsterInvariantViolationError
 from dagster._record import record
+from dagster.components.core.context import ComponentLoadContext
 
 T_Defs = TypeVar("T_Defs", Definitions, RepositoryDefinition)
 
 
 @record
 class LazyDefinitions(Generic[T_Defs]):
-    """An object that can be invoked to load a set of definitions. Useful in tests when you want to regenerate the same definitions in multiple contexts."""
+    """An object that can be invoked to load a set of definitions."""
 
-    load_fn: Callable[[], T_Defs]
+    load_fn: Callable[..., T_Defs]
+    has_context_arg: bool
 
-    def __call__(self) -> T_Defs:
+    def __call__(self, context: Optional[ComponentLoadContext] = None) -> T_Defs:
         """Load a set of definitions using the load_fn provided at construction time.
 
+        Args:
+            context (Optional[ComponentLoadContext]): Optional context for loading definitions.
+
         Returns:
-            Union[Definitions, RepositoryDefinition]: The loaded definitions.
+            T_Defs: The loaded definitions.
         """
-        result = self.load_fn()
+        if self.has_context_arg:
+            if context is None:
+                raise DagsterInvariantViolationError(
+                    "Function requires a ComponentLoadContext but none was provided"
+                )
+            result = self.load_fn(context)
+        else:
+            result = self.load_fn()
+
         if not isinstance(result, (Definitions, RepositoryDefinition)):
             raise DagsterInvariantViolationError(
-                "DefinitionsLoader must return a Definitions or RepositoryDefinition object"
+                "Function must return a Definitions or RepositoryDefinition object"
             )
         return result
 
 
 @public
-@preview(emit_runtime_warning=False)
-def definitions(fn: Callable[[], T_Defs]) -> LazyDefinitions[T_Defs]:
-    """Marks a function as an entry point for loading a set of Dagster definitions. Useful as a test
-    utility to define definitions that you wish to load multiple times with different contexts.
+def definitions(
+    fn: Union[Callable[[], Definitions], Callable[[ComponentLoadContext], Definitions]],
+) -> Callable[..., Definitions]:
+    """Decorator that marks a function as an entry point for loading Dagster definitions.
 
-    As with plain `Definitions` objects, there can be only one `@definitions`-decorated function per
-    module if that module is being loaded as a Dagster code location.
+    This decorator provides a lazy loading mechanism for Definitions objects, which is the
+    preferred approach over directly instantiating Definitions at module import time. It
+    enables Dagster's tools to discover and load definitions on-demand without executing
+    the definition creation logic during module imports. The user can also import this
+    function and import it for test cases.
+
+    The decorated function must return a Definitions object and can optionally accept a
+    ComponentLoadContext parameter, populated when loaded in the context of
+    autoloaded defs folders in the dg project layout.
+
+    Args:
+        fn: A function that returns a Definitions object. The function can either:
+            - Accept no parameters: ``() -> Definitions``
+            - Accept a ComponentLoadContext: ``(ComponentLoadContext) -> Definitions``
 
     Returns:
-        LazyDefinitions: A callable that will load a set of definitions when invoked.
+        A callable that will invoke the original function and return its
+        Definitions object when called by Dagster's loading mechanisms or directly
+        by the user.
+
+    Raises:
+        DagsterInvariantViolationError: If the function signature doesn't match the expected
+            patterns (no parameters or exactly one ComponentLoadContext parameter).
 
     Examples:
+        Basic usage without context:
+
         .. code-block:: python
 
-            from dagster import (
-                AssetSpec,
-                Definitions,
-                DefinitionsLoadContext,
-                DefinitionsLoadType,
-                asset,
-                definitions,
-                external_assets_from_specs,
+            import dagster as dg
+
+            @dg.definitions
+            def my_definitions():
+                @dg.asset
+                def sales_data():
+                    return [1, 2, 3]
+
+                return dg.Definitions(assets=[sales_data])
+
+        Usage with ComponentLoadContext for autoloaded definitions:
+
+        .. code-block:: python
+
+            import dagster as dg
+
+            @dg.definitions
+            def my_definitions(context: dg.ComponentLoadContext):
+                @dg.asset
+                def sales_data():
+                    # Can use context for environment-specific logic
+                    return load_data_from(context.path)
+
+                return dg.Definitions(assets=[sales_data])
+
+        The decorated function can be imported and used by Dagster tools:
+
+        .. code-block:: python
+
+            # my_definitions.py
+            @dg.definitions
+            def defs():
+                return dg.Definitions(assets=[my_asset])
+
+            # dg dev -f my_definitions.py
+
+    Note:
+        When used in autoloaded defs folders, the ComponentLoadContext provides access to
+        environment variables and other contextual information for dynamic definition loading.
+
+    See Also:
+        - :py:class:`dagster.Definitions`: The object that should be returned by the decorated function
+        - :py:class:`dagster.ComponentLoadContext`: Context object for autoloaded definitions
+    """
+    sig = inspect.signature(fn)
+    has_context_arg = False
+
+    if len(sig.parameters) > 0:
+        first_param = next(iter(sig.parameters.values()))
+        if first_param.annotation == ComponentLoadContext:
+            has_context_arg = True
+            if len(sig.parameters) > 1:
+                raise DagsterInvariantViolationError(
+                    "Function must accept either no parameters or exactly one ComponentLoadContext parameter"
+                )
+        else:
+            raise DagsterInvariantViolationError(
+                "Function must accept either no parameters or exactly one ComponentLoadContext parameter"
             )
 
-            WORKSPACE_ID = "my_workspace"
-            FOO_METADATA_KEY_PREFIX = "foo"
+    lazy_defs = LazyDefinitions[Definitions](load_fn=fn, has_context_arg=has_context_arg)
+    return cast("Callable[..., Definitions]", lazy_defs)
 
 
-            # Simple model of an external service foo
-            def fetch_foo_defs_metadata(workspace_id: str):
-                if workspace_id == WORKSPACE_ID:
-                    return [{"id": "alpha"}, {"id": "beta"}]
-                else:
-                    raise Exception("Unknown workspace")
-
-
-            def get_foo_defs(context: DefinitionsLoadContext, workspace_id: str) -> Definitions:
-                metadata_key = f"{FOO_METADATA_KEY_PREFIX}/{workspace_id}"
-                if (
-                    context.load_type == DefinitionsLoadType.RECONSTRUCTION
-                    and metadata_key in context.reconstruction_metadata
-                ):
-                    payload = context.reconstruction_metadata[metadata_key]
-                else:
-                    payload = fetch_foo_defs_metadata(workspace_id)
-                asset_specs = [AssetSpec(item["id"]) for item in payload]
-                assets = external_assets_from_specs(asset_specs)
-                return Definitions(
-                    assets=assets,
-                ).with_reconstruction_metadata({metadata_key: payload})
-
-
-            @definitions
-            def defs():
-                @asset
-                def regular_asset(): ...
-
-                context = DefinitionsLoadContext.get()
-
-                return Definitions.merge(
-                    get_foo_defs(context, WORKSPACE_ID),
-                    Definitions(assets=[regular_asset]),
-                )
-
-    """
-    return LazyDefinitions(load_fn=fn)
+# For backwards compatibility with existing test cases
+def lazy_repository(fn: Callable[[], RepositoryDefinition]) -> Callable[[], RepositoryDefinition]:
+    lazy_defs = LazyDefinitions[RepositoryDefinition](load_fn=fn, has_context_arg=False)
+    return cast("Callable[[], RepositoryDefinition]", lazy_defs)

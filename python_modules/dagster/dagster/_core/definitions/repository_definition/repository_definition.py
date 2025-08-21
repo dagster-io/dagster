@@ -5,10 +5,12 @@ from dagster_shared.utils.hash import hash_collection
 
 import dagster._check as check
 from dagster._annotations import public
-from dagster._core.definitions.asset_check_spec import AssetCheckKey
-from dagster._core.definitions.asset_graph import AssetGraph
-from dagster._core.definitions.asset_job import IMPLICIT_ASSET_JOB_NAME
-from dagster._core.definitions.cacheable_assets import AssetsDefinitionCacheableData
+from dagster._core.definitions.asset_checks.asset_check_spec import AssetCheckKey
+from dagster._core.definitions.assets.definition.cacheable_assets_definition import (
+    AssetsDefinitionCacheableData,
+)
+from dagster._core.definitions.assets.graph.asset_graph import AssetGraph
+from dagster._core.definitions.assets.job.asset_job import IMPLICIT_ASSET_JOB_NAME
 from dagster._core.definitions.events import AssetKey, CoercibleToAssetKey
 from dagster._core.definitions.job_definition import JobDefinition
 from dagster._core.definitions.metadata import MetadataMapping
@@ -31,7 +33,7 @@ from dagster._utils.cached_method import cached_method
 
 if TYPE_CHECKING:
     from dagster._core.definitions import AssetsDefinition
-    from dagster._core.definitions.asset_checks import AssetChecksDefinition
+    from dagster._core.definitions.asset_checks.asset_checks_definition import AssetChecksDefinition
     from dagster._core.storage.asset_value_loader import AssetValueLoader
 
 
@@ -90,6 +92,7 @@ class RepositoryLoadData(
         )
 
 
+@public
 class RepositoryDefinition:
     """Define a repository that contains a group of definitions.
 
@@ -420,6 +423,9 @@ class RepositoryDefinition:
                 *list(set(self.asset_checks_defs_by_key.values())),
             ],
         )
+
+    def get_component_tree(self):
+        return self._repository_data.get_component_tree()
 
     # If definition comes from the @repository decorator, then the __call__ method will be
     # overwritten. Therefore, we want to maintain the call-ability of repository definitions.

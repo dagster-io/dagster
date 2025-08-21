@@ -14,7 +14,7 @@ import {useAssetDefinition} from './useAssetDefinition';
 import {useAssetEventsFilters} from './useAssetEventsFilters';
 import {usePaginatedAssetEvents} from './usePaginatedAssetEvents';
 import {LiveDataForNode, stepKeyForAsset} from '../asset-graph/Utils';
-import {MaterializationHistoryEventTypeSelector, RepositorySelector} from '../graphql/types';
+import {AssetEventHistoryEventTypeSelector, RepositorySelector} from '../graphql/types';
 
 interface Props {
   assetKey: AssetKey;
@@ -46,7 +46,10 @@ export const AssetEvents = ({
   });
 
   const combinedParams = useMemo(() => {
-    const combinedParams: Parameters<typeof usePaginatedAssetEvents>[1] = {...params};
+    const combinedParams: Parameters<typeof usePaginatedAssetEvents>[1] = {
+      asOf: params.asOf,
+    };
+
     if (filterState.dateRange) {
       if (filterState.dateRange.end) {
         combinedParams.before = filterState.dateRange.end;
@@ -55,17 +58,48 @@ export const AssetEvents = ({
         combinedParams.after = filterState.dateRange.start;
       }
     }
-    if (filterState.status) {
-      if (filterState.status.length === 1) {
-        combinedParams.status = filterState.status[0] as MaterializationHistoryEventTypeSelector;
-      } else {
-        combinedParams.status = MaterializationHistoryEventTypeSelector.ALL;
-      }
+    if (filterState.partitions) {
+      combinedParams.partitions = filterState.partitions;
+    }
+    if (filterState.status?.length === 1) {
+      const status = filterState.status[0];
+      const statusesForStatus =
+        status === 'Success'
+          ? [
+              AssetEventHistoryEventTypeSelector.MATERIALIZATION,
+              AssetEventHistoryEventTypeSelector.OBSERVATION,
+            ]
+          : [AssetEventHistoryEventTypeSelector.FAILED_TO_MATERIALIZE];
+
+      combinedParams.statuses = combinedParams.statuses
+        ? combinedParams.statuses.filter((c) => statusesForStatus.includes(c))
+        : statusesForStatus;
+    }
+
+    if (filterState.type?.length === 1) {
+      const type = filterState.type[0];
+      const statusesForType =
+        type === 'Materialization'
+          ? [
+              AssetEventHistoryEventTypeSelector.MATERIALIZATION,
+              AssetEventHistoryEventTypeSelector.FAILED_TO_MATERIALIZE,
+            ]
+          : [AssetEventHistoryEventTypeSelector.OBSERVATION];
+
+      combinedParams.statuses = combinedParams.statuses
+        ? combinedParams.statuses.filter((c) => statusesForType.includes(c))
+        : statusesForType;
     }
     return combinedParams;
-  }, [params, filterState.dateRange, filterState.status]);
+  }, [
+    params.asOf,
+    filterState.dateRange,
+    filterState.status,
+    filterState.type,
+    filterState.partitions,
+  ]);
 
-  const {materializations, observations, fetchMore, fetchLatest, loading} = usePaginatedAssetEvents(
+  const {events, fetchMore, fetchLatest, loading} = usePaginatedAssetEvents(
     assetKey,
     combinedParams,
   );
@@ -78,15 +112,11 @@ export const AssetEvents = ({
     fetchLatest,
     combinedParams.after,
     combinedParams.before,
-    combinedParams.status,
+    combinedParams.statuses,
+    combinedParams.partitions,
   ]);
 
-  const grouped = useGroupedEvents(
-    'time',
-    filterState.type?.includes('Materialization') ? materializations : [],
-    filterState.type?.includes('Observation') ? observations : [],
-    [],
-  );
+  const grouped = useGroupedEvents('time', events, []);
 
   const onSetFocused = (group: AssetEventGroup | undefined) => {
     const updates: Partial<AssetViewParams> = {
@@ -120,11 +150,9 @@ export const AssetEvents = ({
 
   const def = definition ?? cachedDefinition;
 
-  const hasFilter =
-    combinedParams.status !== MaterializationHistoryEventTypeSelector.ALL ||
-    combinedParams.before !== undefined ||
-    combinedParams.after !== undefined;
-  if (!loading && !materializations.length && !observations.length && !hasFilter) {
+  const hasFilter = Object.keys(combinedParams).length > 0;
+
+  if (!loading && !events.length && !hasFilter) {
     return (
       <Box padding={{horizontal: 24, vertical: 64}}>
         <NonIdealState
