@@ -8,6 +8,7 @@ import {
   Popover,
   Spinner,
   Tag,
+  Tooltip,
 } from '@dagster-io/ui-components';
 import {useState, useEffect, useMemo} from 'react';
 
@@ -163,7 +164,11 @@ const CreatedAtCell = ({entry}: {entry: RunsFeedTableEntryFragment}) => {
 
 const TagsCell = ({entry}: {entry: RunsFeedTableEntryFragment}) => {
   const [isOpen, setIsOpen] = useState(false);
-  const tags = entry.tags || [];
+  const tags = (entry.tags || []).sort((a, b) => {
+    const keyA = a.key.startsWith('dagster/') ? a.key.replace('dagster/', '') : a.key;
+    const keyB = b.key.startsWith('dagster/') ? b.key.replace('dagster/', '') : b.key;
+    return keyA.localeCompare(keyB);
+  });
 
   const copyAllTags = () => {
     const tagText = tags.map((tag) => `${tag.key}: ${tag.value}`).join('\n');
@@ -172,6 +177,14 @@ const TagsCell = ({entry}: {entry: RunsFeedTableEntryFragment}) => {
 
   const copyTag = (key: string, value: string) => {
     navigator.clipboard.writeText(`${key}: ${value}`);
+  };
+
+  const copyKey = (key: string) => {
+    navigator.clipboard.writeText(key);
+  };
+
+  const copyValue = (value: string) => {
+    navigator.clipboard.writeText(value);
   };
 
   const runIdShort = entry.id.slice(0, 8);
@@ -197,58 +210,55 @@ const TagsCell = ({entry}: {entry: RunsFeedTableEntryFragment}) => {
           >
             <Box style={{display: 'flex', alignItems: 'center', gap: '6px'}}>
               <Icon name="tag" size={16} />
-              <span style={{fontWeight: 500}}>Tags</span>
+              <span style={{fontSize: '18px', fontWeight: 600}}>Tags</span>
             </Box>
-            <Box style={{color: '#64748b', fontSize: '12px'}}>#{runIdShort}</Box>
+            <Box style={{fontFamily: 'Geist Mono', fontSize: '14px', lineHeight: '20px', color: '#64748b'}}>#{runIdShort}</Box>
           </Box>
 
           {/* Tags List */}
-          <Box style={{display: 'flex', flexDirection: 'column', gap: '4px', marginBottom: '12px'}}>
-            {tags.map((tag, index) => (
-              <Box
-                key={index}
-                style={{
-                  display: 'flex',
-                  justifyContent: 'space-between',
-                  alignItems: 'center',
-                  padding: '4px 0',
-                }}
-              >
-                <Box style={{display: 'flex', justifyContent: 'space-between', width: '100%'}}>
-                  <Box style={{fontWeight: 500, color: '#374151'}}>{tag.key}:</Box>
-                  <Box style={{color: '#6b7280', marginLeft: '12px'}}>{tag.value}</Box>
-                </Box>
-                <Popover
-                  content={
-                    <Menu>
-                      <MenuItem
-                        text="Copy tag"
-                        onClick={() => copyTag(tag.key, tag.value)}
-                        icon="copy"
-                      />
-                    </Menu>
-                  }
-                  placement="left"
-                >
-                  <Button
-                    icon={<Icon name="more_horiz" />}
-                    intent="none"
+          <Box style={{display: 'flex', gap: '24px', marginBottom: '12px'}}>
+            {/* Keys Column */}
+            <Box style={{display: 'flex', flexDirection: 'column'}}>
+              {tags.map((tag, index) => {
+                const isDagsterTag = tag.key.startsWith('dagster/');
+                const displayKey = isDagsterTag ? tag.key.replace('dagster/', '') : tag.key;
+                
+                return (
+                  <Box
+                    key={`key-${index}`}
                     style={{
-                      marginLeft: '8px',
-                      minWidth: 'auto',
-                      width: '32px',
                       height: '32px',
-                      padding: '4px',
-                      border: 'none',
                       display: 'flex',
                       alignItems: 'center',
-                      justifyContent: 'center'
+                      fontSize: '14px',
+                      fontWeight: 600,
+                      color: Colors.textDefault(),
                     }}
-                    onClick={(e) => e.stopPropagation()}
-                  />
-                </Popover>
-              </Box>
-            ))}
+                  >
+                    {displayKey}:
+                  </Box>
+                );
+              })}
+            </Box>
+            
+            {/* Values Column */}
+            <Box style={{display: 'flex', flexDirection: 'column', flex: 1}}>
+              {tags.map((tag, index) => (
+                <Box
+                  key={`value-${index}`}
+                  style={{
+                    height: '32px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                  }}
+                >
+                  <Box style={{fontSize: '14px', fontWeight: 400, color: Colors.textDefault(), textAlign: 'left', maxWidth: '200px', wordWrap: 'break-word'}}>
+                    {tag.value}
+                  </Box>
+                </Box>
+              ))}
+            </Box>
           </Box>
 
           {/* Copy All Button */}
@@ -492,9 +502,9 @@ const StatusCell = ({entry}: {entry: RunsFeedTableEntryFragment}) => {
               ) : config.icon ? (
                 <Icon name={config.icon} size={16} style={{backgroundColor: config.color}} />
               ) : null}
-              <span style={{fontWeight: 500}}>{getStatusName(status)}</span>
+              <span style={{fontSize: '18px', fontWeight: 600}}>{getStatusName(status)}</span>
             </Box>
-            <Box style={{color: '#64748b', fontSize: '12px'}}>#{runIdShort}</Box>
+            <Box style={{fontFamily: 'Geist Mono', fontSize: '14px', lineHeight: '20px', color: '#64748b'}}>#{runIdShort}</Box>
           </Box>
 
           {/* Job name section */}
@@ -505,9 +515,14 @@ const StatusCell = ({entry}: {entry: RunsFeedTableEntryFragment}) => {
                 justifyContent: 'space-between',
                 alignItems: 'center',
                 marginBottom: '12px',
+                paddingBottom: '8px',
+                borderBottom: '1px solid #e1e5e9',
               }}
             >
-              <Box style={{fontWeight: 500, color: '#374151'}}>Job name:</Box>
+              <Box style={{display: 'flex', alignItems: 'center', gap: '6px'}}>
+                <Icon name="job" size={16} />
+                <span style={{fontSize: '14px', fontWeight: 400, color: Colors.textDefault()}}>Job name:</span>
+              </Box>
               <Tag intent="none">{entry.jobName}</Tag>
             </Box>
           )}
@@ -518,10 +533,13 @@ const StatusCell = ({entry}: {entry: RunsFeedTableEntryFragment}) => {
               display: 'flex',
               justifyContent: 'space-between',
               alignItems: 'center',
-              marginBottom: '12px',
+              height: '32px',
             }}
           >
-            <Box style={{fontWeight: 500, color: '#374151'}}>Steps executed:</Box>
+            <Box style={{display: 'flex', alignItems: 'center', gap: '6px'}}>
+              <Icon name="op" size={16} />
+              <span style={{fontSize: '14px', fontWeight: 400, color: Colors.textDefault()}}>Steps executed:</span>
+            </Box>
             <Tag intent={getTagVariant(mockData.stepsCompleted, mockData.stepsExpected)}>
               {mockData.stepsCompleted}/{mockData.stepsExpected}
             </Tag>
@@ -533,10 +551,13 @@ const StatusCell = ({entry}: {entry: RunsFeedTableEntryFragment}) => {
               display: 'flex',
               justifyContent: 'space-between',
               alignItems: 'center',
-              marginBottom: '12px',
+              height: '32px',
             }}
           >
-            <Box style={{fontWeight: 500, color: '#374151'}}>Assets materialized:</Box>
+            <Box style={{display: 'flex', alignItems: 'center', gap: '6px'}}>
+              <Icon name="asset" size={16} />
+              <span style={{fontSize: '14px', fontWeight: 400, color: Colors.textDefault()}}>Assets materialized:</span>
+            </Box>
             <Tag intent={getTagVariant(mockData.assetsCompleted, mockData.assetsExpected)}>
               {mockData.assetsCompleted}/{mockData.assetsExpected}
             </Tag>
@@ -548,10 +569,13 @@ const StatusCell = ({entry}: {entry: RunsFeedTableEntryFragment}) => {
               display: 'flex',
               justifyContent: 'space-between',
               alignItems: 'center',
-              marginBottom: '12px',
+              height: '32px',
             }}
           >
-            <Box style={{fontWeight: 500, color: '#374151'}}>Asset checks evaluated:</Box>
+            <Box style={{display: 'flex', alignItems: 'center', gap: '6px'}}>
+              <Icon name="asset_check" size={16} />
+              <span style={{fontSize: '14px', fontWeight: 400, color: Colors.textDefault()}}>Asset checks evaluated:</span>
+            </Box>
             <Tag intent={getTagVariant(mockData.checksCompleted, mockData.checksExpected)}>
               {mockData.checksCompleted}/{mockData.checksExpected}
             </Tag>
@@ -642,24 +666,29 @@ export const RunsFeedTableHeader = () => {
       style={{
         display: 'flex',
         justifyContent: 'space-between',
-        padding: '8px 12px',
-        borderBottom: '2px solid #d1d5db',
-        fontWeight: 600,
-        backgroundColor: '#f9fafb',
+        paddingTop: '12px',
+        paddingBottom: '8px',
+        paddingLeft: '12px',
+        paddingRight: '12px',
+        borderBottom: '1px solid #e1e5e9',
+        fontSize: '14px',
+        fontWeight: 400,
+        color: Colors.textLight(),
+        backgroundColor: 'var(--color-background-default)',
         alignItems: 'center',
       }}
     >
       {/* Left group headers */}
       <Box style={{display: 'flex', alignItems: 'center', gap: '12px'}}>
-        <Box>Launched by</Box>
-        <Box>Created at</Box>
-        <Box>Tags</Box>
+        <Box style={{width: '248px', paddingRight: '12px', textAlign: 'left'}}>Launched by</Box>
+        <Box style={{width: '88px', paddingRight: '12px', textAlign: 'left'}}>Created at</Box>
+        <Box style={{width: '76px', textAlign: 'left'}}>Tags</Box>
       </Box>
       
       {/* Right group headers */}
-      <Box style={{display: 'flex', alignItems: 'center', gap: '12px'}}>
-        <Box>Status</Box>
-        <Box></Box>
+      <Box style={{display: 'flex', alignItems: 'center', gap: '24px'}}>
+        <Box style={{textAlign: 'right', paddingRight: '12px'}}>Status</Box>
+        <Box style={{width: '32px', textAlign: 'right'}}></Box>
       </Box>
     </Box>
   );
