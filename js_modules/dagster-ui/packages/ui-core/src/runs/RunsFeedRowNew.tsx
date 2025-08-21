@@ -170,23 +170,6 @@ const TagsCell = ({entry}: {entry: RunsFeedTableEntryFragment}) => {
     return keyA.localeCompare(keyB);
   });
 
-  const copyAllTags = () => {
-    const tagText = tags.map((tag) => `${tag.key}: ${tag.value}`).join('\n');
-    navigator.clipboard.writeText(tagText);
-  };
-
-  const copyTag = (key: string, value: string) => {
-    navigator.clipboard.writeText(`${key}: ${value}`);
-  };
-
-  const copyKey = (key: string) => {
-    navigator.clipboard.writeText(key);
-  };
-
-  const copyValue = (value: string) => {
-    navigator.clipboard.writeText(value);
-  };
-
   const runIdShort = entry.id.slice(0, 8);
 
   return (
@@ -209,7 +192,7 @@ const TagsCell = ({entry}: {entry: RunsFeedTableEntryFragment}) => {
             }}
           >
             <Box style={{display: 'flex', alignItems: 'center', gap: '6px'}}>
-              <Icon name="tag" size={16} />
+              <Icon name="data_object" size={16} style={{backgroundColor: Colors.accentBlue()}} />
               <span style={{fontSize: '18px', fontWeight: 600}}>Tags</span>
             </Box>
             <Box style={{fontFamily: 'Geist Mono', fontSize: '14px', lineHeight: '20px', color: '#64748b'}}>#{runIdShort}</Box>
@@ -218,7 +201,7 @@ const TagsCell = ({entry}: {entry: RunsFeedTableEntryFragment}) => {
           {/* Tags List */}
           <Box style={{display: 'flex', gap: '24px', marginBottom: '12px'}}>
             {/* Keys Column */}
-            <Box style={{display: 'flex', flexDirection: 'column'}}>
+            <Box style={{display: 'flex', flexDirection: 'column', maxWidth: '200px'}}>
               {tags.map((tag, index) => {
                 const isDagsterTag = tag.key.startsWith('dagster/');
                 const displayKey = isDagsterTag ? tag.key.replace('dagster/', '') : tag.key;
@@ -230,41 +213,181 @@ const TagsCell = ({entry}: {entry: RunsFeedTableEntryFragment}) => {
                       height: '32px',
                       display: 'flex',
                       alignItems: 'center',
-                      fontSize: '14px',
-                      fontWeight: 600,
-                      color: Colors.textDefault(),
                     }}
                   >
-                    {displayKey}:
+                    <Box
+                      style={{
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        padding: '0 6px',
+                        fontSize: '14px',
+                        fontWeight: 600,
+                        color: Colors.textDefault(),
+                        cursor: 'pointer',
+                        borderRadius: '8px',
+                        gap: '4px',
+                        maxWidth: '100%',
+                        overflow: 'hidden',
+                        height: '32px',
+                      }}
+                      className="tag-item"
+                    >
+                      <Box style={{
+                        overflow: 'hidden',
+                        textOverflow: 'ellipsis',
+                        whiteSpace: 'nowrap',
+                      }}>
+                        {displayKey}:
+                      </Box>
+                      <Box
+                        style={{
+                          width: '16px',
+                          height: '16px',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          opacity: 0,
+                          transition: 'opacity 0.15s ease'
+                        }}
+                        className="copy-icon"
+                      >
+                        <Icon name="content_copy" size={16} color={Colors.accentGray()} />
+                      </Box>
+                    </Box>
                   </Box>
                 );
               })}
             </Box>
             
             {/* Values Column */}
-            <Box style={{display: 'flex', flexDirection: 'column', flex: 1}}>
-              {tags.map((tag, index) => (
-                <Box
-                  key={`value-${index}`}
-                  style={{
-                    height: '32px',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'space-between',
-                  }}
-                >
-                  <Box style={{fontSize: '14px', fontWeight: 400, color: Colors.textDefault(), textAlign: 'left', maxWidth: '200px', wordWrap: 'break-word'}}>
-                    {tag.value}
+            <Box style={{display: 'flex', flexDirection: 'column', flex: 1, maxWidth: '200px'}}>
+              {tags.map((tag, index) => {
+                return (
+                  <Box
+                    key={`value-${index}`}
+                    style={{
+                      height: '32px',
+                      display: 'flex',
+                      alignItems: 'center',
+                    }}
+                  >
+                    <Box
+                      style={{
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        padding: '0 6px',
+                        fontSize: '14px',
+                        fontWeight: 400,
+                        color: Colors.textDefault(),
+                        cursor: 'pointer',
+                        borderRadius: '8px',
+                        gap: '4px',
+                        maxWidth: '100%',
+                        overflow: 'hidden',
+                        height: '32px',
+                      }}
+                      className="tag-item"
+                    >
+                      <Box style={{
+                        overflow: 'hidden',
+                        textOverflow: 'ellipsis',
+                        whiteSpace: 'nowrap',
+                      }}>
+                        {tag.value}
+                      </Box>
+                      <Box
+                        style={{
+                          width: '16px',
+                          height: '16px',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          opacity: 0,
+                          transition: 'opacity 0.15s ease'
+                        }}
+                        className="copy-icon"
+                      >
+                        <Icon name="content_copy" size={16} color={Colors.accentGray()} />
+                      </Box>
+                    </Box>
                   </Box>
-                </Box>
-              ))}
+                );
+              })}
+            </Box>
+            
+            {/* Actions Column */}
+            <Box style={{display: 'flex', flexDirection: 'column'}}>
+              {tags.map((tag, index) => {
+                return (
+                  <Box
+                    key={`actions-${index}`}
+                    style={{
+                      height: '32px',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '4px',
+                    }}
+                  >
+                    <Tooltip content="Copy key/value pair">
+                      <Button
+                        icon={<Icon name="content_copy" />}
+                        intent="none"
+                        style={{
+                          minWidth: 'auto',
+                          width: '32px',
+                          height: '32px',
+                          padding: '4px',
+                          border: 'none',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center'
+                        }}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          // TODO: Implement copy functionality
+                        }}
+                      />
+                    </Tooltip>
+                    <Tooltip content="Add tag to view">
+                      <Button
+                        icon={<Icon name="add" />}
+                        intent="none"
+                        style={{
+                          minWidth: 'auto',
+                          width: '32px',
+                          height: '32px',
+                          padding: '4px',
+                          border: 'none',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center'
+                        }}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          // TODO: Implement add to filters functionality
+                        }}
+                      />
+                    </Tooltip>
+                  </Box>
+                );
+              })}
             </Box>
           </Box>
 
           {/* Copy All Button */}
-          <Button onClick={copyAllTags} style={{border: '1px solid #d1d5db'}} intent="none">
+          <Button onClick={() => {}} style={{border: '1px solid #d1d5db'}} intent="none">
             Copy all
           </Button>
+          
+          <style>{`
+            .tag-item:hover {
+              background-color: ${Colors.backgroundGray()} !important;
+            }
+            
+            .tag-item:hover .copy-icon {
+              opacity: 1 !important;
+            }
+          `}</style>
         </Box>
       }
     >
