@@ -383,8 +383,8 @@ export const RunsFeedTableNew = ({
         />
 
         <IndeterminateLoadingBar $loading={loading} />
+        {header}
         <Container ref={parentRef} style={scroll ? {overflow: 'auto'} : {overflow: 'visible'}}>
-          {header}
           {sortedEntries.length === 0 && loading && (
             <Box flex={{direction: 'row', justifyContent: 'center'}} padding={32} style={{margin: 'auto'}}>
               <SpinnerWithText label="Loading runs…" />
