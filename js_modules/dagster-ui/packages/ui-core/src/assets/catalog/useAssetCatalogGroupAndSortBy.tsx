@@ -86,7 +86,7 @@ export const useAssetCatalogGroupAndSortBy = ({
     encode: useCallback((b: AssetHealthGroupBy) => ({groupBy: b}), []),
   });
 
-  const grouped: Record<string, Grouped<any, any>> = useMemo(() => {
+  const grouped: Record<string, Grouped<T, TAsset>> = useMemo(() => {
     switch (groupBy) {
       case AssetHealthGroupBy.code_location:
         return groupByAttribute({
