@@ -36,7 +36,13 @@ from dagster_shared.utils.config import (
 from typing_extensions import Never, NotRequired, Required, Self, TypeAlias, TypeGuard
 
 from dagster_dg_core.error import DgError, DgValidationError
-from dagster_dg_core.utils import exit_with_error, get_toml_node, has_toml_node, modify_toml
+from dagster_dg_core.utils import (
+    exit_with_error,
+    generate_tool_dg_cli_in_project_in_workspace_error_message,
+    get_toml_node,
+    has_toml_node,
+    modify_toml,
+)
 from dagster_dg_core.utils.warnings import DgWarningIdentifier, emit_warning
 
 if TYPE_CHECKING:
@@ -51,6 +57,119 @@ def discover_workspace_root(path: Path) -> Optional[Path]:
         path, lambda config: config["directory_type"] == "workspace"
     )
     return workspace_config_path.parent if workspace_config_path else None
+
+
+@record
+class DgConfigFileDiscoveryResult:
+    root_path: Path
+    workspace_root_path: Optional[Path] = None
+    root_file_path: Optional[Path] = None
+    root_validation_result: Optional["DgConfigValidationResult"] = None
+    container_workspace_file_path: Optional[Path] = None
+    container_workspace_validation_result: Optional["DgConfigValidationResult"] = None
+    user_file_path: Optional[Path] = None
+    user_config: Optional["DgRawCliConfig"] = None
+    cli_config_warning: Optional[str]
+
+    @property
+    def has_root_file(self) -> bool:
+        return self.root_file_path is not None
+
+    @property
+    def has_container_workspace_file(self) -> bool:
+        return self.container_workspace_file_path is not None
+
+    @property
+    def has_user_file(self) -> bool:
+        return self.user_file_path is not None
+
+    @property
+    def root_result(self) -> "DgConfigValidationResult":
+        if not self.root_validation_result:
+            raise DgError("No root file validation result available.")
+        return self.root_validation_result
+
+    @property
+    def container_workspace_result(self) -> "DgConfigValidationResult":
+        if not self.container_workspace_validation_result:
+            raise DgError("No container workspace validation result available.")
+        return self.container_workspace_validation_result
+
+    @property
+    def root_type(self) -> Optional[str]:
+        if not self.root_file_path:
+            return None
+        return self.root_result.type
+
+    @property
+    def root_config(self) -> Optional["DgFileConfig"]:
+        if not self.root_validation_result:
+            return None
+        return self.root_validation_result.config
+
+    @property
+    def container_workspace_config(self) -> Optional["DgWorkspaceFileConfig"]:
+        if not self.container_workspace_validation_result:
+            return None
+        return cast("DgWorkspaceFileConfig", self.container_workspace_validation_result.config)
+
+
+def discover_and_validate_config_files(path: Path) -> DgConfigFileDiscoveryResult:
+    root_config_path = discover_config_file(path)
+    workspace_config_path = discover_config_file(
+        path, lambda x: bool(x.get("directory_type") == "workspace")
+    )
+
+    cli_config_warning: Optional[str] = None
+    if root_config_path:
+        root_path = root_config_path.parent
+        root_file_validation_result = validate_dg_file_config(root_config_path)
+        if workspace_config_path is None:
+            workspace_root_path = None
+            container_workspace_validation_result = None
+
+        # Only load the workspace config if the workspace root is different from the first
+        # detected root.
+        elif workspace_config_path == root_config_path:
+            workspace_root_path = workspace_config_path.parent
+            container_workspace_validation_result = None
+        else:
+            workspace_root_path = workspace_config_path.parent
+            container_workspace_validation_result = validate_dg_file_config(workspace_config_path)
+            if (
+                not root_file_validation_result.has_errors
+                and "cli" in root_file_validation_result.config
+            ):
+                del root_file_validation_result.config["cli"]
+                # We have to emit this _after_ we merge all configs to ensure we have the right
+                # suppression list.
+                cli_config_warning = generate_tool_dg_cli_in_project_in_workspace_error_message(
+                    root_path, workspace_root_path
+                )
+    else:
+        root_path = Path.cwd()
+        workspace_root_path = None
+        root_file_validation_result = None
+        container_workspace_validation_result = None
+
+    if has_dg_user_file_config():
+        user_config = load_dg_user_file_config()
+    else:
+        user_config = None
+
+    return DgConfigFileDiscoveryResult(
+        root_path=root_path,
+        workspace_root_path=workspace_root_path,
+        root_file_path=root_config_path,
+        root_validation_result=root_file_validation_result,
+        container_workspace_file_path=workspace_config_path
+        if root_path != workspace_root_path
+        else None,
+        container_workspace_validation_result=container_workspace_validation_result,
+        user_file_path=get_dg_config_path() if has_dg_user_file_config() else None,
+        user_config=user_config,
+        cli_config_warning=cli_config_warning,
+    )
 
 
 # NOTE: The presence of dg.toml will cause pyproject.toml to be ignored for purposes of dg config.
@@ -466,10 +585,20 @@ def load_dg_workspace_file_config(path: Path) -> "DgWorkspaceFileConfig":
     if is_workspace_file_config(config):
         return config
     else:
-        _raise_file_config_validation_error("Expected a workspace configuration.", path)
+        raise_file_config_validation_error("Expected a workspace configuration.", path)
 
 
 def _load_dg_file_config(path: Path, config_format: Optional[DgConfigFileFormat]) -> DgFileConfig:
+    validation_result = validate_dg_file_config(path, config_format)
+    if validation_result.has_errors:
+        raise_file_config_validation_error(validation_result.message, path)
+    return validation_result.config
+
+
+def validate_dg_file_config(
+    path: Path, config_format: Optional[DgConfigFileFormat] = None
+) -> "DgConfigValidationResult":
+    """Validate a Dg config file at the given path."""
     import tomlkit
     import tomlkit.items
 
@@ -481,11 +610,7 @@ def _load_dg_file_config(path: Path, config_format: Optional[DgConfigFileFormat]
     else:
         raw_dict = get_toml_node(toml, ("tool", "dg"), tomlkit.items.Table).unwrap()
         path_prefix = "tool.dg"
-
-    result = _DgConfigValidator(path_prefix).validate({k: v for k, v in raw_dict.items()})
-    if result.errors:
-        _raise_file_config_validation_error(result.message, path)
-    return result.config
+    return _DgConfigValidator(path_prefix).validate({k: v for k, v in raw_dict.items()})
 
 
 _DgConfigErrorType: TypeAlias = Literal[
@@ -533,7 +658,7 @@ class _DgConfigMissingRequiredFieldErrorRecord(_DgConfigErrorRecord):
 
     @property
     def message(self) -> str:
-        return f"Missing required value for `{self.key}`:\n    Expected: {self.expected_type_str}."
+        return f"Missing required value for `{self.key}`:\n    Expected: {self.expected_type_str}"
 
 
 @record
@@ -546,7 +671,7 @@ class _DgConfigMiscellaneousErrorRecord(_DgConfigErrorRecord):
 
 
 @record
-class _DgConfigValidatorResult:
+class DgConfigValidationResult:
     raw_config: dict[str, Any]
     type: Optional[str]
     errors: list[_DgConfigErrorRecord] = field(default_factory=list)
@@ -558,6 +683,11 @@ class _DgConfigValidatorResult:
             return "Configuration is valid."
         else:
             return "\n".join(error.message for error in self.errors)
+
+    @property
+    def has_errors(self) -> bool:
+        """Check if there are any validation errors."""
+        return bool(self.errors)
 
     @property
     def config(self) -> Union["DgWorkspaceFileConfig", "DgProjectFileConfig"]:
@@ -579,7 +709,7 @@ class _DgConfigValidator:
         self.path_prefix = path_prefix
         self.errors: list[_DgConfigErrorRecord] = []
 
-    def validate(self, raw_dict: dict[str, Any]) -> _DgConfigValidatorResult:
+    def validate(self, raw_dict: dict[str, Any]) -> DgConfigValidationResult:
         self._normalize_deprecated_settings(raw_dict)
         self._validate_file_config_setting(
             raw_dict,
@@ -601,7 +731,7 @@ class _DgConfigValidator:
                 set(DgProjectFileConfig.__annotations__.keys()), raw_dict, None
             )
             directory_type = raw_dict["directory_type"]
-        return _DgConfigValidatorResult(
+        return DgConfigValidationResult(
             raw_config=raw_dict,
             type=directory_type,
             errors=self.errors,
@@ -770,7 +900,7 @@ class _DgConfigValidator:
         )
 
 
-def _raise_file_config_validation_error(message: str, file_path: Path) -> Never:
+def raise_file_config_validation_error(message: str, file_path: Path) -> Never:
     exit_with_error(
         textwrap.dedent(f"""
         Errors found in configuration file at:
