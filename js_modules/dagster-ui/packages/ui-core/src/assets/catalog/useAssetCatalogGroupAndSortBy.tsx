@@ -10,7 +10,7 @@ import {AssetHealthFragment} from '../../asset-data/types/AssetHealthDataProvide
 import {tokenForAssetKey} from '../../asset-graph/Utils';
 import {AssetHealthStatus} from '../../graphql/types';
 import {useQueryAndLocalStoragePersistedState} from '../../hooks/useQueryAndLocalStoragePersistedState';
-import {weakMapMemoize} from '../../util/weakMapMemoize';
+import {DagsterTag} from '../../runs/RunTag';
 import {buildRepoPathForHuman} from '../../workspace/buildRepoAddress';
 import {statusToIconAndColor} from '../AssetHealthSummary';
 import {AssetTableFragment} from '../types/AssetTableFragment.types';
@@ -49,6 +49,8 @@ type UseAssetCatalogGroupAndSortByProps = {
 
 type SortBy = (typeof SORT_ITEMS)[number]['key'];
 
+const NONE_KEY = '______NONE_____' + Math.random();
+
 export const useAssetCatalogGroupAndSortBy = ({
   liveDataByNode,
   assetsByAssetKey,
@@ -86,10 +88,11 @@ export const useAssetCatalogGroupAndSortBy = ({
       case AssetHealthGroupBy.code_location:
         return groupByAttribute({
           liveDataByNode,
+          noneGroup: 'No code location',
           getAttributes: ({key}) => {
             const asset = assetsByAssetKey.get(tokenForAssetKey(key));
             const repo = asset?.definition?.repository;
-            return [repo ? buildRepoPathForHuman(repo.name, repo.location.name) : 'None'];
+            return [repo ? buildRepoPathForHuman(repo.name, repo.location.name) : NONE_KEY];
           },
           renderGroupHeader: (props) => {
             return (
@@ -97,6 +100,7 @@ export const useAssetCatalogGroupAndSortBy = ({
                 {...props}
                 text={props.group}
                 groupBy={AssetHealthGroupBy.code_location}
+                key={props.group}
               />
             );
           },
@@ -104,6 +108,7 @@ export const useAssetCatalogGroupAndSortBy = ({
       case AssetHealthGroupBy.group:
         return groupByAttribute({
           liveDataByNode,
+          noneGroup: 'No group',
           getAttributes: ({key}) => {
             const asset = assetsByAssetKey.get(tokenForAssetKey(key));
             return [asset?.definition?.groupName ?? 'default'];
@@ -114,6 +119,7 @@ export const useAssetCatalogGroupAndSortBy = ({
                 {...props}
                 text={props.group}
                 groupBy={AssetHealthGroupBy.group}
+                key={props.group}
               />
             );
           },
@@ -121,12 +127,13 @@ export const useAssetCatalogGroupAndSortBy = ({
       case AssetHealthGroupBy.owner:
         return groupByAttribute({
           liveDataByNode,
+          noneGroup: 'No owner',
           getAttributes: ({key}) => {
             const asset = assetsByAssetKey.get(tokenForAssetKey(key));
             return (
               asset?.definition?.owners.map((owner) =>
                 'email' in owner ? owner.email : owner.team,
-              ) ?? ['None']
+              ) ?? [NONE_KEY]
             );
           },
           renderGroupHeader: (props) => {
@@ -135,6 +142,7 @@ export const useAssetCatalogGroupAndSortBy = ({
                 {...props}
                 text={props.group}
                 groupBy={AssetHealthGroupBy.owner}
+                key={props.group}
               />
             );
           },
@@ -142,6 +150,7 @@ export const useAssetCatalogGroupAndSortBy = ({
       case AssetHealthGroupBy.kind:
         return groupByAttribute({
           liveDataByNode,
+          noneGroup: 'No kind',
           getAttributes: ({key}) => {
             const asset = assetsByAssetKey.get(tokenForAssetKey(key));
             if (asset?.definition?.computeKind || asset?.definition?.kinds?.length) {
@@ -153,7 +162,7 @@ export const useAssetCatalogGroupAndSortBy = ({
                 ),
               );
             }
-            return [];
+            return [NONE_KEY];
           },
           renderGroupHeader: (props) => {
             return (
@@ -161,6 +170,7 @@ export const useAssetCatalogGroupAndSortBy = ({
                 {...props}
                 text={props.group}
                 groupBy={AssetHealthGroupBy.kind}
+                key={props.group}
               />
             );
           },
@@ -168,9 +178,14 @@ export const useAssetCatalogGroupAndSortBy = ({
       case AssetHealthGroupBy.tags:
         return groupByAttribute({
           liveDataByNode,
+          noneGroup: 'No tags',
           getAttributes: ({key}) => {
             const asset = assetsByAssetKey.get(tokenForAssetKey(key));
-            return asset?.definition?.tags.map((tag) => `${tag.key}: ${tag.value}`) ?? [];
+            return (
+              asset?.definition?.tags
+                .filter((tag) => !tag.key.startsWith(DagsterTag.Namespace))
+                .map((tag) => `${tag.key}${tag.value ? `: ${tag.value}` : ''}`) ?? [NONE_KEY]
+            );
           },
           renderGroupHeader: (props) => {
             return (
@@ -178,6 +193,7 @@ export const useAssetCatalogGroupAndSortBy = ({
                 {...props}
                 text={props.group}
                 groupBy={AssetHealthGroupBy.tags}
+                key={props.group}
               />
             );
           },
@@ -185,6 +201,7 @@ export const useAssetCatalogGroupAndSortBy = ({
       case AssetHealthGroupBy.materialization_status:
         return groupByAttribute({
           liveDataByNode,
+          noneGroup: statusToIconAndColor[AssetHealthStatus.UNKNOWN].text,
           getAttributes: (asset) => {
             return [
               statusToIconAndColor[asset.assetHealth?.freshnessStatus ?? AssetHealthStatus.UNKNOWN]
@@ -192,12 +209,20 @@ export const useAssetCatalogGroupAndSortBy = ({
             ];
           },
           renderGroupHeader: (props) => {
-            return <HealthStatusHeaderRow {...props} status={props.group} groupBy={groupBy} />;
+            return (
+              <HealthStatusHeaderRow
+                {...props}
+                status={props.group}
+                groupBy={groupBy}
+                key={props.group}
+              />
+            );
           },
         });
       case AssetHealthGroupBy.freshness_status:
         return groupByAttribute({
           liveDataByNode,
+          noneGroup: statusToIconAndColor[AssetHealthStatus.UNKNOWN].text,
           getAttributes: (asset) => {
             return [
               statusToIconAndColor[asset.assetHealth?.freshnessStatus ?? AssetHealthStatus.UNKNOWN]
@@ -205,12 +230,20 @@ export const useAssetCatalogGroupAndSortBy = ({
             ];
           },
           renderGroupHeader: (props) => {
-            return <HealthStatusHeaderRow {...props} status={props.group} groupBy={groupBy} />;
+            return (
+              <HealthStatusHeaderRow
+                {...props}
+                status={props.group}
+                groupBy={groupBy}
+                key={props.group}
+              />
+            );
           },
         });
       case AssetHealthGroupBy.check_status:
         return groupByAttribute({
           liveDataByNode,
+          noneGroup: statusToIconAndColor[AssetHealthStatus.UNKNOWN].text,
           getAttributes: (asset) => {
             return [
               statusToIconAndColor[
@@ -219,13 +252,21 @@ export const useAssetCatalogGroupAndSortBy = ({
             ];
           },
           renderGroupHeader: (props) => {
-            return <HealthStatusHeaderRow {...props} status={props.group} groupBy={groupBy} />;
+            return (
+              <HealthStatusHeaderRow
+                {...props}
+                status={props.group}
+                groupBy={groupBy}
+                key={props.group}
+              />
+            );
           },
         });
       case AssetHealthGroupBy.health_status:
       default:
         return groupByAttribute({
           liveDataByNode,
+          noneGroup: statusToIconAndColor[AssetHealthStatus.UNKNOWN].text,
           getAttributes: (asset) => {
             return [
               statusToIconAndColor[asset.assetHealth?.assetHealth ?? AssetHealthStatus.UNKNOWN]
@@ -233,7 +274,14 @@ export const useAssetCatalogGroupAndSortBy = ({
             ];
           },
           renderGroupHeader: (props) => {
-            return <HealthStatusHeaderRow {...props} status={props.group} groupBy={groupBy} />;
+            return (
+              <HealthStatusHeaderRow
+                {...props}
+                status={props.group}
+                groupBy={groupBy}
+                key={props.group}
+              />
+            );
           },
         });
     }
@@ -247,7 +295,15 @@ export const useAssetCatalogGroupAndSortBy = ({
         return ['Degraded', 'Warning', 'Healthy', 'Unknown'];
 
       default:
-        return Object.keys(grouped).sort((a, b) => COMMON_COLLATOR.compare(a, b));
+        return Object.keys(grouped).sort((a, b) => {
+          if (a === NONE_KEY) {
+            return -1;
+          }
+          if (b === NONE_KEY) {
+            return 1;
+          }
+          return COMMON_COLLATOR.compare(a, b);
+        });
     }
   }, [groupBy, grouped]);
 
@@ -296,7 +352,10 @@ export const useAssetCatalogGroupAndSortBy = ({
   };
 };
 
-function sortAssetsByMaterializationTimestamp(a: AssetHealthFragment, b: AssetHealthFragment) {
+export function sortAssetsByMaterializationTimestamp(
+  a: AssetHealthFragment,
+  b: AssetHealthFragment,
+) {
   const aMaterialization = a.assetMaterializations[0]?.timestamp;
   const bMaterialization = b.assetMaterializations[0]?.timestamp;
   if (!aMaterialization && !bMaterialization) {
@@ -311,32 +370,33 @@ function sortAssetsByMaterializationTimestamp(a: AssetHealthFragment, b: AssetHe
   return Number(bMaterialization) - Number(aMaterialization);
 }
 
-const groupByAttribute = weakMapMemoize(
-  <T extends string>({
-    liveDataByNode,
-    getAttributes,
-    renderGroupHeader,
-  }: {
-    liveDataByNode: Record<string, AssetHealthFragment>;
-    getAttributes: (asset: AssetHealthFragment) => T[];
-    renderGroupHeader: Grouped<T>['renderGroupHeader'];
-  }): Record<T, Grouped<T>> => {
-    const byAttribute: {[key in T]: Grouped<T>} = {} as {[key in T]: Grouped<T>};
-    Object.values(liveDataByNode).forEach((asset) => {
-      const attributes = getAttributes(asset);
-      attributes.forEach((attribute) => {
-        if (!byAttribute[attribute]) {
-          byAttribute[attribute] = {
-            assets: [],
-            renderGroupHeader,
-          };
-        }
-        byAttribute[attribute].assets.push(asset);
-      });
+const groupByAttribute = <T extends string>({
+  liveDataByNode,
+  getAttributes,
+  renderGroupHeader,
+  noneGroup,
+}: {
+  liveDataByNode: Record<string, AssetHealthFragment>;
+  getAttributes: (asset: AssetHealthFragment) => T[];
+  renderGroupHeader: Grouped<T>['renderGroupHeader'];
+  noneGroup: T;
+}): Record<T, Grouped<T>> => {
+  const byAttribute: {[key in T]: Grouped<T>} = {} as {[key in T]: Grouped<T>};
+  Object.values(liveDataByNode).forEach((asset) => {
+    const attributes = getAttributes(asset);
+    attributes.forEach((_attribute) => {
+      const attribute = _attribute === NONE_KEY ? noneGroup : _attribute;
+      if (!byAttribute[attribute]) {
+        byAttribute[attribute] = {
+          assets: [],
+          renderGroupHeader,
+        };
+      }
+      byAttribute[attribute].assets.push(asset);
     });
-    return byAttribute;
-  },
-);
+  });
+  return byAttribute;
+};
 
 export function isHealthGroupBy(groupBy: AssetHealthGroupBy) {
   return [

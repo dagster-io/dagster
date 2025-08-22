@@ -63,7 +63,13 @@ const AssetCatalogV2VirtualizedTableImpl = <T extends string>({
         return [];
       }
       if (!closedGroups.has(group)) {
-        return [{header: true, group}, ...grouped[group].assets];
+        return [
+          {header: true, group},
+          ...grouped[group].assets.map((asset) => ({
+            ...asset,
+            group,
+          })),
+        ];
       }
       return [{header: true, group}];
     });
@@ -108,25 +114,17 @@ const AssetCatalogV2VirtualizedTableImpl = <T extends string>({
               return null;
             }
 
-            let key: string | number = index;
-
-            const wrapper = (content: React.ReactNode) => (
-              <div key={index} data-index={index} ref={rowVirtualizer.measureElement}>
-                {content}
-              </div>
-            );
-
             if ('shimmer' in item) {
-              return wrapper(
-                <Box padding={{top: 12, horizontal: 20}}>
-                  <Skeleton $height={30} $width="100%" />
-                </Box>,
+              return (
+                <div key={index} data-index={index} ref={rowVirtualizer.measureElement}>
+                  <Box padding={{top: 12, horizontal: 20}}>
+                    <Skeleton $height={30} $width="100%" />
+                  </Box>
+                </div>
               );
             }
 
             if ('header' in item) {
-              key = item.group as string;
-
               const assetsInGroup =
                 grouped[item.group]?.assets.map((asset) => tokenForAssetKey(asset.key)) ?? [];
 
@@ -139,7 +137,7 @@ const AssetCatalogV2VirtualizedTableImpl = <T extends string>({
               const Klass = grouped[item.group]?.renderGroupHeader;
 
               return (
-                <div key={key} data-index={index} ref={rowVirtualizer.measureElement}>
+                <div key={item.group} data-index={index} ref={rowVirtualizer.measureElement}>
                   {Klass ? (
                     <Klass
                       group={item.group}
@@ -166,12 +164,10 @@ const AssetCatalogV2VirtualizedTableImpl = <T extends string>({
               );
             }
 
-            key = tokenForAssetKey(item.key);
-
             return (
               <AssetRow
                 ref={rowVirtualizer.measureElement}
-                key={key}
+                key={`${item.group}-${tokenForAssetKey(item.key)}`}
                 asset={item}
                 index={index}
                 checked={checkedDisplayKeys.has(tokenForAssetKey(item.key))}
