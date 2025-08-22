@@ -327,7 +327,7 @@ const Table = React.memo(
   }: TableProps<T, TAsset>) => {
     const scope = useMemo(() => {
       const list = (assets ?? []).filter((a): a is AssetWithDefinition => !!a.definition);
-      const selected = list.filter((a) => checkedDisplayKeys.has(JSON.stringify(a.key.path)));
+      const selected = list.filter((a) => checkedDisplayKeys.has(tokenForAssetKey(a.key)));
       return {
         selected: selected.map((a) => ({...a.definition, assetKey: a.key})),
       };

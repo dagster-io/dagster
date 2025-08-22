@@ -50,22 +50,14 @@ const ITEMS_BY_KEY = SORT_ITEMS.reduce(
 type UseAssetCatalogGroupAndSortByProps = {
   liveDataByNode: Record<string, AssetHealthFragment>;
   assetsByAssetKey: Map<string, AssetTableFragment>;
-  filteredKeys: Set<string>;
 };
 
 type SortBy = (typeof SORT_ITEMS)[number]['key'];
 
 export const useAssetCatalogGroupAndSortBy = ({
-  liveDataByNode: liveDataByNodeUnfiltered,
+  liveDataByNode,
   assetsByAssetKey,
-  filteredKeys,
 }: UseAssetCatalogGroupAndSortByProps) => {
-  const liveDataByNode = useMemo(() => {
-    return Object.fromEntries(
-      Object.entries(liveDataByNodeUnfiltered).filter(([key]) => filteredKeys.has(key)),
-    );
-  }, [liveDataByNodeUnfiltered, filteredKeys]);
-
   const [sortBy, setSortBy] = useQueryAndLocalStoragePersistedState<SortBy>({
     localStorageKey: usePrefixedCacheKey('catalog-sortBy'),
     isEmptyState: (state) => !state || state === 'materialization_asc',
