@@ -1389,5 +1389,8 @@ class GrapheneQuery(graphene.ObjectType):
         )
 
     def resolve_latestDefsStateInfo(self, graphene_info: ResolveInfo):
-        latest_info = graphene_info.context.instance.get_latest_defs_state_info()
+        defs_state_storage = graphene_info.context.instance.defs_state_storage
+        latest_info = (
+            defs_state_storage.get_latest_defs_state_info() if defs_state_storage else None
+        )
         return GrapheneDefsStateInfo(latest_info) if latest_info else None

@@ -13,10 +13,10 @@ from dagster._core.remote_representation.grpc_server_state_subscriber import (
     LocationStateSubscriber,
 )
 from dagster._core.remote_representation.handle import RepositoryHandle
-from dagster._core.storage.defs_state.defs_state_info import DefsStateInfo
 from dagster._core.workspace.context import WorkspaceProcessContext
 from dagster._core.workspace.workspace import CodeLocationEntry, CodeLocationLoadStatus
 from dagster.components.core.load_defs import PLUGIN_COMPONENT_TYPES_JSON_METADATA_KEY
+from dagster_shared.serdes.objects import DefsStateInfo
 
 from dagster_graphql.implementation.fetch_solids import get_solid, get_solids
 from dagster_graphql.implementation.loader import RepositoryScopedBatchLoader

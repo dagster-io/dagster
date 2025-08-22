@@ -11,6 +11,7 @@ from typing import Any, Callable, Optional, cast
 import click
 import dagster_shared.seven as seven
 from dagster_shared.cli import python_pointer_options
+from dagster_shared.serdes.objects import DefsStateInfo
 
 import dagster._check as check
 from dagster._cli.utils import assert_no_remaining_opts, get_instance_for_cli
@@ -35,7 +36,6 @@ from dagster._core.origin import (
     get_python_environment_entry_point,
 )
 from dagster._core.storage.dagster_run import DagsterRun, DagsterRunStatus
-from dagster._core.storage.defs_state.defs_state_info import DefsStateInfo
 from dagster._core.storage.tags import (
     RUN_METRIC_TAGS,
     RUN_METRICS_POLLING_INTERVAL_TAG,

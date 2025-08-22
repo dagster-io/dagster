@@ -3,6 +3,7 @@ import zlib
 from collections.abc import Mapping, Sequence
 from typing import AbstractSet, Any, NamedTuple, Optional  # noqa: UP035
 
+from dagster_shared.serdes.objects import DefsStateInfo
 from dagster_shared.serdes.serdes import SetToSequenceFieldSerializer
 
 import dagster._check as check
@@ -18,7 +19,6 @@ from dagster._core.remote_representation.external_data import (
     DEFAULT_MODE_NAME,
     job_name_for_partition_set_snap_name,
 )
-from dagster._core.storage.defs_state.defs_state_info import DefsStateInfo
 from dagster._serdes import serialize_value, whitelist_for_serdes
 from dagster._utils.error import SerializableErrorInfo
 

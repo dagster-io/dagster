@@ -22,6 +22,7 @@ import grpc
 from dagster_shared.error import remove_system_frames_from_error
 from dagster_shared.ipc import open_ipc_subprocess
 from dagster_shared.libraries import DagsterLibraryRegistry
+from dagster_shared.serdes.objects import DefsStateInfo
 from dagster_shared.utils import find_free_port
 from grpc_health.v1 import health, health_pb2, health_pb2_grpc
 
@@ -52,7 +53,6 @@ from dagster._core.remote_representation.external_data import (
     SensorExecutionErrorSnap,
 )
 from dagster._core.snap.execution_plan_snapshot import ExecutionPlanSnapshotErrorData
-from dagster._core.storage.defs_state.defs_state_info import DefsStateInfo
 from dagster._core.types.loadable_target_origin import (
     LoadableTargetOrigin,
     enter_loadable_target_origin_load_context,

@@ -1,6 +1,7 @@
 from collections.abc import Iterable, Mapping, Sequence
 from typing import TYPE_CHECKING, AbstractSet, Any, NamedTuple, Optional  # noqa: UP035
 
+from dagster_shared.serdes.objects import DefsStateInfo
 from dagster_shared.utils.hash import hash_collection
 
 import dagster._check as check
@@ -28,7 +29,6 @@ from dagster._core.definitions.source_asset import SourceAsset
 from dagster._core.definitions.utils import check_valid_name
 from dagster._core.errors import DagsterInvariantViolationError
 from dagster._core.instance import DagsterInstance
-from dagster._core.storage.defs_state.defs_state_info import DefsStateInfo
 from dagster._serdes import whitelist_for_serdes
 from dagster._utils.cached_method import cached_method
 

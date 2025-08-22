@@ -2,8 +2,9 @@ from abc import ABC, abstractmethod
 from pathlib import Path
 from typing import ClassVar, Optional
 
+from dagster_shared.serdes.objects import DefsStateInfo
+
 from dagster._core.instance import MayHaveInstanceWeakref, T_DagsterInstance
-from dagster._core.storage.defs_state.defs_state_info import DefsStateInfo
 
 # constant indicating where to store the latest defs state info in a kvs context
 DEFS_STATE_INFO_CURSOR_KEY = "__latest_defs_state_info__"
