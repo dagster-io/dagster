@@ -416,6 +416,7 @@ def execute_scaffold_branch_command(
                 prompt_text,
                 input_type,
                 diagnostics,
+                verbose=cli_config.get("verbose", False),
                 use_spinner=not disable_progress,
                 model=execution_model,
             )
