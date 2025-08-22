@@ -19,43 +19,51 @@ import {formatElapsedTimeWithoutMsec} from '../app/Util';
 import {RunsFeedTableEntryFragment} from './types/RunsFeedTableEntryFragment.types';
 import {RunStatus} from '../graphql/types';
 
-// Context for managing selected tags across runs
-type SelectedTag = {
-  key: string;
-  value: string;
-};
-
+// Context for managing selected tag keys across all runs
 type SelectedTagsContextType = {
-  selectedTags: Record<string, SelectedTag[]>; // runId -> tags
-  addSelectedTag: (runId: string, tag: SelectedTag) => void;
-  removeSelectedTag: (runId: string, tagIndex: number) => void;
+  selectedTagKeys: Set<string>; // Set of selected tag keys
+  addSelectedTagKey: (key: string) => void;
+  removeSelectedTagKey: (key: string) => void;
+  getTagsForRun: (entry: RunsFeedTableEntryFragment, selectedKeys: Set<string>) => {key: string, value: string}[];
 };
 
 const SelectedTagsContext = createContext<SelectedTagsContextType>({
-  selectedTags: {},
-  addSelectedTag: () => {},
-  removeSelectedTag: () => {},
+  selectedTagKeys: new Set(),
+  addSelectedTagKey: () => {},
+  removeSelectedTagKey: () => {},
+  getTagsForRun: () => [],
 });
 
 export const SelectedTagsProvider = ({children}: {children: React.ReactNode}) => {
-  const [selectedTags, setSelectedTags] = useState<Record<string, SelectedTag[]>>({});
+  const [selectedTagKeys, setSelectedTagKeys] = useState<Set<string>>(new Set());
 
-  const addSelectedTag = (runId: string, tag: SelectedTag) => {
-    setSelectedTags(prev => ({
-      ...prev,
-      [runId]: [...(prev[runId] || []), tag]
-    }));
+  const addSelectedTagKey = (key: string) => {
+    setSelectedTagKeys(prev => new Set([...prev, key]));
   };
 
-  const removeSelectedTag = (runId: string, tagIndex: number) => {
-    setSelectedTags(prev => ({
-      ...prev,
-      [runId]: (prev[runId] || []).filter((_, index) => index !== tagIndex)
-    }));
+  const removeSelectedTagKey = (key: string) => {
+    setSelectedTagKeys(prev => {
+      const newSet = new Set(prev);
+      newSet.delete(key);
+      return newSet;
+    });
+  };
+
+  const getTagsForRun = (entry: RunsFeedTableEntryFragment, selectedKeys: Set<string>) => {
+    return (entry.tags || [])
+      .filter(tag => {
+        // Check if this tag's key matches any selected key (with or without dagster/ prefix)
+        const normalizedKey = tag.key.startsWith('dagster/') ? tag.key.replace('dagster/', '') : tag.key;
+        return selectedKeys.has(normalizedKey) || selectedKeys.has(tag.key);
+      })
+      .map(tag => ({
+        key: tag.key.startsWith('dagster/') ? tag.key.replace('dagster/', '') : tag.key,
+        value: tag.value,
+      }));
   };
 
   return (
-    <SelectedTagsContext.Provider value={{selectedTags, addSelectedTag, removeSelectedTag}}>
+    <SelectedTagsContext.Provider value={{selectedTagKeys, addSelectedTagKey, removeSelectedTagKey, getTagsForRun}}>
       {children}
     </SelectedTagsContext.Provider>
   );
@@ -213,7 +221,7 @@ const CreatedAtCell = ({entry}: {entry: RunsFeedTableEntryFragment}) => {
 
 const TagsCell = ({entry}: {entry: RunsFeedTableEntryFragment}) => {
   const [isOpen, setIsOpen] = useState(false);
-  const {addSelectedTag} = useContext(SelectedTagsContext);
+  const {addSelectedTagKey} = useContext(SelectedTagsContext);
   const tags = (entry.tags || []).slice().sort((a, b) => {
     const keyA = a.key.startsWith('dagster/') ? a.key.replace('dagster/', '') : a.key;
     const keyB = b.key.startsWith('dagster/') ? b.key.replace('dagster/', '') : b.key;
@@ -415,10 +423,7 @@ const TagsCell = ({entry}: {entry: RunsFeedTableEntryFragment}) => {
                         onClick={(e) => {
                           e.stopPropagation();
                           const displayKey = tag.key.startsWith('dagster/') ? tag.key.replace('dagster/', '') : tag.key;
-                          addSelectedTag(entry.id, {
-                            key: displayKey,
-                            value: tag.value,
-                          });
+                          addSelectedTagKey(displayKey);
                         }}
                       />
                     </Tooltip>
@@ -839,8 +844,8 @@ export const SkeletonRow = () => {
 };
 
 export const RunsFeedRow = ({entry}: {entry: RunsFeedTableEntryFragment}) => {
-  const {selectedTags} = useContext(SelectedTagsContext);
-  const runSelectedTags = selectedTags[entry.id] || [];
+  const {selectedTagKeys, getTagsForRun} = useContext(SelectedTagsContext);
+  const runSelectedTags = getTagsForRun(entry, selectedTagKeys);
   
   return (
     <Box
