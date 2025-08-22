@@ -442,7 +442,7 @@ class DatabricksUnknownTask(DatabricksBaseTask):
         # We can't parse config and parameters of Databricks tasks of unknown type
         task_config = {}
         task_parameters = {}
-        raise DatabricksUnknownTask(
+        return DatabricksUnknownTask(
             task_key=job_task_config["task_key"],
             task_config=task_config,
             task_parameters=task_parameters,
