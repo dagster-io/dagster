@@ -27,6 +27,8 @@ T_DatabricksSdkTask = TypeVar("T_DatabricksSdkTask", bound=DatabricksSdkTaskType
 
 logger = get_dagster_logger()
 
+DATABRICKS_UNKNOWN_TASK_TYPE = "__UNKNOWN__"
+
 
 def load_yaml(path: Path) -> Mapping[str, Any]:
     """Load YAML file with error handling."""
@@ -105,16 +107,6 @@ def parse_libraries(libraries: Optional[list[Mapping[str, Any]]]) -> list[jobs.c
 class DatabricksTaskDependsOnConfig:
     task_key: str
     outcome: Optional[str]
-
-
-@record
-class DatabricksTaskAssetSpecData:
-    task_key: str
-    depends_on: Optional[list[DatabricksTaskDependsOnConfig]] = None
-    job_name: Optional[str] = None
-    libraries: Optional[list[Mapping[str, Any]]] = None
-    task_type: Optional[str] = None
-    task_config_metadata: Optional[Mapping[str, Any]] = None
 
 
 @record
@@ -431,7 +423,7 @@ class DatabricksJobTask(DatabricksBaseTask):
 class DatabricksUnknownTask(DatabricksBaseTask):
     @property
     def task_type(self) -> str:
-        return ""
+        return DATABRICKS_UNKNOWN_TASK_TYPE
 
     @property
     def task_config_metadata(self) -> Mapping[str, Any]:
@@ -457,7 +449,7 @@ class DatabricksUnknownTask(DatabricksBaseTask):
 
     @property
     def submit_task_key(self) -> str:
-        return ""
+        return DATABRICKS_UNKNOWN_TASK_TYPE
 
     def to_databricks_sdk_task(self) -> jobs.Task:
         return jobs.Task(task_key=self.task_key)

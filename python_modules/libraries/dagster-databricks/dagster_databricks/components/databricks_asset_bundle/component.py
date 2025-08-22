@@ -15,6 +15,7 @@ from dagster.components.resolved.model import Resolver
 from dagster.components.scaffold.scaffold import scaffold_with
 
 from dagster_databricks.components.databricks_asset_bundle.configs import (
+    DATABRICKS_UNKNOWN_TASK_TYPE,
     DatabricksBaseTask,
     DatabricksConfig,
     ResolvedDatabricksExistingClusterConfig,
@@ -144,11 +145,14 @@ class DatabricksAssetBundleComponent(Component, Resolvable):
         return AssetSpec(
             key=snake_case(task.task_key),
             description=f"{task.task_key} task from {task.job_name} job",
-            kinds={"databricks", *([task.task_type] if task.task_type else [])},
+            kinds={
+                "databricks",
+                *([task.task_type] if task.task_type is not DATABRICKS_UNKNOWN_TASK_TYPE else []),
+            },
             skippable=True,
             metadata={
                 "task_key": MetadataValue.text(task.task_key),
-                **({"task_type": MetadataValue.text(task.task_type)} if task.task_type else {}),
+                "task_type": MetadataValue.text(task.task_type),
                 **(
                     {"task_config": MetadataValue.json(task.task_config_metadata)}
                     if task.task_config_metadata
