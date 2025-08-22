@@ -91,6 +91,19 @@ class PlanGenerator:
 
         prompt = self._create_initial_plan_prompt(context)
 
+        # Debug: Print the full prompt being sent to Claude
+        self.diagnostics.debug(
+            category="planning_prompt_generated",
+            message="Generated planning prompt for Claude",
+            data={"prompt_length": len(prompt)},
+        )
+        if self.diagnostics.level == "debug":
+            click.echo("\n" + "=" * 80)
+            click.echo("DEBUG: Planning Prompt Being Sent to Claude:")
+            click.echo("=" * 80)
+            click.echo(prompt)
+            click.echo("=" * 80 + "\n")
+
         allowed_tools = ALLOWED_COMMANDS_PLANNING.copy()
 
         # Use Claude to generate structured plan as markdown

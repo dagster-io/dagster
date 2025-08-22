@@ -14,6 +14,14 @@ Analyze the user's request above and create a comprehensive plan showing exactly
 
 {context_info}
 
+## User Request
+
+{user_input}
+
+## Available Project Context
+
+**Available Components:** {available_components}{codebase_info}{project_info}
+
 ## Required Plan Format
 
 Please provide your plan in this exact structure:

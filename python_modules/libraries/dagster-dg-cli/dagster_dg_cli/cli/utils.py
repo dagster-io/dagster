@@ -30,6 +30,8 @@ from dagster_shared import check
 from dagster_shared.serdes.objects import EnvRegistryKey
 from packaging.version import Version
 
+from dagster_dg_cli.cli.agent_project_context import agent_project_context_command
+from dagster_dg_cli.cli.agent_project_context.schema_utils import generate_yaml_template_from_schema
 from dagster_dg_cli.utils.yaml_template_generator import (
     generate_defs_yaml_example_values,
     generate_defs_yaml_schema,
@@ -41,6 +43,9 @@ DEFAULT_SCHEMA_FOLDER_NAME = ".dg"
 @click.group(name="utils", cls=DgClickGroup)
 def utils_group():
     """Assorted utility commands."""
+
+
+utils_group.add_command(agent_project_context_command)
 
 
 def _generate_component_schema(dg_context: DgContext, output_path: Optional[Path] = None) -> Path:
@@ -100,6 +105,7 @@ def configure_editor_command(
 @click.argument("component_type", type=str)
 @click.option("--description", is_flag=True, default=False)
 @click.option("--scaffold-params-schema", is_flag=True, default=False)
+@click.option("--component-schema", is_flag=True, default=False)
 @click.option("--defs-yaml-json-schema", is_flag=True, default=False)
 @click.option(
     "--defs-yaml-schema",
@@ -118,6 +124,12 @@ def configure_editor_command(
     default=False,
     help="Generate YAML example values optimized for LLM understanding and code generation",
 )
+@click.option(
+    "--template",
+    is_flag=True,
+    default=False,
+    help="Output component schema as LLM-friendly YAML template",
+)
 @dg_path_options
 @dg_global_options
 @cli_telemetry_wrapper
@@ -125,9 +137,11 @@ def inspect_component_type_command(
     component_type: str,
     description: bool,
     scaffold_params_schema: bool,
+    component_schema: bool,
     defs_yaml_json_schema: bool,
     defs_yaml_schema: bool,
     defs_yaml_example_values: bool,
+    template: bool,
     target_path: Path,
     **global_options: object,
 ) -> None:
@@ -143,15 +157,17 @@ def inspect_component_type_command(
             [
                 description,
                 scaffold_params_schema,
+                component_schema,
                 defs_yaml_json_schema,
                 defs_yaml_schema,
                 defs_yaml_example_values,
+                template,
             ]
         )
         > 1
     ):
         exit_with_error(
-            "Only one of --description, --scaffold-params-schema, --defs-yaml-json-schema, --defs-yaml-schema, and --defs-yaml-example-values can be specified."
+            "Only one of --description, --scaffold-params-schema, --component-schema, --defs-yaml-json-schema, --defs-yaml-schema, --defs-yaml-example-values, and --template can be specified."
         )
 
     entry_snap = registry.get(component_key)
@@ -165,6 +181,11 @@ def inspect_component_type_command(
             click.echo(_serialize_json_schema(entry_snap.scaffolder_schema))
         else:
             click.echo("No scaffold params schema defined.")
+    elif component_schema:
+        if entry_snap.component_schema:
+            click.echo(_serialize_json_schema(entry_snap.component_schema))
+        else:
+            click.echo("No component schema defined.")
     elif defs_yaml_json_schema:
         json_schema = _generate_defs_yaml_json_schema(component_type, entry_snap)
         click.echo(_serialize_json_schema(json_schema))
@@ -174,6 +195,15 @@ def inspect_component_type_command(
     elif defs_yaml_example_values:
         example_values = _generate_defs_yaml_example_values(component_type, entry_snap)
         click.echo(example_values)
+    elif template:
+        if entry_snap.component_schema:
+            component_name = component_type.split(".")[-1]
+            template_output = generate_yaml_template_from_schema(
+                entry_snap.component_schema, component_name
+            )
+            click.echo(template_output)
+        else:
+            click.echo("No component schema defined.")
     # print all available metadata
     else:
         click.echo(component_type)
