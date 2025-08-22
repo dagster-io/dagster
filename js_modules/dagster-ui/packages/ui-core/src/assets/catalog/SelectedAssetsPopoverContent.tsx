@@ -1,35 +1,41 @@
-import {Box, Container, Icon, Inner, MiddleTruncate} from '@dagster-io/ui-components';
+import {Box, Container, Inner, MiddleTruncate} from '@dagster-io/ui-components';
 import {useVirtualizer} from '@tanstack/react-virtual';
 import {useMemo, useRef} from 'react';
 
-import {AssetHealthFragment} from '../../asset-data/types/AssetHealthDataProvider.types';
-import {AssetHealthStatusString, STATUS_INFO} from '../AssetHealthSummary';
+import {Grouped} from './AssetCatalogV2VirtualizedTable';
+import {tokenForAssetKey, tokenToAssetKey} from '../../asset-graph/Utils';
+import {AssetHealthSummary} from '../AssetHealthSummary';
+import styles from './SelectedAssetsPopoverContext.module.css';
 
-interface Props {
+type Props<T extends string> = {
   checkedDisplayKeys: Set<string>;
-  groupedByStatus: Record<AssetHealthStatusString, AssetHealthFragment[]>;
-}
+  grouped: Record<T, Grouped<T>>;
+};
 
-export const SelectedAssetsPopoverContent = ({checkedDisplayKeys, groupedByStatus}: Props) => {
+export const SelectedAssetsPopoverContent = <T extends string>({
+  checkedDisplayKeys,
+  grouped,
+}: Props<T>) => {
   const parentRef = useRef<HTMLDivElement>(null);
 
   const groupSets = useMemo(() => {
     return Object.fromEntries(
-      Object.entries(groupedByStatus).map(([status, assets]) => {
-        return [status, new Set(assets.map((asset) => JSON.stringify(asset.key.path)))];
+      Object.entries(grouped).map(([group, _value]) => {
+        const {assets} = _value as Grouped<T>;
+        return [group as T, new Set(assets.map((asset) => tokenForAssetKey(asset.key)))];
       }),
     );
-  }, [groupedByStatus]);
+  }, [grouped]);
 
-  const selectedAssets: {status: AssetHealthStatusString; key: string}[] = useMemo(() => {
+  const selectedAssets: {group: T; key: string}[] = useMemo(() => {
     return Array.from(checkedDisplayKeys)
       .map((key) => {
         const matchingGroup = Object.entries(groupSets).find(([_, group]) => group.has(key));
         if (!matchingGroup) {
           return null;
         }
-        const [status] = matchingGroup;
-        return {status: status as AssetHealthStatusString, key};
+        const [group] = matchingGroup;
+        return {group: group as T, key};
       })
       .filter((asset) => asset !== null);
   }, [checkedDisplayKeys, groupSets]);
@@ -57,9 +63,10 @@ export const SelectedAssetsPopoverContent = ({checkedDisplayKeys, groupedByStatu
             }}
           >
             {items.map(({index, key}) => {
-              // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-              const item = selectedAssets[index]!;
-              const {iconName, iconColor} = STATUS_INFO[item.status];
+              const item = selectedAssets[index];
+              if (!item) {
+                return null;
+              }
               return (
                 <Box
                   key={key}
@@ -72,8 +79,10 @@ export const SelectedAssetsPopoverContent = ({checkedDisplayKeys, groupedByStatu
                     horizontal: 12,
                   }}
                 >
-                  <Icon name={iconName} color={iconColor} />
-                  <MiddleTruncate text={JSON.parse(item.key).join(' / ')} />
+                  <div className={styles.iconContainer}>
+                    <AssetHealthSummary assetKey={tokenToAssetKey(item.key)} iconOnly />
+                  </div>
+                  <MiddleTruncate text={item.key} />
                 </Box>
               );
             })}
