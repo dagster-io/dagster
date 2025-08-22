@@ -145,7 +145,6 @@ export const useAssetCatalogGroupAndSortBy = ({
           getAttributes: ({key}) => {
             const asset = assetsByAssetKey.get(tokenForAssetKey(key));
             if (asset?.definition?.computeKind || asset?.definition?.kinds?.length) {
-              debugger;
               return Array.from(
                 new Set(
                   [asset?.definition?.computeKind, ...(asset?.definition?.kinds ?? [])].filter(
