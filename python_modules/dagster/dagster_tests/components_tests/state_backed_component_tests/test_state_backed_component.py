@@ -1,3 +1,4 @@
+import asyncio
 import json
 import random
 from pathlib import Path
@@ -26,14 +27,14 @@ class MyStateBackedComponent(StateBackedComponent, dg.Model, dg.Resolvable):
 
         return dg.Definitions(assets=[the_asset])
 
-    def write_state_to_path(self, state_path: Path):
+    async def write_state_to_path(self, state_path: Path):
         with open(state_path, "w") as f:
             json.dump({"value": f"bar_{random.randint(1000, 9999)}"}, f)
 
     def _get_state_refresh_defs(self, context: dg.ComponentLoadContext) -> dg.Definitions:
         @dg.op
         def refresh_state_op():
-            self.refresh_state(context)
+            asyncio.run(self.refresh_state())
 
         @dg.job
         def state_refresh_job():
