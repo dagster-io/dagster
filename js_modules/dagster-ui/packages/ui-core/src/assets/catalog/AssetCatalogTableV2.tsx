@@ -744,5 +744,6 @@ function isHealthGroupBy(groupBy: AssetHealthGroupBy) {
     AssetHealthGroupBy.health_status,
     AssetHealthGroupBy.freshness_status,
     AssetHealthGroupBy.check_status,
+    AssetHealthGroupBy.materialization_status,
   ].includes(groupBy);
 }
