@@ -49,7 +49,7 @@ NOT:    src/my_project/defs/src/my_project/defs/analytics/defs.yaml ❌
 
 ## Template Variables
 
-- If you require a path to a file in a defs.yaml relative to the root of the project, use the template var `{{ project_root }}`.
+- If you require a path to a file in a defs.yaswml relative to the root of the project, use the template var `{{ project_root }}`.
 
 ## Defs.yaml Schema
 

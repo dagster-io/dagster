@@ -15,12 +15,10 @@ ALLOWED_COMMANDS_SCAFFOLDING = [
     "Bash(dg scaffold defs:*)",
     "Bash(dg list defs:*)",
     "Bash(dg list components:*)",
-    "Bash(dg docs component:*)",
     "Bash(dg check yaml:*)",
     "Bash(dg check defs:*)",
     "Bash(dg list env:*)",
-    "Bash(dg utils inspect-component:*)",
-    "Bash(dg docs integrations:*)",
+    "Bash(dg utils:*)",
     "Bash(uv add:*)",
     "Bash(uv sync:*)",
     # update yaml files
@@ -51,9 +49,7 @@ ALLOWED_COMMANDS_PLANNING = [
     # Read-only dg commands for analysis
     "Bash(dg list defs:*)",
     "Bash(dg list components:*)",
-    "Bash(dg docs component:*)",
-    "Bash(dg utils inspect-component:*)",
-    "Bash(dg docs integrations:*)",
+    "Bash(dg utils:*)",
     "Bash(dg list env:*)",
     # Git commands for understanding repository state
     "Bash(git log:*)",
