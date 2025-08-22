@@ -773,7 +773,9 @@ export const RunsFeedRow = ({entry}: {entry: RunsFeedTableEntryFragment}) => {
         backgroundColor: 'var(--color-background-default)',
         height: '56px',
         color: Colors.textLight(),
+        cursor: 'pointer',
       }}
+      className="runs-feed-row"
     >
       {/* Left group: Checkbox, Launched by, Created at, Tags */}
       <Box style={{display: 'flex', alignItems: 'center', gap: '12px'}}>
@@ -788,6 +790,12 @@ export const RunsFeedRow = ({entry}: {entry: RunsFeedTableEntryFragment}) => {
         <StatusCell entry={entry} />
         <MoreActionsCell entry={entry} />
       </Box>
+      
+      <style>{`
+        .runs-feed-row:hover {
+          background-color: ${Colors.backgroundDefaultHover()} !important;
+        }
+      `}</style>
     </Box>
   );
 };
