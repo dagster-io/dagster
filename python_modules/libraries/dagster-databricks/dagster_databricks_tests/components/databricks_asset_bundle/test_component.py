@@ -2,7 +2,8 @@ import os
 from typing import Optional
 
 import pytest
-from dagster import AssetDep, AssetKey, AssetsDefinition
+from dagster import AssetDep, AssetKey, AssetsDefinition, BackfillPolicy
+from dagster._core.definitions.backfill_policy import BackfillPolicyType
 from dagster.components.testing import create_defs_folder_sandbox
 from dagster_databricks.components.databricks_asset_bundle.component import (
     DatabricksAssetBundleComponent,
@@ -92,7 +93,13 @@ def test_load_component(custom_op_name: Optional[str], databricks_config_path: s
                 "attributes": {
                     "databricks_config_path": databricks_config_path,
                     "compute_config": {},
-                    "op": {"name": "test_op_name"} if custom_op_name else None,
+                    "op": {
+                        **({"name": "test_op_name"} if custom_op_name else {}),
+                        "tags": {"test_tag": "test_value"},
+                        "description": "test_description",
+                        "pool": "test_pool",
+                        "backfill_policy": {"type": "single_run"},
+                    },
                     "workspace": {
                         "host": TEST_DATABRICKS_WORKSPACE_HOST,
                         "token": TEST_DATABRICKS_WORKSPACE_TOKEN,
@@ -119,7 +126,12 @@ def test_load_component(custom_op_name: Optional[str], databricks_config_path: s
                 custom_op_name if custom_op_name else test_component_defs_path_as_python_str
             )
 
-            assert test_op_name in databricks_assets.node_def.name
+            assert test_op_name in databricks_assets.op.name
+            assert databricks_assets.op.tags["test_tag"] == "test_value"
+            assert databricks_assets.op.description == "test_description"
+            assert databricks_assets.op.pool == "test_pool"
+            assert isinstance(databricks_assets.backfill_policy, BackfillPolicy)
+            assert databricks_assets.backfill_policy.policy_type == BackfillPolicyType.SINGLE_RUN
 
             assert defs.resolve_asset_graph().get_all_asset_keys() == {
                 AssetKey(["check_data_quality"]),

@@ -112,12 +112,12 @@ class DatabricksAssetBundleComponent(Component, Resolvable):
                 ),
                 examples=[
                     {
-                        "spark_version": "test_spark_version",
-                        "node_type_id": "node_type_id",
+                        "spark_version": "some_spark_version",
+                        "node_type_id": "some_node_type_id",
                         "num_workers": 1,
                     },
                     {
-                        "existing_cluster_id": "existing_cluster_id",
+                        "existing_cluster_id": "some_existing_cluster_id",
                     },
                     {
                         "is_serverless": True,
@@ -133,6 +133,10 @@ class DatabricksAssetBundleComponent(Component, Resolvable):
             examples=[
                 {
                     "name": "some_op",
+                    "tags": {"some_tag": "some_value"},
+                    "description": "some_description",
+                    "pool": "some_pool",
+                    "backfill_policy": {"type": "single_run"},
                 },
             ],
         ),
@@ -178,10 +182,14 @@ class DatabricksAssetBundleComponent(Component, Resolvable):
 
         @multi_asset(
             name=self.op.name
-            if self.op
+            if self.op and self.op.name
             else f"databricks_tasks_multi_asset_{component_defs_path_as_python_str}",
             specs=[self.get_asset_spec(task=task) for task in self.databricks_config.tasks],
             can_subset=True,
+            op_tags=self.op.tags if self.op else None,
+            description=self.op.description if self.op else None,
+            pool=self.op.pool if self.op else None,
+            backfill_policy=self.op.backfill_policy if self.op else None,
         )
         def databricks_tasks_multi_asset(
             context: AssetExecutionContext,
