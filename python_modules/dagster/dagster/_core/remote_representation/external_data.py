@@ -11,6 +11,7 @@ from collections.abc import Iterable, Mapping, Sequence
 from enum import Enum
 from typing import Any, Final, NamedTuple, Optional, Union, cast
 
+from dagster_shared.serdes.objects import DefsStateInfo
 from dagster_shared.serdes.serdes import (
     FieldSerializer,
     get_prefix_for_a_serialized,
@@ -1537,6 +1538,7 @@ class ComponentTreeSnap:
     skip_when_empty_fields={
         "pools",
         "component_tree",
+        "defs_state_info",
     },
 )
 @record_custom
@@ -1553,6 +1555,7 @@ class RepositorySnap(IHaveNew):
     metadata: Optional[MetadataMapping]
     utilized_env_vars: Optional[Mapping[str, Sequence[EnvVarConsumer]]]
     component_tree: Optional[ComponentTreeSnap]
+    defs_state_info: Optional[DefsStateInfo]
 
     def __new__(
         cls,
@@ -1568,6 +1571,7 @@ class RepositorySnap(IHaveNew):
         metadata: Optional[MetadataMapping] = None,
         utilized_env_vars: Optional[Mapping[str, Sequence[EnvVarConsumer]]] = None,
         component_tree: Optional[ComponentTreeSnap] = None,
+        defs_state_info: Optional[DefsStateInfo] = None,
     ):
         return super().__new__(
             cls,
@@ -1583,6 +1587,7 @@ class RepositorySnap(IHaveNew):
             metadata=metadata or {},
             utilized_env_vars=utilized_env_vars,
             component_tree=component_tree,
+            defs_state_info=defs_state_info,
         )
 
     @classmethod
@@ -1706,6 +1711,9 @@ class RepositorySnap(IHaveNew):
                 for env_var, res_names in repository_def.get_env_vars_by_top_level_resource().items()
             },
             component_tree=component_snap,
+            defs_state_info=repository_def.repository_load_data.defs_state_info
+            if repository_def.repository_load_data
+            else None,
         )
 
     def has_job_data(self):

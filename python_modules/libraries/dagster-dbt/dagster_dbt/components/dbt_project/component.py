@@ -1,5 +1,7 @@
+import itertools
+import json
 from collections.abc import Iterator, Mapping
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from functools import cached_property
 from pathlib import Path
 from typing import Annotated, Any, Optional, Union
@@ -16,6 +18,7 @@ from dagster.components.resolved.core_models import OpSpec, ResolutionContext
 from dagster.components.resolved.model import Resolver
 from dagster.components.scaffold.scaffold import scaffold_with
 from dagster.components.utils.translation import TranslationFn, TranslationFnResolver
+from dagster_shared import check
 
 from dagster_dbt.asset_decorator import dbt_assets
 from dagster_dbt.asset_utils import DBT_DEFAULT_EXCLUDE, DBT_DEFAULT_SELECT, get_node
@@ -114,6 +117,25 @@ class DbtProjectComponent(Component, Resolvable):
             ],
         ),
     ]
+    cli_args: Annotated[
+        list[Union[str, dict[str, Any]]],
+        Resolver.passthrough(
+            description="Arguments to pass to the dbt CLI when executing. Defaults to `['build']`.",
+            examples=[
+                ["run"],
+                [
+                    "build",
+                    "--full_refresh",
+                    {
+                        "--vars": {
+                            "start_date": "{{ context.partition_range_start }}",
+                            "end_date": "{{ context.partition_range_end }}",
+                        },
+                    },
+                ],
+            ],
+        ),
+    ] = field(default_factory=lambda: ["build"])
     op: Annotated[
         Optional[OpSpec],
         Resolver.default(
@@ -204,8 +226,45 @@ class DbtProjectComponent(Component, Resolvable):
         defs = Definitions(assets=[_fn])
         return defs
 
+    def get_cli_args(self, context: AssetExecutionContext) -> list[str]:
+        # create a resolution scope that includes the partition key and range, if available
+        partition_key = context.partition_key if context.has_partition_key else None
+        partition_key_range = (
+            context.partition_key_range if context.has_partition_key_range else None
+        )
+        scope = dict(
+            partition_key=partition_key,
+            partition_key_range=partition_key_range,
+        )
+
+        # resolve the cli args with this additional scope
+        resolved_args = ResolutionContext(scope=scope).resolve_value(
+            self.cli_args, as_type=list[str]
+        )
+
+        def _normalize_arg(arg: Union[str, dict[str, Any]]) -> list[str]:
+            if isinstance(arg, str):
+                return [arg]
+
+            check.invariant(
+                len(arg.keys()) == 1, "Invalid cli args dict, must have exactly one key"
+            )
+            key = next(iter(arg.keys()))
+            value = arg[key]
+            if isinstance(value, dict):
+                normalized_value = json.dumps(value)
+            else:
+                normalized_value = str(value)
+
+            return [key, normalized_value]
+
+        normalized_args = list(
+            itertools.chain(*[list(_normalize_arg(arg)) for arg in resolved_args])
+        )
+        return normalized_args
+
     def execute(self, context: AssetExecutionContext, dbt: DbtCliResource) -> Iterator:
-        yield from dbt.cli(["build"], context=context).stream()
+        yield from dbt.cli(self.get_cli_args(context), context=context).stream()
 
     @cached_property
     def _validated_manifest(self):

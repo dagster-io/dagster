@@ -3,14 +3,27 @@ import threading
 import time
 from collections.abc import Iterator
 from contextlib import contextmanager
+from typing import Optional
 
 from yaspin import Spinner, yaspin
 from yaspin.core import Yaspin
 
 # "Daggy" octopus-like unicode characters
-DEFAULT_SPINNER_FRAMES = "ଳଢଡଜ"
+DAGGY_SPINNER_FRAMES = "ଳଢଡଜ"
 DEFAULT_SPINNER_INTERVAL = 0.1  # seconds between spinner frame updates
 DEFAULT_ELLIPSIS_INTERVAL = 0.5  # seconds between ellipsis animation updates
+
+
+def format_duration(seconds: Optional[float]) -> str:
+    """Format duration in a human-readable way."""
+    if seconds is None:
+        return "0s"
+    elif seconds < 60:
+        return f"{seconds:.0f}s"
+    else:
+        minutes = int(seconds // 60)
+        secs = int(seconds % 60)
+        return f"{minutes}m {secs}s" if secs > 0 else f"{minutes}m"
 
 
 @contextmanager
@@ -47,7 +60,7 @@ def daggy_spinner_context(
         Yaspin: The spinner instance that can be used to write additional output
     """
     # Create spinner with configurable interval (convert seconds to milliseconds)
-    spinner_config = Spinner(frames=DEFAULT_SPINNER_FRAMES, interval=int(spinner_interval * 1000))
+    spinner_config = Spinner(frames=DAGGY_SPINNER_FRAMES, interval=int(spinner_interval * 1000))
     stop_thread = threading.Event()
 
     def update_text():

@@ -518,6 +518,10 @@ class DirectOpExecutionContext(OpExecutionContext, BaseDirectExecutionContext):
         check.failed("Tried to access partition_key for a non-partitioned run")
 
     @property
+    def has_partition_key_range(self) -> bool:
+        return self._partition_key_range is not None
+
+    @property
     def partition_keys(self) -> Sequence[str]:
         key_range = self.partition_key_range
         partitions_def = self.assets_def.partitions_def
