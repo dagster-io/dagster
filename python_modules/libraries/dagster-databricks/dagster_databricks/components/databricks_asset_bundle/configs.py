@@ -149,16 +149,6 @@ class DatabricksBaseTask(ABC, Generic[T_DatabricksSdkTask]):
     @abstractmethod
     def to_databricks_sdk_task(self) -> T_DatabricksSdkTask: ...
 
-    def to_databricks_task_spec_data(self) -> DatabricksTaskAssetSpecData:
-        return DatabricksTaskAssetSpecData(
-            task_key=self.task_key,
-            depends_on=self.depends_on,
-            job_name=self.job_name,
-            libraries=self.libraries,
-            task_type=self.task_type,
-            task_config_metadata=self.task_config_metadata,
-        )
-
 
 @record
 class DatabricksNotebookTask(DatabricksBaseTask):
@@ -435,6 +425,42 @@ class DatabricksJobTask(DatabricksBaseTask):
             job_id=self.task_config["run_job_task"]["job_id"],
             job_parameters=check.is_dict(self.task_parameters),
         )
+
+
+@record
+class DatabricksUnknownTask(DatabricksBaseTask):
+    @property
+    def task_type(self) -> str:
+        return ""
+
+    @property
+    def task_config_metadata(self) -> Mapping[str, Any]:
+        return {}
+
+    @classmethod
+    def from_job_task_config(cls, job_task_config: Mapping[str, Any]) -> "DatabricksUnknownTask":
+        # We can't parse config and parameters of Databricks tasks of unknown type
+        task_config = {}
+        task_parameters = {}
+        raise DatabricksUnknownTask(
+            task_key=job_task_config["task_key"],
+            task_config=task_config,
+            task_parameters=task_parameters,
+            depends_on=parse_depends_on(job_task_config.get("depends_on", [])),
+            job_name=job_task_config.get("job_name", "unknown"),
+            libraries=job_task_config.get("libraries", []),
+        )
+
+    @property
+    def needs_cluster(self) -> bool:
+        return False
+
+    @property
+    def submit_task_key(self) -> str:
+        return ""
+
+    def to_databricks_sdk_task(self) -> jobs.Task:
+        return jobs.Task(task_key=self.task_key)
 
 
 @record_custom
