@@ -98,12 +98,14 @@ export const AssetCatalogTableV2 = React.memo(() => {
     return Object.values(liveDataByNode).length !== filtered.length;
   }, [liveDataByNode, filtered]);
 
-  const {assetsByAssetKey} = useAllAssets();
-
-  const filteredKeys = useMemo(
-    () => new Set(filtered.map((asset) => tokenForAssetKey(asset.key))),
-    [filtered],
-  );
+  const {assetsByAssetKey: unfilteredAssetsByAssetKey} = useAllAssets();
+  const assetsByAssetKey = useMemo(() => {
+    return new Map(
+      Array.from(unfilteredAssetsByAssetKey.entries()).filter(([key]) =>
+        filtered.map((asset) => tokenForAssetKey(asset.key)).includes(key),
+      ),
+    );
+  }, [unfilteredAssetsByAssetKey, filtered]);
 
   const {
     sortBy,
@@ -117,7 +119,6 @@ export const AssetCatalogTableV2 = React.memo(() => {
   } = useAssetCatalogGroupAndSortBy({
     liveDataByNode,
     assetsByAssetKey,
-    filteredKeys,
   });
 
   const [selectedTab, setSelectedTab] = useQueryPersistedState<string>({
