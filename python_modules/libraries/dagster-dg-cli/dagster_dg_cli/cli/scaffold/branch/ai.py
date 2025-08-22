@@ -334,8 +334,8 @@ def scaffold_content_for_prompt(
     input_type: type[InputType],
     diagnostics: ClaudeDiagnostics,
     verbose: bool,
+    model: ModelType,
     use_spinner: bool = True,
-    model: ModelType = "sonnet",
 ) -> None:
     """Scaffolds content for the user's prompt using Claude Code SDK."""
     ensure_claude_sdk_python_version()
@@ -357,6 +357,7 @@ def scaffold_content_for_prompt(
             asyncio.run(
                 claude_sdk.scaffold_with_streaming(
                     prompt=prompt,
+                    model=model,
                     allowed_tools=allowed_tools,
                     output_channel=channel,
                     disallowed_tools=["Bash(python:*)", "WebSearch", "WebFetch"],
