@@ -1,6 +1,6 @@
 import tempfile
 from pathlib import Path
-from typing import Optional
+from typing import Any, Optional
 
 import pytest
 from dagster._core.storage.defs_state.base import DefsStateStorage
@@ -13,7 +13,7 @@ def _version_map(state_info: Optional[DefsStateInfo]) -> Optional[dict[str, str]
     return {k: v.version for k, v in state_info.info_mapping.items()}
 
 
-class TestStateStorage:
+class TestDefsStateStorage:
     """You can extend this class to easily run these set of tests on any state storage. When extending,
     you simply need to override the `state_storage` fixture and return your implementation of
     `StateStorage`.
@@ -22,7 +22,7 @@ class TestStateStorage:
     __test__ = False
 
     @pytest.fixture(name="storage")
-    def state_storage(self): ...
+    def state_storage(self) -> Any: ...
 
     def test_get_latest_state_version_for_defs(self, storage: DefsStateStorage) -> None:
         """Test get_latest_state_version_for_defs method."""
