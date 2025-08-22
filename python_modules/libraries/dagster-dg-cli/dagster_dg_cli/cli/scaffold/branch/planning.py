@@ -11,6 +11,7 @@ from typing import TYPE_CHECKING, Any, Optional
 import click
 from dagster_dg_core.context import DgContext
 from dagster_shared.record import record
+from dagster_shared.utils.timing import format_duration
 
 from dagster_dg_cli.cli.scaffold.branch.claude.diagnostics import ClaudeDiagnostics
 from dagster_dg_cli.cli.scaffold.branch.claude.sdk_client import OutputChannel
@@ -314,10 +315,9 @@ Provide the complete updated plan in the same markdown format as before."""
 
         # Display success summary to user
         if result_message:
-            output_channel.write("✅ Plan generation completed:")
-            output_channel.write(f" * {len(plan_content):,} characters")
-            output_channel.write(f" * ${result_message.total_cost_usd:.2f}")
-            output_channel.write(f" * {result_message.duration_ms:,}ms")
+            output_channel.write(
+                f"✅ Plan generation completed ({len(plan_content):,} characters, ${result_message.total_cost_usd:.2f}, {format_duration(result_message.duration_ms)})."
+            )
 
         self.diagnostics.debug(
             category="plan_extraction_result",
