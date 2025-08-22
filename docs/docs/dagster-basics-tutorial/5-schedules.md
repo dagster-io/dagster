@@ -16,8 +16,6 @@ Cron-based schedules are common in data orchestration. They use time-based expre
 
 Use the `dg scaffold defs` command to scaffold a new schedule object:
 
-Use the `dg scaffold defs` command to scaffold a new schedule object:
-
 <CliInvocationExample path="docs_snippets/docs_snippets/guides/tutorials/dagster-tutorial/commands/dg-scaffold-schedules.txt" />
 
 This will add a generic schedules file to your project. The `schedules.py` file is now part of the `dagster-tutorial` module:

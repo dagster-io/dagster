@@ -17,7 +17,7 @@ To streamline project creation, Dagster provides the [`create-dagster` CLI](/api
       1. Open your terminal and scaffold a new Dagster project:
 
          ```shell
-         uvx -U create-dagster project dagster-tutorial
+         uvx create-dagster@latest project dagster-tutorial
          ```
 
       2. Respond `y` to the prompt to run `uv sync` after scaffolding:
@@ -134,7 +134,7 @@ Your new Dagster project should have the following structure:
 
 ## 2. Start the Dagster webserver
 
-When you initialize a project with `create-dagster`, the `dagster-dg-cli` library is installed. This provides the `dg` CLI, which includes several commands to help you structure and navigate Dagster projects. For more details, see the [`dg` CLI documentation](/api/clis/dg-cli/dg-cli-reference).
+When you initialize a project with `create-dagster`, the `dagster-dg-cli` library is installed. This provides the `dg` CLI, which includes several commands to help you structure and navigate Dagster projects. For more details, see the [`dg` CLI documentation](/api/clis/dg-cli/dg-cli-configuration).
 
 Use the following command to launch the Dagster UI locally:
 

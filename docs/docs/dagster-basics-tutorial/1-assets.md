@@ -85,6 +85,6 @@ You can also materialize assets from the command line with [`dg launch`](/api/cl
 
 To materialize specific assets, pass an [asset selection](/guides/build/assets/asset-selection-syntax) specifying them:
 
-<CliInvocationExample contents="dg launch --asset customers,orders,payments" />
+<CliInvocationExample contents="dg launch --assets customers,orders,payments" />
 
 :::
