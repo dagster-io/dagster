@@ -14,6 +14,7 @@ from claude_code_sdk.types import (
 )
 
 from dagster_dg_cli.cli.scaffold.branch.claude.diagnostics import AIInteraction, ClaudeDiagnostics
+from dagster_dg_cli.cli.scaffold.branch.constants import ModelType
 
 
 class OutputChannel(Protocol):
@@ -49,6 +50,7 @@ class ClaudeSDKClient:
     async def scaffold_with_streaming(
         self,
         prompt: str,
+        model: ModelType,
         allowed_tools: list[str],
         output_channel: OutputChannel,
         disallowed_tools: Optional[list[str]] = None,
@@ -84,6 +86,7 @@ class ClaudeSDKClient:
                 allowed_tools=allowed_tools,
                 permission_mode="acceptEdits",  # Auto-accept file edits for scaffolding
                 max_turns=20,  # Match existing MAX_TURNS
+                model=model,
             )
 
             # Execute SDK query with streaming

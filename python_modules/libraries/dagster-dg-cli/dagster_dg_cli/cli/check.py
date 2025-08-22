@@ -3,7 +3,8 @@ from pathlib import Path
 from typing import Any, Optional
 
 import click
-from dagster_dg_core.config import normalize_cli_config
+import dagster_shared.check as check
+from dagster_dg_core.config import discover_and_validate_config_files, normalize_cli_config
 from dagster_dg_core.context import DgContext
 from dagster_dg_core.shared_options import dg_global_options, dg_path_options
 from dagster_dg_core.utils import DgClickCommand, DgClickGroup, exit_with_error, pushd
@@ -65,6 +66,60 @@ def check_yaml_command(
             click.get_current_context().exit(0)
         else:
             click.get_current_context().exit(1)
+
+
+@check_group.command(name="toml", cls=DgClickCommand)
+@dg_global_options
+@dg_path_options
+@cli_telemetry_wrapper
+def check_toml_command(
+    target_path: Path,
+    **global_options: object,
+) -> None:
+    """Check TOML configuration files (dg.toml, pyproject.toml) for validity."""
+    cli_config = normalize_cli_config(global_options, click.get_current_context())  # noqa: F841
+    click.echo("Checking TOML configuration files...")
+
+    # We can't create a DgContext because that relies on valid config files.
+    result = discover_and_validate_config_files(target_path)
+
+    # root
+    has_errors = False
+    if result.has_root_file:
+        directory_type = check.not_none(result.root_type)
+        click.echo("")
+        click.echo(f"Found {directory_type} configuration file: {result.root_file_path}")
+        if result.root_result.has_errors:
+            has_errors = True
+            click.secho(
+                f"{directory_type.title()} configuration file errors:\n\n{result.root_result.message}",
+                fg="red",
+            )
+        else:
+            click.echo(f"{directory_type.title()} configuration file is valid.")
+        click.echo("")
+
+    if result.has_container_workspace_file:
+        click.echo("")
+        click.echo(f"Found workspace configuration file: {result.container_workspace_file_path}")
+        if result.container_workspace_result.has_errors:
+            has_errors = True
+            click.secho(
+                f"Workspace configuration file errors:\n\n{result.container_workspace_result.message}",
+                fg="red",
+            )
+        else:
+            click.echo("Workspace configuration file is valid.")
+        click.echo("")  # blank line
+
+    if has_errors:
+        click.secho(
+            "One or more TOML configuration files contain errors.",
+            fg="red",
+        )
+        click.get_current_context().exit(1)
+    else:
+        click.echo("All TOML configuration files are valid.")
 
 
 @check_group.command(name="defs", cls=DgClickCommand)
