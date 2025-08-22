@@ -163,7 +163,9 @@ class DatabricksAssetBundleComponent(Component, Resolvable):
             },
             deps=[
                 self.get_asset_spec(
-                    task=DatabricksUnknownTask.from_job_task_config({"task_key": dep_config.task_key})
+                    task=DatabricksUnknownTask.from_job_task_config(
+                        {"task_key": dep_config.task_key}
+                    )
                 ).key
                 for dep_config in task.depends_on
             ],
