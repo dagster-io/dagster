@@ -199,11 +199,22 @@ describe('AssetCatalogTableV2', () => {
         checkedDisplayKeys: new Set(),
         loading: false,
         healthDataLoading: false,
-        groupedByStatus: expect.objectContaining({
-          Healthy: [expect.objectContaining({key: asset1}), expect.objectContaining({key: asset5})],
-          Degraded: [expect.objectContaining({key: asset2})],
-          Warning: [expect.objectContaining({key: asset3})],
-          Unknown: [expect.objectContaining({key: asset4})],
+        grouped: expect.objectContaining({
+          Healthy: expect.objectContaining({
+            assets: [
+              expect.objectContaining({key: asset1}),
+              expect.objectContaining({key: asset5}),
+            ],
+          }),
+          Degraded: expect.objectContaining({
+            assets: [expect.objectContaining({key: asset2})],
+          }),
+          Warning: expect.objectContaining({
+            assets: [expect.objectContaining({key: asset3})],
+          }),
+          Unknown: expect.objectContaining({
+            assets: [expect.objectContaining({key: asset4})],
+          }),
         }),
       }),
     );
@@ -248,11 +259,13 @@ describe('AssetCatalogTableV2', () => {
           checkedDisplayKeys: new Set(['asset1', 'asset2']),
           loading: false,
           healthDataLoading: false,
-          groupedByStatus: expect.objectContaining({
-            Healthy: [expect.objectContaining({key: asset1})],
-            Degraded: [expect.objectContaining({key: asset2})],
-            Warning: [],
-            Unknown: [],
+          grouped: expect.objectContaining({
+            Healthy: expect.objectContaining({
+              assets: [expect.objectContaining({key: asset1})],
+            }),
+            Degraded: expect.objectContaining({
+              assets: [expect.objectContaining({key: asset2})],
+            }),
           }),
         }),
       ),

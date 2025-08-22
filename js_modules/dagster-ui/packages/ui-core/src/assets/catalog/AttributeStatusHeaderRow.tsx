@@ -8,6 +8,7 @@ export enum AssetHealthGroupBy {
   health_status = 'health_status',
   freshness_status = 'freshness_status',
   check_status = 'check_status',
+  materialization_status = 'materialization_status',
   code_location = 'code_location',
   group = 'group',
   owner = 'owner',
@@ -30,6 +31,10 @@ export const ASSET_HEALTH_GROUP_BY_META: Record<
   [AssetHealthGroupBy.check_status]: {
     text: 'Check Status',
     icon: 'asset_check',
+  },
+  [AssetHealthGroupBy.materialization_status]: {
+    text: 'Materialization Status',
+    icon: 'materialization',
   },
   [AssetHealthGroupBy.code_location]: {
     text: 'Code Location',
@@ -57,6 +62,7 @@ export const GROUP_BY = [
   AssetHealthGroupBy.health_status,
   AssetHealthGroupBy.freshness_status,
   AssetHealthGroupBy.check_status,
+  AssetHealthGroupBy.materialization_status,
   AssetHealthGroupBy.code_location,
   AssetHealthGroupBy.group,
   AssetHealthGroupBy.owner,

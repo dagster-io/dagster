@@ -126,7 +126,7 @@ export const AssetCatalogTableV2 = React.memo(() => {
 
   const [groupBy, setGroupBy] = useQueryAndLocalStoragePersistedState<AssetHealthGroupBy>({
     localStorageKey: usePrefixedCacheKey('catalog-groupBy'),
-    isEmptyState: (state) => !state || state === AssetHealthGroupBy.code_location,
+    isEmptyState: (state) => !state || state === AssetHealthGroupBy.health_status,
     decode: useCallback((qs: ParsedQs) => {
       if (qs.groupBy && GROUP_BY.includes(qs.groupBy as AssetHealthGroupBy)) {
         return qs.groupBy as AssetHealthGroupBy;
@@ -236,6 +236,19 @@ export const AssetCatalogTableV2 = React.memo(() => {
             );
           },
         });
+      case AssetHealthGroupBy.materialization_status:
+        return groupByAttribute({
+          liveDataByNode,
+          getAttributes: (asset) => {
+            return [
+              statusToIconAndColor[asset.assetHealth?.freshnessStatus ?? AssetHealthStatus.UNKNOWN]
+                .text,
+            ];
+          },
+          renderGroupHeader: (props) => {
+            return <HealthStatusHeaderRow {...props} status={props.group} substatus />;
+          },
+        });
       case AssetHealthGroupBy.freshness_status:
         return groupByAttribute({
           liveDataByNode,
@@ -246,7 +259,7 @@ export const AssetCatalogTableV2 = React.memo(() => {
             ];
           },
           renderGroupHeader: (props) => {
-            return <HealthStatusHeaderRow {...props} status={props.group} />;
+            return <HealthStatusHeaderRow {...props} status={props.group} substatus />;
           },
         });
       case AssetHealthGroupBy.check_status:
@@ -260,7 +273,7 @@ export const AssetCatalogTableV2 = React.memo(() => {
             ];
           },
           renderGroupHeader: (props) => {
-            return <HealthStatusHeaderRow {...props} status={props.group} />;
+            return <HealthStatusHeaderRow {...props} status={props.group} substatus />;
           },
         });
       case AssetHealthGroupBy.health_status:
