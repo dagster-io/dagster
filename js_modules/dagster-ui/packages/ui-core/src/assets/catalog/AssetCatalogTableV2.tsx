@@ -99,13 +99,15 @@ export const AssetCatalogTableV2 = React.memo(() => {
   }, [liveDataByNode, filtered]);
 
   const {assetsByAssetKey: unfilteredAssetsByAssetKey} = useAllAssets();
+  const filteredKeys = useMemo(
+    () => new Set(filtered.map((asset) => tokenForAssetKey(asset.key))),
+    [filtered],
+  );
   const assetsByAssetKey = useMemo(() => {
     return new Map(
-      Array.from(unfilteredAssetsByAssetKey.entries()).filter(([key]) =>
-        filtered.map((asset) => tokenForAssetKey(asset.key)).includes(key),
-      ),
+      Array.from(unfilteredAssetsByAssetKey.entries()).filter(([key]) => filteredKeys.has(key)),
     );
-  }, [unfilteredAssetsByAssetKey, filtered]);
+  }, [unfilteredAssetsByAssetKey, filteredKeys]);
 
   const {
     sortBy,
