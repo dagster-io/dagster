@@ -87,7 +87,6 @@ export const AssetCatalogTableV2 = React.memo(() => {
       [errorState],
     ),
   });
-
   const loading = selectionLoading && !filtered.length;
 
   const {liveDataByNode} = useAssetsHealthData({
@@ -101,6 +100,11 @@ export const AssetCatalogTableV2 = React.memo(() => {
 
   const {assetsByAssetKey} = useAllAssets();
 
+  const filteredKeys = useMemo(
+    () => new Set(filtered.map((asset) => tokenForAssetKey(asset.key))),
+    [filtered],
+  );
+
   const {
     sortBy,
     setSortBy,
@@ -113,6 +117,7 @@ export const AssetCatalogTableV2 = React.memo(() => {
   } = useAssetCatalogGroupAndSortBy({
     liveDataByNode,
     assetsByAssetKey,
+    filteredKeys,
   });
 
   const [selectedTab, setSelectedTab] = useQueryPersistedState<string>({
