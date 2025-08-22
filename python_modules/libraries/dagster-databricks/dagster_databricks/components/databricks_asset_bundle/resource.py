@@ -9,6 +9,7 @@ from dagster import (
     MaterializeResult,
     _check as check,
 )
+from dagster._annotations import preview
 from dagster_shared.utils.cached_method import cached_method
 from databricks.sdk import WorkspaceClient
 from databricks.sdk.service import compute, jobs
@@ -27,6 +28,7 @@ if TYPE_CHECKING:
     )
 
 
+@preview
 class DatabricksWorkspace(ConfigurableResource):
     """Represents a workspace in Databricks and provides utilities
     to interact with the Databricks SDK.

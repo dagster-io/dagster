@@ -10,6 +10,7 @@ from dagster import (
     _check as check,
     get_dagster_logger,
 )
+from dagster._annotations import preview
 from dagster_shared.record import IHaveNew, record, record_custom
 from databricks.sdk.service import jobs
 from typing_extensions import Self, TypeVar
@@ -550,15 +551,18 @@ class DatabricksConfig(IHaveNew):
         return job_parameters
 
 
+@preview
 class ResolvedDatabricksNewClusterConfig(Resolvable, Model):
     spark_version: str = "13.3.x-scala2.12"
     node_type_id: str = "i3.xlarge"
     num_workers: int = 1
 
 
+@preview
 class ResolvedDatabricksExistingClusterConfig(Resolvable, Model):
     existing_cluster_id: str
 
 
+@preview
 class ResolvedDatabricksServerlessConfig(Resolvable, Model):
     is_serverless: bool
