@@ -1,17 +1,8 @@
-import {
-  Alert,
-  Body2,
-  Box,
-  CursorHistoryControls,
-  CursorPaginationProps,
-  SpinnerWithText,
-  ifPlural,
-} from '@dagster-io/ui-components';
+import {Box, CursorPaginationProps, SpinnerWithText} from '@dagster-io/ui-components';
 import {useVirtualizer} from '@tanstack/react-virtual';
 import React, {useEffect, useMemo, useRef, useState} from 'react';
 
 import {QueuedRunCriteriaDialog} from './QueuedRunCriteriaDialog';
-import {RunBulkActionsMenu} from './RunActionsMenu';
 import {RunTableEmptyState} from './RunTableEmptyState';
 import {RunsQueryRefetchContext} from './RunUtils';
 import {RunsFeedError} from './RunsFeedError';
@@ -26,10 +17,8 @@ import {FIFTEEN_SECONDS, useQueryRefreshAtInterval} from '../app/QueryRefresh';
 import {RunsFeedView, RunsFilter} from '../graphql/types';
 import {useSelectionReducer} from '../hooks/useSelectionReducer';
 import {BackfillPartitionsRequestedDialog} from '../instance/backfill/BackfillPartitionsRequestedDialog';
-import {CheckAllBox} from '../ui/CheckAllBox';
 import {IndeterminateLoadingBar} from '../ui/IndeterminateLoadingBar';
 import {Container, Inner, Row} from '../ui/VirtualizedTable';
-import {numberFormatter} from '../ui/formatters';
 
 interface RunsFeedTableNewProps {
   entries: RunsFeedTableEntryFragment[];
@@ -73,19 +62,19 @@ export const RunsFeedTableNew = ({
     if (entries.length === 0) {
       return entries;
     }
-    
+
     const sorted = [...entries].sort((a, b) => {
       // Handle potential undefined/null values
       const timeA = a.creationTime ?? 0;
       const timeB = b.creationTime ?? 0;
       return timeB - timeA; // Newest first (descending order)
     });
-    
+
     console.log('Sorted by creation time - showing first 3 entries:');
     sorted.slice(0, 3).forEach((entry, i) => {
       console.log(`${i + 1}. Created: ${new Date(entry.creationTime * 1000).toLocaleString()}`);
     });
-    
+
     return sorted;
   }, [entries]);
 
@@ -191,7 +180,7 @@ export const RunsFeedTableNew = ({
         <Container ref={parentRef} style={scroll ? {overflow: 'auto'} : {overflow: 'visible'}}>
           {header}
           {sortedEntries.length === 0 && loading && (
-            <Box flex={{direction: 'row', justifyContent: 'center'}} padding={32}>
+            <Box flex={{direction: 'row', justifyContent: 'center'}} padding={32} style={{margin: 'auto'}}>
               <SpinnerWithText label="Loading runs…" />
             </Box>
           )}

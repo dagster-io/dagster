@@ -538,8 +538,8 @@ const StatusCell = ({entry}: {entry: RunsFeedTableEntryFragment}) => {
   const renderStatusContent = () => {
     if (config.showOnlyDuration && config.showDuration) {
       return (
-        <Box style={{display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%'}}>
-          <Box style={{width: '16px', display: 'flex', alignItems: 'center', justifyContent: 'flex-start'}}>
+        <Box style={{display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%', gap: '12px'}}>
+          <Box style={{width: '28px', display: 'flex', alignItems: 'center', justifyContent: 'flex-start', paddingRight: '12px', borderRight: '1px solid #d1d5db'}}>
             {config.useSpinner ? (
               <Box style={{margin: 'auto'}} className="spinner-wrapper">
                 <style>{`.spinner-wrapper svg path { stroke: ${config.color} !important; }`}</style>
@@ -557,7 +557,7 @@ const StatusCell = ({entry}: {entry: RunsFeedTableEntryFragment}) => {
               lineHeight: '20px',
               fontVariantNumeric: 'tabular-nums',
               width: '6em',
-              textAlign: 'right',
+              textAlign: 'left',
             }}
           >
             {entry.startTime
@@ -571,8 +571,8 @@ const StatusCell = ({entry}: {entry: RunsFeedTableEntryFragment}) => {
     }
 
     return (
-      <Box style={{display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%'}}>
-        <Box style={{width: '16px', display: 'flex', alignItems: 'center', justifyContent: 'flex-start'}}>
+      <Box style={{display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%', gap: '12px'}}>
+        <Box style={{width: '28px', display: 'flex', alignItems: 'center', justifyContent: 'flex-start', paddingRight: '12px', borderRight: '1px solid #d1d5db'}}>
           {config.useSpinner ? (
             <Box style={{margin: 'auto'}} className="spinner-wrapper">
               <style>{`.spinner-wrapper svg path { stroke: ${config.color} !important; }`}</style>
@@ -582,14 +582,14 @@ const StatusCell = ({entry}: {entry: RunsFeedTableEntryFragment}) => {
             <Icon name={config.icon} size={16} style={{margin: 'auto', backgroundColor: config.color}} />
           ) : null}
         </Box>
-        <Box 
+        <Box
           style={{
-            color: config.color, 
-            fontSize: '14px', 
+            color: config.color,
+            fontSize: '14px',
             fontWeight: 400,
             lineHeight: '20px',
             width: '6em',
-            textAlign: 'right',
+            textAlign: 'left',
           }}
         >
           {config.text}

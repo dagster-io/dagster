@@ -55,6 +55,7 @@ export const Spinner = ({
 
 export const SpinnerWrapper = styled.div<{$padding: number}>`
   padding: ${({$padding}) => $padding}px;
+  margin: auto;
 `;
 
 const SlowSpinner = styled(BlueprintSpinner)<{$fillColor: string; $stopped?: boolean}>`
