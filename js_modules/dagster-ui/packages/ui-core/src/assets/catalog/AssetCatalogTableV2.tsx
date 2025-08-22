@@ -246,7 +246,7 @@ export const AssetCatalogTableV2 = React.memo(() => {
             ];
           },
           renderGroupHeader: (props) => {
-            return <HealthStatusHeaderRow {...props} status={props.group} substatus />;
+            return <HealthStatusHeaderRow {...props} status={props.group} groupBy={groupBy} />;
           },
         });
       case AssetHealthGroupBy.freshness_status:
@@ -259,7 +259,7 @@ export const AssetCatalogTableV2 = React.memo(() => {
             ];
           },
           renderGroupHeader: (props) => {
-            return <HealthStatusHeaderRow {...props} status={props.group} substatus />;
+            return <HealthStatusHeaderRow {...props} status={props.group} groupBy={groupBy} />;
           },
         });
       case AssetHealthGroupBy.check_status:
@@ -273,7 +273,7 @@ export const AssetCatalogTableV2 = React.memo(() => {
             ];
           },
           renderGroupHeader: (props) => {
-            return <HealthStatusHeaderRow {...props} status={props.group} substatus />;
+            return <HealthStatusHeaderRow {...props} status={props.group} groupBy={groupBy} />;
           },
         });
       case AssetHealthGroupBy.health_status:
@@ -287,7 +287,7 @@ export const AssetCatalogTableV2 = React.memo(() => {
             ];
           },
           renderGroupHeader: (props) => {
-            return <HealthStatusHeaderRow {...props} status={props.group} />;
+            return <HealthStatusHeaderRow {...props} status={props.group} groupBy={groupBy} />;
           },
         });
     }
