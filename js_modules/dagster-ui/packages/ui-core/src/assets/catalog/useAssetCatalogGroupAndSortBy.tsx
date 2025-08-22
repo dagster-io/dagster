@@ -86,7 +86,7 @@ export const useAssetCatalogGroupAndSortBy = ({
     encode: useCallback((b: AssetHealthGroupBy) => ({groupBy: b}), []),
   });
 
-  const grouped: Record<string, Grouped<T, TAsset>> = useMemo(() => {
+  const grouped: Record<string, Grouped<any, any>> = useMemo(() => {
     switch (groupBy) {
       case AssetHealthGroupBy.code_location:
         return groupByAttribute({
@@ -206,10 +206,10 @@ export const useAssetCatalogGroupAndSortBy = ({
           liveDataByNode,
           getAttributes: (asset) => {
             return [
-              statusToIconAndColor[asset.assetHealth?.materializationStatus ?? AssetHealthStatus.UNKNOWN]
-                .text,
+              statusToIconAndColor[
+                asset.assetHealth?.materializationStatus ?? AssetHealthStatus.UNKNOWN
+              ].text,
             ];
-
           },
           renderGroupHeader: (props) => {
             return (
@@ -311,19 +311,25 @@ export const useAssetCatalogGroupAndSortBy = ({
     let sortFn;
     switch (sortBy) {
       case 'materialization_asc':
-        sortFn = (a: AssetHealthFragment, b: AssetHealthFragment) =>
-          sortAssetsByMaterializationTimestamp(a, b);
+        sortFn = (a: {key: {path: string[]}}, b: {key: {path: string[]}}) =>
+          sortAssetsByMaterializationTimestamp(
+            liveDataByNode?.[tokenForAssetKey(a.key)] ?? a,
+            liveDataByNode?.[tokenForAssetKey(b.key)] ?? b,
+          );
         break;
       case 'materialization_desc':
-        sortFn = (a: AssetHealthFragment, b: AssetHealthFragment) =>
-          sortAssetsByMaterializationTimestamp(b, a);
+        sortFn = (a: {key: {path: string[]}}, b: {key: {path: string[]}}) =>
+          sortAssetsByMaterializationTimestamp(
+            liveDataByNode?.[tokenForAssetKey(b.key)] ?? b,
+            liveDataByNode?.[tokenForAssetKey(a.key)] ?? a,
+          );
         break;
       case 'key_asc':
-        sortFn = (a: AssetHealthFragment, b: AssetHealthFragment) =>
+        sortFn = (a: {key: {path: string[]}}, b: {key: {path: string[]}}) =>
           COMMON_COLLATOR.compare(tokenForAssetKey(a.key), tokenForAssetKey(b.key));
         break;
       case 'key_desc':
-        sortFn = (a: AssetHealthFragment, b: AssetHealthFragment) =>
+        sortFn = (a: {key: {path: string[]}}, b: {key: {path: string[]}}) =>
           COMMON_COLLATOR.compare(tokenForAssetKey(b.key), tokenForAssetKey(a.key));
         break;
       default:
@@ -331,13 +337,13 @@ export const useAssetCatalogGroupAndSortBy = ({
     }
     const copy = {...grouped};
     Object.entries(copy).forEach(([group, groupData]) => {
-      copy[group] = {
+      copy[group as keyof typeof copy] = {
         ...groupData,
         assets: groupData.assets.slice().sort(sortFn),
       };
     });
     return copy;
-  }, [grouped, sortBy]);
+  }, [grouped, liveDataByNode, sortBy]);
 
   return {
     sortBy,
@@ -353,11 +359,13 @@ export const useAssetCatalogGroupAndSortBy = ({
 };
 
 export function sortAssetsByMaterializationTimestamp(
-  a: AssetHealthFragment,
-  b: AssetHealthFragment,
+  a: AssetHealthFragment | {key: {path: string[]}},
+  b: AssetHealthFragment | {key: {path: string[]}},
 ) {
-  const aMaterialization = a.assetMaterializations[0]?.timestamp;
-  const bMaterialization = b.assetMaterializations[0]?.timestamp;
+  const aMaterialization =
+    'assetMaterializations' in a ? a.assetMaterializations[0]?.timestamp : undefined;
+  const bMaterialization =
+    'assetMaterializations' in b ? b.assetMaterializations[0]?.timestamp : undefined;
   if (!aMaterialization && !bMaterialization) {
     return 0;
   }
@@ -376,7 +384,7 @@ const groupByAttribute = <TGroup extends string, TAsset extends {key: {path: str
   renderGroupHeader,
 }: {
   liveDataByNode: Map<string, TAsset> | Record<string, TAsset>;
-  getAttributes: (asset: TAsset) => TGroup[];
+  getAttributes: (asset: TAsset) => (TGroup | symbol)[];
   renderGroupHeader: Grouped<TGroup, TAsset>['renderGroupHeader'];
 }): Record<TGroup, Grouped<TGroup, TAsset>> => {
   const byAttribute: {[key in TGroup]: Grouped<TGroup, TAsset>} = {} as {
@@ -390,14 +398,14 @@ const groupByAttribute = <TGroup extends string, TAsset extends {key: {path: str
   values.forEach((asset) => {
     const attributes = getAttributes(asset);
     attributes.forEach((attribute) => {
-      if (!byAttribute[attribute]) {
-        byAttribute[attribute] = {
+      if (!byAttribute[attribute as keyof typeof byAttribute]) {
+        byAttribute[attribute as keyof typeof byAttribute] = {
           assets: [],
           renderGroupHeader,
           isNone: attribute === NONE_KEY,
         };
       }
-      byAttribute[attribute].assets.push(asset);
+      byAttribute[attribute as keyof typeof byAttribute].assets.push(asset);
     });
   });
   return byAttribute;

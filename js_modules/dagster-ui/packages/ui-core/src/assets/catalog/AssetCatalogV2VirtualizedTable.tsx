@@ -8,10 +8,12 @@ import {
   Skeleton,
 } from '@dagster-io/ui-components';
 import {useVirtualizer} from '@tanstack/react-virtual';
-import React, {forwardRef, useMemo, useRef, useState} from 'react';
+import React, {forwardRef, useMemo, useRef} from 'react';
 import {Link} from 'react-router-dom';
 
+import {usePrefixedCacheKey} from '../../app/usePrefixedCacheKey';
 import {tokenForAssetKey} from '../../asset-graph/Utils';
+import {useStateWithStorage} from '../../hooks/useStateWithStorage';
 import {buildRepoAddress} from '../../workspace/buildRepoAddress';
 import {AssetActionMenu} from '../AssetActionMenu';
 import {AssetRecentUpdatesTrend} from '../AssetRecentUpdatesTrend';
@@ -38,6 +40,7 @@ export type AssetCatalogV2VirtualizedTableProps<
   T extends string,
   TAsset extends {key: {path: string[]}},
 > = {
+  id: string;
   allGroups: T[];
   grouped: Record<T, Grouped<T, TAsset>>;
   loading: boolean;
@@ -51,6 +54,7 @@ const AssetCatalogV2VirtualizedTableImpl = <
   T extends string,
   TAsset extends {key: {path: string[]}},
 >({
+  id,
   allGroups,
   grouped,
   loading,
@@ -61,7 +65,19 @@ const AssetCatalogV2VirtualizedTableImpl = <
 }: AssetCatalogV2VirtualizedTableProps<T, TAsset>) => {
   const containerRef = useRef<HTMLDivElement>(null);
 
-  const [closedGroups, setClosedGroups] = useState<Set<T>>(new Set());
+  const [closedGroupsArray, setClosedGroups] = useStateWithStorage<T[]>(
+    usePrefixedCacheKey(id),
+    (json) => {
+      if (json instanceof Array) {
+        return json;
+      }
+      return [];
+    },
+  );
+
+  const closedGroups = useMemo(() => new Set(closedGroupsArray), [closedGroupsArray]);
+
+  console.log({closedGroups});
 
   const unGroupedRowItems = useMemo(() => {
     return allGroups.flatMap((group) => {
@@ -153,13 +169,10 @@ const AssetCatalogV2VirtualizedTableImpl = <
                       checkedState={checkedState}
                       onToggleOpen={() =>
                         setClosedGroups((prev) => {
-                          const newSet = new Set(prev);
-                          if (newSet.has(item.group)) {
-                            newSet.delete(item.group);
-                          } else {
-                            newSet.add(item.group);
+                          if (prev.includes(item.group)) {
+                            return prev.filter((group) => group !== item.group);
                           }
-                          return newSet;
+                          return [...prev, item.group];
                         })
                       }
                     />

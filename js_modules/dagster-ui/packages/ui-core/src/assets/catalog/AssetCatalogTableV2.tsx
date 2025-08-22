@@ -448,6 +448,7 @@ const Table = React.memo(
               checkedDisplayKeys={checkedDisplayKeys}
               onToggleFactory={onToggleFactory}
               onToggleGroup={onToggleGroup}
+              id={`asset-catalog-table-${groupBy}`}
             />
           </div>
         </Box>

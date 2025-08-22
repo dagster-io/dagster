@@ -86,7 +86,7 @@ interface HeaderProps<TAsset extends {key: {path: string[]}}> {
   noneGroup: string;
 }
 
-export const NONE_KEY = '__<None>__' + Math.random();
+export const NONE_KEY = '__<None>__asfoiahgoih1309419205i9i5jigj1__#$#@%@%3425'; // random constant string for uniqueness
 
 export const AttributeStatusHeaderRow = React.memo(
   <TAsset extends {key: {path: string[]}}>({
