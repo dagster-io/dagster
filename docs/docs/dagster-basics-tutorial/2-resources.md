@@ -10,7 +10,7 @@ In this step, you will load that data into [DuckDB](https://duckdb.org), an anal
 
 Since the same database will be used across all three assets, rather than adding the connection logic to each asset, you can use a [resource](/guides/build/external-resources) to centralize the connection in a single object that can be shared across multiple Dagster objects.
 
-Resources are Dagster objects much like assets, but they are not executed as `Ops`. Some Dagster abstractions in the `Definitions` layer complement other objects without being able to be directly executed. Typically, resources are reusable objects that supply external context, such as database connections, API clients, or configuration settings. Because of this, a single resource can be shared across many different Dagster objects.
+Resources are Dagster objects much like assets, but they are not executed. Some Dagster entities in the `Definitions` layer complement other objects without being able to be directly executed. Typically, resources are reusable objects that supply external context, such as database connections, API clients, or configuration settings. Because of this, a single resource can be shared across many different Dagster objects.
 
 ![2048 resolution](/images/tutorial/dagster-tutorial/overviews/resources.png)
 

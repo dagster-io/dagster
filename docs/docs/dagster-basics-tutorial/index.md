@@ -14,13 +14,11 @@ By the end, you will be ready to build your own data pipelines and explore more 
 
 ## Dagster's programming model
 
-Dagster’s programming model is built on three concepts that work together: `Components`, `Definitions`, and `Ops`. Each concept has a different level of abstraction and purpose, and together they let you move smoothly from high-level configuration to low-level execution.
+Dagster’s programming model is built around `Assets`, which are organized within `Definitions`.
 
-- **`Components`** generate one or more `Definitions` based on configuration you provide. This allows you to avoid repetitive code by producing multiple `Definitions` automatically from a common pattern.
+- **`Definitions`** act as containers for all Dagster entities in your project.
 
-- **`Definitions`** are the building blocks of Dagster. `Definitions` combine metadata (what the entity, such an asset, represents) with a Python function called an `Op` (how the entity behaves). `Definitions` are what you actually execute in a Dagster job or run.
-
-- **`Ops`**, short for "operations", are the lowest-level execution units. They are Python functions that represent the most basic unit of computation in Dagster.
+- **`Assets`** are the core building blocks of Dagster. They represent the entities in your data platform, while the dependencies between them define the project’s lineage.
 
 ![2048 resolution](/images/tutorial/dagster-tutorial/overviews/overview-1.png)
 
