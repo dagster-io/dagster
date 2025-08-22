@@ -275,6 +275,7 @@ def execute_scaffold_branch_command(
                 project_structure={
                     "root_path": str(dg_context.root_path),
                 },
+                verbose=cli_config.get("verbose", False),
             )
 
             # Generate initial plan
@@ -319,6 +320,7 @@ def execute_scaffold_branch_command(
                         "Refining plan", spin=not disable_progress
                     ) as output_channel:
                         current_plan = plan_generator.refine_plan(
+                            planning_context,
                             current_plan,
                             feedback,
                             output_channel,

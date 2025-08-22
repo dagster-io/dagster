@@ -5,6 +5,8 @@ import time
 from contextlib import ExitStack
 from typing import TYPE_CHECKING, Optional
 
+from dagster_shared.serdes.objects import DefsStateInfo
+
 import dagster._check as check
 from dagster._core.instance import InstanceRef
 from dagster._core.remote_origin import ManagedGrpcPythonEnvCodeLocationOrigin
@@ -56,6 +58,7 @@ class DagsterProxyApiServicer(DagsterApiServicer):
         logger: logging.Logger,
         server_heartbeat: bool,
         server_heartbeat_timeout: int,
+        defs_state_info: Optional[DefsStateInfo],
     ):
         super().__init__()
 
@@ -90,6 +93,7 @@ class DagsterProxyApiServicer(DagsterApiServicer):
                 container_context=self._container_context,
                 wait_for_processes_on_shutdown=True,
                 additional_timeout_msg="Set from --startup-timeout command line argument. ",
+                defs_state_info=defs_state_info,
             )
         )
         self._origin = ManagedGrpcPythonEnvCodeLocationOrigin(

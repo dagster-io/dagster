@@ -119,3 +119,55 @@ def test_load_component(
                 )
                 == expected_cluster_config_calls
             )
+
+            # 6 different types of submit task are created
+            assert (
+                len(
+                    [call for call in mock_submit_task.mock_calls if "notebook_task" in call.kwargs]
+                )
+                == 1
+            )
+            assert (
+                len(
+                    [
+                        call
+                        for call in mock_submit_task.mock_calls
+                        if "condition_task" in call.kwargs
+                    ]
+                )
+                == 1
+            )
+            assert (
+                len(
+                    [
+                        call
+                        for call in mock_submit_task.mock_calls
+                        if "spark_python_task" in call.kwargs
+                    ]
+                )
+                == 1
+            )
+            assert (
+                len(
+                    [
+                        call
+                        for call in mock_submit_task.mock_calls
+                        if "python_wheel_task" in call.kwargs
+                    ]
+                )
+                == 1
+            )
+            assert (
+                len(
+                    [
+                        call
+                        for call in mock_submit_task.mock_calls
+                        if "spark_jar_task" in call.kwargs
+                    ]
+                )
+                == 1
+            )
+            assert (
+                len([call for call in mock_submit_task.mock_calls if "run_job_task" in call.kwargs])
+                == 1
+            )

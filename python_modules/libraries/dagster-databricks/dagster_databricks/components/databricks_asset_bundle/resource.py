@@ -70,7 +70,10 @@ class DatabricksWorkspace(ConfigurableResource):
             context.log.info(f"Task {task_key}: parameters={task.task_parameters}")
 
             # Create the SubmitTask params dictionary
-            submit_task_params = {"task_key": task_key}
+            submit_task_params = {
+                "task_key": task_key,
+                task.submit_task_key: task.to_databricks_sdk_task(),
+            }
 
             # Convert dependency config to TaskDependency objects
             task_dependencies = [

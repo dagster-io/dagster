@@ -49,6 +49,7 @@ class PlanningContext:
     user_input: str
     dg_context: DgContext
     project_structure: dict[str, Any]
+    verbose: bool
 
 
 class PlanGenerator:
@@ -99,7 +100,7 @@ class PlanGenerator:
                 allowed_tools=allowed_tools,
                 output_channel=output_channel,
                 disallowed_tools=["Bash(python:*)", "WebSearch", "WebFetch"],
-                verbose=False,
+                verbose=context.verbose,
             )
         )
 
@@ -128,6 +129,7 @@ class PlanGenerator:
 
     def refine_plan(
         self,
+        context: PlanningContext,
         current_plan: GeneratedPlan,
         user_feedback: str,
         output_channel: OutputChannel,
@@ -160,7 +162,7 @@ class PlanGenerator:
                 allowed_tools=allowed_tools,
                 output_channel=output_channel,
                 disallowed_tools=["Bash(python:*)", "WebSearch", "WebFetch"],
-                verbose=False,
+                verbose=context.verbose,
             )
         )
 
@@ -267,7 +269,6 @@ Provide the complete updated plan in the same markdown format as before."""
                 category="plan_message_processing",
                 message=f"Processing message {i}",
                 data={
-                    "message_type": str(type(message)),
                     "message_class": type(message).__name__,
                 },
             )

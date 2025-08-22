@@ -11,6 +11,7 @@ PrintFn = Callable[[Any], None]
 
 if TYPE_CHECKING:
     from dagster._core.events import AssetKey, DagsterEventType
+    from dagster._core.storage.defs_state import DefsStateStorage
     from dagster._core.storage.event_log import EventLogStorage
     from dagster._core.storage.root import LocalArtifactStorage
     from dagster._core.storage.runs import RunStorage
@@ -29,6 +30,7 @@ class StorageMethods:
     _run_storage: "RunStorage"
     _schedule_storage: Optional["ScheduleStorage"]
     _local_artifact_storage: "LocalArtifactStorage"
+    _defs_state_storage: Optional["DefsStateStorage"]
 
     @traced
     def get_latest_storage_id_by_partition(
