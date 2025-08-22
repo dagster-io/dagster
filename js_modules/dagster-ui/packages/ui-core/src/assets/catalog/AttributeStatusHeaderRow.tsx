@@ -2,7 +2,6 @@ import {Icon, IconName} from '@dagster-io/ui-components';
 import React from 'react';
 
 import {AssetCatalogTableGroupHeaderRow} from './AssetCatalogTableGroupHeaderRow';
-import {AssetHealthFragment} from '../../asset-data/types/AssetHealthDataProvider.types';
 
 export enum AssetHealthGroupBy {
   health_status = 'health_status',
@@ -76,18 +75,30 @@ export const GROUP_BY_ITEMS = GROUP_BY.map((key) => ({
   icon: ASSET_HEALTH_GROUP_BY_META[key].icon,
 }));
 
-interface HeaderProps {
+interface HeaderProps<TAsset extends {key: {path: string[]}}> {
   text: string;
   groupBy: AssetHealthGroupBy;
   open: boolean;
-  assets: AssetHealthFragment[];
+  assets: TAsset[];
   onToggleOpen: () => void;
   checkedState: 'checked' | 'indeterminate' | 'unchecked';
   onToggleChecked: (checked: boolean) => void;
+  noneGroup: string;
 }
 
+export const NONE_KEY = '__<None>__' + Math.random();
+
 export const AttributeStatusHeaderRow = React.memo(
-  ({text, groupBy, open, assets, onToggleOpen, checkedState, onToggleChecked}: HeaderProps) => {
+  <TAsset extends {key: {path: string[]}}>({
+    text,
+    groupBy,
+    open,
+    assets,
+    onToggleOpen,
+    checkedState,
+    onToggleChecked,
+    noneGroup,
+  }: HeaderProps<TAsset>) => {
     let icon = null;
     if (ASSET_HEALTH_GROUP_BY_META[groupBy]) {
       icon = <Icon name={ASSET_HEALTH_GROUP_BY_META[groupBy].icon} />;
@@ -96,7 +107,7 @@ export const AttributeStatusHeaderRow = React.memo(
     return (
       <AssetCatalogTableGroupHeaderRow
         icon={icon}
-        text={text}
+        text={text === NONE_KEY ? noneGroup : text}
         count={assets.length}
         open={open}
         onToggleOpen={onToggleOpen}

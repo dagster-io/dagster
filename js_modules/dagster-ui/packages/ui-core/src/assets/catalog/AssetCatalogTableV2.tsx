@@ -279,9 +279,9 @@ export const AssetCatalogTableV2 = React.memo(() => {
 
 AssetCatalogTableV2.displayName = 'AssetCatalogTableV2';
 
-type TableProps<T extends string> = {
+type TableProps<T extends string, TAsset extends {key: {path: string[]}}> = {
   assets: AssetTableFragment[] | undefined;
-  grouped: AssetCatalogV2VirtualizedTableProps<T>['grouped'];
+  grouped: AssetCatalogV2VirtualizedTableProps<T, TAsset>['grouped'];
   loading: boolean;
   healthDataLoading: boolean;
   tabs: React.ReactNode;
@@ -299,7 +299,7 @@ type TableProps<T extends string> = {
 };
 
 const Table = React.memo(
-  <T extends string>({
+  <T extends string, TAsset extends {key: {path: string[]}}>({
     assets,
     grouped,
     loading,
@@ -316,7 +316,7 @@ const Table = React.memo(
     allGroups: _allGroups,
     SORT_ITEMS,
     ITEMS_BY_KEY,
-  }: TableProps<T>) => {
+  }: TableProps<T, TAsset>) => {
     const scope = useMemo(() => {
       const list = (assets ?? []).filter((a): a is AssetWithDefinition => !!a.definition);
       const selected = list.filter((a) => checkedDisplayKeys.has(JSON.stringify(a.key.path)));

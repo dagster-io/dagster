@@ -11,7 +11,6 @@ import {useVirtualizer} from '@tanstack/react-virtual';
 import React, {forwardRef, useMemo, useRef, useState} from 'react';
 import {Link} from 'react-router-dom';
 
-import {AssetHealthFragment} from '../../asset-data/types/AssetHealthDataProvider.types';
 import {tokenForAssetKey} from '../../asset-graph/Utils';
 import {buildRepoAddress} from '../../workspace/buildRepoAddress';
 import {AssetActionMenu} from '../AssetActionMenu';
@@ -22,21 +21,25 @@ import {useAllAssets} from '../useAllAssets';
 const shimmer = {shimmer: true};
 const shimmerRows = [shimmer, shimmer, shimmer, shimmer, shimmer];
 
-export type Grouped<T extends string> = {
-  assets: AssetHealthFragment[];
+export type Grouped<T extends string, TAsset extends {key: {path: string[]}}> = {
+  assets: TAsset[];
   renderGroupHeader: (props: {
     group: T;
     open: boolean;
-    assets: AssetHealthFragment[];
+    assets: TAsset[];
     onToggleChecked: (checked: boolean) => void;
     checkedState: 'checked' | 'indeterminate' | 'unchecked';
     onToggleOpen: () => void;
   }) => React.ReactNode;
+  isNone?: boolean;
 };
 
-export type AssetCatalogV2VirtualizedTableProps<T extends string> = {
+export type AssetCatalogV2VirtualizedTableProps<
+  T extends string,
+  TAsset extends {key: {path: string[]}},
+> = {
   allGroups: T[];
-  grouped: Record<T, Grouped<T>>;
+  grouped: Record<T, Grouped<T, TAsset>>;
   loading: boolean;
   healthDataLoading: boolean;
   checkedDisplayKeys: Set<string>;
@@ -44,7 +47,10 @@ export type AssetCatalogV2VirtualizedTableProps<T extends string> = {
   onToggleGroup: (group: T) => (checked: boolean) => void;
 };
 
-const AssetCatalogV2VirtualizedTableImpl = <T extends string>({
+const AssetCatalogV2VirtualizedTableImpl = <
+  T extends string,
+  TAsset extends {key: {path: string[]}},
+>({
   allGroups,
   grouped,
   loading,
@@ -52,7 +58,7 @@ const AssetCatalogV2VirtualizedTableImpl = <T extends string>({
   checkedDisplayKeys,
   onToggleFactory,
   onToggleGroup,
-}: AssetCatalogV2VirtualizedTableProps<T>) => {
+}: AssetCatalogV2VirtualizedTableProps<T, TAsset>) => {
   const containerRef = useRef<HTMLDivElement>(null);
 
   const [closedGroups, setClosedGroups] = useState<Set<T>>(new Set());
@@ -185,15 +191,18 @@ export const AssetCatalogV2VirtualizedTable = React.memo(
   AssetCatalogV2VirtualizedTableImpl,
 ) as typeof AssetCatalogV2VirtualizedTableImpl;
 
-interface RowProps {
-  asset: AssetHealthFragment;
+interface RowProps<TAsset> {
+  asset: TAsset;
   index: number;
   checked: boolean;
   onToggle: (values: {checked: boolean; shiftKey: boolean}) => void;
 }
 
 const AssetRow = forwardRef(
-  ({asset, index, checked, onToggle}: RowProps, ref: React.ForwardedRef<HTMLDivElement>) => {
+  <TAsset extends {key: {path: string[]}}>(
+    {asset, index, checked, onToggle}: RowProps<TAsset>,
+    ref: React.ForwardedRef<HTMLDivElement>,
+  ) => {
     const linkUrl = assetDetailsPathForKey({path: asset.key.path});
 
     const {assets} = useAllAssets();
@@ -226,7 +235,10 @@ const AssetRow = forwardRef(
         right={
           <HorizontalControls
             controls={[
-              {key: 'recent-updates', control: <AssetRecentUpdatesTrend asset={asset} />},
+              {
+                key: 'recent-updates',
+                control: <AssetRecentUpdatesTrend asset={asset} />,
+              },
               {
                 key: 'action-menu',
                 control: (

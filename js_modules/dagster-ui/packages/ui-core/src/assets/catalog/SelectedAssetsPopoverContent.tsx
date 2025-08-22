@@ -9,7 +9,7 @@ import styles from './SelectedAssetsPopoverContext.module.css';
 
 type Props<T extends string> = {
   checkedDisplayKeys: Set<string>;
-  grouped: Record<T, Grouped<T>>;
+  grouped: Record<T, Grouped<T, any>>;
 };
 
 export const SelectedAssetsPopoverContent = <T extends string>({
@@ -21,7 +21,7 @@ export const SelectedAssetsPopoverContent = <T extends string>({
   const groupSets = useMemo(() => {
     return Object.fromEntries(
       Object.entries(grouped).map(([group, _value]) => {
-        const {assets} = _value as Grouped<T>;
+        const {assets} = _value as Grouped<T, any>;
         return [group as T, new Set(assets.map((asset) => tokenForAssetKey(asset.key)))];
       }),
     );
