@@ -37,7 +37,7 @@ class GeneratedPlan:
 @record
 class PlanningContext:
     model: ModelType
-    user_input: str
+    prompt_text: str
     dg_context: DgContext
     project_structure: dict[str, Any]
     verbose: bool
@@ -76,7 +76,7 @@ class PlanGenerator:
             category="planning_generation_start",
             message="Starting initial plan generation",
             data={
-                "user_input_length": len(context.user_input),
+                "user_input_length": len(context.prompt_text),
             },
         )
 
@@ -104,7 +104,7 @@ class PlanGenerator:
             metadata={
                 "generation_method": "prompt_driven_claude_generation",
                 "messages_count": len(messages),
-                "user_input": context.user_input,
+                "user_input": context.prompt_text,
             },
         )
 
@@ -203,7 +203,7 @@ class PlanGenerator:
 
         # Format template with actual values
         return template.format(
-            user_input=context.user_input,
+            user_input=context.prompt_text,
             context_info=context_info,
         )
 
