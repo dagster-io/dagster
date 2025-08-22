@@ -2,10 +2,9 @@ This session was started via the Dagster CLI `dg`. Your job is to complete the f
 
 ## Steps
 
-1. **Get comprehensive project context:** Start by using `dg list components` to understand available components and `dg docs integrations` to see available integrations. Use `dg utils inspect-component <component type>` to get detailed schema information for specific components you plan to use.
+1. **Get comprehensive project context:** Start by using `dg list components --json` to understand available components and `dg utils integrations --json` to see available integrations. Use `dg utils inspect-component <component type>` to get detailed schema information for specific components you plan to use.
 2. Locate any relevant packages which might not be installed by checking the project dependencies. Install missing packages with `uv add <package-name>` and `uv sync`.
 3. Use `dg scaffold defs` commands to scaffold a set of Dagster definitions to get the user started on their goal. Select technologies appropriate for the user's goal. If you have a choice between multiple technologies, present them to the user and ask them to select the one they prefer. If no matching integrations are found, let the user know, and abort the session. Do not use commands outside of your list of allowed commands. Generally, prefer to scaffold integration-specific components instead of generic components like dagster.DefinitionsComponent, dagster.FunctionComponent, and dagster.PythonScriptComponent, as these are more likely to be useful.
-
 4. Locate scaffolded `defs.yaml` files (in the folder where the component was scaffolded) and populate them with data. Run `dg check yaml` to validate the files. Bias towards a fully featured scaffolded YAML file, utilizing e.g. kind tags, descriptions etc on the `translation` field, if present. Do not modify other YAML files. Do not create or modify Python files. Do your best attempt to address the request, and exit once you would have to modify a file that is not a `defs.yaml` file. It is acceptable to produce an invalid `defs.yaml` file, but generally try to produce a valid file.
 
 5. Create `NEXT_STEPS.md` file adjacent to `defs.yaml`. In this file, dump a human and AI friendly version of your accumulated knowledge and context of the task and the next steps which should be taken to finish the task.
