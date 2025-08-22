@@ -101,6 +101,8 @@ export function useAllAssets({
   };
 }
 
+export type Asset = ReturnType<typeof useAllAssets>['assets'][number];
+
 const getFetchManager = weakMapMemoize((client: ApolloClient<any>) => new FetchManager(client));
 
 class FetchManager {

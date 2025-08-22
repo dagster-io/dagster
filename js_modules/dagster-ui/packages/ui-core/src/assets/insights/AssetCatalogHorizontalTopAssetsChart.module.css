@@ -1,19 +1,13 @@
 .container {
-  background-color: var(--color-background-default);
-  color: var(--color-text-default);
+  height: 100%;
+  overflow: hidden;
   display: flex;
   flex-direction: column;
-  padding: 16px 24px;
-  height: 460px;
 }
 
-.table {
-  width: 100%;
-  border-collapse: collapse;
-  font-size: 14px;
-  display: grid;
-  grid-template-columns: minmax(0, 3fr) minmax(0, 1fr) minmax(0, 1fr);
-  gap: 12px;
+.listContainer {
+  flex: 1;
+  overflow: hidden;
 }
 
 .tableValue {
@@ -23,4 +17,54 @@
 .distributionRow {
   background-color: var(--color-accent-blue);
   height: 20px;
+}
+
+.headerGrid {
+  display: grid;
+  gap: 12px;
+  grid-template-columns: 1fr;
+  padding: 0px 20px 8px 24px;
+}
+
+.headerGrid.hasCurrentData,
+.headerGrid.hasPreviousData {
+  grid-template-columns: 1fr 88px;
+}
+
+.headerGrid.change.change {
+  grid-template-columns: 1fr repeat(3, 88px);
+}
+
+.sortButton.sortButton {
+  font-size: 12px;
+  text-align: right;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 4px;
+  justify-content: flex-end;
+}
+
+.sortButton:first-child {
+  text-align: left;
+  justify-content: flex-start;
+}
+
+.sortButton.active {
+  color: var(--color-text-default);
+}
+
+.rightGrid {
+  display: grid;
+  grid-template-columns: repeat(3, 88px);
+  gap: 12px;
+}
+
+.rightGrid.hasCurrentData,
+.rightGrid.hasPreviousData {
+  grid-template-columns: 88px;
+}
+
+.rightGrid.change.change {
+  grid-template-columns: repeat(3, 88px);
 }

@@ -80,10 +80,16 @@ export const getDataset = (
 };
 
 export type MetricDialogData<T> = {
-  after: number;
-  before: number;
+  current?: {
+    before: number;
+    after: number;
+  };
+  previous?: {
+    before: number;
+    after: number;
+  };
   metric: T;
-  unit: string;
+  unitType: ReportingUnitType;
 };
 
 interface Props<T> {
@@ -315,21 +321,29 @@ export const InnerLineChartWithComparison = <T,>(props: Props<T>) => {
           }
         }
 
-        const before = metrics.currentPeriod.timestamps[index];
-        if (typeof before !== 'number') {
+        const currentTime = metrics.currentPeriod.timestamps[index];
+        if (typeof currentTime !== 'number') {
           return;
         }
 
-        const after = before - timeSliceSeconds;
+        const previousTime = metrics.prevPeriod.timestamps[index] ?? undefined;
 
         // Only open the dialog if data exists for the clicked index
         // in the current period
         if (metrics.currentPeriod.data[index] && openMetricDialog) {
           openMetricDialog({
-            after,
-            before,
+            current: {
+              before: currentTime - timeSliceSeconds,
+              after: currentTime,
+            },
+            previous: previousTime
+              ? {
+                  before: previousTime - timeSliceSeconds,
+                  after: previousTime,
+                }
+              : undefined,
             metric: metricName,
-            unit: unitType,
+            unitType,
           });
         }
       }

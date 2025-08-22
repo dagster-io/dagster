@@ -1,10 +1,11 @@
+import os
 import re
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from functools import cached_property
 from pathlib import Path
-from typing import Annotated
+from typing import Annotated, Optional, Union
 
-from dagster import AssetSpec, MetadataValue, Resolvable
+from dagster import AssetExecutionContext, AssetSpec, MetadataValue, Resolvable, multi_asset
 from dagster._core.definitions.definitions_class import Definitions
 from dagster.components.component.component import Component
 from dagster.components.core.context import ComponentLoadContext
@@ -15,7 +16,11 @@ from dagster.components.scaffold.scaffold import scaffold_with
 from dagster_databricks.components.databricks_asset_bundle.configs import (
     DatabricksBaseTask,
     DatabricksConfig,
+    ResolvedDatabricksExistingClusterConfig,
+    ResolvedDatabricksNewClusterConfig,
+    ResolvedDatabricksServerlessConfig,
 )
+from dagster_databricks.components.databricks_asset_bundle.resource import DatabricksWorkspace
 from dagster_databricks.components.databricks_asset_bundle.scaffolder import (
     DatabricksAssetBundleScaffolder,
 )
@@ -32,9 +37,25 @@ def snake_case(name: str) -> str:
     return name.lower().strip("_")
 
 
+@dataclass
+class DatabricksWorkspaceArgs(Resolvable):
+    """Aligns with DatabricksWorkspace.__new__."""
+
+    host: str
+    token: str
+
+
 def resolve_databricks_config_path(context: ResolutionContext, model) -> Path:
     return context.resolve_source_relative_path(
         context.resolve_value(model, as_type=str),
+    )
+
+
+def resolve_databricks_workspace(context: ResolutionContext, model) -> DatabricksWorkspace:
+    args = DatabricksWorkspaceArgs.resolve_from_model(context, model)
+    return DatabricksWorkspace(
+        host=args.host,
+        token=args.token,
     )
 
 
@@ -52,6 +73,55 @@ class DatabricksAssetBundleComponent(Component, Resolvable):
             ],
         ),
     ]
+    workspace: Annotated[
+        DatabricksWorkspace,
+        Resolver(
+            resolve_databricks_workspace,
+            model_field_type=DatabricksWorkspaceArgs.model(),
+            description="The mapping defining a DatabricksWorkspace.",
+            examples=[
+                {
+                    "host": "your_host",
+                    "token": "your_token",
+                },
+            ],
+        ),
+    ]
+    compute_config: Optional[
+        Annotated[
+            Union[
+                ResolvedDatabricksNewClusterConfig,
+                ResolvedDatabricksExistingClusterConfig,
+                ResolvedDatabricksServerlessConfig,
+            ],
+            Resolver.default(
+                model_field_type=Union[
+                    ResolvedDatabricksNewClusterConfig,
+                    ResolvedDatabricksExistingClusterConfig,
+                    ResolvedDatabricksServerlessConfig,
+                ],
+                description=(
+                    "A mapping defining a Databricks compute config. "
+                    "Allowed types are databricks_asset_bundle.configs.ResolvedDatabricksNewClusterConfig, "
+                    "databricks_asset_bundle.configs.ResolvedDatabricksExistingClusterConfig and "
+                    "databricks_asset_bundle.configs.ResolvedDatabricksServerlessConfig. Optional."
+                ),
+                examples=[
+                    {
+                        "spark_version": "test_spark_version",
+                        "node_type_id": "node_type_id",
+                        "num_workers": 1,
+                    },
+                    {
+                        "existing_cluster_id": "existing_cluster_id",
+                    },
+                    {
+                        "is_serverless": True,
+                    },
+                ],
+            ),
+        ]
+    ] = field(default_factory=ResolvedDatabricksNewClusterConfig)
 
     @cached_property
     def databricks_config(self) -> DatabricksConfig:
@@ -69,7 +139,29 @@ class DatabricksAssetBundleComponent(Component, Resolvable):
                 "task_config": MetadataValue.json(task.task_config_metadata),
                 **({"libraries": MetadataValue.json(task.libraries)} if task.libraries else {}),
             },
+            deps=[snake_case(dep_config.task_key) for dep_config in task.depends_on],
         )
 
     def build_defs(self, context: ComponentLoadContext) -> Definitions:
-        raise NotImplementedError()
+        component_defs_path_as_python_str = str(
+            os.path.relpath(context.component_path.file_path, start=context.project_root)
+        ).replace("/", "_")
+
+        @multi_asset(
+            name=f"databricks_multi_asset_{component_defs_path_as_python_str}",
+            specs=[self.get_asset_spec(task) for task in self.databricks_config.tasks],
+            can_subset=True,
+        )
+        def multi_notebook_job_asset(
+            context: AssetExecutionContext,
+            databricks: DatabricksWorkspace,
+        ):
+            """Multi-asset that runs multiple notebooks as a single Databricks job."""
+            yield from databricks.submit_and_poll(
+                component=self,
+                context=context,
+            )
+
+        return Definitions(
+            assets=[multi_notebook_job_asset], resources={"databricks": self.workspace}
+        )

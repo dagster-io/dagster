@@ -5,6 +5,7 @@ from buildkite_shared.environment import is_release_branch, safe_getenv
 from buildkite_shared.python_packages import PythonPackages
 from buildkite_shared.python_version import AvailablePythonVersion
 from buildkite_shared.step_builders.command_step_builder import (
+    BuildkiteQueue,
     CommandStepBuilder,
     CommandStepConfiguration,
 )
@@ -145,6 +146,8 @@ def build_repo_wide_pyright_steps() -> list[StepConfiguration]:
                     "make pyright",
                 )
                 .skip_if(skip_if_no_python_changes(overrides=["pyright"]))
+                # Run on a larger instance
+                .on_queue(BuildkiteQueue.DOCKER)
                 .build(),
                 add_test_image(
                     CommandStepBuilder(

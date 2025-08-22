@@ -12,6 +12,12 @@ class DatabricksAssetBundleScaffoldParams(BaseModel):
     databricks_config_path: str = Field(
         description="Path to the databricks.yml config file",
     )
+    databricks_workspace_host: str = Field(
+        description="The host of your Databricks workspace.",
+    )
+    databricks_workspace_token: str = Field(
+        description="The token to access your Databricks workspace.",
+    )
 
 
 class DatabricksAssetBundleScaffolder(Scaffolder[DatabricksAssetBundleScaffoldParams]):
@@ -22,7 +28,19 @@ class DatabricksAssetBundleScaffolder(Scaffolder[DatabricksAssetBundleScaffoldPa
     def scaffold(self, request: ScaffoldRequest[DatabricksAssetBundleScaffoldParams]) -> None:
         project_root = request.project_root or os.getcwd()
         project_root_tmpl = "{{ project_root }}"
-        rel_path = os.path.relpath(request.params.databricks_config_path, start=project_root)
-        path_str = f"{project_root_tmpl}/{rel_path}"
 
-        scaffold_component(request, {"databricks_config_path": path_str})
+        rel_databricks_config_path = os.path.relpath(
+            request.params.databricks_config_path, start=project_root
+        )
+        databricks_config_path_str = f"{project_root_tmpl}/{rel_databricks_config_path}"
+
+        scaffold_component(
+            request,
+            {
+                "databricks_config_path": databricks_config_path_str,
+                "workspace": {
+                    "host": request.params.databricks_workspace_host,
+                    "token": request.params.databricks_workspace_token,
+                },
+            },
+        )

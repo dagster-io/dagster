@@ -127,9 +127,7 @@ def test_dev_project_context_success():
     is_windows() == "Windows", reason="Temporarily skipping (signal issues in CLI).."
 )
 def test_dev_has_options_of_dagster_dev():
-    # ruff: noqa: I001 - import order differs between CI and local due to package installation differences
     from dagster._cli.dev import dev_command as dagster_dev_command
-
     from dagster_dg_cli.cli import dev_command as dev_command
 
     exclude_dagster_dev_params = {

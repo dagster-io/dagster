@@ -1,4 +1,3 @@
-# ruff: noqa: I001 - import order differs between CI and local due to package installation differences
 import json
 import tempfile
 from collections.abc import Iterator
@@ -22,7 +21,6 @@ from dagster_airlift.constants import (
 from dagster_airlift.core.components.airflow_instance.component import AirflowInstanceComponent
 from dagster_airlift.test import make_instance
 from dagster_airlift.test.test_utils import asset_spec, get_job_from_defs
-
 from dagster_dg_cli.cli import cli
 
 ensure_dagster_tests_import()
