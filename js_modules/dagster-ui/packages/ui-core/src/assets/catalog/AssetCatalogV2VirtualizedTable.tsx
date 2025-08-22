@@ -101,15 +101,17 @@ const AssetCatalogV2VirtualizedTableImpl = <T extends string>({
             transform: `translateY(${items[0]?.start ?? 0}px)`,
           }}
         >
-          {items.map(({index, key}) => {
+          {items.map(({index}) => {
             const item = rowItems[index];
 
             if (!item) {
               return null;
             }
 
+            let key: string | number = index;
+
             const wrapper = (content: React.ReactNode) => (
-              <div key={key} data-index={index} ref={rowVirtualizer.measureElement}>
+              <div key={index} data-index={index} ref={rowVirtualizer.measureElement}>
                 {content}
               </div>
             );
@@ -123,6 +125,8 @@ const AssetCatalogV2VirtualizedTableImpl = <T extends string>({
             }
 
             if ('header' in item) {
+              key = item.group as string;
+
               const assetsInGroup =
                 grouped[item.group]?.assets.map((asset) => tokenForAssetKey(asset.key)) ?? [];
 
@@ -161,6 +165,8 @@ const AssetCatalogV2VirtualizedTableImpl = <T extends string>({
                 </div>
               );
             }
+
+            key = tokenForAssetKey(item.key);
 
             return (
               <AssetRow

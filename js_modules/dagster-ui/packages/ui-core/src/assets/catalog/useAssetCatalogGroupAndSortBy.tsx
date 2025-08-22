@@ -10,6 +10,7 @@ import {AssetHealthFragment} from '../../asset-data/types/AssetHealthDataProvide
 import {tokenForAssetKey} from '../../asset-graph/Utils';
 import {AssetHealthStatus} from '../../graphql/types';
 import {useQueryAndLocalStoragePersistedState} from '../../hooks/useQueryAndLocalStoragePersistedState';
+import {weakMapMemoize} from '../../util/weakMapMemoize';
 import {buildRepoPathForHuman} from '../../workspace/buildRepoAddress';
 import {statusToIconAndColor} from '../AssetHealthSummary';
 import {AssetTableFragment} from '../types/AssetTableFragment.types';
@@ -143,13 +144,17 @@ export const useAssetCatalogGroupAndSortBy = ({
           liveDataByNode,
           getAttributes: ({key}) => {
             const asset = assetsByAssetKey.get(tokenForAssetKey(key));
-            return Array.from(
-              new Set(
-                [asset?.definition?.computeKind, ...(asset?.definition?.kinds ?? [])].filter(
-                  Boolean,
-                ) as string[],
-              ),
-            );
+            if (asset?.definition?.computeKind || asset?.definition?.kinds?.length) {
+              debugger;
+              return Array.from(
+                new Set(
+                  [asset?.definition?.computeKind, ...(asset?.definition?.kinds ?? [])].filter(
+                    Boolean,
+                  ) as string[],
+                ),
+              );
+            }
+            return [];
           },
           renderGroupHeader: (props) => {
             return (
@@ -269,10 +274,14 @@ export const useAssetCatalogGroupAndSortBy = ({
       default:
         assertUnreachable(sortBy);
     }
-    Object.values(grouped).forEach((group) => {
-      group.assets = group.assets.slice().sort(sortFn);
+    const copy = {...grouped};
+    Object.entries(copy).forEach(([group, groupData]) => {
+      copy[group] = {
+        ...groupData,
+        assets: groupData.assets.slice().sort(sortFn),
+      };
     });
-    return grouped;
+    return copy;
   }, [grouped, sortBy]);
 
   return {
@@ -303,30 +312,32 @@ function sortAssetsByMaterializationTimestamp(a: AssetHealthFragment, b: AssetHe
   return Number(bMaterialization) - Number(aMaterialization);
 }
 
-function groupByAttribute<T extends string>({
-  liveDataByNode,
-  getAttributes,
-  renderGroupHeader,
-}: {
-  liveDataByNode: Record<string, AssetHealthFragment>;
-  getAttributes: (asset: AssetHealthFragment) => T[];
-  renderGroupHeader: Grouped<T>['renderGroupHeader'];
-}): Record<T, Grouped<T>> {
-  const byAttribute: {[key in T]: Grouped<T>} = {} as {[key in T]: Grouped<T>};
-  Object.values(liveDataByNode).forEach((asset) => {
-    const attributes = getAttributes(asset);
-    attributes.forEach((attribute) => {
-      if (!byAttribute[attribute]) {
-        byAttribute[attribute] = {
-          assets: [],
-          renderGroupHeader,
-        };
-      }
-      byAttribute[attribute].assets.push(asset);
+const groupByAttribute = weakMapMemoize(
+  <T extends string>({
+    liveDataByNode,
+    getAttributes,
+    renderGroupHeader,
+  }: {
+    liveDataByNode: Record<string, AssetHealthFragment>;
+    getAttributes: (asset: AssetHealthFragment) => T[];
+    renderGroupHeader: Grouped<T>['renderGroupHeader'];
+  }): Record<T, Grouped<T>> => {
+    const byAttribute: {[key in T]: Grouped<T>} = {} as {[key in T]: Grouped<T>};
+    Object.values(liveDataByNode).forEach((asset) => {
+      const attributes = getAttributes(asset);
+      attributes.forEach((attribute) => {
+        if (!byAttribute[attribute]) {
+          byAttribute[attribute] = {
+            assets: [],
+            renderGroupHeader,
+          };
+        }
+        byAttribute[attribute].assets.push(asset);
+      });
     });
-  });
-  return byAttribute;
-}
+    return byAttribute;
+  },
+);
 
 export function isHealthGroupBy(groupBy: AssetHealthGroupBy) {
   return [
