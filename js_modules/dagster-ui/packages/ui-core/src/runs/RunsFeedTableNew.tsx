@@ -1,6 +1,7 @@
 import {Box, CursorPaginationProps, SpinnerWithText} from '@dagster-io/ui-components';
 import {useVirtualizer} from '@tanstack/react-virtual';
-import React, {useEffect, useMemo, useRef, useState} from 'react';
+import React, {useEffect, useMemo, useRef, useState, useCallback} from 'react';
+import faker from 'faker';
 
 import {QueuedRunCriteriaDialog} from './QueuedRunCriteriaDialog';
 import {RunTableEmptyState} from './RunTableEmptyState';
@@ -58,17 +59,153 @@ export const RunsFeedTableNew = ({
 }: RunsFeedTableNewProps) => {
   console.log('entries', entries);
   const parentRef = useRef<HTMLDivElement | null>(null);
+  const [additionalEntries, setAdditionalEntries] = useState<RunsFeedTableEntryFragment[]>([]);
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
+
+  // Helper functions from defaultMocks
+  const hyphenatedName = (wordCount = 2) =>
+    faker.random.words(wordCount).replace(/ /g, '-').toLowerCase();
+  const randomId = () => faker.datatype.uuid();
+
+  // Function to generate mock entries using faker (matching defaultMocks.ts)
+  const generateMockEntries = useCallback((count: number): RunsFeedTableEntryFragment[] => {
+    const mockEntries: RunsFeedTableEntryFragment[] = [];
+    
+    for (let i = 0; i < count; i++) {
+      const status = faker.random.arrayElement([
+        RunStatus.SUCCESS,
+        RunStatus.SUCCESS, // Weight SUCCESS more heavily
+        RunStatus.STARTED,
+        RunStatus.FAILURE,
+        RunStatus.QUEUED,
+        RunStatus.STARTING,
+        RunStatus.NOT_STARTED,
+        RunStatus.CANCELING,
+        RunStatus.CANCELED,
+      ]);
+      
+      const now = Date.now() / 1000;
+      const creationTime = now - faker.datatype.number({min: 10, max: 7200}); // 10 seconds to 2 hours ago
+      
+      let startTime = null;
+      let endTime = null;
+      
+      // Set times based on status to ensure logical consistency
+      if (status === RunStatus.SUCCESS || status === RunStatus.FAILURE) {
+        // Completed runs should have both start and end times
+        const runDuration = faker.datatype.number({min: 15, max: 900}); // 15 seconds to 15 minutes
+        endTime = now - faker.datatype.number({min: 5, max: 180}); // ended 5s to 3min ago
+        startTime = endTime - runDuration;
+      } else if (status === RunStatus.STARTED) {
+        // Started runs have start time but no end time
+        startTime = now - faker.datatype.number({min: 10, max: 600}); // started 10s to 10min ago
+      } else if (status === RunStatus.STARTING || status === RunStatus.CANCELING) {
+        // These might have start times
+        startTime = faker.datatype.boolean() 
+          ? now - faker.datatype.number({min: 2, max: 30}) // started 2s to 30s ago
+          : null;
+      }
+      
+      // Generate realistic tags
+      const baseTags = [...new Array(faker.datatype.number({min: 5, max: 12}))].map(() => ({
+        key: faker.random.arrayElement([
+          'dagster/agent_id',
+          'dagster/git_commit_hash',
+          'dagster/image',
+          'dagster/from_ui',
+          'environment',
+          'team',
+          'partition_date',
+          'retry_count',
+          'priority',
+          'source_system',
+        ]),
+        value: faker.random.arrayElement([
+          faker.datatype.uuid().slice(0, 8),
+          faker.git.commitSha().slice(0, 12),
+          faker.datatype.boolean().toString(),
+          faker.random.arrayElement(['production', 'staging', 'development']),
+          faker.random.arrayElement(['data-engineering', 'analytics', 'ml-ops']),
+          faker.date.recent().toISOString().slice(0, 10),
+          faker.datatype.number({min: 0, max: 3}).toString(),
+          faker.random.arrayElement(['high', 'medium', 'low']),
+        ]),
+      }));
+
+      // Add launch type tags for realistic distribution  
+      const launchTags = [];
+      if (faker.datatype.number({min: 1, max: 10}) <= 8) {
+        const launchType = faker.random.arrayElement([
+          'user',
+          'schedule', 
+          'sensor',
+          'automation',
+          'backfill',
+        ]);
+
+        switch (launchType) {
+          case 'user':
+            launchTags.push({key: 'user', value: faker.internet.email()});
+            break;
+          case 'schedule':
+            launchTags.push({key: 'dagster/schedule_name', value: `${hyphenatedName()}_schedule`});
+            break;
+          case 'sensor':
+            launchTags.push({key: 'dagster/sensor_name', value: `${hyphenatedName()}_sensor`});
+            break;
+          case 'automation':
+            launchTags.push(
+              {key: 'dagster/auto_materialize', value: 'true'},
+              {key: 'dagster/from_automation_condition', value: 'true'},
+              {key: 'dagster/sensor_name', value: 'default_automation_condition_sensor'},
+            );
+            break;
+          case 'backfill':
+            launchTags.push(
+              {key: 'dagster/backfill', value: faker.datatype.uuid().slice(0, 8)},
+              {key: 'user', value: faker.internet.email()},
+            );
+            break;
+        }
+      }
+      
+      mockEntries.push({
+        __typename: 'Run',
+        id: randomId(),
+        jobName: hyphenatedName(),
+        runStatus: status,
+        creationTime,
+        startTime,
+        endTime,
+        tags: [...baseTags, ...launchTags],
+        assetSelection: [...new Array(faker.datatype.number({min: 0, max: 8}))].map(() => ({
+          path: faker.random.words(faker.datatype.number({min: 1, max: 3})).split(' '),
+        })),
+        assetCheckSelection: [...new Array(faker.datatype.number({min: 0, max: 5}))].map(() => ({
+          name: hyphenatedName(),
+          assetKey: {
+            path: faker.random.words(faker.datatype.number({min: 1, max: 3})).split(' '),
+          },
+        })),
+      } as RunsFeedTableEntryFragment);
+    }
+    
+    return mockEntries;
+  }, []);
+
+  // Combine original and additional entries
+  const allEntries = useMemo(() => [...entries, ...additionalEntries], [entries, additionalEntries]);
 
   // Filter and sort entries by creation time (newest first)
   const sortedEntries = useMemo(() => {
-    if (entries.length === 0) {
-      return entries;
+    if (allEntries.length === 0) {
+      return allEntries;
     }
 
     // First filter by status
-    let filtered = entries;
+    let filtered = allEntries;
     if (statusFilter !== 'all') {
-      filtered = entries.filter((entry) => {
+      filtered = allEntries.filter((entry) => {
         const status = entry.runStatus;
         switch (statusFilter) {
           case 'in-progress':
@@ -102,7 +239,7 @@ export const RunsFeedTableNew = ({
     });
 
     return sorted;
-  }, [entries, statusFilter]);
+  }, [allEntries, statusFilter]);
 
   const entryIds = useMemo(() => sortedEntries.map((e) => e.id), [sortedEntries]);
   const [{checkedIds}, {onToggleFactory, onToggleAll}] = useSelectionReducer(entryIds);
@@ -117,6 +254,36 @@ export const RunsFeedTableNew = ({
 
   const totalHeight = rowVirtualizer.getTotalSize();
   const items = rowVirtualizer.getVirtualItems();
+
+  // Function to load more entries
+  const loadMoreEntries = useCallback(async () => {
+    if (isLoadingMore) return;
+    
+    setIsLoadingMore(true);
+    // Simulate API delay
+    setTimeout(() => {
+      const newEntries = generateMockEntries(100);
+      setAdditionalEntries(prev => [...prev, ...newEntries]);
+      setIsLoadingMore(false);
+    }, 500);
+  }, [isLoadingMore, generateMockEntries]);
+
+  // Scroll detection for infinite loading
+  useEffect(() => {
+    const scrollElement = parentRef.current;
+    if (!scrollElement) return;
+
+    const handleScroll = () => {
+      const { scrollTop, scrollHeight, clientHeight } = scrollElement;
+      // Trigger when user is within 200px of bottom
+      if (scrollHeight - scrollTop <= clientHeight + 200 && !isLoadingMore) {
+        loadMoreEntries();
+      }
+    };
+
+    scrollElement.addEventListener('scroll', handleScroll);
+    return () => scrollElement.removeEventListener('scroll', handleScroll);
+  }, [loadMoreEntries, isLoadingMore]);
 
   const selectedEntries = sortedEntries.filter((e): e is RunsFeedTableEntryFragment_Run =>
     checkedIds.has(e.id),
@@ -225,6 +392,11 @@ export const RunsFeedTableNew = ({
               );
             })}
           </Inner>
+          {isLoadingMore && (
+            <Box flex={{direction: 'row', justifyContent: 'center'}} padding={16}>
+              <SpinnerWithText label="Loading more runs…" />
+            </Box>
+          )}
         </Container>
       </div>
     );
