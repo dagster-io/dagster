@@ -174,7 +174,7 @@ const GroupNodeAssetStatusCountsAssetHealth = ({
                 )} healthy`}
               >
                 <Tag
-                  icon={statusToIconAndColor[AssetHealthStatus.HEALTHY].iconName}
+                  icon={statusToIconAndColor[AssetHealthStatus.HEALTHY].primaryIcon}
                   intent="success"
                 >
                   {numberFormatter.format(statuses[AssetHealthStatus.HEALTHY].length)}
@@ -190,7 +190,10 @@ const GroupNodeAssetStatusCountsAssetHealth = ({
                 'assets have',
               )} a warning`}
             >
-              <Tag icon={statusToIconAndColor[AssetHealthStatus.WARNING].iconName} intent="warning">
+              <Tag
+                icon={statusToIconAndColor[AssetHealthStatus.WARNING].primaryIcon}
+                intent="warning"
+              >
                 {numberFormatter.format(statuses[AssetHealthStatus.WARNING].length)}
               </Tag>
             </Tooltip>
@@ -199,7 +202,10 @@ const GroupNodeAssetStatusCountsAssetHealth = ({
             <Tooltip
               content={<DegradedStatusTooltip statuses={statuses[AssetHealthStatus.DEGRADED]} />}
             >
-              <Tag icon={statusToIconAndColor[AssetHealthStatus.DEGRADED].iconName} intent="danger">
+              <Tag
+                icon={statusToIconAndColor[AssetHealthStatus.DEGRADED].primaryIcon}
+                intent="danger"
+              >
                 {numberFormatter.format(statuses[AssetHealthStatus.DEGRADED].length)}
               </Tag>
             </Tooltip>

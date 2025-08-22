@@ -242,11 +242,17 @@ export const AssetCatalogTableV2 = React.memo(() => {
           getAttributes: (asset) => {
             return [
               statusToIconAndColor[asset.assetHealth?.freshnessStatus ?? AssetHealthStatus.UNKNOWN]
-                .text,
+                .statusText,
             ];
           },
           renderGroupHeader: (props) => {
-            return <HealthStatusHeaderRow {...props} status={props.group} substatus />;
+            return (
+              <HealthStatusHeaderRow
+                {...props}
+                status={props.group}
+                groupBy={AssetHealthGroupBy.materialization_status}
+              />
+            );
           },
         });
       case AssetHealthGroupBy.freshness_status:
@@ -255,11 +261,17 @@ export const AssetCatalogTableV2 = React.memo(() => {
           getAttributes: (asset) => {
             return [
               statusToIconAndColor[asset.assetHealth?.freshnessStatus ?? AssetHealthStatus.UNKNOWN]
-                .text,
+                .statusText,
             ];
           },
           renderGroupHeader: (props) => {
-            return <HealthStatusHeaderRow {...props} status={props.group} substatus />;
+            return (
+              <HealthStatusHeaderRow
+                {...props}
+                status={props.group}
+                groupBy={AssetHealthGroupBy.freshness_status}
+              />
+            );
           },
         });
       case AssetHealthGroupBy.check_status:
@@ -269,11 +281,17 @@ export const AssetCatalogTableV2 = React.memo(() => {
             return [
               statusToIconAndColor[
                 asset.assetHealth?.assetChecksStatus ?? AssetHealthStatus.UNKNOWN
-              ].text,
+              ].statusText,
             ];
           },
           renderGroupHeader: (props) => {
-            return <HealthStatusHeaderRow {...props} status={props.group} substatus />;
+            return (
+              <HealthStatusHeaderRow
+                {...props}
+                status={props.group}
+                groupBy={AssetHealthGroupBy.check_status}
+              />
+            );
           },
         });
       case AssetHealthGroupBy.health_status:
@@ -283,11 +301,17 @@ export const AssetCatalogTableV2 = React.memo(() => {
           getAttributes: (asset) => {
             return [
               statusToIconAndColor[asset.assetHealth?.assetHealth ?? AssetHealthStatus.UNKNOWN]
-                .text,
+                .statusText,
             ];
           },
           renderGroupHeader: (props) => {
-            return <HealthStatusHeaderRow {...props} status={props.group} />;
+            return (
+              <HealthStatusHeaderRow
+                {...props}
+                status={props.group}
+                groupBy={AssetHealthGroupBy.health_status}
+              />
+            );
           },
         });
     }

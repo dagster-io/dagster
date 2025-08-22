@@ -182,7 +182,7 @@ export function getHealthStatuses({
       }
     >
       <Box className={styles.statusCountItem}>
-        <Icon name={degradedMeta.iconName} color={degradedMeta.iconColor} />
+        <Icon name={degradedMeta.primaryIcon} color={degradedMeta.iconColor} />
         <BodySmall color={Colors.textLight()}>
           {compactNumberFormatter.format(statusCounts[AssetHealthStatus.DEGRADED])}
         </BodySmall>
@@ -192,7 +192,7 @@ export function getHealthStatuses({
 
   const warningJsx = statusCounts[AssetHealthStatus.WARNING] && (
     <Box className={styles.statusCountItem}>
-      <Icon name={warningMeta.iconName} color={warningMeta.iconColor} />
+      <Icon name={warningMeta.primaryIcon} color={warningMeta.iconColor} />
       <BodySmall color={Colors.textLight()}>
         {compactNumberFormatter.format(statusCounts[AssetHealthStatus.WARNING])}
       </BodySmall>
@@ -201,7 +201,7 @@ export function getHealthStatuses({
 
   const unknownJsx = statusCounts[AssetHealthStatus.UNKNOWN] && (
     <Box className={styles.statusCountItem}>
-      <Icon name={unknownMeta.iconName} color={unknownMeta.iconColor} />
+      <Icon name={unknownMeta.primaryIcon} color={unknownMeta.iconColor} />
       <BodySmall color={Colors.textLight()}>
         {compactNumberFormatter.format(statusCounts[AssetHealthStatus.UNKNOWN])}
       </BodySmall>
@@ -210,7 +210,7 @@ export function getHealthStatuses({
 
   const healthyJsx = statusCounts[AssetHealthStatus.HEALTHY] && (
     <Box className={styles.statusCountItem}>
-      <Icon name={healthyMeta.iconName} color={healthyMeta.iconColor} />
+      <Icon name={healthyMeta.primaryIcon} color={healthyMeta.iconColor} />
       <BodySmall color={Colors.textLight()}>
         {compactNumberFormatter.format(statusCounts[AssetHealthStatus.HEALTHY])}
       </BodySmall>

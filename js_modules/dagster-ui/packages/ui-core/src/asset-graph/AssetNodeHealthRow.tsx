@@ -23,7 +23,7 @@ export const AssetNodeHealthRow = ({
   const materializingRunId = inProgressRunIds?.[0] || unstartedRunIds?.[0];
   const numMaterializing = partitionStats?.numMaterializing;
 
-  const {iconName, iconColor, backgroundColor, textColor, text} = React.useMemo(() => {
+  const {primaryIcon, iconColor, backgroundColor, textColor, statusText} = React.useMemo(() => {
     return statusToIconAndColor[health?.assetHealth ?? 'undefined'];
   }, [health]);
 
@@ -60,9 +60,9 @@ export const AssetNodeHealthRow = ({
       flex={{justifyContent: 'flex-start', alignItems: 'center', gap: 6}}
     >
       <AssetHealthSummaryPopover health={health} assetKey={definition.assetKey}>
-        <Icon name={iconName} color={iconColor} />
+        <Icon name={primaryIcon} color={iconColor} />
       </AssetHealthSummaryPopover>
-      <span style={{color: textColor}}>{text}</span>
+      <span style={{color: textColor}}>{statusText}</span>
     </AssetNodeRowBox>
   );
 };
