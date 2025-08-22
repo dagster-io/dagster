@@ -24,7 +24,7 @@ from dagster_dg_cli.cli.scaffold.branch.claude.diagnostics import (
 )
 
 # Lazy import of ClaudeSDKClient to avoid docs build failures when claude_code_sdk is not available
-from dagster_dg_cli.cli.scaffold.branch.constants import VALID_MODELS
+from dagster_dg_cli.cli.scaffold.branch.constants import VALID_MODELS, ModelType
 from dagster_dg_cli.cli.scaffold.branch.git import (
     check_git_repository,
     create_branch_and_pr,
@@ -76,13 +76,13 @@ def is_prompt_valid_git_branch_name(prompt: str) -> bool:
 )
 @click.option(
     "--planning-model",
-    type=str,
+    type=click.Choice(list(VALID_MODELS)),
     default="opus",
     help="Model to use for planning phase (default: opus). Options: opus, sonnet, haiku.",
 )
 @click.option(
     "--execution-model",
-    type=str,
+    type=click.Choice(list(VALID_MODELS)),
     default="sonnet",
     help="Model to use for execution phase (default: sonnet). Options: opus, sonnet, haiku.",
 )
@@ -97,8 +97,8 @@ def scaffold_branch_command(
     record: Optional[Path],
     diagnostics_level: DiagnosticsLevel,
     diagnostics_dir: Optional[Path],
-    planning_model: str,
-    execution_model: str,
+    planning_model: ModelType,
+    execution_model: ModelType,
     **other_options: object,
 ) -> None:
     """Scaffold a new branch (requires Python 3.10+)."""
@@ -270,6 +270,7 @@ def execute_scaffold_branch_command(
 
             # Create planning context
             planning_context = PlanningContext(
+                model=planning_model,
                 user_input=prompt_text,
                 dg_context=dg_context,
                 project_structure={
