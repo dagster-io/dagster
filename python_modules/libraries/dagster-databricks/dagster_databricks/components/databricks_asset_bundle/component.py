@@ -107,7 +107,7 @@ class DatabricksAssetBundleComponent(Component, Resolvable):
                 "A mapping defining a Databricks compute config. "
                 "Allowed types are databricks_asset_bundle.configs.ResolvedDatabricksNewClusterConfig, "
                 "databricks_asset_bundle.configs.ResolvedDatabricksExistingClusterConfig and "
-                "databricks_asset_bundle.configs.ResolvedDatabricksServerlessConfig. Optional."
+                "databricks_asset_bundle.configs.ResolvedDatabricksServerlessConfig."
             ),
             examples=[
                 {
