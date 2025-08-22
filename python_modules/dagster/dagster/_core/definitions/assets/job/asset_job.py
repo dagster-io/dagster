@@ -155,7 +155,14 @@ def build_asset_job(
             ]
         )
     ]
-
+    # Collect config mapping from graph asset to make them visible in UI
+    config = None
+    for asset in asset_graph.assets_defs_for_keys([*asset_graph.executable_asset_keys]):
+        if hasattr(asset, 'node_def'):
+            if (isinstance(asset.node_def, GraphDefinition)):
+                if asset.node_def.config_field is not None:
+                    config = asset.node_def.config_mapping  
+                    
     graph = GraphDefinition(
         name=name,
         node_defs=node_defs,

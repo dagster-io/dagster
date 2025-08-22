@@ -9,7 +9,8 @@ from dagster._core.definitions.config import ConfigMapping
 from dagster._core.definitions.graph_definition import GraphDefinition
 from dagster._core.definitions.input import GraphIn, InputDefinition
 from dagster._core.definitions.output import GraphOut, OutputDefinition
-
+from dagster._config.field import Field
+from dagster._config.field_utils import Shape
 
 class _Graph:
     name: Optional[str]
@@ -200,7 +201,11 @@ def graph(
     # Case 1: a dictionary of config is provided, convert to config mapping.
     if config is not None and not isinstance(config, ConfigMapping):
         config = check.dict_param(config, "config", key_type=str)
-        config_mapping = ConfigMapping(config_fn=lambda _: config, config_schema=None)
+        config_schema = build_shape_with_defaults({name: {"config": config}})
+        config_mapping = ConfigMapping(
+            config_fn=lambda config: {name: {"config": config}},
+            config_schema=config_schema,
+        )
     # Case 2: actual config mapping is provided.
     else:
         config_mapping = config
@@ -215,3 +220,5 @@ def graph(
         tags=tags,
         config_mapping=config_mapping,
     )
+def build_shape_with_defaults(config_dict):
+    return Shape({k: Field(config=type(v), default_value=v) for k, v in config_dict.items()})
