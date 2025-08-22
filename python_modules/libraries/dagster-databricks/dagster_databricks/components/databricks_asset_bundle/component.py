@@ -15,6 +15,7 @@ from dagster.components.resolved.model import Resolver
 from dagster.components.scaffold.scaffold import scaffold_with
 
 from dagster_databricks.components.databricks_asset_bundle.configs import (
+    DATABRICKS_UNKNOWN_TASK_TYPE,
     DatabricksBaseTask,
     DatabricksConfig,
     ResolvedDatabricksExistingClusterConfig,
@@ -144,15 +145,22 @@ class DatabricksAssetBundleComponent(Component, Resolvable):
         return AssetSpec(
             key=snake_case(task.task_key),
             description=f"{task.task_key} task from {task.job_name} job",
-            kinds={"databricks", task.task_type},
+            kinds={
+                "databricks",
+                *([task.task_type] if task.task_type is not DATABRICKS_UNKNOWN_TASK_TYPE else []),
+            },
             skippable=True,
             metadata={
                 "task_key": MetadataValue.text(task.task_key),
                 "task_type": MetadataValue.text(task.task_type),
-                "task_config": MetadataValue.json(task.task_config_metadata),
+                **(
+                    {"task_config": MetadataValue.json(task.task_config_metadata)}
+                    if task.task_config_metadata
+                    else {}
+                ),
                 **({"libraries": MetadataValue.json(task.libraries)} if task.libraries else {}),
             },
-            deps=[snake_case(dep_config.task_key) for dep_config in task.depends_on],
+            deps=[snake_case(dep_config.task_key) for dep_config in task.depends_on or []],
         )
 
     def build_defs(self, context: ComponentLoadContext) -> Definitions:
@@ -164,7 +172,7 @@ class DatabricksAssetBundleComponent(Component, Resolvable):
             name=self.op.name
             if self.op
             else f"databricks_tasks_multi_asset_{component_defs_path_as_python_str}",
-            specs=[self.get_asset_spec(task) for task in self.databricks_config.tasks],
+            specs=[self.get_asset_spec(task=task) for task in self.databricks_config.tasks],
             can_subset=True,
         )
         def databricks_tasks_multi_asset(
