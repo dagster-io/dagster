@@ -119,4 +119,4 @@ Resources are very helpful as projects grow more complex and help ensure that al
 
 ## Next steps
 
-In the next step, we will [ensure data quality with asset checks](/etl-pipeline-tutorial/data-quality).
+In the next step, we will [ensure data quality with asset checks](/examples/etl-pipeline/data-quality).

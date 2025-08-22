@@ -56,4 +56,4 @@ Associating automation directly with assets provides flexibility and allows you 
 
 ## Next steps
 
-In the next step, we [build an Evidence dashboard](/etl-pipeline-tutorial/visualize-data) to enable us to visualize data.
+In the next step, we [build an Evidence dashboard](/examples/etl-pipeline/visualize-data) to enable us to visualize data.

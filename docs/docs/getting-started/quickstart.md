@@ -249,5 +249,5 @@ id,name,age,city,age_group
 
 Congratulations! You've just built and run your first pipeline with Dagster. Next, you can:
 
-- Continue with the [ETL pipeline tutorial](/etl-pipeline-tutorial) to learn how to build a more complex ETL pipeline
+- Follow the [Tutorial](/dagster-basics-tutorial) to learn how to build a more complex ETL pipeline
 - [Create your own Dagster project](/guides/build/projects/creating-a-new-project) and [add assets](/guides/build/assets/defining-assets) to it

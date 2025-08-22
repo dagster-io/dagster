@@ -146,4 +146,4 @@ There are three assets which each load a file into DuckDB. We have also seen how
 
 ## Next steps
 
-In the [next step](/etl-pipeline-tutorial/transform-data), we will build downstream assets that transform the data we have loaded into DuckDB.
+In the [next step](/examples/etl-pipeline/transform-data), we will build downstream assets that transform the data we have loaded into DuckDB.

@@ -3416,7 +3416,39 @@
     },
     {
       "source": "/etl-pipeline-tutorial",
-      "destination": "/dagster-basics-tutorial"
+      "destination": "/examples/etl-pipeline"
+    },
+    {
+      "source": "/examples/etl-pipeline-tutorial/extract-data",
+      "destination": "/examples/etl-pipeline/extract-data"
+    },
+    {
+      "source": "/examples/etl-pipeline-tutorial/transform-data",
+      "destination": "/examples/etl-pipeline/transform-data"
+    },
+    {
+      "source": "/examples/etl-pipeline-tutorial/add-a-resource",
+      "destination": "/examples/etl-pipeline/add-a-resource"
+    },
+    {
+      "source": "/examples/etl-pipeline-tutorial/data-quality",
+      "destination": "/examples/etl-pipeline/data-quality"
+    },
+    {
+      "source": "/examples/etl-pipeline-tutorial/partition-asset",
+      "destination": "/examples/etl-pipeline/partition-asset"
+    },
+    {
+      "source": "/examples/etl-pipeline-tutorial/automate-your-pipeline",
+      "destination": "/examples/etl-pipeline/automate-your-pipeline"
+    },
+    {
+      "source": "/examples/etl-pipeline-tutorial/visualize-data",
+      "destination": "/examples/etl-pipeline/visualize-data"
+    },
+    {
+      "source": "/examples/etl-pipeline-tutorial/create-a-sensor",
+      "destination": "/examples/etl-pipeline/create-a-sensor"
     }
   ],
   "trailingSlash": false
