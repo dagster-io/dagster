@@ -41,11 +41,13 @@ class DefsStateInfo:
 
     @staticmethod
     def from_dict(val: dict[str, Any]) -> "DefsStateInfo":
+        """Used for converting from the user-facing dict representation."""
         return DefsStateInfo(
             info_mapping={key: DefsKeyStateInfo.from_dict(info) for key, info in val.items()}
         )
 
     def to_dict(self) -> dict[str, Any]:
+        """Used for converting to the user-facing dict representation."""
         return {key: info.to_dict() for key, info in self.info_mapping.items()}
 
     def get_version(self, key: str) -> Optional[str]:
