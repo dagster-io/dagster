@@ -1,5 +1,4 @@
 import tempfile
-from collections.abc import Iterator
 from pathlib import Path
 from typing import Optional
 
@@ -23,7 +22,7 @@ class TestStateStorage:
     __test__ = False
 
     @pytest.fixture(name="storage")
-    def state_storage(self) -> Iterator[DefsStateStorage]: ...
+    def state_storage(self): ...
 
     def test_get_latest_state_version_for_defs(self, storage: DefsStateStorage) -> None:
         """Test get_latest_state_version_for_defs method."""
