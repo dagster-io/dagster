@@ -7,7 +7,7 @@ import {QueuedRunCriteriaDialog} from './QueuedRunCriteriaDialog';
 import {RunTableEmptyState} from './RunTableEmptyState';
 import {RunsQueryRefetchContext} from './RunUtils';
 import {RunsFeedError} from './RunsFeedError';
-import {RunsFeedRow, RunsFeedTableHeader} from './RunsFeedRowNew';
+import {RunsFeedRow, RunsFeedTableHeader, SkeletonRow} from './RunsFeedRowNew';
 import {RunFilterToken} from './RunsFilterInput';
 import {
   RunsFeedTableEntryFragment,
@@ -61,6 +61,7 @@ export const RunsFeedTableNew = ({
   const parentRef = useRef<HTMLDivElement | null>(null);
   const [additionalEntries, setAdditionalEntries] = useState<RunsFeedTableEntryFragment[]>([]);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
+  const [skeletonEntries, setSkeletonEntries] = useState<Set<string>>(new Set());
 
   // Helper functions from defaultMocks
   const hyphenatedName = (wordCount = 2) =>
@@ -260,12 +261,24 @@ export const RunsFeedTableNew = ({
     if (isLoadingMore) return;
     
     setIsLoadingMore(true);
-    // Simulate API delay
+    
+    // Generate the new entries immediately but mark them as skeleton
+    const newEntries = generateMockEntries(100);
+    const skeletonIds = new Set(newEntries.map(entry => entry.id));
+    
+    // Add skeleton entries immediately
+    setAdditionalEntries(prev => [...prev, ...newEntries]);
+    setSkeletonEntries(prev => new Set([...prev, ...skeletonIds]));
+    
+    // After 1 second, remove skeleton state and show real content
     setTimeout(() => {
-      const newEntries = generateMockEntries(100);
-      setAdditionalEntries(prev => [...prev, ...newEntries]);
+      setSkeletonEntries(prev => {
+        const newSet = new Set(prev);
+        skeletonIds.forEach(id => newSet.delete(id));
+        return newSet;
+      });
       setIsLoadingMore(false);
-    }, 500);
+    }, 1000);
   }, [isLoadingMore, generateMockEntries]);
 
   // Scroll detection for infinite loading
@@ -383,10 +396,11 @@ export const RunsFeedTableNew = ({
               if (!entry) {
                 return <span key={key} />;
               }
+              const isSkeleton = skeletonEntries.has(entry.id);
               return (
                 <Row $height={size} $start={start} data-key={key} key={key}>
                   <div ref={rowVirtualizer.measureElement} data-index={index}>
-                    <RunsFeedRow key={key} entry={entry} />
+                    {isSkeleton ? <SkeletonRow key={key} /> : <RunsFeedRow key={key} entry={entry} />}
                   </div>
                 </Row>
               );

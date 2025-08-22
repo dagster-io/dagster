@@ -761,6 +761,36 @@ const MoreActionsCell = ({entry: _entry}: {entry: RunsFeedTableEntryFragment}) =
   );
 };
 
+export const SkeletonRow = () => {
+  return (
+    <Box
+      style={{
+        display: 'flex',
+        justifyContent: 'space-between',
+        padding: '8px 16px',
+        borderBottom: '1px solid #e1e5e9',
+        alignItems: 'center',
+        backgroundColor: 'var(--color-background-default)',
+        height: '56px',
+      }}
+    >
+      {/* Left group skeleton: Checkbox, Launched by, Created at, Tags */}
+      <Box style={{display: 'flex', alignItems: 'center', gap: '12px'}}>
+        <Box style={{width: '16px', height: '16px', backgroundColor: Colors.backgroundGray(), borderRadius: '3px'}} />
+        <Box style={{width: '248px', height: '20px', backgroundColor: Colors.backgroundGray(), borderRadius: '4px'}} />
+        <Box style={{width: '88px', height: '20px', backgroundColor: Colors.backgroundGray(), borderRadius: '4px'}} />
+        <Box style={{width: '32px', height: '32px', backgroundColor: Colors.backgroundGray(), borderRadius: '6px'}} />
+      </Box>
+      
+      {/* Right group skeleton: Status, More actions */}
+      <Box style={{display: 'flex', alignItems: 'center', gap: '24px'}}>
+        <Box style={{width: '120px', height: '20px', backgroundColor: Colors.backgroundGray(), borderRadius: '4px'}} />
+        <Box style={{width: '32px', height: '32px', backgroundColor: Colors.backgroundGray(), borderRadius: '6px'}} />
+      </Box>
+    </Box>
+  );
+};
+
 export const RunsFeedRow = ({entry}: {entry: RunsFeedTableEntryFragment}) => {
   return (
     <Box
