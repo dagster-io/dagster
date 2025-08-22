@@ -7,7 +7,7 @@ from dagster import (
     AssetMaterialization,
     ConfigurableResource,
     MaterializeResult,
-    _check as check
+    _check as check,
 )
 from dagster_shared.utils.cached_method import cached_method
 from databricks.sdk import WorkspaceClient
@@ -146,7 +146,9 @@ class DatabricksWorkspace(ConfigurableResource):
         for run_task in final_run_tasks:
             task_key = run_task.task_key
             task_state = (
-                run_task.state.result_state.value if run_task.state and run_task.state.result_state else "UNKNOWN"
+                run_task.state.result_state.value
+                if run_task.state and run_task.state.result_state
+                else "UNKNOWN"
             )
 
             # Build task-specific URL (task tab within the job run)
