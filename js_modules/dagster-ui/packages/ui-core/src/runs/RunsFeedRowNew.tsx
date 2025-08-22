@@ -129,7 +129,13 @@ const LaunchedByCell = ({entry}: {entry: RunsFeedTableEntryFragment}) => {
     case 'automation':
       return renderLaunchInfo('automation_condition', 'Declarative automation');
     case 'backfill-launched':
-      return renderLaunchInfo('settings_backup_restore', `Backfill (${launchType.backfillId})`);
+      return (
+        <Box style={{display: 'flex', alignItems: 'center', gap: '6px', width: '248px', paddingRight: '12px', borderRight: '1px solid #d1d5db'}}>
+          <Icon name="settings_backup_restore" size={16} color={Colors.accentBlue()} />
+          <span style={{overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap'}}>Backfill</span>
+          <Tag icon="id" intent="none">{launchType.backfillId}</Tag>
+        </Box>
+      );
     default:
       return renderLaunchInfo('account_circle', 'Manual');
   }
