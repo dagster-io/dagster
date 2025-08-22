@@ -1,11 +1,12 @@
 import os
 from collections.abc import Mapping
-from typing import Any, Callable, Optional
+from typing import Any, Callable, Optional, Union
 
 import pytest
 from dagster import AssetDep, AssetKey, AssetsDefinition, BackfillPolicy
 from dagster._core.definitions.backfill_policy import BackfillPolicyType
 from dagster._core.test_utils import ensure_dagster_tests_import
+from dagster.components.core.component_tree import ComponentTreeException
 from dagster.components.resolved.core_models import OpSpec
 from dagster.components.testing import create_defs_folder_sandbox
 from dagster.components.testing.test_cases import TestOpCustomization
@@ -14,7 +15,9 @@ from dagster_databricks.components.databricks_asset_bundle.component import (
     snake_case,
 )
 from dagster_databricks.components.databricks_asset_bundle.configs import (
+    ResolvedDatabricksExistingClusterConfig,
     ResolvedDatabricksNewClusterConfig,
+    ResolvedDatabricksServerlessConfig,
 )
 from dagster_databricks.components.databricks_asset_bundle.resource import DatabricksWorkspace
 
@@ -23,33 +26,38 @@ from dagster_tests.components_tests.utils import load_component_for_test
 
 from dagster_databricks_tests.components.databricks_asset_bundle.conftest import (
     DATABRICKS_CONFIG_LOCATION_PATH,
+    EXISTING_CLUSTER_CONFIG,
+    INVALID_PARTIAL_NEW_CLUSTER_CONFIG,
+    NEW_CLUSTER_CONFIG,
+    RESOLVED_EXISTING_CLUSTER_CONFIG,
+    RESOLVED_NEW_CLUSTER_CONFIG,
+    RESOLVED_SERVERLESS_CONFIG,
+    SERVERLESS_CONFIG,
     TEST_DATABRICKS_WORKSPACE_HOST,
     TEST_DATABRICKS_WORKSPACE_TOKEN,
 )
-
-NEW_CLUSTER_CONFIG = {
-    "spark_version": "test_spark_version",
-    "node_type_id": "test_node_type_id",
-    "num_workers": 2,
-}
-
-PARTIAL_NEW_CLUSTER_CONFIG = {"spark_version": "test_spark_version"}
 
 
 @pytest.mark.parametrize(
     "compute_config",
     [
-        ({}),
-        (NEW_CLUSTER_CONFIG),
-        (PARTIAL_NEW_CLUSTER_CONFIG),
+        (RESOLVED_SERVERLESS_CONFIG),
+        (RESOLVED_NEW_CLUSTER_CONFIG),
+        (RESOLVED_EXISTING_CLUSTER_CONFIG),
     ],
     ids=[
-        "no_new_cluster_config",
+        "serverless_config",
         "new_cluster_config",
-        "partial_new_cluster_config",
+        "existing_cluster_config",
     ],
 )
-def test_component_asset_spec(compute_config: Optional[ResolvedDatabricksNewClusterConfig]):
+def test_component_asset_spec(
+    compute_config: Union[
+        ResolvedDatabricksNewClusterConfig,
+        ResolvedDatabricksExistingClusterConfig,
+        ResolvedDatabricksServerlessConfig,
+    ],
+):
     component = DatabricksAssetBundleComponent(
         databricks_config_path=DATABRICKS_CONFIG_LOCATION_PATH,
         compute_config=compute_config,
@@ -86,7 +94,29 @@ def test_component_asset_spec(compute_config: Optional[ResolvedDatabricksNewClus
         "custom_op_name",
     ],
 )
-def test_load_component(custom_op_name: Optional[str], databricks_config_path: str):
+@pytest.mark.parametrize(
+    "compute_config, expected_resolved_compute_config",
+    [
+        (SERVERLESS_CONFIG, RESOLVED_SERVERLESS_CONFIG),
+        (NEW_CLUSTER_CONFIG, RESOLVED_NEW_CLUSTER_CONFIG),
+        (EXISTING_CLUSTER_CONFIG, RESOLVED_EXISTING_CLUSTER_CONFIG),
+    ],
+    ids=[
+        "serverless_config",
+        "new_cluster_config",
+        "existing_cluster_config",
+    ],
+)
+def test_load_component(
+    compute_config: Mapping[str, Any],
+    expected_resolved_compute_config: Union[
+        ResolvedDatabricksNewClusterConfig,
+        ResolvedDatabricksExistingClusterConfig,
+        ResolvedDatabricksServerlessConfig,
+    ],
+    custom_op_name: Optional[str],
+    databricks_config_path: str,
+):
     with create_defs_folder_sandbox() as sandbox:
         defs_path = sandbox.scaffold_component(
             component_cls=DatabricksAssetBundleComponent,
@@ -99,7 +129,7 @@ def test_load_component(custom_op_name: Optional[str], databricks_config_path: s
                 "type": "dagster_databricks.components.databricks_asset_bundle.component.DatabricksAssetBundleComponent",
                 "attributes": {
                     "databricks_config_path": databricks_config_path,
-                    "compute_config": {},
+                    "compute_config": compute_config,
                     "op": {
                         **({"name": "test_op_name"} if custom_op_name else {}),
                         "tags": {"test_tag": "test_value"},
@@ -119,7 +149,7 @@ def test_load_component(custom_op_name: Optional[str], databricks_config_path: s
             defs,
         ):
             assert isinstance(component, DatabricksAssetBundleComponent)
-            assert component.compute_config == ResolvedDatabricksNewClusterConfig()
+            assert component.compute_config == expected_resolved_compute_config
 
             assets = list(defs.assets or [])
             assert len(assets) == 1
@@ -148,6 +178,35 @@ def test_load_component(custom_op_name: Optional[str], databricks_config_path: s
                 AssetKey(["spark_processing_jar"]),
                 AssetKey(["stage_documents"]),
             }
+
+
+def test_invalid_compute_config(databricks_config_path: str):
+    with create_defs_folder_sandbox() as sandbox:
+        defs_path = sandbox.scaffold_component(
+            component_cls=DatabricksAssetBundleComponent,
+            scaffold_params={
+                "databricks_config_path": databricks_config_path,
+                "databricks_workspace_host": TEST_DATABRICKS_WORKSPACE_HOST,
+                "databricks_workspace_token": TEST_DATABRICKS_WORKSPACE_TOKEN,
+            },
+            defs_yaml_contents={
+                "type": "dagster_databricks.components.databricks_asset_bundle.component.DatabricksAssetBundleComponent",
+                "attributes": {
+                    "databricks_config_path": databricks_config_path,
+                    "compute_config": INVALID_PARTIAL_NEW_CLUSTER_CONFIG,
+                    "workspace": {
+                        "host": TEST_DATABRICKS_WORKSPACE_HOST,
+                        "token": TEST_DATABRICKS_WORKSPACE_TOKEN,
+                    },
+                },
+            },
+        )
+        with pytest.raises(ComponentTreeException, match="Error while loading component"):
+            with sandbox.load_component_and_build_defs(defs_path=defs_path) as (
+                component,
+                defs,
+            ):
+                pass
 
 
 class TestDatabricksOpCustomization(TestOpCustomization):

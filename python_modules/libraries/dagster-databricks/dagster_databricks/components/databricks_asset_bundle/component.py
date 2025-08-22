@@ -91,41 +91,39 @@ class DatabricksAssetBundleComponent(Component, Resolvable):
             ],
         ),
     ]
-    compute_config: Optional[
-        Annotated[
-            Union[
+    compute_config: Annotated[
+        Union[
+            ResolvedDatabricksNewClusterConfig,
+            ResolvedDatabricksExistingClusterConfig,
+            ResolvedDatabricksServerlessConfig,
+        ],
+        Resolver.default(
+            model_field_type=Union[
                 ResolvedDatabricksNewClusterConfig,
                 ResolvedDatabricksExistingClusterConfig,
                 ResolvedDatabricksServerlessConfig,
             ],
-            Resolver.default(
-                model_field_type=Union[
-                    ResolvedDatabricksNewClusterConfig,
-                    ResolvedDatabricksExistingClusterConfig,
-                    ResolvedDatabricksServerlessConfig,
-                ],
-                description=(
-                    "A mapping defining a Databricks compute config. "
-                    "Allowed types are databricks_asset_bundle.configs.ResolvedDatabricksNewClusterConfig, "
-                    "databricks_asset_bundle.configs.ResolvedDatabricksExistingClusterConfig and "
-                    "databricks_asset_bundle.configs.ResolvedDatabricksServerlessConfig. Optional."
-                ),
-                examples=[
-                    {
-                        "spark_version": "some_spark_version",
-                        "node_type_id": "some_node_type_id",
-                        "num_workers": 1,
-                    },
-                    {
-                        "existing_cluster_id": "some_existing_cluster_id",
-                    },
-                    {
-                        "is_serverless": True,
-                    },
-                ],
+            description=(
+                "A mapping defining a Databricks compute config. "
+                "Allowed types are databricks_asset_bundle.configs.ResolvedDatabricksNewClusterConfig, "
+                "databricks_asset_bundle.configs.ResolvedDatabricksExistingClusterConfig and "
+                "databricks_asset_bundle.configs.ResolvedDatabricksServerlessConfig. Optional."
             ),
-        ]
-    ] = field(default_factory=ResolvedDatabricksNewClusterConfig)
+            examples=[
+                {
+                    "spark_version": "some_spark_version",
+                    "node_type_id": "some_node_type_id",
+                    "num_workers": 1,
+                },
+                {
+                    "existing_cluster_id": "some_existing_cluster_id",
+                },
+                {
+                    "is_serverless": True,
+                },
+            ],
+        ),
+    ] = field(default_factory=ResolvedDatabricksServerlessConfig)
     op: Annotated[
         Optional[OpSpec],
         Resolver.default(
