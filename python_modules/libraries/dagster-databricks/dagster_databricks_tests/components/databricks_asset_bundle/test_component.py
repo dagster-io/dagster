@@ -1,10 +1,13 @@
 import os
-from typing import Optional
+from collections.abc import Mapping
+from typing import Any, Callable, Optional
 
 import pytest
 from dagster import AssetDep, AssetKey, AssetsDefinition, BackfillPolicy
 from dagster._core.definitions.backfill_policy import BackfillPolicyType
+from dagster.components.resolved.core_models import OpSpec
 from dagster.components.testing import create_defs_folder_sandbox
+from dagster.components.testing.test_cases import TestOpCustomization
 from dagster_databricks.components.databricks_asset_bundle.component import (
     DatabricksAssetBundleComponent,
     snake_case,
@@ -13,6 +16,7 @@ from dagster_databricks.components.databricks_asset_bundle.configs import (
     ResolvedDatabricksNewClusterConfig,
 )
 from dagster_databricks.components.databricks_asset_bundle.resource import DatabricksWorkspace
+from dagster_tests.components_tests.utils import load_component_for_test
 
 from dagster_databricks_tests.components.databricks_asset_bundle.conftest import (
     DATABRICKS_CONFIG_LOCATION_PATH,
@@ -141,3 +145,26 @@ def test_load_component(custom_op_name: Optional[str], databricks_config_path: s
                 AssetKey(["spark_processing_jar"]),
                 AssetKey(["stage_documents"]),
             }
+
+
+class TestDatabricksOpCustomization(TestOpCustomization):
+    def test_translation(
+        self,
+        attributes: Mapping[str, Any],
+        assertion: Callable[[OpSpec], bool],
+        databricks_config_path: str,
+    ) -> None:
+        component = load_component_for_test(
+            DatabricksAssetBundleComponent,
+            {
+                "databricks_config_path": databricks_config_path,
+                "op": attributes,
+                "workspace": {
+                    "host": TEST_DATABRICKS_WORKSPACE_HOST,
+                    "token": TEST_DATABRICKS_WORKSPACE_TOKEN,
+                },
+            },
+        )
+        op = component.op
+        assert op
+        assert assertion(op)
