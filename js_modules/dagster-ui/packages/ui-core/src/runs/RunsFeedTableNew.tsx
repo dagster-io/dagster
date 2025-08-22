@@ -14,7 +14,7 @@ import {
 } from './types/RunsFeedTableEntryFragment.types';
 import {useRunsFeedEntries} from './useRunsFeedEntries';
 import {FIFTEEN_SECONDS, useQueryRefreshAtInterval} from '../app/QueryRefresh';
-import {RunsFeedView, RunsFilter} from '../graphql/types';
+import {RunsFeedView, RunsFilter, RunStatus} from '../graphql/types';
 import {useSelectionReducer} from '../hooks/useSelectionReducer';
 import {BackfillPartitionsRequestedDialog} from '../instance/backfill/BackfillPartitionsRequestedDialog';
 import {IndeterminateLoadingBar} from '../ui/IndeterminateLoadingBar';
@@ -33,6 +33,7 @@ interface RunsFeedTableNewProps {
   filter?: RunsFilter;
   emptyState?: () => React.ReactNode;
   scroll?: boolean;
+  statusFilter?: 'all' | 'in-progress' | 'failed' | 'queued';
 }
 
 // Potentially other modals in the future
@@ -53,30 +54,55 @@ export const RunsFeedTableNew = ({
   filter,
   emptyState,
   scroll = true,
+  statusFilter = 'all',
 }: RunsFeedTableNewProps) => {
   console.log('entries', entries);
   const parentRef = useRef<HTMLDivElement | null>(null);
 
-  // Sort entries by creation time (newest first)
+  // Filter and sort entries by creation time (newest first)
   const sortedEntries = useMemo(() => {
     if (entries.length === 0) {
       return entries;
     }
 
-    const sorted = [...entries].sort((a, b) => {
+    // First filter by status
+    let filtered = entries;
+    if (statusFilter !== 'all') {
+      filtered = entries.filter((entry) => {
+        const status = entry.runStatus;
+        switch (statusFilter) {
+          case 'in-progress':
+            return [
+              RunStatus.NOT_STARTED,
+              RunStatus.STARTING,
+              RunStatus.STARTED,
+              RunStatus.CANCELING,
+            ].includes(status);
+          case 'queued':
+            return status === RunStatus.QUEUED;
+          case 'failed':
+            return status === RunStatus.FAILURE;
+          default:
+            return true;
+        }
+      });
+    }
+
+    // Then sort by creation time
+    const sorted = [...filtered].sort((a, b) => {
       // Handle potential undefined/null values
       const timeA = a.creationTime ?? 0;
       const timeB = b.creationTime ?? 0;
       return timeB - timeA; // Newest first (descending order)
     });
 
-    console.log('Sorted by creation time - showing first 3 entries:');
+    console.log(`Filtered by ${statusFilter} status - showing ${sorted.length} entries`);
     sorted.slice(0, 3).forEach((entry, i) => {
-      console.log(`${i + 1}. Created: ${new Date(entry.creationTime * 1000).toLocaleString()}`);
+      console.log(`${i + 1}. Status: ${entry.runStatus}, Created: ${new Date(entry.creationTime * 1000).toLocaleString()}`);
     });
 
     return sorted;
-  }, [entries]);
+  }, [entries, statusFilter]);
 
   const entryIds = useMemo(() => sortedEntries.map((e) => e.id), [sortedEntries]);
   const [{checkedIds}, {onToggleFactory, onToggleAll}] = useSelectionReducer(entryIds);

@@ -185,6 +185,7 @@ export const RunsFeedRootNew = () => {
         belowActionBarComponents={belowActionBarComponents}
         paginationProps={paginationProps}
         filter={filter}
+        statusFilter={selectedTab}
         terminateAllRunsButton={
           currentTab === 'queued' ? (
             <TerminateAllRunsButton
