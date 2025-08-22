@@ -71,7 +71,7 @@ export const DimensionRangeWizards = ({
                 (d) => d.name === range.dimension.name,
               )?.dynamicPartitionsDefinitionName
             }
-            showQuickSelectButtons={selections.length === 1}
+            showQuickSelectOptionsForStatuses={selections.length === 1}
           />
         </Box>
       ))}

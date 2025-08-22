@@ -209,7 +209,7 @@ export const BackfillPartitionSelector = ({
                   ? PartitionDefinitionType.TIME_WINDOW
                   : PartitionDefinitionType.STATIC
               }
-              showQuickSelectButtons={false}
+              showQuickSelectOptionsForStatuses={false}
             />
 
             <PartitionRunStatusCheckboxes

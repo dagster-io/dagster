@@ -22,7 +22,7 @@ export const DimensionRangeWizard = ({
   dynamicPartitionsDefinitionName,
   repoAddress,
   refetch,
-  showQuickSelectButtons,
+  showQuickSelectOptionsForStatuses,
 }: {
   selected: string[];
   setSelected: (selected: string[]) => void;
@@ -36,7 +36,7 @@ export const DimensionRangeWizard = ({
   // For multi-dimensional partitions, this is set to false because filtering by failed or missing
   // partitions only makes sense when applied across all dimensions simultaneously.
   // This dialog is also used to backfill jobs and in that case we also set it to false.
-  showQuickSelectButtons: boolean;
+  showQuickSelectOptionsForStatuses: boolean;
 }) => {
   const isTimeseries = dimensionType === PartitionDefinitionType.TIME_WINDOW;
   const isDynamic = dimensionType === PartitionDefinitionType.DYNAMIC;
@@ -47,7 +47,7 @@ export const DimensionRangeWizard = ({
     'all' | 'failed' | 'missing' | 'failed_and_missing' | 'latest' | 'custom'
   >('custom');
 
-  const quickSelectButtons = showQuickSelectButtons && (
+  const quickSelectButtons = showQuickSelectOptionsForStatuses && (
     <Box flex={{direction: 'row', gap: 8}}>
       <JoinedButtons>
         {isTimeseries && (
@@ -145,7 +145,7 @@ export const DimensionRangeWizard = ({
             />
           )}
         </Box>
-        {isTimeseries && !showQuickSelectButtons && (
+        {isTimeseries && !showQuickSelectOptionsForStatuses && (
           <Button
             onClick={() => setSelected(partitionKeys.slice(-1))}
             data-testid={testId('latest-partition-button')}
@@ -153,7 +153,7 @@ export const DimensionRangeWizard = ({
             Latest
           </Button>
         )}
-        {!showQuickSelectButtons && (
+        {!showQuickSelectOptionsForStatuses && (
           <Button
             onClick={() => setSelected(partitionKeys)}
             data-testid={testId('all-partition-button')}
@@ -216,7 +216,7 @@ const getMissingPartitions = (health: PartitionStatusHealthSource, partitionKeys
     return missingRangeSelections.selectedKeys;
   }
   return partitionKeys.filter(
-    (key, idx) => health.runStatusForPartitionKey(key, idx) === RunStatus.CANCELED,
+    (key, idx) => health.runStatusForPartitionKey(key, idx) === undefined,
   );
 };
 
