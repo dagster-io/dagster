@@ -1,12 +1,28 @@
 from abc import ABC, abstractmethod
 from collections.abc import Mapping
 from pathlib import Path
-from typing import Any, Optional, Union
+from typing import Any, Generic, Optional, Union
 
 import yaml
-from dagster import get_dagster_logger
+from dagster import (
+    Model,
+    Resolvable,
+    _check as check,
+    get_dagster_logger,
+)
 from dagster_shared.record import IHaveNew, record, record_custom
-from typing_extensions import Self
+from databricks.sdk.service import jobs
+from typing_extensions import Self, TypeVar
+
+DatabricksSdkTaskType = Union[
+    jobs.NotebookTask,
+    jobs.RunJobTask,
+    jobs.PythonWheelTask,
+    jobs.SparkPythonTask,
+    jobs.SparkJarTask,
+    jobs.ConditionTask,
+]
+T_DatabricksSdkTask = TypeVar("T_DatabricksSdkTask", bound=DatabricksSdkTaskType)
 
 logger = get_dagster_logger()
 
@@ -36,6 +52,54 @@ def parse_depends_on(depends_on: Optional[list]) -> list["DatabricksTaskDependsO
     return parsed_depends_on
 
 
+def parse_libraries(libraries: Optional[list[Mapping[str, Any]]]) -> list[jobs.compute.Library]:
+    libraries_list = []
+    for lib in libraries or []:
+        if "whl" in lib:
+            libraries_list.append(jobs.compute.Library(whl=lib["whl"]))
+        elif "jar" in lib:
+            libraries_list.append(jobs.compute.Library(jar=lib["jar"]))
+        elif "egg" in lib:
+            libraries_list.append(jobs.compute.Library(egg=lib["egg"]))
+        elif "pypi" in lib:
+            pypi_config = lib["pypi"]
+            # Handle version by combining it with package name
+            package = pypi_config["package"]
+            if "version" in pypi_config:
+                package = f"{package}=={pypi_config['version']}"
+
+            libraries_list.append(
+                jobs.compute.Library(
+                    pypi=jobs.compute.PythonPyPiLibrary(
+                        package=package, repo=pypi_config.get("repo")
+                    )
+                )
+            )
+        elif "maven" in lib:
+            maven_config = lib["maven"]
+            libraries_list.append(
+                jobs.compute.Library(
+                    maven=jobs.compute.MavenLibrary(
+                        coordinates=maven_config["coordinates"],
+                        repo=maven_config.get("repo"),
+                        exclusions=maven_config.get("exclusions", []),
+                    )
+                )
+            )
+        elif "cran" in lib:
+            cran_config = lib["cran"]
+            libraries_list.append(
+                jobs.compute.Library(
+                    cran=jobs.compute.RCranLibrary(
+                        package=cran_config["package"], repo=cran_config.get("repo")
+                    )
+                )
+            )
+        else:
+            logger.warning(f"Unknown library type: {lib}")
+    return libraries_list
+
+
 @record
 class DatabricksTaskDependsOnConfig:
     task_key: str
@@ -43,7 +107,7 @@ class DatabricksTaskDependsOnConfig:
 
 
 @record
-class DatabricksBaseTask(ABC):
+class DatabricksBaseTask(ABC, Generic[T_DatabricksSdkTask]):
     task_key: str
     task_config: Mapping[str, Any]
     task_parameters: Union[Mapping[str, Any], list[str]]
@@ -62,6 +126,17 @@ class DatabricksBaseTask(ABC):
     @classmethod
     @abstractmethod
     def from_job_task_config(cls, job_task_config: Mapping[str, Any]) -> Self: ...
+
+    @property
+    @abstractmethod
+    def needs_cluster(self) -> bool: ...
+
+    @property
+    @abstractmethod
+    def submit_task_key(self) -> str: ...
+
+    @abstractmethod
+    def to_databricks_sdk_task(self) -> T_DatabricksSdkTask: ...
 
 
 @record
@@ -90,6 +165,20 @@ class DatabricksNotebookTask(DatabricksBaseTask):
             depends_on=parse_depends_on(job_task_config.get("depends_on", [])),
             job_name=job_task_config["job_name"],
             libraries=job_task_config.get("libraries", []),
+        )
+
+    @property
+    def needs_cluster(self) -> bool:
+        return True
+
+    @property
+    def submit_task_key(self) -> str:
+        return "notebook_task"
+
+    def to_databricks_sdk_task(self) -> jobs.NotebookTask:
+        return jobs.NotebookTask(
+            notebook_path=self.task_config["notebook_task"]["notebook_path"],
+            base_parameters=check.is_dict(self.task_parameters),
         )
 
 
@@ -123,6 +212,25 @@ class DatabricksConditionTask(DatabricksBaseTask):
             libraries=job_task_config.get("libraries", []),
         )
 
+    @property
+    def needs_cluster(self) -> bool:
+        return False
+
+    @property
+    def submit_task_key(self) -> str:
+        return "condition_task"
+
+    def to_databricks_sdk_task(self) -> jobs.ConditionTask:
+        condition_config = self.task_config["condition_task"]
+        return jobs.ConditionTask(
+            left=condition_config.get("left", ""),
+            op=getattr(
+                jobs.ConditionTaskOp,
+                condition_config.get("op", "EQUAL_TO"),
+            ),
+            right=condition_config.get("right", ""),
+        )
+
 
 @record
 class DatabricksSparkPythonTask(DatabricksBaseTask):
@@ -153,6 +261,20 @@ class DatabricksSparkPythonTask(DatabricksBaseTask):
             depends_on=parse_depends_on(job_task_config.get("depends_on", [])),
             job_name=job_task_config["job_name"],
             libraries=job_task_config.get("libraries", []),
+        )
+
+    @property
+    def needs_cluster(self) -> bool:
+        return True
+
+    @property
+    def submit_task_key(self) -> str:
+        return "spark_python_task"
+
+    def to_databricks_sdk_task(self) -> jobs.SparkPythonTask:
+        python_config = self.task_config["spark_python_task"]
+        return jobs.SparkPythonTask(
+            python_file=python_config["python_file"], parameters=check.is_list(self.task_parameters)
         )
 
 
@@ -188,6 +310,22 @@ class DatabricksPythonWheelTask(DatabricksBaseTask):
             libraries=job_task_config.get("libraries", []),
         )
 
+    @property
+    def needs_cluster(self) -> bool:
+        return True
+
+    @property
+    def submit_task_key(self) -> str:
+        return "python_wheel_task"
+
+    def to_databricks_sdk_task(self) -> jobs.PythonWheelTask:
+        wheel_config = self.task_config["python_wheel_task"]
+        return jobs.PythonWheelTask(
+            package_name=wheel_config["package_name"],
+            entry_point=wheel_config["entry_point"],
+            parameters=check.is_list(self.task_parameters),
+        )
+
 
 @record
 class DatabricksSparkJarTask(DatabricksBaseTask):
@@ -218,6 +356,21 @@ class DatabricksSparkJarTask(DatabricksBaseTask):
             libraries=job_task_config.get("libraries", []),
         )
 
+    @property
+    def needs_cluster(self) -> bool:
+        return True
+
+    @property
+    def submit_task_key(self) -> str:
+        return "spark_jar_task"
+
+    def to_databricks_sdk_task(self) -> jobs.SparkJarTask:
+        jar_config = self.task_config["spark_jar_task"]
+        return jobs.SparkJarTask(
+            main_class_name=jar_config["main_class_name"],
+            parameters=check.is_list(self.task_parameters),
+        )
+
 
 @record
 class DatabricksJobTask(DatabricksBaseTask):
@@ -246,6 +399,20 @@ class DatabricksJobTask(DatabricksBaseTask):
             depends_on=parse_depends_on(job_task_config.get("depends_on", [])),
             job_name=job_task_config["job_name"],
             libraries=job_task_config.get("libraries", []),
+        )
+
+    @property
+    def needs_cluster(self) -> bool:
+        return False
+
+    @property
+    def submit_task_key(self) -> str:
+        return "run_job_task"
+
+    def to_databricks_sdk_task(self) -> jobs.RunJobTask:
+        return jobs.RunJobTask(
+            job_id=self.task_config["run_job_task"]["job_id"],
+            job_parameters=check.is_dict(self.task_parameters),
         )
 
 
@@ -381,3 +548,17 @@ class DatabricksConfig(IHaveNew):
             job_parameters = job_config["job_parameters"]
 
         return job_parameters
+
+
+class ResolvedDatabricksNewClusterConfig(Resolvable, Model):
+    spark_version: str = "13.3.x-scala2.12"
+    node_type_id: str = "i3.xlarge"
+    num_workers: int = 1
+
+
+class ResolvedDatabricksExistingClusterConfig(Resolvable, Model):
+    existing_cluster_id: str
+
+
+class ResolvedDatabricksServerlessConfig(Resolvable, Model):
+    is_serverless: bool

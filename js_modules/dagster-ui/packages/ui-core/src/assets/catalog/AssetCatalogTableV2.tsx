@@ -471,7 +471,10 @@ type AssetWithDefinition = AssetTableFragment & {
   definition: NonNullable<AssetTableFragment['definition']>;
 };
 
-function sortAssetsByMaterializationTimestamp(a: AssetHealthFragment, b: AssetHealthFragment) {
+export function sortAssetsByMaterializationTimestamp(
+  a: AssetHealthFragment,
+  b: AssetHealthFragment,
+) {
   const aMaterialization = a.assetMaterializations[0]?.timestamp;
   const bMaterialization = b.assetMaterializations[0]?.timestamp;
   if (!aMaterialization && !bMaterialization) {

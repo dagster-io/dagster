@@ -9,6 +9,7 @@ attributes:  # Optional: Attributes details
     target: <string>  # Optional: 
     packaged_project_dir: <string>  # Optional: 
     state_path: <string>  # Optional: 
+  cli_args: <one of: array of item, string>  # Optional: Arguments to pass to the dbt CLI when executing. Defaults to `['build']`.
   op:  # Optional: Op related arguments to set on the generated @dbt_assets
     name: <string>  # Optional: 
     tags: <one of: object, string>  # Optional: 

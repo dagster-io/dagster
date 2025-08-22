@@ -9,7 +9,7 @@ from typing import Any, Callable, Optional, Union, overload
 from unittest import mock
 
 from dagster_shared import check
-from dagster_shared.record import record
+from dagster_shared.record import IHaveNew, record
 from dagster_shared.utils.cached_method import get_cached_method_cache, make_cached_method_cache_key
 from dagster_shared.utils.config import (
     discover_config_file,
@@ -19,6 +19,7 @@ from dagster_shared.utils.config import (
 from typing_extensions import Self, TypeVar
 
 from dagster._core.definitions.definitions_class import Definitions
+from dagster._core.errors import DagsterInvalidDefinitionError
 from dagster._utils.cached_method import cached_method
 from dagster.components.component.component import Component
 from dagster.components.core.context import ComponentDeclLoadContext, ComponentLoadContext
@@ -84,14 +85,15 @@ class ComponentTreeException(Exception):
     pass
 
 
-class ComponentTreeDependencyTracker:
-    """Stateful class which tracks the dependencies between components,
-    used when reloading a subset of the component tree.
+class ComponentTreeStateTracker:
+    """Stateful class which tracks the state of the component tree
+    as it is loaded.
     """
 
     def __init__(self):
         self._component_load_dependents_dict = defaultdict(set)
         self._component_defs_dependents_dict = defaultdict(set)
+        self._component_defs_state_key_dict = dict()
 
     def mark_component_load_dependency(
         self, defs_module_path: Path, from_path: ComponentPath, to_path: ResolvableToComponentPath
@@ -106,6 +108,22 @@ class ComponentTreeDependencyTracker:
         self._component_defs_dependents_dict[
             _get_canonical_component_path(defs_module_path, to_path)
         ].add(_get_canonical_component_path(defs_module_path, from_path))
+
+    def mark_component_defs_state_key(
+        self, defs_module_path: Path, component_path: ComponentPath, defs_state_key: str
+    ) -> None:
+        # ensures that no components share the same defs state key
+        canonical_path = _get_canonical_component_path(defs_module_path, component_path)
+        existing_path = self._component_defs_state_key_dict.get(defs_state_key)
+        if existing_path is not None and existing_path != canonical_path:
+            raise DagsterInvalidDefinitionError(
+                f"Multiple components have the same defs state key: {defs_state_key}\n"
+                "Component paths: \n"
+                f"  {existing_path}\n"
+                f"  {canonical_path}\n"
+                "Configure or override the `get_defs_state_key` method on one or both components to disambiguate."
+            )
+        self._component_defs_state_key_dict[defs_state_key] = canonical_path
 
     def get_direct_load_dependents_of_component(
         self, defs_module_path: Path, component_path: ComponentPath
@@ -147,7 +165,7 @@ class ComponentTreeDependencyTracker:
 @record(
     checked=False,  # cant handle ModuleType
 )
-class ComponentTree:
+class ComponentTree(IHaveNew):
     """The hierarchy of Component instances defined in the project.
 
     Manages and caches the component loading process, including finding component declarations
@@ -158,7 +176,10 @@ class ComponentTree:
     defs_module: ModuleType
     project_root: Path
     terminate_autoloading_on_keyword_files: Optional[bool] = None
-    component_tree_dependencies: ComponentTreeDependencyTracker = ComponentTreeDependencyTracker()
+
+    @cached_property
+    def component_tree_state_tracker(self) -> ComponentTreeStateTracker:
+        return ComponentTreeStateTracker()
 
     @contextmanager
     def augment_component_tree_exception(
@@ -362,7 +383,7 @@ class ComponentTree:
             from_path: The path to the component that depends on the component at `to_path`.
             to_path: The path to the component that the component at `from_path` depends on.
         """
-        self.component_tree_dependencies.mark_component_load_dependency(
+        self.component_tree_state_tracker.mark_component_load_dependency(
             self.defs_module_path, from_path, to_path
         )
 
@@ -376,8 +397,21 @@ class ComponentTree:
             from_path: The path to the component that depends on the defs of the component at `to_path`.
             to_path: The path to the component that the component at `from_path` depends on.
         """
-        self.component_tree_dependencies.mark_component_defs_dependency(
+        self.component_tree_state_tracker.mark_component_defs_dependency(
             self.defs_module_path, from_path, to_path
+        )
+
+    def mark_component_defs_state_key(
+        self, component_path: ComponentPath, defs_state_key: str
+    ) -> None:
+        """Marks a defs state key for the component at `component_path`.
+
+        Args:
+            component_path: The path to the component to mark the state key for.
+            defs_state_key: The state key to mark.
+        """
+        self.component_tree_state_tracker.mark_component_defs_state_key(
+            self.defs_module_path, component_path, defs_state_key
         )
 
     @overload

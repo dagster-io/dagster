@@ -5,7 +5,7 @@ from dagster_databricks_tests.components.databricks_asset_bundle.conftest import
 )
 
 
-def test_load_databrick_configs():
+def test_load_databrick_config():
     databricks_config = DatabricksConfig(databricks_config_path=DATABRICKS_CONFIG_LOCATION_PATH)
     assert databricks_config.databricks_config_path == DATABRICKS_CONFIG_LOCATION_PATH
     assert len(databricks_config.tasks) == 6
