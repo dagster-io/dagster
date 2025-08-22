@@ -6,6 +6,7 @@ from dagster.components.testing import create_defs_folder_sandbox
 from dagster_databricks.components.databricks_asset_bundle.component import (
     DatabricksAssetBundleComponent,
 )
+from databricks.sdk.service.jobs import Run, RunResultState, RunState, RunTask
 
 from dagster_databricks_tests.components.databricks_asset_bundle.conftest import (
     TEST_DATABRICKS_WORKSPACE_HOST,
@@ -26,13 +27,50 @@ from dagster_databricks_tests.components.databricks_asset_bundle.conftest import
         "serverless_compute_config",
     ],
 )
+@mock.patch(
+    "databricks.sdk.service.jobs.JobsAPI.wait_get_run_job_terminated_or_skipped", autospec=True
+)
+@mock.patch("databricks.sdk.mixins.jobs.JobsExt.get_run", autospec=True)
+@mock.patch("databricks.sdk.service.jobs.JobsAPI.submit", autospec=True)
 @mock.patch("databricks.sdk.service.jobs.SubmitTask", autospec=True)
 def test_load_component(
     mock_submit_task: mock.MagicMock,
+    mock_submit_fn: mock.MagicMock,
+    mock_get_run_fn: mock.MagicMock,
+    mock_wait_fn: mock.MagicMock,
     use_existing_cluster: bool,
     is_serverless: bool,
     databricks_config_path: str,
 ):
+    mock_get_run_fn.return_value = Run(
+        run_id=11111,
+        job_id=22222,
+        state=RunState(result_state=RunResultState.SUCCESS),
+        tasks=[
+            RunTask(
+                task_key="data_processing_notebook",
+                state=RunState(result_state=RunResultState.SUCCESS),
+            ),
+            RunTask(
+                task_key="stage_documents", state=RunState(result_state=RunResultState.SUCCESS)
+            ),
+            RunTask(
+                task_key="spark_processing_jar", state=RunState(result_state=RunResultState.SUCCESS)
+            ),
+            RunTask(
+                task_key="existing_job_with_references",
+                state=RunState(result_state=RunResultState.SUCCESS),
+            ),
+            RunTask(
+                task_key="check_data_quality", state=RunState(result_state=RunResultState.SUCCESS)
+            ),
+            RunTask(
+                task_key="hello_world_spark_task",
+                state=RunState(result_state=RunResultState.SUCCESS),
+            ),
+        ],
+    )
+
     with create_defs_folder_sandbox() as sandbox:
         defs_path = sandbox.scaffold_component(
             component_cls=DatabricksAssetBundleComponent,

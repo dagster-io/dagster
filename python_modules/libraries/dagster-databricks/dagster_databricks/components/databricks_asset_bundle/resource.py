@@ -1,7 +1,14 @@
-from collections.abc import Iterator
-from typing import TYPE_CHECKING
+from collections.abc import Iterator, Mapping
+from typing import TYPE_CHECKING, Any, Union
 
-from dagster import AssetExecutionContext, AssetMaterialization, ConfigurableResource
+from dagster import (
+    AssetExecutionContext,
+    AssetKey,
+    AssetMaterialization,
+    ConfigurableResource,
+    MaterializeResult,
+    _check as check,
+)
 from dagster_shared.utils.cached_method import cached_method
 from databricks.sdk import WorkspaceClient
 from databricks.sdk.service import compute, jobs
@@ -37,7 +44,7 @@ class DatabricksWorkspace(ConfigurableResource):
 
     def submit_and_poll(
         self, component: "DatabricksAssetBundleComponent", context: AssetExecutionContext
-    ) -> Iterator[AssetMaterialization]:
+    ) -> Iterator[Union[AssetMaterialization, MaterializeResult]]:
         tasks = component.databricks_config.tasks
 
         # Get selected asset keys that are being materialized
@@ -64,7 +71,7 @@ class DatabricksWorkspace(ConfigurableResource):
             context.log.info("No tasks selected for execution")
 
         # Create Databricks SDK task objects only for selected tasks
-        databricks_tasks_by_task_key = {}
+        databricks_tasks = []
         for task_key, task in selected_tasks_by_task_key.items():
             # TODO: support common config
             context.log.info(f"Task {task_key}: parameters={task.task_parameters}")
@@ -111,9 +118,65 @@ class DatabricksWorkspace(ConfigurableResource):
                 **libraries_config,
             }
 
-            databricks_task = jobs.SubmitTask(**submit_task_params)
-            databricks_tasks_by_task_key[task_key] = databricks_task
+            databricks_tasks.append(jobs.SubmitTask(**submit_task_params))
 
-        # TODO: implement submit tasks and poll at client level
-        for task_key in databricks_tasks_by_task_key.keys():
-            yield AssetMaterialization(asset_key=selected_task_key_to_asset_key_mapping[task_key])
+        # Prepare job submission parameters
+        job_submit_params = {
+            "run_name": f"{assets_def.node_def.name}_{context.run_id}",
+            "tasks": databricks_tasks,
+        }
+
+        job_run = self._submit_job(params=job_submit_params)
+        run_id = check.not_none(job_run.run_id)
+        job_id = check.not_none(job_run.job_id)
+        context.log.info(f"Databricks job submitted with run ID: {run_id}")
+
+        # Build Databricks job run URL
+        workspace_url = self.host.rstrip("/")
+        job_run_url = f"{workspace_url}/jobs/{job_id}/runs/{run_id}"
+        context.log.info(f"Databricks job run URL: {job_run_url}")
+
+        final_run = self._poll_run(run_id=run_id)
+        final_run_state = check.not_none(final_run.state)
+        final_run_tasks = check.not_none(final_run.tasks)
+        context.log.info(f"Job completed with overall state: {final_run_state.result_state}")
+        context.log.info(f"View job details: {job_run_url}")
+
+        # Get individual task run states
+        for run_task in final_run_tasks:
+            task_key = run_task.task_key
+            task_state = (
+                run_task.state.result_state.value
+                if run_task.state and run_task.state.result_state
+                else "UNKNOWN"
+            )
+
+            # Build task-specific URL (task tab within the job run)
+            task_url = f"{job_run_url}#task/{task_key}"
+
+            context.log.info(f"Task {task_key} completed with state: {task_state}")
+            context.log.info(f"Task {task_key} details: {task_url}")
+
+            if task_state == "SUCCESS":
+                if task_key in selected_task_key_to_asset_key_mapping:
+                    yield MaterializeResult(
+                        asset_key=selected_task_key_to_asset_key_mapping[task_key]
+                    )
+                else:
+                    context.log.warning(
+                        f"An unexpected asset was materialized for task: {task_key}. "
+                        f"Yielding a materialization event."
+                    )
+                    yield AssetMaterialization(asset_key=AssetKey(task_key))
+
+    def _submit_job(self, params: Mapping[str, Any]) -> jobs.Run:
+        client = self.get_client()
+        job_run = client.jobs.submit(**params)
+        return client.jobs.get_run(run_id=job_run.run_id)
+
+    def _poll_run(self, run_id: int) -> jobs.Run:
+        client = self.get_client()
+        # Wait for job completion
+        client.jobs.wait_get_run_job_terminated_or_skipped(run_id)
+        # Get final job status
+        return client.jobs.get_run(run_id)
