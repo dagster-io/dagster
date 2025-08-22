@@ -85,7 +85,6 @@ class ClaudeSDKClient:
             options = ClaudeCodeOptions(
                 allowed_tools=allowed_tools,
                 permission_mode="acceptEdits",  # Auto-accept file edits for scaffolding
-                max_turns=20,  # Match existing MAX_TURNS
                 model=model,
             )
 
