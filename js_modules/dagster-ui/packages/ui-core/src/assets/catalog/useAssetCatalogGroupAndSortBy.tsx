@@ -206,9 +206,10 @@ export const useAssetCatalogGroupAndSortBy = ({
           liveDataByNode,
           getAttributes: (asset) => {
             return [
-              statusToIconAndColor[asset.assetHealth?.freshnessStatus ?? AssetHealthStatus.UNKNOWN]
+              statusToIconAndColor[asset.assetHealth?.materializationStatus ?? AssetHealthStatus.UNKNOWN]
                 .text,
             ];
+
           },
           renderGroupHeader: (props) => {
             return (
