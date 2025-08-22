@@ -7,7 +7,7 @@ import {QueuedRunCriteriaDialog} from './QueuedRunCriteriaDialog';
 import {RunTableEmptyState} from './RunTableEmptyState';
 import {RunsQueryRefetchContext} from './RunUtils';
 import {RunsFeedError} from './RunsFeedError';
-import {RunsFeedRow, RunsFeedTableHeader, SkeletonRow} from './RunsFeedRowNew';
+import {RunsFeedRow, RunsFeedTableHeader, SkeletonRow, SelectedTagsProvider} from './RunsFeedRowNew';
 import {RunFilterToken} from './RunsFilterInput';
 import {
   RunsFeedTableEntryFragment,
@@ -417,14 +417,16 @@ export const RunsFeedTableNew = ({
   }
 
   return (
-    <Box
-      flex={{direction: 'column', gap: 8}}
-      padding={{vertical: 12}}
-      style={scroll ? {height: '100%', minHeight: 0} : {}}
-    >
-      {actionBar}
-      {content()}
-    </Box>
+    <SelectedTagsProvider>
+      <Box
+        flex={{direction: 'column', gap: 8}}
+        padding={{vertical: 12}}
+        style={scroll ? {height: '100%', minHeight: 0} : {}}
+      >
+        {actionBar}
+        {content()}
+      </Box>
+    </SelectedTagsProvider>
   );
 };
 

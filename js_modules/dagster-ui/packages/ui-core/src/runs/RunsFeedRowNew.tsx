@@ -11,13 +11,55 @@ import {
   Tag,
   Tooltip,
 } from '@dagster-io/ui-components';
-import {useState, useEffect, useMemo} from 'react';
+import {useState, useEffect, useMemo, useContext, createContext} from 'react';
 
 import {DagsterTag} from './RunTag';
 import {RunStats} from './RunStats';
 import {formatElapsedTimeWithoutMsec} from '../app/Util';
 import {RunsFeedTableEntryFragment} from './types/RunsFeedTableEntryFragment.types';
 import {RunStatus} from '../graphql/types';
+
+// Context for managing selected tags across runs
+type SelectedTag = {
+  key: string;
+  value: string;
+};
+
+type SelectedTagsContextType = {
+  selectedTags: Record<string, SelectedTag[]>; // runId -> tags
+  addSelectedTag: (runId: string, tag: SelectedTag) => void;
+  removeSelectedTag: (runId: string, tagIndex: number) => void;
+};
+
+const SelectedTagsContext = createContext<SelectedTagsContextType>({
+  selectedTags: {},
+  addSelectedTag: () => {},
+  removeSelectedTag: () => {},
+});
+
+export const SelectedTagsProvider = ({children}: {children: React.ReactNode}) => {
+  const [selectedTags, setSelectedTags] = useState<Record<string, SelectedTag[]>>({});
+
+  const addSelectedTag = (runId: string, tag: SelectedTag) => {
+    setSelectedTags(prev => ({
+      ...prev,
+      [runId]: [...(prev[runId] || []), tag]
+    }));
+  };
+
+  const removeSelectedTag = (runId: string, tagIndex: number) => {
+    setSelectedTags(prev => ({
+      ...prev,
+      [runId]: (prev[runId] || []).filter((_, index) => index !== tagIndex)
+    }));
+  };
+
+  return (
+    <SelectedTagsContext.Provider value={{selectedTags, addSelectedTag, removeSelectedTag}}>
+      {children}
+    </SelectedTagsContext.Provider>
+  );
+};
 
 type LaunchType =
   | {type: 'manual'; user: string}
@@ -171,6 +213,7 @@ const CreatedAtCell = ({entry}: {entry: RunsFeedTableEntryFragment}) => {
 
 const TagsCell = ({entry}: {entry: RunsFeedTableEntryFragment}) => {
   const [isOpen, setIsOpen] = useState(false);
+  const {addSelectedTag} = useContext(SelectedTagsContext);
   const tags = (entry.tags || []).slice().sort((a, b) => {
     const keyA = a.key.startsWith('dagster/') ? a.key.replace('dagster/', '') : a.key;
     const keyB = b.key.startsWith('dagster/') ? b.key.replace('dagster/', '') : b.key;
@@ -371,7 +414,11 @@ const TagsCell = ({entry}: {entry: RunsFeedTableEntryFragment}) => {
                         }}
                         onClick={(e) => {
                           e.stopPropagation();
-                          // TODO: Implement add to filters functionality
+                          const displayKey = tag.key.startsWith('dagster/') ? tag.key.replace('dagster/', '') : tag.key;
+                          addSelectedTag(entry.id, {
+                            key: displayKey,
+                            value: tag.value,
+                          });
                         }}
                       />
                     </Tooltip>
@@ -792,6 +839,9 @@ export const SkeletonRow = () => {
 };
 
 export const RunsFeedRow = ({entry}: {entry: RunsFeedTableEntryFragment}) => {
+  const {selectedTags} = useContext(SelectedTagsContext);
+  const runSelectedTags = selectedTags[entry.id] || [];
+  
   return (
     <Box
       style={{
@@ -814,6 +864,27 @@ export const RunsFeedRow = ({entry}: {entry: RunsFeedTableEntryFragment}) => {
         <CreatedAtCell entry={entry} />
         <TagsCell entry={entry} />
       </Box>
+      
+      {/* Middle section: Selected tags - only show if there are selected tags */}
+      {runSelectedTags.length > 0 && (
+        <Box
+          style={{
+            display: 'flex',
+            flexWrap: 'wrap',
+            gap: '4px',
+            flex: '1',
+            marginLeft: '24px',
+            marginRight: '24px',
+            justifyContent: 'flex-end',
+          }}
+        >
+          {runSelectedTags.map((tag, index) => (
+            <Tag key={index} intent="primary">
+              {tag.key}: {tag.value}
+            </Tag>
+          ))}
+        </Box>
+      )}
       
       {/* Right group: Status, More actions */}
       <Box style={{display: 'flex', alignItems: 'center', gap: '24px'}}>
