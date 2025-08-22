@@ -333,6 +333,7 @@ def scaffold_content_for_prompt(
     user_input: str,
     input_type: type[InputType],
     diagnostics: ClaudeDiagnostics,
+    verbose: bool,
     use_spinner: bool = True,
     model: ModelType = "sonnet",
 ) -> None:
@@ -353,15 +354,13 @@ def scaffold_content_for_prompt(
         ):
             claude_sdk = ClaudeSDKClient(diagnostics)
 
-            # Run the async SDK operation with verbose mode for debug diagnostics
-            verbose_mode = diagnostics.level == "debug"
             asyncio.run(
                 claude_sdk.scaffold_with_streaming(
                     prompt=prompt,
                     allowed_tools=allowed_tools,
                     output_channel=channel,
                     disallowed_tools=["Bash(python:*)", "WebSearch", "WebFetch"],
-                    verbose=verbose_mode,
+                    verbose=verbose,
                 )
             )
 
