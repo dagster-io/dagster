@@ -52,7 +52,7 @@ const AssetHealthSummaryImpl = React.memo(
     const {liveData} = useAssetHealthData(assetKey);
     const health = liveData?.assetHealth;
 
-    const {primaryIcon, iconColor, intent, statusText} = useMemo(() => {
+    const {trendIcon, iconColor, intent, displayName} = useMemo(() => {
       return statusToIconAndColor[health?.assetHealth ?? 'undefined'];
     }, [health]);
 
@@ -60,13 +60,13 @@ const AssetHealthSummaryImpl = React.memo(
       if (iconOnly) {
         return (
           <HoverButton style={{padding: 8}}>
-            <Icon name={primaryIcon} color={iconColor} />
+            <Icon name={trendIcon} color={iconColor} />
           </HoverButton>
         );
       }
       return (
-        <Tag intent={intent} icon={primaryIcon}>
-          {statusText}
+        <Tag intent={intent} icon={trendIcon}>
+          {displayName}
         </Tag>
       );
     }
@@ -99,7 +99,7 @@ export const AssetHealthSummaryPopover = ({
   assetKey: AssetKeyInput;
   children: React.ReactNode;
 }) => {
-  const {primaryIcon, iconColor, statusText} = useMemo(() => {
+  const {trendIcon, iconColor, displayName} = useMemo(() => {
     return statusToIconAndColor[health?.assetHealth ?? 'undefined'];
   }, [health]);
 
@@ -109,8 +109,8 @@ export const AssetHealthSummaryPopover = ({
       content={
         <div onClick={(e) => e.stopPropagation()}>
           <Box padding={12} flex={{direction: 'row', alignItems: 'center', gap: 6}} border="bottom">
-            <Icon name={primaryIcon} color={iconColor} />
-            <SubtitleLarge>{statusText}</SubtitleLarge>
+            <Icon name={trendIcon} color={iconColor} />
+            <SubtitleLarge>{displayName}</SubtitleLarge>
           </Box>
           <Criteria
             assetKey={assetKey}
@@ -159,7 +159,7 @@ const Criteria = React.memo(
       | null;
     type: 'materialization' | 'freshness' | 'checks';
   }) => {
-    const {criteriaIcon, iconColor, textColor} = statusToIconAndColor[status ?? 'undefined'];
+    const {detailIcon, iconColor, textColor} = statusToIconAndColor[status ?? 'undefined'];
 
     const trackEvent = useTrackEvent();
     const onClick = useCallback(
@@ -375,7 +375,7 @@ const Criteria = React.memo(
           opacity: shouldDim ? 0.5 : 1,
         }}
       >
-        <Icon name={criteriaIcon} color={iconColor} style={{paddingTop: 2}} />
+        <Icon name={detailIcon} color={iconColor} style={{paddingTop: 2}} />
         <Body color={textColor}>{text}</Body>
         <div />
         <Body color={Colors.textLight()}>{derivedExplanation}</Body>
@@ -389,70 +389,70 @@ export type AssetHealthStatusString = 'Unknown' | 'Degraded' | 'Warning' | 'Heal
 export const STATUS_INFO: Record<
   AssetHealthStatusString | 'Not Applicable',
   {
-    primaryIcon: IconName; // Main trend/status icon (e.g., 'successful_trend', 'failure_trend')
-    simpleIcon: IconName; // Simple status icon (e.g., 'check_circle', 'cancel')
-    criteriaIcon: IconName; // Icon used in detailed criteria breakdown
+    trendIcon: IconName; // Trend-based status icon (e.g., 'successful_trend', 'failure_trend')
+    compactIcon: IconName; // Compact icon for space-constrained contexts (e.g., 'check_circle', 'cancel')
+    detailIcon: IconName; // Icon used in detailed status breakdowns and criteria
     iconColor: string;
     textColor: string;
     borderColor: string;
-    statusText: AssetHealthStatusString; // Primary status display text
+    displayName: AssetHealthStatusString; // Primary human-readable status label
     intent: Intent;
     backgroundColor: string;
     hoverBackgroundColor: string;
-    groupHeaderText: string; // Text used in grouped/header views
-    materializationText: string; // Specific text for materialization status context
+    shortLabel: string; // Concise label for grouped/header contexts
+    materializationText: string; // Context-specific text for materialization scenarios
   }
 > = {
   'Not Applicable': {
-    primaryIcon: 'status',
-    simpleIcon: 'missing',
+    trendIcon: 'status',
+    compactIcon: 'missing',
     iconColor: Colors.textLight(),
     textColor: Colors.textDefault(),
-    statusText: 'Unknown',
-    groupHeaderText: 'None set',
+    displayName: 'Unknown',
+    shortLabel: 'None set',
     materializationText: 'Not applicable',
     intent: 'none',
-    criteriaIcon: 'missing',
+    detailIcon: 'missing',
     borderColor: Colors.accentGray(),
     backgroundColor: Colors.backgroundGray(),
     hoverBackgroundColor: Colors.backgroundGrayHover(),
   },
   Unknown: {
-    primaryIcon: 'status',
-    simpleIcon: 'missing',
+    trendIcon: 'status',
+    compactIcon: 'missing',
     iconColor: Colors.textLight(),
     textColor: Colors.textDefault(),
-    statusText: 'Unknown',
-    groupHeaderText: 'Not evaluated',
+    displayName: 'Unknown',
+    shortLabel: 'Not evaluated',
     intent: 'none',
     materializationText: 'Never materialized',
-    criteriaIcon: 'missing',
+    detailIcon: 'missing',
     borderColor: Colors.accentGray(),
     backgroundColor: Colors.backgroundGray(),
     hoverBackgroundColor: Colors.backgroundGrayHover(),
   },
   Degraded: {
-    primaryIcon: 'failure_trend',
-    simpleIcon: 'cancel',
-    criteriaIcon: 'close',
+    trendIcon: 'failure_trend',
+    compactIcon: 'cancel',
+    detailIcon: 'close',
     materializationText: 'Failed',
     iconColor: Colors.accentRed(),
     textColor: Colors.textRed(),
-    statusText: 'Degraded',
-    groupHeaderText: 'Failed',
+    displayName: 'Degraded',
+    shortLabel: 'Failed',
     intent: 'danger',
     borderColor: Colors.accentRed(),
     backgroundColor: Colors.backgroundRed(),
     hoverBackgroundColor: Colors.backgroundRedHover(),
   },
   Warning: {
-    primaryIcon: 'warning_trend',
-    simpleIcon: 'warning_outline',
+    trendIcon: 'warning_trend',
+    compactIcon: 'warning_outline',
     materializationText: 'Not applicable',
-    criteriaIcon: 'warning_outline',
+    detailIcon: 'warning_outline',
     iconColor: Colors.accentYellow(),
-    statusText: 'Warning',
-    groupHeaderText: 'Warning',
+    displayName: 'Warning',
+    shortLabel: 'Warning',
     textColor: Colors.textYellow(),
     borderColor: Colors.accentYellow(),
     backgroundColor: Colors.backgroundYellow(),
@@ -460,14 +460,14 @@ export const STATUS_INFO: Record<
     intent: 'warning',
   },
   Healthy: {
-    primaryIcon: 'successful_trend',
-    simpleIcon: 'check_circle',
-    criteriaIcon: 'done',
+    trendIcon: 'successful_trend',
+    compactIcon: 'check_circle',
+    detailIcon: 'done',
     materializationText: 'Success',
     iconColor: Colors.accentGreen(),
     textColor: Colors.textDefault(),
-    statusText: 'Healthy',
-    groupHeaderText: 'Passing',
+    displayName: 'Healthy',
+    shortLabel: 'Passing',
     intent: 'success',
     borderColor: Colors.accentGreen(),
     backgroundColor: Colors.backgroundGreen(),

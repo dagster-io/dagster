@@ -23,14 +23,14 @@ export const AssetNodeFreshnessRow = ({
     return <AssetNodeFreshnessRowOld liveData={liveData} />;
   }
 
-  const {iconColor, criteriaIcon, groupHeaderText} =
+  const {iconColor, detailIcon, shortLabel} =
     statusToIconAndColor[health?.freshnessStatus ?? 'undefined'];
 
   return (
     <AssetNodeRow label={labelForFacet(AssetNodeFacet.Freshness)}>
       <Box flex={{gap: 4, alignItems: 'center'}}>
-        <Icon name={criteriaIcon} color={iconColor} />
-        {groupHeaderText}
+        <Icon name={detailIcon} color={iconColor} />
+        {shortLabel}
       </Box>
     </AssetNodeRow>
   );

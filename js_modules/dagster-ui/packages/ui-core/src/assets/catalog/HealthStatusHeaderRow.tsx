@@ -28,17 +28,17 @@ export const HealthStatusHeaderRow = React.memo(
       if (
         [AssetHealthGroupBy.check_status, AssetHealthGroupBy.freshness_status].includes(groupBy)
       ) {
-        const iconName = STATUS_INFO[status].criteriaIcon;
+        const iconName = STATUS_INFO[status].detailIcon;
         const iconColor = STATUS_INFO[status].iconColor;
-        const text = STATUS_INFO[status].groupHeaderText;
+        const text = STATUS_INFO[status].shortLabel;
         return {iconName, iconColor, text};
       } else if (groupBy === AssetHealthGroupBy.health_status) {
-        const iconName = STATUS_INFO[status].primaryIcon;
+        const iconName = STATUS_INFO[status].trendIcon;
         const iconColor = STATUS_INFO[status].iconColor;
-        const text = STATUS_INFO[status].statusText;
+        const text = STATUS_INFO[status].displayName;
         return {iconName, iconColor, text};
       } else {
-        const iconName = STATUS_INFO[status].criteriaIcon;
+        const iconName = STATUS_INFO[status].detailIcon;
         const iconColor = STATUS_INFO[status].iconColor;
         const text = STATUS_INFO[status].materializationText;
         return {iconName, iconColor, text};

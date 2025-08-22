@@ -242,7 +242,7 @@ export const AssetCatalogTableV2 = React.memo(() => {
           getAttributes: (asset) => {
             return [
               statusToIconAndColor[asset.assetHealth?.freshnessStatus ?? AssetHealthStatus.UNKNOWN]
-                .statusText,
+                .displayName,
             ];
           },
           renderGroupHeader: (props) => {
@@ -261,7 +261,7 @@ export const AssetCatalogTableV2 = React.memo(() => {
           getAttributes: (asset) => {
             return [
               statusToIconAndColor[asset.assetHealth?.freshnessStatus ?? AssetHealthStatus.UNKNOWN]
-                .statusText,
+                .displayName,
             ];
           },
           renderGroupHeader: (props) => {
@@ -281,7 +281,7 @@ export const AssetCatalogTableV2 = React.memo(() => {
             return [
               statusToIconAndColor[
                 asset.assetHealth?.assetChecksStatus ?? AssetHealthStatus.UNKNOWN
-              ].statusText,
+              ].displayName,
             ];
           },
           renderGroupHeader: (props) => {
@@ -301,7 +301,7 @@ export const AssetCatalogTableV2 = React.memo(() => {
           getAttributes: (asset) => {
             return [
               statusToIconAndColor[asset.assetHealth?.assetHealth ?? AssetHealthStatus.UNKNOWN]
-                .statusText,
+                .displayName,
             ];
           },
           renderGroupHeader: (props) => {

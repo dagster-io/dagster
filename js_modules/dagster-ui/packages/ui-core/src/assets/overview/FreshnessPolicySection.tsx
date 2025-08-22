@@ -89,8 +89,7 @@ const QueryfulFreshnessPolicySection = ({assetKey, policy}: FreshnessPolicySecti
   const freshnessStatus = assetNode.freshnessStatusInfo?.freshnessStatus;
   const metadata = assetNode.freshnessStatusInfo?.freshnessStatusMetadata;
   const lastMaterializedTimestamp = metadata?.lastMaterializedTimestamp;
-  const {simpleIcon, intent, groupHeaderText} =
-    statusToIconAndColor[freshnessStatus ?? 'undefined'];
+  const {compactIcon, intent, shortLabel} = statusToIconAndColor[freshnessStatus ?? 'undefined'];
 
   return (
     <Box flex={{direction: 'column'}}>
@@ -101,8 +100,8 @@ const QueryfulFreshnessPolicySection = ({assetKey, policy}: FreshnessPolicySecti
         flex={{gap: 8, direction: 'column'}}
       >
         <div>
-          <Tag intent={intent} icon={simpleIcon}>
-            {groupHeaderText}
+          <Tag intent={intent} icon={compactIcon}>
+            {shortLabel}
           </Tag>
         </div>
         {lastMaterializedTimestamp ? (
@@ -154,8 +153,7 @@ export const FreshnessTag = ({
   const freshnessStatus = assetNode.freshnessStatusInfo?.freshnessStatus;
   const metadata = assetNode.freshnessStatusInfo?.freshnessStatusMetadata;
   const lastMaterializedTimestamp = metadata?.lastMaterializedTimestamp;
-  const {simpleIcon, intent, groupHeaderText} =
-    statusToIconAndColor[freshnessStatus ?? 'undefined'];
+  const {compactIcon, intent, shortLabel} = statusToIconAndColor[freshnessStatus ?? 'undefined'];
 
   return (
     <div>
@@ -182,8 +180,8 @@ export const FreshnessTag = ({
           </div>
         }
       >
-        <Tag intent={intent} icon={simpleIcon}>
-          {groupHeaderText}
+        <Tag intent={intent} icon={compactIcon}>
+          {shortLabel}
         </Tag>
       </Popover>
     </div>
