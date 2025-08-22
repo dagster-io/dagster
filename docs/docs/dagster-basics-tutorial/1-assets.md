@@ -6,7 +6,7 @@ sidebar_position: 20
 
 [Software-defined assets](/guides/build/assets) are the primary building blocks in Dagster. They represent the underlying entities in our pipelines, such as database tables, machine learning models, or AI processes. Together, these assets form the data platform. In this step, you will define the initial assets that represent the data you will work with throughout this tutorial.
 
-All Dagster objects, such as assets, are added to the `Definitions` object that was created when you initialized your project. The assets are then executed as lower level `Ops` within the context of the project environment.
+All Dagster objects, such as assets, are added to the `Definitions` object that was created when you initialized your project.
 
 ![2048 resolution](/images/tutorial/dagster-tutorial/overviews/assets.png)
 

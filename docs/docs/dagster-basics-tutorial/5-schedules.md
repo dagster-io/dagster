@@ -6,7 +6,7 @@ sidebar_position: 80
 
 There are several ways to [automate assets](/guides/automate) in Dagster. Dagster supports both scheduled and event-driven pipelines. In this step, you will add a [schedule](/guides/automate/schedules) object to automate the assets you have created.
 
-Similar to resources, schedules exist within the `Definitions` layer, though they are not directly executed as `Ops`.
+Similar to resources, schedules exist within the `Definitions` layer.
 
 ![2048 resolution](/images/tutorial/dagster-tutorial/overviews/schedules.png)
 
