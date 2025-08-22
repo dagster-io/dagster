@@ -130,49 +130,12 @@ export const RunsFeedTableNew = ({
     <Box flex={{direction: 'column', gap: 8}}>
       <Box
         flex={{justifyContent: 'space-between'}}
-        style={{width: '100%'}}
-        padding={{left: 24, right: 12}}
+        style={{width: '100%', borderBottom: '1px solid #e1e5e9'}}
+        padding={{left: 16, right: 16, bottom: 16}}
       >
         {actionBarComponents ?? <span />}
         <Box flex={{gap: 12, alignItems: 'center'}} style={{marginRight: 8}}>
-          <CursorHistoryControls
-            style={{marginTop: 0}}
-            hasPrevCursor={paginationProps.hasPrevCursor}
-            hasNextCursor={paginationProps.hasNextCursor}
-            popCursor={() => {
-              resetScrollOnLoad.current = true;
-              paginationProps.popCursor();
-            }}
-            advanceCursor={() => {
-              resetScrollOnLoad.current = true;
-              paginationProps.advanceCursor();
-            }}
-            reset={() => {
-              resetScrollOnLoad.current = true;
-              paginationProps.reset();
-            }}
-          />
-          {terminateAllRunsButton}
-          <RunBulkActionsMenu
-            clearSelection={() => onToggleAll(false)}
-            selected={selectedRuns}
-            notice={
-              backfillsExcluded ? (
-                <Alert
-                  intent="warning"
-                  title={
-                    <Box flex={{direction: 'column'}}>
-                      <Body2>Bulk actions are currently only supported for runs.</Body2>
-                      <Body2>
-                        {numberFormatter.format(backfillsExcluded)}&nbsp;
-                        {ifPlural(backfillsExcluded, 'backfill is', 'backfills are')} being excluded
-                      </Body2>
-                    </Box>
-                  }
-                />
-              ) : null
-            }
-          />
+          {/* Pagination and bulk actions removed */}
         </Box>
       </Box>
       {belowActionBarComponents ? (

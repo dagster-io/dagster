@@ -1,5 +1,5 @@
-import {Box, Checkbox, Colors, tokenToString} from '@dagster-io/ui-components';
-import {useCallback} from 'react';
+import {Box, Button, ButtonGroup, Checkbox, Colors, Icon, tokenToString} from '@dagster-io/ui-components';
+import {useCallback, useState} from 'react';
 
 import {QueuedRunsBanners} from './QueuedRunsBanners';
 import {inProgressStatuses, queuedStatuses} from './RunStatuses';
@@ -24,7 +24,6 @@ import {useRunsFeedEntries} from './useRunsFeedEntries';
 import {useQuery} from '../apollo-client';
 import {
   FIFTEEN_SECONDS,
-  QueryRefreshCountdown,
   useMergedRefresh,
   useQueryRefreshAtInterval,
 } from '../app/QueryRefresh';
@@ -47,6 +46,10 @@ const filters: RunFilterTokenType[] = [
 
 export const RunsFeedRootNew = () => {
   useTrackPageView();
+
+  const [selectedTab, setSelectedTab] = useState<
+    'all' | 'in-progress' | 'failed' | 'queued'
+  >('all');
 
   const [filterTokens, setFilterTokens] = useQueryPersistedRunFilters();
   const filter = runsFilterForSearchTokens(filterTokens);
@@ -84,7 +87,7 @@ export const RunsFeedRootNew = () => {
     enabledFilters: filters,
   });
 
-  const {tabs, queryResult: runQueryResult} = useRunsFeedTabs(currentTab, filter);
+  const {queryResult: runQueryResult} = useRunsFeedTabs(currentTab, filter);
   const isScheduled = currentTab === 'scheduled';
   const isShowingViewOption = ['all', 'failed'].includes(currentTab);
 
@@ -110,16 +113,29 @@ export const RunsFeedRootNew = () => {
   const {error} = queryResult;
 
   const actionBarComponents = (
-    <Box flex={{direction: 'row', gap: 8, alignItems: 'center'}}>
-      {button}
+    <Box flex={{direction: 'row', gap: 12, alignItems: 'center'}}>
+      <ButtonGroup
+        activeItems={new Set([selectedTab])}
+        buttons={[
+          {id: 'all', label: 'Show all'},
+          {id: 'in-progress', label: 'In progress'},
+          {id: 'failed', label: 'Failed'},
+          {id: 'queued', label: 'Queued'},
+        ]}
+        onClick={(id) => setSelectedTab(id as 'all' | 'in-progress' | 'failed' | 'queued')}
+      />
+      <Button rightIcon={<Icon name="expand_more" />}>More filters</Button>
       {isShowingViewOption && (
-        <Checkbox
-          label={<span>Show runs within backfills</span>}
-          checked={view === RunsFeedView.RUNS}
-          onChange={() => {
-            setView(view === RunsFeedView.RUNS ? RunsFeedView.ROOTS : RunsFeedView.RUNS);
-          }}
-        />
+        <Box style={{paddingLeft: '24px'}}>
+          <Checkbox
+            format="switch"
+            label={<span>Show backfills only</span>}
+            checked={view === RunsFeedView.RUNS}
+            onChange={() => {
+              setView(view === RunsFeedView.RUNS ? RunsFeedView.ROOTS : RunsFeedView.RUNS);
+            }}
+          />
+        </Box>
       )}
     </Box>
   );
@@ -197,23 +213,36 @@ export const RunsFeedRootNew = () => {
   }
 
   return (
-    <Box style={{height: '100%', display: 'grid', gridTemplateRows: 'auto minmax(0, 1fr)'}}>
+    <Box style={{height: '100%', display: 'flex', flexDirection: 'column'}}>
+      {/* H1 Runs Header */}
       <Box
-        border="bottom"
-        background={Colors.backgroundDefault()}
-        padding={{left: 24, right: 20}}
-        flex={{direction: 'row', justifyContent: 'space-between'}}
+        style={{
+          height: '52px',
+          display: 'flex',
+          alignItems: 'center',
+          paddingLeft: '16px',
+          paddingRight: '16px',
+          flexShrink: 0,
+          borderBottom: '1px solid #e1e5e9',
+        }}
       >
-        {tabs}
-        <Box flex={{gap: 16, alignItems: 'center'}}>
-          <QueryRefreshCountdown refreshState={combinedRefreshState} />
-        </Box>
+        <h1
+          style={{
+            margin: 0,
+            fontSize: '20px',
+            fontWeight: 600,
+            lineHeight: '24px',
+            color: Colors.textDefault(),
+          }}
+        >
+          Runs
+        </h1>
       </Box>
-      <div>
+      <Box style={{flex: 1, minHeight: 0}}>
         <RunsQueryRefetchContext.Provider value={{refetch: combinedRefreshState.refetch}}>
           {content()}
         </RunsQueryRefetchContext.Provider>
-      </div>
+      </Box>
     </Box>
   );
 };
