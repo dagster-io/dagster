@@ -538,7 +538,7 @@ const StatusCell = ({entry}: {entry: RunsFeedTableEntryFragment}) => {
   const renderStatusContent = () => {
     if (config.showOnlyDuration && config.showDuration) {
       return (
-        <Box style={{display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%', gap: '12px'}}>
+        <Box style={{display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%'}}>
           <Box style={{width: '28px', display: 'flex', alignItems: 'center', justifyContent: 'flex-start', paddingRight: '12px', borderRight: '1px solid #d1d5db'}}>
             {config.useSpinner ? (
               <Box style={{margin: 'auto'}} className="spinner-wrapper">
@@ -557,7 +557,7 @@ const StatusCell = ({entry}: {entry: RunsFeedTableEntryFragment}) => {
               lineHeight: '20px',
               fontVariantNumeric: 'tabular-nums',
               width: '6em',
-              textAlign: 'left',
+              textAlign: 'right',
             }}
           >
             {entry.startTime
@@ -571,7 +571,7 @@ const StatusCell = ({entry}: {entry: RunsFeedTableEntryFragment}) => {
     }
 
     return (
-      <Box style={{display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%', gap: '12px'}}>
+      <Box style={{display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%'}}>
         <Box style={{width: '28px', display: 'flex', alignItems: 'center', justifyContent: 'flex-start', paddingRight: '12px', borderRight: '1px solid #d1d5db'}}>
           {config.useSpinner ? (
             <Box style={{margin: 'auto'}} className="spinner-wrapper">
@@ -589,7 +589,7 @@ const StatusCell = ({entry}: {entry: RunsFeedTableEntryFragment}) => {
             fontWeight: 400,
             lineHeight: '20px',
             width: '6em',
-            textAlign: 'left',
+            textAlign: 'right',
           }}
         >
           {config.text}
@@ -815,23 +815,26 @@ export const RunsFeedTableHeader = () => {
       {/* Right group headers */}
       <Box style={{display: 'flex', alignItems: 'center', gap: '24px'}}>
         <Box style={{textAlign: 'right', paddingRight: '12px'}}>Status</Box>
-        <Button
-          icon={<Icon name="checklist" />}
-          intent="none"
-          style={{
-            minWidth: 'auto',
-            width: '32px',
-            height: '32px',
-            padding: '4px',
-            border: 'none',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center'
-          }}
-          onClick={() => {
-            // TODO: Implement bulk actions functionality
-          }}
-        />
+        <Tooltip content="Runs must be selected to perform bulk actions.">
+          <Button
+            icon={<Icon name="checklist" />}
+            intent="none"
+            disabled
+            style={{
+              minWidth: 'auto',
+              width: '32px',
+              height: '32px',
+              padding: '4px',
+              border: 'none',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+            }}
+            onClick={() => {
+              // TODO: Implement bulk actions functionality
+            }}
+          />
+        </Tooltip>
       </Box>
     </Box>
   );
