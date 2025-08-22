@@ -77,8 +77,6 @@ const AssetCatalogV2VirtualizedTableImpl = <
 
   const closedGroups = useMemo(() => new Set(closedGroupsArray), [closedGroupsArray]);
 
-  console.log({closedGroups});
-
   const unGroupedRowItems = useMemo(() => {
     return allGroups.flatMap((group) => {
       if (!grouped[group]?.assets.length) {
