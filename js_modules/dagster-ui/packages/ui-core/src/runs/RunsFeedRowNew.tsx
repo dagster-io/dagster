@@ -1,6 +1,7 @@
 import {
   Box,
   Button,
+  Checkbox,
   Colors,
   Icon,
   Menu,
@@ -159,7 +160,7 @@ const getStatusName = (status: RunStatus): string => {
 
 const CreatedAtCell = ({entry}: {entry: RunsFeedTableEntryFragment}) => {
   const createdAtText = formatTimeAgo(entry.creationTime);
-  return <Box style={{color: '#64748b', fontSize: '14px', width: '88px', paddingRight: '12px', borderRight: '1px solid #d1d5db'}}>{createdAtText}</Box>;
+  return <Box style={{fontSize: '14px', width: '88px', paddingRight: '12px', borderRight: '1px solid #d1d5db'}}>{createdAtText}</Box>;
 };
 
 const TagsCell = ({entry}: {entry: RunsFeedTableEntryFragment}) => {
@@ -765,10 +766,12 @@ export const RunsFeedRow = ({entry}: {entry: RunsFeedTableEntryFragment}) => {
         alignItems: 'center',
         backgroundColor: 'var(--color-background-default)',
         height: '56px',
+        color: Colors.textLight(),
       }}
     >
-      {/* Left group: Launched by, Created at, Tags */}
+      {/* Left group: Checkbox, Launched by, Created at, Tags */}
       <Box style={{display: 'flex', alignItems: 'center', gap: '12px'}}>
+        <Checkbox checked={false} size="small" />
         <LaunchedByCell entry={entry} />
         <CreatedAtCell entry={entry} />
         <TagsCell entry={entry} />
@@ -796,13 +799,14 @@ export const RunsFeedTableHeader = () => {
         borderBottom: '1px solid #e1e5e9',
         fontSize: '14px',
         fontWeight: 400,
-        color: Colors.textLight(),
+        color: Colors.textLighter(),
         backgroundColor: 'var(--color-background-default)',
         alignItems: 'center',
       }}
     >
       {/* Left group headers */}
       <Box style={{display: 'flex', alignItems: 'center', gap: '12px'}}>
+        <Checkbox checked={false} size="small" /> {/* Select All checkbox */}
         <Box style={{width: '248px', paddingRight: '12px', textAlign: 'left'}}>Launched by</Box>
         <Box style={{width: '88px', paddingRight: '12px', textAlign: 'left'}}>Created at</Box>
         <Box style={{width: '76px', textAlign: 'left'}}>Tags</Box>
@@ -811,7 +815,23 @@ export const RunsFeedTableHeader = () => {
       {/* Right group headers */}
       <Box style={{display: 'flex', alignItems: 'center', gap: '24px'}}>
         <Box style={{textAlign: 'right', paddingRight: '12px'}}>Status</Box>
-        <Box style={{width: '32px', textAlign: 'right'}}></Box>
+        <Button
+          icon={<Icon name="checklist" />}
+          intent="none"
+          style={{
+            minWidth: 'auto',
+            width: '32px',
+            height: '32px',
+            padding: '4px',
+            border: 'none',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center'
+          }}
+          onClick={() => {
+            // TODO: Implement bulk actions functionality
+          }}
+        />
       </Box>
     </Box>
   );
