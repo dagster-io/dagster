@@ -47,10 +47,6 @@ def defs():
     return load_from_defs_folder(project_root=Path(__file__).parent.parent.parent)
 ```
 
-### For a code location
-
-To specify a default executor for all jobs and assets provided to a code location, create a file in your `/defs` folder that contains an `@definitions`-decorated function that returns a `Definitions` object with the executor specified.
-
 If a job explicitly specifies an executor, then that executor will be used. Otherwise, jobs that don't specify an executor will use the default provided to the code location:
 
 <CodeExample
