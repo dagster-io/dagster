@@ -12,6 +12,7 @@ from dagster import (
     OpExecutionContext,
     _check as check,
     multi_asset,
+    RetryPolicy,
 )
 from dagster._annotations import deprecated
 from dagster._core.definitions.assets.definition.asset_spec import AssetSpec
@@ -109,6 +110,7 @@ def _build_fivetran_assets(
     max_threadpool_workers: int = DEFAULT_MAX_THREADPOOL_WORKERS,
     translator: Optional[type[DagsterFivetranTranslator]] = None,
     connection_metadata: Optional["FivetranConnectionMetadata"] = None,
+    retry_policy: Optional[RetryPolicy] = None,
 ) -> Sequence[AssetsDefinition]:
     asset_key_prefix = check.opt_sequence_param(asset_key_prefix, "asset_key_prefix", of_type=str)
     check.invariant(
@@ -163,6 +165,7 @@ def _build_fivetran_assets(
         resource_defs=resource_defs,
         op_tags=op_tags,
         specs=asset_specs,
+        retry_policy=retry_policy,
     )
     def _assets(context: OpExecutionContext, fivetran: FivetranResource) -> Any:
         fivetran_output = fivetran.sync_and_poll(
@@ -408,6 +411,7 @@ def _build_fivetran_assets_from_metadata(
     fetch_column_metadata: bool,
     translator: Optional[type[DagsterFivetranTranslator]] = None,
     tags: Optional[Mapping[str, Any]] = None,
+    retry_policy: Optional[RetryPolicy] = None,
 ) -> AssetsDefinition:
     metadata = cast("Mapping[str, Any]", assets_defn_meta.extra_metadata)
     connector_id = cast("str", metadata["connector_id"])
@@ -441,6 +445,7 @@ def _build_fivetran_assets_from_metadata(
         op_tags=None,
         translator=translator,
         connection_metadata=connection_metadata,
+        retry_policy=retry_policy,
     )[0]
 
 
@@ -571,6 +576,9 @@ class FivetranInstanceCacheableAssetsDefinition(CacheableAssetsDefinition):
     def build_definitions(
         self, data: Sequence[AssetsDefinitionCacheableData]
     ) -> Sequence[AssetsDefinition]:
+        retries = None
+        if self._tags and "dagster/max_retries" in self._tags:
+            retries = int(self._tags["dagster/max_retries"])
         return [
             _build_fivetran_assets_from_metadata(
                 meta,
@@ -582,6 +590,7 @@ class FivetranInstanceCacheableAssetsDefinition(CacheableAssetsDefinition):
                 fetch_column_metadata=self._fetch_column_metadata,
                 translator=self._translator,
                 tags=self._tags,
+                retry_policy=RetryPolicy(max_retries=retries) if retries else None,
             )
             for meta in data
         ]
