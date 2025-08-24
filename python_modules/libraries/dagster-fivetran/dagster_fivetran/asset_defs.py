@@ -648,6 +648,9 @@ def load_assets_from_fivetran_instance(
             timed out. By default, this will never time out.
         fetch_column_metadata (bool): If True, will fetch column schema information for each table in the connector.
             This will induce additional API calls.
+        tags(Optional[Mapping[str, Any]]): Tags that can alter behavior when building or using this function by putting in specific keys, and then the program alters the steps according to the value in the key value pair. 
+            Namely if you use the key, dagster/max_retries, the int you place afterward will be the amount of times that the RetryPolicy will work. Can be further devoloped upon.
+        
 
     **Examples:**
 
@@ -682,46 +685,53 @@ def load_assets_from_fivetran_instance(
             connector_filter=lambda meta: "snowflake" in meta.name,
         )
     """
-    if isinstance(key_prefix, str):
-        key_prefix = [key_prefix]
-    key_prefix = check.list_param(key_prefix or [], "key_prefix", of_type=str)
+    try:
+        if isinstance(key_prefix, str):
+            key_prefix = [key_prefix]
+        key_prefix = check.list_param(key_prefix or [], "key_prefix", of_type=str)
 
-    check.invariant(
-        not (
-            (
-                key_prefix
-                or connector_to_group_fn
-                or io_manager_key
-                or connector_to_io_manager_key_fn
-                or connector_to_asset_key_fn
-            )
-            and translator
-        ),
-        "Cannot specify key_prefix, connector_to_group_fn, io_manager_key, connector_to_io_manager_key_fn, or connector_to_asset_key_fn when translator is specified",
-    )
-    connector_to_group_fn = connector_to_group_fn or _clean_name
+        check.invariant(
+            not (
+                (
+                    key_prefix
+                    or connector_to_group_fn
+                    or io_manager_key
+                    or connector_to_io_manager_key_fn
+                    or connector_to_asset_key_fn
+                )
+                and translator
+            ),
+            "Cannot specify key_prefix, connector_to_group_fn, io_manager_key, connector_to_io_manager_key_fn, or connector_to_asset_key_fn when translator is specified",
+        )
+        connector_to_group_fn = connector_to_group_fn or _clean_name
 
-    check.invariant(
-        not io_manager_key or not connector_to_io_manager_key_fn,
-        "Cannot specify both io_manager_key and connector_to_io_manager_key_fn",
-    )
-    if not connector_to_io_manager_key_fn:
-        connector_to_io_manager_key_fn = lambda _: io_manager_key
+        check.invariant(
+            not io_manager_key or not connector_to_io_manager_key_fn,
+            "Cannot specify both io_manager_key and connector_to_io_manager_key_fn",
+        )
+        if not connector_to_io_manager_key_fn:
+            connector_to_io_manager_key_fn = lambda _: io_manager_key
 
-    return FivetranInstanceCacheableAssetsDefinition(
-        fivetran_resource_def=fivetran,
-        key_prefix=key_prefix,
-        connector_to_group_fn=connector_to_group_fn,
-        connector_to_io_manager_key_fn=connector_to_io_manager_key_fn,
-        connector_filter=connector_filter,
-        connector_to_asset_key_fn=connector_to_asset_key_fn,
-        destination_ids=destination_ids,
-        poll_interval=poll_interval,
-        poll_timeout=poll_timeout,
-        fetch_column_metadata=fetch_column_metadata,
-        translator=translator,
-        tags=tags,
-    )
+        return FivetranInstanceCacheableAssetsDefinition(
+            fivetran_resource_def=fivetran,
+            key_prefix=key_prefix,
+            connector_to_group_fn=connector_to_group_fn,
+            connector_to_io_manager_key_fn=connector_to_io_manager_key_fn,
+            connector_filter=connector_filter,
+            connector_to_asset_key_fn=connector_to_asset_key_fn,
+            destination_ids=destination_ids,
+            poll_interval=poll_interval,
+            poll_timeout=poll_timeout,
+            fetch_column_metadata=fetch_column_metadata,
+            translator=translator,
+            tags=tags,
+        )
+    except Exception as e:
+        logger.warning(
+            "An error occured while loading an asset from a fivetran instance",
+            f"Exception: {e}",
+            exc_info=True,
+        )
 
 
 # -----------------------
