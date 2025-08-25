@@ -591,9 +591,9 @@ class DatabricksConfig(IHaveNew):
 
 @preview
 class ResolvedDatabricksNewClusterConfig(Resolvable, Model):
-    spark_version: str = "13.3.x-scala2.12"
-    node_type_id: str = "i3.xlarge"
-    num_workers: int = 1
+    spark_version: str
+    node_type_id: str
+    num_workers: int
 
 
 @preview
@@ -603,4 +603,4 @@ class ResolvedDatabricksExistingClusterConfig(Resolvable, Model):
 
 @preview
 class ResolvedDatabricksServerlessConfig(Resolvable, Model):
-    is_serverless: bool
+    is_serverless: bool = True
