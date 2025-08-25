@@ -158,6 +158,7 @@ class TimeWindowPartitionsDefinition(PartitionsDefinition, IHaveNew):
                 " TimeWindowPartitionsDefinition."
             )
 
+        cleaned_exclusions: Optional[set[Union[str, TimestampWithTimezone]]] = None
         if exclusions:
             check.set_param(
                 exclusions,
@@ -176,7 +177,7 @@ class TimeWindowPartitionsDefinition(PartitionsDefinition, IHaveNew):
                     " argument for a TimeWindowPartitionsDefinition. Expected a set of valid cron"
                     " strings and datetime objects."
                 )
-            cleaned_exclusions: set[Union[str, TimestampWithTimezone]] = set()
+            cleaned_exclusions = set()
             for exclusion_part in exclusions:
                 if isinstance(exclusion_part, datetime):
                     dt = exclusion_part.replace(tzinfo=get_timezone(timezone))
@@ -192,7 +193,7 @@ class TimeWindowPartitionsDefinition(PartitionsDefinition, IHaveNew):
             fmt=fmt,
             end_offset=end_offset,
             cron_schedule=cron_schedule,
-            exclusions=cleaned_exclusions if exclusions else None,
+            exclusions=cleaned_exclusions if cleaned_exclusions else None,
         )
 
     @property
