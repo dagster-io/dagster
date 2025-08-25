@@ -15,7 +15,6 @@
 
 .chartGraph {
   flex-grow: 1;
-  height: 160px;
   cursor: pointer;
 }
 
@@ -28,6 +27,7 @@
   font-size: 24px;
   font-weight: 500;
   margin-bottom: 2px;
+  line-height: 24px;
   display: flex;
   align-items: baseline;
   gap: 4px;

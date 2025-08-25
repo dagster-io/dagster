@@ -103,5 +103,5 @@ If you run into trouble during the installation process, reach out to the [Dagst
 ## Next steps
 
 - Follow the [Quickstart](/getting-started/quickstart) to get up and running with a basic Dagster project
-- Follow the [ETL pipeline tutorial](/etl-pipeline-tutorial) to learn how to build a more complex ETL pipeline
+- Follow the [Tutorial](/dagster-basics-tutorial) to learn how to build a more complex ETL pipeline
 - Add [assets](/guides/build/assets/defining-assets) to your Dagster project

@@ -3,6 +3,7 @@ import zlib
 from collections.abc import Mapping, Sequence
 from typing import AbstractSet, Any, NamedTuple, Optional  # noqa: UP035
 
+from dagster_shared.serdes.objects import DefsStateInfo
 from dagster_shared.serdes.serdes import SetToSequenceFieldSerializer
 
 import dagster._check as check
@@ -328,6 +329,7 @@ class ListRepositoriesResponse(
             ("container_image", Optional[str]),
             ("container_context", Optional[Mapping[str, Any]]),
             ("dagster_library_versions", Optional[Mapping[str, str]]),
+            ("defs_state_info", Optional[DefsStateInfo]),
         ],
     )
 ):
@@ -340,6 +342,7 @@ class ListRepositoriesResponse(
         container_image: Optional[str] = None,
         container_context: Optional[Mapping] = None,
         dagster_library_versions: Optional[Mapping[str, str]] = None,
+        defs_state_info: Optional[DefsStateInfo] = None,
     ):
         return super().__new__(
             cls,
@@ -367,6 +370,7 @@ class ListRepositoriesResponse(
             dagster_library_versions=check.opt_nullable_mapping_param(
                 dagster_library_versions, "dagster_library_versions"
             ),
+            defs_state_info=check.opt_inst_param(defs_state_info, "defs_state_info", DefsStateInfo),
         )
 
 

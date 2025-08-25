@@ -26,8 +26,7 @@ from dagster_dg_core.utils import (
 )
 from dagster_dg_core.utils.warnings import DgWarningIdentifier
 from dagster_shared.utils.config import get_default_dg_user_config_path
-
-from dagster_dg_core_tests.utils import (
+from dagster_test.dg_utils.utils import (
     ConfigFileType,
     ProxyRunner,
     assert_runner_result,
@@ -282,18 +281,6 @@ def test_missing_dg_registry_module_in_manifest_warning():
                 EnvRegistry.from_dg_context(context)
 
 
-def test_context_with_autoload_defs_and_definitions_py():
-    with (
-        ProxyRunner.test() as runner,
-        isolated_example_project_foo_bar(runner, in_workspace=False, uv_sync=True),
-    ):
-        # Set autoload_defs to true in pyproject.toml
-        with modify_dg_toml_config_as_dict(Path("pyproject.toml")) as toml:
-            create_toml_node(toml, ("project", "autoload_defs"), True)
-        with dg_warns("`project.autoload_defs` is enabled, but a code location load target"):
-            DgContext.for_project_environment(Path.cwd(), {})
-
-
 # ########################
 # ##### CONFIG TESTS
 # ########################
@@ -401,35 +388,25 @@ def test_invalid_config_project(config_file: ConfigFileType):
                 _set_and_detect_missing_required_key(config_file, path, expected_type)
 
         with _reset_config_file(config_file):
-            full_registry_modules_key = _get_full_str_path(config_file, "project.registry_modules")
-            err_msg = f"Invalid module pattern `foo.*bar` at `{full_registry_modules_key}`"
-            _set_and_detect_error(
+            expected_type = "A pattern consisting of '.'-separated segments that are either valid Python identifiers or wildcards ('*')."
+            _set_and_detect_mistyped_value(
                 config_file,
-                ("project", "registry_modules"),
-                ["foo.*bar"],
-                err_msg,
+                "project.registry_modules[0]",
+                expected_type,
+                "foo.*bar",
             )
 
-        # Test specifying autoload_defs and code_location_target_module
-        # errors.
+        # test that multiple errors are reported
         with _reset_config_file(config_file):
             with modify_dg_toml_config_as_dict(Path(config_file)) as toml:
-                create_toml_node(
-                    toml,
-                    ("project", "autoload_defs"),
-                    True,
-                )
-
-            full_code_location_key = _get_full_str_path(
-                config_file, "project.code_location_target_module"
+                create_toml_node(toml, ("project", "invalid_key"), True)
+                set_toml_node(toml, ("project", "root_module"), 1)
+            err_msg_1 = _get_invalid_key_error_message("project.invalid_key", config_file)
+            err_msg_2 = _get_mistyped_value_error_message(
+                "project.root_module", str, config_file, 1
             )
-            err_msg = f"Cannot specify `{full_code_location_key}`"
-            _set_and_detect_error(
-                config_file,
-                ("project", "code_location_target_module"),
-                "foo_bar._definitions",
-                err_msg,
-            )
+            with dg_exits(re.escape(err_msg_1), re.escape(err_msg_2)):
+                DgContext.from_file_discovery_and_command_line_config(Path.cwd(), {})
 
 
 @pytest.mark.parametrize("config_file", ["dg.toml", "pyproject.toml"])
@@ -453,13 +430,6 @@ def test_code_location_config(config_file: ConfigFileType):
         ProxyRunner.test() as runner,
         isolated_example_project_foo_bar(runner, config_file_type=config_file),
     ):
-        with modify_dg_toml_config_as_dict(Path(config_file)) as toml:
-            create_toml_node(
-                toml,
-                ("project", "autoload_defs"),
-                False,
-            )
-
         context = DgContext.for_project_environment(Path.cwd(), {})
         assert context.code_location_target_module_name == "foo_bar.definitions"
         assert context.code_location_name == "foo-bar"
@@ -524,32 +494,48 @@ def _set_and_detect_error(
 def _set_and_detect_invalid_key(
     config_file: ConfigFileType, str_path: str, config_value: object = True
 ):
+    error_message = _get_invalid_key_error_message(str_path, config_file)
     path = toml_path_from_str(str_path)
-    leading_str_path, key = toml_path_to_str(path[:-1]), path[-1]
+    _set_and_detect_error(config_file, path, config_value, error_message)
+
+
+def _get_invalid_key_error_message(str_path: str, config_file: ConfigFileType) -> str:
+    leading_str_path, key = (
+        toml_path_to_str(toml_path_from_str(str_path)[:-1]),
+        toml_path_from_str(str_path)[-1],
+    )
     full_leading_str_path = _get_full_str_path(config_file, leading_str_path)
-    error_message = "\n".join(
+    return "\n".join(
         [
-            rf"Unrecognized fields at `{full_leading_str_path}`:",
-            rf"    ['{key}']",
+            rf"Unrecognized field at `{full_leading_str_path}`:",
+            rf"    {key}",
         ]
     )
-    _set_and_detect_error(config_file, path, config_value, error_message)
 
 
 # expected_type Any to handle typing constructs (`Literal` etc)
 def _set_and_detect_mistyped_value(
     config_file: ConfigFileType, str_path: str, expected_type: Any, config_value: object
 ):
+    error_message = _get_mistyped_value_error_message(
+        str_path, expected_type, config_file, config_value
+    )
     path = toml_path_from_str(str_path)
+    _set_and_detect_error(config_file, path, config_value, error_message)
+
+
+def _get_mistyped_value_error_message(
+    str_path: str, expected_type: Any, config_file: ConfigFileType, config_value: object
+) -> str:
     expected_str = get_type_str(expected_type)
     full_str_path = _get_full_str_path(config_file, str_path)
-    error_message = "\n".join(
+    return "\n".join(
         [
             rf"Invalid value for `{full_str_path}`:",
-            rf"    Expected {expected_str}, got `{config_value}`",
+            rf"    Expected: {expected_str}",
+            rf"    Received: {config_value}",
         ]
     )
-    _set_and_detect_error(config_file, path, config_value, error_message)
 
 
 # expected_type Any to handle typing constructs (`Literal` etc)
@@ -562,7 +548,7 @@ def _set_and_detect_missing_required_key(
     error_message = "\n".join(
         [
             rf"Missing required value for `{full_str_path}`:",
-            rf"   Expected {expected_str}",
+            rf"    Expected: {expected_str}",
         ]
     )
     with modify_dg_toml_config_as_dict(Path(config_file)) as toml:

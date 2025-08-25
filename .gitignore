@@ -192,3 +192,4 @@ exponent.txt
 
 # personal claude files
 .claude/**/*.local.md
+.claude/.local

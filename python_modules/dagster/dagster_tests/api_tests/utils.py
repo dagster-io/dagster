@@ -6,9 +6,8 @@ from typing import Optional
 import dagster as dg
 from dagster._core.instance import DagsterInstance
 from dagster._core.remote_origin import ManagedGrpcPythonEnvCodeLocationOrigin
-from dagster._core.remote_representation import JobHandle
 from dagster._core.remote_representation.code_location import GrpcServerCodeLocation
-from dagster._core.remote_representation.handle import RepositoryHandle
+from dagster._core.remote_representation.handle import JobHandle, RepositoryHandle
 from dagster._core.types.loadable_target_origin import LoadableTargetOrigin
 from dagster._core.workspace.context import WorkspaceProcessContext, WorkspaceRequestContext
 from dagster._core.workspace.load_target import PythonFileTarget

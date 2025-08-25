@@ -5,11 +5,7 @@ from unittest import mock
 
 import pytest
 from dagster_dg_cli.cli.utils import DEFAULT_SCHEMA_FOLDER_NAME
-from dagster_dg_core.utils import ensure_dagster_dg_tests_import
-
-ensure_dagster_dg_tests_import()
-
-from dagster_dg_core_tests.utils import ProxyRunner, isolated_example_project_foo_bar
+from dagster_test.dg_utils.utils import ProxyRunner, isolated_example_project_foo_bar
 
 
 def mock_vscode_cli_command(editor, args: list[str]) -> bytes:
@@ -23,7 +19,8 @@ def test_utils_configure_editor(editor: str) -> None:
         TemporaryDirectory() as extension_dir,
         mock.patch("dagster_dg_core.utils.editor.has_editor_cli_command", new=lambda x: True),
         mock.patch(
-            "dagster_dg_core.utils.editor.run_editor_cli_command", new=mock_vscode_cli_command
+            "dagster_dg_core.utils.editor.run_editor_cli_command",
+            new=mock_vscode_cli_command,
         ),
         mock.patch(
             "dagster_dg_core.utils.editor.get_default_extension_dir",

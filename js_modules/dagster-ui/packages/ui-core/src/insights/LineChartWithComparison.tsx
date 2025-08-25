@@ -7,7 +7,6 @@ import {
   Icon,
   Mono,
   Spinner,
-  Subheading,
 } from '@dagster-io/ui-components';
 import {
   CategoryScale,
@@ -21,7 +20,7 @@ import {
   Tooltip,
 } from 'chart.js';
 import CrosshairPlugin from 'chartjs-plugin-crosshair';
-import React, {memo, useCallback, useMemo, useRef} from 'react';
+import React, {useCallback, useMemo, useRef} from 'react';
 import {Line} from 'react-chartjs-2';
 
 import {TooltipCard} from './InsightsChartShared';
@@ -36,81 +35,60 @@ import {useFormatDateTime} from '../ui/useFormatDateTime';
 
 ChartJS.register(LineElement, CategoryScale, LinearScale, PointElement, Tooltip);
 
+type PeriodData = {
+  label: string;
+  data: (number | null)[];
+  timestamps: number[];
+  aggregateValue: number | null;
+  color: string;
+};
+
 export type LineChartMetrics = {
   title: string;
   color: string;
-  timestamps: number[];
   pctChange: number | null;
-  currentPeriod: {
-    label: string;
-    data: (number | null)[];
-    aggregateValue: number | null;
-    color: string;
-  };
-  prevPeriod: {
-    label: string;
-    data: (number | null)[];
-    aggregateValue: number | null;
-    color: string;
-  };
+  currentPeriod: PeriodData;
+  prevPeriod: PeriodData;
 };
 
 export const getDataset = (
   metrics: LineChartMetrics,
-  formatDatetime: (date: Date, options: Intl.DateTimeFormatOptions) => string,
-): ChartData<'line', (number | null)[], string> => {
-  const firstTimestamp = metrics.timestamps[0] ?? null;
-  const lastTimestamp = metrics.timestamps[metrics.timestamps.length - 1] ?? null;
-
-  const start = firstTimestamp
-    ? formatDatetime(new Date(firstTimestamp * 1000), {
-        month: 'short',
-        day: 'numeric',
-      })
-    : '';
-  const end = lastTimestamp
-    ? formatDatetime(new Date(lastTimestamp * 1000), {
-        month: 'short',
-        day: 'numeric',
-      })
-    : '';
-
-  const labels = metrics.timestamps.length
-    ? [start, ...Array(metrics.timestamps.length - 2).fill(''), end]
-    : [];
-
-  return {
-    labels,
-    datasets: [
-      {
-        label: metrics.currentPeriod.label,
-        data: metrics.currentPeriod.data,
-        borderColor: metrics.currentPeriod.color,
-        backgroundColor: 'transparent',
-        pointRadius: 0,
-        borderWidth: 2,
-        pointHoverRadius: 6,
-        pointHoverBorderColor: metrics.currentPeriod.color,
-      },
-      {
-        label: metrics.prevPeriod.label,
-        data: metrics.prevPeriod.data,
-        borderColor: metrics.prevPeriod.color,
-        backgroundColor: 'transparent',
-        pointRadius: 0,
-        borderWidth: 2,
-        pointHoverRadius: 6,
-        pointHoverBorderColor: metrics.prevPeriod.color,
-      },
-    ],
-  };
+): ChartData<'line', (number | null)[], string>['datasets'] => {
+  return [
+    {
+      label: `current: ${metrics.currentPeriod.label}`,
+      data: metrics.currentPeriod.data,
+      borderColor: metrics.currentPeriod.color,
+      backgroundColor: 'transparent',
+      pointRadius: 0,
+      borderWidth: 2,
+      pointHoverRadius: 6,
+      pointHoverBorderColor: metrics.currentPeriod.color,
+    },
+    {
+      label: `previous: ${metrics.prevPeriod.label}`,
+      data: metrics.prevPeriod.data,
+      borderColor: metrics.prevPeriod.color,
+      backgroundColor: 'transparent',
+      pointRadius: 0,
+      borderWidth: 2,
+      pointHoverRadius: 6,
+      pointHoverBorderColor: metrics.prevPeriod.color,
+    },
+  ];
 };
 
-type MetricDialogData<T> = {
-  after: number;
-  before: number;
+export type MetricDialogData<T> = {
+  current?: {
+    before: number;
+    after: number;
+  };
+  previous?: {
+    before: number;
+    after: number;
+  };
   metric: T;
-  unit: string;
+  unitType: ReportingUnitType;
 };
 
 interface Props<T> {
@@ -118,11 +96,40 @@ interface Props<T> {
   loading: boolean;
   unitType: ReportingUnitType;
   openMetricDialog?: (data: MetricDialogData<T>) => void;
+  showPreviousAggregate?: boolean;
   metricName: T;
+  tickLabels: string[];
+  height?: number;
+  width?: number;
 }
 
-const InnerLineChartWithComparison = <T,>(props: Props<T>) => {
-  const {metrics, loading, unitType, openMetricDialog, metricName} = props;
+export const LineChartWithComparison = <T,>(props: Props<T>) => {
+  return (
+    <div className={styles.chartContainer}>
+      <div className={styles.chartHeader}>
+        <Box flex={{direction: 'row', gap: 4, justifyContent: 'space-between'}}>
+          <BodyLarge>{props.metrics.title}</BodyLarge>
+          {props.loading ? <Spinner purpose="body-text" /> : null}
+        </Box>
+      </div>
+      <InnerLineChartWithComparison {...props} />
+    </div>
+  );
+};
+
+export const InnerLineChartWithComparison = <T,>(props: Props<T>) => {
+  const {
+    metrics,
+    loading,
+    unitType,
+    openMetricDialog,
+    metricName,
+    showPreviousAggregate,
+    tickLabels,
+    height = 160,
+    width,
+  } = props;
+
   const formatDatetime = useFormatDateTime();
   const rgbColors = useRGBColorsForTheme();
 
@@ -130,32 +137,55 @@ const InnerLineChartWithComparison = <T,>(props: Props<T>) => {
     useCallback(
       ({context}: {context: Context}) => {
         const {tooltip} = context;
-        const currentPeriodDataPoint = tooltip.dataPoints[0];
-        const prevPeriodDataPoint = tooltip.dataPoints[1];
+        const currentPeriodDataPoint = tooltip.dataPoints.find((point) =>
+          point.dataset.label?.startsWith('current:'),
+        );
+        const prevPeriodDataPoint = tooltip.dataPoints.find((point) =>
+          point.dataset.label?.startsWith('previous:'),
+        );
 
-        if (!currentPeriodDataPoint || !prevPeriodDataPoint) {
+        if (!currentPeriodDataPoint && !prevPeriodDataPoint) {
           return <div />;
         }
 
-        const timestamp = metrics.timestamps[currentPeriodDataPoint.dataIndex];
-        if (!timestamp) {
+        const currentTimestamp = currentPeriodDataPoint
+          ? metrics.currentPeriod.timestamps[currentPeriodDataPoint.dataIndex]
+          : null;
+        const previousTimestamp = prevPeriodDataPoint
+          ? metrics.prevPeriod.timestamps[prevPeriodDataPoint.dataIndex]
+          : null;
+
+        if (!currentTimestamp && !previousTimestamp) {
           return <div />;
         }
 
-        const date = formatDatetime(new Date(timestamp * 1000), {
-          month: 'short',
-          day: 'numeric',
-          hour: 'numeric',
-          minute: 'numeric',
-        });
-        const currentPeriodMetric = metrics.currentPeriod.data[currentPeriodDataPoint.dataIndex];
+        const currentPeriodDate = currentTimestamp
+          ? formatDatetime(new Date(currentTimestamp * 1000), {
+              month: 'short',
+              day: 'numeric',
+              hour: 'numeric',
+              minute: 'numeric',
+            })
+          : null;
+        const previousPeriodDate = previousTimestamp
+          ? formatDatetime(new Date(previousTimestamp * 1000), {
+              month: 'short',
+              day: 'numeric',
+              hour: 'numeric',
+              minute: 'numeric',
+            })
+          : null;
+
+        const currentPeriodMetric = currentPeriodDataPoint
+          ? metrics.currentPeriod.data[currentPeriodDataPoint.dataIndex]
+          : null;
+        const previousPeriodMetric = prevPeriodDataPoint
+          ? metrics.prevPeriod.data[prevPeriodDataPoint.dataIndex]
+          : null;
 
         return (
           <TooltipCard>
             <Box flex={{direction: 'column'}}>
-              <Box border="bottom" padding={{horizontal: 12, vertical: 8}}>
-                <Subheading>{date}</Subheading>
-              </Box>
               <Box padding={{horizontal: 16, vertical: 12}}>
                 <Box
                   flex={{direction: 'row', justifyContent: 'space-between'}}
@@ -168,12 +198,13 @@ const InnerLineChartWithComparison = <T,>(props: Props<T>) => {
                         height: 8,
                         backgroundColor: metrics.currentPeriod.color,
                         borderRadius: '50%',
+                        fontVariantNumeric: 'tabular-nums',
                       }}
                     />
-                    <Body>Current period</Body>
+                    <Body>{currentPeriodDate ?? <>&mdash;</>}</Body>
                   </Box>
                   <Box flex={{direction: 'row', alignItems: 'center', gap: 4}}>
-                    <Mono>{currentPeriodDataPoint?.formattedValue ?? 0}</Mono>
+                    <Mono>{currentPeriodDataPoint?.formattedValue ?? <>&mdash;</>}</Mono>
                     <Body color={Colors.textLight()}>{unitTypeToLabel[unitType]}</Body>
                   </Box>
                 </Box>
@@ -185,17 +216,18 @@ const InnerLineChartWithComparison = <T,>(props: Props<T>) => {
                         height: 8,
                         backgroundColor: metrics.prevPeriod.color,
                         borderRadius: '50%',
+                        fontVariantNumeric: 'tabular-nums',
                       }}
                     />
-                    <Body>Previous period</Body>
+                    <Body>{previousPeriodDate}</Body>
                   </Box>
                   <Box flex={{direction: 'row', alignItems: 'center', gap: 4}}>
-                    <Mono>{prevPeriodDataPoint?.formattedValue ?? 0}</Mono>
+                    <Mono>{prevPeriodDataPoint?.formattedValue ?? <>&mdash;</>}</Mono>
                     <Body color={Colors.textLight()}>{unitTypeToLabel[unitType]}</Body>
                   </Box>
                 </Box>
               </Box>
-              {currentPeriodMetric && openMetricDialog ? (
+              {(currentPeriodMetric || previousPeriodMetric) && openMetricDialog ? (
                 <Box padding={{horizontal: 12, vertical: 8}} border="top">
                   <Body color={Colors.textLight()}>Click to view details</Body>
                 </Box>
@@ -284,7 +316,7 @@ const InnerLineChartWithComparison = <T,>(props: Props<T>) => {
 
   const chartRef = useRef(null);
   const onClick = (event: React.MouseEvent<HTMLCanvasElement>) => {
-    if (!chartRef.current) {
+    if (!chartRef.current || !openMetricDialog) {
       return;
     }
 
@@ -305,29 +337,40 @@ const InnerLineChartWithComparison = <T,>(props: Props<T>) => {
       if (element) {
         const index = element.index;
         let timeSliceSeconds = 60 * 60; // Default to 1 hour
-        if (metrics.timestamps.length >= 2) {
-          const timeSliceStart = metrics.timestamps[0];
-          const timeSliceEnd = metrics.timestamps[1];
+        if (metrics.currentPeriod.timestamps.length >= 2) {
+          const timeSliceStart = metrics.currentPeriod.timestamps[0];
+          const timeSliceEnd = metrics.currentPeriod.timestamps[1];
           if (timeSliceStart && timeSliceEnd) {
             timeSliceSeconds = timeSliceEnd - timeSliceStart;
           }
         }
 
-        const before = metrics.timestamps[index];
-        if (typeof before !== 'number') {
-          return;
-        }
+        const currentTime = metrics.currentPeriod.timestamps[index];
+        const previousTime = metrics.prevPeriod.timestamps[index];
+        const currentDataAtIndex = metrics.currentPeriod.data[index];
+        const previousDataAtIndex = metrics.prevPeriod.data[index];
 
-        const after = before - timeSliceSeconds;
+        const current =
+          currentTime && currentDataAtIndex
+            ? {
+                before: currentTime - timeSliceSeconds,
+                after: currentTime,
+              }
+            : undefined;
+        const previous =
+          previousTime && previousDataAtIndex
+            ? {
+                before: previousTime - timeSliceSeconds,
+                after: previousTime,
+              }
+            : undefined;
 
-        // Only open the dialog if data exists for the clicked index
-        // in the current period
-        if (metrics.currentPeriod.data[index] && openMetricDialog) {
+        if (current || previous) {
           openMetricDialog({
-            after,
-            before,
+            current,
+            previous,
             metric: metricName,
-            unit: unitType,
+            unitType,
           });
         }
       }
@@ -349,59 +392,61 @@ const InnerLineChartWithComparison = <T,>(props: Props<T>) => {
   );
 
   return (
-    <div className={styles.chartContainer}>
-      <div className={styles.chartHeader}>
-        <Box flex={{direction: 'row', gap: 4, justifyContent: 'space-between'}}>
-          <BodyLarge>{metrics.title}</BodyLarge>
-          {loading ? <Spinner purpose="body-text" /> : null}
-        </Box>
-      </div>
+    <>
       <Box flex={{direction: 'column', justifyContent: 'space-between'}}>
-        <div className={styles.chartCount}>
-          {metrics.currentPeriod.aggregateValue
-            ? numberFormatterWithMaxFractionDigits(2).format(currentPeriodDisplayValueAndUnit.value)
-            : 0}
-          <Body color={Colors.textDefault()}>{currentPeriodDisplayValueAndUnit.unit}</Body>
-        </div>
-        <Box
-          className={styles.chartChange}
-          flex={{direction: 'row', gap: 4, justifyContent: 'space-between'}}
-        >
-          <Box flex={{direction: 'row', gap: 4, alignItems: 'center'}}>
-            {metrics.prevPeriod.aggregateValue
-              ? numberFormatterWithMaxFractionDigits(2).format(prevPeriodDisplayValueAndUnit.value)
+        {loading ? (
+          <div className={styles.chartCount}>&mdash;</div>
+        ) : (
+          <div className={styles.chartCount}>
+            {metrics.currentPeriod.aggregateValue
+              ? numberFormatterWithMaxFractionDigits(2).format(
+                  currentPeriodDisplayValueAndUnit.value,
+                )
               : 0}
-            <span> prev period</span>
+            <Body color={Colors.textDefault()}>{currentPeriodDisplayValueAndUnit.unit}</Body>
+          </div>
+        )}
+        {showPreviousAggregate ? (
+          <Box
+            className={styles.chartChange}
+            flex={{direction: 'row', gap: 4, justifyContent: 'space-between'}}
+          >
+            <Box flex={{direction: 'row', gap: 4, alignItems: 'center'}}>
+              {metrics.prevPeriod.aggregateValue
+                ? numberFormatterWithMaxFractionDigits(2).format(
+                    prevPeriodDisplayValueAndUnit.value,
+                  )
+                : 0}
+              <span> prev period</span>
+            </Box>
+            <Box flex={{direction: 'row', gap: 4, alignItems: 'center'}}>
+              {metrics.pctChange && metrics.pctChange > 0 ? (
+                <Icon name="trending_up" size={16} color={Colors.textLighter()} />
+              ) : metrics.pctChange && metrics.pctChange < 0 ? (
+                <Icon name="trending_down" size={16} color={Colors.textLighter()} />
+              ) : null}
+              {percentFormatter.format(Math.abs(metrics.pctChange ?? 0))}
+            </Box>
           </Box>
-          <Box flex={{direction: 'row', gap: 4, alignItems: 'center'}}>
-            {metrics.pctChange && metrics.pctChange > 0 ? (
-              <Icon name="trending_up" size={16} color={Colors.textLighter()} />
-            ) : metrics.pctChange && metrics.pctChange < 0 ? (
-              <Icon name="trending_down" size={16} color={Colors.textLighter()} />
-            ) : null}
-            {percentFormatter.format(Math.abs(metrics.pctChange ?? 0))}
-          </Box>
-        </Box>
+        ) : null}
       </Box>
       <div className={styles.chartWrapper}>
-        <div className={styles.chartGraph}>
+        <div className={styles.chartGraph} style={{height}}>
           <Line
             ref={chartRef}
-            data={getDataset(metrics, formatDatetime)}
+            data={{labels: tickLabels, datasets: getDataset(metrics)}}
             options={options}
             onClick={onClick}
             plugins={[CrosshairPlugin as Plugin<'line'>]}
             updateMode="none"
+            height={height}
+            width={width}
           />
         </div>
       </div>
-    </div>
+    </>
   );
 };
-
-export const LineChartWithComparison = memo(
-  InnerLineChartWithComparison,
-) as typeof InnerLineChartWithComparison;
 
 const unitTypeToLabel: Record<ReportingUnitType, string> = {
   [ReportingUnitType.TIME_MS]: 'ms',

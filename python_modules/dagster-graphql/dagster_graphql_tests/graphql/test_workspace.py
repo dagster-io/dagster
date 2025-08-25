@@ -357,7 +357,9 @@ class TestLoadWorkspace(BaseTestSuite):
             mock_fetch.side_effect = Exception("boom")
 
             result = execute_dagster_graphql(
-                graphql_context, LOCATION_ENTRY_QUERY, {"name": main_repo_location_name()}
+                graphql_context,
+                LOCATION_ENTRY_QUERY,
+                {"name": main_repo_location_name()},
             )
             assert result
             assert result.data["workspaceLocationEntryOrError"]

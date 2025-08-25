@@ -119,6 +119,7 @@ from dagster_graphql.schema.backfill import (
 from dagster_graphql.schema.entity_key import GrapheneAssetKey
 from dagster_graphql.schema.env_vars import GrapheneEnvVarWithConsumersListOrError
 from dagster_graphql.schema.external import (
+    GrapheneDefsStateInfo,
     GrapheneRepositoriesOrError,
     GrapheneRepositoryConnection,
     GrapheneRepositoryOrError,
@@ -647,6 +648,11 @@ class GrapheneQuery(graphene.ObjectType):
         limit=graphene.NonNull(graphene.Int),
         cursor=graphene.String(),
         description="Retrieve the executions for a given asset check.",
+    )
+
+    latestDefsStateInfo = graphene.Field(
+        GrapheneDefsStateInfo,
+        description="Retrieve the latest available DefsStateInfo for the current workspace.",
     )
 
     @capture_error
@@ -1381,3 +1387,10 @@ class GrapheneQuery(graphene.ObjectType):
             limit=limit,
             cursor=cursor,
         )
+
+    def resolve_latestDefsStateInfo(self, graphene_info: ResolveInfo):
+        defs_state_storage = graphene_info.context.instance.defs_state_storage
+        latest_info = (
+            defs_state_storage.get_latest_defs_state_info() if defs_state_storage else None
+        )
+        return GrapheneDefsStateInfo(latest_info) if latest_info else None

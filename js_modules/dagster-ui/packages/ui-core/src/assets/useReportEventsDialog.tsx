@@ -3,6 +3,7 @@ import {
   Box,
   Button,
   Caption,
+  Checkbox,
   Dialog,
   DialogFooter,
   DialogHeader,
@@ -14,6 +15,7 @@ import {
 import {useMemo, useState} from 'react';
 
 import {partitionCountString} from './AssetNodePartitionCounts';
+import {AssetPartitionStatus} from './AssetPartitionStatus';
 import {
   explodePartitionKeysInSelectionMatching,
   mergedAssetHealth,
@@ -35,6 +37,7 @@ import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
 import {PythonErrorInfo} from '../app/PythonErrorInfo';
 import {AssetEventType, AssetKeyInput, PartitionDefinitionType} from '../graphql/types';
 import {DimensionRangeWizards} from '../partitions/DimensionRangeWizards';
+import {testId} from '../testing/testId';
 import {ToggleableSection} from '../ui/ToggleableSection';
 import {RepoAddress} from '../workspace/types';
 
@@ -161,11 +164,29 @@ const ReportEventDialogBody = ({
     defaultSelection: 'empty',
   });
 
+  const [filterFailed, setFilterFailed] = useState(true);
+  const [filterMissing, setFilterMissing] = useState(true);
   const keysFiltered = useMemo(() => {
-    return explodePartitionKeysInSelectionMatching(selections, () => true);
-  }, [selections]);
+    return explodePartitionKeysInSelectionMatching(selections, (keyIdx) => {
+      if (!filterFailed && !filterMissing) {
+        return true;
+      }
+
+      const state = assetHealth.stateForKeyIdx(keyIdx);
+      if (filterFailed && state.includes(AssetPartitionStatus.FAILED)) {
+        return true;
+      }
+      if (filterMissing && state.includes(AssetPartitionStatus.MISSING)) {
+        return true;
+      }
+      return false;
+    });
+  }, [selections, assetHealth, filterFailed, filterMissing]);
+
+  const [isReporting, setIsReporting] = useState(false);
 
   const onReportEvent = async () => {
+    setIsReporting(true);
     const result = await mutation({
       variables: {
         eventParams: {
@@ -176,6 +197,7 @@ const ReportEventDialogBody = ({
         },
       },
     });
+    setIsReporting(false);
     const data = result.data?.reportRunlessAssetEvents;
 
     if (!data || data.__typename === 'PythonError') {
@@ -250,6 +272,25 @@ const ReportEventDialogBody = ({
             displayedHealth={assetHealth}
             displayedPartitionDefinition={assetPartitionDef}
           />
+          {/* Only show the failed and missing filters for multi-dimensional partitions */}
+          {/* because DimensionRangeWizards will set quickSelectButtons to false for multi-dimensional partitions */}
+          {/* so this is the only way for the user to filter to failed and missing partitions */}
+          {selections.length > 1 && (
+            <Box padding={{vertical: 8, horizontal: 20}} flex={{direction: 'column', gap: 8}}>
+              <Checkbox
+                data-testid={testId('failed-only-checkbox')}
+                label="Report only failed partitions within selection"
+                checked={filterFailed}
+                onChange={() => setFilterFailed(!filterFailed)}
+              />
+              <Checkbox
+                data-testid={testId('missing-only-checkbox')}
+                label="Report only missing partitions within selection"
+                checked={filterMissing}
+                onChange={() => setFilterMissing(!filterMissing)}
+              />
+            </Box>
+          )}
         </ToggleableSection>
       ) : undefined}
 
@@ -268,19 +309,26 @@ const ReportEventDialogBody = ({
       </Box>
       <DialogFooter topBorder>
         <Button onClick={() => setIsOpen(false)}>Cancel</Button>
-        <Tooltip
-          content={DEFAULT_DISABLED_REASON}
-          canShow={!asset.hasReportRunlessAssetEventPermission}
-        >
-          <Button
-            intent="primary"
-            onClick={onReportEvent}
-            disabled={!asset.hasReportRunlessAssetEventPermission}
+        <Tooltip content="No partitions selected" canShow={keysFiltered.length === 0}>
+          <Tooltip
+            content={DEFAULT_DISABLED_REASON}
+            canShow={!asset.hasReportRunlessAssetEventPermission}
           >
-            {keysFiltered.length > 1
-              ? `Report ${keysFiltered.length.toLocaleString()} events`
-              : 'Report event'}
-          </Button>
+            <Button
+              intent="primary"
+              onClick={onReportEvent}
+              disabled={
+                !asset.hasReportRunlessAssetEventPermission ||
+                isReporting ||
+                keysFiltered.length === 0
+              }
+              loading={isReporting}
+            >
+              {keysFiltered.length > 1
+                ? `Report ${keysFiltered.length.toLocaleString()} events`
+                : 'Report event'}
+            </Button>
+          </Tooltip>
         </Tooltip>
       </DialogFooter>
     </>

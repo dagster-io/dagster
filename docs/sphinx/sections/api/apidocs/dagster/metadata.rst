@@ -72,7 +72,7 @@ Code references
 ^^^^^^^^^^^^^^^
 
 The following functions are used to attach source code references to your assets.
-For more information, refer to the `Linking to asset definition code with code references <https://docs.dagster.io/guides/dagster/code-references>`_ guide.
+For more information, refer to the `Linking to asset definition code with code references <https://docs.dagster.io/guides/build/assets/metadata-and-tags#source-code>`_ guide.
 
 
 .. autofunction:: with_source_code_references

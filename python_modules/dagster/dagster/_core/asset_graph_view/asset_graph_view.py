@@ -130,6 +130,10 @@ class AssetGraphView(LoadingContext):
         )
 
     @property
+    def partition_loading_context(self) -> PartitionLoadingContext:
+        return self._partition_loading_context
+
+    @property
     def instance(self) -> "DagsterInstance":
         return self._instance
 

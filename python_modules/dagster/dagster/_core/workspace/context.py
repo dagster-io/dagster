@@ -17,6 +17,7 @@ from dagster._core.definitions.asset_key import AssetKey
 from dagster._core.definitions.assets.graph.remote_asset_graph import RemoteRepositoryAssetNode
 from dagster._core.definitions.data_time import CachingDataTimeResolver
 from dagster._core.definitions.data_version import CachingStaleStatusResolver
+from dagster._core.definitions.partitions.context import partition_loading_context
 from dagster._core.definitions.selector import (
     JobSelector,
     JobSubsetSelector,
@@ -34,14 +35,10 @@ from dagster._core.remote_origin import (
     GrpcServerCodeLocationOrigin,
     ManagedGrpcPythonEnvCodeLocationOrigin,
 )
-from dagster._core.remote_representation import (
-    CodeLocation,
-    GrpcServerCodeLocation,
+from dagster._core.remote_representation.code_location import CodeLocation, GrpcServerCodeLocation
+from dagster._core.remote_representation.external import (
     RemoteExecutionPlan,
     RemoteJob,
-    RepositoryHandle,
-)
-from dagster._core.remote_representation.external import (
     RemoteRepository,
     RemoteSchedule,
     RemoteSensor,
@@ -52,7 +49,7 @@ from dagster._core.remote_representation.grpc_server_state_subscriber import (
     LocationStateChangeEventType,
     LocationStateSubscriber,
 )
-from dagster._core.remote_representation.handle import InstigatorHandle
+from dagster._core.remote_representation.handle import InstigatorHandle, RepositoryHandle
 from dagster._core.snap.dagster_types import DagsterTypeSnap
 from dagster._core.snap.mode import ResourceDefSnap
 from dagster._core.snap.node import GraphDefSnap, OpDefSnap
@@ -78,7 +75,7 @@ from dagster._utils.error import SerializableErrorInfo, serializable_error_info_
 
 if TYPE_CHECKING:
     from dagster._core.definitions.assets.graph.remote_asset_graph import RemoteWorkspaceAssetGraph
-    from dagster._core.remote_representation import (
+    from dagster._core.remote_representation.external_data import (
         PartitionConfigSnap,
         PartitionExecutionErrorSnap,
         PartitionNamesSnap,
@@ -102,6 +99,8 @@ class BaseWorkspaceRequestContext(LoadingContext):
     into errors.
     """
 
+    _exit_stack: ExitStack
+
     @property
     @abstractmethod
     def instance(self) -> DagsterInstance: ...
@@ -117,6 +116,16 @@ class BaseWorkspaceRequestContext(LoadingContext):
     # implemented here since they require the full CurrentWorkspace
     def get_code_location_entries(self) -> Mapping[str, CodeLocationEntry]:
         return self.get_current_workspace().code_location_entries
+
+    def __enter__(self) -> Self:
+        self._exit_stack = ExitStack()
+        self._exit_stack.enter_context(
+            partition_loading_context(dynamic_partitions_store=self.dynamic_partitions_loader)
+        )
+        return self
+
+    def __exit__(self, exception_type, exception_value, traceback) -> None:
+        self._exit_stack.close()
 
     @property
     def asset_graph(self) -> "RemoteWorkspaceAssetGraph":

@@ -7,6 +7,7 @@ from functools import cached_property
 from typing import TYPE_CHECKING, AbstractSet, Any, Optional, Union, cast  # noqa: UP035
 
 from dagster_shared.libraries import DagsterLibraryRegistry
+from dagster_shared.serdes.objects import DefsStateInfo
 
 import dagster._check as check
 from dagster._check import checked
@@ -31,7 +32,6 @@ from dagster._core.remote_origin import (
     GrpcServerCodeLocationOrigin,
     InProcessCodeLocationOrigin,
 )
-from dagster._core.remote_representation import RemoteJobSubsetResult
 from dagster._core.remote_representation.external import (
     RemoteExecutionPlan,
     RemoteJob,
@@ -39,6 +39,7 @@ from dagster._core.remote_representation.external import (
 )
 from dagster._core.remote_representation.external_data import (
     PartitionNamesSnap,
+    RemoteJobSubsetResult,
     RepositorySnap,
     ScheduleExecutionErrorSnap,
     SensorExecutionErrorSnap,
@@ -64,7 +65,7 @@ from dagster._utils.merger import merge_dicts
 if TYPE_CHECKING:
     from dagster._core.definitions.schedule_definition import ScheduleExecutionData
     from dagster._core.definitions.sensor_definition import SensorExecutionData
-    from dagster._core.remote_representation import (
+    from dagster._core.remote_representation.external_data import (
         PartitionConfigSnap,
         PartitionExecutionErrorSnap,
         PartitionSetExecutionParamSnap,
@@ -398,6 +399,25 @@ class CodeLocation(AbstractContextManager):
     @abstractmethod
     def get_dagster_library_versions(self) -> Optional[Mapping[str, str]]: ...
 
+    def get_defs_state_info(self) -> Optional[DefsStateInfo]:
+        all_infos = list(
+            filter(
+                None,
+                [repo.repository_snap.defs_state_info for repo in self.get_repositories().values()],
+            )
+        )
+        if len(all_infos) == 0:
+            return None
+        elif len(all_infos) == 1:
+            return all_infos[0]
+        else:
+            # in theory this would be extremely rare, as having multiple
+            # repositories in the same location has long been deprecated
+            combined_mapping = {}
+            for info in all_infos:
+                combined_mapping.update(info.info_mapping)
+            return DefsStateInfo(info_mapping=combined_mapping)
+
 
 class InProcessCodeLocation(CodeLocation):
     def __init__(self, origin: InProcessCodeLocationOrigin, instance: DagsterInstance):
@@ -412,6 +432,10 @@ class InProcessCodeLocation(CodeLocation):
             entry_point=self._origin.entry_point,
             container_image=self._origin.container_image,
             container_context=self._origin.container_context,
+            # for InProcessCodeLocations, we always use the latest available state versions
+            defs_state_info=self._instance.defs_state_storage.get_latest_defs_state_info()
+            if self._instance.defs_state_storage
+            else None,
         )
 
         self._repository_code_pointer_dict = self._loaded_repositories.code_pointers_by_repo_name

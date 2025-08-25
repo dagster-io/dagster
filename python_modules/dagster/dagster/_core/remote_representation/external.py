@@ -743,7 +743,7 @@ class RemoteExecutionPlan(LoadableBy[JobSubsetSelector, "BaseWorkspaceRequestCon
         tasks = [
             context.gen_execution_plan(
                 check.not_none(remote_jobs_by_key[key]),
-                run_config={},
+                run_config=key.run_config or {},
                 step_keys_to_execute=None,
                 known_state=None,
             )

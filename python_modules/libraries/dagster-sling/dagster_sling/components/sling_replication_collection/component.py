@@ -1,4 +1,3 @@
-import textwrap
 from collections.abc import Iterator, Mapping, Sequence
 from dataclasses import dataclass, field
 from functools import cached_property
@@ -18,7 +17,7 @@ from dagster._core.definitions.result import MaterializeResult
 from dagster.components.component.component import Component
 from dagster.components.core.context import ComponentLoadContext
 from dagster.components.resolved.context import ResolutionContext
-from dagster.components.resolved.core_models import AssetPostProcessor, OpSpec
+from dagster.components.resolved.core_models import OpSpec
 from dagster.components.scaffold.scaffold import scaffold_with
 from dagster.components.utils.translation import TranslationFn, TranslationFnResolver
 from dagster_shared.utils.warnings import deprecation_warning
@@ -139,8 +138,6 @@ class SlingReplicationCollectionComponent(Component, Resolvable):
 
     connections: ResolvedSlingConnections = field(default_factory=list)
     replications: Sequence[SlingReplicationSpecModel] = field(default_factory=list)
-    # TODO: deprecate and then delete -- schrockn 2025-06-10
-    asset_post_processors: Optional[Sequence[AssetPostProcessor]] = None
     resource: Annotated[
         Optional[SlingResource],
         Resolver(resolve_resource, model_field_name="sling"),
@@ -197,25 +194,6 @@ class SlingReplicationCollectionComponent(Component, Resolvable):
         yield from iterator
 
     def build_defs(self, context: ComponentLoadContext) -> Definitions:
-        if self.asset_post_processors:
-            raise Exception(
-                "The asset_post_processors field is deprecated, place your post-processors in the assets"
-                " field in the top-level post_processing field instead, as in this example:\n"
-                + textwrap.dedent(
-                    """
-                    type: dagster_sling.SlingReplicationCollectionComponent
-
-                    attributes: ~
-
-                    post_processing:
-                      assets:
-                        - target: "*"
-                          attributes:
-                            group_name: "my_group"
-                    """
-                )
-            )
-
         return Definitions(
             assets=[self.build_asset(context, replication) for replication in self.replications],
         )

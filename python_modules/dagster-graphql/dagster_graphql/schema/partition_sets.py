@@ -13,11 +13,12 @@ from dagster._core.definitions.partitions.snap import (
     TimeWindowPartitionsSnap,
 )
 from dagster._core.errors import DagsterUserCodeProcessError
-from dagster._core.remote_representation import RemoteJob, RemotePartitionSet, RepositoryHandle
+from dagster._core.remote_representation.external import RemoteJob, RemotePartitionSet
 from dagster._core.remote_representation.external_data import (
     PartitionExecutionErrorSnap,
     job_name_for_partition_set_snap_name,
 )
+from dagster._core.remote_representation.handle import RepositoryHandle
 from dagster._core.storage.dagster_run import RunsFilter
 from dagster._core.storage.tags import PARTITION_NAME_TAG, PARTITION_SET_TAG
 from dagster._utils.merger import merge_dicts

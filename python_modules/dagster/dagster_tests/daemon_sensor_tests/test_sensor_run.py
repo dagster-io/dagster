@@ -32,8 +32,7 @@ from dagster._core.remote_origin import (
     RemoteInstigatorOrigin,
     RemoteRepositoryOrigin,
 )
-from dagster._core.remote_representation import RemoteSensor
-from dagster._core.remote_representation.external import RemoteRepository
+from dagster._core.remote_representation.external import RemoteRepository, RemoteSensor
 from dagster._core.scheduler.instigation import (
     DynamicPartitionsRequestResult,
     InstigatorState,

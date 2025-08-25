@@ -29,7 +29,7 @@ from dagster._cli.workspace.cli_target import (
 )
 from dagster._core.definitions.run_request import InstigatorType
 from dagster._core.instance import DagsterInstance
-from dagster._core.remote_representation import RemoteRepository
+from dagster._core.remote_representation.external import RemoteRepository
 from dagster._core.scheduler.instigation import (
     InstigatorState,
     InstigatorStatus,

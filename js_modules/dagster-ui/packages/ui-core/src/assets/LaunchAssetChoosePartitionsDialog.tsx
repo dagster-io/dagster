@@ -14,6 +14,7 @@ import {
   Subheading,
   Tooltip,
 } from '@dagster-io/ui-components';
+import {StyledRawCodeMirror} from '@dagster-io/ui-components/editor';
 import reject from 'lodash/reject';
 import {useEffect, useMemo, useState} from 'react';
 import {useLaunchWithTelemetry} from 'shared/launchpad/useLaunchWithTelemetry.oss';
@@ -47,6 +48,7 @@ import {showCustomAlert} from '../app/CustomAlertProvider';
 import {PipelineRunTag} from '../app/ExecutionSessionStorage';
 import {usePermissionsForLocation} from '../app/Permissions';
 import {
+  __ASSET_JOB_PREFIX,
   displayNameForAssetKey,
   isHiddenAssetGroupJob,
   itemWithAssetKey,
@@ -59,6 +61,8 @@ import {
   LaunchPartitionBackfillMutationVariables,
 } from '../instance/backfill/types/BackfillUtils.types';
 import {fetchTagsAndConfigForAssetJob} from '../launchpad/ConfigFetch';
+import {BackfillLaunchpad} from '../launchpad/LaunchpadRoot';
+import {LaunchpadConfig} from '../launchpad/LaunchpadSession';
 import {TagContainer, TagEditor} from '../launchpad/TagEditor';
 import {tagsWithUIExecutionTags} from '../launchpad/uiExecutionTags';
 import {
@@ -87,7 +91,12 @@ export interface LaunchAssetChoosePartitionsDialogProps {
   target: LaunchAssetsChoosePartitionsTarget;
   assets: Pick<
     LaunchAssetExecutionAssetNodeFragment,
-    'assetKey' | 'assetChecksOrError' | 'opNames' | 'partitionDefinition' | 'backfillPolicy'
+    | 'assetKey'
+    | 'assetChecksOrError'
+    | 'opNames'
+    | 'partitionDefinition'
+    | 'backfillPolicy'
+    | 'jobNames'
   >[];
   upstreamAssetKeys: AssetKey[]; // single layer of upstream dependencies
   refetch?: () => Promise<void>;
@@ -142,6 +151,8 @@ const LaunchAssetChoosePartitionsDialogBody = ({
   const [launching, setLaunching] = useState(false);
   const [tagEditorOpen, setTagEditorOpen] = useState(false);
   const [previewOpen, setPreviewOpen] = useState(false);
+  const [launchpadOpen, setLaunchpadOpen] = useState(false);
+  const [savedConfig, setSavedConfig] = useState<LaunchpadConfig | null>(null);
   const [tags, setTags] = useState<PipelineRunTag[]>([]);
 
   const showSingleRunBackfillToggle = useFeatureFlagForCodeLocation(
@@ -318,13 +329,18 @@ const LaunchAssetChoosePartitionsDialogBody = ({
 
   const onLaunchAsBackfill = async () => {
     const backfillTags = tagsWithUIExecutionTags(tags);
-    const backfillParams: LaunchBackfillParams =
+
+    // Add runConfigData if we have saved configuration
+    const runConfigData = savedConfig?.runConfigYaml || undefined;
+
+    const backfillParams = (
       target.type === 'job' && !isHiddenAssetGroupJob(target.jobName)
         ? {
             tags: backfillTags,
             assetSelection: assets.map(asAssetKeyInput),
             partitionNames: keysFiltered,
             fromFailure: false,
+            runConfigData,
             selector: {
               // Todo: Fix after PR #23720 merges
               partitionSetName: `${target.jobName}_partition_set`,
@@ -339,13 +355,16 @@ const LaunchAssetChoosePartitionsDialogBody = ({
               tags: backfillTags,
               assetSelection: assets.map(asAssetKeyInput),
               allPartitions: true,
+              runConfigData,
             }
           : {
               tags: backfillTags,
               assetSelection: assets.map(asAssetKeyInput),
               partitionNames: keysFiltered,
               fromFailure: false,
-            };
+              runConfigData,
+            }
+    ) as LaunchBackfillParams;
 
     const {data: launchBackfillData} = await client.mutate<
       LaunchPartitionBackfillMutation,
@@ -527,6 +546,34 @@ const LaunchAssetChoosePartitionsDialogBody = ({
             </div>
           </Box>
         </ToggleableSection>
+        <ToggleableSection
+          title={
+            <Box flex={{direction: 'row', justifyContent: 'space-between'}}>
+              <Subheading>Config</Subheading>
+              {savedConfig && <span>Config saved</span>}
+            </Box>
+          }
+          isInitiallyOpen={false}
+        >
+          <Box padding={{vertical: 16, horizontal: 20}} flex={{direction: 'column', gap: 12}}>
+            <div>Config will be applied to all backfill runs</div>
+            <div>
+              <Button onClick={() => setLaunchpadOpen(true)}>Add config</Button>
+            </div>
+            {savedConfig && (
+              <Box padding={{vertical: 12, horizontal: 16}} background={Colors.backgroundLight()}>
+                <StyledRawCodeMirror
+                  value={savedConfig.runConfigYaml}
+                  options={{
+                    lineNumbers: true,
+                    readOnly: true,
+                    mode: 'yaml',
+                  }}
+                />
+              </Box>
+            )}
+          </Box>
+        </ToggleableSection>
         {target.type === 'job' && (
           <ToggleableSection
             isInitiallyOpen={true}
@@ -586,6 +633,21 @@ const LaunchAssetChoosePartitionsDialogBody = ({
         keysFiltered={keysFiltered}
         isOpen={previewOpen}
         setOpen={setPreviewOpen}
+      />
+
+      <BackfillLaunchpad
+        repoAddress={repoAddress}
+        assetJobName={
+          assets[0]?.jobNames.find((name) => name.startsWith(__ASSET_JOB_PREFIX)) ||
+          __ASSET_JOB_PREFIX
+        }
+        open={launchpadOpen}
+        setOpen={setLaunchpadOpen}
+        onSaveConfig={(config: LaunchpadConfig) => {
+          setSavedConfig(config);
+          setLaunchpadOpen(false);
+        }}
+        savedConfig={savedConfig}
       />
 
       {previewNotice && (

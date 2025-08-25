@@ -3222,7 +3222,7 @@
               "description": null,
               "is_dynamic": false,
               "is_required": true,
-              "name": "third_kinds_key"
+              "name": "fourth_kinds_key"
             },
             {
               "__class__": "OutputDefSnap",
@@ -3230,7 +3230,7 @@
               "description": null,
               "is_dynamic": false,
               "is_required": true,
-              "name": "fourth_kinds_key"
+              "name": "third_kinds_key"
             }
           ],
           "required_resource_keys": [],
@@ -3374,7 +3374,7 @@
               "description": null,
               "is_dynamic": false,
               "is_required": true,
-              "name": "result"
+              "name": "check_in_op_asset_my_check"
             },
             {
               "__class__": "OutputDefSnap",
@@ -3382,7 +3382,7 @@
               "description": null,
               "is_dynamic": false,
               "is_required": true,
-              "name": "check_in_op_asset_my_check"
+              "name": "result"
             }
           ],
           "required_resource_keys": [],
@@ -4879,14 +4879,6 @@
               "description": null,
               "is_dynamic": false,
               "is_required": false,
-              "name": "two"
-            },
-            {
-              "__class__": "OutputDefSnap",
-              "dagster_type_key": "Any",
-              "description": null,
-              "is_dynamic": false,
-              "is_required": false,
               "name": "one_my_check"
             },
             {
@@ -4896,6 +4888,14 @@
               "is_dynamic": false,
               "is_required": false,
               "name": "one_my_other_check"
+            },
+            {
+              "__class__": "OutputDefSnap",
+              "dagster_type_key": "Any",
+              "description": null,
+              "is_dynamic": false,
+              "is_required": false,
+              "name": "two"
             }
           ],
           "required_resource_keys": [],
@@ -18546,7 +18546,7 @@
               "description": null,
               "is_dynamic": false,
               "is_required": false,
-              "name": "success"
+              "name": "skip"
             },
             {
               "__class__": "OutputDefSnap",
@@ -18554,7 +18554,7 @@
               "description": null,
               "is_dynamic": false,
               "is_required": false,
-              "name": "skip"
+              "name": "success"
             }
           ],
           "required_resource_keys": [],
@@ -18626,7 +18626,7 @@
   '''
 # ---
 # name: test_all_snapshot_ids[125]
-  '9a9a09da6b3a1dbab13bfde5e155c0f097dd22a5'
+  'b36369d8d91bfe2c213c5e6ef8c12c2be6a9567f'
 # ---
 # name: test_all_snapshot_ids[126]
   '''
@@ -32027,14 +32027,6 @@
               "description": null,
               "is_dynamic": false,
               "is_required": false,
-              "name": "two"
-            },
-            {
-              "__class__": "OutputDefSnap",
-              "dagster_type_key": "Any",
-              "description": null,
-              "is_dynamic": false,
-              "is_required": false,
               "name": "one_my_check"
             },
             {
@@ -32044,6 +32036,14 @@
               "is_dynamic": false,
               "is_required": false,
               "name": "one_my_other_check"
+            },
+            {
+              "__class__": "OutputDefSnap",
+              "dagster_type_key": "Any",
+              "description": null,
+              "is_dynamic": false,
+              "is_required": false,
+              "name": "two"
             }
           ],
           "required_resource_keys": [],
@@ -34233,7 +34233,7 @@
   'dedb9fc5a6627950d8d31dce78af887c18c25160'
 # ---
 # name: test_all_snapshot_ids[15]
-  'c77559c3ffec162d2580606b6cc7aeaf8ab8d9e0'
+  'b357ebb3c19f032a050b1e816c21aa078456b9e7'
 # ---
 # name: test_all_snapshot_ids[16]
   '''
@@ -36543,7 +36543,7 @@
   'd9f6d85793df3d9df94d4aedb21bb659c1202bda'
 # ---
 # name: test_all_snapshot_ids[1]
-  'cb24dc58cd64daf2a29598963c6e4b9e70e992b5'
+  '5d5761e435cf134067c53ef84f6a560153e9719c'
 # ---
 # name: test_all_snapshot_ids[20]
   '''
@@ -45751,7 +45751,7 @@
               "__class__": "InputDefSnap",
               "dagster_type_key": "Any",
               "description": null,
-              "name": "y"
+              "name": "should_fail"
             },
             {
               "__class__": "InputDefSnap",
@@ -45763,7 +45763,7 @@
               "__class__": "InputDefSnap",
               "dagster_type_key": "Any",
               "description": null,
-              "name": "should_fail"
+              "name": "y"
             }
           ],
           "name": "multiply_inputs",
@@ -45821,7 +45821,7 @@
   '''
 # ---
 # name: test_all_snapshot_ids[35]
-  'db3c9e009bad031bbf9b5f278cc09b691a00eaec'
+  'c1766b1a360422f3b146bb310a1088059247afc1'
 # ---
 # name: test_all_snapshot_ids[36]
   '''
@@ -66183,7 +66183,7 @@
               "description": null,
               "is_dynamic": false,
               "is_required": true,
-              "name": "result"
+              "name": "check_in_op_asset_my_check"
             },
             {
               "__class__": "OutputDefSnap",
@@ -66191,7 +66191,7 @@
               "description": null,
               "is_dynamic": false,
               "is_required": true,
-              "name": "check_in_op_asset_my_check"
+              "name": "result"
             }
           ],
           "required_resource_keys": [],
@@ -70800,7 +70800,7 @@
   '68f90c6bc3483e01ab1317573d90e23d0efe14a9'
 # ---
 # name: test_all_snapshot_ids[7]
-  '8023256507d183317343a2f6c4703a5ac3800eaf'
+  '596a198798f7c7bfc96167ddacf6114b79d2d1fb'
 # ---
 # name: test_all_snapshot_ids[80]
   '''

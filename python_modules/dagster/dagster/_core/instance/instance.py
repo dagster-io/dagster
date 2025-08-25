@@ -38,7 +38,7 @@ if TYPE_CHECKING:
     from dagster._core.events import AssetMaterialization, DagsterEventType
     from dagster._core.events.log import EventLogEntry
     from dagster._core.launcher import RunLauncher
-    from dagster._core.remote_representation import HistoricalJob
+    from dagster._core.remote_representation.historical import HistoricalJob
     from dagster._core.run_coordinator import RunCoordinator
     from dagster._core.scheduler import Scheduler
     from dagster._core.secrets import SecretsLoader
@@ -46,6 +46,7 @@ if TYPE_CHECKING:
     from dagster._core.storage.compute_log_manager import ComputeLogManager
     from dagster._core.storage.daemon_cursor import DaemonCursorStorage
     from dagster._core.storage.dagster_run import JobBucket, RunRecord, TagBucket
+    from dagster._core.storage.defs_state.base import DefsStateStorage
     from dagster._core.storage.event_log import EventLogStorage
     from dagster._core.storage.event_log.base import (
         AssetRecord,
@@ -142,6 +143,7 @@ class DagsterInstance(
         schedule_storage: Optional["ScheduleStorage"] = None,
         settings: Optional[Mapping[str, Any]] = None,
         secrets_loader: Optional["SecretsLoader"] = None,
+        defs_state_storage: Optional["DefsStateStorage"] = None,
         ref: Optional[InstanceRef] = None,
         **_kwargs: Any,  # we accept kwargs for forward-compat of custom instances
     ):
@@ -150,6 +152,7 @@ class DagsterInstance(
         from dagster._core.scheduler import Scheduler
         from dagster._core.secrets import SecretsLoader
         from dagster._core.storage.compute_log_manager import ComputeLogManager
+        from dagster._core.storage.defs_state import DefsStateStorage
         from dagster._core.storage.event_log import EventLogStorage
         from dagster._core.storage.root import LocalArtifactStorage
         from dagster._core.storage.runs import RunStorage
@@ -209,6 +212,12 @@ class DagsterInstance(
 
         if self._secrets_loader:
             self._secrets_loader.register_instance(self)
+
+        self._defs_state_storage = check.opt_inst_param(
+            defs_state_storage, "defs_state_storage", DefsStateStorage
+        )
+        if self._defs_state_storage:
+            self._defs_state_storage.register_instance(self)
 
         self._ref = check.opt_inst_param(ref, "ref", InstanceRef)
 
@@ -754,6 +763,10 @@ class DagsterInstance(
         return self._run_storage
 
     @property
+    def defs_state_storage(self) -> Optional["DefsStateStorage"]:
+        return self._defs_state_storage
+
+    @property
     def event_log_storage(self) -> "EventLogStorage":
         return self._event_storage
 
@@ -867,7 +880,7 @@ class DagsterInstance(
 
     @traced
     def get_historical_job(self, snapshot_id: str) -> "HistoricalJob":
-        from dagster._core.remote_representation import HistoricalJob
+        from dagster._core.remote_representation.historical import HistoricalJob
 
         snapshot = self._run_storage.get_job_snapshot(snapshot_id)
         parent_snapshot = (
@@ -901,6 +914,9 @@ class DagsterInstance(
     # directories
 
     def __enter__(self) -> Self:
+        from dagster._core.storage.defs_state.base import DefsStateStorage
+
+        DefsStateStorage.set_current(self.defs_state_storage)
         return self
 
     def __exit__(
@@ -909,6 +925,9 @@ class DagsterInstance(
         _exception_value: Optional[BaseException],
         _traceback: Optional[TracebackType],
     ) -> None:
+        from dagster._core.storage.defs_state.base import DefsStateStorage
+
+        DefsStateStorage.set_current(None)
         self.dispose()
 
     # backfill
