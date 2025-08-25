@@ -5,6 +5,8 @@ from collections.abc import Generator, Mapping
 from contextlib import ContextDecorator
 from typing import AbstractSet, Any, Callable, Optional, Union, cast  # noqa: UP035
 
+from dagster_shared.utils.timing import format_duration
+
 import dagster._check as check
 from dagster._core.definitions.job_definition import JobDefinition
 from dagster._core.definitions.resource_definition import (
@@ -34,7 +36,7 @@ from dagster._core.system_config.objects import ResourceConfig
 from dagster._core.utils import toposort
 from dagster._utils import EventGenerationManager, ensure_gen
 from dagster._utils.error import serializable_error_info_from_exc_info
-from dagster._utils.timing import format_duration, time_execution_scope
+from dagster._utils.timing import time_execution_scope
 
 
 def resource_initialization_manager(
