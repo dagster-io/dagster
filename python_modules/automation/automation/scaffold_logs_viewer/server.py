@@ -138,6 +138,4 @@ def serve_logs(logs_directory: Path, port: int = 8000, host: str = "localhost"):
         try:
             httpd.serve_forever()
         except KeyboardInterrupt:
-            import click
-
             click.echo("\nShutting down server...")

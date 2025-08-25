@@ -217,7 +217,7 @@
             return new Date(timestamp).toLocaleString();
         }
 
-        async function selectSession(filename) {
+        async function selectSession(filename, event) {
             try {
                 // Update active session in UI
                 document.querySelectorAll('.session-item').forEach(item => {
