@@ -104,9 +104,9 @@ export const AssetGraphExplorerSidebar = React.memo(
         if (val.viewType === 'tree' || val.viewType === 'group') {
           return val.viewType;
         }
-        return 'group';
+        return 'tree';
       },
-      isEmptyState: (val) => val === null || val === 'group',
+      isEmptyState: (val) => val === null || val === 'tree',
     });
 
     const rootNodes = React.useMemo(
@@ -272,6 +272,13 @@ export const AssetGraphExplorerSidebar = React.memo(
     const totalHeight = rowVirtualizer.getTotalSize();
     const items = rowVirtualizer.getVirtualItems();
 
+    const lastSelectedRenderedNode = React.useMemo(
+      () =>
+        lastSelectedNode &&
+        renderedNodes.findIndex((node) => nodePathKey(lastSelectedNode) === nodePathKey(node)),
+      [lastSelectedNode, renderedNodes],
+    );
+
     React.useLayoutEffect(() => {
       if (lastSelectedNode) {
         setOpenNodes((prevOpenNodes) => {
@@ -325,38 +332,29 @@ export const AssetGraphExplorerSidebar = React.memo(
         setSelectedNode(null);
       }
       // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [
-      lastSelectedNode,
-      graphData,
-      // eslint-disable-next-line react-hooks/exhaustive-deps
-      lastSelectedNode &&
-        renderedNodes.findIndex((node) => nodePathKey(lastSelectedNode) === nodePathKey(node)),
-    ]);
+    }, [lastSelectedNode, graphData, lastSelectedRenderedNode]);
 
-    const indexOfLastSelectedNode = React.useMemo(
-      () => {
-        if (!selectedNode) {
-          return -1;
+    const indexOfLastSelectedNode = React.useMemo(() => {
+      if (!selectedNode) {
+        return -1;
+      }
+      if (sidebarViewType === 'tree') {
+        return 'path' in selectedNode
+          ? renderedNodes.findIndex((node) => 'path' in node && node.path === selectedNode.path)
+          : -1;
+      }
+      return renderedNodes.findIndex((node) => {
+        // If you select a node via the search dropdown or from the graph directly then
+        // selectedNode will have an `id` field and not a path. The nodes in renderedNodes
+        // will always have a path so we need to explicitly check if the id's match
+        if (!('path' in selectedNode)) {
+          return node.id === selectedNode.id;
+        } else {
+          return nodePathKey(node) === nodePathKey(selectedNode);
         }
-        if (sidebarViewType === 'tree') {
-          return 'path' in selectedNode
-            ? renderedNodes.findIndex((node) => 'path' in node && node.path === selectedNode.path)
-            : -1;
-        }
-        return renderedNodes.findIndex((node) => {
-          // If you select a node via the search dropdown or from the graph directly then
-          // selectedNode will have an `id` field and not a path. The nodes in renderedNodes
-          // will always have a path so we need to explicitly check if the id's match
-          if (!('path' in selectedNode)) {
-            return node.id === selectedNode.id;
-          } else {
-            return nodePathKey(node) === nodePathKey(selectedNode);
-          }
-        });
-      },
-      // eslint-disable-next-line react-hooks/exhaustive-deps
-      [renderedNodes, selectedNode, sidebarViewType],
-    );
+      });
+    }, [renderedNodes, selectedNode, sidebarViewType]);
+
     const indexOfLastSelectedNodeRef = React.useRef(indexOfLastSelectedNode);
     indexOfLastSelectedNodeRef.current = indexOfLastSelectedNode;
 
