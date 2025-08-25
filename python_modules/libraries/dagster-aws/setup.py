@@ -53,6 +53,7 @@ setup(
             "xmltodict==0.12.0",  # pinned until moto>=3.1.9 (https://github.com/spulec/moto/issues/5112)
             "flaky",
             "pytest-cases",
+            "s3fs",
         ],
     },
     zip_safe=False,

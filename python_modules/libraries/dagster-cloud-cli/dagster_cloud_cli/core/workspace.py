@@ -3,6 +3,8 @@ from typing import Any, NamedTuple, Optional
 
 from dagster_shared import check
 from dagster_shared.serdes import whitelist_for_serdes
+from dagster_shared.serdes.objects import DefsStateInfo
+from dagster_shared.serdes.serdes import serialize_value
 
 from dagster_cloud_cli.core.agent_queue import AgentQueue
 
@@ -83,6 +85,7 @@ class CodeLocationDeployData(
             ("pex_metadata", Optional[PexMetadata]),
             ("agent_queue", Optional[AgentQueue]),
             ("autoload_defs_module_name", Optional[str]),
+            ("defs_state_info", Optional[DefsStateInfo]),
         ],
     )
 ):
@@ -101,6 +104,7 @@ class CodeLocationDeployData(
         pex_metadata=None,
         agent_queue=None,
         autoload_defs_module_name=None,
+        defs_state_info=None,
     ):
         check.invariant(
             len(
@@ -129,6 +133,7 @@ class CodeLocationDeployData(
             check.opt_inst_param(pex_metadata, "pex_metadata", PexMetadata),
             check.opt_str_param(agent_queue, "agent_queue"),
             check.opt_str_param(autoload_defs_module_name, "autoload_defs_module_name"),
+            check.opt_inst_param(defs_state_info, "defs_state_info", DefsStateInfo),
         )
 
     def with_cloud_context_env(self, cloud_context_env: dict[str, Any]) -> "CodeLocationDeployData":
@@ -145,6 +150,11 @@ class CodeLocationDeployData(
             + (["--port", str(port)] if port else [])
             + (["--socket", str(socket)] if socket else [])
             + (["--enable-metrics"] if metrics_enabled else [])
+            + (
+                ["--defs-state-info", serialize_value(self.defs_state_info)]
+                if self.defs_state_info
+                else []
+            )
         )
 
     def get_multipex_server_env(self) -> dict[str, str]:
@@ -159,4 +169,9 @@ class CodeLocationDeployData(
                 "grpc",
             ]
             + (["--enable-metrics"] if metrics_enabled else [])
+            + (
+                ["--defs-state-info", serialize_value(self.defs_state_info)]
+                if self.defs_state_info
+                else []
+            )
         )

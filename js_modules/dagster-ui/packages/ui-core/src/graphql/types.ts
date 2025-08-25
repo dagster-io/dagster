@@ -1280,6 +1280,23 @@ export type DefinitionTag = {
   value: Scalars['String']['output'];
 };
 
+export type DefsKeyStateInfo = {
+  __typename: 'DefsKeyStateInfo';
+  createTimestamp: Scalars['Float']['output'];
+  version: Scalars['String']['output'];
+};
+
+export type DefsStateInfo = {
+  __typename: 'DefsStateInfo';
+  keyStateInfo: Array<DefsStateInfoEntry>;
+};
+
+export type DefsStateInfoEntry = {
+  __typename: 'DefsStateInfoEntry';
+  info: DefsKeyStateInfo;
+  name: Scalars['String']['output'];
+};
+
 export type DeleteDynamicPartitionsResult =
   | DeleteDynamicPartitionsSuccess
   | PythonError
@@ -4100,6 +4117,7 @@ export type Query = {
   instigationStateOrError: InstigationStateOrError;
   instigationStatesOrError: InstigationStatesOrError;
   isPipelineConfigValid: PipelineConfigValidationResult;
+  latestDefsStateInfo: Maybe<DefsStateInfo>;
   locationStatusesOrError: WorkspaceLocationStatusEntriesOrError;
   logsForRun: EventConnectionOrError;
   partitionBackfillOrError: PartitionBackfillOrError;
@@ -6118,6 +6136,7 @@ export type Workspace = {
 
 export type WorkspaceLocationEntry = {
   __typename: 'WorkspaceLocationEntry';
+  defsStateInfo: Maybe<DefsStateInfo>;
   displayMetadata: Array<RepositoryMetadata>;
   featureFlags: Array<FeatureFlag>;
   id: Scalars['ID']['output'];
@@ -8338,6 +8357,51 @@ export const buildDefinitionTag = (
     __typename: 'DefinitionTag',
     key: overrides && overrides.hasOwnProperty('key') ? overrides.key! : 'itaque',
     value: overrides && overrides.hasOwnProperty('value') ? overrides.value! : 'consequatur',
+  };
+};
+
+export const buildDefsKeyStateInfo = (
+  overrides?: Partial<DefsKeyStateInfo>,
+  _relationshipsToOmit: Set<string> = new Set(),
+): {__typename: 'DefsKeyStateInfo'} & DefsKeyStateInfo => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('DefsKeyStateInfo');
+  return {
+    __typename: 'DefsKeyStateInfo',
+    createTimestamp:
+      overrides && overrides.hasOwnProperty('createTimestamp') ? overrides.createTimestamp! : 2.02,
+    version: overrides && overrides.hasOwnProperty('version') ? overrides.version! : 'dolores',
+  };
+};
+
+export const buildDefsStateInfo = (
+  overrides?: Partial<DefsStateInfo>,
+  _relationshipsToOmit: Set<string> = new Set(),
+): {__typename: 'DefsStateInfo'} & DefsStateInfo => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('DefsStateInfo');
+  return {
+    __typename: 'DefsStateInfo',
+    keyStateInfo:
+      overrides && overrides.hasOwnProperty('keyStateInfo') ? overrides.keyStateInfo! : [],
+  };
+};
+
+export const buildDefsStateInfoEntry = (
+  overrides?: Partial<DefsStateInfoEntry>,
+  _relationshipsToOmit: Set<string> = new Set(),
+): {__typename: 'DefsStateInfoEntry'} & DefsStateInfoEntry => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('DefsStateInfoEntry');
+  return {
+    __typename: 'DefsStateInfoEntry',
+    info:
+      overrides && overrides.hasOwnProperty('info')
+        ? overrides.info!
+        : relationshipsToOmit.has('DefsKeyStateInfo')
+          ? ({} as DefsKeyStateInfo)
+          : buildDefsKeyStateInfo({}, relationshipsToOmit),
+    name: overrides && overrides.hasOwnProperty('name') ? overrides.name! : 'voluptas',
   };
 };
 
@@ -13201,6 +13265,12 @@ export const buildQuery = (
         : relationshipsToOmit.has('InvalidSubsetError')
           ? ({} as InvalidSubsetError)
           : buildInvalidSubsetError({}, relationshipsToOmit),
+    latestDefsStateInfo:
+      overrides && overrides.hasOwnProperty('latestDefsStateInfo')
+        ? overrides.latestDefsStateInfo!
+        : relationshipsToOmit.has('DefsStateInfo')
+          ? ({} as DefsStateInfo)
+          : buildDefsStateInfo({}, relationshipsToOmit),
     locationStatusesOrError:
       overrides && overrides.hasOwnProperty('locationStatusesOrError')
         ? overrides.locationStatusesOrError!
@@ -16490,6 +16560,12 @@ export const buildWorkspaceLocationEntry = (
   relationshipsToOmit.add('WorkspaceLocationEntry');
   return {
     __typename: 'WorkspaceLocationEntry',
+    defsStateInfo:
+      overrides && overrides.hasOwnProperty('defsStateInfo')
+        ? overrides.defsStateInfo!
+        : relationshipsToOmit.has('DefsStateInfo')
+          ? ({} as DefsStateInfo)
+          : buildDefsStateInfo({}, relationshipsToOmit),
     displayMetadata:
       overrides && overrides.hasOwnProperty('displayMetadata') ? overrides.displayMetadata! : [],
     featureFlags:

@@ -1,5 +1,6 @@
 import functools
 import textwrap
+from abc import abstractmethod
 from collections.abc import Iterator, Mapping, Sequence
 from contextlib import contextmanager
 from dataclasses import dataclass, field
@@ -22,6 +23,7 @@ from click.core import ParameterSource
 from dagster_shared.match import match_type
 from dagster_shared.merger import deep_merge_dicts
 from dagster_shared.plus.config import load_config
+from dagster_shared.record import record
 from dagster_shared.seven import is_valid_module_pattern
 from dagster_shared.utils import remove_none_recursively
 from dagster_shared.utils.config import (
@@ -34,7 +36,13 @@ from dagster_shared.utils.config import (
 from typing_extensions import Never, NotRequired, Required, Self, TypeAlias, TypeGuard
 
 from dagster_dg_core.error import DgError, DgValidationError
-from dagster_dg_core.utils import exit_with_error, get_toml_node, has_toml_node, modify_toml
+from dagster_dg_core.utils import (
+    exit_with_error,
+    generate_tool_dg_cli_in_project_in_workspace_error_message,
+    get_toml_node,
+    has_toml_node,
+    modify_toml,
+)
 from dagster_dg_core.utils.warnings import DgWarningIdentifier, emit_warning
 
 if TYPE_CHECKING:
@@ -49,6 +57,119 @@ def discover_workspace_root(path: Path) -> Optional[Path]:
         path, lambda config: config["directory_type"] == "workspace"
     )
     return workspace_config_path.parent if workspace_config_path else None
+
+
+@record
+class DgConfigFileDiscoveryResult:
+    root_path: Path
+    workspace_root_path: Optional[Path] = None
+    root_file_path: Optional[Path] = None
+    root_validation_result: Optional["DgConfigValidationResult"] = None
+    container_workspace_file_path: Optional[Path] = None
+    container_workspace_validation_result: Optional["DgConfigValidationResult"] = None
+    user_file_path: Optional[Path] = None
+    user_config: Optional["DgRawCliConfig"] = None
+    cli_config_warning: Optional[str]
+
+    @property
+    def has_root_file(self) -> bool:
+        return self.root_file_path is not None
+
+    @property
+    def has_container_workspace_file(self) -> bool:
+        return self.container_workspace_file_path is not None
+
+    @property
+    def has_user_file(self) -> bool:
+        return self.user_file_path is not None
+
+    @property
+    def root_result(self) -> "DgConfigValidationResult":
+        if not self.root_validation_result:
+            raise DgError("No root file validation result available.")
+        return self.root_validation_result
+
+    @property
+    def container_workspace_result(self) -> "DgConfigValidationResult":
+        if not self.container_workspace_validation_result:
+            raise DgError("No container workspace validation result available.")
+        return self.container_workspace_validation_result
+
+    @property
+    def root_type(self) -> Optional[str]:
+        if not self.root_file_path:
+            return None
+        return self.root_result.type
+
+    @property
+    def root_config(self) -> Optional["DgFileConfig"]:
+        if not self.root_validation_result:
+            return None
+        return self.root_validation_result.config
+
+    @property
+    def container_workspace_config(self) -> Optional["DgWorkspaceFileConfig"]:
+        if not self.container_workspace_validation_result:
+            return None
+        return cast("DgWorkspaceFileConfig", self.container_workspace_validation_result.config)
+
+
+def discover_and_validate_config_files(path: Path) -> DgConfigFileDiscoveryResult:
+    root_config_path = discover_config_file(path)
+    workspace_config_path = discover_config_file(
+        path, lambda x: bool(x.get("directory_type") == "workspace")
+    )
+
+    cli_config_warning: Optional[str] = None
+    if root_config_path:
+        root_path = root_config_path.parent
+        root_file_validation_result = validate_dg_file_config(root_config_path)
+        if workspace_config_path is None:
+            workspace_root_path = None
+            container_workspace_validation_result = None
+
+        # Only load the workspace config if the workspace root is different from the first
+        # detected root.
+        elif workspace_config_path == root_config_path:
+            workspace_root_path = workspace_config_path.parent
+            container_workspace_validation_result = None
+        else:
+            workspace_root_path = workspace_config_path.parent
+            container_workspace_validation_result = validate_dg_file_config(workspace_config_path)
+            if (
+                not root_file_validation_result.has_errors
+                and "cli" in root_file_validation_result.config
+            ):
+                del root_file_validation_result.config["cli"]
+                # We have to emit this _after_ we merge all configs to ensure we have the right
+                # suppression list.
+                cli_config_warning = generate_tool_dg_cli_in_project_in_workspace_error_message(
+                    root_path, workspace_root_path
+                )
+    else:
+        root_path = Path.cwd()
+        workspace_root_path = None
+        root_file_validation_result = None
+        container_workspace_validation_result = None
+
+    if has_dg_user_file_config():
+        user_config = load_dg_user_file_config()
+    else:
+        user_config = None
+
+    return DgConfigFileDiscoveryResult(
+        root_path=root_path,
+        workspace_root_path=workspace_root_path,
+        root_file_path=root_config_path,
+        root_validation_result=root_file_validation_result,
+        container_workspace_file_path=workspace_config_path
+        if root_path != workspace_root_path
+        else None,
+        container_workspace_validation_result=container_workspace_validation_result,
+        user_file_path=get_dg_config_path() if has_dg_user_file_config() else None,
+        user_config=user_config,
+        cli_config_warning=cli_config_warning,
+    )
 
 
 # NOTE: The presence of dg.toml will cause pyproject.toml to be ignored for purposes of dg config.
@@ -464,10 +585,20 @@ def load_dg_workspace_file_config(path: Path) -> "DgWorkspaceFileConfig":
     if is_workspace_file_config(config):
         return config
     else:
-        _raise_file_config_validation_error("Expected a workspace configuration.", path)
+        raise_file_config_validation_error("Expected a workspace configuration.", path)
 
 
 def _load_dg_file_config(path: Path, config_format: Optional[DgConfigFileFormat]) -> DgFileConfig:
+    validation_result = validate_dg_file_config(path, config_format)
+    if validation_result.has_errors:
+        raise_file_config_validation_error(validation_result.message, path)
+    return validation_result.config
+
+
+def validate_dg_file_config(
+    path: Path, config_format: Optional[DgConfigFileFormat] = None
+) -> "DgConfigValidationResult":
+    """Validate a Dg config file at the given path."""
     import tomlkit
     import tomlkit.items
 
@@ -479,18 +610,134 @@ def _load_dg_file_config(path: Path, config_format: Optional[DgConfigFileFormat]
     else:
         raw_dict = get_toml_node(toml, ("tool", "dg"), tomlkit.items.Table).unwrap()
         path_prefix = "tool.dg"
-    try:
-        config = _DgConfigValidator(path_prefix).validate({k: v for k, v in raw_dict.items()})
-    except DgValidationError as e:
-        _raise_file_config_validation_error(str(e), path)
-    return config
+    return _DgConfigValidator(path_prefix).validate({k: v for k, v in raw_dict.items()})
+
+
+_DgConfigErrorType: TypeAlias = Literal[
+    "unrecognized_field",
+    "missing_required_field",
+    "invalid_value",
+]
+
+
+@record
+class _DgConfigErrorRecord:
+    """Record for errors encountered during Dg config validation."""
+
+    @property
+    @abstractmethod
+    def message(self) -> str:
+        """The error message to display."""
+
+
+@record
+class _DgConfigInvalidValueErrorRecord(_DgConfigErrorRecord):
+    key: str
+    expected_type_str: str
+    value_str: str
+
+    @property
+    def message(self) -> str:
+        return f"Invalid value for `{self.key}`:\n    Expected: {self.expected_type_str}\n    Received: {self.value_str}"
+
+
+@record
+class _DgConfigUnrecognizedFieldErrorRecord(_DgConfigErrorRecord):
+    parent_key: str
+    key: str
+
+    @property
+    def message(self) -> str:
+        return f"Unrecognized field at `{self.parent_key}`:\n    {self.key}"
+
+
+@record
+class _DgConfigMissingRequiredFieldErrorRecord(_DgConfigErrorRecord):
+    key: str
+    expected_type_str: str
+
+    @property
+    def message(self) -> str:
+        return f"Missing required value for `{self.key}`:\n    Expected: {self.expected_type_str}"
+
+
+@record
+class _DgConfigMiscellaneousErrorRecord(_DgConfigErrorRecord):
+    description: str
+
+    @property
+    def message(self) -> str:
+        return self.description
+
+
+@record
+class DgConfigValidationResult:
+    raw_config: dict[str, Any]
+    type: Optional[str]
+    errors: list[_DgConfigErrorRecord] = field(default_factory=list)
+
+    @property
+    def message(self) -> str:
+        """Get a message summarizing the validation result."""
+        if not self.errors:
+            return "Configuration is valid."
+        else:
+            return "\n".join(error.message for error in self.errors)
+
+    @property
+    def has_errors(self) -> bool:
+        """Check if there are any validation errors."""
+        return bool(self.errors)
+
+    @property
+    def config(self) -> Union["DgWorkspaceFileConfig", "DgProjectFileConfig"]:
+        if self.errors:
+            raise DgError(
+                "Cannot access config when there are validation errors. "
+                "Use the `errors` property to access the list of errors."
+            )
+        if self.type == "workspace":
+            return cast("DgWorkspaceFileConfig", self.raw_config)
+        elif self.type == "project":
+            return cast("DgProjectFileConfig", self.raw_config)
+        else:
+            raise DgError("Unreachable: Invalid type in _DgConfigValidatorResult.")
 
 
 class _DgConfigValidator:
     def __init__(self, path_prefix: Optional[str]) -> None:
         self.path_prefix = path_prefix
+        self.errors: list[_DgConfigErrorRecord] = []
 
-    def normalize_deprecated_settings(self, raw_dict: dict[str, Any]) -> None:
+    def validate(self, raw_dict: dict[str, Any]) -> DgConfigValidationResult:
+        self._normalize_deprecated_settings(raw_dict)
+        self._validate_file_config_setting(
+            raw_dict,
+            "directory_type",
+            Required[Literal["workspace", "project"]],
+        )
+        self._validate_dg_config_file_cli_section(raw_dict.get("cli", {}))
+
+        directory_type = None
+        if raw_dict.get("directory_type") == "workspace":
+            self._validate_file_config_workspace_section(raw_dict.get("workspace", {}))
+            self._validate_file_config_no_extraneous_keys(
+                set(DgWorkspaceFileConfig.__annotations__.keys()), raw_dict, None
+            )
+            directory_type = raw_dict["directory_type"]
+        elif raw_dict.get("directory_type") == "project":
+            self._validate_file_config_project_section(raw_dict.get("project", {}))
+            self._validate_file_config_no_extraneous_keys(
+                set(DgProjectFileConfig.__annotations__.keys()), raw_dict, None
+            )
+            directory_type = raw_dict["directory_type"]
+        return DgConfigValidationResult(
+            raw_config=raw_dict,
+            type=directory_type,
+            errors=self.errors,
+        )
+
+    def _normalize_deprecated_settings(self, raw_dict: dict[str, Any]) -> None:
         """Normalize deprecated settings to the new format."""
         # We have to separately extract the warning suppression list since we haven't validated the
         # config yet.
@@ -510,34 +757,10 @@ class _DgConfigValidator:
             emit_warning("deprecated_python_environment", msg, suppress_warnings)
             del raw_dict["project"]["python_environment"]
 
-    def validate(self, raw_dict: dict[str, Any]) -> DgFileConfig:
-        self.normalize_deprecated_settings(raw_dict)
-        self._validate_file_config_setting(
-            raw_dict,
-            "directory_type",
-            Required[Literal["workspace", "project"]],
-        )
-        self._validate_dg_config_file_cli_section(raw_dict.get("cli", {}))
-        if raw_dict["directory_type"] == "workspace":
-            self._validate_file_config_setting(raw_dict, "workspace", dict)
-            self._validate_file_config_workspace_section(raw_dict.get("workspace", {}))
-            self._validate_file_config_no_extraneous_keys(
-                set(DgWorkspaceFileConfig.__annotations__.keys()), raw_dict, None
-            )
-            return cast("DgWorkspaceFileConfig", raw_dict)
-        elif raw_dict["directory_type"] == "project":
-            self._validate_file_config_setting(raw_dict, "project", dict)
-            self._validate_file_config_project_section(raw_dict.get("project", {}))
-            self._validate_file_config_no_extraneous_keys(
-                set(DgProjectFileConfig.__annotations__.keys()), raw_dict, None
-            )
-            return cast("DgProjectFileConfig", raw_dict)
-        else:
-            raise DgError("Unreachable")
-
     def _validate_dg_config_file_cli_section(self, section: object) -> None:
         if not isinstance(section, dict):
-            self._raise_mistyped_key_error("tool.dg.cli", get_type_str(dict), section)
+            self._log_invalid_value_error("tool.dg.cli", get_type_str(dict), section)
+            return
         for key, type_ in DgRawCliConfig.__annotations__.items():
             self._validate_file_config_setting(section, key, type_, "cli")
         self._validate_file_config_no_extraneous_keys(
@@ -546,30 +769,34 @@ class _DgConfigValidator:
 
     def _validate_file_config_project_section(self, section: object) -> None:
         if not isinstance(section, dict):
-            self._raise_mistyped_key_error("project", get_type_str(dict), section)
+            self._log_invalid_value_error("project", get_type_str(dict), section)
+            return
         for key, type_ in DgRawProjectConfig.__annotations__.items():
             self._validate_file_config_setting(section, key, type_, "project")
         self._validate_file_config_no_extraneous_keys(
             set(DgRawProjectConfig.__annotations__.keys()), section, "project"
         )
         if "registry_modules" in section:
-            for pattern in section["registry_modules"]:
+            for i, pattern in enumerate(section["registry_modules"]):
                 if not is_valid_module_pattern(pattern):
-                    full_key = self._get_full_key("project.registry_modules")
-                    raise DgValidationError(
-                        f"Invalid module pattern `{pattern}` at `{full_key}`. "
-                        "Module patterns must consist of '.'-separated segments that are either "
-                        "valid Python identifiers or wildcards ('*')."
+                    full_key = self._get_full_key(f"project.registry_modules[{i}]")
+                    self.errors.append(
+                        _DgConfigInvalidValueErrorRecord(
+                            key=full_key,
+                            expected_type_str="A pattern consisting of '.'-separated segments that are either valid Python identifiers or wildcards ('*').",
+                            value_str=str(pattern),
+                        )
                     )
 
     def _validate_file_config_workspace_section(self, section: object) -> None:
         if not isinstance(section, dict):
-            self._raise_mistyped_key_error("workspace", get_type_str(dict), section)
+            self._log_invalid_value_error("workspace", get_type_str(dict), section)
+            return
         for key, type_ in DgRawWorkspaceConfig.__annotations__.items():
             if key == "projects":
-                self._validate_file_config_setting(section, key, list, "workspace")
-                for i, spec in enumerate(section.get("projects") or []):
-                    self._validate_file_config_workspace_project_spec(spec, i)
+                if self._validate_file_config_setting(section, key, list, "workspace"):
+                    for i, spec in enumerate(section.get("projects") or []):
+                        self._validate_file_config_workspace_project_spec(spec, i)
             elif key == "scaffold_project_options":
                 self._validate_file_config_workspace_scaffold_project_options(
                     section.get("scaffold_project_options", {})
@@ -582,9 +809,10 @@ class _DgConfigValidator:
 
     def _validate_file_config_workspace_project_spec(self, section: object, index: int) -> None:
         if not isinstance(section, dict):
-            self._raise_mistyped_key_error(
+            self._log_invalid_value_error(
                 f"workspace.projects[{index}]", get_type_str(dict), section
             )
+            return
         for key, type_ in DgRawWorkspaceProjectSpec.__annotations__.items():
             self._validate_file_config_setting(section, key, type_, f"workspace.projects[{index}]")
         self._validate_file_config_no_extraneous_keys(
@@ -595,9 +823,10 @@ class _DgConfigValidator:
 
     def _validate_file_config_workspace_scaffold_project_options(self, section: object) -> None:
         if not isinstance(section, dict):
-            self._raise_mistyped_key_error(
+            self._log_invalid_value_error(
                 "workspace.scaffold_project_options", get_type_str(dict), section
             )
+            return
         for key, type_ in DgRawWorkspaceNewProjectOptions.__annotations__.items():
             self._validate_file_config_setting(
                 section, key, type_, "workspace.scaffold_project_options"
@@ -612,9 +841,11 @@ class _DgConfigValidator:
         self, valid_keys: set[str], section: Mapping[str, object], toml_path: Optional[str]
     ) -> None:
         extraneous_keys = [k for k in section.keys() if k not in valid_keys]
-        if extraneous_keys:
-            full_key = self._get_full_key(toml_path)
-            raise DgValidationError(f"Unrecognized fields at `{full_key}`:\n    {extraneous_keys}")
+        parent_key = self._get_full_key(toml_path)
+        for key in extraneous_keys:
+            self.errors.append(
+                _DgConfigUnrecognizedFieldErrorRecord(parent_key=parent_key, key=key)
+            )
 
     # expected_type Any to handle typing constructs (`Literal` etc)
     def _validate_file_config_setting(
@@ -623,48 +854,59 @@ class _DgConfigValidator:
         key: str,
         type_: Any,
         path_prefix: Optional[str] = None,
-    ) -> None:
+    ) -> bool:
         origin = get_origin(type_)
         is_required = origin is Required
         class_ = type_ if origin not in (Required, NotRequired) else get_args(type_)[0]
 
-        error_type = None
+        error_type: Optional[_DgConfigErrorType] = None
         if is_required and key not in section:
-            error_type = "required"
+            error_type = "missing_required_field"
         if key in section and not match_type(section[key], class_):
-            error_type = "mistype"
+            error_type = "invalid_value"
+
         if error_type:
             full_key = f"{path_prefix}.{key}" if path_prefix else key
             type_str = get_type_str(class_)
-            if error_type == "required":
-                self._raise_missing_required_key_error(full_key, type_str)
-            if error_type == "mistype":
-                self._raise_mistyped_key_error(full_key, type_str, section[key])
+            if error_type == "missing_required_field":
+                self._log_missing_required_field_error(full_key, type_str)
+            if error_type == "invalid_value":
+                self._log_invalid_value_error(full_key, type_str, section[key])
+            return False
+        return True
 
     def _get_full_key(self, key: Optional[str]) -> str:
         if self.path_prefix:
             return f"{self.path_prefix}.{key}" if key else self.path_prefix
         return key if key else "<root>"
 
-    def _raise_missing_required_key_error(self, key: str, type_str: str) -> Never:
+    def _log_missing_required_field_error(self, key: str, type_str: str) -> None:
         full_key = self._get_full_key(key)
-        raise DgValidationError(
-            f"Missing required value for `{full_key}`:\n   Expected {type_str}."
+        self.errors.append(
+            _DgConfigMissingRequiredFieldErrorRecord(
+                key=full_key,
+                expected_type_str=type_str,
+            )
         )
 
-    def _raise_mistyped_key_error(self, key: str, type_str: str, value: object) -> Never:
+    def _log_invalid_value_error(self, key: str, type_str: str, value: object) -> None:
         full_key = self._get_full_key(key)
-        raise DgValidationError(
-            f"Invalid value for `{full_key}`:\n    Expected {type_str}, got `{value}`."
+        self.errors.append(
+            _DgConfigInvalidValueErrorRecord(
+                key=full_key,
+                expected_type_str=type_str,
+                value_str=str(value),
+            )
         )
 
 
-def _raise_file_config_validation_error(message: str, file_path: Path) -> Never:
+def raise_file_config_validation_error(message: str, file_path: Path) -> Never:
     exit_with_error(
         textwrap.dedent(f"""
-        Error in configuration file:
+        Errors found in configuration file at:
             {file_path}
         """)
+        + "\n"
         + message,
         do_format=False,
     )

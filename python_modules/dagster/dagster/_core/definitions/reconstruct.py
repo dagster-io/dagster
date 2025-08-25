@@ -653,6 +653,7 @@ def def_from_pointer(
         raise DagsterInvariantViolationError(
             f"Error invoking function at {pointer.describe()} with no arguments. "
             "Reconstructable target must be callable with no arguments"
+            f"Got {target}, {pointer.describe()}"
         )
 
     return _check_is_loadable(target())
@@ -733,9 +734,11 @@ def repository_def_from_target_def(
     from dagster._core.definitions.definitions_load_context import DefinitionsLoadContext
 
     repo_def = _repository_def_from_target_def_inner(target, None)
+    context = DefinitionsLoadContext.get()
     return (
-        repo_def.replace_reconstruction_metadata(
-            DefinitionsLoadContext.get().get_pending_reconstruction_metadata()
+        repo_def.replace_repository_load_data(
+            context.get_pending_reconstruction_metadata(),
+            context.defs_state_info,
         )
         if repo_def
         else None
@@ -771,8 +774,10 @@ def initialize_repository_def_from_pointer(
             f"Received a {type(target)}"
         )
 
-    return check.inst(repo_def, RepositoryDefinition).replace_reconstruction_metadata(
-        DefinitionsLoadContext.get().get_pending_reconstruction_metadata()
+    context = DefinitionsLoadContext.get()
+    return check.inst(repo_def, RepositoryDefinition).replace_repository_load_data(
+        context.get_pending_reconstruction_metadata(),
+        context.defs_state_info,
     )
 
 
@@ -813,6 +818,7 @@ def reconstruct_repository_def_from_pointer(
                 if curr_repo_load_data
                 else {},
                 reconstruction_metadata=curr_context.get_pending_reconstruction_metadata(),
+                defs_state_info=curr_context.defs_state_info,
             ),
         )
     else:
@@ -831,6 +837,8 @@ def reconstruct_repository_def_from_pointer(
             f"Received a {type(target)}"
         )
 
-    return check.inst(repo_def, RepositoryDefinition).replace_reconstruction_metadata(
-        DefinitionsLoadContext.get().get_pending_reconstruction_metadata()
+    context = DefinitionsLoadContext.get()
+    return check.inst(repo_def, RepositoryDefinition).replace_repository_load_data(
+        context.get_pending_reconstruction_metadata(),
+        context.defs_state_info,
     )

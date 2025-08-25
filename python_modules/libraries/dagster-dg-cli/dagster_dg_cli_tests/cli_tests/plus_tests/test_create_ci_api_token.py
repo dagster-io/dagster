@@ -1,12 +1,11 @@
-# ruff: noqa: I001 - import order differs between CI and local due to package installation differences
 from typing import Callable, Optional
 from unittest import mock
 
 import pytest
 import responses
+from dagster_dg_cli.utils.plus import gql
 from dagster_test.dg_utils.utils import ProxyRunner, isolated_example_workspace
 
-from dagster_dg_cli.utils.plus import gql
 from dagster_dg_cli_tests.cli_tests.plus_tests.utils import mock_gql_response
 
 

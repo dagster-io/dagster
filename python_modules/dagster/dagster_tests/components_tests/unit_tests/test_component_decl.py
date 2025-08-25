@@ -13,10 +13,8 @@ from dagster.components.core.decl import (
     PythonFileDecl,
 )
 from dagster.components.core.defs_module import ComponentPath, PythonFileComponent
-from dagster_shared.record import record
 
 
-@record(checked=False)
 class MockComponentTree(ComponentTree):
     def set_root_decl(self, root_decl: ComponentDecl):
         setattr(self, "_root_decl", root_decl)

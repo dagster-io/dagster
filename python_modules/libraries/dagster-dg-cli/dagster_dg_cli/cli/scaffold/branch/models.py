@@ -50,7 +50,7 @@ class AIInteraction:
     prompt: str
     response: str
     token_count: Optional[int]
-    tools_used: list[str]
+    allowed_tools: list[str]
     duration_ms: float
 
 

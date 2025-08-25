@@ -12,13 +12,13 @@ Analyze the user's request above and create a comprehensive plan showing exactly
 
 ## Context Information
 
-**Available Components:** {available_components}{codebase_info}{project_info}
+{context_info}
 
 ## Required Plan Format
 
 Please provide your plan in this exact structure:
 
-### 📋 COMPLETE EXECUTION PLAN
+# 📋 COMPLETE EXECUTION PLAN
 
 **Summary:** Brief description of what this plan will accomplish
 
@@ -37,7 +37,7 @@ Please provide your plan in this exact structure:
 
 **Environment requirements:** [list any environment variables or setup needed, or "None" if no special requirements]
 
-Will verify creation with `dg check defs`
+**Verification** Run `dg check defs` to verify definitions are valid
 
 ## Important Guidelines
 
@@ -48,4 +48,3 @@ Will verify creation with `dg check defs`
 5. **NEXT_STEPS.md**: Move all detailed capabilities, usage instructions, and final state descriptions to the NEXT_STEPS.md file. Do not include subbullets in the plan
 6. **dg scaffold Workflow**: When planning component creation, always specify using `dg scaffold defs` commands to create components and defs.yaml files, then editing the generated files. Never plan to create defs.yaml files directly.
 7. **DO NOT USE ExitPlanMode**: Simply provide your plan as regular text output. Do not use any tools that exit planning mode.
-8. **Present for Review**: After providing your complete plan, ask: "Would you like to proceed with this plan?"

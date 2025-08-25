@@ -634,6 +634,7 @@ class ProxyRunner:
         use_fixed_test_components: bool = False,
         verbose: bool = False,
         console_width: int = DG_CLI_MAX_OUTPUT_WIDTH,
+        mix_stderr: bool = True,
     ) -> Iterator[Self]:
         # We set the `COLUMNS` environment variable because this determines the width of output from
         # `rich`, which we use for generating tables etc.
@@ -647,7 +648,11 @@ class ProxyRunner:
                 *use_component_modules_args,
                 *(["--verbose"] if verbose else []),
             ]
-            yield cls(CliRunner(), append_args=append_opts, console_width=console_width)
+            yield cls(
+                CliRunner(mix_stderr=mix_stderr),
+                append_args=append_opts,
+                console_width=console_width,
+            )
 
     def invoke(self, *args: str, **invoke_kwargs: Any) -> Result:
         from dagster_dg_cli.cli import cli as dg_cli

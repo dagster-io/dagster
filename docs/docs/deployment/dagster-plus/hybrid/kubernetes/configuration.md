@@ -18,6 +18,23 @@ helm show values dagster-plus/dagster-plus-agent
 
 You can also view the chart values on [ArtifactHub](https://artifacthub.io/packages/helm/dagster-cloud/dagster-cloud-agent?modal=values).
 
+## Agent configuration
+
+The [`dagsterCloudAgent`](https://artifacthub.io/packages/helm/dagster-cloud/dagster-cloud-agent?modal=values) value of the Helm chart provides the ability to add configuration to the Dagster+ agent.
+
+The following `values.yaml` example file shows how to configure the resources for a Dagster+ agent:
+
+```yaml
+dagsterCloudAgent:
+  resources:
+    requests:
+      cpu: '1000m'
+      memory: '2Gi'
+    limits:
+      cpu: '2000m'
+      memory: '4Gi'
+```
+
 ## Per-deployment configuration
 
 The [`workspace`](https://artifacthub.io/packages/helm/dagster-cloud/dagster-cloud-agent?modal=values) value of the Helm chart provides the ability to add configuration for all jobs that are spun up by the agent, across all repositories. To add secrets or mounted volumes to all Kubernetes Pods, you can specify your desired configuration under this value.

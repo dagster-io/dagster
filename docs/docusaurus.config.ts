@@ -39,7 +39,7 @@ const config: Config = {
           keywords: {boost: 75},
           content: {boost: 2},
         },
-        excludeRoutes: ['/api/python-api/**/*', '/about/changelog', '/migration/upgrading'],
+        excludeRoutes: ['/tags', '/tags/**/*', '/about/**/*', '/migration/upgrading'],
       },
     ],
   ],
@@ -207,7 +207,7 @@ const config: Config = {
           lastVersion: 'current',
           versions: {
             current: {
-              label: 'Latest (1.11.6)',
+              label: 'Latest (1.11.7)',
               path: '/',
             },
           },

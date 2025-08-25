@@ -25,7 +25,7 @@ freshness:
   enabled: True
 ```
 
-To use freshness policies in Dagster+, sign up for the [Observability update early access program](/guides/labs/observability-update/#how-to-join-the-early-access-program).
+To use freshness policies in Dagster+, sign up for the [Observability update early access program](/guides/labs/observability-update#how-to-join-the-early-access-program).
 
 ### Relationship to existing `FreshnessPolicy`
 

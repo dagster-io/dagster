@@ -1,5 +1,21 @@
 # Changelog
 
+## 1.11.7 (core) / 0.27.7 (libraries)
+
+### New
+
+- `dg` will now report multiple detected errors in a configuration file instead of failing on the first detected error.
+- It is now possible to supply run config when launching an asset backfill.
+- Updated the root URL to display the Overview/Timeline view for locations with schedules/automations, but no jobs (thanks [@dschafer](https://github.com/dschafer)!)
+- Added `tzdata` as a dependency to `dagster`, to ensure that declaring timezones like `US/Central` work in all environments.
+- [dagster-dg-cli] Updated scaffolded file names to handle consecutive upper case letters (ACMEDatabricksJobComponent → acme_databricks_job_component.py not a_c_m_e_databricks_job_component.py)
+- [dagster-dg-cli] Validating `requirements.env` is now opt-in for `dg check yaml`.
+- [dagster-dbt] `DAGSTER_DBT_CLOUD_POLL_INTERVAL` and `DAGSTER_DBT_CLOUD_POLL_TIMEOUT` environment variables can now be used to configure the polling interval and timeout for fetching data from dbt Cloud.
+
+### Deprecations
+
+- [components] Removed deprecated and non-functional `asset_post_processors` fields from `SlingReplicationCollectionComponent` and `AirflowInstanceComponent`.
+
 ## 1.11.6 (core) / 0.27.6 (libraries)
 
 ### New
