@@ -430,6 +430,8 @@ export const AssetGraphExplorerSidebar = React.memo(
       return 'repeat(2, minmax(0, 1fr))';
     }, [expandedPanel]);
 
+    console.log({isTopPanelHidden, isBottomPanelHidden});
+
     return (
       <div
         style={{
@@ -443,8 +445,7 @@ export const AssetGraphExplorerSidebar = React.memo(
             display: 'grid',
             gridTemplateColumns: '1fr auto',
             gap: '6px',
-            padding: '12px 24px',
-            paddingRight: 12,
+            padding: '12px',
           }}
         >
           <ButtonGroupWrapper>
@@ -463,7 +464,7 @@ export const AssetGraphExplorerSidebar = React.memo(
             <Button icon={<Icon name="panel_show_right" />} onClick={hideSidebar} />
           </Tooltip>
         </Box>
-        <Box padding={{vertical: 8, left: 24, right: 12}}>
+        <Box padding={{vertical: 8, horizontal: 12}}>
           <SearchFilter
             values={React.useMemo(() => {
               return allAssetKeys.map((key) => ({
@@ -477,13 +478,13 @@ export const AssetGraphExplorerSidebar = React.memo(
         </Box>
         {sidebarViewType === 'tree' ? (
           <div style={{display: 'grid', gridTemplateRows: treeViewRows}}>
-            <Box border="top" style={{overflow: 'hidden'}} flex={{direction: 'column'}}>
+            <Box flex={{direction: 'column', gap: 4}}>
               <Box
                 background={Colors.backgroundLight()}
                 padding={{horizontal: 24, vertical: 8}}
                 style={{fontWeight: 500, position: 'sticky', top: 0, zIndex: 1}}
                 flex={{direction: 'row', alignItems: 'center', justifyContent: 'space-between'}}
-                border="top-and-bottom"
+                border={isTopPanelHidden ? 'top' : 'top-and-bottom'}
               >
                 <Box flex={{direction: 'row', alignItems: 'center', gap: 4}}>
                   Downstream{' '}
@@ -529,7 +530,7 @@ export const AssetGraphExplorerSidebar = React.memo(
                 />
               </div>
             </Box>
-            <Box border="top" style={{overflow: 'hidden'}} flex={{direction: 'column'}}>
+            <Box flex={{direction: 'column', gap: 4}}>
               <Box
                 background={Colors.backgroundLight()}
                 padding={{horizontal: 24, vertical: 8}}
@@ -583,7 +584,7 @@ export const AssetGraphExplorerSidebar = React.memo(
             </Box>
           </div>
         ) : (
-          <Box border="top">
+          <Box border="top" padding={{top: 4}}>
             <AssetSidebarListView
               loading={loading}
               renderedNodes={renderedNodesRootToLeaf}

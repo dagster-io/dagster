@@ -257,7 +257,7 @@ const FocusableLabelContainer = ({
 const BoxWrapper = ({level, children}: {level: number; children: React.ReactNode}) => {
   const wrapper = React.useMemo(() => {
     let sofar = children;
-    for (let i = 0; i < level; i++) {
+    for (let i = 1; i < level; i++) {
       sofar = (
         <Box
           padding={{left: 8}}
