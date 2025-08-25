@@ -660,7 +660,9 @@ class TimeWindowPartitionsDefinition(PartitionsDefinition, IHaveNew):
         return self._get_first_partition_window(self._get_current_timestamp())
 
     @functools.lru_cache(maxsize=256)
-    def _get_last_partition_window(self, current_timestamp: float) -> Optional[TimeWindow]:
+    def _get_last_partition_window(
+        self, current_timestamp: float, ignore_exclusions: bool = False
+    ) -> Optional[TimeWindow]:
         first_window = self.get_first_partition_window()
         if first_window is None:
             return None
@@ -669,17 +671,31 @@ class TimeWindowPartitionsDefinition(PartitionsDefinition, IHaveNew):
             if self.end_timestamp is not None and self.end_timestamp < current_timestamp:
                 current_timestamp = self.end_timestamp
 
-            return next(iter(self._reverse_iterate_time_windows(current_timestamp)))
+            return next(
+                iter(
+                    self._reverse_iterate_time_windows(
+                        current_timestamp, ignore_exclusions=ignore_exclusions
+                    )
+                )
+            )
 
         last_window_before_end_timestamp = None
         current_timestamp_window = None
 
         if self.end_timestamp is not None:
             last_window_before_end_timestamp = next(
-                iter(self._reverse_iterate_time_windows(self.end_timestamp))
+                iter(
+                    self._reverse_iterate_time_windows(
+                        self.end_timestamp, ignore_exclusions=ignore_exclusions
+                    )
+                )
             )
 
-        current_timestamp_iter = iter(self._reverse_iterate_time_windows(current_timestamp))
+        current_timestamp_iter = iter(
+            self._reverse_iterate_time_windows(
+                current_timestamp, ignore_exclusions=ignore_exclusions
+            )
+        )
         # first returned time window is the last window <= the current timestamp
         end_offset_zero_window = next(current_timestamp_iter)
 
@@ -688,7 +704,9 @@ class TimeWindowPartitionsDefinition(PartitionsDefinition, IHaveNew):
                 current_timestamp_window = next(current_timestamp_iter)
         else:
             current_timestamp_iter = iter(
-                self._iterate_time_windows(end_offset_zero_window.end.timestamp())
+                self._iterate_time_windows(
+                    end_offset_zero_window.end.timestamp(), ignore_exclusions=ignore_exclusions
+                )
             )
             for _ in range(self.end_offset):
                 current_timestamp_window = next(current_timestamp_iter)
@@ -709,8 +727,10 @@ class TimeWindowPartitionsDefinition(PartitionsDefinition, IHaveNew):
         else:
             return current_timestamp_window
 
-    def get_last_partition_window(self) -> Optional[TimeWindow]:
-        return self._get_last_partition_window(self._get_current_timestamp())
+    def get_last_partition_window(self, ignore_exclusions: bool = False) -> Optional[TimeWindow]:
+        return self._get_last_partition_window(
+            self._get_current_timestamp(), ignore_exclusions=ignore_exclusions
+        )
 
     def get_first_partition_key(self) -> Optional[str]:
         first_window = self.get_first_partition_window()
@@ -921,7 +941,9 @@ class TimeWindowPartitionsDefinition(PartitionsDefinition, IHaveNew):
             day_offset=day_offset,
         )
 
-    def _iterate_time_windows(self, start_timestamp: float) -> Iterable[TimeWindow]:
+    def _iterate_time_windows(
+        self, start_timestamp: float, ignore_exclusions: bool = False
+    ) -> Iterable[TimeWindow]:
         """Returns an infinite generator of time windows that start >= the given start time."""
         iterator = cron_string_iterator(
             start_timestamp=start_timestamp,
@@ -934,15 +956,21 @@ class TimeWindowPartitionsDefinition(PartitionsDefinition, IHaveNew):
 
         while True:
             next_time = next(iterator)
-            if not self.is_window_start_excluded(curr_time):
+            if not self.is_window_start_excluded(curr_time) or ignore_exclusions:
                 yield TimeWindow(curr_time, next_time)
             curr_time = next_time
 
-    def _reverse_iterate_time_windows(self, end_timestamp: float) -> Iterable[TimeWindow]:
+    def _reverse_iterate_time_windows(
+        self, end_timestamp: float, ignore_exclusions: bool = False
+    ) -> Iterable[TimeWindow]:
         """Returns an infinite generator of time windows that end before the given end timestamp.
         For example, if you pass in any time on day N (including midnight) for a daily partition
         with offset 0 bounded at midnight, the first element this iterator will return is
         [day N-1, day N).
+
+        If ignore_exclusions is True, excluded windows will be included in the iteration.  This is
+        useful for checking for skipping excluded windows when calculating a schedule off of the
+        time window partitions definition
         """
         iterator = reverse_cron_string_iterator(
             end_timestamp=end_timestamp,
@@ -956,7 +984,7 @@ class TimeWindowPartitionsDefinition(PartitionsDefinition, IHaveNew):
 
         while True:
             prev_time = next(iterator)
-            if not self.is_window_start_excluded(prev_time):
+            if not self.is_window_start_excluded(prev_time) or ignore_exclusions:
                 yield TimeWindow(prev_time, curr_time)
             curr_time = prev_time
 
