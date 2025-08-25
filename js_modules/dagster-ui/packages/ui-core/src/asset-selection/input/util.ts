@@ -88,6 +88,7 @@ export const getAttributesMap = (assets: AssetGraphQueryItem[]) => {
       AssetHealthStatus.WARNING,
       AssetHealthStatus.UNKNOWN,
       AssetHealthStatus.NOT_APPLICABLE,
+      ...SUB_STATUSES,
     ];
     return {
       ...data,
@@ -97,7 +98,7 @@ export const getAttributesMap = (assets: AssetGraphQueryItem[]) => {
   return data;
 };
 
-const memoizedTag = weakMapMemoize((key: string, value: string) => ({
+export const memoizedTag = weakMapMemoize((key: string, value: string) => ({
   key,
   value,
 }));
@@ -125,3 +126,20 @@ export const unsupportedAttributeMessages = {
   changed_in_branch: 'changed_in_branch filtering is available in Dagster+ branch deployments',
   status: 'status filtering is available in Dagster+',
 };
+
+export const SUB_STATUSES = [
+  'MATERIALIZATION_SUCCESS',
+  'MATERIALIZATION_FAILURE',
+  'MATERIALIZATION_UNKNOWN',
+  'CHECK_PASSED',
+  'CHECK_WARNING',
+  'CHECK_ERROR',
+  'CHECK_EXECUTION_FAILED',
+  'CHECK_UNKNOWN',
+  'CHECK_MISSING',
+  'FRESHNESS_PASSING',
+  'FRESHNESS_WARNING',
+  'FRESHNESS_FAILURE',
+  'FRESHNESS_UNKNOWN',
+  'FRESHNESS_MISSING',
+] as const;

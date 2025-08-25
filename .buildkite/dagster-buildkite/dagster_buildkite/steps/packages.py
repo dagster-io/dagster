@@ -19,7 +19,7 @@ from buildkite_shared.step_builders.step_builder import (
 )
 from dagster_buildkite.defines import GCP_CREDS_FILENAME, GCP_CREDS_LOCAL_FILE, GIT_REPO_ROOT
 from dagster_buildkite.steps.test_project import test_project_depends_fn
-from dagster_buildkite.steps.tox import build_tox_step
+from dagster_buildkite.steps.tox import ToxFactor, build_tox_step
 from dagster_buildkite.utils import (
     connect_sibling_docker_container,
     has_dagster_airlift_changes,
@@ -27,6 +27,7 @@ from dagster_buildkite.utils import (
     has_storage_test_fixture_changes,
     network_buildkite_container,
     skip_if_not_dagster_dbt_cloud_commit,
+    skip_if_not_dagster_dbt_commit,
 )
 from typing_extensions import TypeAlias
 
@@ -68,10 +69,14 @@ _PACKAGE_TYPE_TO_EMOJI_MAP: Mapping[str, str] = {
 }
 
 PytestExtraCommandsFunction: TypeAlias = Callable[
-    [AvailablePythonVersion, Optional[str]], list[str]
+    [AvailablePythonVersion, Optional[ToxFactor]], list[str]
 ]
-PytestDependenciesFunction: TypeAlias = Callable[[AvailablePythonVersion, Optional[str]], list[str]]
-UnsupportedVersionsFunction: TypeAlias = Callable[[Optional[str]], list[AvailablePythonVersion]]
+PytestDependenciesFunction: TypeAlias = Callable[
+    [AvailablePythonVersion, Optional[ToxFactor]], list[str]
+]
+UnsupportedVersionsFunction: TypeAlias = Callable[
+    [Optional[ToxFactor]], list[AvailablePythonVersion]
+]
 
 
 @dataclass
@@ -100,12 +105,12 @@ class PackageSpec:
             list of commands or a function. Function form takes two arguments, the python version
             being tested and the tox factor (if any), and returns a list of Buildkite step names.
             Defaults to None (no additional commands).
-        pytest_tox_factors: (list[str], optional): list of additional tox environment factors to
+        pytest_tox_factors: (list[ToxFactor], optional): list of additional tox environment factors to
             use when iterating pytest tox environments. A separate pytest step is generated for each
             element of the product of versions tested and these factors. For example, if we are
-            testing Python 3.7 and 3.8 and pass factors `["a", "b"]`, then four steps will be
-            generated corresponding to environments "py37-a", "py37-b", "py38-a", "py38-b". Defaults
-            to None.
+            testing Python 3.7 and 3.8 and pass factors `[ToxFactor("pytest"), ToxFactor("integration")]`,
+            then four steps will be generated corresponding to environments "py37-pytest", "py37-integration",
+            "py38-pytest", "py38-integration". Defaults to None.
         env_vars (list[str], optional): Additional environment variables to pass through to each
             test environment. These must also be listed in the target toxfile under `passenv`.
             Defaults to None.
@@ -115,6 +120,8 @@ class PackageSpec:
         timeout_in_minutes (int, optional): Fail after this many minutes.
         queue (BuildkiteQueue, optional): Schedule steps to this queue.
         run_pytest (bool, optional): Whether to run pytest. Enabled by default.
+        splits (int, optional): Number of splits to use when no tox factors are defined.
+            This allows parallelizing tests even when no specific tox factors are specified. Defaults to 1.
     """
 
     directory: str
@@ -125,13 +132,14 @@ class PackageSpec:
     ] = None
     pytest_extra_cmds: Optional[Union[list[str], PytestExtraCommandsFunction]] = None
     pytest_step_dependencies: Optional[Union[list[str], PytestDependenciesFunction]] = None
-    pytest_tox_factors: Optional[list[str]] = None
+    pytest_tox_factors: Optional[list[ToxFactor]] = None
     env_vars: Optional[list[str]] = None
     tox_file: Optional[str] = None
     retries: Optional[int] = None
     timeout_in_minutes: Optional[int] = None
     queue: Optional[BuildkiteQueue] = None
     run_pytest: bool = True
+    splits: int = 1
     always_run_if: Optional[Callable[[], bool]] = None
     skip_if: Optional[Callable[[], Optional[str]]] = None
 
@@ -152,10 +160,8 @@ class PackageSpec:
         if self.run_pytest:
             default_python_versions = AvailablePythonVersion.get_pytest_defaults()
 
-            tox_factors: list[Optional[str]] = (
-                [f.lstrip("-") for f in self.pytest_tox_factors]
-                if self.pytest_tox_factors
-                else [None]
+            tox_factors: list[Optional[ToxFactor]] = (
+                self.pytest_tox_factors if self.pytest_tox_factors else [None]
             )
 
             for other_factor in tox_factors:
@@ -185,15 +191,17 @@ class PackageSpec:
                     version_factor = AvailablePythonVersion.to_tox_factor(py_version)
                     if other_factor is None:
                         tox_env = version_factor
+                        splits = self.splits
                     else:
-                        tox_env = f"{version_factor}-{other_factor}"
+                        tox_env = f"{version_factor}-{other_factor.factor}"
+                        splits = other_factor.splits
 
                     if isinstance(self.pytest_extra_cmds, list):
-                        extra_commands_pre = self.pytest_extra_cmds
+                        base_extra_commands_pre = self.pytest_extra_cmds
                     elif callable(self.pytest_extra_cmds):
-                        extra_commands_pre = self.pytest_extra_cmds(py_version, other_factor)
+                        base_extra_commands_pre = self.pytest_extra_cmds(py_version, other_factor)
                     else:
-                        extra_commands_pre = []
+                        base_extra_commands_pre = []
 
                     dependencies = []
                     if not self.skip_reason:
@@ -202,23 +210,35 @@ class PackageSpec:
                         elif callable(self.pytest_step_dependencies):
                             dependencies = self.pytest_step_dependencies(py_version, other_factor)
 
-                    steps.append(
-                        build_tox_step(
-                            self.directory,
-                            tox_env,
-                            base_label=base_name,
-                            command_type="pytest",
-                            python_version=py_version,
-                            env_vars=self.env_vars,
-                            extra_commands_pre=extra_commands_pre,
-                            dependencies=dependencies,
-                            tox_file=self.tox_file,
-                            timeout_in_minutes=self.timeout_in_minutes,
-                            queue=self.queue,
-                            retries=self.retries,
-                            skip_reason=self.skip_reason,
+                    # Generate multiple steps if splits > 1
+                    for split_index in range(1, splits + 1):
+                        if splits > 1:
+                            split_label = f"{base_name} ({split_index}/{splits})"
+                            pytest_args = [f"--split {split_index}/{splits}"]
+                            extra_commands_pre = base_extra_commands_pre
+                        else:
+                            split_label = base_name
+                            pytest_args = None
+                            extra_commands_pre = base_extra_commands_pre
+
+                        steps.append(
+                            build_tox_step(
+                                self.directory,
+                                tox_env,
+                                base_label=split_label,
+                                command_type="pytest",
+                                python_version=py_version,
+                                env_vars=self.env_vars,
+                                extra_commands_pre=extra_commands_pre,
+                                dependencies=dependencies,
+                                tox_file=self.tox_file,
+                                timeout_in_minutes=self.timeout_in_minutes,
+                                queue=self.queue,
+                                retries=self.retries,
+                                skip_reason=self.skip_reason,
+                                pytest_args=pytest_args,
+                            )
                         )
-                    )
 
         emoji = _PACKAGE_TYPE_TO_EMOJI_MAP[self.package_type]  # type: ignore[index]
         if len(steps) >= 2:
@@ -350,8 +370,8 @@ airline_demo_extra_cmds = [
 ]
 
 
-def dagster_graphql_extra_cmds(_, tox_factor: Optional[str]) -> list[str]:
-    if tox_factor and tox_factor.startswith("postgres"):
+def dagster_graphql_extra_cmds(_, tox_factor: Optional[ToxFactor]) -> list[str]:
+    if tox_factor and tox_factor.factor.startswith("postgres"):
         return [
             "pushd python_modules/dagster-graphql/dagster_graphql_tests/graphql/",
             "docker-compose up -d --remove-orphans",  # clean up in hooks/pre-exit,
@@ -464,9 +484,9 @@ EXAMPLE_PACKAGES_WITH_CUSTOM_CONFIG: list[PackageSpec] = [
         # snippets against all supported python versions.
         unsupported_python_versions=AvailablePythonVersion.get_all_except_default(),
         pytest_tox_factors=[
-            "all",
-            "integrations",
-            "docs_snapshot_test",
+            ToxFactor("all"),
+            ToxFactor("integrations"),
+            ToxFactor("docs_snapshot_test", splits=3),
         ],
         always_run_if=has_dg_changes,
     ),
@@ -500,11 +520,11 @@ EXAMPLE_PACKAGES_WITH_CUSTOM_CONFIG: list[PackageSpec] = [
     # The 6 tutorials referenced in cloud onboarding cant test "source" due to dagster-cloud dep
     PackageSpec(
         "examples/assets_modern_data_stack",
-        pytest_tox_factors=["pypi"],
+        pytest_tox_factors=[ToxFactor("pypi")],
     ),
     PackageSpec(
         "examples/assets_dbt_python",
-        pytest_tox_factors=["pypi"],
+        pytest_tox_factors=[ToxFactor("pypi")],
         unsupported_python_versions=[
             AvailablePythonVersion.V3_12,  # duckdb
             AvailablePythonVersion.V3_13,  # duckdb
@@ -519,7 +539,7 @@ EXAMPLE_PACKAGES_WITH_CUSTOM_CONFIG: list[PackageSpec] = [
     ),
     PackageSpec(
         "examples/quickstart_aws",
-        pytest_tox_factors=["pypi"],
+        pytest_tox_factors=[ToxFactor("pypi")],
         # TODO - re-enable once new version of `dagster-cloud` is available on pypi
         unsupported_python_versions=[
             AvailablePythonVersion.V3_13,
@@ -527,19 +547,19 @@ EXAMPLE_PACKAGES_WITH_CUSTOM_CONFIG: list[PackageSpec] = [
     ),
     PackageSpec(
         "examples/quickstart_etl",
-        pytest_tox_factors=["pypi"],
+        pytest_tox_factors=[ToxFactor("pypi")],
     ),
     PackageSpec(
         "examples/quickstart_gcp",
-        pytest_tox_factors=["pypi"],
+        pytest_tox_factors=[ToxFactor("pypi")],
     ),
     PackageSpec(
         "examples/quickstart_snowflake",
-        pytest_tox_factors=["pypi"],
+        pytest_tox_factors=[ToxFactor("pypi")],
     ),
     PackageSpec(
         "examples/use_case_repository",
-        pytest_tox_factors=["source"],
+        pytest_tox_factors=[ToxFactor("source")],
     ),
     # Federation tutorial spins up multiple airflow instances, slow to run - use docker queue to ensure
     # beefier instance
@@ -567,16 +587,16 @@ EXAMPLE_PACKAGES_WITH_CUSTOM_CONFIG: list[PackageSpec] = [
 
 
 def _unsupported_dagster_python_versions(
-    tox_factor: Optional[str],
+    tox_factor: Optional[ToxFactor],
 ) -> list[AvailablePythonVersion]:
-    if tox_factor == "general_tests_old_protobuf":
+    if tox_factor and tox_factor.factor == "general_tests_old_protobuf":
         return [
             AvailablePythonVersion.V3_11,
             AvailablePythonVersion.V3_12,
             AvailablePythonVersion.V3_13,
         ]
 
-    if tox_factor in {
+    if tox_factor and tox_factor.factor in {
         "type_signature_tests",
     }:
         return [AvailablePythonVersion.V3_12]
@@ -600,9 +620,9 @@ def test_subfolders(tests_folder_name: str) -> Iterable[str]:
             yield subfolder.name
 
 
-def tox_factors_for_folder(tests_folder_name: str) -> list[str]:
+def tox_factors_for_folder(tests_folder_name: str) -> list[ToxFactor]:
     return [
-        f"{tests_folder_name}__{subfolder_name}"
+        ToxFactor(f"{tests_folder_name}__{subfolder_name}")
         for subfolder_name in test_subfolders(tests_folder_name)
     ]
 
@@ -614,32 +634,33 @@ LIBRARY_PACKAGES_WITH_CUSTOM_CONFIG: list[PackageSpec] = [
         # test suite also installs a ton of packages in the same environment, which is liable to
         # cause dependency collisions.
         unsupported_python_versions=AvailablePythonVersion.get_all_except_default(),
+        retries=0,
     ),
     PackageSpec("python_modules/dagster-webserver", pytest_extra_cmds=ui_extra_cmds),
     PackageSpec(
         "python_modules/dagster",
         env_vars=["AWS_ACCOUNT_ID"],
         pytest_tox_factors=[
-            "api_tests",
-            "asset_defs_tests",
-            "cli_tests",
-            "components_tests",
-            "core_tests",
-            "daemon_sensor_tests",
-            "daemon_tests",
-            "declarative_automation_tests",
-            "definitions_tests",
-            "general_tests",
-            "general_tests_old_protobuf",
-            "launcher_tests",
-            "logging_tests",
-            "model_tests",
-            "scheduler_tests",
-            "storage_tests",
-            "storage_tests_sqlalchemy_1_3",
-            "storage_tests_sqlalchemy_1_4",
-            "utils_tests",
-            "type_signature_tests",
+            ToxFactor("api_tests"),
+            ToxFactor("asset_defs_tests"),
+            ToxFactor("cli_tests", splits=2),
+            ToxFactor("components_tests"),
+            ToxFactor("core_tests"),
+            ToxFactor("daemon_sensor_tests", splits=2),
+            ToxFactor("daemon_tests", splits=2),
+            ToxFactor("declarative_automation_tests", splits=2),
+            ToxFactor("definitions_tests"),
+            ToxFactor("general_tests"),
+            ToxFactor("general_tests_old_protobuf"),
+            ToxFactor("launcher_tests"),
+            ToxFactor("logging_tests"),
+            ToxFactor("model_tests"),
+            ToxFactor("scheduler_tests"),
+            ToxFactor("storage_tests", splits=2),
+            ToxFactor("storage_tests_sqlalchemy_1_3", splits=2),
+            ToxFactor("storage_tests_sqlalchemy_1_4", splits=2),
+            ToxFactor("utils_tests"),
+            ToxFactor("type_signature_tests"),
         ]
         + tox_factors_for_folder("execution_tests"),
         unsupported_python_versions=_unsupported_dagster_python_versions,
@@ -648,22 +669,23 @@ LIBRARY_PACKAGES_WITH_CUSTOM_CONFIG: list[PackageSpec] = [
         "python_modules/dagster-graphql",
         pytest_extra_cmds=dagster_graphql_extra_cmds,
         pytest_tox_factors=[
-            "not_graphql_context_test_suite",
-            "sqlite_instance_multi_location",
-            "sqlite_instance_managed_grpc_env",
-            "sqlite_instance_deployed_grpc_env",
-            "sqlite_instance_code_server_cli_grpc_env",
-            "graphql_python_client",
-            "postgres-graphql_context_variants",
-            "postgres-instance_multi_location",
-            "postgres-instance_managed_grpc_env",
-            "postgres-instance_deployed_grpc_env",
+            ToxFactor("not_graphql_context_test_suite", splits=2),
+            ToxFactor("sqlite_instance_multi_location"),
+            ToxFactor("sqlite_instance_managed_grpc_env", splits=2),
+            ToxFactor("sqlite_instance_deployed_grpc_env", splits=2),
+            ToxFactor("sqlite_instance_code_server_cli_grpc_env", splits=2),
+            ToxFactor("graphql_python_client"),
+            ToxFactor("postgres-graphql_context_variants"),
+            ToxFactor("postgres-instance_multi_location"),
+            ToxFactor("postgres-instance_managed_grpc_env", splits=2),
+            ToxFactor("postgres-instance_deployed_grpc_env", splits=2),
         ],
         unsupported_python_versions=(
             lambda tox_factor: (
                 [AvailablePythonVersion.V3_11]
                 if (
                     tox_factor
+                    and tox_factor.factor
                     in {
                         # test suites particularly likely to crash and/or hang
                         # due to https://github.com/grpc/grpc/issues/31885
@@ -692,17 +714,22 @@ LIBRARY_PACKAGES_WITH_CUSTOM_CONFIG: list[PackageSpec] = [
     PackageSpec(
         "python_modules/libraries/dagster-dbt",
         pytest_tox_factors=[
-            f"{deps_factor}-{command_factor}"
+            ToxFactor(f"{deps_factor}-{command_factor}", splits=3)
             for deps_factor in ["dbt17", "dbt18", "dbt19", "dbt110"]
             for command_factor in ["cloud", "core-main", "core-derived-metadata"]
-        ]
-        + ["dbtfusion-snowflake"],
+        ],
         # dbt-core 1.7's protobuf<5 constraint conflicts with the grpc requirement for Python 3.13
         unsupported_python_versions=(
             lambda tox_factor: [AvailablePythonVersion.V3_13]
-            if tox_factor and tox_factor.startswith("dbt17")
+            if tox_factor and tox_factor.factor.startswith("dbt17")
             else []
         ),
+    ),
+    PackageSpec(
+        "python_modules/libraries/dagster-dbt/",
+        skip_if=skip_if_not_dagster_dbt_commit,
+        name="dagster-dbt-fusion",
+        pytest_tox_factors=[ToxFactor("dbtfusion-snowflake")],
         env_vars=[
             "SNOWFLAKE_ACCOUNT",
             "SNOWFLAKE_USER",
@@ -732,7 +759,7 @@ LIBRARY_PACKAGES_WITH_CUSTOM_CONFIG: list[PackageSpec] = [
     ),
     PackageSpec(
         "python_modules/libraries/dagster-airbyte",
-        pytest_tox_factors=["unit", "integration"],
+        pytest_tox_factors=[ToxFactor("unit"), ToxFactor("integration")],
     ),
     PackageSpec(
         "python_modules/libraries/dagster-airflow",
@@ -753,20 +780,24 @@ LIBRARY_PACKAGES_WITH_CUSTOM_CONFIG: list[PackageSpec] = [
         ],
         pytest_extra_cmds=airflow_extra_cmds,
         pytest_tox_factors=[
-            "default-airflow2",
-            "localdb-airflow2",
-            "persistentdb-airflow2",
+            ToxFactor("default-airflow2"),
+            ToxFactor("localdb-airflow2"),
+            ToxFactor("persistentdb-airflow2"),
         ],
     ),
     PackageSpec(
         "python_modules/libraries/dagster-dg-cli",
-        pytest_tox_factors=["general", "docs", "plus"],
+        pytest_tox_factors=[
+            ToxFactor("general", splits=2),
+            ToxFactor("docs"),
+            ToxFactor("plus"),
+        ],
         env_vars=["SHELL"],
     ),
     PackageSpec(
         "python_modules/libraries/dagster-dg-cli",
         name="dagster-dg-cli-mcp",
-        pytest_tox_factors=["mcp"],
+        pytest_tox_factors=[ToxFactor("mcp")],
         unsupported_python_versions=[
             AvailablePythonVersion.V3_9,
         ],
@@ -889,8 +920,8 @@ LIBRARY_PACKAGES_WITH_CUSTOM_CONFIG: list[PackageSpec] = [
             "BUILDKITE_SECRETS_BUCKET",
         ],
         pytest_tox_factors=[
-            "default",
-            "old_kubernetes",
+            ToxFactor("default"),
+            ToxFactor("old_kubernetes"),
         ],
         pytest_extra_cmds=k8s_extra_cmds,
     ),
@@ -901,8 +932,8 @@ LIBRARY_PACKAGES_WITH_CUSTOM_CONFIG: list[PackageSpec] = [
         "python_modules/libraries/dagster-mysql",
         pytest_extra_cmds=mysql_extra_cmds,
         pytest_tox_factors=[
-            "storage_tests",
-            "storage_tests_sqlalchemy_1_3",
+            ToxFactor("storage_tests", splits=2),
+            ToxFactor("storage_tests_sqlalchemy_1_3", splits=2),
         ],
         always_run_if=has_storage_test_fixture_changes,
     ),
@@ -921,8 +952,8 @@ LIBRARY_PACKAGES_WITH_CUSTOM_CONFIG: list[PackageSpec] = [
     PackageSpec(
         "python_modules/libraries/dagster-postgres",
         pytest_tox_factors=[
-            "storage_tests",
-            "storage_tests_sqlalchemy_1_3",
+            ToxFactor("storage_tests"),
+            ToxFactor("storage_tests_sqlalchemy_1_3"),
         ],
         always_run_if=has_storage_test_fixture_changes,
     ),
@@ -941,12 +972,12 @@ LIBRARY_PACKAGES_WITH_CUSTOM_CONFIG: list[PackageSpec] = [
     ),
     PackageSpec(
         "python_modules/libraries/dagstermill",
-        pytest_tox_factors=["papermill1", "papermill2"],
+        pytest_tox_factors=[ToxFactor("papermill1", splits=2), ToxFactor("papermill2", splits=2)],
         retries=2,  # Workaround for flaky kernel issues
         unsupported_python_versions=(
             lambda tox_factor: (
                 [AvailablePythonVersion.V3_12, AvailablePythonVersion.V3_13]
-                if (tox_factor == "papermill1")
+                if (tox_factor and tox_factor.factor == "papermill1")
                 else []
             )
         ),
@@ -969,6 +1000,7 @@ LIBRARY_PACKAGES_WITH_CUSTOM_CONFIG: list[PackageSpec] = [
             AvailablePythonVersion.V3_13,
         ],
         queue=BuildkiteQueue.DOCKER,
+        splits=2,
     ),
     # Runs against live dbt cloud instance, we only want to run on commits and on the
     # nightly build

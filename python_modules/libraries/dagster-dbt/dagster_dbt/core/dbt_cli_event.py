@@ -36,6 +36,7 @@ from dagster_dbt.asset_utils import (
 from dagster_dbt.compat import REFABLE_NODE_TYPES, NodeStatus, NodeType, TestStatus
 from dagster_dbt.dagster_dbt_translator import DagsterDbtTranslator, validate_translator
 from dagster_dbt.dbt_manifest import DbtManifestParam, validate_manifest
+from dagster_dbt.dbt_project import DbtProject
 
 logger = get_dagster_logger()
 
@@ -386,8 +387,9 @@ class DbtCliEventMessage(ABC):
         dagster_dbt_translator: DagsterDbtTranslator,
         context: Optional[Union[OpExecutionContext, AssetExecutionContext]],
         target_path: Optional[Path],
+        project: Optional[DbtProject],
     ) -> Iterator[Union[Output, AssetMaterialization]]:
-        asset_key = dagster_dbt_translator.get_asset_spec(manifest, self._unique_id, None).key
+        asset_key = dagster_dbt_translator.get_asset_spec(manifest, self._unique_id, project).key
         metadata = self._get_materialization_metadata(dagster_dbt_translator, manifest, target_path)
         if context and context.has_assets_def:
             yield Output(
@@ -492,10 +494,11 @@ class DbtCliEventMessage(ABC):
         self,
         manifest: Mapping[str, Any],
         translator: DagsterDbtTranslator,
+        project: Optional[DbtProject],
         context: Optional[Union[OpExecutionContext, AssetExecutionContext]],
     ) -> Iterator[Union[AssetCheckResult, AssetCheckEvaluation, AssetObservation]]:
         """Converts a dbt CLI event to a set of Dagster events corresponding to a test execution."""
-        key = get_asset_check_key_for_test(manifest, translator, self._unique_id, project=None)
+        key = get_asset_check_key_for_test(manifest, translator, self._unique_id, project=project)
 
         has_assets_def = context is not None and context.has_assets_def
 
@@ -527,6 +530,7 @@ class DbtCliEventMessage(ABC):
         dagster_dbt_translator: DagsterDbtTranslator = DagsterDbtTranslator(),
         context: Optional[Union[OpExecutionContext, AssetExecutionContext]] = None,
         target_path: Optional[Path] = None,
+        project: Optional[DbtProject] = None,
     ) -> Iterator[
         Union[
             Output, AssetMaterialization, AssetObservation, AssetCheckResult, AssetCheckEvaluation
@@ -563,9 +567,11 @@ class DbtCliEventMessage(ABC):
         manifest = validate_manifest(manifest)
 
         if self._is_model_execution_event(manifest):
-            yield from self._to_model_events(manifest, dagster_dbt_translator, context, target_path)
+            yield from self._to_model_events(
+                manifest, dagster_dbt_translator, context, target_path, project
+            )
         if self._is_test_execution_event(manifest):
-            yield from self._to_test_events(manifest, dagster_dbt_translator, context)
+            yield from self._to_test_events(manifest, dagster_dbt_translator, project, context)
 
 
 class DbtCoreCliEventMessage(DbtCliEventMessage):

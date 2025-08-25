@@ -103,6 +103,7 @@ class _Repository:
 
         repository_definitions = fn()
         context = DefinitionsLoadContext.get()
+        defs_state_info = context.defs_state_info
 
         if context.load_type == DefinitionsLoadType.INITIALIZATION:
             reconstruction_metadata = context.get_pending_reconstruction_metadata()
@@ -159,8 +160,9 @@ class _Repository:
                 RepositoryLoadData(
                     cacheable_asset_data=cacheable_asset_data,
                     reconstruction_metadata=reconstruction_metadata,
+                    defs_state_info=defs_state_info,
                 )
-                if cacheable_asset_data or reconstruction_metadata
+                if cacheable_asset_data or reconstruction_metadata or defs_state_info
                 else None
             )
 
@@ -275,7 +277,7 @@ def repository(
 
         {
             'jobs': Dict[str, Callable[[], JobDefinition]],
-            'schedules': Dict[str, Callable[[], ScheduleDefinition]]
+            'schedules': Dict[str, Callable[[], ScheduleDefinition]],
             'sensors': Dict[str, Callable[[], SensorDefinition]]
         }
 
@@ -319,7 +321,7 @@ def repository(
             def some_sensor():
                 if foo():
                     yield RunRequest(
-                        run_key= ...,
+                        run_key=...,
                         run_config={
                             'ops': {'return_n': {'config': {'n': bar()}}}
                         }
@@ -348,7 +350,7 @@ def repository(
                     'team': 'Team A',
                     'repository_version': '1.2.3',
                     'environment': 'production',
-             })
+                })
             def simple_repository():
                 return [simple_job, some_sensor, my_schedule]
 

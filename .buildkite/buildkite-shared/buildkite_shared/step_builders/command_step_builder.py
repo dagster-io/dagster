@@ -3,6 +3,8 @@ from collections.abc import Mapping
 from enum import Enum
 from typing import Any, Callable, Optional, TypedDict
 
+from buildkite_shared.environment import is_feature_branch
+
 DEFAULT_TIMEOUT_IN_MIN = 35
 
 DOCKER_PLUGIN = "docker#v5.10.0"
@@ -77,21 +79,39 @@ CommandStepConfiguration = TypedDict(
 class CommandStepBuilder:
     _step: CommandStepConfiguration
 
+    def _should_enable_automatic_retry(self) -> bool:
+        """Determine if automatic retry should be enabled based on branch detection.
+
+        Returns True if automatic retry should be enabled, False otherwise.
+        Enables retries on master/release branches only.
+        """
+        try:
+            return not is_feature_branch()
+        except (AssertionError, KeyError):
+            # If BUILDKITE_BRANCH is not set, default to retry (safer fallback)
+            return True
+
     def __init__(
         self,
         label,
         key: Optional[str] = None,
         timeout_in_minutes: int = DEFAULT_TIMEOUT_IN_MIN,
-        retry_automatically=True,
+        retry_automatically: Optional[bool] = None,
         plugins: Optional[list[dict[str, object]]] = None,
     ):
         self._secrets = {}
         self._kubernetes_secrets = []
         self._docker_settings = None
+
         retry: dict[str, Any] = {
             "manual": {"permit_on_passed": True},
         }
-        if retry_automatically:
+        should_retry = (
+            retry_automatically
+            if retry_automatically is not None
+            else self._should_enable_automatic_retry()
+        )
+        if should_retry:
             retry["automatic"] = [
                 # https://buildkite.com/docs/agent/v3#exit-codes
                 {"exit_status": -1, "limit": 2},  # agent lost
@@ -231,7 +251,14 @@ class CommandStepBuilder:
         return self
 
     def with_retry(self, num_retries):
-        self._step["retry"] = {"automatic": {"limit": num_retries}}
+        # Always include manual retry configuration to match constructor behavior
+        retry_config: dict[str, object] = {"manual": {"permit_on_passed": True}}
+
+        # Add automatic retry only when appropriate
+        if num_retries is not None and num_retries > 0 and self._should_enable_automatic_retry():
+            retry_config["automatic"] = {"limit": num_retries}
+
+        self._step["retry"] = retry_config
         return self
 
     def on_queue(self, queue: BuildkiteQueue):

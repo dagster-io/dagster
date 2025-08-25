@@ -1,7 +1,7 @@
 ---
 title: 'Freshness policies'
 description: Dagster Freshness policies help you understand which of your assets have materialized recently and which ones are running behind - a key component of asset health.
-sidebar_position: 100
+sidebar_position: 500
 ---
 
 import FreshnessPoliciesPreview from '@site/docs/partials/\_FreshnessPoliciesPreview.md';
@@ -25,7 +25,7 @@ freshness:
   enabled: True
 ```
 
-To use freshness policies in Dagster+, sign up for the [Observability update early access program](/guides/labs/observability-update/#how-to-join-and-enable-the-beta).
+To use freshness policies in Dagster+, sign up for the [Observability update early access program](/guides/labs/observability-update#how-to-join-the-early-access-program).
 
 ### Relationship to existing `FreshnessPolicy`
 

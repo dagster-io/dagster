@@ -2,6 +2,8 @@
 description: Schedules enable automated execution of Dagster jobs at specified intervals ranging from common frequencies like hourly, daily, or weekly to more complex patterns defined with cron expressions.
 sidebar_position: 10
 title: Schedules
+canonicalUrl: '/guides/automate/schedules'
+slug: '/guides/automate/schedules'
 ---
 
 Schedules enable automated execution of jobs at specified intervals. These intervals can range from common frequencies like hourly, daily, or weekly, to more complex patterns defined using cron expressions.

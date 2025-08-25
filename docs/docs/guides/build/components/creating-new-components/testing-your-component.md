@@ -61,7 +61,7 @@ For ease of use, the `defs_yaml_contents` argument can be used to replace the co
 
 To test instantiation of a component, and to validate the definitions it produces, you can use the `load_component_and_build_defs` method, which loads an already-scaffolded component and builds the corresponding Definitions.
 
-For example, the following is code from our tests of our [dlt component](/guides/build/components/integrations/dlt-component-tutorial). In this case, we ensure that the definitions have loaded, and that the correct asset keys have been created:
+For example, the following is code from our tests of our [dlt component](/integrations/libraries/dlt). In this case, we ensure that the definitions have loaded, and that the correct asset keys have been created:
 
 ```python
 def test_dlt_component():

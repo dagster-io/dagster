@@ -11,6 +11,7 @@ from typing import Any, Callable, Optional, cast
 import click
 import dagster_shared.seven as seven
 from dagster_shared.cli import python_pointer_options
+from dagster_shared.serdes.objects import DefsStateInfo
 
 import dagster._check as check
 from dagster._cli.utils import assert_no_remaining_opts, get_instance_for_cli
@@ -698,6 +699,12 @@ def _execute_step_command_body(
     help="[INTERNAL] Retrieves current utilization metrics from GRPC server.",
     envvar="DAGSTER_ENABLE_SERVER_METRICS",
 )
+@click.option(
+    "--defs-state-info",
+    type=click.STRING,
+    required=False,
+    help="[INTERNAL] Serialized DefsStateInfo to use for the server.",
+)
 @python_pointer_options
 def grpc_command(
     port: Optional[int],
@@ -718,6 +725,7 @@ def grpc_command(
     location_name: Optional[str],
     instance_ref: Optional[str],
     enable_metrics: bool = False,
+    defs_state_info: Optional[str] = None,
     **other_opts: Any,
 ) -> None:
     # deferring for import perf
@@ -817,6 +825,9 @@ def grpc_command(
         location_name=location_name,
         enable_metrics=enable_metrics,
         server_threadpool_executor=threadpool_executor,
+        defs_state_info=deserialize_value(defs_state_info, DefsStateInfo)
+        if defs_state_info
+        else None,
     )
 
     server = DagsterGrpcServer(

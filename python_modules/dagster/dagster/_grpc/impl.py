@@ -4,7 +4,7 @@ import os
 import sys
 import threading
 from collections.abc import Generator, Iterator, Sequence
-from contextlib import contextmanager, nullcontext
+from contextlib import ExitStack, contextmanager, nullcontext
 from typing import TYPE_CHECKING, AbstractSet, Any, Optional, Union  # noqa: UP035
 
 from dagster_shared.record import record
@@ -36,6 +36,7 @@ from dagster._core.events import DagsterEvent, EngineEventData
 from dagster._core.execution.api import create_execution_plan, execute_run_iterator
 from dagster._core.instance import DagsterInstance
 from dagster._core.instance.ref import InstanceRef
+from dagster._core.remote_origin import CodeLocationOrigin
 from dagster._core.remote_representation.external_data import (
     JobDataSnap,
     PartitionConfigSnap,
@@ -49,7 +50,6 @@ from dagster._core.remote_representation.external_data import (
     SensorExecutionErrorSnap,
     job_name_for_partition_set_snap_name,
 )
-from dagster._core.remote_representation.origin import CodeLocationOrigin
 from dagster._core.snap.execution_plan_snapshot import snapshot_from_execution_plan
 from dagster._core.storage.dagster_run import DagsterRun
 from dagster._grpc.types import ExecuteExternalJobArgs, ExecutionPlanSnapshotArgs
@@ -194,25 +194,23 @@ def _run_in_subprocess(
 ) -> None:
     done_event = threading.Event()
     start_termination_thread(termination_event, done_event)
+
+    exit_stack = ExitStack()
     try:
         execute_run_args = deserialize_value(serialized_execute_run_args, ExecuteExternalJobArgs)
 
-        with (
-            DagsterInstance.from_ref(execute_run_args.instance_ref)
-            if execute_run_args.instance_ref
-            else nullcontext()
-        ) as instance:
-            instance = check.not_none(instance)  # noqa: PLW2901
-            dagster_run = instance.get_run_by_id(execute_run_args.run_id)
+        instance_ref = check.not_none(execute_run_args.instance_ref)
+        instance = exit_stack.enter_context(DagsterInstance.from_ref(instance_ref))
+        dagster_run = instance.get_run_by_id(execute_run_args.run_id)
 
-            if not dagster_run:
-                raise DagsterRunNotFoundError(
-                    f"gRPC server could not load run {execute_run_args.run_id} in order to execute it. Make sure that"
-                    " the gRPC server has access to your run storage.",
-                    invalid_run_id=execute_run_args.run_id,
-                )
+        if not dagster_run:
+            raise DagsterRunNotFoundError(
+                f"gRPC server could not load run {execute_run_args.run_id} in order to execute it. Make sure that"
+                " the gRPC server has access to your run storage.",
+                invalid_run_id=execute_run_args.run_id,
+            )
 
-            pid = os.getpid()
+        pid = os.getpid()
 
     except:
         serializable_error_info = serializable_error_info_from_exc_info(sys.exc_info())
@@ -222,6 +220,7 @@ def _run_in_subprocess(
         )
         subprocess_status_handler(event)
         subprocess_status_handler(RunInSubprocessComplete())
+        exit_stack.close()
         # set events to stop the termination thread on exit
         done_event.set()
         termination_event.set()
@@ -258,7 +257,7 @@ def _run_in_subprocess(
                 )
             )
         subprocess_status_handler(RunInSubprocessComplete())
-        instance.dispose()
+        exit_stack.close()
         # set events to stop the termination thread on exit
         done_event.set()
         termination_event.set()

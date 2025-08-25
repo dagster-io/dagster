@@ -1,6 +1,6 @@
 # Diagnose Buildkite Failure
 
-Automatically diagnose Buildkite test failures for the current PR by fetching build information and analyzing failure logs.
+Fast automated diagnosis of Buildkite build failures using the specialized buildkite-error-detective agent.
 
 ## Usage
 
@@ -10,61 +10,43 @@ Automatically diagnose Buildkite test failures for the current PR by fetching bu
 
 ## What it does
 
+**Delegates to buildkite-error-detective agent** for:
+
+- Fast parallel analysis of failing builds (30-45 second target)
+- Pattern-first diagnosis of common failure types
+- Specific actionable fixes with file paths and line numbers
+- Distinction between functional failures vs. test infrastructure issues
+
+**Process**:
+
 1. **Get PR Status**: Uses `gh` CLI to fetch the current PR's status checks
-2. **Find Failing Builds**: Identifies any failing Buildkite builds and extracts build numbers
-3. **Fetch Failure Logs**: Uses Buildkite MCP server to get detailed logs from failing jobs
+2. **Find Failing Builds**: Identifies failing Buildkite builds and extracts build numbers
+3. **Fetch Failure Logs**: Uses Buildkite MCP server to get detailed logs from the most recent failing build
 4. **Analyze Failures**: Examines error patterns and provides diagnosis
 5. **Suggest Solutions**: Recommends specific fixes or next steps
 
 ## Requirements
 
-- **GitHub CLI (`gh`)**: Must be installed and authenticated
-- **Buildkite MCP Server**: Must be installed and configured
+- **Buildkite MCP Server**: Must be configured with API tokens
   - Installation: https://github.com/buildkite/buildkite-mcp-server
-  - API access tokens available here: https://buildkite.com/user/api-access-tokens
-  - Required for fetching build logs and job details
-
-## Output
-
-The command will:
-
-- List all failing Buildkite builds for the current PR
-- Show detailed error messages from failed jobs
-- Categorize failure types (test failures, infrastructure issues, etc.)
-- Provide specific recommendations for fixing the issues
-- Include direct links to failing builds for manual investigation
-
-## Error Handling
-
-- If not in a git repository: Shows error and exits
-- If `gh` CLI is not available: Shows installation instructions
-- If no PR is found: Shows error message
-- If Buildkite MCP server is not configured: Shows setup instructions with manual investigation options
-- If no failures are found: Confirms all builds are passing
+  - API tokens: https://buildkite.com/user/api-access-tokens
 
 ## Example Output
 
-```
-🔍 Diagnosing Buildkite failures for current PR...
-📋 Getting PR status checks...
+**Executive Summary**: Cache Performance Regression in Asset Partition Status Methods
 
-❌ Found 1 failing Buildkite build:
-   • dagster-dagster #129927
+**Root Cause**: AssetMixin extraction broke caching behavior - `get_materialized_partitions()` called more times than expected
 
-🔍 Analyzing failure logs...
+**Priority Fixes**:
 
-📊 Failure Analysis:
-   Build: dagster-dagster #129927
-   Failed Jobs: 1
+1. **Verify AssetMixin Integration**: Check cached method delegation in asset mixin structure
+2. **Cache Mechanism**: Ensure partition status queries properly cached through new mixin
+3. **Method Resolution**: Confirm cache decorators preserved after method extraction
 
-   Job: :pytest: automation 3.12
-   Error Type: Test Failure
-   Root Cause: test_check_docstrings_real_dagster_symbols[dagster.DagsterInstance] FAILED
+**Affected Tests**:
 
-   Details: Test expects validation output but symbol is in exclude list
+- `test_get_cached_partition_status_changed_time_partitions`
+- `test_get_cached_partition_status_by_asset`
+- Storage & GraphQL partition caching tests (8 failed jobs)
 
-💡 Recommended Fix:
-   Update test in test_integration.py to handle excluded symbols
-
-🔗 Build URL: https://buildkite.com/dagster/dagster-dagster/builds/129927
-```
+**Investigation Time**: ~35 seconds ✅

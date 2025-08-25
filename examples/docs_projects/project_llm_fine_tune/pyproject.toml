@@ -25,7 +25,6 @@ directory_type = "project"
 
 [tool.dg.project]
 root_module = "project_llm_fine_tune"
-autoload_defs = true
 
 [tool.dg.project.python_environment]
 active = true

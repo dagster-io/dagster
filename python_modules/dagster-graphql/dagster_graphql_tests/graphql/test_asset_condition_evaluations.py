@@ -20,7 +20,7 @@ from dagster._core.definitions.partitions.definition import (
 from dagster._core.definitions.run_request import InstigatorType
 from dagster._core.definitions.sensor_definition import SensorType
 from dagster._core.instance import DagsterInstance
-from dagster._core.remote_representation.origin import RemoteInstigatorOrigin
+from dagster._core.remote_origin import RemoteInstigatorOrigin
 from dagster._core.scheduler.instigation import (
     InstigatorState,
     InstigatorStatus,

@@ -3,7 +3,7 @@
 Schedules and sensors
 =====================
 
-Dagster offers several ways to run data pipelines without manual intervention, including traditional scheduling and event-based triggers. `Automating your Dagster pipelines <https://docs.dagster.io/guides/automate/>`_ can boost efficiency and ensure that data is produced consistently and reliably.
+Dagster offers several ways to run data pipelines without manual intervention, including traditional scheduling and event-based triggers. `Automating your Dagster pipelines <https://docs.dagster.io/guides/automate>`_ can boost efficiency and ensure that data is produced consistently and reliably.
 
 ----
 

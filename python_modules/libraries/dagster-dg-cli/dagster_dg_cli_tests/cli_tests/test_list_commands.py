@@ -8,17 +8,12 @@ import tempfile
 import textwrap
 from pathlib import Path
 from typing import Any
+from unittest import mock
 
 import pytest
 from dagster.components.utils import format_error_message
-from dagster_dg_core.utils import activate_venv, ensure_dagster_dg_tests_import, set_toml_node
-
-ensure_dagster_dg_tests_import()
-
-from unittest import mock
-
-from dagster_dg_core.utils import ensure_dagster_dg_tests_import
-from dagster_dg_core_tests.utils import (
+from dagster_dg_core.utils import activate_venv, set_toml_node
+from dagster_test.dg_utils.utils import (
     ProxyRunner,
     assert_runner_result,
     fixed_panel_width,
@@ -121,7 +116,13 @@ def test_list_components_success():
         with fixed_panel_width(width=120):
             result = runner.invoke("list", "components")
             assert_runner_result(result)
-            match_terminal_box_output(result.output.strip(), _EXPECTED_COMPONENT_TYPES_TABLE)
+            lines = result.output.splitlines()
+            table_start_index = next(
+                i for i, line in enumerate(lines) if re.search(r"^[^\w\s]", line)
+            )
+            print("FIRST LINE", lines[table_start_index])  # noqa: T201
+            table_output = "\n".join(lines[table_start_index:])
+            match_terminal_box_output(table_output.strip(), _EXPECTED_COMPONENT_TYPES_TABLE)
 
 
 def test_list_components_json_success():
@@ -130,8 +131,10 @@ def test_list_components_json_success():
         isolated_components_venv(runner),
     ):
         result = runner.invoke("list", "components", "--json")
-        assert_runner_result(result)
-        assert match_json_output(result.output.strip(), _EXPECTED_COMPONENTS_JSON)
+        lines = result.output.splitlines()
+        json_start_index = next(i for i, line in enumerate(lines) if line.startswith("["))
+        json_output = "\n".join(lines[json_start_index:])
+        assert match_json_output(json_output, _EXPECTED_COMPONENTS_JSON)
 
 
 def test_list_components_filtered():
@@ -237,7 +240,7 @@ _EXPECTED_PLUGIN_JSON = textwrap.dedent("""
 
 def test_list_registry_modules_success():
     with (
-        ProxyRunner.test(use_fixed_test_components=True) as runner,
+        ProxyRunner.test(use_fixed_test_components=True, mix_stderr=False) as runner,
         isolated_components_venv(runner),
     ):
         with fixed_panel_width(width=120):

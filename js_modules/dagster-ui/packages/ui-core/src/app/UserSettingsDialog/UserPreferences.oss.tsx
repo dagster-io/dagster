@@ -1,4 +1,4 @@
-import {Box, Button, Checkbox, Icon, Subheading} from '@dagster-io/ui-components';
+import {Box, Button, Checkbox, Icon, Subheading, Tooltip} from '@dagster-io/ui-components';
 import React from 'react';
 
 import {useStateWithStorage} from '../../hooks/useStateWithStorage';
@@ -8,6 +8,7 @@ import {ThemeSelect} from '../time/ThemeSelect';
 import {TimezoneSelect} from '../time/TimezoneSelect';
 import {automaticLabel} from '../time/browserTimezone';
 import {useThemeState} from '../useThemeState';
+import {useShowAssetsWithoutDefinitions} from './useShowAssetsWithoutDefinitions';
 
 export const UserPreferences = ({
   onChangeRequiresReload,
@@ -18,7 +19,8 @@ export const UserPreferences = ({
     SHORTCUTS_STORAGE_KEY,
     (value: any) => (typeof value === 'boolean' ? value : true),
   );
-
+  const {showAssetsWithoutDefinitions, setShowAssetsWithoutDefinitions} =
+    useShowAssetsWithoutDefinitions();
   const {theme, setTheme} = useThemeState();
 
   const initialShortcutsEnabled = React.useRef(shortcutsEnabled);
@@ -49,6 +51,11 @@ export const UserPreferences = ({
     setShortcutsEnabled(checked);
   };
 
+  const toggleShowAssetsWithoutDefinitions = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const {checked} = e.target;
+    setShowAssetsWithoutDefinitions(checked);
+  };
+
   return (
     <>
       <Box padding={{bottom: 4}}>
@@ -69,6 +76,19 @@ export const UserPreferences = ({
       <Box padding={{vertical: 8}} flex={{justifyContent: 'space-between', alignItems: 'center'}}>
         <div>Enable keyboard shortcuts</div>
         <Checkbox checked={shortcutsEnabled} format="switch" onChange={toggleKeyboardShortcuts} />
+      </Box>
+      <Box padding={{vertical: 8}} flex={{justifyContent: 'space-between', alignItems: 'center'}}>
+        <Box flex={{direction: 'row', alignItems: 'center'}}>
+          <div>Show assets without definitions in catalog</div>
+          <Tooltip content="Hide assets that lack current code definitions (typically legacy or orphaned assets with only historical materialization data) helping users focus on actively managed assets">
+            <Icon name="info" />
+          </Tooltip>
+        </Box>
+        <Checkbox
+          checked={showAssetsWithoutDefinitions}
+          format="switch"
+          onChange={toggleShowAssetsWithoutDefinitions}
+        />
       </Box>
     </>
   );

@@ -378,6 +378,14 @@ Each Docusaurus doc can include [front matter](https://docusaurus.io/docs/markdo
 
 The llms-txt plugin recreates llms.txt and llms-full.txt in the `build` folder every time `yarn build` is run. This plugin appends each page's title and front matter description to llms.txt, and the entire contents of each page to llms-full.txt.
 
+### Canonical URL
+
+Since we have `trailingSlash: false` set in `vercel.json`, canonical URLs for docs do not include a trailing slash. However, by default, Docusaurus includes a trailing slash for index page URLs, which can harm SEO for the docs site. To get around this, we set the `canonicalUrl` in the front matter of index pages.
+
+### Slug
+
+We set the slug in the front matter of index pages so the slug that is displayed in a browser for index pages is the same as the canonical URL.
+
 ### Integrations pages front matter
 
 The front matter for integration pages (e.g. [Databricks](https://docs.dagster.io/integrations/libraries/databricks) or [Delta Lake](https://docs.dagster.io/integrations/libraries/deltalake/)) is aligned with the public API that is used in the integrations marketplace -- please check with the @dagster-io/docs team before changing it.

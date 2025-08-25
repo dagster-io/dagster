@@ -6,6 +6,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Callable, Optional
 
+import dagster as dg
 import pytest
 from click.testing import CliRunner
 from dagster import AssetKey, AssetSpec, BackfillPolicy
@@ -20,7 +21,7 @@ from dagster.components.core.component_tree import ComponentTree
 from dagster.components.core.load_defs import build_component_defs
 from dagster.components.resolved.core_models import AssetAttributesModel, OpSpec
 from dagster.components.resolved.errors import ResolutionException
-from dagster.components.testing import TestOpCustomization, TestTranslation
+from dagster.components.testing.test_cases import TestOpCustomization, TestTranslation
 from dagster_dbt import DbtProject, DbtProjectComponent
 from dagster_dbt.cli.app import project_app_typer_click_object
 from dagster_dbt.components.dbt_project.component import get_projects_from_dbt_component
@@ -256,6 +257,9 @@ def test_dependency_on_dbt_project():
         downstream_of_customers_two_def.asset_deps[AssetKey("downstream_of_customers_two")]
     ) == {AssetKey("customers")}
 
+    assert defs.resolve_job_def("run_customers")
+    assert defs.resolve_schedule_def("run_customers_schedule")
+
 
 def test_spec_is_available_in_scope(dbt_path: Path) -> None:
     defs = build_component_defs_for_test(
@@ -323,6 +327,53 @@ def test_state_path(
     assert comp.project.state_path.resolve() == Path(state_path)
     assert comp.project.target == "target"
     assert comp.project.profile == "profile"
+
+
+@pytest.mark.parametrize(
+    ["cli_args", "expected_args"],
+    [
+        (
+            None,
+            [
+                "build",
+            ],
+        ),
+        (
+            ["build", "--foo"],
+            ["build", "--foo"],
+        ),
+        (
+            [
+                "run",
+                {
+                    "--vars": {
+                        "start_date": "{{ partition_key_range.start }}",
+                        "end_date": "{{ partition_key_range.end }}",
+                    }
+                },
+                {"--threads": 2},
+            ],
+            [
+                "run",
+                "--vars",
+                '{"start_date": "2021-01-01", "end_date": "2021-01-01"}',
+                "--threads",
+                "2",
+            ],
+        ),
+    ],
+)
+def test_cli_args(dbt_path: Path, cli_args: Optional[list[str]], expected_args: list[str]) -> None:
+    args = {"cli_args": cli_args} if cli_args else {}
+
+    comp = load_component_for_test(
+        DbtProjectComponent,
+        {"project": str(dbt_path), **args},
+    )
+    context = dg.build_asset_context(
+        partition_key_range=dg.PartitionKeyRange(start="2021-01-01", end="2021-01-01"),
+    )
+    assert comp.get_cli_args(context) == expected_args
 
 
 def test_python_interface(dbt_path: Path):

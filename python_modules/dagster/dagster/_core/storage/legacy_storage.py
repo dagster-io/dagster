@@ -49,7 +49,7 @@ if TYPE_CHECKING:
     )
     from dagster._core.execution.stats import RunStepKeyStatsSnapshot
     from dagster._core.instance import DagsterInstance
-    from dagster._core.remote_representation.origin import RemoteJobOrigin
+    from dagster._core.remote_origin import RemoteJobOrigin
     from dagster._core.scheduler.instigation import (
         AutoMaterializeAssetEvaluationRecord,
         InstigatorState,

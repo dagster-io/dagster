@@ -1,6 +1,7 @@
 import inspect
 from collections.abc import Mapping
 from dataclasses import dataclass
+from functools import partial
 from typing import Any, Callable, Final, Optional, Union, overload
 
 from dagster import _check as check
@@ -99,8 +100,8 @@ def preview(
                 ...
     """
     if __obj is None:
-        return lambda obj: preview(
-            obj,
+        return partial(
+            preview,
             subject=subject,
             emit_runtime_warning=emit_runtime_warning,
             additional_warn_text=additional_warn_text,
@@ -116,8 +117,9 @@ def preview(
         if emit_runtime_warning:
             stack_level = _get_warning_stacklevel(__obj)
             subject = subject or _get_subject(__obj)
-            warning_fn = lambda: preview_warning(
-                subject,
+            warning_fn = partial(
+                preview_warning,
+                subject=subject,
                 additional_warn_text=additional_warn_text,
                 stacklevel=stack_level,
             )
@@ -213,8 +215,8 @@ def beta(
                 ...
     """
     if __obj is None:
-        return lambda obj: beta(
-            obj,
+        return partial(
+            beta,
             subject=subject,
             emit_runtime_warning=emit_runtime_warning,
             additional_warn_text=additional_warn_text,
@@ -230,8 +232,9 @@ def beta(
         if emit_runtime_warning:
             stack_level = _get_warning_stacklevel(__obj)
             subject = subject or _get_subject(__obj)
-            warning_fn = lambda: beta_warning(
-                subject,
+            warning_fn = partial(
+                beta_warning,
+                subject=subject,
                 additional_warn_text=additional_warn_text,
                 stacklevel=stack_level,
             )
@@ -300,8 +303,8 @@ def beta_param(
         emit_runtime_warning (bool): Whether to emit a warning when the function is called.
     """
     if __obj is None:
-        return lambda obj: beta_param(
-            obj,
+        return partial(
+            beta_param,
             param=param,
             additional_warn_text=additional_warn_text,
             emit_runtime_warning=emit_runtime_warning,
@@ -320,13 +323,17 @@ def beta_param(
         )
 
         if emit_runtime_warning:
-            condition = lambda *_, **kwargs: kwargs.get(param) is not None
-            warning_fn = lambda: beta_warning(
-                _get_subject(__obj, param=param),
+            warning_fn = partial(
+                beta_warning,
+                subject=_get_subject(__obj, param=param),
                 additional_warn_text=additional_warn_text,
-                stacklevel=4,
+                stacklevel=3,
             )
-            return apply_pre_call_decorator(__obj, warning_fn, condition=condition)
+            return apply_pre_call_decorator(
+                __obj,
+                warning_fn,
+                condition=partial(_param_is_used, __param=param),
+            )
         else:
             return __obj
 
@@ -428,8 +435,8 @@ def superseded(
                 ...
     """
     if __obj is None:
-        return lambda obj: superseded(
-            obj,
+        return partial(
+            superseded,
             subject=subject,
             emit_runtime_warning=emit_runtime_warning,
             additional_warn_text=additional_warn_text,
@@ -445,8 +452,9 @@ def superseded(
         if emit_runtime_warning:
             stack_level = _get_warning_stacklevel(__obj)
             subject = subject or _get_subject(__obj)
-            warning_fn = lambda: supersession_warning(
-                subject,
+            warning_fn = partial(
+                supersession_warning,
+                subject=subject,
                 additional_warn_text=additional_warn_text,
                 stacklevel=stack_level,
             )
@@ -549,8 +557,8 @@ def deprecated(
 
     """
     if __obj is None:
-        return lambda obj: deprecated(
-            obj,
+        return partial(
+            deprecated,
             subject=subject,
             emit_runtime_warning=emit_runtime_warning,
             breaking_version=breaking_version,
@@ -572,8 +580,9 @@ def deprecated(
         if emit_runtime_warning:
             stack_level = _get_warning_stacklevel(__obj)
             subject = subject or _get_subject(__obj)
-            warning_fn = lambda: deprecation_warning(
-                subject,
+            warning_fn = partial(
+                deprecation_warning,
+                subject=subject,
                 breaking_version=breaking_version,
                 additional_warn_text=additional_warn_text,
                 stacklevel=stack_level,
@@ -655,8 +664,8 @@ def deprecated_param(
 
     """
     if __obj is None:
-        return lambda obj: deprecated_param(  # type: ignore
-            obj,
+        return partial(  # type: ignore
+            deprecated_param,
             param=param,
             breaking_version=breaking_version,
             additional_warn_text=additional_warn_text,
@@ -671,6 +680,10 @@ def deprecated_param(
             emit_runtime_warning=emit_runtime_warning,
             hidden=False,
         )
+
+
+def _param_is_used(*_, __param: str, **kwargs):
+    return kwargs.get(__param) is not None
 
 
 def attach_deprecation_info_and_wrap(
@@ -699,14 +712,18 @@ def attach_deprecation_info_and_wrap(
     if not emit_runtime_warning:
         return obj
 
-    condition = lambda *_, **kwargs: kwargs.get(param) is not None
-    warning_fn = lambda: deprecation_warning(
+    warning_fn = partial(
+        deprecation_warning,
         _get_subject(obj, param=param),
         breaking_version=breaking_version,
         additional_warn_text=additional_warn_text,
-        stacklevel=4,
+        stacklevel=3,
     )
-    return apply_pre_call_decorator(obj, warning_fn, condition=condition)
+    return apply_pre_call_decorator(
+        obj,
+        warning_fn,
+        condition=partial(_param_is_used, __param=param),
+    )
 
 
 @overload
@@ -766,8 +783,8 @@ def hidden_param(
                 only_allow_hidden_params_in_kwargs(func_with_hidden_args, kwargs)
     """
     if __obj is None:
-        return lambda obj: hidden_param(  # type: ignore
-            obj,
+        return partial(  # type: ignore
+            hidden_param,
             param=param,
             breaking_version=breaking_version,
             additional_warn_text=additional_warn_text,
@@ -831,9 +848,9 @@ def _get_warning_stacklevel(obj: Annotatable):
     called. Can be determined through trial and error.
     """
     if is_resource_def(obj):
-        return 6
+        return 5
     else:
-        return 4
+        return 3
 
 
 def _annotatable_has_param(obj: Annotatable, param: str) -> bool:

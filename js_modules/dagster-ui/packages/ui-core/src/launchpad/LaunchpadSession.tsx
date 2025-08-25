@@ -81,6 +81,14 @@ import {repoAddressAsHumanString} from '../workspace/repoAddressAsString';
 import {repoAddressToSelector} from '../workspace/repoAddressToSelector';
 import {RepoAddress} from '../workspace/types';
 
+// Define the type for the config object passed to onSaveConfig
+export interface LaunchpadConfig {
+  runConfigYaml: string;
+  mode: string | null;
+  pipelineName: string;
+  repoAddress: RepoAddress;
+}
+
 const YAML_SYNTAX_INVALID = `The YAML you provided couldn't be parsed. Please fix the syntax errors and try again.`;
 const LOADING_CONFIG_FOR_PARTITION = `Generating configuration...`;
 const LOADING_CONFIG_SCHEMA = `Loading config schema...`;
@@ -97,6 +105,7 @@ interface LaunchpadSessionProps {
   repoAddress: RepoAddress;
   initialExecutionSessionState?: Partial<IExecutionSession>;
   rootDefaultYaml: string | undefined;
+  onSaveConfig?: (config: LaunchpadConfig) => void;
 }
 
 interface ILaunchpadSessionState {
@@ -184,6 +193,7 @@ const LaunchpadSession = (props: LaunchpadSessionProps) => {
     pipeline,
     repoAddress,
     rootDefaultYaml,
+    onSaveConfig,
   } = props;
 
   const client = useApolloClient();
@@ -595,6 +605,152 @@ const LaunchpadSession = (props: LaunchpadSessionProps) => {
 
   const copyAction = useCopyAction();
 
+  const sessionSettingsItems = () => {
+    if (onSaveConfig) {
+      return <div style={{flex: 1}} />;
+    } else {
+      return (
+        <>
+          <ConfigEditorConfigPicker
+            partitionSetDetails={partitionSetDetails}
+            pipeline={pipeline}
+            partitionSets={partitionSets.results}
+            base={currentSession.base}
+            onSaveSession={onSaveSession}
+            onSelectPreset={onSelectPreset}
+            onSelectPartition={onSelectPartition}
+            repoAddress={repoAddress}
+            assetSelection={currentSession.assetSelection}
+          />
+          <SessionSettingsSpacer />
+          {launchpadType === 'asset' ? (
+            <Box flex={{gap: 16, alignItems: 'center'}}>
+              <TextInput
+                readOnly
+                value={
+                  currentSession.assetSelection
+                    ? currentSession.assetSelection
+                        .map((a) => tokenForAssetKey(a.assetKey))
+                        .join(', ')
+                    : '*'
+                }
+              />
+              {includedChecks.length > 0 ? (
+                <Body color={Colors.textDefault()}>
+                  {`Including `}
+                  <ButtonLink onClick={() => setShowChecks(includedChecks)}>
+                    {`${includedChecks.length.toLocaleString()} ${
+                      includedChecks.length > 1 ? 'checks' : 'check'
+                    }`}
+                  </ButtonLink>
+                </Body>
+              ) : undefined}
+              {executableChecks.length > 0 ? (
+                <Checkbox
+                  label={
+                    <span>
+                      {`Include `}
+                      <ButtonLink onClick={() => setShowChecks(executableChecks)}>
+                        {`${executableChecks.length.toLocaleString()} separately executable ${
+                          executableChecks.length > 1 ? 'checks' : 'check'
+                        }`}
+                      </ButtonLink>
+                    </span>
+                  }
+                  checked={currentSession.includeSeparatelyExecutableChecks}
+                  onChange={() =>
+                    onSaveSession({
+                      includeSeparatelyExecutableChecks:
+                        !currentSession.includeSeparatelyExecutableChecks,
+                    })
+                  }
+                />
+              ) : undefined}
+            </Box>
+          ) : (
+            <OpSelector
+              serverProvidedSubsetError={
+                preview?.isPipelineConfigValid.__typename === 'InvalidSubsetError'
+                  ? preview.isPipelineConfigValid
+                  : undefined
+              }
+              pipelineName={pipeline.name}
+              value={currentSession.solidSelection || null}
+              query={currentSession.solidSelectionQuery || null}
+              onChange={onOpSelectionChange}
+              flattenGraphs={currentSession.flattenGraphs}
+              onFlattenGraphsChange={onFlattenGraphsChange}
+              repoAddress={repoAddress}
+            />
+          )}
+
+          {!isJob && (
+            <>
+              <SessionSettingsSpacer />
+              <ConfigEditorModePicker
+                modes={pipeline.modes}
+                modeError={modeError}
+                onModeChange={onModeChange}
+                modeName={currentSession.mode}
+              />
+            </>
+          )}
+
+          <TagEditor
+            tagsFromDefinition={pipeline.tags}
+            tagsFromSession={tagsFromSession}
+            onChange={saveTags}
+            open={tagEditorOpen}
+            onRequestClose={closeTagEditor}
+          />
+          <div style={{flex: 1}} />
+          <ShortcutHandler
+            shortcutLabel="⌥T"
+            shortcutFilter={(e) => e.code === 'KeyT' && e.altKey}
+            onShortcut={openTagEditor}
+          >
+            <Button onClick={openTagEditor} icon={<Icon name="edit" />}>
+              Edit tags
+            </Button>
+          </ShortcutHandler>
+        </>
+      );
+    }
+  };
+
+  const submitActionButton = () => {
+    if (onSaveConfig) {
+      return (
+        <Button
+          intent="primary"
+          onClick={() => {
+            onSaveConfig({
+              runConfigYaml: currentSession.runConfigYaml,
+              mode: currentSession.mode,
+              pipelineName: pipeline.name,
+              repoAddress,
+            });
+          }}
+          disabled={preview?.isPipelineConfigValid?.__typename !== 'PipelineConfigValidationValid'}
+        >
+          Save config
+        </Button>
+      );
+    } else {
+      return (
+        <LaunchRootExecutionButton
+          title={launchButtonTitle}
+          warning={launchButtonWarning}
+          hasLaunchPermission={canLaunchPipelineExecution}
+          pipelineName={pipeline.name}
+          getVariables={buildExecutionVariables}
+          disabled={preview?.isPipelineConfigValid?.__typename !== 'PipelineConfigValidationValid'}
+          behavior="open"
+        />
+      );
+    }
+  };
+
   return (
     <>
       <Dialog
@@ -628,109 +784,8 @@ const LaunchpadSession = (props: LaunchpadSessionProps) => {
           <>
             <LoadingOverlay isLoading={configLoading} message={LOADING_CONFIG_FOR_PARTITION} />
             <SessionSettingsBar>
-              <ConfigEditorConfigPicker
-                partitionSetDetails={partitionSetDetails}
-                pipeline={pipeline}
-                partitionSets={partitionSets.results}
-                base={currentSession.base}
-                onSaveSession={onSaveSession}
-                onSelectPreset={onSelectPreset}
-                onSelectPartition={onSelectPartition}
-                repoAddress={repoAddress}
-                assetSelection={currentSession.assetSelection}
-              />
-              <SessionSettingsSpacer />
-              {launchpadType === 'asset' ? (
-                <Box flex={{gap: 16, alignItems: 'center'}}>
-                  <TextInput
-                    readOnly
-                    value={
-                      currentSession.assetSelection
-                        ? currentSession.assetSelection
-                            .map((a) => tokenForAssetKey(a.assetKey))
-                            .join(', ')
-                        : '*'
-                    }
-                  />
-                  {includedChecks.length > 0 ? (
-                    <Body color={Colors.textDefault()}>
-                      {`Including `}
-                      <ButtonLink onClick={() => setShowChecks(includedChecks)}>
-                        {`${includedChecks.length.toLocaleString()} ${
-                          includedChecks.length > 1 ? 'checks' : 'check'
-                        }`}
-                      </ButtonLink>
-                    </Body>
-                  ) : undefined}
-                  {executableChecks.length > 0 ? (
-                    <Checkbox
-                      label={
-                        <span>
-                          {`Include `}
-                          <ButtonLink onClick={() => setShowChecks(executableChecks)}>
-                            {`${executableChecks.length.toLocaleString()} separately executable ${
-                              executableChecks.length > 1 ? 'checks' : 'check'
-                            }`}
-                          </ButtonLink>
-                        </span>
-                      }
-                      checked={currentSession.includeSeparatelyExecutableChecks}
-                      onChange={() =>
-                        onSaveSession({
-                          includeSeparatelyExecutableChecks:
-                            !currentSession.includeSeparatelyExecutableChecks,
-                        })
-                      }
-                    />
-                  ) : undefined}
-                </Box>
-              ) : (
-                <OpSelector
-                  serverProvidedSubsetError={
-                    preview?.isPipelineConfigValid.__typename === 'InvalidSubsetError'
-                      ? preview.isPipelineConfigValid
-                      : undefined
-                  }
-                  pipelineName={pipeline.name}
-                  value={currentSession.solidSelection || null}
-                  query={currentSession.solidSelectionQuery || null}
-                  onChange={onOpSelectionChange}
-                  flattenGraphs={currentSession.flattenGraphs}
-                  onFlattenGraphsChange={onFlattenGraphsChange}
-                  repoAddress={repoAddress}
-                />
-              )}
+              {sessionSettingsItems()}
 
-              {isJob ? (
-                <span />
-              ) : (
-                <>
-                  <SessionSettingsSpacer />
-                  <ConfigEditorModePicker
-                    modes={pipeline.modes}
-                    modeError={modeError}
-                    onModeChange={onModeChange}
-                    modeName={currentSession.mode}
-                  />
-                </>
-              )}
-              <TagEditor
-                tagsFromDefinition={pipeline.tags}
-                tagsFromSession={tagsFromSession}
-                onChange={saveTags}
-                open={tagEditorOpen}
-                onRequestClose={closeTagEditor}
-              />
-              <div style={{flex: 1}} />
-              <ShortcutHandler
-                shortcutLabel="⌥T"
-                shortcutFilter={(e) => e.code === 'KeyT' && e.altKey}
-                onShortcut={openTagEditor}
-              >
-                <Button onClick={openTagEditor} icon={<Icon name="edit" />}>
-                  Edit tags
-                </Button>
-              </ShortcutHandler>
               <SessionSettingsSpacer />
               <LaunchpadConfigExpansionButton
                 axis="horizontal"
@@ -827,15 +882,7 @@ const LaunchpadSession = (props: LaunchpadSessionProps) => {
       />
 
       <LaunchButtonContainer launchpadType={launchpadType}>
-        <LaunchRootExecutionButton
-          title={launchButtonTitle}
-          warning={launchButtonWarning}
-          hasLaunchPermission={canLaunchPipelineExecution}
-          pipelineName={pipeline.name}
-          getVariables={buildExecutionVariables}
-          disabled={preview?.isPipelineConfigValid?.__typename !== 'PipelineConfigValidationValid'}
-          behavior="open"
-        />
+        {submitActionButton()}
       </LaunchButtonContainer>
     </>
   );

@@ -38,7 +38,6 @@ directory_type = "project"
 
 [tool.dg.project]
 root_module = "project_ask_ai_dagster"
-autoload_defs = true
 
 [tool.dg.project.python_environment]
 active = true

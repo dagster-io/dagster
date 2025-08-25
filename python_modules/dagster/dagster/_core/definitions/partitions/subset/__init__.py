@@ -4,6 +4,9 @@ from dagster._core.definitions.partitions.subset.all import (
 from dagster._core.definitions.partitions.subset.default import (
     DefaultPartitionsSubset as DefaultPartitionsSubset,
 )
+from dagster._core.definitions.partitions.subset.key_ranges import (
+    KeyRangesPartitionsSubset as KeyRangesPartitionsSubset,
+)
 from dagster._core.definitions.partitions.subset.partitions_subset import (
     PartitionsSubset as PartitionsSubset,
 )

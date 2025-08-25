@@ -8,6 +8,8 @@ pypi: https://pypi.org/project/dagstermill/
 sidebar_custom_props:
   logo: images/integrations/jupyter.svg
 partnerlink:
+canonicalUrl: '/integrations/libraries/jupyter'
+slug: '/integrations/libraries/jupyter'
 ---
 
 import Beta from '@site/docs/partials/\_Beta.md';

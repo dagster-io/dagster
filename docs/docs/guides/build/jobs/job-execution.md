@@ -36,7 +36,7 @@ Dagster supports the following methods to execute one-off jobs. Click the tabs f
 
 Using the Dagster UI, you can view, interact, and execute jobs.
 
-To view your job in the UI, use the [`dg dev`](/api/dg/dg-cli#dg-dev) command:
+To view your job in the UI, use the [`dg dev`](/api/clis/dg-cli/dg-cli-reference#dg-dev) command:
 
 ```bash
 dg dev
@@ -59,7 +59,7 @@ The Launchpad also offers a configuration editor to let you interactively build 
 
 The dagster CLI includes the following commands for job execution:
 
-- [`dg launch`](/api/dg/dg-cli#dg-launch) for launching runs asynchronously using the [run launcher](/deployment/execution/run-launchers) on your instance
+- [`dg launch`](/api/clis/dg-cli/dg-cli-reference#dg-launch) for launching runs asynchronously using the [run launcher](/deployment/execution/run-launchers) on your instance
 
 To execute your job directly, run:
 

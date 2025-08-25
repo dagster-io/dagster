@@ -86,7 +86,12 @@ const PopoverWrapper = ({
       <PopoverPortal forceMount>
         <PopoverContent
           forceMount
-          style={{zIndex: 1, outline: 'none', opacity: tooltip.opacity}}
+          style={{
+            zIndex: 1,
+            outline: 'none',
+            opacity: tooltip.opacity,
+            display: tooltip.opacity === 0 ? 'none' : 'initial',
+          }}
           {...popoverContentProps}
         >
           {children}

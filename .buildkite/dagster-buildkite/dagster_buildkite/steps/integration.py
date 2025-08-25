@@ -16,6 +16,7 @@ from dagster_buildkite.steps.packages import (
     UnsupportedVersionsFunction,
 )
 from dagster_buildkite.steps.test_project import test_project_depends_fn
+from dagster_buildkite.steps.tox import ToxFactor
 from dagster_buildkite.utils import (
     connect_sibling_docker_container,
     has_helm_changes,
@@ -54,8 +55,8 @@ def build_integration_steps() -> list[StepConfiguration]:
 
 def build_backcompat_suite_steps() -> list[TopLevelStepConfiguration]:
     tox_factors = [
-        "user-code-latest-release",
-        "user-code-earliest-release",
+        ToxFactor("user-code-latest-release"),
+        ToxFactor("user-code-earliest-release"),
     ]
 
     return build_integration_suite_steps(
@@ -65,15 +66,16 @@ def build_backcompat_suite_steps() -> list[TopLevelStepConfiguration]:
     )
 
 
-def backcompat_extra_cmds(_, factor: Optional[str]) -> list[str]:
+def backcompat_extra_cmds(_, factor: Optional[ToxFactor]) -> list[str]:
     tox_factor_map = {
         "user-code-latest-release": LATEST_DAGSTER_RELEASE,
         "user-code-earliest-release": EARLIEST_TESTED_RELEASE,
     }
     assert factor
+    factor_str = factor.factor
     webserver_version = DAGSTER_CURRENT_BRANCH
     webserver_library_version = _get_library_version(webserver_version)
-    user_code_version = tox_factor_map[factor]
+    user_code_version = tox_factor_map[factor_str]
     user_code_library_version = _get_library_version(user_code_version)
     user_code_definitions_file = _infer_user_code_definitions_files(user_code_version)
 
@@ -124,8 +126,8 @@ def _get_library_version(version: str) -> str:
 
 def build_celery_k8s_suite_steps() -> list[TopLevelStepConfiguration]:
     pytest_tox_factors = [
-        "-default",
-        "-markredis",
+        ToxFactor("-default"),
+        ToxFactor("-markredis"),
     ]
     directory = os.path.join("integration_tests", "test_suites", "celery-k8s-test-suite")
     return build_integration_suite_steps(
@@ -213,10 +215,10 @@ def daemon_pytest_extra_cmds(version: AvailablePythonVersion, _):
 
 def build_k8s_suite_steps() -> list[TopLevelStepConfiguration]:
     pytest_tox_factors = [
-        "-default",
-        "-subchart",
-        "-default_monitoring",
-        "-subchart_monitoring",
+        ToxFactor("-default", splits=2),
+        ToxFactor("-subchart", splits=2),
+        ToxFactor("-default_monitoring"),
+        ToxFactor("-subchart_monitoring"),
     ]
     directory = os.path.join("integration_tests", "test_suites", "k8s-test-suite")
     return build_integration_suite_steps(
@@ -235,7 +237,7 @@ def build_k8s_suite_steps() -> list[TopLevelStepConfiguration]:
 
 def build_integration_suite_steps(
     directory: str,
-    pytest_tox_factors: Optional[list[str]],
+    pytest_tox_factors: Optional[list[ToxFactor]],
     pytest_extra_cmds: Optional[PytestExtraCommandsFunction] = None,
     queue=None,
     always_run_if: Optional[Callable[[], bool]] = None,

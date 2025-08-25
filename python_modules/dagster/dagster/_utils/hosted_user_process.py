@@ -15,7 +15,7 @@ import dagster._check as check
 from dagster._core.definitions.asset_key import AssetKey
 from dagster._core.definitions.reconstruct import ReconstructableJob, ReconstructableRepository
 from dagster._core.origin import JobPythonOrigin, RepositoryPythonOrigin
-from dagster._core.remote_representation import RemoteJob
+from dagster._core.remote_representation.external import RemoteJob
 from dagster._core.remote_representation.external_data import JobDataSnap
 from dagster._core.remote_representation.handle import RepositoryHandle
 

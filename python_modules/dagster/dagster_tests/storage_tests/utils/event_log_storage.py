@@ -45,6 +45,7 @@ from dagster._core.definitions.events import (
 )
 from dagster._core.definitions.job_base import InMemoryJob
 from dagster._core.definitions.partitions.context import partition_loading_context
+from dagster._core.definitions.partitions.snap import PartitionsSnap
 from dagster._core.definitions.partitions.subset import AllPartitionsSubset
 from dagster._core.event_api import EventLogCursor
 from dagster._core.events import (
@@ -66,8 +67,7 @@ from dagster._core.execution.plan.objects import StepFailureData, StepSuccessDat
 from dagster._core.execution.stats import StepEventStatus
 from dagster._core.instance import RUNLESS_JOB_NAME, RUNLESS_RUN_ID
 from dagster._core.loader import LoadingContextForTest
-from dagster._core.remote_representation.external_data import PartitionsSnap
-from dagster._core.remote_representation.origin import (
+from dagster._core.remote_origin import (
     InProcessCodeLocationOrigin,
     RemoteJobOrigin,
     RemoteRepositoryOrigin,
@@ -484,7 +484,7 @@ class TestEventLogStorage:
     def supports_get_logs_for_all_runs_by_log_id(self):
         return True
 
-    def supports_multiple_event_type_queries(self):
+    def supports_multiple_event_type_queries(self) -> bool:
         return True
 
     def set_default_op_concurrency(self, instance, storage, limit):

@@ -11,19 +11,19 @@ from dagster._api.snapshot_repository import (
 )
 from dagster._core.errors import DagsterUserCodeProcessError
 from dagster._core.instance import DagsterInstance
-from dagster._core.remote_representation import (
+from dagster._core.remote_origin import (
     ManagedGrpcPythonEnvCodeLocationOrigin,
-    RepositorySnap,
+    RemoteRepositoryOrigin,
 )
 from dagster._core.remote_representation.external import RemoteRepository
 from dagster._core.remote_representation.external_data import (
     DISABLE_FAST_EXTRACT_ENV_VAR,
     JobDataSnap,
     JobRefSnap,
+    RepositorySnap,
     extract_serialized_job_snap_from_serialized_job_data_snap,
 )
 from dagster._core.remote_representation.handle import RepositoryHandle
-from dagster._core.remote_representation.origin import RemoteRepositoryOrigin
 from dagster._core.storage.tags import EXTERNAL_JOB_SOURCE_TAG_KEY
 from dagster._core.types.loadable_target_origin import LoadableTargetOrigin
 from dagster._utils.env import environ

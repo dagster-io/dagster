@@ -5,7 +5,7 @@ from signal import Signals
 import pytest
 from dagster import DagsterInstance
 from dagster._core.execution.backfill import BulkActionStatus, PartitionBackfill
-from dagster._core.remote_representation import RemoteRepository
+from dagster._core.remote_representation.external import RemoteRepository
 from dagster._core.test_utils import (
     cleanup_test_instance,
     create_test_daemon_workspace_context,

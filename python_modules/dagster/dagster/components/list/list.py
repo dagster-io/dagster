@@ -28,6 +28,10 @@ from dagster._cli.workspace.cli_target import get_repository_python_origin_from_
 from dagster._config.pythonic_config.resource import get_resource_type_name
 from dagster._core.definitions.asset_selection import AssetSelection
 from dagster._core.definitions.assets.job.asset_job import is_reserved_asset_job_name
+from dagster._core.definitions.definitions_load_context import (
+    DefinitionsLoadContext,
+    DefinitionsLoadType,
+)
 from dagster._core.definitions.metadata import ArbitraryMetadataMapping, CodeReferencesMetadataValue
 from dagster._core.definitions.metadata.source_code import LocalFileCodeReference
 from dagster._core.definitions.repository_definition.repository_definition import (
@@ -91,6 +95,10 @@ def _load_defs_at_path(dg_context: DgContext, path: Optional[Path]) -> Repositor
     """Attempts to load the component tree from the context project root, falling back to
     resolving the entire repository and using the attached component tree.
     """
+    DefinitionsLoadContext.set(
+        DefinitionsLoadContext(load_type=DefinitionsLoadType.INITIALIZATION),
+    )
+
     if not path:
         repository_origin = get_repository_python_origin_from_cli_opts(
             PythonPointerOpts.extract_from_cli_options(dict(dg_context.target_args))
@@ -287,6 +295,7 @@ def _get_source(
                 str(Path(ref.source).relative_to(dg_context.root_path))
                 for ref in code_ref_metadata.code_references
                 if isinstance(ref, LocalFileCodeReference)
+                and Path(ref.source).is_relative_to(dg_context.root_path)
             ),
             None,
         )

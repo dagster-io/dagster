@@ -655,7 +655,7 @@ def test_add_backfill_tags(conn_string):
 
 
 def test_add_bulk_actions_job_name_column(conn_string):
-    from dagster._core.remote_representation.origin import (
+    from dagster._core.remote_origin import (
         GrpcServerCodeLocationOrigin,
         RemotePartitionSetOrigin,
         RemoteRepositoryOrigin,

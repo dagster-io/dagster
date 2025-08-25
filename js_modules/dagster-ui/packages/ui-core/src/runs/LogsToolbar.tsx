@@ -2,7 +2,6 @@ import {
   Box,
   Button,
   ButtonGroup,
-  Checkbox,
   ExternalAnchorButton,
   Icon,
   IconName,
@@ -11,7 +10,6 @@ import {
   Tooltip,
 } from '@dagster-io/ui-components';
 import * as React from 'react';
-import styled from 'styled-components';
 
 import {FilterOption, LogFilterSelect} from './LogFilterSelect';
 import {LogLevel} from './LogLevel';
@@ -254,7 +252,6 @@ const StructuredLogToolbar = ({
   const [_, setStoredLogLevels] = useStateWithStorage(EnabledRunLogLevelsKey, validateLogLevels);
 
   const selectedStep = filter.logQuery.find((v) => v.token === 'step')?.value || null;
-  const filterText = filter.logQuery.reduce((accum, value) => accum + value.value, '');
 
   // Reset the query string if the filter is updated, allowing external behavior
   // (e.g. clicking a Gantt step) to set the input.
@@ -337,31 +334,12 @@ const StructuredLogToolbar = ({
         suggestionProviders={getRunFilterProviders(steps)}
         onChange={onChange}
       />
-      {filterText ? (
-        <NonMatchCheckbox
-          checked={filter.hideNonMatches}
-          onChange={(event: React.ChangeEvent<HTMLInputElement>) =>
-            onSetFilter({...filter, hideNonMatches: event.currentTarget.checked})
-          }
-          label="Hide non-matches"
-        />
-      ) : null}
-      <Box flex={{direction: 'row', alignItems: 'center', gap: 8}} margin={{left: 12}}>
-        <LogFilterSelect
-          options={filterOptions as Record<LogLevel, FilterOption>}
-          onSetFilter={onChangeFilter}
-        />
-      </Box>
+      <LogFilterSelect
+        options={filterOptions as Record<LogLevel, FilterOption>}
+        onSetFilter={onChangeFilter}
+      />
       {selectedStep && <OptionsDivider />}
       <div style={{minWidth: 15, flex: 1}} />
     </>
   );
 };
-
-const NonMatchCheckbox = styled(Checkbox)`
-  &&& {
-    margin: 0 4px 0 12px;
-  }
-
-  white-space: nowrap;
-`;

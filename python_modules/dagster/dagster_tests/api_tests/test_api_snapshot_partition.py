@@ -12,7 +12,7 @@ from dagster._core.definitions.assets.job.asset_job import IMPLICIT_ASSET_JOB_NA
 from dagster._core.definitions.repository_definition import SINGLETON_REPOSITORY_NAME
 from dagster._core.errors import DagsterUserCodeProcessError
 from dagster._core.instance import DagsterInstance
-from dagster._core.remote_representation import (
+from dagster._core.remote_representation.external_data import (
     PartitionConfigSnap,
     PartitionExecutionErrorSnap,
     PartitionNamesSnap,

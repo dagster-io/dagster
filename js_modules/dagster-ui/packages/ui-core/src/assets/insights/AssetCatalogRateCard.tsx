@@ -71,16 +71,6 @@ export function AssetCatalogRateCard({
   loading,
   unit,
 }: AssetCatalogRateCardProps) {
-  const {currValueString, prevValueString, absDeltaString, hasNegativeDelta} = formatValues(
-    value,
-    prevValue,
-    unit,
-  );
-
-  const noDataAvailableCard = (
-    <div className={styles.rateCardNoDataContainer}>No data available</div>
-  );
-
   if (loading) {
     return (
       <div className={styles.rateCardContainer}>
@@ -97,6 +87,31 @@ export function AssetCatalogRateCard({
   return (
     <div className={styles.rateCardContainer}>
       <BodyLarge style={{marginBottom: 12}}>{title}</BodyLarge>
+      <AssetCatalogRateStats value={value} prevValue={prevValue} unit={unit} />
+    </div>
+  );
+}
+
+export const AssetCatalogRateStats = ({
+  value,
+  prevValue,
+  unit,
+}: {
+  value: number | null;
+  prevValue: number | null;
+  unit: 'percent' | 'seconds';
+}) => {
+  const {currValueString, prevValueString, absDeltaString, hasNegativeDelta} = formatValues(
+    value,
+    prevValue,
+    unit,
+  );
+
+  const noDataAvailableCard = (
+    <div className={styles.rateCardNoDataContainer}>No data available</div>
+  );
+  return (
+    <>
       {value !== null ? (
         <div className={styles.rateCardValue}>{currValueString}</div>
       ) : (
@@ -116,7 +131,7 @@ export function AssetCatalogRateCard({
           prevValue !== null &&
           value !== null && (
             <>
-              <div className={styles.rateCardPrev}>{prevValueString + ' previous period'}</div>
+              <div className={styles.rateCardPrev}>{prevValueString + ' prev period'}</div>
               <Box
                 className={styles.rateCardDeltaRow}
                 flex={{direction: 'row', alignItems: 'center', gap: 4}}
@@ -134,6 +149,6 @@ export function AssetCatalogRateCard({
           )
         )}
       </Box>
-    </div>
+    </>
   );
-}
+};

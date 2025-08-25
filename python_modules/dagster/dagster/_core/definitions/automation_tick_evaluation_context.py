@@ -24,6 +24,7 @@ from dagster._core.definitions.declarative_automation.serialized_objects import 
     AutomationConditionEvaluation,
 )
 from dagster._core.definitions.events import AssetKey, AssetKeyPartitionKey
+from dagster._core.definitions.partitions.context import use_partition_loading_context
 from dagster._core.definitions.partitions.definition import PartitionsDefinition
 from dagster._core.definitions.run_request import RunRequest
 from dagster._core.instance import DynamicPartitionsStore
@@ -74,6 +75,7 @@ class AutomationTickEvaluationContext:
         self._materialize_run_tags = materialize_run_tags
         self._observe_run_tags = observe_run_tags
         self._auto_observe_asset_keys = auto_observe_asset_keys or set()
+        self._partition_loading_context = self._evaluator.asset_graph_view.partition_loading_context
 
     @property
     def cursor(self) -> AssetDaemonCursor:
@@ -165,6 +167,7 @@ class AutomationTickEvaluationContext:
                 updated_evaluations.append(result.serializable_evaluation)
         return updated_evaluations
 
+    @use_partition_loading_context
     async def async_evaluate(
         self,
     ) -> tuple[
@@ -179,6 +182,7 @@ class AutomationTickEvaluationContext:
             self._get_updated_evaluations(results),
         )
 
+    @use_partition_loading_context
     def evaluate(
         self,
     ) -> tuple[

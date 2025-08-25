@@ -2,15 +2,17 @@ from abc import ABC, abstractmethod, abstractproperty
 from collections.abc import Sequence
 from datetime import datetime
 from functools import cached_property
-from typing import Optional
+from typing import TYPE_CHECKING, Optional
 
 from dagster._annotations import public
 from dagster._core.definitions.partitions.definition.partitions_definition import (
     PartitionsDefinition,
 )
 from dagster._core.definitions.partitions.subset.partitions_subset import PartitionsSubset
-from dagster._core.instance import DynamicPartitionsStore
 from dagster._record import record
+
+if TYPE_CHECKING:
+    from dagster._core.instance import DynamicPartitionsStore
 
 
 @record
@@ -49,7 +51,7 @@ class PartitionMapping(ABC):
         upstream_partitions_def: PartitionsDefinition,
         downstream_partitions_def: PartitionsDefinition,
         current_time: Optional[datetime] = None,
-        dynamic_partitions_store: Optional[DynamicPartitionsStore] = None,
+        dynamic_partitions_store: Optional["DynamicPartitionsStore"] = None,
     ) -> PartitionsSubset:
         """Returns the subset of partition keys in the downstream asset that use the data in the given
         partition key subset of the upstream asset.
@@ -81,7 +83,7 @@ class PartitionMapping(ABC):
         downstream_partitions_def: Optional[PartitionsDefinition],
         upstream_partitions_def: PartitionsDefinition,
         current_time: Optional[datetime] = None,
-        dynamic_partitions_store: Optional[DynamicPartitionsStore] = None,
+        dynamic_partitions_store: Optional["DynamicPartitionsStore"] = None,
     ) -> UpstreamPartitionsResult:
         """Returns a UpstreamPartitionsResult object containing the partition keys the downstream
         partitions subset was mapped to in the upstream partitions definition.

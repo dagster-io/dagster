@@ -282,6 +282,9 @@ class Enum(ConfigType):
 
     .. code-block:: python
 
+        from dagster import Field, op
+        from dagster._config.config_type import Enum, EnumValue
+
         @op(
             config_schema=Field(
                 Enum(
@@ -295,7 +298,8 @@ class Enum(ConfigType):
             )
         )
         def resolve_standoff(context):
-            # ...
+            # Implementation here
+            pass
     """
 
     def __init__(self, name: str, enum_values: Sequence[EnumValue]):

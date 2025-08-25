@@ -1614,6 +1614,7 @@ def execute_asset_backfill_iteration_consume_generator(
             ),
             backfill_start_timestamp=asset_backfill_data.backfill_start_timestamp,
             logger=logging.getLogger("fake_logger"),
+            run_config=None,
         )
         assert counter.counts().get("DagsterInstance.get_dynamic_partitions", 0) <= 1
         return result
@@ -2148,7 +2149,9 @@ def test_asset_backfill_throw_error_on_invalid_upstreams():
     )
 
     instance = DagsterInstance.ephemeral()
-    with pytest.raises(dg.DagsterInvariantViolationError, match="depends on invalid partitions"):
+    with pytest.raises(
+        dg.DagsterInvariantViolationError, match="depends on non-existent partitions"
+    ):
         run_backfill_to_completion(asset_graph, assets_by_repo_name, backfill_data, [], instance)
 
 
@@ -2510,7 +2513,9 @@ def test_connected_assets_disconnected_partitions():
         ],
     )
 
-    target_root_subset = asset_backfill_data.get_target_root_asset_graph_subset(instance_queryer)
+    target_root_subset = asset_backfill_data.get_target_root_asset_graph_subset(
+        _get_asset_graph_view(instance, asset_graph, backfill_start_datetime)
+    )
     assert set(target_root_subset.iterate_asset_partitions()) == {
         AssetKeyPartitionKey(asset_key=dg.AssetKey(["foo"]), partition_key="2023-10-05"),
         AssetKeyPartitionKey(asset_key=dg.AssetKey(["foo"]), partition_key="2023-10-03"),

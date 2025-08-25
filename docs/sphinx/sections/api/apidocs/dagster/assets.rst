@@ -63,7 +63,7 @@ Dependencies
 Asset jobs
 ----------
 
-`Asset jobs <https://docs.dagster.io/guides/build/assets/asset-jobs>`_ enable the automation of asset materializations.  Dagster's `asset selection syntax <https://docs.dagster.io/guides/build/assets/asset-selection-syntax>`_ can be used to select assets and assign them to a job.
+`Asset jobs <https://docs.dagster.io/guides/build/jobs/asset-jobs>`_ enable the automation of asset materializations.  Dagster's `asset selection syntax <https://docs.dagster.io/guides/build/assets/asset-selection-syntax>`_ can be used to select assets and assign them to a job.
 
 .. autofunction:: define_asset_job
 
@@ -72,7 +72,7 @@ Asset jobs
 Code locations
 --------------
 
-Loading assets and asset jobs into a `code location <https://docs.dagster.io/guides/deploy/code-locations>`_ makes them available to Dagster tools like the UI, CLI, and GraphQL API.
+Loading assets and asset jobs into a `code location <https://docs.dagster.io/deployment/code-locations>`_ makes them available to Dagster tools like the UI, CLI, and GraphQL API.
 
 .. autofunction:: load_assets_from_modules
 

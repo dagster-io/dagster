@@ -4,7 +4,7 @@ from unittest import mock
 
 from dagster import file_relative_path, repository
 from dagster._core.code_pointer import CodePointer
-from dagster._core.remote_representation import ManagedGrpcPythonEnvCodeLocationOrigin
+from dagster._core.remote_origin import ManagedGrpcPythonEnvCodeLocationOrigin
 from dagster._core.remote_representation.external_data import RepositorySnap
 from dagster._core.types.loadable_target_origin import LoadableTargetOrigin
 from dagster._core.workspace.load import location_origins_from_yaml_paths

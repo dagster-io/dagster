@@ -1,0 +1,55 @@
+type: "dagster_dbt.DbtProjectComponent"
+attributes:
+  project:
+    project_dir: "example_string"
+    target_path: "example_string"
+    profiles_dir: "example_string"
+    profile: "example_string"
+    target: "example_string"
+    packaged_project_dir: "example_string"
+    state_path: "example_string"
+  cli_args:
+    -
+      key: "value"
+  op:
+    name: "example_string"
+    tags:
+      key: "value"
+    description: "example_string"
+    pool: "example_string"
+    backfill_policy:
+      type: "example_string"
+  translation:
+    deps:
+      - "example_string"
+    description: "example_string"
+    metadata:
+      key: "value"
+    group_name: "example_string"
+    skippable: true
+    code_version: "example_string"
+    owners:
+      - "example_string"
+    tags:
+      key: "value"
+    kinds:
+      - "example_string"
+    automation_condition: "example_string"
+    partitions_def:
+      type: "example_string"
+      start_date: "example_string"
+      end_date: "example_string"
+      timezone: "example_string"
+      minute_offset: 1
+    key: "example_string"
+    key_prefix:
+      - "example_string"
+  select: "tag:dagster"
+  exclude: "tag:skip_dagster"
+  translation_settings:
+    enable_asset_checks: true
+    enable_duplicate_source_asset_keys: true
+    enable_code_references: true
+    enable_dbt_selection_by_name: true
+    enable_source_tests_as_checks: true
+  prepare_if_dev: true

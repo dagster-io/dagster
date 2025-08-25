@@ -167,24 +167,24 @@ def test_autoload_single_file(component_tree: ComponentTree) -> None:
     defs = component_tree.build_defs()
     assert component_tree.has_built_all_defs()
 
-    assert component_tree.component_tree_dependencies.get_direct_load_dependents_of_component(
+    assert component_tree.component_tree_state_tracker.get_direct_load_dependents_of_component(
         component_tree.defs_module_path,
         ComponentPath(file_path=Path("single_file/some_file.py"), instance_key=None),
     ) == {ComponentPath(file_path=Path("single_file"), instance_key=None)}
 
-    assert component_tree.component_tree_dependencies.get_direct_defs_dependents_of_component(
+    assert component_tree.component_tree_state_tracker.get_direct_defs_dependents_of_component(
         component_tree.defs_module_path,
         ComponentPath(file_path=Path("single_file/some_file.py"), instance_key=None),
     ) == {ComponentPath(file_path=Path("single_file"), instance_key=None)}
 
-    assert component_tree.component_tree_dependencies.get_direct_load_dependents_of_component(
+    assert component_tree.component_tree_state_tracker.get_direct_load_dependents_of_component(
         component_tree.defs_module_path,
         ComponentPath(file_path=Path("single_file"), instance_key=None),
     ) == {
         ComponentPath(file_path=Path("."), instance_key=None),
     }
 
-    assert component_tree.component_tree_dependencies.get_direct_load_dependents_of_component(
+    assert component_tree.component_tree_state_tracker.get_direct_load_dependents_of_component(
         component_tree.defs_module_path,
         ComponentPath(file_path=Path("__init__.py"), instance_key=None),
     ) == {

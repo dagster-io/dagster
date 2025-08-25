@@ -1,5 +1,5 @@
 from dagster import Field, Float, Map, Noneable, StringSource
-from dagster._core.remote_representation import IN_PROCESS_NAME
+from dagster._core.remote_origin import IN_PROCESS_NAME
 from dagster._utils.merger import merge_dicts
 from dagster_celery.executor import CELERY_CONFIG
 from dagster_k8s import DagsterK8sJobConfig

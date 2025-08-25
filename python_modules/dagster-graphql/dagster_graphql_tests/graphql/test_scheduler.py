@@ -4,7 +4,7 @@ import sys
 import time
 
 import pytest
-from dagster._core.remote_representation import InProcessCodeLocationOrigin, RemoteRepositoryOrigin
+from dagster._core.remote_origin import InProcessCodeLocationOrigin, RemoteRepositoryOrigin
 from dagster._core.remote_representation.external import CompoundID
 from dagster._core.scheduler.instigation import (
     InstigatorState,
@@ -882,8 +882,8 @@ def test_repository_batching(graphql_context):
     # each schedule (~18 distinct schedules in the repo)
     # 1) `get_batch_ticks` is fetched to grab ticks
     # 2) `all_instigator_state` is fetched to instantiate GrapheneSchedule
-    assert counts.get("DagsterInstance.get_batch_ticks") == 1
-    assert counts.get("DagsterInstance.all_instigator_state") == 1
+    assert counts.get("SchedulingMethods.get_batch_ticks") == 1
+    assert counts.get("SchedulingMethods.all_instigator_state") == 1
 
 
 class TestScheduleMutations(ExecutingGraphQLContextTestMatrix):

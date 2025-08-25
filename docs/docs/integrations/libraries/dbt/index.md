@@ -8,6 +8,8 @@ pypi: https://pypi.org/project/dagster-dbt/
 sidebar_custom_props:
   logo: images/integrations/dbt/dbt.svg
 partnerlink: https://www.getdbt.com/
+canonicalUrl: '/integrations/libraries/dbt'
+slug: '/integrations/libraries/dbt'
 ---
 
 <p>{frontMatter.description}</p>

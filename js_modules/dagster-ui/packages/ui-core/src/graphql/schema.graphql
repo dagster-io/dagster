@@ -1773,6 +1773,7 @@ type WorkspaceLocationEntry {
   displayMetadata: [RepositoryMetadata!]!
   updatedTimestamp: Float!
   versionKey: String!
+  defsStateInfo: DefsStateInfo
   permissions: [Permission!]!
   featureFlags: [FeatureFlag!]!
 }
@@ -2511,6 +2512,20 @@ union RepositoryOrError = PythonError | Repository | RepositoryNotFoundError
 
 union WorkspaceLocationEntryOrError = WorkspaceLocationEntry | PythonError
 
+type DefsStateInfo {
+  keyStateInfo: [DefsStateInfoEntry!]!
+}
+
+type DefsKeyStateInfo {
+  version: String!
+  createTimestamp: Float!
+}
+
+type DefsStateInfoEntry {
+  name: String!
+  info: DefsKeyStateInfo!
+}
+
 input AssetKeyInput {
   path: [String!]!
 }
@@ -2578,6 +2593,7 @@ input LaunchBackfillParams {
   forceSynchronousSubmission: Boolean
   title: String
   description: String
+  runConfigData: RunConfigData
 }
 
 input PartitionSetSelector {
@@ -3670,6 +3686,7 @@ type Query {
     limit: Int!
     cursor: String
   ): [AssetCheckExecution!]!
+  latestDefsStateInfo: DefsStateInfo
 }
 
 union WorkspaceOrError = Workspace | PythonError

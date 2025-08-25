@@ -144,7 +144,7 @@ Your new Dagster project should have the following structure:
 
 ## Step 2: Scaffold an assets file
 
-Use the [`dg scaffold defs`](/api/dg/dg-cli#dg-scaffold) command to generate an assets file on the command line:
+Use the [`dg scaffold defs`](/api/clis/dg-cli/dg-cli-reference#dg-scaffold) command to generate an assets file on the command line:
 
 ```shell
 dg scaffold defs dagster.asset assets.py
@@ -187,11 +187,11 @@ To define the assets for the ETL pipeline, open `src/dagster_quickstart/defs/ass
   title="src/dagster_quickstart/defs/assets.py"
 />
 
-At this point, you can list the Dagster definitions in your project with [`dg list defs`](/api/dg/dg-cli#dg-list). You should see the asset you just created:
+At this point, you can list the Dagster definitions in your project with [`dg list defs`](/api/clis/dg-cli/dg-cli-reference#dg-list). You should see the asset you just created:
 
 <CliInvocationExample path="docs_snippets/docs_snippets/getting-started/quickstart/dg_list_defs.txt" />
 
-You can also load and validate your Dagster definitions with [`dg check defs`](/api/dg/dg-cli#dg-check):
+You can also load and validate your Dagster definitions with [`dg check defs`](/api/clis/dg-cli/dg-cli-reference#dg-check):
 
 <CliInvocationExample path="docs_snippets/docs_snippets/getting-started/quickstart/dg_check_defs.txt" />
 
@@ -219,7 +219,7 @@ You can also load and validate your Dagster definitions with [`dg check defs`](/
 
 :::tip
 
-You can also run the pipeline by using the [`dg launch --assets`](/api/dg/dg-cli#dg-launch) command and passing an [asset selection](/guides/build/assets/asset-selection-syntax):
+You can also run the pipeline by using the [`dg launch --assets`](/api/clis/dg-cli/dg-cli-reference#dg-launch) command and passing an [asset selection](/guides/build/assets/asset-selection-syntax):
 
 ```
 dg launch --assets "*"
@@ -249,5 +249,5 @@ id,name,age,city,age_group
 
 Congratulations! You've just built and run your first pipeline with Dagster. Next, you can:
 
-- Continue with the [ETL pipeline tutorial](/etl-pipeline-tutorial) to learn how to build a more complex ETL pipeline
+- Follow the [Tutorial](/dagster-basics-tutorial) to learn how to build a more complex ETL pipeline
 - [Create your own Dagster project](/guides/build/projects/creating-a-new-project) and [add assets](/guides/build/assets/defining-assets) to it

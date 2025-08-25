@@ -98,7 +98,7 @@ export const JobsPageContent = () => {
 
   return (
     <>
-      <Box padding={{horizontal: 24, vertical: 8}} border="bottom">
+      <Box padding={{horizontal: 24, vertical: 12}} border="bottom">
         <JobSelectionInput items={allJobs} value={selection} onChange={setSelection} />
       </Box>
       {loading && !repoCount ? (

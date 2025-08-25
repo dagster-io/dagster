@@ -1,8 +1,16 @@
+import logging
 from enum import Enum
 from typing import TYPE_CHECKING, Any
 
 from packaging import version
 from typing_extensions import TypeAlias
+
+# it's unclear exactly which dbt import adds a handler to the root logger, but something certainly does!
+# on this line, we keep track of the set of handlers that are on the root logger BEFORE any dbt imports
+# happen. at the end of this file, we set the root logger's handlers to the original set to ensure that
+# after this file is loaded, the root logger's handlers will be unchanged.
+existing_root_logger_handlers = [*logging.getLogger().handlers]
+
 
 try:
     from dbt.version import __version__ as dbt_version
@@ -95,3 +103,6 @@ else:
             Fail = NodeStatus.Fail
             Warn = NodeStatus.Warn
             Skipped = NodeStatus.Skipped
+
+
+logging.getLogger().handlers = existing_root_logger_handlers

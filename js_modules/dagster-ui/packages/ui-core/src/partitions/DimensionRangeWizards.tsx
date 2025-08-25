@@ -71,6 +71,7 @@ export const DimensionRangeWizards = ({
                 (d) => d.name === range.dimension.name,
               )?.dynamicPartitionsDefinitionName
             }
+            showQuickSelectOptionsForStatuses={selections.length === 1}
           />
         </Box>
       ))}

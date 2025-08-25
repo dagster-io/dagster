@@ -9,6 +9,7 @@ import {GraphNode} from '../Utils';
 export type FolderNodeGroupType = {
   id: string;
   level: number;
+  openAlways?: boolean;
   groupNode: {
     groupName: string;
     assets: GraphNode[];

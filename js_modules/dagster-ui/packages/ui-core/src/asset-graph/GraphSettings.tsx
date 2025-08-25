@@ -1,4 +1,5 @@
 import {
+  Body,
   Box,
   Button,
   Icon,
@@ -7,6 +8,7 @@ import {
   Popover,
   ProductTour,
   ProductTourPosition,
+  Tooltip,
 } from '@dagster-io/ui-components';
 import {useMemo} from 'react';
 
@@ -14,6 +16,7 @@ import {KeyboardTag} from './KeyboardTag';
 import ShowAndHideNeighborAssetsMP4 from './ShowAndHideNeighborAssets.mp4';
 import {AssetLayoutDirection} from './layout';
 import {ShortcutHandler} from '../app/ShortcutHandler';
+import {useShowStubAssets} from '../app/UserSettingsDialog/useShowStubAssets';
 import {assertUnreachable} from '../app/Util';
 import {useStateWithStorage} from '../hooks/useStateWithStorage';
 
@@ -25,12 +28,15 @@ type Props = {
   setDirection: (d: AssetLayoutDirection) => void;
   hideEdgesToNodesOutsideQuery?: boolean;
   setHideEdgesToNodesOutsideQuery?: (hideEdgesToNodesOutsideQuery: boolean) => void;
+  showStubAssets?: boolean | undefined;
+  setShowStubAssets?: (showStubAssets: boolean) => void;
 };
 
 enum Shortcut {
   Direction = 'Direction',
   ExpandAllGroups = 'ExpandAllGroups',
   HideEdgesToNodesOutsideQuery = 'HideEdgesToNodesOutsideQuery',
+  ShowStubAssets = 'ShowStubAssets',
 }
 
 type ShortcutInfo =
@@ -50,6 +56,12 @@ type ShortcutInfo =
       hideEdgesToNodesOutsideQuery: boolean;
       setHideEdgesToNodesOutsideQuery: (hideEdgesToNodesOutsideQuery: boolean) => void;
       label: React.ReactNode;
+    }
+  | {
+      type: Shortcut.ShowStubAssets;
+      showStubAssets: boolean;
+      setShowStubAssets: (showStubAssets: boolean) => void;
+      label: React.ReactNode;
     };
 
 export const AssetGraphSettingsButton = ({
@@ -62,6 +74,7 @@ export const AssetGraphSettingsButton = ({
   setHideEdgesToNodesOutsideQuery,
 }: Props) => {
   const hasMultipleGroups = (allGroups?.length ?? 0) > 1;
+  const {showStubAssets, setShowStubAssets} = useShowStubAssets();
 
   const shortcuts = useMemo(() => {
     const shortcuts: ShortcutInfo[] = [
@@ -106,6 +119,19 @@ export const AssetGraphSettingsButton = ({
         ),
       });
     }
+    shortcuts.push({
+      type: Shortcut.ShowStubAssets,
+      showStubAssets: !!showStubAssets,
+      setShowStubAssets,
+      label: (
+        <Box flex={{direction: 'row', gap: 4, alignItems: 'center'}}>
+          <div>⌥S</div>-<div>{showStubAssets ? 'Hide' : 'Show'} stub assets in catalog</div>
+          <Tooltip content="Stub assets are placeholder assets that Dagster automatically creates to represent dependencies that aren't defined in your current code location. ">
+            <Icon name="info" />
+          </Tooltip>
+        </Box>
+      ),
+    });
     return shortcuts;
   }, [
     direction,
@@ -115,6 +141,8 @@ export const AssetGraphSettingsButton = ({
     expandedGroups,
     allGroups,
     hideEdgesToNodesOutsideQuery,
+    setShowStubAssets,
+    showStubAssets,
   ]);
 
   const shortcutsJsx = useMemo(() => {
@@ -156,11 +184,28 @@ export const AssetGraphSettingsButton = ({
               <div />
             </ShortcutHandler>
           );
+        case Shortcut.ShowStubAssets:
+          return (
+            <ShortcutHandler
+              key={shortcut.type}
+              onShortcut={() => setShowStubAssets(!showStubAssets)}
+              shortcutFilter={(e) => e.altKey && e.code === 'KeyS'}
+            >
+              <div />
+            </ShortcutHandler>
+          );
         default:
           assertUnreachable(shortcut);
       }
     });
-  }, [shortcuts, direction, hideEdgesToNodesOutsideQuery, setDirection]);
+  }, [
+    shortcuts,
+    setDirection,
+    direction,
+    hideEdgesToNodesOutsideQuery,
+    setShowStubAssets,
+    showStubAssets,
+  ]);
 
   const shortcutLabelJsx = useMemo(
     () => (
@@ -188,6 +233,8 @@ export const AssetGraphSettingsButton = ({
               setHideEdgesToNodesOutsideQuery={setHideEdgesToNodesOutsideQuery}
               direction={direction}
               setDirection={setDirection}
+              showStubAssets={showStubAssets}
+              setShowStubAssets={setShowStubAssets}
             />
           }
           placement="top"
@@ -245,6 +292,7 @@ export const AssetGraphSettingsMenu = ({
           setHideEdgesToNodesOutsideQuery={setHideEdgesToNodesOutsideQuery}
         />
       ) : null}
+      <ToggleShowStubAssetsMenuItem />
     </Menu>
   );
 };
@@ -264,7 +312,7 @@ export const ToggleGroupsMenuItem = ({
     text={
       <Box flex={{direction: 'row', gap: 4, alignItems: 'center'}}>
         {expandedGroups.length === 0 ? 'Expand all groups' : 'Collapse all groups'}{' '}
-        <KeyboardTag $withinTooltip>⌥E</KeyboardTag>
+        <KeyboardTag>⌥E</KeyboardTag>
       </Box>
     }
   />
@@ -290,7 +338,7 @@ export const ToggleDirectionMenuItem = ({
     text={
       <Box flex={{direction: 'row', gap: 4, alignItems: 'center'}}>
         Change graph to {direction === 'vertical' ? 'horizontal' : 'vertical'} orientation{' '}
-        <KeyboardTag $withinTooltip>⌥O</KeyboardTag>
+        <KeyboardTag>⌥O</KeyboardTag>
       </Box>
     }
   />
@@ -312,7 +360,32 @@ export const ToggleHideEdgesToNodesOutsideQueryMenuItem = ({
       text={
         <Box flex={{direction: 'row', gap: 4, alignItems: 'center'}}>
           {hideEdgesToNodesOutsideQuery ? 'Show' : 'Hide'} neighbor assets outside of selection{' '}
-          <KeyboardTag $withinTooltip>⌥V</KeyboardTag>
+          <KeyboardTag>⌥V</KeyboardTag>
+        </Box>
+      }
+    />
+  );
+};
+
+export const ToggleShowStubAssetsMenuItem = () => {
+  const {showStubAssets, setShowStubAssets} = useShowStubAssets();
+
+  return (
+    <MenuItem
+      icon={showStubAssets ? <Icon name="visibility" /> : <Icon name="visibility_off" />}
+      onClick={() => setShowStubAssets(!showStubAssets)}
+      text={
+        <Box flex={{direction: 'row', gap: 4, alignItems: 'center'}}>
+          <Body>{showStubAssets ? 'Hide' : 'Show'} stub assets </Body>
+          <div style={{marginLeft: 8}}>
+            <Tooltip
+              content="Stub assets are placeholder assets that Dagster automatically creates to represent dependencies that aren't defined in your current code location. "
+              targetTagName="div"
+            >
+              <Icon name="info" />
+            </Tooltip>
+          </div>
+          <KeyboardTag>⌥S</KeyboardTag>
         </Box>
       }
     />

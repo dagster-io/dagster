@@ -1,4 +1,3 @@
-# ruff: noqa: F841 TID252
 import uuid
 from collections.abc import Iterator, Mapping
 from contextlib import contextmanager, nullcontext
@@ -12,13 +11,11 @@ from dagster._core.definitions.definitions_class import Definitions
 from dagster._core.test_utils import ensure_dagster_tests_import
 from dagster._utils import alter_sys_path
 from dagster.components.testing import create_defs_folder_sandbox
-from dagster_dg_core.utils import ensure_dagster_dg_tests_import
 from dagster_powerbi import PowerBIWorkspaceComponent
 
 ensure_dagster_tests_import()
-ensure_dagster_dg_tests_import()
 
-from dagster_dg_core_tests.utils import ProxyRunner, isolated_example_project_foo_bar
+from dagster_test.dg_utils.utils import ProxyRunner, isolated_example_project_foo_bar
 
 
 @contextmanager

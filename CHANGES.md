@@ -1,5 +1,62 @@
 # Changelog
 
+## 1.11.7 (core) / 0.27.7 (libraries)
+
+### New
+
+- `dg` will now report multiple detected errors in a configuration file instead of failing on the first detected error.
+- It is now possible to supply run config when launching an asset backfill.
+- Updated the root URL to display the Overview/Timeline view for locations with schedules/automations, but no jobs (thanks [@dschafer](https://github.com/dschafer)!)
+- Added `tzdata` as a dependency to `dagster`, to ensure that declaring timezones like `US/Central` work in all environments.
+- [dagster-dg-cli] Updated scaffolded file names to handle consecutive upper case letters (ACMEDatabricksJobComponent → acme_databricks_job_component.py not a_c_m_e_databricks_job_component.py)
+- [dagster-dg-cli] Validating `requirements.env` is now opt-in for `dg check yaml`.
+- [dagster-dbt] `DAGSTER_DBT_CLOUD_POLL_INTERVAL` and `DAGSTER_DBT_CLOUD_POLL_TIMEOUT` environment variables can now be used to configure the polling interval and timeout for fetching data from dbt Cloud.
+
+### Deprecations
+
+- [components] Removed deprecated and non-functional `asset_post_processors` fields from `SlingReplicationCollectionComponent` and `AirflowInstanceComponent`.
+
+## 1.11.6 (core) / 0.27.6 (libraries)
+
+### New
+
+- Allow explicit git `platform` selection in `link_code_references_to_git`, thanks [@chazmo03](https://github.com/chazmo03)!
+
+### Bugfixes
+
+- Fixed issue causing `AutomationCondition.replace` to not update built-in sub-conditions that did not have an explicit label, thanks [@dschafer](https://github.com/dschafer)!
+- Fixed an issue where assets were considered stubs if they were a stub in any code location.
+- Projects using components no longer cause "job definitions changed while uploading" errors on older agent versions.
+- [dagster-dbt] Fixed a bug that could cause execution to fail if `enable_code_references` was set to `True` on the `DagsterDbtTranslatorSettings`.
+
+### Documentation
+
+- Updated documentation of `dagster.yaml` to include the `nux` option, thanks [@dwisdom0](https://github.com/dwisdom0)!
+
+### Dagster Plus
+
+- Fix "Create a support ticket" dialog submissions.
+
+## 1.11.5 (core) / 0.27.5 (libraries)
+
+### New
+
+- Static functions on classes decorated with `@template_var` can now optionally accept a `ComponentLoadContext` argument.
+- [dg] A MCP server is available to expose `dg` CLI capabilities to MCP clients. See the `dg mcp` CLI group for details.
+- [dagster-dbt] The `dagster-dbt` package no longer has a dependency on `dbt-core`.
+- [dagster-dbt][preview] Users of the dbt Fusion CLI can now use the `dagster-dbt` package to run dbt commands with no changes to their existing dagster code. This support is still in preview as the format of the log messages produced by the dbt Fusion CLI is still subject to change. Let us know if you notice any incompatibilities.
+- [dagster-databricks] Added a `PipesDatabricksServerlessClient` to support Databricks Serverless jobs with Dagster pipes.
+- [dagster-databricks] Added additional options for cluster configuration (thanks [@jmccartin](https://github.com/jmccartin)!)
+
+### Bugfixes
+
+- Various bugfixes for backfills that target assets which change their partitions definition mid-backfill.
+- [ui] Fixed issue that could cause errors related to the `ObjectMetadataValue` class.
+
+### Documentation
+
+- Added docs for using Spark Connect and Databricks Connect with Dagster.
+
 ## 1.11.4 (core) / 0.27.4 (libraries)
 
 ### New

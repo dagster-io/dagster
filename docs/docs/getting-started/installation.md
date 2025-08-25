@@ -13,7 +13,7 @@ To follow the steps in this guide, you'll need to install [Python 3.9](https://w
 
 :::
 
-To get started with Dagster, you can scaffold a new project with the [`create-dagster` CLI](/api/dg/create-dagster) (recommended), manually create a new project, or update an existing project to install Dagster dependencies.
+To get started with Dagster, you can scaffold a new project with the [`create-dagster` CLI](/api/clis/create-dagster) (recommended), manually create a new project, or update an existing project to install Dagster dependencies.
 
 - [Installation requirements for using the `create-dagster` CLI](#installation-requirements-for-using-the-create-dagster-cli)
 - [Installation requirements for manually creating or updating a project](#installation-requirements-for-manually-creating-or-updating-a-project)
@@ -103,5 +103,5 @@ If you run into trouble during the installation process, reach out to the [Dagst
 ## Next steps
 
 - Follow the [Quickstart](/getting-started/quickstart) to get up and running with a basic Dagster project
-- Follow the [ETL pipeline tutorial](/etl-pipeline-tutorial) to learn how to build a more complex ETL pipeline
+- Follow the [Tutorial](/dagster-basics-tutorial) to learn how to build a more complex ETL pipeline
 - Add [assets](/guides/build/assets/defining-assets) to your Dagster project

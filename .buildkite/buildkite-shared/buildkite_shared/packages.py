@@ -4,7 +4,7 @@ from pathlib import Path
 from typing import Callable, Optional
 
 import pkg_resources
-from buildkite_shared.environment import is_feature_branch, message_contains
+from buildkite_shared.environment import is_feature_branch, run_all_tests
 from buildkite_shared.git import ChangedFiles
 from buildkite_shared.python_packages import PythonPackages, changed_filetypes
 
@@ -40,7 +40,7 @@ def skip_reason(
 
     # If the result is not cached, check for NO_SKIP signifier first, so that it always
     # takes precedent.
-    if message_contains("NO_SKIP"):
+    if run_all_tests():
         logging.info(f"Building {name} because NO_SKIP set")
         return None
     if always_run_if and always_run_if():

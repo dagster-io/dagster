@@ -17,7 +17,8 @@ from dagster._core.definitions.sensor_definition import SensorType
 from dagster._core.events import DagsterEventType
 from dagster._core.instance import DagsterInstance
 from dagster._core.log_manager import LOG_RECORD_METADATA_ATTR
-from dagster._core.remote_representation import CodeLocation, RemoteRepository
+from dagster._core.remote_representation.code_location import CodeLocation
+from dagster._core.remote_representation.external import RemoteRepository
 from dagster._core.scheduler.instigation import SensorInstigatorData, TickStatus
 from dagster._core.test_utils import create_test_daemon_workspace_context, environ, freeze_time
 from dagster._core.workspace.context import WorkspaceProcessContext

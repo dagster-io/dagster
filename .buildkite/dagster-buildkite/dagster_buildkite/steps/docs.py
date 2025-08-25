@@ -41,13 +41,21 @@ def build_build_docs_step():
 
 
 def build_docstring_validation_step() -> GroupLeafStepConfiguration:
+    python_version = AvailablePythonVersion.get_default()
+    tox_env = f"py{python_version.value.replace('.', '')}"
     return (
         add_test_image(
-            CommandStepBuilder(":memo: docstring validation"),
-            AvailablePythonVersion.get_default(),
+            CommandStepBuilder(
+                f":pytest: docstring validation {python_version.value}", retry_automatically=False
+            ),
+            python_version,
         )
         .run(
-            "uv pip install --system -e python_modules/automation[buildkite]",
+            "cd python_modules/automation",
+            'pip install "uv==0.7.2"',
+            "uv pip install --system -e .[buildkite]",
+            f"echo -e '--- \\033[0;32m:pytest: Running tox env: {tox_env}\\033[0m'",
+            f"tox -vv -e {tox_env}",
             "python -m automation.dagster_docs.main check docstrings --all",
         )
         .build()

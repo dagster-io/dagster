@@ -6,12 +6,12 @@ for that.
 
 import json
 import os
-from abc import ABC, abstractmethod
 from collections import defaultdict
 from collections.abc import Iterable, Mapping, Sequence
 from enum import Enum
 from typing import Any, Final, NamedTuple, Optional, Union, cast
 
+from dagster_shared.serdes.objects import DefsStateInfo
 from dagster_shared.serdes.serdes import (
     FieldSerializer,
     get_prefix_for_a_serialized,
@@ -33,7 +33,6 @@ from dagster._config.snap import ConfigFieldSnap, ConfigSchemaSnapshot, snap_fro
 from dagster._core.definitions import (
     AssetSelection,
     JobDefinition,
-    PartitionsDefinition,
     RepositoryDefinition,
     ScheduleDefinition,
 )
@@ -78,7 +77,13 @@ from dagster._core.definitions.partitions.definition import (
     TimeWindowPartitionsDefinition,
 )
 from dagster._core.definitions.partitions.mapping import PartitionMapping
-from dagster._core.definitions.partitions.schedule_type import ScheduleType
+from dagster._core.definitions.partitions.snap import (
+    DynamicPartitionsSnap,
+    MultiPartitionsSnap,
+    PartitionsSnap,
+    StaticPartitionsSnap,
+    TimeWindowPartitionsSnap,
+)
 from dagster._core.definitions.partitions.utils import get_builtin_partition_mapping_types
 from dagster._core.definitions.resource_definition import ResourceDefinition
 from dagster._core.definitions.resource_requirement import ResourceKeyRequirement
@@ -90,7 +95,6 @@ from dagster._core.definitions.sensor_definition import (
 )
 from dagster._core.definitions.unresolved_asset_job_definition import UnresolvedAssetJobDefinition
 from dagster._core.definitions.utils import DEFAULT_GROUP_NAME
-from dagster._core.errors import DagsterInvalidDefinitionError
 from dagster._core.origin import RepositoryPythonOrigin
 from dagster._core.snap import JobSnap
 from dagster._core.snap.mode import ResourceDefSnap, build_resource_def_snap
@@ -99,7 +103,6 @@ from dagster._core.storage.tags import COMPUTE_KIND_TAG, TAGS_INCLUDE_IN_REMOTE_
 from dagster._core.utils import is_valid_email
 from dagster._record import IHaveNew, record, record_custom
 from dagster._serdes import whitelist_for_serdes
-from dagster._time import datetime_from_timestamp
 from dagster._utils.error import SerializableErrorInfo
 from dagster._utils.warnings import suppress_dagster_warnings
 from dagster.components.core.component_tree import ComponentTree
@@ -545,187 +548,6 @@ class ExecutionParamsSnap(IHaveNew):
 @record
 class ExecutionParamsErrorSnap:
     error: Optional[SerializableErrorInfo]
-
-
-class PartitionsSnap(ABC):
-    @classmethod
-    def from_def(cls, partitions_def: PartitionsDefinition) -> "PartitionsSnap":
-        if isinstance(partitions_def, TimeWindowPartitionsDefinition):
-            return TimeWindowPartitionsSnap.from_def(partitions_def)
-        elif isinstance(partitions_def, StaticPartitionsDefinition):
-            return StaticPartitionsSnap.from_def(partitions_def)
-        elif isinstance(partitions_def, MultiPartitionsDefinition):
-            return MultiPartitionsSnap.from_def(partitions_def)
-        elif isinstance(partitions_def, DynamicPartitionsDefinition):
-            return DynamicPartitionsSnap.from_def(partitions_def)
-        else:
-            raise DagsterInvalidDefinitionError(
-                "Only static, time window, multi-dimensional partitions, and dynamic partitions"
-                " definitions with a name parameter are currently supported."
-            )
-
-    @abstractmethod
-    def get_partitions_definition(self) -> PartitionsDefinition: ...
-
-
-@whitelist_for_serdes(storage_name="ExternalTimeWindowPartitionsDefinitionData")
-@record
-class TimeWindowPartitionsSnap(PartitionsSnap):
-    start: float
-    timezone: Optional[str]
-    fmt: str
-    end_offset: int
-    end: Optional[float] = None
-    cron_schedule: Optional[str] = None
-    # superseded by cron_schedule, but kept around for backcompat
-    schedule_type: Optional[ScheduleType] = None
-    # superseded by cron_schedule, but kept around for backcompat
-    minute_offset: Optional[int] = None
-    # superseded by cron_schedule, but kept around for backcompat
-    hour_offset: Optional[int] = None
-    # superseded by cron_schedule, but kept around for backcompat
-    day_offset: Optional[int] = None
-
-    @classmethod
-    def from_def(cls, partitions_def: TimeWindowPartitionsDefinition) -> Self:  # pyright: ignore[reportIncompatibleMethodOverride]
-        check.inst_param(partitions_def, "partitions_def", TimeWindowPartitionsDefinition)
-        return cls(
-            cron_schedule=partitions_def.cron_schedule,
-            start=partitions_def.start.timestamp(),
-            end=partitions_def.end.timestamp() if partitions_def.end else None,
-            timezone=partitions_def.timezone,
-            fmt=partitions_def.fmt,
-            end_offset=partitions_def.end_offset,
-        )
-
-    def get_partitions_definition(self):
-        if self.cron_schedule is not None:
-            return TimeWindowPartitionsDefinition(
-                cron_schedule=self.cron_schedule,
-                start=datetime_from_timestamp(self.start, tz=self.timezone),  # pyright: ignore[reportArgumentType]
-                timezone=self.timezone,
-                fmt=self.fmt,
-                end_offset=self.end_offset,
-                end=(datetime_from_timestamp(self.end, tz=self.timezone) if self.end else None),  # pyright: ignore[reportArgumentType]
-            )
-        else:
-            # backcompat case
-            return TimeWindowPartitionsDefinition(
-                schedule_type=self.schedule_type,
-                start=datetime_from_timestamp(self.start, tz=self.timezone),  # pyright: ignore[reportArgumentType]
-                timezone=self.timezone,
-                fmt=self.fmt,
-                end_offset=self.end_offset,
-                end=(datetime_from_timestamp(self.end, tz=self.timezone) if self.end else None),  # pyright: ignore[reportArgumentType]
-                minute_offset=self.minute_offset,
-                hour_offset=self.hour_offset,
-                day_offset=self.day_offset,
-            )
-
-
-def _dedup_partition_keys(keys: Sequence[str]) -> Sequence[str]:
-    # Use both a set and a list here to preserve lookup performance in case of large inputs. (We
-    # can't just use a set because we need to preserve ordering.)
-    seen_keys: set[str] = set()
-    new_keys: list[str] = []
-    for key in keys:
-        if key not in seen_keys:
-            new_keys.append(key)
-            seen_keys.add(key)
-    return new_keys
-
-
-@whitelist_for_serdes(storage_name="ExternalStaticPartitionsDefinitionData")
-@record_custom(checked=False)
-class StaticPartitionsSnap(PartitionsSnap, IHaveNew):
-    partition_keys: Sequence[str]
-
-    def __new__(cls, partition_keys: Sequence[str]):
-        # for back compat reasons we allow str as a Sequence[str] here
-        if not isinstance(partition_keys, str):
-            check.sequence_param(
-                partition_keys,
-                "partition_keys",
-                of_type=str,
-            )
-
-        return super().__new__(
-            cls,
-            partition_keys=partition_keys,
-        )
-
-    @classmethod
-    def from_def(cls, partitions_def: StaticPartitionsDefinition) -> Self:  # pyright: ignore[reportIncompatibleMethodOverride]
-        check.inst_param(partitions_def, "partitions_def", StaticPartitionsDefinition)
-        return cls(partition_keys=partitions_def.get_partition_keys())
-
-    def get_partitions_definition(self):
-        # v1.4 made `StaticPartitionsDefinition` error if given duplicate keys. This caused
-        # host process errors for users who had not upgraded their user code to 1.4 and had dup
-        # keys, since the host process `StaticPartitionsDefinition` would throw an error.
-        keys = _dedup_partition_keys(self.partition_keys)
-        return StaticPartitionsDefinition(keys)
-
-
-@whitelist_for_serdes(
-    storage_name="ExternalPartitionDimensionDefinition",
-    storage_field_names={"partitions": "external_partitions_def_data"},
-)
-@record
-class PartitionDimensionSnap:
-    name: str
-    partitions: PartitionsSnap
-
-
-@whitelist_for_serdes(
-    storage_name="ExternalMultiPartitionsDefinitionData",
-    storage_field_names={"partition_dimensions": "external_partition_dimension_definitions"},
-)
-@record
-class MultiPartitionsSnap(PartitionsSnap):
-    partition_dimensions: Sequence[PartitionDimensionSnap]
-
-    @classmethod
-    def from_def(cls, partitions_def: MultiPartitionsDefinition) -> Self:  # pyright: ignore[reportIncompatibleMethodOverride]
-        check.inst_param(partitions_def, "partitions_def", MultiPartitionsDefinition)
-
-        return cls(
-            partition_dimensions=[
-                PartitionDimensionSnap(
-                    name=dimension.name,
-                    partitions=PartitionsSnap.from_def(dimension.partitions_def),
-                )
-                for dimension in partitions_def.partitions_defs
-            ]
-        )
-
-    def get_partitions_definition(self):
-        return MultiPartitionsDefinition(
-            {
-                partition_dimension.name: (
-                    partition_dimension.partitions.get_partitions_definition()
-                )
-                for partition_dimension in self.partition_dimensions
-            }
-        )
-
-
-@whitelist_for_serdes(storage_name="ExternalDynamicPartitionsDefinitionData")
-@record
-class DynamicPartitionsSnap(PartitionsSnap):
-    name: str
-
-    @classmethod
-    def from_def(cls, partitions_def: DynamicPartitionsDefinition) -> Self:  # pyright: ignore[reportIncompatibleMethodOverride]
-        check.inst_param(partitions_def, "partitions_def", DynamicPartitionsDefinition)
-        if partitions_def.name is None:
-            raise DagsterInvalidDefinitionError(
-                "Dagster does not support dynamic partitions definitions without a name parameter."
-            )
-        return cls(name=partitions_def.name)
-
-    def get_partitions_definition(self):
-        return DynamicPartitionsDefinition(name=self.name)
 
 
 @whitelist_for_serdes(
@@ -1716,6 +1538,7 @@ class ComponentTreeSnap:
     skip_when_empty_fields={
         "pools",
         "component_tree",
+        "defs_state_info",
     },
 )
 @record_custom
@@ -1732,6 +1555,7 @@ class RepositorySnap(IHaveNew):
     metadata: Optional[MetadataMapping]
     utilized_env_vars: Optional[Mapping[str, Sequence[EnvVarConsumer]]]
     component_tree: Optional[ComponentTreeSnap]
+    defs_state_info: Optional[DefsStateInfo]
 
     def __new__(
         cls,
@@ -1747,6 +1571,7 @@ class RepositorySnap(IHaveNew):
         metadata: Optional[MetadataMapping] = None,
         utilized_env_vars: Optional[Mapping[str, Sequence[EnvVarConsumer]]] = None,
         component_tree: Optional[ComponentTreeSnap] = None,
+        defs_state_info: Optional[DefsStateInfo] = None,
     ):
         return super().__new__(
             cls,
@@ -1762,6 +1587,7 @@ class RepositorySnap(IHaveNew):
             metadata=metadata or {},
             utilized_env_vars=utilized_env_vars,
             component_tree=component_tree,
+            defs_state_info=defs_state_info,
         )
 
     @classmethod
@@ -1885,6 +1711,9 @@ class RepositorySnap(IHaveNew):
                 for env_var, res_names in repository_def.get_env_vars_by_top_level_resource().items()
             },
             component_tree=component_snap,
+            defs_state_info=repository_def.repository_load_data.defs_state_info
+            if repository_def.repository_load_data
+            else None,
         )
 
     def has_job_data(self):

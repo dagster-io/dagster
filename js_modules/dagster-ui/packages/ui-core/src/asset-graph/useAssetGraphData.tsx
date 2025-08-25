@@ -7,6 +7,8 @@ import {computeGraphData} from './ComputeGraphData';
 import {GraphData, buildGraphData, tokenForAssetKey} from './Utils';
 import {AssetGraphQueryItem, AssetNode} from './types';
 import {GraphQueryItem} from '../app/GraphQueryImpl';
+import {useShowAssetsWithoutDefinitions} from '../app/UserSettingsDialog/useShowAssetsWithoutDefinitions';
+import {useShowStubAssets} from '../app/UserSettingsDialog/useShowStubAssets';
 import {AssetKey} from '../assets/types';
 import {useAllAssetsNodes} from '../assets/useAllAssets';
 import {AssetGroupSelector, PipelineSelector} from '../graphql/types';
@@ -40,9 +42,17 @@ export function useFullAssetGraphData(
 ) {
   const {assets, loading} = useAllAssetsNodes();
 
+  const {showStubAssets} = useShowStubAssets();
+  const {showAssetsWithoutDefinitions} = useShowAssetsWithoutDefinitions();
+
   const allNodes = useMemo(
-    () => getAllAssets(assets, options.externalAssets ?? []),
-    [assets, options.externalAssets],
+    () =>
+      getAllAssets(
+        assets,
+        showAssetsWithoutDefinitions ? (options.externalAssets ?? []) : [],
+        showStubAssets,
+      ),
+    [assets, showStubAssets, showAssetsWithoutDefinitions, options.externalAssets],
   );
 
   const [fullAssetGraphData, setFullAssetGraphData] = useState<GraphData | null>(null);
@@ -80,11 +90,18 @@ const INITIAL_STATE: GraphDataState = {
  * uses this option to implement the "3 of 4 repositories" picker.
  */
 export function useAssetGraphData(opsQuery: string, options: AssetGraphFetchScope) {
+  const {showStubAssets} = useShowStubAssets();
+  const {showAssetsWithoutDefinitions} = useShowAssetsWithoutDefinitions();
   const {assets, loading: assetsLoading} = useAllAssetsNodes();
 
   const allNodes = useMemo(
-    () => getAllAssets(assets, options.externalAssets ?? []),
-    [assets, options.externalAssets],
+    () =>
+      getAllAssets(
+        assets,
+        showAssetsWithoutDefinitions ? (options.externalAssets ?? []) : [],
+        showStubAssets,
+      ),
+    [assets, options.externalAssets, showAssetsWithoutDefinitions, showStubAssets],
   );
 
   const {pipelineSelector, groupSelector, hideNodesMatching} = options;
@@ -205,8 +222,8 @@ export const calculateGraphDistances = (items: GraphQueryItem[], assetKey: Asset
     upstreamDepth += 1;
 
     candidates.forEach((candidate) => {
-      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-      map[candidate]!.inputs.flatMap((i) =>
+      const inputs = map[candidate]?.inputs ?? [];
+      inputs.flatMap((i) =>
         i.dependsOn.forEach((d) => {
           if (!candidates.has(d.solid.name)) {
             nextCandidates.add(d.solid.name);
@@ -225,8 +242,8 @@ export const calculateGraphDistances = (items: GraphQueryItem[], assetKey: Asset
     downstreamDepth += 1;
 
     candidates.forEach((candidate) => {
-      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-      map[candidate]!.outputs.flatMap((i) =>
+      const outputs = map[candidate]?.outputs ?? [];
+      outputs.flatMap((i) =>
         i.dependedBy.forEach((d) => {
           if (!candidates.has(d.solid.name)) {
             nextCandidates.add(d.solid.name);
@@ -254,6 +271,7 @@ const buildExternalAssetQueryItem = (asset: {
     hasMaterializePermission: false,
     graphName: '',
     opVersion: null,
+    hasAssetChecks: false,
     hasReportRunlessAssetEventPermission: false,
     pools: [],
     internalFreshnessPolicy: null,
@@ -295,9 +313,10 @@ const getAllAssets = weakMapMemoize(
   (
     sdas: ReturnType<typeof useAllAssetsNodes>['assets'],
     externalAssets: {id: string; key: {path: Array<string>}}[],
+    showStubAssets: boolean,
   ) => {
     return [
-      ...sdas.map((sda) => sda.definition),
+      ...sdas.map((sda) => sda.definition).filter((d) => showStubAssets || !d?.isAutoCreatedStub),
       ...externalAssets.map((a) => buildExternalAssetQueryItem(a)),
     ];
   },

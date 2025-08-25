@@ -35,7 +35,6 @@ export type LogFilter = {
   levels: {[key: string]: boolean};
   focusedTime: number;
   sinceTime: number;
-  hideNonMatches: boolean;
 };
 
 export interface LogsProviderLogs {

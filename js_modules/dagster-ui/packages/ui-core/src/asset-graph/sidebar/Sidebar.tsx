@@ -180,7 +180,12 @@ export const AssetGraphExplorerSidebar = React.memo(
       Object.entries(codeLocationNodes)
         .sort(([_1, a], [_2, b]) => COLLATOR.compare(a.locationName, b.locationName))
         .forEach(([locationName, locationNode]) => {
-          folderNodes.push({locationName, id: locationName, level: 1});
+          folderNodes.push({
+            locationName,
+            id: locationName,
+            level: 1,
+            openAlways: codeLocationsCount === 1,
+          });
           if (openNodes.has(locationName) || codeLocationsCount === 1) {
             Object.entries(locationNode.groups)
               .sort(([_1, a], [_2, b]) => COLLATOR.compare(a.groupName, b.groupName))
@@ -378,9 +383,9 @@ export const AssetGraphExplorerSidebar = React.memo(
                 {items.map(({index, key, size, start}) => {
                   // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
                   const node = renderedNodes[index]!;
-                  const isCodelocationNode = 'locationName' in node;
+                  const isCodeLocationNode = 'locationName' in node;
                   const isGroupNode = 'groupNode' in node;
-                  const row = !isCodelocationNode && !isGroupNode ? graphData.nodes[node.id] : node;
+                  const row = !isCodeLocationNode && !isGroupNode ? graphData.nodes[node.id] : node;
                   const isSelected =
                     selectedNode?.id === node.id || selectedNodes.includes(row as GraphNode);
                   return (

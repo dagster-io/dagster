@@ -5,6 +5,7 @@ from buildkite_shared.environment import is_release_branch, safe_getenv
 from buildkite_shared.python_packages import PythonPackages
 from buildkite_shared.python_version import AvailablePythonVersion
 from buildkite_shared.step_builders.command_step_builder import (
+    BuildkiteQueue,
     CommandStepBuilder,
     CommandStepConfiguration,
 )
@@ -83,9 +84,12 @@ def build_dagster_steps() -> list[StepConfiguration]:
 
 def build_repo_wide_ruff_steps() -> list[CommandStepConfiguration]:
     return [
-        add_test_image(CommandStepBuilder(":zap: ruff"), AvailablePythonVersion.get_default())
+        add_test_image(
+            CommandStepBuilder(":zap: ruff", retry_automatically=False),
+            AvailablePythonVersion.get_default(),
+        )
         .run(
-            "pip install -e python_modules/dagster[ruff] -e python_modules/dagster-pipes -e python_modules/libraries/dagster-shared",
+            "uv pip install --system -e python_modules/dagster[ruff] -e python_modules/dagster-pipes -e python_modules/libraries/dagster-shared",
             "make check_ruff",
         )
         .skip_if(skip_if_no_python_changes())
@@ -96,7 +100,7 @@ def build_repo_wide_ruff_steps() -> list[CommandStepConfiguration]:
 def build_repo_wide_prettier_steps() -> list[CommandStepConfiguration]:
     return [
         add_test_image(
-            CommandStepBuilder(":prettier: prettier"),
+            CommandStepBuilder(":prettier: prettier", retry_automatically=False),
             AvailablePythonVersion.get_default(),
         )
         .run(
@@ -130,7 +134,7 @@ def build_repo_wide_pyright_steps() -> list[StepConfiguration]:
             name=":pyright: pyright",
             steps=[
                 add_test_image(
-                    CommandStepBuilder(":pyright: make pyright"),
+                    CommandStepBuilder(":pyright: make pyright", retry_automatically=False),
                     AvailablePythonVersion.get_default(),
                 )
                 .run(
@@ -142,9 +146,13 @@ def build_repo_wide_pyright_steps() -> list[StepConfiguration]:
                     "make pyright",
                 )
                 .skip_if(skip_if_no_python_changes(overrides=["pyright"]))
+                # Run on a larger instance
+                .on_queue(BuildkiteQueue.DOCKER)
                 .build(),
                 add_test_image(
-                    CommandStepBuilder(":pyright: make rebuild_pyright_pins"),
+                    CommandStepBuilder(
+                        ":pyright: make rebuild_pyright_pins", retry_automatically=False
+                    ),
                     AvailablePythonVersion.get_default(),
                 )
                 .run(
@@ -176,7 +184,7 @@ def build_repo_wide_check_manifest_steps() -> list[CommandStepConfiguration]:
     ]
 
     commands = [
-        "pip install check-manifest",
+        "uv pip install --system check-manifest",
         *(
             f"check-manifest {library}"
             for library in published_packages
@@ -199,7 +207,7 @@ def build_sql_schema_check_steps() -> list[CommandStepConfiguration]:
         add_test_image(
             CommandStepBuilder(":mysql: mysql-schema")
             .run(
-                "pip install -e python_modules/dagster -e python_modules/dagster-pipes -e python_modules/libraries/dagster-shared",
+                "uv pip install --system -e python_modules/dagster -e python_modules/dagster-pipes -e python_modules/libraries/dagster-shared",
                 "python scripts/check_schemas.py",
             )
             .skip_if(skip_mysql_if_no_changes_to_dependencies(["dagster"])),
@@ -213,7 +221,7 @@ def build_graphql_python_client_backcompat_steps() -> list[CommandStepConfigurat
         add_test_image(
             CommandStepBuilder(":graphql: GraphQL Python Client backcompat")
             .run(
-                "pip install -e python_modules/dagster[test] -e python_modules/dagster-pipes"
+                "uv pip install --system -e python_modules/dagster[test] -e python_modules/dagster-pipes"
                 " -e python_modules/libraries/dagster-shared -e python_modules/dagster-graphql"
                 " -e python_modules/automation",
                 "dagster-graphql-client query check",

@@ -14,7 +14,7 @@ from dagster._core.events import DagsterEvent, DagsterEventType, JobFailureData,
 from dagster._core.execution.backfill import BulkActionsFilter, BulkActionStatus, PartitionBackfill
 from dagster._core.instance import InstanceType
 from dagster._core.launcher.sync_in_memory_run_launcher import SyncInMemoryRunLauncher
-from dagster._core.remote_representation import (
+from dagster._core.remote_origin import (
     ManagedGrpcPythonEnvCodeLocationOrigin,
     RemoteRepositoryOrigin,
 )
@@ -105,23 +105,23 @@ class TestRunStorage:
         return True
 
     # Override for storages that support filtering backfills by tag
-    def supports_backfill_tags_filtering_queries(self):
+    def supports_backfill_tags_filtering_queries(self) -> bool:
         return False
 
     # Override for storages that support filtering backfills by job name
-    def supports_backfill_job_name_filtering_queries(self):
+    def supports_backfill_job_name_filtering_queries(self) -> bool:
         return False
 
     # Override for storages that support filtering backfills by backfill id
-    def supports_backfill_id_filtering_queries(self):
+    def supports_backfill_id_filtering_queries(self) -> bool:
         return False
 
     # Override for storages that support getting backfill counts
-    def supports_backfills_count(self):
+    def supports_backfills_count(self) -> bool:
         return False
 
     # Override for storages that support adding a historical run
-    def supports_add_historical_run(self):
+    def supports_add_historical_run(self) -> bool:
         return False
 
     def get_backfills_and_assert_expected_count(self, storage, filters, expected_count):

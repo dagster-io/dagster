@@ -10,7 +10,7 @@ from dagster._core.origin import (
     JobPythonOrigin,
     RepositoryPythonOrigin,
 )
-from dagster._core.remote_representation.origin import (
+from dagster._core.remote_origin import (
     InProcessCodeLocationOrigin,
     RemoteJobOrigin,
     RemoteRepositoryOrigin,

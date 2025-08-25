@@ -3,6 +3,8 @@ title: 'Automate'
 description: Learn how to automate your Dagster data pipelines.
 sidebar_class_name: hidden
 sidebar_position: 10
+canonicalUrl: '/guides/automate'
+slug: '/guides/automate'
 ---
 
 Automation is key to building reliable, efficient data pipelines. Dagster offers several ways to automate pipeline execution to fit a variety of needs.
@@ -22,4 +24,4 @@ Consider these factors when selecting an automation method:
 | [Declarative automation](/guides/automate/declarative-automation) | A framework that allows you to set automation conditions on assets and asset checks                                          | Asset-centric, condition-based updates                       | Assets only         |
 | [Sensors](/guides/automate/sensors)                               | Trigger runs based on events or conditions that you define, like the arrival of a new file or a change to an external system | Event-driven automation                                      | Assets, Ops, Graphs |
 | [Asset sensors](/guides/automate/asset-sensors)                   | Trigger jobs when specified assets are materialized, allowing you to create dependencies between jobs or code locations.     | Cross-job/location asset dependencies                        | Assets only         |
-| [GraphQL triggers](/guides/operate/graphql)                       | Trigger materializations and jobs from the GraphQL endpoint                                                                  | Event triggers from external systems                         | Assets, Ops, Jobs   |
+| [GraphQL triggers](/api/graphql)                                  | Trigger materializations and jobs from the GraphQL endpoint                                                                  | Event triggers from external systems                         | Assets, Ops, Jobs   |

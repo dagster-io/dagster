@@ -114,7 +114,7 @@ class DbtManifestAssetSelection(AssetSelection):
             is_dbt_asset = dbt_resource_props["resource_type"] in ASSET_RESOURCE_TYPES
             if is_dbt_asset and not is_non_asset_node(dbt_resource_props):
                 asset_key = self.dagster_dbt_translator.get_asset_spec(
-                    self.manifest, unique_id, None
+                    self.manifest, unique_id, self.project
                 ).key
                 keys.add(asset_key)
 
@@ -132,13 +132,13 @@ class DbtManifestAssetSelection(AssetSelection):
             exclude=self.exclude,
             selector=self.selector,
             manifest_json=self.manifest,
-            project=None,
+            project=self.project,
         ):
             asset_check_key = get_asset_check_key_for_test(
                 self.manifest,
                 self.dagster_dbt_translator,
                 test_unique_id=unique_id,
-                project=None,
+                project=self.project,
             )
 
             if asset_check_key:

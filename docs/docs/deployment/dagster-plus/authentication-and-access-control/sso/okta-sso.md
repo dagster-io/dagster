@@ -13,7 +13,7 @@ In this guide, you'll configure Okta to use single sign-on (SSO) with your Dagst
 To complete the steps in this guide, you'll need:
 
 - **An existing Okta account**
-- **To install the [`dagster-cloud` CLI](/deployment/dagster-plus/management/dagster-cloud-cli/installing-and-configuring)**
+- **To install the [`dagster-cloud` CLI](/api/clis/dagster-cloud-cli/installing-and-configuring)**
 - **The following in Dagster+:**
   - A Pro plan
   - [Access to a user token](/deployment/dagster-plus/management/tokens/user-tokens)

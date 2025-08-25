@@ -4,7 +4,7 @@ export const createWorkerThread = (
   onMessage: (postMessage: (message: any) => void, data: any) => Promise<void>,
   onError: (postMessage: (message: any) => void, error: Error, event: MessageEvent) => void,
 ) => {
-  self.addEventListener('message', async (event) => {
+  self.addEventListener('message', async (event: MessageEvent) => {
     try {
       if (event.data[WEB_WORKER_FEATURE_FLAGS_KEY]) {
         // Don't broadcast the feature flags update to the main thread.

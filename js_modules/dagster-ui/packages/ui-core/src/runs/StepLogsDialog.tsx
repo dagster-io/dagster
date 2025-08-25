@@ -121,7 +121,6 @@ export const StepLogsDialogContent = ({
   const firstLogForStepTime = firstLogForStep ? Number(firstLogForStep.timestamp) : 0;
 
   const [filter, setFilter] = useState<LogFilter>({
-    hideNonMatches: false,
     focusedTime: firstLogForStepTime,
     levels: Object.fromEntries(DefaultLogLevels.map((l) => [l, true])),
     logQuery: stepKeys.map((stepKey) => ({token: 'step', value: stepKey})),

@@ -63,9 +63,7 @@ yarn build-api-docs          # Build API docs after .rst changes
 
 ## Code Style
 
-- Follow Google-style docstrings
-- **ALWAYS use `@record` from `dagster_shared.record` for data structures, result objects, and immutable classes**
-- Only use `@dataclass` when mutability is specifically required
+- **See [.claude/coding_conventions.md](./.claude/coding_conventions.md) for all code style and convention guidelines**
 
 ## Code Quality Requirements
 
@@ -84,27 +82,30 @@ yarn build-api-docs          # Build API docs after .rst changes
 - DO NOT search for Python code (.py files) inside of .tox folders. These are temporary environments and this will only cause confusion.
 - Always search for package dependencies in setup.py files only. This is the current source of truth for dependencies in this repository.
 
-## Linting and Code Style
-
-- In CLI scripts, use `# noqa: T201` to mark print statements as OK to use since CLIs require printing to stdout
-
-## CLI Development Guidelines
-
-- Note that click MUST be used to building cli tools
-
-## Project Compatibility
-
-- Code must be compatible with Python version 3.9 and later
-- For CLI output, use `click.echo()` instead of `print()` - this ensures proper output handling in CLI contexts and testing
-
-## Import Guidelines
-
-- Use top-level imports unless you need conditional imports or have performance concerns requiring lazy loading
-
-## Development Best Practices
-
-- ALWAYS run make ruff and make quick_pyright from the root of this repository, no matter what your working directory is
-
 ## Make Command Guidelines
 
 - Whenever there is an instruction to run a make command, ALWAYS cd to $DAGSTER_GIT_REPO_DIR, as the Makefile is at the root of the repository
+
+## Environment Variables
+
+- **DAGSTER_GIT_REPO_DIR**: Always defined and points to the repository root directory. Use this for any absolute path references in agent configurations or file operations instead of hardcoding user-specific paths.
+
+## PR Stack Operations
+
+### Finding GitHub Usernames Efficiently
+
+- **Best method**: `gh search commits "FirstName" --author="Full Name" --repo=dagster-io/dagster`
+- **Why effective**: Co-authored commits reveal exact GitHub username format
+- **Alternative**: Check recent PRs or issues for the person's contributions
+
+### Stack Operations Always Use GT
+
+- **Key rule**: When someone mentions "stacking" or "stack", always use `gt` commands first
+- **Reason**: GT is the source of truth for stack metadata and relationships
+- **Primary command**: `gt log` provides comprehensive PR numbers, statuses, and branch relationships
+- **Impact**: Single command reveals entire stack structure vs. manual discovery
+
+### Git Operations
+
+- **NEVER use `git push` directly** - always ask the user before pushing changes to remote
+- Do not automatically do git commit --amend on user's behalf since you lose track of what the agent has done

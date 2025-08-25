@@ -4,7 +4,7 @@ import * as React from 'react';
 import styled from 'styled-components';
 import {SubscriptionClient} from 'subscriptions-transport-ws';
 
-import {useFeatureFlags} from './Flags';
+import {useFeatureFlags} from './useFeatureFlags';
 
 type Availability = 'attempting-to-connect' | 'unavailable' | 'available';
 

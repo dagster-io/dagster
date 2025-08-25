@@ -13,15 +13,14 @@ from dagster._core.definitions.external_asset import external_assets_from_specs
 from dagster._core.definitions.metadata import MetadataValue, normalize_metadata
 from dagster._core.definitions.partitions.definition import TimeWindowPartitionsDefinition
 from dagster._core.definitions.partitions.schedule_type import ScheduleType
+from dagster._core.definitions.partitions.snap import MultiPartitionsSnap, TimeWindowPartitionsSnap
 from dagster._core.definitions.utils import DEFAULT_GROUP_NAME
 from dagster._core.remote_representation.external_data import (
     AssetChildEdgeSnap,
     AssetNodeSnap,
     AssetParentEdgeSnap,
-    MultiPartitionsSnap,
     SensorSnap,
     TargetSnap,
-    TimeWindowPartitionsSnap,
     asset_node_snaps_from_repo,
 )
 from dagster._serdes import unpack_value

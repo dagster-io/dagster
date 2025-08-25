@@ -41,11 +41,17 @@ class HourlyPartitionsDefinition(TimeWindowPartitionsDefinition):
 
     .. code-block:: python
 
-        HourlyPartitionsDefinition(start_date=datetime(2022, 03, 12))
-        # creates partitions (2022-03-12-00:00, 2022-03-12-01:00), (2022-03-12-01:00, 2022-03-12-02:00), ...
+        from datetime import datetime
+        from dagster import HourlyPartitionsDefinition
 
-        HourlyPartitionsDefinition(start_date=datetime(2022, 03, 12), minute_offset=15)
-        # creates partitions (2022-03-12-00:15, 2022-03-12-01:15), (2022-03-12-01:15, 2022-03-12-02:15), ...
+        # Basic hourly partitions starting at midnight
+        hourly_partitions = HourlyPartitionsDefinition(start_date=datetime(2022, 3, 12))
+
+        # Hourly partitions with 15-minute offset
+        offset_partitions = HourlyPartitionsDefinition(
+            start_date=datetime(2022, 3, 12),
+            minute_offset=15
+        )
     """
 
     # mapping for fields defined on TimeWindowPartitionsDefinition to this subclasses __new__

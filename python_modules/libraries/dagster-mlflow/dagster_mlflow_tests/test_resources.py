@@ -420,11 +420,11 @@ def test_execute_op_with_mlflow_resource():
     @op(required_resource_keys={"mlflow"})
     def op1(_):
         mlflow.log_params(params)
-        run_id_holder["op1_run_id"] = mlflow.active_run().info.run_id
+        run_id_holder["op1_run_id"] = mlflow.active_run().info.run_id  # type: ignore
 
     @op(required_resource_keys={"mlflow"})
     def op2(_, _arg1):
-        run_id_holder["op2_run_id"] = mlflow.active_run().info.run_id
+        run_id_holder["op2_run_id"] = mlflow.active_run().info.run_id  # type: ignore
 
     @job(resource_defs={"mlflow": mlflow_tracking})
     def mlf_job():

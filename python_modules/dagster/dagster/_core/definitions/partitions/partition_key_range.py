@@ -1,8 +1,10 @@
 from typing import NamedTuple
 
 from dagster._annotations import PublicAttr, public
+from dagster._serdes import whitelist_for_serdes
 
 
+@whitelist_for_serdes
 @public
 class PartitionKeyRange(NamedTuple):
     """Defines a range of partitions.

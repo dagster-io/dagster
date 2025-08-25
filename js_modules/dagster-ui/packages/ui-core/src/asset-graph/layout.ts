@@ -1,6 +1,6 @@
 import * as dagre from 'dagre';
 
-import {AssetNodeFacet} from './AssetNodeFacets';
+import {AssetNodeFacet} from './AssetNodeFacetsUtil';
 import {GraphData, GraphId, GraphNode, groupIdForNode, isGroupId} from './Utils';
 import type {IBounds, IPoint} from '../graph/common';
 import {ChangeReason} from '../graphql/types';

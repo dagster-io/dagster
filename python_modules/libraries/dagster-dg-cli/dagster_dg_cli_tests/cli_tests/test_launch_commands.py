@@ -6,11 +6,8 @@ from pathlib import Path
 
 import pytest
 import yaml
-from dagster_dg_core.utils import ensure_dagster_dg_tests_import
-
-ensure_dagster_dg_tests_import()
 from dagster_dg_core.utils import activate_venv
-from dagster_dg_core_tests.utils import ProxyRunner, isolated_example_project_foo_bar
+from dagster_test.dg_utils.utils import ProxyRunner, isolated_example_project_foo_bar
 
 
 def _sample_defs():

@@ -77,4 +77,4 @@ We can run `dg list defs` to confirm that all of our definitions are being loade
 
 ## Next steps
 
-- [Add a new definition to your project](/api/dg/dg-cli)
+- [Add a new definition to your project](/api/clis/dg-cli/dg-cli-reference)

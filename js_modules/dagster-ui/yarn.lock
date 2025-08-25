@@ -3592,6 +3592,8 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "@dagster-io/dagster-ui-workspace@workspace:."
   dependencies:
+    "@types/chartjs-plugin-crosshair": "npm:^1.1.5"
+    chartjs-plugin-crosshair: "npm:^2.0.0"
     graphql.macro: "npm:^1.4.2"
     patch-package: "npm:^8.0.0"
     postinstall-postinstall: "npm:^2.1.0"
@@ -8039,6 +8041,24 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@types/chart.js@npm:<3":
+  version: 2.9.41
+  resolution: "@types/chart.js@npm:2.9.41"
+  dependencies:
+    moment: "npm:^2.10.2"
+  checksum: 10/302b251633bb469410c0a8bd3e9b30fdc08c14f9d92998095ae3849a1c3069f61e70df530e6598e6416b3abd13d15dd4eb4c45914300a679ce4c8dee21847301
+  languageName: node
+  linkType: hard
+
+"@types/chartjs-plugin-crosshair@npm:^1.1.5":
+  version: 1.1.5
+  resolution: "@types/chartjs-plugin-crosshair@npm:1.1.5"
+  dependencies:
+    "@types/chart.js": "npm:<3"
+  checksum: 10/fb6d45aabbafbdbc84bff266be9563abfdc7061f140cdcbecdc752f045aaff1ba53436b6456b123c6ee2f56aad336a0e4e45494b1b4483c483039824b60c70a2
+  languageName: node
+  linkType: hard
+
 "@types/codemirror@npm:^5.60.5":
   version: 5.60.8
   resolution: "@types/codemirror@npm:5.60.8"
@@ -11280,31 +11300,10 @@ __metadata:
   languageName: node
   linkType: hard
 
-"caniuse-lite@npm:^1.0.0, caniuse-lite@npm:^1.0.30001517, caniuse-lite@npm:^1.0.30001565":
-  version: 1.0.30001606
-  resolution: "caniuse-lite@npm:1.0.30001606"
-  checksum: 10/55ee377f9b5e09d290d2a60d339aa1fbab949d3086cfd0546d2896bc57f4df693cf69e9a0c828cb9622df039403927c66ec2d6a7ff4b7580f38846314bdb4800
-  languageName: node
-  linkType: hard
-
-"caniuse-lite@npm:^1.0.30001579":
-  version: 1.0.30001617
-  resolution: "caniuse-lite@npm:1.0.30001617"
-  checksum: 10/eac442b9ad12801086be19f6dc17056827fe398f1c05983357e2531c8183ee890ffc8fb973d54519ad7114a2fd47de8f33ec66d98565b995fef1c6ba02b5bc5b
-  languageName: node
-  linkType: hard
-
-"caniuse-lite@npm:^1.0.30001629":
-  version: 1.0.30001636
-  resolution: "caniuse-lite@npm:1.0.30001636"
-  checksum: 10/9e6c5ab4c20df31df36720dda77cf6a781549ac2ad844bc0a416b327a793da21486358a1f85fdd6c39e22d336f70aac3b0e232f5f228cdff0ceb6e3e1c5e98fd
-  languageName: node
-  linkType: hard
-
-"caniuse-lite@npm:^1.0.30001646":
-  version: 1.0.30001653
-  resolution: "caniuse-lite@npm:1.0.30001653"
-  checksum: 10/cd9b1c0fe03249e593789a11a9ef14f987b385e60441748945916b19e74e7bc5c82c40d4836496a647586651898741aed1598ae0792114a9f0d7d7fdb2b7deb0
+"caniuse-lite@npm:^1.0.0, caniuse-lite@npm:^1.0.30001517, caniuse-lite@npm:^1.0.30001565, caniuse-lite@npm:^1.0.30001579, caniuse-lite@npm:^1.0.30001629, caniuse-lite@npm:^1.0.30001646":
+  version: 1.0.30001734
+  resolution: "caniuse-lite@npm:1.0.30001734"
+  checksum: 10/330daaab3991b3e6c8536547df73b40de3885b1335a598e402e232820e3ca8d7f531298f0276b6a340b503b6c3df1ba253843091efe7de198fc6a151bcf7fd6b
   languageName: node
   linkType: hard
 
@@ -11500,6 +11499,15 @@ __metadata:
   peerDependencies:
     chart.js: ">=2.8.0"
   checksum: 10/13b1a76988471cd3931ba39501daba221983bd45d12751a4c99e6a1c2622945c69248d6ce4142b26454249060db1b306f084ff541b142c6d1e2afa7996bc0f87
+  languageName: node
+  linkType: hard
+
+"chartjs-plugin-crosshair@npm:^2.0.0":
+  version: 2.0.0
+  resolution: "chartjs-plugin-crosshair@npm:2.0.0"
+  peerDependencies:
+    chart.js: ^4.0.1
+  checksum: 10/f07105c2995c80d7a011a9e97765b97f1fbb1db7eab514381d0a50df665239fdc86219b920299e5363347a7857cbfef957499548df27ab756531415461b77d72
   languageName: node
   linkType: hard
 
@@ -20164,7 +20172,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"moment@npm:^2.26.0":
+"moment@npm:^2.10.2, moment@npm:^2.26.0":
   version: 2.30.1
   resolution: "moment@npm:2.30.1"
   checksum: 10/ae42d876d4ec831ef66110bdc302c0657c664991e45cf2afffc4b0f6cd6d251dde11375c982a5c0564ccc0fa593fc564576ddceb8c8845e87c15f58aa6baca69
