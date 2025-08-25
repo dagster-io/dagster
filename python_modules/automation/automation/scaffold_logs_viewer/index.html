@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Scaffold Branch Diagnostics Viewer</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #f8f9fa;
+            height: 100vh;
+            display: flex;
+            color: #333;
+        }
+        
+        .sidebar {
+            width: 300px;
+            background: #fff;
+            border-right: 1px solid #e9ecef;
+            padding: 20px;
+            overflow-y: auto;
+        }
+        
+        .main-content {
+            flex: 1;
+            padding: 20px;
+            overflow-y: auto;
+        }
+        
+        h1 {
+            font-size: 24px;
+            margin-bottom: 20px;
+            color: #2c3e50;
+        }
+        
+        h2 {
+            font-size: 18px;
+            margin-bottom: 15px;
+            color: #34495e;
+        }
+        
+        .session-list {
+            list-style: none;
+        }
+        
+        .session-item {
+            padding: 10px;
+            margin-bottom: 5px;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.2s;
+            font-size: 14px;
+        }
+        
+        .session-item:hover {
+            background-color: #e9ecef;
+        }
+        
+        .session-item.active {
+            background-color: #007bff;
+            color: white;
+        }
+        
+        .session-timestamp {
+            font-weight: 500;
+            margin-bottom: 3px;
+        }
+        
+        .session-id {
+            font-size: 11px;
+            color: #6c757d;
+            font-family: monospace;
+        }
+        
+        .session-item.active .session-id {
+            color: #b3d7ff;
+        }
+        
+        .entries-container {
+            background: white;
+            border-radius: 8px;
+            padding: 20px;
+            min-height: 200px;
+        }
+        
+        .entry {
+            margin-bottom: 15px;
+            padding: 12px;
+            border-left: 4px solid #dee2e6;
+            background: #f8f9fa;
+            border-radius: 0 5px 5px 0;
+        }
+        
+        .entry.info { border-left-color: #007bff; }
+        .entry.debug { border-left-color: #6c757d; }
+        .entry.error { border-left-color: #dc3545; }
+        .entry.warning { border-left-color: #ffc107; }
+        
+        .entry-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 8px;
+        }
+        
+        .entry-level {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 3px;
+            font-size: 11px;
+            font-weight: bold;
+            text-transform: uppercase;
+        }
+        
+        .entry-level.info { background: #e3f2fd; color: #0277bd; }
+        .entry-level.debug { background: #f5f5f5; color: #616161; }
+        .entry-level.error { background: #ffebee; color: #c62828; }
+        .entry-level.warning { background: #fff3e0; color: #f57c00; }
+        
+        .entry-timestamp {
+            font-size: 11px;
+            color: #6c757d;
+            font-family: monospace;
+        }
+        
+        .entry-category {
+            font-weight: 600;
+            color: #495057;
+            margin-bottom: 5px;
+        }
+        
+        .entry-message {
+            color: #495057;
+            margin-bottom: 8px;
+        }
+        
+        .entry-data {
+            background: #fff;
+            border: 1px solid #e9ecef;
+            border-radius: 3px;
+            padding: 8px;
+            font-family: monospace;
+            font-size: 12px;
+            white-space: pre-wrap;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        
+        .no-session {
+            text-align: center;
+            color: #6c757d;
+            margin-top: 100px;
+        }
+        
+        .loading {
+            text-align: center;
+            color: #6c757d;
+            margin-top: 50px;
+        }
+    </style>
+</head>
+<body>
+    <div class="sidebar">
+        <h1>Sessions</h1>
+        <ul class="session-list" id="sessionList">
+            <li class="loading">Loading sessions...</li>
+        </ul>
+    </div>
+    
+    <div class="main-content">
+        <div id="mainContent">
+            <div class="no-session">
+                <h2>Select a session to view details</h2>
+                <p>Choose a session from the sidebar to view its diagnostic entries</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let sessions = [];
+        let currentSession = null;
+
+        async function loadSessions() {
+            try {
+                const response = await fetch('/api/sessions');
+                sessions = await response.json();
+                renderSessionList();
+            } catch (error) {
+                document.getElementById('sessionList').innerHTML = '<li class="loading">Error loading sessions</li>';
+                console.error('Error loading sessions:', error);
+            }
+        }
+
+        function renderSessionList() {
+            const sessionList = document.getElementById('sessionList');
+            
+            if (sessions.length === 0) {
+                sessionList.innerHTML = '<li class="loading">No sessions found</li>';
+                return;
+            }
+
+            sessionList.innerHTML = sessions.map(session => `
+                <li class="session-item" onclick="selectSession('${session.filename}')">
+                    <div class="session-timestamp">${formatTimestamp(session.timestamp)}</div>
+                    <div class="session-id">${session.correlation_id}</div>
+                </li>
+            `).join('');
+        }
+
+        function formatTimestamp(timestamp) {
+            return new Date(timestamp).toLocaleString();
+        }
+
+        async function selectSession(filename) {
+            try {
+                // Update active session in UI
+                document.querySelectorAll('.session-item').forEach(item => {
+                    item.classList.remove('active');
+                });
+                event.target.closest('.session-item').classList.add('active');
+
+                // Load session data
+                const response = await fetch(`/api/sessions/${encodeURIComponent(filename)}`);
+                const sessionData = await response.json();
+                
+                currentSession = sessionData;
+                renderSessionContent(sessionData);
+            } catch (error) {
+                document.getElementById('mainContent').innerHTML = '<div class="loading">Error loading session data</div>';
+                console.error('Error loading session data:', error);
+            }
+        }
+
+        function renderSessionContent(sessionData) {
+            const mainContent = document.getElementById('mainContent');
+            
+            const entries = sessionData.entries.filter(entry => entry.type === 'entry');
+            
+            const content = `
+                <div class="entries-container">
+                    <h2>Session: ${sessionData.correlation_id}</h2>
+                    <p style="margin-bottom: 20px; color: #6c757d;">
+                        Started: ${formatTimestamp(sessionData.start_time)} | 
+                        ${entries.length} entries
+                    </p>
+                    ${entries.map(entry => renderEntry(entry)).join('')}
+                </div>
+            `;
+            
+            mainContent.innerHTML = content;
+        }
+
+        function renderEntry(entry) {
+            const hasData = entry.data && Object.keys(entry.data).length > 0;
+            
+            return `
+                <div class="entry ${entry.level}">
+                    <div class="entry-header">
+                        <span class="entry-level ${entry.level}">${entry.level}</span>
+                        <span class="entry-timestamp">${new Date(entry.timestamp).toLocaleTimeString()}</span>
+                    </div>
+                    <div class="entry-category">${entry.category}</div>
+                    <div class="entry-message">${entry.message}</div>
+                    ${hasData ? `<div class="entry-data">${JSON.stringify(entry.data, null, 2)}</div>` : ''}
+                </div>
+            `;
+        }
+
+        // Initialize
+        loadSessions();
+    </script>
+</body>
+</html>
