@@ -2398,3 +2398,63 @@ def test_exclusions():
     assert window
     assert window.start == datetime.strptime("2025-12-23", "%Y-%m-%d").replace(tzinfo=timezone.utc)
     assert window.end == datetime.strptime("2025-12-24", "%Y-%m-%d").replace(tzinfo=timezone.utc)
+
+
+def test_exclusions_with_end_offset():
+    partitions_def = dg.DailyPartitionsDefinition(
+        start_date="2021-05-05",
+        end_offset=2,
+        exclusions={
+            datetime.strptime("2021-06-04", DATE_FORMAT),
+        },
+    )
+    current_time = datetime.strptime("2021-06-05", DATE_FORMAT)
+    partition_context = PartitionLoadingContext(
+        temporal_context=TemporalContext(
+            effective_dt=current_time,
+            last_event_id=None,
+        ),
+        dynamic_partitions_store=None,
+    )
+
+    paginated_results = partitions_def.get_paginated_partition_keys(
+        context=partition_context, limit=5, ascending=False, cursor=None
+    )
+
+    assert paginated_results.results == [
+        "2021-06-06",
+        "2021-06-05",
+        "2021-06-03",
+        "2021-06-02",
+        "2021-06-01",
+    ]
+
+
+def test_exclusions_with_negative_end_offset():
+    partitions_def = dg.DailyPartitionsDefinition(
+        start_date="2021-05-05",
+        end_offset=-2,
+        exclusions={
+            datetime.strptime("2021-06-01", DATE_FORMAT),
+        },
+    )
+    current_time = datetime.strptime("2021-06-05", DATE_FORMAT)
+    partition_context = PartitionLoadingContext(
+        temporal_context=TemporalContext(
+            effective_dt=current_time,
+            last_event_id=None,
+        ),
+        dynamic_partitions_store=None,
+    )
+
+    paginated_results = partitions_def.get_paginated_partition_keys(
+        context=partition_context, limit=5, ascending=False, cursor=None
+    )
+
+    assert paginated_results.results == [
+        "2021-06-02",
+        "2021-05-31",
+        "2021-05-30",
+        "2021-05-29",
+        "2021-05-28",
+    ]
