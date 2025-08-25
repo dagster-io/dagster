@@ -477,7 +477,7 @@ export const AssetGraphExplorerSidebar = React.memo(
         </Box>
         {sidebarViewType === 'tree' ? (
           <div style={{display: 'grid', gridTemplateRows: treeViewRows}}>
-            <Box border="top" style={{overflow: 'hidden'}}>
+            <Box border="top" style={{overflow: 'hidden'}} flex={{direction: 'column'}}>
               <Box
                 background={Colors.backgroundLight()}
                 padding={{horizontal: 24, vertical: 8}}
@@ -529,7 +529,7 @@ export const AssetGraphExplorerSidebar = React.memo(
                 />
               </div>
             </Box>
-            <Box border="top" style={{overflow: 'hidden'}}>
+            <Box border="top" style={{overflow: 'hidden'}} flex={{direction: 'column'}}>
               <Box
                 background={Colors.backgroundLight()}
                 padding={{horizontal: 24, vertical: 8}}
