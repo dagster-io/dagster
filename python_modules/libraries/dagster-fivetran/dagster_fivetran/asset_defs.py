@@ -728,7 +728,7 @@ def load_assets_from_fivetran_instance(
         )
     except Exception as e:
         logger.warning(
-            "An error occured while loading an asset from a fivetran instance",
+            "An error occurred while loading an asset from a fivetran instance",
             f"Exception: {e}",
             exc_info=True,
         )
