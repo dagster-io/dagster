@@ -555,8 +555,7 @@ def cancel_backfill_runs_and_cancellation_complete(
     canceled_any_runs = False
 
     while True:
-        # Query for cancelable runs, enforcing a limit on the number of runs to cancel in an iteration
-        # as canceling runs incurs cost
+        # Cancel all cancelable runs for the backfill in batches
         runs_to_cancel_in_iteration = instance.run_storage.get_runs(
             filters=RunsFilter(
                 statuses=CANCELABLE_RUN_STATUSES,
