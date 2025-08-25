@@ -66,7 +66,7 @@ export const AssetGraphExplorerSidebar = React.memo(
       : false;
 
     React.useEffect(() => {
-      if (selectWhenDataAvailable) {
+      if (selectWhenDataAvailable && selectedNodeHasDataAvailable) {
         const [e, id] = selectWhenDataAvailable;
         _selectNode(e, id);
       }
@@ -77,17 +77,12 @@ export const AssetGraphExplorerSidebar = React.memo(
       setSelectWhenDataAvailable([e, id]);
       if (!assetGraphData.nodes[id]) {
         try {
-          const path = JSON.parse(id);
-          let nextOpsQuery = explorerPath.opsQuery.trim();
-          if (explorerPath.opsQuery.trim()) {
-            nextOpsQuery = `key:\"${tokenForAssetKey({path})}\"`;
-          } else {
-            nextOpsQuery = '*';
-          }
+          // If the graph data is not available then the current asset selection is filtering it out.
+          // Change the asset selection to show all assets so that we can select the node.
           onChangeExplorerPath(
             {
               ...explorerPath,
-              opsQuery: nextOpsQuery,
+              opsQuery: '*',
             },
             'push',
           );
@@ -413,7 +408,6 @@ export const AssetGraphExplorerSidebar = React.memo(
           if (selectedNodeLeafToRoot?.id !== lastSelectedNode.id) {
             setSelectedNodeLeafToRoot({id: lastSelectedNode.id, path: currentPath});
           }
-          console.log({nextOpenNodes});
           return nextOpenNodes;
         });
       } else {
