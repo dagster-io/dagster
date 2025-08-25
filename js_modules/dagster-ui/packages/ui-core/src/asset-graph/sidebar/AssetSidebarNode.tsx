@@ -35,6 +35,7 @@ type AssetSidebarNodeProps = {
   onFilterToGroup: (group: AssetGroup) => void;
   viewType: 'tree' | 'group';
   direction?: 'root-to-leaf' | 'leaf-to-root';
+  collapseAllNodes?: () => void;
 };
 
 export const AssetSidebarNode = (props: AssetSidebarNodeProps) => {
@@ -47,6 +48,7 @@ export const AssetSidebarNode = (props: AssetSidebarNodeProps) => {
     viewType,
     graphData,
     direction = 'root-to-leaf',
+    collapseAllNodes,
   } = props;
   const isGroupNode = 'groupNode' in node;
   const isLocationNode = 'locationName' in node;
@@ -104,7 +106,7 @@ export const AssetSidebarNode = (props: AssetSidebarNodeProps) => {
             <div style={{width: 18}} />
           )}
           {isAssetNode ? (
-            <AssetSidebarAssetLabel {...props} node={node} />
+            <AssetSidebarAssetLabel {...props} node={node} collapseAllNodes={collapseAllNodes} />
           ) : isGroupNode ? (
             <AssetSidebarGroupLabel {...props} node={node} />
           ) : (
@@ -124,6 +126,7 @@ type AssetSidebarAssetLabelProps = {
   isSelected: boolean;
   explorerPath: ExplorerPath;
   onChangeExplorerPath: (path: ExplorerPath, mode: 'replace' | 'push') => void;
+  collapseAllNodes?: () => void;
 };
 
 const AssetSidebarAssetLabel = ({
@@ -134,6 +137,7 @@ const AssetSidebarAssetLabel = ({
   selectNode,
   explorerPath,
   onChangeExplorerPath,
+  collapseAllNodes,
 }: AssetSidebarAssetLabelProps) => {
   const {menu, dialog} = useAssetNodeMenu({
     graphData: fullAssetGraphData,
@@ -141,6 +145,7 @@ const AssetSidebarAssetLabel = ({
     selectNode,
     explorerPath,
     onChangeExplorerPath,
+    collapseAllNodes,
   });
 
   return (

@@ -28,6 +28,7 @@ export interface AssetSidebarListViewProps {
   onFilterToGroup: (group: AssetGroup) => void;
   viewType: 'tree' | 'group';
   direction?: 'root-to-leaf' | 'leaf-to-root';
+  collapseAllNodes?: () => void;
 }
 
 export const AssetSidebarListView = ({
@@ -42,6 +43,7 @@ export const AssetSidebarListView = ({
   setOpenNodes,
   setSelectedNode,
   selectNode,
+  collapseAllNodes,
   explorerPath,
   onChangeExplorerPath,
   onFilterToGroup,
@@ -86,7 +88,7 @@ export const AssetSidebarListView = ({
   const indexOfLastSelectedNodeRef = React.useRef(indexOfLastSelectedNode);
   indexOfLastSelectedNodeRef.current = indexOfLastSelectedNode;
 
-  React.useLayoutEffect(() => {
+  React.useEffect(() => {
     if (indexOfLastSelectedNode !== -1) {
       rowVirtualizer.scrollToIndex(indexOfLastSelectedNode, {
         align: 'center',
@@ -170,6 +172,7 @@ export const AssetSidebarListView = ({
                       return openNodes;
                     });
                   }}
+                  collapseAllNodes={collapseAllNodes}
                   selectNode={(e, id) => {
                     selectNode(e, id);
                   }}

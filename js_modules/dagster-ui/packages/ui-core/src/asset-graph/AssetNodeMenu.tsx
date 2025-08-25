@@ -43,6 +43,7 @@ export type AssetNodeMenuProps = {
   explorerPath?: ExplorerPath;
   onChangeExplorerPath?: (path: ExplorerPath, mode: 'replace' | 'push') => void;
   selectNode?: (e: React.MouseEvent<any> | React.KeyboardEvent<any>, nodeId: string) => void;
+  collapseAllNodes?: () => void;
 };
 
 export const useAssetNodeMenu = ({
@@ -51,6 +52,7 @@ export const useAssetNodeMenu = ({
   graphData,
   explorerPath,
   onChangeExplorerPath,
+  collapseAllNodes,
 }: AssetNodeMenuProps) => {
   const upstream = graphData ? Object.keys(graphData.upstream[node.id] ?? {}) : [];
   const downstream = graphData ? Object.keys(graphData.downstream[node.id] ?? {}) : [];
@@ -125,6 +127,13 @@ export const useAssetNodeMenu = ({
             text="Show downstream graph"
             icon="arrow_forward"
             onClick={() => showGraph(downstreamGraphQuery(node.assetKey))}
+          />
+        ) : null}
+        {collapseAllNodes ? (
+          <MenuItem
+            text="Collapse all assets"
+            icon="collapse"
+            onClick={() => collapseAllNodes?.()}
           />
         ) : null}
       </Menu>

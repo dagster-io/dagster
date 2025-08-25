@@ -126,6 +126,18 @@ export const AssetGraphExplorerSidebar = React.memo(
       },
       isEmptyState: (val) => val === null || val === 'group',
     });
+    const collapseAllNodes = useMemo(() => {
+      if (sidebarViewType === 'group') {
+        return;
+      }
+      if (openNodesRootToLeaf.size === 0 && openNodesLeafToRoot.size === 0) {
+        return;
+      }
+      return () => {
+        setOpenNodesRootToLeaf(new Set());
+        setOpenNodesLeafToRoot(new Set());
+      };
+    }, [sidebarViewType, openNodesRootToLeaf, openNodesLeafToRoot]);
 
     const rootNodes = React.useMemo(
       () =>
@@ -401,6 +413,7 @@ export const AssetGraphExplorerSidebar = React.memo(
           if (selectedNodeLeafToRoot?.id !== lastSelectedNode.id) {
             setSelectedNodeLeafToRoot({id: lastSelectedNode.id, path: currentPath});
           }
+          console.log({nextOpenNodes});
           return nextOpenNodes;
         });
       } else {
@@ -511,6 +524,7 @@ export const AssetGraphExplorerSidebar = React.memo(
                   lastSelectedNode={lastSelectedNode}
                   openNodes={openNodesRootToLeaf}
                   setOpenNodes={setOpenNodesRootToLeaf}
+                  collapseAllNodes={collapseAllNodes}
                   setSelectedNode={setSelectedNodeRootToLeaf}
                   selectNode={selectNode}
                   explorerPath={explorerPath}
@@ -562,6 +576,7 @@ export const AssetGraphExplorerSidebar = React.memo(
                   lastSelectedNode={lastSelectedNode}
                   openNodes={openNodesLeafToRoot}
                   setOpenNodes={setOpenNodesLeafToRoot}
+                  collapseAllNodes={collapseAllNodes}
                   setSelectedNode={setSelectedNodeLeafToRoot}
                   selectNode={selectNode}
                   explorerPath={explorerPath}
