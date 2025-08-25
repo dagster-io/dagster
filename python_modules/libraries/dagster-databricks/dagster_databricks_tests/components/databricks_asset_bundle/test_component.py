@@ -5,6 +5,7 @@ from typing import Any, Callable, Optional
 import pytest
 from dagster import AssetDep, AssetKey, AssetsDefinition, BackfillPolicy
 from dagster._core.definitions.backfill_policy import BackfillPolicyType
+from dagster._core.test_utils import ensure_dagster_tests_import
 from dagster.components.resolved.core_models import OpSpec
 from dagster.components.testing import create_defs_folder_sandbox
 from dagster.components.testing.test_cases import TestOpCustomization
@@ -16,6 +17,8 @@ from dagster_databricks.components.databricks_asset_bundle.configs import (
     ResolvedDatabricksNewClusterConfig,
 )
 from dagster_databricks.components.databricks_asset_bundle.resource import DatabricksWorkspace
+
+ensure_dagster_tests_import()
 from dagster_tests.components_tests.utils import load_component_for_test
 
 from dagster_databricks_tests.components.databricks_asset_bundle.conftest import (
