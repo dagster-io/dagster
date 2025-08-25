@@ -1,10 +1,12 @@
-import {Box, Button, Icon, Skeleton, Tooltip} from '@dagster-io/ui-components';
+import {Box, Button, ButtonGroup, Icon, Skeleton, Tooltip} from '@dagster-io/ui-components';
 import {useVirtualizer} from '@tanstack/react-virtual';
 import * as React from 'react';
+import styled from 'styled-components';
 
 import {AssetSidebarNode} from './AssetSidebarNode';
-import {FolderNodeType, getDisplayName, nodePathKey} from './util';
+import {FolderNodeType, TreeNodeType, getDisplayName, nodePathKey} from './util';
 import {LayoutContext} from '../../app/LayoutProvider';
+import {usePrefixedCacheKey} from '../../app/usePrefixedCacheKey';
 import {AssetKey} from '../../assets/types';
 import {useQueryAndLocalStoragePersistedState} from '../../hooks/useQueryAndLocalStoragePersistedState';
 import {ExplorerPath} from '../../pipelines/PipelinePathUtils';
@@ -88,25 +90,24 @@ export const AssetGraphExplorerSidebar = React.memo(
         }
       }
     };
-    const [openNodes, setOpenNodes] = useQueryAndLocalStoragePersistedState<Set<string>>({
-      // include pathname so that theres separate storage entries for graphs at different URLs
-      // eg. independent group graph should persist open nodes separately
-      localStorageKey: `asset-graph-open-sidebar-nodes-${viewType}-${explorerPath.pipelineName}`,
-      encode: (val) => {
-        return {'open-nodes': Array.from(val)};
-      },
-      decode: (qs) => {
-        const openNodes = qs['open-nodes'];
-        if (Array.isArray(openNodes)) {
-          return new Set(openNodes.map((node) => String(node)));
-        }
-        return new Set();
-      },
-      isEmptyState: (val) => val.size === 0,
-    });
+    const [openNodes, setOpenNodes] = React.useState<Set<string>>(() => new Set());
     const [selectedNode, setSelectedNode] = React.useState<
       null | {id: string; path: string} | {id: string}
     >(null);
+
+    const [sidebarViewType, setSidebarViewType] = useQueryAndLocalStoragePersistedState<
+      'tree' | 'group'
+    >({
+      localStorageKey: usePrefixedCacheKey('asset-graph-sidebar-view-type'),
+      encode: (val) => ({viewType: val}),
+      decode: (val) => {
+        if (val.viewType === 'tree' || val.viewType === 'group') {
+          return val.viewType;
+        }
+        return 'group';
+      },
+      isEmptyState: (val) => val === null || val === 'group',
+    });
 
     const rootNodes = React.useMemo(
       () =>
@@ -129,7 +130,29 @@ export const AssetGraphExplorerSidebar = React.memo(
       [graphData],
     );
 
-    const renderedNodes = React.useMemo(() => {
+    const treeNodes = React.useMemo(() => {
+      const queue = rootNodes.map((id) => ({level: 1, id, path: id}));
+
+      const treeNodes: TreeNodeType[] = [];
+      while (true) {
+        const node = queue.shift();
+        if (!node) {
+          break;
+        }
+        treeNodes.push(node);
+        if (openNodes.has(node.path)) {
+          const downstream = Object.keys(graphData.downstream[node.id] || {}).filter(
+            (id) => graphData.nodes[id],
+          );
+          queue.unshift(
+            ...downstream.map((id) => ({level: node.level + 1, id, path: `${node.path}:${id}`})),
+          );
+        }
+      }
+      return treeNodes;
+    }, [graphData.downstream, graphData.nodes, openNodes, rootNodes]);
+
+    const folderNodes = React.useMemo(() => {
       const folderNodes: FolderNodeType[] = [];
 
       // Map of Code Locations -> Groups -> Assets
@@ -226,6 +249,8 @@ export const AssetGraphExplorerSidebar = React.memo(
       return folderNodes;
     }, [graphData.nodes, openNodes]);
 
+    const renderedNodes = sidebarViewType === 'tree' ? treeNodes : folderNodes;
+
     const {nav} = React.useContext(LayoutContext);
 
     React.useEffect(() => {
@@ -250,6 +275,36 @@ export const AssetGraphExplorerSidebar = React.memo(
     React.useLayoutEffect(() => {
       if (lastSelectedNode) {
         setOpenNodes((prevOpenNodes) => {
+          if (sidebarViewType === 'tree') {
+            let path = lastSelectedNode.id;
+            let currentId = lastSelectedNode.id;
+            let next: string | undefined;
+            while ((next = Object.keys(graphData.upstream[currentId] ?? {})[0])) {
+              if (!graphData.nodes[next]) {
+                break;
+              }
+              path = `${next}:${path}`;
+              currentId = next;
+            }
+
+            const nodesInPath = path.split(':');
+            let currentPath = nodesInPath[0];
+
+            if (!currentPath) {
+              return prevOpenNodes;
+            }
+
+            const nextOpenNodes = new Set(prevOpenNodes);
+            nextOpenNodes.add(currentPath);
+            for (let i = 1; i < nodesInPath.length; i++) {
+              currentPath = `${currentPath}:${nodesInPath[i]}`;
+              nextOpenNodes.add(currentPath);
+            }
+            if (selectedNode?.id !== lastSelectedNode.id) {
+              setSelectedNode({id: lastSelectedNode.id, path: currentPath});
+            }
+            return nextOpenNodes;
+          }
           const nextOpenNodes = new Set(prevOpenNodes);
           const assetNode = graphData.nodes[lastSelectedNode.id];
           if (assetNode) {
@@ -283,6 +338,11 @@ export const AssetGraphExplorerSidebar = React.memo(
         if (!selectedNode) {
           return -1;
         }
+        if (sidebarViewType === 'tree') {
+          return 'path' in selectedNode
+            ? renderedNodes.findIndex((node) => 'path' in node && node.path === selectedNode.path)
+            : -1;
+        }
         return renderedNodes.findIndex((node) => {
           // If you select a node via the search dropdown or from the graph directly then
           // selectedNode will have an `id` field and not a path. The nodes in renderedNodes
@@ -295,7 +355,7 @@ export const AssetGraphExplorerSidebar = React.memo(
         });
       },
       // eslint-disable-next-line react-hooks/exhaustive-deps
-      [renderedNodes, selectedNode],
+      [renderedNodes, selectedNode, sidebarViewType],
     );
     const indexOfLastSelectedNodeRef = React.useRef(indexOfLastSelectedNode);
     indexOfLastSelectedNodeRef.current = indexOfLastSelectedNode;
@@ -314,7 +374,7 @@ export const AssetGraphExplorerSidebar = React.memo(
     }, [selectedNode, rootNodes, rowVirtualizer]);
 
     return (
-      <div style={{display: 'grid', gridTemplateRows: 'auto minmax(0, 1fr)', height: '100%'}}>
+      <div style={{display: 'grid', gridTemplateRows: 'auto auto minmax(0, 1fr)', height: '100%'}}>
         <Box
           style={{
             display: 'grid',
@@ -324,6 +384,23 @@ export const AssetGraphExplorerSidebar = React.memo(
             paddingRight: 12,
           }}
         >
+          <ButtonGroupWrapper>
+            <ButtonGroup
+              activeItems={new Set([sidebarViewType])}
+              buttons={[
+                {id: 'group', label: 'Group view', icon: 'asset_group'},
+                {id: 'tree', label: 'Tree view', icon: 'gantt_flat'},
+              ]}
+              onClick={(id: 'tree' | 'group') => {
+                setSidebarViewType(id);
+              }}
+            />
+          </ButtonGroupWrapper>
+          <Tooltip content="Hide sidebar">
+            <Button icon={<Icon name="panel_show_right" />} onClick={hideSidebar} />
+          </Tooltip>
+        </Box>
+        <Box padding={{vertical: 8, left: 24, right: 12}}>
           <SearchFilter
             values={React.useMemo(() => {
               return allAssetKeys.map((key) => ({
@@ -334,9 +411,6 @@ export const AssetGraphExplorerSidebar = React.memo(
             }, [allAssetKeys])}
             onSelectValue={selectNode}
           />
-          <Tooltip content="Hide sidebar">
-            <Button icon={<Icon name="panel_show_right" />} onClick={hideSidebar} />
-          </Tooltip>
         </Box>
         <Box border="top">
           {loading ? (
@@ -421,6 +495,8 @@ export const AssetGraphExplorerSidebar = React.memo(
                           explorerPath={explorerPath}
                           onChangeExplorerPath={onChangeExplorerPath}
                           onFilterToGroup={onFilterToGroup}
+                          graphData={graphData}
+                          viewType={sidebarViewType}
                         />
                       </div>
                     </Row>
@@ -434,3 +510,13 @@ export const AssetGraphExplorerSidebar = React.memo(
     );
   },
 );
+
+const ButtonGroupWrapper = styled.div`
+  > * {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    > * {
+      place-content: center;
+    }
+  }
+`;

@@ -228,13 +228,12 @@ const AssetGraphExplorerWithData = ({
   const viewportEl = React.useRef<SVGViewportRef>();
 
   const selectedTokens =
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    explorerPath.opNames[explorerPath.opNames.length - 1]!.split(',').filter(Boolean);
+    explorerPath.opNames[explorerPath.opNames.length - 1]?.split(',').filter(Boolean) ?? [];
   const selectedGraphNodes = Object.values(assetGraphData.nodes).filter((node) =>
     selectedTokens.includes(tokenForAssetKey(node.definition.assetKey)),
   );
-  // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-  const lastSelectedNode = selectedGraphNodes[selectedGraphNodes.length - 1]!;
+
+  const lastSelectedNode = selectedGraphNodes[selectedGraphNodes.length - 1];
 
   const selectedDefinitions = selectedGraphNodes.map((a) => a.definition);
   const allDefinitionsForMaterialize = Object.values(assetGraphData.nodes).map((a) => a.definition);

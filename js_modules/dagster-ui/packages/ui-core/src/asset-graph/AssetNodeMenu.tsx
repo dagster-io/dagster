@@ -1,11 +1,19 @@
-import {Box, Menu, MenuDivider, MenuItem, Spinner} from '@dagster-io/ui-components';
+import {
+  Box,
+  HoverButton,
+  Icon,
+  Menu,
+  MenuDivider,
+  MenuItem,
+  Spinner,
+} from '@dagster-io/ui-components';
 import * as React from 'react';
 import {AddToFavoritesMenuItem} from 'shared/assets/AddToFavoritesMenuItem.oss';
 
 import {GraphData, tokenForAssetKey} from './Utils';
-import {StatusDot} from './sidebar/StatusDot';
 import {useAssetBaseData} from '../asset-data/AssetBaseDataProvider';
 import {useExecuteAssetMenuItem} from '../assets/AssetActionMenu';
+import {AssetHealthSummary} from '../assets/AssetHealthSummary';
 import {
   AssetKeysDialog,
   AssetKeysDialogEmptyState,
@@ -194,24 +202,33 @@ const UpstreamDownstreamDialog = ({
                 const path = JSON.parse(assetId);
                 const node = graphData.nodes[assetId];
                 return (
-                  <MenuItem
-                    icon="asset"
-                    text={
-                      <Box flex={{direction: 'row', alignItems: 'center', gap: 4}}>
-                        {node ? <StatusDot node={node} /> : null}
-                        <span>{path[path.length - 1]}</span>
-                      </Box>
-                    }
+                  <HoverButton
                     key={assetId}
                     onClick={
                       selectNode
-                        ? (e) => {
+                        ? (
+                            e:
+                              | React.MouseEvent<HTMLButtonElement>
+                              | React.KeyboardEvent<HTMLButtonElement>,
+                          ) => {
                             selectNode(e, assetId);
                             setIsOpen(false);
                           }
                         : undefined
                     }
-                  />
+                  >
+                    <Box
+                      flex={{direction: 'row', alignItems: 'center'}}
+                      padding={{horizontal: 8, vertical: 4}}
+                    >
+                      {node ? (
+                        <AssetHealthSummary iconOnly assetKey={node.assetKey} />
+                      ) : (
+                        <Icon name="asset" />
+                      )}
+                      <span>{path[path.length - 1]}</span>
+                    </Box>
+                  </HoverButton>
                 );
               }}
             />

@@ -20,6 +20,7 @@ import {GraphData, GraphNode} from '../Utils';
 
 type AssetSidebarNodeProps = {
   fullAssetGraphData?: GraphData;
+  graphData: GraphData;
   node: GraphNode | FolderNodeNonAssetType;
   level: number;
   toggleOpen: () => void;
@@ -31,17 +32,21 @@ type AssetSidebarNodeProps = {
   explorerPath: ExplorerPath;
   onChangeExplorerPath: (path: ExplorerPath, mode: 'replace' | 'push') => void;
   onFilterToGroup: (group: AssetGroup) => void;
+  viewType: 'tree' | 'group';
 };
 
 export const AssetSidebarNode = (props: AssetSidebarNodeProps) => {
-  const {node, level, toggleOpen, isOpen, selectThisNode} = props;
+  const {node, level, toggleOpen, isOpen, selectThisNode, viewType, graphData} = props;
   const isGroupNode = 'groupNode' in node;
   const isLocationNode = 'locationName' in node;
   const isAssetNode = !isGroupNode && !isLocationNode;
 
+  const downstream = Object.keys(graphData.downstream[node.id] ?? {});
   const elementRef = React.useRef<HTMLDivElement | null>(null);
 
-  const showArrow = !isAssetNode && !('openAlways' in node && node.openAlways);
+  const showArrow =
+    (!isAssetNode && !('openAlways' in node && node.openAlways)) ||
+    (viewType === 'tree' && downstream.filter((id) => graphData.nodes[id]).length);
 
   return (
     <Box ref={elementRef} padding={{left: 8, right: 12}}>
@@ -140,7 +145,8 @@ const AssetSidebarAssetLabel = ({
       <ExpandMore onClick={triggerContextMenu}>
         <Icon name="more_horiz" color={Colors.accentGray()} />
       </ExpandMore>
-      {dialog}
+      {/* Stop propagation of clicks from the dialog otherwise they will trigger the click handler from `ItemContainer` */}
+      <div onClick={(e) => e.stopPropagation()}>{dialog}</div>
     </ContextMenuWrapper>
   );
 };
