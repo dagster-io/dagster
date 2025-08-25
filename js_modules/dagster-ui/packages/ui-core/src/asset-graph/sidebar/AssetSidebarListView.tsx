@@ -27,6 +27,7 @@ export interface AssetSidebarListViewProps {
   onChangeExplorerPath: (path: ExplorerPath, mode: 'replace' | 'push') => void;
   onFilterToGroup: (group: AssetGroup) => void;
   viewType: 'tree' | 'group';
+  direction?: 'root-to-leaf' | 'leaf-to-root';
 }
 
 export const AssetSidebarListView = ({
@@ -44,7 +45,10 @@ export const AssetSidebarListView = ({
   explorerPath,
   onChangeExplorerPath,
   onFilterToGroup,
+
   viewType,
+  // Direction is only used when viewType is 'tree'
+  direction = 'root-to-leaf',
 }: AssetSidebarListViewProps) => {
   const containerRef = React.useRef<HTMLDivElement | null>(null);
 
@@ -178,6 +182,7 @@ export const AssetSidebarListView = ({
                   onFilterToGroup={onFilterToGroup}
                   graphData={graphData}
                   viewType={viewType}
+                  direction={direction}
                 />
               </div>
             </Row>

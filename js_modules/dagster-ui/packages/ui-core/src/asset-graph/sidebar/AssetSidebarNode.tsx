@@ -1,5 +1,6 @@
 import {Box, Colors, Icon, MiddleTruncate, UnstyledButton} from '@dagster-io/ui-components';
 import * as React from 'react';
+import {useMemo} from 'react';
 import {observeEnabled} from 'shared/app/observeEnabled.oss';
 import styled from 'styled-components';
 
@@ -33,20 +34,36 @@ type AssetSidebarNodeProps = {
   onChangeExplorerPath: (path: ExplorerPath, mode: 'replace' | 'push') => void;
   onFilterToGroup: (group: AssetGroup) => void;
   viewType: 'tree' | 'group';
+  direction?: 'root-to-leaf' | 'leaf-to-root';
 };
 
 export const AssetSidebarNode = (props: AssetSidebarNodeProps) => {
-  const {node, level, toggleOpen, isOpen, selectThisNode, viewType, graphData} = props;
+  const {
+    node,
+    level,
+    toggleOpen,
+    isOpen,
+    selectThisNode,
+    viewType,
+    graphData,
+    direction = 'root-to-leaf',
+  } = props;
   const isGroupNode = 'groupNode' in node;
   const isLocationNode = 'locationName' in node;
   const isAssetNode = !isGroupNode && !isLocationNode;
 
-  const downstream = Object.keys(graphData.downstream[node.id] ?? {});
+  const connectedNodes =
+    direction === 'root-to-leaf'
+      ? Object.keys(graphData.downstream[node.id] ?? {})
+      : Object.keys(graphData.upstream[node.id] ?? {});
   const elementRef = React.useRef<HTMLDivElement | null>(null);
 
-  const showArrow =
-    (!isAssetNode && !('openAlways' in node && node.openAlways)) ||
-    (viewType === 'tree' && downstream.filter((id) => graphData.nodes[id]).length);
+  const showArrow = useMemo(() => {
+    if (viewType === 'tree') {
+      return connectedNodes.filter((id) => graphData.nodes[id]).length > 0;
+    }
+    return !isAssetNode && !('openAlways' in node && node.openAlways);
+  }, [isAssetNode, node, viewType, connectedNodes, graphData.nodes]);
 
   return (
     <Box ref={elementRef} padding={{left: 8, right: 12}}>

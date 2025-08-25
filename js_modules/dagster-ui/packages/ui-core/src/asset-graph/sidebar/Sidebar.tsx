@@ -1,5 +1,14 @@
-import {Box, Button, ButtonGroup, Icon, Tooltip} from '@dagster-io/ui-components';
+import {
+  Box,
+  Button,
+  ButtonGroup,
+  Colors,
+  HoverButton,
+  Icon,
+  Tooltip,
+} from '@dagster-io/ui-components';
 import * as React from 'react';
+import {useMemo} from 'react';
 import styled from 'styled-components';
 
 import {AssetSidebarListView} from './AssetSidebarListView';
@@ -88,8 +97,19 @@ export const AssetGraphExplorerSidebar = React.memo(
         }
       }
     };
-    const [openNodes, setOpenNodes] = React.useState<Set<string>>(() => new Set());
-    const [selectedNode, setSelectedNode] = React.useState<
+    // State for root-to-leaf view
+    const [openNodesRootToLeaf, setOpenNodesRootToLeaf] = React.useState<Set<string>>(
+      () => new Set(),
+    );
+    const [selectedNodeRootToLeaf, setSelectedNodeRootToLeaf] = React.useState<
+      null | {id: string; path: string} | {id: string}
+    >(null);
+
+    // State for leaf-to-root view
+    const [openNodesLeafToRoot, setOpenNodesLeafToRoot] = React.useState<Set<string>>(
+      () => new Set(),
+    );
+    const [selectedNodeLeafToRoot, setSelectedNodeLeafToRoot] = React.useState<
       null | {id: string; path: string} | {id: string}
     >(null);
 
@@ -102,9 +122,9 @@ export const AssetGraphExplorerSidebar = React.memo(
         if (val.viewType === 'tree' || val.viewType === 'group') {
           return val.viewType;
         }
-        return 'tree';
+        return 'group';
       },
-      isEmptyState: (val) => val === null || val === 'tree',
+      isEmptyState: (val) => val === null || val === 'group',
     });
 
     const rootNodes = React.useMemo(
@@ -128,7 +148,27 @@ export const AssetGraphExplorerSidebar = React.memo(
       [graphData],
     );
 
-    const treeNodes = React.useMemo(() => {
+    const leafNodes = React.useMemo(
+      () =>
+        Object.keys(graphData.nodes)
+          .filter(
+            (id) =>
+              // Leaf nodes are those with no downstream dependencies
+              !Object.keys(graphData.downstream[id] ?? {}).filter((id) => graphData.nodes[id])
+                .length,
+          )
+          .sort((a, b) =>
+            COLLATOR.compare(
+              // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+              getDisplayName(graphData.nodes[a]!),
+              // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+              getDisplayName(graphData.nodes[b]!),
+            ),
+          ),
+      [graphData],
+    );
+
+    const treeNodesRootToLeaf = React.useMemo(() => {
       const queue = rootNodes.map((id) => ({level: 1, id, path: id}));
 
       const treeNodes: TreeNodeType[] = [];
@@ -138,7 +178,7 @@ export const AssetGraphExplorerSidebar = React.memo(
           break;
         }
         treeNodes.push(node);
-        if (openNodes.has(node.path)) {
+        if (openNodesRootToLeaf.has(node.path)) {
           const downstream = Object.keys(graphData.downstream[node.id] || {}).filter(
             (id) => graphData.nodes[id],
           );
@@ -148,7 +188,29 @@ export const AssetGraphExplorerSidebar = React.memo(
         }
       }
       return treeNodes;
-    }, [graphData.downstream, graphData.nodes, openNodes, rootNodes]);
+    }, [graphData.downstream, graphData.nodes, openNodesRootToLeaf, rootNodes]);
+
+    const treeNodesLeafToRoot = React.useMemo(() => {
+      const queue = leafNodes.map((id) => ({level: 1, id, path: id}));
+
+      const treeNodes: TreeNodeType[] = [];
+      while (true) {
+        const node = queue.shift();
+        if (!node) {
+          break;
+        }
+        treeNodes.push(node);
+        if (openNodesLeafToRoot.has(node.path)) {
+          const upstream = Object.keys(graphData.upstream[node.id] || {}).filter(
+            (id) => graphData.nodes[id],
+          );
+          queue.unshift(
+            ...upstream.map((id) => ({level: node.level + 1, id, path: `${node.path}:${id}`})),
+          );
+        }
+      }
+      return treeNodes;
+    }, [graphData.upstream, graphData.nodes, openNodesLeafToRoot, leafNodes]);
 
     const folderNodes = React.useMemo(() => {
       const folderNodes: FolderNodeType[] = [];
@@ -207,7 +269,7 @@ export const AssetGraphExplorerSidebar = React.memo(
             level: 1,
             openAlways: codeLocationsCount === 1,
           });
-          if (openNodes.has(locationName) || codeLocationsCount === 1) {
+          if (openNodesRootToLeaf.has(locationName) || codeLocationsCount === 1) {
             Object.entries(locationNode.groups)
               .sort(([_1, a], [_2, b]) => COLLATOR.compare(a.groupName, b.groupName))
               .forEach(([id, groupNode]) => {
@@ -216,7 +278,7 @@ export const AssetGraphExplorerSidebar = React.memo(
                   id,
                   level: 2,
                 });
-                if (openNodes.has(id) || groupsCount === 1) {
+                if (openNodesRootToLeaf.has(id) || groupsCount === 1) {
                   groupNode.assets
                     .sort((a, b) => COLLATOR.compare(a.id, b.id))
                     .forEach((assetNode) => {
@@ -245,9 +307,10 @@ export const AssetGraphExplorerSidebar = React.memo(
       }
 
       return folderNodes;
-    }, [graphData.nodes, openNodes]);
+    }, [graphData.nodes, openNodesRootToLeaf]);
 
-    const renderedNodes = sidebarViewType === 'tree' ? treeNodes : folderNodes;
+    const renderedNodesRootToLeaf = sidebarViewType === 'tree' ? treeNodesRootToLeaf : folderNodes;
+    const renderedNodesLeafToRoot = treeNodesLeafToRoot; // Leaf-to-root only supports tree view
 
     const {nav} = React.useContext(LayoutContext);
 
@@ -260,7 +323,8 @@ export const AssetGraphExplorerSidebar = React.memo(
 
     React.useLayoutEffect(() => {
       if (lastSelectedNode) {
-        setOpenNodes((prevOpenNodes) => {
+        // Update root-to-leaf view
+        setOpenNodesRootToLeaf((prevOpenNodes) => {
           if (sidebarViewType === 'tree') {
             let path = lastSelectedNode.id;
             let currentId = lastSelectedNode.id;
@@ -286,8 +350,8 @@ export const AssetGraphExplorerSidebar = React.memo(
               currentPath = `${currentPath}:${nodesInPath[i]}`;
               nextOpenNodes.add(currentPath);
             }
-            if (selectedNode?.id !== lastSelectedNode.id) {
-              setSelectedNode({id: lastSelectedNode.id, path: currentPath});
+            if (selectedNodeRootToLeaf?.id !== lastSelectedNode.id) {
+              setSelectedNodeRootToLeaf({id: lastSelectedNode.id, path: currentPath});
             }
             return nextOpenNodes;
           }
@@ -302,19 +366,71 @@ export const AssetGraphExplorerSidebar = React.memo(
             nextOpenNodes.add(locationName);
             nextOpenNodes.add(locationName + ':' + groupName);
           }
-          if (selectedNode?.id !== lastSelectedNode.id) {
-            setSelectedNode({id: lastSelectedNode.id});
+          if (selectedNodeRootToLeaf?.id !== lastSelectedNode.id) {
+            setSelectedNodeRootToLeaf({id: lastSelectedNode.id});
+          }
+          return nextOpenNodes;
+        });
+
+        // Update leaf-to-root view
+        setOpenNodesLeafToRoot((prevOpenNodes) => {
+          let path = lastSelectedNode.id;
+          let currentId = lastSelectedNode.id;
+          let next: string | undefined;
+          while ((next = Object.keys(graphData.downstream[currentId] ?? {})[0])) {
+            if (!graphData.nodes[next]) {
+              break;
+            }
+            path = `${next}:${path}`;
+            currentId = next;
+          }
+
+          const nodesInPath = path.split(':');
+          let currentPath = nodesInPath[0];
+
+          if (!currentPath) {
+            return prevOpenNodes;
+          }
+
+          const nextOpenNodes = new Set(prevOpenNodes);
+          nextOpenNodes.add(currentPath);
+          for (let i = 1; i < nodesInPath.length; i++) {
+            currentPath = `${currentPath}:${nodesInPath[i]}`;
+            nextOpenNodes.add(currentPath);
+          }
+          if (selectedNodeLeafToRoot?.id !== lastSelectedNode.id) {
+            setSelectedNodeLeafToRoot({id: lastSelectedNode.id, path: currentPath});
           }
           return nextOpenNodes;
         });
       } else {
-        setSelectedNode(null);
+        setSelectedNodeRootToLeaf(null);
+        setSelectedNodeLeafToRoot(null);
       }
       // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [lastSelectedNode, graphData]);
 
+    const [expandedPanel, setExpandedPanel] = React.useState<'bottom' | 'top' | null>(null);
+
+    const isTopPanelHidden = expandedPanel === 'bottom';
+    const isBottomPanelHidden = expandedPanel === 'top';
+    const treeViewRows = useMemo(() => {
+      if (expandedPanel === 'top') {
+        return 'minmax(0, 1fr) auto';
+      } else if (expandedPanel === 'bottom') {
+        return 'auto minmax(0, 1fr)';
+      }
+      return 'repeat(2, minmax(0, 1fr))';
+    }, [expandedPanel]);
+
     return (
-      <div style={{display: 'grid', gridTemplateRows: 'auto auto minmax(0, 1fr)', height: '100%'}}>
+      <div
+        style={{
+          display: 'grid',
+          gridTemplateRows: 'auto auto minmax(0, 1fr)',
+          height: '100%',
+        }}
+      >
         <Box
           style={{
             display: 'grid',
@@ -352,25 +468,132 @@ export const AssetGraphExplorerSidebar = React.memo(
             onSelectValue={selectNode}
           />
         </Box>
-        <Box border="top">
-          <AssetSidebarListView
-            loading={loading}
-            renderedNodes={renderedNodes}
-            graphData={graphData}
-            fullAssetGraphData={fullAssetGraphData}
-            selectedNodes={selectedNodes}
-            selectedNode={selectedNode}
-            lastSelectedNode={lastSelectedNode}
-            openNodes={openNodes}
-            setOpenNodes={setOpenNodes}
-            setSelectedNode={setSelectedNode}
-            selectNode={selectNode}
-            explorerPath={explorerPath}
-            onChangeExplorerPath={onChangeExplorerPath}
-            onFilterToGroup={onFilterToGroup}
-            viewType={sidebarViewType}
-          />
-        </Box>
+        {sidebarViewType === 'tree' ? (
+          <div style={{display: 'grid', gridTemplateRows: treeViewRows}}>
+            <Box border="top" style={{overflow: 'hidden'}}>
+              <Box
+                background={Colors.backgroundLight()}
+                padding={{horizontal: 24, vertical: 8}}
+                style={{fontWeight: 500, position: 'sticky', top: 0, zIndex: 1}}
+                flex={{direction: 'row', alignItems: 'center', justifyContent: 'space-between'}}
+                border="top-and-bottom"
+              >
+                <Box flex={{direction: 'row', alignItems: 'center', gap: 4}}>
+                  Downstream{' '}
+                  <Tooltip content="Parent asset to child assets">
+                    <Icon name="info" />
+                  </Tooltip>
+                </Box>
+                <Box>
+                  <HoverButton
+                    onClick={() => {
+                      setExpandedPanel((prev) => (prev !== 'top' ? 'top' : null));
+                    }}
+                  >
+                    <Icon name={expandedPanel === 'top' ? 'collapse_arrows' : 'expand_arrows'} />
+                  </HoverButton>
+                </Box>
+              </Box>
+              <div
+                style={{
+                  display: isTopPanelHidden ? 'none' : 'block',
+                  height: isTopPanelHidden ? 0 : '100%',
+                  overflow: 'hidden',
+                }}
+              >
+                <AssetSidebarListView
+                  loading={loading}
+                  renderedNodes={renderedNodesRootToLeaf}
+                  graphData={graphData}
+                  fullAssetGraphData={fullAssetGraphData}
+                  selectedNodes={selectedNodes}
+                  selectedNode={selectedNodeRootToLeaf}
+                  lastSelectedNode={lastSelectedNode}
+                  openNodes={openNodesRootToLeaf}
+                  setOpenNodes={setOpenNodesRootToLeaf}
+                  setSelectedNode={setSelectedNodeRootToLeaf}
+                  selectNode={selectNode}
+                  explorerPath={explorerPath}
+                  onChangeExplorerPath={onChangeExplorerPath}
+                  onFilterToGroup={onFilterToGroup}
+                  viewType={sidebarViewType}
+                  direction="root-to-leaf"
+                />
+              </div>
+            </Box>
+            <Box border="top" style={{overflow: 'hidden'}}>
+              <Box
+                background={Colors.backgroundLight()}
+                padding={{horizontal: 24, vertical: 8}}
+                flex={{direction: 'row', alignItems: 'center', justifyContent: 'space-between'}}
+                style={{fontWeight: 500, position: 'sticky', top: 0, zIndex: 1}}
+                border="top-and-bottom"
+              >
+                <Box flex={{direction: 'row', alignItems: 'center', gap: 4}}>
+                  Upstream{' '}
+                  <Tooltip content="Child asset to parent assets">
+                    <Icon name="info" />
+                  </Tooltip>
+                </Box>
+                <Box>
+                  <HoverButton
+                    onClick={() => {
+                      setExpandedPanel((prev) => (prev !== 'bottom' ? 'bottom' : null));
+                    }}
+                  >
+                    <Icon name={expandedPanel === 'bottom' ? 'collapse_arrows' : 'expand_arrows'} />
+                  </HoverButton>
+                </Box>
+              </Box>
+              <div
+                style={{
+                  display: isBottomPanelHidden ? 'none' : 'block',
+                  height: isBottomPanelHidden ? 0 : '100%',
+                  overflow: 'hidden',
+                }}
+              >
+                <AssetSidebarListView
+                  loading={loading}
+                  renderedNodes={renderedNodesLeafToRoot}
+                  graphData={graphData}
+                  fullAssetGraphData={fullAssetGraphData}
+                  selectedNodes={selectedNodes}
+                  selectedNode={selectedNodeLeafToRoot}
+                  lastSelectedNode={lastSelectedNode}
+                  openNodes={openNodesLeafToRoot}
+                  setOpenNodes={setOpenNodesLeafToRoot}
+                  setSelectedNode={setSelectedNodeLeafToRoot}
+                  selectNode={selectNode}
+                  explorerPath={explorerPath}
+                  onChangeExplorerPath={onChangeExplorerPath}
+                  onFilterToGroup={onFilterToGroup}
+                  viewType={sidebarViewType}
+                  direction="leaf-to-root"
+                />
+              </div>
+            </Box>
+          </div>
+        ) : (
+          <Box border="top">
+            <AssetSidebarListView
+              loading={loading}
+              renderedNodes={renderedNodesRootToLeaf}
+              graphData={graphData}
+              fullAssetGraphData={fullAssetGraphData}
+              selectedNodes={selectedNodes}
+              selectedNode={selectedNodeRootToLeaf}
+              lastSelectedNode={lastSelectedNode}
+              openNodes={openNodesRootToLeaf}
+              setOpenNodes={setOpenNodesRootToLeaf}
+              setSelectedNode={setSelectedNodeRootToLeaf}
+              selectNode={selectNode}
+              explorerPath={explorerPath}
+              onChangeExplorerPath={onChangeExplorerPath}
+              onFilterToGroup={onFilterToGroup}
+              viewType={sidebarViewType}
+            />
+          </Box>
+        )}
       </div>
     );
   },
