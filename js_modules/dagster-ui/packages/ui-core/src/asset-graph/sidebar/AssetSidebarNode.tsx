@@ -62,6 +62,7 @@ export const AssetSidebarNode = (props: AssetSidebarNodeProps) => {
 
   const showArrow = useMemo(() => {
     if (viewType === 'tree') {
+      // If the connected node is not in graphData then it is filtered out by the asset selection
       return connectedNodes.filter((id) => graphData.nodes[id]).length > 0;
     }
     return !isAssetNode && !('openAlways' in node && node.openAlways);
