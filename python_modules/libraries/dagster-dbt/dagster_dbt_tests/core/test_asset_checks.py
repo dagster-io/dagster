@@ -775,7 +775,7 @@ def test_asset_checks_evaluations(
     result = my_dbt_job.execute_in_process(
         resources={"dbt": DbtCliResource(project_dir=os.fspath(test_asset_checks_path))}
     )
-    assert result.success
+    assert result.success_with_warnings
 
 
 @pytest.mark.parametrize(

@@ -47,6 +47,7 @@ def emit_error_job():
 
     return the_job_fails
 
+
 def build_warn_job():
     @dg.asset
     def upstream():
@@ -70,6 +71,7 @@ def build_error_and_warn_job():
     """Job with an asset that raises ERROR and also has a WARN-failing check.
     Final run status should be FAILURE (ERROR wins over WARN).
     """
+
     @dg.asset
     def bad_asset():
         # Simulate a real failure in the asset step
@@ -99,6 +101,7 @@ def test_basic_success(instance):
 def test_no_raise_on_error(instance):
     result = dg.execute_job(dg.reconstructable(emit_error_job), instance)
     assert not result.success
+
 
 def test_success_with_warnings(instance):
     result = dg.execute_job(dg.reconstructable(build_warn_job), instance)

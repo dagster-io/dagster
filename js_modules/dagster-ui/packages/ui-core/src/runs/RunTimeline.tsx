@@ -278,7 +278,7 @@ const RunStatusTags = React.memo(({rows}: {rows: TimelineRow[]}) => {
           inProgressCount++;
         } else if (failedStatuses.has(status)) {
           failedCount++;
-        } else if(status === 'SUCCESS_WITH_WARNINGS'){
+        } else if (status === 'SUCCESS_WITH_WARNINGS') {
           warningCount++;
         } else if (successStatuses.has(status)) {
           succeededCount++;
@@ -306,10 +306,11 @@ export const RunStatusTagsWithCounts = ({
     inProgressCount === 1 ? '1 run in progress' : `${inProgressCount} runs in progress`;
   const succeededText =
     succeededCount === 1 ? '1 run succeeded' : `${succeededCount} runs succeeded`;
-  const failedText = 
-    failedCount === 1 ? '1 run failed' : `${failedCount} runs failed`;
-  const warningText = 
-    warningCount === 1 ? '1 run succeeded with warnings' : `${warningCount} runs succeeded with warnings`;
+  const failedText = failedCount === 1 ? '1 run failed' : `${failedCount} runs failed`;
+  const warningText =
+    warningCount === 1
+      ? '1 run succeeded with warnings'
+      : `${warningCount} runs succeeded with warnings`;
 
   return (
     <Box flex={{direction: 'row', gap: 4, alignItems: 'center'}}>

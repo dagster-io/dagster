@@ -47,7 +47,10 @@ def assert_check_result(
         asset_checks=freshness_checks,
         instance=instance,
     )
-    assert result.success
+    if expected_pass:
+        assert result.success
+    else:
+        assert result.success_with_warnings
     assert len(result.get_asset_check_evaluations()) == 1
     assert result.get_asset_check_evaluations()[0].passed == expected_pass
     assert result.get_asset_check_evaluations()[0].severity == severity
