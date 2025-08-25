@@ -77,4 +77,4 @@ But there are now data checks on the assets we have created to help ensure the q
 
 ## Next steps
 
-- Continue this tutorial with [creating and materializing partitioned assets](/etl-pipeline-tutorial/partition-asset)
+- Continue this tutorial with [creating and materializing partitioned assets](/examples/etl-pipeline/partition-asset)

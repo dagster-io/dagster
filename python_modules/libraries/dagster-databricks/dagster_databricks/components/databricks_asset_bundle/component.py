@@ -18,6 +18,7 @@ from dagster_databricks.components.databricks_asset_bundle.configs import (
     DATABRICKS_UNKNOWN_TASK_TYPE,
     DatabricksBaseTask,
     DatabricksConfig,
+    DatabricksUnknownTask,
     ResolvedDatabricksExistingClusterConfig,
     ResolvedDatabricksNewClusterConfig,
     ResolvedDatabricksServerlessConfig,
@@ -160,7 +161,14 @@ class DatabricksAssetBundleComponent(Component, Resolvable):
                 ),
                 **({"libraries": MetadataValue.json(task.libraries)} if task.libraries else {}),
             },
-            deps=[snake_case(dep_config.task_key) for dep_config in task.depends_on or []],
+            deps=[
+                self.get_asset_spec(
+                    task=DatabricksUnknownTask.from_job_task_config(
+                        {"task_key": dep_config.task_key}
+                    )
+                ).key
+                for dep_config in task.depends_on
+            ],
         )
 
     def build_defs(self, context: ComponentLoadContext) -> Definitions:

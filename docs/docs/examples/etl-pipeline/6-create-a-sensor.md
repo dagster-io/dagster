@@ -89,4 +89,4 @@ Sensors provide a fine grained way to build event driven systems. Combined with 
 
 # Next steps
 
-- Continue this tutorial to [visualize data](/etl-pipeline-tutorial/visualize-data)
+- Continue this tutorial to [visualize data](/examples/etl-pipeline/visualize-data)

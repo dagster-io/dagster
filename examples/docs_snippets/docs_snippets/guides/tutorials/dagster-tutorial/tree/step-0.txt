@@ -1,7 +1,7 @@
 src
-└── etl_tutorial
+└── dagster_tutorial
     ├── __init__.py
     ├── definitions.py
     └── defs
         ├── __init__.py
-        └── assets.py
+        └── assets.py   # NEW
