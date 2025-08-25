@@ -562,29 +562,52 @@ def test_daily_exclusion_schedule():
         return {"start": start.isoformat(), "end": end.isoformat()}
 
     keys = my_partitioned_config.get_partition_keys()
-
     assert keys[0] == "2021-05-05"
     assert keys[1] == "2021-05-07"
 
-    my_schedule = schedule_for_partitioned_config(
-        my_partitioned_config, hour_of_day=9, minute_of_hour=30
-    )
-    assert my_schedule.cron_schedule == "30 9 * * *"  # pyright: ignore[reportAttributeAccessIssue]
+    my_schedule = schedule_for_partitioned_config(my_partitioned_config)
+    assert my_schedule.cron_schedule == "0 0 * * *"  # pyright: ignore[reportAttributeAccessIssue]
 
     # tick on excluded date will skip
     tick = my_schedule.evaluate_tick(  # pyright: ignore[reportAttributeAccessIssue]
-        dg.build_schedule_context(scheduled_execution_time=datetime(2021, 5, 7, 9, 30))
+        dg.build_schedule_context(scheduled_execution_time=datetime(2021, 5, 7))
     )
     assert tick.run_requests == []
 
     run_request = my_schedule.evaluate_tick(  # pyright: ignore[reportOptionalSubscript,reportAttributeAccessIssue]
-        dg.build_schedule_context(scheduled_execution_time=datetime(2021, 5, 8, 9, 30))
+        dg.build_schedule_context(scheduled_execution_time=datetime(2021, 5, 8))
     ).run_requests[0]
     assert run_request.run_config == {
         "start": "2021-05-07T00:00:00+00:00",
         "end": "2021-05-08T00:00:00+00:00",
     }
 
-    @dg.repository
-    def _repo():
-        return [my_schedule]
+
+def test_daily_exclusion_schedule_with_end_offsets():
+    @dg.daily_partitioned_config(
+        start_date="2021-05-05", exclusions={datetime(2021, 5, 6)}, end_offset=1
+    )
+    def my_partitioned_config(start, end):
+        return {"start": start.isoformat(), "end": end.isoformat()}
+
+    keys = my_partitioned_config.get_partition_keys()
+    assert keys[0] == "2021-05-05"
+    assert keys[1] == "2021-05-07"
+
+    my_schedule = schedule_for_partitioned_config(my_partitioned_config)
+    assert my_schedule.cron_schedule == "0 0 * * *"  # pyright: ignore[reportAttributeAccessIssue]
+
+    # tick on excluded date will skip
+    tick = my_schedule.evaluate_tick(  # pyright: ignore[reportAttributeAccessIssue]
+        dg.build_schedule_context(scheduled_execution_time=datetime(2021, 5, 6))
+    )
+    assert tick.run_requests == []
+
+    run_request = my_schedule.evaluate_tick(  # pyright: ignore[reportOptionalSubscript,reportAttributeAccessIssue]
+        dg.build_schedule_context(scheduled_execution_time=datetime(2021, 5, 7))
+    ).run_requests[0]
+    assert tick.run_requests == []
+    assert run_request.run_config == {
+        "start": "2021-05-07T00:00:00+00:00",
+        "end": "2021-05-08T00:00:00+00:00",
+    }
