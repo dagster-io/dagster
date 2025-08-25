@@ -2,10 +2,12 @@
 title: Build an ETL Pipeline
 description: Learn how to build an ETL pipeline with Dagster
 last_update:
-  author: Alex Noonan
-sidebar_class_name: hidden
-canonicalUrl: '/etl-pipeline-tutorial'
-slug: '/etl-pipeline-tutorial'
+  author: Dennis Hume
+sidebar_custom_props:
+  logo: images/dagster-primary-mark.svg
+tags: [code-example]
+canonicalUrl: '/examples/etl-pipeline'
+slug: '/examples/etl-pipeline'
 ---
 
 # Build your first ETL pipeline
@@ -128,4 +130,4 @@ At this point the project will be empty, but we will continue to add to it throu
 
 ## Next steps
 
-- Continue this tutorial with [extract data](/etl-pipeline-tutorial/extract-data)
+- Continue this tutorial with [extract data](/examples/etl-pipeline/extract-data)

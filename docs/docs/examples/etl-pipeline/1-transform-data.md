@@ -125,4 +125,4 @@ You might be wondering about the relationship between components and definitions
 
 ## Next steps
 
-In the next step, we will [add a DuckDB resource](/etl-pipeline-tutorial/add-a-resource) to our project to more efficiently manage our database connections.
+In the next step, we will [add a DuckDB resource](/examples/etl-pipeline/add-a-resource) to our project to more efficiently manage our database connections.
