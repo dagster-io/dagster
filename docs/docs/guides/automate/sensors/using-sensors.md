@@ -27,10 +27,6 @@ src
 
 ## Scaffolding sensors
 
-import ScaffoldSensor from '@site/docs/partials/\_ScaffoldSensor.md';
-
-<ScaffoldSensor />
-
 To create a sensor dictionary like the above, you can run the following:
 
 ```bash
