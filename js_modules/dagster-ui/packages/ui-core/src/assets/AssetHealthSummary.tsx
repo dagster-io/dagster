@@ -400,6 +400,7 @@ export const STATUS_INFO: Record<
     backgroundColor: string;
     hoverBackgroundColor: string;
     text2: string;
+    materializationText: string;
   }
 > = {
   'Not Applicable': {
@@ -409,6 +410,7 @@ export const STATUS_INFO: Record<
     textColor: Colors.textDefault(),
     text: 'Unknown',
     text2: 'None set',
+    materializationText: 'Not applicable',
     intent: 'none',
     subStatusIconName: 'missing',
     borderColor: Colors.accentGray(),
@@ -423,6 +425,7 @@ export const STATUS_INFO: Record<
     text: 'Unknown',
     text2: 'Not evaluated',
     intent: 'none',
+    materializationText: 'Never materialized',
     subStatusIconName: 'missing',
     borderColor: Colors.accentGray(),
     backgroundColor: Colors.backgroundGray(),
@@ -432,6 +435,7 @@ export const STATUS_INFO: Record<
     iconName: 'failure_trend',
     iconName2: 'cancel',
     subStatusIconName: 'close',
+    materializationText: 'Failed',
     iconColor: Colors.accentRed(),
     textColor: Colors.textRed(),
     text: 'Degraded',
@@ -444,6 +448,7 @@ export const STATUS_INFO: Record<
   Warning: {
     iconName: 'warning_trend',
     iconName2: 'warning_outline',
+    materializationText: 'Not applicable',
     subStatusIconName: 'warning_outline',
     iconColor: Colors.accentYellow(),
     text: 'Warning',
@@ -458,6 +463,7 @@ export const STATUS_INFO: Record<
     iconName: 'successful_trend',
     iconName2: 'check_circle',
     subStatusIconName: 'done',
+    materializationText: 'Success',
     iconColor: Colors.accentGreen(),
     textColor: Colors.textDefault(),
     text: 'Healthy',
