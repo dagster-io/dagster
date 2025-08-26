@@ -14,6 +14,7 @@ import {__ASSET_JOB_PREFIX} from '../asset-graph/Utils';
 import {useBlockTraceUntilTrue} from '../performance/TraceContext';
 import {RepoAddress} from '../workspace/types';
 import {LaunchpadRootQuery, LaunchpadRootQueryVariables} from './types/LaunchpadAllowedRoot.types';
+import {AssetKey} from '../graphql/types';
 
 // ########################
 // ##### LAUNCHPAD ROOTS
@@ -58,6 +59,7 @@ export const BackfillLaunchpad = ({
   repoAddress,
   sessionPresets,
   assetJobName,
+  assetKeys,
   open,
   setOpen,
   onSaveConfig,
@@ -66,6 +68,7 @@ export const BackfillLaunchpad = ({
   repoAddress: RepoAddress;
   sessionPresets?: Partial<IExecutionSession>;
   assetJobName: string;
+  assetKeys?: AssetKey[];
   open: boolean;
   setOpen: (open: boolean) => void;
   onSaveConfig: (config: LaunchpadConfig) => void;
@@ -108,12 +111,15 @@ export const BackfillLaunchpad = ({
   // Use the saved config's runConfigYaml as rootDefaultYaml if available
   const rootDefaultYaml = savedConfig?.runConfigYaml;
 
+  // Convert assetKeys to the format expected by sessionPresets.assetSelection
+  const assetSelection = assetKeys?.map((assetKey) => ({
+    assetKey: {path: assetKey.path},
+  }));
+
   return (
     <Dialog
       style={{height: '90vh', width: '80%', minWidth: '1000px'}}
       isOpen={open}
-      canEscapeKeyClose={false}
-      canOutsideClickClose={false}
       onClose={() => setOpen(false)}
     >
       <DialogHeader icon="layers" label={title} />
@@ -123,7 +129,10 @@ export const BackfillLaunchpad = ({
         pipeline={pipelineOrError}
         partitionSets={partitionSetsOrError}
         repoAddress={repoAddress}
-        sessionPresets={sessionPresets || {}}
+        sessionPresets={{
+          ...sessionPresets,
+          assetSelection,
+        }}
         rootDefaultYaml={rootDefaultYaml}
         onSaveConfig={onSaveConfig}
       />
