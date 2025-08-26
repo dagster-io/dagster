@@ -1,45 +1,35 @@
 ---
-title: Alerts
-description: 
+title: Asset health alerts and freshness alerts
+description: TK
 sidebar_position: 600
 ---
 
-The Dagster+ Summer Update introduces two new ways to alert on the status of your assets: asset health alerts and freshness alerts. These alerts can only be created and edited by users who have enable the "New health & observability UIs" user setting. (TODO - confirm name of setting)
+The [Dagster+ Summer Update](/guides/labs/observability-update) introduces two new ways to alert on the status of your assets: asset health alerts and freshness alerts.
 
-## Health alerts
+:::info Enabling new alerts
 
-Asset health alerts work by sending notifications when the overall health status of the asset changes.
-
-You cannot create an alert policy that notifies on health status changes and on individual events (materialization failed).
-
-### Health states
-
-You can create an alert that notifies on any of the health state changes described below:
-
-| State | Description |
-|-------|-------------|
-| Healthy | TK |
-| Warning | TK |
-| Degraded | TK |
-
-### Example
-
-If you want to know when an asset becomes degraded, you can set up an asset health alert to notify you when that happens. If the asset is healthy, and a run begins, and the asset fails to materialize, then the asset's health status is degraded, and Dagster will send you a health alert notification.
-
-:::note
-
-Health alerts are different from from existing alerts in that notifications will not be sent if events occur that keep the asset in its current health state. In the example above, if the asset checks for the asset fail after the health alert notification is sent, you will not receive an additional health alert notification, since the asset's health status is still degraded.
-
-:::
-
-## Freshness alerts
-
-
-
-
-:::note
+To create and edit the new alerts, you will need to enable the "New homepage & observability UIs" user setting.
 
 If you opt out of the new homepage and observability features, you will be unable to create new health or freshness alerts, or edit existing health or freshness alerts.
 
 :::
 
+## Health alerts
+
+Asset health alerts send notifications when the overall health status of the asset changes:
+
+![Create new health alery policy UI](/images/guides/labs/observability-update/create-new-alert-policy.png)
+
+For more information on the meaning of the different health statuses, see the [asset health reporting documentation](/guides/labs/observability-update/asset-health#asset-health-statuses).
+
+Health alerts differ from the existing event-based alerts, as they will only notify once when the health status of the asset changes, instead of every time an event occurs. For example, assume you have set up an asset health alert to notify when an asset becomes degraded. If the asset is healthy, and a run begins, and the asset fails to materialize, then the asset's health status is degraded, and Dagster will send you a health alert notification. If another run for the asset begins, and the asset fails to materialize, Dagster will not send a new notification, whereas an alert configured to notify on materialization failures would continue to send notifications. This makes the health status notifications more informative.
+
+You cannot create an alert policy that notifies on both health status changes and on individual events (materialization failed).
+
+## Freshness alerts
+
+Asset freshness alerts send notifications when an asset's [freshness status](/guides/labs/observability-update/freshness) changes:
+
+![Asset freshness alert in UI](/images/guides/labs/observability-update/create-new-freshness-alert.png)
+
+For example, if you have an asset that you expect to materialize every six hours, you can create a [freshness policy](/guides/labs/observability-update/freshness) for the asset, and set up an alert to notify you when that policy is failing. If it's been six hours since the last materialization of the asset, you will receive a notification about the failing policy.

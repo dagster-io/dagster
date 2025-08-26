@@ -43,3 +43,7 @@ Give teams a focused view of the data that matters most. Create flexible, sharea
 ### Freshness policies
 
 Ensure your most critical data stays fresh and trustworthy so teams can make timely, confident decisions without second-guessing the source. For more information, see the [Freshness policies guide](/guides/labs/observability-update/freshness).
+
+### Asset health alerts and freshness alerts
+
+Get notified when the overall health status of your assets changes, or when an asset has violated its freshness policy. For more information, see the [Asset health alerts and freshness alerts guide](/guides/labs/observability-update/alerts).
