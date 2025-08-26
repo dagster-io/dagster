@@ -18,7 +18,7 @@ For example, freshness policies can help identify stale assets caused by:
 
 :::info
 
-You can set an [asset freshness alert](/guides/labs/observability-update/freshness) to notify you when an asset is failing its freshness policy.
+You can set an [asset freshness alert](/guides/labs/observability-update/alerts) to notify you when an asset is failing its freshness policy.
 
 :::
 

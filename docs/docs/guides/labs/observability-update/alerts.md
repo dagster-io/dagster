@@ -14,7 +14,7 @@ To create and edit the new alerts, you will need to enable the "New homepage & o
 
 Asset health alerts send notifications when the overall [health status](/guides/labs/observability-update/asset-health) of the asset changes:
 
-![Create new health alery policy UI](/images/guides/labs/observability-update/create-new-alert-policy.png)
+![Create new health alert policy UI](/images/guides/labs/observability-update/create-new-alert-policy.png)
 
 To make health alert notifications as relevant as possible, they only notify once when the health status of the asset changes, instead of every time an event occurs. This makes them different from the existing event-based alerts.
 
