@@ -23,6 +23,7 @@ from dagster_shared.serdes.serdes import (
     UnpackContext,
     is_whitelisted_for_serdes_object,
 )
+from dagster_shared.utils.timing import format_duration
 
 import dagster._check as check
 from dagster._annotations import public
@@ -70,7 +71,6 @@ from dagster._utils.error import (
     serializable_error_info_from_exc_info,
     truncate_event_error_info,
 )
-from dagster._utils.timing import format_duration
 
 if TYPE_CHECKING:
     from dagster._core.definitions.events import ObjectStoreOperation

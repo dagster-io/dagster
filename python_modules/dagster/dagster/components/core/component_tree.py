@@ -1,6 +1,4 @@
 import importlib
-from collections import defaultdict
-from collections.abc import Sequence
 from contextlib import contextmanager
 from functools import cached_property
 from pathlib import Path
@@ -10,7 +8,6 @@ from unittest import mock
 
 from dagster_shared import check
 from dagster_shared.record import IHaveNew, record
-from dagster_shared.utils.cached_method import get_cached_method_cache, make_cached_method_cache_key
 from dagster_shared.utils.config import (
     discover_config_file,
     get_canonical_defs_module_name,
@@ -19,9 +16,8 @@ from dagster_shared.utils.config import (
 from typing_extensions import Self, TypeVar
 
 from dagster._core.definitions.definitions_class import Definitions
-from dagster._core.errors import DagsterInvalidDefinitionError
-from dagster._utils.cached_method import cached_method
 from dagster.components.component.component import Component
+from dagster.components.core.component_tree_state import ComponentTreeStateTracker
 from dagster.components.core.context import ComponentDeclLoadContext, ComponentLoadContext
 from dagster.components.core.decl import (
     ComponentDecl,
@@ -35,131 +31,25 @@ from dagster.components.core.defs_module import (
     CompositeYamlComponent,
     DefsFolderComponent,
     PythonFileComponent,
+    ResolvableToComponentPath,
 )
 from dagster.components.resolved.context import ResolutionContext
 from dagster.components.utils import get_path_from_module
 
 PLUGIN_COMPONENT_TYPES_JSON_METADATA_KEY = "plugin_component_types_json"
 
+T = TypeVar("T", bound=Component)
 TComponent = TypeVar("TComponent", bound=Component)
-
-ResolvableToComponentPath = Union[Path, ComponentPath, str]
-
-
-def resolve_to_component_path(path: ResolvableToComponentPath) -> ComponentPath:
-    if isinstance(path, str):
-        return ComponentPath(file_path=Path(path), instance_key=None)
-    elif isinstance(path, Path):
-        return ComponentPath(file_path=path, instance_key=None)
-    else:
-        return path
-
-
-def _get_canonical_path_string(root_path: Path, path: Path) -> str:
-    """Returns a canonical string representation of the given path (the absolute, POSIX path)
-    to use for e.g. dict keys or path comparisons.
-    """
-    return (root_path / path if not path.is_absolute() else path).absolute().as_posix()
-
-
-def _get_canonical_component_path(
-    root_path: Path, path: ResolvableToComponentPath
-) -> tuple[str, Optional[Union[int, str]]]:
-    resolved_path = resolve_to_component_path(path)
-    return _get_canonical_path_string(
-        root_path, resolved_path.file_path
-    ), resolved_path.instance_key
 
 
 @record
 class ComponentWithContext:
-    path: Path
     component: Component
     component_decl: ComponentDecl
 
 
-T = TypeVar("T", bound=Component)
-
-
 class ComponentTreeException(Exception):
     pass
-
-
-class ComponentTreeStateTracker:
-    """Stateful class which tracks the state of the component tree
-    as it is loaded.
-    """
-
-    def __init__(self):
-        self._component_load_dependents_dict = defaultdict(set)
-        self._component_defs_dependents_dict = defaultdict(set)
-        self._component_defs_state_key_dict = dict()
-
-    def mark_component_load_dependency(
-        self, defs_module_path: Path, from_path: ComponentPath, to_path: ResolvableToComponentPath
-    ) -> None:
-        self._component_load_dependents_dict[
-            _get_canonical_component_path(defs_module_path, to_path)
-        ].add(_get_canonical_component_path(defs_module_path, from_path))
-
-    def mark_component_defs_dependency(
-        self, defs_module_path: Path, from_path: ComponentPath, to_path: ResolvableToComponentPath
-    ) -> None:
-        self._component_defs_dependents_dict[
-            _get_canonical_component_path(defs_module_path, to_path)
-        ].add(_get_canonical_component_path(defs_module_path, from_path))
-
-    def mark_component_defs_state_key(
-        self, defs_module_path: Path, component_path: ComponentPath, defs_state_key: str
-    ) -> None:
-        # ensures that no components share the same defs state key
-        canonical_path = _get_canonical_component_path(defs_module_path, component_path)
-        existing_path = self._component_defs_state_key_dict.get(defs_state_key)
-        if existing_path is not None and existing_path != canonical_path:
-            raise DagsterInvalidDefinitionError(
-                f"Multiple components have the same defs state key: {defs_state_key}\n"
-                "Component paths: \n"
-                f"  {existing_path}\n"
-                f"  {canonical_path}\n"
-                "Configure or override the `get_defs_state_key` method on one or both components to disambiguate."
-            )
-        self._component_defs_state_key_dict[defs_state_key] = canonical_path
-
-    def get_direct_load_dependents_of_component(
-        self, defs_module_path: Path, component_path: ComponentPath
-    ) -> set[ComponentPath]:
-        """Returns the set of components that directly depend on the given component.
-
-        Args:
-            defs_module_path: The path to the defs module.
-            component_path: The path to the component to get the direct load dependents of.
-        """
-        return set(
-            ComponentPath(
-                file_path=Path(file_path).relative_to(defs_module_path), instance_key=instance_key
-            )
-            for file_path, instance_key in self._component_load_dependents_dict[
-                _get_canonical_component_path(defs_module_path, component_path)
-            ]
-        )
-
-    def get_direct_defs_dependents_of_component(
-        self, defs_module_path: Path, component_path: ComponentPath
-    ) -> set[ComponentPath]:
-        """Returns the set of components that directly depend on the given component's defs.
-
-        Args:
-            defs_module_path: The path to the defs module.
-            component_path: The path to the component to get the direct defs dependents of.
-        """
-        return set(
-            ComponentPath(
-                file_path=Path(file_path).relative_to(defs_module_path), instance_key=instance_key
-            )
-            for file_path, instance_key in self._component_defs_dependents_dict[
-                _get_canonical_component_path(defs_module_path, component_path)
-            ]
-        )
 
 
 @record(
@@ -178,19 +68,20 @@ class ComponentTree(IHaveNew):
     terminate_autoloading_on_keyword_files: Optional[bool] = None
 
     @cached_property
-    def component_tree_state_tracker(self) -> ComponentTreeStateTracker:
-        return ComponentTreeStateTracker()
+    def state_tracker(self) -> ComponentTreeStateTracker:
+        return ComponentTreeStateTracker(self.defs_module_path)
 
     @contextmanager
     def augment_component_tree_exception(
-        self, path: ComponentPath, msg_for_path: Callable[[str], str]
+        self, path: ResolvableToComponentPath, msg_for_path: Callable[[str], str]
     ):
         try:
             yield
         except Exception as e:
+            resolved_path = ComponentPath.from_resolvable(self.defs_module_path, path)
             if not isinstance(e, ComponentTreeException):
                 raise ComponentTreeException(
-                    f"{msg_for_path(path.get_relative_key(self.defs_module_path))}:\n{self.to_string_representation(include_load_and_build_status=True, match_path=path)}"
+                    f"{msg_for_path(resolved_path.get_relative_key(self.defs_module_path))}:\n{self.to_string_representation(include_load_and_build_status=True, match_path=resolved_path)}"
                 ) from e
             raise
 
@@ -263,102 +154,62 @@ class ComponentTree(IHaveNew):
 
         return cls(defs_module=defs_module, project_root=path_within_project)
 
-    @cached_property
-    def decl_load_context(self):
-        return ComponentDeclLoadContext(
-            component_path=ComponentPath(file_path=self.defs_module_path, instance_key=None),
-            project_root=self.project_root,
-            defs_module_path=self.defs_module_path,
-            defs_module_name=self.defs_module_name,
-            resolution_context=ResolutionContext.default(),
-            terminate_autoloading_on_keyword_files=False,
-            component_tree=self,
+    @property
+    def decl_load_context(self) -> ComponentDeclLoadContext:
+        if self.state_tracker.get_cache_data(self.defs_module_path).decl_load_context is None:
+            self.state_tracker.set_cache_data(
+                self.defs_module_path,
+                decl_load_context=ComponentDeclLoadContext(
+                    component_path=ComponentPath.from_path(self.defs_module_path),
+                    project_root=self.project_root,
+                    defs_module_path=self.defs_module_path,
+                    defs_module_name=self.defs_module_name,
+                    resolution_context=ResolutionContext.default(),
+                    terminate_autoloading_on_keyword_files=False,
+                    component_tree=self,
+                ),
+            )
+        return check.not_none(
+            self.state_tracker.get_cache_data(self.defs_module_path).decl_load_context
         )
 
-    @cached_property
-    def load_context(self):
-        return ComponentLoadContext.from_decl_load_context(
-            self.decl_load_context, self.find_root_decl()
-        )
+    @property
+    def load_context(self) -> ComponentLoadContext:
+        if self.state_tracker.get_cache_data(self.defs_module_path).load_context is None:
+            self.state_tracker.set_cache_data(
+                self.defs_module_path,
+                load_context=ComponentLoadContext.from_decl_load_context(
+                    self.decl_load_context, self.find_root_decl()
+                ),
+            )
+        return check.not_none(self.state_tracker.get_cache_data(self.defs_module_path).load_context)
 
-    @cached_method
-    def find_root_decl(self) -> ComponentDecl:
-        return check.not_none(build_component_decl_from_context(self.decl_load_context))
-
-    @cached_method
     def load_root_component(self) -> Component:
         return self.load_structural_component_at_path(self.defs_module_path)
 
-    @cached_method
+    def find_root_decl(self) -> ComponentDecl:
+        if self.state_tracker.get_cache_data(self.defs_module_path).component_decl is None:
+            self.state_tracker.set_cache_data(
+                self.defs_module_path,
+                component_decl=build_component_decl_from_context(self.decl_load_context),
+            )
+        return check.not_none(
+            self.state_tracker.get_cache_data(self.defs_module_path).component_decl
+        )
+
     def build_defs(self) -> Definitions:
         from dagster.components.core.load_defs import get_library_json_enriched_defs
 
-        return Definitions.merge(
-            self.build_defs_at_path(self.defs_module_path),
-            get_library_json_enriched_defs(self),
-        )
-
-    @cached_method
-    def _component_decl_tree(self) -> Sequence[tuple[ComponentPath, ComponentDecl]]:
-        """Constructs or returns the full component declaration tree from cache."""
-        root_decl = self.find_root_decl()
-        return list(root_decl.iterate_path_component_decl_pairs())
-
-    @cached_method
-    def _component_decl_at_posix_path(
-        self, defs_path_posix: str, instance_key: Optional[Union[int, str]]
-    ) -> Optional[tuple[Path, ComponentDecl]]:
-        """Locates a component declaration matching the given canonical string path."""
-        for cp, component_decl in self._component_decl_tree():
-            if (
-                cp.file_path.absolute().as_posix() == defs_path_posix
-                and cp.instance_key == instance_key
-            ):
-                return (cp.file_path, component_decl)
-        return None
-
-    @cached_method
-    def _component_and_context_at_posix_path(
-        self, defs_path_posix: str, instance_key: Optional[Union[int, str]]
-    ) -> Optional[ComponentWithContext]:
-        with self.augment_component_tree_exception(
-            ComponentPath(file_path=Path(defs_path_posix), instance_key=instance_key),
-            lambda path: f"Error while loading component {path}",
-        ):
-            component_decl_and_path = self._component_decl_at_posix_path(
-                defs_path_posix, instance_key
+        if self.state_tracker.get_cache_data(self.defs_module_path).defs is None:
+            defs = Definitions.merge(
+                self.build_defs_at_path(self.defs_module_path),
+                get_library_json_enriched_defs(self),
             )
-            if component_decl_and_path:
-                path, component_decl = component_decl_and_path
-                return ComponentWithContext(
-                    path=path,
-                    component=component_decl._load_component(),  # noqa: SLF001
-                    component_decl=component_decl,
-                )
-            return None
+            self.state_tracker.set_cache_data(self.defs_module_path, defs=defs)
 
-    @cached_method
-    def _defs_at_posix_path(
-        self, defs_path_posix: str, instance_key: Optional[Union[int, str]]
-    ) -> Optional[Definitions]:
-        with self.augment_component_tree_exception(
-            ComponentPath(file_path=Path(defs_path_posix), instance_key=instance_key),
-            lambda path: f"Error while building definitions for {path}",
-        ):
-            component_info = self._component_and_context_at_posix_path(
-                defs_path_posix, instance_key
-            )
-            if component_info is None:
-                return None
-            component = component_info.component
-            component_decl = component_info.component_decl
+        return check.not_none(self.state_tracker.get_cache_data(self.defs_module_path).defs)
 
-            clc = ComponentLoadContext.from_decl_load_context(
-                component_decl.context, component_decl
-            )
-            return component.build_defs(clc)
-
-    def find_decl_at_path(self, defs_path: Union[Path, ComponentPath, str]) -> ComponentDecl:
+    def find_decl_at_path(self, defs_path: ResolvableToComponentPath) -> ComponentDecl:
         """Loads a component declaration from the given path.
 
         Args:
@@ -367,15 +218,14 @@ class ComponentTree(IHaveNew):
         Returns:
             ComponentDecl: The component declaration loaded from the given path.
         """
-        component_decl_and_path = self._component_decl_at_posix_path(
-            *_get_canonical_component_path(self.defs_module_path, defs_path)
-        )
-        if component_decl_and_path is None:
+        resolved_path = ComponentPath.from_resolvable(self.defs_module_path, defs_path)
+        decl = self._component_decl_tree().get(resolved_path)
+        if decl is None:
             raise Exception(f"No component decl found for path {defs_path}")
-        return component_decl_and_path[1]
+        return decl
 
     def mark_component_load_dependency(
-        self, from_path: ComponentPath, to_path: ResolvableToComponentPath
+        self, from_path: ComponentPath, to_path: ComponentPath
     ) -> None:
         """Marks a dependency between the component at `from_path` and the component at `to_path`.
 
@@ -383,12 +233,10 @@ class ComponentTree(IHaveNew):
             from_path: The path to the component that depends on the component at `to_path`.
             to_path: The path to the component that the component at `from_path` depends on.
         """
-        self.component_tree_state_tracker.mark_component_load_dependency(
-            self.defs_module_path, from_path, to_path
-        )
+        self.state_tracker.mark_component_load_dependency(from_path, to_path)
 
     def mark_component_defs_dependency(
-        self, from_path: ComponentPath, to_path: ResolvableToComponentPath
+        self, from_path: ComponentPath, to_path: ComponentPath
     ) -> None:
         """Marks a dependency between the component at `from_path` on the defs of
         the component at `to_path`.
@@ -397,9 +245,7 @@ class ComponentTree(IHaveNew):
             from_path: The path to the component that depends on the defs of the component at `to_path`.
             to_path: The path to the component that the component at `from_path` depends on.
         """
-        self.component_tree_state_tracker.mark_component_defs_dependency(
-            self.defs_module_path, from_path, to_path
-        )
+        self.state_tracker.mark_component_defs_dependency(from_path, to_path)
 
     def mark_component_defs_state_key(
         self, component_path: ComponentPath, defs_state_key: str
@@ -410,9 +256,7 @@ class ComponentTree(IHaveNew):
             component_path: The path to the component to mark the state key for.
             defs_state_key: The state key to mark.
         """
-        self.component_tree_state_tracker.mark_component_defs_state_key(
-            self.defs_module_path, component_path, defs_state_key
-        )
+        self.state_tracker.mark_component_defs_state_key(component_path, defs_state_key)
 
     @overload
     def load_component_at_path(self, defs_path: Union[Path, ComponentPath, str]) -> Component: ...
@@ -447,9 +291,55 @@ class ComponentTree(IHaveNew):
 
         return component
 
-    def load_structural_component_at_path(
-        self, defs_path: Union[Path, ComponentPath, str]
-    ) -> Component:
+    def _component_decl_tree(self) -> dict[ComponentPath, ComponentDecl]:
+        """Constructs or returns the full component declaration tree from cache."""
+        root_decl = self.find_root_decl()
+        return dict(root_decl.iterate_path_component_decl_pairs())
+
+    def _component_and_context_at_path(
+        self, defs_path: ResolvableToComponentPath
+    ) -> Optional[tuple[Component, ComponentDecl]]:
+        if self.state_tracker.get_cache_data(defs_path).component is None:
+            with self.augment_component_tree_exception(
+                defs_path,
+                lambda path: f"Error while loading component {path}",
+            ):
+                resolved_path = ComponentPath.from_resolvable(self.defs_module_path, defs_path)
+                component_decl = self._component_decl_tree().get(resolved_path)
+                if component_decl:
+                    self.state_tracker.set_cache_data(
+                        defs_path,
+                        component=component_decl._load_component(),  # noqa: SLF001
+                        component_decl=component_decl,
+                    )
+        cache_data = self.state_tracker.get_cache_data(defs_path)
+        if cache_data.component is None or cache_data.component_decl is None:
+            return None
+        return (cache_data.component, cache_data.component_decl)
+
+    def _build_defs_at_path(self, defs_path: ResolvableToComponentPath) -> Optional[Definitions]:
+        cached_data = self.state_tracker.get_cache_data(defs_path)
+        if cached_data.defs:
+            return cached_data.defs
+
+        with self.augment_component_tree_exception(
+            defs_path,
+            lambda path: f"Error while building definitions for {path}",
+        ):
+            component_info = self._component_and_context_at_path(defs_path)
+            if component_info is None:
+                raise Exception(f"No component found for path {defs_path}")
+
+            component, component_decl = component_info
+            clc = ComponentLoadContext.from_decl_load_context(
+                component_decl.context, component_decl
+            )
+
+            defs = component.build_defs(clc)
+            self.state_tracker.set_cache_data(defs_path, defs=defs)
+            return defs
+
+    def load_structural_component_at_path(self, defs_path: ResolvableToComponentPath) -> Component:
         """Loads a component from the given path, does not resolve e.g. CompositeYamlComponent to an underlying
         component type.
 
@@ -459,15 +349,12 @@ class ComponentTree(IHaveNew):
         Returns:
             Component: The component loaded from the given path.
         """
-        component = self._component_and_context_at_posix_path(
-            *_get_canonical_component_path(self.defs_module_path, defs_path)
-        )
-        if component is None:
+        component_with_context = self._component_and_context_at_path(defs_path)
+        if component_with_context is None:
             raise Exception(f"No component found for path {defs_path}")
+        return component_with_context[0]
 
-        return component.component
-
-    def build_defs_at_path(self, defs_path: Union[Path, ComponentPath, str]) -> Definitions:
+    def build_defs_at_path(self, defs_path: ResolvableToComponentPath) -> Definitions:
         """Builds definitions from the given defs subdirectory. Currently
         does not incorporate postprocessing from parent defs modules.
 
@@ -477,9 +364,7 @@ class ComponentTree(IHaveNew):
         Returns:
             Definitions: The definitions loaded from the given path.
         """
-        defs = self._defs_at_posix_path(
-            *_get_canonical_component_path(self.defs_module_path, defs_path)
-        )
+        defs = self._build_defs_at_path(defs_path)
         if defs is None:
             raise Exception(f"No definitions found for path {defs_path}")
         return defs
@@ -498,21 +383,13 @@ class ComponentTree(IHaveNew):
             if isinstance(component, of_type)
         ]
 
-    def _has_loaded_component_at_path(self, path: Union[Path, ComponentPath]) -> bool:
-        cache = get_cached_method_cache(self, "_component_and_context_at_posix_path")
-        canonical_path = _get_canonical_component_path(self.defs_module_path, path)
-        key = make_cached_method_cache_key(
-            {"defs_path_posix": canonical_path[0], "instance_key": canonical_path[1]}
-        )
-        return key in cache
+    def _has_loaded_component_at_path(self, path: ResolvableToComponentPath) -> bool:
+        resolved_path = ComponentPath.from_resolvable(self.defs_module_path, path)
+        return self.state_tracker.get_cache_data(resolved_path).component is not None
 
     def _has_built_defs_at_path(self, path: Union[Path, ComponentPath]) -> bool:
-        cache = get_cached_method_cache(self, "_defs_at_posix_path")
-        canonical_path = _get_canonical_component_path(self.defs_module_path, path)
-        key = make_cached_method_cache_key(
-            {"defs_path_posix": canonical_path[0], "instance_key": canonical_path[1]}
-        )
-        return key in cache
+        resolved_path = ComponentPath.from_resolvable(self.defs_module_path, path)
+        return self.state_tracker.get_cache_data(resolved_path).defs is not None
 
     def is_fully_loaded(self) -> bool:
         return self._has_loaded_component_at_path(self.defs_module_path)
@@ -642,10 +519,10 @@ class TestComponentTree(ComponentTree):
     def defs_module_path(self) -> Path:
         return Path.cwd()
 
-    @cached_property
+    @property
     def decl_load_context(self):
         return ComponentDeclLoadContext(
-            component_path=ComponentPath(file_path=self.defs_module_path, instance_key=None),
+            component_path=ComponentPath.from_path(self.defs_module_path),
             project_root=self.project_root,
             defs_module_path=self.defs_module_path,
             defs_module_name=self.defs_module_name,
@@ -654,7 +531,7 @@ class TestComponentTree(ComponentTree):
             component_tree=self,
         )
 
-    @cached_property
+    @property
     def load_context(self):
         component_decl = mock.Mock()
         component_decl.iterate_child_component_decls = mock.Mock(return_value=[])
@@ -667,10 +544,10 @@ class LegacyAutoloadingComponentTree(ComponentTree):
     test and load_defs codepaths.
     """
 
-    @cached_property
+    @property
     def decl_load_context(self):
         return ComponentDeclLoadContext(
-            component_path=ComponentPath(file_path=self.defs_module_path, instance_key=None),
+            component_path=ComponentPath.from_path(self.defs_module_path),
             project_root=self.project_root,
             defs_module_path=self.defs_module_path,
             defs_module_name=self.defs_module_name,

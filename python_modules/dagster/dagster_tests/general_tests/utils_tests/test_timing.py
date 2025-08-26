@@ -1,5 +1,6 @@
 import pytest
-from dagster._utils.timing import TimerResult, format_duration, time_execution_scope
+from dagster._utils.timing import TimerResult, time_execution_scope
+from dagster_shared.utils.timing import format_duration
 
 
 def test_format_duration():

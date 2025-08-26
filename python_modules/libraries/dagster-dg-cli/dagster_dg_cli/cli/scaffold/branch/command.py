@@ -1,7 +1,6 @@
 """Main scaffold branch command implementation."""
 
 import json
-import os
 import re
 import uuid
 from datetime import datetime
@@ -14,7 +13,7 @@ from dagster_dg_core.context import DgContext
 from dagster_dg_core.shared_options import dg_global_options, dg_path_options
 from dagster_dg_core.utils import DgClickCommand
 from dagster_dg_core.utils.telemetry import cli_telemetry_wrapper
-from dagster_shared.record import as_dict, replace
+from dagster_shared.record import as_dict
 
 from dagster_dg_cli.cli.scaffold.branch.ai import enter_waiting_phase
 from dagster_dg_cli.cli.scaffold.branch.claude.diagnostics import (
@@ -24,7 +23,7 @@ from dagster_dg_cli.cli.scaffold.branch.claude.diagnostics import (
 )
 
 # Lazy import of ClaudeSDKClient to avoid docs build failures when claude_code_sdk is not available
-from dagster_dg_cli.cli.scaffold.branch.constants import VALID_MODELS
+from dagster_dg_cli.cli.scaffold.branch.constants import VALID_MODELS, ModelType
 from dagster_dg_cli.cli.scaffold.branch.git import (
     check_git_repository,
     create_branch_and_pr,
@@ -76,13 +75,13 @@ def is_prompt_valid_git_branch_name(prompt: str) -> bool:
 )
 @click.option(
     "--planning-model",
-    type=str,
+    type=click.Choice(list(VALID_MODELS)),
     default="opus",
     help="Model to use for planning phase (default: opus). Options: opus, sonnet, haiku.",
 )
 @click.option(
     "--execution-model",
-    type=str,
+    type=click.Choice(list(VALID_MODELS)),
     default="sonnet",
     help="Model to use for execution phase (default: sonnet). Options: opus, sonnet, haiku.",
 )
@@ -97,15 +96,12 @@ def scaffold_branch_command(
     record: Optional[Path],
     diagnostics_level: DiagnosticsLevel,
     diagnostics_dir: Optional[Path],
-    planning_model: str,
-    execution_model: str,
+    planning_model: ModelType,
+    execution_model: ModelType,
     **other_options: object,
 ) -> None:
     """Scaffold a new branch (requires Python 3.10+)."""
-    # Basic input validation
-    prompt_text = " ".join(prompt).strip()
-    if not prompt_text:
-        raise click.UsageError("Prompt cannot be empty")
+    user_text = " ".join(prompt).strip()
 
     # DiagnosticsLevel is already validated by click.Choice, so this check is redundant
     # but kept for explicit validation in case of programmatic usage
@@ -141,7 +137,7 @@ def scaffold_branch_command(
                 record,
                 diagnostics_level,
                 other_options,
-                prompt_text,
+                user_text,
                 diagnostics,
                 planning_model,
                 execution_model,
@@ -175,7 +171,7 @@ def execute_scaffold_branch_command(
     record,
     diagnostics_level,
     other_options,
-    prompt_text,
+    user_text,
     diagnostics,
     planning_model,
     execution_model,
@@ -184,7 +180,7 @@ def execute_scaffold_branch_command(
         category="command_start",
         message="Starting scaffold branch command",
         data={
-            "prompt": prompt_text,
+            "user_text": user_text,
             "target_path": str(target_path),
             "local_only": local_only,
             "diagnostics_level": diagnostics_level,
@@ -202,7 +198,8 @@ def execute_scaffold_branch_command(
 
     ai_scaffolding = False
     input_type = None
-    scaffold_content_for_prompt = None
+    current_plan = None
+    prompt_text = None
 
     if record and (not record.exists() or not record.is_dir()):
         raise click.UsageError(f"{record} is not an existing directory")
@@ -211,13 +208,13 @@ def execute_scaffold_branch_command(
     pr_title = ""  # Initialize pr_title
 
     # If the user input a valid git branch name, bypass AI inference and create the branch directly.
-    if prompt_text and is_prompt_valid_git_branch_name(prompt_text.strip()):
+    if user_text and is_prompt_valid_git_branch_name(user_text.strip()):
         diagnostics.info(
             category="branch_name_direct",
             message="Using prompt as direct branch name",
-            data={"branch_name": prompt_text.strip()},
+            data={"branch_name": user_text.strip()},
         )
-        branch_name = prompt_text.strip()
+        branch_name = user_text.strip()
         pr_title = branch_name
     else:
         # Check if Claude Code SDK and api key are available before proceeding with AI operations
@@ -226,29 +223,27 @@ def execute_scaffold_branch_command(
                 "claude_code_sdk is required for AI scaffolding functionality. "
                 "Install with: pip install claude-code-sdk>=0.0.19"
             )
-        if not os.getenv("ANTHROPIC_API_KEY"):
-            raise click.ClickException(
-                "ANTHROPIC_API_KEY environment variable is required for AI scaffolding functionality"
-            )
 
         # Import AI modules only when needed and available
         from dagster_dg_cli.cli.scaffold.branch.ai import (
             INPUT_TYPES,
             TextInputType,
-            get_branch_name_and_pr_title_from_prompt,
+            get_branch_name_and_pr_title_from_plan,
         )
 
         # Otherwise, use AI to infer the branch name and PR title. Try to match the input to a known
         # input type so we can gather more context.
-        if not prompt_text:
-            prompt_text = click.prompt("What would you like to accomplish?")
-        assert prompt_text
+        if not user_text:
+            user_text = click.prompt("What would you like to accomplish?")
+            if not user_text:
+                raise click.UsageError("Prompt cannot be empty")
 
         with diagnostics.time_operation("input_type_detection", "ai_preprocessing"):
             input_type = next(
-                (input_type for input_type in INPUT_TYPES if input_type.matches(prompt_text)),
+                (input_type for input_type in INPUT_TYPES if input_type.matches(user_text)),
                 TextInputType,
             )
+            prompt_text = input_type.get_context(user_text)
 
         diagnostics.info(
             category="input_type_detected",
@@ -270,7 +265,8 @@ def execute_scaffold_branch_command(
 
             # Create planning context
             planning_context = PlanningContext(
-                user_input=prompt_text,
+                model=planning_model,
+                prompt_text=prompt_text,
                 dg_context=dg_context,
                 project_structure={
                     "root_path": str(dg_context.root_path),
@@ -341,31 +337,20 @@ def execute_scaffold_branch_command(
         # Proceed with execution after plan approval
         click.echo("\n🚀 Beginning implementation...")
 
-        # Generate branch name and PR title for execution
-        with enter_waiting_phase("Generating branch name and PR title", spin=not disable_progress):
-            with diagnostics.time_operation("branch_name_generation", "ai_generation"):
-                branch_generation = get_branch_name_and_pr_title_from_prompt(
-                    dg_context, prompt_text, input_type, diagnostics, model=execution_model
-                )
-        # Update final branch name with suffix to avoid conflicts
-        final_branch_name = branch_generation.original_branch_name + "-" + str(uuid.uuid4())[:8]
-        branch_generation = replace(branch_generation, final_branch_name=final_branch_name)
-
-        generated_outputs["branch_name"] = branch_generation.original_branch_name
-        generated_outputs["pr_title"] = branch_generation.pr_title
-        branch_name = final_branch_name
-        pr_title = branch_generation.pr_title
-        ai_scaffolding = True
-
-        diagnostics.info(
-            category="branch_name_generated",
-            message="Generated branch name and PR title",
-            data={
-                "original_branch_name": branch_generation.original_branch_name,
-                "final_branch_name": branch_generation.final_branch_name,
-                "pr_title": branch_generation.pr_title,
-            },
+        click.echo("Extracting branch name and PR title")
+        extracted = get_branch_name_and_pr_title_from_plan(
+            current_plan.markdown_content,
+            diagnostics,
         )
+
+        # Update final branch name with suffix to avoid conflicts
+        final_branch_name = extracted.branch_name + "-" + str(uuid.uuid4())[:8]
+
+        generated_outputs["branch_name"] = extracted.branch_name
+        generated_outputs["pr_title"] = extracted.pr_title
+        branch_name = final_branch_name
+        pr_title = extracted.pr_title
+        ai_scaffolding = True
 
     click.echo(f"Creating new branch: {branch_name}")
 
@@ -407,15 +392,16 @@ def execute_scaffold_branch_command(
         click.echo(f"✅ Successfully created branch and pull request: {pr_url}")
 
     first_pass_sha = None
-    if ai_scaffolding and input_type:
+    if ai_scaffolding and current_plan and input_type:
         # Import scaffold_content_for_prompt only when we need it
-        from dagster_dg_cli.cli.scaffold.branch.ai import scaffold_content_for_prompt
+        from dagster_dg_cli.cli.scaffold.branch.ai import scaffold_content_for_plan
 
         with diagnostics.time_operation("content_scaffolding", "ai_generation"):
-            scaffold_content_for_prompt(
-                prompt_text,
+            scaffold_content_for_plan(
+                current_plan.markdown_content,
                 input_type,
                 diagnostics,
+                verbose=cli_config.get("verbose", False),
                 use_spinner=not disable_progress,
                 model=execution_model,
             )
@@ -452,5 +438,3 @@ def execute_scaffold_branch_command(
             message="Session data recorded to file",
             data={"record_path": str(record_path)},
         )
-
-    # Success logging is handled by claude_operation

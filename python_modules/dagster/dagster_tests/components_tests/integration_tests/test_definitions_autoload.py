@@ -25,20 +25,14 @@ from dagster_tests.components_tests.utils import create_project_from_components
 def assert_tree_node_structure_matches(
     tree: ComponentTree, structure: dict[Union[str, ComponentPath], type[ComponentDecl]]
 ):
-    nodes_by_path = {
-        ComponentPath(
-            file_path=node_path.file_path.relative_to(tree.defs_module_path),
-            instance_key=node_path.instance_key,
-        ): node
-        for node_path, node in tree.find_root_decl().iterate_path_component_decl_pairs()
-    }
+    nodes_by_path = dict(tree.find_root_decl().iterate_path_component_decl_pairs())
     unrepresented_paths = set(nodes_by_path.keys())
 
     for path, expected_type in structure.items():
         component_path = (
             path
             if isinstance(path, ComponentPath)
-            else ComponentPath(file_path=Path(path), instance_key=None)
+            else ComponentPath.from_path(path=tree.defs_module_path / Path(path), instance_key=None)
         )
         matching_node = next(
             (
@@ -167,29 +161,21 @@ def test_autoload_single_file(component_tree: ComponentTree) -> None:
     defs = component_tree.build_defs()
     assert component_tree.has_built_all_defs()
 
-    assert component_tree.component_tree_state_tracker.get_direct_load_dependents_of_component(
-        component_tree.defs_module_path,
-        ComponentPath(file_path=Path("single_file/some_file.py"), instance_key=None),
-    ) == {ComponentPath(file_path=Path("single_file"), instance_key=None)}
+    assert component_tree.state_tracker.get_direct_load_dependents(
+        ComponentPath.from_resolvable(component_tree.defs_module_path, "single_file/some_file.py"),
+    ) == {ComponentPath.from_resolvable(component_tree.defs_module_path, "single_file")}
 
-    assert component_tree.component_tree_state_tracker.get_direct_defs_dependents_of_component(
-        component_tree.defs_module_path,
-        ComponentPath(file_path=Path("single_file/some_file.py"), instance_key=None),
-    ) == {ComponentPath(file_path=Path("single_file"), instance_key=None)}
+    assert component_tree.state_tracker.get_direct_defs_dependents(
+        ComponentPath.from_resolvable(component_tree.defs_module_path, "single_file/some_file.py"),
+    ) == {ComponentPath.from_resolvable(component_tree.defs_module_path, "single_file")}
 
-    assert component_tree.component_tree_state_tracker.get_direct_load_dependents_of_component(
-        component_tree.defs_module_path,
-        ComponentPath(file_path=Path("single_file"), instance_key=None),
-    ) == {
-        ComponentPath(file_path=Path("."), instance_key=None),
-    }
+    assert component_tree.state_tracker.get_direct_load_dependents(
+        ComponentPath.from_resolvable(component_tree.defs_module_path, "single_file")
+    ) == {ComponentPath.from_resolvable(component_tree.defs_module_path, ".")}
 
-    assert component_tree.component_tree_state_tracker.get_direct_load_dependents_of_component(
-        component_tree.defs_module_path,
-        ComponentPath(file_path=Path("__init__.py"), instance_key=None),
-    ) == {
-        ComponentPath(file_path=Path("."), instance_key=None),
-    }
+    assert component_tree.state_tracker.get_direct_load_dependents(
+        ComponentPath.from_resolvable(component_tree.defs_module_path, "__init__.py")
+    ) == {ComponentPath.from_resolvable(component_tree.defs_module_path, ".")}
 
     assert {spec.key for spec in defs.resolve_all_asset_specs()} == {dg.AssetKey("an_asset")}
     assert (
@@ -337,24 +323,24 @@ def test_ignored_empty_dir():
             tree,
             {
                 ".": YamlFileDecl,
-                ComponentPath(file_path=Path("."), instance_key=0): DefsFolderDecl,
+                ComponentPath.from_path(tree.defs_module_path, 0): DefsFolderDecl,
                 "top_level.py": PythonFileDecl,
                 "loose_defs": YamlFileDecl,
-                ComponentPath(file_path=Path("loose_defs"), instance_key=0): DefsFolderDecl,
+                ComponentPath.from_path(tree.defs_module_path / "loose_defs", 0): DefsFolderDecl,
                 "loose_defs/asset.py": PythonFileDecl,
                 "loose_defs/inner": DefsFolderDecl,
                 "loose_defs/inner/asset.py": PythonFileDecl,
                 "loose_defs/inner/innerer": DefsFolderDecl,
                 "loose_defs/inner/innerer/asset.py": PythonFileDecl,
                 "loose_defs/inner/innerer/another_level": YamlFileDecl,
-                ComponentPath(
-                    file_path=Path("loose_defs/inner/innerer/another_level"), instance_key=0
+                ComponentPath.from_path(
+                    tree.defs_module_path / "loose_defs/inner/innerer/another_level", 0
                 ): DefsFolderDecl,
                 "loose_defs/inner/innerer/another_level/in_init": DefsFolderDecl,
                 "loose_defs/inner/innerer/another_level/in_init/__init__.py": PythonFileDecl,
                 "loose_defs/inner/innerer/another_level/innerest/definitions.py": PythonFileDecl,  # no folder bc definitions.py special name
                 "defs_object": YamlFileDecl,
-                ComponentPath(file_path=Path("defs_object"), instance_key=0): DefsFolderDecl,
+                ComponentPath.from_path(tree.defs_module_path / "defs_object", 0): DefsFolderDecl,
                 "defs_object/defs_object/definitions.py": PythonFileDecl,  # no folder bc definitions.py special name
             },
         )

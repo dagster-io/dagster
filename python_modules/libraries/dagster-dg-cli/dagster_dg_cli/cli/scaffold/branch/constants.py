@@ -15,7 +15,6 @@ ALLOWED_COMMANDS_SCAFFOLDING = [
     "Bash(dg scaffold defs:*)",
     "Bash(dg list defs:*)",
     "Bash(dg list components:*)",
-    "Bash(dg docs component:*)",
     "Bash(dg check yaml:*)",
     "Bash(dg check defs:*)",
     "Bash(dg list env:*)",
@@ -51,7 +50,6 @@ ALLOWED_COMMANDS_PLANNING = [
     # Read-only dg commands for analysis
     "Bash(dg list defs:*)",
     "Bash(dg list components:*)",
-    "Bash(dg docs component:*)",
     "Bash(dg utils inspect-component:*)",
     "Bash(dg docs integrations:*)",
     "Bash(dg list env:*)",

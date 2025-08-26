@@ -209,6 +209,15 @@ export const SelectionAutoCompleteInput = ({
           setShowResults({current: true});
         }
       });
+
+      cmInstance.current.on('paste', (instance: Editor, event: ClipboardEvent) => {
+        const clipboardData = event.clipboardData;
+        const pastedText = clipboardData?.getData('text')?.replace(/\s+/g, ' ');
+        if (pastedText) {
+          instance.replaceSelection(pastedText);
+          instance.setCursor({line: 0, ch: instance.getCursor().ch + pastedText.length});
+        }
+      });
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);

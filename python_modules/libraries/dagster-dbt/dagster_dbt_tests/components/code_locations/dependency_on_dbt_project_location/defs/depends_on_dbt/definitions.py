@@ -8,7 +8,7 @@ from dagster_dbt import DbtProjectComponent
 @dg.definitions
 def defs(context: dg.ComponentLoadContext) -> dg.Definitions:
     customers_asset_key = context.load_component_at_path(
-        ComponentPath(file_path=Path("jaffle_shop_dbt"), instance_key=0),
+        ComponentPath.from_path(Path(__file__).parent.parent / "jaffle_shop_dbt", instance_key=0),
         expected_type=DbtProjectComponent,
     ).asset_key_for_model("customers")
 
