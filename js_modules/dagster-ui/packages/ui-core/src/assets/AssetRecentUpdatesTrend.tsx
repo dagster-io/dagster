@@ -21,13 +21,12 @@ import {useRecentAssetEvents} from './useRecentAssetEvents';
 import {useRefreshAtInterval} from '../app/QueryRefresh';
 import {Timestamp} from '../app/time/Timestamp';
 import {AssetLatestInfoFragment} from '../asset-data/types/AssetBaseDataProvider.types';
-import {AssetHealthFragment} from '../asset-data/types/AssetHealthDataProvider.types';
 import {AssetEventHistoryEventTypeSelector} from '../graphql/types';
 import {TimeFromNow} from '../ui/TimeFromNow';
 
 const INTERVAL_MSEC = 30 * 1000;
 
-export const AssetRecentUpdatesTrend = React.memo(({asset}: {asset: AssetHealthFragment}) => {
+export const AssetRecentUpdatesTrend = React.memo(({asset}: {asset: {key: {path: string[]}}}) => {
   // Wait 100ms to avoid querying during fast scrolling of the table
   const shouldQuery = useDelayedState(500);
   const {

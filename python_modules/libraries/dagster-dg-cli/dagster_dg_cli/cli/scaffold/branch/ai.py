@@ -33,9 +33,6 @@ class BranchNameGeneration:
     generation_metadata: dict[str, Any]
 
 
-MAX_TURNS = 20
-
-
 def invoke_anthropic_api_direct(
     prompt: str,
     diagnostics: ClaudeDiagnostics,

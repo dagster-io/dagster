@@ -143,7 +143,7 @@ class DatabricksBaseTask(ABC, Generic[T_DatabricksSdkTask]):
 
 
 @record
-class DatabricksNotebookTask(DatabricksBaseTask):
+class DatabricksNotebookTask(DatabricksBaseTask[jobs.NotebookTask]):
     @property
     def task_type(self) -> str:
         return "notebook"
@@ -186,7 +186,7 @@ class DatabricksNotebookTask(DatabricksBaseTask):
 
 
 @record
-class DatabricksConditionTask(DatabricksBaseTask):
+class DatabricksConditionTask(DatabricksBaseTask[jobs.ConditionTask]):
     @property
     def task_type(self) -> str:
         return "condition"
@@ -236,7 +236,7 @@ class DatabricksConditionTask(DatabricksBaseTask):
 
 
 @record
-class DatabricksSparkPythonTask(DatabricksBaseTask):
+class DatabricksSparkPythonTask(DatabricksBaseTask[jobs.SparkPythonTask]):
     @property
     def task_type(self) -> str:
         return "spark_python"
@@ -282,7 +282,7 @@ class DatabricksSparkPythonTask(DatabricksBaseTask):
 
 
 @record
-class DatabricksPythonWheelTask(DatabricksBaseTask):
+class DatabricksPythonWheelTask(DatabricksBaseTask[jobs.PythonWheelTask]):
     @property
     def task_type(self) -> str:
         return "python_wheel"
@@ -331,7 +331,7 @@ class DatabricksPythonWheelTask(DatabricksBaseTask):
 
 
 @record
-class DatabricksSparkJarTask(DatabricksBaseTask):
+class DatabricksSparkJarTask(DatabricksBaseTask[jobs.SparkJarTask]):
     @property
     def task_type(self) -> str:
         return "spark_jar"
@@ -376,7 +376,7 @@ class DatabricksSparkJarTask(DatabricksBaseTask):
 
 
 @record
-class DatabricksJobTask(DatabricksBaseTask):
+class DatabricksJobTask(DatabricksBaseTask[jobs.RunJobTask]):
     @property
     def task_type(self) -> str:
         return "run_job"
@@ -591,9 +591,9 @@ class DatabricksConfig(IHaveNew):
 
 @preview
 class ResolvedDatabricksNewClusterConfig(Resolvable, Model):
-    spark_version: str = "13.3.x-scala2.12"
-    node_type_id: str = "i3.xlarge"
-    num_workers: int = 1
+    spark_version: str
+    node_type_id: str
+    num_workers: int
 
 
 @preview
@@ -603,4 +603,4 @@ class ResolvedDatabricksExistingClusterConfig(Resolvable, Model):
 
 @preview
 class ResolvedDatabricksServerlessConfig(Resolvable, Model):
-    is_serverless: bool
+    is_serverless: bool = True

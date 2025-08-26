@@ -2,7 +2,7 @@
 
 from datetime import datetime
 from time import perf_counter
-from typing import Any, Optional, Protocol
+from typing import Any, Final, Optional, Protocol
 
 from claude_code_sdk import query
 from claude_code_sdk.types import (
@@ -15,6 +15,8 @@ from claude_code_sdk.types import (
 
 from dagster_dg_cli.cli.scaffold.branch.claude.diagnostics import AIInteraction, ClaudeDiagnostics
 from dagster_dg_cli.cli.scaffold.branch.constants import ModelType
+
+MAX_TURNS: Final = 100
 
 
 class OutputChannel(Protocol):
@@ -85,7 +87,7 @@ class ClaudeSDKClient:
             options = ClaudeCodeOptions(
                 allowed_tools=allowed_tools,
                 permission_mode="acceptEdits",  # Auto-accept file edits for scaffolding
-                max_turns=20,  # Match existing MAX_TURNS
+                max_turns=MAX_TURNS,
                 model=model,
             )
 

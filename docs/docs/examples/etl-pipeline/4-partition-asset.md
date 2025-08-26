@@ -67,4 +67,4 @@ Partitions provide operational flexibility by allowing you to launch runs that m
 
 ## Next steps
 
-Now that we have the main assets in our ETL pipeline, it's time to [automate our pipeline](/etl-pipeline-tutorial/automate-your-pipeline).
+Now that we have the main assets in our ETL pipeline, it's time to [automate our pipeline](/examples/etl-pipeline/automate-your-pipeline).
