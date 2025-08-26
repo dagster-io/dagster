@@ -895,15 +895,15 @@ const AssetGraphExplorerWithData = ({
     />
   );
 
-  if (showSidebar) {
-    return (
-      <SplitPanelContainer
-        key="explorer-wrapper"
-        identifier="explorer-wrapper"
-        firstMinSize={300}
-        firstInitialPercent={0}
-        secondMinSize={400}
-        first={
+  return (
+    <SplitPanelContainer
+      key="explorer-wrapper"
+      identifier="explorer-wrapper"
+      firstMinSize={300}
+      firstInitialPercent={0}
+      secondMinSize={400}
+      first={
+        showSidebar ? (
           <AssetGraphExplorerSidebar
             viewType={viewType}
             allAssetKeys={allAssetKeys}
@@ -921,12 +921,11 @@ const AssetGraphExplorerWithData = ({
             onFilterToGroup={onFilterToGroup}
             loading={loading}
           />
-        }
-        second={explorer}
-      />
-    );
-  }
-  return explorer;
+        ) : null
+      }
+      second={explorer}
+    />
+  );
 };
 
 export interface AssetGroup {
