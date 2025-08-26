@@ -1,8 +1,9 @@
 from abc import ABC, abstractmethod
 from asyncio import Task, get_event_loop, run
-from collections.abc import AsyncGenerator, Iterator, Sequence
+from collections.abc import AsyncGenerator, Collection, Iterator, Sequence
 from contextlib import AbstractContextManager, contextmanager
 from enum import Enum
+from inspect import isawaitable
 from typing import TYPE_CHECKING, Any, Generic, Optional, TypeVar, Union, cast
 
 import dagster._check as check
@@ -11,7 +12,15 @@ from dagster._utils.error import serializable_error_info_from_exc_info
 from dagster_graphql.implementation.utils import ErrorCapture
 from dagster_shared.seven import json
 from graphene import Schema
-from graphql import GraphQLError, GraphQLFormattedError
+from graphql import (
+    ASTValidationRule,
+    GraphQLError,
+    GraphQLFormattedError,
+    execute,
+    parse,
+    specified_rules,
+    validate,
+)
 from graphql.execution import ExecutionResult
 from starlette import status
 from starlette.applications import Starlette
@@ -51,14 +60,18 @@ class GraphQLServer(ABC, Generic[TRequestContext]):
     def __init__(self, app_path_prefix: str = ""):
         self._app_path_prefix = app_path_prefix
 
-        self._graphql_schema = self.build_graphql_schema()
+        self._graphene_schema = self.build_graphql_schema()
         self._graphql_middleware = self.build_graphql_middleware()
+        self._graphql_validation_rules = self.build_graphql_validation_rules()
 
     @abstractmethod
     def build_graphql_schema(self) -> Schema: ...
 
     @abstractmethod
     def build_graphql_middleware(self) -> list: ...
+
+    def build_graphql_validation_rules(self) -> Collection[type[ASTValidationRule]]:
+        return specified_rules
 
     @abstractmethod
     def build_middleware(self) -> list[Middleware]: ...
@@ -259,15 +272,46 @@ class GraphQLServer(ABC, Generic[TRequestContext]):
         variables: Optional[dict[str, Any]],
         operation_name: Optional[str],
     ) -> JSONResponse:
+        # Parse
+        try:
+            document = parse(query)
+        except GraphQLError as error:
+            return JSONResponse(
+                {
+                    "data": None,
+                    "errors": self.handle_graphql_errors([error]),
+                },
+                status_code=status.HTTP_400_BAD_REQUEST,
+            )
+
+        # Validate
+        validation_errors = validate(
+            self._graphene_schema.graphql_schema,
+            document,
+            rules=self._graphql_validation_rules,
+        )
+        if validation_errors:
+            return JSONResponse(
+                {
+                    "data": None,
+                    "errors": self.handle_graphql_errors(validation_errors),
+                },
+                status_code=status.HTTP_400_BAD_REQUEST,
+            )
+
+        # Execute
         captured_errors: list[Exception] = []
         with ErrorCapture.watch(captured_errors.append):
-            gql_result = await self._graphql_schema.execute_async(
-                query,
-                variables=variables,
+            gql_result = execute(
+                schema=self._graphene_schema.graphql_schema,
+                document=document,
+                context_value=request_context,
+                variable_values=variables,
                 operation_name=operation_name,
-                context=request_context,
                 middleware=self._graphql_middleware,
             )
+            if isawaitable(gql_result):
+                gql_result = await gql_result
 
         response_data: dict[str, Any] = {"data": gql_result.data}
 
@@ -292,7 +336,7 @@ class GraphQLServer(ABC, Generic[TRequestContext]):
     ) -> tuple[Optional[Task], Optional[GraphQLFormattedError]]:
         with self.request_context(websocket) as request_context:
             try:
-                async_result = await self._graphql_schema.subscribe(
+                async_result = await self._graphene_schema.subscribe(
                     query,
                     variables=variables,
                     operation_name=operation_name,
