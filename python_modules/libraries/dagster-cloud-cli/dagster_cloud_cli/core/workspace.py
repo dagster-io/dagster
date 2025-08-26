@@ -50,19 +50,6 @@ class PexMetadata(
             check.opt_str_param(python_version, "python_version"),
         )
 
-    def resolve_image(self) -> Optional[str]:
-        if not self.python_version:
-            return None
-        agent_image_tag = os.getenv("DAGSTER_CLOUD_AGENT_IMAGE_TAG")
-        serverless_service_name = os.getenv("SERVERLESS_SERVICE_NAME")
-        if not agent_image_tag or not serverless_service_name:
-            return None
-        image_tag = agent_image_tag if self.python_version != "3.8" else _PYTHON_38_BASE_IMAGE_TAG
-        if serverless_service_name in ["serverless-agents", "serverless-agents-public-demo"]:
-            return f"657821118200.dkr.ecr.us-west-2.amazonaws.com/dagster-cloud-serverless-base-py{self.python_version}:{image_tag}"
-        else:
-            return f"878483074102.dkr.ecr.us-west-2.amazonaws.com/dagster-cloud-serverless-base-py{self.python_version}:{image_tag}"
-
 
 # History of CodeLocationDeployData
 # 1. Removal of `enable_metrics` field
