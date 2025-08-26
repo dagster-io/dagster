@@ -154,3 +154,4 @@ fastapi>=0.115.6 # producing a bizarrely early version of fastapi without this
 # -e examples/docs_projects/project_ask_ai_dagster
 # -e examples/docs_projects/project_llm_fine_tune
 # -e examples/docs_projects/project_components_pdf_extraction
+# -e examples/docs_projects/project_dbt

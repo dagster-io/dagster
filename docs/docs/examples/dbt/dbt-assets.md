@@ -1,6 +1,6 @@
 ---
 title: dbt assets
-description: The base dbt assets
+description: The dbt assets
 last_update:
   author: Dennis Hume
 sidebar_position: 40
@@ -12,9 +12,11 @@ Instead of taking that approach in Dagster, we’ll treat each dbt model as an i
 
 ## Parsing the dbt project
 
-<CliInvocationExample path="docs_snippets/docs_snippets/guides/tutorials/dagster-tutorial/commands/dg-scaffold-dbt-component.txt" />
+The best way to integrate a dbt project with Dagster is using the [dbt component](/integrations/libraries/dbt). This can turn a dbt project directory into a collection of assets for each model. We can do this with `dg` and scaffolding the component:
 
-The first step in integrating dbt with Dagster is to parse the dbt project using the `DbtProject` object from the `dagster_dbt` library. You just need to provide the path to the dbt project directory:
+<CliInvocationExample path="docs_projects/project_dbt/commands/dg-scaffold-dbt-component.txt" />
+
+There is no need to edit the scaffolding YAML at this point since the `dg` command generates the correct project path:
 
 ```yaml
 type: dagster_dbt.DbtProjectComponent
@@ -23,18 +25,27 @@ attributes:
   project: '{{ project_root }}/src/project_dbt/analytics'
 ```
 
-Next, we set a translator to help Dagster align dbt models and sources with the appropriate Dagster asset keys. This is necessary because the naming in the dbt project may differ from the asset names used elsewhere in our pipeline:
+## Customizing assets
 
-| dbt Source | Asset Name   |
-| ---------- | ------------ |
-| `zones`    | `taxi_zones` |
-| `trips`    | `taxi_trips` |
+At this point all of the dbt models are represented as assets. However the asset keys do not line up correctly.
 
-To maintain lineage and ensure proper dependency tracking, the translator modifies source names using the `get_asset_key` method. In this case, we prepend `taxi_` to all dbt source names, so that source(`zones`) maps to the existing `taxi_zones` asset in Dagster:
+To solve this problem we can add a `translation` to the scaffolding. This translation allows us to modify the names of the assets we produce within the component:
+
+```yaml
+type: dagster_dbt.DbtProjectComponent
+
+attributes:
+  project: '{{ project_root }}/src/project_dbt/analytics'
+  translation:
+    key: 'taxi_{{ node.name }}'
+    group_name: dbt
+```
+
+This maintains the proper lineage and ensures proper dependency tracking, the translator modifies source names, prepending `taxi_` to all dbt source names, so that source(`zones`) maps to the existing `taxi_zones` asset in Dagster.
 
 ## Incrementals
 
-However, there’s one piece of Dagster-specific logic we do need to introduce: support for incremental models:
+Now that lineage is set, there is one final change we need to make to our scaffolding. As previously mentioned, in our dbt project, the `daily_metrics` is an [incremental model](https://docs.getdbt.com/docs/build/incremental-models). Incremental models optimize performance by avoiding full refreshes, they process only new or modified data based on a time filter.
 
 <CodeExample
   path="docs_projects/project_dbt/src/project_dbt/analytics/models/marts/daily_metrics.sql"
@@ -42,21 +53,14 @@ However, there’s one piece of Dagster-specific logic we do need to introduce: 
   title="src/project_dbt/analytics/models/marts/daily_metrics.sql"
 />
 
-
-[dbt build](https://docs.getdbt.com/reference/commands/build)
-
-```bash
-dbt build --vars "{min_date: '{{ partition_key_range.start }}', max_date: '{{ partition_key_range.end }}'}"
-```
-
-In our dbt project, the `daily_metrics` is an [incremental model](https://docs.getdbt.com/docs/build/incremental-models). Incremental models optimize performance by avoiding full refreshes, they process only new or modified data based on a time filter.
-
 Here's how it works:
 
 - On the first run, the model runs without filters and processes the full dataset.
 - On subsequent runs, dbt applies the `is_incremental()` filter, using `min_date` and `max_date` values that must be provided at runtime.
 
-Since `daily_metrics` is downstream of our partitioned asset `taxi_trips`, we want to manage this temporal logic at the Dagster orchestration level, ensuring that each partitioned run provides the correct date boundaries:
+Since Dagster is executing dbt, we want Dagster to be responsible for passing the variables in the `is_incremental` function of the dbt model. These values will come from the context of the Dagster partition.
+
+We can update the scaffolding YAML to account for partitions:
 
 <CodeExample
   path="docs_projects/project_dbt/src/project_dbt/defs/transform/defs.yaml"

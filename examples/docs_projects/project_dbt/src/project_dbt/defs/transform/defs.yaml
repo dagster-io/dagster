@@ -2,6 +2,9 @@ type: dagster_dbt.DbtProjectComponent
 
 attributes:
   project: '{{ project_root }}/src/project_dbt/analytics'
+  translation:
+    key: "taxi_{{ node.name }}"
+    group_name: dbt
   # highlight-start
   select: "tag:daily"
   translation:
