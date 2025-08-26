@@ -4,6 +4,7 @@ from enum import Enum
 from typing import Any, Callable, Optional, TypedDict
 
 from buildkite_shared.environment import is_feature_branch
+from typing_extensions import NotRequired
 
 DEFAULT_TIMEOUT_IN_MIN = 35
 
@@ -57,22 +58,21 @@ CommandStepConfiguration = TypedDict(
     "CommandStepConfiguration",
     {
         "agents": dict[str, str],
-        "commands": list[str],
-        "depends_on": list[str],
-        "key": str,
         "label": str,
+        "timeout_in_minutes": int,
         "plugins": list[dict[str, object]],
         "retry": dict[str, object],
-        "timeout_in_minutes": int,
-        "skip": Optional[str],
-        "artifact_paths": list[str],
-        "concurrency": int,
-        "concurrency_group": str,
-        "allow_dependency_failure": bool,
-        "soft_fail": bool,
-        "if": str,  # Reserved word handled with quotes
+        "commands": NotRequired[list[str]],
+        "depends_on": NotRequired[list[str]],
+        "key": NotRequired[str],
+        "skip": NotRequired[Optional[str]],
+        "artifact_paths": NotRequired[list[str]],
+        "concurrency": NotRequired[int],
+        "concurrency_group": NotRequired[str],
+        "allow_dependency_failure": NotRequired[bool],
+        "soft_fail": NotRequired[bool],
+        "if": NotRequired[str],  # Reserved word handled with quotes
     },
-    total=False,
 )
 
 
@@ -251,18 +251,14 @@ class CommandStepBuilder:
         return self
 
     def with_retry(self, num_retries):
-        # Always include manual retry configuration to match constructor behavior
-        retry_config: dict[str, object] = {"manual": {"permit_on_passed": True}}
-
-        # Add automatic retry only when appropriate
+        # Update default retry config to blanket limit with num_retries
         if num_retries is not None and num_retries > 0 and self._should_enable_automatic_retry():
-            retry_config["automatic"] = {"limit": num_retries}
+            self._step["retry"]["automatic"] = {"limit": num_retries}
 
-        self._step["retry"] = retry_config
         return self
 
     def on_queue(self, queue: BuildkiteQueue):
-        self._step["agents"]["queue"] = queue.value  # type: ignore
+        self._step["agents"]["queue"] = queue.value
         return self
 
     def with_kubernetes_secret(self, secret: str) -> "CommandStepBuilder":
