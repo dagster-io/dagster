@@ -87,8 +87,8 @@ class TimeWindowPartitionsDefinition(PartitionsDefinition, IHaveNew):
             passed. If end_offset is 0 (the default), the last partition ends before the current
             time. If end_offset is 1, the second-to-last partition ends before the current time,
             and so on.
-        exclusions (Optional[Set[Union[str, datetime]]]): Specifies a set of cron strings or
-            datetime objects that should be excluded from the partition set. Every tick of the
+        exclusions (Optional[Sequence[Union[str, datetime]]]): Specifies a sequence of cron strings
+            or datetime objects that should be excluded from the partition set. Every tick of the
             cron schedule that matches an excluded datetime or matches the tick of an excluded
             cron string will be excluded from the partition set.
 
@@ -100,7 +100,7 @@ class TimeWindowPartitionsDefinition(PartitionsDefinition, IHaveNew):
     fmt: PublicAttr[str]
     end_offset: PublicAttr[int]
     cron_schedule: PublicAttr[str]
-    exclusions: PublicAttr[Optional[set[Union[str, TimestampWithTimezone]]]]
+    exclusions: PublicAttr[Optional[Sequence[Union[str, TimestampWithTimezone]]]]
 
     def __new__(
         cls,
@@ -114,7 +114,7 @@ class TimeWindowPartitionsDefinition(PartitionsDefinition, IHaveNew):
         hour_offset: Optional[int] = None,
         day_offset: Optional[int] = None,
         cron_schedule: Optional[str] = None,
-        exclusions: Optional[set[Union[str, datetime, TimestampWithTimezone]]] = None,
+        exclusions: Optional[Sequence[Union[str, datetime, TimestampWithTimezone]]] = None,
     ):
         check.opt_str_param(timezone, "timezone")
         timezone = timezone or "UTC"
@@ -158,9 +158,9 @@ class TimeWindowPartitionsDefinition(PartitionsDefinition, IHaveNew):
                 " TimeWindowPartitionsDefinition."
             )
 
-        cleaned_exclusions: Optional[set[Union[str, TimestampWithTimezone]]] = None
+        cleaned_exclusions: Optional[Sequence[Union[str, TimestampWithTimezone]]] = None
         if exclusions:
-            check.set_param(
+            check.sequence_param(
                 exclusions,
                 "exclusions",
                 of_type=(str, datetime, TimestampWithTimezone),
@@ -168,22 +168,20 @@ class TimeWindowPartitionsDefinition(PartitionsDefinition, IHaveNew):
             cron_exclusions = [cs for cs in exclusions if isinstance(cs, str)]
             invalid_exclusions = [cs for cs in cron_exclusions if not is_valid_cron_schedule(cs)]
             if invalid_exclusions:
-                if len(invalid_exclusions) == 1:
-                    invalid_exclusion_str = f"'{invalid_exclusions[0]}'"
-                else:
-                    invalid_exclusion_str = "'" + "', '".join(invalid_exclusions) + "'"
+                quoted_exclusions = [f"'{excl}'" for excl in invalid_exclusions]
+                invalid_exclusion_str = ", ".join(quoted_exclusions)
                 raise DagsterInvalidDefinitionError(
                     f"Found invalid cron schedule(s) {invalid_exclusion_str} in the exclusions"
                     " argument for a TimeWindowPartitionsDefinition. Expected a set of valid cron"
                     " strings and datetime objects."
                 )
-            cleaned_exclusions = set()
+            cleaned_exclusions = []
             for exclusion_part in exclusions:
                 if isinstance(exclusion_part, datetime):
                     dt = exclusion_part.replace(tzinfo=get_timezone(timezone))
-                    cleaned_exclusions.add(TimestampWithTimezone(dt.timestamp(), timezone))
+                    cleaned_exclusions.append(TimestampWithTimezone(dt.timestamp(), timezone))
                 else:
-                    cleaned_exclusions.add(exclusion_part)
+                    cleaned_exclusions.append(exclusion_part)
 
         return super().__new__(
             cls,
@@ -504,7 +502,7 @@ class TimeWindowPartitionsDefinition(PartitionsDefinition, IHaveNew):
         # Between python 3.8 and 3.9 the repr of a datetime object changed.
         # Replaces start time with timestamp as a workaround to make sure the repr is consistent across versions.
         # Make sure to update this __repr__ if any new fields are added to TimeWindowPartitionsDefinition.
-        exclusions_str = ", exclusions={self.exclusions}" if self.exclusions else ""
+        exclusions_str = f", exclusions={self.exclusions}" if self.exclusions else ""
         return (
             f"TimeWindowPartitionsDefinition(start={self.start_timestamp},"
             f" end={self.end_timestamp if self.end_timestamp is not None else None},"
@@ -728,9 +726,14 @@ class TimeWindowPartitionsDefinition(PartitionsDefinition, IHaveNew):
         else:
             return current_timestamp_window
 
-    def get_last_partition_window(self, ignore_exclusions: bool = False) -> Optional[TimeWindow]:
+    def get_last_partition_window(self) -> Optional[TimeWindow]:
         return self._get_last_partition_window(
-            self._get_current_timestamp(), ignore_exclusions=ignore_exclusions
+            self._get_current_timestamp(), ignore_exclusions=False
+        )
+
+    def get_last_partition_window_ignoring_exclusions(self) -> Optional[TimeWindow]:
+        return self._get_last_partition_window(
+            self._get_current_timestamp(), ignore_exclusions=True
         )
 
     def get_first_partition_key(self) -> Optional[str]:

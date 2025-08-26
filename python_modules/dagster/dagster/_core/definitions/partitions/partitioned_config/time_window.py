@@ -1,4 +1,4 @@
-from collections.abc import Mapping
+from collections.abc import Mapping, Sequence
 from datetime import datetime
 from typing import Any, Callable, Optional, Union
 
@@ -51,7 +51,7 @@ def hourly_partitioned_config(
     fmt: Optional[str] = None,
     end_offset: int = 0,
     tags_for_partition_fn: Optional[Callable[[datetime, datetime], Mapping[str, str]]] = None,
-    exclusions: Optional[set[Union[str, datetime, TimestampWithTimezone]]] = None,
+    exclusions: Optional[Sequence[Union[str, datetime, TimestampWithTimezone]]] = None,
 ) -> Callable[
     [Callable[[datetime, datetime], Mapping[str, Any]]],
     PartitionedConfig[HourlyPartitionsDefinition],
@@ -85,6 +85,10 @@ def hourly_partitioned_config(
         tags_for_partition_fn (Optional[Callable[[str], Mapping[str, str]]]): A function that
             accepts a partition time window and returns a dictionary of tags to attach to runs for
             that partition.
+        exclusions (Optional[Sequence[Union[str, datetime]]]): Specifies a sequence of cron strings
+            or datetime objects that should be excluded from the partition set. Every tick of the
+            cron schedule that matches an excluded datetime or matches the tick of an excluded
+            cron string will be excluded from the partition set.
 
     .. code-block:: python
 
@@ -136,7 +140,7 @@ def daily_partitioned_config(
     fmt: Optional[str] = None,
     end_offset: int = 0,
     tags_for_partition_fn: Optional[Callable[[datetime, datetime], Mapping[str, str]]] = None,
-    exclusions: Optional[set[Union[str, datetime, TimestampWithTimezone]]] = None,
+    exclusions: Optional[Sequence[Union[str, datetime, TimestampWithTimezone]]] = None,
 ) -> Callable[
     [Callable[[datetime, datetime], Mapping[str, Any]]],
     PartitionedConfig[DailyPartitionsDefinition],
@@ -171,6 +175,10 @@ def daily_partitioned_config(
         tags_for_partition_fn (Optional[Callable[[str], Mapping[str, str]]]): A function that
             accepts a partition time window and returns a dictionary of tags to attach to runs for
             that partition.
+        exclusions (Optional[Sequence[Union[str, datetime]]]): Specifies a sequence of cron strings
+            or datetime objects that should be excluded from the partition set. Every tick of the
+            cron schedule that matches an excluded datetime or matches the tick of an excluded
+            cron string will be excluded from the partition set.
 
     .. code-block:: python
 
@@ -225,7 +233,7 @@ def weekly_partitioned_config(
     fmt: Optional[str] = None,
     end_offset: int = 0,
     tags_for_partition_fn: Optional[Callable[[datetime, datetime], Mapping[str, str]]] = None,
-    exclusions: Optional[set[Union[str, datetime, TimestampWithTimezone]]] = None,
+    exclusions: Optional[Sequence[Union[str, datetime, TimestampWithTimezone]]] = None,
 ) -> Callable[
     [Callable[[datetime, datetime], Mapping[str, Any]]],
     PartitionedConfig[WeeklyPartitionsDefinition],
@@ -264,6 +272,10 @@ def weekly_partitioned_config(
         tags_for_partition_fn (Optional[Callable[[str], Mapping[str, str]]]): A function that
             accepts a partition time window and returns a dictionary of tags to attach to runs for
             that partition.
+        exclusions (Optional[Sequence[Union[str, datetime]]]): Specifies a sequence of cron strings
+            or datetime objects that should be excluded from the partition set. Every tick of the
+            cron schedule that matches an excluded datetime or matches the tick of an excluded
+            cron string will be excluded from the partition set.
 
     .. code-block:: python
 
@@ -318,7 +330,7 @@ def monthly_partitioned_config(
     fmt: Optional[str] = None,
     end_offset: int = 0,
     tags_for_partition_fn: Optional[Callable[[datetime, datetime], Mapping[str, str]]] = None,
-    exclusions: Optional[set[Union[str, datetime, TimestampWithTimezone]]] = None,
+    exclusions: Optional[Sequence[Union[str, datetime, TimestampWithTimezone]]] = None,
 ) -> Callable[
     [Callable[[datetime, datetime], Mapping[str, Any]]],
     PartitionedConfig[MonthlyPartitionsDefinition],
@@ -356,6 +368,10 @@ def monthly_partitioned_config(
         tags_for_partition_fn (Optional[Callable[[str], Mapping[str, str]]]): A function that
             accepts a partition time window and returns a dictionary of tags to attach to runs for
             that partition.
+        exclusions (Optional[Sequence[Union[str, datetime]]]): Specifies a sequence of cron strings
+            or datetime objects that should be excluded from the partition set. Every tick of the
+            cron schedule that matches an excluded datetime or matches the tick of an excluded
+            cron string will be excluded from the partition set.
 
     .. code-block:: python
 

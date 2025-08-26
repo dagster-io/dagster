@@ -212,9 +212,7 @@ def build_schedule_from_partitioned_job(
                         if context.instance_ref is not None
                         else None,
                     ):
-                        window = time_partitions_def.get_last_partition_window(
-                            ignore_exclusions=True
-                        )
+                        window = time_partitions_def.get_last_partition_window_ignoring_exclusions()
                         if not window:
                             return True
                         return not time_partitions_def.is_window_start_excluded(window.start)

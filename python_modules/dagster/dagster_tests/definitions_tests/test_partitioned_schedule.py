@@ -557,7 +557,7 @@ def test_dynamic_multipartitioned_job_schedule():
 
 
 def test_daily_exclusion_schedule():
-    @dg.daily_partitioned_config(start_date="2021-05-05", exclusions={datetime(2021, 5, 6)})
+    @dg.daily_partitioned_config(start_date="2021-05-05", exclusions=[datetime(2021, 5, 6)])
     def my_partitioned_config(start, end):
         return {"start": start.isoformat(), "end": end.isoformat()}
 
@@ -585,7 +585,7 @@ def test_daily_exclusion_schedule():
 
 def test_daily_exclusion_schedule_with_end_offsets():
     @dg.daily_partitioned_config(
-        start_date="2021-05-05", exclusions={datetime(2021, 5, 6)}, end_offset=1
+        start_date="2021-05-05", exclusions=[datetime(2021, 5, 6)], end_offset=1
     )
     def my_partitioned_config(start, end):
         return {"start": start.isoformat(), "end": end.isoformat()}
@@ -606,7 +606,6 @@ def test_daily_exclusion_schedule_with_end_offsets():
     run_request = my_schedule.evaluate_tick(  # pyright: ignore[reportOptionalSubscript,reportAttributeAccessIssue]
         dg.build_schedule_context(scheduled_execution_time=datetime(2021, 5, 7))
     ).run_requests[0]
-    assert tick.run_requests == []
     assert run_request.run_config == {
         "start": "2021-05-07T00:00:00+00:00",
         "end": "2021-05-08T00:00:00+00:00",

@@ -1023,17 +1023,17 @@ def test_invalid_mappings_with_asset_deps():
 
 def test_time_window_partition_mapping_with_exclusions():
     """Test that TimeWindowPartitionMapping correctly handles excluded partitions with datetime exclusions."""
-    excluded_partition_dts = {
+    excluded_partition_dts = [
         datetime(2023, 1, 7),  # Saturday
         datetime(2023, 1, 8),  # Sunday
         datetime(2023, 1, 14),  # Saturday
         datetime(2023, 1, 15),  # Sunday
-    }
+    ]
     partitions_def_with_exclusions = dg.TimeWindowPartitionsDefinition(
         cron_schedule="@daily",
         start="2023-01-01",
         fmt="%Y-%m-%d",
-        exclusions=set(excluded_partition_dts),
+        exclusions=excluded_partition_dts,
     )
 
     @dg.asset(partitions_def=partitions_def_with_exclusions)

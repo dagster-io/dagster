@@ -2330,19 +2330,19 @@ def test_exclusions():
         end="2026-01-01",
         fmt="%Y-%m-%d",
         cron_schedule="0 0 * * *",
-        exclusions={
+        exclusions=[
             "0 0 * * 6-7",  # exclude weekends
-        },
+        ],
     )
     dagsterlabs_calendar = TimeWindowPartitionsDefinition(
         start="2025-01-01",
         end="2026-01-01",
         fmt="%Y-%m-%d",
         cron_schedule="0 0 * * *",  # weekdays only
-        exclusions={
+        exclusions=[
             "0 0 * * 6-7",  # exclude weekends
             *company_holidays,  # exclude company holidays
-        },
+        ],
     )
 
     assert daily_calendar.get_first_partition_key() == "2025-01-01"
@@ -2404,9 +2404,9 @@ def test_exclusions_with_end_offset():
     partitions_def = dg.DailyPartitionsDefinition(
         start_date="2021-05-05",
         end_offset=2,
-        exclusions={
+        exclusions=[
             datetime.strptime("2021-06-04", DATE_FORMAT),
-        },
+        ],
     )
     current_time = datetime.strptime("2021-06-05", DATE_FORMAT)
     partition_context = PartitionLoadingContext(
@@ -2434,9 +2434,9 @@ def test_exclusions_with_negative_end_offset():
     partitions_def = dg.DailyPartitionsDefinition(
         start_date="2021-05-05",
         end_offset=-2,
-        exclusions={
+        exclusions=[
             datetime.strptime("2021-06-01", DATE_FORMAT),
-        },
+        ],
     )
     current_time = datetime.strptime("2021-06-05", DATE_FORMAT)
     partition_context = PartitionLoadingContext(
