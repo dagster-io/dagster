@@ -1,6 +1,7 @@
 ---
 title: Dagster & dbt (Pythonic)
 sidebar_label: dbt (Pythonic)
+description: Orchestrate dbt models.
 sidebar_position: 100
 ---
 

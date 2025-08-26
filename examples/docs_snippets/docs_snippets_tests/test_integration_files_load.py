@@ -74,6 +74,8 @@ EXCLUDED_FILES = {
     f"{snippets_folder}/dbt/tutorial/upstream_assets/assets.py",
     f"{snippets_folder}/dbt/tutorial/upstream_assets/definitions.py",
     f"{snippets_folder}/dbt/tutorial/upstream_assets/project.py",
+    f"{snippets_folder}/dbt/pythonic/assets.py",
+    f"{snippets_folder}/dbt/pythonic/resources.py",
     f"{snippets_folder}/dbt/dbt_cloud_observability.py",
     f"{snippets_folder}/dbt/dbt_cloud_orchestration.py",
     f"{snippets_folder}/deltalake/multi_partition.py",
