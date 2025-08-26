@@ -201,7 +201,7 @@ async def get_asset_check_status_and_metadata(
         if not context.asset_graph.has(
             asset_key
         ) or not context.asset_graph.get_check_keys_for_assets({asset_key}):
-            return AssetHealthStatus.UNKNOWN, None
+            return AssetHealthStatus.NOT_APPLICABLE, None
 
         remote_check_nodes = context.asset_graph.get_checks_for_asset(asset_key)
         asset_check_health_state = await AssetCheckHealthState.compute_for_asset_checks(
