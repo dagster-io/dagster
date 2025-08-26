@@ -1,0 +1,14 @@
+type: dagster_dbt.DbtProjectComponent
+
+attributes:
+  project: '{{ project_root }}/src/project_dbt/analytics'
+  # highlight-start
+  select: "tag:daily"
+  translation:
+    partitions_def: {{ daily_partitions_def }}
+  cli_args:
+    - build
+    - vars:
+        min_date: {{ partition_key_range.start }}
+        max_date: {{ partition_key_range.end }}
+  # highlight-end

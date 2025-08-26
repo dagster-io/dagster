@@ -3,7 +3,7 @@ name = "project_dbt"
 requires-python = ">=3.9,<3.14"
 version = "0.1.0"
 dependencies = [
-    "dagster==1.11.1",
+    "dagster",
     "dagster-dg-cli",
     "dagster-webserver",
     "dagster-duckdb",

@@ -12,42 +12,27 @@ Instead of taking that approach in Dagster, we’ll treat each dbt model as an i
 
 ## Parsing the dbt project
 
+<CliInvocationExample path="docs_snippets/docs_snippets/guides/tutorials/dagster-tutorial/commands/dg-scaffold-dbt-component.txt" />
+
 The first step in integrating dbt with Dagster is to parse the dbt project using the `DbtProject` object from the `dagster_dbt` library. You just need to provide the path to the dbt project directory:
 
-<CodeExample
-  path="docs_projects/project_dbt/src/project_dbt/defs/assets/dbt.py"
-  language="python"
-  startAfter="start_dbt_project"
-  endBefore="end_dbt_project"
-  title="src/project_dbt/defs/assets/dbt.py"
-/>
+```yaml
+type: dagster_dbt.DbtProjectComponent
+
+attributes:
+  project: '{{ project_root }}/src/project_dbt/analytics'
+```
 
 Next, we set a translator to help Dagster align dbt models and sources with the appropriate Dagster asset keys. This is necessary because the naming in the dbt project may differ from the asset names used elsewhere in our pipeline:
 
-<CodeExample
-  path="docs_projects/project_dbt/src/project_dbt/analytics/models/sources/raw_taxis.yml"
-  language="yaml"
-  title="src/project_dbt/analytics/models/sources/raw_taxis.yml"
-/>
-
-| dbt Source | Asset Name |
-| --- | --- |
-| `zones` | `taxi_zones` |
-| `trips` | `taxi_trips` |
+| dbt Source | Asset Name   |
+| ---------- | ------------ |
+| `zones`    | `taxi_zones` |
+| `trips`    | `taxi_trips` |
 
 To maintain lineage and ensure proper dependency tracking, the translator modifies source names using the `get_asset_key` method. In this case, we prepend `taxi_` to all dbt source names, so that source(`zones`) maps to the existing `taxi_zones` asset in Dagster:
 
-<CodeExample
-  path="docs_projects/project_dbt/src/project_dbt/defs/assets/dbt.py"
-  language="python"
-  startAfter="start_dbt_project"
-  endBefore="end_dbt_project"
-  title="src/project_dbt/defs/assets/dbt.py"
-/>
-
 ## Incrementals
-
-The final step is to generate Dagster assets from the dbt project. Fortunately, Dagster can automatically create asset definitions by parsing the dbt project path with no need to manually define each model.
 
 However, there’s one piece of Dagster-specific logic we do need to introduce: support for incremental models:
 
@@ -57,28 +42,33 @@ However, there’s one piece of Dagster-specific logic we do need to introduce: 
   title="src/project_dbt/analytics/models/marts/daily_metrics.sql"
 />
 
-In our dbt project, the model `daily_metrics` is incremental. Incremental models optimize performance by avoiding full refreshes, they process only new or modified data based on a time filter.
+
+[dbt build](https://docs.getdbt.com/reference/commands/build)
+
+```bash
+dbt build --vars "{min_date: '{{ partition_key_range.start }}', max_date: '{{ partition_key_range.end }}'}"
+```
+
+In our dbt project, the `daily_metrics` is an [incremental model](https://docs.getdbt.com/docs/build/incremental-models). Incremental models optimize performance by avoiding full refreshes, they process only new or modified data based on a time filter.
 
 Here's how it works:
 
-* On the first run, the model runs without filters and processes the full dataset.
-* On subsequent runs, dbt applies the `is_incremental()` filter, using `min_date` and `max_date` values that must be provided at runtime.
+- On the first run, the model runs without filters and processes the full dataset.
+- On subsequent runs, dbt applies the `is_incremental()` filter, using `min_date` and `max_date` values that must be provided at runtime.
 
 Since `daily_metrics` is downstream of our partitioned asset `taxi_trips`, we want to manage this temporal logic at the Dagster orchestration level, ensuring that each partitioned run provides the correct date boundaries:
 
 <CodeExample
-  path="docs_projects/project_dbt/src/project_dbt/defs/assets/dbt.py"
-  language="python"
-  startAfter="start_dbt_assets"
-  endBefore="end_dbt_assets"
-  title="src/project_dbt/defs/assets/dbt.py"
+  path="docs_projects/project_dbt/src/project_dbt/defs/transform/defs.yaml"
+  language="yaml"
+  title="src/project_dbt/defs/transform/defs.yaml"
 />
 
 This design allows us to:
 
-* Automatically configure incremental filters using partition context.
-* Maintain consistent partitioning across upstream and downstream assets.
-* Execute incremental updates or full backfills with flexibility.
+- Automatically configure incremental filters using partition context.
+- Maintain consistent partitioning across upstream and downstream assets.
+- Execute incremental updates or full backfills with flexibility.
 
 Best of all, this setup applies automatically to all dbt models in the project. If you add more models in the future, whether incremental or not, Dagster will handle them using the same pattern, with no need for structural changes.
 

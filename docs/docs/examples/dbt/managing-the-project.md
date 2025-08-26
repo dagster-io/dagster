@@ -16,8 +16,8 @@ Both the `taxi_trips` asset and the dbt-generated assets are partitioned to repr
 
 To support this, the codebase defines two separate partition definitions over the same time range:
 
-* `monthly_partition` – used by the `taxi_trips` asset.
-* `daily_partition` – used by `get_dbt_partitioned_models`.
+- `monthly_partition` – used by the `taxi_trips` asset.
+- `daily_partition` – used by `get_dbt_partitioned_models`.
 
 <CodeExample
   path="docs_projects/project_dbt/src/project_dbt/defs/partitions.py"
@@ -29,8 +29,8 @@ This design gives you the flexibility to control data ingestion and transformati
 
 You can observe this difference in the asset graph:
 
-* `taxi_trips` references 3 partitions (e.g., 2024-05, 2024-06, 2024-07).
-* dbt assets reference 90 partitions (one for each day across those 3 months).
+- `taxi_trips` references 3 partitions (e.g., 2024-05, 2024-06, 2024-07).
+- dbt assets reference 90 partitions (one for each day across those 3 months).
 
 ![2048 resolution](/images/examples/dbt/asset_graph_partitions.png)
 
@@ -55,11 +55,5 @@ This pattern allows for seamless integration across both hand-coded and dbt-deri
   language="python"
   title="src/project_dbt/defs/assets/metrics.py"
 />
-
-To view all the assets currently defined—including both manually defined assets and those inferred from dbt, you can run:
-
-```
-dg list defs
-```
 
 This will list all available Dagster asset keys, helping you verify model names, check dependencies, or debug execution plans.
