@@ -157,7 +157,7 @@ const AssetSidebarAssetLabel = ({
   });
 
   // This is a hack: prevent showing the popover for a second in case we are scrolling very fast.
-  // This is to workaround a bug with blueprint's Popover's ResizeSensor causing an infinite loop during the animated scrolling.
+  // This is to workaround a bug with blueprint Popover's ResizeSensor causing an infinite loop during the animated scrolling.
   const canShowPopover = useDelayedState(1000);
 
   return (
