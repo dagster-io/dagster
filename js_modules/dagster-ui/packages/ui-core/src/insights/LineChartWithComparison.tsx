@@ -337,6 +337,7 @@ export const InnerLineChartWithComparison = <T,>(props: Props<T>) => {
       if (element) {
         const index = element.index;
         let timeSliceSeconds = 60 * 60; // Default to 1 hour
+
         if (metrics.currentPeriod.timestamps.length >= 2) {
           const timeSliceStart = metrics.currentPeriod.timestamps[0];
           const timeSliceEnd = metrics.currentPeriod.timestamps[1];
@@ -347,23 +348,19 @@ export const InnerLineChartWithComparison = <T,>(props: Props<T>) => {
 
         const currentTime = metrics.currentPeriod.timestamps[index];
         const previousTime = metrics.prevPeriod.timestamps[index];
-        const currentDataAtIndex = metrics.currentPeriod.data[index];
-        const previousDataAtIndex = metrics.prevPeriod.data[index];
 
-        const current =
-          currentTime && currentDataAtIndex
-            ? {
-                before: currentTime - timeSliceSeconds,
-                after: currentTime,
-              }
-            : undefined;
-        const previous =
-          previousTime && previousDataAtIndex
-            ? {
-                before: previousTime - timeSliceSeconds,
-                after: previousTime,
-              }
-            : undefined;
+        const current = currentTime
+          ? {
+              after: currentTime - timeSliceSeconds,
+              before: currentTime,
+            }
+          : undefined;
+        const previous = previousTime
+          ? {
+              after: previousTime - timeSliceSeconds,
+              before: previousTime,
+            }
+          : undefined;
 
         if (current || previous) {
           openMetricDialog({
