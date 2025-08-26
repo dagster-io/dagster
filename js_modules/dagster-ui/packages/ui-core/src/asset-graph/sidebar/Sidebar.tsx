@@ -329,6 +329,13 @@ export const AssetGraphExplorerSidebar = React.memo(
     }, [viewType]);
 
     React.useLayoutEffect(() => {
+      /**
+       * This effect is in charge of updating which nodes are open in the sidebar.
+       * It attempts to open the nodes that are ancestors of the last selected node
+       * so that the last selected node is visible in the sidebar. A node that isn't visible
+       * can be selected by clicking it on in the graph or clicking on the asset in one of the
+       * asset dialogs for example UpstreamDownstreamDialog.
+       */
       if (lastSelectedNode) {
         // Update root-to-leaf view
         setOpenNodesRootToLeaf((prevOpenNodes) => {
@@ -414,13 +421,9 @@ export const AssetGraphExplorerSidebar = React.memo(
         setSelectedNodeRootToLeaf(null);
         setSelectedNodeLeafToRoot(null);
       }
-    }, [
-      lastSelectedNode,
-      graphData,
-      sidebarViewType,
-      selectedNodeRootToLeaf?.id,
-      selectedNodeLeafToRoot?.id,
-    ]);
+      // We only want to update the open nodes when the last selected node changes or the graph data changes.
+      // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [lastSelectedNode, graphData]);
 
     const [expandedPanel, setExpandedPanel] = React.useState<'bottom' | 'top' | null>(null);
 
