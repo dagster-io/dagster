@@ -7,7 +7,6 @@ import {
   Icon,
   Mono,
   Spinner,
-  Subheading,
 } from '@dagster-io/ui-components';
 import {
   CategoryScale,
@@ -57,7 +56,7 @@ export const getDataset = (
 ): ChartData<'line', (number | null)[], string>['datasets'] => {
   return [
     {
-      label: metrics.currentPeriod.label,
+      label: `current: ${metrics.currentPeriod.label}`,
       data: metrics.currentPeriod.data,
       borderColor: metrics.currentPeriod.color,
       backgroundColor: 'transparent',
@@ -67,7 +66,7 @@ export const getDataset = (
       pointHoverBorderColor: metrics.currentPeriod.color,
     },
     {
-      label: metrics.prevPeriod.label,
+      label: `previous: ${metrics.prevPeriod.label}`,
       data: metrics.prevPeriod.data,
       borderColor: metrics.prevPeriod.color,
       backgroundColor: 'transparent',
@@ -138,32 +137,55 @@ export const InnerLineChartWithComparison = <T,>(props: Props<T>) => {
     useCallback(
       ({context}: {context: Context}) => {
         const {tooltip} = context;
-        const currentPeriodDataPoint = tooltip.dataPoints[0];
-        const prevPeriodDataPoint = tooltip.dataPoints[1];
+        const currentPeriodDataPoint = tooltip.dataPoints.find((point) =>
+          point.dataset.label?.startsWith('current:'),
+        );
+        const prevPeriodDataPoint = tooltip.dataPoints.find((point) =>
+          point.dataset.label?.startsWith('previous:'),
+        );
 
-        if (!currentPeriodDataPoint || !prevPeriodDataPoint) {
+        if (!currentPeriodDataPoint && !prevPeriodDataPoint) {
           return <div />;
         }
 
-        const timestamp = metrics.currentPeriod.timestamps[currentPeriodDataPoint.dataIndex];
-        if (!timestamp) {
+        const currentTimestamp = currentPeriodDataPoint
+          ? metrics.currentPeriod.timestamps[currentPeriodDataPoint.dataIndex]
+          : null;
+        const previousTimestamp = prevPeriodDataPoint
+          ? metrics.prevPeriod.timestamps[prevPeriodDataPoint.dataIndex]
+          : null;
+
+        if (!currentTimestamp && !previousTimestamp) {
           return <div />;
         }
 
-        const date = formatDatetime(new Date(timestamp * 1000), {
-          month: 'short',
-          day: 'numeric',
-          hour: 'numeric',
-          minute: 'numeric',
-        });
-        const currentPeriodMetric = metrics.currentPeriod.data[currentPeriodDataPoint.dataIndex];
+        const currentPeriodDate = currentTimestamp
+          ? formatDatetime(new Date(currentTimestamp * 1000), {
+              month: 'short',
+              day: 'numeric',
+              hour: 'numeric',
+              minute: 'numeric',
+            })
+          : null;
+        const previousPeriodDate = previousTimestamp
+          ? formatDatetime(new Date(previousTimestamp * 1000), {
+              month: 'short',
+              day: 'numeric',
+              hour: 'numeric',
+              minute: 'numeric',
+            })
+          : null;
+
+        const currentPeriodMetric = currentPeriodDataPoint
+          ? metrics.currentPeriod.data[currentPeriodDataPoint.dataIndex]
+          : null;
+        const previousPeriodMetric = prevPeriodDataPoint
+          ? metrics.prevPeriod.data[prevPeriodDataPoint.dataIndex]
+          : null;
 
         return (
           <TooltipCard>
             <Box flex={{direction: 'column'}}>
-              <Box border="bottom" padding={{horizontal: 12, vertical: 8}}>
-                <Subheading>{date}</Subheading>
-              </Box>
               <Box padding={{horizontal: 16, vertical: 12}}>
                 <Box
                   flex={{direction: 'row', justifyContent: 'space-between'}}
@@ -176,12 +198,13 @@ export const InnerLineChartWithComparison = <T,>(props: Props<T>) => {
                         height: 8,
                         backgroundColor: metrics.currentPeriod.color,
                         borderRadius: '50%',
+                        fontVariantNumeric: 'tabular-nums',
                       }}
                     />
-                    <Body>Current period</Body>
+                    <Body>{currentPeriodDate ?? <>&mdash;</>}</Body>
                   </Box>
                   <Box flex={{direction: 'row', alignItems: 'center', gap: 4}}>
-                    <Mono>{currentPeriodDataPoint?.formattedValue ?? 0}</Mono>
+                    <Mono>{currentPeriodDataPoint?.formattedValue ?? <>&mdash;</>}</Mono>
                     <Body color={Colors.textLight()}>{unitTypeToLabel[unitType]}</Body>
                   </Box>
                 </Box>
@@ -193,17 +216,18 @@ export const InnerLineChartWithComparison = <T,>(props: Props<T>) => {
                         height: 8,
                         backgroundColor: metrics.prevPeriod.color,
                         borderRadius: '50%',
+                        fontVariantNumeric: 'tabular-nums',
                       }}
                     />
-                    <Body>Previous period</Body>
+                    <Body>{previousPeriodDate}</Body>
                   </Box>
                   <Box flex={{direction: 'row', alignItems: 'center', gap: 4}}>
-                    <Mono>{prevPeriodDataPoint?.formattedValue ?? 0}</Mono>
+                    <Mono>{prevPeriodDataPoint?.formattedValue ?? <>&mdash;</>}</Mono>
                     <Body color={Colors.textLight()}>{unitTypeToLabel[unitType]}</Body>
                   </Box>
                 </Box>
               </Box>
-              {currentPeriodMetric && openMetricDialog ? (
+              {(currentPeriodMetric || previousPeriodMetric) && openMetricDialog ? (
                 <Box padding={{horizontal: 12, vertical: 8}} border="top">
                   <Body color={Colors.textLight()}>Click to view details</Body>
                 </Box>
@@ -292,7 +316,7 @@ export const InnerLineChartWithComparison = <T,>(props: Props<T>) => {
 
   const chartRef = useRef(null);
   const onClick = (event: React.MouseEvent<HTMLCanvasElement>) => {
-    if (!chartRef.current) {
+    if (!chartRef.current || !openMetricDialog) {
       return;
     }
 
@@ -322,26 +346,29 @@ export const InnerLineChartWithComparison = <T,>(props: Props<T>) => {
         }
 
         const currentTime = metrics.currentPeriod.timestamps[index];
-        if (typeof currentTime !== 'number') {
-          return;
-        }
+        const previousTime = metrics.prevPeriod.timestamps[index];
+        const currentDataAtIndex = metrics.currentPeriod.data[index];
+        const previousDataAtIndex = metrics.prevPeriod.data[index];
 
-        const previousTime = metrics.prevPeriod.timestamps[index] ?? undefined;
+        const current =
+          currentTime && currentDataAtIndex
+            ? {
+                before: currentTime - timeSliceSeconds,
+                after: currentTime,
+              }
+            : undefined;
+        const previous =
+          previousTime && previousDataAtIndex
+            ? {
+                before: previousTime - timeSliceSeconds,
+                after: previousTime,
+              }
+            : undefined;
 
-        // Only open the dialog if data exists for the clicked index
-        // in the current period
-        if (metrics.currentPeriod.data[index] && openMetricDialog) {
+        if (current || previous) {
           openMetricDialog({
-            current: {
-              before: currentTime - timeSliceSeconds,
-              after: currentTime,
-            },
-            previous: previousTime
-              ? {
-                  before: previousTime - timeSliceSeconds,
-                  after: previousTime,
-                }
-              : undefined,
+            current,
+            previous,
             metric: metricName,
             unitType,
           });

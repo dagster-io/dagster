@@ -2,6 +2,8 @@ import os
 from collections.abc import Iterator
 from typing import Optional
 
+from dagster_shared.utils.timing import format_duration
+
 import dagster._check as check
 from dagster._core.events import DagsterEvent, EngineEventData
 from dagster._core.execution.api import ExecuteRunWithPlanIterable
@@ -12,7 +14,7 @@ from dagster._core.execution.plan.instance_concurrency_context import InstanceCo
 from dagster._core.execution.plan.plan import ExecutionPlan
 from dagster._core.execution.retries import RetryMode
 from dagster._core.executor.base import Executor
-from dagster._utils.timing import format_duration, time_execution_scope
+from dagster._utils.timing import time_execution_scope
 
 
 def inprocess_execution_iterator(

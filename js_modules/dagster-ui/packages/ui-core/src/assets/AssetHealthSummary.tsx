@@ -38,17 +38,39 @@ import {TimeFromNow} from '../ui/TimeFromNow';
 import {numberFormatter} from '../ui/formatters';
 
 export const AssetHealthSummary = React.memo(
-  ({assetKey, iconOnly}: {assetKey: {path: string[]}; iconOnly?: boolean}) => {
+  ({
+    assetKey,
+    iconOnly,
+    canShowPopover = true,
+  }: {
+    assetKey: {path: string[]};
+    iconOnly?: boolean;
+    canShowPopover?: boolean;
+  }) => {
     if (!observeEnabled()) {
       return null;
     }
 
-    return <AssetHealthSummaryImpl assetKey={assetKey} iconOnly={iconOnly} />;
+    return (
+      <AssetHealthSummaryImpl
+        assetKey={assetKey}
+        iconOnly={iconOnly}
+        canShowPopover={canShowPopover}
+      />
+    );
   },
 );
 
 const AssetHealthSummaryImpl = React.memo(
-  ({assetKey, iconOnly}: {assetKey: {path: string[]}; iconOnly?: boolean}) => {
+  ({
+    assetKey,
+    iconOnly,
+    canShowPopover,
+  }: {
+    assetKey: {path: string[]};
+    iconOnly?: boolean;
+    canShowPopover?: boolean;
+  }) => {
     const {liveData} = useAssetHealthData(assetKey);
     const health = liveData?.assetHealth;
 
@@ -83,7 +105,11 @@ const AssetHealthSummaryImpl = React.memo(
     }
 
     return (
-      <AssetHealthSummaryPopover assetKey={assetKey} health={health}>
+      <AssetHealthSummaryPopover
+        assetKey={assetKey}
+        health={health}
+        canShowPopover={canShowPopover}
+      >
         {content()}
       </AssetHealthSummaryPopover>
     );
@@ -94,10 +120,12 @@ export const AssetHealthSummaryPopover = ({
   health,
   assetKey,
   children,
+  canShowPopover = true,
 }: {
   health: AssetHealthFragment['assetHealth'] | undefined;
   assetKey: AssetKeyInput;
   children: React.ReactNode;
+  canShowPopover?: boolean;
 }) => {
   const {iconName, iconColor, text} = useMemo(() => {
     return statusToIconAndColor[health?.assetHealth ?? 'undefined'];
@@ -106,6 +134,7 @@ export const AssetHealthSummaryPopover = ({
   return (
     <Popover
       interactionKind="hover"
+      isOpen={canShowPopover ? undefined : false}
       content={
         <div onClick={(e) => e.stopPropagation()}>
           <Box padding={12} flex={{direction: 'row', alignItems: 'center', gap: 6}} border="bottom">
@@ -400,6 +429,7 @@ export const STATUS_INFO: Record<
     backgroundColor: string;
     hoverBackgroundColor: string;
     text2: string;
+    materializationText: string;
   }
 > = {
   'Not Applicable': {
@@ -409,6 +439,7 @@ export const STATUS_INFO: Record<
     textColor: Colors.textDefault(),
     text: 'Unknown',
     text2: 'None set',
+    materializationText: 'Not applicable',
     intent: 'none',
     subStatusIconName: 'missing',
     borderColor: Colors.accentGray(),
@@ -423,6 +454,7 @@ export const STATUS_INFO: Record<
     text: 'Unknown',
     text2: 'Not evaluated',
     intent: 'none',
+    materializationText: 'Never materialized',
     subStatusIconName: 'missing',
     borderColor: Colors.accentGray(),
     backgroundColor: Colors.backgroundGray(),
@@ -432,6 +464,7 @@ export const STATUS_INFO: Record<
     iconName: 'failure_trend',
     iconName2: 'cancel',
     subStatusIconName: 'close',
+    materializationText: 'Failed',
     iconColor: Colors.accentRed(),
     textColor: Colors.textRed(),
     text: 'Degraded',
@@ -444,6 +477,7 @@ export const STATUS_INFO: Record<
   Warning: {
     iconName: 'warning_trend',
     iconName2: 'warning_outline',
+    materializationText: 'Not applicable',
     subStatusIconName: 'warning_outline',
     iconColor: Colors.accentYellow(),
     text: 'Warning',
@@ -458,6 +492,7 @@ export const STATUS_INFO: Record<
     iconName: 'successful_trend',
     iconName2: 'check_circle',
     subStatusIconName: 'done',
+    materializationText: 'Success',
     iconColor: Colors.accentGreen(),
     textColor: Colors.textDefault(),
     text: 'Healthy',

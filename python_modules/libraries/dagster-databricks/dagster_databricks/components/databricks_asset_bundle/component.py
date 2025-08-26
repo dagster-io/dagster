@@ -18,6 +18,7 @@ from dagster_databricks.components.databricks_asset_bundle.configs import (
     DATABRICKS_UNKNOWN_TASK_TYPE,
     DatabricksBaseTask,
     DatabricksConfig,
+    DatabricksUnknownTask,
     ResolvedDatabricksExistingClusterConfig,
     ResolvedDatabricksNewClusterConfig,
     ResolvedDatabricksServerlessConfig,
@@ -90,41 +91,39 @@ class DatabricksAssetBundleComponent(Component, Resolvable):
             ],
         ),
     ]
-    compute_config: Optional[
-        Annotated[
-            Union[
+    compute_config: Annotated[
+        Union[
+            ResolvedDatabricksNewClusterConfig,
+            ResolvedDatabricksExistingClusterConfig,
+            ResolvedDatabricksServerlessConfig,
+        ],
+        Resolver.default(
+            model_field_type=Union[
                 ResolvedDatabricksNewClusterConfig,
                 ResolvedDatabricksExistingClusterConfig,
                 ResolvedDatabricksServerlessConfig,
             ],
-            Resolver.default(
-                model_field_type=Union[
-                    ResolvedDatabricksNewClusterConfig,
-                    ResolvedDatabricksExistingClusterConfig,
-                    ResolvedDatabricksServerlessConfig,
-                ],
-                description=(
-                    "A mapping defining a Databricks compute config. "
-                    "Allowed types are databricks_asset_bundle.configs.ResolvedDatabricksNewClusterConfig, "
-                    "databricks_asset_bundle.configs.ResolvedDatabricksExistingClusterConfig and "
-                    "databricks_asset_bundle.configs.ResolvedDatabricksServerlessConfig. Optional."
-                ),
-                examples=[
-                    {
-                        "spark_version": "test_spark_version",
-                        "node_type_id": "node_type_id",
-                        "num_workers": 1,
-                    },
-                    {
-                        "existing_cluster_id": "existing_cluster_id",
-                    },
-                    {
-                        "is_serverless": True,
-                    },
-                ],
+            description=(
+                "A mapping defining a Databricks compute config. "
+                "Allowed types are databricks_asset_bundle.configs.ResolvedDatabricksNewClusterConfig, "
+                "databricks_asset_bundle.configs.ResolvedDatabricksExistingClusterConfig and "
+                "databricks_asset_bundle.configs.ResolvedDatabricksServerlessConfig."
             ),
-        ]
-    ] = field(default_factory=ResolvedDatabricksNewClusterConfig)
+            examples=[
+                {
+                    "spark_version": "some_spark_version",
+                    "node_type_id": "some_node_type_id",
+                    "num_workers": 1,
+                },
+                {
+                    "existing_cluster_id": "some_existing_cluster_id",
+                },
+                {
+                    "is_serverless": True,
+                },
+            ],
+        ),
+    ] = field(default_factory=ResolvedDatabricksServerlessConfig)
     op: Annotated[
         Optional[OpSpec],
         Resolver.default(
@@ -132,6 +131,10 @@ class DatabricksAssetBundleComponent(Component, Resolvable):
             examples=[
                 {
                     "name": "some_op",
+                    "tags": {"some_tag": "some_value"},
+                    "description": "some_description",
+                    "pool": "some_pool",
+                    "backfill_policy": {"type": "single_run"},
                 },
             ],
         ),
@@ -160,7 +163,14 @@ class DatabricksAssetBundleComponent(Component, Resolvable):
                 ),
                 **({"libraries": MetadataValue.json(task.libraries)} if task.libraries else {}),
             },
-            deps=[snake_case(dep_config.task_key) for dep_config in task.depends_on or []],
+            deps=[
+                self.get_asset_spec(
+                    task=DatabricksUnknownTask.from_job_task_config(
+                        {"task_key": dep_config.task_key}
+                    )
+                ).key
+                for dep_config in task.depends_on
+            ],
         )
 
     def build_defs(self, context: ComponentLoadContext) -> Definitions:
@@ -170,10 +180,14 @@ class DatabricksAssetBundleComponent(Component, Resolvable):
 
         @multi_asset(
             name=self.op.name
-            if self.op
+            if self.op and self.op.name
             else f"databricks_tasks_multi_asset_{component_defs_path_as_python_str}",
             specs=[self.get_asset_spec(task=task) for task in self.databricks_config.tasks],
             can_subset=True,
+            op_tags=self.op.tags if self.op else None,
+            description=self.op.description if self.op else None,
+            pool=self.op.pool if self.op else None,
+            backfill_policy=self.op.backfill_policy if self.op else None,
         )
         def databricks_tasks_multi_asset(
             context: AssetExecutionContext,
