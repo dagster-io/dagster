@@ -1,5 +1,5 @@
 import os
-from collections.abc import Iterable, Mapping
+from collections.abc import Iterable, Mapping, Sequence
 from dataclasses import dataclass
 from glob import glob
 from pathlib import Path
@@ -160,7 +160,7 @@ class PackageSpec:
         if self.run_pytest:
             default_python_versions = AvailablePythonVersion.get_pytest_defaults()
 
-            tox_factors: list[Optional[ToxFactor]] = (
+            tox_factors: Sequence[Optional[ToxFactor]] = (
                 self.pytest_tox_factors if self.pytest_tox_factors else [None]
             )
 
