@@ -14,7 +14,10 @@ from typing_extensions import Self
 import dagster._check as check
 from dagster._config.snap import ConfigTypeSnap
 from dagster._core.definitions.asset_key import AssetKey
-from dagster._core.definitions.assets.graph.remote_asset_graph import RemoteRepositoryAssetNode
+from dagster._core.definitions.assets.graph.remote_asset_graph import (
+    RemoteAssetGraph,
+    RemoteRepositoryAssetNode,
+)
 from dagster._core.definitions.data_time import CachingDataTimeResolver
 from dagster._core.definitions.data_version import CachingStaleStatusResolver
 from dagster._core.definitions.partitions.context import partition_loading_context
@@ -397,7 +400,9 @@ class BaseWorkspaceRequestContext(LoadingContext):
         code_location = self.get_code_location(code_location_name)
         return code_location.get_notebook_data(notebook_path=notebook_path)
 
-    def get_base_deployment_asset_graph(self) -> Optional["RemoteWorkspaceAssetGraph"]:
+    def get_base_deployment_asset_graph(
+        self, repository_selector: Optional["RepositorySelector"]
+    ) -> Optional["RemoteAssetGraph"]:
         return None
 
     def get_repository(
