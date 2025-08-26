@@ -430,8 +430,6 @@ export const AssetGraphExplorerSidebar = React.memo(
       return 'repeat(2, minmax(0, 1fr))';
     }, [expandedPanel]);
 
-    console.log({isTopPanelHidden, isBottomPanelHidden});
-
     return (
       <div
         style={{
@@ -615,6 +613,9 @@ const ButtonGroupWrapper = styled.div`
     grid-template-columns: 1fr 1fr;
     > * {
       place-content: center;
+    }
+    span {
+      flex: initial;
     }
   }
 `;
