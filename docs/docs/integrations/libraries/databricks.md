@@ -24,9 +24,9 @@ partnerlink: https://databricks.com/
 
 ## Serverless compute example
 
-Using pipes with Databricks serverless compute is slightly different. First, you can't specify library dependencies, you must instead define dagster-pipes as a dependency in the notebook environoment.
+Using pipes with Databricks serverless compute is slightly different. First, you can't specify library dependencies, you must instead define dagster-pipes as a dependency in the notebook environment.
 
-Second, we use Volumes for context loading and messaging writing because dbfs is unreliable for serverless compute.
+Second, You must use Volumes for context loading and message writing, since dbfs is incompatible with serverless compute.
 
 <CodeExample path="docs_snippets/docs_snippets/integrations/databricks/dagster_code_serverless.py" language="python" />
 
