@@ -4,7 +4,7 @@ description: Asset health alerts and freshness alerts keep you informed about th
 sidebar_position: 600
 ---
 
-The [Dagster+ Summer Update](/guides/labs/observability-update) introduces two new ways to alert on the status of your assets: asset health alerts and freshness alerts. 
+The [Dagster+ Summer Update](/guides/labs/observability-update) introduces two new ways to alert on the status of your assets: asset health alerts and freshness alerts.
 
 ## Enabling new alerts
 
