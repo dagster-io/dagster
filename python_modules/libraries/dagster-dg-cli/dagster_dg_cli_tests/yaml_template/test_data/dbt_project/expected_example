@@ -8,6 +8,9 @@ attributes:
     target: "example_string"
     packaged_project_dir: "example_string"
     state_path: "example_string"
+  cli_args:
+    -
+      key: "value"
   op:
     name: "example_string"
     tags:

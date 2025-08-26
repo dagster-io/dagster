@@ -270,6 +270,7 @@ export const AssetCatalogTableV2 = React.memo(() => {
             assets={filtered}
             groupedByStatus={groupedByStatus}
             loading={loading}
+            selectionLoading={selectionLoading}
             healthDataLoading={healthDataLoading}
             tabs={tabs}
             sortBy={sortBy}
@@ -345,6 +346,7 @@ interface TableProps {
   checkedDisplayKeys: Set<string>;
   onToggleFactory: (id: string) => (values: {checked: boolean; shiftKey: boolean}) => void;
   onToggleGroup: (group: AssetHealthStatusString) => (checked: boolean) => void;
+  selectionLoading: boolean;
 }
 
 const Table = React.memo(
@@ -359,6 +361,7 @@ const Table = React.memo(
     checkedDisplayKeys,
     onToggleFactory,
     onToggleGroup,
+    selectionLoading,
   }: TableProps) => {
     const scope = useMemo(() => {
       const list = (assets ?? []).filter((a): a is AssetWithDefinition => !!a.definition);
@@ -372,7 +375,7 @@ const Table = React.memo(
 
     return (
       <>
-        <IndeterminateLoadingBar $loading={loading || healthDataLoading} />
+        <IndeterminateLoadingBar $loading={loading || healthDataLoading || selectionLoading} />
         {tabs}
         <Box flex={{direction: 'column'}} style={{height: '100%', overflow: 'hidden'}}>
           <Box
@@ -468,7 +471,10 @@ type AssetWithDefinition = AssetTableFragment & {
   definition: NonNullable<AssetTableFragment['definition']>;
 };
 
-function sortAssetsByMaterializationTimestamp(a: AssetHealthFragment, b: AssetHealthFragment) {
+export function sortAssetsByMaterializationTimestamp(
+  a: AssetHealthFragment,
+  b: AssetHealthFragment,
+) {
   const aMaterialization = a.assetMaterializations[0]?.timestamp;
   const bMaterialization = b.assetMaterializations[0]?.timestamp;
   if (!aMaterialization && !bMaterialization) {

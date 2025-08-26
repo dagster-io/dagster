@@ -108,7 +108,7 @@ class TestClaudeDiagnosticsService:
             prompt="test prompt",
             response="test response",
             token_count=100,
-            tools_used=["tool1", "tool2"],
+            allowed_tools=["tool1", "tool2"],
             duration_ms=500.0,
         )
 
@@ -120,7 +120,7 @@ class TestClaudeDiagnosticsService:
         assert entry.data["prompt_length"] == len("test prompt")
         assert entry.data["response_length"] == len("test response")
         assert entry.data["token_count"] == 100
-        assert entry.data["tools_used"] == ["tool1", "tool2"]
+        assert entry.data["allowed_tools"] == ["tool1", "tool2"]
         assert entry.data["duration_ms"] == 500.0
 
     def test_context_gathering_logging(self):
@@ -307,14 +307,14 @@ class TestDiagnosticsDataModels:
             prompt="test prompt",
             response="test response",
             token_count=100,
-            tools_used=["tool1"],
+            allowed_tools=["tool1"],
             duration_ms=500.0,
         )
 
         assert interaction.prompt == "test prompt"
         assert interaction.response == "test response"
         assert interaction.token_count == 100
-        assert interaction.tools_used == ["tool1"]
+        assert interaction.allowed_tools == ["tool1"]
         assert interaction.duration_ms == 500.0
 
     def test_context_gathering_creation(self):

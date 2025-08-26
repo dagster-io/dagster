@@ -6,6 +6,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Callable, Optional
 
+import dagster as dg
 import pytest
 from click.testing import CliRunner
 from dagster import AssetKey, AssetSpec, BackfillPolicy
@@ -326,6 +327,53 @@ def test_state_path(
     assert comp.project.state_path.resolve() == Path(state_path)
     assert comp.project.target == "target"
     assert comp.project.profile == "profile"
+
+
+@pytest.mark.parametrize(
+    ["cli_args", "expected_args"],
+    [
+        (
+            None,
+            [
+                "build",
+            ],
+        ),
+        (
+            ["build", "--foo"],
+            ["build", "--foo"],
+        ),
+        (
+            [
+                "run",
+                {
+                    "--vars": {
+                        "start_date": "{{ partition_key_range.start }}",
+                        "end_date": "{{ partition_key_range.end }}",
+                    }
+                },
+                {"--threads": 2},
+            ],
+            [
+                "run",
+                "--vars",
+                '{"start_date": "2021-01-01", "end_date": "2021-01-01"}',
+                "--threads",
+                "2",
+            ],
+        ),
+    ],
+)
+def test_cli_args(dbt_path: Path, cli_args: Optional[list[str]], expected_args: list[str]) -> None:
+    args = {"cli_args": cli_args} if cli_args else {}
+
+    comp = load_component_for_test(
+        DbtProjectComponent,
+        {"project": str(dbt_path), **args},
+    )
+    context = dg.build_asset_context(
+        partition_key_range=dg.PartitionKeyRange(start="2021-01-01", end="2021-01-01"),
+    )
+    assert comp.get_cli_args(context) == expected_args
 
 
 def test_python_interface(dbt_path: Path):

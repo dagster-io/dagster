@@ -89,8 +89,8 @@ setup(
         "alembic>=1.2.1,!=1.6.3,!=1.7.0,!=1.11.0",
         f"grpcio>={GRPC_VERSION_FLOOR}",
         f"grpcio-health-checking>={GRPC_VERSION_FLOOR}",
-        "protobuf>=3.20.0,<6; python_version<'3.11'",  # min protobuf version to be compatible with both protobuf 3 and greater
-        "protobuf>=4,<6; python_version>='3.11'",
+        "protobuf>=3.20.0,<7; python_version<'3.11'",  # min protobuf version to be compatible with both protobuf 3 and greater
+        "protobuf>=4,<7; python_version>='3.11'",
         "python-dotenv",
         "pytz",
         "requests",

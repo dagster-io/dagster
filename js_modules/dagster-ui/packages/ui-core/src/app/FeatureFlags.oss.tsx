@@ -6,7 +6,6 @@ export enum FeatureFlag {
   flagAssetNodeFacets = 'flagAssetNodeFacets',
   flagUseNewObserveUIs = 'flagUseNewObserveUIs',
   flagMarketplace = 'flagMarketplace',
-  flagDocsInApp = 'flagDocsInApp',
 
   // Flags for tests
   __TestFlagDefaultNone = '__TestFlagDefaultNone',

@@ -101,7 +101,6 @@ def _get_editable_package_root(pkg_name: str) -> str:
 # ########################
 
 
-@pytest.mark.flaky(max_runs=2)
 def test_components_from_dagster():
     common_deps: list[str] = []
     for pkg_name in [

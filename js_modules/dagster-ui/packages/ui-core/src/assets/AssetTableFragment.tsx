@@ -12,6 +12,7 @@ export const ASSET_TABLE_DEFINITION_FRAGMENT = gql`
     isExecutable
     isPartitioned
     isAutoCreatedStub
+    hasAssetChecks
     computeKind
     hasMaterializePermission
     hasReportRunlessAssetEventPermission

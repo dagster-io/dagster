@@ -1,5 +1,6 @@
 import importlib
 import json
+import re
 import subprocess
 import textwrap
 from pathlib import Path
@@ -35,14 +36,18 @@ def test_scaffold_defs_dynamic_subcommand_generation() -> None:
 
         normalized_output = standardize_box_characters(result.output)
         # These are wrapped in a table so it's hard to check exact output.
+        # The " +\w" at the end is used to ensure that a help message is generated for the
+        # component.
         for line in [
-            "╭─ Commands",
-            "│ dagster_test.components.AllMetadataEmptyComponent",
-            "│ dagster_test.components.ComplexAssetComponent",
-            "│ dagster_test.components.SimpleAssetComponent",
-            "│ dagster_test.components.SimplePipesScriptComponent",
+            r"╭─ Commands",
+            r"│ dagster_test.components.AllMetadataEmptyComponent +\w",
+            r"│ dagster_test.components.ComplexAssetComponent +\w",
+            r"│ dagster_test.components.SimpleAssetComponent +\w",
+            r"│ dagster_test.components.SimplePipesScriptComponent +\w",
         ]:
-            assert standardize_box_characters(line) in normalized_output
+            assert re.search(standardize_box_characters(line), normalized_output), (
+                f"Expected line not found: {line}"
+            )
 
 
 @pytest.mark.parametrize(
