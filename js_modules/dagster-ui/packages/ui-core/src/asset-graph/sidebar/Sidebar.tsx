@@ -414,8 +414,13 @@ export const AssetGraphExplorerSidebar = React.memo(
         setSelectedNodeRootToLeaf(null);
         setSelectedNodeLeafToRoot(null);
       }
-      // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [lastSelectedNode, graphData]);
+    }, [
+      lastSelectedNode,
+      graphData,
+      sidebarViewType,
+      selectedNodeRootToLeaf?.id,
+      selectedNodeLeafToRoot?.id,
+    ]);
 
     const [expandedPanel, setExpandedPanel] = React.useState<'bottom' | 'top' | null>(null);
 

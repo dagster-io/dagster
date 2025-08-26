@@ -1,4 +1,11 @@
-import {Box, Colors, Icon, MiddleTruncate, UnstyledButton} from '@dagster-io/ui-components';
+import {
+  Box,
+  Colors,
+  Icon,
+  MiddleTruncate,
+  UnstyledButton,
+  useDelayedState,
+} from '@dagster-io/ui-components';
 import * as React from 'react';
 import {useMemo} from 'react';
 import {observeEnabled} from 'shared/app/observeEnabled.oss';
@@ -149,6 +156,10 @@ const AssetSidebarAssetLabel = ({
     collapseAllNodes,
   });
 
+  // This is a hack: prevent showing the popover for a second in case we are scrolling very fast.
+  // This is to workaround a bug with blueprint's Popover's ResizeSensor causing an infinite loop during the animated scrolling.
+  const canShowPopover = useDelayedState(1000);
+
   return (
     <ContextMenuWrapper stopPropagation menu={menu} wrapperOuterStyles={{width: '100%'}}>
       <FocusableLabelContainer
@@ -157,7 +168,11 @@ const AssetSidebarAssetLabel = ({
         icon={
           observeEnabled() ? (
             <div style={{marginLeft: -8, marginRight: -8}}>
-              <AssetHealthSummary iconOnly assetKey={node.assetKey} />
+              <AssetHealthSummary
+                iconOnly
+                assetKey={node.assetKey}
+                canShowPopover={canShowPopover}
+              />
             </div>
           ) : (
             <StatusDot node={node} />
