@@ -921,29 +921,6 @@ GET_ASSET_DEPENDENCIES_PARTITION_MAPPING = """
     }
 """
 
-GET_MATERIALIZATIONS_FROM_STEP_STATS = """
-query MaterializationsFromStepStatsQuery($runId: ID!) {
-  runOrError(runId: $runId) {
-    ... on PythonError {
-      className
-      message
-      stack
-    }
-    ... on Run {
-      stepStats {
-        materializations {
-          eventType
-          message
-          assetLineage {
-            partitions
-          }
-        }
-      }
-    }
-  }
-}
-"""
-
 GET_ASSET_CONCURRENCY_GROUP = """
     query AssetNodeQuery($assetKey: AssetKeyInput!) {
         assetNodeOrError(assetKey: $assetKey) {
@@ -2263,14 +2240,6 @@ class TestAssetAwareEventLog(ExecutingGraphQLContextTestMatrix):
         assert len(result.data["runsOrError"]["results"]) == 1
         assert len(result.data["runsOrError"]["results"][0]["assetMaterializations"]) == 1
         snapshot.assert_match(result.data)
-
-    def test_get_materializations_from_step_stats(self, graphql_context: WorkspaceRequestContext):
-        run_id = _create_run(graphql_context, "single_asset_job")
-        result = execute_dagster_graphql(
-            graphql_context, GET_MATERIALIZATIONS_FROM_STEP_STATS, {"runId": run_id}
-        )
-        assert result.data
-        assert len(result.data["runOrError"]["stepStats"][0]["materializations"]) == 1
 
     def test_asset_selection_in_run(self, graphql_context: WorkspaceRequestContext):
         # Generate materializations for bar asset

@@ -40,12 +40,6 @@ export const RunStats = ({runId}: {runId: string}) => {
       <Link to={`${runPath}?logs=type:STEP_FAILURE`}>
         {`${result.stats.stepsFailed} steps failed`}
       </Link>
-      <Link
-        to={`${runPath}?logs=type:ASSET_MATERIALIZATION`}
-      >{`${result.stats.materializations} materializations`}</Link>
-      <Link
-        to={`${runPath}?logs=type:STEP_EXPECTATION_RESULT`}
-      >{`${result.stats.expectations} expectations evaluated`}</Link>
     </RunStatsDetailsContainer>
   );
 };
@@ -64,8 +58,6 @@ const RUN_STATS_QUERY = gql`
             id
             stepsSucceeded
             stepsFailed
-            expectations
-            materializations
           }
           ...PythonErrorFragment
         }

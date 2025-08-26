@@ -11,35 +11,6 @@ from dagster_graphql_tests.graphql.graphql_context_test_suite import (
 )
 from dagster_graphql_tests.graphql.utils import sync_execute_get_events
 
-GET_EXPECTATIONS_FROM_STEP_STATS = """
-query MaterializationsFromStepStatsQuery($runId: ID!) {
-  runOrError(runId: $runId) {
-    ... on PythonError {
-      className
-      message
-      stack
-    }
-    ... on Run {
-      stepStats {
-        expectationResults {
-            success
-            label
-            description
-            metadataEntries {
-                ... on TextMetadataEntry {
-                    text
-                }
-                ... on JsonMetadataEntry {
-                    jsonString
-                }
-            }
-        }
-      }
-    }
-  }
-}
-"""
-
 
 def _create_run(
     graphql_context: WorkspaceRequestContext,
@@ -122,28 +93,6 @@ class TestExpectations(ExecutingGraphQLContextTestMatrix):
         snapshot.assert_match(get_expectation_results(logs, "emit_successful_expectation"))
         snapshot.assert_match(
             get_expectation_results(logs, "emit_successful_expectation_no_metadata")
-        )
-
-    def test_get_expectation_results_from_step_stats(
-        self, graphql_context: WorkspaceRequestContext
-    ):
-        run_id = _create_run(graphql_context, "job_with_expectations")
-        result = execute_dagster_graphql(
-            graphql_context, GET_EXPECTATIONS_FROM_STEP_STATS, {"runId": run_id}
-        )
-        assert result.data
-        assert any(
-            len(step["expectationResults"]) > 0
-            and step["expectationResults"][0]
-            == {
-                "success": False,
-                "label": "always_false",
-                "description": "Failure",
-                "metadataEntries": [
-                    {"jsonString": json.dumps({"reason": "Relentless pessimism."})}
-                ],
-            }
-            for step in result.data["runOrError"]["stepStats"]
         )
 
     def test_basic_input_output_expectations(

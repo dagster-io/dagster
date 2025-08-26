@@ -125,8 +125,6 @@ class DagsterRunStatsSnapshot(IHaveNew):
     run_id: str
     steps_succeeded: int
     steps_failed: int
-    materializations: int
-    expectations: int
     enqueued_time: Optional[float]
     launch_time: Optional[float]
     start_time: Optional[float]
