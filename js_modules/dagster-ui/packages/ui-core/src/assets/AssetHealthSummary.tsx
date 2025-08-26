@@ -38,17 +38,39 @@ import {TimeFromNow} from '../ui/TimeFromNow';
 import {numberFormatter} from '../ui/formatters';
 
 export const AssetHealthSummary = React.memo(
-  ({assetKey, iconOnly}: {assetKey: {path: string[]}; iconOnly?: boolean}) => {
+  ({
+    assetKey,
+    iconOnly,
+    canShowPopover = true,
+  }: {
+    assetKey: {path: string[]};
+    iconOnly?: boolean;
+    canShowPopover?: boolean;
+  }) => {
     if (!observeEnabled()) {
       return null;
     }
 
-    return <AssetHealthSummaryImpl assetKey={assetKey} iconOnly={iconOnly} />;
+    return (
+      <AssetHealthSummaryImpl
+        assetKey={assetKey}
+        iconOnly={iconOnly}
+        canShowPopover={canShowPopover}
+      />
+    );
   },
 );
 
 const AssetHealthSummaryImpl = React.memo(
-  ({assetKey, iconOnly}: {assetKey: {path: string[]}; iconOnly?: boolean}) => {
+  ({
+    assetKey,
+    iconOnly,
+    canShowPopover,
+  }: {
+    assetKey: {path: string[]};
+    iconOnly?: boolean;
+    canShowPopover?: boolean;
+  }) => {
     const {liveData} = useAssetHealthData(assetKey);
     const health = liveData?.assetHealth;
 
@@ -83,7 +105,11 @@ const AssetHealthSummaryImpl = React.memo(
     }
 
     return (
-      <AssetHealthSummaryPopover assetKey={assetKey} health={health}>
+      <AssetHealthSummaryPopover
+        assetKey={assetKey}
+        health={health}
+        canShowPopover={canShowPopover}
+      >
         {content()}
       </AssetHealthSummaryPopover>
     );
@@ -94,10 +120,12 @@ export const AssetHealthSummaryPopover = ({
   health,
   assetKey,
   children,
+  canShowPopover = true,
 }: {
   health: AssetHealthFragment['assetHealth'] | undefined;
   assetKey: AssetKeyInput;
   children: React.ReactNode;
+  canShowPopover?: boolean;
 }) => {
   const {iconName, iconColor, text} = useMemo(() => {
     return statusToIconAndColor[health?.assetHealth ?? 'undefined'];
@@ -106,6 +134,7 @@ export const AssetHealthSummaryPopover = ({
   return (
     <Popover
       interactionKind="hover"
+      isOpen={canShowPopover ? undefined : false}
       content={
         <div onClick={(e) => e.stopPropagation()}>
           <Box padding={12} flex={{direction: 'row', alignItems: 'center', gap: 6}} border="bottom">
