@@ -641,6 +641,7 @@ const LaunchAssetChoosePartitionsDialogBody = ({
           assets[0]?.jobNames.find((name) => name.startsWith(__ASSET_JOB_PREFIX)) ||
           __ASSET_JOB_PREFIX
         }
+        assetKeys={assets.map((asset) => asset.assetKey)}
         open={launchpadOpen}
         setOpen={setLaunchpadOpen}
         onSaveConfig={(config: LaunchpadConfig) => {
