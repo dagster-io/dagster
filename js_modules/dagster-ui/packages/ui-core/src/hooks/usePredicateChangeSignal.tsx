@@ -15,8 +15,8 @@ export const usePredicateChangeSignal = <T extends ReadonlyArray<unknown>>(
 
   const resultValueRef = React.useRef<1 | 0>(1);
 
+  previousDepsRef.current = currentDeps;
   if (didChange) {
-    previousDepsRef.current = currentDeps;
     resultValueRef.current = resultValueRef.current === 1 ? 0 : 1;
   }
   return resultValueRef.current;

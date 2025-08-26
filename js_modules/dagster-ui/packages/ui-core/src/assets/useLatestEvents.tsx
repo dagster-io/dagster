@@ -26,7 +26,6 @@ export function useLatestEvents(
   });
 
   const {data, refetch} = queryResult;
-
   const refreshHint = usePredicateChangeSignal(
     (prevHints, [lastMaterializationTimestamp, assetNodeLoadTimestamp]) => {
       const [prevLastMaterializationTimestamp, prevAssetNodeLoadTimestamp] =
