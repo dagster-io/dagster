@@ -80,7 +80,7 @@ class AssetGraphDiffer:
     def __init__(
         self,
         branch_asset_graph: "RemoteAssetGraph",
-        base_asset_graph: "RemoteAssetGraph",
+        base_asset_graph: Optional["RemoteAssetGraph"],
     ):
         self._branch_asset_graph = branch_asset_graph
         self._base_asset_graph = base_asset_graph
@@ -91,7 +91,7 @@ class AssetGraphDiffer:
         """Computes the diff between a branch deployment asset and the
         corresponding base deployment asset.
         """
-        if not self._base_asset_graph.has(asset_key):
+        if not self._base_asset_graph or not self._base_asset_graph.has(asset_key):
             # if the base asset graph is None, it is because the asset graph in the branch deployment
             # is new and doesn't exist in the base deployment. Thus all assets are new.
             return AssetDefinitionDiffDetails(change_types={AssetDefinitionChangeType.NEW})
