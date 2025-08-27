@@ -27,12 +27,13 @@ setup(
         "Programming Language :: Python :: 3.10",
         "Programming Language :: Python :: 3.11",
         "Programming Language :: Python :: 3.12",
+        "Programming Language :: Python :: 3.13",
         "License :: OSI Approved :: Apache Software License",
         "Operating System :: OS Independent",
     ],
     packages=find_packages(exclude=["dagster_snowflake_tests*"]),
     include_package_data=True,
-    python_requires=">=3.9,<3.13",
+    python_requires=">=3.9,<3.14",
     install_requires=[
         f"dagster{pin}",
         "snowflake-connector-python>=3.4.0",
@@ -51,4 +52,9 @@ setup(
         ],
     },
     zip_safe=False,
+    entry_points={
+        "dagster_dg_cli.registry_modules": [
+            "dagster_snowflake = dagster_snowflake",
+        ],
+    },
 )

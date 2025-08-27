@@ -10,29 +10,20 @@ from dagster import (
     MetadataValue,
     Output,
 )
-from dagster._annotations import preview
+from dagster._annotations import beta
 from dagster._record import record
 from dateutil import parser
-from dbt.contracts.results import NodeStatus, TestStatus
-from dbt.node_types import NodeType
-from dbt.version import __version__ as dbt_version
-from packaging import version
 
 from dagster_dbt.asset_utils import build_dbt_specs, get_asset_check_key_for_test
 from dagster_dbt.cloud_v2.client import DbtCloudWorkspaceClient
 from dagster_dbt.cloud_v2.types import DbtCloudJobRunStatusType, DbtCloudRun
+from dagster_dbt.compat import REFABLE_NODE_TYPES, NodeStatus, NodeType, TestStatus
 from dagster_dbt.dagster_dbt_translator import DagsterDbtTranslator
-
-IS_DBT_CORE_VERSION_LESS_THAN_1_8_0 = version.parse(dbt_version) < version.parse("1.8.0")
-if IS_DBT_CORE_VERSION_LESS_THAN_1_8_0:
-    REFABLE_NODE_TYPES = NodeType.refable()  # type: ignore
-else:
-    from dbt.node_types import REFABLE_NODE_TYPES as REFABLE_NODE_TYPES
 
 COMPLETED_AT_TIMESTAMP_METADATA_KEY = "dagster_dbt/completed_at_timestamp"
 
 
-@preview
+@beta
 @record
 class DbtCloudJobRunHandler:
     """Handles the process of a dbt Cloud job run."""
@@ -79,7 +70,7 @@ def get_completed_at_timestamp(result: Mapping[str, Any]) -> float:
     return parser.parse(result["timing"][-1]["completed_at"]).timestamp()
 
 
-@preview
+@beta
 @record
 class DbtCloudJobRunResults:
     """Represents the run results of a dbt Cloud job run."""

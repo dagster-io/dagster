@@ -56,7 +56,7 @@ class SnowflakePySparkTypeHandler(DbTypeHandler[DataFrame]):
             def my_table() -> pd.DataFrame:  # the name of the asset will be the table name
                 ...
 
-            defs = Definitions(
+            Definitions(
                 assets=[my_table],
                 resources={
                     "io_manager": MySnowflakeIOManager(database="MY_DATABASE", account=EnvVar("SNOWFLAKE_ACCOUNT"), warehouse="my_warehouse", ...)
@@ -132,7 +132,7 @@ Examples:
         def my_table() -> DataFrame:  # the name of the asset will be the table name
             ...
 
-        defs = Definitions(
+        Definitions(
             assets=[my_table],
             resources={
                 "io_manager": snowflake_pyspark_io_manager.configured({
@@ -152,7 +152,7 @@ Examples:
 
     .. code-block:: python
 
-        defs = Definitions(
+        Definitions(
             assets=[my_table]
             resources={"io_manager" snowflake_pyspark_io_manager.configured(
                 {"database": "my_database", "schema": "my_schema", ...} # will be used as the schema
@@ -226,7 +226,7 @@ class SnowflakePySparkIOManager(SnowflakeIOManager):
             def my_table() -> DataFrame:  # the name of the asset will be the table name
                 ...
 
-            defs = Definitions(
+            Definitions(
                 assets=[my_table],
                 resources={
                     "io_manager": SnowflakePySparkIOManager(
@@ -246,7 +246,7 @@ class SnowflakePySparkIOManager(SnowflakeIOManager):
 
         .. code-block:: python
 
-            defs = Definitions(
+            Definitions(
                 assets=[my_table]
                 resources={
                     "io_manager" SnowflakePySparkIOManager(database="my_database", schema="my_schema", ...)

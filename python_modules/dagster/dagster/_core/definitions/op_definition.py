@@ -7,7 +7,7 @@ from typing_extensions import TypeAlias, get_args, get_origin
 import dagster._check as check
 from dagster._annotations import deprecated, deprecated_param, public
 from dagster._config.config_schema import UserConfigSchema
-from dagster._core.definitions.asset_check_result import AssetCheckResult
+from dagster._core.definitions.asset_checks.asset_check_result import AssetCheckResult
 from dagster._core.definitions.definition_config_schema import (
     IDefinitionConfigSchema,
     convert_user_facing_definition_config_schema,
@@ -39,13 +39,14 @@ from dagster._utils import IHasInternalInit
 from dagster._utils.warnings import normalize_renamed_param
 
 if TYPE_CHECKING:
-    from dagster._core.definitions.asset_layer import AssetLayer
+    from dagster._core.definitions.assets.job.asset_layer import AssetLayer
     from dagster._core.definitions.composition import PendingNodeInvocation
     from dagster._core.definitions.decorators.op_decorator import DecoratedOpFunction
 
 OpComputeFunction: TypeAlias = Callable[..., Any]
 
 
+@public
 @deprecated_param(
     param="version",
     breaking_version="2.0",
@@ -348,7 +349,7 @@ class OpDefinition(NodeDefinition, IHasInternalInit):
                 and not input_def.has_default_value
                 and not input_def.input_manager_key
             ):
-                input_asset_key = asset_layer.asset_key_for_input(handle, input_def.name)
+                input_asset_key = asset_layer.get_asset_key_for_node_input(handle, input_def.name)
                 # If input_asset_key is present, this input can be resolved
                 # by a source asset, so input does not need to be resolved
                 # at the top level.
@@ -426,7 +427,7 @@ class OpDefinition(NodeDefinition, IHasInternalInit):
                     root_input=False,
                 )
             elif asset_layer and handle:
-                input_asset_key = asset_layer.asset_key_for_input(handle, input_def.name)
+                input_asset_key = asset_layer.get_asset_key_for_node_input(handle, input_def.name)
                 if input_asset_key:
                     io_manager_key = (
                         asset_layer.get(input_asset_key).io_manager_key

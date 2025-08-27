@@ -3,10 +3,11 @@ from collections.abc import Iterator
 from contextlib import contextmanager
 from typing import TYPE_CHECKING, Any, Callable
 
+from dagster_shared.error import DagsterError
+
 import dagster._check as check
 from dagster._core.definitions.events import Failure, RetryRequested
 from dagster._core.errors import (
-    DagsterError,
     DagsterExecutionInterruptedError,
     DagsterUserCodeExecutionError,
     raise_execution_interrupts,

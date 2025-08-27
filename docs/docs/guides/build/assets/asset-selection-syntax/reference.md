@@ -24,6 +24,7 @@ Filters allow you to narrow your asset selection using specific criteria.
 | **Column tag** | `column_tag: "my_tag"` | Selects assets tagged with `my_tag`. | Dagster+ only |
 | **Columns** | `columns: "my_column"` | Selects assets with a column named `my_column`. | Dagster+ only |
 | **Table name** | `table_name: "my_table"` | Selects assets with a table named `my_table`. | Dagster+ only |
+| **Asset health status** | `status: "DEGRADED"` | Selects assets with a given [asset health status](/guides/labs/observability-update/asset-health). Options are `"HEALTHY"`, `"WARNING"`, `"DEGRADED"`, `"UNKNOWN"`, or `"NOT_APPLICABLE"` | Dagster+ only (requires [Observability early access](/guides/labs/observability-update)) |
 
 
 :::info Wildcard matching
@@ -38,7 +39,7 @@ The `changed_in_branch` filter selects assets that have been changed for a speci
 
 :::info
 
-The `changed_in_branch` filter is only available in [Dagster+ branch deployments](/deployment/dagster-plus/ci-cd/branch-deployments/).
+The `changed_in_branch` filter is only available in [Dagster+ branch deployments](/deployment/dagster-plus/ci-cd/branch-deployments).
 
 :::
 

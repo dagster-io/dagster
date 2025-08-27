@@ -258,15 +258,13 @@ export const AssetEventMetadataEntriesTable = ({
           </StyledTableWithHeader>
           {displayedCount < filteredRows.length ? (
             <Box padding={{vertical: 8}}>
-              <Button small onClick={() => setDisplayedCount(Number.MAX_SAFE_INTEGER)}>
+              <Button onClick={() => setDisplayedCount(Number.MAX_SAFE_INTEGER)}>
                 Show {filteredRows.length - displayedCount} more
               </Button>
             </Box>
           ) : displayedCount > displayedByDefault ? (
             <Box padding={{vertical: 8}}>
-              <Button small onClick={() => setDisplayedCount(displayedByDefault)}>
-                Show less
-              </Button>
+              <Button onClick={() => setDisplayedCount(displayedByDefault)}>Show less</Button>
             </Box>
           ) : undefined}
         </AssetEventMetadataScrollContainer>

@@ -6,9 +6,9 @@ within Dagster ops.
 
 We use the Python `datadogpy <https://github.com/DataDog/datadogpy>`_ library. To use it, you'll
 first need to create a DataDog account and get both `API and Application keys
-<https://docs.datadoghq.com/account_management/api-app-keys/>`_.
+<https://docs.datadoghq.com/account_management/api-app-keys>`_.
 
-The integration uses `DogStatsD <https://docs.datadoghq.com/developers/dogstatsd/>`_, so you'll need
+The integration uses `DogStatsD <https://docs.datadoghq.com/developers/dogstatsd>`_, so you'll need
 to ensure the datadog agent is running on the host you're sending metrics from.
 
 

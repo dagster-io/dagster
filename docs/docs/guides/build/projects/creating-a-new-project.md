@@ -1,118 +1,187 @@
 ---
 title: "Creating a new Dagster project"
-description: Dagster comes with a convenient CLI command for creating a new project. This guide explains the role of each generated file and directory.
+description: dg allows you to create a special type of Python package, called a project, that defines a Dagster code location.
 sidebar_position: 100
 ---
 
-The easiest way to start building a Dagster project is by using the `dagster project` CLI. This CLI tool helps generate files and folder structures that enable you to quickly get started with Dagster.
+The easiest way to start building a Dagster project is by using the [`create-dagster` CLI](/api/clis/create-dagster). This CLI tool allows you to create a special type of Python package, called a _project_, that defines a [Dagster code location](/deployment/code-locations/managing-code-locations-with-definitions).
 
+import ProjectCreationPrereqs from '@site/docs/partials/\_ProjectCreationPrereqs.md';
 
-## Step 1: Bootstrap a new project
+<ProjectCreationPrereqs />
 
-:::note
+## Step 1. Scaffold a new Dagster project
 
-If you don't already have Dagster installed, verify you meet the [installation requirements](/getting-started/installation) before continuing.
+<Tabs groupId="package-manager">
+   <TabItem value="uv" label="uv">
+   1. Open your terminal and scaffold a new Dagster project. You can replace `my-project` with a different project name if you wish:
 
-:::
+      ```shell
+      uvx create-dagster@latest project my-project
+      ```
+   
+   2. Respond `y` to the prompt to run `uv sync` after scaffolding
 
-You can scaffold a new project using the default project skeleton, or start with one of the official Dagster examples.
+      ![Responding y to uv sync prompt](/images/getting-started/quickstart/uv_sync_yes.png)
 
-To learn more about the default files in a Dagster project, refer to the [Dagster project file reference](/guides/build/projects/dagster-project-file-reference).
+   3. Change to the project directory:
 
-<Tabs>
-<TabItem value="Default project skeleton">
+      ```shell
+      cd my-project
+      ```
+   4. Activate the virtual environment:
 
-### Using the default project skeleton
+    <Tabs>
+      <TabItem value="macos" label="MacOS/Unix">
+        ```
+        source .venv/bin/activate
+        ```
+      </TabItem>
+      <TabItem value="windows" label="Windows">
+        ```
+        .venv\Scripts\activate
+        ```
+      </TabItem>
+    </Tabs>
+   </TabItem>
+   <TabItem value="pip" label="pip">
+   1. Open your terminal and scaffold a new Dagster project. You can replace `my-project` with a different project name if you wish:
 
-To get started, run:
+      ```shell
+      create-dagster project my-project
+      ```
+   2. Change to the project directory:
 
-```bash
-pip install dagster
-dagster project scaffold --name my-dagster-project
-```
+      ```shell
+      cd my-project
+      ```
+   
+   3. Create and activate a virtual environment:
 
-The `dagster project scaffold` command generates a folder structure with a single Dagster code location and other files, such as `pyproject.toml` and `setup.py`. This takes care of setting things up with an empty project, enabling you to quickly get started.
+   <Tabs>
+     <TabItem value="macos" label="MacOS/Unix">
+      ```shell
+      python -m venv .venv
+      ```
+      ```shell
+      source .venv/bin/activate
+      ```
+     </TabItem>
+     <TabItem value="windows" label="Windows">
+      ```shell
+      python -m venv .venv
+      ```
+      ```shell
+      .venv\Scripts\activate
+      ```
+     </TabItem>
+   </Tabs>
+   
+   4. Install your project as an editable package:
 
-</TabItem>
-<TabItem value="Official example">
-
-### Using an official example
-
-To get started using an official Dagster example, run:
-
-```bash
-pip install dagster
-dagster project from-example \
-  --name my-dagster-project \
-  --example quickstart_etl
-```
-
-The command `dagster project from-example` downloads one of the official Dagster examples to the current directory. This command enables you to quickly bootstrap your project with an officially maintained example.
-
-For more info about the examples, visit the [Dagster GitHub repository](https://github.com/dagster-io/dagster/tree/master/examples) or use `dagster project list-examples`.
-
-</TabItem>
+      ```shell
+      pip install --editable .
+      ```
+   </TabItem>
 </Tabs>
 
-## Step 2: Install project dependencies
+Your new Dagster project should have the following structure:
 
-The newly generated `my-dagster-project` directory is a fully functioning [Python package](https://docs.python.org/3/tutorial/modules.html#packages) and can be installed with `pip`.
+<Tabs groupId="package-manager">
 
-To install it as a package and its Python dependencies, run:
-
-```bash
-pip install -e ".[dev]"
-```
+   <TabItem value="uv" label="uv">
+   ```shell
+   .
+   └── my-project
+      ├── pyproject.toml
+      ├── src
+      │   └── my_project
+      │       ├── __init__.py
+      │       ├── definitions.py
+      │       └── defs
+      │           └── __init__.py
+      ├── tests
+      │   └── __init__.py
+      └── uv.lock
+   ```
+   </TabItem>
+   <TabItem value="pip" label="pip">
+   ```shell
+   .
+   └── my-project
+      ├── pyproject.toml
+      ├── src
+      │   └── my_project
+      │       ├── __init__.py
+      │       ├── definitions.py
+      │       └── defs
+      │           └── __init__.py
+      └── tests
+         └── __init__.py
+   ```
+   </TabItem>
+</Tabs>
 
 :::info
 
-Using the `--editable` (`-e`) flag instructs `pip` to install your code location as a Python package in [editable mode](https://pip.pypa.io/en/latest/topics/local-project-installs/#editable-installs), so that as you develop, local code changes are automatically applied.
+The `create-dagster project` command creates a directory with a standard Python package structure with some additions. For more information on the files and directories in a Dagster project, see the [Dagster project file reference](/guides/build/projects/dagster-project-file-reference).
 
 :::
 
-## Step 3: Start the Dagster UI
+## Step 2. Add assets
+
+Assets are the core abstraction in Dagster and can represent logical units of data such as tables, datasets, or machine learning models. Assets can have dependencies on other assets, forming the data lineage for your pipelines. To add assets to your project, see [Defining assets](/guides/build/assets/defining-assets).
+
+## Step 3: View assets in the UI
 
 To start the [Dagster UI](/guides/operate/webserver), run:
 
 ```bash
-dagster dev
+dg dev
 ```
 
-**Note**: This command also starts the [Dagster daemon](/deployment/execution/dagster-daemon). Refer to the [Running Dagster locally guide](/deployment/oss/deployment-options/running-dagster-locally) for more info.
+To see your assets, navigate to [http://localhost:3000](http://localhost:3000).
 
-Use your browser to open [http://localhost:3000](http://localhost:3000) to view the project.
+## Step 4: Continue development
 
-## Step 4: Development
+- [Add new Python dependencies](#add-new-python-dependencies)
+- [Add integrations](#add-integrations)
+- [Use environment variables and secrets](#use-environment-variables-and-secrets)
+- [Add and run unit tests](#add-and-run-unit-tests)
 
-- [Adding new Python dependencies](#adding-new-python-dependencies)
-- [Environment variables and secrets](#using-environment-variables-and-secrets)
-- [Unit testing](#adding-and-running-unit-tests)
+### Add new Python dependencies
 
-### Adding new Python dependencies
+You can specify new Python dependencies in `pyproject.toml`.
 
-You can specify new Python dependencies in `setup.py`.
+### Add integrations
 
-### Using environment variables and secrets
+See the [Integrations docs](/integrations/libraries) for a full list of Dagster-supported and community-supported integrations.
+
+### Use environment variables and secrets
 
 Environment variables, which are key-value pairs configured outside your source code, allow you to dynamically modify application behavior depending on environment.
 
 Using environment variables, you can define various configuration options for your Dagster application and securely set up secrets. For example, instead of hard-coding database credentials - which is bad practice and cumbersome for development - you can use environment variables to supply user details. This allows you to parameterize your pipeline without modifying code or insecurely storing sensitive data.
 
-For more information and examples, see "[Using environment variables and secrets](/guides/operate/configuration/using-environment-variables-and-secrets)".
+For more information and examples, see [Using environment variables and secrets](/guides/operate/configuration/using-environment-variables-and-secrets).
 
-### Adding and running unit tests
+### Add and run unit tests
 
-Tests can be added in the `my_dagster_project_tests` directory and run using `pytest`:
+Tests can be added to the `tests` directory and run using `pytest`:
 
 ```bash
-pytest my_dagster_project_tests
+pytest tests
 ```
+
+For more information on testing, see the following docs:
+* The [Testing guides](/guides/test) have guidance on asset checks, data freshness checks, unit testing assets and ops, and testing partitioned config and jobs.
+* [Testing component definitions](/guides/build/components/building-pipelines-with-components/testing-component-definitions) contains testing best practices for definitions scaffolded existing components.
+* [Testing your component](/guides/build/components/creating-new-components/testing-your-component) has best practices for testing custom components.
 
 ## Next steps
 
-Once your project is ready to move to production, check out our recommendations for [transitioning data pipelines from development to production](/guides/operate/dev-to-prod).
+{/* TODO make this visible once the dev to prod guide is updated: Once your project is ready to move to production, check out our recommendations for [transitioning data pipelines from development to production](/guides/operate/dev-to-prod). */}
 
-Check out the following resources to learn more about deployment options:
-
-- [Dagster+](/deployment/dagster-plus) - Deploy using Dagster-managed infrastructure
-- [Your own infrastructure](/deployment/oss) - Deploy to your infrastructure, such as Docker, Kubernetes, Amazon Web Services, etc.
+* Add [integrations](/integrations/libraries) to your project
+* Create your own [Dagster Components](/guides/build/components/creating-new-components) to share with your team
+* Deploy your project to [Dagster+](/deployment/dagster-plus) or [your own infrastructure](/deployment/oss)

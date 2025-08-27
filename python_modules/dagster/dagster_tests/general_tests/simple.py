@@ -1,11 +1,11 @@
-from dagster import job, op
+import dagster as dg
 
 
-@op
+@dg.op
 def foo():
     pass
 
 
-@job
+@dg.job
 def bar():
     foo()

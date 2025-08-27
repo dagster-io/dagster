@@ -5,27 +5,9 @@ from difflib import SequenceMatcher
 from typing import Any
 from unittest import mock
 
+import dagster as dg
 import pytest
 from click.testing import CliRunner
-from dagster import (
-    ConfigurableIOManager,
-    ConfigurableResource,
-    DailyPartitionsDefinition,
-    Definitions,
-    DynamicPartitionsDefinition,
-    FreshnessPolicy,
-    MultiPartitionsDefinition,
-    PipesSubprocessClient,
-    SourceAsset,
-    StaticPartitionsDefinition,
-    asset,
-    asset_check,
-    define_asset_job,
-    io_manager,
-    observable_source_asset,
-    repository,
-    resource,
-)
 from dagster._cli.job import job_execute_command
 from dagster._core.definitions.reconstruct import get_ephemeral_repository_name
 from dagster._core.definitions.resource_definition import dagster_maintained_resource
@@ -45,9 +27,9 @@ from dagster._core.telemetry import (
     log_workspace_stats,
     write_telemetry_log_line,
 )
-from dagster._core.test_utils import environ, instance_for_test
+from dagster._core.test_utils import environ
 from dagster._core.workspace.load import load_workspace_process_context_from_yaml_paths
-from dagster._utils import file_relative_path, pushd, script_relative_path
+from dagster._utils import pushd, script_relative_path
 from dagster_shared.telemetry import (
     cleanup_telemetry_logger,
     get_or_create_dir_from_dagster_home,
@@ -90,12 +72,12 @@ def path_to_file(path):
 
 @pytest.fixture
 def instance():
-    with instance_for_test() as instance:
+    with dg.instance_for_test() as instance:
         return instance
 
 
 def test_dagster_telemetry_enabled(telemetry_caplog):
-    with instance_for_test(overrides={"telemetry": {"enabled": True}}):
+    with dg.instance_for_test(overrides={"telemetry": {"enabled": True}}):
         runner = CliRunner()
         with pushd(path_to_file("")):
             job_attribute = "qux_job"
@@ -126,7 +108,7 @@ def test_dagster_telemetry_enabled(telemetry_caplog):
 
 def test_dagster_telemetry_disabled_avoids_run_storage_query(telemetry_caplog):
     """Verify that when telemetry is disabled, we don't query run_storage_id."""
-    with instance_for_test(overrides={"telemetry": {"enabled": False}}) as instance:
+    with dg.instance_for_test(overrides={"telemetry": {"enabled": False}}) as instance:
         # Ensure the instance uses SqlRunStorage for the mock target to be relevant
         assert isinstance(instance.run_storage, SqlRunStorage)
 
@@ -140,7 +122,7 @@ def test_dagster_telemetry_disabled_avoids_run_storage_query(telemetry_caplog):
             mock_get_id.assert_not_called()
 
     # Double check: enable telemetry and ensure it *is* called
-    with instance_for_test(overrides={"telemetry": {"enabled": True}}) as instance_enabled:
+    with dg.instance_for_test(overrides={"telemetry": {"enabled": True}}) as instance_enabled:
         assert isinstance(instance_enabled.run_storage, SqlRunStorage)
         with mock.patch.object(
             SqlRunStorage,
@@ -152,7 +134,7 @@ def test_dagster_telemetry_disabled_avoids_run_storage_query(telemetry_caplog):
 
 
 def test_dagster_telemetry_disabled(telemetry_caplog):
-    with instance_for_test(overrides={"telemetry": {"enabled": False}}):
+    with dg.instance_for_test(overrides={"telemetry": {"enabled": False}}):
         runner = CliRunner()
         with pushd(path_to_file("")):
             job_name = "qux_job"
@@ -175,7 +157,7 @@ def test_dagster_telemetry_disabled(telemetry_caplog):
 
 def test_dagster_telemetry_unset(telemetry_caplog):
     with tempfile.TemporaryDirectory() as temp_dir:
-        with instance_for_test(temp_dir=temp_dir, overrides={"telemetry": {"enabled": True}}):
+        with dg.instance_for_test(temp_dir=temp_dir, overrides={"telemetry": {"enabled": True}}):
             runner = CliRunner(env={"DAGSTER_HOME": temp_dir})
             with pushd(path_to_file("")):
                 job_attribute = "qux_job"
@@ -201,19 +183,19 @@ def test_dagster_telemetry_unset(telemetry_caplog):
 
 
 def get_dynamic_partitioned_asset_repo():
-    @asset(partitions_def=DynamicPartitionsDefinition(name="fruit"))
+    @dg.asset(partitions_def=dg.DynamicPartitionsDefinition(name="fruit"))
     def my_asset(_):
         pass
 
-    @repository
+    @dg.repository
     def my_repo():
-        return [define_asset_job("dynamic_job"), my_asset]
+        return [dg.define_asset_job("dynamic_job"), my_asset]
 
     return my_repo
 
 
 def test_update_repo_stats_dynamic_partitions(telemetry_caplog):
-    with instance_for_test(overrides={"telemetry": {"enabled": True}}) as instance:
+    with dg.instance_for_test(overrides={"telemetry": {"enabled": True}}) as instance:
         instance.add_dynamic_partitions("fruit", ["apple"])
         runner = CliRunner()
         with pushd(path_to_file("")):
@@ -243,17 +225,19 @@ def test_update_repo_stats_dynamic_partitions(telemetry_caplog):
 
 
 def test_get_stats_from_remote_repo_partitions():
-    @asset(partitions_def=StaticPartitionsDefinition(["foo", "bar"]))
+    @dg.asset(partitions_def=dg.StaticPartitionsDefinition(["foo", "bar"]))
     def asset1(): ...
 
-    @asset(partitions_def=DailyPartitionsDefinition(start_date="2022-01-01"))
+    @dg.asset(partitions_def=dg.DailyPartitionsDefinition(start_date="2022-01-01"))
     def asset2(): ...
 
-    @asset
+    @dg.asset
     def asset3(): ...
 
     remote_repo = remote_repository(
-        RepositorySnap.from_def(Definitions(assets=[asset1, asset2, asset3]).get_repository_def()),
+        RepositorySnap.from_def(
+            dg.Definitions(assets=[asset1, asset2, asset3]).get_repository_def()
+        ),
         repository_handle=RepositoryHandle.for_test(),
     )
     stats = get_stats_from_remote_repo(remote_repo)
@@ -261,18 +245,20 @@ def test_get_stats_from_remote_repo_partitions():
 
 
 def test_get_stats_from_remote_repo_multi_partitions(instance):
-    @asset(
-        partitions_def=MultiPartitionsDefinition(
+    @dg.asset(
+        partitions_def=dg.MultiPartitionsDefinition(
             {
-                "dim1": StaticPartitionsDefinition(["foo", "bar"]),
-                "dim2": DailyPartitionsDefinition(start_date="2022-01-01"),
+                "dim1": dg.StaticPartitionsDefinition(["foo", "bar"]),
+                "dim2": dg.DailyPartitionsDefinition(start_date="2022-01-01"),
             }
         )
     )
     def multi_partitioned_asset(): ...
 
     remote_repo = remote_repository(
-        RepositorySnap.from_def(Definitions(assets=[multi_partitioned_asset]).get_repository_def()),
+        RepositorySnap.from_def(
+            dg.Definitions(assets=[multi_partitioned_asset]).get_repository_def()
+        ),
         repository_handle=RepositoryHandle.for_test(),
     )
     stats = get_stats_from_remote_repo(remote_repo)
@@ -281,13 +267,15 @@ def test_get_stats_from_remote_repo_multi_partitions(instance):
 
 
 def test_get_stats_from_remote_repo_source_assets():
-    source_asset1 = SourceAsset("source_asset1")
+    source_asset1 = dg.SourceAsset("source_asset1")
 
-    @asset
+    @dg.asset
     def asset1(): ...
 
     remote_repo = remote_repository(
-        RepositorySnap.from_def(Definitions(assets=[source_asset1, asset1]).get_repository_def()),
+        RepositorySnap.from_def(
+            dg.Definitions(assets=[source_asset1, asset1]).get_repository_def()
+        ),
         repository_handle=RepositoryHandle.for_test(),
     )
     stats = get_stats_from_remote_repo(remote_repo)
@@ -295,17 +283,17 @@ def test_get_stats_from_remote_repo_source_assets():
 
 
 def test_get_stats_from_remote_repo_observable_source_assets():
-    source_asset1 = SourceAsset("source_asset1")
+    source_asset1 = dg.SourceAsset("source_asset1")
 
-    @observable_source_asset
+    @dg.observable_source_asset
     def source_asset2(): ...
 
-    @asset
+    @dg.asset
     def asset1(): ...
 
     remote_repo = remote_repository(
         RepositorySnap.from_def(
-            Definitions(assets=[source_asset1, source_asset2, asset1]).get_repository_def()
+            dg.Definitions(assets=[source_asset1, source_asset2, asset1]).get_repository_def()
         ),
         repository_handle=RepositoryHandle.for_test(),
     )
@@ -315,14 +303,14 @@ def test_get_stats_from_remote_repo_observable_source_assets():
 
 
 def test_get_stats_from_remote_repo_freshness_policies():
-    @asset(freshness_policy=FreshnessPolicy(maximum_lag_minutes=30))
+    @dg.asset(legacy_freshness_policy=dg.LegacyFreshnessPolicy(maximum_lag_minutes=30))
     def asset1(): ...
 
-    @asset
+    @dg.asset
     def asset2(): ...
 
     remote_repo = remote_repository(
-        RepositorySnap.from_def(Definitions(assets=[asset1, asset2]).get_repository_def()),
+        RepositorySnap.from_def(dg.Definitions(assets=[asset1, asset2]).get_repository_def()),
         repository_handle=RepositoryHandle.for_test(),
     )
     stats = get_stats_from_remote_repo(remote_repo)
@@ -330,14 +318,14 @@ def test_get_stats_from_remote_repo_freshness_policies():
 
 
 def test_get_stats_from_remote_repo_code_versions():
-    @asset(code_version="hello")
+    @dg.asset(code_version="hello")
     def asset1(): ...
 
-    @asset
+    @dg.asset
     def asset2(): ...
 
     remote_repo = remote_repository(
-        RepositorySnap.from_def(Definitions(assets=[asset1, asset2]).get_repository_def()),
+        RepositorySnap.from_def(dg.Definitions(assets=[asset1, asset2]).get_repository_def()),
         repository_handle=RepositoryHandle.for_test(),
     )
     stats = get_stats_from_remote_repo(remote_repo)
@@ -345,21 +333,21 @@ def test_get_stats_from_remote_repo_code_versions():
 
 
 def test_get_stats_from_remote_repo_code_checks():
-    @asset
+    @dg.asset
     def my_asset(): ...
 
-    @asset_check(asset=my_asset)  # pyright: ignore[reportArgumentType]
+    @dg.asset_check(asset=my_asset)  # pyright: ignore[reportArgumentType]
     def my_check(): ...
 
-    @asset_check(asset=my_asset)  # pyright: ignore[reportArgumentType]
+    @dg.asset_check(asset=my_asset)  # pyright: ignore[reportArgumentType]
     def my_check_2(): ...
 
-    @asset
+    @dg.asset
     def my_other_asset(): ...
 
     remote_repo = remote_repository(
         RepositorySnap.from_def(
-            Definitions(
+            dg.Definitions(
                 assets=[my_asset, my_other_asset], asset_checks=[my_check, my_check_2]
             ).get_repository_def()
         ),
@@ -371,14 +359,14 @@ def test_get_stats_from_remote_repo_code_checks():
 
 
 def test_get_stats_from_remote_repo_dbt():
-    @asset(compute_kind="dbt")
+    @dg.asset(compute_kind="dbt")
     def asset1(): ...
 
-    @asset
+    @dg.asset
     def asset2(): ...
 
     remote_repo = remote_repository(
-        RepositorySnap.from_def(Definitions(assets=[asset1, asset2]).get_repository_def()),
+        RepositorySnap.from_def(dg.Definitions(assets=[asset1, asset2]).get_repository_def()),
         repository_handle=RepositoryHandle.for_test(),
     )
     stats = get_stats_from_remote_repo(remote_repo)
@@ -386,22 +374,22 @@ def test_get_stats_from_remote_repo_dbt():
 
 
 def test_get_stats_from_remote_repo_resources():
-    class MyResource(ConfigurableResource):
+    class MyResource(dg.ConfigurableResource):
         foo: str
 
         @classmethod
         def _is_dagster_maintained(cls) -> bool:
             return True
 
-    class CustomResource(ConfigurableResource):
+    class CustomResource(dg.ConfigurableResource):
         baz: str
 
-    @asset
+    @dg.asset
     def asset1(my_resource: MyResource, custom_resource: CustomResource): ...
 
     remote_repo = remote_repository(
         RepositorySnap.from_def(
-            Definitions(
+            dg.Definitions(
                 assets=[asset1],
                 resources={
                     "my_resource": MyResource(foo="bar"),
@@ -419,7 +407,7 @@ def test_get_stats_from_remote_repo_resources():
 
 
 def test_get_stats_from_remote_repo_io_managers():
-    class MyIOManager(ConfigurableIOManager):
+    class MyIOManager(dg.ConfigurableIOManager):
         foo: str
 
         @classmethod
@@ -432,7 +420,7 @@ def test_get_stats_from_remote_repo_io_managers():
         def load_input(self, context: InputContext) -> Any:
             return 1
 
-    class CustomIOManager(ConfigurableIOManager):
+    class CustomIOManager(dg.ConfigurableIOManager):
         baz: str
 
         def handle_output(self, context: OutputContext, obj: Any) -> None:
@@ -441,12 +429,12 @@ def test_get_stats_from_remote_repo_io_managers():
         def load_input(self, context: InputContext) -> Any:
             return 1
 
-    @asset
+    @dg.asset
     def asset1(): ...
 
     remote_repo = remote_repository(
         RepositorySnap.from_def(
-            Definitions(
+            dg.Definitions(
                 assets=[asset1],
                 resources={
                     "my_io_manager": MyIOManager(foo="bar"),
@@ -465,20 +453,20 @@ def test_get_stats_from_remote_repo_io_managers():
 
 def test_get_stats_from_remote_repo_functional_resources():
     @dagster_maintained_resource
-    @resource(config_schema={"foo": str})
+    @dg.resource(config_schema={"foo": str})
     def my_resource():
         return 1
 
-    @resource(config_schema={"baz": str})
+    @dg.resource(config_schema={"baz": str})
     def custom_resource():
         return 2
 
-    @asset(required_resource_keys={"my_resource", "custom_resource"})
+    @dg.asset(required_resource_keys={"my_resource", "custom_resource"})
     def asset1(): ...
 
     remote_repo = remote_repository(
         RepositorySnap.from_def(
-            Definitions(
+            dg.Definitions(
                 assets=[asset1],
                 resources={
                     "my_resource": my_resource.configured({"foo": "bar"}),
@@ -497,20 +485,20 @@ def test_get_stats_from_remote_repo_functional_resources():
 
 def test_get_stats_from_remote_repo_functional_io_managers():
     @dagster_maintained_io_manager
-    @io_manager(config_schema={"foo": str})  # pyright: ignore[reportArgumentType]
+    @dg.io_manager(config_schema={"foo": str})  # pyright: ignore[reportArgumentType]
     def my_io_manager():
         return 1
 
-    @io_manager(config_schema={"baz": str})  # pyright: ignore[reportArgumentType]
+    @dg.io_manager(config_schema={"baz": str})  # pyright: ignore[reportArgumentType]
     def custom_io_manager():
         return 2
 
-    @asset
+    @dg.asset
     def asset1(): ...
 
     remote_repo = remote_repository(
         RepositorySnap.from_def(
-            Definitions(
+            dg.Definitions(
                 assets=[asset1],
                 resources={
                     "my_io_manager": my_io_manager.configured({"foo": "bar"}),
@@ -530,9 +518,9 @@ def test_get_stats_from_remote_repo_functional_io_managers():
 def test_get_stats_from_remote_repo_pipes_client():
     remote_repo = remote_repository(
         RepositorySnap.from_def(
-            Definitions(
+            dg.Definitions(
                 resources={
-                    "pipes_subprocess_client": PipesSubprocessClient(),
+                    "pipes_subprocess_client": dg.PipesSubprocessClient(),
                 },
             ).get_repository_def()
         ),
@@ -546,14 +534,14 @@ def test_get_stats_from_remote_repo_pipes_client():
 
 
 def test_get_stats_from_remote_repo_delayed_resource_configuration():
-    class MyResource(ConfigurableResource):
+    class MyResource(dg.ConfigurableResource):
         foo: str
 
         @classmethod
         def _is_dagster_maintained(cls) -> bool:
             return True
 
-    class MyIOManager(ConfigurableIOManager):
+    class MyIOManager(dg.ConfigurableIOManager):
         foo: str
 
         @classmethod
@@ -567,24 +555,24 @@ def test_get_stats_from_remote_repo_delayed_resource_configuration():
             return 1
 
     @dagster_maintained_resource
-    @resource(config_schema={"foo": str})
+    @dg.resource(config_schema={"foo": str})
     def my_resource():
         return 1
 
     @dagster_maintained_io_manager
-    @io_manager(config_schema={"foo": str})  # pyright: ignore[reportArgumentType]
+    @dg.io_manager(config_schema={"foo": str})  # pyright: ignore[reportArgumentType]
     def my_io_manager():
         return 1
 
-    @asset
+    @dg.asset
     def asset1(my_resource: MyResource): ...
 
-    @asset(required_resource_keys={"my_other_resource"})
+    @dg.asset(required_resource_keys={"my_other_resource"})
     def asset2(): ...
 
     remote_repo = remote_repository(
         RepositorySnap.from_def(
-            Definitions(
+            dg.Definitions(
                 assets=[asset1, asset2],
                 resources={
                     "my_io_manager": MyIOManager.configure_at_launch(),
@@ -609,7 +597,7 @@ def test_get_stats_from_remote_repo_delayed_resource_configuration():
 # TODO - not sure what this test is testing for, so unclear as to how to update it to jobs
 def test_repo_stats(telemetry_caplog):
     with tempfile.TemporaryDirectory() as temp_dir:
-        with instance_for_test(temp_dir=temp_dir, overrides={"telemetry": {"enabled": True}}):
+        with dg.instance_for_test(temp_dir=temp_dir, overrides={"telemetry": {"enabled": True}}):
             runner = CliRunner(env={"DAGSTER_HOME": temp_dir})
             with pushd(path_to_file("")):
                 job_name = "double_adder_job"
@@ -617,11 +605,11 @@ def test_repo_stats(telemetry_caplog):
                     job_execute_command,
                     [
                         "-f",
-                        file_relative_path(__file__, "../../general_tests/test_repository.py"),
+                        dg.file_relative_path(__file__, "../../general_tests/test_repository.py"),
                         "-a",
                         "dagster_test_repository",
                         "--config",
-                        file_relative_path(__file__, "../../environments/double_adder_job.yaml"),
+                        dg.file_relative_path(__file__, "../../environments/double_adder_job.yaml"),
                         "-j",
                         job_name,
                         "--tags",
@@ -645,9 +633,9 @@ def test_repo_stats(telemetry_caplog):
 
 
 def test_log_workspace_stats(telemetry_caplog):
-    with instance_for_test(overrides={"telemetry": {"enabled": True}}) as instance:
+    with dg.instance_for_test(overrides={"telemetry": {"enabled": True}}) as instance:
         with load_workspace_process_context_from_yaml_paths(
-            instance, [file_relative_path(__file__, "./multi_env_telemetry_workspace.yaml")]
+            instance, [dg.file_relative_path(__file__, "./multi_env_telemetry_workspace.yaml")]
         ) as context:
             log_workspace_stats(instance, context)
 

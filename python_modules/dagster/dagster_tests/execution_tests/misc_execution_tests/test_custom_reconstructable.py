@@ -1,14 +1,12 @@
 import os
 import sys
 
+import dagster as dg
 import pytest
-from dagster import job, op, reconstructable
-from dagster._core.definitions import ReconstructableJob, build_reconstructable_job
-from dagster._core.definitions.job_definition import JobDefinition
-from dagster._core.errors import DagsterInvariantViolationError
+from dagster._core.definitions import ReconstructableJob
 
 
-@op
+@dg.op
 def top_scope_op(_context):
     pass
 
@@ -17,12 +15,12 @@ class JobFactory:
     def __init__(self, prefix: str):
         self.prefix = prefix
 
-    def make_job(self, has_nested_scope_solid: bool, name: str) -> JobDefinition:
-        @op
+    def make_job(self, has_nested_scope_solid: bool, name: str) -> dg.JobDefinition:
+        @dg.op
         def nested_scope_op(_context):
             pass
 
-        @job(name=self.prefix + name)
+        @dg.job(name=self.prefix + name)
         def _job():
             if has_nested_scope_solid:
                 nested_scope_op()
@@ -31,7 +29,7 @@ class JobFactory:
         return _job
 
 
-def reconstruct_job(factory_prefix: str, has_nested_scope_op: bool, name: str) -> JobDefinition:
+def reconstruct_job(factory_prefix: str, has_nested_scope_op: bool, name: str) -> dg.JobDefinition:
     factory = JobFactory(factory_prefix)
     return factory.make_job(has_nested_scope_op, name=name)
 
@@ -42,10 +40,10 @@ def test_build_reconstructable_job():
         factory = JobFactory("foo_")
         bar_job = factory.make_job(True, name="bar")
 
-        with pytest.raises(DagsterInvariantViolationError):
-            reconstructable(bar_job)
+        with pytest.raises(dg.DagsterInvariantViolationError):
+            dg.reconstructable(bar_job)
 
-        reconstructable_bar_job = build_reconstructable_job(
+        reconstructable_bar_job = dg.build_reconstructable_job(
             "test_custom_reconstructable",
             "reconstruct_job",
             ("foo_",),
@@ -70,12 +68,12 @@ def test_build_reconstructable_job_serdes():
         factory = JobFactory("foo_")
         bar_job = factory.make_job(True, name="bar")
 
-        with pytest.raises(DagsterInvariantViolationError):
-            reconstructable(bar_job)
+        with pytest.raises(dg.DagsterInvariantViolationError):
+            dg.reconstructable(bar_job)
 
         sys.path.insert(0, os.path.dirname(os.path.realpath(__file__)))
 
-        reconstructable_bar_job = build_reconstructable_job(
+        reconstructable_bar_job = dg.build_reconstructable_job(
             "test_custom_reconstructable",
             "reconstruct_job",
             ("foo_",),

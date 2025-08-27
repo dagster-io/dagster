@@ -141,6 +141,7 @@ const EvaluateSchedule = ({repoAddress, name, onClose, jobName}: Props) => {
           ...repositorySelector,
           scheduleName: name,
         },
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
         timestamp: selectedTimestampRef.current!.ts,
       },
     });
@@ -241,6 +242,7 @@ const EvaluateSchedule = ({repoAddress, name, onClose, jobName}: Props) => {
         <EvaluateScheduleResult
           repoAddress={repoAddress}
           name={name}
+          // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
           timestamp={selectedTimestampRef.current!.ts}
           jobName={jobName}
           scheduleExecutionData={scheduleExecutionData}

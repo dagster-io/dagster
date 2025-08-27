@@ -4,7 +4,7 @@ sidebar_position: 700
 title: Executing Dagster on Celery
 ---
 
-[Celery](https://docs.celeryq.dev/) is an open-source Python distributed task queue system, with support for a variety of queues (brokers) and result persistence strategies (backends).
+[Celery](https://docs.celeryq.dev) is an open-source Python distributed task queue system, with support for a variety of queues (brokers) and result persistence strategies (backends).
 
 The `dagster-celery` executor uses Celery to satisfy three common requirements when running jobs in production:
 
@@ -144,7 +144,7 @@ There are several available tools for monitoring and debugging your queues and w
 
 To debug broker/queue level issues, use the monitoring tools provided by the broker you're running. RabbitMQ includes a [monitoring API](https://www.rabbitmq.com/monitoring.html) and has first class support for Prometheus and Grafana integration in production.
 
-To monitor celery workers and queues, you can use Celery's [Flower](https://flower.readthedocs.io/en/latest/) tool. This can be useful in understanding how workers interact with the queue.
+To monitor celery workers and queues, you can use Celery's [Flower](https://flower.readthedocs.io/en/latest) tool. This can be useful in understanding how workers interact with the queue.
 
 ### Broker and backend
 

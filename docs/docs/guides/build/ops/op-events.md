@@ -43,7 +43,7 @@ Because returning a value from an op is such a fundamental part of creating a da
 
 For many use cases, Dagster ops can be used directly with python's native type annotations without additional modification.
 
-<CodeExample path="docs_snippets/docs_snippets/concepts/ops_jobs_graphs/ops.py" startAfter="start_output_op_marker" endBefore="end_output_op_marker" />
+<CodeExample path="docs_snippets/docs_snippets/concepts/ops_jobs_graphs/ops.py" startAfter="start_output_op_marker" endBefore="end_output_op_marker" title="src/<project_name>/defs/ops.py"/>
 
 Check out the docs on [Op Outputs](/guides/build/ops#outputs) to learn more about this functionality.
 
@@ -52,11 +52,11 @@ Dagster also provides the <PyObject section="ops" module="dagster" object="Outpu
 <PyObject section="ops" module="dagster" object="Output"/> objects can be either returned or yielded. The Output
 type is also generic, for use with return annotations:
 
-<CodeExample path="docs_snippets/docs_snippets/concepts/ops_jobs_graphs/op_events.py" startAfter="start_op_output_4" endBefore="end_op_output_4" />
+<CodeExample path="docs_snippets/docs_snippets/concepts/ops_jobs_graphs/op_events.py" startAfter="start_op_output_4" endBefore="end_op_output_4" title="src/<project_name>/defs/ops.py"/>
 
 When <PyObject section="ops" module="dagster" object="Output"/> objects are yielded, type annotations cannot be used. Instead, type information can be specified using the `out` argument of the op decorator.
 
-<CodeExample path="docs_snippets/docs_snippets/concepts/ops_jobs_graphs/op_events.py" startAfter="start_yield_outputs" endBefore="end_yield_outputs" />
+<CodeExample path="docs_snippets/docs_snippets/concepts/ops_jobs_graphs/op_events.py" startAfter="start_yield_outputs" endBefore="end_yield_outputs" title="src/<project_name>/defs/ops.py"/>
 
 #### Attaching metadata to outputs (Experimental)
 
@@ -66,7 +66,7 @@ The `EventMetadata` class contains a set of static wrappers to customize the dis
 
 The following example demonstrates how you might use this functionality:
 
-<CodeExample path="docs_snippets/docs_snippets/concepts/ops_jobs_graphs/op_events.py" startAfter="start_op_output_3" endBefore="end_op_output_3" />
+<CodeExample path="docs_snippets/docs_snippets/concepts/ops_jobs_graphs/op_events.py" startAfter="start_op_output_3" endBefore="end_op_output_3" title="src/<project_name>/defs/ops.py"/>
 
 ### Asset materializations
 
@@ -74,13 +74,13 @@ The following example demonstrates how you might use this functionality:
 
 Generally, you'd want to send this event directly after you persist the asset to your external system. All <PyObject section="ops" module="dagster" object="AssetMaterialization" /> events must define an `asset_key`, which is a unique identifier to describe the asset you are persisting. They can optionally include a `partition` if they're persisting a particular [partition](/guides/build/partitions-and-backfills/partitioning-assets) of an asset.
 
-If you're using [asset definitions](/guides/build/assets/), you don't need to record these events explicitly – the framework handles it for you.
+If you're using [asset definitions](/guides/build/assets), you don't need to record these events explicitly – the framework handles it for you.
 
-<CodeExample path="docs_snippets/docs_snippets/concepts/ops_jobs_graphs/op_events.py" startAfter="start_asset_op" endBefore="end_asset_op" />
+<CodeExample path="docs_snippets/docs_snippets/concepts/ops_jobs_graphs/op_events.py" startAfter="start_asset_op" endBefore="end_asset_op" title="src/<project_name>/defs/ops.py"/>
 
 Asset materializations can also be yielded:
 
-<CodeExample path="docs_snippets/docs_snippets/concepts/ops_jobs_graphs/op_events.py" startAfter="start_asset_op_yield" endBefore="end_asset_op_yield" />
+<CodeExample path="docs_snippets/docs_snippets/concepts/ops_jobs_graphs/op_events.py" startAfter="start_asset_op_yield" endBefore="end_asset_op_yield" title="src/<project_name>/defs/ops.py"/>
 
 When yielding asset materializations, outputs must also be yielded via an <PyObject section="ops" module="dagster" object="Output"/>.
 
@@ -90,7 +90,7 @@ To learn more about assets and how they are surfaced once you send this event, c
 
 Attaching metadata to Asset Materializations is an important way of tracking aspects of a given asset over time. This functions essentially identically to other events which accept a `metadata` parameter, allowing you to attach a set of structured labels and values to display.
 
-<CodeExample path="docs_snippets/docs_snippets/concepts/assets/materialization_ops.py" startAfter="start_materialization_ops_marker_2" endBefore="end_materialization_ops_marker_2" />
+<CodeExample path="docs_snippets/docs_snippets/concepts/assets/materialization_ops.py" startAfter="start_materialization_ops_marker_2" endBefore="end_materialization_ops_marker_2" title="src/<project_name>/defs/ops.py"/>
 
 ### Asset observations
 
@@ -100,7 +100,7 @@ mutated.
 
 Within ops and assets, you can log or yield <PyObject section="assets" module="dagster" object="AssetObservation" /> events at runtime. Similar to attaching metadata to asset materializations, asset observations accept a `metadata` parameter, allowing you to track specific properties of an asset over time.
 
-<CodeExample path="docs_snippets/docs_snippets/concepts/assets/observations.py" startAfter="start_observation_asset_marker_0" endBefore="end_observation_asset_marker_0" />
+<CodeExample path="docs_snippets/docs_snippets/concepts/assets/observations.py" startAfter="start_observation_asset_marker_0" endBefore="end_observation_asset_marker_0" title="src/<project_name>/defs/ops.py"/>
 
 In the example above, an observation tracks the number of rows in an asset persisted to storage. This information can then be viewed on the [Asset Details](/guides/operate/webserver#assets) page.
 
@@ -110,7 +110,7 @@ To learn more about asset observations, check out the [Asset Observation](/guide
 
 Ops can emit structured events to represent the results of a data quality test. The data quality event class is the <PyObject section="ops" module="dagster" object="ExpectationResult" />. To generate an expectation result, we can log or yield an <PyObject section="ops" module="dagster" object="ExpectationResult" /> event in our op.
 
-<CodeExample path="docs_snippets/docs_snippets/concepts/ops_jobs_graphs/op_events.py" startAfter="start_expectation_op" endBefore="end_expectation_op" />
+<CodeExample path="docs_snippets/docs_snippets/concepts/ops_jobs_graphs/op_events.py" startAfter="start_expectation_op" endBefore="end_expectation_op" title="src/<project_name>/defs/ops.py"/>
 
 #### Attaching metadata to expectation results
 
@@ -118,7 +118,7 @@ Like many other event types in Dagster, there are a variety of types of metadata
 
 This example shows metadata entries of different types attached to the same expectation result:
 
-<CodeExample path="docs_snippets/docs_snippets/concepts/ops_jobs_graphs/op_events.py" startAfter="start_metadata_expectation_op" endBefore="end_metadata_expectation_op" />
+<CodeExample path="docs_snippets/docs_snippets/concepts/ops_jobs_graphs/op_events.py" startAfter="start_metadata_expectation_op" endBefore="end_metadata_expectation_op" title="src/<project_name>/defs/ops.py"/>
 
 ## Exceptions
 
@@ -130,7 +130,7 @@ A <PyObject section="ops" module="dagster" object="Failure" /> is a kind of [Exc
 
 A <PyObject section="ops" module="dagster" object="Failure" /> can include a dictionary with structured <PyObject section="metadata" module="dagster" object="MetadataValue"/> values, which will be rendered in the UI according to their type. It also has an `allow_retries` argument that can be used to bypass the op's retry policy.
 
-<CodeExample path="docs_snippets/docs_snippets/concepts/ops_jobs_graphs/op_events.py" startAfter="start_failure_op" endBefore="end_failure_op" />
+<CodeExample path="docs_snippets/docs_snippets/concepts/ops_jobs_graphs/op_events.py" startAfter="start_failure_op" endBefore="end_failure_op" title="src/<project_name>/defs/ops.py"/>
 
 ### Retry requests
 
@@ -142,4 +142,4 @@ execution.
 
 You can configure the number of retries to be attempted with the `max_retries` parameter.
 
-<CodeExample path="docs_snippets/docs_snippets/concepts/ops_jobs_graphs/op_events.py" startAfter="start_retry_op" endBefore="end_retry_op" />
+<CodeExample path="docs_snippets/docs_snippets/concepts/ops_jobs_graphs/op_events.py" startAfter="start_retry_op" endBefore="end_retry_op" title="src/<project_name>/defs/ops.py" />

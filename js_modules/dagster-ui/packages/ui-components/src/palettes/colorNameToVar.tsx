@@ -1,6 +1,6 @@
 import {ColorName} from './ColorName';
 
-export const colorNameToVar = {
+export const colorNameToVar: Record<ColorName, string> = {
   [ColorName.BrowserColorScheme]: 'var(--browser-color-scheme)',
   [ColorName.KeylineDefault]: 'var(--color-keyline-default)',
   [ColorName.LinkDefault]: 'var(--color-link-default)',

@@ -76,8 +76,45 @@ def test_without_asset_checks(test_asset_checks_manifest: dict[str, Any]) -> Non
     assert not result.get_asset_check_evaluations()
 
 
-def test_asset_checks_enabled_by_default(test_asset_checks_manifest: dict[str, Any]) -> None:
-    @dbt_assets(manifest=test_asset_checks_manifest)
+def test_customized_checks(test_asset_checks_manifest: dict[str, Any]) -> None:
+    class CustomDagsterDbtTranslatorWithChecks(DagsterDbtTranslator):
+        def get_asset_check_spec(self, asset_spec, manifest, unique_id, project):
+            default_spec = super().get_asset_check_spec(asset_spec, manifest, unique_id, project)
+            return default_spec._replace(description="blah") if default_spec else None
+
+    @dbt_assets(
+        manifest=test_asset_checks_manifest,
+        dagster_dbt_translator=CustomDagsterDbtTranslatorWithChecks(),
+    )
+    def my_dbt_assets(context: AssetExecutionContext, dbt: DbtCliResource):
+        yield from dbt.cli(["build"], context=context).stream()
+
+    check_specs = list(my_dbt_assets.check_specs_by_output_name.values())
+    assert len(check_specs) == 26
+    for spec in check_specs:
+        assert spec.description == "blah"
+
+
+@pytest.mark.parametrize(
+    "block_on_error_severity",
+    [True, False],
+)
+def test_asset_checks_enabled_by_default(
+    test_asset_checks_manifest: dict[str, Any], block_on_error_severity: bool
+) -> None:
+    class CustomDagsterDbtTranslatorWithNonBlockingChecks(DagsterDbtTranslator):
+        def get_asset_check_spec(self, asset_spec, manifest, unique_id, project):
+            default_check_spec = super().get_asset_check_spec(
+                asset_spec, manifest, unique_id, project
+            )
+            return default_check_spec._replace(blocking=False) if default_check_spec else None
+
+    @dbt_assets(
+        manifest=test_asset_checks_manifest,
+        dagster_dbt_translator=CustomDagsterDbtTranslatorWithNonBlockingChecks()
+        if not block_on_error_severity
+        else None,  # block_on_error_severity is the default
+    )
     def my_dbt_assets(context: AssetExecutionContext, dbt: DbtCliResource):
         yield from dbt.cli(["build"], context=context).stream()
 
@@ -96,43 +133,53 @@ def test_asset_checks_enabled_by_default(test_asset_checks_manifest: dict[str, A
         "customers_not_null_customers_customer_id": AssetCheckSpec(
             name="not_null_customers_customer_id",
             asset=AssetKey(["customers"]),
+            blocking=block_on_error_severity,
         ),
         "customers_unique_customers_customer_id": AssetCheckSpec(
             name="unique_customers_customer_id",
             asset=AssetKey(["customers"]),
+            blocking=False,  # severity is warn
         ),
         "orders_accepted_values_orders_status__placed__shipped__completed__return_pending__returned": AssetCheckSpec(
             name="accepted_values_orders_status__placed__shipped__completed__return_pending__returned",
             asset=AssetKey(["orders"]),
             description="Status must be one of ['placed', 'shipped', 'completed', 'return_pending', or 'returned']",
+            blocking=block_on_error_severity,
         ),
         "orders_not_null_orders_amount": AssetCheckSpec(
             name="not_null_orders_amount",
             asset=AssetKey(["orders"]),
+            blocking=block_on_error_severity,
         ),
         "orders_not_null_orders_bank_transfer_amount": AssetCheckSpec(
             name="not_null_orders_bank_transfer_amount",
             asset=AssetKey(["orders"]),
+            blocking=block_on_error_severity,
         ),
         "orders_not_null_orders_coupon_amount": AssetCheckSpec(
             name="not_null_orders_coupon_amount",
             asset=AssetKey(["orders"]),
+            blocking=block_on_error_severity,
         ),
         "orders_not_null_orders_credit_card_amount": AssetCheckSpec(
             name="not_null_orders_credit_card_amount",
             asset=AssetKey(["orders"]),
+            blocking=block_on_error_severity,
         ),
         "orders_not_null_orders_customer_id": AssetCheckSpec(
             name="not_null_orders_customer_id",
             asset=AssetKey(["orders"]),
+            blocking=block_on_error_severity,
         ),
         "orders_not_null_orders_gift_card_amount": AssetCheckSpec(
             name="not_null_orders_gift_card_amount",
             asset=AssetKey(["orders"]),
+            blocking=block_on_error_severity,
         ),
         "orders_not_null_orders_order_id": AssetCheckSpec(
             name="not_null_orders_order_id",
             asset=AssetKey(["orders"]),
+            blocking=block_on_error_severity,
         ),
         "orders_relationships_orders_customer_id__customer_id__ref_customers_": AssetCheckSpec(
             name="relationships_orders_customer_id__customer_id__ref_customers_",
@@ -140,6 +187,7 @@ def test_asset_checks_enabled_by_default(test_asset_checks_manifest: dict[str, A
             additional_deps=[
                 AssetKey(["customers"]),
             ],
+            blocking=block_on_error_severity,
         ),
         "orders_relationships_orders_customer_id__id__source_jaffle_shop_raw_customers_": AssetCheckSpec(
             name="relationships_orders_customer_id__id__source_jaffle_shop_raw_customers_",
@@ -147,6 +195,7 @@ def test_asset_checks_enabled_by_default(test_asset_checks_manifest: dict[str, A
             additional_deps=[
                 AssetKey(["jaffle_shop", "raw_customers"]),
             ],
+            blocking=block_on_error_severity,
         ),
         "orders_relationships_with_duplicate_orders_ref_customers___customer_id__customer_id__ref_customers_": AssetCheckSpec(
             name="relationships_with_duplicate_orders_ref_customers___customer_id__customer_id__ref_customers_",
@@ -154,54 +203,67 @@ def test_asset_checks_enabled_by_default(test_asset_checks_manifest: dict[str, A
             additional_deps=[
                 AssetKey(["customers"]),
             ],
+            blocking=block_on_error_severity,
         ),
         "orders_unique_orders_order_id": AssetCheckSpec(
             name="unique_orders_order_id",
             asset=AssetKey(["orders"]),
+            blocking=block_on_error_severity,
         ),
         "stg_customers_not_null_stg_customers_customer_id": AssetCheckSpec(
             name="not_null_stg_customers_customer_id",
             asset=AssetKey(["stg_customers"]),
+            blocking=block_on_error_severity,
         ),
         "stg_customers_unique_stg_customers_customer_id": AssetCheckSpec(
             name="unique_stg_customers_customer_id",
             asset=AssetKey(["stg_customers"]),
+            blocking=block_on_error_severity,
         ),
         "stg_orders_accepted_values_stg_orders_status__placed__shipped__completed__return_pending__returned": AssetCheckSpec(
             name="accepted_values_stg_orders_status__placed__shipped__completed__return_pending__returned",
             asset=AssetKey(["stg_orders"]),
+            blocking=block_on_error_severity,
         ),
         "stg_orders_not_null_stg_orders_order_id": AssetCheckSpec(
             name="not_null_stg_orders_order_id",
             asset=AssetKey(["stg_orders"]),
+            blocking=block_on_error_severity,
         ),
         "stg_orders_unique_stg_orders_order_id": AssetCheckSpec(
             name="unique_stg_orders_order_id",
             asset=AssetKey(["stg_orders"]),
+            blocking=block_on_error_severity,
         ),
         "stg_payments_accepted_values_stg_payments_payment_method__credit_card__coupon__bank_transfer__gift_card": AssetCheckSpec(
             name="accepted_values_stg_payments_payment_method__credit_card__coupon__bank_transfer__gift_card",
             asset=AssetKey(["stg_payments"]),
+            blocking=block_on_error_severity,
         ),
         "stg_payments_not_null_stg_payments_payment_id": AssetCheckSpec(
             name="not_null_stg_payments_payment_id",
             asset=AssetKey(["stg_payments"]),
+            blocking=block_on_error_severity,
         ),
         "stg_payments_unique_stg_payments_payment_id": AssetCheckSpec(
             name="unique_stg_payments_payment_id",
             asset=AssetKey(["stg_payments"]),
+            blocking=block_on_error_severity,
         ),
         "fail_tests_model_accepted_values_fail_tests_model_first_name__foo__bar__baz": AssetCheckSpec(
             name="accepted_values_fail_tests_model_first_name__foo__bar__baz",
             asset=AssetKey(["fail_tests_model"]),
+            blocking=block_on_error_severity,
         ),
         "fail_tests_model_unique_fail_tests_model_id": AssetCheckSpec(
             name="unique_fail_tests_model_id",
             asset=AssetKey(["fail_tests_model"]),
+            blocking=block_on_error_severity,
         ),
         "customers_singular_test_with_single_dependency": AssetCheckSpec(
             name="singular_test_with_single_dependency",
             asset=AssetKey(["customers"]),
+            blocking=block_on_error_severity,
         ),
         "customers_singular_test_with_meta_and_multiple_dependencies": AssetCheckSpec(
             name="singular_test_with_meta_and_multiple_dependencies",
@@ -209,6 +271,7 @@ def test_asset_checks_enabled_by_default(test_asset_checks_manifest: dict[str, A
             additional_deps=[
                 AssetKey(["orders"]),
             ],
+            blocking=block_on_error_severity,
         ),
     }
 
@@ -582,8 +645,16 @@ def test_asset_checks_results(
     result = materialize(
         [my_dbt_assets],
         resources={"dbt": DbtCliResource(project_dir=os.fspath(test_asset_checks_path))},
+        raise_on_error=False,
     )
-    assert result.success
+    assert not result.success
+    assert len(result.get_asset_materialization_events()) == 10
+    assert len(result.get_asset_check_evaluations()) == 26
+    assert len(result.get_step_failure_events()) == 1
+    assert (
+        "1 blocking asset check failed with ERROR severity:\\nfail_tests_model: accepted_values_fail_tests_model_first_name__foo__bar__baz"
+        in str(result.get_step_failure_events()[0])
+    )
 
 
 def test_asset_checks_evaluations(

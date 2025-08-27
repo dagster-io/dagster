@@ -294,6 +294,7 @@ const EditConcurrencyLimitDialog = ({
   const save = async () => {
     setIsSubmitting(true);
     await setConcurrencyLimit({
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
       variables: {concurrencyKey, limit: parseInt(limitInput!.trim())},
     });
     setIsSubmitting(false);

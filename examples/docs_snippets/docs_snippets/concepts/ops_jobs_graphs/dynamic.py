@@ -1,33 +1,31 @@
 # ruff: isort: skip_file
+import dagster as dg
 
 
-from dagster import DynamicOut, DynamicOutput, job, op
-
-
-@op
+@dg.op
 def one():
     return 1
 
 
-@op
+@dg.op
 def add(a, b):
     return a + b
 
 
-@op
+@dg.op
 def echo(x):
     return x
 
 
-@op
+@dg.op
 def process(results):
     return sum(results)
 
 
-@op(out=DynamicOut())
+@dg.op(out=dg.DynamicOut())
 def dynamic_values():
     for i in range(2):
-        yield DynamicOutput(i, mapping_key=f"num_{i}")
+        yield dg.DynamicOutput(i, mapping_key=f"num_{i}")
 
 
 class BigData:
@@ -51,14 +49,14 @@ def analyze(x):
 
 
 # non_dyn_start
-@op
+@dg.op
 def data_processing():
     large_data = load_big_data()
     interesting_result = expensive_processing(large_data)
     return analyze(interesting_result)
 
 
-@job
+@dg.job
 def naive():
     data_processing()
 
@@ -67,28 +65,28 @@ def naive():
 
 
 # dyn_out_start
-@op(out=DynamicOut())
+@dg.op(out=dg.DynamicOut())
 def load_pieces():
     large_data = load_big_data()
     for idx, piece in large_data.chunk():
-        yield DynamicOutput(piece, mapping_key=idx)
+        yield dg.DynamicOutput(piece, mapping_key=idx)
 
 
 # dyn_out_end
 
 
-@op
+@dg.op
 def compute_piece(piece):
     return expensive_processing(piece)
 
 
-@op
+@dg.op
 def merge_and_analyze(results):
     return analyze(results)
 
 
 # dyn_job_start
-@job
+@dg.job
 def dynamic_graph():
     pieces = load_pieces()
     results = pieces.map(compute_piece)
@@ -153,13 +151,13 @@ defs = dg.Definitions(jobs=[dynamic_graph])
 
 
 # dyn_chain_start
-@job
+@dg.job
 def chained():
     results = dynamic_values().map(echo).map(echo).map(echo)
     process(results.collect())
 
 
-@job
+@dg.job
 def chained_alt():
     def _for_each(val):
         a = echo(val)
@@ -174,7 +172,7 @@ def chained_alt():
 
 
 # dyn_add_start
-@job
+@dg.job
 def other_arg():
     non_dynamic = one()
     dynamic_values().map(lambda val: add(val, non_dynamic))
@@ -182,19 +180,19 @@ def other_arg():
 
 # dyn_add_end
 # dyn_mult_start
-@op(
+@dg.op(
     out={
-        "values": DynamicOut(),
-        "negatives": DynamicOut(),
+        "values": dg.DynamicOut(),
+        "negatives": dg.DynamicOut(),
     },
 )
 def multiple_dynamic_values():
     for i in range(2):
-        yield DynamicOutput(i, output_name="values", mapping_key=f"num_{i}")
-        yield DynamicOutput(-i, output_name="negatives", mapping_key=f"neg_{i}")
+        yield dg.DynamicOutput(i, output_name="values", mapping_key=f"num_{i}")
+        yield dg.DynamicOutput(-i, output_name="negatives", mapping_key=f"neg_{i}")
 
 
-@job
+@dg.job
 def multiple():
     # can unpack on assignment (order based)
     values, negatives = multiple_dynamic_values()
@@ -215,14 +213,14 @@ def get_pages():
 
 
 # dyn_out_return_start
-from dagster import DynamicOut, DynamicOutput, op
+import dagster as dg
 
 
-@op(out=DynamicOut())
-def return_dynamic() -> list[DynamicOutput[str]]:
+@dg.op(out=dg.DynamicOut())
+def return_dynamic() -> list[dg.DynamicOutput[str]]:
     outputs = []
     for idx, page_key in get_pages():
-        outputs.append(DynamicOutput(page_key, mapping_key=idx))
+        outputs.append(dg.DynamicOutput(page_key, mapping_key=idx))
     return outputs
 
 

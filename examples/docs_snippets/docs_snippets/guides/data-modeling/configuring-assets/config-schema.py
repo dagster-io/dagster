@@ -20,8 +20,6 @@ def forecast_model(config: ForecastModelConfig):
     # ...more code here
 
 
-defs = dg.Definitions(assets=[forecast_model])
-
 if __name__ == "__main__":
     from pathlib import Path
 

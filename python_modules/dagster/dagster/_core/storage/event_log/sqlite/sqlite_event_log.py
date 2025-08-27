@@ -36,6 +36,7 @@ from dagster._core.events import (
     DagsterEventType,
 )
 from dagster._core.events.log import EventLogEntry
+from dagster._core.instance import RUNLESS_RUN_ID
 from dagster._core.storage.dagster_run import DagsterRunStatus, RunsFilter
 from dagster._core.storage.event_log.base import EventLogCursor, EventLogRecord, EventRecordsFilter
 from dagster._core.storage.event_log.schema import (
@@ -257,13 +258,7 @@ class SqliteEventLogStorage(SqlEventLogStorage, ConfigurableClass):
         with self.run_connection(run_id) as conn:
             conn.execute(insert_event_statement)
 
-        if event.is_dagster_event and event.dagster_event.asset_key:  # type: ignore
-            check.invariant(
-                event.dagster_event_type in ASSET_EVENTS,
-                "Can only store asset materializations, materialization_planned, and"
-                " observations in index database",
-            )
-
+        if event.is_dagster_event and event.dagster_event_type in ASSET_EVENTS:
             event_id = None
 
             # mirror the event in the cross-run index database
@@ -365,20 +360,17 @@ class SqliteEventLogStorage(SqlEventLogStorage, ConfigurableClass):
             ascending=ascending,
         )
 
-        event_records = []
-        for run_record in run_records:
-            run_id = run_record.dagster_run.run_id
+        def _get_event_records_for_run(run_id: str) -> Sequence[EventLogRecord]:
+            records = []
             with self.run_connection(run_id) as conn:
                 results = conn.execute(query).fetchall()
 
             for row_id, json_str in results:
                 try:
                     event_record = deserialize_value(json_str, EventLogEntry)
-                    event_records.append(
-                        EventLogRecord(storage_id=row_id, event_log_entry=event_record)
-                    )
-                    if limit and len(event_records) >= limit:
-                        break
+                    records.append(EventLogRecord(storage_id=row_id, event_log_entry=event_record))
+                    if limit and len(records) >= limit:
+                        return records
                 except DeserializationError:
                     logging.warning(
                         "Could not resolve event record as EventLogEntry for id `%s`.", row_id
@@ -386,8 +378,18 @@ class SqliteEventLogStorage(SqlEventLogStorage, ConfigurableClass):
                 except seven.JSONDecodeError:
                     logging.warning("Could not parse event record id `%s`.", row_id)
 
+            return records
+
+        event_records = []
+        for run_record in run_records:
+            run_id = run_record.dagster_run.run_id
+            event_records.extend(_get_event_records_for_run(run_id))
+
             if limit and len(event_records) >= limit:
                 break
+
+        if not limit or len(event_records) < limit:
+            event_records.extend(_get_event_records_for_run(RUNLESS_RUN_ID))
 
         return event_records[:limit]
 

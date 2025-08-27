@@ -2,13 +2,14 @@ from collections.abc import Sequence
 from typing import TYPE_CHECKING, Optional, cast
 
 from dagster import AssetExecutionContext, AssetsDefinition, AssetSpec, multi_asset
-from dagster._annotations import beta, deprecated_param
+from dagster._annotations import beta, deprecated_param, superseded
 from dagster_shared import check
 
 if TYPE_CHECKING:
     from dagster_tableau.resources import BaseTableauWorkspace
 
 
+@superseded(additional_warn_text="Use `tableau_assets` decorator instead.")
 @deprecated_param(
     param="refreshable_workbook_ids",
     breaking_version="0.27",

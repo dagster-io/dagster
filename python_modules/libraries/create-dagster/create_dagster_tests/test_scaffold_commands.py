@@ -11,23 +11,18 @@ from dagster_dg_core.shared_options import DEFAULT_EDITABLE_DAGSTER_PROJECTS_ENV
 from dagster_dg_core.utils import (
     create_toml_node,
     discover_git_root,
-    ensure_dagster_dg_tests_import,
     get_toml_node,
     has_toml_node,
     modify_toml_as_dict,
 )
 from dagster_shared.libraries import get_published_pypi_versions
-from typing_extensions import TypeAlias
-
-ensure_dagster_dg_tests_import()
-
-from dagster_dg_core.utils import ensure_dagster_dg_tests_import
-from dagster_dg_core_tests.utils import (
+from dagster_test.dg_utils.utils import (
     ProxyRunner,
     assert_runner_result,
     clear_module_from_cache,
     isolated_example_workspace,
 )
+from typing_extensions import TypeAlias
 
 # ########################
 # ##### WORKSPACE
@@ -164,6 +159,13 @@ def test_scaffold_project_success(
         assert Path("foo-bar/src/foo_bar/defs").exists()
         assert Path("foo-bar/tests").exists()
         assert Path("foo-bar/pyproject.toml").exists()
+        # Standalone projects should have README.md and .gitignore
+        assert Path("foo-bar/README.md").exists()
+        assert Path("foo-bar/.gitignore").exists()
+
+        # Verify README.md contains the project name
+        readme_content = Path("foo-bar/README.md").read_text()
+        assert "foo_bar" in readme_content
 
         # this indicates user opts to create venv and uv.lock
         if not use_preexisting_venv and (
@@ -197,6 +199,9 @@ def test_scaffold_project_inside_workspace_success(monkeypatch) -> None:
         assert Path("projects/foo-bar/src/foo_bar/defs").exists()
         assert Path("projects/foo-bar/tests").exists()
         assert Path("projects/foo-bar/pyproject.toml").exists()
+        # Workspace projects should NOT have README.md and .gitignore
+        assert not Path("projects/foo-bar/README.md").exists()
+        assert not Path("projects/foo-bar/.gitignore").exists()
 
         # Check project TOML content
         toml = tomlkit.parse(Path("projects/foo-bar/pyproject.toml").read_text())
@@ -231,6 +236,10 @@ def test_scaffold_project_inside_workspace_success(monkeypatch) -> None:
         )
         assert_runner_result(result)
 
+        # Verify the second workspace project also doesn't have README.md and .gitignore
+        assert not Path("other_projects/baz/README.md").exists()
+        assert not Path("other_projects/baz/.gitignore").exists()
+
         # Check workspace TOML content
         raw_toml = Path("dg.toml").read_text()
         toml = tomlkit.parse(raw_toml)
@@ -259,6 +268,9 @@ def test_scaffold_project_inside_workspace_applies_scaffold_project_options(monk
             "--uv-sync",
         )
         assert_runner_result(result)
+        # Workspace projects should NOT have README.md and .gitignore
+        assert not Path("projects/foo-bar/README.md").exists()
+        assert not Path("projects/foo-bar/.gitignore").exists()
         # Check that use_editable_dagster was applied
         toml = tomlkit.parse(Path("projects/foo-bar/pyproject.toml").read_text())
         assert has_toml_node(toml, ("tool", "uv", "sources", "dagster"))
@@ -291,6 +303,9 @@ def test_scaffold_project_editable_dagster_success(
         assert_runner_result(result)
         assert Path("projects/foo-bar").exists()
         assert Path("projects/foo-bar/pyproject.toml").exists()
+        # Workspace projects should NOT have README.md and .gitignore
+        assert not Path("projects/foo-bar/README.md").exists()
+        assert not Path("projects/foo-bar/.gitignore").exists()
         with open("projects/foo-bar/pyproject.toml") as f:
             toml = tomlkit.parse(f.read())
             validate_pyproject_toml_with_editable(toml, option, dagster_git_repo_dir)
@@ -369,7 +384,7 @@ def validate_published_pyproject_toml(
     ) == {
         "dev": [
             "dagster-webserver",
-            "dagster-dg-cli[local]",
+            "dagster-dg-cli",
         ]
     }
 

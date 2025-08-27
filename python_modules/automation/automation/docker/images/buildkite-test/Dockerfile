@@ -55,10 +55,10 @@ RUN apt-get update -yqq \
     libxmlsec1-dev \
     pkg-config
 
-# Install Java (required by pyspark)
-COPY --from=openjdk:8-jre-slim /usr/local/openjdk-8 /usr/local/openjdk-8
-ENV JAVA_HOME /usr/local/openjdk-8
-RUN update-alternatives --install /usr/bin/java java /usr/local/openjdk-8/bin/java 1
+# Install Java (required by pyspark) - Java 17 for compatibility with both Spark 3 and 4
+COPY --from=openjdk:17-slim-buster /usr/local/openjdk-17 /usr/local/openjdk-17
+ENV JAVA_HOME /usr/local/openjdk-17
+RUN update-alternatives --install /usr/bin/java java /usr/local/openjdk-17/bin/java 1
 
 # Install various packages used in running/installing/testing Dagster:
 # - git/make (cloning dagster, running checks defined in Makefile)

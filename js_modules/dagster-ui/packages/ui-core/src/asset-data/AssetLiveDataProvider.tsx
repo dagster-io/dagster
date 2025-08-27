@@ -1,5 +1,5 @@
-import uniq from 'lodash/uniq';
-import React, {useCallback, useMemo, useReducer, useRef} from 'react';
+import React, {useCallback, useMemo} from 'react';
+import {useAssetLiveDataProviderChangeSignal} from 'shared/asset-data/_useAssetLiveDataProviderChangeSignal.oss';
 
 import {
   AssetAutomationData,
@@ -11,14 +11,11 @@ import {
   AssetStaleStatusData,
   __resetForJest as __resetStaleData,
 } from './AssetStaleStatusDataProvider';
-import {observeAssetEventsInRuns} from '../asset-graph/AssetRunLogObserver';
 import {LiveDataForNodeWithStaleData, tokenForAssetKey} from '../asset-graph/Utils';
+import {SelectionHealthDataProvider} from '../assets/catalog/useSelectionHealthData';
 import {AssetKeyInput} from '../graphql/types';
-import {useThrottledEffect} from '../hooks/useThrottledEffect';
 import {LiveDataPollRateContext} from '../live-data-provider/LiveDataProvider';
 import {LiveDataThreadID} from '../live-data-provider/LiveDataThread';
-import {SUBSCRIPTION_MAX_POLL_RATE} from '../live-data-provider/util';
-import {useDidLaunchEvent} from '../runs/RunUtils';
 
 export function useAssetLiveData(assetKey: AssetKeyInput, thread: LiveDataThreadID = 'default') {
   const key = tokenForAssetKey(assetKey);
@@ -92,27 +89,6 @@ export function useAssetsLiveData(
 }
 
 export const AssetLiveDataProvider = ({children}: {children: React.ReactNode}) => {
-  const [keysChanged, updateKeysChanged] = useReducer((s) => s + 1, 0);
-
-  const staleKeysObserved = useRef<Set<string>[]>([]);
-  const baseKeysObserved = useRef<Set<string>[]>([]);
-  const healthKeysObserved = useRef<Set<string>[]>([]);
-
-  React.useEffect(() => {
-    AssetStaleStatusData.manager.setOnSubscriptionsChangedCallback((keys) => {
-      staleKeysObserved.current = keys;
-      updateKeysChanged();
-    });
-    AssetBaseData.manager.setOnSubscriptionsChangedCallback((keys) => {
-      baseKeysObserved.current = keys;
-      updateKeysChanged();
-    });
-    AssetHealthData.manager.setOnSubscriptionsChangedCallback((keys) => {
-      healthKeysObserved.current = keys;
-      updateKeysChanged();
-    });
-  }, []);
-
   const pollRate = React.useContext(LiveDataPollRateContext);
 
   React.useEffect(() => {
@@ -122,56 +98,15 @@ export const AssetLiveDataProvider = ({children}: {children: React.ReactNode}) =
     AssetAutomationData.manager.setPollRate(pollRate);
   }, [pollRate]);
 
-  useDidLaunchEvent(() => {
-    AssetStaleStatusData.manager.invalidateCache();
-    AssetBaseData.manager.invalidateCache();
-    AssetHealthData.manager.invalidateCache();
-    AssetAutomationData.manager.invalidateCache();
-  }, SUBSCRIPTION_MAX_POLL_RATE);
-
-  useThrottledEffect(
-    () => {
-      const assetKeyTokensArray = [
-        ...staleKeysObserved.current.flatMap((keySet) => Array.from(keySet)),
-        ...baseKeysObserved.current.flatMap((keySet) => Array.from(keySet)),
-        ...healthKeysObserved.current.flatMap((keySet) => Array.from(keySet)),
-      ];
-      const assetKeyTokens = new Set(assetKeyTokensArray);
-      const dataForObservedKeys = assetKeyTokensArray
-        .map((key) => AssetBaseData.manager.getCacheEntry(key)!)
-        .filter((n) => n);
-
-      const assetStepKeys = new Set(dataForObservedKeys.flatMap((n) => n.opNames));
-
-      const runInProgressId = uniq(
-        dataForObservedKeys.flatMap((p) => [...p.unstartedRunIds, ...p.inProgressRunIds]),
-      ).sort();
-
-      const unobserve = observeAssetEventsInRuns(runInProgressId, (events) => {
-        if (
-          events.some(
-            (e) =>
-              (e.assetKey && assetKeyTokens.has(tokenForAssetKey(e.assetKey))) ||
-              (e.stepKey && assetStepKeys.has(e.stepKey)),
-          )
-        ) {
-          AssetBaseData.manager.invalidateCache();
-          AssetStaleStatusData.manager.invalidateCache();
-          AssetHealthData.manager.invalidateCache();
-          AssetAutomationData.manager.invalidateCache();
-        }
-      });
-      return unobserve;
-    },
-    [keysChanged],
-    2000,
-  );
+  useAssetLiveDataProviderChangeSignal();
 
   return (
     <AssetAutomationData.LiveDataProvider>
       <AssetHealthData.LiveDataProvider>
         <AssetBaseData.LiveDataProvider>
-          <AssetStaleStatusData.LiveDataProvider>{children}</AssetStaleStatusData.LiveDataProvider>
+          <AssetStaleStatusData.LiveDataProvider>
+            <SelectionHealthDataProvider>{children}</SelectionHealthDataProvider>
+          </AssetStaleStatusData.LiveDataProvider>
         </AssetBaseData.LiveDataProvider>
       </AssetHealthData.LiveDataProvider>
     </AssetAutomationData.LiveDataProvider>

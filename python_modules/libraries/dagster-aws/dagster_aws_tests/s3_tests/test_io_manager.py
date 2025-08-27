@@ -11,15 +11,15 @@ from dagster import (
     Int,
     Out,
     Output,
-    StaticPartitionsDefinition,
     asset,
     graph,
     job,
     op,
     resource,
 )
-from dagster._core.definitions.assets import AssetsDefinition
+from dagster._core.definitions.assets.definition.assets_definition import AssetsDefinition
 from dagster._core.definitions.definitions_class import Definitions
+from dagster._core.definitions.partitions.definition import StaticPartitionsDefinition
 from dagster._core.definitions.source_asset import SourceAsset
 from dagster._core.definitions.unresolved_asset_job_definition import define_asset_job
 

@@ -32,7 +32,7 @@ export const OverviewResourcesRoot = () => {
   const {
     allRepos,
     visibleRepos,
-    loading: workspaceLoading,
+    loadingNonAssets: workspaceLoading,
     data: cachedData,
   } = useContext(WorkspaceContext);
   const [searchValue, setSearchValue] = useQueryPersistedState<string>({

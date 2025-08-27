@@ -1,0 +1,14 @@
+# SCHEMA TEMPLATE - Copy and modify the structure below
+type: dagster_test.components.simple_pipes_script_asset.SimplePipesScriptComponent  # Required
+attributes:  # Optional: Component attributes
+  name: <string>  # Required: The component name
+  count: <integer>  # Optional: 
+  enabled: <boolean>  # Optional: 
+
+---
+# EXAMPLE VALUES - Valid YAML with sample data
+type: "dagster_test.components.simple_pipes_script_asset.SimplePipesScriptComponent"
+attributes:
+  name: "example_string"
+  count: 1
+  enabled: true

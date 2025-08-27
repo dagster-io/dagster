@@ -270,5 +270,5 @@ def finish_deploy_session(dg_context: DgContext, statedir: str, location_names: 
         statedir=str(statedir),
         location_name=list(location_names),
         location_load_timeout=get_location_load_timeout(),
-        agent_heartbeat_timeout=get_agent_heartbeat_timeout(),
+        agent_heartbeat_timeout=get_agent_heartbeat_timeout(default_timeout=None),
     )

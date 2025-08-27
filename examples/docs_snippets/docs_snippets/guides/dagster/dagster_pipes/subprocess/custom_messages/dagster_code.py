@@ -33,7 +33,8 @@ def subprocess_asset(
     )
 
 
-defs = dg.Definitions(
-    assets=[subprocess_asset],
-    resources={"pipes_subprocess_client": dg.PipesSubprocessClient()},
-)
+@dg.definitions
+def resources():
+    return dg.Definitions(
+        resources={"pipes_subprocess_client": dg.PipesSubprocessClient()}
+    )

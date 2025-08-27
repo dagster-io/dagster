@@ -16,11 +16,13 @@ import {KEY_PREFIX, __resetForJest} from '../../../search/useIndexedDBCachedQuer
 import {getMockResultFn} from '../../../testing/mocking';
 import {cache} from '../../../util/idb-lru-cache';
 import {WorkspaceContext, WorkspaceProvider} from '../WorkspaceContext';
+import {LOCATION_WORKSPACE_ASSETS_QUERY_KEY} from '../WorkspaceLocationAssetsFetcher';
 import {LOCATION_WORKSPACE_QUERY_KEY} from '../WorkspaceLocationDataFetcher';
 import {CODE_LOCATION_STATUS_QUERY_KEY} from '../WorkspaceStatusPoller';
 import {buildWorkspaceMocks} from '../__fixtures__/Workspace.fixtures';
 import {
   CodeLocationStatusQueryVersion,
+  LocationWorkspaceAssetsQueryVersion,
   LocationWorkspaceQueryVersion,
 } from '../types/WorkspaceQueries.types';
 import {repoLocationToRepos} from '../util';
@@ -48,12 +50,14 @@ jest.mock('../../../util/idb-lru-cache', () => {
 const mockLoadFromServerQueue: (() => void)[] = [];
 function drainMockLoadFromServerQueue() {
   while (mockLoadFromServerQueue.length) {
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     mockLoadFromServerQueue.shift()!();
   }
 }
 const mockHandleStatusUpdateQueue: (() => void)[] = [];
 function drainMockHandleStatusUpdateQueue() {
   while (mockHandleStatusUpdateQueue.length) {
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     mockHandleStatusUpdateQueue.shift()!();
   }
 }
@@ -150,6 +154,15 @@ function getLocationMocks(updatedTimestamp = 0) {
       location3: mockCache({
         dbName: `${KEY_PREFIX}${LOCAL_CACHE_ID_PREFIX}${LOCATION_WORKSPACE_QUERY_KEY}/location3`,
       }),
+      location1Assets: mockCache({
+        dbName: `${KEY_PREFIX}${LOCAL_CACHE_ID_PREFIX}${LOCATION_WORKSPACE_ASSETS_QUERY_KEY}/location1`,
+      }),
+      location2Assets: mockCache({
+        dbName: `${KEY_PREFIX}${LOCAL_CACHE_ID_PREFIX}${LOCATION_WORKSPACE_ASSETS_QUERY_KEY}/location2`,
+      }),
+      location3Assets: mockCache({
+        dbName: `${KEY_PREFIX}${LOCAL_CACHE_ID_PREFIX}${LOCATION_WORKSPACE_ASSETS_QUERY_KEY}/location3`,
+      }),
     },
   };
 }
@@ -169,15 +182,20 @@ describe('WorkspaceContext', () => {
     caches.location1.has.mockResolvedValue(false);
     caches.location2.has.mockResolvedValue(false);
     caches.location3.has.mockResolvedValue(false);
+    caches.location1Assets.has.mockResolvedValue(false);
+    caches.location2Assets.has.mockResolvedValue(false);
+    caches.location3Assets.has.mockResolvedValue(false);
     const mocks = buildWorkspaceMocks([location1, location2, location3], {delay: 10});
     const mockCbs = mocks.map(getMockResultFn);
 
     // Include code location status mock a second time since we call runOnlyPendingTimersAsync twice
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     const {result} = renderWithMocks([...mocks, mocks[0]!]);
 
     expect(result.current.allRepos).toEqual([]);
     expect(result.current.data).toEqual({});
-    expect(result.current.loading).toEqual(true);
+    expect(result.current.loadingNonAssets).toEqual(true);
+    expect(result.current.loadingAssets).toEqual(true);
 
     await act(async () => {
       await jest.runOnlyPendingTimersAsync();
@@ -189,10 +207,14 @@ describe('WorkspaceContext', () => {
     expect(mockCbs[1]).not.toHaveBeenCalled();
     expect(mockCbs[2]).not.toHaveBeenCalled();
     expect(mockCbs[3]).not.toHaveBeenCalled();
+    expect(mockCbs[4]).not.toHaveBeenCalled();
+    expect(mockCbs[5]).not.toHaveBeenCalled();
+    expect(mockCbs[6]).not.toHaveBeenCalled();
 
     expect(result.current.allRepos).toEqual([]);
     expect(result.current.data).toEqual({});
-    expect(result.current.loading).toEqual(true);
+    expect(result.current.loadingNonAssets).toEqual(true);
+    expect(result.current.loadingAssets).toEqual(true);
 
     // Runs the individual location queries
     await act(async () => {
@@ -203,10 +225,14 @@ describe('WorkspaceContext', () => {
       expect(mockCbs[1]).toHaveBeenCalled();
       expect(mockCbs[2]).toHaveBeenCalled();
       expect(mockCbs[3]).toHaveBeenCalled();
+      expect(mockCbs[4]).toHaveBeenCalled();
+      expect(mockCbs[5]).toHaveBeenCalled();
+      expect(mockCbs[6]).toHaveBeenCalled();
     });
 
     await waitFor(() => {
-      expect(result.current.loading).toEqual(false);
+      expect(result.current.loadingNonAssets).toEqual(false);
+      expect(result.current.loadingAssets).toEqual(false);
     });
     expect(result.current.allRepos).toEqual([
       ...repoLocationToRepos(repositoryLocation1),
@@ -239,19 +265,38 @@ describe('WorkspaceContext', () => {
 
     caches.codeLocationStatusQuery.has.mockResolvedValue(true);
     caches.codeLocationStatusQuery.get.mockResolvedValue({
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
       value: {data: (mocks[0]! as any).result.data, version: CodeLocationStatusQueryVersion},
     });
     caches.location1.has.mockResolvedValue(true);
     caches.location1.get.mockResolvedValue({
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
       value: {data: (mocks[1]! as any).result.data, version: LocationWorkspaceQueryVersion},
     });
     caches.location2.has.mockResolvedValue(true);
     caches.location2.get.mockResolvedValue({
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
       value: {data: (mocks[2]! as any).result.data, version: LocationWorkspaceQueryVersion},
     });
     caches.location3.has.mockResolvedValue(true);
     caches.location3.get.mockResolvedValue({
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
       value: {data: (mocks[3]! as any).result.data, version: LocationWorkspaceQueryVersion},
+    });
+    caches.location1Assets.has.mockResolvedValue(true);
+    caches.location1Assets.get.mockResolvedValue({
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+      value: {data: (mocks[4]! as any).result.data, version: LocationWorkspaceAssetsQueryVersion},
+    });
+    caches.location2Assets.has.mockResolvedValue(true);
+    caches.location2Assets.get.mockResolvedValue({
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+      value: {data: (mocks[5]! as any).result.data, version: LocationWorkspaceAssetsQueryVersion},
+    });
+    caches.location3Assets.has.mockResolvedValue(true);
+    caches.location3Assets.get.mockResolvedValue({
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+      value: {data: (mocks[6]! as any).result.data, version: LocationWorkspaceAssetsQueryVersion},
     });
 
     const mockCbs = mocks.map(getMockResultFn);
@@ -261,7 +306,8 @@ describe('WorkspaceContext', () => {
     await waitFor(async () => {
       drainMockLoadFromServerQueue();
       drainMockHandleStatusUpdateQueue();
-      expect(result.current.loading).toEqual(false);
+      expect(result.current.loadingNonAssets).toEqual(false);
+      expect(result.current.loadingAssets).toEqual(false);
     });
     // We queries for code location statuses but saw we were up to date
     // so we didn't call any the location queries
@@ -270,6 +316,9 @@ describe('WorkspaceContext', () => {
     expect(mockCbs[1]).not.toHaveBeenCalled();
     expect(mockCbs[2]).not.toHaveBeenCalled();
     expect(mockCbs[3]).not.toHaveBeenCalled();
+    expect(mockCbs[4]).not.toHaveBeenCalled();
+    expect(mockCbs[5]).not.toHaveBeenCalled();
+    expect(mockCbs[6]).not.toHaveBeenCalled();
     expect(result.current.allRepos).toEqual([
       ...repoLocationToRepos(repositoryLocation1),
       ...repoLocationToRepos(repositoryLocation2),
@@ -311,22 +360,42 @@ describe('WorkspaceContext', () => {
 
     caches.codeLocationStatusQuery.has.mockResolvedValue(true);
     caches.codeLocationStatusQuery.get.mockResolvedValue({
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
       value: {data: (mocks[0]! as any).result.data, version: CodeLocationStatusQueryVersion},
     });
     caches.location1.has.mockResolvedValue(true);
     caches.location1.get.mockResolvedValue({
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
       value: {data: (mocks[1]! as any).result.data, version: LocationWorkspaceQueryVersion},
     });
     caches.location2.has.mockResolvedValue(true);
     caches.location2.get.mockResolvedValue({
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
       value: {data: (mocks[2]! as any).result.data, version: LocationWorkspaceQueryVersion},
     });
     caches.location3.has.mockResolvedValue(true);
     caches.location3.get.mockResolvedValue({
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
       value: {data: (mocks[3]! as any).result.data, version: LocationWorkspaceQueryVersion},
+    });
+    caches.location1Assets.has.mockResolvedValue(true);
+    caches.location1Assets.get.mockResolvedValue({
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+      value: {data: (mocks[4]! as any).result.data, version: LocationWorkspaceAssetsQueryVersion},
+    });
+    caches.location2Assets.has.mockResolvedValue(true);
+    caches.location2Assets.get.mockResolvedValue({
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+      value: {data: (mocks[5]! as any).result.data, version: LocationWorkspaceAssetsQueryVersion},
+    });
+    caches.location3Assets.has.mockResolvedValue(true);
+    caches.location3Assets.get.mockResolvedValue({
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+      value: {data: (mocks[6]! as any).result.data, version: LocationWorkspaceAssetsQueryVersion},
     });
     const mockCbs = updatedMocks.map(getMockResultFn);
 
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     const {result} = renderWithMocks([...updatedMocks, updatedMocks[0]!]);
 
     await act(async () => {
@@ -339,7 +408,9 @@ describe('WorkspaceContext', () => {
     expect(mockCbs[1]).not.toHaveBeenCalled();
     expect(mockCbs[2]).not.toHaveBeenCalled();
     expect(mockCbs[3]).not.toHaveBeenCalled();
-
+    expect(mockCbs[4]).not.toHaveBeenCalled();
+    expect(mockCbs[5]).not.toHaveBeenCalled();
+    expect(mockCbs[6]).not.toHaveBeenCalled();
     expect(result.current.allRepos).toEqual([
       ...repoLocationToRepos(repositoryLocation1),
       ...repoLocationToRepos(repositoryLocation2),
@@ -390,22 +461,37 @@ describe('WorkspaceContext', () => {
 
     caches.codeLocationStatusQuery.has.mockResolvedValue(true);
     caches.codeLocationStatusQuery.get.mockResolvedValue({
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
       value: {data: (mocks[0]! as any).result.data, version: CodeLocationStatusQueryVersion},
     });
     caches.location1.has.mockResolvedValue(true);
     caches.location1.get.mockResolvedValue({
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
       value: {data: (mocks[1]! as any).result.data, version: LocationWorkspaceQueryVersion},
     });
     caches.location2.has.mockResolvedValue(true);
     caches.location2.get.mockResolvedValue({
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
       value: {data: (mocks[2]! as any).result.data, version: LocationWorkspaceQueryVersion},
     });
     caches.location3.has.mockResolvedValue(true);
     caches.location3.get.mockResolvedValue({
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
       value: {data: (mocks[3]! as any).result.data, version: LocationWorkspaceQueryVersion},
+    });
+    caches.location1Assets.has.mockResolvedValue(true);
+    caches.location1Assets.get.mockResolvedValue({
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+      value: {data: (mocks[4]! as any).result.data, version: LocationWorkspaceAssetsQueryVersion},
+    });
+    caches.location2Assets.has.mockResolvedValue(true);
+    caches.location2Assets.get.mockResolvedValue({
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+      value: {data: (mocks[5]! as any).result.data, version: LocationWorkspaceAssetsQueryVersion},
     });
     const mockCbs = updatedMocks.map(getMockResultFn);
 
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     const {result} = renderWithMocks([...updatedMocks, updatedMocks[0]!]);
 
     await act(async () => {
@@ -415,7 +501,8 @@ describe('WorkspaceContext', () => {
 
     await waitFor(async () => {
       drainMockHandleStatusUpdateQueue();
-      expect(result.current.loading).toEqual(false);
+      expect(result.current.loadingNonAssets).toEqual(false);
+      expect(result.current.loadingAssets).toEqual(false);
     });
 
     // We return the cached data
@@ -474,6 +561,7 @@ describe('WorkspaceContext', () => {
     location2.locationOrLoadError = error;
 
     const mocks = buildWorkspaceMocks([location1, location2, location3], {delay: 10});
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     mocks[0]!.maxUsageCount = 999;
     const mockCbs = mocks.map(getMockResultFn);
 
@@ -481,10 +569,16 @@ describe('WorkspaceContext', () => {
     caches.location1.has.mockResolvedValue(false);
     caches.location2.has.mockResolvedValue(false);
     caches.location3.has.mockResolvedValue(false);
+    caches.location1Assets.has.mockResolvedValue(false);
+    caches.location2Assets.has.mockResolvedValue(false);
+    caches.location3Assets.has.mockResolvedValue(false);
 
     const {result} = renderWithMocks(mocks);
 
-    expect(result.current.loading).toEqual(true);
+    await waitFor(() => {
+      expect(result.current.loadingNonAssets).toEqual(true);
+      expect(result.current.loadingAssets).toEqual(true);
+    });
 
     // Run the code location status query
     await act(async () => {
@@ -498,10 +592,14 @@ describe('WorkspaceContext', () => {
       expect(mockCbs[1]).toHaveBeenCalled();
       expect(mockCbs[2]).toHaveBeenCalled();
       expect(mockCbs[3]).toHaveBeenCalled();
+      expect(mockCbs[4]).toHaveBeenCalled();
+      expect(mockCbs[5]).toHaveBeenCalled();
+      expect(mockCbs[6]).toHaveBeenCalled();
     });
 
     await waitFor(() => {
-      expect(result.current.loading).toEqual(false);
+      expect(result.current.loadingNonAssets).toEqual(false);
+      expect(result.current.loadingAssets).toEqual(false);
     });
 
     expect(result.current.data).toEqual({
@@ -522,12 +620,25 @@ describe('WorkspaceContext', () => {
     caches.codeLocationStatusQuery.has.mockResolvedValue(false);
 
     const mocks = buildWorkspaceMocks([], {delay: 10});
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+    mocks[0]!.maxUsageCount = 9999;
 
     const {result} = renderWithMocks(mocks);
-    expect(result.current.loading).toEqual(true);
 
     await waitFor(() => {
-      expect(result.current.loading).toEqual(false);
+      expect(result.current.loadingNonAssets).toEqual(true);
+      expect(result.current.loadingAssets).toEqual(true);
+    });
+
+    await act(async () => {
+      await jest.runOnlyPendingTimersAsync();
+    });
+
+    await waitFor(() => {
+      drainMockHandleStatusUpdateQueue();
+      drainMockLoadFromServerQueue();
+      expect(result.current.loadingNonAssets).toEqual(false);
+      expect(result.current.loadingAssets).toEqual(false);
     });
 
     expect(result.current.allRepos).toEqual([]);
@@ -546,16 +657,21 @@ describe('WorkspaceContext', () => {
     });
     const mockCbs = mocks.map(getMockResultFn);
 
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     const {result} = renderWithMocks([...mocks, mocks[0]!]);
 
     expect(result.current.allRepos).toEqual([]);
     expect(result.current.data).toEqual({});
-    expect(result.current.loading).toEqual(true);
+    await waitFor(() => {
+      expect(result.current.loadingNonAssets).toEqual(true);
+      expect(result.current.loadingAssets).toEqual(true);
+    });
 
     await waitFor(() => {
       drainMockHandleStatusUpdateQueue();
       drainMockLoadFromServerQueue();
-      expect(result.current.loading).toEqual(false);
+      expect(result.current.loadingNonAssets).toEqual(false);
+      expect(result.current.loadingAssets).toEqual(false);
     });
 
     await waitFor(() => {
@@ -577,6 +693,9 @@ describe('WorkspaceContext', () => {
     caches.location1.has.mockResolvedValue(false);
     caches.location2.has.mockResolvedValue(false);
     caches.location3.has.mockResolvedValue(false);
+    caches.location1Assets.has.mockResolvedValue(false);
+    caches.location2Assets.has.mockResolvedValue(false);
+    caches.location3Assets.has.mockResolvedValue(false);
 
     const mocks = buildWorkspaceMocks([location1, location2, location3], {delay: 10});
 
@@ -589,13 +708,17 @@ describe('WorkspaceContext', () => {
     await waitFor(() => {
       drainMockHandleStatusUpdateQueue();
       drainMockLoadFromServerQueue();
-      expect(result.current.loading).toEqual(false);
+      expect(result.current.loadingNonAssets).toEqual(false);
+      expect(result.current.loadingAssets).toEqual(false);
     });
 
     expect(mockCbs[0]).toHaveBeenCalledTimes(1);
     expect(mockCbs[1]).toHaveBeenCalledTimes(1);
     expect(mockCbs[2]).toHaveBeenCalledTimes(1);
     expect(mockCbs[3]).toHaveBeenCalledTimes(1);
+    expect(mockCbs[4]).toHaveBeenCalledTimes(1);
+    expect(mockCbs[5]).toHaveBeenCalledTimes(1);
+    expect(mockCbs[6]).toHaveBeenCalledTimes(1);
 
     let promise: Promise<void>;
     await act(async () => {
@@ -608,6 +731,9 @@ describe('WorkspaceContext', () => {
       expect(mockCbs2[1]).not.toHaveBeenCalled();
       expect(mockCbs2[2]).not.toHaveBeenCalled();
       expect(mockCbs2[3]).not.toHaveBeenCalled();
+      expect(mockCbs2[4]).not.toHaveBeenCalled();
+      expect(mockCbs2[5]).not.toHaveBeenCalled();
+      expect(mockCbs2[6]).not.toHaveBeenCalled();
     });
 
     await act(async () => {
@@ -622,6 +748,9 @@ describe('WorkspaceContext', () => {
     caches.location1.has.mockResolvedValue(false);
     caches.location2.has.mockResolvedValue(false);
     caches.location3.has.mockResolvedValue(false);
+    caches.location1Assets.has.mockResolvedValue(false);
+    caches.location2Assets.has.mockResolvedValue(false);
+    caches.location3Assets.has.mockResolvedValue(false);
 
     const mocks = buildWorkspaceMocks([location1, location2, location3], {delay: 10});
 
@@ -635,7 +764,8 @@ describe('WorkspaceContext', () => {
     await waitFor(() => {
       drainMockHandleStatusUpdateQueue();
       drainMockLoadFromServerQueue();
-      expect(result.current.loading).toEqual(false);
+      expect(result.current.loadingNonAssets).toEqual(false);
+      expect(result.current.loadingAssets).toEqual(false);
     });
 
     await waitFor(() => {
@@ -643,6 +773,9 @@ describe('WorkspaceContext', () => {
       expect(mockCbs[1]).toHaveBeenCalledTimes(1);
       expect(mockCbs[2]).toHaveBeenCalledTimes(1);
       expect(mockCbs[3]).toHaveBeenCalledTimes(1);
+      expect(mockCbs[4]).toHaveBeenCalledTimes(1);
+      expect(mockCbs[5]).toHaveBeenCalledTimes(1);
+      expect(mockCbs[6]).toHaveBeenCalledTimes(1);
     });
 
     let promise: Promise<void>;
@@ -662,6 +795,10 @@ describe('WorkspaceContext', () => {
       expect(result.current.locationStatuses[location3.name]?.versionKey).toEqual(
         updatedLocation3.versionKey,
       );
+      expect(mockCbs2[4]).not.toHaveBeenCalled();
+      expect(mockCbs2[5]).not.toHaveBeenCalled();
+      // The third location query was updated so it was refetched immediately
+      expect(mockCbs2[6]).toHaveBeenCalledTimes(1);
     });
 
     await act(async () => {

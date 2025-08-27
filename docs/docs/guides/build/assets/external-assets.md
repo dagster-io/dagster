@@ -6,6 +6,10 @@ title: External assets
 
 One of Dagster's goals is to present a single unified lineage of all of the data assets in an organization, even if those assets are orchestrated by systems other than Dagster.
 
+import ScaffoldAsset from '@site/docs/partials/\_ScaffoldAsset.md';
+
+<ScaffoldAsset />
+
 With **external assets**, you can model assets orchestrated by other systems natively within Dagster, ensuring you have a comprehensive catalog of your organization's data. You can also create new data assets downstream of these external assets.
 
 Unlike native assets, Dagster can't materialize external assets directly or put them in a schedule. In these cases, an external system must inform Dagster when an external asset is updated.
@@ -16,19 +20,13 @@ For example, external assets could be:
 - A CSV file delivered daily by SFTP from a partner
 - A table in a data warehouse populated by another orchestrator
 
-:::note
-
-This article assumes familiarity with [assets](/guides/build/assets/defining-assets) and [sensors](/guides/automate/sensors).
-
-:::
-
 ## Defining external assets
 
 Let's say you have a partner who sends you raw transaction data by SFTP on an almost daily basis. This data is later cleaned and stored in an internal data lake.
 
 Because the raw transaction data isn't materialized by Dagster, it makes sense to model it as an external asset. The following example accomplishes this by using `AssetSpec`:
 
-<CodeExample path="docs_snippets/docs_snippets/guides/data-modeling/external-assets/creating-external-assets.py" language="python" />
+<CodeExample path="docs_snippets/docs_snippets/guides/data-modeling/external-assets/creating-external-assets.py" language="python" title="src/<project_name>/defs/assets.py" />
 
 Refer to the <PyObject section="assets" module="dagster" object="AssetSpec" /> for the parameters you can provide to an external asset.
 
@@ -43,11 +41,15 @@ There are two main ways to do this:
 
 ### Pulling with sensors
 
+import ScaffoldSensor from '@site/docs/partials/\_ScaffoldSensor.md';
+
+<ScaffoldSensor />
+
 You can use a Dagster [sensor](/guides/automate/sensors) to regularly poll the external system and pull information about the external asset into Dagster.
 
 For example, here's how you would poll an external system like an SFTP server to update an external asset whenever the file is changed.
 
-<CodeExample path="docs_snippets/docs_snippets/guides/data-modeling/external-assets/pulling-with-sensors.py" language="python" />
+<CodeExample path="docs_snippets/docs_snippets/guides/data-modeling/external-assets/pulling-with-sensors.py" language="python" title="src/<project_name>/defs/sensors.py" />
 
 Refer to the [Sensors guide](/guides/automate/sensors) for more information about sensors.
 
@@ -99,10 +101,10 @@ curl \
 </TabItem>
 </Tabs>
 
-Refer to the [External assets REST API documentation](/api/dagster/external-assets-rest-api) for more information.
+Refer to the [External assets REST API documentation](/api/rest-apis/external-assets-rest-api) for more information.
 
 ## Modeling a graph of external assets
 
 Like regular Dagster assets, external assets can have dependencies. This is useful when you want to model an entire data pipeline orchestrated by another system.
 
-<CodeExample path="docs_snippets/docs_snippets/guides/data-modeling/external-assets/dag-of-external-assets.py" language="python" />
+<CodeExample path="docs_snippets/docs_snippets/guides/data-modeling/external-assets/dag-of-external-assets.py" language="python" title="src/<project_name>/defs/assets.py" />

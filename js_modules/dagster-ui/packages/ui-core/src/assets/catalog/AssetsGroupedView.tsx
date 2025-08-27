@@ -1,6 +1,5 @@
 import {
   Box,
-  Colors,
   Container,
   Icon,
   IconName,
@@ -8,14 +7,12 @@ import {
   Menu,
   MenuItem,
   Popover,
-  Row,
-  Subtitle,
   Tab,
   Tabs,
   UnstyledButton,
 } from '@dagster-io/ui-components';
 import {useVirtualizer} from '@tanstack/react-virtual';
-import React, {useDeferredValue, useMemo, useRef} from 'react';
+import React, {useMemo, useRef} from 'react';
 import {CreateCatalogViewButton} from 'shared/assets/CreateCatalogViewButton.oss';
 import {useCatalogViews} from 'shared/assets/catalog/useCatalogViews.oss';
 
@@ -30,6 +27,7 @@ import {
   TILE_WIDTH,
 } from './AssetSelectionSummaryTile';
 import {Grid, SectionedGrid, SectionedList} from './ListGridViews';
+import {SelectionSectionHeader} from './SelectionSectionHeader';
 import {ViewType, getGroupedAssets} from './util';
 import {COMMON_COLLATOR} from '../../app/Util';
 import {usePrefixedCacheKey} from '../../app/usePrefixedCacheKey';
@@ -38,7 +36,6 @@ import {useQueryPersistedState} from '../../hooks/useQueryPersistedState';
 import {useStateWithStorage} from '../../hooks/useStateWithStorage';
 import {InsightsIcon} from '../../insights/InsightsIcon';
 import {LoadingSpinner} from '../../ui/Loading';
-import {numberFormatter} from '../../ui/formatters';
 import {weakMapMemoize} from '../../util/weakMapMemoize';
 import {AssetTableFragment} from '../types/AssetTableFragment.types';
 import {useAllAssets} from '../useAllAssets';
@@ -167,6 +164,7 @@ export const AssetsGroupedView = ({assets}: {assets: AssetTableFragment[]}) => {
                   <MenuItem text="List" onClick={() => setDisplayAs('List')} />
                 </Menu>
               }
+              placement="bottom-end"
             >
               <UnstyledButton $outlineOnHover style={{padding: 8, borderRadius: 4}}>
                 <Box flex={{direction: 'row', alignItems: 'center', gap: 2}}>
@@ -191,7 +189,7 @@ const getListItems = weakMapMemoize(
   ) => {
     return Object.entries(items)
       .sort(([keyA], [keyB]) => COMMON_COLLATOR.compare(keyA, keyB))
-      .map(([key, {label, assets, link}]) => {
+      .map(([key, {label, assets, link}], index) => {
         const icon = (
           <InsightsIcon
             name={
@@ -209,7 +207,7 @@ const getListItems = weakMapMemoize(
             icon={icon}
             link={link}
             assets={assets}
-            menu={<Menu />}
+            index={index}
           />
         ) : (
           <AssetSelectionSummaryTile
@@ -239,16 +237,25 @@ const List = ({rows}: {rows: React.ReactNode[]}) => {
   return (
     <Container ref={scrollWrapperRef} style={{maxHeight: '600px', overflowY: 'auto'}}>
       <Inner $totalHeight={totalHeight}>
-        {rowItems.map(({index, key, size, start}) => {
-          const row = rows[index]!;
-          return (
-            <Row key={key} $height={size} $start={start}>
-              <div ref={rowVirtualizer.measureElement} data-index={index}>
+        <div
+          style={{
+            position: 'absolute',
+            top: 0,
+            left: 0,
+            width: '100%',
+            transform: `translateY(${rowItems[0]?.start ?? 0}px)`,
+          }}
+        >
+          {rowItems.map(({index, key}) => {
+            // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+            const row = rows[index]!;
+            return (
+              <div key={key} ref={rowVirtualizer.measureElement} data-index={index}>
                 {row}
               </div>
-            </Row>
-          );
-        })}
+            );
+          })}
+        </div>
       </Inner>
     </Container>
   );
@@ -275,73 +282,6 @@ const propertyToLabelAndIcon: Record<Property, {label: string; icon: IconName}> 
     label: 'Code locations',
     icon: 'folder',
   },
-};
-
-// DRY: Shared Section Header for Selections
-const SelectionSectionHeader = ({
-  icon,
-  label,
-  count,
-  border,
-  isOpen,
-  toggleOpen,
-  children,
-  displayAs,
-}: {
-  icon: IconName;
-  label: string;
-  count: number;
-  border: 'top-and-bottom' | 'bottom';
-  isOpen: boolean;
-  toggleOpen: () => void;
-  children?: React.ReactNode;
-  displayAs: 'List' | 'Grid';
-}) => {
-  const actuallyOpen = useDeferredValue(isOpen);
-  return (
-    <Box padding={{bottom: actuallyOpen && displayAs === 'Grid' ? 12 : 0}}>
-      <Box
-        flex={{
-          direction: 'row',
-          alignItems: 'center',
-          gap: 8,
-          justifyContent: 'space-between',
-        }}
-        padding={{horizontal: 24, vertical: 2}}
-        style={{height: 44}}
-        background={Colors.backgroundLight()}
-        border={border}
-      >
-        <Box flex={{direction: 'row', alignItems: 'center', gap: 8}}>
-          <Icon name={icon} />
-          <Subtitle>
-            {label} ({numberFormatter.format(count)})
-          </Subtitle>
-          <UnstyledButton
-            onClick={(e) => {
-              e.stopPropagation();
-              toggleOpen();
-            }}
-            onDoubleClick={(e) => {
-              e.stopPropagation();
-            }}
-            onKeyDown={(e) => {
-              if (e.code === 'Space') {
-                e.preventDefault();
-              }
-            }}
-            style={{cursor: 'pointer', width: 18}}
-          >
-            <Icon
-              name="arrow_drop_down"
-              style={{transform: isOpen ? 'rotate(0deg)' : 'rotate(-90deg)'}}
-            />
-          </UnstyledButton>
-        </Box>
-        {children}
-      </Box>
-    </Box>
-  );
 };
 
 function createSelectionSection({
@@ -380,8 +320,13 @@ function createSelectionSection({
         {children}
       </SelectionSectionHeader>
     ),
-    renderItem: (item: ViewType) => (
-      <SelectionListItem item={item} assetsByAssetKey={assetsByAssetKey} key={item.id} />
+    renderItem: (item: ViewType, index: number) => (
+      <SelectionListItem
+        index={index}
+        item={item}
+        assetsByAssetKey={assetsByAssetKey}
+        key={item.id}
+      />
     ),
     renderTile: (item: ViewType) => (
       <SelectionTile item={item} assetsByAssetKey={assetsByAssetKey} key={item.id} />
@@ -391,30 +336,27 @@ function createSelectionSection({
 
 const SelectionListItem = React.memo(
   ({
+    index,
     item,
     assetsByAssetKey,
   }: {
+    index: number;
     item: ViewType;
     assetsByAssetKey: Map<string, AssetTableFragment>;
   }) => {
     if (item.__typename === 'CatalogView') {
-      return (
-        <AssetSelectionSummaryListItemFromSelection
-          item={item}
-          menu={<Menu />}
-          icon={<Icon name={item.icon as IconName} size={16} />}
-        />
-      );
+      return <AssetSelectionSummaryListItemFromSelection index={index} item={item} />;
     }
     return (
       <AssetSelectionSummaryListItem
+        index={index}
         assets={item.assets
+          // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
           .map((assetKey: string) => assetsByAssetKey.get(assetKey)!)
           .filter(Boolean)}
         icon={<Icon name={item.icon as IconName} size={16} />}
         label={item.name}
         link={item.link}
-        menu={<Menu />}
       />
     );
   },
@@ -434,6 +376,7 @@ export const SelectionTile = React.memo(
       <AssetSelectionSummaryTile
         icon={<Icon name={item.icon as IconName} size={24} />}
         label={item.name}
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
         assets={item.assets.map((assetKey: any) => assetsByAssetKey.get(assetKey)!).filter(Boolean)}
         link={item.link}
       />

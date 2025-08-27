@@ -1,5 +1,15 @@
 import {Colors} from '@dagster-io/ui-components';
-import {ActiveElement, ChartEvent, ChartOptions} from 'chart.js';
+import {
+  ActiveElement,
+  CategoryScale,
+  ChartEvent,
+  Chart as ChartJS,
+  ChartOptions,
+  LineElement,
+  LinearScale,
+  PointElement,
+  TimeScale,
+} from 'chart.js';
 import 'chartjs-adapter-date-fns';
 import * as React from 'react';
 import {useContext} from 'react';
@@ -8,6 +18,8 @@ import {Line} from 'react-chartjs-2';
 import {TimeContext} from '../app/time/TimeContext';
 import {timestampToString} from '../app/time/timestampToString';
 import {useRGBColorsForTheme} from '../app/useRGBColorsForTheme';
+
+ChartJS.register(CategoryScale, LinearScale, LineElement, PointElement, TimeScale);
 
 export interface AssetValueGraphData {
   minY: number;
@@ -164,16 +176,10 @@ export const AssetValueGraph = (props: {
         props.onHoverX(null);
         return;
       }
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
       props.onHoverX(props.data.values[itemIdx]!.x);
     },
   };
 
-  return (
-    <Line
-      data={graphData}
-      height={props.height || 100}
-      options={options as any}
-      key={props.width}
-    />
-  );
+  return <Line data={graphData} height={props.height || 100} options={options} key={props.width} />;
 };

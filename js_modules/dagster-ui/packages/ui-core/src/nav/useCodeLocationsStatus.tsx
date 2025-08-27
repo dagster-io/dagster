@@ -1,4 +1,4 @@
-import {Box, ButtonLink, Colors} from '@dagster-io/ui-components';
+import {Box, ButtonLink} from '@dagster-io/ui-components';
 import qs from 'qs';
 import {useCallback, useContext, useLayoutEffect, useMemo, useRef, useState} from 'react';
 import {useHistory} from 'react-router-dom';
@@ -26,7 +26,7 @@ export const codeLocationStatusAtom = atom<CodeLocationStatusQuery | undefined>(
 });
 
 export const useCodeLocationsStatus = (): StatusAndMessage | null => {
-  const {locationEntries, loading, data} = useContext(WorkspaceContext);
+  const {locationEntries, loadingNonAssets: loading, data} = useContext(WorkspaceContext);
   const [previousEntriesById, setPreviousEntriesById] = useState<EntriesById | null>(null);
 
   const history = useHistory();
@@ -219,6 +219,7 @@ export const useCodeLocationsStatus = (): StatusAndMessage | null => {
 
       const toastContent = () => {
         if (addedEntries.length === 1) {
+          // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
           const entryId = addedEntries[0]!;
           const locationName = currEntriesById[entryId]?.name;
           // The entry should be in the entry map, but guard against errors just in case.
@@ -263,7 +264,8 @@ export const useCodeLocationsStatus = (): StatusAndMessage | null => {
           <Box flex={{direction: 'row', justifyContent: 'space-between', gap: 24, grow: 1}}>
             {currentlyLoading.length === 1 ? (
               <span>
-                Updating <strong>{currentlyLoading[0]!.name}</strong>
+                {/* eslint-disable-next-line @typescript-eslint/no-non-null-assertion */}
+                <strong>{currentlyLoading[0]!.name}</strong>
               </span>
             ) : (
               <span>Updating {currentlyLoading.length} code locations</span>
@@ -309,11 +311,7 @@ export const useCodeLocationsStatus = (): StatusAndMessage | null => {
 };
 
 const ViewCodeLocationsButton = ({onClick}: {onClick: () => void}) => {
-  return (
-    <ViewButton onClick={onClick} color={Colors.accentWhite()}>
-      View
-    </ViewButton>
-  );
+  return <ViewButton onClick={onClick}>View</ViewButton>;
 };
 
 const ViewButton = styled(ButtonLink)`

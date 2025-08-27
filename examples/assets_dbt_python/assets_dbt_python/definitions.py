@@ -4,11 +4,9 @@ from dagster import (
     Definitions,
     FilesystemIOManager,
     ScheduleDefinition,
+    build_sensor_for_freshness_checks,
     define_asset_job,
     load_assets_from_modules,
-)
-from dagster._core.definitions.asset_check_factories.freshness_checks.sensor import (
-    build_sensor_for_freshness_checks,
 )
 from dagster_dbt import DbtCliResource
 from dagster_duckdb_pandas import DuckDBPandasIOManager

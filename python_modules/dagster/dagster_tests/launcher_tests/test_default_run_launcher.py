@@ -7,27 +7,20 @@ import time
 from collections.abc import Mapping
 from typing import Any
 
+import dagster as dg
 import pytest
 from dagster import (
-    Config,
     DagsterEvent,
     DagsterEventType,
-    DefaultRunLauncher,
-    Output,
-    RetryPolicy,
     _check as check,
-    file_relative_path,
-    repository,
 )
-from dagster._core.definitions import op
-from dagster._core.errors import DagsterExecutionInterruptedError, DagsterLaunchFailedError
+from dagster._core.errors import DagsterLaunchFailedError
 from dagster._core.execution.plan.objects import StepSuccessData
 from dagster._core.instance import DagsterInstance
 from dagster._core.storage.dagster_run import DagsterRunStatus
 from dagster._core.storage.tags import GRPC_INFO_TAG
 from dagster._core.test_utils import (
     environ,
-    instance_for_test,
     poll_for_event,
     poll_for_finished_run,
     poll_for_step_start,
@@ -40,21 +33,18 @@ from dagster._grpc.types import CancelExecutionRequest
 from dagster_shared import seven
 
 
-@op
+@dg.op
 def noop_op(_):
     pass
 
 
-from dagster import job
-
-
-@job
+@dg.job
 def noop_job():
     pass
 
 
-@op(
-    retry_policy=RetryPolicy(
+@dg.op(
+    retry_policy=dg.RetryPolicy(
         max_retries=2,
     )
 )
@@ -62,27 +52,27 @@ def crashy_op(_):
     os._exit(1)
 
 
-@job
+@dg.job
 def crashy_job():
     crashy_op()
 
 
-@op
+@dg.op
 def exity_op(_):
     sys.exit(1)
 
 
-@job
+@dg.job
 def exity_job():
     exity_op()
 
 
-class SleepyOpConfig(Config):
+class SleepyOpConfig(dg.Config):
     raise_keyboard_interrupt: bool = False
     crash_after_termination: bool = False
 
 
-@op
+@dg.op
 def sleepy_op(config: SleepyOpConfig):
     assert not (config.raise_keyboard_interrupt and config.crash_after_termination)
 
@@ -90,7 +80,7 @@ def sleepy_op(config: SleepyOpConfig):
         try:
             time.sleep(0.1)
 
-        except DagsterExecutionInterruptedError:
+        except dg.DagsterExecutionInterruptedError:
             if config.raise_keyboard_interrupt:
                 # simulates a custom signal handler that has overridden ours
                 # to raise a normal KeyboardInterrupt
@@ -102,42 +92,42 @@ def sleepy_op(config: SleepyOpConfig):
                 raise
 
 
-@job
+@dg.job
 def sleepy_job():
     sleepy_op()
 
 
-@op
+@dg.op
 def slow_sudop(_):
     time.sleep(4)
 
 
-@job
+@dg.job
 def slow_job():
     slow_sudop()
 
 
-@op
+@dg.op
 def return_one(_):
     return 1
 
 
-@op
+@dg.op
 def multiply_by_2(_, num):
     return num * 2
 
 
-@op
+@dg.op
 def multiply_by_3(_, num):
     return num * 3
 
 
-@op
+@dg.op
 def add(_, num1, num2):
     return num1 + num2
 
 
-@op
+@dg.op
 def op_that_emits_duplicate_step_success_event(context):
     # emits a duplicate step success event which will mess up the execution
     # machinery and fail the run worker
@@ -149,22 +139,22 @@ def op_that_emits_duplicate_step_success_event(context):
         context._step_execution_context,  # noqa
         StepSuccessData(duration_ms=50.0),
     )
-    yield Output(5)
+    yield dg.Output(5)
 
 
-@job
+@dg.job
 def job_that_fails_run_worker():
     sleepy_op()
     op_that_emits_duplicate_step_success_event()
 
 
-@job
+@dg.job
 def math_diamond():
     one = return_one()
     add(multiply_by_2(one), multiply_by_3(one))
 
 
-@repository
+@dg.repository
 def nope():
     return [
         noop_job,
@@ -313,7 +303,7 @@ def test_invalid_instance_run():
         wrong_run_storage_dir = os.path.join(temp_dir, "wrong", "")
 
         with environ({"RUN_STORAGE_ENV": correct_run_storage_dir}):
-            with instance_for_test(
+            with dg.instance_for_test(
                 temp_dir=temp_dir,
                 overrides={
                     "run_storage": {
@@ -328,7 +318,7 @@ def test_invalid_instance_run():
                     with WorkspaceProcessContext(
                         instance,
                         PythonFileTarget(
-                            python_file=file_relative_path(
+                            python_file=dg.file_relative_path(
                                 __file__, "test_default_run_launcher.py"
                             ),
                             attribute="nope",
@@ -909,7 +899,7 @@ def test_engine_events(
 
 
 def test_not_initialized():
-    run_launcher = DefaultRunLauncher()
+    run_launcher = dg.DefaultRunLauncher()
     run_id = make_new_run_id()
 
     assert run_launcher.join() is None

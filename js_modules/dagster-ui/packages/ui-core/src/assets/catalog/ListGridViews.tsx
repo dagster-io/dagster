@@ -15,8 +15,8 @@ export type Sections<T> = {
     isOpen: boolean;
     toggleOpen: () => void;
   }) => React.ReactNode;
-  renderItem: (item: T) => React.ReactNode;
-  renderTile: (item: T) => React.ReactNode;
+  renderItem: (item: T, index: number) => React.ReactNode;
+  renderTile: (item: T, index: number) => React.ReactNode;
 }[];
 
 const PADDING_HORIZONTAL = 24;
@@ -45,7 +45,7 @@ function getSectionRows<T>(params: {
       tileGap !== undefined &&
       tileWidth !== undefined
     ) {
-      const tiles = items.map((item) => renderTile(item));
+      const tiles = items.map((item, index) => renderTile(item, index));
       const tilesPerRow = getTilesPerRow(viewport, tileGap, tileWidth);
       const rowCount = Math.ceil(tiles.length / tilesPerRow);
       return [
@@ -69,7 +69,7 @@ function getSectionRows<T>(params: {
         )),
       ];
     } else if (renderType === 'item' && isOpen) {
-      return [header, ...items.map((item) => renderItem(item))];
+      return [header, ...items.map((item, index) => renderItem(item, index))];
     } else {
       return [header];
     }
@@ -193,6 +193,7 @@ export const List = ({rows}: {rows: React.ReactNode[]}) => {
     <Container ref={scrollWrapperRef} style={{maxHeight: '600px', overflowY: 'auto'}}>
       <Inner $totalHeight={totalHeight}>
         {rowItems.map(({index, key, size, start}) => {
+          // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
           const row = rows[index]!;
           return (
             <Row key={key} $height={size} $start={start}>

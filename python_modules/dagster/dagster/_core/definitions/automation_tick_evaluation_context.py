@@ -8,11 +8,11 @@ import dagster._check as check
 from dagster import PartitionKeyRange
 from dagster._core.asset_graph_view.entity_subset import EntitySubset
 from dagster._core.definitions.asset_daemon_cursor import AssetDaemonCursor
-from dagster._core.definitions.asset_graph_subset import AssetGraphSubset
 from dagster._core.definitions.asset_key import AssetCheckKey, EntityKey
 from dagster._core.definitions.asset_selection import AssetSelection
+from dagster._core.definitions.assets.graph.asset_graph_subset import AssetGraphSubset
+from dagster._core.definitions.assets.graph.base_asset_graph import BaseAssetGraph
 from dagster._core.definitions.backfill_policy import BackfillPolicy, BackfillPolicyType
-from dagster._core.definitions.base_asset_graph import BaseAssetGraph
 from dagster._core.definitions.declarative_automation.automation_condition import (
     AutomationCondition,
     AutomationResult,
@@ -24,7 +24,8 @@ from dagster._core.definitions.declarative_automation.serialized_objects import 
     AutomationConditionEvaluation,
 )
 from dagster._core.definitions.events import AssetKey, AssetKeyPartitionKey
-from dagster._core.definitions.partition import PartitionsDefinition
+from dagster._core.definitions.partitions.context import use_partition_loading_context
+from dagster._core.definitions.partitions.definition import PartitionsDefinition
 from dagster._core.definitions.run_request import RunRequest
 from dagster._core.instance import DynamicPartitionsStore
 from dagster._core.storage.tags import (
@@ -74,6 +75,7 @@ class AutomationTickEvaluationContext:
         self._materialize_run_tags = materialize_run_tags
         self._observe_run_tags = observe_run_tags
         self._auto_observe_asset_keys = auto_observe_asset_keys or set()
+        self._partition_loading_context = self._evaluator.asset_graph_view.partition_loading_context
 
     @property
     def cursor(self) -> AssetDaemonCursor:
@@ -165,6 +167,22 @@ class AutomationTickEvaluationContext:
                 updated_evaluations.append(result.serializable_evaluation)
         return updated_evaluations
 
+    @use_partition_loading_context
+    async def async_evaluate(
+        self,
+    ) -> tuple[
+        Sequence[RunRequest], AssetDaemonCursor, Sequence[AutomationConditionEvaluation[EntityKey]]
+    ]:
+        observe_run_requests = self._legacy_build_auto_observe_run_requests()
+        results, entity_subsets = await self._evaluator.async_evaluate()
+
+        return (
+            [*self._build_run_requests(entity_subsets), *observe_run_requests],
+            self._get_updated_cursor(results, observe_run_requests),
+            self._get_updated_evaluations(results),
+        )
+
+    @use_partition_loading_context
     def evaluate(
         self,
     ) -> tuple[
@@ -419,9 +437,7 @@ def _build_run_requests_with_backfill_policy(
 ) -> Sequence[RunRequest]:
     run_requests = []
     partition_subset = partitions_def.subset_with_partition_keys(partition_keys)
-    partition_key_ranges = partition_subset.get_partition_key_ranges(
-        partitions_def, dynamic_partitions_store=dynamic_partitions_store
-    )
+    partition_key_ranges = partition_subset.get_partition_key_ranges(partitions_def)
     for partition_key_range in partition_key_ranges:
         # We might resolve more than one partition key range for the given partition keys.
         # We can only apply chunking on individual partition key ranges.
@@ -464,9 +480,7 @@ def _build_run_requests_for_partition_key_range(
     """Builds multiple run requests for the given partition key range. Each run request will have at most
     max_partitions_per_run partitions.
     """
-    partition_keys = partitions_def.get_partition_keys_in_range(
-        partition_key_range, dynamic_partitions_store=dynamic_partitions_store
-    )
+    partition_keys = partitions_def.get_partition_keys_in_range(partition_key_range)
     partition_range_start_index = partition_keys.index(partition_key_range.start)
     partition_range_end_index = partition_keys.index(partition_key_range.end)
 

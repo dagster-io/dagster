@@ -27,12 +27,4 @@ export const useVisibleFeatureFlagRows = (): FeatureFlagRow[] => [
     key: 'Disable automatically loading default config in launchpad',
     flagType: FeatureFlag.flagDisableAutoLoadDefaults,
   },
-  {
-    key: 'Docs in app (experimental)',
-    flagType: FeatureFlag.flagDocsInApp,
-  },
-  {
-    key: 'Enable retries from asset failure',
-    flagType: FeatureFlag.flagAssetRetries,
-  },
 ];

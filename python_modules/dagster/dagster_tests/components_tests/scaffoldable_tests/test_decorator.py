@@ -1,21 +1,17 @@
+import dagster as dg
 import pytest
-from dagster.components.scaffold.scaffold import (
-    Scaffolder,
-    get_scaffolder,
-    has_scaffolder,
-    scaffold_with,
-)
+from dagster.components.scaffold.scaffold import get_scaffolder, has_scaffolder
 from dagster_shared.check import CheckError
 
 
 # Example usage:
 def test_basic_usage() -> None:
     # Example scaffolder class
-    class MyScaffolder(Scaffolder):
+    class MyScaffolder(dg.Scaffolder):
         pass
 
     # Example decorated class
-    @scaffold_with(MyScaffolder)
+    @dg.scaffold_with(MyScaffolder)
     class MyClass:
         pass
 
@@ -32,14 +28,14 @@ def test_basic_usage() -> None:
 
 
 def test_inheritance() -> None:
-    class ScaffolderOne(Scaffolder): ...
+    class ScaffolderOne(dg.Scaffolder): ...
 
-    class ScaffolderTwo(Scaffolder): ...
+    class ScaffolderTwo(dg.Scaffolder): ...
 
-    @scaffold_with(ScaffolderOne)
+    @dg.scaffold_with(ScaffolderOne)
     class ClassOne: ...
 
-    @scaffold_with(ScaffolderTwo)
+    @dg.scaffold_with(ScaffolderTwo)
     class ClassTwo(ClassOne): ...
 
     assert has_scaffolder(ClassOne) is True

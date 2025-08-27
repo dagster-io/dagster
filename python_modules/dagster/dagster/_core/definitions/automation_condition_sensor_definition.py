@@ -3,7 +3,7 @@ from functools import partial
 from typing import Any, Optional, cast
 
 import dagster._check as check
-from dagster._annotations import beta_param
+from dagster._annotations import beta_param, public
 from dagster._core.definitions.asset_selection import AssetSelection, CoercibleToAssetSelection
 from dagster._core.definitions.declarative_automation.automation_condition import (
     AutomationCondition,
@@ -55,7 +55,7 @@ def _evaluate(sensor_def: "AutomationConditionSensorDefinition", context: Sensor
     )
     if evaluation_context.total_keys > MAX_ENTITIES:
         raise DagsterInvalidInvocationError(
-            f'AutomationConditionSensorDefintion "{sensor_def.name}" targets {evaluation_context.total_keys} '
+            f'AutomationConditionSensorDefinition "{sensor_def.name}" targets {evaluation_context.total_keys} '
             f"assets or checks, which is more than the limit of {MAX_ENTITIES}. Either set `use_user_code_server` to `False`, "
             "or split this sensor into multiple AutomationConditionSensorDefinitions with AssetSelections that target fewer "
             "assets or checks."
@@ -76,6 +76,7 @@ def not_supported(context) -> None:
     )
 
 
+@public
 @beta_param(param="use_user_code_server")
 @beta_param(param="default_condition")
 class AutomationConditionSensorDefinition(SensorDefinition):

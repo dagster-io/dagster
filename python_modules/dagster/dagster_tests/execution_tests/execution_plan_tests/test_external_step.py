@@ -5,60 +5,27 @@ import uuid
 from collections import defaultdict
 from threading import Thread
 
+import dagster as dg
 import pytest
-from dagster import (
-    AssetCheckResult,
-    AssetKey,
-    AssetsDefinition,
-    DagsterInstance,
-    DynamicOut,
-    DynamicOutput,
-    Failure,
-    Field,
-    Output,
-    ResourceDefinition,
-    RetryPolicy,
-    RetryRequested,
-    String,
-    asset,
-    define_asset_job,
-    fs_io_manager,
-    job,
-    op,
-    reconstructable,
-    repository,
-    resource,
-    with_resources,
-)
-from dagster._core.definitions.asset_check_spec import AssetCheckSpec
-from dagster._core.definitions.asset_graph import AssetGraph
-from dagster._core.definitions.cacheable_assets import (
+from dagster import AssetsDefinition, DagsterInstance, ResourceDefinition
+from dagster._core.definitions.assets.definition.cacheable_assets_definition import (
     AssetsDefinitionCacheableData,
     CacheableAssetsDefinition,
 )
-from dagster._core.definitions.job_definition import JobDefinition
+from dagster._core.definitions.assets.graph.asset_graph import AssetGraph
 from dagster._core.definitions.metadata import MetadataValue
 from dagster._core.definitions.no_step_launcher import no_step_launcher
 from dagster._core.definitions.reconstruct import ReconstructableJob, ReconstructableRepository
 from dagster._core.events import DagsterEventType
-from dagster._core.execution.api import (
-    ReexecutionOptions,
-    create_execution_plan,
-    execute_job,
-    execute_run_iterator,
-)
+from dagster._core.execution.api import create_execution_plan, execute_run_iterator
 from dagster._core.execution.context.system import IStepContext
 from dagster._core.execution.context_creation_job import PlanExecutionContextManager
 from dagster._core.execution.plan.external_step import (
     LocalExternalStepLauncher,
     local_external_step_launcher,
-    step_context_to_step_run_ref,
-    step_run_ref_to_step_context,
 )
 from dagster._core.execution.plan.state import KnownExecutionState
 from dagster._core.execution.retries import RetryMode
-from dagster._core.storage.dagster_run import DagsterRun
-from dagster._core.test_utils import instance_for_test
 from dagster._utils import safe_tempfile_path, send_interrupt
 from dagster._utils.merger import deep_merge_dicts, merge_dicts
 from dagster.components.definitions import lazy_repository
@@ -88,33 +55,33 @@ def make_run_config(scratch_dir: str, resource_set: str):
 class RequestRetryLocalExternalStepLauncher(LocalExternalStepLauncher):
     def launch_step(self, step_context):
         if step_context.previous_attempt_count == 0:
-            raise RetryRequested()
+            raise dg.RetryRequested()
         else:
             return super().launch_step(step_context)
 
 
-@resource(config_schema=local_external_step_launcher.config_schema)
+@dg.resource(config_schema=local_external_step_launcher.config_schema)
 def request_retry_local_external_step_launcher(context):
     return RequestRetryLocalExternalStepLauncher(**context.resource_config)
 
 
-def _define_failing_job(has_policy: bool, is_explicit: bool = True) -> JobDefinition:
-    @op(
+def _define_failing_job(has_policy: bool, is_explicit: bool = True) -> dg.JobDefinition:
+    @dg.op(
         required_resource_keys={"step_launcher"},
-        retry_policy=RetryPolicy(max_retries=3) if has_policy else None,
+        retry_policy=dg.RetryPolicy(max_retries=3) if has_policy else None,
     )
     def retry_op(context):
         if context.retry_number < 3:
             if is_explicit:
-                raise Failure(description="some failure description", metadata={"foo": 1.23})
+                raise dg.Failure(description="some failure description", metadata={"foo": 1.23})
             else:
                 _ = "x" + 1  # pyright: ignore[reportOperatorIssue]
         return context.retry_number
 
-    @job(
+    @dg.job(
         resource_defs={
             "step_launcher": local_external_step_launcher,
-            "io_manager": fs_io_manager,
+            "io_manager": dg.fs_io_manager,
         }
     )
     def retry_job():
@@ -143,24 +110,24 @@ def _define_dynamic_job(launch_initial, launch_final):
         local_external_step_launcher if launch_final else ResourceDefinition.mock_resource()
     )
 
-    @op(required_resource_keys={"initial_launcher"}, out=DynamicOut(int))
+    @dg.op(required_resource_keys={"initial_launcher"}, out=dg.DynamicOut(int))
     def dynamic_outs():
         for i in range(0, 3):
-            yield DynamicOutput(value=i, mapping_key=f"num_{i}")
+            yield dg.DynamicOutput(value=i, mapping_key=f"num_{i}")
 
-    @op
+    @dg.op
     def increment(i):
         return i + 1
 
-    @op(required_resource_keys={"final_launcher"})
+    @dg.op(required_resource_keys={"final_launcher"})
     def total(ins: list[int]):
         return sum(ins)
 
-    @job(
+    @dg.job(
         resource_defs={
             "initial_launcher": initial_launcher,
             "final_launcher": final_launcher,
-            "io_manager": fs_io_manager,
+            "io_manager": dg.fs_io_manager,
         }
     )
     def my_job():
@@ -178,23 +145,23 @@ def _define_basic_job(launch_initial, launch_final):
         local_external_step_launcher if launch_final else ResourceDefinition.mock_resource()
     )
 
-    @op(required_resource_keys={"initial_launcher"})
+    @dg.op(required_resource_keys={"initial_launcher"})
     def op1():
         return 1
 
-    @op(required_resource_keys={"initial_launcher"})
+    @dg.op(required_resource_keys={"initial_launcher"})
     def op2():
         return 2
 
-    @op(required_resource_keys={"final_launcher"})
+    @dg.op(required_resource_keys={"final_launcher"})
     def combine(a, b):
         return a + b
 
-    @job(
+    @dg.job(
         resource_defs={
             "initial_launcher": initial_launcher,
             "final_launcher": final_launcher,
-            "io_manager": fs_io_manager,
+            "io_manager": dg.fs_io_manager,
         }
     )
     def my_job():
@@ -227,20 +194,20 @@ def define_basic_job_last_launched():
     return _define_basic_job(False, True)
 
 
-@op(
+@dg.op(
     required_resource_keys=set(["first_step_launcher"]),
-    config_schema={"a": Field(str)},
+    config_schema={"a": dg.Field(str)},
 )
 def return_two(_):
     return 2
 
 
-@op(required_resource_keys=set(["second_step_launcher"]))
+@dg.op(required_resource_keys=set(["second_step_launcher"]))
 def add_one(_, num):
     return num + 1
 
 
-def _define_basic_job_2(resource_set: str) -> JobDefinition:
+def _define_basic_job_2(resource_set: str) -> dg.JobDefinition:
     if resource_set == "external":
         first_launcher = local_external_step_launcher
         second_launcher = local_external_step_launcher
@@ -253,11 +220,11 @@ def _define_basic_job_2(resource_set: str) -> JobDefinition:
     else:
         raise Exception("Unknown resource set")
 
-    @job(
+    @dg.job(
         resource_defs={
             "first_step_launcher": first_launcher,
             "second_step_launcher": second_launcher,
-            "io_manager": fs_io_manager,
+            "io_manager": dg.fs_io_manager,
         },
     )
     def basic_job():
@@ -279,8 +246,8 @@ def define_basic_job_request_retry():
 
 
 def define_sleepy_job():
-    @op(
-        config_schema={"tempfile": Field(String)},
+    @dg.op(
+        config_schema={"tempfile": dg.Field(dg.String)},
         required_resource_keys=set(["first_step_launcher"]),
     )
     def sleepy_op(context):
@@ -292,10 +259,10 @@ def define_sleepy_job():
             if time.time() - start_time > 120:
                 raise Exception("Timed out")
 
-    @job(
+    @dg.job(
         resource_defs={
             "first_step_launcher": local_external_step_launcher,
-            "io_manager": fs_io_manager,
+            "io_manager": dg.fs_io_manager,
         }
     )
     def sleepy_job():
@@ -305,23 +272,23 @@ def define_sleepy_job():
 
 
 def define_asset_check_job():
-    @asset(
+    @dg.asset(
         check_specs=[
-            AssetCheckSpec(
+            dg.AssetCheckSpec(
                 asset="asset1",
                 name="check1",
             )
         ],
         resource_defs={
             "second_step_launcher": local_external_step_launcher,
-            "io_manager": fs_io_manager,
+            "io_manager": dg.fs_io_manager,
         },
     )
     def asset1():
-        yield Output(1)
-        yield AssetCheckResult(passed=True)
+        yield dg.Output(1)
+        yield dg.AssetCheckResult(passed=True)
 
-    return define_asset_job(name="asset_check_job", selection=[asset1]).resolve(
+    return dg.define_asset_job(name="asset_check_job", selection=[asset1]).resolve(
         asset_graph=AssetGraph.from_assets([asset1])
     )
 
@@ -333,13 +300,13 @@ def initialize_step_context(
     resource_set="external",
     step_name="return_two",
 ) -> IStepContext:
-    run = DagsterRun(
+    run = dg.DagsterRun(
         job_name="foo_job",
         run_id=str(uuid.uuid4()),
         run_config=make_run_config(scratch_dir, resource_set),
     )
 
-    recon_job = reconstructable(job_def_fn)
+    recon_job = dg.reconstructable(job_def_fn)
 
     plan = create_execution_plan(recon_job, run.run_config)
 
@@ -366,11 +333,11 @@ def test_step_context_to_step_run_ref():
     with DagsterInstance.ephemeral() as instance:
         step_context = initialize_step_context("", instance)
         step = step_context.step
-        step_run_ref = step_context_to_step_run_ref(step_context)  # pyright: ignore[reportArgumentType]
+        step_run_ref = dg.step_context_to_step_run_ref(step_context)  # pyright: ignore[reportArgumentType]
         assert step_run_ref.run_config == step_context.dagster_run.run_config
         assert step_run_ref.run_id == step_context.dagster_run.run_id
 
-        rehydrated_step_context = step_run_ref_to_step_context(step_run_ref, instance)
+        rehydrated_step_context = dg.step_run_ref_to_step_context(step_run_ref, instance)
         rehydrated_step = rehydrated_step_context.step
         assert rehydrated_step.job_name == step.job_name
         assert rehydrated_step.step_inputs == step.step_inputs
@@ -415,9 +382,9 @@ def test_asset_check_step_launcher():
 
 def test_asset_check_step_launcher_job():
     with tempfile.TemporaryDirectory() as tmpdir:
-        with instance_for_test() as instance:
-            with execute_job(
-                reconstructable(define_asset_check_job),
+        with dg.instance_for_test() as instance:
+            with dg.execute_job(
+                dg.reconstructable(define_asset_check_job),
                 run_config=make_run_config(tmpdir, "no_base"),
                 instance=instance,
             ) as result:
@@ -437,9 +404,9 @@ def test_job(resource_set):
         raise Exception("Unknown resource set")
 
     with tempfile.TemporaryDirectory() as tmpdir:
-        with instance_for_test() as instance:
-            with execute_job(
-                reconstructable(job_fn),
+        with dg.instance_for_test() as instance:
+            with dg.execute_job(
+                dg.reconstructable(job_fn),
                 instance=instance,
                 run_config=make_run_config(tmpdir, resource_set),
             ) as result:
@@ -457,9 +424,9 @@ def test_job(resource_set):
 )
 def test_dynamic_job(job_fn):
     with tempfile.TemporaryDirectory() as tmpdir:
-        with instance_for_test() as instance:
-            with execute_job(
-                reconstructable(job_fn),
+        with dg.instance_for_test() as instance:
+            with dg.execute_job(
+                dg.reconstructable(job_fn),
                 run_config={
                     "resources": {
                         "initial_launcher": {
@@ -497,18 +464,18 @@ def test_reexecution(job_fn):
                 "io_manager": {"config": {"base_dir": tmpdir}},
             }
         }
-        with instance_for_test() as instance:
-            with execute_job(
-                reconstructable(job_fn),
+        with dg.instance_for_test() as instance:
+            with dg.execute_job(
+                dg.reconstructable(job_fn),
                 run_config=run_config,
                 instance=instance,
             ) as result_1:
                 assert result_1.success
                 assert result_1.output_for_node("combine") == 3
                 parent_run_id = result_1.run_id
-            with execute_job(
-                reconstructable(job_fn),
-                reexecution_options=ReexecutionOptions(
+            with dg.execute_job(
+                dg.reconstructable(job_fn),
+                reexecution_options=dg.ReexecutionOptions(
                     parent_run_id=parent_run_id, step_selection=["combine"]
                 ),
                 run_config=run_config,
@@ -526,9 +493,9 @@ def test_retry_policy():
                 "io_manager": {"config": {"base_dir": tmpdir}},
             }
         }
-        with instance_for_test() as instance:
-            with execute_job(
-                reconstructable(_define_retry_job),
+        with dg.instance_for_test() as instance:
+            with dg.execute_job(
+                dg.reconstructable(_define_retry_job),
                 run_config=run_config,
                 instance=instance,
             ) as result:
@@ -548,9 +515,9 @@ def test_explicit_failure():
                 "io_manager": {"config": {"base_dir": tmpdir}},
             }
         }
-        with instance_for_test() as instance:
-            with execute_job(
-                reconstructable(_define_failure_job),
+        with dg.instance_for_test() as instance:
+            with dg.execute_job(
+                dg.reconstructable(_define_failure_job),
                 run_config=run_config,
                 instance=instance,
                 raise_on_error=False,
@@ -568,9 +535,9 @@ def test_arbitrary_error():
                 "io_manager": {"config": {"base_dir": tmpdir}},
             }
         }
-        with instance_for_test() as instance:
-            with execute_job(
-                reconstructable(_define_error_job),
+        with dg.instance_for_test() as instance:
+            with dg.execute_job(
+                dg.reconstructable(_define_error_job),
                 run_config=run_config,
                 instance=instance,
                 raise_on_error=False,
@@ -584,9 +551,9 @@ def test_arbitrary_error():
 
 def test_launcher_requests_retry():
     with tempfile.TemporaryDirectory() as tmpdir:
-        with instance_for_test() as instance:
-            with execute_job(
-                reconstructable(define_basic_job_request_retry),
+        with dg.instance_for_test() as instance:
+            with dg.execute_job(
+                dg.reconstructable(define_basic_job_request_retry),
                 instance=instance,
                 run_config=make_run_config(tmpdir, "request_retry"),
             ) as result:
@@ -625,14 +592,14 @@ def test_interrupt_step_launcher():
 
             event_types = []
 
-            with instance_for_test() as instance:
+            with dg.instance_for_test() as instance:
                 dagster_run = instance.create_run_for_job(
                     define_sleepy_job(),
                     run_config=sleepy_run_config,
                 )
 
                 for event in execute_run_iterator(
-                    reconstructable(define_sleepy_job),
+                    dg.reconstructable(define_sleepy_job),
                     dagster_run,
                     instance=instance,
                 ):
@@ -647,8 +614,8 @@ def test_interrupt_step_launcher():
 def test_multiproc_launcher_requests_retry():
     with tempfile.TemporaryDirectory() as tmpdir:
         run_config = make_run_config(tmpdir, "request_retry")
-        with execute_job(
-            reconstructable(define_basic_job_request_retry),
+        with dg.execute_job(
+            dg.reconstructable(define_basic_job_request_retry),
             run_config=run_config,
             instance=DagsterInstance.local_temp(tmpdir),
         ) as result:
@@ -674,14 +641,14 @@ def test_multiproc_launcher_with_repository_load_data():
                 "io_manager": {"config": {"base_dir": tmpdir}},
             }
         }
-        with instance_for_test() as instance:
+        with dg.instance_for_test() as instance:
             instance.run_storage.set_cursor_values({"val": "INITIAL_VALUE"})
             recon_repo = ReconstructableRepository.for_file(
                 __file__, fn_name="cacheable_asset_defs"
             )
             recon_job = ReconstructableJob(repository=recon_repo, job_name="all_asset_job")
 
-            with execute_job(
+            with dg.execute_job(
                 recon_job,
                 run_config=run_config,
                 instance=instance,
@@ -691,7 +658,9 @@ def test_multiproc_launcher_with_repository_load_data():
 
 
 class MyCacheableAssetsDefinition(CacheableAssetsDefinition):
-    _cacheable_data = AssetsDefinitionCacheableData(keys_by_output_name={"result": AssetKey("foo")})
+    _cacheable_data = AssetsDefinitionCacheableData(
+        keys_by_output_name={"result": dg.AssetKey("foo")}
+    )
 
     def compute_cacheable_data(self):
         # used for tracking how many times this function gets called over an execution
@@ -708,11 +677,11 @@ class MyCacheableAssetsDefinition(CacheableAssetsDefinition):
         assert len(data) == 1
         assert data == [self._cacheable_data]
 
-        @op(required_resource_keys={"step_launcher"})
+        @dg.op(required_resource_keys={"step_launcher"})
         def _op():
             return 1
 
-        return with_resources(
+        return dg.with_resources(
             [
                 AssetsDefinition.from_op(
                     _op,
@@ -726,12 +695,12 @@ class MyCacheableAssetsDefinition(CacheableAssetsDefinition):
 
 @lazy_repository
 def cacheable_asset_defs():
-    @asset
+    @dg.asset
     def bar(foo):
         return foo + 1
 
-    @repository
+    @dg.repository
     def repo():
-        return [bar, MyCacheableAssetsDefinition("xyz"), define_asset_job("all_asset_job")]
+        return [bar, MyCacheableAssetsDefinition("xyz"), dg.define_asset_job("all_asset_job")]
 
     return repo

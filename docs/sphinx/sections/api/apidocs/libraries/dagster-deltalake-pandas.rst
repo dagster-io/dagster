@@ -1,11 +1,11 @@
 Deltalake + Pandas (dagster-deltalake-pandas)
 ---------------------------------------------
 
-This library provides an integration with the `Delta Lake <https://delta.io/>`_ storage framework.
+This library provides an integration with the `Delta Lake <https://delta.io>`_ storage framework.
 
 Related guides:
 
-* `Using Dagster with Delta Lake guide <https://docs.dagster.io/integrations/libraries/deltalake/>`_
+* `Using Dagster with Delta Lake guide <https://docs.dagster.io/integrations/libraries/deltalake>`_
 * `DeltaLake I/O manager reference <https://docs.dagster.io/integrations/libraries/deltalake/reference>`_
 
 

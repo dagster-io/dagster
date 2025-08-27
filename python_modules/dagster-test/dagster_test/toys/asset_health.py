@@ -132,7 +132,7 @@ def observable_source_asset_random_execution_error(context):
 
 
 @dg.asset(
-    internal_freshness_policy=InternalFreshnessPolicy.time_window(
+    freshness_policy=InternalFreshnessPolicy.time_window(
         fail_window=timedelta(minutes=5), warn_window=timedelta(minutes=1)
     )
 )
@@ -205,6 +205,16 @@ def materialize_no_def_materializable_job():
     checks_no_def_materializable()
 
 
+random_assets_job = dg.define_asset_job(
+    "random_assets_job", selection=dg.AssetSelection.assets(random_1, random_2, random_3)
+)
+
+random_assets_every_15m_schedule = dg.ScheduleDefinition(
+    job=random_assets_job,
+    cron_schedule="*/15 * * * *",
+)
+
+
 def get_assets_and_checks():
     return [
         random_1,
@@ -230,4 +240,6 @@ def get_assets_and_checks():
         insert_source_asset_materializations_job,
         materialize_no_def_materializable_job,
         observe_no_def_observable_job,
+        random_assets_job,
+        random_assets_every_15m_schedule,
     ]

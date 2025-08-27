@@ -1,10 +1,18 @@
 from dagster._core.definitions.asset_key import AssetKey
-from dagster._core.definitions.asset_spec import AssetSpec
+from dagster._core.definitions.assets.definition.asset_spec import AssetSpec
 from dagster_tableau import DagsterTableauTranslator
 from dagster_tableau.translator import TableauTranslatorData, TableauWorkspaceData
 
+from dagster_tableau_tests.conftest import (
+    TEST_DATA_SOURCE_ID,
+    TEST_EMBEDDED_DATA_SOURCE_ID,
+    TEST_PROJECT_ID,
+    TEST_PROJECT_NAME,
+    TEST_WORKBOOK_ID,
+)
 
-def test_translator_sheet_spec(workspace_data: TableauWorkspaceData, workbook_id: str) -> None:
+
+def test_translator_sheet_spec(workspace_data: TableauWorkspaceData) -> None:
     translator = DagsterTableauTranslator()
     asset_key_list = ["superstore_datasource", "embedded_superstore_datasource"]
     index = 0
@@ -19,7 +27,9 @@ def test_translator_sheet_spec(workspace_data: TableauWorkspaceData, workbook_id
         ]
         assert asset_spec.metadata == {
             "dagster-tableau/id": sheet.properties.get("luid"),
-            "dagster-tableau/workbook_id": workbook_id,
+            "dagster-tableau/workbook_id": TEST_WORKBOOK_ID,
+            "dagster-tableau/project_name": TEST_PROJECT_NAME,
+            "dagster-tableau/project_id": TEST_PROJECT_ID,
         }
         assert asset_spec.tags == {
             "dagster/storage_kind": "tableau",
@@ -31,9 +41,7 @@ def test_translator_sheet_spec(workspace_data: TableauWorkspaceData, workbook_id
         index += 1
 
 
-def test_translator_dashboard_spec(
-    workspace_data: TableauWorkspaceData, dashboard_id: str, workbook_id: str
-) -> None:
+def test_translator_dashboard_spec(workspace_data: TableauWorkspaceData, dashboard_id: str) -> None:
     dashboard = next(iter(workspace_data.dashboards_by_id.values()))
 
     translator = DagsterTableauTranslator()
@@ -44,7 +52,9 @@ def test_translator_dashboard_spec(
     assert asset_spec.key.path == ["test_workbook", "dashboard", "dashboard_sales"]
     assert asset_spec.metadata == {
         "dagster-tableau/id": dashboard_id,
-        "dagster-tableau/workbook_id": workbook_id,
+        "dagster-tableau/workbook_id": TEST_WORKBOOK_ID,
+        "dagster-tableau/project_name": TEST_PROJECT_NAME,
+        "dagster-tableau/project_id": TEST_PROJECT_ID,
     }
     assert asset_spec.tags == {
         "dagster/storage_kind": "tableau",
@@ -56,19 +66,40 @@ def test_translator_dashboard_spec(
 
 
 def test_translator_data_source_spec(
-    workspace_data: TableauWorkspaceData, data_source_id: str
+    workspace_data: TableauWorkspaceData,
 ) -> None:
-    data_source = next(iter(workspace_data.data_sources_by_id.values()))
-
+    iter_data_sources = iter(workspace_data.data_sources_by_id.values())
     translator = DagsterTableauTranslator()
+
+    published_data_source = next(iter_data_sources)
     asset_spec = translator.get_asset_spec(
-        TableauTranslatorData(content_data=data_source, workspace_data=workspace_data)
+        TableauTranslatorData(content_data=published_data_source, workspace_data=workspace_data)
     )
 
     assert asset_spec.key.path == ["superstore_datasource"]
     assert asset_spec.metadata == {
-        "dagster-tableau/id": data_source_id,
+        "dagster-tableau/id": TEST_DATA_SOURCE_ID,
         "dagster-tableau/has_extracts": False,
+        "dagster-tableau/is_published": True,
+    }
+    assert asset_spec.tags == {
+        "dagster/storage_kind": "tableau",
+        "dagster-tableau/asset_type": "data_source",
+    }
+    deps = list(asset_spec.deps)
+    assert len(deps) == 0
+
+    embedded_data_source = next(iter_data_sources)
+    asset_spec = translator.get_asset_spec(
+        TableauTranslatorData(content_data=embedded_data_source, workspace_data=workspace_data)
+    )
+
+    assert asset_spec.key.path == ["embedded_superstore_datasource"]
+    assert asset_spec.metadata == {
+        "dagster-tableau/id": TEST_EMBEDDED_DATA_SOURCE_ID,
+        "dagster-tableau/has_extracts": True,
+        "dagster-tableau/is_published": False,
+        "dagster-tableau/workbook_id": TEST_WORKBOOK_ID,
     }
     assert asset_spec.tags == {
         "dagster/storage_kind": "tableau",

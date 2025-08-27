@@ -58,7 +58,7 @@ To do this, provide a `$DAGSTER_HOME/dagster.yaml` file, which the webserver and
 | Dagster storage        | `storage`                | Controls how job and asset history is persisted. This includes run, event log, and schedule/sensor tick metadata, as well as other useful data. |
 | Run launcher           | `run_launcher`           | Determines where runs are executed.                                                                                                             |
 | Run coordinator        | `run_coordinator`        | Determines the policy used to set prioritization rules and concurrency limits for runs.                                                         |
-| Compute log storage    | `compute_logs`           | Controls the capture and persistence of raw stdout and stderr ext logs.                                                                    |
+| Compute log storage    | `compute_logs`           | Controls the capture and persistence of raw stdout and stderr ext logs.                                                                         |
 | Local artifact storage | `local_artifact_storage` | Configures storage for artifacts that require a local disk or when using the filesystem I/O manager ( ).                                        |
 | Telemetry              | `telemetry`              | Used to opt in/out of Dagster collecting anonymized usage statistics.                                                                           |
 | gRPC servers           | `code_servers`           | Configures how Dagster loads the code in a code location.                                                                                       |

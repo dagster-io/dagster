@@ -181,14 +181,14 @@ export const AppProvider = (props: AppProviderProps) => {
     <AppContext.Provider value={appContextValue}>
       <WebSocketProvider websocketClient={websocketClient}>
         <ApolloProvider client={apolloClient}>
-          <AssetLiveDataProvider>
-            <PermissionsProvider>
-              <BrowserRouter basename={basePath || ''}>
-                <GlobalStyleProvider />
-                <CompatRouter>
-                  <TimeProvider>
-                    <CodeLinkProtocolProvider>
-                      <WorkspaceProvider>
+          <PermissionsProvider>
+            <BrowserRouter basename={basePath || ''}>
+              <GlobalStyleProvider />
+              <CompatRouter>
+                <TimeProvider>
+                  <CodeLinkProtocolProvider>
+                    <WorkspaceProvider>
+                      <AssetLiveDataProvider>
                         <DeploymentStatusProvider include={statusPolling}>
                           <CustomConfirmationProvider>
                             <AnalyticsContext.Provider value={analytics}>
@@ -201,13 +201,13 @@ export const AppProvider = (props: AppProviderProps) => {
                           <CustomAlertProvider />
                           <AssetRunLogObserver />
                         </DeploymentStatusProvider>
-                      </WorkspaceProvider>
-                    </CodeLinkProtocolProvider>
-                  </TimeProvider>
-                </CompatRouter>
-              </BrowserRouter>
-            </PermissionsProvider>
-          </AssetLiveDataProvider>
+                      </AssetLiveDataProvider>
+                    </WorkspaceProvider>
+                  </CodeLinkProtocolProvider>
+                </TimeProvider>
+              </CompatRouter>
+            </BrowserRouter>
+          </PermissionsProvider>
         </ApolloProvider>
       </WebSocketProvider>
     </AppContext.Provider>

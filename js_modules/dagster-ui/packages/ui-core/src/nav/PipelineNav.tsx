@@ -24,6 +24,7 @@ export const PipelineNav = (props: Props) => {
     '/locations/:repoPath/pipeline_or_job/:selector/:tab?',
   ]);
 
+  // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
   const explorerPath = explorerPathFromString(match!.params.selector);
   const {pipelineName, snapshotId} = explorerPath;
 
@@ -71,6 +72,7 @@ export const PipelineNav = (props: Props) => {
             isJob={isJob}
             explorerPath={explorerPath}
             permissions={permissions}
+            // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
             matchingTab={match!.params.tab}
             tabs={tabs}
           />

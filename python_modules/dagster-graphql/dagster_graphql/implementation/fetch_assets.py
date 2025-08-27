@@ -1,6 +1,6 @@
 import datetime
 from collections import defaultdict
-from collections.abc import Mapping, Sequence
+from collections.abc import Sequence
 from typing import TYPE_CHECKING, AbstractSet, Optional, Union, cast  # noqa: UP035
 
 import dagster_shared.seven as seven
@@ -8,16 +8,18 @@ from dagster import (
     AssetKey,
     DagsterEventType,
     DagsterRun,
-    MultiPartitionsDefinition,
     _check as check,
 )
 from dagster._core.definitions.data_time import CachingDataTimeResolver
-from dagster._core.definitions.partition import PartitionsDefinition, PartitionsSubset
-from dagster._core.definitions.remote_asset_graph import RemoteAssetNode
-from dagster._core.definitions.time_window_partitions import (
-    PartitionRangeStatus,
+from dagster._core.definitions.partitions.context import partition_loading_context
+from dagster._core.definitions.partitions.definition import (
+    MultiPartitionsDefinition,
+    PartitionsDefinition,
     TimeWindowPartitionsDefinition,
-    TimeWindowPartitionsSubset,
+)
+from dagster._core.definitions.partitions.subset import PartitionsSubset, TimeWindowPartitionsSubset
+from dagster._core.definitions.partitions.utils.time_window import (
+    PartitionRangeStatus,
     fetch_flattened_time_window_ranges,
 )
 from dagster._core.errors import DagsterInvariantViolationError
@@ -26,9 +28,6 @@ from dagster._core.events.log import EventLogEntry
 from dagster._core.instance import DynamicPartitionsStore
 from dagster._core.remote_representation.external import RemoteRepository
 from dagster._core.storage.event_log.sql_event_log import get_max_event_records_limit
-from dagster._time import get_current_datetime
-
-from dagster_graphql.implementation.loader import StaleStatusLoader
 
 if TYPE_CHECKING:
     from dagster_graphql.schema.asset_graph import (
@@ -119,31 +118,26 @@ def get_assets(
         materialized_keys = instance.get_asset_keys(
             prefix=prefix, limit=limit, cursor=normalized_cursor_str
         )
+
+        asset_graph_keys = {
+            asset_key
+            for asset_key in graphene_info.context.asset_graph.get_all_asset_keys()
+            if (
+                (not prefix or asset_key.path[: len(prefix)] == prefix)
+                and (not normalized_cursor_str or asset_key.to_string() > normalized_cursor_str)
+                and (not asset_keys or asset_key in asset_keys)
+            )
+        }
+
+        merged_asset_keys = sorted(set(materialized_keys).union(asset_graph_keys), key=str)
     else:
-        materialized_keys = asset_keys
+        merged_asset_keys = asset_keys
 
-    asset_nodes_by_asset_key = {
-        asset_key: asset_node
-        for asset_key, asset_node in get_asset_nodes_by_asset_key(graphene_info).items()
-        if (not prefix or asset_key.path[: len(prefix)] == prefix)
-        and (not normalized_cursor_str or asset_key.to_string() > normalized_cursor_str)
-        and (not asset_keys or asset_key in asset_keys)
-    }
-
-    merged_asset_keys = sorted(
-        set(materialized_keys).union(asset_nodes_by_asset_key.keys()), key=str
-    )
     if limit:
         merged_asset_keys = merged_asset_keys[:limit]
 
     return GrapheneAssetConnection(
-        nodes=[
-            GrapheneAsset(
-                key=asset_key,
-                definition=asset_nodes_by_asset_key.get(asset_key),
-            )
-            for asset_key in merged_asset_keys
-        ],
+        nodes=[GrapheneAsset(key=asset_key) for asset_key in merged_asset_keys],
         cursor=merged_asset_keys[-1].to_string() if merged_asset_keys else None,
     )
 
@@ -194,44 +188,10 @@ def get_asset_node_definition_collisions(
     return results
 
 
-def _graphene_asset_node(
-    graphene_info: "ResolveInfo",
-    remote_node: RemoteAssetNode,
-    stale_status_loader: Optional[StaleStatusLoader],
-):
-    from dagster_graphql.schema.asset_graph import GrapheneAssetNode
-
-    return GrapheneAssetNode(
-        remote_node=remote_node,
-        stale_status_loader=stale_status_loader,
-    )
-
-
-def get_asset_nodes_by_asset_key(
-    graphene_info: "ResolveInfo",
-) -> Mapping[AssetKey, "GrapheneAssetNode"]:
-    """If multiple repositories have asset nodes for the same asset key, chooses the asset node that
-    has an op.
-    """
-    stale_status_loader = StaleStatusLoader(
-        instance=graphene_info.context.instance,
-        asset_graph=lambda: graphene_info.context.asset_graph,
-        loading_context=graphene_info.context,
-    )
-
-    return {
-        remote_node.key: _graphene_asset_node(
-            graphene_info,
-            remote_node,
-            stale_status_loader=stale_status_loader,
-        )
-        for remote_node in graphene_info.context.asset_graph.asset_nodes
-    }
-
-
 def get_asset_node(
     graphene_info: "ResolveInfo", asset_key: AssetKey
 ) -> Union["GrapheneAssetNode", "GrapheneAssetNotFoundError"]:
+    from dagster_graphql.schema.asset_graph import GrapheneAssetNode
     from dagster_graphql.schema.errors import GrapheneAssetNotFoundError
 
     check.inst_param(asset_key, "asset_key", AssetKey)
@@ -240,15 +200,7 @@ def get_asset_node(
         return GrapheneAssetNotFoundError(asset_key=asset_key)
 
     remote_node = graphene_info.context.asset_graph.get(asset_key)
-    return _graphene_asset_node(
-        graphene_info,
-        remote_node,
-        stale_status_loader=StaleStatusLoader(
-            instance=graphene_info.context.instance,
-            asset_graph=lambda: graphene_info.context.asset_graph,
-            loading_context=graphene_info.context,
-        ),
-    )
+    return GrapheneAssetNode(remote_node)
 
 
 def get_asset(
@@ -264,16 +216,7 @@ def get_asset(
     if not has_remote_node and not instance.has_asset_key(asset_key):
         return GrapheneAssetNotFoundError(asset_key=asset_key)
 
-    if has_remote_node:
-        def_node = _graphene_asset_node(
-            graphene_info,
-            graphene_info.context.asset_graph.get(asset_key),
-            stale_status_loader=None,
-        )
-    else:
-        def_node = None
-
-    return GrapheneAsset(key=asset_key, definition=def_node)
+    return GrapheneAsset(key=asset_key)
 
 
 def get_asset_materialization_event_records(
@@ -570,21 +513,23 @@ def build_partition_statuses(
             partitions_def,
         )
     elif partitions_def:
-        materialized_keys = materialized_partitions_subset.get_partition_keys()
-        failed_keys = failed_partitions_subset.get_partition_keys()
-        in_progress_keys = in_progress_partitions_subset.get_partition_keys()
+        with partition_loading_context(
+            dynamic_partitions_store=dynamic_partitions_store,
+        ):
+            materialized_keys = materialized_partitions_subset.get_partition_keys()
+            failed_keys = failed_partitions_subset.get_partition_keys()
+            in_progress_keys = in_progress_partitions_subset.get_partition_keys()
 
-        return GrapheneDefaultPartitionStatuses(
-            materializedPartitions=set(materialized_keys)
-            - set(failed_keys)
-            - set(in_progress_keys),
-            failedPartitions=failed_keys,
-            unmaterializedPartitions=materialized_partitions_subset.get_partition_keys_not_in_subset(
-                partitions_def=partitions_def,
-                dynamic_partitions_store=dynamic_partitions_store,
-            ),
-            materializingPartitions=in_progress_keys,
-        )
+            return GrapheneDefaultPartitionStatuses(
+                materializedPartitions=set(materialized_keys)
+                - set(failed_keys)
+                - set(in_progress_keys),
+                failedPartitions=failed_keys,
+                unmaterializedPartitions=materialized_partitions_subset.get_partition_keys_not_in_subset(
+                    partitions_def=partitions_def
+                ),
+                materializingPartitions=in_progress_keys,
+            )
     else:
         check.failed("Should not reach this point")
 
@@ -601,126 +546,116 @@ def get_2d_run_length_encoded_partitions(
         GrapheneMultiPartitionStatuses,
     )
 
-    current_time = get_current_datetime()
-
     check.invariant(
         isinstance(partitions_def, MultiPartitionsDefinition),
         "Partitions definition should be multipartitioned",
     )
 
-    primary_dim = partitions_def.primary_dimension
-    secondary_dim = partitions_def.secondary_dimension
-
-    dim2_materialized_partition_subset_by_dim1: dict[str, PartitionsSubset] = defaultdict(
-        lambda: secondary_dim.partitions_def.empty_subset()
-    )
-    for partition_key in materialized_partitions_subset.get_partition_keys():
-        multipartition_key = partitions_def.get_partition_key_from_str(partition_key)
-        dim2_materialized_partition_subset_by_dim1[
-            multipartition_key.keys_by_dimension[primary_dim.name]
-        ] = dim2_materialized_partition_subset_by_dim1[
-            multipartition_key.keys_by_dimension[primary_dim.name]
-        ].with_partition_keys([multipartition_key.keys_by_dimension[secondary_dim.name]])
-
-    dim2_failed_partition_subset_by_dim1: dict[str, PartitionsSubset] = defaultdict(
-        lambda: secondary_dim.partitions_def.empty_subset()
-    )
-    for partition_key in failed_partitions_subset.get_partition_keys():
-        multipartition_key = partitions_def.get_partition_key_from_str(partition_key)
-        dim2_failed_partition_subset_by_dim1[
-            multipartition_key.keys_by_dimension[primary_dim.name]
-        ] = dim2_failed_partition_subset_by_dim1[
-            multipartition_key.keys_by_dimension[primary_dim.name]
-        ].with_partition_keys([multipartition_key.keys_by_dimension[secondary_dim.name]])
-
-    dim2_in_progress_partition_subset_by_dim1: dict[str, PartitionsSubset] = defaultdict(
-        lambda: secondary_dim.partitions_def.empty_subset()
-    )
-    for partition_key in in_progress_partitions_subset.get_partition_keys():
-        multipartition_key = partitions_def.get_partition_key_from_str(partition_key)
-        dim2_in_progress_partition_subset_by_dim1[
-            multipartition_key.keys_by_dimension[primary_dim.name]
-        ] = dim2_in_progress_partition_subset_by_dim1[
-            multipartition_key.keys_by_dimension[primary_dim.name]
-        ].with_partition_keys([multipartition_key.keys_by_dimension[secondary_dim.name]])
-
-    materialized_2d_ranges = []
-
-    dim1_keys = primary_dim.partitions_def.get_partition_keys(
-        current_time=current_time, dynamic_partitions_store=dynamic_partitions_store
-    )
-    unevaluated_idx = 0
-    range_start_idx = 0  # pointer to first dim1 partition with same dim2 materialization status
-
-    if (
-        len(dim1_keys) == 0
-        or len(
-            secondary_dim.partitions_def.get_partition_keys(
-                current_time=current_time,
-                dynamic_partitions_store=dynamic_partitions_store,
-            )
-        )
-        == 0
+    with partition_loading_context(
+        dynamic_partitions_store=dynamic_partitions_store,
     ):
-        return GrapheneMultiPartitionStatuses(ranges=[], primaryDimensionName=primary_dim.name)
+        primary_dim = partitions_def.primary_dimension
+        secondary_dim = partitions_def.secondary_dimension
 
-    while unevaluated_idx <= len(dim1_keys):
-        if (
-            unevaluated_idx == len(dim1_keys)
-            or dim2_materialized_partition_subset_by_dim1[dim1_keys[unevaluated_idx]]
-            != dim2_materialized_partition_subset_by_dim1[dim1_keys[range_start_idx]]
-            or dim2_failed_partition_subset_by_dim1[dim1_keys[unevaluated_idx]]
-            != dim2_failed_partition_subset_by_dim1[dim1_keys[range_start_idx]]
-            or dim2_in_progress_partition_subset_by_dim1[dim1_keys[unevaluated_idx]]
-            != dim2_in_progress_partition_subset_by_dim1[dim1_keys[range_start_idx]]
-        ):
-            # Add new multipartition range if we've reached the end of the dim1 keys or if the
-            # second dimension subsets are different than for the previous dim1 key
+        dim2_materialized_partition_subset_by_dim1: dict[str, PartitionsSubset] = defaultdict(
+            lambda: secondary_dim.partitions_def.empty_subset()
+        )
+        for partition_key in materialized_partitions_subset.get_partition_keys():
+            multipartition_key = partitions_def.get_partition_key_from_str(partition_key)
+            dim2_materialized_partition_subset_by_dim1[
+                multipartition_key.keys_by_dimension[primary_dim.name]
+            ] = dim2_materialized_partition_subset_by_dim1[
+                multipartition_key.keys_by_dimension[primary_dim.name]
+            ].with_partition_keys([multipartition_key.keys_by_dimension[secondary_dim.name]])
+
+        dim2_failed_partition_subset_by_dim1: dict[str, PartitionsSubset] = defaultdict(
+            lambda: secondary_dim.partitions_def.empty_subset()
+        )
+        for partition_key in failed_partitions_subset.get_partition_keys():
+            multipartition_key = partitions_def.get_partition_key_from_str(partition_key)
+            dim2_failed_partition_subset_by_dim1[
+                multipartition_key.keys_by_dimension[primary_dim.name]
+            ] = dim2_failed_partition_subset_by_dim1[
+                multipartition_key.keys_by_dimension[primary_dim.name]
+            ].with_partition_keys([multipartition_key.keys_by_dimension[secondary_dim.name]])
+
+        dim2_in_progress_partition_subset_by_dim1: dict[str, PartitionsSubset] = defaultdict(
+            lambda: secondary_dim.partitions_def.empty_subset()
+        )
+        for partition_key in in_progress_partitions_subset.get_partition_keys():
+            multipartition_key = partitions_def.get_partition_key_from_str(partition_key)
+            dim2_in_progress_partition_subset_by_dim1[
+                multipartition_key.keys_by_dimension[primary_dim.name]
+            ] = dim2_in_progress_partition_subset_by_dim1[
+                multipartition_key.keys_by_dimension[primary_dim.name]
+            ].with_partition_keys([multipartition_key.keys_by_dimension[secondary_dim.name]])
+
+        materialized_2d_ranges = []
+
+        dim1_keys = primary_dim.partitions_def.get_partition_keys()
+        unevaluated_idx = 0
+        range_start_idx = 0  # pointer to first dim1 partition with same dim2 materialization status
+
+        if len(dim1_keys) == 0 or len(secondary_dim.partitions_def.get_partition_keys()) == 0:
+            return GrapheneMultiPartitionStatuses(ranges=[], primaryDimensionName=primary_dim.name)
+
+        while unevaluated_idx <= len(dim1_keys):
             if (
-                len(dim2_materialized_partition_subset_by_dim1[dim1_keys[range_start_idx]]) > 0
-                or len(dim2_failed_partition_subset_by_dim1[dim1_keys[range_start_idx]]) > 0
-                or len(dim2_in_progress_partition_subset_by_dim1[dim1_keys[range_start_idx]]) > 0
+                unevaluated_idx == len(dim1_keys)
+                or dim2_materialized_partition_subset_by_dim1[dim1_keys[unevaluated_idx]]
+                != dim2_materialized_partition_subset_by_dim1[dim1_keys[range_start_idx]]
+                or dim2_failed_partition_subset_by_dim1[dim1_keys[unevaluated_idx]]
+                != dim2_failed_partition_subset_by_dim1[dim1_keys[range_start_idx]]
+                or dim2_in_progress_partition_subset_by_dim1[dim1_keys[unevaluated_idx]]
+                != dim2_in_progress_partition_subset_by_dim1[dim1_keys[range_start_idx]]
             ):
-                # Do not add to materialized_2d_ranges if the dim2 partition subset is empty
-                start_key = dim1_keys[range_start_idx]
-                end_key = dim1_keys[unevaluated_idx - 1]
+                # Add new multipartition range if we've reached the end of the dim1 keys or if the
+                # second dimension subsets are different than for the previous dim1 key
+                if (
+                    len(dim2_materialized_partition_subset_by_dim1[dim1_keys[range_start_idx]]) > 0
+                    or len(dim2_failed_partition_subset_by_dim1[dim1_keys[range_start_idx]]) > 0
+                    or len(dim2_in_progress_partition_subset_by_dim1[dim1_keys[range_start_idx]])
+                    > 0
+                ):
+                    # Do not add to materialized_2d_ranges if the dim2 partition subset is empty
+                    start_key = dim1_keys[range_start_idx]
+                    end_key = dim1_keys[unevaluated_idx - 1]
 
-                primary_partitions_def = primary_dim.partitions_def
-                if isinstance(primary_partitions_def, TimeWindowPartitionsDefinition):
-                    time_windows = cast(
-                        "TimeWindowPartitionsDefinition", primary_partitions_def
-                    ).time_windows_for_partition_keys(
-                        frozenset([start_key, end_key]),
-                        current_time=current_time,
-                        validate=False,  # we already know these keys are in the partition set
+                    primary_partitions_def = primary_dim.partitions_def
+                    if isinstance(primary_partitions_def, TimeWindowPartitionsDefinition):
+                        time_windows = cast(
+                            "TimeWindowPartitionsDefinition", primary_partitions_def
+                        ).time_windows_for_partition_keys(
+                            frozenset([start_key, end_key]),
+                            validate=False,  # we already know these keys are in the partition set
+                        )
+                        start_time = time_windows[0].start.timestamp()
+                        end_time = time_windows[-1].end.timestamp()
+                    else:
+                        start_time = None
+                        end_time = None
+
+                    materialized_2d_ranges.append(
+                        GrapheneMultiPartitionRangeStatuses(
+                            primaryDimStartKey=start_key,
+                            primaryDimEndKey=end_key,
+                            primaryDimStartTime=start_time,
+                            primaryDimEndTime=end_time,
+                            secondaryDim=build_partition_statuses(
+                                dynamic_partitions_store,
+                                dim2_materialized_partition_subset_by_dim1[start_key],
+                                dim2_failed_partition_subset_by_dim1[start_key],
+                                dim2_in_progress_partition_subset_by_dim1[start_key],
+                                secondary_dim.partitions_def,
+                            ),
+                        )
                     )
-                    start_time = time_windows[0].start.timestamp()
-                    end_time = time_windows[-1].end.timestamp()
-                else:
-                    start_time = None
-                    end_time = None
+                range_start_idx = unevaluated_idx
+            unevaluated_idx += 1
 
-                materialized_2d_ranges.append(
-                    GrapheneMultiPartitionRangeStatuses(
-                        primaryDimStartKey=start_key,
-                        primaryDimEndKey=end_key,
-                        primaryDimStartTime=start_time,
-                        primaryDimEndTime=end_time,
-                        secondaryDim=build_partition_statuses(
-                            dynamic_partitions_store,
-                            dim2_materialized_partition_subset_by_dim1[start_key],
-                            dim2_failed_partition_subset_by_dim1[start_key],
-                            dim2_in_progress_partition_subset_by_dim1[start_key],
-                            secondary_dim.partitions_def,
-                        ),
-                    )
-                )
-            range_start_idx = unevaluated_idx
-        unevaluated_idx += 1
-
-    return GrapheneMultiPartitionStatuses(
-        ranges=materialized_2d_ranges, primaryDimensionName=primary_dim.name
-    )
+        return GrapheneMultiPartitionStatuses(
+            ranges=materialized_2d_ranges, primaryDimensionName=primary_dim.name
+        )
 
 
 def get_freshness_info(

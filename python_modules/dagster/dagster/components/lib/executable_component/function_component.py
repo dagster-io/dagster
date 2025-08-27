@@ -10,17 +10,14 @@ from dagster._config.field import Field
 from dagster._config.pythonic_config.config import Config
 from dagster._config.pythonic_config.type_check_utils import safe_is_subclass
 from dagster._core.decorator_utils import get_function_params
-from dagster._core.definitions.asset_check_result import AssetCheckResult
+from dagster._core.definitions.asset_checks.asset_check_result import AssetCheckResult
 from dagster._core.definitions.resource_annotation import get_resource_args
 from dagster._core.definitions.result import MaterializeResult
 from dagster._core.execution.context.asset_check_execution_context import AssetCheckExecutionContext
 from dagster._core.execution.context.asset_execution_context import AssetExecutionContext
 from dagster._core.execution.plan.compute_generator import construct_config_from_context
 from dagster.components.core.context import ComponentLoadContext
-from dagster.components.lib.executable_component.component import (
-    ExecutableComponent,
-    OpMetadataSpec,
-)
+from dagster.components.lib.executable_component.component import ExecutableComponent, OpSpec
 from dagster.components.resolved.context import ResolutionContext
 from dagster.components.resolved.model import Resolver
 
@@ -42,7 +39,7 @@ ResolvableCallable: TypeAlias = Annotated[
 ]
 
 
-class FunctionSpec(OpMetadataSpec):
+class FunctionSpec(OpSpec):
     type: Literal["function"] = "function"
     fn: ResolvableCallable
 
@@ -96,11 +93,42 @@ class ExecuteFnMetadata:
 
 
 class FunctionComponent(ExecutableComponent):
+    """Represents a Python function, alongside the set of assets or asset checks that it is responsible for executing.
+
+    The provided function should return either a `MaterializeResult` or an `AssetCheckResult`.
+
+    Examples:
+    ```yaml
+    type: dagster.FunctionComponent
+    attributes:
+      execution:
+        fn: .my_module.update_table
+      assets:
+        - key: my_table
+    ```
+
+    ```python
+    from dagster import MaterializeResult
+
+    def update_table(context: AssetExecutionContext) -> MaterializeResult:
+        # ...
+        return MaterializeResult(metadata={"rows_updated": 100})
+
+    @component
+    def my_component():
+        return FunctionComponent(
+            execution=update_table,
+            assets=[AssetSpec(key="my_table")],
+        )
+    ```
+
+    """
+
     ## Begin overloads
     execution: Union[FunctionSpec, ResolvableCallable]
 
     @property
-    def op_metadata_spec(self) -> OpMetadataSpec:
+    def op_spec(self) -> OpSpec:
         return (
             self.execution
             if isinstance(self.execution, FunctionSpec)
@@ -150,4 +178,4 @@ class FunctionComponent(ExecutableComponent):
 
     @cached_property
     def execute_fn_metadata(self) -> "ExecuteFnMetadata":
-        return ExecuteFnMetadata(check.inst(self.op_metadata_spec, FunctionSpec).fn)
+        return ExecuteFnMetadata(check.inst(self.op_spec, FunctionSpec).fn)

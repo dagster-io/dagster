@@ -1,24 +1,23 @@
-from dagster import Component, ComponentLoadContext, component_instance
-from dagster._core.definitions.decorators.asset_decorator import asset
-from dagster._core.definitions.definitions_class import Definitions
+import dagster as dg
+from dagster import ComponentLoadContext
 
 # This import is used to test relative imports in the same module.
 from .other_file import return_value  # noqa
 
 
-class AComponent(Component):
+class AComponent(dg.Component):
     """A simple component class for demonstration purposes."""
 
-    def build_defs(self, context: ComponentLoadContext) -> Definitions:
+    def build_defs(self, context: ComponentLoadContext) -> dg.Definitions:
         assert return_value() == "value", "Expected return_value to be 'value'"
 
-        @asset(key=return_value())
+        @dg.asset(key=return_value())
         def an_asset() -> None: ...
 
-        return Definitions(assets=[an_asset])
+        return dg.Definitions(assets=[an_asset])
 
 
-@component_instance
-def load(context: ComponentLoadContext) -> Component:
+@dg.component_instance
+def load(context: ComponentLoadContext) -> dg.Component:
     """A component that loads a component from the same module."""
     return AComponent()

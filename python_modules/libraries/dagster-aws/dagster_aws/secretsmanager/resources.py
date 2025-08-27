@@ -48,7 +48,7 @@ class SecretsManagerResource(ResourceWithBoto3Configuration):
             def example_job():
                 example_secretsmanager_op()
 
-            defs = Definitions(
+            Definitions(
                 jobs=[example_job],
                 resources={
                     'secretsmanager': SecretsManagerResource(
@@ -158,7 +158,7 @@ class SecretsManagerSecretsResource(ResourceWithBoto3Configuration):
                 example_secretsmanager_secrets_op()
                 example_secretsmanager_secrets_op_2()
 
-            defs = Definitions(
+            Definitions(
                 jobs=[example_job],
                 resources={
                     'secrets': SecretsManagerSecretsResource(

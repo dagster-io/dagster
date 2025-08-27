@@ -1,23 +1,23 @@
-from dagster import job, op, repository, schedule
+import dagster as dg
 
 
-@op
+@dg.op
 def the_op():
     pass
 
 
-@job
+@dg.job
 def the_job():
     the_op()
 
 
 # changed simple schedule from running (2 0 * * *) to running (1 0 * * *)
-@schedule(cron_schedule="0 1 * * *", job_name="the_job", execution_timezone="UTC")
+@dg.schedule(cron_schedule="0 1 * * *", job_name="the_job", execution_timezone="UTC")
 def simple_schedule():
     return {}
 
 
-@repository
+@dg.repository
 def the_repo():
     return [
         the_job,

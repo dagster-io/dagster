@@ -3,16 +3,18 @@ from collections.abc import Sequence
 from typing import TYPE_CHECKING, AbstractSet, Any, Generic, Optional, Union  # noqa: UP035
 
 from dagster_shared.serdes import whitelist_for_serdes
+from typing_extensions import Self
 
 import dagster._check as check
 from dagster._annotations import public
 from dagster._core.asset_graph_view.asset_graph_view import U_EntityKey
 from dagster._core.definitions.asset_key import AssetKey, T_EntityKey
-from dagster._core.definitions.base_asset_graph import BaseAssetGraph, BaseAssetNode
+from dagster._core.definitions.assets.graph.base_asset_graph import BaseAssetGraph, BaseAssetNode
 from dagster._core.definitions.declarative_automation.automation_condition import (
     AutomationCondition,
     AutomationResult,
     BuiltinAutomationCondition,
+    T_AutomationCondition,
 )
 from dagster._core.definitions.declarative_automation.automation_context import AutomationContext
 from dagster._core.definitions.declarative_automation.serialized_objects import OperatorType
@@ -34,6 +36,10 @@ class EntityMatchesCondition(
     @property
     def name(self) -> str:
         return self.key.to_user_string()
+
+    @property
+    def children(self) -> Sequence[AutomationCondition]:
+        return [self.operand]
 
     async def evaluate(  # pyright: ignore[reportIncompatibleMethodOverride]
         self, context: AutomationContext[T_EntityKey]
@@ -66,11 +72,11 @@ class EntityMatchesCondition(
 
     @public
     def replace(
-        self, old: Union[AutomationCondition, str], new: AutomationCondition
-    ) -> AutomationCondition:
+        self, old: Union[AutomationCondition, str], new: T_AutomationCondition
+    ) -> Union[Self, T_AutomationCondition]:
         """Replaces all instances of ``old`` across any sub-conditions with ``new``.
 
-        If ``old`` is a string, then conditions with a label matching
+        If ``old`` is a string, then conditions with a label or name matching
         that string will be replaced.
 
         Args:
@@ -79,7 +85,7 @@ class EntityMatchesCondition(
         """
         return (
             new
-            if old in [self, self.get_label()]
+            if old in [self, self.name, self.get_label()]
             else copy(self, operand=self.operand.replace(old, new))
         )
 
@@ -108,6 +114,10 @@ class DepsAutomationCondition(BuiltinAutomationCondition[T_EntityKey]):
         if props:
             name += f"({','.join(props)})"
         return name
+
+    @property
+    def children(self) -> Sequence[AutomationCondition]:
+        return [self.operand]
 
     @property
     def requires_cursor(self) -> bool:
@@ -162,11 +172,11 @@ class DepsAutomationCondition(BuiltinAutomationCondition[T_EntityKey]):
 
     @public
     def replace(
-        self, old: Union[AutomationCondition, str], new: AutomationCondition
-    ) -> AutomationCondition:
+        self, old: Union[AutomationCondition, str], new: T_AutomationCondition
+    ) -> Union[Self, T_AutomationCondition]:
         """Replaces all instances of ``old`` across any sub-conditions with ``new``.
 
-        If ``old`` is a string, then conditions with a label matching
+        If ``old`` is a string, then conditions with a label or name matching
         that string will be replaced.
 
         Args:
@@ -175,7 +185,7 @@ class DepsAutomationCondition(BuiltinAutomationCondition[T_EntityKey]):
         """
         return (
             new
-            if old in [self, self.get_label()]
+            if old in [self, self.name, self.get_label()]
             else copy(self, operand=self.operand.replace(old, new))
         )
 

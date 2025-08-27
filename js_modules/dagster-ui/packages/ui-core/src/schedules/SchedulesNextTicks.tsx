@@ -85,13 +85,16 @@ export const SchedulesNextTicks = memo(({repos}: Props) => {
     const minMaxTimestamp = Math.min(
       ...futureTickSchedules.map(
         (schedule) =>
+          // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
           schedule.futureTicks.results[schedule.futureTicks.results.length - 1]!.timestamp!,
       ),
     );
 
     futureTickSchedules.forEach((schedule) => {
       schedule.futureTicks.results.forEach((tick) => {
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
         if (tick.timestamp! <= minMaxTimestamp) {
+          // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
           nextTicks.push({schedule, timestamp: tick.timestamp!, repoAddress});
         }
       });
@@ -335,7 +338,8 @@ const NextTickDialog = ({
   const [selectedRunRequest, setSelectedRunRequest] =
     useState<ScheduleFutureTickRunRequestFragment | null>(
       evaluationResult && evaluationResult.runRequests && evaluationResult.runRequests.length === 1
-        ? evaluationResult.runRequests[0]!
+        ? // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+          evaluationResult.runRequests[0]!
         : null,
     );
 
@@ -348,6 +352,7 @@ const NextTickDialog = ({
       evaluationResult.runRequests &&
       evaluationResult.runRequests.length === 1
     ) {
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
       setSelectedRunRequest(evaluationResult.runRequests[0]!);
     }
   }, [evaluationResult]);

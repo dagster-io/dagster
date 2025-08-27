@@ -2,45 +2,35 @@ import enum
 from collections.abc import Mapping
 from typing import Any, Literal, Optional, Union
 
+import dagster as dg
 import pydantic
 import pytest
-from dagster import (
-    Definitions,
-    Field as LegacyDagsterField,
-    IntSource,
-    Map,
-    Shape,
-    asset,
-    job,
-    op,
-)
-from dagster._config.config_type import ConfigTypeKind, Noneable
-from dagster._config.pythonic_config import Config, ConfigurableResource, PermissiveConfig
+from dagster import Field as LegacyDagsterField
+from dagster._config.config_type import ConfigTypeKind
+from dagster._config.pythonic_config.config import PermissiveConfig
 from dagster._config.type_printer import print_config_type_to_string
-from dagster._core.errors import DagsterInvalidConfigError
 from dagster._utils.cached_method import cached_method
-from pydantic import Field
 from typing_extensions import TypeAlias
 
 
 def test_default_config_class_non_permissive() -> None:
-    class AnOpConfig(Config):
+    class AnOpConfig(dg.Config):
         a_string: str
         an_int: int
 
     executed = {}
 
-    @op
+    @dg.op
     def a_struct_config_op(config: AnOpConfig):
         executed["yes"] = True
         assert config.a_string == "foo"
         assert config.an_int == 2
 
-    @job
+    @dg.job
     def a_job():
         a_struct_config_op()
 
-    with pytest.raises(DagsterInvalidConfigError):
+    with pytest.raises(dg.DagsterInvalidConfigError):
         a_job.execute_in_process(
             {
                 "ops": {
@@ -53,13 +43,13 @@ def test_default_config_class_non_permissive() -> None:
 
 
 def test_struct_config_permissive() -> None:
-    class AnOpConfig(PermissiveConfig):
+    class AnOpConfig(dg.PermissiveConfig):
         a_string: str
         an_int: int
 
     executed = {}
 
-    @op
+    @dg.op
     def a_struct_config_op(config: AnOpConfig):
         executed["yes"] = True
         assert config.a_string == "foo"
@@ -85,7 +75,7 @@ def test_struct_config_permissive() -> None:
         "an_int",
     ]
 
-    @job
+    @dg.job
     def a_job():
         a_struct_config_op()
 
@@ -105,7 +95,7 @@ def test_struct_config_permissive() -> None:
 def test_struct_config_persmissive_cached_method() -> None:
     calls = {"plus": 0}
 
-    class PlusConfig(PermissiveConfig):
+    class PlusConfig(dg.PermissiveConfig):
         x: int
         y: int
 
@@ -124,17 +114,17 @@ def test_struct_config_persmissive_cached_method() -> None:
 
 
 def test_struct_config_array() -> None:
-    class AnOpConfig(Config):
+    class AnOpConfig(dg.Config):
         a_string_list: list[str]
 
     executed = {}
 
-    @op
+    @dg.op
     def a_struct_config_op(config: AnOpConfig):
         executed["yes"] = True
         assert config.a_string_list == ["foo", "bar"]
 
-    @job
+    @dg.job
     def a_job():
         a_struct_config_op()
 
@@ -143,24 +133,24 @@ def test_struct_config_array() -> None:
     )
     assert executed["yes"]
 
-    with pytest.raises(DagsterInvalidConfigError):
+    with pytest.raises(dg.DagsterInvalidConfigError):
         a_job.execute_in_process(
             {"ops": {"a_struct_config_op": {"config": {"a_string_list": ["foo", "bar", 3]}}}}
         )
 
 
 def test_struct_config_map() -> None:
-    class AnOpConfig(Config):
+    class AnOpConfig(dg.Config):
         a_string_to_int_dict: dict[str, int]
 
     executed = {}
 
-    @op
+    @dg.op
     def a_struct_config_op(config: AnOpConfig):
         executed["yes"] = True
         assert config.a_string_to_int_dict == {"foo": 1, "bar": 2}
 
-    @job
+    @dg.job
     def a_job():
         a_struct_config_op()
 
@@ -169,7 +159,7 @@ def test_struct_config_map() -> None:
     )
     assert executed["yes"]
 
-    with pytest.raises(DagsterInvalidConfigError):
+    with pytest.raises(dg.DagsterInvalidConfigError):
         a_job.execute_in_process(
             {
                 "ops": {
@@ -180,24 +170,24 @@ def test_struct_config_map() -> None:
             }
         )
 
-    with pytest.raises(DagsterInvalidConfigError):
+    with pytest.raises(dg.DagsterInvalidConfigError):
         a_job.execute_in_process(
             {"ops": {"a_struct_config_op": {"config": {"a_string_to_int_dict": {"foo": 1, 2: 4}}}}}
         )
 
 
 def test_struct_config_mapping() -> None:
-    class AnOpConfig(Config):
+    class AnOpConfig(dg.Config):
         a_string_to_int_mapping: Mapping[str, int]
 
     executed = {}
 
-    @op
+    @dg.op
     def a_struct_config_op(config: AnOpConfig):
         executed["yes"] = True
         assert config.a_string_to_int_mapping == {"foo": 1, "bar": 2}
 
-    @job
+    @dg.job
     def a_job():
         a_struct_config_op()
 
@@ -212,17 +202,17 @@ def test_struct_config_mapping() -> None:
 
 
 def test_struct_config_mapping_list() -> None:
-    class AnOpConfig(Config):
+    class AnOpConfig(dg.Config):
         a_list_of_string_to_int_mapping: list[Mapping[str, int]]
 
     executed = {}
 
-    @op
+    @dg.op
     def a_struct_config_op(config: AnOpConfig):
         executed["yes"] = True
         assert config.a_list_of_string_to_int_mapping == [{"foo": 1, "bar": 2}]
 
-    @job
+    @dg.job
     def a_job():
         a_struct_config_op()
 
@@ -239,17 +229,17 @@ def test_struct_config_mapping_list() -> None:
 
 
 def test_complex_config_schema() -> None:
-    class AnOpConfig(Config):
+    class AnOpConfig(dg.Config):
         a_complex_thing: Mapping[int, list[Mapping[str, Optional[int]]]]
 
     executed = {}
 
-    @op
+    @dg.op
     def a_struct_config_op(config: AnOpConfig):
         executed["yes"] = True
         assert config.a_complex_thing == {5: [{"foo": 1, "bar": 2, "baz": None}]}
 
-    @job
+    @dg.job
     def a_job():
         a_struct_config_op()
 
@@ -272,20 +262,20 @@ def test_complex_config_schema() -> None:
 
 @pytest.mark.skip(reason="not yet supported")
 def test_struct_config_optional_nested() -> None:
-    class ANestedConfig(Config):
+    class ANestedConfig(dg.Config):
         a_str: str
 
-    class AnOpConfig(Config):
+    class AnOpConfig(dg.Config):
         an_optional_nested: Optional[ANestedConfig]
 
     executed = {}
 
-    @op
+    @dg.op
     def a_struct_config_op(config: AnOpConfig):
         executed["yes"] = True
         assert config.an_optional_nested is None
 
-    @job
+    @dg.job
     def a_job():
         a_struct_config_op()
 
@@ -297,21 +287,21 @@ def test_struct_config_optional_nested() -> None:
 
 
 def test_struct_config_nested_in_list() -> None:
-    class ANestedConfig(Config):
+    class ANestedConfig(dg.Config):
         a_str: str
 
-    class AnOpConfig(Config):
+    class AnOpConfig(dg.Config):
         an_optional_nested: list[ANestedConfig]
 
     executed = {}
 
-    @op
+    @dg.op
     def a_struct_config_op(config: AnOpConfig):
         executed["yes"] = True
         assert config.an_optional_nested[0].a_str == "foo"
         assert config.an_optional_nested[1].a_str == "bar"
 
-    @job
+    @dg.job
     def a_job():
         a_struct_config_op()
 
@@ -328,22 +318,22 @@ def test_struct_config_nested_in_list() -> None:
 
 
 def test_struct_config_optional_nested_in_list() -> None:
-    class ANestedConfig(Config):
+    class ANestedConfig(dg.Config):
         a_str: str
 
-    class AnOpConfig(Config):
+    class AnOpConfig(dg.Config):
         an_optional_nested: Optional[list[ANestedConfig]]
 
     executed = {}
 
-    @op
+    @dg.op
     def a_struct_config_op(config: AnOpConfig):
         executed["yes"] = True
 
         assert not config.an_optional_nested or config.an_optional_nested[0].a_str == "foo"
         assert not config.an_optional_nested or config.an_optional_nested[1].a_str == "bar"
 
-    @job
+    @dg.job
     def a_job():
         a_struct_config_op()
 
@@ -370,21 +360,21 @@ def test_struct_config_optional_nested_in_list() -> None:
 
 
 def test_struct_config_nested_in_dict() -> None:
-    class ANestedConfig(Config):
+    class ANestedConfig(dg.Config):
         a_str: str
 
-    class AnOpConfig(Config):
+    class AnOpConfig(dg.Config):
         an_optional_nested: dict[str, ANestedConfig]
 
     executed = {}
 
-    @op
+    @dg.op
     def a_struct_config_op(config: AnOpConfig):
         executed["yes"] = True
         assert config.an_optional_nested["foo"].a_str == "foo"
         assert config.an_optional_nested["bar"].a_str == "bar"
 
-    @job
+    @dg.job
     def a_job():
         a_struct_config_op()
 
@@ -407,17 +397,17 @@ def test_struct_config_nested_in_dict() -> None:
     [(str, ["foo", "bar"]), (int, [1, 2]), (float, [1.0, 2.0]), (bool, [True, False])],
 )
 def test_struct_config_map_different_key_type(key_type: type, keys: list[Any]):
-    class AnOpConfig(Config):
+    class AnOpConfig(dg.Config):
         my_dict: dict[key_type, int]  # type: ignore # ignored for update, fix me!
 
     executed = {}
 
-    @op
+    @dg.op
     def a_struct_config_op(config: AnOpConfig):
         executed["yes"] = True
         assert config.my_dict == {keys[0]: 1, keys[1]: 2}
 
-    @job
+    @dg.job
     def a_job():
         a_struct_config_op()
 
@@ -428,25 +418,25 @@ def test_struct_config_map_different_key_type(key_type: type, keys: list[Any]):
 
 
 def test_discriminated_unions() -> None:
-    class Cat(Config):
+    class Cat(dg.Config):
         pet_type: Literal["cat"]
         meows: int
 
-    class Dog(Config):
+    class Dog(dg.Config):
         pet_type: Literal["dog"]
         barks: float
 
-    class Lizard(Config):
+    class Lizard(dg.Config):
         pet_type: Literal["reptile", "lizard"]
         scales: bool
 
-    class OpConfigWithUnion(Config):
-        pet: Union[Cat, Dog, Lizard] = Field(..., discriminator="pet_type")
+    class OpConfigWithUnion(dg.Config):
+        pet: Union[Cat, Dog, Lizard] = pydantic.Field(..., discriminator="pet_type")
         n: int
 
     executed = {}
 
-    @op
+    @dg.op
     def a_struct_config_op(config: OpConfigWithUnion):
         if config.pet.pet_type == "cat":
             assert config.pet.meows == 2
@@ -458,7 +448,7 @@ def test_discriminated_unions() -> None:
 
         executed["yes"] = True
 
-    @job
+    @dg.job
     def a_job():
         a_struct_config_op()
 
@@ -488,13 +478,13 @@ def test_discriminated_unions() -> None:
     assert executed["yes"]
 
     # Ensure passing value which doesn't exist errors
-    with pytest.raises(DagsterInvalidConfigError):
+    with pytest.raises(dg.DagsterInvalidConfigError):
         a_job.execute_in_process(
             {"ops": {"a_struct_config_op": {"config": {"pet": {"octopus": {"meows": 2}}, "n": 4}}}}
         )
 
     # Disallow passing multiple discriminated union values
-    with pytest.raises(DagsterInvalidConfigError):
+    with pytest.raises(dg.DagsterInvalidConfigError):
         a_job.execute_in_process(
             {
                 "ops": {
@@ -510,30 +500,30 @@ def test_discriminated_unions() -> None:
 
 
 def test_nested_discriminated_unions() -> None:
-    class Poodle(Config):
+    class Poodle(dg.Config):
         breed_type: Literal["poodle"]
         fluffy: bool
 
-    class Dachshund(Config):
+    class Dachshund(dg.Config):
         breed_type: Literal["dachshund"]
         long: bool
 
-    class Cat(Config):
+    class Cat(dg.Config):
         pet_type: Literal["cat"]
         meows: int
 
-    class Dog(Config):
+    class Dog(dg.Config):
         pet_type: Literal["dog"]
         barks: float
-        breed: Union[Poodle, Dachshund] = Field(..., discriminator="breed_type")
+        breed: Union[Poodle, Dachshund] = pydantic.Field(..., discriminator="breed_type")
 
-    class OpConfigWithUnion(Config):
-        pet: Union[Cat, Dog] = Field(..., discriminator="pet_type")
+    class OpConfigWithUnion(dg.Config):
+        pet: Union[Cat, Dog] = pydantic.Field(..., discriminator="pet_type")
         n: int
 
     executed = {}
 
-    @op
+    @dg.op
     def a_struct_config_op(config: OpConfigWithUnion):
         assert config.pet.pet_type == "dog"
         assert isinstance(config.pet, Dog)
@@ -543,7 +533,7 @@ def test_nested_discriminated_unions() -> None:
 
         executed["yes"] = True
 
-    @job
+    @dg.job
     def a_job():
         a_struct_config_op()
 
@@ -565,20 +555,20 @@ def test_nested_discriminated_unions() -> None:
 
 
 def test_discriminated_unions_direct_instantiation() -> None:
-    class Cat(Config):
+    class Cat(dg.Config):
         pet_type: Literal["cat"] = "cat"
         meows: int
 
-    class Dog(Config):
+    class Dog(dg.Config):
         pet_type: Literal["dog"] = "dog"
         barks: float
 
-    class Lizard(Config):
+    class Lizard(dg.Config):
         pet_type: Literal["reptile", "lizard"] = "reptile"
         scales: bool
 
-    class OpConfigWithUnion(Config):
-        pet: Union[Cat, Dog, Lizard] = Field(..., discriminator="pet_type")
+    class OpConfigWithUnion(dg.Config):
+        pet: Union[Cat, Dog, Lizard] = pydantic.Field(..., discriminator="pet_type")
         n: int
 
     config = OpConfigWithUnion(pet=Cat(meows=3), n=5)
@@ -587,25 +577,25 @@ def test_discriminated_unions_direct_instantiation() -> None:
 
 
 def test_nested_discriminated_config_instantiation() -> None:
-    class Poodle(Config):
+    class Poodle(dg.Config):
         breed_type: Literal["poodle"] = "poodle"
         fluffy: bool
 
-    class Dachshund(Config):
+    class Dachshund(dg.Config):
         breed_type: Literal["dachshund"] = "dachshund"
         long: bool
 
-    class Cat(Config):
+    class Cat(dg.Config):
         pet_type: Literal["cat"] = "cat"
         meows: int
 
-    class Dog(Config):
+    class Dog(dg.Config):
         pet_type: Literal["dog"] = "dog"
         barks: float
-        breed: Union[Poodle, Dachshund] = Field(..., discriminator="breed_type")
+        breed: Union[Poodle, Dachshund] = pydantic.Field(..., discriminator="breed_type")
 
-    class OpConfigWithUnion(Config):
-        pet: Union[Cat, Dog] = Field(..., discriminator="pet_type")
+    class OpConfigWithUnion(dg.Config):
+        pet: Union[Cat, Dog] = pydantic.Field(..., discriminator="pet_type")
         n: int
 
     config = OpConfigWithUnion(pet=Dog(barks=5.5, breed=Poodle(fluffy=True)), n=3)
@@ -618,25 +608,25 @@ def test_nested_discriminated_config_instantiation() -> None:
 
 
 def test_nested_discriminated_resource_instantiation() -> None:
-    class Poodle(Config):
+    class Poodle(dg.Config):
         breed_type: Literal["poodle"] = "poodle"
         fluffy: bool
 
-    class Dachshund(Config):
+    class Dachshund(dg.Config):
         breed_type: Literal["dachshund"] = "dachshund"
         long: bool
 
-    class Cat(Config):
+    class Cat(dg.Config):
         pet_type: Literal["cat"] = "cat"
         meows: int
 
-    class Dog(Config):
+    class Dog(dg.Config):
         pet_type: Literal["dog"] = "dog"
         barks: float
-        breed: Union[Poodle, Dachshund] = Field(..., discriminator="breed_type")
+        breed: Union[Poodle, Dachshund] = pydantic.Field(..., discriminator="breed_type")
 
-    class ResourceWithUnion(ConfigurableResource):
-        pet: Union[Cat, Dog] = Field(..., discriminator="pet_type")
+    class ResourceWithUnion(dg.ConfigurableResource):
+        pet: Union[Cat, Dog] = pydantic.Field(..., discriminator="pet_type")
         n: int
 
     resource_with_union = ResourceWithUnion(pet=Dog(barks=5.5, breed=Poodle(fluffy=True)), n=3)
@@ -649,7 +639,7 @@ def test_nested_discriminated_resource_instantiation() -> None:
 
     executed = {}
 
-    @asset
+    @dg.asset
     def my_asset_uses_resource(resource_with_union: ResourceWithUnion):
         assert isinstance(resource_with_union.pet, Dog)
         assert resource_with_union.pet.barks == 5.5
@@ -659,7 +649,7 @@ def test_nested_discriminated_resource_instantiation() -> None:
         assert resource_with_union.pet.breed.breed_type == "poodle"
         executed["yes"] = True
 
-    defs = Definitions(
+    defs = dg.Definitions(
         assets=[my_asset_uses_resource],
         resources={"resource_with_union": resource_with_union},
     )
@@ -668,22 +658,24 @@ def test_nested_discriminated_resource_instantiation() -> None:
 
 
 def test_struct_config_optional_map() -> None:
-    class AnOpConfig(Config):
+    class AnOpConfig(dg.Config):
         an_optional_dict: Optional[dict[str, int]]
 
     executed = {}
 
-    @op
+    @dg.op
     def a_struct_config_op(config: AnOpConfig):
         executed["yes"] = True
 
     assert print_config_type_to_string(
         a_struct_config_op.config_schema.config_type
     ) == print_config_type_to_string(
-        Shape(fields={"an_optional_dict": LegacyDagsterField(Noneable(Map(str, IntSource)))})
+        dg.Shape(
+            fields={"an_optional_dict": LegacyDagsterField(dg.Noneable(dg.Map(str, dg.IntSource)))}
+        )
     )
 
-    @job
+    @dg.job
     def a_job():
         a_struct_config_op()
 
@@ -702,7 +694,7 @@ def test_struct_config_optional_map() -> None:
     )
     assert executed["yes"]
 
-    with pytest.raises(DagsterInvalidConfigError):
+    with pytest.raises(dg.DagsterInvalidConfigError):
         a_job.execute_in_process(
             {
                 "ops": {
@@ -715,16 +707,16 @@ def test_struct_config_optional_map() -> None:
 
 
 def test_struct_config_optional_array() -> None:
-    class AnOpConfig(Config):
+    class AnOpConfig(dg.Config):
         a_string_list: Optional[list[str]]
 
     executed = {}
 
-    @op
+    @dg.op
     def a_struct_config_op(config: AnOpConfig):
         executed["yes"] = True
 
-    @job
+    @dg.job
     def a_job():
         a_struct_config_op()
 
@@ -741,7 +733,7 @@ def test_struct_config_optional_array() -> None:
     a_job.execute_in_process()
     assert executed["yes"]
 
-    with pytest.raises(DagsterInvalidConfigError):
+    with pytest.raises(dg.DagsterInvalidConfigError):
         a_job.execute_in_process(
             {"ops": {"a_struct_config_op": {"config": {"a_string_list": ["foo", "bar", 3]}}}}
         )
@@ -752,41 +744,41 @@ def test_str_enum_value() -> None:
         FOO = "foo"
         BAR = "bar"
 
-    class AnOpConfig(Config):
+    class AnOpConfig(dg.Config):
         an_enum: MyEnum
 
     executed = {}
 
-    @op
+    @dg.op
     def a_struct_config_op(config: AnOpConfig):
         assert config.an_enum == MyEnum.FOO
         executed["yes"] = True
 
-    @job
+    @dg.job
     def a_job():
         a_struct_config_op()
 
     a_job.execute_in_process({"ops": {"a_struct_config_op": {"config": {"an_enum": "FOO"}}}})
     assert executed["yes"]
 
-    with pytest.raises(DagsterInvalidConfigError):
+    with pytest.raises(dg.DagsterInvalidConfigError):
         a_job.execute_in_process({"ops": {"a_struct_config_op": {"config": {"an_enum": "BAZ"}}}})
 
     # must pass enum name, not value
-    with pytest.raises(DagsterInvalidConfigError):
+    with pytest.raises(dg.DagsterInvalidConfigError):
         a_job.execute_in_process({"ops": {"a_struct_config_op": {"config": {"an_enum": "foo"}}}})
 
 
 def test_literal_in_op_config() -> None:
-    class AnOpConfig(Config):
+    class AnOpConfig(dg.Config):
         a_literal: Literal["foo", "bar"] = "foo"
 
-    @op
+    @dg.op
     def a_struct_config_op(config: AnOpConfig):
         assert isinstance(config.a_literal, str)
         assert config.a_literal in ["foo", "bar"]
 
-    @job
+    @dg.job
     def a_job():
         a_struct_config_op()
 
@@ -794,22 +786,22 @@ def test_literal_in_op_config() -> None:
 
     a_job.execute_in_process({"ops": {"a_struct_config_op": {"config": {"a_literal": "bar"}}}})
 
-    with pytest.raises(DagsterInvalidConfigError):
+    with pytest.raises(dg.DagsterInvalidConfigError):
         a_job.execute_in_process({"ops": {"a_struct_config_op": {"config": {"a_literal": "baz"}}}})
 
 
 def test_literal_in_resource_config() -> None:
-    class MyResource(ConfigurableResource):
+    class MyResource(dg.ConfigurableResource):
         a_literal: Literal["foo", "bar"] = "foo"
 
         def setup_for_execution(self, context):
             assert self.a_literal in ["foo", "bar"]
 
-    @op
+    @dg.op
     def my_op(my_resource: MyResource):
         pass
 
-    @job
+    @dg.job
     def a_job():
         my_op()
 
@@ -826,19 +818,19 @@ def test_enum_complex() -> None:
         FOO = "foo"
         BAR = "bar"
 
-    class AnOpConfig(Config):
+    class AnOpConfig(dg.Config):
         an_optional_enum: Optional[MyEnum]
         an_enum_list: list[MyEnum]
 
     executed = {}
 
-    @op
+    @dg.op
     def a_struct_config_op(config: AnOpConfig):
         assert config.an_optional_enum is None
         assert config.an_enum_list == [MyEnum.FOO, MyEnum.BAR]
         executed["yes"] = True
 
-    @job
+    @dg.job
     def a_job():
         a_struct_config_op()
 
@@ -847,7 +839,7 @@ def test_enum_complex() -> None:
     )
     assert executed["yes"]
 
-    with pytest.raises(DagsterInvalidConfigError):
+    with pytest.raises(dg.DagsterInvalidConfigError):
         a_job.execute_in_process(
             {"ops": {"a_struct_config_op": {"config": {"an_enum_list": ["FOO", "BAZ"]}}}}
         )
@@ -856,21 +848,21 @@ def test_enum_complex() -> None:
 def test_struct_config_non_optional_none_input_errors() -> None:
     executed = {}
 
-    class AnOpListConfig(Config):
+    class AnOpListConfig(dg.Config):
         a_string_list: list[str]
 
-    @op
+    @dg.op
     def a_list_op(config: AnOpListConfig):
         executed["yes"] = True
 
-    class AnOpMapConfig(Config):
+    class AnOpMapConfig(dg.Config):
         a_string_list: dict[str, str]
 
-    @op
+    @dg.op
     def a_map_op(config: AnOpMapConfig):
         executed["yes"] = True
 
-    @job
+    @dg.job
     def a_job():
         a_map_op()
         a_list_op()
@@ -888,7 +880,7 @@ def test_struct_config_non_optional_none_input_errors() -> None:
 
     # Validate that we error when we pass None to a non-optional field
     # or when we omit the field entirely
-    with pytest.raises(DagsterInvalidConfigError):
+    with pytest.raises(dg.DagsterInvalidConfigError):
         a_job.execute_in_process(
             {
                 "ops": {
@@ -897,7 +889,7 @@ def test_struct_config_non_optional_none_input_errors() -> None:
                 }
             }
         )
-    with pytest.raises(DagsterInvalidConfigError):
+    with pytest.raises(dg.DagsterInvalidConfigError):
         a_job.execute_in_process(
             {
                 "ops": {
@@ -905,7 +897,7 @@ def test_struct_config_non_optional_none_input_errors() -> None:
                 }
             }
         )
-    with pytest.raises(DagsterInvalidConfigError):
+    with pytest.raises(dg.DagsterInvalidConfigError):
         a_job.execute_in_process(
             {
                 "ops": {
@@ -914,7 +906,7 @@ def test_struct_config_non_optional_none_input_errors() -> None:
                 }
             }
         )
-    with pytest.raises(DagsterInvalidConfigError):
+    with pytest.raises(dg.DagsterInvalidConfigError):
         a_job.execute_in_process(
             {
                 "ops": {
@@ -928,15 +920,15 @@ FooBarLiteral: TypeAlias = Literal["foo", "bar"]
 
 
 def test_conversion_to_fields() -> None:
-    class ConfigClassToConvert(Config):
+    class ConfigClassToConvert(dg.Config):
         a_string: str
         an_int: str
-        with_description: str = Field(description="a description")
-        with_default_value: int = Field(default=12)
+        with_description: str = pydantic.Field(description="a description")
+        with_default_value: int = pydantic.Field(default=12)
         optional_str: Optional[str] = None
         a_literal: FooBarLiteral
         a_default_literal: FooBarLiteral = "bar"
-        a_literal_with_description: FooBarLiteral = Field(
+        a_literal_with_description: FooBarLiteral = pydantic.Field(
             default="foo", description="a description"
         )
 
@@ -966,7 +958,7 @@ def test_conversion_to_fields() -> None:
 
 
 def test_to_config_dict_combined_with_cached_method() -> None:
-    class ConfigWithCachedMethod(Config):
+    class ConfigWithCachedMethod(dg.Config):
         a_string: str
 
         @cached_method
@@ -979,17 +971,17 @@ def test_to_config_dict_combined_with_cached_method() -> None:
 
 
 def test_aliases() -> None:
-    class ConfigWithAlias(ConfigurableResource):
-        field_name: Optional[Mapping[str, str]] = Field(
+    class ConfigWithAlias(dg.ConfigurableResource):
+        field_name: Optional[Mapping[str, str]] = pydantic.Field(
             alias="alias_name",
             default=None,
         )
 
-    @op
+    @dg.op
     def echo_config(my_resource: ConfigWithAlias):
         return my_resource.field_name
 
-    @job
+    @dg.job
     def echo_job():
         echo_config()
 
@@ -1000,3 +992,18 @@ def test_aliases() -> None:
     d = {"test": "test"}
     result = echo_job.execute_in_process(resources={"my_resource": ConfigWithAlias(alias_name=d)})
     assert result.output_for_node("echo_config") == d
+
+
+def test_permissive_extra_field_via_dot():
+    class ExtraConfig(PermissiveConfig):
+        foo: int
+
+    conf = ExtraConfig(foo=10, bar="hello", baz=[1, 2, 3])  # type: ignore
+    conf1 = ExtraConfig(foo=10, bar="hello", baz=[1, 2, 3])  # type: ignore
+    assert conf == conf1
+    assert conf.foo == 10
+    assert conf.bar == "hello"
+    assert conf.baz == [1, 2, 3]
+    # confirm it's in dict and convert_to_config_dictionary
+    expected = {"foo": 10, "bar": "hello", "baz": [1, 2, 3]}
+    assert conf.model_dump() == expected

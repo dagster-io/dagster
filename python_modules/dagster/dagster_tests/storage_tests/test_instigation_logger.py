@@ -1,9 +1,9 @@
 from contextlib import contextmanager
 from unittest import mock
 
+import dagster as dg
 from dagster._core.definitions.instigation_logger import InstigationLogger
 from dagster._core.storage.noop_compute_log_manager import NoOpComputeLogManager
-from dagster._core.test_utils import instance_for_test
 
 
 def test_gets_correct_logger():
@@ -31,7 +31,7 @@ class MockLogStreamComputeLogManager(NoOpComputeLogManager):
 
 
 def test_instigation_logger_start_failure(capsys):
-    with instance_for_test(
+    with dg.instance_for_test(
         overrides={
             "compute_logs": {
                 "module": "dagster_tests.storage_tests.test_instigation_logger",
@@ -49,7 +49,7 @@ def test_instigation_logger_start_failure(capsys):
 
 
 def test_instigation_logger_log_failure(capsys):
-    with instance_for_test(
+    with dg.instance_for_test(
         overrides={
             "compute_logs": {
                 "module": "dagster_tests.storage_tests.test_instigation_logger",

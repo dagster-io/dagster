@@ -1,6 +1,5 @@
 import {Box, Caption, Colors, Icon, MiddleTruncate} from '@dagster-io/ui-components';
 import dayjs from 'dayjs';
-import relativeTime from 'dayjs/plugin/relativeTime';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
 import styled from 'styled-components';
@@ -18,7 +17,7 @@ import {displayNameForAssetKey} from '../asset-graph/Utils';
 import {AssetKeyInput} from '../graphql/types';
 import {TimeFromNow} from '../ui/TimeFromNow';
 
-dayjs.extend(relativeTime);
+import '../util/dayjsExtensions';
 
 export const AssetMaterializationUpstreamTable = ({
   data,

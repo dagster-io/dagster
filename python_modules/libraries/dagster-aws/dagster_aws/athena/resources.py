@@ -254,7 +254,7 @@ class AthenaClientResource(ResourceWithAthenaConfig):
                 def example_athena_asset(athena: AthenaClientResource):
                     return athena.get_client().execute_query("SELECT 1", fetch_results=True)
 
-                defs = Definitions(
+                Definitions(
                     assets=[example_athena_asset],
                     resources={"athena": AthenaClientResource()}
                 )

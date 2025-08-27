@@ -5,8 +5,9 @@ import tempfile
 from pathlib import Path
 from typing import Any, Optional, TypeVar
 
+import dagster as dg
 from dagster.components.lib.shim_components.base import ShimScaffolder, TModel
-from dagster.components.scaffold.scaffold import NoParams, ScaffoldRequest
+from dagster.components.scaffold.scaffold import NoParams
 from pydantic import BaseModel
 
 T = TypeVar("T", bound=BaseModel)
@@ -14,8 +15,8 @@ T = TypeVar("T", bound=BaseModel)
 
 def make_test_scaffold_request(
     filename: str, params: Optional[TModel] = None
-) -> ScaffoldRequest[TModel]:
-    return ScaffoldRequest[TModel](
+) -> dg.ScaffoldRequest[TModel]:
+    return dg.ScaffoldRequest[TModel](
         type_name="Test",
         target_path=Path(f"{filename}.py"),
         scaffold_format="python",
@@ -62,7 +63,7 @@ def execute_scaffolder_and_get_symbol(
 ) -> Any:
     """Helper function to execute a scaffolder and get the created symbol."""
     # Construct a ScaffoldRequest for the new get_text signature
-    request = ScaffoldRequest(
+    request = dg.ScaffoldRequest(
         type_name=scaffolder.__class__.__name__,
         target_path=Path(f"{symbol_name}.py"),
         scaffold_format="python",

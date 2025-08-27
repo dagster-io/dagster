@@ -11,6 +11,6 @@
 - name: Update build session with image tag for TEMPLATE_LOCATION_NAME
   id: ci-set-build-output-example-location
   if: steps.prerun.outputs.result != 'skip'
-  uses: dagster-io/dagster-cloud-action/actions/utils/dg-cli@dg-v0.1
+  uses: dagster-io/dagster-cloud-action/actions/utils/dg-cli@TEMPLATE_DAGSTER_CLOUD_ACTION_VERSION
   with:
     command: "plus deploy set-build-output --path=${{ env.DAGSTER_PROJECT_DIR }} --location-name=TEMPLATE_LOCATION_NAME --image-tag=$IMAGE_TAG-TEMPLATE_LOCATION_NAME"

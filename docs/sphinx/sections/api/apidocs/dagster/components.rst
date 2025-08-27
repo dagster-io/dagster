@@ -12,9 +12,14 @@ Using Components
 .. autoclass:: ComponentLoadContext
    :members:
 
+.. autoclass:: ComponentTree
+   :members:
+
 
 Building Components
 -------------------
+
+.. autodecorator:: template_var
 
 .. autoclass:: Component
     :members:
@@ -62,4 +67,13 @@ common Dagster types.
 
     Allows resolving to an AssetCheckSpec via a YAML-friendly schema.
 
-.. autoclass:: AssetPostProcessorModel
+
+Built-in Components
+-------------------
+
+.. autoclass:: DefsFolderComponent
+
+Loading Components
+------------------
+
+.. autofunction:: load_from_defs_folder

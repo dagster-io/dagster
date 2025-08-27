@@ -21,11 +21,12 @@ import {useRecentAssetEvents} from './useRecentAssetEvents';
 import {useRefreshAtInterval} from '../app/QueryRefresh';
 import {Timestamp} from '../app/time/Timestamp';
 import {AssetLatestInfoFragment} from '../asset-data/types/AssetBaseDataProvider.types';
-import {AssetHealthFragment} from '../asset-data/types/AssetHealthDataProvider.types';
 import {AssetEventHistoryEventTypeSelector} from '../graphql/types';
 import {TimeFromNow} from '../ui/TimeFromNow';
 
-export const AssetRecentUpdatesTrend = React.memo(({asset}: {asset: AssetHealthFragment}) => {
+const INTERVAL_MSEC = 30 * 1000;
+
+export const AssetRecentUpdatesTrend = React.memo(({asset}: {asset: {key: {path: string[]}}}) => {
   // Wait 100ms to avoid querying during fast scrolling of the table
   const shouldQuery = useDelayedState(500);
   const {
@@ -48,7 +49,7 @@ export const AssetRecentUpdatesTrend = React.memo(({asset}: {asset: AssetHealthF
 
   useRefreshAtInterval({
     refresh: refetch,
-    intervalMs: 3000,
+    intervalMs: INTERVAL_MSEC,
     enabled: shouldQuery,
   });
 
@@ -149,13 +150,16 @@ const EventPopover = React.memo(
             return {
               content: <Body>In progress</Body>,
               icon: <Icon name="run_started" color={Colors.accentBlue()} />,
+              // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
               runId: event.latestRun!.id,
+              // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
               timestamp: Number(event.latestRun!.startTime) * 1000,
             };
           }
           return {
             content: <Body>Queued</Body>,
             icon: <Icon name="run_queued" color={Colors.accentBlue()} />,
+            // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
             runId: event.latestRun!.id,
             timestamp: null,
           };

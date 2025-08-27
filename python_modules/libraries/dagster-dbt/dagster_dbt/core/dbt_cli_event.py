@@ -1,7 +1,9 @@
+from abc import ABC, abstractmethod
 from collections.abc import Iterator, Mapping, Sequence
 from dataclasses import InitVar, dataclass
+from functools import cached_property
 from pathlib import Path
-from typing import AbstractSet, Any, NamedTuple, Optional, Union, cast  # noqa: UP035
+from typing import AbstractSet, Any, NamedTuple, Optional, TypedDict, Union, cast  # noqa: UP035
 
 import dateutil.parser
 from dagster import (
@@ -17,13 +19,10 @@ from dagster import (
     get_dagster_logger,
 )
 from dagster._annotations import public
-from dagster._core.definitions.asset_check_evaluation import AssetCheckEvaluation
+from dagster._core.definitions.asset_checks.asset_check_evaluation import AssetCheckEvaluation
+from dagster._core.definitions.asset_key import AssetCheckKey, AssetKey
 from dagster._core.definitions.metadata import TableMetadataSet
 from dagster._utils.warnings import disable_dagster_warnings
-from dbt.contracts.results import NodeStatus, TestStatus
-from dbt.node_types import NodeType
-from dbt.version import __version__ as dbt_version
-from packaging import version
 from sqlglot import MappingSchema, exp, parse_one, to_table
 from sqlglot.expressions import normalize_table_name
 from sqlglot.lineage import lineage
@@ -34,21 +33,30 @@ from dagster_dbt.asset_utils import (
     get_asset_check_key_for_test,
     get_checks_on_sources_upstream_of_selected_assets,
 )
+from dagster_dbt.compat import REFABLE_NODE_TYPES, NodeStatus, NodeType, TestStatus
 from dagster_dbt.dagster_dbt_translator import DagsterDbtTranslator, validate_translator
 from dagster_dbt.dbt_manifest import DbtManifestParam, validate_manifest
-
-IS_DBT_CORE_VERSION_LESS_THAN_1_8_0 = version.parse(dbt_version) < version.parse("1.8.0")
-if IS_DBT_CORE_VERSION_LESS_THAN_1_8_0:
-    REFABLE_NODE_TYPES = NodeType.refable()  # type: ignore
-else:
-    from dbt.node_types import REFABLE_NODE_TYPES as REFABLE_NODE_TYPES
+from dagster_dbt.dbt_project import DbtProject
 
 logger = get_dagster_logger()
+
+# depending on the specific dbt version, any of these values
+# may be used to indicate an empty value in a log message
+_EMPTY_VALUES = {"", "None", None}
 
 
 class EventHistoryMetadata(NamedTuple):
     columns: dict[str, dict[str, Any]]
     parents: dict[str, dict[str, Any]]
+
+
+class CheckProperties(TypedDict):
+    # Convenenience to abstract over AssetCheckResult and AssetCheckEvaluation
+    passed: bool
+    asset_key: AssetKey
+    check_name: str
+    severity: AssetCheckSeverity
+    metadata: Mapping[str, Any]
 
 
 def _build_column_lineage_metadata(
@@ -207,7 +215,7 @@ def _build_column_lineage_metadata(
 
 
 @dataclass
-class DbtCliEventMessage:
+class DbtCliEventMessage(ABC):
     """The representation of a dbt CLI event.
 
     Args:
@@ -228,42 +236,292 @@ class DbtCliEventMessage:
         return self.raw_event["info"]["msg"]
 
     @property
-    def log_level(self) -> str:
-        """The log level of the event."""
-        return self.raw_event["info"]["level"]
-
-    @property
     def has_column_lineage_metadata(self) -> bool:
         """Whether the event has column level lineage metadata."""
         return bool(self._event_history_metadata) and "parents" in self._event_history_metadata
 
-    @staticmethod
-    def is_result_event(raw_event: dict[str, Any]) -> bool:
-        return raw_event["info"]["name"] in set(
-            ["LogSeedResult", "LogModelResult", "LogSnapshotResult", "LogTestResult"]
-        ) and not raw_event["data"].get("node_info", {}).get("unique_id", "").startswith(
-            "unit_test"
+    @cached_property
+    def _unique_id(self) -> str:
+        return self.raw_event["data"]["node_info"]["unique_id"]
+
+    @cached_property
+    def _raw_data(self) -> Mapping[str, Any]:
+        return self.raw_event["data"]
+
+    @cached_property
+    def _raw_node_info(self) -> Mapping[str, Any]:
+        return self.raw_event["data"]["node_info"]
+
+    @property
+    @abstractmethod
+    def is_result_event(self) -> bool: ...
+
+    def _is_model_execution_event(self, manifest: Mapping[str, Any]) -> bool:
+        resource_props = self._get_resource_props(self._unique_id, manifest)
+        materialized_type = (
+            # check event info
+            self._raw_node_info.get("materialized")
+            # then top-level props
+            or resource_props.get("materialized")
+            # then config
+            or resource_props.get("config", {}).get("materialized")
+        )
+        return (
+            resource_props["resource_type"] in REFABLE_NODE_TYPES
+            and materialized_type != "ephemeral"
+            and self._get_node_status() == NodeStatus.Success
         )
 
-    def _yield_observation_events_for_test(
+    def _is_test_execution_event(self, manifest: Mapping[str, Any]) -> bool:
+        resource_props = self._get_resource_props(self._unique_id, manifest)
+        return resource_props["resource_type"] == NodeType.Test
+
+    def _get_resource_props(self, unique_id: str, manifest: Mapping[str, Any]) -> dict[str, Any]:
+        return manifest["nodes"][unique_id]
+
+    def _get_execution_duration_metadata(self) -> Mapping[str, float]:
+        raw_started_at = self._raw_node_info.get("node_started_at")
+        raw_finished_at = self._raw_node_info.get("node_finished_at")
+
+        has_started_at = raw_started_at not in _EMPTY_VALUES
+        has_finished_at = raw_finished_at not in _EMPTY_VALUES
+
+        if has_started_at and has_finished_at:
+            started_at = dateutil.parser.isoparse(cast("str", raw_started_at))
+            finished_at = dateutil.parser.isoparse(cast("str", raw_finished_at))
+            duration = (finished_at - started_at).total_seconds()
+            return {"Execution Duration": (finished_at - started_at).total_seconds()}
+        else:
+            # if model materialization is incremental microbatch, node_started_at and
+            # node_finished_at are empty strings and require fallback to data.execution_time
+            duration = self._raw_data.get("execution_time")
+
+        return {"Execution Duration": duration} if duration else {}
+
+    ###############
+    # MODEL PARSING
+    ###############
+
+    def _get_column_schema_metadata(self, manifest: Mapping[str, Any]) -> Mapping[str, Any]:
+        try:
+            return default_metadata_from_dbt_resource_props(self._event_history_metadata)
+        except Exception as e:
+            logger.warning(
+                "An error occurred while building column schema metadata from event history"
+                f" `{self._event_history_metadata}` for the dbt resource"
+                f" `{self._get_resource_props(self._unique_id, manifest)['original_file_path']}`."
+                " Column schema metadata will not be included in the event.\n\n"
+                f"Exception: {e}",
+                exc_info=True,
+            )
+            return {}
+
+    def _get_default_metadata(self, manifest: Mapping[str, Any]) -> dict[str, Any]:
+        return {
+            **self._get_column_schema_metadata(manifest),
+            **self._get_execution_duration_metadata(),
+            "unique_id": self._unique_id,
+            "invocation_id": self.raw_event["info"]["invocation_id"],
+        }
+
+    def _get_node_status(self) -> str:
+        # if model materialization is incremental microbatch, node_status
+        # property is "None", hence fall back to status
+        raw_node_status = self._raw_node_info.get("node_status")
+        return (
+            raw_node_status
+            if raw_node_status and raw_node_status not in _EMPTY_VALUES
+            else self._raw_data["status"].lower()
+        )
+
+    def _get_lineage_metadata(
         self,
+        translator: DagsterDbtTranslator,
+        manifest: Mapping[str, Any],
+        target_path: Optional[Path],
+    ) -> Mapping[str, Any]:
+        try:
+            column_data = self._event_history_metadata.get("columns", {})
+            parent_column_data = {
+                parent_key: parent_data["columns"]
+                for parent_key, parent_data in self._event_history_metadata.get(
+                    "parents", {}
+                ).items()
+            }
+
+            # Column lineage can only be built if initial metadata is provided.
+            if self.has_column_lineage_metadata:
+                return _build_column_lineage_metadata(
+                    event_history_metadata=EventHistoryMetadata(
+                        columns=column_data, parents=parent_column_data
+                    ),
+                    dbt_resource_props=self._get_resource_props(self._unique_id, manifest),
+                    manifest=manifest,
+                    dagster_dbt_translator=translator,
+                    target_path=target_path,
+                )
+        except Exception as e:
+            logger.warning(
+                "An error occurred while building column lineage metadata for the dbt resource"
+                f" `{self._get_resource_props(self._unique_id, manifest)['original_file_path']}`."
+                " Lineage metadata will not be included in the event.\n\n"
+                f"Exception: {e}",
+                exc_info=True,
+            )
+        return {}
+
+    def _get_materialization_metadata(
+        self,
+        translator: DagsterDbtTranslator,
+        manifest: Mapping[str, Any],
+        target_path: Optional[Path],
+    ) -> dict[str, Any]:
+        return {
+            **self._get_default_metadata(manifest),
+            **self._get_lineage_metadata(translator, manifest, target_path),
+        }
+
+    def _to_model_events(
+        self,
+        manifest: Mapping[str, Any],
+        dagster_dbt_translator: DagsterDbtTranslator,
+        context: Optional[Union[OpExecutionContext, AssetExecutionContext]],
+        target_path: Optional[Path],
+        project: Optional[DbtProject],
+    ) -> Iterator[Union[Output, AssetMaterialization]]:
+        asset_key = dagster_dbt_translator.get_asset_spec(manifest, self._unique_id, project).key
+        metadata = self._get_materialization_metadata(dagster_dbt_translator, manifest, target_path)
+        if context and context.has_assets_def:
+            yield Output(
+                value=None, output_name=asset_key.to_python_identifier(), metadata=metadata
+            )
+        else:
+            yield AssetMaterialization(asset_key=asset_key, metadata=metadata)
+
+    ##############
+    # TEST PARSING
+    ##############
+
+    def _get_check_execution_metadata(self, manifest: Mapping[str, Any]) -> dict[str, Any]:
+        failure_count = self._raw_data.get("num_failures")
+        return {
+            **self._get_default_metadata(manifest),
+            "status": self._get_node_status(),
+            **({} if failure_count is None else {"dagster_dbt/failed_row_count": failure_count}),
+        }
+
+    @abstractmethod
+    def _get_check_passed(self) -> bool: ...
+
+    @abstractmethod
+    def _get_check_severity(self) -> AssetCheckSeverity: ...
+
+    def _get_check_properties(
+        self, key: AssetCheckKey, manifest: Mapping[str, Any]
+    ) -> CheckProperties:
+        return CheckProperties(
+            passed=self._get_check_passed(),
+            asset_key=key.asset_key,
+            check_name=key.name,
+            severity=self._get_check_severity(),
+            metadata=self._get_check_execution_metadata(manifest),
+        )
+
+    def _get_result_check_keys(
+        self, context: Optional[Union[OpExecutionContext, AssetExecutionContext]]
+    ) -> AbstractSet[AssetCheckKey]:
+        """Returns the set of check keys for which we should emit AssetCheckResult events."""
+        if context is None or not context.has_assets_def:
+            return set()
+        return {
+            *context.selected_asset_check_keys,
+            *get_checks_on_sources_upstream_of_selected_assets(
+                assets_def=context.assets_def,
+                selected_asset_keys=context.selected_asset_keys,
+            ),
+        }
+
+    def _to_observation_events_for_test(
+        self,
+        key: Optional[AssetCheckKey],
         dagster_dbt_translator: DagsterDbtTranslator,
         validated_manifest: Mapping[str, Any],
-        upstream_unique_ids: AbstractSet[str],
         metadata: Mapping[str, Any],
-        description: Optional[str] = None,
     ) -> Iterator[AssetObservation]:
-        for upstream_unique_id in upstream_unique_ids:
+        resource_props = self._get_resource_props(self._unique_id, validated_manifest)
+        message = None
+
+        # dbt's default indirect selection (eager) will select relationship tests
+        # on unselected assets, if they're compared with a selected asset.
+        # This doesn't match Dagster's default check selection which is to only
+        # select checks on selected assets. When we use eager, we may receive
+        # unexpected test results so we log those as observations as if
+        # asset checks were disabled.
+        if dagster_dbt_translator.settings.enable_asset_checks:
+            # If the test did not have an asset key associated with it, it was a singular
+            # test with multiple dependencies without a configured asset key.
+            test_name = resource_props["name"]
+            additional_message = (
+                (
+                    f"`{test_name}` is a singular test with multiple dependencies."
+                    " Configure an asset key in the test's dbt meta to load it as an"
+                    " asset check.\n\n"
+                )
+                if not key
+                else ""
+            )
+
+            message = (
+                "Logging an `AssetObservation` instead of an `AssetCheckResult`"
+                f" for dbt test `{test_name}`.\n\n"
+                f"{additional_message}"
+                "This test was not included in Dagster's asset check"
+                " selection, and was likely executed due to dbt indirect selection."
+            )
+            logger.warning(message)
+
+        for upstream_unique_id in resource_props["depends_on"]["nodes"]:
             upstream_resource_props: dict[str, Any] = validated_manifest["nodes"].get(
                 upstream_unique_id
             ) or validated_manifest["sources"].get(upstream_unique_id)
             upstream_asset_key = dagster_dbt_translator.get_asset_key(upstream_resource_props)
 
             yield AssetObservation(
-                asset_key=upstream_asset_key,
-                metadata=metadata,
-                description=description,
+                asset_key=upstream_asset_key, metadata=metadata, description=message
             )
+
+    def _to_test_events(
+        self,
+        manifest: Mapping[str, Any],
+        translator: DagsterDbtTranslator,
+        project: Optional[DbtProject],
+        context: Optional[Union[OpExecutionContext, AssetExecutionContext]],
+    ) -> Iterator[Union[AssetCheckResult, AssetCheckEvaluation, AssetObservation]]:
+        """Converts a dbt CLI event to a set of Dagster events corresponding to a test execution."""
+        key = get_asset_check_key_for_test(manifest, translator, self._unique_id, project=project)
+
+        has_assets_def = context is not None and context.has_assets_def
+
+        if key is not None and has_assets_def and key in self._get_result_check_keys(context):
+            # key was expected to be evaluated, use AssetCheckResult
+            properties = self._get_check_properties(key, manifest)
+            yield AssetCheckResult(**properties)
+            return
+        elif key is not None and not has_assets_def:
+            # in an op definition, we don't have an assets def, so we use AssetCheckEvaluation
+            properties = self._get_check_properties(key, manifest)
+            yield AssetCheckEvaluation(**properties)
+            return
+
+        # fallback case, emit observation events if we have no key to associate with the
+        # test, or if the test was not expected to be evaluated.
+        metadata = self._get_check_execution_metadata(manifest)
+        yield from self._to_observation_events_for_test(
+            key=key,
+            dagster_dbt_translator=translator,
+            validated_manifest=manifest,
+            metadata=metadata,
+        )
 
     @public
     def to_default_asset_events(
@@ -272,13 +530,10 @@ class DbtCliEventMessage:
         dagster_dbt_translator: DagsterDbtTranslator = DagsterDbtTranslator(),
         context: Optional[Union[OpExecutionContext, AssetExecutionContext]] = None,
         target_path: Optional[Path] = None,
+        project: Optional[DbtProject] = None,
     ) -> Iterator[
         Union[
-            Output,
-            AssetMaterialization,
-            AssetObservation,
-            AssetCheckResult,
-            AssetCheckEvaluation,
+            Output, AssetMaterialization, AssetObservation, AssetCheckResult, AssetCheckEvaluation
         ]
     ]:
         """Convert a dbt CLI event to a set of corresponding Dagster events.
@@ -305,223 +560,53 @@ class DbtCliEventMessage:
                 - AssetCheckEvaluation for dbt test results that are enabled as asset checks.
                 - AssetObservation for dbt test results that are not enabled as asset checks.
         """
-        if not self.is_result_event(self.raw_event):
-            return
-
-        event_node_info: dict[str, Any] = self.raw_event["data"].get("node_info")
-        if not event_node_info:
+        if not self.is_result_event:
             return
 
         dagster_dbt_translator = validate_translator(dagster_dbt_translator)
         manifest = validate_manifest(manifest)
 
-        if not manifest:
-            logger.info(
-                "No dbt manifest was provided. Dagster events for dbt tests will not be created."
+        if self._is_model_execution_event(manifest):
+            yield from self._to_model_events(
+                manifest, dagster_dbt_translator, context, target_path, project
             )
+        if self._is_test_execution_event(manifest):
+            yield from self._to_test_events(manifest, dagster_dbt_translator, project, context)
 
-        unique_id: str = event_node_info["unique_id"]
-        invocation_id: str = self.raw_event["info"]["invocation_id"]
-        dbt_resource_props = manifest["nodes"][unique_id]
 
-        column_schema_metadata = {}
-        try:
-            column_schema_metadata = default_metadata_from_dbt_resource_props(
-                self._event_history_metadata
-            )
-        except Exception as e:
-            logger.warning(
-                "An error occurred while building column schema metadata from event history"
-                f" `{self._event_history_metadata}` for the dbt resource"
-                f" `{dbt_resource_props['original_file_path']}`."
-                " Column schema metadata will not be included in the event.\n\n"
-                f"Exception: {e}",
-                exc_info=True,
-            )
+class DbtCoreCliEventMessage(DbtCliEventMessage):
+    """Represents a dbt CLI event that was produced using the dbt Core engine."""
 
-        default_metadata = {
-            **column_schema_metadata,
-            "unique_id": unique_id,
-            "invocation_id": invocation_id,
-        }
-
-        if event_node_info.get("node_started_at") in [
-            "",
-            "None",
-            None,
-        ] and event_node_info.get("node_finished_at") in ["", "None", None]:
-            # if model materialization is incremental microbatch, node_started_at and node_finished_at are empty strings
-            # and require fallback to data.execution_time
-            default_metadata["Execution Duration"] = self.raw_event["data"]["execution_time"]
-        elif event_node_info.get("node_started_at") and event_node_info.get("node_finished_at"):
-            started_at = dateutil.parser.isoparse(event_node_info["node_started_at"])
-            finished_at = dateutil.parser.isoparse(event_node_info["node_finished_at"])
-            default_metadata["Execution Duration"] = (finished_at - started_at).total_seconds()
-
-        has_asset_def: bool = bool(context and context.has_assets_def)
-
-        node_resource_type: str = event_node_info["resource_type"]
-        # if model materialization is incremental microbatch, node_status property is "None", hence fall back to status
-        node_status: str = (
-            self.raw_event["data"]["status"].lower()
-            if event_node_info["node_status"] in ["", "None", None]
-            else event_node_info["node_status"]
+    @property
+    def is_result_event(self) -> bool:
+        return self.raw_event["info"]["name"] in set(
+            ["LogSeedResult", "LogModelResult", "LogSnapshotResult", "LogTestResult"]
+        ) and not self.raw_event["data"].get("node_info", {}).get("unique_id", "").startswith(
+            "unit_test"
         )
-        node_materialization: str = self.raw_event["data"]["node_info"]["materialized"]
 
-        is_node_ephemeral = node_materialization == "ephemeral"
-        is_node_successful = node_status == NodeStatus.Success
-        is_node_finished = bool(event_node_info.get("node_finished_at"))
-        if (
-            node_resource_type in REFABLE_NODE_TYPES
-            and is_node_successful
-            and not is_node_ephemeral
-        ):
-            lineage_metadata = {}
-            try:
-                column_data = self._event_history_metadata.get("columns", {})
-                parent_column_data = {
-                    parent_key: parent_data["columns"]
-                    for parent_key, parent_data in self._event_history_metadata.get(
-                        "parents", {}
-                    ).items()
-                }
+    def _get_check_passed(self) -> bool:
+        return self._get_node_status() == TestStatus.Pass
 
-                if (
-                    # Column lineage can only be built if initial metadata is provided.
-                    self.has_column_lineage_metadata
-                ):
-                    lineage_metadata = _build_column_lineage_metadata(
-                        event_history_metadata=EventHistoryMetadata(
-                            columns=column_data, parents=parent_column_data
-                        ),
-                        dbt_resource_props=dbt_resource_props,
-                        manifest=manifest,
-                        dagster_dbt_translator=dagster_dbt_translator,
-                        target_path=target_path,
-                    )
-            except Exception as e:
-                logger.warning(
-                    "An error occurred while building column lineage metadata for the dbt resource"
-                    f" `{dbt_resource_props['original_file_path']}`."
-                    " Lineage metadata will not be included in the event.\n\n"
-                    f"Exception: {e}",
-                    exc_info=True,
-                )
+    def _get_check_severity(self) -> AssetCheckSeverity:
+        node_status = self._get_node_status()
+        return (
+            AssetCheckSeverity.WARN if node_status == NodeStatus.Warn else AssetCheckSeverity.ERROR
+        )
 
-            asset_key = dagster_dbt_translator.get_asset_spec(manifest, unique_id, None).key
-            if context and has_asset_def:
-                yield Output(
-                    value=None,
-                    output_name=asset_key.to_python_identifier(),
-                    metadata={
-                        **default_metadata,
-                        **lineage_metadata,
-                    },
-                )
-            else:
-                yield AssetMaterialization(
-                    asset_key=asset_key,
-                    metadata={
-                        **default_metadata,
-                        **lineage_metadata,
-                    },
-                )
-        elif manifest and node_resource_type == NodeType.Test and is_node_finished:
-            test_resource_props = manifest["nodes"][unique_id]
-            upstream_unique_ids: AbstractSet[str] = set(test_resource_props["depends_on"]["nodes"])
-            metadata = {
-                **default_metadata,
-                "status": node_status,
-            }
-            if self.raw_event["data"].get("num_failures") is not None:
-                metadata["dagster_dbt/failed_row_count"] = self.raw_event["data"]["num_failures"]
 
-            asset_check_key = get_asset_check_key_for_test(
-                manifest,
-                dagster_dbt_translator,
-                test_unique_id=unique_id,
-                project=None,
-            )
-            if not context or not context.has_assets_def:
-                selected_check_keys = set()
-            else:
-                selected_check_keys = {
-                    *context.selected_asset_check_keys,
-                    *get_checks_on_sources_upstream_of_selected_assets(
-                        assets_def=context.assets_def,
-                        selected_asset_keys=context.selected_asset_keys,
-                    ),
-                }
+class DbtFusionCliEventMessage(DbtCliEventMessage):
+    """Represents a dbt CLI event that was produced using the dbt Fusion engine."""
 
-            if (
-                context
-                and has_asset_def
-                and asset_check_key is not None
-                and asset_check_key in selected_check_keys
-            ):
-                # The test is an asset check in an asset, so yield an `AssetCheckResult`.
-                yield AssetCheckResult(
-                    passed=node_status == TestStatus.Pass,
-                    asset_key=asset_check_key.asset_key,
-                    check_name=asset_check_key.name,
-                    metadata=metadata,
-                    severity=(
-                        AssetCheckSeverity.WARN
-                        if node_status == TestStatus.Warn
-                        else AssetCheckSeverity.ERROR
-                    ),
-                )
-            elif not has_asset_def and asset_check_key is not None:
-                # The test is an asset check in an op, so yield an `AssetCheckEvaluation`.
-                yield AssetCheckEvaluation(
-                    passed=node_status == TestStatus.Pass,
-                    asset_key=asset_check_key.asset_key,
-                    check_name=asset_check_key.name,
-                    metadata=metadata,
-                    severity=(
-                        AssetCheckSeverity.WARN
-                        if node_status == TestStatus.Warn
-                        else AssetCheckSeverity.ERROR
-                    ),
-                )
-            else:
-                # since there is no asset check key, we log observations instead
-                message = None
+    @property
+    def is_result_event(self) -> bool:
+        return self.raw_event["info"]["name"] == "NodeFinished"
 
-                # dbt's default indirect selection (eager) will select relationship tests
-                # on unselected assets, if they're compared with a selected asset.
-                # This doesn't match Dagster's default check selection which is to only
-                # select checks on selected assets. When we use eager, we may receive
-                # unexpected test results so we log those as observations as if
-                # asset checks were disabled.
-                if dagster_dbt_translator.settings.enable_asset_checks:
-                    # If the test did not have an asset key associated with it, it was a singular
-                    # test with multiple dependencies without a configured asset key.
-                    test_name = test_resource_props["name"]
-                    additional_message = (
-                        (
-                            f"`{test_name}` is a singular test with multiple dependencies."
-                            " Configure an asset key in the test's dbt meta to load it as an"
-                            " asset check.\n\n"
-                        )
-                        if not asset_check_key
-                        else ""
-                    )
+    def _get_check_passed(self) -> bool:
+        return self._get_node_status() == NodeStatus.Success
 
-                    message = (
-                        "Logging an `AssetObservation` instead of an `AssetCheckResult`"
-                        f" for dbt test `{test_name}`.\n\n"
-                        f"{additional_message}"
-                        "This test was not included in Dagster's asset check"
-                        " selection, and was likely executed due to dbt indirect selection."
-                    )
-                    logger.warning(message)
-
-                yield from self._yield_observation_events_for_test(
-                    dagster_dbt_translator=dagster_dbt_translator,
-                    validated_manifest=manifest,
-                    upstream_unique_ids=upstream_unique_ids,
-                    metadata=metadata,
-                    description=message,
-                )
+    def _get_check_severity(self) -> AssetCheckSeverity:
+        node_status = self._get_node_status()
+        return (
+            AssetCheckSeverity.WARN if node_status == NodeStatus.Warn else AssetCheckSeverity.ERROR
+        )

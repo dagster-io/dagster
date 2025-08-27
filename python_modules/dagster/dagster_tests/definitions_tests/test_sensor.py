@@ -1,38 +1,34 @@
+import dagster as dg
 import pytest
-from dagster import AssetKey, SensorDefinition, asset, graph, job
-from dagster._core.definitions.decorators.op_decorator import op
-from dagster._core.definitions.job_definition import JobDefinition
-from dagster._core.definitions.metadata.metadata_value import IntMetadataValue, TextMetadataValue
-from dagster._core.errors import DagsterInvalidDefinitionError
 
 
 def test_jobs_attr():
     def eval_fn():
         pass
 
-    @graph
+    @dg.graph
     def my_graph():
         pass
 
-    sensor = SensorDefinition(evaluation_fn=eval_fn, job=my_graph)
+    sensor = dg.SensorDefinition(evaluation_fn=eval_fn, job=my_graph)
     assert sensor.job.name == my_graph.name
     assert sensor.job_name == my_graph.name
 
-    sensor = SensorDefinition(evaluation_fn=eval_fn, asset_selection=["foo"])
+    sensor = dg.SensorDefinition(evaluation_fn=eval_fn, asset_selection=["foo"])
     for attr in ["job", "job_name"]:
         with pytest.raises(
-            DagsterInvalidDefinitionError, match="No job was provided to SensorDefinition."
+            dg.DagsterInvalidDefinitionError, match="No job was provided to SensorDefinition."
         ):
             getattr(sensor, attr)
 
-    @graph
+    @dg.graph
     def my_second_graph():
         pass
 
-    sensor = SensorDefinition(evaluation_fn=eval_fn, jobs=[my_graph, my_second_graph])
+    sensor = dg.SensorDefinition(evaluation_fn=eval_fn, jobs=[my_graph, my_second_graph])
     for attr in ["job", "job_name"]:
         with pytest.raises(
-            DagsterInvalidDefinitionError,
+            dg.DagsterInvalidDefinitionError,
             match="property not available when SensorDefinition has multiple jobs.",
         ):
             getattr(sensor, attr)
@@ -40,20 +36,20 @@ def test_jobs_attr():
 
 def test_direct_sensor_definition_instantiation():
     with pytest.raises(
-        DagsterInvalidDefinitionError,
+        dg.DagsterInvalidDefinitionError,
         match="Must provide evaluation_fn to SensorDefinition.",
     ):
-        SensorDefinition()
+        dg.SensorDefinition()
 
 
 def test_coerce_to_asset_selection():
-    @asset
+    @dg.asset
     def asset1(): ...
 
-    @asset
+    @dg.asset
     def asset2(): ...
 
-    @asset
+    @dg.asset
     def asset3(): ...
 
     assets = [asset1, asset2, asset3]
@@ -61,47 +57,63 @@ def test_coerce_to_asset_selection():
     def evaluation_fn(context):
         raise NotImplementedError()
 
-    assert SensorDefinition(
+    assert dg.SensorDefinition(
         "a", asset_selection=["asset1", "asset2"], evaluation_fn=evaluation_fn
-    ).asset_selection.resolve(assets) == {AssetKey("asset1"), AssetKey("asset2")}  # pyright: ignore[reportOptionalMemberAccess]
+    ).asset_selection.resolve(assets) == {dg.AssetKey("asset1"), dg.AssetKey("asset2")}  # pyright: ignore[reportOptionalMemberAccess]
 
-    sensor_def = SensorDefinition(
+    sensor_def = dg.SensorDefinition(
         "a", asset_selection=[asset1, asset2], evaluation_fn=evaluation_fn
     )
-    assert sensor_def.asset_selection.resolve(assets) == {AssetKey("asset1"), AssetKey("asset2")}  # pyright: ignore[reportOptionalMemberAccess]
+    assert sensor_def.asset_selection.resolve(assets) == {  # pyright: ignore[reportOptionalMemberAccess]
+        dg.AssetKey("asset1"),
+        dg.AssetKey("asset2"),
+    }
 
 
 def test_coerce_graph_def_to_job():
-    @op
+    @dg.op
     def foo(): ...
 
-    @graph
+    @dg.graph
     def bar():
         foo()
 
     with pytest.warns(DeprecationWarning, match="Passing GraphDefinition"):
-        my_sensor = SensorDefinition(job=bar, evaluation_fn=lambda _: ...)
+        my_sensor = dg.SensorDefinition(job=bar, evaluation_fn=lambda _: ...)
 
-    assert isinstance(my_sensor.job, JobDefinition)
+    assert isinstance(my_sensor.job, dg.JobDefinition)
     assert my_sensor.job.name == "bar"
 
 
 def test_with_attributes():
-    @job
+    @dg.job
     def one(): ...
 
-    @job
+    @dg.job
     def two(): ...
 
     def fn(): ...
 
-    sensor = SensorDefinition(job=one, metadata={"foo": "bar", "four": 4}, evaluation_fn=fn)
+    sensor = dg.SensorDefinition(job=one, metadata={"foo": "bar", "four": 4}, evaluation_fn=fn)
 
     blanked = sensor.with_attributes(metadata={})
     assert blanked.metadata == {}
 
-    sensor = SensorDefinition(jobs=[one, two], metadata={"foo": "bar", "four": 4}, evaluation_fn=fn)
+    sensor = dg.SensorDefinition(
+        jobs=[one, two], metadata={"foo": "bar", "four": 4}, evaluation_fn=fn
+    )
     updated = sensor.with_attributes(metadata={**sensor.metadata, "foo": "baz"})
 
-    assert updated.metadata["foo"] == TextMetadataValue("baz")
-    assert updated.metadata["four"] == IntMetadataValue(4)
+    assert updated.metadata["foo"] == dg.TextMetadataValue("baz")
+    assert updated.metadata["four"] == dg.IntMetadataValue(4)
+
+    name_sensor = dg.SensorDefinition(job_name="foo", evaluation_fn=fn)
+    updated_name_sensor = name_sensor.with_attributes(metadata={"foo": "bar"})
+    assert updated_name_sensor.metadata["foo"] == dg.TextMetadataValue("bar")
+
+    assert updated_name_sensor.targets == name_sensor.targets
+
+    empty_sensor = dg.SensorDefinition(evaluation_fn=fn)
+    updated_empty_sensor = empty_sensor.with_attributes(metadata={"foo": "bar"})
+    assert updated_empty_sensor.metadata["foo"] == dg.TextMetadataValue("bar")
+    assert updated_empty_sensor.targets == empty_sensor.targets

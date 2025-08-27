@@ -8,7 +8,7 @@ import {DirectionalSpacing} from './types';
 interface Props {
   index: number;
   checked?: boolean;
-  onToggle?: (checked: boolean) => void;
+  onToggle?: (values: {checked: boolean; shiftKey: boolean}) => void;
   href: string;
   renderLink: (props: HTMLProps<HTMLAnchorElement>) => ReactNode;
   padding?: DirectionalSpacing;
@@ -48,6 +48,7 @@ export const ListItem = forwardRef<HTMLDivElement, Props>((props, ref) => {
           '--spacing-top': `${top}px`,
           '--spacing-bottom': `${bottom}px`,
           '--spacing-left': `${leftPadding}px`,
+          '--spacing-right': `${rightPadding}px`,
         } as CSSProperties
       }
       data-index={index}
@@ -59,7 +60,11 @@ export const ListItem = forwardRef<HTMLDivElement, Props>((props, ref) => {
             format="check"
             checked={checked}
             size="small"
-            onChange={(e: ChangeEvent<HTMLInputElement>) => onToggle(e.target.checked)}
+            onChange={(e: ChangeEvent<HTMLInputElement>) => {
+              const event = e.nativeEvent;
+              const shiftKey = event instanceof MouseEvent && event.getModifierState('Shift');
+              onToggle({checked: e.target.checked, shiftKey});
+            }}
           />
         </div>
       ) : null}
@@ -68,12 +73,7 @@ export const ListItem = forwardRef<HTMLDivElement, Props>((props, ref) => {
         className: styles.listItemAnchor,
         children: left,
       })}
-      <div
-        style={{'--spacing-right': `${rightPadding}px`} as CSSProperties}
-        className={styles.right}
-      >
-        {right}
-      </div>
+      <div className={styles.right}>{right}</div>
     </div>
   );
 });

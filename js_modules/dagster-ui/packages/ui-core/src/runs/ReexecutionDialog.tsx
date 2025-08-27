@@ -258,7 +258,8 @@ export const ReexecutionDialog = (props: ReexecutionDialogProps) => {
                 ) : (
                   <>
                     One or more of these runs is part of backfill{' '}
-                    <Link to={getBackfillPath(selectedRunBackfillIds[0]!, false)}>
+                    {/* eslint-disable-next-line @typescript-eslint/no-non-null-assertion */}
+                    <Link to={getBackfillPath(selectedRunBackfillIds[0]!, 'runs')}>
                       {selectedRunBackfillIds[0]}
                     </Link>
                   </>

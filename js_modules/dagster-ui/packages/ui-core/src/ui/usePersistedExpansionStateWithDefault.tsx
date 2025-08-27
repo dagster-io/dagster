@@ -35,6 +35,7 @@ export const usePersistedExpansionStateWithDefault = (
 
   const isExpanded = useCallback(
     (key: string) => {
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
       return key in expandedKeys ? expandedKeys[key]! : defaultValue;
     },
     [expandedKeys, defaultValue],

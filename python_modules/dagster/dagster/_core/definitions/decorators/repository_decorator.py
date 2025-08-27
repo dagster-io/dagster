@@ -9,7 +9,7 @@ from dagster._core.definitions.graph_definition import GraphDefinition
 from dagster._core.definitions.job_definition import JobDefinition
 from dagster._core.definitions.logger_definition import LoggerDefinition
 from dagster._core.definitions.metadata import RawMetadataValue, normalize_metadata
-from dagster._core.definitions.partitioned_schedule import (
+from dagster._core.definitions.partitions.partitioned_schedule import (
     UnresolvedPartitionedAssetScheduleDefinition,
 )
 from dagster._core.definitions.repository_definition import (
@@ -28,12 +28,12 @@ from dagster._core.definitions.unresolved_asset_job_definition import Unresolved
 from dagster._core.errors import DagsterInvalidDefinitionError
 
 if TYPE_CHECKING:
-    from dagster._core.definitions.cacheable_assets import (
+    from dagster._core.definitions.assets.definition.cacheable_assets_definition import (
         AssetsDefinitionCacheableData,
         CacheableAssetsDefinition,
     )
     from dagster._core.definitions.definitions_load_context import DefinitionsLoadContext
-    from dagster.components.core.tree import ComponentTree
+    from dagster.components.core.component_tree import ComponentTree
 
 T = TypeVar("T")
 
@@ -86,7 +86,9 @@ class _Repository:
         ],
     ) -> RepositoryDefinition:
         from dagster._core.definitions import AssetsDefinition, SourceAsset
-        from dagster._core.definitions.cacheable_assets import CacheableAssetsDefinition
+        from dagster._core.definitions.assets.definition.cacheable_assets_definition import (
+            CacheableAssetsDefinition,
+        )
         from dagster._core.definitions.definitions_load_context import (
             DefinitionsLoadContext,
             DefinitionsLoadType,
@@ -101,6 +103,7 @@ class _Repository:
 
         repository_definitions = fn()
         context = DefinitionsLoadContext.get()
+        defs_state_info = context.defs_state_info
 
         if context.load_type == DefinitionsLoadType.INITIALIZATION:
             reconstruction_metadata = context.get_pending_reconstruction_metadata()
@@ -157,8 +160,9 @@ class _Repository:
                 RepositoryLoadData(
                     cacheable_asset_data=cacheable_asset_data,
                     reconstruction_metadata=reconstruction_metadata,
+                    defs_state_info=defs_state_info,
                 )
-                if cacheable_asset_data or reconstruction_metadata
+                if cacheable_asset_data or reconstruction_metadata or defs_state_info
                 else None
             )
 
@@ -273,7 +277,7 @@ def repository(
 
         {
             'jobs': Dict[str, Callable[[], JobDefinition]],
-            'schedules': Dict[str, Callable[[], ScheduleDefinition]]
+            'schedules': Dict[str, Callable[[], ScheduleDefinition]],
             'sensors': Dict[str, Callable[[], SensorDefinition]]
         }
 
@@ -317,7 +321,7 @@ def repository(
             def some_sensor():
                 if foo():
                     yield RunRequest(
-                        run_key= ...,
+                        run_key=...,
                         run_config={
                             'ops': {'return_n': {'config': {'n': bar()}}}
                         }
@@ -346,7 +350,7 @@ def repository(
                     'team': 'Team A',
                     'repository_version': '1.2.3',
                     'environment': 'production',
-             })
+                })
             def simple_repository():
                 return [simple_job, some_sensor, my_schedule]
 

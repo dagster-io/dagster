@@ -13,14 +13,14 @@
   "author": "",
   "license": "ISC",
   "description": "",
-  "packageManager": "yarn@4.8.1",
+  "packageManager": "yarn@4.9.2",
   "dependencies": {
     "express": "^5.1.0"
   },
   "devDependencies": {
     "@types/express": "^5.0.1",
     "@types/node": "^22.14.1",
-    "eslint": "^9.24.0",
+    "eslint": "^9.31.0",
     "eslint-config-prettier": "^10.1.1",
     "eslint-plugin-prettier": "^5.2.6",
     "nodemon": "^3.1.9",

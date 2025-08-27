@@ -45,9 +45,6 @@ def test_load_asset_specs(
     assert "dbtcloud" in first_asset_kinds
     assert "dbt" not in first_asset_kinds
 
-    # Clearing cache for other tests
-    workspace.load_specs.cache_clear()
-
 
 def test_load_asset_specs_select(
     workspace: DbtCloudWorkspace,
@@ -67,9 +64,6 @@ def test_load_asset_specs_select(
     assert "dbtcloud" in first_asset_kinds
     assert "dbt" not in first_asset_kinds
 
-    # Clearing cache for other tests
-    workspace.load_specs.cache_clear()
-
 
 def test_load_asset_specs_exclude(
     workspace: DbtCloudWorkspace,
@@ -88,9 +82,6 @@ def test_load_asset_specs_exclude(
     first_asset_kinds = next(spec.kinds for spec in sorted(all_assets))
     assert "dbtcloud" in first_asset_kinds
     assert "dbt" not in first_asset_kinds
-
-    # Clearing cache for other tests
-    workspace.load_specs.cache_clear()
 
 
 def test_load_asset_specs_selector(
@@ -113,9 +104,6 @@ def test_load_asset_specs_selector(
     assert "dbtcloud" in first_asset_kinds
     assert "dbt" not in first_asset_kinds
 
-    # Clearing cache for other tests
-    workspace.load_specs.cache_clear()
-
 
 def test_load_check_specs(
     workspace: DbtCloudWorkspace,
@@ -133,9 +121,6 @@ def test_load_check_specs(
     assert first_check_key.name == "not_null_customers_customer_id"
     assert first_check_key.asset_key.path == ["customers"]
 
-    # Clearing cache for other tests
-    workspace.load_specs.cache_clear()
-
 
 def test_load_check_specs_select(
     workspace: DbtCloudWorkspace,
@@ -152,9 +137,6 @@ def test_load_check_specs_select(
     first_check_key = next(key for key in sorted(all_checks_keys))
     assert first_check_key.name == "not_null_customers_customer_id"
     assert first_check_key.asset_key.path == ["customers"]
-
-    # Clearing cache for other tests
-    workspace.load_specs.cache_clear()
 
 
 def test_load_check_specs_exclude(
@@ -176,9 +158,6 @@ def test_load_check_specs_exclude(
     )
     assert first_check_key.asset_key.path == ["orders"]
 
-    # Clearing cache for other tests
-    workspace.load_specs.cache_clear()
-
 
 def test_load_check_specs_selector(
     workspace: DbtCloudWorkspace,
@@ -197,6 +176,3 @@ def test_load_check_specs_selector(
     first_check_key = next(key for key in sorted(all_checks_keys))
     assert first_check_key.name == "not_null_customers_customer_id"
     assert first_check_key.asset_key.path == ["customers"]
-
-    # Clearing cache for other tests
-    workspace.load_specs.cache_clear()

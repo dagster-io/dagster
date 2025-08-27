@@ -13,6 +13,7 @@ class BackfillPolicyType(Enum):
     MULTI_RUN = "MULTI_RUN"
 
 
+@public
 @whitelist_for_serdes
 class BackfillPolicy(
     NamedTuple(

@@ -2,20 +2,9 @@ import datetime
 import time
 from collections.abc import Set
 
+import dagster as dg
 import pytest
-from dagster import (
-    AssetCheckKey,
-    AssetKey,
-    AssetMaterialization,
-    AutomationCondition,
-    DagsterInstance,
-    Definitions,
-    asset,
-    asset_check,
-    evaluate_automation_conditions,
-    materialize,
-    observable_source_asset,
-)
+from dagster import AutomationCondition, DagsterInstance, Definitions
 from dagster._time import datetime_from_timestamp
 from dagster_shared.check.functions import ParameterCheckError
 
@@ -135,140 +124,140 @@ async def test_on_cron_hourly_partitioned() -> None:
 
 
 def test_on_cron_on_asset_check() -> None:
-    @asset
+    @dg.asset
     def A() -> None: ...
 
-    @asset_check(asset=A, automation_condition=AutomationCondition.on_cron("@hourly"))
+    @dg.asset_check(asset=A, automation_condition=AutomationCondition.on_cron("@hourly"))
     def foo_check() -> ...: ...
 
     current_time = datetime.datetime(2024, 8, 16, 4, 35)
-    defs = Definitions(assets=[A], asset_checks=[foo_check])
+    defs = dg.Definitions(assets=[A], asset_checks=[foo_check])
     instance = DagsterInstance.ephemeral()
 
     # hasn't passed a cron tick
-    result = evaluate_automation_conditions(
+    result = dg.evaluate_automation_conditions(
         defs=defs, instance=instance, evaluation_time=current_time
     )
     assert result.total_requested == 0
 
     # now passed a cron tick, but parent hasn't been updated
     current_time += datetime.timedelta(minutes=30)
-    result = evaluate_automation_conditions(
+    result = dg.evaluate_automation_conditions(
         defs=defs, instance=instance, cursor=result.cursor, evaluation_time=current_time
     )
     assert result.total_requested == 0
 
     # now parent is updated, so fire
     current_time += datetime.timedelta(minutes=1)
-    instance.report_runless_asset_event(AssetMaterialization("A"))
-    result = evaluate_automation_conditions(
+    instance.report_runless_asset_event(dg.AssetMaterialization("A"))
+    result = dg.evaluate_automation_conditions(
         defs=defs, instance=instance, cursor=result.cursor, evaluation_time=current_time
     )
     assert result.total_requested == 1
 
     # don't keep firing
     current_time += datetime.timedelta(minutes=1)
-    result = evaluate_automation_conditions(
+    result = dg.evaluate_automation_conditions(
         defs=defs, instance=instance, cursor=result.cursor, evaluation_time=current_time
     )
     assert result.total_requested == 0
 
     # ...even if the parent is updated again
     current_time += datetime.timedelta(minutes=1)
-    instance.report_runless_asset_event(AssetMaterialization("A"))
-    result = evaluate_automation_conditions(
+    instance.report_runless_asset_event(dg.AssetMaterialization("A"))
+    result = dg.evaluate_automation_conditions(
         defs=defs, instance=instance, cursor=result.cursor, evaluation_time=current_time
     )
     assert result.total_requested == 0
 
     # new tick passes...
     current_time += datetime.timedelta(hours=1)
-    result = evaluate_automation_conditions(
+    result = dg.evaluate_automation_conditions(
         defs=defs, instance=instance, cursor=result.cursor, evaluation_time=current_time
     )
     assert result.total_requested == 0
 
     # and parent is updated
     current_time += datetime.timedelta(minutes=1)
-    instance.report_runless_asset_event(AssetMaterialization("A"))
-    result = evaluate_automation_conditions(
+    instance.report_runless_asset_event(dg.AssetMaterialization("A"))
+    result = dg.evaluate_automation_conditions(
         defs=defs, instance=instance, cursor=result.cursor, evaluation_time=current_time
     )
     assert result.total_requested == 1
 
 
 def test_on_cron_on_observable_source() -> None:
-    @observable_source_asset(automation_condition=AutomationCondition.on_cron("@hourly"))
+    @dg.observable_source_asset(automation_condition=AutomationCondition.on_cron("@hourly"))
     def obs() -> None: ...
 
-    @asset(deps=[obs], automation_condition=AutomationCondition.on_cron("@hourly"))
+    @dg.asset(deps=[obs], automation_condition=AutomationCondition.on_cron("@hourly"))
     def mat() -> None: ...
 
     current_time = datetime.datetime(2024, 8, 16, 4, 35)
-    defs = Definitions(assets=[obs, mat])
+    defs = dg.Definitions(assets=[obs, mat])
     instance = DagsterInstance.ephemeral()
 
     # hasn't passed a cron tick
-    result = evaluate_automation_conditions(
+    result = dg.evaluate_automation_conditions(
         defs=defs, instance=instance, evaluation_time=current_time
     )
     assert result.total_requested == 0
 
     # now passed a cron tick, kick off both
     current_time += datetime.timedelta(minutes=30)
-    result = evaluate_automation_conditions(
+    result = dg.evaluate_automation_conditions(
         defs=defs, instance=instance, cursor=result.cursor, evaluation_time=current_time
     )
     assert result.total_requested == 2
 
     # don't kick off again
     current_time += datetime.timedelta(minutes=1)
-    result = evaluate_automation_conditions(
+    result = dg.evaluate_automation_conditions(
         defs=defs, instance=instance, cursor=result.cursor, evaluation_time=current_time
     )
     assert result.total_requested == 0
 
     # next hour, kick off again
     current_time += datetime.timedelta(hours=1)
-    result = evaluate_automation_conditions(
+    result = dg.evaluate_automation_conditions(
         defs=defs, instance=instance, cursor=result.cursor, evaluation_time=current_time
     )
     assert result.total_requested == 2
 
 
 def test_asset_order_change_doesnt_reset_cursor_state() -> None:
-    @asset
+    @dg.asset
     def A() -> None: ...
 
-    @asset
+    @dg.asset
     def B() -> None: ...
 
-    @asset
+    @dg.asset
     def C() -> None: ...
 
-    @asset(
-        key=AssetKey(["downstream"]),
+    @dg.asset(
+        key=dg.AssetKey(["downstream"]),
         deps=[B, C],
         automation_condition=AutomationCondition.all_deps_updated_since_cron("* * * * *", "UTC"),
     )
     def downstream_before() -> None: ...
 
-    @asset(
-        key=AssetKey(["downstream"]),
+    @dg.asset(
+        key=dg.AssetKey(["downstream"]),
         deps=[A, B, C],
         automation_condition=AutomationCondition.all_deps_updated_since_cron("* * * * *", "UTC"),
     )
     def downstream_aftter() -> None: ...
 
     # B is at index 0 before
-    defs_before = Definitions(assets=[B, C, downstream_before])
+    defs_before = dg.Definitions(assets=[B, C, downstream_before])
 
     # B is at index 1 after
-    defs_after = Definitions(assets=[A, B, C, downstream_aftter])
+    defs_after = dg.Definitions(assets=[A, B, C, downstream_aftter])
 
     instance = DagsterInstance.ephemeral()
 
-    def _emit_check(defs: Definitions, checks: Set[AssetCheckKey], passed: bool):
+    def _emit_check(defs: Definitions, checks: Set[dg.AssetCheckKey], passed: bool):
         defs.resolve_implicit_global_asset_job_def().get_subset(
             asset_check_selection=checks
         ).execute_in_process(
@@ -277,21 +266,21 @@ def test_asset_order_change_doesnt_reset_cursor_state() -> None:
 
     start_time = time.time()
 
-    result = evaluate_automation_conditions(
+    result = dg.evaluate_automation_conditions(
         defs=defs_before, instance=instance, evaluation_time=datetime_from_timestamp(start_time)
     )
     assert result.total_requested == 0
 
     # Cross a cron boundary
     start_time += 60
-    result = evaluate_automation_conditions(
+    result = dg.evaluate_automation_conditions(
         defs=defs_before, instance=instance, evaluation_time=datetime_from_timestamp(start_time)
     )
     assert result.total_requested == 0
 
-    materialize([B], instance=instance)
+    dg.materialize([B], instance=instance)
 
-    result = evaluate_automation_conditions(
+    result = dg.evaluate_automation_conditions(
         defs=defs_before,
         instance=instance,
         cursor=result.cursor,
@@ -299,10 +288,10 @@ def test_asset_order_change_doesnt_reset_cursor_state() -> None:
     )
     assert result.total_requested == 0
 
-    materialize([A], instance=instance)
-    materialize([C], instance=instance)
+    dg.materialize([A], instance=instance)
+    dg.materialize([C], instance=instance)
 
-    result = evaluate_automation_conditions(
+    result = dg.evaluate_automation_conditions(
         defs=defs_after,
         instance=instance,
         cursor=result.cursor,

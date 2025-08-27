@@ -1,5 +1,5 @@
+import dagster as dg
 import pytest
-from dagster._core.definitions.asset_key import AssetKey
 from dagster._core.definitions.events import AssetKeyPartitionKey
 
 from dagster_tests.declarative_automation_tests.automation_condition_tests.builtins.test_dep_condition import (
@@ -23,7 +23,7 @@ async def test_newly_true_condition() -> None:
     assert result.true_subset.size == 0
 
     # becomes true
-    true_set.add(AssetKeyPartitionKey(AssetKey("A")))
+    true_set.add(AssetKeyPartitionKey(dg.AssetKey("A")))
     state, result = await state.evaluate("A")
     assert result.true_subset.size == 1
 
@@ -40,7 +40,7 @@ async def test_newly_true_condition() -> None:
     assert result.true_subset.size == 0
 
     # now condition becomes false, result still false
-    true_set.remove(AssetKeyPartitionKey(AssetKey("A")))
+    true_set.remove(AssetKeyPartitionKey(dg.AssetKey("A")))
     state, result = await state.evaluate("A")
     assert result.true_subset.size == 0
 
@@ -49,7 +49,7 @@ async def test_newly_true_condition() -> None:
     assert result.true_subset.size == 0
 
     # becomes true again
-    true_set.add(AssetKeyPartitionKey(AssetKey("A")))
+    true_set.add(AssetKeyPartitionKey(dg.AssetKey("A")))
     state, result = await state.evaluate("A")
     assert result.true_subset.size == 1
 

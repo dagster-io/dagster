@@ -24,7 +24,7 @@ from dagster import (
 )
 from dagster._annotations import beta, public, superseded
 from dagster._config.pythonic_config import infer_schema_from_config_class
-from dagster._core.definitions.asset_spec import AssetSpec
+from dagster._core.definitions.assets.definition.asset_spec import AssetSpec
 from dagster._core.definitions.definitions_load_context import StateBackedDefinitionsLoader
 from dagster._core.definitions.resource_definition import dagster_maintained_resource
 from dagster._record import record
@@ -313,7 +313,7 @@ class AirbyteCloudResource(BaseAirbyteResource):
             destination_tables=["releases", "tags", "teams"],
         )
 
-        defs = Definitions(
+        Definitions(
             assets=[airbyte_assets],
             resources={"airbyte": my_airbyte_resource},
         )
@@ -439,7 +439,7 @@ class AirbyteResource(BaseAirbyteResource):
             destination_tables=["releases", "tags", "teams"],
         )
 
-        defs = Definitions(
+        Definitions(
             assets=[airbyte_assets],
             resources={"airbyte": my_airbyte_resource},
         )
@@ -1225,7 +1225,7 @@ class AirbyteCloudWorkspace(ConfigurableResource):
                 )
 
                 airbyte_specs = airbyte_workspace.load_asset_specs()
-                defs = dg.Definitions(assets=airbyte_specs, resources={"airbyte": airbyte_workspace}
+                dg.Definitions(assets=airbyte_specs, resources={"airbyte": airbyte_workspace})
         """
         dagster_airbyte_translator = dagster_airbyte_translator or DagsterAirbyteTranslator()
 
@@ -1372,7 +1372,7 @@ def load_airbyte_cloud_asset_specs(
             )
 
             airbyte_cloud_specs = load_airbyte_cloud_asset_specs(airbyte_cloud_workspace)
-            defs = dg.Definitions(assets=airbyte_cloud_specs)
+            dg.Definitions(assets=airbyte_cloud_specs)
 
         Filter connections by name:
 
@@ -1392,7 +1392,7 @@ def load_airbyte_cloud_asset_specs(
                 workspace=airbyte_cloud_workspace,
                 connection_selector_fn=lambda connection: connection.name in ["connection1", "connection2"]
             )
-            defs = dg.Definitions(assets=airbyte_cloud_specs)
+            dg.Definitions(assets=airbyte_cloud_specs)
     """
     dagster_airbyte_translator = dagster_airbyte_translator or DagsterAirbyteTranslator()
 

@@ -14,9 +14,13 @@ from typing_extensions import Self
 import dagster._check as check
 from dagster._config.snap import ConfigTypeSnap
 from dagster._core.definitions.asset_key import AssetKey
+from dagster._core.definitions.assets.graph.remote_asset_graph import (
+    RemoteAssetGraph,
+    RemoteRepositoryAssetNode,
+)
 from dagster._core.definitions.data_time import CachingDataTimeResolver
-from dagster._core.definitions.partition import CachingDynamicPartitionsLoader
-from dagster._core.definitions.remote_asset_graph import RemoteRepositoryAssetNode
+from dagster._core.definitions.data_version import CachingStaleStatusResolver
+from dagster._core.definitions.partitions.context import partition_loading_context
 from dagster._core.definitions.selector import (
     JobSelector,
     JobSubsetSelector,
@@ -27,16 +31,17 @@ from dagster._core.definitions.selector import (
 from dagster._core.errors import DagsterCodeLocationLoadError, DagsterCodeLocationNotFoundError
 from dagster._core.execution.plan.state import KnownExecutionState
 from dagster._core.instance import DagsterInstance
+from dagster._core.instance.types import CachingDynamicPartitionsLoader
 from dagster._core.loader import LoadingContext
-from dagster._core.remote_representation import (
-    CodeLocation,
+from dagster._core.remote_origin import (
     CodeLocationOrigin,
-    GrpcServerCodeLocation,
+    GrpcServerCodeLocationOrigin,
+    ManagedGrpcPythonEnvCodeLocationOrigin,
+)
+from dagster._core.remote_representation.code_location import CodeLocation, GrpcServerCodeLocation
+from dagster._core.remote_representation.external import (
     RemoteExecutionPlan,
     RemoteJob,
-    RepositoryHandle,
-)
-from dagster._core.remote_representation.external import (
     RemoteRepository,
     RemoteSchedule,
     RemoteSensor,
@@ -47,11 +52,7 @@ from dagster._core.remote_representation.grpc_server_state_subscriber import (
     LocationStateChangeEventType,
     LocationStateSubscriber,
 )
-from dagster._core.remote_representation.handle import InstigatorHandle
-from dagster._core.remote_representation.origin import (
-    GrpcServerCodeLocationOrigin,
-    ManagedGrpcPythonEnvCodeLocationOrigin,
-)
+from dagster._core.remote_representation.handle import InstigatorHandle, RepositoryHandle
 from dagster._core.snap.dagster_types import DagsterTypeSnap
 from dagster._core.snap.mode import ResourceDefSnap
 from dagster._core.snap.node import GraphDefSnap, OpDefSnap
@@ -76,8 +77,8 @@ from dagster._utils.env import using_dagster_dev
 from dagster._utils.error import SerializableErrorInfo, serializable_error_info_from_exc_info
 
 if TYPE_CHECKING:
-    from dagster._core.definitions.remote_asset_graph import RemoteWorkspaceAssetGraph
-    from dagster._core.remote_representation import (
+    from dagster._core.definitions.assets.graph.remote_asset_graph import RemoteWorkspaceAssetGraph
+    from dagster._core.remote_representation.external_data import (
         PartitionConfigSnap,
         PartitionExecutionErrorSnap,
         PartitionNamesSnap,
@@ -101,6 +102,8 @@ class BaseWorkspaceRequestContext(LoadingContext):
     into errors.
     """
 
+    _exit_stack: ExitStack
+
     @property
     @abstractmethod
     def instance(self) -> DagsterInstance: ...
@@ -117,6 +120,16 @@ class BaseWorkspaceRequestContext(LoadingContext):
     def get_code_location_entries(self) -> Mapping[str, CodeLocationEntry]:
         return self.get_current_workspace().code_location_entries
 
+    def __enter__(self) -> Self:
+        self._exit_stack = ExitStack()
+        self._exit_stack.enter_context(
+            partition_loading_context(dynamic_partitions_store=self.dynamic_partitions_loader)
+        )
+        return self
+
+    def __exit__(self, exception_type, exception_value, traceback) -> None:
+        self._exit_stack.close()
+
     @property
     def asset_graph(self) -> "RemoteWorkspaceAssetGraph":
         return self.get_current_workspace().asset_graph
@@ -132,6 +145,14 @@ class BaseWorkspaceRequestContext(LoadingContext):
     @cached_property
     def dynamic_partitions_loader(self) -> CachingDynamicPartitionsLoader:
         return CachingDynamicPartitionsLoader(self.instance)
+
+    @cached_property
+    def stale_status_loader(self) -> CachingStaleStatusResolver:
+        return CachingStaleStatusResolver(
+            self.instance,
+            asset_graph=lambda: self.asset_graph,
+            loading_context=self,
+        )
 
     @cached_property
     def data_time_resolver(self) -> CachingDataTimeResolver:
@@ -208,7 +229,9 @@ class BaseWorkspaceRequestContext(LoadingContext):
 
     @property
     def code_location_names(self) -> Sequence[str]:
-        return list(self.get_code_location_entries())
+        # For some WorkspaceRequestContext subclasses, the CodeLocationEntry is more expensive
+        # than the CodeLocationStatusEntry, so use the latter for a faster check.
+        return [status_entry.location_name for status_entry in self.get_code_location_statuses()]
 
     def code_location_errors(self) -> Sequence[SerializableErrorInfo]:
         return [
@@ -275,6 +298,12 @@ class BaseWorkspaceRequestContext(LoadingContext):
             .get_full_job(selector.job_name)
         )
 
+    async def gen_job(
+        self,
+        selector: JobSubsetSelector,
+    ) -> RemoteJob:
+        return await self.get_code_location(selector.location_name).gen_job(selector)
+
     def get_execution_plan(
         self,
         remote_job: RemoteJob,
@@ -283,6 +312,21 @@ class BaseWorkspaceRequestContext(LoadingContext):
         known_state: Optional[KnownExecutionState],
     ) -> RemoteExecutionPlan:
         return self.get_code_location(remote_job.handle.location_name).get_execution_plan(
+            remote_job=remote_job,
+            run_config=run_config,
+            step_keys_to_execute=step_keys_to_execute,
+            known_state=known_state,
+            instance=self.instance,
+        )
+
+    async def gen_execution_plan(
+        self,
+        remote_job: RemoteJob,
+        run_config: Mapping[str, object],
+        step_keys_to_execute: Optional[Sequence[str]],
+        known_state: Optional[KnownExecutionState],
+    ) -> RemoteExecutionPlan:
+        return await self.get_code_location(remote_job.handle.location_name).gen_execution_plan(
             remote_job=remote_job,
             run_config=run_config,
             step_keys_to_execute=step_keys_to_execute,
@@ -356,7 +400,9 @@ class BaseWorkspaceRequestContext(LoadingContext):
         code_location = self.get_code_location(code_location_name)
         return code_location.get_notebook_data(notebook_path=notebook_path)
 
-    def get_base_deployment_asset_graph(self) -> Optional["RemoteWorkspaceAssetGraph"]:
+    def get_base_deployment_asset_graph(
+        self, repository_selector: Optional["RepositorySelector"]
+    ) -> Optional["RemoteAssetGraph"]:
         return None
 
     def get_repository(

@@ -18,6 +18,7 @@ env:
   DAGSTER_CLOUD_FILE: "dagster_cloud.yaml"
   DAGSTER_CLOUD_ORGANIZATION: "TEMPLATE_ORGANIZATION_NAME"
   GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+  DAGSTER_PROJECT_DIR: "TEMPLATE_PROJECT_DIR"
 
 jobs:
   dagster_cloud_default_deploy:
@@ -37,9 +38,9 @@ jobs:
       # Detect if this is branch deployment and initialize the build session
       - name: Initialize build session
         id: ci-init
-        uses: dagster-io/dagster-cloud-action/actions/utils/dg-deploy-init@dg-v0.1
+        uses: dagster-io/dagster-cloud-action/actions/utils/dg-deploy-init@TEMPLATE_DAGSTER_CLOUD_ACTION_VERSION
         with:
-          project_dir: ${{ env.DAGSTER_CLOUD_YAML_PATH }}
+          project_dir: ${{ env.DAGSTER_PROJECT_DIR }}
           # A full deployment name. If this run is for a pull request, this value will be used as
           # the base deployment for the branch deployment.
           deployment: "TEMPLATE_DEFAULT_DEPLOYMENT_NAME"
@@ -61,9 +62,9 @@ jobs:
       - name: Run PEX build
         id: run-pex-build
         if: steps.prerun.outputs.result == 'pex-deploy'
-        uses: dagster-io/dagster-cloud-action/actions/utils/dg-cli@dg-v0.1
+        uses: dagster-io/dagster-cloud-action/actions/utils/dg-cli@TEMPLATE_DAGSTER_CLOUD_ACTION_VERSION
         with:
-          command: "plus build-and-push --build-strategy=python-executable --python-version ${{ env.PYTHON_VERSION }}  --pex-deps-cache-from='${{ github.repository }}' --pex-deps-cache-to='${{ github.repository }}'"
+          command: "plus deploy build-and-push --agent-type=serverless --python-version ${{ env.PYTHON_VERSION }}"
 
       # Otherwise, enable buildx for caching and build the Docker image
       - name: Set up Docker Buildx
@@ -73,15 +74,15 @@ jobs:
       - name: Run Docker build
         id: run-docker-build
         if: steps.prerun.outputs.result == 'docker-deploy'
-        uses: dagster-io/dagster-cloud-action/actions/utils/dg-cli@dg-v0.1
+        uses: dagster-io/dagster-cloud-action/actions/utils/dg-cli@TEMPLATE_DAGSTER_CLOUD_ACTION_VERSION
         with:
-          command: "plus deploy build-and-push --build-strategy=docker --python-version ${{ env.PYTHON_VERSION }}"
+          command: "plus deploy build-and-push --agent-type=serverless --python-version ${{ env.PYTHON_VERSION }}"
 
       # Deploy all code locations in this build session to Dagster Cloud
       - name: Deploy to Dagster Cloud
         id: ci-deploy
         if: steps.prerun.outputs.result != 'skip'
-        uses: dagster-io/dagster-cloud-action/actions/utils/dg-cli@dg-v0.1
+        uses: dagster-io/dagster-cloud-action/actions/utils/dg-cli@TEMPLATE_DAGSTER_CLOUD_ACTION_VERSION
         with:
           command: "plus deploy finish"
 
@@ -91,7 +92,7 @@ jobs:
         if: steps.prerun.outputs.result != 'skip'
         uses: dagster-io/dagster-cloud-action/actions/utils/dagster-cloud-cli@v0.1
         with:
-          command: "ci notify --project-dir=${{ env.DAGSTER_CLOUD_YAML_PATH }}"
+          command: "ci notify --project-dir=${{ env.DAGSTER_PROJECT_DIR }}"
 
       # Generate a summary that shows up on the Workflow Summary page
       - name: Generate a summary

@@ -87,6 +87,7 @@ export const BackfillPartitionSelector = ({
   ]);
 
   const selected = React.useMemo(() => {
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     return range.filter((r) => stateFilters.includes(runStatusData[r]!));
   }, [range, stateFilters, runStatusData]);
 
@@ -121,7 +122,7 @@ export const BackfillPartitionSelector = ({
   }, [onLaunch]);
 
   const onSuccess = (backfillId: string) => {
-    showBackfillSuccessToast(backfillId, false);
+    showBackfillSuccessToast(backfillId);
     onLaunch?.(backfillId, query);
   };
 
@@ -172,6 +173,7 @@ export const BackfillPartitionSelector = ({
   const counts = countsByState(
     range.map((key) => ({
       partitionKey: key,
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
       state: runStatusData[key]!,
     })),
   );
@@ -207,6 +209,7 @@ export const BackfillPartitionSelector = ({
                   ? PartitionDefinitionType.TIME_WINDOW
                   : PartitionDefinitionType.STATIC
               }
+              showQuickSelectOptionsForStatuses={false}
             />
 
             <PartitionRunStatusCheckboxes

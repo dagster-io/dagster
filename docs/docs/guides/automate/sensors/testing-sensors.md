@@ -63,6 +63,7 @@ To unit test sensors, you can directly invoke the sensor's Python function. This
   path="docs_snippets/docs_snippets/concepts/partitions_schedules_sensors/sensors/sensors.py"
   startAfter="start_sensor_testing"
   endBefore="end_sensor_testing"
+  title="src/<project_name>/defs/sensors.py"
 />
 
 Notice that since the context argument wasn't used in the sensor, a context object doesn't have to be provided. However, if the context object **is** needed, it can be provided via <PyObject section="schedules-sensors" module="dagster" object="build_sensor_context" />. Consider again the `my_directory_sensor_cursor` example:
@@ -71,6 +72,7 @@ Notice that since the context argument wasn't used in the sensor, a context obje
   path="docs_snippets/docs_snippets/concepts/partitions_schedules_sensors/sensors/sensors.py"
   startAfter="start_cursor_sensors_marker"
   endBefore="end_cursor_sensors_marker"
+  title="src/<project_name>/defs/sensors.py"
 />
 
 This sensor uses the `context` argument. To invoke it, we need to provide one:
@@ -79,11 +81,12 @@ This sensor uses the `context` argument. To invoke it, we need to provide one:
   path="docs_snippets/docs_snippets/concepts/partitions_schedules_sensors/sensors/sensors.py"
   startAfter="start_sensor_testing_with_context"
   endBefore="end_sensor_testing_with_context"
+  title="src/<project_name>/defs/sensors.py"
 />
 
 **Testing sensors with resources**
 
-For sensors which utilize [resources](/guides/build/external-resources/), you can provide the necessary resources when invoking the sensor function.
+For sensors which utilize [resources](/guides/build/external-resources), you can provide the necessary resources when invoking the sensor function.
 
 Below is a test for the `process_new_users_sensor` that we defined in "[Using resources in sensors](/guides/automate/sensors/using-resources-in-sensors)", which uses the `users_api` resource.
 
@@ -91,6 +94,7 @@ Below is a test for the `process_new_users_sensor` that we defined in "[Using re
   path="docs_snippets/docs_snippets/concepts/resources/pythonic_resources.py"
   startAfter="start_test_resource_on_sensor"
   endBefore="end_test_resource_on_sensor"
+  title="src/<project_name>/defs/sensors.py"
   dedent="4"
 />
 

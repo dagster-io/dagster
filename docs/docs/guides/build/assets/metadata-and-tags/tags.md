@@ -4,7 +4,7 @@ sidebar_position: 1000
 title: Tags
 ---
 
-**Tags** are the primary way to organize assets in Dagster. You can attach several tags to an asset when it's defined, and they will appear in the UI. You can also use tags to search and filter for assets in the [Asset catalog](/guides/build/assets/asset-catalog/) in Dagster+. They're structured as key-value pairs of strings.
+**Tags** are the primary way to organize assets in Dagster. You can attach several tags to an asset when it's defined, and they will appear in the UI. You can also use tags to search and filter for assets in the [Asset catalog](/guides/build/assets/asset-catalog) in Dagster+. They're structured as key-value pairs of strings.
 
 Here's an example of some tags you might apply to an asset:
 
@@ -14,7 +14,7 @@ Here's an example of some tags you might apply to an asset:
 
 Like `owners`, just pass a dictionary of tags to the `tags` argument when defining an asset:
 
-<CodeExample path="docs_snippets/docs_snippets/guides/data-modeling/metadata/tags.py" language="python" />
+<CodeExample path="docs_snippets/docs_snippets/guides/data-modeling/metadata/tags.py" language="python" title="src/<project_name>/defs/assets.py" />
 
 Keep in mind that tags must contain only strings as keys and values. Additionally, the Dagster UI will render tags with the empty string as a "label" rather than a key-value pair.
 

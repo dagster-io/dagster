@@ -1,11 +1,9 @@
 import {Box, Tab, Tabs, Tag} from '@dagster-io/ui-components';
 import {useMemo} from 'react';
-import {FeatureFlag} from 'shared/app/FeatureFlags.oss';
 
 import {CODE_LOCATION_HAS_DOCS_QUERY} from './CodeLocationHasDocsQuery';
 import {findRepositoryInLocation} from './findRepositoryInLocation';
 import {useQuery} from '../apollo-client';
-import {featureEnabled} from '../app/Flags';
 import {TabLink} from '../ui/TabLink';
 import {WorkspaceLocationNodeFragment} from '../workspace/WorkspaceContext/types/WorkspaceQueries.types';
 import {RepoAddress} from '../workspace/types';
@@ -26,12 +24,10 @@ interface Props {
 
 export const CodeLocationTabs = (props: Props) => {
   const {repoAddress, selectedTab, locationEntry} = props;
-  const canShowDocs = featureEnabled(FeatureFlag.flagDocsInApp);
 
   const {data} = useQuery<CodeLocationHasDocsQuery, CodeLocationHasDocsQueryVariables>(
     CODE_LOCATION_HAS_DOCS_QUERY,
     {
-      skip: !canShowDocs,
       variables: {
         repositorySelector: repoAddressToSelector(repoAddress),
       },
@@ -53,7 +49,7 @@ export const CodeLocationTabs = (props: Props) => {
   return (
     <Tabs selectedTabId={selectedTab}>
       <TabLink id="overview" title="Overview" to={workspacePathFromAddress(repoAddress, '/')} />
-      {canShowDocs && hasDocs ? (
+      {hasDocs ? (
         <TabLink
           id="docs"
           title={

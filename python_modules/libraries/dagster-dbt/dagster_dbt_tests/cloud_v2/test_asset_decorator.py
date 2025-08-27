@@ -38,9 +38,6 @@ def test_asset_defs(
     assert "dbtcloud" in first_asset_kinds
     assert "dbt" not in first_asset_kinds
 
-    # Clearing cache for other tests
-    workspace.load_specs.cache_clear()
-
 
 class MyCustomTranslator(DagsterDbtTranslator):
     # DagsterDbtTranslator doesn't have a `get_asset_spec` method yet.
@@ -60,9 +57,6 @@ def test_asset_defs_with_custom_metadata(
     asset_spec = next(iter(assets_def_specs))
     assert "custom" in asset_spec.metadata
     assert asset_spec.metadata["custom"] == "metadata"
-
-    # Clearing cache for other tests
-    workspace.load_specs.cache_clear()
 
 
 class MyCustomTranslatorWithGroupName(DagsterDbtTranslator):
@@ -93,9 +87,6 @@ def test_translator_invariant_group_name_with_asset_decorator(
             dagster_dbt_translator=MyCustomTranslatorWithGroupName(),
         )
         def my_dbt_cloud_assets(): ...
-
-    # Clearing cache for other tests
-    workspace.load_specs.cache_clear()
 
 
 @pytest.mark.parametrize(

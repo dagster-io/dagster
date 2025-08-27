@@ -5,7 +5,8 @@ from contextlib import ExitStack
 from typing import TYPE_CHECKING, AbstractSet, Any, NamedTuple, Optional, Union, cast  # noqa: UP035
 
 import dagster._check as check
-from dagster._core.definitions.assets import AssetsDefinition
+from dagster._annotations import public
+from dagster._core.definitions.assets.definition.assets_definition import AssetsDefinition
 from dagster._core.definitions.composition import PendingNodeInvocation
 from dagster._core.definitions.dependency import Node, NodeHandle
 from dagster._core.definitions.events import (
@@ -17,7 +18,13 @@ from dagster._core.definitions.events import (
 from dagster._core.definitions.hook_definition import HookDefinition
 from dagster._core.definitions.job_definition import JobDefinition
 from dagster._core.definitions.op_definition import OpDefinition
-from dagster._core.definitions.partition_key_range import PartitionKeyRange
+from dagster._core.definitions.partitions.context import partition_loading_context
+from dagster._core.definitions.partitions.definition import TimeWindowPartitionsDefinition
+from dagster._core.definitions.partitions.partition_key_range import PartitionKeyRange
+from dagster._core.definitions.partitions.utils import (
+    TimeWindow,
+    has_one_dimension_time_window_partitioning,
+)
 from dagster._core.definitions.repository_definition import RepositoryDefinition
 from dagster._core.definitions.resource_definition import (
     IContainsGenerator,
@@ -27,11 +34,6 @@ from dagster._core.definitions.resource_definition import (
 )
 from dagster._core.definitions.resource_requirement import ensure_requirements_satisfied
 from dagster._core.definitions.step_launcher import StepLauncher
-from dagster._core.definitions.time_window_partitions import (
-    TimeWindow,
-    TimeWindowPartitionsDefinition,
-    has_one_dimension_time_window_partitioning,
-)
 from dagster._core.errors import (
     DagsterInvalidInvocationError,
     DagsterInvalidPropertyError,
@@ -50,7 +52,10 @@ from dagster._utils.merger import merge_dicts
 
 if TYPE_CHECKING:
     from dagster._core.definitions.decorators.op_decorator import DecoratedOpFunction
-    from dagster._core.definitions.multi_dimensional_partitions import MultiPartitionsDefinition
+    from dagster._core.definitions.partitions.definition import (
+        MultiPartitionsDefinition,
+        TimeWindowPartitionsDefinition,
+    )
 
 
 def _property_msg(prop_name: str, method_name: str) -> str:
@@ -513,6 +518,10 @@ class DirectOpExecutionContext(OpExecutionContext, BaseDirectExecutionContext):
         check.failed("Tried to access partition_key for a non-partitioned run")
 
     @property
+    def has_partition_key_range(self) -> bool:
+        return self._partition_key_range is not None
+
+    @property
     def partition_keys(self) -> Sequence[str]:
         key_range = self.partition_key_range
         partitions_def = self.assets_def.partitions_def
@@ -521,10 +530,8 @@ class DirectOpExecutionContext(OpExecutionContext, BaseDirectExecutionContext):
                 "Cannot access partition_keys for a non-partitioned run"
             )
 
-        return partitions_def.get_partition_keys_in_range(
-            key_range,
-            dynamic_partitions_store=self.instance,
-        )
+        with partition_loading_context(dynamic_partitions_store=self.instance):
+            return partitions_def.get_partition_keys_in_range(key_range)
 
     @property
     def partition_key_range(self) -> PartitionKeyRange:
@@ -928,6 +935,7 @@ def _validate_resource_requirements(
                 ensure_requirements_satisfied(resource_defs, [requirement])
 
 
+@public
 def build_op_context(
     resources: Optional[Mapping[str, Any]] = None,
     op_config: Any = None,
@@ -995,6 +1003,7 @@ def build_op_context(
     )
 
 
+@public
 def build_asset_check_context(
     resources: Optional[Mapping[str, Any]] = None,
     resources_config: Optional[Mapping[str, Any]] = None,
@@ -1027,6 +1036,7 @@ def build_asset_check_context(
     return DirectAssetCheckExecutionContext(op_execution_context=op_context)
 
 
+@public
 def build_asset_context(
     resources: Optional[Mapping[str, Any]] = None,
     resources_config: Optional[Mapping[str, Any]] = None,

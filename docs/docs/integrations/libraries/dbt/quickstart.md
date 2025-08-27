@@ -11,7 +11,7 @@ Dagster orchestrates dbt alongside other technologies, so you can schedule dbt w
 
 To follow the steps in this guide, you'll need:
 
-- A basic understanding of dbt, DuckDB, and Dagster concepts such as [assets](/guides/build/assets/) and [resources](/guides/build/external-resources/)
+- A basic understanding of dbt, DuckDB, and Dagster concepts such as [assets](/guides/build/assets) and [resources](/guides/build/external-resources)
 - To install the [dbt](https://docs.getdbt.com/docs/core/installation-overview) and [DuckDB CLIs](https://duckdb.org/docs/api/cli/overview.html)
 - To install the following packages:
 

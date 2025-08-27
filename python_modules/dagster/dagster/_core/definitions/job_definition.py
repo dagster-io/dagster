@@ -11,9 +11,9 @@ from dagster._annotations import deprecated, public
 from dagster._config import Field, Shape, StringSource
 from dagster._config.config_type import ConfigType
 from dagster._config.validate import validate_config
-from dagster._core.definitions.asset_check_spec import AssetCheckKey
-from dagster._core.definitions.asset_layer import AssetLayer
+from dagster._core.definitions.asset_checks.asset_check_spec import AssetCheckKey
 from dagster._core.definitions.asset_selection import AssetSelection
+from dagster._core.definitions.assets.job.asset_layer import AssetLayer
 from dagster._core.definitions.backfill_policy import BackfillPolicy, resolve_backfill_policy
 from dagster._core.definitions.config import ConfigMapping
 from dagster._core.definitions.dependency import (
@@ -37,11 +37,15 @@ from dagster._core.definitions.metadata import MetadataValue, RawMetadataValue, 
 from dagster._core.definitions.node_definition import NodeDefinition
 from dagster._core.definitions.op_definition import OpDefinition
 from dagster._core.definitions.op_selection import OpSelection, get_graph_subset
-from dagster._core.definitions.partition import (
+from dagster._core.definitions.partitions.context import (
+    PartitionLoadingContext,
+    partition_loading_context,
+)
+from dagster._core.definitions.partitions.definition import (
     DynamicPartitionsDefinition,
-    PartitionedConfig,
     PartitionsDefinition,
 )
+from dagster._core.definitions.partitions.partitioned_config import PartitionedConfig
 from dagster._core.definitions.policy import RetryPolicy
 from dagster._core.definitions.resource_definition import ResourceDefinition
 from dagster._core.definitions.resource_requirement import (
@@ -49,7 +53,6 @@ from dagster._core.definitions.resource_requirement import (
     ResourceRequirement,
     ensure_requirements_satisfied,
 )
-from dagster._core.definitions.run_request import RunRequest
 from dagster._core.definitions.utils import DEFAULT_IO_MANAGER_KEY, check_valid_name
 from dagster._core.errors import (
     DagsterInvalidConfigError,
@@ -73,9 +76,10 @@ from dagster._utils.tags import normalize_tags
 
 if TYPE_CHECKING:
     from dagster._config.snap import ConfigSchemaSnapshot
-    from dagster._core.definitions.assets import AssetsDefinition
+    from dagster._core.definitions.assets.definition.assets_definition import AssetsDefinition
     from dagster._core.definitions.run_config import RunConfig
     from dagster._core.definitions.run_config_schema import RunConfigSchema
+    from dagster._core.definitions.run_request import RunRequest
     from dagster._core.execution.execute_in_process_result import ExecuteInProcessResult
     from dagster._core.execution.resources_init import InitResourceContext
     from dagster._core.instance import DagsterInstance, DynamicPartitionsStore
@@ -85,6 +89,7 @@ if TYPE_CHECKING:
 DEFAULT_EXECUTOR_DEF = multi_or_in_process_executor
 
 
+@public
 class JobDefinition(IHasInternalInit):
     """Defines a Dagster job."""
 
@@ -480,7 +485,7 @@ class JobDefinition(IHasInternalInit):
             elif isinstance(config, PartitionedConfig):
                 self._partitioned_config = config
                 if self.asset_layer:
-                    for asset_key in self._asset_layer.asset_keys_by_node_output_handle.values():
+                    for asset_key in self._asset_layer.selected_asset_keys:
                         asset_partitions_def = self._asset_layer.get(asset_key).partitions_def
                         check.invariant(
                             asset_partitions_def is None
@@ -622,11 +627,8 @@ class JobDefinition(IHasInternalInit):
             FrozenSet[HookDefinition]
         """
         check.inst_param(handle, "handle", NodeHandle)
-        hook_defs = set(
-            self.asset_layer.assets_defs_by_node_handle[handle].hook_defs
-            if handle in self.asset_layer.assets_defs_by_node_handle
-            else []
-        )
+        assets_def = self.asset_layer.get_assets_def_for_node(handle)
+        hook_defs = set(assets_def.hook_defs) if assets_def else set()
 
         current = handle
         lineage = []
@@ -747,11 +749,12 @@ class JobDefinition(IHasInternalInit):
             asset_selection=asset_selection,
         )
         if partition_key and ephemeral_job.partitions_def:
-            ephemeral_job.validate_partition_key(
-                partition_key=partition_key,
-                dynamic_partitions_store=instance,
-                selected_asset_keys=set(asset_selection),
-            )
+            with partition_loading_context(dynamic_partitions_store=instance) as ctx:
+                ephemeral_job.validate_partition_key(
+                    partition_key=partition_key,
+                    selected_asset_keys=set(asset_selection),
+                    context=ctx,
+                )
 
         wrapped_job = InMemoryJob(job_def=ephemeral_job)
 
@@ -822,9 +825,7 @@ class JobDefinition(IHasInternalInit):
             elif self.asset_selection:
                 resolved_selected_asset_keys = self.asset_selection
             else:
-                resolved_selected_asset_keys = [
-                    key for key in self.asset_layer.asset_keys_by_node_output_handle.values()
-                ]
+                resolved_selected_asset_keys = self.asset_layer.selected_asset_keys
 
             unique_partitions_defs: set[PartitionsDefinition] = set()
             for asset_key in resolved_selected_asset_keys:
@@ -849,16 +850,14 @@ class JobDefinition(IHasInternalInit):
     def validate_partition_key(
         self,
         partition_key: str,
-        dynamic_partitions_store: Optional["DynamicPartitionsStore"],
         selected_asset_keys: Optional[Iterable[AssetKey]],
+        context: PartitionLoadingContext,
     ) -> None:
         """Ensures that the given partition_key is a member of the PartitionsDefinition
         corresponding to every asset in the selection.
         """
         partitions_def = self._get_partitions_def(selected_asset_keys)
-        partitions_def.validate_partition_key(
-            partition_key, dynamic_partitions_store=dynamic_partitions_store
-        )
+        partitions_def.validate_partition_key(partition_key, context=context)
 
     def get_tags_for_partition_key(
         self, partition_key: str, selected_asset_keys: Optional[Iterable[AssetKey]]
@@ -924,7 +923,10 @@ class JobDefinition(IHasInternalInit):
     def _get_job_def_for_asset_selection(
         self, selection_data: AssetSelectionData
     ) -> "JobDefinition":
-        from dagster._core.definitions.asset_job import build_asset_job, get_asset_graph_for_job
+        from dagster._core.definitions.assets.job.asset_job import (
+            build_asset_job,
+            get_asset_graph_for_job,
+        )
 
         # If a non-null check selection is provided, use that. Otherwise the selection will resolve
         # to all checks matching a selected asset by default.
@@ -1000,7 +1002,7 @@ class JobDefinition(IHasInternalInit):
         run_config: Optional[Mapping[str, Any]] = None,
         current_time: Optional[datetime] = None,
         dynamic_partitions_store: Optional["DynamicPartitionsStore"] = None,
-    ) -> RunRequest:
+    ) -> "RunRequest":
         """Creates a RunRequest object for a run that processes the given partition.
 
         Args:
@@ -1025,6 +1027,8 @@ class JobDefinition(IHasInternalInit):
         Returns:
             RunRequest: an object that requests a run to process the given partition.
         """
+        from dagster._core.definitions.run_request import RunRequest
+
         if not (self.partitions_def and self.partitioned_config):
             check.failed("Called run_request_for_partition on a non-partitioned job")
 
@@ -1040,11 +1044,8 @@ class JobDefinition(IHasInternalInit):
                 " RunRequest(partition_key=...)"
             )
 
-        self.partitions_def.validate_partition_key(
-            partition_key,
-            current_time=current_time,
-            dynamic_partitions_store=dynamic_partitions_store,
-        )
+        with partition_loading_context(current_time, dynamic_partitions_store) as ctx:
+            self.partitions_def.validate_partition_key(partition_key, context=ctx)
 
         run_config = (
             run_config
@@ -1076,7 +1077,7 @@ class JobDefinition(IHasInternalInit):
 
     @cached_method
     def get_job_index(self) -> "JobIndex":
-        from dagster._core.remote_representation import JobIndex
+        from dagster._core.remote_representation.job_index import JobIndex
         from dagster._core.snap import JobSnap
 
         return JobIndex(JobSnap.from_job_def(self), self.get_parent_job_snapshot())
@@ -1123,7 +1124,9 @@ class JobDefinition(IHasInternalInit):
             asset_layer=self.asset_layer,
             input_values=self.input_values,
             partitions_def=self._original_partitions_def_argument,
-            _was_explicitly_provided_resources=None,
+            _was_explicitly_provided_resources=(
+                "resource_defs" in kwargs or self._was_provided_resources
+            ),
         )
         resolved_kwargs = {**base_kwargs, **kwargs}  # base kwargs overwritten for conflicts
         job_def = JobDefinition.dagster_internal_init(**resolved_kwargs)
@@ -1341,11 +1344,10 @@ def _infer_asset_layer_from_source_asset_deps(job_graph_def: GraphDefinition) ->
     """For non-asset jobs that have some inputs that are fed from assets, constructs an
     AssetLayer that includes these assets as loadables.
     """
-    from dagster._core.definitions.asset_graph import AssetGraph
+    from dagster._core.definitions.assets.graph.asset_graph import AssetGraph
 
-    asset_keys_by_node_input_handle: dict[NodeInputHandle, AssetKey] = {}
-    all_input_assets: list[AssetsDefinition] = []
-    input_asset_keys: set[AssetKey] = set()
+    keys_by_input_handle: dict[NodeInputHandle, AssetKey] = {}
+    assets_defs_by_key: dict[AssetKey, AssetsDefinition] = {}
 
     # each entry is a graph definition and its handle relative to the job root
     stack: list[tuple[GraphDefinition, Optional[NodeHandle]]] = [(job_graph_def, None)]
@@ -1353,34 +1355,39 @@ def _infer_asset_layer_from_source_asset_deps(job_graph_def: GraphDefinition) ->
     while stack:
         graph_def, parent_node_handle = stack.pop()
 
+        # iterate through the input_assets mapping on the graph definition, which
+        # maps from node name to the set of assets definitions associated with each
+        # input of that node
         for node_name, input_assets in graph_def.input_assets.items():
             node_handle = NodeHandle(node_name, parent_node_handle)
             for input_name, assets_def in input_assets.items():
-                if assets_def.key not in input_asset_keys:
-                    input_asset_keys.add(assets_def.key)
-                    all_input_assets.append(assets_def)
+                key = assets_def.key
+                assets_defs_by_key[key] = assets_def
 
-                input_handle = NodeInputHandle(node_handle=node_handle, input_name=input_name)
-                asset_keys_by_node_input_handle[input_handle] = assets_def.key
-                for resolved_input_handle in graph_def.node_dict[
-                    node_name
-                ].definition.resolve_input_to_destinations(input_handle):
-                    asset_keys_by_node_input_handle[resolved_input_handle] = assets_def.key
+                # we know what key is associated with the outer input handle, so we
+                # store that in the mapping and then calculate which inner input handles
+                # this outer input handle is connected to, storing those as well
+                outer_input_handle = NodeInputHandle(node_handle=node_handle, input_name=input_name)
+                keys_by_input_handle[outer_input_handle] = key
+                inner_node_def = graph_def.node_dict[node_name].definition
+                for inner_input_handle in inner_node_def.resolve_input_to_destinations(
+                    outer_input_handle
+                ):
+                    keys_by_input_handle[inner_input_handle] = key
 
-        for node_name, node in graph_def.node_dict.items():
-            if isinstance(node.definition, GraphDefinition):
-                stack.append((node.definition, NodeHandle(node_name, parent_node_handle)))
+        # add all subgraphs to the stack
+        for node_def in graph_def.node_defs:
+            if isinstance(node_def, GraphDefinition):
+                stack.append((node_def, NodeHandle(node_def.name, parent_node_handle)))
 
     return AssetLayer(
-        asset_graph=AssetGraph.from_assets(all_input_assets),
-        assets_defs_by_node_handle={},
-        asset_keys_by_node_input_handle=asset_keys_by_node_input_handle,
-        asset_keys_by_node_output_handle={},
-        node_output_handles_by_asset_check_key={},
-        check_names_by_asset_key_by_node_handle={},
-        check_key_by_node_output_handle={},
-        outer_node_names_by_asset_key={},
-        additional_asset_keys=set(),
+        asset_graph=AssetGraph.from_assets(list(assets_defs_by_key.values())),
+        # the AssetsDefinitions we have do not have any NodeDefinition explicitly
+        # associated with them (they are not part of the actual execution, they're
+        # just markers), so we don't pass them in through the data field and instead
+        # pass this mapping information directly
+        data=[],
+        mapped_source_asset_keys_by_input_handle=keys_by_input_handle,
     )
 
 

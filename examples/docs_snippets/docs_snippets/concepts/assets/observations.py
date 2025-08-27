@@ -20,14 +20,16 @@ def calculate_bytes(_):
 
 
 # start_observation_asset_marker_0
-from dagster import AssetObservation, op
+import dagster as dg
 
 
-@op
-def observation_op(context: OpExecutionContext):
+@dg.op
+def observation_op(context: dg.OpExecutionContext):
     df = read_df()
     context.log_event(
-        AssetObservation(asset_key="observation_asset", metadata={"num_rows": len(df)})
+        dg.AssetObservation(
+            asset_key="observation_asset", metadata={"num_rows": len(df)}
+        )
     )
     return 5
 
@@ -35,19 +37,21 @@ def observation_op(context: OpExecutionContext):
 # end_observation_asset_marker_0
 
 # start_partitioned_asset_observation
-from dagster import Config, op, OpExecutionContext
+import dagster as dg
 
 
-class MyOpConfig(Config):
+class MyOpConfig(dg.Config):
     date: str
 
 
-@op
-def partitioned_dataset_op(context: OpExecutionContext, config: MyOpConfig):
+@dg.op
+def partitioned_dataset_op(context: dg.OpExecutionContext, config: MyOpConfig):
     partition_date = config.date
     df = read_df_for_date(partition_date)
     context.log_event(
-        AssetObservation(asset_key="my_partitioned_dataset", partition=partition_date)
+        dg.AssetObservation(
+            asset_key="my_partitioned_dataset", partition=partition_date
+        )
     )
     return df
 
@@ -56,20 +60,20 @@ def partitioned_dataset_op(context: OpExecutionContext, config: MyOpConfig):
 
 
 # start_observation_asset_marker_2
-from dagster import AssetObservation, MetadataValue, op
+import dagster as dg
 
 
-@op
-def observes_dataset_op(context: OpExecutionContext):
+@dg.op
+def observes_dataset_op(context: dg.OpExecutionContext):
     df = read_df()
     remote_storage_path = persist_to_storage(df)
     context.log_event(
-        AssetObservation(
+        dg.AssetObservation(
             asset_key="my_dataset",
             metadata={
                 "text_metadata": "Text-based metadata for this event",
-                "path": MetadataValue.path(remote_storage_path),
-                "dashboard_url": MetadataValue.url(
+                "path": dg.MetadataValue.path(remote_storage_path),
+                "dashboard_url": dg.MetadataValue.url(
                     "http://mycoolsite.com/url_for_my_data"
                 ),
                 "size (bytes)": calculate_bytes(df),
@@ -82,11 +86,11 @@ def observes_dataset_op(context: OpExecutionContext):
 # end_observation_asset_marker_2
 
 
-@job
+@dg.job
 def my_observation_job():
     observation_op()
 
 
-@job
+@dg.job
 def my_dataset_job():
     observes_dataset_op()

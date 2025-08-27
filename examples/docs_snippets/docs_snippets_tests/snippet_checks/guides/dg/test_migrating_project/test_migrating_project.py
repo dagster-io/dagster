@@ -54,6 +54,9 @@ def test_migrating_project(
                 MASK_MY_EXISTING_PROJECT,
                 MASK_PLUGIN_CACHE_REBUILD,
             ],
+            # For multi-parameter tests which share snippets, we don't want to clear the
+            # snapshot dir before updating the snippets
+            clear_snapshot_dir_before_update=False,
         ) as context:
             project_root = (
                 Path(__file__).parent / f"my-existing-project-{package_manager}"
@@ -112,9 +115,10 @@ def test_migrating_project(
                 )
 
             # Test to make sure everything is working
-            _run_command(
-                "dagster asset materialize --select '*' -m 'my_existing_project.definitions'"
-            )
+            if not update_snippets:
+                _run_command(
+                    "dagster asset materialize --select '*' -m 'my_existing_project.definitions'"
+                )
 
             if package_manager == "uv":
                 # We're using a local `dg` install in reality to avoid polluting global env but we'll fake the global one
@@ -261,14 +265,15 @@ def test_migrating_project(
             context.create_file(
                 Path("my_existing_project") / "definitions.py",
                 contents=format_multiline("""
-                    import my_existing_project.defs
+                    from pathlib import Path
+
                     from my_existing_project.assets import my_asset
 
                     import dagster as dg
 
                     defs = dg.Definitions.merge(
                         dg.Definitions(assets=[my_asset]),
-                        dg.components.load_defs(my_existing_project.defs),
+                        dg.load_from_defs_folder(project_root=Path(__file__).parent.parent),
                     )
                 """),
                 snippet_path=f"{context.get_next_snip_number()}-updated-definitions.py",

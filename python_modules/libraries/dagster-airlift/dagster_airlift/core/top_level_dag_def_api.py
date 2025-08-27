@@ -84,7 +84,7 @@ def assets_with_task_mappings(
             @asset
             def asset_one() -> None: ...
 
-            defs = Definitions(
+            Definitions(
                 assets=assets_with_task_mappings(
                     dag_id="dag_one",
                     task_mappings={
@@ -133,7 +133,7 @@ def assets_with_dag_mappings(
         @asset
         def asset_one() -> None: ...
 
-        defs = Definitions(
+        Definitions(
             assets=assets_with_dag_mappings(
                 dag_mappings={
                     "dag_one": [asset_one],

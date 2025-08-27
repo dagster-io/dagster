@@ -1,8 +1,9 @@
 import asyncio
 from unittest import mock
 
-from dagster import AssetExecutionContext, AssetKey, MonthlyPartitionsDefinition
+from dagster import AssetExecutionContext, AssetKey
 from dagster._core.definitions.materialize import materialize
+from dagster._core.definitions.partitions.definition import MonthlyPartitionsDefinition
 from dagster_dlt import DagsterDltResource, dlt_assets
 from dlt import Pipeline
 

@@ -6,6 +6,7 @@ from traceback import TracebackException
 from typing import Any, Literal, Optional, Union
 
 import click
+import dagster_shared.check as check
 from dagster_dg_core.context import DgContext
 from dagster_shared.cli import PythonPointerOpts
 from dagster_shared.error import SerializableErrorInfo, remove_system_frames_from_error
@@ -25,14 +26,21 @@ from pydantic import ConfigDict, TypeAdapter, create_model
 from dagster._cli.utils import get_possibly_temporary_instance_for_cli
 from dagster._cli.workspace.cli_target import get_repository_python_origin_from_cli_opts
 from dagster._config.pythonic_config.resource import get_resource_type_name
-from dagster._core.definitions.asset_job import is_reserved_asset_job_name
 from dagster._core.definitions.asset_selection import AssetSelection
+from dagster._core.definitions.assets.job.asset_job import is_reserved_asset_job_name
+from dagster._core.definitions.definitions_load_context import (
+    DefinitionsLoadContext,
+    DefinitionsLoadType,
+)
+from dagster._core.definitions.metadata import ArbitraryMetadataMapping, CodeReferencesMetadataValue
+from dagster._core.definitions.metadata.source_code import LocalFileCodeReference
 from dagster._core.definitions.repository_definition.repository_definition import (
     RepositoryDefinition,
 )
 from dagster._utils.error import serializable_error_info_from_exc_info
 from dagster._utils.hosted_user_process import recon_repository_from_origin
 from dagster.components.component.component import Component
+from dagster.components.core.component_tree import ComponentTree
 from dagster.components.core.defs_module import ComponentRequirementsModel
 from dagster.components.core.package_entry import (
     ComponentsEntryPointLoadError,
@@ -41,7 +49,6 @@ from dagster.components.core.package_entry import (
     get_plugin_entry_points,
 )
 from dagster.components.core.snapshot import get_package_entry_snap
-from dagster.components.core.tree import ComponentTree
 
 
 def list_plugins(
@@ -88,6 +95,10 @@ def _load_defs_at_path(dg_context: DgContext, path: Optional[Path]) -> Repositor
     """Attempts to load the component tree from the context project root, falling back to
     resolving the entire repository and using the attached component tree.
     """
+    DefinitionsLoadContext.set(
+        DefinitionsLoadContext(load_type=DefinitionsLoadType.INITIALIZATION),
+    )
+
     if not path:
         repository_origin = get_repository_python_origin_from_cli_opts(
             PythonPointerOpts.extract_from_cli_options(dict(dg_context.target_args))
@@ -96,10 +107,10 @@ def _load_defs_at_path(dg_context: DgContext, path: Optional[Path]) -> Repositor
         repo_def = recon_repo.get_definition()
         return repo_def
 
-    tree = ComponentTree.load(dg_context.root_path)
+    tree = ComponentTree.for_project(dg_context.root_path)
 
     try:
-        defs = tree.load_defs_at_path(path) if path else tree.load_defs()
+        defs = tree.build_defs_at_path(path) if path else tree.build_defs()
     except Exception as e:
         path_text = f" at {path}" if path else ""
         raise click.ClickException(f"Unable to load definitions{path_text}: {e}") from e
@@ -107,14 +118,15 @@ def _load_defs_at_path(dg_context: DgContext, path: Optional[Path]) -> Repositor
     return defs.get_repository_def()
 
 
-IGNORE_METADATA_KEYS_LIST_DEFINITIONS = ["dagster/code_references"]
+def _tag_filter(tag_key: str) -> bool:
+    return not tag_key.startswith("dagster/kind")
 
 
 def list_definitions(
     dg_context: DgContext,
     path: Optional[Path] = None,
     asset_selection: Optional[str] = None,
-) -> list[DgDefinitionMetadata]:
+) -> DgDefinitionMetadata:
     with get_possibly_temporary_instance_for_cli() as instance:
         instance.inject_env_vars(dg_context.code_location_name)
 
@@ -142,8 +154,6 @@ def list_definitions(
             )
             sys.exit(1)
 
-        all_defs: list[DgDefinitionMetadata] = []
-
         asset_graph = repo_def.asset_graph
 
         asset_selection_obj = (
@@ -153,67 +163,97 @@ def list_definitions(
         selected_checks = (
             asset_selection_obj.resolve_checks(asset_graph) if asset_selection_obj else None
         )
+        assets = []
         for key in sorted(
             selected_assets or list(asset_graph.get_all_asset_keys()),
             key=lambda key: key.to_user_string(),
         ):
             node = asset_graph.get(key)
-            all_defs.append(
+            assets.append(
                 DgAssetMetadata(
                     key=key.to_user_string(),
                     deps=sorted([k.to_user_string() for k in node.parent_keys]),
+                    owners=node.owners,
                     group=node.group_name,
                     kinds=sorted(list(node.kinds)),
                     description=node.description,
                     automation_condition=node.automation_condition.get_label()
                     if node.automation_condition
                     else None,
-                    tags=sorted(list(node.tags.items())),
-                    metadata=sorted(
-                        [
-                            (k, str(v))
-                            for k, v in node.metadata.items()
-                            if k not in IGNORE_METADATA_KEYS_LIST_DEFINITIONS
-                        ]
-                    ),
+                    tags=sorted(f'"{k}"="{v}"' for k, v in node.tags.items() if _tag_filter(k)),
+                    is_executable=node.is_executable,
+                    source=_get_source(node.metadata, dg_context),
                 )
             )
+        checks = []
         for key in selected_checks if selected_checks is not None else asset_graph.asset_check_keys:
             node = asset_graph.get(key)
-            all_defs.append(
+            checks.append(
                 DgAssetCheckMetadata(
                     key=key.to_user_string(),
                     asset_key=key.asset_key.to_user_string(),
                     name=key.name,
                     additional_deps=sorted([k.to_user_string() for k in node.parent_entity_keys]),
                     description=node.description,
+                    source=_get_source(node.metadata, dg_context),
                 )
             )
-        # If we have an asset selection, we only want to return assets
-        if asset_selection:
-            return all_defs
 
-        for job in repo_def.get_all_jobs():
-            if not is_reserved_asset_job_name(job.name):
-                all_defs.append(DgJobMetadata(name=job.name, description=job.description))
-        for schedule in repo_def.schedule_defs:
-            schedule_str = (
-                schedule.cron_schedule
-                if isinstance(schedule.cron_schedule, str)
-                else ", ".join(schedule.cron_schedule)
-            )
-            all_defs.append(
-                DgScheduleMetadata(
-                    name=schedule.name,
-                    cron_schedule=schedule_str,
+        jobs = []
+        schedules = []
+        sensors = []
+        resources = []
+
+        # dont include other definitions if asset selection provided
+        if asset_selection_obj is None:
+            for job in repo_def.get_all_jobs():
+                if not is_reserved_asset_job_name(job.name):
+                    jobs.append(
+                        DgJobMetadata(
+                            name=job.name,
+                            description=job.description,
+                            source=_get_source(job.metadata, dg_context),
+                        )
+                    )
+
+            for schedule in repo_def.schedule_defs:
+                schedule_str = (
+                    schedule.cron_schedule
+                    if isinstance(schedule.cron_schedule, str)
+                    else ", ".join(schedule.cron_schedule)
                 )
-            )
-        for sensor in repo_def.sensor_defs:
-            all_defs.append(DgSensorMetadata(name=sensor.name))
-        for name, resource in repo_def.get_top_level_resources().items():
-            all_defs.append(DgResourceMetadata(name=name, type=get_resource_type_name(resource)))
+                schedules.append(
+                    DgScheduleMetadata(
+                        name=schedule.name,
+                        cron_schedule=schedule_str,
+                        source=_get_source(schedule.metadata, dg_context),
+                    )
+                )
 
-        return all_defs
+            for sensor in repo_def.sensor_defs:
+                sensors.append(
+                    DgSensorMetadata(
+                        name=sensor.name,
+                        source=_get_source(sensor.metadata, dg_context),
+                    )
+                )
+
+            for name, resource in repo_def.get_top_level_resources().items():
+                resources.append(
+                    DgResourceMetadata(
+                        name=name,
+                        type=get_resource_type_name(resource),
+                    )
+                )
+
+        return DgDefinitionMetadata(
+            assets=assets,
+            asset_checks=checks,
+            jobs=jobs,
+            schedules=schedules,
+            sensors=sensors,
+            resources=resources,
+        )
 
 
 # ########################
@@ -240,3 +280,24 @@ def _load_component_types(
         for key, obj in _load_plugin_objects(entry_points, extra_modules).items()
         if isinstance(obj, type) and issubclass(obj, Component)
     }
+
+
+def _get_source(
+    metadata: ArbitraryMetadataMapping,
+    dg_context: DgContext,
+) -> Optional[str]:
+    code_ref_metadata = check.opt_inst(
+        metadata.get("dagster/code_references"), CodeReferencesMetadataValue
+    )
+    if code_ref_metadata and code_ref_metadata.code_references:
+        return next(
+            (
+                str(Path(ref.source).relative_to(dg_context.root_path))
+                for ref in code_ref_metadata.code_references
+                if isinstance(ref, LocalFileCodeReference)
+                and Path(ref.source).is_relative_to(dg_context.root_path)
+            ),
+            None,
+        )
+
+    return None

@@ -10,6 +10,7 @@ class CodeSource(BaseModel, extra="forbid"):
     package_name: Optional[str] = None
     module_name: Optional[str] = None
     python_file: Optional[str] = None
+    autoload_defs_module_name: Optional[str] = None
 
     @model_validator(mode="before")
     def exactly_one_source_defined(
@@ -21,7 +22,9 @@ class CodeSource(BaseModel, extra="forbid"):
                 "only one of the following fields should be defined: " + ", ".join(defined)
             )
         elif not defined:
-            raise ValueError("one of package_name, module_name and python_file must be specified")
+            raise ValueError(
+                "one of package_name, module_name, python_file, or autoload_defs_module_name must be specified"
+            )
         return values
 
 

@@ -1,0 +1,3 @@
+dg scaffold defs dagster_sling.SlingReplicationCollectionComponent sling_ingest
+
+Creating defs at /.../my-project/src/my_project/defs/sling_ingest.

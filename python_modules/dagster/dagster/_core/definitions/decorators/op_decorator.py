@@ -14,7 +14,7 @@ from typing import (  # noqa: UP035
 )
 
 import dagster._check as check
-from dagster._annotations import deprecated_param
+from dagster._annotations import deprecated_param, public
 from dagster._config import UserConfigSchema
 from dagster._core.decorator_utils import (
     format_docstring_for_description,
@@ -159,6 +159,7 @@ def op(
 ) -> _Op: ...
 
 
+@public
 @deprecated_param(
     param="version", breaking_version="2.0", additional_warn_text="Use `code_version` instead"
 )

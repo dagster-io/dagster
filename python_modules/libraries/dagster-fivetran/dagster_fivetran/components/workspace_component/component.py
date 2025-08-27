@@ -6,9 +6,8 @@ import dagster as dg
 import pydantic
 from dagster._core.definitions.job_definition import default_job_io_manager
 from dagster.components.resolved.base import resolve_fields
-from dagster.components.utils import TranslatorResolvingInfo
+from dagster.components.utils.translation import TranslationFn, TranslationFnResolver
 from dagster_shared import check
-from typing_extensions import TypeAlias
 
 from dagster_fivetran.asset_defs import build_fivetran_assets_definitions
 from dagster_fivetran.components.workspace_component.scaffolder import (
@@ -22,34 +21,8 @@ from dagster_fivetran.translator import (
 )
 
 
-def resolve_translation(context: dg.ResolutionContext, model):
-    info = TranslatorResolvingInfo(
-        "props",
-        asset_attributes=model,
-        resolution_context=context,
-        model_key="translation",
-    )
-    return lambda base_asset_spec, props: info.get_asset_spec(
-        base_asset_spec,
-        {
-            "props": props,
-            "spec": base_asset_spec,
-        },
-    )
-
-
-TranslationFn: TypeAlias = Callable[[dg.AssetSpec, FivetranConnectorTableProps], dg.AssetSpec]
-ResolvedTranslationFn: TypeAlias = Annotated[
-    TranslationFn,
-    dg.Resolver(
-        resolve_translation,
-        model_field_type=Union[str, dg.AssetAttributesModel],
-    ),
-]
-
-
 class ProxyDagsterFivetranTranslator(DagsterFivetranTranslator):
-    def __init__(self, fn: TranslationFn):
+    def __init__(self, fn: TranslationFn[FivetranConnectorTableProps]):
         self.fn = fn
 
     def get_asset_spec(self, props: FivetranConnectorTableProps) -> dg.AssetSpec:
@@ -108,7 +81,7 @@ class FivetranAccountComponent(dg.Component, dg.Model, dg.Resolvable):
         FivetranWorkspace,
         dg.Resolver(
             lambda context, model: FivetranWorkspace(
-                **resolve_fields(model, FivetranWorkspace, context)  # type: ignore
+                **resolve_fields(model, FivetranWorkspace, context)
             )
         ),
     ]
@@ -121,7 +94,12 @@ class FivetranAccountComponent(dg.Component, dg.Model, dg.Resolvable):
             ],
         ),
     ] = None
-    translation: Optional[ResolvedTranslationFn] = pydantic.Field(
+    translation: Optional[
+        Annotated[
+            TranslationFn[FivetranConnectorTableProps],
+            TranslationFnResolver(template_vars_for_translation_fn=lambda data: {"props": data}),
+        ]
+    ] = pydantic.Field(
         None,
         description="Function used to translate Fivetran connector table properties into Dagster asset specs.",
     )

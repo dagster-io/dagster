@@ -14,7 +14,7 @@ from typing import (  # noqa: UP035
 
 from typing_extensions import Literal, TypeAlias
 
-from dagster._core.definitions.asset_check_spec import AssetCheckKey
+from dagster._core.definitions.asset_checks.asset_check_spec import AssetCheckKey
 from dagster._core.definitions.dependency import DependencyStructure
 from dagster._core.definitions.events import AssetKey
 from dagster._core.errors import DagsterExecutionStepNotFoundError, DagsterInvalidSubsetError
@@ -22,8 +22,8 @@ from dagster._record import record
 from dagster._utils import check
 
 if TYPE_CHECKING:
-    from dagster._core.definitions.assets import AssetsDefinition
-    from dagster._core.definitions.base_asset_graph import BaseAssetGraph, T_AssetNode
+    from dagster._core.definitions.assets.definition.assets_definition import AssetsDefinition
+    from dagster._core.definitions.assets.graph.base_asset_graph import BaseAssetGraph, T_AssetNode
     from dagster._core.definitions.graph_definition import GraphDefinition
     from dagster._core.definitions.job_definition import JobDefinition
 
@@ -157,10 +157,10 @@ class Traverser(Generic[T_Hashable]):
 
     # `depth=None` is infinite depth
     def _fetch_items(
-        self, item_name: T_Hashable, depth: int, direction: Direction
+        self, item_names: Iterable[T_Hashable], depth: int, direction: Direction
     ) -> AbstractSet[T_Hashable]:
         dep_graph = self.graph[direction]
-        stack = deque([item_name])
+        stack = deque(item_names)
         result: set[T_Hashable] = set()
         curr_depth = 0
         while stack:
@@ -179,17 +179,25 @@ class Traverser(Generic[T_Hashable]):
             curr_depth += 1
         return result
 
+    def fetch_upstream_multiple(
+        self, item_names: Iterable[T_Hashable], depth: int
+    ) -> AbstractSet[T_Hashable]:
+        return self._fetch_items(item_names, depth, "upstream")
+
+    def fetch_downstream_multiple(
+        self, item_names: Iterable[T_Hashable], depth: int
+    ) -> AbstractSet[T_Hashable]:
+        return self._fetch_items(item_names, depth, "downstream")
+
     def fetch_upstream(self, item_name: T_Hashable, depth: int) -> AbstractSet[T_Hashable]:
-        # return a set of ancestors of the given item, up to the given depth
-        return self._fetch_items(item_name, depth, "upstream")
+        return self.fetch_upstream_multiple({item_name}, depth)
 
     def fetch_downstream(self, item_name: T_Hashable, depth: int) -> AbstractSet[T_Hashable]:
-        # return a set of descendants of the given item, down to the given depth
-        return self._fetch_items(item_name, depth, "downstream")
+        return self.fetch_downstream_multiple({item_name}, depth)
 
 
 def fetch_connected(
-    item: T_Hashable,
+    items: Iterable[T_Hashable],
     graph: DependencyGraph[T_Hashable],
     *,
     direction: Direction,
@@ -198,9 +206,9 @@ def fetch_connected(
     if depth is None:
         depth = MAX_NUM
     if direction == "downstream":
-        return Traverser(graph).fetch_downstream(item, depth)
+        return Traverser(graph).fetch_downstream_multiple(items, depth)
     elif direction == "upstream":
-        return Traverser(graph).fetch_upstream(item, depth)
+        return Traverser(graph).fetch_upstream_multiple(items, depth)
 
 
 def fetch_sinks(
@@ -247,9 +255,7 @@ def fetch_connected_assets_definitions(
 ) -> frozenset["AssetsDefinition"]:
     depth = MAX_NUM if depth is None else depth
     names = [asset_key.to_user_string() for asset_key in asset.keys]
-    connected_names = [
-        n for name in names for n in fetch_connected(name, graph, direction=direction, depth=depth)
-    ]
+    connected_names = list(fetch_connected(names, graph, direction=direction, depth=depth))
     return frozenset(name_to_definition_map[n] for n in connected_names)
 
 

@@ -1,6 +1,6 @@
+import dagster as dg
 import pytest
-from dagster import In, asset, define_asset_job, in_process_executor, job, op, repository
-from dagster._core.errors import DagsterExecutionStepNotFoundError, DagsterInvalidSubsetError
+from dagster import in_process_executor
 from dagster._core.selector.subset_selector import (
     MAX_NUM,
     Traverser,
@@ -12,32 +12,32 @@ from dagster._core.selector.subset_selector import (
 )
 
 
-@op
+@dg.op
 def return_one():
     return 1
 
 
-@op
+@dg.op
 def return_two():
     return 2
 
 
-@op(ins={"num1": In(), "num2": In()})
+@dg.op(ins={"num1": dg.In(), "num2": dg.In()})
 def add_nums(num1, num2):
     return num1 + num2
 
 
-@op(ins={"num": In()})
+@dg.op(ins={"num": dg.In()})
 def multiply_two(num):
     return num * 2
 
 
-@op(ins={"num": In()})
+@dg.op(ins={"num": dg.In()})
 def add_one(num):
     return num + 1
 
 
-@job(executor_def=in_process_executor)
+@dg.job(executor_def=in_process_executor)
 def foo_job():
     """return_one ---> add_nums --> multiply_two --> add_one
     return_two --|.
@@ -136,7 +136,7 @@ def test_parse_op_selection_multi():
     }
 
     with pytest.raises(
-        DagsterInvalidSubsetError,
+        dg.DagsterInvalidSubsetError,
         match="No qualified ops to execute found for op_selection",
     ):
         parse_op_queries(foo_job, ["*add_nums", "a"])  # pyright: ignore[reportArgumentType]
@@ -144,7 +144,7 @@ def test_parse_op_selection_multi():
 
 def test_parse_op_selection_invalid():
     with pytest.raises(
-        DagsterInvalidSubsetError,
+        dg.DagsterInvalidSubsetError,
         match="No qualified ops to execute found for op_selection",
     ):
         parse_op_queries(foo_job, ["some,solid"])  # pyright: ignore[reportArgumentType]
@@ -236,7 +236,7 @@ def test_parse_step_selection_multi():
     }
 
     with pytest.raises(
-        DagsterExecutionStepNotFoundError,
+        dg.DagsterExecutionStepNotFoundError,
         match="Step selection refers to unknown step: a",
     ):
         parse_step_selection(step_deps, ["*add_nums", "a"])
@@ -244,29 +244,29 @@ def test_parse_step_selection_multi():
 
 def test_parse_step_selection_invalid():
     with pytest.raises(
-        DagsterInvalidSubsetError,
+        dg.DagsterInvalidSubsetError,
         match="No qualified steps to execute found for step_selection",
     ):
         parse_step_selection(step_deps, ["1+some_solid"])
 
 
-@asset
+@dg.asset
 def my_asset(context):
     assert context.job_def.asset_selection_data is not None
     return 1
 
 
-@asset
+@dg.asset
 def asset_2(my_asset):
     return my_asset
 
 
-@repository
+@dg.repository
 def asset_house():
     return [
         my_asset,
         asset_2,
-        define_asset_job("asset_selection_job", selection="*", executor_def=in_process_executor),
+        dg.define_asset_job("asset_selection_job", selection="*", executor_def=in_process_executor),
     ]
 
 

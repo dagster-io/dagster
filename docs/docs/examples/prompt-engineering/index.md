@@ -6,12 +6,14 @@ last_update:
 sidebar_custom_props:
   logo: images/integrations/anthropic.svg
 tags: [code-example]
+canonicalUrl: '/examples/prompt-engineering'
+slug: '/examples/prompt-engineering'
 ---
 
 In this example, you'll build a pipeline with Dagster that:
 
 - Takes an input question
-- Generates prompts to use with [Anthropic](https://www.anthropic.com/)
+- Generates prompts to use with [Anthropic](https://www.anthropic.com)
 - Validates outputs of AI models and passes outputs across assets
 
 <details>
@@ -34,29 +36,29 @@ First, set up a new Dagster project.
    cd examples/docs_projects/project_prompt_eng
    ```
 
-2. Create and activate a virtual environment:
+2. Install the required dependencies with `uv`:
+
+   ```bash
+   uv sync
+   ```
+
+3. Activate the virtual environment:
 
    <Tabs>
      <TabItem value="macos" label="MacOS">
-       ```bash uv venv dagster_example source dagster_example/bin/activate ```
+       ```source .venv/bin/activate ```
      </TabItem>
      <TabItem value="windows" label="Windows">
-       ```bash uv venv dagster_example dagster_example\Scripts\activate ```
+       ```.venv\Scripts\activate ```
      </TabItem>
    </Tabs>
-
-3. Install Dagster and the required dependencies:
-
-   ```bash
-   uv pip install -e ".[dev]"
-   ```
 
 ## Step 2: Launch the Dagster webserver
 
 To make sure Dagster and its dependencies were installed correctly, navigate to the project root directory and start the Dagster webserver:
 
 ```bash
-dagster dev
+dg dev
 ```
 
 ## Next steps

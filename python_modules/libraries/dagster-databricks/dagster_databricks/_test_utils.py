@@ -54,6 +54,11 @@ def databricks_client() -> WorkspaceClient:
     )
 
 
+@pytest.fixture
+def databricks_notebook_path() -> str:
+    return os.environ["DATABRICKS_NOTEBOOK_PATH"]
+
+
 @contextmanager
 def temp_dbfs_script(
     client: WorkspaceClient,

@@ -112,7 +112,7 @@ class S3PickleIOManager(ConfigurableIOManager):
         def asset2(asset1):
             return asset1[:5]
 
-        defs = Definitions(
+        Definitions(
             assets=[asset1, asset2],
             resources={
                 "io_manager": S3PickleIOManager(
@@ -200,7 +200,7 @@ def s3_pickle_io_manager(init_context):
         def asset2(asset1):
             return asset1[:5]
 
-        defs = Definitions(
+        Definitions(
             assets=[asset1, asset2],
             resources={
                 "io_manager": s3_pickle_io_manager.configured(

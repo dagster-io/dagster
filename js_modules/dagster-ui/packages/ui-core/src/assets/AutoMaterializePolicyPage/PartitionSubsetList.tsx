@@ -114,6 +114,7 @@ export const PartitionSubsetList = ({
             <Menu>
               <Inner $totalHeight={totalHeight}>
                 {virtualItems.map(({index, key, size, start}) => {
+                  // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
                   const partitionKey = filteredKeys[index]!;
                   return (
                     <Row $height={size} $start={start} key={key}>

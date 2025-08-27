@@ -8,7 +8,7 @@ from dagster._record import record
 from dagster._utils.merger import merge_dicts
 
 if TYPE_CHECKING:
-    from dagster._core.definitions.assets import AssetsDefinition
+    from dagster._core.definitions.assets.definition.assets_definition import AssetsDefinition
     from dagster._core.definitions.resource_definition import ResourceDefinition
 
 

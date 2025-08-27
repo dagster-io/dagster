@@ -74,7 +74,7 @@ class S3Resource(ResourceWithS3Configuration, IAttachDifferentObjectToOpContext)
             def example_job():
                 example_s3_op()
 
-            defs = Definitions(
+            Definitions(
                 jobs=[example_job],
                 resources={'s3': S3Resource(region_name='us-west-1')}
             )

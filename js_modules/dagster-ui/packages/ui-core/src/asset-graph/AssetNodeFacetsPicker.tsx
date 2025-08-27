@@ -1,6 +1,7 @@
 import {Box, Checkbox} from '@dagster-io/ui-components';
 
-import {AllAssetNodeFacets, AssetNodeFacet, labelForFacet} from './AssetNodeFacets';
+import {AllAssetNodeFacets, labelForFacet} from './AssetNodeFacets';
+import {AssetNodeFacet} from './AssetNodeFacetsUtil';
 
 export const AssetNodeFacetsPicker = ({
   value,

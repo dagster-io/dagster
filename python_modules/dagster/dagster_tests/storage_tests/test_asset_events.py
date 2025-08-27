@@ -1,24 +1,11 @@
-from dagster import (
-    AssetKey,
-    AssetObservation,
-    In,
-    StaticPartitionsDefinition,
-    asset,
-    build_input_context,
-    job,
-    materialize,
-    op,
-)
-from dagster._core.definitions.definitions_class import Definitions
+import dagster as dg
 from dagster._core.definitions.events import AssetLineageInfo
 from dagster._core.events import DagsterEventType
 from dagster._core.instance import DagsterInstance
-from dagster._core.storage.input_manager import input_manager
-from dagster._core.storage.io_manager import IOManager
 
 
 def n_asset_keys(path, n):
-    return AssetLineageInfo(AssetKey(path), set([str(i) for i in range(n)]))
+    return AssetLineageInfo(dg.AssetKey(path), set([str(i) for i in range(n)]))
 
 
 def check_materialization(materialization, asset_key, parent_assets=None, metadata=None):
@@ -29,7 +16,7 @@ def check_materialization(materialization, asset_key, parent_assets=None, metada
 
 
 def test_io_manager_add_input_metadata():
-    class MyIOManager(IOManager):
+    class MyIOManager(dg.IOManager):
         def handle_output(self, context, obj):
             pass
 
@@ -43,28 +30,28 @@ def test_io_manager_add_input_metadata():
             assert "baz" in observations[1].metadata
             return 1
 
-    @asset
+    @dg.asset
     def before(): ...
 
-    @asset
+    @dg.asset
     def after(before):
         del before
 
     get_observation = lambda event: event.event_specific_data.asset_observation
 
-    result = materialize([before, after], resources={"io_manager": MyIOManager()})
+    result = dg.materialize([before, after], resources={"io_manager": MyIOManager()})
     observations = [
         event for event in result.all_node_events if event.event_type_value == "ASSET_OBSERVATION"
     ]
 
     # first observation
     assert observations[0].step_key == "after"
-    assert get_observation(observations[0]) == AssetObservation(
+    assert get_observation(observations[0]) == dg.AssetObservation(
         asset_key=before.key, metadata={"foo": "bar"}
     )
     # second observation
     assert observations[1].step_key == "after"
-    assert get_observation(observations[1]) == AssetObservation(
+    assert get_observation(observations[1]) == dg.AssetObservation(
         asset_key=before.key, metadata={"baz": "qux"}
     )
 
@@ -80,17 +67,17 @@ def test_io_manager_add_input_metadata():
 
 
 def test_input_manager_add_input_metadata():
-    @input_manager
+    @dg.input_manager
     def my_input_manager(context):
         context.add_input_metadata(metadata={"foo": "bar"})
         context.add_input_metadata(metadata={"baz": "qux"})
         return []
 
-    @op(ins={"input1": In(input_manager_key="my_input_manager")})
+    @dg.op(ins={"input1": dg.In(input_manager_key="my_input_manager")})
     def my_op(_, input1):
         return input1
 
-    @job(resource_defs={"my_input_manager": my_input_manager})
+    @dg.job(resource_defs={"my_input_manager": my_input_manager})
     def my_job():
         my_op()
 
@@ -105,17 +92,17 @@ def test_input_manager_add_input_metadata():
 
 
 def test_io_manager_single_partition_add_input_metadata():
-    partitions_def = StaticPartitionsDefinition(["a", "b", "c"])
+    partitions_def = dg.StaticPartitionsDefinition(["a", "b", "c"])
 
-    @asset(partitions_def=partitions_def)
+    @dg.asset(partitions_def=partitions_def)
     def asset_1():
         return 1
 
-    @asset(partitions_def=partitions_def)
+    @dg.asset(partitions_def=partitions_def)
     def asset_2(asset_1):
         return asset_1 + 1
 
-    class MyIOManager(IOManager):
+    class MyIOManager(dg.IOManager):
         def handle_output(self, context, obj):
             pass
 
@@ -123,7 +110,7 @@ def test_io_manager_single_partition_add_input_metadata():
             context.add_input_metadata(metadata={"foo": "bar"}, description="hello world")
             return 1
 
-    result = materialize(
+    result = dg.materialize(
         [asset_1, asset_2], resources={"io_manager": MyIOManager()}, partition_key="a"
     )
 
@@ -134,7 +121,7 @@ def test_io_manager_single_partition_add_input_metadata():
     ]
 
     assert observations[0].step_key == "asset_2"
-    assert get_observation(observations[0]) == AssetObservation(
+    assert get_observation(observations[0]) == dg.AssetObservation(
         asset_key="asset_1",
         metadata={"foo": "bar"},
         description="hello world",
@@ -143,27 +130,27 @@ def test_io_manager_single_partition_add_input_metadata():
 
 
 def test_build_input_context_add_input_metadata():
-    @op
+    @dg.op
     def my_op():
         pass
 
-    context = build_input_context(op_def=my_op)
+    context = dg.build_input_context(op_def=my_op)
     context.add_input_metadata({"foo": "bar"})
 
 
 def test_asset_materialization_accessors():
-    @asset
+    @dg.asset
     def return_one():
         return 1
 
     with DagsterInstance.ephemeral() as instance:
-        defs = Definitions(assets=[return_one])
+        defs = dg.Definitions(assets=[return_one])
         defs.resolve_implicit_global_asset_job_def().execute_in_process(instance=instance)
 
-        log_entry = instance.get_latest_materialization_event(AssetKey("return_one"))
+        log_entry = instance.get_latest_materialization_event(dg.AssetKey("return_one"))
         assert log_entry
         assert log_entry.asset_materialization
-        assert log_entry.asset_materialization.asset_key == AssetKey("return_one")
+        assert log_entry.asset_materialization.asset_key == dg.AssetKey("return_one")
 
         # test when it is not a materilization event
         records = [

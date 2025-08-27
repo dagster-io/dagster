@@ -14,6 +14,7 @@ import {
   Subheading,
   Tooltip,
 } from '@dagster-io/ui-components';
+import {StyledRawCodeMirror} from '@dagster-io/ui-components/editor';
 import reject from 'lodash/reject';
 import {useEffect, useMemo, useState} from 'react';
 import {useLaunchWithTelemetry} from 'shared/launchpad/useLaunchWithTelemetry.oss';
@@ -47,6 +48,7 @@ import {showCustomAlert} from '../app/CustomAlertProvider';
 import {PipelineRunTag} from '../app/ExecutionSessionStorage';
 import {usePermissionsForLocation} from '../app/Permissions';
 import {
+  __ASSET_JOB_PREFIX,
   displayNameForAssetKey,
   isHiddenAssetGroupJob,
   itemWithAssetKey,
@@ -59,6 +61,8 @@ import {
   LaunchPartitionBackfillMutationVariables,
 } from '../instance/backfill/types/BackfillUtils.types';
 import {fetchTagsAndConfigForAssetJob} from '../launchpad/ConfigFetch';
+import {BackfillLaunchpad} from '../launchpad/LaunchpadRoot';
+import {LaunchpadConfig} from '../launchpad/LaunchpadSession';
 import {TagContainer, TagEditor} from '../launchpad/TagEditor';
 import {tagsWithUIExecutionTags} from '../launchpad/uiExecutionTags';
 import {
@@ -87,7 +91,12 @@ export interface LaunchAssetChoosePartitionsDialogProps {
   target: LaunchAssetsChoosePartitionsTarget;
   assets: Pick<
     LaunchAssetExecutionAssetNodeFragment,
-    'assetKey' | 'assetChecksOrError' | 'opNames' | 'partitionDefinition' | 'backfillPolicy'
+    | 'assetKey'
+    | 'assetChecksOrError'
+    | 'opNames'
+    | 'partitionDefinition'
+    | 'backfillPolicy'
+    | 'jobNames'
   >[];
   upstreamAssetKeys: AssetKey[]; // single layer of upstream dependencies
   refetch?: () => Promise<void>;
@@ -99,7 +108,8 @@ export const LaunchAssetChoosePartitionsDialog = (
   const displayName =
     props.assets.length > 1
       ? `${props.assets.length} assets`
-      : displayNameForAssetKey(props.assets[0]!.assetKey);
+      : // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+        displayNameForAssetKey(props.assets[0]!.assetKey);
 
   const title = `Launch runs to materialize ${displayName}`;
 
@@ -141,6 +151,8 @@ const LaunchAssetChoosePartitionsDialogBody = ({
   const [launching, setLaunching] = useState(false);
   const [tagEditorOpen, setTagEditorOpen] = useState(false);
   const [previewOpen, setPreviewOpen] = useState(false);
+  const [launchpadOpen, setLaunchpadOpen] = useState(false);
+  const [savedConfig, setSavedConfig] = useState<LaunchpadConfig | null>(null);
   const [tags, setTags] = useState<PipelineRunTag[]>([]);
 
   const showSingleRunBackfillToggle = useFeatureFlagForCodeLocation(
@@ -182,6 +194,7 @@ const LaunchAssetChoosePartitionsDialogBody = ({
 
   const displayedPartitionDefinition = displayedBaseAsset?.partitionDefinition;
 
+  // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
   const knownDimensions = partitionedAssets[0]!.partitionDefinition?.dimensionTypes || [];
   const [missingFailedOnly, setMissingFailedOnly] = useState(false);
 
@@ -271,6 +284,7 @@ const LaunchAssetChoosePartitionsDialogBody = ({
     }
 
     const config = await fetchTagsAndConfigForAssetJob(client, {
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
       partitionName: keysFiltered[0]!,
       repositoryLocationName: repoAddress.location,
       repositoryName: repoAddress.name,
@@ -288,10 +302,12 @@ const LaunchAssetChoosePartitionsDialogBody = ({
       allTags = allTags.filter((t) => !t.key.startsWith(DagsterTag.Partition));
       allTags.push({
         key: DagsterTag.AssetPartitionRangeStart,
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
         value: keysFiltered[0]!,
       });
       allTags.push({
         key: DagsterTag.AssetPartitionRangeEnd,
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
         value: keysFiltered[keysFiltered.length - 1]!,
       });
     }
@@ -313,13 +329,18 @@ const LaunchAssetChoosePartitionsDialogBody = ({
 
   const onLaunchAsBackfill = async () => {
     const backfillTags = tagsWithUIExecutionTags(tags);
-    const backfillParams: LaunchBackfillParams =
+
+    // Add runConfigData if we have saved configuration
+    const runConfigData = savedConfig?.runConfigYaml || undefined;
+
+    const backfillParams = (
       target.type === 'job' && !isHiddenAssetGroupJob(target.jobName)
         ? {
             tags: backfillTags,
             assetSelection: assets.map(asAssetKeyInput),
             partitionNames: keysFiltered,
             fromFailure: false,
+            runConfigData,
             selector: {
               // Todo: Fix after PR #23720 merges
               partitionSetName: `${target.jobName}_partition_set`,
@@ -334,13 +355,16 @@ const LaunchAssetChoosePartitionsDialogBody = ({
               tags: backfillTags,
               assetSelection: assets.map(asAssetKeyInput),
               allPartitions: true,
+              runConfigData,
             }
           : {
               tags: backfillTags,
               assetSelection: assets.map(asAssetKeyInput),
               partitionNames: keysFiltered,
               fromFailure: false,
-            };
+              runConfigData,
+            }
+    ) as LaunchBackfillParams;
 
     const {data: launchBackfillData} = await client.mutate<
       LaunchPartitionBackfillMutation,
@@ -351,7 +375,7 @@ const LaunchAssetChoosePartitionsDialogBody = ({
     });
 
     if (launchBackfillData?.launchPartitionBackfill.__typename === 'LaunchBackfillSuccess') {
-      showBackfillSuccessToast(launchBackfillData?.launchPartitionBackfill.backfillId, true);
+      showBackfillSuccessToast(launchBackfillData?.launchPartitionBackfill.backfillId);
       setOpen(false);
     } else {
       showBackfillErrorToast(launchBackfillData);
@@ -412,7 +436,8 @@ const LaunchAssetChoosePartitionsDialogBody = ({
       notices.push(
         `Only ${partitionCountString(
           keysFiltered.length,
-        )} failed and missing partitions will be materialized.`,
+          'failed and missing',
+        )} partitions will be materialized.`,
       );
     }
     return notices.join(' ');
@@ -521,6 +546,34 @@ const LaunchAssetChoosePartitionsDialogBody = ({
             </div>
           </Box>
         </ToggleableSection>
+        <ToggleableSection
+          title={
+            <Box flex={{direction: 'row', justifyContent: 'space-between'}}>
+              <Subheading>Config</Subheading>
+              {savedConfig && <span>Config saved</span>}
+            </Box>
+          }
+          isInitiallyOpen={false}
+        >
+          <Box padding={{vertical: 16, horizontal: 20}} flex={{direction: 'column', gap: 12}}>
+            <div>Config will be applied to all backfill runs</div>
+            <div>
+              <Button onClick={() => setLaunchpadOpen(true)}>Add config</Button>
+            </div>
+            {savedConfig && (
+              <Box padding={{vertical: 12, horizontal: 16}} background={Colors.backgroundLight()}>
+                <StyledRawCodeMirror
+                  value={savedConfig.runConfigYaml}
+                  options={{
+                    lineNumbers: true,
+                    readOnly: true,
+                    mode: 'yaml',
+                  }}
+                />
+              </Box>
+            )}
+          </Box>
+        </ToggleableSection>
         {target.type === 'job' && (
           <ToggleableSection
             isInitiallyOpen={true}
@@ -582,6 +635,22 @@ const LaunchAssetChoosePartitionsDialogBody = ({
         setOpen={setPreviewOpen}
       />
 
+      <BackfillLaunchpad
+        repoAddress={repoAddress}
+        assetJobName={
+          assets[0]?.jobNames.find((name) => name.startsWith(__ASSET_JOB_PREFIX)) ||
+          __ASSET_JOB_PREFIX
+        }
+        assetKeys={assets.map((asset) => asset.assetKey)}
+        open={launchpadOpen}
+        setOpen={setLaunchpadOpen}
+        onSaveConfig={(config: LaunchpadConfig) => {
+          setSavedConfig(config);
+          setLaunchpadOpen(false);
+        }}
+        savedConfig={savedConfig}
+      />
+
       {previewNotice && (
         <PartitionSelectionNotice onShowPreview={() => setPreviewOpen(true)} text={previewNotice} />
       )}
@@ -631,7 +700,8 @@ const UpstreamUnavailableWarning = ({
 
   const upstreamUnavailableSpans =
     selections.length === 1
-      ? assembleIntoSpans(selections[0]!.selectedKeys, upstreamUnavailable).filter(
+      ? // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+        assembleIntoSpans(selections[0]!.selectedKeys, upstreamUnavailable).filter(
           (s) => s.status === true,
         )
       : [];
@@ -644,6 +714,7 @@ const UpstreamUnavailableWarning = ({
     if (selections.length > 1) {
       throw new Error('Assertion failed, this feature is only available for 1 dimensional assets');
     }
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     const selection = selections[0]!;
     setSelections([
       {...selection, selectedKeys: reject(selection.selectedKeys, upstreamUnavailable)},
@@ -657,6 +728,7 @@ const UpstreamUnavailableWarning = ({
       description={
         <>
           {upstreamUnavailableSpans
+            // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
             .map((span) => stringForSpan(span, selections[0]!.selectedKeys))
             .join(', ')}
           {

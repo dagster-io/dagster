@@ -2,7 +2,7 @@ from collections.abc import Iterable, Mapping
 from dataclasses import dataclass
 from typing import Any, Callable, Optional
 
-from dagster import AssetKey, AssetSpec, AutoMaterializePolicy, FreshnessPolicy, MetadataValue
+from dagster import AssetKey, AssetSpec, AutoMaterializePolicy, LegacyFreshnessPolicy, MetadataValue
 from dagster._annotations import public, superseded
 from dagster._utils.names import clean_name_lower_with_dots
 from dagster._utils.warnings import supersession_warning
@@ -42,7 +42,7 @@ class DagsterSlingTranslator:
             group_name=self._resolve_back_compat_method(
                 "get_group_name", self._default_group_name_fn, stream_definition
             ),
-            freshness_policy=self._resolve_back_compat_method(
+            legacy_freshness_policy=self._resolve_back_compat_method(
                 "get_freshness_policy", self._default_freshness_policy_fn, stream_definition
             ),
             auto_materialize_policy=self._resolve_back_compat_method(
@@ -471,7 +471,7 @@ class DagsterSlingTranslator:
     @public
     def get_freshness_policy(
         self, stream_definition: Mapping[str, Any]
-    ) -> Optional[FreshnessPolicy]:
+    ) -> Optional[LegacyFreshnessPolicy]:
         """Retrieves the freshness policy for a given stream definition.
 
         This method checks the provided stream definition for a specific configuration
@@ -491,7 +491,7 @@ class DagsterSlingTranslator:
 
     def _default_freshness_policy_fn(
         self, stream_definition: Mapping[str, Any]
-    ) -> Optional[FreshnessPolicy]:
+    ) -> Optional[LegacyFreshnessPolicy]:
         """Retrieves the freshness policy for a given stream definition.
 
         This method checks the provided stream definition for a specific configuration
@@ -511,7 +511,7 @@ class DagsterSlingTranslator:
         meta = config.get("meta", {})
         freshness_policy_config = meta.get("dagster", {}).get("freshness_policy")
         if freshness_policy_config:
-            return FreshnessPolicy(
+            return LegacyFreshnessPolicy(
                 maximum_lag_minutes=float(freshness_policy_config["maximum_lag_minutes"]),
                 cron_schedule=freshness_policy_config.get("cron_schedule"),
                 cron_schedule_timezone=freshness_policy_config.get("cron_schedule_timezone"),

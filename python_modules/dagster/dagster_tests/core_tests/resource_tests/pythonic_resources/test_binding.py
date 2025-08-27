@@ -1,89 +1,73 @@
 from typing import cast
 
+import dagster as dg
 import pytest
-from dagster import (
-    BindResourcesToJobs,
-    Config,
-    ConfigurableIOManager,
-    ConfigurableResource,
-    Definitions,
-    FilesystemIOManager,
-    JobDefinition,
-    RunRequest,
-    ScheduleDefinition,
-    asset,
-    job,
-    op,
-    repository,
-    resource,
-    sensor,
-)
+from dagster import Definitions
 from dagster._core.definitions.repository_definition.repository_data_builder import (
     build_caching_repository_data_from_dict,
 )
-from dagster._core.errors import DagsterInvalidDefinitionError
 
 
 def test_bind_resource_to_job_at_defn_time_err() -> None:
     out_txt = []
 
-    class WriterResource(ConfigurableResource):
+    class WriterResource(dg.ConfigurableResource):
         prefix: str
 
         def output(self, text: str) -> None:
             out_txt.append(f"{self.prefix}{text}")
 
-    @op
+    @dg.op
     def hello_world_op(writer: WriterResource):
         writer.output("hello, world!")
 
-    @job
+    @dg.job
     def hello_world_job():
         hello_world_op()
 
     # Validate that jobs without bound resources error at repository construction time
     with pytest.raises(
-        DagsterInvalidDefinitionError,
+        dg.DagsterInvalidDefinitionError,
         match="resource with key 'writer' required by op 'hello_world_op' was not provided",
     ):
         build_caching_repository_data_from_dict({"jobs": {"hello_world_job": hello_world_job}})
 
     with pytest.raises(
-        DagsterInvalidDefinitionError,
+        dg.DagsterInvalidDefinitionError,
         match="resource with key 'writer' required by op 'hello_world_op' was not provided",
     ):
 
-        @repository
+        @dg.repository
         def my_repo():
             return [hello_world_job]
 
     # Validate that this also happens with Definitions
     with pytest.raises(
-        DagsterInvalidDefinitionError,
+        dg.DagsterInvalidDefinitionError,
         match="resource with key 'writer' required by op 'hello_world_op' was not provided",
     ):
-        Definitions.validate_loadable(Definitions(jobs=[hello_world_job]))
+        Definitions.validate_loadable(dg.Definitions(jobs=[hello_world_job]))
 
 
 def test_bind_resource_to_job_at_defn_time() -> None:
     out_txt = []
 
-    class WriterResource(ConfigurableResource):
+    class WriterResource(dg.ConfigurableResource):
         prefix: str
 
         def output(self, text: str) -> None:
             out_txt.append(f"{self.prefix}{text}")
 
-    @op
+    @dg.op
     def hello_world_op(writer: WriterResource):
         writer.output("hello, world!")
 
-    @job
+    @dg.job
     def hello_world_job():
         hello_world_op()
 
     # Bind the resource to the job at definition time and validate that it works
-    defs = Definitions(
+    defs = dg.Definitions(
         jobs=[hello_world_job],
         resources={
             "writer": WriterResource(prefix=""),
@@ -95,7 +79,7 @@ def test_bind_resource_to_job_at_defn_time() -> None:
 
     out_txt.clear()
 
-    defs = Definitions(
+    defs = dg.Definitions(
         jobs=[hello_world_job],
         resources={
             "writer": WriterResource(prefix="msg: "),
@@ -109,23 +93,23 @@ def test_bind_resource_to_job_at_defn_time() -> None:
 def test_bind_resource_to_job_at_defn_time_bind_resources_to_jobs() -> None:
     out_txt = []
 
-    class WriterResource(ConfigurableResource):
+    class WriterResource(dg.ConfigurableResource):
         prefix: str
 
         def output(self, text: str) -> None:
             out_txt.append(f"{self.prefix}{text}")
 
-    @op
+    @dg.op
     def hello_world_op(writer: WriterResource):
         writer.output("hello, world!")
 
-    @job
+    @dg.job
     def hello_world_job():
         hello_world_op()
 
     # BindResourcesToJobs is a no-op now
-    defs = Definitions(
-        jobs=BindResourcesToJobs([hello_world_job]),
+    defs = dg.Definitions(
+        jobs=dg.BindResourcesToJobs([hello_world_job]),
         resources={
             "writer": WriterResource(prefix=""),
         },
@@ -137,8 +121,8 @@ def test_bind_resource_to_job_at_defn_time_bind_resources_to_jobs() -> None:
     out_txt.clear()
 
     # BindResourcesToJobs is a no-op now
-    defs = Definitions(
-        jobs=BindResourcesToJobs([hello_world_job]),
+    defs = dg.Definitions(
+        jobs=dg.BindResourcesToJobs([hello_world_job]),
         resources={
             "writer": WriterResource(prefix="msg: "),
         },
@@ -151,28 +135,28 @@ def test_bind_resource_to_job_at_defn_time_bind_resources_to_jobs() -> None:
 def test_bind_resource_to_job_with_job_config() -> None:
     out_txt = []
 
-    class WriterResource(ConfigurableResource):
+    class WriterResource(dg.ConfigurableResource):
         prefix: str
 
         def output(self, text: str) -> None:
             out_txt.append(f"{self.prefix}{text}")
 
-    class OpConfig(Config):
+    class OpConfig(dg.Config):
         message: str = "hello, world!"
 
-    @op
+    @dg.op
     def hello_world_op(writer: WriterResource, config: OpConfig):
         writer.output(config.message)
 
-    @job(config={})
+    @dg.job(config={})
     def hello_world_job() -> None:
         hello_world_op()
 
-    @job(config={"ops": {"hello_world_op": {"config": {"message": "hello, earth!"}}}})
+    @dg.job(config={"ops": {"hello_world_op": {"config": {"message": "hello, earth!"}}}})
     def hello_earth_job() -> None:
         hello_world_op()
 
-    defs = Definitions(
+    defs = dg.Definitions(
         jobs=[hello_world_job, hello_earth_job],
         resources={
             "writer": WriterResource(prefix="msg: "),
@@ -188,27 +172,27 @@ def test_bind_resource_to_job_with_job_config() -> None:
 
     # Validate that we correctly error
     with pytest.raises(
-        DagsterInvalidDefinitionError,
+        dg.DagsterInvalidDefinitionError,
         match="resource with key 'writer' required by op 'hello_world_op' was not provided",
     ):
-        Definitions.validate_loadable(Definitions(jobs=[hello_world_job]))
+        Definitions.validate_loadable(dg.Definitions(jobs=[hello_world_job]))
 
 
 def test_bind_resource_to_job_at_defn_time_override() -> None:
     out_txt = []
 
-    class WriterResource(ConfigurableResource):
+    class WriterResource(dg.ConfigurableResource):
         prefix: str
 
         def output(self, text: str) -> None:
             out_txt.append(f"{self.prefix}{text}")
 
-    @op
+    @dg.op
     def hello_world_op(writer: WriterResource):
         writer.output("hello, world!")
 
     # Binding the resource to the job at definition time should not override the resource
-    @job(
+    @dg.job(
         resource_defs={
             "writer": WriterResource(prefix="job says: "),
         }
@@ -216,11 +200,11 @@ def test_bind_resource_to_job_at_defn_time_override() -> None:
     def hello_world_job_with_override():
         hello_world_op()
 
-    @job
+    @dg.job
     def hello_world_job_no_override():
         hello_world_op()
 
-    defs = Definitions(
+    defs = dg.Definitions(
         jobs=[hello_world_job_with_override, hello_world_job_no_override],
         resources={
             "writer": WriterResource(prefix="definitions says: "),
@@ -239,29 +223,29 @@ def test_bind_resource_to_job_at_defn_time_override() -> None:
 def test_bind_resource_to_instigator(include_job_in_definitions) -> None:
     out_txt = []
 
-    class WriterResource(ConfigurableResource):
+    class WriterResource(dg.ConfigurableResource):
         prefix: str
 
         def output(self, text: str) -> None:
             out_txt.append(f"{self.prefix}{text}")
 
-    @op
+    @dg.op
     def hello_world_op(writer: WriterResource):
         writer.output("hello, world!")
 
-    @job
+    @dg.job
     def hello_world_job():
         hello_world_op()
 
-    @sensor(job=hello_world_job)
+    @dg.sensor(job=hello_world_job)
     def hello_world_sensor(): ...
 
-    hello_world_schedule = ScheduleDefinition(
+    hello_world_schedule = dg.ScheduleDefinition(
         name="hello_world_schedule", cron_schedule="* * * * *", job=hello_world_job
     )
 
     # Bind the resource to the job at definition time and validate that it works
-    defs = Definitions(
+    defs = dg.Definitions(
         jobs=[hello_world_job] if include_job_in_definitions else [],
         schedules=[hello_world_schedule],
         sensors=[hello_world_sensor],
@@ -271,7 +255,7 @@ def test_bind_resource_to_instigator(include_job_in_definitions) -> None:
     )
 
     assert (
-        cast("JobDefinition", defs.resolve_sensor_def("hello_world_sensor").job)
+        cast("dg.JobDefinition", defs.resolve_sensor_def("hello_world_sensor").job)
         .execute_in_process()
         .success
     )
@@ -280,7 +264,7 @@ def test_bind_resource_to_instigator(include_job_in_definitions) -> None:
     out_txt.clear()
 
     assert (
-        cast("JobDefinition", defs.resolve_schedule_def("hello_world_schedule").job)
+        cast("dg.JobDefinition", defs.resolve_schedule_def("hello_world_schedule").job)
         .execute_in_process()
         .success
     )
@@ -292,29 +276,29 @@ def test_bind_resource_to_instigator(include_job_in_definitions) -> None:
 def test_bind_resource_to_instigator_by_name() -> None:
     out_txt = []
 
-    class WriterResource(ConfigurableResource):
+    class WriterResource(dg.ConfigurableResource):
         prefix: str
 
         def output(self, text: str) -> None:
             out_txt.append(f"{self.prefix}{text}")
 
-    @op
+    @dg.op
     def hello_world_op(writer: WriterResource):
         writer.output("hello, world!")
 
-    @job
+    @dg.job
     def hello_world_job():
         hello_world_op()
 
-    @sensor(job_name="hello_world_job")
+    @dg.sensor(job_name="hello_world_job")
     def hello_world_sensor(): ...
 
-    hello_world_schedule = ScheduleDefinition(
+    hello_world_schedule = dg.ScheduleDefinition(
         name="hello_world_schedule", cron_schedule="* * * * *", job_name="hello_world_job"
     )
 
     # Bind the resource to the job at definition time and validate that it works
-    defs = Definitions(
+    defs = dg.Definitions(
         jobs=[hello_world_job],
         schedules=[hello_world_schedule],
         sensors=[hello_world_sensor],
@@ -347,23 +331,23 @@ def test_bind_resource_to_instigator_by_name() -> None:
 def test_bind_io_manager_default() -> None:
     outputs = []
 
-    class MyIOManager(ConfigurableIOManager):
+    class MyIOManager(dg.ConfigurableIOManager):
         def load_input(self, _) -> None:  # pyright: ignore[reportIncompatibleMethodOverride]
             pass
 
         def handle_output(self, _, obj) -> None:  # pyright: ignore[reportIncompatibleMethodOverride]
             outputs.append(obj)
 
-    @op
+    @dg.op
     def hello_world_op() -> str:
         return "foo"
 
-    @job
+    @dg.job
     def hello_world_job() -> None:
         hello_world_op()
 
     # Bind the I/O manager to the job at definition time and validate that it works
-    defs = Definitions(
+    defs = dg.Definitions(
         jobs=[hello_world_job],
         resources={
             "io_manager": MyIOManager(),
@@ -377,31 +361,31 @@ def test_bind_io_manager_default() -> None:
 def test_bind_io_manager_override() -> None:
     outputs = []
 
-    class MyIOManager(ConfigurableIOManager):
+    class MyIOManager(dg.ConfigurableIOManager):
         def load_input(self, _) -> None:  # pyright: ignore[reportIncompatibleMethodOverride]
             pass
 
         def handle_output(self, _, obj) -> None:  # pyright: ignore[reportIncompatibleMethodOverride]
             outputs.append(obj)
 
-    class MyOtherIOManager(ConfigurableIOManager):
+    class MyOtherIOManager(dg.ConfigurableIOManager):
         def load_input(self, _) -> None:  # pyright: ignore[reportIncompatibleMethodOverride]
             pass
 
         def handle_output(self, _, obj) -> None:  # pyright: ignore[reportIncompatibleMethodOverride]
             pass
 
-    @op
+    @dg.op
     def hello_world_op() -> str:
         return "foo"
 
-    @job(resource_defs={"io_manager": MyIOManager()})
+    @dg.job(resource_defs={"io_manager": MyIOManager()})
     def hello_world_job() -> None:
         hello_world_op()
 
     # Bind the I/O manager to the job at definition time and validate that it does
     # not take precedence over the one defined on the job
-    defs = Definitions(
+    defs = dg.Definitions(
         jobs=[hello_world_job],
         resources={
             "io_manager": MyOtherIOManager(),
@@ -415,27 +399,27 @@ def test_bind_io_manager_override() -> None:
 def test_bind_top_level_resource_sensor_multi_job() -> None:
     executed = {}
 
-    class FooResource(ConfigurableResource):
+    class FooResource(dg.ConfigurableResource):
         my_str: str
 
-    @op
+    @dg.op
     def hello_world_op(foo: FooResource):
         assert foo.my_str == "foo"
         executed["yes"] = True
 
-    @job()
+    @dg.job()
     def hello_world_job():
         hello_world_op()
 
-    @job
+    @dg.job
     def hello_world_job_2():
         hello_world_op()
 
-    @sensor(jobs=[hello_world_job, hello_world_job_2])
+    @dg.sensor(jobs=[hello_world_job, hello_world_job_2])
     def hello_world_sensor(context):
-        return RunRequest(run_key="foo")
+        return dg.RunRequest(run_key="foo")
 
-    Definitions(
+    dg.Definitions(
         sensors=[hello_world_sensor],
         jobs=[hello_world_job, hello_world_job_2],
         resources={
@@ -445,17 +429,17 @@ def test_bind_top_level_resource_sensor_multi_job() -> None:
 
 
 def test_override_default_value_in_asset_config() -> None:
-    class MyAssetConfig(Config):
+    class MyAssetConfig(dg.Config):
         str_field: str = "a_default_value"
 
     executed = {}
 
-    @asset
+    @dg.asset
     def my_asset(config: MyAssetConfig):
         executed["yes"] = True
         return config.str_field
 
-    defs = Definitions([my_asset])
+    defs = dg.Definitions([my_asset])
 
     assert (
         defs.resolve_implicit_global_asset_job_def()
@@ -473,17 +457,17 @@ def test_override_default_value_in_asset_config() -> None:
 
 
 def test_override_default_value_in_ctor() -> None:
-    class MyResourceWithDefault(ConfigurableResource):
+    class MyResourceWithDefault(dg.ConfigurableResource):
         str_field: str
 
     executed = {}
 
-    @asset
+    @dg.asset
     def my_asset(context, my_resource: MyResourceWithDefault):
         executed["yes"] = True
         return my_resource.str_field
 
-    defs = Definitions(
+    defs = dg.Definitions(
         [my_asset],
         resources={"my_resource": MyResourceWithDefault(str_field="value_set_in_ctor")},
     )
@@ -514,17 +498,17 @@ def test_override_default_value_in_ctor() -> None:
 
 
 def test_override_default_field_value_in_resources() -> None:
-    class MyResourceWithDefault(ConfigurableResource):
+    class MyResourceWithDefault(dg.ConfigurableResource):
         str_field: str = "value_set_in_default_field_decl"
 
     executed = {}
 
-    @asset
+    @dg.asset
     def my_asset(context, my_resource: MyResourceWithDefault):
         executed["yes"] = True
         return my_resource.str_field
 
-    defs = Definitions([my_asset], resources={"my_resource": MyResourceWithDefault()})
+    defs = dg.Definitions([my_asset], resources={"my_resource": MyResourceWithDefault()})
 
     assert (
         defs.resolve_implicit_global_asset_job_def()
@@ -552,17 +536,17 @@ def test_override_default_field_value_in_resources() -> None:
 
 
 def test_override_default_field_value_in_resources_using_configure_at_launch() -> None:
-    class MyResourceWithDefault(ConfigurableResource):
+    class MyResourceWithDefault(dg.ConfigurableResource):
         str_field: str = "value_set_in_default_field_decl"
 
     executed = {}
 
-    @asset
+    @dg.asset
     def my_asset(context, my_resource: MyResourceWithDefault):
         executed["yes"] = True
         return my_resource.str_field
 
-    defs = Definitions(
+    defs = dg.Definitions(
         [my_asset], resources={"my_resource": MyResourceWithDefault.configure_at_launch()}
     )
 
@@ -591,7 +575,7 @@ def test_override_default_field_value_in_resources_using_configure_at_launch() -
     assert executed["yes"]
 
 
-class MyModuleLevelResource(ConfigurableResource):
+class MyModuleLevelResource(dg.ConfigurableResource):
     str_field: str
 
 
@@ -600,13 +584,13 @@ class MyModuleLevelResource(ConfigurableResource):
 # resource-- this is a hard limitation of string annotations in Python as of 2023-07-06 and Python
 # 3.11.
 def test_bind_with_string_annotation():
-    @asset
+    @dg.asset
     def my_asset(context, my_resource: "MyModuleLevelResource"):
         return my_resource.str_field
 
     str_field_value = "foo"
 
-    defs = Definitions(
+    defs = dg.Definitions(
         [my_asset], resources={"my_resource": MyModuleLevelResource(str_field=str_field_value)}
     )
 
@@ -625,31 +609,31 @@ def test_late_binding_with_resource_defs() -> None:
         def execute_query(self, query):
             queries.append(query)
 
-    @resource
+    @dg.resource
     def dummy_database_resource(init_context):
         return DummyDB()
 
-    @op(required_resource_keys={"database"})
+    @dg.op(required_resource_keys={"database"})
     def op_requires_resources(context):
         context.resources.database.execute_query("foo")
 
-    @job(resource_defs={"database": dummy_database_resource})
+    @dg.job(resource_defs={"database": dummy_database_resource})
     def do_database_stuff():
         op_requires_resources()
 
-    @op
+    @dg.op
     def simple_op():
         pass
 
-    @job()
+    @dg.job()
     def simple_job():
         simple_op()
 
     # io_manager here will be bound to both jobs
     # we need to make sure this doesn't invalidate the database resource
-    defs = Definitions(
+    defs = dg.Definitions(
         jobs=[do_database_stuff, simple_job],
-        resources={"io_manager": FilesystemIOManager()},
+        resources={"io_manager": dg.FilesystemIOManager()},
     )
 
     assert defs.resolve_job_def("do_database_stuff").execute_in_process().success
@@ -664,15 +648,15 @@ def test_late_binding_with_resource_defs_override() -> None:
         def execute_query(self, query):
             queries.append(query)
 
-    @resource
+    @dg.resource
     def dummy_database_resource(init_context):
         return DummyDB()
 
-    @op(required_resource_keys={"database"})
+    @dg.op(required_resource_keys={"database"})
     def op_requires_resources(context):
         context.resources.database.execute_query("foo")
 
-    @job(resource_defs={"database": dummy_database_resource})
+    @dg.job(resource_defs={"database": dummy_database_resource})
     def do_database_stuff():
         op_requires_resources()
 
@@ -680,16 +664,16 @@ def test_late_binding_with_resource_defs_override() -> None:
         def execute_query(self, query):
             pass
 
-    @resource
+    @dg.resource
     def bad_database_resource(init_context):
         return BadDB()
 
     # io_manager here will be bound to both jobs
     # we need to make sure the bad database resource doesn't get bound, since the
     # job-level resource def should take precedence
-    defs = Definitions(
+    defs = dg.Definitions(
         jobs=[do_database_stuff],
-        resources={"io_manager": FilesystemIOManager(), "database": bad_database_resource},
+        resources={"io_manager": dg.FilesystemIOManager(), "database": bad_database_resource},
     )
 
     assert defs.resolve_job_def("do_database_stuff").execute_in_process().success

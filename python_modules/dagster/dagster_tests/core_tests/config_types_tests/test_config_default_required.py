@@ -1,9 +1,9 @@
-from dagster import Field, Noneable, op
+import dagster as dg
 from dagster._utils.test import wrap_op_in_graph_and_execute
 
 
 def test_default_implies_not_required_field_correct():
-    @op(config_schema={"default_to_one": Field(int, default_value=1)})
+    @dg.op(config_schema={"default_to_one": dg.Field(int, default_value=1)})
     def return_default_to_one(context):
         return context.op_config["default_to_one"]
 
@@ -14,7 +14,7 @@ def test_default_implies_not_required_field_correct():
 
 
 def test_default_implies_not_required_wrap_op_in_graph_and_execute():
-    @op(config_schema={"default_to_one": Field(int, default_value=1)})
+    @dg.op(config_schema={"default_to_one": dg.Field(int, default_value=1)})
     def return_default_to_one(context):
         return context.op_config["default_to_one"]
 
@@ -22,22 +22,22 @@ def test_default_implies_not_required_wrap_op_in_graph_and_execute():
 
 
 def test_scalar_field_defaults():
-    assert Field(int).is_required is True
-    assert Field(Noneable(int)).is_required is False
-    assert Field(Noneable(int)).default_value is None
+    assert dg.Field(int).is_required is True
+    assert dg.Field(dg.Noneable(int)).is_required is False
+    assert dg.Field(dg.Noneable(int)).default_value is None
 
 
 def test_noneable_shaped_field_defaults():
     schema = {"an_int": int}
-    assert Field(schema).is_required is True
-    assert Field(Noneable(schema)).is_required is False
-    assert Field(Noneable(schema)).default_value is None
+    assert dg.Field(schema).is_required is True
+    assert dg.Field(dg.Noneable(schema)).is_required is False
+    assert dg.Field(dg.Noneable(schema)).default_value is None
 
 
 def test_noneable_string_in_op():
     executed = {}
 
-    @op(config_schema=Noneable(int))
+    @dg.op(config_schema=dg.Noneable(int))
     def default_noneable_int(context):
         assert context.op_config is None
         executed["yes"] = True

@@ -578,6 +578,7 @@ def dagster_instance_config_schema() -> Mapping[str, Field]:
             is_required=False,
         ),
         "secrets": secrets_loader_config_schema(),
+        "defs_state_storage": config_field_for_configurable_class(),
         "retention": retention_config_schema(),
         "backfills": backfills_daemon_config(),
         "sensors": sensors_daemon_config(),
@@ -607,6 +608,7 @@ def dagster_instance_config_schema() -> Mapping[str, Field]:
                 ),
             }
         ),
+        "freshness": Field({"enabled": Field(Bool)}, is_required=False),
         "concurrency": get_concurrency_config(),
     }
 

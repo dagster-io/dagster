@@ -9,13 +9,15 @@ from dagster import (
     AssetsDefinition,
     AutoMaterializePolicy,
     AutomationCondition,
-    DailyPartitionsDefinition,
-    HourlyPartitionsDefinition,
     MaterializeResult,
     PartitionsDefinition,
-    StaticPartitionsDefinition,
     asset,
     repository,
+)
+from dagster._core.definitions.partitions.definition import (
+    DailyPartitionsDefinition,
+    HourlyPartitionsDefinition,
+    StaticPartitionsDefinition,
 )
 from dagster._core.execution.context.asset_execution_context import AssetExecutionContext
 from dagster._utils.warnings import disable_dagster_warnings

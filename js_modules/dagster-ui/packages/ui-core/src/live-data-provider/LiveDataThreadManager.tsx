@@ -73,6 +73,7 @@ export class LiveDataThreadManager<T> {
       this.threads[threadID] = _thread;
     }
     this.listeners[key] = this.listeners[key] || new Set();
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     this.listeners[key]!.add(listener);
     if (this.cache[key]) {
       listener(key, this.cache[key]);
@@ -246,6 +247,14 @@ export class LiveDataThreadManager<T> {
 
   public getCacheEntry(key: string) {
     return this.cache[key];
+  }
+
+  public pauseThread(threadID: LiveDataThreadID) {
+    this.threads[threadID]?.pause();
+  }
+
+  public unpauseThread(threadID: LiveDataThreadID) {
+    this.threads[threadID]?.unpause();
   }
 
   public _markKeysRequested(keys: string[]) {

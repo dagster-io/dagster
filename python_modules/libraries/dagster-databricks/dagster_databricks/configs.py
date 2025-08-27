@@ -17,12 +17,21 @@ from dagster import (
     Enum,
     EnumValue,
     Field,
+    Float,
     Int,
     Noneable,
     Permissive,
     Selector,
     Shape,
     String,
+)
+from databricks.sdk.service.compute import (
+    AwsAvailability,
+    DataSecurityMode,
+    DiskTypeEbsVolumeType,
+    GcpAvailability,
+    InstancePoolAzureAttributesAvailability,
+    RuntimeEngine,
 )
 
 
@@ -95,9 +104,30 @@ def _define_custom_tags() -> Field:
     )
 
 
+def _define_abfss_storage_info() -> Field:
+    destination = Field(
+        String,
+        description=(
+            "Azure Data Lake Storage (ABFSS) destination, e.g. "
+            "abfss://<container-name>@<storage-account-name>.dfs.core.windows.net/<directory-name>"
+        ),
+    )
+    return Field(
+        Shape(fields={"destination": destination}), description="ABFSS storage information"
+    )
+
+
 def _define_dbfs_storage_info() -> Field:
     destination = Field(String, description="DBFS destination, e.g. dbfs:/my/path")
     return Field(Shape(fields={"destination": destination}), description="DBFS storage information")
+
+
+def _define_gcs_storage_info() -> Field:
+    destination = Field(
+        String,
+        description="Google Cloud Storage (GCS) destination, e.g. gs://my-bucket/some-prefix",
+    )
+    return Field(Shape(fields={"destination": destination}), description="GCS storage information")
 
 
 def _define_s3_storage_info() -> Field:
@@ -193,14 +223,7 @@ def _define_aws_attributes_conf() -> Field:
                     is_required=False,
                 ),
                 "availability": Field(
-                    Enum(
-                        "AWSAvailability",
-                        [
-                            EnumValue("SPOT"),
-                            EnumValue("ON_DEMAND"),
-                            EnumValue("SPOT_WITH_FALLBACK"),
-                        ],
-                    ),
+                    Enum("AWSAvailability", [EnumValue(k.value) for k in AwsAvailability]),
                     description=(
                         "Availability type used for all subsequent nodes past the first_on_demand"
                         " ones. Note: If first_on_demand is zero, this availability type will be"
@@ -233,10 +256,7 @@ def _define_aws_attributes_conf() -> Field:
                     is_required=False,
                 ),
                 "ebs_volume_type": Field(
-                    Enum(
-                        "EBSVolumeType",
-                        [EnumValue("GENERAL_PURPOSE_SSD"), EnumValue("THROUGHPUT_OPTIMIZED_HDD")],
-                    ),
+                    Enum("EBSVolumeType", [EnumValue(k.value) for k in DiskTypeEbsVolumeType]),
                     description="The type of EBS volumes that will be launched with this cluster.",
                     is_required=False,
                 ),
@@ -266,7 +286,92 @@ def _define_aws_attributes_conf() -> Field:
         description=(
             "Attributes related to clusters running on Amazon Web Services. "
             "If not specified at cluster creation, a set of default values is used. "
-            "See aws_attributes at https://docs.databricks.com/dev-tools/api/latest/clusters.html."
+            "See https://docs.databricks.com/api/workspace/clusters/create#aws_attributes."
+        ),
+        is_required=False,
+    )
+
+
+def _define_azure_attributes_conf() -> Field:
+    return Field(
+        Permissive(
+            fields={
+                "availability": Field(
+                    Enum(
+                        "AzureAvailability",
+                        [EnumValue(k.value) for k in InstancePoolAzureAttributesAvailability],
+                    ),
+                    description=InstancePoolAzureAttributesAvailability.__doc__,
+                    is_required=False,
+                ),
+                "spot_bid_max_price": Field(
+                    Float,
+                    description=(
+                        "The max bid price to be used for Azure spot instances. The Max price for "
+                        "the bid cannot be higher than the on-demand price of the instance. If not "
+                        "specified, the default value is -1, which specifies that the instance "
+                        "cannot be evicted on the basis of price, and only on the basis of "
+                        "availability. Further, the value should > 0 or -1."
+                    ),
+                    is_required=False,
+                ),
+            }
+        ),
+        description=(
+            "Attributes related to clusters running on Microsoft Azure. "
+            "If not specified at cluster creation, a set of default values is used. "
+            "See https://docs.databricks.com/api/azure/workspace/clusters/create#azure_attributes."
+        ),
+        is_required=False,
+    )
+
+
+def _define_gcp_attributes_conf() -> Field:
+    return Field(
+        Permissive(
+            fields={
+                "availability": Field(
+                    Enum("GCPAvailability", [EnumValue(k.value) for k in GcpAvailability]),
+                    description=GcpAvailability.__doc__,
+                    is_required=False,
+                ),
+                "boot_disk_size": Field(
+                    Int,
+                    description="Boot disk size in GB",
+                    is_required=False,
+                ),
+                "google_service_account": Field(
+                    Int,
+                    description=(
+                        "If provided, the cluster will impersonate the google service account when "
+                        "accessing gcloud services (like GCS). The google service account must have "
+                        "previously been added to the Databricks environment by an account administrator."
+                    ),
+                    is_required=False,
+                ),
+                "local_ssd_count": Field(
+                    Int,
+                    description=(
+                        "If provided, each node (workers and driver) in the cluster will have this number "
+                        "of local SSDs attached. Each local SSD is 375GB in size. Refer to GCP "
+                        "documentation for the supported number of local SSDs for each instance type."
+                    ),
+                    is_required=False,
+                ),
+                "zone_id": Field(
+                    String,
+                    description=(
+                        "Identifier for the availability zone in which the cluster resides. "
+                        "See https://cloud.google.com/compute/docs/regions-zones."
+                    ),
+                    is_required=False,
+                ),
+            }
+        ),
+        description=(
+            "Attributes related to clusters running on Google Cloud Platform. "
+            "If not specified at cluster creation, a set of default values is used. "
+            "See https://docs.databricks.com/api/gcp/workspace/clusters/create#gcp_attributes."
         ),
         is_required=False,
     )
@@ -310,7 +415,7 @@ def _define_volumes_storage_info() -> Field:
                 "destination": Field(
                     String,
                     description=(
-                        "The path to the directory in the workspace where the notebook is located."
+                        "The path to the directory in the volume where the notebook is located."
                     ),
                     is_required=True,
                 )
@@ -323,7 +428,9 @@ def _define_volumes_storage_info() -> Field:
 def _define_init_script():
     return Selector(
         {
+            "abfss": _define_abfss_storage_info(),
             "dbfs": _define_dbfs_storage_info(),
+            "gcs": _define_gcs_storage_info(),
             "s3": _define_s3_storage_info(),
             "workspace": _define_workspace_storage_info(),
             "volumes": _define_volumes_storage_info(),
@@ -469,13 +576,30 @@ def _define_new_cluster() -> Field:
         bool, is_required=False, description="Whether to encrypt cluster local disks"
     )
     runtime_engine = Field(
-        Enum("RuntimeEngine", [EnumValue("PHOTON"), EnumValue("STANDARD")]),
+        Enum("RuntimeEngine", [EnumValue(k.value) for k in RuntimeEngine]),
         is_required=False,
-        description="Decides which runtime engine to be use, e.g. Standard vs. Photon. If unspecified, the runtime engine is inferred from spark_version.",
+        description=(
+            "Decides which runtime engine to be use, e.g. Standard vs. Photon. If unspecified, "
+            "the runtime engine is inferred from spark_version."
+        ),
     )
     policy_id = Field(
         String,
         description="The ID of the cluster policy used to create the cluster if applicable",
+        is_required=False,
+    )
+
+    data_security_mode = Field(
+        Enum("DataSecurityMode", [EnumValue(k.value) for k in DataSecurityMode]),
+        is_required=False,
+        description=(
+            "Decides what data governance model to use when accessing data from a cluster."
+        ),
+    )
+
+    single_user_name = Field(
+        String,
+        description="Single user name if data_security_mode is SINGLE_USER",
         is_required=False,
     )
 
@@ -487,8 +611,12 @@ def _define_new_cluster() -> Field:
                 "spark_conf": spark_conf,
                 "nodes": _define_nodes(),
                 "aws_attributes": _define_aws_attributes_conf(),
+                "azure_attributes": _define_azure_attributes_conf(),
+                "gcp_attributes": _define_gcp_attributes_conf(),
                 "ssh_public_keys": ssh_public_keys,
                 "custom_tags": _define_custom_tags(),
+                "data_security_mode": data_security_mode,
+                "single_user_name": single_user_name,
                 "cluster_log_conf": _define_cluster_log_conf(),
                 "init_scripts": init_scripts,
                 "spark_env_vars": spark_env_vars,

@@ -1,15 +1,15 @@
 from datetime import timedelta
 
 from dagster import AssetSpec, asset
-from dagster._core.definitions.freshness import InternalFreshnessPolicy
+from dagster.preview.freshness import FreshnessPolicy
 
-policy = InternalFreshnessPolicy.time_window(fail_window=timedelta(hours=24))
+policy = FreshnessPolicy.time_window(fail_window=timedelta(hours=24))
 
 
-@asset(internal_freshness_policy=policy)
+@asset(freshness_policy=policy)
 def my_asset():
     pass
 
 
 # Or on an asset spec
-spec = AssetSpec("my_asset", internal_freshness_policy=policy)
+spec = AssetSpec("my_asset", freshness_policy=policy)

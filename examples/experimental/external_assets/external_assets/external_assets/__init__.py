@@ -2,7 +2,7 @@ import os
 
 import yaml
 from dagster import AssetKey
-from dagster._core.definitions.asset_spec import AssetSpec
+from dagster._core.definitions.assets.definition.asset_spec import AssetSpec
 from dagster._core.definitions.external_asset import external_assets_from_specs
 
 

@@ -2,6 +2,8 @@
 description: Define alerts and configure alert notification services to monitor critical events in your Dagster+ deployment.
 sidebar_position: 40
 title: Dagster+ Alerts
+canonicalUrl: '/guides/monitor/alerts'
+slug: '/guides/monitor/alerts'
 ---
 
 import DagsterPlus from '@site/docs/partials/\_DagsterPlus.md';

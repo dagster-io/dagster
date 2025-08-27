@@ -10,9 +10,9 @@ This page provides instructions for running the Dagster+ agent on a [Kubernetes]
 
 ### Prerequisites
 
-You'll need a Kubernetes cluster. This can be a self-hosted Kubernetes cluster or a managed offering like [Amazon EKS](https://aws.amazon.com/eks/), [Azure AKS](https://azure.microsoft.com/en-us/products/kubernetes-service), or [Google GKE](https://cloud.google.com/kubernetes-engine).
+You'll need a Kubernetes cluster. This can be a self-hosted Kubernetes cluster or a managed offering like [Amazon EKS](https://aws.amazon.com/eks), [Azure AKS](https://azure.microsoft.com/en-us/products/kubernetes-service), or [Google GKE](https://cloud.google.com/kubernetes-engine).
 
-You'll also need access to a container registry to which you can push images and from which pods in the Kubernetes cluster can pull images. This can be a self-hosted registry or a managed offering like [Amazon ECR](https://aws.amazon.com/ecr/), [Azure ACR](https://azure.microsoft.com/en-us/products/container-registry), or [Google GCR](https://cloud.google.com/artifact-registry).
+You'll also need access to a container registry to which you can push images and from which pods in the Kubernetes cluster can pull images. This can be a self-hosted registry or a managed offering like [Amazon ECR](https://aws.amazon.com/ecr), [Azure ACR](https://azure.microsoft.com/en-us/products/container-registry), or [Google GCR](https://cloud.google.com/artifact-registry).
 
 We recommend installing the Dagster+ agent using [Helm](https://helm.sh).
 
@@ -90,11 +90,13 @@ An exhaustive list of settings is available on the [Kubernetes agent configurati
 
 ### Configure your agents to serve branch deployments
 
-[Branch deployments](/deployment/dagster-plus/ci-cd/branch-deployments/index.md) are lightweight staging environments created for each code change. To configure your Dagster+ agent to manage them:
+[Branch deployments](/deployment/dagster-plus/ci-cd/branch-deployments) are lightweight staging environments created for each code change. To configure your Dagster+ agent to manage them:
 
 ```yaml
 # values.yaml
 dagsterCloud:
+  deployments: # can omit full deployments to serve only branch deployments in a new agent
+    - prod
   branchDeployment: true
 ```
 
@@ -124,7 +126,8 @@ Work load balanced across agents isn't sticky; there's no guarantee the agent th
 
 ```yaml
 # values.yaml
-isolatedAgents: true
+isolatedAgents:
+  enabled: true
 ```
 
 ```shell

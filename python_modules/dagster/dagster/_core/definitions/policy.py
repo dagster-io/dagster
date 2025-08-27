@@ -3,10 +3,11 @@ from random import random
 from typing import NamedTuple, Optional
 
 import dagster._check as check
-from dagster._annotations import PublicAttr
+from dagster._annotations import PublicAttr, public
 from dagster._core.errors import DagsterInvalidDefinitionError
 
 
+@public
 class Backoff(Enum):
     """A modifier for delay as a function of attempt number.
 
@@ -18,6 +19,7 @@ class Backoff(Enum):
     EXPONENTIAL = "EXPONENTIAL"
 
 
+@public
 class Jitter(Enum):
     """A randomizing modifier for delay, applied after backoff calculation.
 
@@ -29,6 +31,7 @@ class Jitter(Enum):
     PLUS_MINUS = "PLUS_MINUS"
 
 
+@public
 class RetryPolicy(
     NamedTuple(
         "_RetryPolicy",

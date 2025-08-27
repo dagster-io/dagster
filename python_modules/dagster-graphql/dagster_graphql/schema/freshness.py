@@ -5,6 +5,19 @@ from dagster._core.definitions.freshness import (
     TimeWindowFreshnessPolicy,
 )
 
+from dagster_graphql.schema.asset_health import (
+    GrapheneAssetHealthFreshnessMeta,
+    GrapheneAssetHealthStatus,
+)
+
+
+class GrapheneFreshnessStatusInfo(graphene.ObjectType):
+    freshnessStatus = graphene.NonNull(GrapheneAssetHealthStatus)
+    freshnessStatusMetadata = graphene.Field(GrapheneAssetHealthFreshnessMeta)
+
+    class Meta:
+        name = "FreshnessStatusInfo"
+
 
 class GrapheneTimeWindowFreshnessPolicy(graphene.ObjectType):
     class Meta:

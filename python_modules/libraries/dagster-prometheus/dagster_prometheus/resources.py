@@ -30,7 +30,7 @@ class PrometheusResource(ConfigurableResource):
         def my_job():
             example_prometheus_op()
 
-        defs = Definitions(
+        Definitions(
             jobs=[my_job],
             resources={"prometheus": PrometheusResource(gateway="http://pushgateway.local")},
         )

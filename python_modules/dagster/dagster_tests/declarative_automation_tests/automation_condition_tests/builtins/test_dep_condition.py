@@ -3,10 +3,7 @@ from collections.abc import Sequence
 import dagster as dg
 import pytest
 from dagster import AutomationCondition
-from dagster._core.definitions.asset_key import AssetKey
 from dagster._core.definitions.asset_selection import AssetSelection
-from dagster._core.definitions.asset_spec import AssetSpec
-from dagster._core.definitions.declarative_automation.automation_condition import AutomationResult
 from dagster._core.definitions.declarative_automation.automation_context import AutomationContext
 from dagster._core.definitions.events import AssetKeyPartitionKey
 
@@ -24,12 +21,12 @@ from dagster_tests.declarative_automation_tests.scenario_utils.scenario_state im
 def get_hardcoded_condition():
     true_set = set()
 
-    class HardcodedCondition(AutomationCondition):
+    class HardcodedCondition(dg.AutomationCondition):
         @property
         def description(self) -> str:
             return "..."
 
-        def evaluate(self, context: AutomationContext) -> AutomationResult:
+        def evaluate(self, context: AutomationContext) -> dg.AutomationResult:
             filtered_true_set = {akpk for akpk in true_set if akpk.asset_key == context.key}
             if context.partitions_def:
                 true_subset = context.candidate_subset.compute_intersection_with_partition_keys(
@@ -41,7 +38,7 @@ def get_hardcoded_condition():
                     if filtered_true_set
                     else context.asset_graph_view.get_empty_subset(key=context.key)
                 )
-            return AutomationResult(context, true_subset=true_subset)
+            return dg.AutomationResult(context, true_subset=true_subset)
 
     return HardcodedCondition(), true_set
 
@@ -64,7 +61,7 @@ async def test_dep_missing_unpartitioned(is_any: bool) -> None:
     assert result.true_subset.size == 0
 
     # one parent true, still one false
-    true_set.add(AssetKeyPartitionKey(AssetKey("A")))
+    true_set.add(AssetKeyPartitionKey(dg.AssetKey("A")))
     state, result = await state.evaluate("C")
     if is_any:
         assert result.true_subset.size == 1
@@ -72,7 +69,7 @@ async def test_dep_missing_unpartitioned(is_any: bool) -> None:
         assert result.true_subset.size == 0
 
     # both parents true
-    true_set.add(AssetKeyPartitionKey(AssetKey("B")))
+    true_set.add(AssetKeyPartitionKey(dg.AssetKey("B")))
     state, result = await state.evaluate("C")
     assert result.true_subset.size == 1
 
@@ -94,7 +91,7 @@ async def test_dep_missing_partitioned(is_any: bool) -> None:
     state, result = await state.evaluate("C")
     assert result.true_subset.size == 0
 
-    true_set.add(AssetKeyPartitionKey(AssetKey("A"), "1"))
+    true_set.add(AssetKeyPartitionKey(dg.AssetKey("A"), "1"))
     state, result = await state.evaluate("C")
     if is_any:
         # one parent is true for partition 1
@@ -103,7 +100,7 @@ async def test_dep_missing_partitioned(is_any: bool) -> None:
         # neither 1 nor 2 have all parents true
         assert result.true_subset.size == 0
 
-    true_set.add(AssetKeyPartitionKey(AssetKey("A"), "2"))
+    true_set.add(AssetKeyPartitionKey(dg.AssetKey("A"), "2"))
     state, result = await state.evaluate("C")
     if is_any:
         # both partitions 1 and 2 have at least one true parent
@@ -112,7 +109,7 @@ async def test_dep_missing_partitioned(is_any: bool) -> None:
         # neither 1 nor 2 have all parents true
         assert result.true_subset.size == 0
 
-    true_set.add(AssetKeyPartitionKey(AssetKey("B"), "1"))
+    true_set.add(AssetKeyPartitionKey(dg.AssetKey("B"), "1"))
     state, result = await state.evaluate("C")
     if is_any:
         assert result.true_subset.size == 2
@@ -120,7 +117,7 @@ async def test_dep_missing_partitioned(is_any: bool) -> None:
         # now partition 1 has all parents true
         assert result.true_subset.size == 1
 
-    true_set.add(AssetKeyPartitionKey(AssetKey("B"), "2"))
+    true_set.add(AssetKeyPartitionKey(dg.AssetKey("B"), "2"))
     state, result = await state.evaluate("C")
     if is_any:
         assert result.true_subset.size == 2
@@ -175,12 +172,12 @@ async def test_dep_missing_partitioned_selections(
 
 complex_scenario_spec = ScenarioSpec(
     asset_specs=[
-        AssetSpec("A", group_name="foo"),
-        AssetSpec("B", group_name="foo"),
-        AssetSpec("C", group_name="foo"),
-        AssetSpec("D", group_name="bar"),
-        AssetSpec("E", group_name="bar"),
-        AssetSpec("downstream", deps=["A", "B", "C", "D", "E"]),
+        dg.AssetSpec("A", group_name="foo"),
+        dg.AssetSpec("B", group_name="foo"),
+        dg.AssetSpec("C", group_name="foo"),
+        dg.AssetSpec("D", group_name="bar"),
+        dg.AssetSpec("E", group_name="bar"),
+        dg.AssetSpec("downstream", deps=["A", "B", "C", "D", "E"]),
     ]
 )
 

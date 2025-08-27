@@ -4,6 +4,7 @@ from typing import Any, Generic, Optional, Union, cast
 
 from typing_extensions import TypeVar
 
+from dagster._annotations import public
 from dagster._config.pythonic_config.attach_other_object_to_context import (
     IAttachDifferentObjectToOpContext as IAttachDifferentObjectToOpContext,
 )
@@ -81,6 +82,7 @@ class ConfigurableIOManagerFactoryResourceDefinition(  # pyright: ignore[reportI
         return self._nested_partial_resources
 
 
+@public
 class ConfigurableIOManagerFactory(ConfigurableResourceFactory, Generic[TResValue]):
     """Base class for Dagster IO managers that utilize structured config. This base class
     is useful for cases in which the returned IO manager is not the same as the class itself
@@ -114,7 +116,7 @@ class ConfigurableIOManagerFactory(ConfigurableResourceFactory, Generic[TResValu
                 with database.connect(username, password) as connection:
                     return MyExternalIOManager(connection)
 
-        defs = Definitions(
+        Definitions(
             ...,
             resources={
                 "io_manager": ConfigurableExternalIOManager(
@@ -199,6 +201,7 @@ class PartialIOManager(
         )
 
 
+@public
 class ConfigurableIOManager(ConfigurableIOManagerFactory, IOManager):
     """Base class for Dagster IO managers that utilize structured config.
 
@@ -222,7 +225,7 @@ class ConfigurableIOManager(ConfigurableIOManagerFactory, IOManager):
             def load_input(self, context):
                 return read_csv(self._get_path(context))
 
-        defs = Definitions(
+        Definitions(
             ...,
             resources={
                 "io_manager": MyIOManager(path_prefix=["my", "prefix"])

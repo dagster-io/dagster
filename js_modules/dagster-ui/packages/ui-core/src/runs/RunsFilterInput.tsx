@@ -159,8 +159,10 @@ export function runsFilterForSearchTokens(search: TokenizingFieldValue[]) {
     } else if (item.token === 'tag') {
       const [key, value = ''] = item.value.split('=');
       if (obj.tags) {
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
         obj.tags.push({key: key!, value});
       } else {
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
         obj.tags = [{key: key!, value}];
       }
     }
@@ -264,7 +266,10 @@ export const useRunsFilterInput = ({tokens, onChange, enabledFilters}: RunsFilte
 
   const createdByValues = useMemo(
     () => [
-      tagToFilterValue(DagsterTag.Automaterialize, 'true'),
+      {
+        ...tagToFilterValue(DagsterTag.Automaterialize, 'true'),
+        final: true,
+      },
       ...[...sensorValues].sort((a, b) => COMMON_COLLATOR.compare(a.label, b.label)),
       ...[...scheduleValues].sort((a, b) => COMMON_COLLATOR.compare(a.label, b.label)),
       ...[...userValues].sort((a, b) => COMMON_COLLATOR.compare(a.label, b.label)),
@@ -430,6 +435,7 @@ export const useRunsFilterInput = ({tokens, onChange, enabledFilters}: RunsFilte
       <Box flex={{direction: 'row', gap: 4, alignItems: 'center'}}>
         <Icon name="id" />
         <TruncatedTextWithFullTextOnHover text={value.value} />
+        {/* eslint-disable-next-line @typescript-eslint/no-non-null-assertion */}
         {value.value!}
       </Box>
     ),
@@ -485,6 +491,7 @@ export const useRunsFilterInput = ({tokens, onChange, enabledFilters}: RunsFilte
       <Box flex={{direction: 'row', gap: 4, alignItems: 'center'}}>
         <Icon name="partition" />
         <TruncatedTextWithFullTextOnHover text={value.value} />
+        {/* eslint-disable-next-line @typescript-eslint/no-non-null-assertion */}
         {value.value!}
       </Box>
     ),
@@ -505,6 +512,7 @@ export const useRunsFilterInput = ({tokens, onChange, enabledFilters}: RunsFilte
       } else if (value.type === DagsterTag.ScheduleName) {
         icon = <Icon name="schedule" />;
       } else if (value.type === DagsterTag.User) {
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
         return <UserDisplay email={value.value!} isFilter />;
       } else if (value.type === DagsterTag.Automaterialize) {
         icon = <Icon name="automation_condition" />;
@@ -513,6 +521,7 @@ export const useRunsFilterInput = ({tokens, onChange, enabledFilters}: RunsFilte
       return (
         <Box flex={{direction: 'row', gap: 4, alignItems: 'center'}}>
           {icon}
+          {/* eslint-disable-next-line @typescript-eslint/no-non-null-assertion */}
           <TruncatedTextWithFullTextOnHover text={labelValue!} />
         </Box>
       );
@@ -521,6 +530,7 @@ export const useRunsFilterInput = ({tokens, onChange, enabledFilters}: RunsFilte
       if (x.type === DagsterTag.Automaterialize) {
         return 'Automation condition';
       }
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
       return x.value!;
     },
     state: useMemo(() => {
@@ -633,6 +643,7 @@ export const useRunsFilterInput = ({tokens, onChange, enabledFilters}: RunsFilte
         })
         .map((token) => {
           const [key, value] = token.value.split('=');
+          // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
           return tagSuggestionValueObject(key!, value!).value;
         });
     }, [tokens]),
@@ -769,6 +780,7 @@ function tagToFilterValue(key: string, value: string) {
 export const tagValueToFilterObject = memoize((value: string) => ({
   key: value,
   type: value.split('=')[0] as DagsterTag,
+  // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
   value: value.split('=')[1]!,
 }));
 

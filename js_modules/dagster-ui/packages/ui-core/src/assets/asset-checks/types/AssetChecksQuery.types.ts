@@ -31,6 +31,7 @@ export type AssetChecksQuery = {
                 canExecuteIndividually: Types.AssetCheckCanExecuteIndividually;
                 jobNames: Array<string>;
                 description: string | null;
+                blocking: boolean;
                 assetKey: {__typename: 'AssetKey'; path: Array<string>};
                 automationCondition: {
                   __typename: 'AutomationCondition';
@@ -256,4 +257,4 @@ export type AssetChecksQuery = {
     | {__typename: 'AssetNotFoundError'};
 };
 
-export const AssetChecksQueryVersion = '655a37486ebc6427fe969b59420b9590440a901b3b0c7adc4c8a9873c593a7fe';
+export const AssetChecksQueryVersion = 'df2f0eba0bb9816ab3ffabe630b837f47a61ae541a1b543bd7abf365b0754094';

@@ -2,7 +2,7 @@ import datetime
 from abc import ABC, abstractmethod
 from collections.abc import Mapping, Sequence, Set
 from functools import cached_property
-from typing import TYPE_CHECKING, Generic, Optional, Union
+from typing import TYPE_CHECKING, Generic, Optional, TypeVar, Union
 
 from dagster_shared.serdes.serdes import is_whitelisted_for_serdes_object
 from typing_extensions import Self
@@ -26,9 +26,12 @@ from dagster._core.definitions.declarative_automation.serialized_objects import 
     AutomationConditionSnapshot,
     OperatorType,
     get_serializable_candidate_subset,
+    get_serializable_true_subset,
 )
-from dagster._core.definitions.partition import AllPartitionsSubset
-from dagster._core.definitions.time_window_partitions import TimeWindowPartitionsSubset
+from dagster._core.definitions.partitions.subset import (
+    AllPartitionsSubset,
+    TimeWindowPartitionsSubset,
+)
 from dagster._record import copy, record
 from dagster._time import get_current_timestamp
 from dagster._utils.schedules import is_valid_cron_schedule
@@ -52,6 +55,10 @@ if TYPE_CHECKING:
     )
 
 
+T_AutomationCondition = TypeVar("T_AutomationCondition", bound="AutomationCondition")
+
+
+@public
 class AutomationCondition(ABC, Generic[T_EntityKey]):
     """An AutomationCondition represents a condition of an asset that impacts whether it should be
     automatically executed. For example, you can have a condition which becomes true whenever the
@@ -138,8 +145,7 @@ class AutomationCondition(ABC, Generic[T_EntityKey]):
 
     def get_node_unique_id(self, *, parent_unique_id: Optional[str], index: Optional[int]) -> str:
         """Returns a unique identifier for this condition within the broader condition tree."""
-        parts = [str(parent_unique_id), str(index), self.name]
-        return non_secure_md5_hash_str("".join(parts).encode())
+        return non_secure_md5_hash_str(f"{parent_unique_id}{index}{self.name}".encode())
 
     def get_backcompat_node_unique_ids(
         self, *, parent_unique_id: Optional[str] = None, index: Optional[int] = None
@@ -295,18 +301,18 @@ class AutomationCondition(ABC, Generic[T_EntityKey]):
 
     @public
     def replace(
-        self, old: Union["AutomationCondition", str], new: "AutomationCondition"
-    ) -> "AutomationCondition":
+        self, old: Union["AutomationCondition", str], new: T_AutomationCondition
+    ) -> Union[Self, T_AutomationCondition]:
         """Replaces all instances of ``old`` across any sub-conditions with ``new``.
 
-        If ``old`` is a string, then conditions with a label matching
+        If ``old`` is a string, then conditions with a label or name matching
         that string will be replaced.
 
         Args:
             old (Union[AutomationCondition, str]): The condition to replace.
             new (AutomationCondition): The condition to replace with.
         """
-        return new if old in [self, self.get_label()] else self
+        return new if old in [self, self.name, self.get_label()] else self
 
     @public
     @staticmethod
@@ -753,6 +759,7 @@ class BuiltinAutomationCondition(AutomationCondition[T_EntityKey]):
         return copy(self, label=label)
 
 
+@public
 @hidden_param(param="subsets_with_metadata", breaking_version="", emit_runtime_warning=False)
 @hidden_param(param="structured_cursor", breaking_version="", emit_runtime_warning=False)
 @hidden_param(param="metadata", breaking_version="", emit_runtime_warning=False)
@@ -855,10 +862,8 @@ class AutomationResult(Generic[T_EntityKey]):
         if not self.condition.requires_cursor:
             return None
         return AutomationConditionNodeCursor(
-            true_subset=self.get_serializable_subset(),
-            candidate_subset=get_serializable_candidate_subset(
-                self._context.candidate_subset.convert_to_serializable_subset()
-            ),
+            true_subset=get_serializable_true_subset(self.true_subset),
+            candidate_subset=get_serializable_candidate_subset(self._context.candidate_subset),
             subsets_with_metadata=self._subsets_with_metadata,
             metadata=self._metadata,
             extra_state=self._extra_state,
@@ -868,10 +873,8 @@ class AutomationResult(Generic[T_EntityKey]):
     def serializable_evaluation(self) -> AutomationConditionEvaluation:
         return AutomationConditionEvaluation(
             condition_snapshot=self.condition.get_node_snapshot(self.condition_unique_id),
-            true_subset=self.get_serializable_subset(),
-            candidate_subset=get_serializable_candidate_subset(
-                self._context.candidate_subset.convert_to_serializable_subset()
-            ),
+            true_subset=get_serializable_true_subset(self.true_subset),
+            candidate_subset=get_serializable_candidate_subset(self._context.candidate_subset),
             subsets_with_metadata=self._subsets_with_metadata,
             metadata=self._metadata,
             start_timestamp=self._start_timestamp,

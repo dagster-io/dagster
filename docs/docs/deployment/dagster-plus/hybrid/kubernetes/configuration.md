@@ -18,6 +18,23 @@ helm show values dagster-plus/dagster-plus-agent
 
 You can also view the chart values on [ArtifactHub](https://artifacthub.io/packages/helm/dagster-cloud/dagster-cloud-agent?modal=values).
 
+## Agent configuration
+
+The [`dagsterCloudAgent`](https://artifacthub.io/packages/helm/dagster-cloud/dagster-cloud-agent?modal=values) value of the Helm chart provides the ability to add configuration to the Dagster+ agent.
+
+The following `values.yaml` example file shows how to configure the resources for a Dagster+ agent:
+
+```yaml
+dagsterCloudAgent:
+  resources:
+    requests:
+      cpu: '1000m'
+      memory: '2Gi'
+    limits:
+      cpu: '2000m'
+      memory: '4Gi'
+```
+
 ## Per-deployment configuration
 
 The [`workspace`](https://artifacthub.io/packages/helm/dagster-cloud/dagster-cloud-agent?modal=values) value of the Helm chart provides the ability to add configuration for all jobs that are spun up by the agent, across all repositories. To add secrets or mounted volumes to all Kubernetes Pods, you can specify your desired configuration under this value.
@@ -164,7 +181,7 @@ We plan to make this user the default in a future release.
 
 ## Grant AWS permissions
 
-You can provide your Dagster pods with [permissions to assume an AWS IAM role](https://docs.aws.amazon.com/eks/latest/userguide/iam-roles-for-service-accounts.html) using a [Service Account](https://kubernetes.io/docs/tasks/configure-pod-container/configure-service-account/). For example, you might do this to [configure an S3 IO Manager](/deployment/oss/deployment-options/aws#using-s3-for-io-management).
+You can provide your Dagster pods with [permissions to assume an AWS IAM role](https://docs.aws.amazon.com/eks/latest/userguide/iam-roles-for-service-accounts.html) using a [Service Account](https://kubernetes.io/docs/tasks/configure-pod-container/configure-service-account). For example, you might do this to [configure an S3 IO Manager](/deployment/oss/deployment-options/aws#using-s3-for-io-management).
 
 1. [Create an IAM OIDC provider for your EKS cluster](https://docs.aws.amazon.com/eks/latest/userguide/enable-iam-roles-for-service-accounts.html)
 2. [Create an IAM role and and attach IAM policies](https://docs.aws.amazon.com/eks/latest/userguide/associate-service-account-role.html)

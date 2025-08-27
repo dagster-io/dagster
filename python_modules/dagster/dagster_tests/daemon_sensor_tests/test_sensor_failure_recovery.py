@@ -1,6 +1,7 @@
 import multiprocessing
 from unittest.mock import patch
 
+import dagster as dg
 import pytest
 from dagster._core.definitions.run_request import InstigatorType
 from dagster._core.instance import DagsterInstance
@@ -293,7 +294,7 @@ def test_failure_after_run_ids_reserved(
     ).astimezone(get_timezone("US/Central"))
     with (
         freeze_time(frozen_datetime),
-        patch.object(DagsterInstance, "get_ticks", wraps=instance.get_ticks) as mock_get_ticks,
+        patch.object(dg.DagsterInstance, "get_ticks", wraps=instance.get_ticks) as mock_get_ticks,
     ):
         sensor = remote_repo.get_sensor("only_once_cursor_sensor")
         instance.add_instigator_state(

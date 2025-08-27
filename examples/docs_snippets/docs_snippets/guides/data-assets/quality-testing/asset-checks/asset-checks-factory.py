@@ -50,7 +50,8 @@ check_blobs = [
 # highlight-end
 
 
-defs = dg.Definitions(
-    assets=[orders],
-    asset_checks=[make_orders_checks(check_blobs)],
-)
+@dg.definitions
+def asset_checks():
+    return dg.Definitions(
+        asset_checks=[make_orders_checks(check_blobs)],
+    )

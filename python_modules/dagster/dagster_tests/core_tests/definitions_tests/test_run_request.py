@@ -1,16 +1,8 @@
 from collections.abc import Sequence
 from typing import Union, cast
 
+import dagster as dg
 import pytest
-from dagster import (
-    AddDynamicPartitionsRequest,
-    DeleteDynamicPartitionsRequest,
-    DynamicPartitionsDefinition,
-    RunRequest,
-    job,
-)
-from dagster._core.errors import DagsterUnknownPartitionError
-from dagster._core.test_utils import instance_for_test
 
 
 @pytest.mark.parametrize(
@@ -18,27 +10,27 @@ from dagster._core.test_utils import instance_for_test
     [
         (["a"], [], True),
         ([], [], False),
-        ([], [AddDynamicPartitionsRequest("something", ["a"])], True),
-        ([], [AddDynamicPartitionsRequest("something_else", ["a"])], False),
-        (["a"], [DeleteDynamicPartitionsRequest("something", ["a"])], False),
-        (["a"], [DeleteDynamicPartitionsRequest("something_else", ["a"])], True),
+        ([], [dg.AddDynamicPartitionsRequest("something", ["a"])], True),
+        ([], [dg.AddDynamicPartitionsRequest("something_else", ["a"])], False),
+        (["a"], [dg.DeleteDynamicPartitionsRequest("something", ["a"])], False),
+        (["a"], [dg.DeleteDynamicPartitionsRequest("something_else", ["a"])], True),
     ],
 )
 def test_validate_dynamic_partitions(
     prior_partitions: Sequence[str],
     dynamic_partitions_requests: Sequence[
-        Union[AddDynamicPartitionsRequest, DeleteDynamicPartitionsRequest]
+        Union[dg.AddDynamicPartitionsRequest, dg.DeleteDynamicPartitionsRequest]
     ],
     expect_success: bool,
 ):
-    partitions_def = DynamicPartitionsDefinition(name="something")
+    partitions_def = dg.DynamicPartitionsDefinition(name="something")
 
-    @job(partitions_def=partitions_def)
+    @dg.job(partitions_def=partitions_def)
     def job1():
         pass
 
-    run_request = RunRequest(partition_key="a")
-    with instance_for_test() as instance:
+    run_request = dg.RunRequest(partition_key="a")
+    with dg.instance_for_test() as instance:
         instance.add_dynamic_partitions(cast("str", partitions_def.name), prior_partitions)
 
         if expect_success:
@@ -49,7 +41,7 @@ def test_validate_dynamic_partitions(
             )
         else:
             with pytest.raises(
-                DagsterUnknownPartitionError, match="Could not find a partition with key `a`."
+                dg.DagsterUnknownPartitionError, match="Could not find a partition with key `a`."
             ):
                 run_request.with_resolved_tags_and_config(
                     target_definition=job1,

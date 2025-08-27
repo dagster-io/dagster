@@ -1,9 +1,12 @@
 import os
+import re
 import shutil
 import uuid
 from argparse import ArgumentParser, Namespace
 from collections.abc import Sequence
+from functools import cached_property
 from pathlib import Path
+from subprocess import check_output
 from typing import Any, Optional, Union, cast
 
 import yaml
@@ -16,13 +19,6 @@ from dagster import (
 from dagster._annotations import public
 from dagster._core.execution.context.init import InitResourceContext
 from dagster._utils import pushd
-from dbt.adapters.base.impl import BaseAdapter
-from dbt.adapters.factory import get_adapter, register_adapter, reset_adapters
-from dbt.config import RuntimeConfig
-from dbt.config.runtime import load_profile, load_project
-from dbt.config.utils import parse_cli_vars
-from dbt.flags import get_flags, set_from_args
-from dbt.version import __version__ as dbt_version
 from packaging import version
 from pydantic import Field, ValidationInfo, field_validator, model_validator
 
@@ -30,16 +26,11 @@ from dagster_dbt.asset_utils import (
     DBT_INDIRECT_SELECTION_ENV,
     get_updated_cli_invocation_params_for_context,
 )
+from dagster_dbt.compat import DBT_PYTHON_VERSION, BaseAdapter
 from dagster_dbt.core.dbt_cli_invocation import DbtCliInvocation, _get_dbt_target_path
 from dagster_dbt.dagster_dbt_translator import DagsterDbtTranslator, validate_opt_translator
 from dagster_dbt.dbt_manifest import DbtManifestParam, validate_manifest
 from dagster_dbt.dbt_project import DbtProject
-
-IS_DBT_CORE_VERSION_LESS_THAN_1_8_0 = version.parse(dbt_version) < version.parse("1.8.0")
-if IS_DBT_CORE_VERSION_LESS_THAN_1_8_0:
-    from dbt.events.functions import cleanup_event_logger  # type: ignore
-else:
-    from dbt_common.events.event_manager_client import cleanup_event_logger
 
 logger = get_dagster_logger()
 
@@ -315,11 +306,14 @@ class DbtCliResource(ConfigurableResource):
     @model_validator(mode="before")
     def validate_dbt_version(cls, values: dict[str, Any]) -> dict[str, Any]:
         """Validate that the dbt version is supported."""
-        if version.parse(dbt_version) < version.parse("1.7.0"):
+        if DBT_PYTHON_VERSION is None:
+            # dbt-core is not installed, so assume fusion is installed
+            return values
+
+        if DBT_PYTHON_VERSION < version.parse("1.7.0"):
             raise ValueError(
-                "To use `dagster_dbt.DbtCliResource`, you must use `dbt-core>=1.7.0`. Currently,"
-                f" you are using `dbt-core=={dbt_version}`. Please install a compatible dbt-core"
-                " version."
+                "To use `dagster_dbt.DbtCliResource`, you must use `dbt-core>=1.7.0` or dbt Fusion. Currently,"
+                f" you are using `dbt-core=={DBT_PYTHON_VERSION.base_version}`. Please install a compatible dbt engine."
             )
 
         return values
@@ -351,8 +345,22 @@ class DbtCliResource(ConfigurableResource):
 
         return current_target_path.joinpath(path)
 
-    def _initialize_adapter(self, cli_vars) -> BaseAdapter:
-        if not IS_DBT_CORE_VERSION_LESS_THAN_1_8_0:
+    def _initialize_dbt_core_adapter(self, args: Sequence[str]) -> BaseAdapter:
+        from dbt.adapters.factory import get_adapter, register_adapter, reset_adapters
+        from dbt.config import RuntimeConfig
+        from dbt.config.runtime import load_profile, load_project
+        from dbt.config.utils import parse_cli_vars
+        from dbt.flags import get_flags, set_from_args
+
+        parser = ArgumentParser(description="Parse cli vars from dbt command")
+        parser.add_argument("--vars")
+        var_args, _ = parser.parse_known_args(args)
+        if not var_args.vars:
+            cli_vars = {}
+        else:
+            cli_vars = parse_cli_vars(var_args.vars)
+
+        if DBT_PYTHON_VERSION >= version.parse("1.8.0"):
             from dbt_common.context import set_invocation_context
 
             set_invocation_context(os.environ.copy())
@@ -391,11 +399,16 @@ class DbtCliResource(ConfigurableResource):
                 with pushd(self.project_dir):
                     config.credentials.path = os.fspath(Path(config.credentials.path).absolute())
 
+        if DBT_PYTHON_VERSION < version.parse("1.8.0"):
+            from dbt.events.functions import cleanup_event_logger  # type: ignore
+        else:
+            from dbt_common.events.event_manager_client import cleanup_event_logger
+
         cleanup_event_logger()
 
         # reset adapters list in case we have instantiated an adapter before in this process
         reset_adapters()
-        if IS_DBT_CORE_VERSION_LESS_THAN_1_8_0:
+        if DBT_PYTHON_VERSION < version.parse("1.8.0"):
             register_adapter(config)  # type: ignore
         else:
             from dbt.adapters.protocol import MacroContextGeneratorCallable  # noqa: TC002
@@ -404,7 +417,7 @@ class DbtCliResource(ConfigurableResource):
             from dbt.parser.manifest import ManifestLoader
 
             register_adapter(config, get_mp_context())
-            adapter = cast("BaseAdapter", get_adapter(config))
+            adapter = get_adapter(config)
             manifest = ManifestLoader.load_macros(
                 config,
                 adapter.connections.set_query_header,  # type: ignore
@@ -418,6 +431,19 @@ class DbtCliResource(ConfigurableResource):
         adapter = cast("BaseAdapter", get_adapter(config))
 
         return adapter
+
+    @cached_property
+    def _cli_version(self) -> version.Version:
+        """Gets the version of the currently-installed dbt executable.
+
+        This may differ from the version of the dbt-core package, most obviously if dbt-core is not
+        installed due to the fusion engine being used.
+        """
+        raw_output = check_output([self.dbt_executable, "--version"]).decode("utf-8").strip()
+        match = re.search(r"(\d+\.\d+\.\d+)", raw_output)
+        if not match:
+            raise ValueError(f"Could not parse dbt version from output: {raw_output}")
+        return version.parse(match.group(1))
 
     @public
     def get_defer_args(self) -> Sequence[str]:
@@ -654,17 +680,18 @@ class DbtCliResource(ConfigurableResource):
         if not target_path.is_absolute():
             target_path = project_dir.joinpath(target_path)
 
+        # run dbt --version to get the dbt core version
         adapter: Optional[BaseAdapter] = None
         with pushd(self.project_dir):
-            try:
-                cli_vars = parse_cli_vars_from_args(args)
-                adapter = self._initialize_adapter(cli_vars)
-
-            except:
-                logger.warning(
-                    "An error was encountered when creating a handle to the dbt adapter in Dagster.",
-                    exc_info=True,
-                )
+            # we do not need to initialize the adapter if we are using the fusion engine
+            if self._cli_version.major < 2:
+                try:
+                    adapter = self._initialize_dbt_core_adapter(args)
+                except:
+                    logger.warning(
+                        "An error was encountered when creating a handle to the dbt adapter in Dagster.",
+                        exc_info=True,
+                    )
 
             return DbtCliInvocation.run(
                 args=full_dbt_args,
@@ -676,6 +703,8 @@ class DbtCliResource(ConfigurableResource):
                 raise_on_error=raise_on_error,
                 context=context,
                 adapter=adapter,
+                cli_version=self._cli_version,
+                dbt_project=updated_params.dbt_project,
             )
 
     def setup_for_execution(self, context: InitResourceContext) -> None:
@@ -691,12 +720,3 @@ class DbtCliResource(ConfigurableResource):
                 " removed in dagster-dbt 0.24.0. Use the `fetch_column_metadata` method in your asset definition"
                 " to fetch column metadata instead."
             )
-
-
-def parse_cli_vars_from_args(args: Sequence[str]) -> dict[str, Any]:
-    parser = ArgumentParser(description="Parse cli vars from dbt command")
-    parser.add_argument("--vars")
-    var_args, _ = parser.parse_known_args(args)
-    if not var_args.vars:
-        return {}
-    return parse_cli_vars(var_args.vars)

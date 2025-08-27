@@ -8,6 +8,7 @@ from dagster_shared.serdes.serdes import NamedTupleSerializer, whitelist_for_ser
 from dagster_shared.yaml_utils import load_run_config_yaml
 from typing_extensions import Self
 
+from dagster._annotations import public
 from dagster._utils import convert_dagster_submodule_name
 
 if TYPE_CHECKING:
@@ -30,6 +31,7 @@ class ConfigurableClassDataSerializer(NamedTupleSerializer["ConfigurableClassDat
 
 
 @whitelist_for_serdes(serializer=ConfigurableClassDataSerializer)
+@public
 class ConfigurableClassData(
     NamedTuple(
         "_ConfigurableClassData",
@@ -118,6 +120,7 @@ class ConfigurableClassData(
         return klass.from_config_value(self, check.not_none(result.value))
 
 
+@public
 class ConfigurableClass(ABC):
     """Abstract mixin for classes that can be loaded from config.
 

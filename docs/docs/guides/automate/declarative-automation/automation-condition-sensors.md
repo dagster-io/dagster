@@ -18,7 +18,10 @@ If you have a code location with a large number of assets using automation condi
 
 To add an additional sensor, create a <PyObject section="assets" module="dagster" object="AutomationConditionSensorDefinition" /> and pass it to the `sensors` argument of your `Definitions` object:
 
-<CodeExample path="docs_snippets/docs_snippets/concepts/declarative_automation/sensors/multiple_sensors.py" />
+<CodeExample
+  path="docs_snippets/docs_snippets/concepts/declarative_automation/sensors/multiple_sensors.py"
+  title="src/<project_name>/defs/sensors.py"
+/>
 
 When you create new sensors, the `default_automation_condition_sensor` will only target the automation conditions that are not already covered by the additional sensors.
 
@@ -26,10 +29,16 @@ When you create new sensors, the `default_automation_condition_sensor` will only
 
 As with other sensor types, all `AutomationConditionSensorDefinitions` will default to the `STOPPED` state when they are first added to a code location. To modify this behavior, create an `AutomationConditionSensorDefinition` with the `default_status` argument set to `RUNNING`:
 
-<CodeExample path="docs_snippets/docs_snippets/concepts/declarative_automation/sensors/default_running.py" />
+<CodeExample
+  path="docs_snippets/docs_snippets/concepts/declarative_automation/sensors/default_running.py"
+  title="src/<project_name>/defs/sensors.py"
+/>
 
 ### Adding run tags
 
 To add tags to runs produced by a given <PyObject section="assets" module="dagster" object="AutomationConditionSensorDefinition" />, pass a `run_tags` argument to the `AutomationConditionSensorDefinition`:
 
-<CodeExample path="docs_snippets/docs_snippets/concepts/declarative_automation/sensors/run_tags.py" />
+<CodeExample
+  path="docs_snippets/docs_snippets/concepts/declarative_automation/sensors/run_tags.py"
+  title="src/<project_name>/defs/sensors.py"
+/>

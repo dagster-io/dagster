@@ -3,7 +3,7 @@ import {BreadcrumbProps} from '@blueprintjs/core';
 import {Box} from '@dagster-io/ui-components';
 import React, {useMemo} from 'react';
 import {useHistory, useParams} from 'react-router-dom';
-import {FeatureFlag} from 'shared/app/FeatureFlags.oss';
+import {observeEnabled} from 'shared/app/observeEnabled.oss';
 import {AssetGlobalLineageLink, AssetPageHeader} from 'shared/assets/AssetPageHeader.oss';
 
 import {AssetView} from './AssetView';
@@ -13,7 +13,6 @@ import {AssetsCatalog} from './catalog/AssetsCatalog';
 import {AssetKey} from './types';
 import {gql} from '../apollo-client';
 import {useAssetViewParams} from './useAssetViewParams';
-import {featureEnabled} from '../app/Flags';
 import {useTrackPageView} from '../app/analytics';
 import {displayNameForAssetKey} from '../asset-graph/Utils';
 import {useDocumentTitle} from '../hooks/useDocumentTitle';
@@ -53,7 +52,7 @@ export const AssetsOverviewRoot = ({
   );
 
   if (currentPath.length === 0 || searchParams.view === 'folder') {
-    if (featureEnabled(FeatureFlag.flagUseNewObserveUIs)) {
+    if (observeEnabled()) {
       return <AssetsCatalog />;
     }
     return (

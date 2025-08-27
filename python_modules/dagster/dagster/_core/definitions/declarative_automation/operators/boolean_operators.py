@@ -3,6 +3,7 @@ from collections.abc import Sequence
 from typing import TYPE_CHECKING, Union
 
 from dagster_shared.serdes import whitelist_for_serdes
+from typing_extensions import Self
 
 import dagster._check as check
 from dagster._annotations import public
@@ -11,6 +12,7 @@ from dagster._core.definitions.declarative_automation.automation_condition impor
     AutomationCondition,
     AutomationResult,
     BuiltinAutomationCondition,
+    T_AutomationCondition,
 )
 from dagster._core.definitions.declarative_automation.automation_context import AutomationContext
 from dagster._core.definitions.declarative_automation.operators.utils import has_allow_ignore
@@ -75,11 +77,11 @@ class AndAutomationCondition(BuiltinAutomationCondition[T_EntityKey]):
 
     @public
     def replace(
-        self, old: Union[AutomationCondition, str], new: AutomationCondition
-    ) -> AutomationCondition:
+        self, old: Union[AutomationCondition, str], new: T_AutomationCondition
+    ) -> Union[Self, T_AutomationCondition]:
         """Replaces all instances of ``old`` across any sub-conditions with ``new``.
 
-        If ``old`` is a string, then conditions with a label matching
+        If ``old`` is a string, then conditions with a label or name matching
         that string will be replaced.
 
         Args:
@@ -88,7 +90,7 @@ class AndAutomationCondition(BuiltinAutomationCondition[T_EntityKey]):
         """
         return (
             new
-            if old in [self, self.get_label()]
+            if old in [self, self.name, self.get_label()]
             else copy(self, operands=[child.replace(old, new) for child in self.operands])
         )
 
@@ -182,11 +184,11 @@ class OrAutomationCondition(BuiltinAutomationCondition[T_EntityKey]):
 
     @public
     def replace(
-        self, old: Union[AutomationCondition, str], new: AutomationCondition
-    ) -> AutomationCondition:
+        self, old: Union[AutomationCondition, str], new: T_AutomationCondition
+    ) -> Union[Self, T_AutomationCondition]:
         """Replaces all instances of ``old`` across any sub-conditions with ``new``.
 
-        If ``old`` is a string, then conditions with a label matching
+        If ``old`` is a string, then conditions with a label or name matching
         that string will be replaced.
 
         Args:
@@ -195,7 +197,7 @@ class OrAutomationCondition(BuiltinAutomationCondition[T_EntityKey]):
         """
         return (
             new
-            if old in [self, self.get_label()]
+            if old in [self, self.name, self.get_label()]
             else copy(self, operands=[child.replace(old, new) for child in self.operands])
         )
 
@@ -277,11 +279,11 @@ class NotAutomationCondition(BuiltinAutomationCondition[T_EntityKey]):
 
     @public
     def replace(
-        self, old: Union[AutomationCondition, str], new: AutomationCondition
-    ) -> AutomationCondition:
+        self, old: Union[AutomationCondition, str], new: T_AutomationCondition
+    ) -> Union[Self, T_AutomationCondition]:
         """Replaces all instances of ``old`` across any sub-conditions with ``new``.
 
-        If ``old`` is a string, then conditions with a label matching
+        If ``old`` is a string, then conditions with a label or name matching
         that string will be replaced.
 
         Args:
@@ -290,7 +292,7 @@ class NotAutomationCondition(BuiltinAutomationCondition[T_EntityKey]):
         """
         return (
             new
-            if old in [self, self.get_label()]
+            if old in [self, self.name, self.get_label()]
             else copy(self, operand=self.operand.replace(old, new))
         )
 

@@ -131,7 +131,7 @@ In this example, we attach the resource to the `small_petals` asset. In the body
 
 ## Configuring table behavior using table properties
 
-PyIceberg tables support table properties to configure table behavior. You can find a [full list of properties in the PyIceberg documentation](https://py.iceberg.apache.org/configuration/).
+PyIceberg tables support table properties to configure table behavior. You can find a [full list of properties in the PyIceberg documentation](https://py.iceberg.apache.org/configuration).
 
 Use asset metadata to set table properties:
 
@@ -149,7 +149,7 @@ By default, assets will error when you change the partition spec (e.g. if you ch
 
 ## Using the custom I/O manager
 
-The `dagster-iceberg` library leans heavily on Dagster's `DbIOManager` implementation. However, this I/O manager comes with some limitations, such as the lack of support for various [partition mappings](https://docs.dagster.io/_apidocs/partitions#partition-mapping). A custom (experimental) `DbIOManager` implementation is available that supports partition mappings as long as any time-based partition is _consecutive_ and static partitions are of string type. You can enable it as follows:
+The `dagster-iceberg` library leans heavily on Dagster's `DbIOManager` implementation. However, this I/O manager comes with some limitations, such as the lack of support for various [partition mappings](/api/dagster/partitions#partition-mapping). A custom (experimental) `DbIOManager` implementation is available that supports partition mappings as long as any time-based partition is _consecutive_ and static partitions are of string type. You can enable it as follows:
 
 <CodeExample
   path="docs_snippets/docs_snippets/integrations/iceberg/using_custom_io_manager.py"

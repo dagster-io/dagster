@@ -27,7 +27,7 @@ query GetAssetHealth($assetKey: AssetKeyInput!) {
 class TestAssetHealth(ExecutingGraphQLContextTestMatrix):
     def test_asset_health_status(self, graphql_context: WorkspaceRequestContext):
         instance = graphql_context.instance
-        assert not instance.dagster_observe_supported()
+        assert not instance.dagster_asset_health_queries_supported()
         res = execute_dagster_graphql(
             graphql_context, GET_ASSET_HEALTH, variables={"assetKey": {"path": ["asset_1"]}}
         )

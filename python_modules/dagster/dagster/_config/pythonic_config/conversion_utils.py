@@ -125,7 +125,7 @@ def _convert_pydantic_field(
 
         default_to_pass = (
             default
-            if default
+            if default is not None
             else (
                 pydantic_field.default
                 if pydantic_field.default is not PydanticUndefined

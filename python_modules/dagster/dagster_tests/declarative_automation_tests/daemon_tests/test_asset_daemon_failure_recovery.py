@@ -1,12 +1,11 @@
 import datetime
 import multiprocessing
 
+import dagster as dg
 import pytest
-from dagster import AssetKey
 from dagster._core.errors import DagsterUserCodeUnreachableError
 from dagster._core.instance import DagsterInstance
 from dagster._core.instance.ref import InstanceRef
-from dagster._core.instance_for_test import instance_for_test
 from dagster._core.scheduler.instigation import TickStatus
 from dagster._core.storage.tags import PARTITION_NAME_TAG
 from dagster._core.test_utils import cleanup_test_instance, freeze_time
@@ -53,13 +52,13 @@ def _assert_run_requests_match(
 
 @pytest.fixture
 def instance():
-    with instance_for_test() as the_instance:
+    with dg.instance_for_test() as the_instance:
         yield the_instance
 
 
 @pytest.fixture
 def daemon_paused_instance():
-    with instance_for_test(
+    with dg.instance_for_test(
         overrides={
             "auto_materialize": {"max_tick_retries": 2, "use_sensors": False},
         },
@@ -149,6 +148,8 @@ def test_old_tick_not_resumed(daemon_not_paused_instance):
     [
         "EVALUATIONS_FINISHED",
         "RUN_REQUESTS_CREATED",
+        "EXECUTION_PLAN_CACHED",
+        "EXECUTION_PLAN_CACHED_1",
     ],
 )
 def test_error_loop_before_cursor_written(daemon_not_paused_instance, crash_location):
@@ -545,10 +546,10 @@ def test_asset_daemon_crash_recovery(daemon_not_paused_instance, crash_location)
     sorted_runs = sorted(runs[: len(scenario.expected_run_requests)], key=sort_run_key_fn)  # pyright: ignore[reportArgumentType]
 
     evaluations = instance.schedule_storage.get_auto_materialize_asset_evaluations(
-        key=AssetKey("hourly"), limit=100
+        key=dg.AssetKey("hourly"), limit=100
     )
     assert len(evaluations) == 1
-    assert evaluations[0].get_evaluation_with_run_ids().evaluation.key == AssetKey("hourly")
+    assert evaluations[0].get_evaluation_with_run_ids().evaluation.key == dg.AssetKey("hourly")
     assert evaluations[0].get_evaluation_with_run_ids().run_ids == {
         run.run_id for run in sorted_runs
     }
@@ -654,10 +655,10 @@ def test_asset_daemon_exception_recovery(daemon_not_paused_instance, crash_locat
     sorted_runs = sorted(runs[: len(scenario.expected_run_requests)], key=sort_run_key_fn)  # pyright: ignore[reportArgumentType]
 
     evaluations = instance.schedule_storage.get_auto_materialize_asset_evaluations(
-        key=AssetKey("hourly"), limit=100
+        key=dg.AssetKey("hourly"), limit=100
     )
     assert len(evaluations) == 1
-    assert evaluations[0].get_evaluation_with_run_ids().evaluation.key == AssetKey("hourly")
+    assert evaluations[0].get_evaluation_with_run_ids().evaluation.key == dg.AssetKey("hourly")
     assert evaluations[0].get_evaluation_with_run_ids().run_ids == {
         run.run_id for run in sorted_runs
     }

@@ -1,9 +1,10 @@
-import React, {useMemo} from 'react';
+import React, {useLayoutEffect, useMemo} from 'react';
 
 import {LiveDataRefreshButton} from './LiveDataRefreshButton';
 import {LiveDataThreadID} from './LiveDataThread';
 import {LiveDataThreadManager} from './LiveDataThreadManager';
 import {useDocumentVisibility} from '../hooks/useDocumentVisibility';
+import {useStableReferenceByHash} from '../hooks/useStableReferenceByHash';
 
 export const SUBSCRIPTION_IDLE_POLL_RATE = 30 * 1000;
 
@@ -13,11 +14,13 @@ export function useLiveDataSingle<T>(
   key: string,
   manager: LiveDataThreadManager<T>,
   thread: LiveDataThreadID = 'default',
+  skip?: boolean,
 ) {
   const {liveDataByNode, refresh, refreshing} = useLiveData(
     React.useMemo(() => [key], [key]),
     manager,
     thread,
+    skip,
   );
   return {
     liveData: liveDataByNode[key],
@@ -27,32 +30,35 @@ export function useLiveDataSingle<T>(
 }
 
 const emptyObject = {};
+let uuid = 0;
 
 export function useLiveData<T>(
-  keys: string[],
+  _keys: string[],
   manager: LiveDataThreadManager<T>,
   thread: LiveDataThreadID = 'default',
+  skip?: boolean,
   batchUpdatesInterval: number = 1000,
 ) {
-  const [data, setData] = React.useState<Record<string, T>>({});
+  const [data, setData] = React.useState<Record<string, T>>(emptyObject);
 
   const [isRefreshing, setIsRefreshing] = React.useState(false);
 
-  // use JSON.stringify to avoid unsubscribing/re-subscribing to the same keys
-  const keysJSON = useMemo(() => JSON.stringify(keys), [keys]);
+  // Hash the keys and use that as a dependency to avoid unsubscribing/re-subscribing to the same keys in case the reference changes but the keys are the same
+  const keys = useStableReferenceByHash(_keys);
 
-  React.useLayoutEffect(() => {
-    const keys = JSON.parse(keysJSON) as string[];
+  const initialSkipRef = React.useRef(skip);
+  const uuidRef = React.useRef(0);
+
+  const updateManager = useMemo(() => {
     let timeout: ReturnType<typeof setTimeout> | null = null;
     let didUpdateOnce = false;
     let didScheduleUpdateOnce = false;
     let updates: {stringKey: string; data: T | undefined}[] = [];
-    const id = Math.random();
-    // reset data to empty object
-    setData(emptyObject);
+
+    let shouldSkip = initialSkipRef.current;
 
     function processUpdates() {
-      if (!updates.length) {
+      if (!updates.length || shouldSkip) {
         return;
       }
       setData((current) => {
@@ -69,8 +75,8 @@ export function useLiveData<T>(
       });
     }
 
-    const setDataSingle = (stringKey: string, messageId: number, data?: T | undefined) => {
-      if (messageId !== id) {
+    const queueUpdate = (stringKey: string, messageId: number, data?: T | undefined) => {
+      if (messageId !== uuidRef.current) {
         // We do a lot of scheduling of updates downstream which means this could be called with an older id.
         // corresponding to a different set of keys. In this case, we just skip the update.
         return;
@@ -94,17 +100,41 @@ export function useLiveData<T>(
         }, batchUpdatesInterval);
       }
     };
+
+    return {
+      queueUpdate,
+      processUpdates,
+      setSkip: (skip: boolean) => {
+        shouldSkip = skip;
+      },
+    };
+  }, [batchUpdatesInterval]);
+
+  useLayoutEffect(() => {
+    updateManager.setSkip(skip ?? false);
+  }, [skip, updateManager]);
+
+  React.useLayoutEffect(() => {
+    const id = uuid++;
+    uuidRef.current = id;
+    // reset data to empty object
+    setData(emptyObject);
+
     const unsubscribeCallbacks = keys.map((key) =>
-      manager.subscribe(key, (stringKey, data) => setDataSingle(stringKey, id, data), thread),
+      manager.subscribe(
+        key,
+        (stringKey, data) => updateManager.queueUpdate(stringKey, id, data),
+        thread,
+      ),
     );
-    // Process updates immediately to avoid rendering with empty data
-    processUpdates();
+
+    updateManager.processUpdates();
     return () => {
       unsubscribeCallbacks.forEach((cb) => {
         cb();
       });
     };
-  }, [batchUpdatesInterval, manager, thread, keysJSON]);
+  }, [keys, manager, thread, updateManager]);
 
   return {
     liveDataByNode: data,

@@ -1,7 +1,9 @@
 ---
 description: I/O managers in Dagster allow you to keep the code for data processing separate from the code for reading and writing data, which reduces repetitive code and makes it easier to change where your data is stored.
-sidebar_position: 50
+sidebar_position: 60
 title: I/O managers
+canonicalUrl: "/guides/build/io-managers"
+slug: "/guides/build/io-managers"
 ---
 
 I/O managers in Dagster allow you to keep the code for data processing separate from the code for reading and writing data. This reduces repetitive code and makes it easier to change where your data is stored.
@@ -16,7 +18,7 @@ For assets that follow this pattern, an I/O manager can streamline the code that
 
 :::note
 
-This article assumes familiarity with: [assets](/guides/build/assets/) and [resources](/guides/build/external-resources/)
+This article assumes familiarity with: [assets](/guides/build/assets) and [resources](/guides/build/external-resources)
 
 :::
 
@@ -38,13 +40,21 @@ As a general rule, if your pipeline becomes more complicated in order to use I/O
 
 ## Using I/O managers in assets \{#io-in-assets}
 
+import ScaffoldAsset from '@site/docs/partials/\_ScaffoldAsset.md';
+
+<ScaffoldAsset />
+
 Consider the following example, which contains assets that construct a DuckDB connection object, read data from an upstream table, apply some in-memory transform, and write the result to a new table in DuckDB:
 
-<CodeExample path="docs_snippets/docs_snippets/guides/external-systems/assets-without-io-managers.py" language="python" />
+<CodeExample path="docs_snippets/docs_snippets/guides/external-systems/assets-without-io-managers.py" language="python" title="src/<project_name>/defs/assets.py" />
+
+<CodeExample path="docs_snippets/docs_snippets/guides/external-systems/resources-without-io-managers.py" language="python" title="src/<project_name>/defs/resources.py" />
 
 Using an I/O manager would remove the code that reads and writes data from the assets themselves, instead delegating it to the I/O manager. The assets would be left only with the code that applies transformations or retrieves the initial CSV file.
 
-<CodeExample path="docs_snippets/docs_snippets/guides/external-systems/assets-with-io-managers.py" language="python" />
+<CodeExample path="docs_snippets/docs_snippets/guides/external-systems/assets-with-io-managers.py" language="python" title="src/<project_name>/defs/assets.py" />
+
+<CodeExample path="docs_snippets/docs_snippets/guides/external-systems/resources-io-managers.py" language="python" title="src/<project_name>/defs/resources.py" />
 
 To load upstream assets using an I/O manager, specify the asset as an input parameter to the asset function. In this example, the `DuckDBPandasIOManager` I/O manager will read the DuckDB table with the same name as the upstream asset (`raw_sales_data`) and pass the data to `clean_sales_data` as a Pandas DataFrame.
 
@@ -58,7 +68,9 @@ With I/O managers, swapping data stores consists of changing the implementation 
 
 In the following example, a Snowflake I/O manager replaced the DuckDB I/O manager.
 
-<CodeExample path="docs_snippets/docs_snippets/guides/external-systems/assets-with-snowflake-io-manager.py" language="python" />
+<CodeExample path="docs_snippets/docs_snippets/guides/external-systems/assets-with-snowflake-io-manager.py" language="python" title="src/<project_name>/defs/assets.py" />
+
+<CodeExample path="docs_snippets/docs_snippets/guides/external-systems/resources-snowflake.py" language="python" title="src/<project_name>/defs/resources.py" />
 
 ## Built-in I/O managers \{#built-in}
 

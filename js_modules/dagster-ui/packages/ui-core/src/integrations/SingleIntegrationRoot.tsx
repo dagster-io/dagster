@@ -8,27 +8,28 @@ import {
 } from '@dagster-io/ui-components';
 import {useEffect, useState} from 'react';
 import {Link, useParams} from 'react-router-dom';
+import {useIntegrationsProvider} from 'shared/integrations/useIntegrationsProvider.oss';
 
-import {IntegrationPage} from './IntegrationPage';
-import {INTEGRATIONS_HOSTNAME} from './constants';
+import {SingleIntegrationPage} from './SingleIntegrationPage';
 import {IntegrationConfig} from './types';
+import {useTrackPageView} from '../app/analytics';
 import {AnchorButton} from '../ui/AnchorButton';
 
 export const SingleIntegrationRoot = () => {
-  const {integrationName} = useParams<{integrationName: string}>();
+  useTrackPageView();
+  const {integrationId} = useParams<{integrationId: string}>();
   const [loading, setLoading] = useState(true);
   const [integration, setIntegration] = useState<IntegrationConfig | null>(null);
+  const provider = useIntegrationsProvider();
+  const {fetchIntegrationDetails} = provider;
 
   useEffect(() => {
-    const fetchIntegration = async () => {
-      const url = `${INTEGRATIONS_HOSTNAME}/api/integrations/${integrationName}.json`;
-      const res = await fetch(url);
-      const data = await res.json();
-      setIntegration(data);
+    const load = async () => {
+      setIntegration(await fetchIntegrationDetails(integrationId));
       setLoading(false);
     };
-    fetchIntegration();
-  }, [integrationName]);
+    load();
+  }, [fetchIntegrationDetails, integrationId]);
 
   const content = () => {
     if (loading) {
@@ -56,7 +57,7 @@ export const SingleIntegrationRoot = () => {
       );
     }
 
-    return <IntegrationPage integration={integration} />;
+    return <SingleIntegrationPage integration={integration} provider={provider} />;
   };
 
   return (

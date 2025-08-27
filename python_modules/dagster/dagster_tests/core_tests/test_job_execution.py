@@ -2,34 +2,15 @@ import uuid
 import warnings
 from collections.abc import Mapping, Sequence
 
+import dagster as dg
 import pytest
 from dagster import (
-    DependencyDefinition,
-    Field,
-    GraphDefinition,
-    In,
-    Int,
-    List,
-    MultiDependencyDefinition,
-    Nothing,
-    Optional,
-    Out,
-    Output,
-    ResourceDefinition,
-    String,
     _check as check,
     job,
-    op,
-    reconstructable,
 )
 from dagster._core.definitions.dependency import DependencyMapping, DependencyStructure, OpNode
 from dagster._core.definitions.graph_definition import create_adjacency_lists
-from dagster._core.definitions.job_definition import JobDefinition
-from dagster._core.definitions.op_definition import OpDefinition
-from dagster._core.errors import DagsterExecutionStepNotFoundError, DagsterInvariantViolationError
-from dagster._core.execution.api import ReexecutionOptions, execute_job
 from dagster._core.instance import DagsterInstance
-from dagster._core.test_utils import instance_for_test
 from dagster._core.utility_ops import create_op_with_deps, create_root_op, create_stub_op, input_set
 from dagster._core.workspace.load import location_origin_from_python_file
 
@@ -66,11 +47,11 @@ def make_compute_fn():
 
 
 def _do_construct(
-    ops: Sequence[OpDefinition],
+    ops: Sequence[dg.OpDefinition],
     dependencies: DependencyMapping[str],
 ) -> tuple[Mapping[str, set[str]], Mapping[str, set[str]]]:
-    job_def = JobDefinition(
-        graph_def=GraphDefinition(name="test", node_defs=ops, dependencies=dependencies)
+    job_def = dg.JobDefinition(
+        graph_def=dg.GraphDefinition(name="test", node_defs=ops, dependencies=dependencies)
     )
     op_map = {
         s.name: OpNode(name=s.name, definition=s, graph_definition=job_def.graph) for s in ops
@@ -92,7 +73,7 @@ def test_single_dep_adjacency_lists():
     node_b = create_op_with_deps("B", node_a)
 
     forward_edges, backwards_edges = _do_construct(
-        [node_a, node_b], {"B": {"A": DependencyDefinition("A")}}
+        [node_a, node_b], {"B": {"A": dg.DependencyDefinition("A")}}
     )
 
     assert forward_edges == {"A": {"B"}, "B": set()}
@@ -118,12 +99,12 @@ def test_diamond_deps_adjaceny_lists():
     }
 
 
-def diamond_deps() -> Mapping[str, Mapping[str, DependencyDefinition]]:
+def diamond_deps() -> Mapping[str, Mapping[str, dg.DependencyDefinition]]:
     return {
-        "A": {"A_input": DependencyDefinition("A_source")},
-        "B": {"A": DependencyDefinition("A")},
-        "C": {"A": DependencyDefinition("A")},
-        "D": {"B": DependencyDefinition("B"), "C": DependencyDefinition("C")},
+        "A": {"A_input": dg.DependencyDefinition("A_source")},
+        "B": {"A": dg.DependencyDefinition("A")},
+        "C": {"A": dg.DependencyDefinition("A")},
+        "D": {"B": dg.DependencyDefinition("B"), "C": dg.DependencyDefinition("C")},
     }
 
 
@@ -138,7 +119,7 @@ def test_disconnected_graphs_adjaceny_lists():
 
     forward_edges, backwards_edges = _do_construct(
         [node_a, node_b, node_c, node_d],
-        {"B": {"A": DependencyDefinition("A")}, "D": {"C": DependencyDefinition("C")}},
+        {"B": {"A": dg.DependencyDefinition("A")}, "D": {"C": dg.DependencyDefinition("C")}},
     )
     assert forward_edges == {"A": {"B"}, "B": set(), "C": {"D"}, "D": set()}
     assert backwards_edges == {"B": {"A"}, "A": set(), "D": {"C"}, "C": set()}
@@ -154,7 +135,7 @@ def create_diamond_ops():
 
 
 def create_diamond_job():
-    return GraphDefinition(
+    return dg.GraphDefinition(
         name="diamond_graph",
         node_defs=create_diamond_ops(),
         dependencies=diamond_deps(),
@@ -172,7 +153,7 @@ def test_diamond_toposort():
 
 
 def test_external_diamond_toposort():
-    with instance_for_test() as instance:
+    with dg.instance_for_test() as instance:
         with location_origin_from_python_file(
             python_file=__file__,
             attribute="create_diamond_job",
@@ -194,7 +175,7 @@ def compute_called(name: str) -> Mapping[str, object]:
 
 
 def test_job_execution_graph_diamond():
-    pipe = GraphDefinition(
+    pipe = dg.GraphDefinition(
         node_defs=create_diamond_ops(), name="test", dependencies=diamond_deps()
     ).to_job()
     return _do_test(pipe)
@@ -272,7 +253,7 @@ def test_two_root_op_job_with_partial_dependency_definition():
     stub_op_a = create_stub_op("stub_a", [{"a key": "a value"}])
     stub_op_b = create_stub_op("stub_b", [{"a key": "a value"}])
 
-    single_dep_pipe = GraphDefinition(
+    single_dep_pipe = dg.GraphDefinition(
         node_defs=[stub_op_a, stub_op_b],
         name="test",
         dependencies={"stub_a": {}},
@@ -317,7 +298,7 @@ def _do_test(the_job):
 
 
 def test_empty_job_execution():
-    result = GraphDefinition(node_defs=[], name="test").execute_in_process()
+    result = dg.GraphDefinition(node_defs=[], name="test").execute_in_process()
 
     assert result.success
 
@@ -325,28 +306,28 @@ def test_empty_job_execution():
 def test_job_name_threaded_through_context():
     name = "foobar"
 
-    @op()
+    @dg.op()
     def assert_name_op(context):
         assert context.job_name == name
 
-    result = GraphDefinition(name="foobar", node_defs=[assert_name_op]).execute_in_process()
+    result = dg.GraphDefinition(name="foobar", node_defs=[assert_name_op]).execute_in_process()
 
     assert result.success
 
 
 def test_job_subset():
-    @op
+    @dg.op
     def return_one():
         return 1
 
-    @op
+    @dg.op
     def add_one(num):
         return num + 1
 
-    job_def = GraphDefinition(
+    job_def = dg.GraphDefinition(
         node_defs=[return_one, add_one],
         name="test",
-        dependencies={"add_one": {"num": DependencyDefinition("return_one")}},
+        dependencies={"add_one": {"num": dg.DependencyDefinition("return_one")}},
     ).to_job()
 
     result = job_def.execute_in_process()
@@ -358,24 +339,24 @@ def test_job_subset():
     subset_result = job_def.execute_in_process(run_config=env_config, op_selection=["add_one"])
 
     assert subset_result.success
-    with pytest.raises(DagsterInvariantViolationError):
+    with pytest.raises(dg.DagsterInvariantViolationError):
         subset_result.output_for_node("return_one")
     assert subset_result.output_for_node("add_one") == 4
 
 
 def test_job_explicit_subset():
-    @op
+    @dg.op
     def return_one():
         return 1
 
-    @op
+    @dg.op
     def add_one(num):
         return num + 1
 
-    job_def = GraphDefinition(
+    job_def = dg.GraphDefinition(
         node_defs=[return_one, add_one],
         name="test",
-        dependencies={"add_one": {"num": DependencyDefinition("return_one")}},
+        dependencies={"add_one": {"num": dg.DependencyDefinition("return_one")}},
     ).to_job()
 
     result = job_def.execute_in_process()
@@ -387,17 +368,17 @@ def test_job_explicit_subset():
     subset_result = job_def.execute_in_process(run_config=env_config, op_selection=["add_one"])
 
     assert subset_result.success
-    with pytest.raises(DagsterInvariantViolationError):
+    with pytest.raises(dg.DagsterInvariantViolationError):
         subset_result.output_for_node("return_one")
     assert subset_result.output_for_node("add_one") == 4
 
 
 def test_job_subset_of_subset():
-    @op
+    @dg.op
     def return_one():
         return 1
 
-    @op
+    @dg.op
     def add_one(num):
         return num + 1
 
@@ -416,34 +397,34 @@ def test_job_subset_of_subset():
     subset_job = job_def.get_subset(op_selection=["add_one_a", "return_one_a"])
     subset_result = subset_job.execute_in_process()
     assert subset_result.success
-    with pytest.raises(DagsterInvariantViolationError):
+    with pytest.raises(dg.DagsterInvariantViolationError):
         subset_result.output_for_node("return_one_b")
     assert subset_result.output_for_node("return_one_a") == 1
     assert subset_result.output_for_node("add_one_a") == 2
 
 
 def test_job_subset_with_multi_dependency():
-    @op
+    @dg.op
     def return_one():
         return 1
 
-    @op
+    @dg.op
     def return_two():
         return 2
 
-    @op(ins={"dep": In(Nothing)})
+    @dg.op(ins={"dep": dg.In(dg.Nothing)})
     def noop():
         return 3
 
-    job_def = GraphDefinition(
+    job_def = dg.GraphDefinition(
         node_defs=[return_one, return_two, noop],
         name="test",
         dependencies={
             "noop": {
-                "dep": MultiDependencyDefinition(
+                "dep": dg.MultiDependencyDefinition(
                     [
-                        DependencyDefinition("return_one"),
-                        DependencyDefinition("return_two"),
+                        dg.DependencyDefinition("return_one"),
+                        dg.DependencyDefinition("return_two"),
                     ]
                 )
             }
@@ -457,7 +438,7 @@ def test_job_subset_with_multi_dependency():
     subset_result = job_def.get_subset(op_selection=["noop"]).execute_in_process()
 
     assert subset_result.success
-    with pytest.raises(DagsterInvariantViolationError):
+    with pytest.raises(dg.DagsterInvariantViolationError):
         subset_result.output_for_node("return_one")
     assert subset_result.output_for_node("noop") == 3
 
@@ -472,27 +453,27 @@ def test_job_subset_with_multi_dependency():
 
 
 def test_job_explicit_subset_with_multi_dependency():
-    @op
+    @dg.op
     def return_one():
         return 1
 
-    @op
+    @dg.op
     def return_two():
         return 2
 
-    @op(ins={"dep": In(Nothing)})
+    @dg.op(ins={"dep": dg.In(dg.Nothing)})
     def noop():
         return 3
 
-    job_def = GraphDefinition(
+    job_def = dg.GraphDefinition(
         node_defs=[return_one, return_two, noop],
         name="test",
         dependencies={
             "noop": {
-                "dep": MultiDependencyDefinition(
+                "dep": dg.MultiDependencyDefinition(
                     [
-                        DependencyDefinition("return_one"),
-                        DependencyDefinition("return_two"),
+                        dg.DependencyDefinition("return_one"),
+                        dg.DependencyDefinition("return_two"),
                     ]
                 )
             }
@@ -506,7 +487,7 @@ def test_job_explicit_subset_with_multi_dependency():
     subset_result = job_def.execute_in_process(op_selection=["noop"])
 
     assert subset_result.success
-    with pytest.raises(DagsterInvariantViolationError):
+    with pytest.raises(dg.DagsterInvariantViolationError):
         subset_result.output_for_node("return_one")
     assert job.output_for_node("noop") == 3
 
@@ -519,19 +500,21 @@ def test_job_explicit_subset_with_multi_dependency():
 
 
 def define_three_part_job():
-    @op(ins={"num": In(Int)}, out=Out(Int))
+    @dg.op(ins={"num": dg.In(dg.Int)}, out=dg.Out(dg.Int))
     def add_one(num):
         return num + 1
 
-    @op(ins={"num": In(Int)}, out=Out(Int))
+    @dg.op(ins={"num": dg.In(dg.Int)}, out=dg.Out(dg.Int))
     def add_two(num):
         return num + 2
 
-    @op(ins={"num": In(Int)}, out=Out(Int))
+    @dg.op(ins={"num": dg.In(dg.Int)}, out=dg.Out(dg.Int))
     def add_three(num):
         return num + 3
 
-    return GraphDefinition(name="three_part_job", node_defs=[add_one, add_two, add_three]).to_job()
+    return dg.GraphDefinition(
+        name="three_part_job", node_defs=[add_one, add_two, add_three]
+    ).to_job()
 
 
 def define_created_disjoint_three_part_job():
@@ -560,15 +543,15 @@ def test_job_execution_explicit_disjoint_subset():
 
     assert result.success
     assert result.output_for_node("add_one") == 3
-    with pytest.raises(DagsterInvariantViolationError):
+    with pytest.raises(dg.DagsterInvariantViolationError):
         result.output_for_node("add_two")
     assert result.output_for_node("add_three") == 8
 
 
 def test_job_wrapping_types():
-    @op(
-        ins={"value": In(Optional[List[Optional[String]]])},
-        out=Out(Optional[List[Optional[String]]]),
+    @dg.op(
+        ins={"value": dg.In(dg.Optional[dg.List[dg.Optional[dg.String]]])},
+        out=dg.Out(dg.Optional[dg.List[dg.Optional[dg.String]]]),
     )
     def double_string_for_all(value):
         if not value:
@@ -603,7 +586,7 @@ def test_job_wrapping_types():
 
 
 def test_job_init_failure():
-    @op(required_resource_keys={"failing"})
+    @dg.op(required_resource_keys={"failing"})
     def stub_op(_):
         return None
 
@@ -612,7 +595,7 @@ def test_job_init_failure():
     def failing_resource_fn(*args, **kwargs):
         raise Exception()
 
-    @job(resource_defs={"failing": ResourceDefinition(resource_fn=failing_resource_fn)})
+    @job(resource_defs={"failing": dg.ResourceDefinition(resource_fn=failing_resource_fn)})
     def failing_init_job():
         stub_op()
 
@@ -628,7 +611,7 @@ def test_job_init_failure():
     assert event.job_failure_data
     assert mem_instance.get_run_by_id(result.run_id).is_failure_or_canceled  # pyright: ignore[reportOptionalMemberAccess]
 
-    with instance_for_test() as fs_instance:
+    with dg.instance_for_test() as fs_instance:
         result = failing_init_job.execute_in_process(
             run_config=dict(env_config),
             raise_on_error=False,
@@ -641,10 +624,10 @@ def test_job_init_failure():
         assert fs_instance.get_run_by_id(result.run_id).is_failure_or_canceled  # pyright: ignore[reportOptionalMemberAccess]
 
 
-def get_retry_job() -> JobDefinition:
-    @op(
+def get_retry_job() -> dg.JobDefinition:
+    @dg.op(
         config_schema={
-            "fail": Field(bool, is_required=False, default_value=False),
+            "fail": dg.Field(bool, is_required=False, default_value=False),
         },
     )
     def return_one(context):
@@ -652,30 +635,30 @@ def get_retry_job() -> JobDefinition:
             raise Exception("FAILURE")
         return 1
 
-    @op
+    @dg.op
     def add_one(num):
         return num + 1
 
-    return GraphDefinition(
+    return dg.GraphDefinition(
         node_defs=[return_one, add_one],
         name="test",
-        dependencies={"add_one": {"num": DependencyDefinition("return_one")}},
+        dependencies={"add_one": {"num": dg.DependencyDefinition("return_one")}},
     ).to_job()
 
 
 def test_reexecution_fs_storage():
-    recon_job = reconstructable(get_retry_job)
+    recon_job = dg.reconstructable(get_retry_job)
 
-    with instance_for_test() as instance:
-        with execute_job(recon_job, instance=instance) as result:
+    with dg.instance_for_test() as instance:
+        with dg.execute_job(recon_job, instance=instance) as result:
             assert result.success
             assert result.output_for_node("add_one") == 2
             run_id = result.run_id
 
-        with execute_job(
+        with dg.execute_job(
             recon_job,
             instance=instance,
-            reexecution_options=ReexecutionOptions(parent_run_id=run_id),
+            reexecution_options=dg.ReexecutionOptions(parent_run_id=run_id),
         ) as child_result:
             assert child_result.success
             assert child_result.output_for_node("return_one") == 1
@@ -686,9 +669,9 @@ def test_reexecution_fs_storage():
             assert child_run.root_run_id == run_id
             child_run_id = child_run.run_id
 
-        with execute_job(
+        with dg.execute_job(
             recon_job,
-            reexecution_options=ReexecutionOptions(parent_run_id=child_run_id),
+            reexecution_options=dg.ReexecutionOptions(parent_run_id=child_run_id),
             instance=instance,
         ) as grandchild_result:
             assert grandchild_result.success
@@ -701,10 +684,10 @@ def test_reexecution_fs_storage():
 
 
 def test_reexecution_fs_storage_after_fail():
-    recon_job = reconstructable(get_retry_job)
+    recon_job = dg.reconstructable(get_retry_job)
 
-    with instance_for_test() as instance:
-        with execute_job(
+    with dg.instance_for_test() as instance:
+        with dg.execute_job(
             recon_job,
             instance=instance,
             run_config={
@@ -715,10 +698,10 @@ def test_reexecution_fs_storage_after_fail():
             assert not result.success
             run_id = result.run_id
 
-        with execute_job(
+        with dg.execute_job(
             recon_job,
             instance=instance,
-            reexecution_options=ReexecutionOptions(parent_run_id=run_id),
+            reexecution_options=dg.ReexecutionOptions(parent_run_id=run_id),
             run_config={},
         ) as child_result:
             assert child_result.success
@@ -730,9 +713,9 @@ def test_reexecution_fs_storage_after_fail():
             assert child_run.root_run_id == result.run_id
             child_run_id = child_run.run_id
 
-        with execute_job(
+        with dg.execute_job(
             recon_job,
-            reexecution_options=ReexecutionOptions(parent_run_id=child_run_id),
+            reexecution_options=dg.ReexecutionOptions(parent_run_id=child_run_id),
             instance=instance,
             run_config={},
         ) as grandchild_result:
@@ -746,61 +729,61 @@ def test_reexecution_fs_storage_after_fail():
 
 
 def test_reexecution_fs_storage_with_op_selection():
-    recon_job = reconstructable(get_retry_job)
-    with instance_for_test() as instance:
+    recon_job = dg.reconstructable(get_retry_job)
+    with dg.instance_for_test() as instance:
         # Case 1: re-execute a part of a job when the original job
         # doesn't have op selection.
-        with execute_job(
+        with dg.execute_job(
             recon_job,
             instance=instance,
         ) as result:
             assert result.success
             run_id = result.run_id
 
-        with execute_job(
+        with dg.execute_job(
             recon_job,
             instance=instance,
-            reexecution_options=ReexecutionOptions(
+            reexecution_options=dg.ReexecutionOptions(
                 parent_run_id=run_id, step_selection=["return_one"]
             ),
         ) as child_result_no_op_selection:
             assert child_result_no_op_selection.success
             assert child_result_no_op_selection.output_for_node("return_one") == 1
-            with pytest.raises(DagsterInvariantViolationError):
+            with pytest.raises(dg.DagsterInvariantViolationError):
                 result.output_for_node("add_one")
 
         # Case 2: re-execute a job when the original job has op
         # selection
-        with execute_job(
+        with dg.execute_job(
             recon_job,
             instance=instance,
             op_selection=["return_one"],
         ) as result:
             assert result.success
             assert result.output_for_node("return_one") == 1
-            with pytest.raises(DagsterInvariantViolationError):
+            with pytest.raises(dg.DagsterInvariantViolationError):
                 result.output_for_node("add_one")
             op_selection_run_id = result.run_id
 
-        with execute_job(
+        with dg.execute_job(
             recon_job,
             instance=instance,
-            reexecution_options=ReexecutionOptions(parent_run_id=op_selection_run_id),
+            reexecution_options=dg.ReexecutionOptions(parent_run_id=op_selection_run_id),
         ) as child_result_yes_op_selection:
             assert child_result_yes_op_selection.success
             assert child_result_yes_op_selection.output_for_node("return_one") == 1
-            with pytest.raises(DagsterInvariantViolationError):
+            with pytest.raises(dg.DagsterInvariantViolationError):
                 result.output_for_node("add_one")
 
         # Case 3: re-execute a job partially when the original job has op selection and
         #   re-exeucte a step which hasn't been included in the original job
         with pytest.raises(
-            DagsterExecutionStepNotFoundError,
+            dg.DagsterExecutionStepNotFoundError,
             match="Step selection refers to unknown step: add_one",
         ):
-            execute_job(
+            dg.execute_job(
                 recon_job,
-                reexecution_options=ReexecutionOptions(
+                reexecution_options=dg.ReexecutionOptions(
                     parent_run_id=op_selection_run_id, step_selection=["add_one"]
                 ),
                 instance=instance,
@@ -808,9 +791,9 @@ def test_reexecution_fs_storage_with_op_selection():
 
         # Case 4: re-execute a job partially when the original job has op selection and
         #   re-exeucte a step which has been included in the original job
-        with execute_job(
+        with dg.execute_job(
             recon_job,
-            reexecution_options=ReexecutionOptions(
+            reexecution_options=dg.ReexecutionOptions(
                 parent_run_id=op_selection_run_id, step_selection=["return_one"]
             ),
             instance=instance,
@@ -820,9 +803,9 @@ def test_reexecution_fs_storage_with_op_selection():
 
 
 def test_single_step_reexecution():
-    recon_job = reconstructable(get_retry_job)
-    with instance_for_test() as instance:
-        with execute_job(
+    recon_job = dg.reconstructable(get_retry_job)
+    with dg.instance_for_test() as instance:
+        with dg.execute_job(
             recon_job,
             instance=instance,
         ) as result:
@@ -830,23 +813,23 @@ def test_single_step_reexecution():
             assert result.output_for_node("add_one") == 2
             run_id = result.run_id
 
-        with execute_job(
+        with dg.execute_job(
             recon_job,
             instance=instance,
-            reexecution_options=ReexecutionOptions(
+            reexecution_options=dg.ReexecutionOptions(
                 parent_run_id=run_id, step_selection=["add_one"]
             ),
         ) as child_result:
             assert child_result.success
             assert child_result.output_for_node("add_one") == 2
-            with pytest.raises(DagsterInvariantViolationError):
+            with pytest.raises(dg.DagsterInvariantViolationError):
                 result.output_for_node("return_one")
 
 
 def test_two_step_reexecution():
-    recon_job = reconstructable(get_retry_job)
-    with instance_for_test() as instance:
-        with execute_job(
+    recon_job = dg.reconstructable(get_retry_job)
+    with dg.instance_for_test() as instance:
+        with dg.execute_job(
             recon_job,
             instance=instance,
         ) as result:
@@ -854,10 +837,10 @@ def test_two_step_reexecution():
             assert result.output_for_node("add_one") == 2
             run_id = result.run_id
 
-        with execute_job(
+        with dg.execute_job(
             recon_job,
             instance=instance,
-            reexecution_options=ReexecutionOptions(
+            reexecution_options=dg.ReexecutionOptions(
                 parent_run_id=run_id, step_selection=["return_one", "add_one"]
             ),
         ) as child_result:
@@ -867,16 +850,16 @@ def test_two_step_reexecution():
 
 
 def test_optional():
-    @op(
+    @dg.op(
         out={
-            "x": Out(Int),
-            "y": Out(Int, is_required=False),
+            "x": dg.Out(dg.Int),
+            "y": dg.Out(dg.Int, is_required=False),
         }
     )
     def return_optional(_context):
-        yield Output(1, "x")
+        yield dg.Output(1, "x")
 
-    @op
+    @dg.op
     def echo(x):
         return x
 
@@ -895,15 +878,15 @@ def test_optional():
 def test_selector_with_partial_dependency_dict():
     executed = {}
 
-    @op
+    @dg.op
     def def_one(_):
         executed["one"] = True
 
-    @op
+    @dg.op
     def def_two(_):
         executed["two"] = True
 
-    pipe_two = GraphDefinition(
+    pipe_two = dg.GraphDefinition(
         name="pipe_two", node_defs=[def_one, def_two], dependencies={"def_one": {}}
     ).to_job()
 
@@ -914,11 +897,11 @@ def test_selector_with_partial_dependency_dict():
 
 
 def test_selector_with_subset_for_execution():
-    @op
+    @dg.op
     def def_one(_):
         pass
 
-    @op
+    @dg.op
     def def_two(_):
         pass
 
@@ -936,13 +919,13 @@ def test_selector_with_subset_for_execution():
 def test_default_run_id():
     called = {}
 
-    @op
+    @dg.op
     def check_run_id(context):
         called["yes"] = True
         assert uuid.UUID(context.run_id)
         called["run_id"] = context.run_id
 
-    job_def = GraphDefinition(node_defs=[check_run_id], name="test").to_job()
+    job_def = dg.GraphDefinition(node_defs=[check_run_id], name="test").to_job()
 
     result = job_def.execute_in_process()
     assert result.run_id == called["run_id"]
@@ -952,12 +935,12 @@ def test_default_run_id():
 def test_job_tags():
     called = {}
 
-    @op
+    @dg.op
     def check_tags(context):
         assert context.get_tag("foo") == "bar"
         called["yup"] = True
 
-    job_def_with_tags = GraphDefinition(
+    job_def_with_tags = dg.GraphDefinition(
         name="injected_run_id", node_defs=[check_tags], tags={"foo": "bar"}
     ).to_job()
     result = job_def_with_tags.execute_in_process()
@@ -965,7 +948,7 @@ def test_job_tags():
     assert called["yup"]
 
     called = {}
-    job_def_with_override_tags = GraphDefinition(
+    job_def_with_override_tags = dg.GraphDefinition(
         name="injected_run_id", node_defs=[check_tags], tags={"foo": "notbar"}
     ).to_job()
     result = job_def_with_override_tags.execute_in_process(tags={"foo": "bar"})
@@ -974,24 +957,24 @@ def test_job_tags():
 
 
 def test_multi_dep_optional():
-    @op
+    @dg.op
     def ret_one():
         return 1
 
-    @op
+    @dg.op
     def echo(x):
         return x
 
-    @op(out={"skip": Out(is_required=False)})
+    @dg.op(out={"skip": dg.Out(is_required=False)})
     def skip(_):
         return
         yield  # pylint: disable=unreachable
 
-    @op
+    @dg.op
     def collect(_, items):
         return items
 
-    @op
+    @dg.op
     def collect_and(_, items, other):
         return items + [other]
 

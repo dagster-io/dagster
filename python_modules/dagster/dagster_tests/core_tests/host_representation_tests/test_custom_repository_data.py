@@ -1,12 +1,9 @@
 import sys
 from collections.abc import Iterator
 
+import dagster as dg
 import pytest
-from dagster import file_relative_path, job, op, repository
-from dagster._core.definitions.job_definition import JobDefinition
-from dagster._core.definitions.repository_definition import RepositoryData
 from dagster._core.instance import DagsterInstance
-from dagster._core.test_utils import instance_for_test
 from dagster._core.types.loadable_target_origin import LoadableTargetOrigin
 from dagster._core.workspace.context import WorkspaceProcessContext
 from dagster._core.workspace.load_target import GrpcServerTarget
@@ -14,29 +11,29 @@ from dagster._grpc.server import GrpcServerProcess
 
 
 def define_do_something(num_calls):
-    @op(name="do_something_" + str(num_calls))
+    @dg.op(name="do_something_" + str(num_calls))
     def do_something():
         return num_calls
 
     return do_something
 
 
-@op
+@dg.op
 def do_input(x):
     return x
 
 
-def define_foo_job(num_calls: int) -> JobDefinition:
+def define_foo_job(num_calls: int) -> dg.JobDefinition:
     do_something = define_do_something(num_calls)
 
-    @job(name="foo_" + str(num_calls))
+    @dg.job(name="foo_" + str(num_calls))
     def foo_job():
         do_input(do_something())
 
     return foo_job
 
 
-class TestDynamicRepositoryData(RepositoryData):
+class TestDynamicRepositoryData(dg.RepositoryData):
     def __init__(self):
         self._num_calls = 0
 
@@ -52,14 +49,14 @@ class TestDynamicRepositoryData(RepositoryData):
         return {}
 
 
-@repository  # pyright: ignore[reportArgumentType]
+@dg.repository  # pyright: ignore[reportArgumentType]
 def bar_repo():
     return TestDynamicRepositoryData()
 
 
 @pytest.fixture(name="instance")
-def instance_fixture() -> Iterator[DagsterInstance]:
-    with instance_for_test() as instance:
+def instance_fixture() -> Iterator[dg.DagsterInstance]:
+    with dg.instance_for_test() as instance:
         yield instance
 
 
@@ -69,7 +66,7 @@ def workspace_process_context_fixture(
 ) -> Iterator[WorkspaceProcessContext]:
     loadable_target_origin = LoadableTargetOrigin(
         executable_path=sys.executable,
-        python_file=file_relative_path(__file__, "test_custom_repository_data.py"),
+        python_file=dg.file_relative_path(__file__, "test_custom_repository_data.py"),
     )
     with GrpcServerProcess(
         instance_ref=instance.get_ref(),

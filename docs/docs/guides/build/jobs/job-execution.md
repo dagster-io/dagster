@@ -6,16 +6,20 @@ sidebar_position: 300
 
 :::note
 
-This guide is applicable to both [ops](/guides/build/ops/) and [jobs](/guides/build/jobs/).
+This guide is applicable to both [ops](/guides/build/ops) and [jobs](/guides/build/jobs).
 
 :::
+
+import ScaffoldJob from '@site/docs/partials/\_ScaffoldJob.md';
+
+<ScaffoldJob />
 
 Dagster provides several methods to execute [op](/guides/build/jobs/op-jobs) and [asset jobs](/guides/build/jobs/asset-jobs). This guide explains different ways to do one-off execution of jobs using the Dagster UI, command line, or Python APIs.
 
 You can also launch jobs in other ways:
 
-- [Schedules](/guides/automate/schedules/) can be used to launch runs on a fixed interval.
-- [Sensors](/guides/automate/sensors/) allow you to launch runs based on external state changes.
+- [Schedules](/guides/automate/schedules) can be used to launch runs on a fixed interval.
+- [Sensors](/guides/automate/sensors) allow you to launch runs based on external state changes.
 
 ## Relevant APIs
 
@@ -32,10 +36,10 @@ Dagster supports the following methods to execute one-off jobs. Click the tabs f
 
 Using the Dagster UI, you can view, interact, and execute jobs.
 
-To view your job in the UI, use the [`dagster dev`](/api/dagster/cli#dagster-dev) command:
+To view your job in the UI, use the [`dg dev`](/api/clis/dg-cli/dg-cli-reference#dg-dev) command:
 
 ```bash
-dagster dev -f my_job.py
+dg dev
 ```
 
 Then navigate to `http://localhost:3000`:
@@ -48,20 +52,19 @@ Click on the **Launchpad** tab, then press the **Launch Run** button to execute 
 
 By default, Dagster will run the job using the <PyObject section="execution" module="dagster" object="multiprocess_executor" /> - that means each step in the job runs in its own process, and steps that don't depend on each other can run in parallel.
 
-The Launchpad also offers a configuration editor to let you interactively build up the configuration. Refer to the [run configuration documentation](/guides/operate/configuration/run-configuration#specifying-runtime-configuration) for more info.
+The Launchpad also offers a configuration editor to let you interactively build up the configuration. Refer to the [run configuration documentation](/guides/operate/configuration/run-configuration#providing-config-values-at-runtime) for more info.
 
 </TabItem>
 <TabItem value="Command line">
 
 The dagster CLI includes the following commands for job execution:
 
-- [`dagster job execute`](/api/dagster/cli#dagster-job) for direct execution
-- [`dagster job launch`](/api/dagster/cli#dagster-job) for launching runs asynchronously using the [run launcher](/deployment/execution/run-launchers) on your instance
+- [`dg launch`](/api/clis/dg-cli/dg-cli-reference#dg-launch) for launching runs asynchronously using the [run launcher](/deployment/execution/run-launchers) on your instance
 
 To execute your job directly, run:
 
 ```bash
-dagster job execute -f my_job.py
+dg launch --jobs my_job
 ```
 
 </TabItem>
@@ -74,9 +77,9 @@ Dagster includes Python APIs for execution that are useful when writing tests or
 <PyObject section="jobs" module="dagster" object="JobDefinition.execute_in_process" /> executes a job and
 returns an <PyObject section="execution" module="dagster" object="ExecuteInProcessResult" />.
 
-<CodeExample path="docs_snippets/docs_snippets/concepts/ops_jobs_graphs/job_execution.py" startAfter="start_execute_marker" endBefore="end_execute_marker" />
+<CodeExample path="docs_snippets/docs_snippets/concepts/ops_jobs_graphs/job_execution.py" startAfter="start_execute" endBefore="end_execute" title="src/<project_name>/defs/assets.py"/>
 
-You can find the full API documentation in [Execution API](/api/dagster/execution) and learn more about the testing use cases in the [testing documentation](/guides/test/).
+You can find the full API documentation in [Execution API](/api/dagster/execution) and learn more about the testing use cases in the [testing documentation](/guides/test).
 
 </TabItem>
 </Tabs>
@@ -113,7 +116,7 @@ Let's take a look at some examples:
 
 Use this selection syntax in the `op_selection` argument to the <PyObject section="jobs" module="dagster" object="JobDefinition.execute_in_process" />:
 
-<CodeExample path="docs_snippets/docs_snippets/concepts/ops_jobs_graphs/job_execution.py" startAfter="start_op_selection_marker" endBefore="end_op_selection_marker" />
+<CodeExample path="docs_snippets/docs_snippets/concepts/ops_jobs_graphs/job_execution.py" startAfter="start_op_selection_marker" endBefore="end_op_selection_marker" title="src/<project_name>/defs/jobs.py"/>
 
 Similarly, you can specify the same op selection in the Dagster UI Launchpad:
 
@@ -137,7 +140,7 @@ Additional config options are available for multiprocess execution that can help
 
 The example below sets the run config directly on the job to explicitly set the max concurrent subprocesses to `4`, and change the subprocess start method to use a forkserver.
 
-<CodeExample path="docs_snippets/docs_snippets/concepts/ops_jobs_graphs/job_execution.py" startAfter="start_mp_cfg" endBefore="end_mp_cfg" />
+<CodeExample path="docs_snippets/docs_snippets/concepts/ops_jobs_graphs/job_execution.py" startAfter="start_mp_cfg" endBefore="end_mp_cfg" title="src/<project_name>/defs/jobs.py"/>
 
 Using a forkserver is a great way to reduce per-process overhead during multiprocess execution, but can cause issues with certain libraries. Refer to the [Python documentation](https://docs.python.org/3/library/multiprocessing.html#contexts-and-start-methods) for more info.
 
@@ -149,7 +152,7 @@ Limits can be specified for all ops with a certain tag key or key-value pair. If
 
 For example, the following job will execute at most two ops at once with the `database` tag equal to `redshift`, while also ensuring that at most four ops execute at once:
 
-<CodeExample path="docs_snippets/docs_snippets/concepts/ops_jobs_graphs/job_execution.py" startAfter="start_tag_concurrency" endBefore="end_tag_concurrency" />
+<CodeExample path="docs_snippets/docs_snippets/concepts/ops_jobs_graphs/job_execution.py" startAfter="start_tag_concurrency" endBefore="end_tag_concurrency" title="src/<project_name>/defs/jobs.py"/>
 
 :::note
 

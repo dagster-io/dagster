@@ -1,9 +1,9 @@
 from datetime import timedelta
 
 from dagster import Definitions, asset, define_asset_job, multi_asset
-from dagster._core.definitions.asset_spec import AssetSpec
-from dagster._core.definitions.assets import AssetsDefinition
-from dagster._core.definitions.time_window_partitions import DailyPartitionsDefinition
+from dagster._core.definitions.assets.definition.asset_spec import AssetSpec
+from dagster._core.definitions.assets.definition.assets_definition import AssetsDefinition
+from dagster._core.definitions.partitions.definition import DailyPartitionsDefinition
 from dagster._core.execution.context.asset_execution_context import AssetExecutionContext
 from dagster._time import get_current_datetime_midnight
 from dagster_airlift.core import (

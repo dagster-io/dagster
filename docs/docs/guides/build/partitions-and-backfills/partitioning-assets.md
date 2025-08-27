@@ -4,6 +4,10 @@ description: Learn how to partition your data in Dagster.
 sidebar_position: 100
 ---
 
+import ScaffoldAsset from '@site/docs/partials/\_ScaffoldAsset.md';
+
+<ScaffoldAsset />
+
 In Dagster, partitioning is a powerful technique for managing large datasets, improving pipeline performance, and enabling incremental processing. This guide will help you understand how to implement data partitioning in your Dagster projects.
 
 There are several ways to partition your data in Dagster:
@@ -15,7 +19,7 @@ There are several ways to partition your data in Dagster:
 
 :::note
 
-We recommend limiting the number of partitions for each asset to 25,000 or fewer. Assets with partition counts exceeding this limit will likely have slower load times in the UI.
+We recommend limiting the number of partitions for each asset to 100,000 or fewer. Assets with partition counts exceeding this limit will likely have slower load times in the UI.
 
 :::
 
@@ -23,13 +27,13 @@ We recommend limiting the number of partitions for each asset to 25,000 or fewer
 
 A common use case for partitioning is to process data that can be divided into time intervals, such as daily logs or monthly reports.
 
-<CodeExample path="docs_snippets/docs_snippets/guides/data-modeling/partitioning/time_based_partitioning.py" language="python" />
+<CodeExample path="docs_snippets/docs_snippets/guides/data-modeling/partitioning/time_based_partitioning.py" language="python" title="src/<project_name>/defs/assets.py"/>
 
 ## Partitions with predefined categories \{#static-partitions}
 
 Sometimes you have a set of predefined categories for your data. For instance, you might want to process data separately for different regions.
 
-<CodeExample path="docs_snippets/docs_snippets/guides/data-modeling/partitioning/static_partitioning.py" language="python" />
+<CodeExample path="docs_snippets/docs_snippets/guides/data-modeling/partitioning/static_partitioning.py" language="python" title="src/<project_name>/defs/assets.py"/>
 
 {/* TODO: Link to Backfill page to explain how to backfill regional sales data */}
 
@@ -37,7 +41,7 @@ Sometimes you have a set of predefined categories for your data. For instance, y
 
 Two-dimensional partitioning allows you to partition data along two different axes simultaneously. This is useful when you need to process data that can be categorized in multiple ways. For example:
 
-<CodeExample path="docs_snippets/docs_snippets/guides/data-modeling/partitioning/two_dimensional_partitioning.py" language="python" />
+<CodeExample path="docs_snippets/docs_snippets/guides/data-modeling/partitioning/two_dimensional_partitioning.py" language="python" title="src/<project_name>/defs/assets.py"/>
 
 In this example:
 
@@ -52,7 +56,7 @@ Sometimes you don't know the partitions in advance. For example, you might want 
 
 Consider this example:
 
-<CodeExample path="docs_snippets/docs_snippets/guides/data-modeling/partitioning/dynamic_partitioning.py" language="python" title="Dynamic partitioning" />
+<CodeExample path="docs_snippets/docs_snippets/guides/data-modeling/partitioning/dynamic_partitioning.py" language="python" title="src/<project_name>/defs/assets.py"/>
 
 In this example:
 

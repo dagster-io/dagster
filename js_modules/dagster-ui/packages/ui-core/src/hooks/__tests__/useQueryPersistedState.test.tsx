@@ -568,6 +568,7 @@ describe('useQueryPersistedState', () => {
     );
 
     act(() => {
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
       push!('/page?');
     });
 

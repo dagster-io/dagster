@@ -26,7 +26,6 @@ import {AssetKind} from '../graph/KindTags';
 import {AssetKeyInput} from '../graphql/types';
 import {RepositoryLink} from '../nav/RepositoryLink';
 import {TimestampDisplay} from '../schedules/TimestampDisplay';
-import {testId} from '../testing/testId';
 import {HeaderCell, HeaderRow, Row, RowCell} from '../ui/VirtualizedTable';
 
 const TEMPLATE_COLUMNS = '1.3fr 1fr 80px';
@@ -88,11 +87,15 @@ export const VirtualizedAssetRow = (props: AssetRowProps) => {
   const kinds = definition?.kinds;
 
   return (
-    <Row $height={height} $start={start} data-testid={testId(`row-${tokenForAssetKey({path})}`)}>
+    <Row $height={height} $start={start}>
       <RowGrid border="bottom" $showRepoColumn={showRepoColumn}>
         {showCheckboxColumn ? (
           <RowCell>
-            <Checkbox checked={checked} onChange={onChange} />
+            <Checkbox
+              checked={checked}
+              onChange={onChange}
+              data-testid={`checkbox-${tokenForAssetKey({path})}`}
+            />
           </RowCell>
         ) : null}
         <RowCell>
@@ -323,6 +326,7 @@ export function useLiveDataOrLatestMaterializationDebounced(
   }, [type, path]);
 
   if (type === 'asset') {
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     return liveDataByNode[tokenForAssetKey({path})]!;
   }
 

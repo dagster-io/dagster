@@ -3,25 +3,24 @@ import time
 from contextlib import ExitStack
 from unittest import mock
 
+import dagster as dg
 import pytest
-from dagster import JobDefinition, job, op
 from dagster._core.execution.plan.instance_concurrency_context import (
     INITIAL_INTERVAL_VALUE,
     STEP_UP_BASE,
     InstanceConcurrencyContext,
 )
-from dagster._core.test_utils import instance_for_test
 from dagster._core.utils import make_new_run_id
 
 from dagster_tests.execution_tests.misc_execution_tests.conftest import CUSTOM_SLEEP_INTERVAL
 
 
-def define_foo_job() -> JobDefinition:
-    @op
+def define_foo_job() -> dg.JobDefinition:
+    @dg.op
     def foo_op():
         pass
 
-    @job
+    @dg.job
     def foo_job():
         foo_op()
 
@@ -230,7 +229,7 @@ def test_zero_concurrency_key(concurrency_instance_op_granularity):
 
 def test_changing_default_concurrency_key():
     with tempfile.TemporaryDirectory() as temp_dir:
-        with instance_for_test(
+        with dg.instance_for_test(
             overrides={
                 "event_log_storage": {
                     "module": "dagster.utils.test",
@@ -257,7 +256,7 @@ def test_changing_default_concurrency_key():
                 == 1
             )
 
-        with instance_for_test(
+        with dg.instance_for_test(
             overrides={
                 "event_log_storage": {
                     "module": "dagster.utils.test",

@@ -16,7 +16,6 @@ from dagster_shared.serdes.objects.package_entry import (
 )
 from packaging.version import Version
 
-from dagster_dg_core.utils import validate_dagster_availability
 from dagster_dg_core.utils.warnings import emit_warning
 
 if TYPE_CHECKING:
@@ -131,7 +130,6 @@ class EnvRegistry:
 
 def all_components_schema_from_dg_context(dg_context: "DgContext") -> Mapping[str, Any]:
     """Generate a schema for all components in the current environment."""
-    validate_dagster_availability()
     from dagster.components.list import list_all_components_schema
 
     return list_all_components_schema(entry_points=True, extra_modules=())
@@ -175,11 +173,9 @@ def _load_module_registry_objects(
 # can compute a EnvRegistryManifest from the list[EnvRegistryObjectSnap], but it
 # won't include any modules that register an entry point but don't expose any plugin objects.
 def _fetch_plugin_manifest(entry_points: bool, extra_modules: Sequence[str]) -> EnvRegistryManifest:
+    from dagster.components.list import list_plugins
     from rich.console import Console
     from rich.panel import Panel
-
-    validate_dagster_availability()
-    from dagster.components.list import list_plugins
 
     result = list_plugins(entry_points=entry_points, extra_modules=extra_modules)
 
@@ -220,9 +216,10 @@ def get_used_env_vars(data_structure: Union[Mapping[str, Any], Sequence[Any], An
     if isinstance(data_structure, Mapping):
         return set.union(set(), *(get_used_env_vars(value) for value in data_structure.values()))
     elif isinstance(data_structure, str):
-        return set(env_var_regex.findall(data_structure)).union(
+        raw_result = set(env_var_regex.findall(data_structure)).union(
             set(env_var_regex_dot_notation.findall(data_structure))
         )
+        return {var.strip() for var in raw_result}
     elif isinstance(data_structure, Sequence):
         return set.union(set(), *(get_used_env_vars(item) for item in data_structure))
     else:

@@ -18,6 +18,7 @@ import {CodeLocationTabs} from 'shared/code-location/CodeLocationTabs.oss';
 import {createGlobalStyle} from 'styled-components';
 import * as yaml from 'yaml';
 
+import {CodeLocationDefsStateComparisonSection} from './CodeLocationDefsStateComparisonSection';
 import {CodeLocationOverviewSectionHeader} from './CodeLocationOverviewSectionHeader';
 import {useCopyToClipboard} from '../app/browser';
 import {TimeFromNow} from '../ui/TimeFromNow';
@@ -162,6 +163,7 @@ export const CodeLocationOverviewRoot = (props: Props) => {
           </Table>
         </>
       ) : null}
+      <CodeLocationDefsStateComparisonSection locationName={repoAddress.location} />
       <CodeLocationAlertsSection locationName={repoAddress.location} />
       <CodeLocationOverviewSectionHeader label="Metadata" border="bottom" />
       <CodeLocationMetadataStyle />
@@ -177,7 +179,11 @@ export const CodeLocationOverviewRoot = (props: Props) => {
 };
 
 const QueryfulCodeLocationOverviewRoot = ({repoAddress}: {repoAddress: RepoAddress}) => {
-  const {locationEntries, locationStatuses, loading} = useContext(WorkspaceContext);
+  const {
+    locationEntries,
+    locationStatuses,
+    loadingNonAssets: loading,
+  } = useContext(WorkspaceContext);
   const locationEntry = locationEntries.find((entry) => entry.name === repoAddress.location);
   const locationStatus = locationStatuses[repoAddress.location];
 

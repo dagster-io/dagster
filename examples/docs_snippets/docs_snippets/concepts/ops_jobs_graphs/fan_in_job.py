@@ -1,20 +1,20 @@
 # start_marker
 
 
-from dagster import job, op
+import dagster as dg
 
 
-@op
+@dg.op
 def return_one() -> int:
     return 1
 
 
-@op
+@dg.op
 def sum_fan_in(nums: list[int]) -> int:
     return sum(nums)
 
 
-@job
+@dg.job
 def fan_in():
     fan_outs = []
     for i in range(0, 10):

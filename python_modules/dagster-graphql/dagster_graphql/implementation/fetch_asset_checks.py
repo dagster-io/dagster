@@ -5,7 +5,7 @@ from dagster import (
     AssetKey,
     _check as check,
 )
-from dagster._core.definitions.asset_check_spec import AssetCheckKey
+from dagster._core.definitions.asset_checks.asset_check_spec import AssetCheckKey
 from dagster._core.events import ASSET_CHECK_EVENTS, DagsterEventType
 from dagster._core.loader import LoadingContext
 from dagster._core.storage.asset_check_execution_record import AssetCheckExecutionRecordStatus

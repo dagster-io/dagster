@@ -3,14 +3,13 @@ from pathlib import Path
 from types import ModuleType
 from typing import Optional
 
-from dagster_shared import check
 from dagster_shared.serdes.objects.package_entry import json_for_all_components
 
-from dagster._annotations import deprecated, preview, public
+from dagster._annotations import deprecated, public
 from dagster._core.definitions.definitions_class import Definitions
 from dagster._utils.warnings import suppress_dagster_warnings
-from dagster.components.core.context import ComponentLoadContext
-from dagster.components.core.tree import ComponentTree
+from dagster.components.component.component import Component
+from dagster.components.core.component_tree import ComponentTree, LegacyAutoloadingComponentTree
 
 PLUGIN_COMPONENT_TYPES_JSON_METADATA_KEY = "plugin_component_types_json"
 
@@ -18,7 +17,7 @@ PLUGIN_COMPONENT_TYPES_JSON_METADATA_KEY = "plugin_component_types_json"
 @deprecated(breaking_version="0.2.0")
 @suppress_dagster_warnings
 def build_component_defs(components_root: Path) -> Definitions:
-    """Build a Definitions object for all the component instances in a given code location.
+    """Build a Definitions object for all the component instances in a given project.
 
     Args:
         components_root (Path): The path to the components root. This is a directory containing
@@ -44,8 +43,12 @@ def get_project_root(defs_root: ModuleType) -> Path:
         FileNotFoundError: If no project root with pyproject.toml or setup.py is found.
     """
     # Get the module's file path
-
     module_path = getattr(defs_root, "__file__", None)
+    if module_path is None:
+        # For modules without __file__ attribute (e.g. namespace packages), try to get path from __path__
+        module_paths = getattr(defs_root, "__path__", None)
+        if module_paths and len(module_paths) > 0:
+            module_path = module_paths[0]
     if not module_path:
         raise FileNotFoundError(f"Module {defs_root} has no __file__ attribute")
 
@@ -61,9 +64,62 @@ def get_project_root(defs_root: ModuleType) -> Path:
     raise FileNotFoundError("No project root with pyproject.toml or setup.py found")
 
 
-# Public method so optional Nones are fine
 @public
-@preview(emit_runtime_warning=False)
+@suppress_dagster_warnings
+def build_defs_for_component(component: Component) -> Definitions:
+    """Constructs Definitions from a standalone component. This is useful for
+    loading individual components in a non-component project.
+
+    Args:
+        component (Component): The component to load defs from.
+    """
+    return component.build_defs(ComponentTree.for_test().load_context)
+
+
+@public
+@suppress_dagster_warnings
+def load_from_defs_folder(*, project_root: Path) -> Definitions:
+    """Constructs a Definitions object by automatically discovering and loading all Dagster
+    definitions from a project's defs folder structure.
+
+    This function serves as the primary entry point for loading definitions in dg-managed
+    projects. It reads the project configuration (dg.toml or pyproject.toml), identifies
+    the defs module, and recursively loads all components, assets, jobs, and other Dagster
+    definitions from the project structure.
+
+    The function automatically handles:
+
+    * Reading project configuration to determine the defs module location
+    * Importing and traversing the defs module hierarchy
+    * Loading component definitions and merging them into a unified Definitions object
+    * Enriching definitions with plugin component metadata from entry points
+
+    Args:
+        project_root (Path): The absolute path to the dg project root directory. This should be the directory containing the project's configuration file (dg.toml or pyproject.toml with [tool.dg] section).
+
+    Returns:
+        Definitions: A merged Definitions object containing all discovered definitions from the project's defs folder, enriched with component metadata.
+
+    Example:
+        .. code-block:: python
+
+            from pathlib import Path
+            import dagster as dg
+
+            @dg.definitions
+            def defs():
+                project_path = Path("/path/to/my/dg/project")
+                return dg.load_from_defs_folder(project_root=project_path)
+
+    """
+    return ComponentTree.for_project(path_within_project=project_root).build_defs()
+
+
+# Public method so optional Nones are fine
+@deprecated(
+    breaking_version="1.11",
+    additional_warn_text="Use load_from_defs_folder instead.",
+)
 @suppress_dagster_warnings
 def load_defs(
     defs_root: ModuleType,
@@ -79,32 +135,15 @@ def load_defs(
             autoloading process when encountering a definitions.py or component.py file.
             Defaults to True.
     """
-    from dagster.components.core.defs_module import DefsFolderComponent, get_component
-
     project_root = project_root if project_root else get_project_root(defs_root)
 
-    # create a top-level DefsModule component from the root module
-    context = ComponentLoadContext.for_module(
-        defs_root, project_root, terminate_autoloading_on_keyword_files
-    )
-
-    # Despite the argument being named defs_root, load_defs supports loading arbitrary components
-    # directly, so use get_component instead of DefsFolderComponent.get
-    root_component = check.not_none(
-        get_component(context), "Could not resolve root module to a component."
-    )
-
-    # If we did get a folder component back, assume its the root tree
     tree = (
-        ComponentTree(defs_module=defs_root, project_root=project_root)
-        if isinstance(root_component, DefsFolderComponent)
-        else None
+        LegacyAutoloadingComponentTree.from_module(defs_module=defs_root, project_root=project_root)
+        if terminate_autoloading_on_keyword_files
+        else ComponentTree.from_module(defs_module=defs_root, project_root=project_root)
     )
 
-    return Definitions.merge(
-        root_component.build_defs(context),
-        get_library_json_enriched_defs(tree),
-    )
+    return tree.build_defs()
 
 
 def get_library_json_enriched_defs(tree: Optional[ComponentTree]) -> Definitions:

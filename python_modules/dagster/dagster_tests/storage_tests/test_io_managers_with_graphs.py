@@ -1,11 +1,10 @@
-from dagster import DagsterType, In, Out, graph, job, op
-from dagster._core.storage.io_manager import IOManager, io_manager
+import dagster as dg
 
 
 def named_io_manager(storage_dict, name):
-    @io_manager
+    @dg.io_manager
     def my_io_manager(_):
-        class MyIOManager(IOManager):
+        class MyIOManager(dg.IOManager):
             def handle_output(self, context, obj):
                 storage_dict[tuple(context.get_run_scoped_output_identifier())] = {
                     "value": obj,
@@ -24,13 +23,13 @@ def named_io_manager(storage_dict, name):
 
 
 def test_graph_output():
-    @op(out=Out(io_manager_key="inner_manager"))
+    @dg.op(out=dg.Out(io_manager_key="inner_manager"))
     def my_op(_):
         return 5
 
-    @op(
-        ins={"x": In()},
-        out=Out(io_manager_key="inner_manager"),
+    @dg.op(
+        ins={"x": dg.In()},
+        out=dg.Out(io_manager_key="inner_manager"),
     )
     def my_op_takes_input(_, x):
         return x
@@ -40,11 +39,11 @@ def test_graph_output():
 
     # Only use the io managers on inner ops for handling inputs and storing outputs.
 
-    @graph
+    @dg.graph
     def my_graph():
         return my_op_takes_input(my_op())
 
-    @job(resource_defs={"inner_manager": named_io_manager(storage_dict, "inner")})
+    @dg.job(resource_defs={"inner_manager": named_io_manager(storage_dict, "inner")})
     def my_job():
         my_graph()
 
@@ -62,15 +61,15 @@ def test_graph_output():
 def test_graph_upstream_output():
     # Only use the io managers on inner ops for loading downstream inputs.
 
-    @op(out=Out(io_manager_key="inner_manager"))
+    @dg.op(out=dg.Out(io_manager_key="inner_manager"))
     def my_op(_):
         return 5
 
-    @graph
+    @dg.graph
     def my_graph():
         return my_op()
 
-    @op
+    @dg.op
     def downstream_op(_, input1):
         assert input1 == {
             "value": 5,
@@ -80,7 +79,7 @@ def test_graph_upstream_output():
 
     storage_dict = {}
 
-    @job(resource_defs={"inner_manager": named_io_manager(storage_dict, "inner")})
+    @dg.job(resource_defs={"inner_manager": named_io_manager(storage_dict, "inner")})
     def my_job():
         downstream_op(my_graph())
 
@@ -91,9 +90,9 @@ def test_graph_upstream_output():
 def test_io_manager_config_inside_composite():
     stored_dict = {}
 
-    @io_manager(output_config_schema={"output_suffix": str})
+    @dg.io_manager(output_config_schema={"output_suffix": str})
     def inner_manager(_):
-        class MyHardcodedIOManager(IOManager):
+        class MyHardcodedIOManager(dg.IOManager):
             def handle_output(self, context, obj):
                 keys = tuple(
                     context.get_run_scoped_output_identifier() + [context.config["output_suffix"]]  # pyright: ignore[reportOperatorIssue]
@@ -109,20 +108,20 @@ def test_io_manager_config_inside_composite():
 
         return MyHardcodedIOManager()
 
-    @op(out=Out(io_manager_key="inner_manager"))
+    @dg.op(out=dg.Out(io_manager_key="inner_manager"))
     def my_op(_):
         return "hello"
 
-    @op
+    @dg.op
     def my_op_takes_input(_, x):
         assert x == "hello"
         return x
 
-    @graph
+    @dg.graph
     def my_graph():
         return my_op_takes_input(my_op())
 
-    @job(resource_defs={"inner_manager": inner_manager})
+    @dg.job(resource_defs={"inner_manager": inner_manager})
     def my_job():
         my_graph()
 
@@ -141,21 +140,21 @@ def test_io_manager_config_inside_composite():
 
 
 def test_inner_inputs_connected_to_outer_dependency():
-    my_dagster_type = DagsterType(name="foo", type_check_fn=lambda _, _a: True)
+    my_dagster_type = dg.DagsterType(name="foo", type_check_fn=lambda _, _a: True)
 
-    @op(ins={"data": In(my_dagster_type)})
+    @dg.op(ins={"data": dg.In(my_dagster_type)})
     def inner_op(data):
         return data
 
-    @graph
+    @dg.graph
     def my_graph(data):
         return inner_op(data)
 
-    @op
+    @dg.op
     def top_level_op():
         return "from top_level_op"
 
-    @job
+    @dg.job
     def my_job():
         # inner_op should be connected to top_level_op
         my_graph(top_level_op())
@@ -166,30 +165,30 @@ def test_inner_inputs_connected_to_outer_dependency():
 
 
 def test_inner_inputs_connected_to_nested_outer_dependency():
-    my_dagster_type = DagsterType(name="foo", type_check_fn=lambda _, _a: True)
+    my_dagster_type = dg.DagsterType(name="foo", type_check_fn=lambda _, _a: True)
 
-    @op(ins={"data": In(my_dagster_type)})
+    @dg.op(ins={"data": dg.In(my_dagster_type)})
     def inner_op(data):
         return data
 
-    @graph
+    @dg.graph
     def inner_graph(data_1):
         # source output handle should be top_level op
         return inner_op(data_1)
 
-    @graph
+    @dg.graph
     def middle_graph(data_2):
         return inner_graph(data_2)
 
-    @graph
+    @dg.graph
     def outer_graph(data_3):
         return middle_graph(data_3)
 
-    @op
+    @dg.op
     def top_level_op():
         return "from top_level_op"
 
-    @job
+    @dg.job
     def my_job():
         # inner_op should be connected to top_level_op
         outer_graph(top_level_op())

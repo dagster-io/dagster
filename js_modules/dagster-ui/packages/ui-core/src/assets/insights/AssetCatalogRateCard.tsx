@@ -2,7 +2,8 @@ import {BodyLarge, Box, Colors, Icon, Spinner} from '@dagster-io/ui-components';
 import React from 'react';
 
 import styles from './AssetCatalogRateCard.module.css';
-import {percentFormatter} from '../../ui/formatters';
+import {formatDuration, unitToShortLabel} from '../../ui/formatDuration';
+import {numberFormatterWithMaxFractionDigits, percentFormatter} from '../../ui/formatters';
 
 export interface AssetCatalogRateCardProps {
   title: string;
@@ -25,11 +26,6 @@ function pctChange(x: number, y: number): number {
   }
   return -(1 - y / x);
 }
-
-const secondsFormatter = new Intl.NumberFormat(navigator.language, {
-  style: 'unit',
-  unit: 'second',
-});
 
 function formatValues(
   valueOrNull: number | null,
@@ -57,9 +53,12 @@ function formatValues(
     };
   }
 
+  const currValueAndUnit = formatDuration(value, {unit})[0];
+  const prevValueAndUnit = formatDuration(prevValue, {unit})[0];
+
   return {
-    currValueString: secondsFormatter.format(value),
-    prevValueString: secondsFormatter.format(prevValue),
+    currValueString: `${numberFormatterWithMaxFractionDigits(2).format(currValueAndUnit.value)} ${unitToShortLabel[currValueAndUnit.unit]}`,
+    prevValueString: `${numberFormatterWithMaxFractionDigits(2).format(prevValueAndUnit.value)} ${unitToShortLabel[prevValueAndUnit.unit]}`,
     absDeltaString: percentFormatter.format(absDelta),
     hasNegativeDelta,
   };
@@ -72,19 +71,6 @@ export function AssetCatalogRateCard({
   loading,
   unit,
 }: AssetCatalogRateCardProps) {
-  const {currValueString, prevValueString, absDeltaString, hasNegativeDelta} = formatValues(
-    value,
-    prevValue,
-    unit,
-  );
-
-  const noDataAvailableCard = (
-    <div className={styles.rateCardNoDataContainer}>
-      <div className={styles.rateCardNoDataPercentContainer}>%</div>
-      No data available
-    </div>
-  );
-
   if (loading) {
     return (
       <div className={styles.rateCardContainer}>
@@ -100,7 +86,32 @@ export function AssetCatalogRateCard({
 
   return (
     <div className={styles.rateCardContainer}>
-      <BodyLarge>{title}</BodyLarge>
+      <BodyLarge style={{marginBottom: 12}}>{title}</BodyLarge>
+      <AssetCatalogRateStats value={value} prevValue={prevValue} unit={unit} />
+    </div>
+  );
+}
+
+export const AssetCatalogRateStats = ({
+  value,
+  prevValue,
+  unit,
+}: {
+  value: number | null;
+  prevValue: number | null;
+  unit: 'percent' | 'seconds';
+}) => {
+  const {currValueString, prevValueString, absDeltaString, hasNegativeDelta} = formatValues(
+    value,
+    prevValue,
+    unit,
+  );
+
+  const noDataAvailableCard = (
+    <div className={styles.rateCardNoDataContainer}>No data available</div>
+  );
+  return (
+    <>
       {value !== null ? (
         <div className={styles.rateCardValue}>{currValueString}</div>
       ) : (
@@ -112,7 +123,6 @@ export function AssetCatalogRateCard({
             className={styles.rateCardDeltaRow}
             flex={{direction: 'row', alignItems: 'center', gap: 4}}
           >
-            <Icon name="trending_up" color={Colors.textLight()} size={16} />
             <span className={styles.rateCardDelta}>
               <>New this period</>
             </span>
@@ -121,14 +131,14 @@ export function AssetCatalogRateCard({
           prevValue !== null &&
           value !== null && (
             <>
-              <div className={styles.rateCardPrev}>{prevValueString + ' last period'}</div>
+              <div className={styles.rateCardPrev}>{prevValueString + ' prev period'}</div>
               <Box
                 className={styles.rateCardDeltaRow}
                 flex={{direction: 'row', alignItems: 'center', gap: 4}}
               >
                 <Icon
                   name={hasNegativeDelta ? 'trending_down' : 'trending_up'}
-                  color={Colors.textLight()}
+                  color={Colors.textLighter()}
                   size={16}
                 />
                 <span className={styles.rateCardDelta}>
@@ -139,6 +149,6 @@ export function AssetCatalogRateCard({
           )
         )}
       </Box>
-    </div>
+    </>
   );
-}
+};

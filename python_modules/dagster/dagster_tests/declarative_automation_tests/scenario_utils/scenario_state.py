@@ -10,37 +10,21 @@ from dataclasses import dataclass, field
 from typing import AbstractSet, NamedTuple, Optional, Union, cast  # noqa: UP035
 from unittest import mock
 
+import dagster as dg
 from dagster import (
     AssetExecutionContext,
     AssetKey,
-    AssetsDefinition,
-    AssetSpec,
     AutoMaterializePolicy,
     DagsterRunStatus,
-    Definitions,
-    PartitionsDefinition,
     RunRequest,
-    RunsFilter,
-    SensorDefinition,
-    asset,
-    multi_asset,
-    op,
 )
-from dagster._core.definitions import materialize
-from dagster._core.definitions.asset_check_spec import AssetCheckSpec
-from dagster._core.definitions.asset_graph import AssetGraph
-from dagster._core.definitions.asset_spec import (
+from dagster._core.definitions.assets.definition.asset_spec import (
     SYSTEM_METADATA_KEY_ASSET_EXECUTION_TYPE,
     AssetExecutionType,
 )
+from dagster._core.definitions.assets.graph.asset_graph import AssetGraph
 from dagster._core.definitions.data_version import DATA_VERSION_TAG
-from dagster._core.definitions.decorators.asset_check_decorator import asset_check
-from dagster._core.definitions.definitions_class import create_repository_using_definitions_args
-from dagster._core.definitions.events import (
-    AssetMaterialization,
-    AssetObservation,
-    CoercibleToAssetKey,
-)
+from dagster._core.definitions.events import CoercibleToAssetKey
 from dagster._core.definitions.executor_definition import in_process_executor
 from dagster._core.definitions.repository_definition.repository_definition import (
     RepositoryDefinition,
@@ -50,8 +34,8 @@ from dagster._core.definitions.repository_definition.valid_definitions import (
 )
 from dagster._core.execution.api import create_execution_plan
 from dagster._core.instance import DagsterInstance
+from dagster._core.remote_origin import InProcessCodeLocationOrigin
 from dagster._core.remote_representation.external_data import RepositorySnap
-from dagster._core.remote_representation.origin import InProcessCodeLocationOrigin
 from dagster._core.storage.tags import PARTITION_NAME_TAG
 from dagster._core.test_utils import (
     InProcessTestWorkspaceLoadTarget,
@@ -77,7 +61,7 @@ def get_code_location_origin(
     """Hacky method to allow us to point a code location at a module-scoped attribute, even though
     the attribute is not defined until the scenario is run.
     """
-    repository = create_repository_using_definitions_args(
+    repository = dg.create_repository_using_definitions_args(
         name=repository_name,
         assets=scenario_spec.assets,
         executor=in_process_executor,
@@ -85,7 +69,7 @@ def get_code_location_origin(
     )
 
     return _get_code_location_origin_from_repository(
-        cast("RepositoryDefinition", repository), location_name=location_name
+        cast("dg.RepositoryDefinition", repository), location_name=location_name
     )
 
 
@@ -111,8 +95,8 @@ def _get_code_location_origin_from_repository(repository: RepositoryDefinition, 
 
 
 class MultiAssetSpec(NamedTuple):
-    specs: Sequence[AssetSpec]
-    partitions_def: Optional[PartitionsDefinition] = None
+    specs: Sequence[dg.AssetSpec]
+    partitions_def: Optional[dg.PartitionsDefinition] = None
     can_subset: bool = False
 
 
@@ -120,17 +104,17 @@ class MultiAssetSpec(NamedTuple):
 class ScenarioSpec:
     """A construct for declaring and modifying a desired Definitions object."""
 
-    asset_specs: Sequence[Union[AssetSpec, MultiAssetSpec]]
-    check_specs: Sequence[AssetCheckSpec] = field(default_factory=list)
+    asset_specs: Sequence[Union[dg.AssetSpec, MultiAssetSpec]]
+    check_specs: Sequence[dg.AssetCheckSpec] = field(default_factory=list)
     current_time: datetime.datetime = field(default_factory=lambda: get_current_datetime())
-    sensors: Sequence[SensorDefinition] = field(default_factory=list)
+    sensors: Sequence[dg.SensorDefinition] = field(default_factory=list)
     additional_repo_specs: Sequence["ScenarioSpec"] = field(default_factory=list)
 
-    def with_sensors(self, sensors: Sequence[SensorDefinition]) -> "ScenarioSpec":
+    def with_sensors(self, sensors: Sequence[dg.SensorDefinition]) -> "ScenarioSpec":
         return dataclasses.replace(self, sensors=sensors)
 
     @property
-    def assets(self) -> Sequence[AssetsDefinition]:
+    def assets(self) -> Sequence[dg.AssetsDefinition]:
         def compute_fn(context: AssetExecutionContext) -> None:
             fail_keys = {
                 AssetKey.from_coercible(s)
@@ -144,7 +128,7 @@ class ScenarioSpec:
         for spec in self.asset_specs:
             if isinstance(spec, MultiAssetSpec):
 
-                @multi_asset(**spec._asdict())
+                @dg.multi_asset(**spec._asdict())
                 def _multi_asset(context: AssetExecutionContext):
                     return compute_fn(context)
 
@@ -157,10 +141,10 @@ class ScenarioSpec:
                 # create an observable_source_asset or regular asset depending on the execution type
                 if execution_type == AssetExecutionType.OBSERVATION:
 
-                    @op
+                    @dg.op
                     def noop(): ...
 
-                    osa = AssetsDefinition(
+                    osa = dg.AssetsDefinition(
                         specs=[spec],
                         execution_type=execution_type,
                         keys_by_output_name={"result": spec.key},
@@ -176,20 +160,20 @@ class ScenarioSpec:
                         "group_name",
                         "code_version",
                         "automation_condition",
-                        "freshness_policy",
+                        "legacy_freshness_policy",
                         "partitions_def",
                         "metadata",
                     }
 
                     assets.append(
-                        asset(
+                        dg.asset(
                             compute_fn=compute_fn,
                             **{k: v for k, v in spec._asdict().items() if k in params},
                         )
                     )
         for check_spec in self.check_specs:
 
-            @asset_check(  # pyright: ignore[reportArgumentType]
+            @dg.asset_check(  # pyright: ignore[reportArgumentType]
                 asset=check_spec.asset_key,
                 name=check_spec.key.name,
                 blocking=check_spec.blocking,
@@ -201,8 +185,8 @@ class ScenarioSpec:
         return assets
 
     @property
-    def defs(self) -> Definitions:
-        return Definitions(assets=self.assets, sensors=self.sensors)
+    def defs(self) -> dg.Definitions:
+        return dg.Definitions(assets=self.assets, sensors=self.sensors)
 
     @property
     def asset_graph(self) -> AssetGraph:
@@ -269,7 +253,7 @@ class ScenarioState:
     """A reference to the state of a specific scenario alongside an instance."""
 
     scenario_spec: ScenarioSpec
-    instance: DagsterInstance = field(default_factory=lambda: DagsterInstance.ephemeral())
+    instance: dg.DagsterInstance = field(default_factory=lambda: DagsterInstance.ephemeral())
     logger: logging.Logger = field(default_factory=lambda: logging.getLogger(__name__))
 
     @property
@@ -297,7 +281,7 @@ class ScenarioState:
 
     def _with_run_with_status_for_assets(
         self,
-        asset_keys: AbstractSet[AssetKey],
+        asset_keys: AbstractSet[dg.AssetKey],
         partition_key: Optional[str],
         status: DagsterRunStatus,
     ) -> Self:
@@ -345,7 +329,7 @@ class ScenarioState:
 
         with freeze_time(self.current_time), mock.patch("time.time", new=test_time_fn):
             for rr in run_requests:
-                materialize(
+                dg.materialize(
                     assets=self.scenario_spec.assets,
                     instance=self.instance,
                     partition_key=rr.partition_key,
@@ -364,7 +348,7 @@ class ScenarioState:
     def with_reported_materialization(
         self, asset_key: CoercibleToAssetKey, partition_key: Optional[str] = None
     ) -> Self:
-        mat = AssetMaterialization(
+        mat = dg.AssetMaterialization(
             asset_key=asset_key,
             partition=partition_key,
         )
@@ -377,7 +361,7 @@ class ScenarioState:
         partition_key: Optional[str] = None,
         data_version: Optional[str] = None,
     ) -> Self:
-        obs = AssetObservation(
+        obs = dg.AssetObservation(
             asset_key=asset_key,
             partition=partition_key,
             tags={DATA_VERSION_TAG: data_version} if data_version else None,
@@ -391,7 +375,7 @@ class ScenarioState:
         This allows us to "freeze" runs in a particular state to help observe how conditions react
         to certain statuses, then have them complete at a time of our choosing.
         """
-        runs = self.instance.get_runs(filters=RunsFilter(statuses=[status]))
+        runs = self.instance.get_runs(filters=dg.RunsFilter(statuses=[status]))
         for run in runs:
             self.instance.delete_run(run_id=run.run_id)
         return self.with_runs(

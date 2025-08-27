@@ -3,14 +3,9 @@ from collections.abc import Mapping, Sequence
 from typing import Optional, Union
 from unittest import mock
 
+import dagster as dg
 import pytest
-from dagster import get_dagster_logger, reconstructable, resource
-from dagster._core.definitions.decorators import op
-from dagster._core.definitions.decorators.job_decorator import job
-from dagster._core.definitions.job_definition import JobDefinition
 from dagster._core.definitions.reconstruct import ReconstructableJob
-from dagster._core.execution.api import execute_job
-from dagster._core.test_utils import instance_for_test
 
 
 def _reset_logging() -> None:
@@ -29,7 +24,7 @@ def reset_logging():
 
 
 def get_log_records(
-    job_def: Union[JobDefinition, ReconstructableJob],
+    job_def: Union[dg.JobDefinition, ReconstructableJob],
     managed_loggers: Optional[Sequence[str]] = None,
     python_logging_level: Optional[str] = None,
     run_config: Optional[Mapping[str, object]] = None,
@@ -44,11 +39,11 @@ def get_log_records(
     if python_logs_overrides:
         overrides["python_logs"] = python_logs_overrides
 
-    with instance_for_test(overrides=overrides) as instance:
-        if isinstance(job_def, JobDefinition):
+    with dg.instance_for_test(overrides=overrides) as instance:
+        if isinstance(job_def, dg.JobDefinition):
             result = job_def.execute_in_process(run_config=run_config, instance=instance)
         else:
-            result = execute_job(job_def, instance=instance, run_config=run_config)
+            result = dg.execute_job(job_def, instance=instance, run_config=run_config)
         assert result.success
         event_records = instance.event_log_storage.get_logs_for_run(result.run_id)
     return [er for er in event_records if er.user_message]
@@ -68,11 +63,11 @@ def test_logging_capture_logger_defined_outside(managed_logs, expect_output, res
     logger = logging.getLogger("python_logger")
     logger.setLevel(logging.INFO)
 
-    @op
+    @dg.op
     def my_op():
         logger.info("some info")
 
-    @job
+    @dg.job
     def my_job():
         my_op()
 
@@ -100,13 +95,13 @@ def test_logging_capture_logger_defined_outside(managed_logs, expect_output, res
     ],
 )
 def test_logging_capture_logger_defined_inside(managed_logs, expect_output, reset_logging):
-    @op
+    @dg.op
     def my_op():
         logger = logging.getLogger("python_logger")
         logger.setLevel(logging.INFO)
         logger.info("some info")
 
-    @job
+    @dg.job
     def my_job():
         my_op()
 
@@ -137,26 +132,26 @@ def test_logging_capture_resource(managed_logs, expect_output, reset_logging):
     python_log = logging.getLogger("python_logger")
     python_log.setLevel(logging.DEBUG)
 
-    @resource
+    @dg.resource
     def foo_resource():
         def fn():
             python_log.info("log from resource %s", "foo")
 
         return fn
 
-    @resource
+    @dg.resource
     def bar_resource():
         def fn():
             python_log.info("log from resource %s", "bar")
 
         return fn
 
-    @op(required_resource_keys={"foo", "bar"})
+    @dg.op(required_resource_keys={"foo", "bar"})
     def process(context):
         context.resources.foo()
         context.resources.bar()
 
-    @job(resource_defs={"foo": foo_resource, "bar": bar_resource})
+    @dg.job(resource_defs={"foo": foo_resource, "bar": bar_resource})
     def my_job():
         process()
 
@@ -174,14 +169,16 @@ def test_logging_capture_resource(managed_logs, expect_output, reset_logging):
         assert len(log_event_records) == 0
 
 
-def define_multilevel_logging_job(inside: bool, python: bool) -> JobDefinition:
+def define_multilevel_logging_job(inside: bool, python: bool) -> dg.JobDefinition:
     if not inside:
-        outside_logger = logging.getLogger("my_logger_outside") if python else get_dagster_logger()
+        outside_logger = (
+            logging.getLogger("my_logger_outside") if python else dg.get_dagster_logger()
+        )
 
-    @op
+    @dg.op
     def my_op1():
         if inside:
-            logger = logging.getLogger("my_logger_inside") if python else get_dagster_logger()
+            logger = logging.getLogger("my_logger_inside") if python else dg.get_dagster_logger()
         else:
             logger = outside_logger  # pyright: ignore[reportPossiblyUnboundVariable]
         for level in [
@@ -190,10 +187,10 @@ def define_multilevel_logging_job(inside: bool, python: bool) -> JobDefinition:
         ]:
             logger.log(level, "foobar%s", "baz")
 
-    @op
+    @dg.op
     def my_op2(_in):
         if inside:
-            logger = logging.getLogger("my_logger_inside") if python else get_dagster_logger()
+            logger = logging.getLogger("my_logger_inside") if python else dg.get_dagster_logger()
         else:
             logger = outside_logger  # pyright: ignore[reportPossiblyUnboundVariable]
         for level in [
@@ -203,7 +200,7 @@ def define_multilevel_logging_job(inside: bool, python: bool) -> JobDefinition:
         ]:
             logger.log(level=level, msg="foobarbaz")
 
-    @job
+    @dg.job
     def my_job():
         my_op2(my_op1())
 
@@ -323,13 +320,13 @@ def test_logging_capture_builtin_inside(log_level, expected_msgs, reset_logging)
 def define_logging_job():
     loggerA = logging.getLogger("loggerA")
 
-    @op
+    @dg.op
     def opA():
         loggerA.debug("loggerA")
         loggerA.info("loggerA")
         return 1
 
-    @op
+    @dg.op
     def opB(_in):
         loggerB = logging.getLogger("loggerB")
         loggerB.debug("loggerB")
@@ -337,7 +334,7 @@ def define_logging_job():
         loggerA.debug("loggerA")
         loggerA.info("loggerA")
 
-    @job
+    @dg.job
     def foo_job():
         opB(opA())
 
@@ -364,7 +361,7 @@ def define_logging_job():
 )
 def test_execution_logging(managed_loggers, run_config, reset_logging):
     log_records = get_log_records(
-        reconstructable(define_logging_job),
+        dg.reconstructable(define_logging_job),
         managed_loggers=managed_loggers,
         python_logging_level="INFO",
         run_config=run_config,
@@ -379,7 +376,7 @@ def test_execution_logging(managed_loggers, run_config, reset_logging):
 
 @pytest.mark.parametrize("managed_loggers", [["root"], ["loggerA", "loggerB"]])
 def test_failure_logging(managed_loggers, reset_logging):
-    with instance_for_test(
+    with dg.instance_for_test(
         overrides={
             "python_logs": {
                 "managed_python_loggers": managed_loggers,
@@ -387,8 +384,8 @@ def test_failure_logging(managed_loggers, reset_logging):
             }
         }
     ) as instance:
-        result = execute_job(
-            reconstructable(define_logging_job),
+        result = dg.execute_job(
+            dg.reconstructable(define_logging_job),
             run_config={"execution": {"config": {"in_process": {}}}},
             instance=instance,
         )
@@ -412,8 +409,8 @@ def test_failure_logging(managed_loggers, reset_logging):
             return orig_handle_new_event(event)
 
         with mock.patch.object(instance, "handle_new_event", _fake_handle_new_event):
-            result = execute_job(
-                reconstructable(define_logging_job),
+            result = dg.execute_job(
+                dg.reconstructable(define_logging_job),
                 run_config={"execution": {"config": {"in_process": {}}}},
                 instance=instance,
             )
@@ -442,8 +439,8 @@ def test_failure_logging(managed_loggers, reset_logging):
             instance, "handle_new_event", side_effect=Exception("failed writing event")
         ):
             with pytest.raises(Exception, match="failed writing event"):
-                execute_job(
-                    reconstructable(define_logging_job),
+                dg.execute_job(
+                    dg.reconstructable(define_logging_job),
                     run_config={"execution": {"config": {"in_process": {}}}},
                     instance=instance,
                 )

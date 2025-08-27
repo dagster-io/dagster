@@ -150,7 +150,7 @@ class ADLS2PickleIOManager(ConfigurableIOManager):
         def asset2(asset1):
             return df[:5]
 
-        defs = Definitions(
+        Definitions(
             assets=[asset1, asset2],
             resources={
                 "io_manager": ADLS2PickleIOManager(
@@ -271,7 +271,7 @@ def adls2_pickle_io_manager(init_context: InitResourceContext) -> PickledObjectA
         def asset2(asset1):
             return df[:5]
 
-        defs = Definitions(
+        Definitions(
             assets=[asset1, asset2],
             resources={
                 "io_manager": adls2_pickle_io_manager.configured(

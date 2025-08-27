@@ -2,11 +2,11 @@ import {Box, Colors, FontFamily, Icon, Tooltip} from '@dagster-io/ui-components'
 import isEqual from 'lodash/isEqual';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
-import {FeatureFlag} from 'shared/app/FeatureFlags.oss';
+import {observeEnabled} from 'shared/app/observeEnabled.oss';
 import styled, {CSSObject} from 'styled-components';
 
 import {ASSET_NODE_HOVER_EXPAND_HEIGHT} from './AssetNode2025';
-import {AssetNodeFacet} from './AssetNodeFacets';
+import {AssetNodeFacet} from './AssetNodeFacetsUtil';
 import {AssetNodeHealthRow} from './AssetNodeHealthRow';
 import {AssetNodeMenuProps, useAssetNodeMenu} from './AssetNodeMenu';
 import {buildAssetNodeStatusContent} from './AssetNodeStatusContent';
@@ -19,7 +19,6 @@ import {
 } from './layout';
 import {gql} from '../apollo-client';
 import {AssetNodeFragment} from './types/AssetNode.types';
-import {featureEnabled} from '../app/Flags';
 import {withMiddleTruncation} from '../app/Util';
 import {useAssetHealthData} from '../asset-data/AssetHealthDataProvider';
 import {useAssetLiveData} from '../asset-data/AssetLiveDataProvider';
@@ -72,7 +71,7 @@ export const AssetNode = React.memo(({definition, selected, onChangeAssetSelecti
             <PartitionCountTags definition={definition} liveData={liveData} />
           )}
         </Box>
-        {featureEnabled(FeatureFlag.flagUseNewObserveUIs) ? (
+        {observeEnabled() ? (
           <AssetNodeHealthRow definition={definition} liveData={liveData} />
         ) : (
           <AssetNodeStatusRow definition={definition} liveData={liveData} />
@@ -97,6 +96,7 @@ export const AssetNode = React.memo(({definition, selected, onChangeAssetSelecti
 }, isEqual);
 
 export const AssetNameRow = ({definition}: {definition: AssetNodeFragment}) => {
+  // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
   const displayName = definition.assetKey.path[definition.assetKey.path.length - 1]!;
 
   return (
@@ -209,7 +209,7 @@ type AssetNodeMinimalProps = {
 };
 
 export const AssetNodeMinimal = (props: AssetNodeMinimalProps) => {
-  return featureEnabled(FeatureFlag.flagUseNewObserveUIs) ? (
+  return observeEnabled() ? (
     <AssetNodeMinimalWithHealth {...props} />
   ) : (
     <AssetNodeMinimalOld {...props} />
@@ -227,6 +227,7 @@ export const AssetNodeMinimalWithHealth = ({
   const {liveData: healthData} = useAssetHealthData(assetKey);
   const health = healthData?.assetHealth;
 
+  // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
   const displayName = assetKey.path[assetKey.path.length - 1]!;
   const isChanged = definition.changedReasons.length;
   const isStale = isAssetStale(liveData);
@@ -303,6 +304,7 @@ export const AssetNodeMinimalOld = ({
   const {liveData} = useAssetLiveData(assetKey);
 
   const {border, background} = buildAssetNodeStatusContent({assetKey, definition, liveData});
+  // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
   const displayName = assetKey.path[assetKey.path.length - 1]!;
 
   const isChanged = definition.changedReasons.length;

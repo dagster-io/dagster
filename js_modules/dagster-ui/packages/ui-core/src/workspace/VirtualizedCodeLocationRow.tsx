@@ -1,7 +1,6 @@
 import {Box, Colors, JoinedButtons, MiddleTruncate} from '@dagster-io/ui-components';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
-import {FeatureFlag} from 'shared/app/FeatureFlags.oss';
 import styled from 'styled-components';
 
 import {CodeLocationMenu} from './CodeLocationMenu';
@@ -17,7 +16,6 @@ import {
 import {DUNDER_REPO_NAME, buildRepoAddress} from './buildRepoAddress';
 import {repoAddressAsHumanString} from './repoAddressAsString';
 import {workspacePathFromAddress} from './workspacePath';
-import {featureEnabled} from '../app/Flags';
 import {AnchorButton} from '../ui/AnchorButton';
 import {TimeFromNow} from '../ui/TimeFromNow';
 import {HeaderCell, HeaderRow, RowCell} from '../ui/VirtualizedTable';
@@ -37,9 +35,7 @@ export type CodeLocationRowType =
       status: CodeLocationRowStatusType;
     };
 
-const TEMPLATE_COLUMNS = featureEnabled(FeatureFlag.flagDocsInApp)
-  ? '3fr 1fr 1fr 160px 160px'
-  : '3fr 1fr 1fr 160px';
+const TEMPLATE_COLUMNS = '3fr 1fr 1fr 160px 160px';
 
 interface LocationRowProps {
   locationEntry: WorkspaceRepositoryLocationNode | null;
@@ -76,19 +72,17 @@ export const VirtualizedCodeLocationRow = React.forwardRef(
               <TimeFromNow unixTimestamp={locationStatus.updateTimestamp} />
             </div>
           </RowCell>
-          {featureEnabled(FeatureFlag.flagDocsInApp) ? (
-            <RowCell>
-              {hasDocs ? (
-                <div>
-                  <AnchorButton to={workspacePathFromAddress(repoAddress, '/docs')}>
-                    View docs
-                  </AnchorButton>
-                </div>
-              ) : (
-                <span style={{color: Colors.textLighter()}}>None</span>
-              )}
-            </RowCell>
-          ) : null}
+          <RowCell>
+            {hasDocs ? (
+              <div>
+                <AnchorButton to={workspacePathFromAddress(repoAddress, '/docs')}>
+                  View docs
+                </AnchorButton>
+              </div>
+            ) : (
+              <span style={{color: Colors.textLighter()}}>None</span>
+            )}
+          </RowCell>
           <RowCell>
             <JoinedButtons>
               <ReloadButton location={name} />
@@ -142,19 +136,17 @@ export const VirtualizedCodeLocationRepositoryRow = React.forwardRef(
               <TimeFromNow unixTimestamp={locationStatus.updateTimestamp} />
             </div>
           </RowCell>
-          {featureEnabled(FeatureFlag.flagDocsInApp) ? (
-            <RowCell>
-              {hasDocs ? (
-                <div>
-                  <AnchorButton to={workspacePathFromAddress(repoAddress, '/docs')}>
-                    View docs
-                  </AnchorButton>
-                </div>
-              ) : (
-                <span style={{color: Colors.textLighter()}}>None</span>
-              )}
-            </RowCell>
-          ) : null}
+          <RowCell>
+            {hasDocs ? (
+              <div>
+                <AnchorButton to={workspacePathFromAddress(repoAddress, '/docs')}>
+                  View docs
+                </AnchorButton>
+              </div>
+            ) : (
+              <span style={{color: Colors.textLighter()}}>None</span>
+            )}
+          </RowCell>
           <RowCell style={{alignItems: 'flex-end'}}>
             <JoinedButtons>
               <ReloadButton location={locationStatus.name} />
@@ -173,7 +165,7 @@ export const VirtualizedCodeLocationHeader = () => {
       <HeaderCell>Name</HeaderCell>
       <HeaderCell>Status</HeaderCell>
       <HeaderCell>Updated</HeaderCell>
-      {featureEnabled(FeatureFlag.flagDocsInApp) ? <HeaderCell>Docs</HeaderCell> : null}
+      <HeaderCell>Docs</HeaderCell>
       <HeaderCell style={{textAlign: 'right'}}>Actions</HeaderCell>
     </HeaderRow>
   );

@@ -3,6 +3,8 @@ import sys
 from collections.abc import Iterator, Mapping, Sequence
 from typing import Optional, Union
 
+from dagster_shared.error import DagsterError
+
 import dagster._check as check
 from dagster._config import Field, process_config
 from dagster._core.definitions.executor_definition import (
@@ -12,11 +14,7 @@ from dagster._core.definitions.executor_definition import (
 )
 from dagster._core.definitions.reconstruct import ReconstructableJob
 from dagster._core.definitions.run_config import selector_for_named_defs
-from dagster._core.errors import (
-    DagsterError,
-    DagsterInvalidConfigError,
-    DagsterInvariantViolationError,
-)
+from dagster._core.errors import DagsterInvalidConfigError, DagsterInvariantViolationError
 from dagster._core.events import DagsterEvent, RunFailureReason
 from dagster._core.execution.api import ExecuteRunWithPlanIterable, job_execution_iterator
 from dagster._core.execution.context.logger import InitLoggerContext

@@ -1,4 +1,4 @@
-from dagster._serdes import deserialize_value
+import dagster as dg
 
 
 def test_backcompat():
@@ -7,5 +7,5 @@ def test_backcompat():
         ' ["a"]}, "check_name": "foo", "metadata": {}, "severity": {"__enum__":'
         ' "AssetCheckSeverity.ERROR"}, "success": true, "target_materialization_data": null}'
     )
-    v = deserialize_value(old_value)
+    v = dg.deserialize_value(old_value)
     assert v.passed  # pyright: ignore[reportOptionalMemberAccess,reportAttributeAccessIssue]

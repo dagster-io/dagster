@@ -1,7 +1,7 @@
 from unittest import mock
 
+import dagster as dg
 from dagster import AutomationCondition
-from dagster._core.definitions.asset_key import AssetKey
 
 from dagster_tests.declarative_automation_tests.daemon_tests.test_asset_daemon import (
     get_daemon_instance,
@@ -116,7 +116,7 @@ def test_disconnected_graphs_backfill(mock_da_request_backfills) -> None:
         assert len(new_run_requests) == 1
         assert new_run_requests[0].requires_backfill_daemon()
         assert new_run_requests[0].asset_graph_subset
-        assert new_run_requests[0].asset_graph_subset.asset_keys == {AssetKey("B")}
+        assert new_run_requests[0].asset_graph_subset.asset_keys == {dg.AssetKey("B")}
         state = state.with_runs(
             *(
                 run_request(ak, pk)
@@ -145,4 +145,4 @@ def test_disconnected_graphs_backfill(mock_da_request_backfills) -> None:
         assert new_run_requests[0].requires_backfill_daemon()
         assert new_run_requests[0].asset_graph_subset and new_run_requests[
             0
-        ].asset_graph_subset.asset_keys == {AssetKey("B"), AssetKey("D")}
+        ].asset_graph_subset.asset_keys == {dg.AssetKey("B"), dg.AssetKey("D")}

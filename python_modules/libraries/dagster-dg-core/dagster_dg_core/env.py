@@ -19,18 +19,22 @@ def get_project_specified_env_vars(dg_context: DgContext) -> Mapping[str, Sequen
     """Returns a mapping of environment variables to the components that specify
     requiring them.
     """
+    if not dg_context.has_defs_path:
+        return {}
+
     from dagster_shared.yaml_utils import parse_yamls_with_source_position
     from yaml.scanner import ScannerError
 
     env_vars = defaultdict(list)
-    for component_dir in dg_context.defs_path.rglob("*"):
-        component_path = component_dir / "defs.yaml"
 
-        if component_path.exists():
-            text = component_path.read_text()
+    for component_dir in dg_context.defs_path.rglob("*"):
+        defs_path = component_dir / "defs.yaml"
+
+        if defs_path.exists():
+            text = defs_path.read_text()
             try:
                 component_doc_trees = parse_yamls_with_source_position(
-                    text, filename=str(component_path)
+                    text, filename=str(defs_path)
                 )
             except ScannerError:
                 continue
@@ -38,7 +42,7 @@ def get_project_specified_env_vars(dg_context: DgContext) -> Mapping[str, Sequen
             for component_doc_tree in component_doc_trees:
                 specified_env_var_deps = get_specified_env_var_deps(component_doc_tree.value)
                 for key in specified_env_var_deps:
-                    env_vars[key].append(component_path.relative_to(dg_context.defs_path).parent)
+                    env_vars[key].append(defs_path.relative_to(dg_context.defs_path).parent)
     return env_vars
 
 

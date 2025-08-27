@@ -3,11 +3,12 @@ name = "{{ project_name }}"
 version = "0.1.0"
 description = "Add your description here"
 readme = "README.md"
-requires-python = ">=3.9,<3.13"
+requires-python = ">=3.9,<3.14"
 dependencies = [
     "dagster",
     "dagster-cloud",
     "dagster-dbt",
+    "dbt-core<{{ dbt_core_version_upper_bound }}",
     {%- for dbt_adapter in dbt_adapter_packages %}
     "{{ dbt_adapter }}<{{ dbt_core_version_upper_bound }}",
     {%- endfor %}
@@ -15,7 +16,7 @@ dependencies = [
 
 [project.optional-dependencies]
 dev = [
-    "dagster-webserver", 
+    "dagster-webserver",
 ]
 
 [build-system]

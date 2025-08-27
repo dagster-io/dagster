@@ -8,6 +8,7 @@ import {
   getSupplementaryDataKey,
   getTraversalDepth,
   getValue,
+  isNullValue,
 } from './util';
 import {GraphTraverser} from '../app/GraphQueryImpl';
 import {tokenForAssetKey} from '../asset-graph/Utils';
@@ -174,46 +175,72 @@ export class AntlrAssetSelectionVisitor
     if (ctx.EQUAL()) {
       value = getValue(ctx.value(1));
     }
+    const isNullKey = isNullValue(ctx.value(0));
     return new Set(
-      [...this.all_assets].filter((i) =>
-        i.node.tags.some((t) => t.key === key && (!value || t.value === value)),
-      ),
+      [...this.all_assets].filter((i) => {
+        if (i.node.tags.length > 0) {
+          return i.node.tags.some(
+            (t) => t.key === key && ((!value && t.value === '') || t.value === value),
+          );
+        }
+        return isNullKey && !value;
+      }),
     );
   }
 
   visitOwnerAttributeExpr(ctx: OwnerAttributeExprContext) {
     const value: string = getValue(ctx.value());
+    const isNull = isNullValue(ctx.value());
     return new Set(
-      [...this.all_assets].filter((i) =>
-        i.node.owners.some((o) => {
-          if (o.__typename === 'TeamAssetOwner') {
-            return o.team === value;
-          } else {
-            return o.email === value;
-          }
-        }),
-      ),
+      [...this.all_assets].filter((i) => {
+        if (i.node.owners.length > 0) {
+          return i.node.owners.some((o) => {
+            if (o.__typename === 'TeamAssetOwner') {
+              return o.team === value;
+            } else {
+              return o.email === value;
+            }
+          });
+        }
+        return isNull;
+      }),
     );
   }
 
   visitGroupAttributeExpr(ctx: GroupAttributeExprContext) {
     const value: string = getValue(ctx.value());
-    return new Set([...this.all_assets].filter((i) => i.node.groupName === value));
+    const isNull = isNullValue(ctx.value());
+    return new Set(
+      [...this.all_assets].filter((i) => {
+        if (i.node.groupName) {
+          return i.node.groupName === value;
+        }
+        return isNull;
+      }),
+    );
   }
 
   visitKindAttributeExpr(ctx: KindAttributeExprContext) {
     const value: string = getValue(ctx.value());
-    return new Set([...this.all_assets].filter((i) => i.node.kinds.some((k) => k === value)));
+    const isNull = isNullValue(ctx.value());
+    return new Set(
+      [...this.all_assets].filter((i) => {
+        if (i.node.kinds.length > 0) {
+          return i.node.kinds.some((k) => k === value);
+        }
+        return isNull;
+      }),
+    );
   }
 
   visitCodeLocationAttributeExpr(ctx: CodeLocationAttributeExprContext) {
     const value: string = getValue(ctx.value());
     const selection = new Set<AssetGraphQueryItem>();
     for (const asset of this.all_assets) {
-      const location = buildRepoPathForHuman(
-        asset.node.repository.name,
-        asset.node.repository.location.name,
-      );
+      const repository = asset.node.repository;
+      const location = repository.name
+        ? buildRepoPathForHuman(repository.name, repository.location.name)
+        : '';
       if (location === value) {
         selection.add(asset);
       }
@@ -233,6 +260,7 @@ export class AntlrAssetSelectionVisitor
     }
     return new Set(
       matchingAssetKeys
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
         .map((key) => this.allAssetsByKey.get(tokenForAssetKey(key))!)
         .filter(Boolean),
     );

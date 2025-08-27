@@ -5,7 +5,7 @@ title: Configuring Okta SCIM provisioning
 sidebar_label: Okta
 ---
 
-In this guide, we'll walk you through configuring [Okta SCIM provisioning](https://developer.okta.com/docs/concepts/scim/) for Dagster+.
+In this guide, we'll walk you through configuring [Okta SCIM provisioning](https://developer.okta.com/docs/concepts/scim) for Dagster+.
 
 :::info Limitations
 

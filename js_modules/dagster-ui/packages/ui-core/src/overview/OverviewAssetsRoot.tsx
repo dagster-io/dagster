@@ -127,6 +127,7 @@ export const OverviewAssetsRoot = ({Header, TabButton}: Props) => {
           <VirtualHeaderRow />
           <Inner $totalHeight={totalHeight}>
             {items.map(({index, key, size, start}) => {
+              // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
               const group = groupedAssets[index]!;
               return <VirtualRow key={key} start={start} height={size} group={group} />;
             })}

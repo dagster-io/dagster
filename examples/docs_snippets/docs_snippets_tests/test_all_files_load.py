@@ -23,9 +23,6 @@ EXCLUDED_FILES = {
     # setup() expects. So omit files that call setup() since they cannot be loaded without errors.
     f"{snippets_folder}/dagster-plus/deployment/serverless/runtime-environment/data_files_setup.py",
     f"{snippets_folder}/dagster-plus/deployment/serverless/runtime-environment/example_setup.py",
-    # these files are part of a completed project and the import references are failing the tests
-    f"{snippets_folder}/guides/tutorials/etl_tutorial_completed/etl_tutorial/assets.py",
-    f"{snippets_folder}/guides/tutorials/etl_tutorial_completed/etl_tutorial/definitions.py",
     # there are no components defined in the snippets and so it would fail to load
     f"{snippets_folder}/guides/components/existing-project/definitions-after.py",
     # there are no components defined in the snippets and so it would fail to load
@@ -48,8 +45,17 @@ EXCLUDED_FILES = {
     f"{snippets_folder}/guides/dg/using-resources/1-asset-one.py",
     f"{snippets_folder}/guides/dg/using-resources/2-resources-at-defs-root.py",
     f"{snippets_folder}/guides/dg/using-resources/3-resource-defs-at-project-root.py",
+    f"{snippets_folder}/guides/dg/adding-components-to-existing-project/2-definitions-before.py",
+    f"{snippets_folder}/guides/dg/adding-components-to-existing-project/6-definitions.py",
     f"{snippets_folder}/guides/components/integrations/dlt-component/5-loads.py",
     f"{snippets_folder}/guides/components/integrations/dlt-component/7-customized-loads.py",
+    # resources are defined in a separate file so import references are failing tests
+    f"{snippets_folder}/guides/operate/configuration/env_vars_and_secrets/assets.py",
+    f"{snippets_folder}/guides/operate/configuration/run_config/asset_example/assets.py",
+    f"{snippets_folder}/guides/operate/configuration/run_config/op_example/ops.py",
+    f"{snippets_folder}/guides/operate/configuration/run_config/providing_config_values/assets.py",
+    f"{snippets_folder}/guides/operate/configuration/run_config/using_env_vars/assets.py",
+    f"{snippets_folder}/guides/operate/configuration/run_config/validation/assets.py",
     # migrated from legacy `docs_snippets/`
     f"{snippets_folder}/concepts/assets/asset_group_module.py",
     f"{snippets_folder}/concepts/assets/asset_input_managers_numpy.py",
@@ -130,6 +136,8 @@ EXCLUDED_FILES = {
     f"{snippets_folder}/tutorial/connecting/connecting_with_config.py",
     f"{snippets_folder}/tutorial/connecting/connecting_with_envvar.py",
     f"{snippets_folder}/tutorial/scheduling/with_schedule/with_schedule.py",
+    f"{snippets_folder}/guides/dagster/dagster_pipes/databricks/resources.py",
+    f"{snippets_folder}/guides/tutorials/spark_connect/databricks_resources.py",
 }
 EXCLUDED_DIRS = {
     # integrations are excluded because they have external dependencies that are easier to manage in

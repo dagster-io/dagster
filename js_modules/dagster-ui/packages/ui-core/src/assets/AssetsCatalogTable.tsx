@@ -55,9 +55,7 @@ export const AssetsCatalogTable = ({
     if (!favorites) {
       return assets ?? [];
     }
-    return (assets ?? []).filter((asset: AssetTableFragment) =>
-      favorites.has(tokenForAssetKey(asset.key)),
-    );
+    return (assets ?? []).filter((asset) => favorites.has(tokenForAssetKey(asset.key)));
   }, [favorites, assets]);
 
   const [errorState, setErrorState] = useState<SyntaxError[]>([]);
@@ -72,7 +70,7 @@ export const AssetsCatalogTable = ({
       },
     });
 
-  useBlockTraceUntilTrue('useAllAssets', !!assets?.length && !loading);
+  useBlockTraceUntilTrue('useAllAssets', !loading);
 
   const {displayPathForAsset, displayed} = useMemo(
     () =>

@@ -7,9 +7,9 @@ import click
 import yaml
 from dagster_shared import check
 from dagster_shared.serdes.objects import EnvRegistryKey
+from dagster_shared.seven import load_module_object
 from pydantic import BaseModel, TypeAdapter
 
-from dagster.components.core.package_entry import load_package_object
 from dagster.components.scaffold.scaffold import (
     NoParams,
     ScaffolderUnavailableReason,
@@ -36,7 +36,11 @@ def scaffold_component(
     yaml_attributes: Optional[Mapping[str, Any]] = None,
 ) -> None:
     if request.scaffold_format == "yaml":
-        with open(request.target_path / "defs.yaml", "w") as f:
+        mode = "a" if request.append else "w"
+        file_path = request.target_path if request.append else request.target_path / "defs.yaml"
+        with open(file_path, mode) as f:
+            if request.append:
+                f.write("---\n")
             component_data = {"type": request.type_name, "attributes": yaml_attributes or {}}
             yaml.dump(
                 component_data, f, Dumper=ComponentDumper, sort_keys=False, default_flow_style=False
@@ -53,11 +57,11 @@ def scaffold_component(
             f.write(
                 textwrap.dedent(
                     f"""
-                        from dagster import component, ComponentLoadContext
+                        import dagster as dg
                         from {module_path} import {class_name}
 
-                        @component_instance
-                        def load(context: ComponentLoadContext) -> {class_name}: ...
+                        @dg.component_instance
+                        def load(context: dg.ComponentLoadContext) -> {class_name}: ...
                 """
                 ).lstrip()
             )
@@ -71,15 +75,12 @@ def scaffold_object(
     json_params: Optional[str],
     scaffold_format: str,
     project_root: Optional[Path],
+    append: bool = False,
 ) -> None:
     from dagster.components.component.component import Component
 
-    click.echo(f"Creating a component at {path}.")
-    if not path.exists():
-        path.mkdir(parents=True)
-
     key = EnvRegistryKey.from_typename(typename)
-    obj = load_package_object(key)
+    obj = load_module_object(key.namespace, key.name)
 
     scaffolder = get_scaffolder(obj)
 
@@ -95,6 +96,10 @@ def scaffold_object(
 
     params_model = parse_params_model(obj=obj, json_params=json_params)
 
+    click.echo(f"Creating defs at {path}.")
+    if not path.exists():
+        path.mkdir(parents=True)
+
     scaffolder.scaffold(
         ScaffoldRequest(
             type_name=typename,
@@ -102,10 +107,11 @@ def scaffold_object(
             scaffold_format=cast("ScaffoldFormatOptions", scaffold_format),
             project_root=project_root,
             params=params_model,
+            append=append,
         ),
     )
 
-    if isinstance(obj, type) and issubclass(obj, Component):
+    if isinstance(obj, type) and issubclass(obj, Component) and not append:
         defs_yaml_path = path / "defs.yaml"
         component_py_path = path / "component.py"
         if not (defs_yaml_path.exists() or component_py_path.exists()):

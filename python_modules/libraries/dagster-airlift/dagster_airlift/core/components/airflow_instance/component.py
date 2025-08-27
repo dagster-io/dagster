@@ -4,7 +4,7 @@ from typing import Annotated, Any, Literal, Optional, Union
 
 from dagster import Component, ComponentLoadContext, Resolvable
 from dagster._core.definitions.asset_key import AssetKey
-from dagster._core.definitions.asset_spec import (
+from dagster._core.definitions.assets.definition.asset_spec import (
     SYSTEM_METADATA_KEY_AUTO_CREATED_STUB_ASSET,
     AssetSpec,
 )
@@ -13,11 +13,7 @@ from dagster.components.component_scaffolding import scaffold_component
 from dagster.components.core.defs_module import DefsFolderComponent, find_components_from_context
 from dagster.components.resolved.base import resolve_fields
 from dagster.components.resolved.context import ResolutionContext
-from dagster.components.resolved.core_models import (
-    AssetPostProcessor,
-    ResolvedAssetKey,
-    ResolvedAssetSpec,
-)
+from dagster.components.resolved.core_models import ResolvedAssetKey, ResolvedAssetSpec
 from dagster.components.resolved.model import Resolver
 from dagster.components.scaffold.scaffold import Scaffolder, ScaffoldRequest, scaffold_with
 from pydantic import BaseModel
@@ -196,7 +192,6 @@ class AirflowInstanceComponent(Component, Resolvable):
     filter: Optional[ResolvedAirflowFilter] = None
     mappings: Optional[Sequence[AirflowDagMapping]] = None
     source_code_retrieval_enabled: Optional[bool] = None
-    asset_post_processors: Optional[Sequence[AssetPostProcessor]] = None
 
     def _get_instance(self) -> dg_airlift_core.AirflowInstance:
         return dg_airlift_core.AirflowInstance(
@@ -205,15 +200,12 @@ class AirflowInstanceComponent(Component, Resolvable):
         )
 
     def build_defs(self, context: ComponentLoadContext) -> Definitions:
-        defs = build_job_based_airflow_defs(
+        return build_job_based_airflow_defs(
             airflow_instance=self._get_instance(),
             mapped_defs=apply_mappings(defs_from_subdirs(context), self.mappings or []),
             source_code_retrieval_enabled=self.source_code_retrieval_enabled,
             retrieval_filter=self.filter or AirflowFilter(),
         )
-        for post_processor in self.asset_post_processors or []:
-            defs = post_processor(defs)
-        return defs
 
 
 def defs_from_subdirs(context: ComponentLoadContext) -> Definitions:
@@ -221,7 +213,6 @@ def defs_from_subdirs(context: ComponentLoadContext) -> Definitions:
     return DefsFolderComponent(
         path=context.path,
         children=find_components_from_context(context),
-        asset_post_processors=None,
     ).build_defs(context)
 
 
@@ -265,7 +256,7 @@ def apply_mappings(defs: Definitions, mappings: Sequence[AirflowDagMapping]) -> 
             return spec.merge_attributes(metadata={handle.metadata_key: [handle.as_dict]})
         return spec
 
-    return Definitions.merge(
+    return Definitions.merge_unbound_defs(
         defs.map_resolved_asset_specs(func=spec_mapper), Definitions(assets=additional_assets)
     )
 

@@ -24,7 +24,7 @@ const TEST_GRAPH: AssetGraphQueryItem[] = [
   {
     name: 'B',
     node: buildAssetNode({
-      tags: [buildDefinitionTag({key: 'foo', value: 'baz'})],
+      tags: [buildDefinitionTag({key: 'foo', value: ''})],
       kinds: ['python', 'snowflake'],
     }),
     inputs: [{dependsOn: [{solid: {name: 'A'}}]}],
@@ -32,7 +32,16 @@ const TEST_GRAPH: AssetGraphQueryItem[] = [
   },
   {
     name: 'B2',
-    node: buildAssetNode(),
+    node: buildAssetNode({
+      repository: buildRepository({
+        name: '',
+        location: buildRepositoryLocation({name: ''}),
+      }),
+      owners: [],
+      tags: [],
+      groupName: undefined,
+      kinds: [],
+    }),
     inputs: [{dependsOn: [{solid: {name: 'A'}}]}],
     outputs: [{dependedBy: [{solid: {name: 'C'}}]}],
   },
@@ -149,7 +158,7 @@ describe('parseAssetSelectionQuery', () => {
     });
 
     it('should parse tag query', () => {
-      assertQueryResult('tag:foo', ['A', 'B']);
+      assertQueryResult('tag:foo', ['B']);
       assertQueryResult('tag:foo=bar', ['A']);
     });
 
@@ -168,6 +177,26 @@ describe('parseAssetSelectionQuery', () => {
 
     it('should parse code location query', () => {
       assertQueryResult('code_location:"repo@my_location"', ['C']);
+    });
+
+    it('should be able to filter to assets without any code location', () => {
+      assertQueryResult('code_location:<null>', ['B2']);
+    });
+
+    it('should be able to filter to assets without any tags', () => {
+      assertQueryResult('tag:<null>', ['B2', 'C']);
+    });
+
+    it('should be able to filter to assets without any owners', () => {
+      assertQueryResult('owner:<null>', ['B', 'B2', 'C']);
+    });
+
+    it('should be able to filter to assets without any group', () => {
+      assertQueryResult('group:<null>', ['B2']);
+    });
+
+    it('should be able to filter to assets without any kind', () => {
+      assertQueryResult('kind:<null>', ['A', 'B2', 'C']);
     });
   });
 });

@@ -2,8 +2,8 @@ import os
 import re
 from pathlib import Path
 
+import dagster as dg
 from click.testing import CliRunner
-from dagster import file_relative_path
 from dagster._cli.project import (
     from_example_command,
     scaffold_code_location_command,
@@ -143,7 +143,7 @@ def test_from_example_command_default_name():
 
 def test_available_examples_in_sync_with_example_folder():
     # ensure the list of AVAILABLE_EXAMPLES is in sync with the example folder minus EXAMPLES_TO_IGNORE
-    example_folder = Path(file_relative_path(__file__, "../../../../examples"))
+    example_folder = Path(dg.file_relative_path(__file__, "../../../../examples"))
     available_examples_in_folder = [
         e
         for e in os.listdir(example_folder)

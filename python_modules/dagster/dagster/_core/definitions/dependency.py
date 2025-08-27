@@ -34,7 +34,7 @@ from dagster._record import record
 from dagster._utils.tags import normalize_tags
 
 if TYPE_CHECKING:
-    from dagster._core.definitions.asset_layer import AssetLayer
+    from dagster._core.definitions.assets.job.asset_layer import AssetLayer
     from dagster._core.definitions.composition import MappedInputPlaceholder
     from dagster._core.definitions.graph_definition import GraphDefinition
     from dagster._core.definitions.node_definition import NodeDefinition
@@ -45,6 +45,7 @@ T_DependencyKey = TypeVar("T_DependencyKey", str, "NodeInvocation")
 DependencyMapping: TypeAlias = Mapping[T_DependencyKey, Mapping[str, "IDependencyDefinition"]]
 
 
+@public
 class NodeInvocation(
     NamedTuple(
         "Node",
@@ -623,6 +624,7 @@ class IDependencyDefinition(ABC):
         """The result passed to the corresponding input will be a List made from different node outputs."""
 
 
+@public
 class DependencyDefinition(
     NamedTuple(
         "_DependencyDefinition", [("node", str), ("output", str), ("description", Optional[str])]
@@ -640,11 +642,13 @@ class DependencyDefinition(
 
     .. code-block:: python
 
+        from dagster import DependencyDefinition
+
         dependency_structure = {
             'my_downstream_op': {
                 'input': DependencyDefinition('my_upstream_op', 'result')
-            }
-            'my_downstream_op': {
+            },
+            'my_other_downstream_op': {
                 'input': DependencyDefinition('my_upstream_graph', 'result')
             }
         }
@@ -654,6 +658,8 @@ class DependencyDefinition(
     :py:func:`@job <job>` API:
 
     .. code-block:: python
+
+        from dagster import job
 
         @job
         def the_job():
@@ -692,6 +698,7 @@ class DependencyDefinition(
         return [self]
 
 
+@public
 class MultiDependencyDefinition(
     NamedTuple(
         "_MultiDependencyDefinition",

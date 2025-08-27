@@ -1,6 +1,6 @@
+import dagster as dg
 import pytest
-from dagster import AssetMaterialization, AssetSelection, DagsterInstance, job, op
-from dagster._core.definitions.time_window_partitions import HourlyPartitionsDefinition
+from dagster import AssetSelection, DagsterInstance
 
 from dagster_tests.declarative_automation_tests.legacy_tests.scenarios.scenarios import (
     ASSET_RECONCILIATION_SCENARIOS,
@@ -73,7 +73,7 @@ def test_reconciliation_no_tags(scenario):
 
 
 def test_bad_partition_key():
-    hourly_partitions_def = HourlyPartitionsDefinition("2013-01-05-00:00")
+    hourly_partitions_def = dg.HourlyPartitionsDefinition("2013-01-05-00:00")
     assets = [
         asset_def("hourly1", partitions_def=hourly_partitions_def),
         asset_def("hourly2", ["hourly1"], partitions_def=hourly_partitions_def),
@@ -81,11 +81,11 @@ def test_bad_partition_key():
 
     instance = DagsterInstance.ephemeral()
 
-    @op
+    @dg.op
     def materialization_op(context):
-        context.log_event(AssetMaterialization("hourly1", partition="bad partition key"))
+        context.log_event(dg.AssetMaterialization("hourly1", partition="bad partition key"))
 
-    @job
+    @dg.job
     def materialization_job():
         materialization_op()
 

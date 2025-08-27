@@ -66,7 +66,7 @@ def test_databricks_submit_job_existing_cluster(mock_submit_run, databricks_run_
     )
 
     databricks_run_config["install_default_libraries"] = False
-    expected_task.libraries = None
+    expected_task.libraries = []
 
     runner.submit_run(databricks_run_config, task)
     mock_submit_run.assert_called_with(
@@ -135,6 +135,7 @@ def test_databricks_submit_job_new_cluster(mock_submit_run, databricks_run_confi
         spark_version=NEW_CLUSTER["spark_version"],
         num_workers=NEW_CLUSTER["size"]["num_workers"],
         custom_tags={"__dagster_version": dagster.__version__},
+        init_scripts=[],
     )
     expected_task.libraries = [
         compute.Library(pypi=compute.PythonPyPiLibrary(package=f"dagster=={dagster.__version__}")),

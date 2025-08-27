@@ -2,9 +2,8 @@ import enum
 import os
 from collections.abc import Mapping
 
+import dagster as dg
 import pytest
-from dagster import Config, ConfigurableResource, Definitions, EnvVar, asset
-from dagster._core.errors import DagsterInvalidConfigError
 from dagster._core.test_utils import environ
 
 
@@ -15,21 +14,21 @@ def test_env_var() -> None:
         }
     ):
 
-        class ResourceWithString(ConfigurableResource):
+        class ResourceWithString(dg.ConfigurableResource):
             a_str: str
 
         executed = {}
 
-        @asset
+        @dg.asset
         def an_asset(a_resource: ResourceWithString):
             assert a_resource.a_str == "SOME_VALUE"
             executed["yes"] = True
 
-        defs = Definitions(
+        defs = dg.Definitions(
             assets=[an_asset],
             resources={
                 "a_resource": ResourceWithString(
-                    a_str=EnvVar("ENV_VARIABLE_FOR_TEST"),
+                    a_str=dg.EnvVar("ENV_VARIABLE_FOR_TEST"),
                 )
             },
         )
@@ -46,13 +45,13 @@ def test_env_var_data_structure() -> None:
         }
     ):
 
-        class ResourceWithString(ConfigurableResource):
+        class ResourceWithString(dg.ConfigurableResource):
             my_list: list[str]
             my_dict: Mapping[str, str]
 
         executed = {}
 
-        @asset
+        @dg.asset
         def an_asset(a_resource: ResourceWithString):
             assert len(a_resource.my_list) == 2
             assert a_resource.my_list[0] == "hello"
@@ -62,14 +61,14 @@ def test_env_var_data_structure() -> None:
             assert a_resource.my_dict["bar"] == "world"
             executed["yes"] = True
 
-        defs = Definitions(
+        defs = dg.Definitions(
             assets=[an_asset],
             resources={
                 "a_resource": ResourceWithString(
-                    my_list=[EnvVar("FOO"), EnvVar("BAR")],  # type: ignore[arg-type]
+                    my_list=[dg.EnvVar("FOO"), dg.EnvVar("BAR")],  # type: ignore[arg-type]
                     my_dict={
-                        "foo": EnvVar("FOO"),
-                        "bar": EnvVar("BAR"),
+                        "foo": dg.EnvVar("FOO"),
+                        "bar": dg.EnvVar("BAR"),
                     },
                 )
             },
@@ -82,25 +81,25 @@ def test_env_var_data_structure() -> None:
 def test_runtime_config_env_var() -> None:
     out_txt = []
 
-    class WriterResource(ConfigurableResource):
+    class WriterResource(dg.ConfigurableResource):
         prefix: str
 
         def output(self, text: str) -> None:
             out_txt.append(f"{self.prefix}{text}")
 
-    @asset
+    @dg.asset
     def hello_world_asset(writer: WriterResource):
         writer.output("hello, world!")
 
-    defs = Definitions(
+    defs = dg.Definitions(
         assets=[hello_world_asset],
         resources={"writer": WriterResource.configure_at_launch()},
     )
 
     with environ({"MY_PREFIX_FOR_TEST": "greeting: "}):
-        with pytest.raises(DagsterInvalidConfigError):
+        with pytest.raises(dg.DagsterInvalidConfigError):
             defs.resolve_implicit_global_asset_job_def().execute_in_process(
-                {"resources": {"writer": {"config": {"prefix": EnvVar("MY_PREFIX_FOR_TEST")}}}}
+                {"resources": {"writer": {"config": {"prefix": dg.EnvVar("MY_PREFIX_FOR_TEST")}}}}
             )
 
         # Ensure fully unstructured run config option works
@@ -115,24 +114,24 @@ def test_env_var_err() -> None:
     if "UNSET_ENV_VAR" in os.environ:
         del os.environ["UNSET_ENV_VAR"]
 
-    class ResourceWithString(ConfigurableResource):
+    class ResourceWithString(dg.ConfigurableResource):
         a_str: str
 
-    @asset
+    @dg.asset
     def an_asset(a_resource: ResourceWithString):
         pass
 
     # No error constructing the resource, only at runtime
-    defs = Definitions(
+    defs = dg.Definitions(
         assets=[an_asset],
         resources={
             "a_resource": ResourceWithString(
-                a_str=EnvVar("UNSET_ENV_VAR"),
+                a_str=dg.EnvVar("UNSET_ENV_VAR"),
             )
         },
     )
     with pytest.raises(
-        DagsterInvalidConfigError,
+        dg.DagsterInvalidConfigError,
         match=(
             'You have attempted to fetch the environment variable "UNSET_ENV_VAR" which is not set.'
         ),
@@ -140,39 +139,39 @@ def test_env_var_err() -> None:
         defs.resolve_implicit_global_asset_job_def().execute_in_process()
 
     # Test using runtime configuration of the resource
-    defs = Definitions(
+    defs = dg.Definitions(
         assets=[an_asset],
         resources={"a_resource": ResourceWithString.configure_at_launch()},
     )
     with pytest.raises(
-        DagsterInvalidConfigError,
+        dg.DagsterInvalidConfigError,
         match="Invalid use of environment variable wrapper.",
     ):
         defs.resolve_implicit_global_asset_job_def().execute_in_process(
-            {"resources": {"a_resource": {"config": {"a_str": EnvVar("UNSET_ENV_VAR_RUNTIME")}}}}
+            {"resources": {"a_resource": {"config": {"a_str": dg.EnvVar("UNSET_ENV_VAR_RUNTIME")}}}}
         )
 
 
 def test_env_var_nested_resources() -> None:
-    class ResourceWithString(ConfigurableResource):
+    class ResourceWithString(dg.ConfigurableResource):
         a_str: str
 
-    class OuterResource(ConfigurableResource):
+    class OuterResource(dg.ConfigurableResource):
         inner: ResourceWithString
 
     executed = {}
 
-    @asset
+    @dg.asset
     def an_asset(a_resource: OuterResource):
         assert a_resource.inner.a_str == "SOME_VALUE"
         executed["yes"] = True
 
-    defs = Definitions(
+    defs = dg.Definitions(
         assets=[an_asset],
         resources={
             "a_resource": OuterResource(
                 inner=ResourceWithString(
-                    a_str=EnvVar("ENV_VARIABLE_FOR_TEST"),
+                    a_str=dg.EnvVar("ENV_VARIABLE_FOR_TEST"),
                 )
             )
         },
@@ -188,25 +187,25 @@ def test_env_var_nested_resources() -> None:
 
 
 def test_env_var_nested_config() -> None:
-    class NestedWithString(Config):
+    class NestedWithString(dg.Config):
         a_str: str
 
-    class OuterResource(ConfigurableResource):
+    class OuterResource(dg.ConfigurableResource):
         inner: NestedWithString
 
     executed = {}
 
-    @asset
+    @dg.asset
     def an_asset(a_resource: OuterResource):
         assert a_resource.inner.a_str == "SOME_VALUE"
         executed["yes"] = True
 
-    defs = Definitions(
+    defs = dg.Definitions(
         assets=[an_asset],
         resources={
             "a_resource": OuterResource(
                 inner=NestedWithString(
-                    a_str=EnvVar("ENV_VARIABLE_FOR_TEST"),
+                    a_str=dg.EnvVar("ENV_VARIABLE_FOR_TEST"),
                 )
             )
         },
@@ -226,22 +225,22 @@ def test_env_var_alongside_enum() -> None:
         FOO = "foofoo"
         BAR = "barbar"
 
-    class ResourceWithStringAndEnum(ConfigurableResource):
+    class ResourceWithStringAndEnum(dg.ConfigurableResource):
         a_str: str
         my_enum: MyEnum
 
     executed = {}
 
-    @asset
+    @dg.asset
     def an_asset(a_resource: ResourceWithStringAndEnum):
         executed["yes"] = True
         return a_resource.my_enum.name, a_resource.a_str
 
-    defs = Definitions(
+    defs = dg.Definitions(
         assets=[an_asset],
         resources={
             "a_resource": ResourceWithStringAndEnum(
-                a_str=EnvVar("ENV_VARIABLE_FOR_TEST"),
+                a_str=dg.EnvVar("ENV_VARIABLE_FOR_TEST"),
                 my_enum=MyEnum.FOO,
             )
         },
@@ -273,15 +272,15 @@ def test_env_var_err_at_instantiation() -> None:
     if "UNSET_ENV_VAR" in os.environ:
         del os.environ["UNSET_ENV_VAR"]
 
-    class ResourceWithString(ConfigurableResource):
+    class ResourceWithString(dg.ConfigurableResource):
         a_str: str
 
     with pytest.raises(
-        DagsterInvalidConfigError,
+        dg.DagsterInvalidConfigError,
         match=(
             'You have attempted to fetch the environment variable "UNSET_ENV_VAR" which is not set.'
         ),
     ):
         ResourceWithString(
-            a_str=EnvVar("UNSET_ENV_VAR"),
+            a_str=dg.EnvVar("UNSET_ENV_VAR"),
         ).process_config_and_initialize()

@@ -1,12 +1,12 @@
 import time
 
-from dagster import asset
+import dagster as dg
 
 print("WAITING 10 seconds")  # noqa
 time.sleep(10)
 print("DONE WAITING")  # noqa
 
 
-@asset
+@dg.asset
 def my_asset():
     pass

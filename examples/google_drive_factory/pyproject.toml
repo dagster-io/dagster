@@ -3,7 +3,7 @@ name = "google_drive_factory"
 version = "0.1.0"
 description = "Dagster project to show factory patterns"
 readme = "README.md"
-requires-python = ">=3.9,<3.13"
+requires-python = ">=3.9,<3.14"
 dependencies = [
     "dagster",
     "dagster-cloud",
@@ -18,7 +18,7 @@ dependencies = [
 
 [project.optional-dependencies]
 dev = [
-    "dagster-webserver", 
+    "dagster-webserver",
     "pytest",
     "ruff",
 ]

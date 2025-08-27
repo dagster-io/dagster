@@ -8,7 +8,7 @@ from dagster_shared.yaml_utils import load_yaml_from_path
 import dagster._check as check
 from dagster._core.code_pointer import rebase_file
 from dagster._core.instance import DagsterInstance
-from dagster._core.remote_representation.origin import (
+from dagster._core.remote_origin import (
     CodeLocationOrigin,
     GrpcServerCodeLocationOrigin,
     ManagedGrpcPythonEnvCodeLocationOrigin,

@@ -4,7 +4,7 @@ description: 'Learn to integrate Snowflake with Dagster using a Snowflake resour
 sidebar_position: 200
 ---
 
-This tutorial focuses on how to store and load Dagster's [asset definitions](/guides/build/assets/defining-assets) in Snowflake by using Dagster's <PyObject section="libraries" object="SnowflakeResource" module="dagster_snowflake" />. A [**resource**](/guides/build/external-resources/) allows you to directly run SQL queries against tables within an asset's compute function.
+This tutorial focuses on how to store and load Dagster's [asset definitions](/guides/build/assets/defining-assets) in Snowflake by using Dagster's <PyObject section="libraries" object="SnowflakeResource" module="dagster_snowflake" />. A [**resource**](/guides/build/external-resources) allows you to directly run SQL queries against tables within an asset's compute function.
 
 By the end of the tutorial, you will:
 
@@ -13,7 +13,7 @@ By the end of the tutorial, you will:
 - Load Snowflake tables in downstream assets
 - Add the assets and Snowflake resource to a `Definitions` object
 
-**Prefer to use an I/O manager?** Unlike resources, an [I/O manager](/guides/build/io-managers/) transfers the responsibility of storing and loading DataFrames as Snowflake tables to Dagster. Refer to the [Snowlake I/O manager guide](/integrations/libraries/snowflake/using-snowflake-with-dagster-io-managers) for more info.
+**Prefer to use an I/O manager?** Unlike resources, an [I/O manager](/guides/build/io-managers) transfers the responsibility of storing and loading DataFrames as Snowflake tables to Dagster. Refer to the [Snowlake I/O manager guide](/integrations/libraries/snowflake/using-snowflake-with-dagster-io-managers) for more info.
 
 ## Prerequisites
 

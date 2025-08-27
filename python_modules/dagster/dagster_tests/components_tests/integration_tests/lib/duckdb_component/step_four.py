@@ -5,10 +5,7 @@ from typing import Optional
 
 import dagster as dg
 import duckdb
-from dagster import Component, ComponentLoadContext, Model, Resolvable, Scaffolder, ScaffoldRequest
-from dagster.components.component_scaffolding import scaffold_component
-from dagster.components.resolved.core_models import ResolvedAssetSpec
-from dagster.components.scaffold.scaffold import scaffold_with
+from dagster import ComponentLoadContext
 from pydantic import BaseModel
 
 
@@ -17,25 +14,25 @@ class DuckDbScaffolderParams(BaseModel):
     asset_key: Optional[str]
 
 
-class DuckDbComponentScaffolder(Scaffolder[DuckDbScaffolderParams]):
-    def scaffold(self, request: ScaffoldRequest[DuckDbScaffolderParams]) -> None:
+class DuckDbComponentScaffolder(dg.Scaffolder[DuckDbScaffolderParams]):
+    def scaffold(self, request: dg.ScaffoldRequest[DuckDbScaffolderParams]) -> None:
         root_name = request.target_path.stem
         asset_key = request.params.asset_key or f"{root_name}"
         sql_file = request.params.sql_file or f"{root_name}.sql"
 
         Path(sql_file).touch()
 
-        scaffold_component(
+        dg.scaffold_component(
             request=request,
             yaml_attributes={"sql_file": sql_file, "assets": [{"key": asset_key}]},
         )
 
 
-@scaffold_with(DuckDbComponentScaffolder)
-class DuckDbComponent(Component, Model, Resolvable):
+@dg.scaffold_with(DuckDbComponentScaffolder)
+class DuckDbComponent(dg.Component, dg.Model, dg.Resolvable):
     """A component that allows you to write SQL without learning dbt or Dagster's concepts."""
 
-    assets: Sequence[ResolvedAssetSpec]
+    assets: Sequence[dg.ResolvedAssetSpec]
     sql_file: str
 
     def build_defs(self, context: ComponentLoadContext) -> dg.Definitions:

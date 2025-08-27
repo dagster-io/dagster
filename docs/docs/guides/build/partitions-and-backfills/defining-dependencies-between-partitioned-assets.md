@@ -5,6 +5,10 @@ sidebar_label: Partitioning dependencies
 sidebar_position: 200
 ---
 
+import ScaffoldAsset from '@site/docs/partials/\_ScaffoldAsset.md';
+
+<ScaffoldAsset />
+
 Now that you've seen how to model partitioned assets in different ways, you may want to define dependencies between the partitioned assets, or even between unpartitioned assets.
 
 Partitioned assets in Dagster can have dependencies on other partitioned assets, allowing you to create complex data pipelines where the output of one partitioned asset feeds into another. Here's how it works:
@@ -29,7 +33,7 @@ Default partition dependency rules can be overridden by providing a <PyObject se
 
 To override partition dependency rules for basic asset dependencies, you can use <PyObject section="assets" module="dagster" object="AssetDep" /> to specify the partition dependency on an upstream asset:
 
-<CodeExample path="docs_snippets/docs_snippets/concepts/partitions_schedules_sensors/partitioned_asset_mappings.py" />
+<CodeExample path="docs_snippets/docs_snippets/concepts/partitions_schedules_sensors/partitioned_asset_mappings.py" title="src/<project_name>/defs/assets.py" />
 
 ### Managed-loading asset dependencies
 
@@ -37,7 +41,7 @@ To override partition dependency rules for managed-loading asset dependencies, y
 
 In the following code, we use a <PyObject section="partitions" module="dagster" object="TimeWindowPartitionMapping" /> to specify that each partition of a daily-partitioned asset should depend on the prior day's partition in an upstream asset:
 
-<CodeExample path="docs_snippets/docs_snippets/concepts/partitions_schedules_sensors/partition_mapping.py" />
+<CodeExample path="docs_snippets/docs_snippets/concepts/partitions_schedules_sensors/partition_mapping.py" title="src/<project_name>/defs/assets.py" />
 
 For a list of available `PartitionMappings`, see the [API docs](/api/dagster/partitions#dagster.PartitionMapping). Note that custom `PartitionMapping` and overriding `PartitionMapping` outside of Dagster is not currently supported.
 
@@ -50,7 +54,7 @@ The following example creates two partitions: `daily_sales_data` and `daily_sale
 <details>
 <summary>Show example</summary>
 
-<CodeExample path="docs_snippets/docs_snippets/guides/data-modeling/partitioning/time_based_partitioning.py" language="python" />
+<CodeExample path="docs_snippets/docs_snippets/guides/data-modeling/partitioning/time_based_partitioning.py" language="python" title="src/<project_name>/defs/assets.py" />
 
 </details>
 
@@ -58,7 +62,7 @@ However, sometimes you might want to define dependencies between different time-
 
 Consider the following example:
 
-<CodeExample path="docs_snippets/docs_snippets/guides/data-modeling/partitioning/time_based_partition_dependencies.py" language="python" />
+<CodeExample path="docs_snippets/docs_snippets/guides/data-modeling/partitioning/time_based_partition_dependencies.py" language="python" title="src/<project_name>/defs/assets.py"/>
 
 In this example:
 
@@ -75,7 +79,7 @@ In this example:
 
 :::tip
 
-We recommend using [automation conditions](/guides/automate/declarative-automation/) instead of [schedules](/guides/automate/schedules) for code with complex dependency logic, such as the example above. Automation conditions specify when an asset should run, which allows you to define execution criteria without needing to add custom scheduling logic.
+We recommend using [automation conditions](/guides/automate/declarative-automation) instead of [schedules](/guides/automate/schedules) for code with complex dependency logic, such as the example above. Automation conditions specify when an asset should run, which allows you to define execution criteria without needing to add custom scheduling logic.
 
 :::
 

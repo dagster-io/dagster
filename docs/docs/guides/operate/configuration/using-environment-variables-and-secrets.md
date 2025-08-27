@@ -8,14 +8,18 @@ Environment variables, which are key-value pairs configured outside your source 
 
 Using environment variables, you can define various configuration options for your Dagster application and securely set up secrets. For example, instead of hard-coding database credentials - which is bad practice and cumbersome for development - you can use environment variables to supply user details. This allows you to parameterize your pipeline without modifying code or insecurely storing sensitive data.
 
+:::info
+
+For more information on using environment variables with [Dagster components](/guides/build/components), see [Using environment variables with components](/guides/build/components/using-environment-variables-in-components).
+
+:::
+
 ## Declaring environment variables
 
 How environment variables are declared depends on whether you're developing locally or have already deployed your Dagster project.
 
 <Tabs>
 <TabItem value="Local development">
-
-**Local development**
 
 As of Dagster 1.1.0, using `.env` files is supported for loading environment variables into local environments. A `.env` file is a text file containing key-value pairs that is used locally, but not checked into source control. Using a `.env` file allows you to develop and test locally without putting sensitive info at risk. For example:
 
@@ -28,16 +32,15 @@ DATABASE_USERNAME=salesteam
 DATABASE_PASSWORD=supersecretstagingpassword
 ```
 
-If Dagster detects a `.env` file in the same folder where `dagster-webserver` or `dagster-daemon` is launched, it will automatically load the environment variables in the file. This also applies to variables [exported from Dagster+](/deployment/dagster-plus/management/environment-variables/dagster-ui#export)
+If Dagster detects a `.env` file in the same folder where the [webserver](/guides/operate/webserver) is launched, it will automatically load the environment variables in the file. This also applies to variables [exported from Dagster+](/deployment/dagster-plus/management/environment-variables/dagster-ui#export)
 
 When using a `.env` file, keep the following in mind:
 
-- The `.env` file must be in the same folder where `dagster-webserver` or `dagster-daemon` is launched
-- Any time the `.env` file is modified, the workspace must be re-loaded to make the Dagster webserver/UI aware of the changes
+- The `.env` file must be in the same folder where the webserver is launched
+- Any time the `.env` file is modified, the workspace must be re-loaded to make the Dagster webserver aware of the changes
 
+</TabItem>
 <TabItem value="Dagster+">
-
-**Dagster+**
 
 Environment variables can be set a variety of ways in Dagster+:
 
@@ -46,14 +49,10 @@ Environment variables can be set a variety of ways in Dagster+:
 
 If using the UI, you can also [export locally-scoped variables to a `.env` file](/deployment/dagster-plus/management/environment-variables/dagster-ui#export), which you can then use to develop locally.
 
-Refer to the [Dagster+ environment variables guide](/deployment/dagster-plus/management/environment-variables/) for more info.
-
-</TabItem>
+Refer to the [Dagster+ environment variables guide](/deployment/dagster-plus/management/environment-variables) for more info.
 
 </TabItem>
 <TabItem value="Dagster open source">
-
-**Dagster open source**
 
 How environment variables are set for Dagster projects deployed on your infrastructure depends on **where** Dagster is deployed. Refer to the deployment guide for your platform for more info:
 
@@ -69,12 +68,25 @@ How environment variables are set for Dagster projects deployed on your infrastr
 
 In this section, we'll demonstrate how to access environment variables once they've been declared. There are two ways to do this:
 
-- [In Python code](#in-python-code), which isn't specific to Dagster
+- [In Python code](#in-python-code)
 - [From Dagster configuration](#from-dagster-configuration), which incorporates environment variables into the Dagster config system
 
 ### In Python code
 
-To access environment variables in your Dagster code, you can use [`os.getenv`](https://docs.python.org/3/library/os.html#os.getenv):
+To access environment variables in your code, you can either use the [`os.getenv`](https://docs.python.org/3/library/os.html#os.getenv) function or the Dagster <PyObject section="resources" module="dagster" object="EnvVar"/> class.
+
+- **When you use `os.getenv`**, the variable's value is retrieved when Dagster loads the code location and **will** be visible in the UI.
+- **When you use EnvVar**, the variable's value is retrieved at runtime and **won't** be visible in the UI.
+
+Using the `EnvVar` approach has a few unique benefits:
+
+- **Improved observability.** The UI will display information about configuration values sourced from environment variables.
+- **Secret values are hidden in the UI.** Secret values are hidden in the Launchpad, Resources page, and other places where configuration is displayed.
+- **Simplified testing.** Because you can provide string values directly to configuration rather than environment variables, testing may be easier.
+
+#### os.getenv function
+
+Below is an example of retrieving an environment variable with `os.getenv`:
 
 ```python
 import os
@@ -82,7 +94,7 @@ import os
 database_name = os.getenv("DATABASE_NAME")
 ```
 
-This approach also works for accessing [built-in environment variables for Dagster+](/deployment/dagster-plus/management/environment-variables/built-in):
+You can also use `os.getenv` to access [built-in environment variables for Dagster+](/deployment/dagster-plus/management/environment-variables/built-in):
 
 ```python
 import os
@@ -92,45 +104,43 @@ deployment_name = os.getenv("DAGSTER_CLOUD_DEPLOYMENT_NAME")
 
 For a real-world example, see the [Dagster+ branch deployments example](#dagster-branch-deployments).
 
-You can also call the `get_value()` method on the `EnvVar`:
+#### Dagster EnvVar class
+
+To use the `EnvVar` approach, call the `get_value()` method on the Dagster <PyObject section="resources" module="dagster" object="EnvVar"/> class:
 
 ```python
-from dagster import EnvVar
+import dagster as dg
 
-database_name = EnvVar('DATABASE_NAME').get_value()
+database_name = dg.EnvVar('DATABASE_NAME').get_value()
 ```
 
 ### From Dagster configuration
 
-[Configurable Dagster objects](/guides/operate/configuration/run-configuration) - such as ops, assets, resources, I/O managers, and so on - can accept configuration from environment variables. Dagster provides a native way to specify environment variables in your configuration. These environment variables are retrieved at launch time, rather than on initialization as with `os.getenv`. Refer to the [next section](#using-envvar-vs-osgetenv) for more info.
+[Configurable Dagster objects](/guides/operate/configuration/run-configuration) (such as ops, assets, resources, I/O managers, and so on) can accept configuration from environment variables with `EnvVar`. These environment variables are retrieved at launch time, rather than on initialization as with `os.getenv`.
 
 <Tabs>
 <TabItem value="In Python code">
 
-**In Python code**
-
 To access an environment variable as part of a Dagster configuration in Python code, you may use the following special syntax:
 
 ```python
-"PARAMETER_NAME": EnvVar("ENVIRONMENT_VARIABLE_NAME")
+"PARAMETER_NAME": dg.EnvVar("ENVIRONMENT_VARIABLE_NAME")
 ```
 
 For example:
 
 ```python
-"access_token": EnvVar("GITHUB_ACCESS_TOKEN")
+"access_token": dg.EnvVar("GITHUB_ACCESS_TOKEN")
 ```
 
 And when specifying an integer number:
 
 ```python
-"database_port": EnvVar.int("DATABASE_PORT")
+"database_port": dg.EnvVar.int("DATABASE_PORT")
 ```
 
 </TabItem>
 <TabItem value="In YAML or config dictionaries">
-
-**In YAML or config dictionaries**
 
 To access an environment variable as part of a Dagster configuration in YAML or in a config dictionary, use the following syntax:
 
@@ -144,88 +154,72 @@ For example:
 "access_token": {"env": "GITHUB_ACCESS_TOKEN"}
 ```
 
-Refer to the [Handling secrets section](#handling-secrets) and [Per-environment configuration example](#per-environment-configuration-example) for examples.
+For more information, see the [Handling secrets](#handling-secrets) and [Per-environment configuration](#per-environment-configuration) sections.
 
 </TabItem>
 </Tabs>
 
-### Using EnvVar vs os.getenv
-
-We just covered two different ways to access environment variables in Dagster. So, which one should you use? When choosing an approach, keep the following in mind:
-
-- **When `os.getenv` is used**, the variable's value is retrieved when Dagster loads the [code location](/deployment/code-locations) and **will** be visible in the UI.
-- **When `EnvVar` is used**, the variable's value is retrieved at runtime and **won't** be visible in the UI.
-
-Using the `EnvVar` approach has a few unique benefits:
-
-- **Improved observability.** The UI will display information about configuration values sourced from environment variables.
-- **Secret values are hidden in the UI.** Secret values are hidden in the Launchpad, Resources page, and other places where configuration is displayed.
-- **Simplified testing.** Because you can provide string values directly to configuration rather than environment variables, testing may be easier.
-
 ## Handling secrets
 
-Using environment variables to provide secrets ensures sensitive info won't be visible in your code or the launchpad in the UI. In Dagster, best practice for handling secrets uses [configuration](/guides/operate/configuration/run-configuration) and [resources](/guides/build/external-resources/).
+:::note
 
-A resource is typically used to connect to an external service or system, such as a database. Resources can be configured separately from the rest of your app, allowing you to define it once and reuse it as needed.
+The example code in this section follows the structure of a Dagster project created with the [`create-dagster CLI](/api/clis/create-dagster). To create a Dagster project with this structure, see [Creating a new Dagster project](/guides/build/projects/creating-a-new-project).
 
-Let's take a look at an example from the [Dagster Crash Course](https://dagster.io/blog/dagster-crash-course-oct-2022), which creates a GitHub resource and supplies it to assets. Let's start by looking at the resource:
+:::
 
-```python
-## resources.py
+Using environment variables to provide secrets ensures sensitive information won't be visible in your code or the launchpad in the UI. In Dagster, we recommend using [configuration](/guides/operate/configuration/run-configuration) and [resources](/guides/build/external-resources) to manage secrets.
 
-from dagster import StringSource, resource
-from github import Github
+A resource is typically used to connect to an external service or system, such as a database. Resources can be configured separately from your assets, allowing you to define them once and reuse them as needed.
 
-class GithubClientResource(ConfigurableResource):
-  access_token: str
-
-  def get_client(self) -> Github:
-    return Github(self.access_token)
-```
-
-Let's review what's happening here:
-
-- This code creates a GitHub resource named `GithubClientResource`
-- By subclassing <PyObject section="resources" module="dagster" object="ConfigurableResource" /> and specifying the `access_token` field, we're telling Dagster that we want to be able to configure the resource with an `access_token` parameter
-- Since `access_token` is a string value, this config parameter can either be:
-  - An environment variable, or
-  - Provided directly in the configuration
-
-As storing secrets in configuration is bad practice, we'll opt for using an environment variable. In this code, we're configuring the resource supplying it to our assets:
+Let's take a look at an example that creates a resource called `SomeResource` and supplies it to assets. Let's start by looking at the resource:
 
 <CodeExample
-  path="docs_snippets/docs_snippets/guides/dagster/using_environment_variables_and_secrets/repository.py"
-  startAfter="start"
-  endBefore="end"
+  path="docs_snippets/docs_snippets/guides/operate/configuration/env_vars_and_secrets/resources.py"
+  title="src/<project_name>/defs/resources.py"
 />
 
 Let's review what's happening here:
 
-- We pass configuration info to the resource when we construct it. In this example, we're telling Dagster to load the `access_token` from the `GITHUB_ACCESS_TOKEN` environment variable by wrapping it in `EnvVar`.
-- We're adding that resource to our <PyObject section="definitions" module="dagster" object="Definitions" /> object so it's available for our assets.
+- This code creates a resource named `SomeResource`
+- By subclassing <PyObject section="resources" module="dagster" object="ConfigurableResource" /> and specifying the `access_token` field, we're telling Dagster that we want to be able to configure the resource with an `access_token` parameter, which is a string value
+
+By including a reference to `SomeResource` in a `@dg.definitions`-decorated function, we make that resource available to assets defined elsewhere in the `src/<project_name>/defs` directory:
+
+<CodeExample
+  path="docs_snippets/docs_snippets/guides/operate/configuration/env_vars_and_secrets/assets.py"
+  title="src/<project_name>/defs/assets.py"
+  startAfter="start"
+  endBefore="end"
+/>
+
+As storing secrets in configuration is bad practice, we'll use an environment variable:
+
+<CodeExample
+  path="docs_snippets/docs_snippets/guides/operate/configuration/env_vars_and_secrets/resources_v2.py"
+  title="src/<project_name>/defs/resources.py"
+/>
+
+In this code, we pass configuration information to the resource when we construct it. In this example, we're telling Dagster to load the `access_token` from the `MY_ACCESS_TOKEN` environment variable by wrapping it in `dg.EnvVar`.
 
 ## Parameterizing pipeline behavior
 
 Using environment variables, you define how your code should execute at runtime.
 
-- [Per-environment configuration example](#per-environment-configuration-example)
+### Per-environment configuration
 
-### Per-environment configuration example
-
-In this example, we'll demonstrate how to use different I/O manager configurations for `local` and `production` environments using [configuration](/guides/operate/configuration/run-configuration) (specifically the configured API) and [resources](/guides/build/external-resources/).
+In this example, we'll demonstrate how to use different I/O manager configurations for `local` and `production` environments using [configuration](/guides/operate/configuration/run-configuration) (specifically the configured API) and [resources](/guides/build/external-resources).
 
 This example is adapted from the [Transitioning data pipelines from development to production guide](/guides/operate/dev-to-prod):
 
 <CodeExample
-  path="docs_snippets/docs_snippets/guides/dagster/using_environment_variables_and_secrets/repository_v2.py"
-  startAfter="start_new"
-  endBefore="end_new"
+  path="docs_snippets/docs_snippets/guides/operate/configuration/env_vars_and_secrets/per_env_config.py"
+  title="src/<project_name>/defs/resources.py"
 />
 
 Let's review what's happening here:
 
-- We've created a dictionary of resource definitions, `resources`, named after our `local` and `production` environments. In this example, we're using a [Pandas Snowflake I/O manager](/api/libraries/dagster-snowflake-pandas).
-- For both `local` and `production`, we constructed the I/O manager using environment-specific run configuration. Note the differences in configuration between `local` and `production`, specifically where environment variables were used.
+- We've created a dictionary of resource definitions called `resources`, with sections for `local` and `production` environments. In this example, we're using a [Pandas Snowflake I/O manager](/api/libraries/dagster-snowflake-pandas).
+- For both `local` and `production`, we constructed the I/O manager using environment-specific run configuration.
 - Following the `resources` dictionary, we define the `deployment_name` variable, which determines the current executing environment. This variable defaults to `local`, ensuring that `DAGSTER_DEPLOYMENT=PRODUCTION` must be set to use the `production` configuration.
 
 ### Dagster+ branch deployments
@@ -236,9 +230,7 @@ This section is only applicable to Dagster+.
 
 :::
 
-This example demonstrates how to determine the current deployment type at runtime - [branch deployment](/deployment/dagster-plus/ci-cd/branch-deployments/) or [full deployment](/deployment/dagster-plus/full-deployments/) - without using resources or configuration.
-
-Let's look at a function that determines the current deployment using the `DAGSTER_CLOUD_IS_BRANCH_DEPLOYMENT` environment variable:
+You can determine the current deployment type ([branch deployment](/deployment/dagster-plus/ci-cd/branch-deployments) or [full deployment](/deployment/dagster-plus/full-deployments)) at runtime with the `DAGSTER_CLOUD_IS_BRANCH_DEPLOYMENT` environment variable. Using this information, you can write code that executes differently when in a branch deployment or a full deployment.
 
 ```python
 
@@ -249,9 +241,7 @@ def get_current_env():
 
 ```
 
-This function checks the value of `DAGSTER_CLOUD_IS_BRANCH_DEPLOYMENT` and, if equal to `1`, returns a variable with the value of `branch`. This indicates that the current deployment is a branch deployment. Otherwise, the deployment is a full deployment and is_branch_depl will be returned with a value of prod.
-
-Using this info, we can write code that executes differently when in a branch deployment or a full deployment.
+This function checks the value of `DAGSTER_CLOUD_IS_BRANCH_DEPLOYMENT` and, if equal to `1`, returns a variable with the value of `branch`. This indicates that the current deployment is a branch deployment. Otherwise, the deployment is a full deployment and `is_branch_depl` will be returned with a value of `prod`.
 
 ## Troubleshooting
 

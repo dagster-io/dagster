@@ -1,0 +1,73 @@
+.activityChart {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 2px;
+  color: var(--color-text-light);
+}
+
+.tileContainer {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  border-radius: 2px;
+  cursor: pointer;
+}
+
+.placeholderTile {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  border-radius: 2px;
+  background-color: var(--color-background-light);
+}
+
+.tileContainer:hover .placeholderTile {
+  box-shadow: inset 0 0 0 1px var(--tile-hover-color);
+}
+
+.tileButton {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  border-radius: 2px;
+  border: 0;
+  transition: background-color 150ms;
+  background-color: var(--tile-color);
+  cursor: pointer;
+  padding: 0;
+}
+
+.tileButton:hover {
+  background-color: var(--tile-hover-color);
+}
+
+.activityChartContainer {
+  padding: 16px 24px;
+  border-radius: 12px;
+  border: 1px solid var(--color-keyline-default);
+}
+
+.activityChartRow {
+  display: grid;
+  grid-template-columns: 42px 1fr;
+  gap: 12px;
+}
+
+.activityChartRowInnerGrid {
+  display: grid;
+  gap: 2px;
+  grid-template-columns: repeat(24, 1fr);
+  grid-template-rows: 16px;
+}
+
+.activityChartBottomLegend {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  align-self: stretch;
+  gap: 6px;
+}
+
+.popover {
+  pointer-events: none;
+}

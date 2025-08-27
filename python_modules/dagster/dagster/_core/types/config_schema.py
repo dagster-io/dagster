@@ -4,6 +4,7 @@ from typing import TYPE_CHECKING, AbstractSet, Any, Callable, Iterator, Optional
 from typing_extensions import TypeAlias
 
 import dagster._check as check
+from dagster._annotations import public
 from dagster._config import ConfigType
 from dagster._core.decorator_utils import get_function_params, validate_expected_params
 from dagster._core.definitions.resource_requirement import (
@@ -16,6 +17,7 @@ if TYPE_CHECKING:
     from dagster._core.execution.context.system import DagsterTypeLoaderContext
 
 
+@public
 class DagsterTypeLoader(ABC):
     """Dagster type loaders are used to load unconnected inputs of the dagster type they are attached
     to.
@@ -77,6 +79,7 @@ def _create_type_loader_for_decorator(
 DagsterTypeLoaderFn: TypeAlias = Callable[["DagsterTypeLoaderContext", Any], Any]
 
 
+@public
 def dagster_type_loader(
     config_schema: object, required_resource_keys: Optional[AbstractSet[str]] = None
 ) -> Callable[[DagsterTypeLoaderFn], DagsterTypeLoaderFromDecorator]:

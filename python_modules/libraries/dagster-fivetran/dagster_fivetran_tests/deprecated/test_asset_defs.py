@@ -4,7 +4,7 @@ import pytest
 import responses
 from dagster import AssetKey, DagsterStepOutputNotFoundError
 from dagster._core.definitions import materialize
-from dagster._core.definitions.asset_spec import AssetSpec
+from dagster._core.definitions.assets.definition.asset_spec import AssetSpec
 from dagster._core.test_utils import environ
 from dagster_fivetran import (
     DagsterFivetranTranslator,

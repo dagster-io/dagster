@@ -52,7 +52,7 @@ We also transformed the dataframes into NumPy arrays and removed `nan` values to
 
 ### Training the model
 
-At this point, we have `X_train`, `y_train`, `X_test`, and `y_test` ready to go for our model. To train our model, we can use any number of models from libraries like [sklearn](https://scikit-learn.org/), [TensorFlow](https://www.tensorflow.org/), and [PyTorch](https://pytorch.org/).
+At this point, we have `X_train`, `y_train`, `X_test`, and `y_test` ready to go for our model. To train our model, we can use any number of models from libraries like [sklearn](https://scikit-learn.org), [TensorFlow](https://www.tensorflow.org), and [PyTorch](https://pytorch.org).
 
 In our example, we will train an [XGBoost model](https://xgboost.readthedocs.io/en/stable/python/python_api.html#xgboost.XGBRegressor) to predict a numerical value.
 

@@ -31,7 +31,7 @@ setup(
     ],
     packages=find_packages(exclude=["dagster_wandb_tests*"]),
     include_package_data=True,
-    python_requires=">=3.9,<3.13",
+    python_requires=">=3.9,<3.14",
     install_requires=[
         f"dagster{pin}",
         "wandb>=0.15.11,<1.0",

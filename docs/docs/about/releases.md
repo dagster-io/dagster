@@ -5,7 +5,7 @@ title: Releases and compatibility
 sidebar_label: Releases
 ---
 
-We follow [semantic versioning](https://semver.org/) for compatibility between Dagster releases.
+We follow [semantic versioning](https://semver.org) for compatibility between Dagster releases.
 
 ## Dagster core
 
@@ -46,7 +46,7 @@ Like non-deprecated public stable APIs, deprecated public stable APIs won't brea
 
 ## Dagster integration libraries
 
-Dagster's integration libraries haven't yet achieved the same API maturity as Dagster core. For this reason, integration libraries remain on a pre-1.0 versioning track (in general 0.y.z of [semantic versioning](https://semver.org/) and 0.16+ as of Dagster 1.0.0) for the time being. However, 0.16+ library releases remain fully compatible with Dagster 1.x. We will graduate integration libraries one-by-one to the 1.x versioning track as they achieve API maturity.
+Dagster's integration libraries haven't yet achieved the same API maturity as Dagster core. For this reason, integration libraries remain on a pre-1.0 versioning track (in general 0.y.z of [semantic versioning](https://semver.org) and 0.16+ as of Dagster 1.0.0) for the time being. However, 0.16+ library releases remain fully compatible with Dagster 1.x. We will graduate integration libraries one-by-one to the 1.x versioning track as they achieve API maturity.
 
 While technically the 0.y.z phase of semantic versioning is "anything goes", we're conservative about making changes and will provide guidance about when to expect breaking changes:
 

@@ -6,7 +6,7 @@ describe('createAssetSelectionHint', () => {
     key: ['asset1', 'asset2', 'asset3', 'prefix/thing1', 'prefix/thing2'],
     tag: ['tag1', 'tag2', 'tag3', 'key=value1', 'key=value2'],
     owner: ['marco@dagsterlabs.com', 'team:frontend'],
-    group: ['group1', 'group2'],
+    group: ['group1', 'group2', 'star-*-group'],
     kind: ['kind1', 'kind2'],
     code_location: ['repo1@location1', 'repo2@location2', 'assumptions@location3'],
   };
@@ -207,6 +207,9 @@ describe('createAssetSelectionHint', () => {
         }),
         expect.objectContaining({
           text: 'group:"group2"',
+        }),
+        expect.objectContaining({
+          text: 'group:"star-*-group"',
         }),
         expect.objectContaining({
           text: 'code_location:"repo1@location1"',
@@ -1211,6 +1214,174 @@ describe('createAssetSelectionHint', () => {
       from: 0,
       list: [expect.objectContaining({text: 'tag:"*test*"'})],
       to: 4,
+    });
+  });
+
+  it('Treats * as a wildcard within key attribute', () => {
+    expect(testAutocomplete('key:"asset*|"')).toEqual({
+      from: 4,
+      list: [
+        expect.objectContaining({
+          text: '"asset1"',
+        }),
+        expect.objectContaining({
+          text: '"asset2"',
+        }),
+        expect.objectContaining({
+          text: '"asset3"',
+        }),
+      ],
+      to: 12,
+    });
+    expect(testAutocomplete('key:asset*|')).toEqual({
+      from: 4,
+      list: [
+        expect.objectContaining({
+          text: '"asset1"',
+        }),
+        expect.objectContaining({
+          text: '"asset2"',
+        }),
+        expect.objectContaining({
+          text: '"asset3"',
+        }),
+      ],
+      to: 10,
+    });
+
+    expect(testAutocomplete('key:*set|')).toEqual({
+      from: 4,
+      list: [
+        expect.objectContaining({
+          text: '"asset1"',
+        }),
+        expect.objectContaining({
+          text: '"asset2"',
+        }),
+        expect.objectContaining({
+          text: '"asset3"',
+        }),
+      ],
+      to: 8,
+    });
+  });
+
+  it('Ignores * in other attribute', () => {
+    expect(testAutocomplete('group:"*|"')).toEqual({
+      from: 6,
+      list: [
+        expect.objectContaining({
+          text: '"star-*-group"',
+        }),
+      ],
+      to: 9,
+    });
+    expect(testAutocomplete('owner:"*|"')).toEqual({
+      from: 6,
+      list: [
+        expect.objectContaining({
+          type: 'no-match',
+        }),
+      ],
+      to: 9,
+    });
+    expect(testAutocomplete('tag:"*|"')).toEqual({
+      from: 4,
+      list: [
+        expect.objectContaining({
+          type: 'no-match',
+        }),
+      ],
+      to: 7,
+    });
+  });
+
+  it('should not suggest + after + if supportsTraversal is false', () => {
+    const provider = createProvider({
+      attributesMap: {
+        key: [],
+        tag: [],
+        owner: [],
+        group: [],
+        kind: [],
+        code_location: [],
+      },
+      primaryAttributeKey: 'tag',
+      attributeToIcon: {
+        key: 'magnify_glass',
+        tag: 'magnify_glass',
+        owner: 'magnify_glass',
+        group: 'magnify_glass',
+        kind: 'magnify_glass',
+        code_location: 'magnify_glass',
+      },
+    });
+    const selectionHint = createSelectionAutoComplete({
+      ...provider,
+      supportsTraversal: false,
+    });
+    expect(testAutocomplete('key:"value"|', selectionHint)).toEqual({
+      from: 11,
+      // Should not suggest "+"
+      list: [expect.objectContaining({text: ' and '}), expect.objectContaining({text: ' or '})],
+      to: 11,
+    });
+  });
+
+  it('should not suggest functions if empty array passed in', () => {
+    const provider = createProvider({
+      attributesMap: {
+        key: [],
+        tag: [],
+        owner: [],
+        group: [],
+        kind: [],
+        code_location: [],
+      },
+      functions: [],
+      primaryAttributeKey: 'tag',
+      attributeToIcon: {
+        key: 'magnify_glass',
+        tag: 'magnify_glass',
+        owner: 'magnify_glass',
+        group: 'magnify_glass',
+        kind: 'magnify_glass',
+        code_location: 'magnify_glass',
+      },
+    });
+    const selectionHint = createSelectionAutoComplete(provider);
+    expect(testAutocomplete('|', selectionHint)).toEqual({
+      list: [
+        expect.objectContaining({
+          text: 'key:',
+        }),
+        expect.objectContaining({
+          text: 'tag:',
+        }),
+        expect.objectContaining({
+          text: 'owner:',
+        }),
+        expect.objectContaining({
+          text: 'group:',
+        }),
+        expect.objectContaining({
+          text: 'kind:',
+        }),
+        expect.objectContaining({
+          text: 'code_location:',
+        }),
+        expect.objectContaining({
+          text: 'not ',
+        }),
+        expect.objectContaining({
+          text: '+',
+        }),
+        expect.objectContaining({
+          text: '()',
+        }),
+      ],
+      from: 0, // cursor location
+      to: 0, // cursor location
     });
   });
 });

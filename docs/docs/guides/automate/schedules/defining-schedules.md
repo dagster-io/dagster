@@ -4,6 +4,10 @@ sidebar_position: 100
 title: Defining schedules
 ---
 
+import ScaffoldSchedule from '@site/docs/partials/\_ScaffoldSchedule.md';
+
+<ScaffoldSchedule />
+
 ## Defining basic schedules
 
 The following examples demonstrate how to define some basic schedules.
@@ -11,12 +15,13 @@ The following examples demonstrate how to define some basic schedules.
 <Tabs>
   <TabItem value="Using ScheduleDefinition">
 
-This example demonstrates how to define a schedule using <PyObject section="schedules-sensors" module="dagster" object="ScheduleDefinition" /> that will run a job every day at midnight. While this example uses op jobs, the same approach will work with [asset jobs](/guides/build/jobs/asset-jobs).
+This example demonstrates how to define a schedule using <PyObject section="schedules-sensors" module="dagster" object="ScheduleDefinition" /> that will run all assets every day at midnight.
 
 <CodeExample
   path="docs_snippets/docs_snippets/concepts/partitions_schedules_sensors/schedules/schedules.py"
   startAfter="start_basic_schedule"
   endBefore="end_basic_schedule"
+  title="src/<project_name>/defs/assets.py"
 />
 
 :::note
@@ -37,7 +42,7 @@ The `cron_schedule` argument accepts standard [cron expressions](https://en.wiki
 This example demonstrates how to define a schedule using <PyObject section="schedules-sensors" module="dagster" object="schedule" decorator />, which provides more flexibility than <PyObject section="schedules-sensors" module="dagster" object="ScheduleDefinition" />. For example, you can [configure job behavior based on its scheduled run time](/guides/automate/schedules/configuring-job-behavior) or [emit log messages](#emitting-log-messages-from-schedule-evaluation).
 
 ```python
-@schedule(job=my_job, cron_schedule="0 0 * * *")
+@schedule(target="*", cron_schedule="0 0 * * *")
 def basic_schedule(): ...
   # things the schedule does, like returning a RunRequest or SkipReason
 ```
@@ -65,6 +70,7 @@ This example demonstrates how to emit log messages from a schedule during its ev
   path="docs_snippets/docs_snippets/concepts/partitions_schedules_sensors/schedules/schedules.py"
   startAfter="start_schedule_logging"
   endBefore="end_schedule_logging"
+  title="src/<project_name>/defs/schedules.py"
 />
 
 :::note

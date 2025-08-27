@@ -51,6 +51,7 @@ _MASK_EMPTY_WARNINGS = (r"\n +warnings.warn\(message\)\n", "")
 
 
 @pytest.mark.parametrize("package_manager", ["pip", "uv"])
+@pytest.mark.flaky(max_runs=2)
 def test_components_docs_index(
     package_manager: DgTestPackageManager, update_snippets: bool
 ) -> None:
@@ -78,6 +79,9 @@ def test_components_docs_index(
                     _MASK_EMPTY_WARNINGS,
                     MASK_PLUGIN_CACHE_REBUILD,
                 ],
+                # For multi-parameter tests which share snippets, we don't want to clear the
+                # snapshot dir before updating the snippets
+                clear_snapshot_dir_before_update=False,
             )
         )
         # We need to use editable dagster in testing context
@@ -107,7 +111,7 @@ def test_components_docs_index(
                 ],
                 input_str="y\n",
                 ignore_output=True,
-                print_cmd="uvx -U create-dagster project jaffle-platform",
+                print_cmd="uvx create-dagster@latest project jaffle-platform",
             )
             context.run_command_and_snippet_output(
                 cmd="cd jaffle-platform && source .venv/bin/activate",
@@ -353,7 +357,8 @@ def test_components_docs_index(
             )
 
             # Run dbt, check works
-            _run_command("dg launch --assets '*'")
+            if not update_snippets:
+                _run_command("dg launch --assets '*'")
             context.run_command_and_snippet_output(
                 cmd='duckdb /tmp/jaffle_platform.duckdb -c "SELECT * FROM orders LIMIT 5;"',
                 snippet_path=f"{next_snip_no()}-duckdb-select-orders.txt",
@@ -454,4 +459,5 @@ def test_components_docs_index(
                 """),
             )
 
-            _run_command("dg launch --assets '* and not key:jaffle_dashboard'")
+            if not update_snippets:
+                _run_command("dg launch --assets '* and not key:jaffle_dashboard'")

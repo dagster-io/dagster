@@ -4,9 +4,11 @@ from typing import Any, Callable, Optional, Union, cast
 import dagster._check as check
 from dagster import AssetKey
 from dagster._annotations import beta, deprecated, public
-from dagster._core.definitions.cacheable_assets import CacheableAssetsDefinition
+from dagster._core.definitions.assets.definition.cacheable_assets_definition import (
+    CacheableAssetsDefinition,
+)
 from dagster._core.definitions.events import CoercibleToAssetKeyPrefix
-from dagster._core.definitions.freshness_policy import FreshnessPolicy
+from dagster._core.definitions.freshness_policy import LegacyFreshnessPolicy
 from dagster._core.definitions.resource_definition import ResourceDefinition
 from dagster._core.execution.context.init import build_init_resource_context
 from dagster._utils.merger import deep_merge_dicts
@@ -698,7 +700,7 @@ class AirbyteManagedElementCacheableAssetsDefinition(AirbyteInstanceCacheableAss
         connection_to_io_manager_key_fn: Optional[Callable[[str], Optional[str]]],
         connection_to_asset_key_fn: Optional[Callable[[AirbyteConnectionMetadata, str], AssetKey]],
         connection_to_freshness_policy_fn: Optional[
-            Callable[[AirbyteConnectionMetadata], Optional[FreshnessPolicy]]
+            Callable[[AirbyteConnectionMetadata], Optional[LegacyFreshnessPolicy]]
         ],
     ):
         defined_conn_names = {conn.name for conn in connections}
@@ -744,7 +746,7 @@ def load_assets_from_connections(
         Callable[[AirbyteConnectionMetadata, str], AssetKey]
     ] = None,
     connection_to_freshness_policy_fn: Optional[
-        Callable[[AirbyteConnectionMetadata], Optional[FreshnessPolicy]]
+        Callable[[AirbyteConnectionMetadata], Optional[LegacyFreshnessPolicy]]
     ] = None,
 ) -> CacheableAssetsDefinition:
     """Loads Airbyte connection assets from a configured AirbyteResource instance, checking against a list of AirbyteConnection objects.

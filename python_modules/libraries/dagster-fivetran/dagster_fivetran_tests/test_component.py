@@ -1,18 +1,18 @@
-# ruff: noqa: F841 TID252
-
 import copy
 from collections.abc import Iterator, Mapping
-from contextlib import contextmanager, nullcontext
+from contextlib import contextmanager
 from typing import Any, Callable, Optional
 
 import pytest
 import responses
 import yaml
-from dagster import AssetKey, ComponentLoadContext
-from dagster._core.definitions.asset_spec import AssetSpec
+from dagster import AssetKey
+from dagster._core.definitions.assets.definition.asset_spec import AssetSpec
 from dagster._core.definitions.definitions_class import Definitions
 from dagster._utils.env import environ
-from dagster.components.testing import scaffold_defs_sandbox
+from dagster.components.core.component_tree import ComponentTree
+from dagster.components.testing.test_cases import TestTranslation
+from dagster.components.testing.utils import create_defs_folder_sandbox
 from dagster_fivetran.components.workspace_component.component import FivetranAccountComponent
 from dagster_fivetran.resources import FivetranWorkspace
 from dagster_fivetran.translator import FivetranConnector
@@ -32,13 +32,18 @@ from dagster_fivetran_tests.conftest import (
 
 @contextmanager
 def setup_fivetran_component(
-    component_body: dict[str, Any],
+    defs_yaml_contents: dict[str, Any],
 ) -> Iterator[tuple[FivetranAccountComponent, Definitions]]:
     """Sets up a components project with a fivetran component based on provided params."""
-    with scaffold_defs_sandbox(
-        component_cls=FivetranAccountComponent,
-    ) as defs_sandbox:
-        with defs_sandbox.load(component_body=component_body) as (component, defs):
+    with create_defs_folder_sandbox() as sandbox:
+        defs_path = sandbox.scaffold_component(
+            component_cls=FivetranAccountComponent,
+            defs_yaml_contents=defs_yaml_contents,
+        )
+        with sandbox.load_component_and_build_defs(defs_path=defs_path) as (
+            component,
+            defs,
+        ):
             assert isinstance(component, FivetranAccountComponent)
             yield component, defs
 
@@ -67,7 +72,7 @@ def test_basic_component_load(
             }
         ),
         setup_fivetran_component(
-            component_body=BASIC_FIVETRAN_COMPONENT_BODY,
+            defs_yaml_contents=BASIC_FIVETRAN_COMPONENT_BODY,
         ) as (
             component,
             defs,
@@ -122,7 +127,7 @@ def test_basic_component_filter(
             }
         ),
         setup_fivetran_component(
-            component_body=deep_merge_dicts(
+            defs_yaml_contents=deep_merge_dicts(
                 BASIC_FIVETRAN_COMPONENT_BODY,
                 {"attributes": {"connector_selector": connector_selector}},
             ),
@@ -162,89 +167,18 @@ def test_custom_filter_fn_python(
         ),
         connector_selector=filter_fn,
         translation=None,
-    ).build_defs(ComponentLoadContext.for_test())
+    ).build_defs(ComponentTree.for_test().load_context)
     assert len(defs.resolve_asset_graph().get_all_asset_keys()) == num_assets
 
 
-@pytest.mark.parametrize(
-    "attributes, assertion, should_error",
-    [
-        ({"group_name": "group"}, lambda asset_spec: asset_spec.group_name == "group", False),
-        (
-            {"owners": ["team:analytics"]},
-            lambda asset_spec: asset_spec.owners == ["team:analytics"],
-            False,
-        ),
-        ({"tags": {"foo": "bar"}}, lambda asset_spec: asset_spec.tags.get("foo") == "bar", False),
-        (
-            {"kinds": ["snowflake", "dbt"]},
-            lambda asset_spec: "snowflake" in asset_spec.kinds and "dbt" in asset_spec.kinds,
-            False,
-        ),
-        (
-            {"tags": {"foo": "bar"}, "kinds": ["snowflake", "dbt"]},
-            lambda asset_spec: "snowflake" in asset_spec.kinds
-            and "dbt" in asset_spec.kinds
-            and asset_spec.tags.get("foo") == "bar",
-            False,
-        ),
-        ({"code_version": "1"}, lambda asset_spec: asset_spec.code_version == "1", False),
-        (
-            {"description": "some description"},
-            lambda asset_spec: asset_spec.description == "some description",
-            False,
-        ),
-        (
-            {"metadata": {"foo": "bar"}},
-            lambda asset_spec: asset_spec.metadata.get("foo") == "bar",
-            False,
-        ),
-        (
-            {"deps": ["customers"]},
-            lambda asset_spec: len(asset_spec.deps) == 1
-            and asset_spec.deps[0].asset_key == AssetKey("customers"),
-            False,
-        ),
-        (
-            {"automation_condition": "{{ automation_condition.eager() }}"},
-            lambda asset_spec: asset_spec.automation_condition is not None,
-            False,
-        ),
-        (
-            {"key": "{{ spec.key.to_user_string() + '_suffix' }}"},
-            lambda asset_spec: asset_spec.key
-            == AssetKey(["schema_name_in_destination_1", "table_name_in_destination_1_suffix"]),
-            False,
-        ),
-        (
-            {"key_prefix": "cool_prefix"},
-            lambda asset_spec: asset_spec.key.has_prefix(["cool_prefix"]),
-            False,
-        ),
-    ],
-    ids=[
-        "group_name",
-        "owners",
-        "tags",
-        "kinds",
-        "tags-and-kinds",
-        "code-version",
-        "description",
-        "metadata",
-        "deps",
-        "automation_condition",
-        "key",
-        "key_prefix",
-    ],
-)
-def test_translation(
-    fetch_workspace_data_multiple_connectors_mocks,
-    attributes: Mapping[str, Any],
-    assertion: Optional[Callable[[AssetSpec], bool]],
-    should_error: bool,
-) -> None:
-    wrapper = pytest.raises(Exception) if should_error else nullcontext()
-    with wrapper:
+class TestFivetranTranslation(TestTranslation):
+    def test_translation(
+        self,
+        fetch_workspace_data_multiple_connectors_mocks,
+        attributes: Mapping[str, Any],
+        assertion: Callable[[AssetSpec], bool],
+        key_modifier: Optional[Callable[[AssetKey], AssetKey]],
+    ) -> None:
         body = copy.deepcopy(BASIC_FIVETRAN_COMPONENT_BODY)
         body["attributes"]["translation"] = attributes
         with (
@@ -256,26 +190,18 @@ def test_translation(
                 }
             ),
             setup_fivetran_component(
-                component_body=body,
+                defs_yaml_contents=body,
             ) as (
                 component,
                 defs,
             ),
         ):
-            if "key" in attributes:
-                key = AssetKey(
-                    ["schema_name_in_destination_1", "table_name_in_destination_1_suffix"]
-                )
-            elif "key_prefix" in attributes:
-                key = AssetKey(
-                    ["cool_prefix", "schema_name_in_destination_1", "table_name_in_destination_1"]
-                )
-            else:
-                key = AssetKey(["schema_name_in_destination_1", "table_name_in_destination_1"])
+            key = AssetKey(["schema_name_in_destination_1", "table_name_in_destination_1"])
+            if key_modifier:
+                key = key_modifier(key)
 
             assets_def = defs.resolve_assets_def(key)
-            if assertion:
-                assert assertion(assets_def.get_asset_spec(key))
+            assert assertion(assets_def.get_asset_spec(key))
 
 
 @pytest.mark.parametrize(
@@ -289,11 +215,13 @@ def test_translation(
     ids=["no_params", "all_params", "just_account_id", "just_credentials"],
 )
 def test_scaffold_component_with_params(scaffold_params: dict):
-    with scaffold_defs_sandbox(
-        component_cls=FivetranAccountComponent,
-        scaffold_params=scaffold_params,
-    ) as instance_folder:
-        defs_yaml_path = instance_folder.defs_folder_path / "defs.yaml"
+    with create_defs_folder_sandbox() as sandbox:
+        defs_path = sandbox.scaffold_component(
+            component_cls=FivetranAccountComponent,
+            scaffold_params=scaffold_params,
+        )
+
+        defs_yaml_path = defs_path / "defs.yaml"
         assert defs_yaml_path.exists()
         assert {
             k: v

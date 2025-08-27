@@ -1,24 +1,24 @@
 from abc import ABC, abstractmethod
 from collections.abc import Iterator, Mapping, Sequence
 from contextlib import contextmanager
-from typing import Any, Generic, NamedTuple, Optional, TypeVar, Union, cast
+from typing import TYPE_CHECKING, Any, Generic, NamedTuple, Optional, TypeVar, Union, cast
 
 import dagster._check as check
 from dagster._check import CheckError
 from dagster._core.definitions.metadata import RawMetadataValue
 from dagster._core.definitions.metadata.metadata_set import TableMetadataSet
-from dagster._core.definitions.multi_dimensional_partitions import (
-    MultiPartitionKey,
+from dagster._core.definitions.partitions.definition import (
     MultiPartitionsDefinition,
-)
-from dagster._core.definitions.time_window_partitions import (
-    TimeWindow,
     TimeWindowPartitionsDefinition,
 )
+from dagster._core.definitions.partitions.utils import MultiPartitionKey, TimeWindow
 from dagster._core.errors import DagsterInvalidMetadata, DagsterInvariantViolationError
 from dagster._core.execution.context.input import InputContext
 from dagster._core.execution.context.output import OutputContext
 from dagster._core.storage.io_manager import IOManager
+
+if TYPE_CHECKING:
+    from dagster._core.definitions.partitions.utils.multi import MultiPartitionKey
 
 T = TypeVar("T")
 

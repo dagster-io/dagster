@@ -14,6 +14,10 @@ type BackfillState = {
 export const BackfillStatusTagForPage = ({backfill}: {backfill: BackfillState}) => {
   const {status, error} = backfill;
   function errorState(status: string) {
+    if (!error) {
+      return <Tag intent="danger">{status}</Tag>;
+    }
+
     const onClick = () =>
       error && showCustomAlert({title: 'Error', body: <PythonErrorInfo error={error} />});
 

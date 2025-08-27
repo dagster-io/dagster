@@ -6,12 +6,9 @@ import sys
 import tempfile
 import time
 
+import dagster as dg
 import pytest
-from dagster import DagsterEventType, fs_io_manager, reconstructable, resource
-from dagster._core.definitions import op
-from dagster._core.definitions.decorators.job_decorator import job
-from dagster._core.definitions.input import In
-from dagster._core.execution.api import execute_job
+from dagster import DagsterEventType
 from dagster._core.execution.compute_logs import should_disable_io_stream_redirect
 from dagster._core.instance import DagsterInstance
 from dagster._core.instance.ref import InstanceRef
@@ -21,7 +18,7 @@ from dagster._core.storage.local_compute_log_manager import (
     IO_TYPE_EXTENSION,
     LocalComputeLogManager,
 )
-from dagster._core.test_utils import create_run_for_test, instance_for_test
+from dagster._core.test_utils import create_run_for_test
 from dagster._core.utils import make_new_run_id
 from dagster._utils import ensure_dir, touch_file
 
@@ -30,25 +27,25 @@ HELLO_RESOURCE = "HELLO RESOURCE"
 SEPARATOR = os.linesep if (os.name == "nt" and sys.version_info < (3,)) else "\n"
 
 
-@resource
+@dg.resource
 def resource_a(_):
     print(HELLO_RESOURCE)  # noqa: T201
     return "A"
 
 
-@op
+@dg.op
 def spawn(_):
     return 1
 
 
-@op(ins={"num": In(int)}, required_resource_keys={"a"})
+@dg.op(ins={"num": dg.In(int)}, required_resource_keys={"a"})
 def spew(_, num):
     print(HELLO_FROM_OP)  # noqa: T201
     return num
 
 
 def define_job():
-    @job(resource_defs={"a": resource_a, "io_manager": fs_io_manager})
+    @dg.job(resource_defs={"a": resource_a, "io_manager": dg.fs_io_manager})
     def spew_job():
         spew(spew(spawn()))
 
@@ -63,7 +60,7 @@ def normalize_file_content(s):
     should_disable_io_stream_redirect(), reason="compute logs disabled for win / py3.6+"
 )
 def test_compute_log_to_disk():
-    with instance_for_test() as instance:
+    with dg.instance_for_test() as instance:
         spew_job = define_job()
         manager = instance.compute_log_manager
         assert isinstance(manager, LocalComputeLogManager)
@@ -91,11 +88,11 @@ def test_compute_log_to_disk():
     should_disable_io_stream_redirect(), reason="compute logs disabled for win / py3.6+"
 )
 def test_compute_log_to_disk_multiprocess():
-    spew_job = reconstructable(define_job)
-    with instance_for_test() as instance:
+    spew_job = dg.reconstructable(define_job)
+    with dg.instance_for_test() as instance:
         manager = instance.compute_log_manager
         assert isinstance(manager, LocalComputeLogManager)
-        result = execute_job(
+        result = dg.execute_job(
             spew_job,
             instance=instance,
         )
@@ -122,7 +119,7 @@ def test_compute_log_to_disk_multiprocess():
     should_disable_io_stream_redirect(), reason="compute logs disabled for win / py3.6+"
 )
 def test_compute_log_manager():
-    with instance_for_test() as instance:
+    with dg.instance_for_test() as instance:
         manager = instance.compute_log_manager
 
         spew_job = define_job()
@@ -150,7 +147,7 @@ def test_compute_log_manager():
     should_disable_io_stream_redirect(), reason="compute logs disabled for win / py3.6+"
 )
 def test_compute_log_manager_subscriptions():
-    with instance_for_test() as instance:
+    with dg.instance_for_test() as instance:
         spew_job = define_job()
         result = spew_job.execute_in_process(instance=instance)
         capture_events = [
@@ -215,11 +212,11 @@ def gen_op_name(length):
 def test_long_op_names():
     op_name = gen_op_name(300)
 
-    @job(resource_defs={"a": resource_a})
+    @dg.job(resource_defs={"a": resource_a})
     def long_job():
         spew.alias(name=op_name)()
 
-    with instance_for_test() as instance:
+    with dg.instance_for_test() as instance:
         manager = instance.compute_log_manager
 
         result = long_job.execute_in_process(
@@ -269,7 +266,7 @@ def expected_outer_prefix():
     should_disable_io_stream_redirect(), reason="compute logs disabled for win / py3.6+"
 )
 def test_single():
-    with instance_for_test() as instance:
+    with dg.instance_for_test() as instance:
         job_name = "foo_job"
         dagster_run = create_run_for_test(instance, job_name=job_name)
 
@@ -305,7 +302,7 @@ def test_single():
 )
 def test_compute_log_base_with_spaces():
     with tempfile.TemporaryDirectory() as temp_dir:
-        with instance_for_test(
+        with dg.instance_for_test(
             temp_dir=temp_dir,
             overrides={
                 "compute_logs": {
@@ -351,7 +348,7 @@ def test_compute_log_base_with_spaces():
 def test_multi():
     ctx = multiprocessing.get_context("spawn")
 
-    with instance_for_test() as instance:
+    with dg.instance_for_test() as instance:
         job_name = "foo_job"
         dagster_run = create_run_for_test(instance, job_name=job_name)
 

@@ -22,7 +22,7 @@ const RepoRouteContainer = () => {
   const workspaceState = useContext(WorkspaceContext);
   const addressForPath = repoAddressFromPath(repoPath);
 
-  const {loading} = workspaceState;
+  const {loadingNonAssets: loading} = workspaceState;
 
   // A RepoAddress could not be created for this path, which means it's invalid.
   if (!addressForPath) {

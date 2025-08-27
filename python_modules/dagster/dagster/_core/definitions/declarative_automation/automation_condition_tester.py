@@ -11,12 +11,13 @@ from dagster._core.asset_graph_view.entity_subset import EntitySubset
 from dagster._core.definitions.asset_daemon_cursor import AssetDaemonCursor
 from dagster._core.definitions.asset_key import AssetKey
 from dagster._core.definitions.asset_selection import AssetSelection
-from dagster._core.definitions.assets import AssetsDefinition
+from dagster._core.definitions.assets.definition.assets_definition import AssetsDefinition
 from dagster._core.definitions.declarative_automation.automation_condition import AutomationResult
 from dagster._core.definitions.declarative_automation.automation_condition_evaluator import (
     AutomationConditionEvaluator,
 )
 from dagster._core.definitions.definitions_class import Definitions
+from dagster._core.definitions.partitions.context import partition_loading_context
 from dagster._core.instance import DagsterInstance
 
 
@@ -142,13 +143,14 @@ def evaluate_automation_conditions(
         cursor=cursor,
     )
     results, requested_subsets = evaluator.evaluate()
-    new_cursor = cursor.with_updates(
-        evaluation_timestamp=(evaluation_time or datetime.datetime.now()).timestamp(),
-        newly_observe_requested_asset_keys=[],
-        evaluation_id=cursor.evaluation_id + 1,
-        condition_cursors=[result.get_new_cursor() for result in results],
-        asset_graph=asset_graph,
-    )
+    with partition_loading_context(effective_dt=evaluation_time, dynamic_partitions_store=instance):
+        new_cursor = cursor.with_updates(
+            evaluation_timestamp=(evaluation_time or datetime.datetime.now()).timestamp(),
+            newly_observe_requested_asset_keys=[],
+            evaluation_id=cursor.evaluation_id + 1,
+            condition_cursors=[result.get_new_cursor() for result in results],
+            asset_graph=asset_graph,
+        )
 
     return EvaluateAutomationConditionsResult(
         cursor=new_cursor, requested_subsets=requested_subsets, results=results

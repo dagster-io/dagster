@@ -95,7 +95,7 @@ class ADLS2Resource(ADLS2BaseResource):
         def my_job():
             my_op()
 
-        defs = Definitions(
+        Definitions(
             assets=[asset1],
             jobs=[my_job],
             resources={

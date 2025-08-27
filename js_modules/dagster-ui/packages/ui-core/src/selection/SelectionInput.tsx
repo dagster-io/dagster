@@ -38,7 +38,9 @@ type SelectionAutoCompleteInputProps = {
   useAutoComplete: SelectionAutoCompleteProvider['useAutoComplete'];
   saveOnBlur?: boolean;
   onErrorStateChange?: (errors: SyntaxError[]) => void;
-  onChange: (value: string) => void;
+  onChange?: (value: string) => void;
+  // Omitting onChange will make the input read only
+
   wildcardAttributeName: string;
 };
 
@@ -77,7 +79,7 @@ export const SelectionAutoCompleteInput = ({
       if (wildcardAttributeName) {
         nextValue = upgradeSyntax(selection, wildcardAttributeName);
       }
-      onChange(nextValue);
+      onChange?.(nextValue);
       trackSelection(nextValue);
     },
     [onChange, trackSelection, wildcardAttributeName],
@@ -143,6 +145,7 @@ export const SelectionAutoCompleteInput = ({
         scrollbarStyle: 'native',
         autoCloseBrackets: true,
         placeholder,
+        readOnly: disabled ? 'nocursor' : false,
         extraKeys: {
           'Ctrl-Space': 'autocomplete',
           Tab: (cm: Editor) => {
@@ -204,6 +207,15 @@ export const SelectionAutoCompleteInput = ({
           // and show the auto-complete results.
           setCursorPosition(nextCursorPosition);
           setShowResults({current: true});
+        }
+      });
+
+      cmInstance.current.on('paste', (instance: Editor, event: ClipboardEvent) => {
+        const clipboardData = event.clipboardData;
+        const pastedText = clipboardData?.getData('text')?.replace(/\s+/g, ' ');
+        if (pastedText) {
+          instance.replaceSelection(pastedText);
+          instance.setCursor({line: 0, ch: instance.getCursor().ch + pastedText.length});
         }
       });
     }
@@ -387,14 +399,19 @@ export const SelectionAutoCompleteInput = ({
 
   useResizeObserver(inputRef, adjustHeight);
 
+  const disabled = !onChange;
+
   const errors = useMemo(() => {
+    if (disabled) {
+      return emptyArray;
+    }
     const linterErrors = linter(value);
     if (linterErrors.length > 0) {
       return linterErrors;
     }
     // Keep the reference the same to avoid re-rendering
     return emptyArray;
-  }, [linter, value]);
+  }, [linter, value, disabled]);
 
   useEffect(() => {
     onErrorStateChange?.(errors);
@@ -415,7 +432,9 @@ export const SelectionAutoCompleteInput = ({
           </div>
         }
         placement="bottom-start"
-        isOpen={loading || autoCompleteResults?.list.length ? showResults.current : false}
+        isOpen={
+          (loading || autoCompleteResults?.list.length ? showResults.current : false) && !disabled
+        }
         targetTagName="div"
         canEscapeKeyClose={true}
       >
@@ -427,6 +446,7 @@ export const SelectionAutoCompleteInput = ({
             gridTemplateColumns: 'auto minmax(0, 1fr) auto',
             contain: 'layout paint style',
           }}
+          $disabled={disabled}
           ref={inputRef}
           onKeyDownCapture={handleKeyDown} // Added keyboard event handler
           tabIndex={0} // Make the div focusable to capture keyboard events
@@ -442,7 +462,7 @@ export const SelectionAutoCompleteInput = ({
             flex={{direction: 'row', alignItems: 'center', gap: 4}}
             style={{alignSelf: currentHeight > 20 ? 'flex-end' : 'center'}}
           >
-            {innerValue !== '' && (
+            {innerValue !== '' && !disabled && (
               <UnstyledButton
                 onClick={() => {
                   cmInstance.current?.setValue('');
@@ -461,7 +481,11 @@ export const SelectionAutoCompleteInput = ({
   );
 };
 
-export const InputDiv = styled.div<{$isCommitted: boolean; $hasErrors: boolean}>`
+export const InputDiv = styled.div<{
+  $isCommitted: boolean;
+  $hasErrors: boolean;
+  $disabled: boolean;
+}>`
   ${SelectionAutoCompleteInputCSS}
   ${({$isCommitted}) =>
     $isCommitted
@@ -473,6 +497,15 @@ export const InputDiv = styled.div<{$isCommitted: boolean; $hasErrors: boolean}>
     $hasErrors
       ? `
       border: 1px solid ${Colors.accentRed()};
+      `
+      : ''}
+  ${({$disabled}) =>
+    $disabled
+      ? `
+        background: ${Colors.backgroundDisabled()};
+        * {
+          color: ${Colors.textLight()} !important;
+        }
       `
       : ''}
 `;

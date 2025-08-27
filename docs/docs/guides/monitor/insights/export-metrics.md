@@ -9,7 +9,7 @@ import DagsterPlus from '@site/docs/partials/\_DagsterPlus.md';
 
 <DagsterPlus />
 
-Using a GraphQL API endpoint, you can export [Dagster+ Insights](/guides/monitor/insights/) metrics from your Dagster+ instance.
+Using a GraphQL API endpoint, you can export [Dagster+ Insights](/guides/monitor/insights) metrics from your Dagster+ instance.
 
 Refer to the [Built-in Insights metrics](/guides/monitor/insights/index.md#built-in-metrics) for a list of available metrics.
 
@@ -31,7 +31,7 @@ Before you start, note that:
 
 ## Using the API
 
-In this example, we're using the [GraphQL Python Client](/guides/operate/graphql/graphql-client) to export the Dagster credits metric for all assets for September 2023:
+In this example, we're using the [GraphQL Python Client](/api/graphql/graphql-client) to export the Dagster credits metric for all assets for September 2023:
 
 ```python
 from datetime import datetime

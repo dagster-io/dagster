@@ -1,9 +1,13 @@
 import {MockedProvider} from '@apollo/client/testing';
 import {Meta} from '@storybook/react';
 
+import {InMemoryCache} from '../../apollo-client';
 import {WorkspaceProvider} from '../../workspace/WorkspaceContext/WorkspaceContext';
 import RunsFeedRoot from '../RunsFeedRoot';
-import {RunsFeedRootMock} from '../__fixtures__/RunsFeedRoot.fixtures';
+import {
+  RunsFeedRootMockBackfill,
+  RunsFeedRootMockRuns,
+} from '../__fixtures__/RunsFeedRoot.fixtures';
 
 // eslint-disable-next-line import/no-default-export
 export default {
@@ -11,9 +15,36 @@ export default {
   component: RunsFeedRoot,
 } as Meta;
 
-export const Example = () => {
+// This cache prevents Apollo Client from stripping fields in mock data.
+const createFixingRunsCache = () => {
+  return new InMemoryCache({
+    possibleTypes: {
+      RunsFeedEntry: ['Run', 'PartitionBackfill'],
+    },
+    typePolicies: {
+      Run: {
+        keyFields: false,
+      },
+      PartitionBackfill: {
+        keyFields: false,
+      },
+    },
+  });
+};
+
+export const Runs = () => {
   return (
-    <MockedProvider mocks={[RunsFeedRootMock]}>
+    <MockedProvider mocks={[RunsFeedRootMockRuns]} cache={createFixingRunsCache()}>
+      <WorkspaceProvider>
+        <RunsFeedRoot />
+      </WorkspaceProvider>
+    </MockedProvider>
+  );
+};
+
+export const Backfill = () => {
+  return (
+    <MockedProvider mocks={[RunsFeedRootMockBackfill]} cache={createFixingRunsCache()}>
       <WorkspaceProvider>
         <RunsFeedRoot />
       </WorkspaceProvider>

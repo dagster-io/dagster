@@ -1,39 +1,27 @@
 import string
 import time
 
-from dagster import (
-    In,
-    Int,
-    Out,
-    ScheduleDefinition,
-    SkipReason,
-    job,
-    op,
-    repository,
-    sensor,
-    usable_as_dagster_type,
-)
-from dagster._core.definitions.partition import PartitionedConfig, StaticPartitionsDefinition
+import dagster as dg
 
 
-@op
+@dg.op
 def do_something():
     return 1
 
 
-@op
+@dg.op
 def do_input(x):
     return x
 
 
-@job(name="foo")
+@dg.job(name="foo")
 def foo_job():
     do_input(do_something())
 
 
-baz_partitions = StaticPartitionsDefinition(list(string.ascii_lowercase))
+baz_partitions = dg.StaticPartitionsDefinition(list(string.ascii_lowercase))
 
-baz_config = PartitionedConfig(
+baz_config = dg.PartitionedConfig(
     partitions_def=baz_partitions,
     run_config_for_partition_key_fn=lambda key: {
         "ops": {"do_input": {"inputs": {"x": {"value": key}}}}
@@ -42,7 +30,7 @@ baz_config = PartitionedConfig(
 )
 
 
-@job(name="baz", description="Not much tbh", partitions_def=baz_partitions, config=baz_config)
+@dg.job(name="baz", description="Not much tbh", partitions_def=baz_partitions, config=baz_config)
 def baz_job():
     do_input()
 
@@ -51,19 +39,19 @@ def define_foo_job():
     return foo_job
 
 
-@job(name="bar")
+@dg.job(name="bar")
 def bar_job():
-    @usable_as_dagster_type(name="InputTypeWithoutHydration")
+    @dg.usable_as_dagster_type(name="InputTypeWithoutHydration")
     class InputTypeWithoutHydration(int):
         pass
 
-    @op(out=Out(InputTypeWithoutHydration))
+    @dg.op(out=dg.Out(InputTypeWithoutHydration))
     def one(_):
         return 1
 
-    @op(
-        ins={"some_input": In(InputTypeWithoutHydration)},
-        out=Out(Int),
+    @dg.op(
+        ins={"some_input": dg.In(InputTypeWithoutHydration)},
+        out=dg.Out(dg.Int),
     )
     def fail_subset(_, some_input):
         return some_input
@@ -73,7 +61,7 @@ def bar_job():
 
 def define_bar_schedules():
     return {
-        "foo_schedule": ScheduleDefinition(
+        "foo_schedule": dg.ScheduleDefinition(
             "foo_schedule",
             cron_schedule="* * * * *",
             job_name="foo",
@@ -82,10 +70,10 @@ def define_bar_schedules():
     }
 
 
-@sensor(job_name="bar")
+@dg.sensor(job_name="bar")
 def slow_sensor(_):
     time.sleep(5)
-    yield SkipReason("Oops fell asleep")
+    yield dg.SkipReason("Oops fell asleep")
 
 
 def error_partition_fn():
@@ -100,7 +88,7 @@ def error_partition_tags_fn(_partition):
     raise Exception("womp womp")
 
 
-@repository
+@dg.repository
 def bar_repo():
     return {
         "jobs": {

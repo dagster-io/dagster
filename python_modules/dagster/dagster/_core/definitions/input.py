@@ -3,8 +3,10 @@ from collections.abc import Mapping
 from types import FunctionType
 from typing import TYPE_CHECKING, Any, Callable, NamedTuple, Optional, TypeVar, Union
 
+from dagster_shared.error import DagsterError
+
 import dagster._check as check
-from dagster._annotations import PublicAttr, deprecated_param, superseded
+from dagster._annotations import PublicAttr, deprecated_param, public, superseded
 from dagster._core.definitions.events import AssetKey
 from dagster._core.definitions.inference import InferredInputProps
 from dagster._core.definitions.metadata import (
@@ -14,7 +16,7 @@ from dagster._core.definitions.metadata import (
     normalize_metadata,
 )
 from dagster._core.definitions.utils import NoValueSentinel, check_valid_name
-from dagster._core.errors import DagsterError, DagsterInvalidDefinitionError
+from dagster._core.errors import DagsterInvalidDefinitionError
 from dagster._core.types.dagster_type import (  # BuiltinScalarDagsterType,
     DagsterType,
     resolve_dagster_type,
@@ -338,6 +340,7 @@ class FanInInputPointer(
     # actually used or discarded.
     emit_runtime_warning=False,
 )
+@public
 class InputMapping(NamedTuple):
     """Defines an input mapping for a graph.
 
@@ -407,6 +410,7 @@ class InputMapping(NamedTuple):
         )
 
 
+@public
 class In(
     NamedTuple(
         "_In",
@@ -501,6 +505,7 @@ class In(
         )
 
 
+@public
 class GraphIn(NamedTuple("_GraphIn", [("description", PublicAttr[Optional[str]])])):
     """Represents information about an input that a graph maps.
 

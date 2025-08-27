@@ -4,13 +4,17 @@ sidebar_position: 40
 title: Asset sensors
 ---
 
+import ScaffoldAsset from '@site/docs/partials/\_ScaffoldAsset.md';
+
+<ScaffoldAsset />
+
 Asset sensors in Dagster provide a powerful mechanism for monitoring asset materializations and triggering downstream computations or notifications based on those events.
 
 This guide covers the most common use cases for asset sensors, such as defining cross-job and cross-code location dependencies.
 
 :::note
 
-This documentation assumes familiarity with [assets](/guides/build/assets/) and [jobs](/guides/build/jobs/).
+This documentation assumes familiarity with [assets](/guides/build/assets) and [jobs](/guides/build/jobs).
 
 :::
 
@@ -62,7 +66,11 @@ end
 
 This is an example of an asset sensor that triggers a job when an asset is materialized. The `daily_sales_data` asset is in the same code location as the job and other asset for this example, but the same pattern can be applied to assets in different code locations.
 
-<CodeExample path="docs_snippets/docs_snippets/guides/automation/simple-asset-sensor-example.py" language="python" />
+<CodeExample
+  path="docs_snippets/docs_snippets/guides/automation/simple-asset-sensor-example.py"
+  language="python"
+  title="src/<project_name>/defs/assets.py"
+/>
 
 ## Customizing the evaluation function of an asset sensor
 
@@ -91,7 +99,11 @@ stateDiagram-v2
 
 In the following example, the `@asset_sensor` decorator defines a custom evaluation function that returns a `RunRequest` object when the asset is materialized and certain metadata is present, otherwise it skips the run.
 
-<CodeExample path="docs_snippets/docs_snippets/guides/automation/asset-sensor-custom-eval.py" language="python" />
+<CodeExample
+  path="docs_snippets/docs_snippets/guides/automation/asset-sensor-custom-eval.py"
+  language="python"
+  title="src/<project_name>/defs/assets.py"
+/>
 
 ## Triggering a job with custom configuration
 
@@ -99,13 +111,17 @@ By providing a configuration to the `RunRequest` object, you can trigger a job w
 
 For example, you might use a sensor to trigger a job when an asset is materialized, but also pass metadata about that materialization to the job:
 
-<CodeExample path="docs_snippets/docs_snippets/guides/automation/asset-sensor-with-config.py" language="python" />
+<CodeExample
+  path="docs_snippets/docs_snippets/guides/automation/asset-sensor-with-config.py"
+  language="python"
+  title="src/<project_name>/defs/assets.py"
+/>
 
 ## Monitoring multiple assets
 
 :::note
 
-The `@multi_asset_sensor` has been marked as deprecated, but will not be removed from the codebase until Dagster 2.0 is released, meaning it will continue to function as it currently does for the foreseeable future. Its functionality has been largely superseded by the `AutomationCondition` system. For more information, see the [Declarative Automation documentation](/guides/automate/declarative-automation/).
+The `@multi_asset_sensor` has been marked as deprecated, but will not be removed from the codebase until Dagster 2.0 is released, meaning it will continue to function as it currently does for the foreseeable future. Its functionality has been largely superseded by the `AutomationCondition` system. For more information, see the [Declarative Automation documentation](/guides/automate/declarative-automation).
 
 :::
 
@@ -113,8 +129,12 @@ When building a pipeline, you may want to monitor multiple assets with a single 
 
 The following example uses a `@multi_asset_sensor` to monitor two assets that triggers an asset job once both have been materialized. You can also trigger op jobs this way.
 
-<CodeExample path="docs_snippets/docs_snippets/guides/automation/multi-asset-sensor.py" language="python" />
+<CodeExample
+  path="docs_snippets/docs_snippets/guides/automation/multi-asset-sensor.py"
+  language="python"
+  title="src/<project_name>/defs/assets.py"
+/>
 
 ## Next steps
 
-- Explore [Declarative Automation](/guides/automate/declarative-automation/) as an alternative to asset sensors
+- Explore [Declarative Automation](/guides/automate/declarative-automation) as an alternative to asset sensors

@@ -2,15 +2,8 @@ import subprocess
 from pathlib import Path
 
 import pytest
-from dagster_dg_core.utils import (
-    ensure_dagster_dg_tests_import,
-    get_venv_executable,
-    resolve_local_venv,
-)
-
-ensure_dagster_dg_tests_import()
-
-from dagster_dg_core_tests.utils import (
+from dagster_dg_core.utils import get_venv_executable, resolve_local_venv
+from dagster_test.dg_utils.utils import (
     ProxyRunner,
     assert_runner_result,
     crawl_cli_commands,
@@ -54,7 +47,6 @@ COMPONENT_LIBRARY_CONTEXT_COMMANDS = [
 ]
 
 REGISTRY_CONTEXT_COMMANDS = [
-    CommandSpec(tuple(), "--rebuild-plugin-cache"),
     CommandSpec(("docs", "serve")),
     CommandSpec(("list", "component")),
     CommandSpec(("list", "registry-modules")),

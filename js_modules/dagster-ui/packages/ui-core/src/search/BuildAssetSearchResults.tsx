@@ -84,6 +84,7 @@ export function buildAssetCountBySection(assets: AssetDefinitionMetadata[]): Ass
   assets
     .filter((asset) => asset.definition)
     .forEach((asset) => {
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
       const assetDefinition = asset.definition!;
       assetDefinition.owners.forEach((owner) => {
         const ownerKey = JSON.stringify(owner);
@@ -183,6 +184,7 @@ export function buildAssetCountBySection(assets: AssetDefinitionMetadata[]): Ass
   const countPerCodeLocation = assetCountByCodeLocation
     .entries()
     .map(([key, count]) => ({
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
       repoAddress: repoAddressFromPath(key)!,
       assetCount: count,
     }))

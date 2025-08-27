@@ -2,9 +2,11 @@
 title: "Using Dagster pipes"
 description: "Learn how to use the built-in subprocess implementation of Dagster Pipes to invoke a subprocess with a given command and environment"
 sidebar_position: 10
+canonicalUrl: "/guides/build/external-pipelines/using-dagster-pipes"
+slug: "/guides/build/external-pipelines/using-dagster-pipes"
 ---
 
-In this guide, we’ll show you how to use [Dagster Pipes](/guides/build/external-pipelines/) with Dagster’s built-in subprocess <PyObject section="pipes" module="dagster" object="PipesSubprocessClient" /> to run a local subprocess with a given command and environment. You can then send information such as structured metadata and logging back to Dagster from the subprocess, where it will be visible in the Dagster UI.
+In this guide, we’ll show you how to use [Dagster Pipes](/guides/build/external-pipelines) with Dagster’s built-in subprocess <PyObject section="pipes" module="dagster" object="PipesSubprocessClient" /> to run a local subprocess with a given command and environment. You can then send information such as structured metadata and logging back to Dagster from the subprocess, where it will be visible in the Dagster UI.
 
 To get there, you'll:
 
@@ -18,16 +20,6 @@ This guide focuses on using an out-of-the-box <PyObject section="pipes" module="
 
 :::
 
-## Prerequisites
-
-To use Dagster Pipes to run a subprocess, you’ll need to have Dagster (`dagster`) and the Dagster UI (`dagster-webserver`) installed. Refer to the [Installation guide](/getting-started/installation) for more info.
-
-You'll also need **an existing Python script.** We’ll use the following Python script to demonstrate. This file will be invoked by the Dagster asset that you’ll create later in this tutorial.
-
-Create a file named `external_code.py` and paste the following into it:
-
-<CodeExample path="docs_snippets/docs_snippets/guides/dagster/dagster_pipes/subprocess/part_1/external_code.py" lineStart="3" />
-
 ## Ready to get started?
 
-When you've fulfilled all the prerequisites for the tutorial, you can get started by [creating a Dagster asset that executes a subprocess](/guides/build/external-pipelines/using-dagster-pipes/create-subprocess-asset).
+You can get started by [creating a Dagster asset that executes a subprocess](/guides/build/external-pipelines/using-dagster-pipes/create-subprocess-asset).

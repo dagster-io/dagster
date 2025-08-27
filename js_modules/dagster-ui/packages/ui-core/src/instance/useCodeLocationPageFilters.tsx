@@ -13,7 +13,7 @@ import {WorkspaceContext} from '../workspace/WorkspaceContext/WorkspaceContext';
 const STATUS_VALUES: Set<string> = new Set(Object.values(CodeLocationRowStatusType));
 
 export const useCodeLocationPageFilters = () => {
-  const {loading, locationEntries} = useContext(WorkspaceContext);
+  const {loadingNonAssets: loading, locationEntries} = useContext(WorkspaceContext);
   const codeLocationStatusData = useRecoilValue(codeLocationStatusAtom);
   const [searchValue, setSearchValue] = useState('');
 

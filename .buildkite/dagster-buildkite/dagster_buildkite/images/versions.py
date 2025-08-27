@@ -1,6 +1,9 @@
 import os
+from typing import Optional
 
 import yaml
+from buildkite_shared.python_version import AvailablePythonVersion
+from buildkite_shared.step_builders.command_step_builder import CommandStepBuilder
 
 
 def get_image_version(image_name: str) -> str:
@@ -31,3 +34,14 @@ BUILDKITE_BUILD_TEST_PROJECT_IMAGE_IMAGE_VERSION: str = get_image_version(
 )
 BUILDKITE_TEST_IMAGE_VERSION: str = get_image_version("buildkite-test")
 TEST_PROJECT_BASE_IMAGE_VERSION: str = get_image_version("test-project-base")
+
+
+def add_test_image(
+    step_builder: CommandStepBuilder,
+    ver: AvailablePythonVersion,
+    env: Optional[list[str]] = None,
+) -> CommandStepBuilder:
+    return step_builder.on_python_image(
+        image=f"buildkite-test:py{ver.value}-{BUILDKITE_TEST_IMAGE_VERSION}",
+        env=env,
+    ).with_ecr_login()

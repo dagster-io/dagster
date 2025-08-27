@@ -13,7 +13,7 @@ Config fields can be annotated with metadata, which can be used to provide addit
 For example, we can annotate a config field with a description, which will be displayed in the documentation for the config field. We can add a value range to a field, which will be validated when config is specified.
 
 <CodeExample
-  path="docs_snippets/docs_snippets/guides/dagster/pythonic_config/pythonic_config.py"
+  path="docs_snippets/docs_snippets/guides/operate/configuration/advanced_config_types/pythonic_config.py"
   startAfter="start_metadata_config"
   endBefore="end_metadata_config"
   dedent="4"
@@ -23,10 +23,11 @@ For example, we can annotate a config field with a description, which will be di
 
 Config fields can have an attached default value. Fields with defaults are not required, meaning they do not need to be specified when constructing the config object.
 
-For example, we can attach a default value of `"hello"` to the `greeting_phrase` field, and can construct `MyAssetConfig` without specifying a phrase. Fields which are marked as `Optional`, such as `person_name`, implicitly have a default value of `None`, but can also be explicitly set to `None` as in the example below.
+For example, we can attach a default value of `"hello"` to the `greeting_phrase` field, and can construct `MyAssetConfig` without specifying a phrase. Fields which are marked as `Optional`, such as `person_name`, implicitly have a default value of `None`, but can also be explicitly set to `None` as in the example below:
 
 <CodeExample
-  path="docs_snippets/docs_snippets/guides/dagster/pythonic_config/pythonic_config.py"
+  path="docs_snippets/docs_snippets/guides/operate/configuration/advanced_config_types/pythonic_config.py"
+  title="src/<project_name>/defs/assets.py"
   startAfter="start_optional_config"
   endBefore="end_optional_config"
   dedent="4"
@@ -37,7 +38,8 @@ For example, we can attach a default value of `"hello"` to the `greeting_phrase`
 By default, fields which are typed as `Optional` are not required to be specified in the config, and have an implicit default value of `None`. If you want to require that a field be specified in the config, you may use an ellipsis (`...`) to [require that a value be passed](https://docs.pydantic.dev/usage/models/#required-fields).
 
 <CodeExample
-  path="docs_snippets/docs_snippets/guides/dagster/pythonic_config/pythonic_config.py"
+  path="docs_snippets/docs_snippets/guides/operate/configuration/advanced_config_types/pythonic_config.py"
+  title="src/<project_name>/defs/assets.py"
   startAfter="start_required_config"
   endBefore="end_required_config"
   dedent="4"
@@ -54,7 +56,8 @@ Basic Python data structures can be used in your config schemas along with neste
 For example, we can define a config schema that takes in a list of user names and a mapping of user names to user scores.
 
 <CodeExample
-  path="docs_snippets/docs_snippets/guides/dagster/pythonic_config/pythonic_config.py"
+  path="docs_snippets/docs_snippets/guides/operate/configuration/advanced_config_types/pythonic_config.py"
+  title="src/<project_name>/defs/assets.py"
   startAfter="start_basic_data_structures_config"
   endBefore="end_basic_data_structures_config"
   dedent="4"
@@ -67,7 +70,8 @@ Schemas can be nested in one another, or in basic Python data structures.
 Here, we define a schema which contains a mapping of user names to complex user data objects.
 
 <CodeExample
-  path="docs_snippets/docs_snippets/guides/dagster/pythonic_config/pythonic_config.py"
+  path="docs_snippets/docs_snippets/guides/operate/configuration/advanced_config_types/pythonic_config.py"
+  title="src/<project_name>/defs/assets.py"
   startAfter="start_nested_schema_config"
   endBefore="end_nested_schema_config"
   dedent="4"
@@ -78,7 +82,8 @@ Here, we define a schema which contains a mapping of user names to complex user 
 By default, `Config` schemas are strict, meaning that they will only accept fields that are explicitly defined in the schema. This can be cumbersome if you want to allow users to specify arbitrary fields in their config. For this purpose, you can use the `PermissiveConfig` base class, which allows arbitrary fields to be specified in the config.
 
 <CodeExample
-  path="docs_snippets/docs_snippets/guides/dagster/pythonic_config/pythonic_config.py"
+  path="docs_snippets/docs_snippets/guides/operate/configuration/advanced_config_types/pythonic_config.py"
+  title="src/<project_name>/defs/assets.py"
   startAfter="start_permissive_schema_config"
   endBefore="end_permissive_schema_config"
   dedent="4"
@@ -91,7 +96,8 @@ Union types are supported using Pydantic [discriminated unions](https://docs.pyd
 Here, we define a config schema which takes in a `pet` field, which can be either a `Cat` or a `Dog`, as indicated by the `pet_type` field.
 
 <CodeExample
-  path="docs_snippets/docs_snippets/guides/dagster/pythonic_config/pythonic_config.py"
+  path="docs_snippets/docs_snippets/guides/operate/configuration/advanced_config_types/pythonic_config.py"
+  title="src/<project_name>/defs/assets.py"
   startAfter="start_union_schema_config"
   endBefore="end_union_schema_config"
   dedent="4"
@@ -124,7 +130,8 @@ In the config dictionary representation, the same pattern is used:
 Python enums which subclass `Enum` are supported as config fields. Here, we define a schema that takes in a list of users, whose roles are specified as enum values:
 
 <CodeExample
-  path="docs_snippets/docs_snippets/guides/dagster/pythonic_config/pythonic_config.py"
+  path="docs_snippets/docs_snippets/guides/operate/configuration/advanced_config_types/pythonic_config.py"
+  title="src/<project_name>/defs/jobs.py"
   startAfter="start_enum_schema_config"
   endBefore="end_enum_schema_config"
   dedent="4"
@@ -153,12 +160,13 @@ In the config dictionary representation, the same pattern is used:
 
 ## Validated config fields
 
-Config fields can have custom validation logic applied using [Pydantic validators](https://docs.pydantic.dev/usage/validators/). Pydantic validators are defined as methods on the config class, and are decorated with the `@validator` decorator. These validators are triggered when the config class is instantiated. In the case of config defined at runtime, a failing validator will not prevent the launch button from being pressed, but will raise an exception and prevent run start.
+Config fields can have custom validation logic applied using [Pydantic validators](https://docs.pydantic.dev/usage/validators). Pydantic validators are defined as methods on the config class, and are decorated with the `@validator` decorator. These validators are triggered when the config class is instantiated. In the case of config defined at runtime, a failing validator will not prevent the launch button from being pressed, but will raise an exception and prevent run start.
 
 Here, we define some validators on a configured user's name and username, which will throw exceptions if incorrect values are passed in the launchpad or from a schedule or sensor.
 
 <CodeExample
-  path="docs_snippets/docs_snippets/guides/dagster/pythonic_config/pythonic_config.py"
+  path="docs_snippets/docs_snippets/guides/operate/configuration/advanced_config_types/pythonic_config.py"
+  title="src/<project_name>/defs/jobs.py"
   startAfter="start_validated_schema_config"
   endBefore="end_validated_schema_config"
 />

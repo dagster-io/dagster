@@ -1,10 +1,10 @@
 import pandas as pd
 
-from dagster import AssetKey, MaterializeResult, asset
+import dagster as dg
 
 
-@asset(deps=[AssetKey("source_bar"), AssetKey("source_baz")])
+@dg.asset(deps=[dg.AssetKey("source_bar"), dg.AssetKey("source_baz")])
 def my_asset():
     my_df: pd.DataFrame = ...
 
-    yield MaterializeResult(metadata={"dagster/row_count": 374})
+    yield dg.MaterializeResult(metadata={"dagster/row_count": 374})

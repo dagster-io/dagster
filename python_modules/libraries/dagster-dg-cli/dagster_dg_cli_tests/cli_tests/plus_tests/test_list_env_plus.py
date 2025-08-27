@@ -1,21 +1,16 @@
+# ruff: noqa: I001 - import order differs between CI and local due to package installation differences
+import textwrap
 from pathlib import Path
 
-from dagster_dg_core.utils import ensure_dagster_dg_tests_import
-
-ensure_dagster_dg_tests_import()
-
-import textwrap
-
 import responses
-from dagster_dg_cli.utils.plus import gql
-from dagster_dg_core.utils import ensure_dagster_dg_tests_import
-from dagster_dg_core_tests.utils import (
+from dagster_test.dg_utils.utils import (
     ProxyRunner,
     assert_runner_result,
     isolated_example_project_foo_bar,
     match_terminal_box_output,
 )
 
+from dagster_dg_cli.utils.plus import gql
 from dagster_dg_cli_tests.cli_tests.plus_tests.utils import mock_gql_response
 
 # ###############################################################

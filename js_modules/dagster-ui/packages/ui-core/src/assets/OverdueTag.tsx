@@ -1,7 +1,5 @@
 import {Box, Popover, Tag, Tooltip} from '@dagster-io/ui-components';
 import dayjs from 'dayjs';
-import duration from 'dayjs/plugin/duration';
-import relativeTime from 'dayjs/plugin/relativeTime';
 import * as React from 'react';
 
 import {
@@ -19,11 +17,10 @@ import {AssetKeyInput, FreshnessPolicy} from '../graphql/types';
 import {humanCronString} from '../schedules/humanCronString';
 import {LoadingSpinner} from '../ui/Loading';
 
+import '../util/dayjsExtensions';
+
 const STALE_UNMATERIALIZED_MSG = `This asset has never been materialized.`;
 const locale = navigator.language;
-
-dayjs.extend(duration);
-dayjs.extend(relativeTime);
 
 type LiveDataWithMinutesLate = LiveDataForNode & {
   freshnessInfo: NonNullable<LiveDataForNode['freshnessInfo']> & {currentMinutesLate: number};

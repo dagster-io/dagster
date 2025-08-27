@@ -27,7 +27,7 @@ jobs:
       # output.result='skip' which is used to skip other steps in this workflow.
       - name: Pre-run checks
         id: prerun
-        uses: dagster-io/dagster-cloud-action/actions/utils/prerun@dg-v0.1
+        uses: dagster-io/dagster-cloud-action/actions/utils/prerun@TEMPLATE_DAGSTER_CLOUD_ACTION_VERSION
 
       # Checkout the project
       - name: Checkout
@@ -40,7 +40,7 @@ jobs:
       - name: Initialize build session
         id: ci-init
         if: steps.prerun.outputs.result != 'skip'
-        uses: dagster-io/dagster-cloud-action/actions/utils/dg-deploy-init@dg-v0.1
+        uses: dagster-io/dagster-cloud-action/actions/utils/dg-deploy-init@TEMPLATE_DAGSTER_CLOUD_ACTION_VERSION
         with:
           project_dir: ${{ env.DAGSTER_PROJECT_DIR }}
           # A full deployment name. If this run is for a pull request, this value will be used as
@@ -73,7 +73,7 @@ jobs:
       - name: Deploy to Dagster Cloud
         id: ci-deploy
         if: steps.prerun.outputs.result != 'skip'
-        uses: dagster-io/dagster-cloud-action/actions/utils/dg-cli@dg-v0.1
+        uses: dagster-io/dagster-cloud-action/actions/utils/dg-cli@TEMPLATE_DAGSTER_CLOUD_ACTION_VERSION
         with:
           command: "plus deploy finish --path=${{ env.DAGSTER_PROJECT_DIR }}"
 
@@ -81,7 +81,7 @@ jobs:
       - name: Update PR comment for branch deployments
         id: ci-notify
         if: steps.prerun.outputs.result != 'skip' && always()
-        uses: dagster-io/dagster-cloud-action/actions/utils/dagster-cloud-cli@dg-v0.1
+        uses: dagster-io/dagster-cloud-action/actions/utils/dagster-cloud-cli@TEMPLATE_DAGSTER_CLOUD_ACTION_VERSION
         with:
           command: "ci notify --project-dir=${{ env.DAGSTER_PROJECT_DIR }}"
 
@@ -89,6 +89,6 @@ jobs:
       - name: Generate a summary
         id: ci-summary
         if: steps.prerun.outputs.result != 'skip' && always()
-        uses: dagster-io/dagster-cloud-action/actions/utils/dagster-cloud-cli@dg-v0.1
+        uses: dagster-io/dagster-cloud-action/actions/utils/dagster-cloud-cli@TEMPLATE_DAGSTER_CLOUD_ACTION_VERSION
         with:
           command: "ci status --output-format=markdown >> $GITHUB_STEP_SUMMARY"

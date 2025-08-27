@@ -7,10 +7,10 @@ import dagster._check as check
 import graphene
 from dagster import AssetKey
 from dagster._core.definitions.backfill_policy import BackfillPolicy, BackfillPolicyType
-from dagster._core.definitions.partition import PartitionsSubset
-from dagster._core.definitions.partition_key_range import PartitionKeyRange
-from dagster._core.definitions.time_window_partitions import TimeWindowPartitionsSubset
-from dagster._core.errors import DagsterError, DagsterInvariantViolationError
+from dagster._core.definitions.partitions.context import partition_loading_context
+from dagster._core.definitions.partitions.partition_key_range import PartitionKeyRange
+from dagster._core.definitions.partitions.subset import PartitionsSubset, TimeWindowPartitionsSubset
+from dagster._core.errors import DagsterInvariantViolationError
 from dagster._core.execution.asset_backfill import (
     AssetBackfillStatus,
     PartitionedAssetBackfillStatus,
@@ -29,6 +29,7 @@ from dagster._core.storage.tags import (
 )
 from dagster._core.workspace.permissions import Permissions
 from dagster_shared import seven
+from dagster_shared.error import DagsterError
 
 from dagster_graphql.implementation.fetch_partition_sets import (
     partition_status_counts_from_run_partition_data,
@@ -473,23 +474,23 @@ class GraphenePartitionBackfill(graphene.ObjectType):
         records = instance.get_run_records(
             RunsFilter(tags=DagsterRun.tags_for_backfill_id(self._backfill_job.backfill_id))
         )
-        return [
-            RunPartitionData(
-                run_id=record.dagster_run.run_id,
-                partition=key,
-                status=record.dagster_run.status,
-                start_time=record.start_time,
-                end_time=record.end_time,
-            )
-            for record in records
-            for key in partitions_def.get_partition_keys_in_range(
-                PartitionKeyRange(
-                    start=record.dagster_run.tags[ASSET_PARTITION_RANGE_START_TAG],
-                    end=record.dagster_run.tags[ASSET_PARTITION_RANGE_END_TAG],
-                ),
-                instance,
-            )
-        ]
+        with partition_loading_context(dynamic_partitions_store=instance):
+            return [
+                RunPartitionData(
+                    run_id=record.dagster_run.run_id,
+                    partition=key,
+                    status=record.dagster_run.status,
+                    start_time=record.start_time,
+                    end_time=record.end_time,
+                )
+                for record in records
+                for key in partitions_def.get_partition_keys_in_range(
+                    PartitionKeyRange(
+                        start=record.dagster_run.tags[ASSET_PARTITION_RANGE_START_TAG],
+                        end=record.dagster_run.tags[ASSET_PARTITION_RANGE_END_TAG],
+                    ),
+                )
+            ]
 
     @property
     def creation_timestamp(self) -> float:

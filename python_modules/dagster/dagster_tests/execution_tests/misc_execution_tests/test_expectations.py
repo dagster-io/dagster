@@ -1,21 +1,15 @@
 from collections.abc import Sequence
 
+import dagster as dg
 import pytest
-from dagster import (
-    DagsterEventType,
-    DagsterInvariantViolationError,
-    ExpectationResult,
-    GraphDefinition,
-    op,
-)
+from dagster import DagsterEventType
 from dagster._annotations import get_deprecated_info, is_deprecated
-from dagster._core.events import DagsterEvent
 from dagster._core.execution.execution_result import ExecutionResult
 
 
 def expt_results_for_compute_step(
     result: ExecutionResult, node_name: str
-) -> Sequence[DagsterEvent]:
+) -> Sequence[dg.DagsterEvent]:
     return [
         compute_step_event
         for compute_step_event in result.events_for_node(node_name)
@@ -24,11 +18,11 @@ def expt_results_for_compute_step(
 
 
 def test_successful_expectation_in_compute_step():
-    @op(out={})
+    @dg.op(out={})
     def success_expectation_op(_context):
-        yield ExpectationResult(success=True, description="This is always true.")
+        yield dg.ExpectationResult(success=True, description="This is always true.")
 
-    job_def = GraphDefinition(
+    job_def = dg.GraphDefinition(
         name="success_expectation_in_compute_pipeline",
         node_defs=[success_expectation_op],
     ).to_job()
@@ -47,11 +41,11 @@ def test_successful_expectation_in_compute_step():
 
 
 def test_failed_expectation_in_compute_step():
-    @op(out={})
+    @dg.op(out={})
     def failure_expectation_op(_context):
-        yield ExpectationResult(success=False, description="This is always false.")
+        yield dg.ExpectationResult(success=False, description="This is always false.")
 
-    job_def = GraphDefinition(
+    job_def = dg.GraphDefinition(
         name="failure_expectation_in_compute_pipeline",
         node_defs=[failure_expectation_op],
     ).to_job()
@@ -69,17 +63,17 @@ def test_failed_expectation_in_compute_step():
 
 
 def test_return_expectation_failure():
-    @op
+    @dg.op
     def return_expectation_failure(_context):
-        return ExpectationResult(success=True, description="This is always true.")
+        return dg.ExpectationResult(success=True, description="This is always true.")
 
-    job_def = GraphDefinition(
+    job_def = dg.GraphDefinition(
         name="success_expectation_in_compute_pipeline",
         node_defs=[return_expectation_failure],
     ).to_job()
 
     with pytest.raises(
-        DagsterInvariantViolationError,
+        dg.DagsterInvariantViolationError,
         match=(
             "If you are returning an AssetMaterialization or an ExpectationResult from op you must"
             " yield them directly"
@@ -89,8 +83,8 @@ def test_return_expectation_failure():
 
 
 def test_expectation_result_deprecated() -> None:
-    assert is_deprecated(ExpectationResult)
+    assert is_deprecated(dg.ExpectationResult)
     assert (
-        get_deprecated_info(ExpectationResult).additional_warn_text
+        get_deprecated_info(dg.ExpectationResult).additional_warn_text
         == "If using assets, use AssetCheckResult and @asset_check instead."
     )

@@ -1,4 +1,4 @@
-from dagster import Backoff, Jitter, RetryPolicy, RetryRequested, job, op
+import dagster as dg
 
 
 def fails_sometimes():
@@ -10,7 +10,7 @@ def should_retry(_):
 
 
 # problem_start
-@op
+@dg.op
 def problematic():
     fails_sometimes()
 
@@ -19,7 +19,7 @@ def problematic():
 
 
 # policy_start
-@op(retry_policy=RetryPolicy())
+@dg.op(retry_policy=dg.RetryPolicy())
 def better():
     fails_sometimes()
 
@@ -28,12 +28,12 @@ def better():
 
 
 # policy2_start
-@op(
-    retry_policy=RetryPolicy(
+@dg.op(
+    retry_policy=dg.RetryPolicy(
         max_retries=3,
         delay=0.2,  # 200ms
-        backoff=Backoff.EXPONENTIAL,
-        jitter=Jitter.PLUS_MINUS,
+        backoff=dg.Backoff.EXPONENTIAL,
+        jitter=dg.Jitter.PLUS_MINUS,
     )
 )
 def even_better():
@@ -43,11 +43,11 @@ def even_better():
 # policy2_end
 
 # policy3_start
-default_policy = RetryPolicy(max_retries=1)
-flakey_op_policy = RetryPolicy(max_retries=10)
+default_policy = dg.RetryPolicy(max_retries=1)
+flakey_op_policy = dg.RetryPolicy(max_retries=10)
 
 
-@job(op_retry_policy=default_policy)
+@dg.job(op_retry_policy=default_policy)
 def default_and_override_job():
     problematic.with_retry_policy(flakey_op_policy)()
 
@@ -56,13 +56,13 @@ def default_and_override_job():
 
 
 # manual_start
-@op
+@dg.op
 def manual():
     try:
         fails_sometimes()
     except Exception as e:
         if should_retry(e):
-            raise RetryRequested(max_retries=1, seconds_to_wait=1) from e
+            raise dg.RetryRequested(max_retries=1, seconds_to_wait=1) from e
         else:
             raise
 
@@ -70,7 +70,7 @@ def manual():
 # manual_end
 
 
-@job
+@dg.job
 def retry_job():
     problematic()
     better()

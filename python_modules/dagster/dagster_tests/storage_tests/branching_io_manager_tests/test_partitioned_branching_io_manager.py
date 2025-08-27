@@ -2,19 +2,8 @@ import math
 import time
 from typing import Any, cast
 
-from dagster import (
-    AssetExecutionContext,
-    AssetIn,
-    AssetsDefinition,
-    DagsterInstance,
-    Definitions,
-    In,
-    StaticPartitionMapping,
-    StaticPartitionsDefinition,
-    asset,
-    job,
-    op,
-)
+import dagster as dg
+from dagster import AssetExecutionContext, DagsterInstance
 from dagster._core.execution.context.compute import OpExecutionContext
 from dagster._core.storage.branching.branching_io_manager import BranchingIOManager
 
@@ -23,12 +12,12 @@ from dagster_tests.storage_tests.branching_io_manager_tests.utils import (
     DefinitionsRunner,
 )
 
-partitioning_scheme = StaticPartitionsDefinition(["A", "B", "C"])
-secondary_partitioning_scheme = StaticPartitionsDefinition(["1", "2", "3"])
-tertiary_partitioning_scheme = StaticPartitionsDefinition(["ab", "bc", "ca"])
+partitioning_scheme = dg.StaticPartitionsDefinition(["A", "B", "C"])
+secondary_partitioning_scheme = dg.StaticPartitionsDefinition(["1", "2", "3"])
+tertiary_partitioning_scheme = dg.StaticPartitionsDefinition(["ab", "bc", "ca"])
 
-primary_secondary_partition_mapping = StaticPartitionMapping({"A": "1", "B": "2", "C": "3"})
-primary_tertiary_partition_mapping = StaticPartitionMapping(
+primary_secondary_partition_mapping = dg.StaticPartitionMapping({"A": "1", "B": "2", "C": "3"})
+primary_tertiary_partition_mapping = dg.StaticPartitionMapping(
     {
         "A": ["ab", "ca"],
         "B": ["bc", "ab"],
@@ -37,43 +26,45 @@ primary_tertiary_partition_mapping = StaticPartitionMapping(
 )
 
 
-@asset(partitions_def=partitioning_scheme)
+@dg.asset(partitions_def=partitioning_scheme)
 def now_time():
     return math.floor(time.time() * 100)
 
 
-@asset(
+@dg.asset(
     partitions_def=secondary_partitioning_scheme,
     ins={
-        "now_time": AssetIn(key="now_time", partition_mapping=primary_secondary_partition_mapping)
+        "now_time": dg.AssetIn(
+            key="now_time", partition_mapping=primary_secondary_partition_mapping
+        )
     },
 )
 def now_time_times_two(now_time: int) -> int:
     return now_time * 2
 
 
-def get_now_time_plus_N(N: int) -> AssetsDefinition:
-    @asset(partitions_def=partitioning_scheme)
+def get_now_time_plus_N(N: int) -> dg.AssetsDefinition:
+    @dg.asset(partitions_def=partitioning_scheme)
     def now_time_plus_N(now_time: int) -> int:
         return now_time + N
 
     return now_time_plus_N
 
 
-@asset(partitions_def=partitioning_scheme)
+@dg.asset(partitions_def=partitioning_scheme)
 def now_time_plus_20_after_plus_N(now_time_plus_N: int) -> int:
     return now_time_plus_N + 20
 
 
 def test_asset_based_io_manager_with_partitions():
-    @asset(partitions_def=partitioning_scheme)
+    @dg.asset(partitions_def=partitioning_scheme)
     def plus_10(now_time):
         return now_time + 10
 
     io_manager = AssetBasedInMemoryIOManager()
 
     with DefinitionsRunner.ephemeral(
-        Definitions(assets=[now_time, plus_10], resources={"io_manager": io_manager})
+        dg.Definitions(assets=[now_time, plus_10], resources={"io_manager": io_manager})
     ) as runner:
         partition_A_result = runner.materialize_all_assets(partition_key="A")
         partition_A_time_now = partition_A_result.output_for_node("now_time")
@@ -107,14 +98,14 @@ def test_basic_partitioning_workflow():
     prod_io_manager = AssetBasedInMemoryIOManager()
     dev_io_manager = AssetBasedInMemoryIOManager()
 
-    prod_defs = Definitions(
+    prod_defs = dg.Definitions(
         assets=[now_time, now_time_plus_10, now_time_plus_20_after_plus_N],
         resources={
             "io_manager": prod_io_manager,
         },
     )
 
-    dev_defs_t0 = Definitions(
+    dev_defs_t0 = dg.Definitions(
         assets=[now_time, get_now_time_plus_N(10), now_time_plus_20_after_plus_N],
         resources={
             "io_manager": BranchingIOManager(
@@ -123,7 +114,7 @@ def test_basic_partitioning_workflow():
         },
     )
 
-    dev_defs_t1 = Definitions(
+    dev_defs_t1 = dg.Definitions(
         # at t1 the developer changes the business logic from +10 to +15
         assets=[now_time, get_now_time_plus_N(15), now_time_plus_20_after_plus_N],
         resources={
@@ -259,14 +250,14 @@ def test_partition_mapping_workflow() -> Any:
     prod_io_manager = AssetBasedInMemoryIOManager()
     dev_io_manager = AssetBasedInMemoryIOManager()
 
-    prod_defs = Definitions(
+    prod_defs = dg.Definitions(
         assets=[now_time, now_time_times_two],
         resources={
             "io_manager": prod_io_manager,
         },
     )
 
-    dev_defs = Definitions(
+    dev_defs = dg.Definitions(
         assets=[now_time, now_time_times_two],
         resources={
             "io_manager": BranchingIOManager(
@@ -311,7 +302,7 @@ def test_partition_mapping_workflow() -> Any:
 
 
 # Asset factory which produces a partitioned asset w/ each partition having a different seeded value
-def get_base_values(seed_values: list[int]) -> AssetsDefinition:
+def get_base_values(seed_values: list[int]) -> dg.AssetsDefinition:
     assert len(seed_values) == 3
     seed_value_dict = {
         "A": seed_values[0],
@@ -319,7 +310,7 @@ def get_base_values(seed_values: list[int]) -> AssetsDefinition:
         "C": seed_values[2],
     }
 
-    @asset(partitions_def=partitioning_scheme)
+    @dg.asset(partitions_def=partitioning_scheme)
     def base_values(context: AssetExecutionContext) -> int:
         return seed_value_dict[context.partition_key]
 
@@ -329,10 +320,10 @@ def get_base_values(seed_values: list[int]) -> AssetsDefinition:
 # Asset with a many-to-one mapping from input partitions to output partitions
 # e.g. to materialize partition "ab" in the output asset, we need as input partitions "A" and "B" of
 # now_time
-@asset(
+@dg.asset(
     partitions_def=tertiary_partitioning_scheme,
     ins={
-        "upstream_values": AssetIn(
+        "upstream_values": dg.AssetIn(
             key="base_values", partition_mapping=primary_tertiary_partition_mapping
         )
     },
@@ -345,14 +336,14 @@ def test_multi_partition_mapping_workflow() -> Any:
     prod_io_manager = AssetBasedInMemoryIOManager()
     dev_io_manager = AssetBasedInMemoryIOManager()
 
-    prod_defs = Definitions(
+    prod_defs = dg.Definitions(
         assets=[get_base_values([10, 20, 30]), average_upstream],
         resources={
             "io_manager": prod_io_manager,
         },
     )
 
-    dev_defs = Definitions(
+    dev_defs = dg.Definitions(
         assets=[get_base_values([50, 100, 150]), average_upstream],
         resources={
             "io_manager": BranchingIOManager(
@@ -415,7 +406,7 @@ def test_multi_partition_mapping_workflow() -> Any:
         assert dev_io_manager.get_value("average_upstream", partition_key="ab") == 75
 
 
-@op
+@dg.op
 def fixed_value_op(context: OpExecutionContext) -> int:
     if context.partition_key == "A":
         return 10
@@ -427,19 +418,19 @@ def fixed_value_op(context: OpExecutionContext) -> int:
         raise Exception("Invalid partition key")
 
 
-@op(ins={"input_value": In(int)})
+@dg.op(ins={"input_value": dg.In(int)})
 def divide_input_by_two(input_value: int) -> int:
     return input_value // 2
 
 
-@job(partitions_def=partitioning_scheme)
+@dg.job(partitions_def=partitioning_scheme)
 def my_math_job():
     divide_input_by_two(fixed_value_op())
 
 
 def test_job_op_usecase_partitioned() -> Any:
     with DefinitionsRunner.ephemeral(
-        Definitions(
+        dg.Definitions(
             jobs=[my_math_job],
             resources={
                 "io_manager": BranchingIOManager(

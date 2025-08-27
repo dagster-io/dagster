@@ -6,6 +6,8 @@ last_update:
 sidebar_custom_props:
   logo: images/integrations/dbt/dbt.svg
 tags: [code-example]
+canonicalUrl: '/examples/bluesky'
+slug: '/examples/bluesky'
 ---
 
 # Analyzing Bluesky data
@@ -30,7 +32,7 @@ To follow the steps in this guide, you'll need:
 - Basic Python knowledge
 - Python 3.9+ installed on your system. Refer to the [Installation guide](/getting-started/installation) for information.
 - Understanding of data pipelines and the extract, transform, and load process (ETL).
-- Familiar with [dbt](https://www.getdbt.com/) and data transformation.
+- Familiar with [dbt](https://www.getdbt.com) and data transformation.
 - Usage of BI tools for dashboards.
 
 </details>
@@ -45,22 +47,22 @@ First, set up a new Dagster project.
    cd examples/docs_project/project_atproto_dashboard
    ```
 
-2. Create and activate a virtual environment:
+2. Install the required dependencies with `uv`:
+
+   ```bash
+   uv sync
+   ```
+
+3. Activate the virtual environment:
 
    <Tabs>
      <TabItem value="macos" label="MacOS">
-       ```bash uv venv dagster_example source dagster_example/bin/activate ```
+       ```source .venv/bin/activate ```
      </TabItem>
      <TabItem value="windows" label="Windows">
-       ```bash uv venv dagster_example dagster_example\Scripts\activate ```
+       ```.venv\Scripts\activate ```
      </TabItem>
    </Tabs>
-
-3. Install Dagster and the required dependencies:
-
-   ```bash
-   uv pip install -e ".[dev]"
-   ```
 
 4. Ensure the following environments have been populated in your .env file. Start by copying the template:
 
@@ -77,7 +79,7 @@ To make sure Dagster and its dependencies were installed correctly, navigate to 
 followed by a bash code snippet for
 
 ```bash
-dagster dev
+dg dev
 ```
 
 ## Next steps

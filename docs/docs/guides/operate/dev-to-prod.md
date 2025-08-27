@@ -13,15 +13,15 @@ Let's say we’ve been tasked with fetching the N most recent entries from Hacke
 
 Using a few Dagster concepts, we can easily tackle this task! Here’s an overview of the main concepts we’ll be using in this guide:
 
-- [Assets](/guides/build/assets/) - An asset is a software object that models a data asset. The prototypical example is a table in a database or a file in cloud storage.
+- [Assets](/guides/build/assets) - An asset is a software object that models a data asset. The prototypical example is a table in a database or a file in cloud storage.
 - [Resources](/guides/build/external-resources) - A resource is an object that models a connection to a (typically) external service. Resources can be shared between assets, and different implementations of resources can be used depending on the environment. For example, a resource may provide methods to send messages in Slack.
-- [I/O managers](/guides/build/io-managers/) - An I/O manager is a special kind of resource that handles storing and loading assets. For example, if we wanted to store assets in S3, we could use Dagster’s built-in S3 I/O manager.
+- [I/O managers](/guides/build/io-managers) - An I/O manager is a special kind of resource that handles storing and loading assets. For example, if we wanted to store assets in S3, we could use Dagster’s built-in S3 I/O manager.
 - [Run config](/guides/operate/configuration/run-configuration) - Assets and resources sometimes require configuration to set certain values, like the password to a database. Run config allows you to set these values at run time. In this guide, we will also use an API to set some default run configuration.
 
 Using these Dagster concepts we will:
 
 - Write three assets: the full Hacker News dataset, data about comments, and data about stories.
-- Use Dagster's Snowflake I/O manager to store the datasets in [Snowflake](https://www.snowflake.com/).
+- Use Dagster's Snowflake I/O manager to store the datasets in [Snowflake](https://www.snowflake.com).
 - Set up our Dagster code so that the configuration for the Snowflake I/O manager is automatically supplied based on the environment where the code is running.
 
 ## Setup
@@ -114,7 +114,7 @@ We can easily solve these problems using <PyObject section="resources" module="d
 
 Depending on your organization’s Dagster setup, there are a couple of options for a staging environment.
 
-- **For Dagster+ users**, we recommend using [branch deployments](/deployment/dagster-plus/ci-cd/branch-deployments/) as your staging step. A branch deployment is a new Dagster deployment that is automatically generated for each git branch, and can be used to verify data pipelines before deploying them to production.
+- **For Dagster+ users**, we recommend using [branch deployments](/deployment/dagster-plus/ci-cd/branch-deployments) as your staging step. A branch deployment is a new Dagster deployment that is automatically generated for each git branch, and can be used to verify data pipelines before deploying them to production.
 
 - **For a self-hosted staging deployment**, we’ve already done most of the necessary work to run our assets in staging! All we need to do is add another entry to the `resources` dictionary and set `DAGSTER_DEPLOYMENT=staging` in our staging deployment.
 

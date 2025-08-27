@@ -1,6 +1,6 @@
-from dagster import asset
+import dagster as dg
 
 
-@asset
+@dg.asset
 def bb_king():
     pass

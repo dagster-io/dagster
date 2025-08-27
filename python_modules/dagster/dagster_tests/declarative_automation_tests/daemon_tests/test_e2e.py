@@ -6,19 +6,18 @@ from collections.abc import Mapping, Sequence
 from contextlib import contextmanager
 from typing import AbstractSet, Any, Optional, Union, cast  # noqa: UP035
 
+import dagster as dg
 import dagster._check as check
 import pytest
-from dagster import AssetMaterialization, RunsFilter, instance_for_test
 from dagster._core.asset_graph_view.serializable_entity_subset import SerializableEntitySubset
 from dagster._core.definitions.asset_daemon_cursor import AssetDaemonCursor
-from dagster._core.definitions.asset_key import AssetCheckKey, AssetKey
-from dagster._core.definitions.base_asset_graph import BaseAssetGraph
+from dagster._core.definitions.assets.graph.base_asset_graph import BaseAssetGraph
 from dagster._core.definitions.sensor_definition import SensorType
 from dagster._core.execution.backfill import PartitionBackfill
 from dagster._core.instance import DagsterInstance
 from dagster._core.instance.ref import InstanceRef
+from dagster._core.remote_origin import InProcessCodeLocationOrigin
 from dagster._core.remote_representation.external import RemoteSensor
-from dagster._core.remote_representation.origin import InProcessCodeLocationOrigin
 from dagster._core.scheduler.instigation import (
     InstigatorState,
     InstigatorTick,
@@ -96,7 +95,7 @@ def _setup_instance(context: WorkspaceProcessContext) -> None:
 def get_workspace_request_context(
     filenames: Sequence[Union[str, tuple[str, str]]], overrides: Optional[dict[str, Any]] = None
 ):
-    with instance_for_test(
+    with dg.instance_for_test(
         overrides=overrides,
         synchronous_run_launcher=True,
         synchronous_run_coordinator=True,
@@ -120,7 +119,7 @@ def get_workspace_request_context(
 @contextmanager
 def get_grpc_workspace_request_context(filename: str, instance_ref: Optional[InstanceRef] = None):
     with (
-        DagsterInstance.from_ref(instance_ref) if instance_ref else instance_for_test()
+        DagsterInstance.from_ref(instance_ref) if instance_ref else dg.instance_for_test()
     ) as instance:
         with GrpcServerProcess(
             instance_ref=instance.get_ref(),
@@ -150,7 +149,6 @@ def get_threadpool_executor():
 def _execute_ticks(
     context: WorkspaceProcessContext,
     threadpool_executor: InheritContextThreadPoolExecutor,
-    submit_threadpool_executor: Optional[InheritContextThreadPoolExecutor] = None,
     debug_crash_flags=None,
 ) -> None:
     """Evaluates a single tick for all automation condition sensors across the workspace.
@@ -158,14 +156,11 @@ def _execute_ticks(
     an AutomationConditionSensorDefinition depending on the user_code setting.
     """
     asset_daemon_futures = {}
-    list(
-        AssetDaemon(settings={}, pre_sensor_interval_seconds=0)._run_iteration_impl(  # noqa
-            context,
-            threadpool_executor=threadpool_executor,
-            amp_tick_futures=asset_daemon_futures,
-            debug_crash_flags=debug_crash_flags or {},
-            submit_threadpool_executor=submit_threadpool_executor,
-        )
+    AssetDaemon(settings={}, pre_sensor_interval_seconds=0)._run_iteration_impl(  # noqa
+        context,
+        threadpool_executor=threadpool_executor,
+        amp_tick_futures=asset_daemon_futures,
+        debug_crash_flags=debug_crash_flags or {},
     )
 
     sensor_daemon_futures = {}
@@ -242,12 +237,12 @@ def _get_reserved_ids_for_latest_ticks(context: WorkspaceProcessContext) -> Sequ
     return ids
 
 
-def _get_runs_for_latest_ticks(context: WorkspaceProcessContext) -> Sequence[DagsterRun]:
+def _get_runs_for_latest_ticks(context: WorkspaceProcessContext) -> Sequence[dg.DagsterRun]:
     reserved_ids = _get_reserved_ids_for_latest_ticks(context)
     if reserved_ids:
         # return the runs in a stable order to make unit testing easier
         return sorted(
-            context.instance.get_runs(filters=RunsFilter(run_ids=reserved_ids)),
+            context.instance.get_runs(filters=dg.RunsFilter(run_ids=reserved_ids)),
             key=lambda r: (sorted(r.asset_selection or []), sorted(r.asset_check_selection or [])),
         )
     else:
@@ -286,7 +281,7 @@ def test_checks_and_assets_in_same_run() -> None:
         with freeze_time(time):
             # now update the asset in the middle
             context.instance.report_runless_asset_event(
-                AssetMaterialization(asset_key=AssetKey("processed_files"))
+                dg.AssetMaterialization(asset_key=dg.AssetKey("processed_files"))
             )
 
             _execute_ticks(context, executor)  # pyright: ignore[reportArgumentType]
@@ -297,7 +292,7 @@ def test_checks_and_assets_in_same_run() -> None:
             assert len(runs) == 1
             run = runs[0]
             assert run.asset_check_selection == {
-                AssetCheckKey(AssetKey("processed_files"), "row_count")
+                dg.AssetCheckKey(dg.AssetKey("processed_files"), "row_count")
             }
             assert len(run.asset_selection or []) == 0
 
@@ -305,7 +300,7 @@ def test_checks_and_assets_in_same_run() -> None:
         with freeze_time(time):
             # now update the asset at the top
             context.instance.report_runless_asset_event(
-                AssetMaterialization(asset_key=AssetKey("raw_files"))
+                dg.AssetMaterialization(asset_key=dg.AssetKey("raw_files"))
             )
 
             _execute_ticks(context, executor)  # pyright: ignore[reportArgumentType]
@@ -316,9 +311,9 @@ def test_checks_and_assets_in_same_run() -> None:
             runs = _get_runs_for_latest_ticks(context)
             assert len(runs) == 1
             run = runs[0]
-            assert run.asset_selection == {AssetKey("processed_files")}
+            assert run.asset_selection == {dg.AssetKey("processed_files")}
             assert run.asset_check_selection == {
-                AssetCheckKey(AssetKey("processed_files"), "row_count")
+                dg.AssetCheckKey(dg.AssetKey("processed_files"), "row_count")
             }
 
 
@@ -344,12 +339,12 @@ def test_cross_location_source_assets() -> None:
             runs = _get_runs_for_latest_ticks(context)
             assert len(runs) == 2
             assert any(
-                run.asset_selection == {AssetKey("foo_source_asset")}
+                run.asset_selection == {dg.AssetKey("foo_source_asset")}
                 and _get_location_name(run) == "defs_with_source_assets"
                 for run in runs
             )
             assert any(
-                run.asset_selection == {AssetKey("always")}
+                run.asset_selection == {dg.AssetKey("always")}
                 and _get_location_name(run) == "always_evaluates"
                 for run in runs
             )
@@ -375,7 +370,7 @@ def test_multiple_materializable_breaks_ties() -> None:
             }  # only one sensor has assets to evaluate
             runs = _get_runs_for_latest_ticks(context)
             assert len(runs) == 1
-            assert runs[0].asset_selection == {AssetKey("always")}
+            assert runs[0].asset_selection == {dg.AssetKey("always")}
 
 
 def test_cross_location_checks() -> None:
@@ -400,7 +395,7 @@ def test_cross_location_checks() -> None:
         with freeze_time(time):
             # now update the asset in the middle
             context.instance.report_runless_asset_event(
-                AssetMaterialization(asset_key=AssetKey("processed_files"))
+                dg.AssetMaterialization(asset_key=dg.AssetKey("processed_files"))
             )
 
             _execute_ticks(context, executor)  # pyright: ignore[reportArgumentType]
@@ -412,12 +407,12 @@ def test_cross_location_checks() -> None:
             assert len(runs) == 2
             # in location 1
             assert runs[1].asset_check_selection == {
-                AssetCheckKey(AssetKey("processed_files"), "row_count")
+                dg.AssetCheckKey(dg.AssetKey("processed_files"), "row_count")
             }
             assert len(runs[1].asset_selection or []) == 0
             # in location 2
             assert runs[0].asset_check_selection == {
-                AssetCheckKey(AssetKey("processed_files"), "no_nulls")
+                dg.AssetCheckKey(dg.AssetKey("processed_files"), "no_nulls")
             }
             assert len(runs[0].asset_selection or []) == 0
 
@@ -425,7 +420,7 @@ def test_cross_location_checks() -> None:
         with freeze_time(time):
             # now update the asset at the top
             context.instance.report_runless_asset_event(
-                AssetMaterialization(asset_key=AssetKey("raw_files"))
+                dg.AssetMaterialization(asset_key=dg.AssetKey("raw_files"))
             )
 
             _execute_ticks(context, executor)  # pyright: ignore[reportArgumentType]
@@ -437,9 +432,9 @@ def test_cross_location_checks() -> None:
             runs = _get_runs_for_latest_ticks(context)
             assert len(runs) == 1
             run = runs[0]
-            assert run.asset_selection == {AssetKey("processed_files")}
+            assert run.asset_selection == {dg.AssetKey("processed_files")}
             assert run.asset_check_selection == {
-                AssetCheckKey(AssetKey("processed_files"), "row_count")
+                dg.AssetCheckKey(dg.AssetKey("processed_files"), "row_count")
             }
 
         time += datetime.timedelta(seconds=30)
@@ -454,12 +449,12 @@ def test_cross_location_checks() -> None:
             assert len(runs) == 2
             # in location 1
             assert runs[1].asset_check_selection == {
-                AssetCheckKey(AssetKey("processed_files"), "row_count")
+                dg.AssetCheckKey(dg.AssetKey("processed_files"), "row_count")
             }
             assert len(runs[1].asset_selection or []) == 0
             # in location 2
             assert runs[0].asset_check_selection == {
-                AssetCheckKey(AssetKey("processed_files"), "no_nulls")
+                dg.AssetCheckKey(dg.AssetKey("processed_files"), "no_nulls")
             }
             assert len(runs[0].asset_selection or []) == 0
 
@@ -476,7 +471,7 @@ def test_default_condition() -> None:
             # eager asset materializes
             runs = _get_runs_for_latest_ticks(context)
             assert len(runs) == 1
-            assert runs[0].asset_selection == {AssetKey("eager_asset")}
+            assert runs[0].asset_selection == {dg.AssetKey("eager_asset")}
 
         time += datetime.timedelta(seconds=60)
         with freeze_time(time):
@@ -485,18 +480,17 @@ def test_default_condition() -> None:
             # passed a cron tick, so cron asset materializes
             runs = _get_runs_for_latest_ticks(context)
             assert len(runs) == 1
-            assert runs[0].asset_selection == {AssetKey("every_5_minutes_asset")}
+            assert runs[0].asset_selection == {dg.AssetKey("every_5_minutes_asset")}
 
 
 def test_non_subsettable_check() -> None:
     with (
         get_grpc_workspace_request_context("check_not_subsettable") as context,
         get_threadpool_executor() as executor,
-        InheritContextThreadPoolExecutor(max_workers=5) as submit_executor,
     ):
         time = datetime.datetime(2024, 8, 17, 1, 35)
         with freeze_time(time):
-            _execute_ticks(context, executor, submit_executor)  # pyright: ignore[reportArgumentType]
+            _execute_ticks(context, executor)  # pyright: ignore[reportArgumentType]
 
             # eager asset materializes
             runs = _get_runs_for_latest_ticks(context)
@@ -505,42 +499,42 @@ def test_non_subsettable_check() -> None:
             # unpartitioned
             unpartitioned_run = runs[2]
             assert unpartitioned_run.tags.get("dagster/partition") is None
-            assert unpartitioned_run.asset_selection == {AssetKey("unpartitioned")}
+            assert unpartitioned_run.asset_selection == {dg.AssetKey("unpartitioned")}
             assert unpartitioned_run.asset_check_selection == {
-                AssetCheckKey(AssetKey("unpartitioned"), name="row_count")
+                dg.AssetCheckKey(dg.AssetKey("unpartitioned"), name="row_count")
             }
 
             # static partitioned
             static_partitioned_run = runs[1]
             assert static_partitioned_run.tags.get("dagster/partition") == "a"
-            assert static_partitioned_run.asset_selection == {AssetKey("static")}
+            assert static_partitioned_run.asset_selection == {dg.AssetKey("static")}
             assert static_partitioned_run.asset_check_selection == {
-                AssetCheckKey(AssetKey("static"), name="c1"),
-                AssetCheckKey(AssetKey("static"), name="c2"),
+                dg.AssetCheckKey(dg.AssetKey("static"), name="c1"),
+                dg.AssetCheckKey(dg.AssetKey("static"), name="c2"),
             }
 
             # multi-asset time partitioned
             time_partitioned_run = runs[0]
             assert time_partitioned_run.tags.get("dagster/partition") == "2024-08-16"
             assert time_partitioned_run.asset_selection == {
-                AssetKey("a"),
-                AssetKey("b"),
-                AssetKey("c"),
-                AssetKey("d"),
+                dg.AssetKey("a"),
+                dg.AssetKey("b"),
+                dg.AssetKey("c"),
+                dg.AssetKey("d"),
             }
             assert time_partitioned_run.asset_check_selection == {
-                AssetCheckKey(AssetKey("a"), name="1"),
-                AssetCheckKey(AssetKey("a"), name="2"),
-                AssetCheckKey(AssetKey("d"), name="3"),
+                dg.AssetCheckKey(dg.AssetKey("a"), name="1"),
+                dg.AssetCheckKey(dg.AssetKey("a"), name="2"),
+                dg.AssetCheckKey(dg.AssetKey("d"), name="3"),
             }
 
 
 def _get_subsets_by_key(
     backfill: PartitionBackfill, asset_graph: BaseAssetGraph
-) -> Mapping[AssetKey, SerializableEntitySubset[AssetKey]]:
+) -> Mapping[dg.AssetKey, SerializableEntitySubset[dg.AssetKey]]:
     assert backfill.asset_backfill_data is not None
     target_subset = backfill.asset_backfill_data.target_subset
-    return {s.key: s for s in target_subset.iterate_asset_subsets(asset_graph)}
+    return {s.key: s for s in target_subset.iterate_asset_subsets()}
 
 
 @pytest.mark.parametrize("location", ["backfill_simple_user_code", "backfill_simple_non_user_code"])
@@ -559,18 +553,18 @@ def test_backfill_creation_simple(location: str) -> None:
             assert len(backfills) == 1
             subsets_by_key = _get_subsets_by_key(backfills[0], asset_graph)
             assert subsets_by_key.keys() == {
-                AssetKey("A"),
-                AssetKey("B"),
-                AssetKey("C"),
-                AssetKey("D"),
-                AssetKey("E"),
+                dg.AssetKey("A"),
+                dg.AssetKey("B"),
+                dg.AssetKey("C"),
+                dg.AssetKey("D"),
+                dg.AssetKey("E"),
             }
 
-            assert subsets_by_key[AssetKey("A")].size == 1
-            assert subsets_by_key[AssetKey("B")].size == 3
-            assert subsets_by_key[AssetKey("C")].size == 3
-            assert subsets_by_key[AssetKey("D")].size == 3
-            assert subsets_by_key[AssetKey("E")].size == 1
+            assert subsets_by_key[dg.AssetKey("A")].size == 1
+            assert subsets_by_key[dg.AssetKey("B")].size == 3
+            assert subsets_by_key[dg.AssetKey("C")].size == 3
+            assert subsets_by_key[dg.AssetKey("D")].size == 3
+            assert subsets_by_key[dg.AssetKey("E")].size == 1
 
             # don't create runs
             runs = _get_runs_for_latest_ticks(context)
@@ -596,8 +590,8 @@ def test_backfill_with_runs_and_checks() -> None:
 
         # report materializations for 2/3 of the partitions, resulting in only one
         # partition needing to be requested
-        context.instance.report_runless_asset_event(AssetMaterialization("run2", partition="x"))
-        context.instance.report_runless_asset_event(AssetMaterialization("run2", partition="y"))
+        context.instance.report_runless_asset_event(dg.AssetMaterialization("run2", partition="x"))
+        context.instance.report_runless_asset_event(dg.AssetMaterialization("run2", partition="y"))
 
         # all start off missing, should be requested
         time = get_current_datetime()
@@ -609,14 +603,14 @@ def test_backfill_with_runs_and_checks() -> None:
             assert len(backfills) == 1
             subsets_by_key = _get_subsets_by_key(backfills[0], asset_graph)
             assert subsets_by_key.keys() == {
-                AssetKey("backfillA"),
-                AssetKey("backfillB"),
-                AssetKey("backfillC"),
+                dg.AssetKey("backfillA"),
+                dg.AssetKey("backfillB"),
+                dg.AssetKey("backfillC"),
             }
 
-            assert subsets_by_key[AssetKey("backfillA")].size == 1
-            assert subsets_by_key[AssetKey("backfillB")].size == 3
-            assert subsets_by_key[AssetKey("backfillC")].size == 3
+            assert subsets_by_key[dg.AssetKey("backfillA")].size == 1
+            assert subsets_by_key[dg.AssetKey("backfillB")].size == 3
+            assert subsets_by_key[dg.AssetKey("backfillC")].size == 3
 
             # create 2 individual runs
             runs = _get_runs_for_latest_ticks(context)
@@ -625,17 +619,17 @@ def test_backfill_with_runs_and_checks() -> None:
             # unpartitioned
             unpartitioned_run = runs[0]
             assert unpartitioned_run.tags.get("dagster/partition") is None
-            assert unpartitioned_run.asset_selection == {AssetKey("run1")}
+            assert unpartitioned_run.asset_selection == {dg.AssetKey("run1")}
             assert unpartitioned_run.asset_check_selection == {
-                AssetCheckKey(AssetKey("run1"), name="inside")
+                dg.AssetCheckKey(dg.AssetKey("run1"), name="inside")
             }
 
             # static partitioned 1
             static_partitioned_run = runs[1]
             assert static_partitioned_run.tags.get("dagster/partition") == "z"
-            assert static_partitioned_run.asset_selection == {AssetKey("run2")}
+            assert static_partitioned_run.asset_selection == {dg.AssetKey("run2")}
             assert static_partitioned_run.asset_check_selection == {
-                AssetCheckKey(AssetKey("run2"), name="inside")
+                dg.AssetCheckKey(dg.AssetKey("run2"), name="inside")
             }
 
         time += datetime.timedelta(seconds=30)
@@ -651,7 +645,7 @@ def test_backfill_with_runs_and_checks() -> None:
 
 def test_toggle_user_code() -> None:
     with (
-        instance_for_test(
+        dg.instance_for_test(
             synchronous_run_launcher=True,
             synchronous_run_coordinator=True,
         ) as instance,
@@ -686,10 +680,10 @@ def test_toggle_user_code() -> None:
                 time += datetime.timedelta(seconds=35)
                 with freeze_time(time):
                     # second tick, root gets updated
-                    instance.report_runless_asset_event(AssetMaterialization("root"))
+                    instance.report_runless_asset_event(dg.AssetMaterialization("root"))
                     _execute_ticks(context, executor)  # pyright: ignore[reportArgumentType]
                     runs = _get_runs_for_latest_ticks(context)
-                    assert runs[0].asset_selection == {AssetKey("downstream")}
+                    assert runs[0].asset_selection == {dg.AssetKey("downstream")}
 
                 time += datetime.timedelta(seconds=35)
                 with freeze_time(time):
@@ -800,7 +794,7 @@ def test_observable_source_asset() -> None:
             _execute_ticks(context, executor)  # pyright: ignore[reportArgumentType]
             runs = _get_runs_for_latest_ticks(context)
             assert len(runs) == 1
-            assert runs[0].asset_selection == {AssetKey("obs"), AssetKey("mat")}
+            assert runs[0].asset_selection == {dg.AssetKey("obs"), dg.AssetKey("mat")}
 
         time += datetime.timedelta(minutes=1)
         with freeze_time(time):
@@ -829,11 +823,11 @@ def test_observable_source_asset_is_not_backfilled() -> None:
             _execute_ticks(context, executor)  # pyright: ignore[reportArgumentType]
             runs = _get_runs_for_latest_ticks(context)
             assert len(runs) == 3
-            assert all(run.asset_selection == {AssetKey("obs")} for run in runs)
+            assert all(run.asset_selection == {dg.AssetKey("obs")} for run in runs)
             backfills = _get_backfills_for_latest_ticks(context)
             assert len(backfills) == 1
             subsets_by_key = _get_subsets_by_key(backfills[0], asset_graph)
-            assert subsets_by_key.keys() == {AssetKey("mat")}
+            assert subsets_by_key.keys() == {dg.AssetKey("mat")}
 
         time += datetime.timedelta(minutes=1)
         with freeze_time(time):
@@ -842,3 +836,49 @@ def test_observable_source_asset_is_not_backfilled() -> None:
             assert len(runs) == 0
             backfills = _get_backfills_for_latest_ticks(context)
             assert len(backfills) == 0
+
+
+def test_dynamic_partitions() -> None:
+    with (
+        get_grpc_workspace_request_context("dynamic_partitions_on_missing") as context,
+        get_threadpool_executor() as executor,
+    ):
+        time = datetime.datetime(2024, 8, 16, 1, 35)
+        with freeze_time(time):
+            _execute_ticks(context, executor)  # pyright: ignore[reportArgumentType]
+            runs = _get_runs_for_latest_ticks(context)
+            assert len(runs) == 0
+
+        context.instance.add_dynamic_partitions("dynamic", ["a", "b", "c"])
+        context.instance.report_runless_asset_event(dg.AssetMaterialization("A", partition="a"))
+        context.instance.report_runless_asset_event(dg.AssetMaterialization("A", partition="b"))
+
+        time += datetime.timedelta(hours=1)
+        with freeze_time(time):
+            _execute_ticks(context, executor)  # pyright: ignore[reportArgumentType]
+            runs = _get_runs_for_latest_ticks(context)
+            assert len(runs) == 1
+            assert runs[0].asset_selection == {dg.AssetKey("A")}
+            assert runs[0].tags["dagster/partition"] == "c"
+
+        time += datetime.timedelta(minutes=1)
+        with freeze_time(time):
+            _execute_ticks(context, executor)  # pyright: ignore[reportArgumentType]
+            runs = _get_runs_for_latest_ticks(context)
+            assert len(runs) == 0
+
+        # add new partition
+        time += datetime.timedelta(minutes=1)
+        context.instance.add_dynamic_partitions("dynamic", ["d"])
+        with freeze_time(time):
+            _execute_ticks(context, executor)  # pyright: ignore[reportArgumentType]
+            runs = _get_runs_for_latest_ticks(context)
+            assert len(runs) == 1
+
+        # delete a partition that we just added, should not cause errors
+        time += datetime.timedelta(minutes=1)
+        context.instance.delete_dynamic_partition("dynamic", "d")
+        with freeze_time(time):
+            _execute_ticks(context, executor)  # pyright: ignore[reportArgumentType]
+            runs = _get_runs_for_latest_ticks(context)
+            assert len(runs) == 0

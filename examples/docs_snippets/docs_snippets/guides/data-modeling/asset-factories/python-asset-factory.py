@@ -7,7 +7,6 @@ import dagster as dg
 
 
 def build_etl_job(
-    s3_resource: s3.S3Resource,
     bucket: str,
     source_object: str,
     target_object: str,
@@ -39,25 +38,33 @@ def build_etl_job(
 
     return dg.Definitions(
         assets=[etl_asset],
-        resources={"s3": s3_resource},
     )
 
 
-s3_resource = s3.S3Resource(aws_access_key_id="...", aws_secret_access_key="...")
+@dg.definitions
+def resources():
+    return dg.Definitions(
+        resources={
+            "s3": s3.S3Resource(aws_access_key_id="...", aws_secret_access_key="...")
+        },
+    )
 
-defs = dg.Definitions.merge(
-    build_etl_job(
-        s3_resource=s3_resource,
-        bucket="my_bucket",
-        source_object="raw_transactions.csv",
-        target_object="cleaned_transactions.csv",
-        sql="SELECT * FROM source WHERE amount IS NOT NULL;",
-    ),
-    build_etl_job(
-        s3_resource=s3_resource,
-        bucket="my_bucket",
-        source_object="all_customers.csv",
-        target_object="risky_customers.csv",
-        sql="SELECT * FROM source WHERE risk_score > 0.8;",
-    ),
-)
+
+@dg.definitions
+def defs():
+    etl_jobs = [
+        {
+            "bucket": "my_bucket",
+            "source_object": "raw_transactions.csv",
+            "target_object": "cleaned_transactions.csv",
+            "sql": "SELECT * FROM source WHERE amount IS NOT NULL;",
+        },
+        {
+            "bucket": "my_bucket",
+            "source_object": "all_customers.csv",
+            "target_object": "risky_customers.csv",
+            "sql": "SELECT * FROM source WHERE risk_score > 0.8;",
+        },
+    ]
+
+    return dg.Definitions.merge(*[build_etl_job(**job) for job in etl_jobs])

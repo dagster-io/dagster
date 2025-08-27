@@ -16,7 +16,7 @@ This guide walks through all three methods.
 
 :::note
 
-This article assumes familiarity with [assets](/guides/build/assets/defining-assets) and[resources](/guides/build/external-resources/)
+This article assumes familiarity with [assets](/guides/build/assets/defining-assets) and[resources](/guides/build/external-resources)
 
 :::
 
@@ -57,7 +57,7 @@ I/O managers handle:
 1. **Input**: Reading data from storage and loading it into memory for use by dependent assets.
 2. **Output**: Writing data to the configured storage location.
 
-For a deeper understanding of I/O managers, check out the [Understanding I/O managers](/guides/build/io-managers/) guide.
+For a deeper understanding of I/O managers, check out the [Understanding I/O managers](/guides/build/io-managers) guide.
 
 <CodeExample path="docs_snippets/docs_snippets/guides/data-assets/passing-data-assets/passing-data-io-manager.py" language="python" title="Using I/O managers" />
 
@@ -94,7 +94,7 @@ Consider this example:
 
 This example downloads a zip file from Google Drive, unzips it, and loads the data into a Pandas DataFrame. It relies on each asset running on the same file system to perform these operations.
 
-The assets are modeled as tasks, rather than as data assets. For more information on the difference between tasks and data assets, check out the [assets guide](/guides/build/assets/).
+The assets are modeled as tasks, rather than as data assets. For more information on the difference between tasks and data assets, check out the [assets guide](/guides/build/assets).
 
 In this refactor, the `download_files`, `unzip_files`, and `load_data` assets are combined into a single asset, `my_dataset`. This asset downloads the files, unzips them, and loads the data into a data warehouse.
 

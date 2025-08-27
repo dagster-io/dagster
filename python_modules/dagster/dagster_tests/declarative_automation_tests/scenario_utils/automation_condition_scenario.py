@@ -4,16 +4,13 @@ from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
 from typing import Optional
 
+import dagster as dg
 import dagster._check as check
 from dagster import AssetKey, AutomationContext
 from dagster._core.asset_graph_view.asset_graph_view import AssetGraphView
 from dagster._core.asset_graph_view.entity_subset import EntitySubset
 from dagster._core.definitions.asset_daemon_cursor import AssetDaemonCursor
 from dagster._core.definitions.auto_materialize_policy import AutoMaterializePolicy
-from dagster._core.definitions.declarative_automation.automation_condition import (
-    AutomationCondition,
-    AutomationResult,
-)
 from dagster._core.definitions.declarative_automation.automation_condition_evaluator import (
     AutomationConditionEvaluator,
 )
@@ -29,7 +26,7 @@ from dagster._core.test_utils import freeze_time
 from dagster_tests.declarative_automation_tests.scenario_utils.scenario_state import ScenarioState
 
 
-class FalseAutomationCondition(AutomationCondition):
+class FalseAutomationCondition(dg.AutomationCondition):
     """Always returns the empty subset."""
 
     label: Optional[str] = None
@@ -38,13 +35,13 @@ class FalseAutomationCondition(AutomationCondition):
     def description(self) -> str:
         return ""
 
-    def evaluate(self, context: AutomationContext) -> AutomationResult:
-        return AutomationResult(context, true_subset=context.get_empty_subset())
+    def evaluate(self, context: AutomationContext) -> dg.AutomationResult:
+        return dg.AutomationResult(context, true_subset=context.get_empty_subset())
 
 
 @dataclass(frozen=True)
 class AutomationConditionScenarioState(ScenarioState):
-    automation_condition: Optional[AutomationCondition] = None
+    automation_condition: Optional[dg.AutomationCondition] = None
     condition_cursor: Optional[AutomationConditionCursor] = None
     requested_asset_partitions: Optional[Sequence[AssetKeyPartitionKey]] = None
     ensure_empty_result: bool = True
@@ -52,7 +49,7 @@ class AutomationConditionScenarioState(ScenarioState):
 
     def _get_request_subsets_by_key(
         self, asset_graph_view: AssetGraphView
-    ) -> Mapping[AssetKey, EntitySubset]:
+    ) -> Mapping[dg.AssetKey, EntitySubset]:
         if self.requested_asset_partitions is None:
             return {}
         ap_by_key = defaultdict(set)
@@ -65,7 +62,7 @@ class AutomationConditionScenarioState(ScenarioState):
 
     async def evaluate(
         self, asset: CoercibleToAssetKey
-    ) -> tuple["AutomationConditionScenarioState", AutomationResult]:
+    ) -> tuple["AutomationConditionScenarioState", dg.AutomationResult]:
         asset_key = AssetKey.from_coercible(asset)
         # ensure that the top level condition never returns any asset partitions, as otherwise the
         # next evaluation will assume that those asset partitions were requested by the machinery

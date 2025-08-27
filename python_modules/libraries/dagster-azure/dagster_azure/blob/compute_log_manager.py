@@ -260,7 +260,7 @@ class AzureBlobComputeLogManager(TruncatingCloudStorageComputeLogManager, Config
         if to_remove:
             self._container_client.delete_blobs(*to_remove)
 
-    def download_url_for_type(  # pyright: ignore[reportIncompatibleMethodOverride]
+    def download_url_for_type(
         self, log_key: Sequence[str], io_type: ComputeIOType
     ) -> Optional[str]:
         if not self.is_capture_complete(log_key):

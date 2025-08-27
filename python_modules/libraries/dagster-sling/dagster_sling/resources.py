@@ -635,6 +635,8 @@ def _process_env_vars(config: dict[str, Any]) -> dict[str, Any]:
     for key, value in config.items():
         if isinstance(value, dict) and len(value) == 1 and next(iter(value.keys())) == "env":
             out[key] = EnvVar(next(iter(value.values()))).get_value()
+        elif isinstance(value, EnvVar):
+            out[key] = value.get_value()
         else:
             out[key] = value
     return out

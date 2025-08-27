@@ -473,6 +473,7 @@ export type PipelineExplorerRootQuery = {
             }>;
           };
         }>;
+        tags: Array<{__typename: 'PipelineTag'; key: string; value: string}>;
         modes: Array<{
           __typename: 'Mode';
           id: string;
@@ -1611,4 +1612,4 @@ export type PipelineExplorerRootQuery = {
       };
 };
 
-export const PipelineExplorerRootQueryVersion = '10d25615ecf8017aec158bbe0b924a263d756d486f736540154c3f97e88f6fc6';
+export const PipelineExplorerRootQueryVersion = '3ee9aa3624890ae0f68accec25d47f4ab0a2103bcfd980f5638e27453e6c4a48';

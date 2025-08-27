@@ -6,8 +6,8 @@ import responses
 from dagster import materialize
 from dagster._config.field_utils import EnvVar
 from dagster._core.code_pointer import CodePointer
-from dagster._core.definitions.asset_spec import AssetSpec
-from dagster._core.definitions.assets import AssetsDefinition
+from dagster._core.definitions.assets.definition.asset_spec import AssetSpec
+from dagster._core.definitions.assets.definition.assets_definition import AssetsDefinition
 from dagster._core.definitions.decorators.asset_decorator import asset
 from dagster._core.definitions.definitions_class import Definitions
 from dagster._core.definitions.reconstruct import (

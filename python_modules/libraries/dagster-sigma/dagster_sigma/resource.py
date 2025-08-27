@@ -18,7 +18,7 @@ import requests
 from aiohttp.client_exceptions import ClientResponseError
 from dagster import ConfigurableResource
 from dagster._annotations import beta, deprecated, public
-from dagster._core.definitions.asset_spec import AssetSpec
+from dagster._core.definitions.assets.definition.asset_spec import AssetSpec
 from dagster._core.definitions.definitions_class import Definitions
 from dagster._core.definitions.definitions_load_context import StateBackedDefinitionsLoader
 from dagster._core.definitions.events import AssetMaterialization
@@ -182,18 +182,30 @@ class SigmaOrganization(ConfigurableResource):
         if query_params:
             url = f"{url}?{urllib.parse.urlencode(query_params)}"
 
-        async with aiohttp.ClientSession() as session:
-            async with session.request(
-                method=method,
-                url=url,
-                headers={
-                    "Accept": "application/json",
-                    "Authorization": f"Bearer {self.api_token}",
-                    **SIGMA_PARTNER_ID_TAG,
-                },
-            ) as response:
-                response.raise_for_status()
-                return await response.json()
+        max_retries = 5
+        base_delay = 1  # seconds
+
+        for attempt in range(max_retries):
+            try:
+                async with aiohttp.ClientSession() as session:
+                    async with session.request(
+                        method=method,
+                        url=url,
+                        headers={
+                            "Accept": "application/json",
+                            "Authorization": f"Bearer {self.api_token}",
+                            **SIGMA_PARTNER_ID_TAG,
+                        },
+                    ) as response:
+                        response.raise_for_status()
+                        return await response.json()
+            except ClientResponseError as e:
+                if e.status == 429 and attempt < max_retries - 1:
+                    delay = base_delay * (2**attempt)  # exponential backoff
+                    await asyncio.sleep(delay)
+                    continue
+                raise
+        raise Exception("Failed to fetch after maximum retries")
 
     def _fetch_json(
         self,

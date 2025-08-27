@@ -1,5 +1,5 @@
 from dagster import AssetKey, SourceAsset, asset
-from dagster._core.definitions.asset_spec import AssetSpec
+from dagster._core.definitions.assets.definition.asset_spec import AssetSpec
 
 
 @asset

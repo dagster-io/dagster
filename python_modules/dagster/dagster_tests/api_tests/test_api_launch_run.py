@@ -1,14 +1,9 @@
+import dagster as dg
 from dagster._core.remote_representation.handle import JobHandle
 from dagster._core.storage.dagster_run import DagsterRunStatus
-from dagster._core.test_utils import (
-    create_run_for_test,
-    instance_for_test,
-    poll_for_event,
-    poll_for_finished_run,
-)
+from dagster._core.test_utils import create_run_for_test, poll_for_event, poll_for_finished_run
 from dagster._grpc.server import ExecuteExternalJobArgs
 from dagster._grpc.types import StartRunResult
-from dagster_shared.serdes import deserialize_value
 
 from dagster_tests.api_tests.utils import get_bar_repo_code_location
 
@@ -25,7 +20,7 @@ def _check_event_log_contains(event_log, expected_type_and_message):
 
 
 def test_launch_run_with_unloadable_job_grpc():
-    with instance_for_test() as instance:
+    with dg.instance_for_test() as instance:
         with get_bar_repo_code_location(instance) as code_location:
             job_handle = JobHandle("foo", code_location.get_repository("bar_repo").handle)
             api_client = code_location.client
@@ -36,7 +31,7 @@ def test_launch_run_with_unloadable_job_grpc():
             original_origin = job_handle.get_remote_origin()
 
             # point the api to a pipeline that cannot be loaded
-            res = deserialize_value(
+            res = dg.deserialize_value(
                 api_client.start_run(
                     ExecuteExternalJobArgs(
                         job_origin=original_origin._replace(job_name="i_am_fake_pipeline"),
@@ -73,7 +68,7 @@ def test_launch_run_with_unloadable_job_grpc():
 
 
 def test_launch_run_grpc():
-    with instance_for_test() as instance:
+    with dg.instance_for_test() as instance:
         with get_bar_repo_code_location(instance) as code_location:
             job_handle = JobHandle("foo", code_location.get_repository("bar_repo").handle)
             api_client = code_location.client
@@ -81,7 +76,7 @@ def test_launch_run_grpc():
             run = create_run_for_test(instance, "foo")
             run_id = run.run_id
 
-            res = deserialize_value(
+            res = dg.deserialize_value(
                 api_client.start_run(
                     ExecuteExternalJobArgs(
                         job_origin=job_handle.get_remote_origin(),
@@ -118,7 +113,7 @@ def test_launch_run_grpc():
 
 
 def test_launch_unloadable_run_grpc():
-    with instance_for_test() as instance:
+    with dg.instance_for_test() as instance:
         with get_bar_repo_code_location(instance) as code_location:
             job_handle = JobHandle("foo", code_location.get_repository("bar_repo").handle)
             api_client = code_location.client
@@ -126,8 +121,8 @@ def test_launch_unloadable_run_grpc():
             run = create_run_for_test(instance, "foo")
             run_id = run.run_id
 
-            with instance_for_test() as other_instance:
-                res = deserialize_value(
+            with dg.instance_for_test() as other_instance:
+                res = dg.deserialize_value(
                     api_client.start_run(
                         ExecuteExternalJobArgs(
                             job_origin=job_handle.get_remote_origin(),

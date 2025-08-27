@@ -3,7 +3,7 @@ from typing import AbstractSet, Any, Optional  # noqa: UP035
 
 import dagster._check as check
 from dagster._annotations import public
-from dagster._core.definitions.asset_check_spec import AssetCheckKey, AssetCheckSpec
+from dagster._core.definitions.asset_checks.asset_check_spec import AssetCheckKey, AssetCheckSpec
 from dagster._core.definitions.job_definition import JobDefinition
 from dagster._core.definitions.op_definition import OpDefinition
 from dagster._core.definitions.repository_definition.repository_definition import (
@@ -22,6 +22,7 @@ from dagster._core.storage.dagster_run import DagsterRun
 from dagster._utils.forked_pdb import ForkedPdb
 
 
+@public
 class AssetCheckExecutionContext:
     def __init__(self, op_execution_context: OpExecutionContext) -> None:
         self._op_execution_context = check.inst_param(

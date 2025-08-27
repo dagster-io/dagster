@@ -8,7 +8,7 @@ from typing import Optional, TypedDict, Union, cast
 
 from dagster import OutputContext
 from dagster._config.pythonic_config import ConfigurableIOManagerFactory
-from dagster._core.definitions.time_window_partitions import TimeWindow
+from dagster._core.definitions.partitions.utils import TimeWindow
 from dagster._core.storage.db_io_manager import (
     DbClient,
     DbIOManager,
@@ -87,7 +87,7 @@ class DeltaLakeIOManager(ConfigurableIOManagerFactory):
             def my_table() -> pd.DataFrame:  # the name of the asset will be the table name
                 ...
 
-            defs = Definitions(
+            Definitions(
                 assets=[my_table],
                 resources={"io_manager": MyDeltaLakeIOManager()}
             )

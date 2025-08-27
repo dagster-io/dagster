@@ -11,7 +11,3 @@ raw_transactions = dg.AssetSpec("raw_transactions")
 # external asset.
 @dg.asset(deps=[raw_transactions])
 def cleaned_transactions(): ...
-
-
-# Define the Definitions object
-defs = dg.Definitions(assets=[raw_transactions, cleaned_transactions])

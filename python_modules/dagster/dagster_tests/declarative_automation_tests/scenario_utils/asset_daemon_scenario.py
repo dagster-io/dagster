@@ -6,21 +6,21 @@ from dataclasses import dataclass, field
 from typing import Any, Callable, NamedTuple, Optional, cast
 from unittest import mock
 
+import dagster as dg
 import dagster._check as check
-from dagster import AssetKey, DagsterInstance, RunRequest, RunsFilter
+from dagster import AssetKey, DagsterInstance, RunRequest
 from dagster._core.definitions.asset_daemon_cursor import (
     AssetDaemonCursor,
     backcompat_deserialize_asset_daemon_cursor_str,
 )
 from dagster._core.definitions.asset_selection import AssetSelection
-from dagster._core.definitions.auto_materialize_rule import AutoMaterializeRule
+from dagster._core.definitions.assets.graph.base_asset_graph import BaseAssetGraph
 from dagster._core.definitions.auto_materialize_rule_evaluation import (
     AutoMaterializeRuleEvaluationData,
 )
 from dagster._core.definitions.automation_tick_evaluation_context import (
     AutomationTickEvaluationContext,
 )
-from dagster._core.definitions.base_asset_graph import BaseAssetGraph
 from dagster._core.definitions.declarative_automation.legacy.valid_asset_subset import (
     ValidAssetSubset,
 )
@@ -32,10 +32,7 @@ from dagster._core.definitions.events import AssetKeyPartitionKey, CoercibleToAs
 from dagster._core.definitions.repository_definition.valid_definitions import (
     SINGLETON_REPOSITORY_NAME,
 )
-from dagster._core.remote_representation.origin import (
-    RemoteInstigatorOrigin,
-    RemoteRepositoryOrigin,
-)
+from dagster._core.remote_origin import RemoteInstigatorOrigin, RemoteRepositoryOrigin
 from dagster._core.scheduler.instigation import SensorInstigatorData, TickStatus
 from dagster._core.storage.tags import PARTITION_NAME_TAG
 from dagster._core.test_utils import freeze_time, wait_for_futures
@@ -48,7 +45,7 @@ from dagster._daemon.asset_daemon import (
     get_current_evaluation_id,
     set_auto_materialize_paused,
 )
-from dagster_shared.serdes.serdes import DeserializationError, deserialize_value, serialize_value
+from dagster_shared.serdes.serdes import DeserializationError
 
 from dagster_tests.declarative_automation_tests.scenario_utils.base_scenario import run_request
 from dagster_tests.declarative_automation_tests.scenario_utils.scenario_state import (
@@ -71,7 +68,7 @@ class AssetRuleEvaluationSpec(NamedTuple):
 
     """
 
-    rule: AutoMaterializeRule
+    rule: dg.AutoMaterializeRule
     partitions: Optional[Sequence[str]] = None
     rule_evaluation_data: Optional[AutoMaterializeRuleEvaluationData] = None
 
@@ -122,8 +119,8 @@ class AssetDaemonScenarioState(ScenarioState):
         current_time (datetime): The current time of the scenario.
     """
 
-    run_requests: Sequence[RunRequest] = field(default_factory=list)
-    serialized_cursor: str = field(default=serialize_value(AssetDaemonCursor.empty(0)))
+    run_requests: Sequence[dg.RunRequest] = field(default_factory=list)
+    serialized_cursor: str = field(default=dg.serialize_value(AssetDaemonCursor.empty(0)))
     evaluations: Sequence[AutomationConditionEvaluation] = field(default_factory=list)
     tick_index: int = 1
 
@@ -138,9 +135,9 @@ class AssetDaemonScenarioState(ScenarioState):
 
     def _evaluate_tick_fast(
         self,
-    ) -> tuple[Sequence[RunRequest], AssetDaemonCursor, Sequence[AutomationConditionEvaluation]]:
+    ) -> tuple[Sequence[dg.RunRequest], AssetDaemonCursor, Sequence[AutomationConditionEvaluation]]:
         try:
-            cursor = deserialize_value(self.serialized_cursor, AssetDaemonCursor)
+            cursor = dg.deserialize_value(self.serialized_cursor, AssetDaemonCursor)
         except DeserializationError:
             cursor = backcompat_deserialize_asset_daemon_cursor_str(
                 self.serialized_cursor, self.asset_graph, 0
@@ -182,7 +179,7 @@ class AssetDaemonScenarioState(ScenarioState):
     def _evaluate_tick_daemon(
         self, stop_mid_iteration: bool
     ) -> tuple[
-        Sequence[RunRequest],
+        Sequence[dg.RunRequest],
         AssetDaemonCursor,
         Sequence[AutomationConditionEvaluation],
     ]:
@@ -207,17 +204,14 @@ class AssetDaemonScenarioState(ScenarioState):
             def _run_daemon():
                 amp_tick_futures = {}
 
-                list(
-                    AssetDaemon(  # noqa: SLF001
-                        settings=self.instance.get_auto_materialize_settings(),
-                        pre_sensor_interval_seconds=42,
-                    )._run_iteration_impl(
-                        workspace_context,
-                        threadpool_executor=self.threadpool_executor,
-                        amp_tick_futures=amp_tick_futures,
-                        debug_crash_flags={},
-                        submit_threadpool_executor=None,
-                    )
+                AssetDaemon(  # noqa: SLF001
+                    settings=self.instance.get_auto_materialize_settings(),
+                    pre_sensor_interval_seconds=42,
+                )._run_iteration_impl(
+                    workspace_context,
+                    threadpool_executor=self.threadpool_executor,
+                    amp_tick_futures=amp_tick_futures,
+                    debug_crash_flags={},
                 )
 
                 wait_for_futures(amp_tick_futures)
@@ -254,7 +248,7 @@ class AssetDaemonScenarioState(ScenarioState):
                     partition_key=run.tags.get(PARTITION_NAME_TAG),
                 )._replace(tags=run.tags)
                 for run in self.instance.get_runs(
-                    filters=RunsFilter(
+                    filters=dg.RunsFilter(
                         tags={"dagster/asset_evaluation_id": str(new_cursor.evaluation_id)}
                     )
                 )
@@ -282,9 +276,9 @@ class AssetDaemonScenarioState(ScenarioState):
             run_requests, cursor, _ = self._evaluate_tick_daemon(
                 stop_mid_iteration=stop_mid_iteration
             )
-        new_state = self.with_serialized_cursor(serialize_value(cursor)).with_current_time_advanced(
-            seconds=1
-        )
+        new_state = self.with_serialized_cursor(
+            dg.serialize_value(cursor)
+        ).with_current_time_advanced(seconds=1)
         return new_state, run_requests
 
     def evaluate_tick(
@@ -311,14 +305,14 @@ class AssetDaemonScenarioState(ScenarioState):
         return dataclasses.replace(
             self,
             run_requests=new_run_requests,
-            serialized_cursor=serialize_value(new_cursor),
+            serialized_cursor=dg.serialize_value(new_cursor),
             evaluations=new_evaluations,
             tick_index=self.tick_index + 1,
         )
 
     def _log_assertion_error(self, expected: Sequence[Any], actual: Sequence[Any]) -> None:
-        expected_str = "\n\n".join("\t" + str(serialize_value(rr)) for rr in expected)
-        actual_str = "\n\n".join("\t" + str(serialize_value(rr)) for rr in actual)
+        expected_str = "\n\n".join("\t" + str(dg.serialize_value(rr)) for rr in expected)
+        actual_str = "\n\n".join("\t" + str(dg.serialize_value(rr)) for rr in actual)
         message = f"\nExpected: \n\n{expected_str}\n\nActual: \n\n{actual_str}\n"
         self.logger.error(message)
 
@@ -334,7 +328,7 @@ class AssetDaemonScenarioState(ScenarioState):
             instigator_name=self.sensor_name,
         )
 
-    def _assert_requested_runs_daemon(self, expected_run_requests: Sequence[RunRequest]) -> None:
+    def _assert_requested_runs_daemon(self, expected_run_requests: Sequence[dg.RunRequest]) -> None:
         """Additional assertions for daemon mode. Checks that the most recent tick matches the
         expected requested asset partitions.
         """
@@ -373,9 +367,9 @@ class AssetDaemonScenarioState(ScenarioState):
         }
 
     def _assert_run_requests_lists_equal(
-        self, actual: Sequence[RunRequest], expected: Sequence[RunRequest]
+        self, actual: Sequence[dg.RunRequest], expected: Sequence[dg.RunRequest]
     ):
-        def sort_run_request_key_fn(run_request) -> tuple[AssetKey, Optional[str]]:
+        def sort_run_request_key_fn(run_request) -> tuple[dg.AssetKey, Optional[str]]:
             return (min(run_request.asset_selection), run_request.partition_key)
 
         sorted_actual_run_requests = sorted(actual, key=sort_run_request_key_fn)
@@ -472,7 +466,9 @@ class AssetDaemonScenarioState(ScenarioState):
         new_run_ids_for_asset = {
             run.run_id
             for run in self.instance.get_runs(
-                filters=RunsFilter(tags={"dagster/asset_evaluation_id": str(current_evaluation_id)})
+                filters=dg.RunsFilter(
+                    tags={"dagster/asset_evaluation_id": str(current_evaluation_id)}
+                )
             )
             if key in (run.asset_selection or set())
         }
@@ -549,22 +545,24 @@ class AssetDaemonScenarioState(ScenarioState):
             for actual_sm, expected_sm in zip(
                 sorted(
                     actual_subsets_with_metadata,
-                    key=lambda x: (str(serialize_value(x.subset)), str(x.metadata)),
+                    key=lambda x: (str(dg.serialize_value(x.subset)), str(x.metadata)),
                 ),
                 sorted(
                     expected_subsets_with_metadata,
-                    key=lambda x: (str(serialize_value(x.subset)), str(x.metadata)),
+                    key=lambda x: (str(dg.serialize_value(x.subset)), str(x.metadata)),
                 ),
             ):
-                assert serialize_value(actual_sm.subset) == serialize_value(expected_sm.subset)
+                assert dg.serialize_value(actual_sm.subset) == dg.serialize_value(
+                    expected_sm.subset
+                )
                 # only check evaluation data if it was set on the expected evaluation spec
                 if expected_sm.metadata:
                     assert actual_sm.metadata == expected_sm.metadata
 
         except:
             self._log_assertion_error(
-                sorted(expected_subsets_with_metadata, key=lambda x: str(serialize_value(x))),
-                sorted(actual_subsets_with_metadata, key=lambda x: str(serialize_value(x))),
+                sorted(expected_subsets_with_metadata, key=lambda x: str(dg.serialize_value(x))),
+                sorted(actual_subsets_with_metadata, key=lambda x: str(dg.serialize_value(x))),
             )
             raise
 

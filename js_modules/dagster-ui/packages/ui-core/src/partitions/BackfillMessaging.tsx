@@ -67,8 +67,8 @@ export async function showBackfillErrorToast(
   });
 }
 
-export async function showBackfillSuccessToast(backfillId: string, isAssetBackfill: boolean) {
-  const url = getBackfillPath(backfillId, isAssetBackfill);
+export async function showBackfillSuccessToast(backfillId: string) {
+  const url = getBackfillPath(backfillId);
   await showSharedToaster({
     intent: 'success',
     message: (

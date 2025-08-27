@@ -2,16 +2,19 @@ import os
 import shlex
 from collections.abc import Sequence
 from pathlib import Path
-from typing import Literal, Optional, Union
+from typing import TYPE_CHECKING, Literal, Optional, Union
 
-from dagster._core.execution.context.asset_check_execution_context import AssetCheckExecutionContext
-from dagster._core.execution.context.asset_execution_context import AssetExecutionContext
-from dagster._core.pipes.context import PipesExecutionResult
-from dagster._core.pipes.subprocess import PipesSubprocessClient
-from dagster.components.lib.executable_component.component import OpMetadataSpec
+from dagster.components.lib.executable_component.component import OpSpec
+
+if TYPE_CHECKING:
+    from dagster._core.execution.context.asset_check_execution_context import (
+        AssetCheckExecutionContext,
+    )
+    from dagster._core.execution.context.asset_execution_context import AssetExecutionContext
+    from dagster._core.pipes.context import PipesExecutionResult
 
 
-class ScriptSpec(OpMetadataSpec):
+class ScriptSpec(OpSpec):
     type: Literal["script"] = "script"
     path: str
     args: Optional[Union[list[str], str]] = None
@@ -30,10 +33,10 @@ class ScriptSpec(OpMetadataSpec):
 
 
 def invoke_runner(
-    *,
-    context: Union[AssetExecutionContext, AssetCheckExecutionContext],
-    command: list[str],
-) -> Sequence[PipesExecutionResult]:
+    *, context: Union["AssetExecutionContext", "AssetCheckExecutionContext"], command: list[str]
+) -> Sequence["PipesExecutionResult"]:
+    from dagster._core.pipes.subprocess import PipesSubprocessClient
+
     return (
         PipesSubprocessClient()
         .run(context=context.op_execution_context, command=command)

@@ -4,14 +4,14 @@ from typing import Annotated, Literal, Optional, Union
 
 from dagster_shared.record import as_dict, record
 
-from dagster._core.definitions.asset_check_factories.metadata_bounds_checks import (
+from dagster._core.definitions.asset_checks.asset_check_factories.metadata_bounds_checks import (
     build_metadata_bounds_checks,
 )
-from dagster._core.definitions.asset_check_factories.schema_change_checks import (
+from dagster._core.definitions.asset_checks.asset_check_factories.schema_change_checks import (
     build_column_schema_change_checks,
 )
-from dagster._core.definitions.asset_check_spec import AssetCheckSeverity
-from dagster._core.definitions.asset_checks import AssetChecksDefinition
+from dagster._core.definitions.asset_checks.asset_check_spec import AssetCheckSeverity
+from dagster._core.definitions.asset_checks.asset_checks_definition import AssetChecksDefinition
 from dagster._core.definitions.asset_key import AssetKey
 from dagster._core.definitions.definitions_class import Definitions
 from dagster.components.component.component import Component

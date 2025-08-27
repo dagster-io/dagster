@@ -2,7 +2,6 @@ import React, {useCallback, useMemo, useState} from 'react';
 import {useHistory} from 'react-router';
 import {useFavoriteAssets} from 'shared/assets/useFavoriteAssets.oss';
 
-import {useFullScreen, useFullScreenAllowedView} from '../../app/AppTopNav/AppTopNavContext';
 import {AssetGraphExplorer} from '../../asset-graph/AssetGraphExplorer';
 import {AssetGraphViewType, tokenForAssetKey} from '../../asset-graph/Utils';
 import {AssetLocation} from '../../asset-graph/useFindAssetLocation';
@@ -22,10 +21,6 @@ export const AssetCatalogAssetGraph = React.memo(
     onChangeSelection: (selection: string) => void;
     tabs: React.ReactNode;
   }) => {
-    useFullScreenAllowedView();
-
-    const {isFullScreen, toggleFullScreen} = useFullScreen();
-
     const history = useHistory();
     const openInNewTab = useOpenInNewTab();
 
@@ -104,8 +99,6 @@ export const AssetCatalogAssetGraph = React.memo(
           )}
           onNavigateToSourceAssetNode={onNavigateToSourceAssetNode}
           viewType={AssetGraphViewType.CATALOG}
-          isFullScreen={isFullScreen}
-          toggleFullScreen={toggleFullScreen}
           setHideEdgesToNodesOutsideQuery={setHideEdgesToNodesOutsideQuery}
         />
       </>

@@ -111,6 +111,7 @@ export const GraphExplorer = (props: GraphExplorerProps) => {
 
     window.requestAnimationFrame(() => {
       handleAdjustPath((opNames) => {
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
         const last = 'name' in arg ? arg.name : arg.path[arg.path.length - 1]!;
         opNames[opNames.length - 1] = last;
         opNames.push('');

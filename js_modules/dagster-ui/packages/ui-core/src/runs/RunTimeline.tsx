@@ -14,7 +14,6 @@ import {
 } from '@dagster-io/ui-components';
 import {useVirtualizer} from '@tanstack/react-virtual';
 import dayjs from 'dayjs';
-import relativeTime from 'dayjs/plugin/relativeTime';
 import * as React from 'react';
 import {useMemo} from 'react';
 import {Link} from 'react-router-dom';
@@ -41,7 +40,7 @@ import {repoAddressAsURLString} from '../workspace/repoAddressAsString';
 import {repoAddressFromPath} from '../workspace/repoAddressFromPath';
 import {RepoAddress} from '../workspace/types';
 
-dayjs.extend(relativeTime);
+import '../util/dayjsExtensions';
 
 const ROW_HEIGHT = 32;
 const TIME_HEADER_HEIGHT = 32;
@@ -100,6 +99,7 @@ export const RunTimeline = (props: Props) => {
           const {repoAddress} = row;
           const repoKey = repoAddressAsURLString(repoAddress);
           accum[repoKey] = accum[repoKey] || [];
+          // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
           accum[repoKey]!.push(row);
           return accum;
         },
@@ -160,6 +160,7 @@ export const RunTimeline = (props: Props) => {
 
   const expandedRepos = repoOrder.filter((repoKey) => expandedKeys.includes(repoKey));
   const expandedJobCount = expandedRepos.reduce(
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     (accum, repoKey) => accum + buckets[repoKey]!.length,
     0,
   );
@@ -188,7 +189,9 @@ export const RunTimeline = (props: Props) => {
           <Container ref={parentRef}>
             <Inner $totalHeight={totalHeight}>
               {items.map(({index, key, size, start}) => {
+                // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
                 const row: RowType = flattened[index]!;
+                // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
                 const type = row!.type;
                 if (type === 'header') {
                   const repoKey = repoAddressAsURLString(row.repoAddress);
@@ -201,6 +204,7 @@ export const RunTimeline = (props: Props) => {
                       top={start}
                       repoAddress={row.repoAddress}
                       isDuplicateRepoName={!!(repoName && duplicateRepoNames.has(repoName))}
+                      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
                       rows={buckets[repoKey]!}
                       onToggle={onToggle}
                       onToggleAll={onToggleAll}
@@ -650,6 +654,7 @@ const RunTimelineRow = ({
           const runCount = runs.length;
           return (
             <RunChunk
+              // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
               key={batch.runs[0]!.id}
               $background={mergeStatusToBackground(batch.runs)}
               $multiple={runCount > 1}
@@ -839,6 +844,7 @@ export const RunHoverContent = (props: RunHoverContentProps) => {
         <Container ref={parentRef}>
           <Inner $totalHeight={totalHeight}>
             {items.map(({index, key, size, start}) => {
+              // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
               const run = batch.runs[index]!;
               return (
                 <Row key={key} $height={size} $start={start}>

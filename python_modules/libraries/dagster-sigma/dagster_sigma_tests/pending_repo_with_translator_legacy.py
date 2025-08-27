@@ -1,5 +1,5 @@
 from dagster import EnvVar, define_asset_job
-from dagster._core.definitions.asset_spec import AssetSpec
+from dagster._core.definitions.assets.definition.asset_spec import AssetSpec
 from dagster._core.definitions.definitions_class import Definitions
 from dagster._utils.env import environ
 from dagster_sigma import (

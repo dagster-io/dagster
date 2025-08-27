@@ -2,6 +2,8 @@
 description: Schedules enable automated execution of Dagster jobs at specified intervals ranging from common frequencies like hourly, daily, or weekly to more complex patterns defined with cron expressions.
 sidebar_position: 10
 title: Schedules
+canonicalUrl: '/guides/automate/schedules'
+slug: '/guides/automate/schedules'
 ---
 
 Schedules enable automated execution of jobs at specified intervals. These intervals can range from common frequencies like hourly, daily, or weekly, to more complex patterns defined using cron expressions.
@@ -11,8 +13,8 @@ Schedules enable automated execution of jobs at specified intervals. These inter
 
 To follow the steps in this guide, you'll need:
 
-- Familiarity with [assets](/guides/build/assets/)
-- Familiarity with [jobs](/guides/build/jobs/)
+- Familiarity with [assets](/guides/build/assets)
+- Familiarity with [jobs](/guides/build/jobs)
 
 </details>
 
@@ -20,18 +22,22 @@ To follow the steps in this guide, you'll need:
 
 A basic schedule is defined by a `JobDefinition` and a `cron_schedule` using the `ScheduleDefinition` class. A job can be thought of as a selection of assets or operations executed together.
 
-<CodeExample path="docs_snippets/docs_snippets/guides/automation/simple-schedule-example.py" language="python" />
+<CodeExample
+  path="docs_snippets/docs_snippets/guides/automation/simple-schedule-example.py"
+  language="python"
+  title="src/<project_name>/defs/assets.py"
+/>
 
 ## Run schedules in a different timezone
 
-By default, schedules without a timezone will run in Coordinated Universal Time (UTC). To run a schedule in a different timezone, set the `timezone` parameter:
+By default, schedules without a timezone will run in Coordinated Universal Time (UTC). To run a schedule in a different timezone, set the `execution_timezone` parameter:
 
 ```python
-daily_schedule = ScheduleDefinition(
+daily_schedule = dg.ScheduleDefinition(
     job=daily_refresh_job,
     cron_schedule="0 0 * * *",
     # highlight-next-line
-    timezone="America/Los_Angeles",
+    execution_timezone="America/Los_Angeles",
 )
 ```
 
@@ -46,14 +52,22 @@ If using partitions and jobs, you can create a schedule using the partition with
 
 If you have a [partitioned asset](/guides/build/partitions-and-backfills) and job:
 
-<CodeExample path="docs_snippets/docs_snippets/guides/automation/schedule-with-partition.py" language="python" />
+<CodeExample
+  path="docs_snippets/docs_snippets/guides/automation/schedule-with-partition.py"
+  language="python"
+  title="src/<project_name>/defs/assets.py"
+/>
 
 </TabItem>
 <TabItem value="ops" label="Ops">
 
 If you have a partitioned op job:
 
-<CodeExample path="docs_snippets/docs_snippets/guides/automation/schedule-with-partition-ops.py" language="python" />
+<CodeExample
+  path="docs_snippets/docs_snippets/guides/automation/schedule-with-partition-ops.py"
+  language="python"
+  title="src/<project_name>/defs/assets.py"
+/>
 
 </TabItem>
 </Tabs>

@@ -1,4 +1,4 @@
-from dagster import Field, Noneable, Permissive, ScalarUnion, Selector, Shape
+import dagster as dg
 from dagster._config import (
     DagsterEvaluationErrorReason,
     EvaluationStackListItemEntry,
@@ -28,7 +28,7 @@ def test_parse_scalar_failure():
     assert error.error_data.value_rep == "2343"  # pyright: ignore[reportAttributeAccessIssue]
 
 
-SingleLevelShape = Shape({"level_one": Field(str)})
+SingleLevelShape = dg.Shape({"level_one": dg.Field(str)})
 
 
 def test_single_dict():
@@ -59,14 +59,14 @@ def test_root_missing_field():
     assert error.error_data.field_name == "level_one"  # pyright: ignore[reportAttributeAccessIssue]
 
 
-DoubleLevelShape = Shape(
+DoubleLevelShape = dg.Shape(
     {
-        "level_one": Field(
-            Shape(
+        "level_one": dg.Field(
+            dg.Shape(
                 {
-                    "string_field": Field(str),
-                    "int_field": Field(int, is_required=False, default_value=989),
-                    "bool_field": Field(bool),
+                    "string_field": dg.Field(str),
+                    "int_field": dg.Field(int, is_required=False, default_value=989),
+                    "bool_field": dg.Field(bool),
                 }
             )
         )
@@ -178,7 +178,7 @@ def get_field_name_error(result, field_name):
     assert False
 
 
-FieldSubShape = Shape({"foo_field": dict, "bar_field": str}, field_aliases={"foo_field": "foo"})
+FieldSubShape = dg.Shape({"foo_field": dict, "bar_field": str}, field_aliases={"foo_field": "foo"})
 
 
 def test_shape_with_field_substitutions():
@@ -197,7 +197,7 @@ def test_shape_with_field_substitutions_collisions():
     assert collision_error.reason == DagsterEvaluationErrorReason.FIELD_ALIAS_COLLISION
 
 
-MultiLevelShapeType = Shape(
+MultiLevelShapeType = dg.Shape(
     {
         "level_one_string_field": str,
         "level_two_dict": {
@@ -290,7 +290,7 @@ def test_deep_mixed_level_errors():
     assert final_level_error.reason == DagsterEvaluationErrorReason.RUNTIME_TYPE_MISMATCH
 
 
-ExampleSelector = Selector({"option_one": Field(str), "option_two": Field(str)})
+ExampleSelector = dg.Selector({"option_one": dg.Field(str), "option_two": dg.Field(str)})
 
 
 def test_example_selector_success():
@@ -328,7 +328,7 @@ def test_example_selector_multiple_fields():
 
 
 def test_selector_within_dict_no_subfields():
-    result = validate_config(Shape({"selector": Field(ExampleSelector)}), {"selector": {}})
+    result = validate_config(dg.Shape({"selector": dg.Field(ExampleSelector)}), {"selector": {}})
     assert not result.success
     assert len(result.errors) == 1  # pyright: ignore[reportArgumentType]
     assert (
@@ -519,9 +519,9 @@ def test_nullable_int():
     assert validate_config(int, 0).success
     assert validate_config(int, 1).success
 
-    assert validate_config(Noneable(int), None).success
-    assert validate_config(Noneable(int), 0).success
-    assert validate_config(Noneable(int), 1).success
+    assert validate_config(dg.Noneable(int), None).success
+    assert validate_config(dg.Noneable(int), 0).success
+    assert validate_config(dg.Noneable(int), 1).success
 
 
 def test_nullable_list():
@@ -532,21 +532,21 @@ def test_nullable_list():
     assert not validate_config(list_of_ints, [None]).success
     assert validate_config(list_of_ints, [1]).success
 
-    nullable_list_of_ints = Noneable([int])
+    nullable_list_of_ints = dg.Noneable([int])
 
     assert validate_config(nullable_list_of_ints, None).success
     assert validate_config(nullable_list_of_ints, []).success
     assert not validate_config(nullable_list_of_ints, [None]).success
     assert validate_config(nullable_list_of_ints, [1]).success
 
-    list_of_nullable_ints = [Noneable(int)]
+    list_of_nullable_ints = [dg.Noneable(int)]
 
     assert not validate_config(list_of_nullable_ints, None).success
     assert validate_config(list_of_nullable_ints, []).success
     assert validate_config(list_of_nullable_ints, [None]).success
     assert validate_config(list_of_nullable_ints, [1]).success
 
-    nullable_list_of_nullable_ints = Noneable([Noneable(int)])
+    nullable_list_of_nullable_ints = dg.Noneable([dg.Noneable(int)])
 
     assert validate_config(nullable_list_of_nullable_ints, None).success
     assert validate_config(nullable_list_of_nullable_ints, []).success
@@ -555,28 +555,30 @@ def test_nullable_list():
 
 
 def test_nullable_dict():
-    dict_with_int = Shape({"int_field": int})
+    dict_with_int = dg.Shape({"int_field": int})
 
     assert not validate_config(dict_with_int, None).success
     assert not validate_config(dict_with_int, {}).success
     assert not validate_config(dict_with_int, {"int_field": None}).success
     assert validate_config(dict_with_int, {"int_field": 1}).success
 
-    nullable_dict_with_int = Noneable(Shape({"int_field": int}))
+    nullable_dict_with_int = dg.Noneable(dg.Shape({"int_field": int}))
 
     assert validate_config(nullable_dict_with_int, None).success
     assert not validate_config(nullable_dict_with_int, {}).success
     assert not validate_config(nullable_dict_with_int, {"int_field": None}).success
     assert validate_config(nullable_dict_with_int, {"int_field": 1}).success
 
-    dict_with_nullable_int = Shape({"int_field": Field(Noneable(int))})
+    dict_with_nullable_int = dg.Shape({"int_field": dg.Field(dg.Noneable(int))})
 
     assert not validate_config(dict_with_nullable_int, None).success
     assert validate_config(dict_with_nullable_int, {}).success
     assert validate_config(dict_with_nullable_int, {"int_field": None}).success
     assert validate_config(dict_with_nullable_int, {"int_field": 1}).success
 
-    nullable_dict_with_nullable_int = Noneable(Shape({"int_field": Field(Noneable(int))}))
+    nullable_dict_with_nullable_int = dg.Noneable(
+        dg.Shape({"int_field": dg.Field(dg.Noneable(int))})
+    )
 
     assert validate_config(nullable_dict_with_nullable_int, None).success
     assert validate_config(nullable_dict_with_nullable_int, {}).success
@@ -585,14 +587,14 @@ def test_nullable_dict():
 
 
 def test_bare_permissive_dict():
-    assert validate_config(Permissive(), {}).success
-    assert validate_config(Permissive(), {"some_key": 1}).success
-    assert not validate_config(Permissive(), None).success
-    assert not validate_config(Permissive(), 1).success
+    assert validate_config(dg.Permissive(), {}).success
+    assert validate_config(dg.Permissive(), {"some_key": 1}).success
+    assert not validate_config(dg.Permissive(), None).success
+    assert not validate_config(dg.Permissive(), 1).success
 
 
 def test_permissive_dict_with_fields():
-    perm_dict_with_field = Permissive({"a_key": Field(str)})
+    perm_dict_with_field = dg.Permissive({"a_key": dg.Field(str)})
 
     assert validate_config(perm_dict_with_field, {"a_key": "djfkdjkfd"}).success
     assert validate_config(
@@ -603,7 +605,7 @@ def test_permissive_dict_with_fields():
 
 
 def test_scalar_or_dict():
-    int_or_dict = ScalarUnion(scalar_type=int, non_scalar_schema=Shape({"a_string": str}))
+    int_or_dict = dg.ScalarUnion(scalar_type=int, non_scalar_schema=dg.Shape({"a_string": str}))
 
     assert validate_config(int_or_dict, 2).success
     assert not validate_config(int_or_dict, "2").success
@@ -617,9 +619,9 @@ def test_scalar_or_dict():
 
 
 def test_scalar_or_selector():
-    int_or_selector = ScalarUnion(
+    int_or_selector = dg.ScalarUnion(
         scalar_type=int,
-        non_scalar_schema=Selector({"a_string": str, "an_int": int}),
+        non_scalar_schema=dg.Selector({"a_string": str, "an_int": int}),
     )
 
     assert validate_config(int_or_selector, 2).success
@@ -636,7 +638,7 @@ def test_scalar_or_selector():
 
 
 def test_scalar_or_list():
-    int_or_list = ScalarUnion(scalar_type=int, non_scalar_schema=resolve_to_config_type([str]))
+    int_or_list = dg.ScalarUnion(scalar_type=int, non_scalar_schema=resolve_to_config_type([str]))
 
     assert validate_config(int_or_list, 2).success
     assert not validate_config(int_or_list, "2").success
@@ -650,7 +652,7 @@ def test_scalar_or_list():
 
 def test_list_of_scalar_or_dict():
     int_or_dict_list = resolve_to_config_type(
-        [ScalarUnion(scalar_type=int, non_scalar_schema=Shape({"a_string": str}))]
+        [dg.ScalarUnion(scalar_type=int, non_scalar_schema=dg.Shape({"a_string": str}))]
     )
 
     assert validate_config(int_or_dict_list, []).success

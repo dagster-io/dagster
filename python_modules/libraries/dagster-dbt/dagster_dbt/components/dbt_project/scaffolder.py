@@ -1,20 +1,13 @@
-import logging
 import os
 from pathlib import Path
 from typing import Optional
 
 import dagster._check as check
+from dagster._core.errors import DagsterInvalidInvocationError
 from dagster.components.component.component_scaffolder import Scaffolder
 from dagster.components.component_scaffolding import scaffold_component
 from dagster.components.scaffold.scaffold import ScaffoldRequest
 from pydantic import BaseModel, Field
-
-# dbt.cli.main adds a handler to the root logger, restore original handlers to prevent logspew
-existing_root_logger_handlers = [*logging.getLogger().handlers]
-
-from dbt.cli.main import dbtRunner
-
-logging.getLogger().handlers = existing_root_logger_handlers
 
 
 class DbtScaffoldParams(BaseModel):
@@ -35,6 +28,13 @@ class DbtProjectComponentScaffolder(Scaffolder[DbtScaffoldParams]):
             path_str = f"{project_root_tmpl}/{rel_path}"
 
         elif request.params.init:
+            try:
+                from dbt.cli.main import dbtRunner
+            except ImportError:
+                raise DagsterInvalidInvocationError(
+                    "dbt-core is not installed. Please install dbt to scaffold this component."
+                )
+
             dbtRunner().invoke(["init"])
             subpaths = [
                 path

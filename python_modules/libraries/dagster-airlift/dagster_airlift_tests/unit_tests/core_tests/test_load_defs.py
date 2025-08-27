@@ -17,7 +17,7 @@ from dagster import (
     sensor,
 )
 from dagster._core.code_pointer import CodePointer
-from dagster._core.definitions.asset_dep import AssetDep
+from dagster._core.definitions.assets.definition.asset_dep import AssetDep
 from dagster._core.definitions.job_definition import JobDefinition
 from dagster._core.definitions.reconstruct import initialize_repository_def_from_pointer
 from dagster._utils.test.definitions import (

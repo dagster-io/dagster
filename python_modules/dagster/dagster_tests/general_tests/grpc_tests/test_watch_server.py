@@ -1,7 +1,7 @@
 import time
 
+import dagster as dg
 import pytest
-from dagster._core.test_utils import instance_for_test
 from dagster._grpc.client import DagsterGrpcClient
 from dagster._grpc.constants import GrpcServerCommand
 from dagster._grpc.server import open_server_process
@@ -43,7 +43,7 @@ def process_cleanup():
 
 @pytest.fixture
 def instance():
-    with instance_for_test() as instance:
+    with dg.instance_for_test() as instance:
         yield instance
 
 

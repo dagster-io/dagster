@@ -6,11 +6,8 @@ from pathlib import Path
 
 import pytest
 import yaml
-from dagster_dg_core.utils import ensure_dagster_dg_tests_import
-
-ensure_dagster_dg_tests_import()
 from dagster_dg_core.utils import activate_venv
-from dagster_dg_core_tests.utils import ProxyRunner, isolated_example_project_foo_bar
+from dagster_test.dg_utils.utils import ProxyRunner, isolated_example_project_foo_bar
 
 
 def _sample_defs():
@@ -101,12 +98,14 @@ def test_launch_assets() -> None:
 
             result = subprocess.run(
                 ["dg", "launch", "--assets", "my_asset_1"],
-                check=True,
+                check=False,
                 capture_output=True,
+                text=True,
             )
 
-            assert "Started execution of run for" in result.stderr.decode("utf-8")
-            assert "RUN_SUCCESS" in result.stderr.decode("utf-8")
+            assert result.returncode == 0, result.stderr
+            assert "Started execution of run for" in result.stderr
+            assert "RUN_SUCCESS" in result.stderr
 
             result = subprocess.run(
                 ["dg", "launch", "--assets", "my_asset_2", "--partition", "2024-02-03"],

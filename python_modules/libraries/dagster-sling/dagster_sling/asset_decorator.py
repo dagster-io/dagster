@@ -9,7 +9,7 @@ from dagster import (
     _check as check,
     multi_asset,
 )
-from dagster._core.definitions.asset_spec import AssetSpec
+from dagster._core.definitions.assets.definition.asset_spec import AssetSpec
 from dagster._utils.merger import deep_merge_dicts
 from dagster._utils.security import non_secure_md5_hash_str
 
@@ -104,6 +104,22 @@ def sling_assets(
             def my_assets(context, sling: SlingResource):
                 yield from sling.replicate(context=context)
     """
+    return multi_asset(
+        name=name,
+        partitions_def=partitions_def,
+        can_subset=True,
+        op_tags=op_tags,
+        backfill_policy=backfill_policy,
+        specs=get_sling_asset_specs(replication_config, dagster_sling_translator, partitions_def),
+        pool=pool,
+    )
+
+
+def get_sling_asset_specs(
+    replication_config: SlingReplicationParam,
+    dagster_sling_translator: Optional[DagsterSlingTranslator] = None,
+    partitions_def: Optional[PartitionsDefinition] = None,
+) -> list[AssetSpec]:
     replication_config = validate_replication(replication_config)
 
     raw_streams = get_streams_from_replication(replication_config)
@@ -124,22 +140,20 @@ def sling_assets(
             return asset_spec.replace_attributes(code_version=code_version)
         return asset_spec
 
-    return multi_asset(
-        name=name,
-        partitions_def=partitions_def,
-        can_subset=True,
-        op_tags=op_tags,
-        backfill_policy=backfill_policy,
-        specs=[
-            update_code_version_if_unset_by_translator(
-                dagster_sling_translator.get_asset_spec(stream).merge_attributes(
-                    metadata={
-                        METADATA_KEY_TRANSLATOR: dagster_sling_translator,
-                        METADATA_KEY_REPLICATION_CONFIG: replication_config,
-                    }
-                )
+    base_specs = [
+        update_code_version_if_unset_by_translator(
+            dagster_sling_translator.get_asset_spec(stream).merge_attributes(
+                metadata={
+                    METADATA_KEY_TRANSLATOR: dagster_sling_translator,
+                    METADATA_KEY_REPLICATION_CONFIG: replication_config,
+                }
             )
-            for stream in streams
-        ],
-        pool=pool,
-    )
+        )
+        for stream in streams
+    ]
+    return [
+        spec.replace_attributes(
+            partitions_def=partitions_def or spec.partitions_def, skippable=True
+        )
+        for spec in base_specs
+    ]

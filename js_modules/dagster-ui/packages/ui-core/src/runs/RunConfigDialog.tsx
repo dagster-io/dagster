@@ -114,6 +114,7 @@ function OpenInLaunchpadButton({
 }) {
   const openInNewTab = useOpenInNewTab();
   const pipelineName = request.jobName ?? jobName;
+  // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
   const [_, onSave] = useExecutionSessionStorage(repoAddress, pipelineName!);
 
   return (

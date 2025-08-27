@@ -1,6 +1,5 @@
 import os
 import subprocess
-from collections.abc import Sequence
 
 import boto3
 from dagster_aws.pipes import PipesS3ContextInjector, PipesS3MessageReader
@@ -35,8 +34,3 @@ def scala_spark_demo(context: dg.AssetExecutionContext) -> dg.MaterializeResult:
         )
 
     return session.get_results()
-
-
-defs = dg.Definitions(
-    assets=[scala_spark_demo],
-)

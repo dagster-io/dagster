@@ -6,7 +6,7 @@ from dagster import (
     _check as check,
     materialize,
 )
-from dagster._core.definitions.assets import AssetsDefinition
+from dagster._core.definitions.assets.definition.assets_definition import AssetsDefinition
 
 from dbt_example_tests.integration_tests.conftest import makefile_dir
 

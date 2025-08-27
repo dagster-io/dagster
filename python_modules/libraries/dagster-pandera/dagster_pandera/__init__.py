@@ -3,9 +3,42 @@ import re
 from collections.abc import Sequence
 from typing import TYPE_CHECKING, Callable, Type, Union  # noqa: F401, UP035
 
-import dagster._check as check
 import pandas as pd
+
+# NOTE: Pandera supports multiple dataframe libraries. Most of the alternatives
+# to pandas implement a pandas-like API wrapper around an underlying library
+# that can handle big data (a weakness of pandas). Typically this means the
+# data is only partly loaded into memory, or is distributed across multiple
+# nodes. Because Dagster types perform runtime validation within a single
+# Python process, it's not clear at present how to interface the more complex
+# validation computations on distributed dataframes with Dagster Types.
+# Therefore, for the time being dagster-pandera only supports pandas dataframes.
+# However, some commented-out scaffolding has been left in place for support of
+# alternatives in the future. These sections are marked with:
+# "TODO: pending alternative dataframe support"
 import pandera as pa
+
+# Currently assume pandas support (prefer pandera.pandas, fallback to main pandera for old versions)
+# TODO: pending alternative dataframe support
+import pandera.pandas as pa_pd
+
+# Try polars support
+try:
+    import pandera.polars as pa_pl
+    import polars as pl
+except ImportError:
+    pa_pl = None
+    pl = None
+
+if TYPE_CHECKING:
+    import pandera.pandas
+
+    try:
+        import pandera.polars  # noqa: TC004
+    except ImportError:
+        pass
+
+import dagster._check as check
 import pandera.errors as pa_errors
 from dagster import (
     DagsterType,
@@ -23,51 +56,32 @@ from typing_extensions import TypeAlias
 
 from dagster_pandera.version import __version__
 
-# NOTE: Pandera supports multiple dataframe libraries. Most of the alternatives
-# to pandas implement a pandas-like API wrapper around an underlying library
-# that can handle big data (a weakness of pandas). Typically this means the
-# data is only partly loaded into memory, or is distributed across multiple
-# nodes. Because Dagster types perform runtime validation within a single
-# Python process, it's not clear at present how to interface the more complex
-# validation computations on distributed dataframes with Dagster Types.
-
-# Therefore, for the time being dagster-pandera only supports pandas dataframes.
-# However, some commented-out scaffolding has been left in place for support of
-# alternatives in the future. These sections are marked with "TODO: pending
-# alternative dataframe support".
-
-try:
-    import pandera.polars as pa_polars
-    import polars as pl
-
+# Set up valid classes based on available imports
+if pa_pd and pa_pl and pl:
+    # TODO: pending alternative dataframe support
     VALID_DATAFRAME_CLASSES = (pd.DataFrame, pl.DataFrame)
-    VALID_SCHEMA_CLASSES = (pa.DataFrameSchema, pa_polars.DataFrameSchema)
-    VALID_SCHEMA_MODEL_CLASSES = (pa.DataFrameModel, pa_polars.DataFrameModel)
-    VALID_COLUMN_CLASSES = (pa.Column, pa_polars.Column)
-except ImportError:
-    pa_polars = None
-    pl = None
+    VALID_SCHEMA_CLASSES = (pa_pd.DataFrameSchema, pa_pl.DataFrameSchema)
+    VALID_SCHEMA_MODEL_CLASSES = (pa_pd.DataFrameModel, pa_pl.DataFrameModel)
+    VALID_COLUMN_CLASSES = (pa_pd.Column, pa_pl.Column)
+elif pa_pd and pd:
     VALID_DATAFRAME_CLASSES = (pd.DataFrame,)
-    VALID_SCHEMA_CLASSES = (pa.DataFrameSchema,)
-    VALID_SCHEMA_MODEL_CLASSES = (pa.DataFrameModel,)
-    VALID_COLUMN_CLASSES = (pa.Column,)
+    VALID_SCHEMA_CLASSES = (pa_pd.DataFrameSchema,)
+    VALID_SCHEMA_MODEL_CLASSES = (pa_pd.DataFrameModel,)
+    VALID_COLUMN_CLASSES = (pa_pd.Column,)
+else:
+    # TODO: pending alternative dataframe support
+    raise ImportError(
+        "Unable to import pandera pandas functionality. This could be due to:\n"
+        "1. Using Pandera < 0.24.0.'\n"
+        "2. Missing pandas dependency.\n"
+        "Please install pandera >= 0.24.0 with pandas to use dagster-pandera."
+    )
 
-if TYPE_CHECKING:
-    # Unconditionally import pandera.polars for type-checking. Note that this is an unresolved
-    # import in a type checking process if polars isn't installed, but this won't interfere with the
-    # user type-checking experience-- the error will be suppressed because it is in a third-party
-    # library, and the type annotation will still render correctly as a string.
-    #
-    # NOTE: It is important NOT to import `pandera.polars` under the same pa_polars alias we use for
-    # the runtime import above-- that will confuse type checkers because that alias is a variable
-    # due to the runtime ImportError handling.
-    import pandera.polars  # noqa: TC004
-
-DagsterPanderaSchema: TypeAlias = Union[pa.DataFrameSchema, "pandera.polars.DataFrameSchema"]
+DagsterPanderaSchema: TypeAlias = Union[pa_pd.DataFrameSchema, "pandera.polars.DataFrameSchema"]
 DagsterPanderaSchemaModel: TypeAlias = type[
-    Union[pa.DataFrameModel, "pandera.polars.DataFrameModel"]
+    Union[pa_pd.DataFrameModel, "pandera.polars.DataFrameModel"]
 ]
-DagsterPanderaColumn: TypeAlias = Union[pa.Column, "pandera.polars.Column"]
+DagsterPanderaColumn: TypeAlias = Union[pa_pd.Column, "pandera.polars.Column"]
 
 DagsterLibraryRegistry.register("dagster-pandera", __version__)
 
@@ -104,7 +118,7 @@ def pandera_schema_to_dagster_type(
     - `failure_sample` a table containing up to the first 10 validation errors.
 
     Args:
-        schema (Union[pa.DataFrameSchema, Type[pa.DataFrameModel]]):
+        schema (Union[pa.DataFrameSchema, Type[pa.DataFrameModel]])
 
     Returns:
         DagsterType: Dagster Type constructed from the Pandera schema.
@@ -134,7 +148,7 @@ def pandera_schema_to_dagster_type(
         metadata={
             "schema": MetadataValue.table_schema(tschema),
         },
-        typing_type=pd.DataFrame,
+        typing_type=pd.DataFrame,  # TODO: pending alternative dataframe support
     )
 
 
@@ -146,13 +160,15 @@ def _extract_name_from_pandera_schema(
     schema: Union[DagsterPanderaSchema, DagsterPanderaSchemaModel],
 ) -> str:
     if isinstance(schema, type) and issubclass(schema, VALID_SCHEMA_MODEL_CLASSES):
-        return (
+        return str(
             getattr(schema.Config, "title", None)
             or getattr(schema.Config, "name", None)
             or schema.__name__
         )
     elif isinstance(schema, VALID_SCHEMA_CLASSES):
-        return schema.title or schema.name or next(_anonymous_schema_name_generator)
+        return str(schema.title or schema.name or next(_anonymous_schema_name_generator))
+    else:
+        return next(_anonymous_schema_name_generator)
 
 
 def _pandera_schema_to_type_check_fn(
@@ -163,11 +179,12 @@ def _pandera_schema_to_type_check_fn(
         if isinstance(value, VALID_DATAFRAME_CLASSES):
             try:
                 # `lazy` instructs pandera to capture every (not just the first) validation error
-                if isinstance(schema, pa.DataFrameSchema):
+                # TODO: pending alternative dataframe support
+                if isinstance(schema, pa_pd.DataFrameSchema):
                     df = check.inst(value, pd.DataFrame, "Must be a pandas DataFrame.")
                     schema.validate(df, lazy=True)
                 # need to check that polars and pandera.polars are available before isinstance
-                elif pl and pa_polars and isinstance(schema, pa_polars.DataFrameSchema):
+                elif pl and pa_pl and isinstance(schema, pa_pl.DataFrameSchema):
                     df = check.inst(value, pl.DataFrame, "Must be a polars DataFrame.")
                     schema.validate(df, lazy=True)
                 else:

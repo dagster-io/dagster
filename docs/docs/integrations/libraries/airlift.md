@@ -13,6 +13,10 @@ import Beta from '@site/docs/partials/\_Beta.md';
 
 <Beta />
 
+import UseAirliftComponent from '@site/docs/partials/\_UseAirliftComponent.md';
+
+<UseAirliftComponent />
+
 <p>{frontMatter.description}</p>
 
 Using [`dagster-airflift`](/api/libraries/dagster-airlift), you can:
@@ -40,11 +44,11 @@ You can use Airlift to migrate an Airflow DAG to Dagster assets. Airlift enables
 - Has task-by-task rollback to reduce risk
 - Retains Airflow DAG structure and execution history during the migration
 
-To get started, see "[Migrate from Airflow to Dagster at the task level](/migration/airflow-to-dagster/task-level-migration)".
+To get started, see "[Migrate from Airflow to Dagster at the task level](/migration/airflow-to-dagster/airlift-v1/task-level-migration)".
 
 :::note
 
-If you need to migrate at the DAG level, see "[Migrate from Airflow to Dagster at the DAG level](/migration/airflow-to-dagster/dag-level-migration)".
+If you need to migrate at the DAG level, see "[Migrate from Airflow to Dagster at the DAG level](/migration/airflow-to-dagster/airlift-v1/dag-level-migration)".
 
 :::
 
@@ -52,7 +56,7 @@ If you need to migrate at the DAG level, see "[Migrate from Airflow to Dagster a
 
 You can use Airlift to observe DAGs from multiple Airflow instances, and federate execution between them using Dagster as a centralized control plane.
 
-To get started, see "[Federate execution between Airflow instances with Dagster](/migration/airflow-to-dagster/federation)".
+To get started, see "[Federate execution between Airflow instances with Dagster](/migration/airflow-to-dagster/airlift-v1/federation)".
 
 ## Airflow operator migration
 

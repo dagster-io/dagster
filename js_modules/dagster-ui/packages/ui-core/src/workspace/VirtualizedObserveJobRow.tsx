@@ -11,8 +11,6 @@ import {
   Tooltip,
   useDelayedState,
 } from '@dagster-io/ui-components';
-import dayjs from 'dayjs';
-import relativeTime from 'dayjs/plugin/relativeTime';
 import {forwardRef, useMemo} from 'react';
 import {Link} from 'react-router-dom';
 
@@ -32,8 +30,6 @@ import {humanCronString} from '../schedules/humanCronString';
 import {ScheduleSwitchFragment} from '../schedules/types/ScheduleSwitchFragment.types';
 import {SensorSwitch} from '../sensors/SensorSwitch';
 import {SensorSwitchFragment} from '../sensors/types/SensorSwitchFragment.types';
-
-dayjs.extend(relativeTime);
 
 interface JobRowProps {
   index: number;
@@ -110,6 +106,19 @@ export const VirtualizedObserveJobRow = forwardRef(
               ) : null,
             },
             {
+              key: 'runs',
+              control: (
+                <Box padding={{horizontal: 8}}>
+                  <RunStatusPezList
+                    jobName={name}
+                    runs={[...latestRuns].reverse()}
+                    fade
+                    forceCount={5}
+                  />
+                </Box>
+              ),
+            },
+            {
               key: 'schedules',
               control:
                 schedules.length > 0 ? (
@@ -143,19 +152,6 @@ export const VirtualizedObserveJobRow = forwardRef(
                     <AutomationButton type="none" />
                   </Tooltip>
                 ) : null,
-            },
-            {
-              key: 'runs',
-              control: (
-                <Box padding={{horizontal: 8}}>
-                  <RunStatusPezList
-                    jobName={name}
-                    runs={[...latestRuns].reverse()}
-                    fade
-                    forceCount={5}
-                  />
-                </Box>
-              ),
             },
             {
               key: 'menu',

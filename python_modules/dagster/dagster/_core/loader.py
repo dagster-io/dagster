@@ -119,12 +119,12 @@ class LoadableBy(ABC, Generic[TKey, TContext]):
         return blocking_loader.blocking_load(id)
 
     @classmethod
-    def blocking_get_many(cls, context: TContext, ids: Iterable[TKey]) -> Iterable[Self]:
+    def blocking_get_many(cls, context: TContext, ids: Iterable[TKey]) -> Iterable[Optional[Self]]:
         """Fetch N objects by their id."""
         # in the future, can consider priming the non-blocking loader with the results of this
         # sync call
         _, blocking_loader = context.get_loaders_for(cls)
-        return list(filter(None, blocking_loader.blocking_load_many(ids)))
+        return list(blocking_loader.blocking_load_many(ids))
 
     @classmethod
     def prepare(cls, context: TContext, ids: Iterable[TKey]) -> None:

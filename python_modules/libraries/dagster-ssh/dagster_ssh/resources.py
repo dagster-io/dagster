@@ -374,6 +374,6 @@ def ssh_resource(init_context):
                     "key_file": "/path/to/private/key"
                 }))
 
-            defs = Definitions(jobs=[my_ssh_job])
+            Definitions(jobs=[my_ssh_job])
     """
     return SSHResource.from_resource_context(init_context)

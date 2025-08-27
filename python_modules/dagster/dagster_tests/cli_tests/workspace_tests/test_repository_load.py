@@ -1,4 +1,5 @@
 import click
+import dagster as dg
 import pytest
 from click.testing import CliRunner
 from dagster._cli.utils import assert_no_remaining_opts
@@ -9,10 +10,8 @@ from dagster._cli.workspace.cli_target import (
     repository_options,
 )
 from dagster._core.instance import DagsterInstance
-from dagster._core.remote_representation import RemoteRepository
-from dagster._core.test_utils import instance_for_test
+from dagster._core.remote_representation.external import RemoteRepository
 from dagster._core.workspace.context import WorkspaceRequestContext
-from dagster._utils import file_relative_path
 from dagster_shared.cli import WorkspaceOpts, workspace_options
 
 
@@ -33,7 +32,7 @@ def load_repository_via_cli_runner(cli_args, repo_assert_fn=None):
             if repo_assert_fn:
                 repo_assert_fn(repo)
 
-    with instance_for_test():
+    with dg.instance_for_test():
         runner = CliRunner()
         result = runner.invoke(command, cli_args)
 
@@ -55,7 +54,7 @@ def load_workspace_via_cli_runner(cli_args, workspace_assert_fn=None):
             if workspace_assert_fn:
                 workspace_assert_fn(workspace)
 
-    with instance_for_test():
+    with dg.instance_for_test():
         runner = CliRunner()
         result = runner.invoke(command, cli_args)
 
@@ -73,7 +72,7 @@ def successfully_load_repository_via_cli(cli_args, repo_assert_fn=None):
     return result
 
 
-PYTHON_FILE_IN_NAMED_LOCATION_WORKSPACE = file_relative_path(
+PYTHON_FILE_IN_NAMED_LOCATION_WORKSPACE = dg.file_relative_path(
     __file__, "hello_world_in_file/python_file_with_named_location_workspace.yaml"
 )
 
@@ -112,8 +111,8 @@ def test_multiple_module_load_with_attribute():
 
 
 def test_multiple_file_load():
-    FILE_ONE = file_relative_path(__file__, "hello_world_in_file/hello_world_repository.py")
-    FILE_TWO = file_relative_path(__file__, "definitions_test_cases/defs_file.py")
+    FILE_ONE = dg.file_relative_path(__file__, "hello_world_in_file/hello_world_repository.py")
+    FILE_TWO = dg.file_relative_path(__file__, "definitions_test_cases/defs_file.py")
 
     executed = {}
 
@@ -133,8 +132,8 @@ def test_multiple_file_load():
 
 
 def test_multiple_file_load_with_attribute():
-    FILE_ONE = file_relative_path(__file__, "hello_world_in_file/hello_world_repository.py")
-    FILE_TWO = file_relative_path(__file__, "definitions_test_cases/defs_file.py")
+    FILE_ONE = dg.file_relative_path(__file__, "hello_world_in_file/hello_world_repository.py")
+    FILE_TWO = dg.file_relative_path(__file__, "definitions_test_cases/defs_file.py")
 
     result = load_workspace_via_cli_runner(
         ["-f", FILE_ONE, "-f", FILE_TWO, "-a", "defs"],
@@ -193,7 +192,7 @@ def test_repository_target_argument_one_location_and_specified_wrong():
     ) in result.stdout
 
 
-MULTI_LOCATION_WORKSPACE = file_relative_path(__file__, "multi_location/multi_location.yaml")
+MULTI_LOCATION_WORKSPACE = dg.file_relative_path(__file__, "multi_location/multi_location.yaml")
 
 
 def test_valid_multi_location_from_file():
@@ -227,7 +226,7 @@ def test_missing_location_name_multi_location():
     ) in result.stdout
 
 
-SINGLE_LOCATION_MULTI_REPO_WORKSPACE = file_relative_path(__file__, "multi_repo/multi_repo.yaml")
+SINGLE_LOCATION_MULTI_REPO_WORKSPACE = dg.file_relative_path(__file__, "multi_repo/multi_repo.yaml")
 
 
 def test_valid_multi_repo():
@@ -258,7 +257,7 @@ def test_missing_repo_name_in_multi_repo_code_location():
 
 
 def test_pending_repo():
-    pending_location = file_relative_path(__file__, "pending_repo/pending_repo.yaml")
+    pending_location = dg.file_relative_path(__file__, "pending_repo/pending_repo.yaml")
 
     def the_assert(remote_repository):
         assert remote_repository.name == "pending_repo"
@@ -269,7 +268,9 @@ def test_pending_repo():
 def test_local_directory_module():
     cli_args = [
         "-w",
-        file_relative_path(__file__, "hello_world_in_module/local_directory_module_workspace.yaml"),
+        dg.file_relative_path(
+            __file__, "hello_world_in_module/local_directory_module_workspace.yaml"
+        ),
     ]
     result = load_repository_via_cli_runner(cli_args)
 
@@ -284,21 +285,21 @@ def test_local_directory_module():
         # load workspace with explicit working directory
         [
             "-w",
-            file_relative_path(
+            dg.file_relative_path(
                 __file__, "hello_world_file_in_directory/working_directory_workspace.yaml"
             ),
         ],
         # load workspace with default working directory
         [
             "-w",
-            file_relative_path(
+            dg.file_relative_path(
                 __file__, "hello_world_file_in_directory/default_working_dir_workspace.yaml"
             ),
         ],
         # load workspace with multiple working directory file targets
         [
             "-w",
-            file_relative_path(__file__, "multi_file_target_workspace/workspace.yaml"),
+            dg.file_relative_path(__file__, "multi_file_target_workspace/workspace.yaml"),
             "-l",
             "one",
         ],
@@ -309,7 +310,7 @@ def test_local_directory_file(cli_args):
 
 
 def test_dagster_definitions():
-    cli_args = ["-f", file_relative_path(__file__, "definitions_test_cases/defs_file.py")]
+    cli_args = ["-f", dg.file_relative_path(__file__, "definitions_test_cases/defs_file.py")]
 
     executed = {}
 

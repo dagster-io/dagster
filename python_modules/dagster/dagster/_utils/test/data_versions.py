@@ -4,9 +4,9 @@ from typing import Any, Optional, Union, cast, overload
 from typing_extensions import Literal
 
 from dagster._core.asset_graph_view.asset_graph_view import AssetGraphView, TemporalContext
-from dagster._core.definitions.asset_graph import AssetGraph
 from dagster._core.definitions.asset_selection import CoercibleToAssetSelection
-from dagster._core.definitions.assets import AssetsDefinition
+from dagster._core.definitions.assets.definition.assets_definition import AssetsDefinition
+from dagster._core.definitions.assets.graph.asset_graph import AssetGraph
 from dagster._core.definitions.data_version import (
     CODE_VERSION_TAG,
     DATA_VERSION_TAG,

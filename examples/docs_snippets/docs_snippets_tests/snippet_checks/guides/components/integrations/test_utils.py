@@ -10,11 +10,7 @@ from dagster_fivetran.asset_defs import (
 from dagster_fivetran.components.workspace_component.component import (
     FivetranAccountComponent,
 )
-from dagster_fivetran.resources import (
-    FivetranConnector,
-    FivetranWorkspace,
-    load_fivetran_asset_specs,
-)
+from dagster_fivetran.resources import FivetranConnector, FivetranWorkspace
 from dagster_fivetran.translator import (
     FivetranDestination,
     FivetranSchema,
@@ -27,19 +23,6 @@ from dagster._utils.cached_method import cached_method
 
 
 class MockFivetranWorkspace(FivetranWorkspace):
-    @cached_method
-    def load_asset_specs(
-        self,
-        dagster_fivetran_translator: Optional[DagsterFivetranTranslator] = None,
-        connector_selector_fn: Optional[ConnectorSelectorFn] = None,
-    ) -> Sequence[AssetSpec]:
-        return load_fivetran_asset_specs(
-            workspace=self,
-            dagster_fivetran_translator=dagster_fivetran_translator
-            or DagsterFivetranTranslator(),
-            connector_selector_fn=connector_selector_fn,
-        )
-
     @cached_method
     def fetch_fivetran_workspace_data(
         self,

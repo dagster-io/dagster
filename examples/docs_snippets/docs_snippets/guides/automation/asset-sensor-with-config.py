@@ -46,10 +46,3 @@ def daily_sales_data_sensor(context: dg.SensorEvaluationContext, asset_event):
             ),
         )
     # highlight-end
-
-
-defs = dg.Definitions(
-    assets=[daily_sales_data, weekly_report],
-    jobs=[my_job],
-    sensors=[daily_sales_data_sensor],
-)

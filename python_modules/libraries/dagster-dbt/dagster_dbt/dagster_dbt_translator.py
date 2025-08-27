@@ -5,15 +5,15 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Any, Optional
 
 from dagster import (
+    AssetCheckSpec,
     AssetDep,
     AssetKey,
     AssetSpec,
     AutoMaterializePolicy,
     AutomationCondition,
     DagsterInvalidDefinitionError,
-    FreshnessPolicy,
+    LegacyFreshnessPolicy,
     PartitionMapping,
-    _check as check,
 )
 from dagster._annotations import beta, public
 from dagster._core.definitions.metadata.source_code import (
@@ -21,14 +21,17 @@ from dagster._core.definitions.metadata.source_code import (
     CodeReferencesMetadataValue,
     LocalFileCodeReference,
 )
-from dagster._core.definitions.partition import PartitionsDefinition
+from dagster._core.definitions.partitions.definition import PartitionsDefinition
 from dagster._utils.tags import is_valid_tag_key
 from dagster.components.resolved.base import Resolvable
+from dagster_shared import check
 
 from dagster_dbt.asset_utils import (
     DAGSTER_DBT_MANIFEST_METADATA_KEY,
+    DAGSTER_DBT_PROJECT_METADATA_KEY,
     DAGSTER_DBT_TRANSLATOR_METADATA_KEY,
     DAGSTER_DBT_UNIQUE_ID_METADATA_KEY,
+    default_asset_check_fn,
     default_asset_key_fn,
     default_auto_materialize_policy_fn,
     default_code_version_fn,
@@ -85,7 +88,6 @@ class DagsterDbtTranslator:
             settings (Optional[DagsterDbtTranslatorSettings]): Settings for the translator.
         """
         self._settings = settings or DagsterDbtTranslatorSettings()
-        self._resolved_specs: dict[tuple, AssetSpec] = {}
 
     @property
     def settings(self) -> DagsterDbtTranslatorSettings:
@@ -103,7 +105,12 @@ class DagsterDbtTranslator:
         """Returns an AssetSpec representing a specific dbt resource."""
         # memoize resolution for a given manifest & unique_id
         # since we recursively call get_asset_spec for dependencies
-        memo_id = (id(manifest), unique_id)
+        memo_id = (id(manifest), unique_id, id(project))
+
+        # Don't initialize this in the constructor in case a subclass does not call __init__
+        if not hasattr(self, "_resolved_specs"):
+            self._resolved_specs = {}
+
         if memo_id in self._resolved_specs:
             return self._resolved_specs[memo_id]
 
@@ -151,7 +158,7 @@ class DagsterDbtTranslator:
             group_name=self.get_group_name(resource_props),
             code_version=self.get_code_version(resource_props),
             automation_condition=self.get_automation_condition(resource_props),
-            freshness_policy=self.get_freshness_policy(resource_props),
+            legacy_freshness_policy=self.get_freshness_policy(resource_props),
             owners=self.get_owners(owners_resource_props),
             tags=self.get_tags(resource_props),
             kinds={"dbt", manifest.get("metadata", {}).get("adapter_type", "dbt")},
@@ -164,6 +171,7 @@ class DagsterDbtTranslator:
                 DAGSTER_DBT_MANIFEST_METADATA_KEY: DbtManifestWrapper(manifest=manifest),
                 DAGSTER_DBT_TRANSLATOR_METADATA_KEY: self,
                 DAGSTER_DBT_UNIQUE_ID_METADATA_KEY: resource_props["unique_id"],
+                **({DAGSTER_DBT_PROJECT_METADATA_KEY: project} if project else {}),
             }
         )
         if self.settings.enable_code_references:
@@ -184,6 +192,21 @@ class DagsterDbtTranslator:
         self._resolved_specs[memo_id] = spec
 
         return self._resolved_specs[memo_id]
+
+    def get_asset_check_spec(
+        self,
+        asset_spec: AssetSpec,
+        manifest: Mapping[str, Any],
+        unique_id: str,
+        project: Optional["DbtProject"],
+    ) -> Optional[AssetCheckSpec]:
+        return default_asset_check_fn(
+            manifest=manifest,
+            dagster_dbt_translator=self,
+            asset_key=asset_spec.key,
+            test_unique_id=unique_id,
+            project=project,
+        )
 
     @public
     def get_asset_key(self, dbt_resource_props: Mapping[str, Any]) -> AssetKey:
@@ -474,7 +497,7 @@ class DagsterDbtTranslator:
     @beta(emit_runtime_warning=False)
     def get_freshness_policy(
         self, dbt_resource_props: Mapping[str, Any]
-    ) -> Optional[FreshnessPolicy]:
+    ) -> Optional[LegacyFreshnessPolicy]:
         """A function that takes a dictionary representing properties of a dbt resource, and
         returns the Dagster :py:class:`dagster.FreshnessPolicy` for that resource.
 

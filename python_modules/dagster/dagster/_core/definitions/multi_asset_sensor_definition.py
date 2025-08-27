@@ -7,10 +7,10 @@ from typing import TYPE_CHECKING, Callable, NamedTuple, Optional, Union, cast
 import dagster._check as check
 from dagster._annotations import deprecated_param, public, superseded
 from dagster._core.definitions.asset_selection import AssetSelection
-from dagster._core.definitions.assets import AssetsDefinition
+from dagster._core.definitions.assets.definition.assets_definition import AssetsDefinition
 from dagster._core.definitions.events import AssetKey
 from dagster._core.definitions.metadata import RawMetadataMapping
-from dagster._core.definitions.partition import PartitionsDefinition
+from dagster._core.definitions.partitions.definition import PartitionsDefinition
 from dagster._core.definitions.resource_annotation import get_resource_args
 from dagster._core.definitions.resource_definition import ResourceDefinition
 from dagster._core.definitions.run_request import RunRequest, SensorResult, SkipReason
@@ -39,7 +39,7 @@ from dagster._utils.warnings import deprecation_warning, normalize_renamed_param
 if TYPE_CHECKING:
     from dagster._core.definitions.definitions_class import Definitions
     from dagster._core.definitions.repository_definition import RepositoryDefinition
-    from dagster._core.remote_representation.origin import CodeLocationOrigin
+    from dagster._core.remote_origin import CodeLocationOrigin
     from dagster._core.storage.event_log.base import EventLogRecord
 
 MAX_NUM_UNCONSUMED_EVENTS = 25
@@ -210,7 +210,7 @@ class MultiAssetSensorEvaluationContext(SensorEvaluationContext):
 
             from dagster import multi_asset_sensor, MultiAssetSensorEvaluationContext
 
-            @multi_asset_sensor(monitored_assets=[AssetKey("asset_1), AssetKey("asset_2)])
+            @multi_asset_sensor(monitored_assets=[AssetKey("asset_1"), AssetKey("asset_2")])
             def the_sensor(context: MultiAssetSensorEvaluationContext):
                 ...
     """
@@ -803,7 +803,7 @@ class MultiAssetSensorEvaluationContext(SensorEvaluationContext):
     def assets_defs_by_key(self) -> Mapping[AssetKey, Optional[AssetsDefinition]]:
         """Mapping[AssetKey, Optional[AssetsDefinition]]: A mapping from AssetKey to the
         AssetsDefinition object which produces it. If a given asset is monitored by this sensor, but
-        is not produced within the same code location as this sensor, then the value will be None.
+        is not produced within the same project as this sensor, then the value will be None.
         """
         return self._assets_by_key
 
@@ -1102,6 +1102,7 @@ MultiAssetMaterializationFunction = Callable[
     "In cases where side effects are required, or a specific job must be targeted for execution, "
     "multi_asset_sensors may be used."
 )
+@public
 class MultiAssetSensorDefinition(SensorDefinition):
     """Define an asset sensor that initiates a set of runs based on the materialization of a list of
     assets.

@@ -3,7 +3,6 @@ from typing import Any, Optional
 
 from dagster import (
     AssetIn,
-    DailyPartitionsDefinition,
     OpExecutionContext,
     RepositoryDefinition,
     TimeWindowPartitionMapping,
@@ -17,7 +16,11 @@ from dagster._core.definitions.data_version import DATA_VERSION_TAG, DataVersion
 from dagster._core.definitions.decorators.source_asset_decorator import observable_source_asset
 from dagster._core.definitions.definitions_class import Definitions
 from dagster._core.definitions.events import AssetKey, Output
-from dagster._core.definitions.partition import StaticPartitionsDefinition
+from dagster._core.definitions.partitions.definition import (
+    DailyPartitionsDefinition,
+    DynamicPartitionsDefinition,
+    StaticPartitionsDefinition,
+)
 from dagster._core.definitions.unresolved_asset_job_definition import define_asset_job
 from dagster._core.test_utils import instance_for_test, wait_for_runs_to_finish
 from dagster._core.workspace.context import WorkspaceRequestContext
@@ -93,6 +96,7 @@ def test_stale_status():
             assert materialize_assets(context)
             wait_for_runs_to_finish(context.instance)
 
+        with define_out_of_process_context(__file__, "get_repo_v1", instance) as context:
             result = _fetch_data_versions(context, repo)
             foo = _get_asset_node(result, "foo")
             assert foo["dataVersion"] is not None
@@ -102,6 +106,7 @@ def test_stale_status():
             assert materialize_assets(context, asset_selection=[AssetKey(["foo"])])
             wait_for_runs_to_finish(context.instance)
 
+        with define_out_of_process_context(__file__, "get_repo_v1", instance) as context:
             result = _fetch_data_versions(context, repo)
             bar = _get_asset_node(result, "bar")
             assert bar["dataVersion"] is not None
@@ -119,6 +124,8 @@ def test_stale_status():
 def get_repo_partitioned():
     partitions_def = StaticPartitionsDefinition(["alpha", "beta"])
 
+    dynamic_partitions_def = DynamicPartitionsDefinition(name="dynamic")
+
     class FooConfig(Config):
         prefix: str = "ok"
 
@@ -132,17 +139,23 @@ def get_repo_partitioned():
     def bar(context: OpExecutionContext, foo) -> Output[bool]:
         return Output(True, data_version=DataVersion(f"ok_bar_{context.partition_key}"))
 
+    @asset(partitions_def=dynamic_partitions_def)
+    def dynamic_asset(context: OpExecutionContext):
+        return Output(True, data_version=DataVersion(f"ok_dynamic_asset_{context.partition_key}"))
+
     @repository
     def repo():
-        return [foo, bar]
+        return [foo, bar, dynamic_asset]
 
     return repo
 
 
 def test_stale_status_partitioned():
     with instance_for_test(synchronous_run_coordinator=True) as instance:
+        instance.add_dynamic_partitions("dynamic", ["alpha", "beta"])
+
         with define_out_of_process_context(__file__, "get_repo_partitioned", instance) as context:
-            for key in ["foo", "bar"]:
+            for key in ["foo", "bar", "dynamic_asset"]:
                 result = _fetch_partition_data_versions(context, AssetKey([key]))
                 node = _get_asset_node(result)
                 assert node["dataVersion"] is None
@@ -155,11 +168,14 @@ def test_stale_status_partitioned():
                 assert node["staleCausesByPartition"] == [[], []]
 
             assert materialize_assets(
-                context, [AssetKey(["foo"]), AssetKey(["bar"])], ["alpha", "beta"]
+                context,
+                [AssetKey(["foo"]), AssetKey(["bar"]), AssetKey("dynamic_asset")],
+                ["alpha", "beta"],
             )
             wait_for_runs_to_finish(context.instance)
 
-            for key in ["foo", "bar"]:
+        with define_out_of_process_context(__file__, "get_repo_partitioned", instance) as context:
+            for key in ["foo", "bar", "dynamic_asset"]:
                 result = _fetch_partition_data_versions(context, AssetKey([key]), "alpha")
                 node = _get_asset_node(result)
                 assert node["dataVersion"] == f"ok_{key}_alpha"
@@ -177,6 +193,7 @@ def test_stale_status_partitioned():
             )
             wait_for_runs_to_finish(context.instance)
 
+        with define_out_of_process_context(__file__, "get_repo_partitioned", instance) as context:
             result = _fetch_partition_data_versions(context, AssetKey(["foo"]), "alpha")
             foo = _get_asset_node(result, "foo")
             assert foo["dataVersion"] == "from_config_foo_alpha"

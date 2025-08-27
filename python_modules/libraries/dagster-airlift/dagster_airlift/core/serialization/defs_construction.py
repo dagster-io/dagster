@@ -2,7 +2,7 @@ from collections.abc import Mapping, Sequence
 from typing import AbstractSet, Any, Callable  # noqa: UP035
 
 from dagster import AssetKey, AssetSpec, JsonMetadataValue, UrlMetadataValue
-from dagster._core.definitions.assets import AssetsDefinition
+from dagster._core.definitions.assets.definition.assets_definition import AssetsDefinition
 from dagster._core.definitions.external_asset import external_asset_from_spec
 from dagster._core.storage.tags import KIND_PREFIX
 

@@ -78,7 +78,9 @@ export const OverviewResourcesTable = ({repos}: Props) => {
         <VirtualizedResourceHeader />
         <Inner $totalHeight={totalHeight}>
           {items.map(({index, key, size, start}) => {
+            // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
             const row: RowType = flattened[index]!;
+            // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
             const type = row!.type;
             return type === 'header' ? (
               <RepoRow

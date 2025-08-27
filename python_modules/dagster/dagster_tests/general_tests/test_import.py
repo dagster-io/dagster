@@ -1,13 +1,13 @@
 import subprocess
 
+import dagster as dg
 import pytest
-from dagster._utils import file_relative_path
 from dagster_shared.seven import IS_WINDOWS
 
 
 @pytest.mark.skipif(IS_WINDOWS, reason="fails on windows, unix coverage sufficient")
 def test_import_cli_perf():
-    py_file = file_relative_path(__file__, "import_cli.py")
+    py_file = dg.file_relative_path(__file__, "import_cli.py")
 
     # import cost profiling output in stderr via "-X importtime"
     result = subprocess.run(
@@ -34,6 +34,7 @@ def test_import_cli_perf():
         "fsspec",
         "requests",
         "jinja2",
+        "pytest",
     ]
     expensive_imports = [
         f"`{lib}`"
@@ -52,7 +53,7 @@ def test_import_cli_perf():
 
 @pytest.mark.skipif(IS_WINDOWS, reason="fails on windows, unix coverage sufficient")
 def test_import_perf():
-    py_file = file_relative_path(__file__, "simple.py")
+    py_file = dg.file_relative_path(__file__, "simple.py")
 
     # import cost profiling output in stderr via "-X importtime"
     result = subprocess.run(
@@ -76,6 +77,7 @@ def test_import_perf():
         "fsspec",
         "jinja2",
         "requests",
+        "pytest",
     ]
     expensive_imports = [f"`{lib}`" for lib in expensive_library if lib in import_profile]
 

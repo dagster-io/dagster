@@ -1,0 +1,3 @@
+dg scaffold defs dagster.PythonScriptComponent script
+
+Creating defs at <YOUR PATH>/dagster-tutorial/src/dagster_tutorial/defs/script.

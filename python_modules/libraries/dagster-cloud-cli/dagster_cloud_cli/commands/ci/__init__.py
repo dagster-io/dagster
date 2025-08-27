@@ -24,12 +24,12 @@ from dagster_cloud_cli.commands.workspace import wait_for_load
 from dagster_cloud_cli.config import DagsterCloudConfigDefaultsMerger, JinjaTemplateLoader
 from dagster_cloud_cli.config.models import load_dagster_cloud_yaml
 from dagster_cloud_cli.config_utils import (
-    AGENT_HEARTBEAT_TIMEOUT_OPTION,
     DAGSTER_ENV_OPTION,
     LOCATION_LOAD_TIMEOUT_OPTION,
     ORGANIZATION_OPTION,
     URL_ENV_VAR_NAME,
     dagster_cloud_options,
+    get_agent_heartbeat_timeout_option,
     get_location_document,
     get_org_url,
     get_user_token,
@@ -46,10 +46,14 @@ from dagster_cloud_cli.core.pex_builder import (
     gitlab_context,
     parse_workspace,
 )
+from dagster_cloud_cli.gql import DagsterPlusDeploymentAgentType
 from dagster_cloud_cli.types import CliEventTags, CliEventType, SnapshotBaseDeploymentCondition
 from dagster_cloud_cli.utils import DEFAULT_PYTHON_VERSION
 
 app = Typer(help="Commands for deploying code to Dagster+ from any CI/CD environment")
+
+DEFAULT_SERVERLESS_AGENT_HEARTBEAT_TIMEOUT = 900
+DEFAULT_HYBRID_AGENT_HEARTBEAT_TIMEOUT = 120
 
 
 @app.callback()
@@ -951,7 +955,7 @@ def deploy(
     statedir: str = STATEDIR_OPTION,
     location_name: list[str] = typer.Option([]),
     location_load_timeout: int = LOCATION_LOAD_TIMEOUT_OPTION,
-    agent_heartbeat_timeout: int = AGENT_HEARTBEAT_TIMEOUT_OPTION,
+    agent_heartbeat_timeout: int = get_agent_heartbeat_timeout_option(default_timeout=None),
 ):
     deploy_impl(statedir, location_name, location_load_timeout, agent_heartbeat_timeout)
 
@@ -960,7 +964,7 @@ def deploy_impl(
     statedir: str,
     location_name: list[str],
     location_load_timeout: int,
-    agent_heartbeat_timeout: int,
+    agent_heartbeat_timeout: Optional[int],
 ):
     state_store = state.FileStore(statedir=statedir)
     locations = _get_selected_locations(state_store, location_name)
@@ -1020,7 +1024,7 @@ def _deploy(
     api_token: str,
     built_locations: list[state.LocationState],
     location_load_timeout: int,
-    agent_heartbeat_timeout: int,
+    agent_heartbeat_timeout: Optional[int],
 ):
     locations_document = []
     for location_state in built_locations:
@@ -1054,6 +1058,20 @@ def _deploy(
         ui.print(
             f"Updated code location{'s' if len(location_names) > 1 else ''} {', '.join(location_names)} in dagster-cloud."
         )
+
+        if not agent_heartbeat_timeout:
+            agent_type = gql.fetch_agent_type(client)
+            # raise the agent heartbeat timeout for serverless deploys to ensure that the
+            # deploy doesn't fail if the agent is still being spun up. A deploy is serverless if
+            # that's the default agent type for the deployment and the locations aren't being
+            # deployed to some other agent queue (since serverless agents only serve the default
+            # agent queue)
+            if agent_type != DagsterPlusDeploymentAgentType.SERVERLESS or any(
+                location_config.get("agent_queue") for location_config in locations_document
+            ):
+                agent_heartbeat_timeout = DEFAULT_HYBRID_AGENT_HEARTBEAT_TIMEOUT
+            else:
+                agent_heartbeat_timeout = DEFAULT_SERVERLESS_AGENT_HEARTBEAT_TIMEOUT
 
         wait_for_load(
             client,

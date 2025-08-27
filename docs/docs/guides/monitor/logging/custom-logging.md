@@ -38,7 +38,7 @@ The following example shows how to add the custom logger to your code location d
 
 ### Add the custom logger to your ops-based jobs
 
-Configuring a ops job to use the custom logger slightly differs from the asset job example. The following example shows how:
+Configuring an ops job to use the custom logger slightly differs from the asset job example. The following example shows how:
 
 <CodeExample
   path="docs_snippets/docs_snippets/guides/monitor-alert/custom-logging/ops-job-example.py"

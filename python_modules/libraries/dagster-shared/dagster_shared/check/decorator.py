@@ -5,6 +5,7 @@ from types import MethodType
 
 import dagster_shared.check as check
 from dagster_shared.check.builder import (
+    INJECTED_CHECK_VAR,
     INJECTED_DEFAULT_VALS_LOCAL_VAR,
     EvalContext,
     build_args_and_assignment_strs,
@@ -80,10 +81,8 @@ def {checked_fn_name}(__checked_wrapper{args_str}):
     )
         """
 
-        if "check" not in self._eval_ctx.global_ns:
-            self._eval_ctx.global_ns["check"] = check
-
         self._eval_ctx.local_ns[INJECTED_DEFAULT_VALS_LOCAL_VAR] = defaults
+        self._eval_ctx.local_ns[INJECTED_CHECK_VAR] = check
 
         call = self._eval_ctx.compile_fn(
             fn_str,

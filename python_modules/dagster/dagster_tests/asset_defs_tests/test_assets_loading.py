@@ -1,15 +1,15 @@
-from dagster import AssetIn, IOManager, asset, io_manager, materialize, with_resources
+import dagster as dg
 
 
 def test_input_manager_override():
-    class MyIOManager(IOManager):
+    class MyIOManager(dg.IOManager):
         def handle_output(self, context, obj):
             pass
 
         def load_input(self, context):
             assert False, "should not be called"
 
-    @io_manager
+    @dg.io_manager
     def my_io_manager():
         return MyIOManager()
 
@@ -20,20 +20,20 @@ def test_input_manager_override():
             else:
                 return 4
 
-    @io_manager
+    @dg.io_manager
     def my_input_manager():
         return MyInputManager()
 
-    @asset
+    @dg.asset
     def first_asset():
         return 1
 
-    @asset(ins={"upstream": AssetIn(key="first_asset", input_manager_key="my_input_manager")})
+    @dg.asset(ins={"upstream": dg.AssetIn(key="first_asset", input_manager_key="my_input_manager")})
     def second_asset(upstream):
         assert upstream == 4
 
-    assert materialize(
-        with_resources(
+    assert dg.materialize(
+        dg.with_resources(
             [first_asset, second_asset],
             resource_defs={"my_input_manager": my_input_manager, "io_manager": my_io_manager},
         )

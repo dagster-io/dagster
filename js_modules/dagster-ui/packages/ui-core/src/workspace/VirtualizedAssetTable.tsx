@@ -51,10 +51,12 @@ export const VirtualizedAssetTable = (props: Props) => {
     }
     return Object.entries(groups).map(([displayKey, assets]) => {
       const path = [...prefixPath, ...JSON.parse(displayKey)];
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
       const isFolder = assets.length > 1 || path.join('/') !== assets[0]!.key.path.join('/');
       return isFolder
         ? {type: 'folder', path, displayKey, assets}
-        : {type: 'asset', path, displayKey, asset: assets[0]!};
+        : // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+          {type: 'asset', path, displayKey, asset: assets[0]!};
     });
   }, [prefixPath, groups, isLoading]);
 
@@ -75,6 +77,7 @@ export const VirtualizedAssetTable = (props: Props) => {
         <VirtualizedAssetCatalogHeader headerCheckbox={headerCheckbox} view={view} />
         <Inner $totalHeight={totalHeight}>
           {items.map(({index, key, size, start}) => {
+            // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
             const row: Row = rows[index]!;
             if (row.type === 'shimmer') {
               return (

@@ -4,18 +4,17 @@ import threading
 import time
 from unittest import mock
 
+import dagster as dg
 import pytest
-from dagster import file_relative_path, job, repository
 from dagster._cli.dev import ProxyServerManager
 from dagster._core.errors import DagsterUserCodeProcessError
 from dagster._core.instance import DagsterInstance
-from dagster._core.remote_representation.code_location import GrpcServerCodeLocation
-from dagster._core.remote_representation.grpc_server_registry import GrpcServerRegistry
-from dagster._core.remote_representation.origin import (
+from dagster._core.remote_origin import (
     ManagedGrpcPythonEnvCodeLocationOrigin,
     RegisteredCodeLocationOrigin,
 )
-from dagster._core.test_utils import instance_for_test
+from dagster._core.remote_representation.code_location import GrpcServerCodeLocation
+from dagster._core.remote_representation.grpc_server_registry import GrpcServerRegistry
 from dagster._core.types.loadable_target_origin import LoadableTargetOrigin
 from dagster._core.workspace.load_target import PythonFileTarget
 from dagster._grpc.constants import GrpcServerCommand
@@ -24,17 +23,17 @@ from dagster._utils import get_terminate_signal
 from dagster._utils.env import environ
 
 
-@job
+@dg.job
 def noop_job():
     pass
 
 
-@repository
+@dg.repository
 def repo():
     return [noop_job]
 
 
-@repository
+@dg.repository
 def other_repo():
     return [noop_job]
 
@@ -56,7 +55,7 @@ def _can_connect(origin, endpoint, instance):
 
 @pytest.fixture
 def instance():
-    with instance_for_test() as instance:
+    with dg.instance_for_test() as instance:
         yield instance
 
 
@@ -65,7 +64,7 @@ def test_error_repo_in_registry(instance):
         loadable_target_origin=LoadableTargetOrigin(
             executable_path=sys.executable,
             attribute="error_repo",
-            python_file=file_relative_path(__file__, "error_repo.py"),
+            python_file=dg.file_relative_path(__file__, "error_repo.py"),
         ),
     )
     with GrpcServerRegistry(
@@ -105,7 +104,7 @@ def test_error_repo_in_registry(instance):
 
 def test_server_unexpectedly_killed(instance: DagsterInstance):
     target = PythonFileTarget(
-        python_file=file_relative_path(__file__, "test_grpc_server_registry.py"),
+        python_file=dg.file_relative_path(__file__, "test_grpc_server_registry.py"),
         attribute="repo",
         working_directory=None,
         location_name=None,
@@ -137,7 +136,7 @@ def test_reload_updates_server_id(instance: DagsterInstance):
         loadable_target_origin=LoadableTargetOrigin(
             executable_path=sys.executable,
             attribute="repo",
-            python_file=file_relative_path(__file__, "test_grpc_server_registry.py"),
+            python_file=dg.file_relative_path(__file__, "test_grpc_server_registry.py"),
         ),
     )
 
@@ -167,7 +166,7 @@ def test_server_registry(instance, server_command: GrpcServerCommand):
         loadable_target_origin=LoadableTargetOrigin(
             executable_path=sys.executable,
             attribute="repo",
-            python_file=file_relative_path(__file__, "test_grpc_server_registry.py"),
+            python_file=dg.file_relative_path(__file__, "test_grpc_server_registry.py"),
         ),
     )
 
@@ -220,7 +219,7 @@ def test_registry_multithreading(instance, server_command: GrpcServerCommand):
         loadable_target_origin=LoadableTargetOrigin(
             executable_path=sys.executable,
             attribute="repo",
-            python_file=file_relative_path(__file__, "test_grpc_server_registry.py"),
+            python_file=dg.file_relative_path(__file__, "test_grpc_server_registry.py"),
         ),
     )
 
@@ -279,13 +278,13 @@ def test_custom_loadable_target_origin(instance):
     first_loadable_target_origin = LoadableTargetOrigin(
         executable_path=sys.executable,
         attribute="repo",
-        python_file=file_relative_path(__file__, "test_grpc_server_registry.py"),
+        python_file=dg.file_relative_path(__file__, "test_grpc_server_registry.py"),
     )
 
     second_loadable_target_origin = LoadableTargetOrigin(
         executable_path=sys.executable,
         attribute="other_repo",
-        python_file=file_relative_path(__file__, "test_grpc_server_registry.py"),
+        python_file=dg.file_relative_path(__file__, "test_grpc_server_registry.py"),
     )
 
     origin = RegisteredCodeLocationOrigin("test_location")
@@ -313,7 +312,7 @@ def test_failure_on_open_server_process(instance):
     loadable_target_origin = LoadableTargetOrigin(
         executable_path=sys.executable,
         attribute="repo",
-        python_file=file_relative_path(__file__, "test_grpc_server_registry.py"),
+        python_file=dg.file_relative_path(__file__, "test_grpc_server_registry.py"),
     )
     with mock.patch("dagster._grpc.server.open_server_process") as mock_open_server_process:
         mock_open_server_process.side_effect = Exception("OOPS")

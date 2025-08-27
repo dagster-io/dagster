@@ -2,15 +2,14 @@ import os
 import sys
 from typing import TYPE_CHECKING, Any, Callable, Optional
 
+import dagster as dg
 import pytest
-from dagster import Config, DagsterInstance, Field, job, op
+from dagster import DagsterInstance
 from dagster._config.field import resolve_to_config_type
 from dagster._config.snap import ConfigSchemaSnapshot, snap_from_config_type
-from dagster._core.definitions.definitions_class import Definitions
-from dagster._core.remote_representation import InProcessCodeLocationOrigin
+from dagster._core.remote_origin import InProcessCodeLocationOrigin
 from dagster._core.remote_representation.external import RemoteRepository
 from dagster._core.snap.snap_to_yaml import default_values_yaml_from_type_snap
-from dagster._core.test_utils import instance_for_test
 from dagster._core.types.loadable_target_origin import LoadableTargetOrigin
 
 if TYPE_CHECKING:
@@ -19,12 +18,12 @@ if TYPE_CHECKING:
 
 @pytest.fixture
 def instance():
-    with instance_for_test() as the_instance:
+    with dg.instance_for_test() as the_instance:
         yield the_instance
 
 
 def test_basic_default():
-    snap = snap_from_config_type(resolve_to_config_type({"a": Field(str, "foo")}))
+    snap = snap_from_config_type(resolve_to_config_type({"a": dg.Field(str, "foo")}))
     yaml_str = default_values_yaml_from_type_snap(
         ConfigSchemaSnapshot(all_config_snaps_by_key={}), snap
     )
@@ -40,7 +39,7 @@ def test_basic_no_nested_fields():
 
 
 def test_with_spaces():
-    snap = snap_from_config_type(resolve_to_config_type({"a": Field(str, "with spaces")}))
+    snap = snap_from_config_type(resolve_to_config_type({"a": dg.Field(str, "with spaces")}))
     yaml_str = default_values_yaml_from_type_snap(
         ConfigSchemaSnapshot(all_config_snaps_by_key={}), snap
     )
@@ -74,15 +73,15 @@ def _remote_repository_for_module(
 
 
 def trivial_job_defs():
-    @op
+    @dg.op
     def an_op():
         pass
 
-    @job
+    @dg.job
     def a_job():
         an_op()
 
-    return Definitions(jobs=[a_job])
+    return dg.Definitions(jobs=[a_job])
 
 
 def test_print_root(
@@ -100,20 +99,20 @@ def test_print_root(
 
 
 def job_def_with_config():
-    class MyOpConfig(Config):
+    class MyOpConfig(dg.Config):
         a_str_with_default: str = "foo"
         optional_int: Optional[int] = None
         a_str_no_default: str
 
-    @op
+    @dg.op
     def an_op(config: MyOpConfig):
         pass
 
-    @job
+    @dg.job
     def a_job():
         an_op()
 
-    return Definitions(jobs=[a_job])
+    return dg.Definitions(jobs=[a_job])
 
 
 def test_print_root_op_config(
@@ -135,22 +134,22 @@ def test_print_root_op_config(
 
 
 def job_def_with_complex_config():
-    class MyNestedConfig(Config):
+    class MyNestedConfig(dg.Config):
         a_default_int: int = 1
 
-    class MyOpConfig(Config):
+    class MyOpConfig(dg.Config):
         nested: MyNestedConfig
         my_list: list[dict[str, int]] = [{"foo": 1, "bar": 2}]
 
-    @op
+    @dg.op
     def an_op(config: MyOpConfig):
         pass
 
-    @job
+    @dg.job
     def a_job():
         an_op()
 
-    return Definitions(jobs=[a_job])
+    return dg.Definitions(jobs=[a_job])
 
 
 def test_print_root_complex_op_config(instance) -> None:

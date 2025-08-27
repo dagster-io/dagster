@@ -9,16 +9,16 @@ This page is specific to ops. To learn about partitioning assets, see "[Partitio
 
 :::
 
-When defining a job that uses [ops](/guides/build/ops/) you can partition it by supplying <PyObject section="partitions" module="dagster" object="PartitionedConfig" /> object as its config.
+When defining a job that uses [ops](/guides/build/ops) you can partition it by supplying <PyObject section="partitions" module="dagster" object="PartitionedConfig" /> object as its config.
 
-In this guide, we'll demonstrate to use partitions with ops and [jobs](/guides/build/jobs/).
+In this guide, we'll demonstrate to use partitions with ops and [jobs](/guides/build/jobs).
 
 ## Prerequisites
 
 Before continuing, you should be familiar with:
 
-- [Ops](/guides/build/ops/)
-- [Jobs](/guides/build/jobs/)
+- [Ops](/guides/build/ops)
+- [Jobs](/guides/build/jobs)
 - [Run configuration](/guides/operate/configuration/run-configuration)
 
 ## Relevant APIs
@@ -45,7 +45,7 @@ The most common kind of partitioned job is a time-partitioned job - each partiti
 
 Before we dive in, let's look at a non-partitioned job that computes some data for a given date:
 
-<CodeExample path="docs_snippets/docs_snippets/concepts/partitions_schedules_sensors/date_config_job.py" />
+<CodeExample path="docs_snippets/docs_snippets/concepts/partitions_schedules_sensors/date_config_job.py" title="src/<project_name>/defs/ops.py"/>
 
 It takes, as config, a string `date`. This piece of config defines which date to compute data for. For example, if you wanted to compute for `May 5th, 2020`, you would execute the graph with the following config:
 
@@ -57,23 +57,23 @@ With the job above, it's possible to supply any value for the `date` param. This
 
 First, define the <PyObject section="partitions" module="dagster" object="PartitionedConfig"/>. In this case, because each partition is a date, you can use the <PyObject section="partitions" module="dagster" object="daily_partitioned_config" decorator /> decorator. This decorator defines the full set of partitions - every date between the start date and the current date, as well as how to determine the run config for a given partition.
 
-<CodeExample path="docs_snippets/docs_snippets/concepts/partitions_schedules_sensors/partitioned_job.py" startAfter="start_partitioned_config" endBefore="end_partitioned_config" />
+<CodeExample path="docs_snippets/docs_snippets/concepts/partitions_schedules_sensors/partitioned_job.py" startAfter="start_partitioned_config" endBefore="end_partitioned_config" title="src/<project_name>/defs/ops.py"/>
 
 Then you can build a job that uses the `PartitionedConfig` by supplying it to the `config` argument when you construct the job:
 
-<CodeExample path="docs_snippets/docs_snippets/concepts/partitions_schedules_sensors/partitioned_job.py" startAfter="start_partitioned_job" endBefore="end_partitioned_job" />
+<CodeExample path="docs_snippets/docs_snippets/concepts/partitions_schedules_sensors/partitioned_job.py" startAfter="start_partitioned_job" endBefore="end_partitioned_job" title="src/<project_name>/defs/ops.py"/>
 
 ## Defining jobs with static partitions
 
 Not all jobs are partitioned by time. For example, the following example shows a partitioned job where the partitions are continents:
 
-<CodeExample path="docs_snippets/docs_snippets/concepts/partitions_schedules_sensors/static_partitioned_job.py" />
+<CodeExample path="docs_snippets/docs_snippets/concepts/partitions_schedules_sensors/static_partitioned_job.py" title="src/<project_name>/defs/ops.py"/>
 
 ## Creating schedules from partitioned jobs
 
 Running a partitioned job on a schedule is a common use case. For example, if your job has a partition for each date, you likely want to run that job every day, on the partition for that day.
 
-Refer to the [Schedule documentation](/guides/automate/schedules/) for more info about constructing both schedules for asset and op-based jobs.
+Refer to the [Schedule documentation](/guides/automate/schedules) for more info about constructing both schedules for asset and op-based jobs.
 
 ## Partitions in the Dagster UI
 

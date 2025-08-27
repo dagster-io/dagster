@@ -134,9 +134,13 @@ if __name__ == "__main__":
         val = fn(event, FakeLambdaContext())
     except Exception as e:
         tb = traceback.TracebackException.from_exception(e)
+        if sys.version_info >= (3, 13):
+            name = tb.exc_type_str.split(".")[-1]
+        else:
+            name = tb.exc_type.__name__ if tb.exc_type is not None else None
         val = {
             "errorMessage": str(tb),
-            "errorType": tb.exc_type.__name__,
+            "errorType": name,
             "stackTrace": tb.stack.format(),
             "requestId": "fake-request-id",
         }

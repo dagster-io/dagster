@@ -2,7 +2,7 @@
 Kubernetes (dagster-k8s)
 ========================
 
-See also the `Kubernetes deployment guide <https://docs.dagster.io/guides/deploy/deployment-options/kubernetes>`_.
+See also the `Kubernetes deployment guide <https://docs.dagster.io/deployment/oss/deployment-options/kubernetes>`_.
 
 This library contains utilities for running Dagster with Kubernetes. This includes a Python API
 allowing the webserver to launch runs as Kubernetes Jobs, as well as a Helm chart you can use as the basis
@@ -95,9 +95,9 @@ To run the unit tests:
    pytest -m "not integration"
 
 
-To run the integration tests, you must have `Docker <https://docs.docker.com/install/>`_\ ,
+To run the integration tests, you must have `Docker <https://docs.docker.com/install>`_\ ,
 `kind <https://kind.sigs.k8s.io/docs/user/quick-start#installation>`__\ ,
-and `helm <https://helm.sh/docs/intro/install/>`_ installed.
+and `helm <https://helm.sh/docs/intro/install>`_ installed.
 
 On macOS:
 

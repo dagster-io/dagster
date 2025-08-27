@@ -4,11 +4,10 @@ from collections.abc import Generator, Sequence
 from contextlib import contextmanager
 from typing import IO, Optional
 
+import dagster as dg
 import dagster._check as check
-from dagster import job, op
 from dagster._core.execution.compute_logs import create_compute_log_file_key
-from dagster._core.instance import DagsterInstance, InstanceRef, InstanceType
-from dagster._core.launcher import DefaultRunLauncher
+from dagster._core.instance import InstanceRef, InstanceType
 from dagster._core.run_coordinator import DefaultRunCoordinator
 from dagster._core.storage.compute_log_manager import (
     CapturedLogContext,
@@ -20,7 +19,7 @@ from dagster._core.storage.compute_log_manager import (
 from dagster._core.storage.event_log import SqliteEventLogStorage
 from dagster._core.storage.root import LocalArtifactStorage
 from dagster._core.storage.runs import SqliteRunStorage
-from dagster._core.test_utils import environ, instance_for_test
+from dagster._core.test_utils import environ
 
 from dagster_tests.storage_tests.utils.compute_log_manager import TestComputeLogManager
 
@@ -77,7 +76,7 @@ class BrokenComputeLogManager(ComputeLogManager):
 def broken_compute_log_manager_instance(fail_on_setup=False, fail_on_teardown=False):
     with tempfile.TemporaryDirectory() as temp_dir:
         with environ({"DAGSTER_HOME": temp_dir}):
-            yield DagsterInstance(
+            yield dg.DagsterInstance(
                 instance_type=InstanceType.PERSISTENT,
                 local_artifact_storage=LocalArtifactStorage(temp_dir),
                 run_storage=SqliteRunStorage.from_local(temp_dir),
@@ -86,7 +85,7 @@ def broken_compute_log_manager_instance(fail_on_setup=False, fail_on_teardown=Fa
                     fail_on_setup=fail_on_setup, fail_on_teardown=fail_on_teardown
                 ),
                 run_coordinator=DefaultRunCoordinator(),
-                run_launcher=DefaultRunLauncher(),
+                run_launcher=dg.DefaultRunLauncher(),
                 ref=InstanceRef.from_dir(temp_dir),
             )
 
@@ -109,26 +108,26 @@ def _has_teardown_exception(execute_result):
     )
 
 
-@op
+@dg.op
 def yay(context):
     context.log.info("yay")
     print("HELLOOO")  # noqa: T201
     return "yay"
 
 
-@op
+@dg.op
 def boo(context):
     context.log.info("boo")
     print("HELLOOO")  # noqa: T201
     raise Exception("booo")
 
 
-@job
+@dg.job
 def yay_job():
     yay()
 
 
-@job
+@dg.job
 def boo_job():
     boo()
 
@@ -172,7 +171,6 @@ from contextlib import contextmanager
 from typing import Any
 
 import pytest
-from dagster import job, op
 from dagster._core.events import DagsterEventType
 from dagster._core.storage.compute_log_manager import CapturedLogContext, ComputeIOType
 from dagster._core.storage.local_compute_log_manager import LocalComputeLogManager
@@ -183,7 +181,7 @@ from typing_extensions import Self
 
 
 def test_compute_log_manager_instance():
-    with instance_for_test() as instance:
+    with dg.instance_for_test() as instance:
         assert instance.compute_log_manager
         assert instance.compute_log_manager._instance  # noqa: SLF001
 
@@ -221,16 +219,16 @@ class ExternalTestComputeLogManager(NoOpComputeLogManager):
 
 
 def test_external_compute_log_manager():
-    @op
+    @dg.op
     def my_op():
         print("hello out")  # noqa: T201
         print("hello error", file=sys.stderr)  # noqa: T201
 
-    @job
+    @dg.job
     def my_job():
         my_op()
 
-    with instance_for_test(
+    with dg.instance_for_test(
         overrides={
             "compute_logs": {
                 "module": "dagster_tests.storage_tests.test_compute_log_manager",

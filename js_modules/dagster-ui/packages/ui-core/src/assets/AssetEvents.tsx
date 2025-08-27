@@ -1,5 +1,4 @@
 import {Box, ErrorBoundary, NonIdealState, Spinner} from '@dagster-io/ui-components';
-import isEqual from 'lodash/isEqual';
 import * as React from 'react';
 import {useMemo} from 'react';
 
@@ -16,12 +15,6 @@ import {useAssetEventsFilters} from './useAssetEventsFilters';
 import {usePaginatedAssetEvents} from './usePaginatedAssetEvents';
 import {LiveDataForNode, stepKeyForAsset} from '../asset-graph/Utils';
 import {AssetEventHistoryEventTypeSelector, RepositorySelector} from '../graphql/types';
-
-const ALL_EVENT_TYPES = [
-  AssetEventHistoryEventTypeSelector.MATERIALIZATION,
-  AssetEventHistoryEventTypeSelector.OBSERVATION,
-  AssetEventHistoryEventTypeSelector.FAILED_TO_MATERIALIZE,
-];
 
 interface Props {
   assetKey: AssetKey;
@@ -53,7 +46,10 @@ export const AssetEvents = ({
   });
 
   const combinedParams = useMemo(() => {
-    const combinedParams: Parameters<typeof usePaginatedAssetEvents>[1] = {...(params as any)};
+    const combinedParams: Parameters<typeof usePaginatedAssetEvents>[1] = {
+      asOf: params.asOf,
+    };
+
     if (filterState.dateRange) {
       if (filterState.dateRange.end) {
         combinedParams.before = filterState.dateRange.end;
@@ -62,15 +58,46 @@ export const AssetEvents = ({
         combinedParams.after = filterState.dateRange.start;
       }
     }
-    if (filterState.status) {
-      if (filterState.status.length === 1) {
-        combinedParams.statuses = [filterState.status[0] as AssetEventHistoryEventTypeSelector];
-      } else {
-        combinedParams.statuses = ALL_EVENT_TYPES;
-      }
+    if (filterState.partitions) {
+      combinedParams.partitions = filterState.partitions;
+    }
+    if (filterState.status?.length === 1) {
+      const status = filterState.status[0];
+      const statusesForStatus =
+        status === 'Success'
+          ? [
+              AssetEventHistoryEventTypeSelector.MATERIALIZATION,
+              AssetEventHistoryEventTypeSelector.OBSERVATION,
+            ]
+          : [AssetEventHistoryEventTypeSelector.FAILED_TO_MATERIALIZE];
+
+      combinedParams.statuses = combinedParams.statuses
+        ? combinedParams.statuses.filter((c) => statusesForStatus.includes(c))
+        : statusesForStatus;
+    }
+
+    if (filterState.type?.length === 1) {
+      const type = filterState.type[0];
+      const statusesForType =
+        type === 'Materialization'
+          ? [
+              AssetEventHistoryEventTypeSelector.MATERIALIZATION,
+              AssetEventHistoryEventTypeSelector.FAILED_TO_MATERIALIZE,
+            ]
+          : [AssetEventHistoryEventTypeSelector.OBSERVATION];
+
+      combinedParams.statuses = combinedParams.statuses
+        ? combinedParams.statuses.filter((c) => statusesForType.includes(c))
+        : statusesForType;
     }
     return combinedParams;
-  }, [params, filterState.dateRange, filterState.status]);
+  }, [
+    params.asOf,
+    filterState.dateRange,
+    filterState.status,
+    filterState.type,
+    filterState.partitions,
+  ]);
 
   const {events, fetchMore, fetchLatest, loading} = usePaginatedAssetEvents(
     assetKey,
@@ -86,6 +113,7 @@ export const AssetEvents = ({
     combinedParams.after,
     combinedParams.before,
     combinedParams.statuses,
+    combinedParams.partitions,
   ]);
 
   const grouped = useGroupedEvents('time', events, []);
@@ -122,10 +150,8 @@ export const AssetEvents = ({
 
   const def = definition ?? cachedDefinition;
 
-  const hasFilter =
-    !isEqual(combinedParams.statuses, ALL_EVENT_TYPES) ||
-    combinedParams.before !== undefined ||
-    combinedParams.after !== undefined;
+  const hasFilter = Object.keys(combinedParams).length > 0;
+
   if (!loading && !events.length && !hasFilter) {
     return (
       <Box padding={{horizontal: 24, vertical: 64}}>

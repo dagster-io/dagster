@@ -1,5 +1,6 @@
 import pytest
 from dagster._core.test_utils import ensure_dagster_tests_import
+from dagster.components.core.component_tree import ComponentTreeException
 from dagster.components.resolved.context import ResolutionException
 from dagster_test.components.test_utils.test_cases import (
     BASIC_COMPONENT_TYPE_FILEPATH,
@@ -68,14 +69,21 @@ def test_validation_messages(test_case: ComponentValidationTestCase) -> None:
     errors.
     """
     if test_case.should_error:
-        with pytest.raises((ValidationError, ScannerError, ResolutionException)) as e:
+        with pytest.raises(
+            (ValidationError, ScannerError, ResolutionException, ComponentTreeException)
+        ) as e:
             sync_load_test_component_defs(
                 str(test_case.component_path),
                 test_case.component_type_filepath,
             )
 
+        if isinstance(e.value, ComponentTreeException):
+            value = e.value.__cause__
+        else:
+            value = e.value
+
         assert test_case.validate_error_msg
-        test_case.validate_error_msg(str(e.value))
+        test_case.validate_error_msg(str(value))
     else:
         sync_load_test_component_defs(
             str(test_case.component_path),

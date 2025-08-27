@@ -44,7 +44,7 @@ class GCSComputeLogManager(TruncatingCloudStorageComputeLogManager, Configurable
             prefix: "dagster-test-"
             upload_interval: 30
 
-    There are more configuration examples in the instance documentation guide: https://docs.dagster.io/guides/deploy/dagster-instance-configuration#compute-log-storage
+    There are more configuration examples in the instance documentation guide: https://docs.dagster.io/deployment/oss/oss-instance-configuration#compute-log-storage
 
     Args:
         bucket (str): The name of the GCS bucket to which to log.
@@ -181,7 +181,7 @@ class GCSComputeLogManager(TruncatingCloudStorageComputeLogManager, Configurable
         else:
             check.failed("Must pass in either `log_key` or `prefix` argument to delete_logs")
 
-    def download_url_for_type(self, log_key: Sequence[str], io_type: ComputeIOType):  # pyright: ignore[reportIncompatibleMethodOverride]
+    def download_url_for_type(self, log_key: Sequence[str], io_type: ComputeIOType):
         if not self.is_capture_complete(log_key):
             return None
 

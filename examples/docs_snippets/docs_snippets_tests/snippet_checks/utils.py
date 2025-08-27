@@ -2,6 +2,7 @@ import inspect
 import logging
 import os
 import re
+import shutil
 import string
 import subprocess
 import textwrap
@@ -196,8 +197,13 @@ def _assert_matches_or_update_snippet(
         else:
             print(f"Snippet {snippet_path} passed")  # noqa: T201
 
+        test_file_being_run = Path(inspect.stack()[2].filename)
+        path_relative_to_docs = test_file_being_run.relative_to(
+            DAGSTER_ROOT / "examples" / "docs_snippets"
+        )
         assert comparison_fn(contents, snippet_contents), (
-            "CLI snippets do not match.\nYou may need to run `make regenerate_cli_snippets` in the `dagster/docs` directory.\nYou may also use `make test_cli_snippets_simulate_bk` to simulate the CI environment locally."
+            "CLI snippets do not match. You may need to regenerate this snippet:"
+            f"\n`cd $DAGSTER_GIT_REPO/examples/docs_snippets && tox -e docs_snapshot_update -- {path_relative_to_docs.as_posix()}`"
         )
 
 
@@ -419,6 +425,7 @@ def isolated_snippet_generation_environment(
     should_update_snippets: bool,
     snapshot_base_dir: Path,
     global_snippet_replace_regexes: Optional[Sequence[tuple[str, str]]] = None,
+    clear_snapshot_dir_before_update: bool = True,
 ) -> Iterator[SnippetGenerationContext]:
     with (
         _get_snippet_working_dir() as tempdir,
@@ -442,6 +449,13 @@ def isolated_snippet_generation_environment(
             enabled = false
             """
         )
+        if (
+            should_update_snippets
+            and snapshot_base_dir.exists()
+            and clear_snapshot_dir_before_update
+        ):
+            shutil.rmtree(snapshot_base_dir)
+            snapshot_base_dir.mkdir(parents=True, exist_ok=True)
         yield SnippetGenerationContext(
             snapshot_base_dir=snapshot_base_dir,
             should_update_snippets=should_update_snippets,

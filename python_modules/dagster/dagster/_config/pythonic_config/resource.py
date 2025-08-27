@@ -15,11 +15,12 @@ from typing import (  # noqa: UP035
 )
 
 from dagster_shared.dagster_model.pydantic_compat_layer import model_fields
+from dagster_shared.error import DagsterError
 from pydantic import BaseModel
 from typing_extensions import TypeAlias, TypeGuard, get_args, get_origin
 
 import dagster._check as check
-from dagster._annotations import deprecated
+from dagster._annotations import deprecated, public
 from dagster._config.field import Field as DagsterField
 from dagster._config.field_utils import config_dictionary_from_values
 from dagster._config.pythonic_config.attach_other_object_to_context import (
@@ -50,11 +51,7 @@ from dagster._core.definitions.resource_definition import (
     has_at_least_one_parameter,
 )
 from dagster._core.definitions.resource_requirement import ResourceRequirement
-from dagster._core.errors import (
-    DagsterError,
-    DagsterInvalidConfigError,
-    DagsterInvalidDefinitionError,
-)
+from dagster._core.errors import DagsterInvalidConfigError, DagsterInvalidDefinitionError
 from dagster._core.execution.context.init import InitResourceContext, build_init_resource_context
 from dagster._core.storage.io_manager import IOManagerDefinition
 from dagster._record import record
@@ -181,7 +178,7 @@ class ConfigurableResourceFactory(
 
     * An existing class from a third-party library that the user does not control.
     * A complex class that requires substantial internal state management or itself requires arguments beyond its config values.
-    * A class with expensive initialization that should not be invoked on code location load, but rather lazily on first use in an op or asset during a run.
+    * A class with expensive initialization that should not be invoked on project load, but rather lazily on first use in an op or asset during a run.
     * A class that you desire to be a plain Python class, rather than a Pydantic class, for whatever reason.
 
     This class is a subclass of both :py:class:`ResourceDefinition` and :py:class:`Config`, and
@@ -592,6 +589,7 @@ class ConfigurableResourceFactory(
             yield value
 
 
+@public
 class ConfigurableResource(ConfigurableResourceFactory[TResValue]):
     """Base class for Dagster resources that utilize structured config.
 

@@ -7,16 +7,21 @@ from typing import TYPE_CHECKING, AbstractSet, Any, Optional, Union  # noqa: UP0
 from dagster_shared.record import IHaveNew, record_custom, replace
 
 import dagster._check as check
-from dagster._annotations import deprecated, deprecated_param
+from dagster._annotations import deprecated, deprecated_param, public
 from dagster._core.definitions import AssetKey
-from dagster._core.definitions.asset_job import build_asset_job, get_asset_graph_for_job
 from dagster._core.definitions.asset_selection import AssetSelection
+from dagster._core.definitions.assets.job.asset_job import build_asset_job, get_asset_graph_for_job
 from dagster._core.definitions.backfill_policy import resolve_backfill_policy
 from dagster._core.definitions.config import ConfigMapping
 from dagster._core.definitions.executor_definition import ExecutorDefinition
 from dagster._core.definitions.hook_definition import HookDefinition
 from dagster._core.definitions.metadata import RawMetadataValue
-from dagster._core.definitions.partition import PartitionedConfig, PartitionsDefinition
+from dagster._core.definitions.partitions.context import partition_loading_context
+from dagster._core.definitions.partitions.definition import (
+    DynamicPartitionsDefinition,
+    PartitionsDefinition,
+)
+from dagster._core.definitions.partitions.partitioned_config import PartitionedConfig
 from dagster._core.definitions.policy import RetryPolicy
 from dagster._core.definitions.resource_definition import ResourceDefinition
 from dagster._core.definitions.run_request import RunRequest
@@ -26,8 +31,8 @@ from dagster._utils.tags import normalize_tags
 
 if TYPE_CHECKING:
     from dagster._core.definitions import JobDefinition
-    from dagster._core.definitions.asset_graph import AssetGraph
     from dagster._core.definitions.asset_selection import CoercibleToAssetSelection
+    from dagster._core.definitions.assets.graph.asset_graph import AssetGraph
     from dagster._core.definitions.run_config import RunConfig
 
 
@@ -118,10 +123,7 @@ class UnresolvedAssetJobDefinition(IHaveNew):
         Returns:
             RunRequest: an object that requests a run to process the given partition.
         """
-        from dagster._core.definitions.partition import (
-            DynamicPartitionsDefinition,
-            PartitionedConfig,
-        )
+        from dagster._core.definitions.partitions.partitioned_config import PartitionedConfig
 
         if not self.partitions_def:
             check.failed("Called run_request_for_partition on a non-partitioned job")
@@ -142,11 +144,8 @@ class UnresolvedAssetJobDefinition(IHaveNew):
                 " RunRequest(partition_key=...)"
             )
 
-        self.partitions_def.validate_partition_key(
-            partition_key,
-            current_time=current_time,
-            dynamic_partitions_store=dynamic_partitions_store,
-        )
+        with partition_loading_context(current_time, dynamic_partitions_store) as ctx:
+            self.partitions_def.validate_partition_key(partition_key, ctx)
 
         run_config = (
             run_config
@@ -239,6 +238,7 @@ class UnresolvedAssetJobDefinition(IHaveNew):
     breaking_version="2.0.0",
     additional_warn_text="Partitioning is inferred from the selected assets, so setting this is redundant.",
 )
+@public
 def define_asset_job(
     name: str,
     selection: Optional["CoercibleToAssetSelection"] = None,
@@ -256,7 +256,7 @@ def define_asset_job(
 ) -> UnresolvedAssetJobDefinition:
     """Creates a definition of a job which will either materialize a selection of assets or observe
     a selection of source assets. This will only be resolved to a JobDefinition once placed in a
-    code location.
+    project.
 
     Args:
         name (str):
@@ -321,17 +321,17 @@ def define_asset_job(
 
 
     Returns:
-        UnresolvedAssetJobDefinition: The job, which can be placed inside a code location.
+        UnresolvedAssetJobDefinition: The job, which can be placed inside a project.
 
     Examples:
         .. code-block:: python
 
-            # A job that targets all assets in the code location:
+            # A job that targets all assets in the project:
             @asset
             def asset1():
                 ...
 
-            defs = Definitions(
+            Definitions(
                 assets=[asset1],
                 jobs=[define_asset_job("all_assets")],
             )
@@ -341,13 +341,13 @@ def define_asset_job(
             def asset1():
                 ...
 
-            defs = Definitions(
+            Definitions(
                 assets=[asset1],
                 jobs=[define_asset_job("all_assets", selection=[asset1])],
             )
 
             # A job that targets all the assets in a group:
-            defs = Definitions(
+            Definitions(
                 assets=assets,
                 jobs=[define_asset_job("marketing_job", selection=AssetSelection.groups("marketing"))],
             )
@@ -357,7 +357,7 @@ def define_asset_job(
                 ...
 
             # A job that observes a source asset:
-            defs = Definitions(
+            Definitions(
                 assets=assets,
                 jobs=[define_asset_job("observation_job", selection=[source_asset])],
             )
@@ -367,7 +367,7 @@ def define_asset_job(
             def asset1():
                 ...
 
-            defs = Definitions(
+            Definitions(
                 assets=[asset1],
                 jobs=[define_asset_job("all_assets")],
                 resources={"slack_client": prod_slack_client},

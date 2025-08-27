@@ -2,7 +2,7 @@ from datetime import datetime, timezone
 
 from dagster import (
     Definitions,
-    FreshnessPolicy,
+    LegacyFreshnessPolicy,
     ObserveResult,
     RepositoryDefinition,
     observable_source_asset,
@@ -29,7 +29,7 @@ GET_FRESHNESS_INFO = """
 """
 
 
-@observable_source_asset(freshness_policy=FreshnessPolicy(maximum_lag_minutes=30))
+@observable_source_asset(legacy_freshness_policy=LegacyFreshnessPolicy(maximum_lag_minutes=30))
 def source_asset_with_freshness(context):
     return ObserveResult(metadata={DATA_TIME_METADATA_KEY: float(context.run.tags["data_time"])})
 

@@ -32,6 +32,7 @@ describe('toGraphQueryItems', () => {
       x: 16,
       y: 0,
     });
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     expect(result.boxes[0]!.children.length).toEqual(1);
     expect(result.boxes[1]).toMatchObject({
       key: 'depends_on_yesterday',

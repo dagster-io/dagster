@@ -283,6 +283,27 @@ def scope_custom_group_name_dagster_dbt_translator():
     # end_custom_group_name_dagster_dbt_translator
 
 
+def scope_custom_group_name_dagster_map_asset_specs():
+    # start_custom_group_name_dagster_map_asset_specs
+    from pathlib import Path
+    from dagster import AssetExecutionContext
+    from dagster_dbt import DbtCliResource, DbtProject, dbt_assets
+
+    my_dbt_project = DbtProject(project_dir=Path("path/to/dbt_project"))
+
+    @dbt_assets(
+        manifest=my_dbt_project.manifest_path,
+    )
+    def my_dbt_assets(context: AssetExecutionContext, dbt: DbtCliResource):
+        yield from dbt.cli(["build"], context=context).stream()
+
+    my_dbt_assets = my_dbt_assets.map_asset_specs(
+        lambda spec: spec.replace_attributes(group_name="snowflake")
+    )
+
+    # end_custom_group_name_dagster_map_asset_specs
+
+
 def scope_custom_owners_dagster_dbt_translator():
     # start_custom_owners_dagster_dbt_translator
     from pathlib import Path
@@ -307,6 +328,29 @@ def scope_custom_owners_dagster_dbt_translator():
         yield from dbt.cli(["build"], context=context).stream()
 
     # end_custom_owners_dagster_dbt_translator
+
+
+def scope_custom_owners_dagster_map_asset_specs():
+    # start_custom_owners_dagster_map_asset_specs
+    from pathlib import Path
+    from dagster import AssetExecutionContext
+    from dagster_dbt import DbtCliResource, DbtProject, dbt_assets
+
+    my_dbt_project = DbtProject(project_dir=Path("path/to/dbt_project"))
+
+    @dbt_assets(
+        manifest=my_dbt_project.manifest_path,
+    )
+    def my_dbt_assets(context: AssetExecutionContext, dbt: DbtCliResource):
+        yield from dbt.cli(["build"], context=context).stream()
+
+    my_dbt_assets = my_dbt_assets.map_asset_specs(
+        lambda spec: spec.replace_attributes(
+            owners=["owner@company.com", "team:data@company.com"]
+        )
+    )
+
+    # end_custom_owners_dagster_map_asset_specs
 
 
 def scope_custom_description_dagster_dbt_translator():

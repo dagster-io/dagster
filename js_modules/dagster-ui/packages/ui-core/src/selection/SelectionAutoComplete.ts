@@ -7,8 +7,9 @@ export function createSelectionAutoComplete({
   getAttributeValueResultsMatchingQuery,
   getFunctionResultsMatchingQuery,
   getSubstringResultMatchingQuery,
-  getAttributeValueIncludeAttributeResultsMatchingQuery,
+  getAllResults,
   createOperatorSuggestion,
+  supportsTraversal = true,
 }: Omit<SelectionAutoCompleteProvider, 'renderResult' | 'useAutoComplete'>) {
   return function (line: string, actualCursorIndex: number) {
     const {parseTrees} = parseInput(line);
@@ -23,10 +24,11 @@ export function createSelectionAutoComplete({
         cursorIndex: actualCursorIndex,
         getAttributeResultsMatchingQuery,
         getAttributeValueResultsMatchingQuery,
-        getAttributeValueIncludeAttributeResultsMatchingQuery,
+        getAllResults,
         getFunctionResultsMatchingQuery,
         getSubstringResultMatchingQuery,
         createOperatorSuggestion,
+        supportsTraversal,
       });
       visitorWithAutoComplete.addUnmatchedValueResults('');
     } else {
@@ -39,10 +41,11 @@ export function createSelectionAutoComplete({
             cursorIndex,
             getAttributeResultsMatchingQuery,
             getAttributeValueResultsMatchingQuery,
-            getAttributeValueIncludeAttributeResultsMatchingQuery,
+            getAllResults,
             getFunctionResultsMatchingQuery,
             getSubstringResultMatchingQuery,
             createOperatorSuggestion,
+            supportsTraversal,
           });
           tree.accept(visitor);
           visitorWithAutoComplete = visitor;

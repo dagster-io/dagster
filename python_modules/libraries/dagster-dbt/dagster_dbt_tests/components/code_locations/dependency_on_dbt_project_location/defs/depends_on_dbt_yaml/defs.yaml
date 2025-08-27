@@ -1,0 +1,7 @@
+type: dependency_on_dbt_project_location.defs.depends_on_dbt_yaml.component.MyExecutableComponent
+
+attributes:
+  assets:
+    - key: downstream_of_customers_two
+      deps:
+        - "{{ load_component_at_path('jaffle_shop_dbt').asset_key_for_model('customers') }}"

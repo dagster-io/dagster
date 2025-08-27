@@ -4,6 +4,10 @@ sidebar_position: 300
 title: Customizing a schedule's execution timezone
 ---
 
+import ScaffoldSchedule from '@site/docs/partials/\_ScaffoldSchedule.md';
+
+<ScaffoldSchedule />
+
 Schedules that don't have a set timezone will, by default, execute in [UTC](https://en.wikipedia.org/wiki/Coordinated_Universal_Time). In this guide, you will learn to:
 
 - Set custom timezones on schedule definitions
@@ -34,6 +38,7 @@ This parameter accepts any [`tz` timezone](https://en.wikipedia.org/wiki/List_of
   path="docs_snippets/docs_snippets/concepts/partitions_schedules_sensors/schedules/schedules.py"
   startAfter="start_timezone"
   endBefore="end_timezone"
+  title="src/<project_name>/defs/schedules.py"
 />
 
 ## Setting timezones on partitioned jobs
@@ -42,7 +47,10 @@ Schedules constructed from partitioned jobs execute in the timezone defined on t
 
 For example, the following partition uses the **US Pacific (America/Los_Angeles)** timezone:
 
-<CodeExample path="docs_snippets/docs_snippets/concepts/partitions_schedules_sensors/partition_with_timezone.py" />
+<CodeExample
+  path="docs_snippets/docs_snippets/concepts/partitions_schedules_sensors/partition_with_timezone.py"
+  title="src/<project_name>/defs/schedules.py"
+/>
 
 ## Execution times and Daylight Savings Time
 

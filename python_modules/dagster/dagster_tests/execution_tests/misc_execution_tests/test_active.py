@@ -3,27 +3,25 @@ import tempfile
 import time
 from collections import defaultdict
 
+import dagster as dg
 import pytest
-from dagster import job, op
-from dagster._core.errors import DagsterExecutionInterruptedError, DagsterInvariantViolationError
-from dagster._core.events import DagsterEvent, DagsterEventType
+from dagster._core.events import DagsterEventType
 from dagster._core.execution.api import create_execution_plan
 from dagster._core.execution.plan.instance_concurrency_context import InstanceConcurrencyContext
 from dagster._core.execution.plan.objects import StepRetryData, StepSuccessData
 from dagster._core.execution.plan.outputs import StepOutputData, StepOutputHandle
 from dagster._core.execution.retries import RetryMode
 from dagster._core.storage.tags import GLOBAL_CONCURRENCY_TAG
-from dagster._core.test_utils import instance_for_test
 from dagster._core.utils import make_new_run_id
 from dagster._utils.error import SerializableErrorInfo
 
 
 def define_foo_job():
-    @op
+    @dg.op
     def foo_op():
         pass
 
-    @job
+    @dg.job
     def foo_job():
         foo_op()
 
@@ -33,9 +31,9 @@ def define_foo_job():
 def test_recover_with_step_in_flight():
     foo_job = define_foo_job()
 
-    with instance_for_test():
+    with dg.instance_for_test():
         with pytest.raises(
-            DagsterInvariantViolationError,
+            dg.DagsterInvariantViolationError,
             match="Execution finished without completing the execution plan",
         ):
             with create_execution_plan(foo_job).start(RetryMode.DISABLED) as active_execution:
@@ -45,7 +43,7 @@ def test_recover_with_step_in_flight():
                 assert step_1.key == "foo_op"
 
                 active_execution.handle_event(
-                    DagsterEvent(
+                    dg.DagsterEvent(
                         DagsterEventType.STEP_START.value,
                         job_name=foo_job.name,
                         step_key=step_1.key,
@@ -57,7 +55,7 @@ def test_recover_with_step_in_flight():
         with create_execution_plan(foo_job).start(RetryMode.DISABLED) as active_execution:
             possibly_in_flight_steps = active_execution.rebuild_from_events(
                 [
-                    DagsterEvent(
+                    dg.DagsterEvent(
                         DagsterEventType.STEP_START.value,
                         job_name=foo_job.name,
                         step_key=step_1.key,  # pyright: ignore[reportPossiblyUnboundVariable]
@@ -69,7 +67,7 @@ def test_recover_with_step_in_flight():
             assert not active_execution.get_steps_to_execute()
 
             active_execution.handle_event(
-                DagsterEvent(
+                dg.DagsterEvent(
                     DagsterEventType.STEP_SUCCESS.value,
                     job_name=foo_job.name,
                     event_specific_data=StepSuccessData(duration_ms=10.0),
@@ -79,15 +77,15 @@ def test_recover_with_step_in_flight():
 
 
 def define_two_op_job():
-    @op
+    @dg.op
     def foo_op():
         pass
 
-    @op
+    @dg.op
     def bar_op(_data):
         pass
 
-    @job
+    @dg.job
     def two_op_job():
         bar_op(foo_op())
 
@@ -98,12 +96,12 @@ def test_recover_in_between_steps():
     two_op_job = define_two_op_job()
 
     events = [
-        DagsterEvent(
+        dg.DagsterEvent(
             DagsterEventType.STEP_START.value,
             job_name=two_op_job.name,
             step_key="foo_op",
         ),
-        DagsterEvent(
+        dg.DagsterEvent(
             DagsterEventType.STEP_OUTPUT.value,
             job_name=two_op_job.name,
             event_specific_data=StepOutputData(
@@ -111,7 +109,7 @@ def test_recover_in_between_steps():
             ),
             step_key="foo_op",
         ),
-        DagsterEvent(
+        dg.DagsterEvent(
             DagsterEventType.STEP_SUCCESS.value,
             job_name=two_op_job.name,
             event_specific_data=StepSuccessData(duration_ms=10.0),
@@ -119,9 +117,9 @@ def test_recover_in_between_steps():
         ),
     ]
 
-    with instance_for_test():
+    with dg.instance_for_test():
         with pytest.raises(
-            DagsterInvariantViolationError,
+            dg.DagsterInvariantViolationError,
             match="Execution finished without completing the execution plan",
         ):
             with create_execution_plan(two_op_job).start(RetryMode.DISABLED) as active_execution:
@@ -145,14 +143,14 @@ def test_recover_in_between_steps():
             assert not active_execution.get_steps_to_execute()
 
             active_execution.handle_event(
-                DagsterEvent(
+                dg.DagsterEvent(
                     DagsterEventType.STEP_START.value,
                     job_name=two_op_job.name,
                     step_key="bar_op",
                 )
             )
             active_execution.handle_event(
-                DagsterEvent(
+                dg.DagsterEvent(
                     DagsterEventType.STEP_SUCCESS.value,
                     job_name=two_op_job.name,
                     event_specific_data=StepSuccessData(duration_ms=10.0),
@@ -169,15 +167,15 @@ def define_concurrency_job(use_tags):
         tags = None
         concurrency_kwarg = "foo"
 
-    @op(tags=tags, pool=concurrency_kwarg)
+    @dg.op(tags=tags, pool=concurrency_kwarg)
     def foo_op():
         pass
 
-    @op(tags=tags, pool=concurrency_kwarg)
+    @dg.op(tags=tags, pool=concurrency_kwarg)
     def bar_op():
         pass
 
-    @job
+    @dg.job
     def foo_job():
         foo_op()
         bar_op()
@@ -191,7 +189,7 @@ def test_active_concurrency(use_tags):
     run_id = make_new_run_id()
 
     with tempfile.TemporaryDirectory() as temp_dir:
-        with instance_for_test(
+        with dg.instance_for_test(
             overrides={
                 "event_log_storage": {
                     "module": "dagster.utils.test",
@@ -209,7 +207,7 @@ def test_active_concurrency(use_tags):
             run = instance.create_run_for_job(foo_job, run_id=run_id)
 
             with pytest.raises(
-                DagsterInvariantViolationError,
+                dg.DagsterInvariantViolationError,
                 match="Execution finished without completing the execution plan",
             ):
                 with InstanceConcurrencyContext(instance, run) as instance_concurrency_context:
@@ -228,7 +226,7 @@ def test_active_concurrency(use_tags):
                         assert foo_info.assigned_step_count == 1
 
                         active_execution.handle_event(
-                            DagsterEvent(
+                            dg.DagsterEvent(
                                 DagsterEventType.STEP_START.value,
                                 job_name=foo_job.name,
                                 step_key=step_1.key,
@@ -277,15 +275,15 @@ def define_concurrency_retry_job(use_tags):
         tags = None
         concurrency_kwarg = "foo"
 
-    @op(tags=tags, pool=concurrency_kwarg)
+    @dg.op(tags=tags, pool=concurrency_kwarg)
     def foo_op():
         pass
 
-    @op
+    @dg.op
     def bar_op():
         pass
 
-    @job
+    @dg.job
     def foo_job():
         foo_op()
         bar_op()
@@ -297,7 +295,7 @@ def define_concurrency_retry_job(use_tags):
 def test_active_concurrency_sleep(use_tags):
     instance_concurrency_context = MockInstanceConcurrencyContext(2.0)
     foo_job = define_concurrency_retry_job(use_tags)
-    with pytest.raises(DagsterExecutionInterruptedError):
+    with pytest.raises(dg.DagsterExecutionInterruptedError):
         with create_execution_plan(foo_job).start(
             RetryMode.ENABLED,
             instance_concurrency_context=instance_concurrency_context,
@@ -310,7 +308,7 @@ def test_active_concurrency_sleep(use_tags):
 
             # start the step
             active_execution.handle_event(
-                DagsterEvent(
+                dg.DagsterEvent(
                     DagsterEventType.STEP_START.value,
                     job_name=foo_job.name,
                     step_key=step.key,
@@ -324,7 +322,7 @@ def test_active_concurrency_sleep(use_tags):
 
             # retry the step
             active_execution.handle_event(
-                DagsterEvent(
+                dg.DagsterEvent(
                     DagsterEventType.STEP_UP_FOR_RETRY.value,
                     job_name=foo_job.name,
                     step_key=step.key,
@@ -335,7 +333,7 @@ def test_active_concurrency_sleep(use_tags):
             active_execution.mark_interrupted()
 
     instance_concurrency_context = MockInstanceConcurrencyContext(2.0)
-    with pytest.raises(DagsterExecutionInterruptedError):
+    with pytest.raises(dg.DagsterExecutionInterruptedError):
         with create_execution_plan(foo_job).start(
             RetryMode.ENABLED,
             instance_concurrency_context=instance_concurrency_context,
@@ -348,7 +346,7 @@ def test_active_concurrency_sleep(use_tags):
 
             # start the step
             active_execution.handle_event(
-                DagsterEvent(
+                dg.DagsterEvent(
                     DagsterEventType.STEP_START.value,
                     job_name=foo_job.name,
                     step_key=step.key,
@@ -362,7 +360,7 @@ def test_active_concurrency_sleep(use_tags):
 
             # retry the step
             active_execution.handle_event(
-                DagsterEvent(
+                dg.DagsterEvent(
                     DagsterEventType.STEP_UP_FOR_RETRY.value,
                     job_name=foo_job.name,
                     step_key=step.key,
@@ -390,7 +388,7 @@ def test_active_concurrency_changing_default(use_tags):
             # pools will use run granularity if the granularity is not specified, so test that
             # by specifying it
             overrides["concurrency"] = {"pools": {"granularity": "op"}}
-        with instance_for_test(overrides=overrides) as instance:
+        with dg.instance_for_test(overrides=overrides) as instance:
             assert instance.event_log_storage.supports_global_concurrency_limits
 
             instance.event_log_storage.set_concurrency_slots("foo", 0)
@@ -416,14 +414,14 @@ def test_active_concurrency_changing_default(use_tags):
 
                     step_1, step_2 = steps
                     active_execution.handle_event(
-                        DagsterEvent(
+                        dg.DagsterEvent(
                             DagsterEventType.STEP_START.value,
                             job_name=foo_job.name,
                             step_key=step_1.key,
                         )
                     )
                     active_execution.handle_event(
-                        DagsterEvent(
+                        dg.DagsterEvent(
                             DagsterEventType.STEP_SUCCESS.value,
                             job_name=foo_job.name,
                             step_key=step_1.key,
@@ -431,14 +429,14 @@ def test_active_concurrency_changing_default(use_tags):
                         )
                     )
                     active_execution.handle_event(
-                        DagsterEvent(
+                        dg.DagsterEvent(
                             DagsterEventType.STEP_START.value,
                             job_name=foo_job.name,
                             step_key=step_2.key,
                         )
                     )
                     active_execution.handle_event(
-                        DagsterEvent(
+                        dg.DagsterEvent(
                             DagsterEventType.STEP_SUCCESS.value,
                             job_name=foo_job.name,
                             step_key=step_2.key,

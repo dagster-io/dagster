@@ -1,10 +1,10 @@
 from collections.abc import Sequence
 
+import dagster as dg
 import pytest
-from dagster import AssetKey, AssetSpec, AutomationCondition, Definitions
+from dagster import AutomationCondition
 from dagster.components.resolved.context import ResolutionContext
 from dagster.components.resolved.core_models import (
-    AssetAttributesModel,
     AssetPostProcessorModel,
     apply_post_processor_to_defs,
 )
@@ -16,11 +16,11 @@ class M(BaseModel):
     asset_attributes: Sequence[AssetPostProcessorModel] = []
 
 
-defs = Definitions(
+defs = dg.Definitions(
     assets=[
-        AssetSpec("a", group_name="g1"),
-        AssetSpec("b", group_name="g2"),
-        AssetSpec("c", group_name="g2", tags={"tag": "val"}),
+        dg.AssetSpec("a", group_name="g1"),
+        dg.AssetSpec("b", group_name="g2"),
+        dg.AssetSpec("c", group_name="g2", tags={"tag": "val"}),
     ],
 )
 
@@ -34,9 +34,9 @@ def test_replace_attributes() -> None:
 
     newdefs = apply_post_processor_to_defs(model=op, defs=defs, context=ResolutionContext.default())
     asset_graph = newdefs.resolve_asset_graph()
-    assert asset_graph.get(AssetKey("a")).tags == {}
-    assert asset_graph.get(AssetKey("b")).tags == {"newtag": "newval"}
-    assert asset_graph.get(AssetKey("c")).tags == {"newtag": "newval"}
+    assert asset_graph.get(dg.AssetKey("a")).tags == {}
+    assert asset_graph.get(dg.AssetKey("b")).tags == {"newtag": "newval"}
+    assert asset_graph.get(dg.AssetKey("c")).tags == {"newtag": "newval"}
 
 
 def test_merge_attributes() -> None:
@@ -48,9 +48,9 @@ def test_merge_attributes() -> None:
 
     newdefs = apply_post_processor_to_defs(model=op, defs=defs, context=ResolutionContext.default())
     asset_graph = newdefs.resolve_asset_graph()
-    assert asset_graph.get(AssetKey("a")).tags == {}
-    assert asset_graph.get(AssetKey("b")).tags == {"newtag": "newval"}
-    assert asset_graph.get(AssetKey("c")).tags == {"tag": "val", "newtag": "newval"}
+    assert asset_graph.get(dg.AssetKey("a")).tags == {}
+    assert asset_graph.get(dg.AssetKey("b")).tags == {"newtag": "newval"}
+    assert asset_graph.get(dg.AssetKey("c")).tags == {"tag": "val", "newtag": "newval"}
 
 
 def test_render_attributes_asset_context() -> None:
@@ -60,9 +60,9 @@ def test_render_attributes_asset_context() -> None:
 
     newdefs = apply_post_processor_to_defs(model=op, defs=defs, context=ResolutionContext.default())
     asset_graph = newdefs.resolve_asset_graph()
-    assert asset_graph.get(AssetKey("a")).tags == {"group_name_tag": "group__g1"}
-    assert asset_graph.get(AssetKey("b")).tags == {"group_name_tag": "group__g2"}
-    assert asset_graph.get(AssetKey("c")).tags == {"tag": "val", "group_name_tag": "group__g2"}
+    assert asset_graph.get(dg.AssetKey("a")).tags == {"group_name_tag": "group__g1"}
+    assert asset_graph.get(dg.AssetKey("b")).tags == {"group_name_tag": "group__g2"}
+    assert asset_graph.get(dg.AssetKey("c")).tags == {"tag": "val", "group_name_tag": "group__g2"}
 
 
 def test_render_attributes_custom_context() -> None:
@@ -88,12 +88,12 @@ def test_render_attributes_custom_context() -> None:
         ),
     )
     asset_graph = newdefs.resolve_asset_graph()
-    assert asset_graph.get(AssetKey("a")).tags == {}
-    assert asset_graph.get(AssetKey("a")).metadata == {}
-    assert asset_graph.get(AssetKey("a")).automation_condition is None
+    assert asset_graph.get(dg.AssetKey("a")).tags == {}
+    assert asset_graph.get(dg.AssetKey("a")).metadata == {}
+    assert asset_graph.get(dg.AssetKey("a")).automation_condition is None
 
     for k in ["b", "c"]:
-        node = asset_graph.get(AssetKey(k))
+        node = asset_graph.get(dg.AssetKey(k))
         assert node.tags == {"a": "theval", "b": "prefix_theval"}
         assert node.metadata == metadata
         assert node.automation_condition == _custom_cron("@daily")
@@ -142,22 +142,20 @@ def test_load_attributes(python, expected) -> None:
 def test_prefixing():
     prefix = ["sweet_prefix"]
     translated = TranslatorResolvingInfo(
-        obj_name="",
         resolution_context=ResolutionContext.default(),
-        asset_attributes=AssetAttributesModel(
+        asset_attributes=dg.AssetAttributesModel(
             key_prefix=prefix,
         ),
-    ).get_asset_spec(AssetSpec("a"), {})
+    ).get_asset_spec(dg.AssetSpec("a"), {})
 
     assert translated.key.has_prefix(prefix)
 
 
 def test_key_set():
-    spec = AssetSpec("a")
+    spec = dg.AssetSpec("a")
     translated = TranslatorResolvingInfo(
-        obj_name="",
         resolution_context=ResolutionContext.default(),
-        asset_attributes=AssetAttributesModel(
+        asset_attributes=dg.AssetAttributesModel(
             key="{{ spec.key.to_user_string() + '_key' }}",
         ),
     ).get_asset_spec(spec, {"spec": spec})
@@ -167,11 +165,10 @@ def test_key_set():
 
 def test_key_and_prefix():
     prefix = ["sweet_prefix"]
-    spec = AssetSpec("a")
+    spec = dg.AssetSpec("a")
     translated = TranslatorResolvingInfo(
-        obj_name="",
         resolution_context=ResolutionContext.default(),
-        asset_attributes=AssetAttributesModel(
+        asset_attributes=dg.AssetAttributesModel(
             key="{{ spec.key.to_user_string() + '_key' }}",
             key_prefix=prefix,
         ),

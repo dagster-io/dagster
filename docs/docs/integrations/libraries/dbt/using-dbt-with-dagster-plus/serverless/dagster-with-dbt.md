@@ -101,7 +101,7 @@ The last step is to update the [CI/CD files](/deployment/dagster-plus/ci-cd/ci-c
    When you add this step, you'll need to:
 
    - **Add any [adapters](https://docs.getdbt.com/docs/connect-adapters) and libraries used by dbt to your `setup.py` file**. In this example, we're using `dbt-core` and `dbt-duckdb`.
-   - **Add the location of your file defining your DbtProject** to the `dagster-dbt project prepare-and-package` command. In this example, our project is in the `/my_dbt_and_dagster_project/project.py` directory. If you are using [Components](/guides/labs/components), you can use the `--components` flag with a path to your project root.
+   - **Add the location of your file defining your DbtProject** to the `dagster-dbt project prepare-and-package` command. In this example, our project is in the `/my_dbt_and_dagster_project/project.py` directory. If you are using [Components](/guides/build/components), you can use the `--components` flag with a path to your project root.
 
 5. Save the changes.
 
@@ -119,13 +119,13 @@ To ensure your project parses correctly with `dbt parse`, you need to include cr
 2. Open the `profiles.yml` file and add the following:
    ```yaml
    my_profile:
-    target: dev
-    outputs:
-      dev:
-        type: snowflake
-        account: "{{ env_var('SNOWFLAKE_ACCOUNT', 'dummy-account') }}"
-        user: "{{ env_var('SNOWFLAKE_USER', 'dummy-user') }}"
-        password: "{{ env_var('SNOWFLAKE_PASSWORD', 'dummy-password') }}"
+     target: dev
+     outputs:
+       dev:
+         type: snowflake
+         account: "{{ env_var('SNOWFLAKE_ACCOUNT', 'dummy-account') }}"
+         user: "{{ env_var('SNOWFLAKE_USER', 'dummy-user') }}"
+         password: "{{ env_var('SNOWFLAKE_PASSWORD', 'dummy-password') }}"
    ```
 3. Save the changes.
 4. Commit the changes to the repository.

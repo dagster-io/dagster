@@ -2,13 +2,13 @@ from collections.abc import Sequence
 
 from dagster import _check as check
 from dagster._annotations import deprecated
-from dagster._core.definitions.asset_spec import (
+from dagster._core.definitions.assets.definition.asset_spec import (
     SYSTEM_METADATA_KEY_AUTO_OBSERVE_INTERVAL_MINUTES,
     SYSTEM_METADATA_KEY_IO_MANAGER_KEY,
     AssetExecutionType,
     AssetSpec,
 )
-from dagster._core.definitions.assets import AssetsDefinition
+from dagster._core.definitions.assets.definition.assets_definition import AssetsDefinition
 from dagster._core.definitions.op_definition import OpDefinition
 from dagster._core.definitions.output import Out
 from dagster._core.definitions.source_asset import (
@@ -156,7 +156,7 @@ def create_external_asset_from_source_asset(source_asset: SourceAsset) -> Assets
             group_name=source_asset.group_name,
             description=source_asset.description,
             tags=source_asset.tags,
-            freshness_policy=source_asset.freshness_policy,
+            legacy_freshness_policy=source_asset.legacy_freshness_policy,
             automation_condition=source_asset.automation_condition,
             deps=[],
             owners=[],

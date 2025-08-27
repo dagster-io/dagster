@@ -82,6 +82,7 @@ export const InsightsBarChart = (props: Props) => {
   // Don't show the y axis while loading datapoints, to avoid jumping renders.
   const showYAxis = values.length > 0;
 
+  // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
   const barColorRGB = rgbColors[barColor]!;
   const keylineDefaultRGB = rgbColors[Colors.keylineDefault()];
   const textLighterRGB = rgbColors[Colors.textLighter()];
@@ -144,7 +145,7 @@ export const InsightsBarChart = (props: Props) => {
         display: true,
         text: metricLabel,
         font: {
-          weight: '700',
+          weight: 700,
           size: 12,
         },
       },

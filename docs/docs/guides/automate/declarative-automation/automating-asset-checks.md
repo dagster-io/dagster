@@ -15,7 +15,10 @@ The <PyObject section="assets" module="dagster" object="AutomationCondition.on_c
 
 In the following example, at the start of each hour, the above check will start waiting for its associated asset to be updated. Once this happens, the check will immediately be requested. The check will not be requested again until the next hour.
 
-<CodeExample path="docs_snippets/docs_snippets/concepts/declarative_automation/on_cron/basic_check.py" />
+<CodeExample
+  path="docs_snippets/docs_snippets/concepts/declarative_automation/on_cron/basic_check.py"
+  title="src/<project_name>/defs/asset_checks.py"
+/>
 
 **Behavior**
 
@@ -32,7 +35,10 @@ The <PyObject section="assets" module="dagster" object="AutomationCondition.eage
 
 In the following example, the asset check will be automatically requested whenever any of its upstream dependencies are updated.
 
-<CodeExample path="docs_snippets/docs_snippets/concepts/declarative_automation/eager/basic_check.py" />
+<CodeExample
+  path="docs_snippets/docs_snippets/concepts/declarative_automation/eager/basic_check.py"
+  title="src/<project_name>/defs/asset_checks.py"
+/>
 
 **Behavior**
 

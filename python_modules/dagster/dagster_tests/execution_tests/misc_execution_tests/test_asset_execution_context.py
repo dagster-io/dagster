@@ -1,4 +1,4 @@
-from dagster import AssetExecutionContext, OpExecutionContext
+import dagster as dg
 
 
 def test_doc_strings():
@@ -18,11 +18,11 @@ def test_doc_strings():
         "log",
     ]
 
-    for attr_name in dir(OpExecutionContext):
+    for attr_name in dir(dg.OpExecutionContext):
         if attr_name.startswith("__") or attr_name in ignores:
             continue
-        if hasattr(AssetExecutionContext, attr_name):
-            op_attr = getattr(OpExecutionContext, attr_name)
-            asset_attr = getattr(AssetExecutionContext, attr_name)
+        if hasattr(dg.AssetExecutionContext, attr_name):
+            op_attr = getattr(dg.OpExecutionContext, attr_name)
+            asset_attr = getattr(dg.AssetExecutionContext, attr_name)
 
             assert op_attr.__doc__ == asset_attr.__doc__

@@ -4,29 +4,13 @@ import sys
 import time
 from unittest import mock
 
+import dagster as dg
 import pytest
-from dagster import (
-    AssetIn,
-    AssetKey,
-    AssetSpec,
-    DagsterInstance,
-    DailyPartitionsDefinition,
-    Definitions,
-    IdentityPartitionMapping,
-    SourceAsset,
-    StaticPartitionMapping,
-    StaticPartitionsDefinition,
-    asset,
-    graph_asset,
-    multi_asset,
-    op,
-)
+from dagster import DagsterInstance
 from dagster._core.definitions.auto_materialize_policy import AutoMaterializePolicy
 from dagster._core.definitions.backfill_policy import BackfillPolicy
 from dagster._core.definitions.data_version import CachingStaleStatusResolver
-from dagster._core.definitions.decorators.source_asset_decorator import observable_source_asset
-from dagster._core.remote_representation import InProcessCodeLocationOrigin
-from dagster._core.test_utils import instance_for_test
+from dagster._core.remote_origin import InProcessCodeLocationOrigin
 from dagster._core.types.loadable_target_origin import LoadableTargetOrigin
 from dagster._core.workspace.context import WorkspaceRequestContext
 from dagster._core.workspace.workspace import (
@@ -36,44 +20,44 @@ from dagster._core.workspace.workspace import (
 )
 
 
-@asset
+@dg.asset
 def asset1(): ...
 
 
-defs1 = Definitions(assets=[asset1])
+defs1 = dg.Definitions(assets=[asset1])
 
 
-@asset
+@dg.asset
 def asset2(): ...
 
 
-defs2 = Definitions(assets=[asset2])
+defs2 = dg.Definitions(assets=[asset2])
 
 
-asset1_source = SourceAsset("asset1")
+asset1_source = dg.SourceAsset("asset1")
 
 
-@asset
+@dg.asset
 def downstream(asset1):
     del asset1
 
 
-downstream_defs = Definitions(assets=[asset1_source, downstream])
+downstream_defs = dg.Definitions(assets=[asset1_source, downstream])
 
 
-@asset(deps=[asset1])
+@dg.asset(deps=[asset1])
 def downstream_non_arg_dep(): ...
 
 
-downstream_defs_no_source = Definitions(assets=[downstream_non_arg_dep])
+downstream_defs_no_source = dg.Definitions(assets=[downstream_non_arg_dep])
 
-partitioned_source = SourceAsset(
-    "partitioned_source", partitions_def=DailyPartitionsDefinition(start_date="2022-01-01")
+partitioned_source = dg.SourceAsset(
+    "partitioned_source", partitions_def=dg.DailyPartitionsDefinition(start_date="2022-01-01")
 )
 
 
-@asset(
-    partitions_def=DailyPartitionsDefinition(start_date="2022-01-01"),
+@dg.asset(
+    partitions_def=dg.DailyPartitionsDefinition(start_date="2022-01-01"),
     deps=[partitioned_source],
     auto_materialize_policy=AutoMaterializePolicy.eager(
         max_materializations_per_minute=75,
@@ -83,17 +67,17 @@ def downstream_of_partitioned_source():
     pass
 
 
-@observable_source_asset(partitions_def=DailyPartitionsDefinition(start_date="2011-01-01"))
+@dg.observable_source_asset(partitions_def=dg.DailyPartitionsDefinition(start_date="2011-01-01"))
 def partitioned_observable_source1():
     pass
 
 
-@observable_source_asset(partitions_def=DailyPartitionsDefinition(start_date="2022-01-01"))
+@dg.observable_source_asset(partitions_def=dg.DailyPartitionsDefinition(start_date="2022-01-01"))
 def partitioned_observable_source2():
     pass
 
 
-partitioned_defs = Definitions(
+partitioned_defs = dg.Definitions(
     assets=[
         partitioned_source,
         downstream_of_partitioned_source,
@@ -102,30 +86,30 @@ partitioned_defs = Definitions(
     ]
 )
 
-static_partition = partitions_def = StaticPartitionsDefinition(["foo", "bar"])
+static_partition = partitions_def = dg.StaticPartitionsDefinition(["foo", "bar"])
 
 
 @pytest.fixture
 def instance():
-    with instance_for_test() as the_instance:
+    with dg.instance_for_test() as the_instance:
         yield the_instance
 
 
-@asset(
+@dg.asset(
     partitions_def=static_partition,
 )
 def static_partitioned_asset():
     pass
 
 
-@asset(
+@dg.asset(
     partitions_def=static_partition,
 )
 def other_static_partitioned_asset():
     pass
 
 
-different_partitions_defs = Definitions(
+different_partitions_defs = dg.Definitions(
     assets=[
         static_partitioned_asset,
         other_static_partitioned_asset,
@@ -193,22 +177,26 @@ def test_cross_repo_dep_with_source_asset(instance) -> None:
     asset_graph = _make_context(instance, ["defs1", "downstream_defs"]).asset_graph
 
     assert len(asset_graph.external_asset_keys) == 0
-    assert asset_graph.get(AssetKey("downstream")).parent_keys == {AssetKey("asset1")}
-    assert asset_graph.get(AssetKey("asset1")).child_keys == {AssetKey("downstream")}
+    assert asset_graph.get(dg.AssetKey("downstream")).parent_keys == {dg.AssetKey("asset1")}
+    assert asset_graph.get(dg.AssetKey("asset1")).child_keys == {dg.AssetKey("downstream")}
 
-    assert asset_graph.get_materialization_job_names(AssetKey("asset1")) == ["__ASSET_JOB"]
+    assert asset_graph.get_materialization_job_names(dg.AssetKey("asset1")) == ["__ASSET_JOB"]
 
-    assert asset_graph.get_materialization_job_names(AssetKey("downstream")) == ["__ASSET_JOB"]
+    assert asset_graph.get_materialization_job_names(dg.AssetKey("downstream")) == ["__ASSET_JOB"]
 
 
 def test_cross_repo_dep_no_source_asset(instance) -> None:
     asset_graph = _make_context(instance, ["defs1", "downstream_defs_no_source"]).asset_graph
     assert len(asset_graph.external_asset_keys) == 0
-    assert asset_graph.get(AssetKey("downstream_non_arg_dep")).parent_keys == {AssetKey("asset1")}
-    assert asset_graph.get(AssetKey("asset1")).child_keys == {AssetKey("downstream_non_arg_dep")}
+    assert asset_graph.get(dg.AssetKey("downstream_non_arg_dep")).parent_keys == {
+        dg.AssetKey("asset1")
+    }
+    assert asset_graph.get(dg.AssetKey("asset1")).child_keys == {
+        dg.AssetKey("downstream_non_arg_dep")
+    }
 
-    assert asset_graph.get_materialization_job_names(AssetKey("asset1")) == ["__ASSET_JOB"]
-    assert asset_graph.get_materialization_job_names(AssetKey("downstream_non_arg_dep")) == [
+    assert asset_graph.get_materialization_job_names(dg.AssetKey("asset1")) == ["__ASSET_JOB"]
+    assert asset_graph.get_materialization_job_names(dg.AssetKey("downstream_non_arg_dep")) == [
         "__ASSET_JOB"
     ]
 
@@ -216,33 +204,33 @@ def test_cross_repo_dep_no_source_asset(instance) -> None:
 def test_partitioned_source_asset(instance) -> None:
     asset_graph = _make_context(instance, ["partitioned_defs"]).asset_graph
 
-    assert asset_graph.get(AssetKey("partitioned_source")).is_partitioned
-    assert asset_graph.get(AssetKey("downstream_of_partitioned_source")).is_partitioned
+    assert asset_graph.get(dg.AssetKey("partitioned_source")).is_partitioned
+    assert asset_graph.get(dg.AssetKey("downstream_of_partitioned_source")).is_partitioned
 
 
 def test_auto_materialize_policy(instance) -> None:
     asset_graph = _make_context(instance, ["partitioned_defs"]).asset_graph
 
     assert asset_graph.get(
-        AssetKey("downstream_of_partitioned_source")
+        dg.AssetKey("downstream_of_partitioned_source")
     ).auto_materialize_policy == AutoMaterializePolicy.eager(
         max_materializations_per_minute=75,
     )
 
 
-@asset(
+@dg.asset(
     ins={
-        "static_partitioned_asset": AssetIn(
-            partition_mapping=StaticPartitionMapping({"foo": "1", "bar": "2"})
+        "static_partitioned_asset": dg.AssetIn(
+            partition_mapping=dg.StaticPartitionMapping({"foo": "1", "bar": "2"})
         )
     },
-    partitions_def=StaticPartitionsDefinition(["1", "2"]),
+    partitions_def=dg.StaticPartitionsDefinition(["1", "2"]),
 )
 def partition_mapping_asset(static_partitioned_asset):
     pass
 
 
-partition_mapping_defs = Definitions(assets=[static_partitioned_asset, partition_mapping_asset])
+partition_mapping_defs = dg.Definitions(assets=[static_partitioned_asset, partition_mapping_asset])
 
 
 def test_partition_mapping(instance) -> None:
@@ -250,19 +238,19 @@ def test_partition_mapping(instance) -> None:
 
     assert isinstance(
         asset_graph.get_partition_mapping(
-            AssetKey("partition_mapping_asset"), AssetKey("static_partitioned_asset")
+            dg.AssetKey("partition_mapping_asset"), dg.AssetKey("static_partitioned_asset")
         ),
-        StaticPartitionMapping,
+        dg.StaticPartitionMapping,
     )
     assert isinstance(
         asset_graph.get_partition_mapping(
-            AssetKey("static_partitioned_asset"), AssetKey("partition_mapping_asset")
+            dg.AssetKey("static_partitioned_asset"), dg.AssetKey("partition_mapping_asset")
         ),
-        IdentityPartitionMapping,
+        dg.IdentityPartitionMapping,
     )
 
 
-@asset(
+@dg.asset(
     partitions_def=static_partition,
     backfill_policy=BackfillPolicy.single_run(),
 )
@@ -270,7 +258,7 @@ def static_partitioned_single_run_backfill_asset():
     pass
 
 
-@asset(
+@dg.asset(
     partitions_def=None,
     backfill_policy=BackfillPolicy.single_run(),
 )
@@ -278,7 +266,7 @@ def non_partitioned_single_run_backfill_asset():
     pass
 
 
-@asset(
+@dg.asset(
     partitions_def=static_partition,
     backfill_policy=BackfillPolicy.multi_run(5),
 )
@@ -286,7 +274,7 @@ def static_partitioned_multi_run_backfill_asset():
     pass
 
 
-backfill_assets_defs = Definitions(
+backfill_assets_defs = dg.Definitions(
     assets=[
         static_partitioned_single_run_backfill_asset,
         non_partitioned_single_run_backfill_asset,
@@ -298,30 +286,30 @@ backfill_assets_defs = Definitions(
 def test_assets_with_backfill_policies(instance):
     asset_graph = _make_context(instance, ["backfill_assets_defs"]).asset_graph
     assert (
-        asset_graph.get(AssetKey("static_partitioned_single_run_backfill_asset")).backfill_policy
+        asset_graph.get(dg.AssetKey("static_partitioned_single_run_backfill_asset")).backfill_policy
         == BackfillPolicy.single_run()
     )
     assert (
-        asset_graph.get(AssetKey("non_partitioned_single_run_backfill_asset")).backfill_policy
+        asset_graph.get(dg.AssetKey("non_partitioned_single_run_backfill_asset")).backfill_policy
         == BackfillPolicy.single_run()
     )
     assert asset_graph.get(
-        AssetKey("static_partitioned_multi_run_backfill_asset")
+        dg.AssetKey("static_partitioned_multi_run_backfill_asset")
     ).backfill_policy == BackfillPolicy.multi_run(5)
 
 
-@asset(deps=[SourceAsset("b")])
+@dg.asset(deps=[dg.SourceAsset("b")])
 def a():
     pass
 
 
-@asset(deps=[SourceAsset("a")])
+@dg.asset(deps=[dg.SourceAsset("a")])
 def b():
     pass
 
 
-cycle_defs_a = Definitions(assets=[a])
-cycle_defs_b = Definitions(assets=[b])
+cycle_defs_a = dg.Definitions(assets=[a])
+cycle_defs_b = dg.Definitions(assets=[b])
 
 
 def test_cycle_status(instance) -> None:
@@ -333,18 +321,18 @@ def test_cycle_status(instance) -> None:
         resolver.get_status(key)
 
 
-@asset
+@dg.asset
 def single_materializable_asset(): ...
 
 
-@observable_source_asset
+@dg.observable_source_asset
 def single_observable_asset(): ...
 
 
-dup_materialization_defs_a = Definitions(assets=[single_materializable_asset])
-dup_materialization_defs_b = Definitions(assets=[single_materializable_asset])
-dup_observation_defs_a = Definitions(assets=[single_observable_asset])
-dup_observation_defs_b = Definitions(assets=[single_observable_asset])
+dup_materialization_defs_a = dg.Definitions(assets=[single_materializable_asset])
+dup_materialization_defs_b = dg.Definitions(assets=[single_materializable_asset])
+dup_observation_defs_a = dg.Definitions(assets=[single_observable_asset])
+dup_observation_defs_b = dg.Definitions(assets=[single_observable_asset])
 
 
 def test_dup_node_detection(instance):
@@ -370,25 +358,25 @@ def test_dup_node_detection(instance):
         ).asset_graph
 
 
-@asset(pool="foo")
+@dg.asset(pool="foo")
 def my_asset():
     pass
 
 
-@op(pool="bar")
+@dg.op(pool="bar")
 def my_op():
     pass
 
 
-@graph_asset
+@dg.graph_asset
 def my_graph_asset():
     return my_op()
 
 
-@multi_asset(
+@dg.multi_asset(
     specs=[
-        AssetSpec("multi_asset_1"),
-        AssetSpec("multi_asset_2"),
+        dg.AssetSpec("multi_asset_1"),
+        dg.AssetSpec("multi_asset_2"),
     ],
     pool="baz",
 )
@@ -396,14 +384,14 @@ def my_multi_asset():
     pass
 
 
-concurrency_assets = Definitions(assets=[my_asset, my_graph_asset, my_multi_asset])
+concurrency_assets = dg.Definitions(assets=[my_asset, my_graph_asset, my_multi_asset])
 
 
 def test_pool_snap(instance) -> None:
     context = _make_context(instance, ["concurrency_assets"])
     asset_graph = context.asset_graph
     assert asset_graph
-    assert asset_graph.get(AssetKey("my_asset")).pools == {"foo"}
-    assert asset_graph.get(AssetKey("my_graph_asset")).pools == {"bar"}
-    assert asset_graph.get(AssetKey("multi_asset_1")).pools == {"baz"}
-    assert asset_graph.get(AssetKey("multi_asset_2")).pools == {"baz"}
+    assert asset_graph.get(dg.AssetKey("my_asset")).pools == {"foo"}
+    assert asset_graph.get(dg.AssetKey("my_graph_asset")).pools == {"bar"}
+    assert asset_graph.get(dg.AssetKey("multi_asset_1")).pools == {"baz"}
+    assert asset_graph.get(dg.AssetKey("multi_asset_2")).pools == {"baz"}

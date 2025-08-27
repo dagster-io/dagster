@@ -40,13 +40,13 @@ In this example, the model is being evaluated against the previous model’s acc
 
 <CodeExample path="docs_snippets/docs_snippets/guides/dagster/managing_ml/managing_ml_code.py" startAfter="conditional_monitoring_start"  endBefore="conditional_monitoring_end" />
 
-A [sensor](/guides/automate/sensors/) can be set up that triggers if an asset fails to materialize. Alerts can be customized and sent through e-mail or natively through Slack. In this example, a Slack message is sent anytime the `ml_job` fails.
+A [sensor](/guides/automate/sensors) can be set up that triggers if an asset fails to materialize. Alerts can be customized and sent through e-mail or natively through Slack. In this example, a Slack message is sent anytime the `ml_job` fails.
 
 <CodeExample path="docs_snippets/docs_snippets/guides/dagster/managing_ml/managing_ml_code.py" startAfter="fail_slack_start"   endBefore="fail_slack_end" />
 
 ## Enhancing the Dagster UI with metadata
 
-Understanding the performance of your ML model is critical to both the model development process and production. [Metadata](/guides/build/assets/metadata-and-tags/) can significantly enhance the usability of the Dagster UI to show what’s going on in a specific asset. Using metadata in Dagster is flexible, can be used for tracking evaluation metrics, and viewing the training accuracy progress over training iterations as a graph.
+Understanding the performance of your ML model is critical to both the model development process and production. [Metadata](/guides/build/assets/metadata-and-tags) can significantly enhance the usability of the Dagster UI to show what’s going on in a specific asset. Using metadata in Dagster is flexible, can be used for tracking evaluation metrics, and viewing the training accuracy progress over training iterations as a graph.
 
 One of the easiest ways to utilize Dagster’s metadata is by using a dictionary to track different metrics that are relevant for an ML model.
 

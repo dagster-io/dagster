@@ -49,7 +49,6 @@ def main(
 
     # Supported on all Python versions.
     editable_target_paths = [
-        ".buildkite/dagster-buildkite",
         "python_modules/libraries/dagster-airlift[core,in-airflow,mwaa,test]",
         "integration_tests/python_modules/dagster-k8s-test-infra",
         "helm/dagster/schema[test]",
@@ -105,6 +104,7 @@ def main(
         "python_modules/libraries/dagster-sling",
         "python_modules/libraries/dagster-snowflake",
         "python_modules/libraries/dagster-snowflake-pandas",
+        "python_modules/libraries/dagster-snowflake-polars",
         "python_modules/libraries/dagster-spark",
         "python_modules/libraries/dagster-ssh",
         "python_modules/libraries/dagster-twilio",
@@ -142,6 +142,11 @@ def main(
     # conflicting dependencies, which will break pip freeze snapshot creation during the integration
     # image build!
     cmd = ["uv", "pip", "install"] + (["--system"] if system else []) + install_targets
+
+    # unknown mystery why numpy requires constraint for 3.13 compatibility
+    # https://numpy.org/news/#numpy-210-released
+    if sys.version_info >= (3, 13):
+        cmd += ["numpy>=2.1.0"]
 
     # Force compat mode for editable installs to avoid
     # polluting uv cache for pyright install

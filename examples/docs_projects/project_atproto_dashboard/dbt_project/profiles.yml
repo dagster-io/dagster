@@ -17,7 +17,7 @@ bluesky:
     prod:
       type: duckdb
       schema: bluesky
-      path: "md:prod_bluesky"
+      path: "md:bluesky"
       threads: 1
       extensions: 
         - httpfs

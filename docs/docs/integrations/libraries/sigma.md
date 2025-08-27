@@ -43,7 +43,7 @@ To get started, you'll need to install the `dagster` and `dagster-sigma` Python 
 
 To load Sigma assets into the Dagster asset graph, you must first construct a <PyObject section="libraries" module="dagster_sigma" object="SigmaOrganization" /> resource, which allows Dagster to communicate with your Sigma organization. You'll need to supply your client ID and client secret alongside the base URL. See [Identify your API request URL](https://help.sigmacomputing.com/reference/get-started-sigma-api#identify-your-api-request-url) in the Sigma documentation for more information on how to find your base URL.
 
-Dagster can automatically load all datasets and workbooks from your Sigma workspace as asset specs. Call the <PyObject section="libraries" module="dagster_sigma" object="load_sigma_asset_specs" /> function, which returns list of <PyObject section="assets" module="dagster" object="AssetSpec" />s representing your Sigma assets. You can then include these asset specs in your <PyObject section="definitions" module="dagster" object="Definitions" /> object:
+Dagster can automatically load all datasets and workbooks from your Sigma organization as asset specs. Call the <PyObject section="libraries" module="dagster_sigma" object="load_sigma_asset_specs" /> function, which returns list of <PyObject section="assets" module="dagster" object="AssetSpec" />s representing your Sigma assets. You can then include these asset specs in your <PyObject section="definitions" module="dagster" object="Definitions" /> object:
 
 <CodeExample path="docs_snippets/docs_snippets/integrations/sigma/representing-sigma-assets.py" />
 
@@ -54,6 +54,18 @@ It is possible to load a subset of your Sigma assets by providing a <PyObject se
 Note that the content and size of Sigma organization may affect the performance of your Dagster deployments. Filtering the workbooks selection from which your Sigma assets will be loaded is particularly useful for improving loading times.
 
 <CodeExample path="docs_snippets/docs_snippets/integrations/sigma/filtering-sigma-assets.py" />
+
+### Load Sigma assets using a snapshot
+
+Sigma assets can be loaded using the snapshot of a Sigma organization, which allows organizations with large amounts of Sigma data to speed up their deployment process.
+
+<CodeExample path="docs_snippets/docs_snippets/integrations/sigma/sigma_organization_snapshot.py" language="python" />
+
+To capture the snapshot, the `dagster-sigma snapshot` CLI can be used.
+
+```bash
+dagster-sigma snapshot --python-module my_dagster_package --output-path snapshot.snap
+```
 
 ## Customize asset definition metadata for Sigma assets
 
@@ -87,5 +99,5 @@ Note that `super()` is called in each of the overridden methods to generate the 
 
 - [`dagster-sigma` API reference](/api/libraries/dagster-sigma)
 - [Asset definitions](/guides/build/assets/defining-assets)
-- [Resources](/guides/build/external-resources/)
+- [Resources](/guides/build/external-resources)
 - [Using environment variables and secrets](/guides/operate/configuration/using-environment-variables-and-secrets)

@@ -10,7 +10,6 @@ from dagster import (
     AssetKey,
     AssetOut,
     AssetSelection,
-    DailyPartitionsDefinition,
     In,
     MaterializeResult,
     MetadataValue,
@@ -25,6 +24,7 @@ from dagster import (
     multi_asset,
     op,
 )
+from dagster._core.definitions.partitions.definition import DailyPartitionsDefinition
 
 
 @asset(key_prefix="test_prefix", group_name="asset_checks")

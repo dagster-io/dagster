@@ -1,31 +1,93 @@
-import {BodySmall, Box, Colors, Popover, Skeleton, Tag} from '@dagster-io/ui-components';
+import {BodySmall, Box, Caption, Colors, Popover, Skeleton, Tag} from '@dagster-io/ui-components';
 import dayjs from 'dayjs';
 
-import {useAssetHealthData} from '../../asset-data/AssetHealthDataProvider';
-import {CronFreshnessPolicy, TimeWindowFreshnessPolicy} from '../../graphql/types';
+import {FRESHNESS_EVALUATION_ENABLED_QUERY, FRESHNESS_STATUS_QUERY} from './FreshnessQueries';
+import {
+  FreshnessEvaluationEnabledQuery,
+  FreshnessEvaluationEnabledQueryVariables,
+  FreshnessStatusQuery,
+  FreshnessStatusQueryVariables,
+} from './types/FreshnessQueries.types';
+import {useQuery} from '../../apollo-client';
+import {AssetKey, CronFreshnessPolicy, TimeWindowFreshnessPolicy} from '../../graphql/types';
 import {humanCronString} from '../../schedules/humanCronString';
 import {TimeFromNow} from '../../ui/TimeFromNow';
 import {statusToIconAndColor} from '../AssetHealthSummary';
-import {AssetKey} from '../types';
-import {AssetTableDefinitionFragment} from '../types/AssetTableFragment.types';
 import {AssetViewDefinitionNodeFragment} from '../types/AssetView.types';
+import {FreshnessPolicyFragment} from '../types/FreshnessPolicyFragment.types';
 
-export const FreshnessPolicySection = ({
-  cachedOrLiveAssetNode,
-  policy,
-}: {
-  assetNode: AssetViewDefinitionNodeFragment | null | undefined;
-  cachedOrLiveAssetNode: AssetViewDefinitionNodeFragment | AssetTableDefinitionFragment;
-  policy: NonNullable<AssetViewDefinitionNodeFragment['internalFreshnessPolicy']>;
-}) => {
-  const {liveData} = useAssetHealthData(cachedOrLiveAssetNode.assetKey);
+import '../../util/dayjsExtensions';
 
-  if (!liveData) {
+export interface FreshnessPolicySectionProps {
+  assetKey: AssetKey;
+  policy: FreshnessPolicyFragment;
+}
+
+export const FreshnessPolicySection = ({assetKey, policy}: FreshnessPolicySectionProps) => {
+  const {data, loading} = useQuery<
+    FreshnessEvaluationEnabledQuery,
+    FreshnessEvaluationEnabledQueryVariables
+  >(FRESHNESS_EVALUATION_ENABLED_QUERY);
+
+  if (loading) {
     return <Skeleton $width="100%" $height={24} />;
   }
 
-  const freshnessStatus = liveData?.assetHealth?.freshnessStatus;
-  const metadata = liveData?.assetHealth?.freshnessStatusMetadata;
+  return data?.instance?.freshnessEvaluationEnabled ? (
+    <QueryfulFreshnessPolicySection assetKey={assetKey} policy={policy} />
+  ) : (
+    <FreshnessPolicyNotEvaluated />
+  );
+};
+
+const FreshnessPolicyNotEvaluated = () => {
+  return (
+    <Popover
+      interactionKind="hover"
+      placement="top"
+      content={
+        <Box padding={{vertical: 12, horizontal: 16}} style={{width: '300px'}}>
+          <Caption>
+            Freshness policies are a new feature under active development and are not evaluated by
+            default. See{' '}
+            <a
+              href="https://docs.dagster.io/guides/labs/freshness"
+              target="_blank"
+              rel="noreferrer"
+            >
+              freshness policy documentation
+            </a>{' '}
+            to learn more.
+          </Caption>
+        </Box>
+      }
+    >
+      <Tag intent="none" icon="no_access">
+        Not evaluated
+      </Tag>
+    </Popover>
+  );
+};
+
+const QueryfulFreshnessPolicySection = ({assetKey, policy}: FreshnessPolicySectionProps) => {
+  const {data, loading} = useQuery<FreshnessStatusQuery, FreshnessStatusQueryVariables>(
+    FRESHNESS_STATUS_QUERY,
+    {
+      variables: {assetKey: {path: assetKey.path}},
+    },
+  );
+
+  if (loading && !data) {
+    return <Skeleton $width="100%" $height={24} />;
+  }
+
+  const assetNode = data?.assetNodeOrError;
+  if (!assetNode || assetNode.__typename !== 'AssetNode') {
+    return null;
+  }
+
+  const freshnessStatus = assetNode.freshnessStatusInfo?.freshnessStatus;
+  const metadata = assetNode.freshnessStatusInfo?.freshnessStatusMetadata;
   const lastMaterializedTimestamp = metadata?.lastMaterializedTimestamp;
   const {iconName2, intent, text2} = statusToIconAndColor[freshnessStatus ?? 'undefined'];
 
@@ -68,14 +130,28 @@ export const FreshnessTag = ({
   policy: NonNullable<AssetViewDefinitionNodeFragment['internalFreshnessPolicy']>;
   assetKey: AssetKey;
 }) => {
-  const {liveData} = useAssetHealthData(assetKey);
+  const {data, loading} = useQuery<FreshnessStatusQuery, FreshnessStatusQueryVariables>(
+    FRESHNESS_STATUS_QUERY,
+    {
+      variables: {assetKey: {path: assetKey.path}},
+    },
+  );
 
-  if (!liveData) {
+  if (loading && !data) {
     return <Skeleton $width="100%" $height={24} />;
   }
 
-  const freshnessStatus = liveData?.assetHealth?.freshnessStatus;
-  const metadata = liveData?.assetHealth?.freshnessStatusMetadata;
+  const assetNode = data?.assetNodeOrError;
+  if (!assetNode || assetNode.__typename !== 'AssetNode') {
+    return (
+      <Tag intent="none" icon="no_access">
+        Not found
+      </Tag>
+    );
+  }
+
+  const freshnessStatus = assetNode.freshnessStatusInfo?.freshnessStatus;
+  const metadata = assetNode.freshnessStatusInfo?.freshnessStatusMetadata;
   const lastMaterializedTimestamp = metadata?.lastMaterializedTimestamp;
   const {iconName2, intent, text2} = statusToIconAndColor[freshnessStatus ?? 'undefined'];
 

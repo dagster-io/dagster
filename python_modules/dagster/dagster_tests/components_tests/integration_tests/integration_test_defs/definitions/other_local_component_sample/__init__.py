@@ -1,5 +1,4 @@
-from dagster import Component, ComponentLoadContext
-from dagster._core.definitions.definitions_class import Definitions
+import dagster as dg
 from pydantic import BaseModel
 
 
@@ -8,10 +7,10 @@ class MyNewComponentSchema(BaseModel):
     an_int: int
 
 
-class MyNewComponent(Component):
+class MyNewComponent(dg.Component):
     @classmethod
     def get_model_cls(cls):
         return MyNewComponentSchema
 
-    def build_defs(self, context: ComponentLoadContext) -> Definitions:
-        return Definitions()
+    def build_defs(self, context: dg.ComponentLoadContext) -> dg.Definitions:
+        return dg.Definitions()

@@ -65,6 +65,7 @@ export const AssetEventList = ({
       >
         <Inner $totalHeight={totalHeight}>
           {items.map(({index, key, size, start}) => {
+            // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
             const group = groups[index]!;
             return (
               <AssetListRow

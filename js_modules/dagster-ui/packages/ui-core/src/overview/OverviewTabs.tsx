@@ -1,5 +1,6 @@
 import {Box, Colors, Spinner, Tabs} from '@dagster-io/ui-components';
 import {useContext} from 'react';
+import {observeEnabled} from 'shared/app/observeEnabled.oss';
 
 import {QueryResult} from '../apollo-client';
 import {QueryRefreshCountdown, RefreshState} from '../app/QueryRefresh';
@@ -20,6 +21,7 @@ export const OverviewTabs = <TData extends Record<string, any>>(props: Props<TDa
   const automaterialize = useAutomaterializeDaemonStatus();
   const automaterializeSensorsFlagState = useAutoMaterializeSensorFlag();
   const {enableAssetHealthOverviewPreview} = useContext(AssetFeatureContext);
+  const hideAMPTab = observeEnabled();
 
   return (
     <Box flex={{direction: 'row', justifyContent: 'space-between', alignItems: 'flex-end'}}>
@@ -28,7 +30,7 @@ export const OverviewTabs = <TData extends Record<string, any>>(props: Props<TDa
         {enableAssetHealthOverviewPreview && (
           <TabLink id="asset-health" title="Asset health" to="/overview/asset-health" />
         )}
-        {automaterializeSensorsFlagState === 'has-global-amp' ? (
+        {automaterializeSensorsFlagState === 'has-global-amp' && !hideAMPTab ? (
           <TabLink
             id="amp"
             title={

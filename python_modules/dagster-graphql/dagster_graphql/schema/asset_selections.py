@@ -2,7 +2,7 @@ from collections.abc import Sequence
 from typing import TYPE_CHECKING
 
 import graphene
-from dagster._core.definitions.asset_check_spec import AssetCheckKey
+from dagster._core.definitions.asset_checks.asset_check_spec import AssetCheckKey
 from dagster._core.definitions.asset_key import AssetKey
 from dagster._core.definitions.asset_selection import AssetSelection, CodeLocationAssetSelection
 from dagster._core.remote_representation.handle import RepositoryHandle

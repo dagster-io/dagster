@@ -1,7 +1,6 @@
 import logging
 
-from dagster._core.definitions.graph_definition import GraphDefinition
-from dagster._core.execution.context.logger import InitLoggerContext
+import dagster as dg
 from dagster._core.log_manager import DagsterLogManager
 from dagster._utils.log import construct_single_handler_logger
 
@@ -28,10 +27,10 @@ def test_log_level_filtering():
 
     loggers = [
         logger_def.logger_fn(
-            InitLoggerContext(
+            dg.InitLoggerContext(
                 {},
                 logger_def,
-                job_def=GraphDefinition(node_defs=[], name="test").to_job(),
+                job_def=dg.GraphDefinition(node_defs=[], name="test").to_job(),
                 run_id="",
             )
         )

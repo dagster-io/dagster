@@ -1,4 +1,3 @@
-import pytest
 from dagster import ScheduleDefinition, job, op, repository
 
 
@@ -44,7 +43,6 @@ def define_schedules():
     return [math_hourly_schedule]
 
 
-@pytest.mark.skip(reason="this is a repository, not a test")
 @repository
-def test():
+def the_test_repo():
     return [math, subset_test] + define_schedules()

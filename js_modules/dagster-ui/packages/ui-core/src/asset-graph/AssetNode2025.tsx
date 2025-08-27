@@ -1,10 +1,10 @@
 import {Box, ButtonLink, Colors, Icon, Tag, Tooltip} from '@dagster-io/ui-components';
+import clsx from 'clsx';
 import isEqual from 'lodash/isEqual';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
-import {FeatureFlag} from 'shared/app/FeatureFlags.oss';
+import {observeEnabled} from 'shared/app/observeEnabled.oss';
 import {UserDisplay} from 'shared/runs/UserDisplay.oss';
-import styled from 'styled-components';
 
 import {
   AssetDescription,
@@ -13,17 +13,19 @@ import {
   AssetNodeContainer,
   AssetNodeRowBox,
 } from './AssetNode';
-import {AssetNodeFacet, labelForFacet} from './AssetNodeFacets';
+import {labelForFacet} from './AssetNodeFacets';
+import {AssetNodeFacet} from './AssetNodeFacetsUtil';
 import {AssetNodeFreshnessRow, AssetNodeFreshnessRowOld} from './AssetNodeFreshnessRow';
 import {AssetNodeHealthRow} from './AssetNodeHealthRow';
 import {assetNodeLatestEventContent, buildAssetNodeStatusContent} from './AssetNodeStatusContent';
 import {LiveDataForNode, LiveDataForNodeWithStaleData} from './Utils';
+import styles from './css/AssetNode2025.module.css';
 import {ASSET_NODE_TAGS_HEIGHT} from './layout';
-import {featureEnabled} from '../app/Flags';
 import {useAssetAutomationData} from '../asset-data/AssetAutomationDataProvider';
 import {useAssetLiveData} from '../asset-data/AssetLiveDataProvider';
 import {AssetAutomationFragment} from '../asset-data/types/AssetAutomationDataProvider.types';
 import {EvaluationUserLabel} from '../assets/AutoMaterializePolicyPage/EvaluationConditionalLabel';
+import {EvaluationDetailDialog} from '../assets/AutoMaterializePolicyPage/EvaluationDetailDialog';
 import {ChangedReasonsTag} from '../assets/ChangedReasons';
 import {StaleReasonsTag} from '../assets/Stale';
 import {AssetChecksStatusSummary} from '../assets/asset-checks/AssetChecksStatusSummary';
@@ -31,7 +33,6 @@ import {assetDetailsPathForKey} from '../assets/assetDetailsPathForKey';
 import {AssetKind} from '../graph/KindTags';
 import {markdownToPlaintext} from '../ui/markdownToPlaintext';
 import {AssetNodeFragment} from './types/AssetNode.types';
-import {EvaluationDetailDialog} from '../assets/AutoMaterializePolicyPage/EvaluationDetailDialog';
 
 interface Props2025 {
   definition: AssetNodeFragment;
@@ -117,7 +118,7 @@ export const AssetNodeWithLiveData = ({
           </AssetNodeRow>
         )}
         {facets.has(AssetNodeFacet.Freshness) &&
-          (featureEnabled(FeatureFlag.flagUseNewObserveUIs) ? (
+          (observeEnabled() ? (
             <AssetNodeFreshnessRow definition={definition} liveData={liveData} />
           ) : (
             <AssetNodeFreshnessRowOld liveData={liveData} />
@@ -126,7 +127,7 @@ export const AssetNodeWithLiveData = ({
           <AssetNodeAutomationRow definition={definition} automationData={automationData} />
         )}
         {facets.has(AssetNodeFacet.Status) &&
-          (featureEnabled(FeatureFlag.flagUseNewObserveUIs) ? (
+          (observeEnabled() ? (
             <AssetNodeHealthRow definition={definition} liveData={liveData} />
           ) : (
             <AssetNodeStatusRow definition={definition} liveData={liveData} />
@@ -204,8 +205,8 @@ export const AssetNodeAutomationRowWithData = ({
       return (
         <AutomationConditionEvaluationLink definition={definition} automationData={automationData}>
           <EvaluationUserLabel
-            userLabel={automationData.automationCondition!.label!}
-            expandedLabel={automationData.automationCondition!.expandedLabel}
+            userLabel={automationData.automationCondition?.label ?? 'condition'}
+            expandedLabel={automationData.automationCondition?.expandedLabel ?? []}
             small
           />
         </AutomationConditionEvaluationLink>
@@ -241,6 +242,7 @@ export const AssetNodeAutomationRowWithData = ({
           </Tooltip>
         ) : null}
         {hasAutomationCondition ? (
+          // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
           <Tooltip content={automationData.automationCondition!.label!} placement="top">
             <AutomationConditionEvaluationLink
               definition={definition}
@@ -304,13 +306,16 @@ const AssetNodeStatusRow = ({
 
 const SingleOwnerOrTooltip = ({owners}: {owners: AssetNodeFragment['owners']}) => {
   if (owners.length === 1) {
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     const owner = owners[0]!;
-    return owner.__typename === 'UserAssetOwner' ? (
-      <UserDisplayWrapNoPadding>
-        <UserDisplay email={owner.email} size="very-small" />
-      </UserDisplayWrapNoPadding>
-    ) : (
-      <Tag icon="people">{owner.team}</Tag>
+    return (
+      <div className={styles.UserDisplayWrapNoPadding}>
+        {owner.__typename === 'UserAssetOwner' ? (
+          <UserDisplay email={owner.email} size="very-small" />
+        ) : (
+          <Tag icon="people">{owner.team}</Tag>
+        )}
+      </div>
     );
   }
 
@@ -318,18 +323,19 @@ const SingleOwnerOrTooltip = ({owners}: {owners: AssetNodeFragment['owners']}) =
     <Tooltip
       placement="top"
       content={
-        <Box flex={{wrap: 'wrap', gap: 12}} style={{maxWidth: 300}}>
-          {owners.map((o, idx) =>
-            o.__typename === 'UserAssetOwner' ? (
-              <UserDisplayWrapNoPadding key={idx}>
+        <Box flex={{wrap: 'wrap', gap: 12}} style={{maxWidth: 300, lineHeight: 0}}>
+          {owners.map((o, idx) => (
+            <div
+              key={idx}
+              className={clsx(styles.UserDisplayWrapNoPadding, styles.UserDisplayInTooltip)}
+            >
+              {o.__typename === 'UserAssetOwner' ? (
                 <UserDisplay email={o.email} size="very-small" />
-              </UserDisplayWrapNoPadding>
-            ) : (
-              <Tag key={idx} icon="people">
-                {o.team}
-              </Tag>
-            ),
-          )}
+              ) : (
+                <Tag icon="people">{o.team}</Tag>
+              )}
+            </div>
+          ))}
         </Box>
       }
     >
@@ -362,6 +368,7 @@ export const AutomationConditionEvaluationLink = ({
         <EvaluationDetailDialog
           isOpen={isOpen}
           onClose={() => setOpen(false)}
+          // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
           evaluationID={automationData.lastAutoMaterializationEvaluationRecord!.evaluationId}
           assetKeyPath={definition.assetKey.path}
         />
@@ -378,10 +385,3 @@ export const AutomationConditionEvaluationLink = ({
     </Link>
   );
 };
-
-const UserDisplayWrapNoPadding = styled.div`
-  & > div > div {
-    background: none;
-    padding: 0;
-  }
-`;

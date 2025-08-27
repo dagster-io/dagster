@@ -1,24 +1,23 @@
-from typing import List
-
-from dagster_buildkite.package_spec import PackageSpec
-from dagster_buildkite.python_version import AvailablePythonVersion
-from dagster_buildkite.step_builder import BuildkiteQueue
+from buildkite_shared.python_version import AvailablePythonVersion
+from buildkite_shared.step_builders.command_step_builder import BuildkiteQueue
+from buildkite_shared.step_builders.step_builder import StepConfiguration
 from dagster_buildkite.steps.packages import (
+    PackageSpec,
     build_steps_from_package_specs,
     gcp_creds_extra_cmds,
     k8s_extra_cmds,
 )
-from dagster_buildkite.utils import BuildkiteStep
+from dagster_buildkite.steps.tox import ToxFactor
 
 
-def build_dagster_oss_nightly_steps() -> List[BuildkiteStep]:
-    steps: List[BuildkiteStep] = []
+def build_dagster_oss_nightly_steps() -> list[StepConfiguration]:
+    steps: list[StepConfiguration] = []
 
     steps += build_steps_from_package_specs(
         [
             PackageSpec(
                 "python_modules/libraries/dagster-dbt",
-                pytest_tox_factors=["dbt18-snowflake", "dbt18-bigquery"],
+                pytest_tox_factors=[ToxFactor("dbt18-snowflake"), ToxFactor("dbt18-bigquery")],
                 env_vars=[
                     "SNOWFLAKE_ACCOUNT",
                     "SNOWFLAKE_USER",
@@ -40,7 +39,7 @@ def build_dagster_oss_nightly_steps() -> List[BuildkiteStep]:
                     "BUILDKITE_SECRETS_BUCKET",
                 ],
                 pytest_tox_factors=[
-                    "nightly",
+                    ToxFactor("nightly"),
                 ],
                 pytest_extra_cmds=k8s_extra_cmds,
                 always_run_if=lambda: True,

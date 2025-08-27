@@ -1,8 +1,7 @@
-import {FeatureFlag} from 'shared/app/FeatureFlags.oss';
+import {observeEnabled} from 'shared/app/observeEnabled.oss';
 
 import {ApolloClient, gql, useApolloClient} from '../apollo-client';
 import {showCustomAlert} from '../app/CustomAlertProvider';
-import {featureEnabled} from '../app/Flags';
 import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
 import {PythonErrorInfo} from '../app/PythonErrorInfo';
 import {tokenForAssetKey, tokenToAssetKey} from '../asset-graph/Utils';
@@ -20,6 +19,8 @@ import {weakMapMemoize} from '../util/weakMapMemoize';
 const BATCH_SIZE = 250;
 const PARALLEL_FETCHES = 4;
 
+const EMPTY_ARRAY: any[] = [];
+
 function init() {
   return liveDataFactory(
     () => {
@@ -28,18 +29,13 @@ function init() {
     async (keys, client: ApolloClient<any>) => {
       const assetKeys = keys.map(tokenToAssetKey);
 
-      let healthResponse;
-      if (featureEnabled(FeatureFlag.flagUseNewObserveUIs)) {
-        healthResponse = await client.query<AssetHealthQuery, AssetHealthQueryVariables>({
-          query: ASSETS_HEALTH_INFO_QUERY,
-          fetchPolicy: 'no-cache',
-          variables: {
-            assetKeys,
-          },
-        });
-      } else {
-        return {};
-      }
+      const healthResponse = await client.query<AssetHealthQuery, AssetHealthQueryVariables>({
+        query: ASSETS_HEALTH_INFO_QUERY,
+        fetchPolicy: 'no-cache',
+        variables: {
+          assetKeys,
+        },
+      });
 
       const assetData = healthResponse.data.assetsOrError;
       if (assetData.__typename === 'PythonError') {
@@ -90,15 +86,38 @@ const memoizedAssetKeys = weakMapMemoize((assetKeys: AssetKeyInput[]) => {
   return assetKeys.map((key) => tokenForAssetKey(key));
 });
 
-export function useAssetsHealthData(
-  assetKeys: AssetKeyInput[],
-  thread: LiveDataThreadID = 'AssetHealth', // Use AssetHealth to get 250 batch size
-) {
-  const keys = memoizedAssetKeys(featureEnabled(FeatureFlag.flagUseNewObserveUIs) ? assetKeys : []);
-  const result = AssetHealthData.useLiveData(keys, thread);
+type AssetsHealthDataConfig = {
+  assetKeys: AssetKeyInput[];
+  thread?: LiveDataThreadID;
+  blockTrace?: boolean;
+  skip?: boolean;
+  loading?: boolean;
+};
+
+// Get assets health data, with an `observeEnabled` check included to effectively no-op any users
+// who are not gated in.
+export function useAssetsHealthData({assetKeys, ...rest}: AssetsHealthDataConfig) {
+  return useAssetsHealthDataWithoutGateCheck({
+    ...rest,
+    assetKeys: observeEnabled() ? assetKeys : EMPTY_ARRAY,
+  });
+}
+
+// Get assets health data, with no `observeEnabled` check. This allows us to dark launch
+// asset health checking without depending on the `observeEnabled` check.
+export function useAssetsHealthDataWithoutGateCheck({
+  assetKeys,
+  thread = 'AssetHealth', // Use AssetHealth to get 250 batch size
+  blockTrace = true,
+  skip = false,
+  loading = false,
+}: AssetsHealthDataConfig) {
+  const keys = memoizedAssetKeys(assetKeys);
+  const result = AssetHealthData.useLiveData(keys, thread, skip);
   useBlockTraceUntilTrue(
     'useAssetsHealthData',
-    !!(Object.keys(result.liveDataByNode).length === assetKeys.length),
+    !loading && (!blockTrace || !!(Object.keys(result.liveDataByNode).length === assetKeys.length)),
+    {skip},
   );
   return result;
 }

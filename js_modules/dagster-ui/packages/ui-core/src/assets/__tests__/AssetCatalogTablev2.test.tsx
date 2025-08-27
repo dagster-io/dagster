@@ -1,10 +1,8 @@
 import {MockedProvider} from '@apollo/client/testing';
-import {render, screen, waitFor} from '@testing-library/react';
+import {render, waitFor} from '@testing-library/react';
 import {MemoryRouter} from 'react-router';
 import {RecoilRoot} from 'recoil';
-import {FeatureFlag} from 'shared/app/FeatureFlags.oss';
 
-import {setFeatureFlags} from '../../app/Flags';
 import {ASSETS_HEALTH_INFO_QUERY} from '../../asset-data/AssetHealthDataProvider';
 import {AssetLiveDataProvider, __resetForJest} from '../../asset-data/AssetLiveDataProvider';
 import {buildMockedAssetGraphLiveQuery} from '../../asset-data/__tests__/util';
@@ -31,7 +29,9 @@ import {AssetCatalogV2VirtualizedTable} from '../catalog/AssetCatalogV2Virtualiz
 import {AssetRecordsQuery, AssetRecordsQueryVariables} from '../types/useAllAssets.types';
 import {ASSET_RECORDS_QUERY, AssetRecord} from '../useAllAssets';
 
-setFeatureFlags({[FeatureFlag.flagUseNewObserveUIs]: true});
+jest.mock('../../app/observeEnabled.oss', () => ({
+  observeEnabled: jest.fn(() => true),
+}));
 
 jest.mock('../../util/idb-lru-cache', () => {
   const mockedCache = {
@@ -73,13 +73,19 @@ const createMock = ({
     maxUsageCount: 100,
   });
 
+const asset1 = buildAssetKey({path: ['asset1']});
+const asset2 = buildAssetKey({path: ['asset2']});
+const asset3 = buildAssetKey({path: ['asset3']});
+const asset4 = buildAssetKey({path: ['asset4']});
+const asset5 = buildAssetKey({path: ['asset5']});
+
 const assetsMock = createMock({
   nodes: [
-    buildAssetRecord({id: 'asset1', key: buildAssetKey({path: ['asset1']})}),
-    buildAssetRecord({id: 'asset2', key: buildAssetKey({path: ['asset2']})}),
-    buildAssetRecord({id: 'asset3', key: buildAssetKey({path: ['asset3']})}),
-    buildAssetRecord({id: 'asset4', key: buildAssetKey({path: ['asset4']})}),
-    buildAssetRecord({id: 'asset5', key: buildAssetKey({path: ['asset5']})}),
+    buildAssetRecord({id: 'asset1', key: asset1}),
+    buildAssetRecord({id: 'asset2', key: asset2}),
+    buildAssetRecord({id: 'asset3', key: asset3}),
+    buildAssetRecord({id: 'asset4', key: asset4}),
+    buildAssetRecord({id: 'asset5', key: asset5}),
   ],
   returnedCursor: '-1',
 });
@@ -126,6 +132,7 @@ const statuses = [
   AssetHealthStatus.WARNING,
   AssetHealthStatus.UNKNOWN,
 ];
+
 const getHealthQueryMock = (assetKeys: AssetKey[]) =>
   buildQueryMock<AssetHealthQuery, AssetHealthQueryVariables>({
     query: ASSETS_HEALTH_INFO_QUERY,
@@ -148,68 +155,69 @@ const workspaceMocks = buildWorkspaceMocks([]);
 
 describe('AssetCatalogTableV2', () => {
   it('renders', async () => {
-    const assetKeys = [
-      buildAssetKey({path: ['asset1']}),
-      buildAssetKey({path: ['asset2']}),
-      buildAssetKey({path: ['asset3']}),
-      buildAssetKey({path: ['asset4']}),
-      buildAssetKey({path: ['asset5']}),
-    ];
+    const assetKeys = [asset1, asset2, asset3, asset4, asset5];
     const healthQueryMock = getHealthQueryMock(assetKeys);
     const resultFn = getMockResultFn(healthQueryMock);
-    await waitFor(() => {
-      expect(() =>
-        render(
-          <RecoilRoot>
-            <MemoryRouter>
-              <MockedProvider
-                mocks={[
-                  assetsMock,
-                  healthQueryMock,
-                  ...buildMockedAssetGraphLiveQuery(assetKeys, undefined),
-                  ...workspaceMocks,
-                ]}
-              >
-                <WorkspaceProvider>
-                  <AssetLiveDataProvider>
-                    <AssetCatalogTableV2 />
-                  </AssetLiveDataProvider>
-                </WorkspaceProvider>
-              </MockedProvider>
-            </MemoryRouter>
-          </RecoilRoot>,
-        ),
-      ).not.toThrow();
-    });
+    const {findByText} = render(
+      <RecoilRoot>
+        <MemoryRouter>
+          <MockedProvider
+            mocks={[
+              assetsMock,
+              healthQueryMock,
+              ...buildMockedAssetGraphLiveQuery(assetKeys, undefined),
+              ...workspaceMocks,
+            ]}
+          >
+            <WorkspaceProvider>
+              <AssetLiveDataProvider>
+                <AssetCatalogTableV2 />
+              </AssetLiveDataProvider>
+            </WorkspaceProvider>
+          </MockedProvider>
+        </MemoryRouter>
+      </RecoilRoot>,
+    );
 
+    await findByText('5 assets');
     await waitFor(() => {
-      expect(screen.getByText('5 assets')).toBeInTheDocument();
       expect(resultFn).toHaveBeenCalled();
     });
+
     const calls = (AssetCatalogV2VirtualizedTable as unknown as jest.Mock).mock.calls;
+    const props = calls[calls.length - 1][0];
     await waitFor(() =>
-      expect(calls[calls.length - 1][0]).toEqual(
+      expect(props).toEqual(
         expect.objectContaining({
           healthDataLoading: false,
         }),
       ),
     );
 
-    await waitFor(() => {
-      expect(calls[calls.length - 1][0]).toEqual({
-        groupedByStatus: {
-          Healthy: [
-            expect.objectContaining({key: buildAssetKey({path: ['asset1']})}),
-            expect.objectContaining({key: buildAssetKey({path: ['asset5']})}),
-          ],
-          Degraded: [expect.objectContaining({key: buildAssetKey({path: ['asset2']})})],
-          Warning: [expect.objectContaining({key: buildAssetKey({path: ['asset3']})})],
-          Unknown: [expect.objectContaining({key: buildAssetKey({path: ['asset4']})})],
-        },
+    expect(props).toEqual(
+      expect.objectContaining({
+        checkedDisplayKeys: new Set(),
         loading: false,
         healthDataLoading: false,
-      });
-    });
+        grouped: expect.objectContaining({
+          Healthy: expect.objectContaining({
+            assets: [
+              expect.objectContaining({key: asset1}),
+              expect.objectContaining({key: asset5}),
+            ],
+          }),
+          Degraded: expect.objectContaining({
+            assets: [expect.objectContaining({key: asset2})],
+          }),
+          Warning: expect.objectContaining({
+            assets: [expect.objectContaining({key: asset3})],
+          }),
+          Unknown: expect.objectContaining({
+            assets: [expect.objectContaining({key: asset4})],
+          }),
+        }),
+      }),
+    );
   });
 
   it('renders with favorites and ignores results from useAllAssets', async () => {
@@ -217,47 +225,50 @@ describe('AssetCatalogTableV2', () => {
     const assetKeys = [buildAssetKey({path: ['asset1']}), buildAssetKey({path: ['asset2']})];
     const healthQueryMock = getHealthQueryMock(assetKeys);
     const resultFn = getMockResultFn(healthQueryMock);
-    await waitFor(() => {
-      expect(() =>
-        render(
-          <RecoilRoot>
-            <MemoryRouter>
-              <MockedProvider
-                mocks={[
-                  assetsMock,
-                  healthQueryMock,
-                  ...buildMockedAssetGraphLiveQuery(assetKeys, undefined),
-                  ...workspaceMocks,
-                ]}
-              >
-                <WorkspaceProvider>
-                  <AssetLiveDataProvider>
-                    <AssetCatalogTableV2 />
-                  </AssetLiveDataProvider>
-                </WorkspaceProvider>
-              </MockedProvider>
-            </MemoryRouter>
-          </RecoilRoot>,
-        ),
-      ).not.toThrow();
-    });
+    const {findByText} = render(
+      <RecoilRoot>
+        <MemoryRouter>
+          <MockedProvider
+            mocks={[
+              assetsMock,
+              healthQueryMock,
+              ...buildMockedAssetGraphLiveQuery(assetKeys, undefined),
+              ...workspaceMocks,
+            ]}
+          >
+            <WorkspaceProvider>
+              <AssetLiveDataProvider>
+                <AssetCatalogTableV2 />
+              </AssetLiveDataProvider>
+            </WorkspaceProvider>
+          </MockedProvider>
+        </MemoryRouter>
+      </RecoilRoot>,
+    );
 
+    expect(await findByText('2 assets')).toBeInTheDocument();
     await waitFor(() => {
-      expect(screen.getByText('2 assets')).toBeInTheDocument();
       expect(resultFn).toHaveBeenCalled();
     });
-    expect(AssetCatalogV2VirtualizedTable).toHaveBeenCalledWith(
-      {
-        groupedByStatus: {
-          Healthy: [expect.objectContaining({key: buildAssetKey({path: ['asset1']})})],
-          Degraded: [expect.objectContaining({key: buildAssetKey({path: ['asset2']})})],
-          Warning: [],
-          Unknown: [],
-        },
-        loading: false,
-        healthDataLoading: false,
-      },
-      {},
+
+    const calls = (AssetCatalogV2VirtualizedTable as unknown as jest.Mock).mock.calls;
+    const props = calls[calls.length - 1][0];
+    await waitFor(() =>
+      expect(props).toEqual(
+        expect.objectContaining({
+          checkedDisplayKeys: new Set(['asset1', 'asset2']),
+          loading: false,
+          healthDataLoading: false,
+          grouped: expect.objectContaining({
+            Healthy: expect.objectContaining({
+              assets: [expect.objectContaining({key: asset1})],
+            }),
+            Degraded: expect.objectContaining({
+              assets: [expect.objectContaining({key: asset2})],
+            }),
+          }),
+        }),
+      ),
     );
   });
 });

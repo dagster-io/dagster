@@ -11,11 +11,12 @@ from types import TracebackType
 from typing import TYPE_CHECKING, Callable, NamedTuple, Optional, Union, cast
 
 import dagster_shared.seven as seven
+from dagster_shared.error import DagsterError
 from typing_extensions import Self
 
 import dagster._check as check
-from dagster._core.definitions.asset_graph_subset import AssetGraphSubset
 from dagster._core.definitions.asset_key import EntityKey
+from dagster._core.definitions.assets.graph.asset_graph_subset import AssetGraphSubset
 from dagster._core.definitions.declarative_automation.serialized_objects import (
     AutomationConditionEvaluation,
     AutomationConditionEvaluationWithRunIds,
@@ -29,7 +30,6 @@ from dagster._core.definitions.selector import JobSubsetSelector
 from dagster._core.definitions.sensor_definition import DefaultSensorStatus, SensorType
 from dagster._core.errors import (
     DagsterCodeLocationLoadError,
-    DagsterError,
     DagsterInvalidInvocationError,
     DagsterUserCodeUnreachableError,
 )
@@ -229,7 +229,11 @@ class SensorLaunchContext(AbstractContextManager):
         return True
 
     def _write(self) -> None:
-        self._instance.update_tick(self._tick)
+        # do not write the cursor into the ticks table for custom user-code AutomationConditionSensorDefinitions
+        if self._remote_sensor.sensor_type == SensorType.AUTOMATION:
+            self._instance.update_tick(self._tick.with_cursor(None))
+        else:
+            self._instance.update_tick(self._tick)
 
         if self._tick.status not in FINISHED_TICK_STATES:
             return
@@ -1237,6 +1241,7 @@ def _submit_backfill_request(
             # would need to add these as params to RunRequest
             title=None,
             description=None,
+            run_config=run_request.run_config,
         )
     )
     return SubmitRunRequestResult(
@@ -1412,10 +1417,14 @@ def _create_sensor_run(
         remote_job_origin=remote_job.get_remote_origin(),
         job_code_origin=remote_job.get_python_origin(),
         asset_selection=(
-            frozenset(run_request.asset_selection) if run_request.asset_selection else None
+            frozenset(run_request.asset_selection)
+            if run_request.asset_selection is not None
+            else None
         ),
         asset_check_selection=(
-            frozenset(run_request.asset_check_keys) if run_request.asset_check_keys else None
+            frozenset(run_request.asset_check_keys)
+            if run_request.asset_check_keys is not None
+            else None
         ),
         asset_graph=code_location.get_repository(
             remote_job.repository_handle.repository_name

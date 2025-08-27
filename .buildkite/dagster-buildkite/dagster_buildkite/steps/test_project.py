@@ -1,14 +1,18 @@
 import os
-from typing import List, Optional, Set
+from typing import Optional
 
+from buildkite_shared.python_version import AvailablePythonVersion
+from buildkite_shared.step_builders.command_step_builder import CommandStepBuilder
+from buildkite_shared.step_builders.group_step_builder import (
+    GroupLeafStepConfiguration,
+    GroupStepBuilder,
+    GroupStepConfiguration,
+)
 from dagster_buildkite.defines import GCP_CREDS_FILENAME, GCP_CREDS_LOCAL_FILE
 from dagster_buildkite.images.versions import (
     BUILDKITE_BUILD_TEST_PROJECT_IMAGE_IMAGE_VERSION,
     TEST_PROJECT_BASE_IMAGE_VERSION,
 )
-from dagster_buildkite.python_version import AvailablePythonVersion
-from dagster_buildkite.step_builder import CommandStepBuilder
-from dagster_buildkite.utils import BuildkiteLeafStep, GroupStep
 
 # Some python packages depend on these images but we don't explicitly define that dependency anywhere other
 # than when we construct said package's Buildkite steps. Until we more explicitly define those dependencies
@@ -22,14 +26,14 @@ from dagster_buildkite.utils import BuildkiteLeafStep, GroupStep
 #
 # TODO: Don't do this :) More explicitly define the dependencies.
 # See https://github.com/dagster-io/dagster/pull/10099 for implementation ideas.
-build_test_project_for: Set[AvailablePythonVersion] = set()
+build_test_project_for: set[AvailablePythonVersion] = set()
 
 
-def build_test_project_steps() -> List[GroupStep]:
+def build_test_project_steps() -> list[GroupStepConfiguration]:
     """This set of tasks builds and pushes Docker images, which are used by the dagster-airflow and
     the dagster-k8s tests.
     """
-    steps: List[BuildkiteLeafStep] = []
+    steps: list[GroupLeafStepConfiguration] = []
 
     # Build for all available versions because a dependent extension might need to run tests on any version.
     py_versions = AvailablePythonVersion.get_all()
@@ -65,10 +69,10 @@ def build_test_project_steps() -> List[GroupStep]:
                 'echo -e "--- \033[32m:docker: Pushing Docker image\033[0m"',
                 "docker push $${TEST_PROJECT_IMAGE}",
             )
+            .skip_if(skip_if_version_not_needed(version))
             .on_python_image(
-                # py version can be bumped when rebuilt
-                f"buildkite-build-test-project-image:py{AvailablePythonVersion.V3_11.value}-{BUILDKITE_BUILD_TEST_PROJECT_IMAGE_IMAGE_VERSION}",
-                [
+                image=f"buildkite-build-test-project-image:py{AvailablePythonVersion.V3_11.value}-{BUILDKITE_BUILD_TEST_PROJECT_IMAGE_IMAGE_VERSION}",
+                env=[
                     "AIRFLOW_HOME",
                     "AWS_ACCOUNT_ID",
                     "AWS_ACCESS_KEY_ID",
@@ -76,16 +80,16 @@ def build_test_project_steps() -> List[GroupStep]:
                     "BUILDKITE_SECRETS_BUCKET",
                 ],
             )
-            .with_skip(skip_if_version_not_needed(version))
+            .with_ecr_login()
             .build()
         )
 
     return [
-        GroupStep(
-            group=":docker: test-project-image",
+        GroupStepBuilder(
+            name=":docker: test-project-image",
             key="test-project-image",
             steps=steps,
-        )
+        ).build()
     ]
 
 
@@ -93,7 +97,7 @@ def _test_project_step_key(version: AvailablePythonVersion) -> str:
     return f"sample-project-{AvailablePythonVersion.to_tox_factor(version)}"
 
 
-def test_project_depends_fn(version: AvailablePythonVersion, _) -> List[str]:
+def test_project_depends_fn(version: AvailablePythonVersion, _) -> list[str]:
     if not os.getenv("CI_DISABLE_INTEGRATION_TESTS"):
         build_test_project_for.add(version)
         return [_test_project_step_key(version)]

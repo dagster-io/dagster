@@ -27,8 +27,8 @@ from typing_extensions import TypeAlias
 import dagster._check as check
 from dagster import DagsterEvent
 from dagster._annotations import public
-from dagster._core.definitions.asset_check_result import AssetCheckResult
-from dagster._core.definitions.asset_check_spec import AssetCheckSeverity
+from dagster._core.definitions.asset_checks.asset_check_result import AssetCheckResult
+from dagster._core.definitions.asset_checks.asset_check_spec import AssetCheckSeverity
 from dagster._core.definitions.data_version import DataProvenance, DataVersion
 from dagster._core.definitions.events import AssetKey
 from dagster._core.definitions.metadata import (
@@ -36,12 +36,12 @@ from dagster._core.definitions.metadata import (
     MetadataValue,
     metadata_map_from_external,
 )
-from dagster._core.definitions.partition_key_range import PartitionKeyRange
-from dagster._core.definitions.result import MaterializeResult
-from dagster._core.definitions.time_window_partitions import (
+from dagster._core.definitions.partitions.partition_key_range import PartitionKeyRange
+from dagster._core.definitions.partitions.utils import (
     TimeWindow,
     has_one_dimension_time_window_partitioning,
 )
+from dagster._core.definitions.result import MaterializeResult
 from dagster._core.errors import DagsterInvariantViolationError, DagsterPipesExecutionError
 from dagster._core.events import EngineEventData
 from dagster._core.execution.context.asset_execution_context import AssetExecutionContext
@@ -68,6 +68,7 @@ class PipesLaunchedData(TypedDict):
     extras: Mapping[str, Any]
 
 
+@public
 class PipesMessageHandler:
     """Class to process :py:obj:`PipesMessage` objects received from a pipes process.
 
@@ -240,6 +241,7 @@ class PipesMessageHandler:
         self._message_reader.on_launched(launched_payload)
 
 
+@public
 @dataclass
 class PipesSession:
     """Object representing a pipes session.

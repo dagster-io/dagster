@@ -13,7 +13,7 @@ from dagster_pipes import (
 
 import dagster._check as check
 from dagster._annotations import public
-from dagster._core.definitions.asset_check_result import AssetCheckResult
+from dagster._core.definitions.asset_checks.asset_check_result import AssetCheckResult
 from dagster._core.definitions.metadata import MetadataValue, RawMetadataMapping, normalize_metadata
 from dagster._core.definitions.result import MaterializeResult
 from dagster._core.execution.context.asset_execution_context import AssetExecutionContext
@@ -24,6 +24,7 @@ if TYPE_CHECKING:
     from dagster._core.pipes.context import PipesMessageHandler
 
 
+@public
 class PipesClient(ABC):
     """Pipes client base class.
 
@@ -138,6 +139,7 @@ class PipesClientCompletedInvocation:
         return self._session.get_custom_messages()
 
 
+@public
 class PipesContextInjector(ABC):
     @abstractmethod
     @contextmanager
@@ -165,6 +167,7 @@ class PipesContextInjector(ABC):
         """
 
 
+@public
 class PipesMessageReader(ABC):
     @abstractmethod
     @contextmanager

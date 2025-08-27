@@ -44,6 +44,7 @@ def _check_property_on_test_context(
         return value
 
 
+@public
 class HookContext:
     """The ``context`` object available to a hook function on an DagsterEvent."""
 
@@ -436,6 +437,7 @@ class BoundHookContext(HookContext):
         return self._instance
 
 
+@public
 def build_hook_context(
     resources: Optional[Mapping[str, Any]] = None,
     op: Optional[Union[OpDefinition, PendingNodeInvocation]] = None,

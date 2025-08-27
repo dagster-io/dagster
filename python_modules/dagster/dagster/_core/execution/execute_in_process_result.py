@@ -13,6 +13,7 @@ from dagster._core.execution.plan.outputs import StepOutputHandle
 from dagster._core.storage.dagster_run import DagsterRun
 
 
+@public
 class ExecuteInProcessResult(ExecutionResult):
     """Result object returned by in-process testing APIs.
 
@@ -129,7 +130,7 @@ class ExecuteInProcessResult(ExecutionResult):
         Returns:
             Any: The value of the retrieved asset.
         """
-        node_output_handle = self._job_def.asset_layer.node_output_handle_for_asset(
+        node_output_handle = self._job_def.asset_layer.get_op_output_handle(
             AssetKey.from_coercible(asset_key)
         )
         return self.output_for_node(

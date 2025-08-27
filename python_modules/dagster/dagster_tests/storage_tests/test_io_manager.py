@@ -4,59 +4,29 @@ import time
 from collections.abc import Mapping
 from unittest import mock
 
+import dagster as dg
 import pytest
-from dagster import (
-    AssetKey,
-    AssetMaterialization,
-    DagsterInstance,
-    DagsterInvariantViolationError,
-    DagsterTypeCheckDidNotPass,
-    Definitions,
-    DynamicOut,
-    DynamicOutput,
-    Field,
-    In,
-    IOManagerDefinition,
-    Nothing,
-    Out,
-    ReexecutionOptions,
-    asset,
-    build_input_context,
-    build_output_context,
-    execute_job,
-    graph,
-    in_process_executor,
-    job,
-    materialize,
-    op,
-    reconstructable,
-    resource,
-)
+from dagster import DagsterInstance, IOManagerDefinition, ReexecutionOptions, in_process_executor
 from dagster._check import CheckError
-from dagster._core.definitions.events import Output
-from dagster._core.definitions.job_definition import JobDefinition
 from dagster._core.definitions.metadata import ArbitraryMetadataMapping
-from dagster._core.definitions.time_window_partitions import DailyPartitionsDefinition
 from dagster._core.errors import DagsterInvalidMetadata
 from dagster._core.execution.api import create_execution_plan, execute_plan
 from dagster._core.execution.context.compute import AssetExecutionContext
 from dagster._core.execution.context.input import InputContext
 from dagster._core.execution.context.output import OutputContext, get_output_context
 from dagster._core.execution.plan.outputs import StepOutputHandle
-from dagster._core.storage.fs_io_manager import custom_path_fs_io_manager, fs_io_manager
-from dagster._core.storage.io_manager import IOManager, dagster_maintained_io_manager, io_manager
-from dagster._core.storage.mem_io_manager import InMemoryIOManager, mem_io_manager
+from dagster._core.storage.fs_io_manager import fs_io_manager
+from dagster._core.storage.io_manager import dagster_maintained_io_manager
 from dagster._core.system_config.objects import ResolvedRunConfig
-from dagster._core.test_utils import instance_for_test
 from dagster._core.utils import make_new_run_id
 
 
 def test_io_manager_with_config():
-    @op
+    @dg.op
     def my_op():
         pass
 
-    class MyIOManager(IOManager):
+    class MyIOManager(dg.IOManager):
         def load_input(self, context):
             assert context.upstream_output.config["some_config"] == "some_value"  # pyright: ignore[reportOptionalMemberAccess]
             return 1
@@ -64,11 +34,11 @@ def test_io_manager_with_config():
         def handle_output(self, context, obj):
             assert context.config["some_config"] == "some_value"
 
-    @io_manager(output_config_schema={"some_config": str})
+    @dg.io_manager(output_config_schema={"some_config": str})
     def configurable_io_manager():
         return MyIOManager()
 
-    @job(resource_defs={"io_manager": configurable_io_manager})
+    @dg.job(resource_defs={"io_manager": configurable_io_manager})
     def my_job():
         my_op()
 
@@ -78,22 +48,22 @@ def test_io_manager_with_config():
 
 
 def test_io_manager_with_optional_config():
-    @op
+    @dg.op
     def my_op():
         pass
 
-    class MyIOManager(IOManager):
+    class MyIOManager(dg.IOManager):
         def load_input(self, context):
             pass
 
         def handle_output(self, context, obj):
             pass
 
-    @io_manager(output_config_schema={"some_config": Field(str, is_required=False)})
+    @dg.io_manager(output_config_schema={"some_config": dg.Field(str, is_required=False)})
     def configurable_io_manager():
         return MyIOManager()
 
-    @job(resource_defs={"io_manager": configurable_io_manager})
+    @dg.job(resource_defs={"io_manager": configurable_io_manager})
     def my_job():
         my_op()
 
@@ -102,11 +72,11 @@ def test_io_manager_with_optional_config():
 
 
 def test_io_manager_with_required_resource_keys():
-    @op
+    @dg.op
     def my_op():
         pass
 
-    class MyIOManager(IOManager):
+    class MyIOManager(dg.IOManager):
         def __init__(self, prefix):
             self._prefix = prefix
 
@@ -117,15 +87,15 @@ def test_io_manager_with_required_resource_keys():
         def handle_output(self, _context, obj):  # pyright: ignore[reportIncompatibleMethodOverride]
             pass
 
-    @io_manager(required_resource_keys={"foo_resource"})
+    @dg.io_manager(required_resource_keys={"foo_resource"})
     def io_manager_requires_resource(init_context):
         return MyIOManager(init_context.resources.foo_resource)
 
-    @resource
+    @dg.resource
     def foo_resource():
         return "foo"
 
-    @job(
+    @dg.job(
         resource_defs={
             "io_manager": io_manager_requires_resource,
             "foo_resource": foo_resource,
@@ -140,16 +110,16 @@ def test_io_manager_with_required_resource_keys():
 
 def define_job(
     manager: IOManagerDefinition, metadata_dict: Mapping[str, ArbitraryMetadataMapping]
-) -> JobDefinition:
-    @op(out=Out(metadata=metadata_dict.get("op_a")))
+) -> dg.JobDefinition:
+    @dg.op(out=dg.Out(metadata=metadata_dict.get("op_a")))
     def op_a(_context):
         return [1, 2, 3]
 
-    @op(out=Out(metadata=metadata_dict.get("op_b")))
+    @dg.op(out=dg.Out(metadata=metadata_dict.get("op_b")))
     def op_b(_context, _df):
         return 1
 
-    @job(resource_defs={"io_manager": manager}, executor_def=in_process_executor)
+    @dg.job(resource_defs={"io_manager": manager}, executor_def=in_process_executor)
     def my_job():
         op_b(op_a())
 
@@ -157,7 +127,7 @@ def define_job(
 
 
 def define_fs_io_manager_job():
-    return define_job(fs_io_manager, {})
+    return define_job(dg.fs_io_manager, {})
 
 
 def test_result_output():
@@ -175,18 +145,18 @@ def test_result_output():
 
 def test_fs_io_manager_reexecution():
     with tempfile.TemporaryDirectory() as tmpdir_path:
-        with instance_for_test() as instance:
-            result = execute_job(
-                reconstructable(define_fs_io_manager_job),
+        with dg.instance_for_test() as instance:
+            result = dg.execute_job(
+                dg.reconstructable(define_fs_io_manager_job),
                 instance,
                 run_config={"resources": {"io_manager": {"config": {"base_dir": tmpdir_path}}}},
             )
             assert result.success
-            re_result = execute_job(
-                reconstructable(define_fs_io_manager_job),
+            re_result = dg.execute_job(
+                dg.reconstructable(define_fs_io_manager_job),
                 instance,
                 run_config={"resources": {"io_manager": {"config": {"base_dir": tmpdir_path}}}},
-                reexecution_options=ReexecutionOptions(
+                reexecution_options=dg.ReexecutionOptions(
                     parent_run_id=result.run_id, step_selection=["op_b"]
                 ),
             )
@@ -200,27 +170,27 @@ def test_fs_io_manager_reexecution():
 
 
 def test_can_reexecute():
-    job_def = define_job(fs_io_manager, {})
+    job_def = define_job(dg.fs_io_manager, {})
     plan = create_execution_plan(job_def)
     assert plan.artifacts_persisted
 
 
 def define_can_fail_job():
-    @op
+    @dg.op
     def one():
         return 1
 
-    @op(config_schema={"should_fail": bool})
+    @dg.op(config_schema={"should_fail": bool})
     def plus_two(context, i):
         if context.op_config["should_fail"] is True:
             raise Exception()
         return i + 2
 
-    @op
+    @dg.op
     def plus_three(i):
         return i + 3
 
-    @job(executor_def=in_process_executor)
+    @dg.job(executor_def=in_process_executor)
     def my_job():
         plus_three(plus_two(one()))
 
@@ -229,9 +199,9 @@ def define_can_fail_job():
 
 def test_reexecute_subset_of_subset():
     with tempfile.TemporaryDirectory() as tmpdir_path:
-        with instance_for_test() as instance:
-            result = execute_job(
-                reconstructable(define_can_fail_job),
+        with dg.instance_for_test() as instance:
+            result = dg.execute_job(
+                dg.reconstructable(define_can_fail_job),
                 instance,
                 run_config={
                     "ops": {"plus_two": {"config": {"should_fail": True}}},
@@ -240,8 +210,8 @@ def test_reexecute_subset_of_subset():
             )
             assert not result.success
             reexecution_options = ReexecutionOptions.from_failure(result.run_id, instance)
-            with execute_job(
-                reconstructable(define_can_fail_job),
+            with dg.execute_job(
+                dg.reconstructable(define_can_fail_job),
                 instance,
                 run_config={
                     "ops": {"plus_two": {"config": {"should_fail": False}}},
@@ -251,28 +221,28 @@ def test_reexecute_subset_of_subset():
             ) as first_re_result:
                 assert first_re_result.success
                 assert first_re_result.output_for_node("plus_two") == 3
-            with execute_job(
-                reconstructable(define_can_fail_job),
+            with dg.execute_job(
+                dg.reconstructable(define_can_fail_job),
                 instance,
                 run_config={
                     "ops": {"plus_two": {"config": {"should_fail": False}}},
                     "resources": {"io_manager": {"config": {"base_dir": tmpdir_path}}},
                 },
-                reexecution_options=ReexecutionOptions(
+                reexecution_options=dg.ReexecutionOptions(
                     first_re_result.run_id, step_selection=["plus_two*"]
                 ),
             ) as second_re_result:
                 assert second_re_result.success
                 assert second_re_result.output_for_node("plus_two") == 3
 
-            with execute_job(
-                reconstructable(define_can_fail_job),
+            with dg.execute_job(
+                dg.reconstructable(define_can_fail_job),
                 instance,
                 run_config={
                     "ops": {"plus_two": {"config": {"should_fail": False}}},
                     "resources": {"io_manager": {"config": {"base_dir": tmpdir_path}}},
                 },
-                reexecution_options=ReexecutionOptions(
+                reexecution_options=dg.ReexecutionOptions(
                     second_re_result.run_id, step_selection=["plus_two*"]
                 ),
             ) as third_re_result:
@@ -281,23 +251,23 @@ def test_reexecute_subset_of_subset():
 
 
 def define_composite_job():
-    @op
+    @dg.op
     def one():
         return 1
 
-    @op
+    @dg.op
     def plus_two(i):
         return i + 2
 
-    @graph
+    @dg.graph
     def one_plus_two():
         return plus_two(one())
 
-    @op
+    @dg.op
     def plus_three(i):
         return i + 3
 
-    @job(executor_def=in_process_executor)
+    @dg.job(executor_def=in_process_executor)
     def my_job():
         plus_three(one_plus_two())
 
@@ -305,28 +275,28 @@ def define_composite_job():
 
 
 def test_reexecute_subset_of_subset_with_composite():
-    with instance_for_test() as instance:
-        result = execute_job(reconstructable(define_composite_job), instance)
+    with dg.instance_for_test() as instance:
+        result = dg.execute_job(dg.reconstructable(define_composite_job), instance)
         assert result.success
 
-        first_re_result = execute_job(
-            reconstructable(define_composite_job),
+        first_re_result = dg.execute_job(
+            dg.reconstructable(define_composite_job),
             instance,
-            reexecution_options=ReexecutionOptions(result.run_id, step_selection=["plus_three"]),
+            reexecution_options=dg.ReexecutionOptions(result.run_id, step_selection=["plus_three"]),
         )
         assert first_re_result.success
 
-        second_re_result = execute_job(
-            reconstructable(define_composite_job),
+        second_re_result = dg.execute_job(
+            dg.reconstructable(define_composite_job),
             instance,
-            reexecution_options=ReexecutionOptions(result.run_id, step_selection=["plus_three"]),
+            reexecution_options=dg.ReexecutionOptions(result.run_id, step_selection=["plus_three"]),
         )
         assert second_re_result.success
 
-        third_re_result = execute_job(
-            reconstructable(define_composite_job),
+        third_re_result = dg.execute_job(
+            dg.reconstructable(define_composite_job),
             instance,
-            reexecution_options=ReexecutionOptions(result.run_id, step_selection=["plus_three"]),
+            reexecution_options=dg.ReexecutionOptions(result.run_id, step_selection=["plus_three"]),
         )
         assert third_re_result.success
 
@@ -340,7 +310,7 @@ def execute_job_with_steps(
     root_run_id=None,
     run_config=None,
 ):
-    recon_job = reconstructable(job_fn)
+    recon_job = dg.reconstructable(job_fn)
     plan = create_execution_plan(
         recon_job, step_keys_to_execute=step_keys_to_execute, run_config=run_config
     )
@@ -360,7 +330,7 @@ def define_metadata_job():
         "op_a": {"path": "a"},
         "op_b": {"path": "b"},
     }
-    return define_job(custom_path_fs_io_manager, test_metadata_dict)
+    return define_job(dg.custom_path_fs_io_manager, test_metadata_dict)
 
 
 def test_step_subset_with_custom_paths():
@@ -419,7 +389,7 @@ def test_step_subset_with_custom_paths():
 
 
 def test_multi_materialization():
-    class DummyIOManager(IOManager):
+    class DummyIOManager(dg.IOManager):
         def __init__(self):
             self.values = {}
 
@@ -427,8 +397,8 @@ def test_multi_materialization():
             keys = tuple(context.get_identifier())
             self.values[keys] = obj
 
-            yield AssetMaterialization(asset_key="yield_one")
-            yield AssetMaterialization(asset_key="yield_two")
+            yield dg.AssetMaterialization(asset_key="yield_one")
+            yield dg.AssetMaterialization(asset_key="yield_two")
 
         def load_input(self, context):
             keys = tuple(context.upstream_output.get_identifier())  # pyright: ignore[reportOptionalMemberAccess]
@@ -438,19 +408,19 @@ def test_multi_materialization():
             keys = tuple(context.get_identifier())
             return keys in self.values
 
-    @io_manager
+    @dg.io_manager
     def dummy_io_manager():
         return DummyIOManager()
 
-    @op(out=Out(io_manager_key="my_io_manager"))
+    @dg.op(out=dg.Out(io_manager_key="my_io_manager"))
     def op_a(_context):
         return 1
 
-    @op()
+    @dg.op()
     def op_b(_context, a):
         assert a == 1
 
-    @job(resource_defs={"my_io_manager": dummy_io_manager})
+    @dg.job(resource_defs={"my_io_manager": dummy_io_manager})
     def my_job():
         op_b(op_a())
 
@@ -463,24 +433,24 @@ def test_multi_materialization():
 
 
 def test_different_io_managers():
-    @op(
-        out=Out(io_manager_key="my_io_manager"),
+    @dg.op(
+        out=dg.Out(io_manager_key="my_io_manager"),
     )
     def op_a(_context):
         return 1
 
-    @op()
+    @dg.op()
     def op_b(_context, a):
         assert a == 1
 
-    @job(resource_defs={"my_io_manager": mem_io_manager})
+    @dg.job(resource_defs={"my_io_manager": dg.mem_io_manager})
     def my_job():
         op_b(op_a())
 
     assert my_job.execute_in_process().success
 
 
-@io_manager  # pyright: ignore[reportCallIssue,reportArgumentType]
+@dg.io_manager  # pyright: ignore[reportCallIssue,reportArgumentType]
 def my_io_manager():
     pass
 
@@ -489,19 +459,19 @@ def test_fan_in():
     with tempfile.TemporaryDirectory() as tmpdir_path:
         default_io_manager = fs_io_manager.configured({"base_dir": tmpdir_path})
 
-        @op
+        @dg.op
         def input_op1():
             return 1
 
-        @op
+        @dg.op
         def input_op2():
             return 2
 
-        @op
+        @dg.op
         def op1(input1):
             assert input1 == [1, 2]
 
-        @job(resource_defs={"io_manager": default_io_manager})
+        @dg.job(resource_defs={"io_manager": default_io_manager})
         def my_job():
             op1(input1=[input_op1(), input_op2()])
 
@@ -512,20 +482,20 @@ def test_fan_in_skip():
     with tempfile.TemporaryDirectory() as tmpdir_path:
         default_io_manager = fs_io_manager.configured({"base_dir": tmpdir_path})
 
-        @op(out={"skip": Out(is_required=False)})
+        @dg.op(out={"skip": dg.Out(is_required=False)})
         def skip():
             return
             yield
 
-        @op
+        @dg.op
         def one():
             return 1
 
-        @op
+        @dg.op
         def receiver(input1):
             assert input1 == [1]
 
-        @job(resource_defs={"io_manager": default_io_manager})
+        @dg.job(resource_defs={"io_manager": default_io_manager})
         def my_job():
             receiver(input1=[one(), skip()])
 
@@ -533,7 +503,7 @@ def test_fan_in_skip():
 
 
 def test_configured():
-    @io_manager(  # pyright: ignore[reportArgumentType]
+    @dg.io_manager(  # pyright: ignore[reportArgumentType]
         config_schema={"base_dir": str},
         description="abc",
         output_config_schema={"path": str},
@@ -546,7 +516,7 @@ def test_configured():
 
     configured_io_manager = an_io_manager.configured({"base_dir": "/a/b/c"})
 
-    assert isinstance(configured_io_manager, IOManagerDefinition)
+    assert isinstance(configured_io_manager, dg.IOManagerDefinition)
     assert configured_io_manager.description == an_io_manager.description
     assert configured_io_manager.output_config_schema == an_io_manager.output_config_schema
     assert configured_io_manager.input_config_schema == an_io_manager.input_config_schema
@@ -555,23 +525,23 @@ def test_configured():
 
 
 def test_mem_io_manager_execution():
-    mem_io_manager_instance = InMemoryIOManager()
-    output_context = build_output_context(step_key="step_key", name="output_name")
+    mem_io_manager_instance = dg.InMemoryIOManager()
+    output_context = dg.build_output_context(step_key="step_key", name="output_name")
     mem_io_manager_instance.handle_output(output_context, 1)
-    input_context = build_input_context(upstream_output=output_context)
+    input_context = dg.build_input_context(upstream_output=output_context)
     assert mem_io_manager_instance.load_input(input_context) == 1
 
 
 def test_io_manager_resources_on_context():
-    @resource
+    @dg.resource
     def foo_resource():
         return "foo"
 
-    @io_manager(required_resource_keys={"foo_resource"})
+    @dg.io_manager(required_resource_keys={"foo_resource"})
     def io_manager_reqs_resources(init_context):
         assert init_context.resources.foo_resource == "foo"
 
-        class InternalIOManager(IOManager):
+        class InternalIOManager(dg.IOManager):
             def handle_output(self, context, obj):
                 assert context.resources.foo_resource == "foo"
 
@@ -580,14 +550,14 @@ def test_io_manager_resources_on_context():
 
         return InternalIOManager()
 
-    @op(
-        ins={"_manager_input": In(input_manager_key="io_manager_reqs_resources")},
-        out=Out(dagster_type=str, io_manager_key="io_manager_reqs_resources"),
+    @dg.op(
+        ins={"_manager_input": dg.In(input_manager_key="io_manager_reqs_resources")},
+        out=dg.Out(dagster_type=str, io_manager_key="io_manager_reqs_resources"),
     )
     def big_op(_manager_input):
         return "manager_input"
 
-    @job(
+    @dg.job(
         resource_defs={
             "io_manager_reqs_resources": io_manager_reqs_resources,
             "foo_resource": foo_resource,
@@ -602,15 +572,15 @@ def test_io_manager_resources_on_context():
 
 
 def test_mem_io_managers_result_for_op():
-    @op
+    @dg.op
     def one():
         return 1
 
-    @op
+    @dg.op
     def add_one(x):
         return x + 1
 
-    @job(resource_defs={"io_manager": mem_io_manager})
+    @dg.job(resource_defs={"io_manager": dg.mem_io_manager})
     def my_job():
         add_one(one())
 
@@ -621,12 +591,14 @@ def test_mem_io_managers_result_for_op():
 
 
 def test_hardcoded_io_manager():
-    @op
+    @dg.op
     def basic_op():
         return 5
 
-    @job(
-        resource_defs={"io_manager": IOManagerDefinition.hardcoded_io_manager(InMemoryIOManager())}
+    @dg.job(
+        resource_defs={
+            "io_manager": IOManagerDefinition.hardcoded_io_manager(dg.InMemoryIOManager())
+        }
     )
     def basic_job():
         basic_op()
@@ -637,11 +609,11 @@ def test_hardcoded_io_manager():
 
 
 def test_get_output_context_with_resources():
-    @op
+    @dg.op
     def basic_op():
         pass
 
-    @job
+    @dg.job
     def basic_job():
         basic_op()
 
@@ -667,23 +639,23 @@ def test_get_output_context_with_resources():
 
 
 def test_error_boundary_with_gen():
-    class ErrorIOManager(IOManager):
+    class ErrorIOManager(dg.IOManager):
         def load_input(self, context):
             pass
 
         def handle_output(self, context, obj):  # pyright: ignore[reportIncompatibleMethodOverride]
-            yield AssetMaterialization(asset_key="a")
+            yield dg.AssetMaterialization(asset_key="a")
             raise ValueError("handle output error")
 
-    @io_manager
+    @dg.io_manager
     def error_io_manager():
         return ErrorIOManager()
 
-    @op
+    @dg.op
     def basic_op():
         return 5
 
-    @job(resource_defs={"io_manager": error_io_manager})
+    @dg.job(resource_defs={"io_manager": error_io_manager})
     def single_op_job():
         basic_op()
 
@@ -695,22 +667,22 @@ def test_error_boundary_with_gen():
 
 
 def test_handle_output_exception_raised():
-    class ErrorIOManager(IOManager):
+    class ErrorIOManager(dg.IOManager):
         def load_input(self, context):
             pass
 
         def handle_output(self, context, obj):
             raise ValueError("handle output error")
 
-    @io_manager
+    @dg.io_manager
     def error_io_manager():
         return ErrorIOManager()
 
-    @op
+    @dg.op
     def basic_op():
         return 5
 
-    @job(resource_defs={"io_manager": error_io_manager})
+    @dg.job(resource_defs={"io_manager": error_io_manager})
     def single_op_job():
         basic_op()
 
@@ -722,7 +694,7 @@ def test_handle_output_exception_raised():
 
 
 def test_output_identifier_dynamic_memoization():
-    context = build_output_context(version="foo", mapping_key="bar", step_key="baz", name="buzz")
+    context = dg.build_output_context(version="foo", mapping_key="bar", step_key="baz", name="buzz")
 
     with pytest.raises(
         CheckError,
@@ -735,15 +707,15 @@ def test_output_identifier_dynamic_memoization():
 
 
 def test_asset_key():
-    @asset
+    @dg.asset
     def before():
         pass
 
-    @asset
+    @dg.asset
     def after(before):
         assert before
 
-    class MyIOManager(IOManager):
+    class MyIOManager(dg.IOManager):
         def load_input(self, context):
             assert context.asset_key == before.key
             assert context.upstream_output.asset_key == before.key  # pyright: ignore[reportOptionalMemberAccess]
@@ -752,20 +724,20 @@ def test_asset_key():
         def handle_output(self, context, obj):
             assert context.asset_key in {before.key, after.key}
 
-    result = materialize([before, after], resources={"io_manager": MyIOManager()})
+    result = dg.materialize([before, after], resources={"io_manager": MyIOManager()})
     assert result.success
 
 
 def test_partition_key():
-    @op
+    @dg.op
     def my_op():
         pass
 
-    @op
+    @dg.op
     def my_op2(_input1):
         pass
 
-    class MyIOManager(IOManager):
+    class MyIOManager(dg.IOManager):
         def load_input(self, context):
             assert context.has_partition_key
             assert context.partition_key == "2020-01-01"
@@ -774,8 +746,8 @@ def test_partition_key():
             assert context.has_partition_key
             assert context.partition_key == "2020-01-01"
 
-    @job(
-        partitions_def=DailyPartitionsDefinition(start_date="2020-01-01"),
+    @dg.job(
+        partitions_def=dg.DailyPartitionsDefinition(start_date="2020-01-01"),
         resource_defs={"io_manager": IOManagerDefinition.hardcoded_io_manager(MyIOManager())},
     )
     def my_job():
@@ -785,7 +757,7 @@ def test_partition_key():
 
 
 def test_context_logging_user_events():
-    class DummyIOManager(IOManager):
+    class DummyIOManager(dg.IOManager):
         def __init__(self):
             self.values = {}
 
@@ -793,24 +765,24 @@ def test_context_logging_user_events():
             keys = tuple(context.get_identifier())
             self.values[keys] = obj
 
-            context.log_event(AssetMaterialization(asset_key="first"))
+            context.log_event(dg.AssetMaterialization(asset_key="first"))
             time.sleep(1)
             context.log.debug("foo bar")
-            context.log_event(AssetMaterialization(asset_key="second"))
+            context.log_event(dg.AssetMaterialization(asset_key="second"))
 
         def load_input(self, context):
             keys = tuple(context.upstream_output.get_identifier())  # pyright: ignore[reportOptionalMemberAccess]
             return self.values[keys]
 
-    @op
+    @dg.op
     def the_op():
         return 5
 
-    @graph
+    @dg.graph
     def the_graph():
         the_op()
 
-    with instance_for_test() as instance:
+    with dg.instance_for_test() as instance:
         result = the_graph.execute_in_process(
             resources={"io_manager": DummyIOManager()}, instance=instance
         )
@@ -845,7 +817,7 @@ def test_context_logging_user_events():
 
 def test_context_logging_metadata():
     def build_for_materialization(materialization):
-        class DummyIOManager(IOManager):
+        class DummyIOManager(dg.IOManager):
             def __init__(self):
                 self.values = {}
 
@@ -862,13 +834,13 @@ def test_context_logging_metadata():
                 keys = tuple(context.upstream_output.get_identifier())  # pyright: ignore[reportOptionalMemberAccess]
                 return self.values[keys]
 
-        @asset
+        @dg.asset
         def key_on_out():
             return 5
 
-        return materialize([key_on_out], resources={"io_manager": DummyIOManager()})
+        return dg.materialize([key_on_out], resources={"io_manager": DummyIOManager()})
 
-    result = build_for_materialization(AssetMaterialization("no_metadata"))
+    result = build_for_materialization(dg.AssetMaterialization("no_metadata"))
     assert result.success
 
     output_event = result.all_node_events[4]
@@ -888,7 +860,7 @@ def test_context_logging_metadata():
     assert set(metadata.keys()) == {"foo", "baz", "bar"}
 
     with pytest.raises(
-        DagsterInvariantViolationError,
+        dg.DagsterInvariantViolationError,
         match=(
             "When handling output 'result' of op 'key_on_out', received a materialization with"
             " metadata, while context.add_output_metadata was used within the same call to"
@@ -896,11 +868,11 @@ def test_context_logging_metadata():
             " metadata in one place within the `handle_output` function."
         ),
     ):
-        build_for_materialization(AssetMaterialization("has_metadata", metadata={"bar": "baz"}))
+        build_for_materialization(dg.AssetMaterialization("has_metadata", metadata={"bar": "baz"}))
 
 
 def test_context_logging_metadata_add_output_metadata_called_twice():
-    class DummyIOManager(IOManager):
+    class DummyIOManager(dg.IOManager):
         def handle_output(self, context, obj):
             del obj
             context.add_output_metadata({"foo": 1})
@@ -911,11 +883,11 @@ def test_context_logging_metadata_add_output_metadata_called_twice():
         def load_input(self, context):
             del context
 
-    @asset
+    @dg.asset
     def asset1():
         return 5
 
-    result = materialize([asset1], resources={"io_manager": DummyIOManager()})
+    result = dg.materialize([asset1], resources={"io_manager": DummyIOManager()})
 
     assert result.success
     materialization = result.asset_materializations_for_node("asset1")[0]
@@ -931,7 +903,7 @@ def test_context_logging_metadata_add_output_metadata_called_twice():
 
 
 def test_metadata_dynamic_outputs():
-    class DummyIOManager(IOManager):
+    class DummyIOManager(dg.IOManager):
         def __init__(self):
             self.values = {}
 
@@ -945,12 +917,12 @@ def test_metadata_dynamic_outputs():
             keys = tuple(context.upstream_output.get_identifier())  # pyright: ignore[reportOptionalMemberAccess]
             return self.values[keys]
 
-    @op(out=DynamicOut())
+    @dg.op(out=dg.DynamicOut())
     def the_op():
-        yield DynamicOutput(1, mapping_key="one", metadata={"one": "blah"})
-        yield DynamicOutput(2, mapping_key="two", metadata={"two": "blah"})
+        yield dg.DynamicOutput(1, mapping_key="one", metadata={"one": "blah"})
+        yield dg.DynamicOutput(2, mapping_key="two", metadata={"two": "blah"})
 
-    @graph
+    @dg.graph
     def the_graph():
         the_op()
 
@@ -958,7 +930,7 @@ def test_metadata_dynamic_outputs():
 
 
 def test_nothing_output_nothing_input():
-    class MyIOManager(IOManager):
+    class MyIOManager(dg.IOManager):
         def __init__(self):
             self.handle_output_calls = 0
 
@@ -970,13 +942,13 @@ def test_nothing_output_nothing_input():
 
     my_io_manager = MyIOManager()
 
-    @op(out=Out(Nothing))
+    @dg.op(out=dg.Out(dg.Nothing))
     def op1(): ...
 
-    @op(ins={"input1": In(Nothing)})
+    @dg.op(ins={"input1": dg.In(dg.Nothing)})
     def op2(): ...
 
-    @job(resource_defs={"io_manager": IOManagerDefinition.hardcoded_io_manager(my_io_manager)})
+    @dg.job(resource_defs={"io_manager": IOManagerDefinition.hardcoded_io_manager(my_io_manager)})
     def job1():
         op2(op1())
 
@@ -986,7 +958,7 @@ def test_nothing_output_nothing_input():
 
 
 def test_nothing_output_something_input():
-    class MyIOManager(IOManager):
+    class MyIOManager(dg.IOManager):
         def __init__(self):
             self.handle_output_calls = 0
             self.handle_input_calls = 0
@@ -1006,13 +978,13 @@ def test_nothing_output_something_input():
 
     my_io_manager = MyIOManager()
 
-    @op(out=Out(Nothing))
+    @dg.op(out=dg.Out(dg.Nothing))
     def op1(): ...
 
-    @op
+    @dg.op
     def op2(_input1): ...
 
-    @job(resource_defs={"io_manager": IOManagerDefinition.hardcoded_io_manager(my_io_manager)})
+    @dg.job(resource_defs={"io_manager": IOManagerDefinition.hardcoded_io_manager(my_io_manager)})
     def job1():
         op2(op1())
 
@@ -1026,18 +998,18 @@ def test_nothing_output_something_input():
 
 
 def test_nothing_typing_type_non_none_return():
-    @asset
+    @dg.asset
     def returns_1() -> None:
         return 1  # type: ignore
 
-    with pytest.raises(DagsterTypeCheckDidNotPass):
-        materialize([returns_1])
+    with pytest.raises(dg.DagsterTypeCheckDidNotPass):
+        dg.materialize([returns_1])
 
 
 def test_instance_set_on_input_context():
     executed = {}
 
-    class AssertingContextInputOnLoadInputIOManager(IOManager):
+    class AssertingContextInputOnLoadInputIOManager(dg.IOManager):
         def __init__(self):
             pass
 
@@ -1048,17 +1020,17 @@ def test_instance_set_on_input_context():
         def handle_output(self, _context, _obj):  # pyright: ignore[reportIncompatibleMethodOverride]
             pass
 
-    @op
+    @dg.op
     def op1():
         pass
 
-    @op
+    @dg.op
     def op2(_an_input):
         pass
 
     asserting_io_manager = AssertingContextInputOnLoadInputIOManager()
 
-    @job(
+    @dg.job(
         resource_defs={"io_manager": IOManagerDefinition.hardcoded_io_manager(asserting_io_manager)}
     )
     def job1():
@@ -1072,7 +1044,7 @@ def test_instance_set_on_input_context():
 def test_instance_set_on_asset_loader():
     executed = {}
 
-    class AssertingContextInputOnLoadInputIOManager(IOManager):
+    class AssertingContextInputOnLoadInputIOManager(dg.IOManager):
         def __init__(self):
             pass
 
@@ -1084,21 +1056,21 @@ def test_instance_set_on_asset_loader():
         def handle_output(self, _context, _obj):  # pyright: ignore[reportIncompatibleMethodOverride]
             pass
 
-    @asset
+    @dg.asset
     def an_asset() -> int:
         return 1
 
-    @asset
+    @dg.asset
     def another_asset(an_asset: int) -> int:
         return an_asset + 1
 
     with DagsterInstance.ephemeral() as instance:
-        defs = Definitions(
+        defs = dg.Definitions(
             assets=[an_asset, another_asset],
             resources={"io_manager": AssertingContextInputOnLoadInputIOManager()},
         )
         defs.resolve_implicit_global_asset_job_def().execute_in_process(
-            asset_selection=[AssetKey("an_asset")], instance=instance
+            asset_selection=[dg.AssetKey("an_asset")], instance=instance
         )
         # load_input not called when asset does not have any inputs
         assert not executed.get("yes")
@@ -1109,14 +1081,14 @@ def test_instance_set_on_asset_loader():
 
 
 def test_telemetry_custom_io_manager():
-    class MyIOManager(IOManager):
+    class MyIOManager(dg.IOManager):
         def handle_output(self, context, obj):  # pyright: ignore[reportIncompatibleMethodOverride]
             return {}
 
         def load_input(self, context):
             return 1
 
-    @io_manager
+    @dg.io_manager
     def my_io_manager():
         return MyIOManager()
 
@@ -1124,7 +1096,7 @@ def test_telemetry_custom_io_manager():
 
 
 def test_telemetry_dagster_io_manager():
-    class MyIOManager(IOManager):
+    class MyIOManager(dg.IOManager):
         def handle_output(self, context, obj):  # pyright: ignore[reportIncompatibleMethodOverride]
             return {}
 
@@ -1132,7 +1104,7 @@ def test_telemetry_dagster_io_manager():
             return 1
 
     @dagster_maintained_io_manager
-    @io_manager
+    @dg.io_manager
     def my_io_manager():
         return MyIOManager()
 
@@ -1142,7 +1114,7 @@ def test_telemetry_dagster_io_manager():
 def test_metadata_in_io_manager():
     expected_metadata = {"foo": "bar"}
 
-    class MyDefinitionMetadataIOManager(IOManager):
+    class MyDefinitionMetadataIOManager(dg.IOManager):
         def handle_output(self, context: OutputContext, obj):
             assert context.definition_metadata == expected_metadata
 
@@ -1150,7 +1122,7 @@ def test_metadata_in_io_manager():
             assert context.upstream_output
             assert context.upstream_output.definition_metadata == expected_metadata
 
-    class MyOutputMetadataIOManager(IOManager):
+    class MyOutputMetadataIOManager(dg.IOManager):
         def handle_output(self, context: OutputContext, obj):
             normalized_metadata = (
                 {
@@ -1166,7 +1138,7 @@ def test_metadata_in_io_manager():
             assert context.upstream_output
             assert context.upstream_output.output_metadata == {}
 
-    class MyAllMetadataIOManager(IOManager):
+    class MyAllMetadataIOManager(dg.IOManager):
         def handle_output(self, context: OutputContext, obj):
             normalized_metadata = (
                 {
@@ -1185,51 +1157,51 @@ def test_metadata_in_io_manager():
             assert context.upstream_output.output_metadata == {}
             assert context.upstream_output.definition_metadata == expected_metadata
 
-    @asset(metadata=expected_metadata)
+    @dg.asset(metadata=expected_metadata)
     def metadata_on_def():
         return 1
 
-    @asset
+    @dg.asset
     def downstream_1(metadata_on_def) -> None:
         return None
 
-    materialize(
+    dg.materialize(
         [metadata_on_def, downstream_1], resources={"io_manager": MyDefinitionMetadataIOManager()}
     )
 
-    @asset
+    @dg.asset
     def metadata_on_output():
-        return Output(1, metadata=expected_metadata)
+        return dg.Output(1, metadata=expected_metadata)
 
-    @asset
+    @dg.asset
     def downstream_2(metadata_on_output) -> None:
         return None
 
-    materialize(
+    dg.materialize(
         [metadata_on_output, downstream_2], resources={"io_manager": MyOutputMetadataIOManager()}
     )
 
-    @asset
+    @dg.asset
     def metadata_added_to_context(context: AssetExecutionContext):
         context.add_output_metadata(expected_metadata)
 
-    @asset
+    @dg.asset
     def downstream_3(metadata_added_to_context) -> None:
         return None
 
-    materialize(
+    dg.materialize(
         [metadata_added_to_context, downstream_3],
         resources={"io_manager": MyOutputMetadataIOManager()},
     )
 
-    @asset(metadata=expected_metadata)
+    @dg.asset(metadata=expected_metadata)
     def override_metadata(context: AssetExecutionContext):
         context.add_output_metadata(expected_metadata)
 
-    @asset
+    @dg.asset
     def downstream_4(override_metadata) -> None:
         return None
 
-    materialize(
+    dg.materialize(
         [override_metadata, downstream_4], resources={"io_manager": MyAllMetadataIOManager()}
     )

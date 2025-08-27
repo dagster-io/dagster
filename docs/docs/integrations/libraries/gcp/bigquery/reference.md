@@ -246,7 +246,7 @@ If you work with both Pandas and PySpark DataFrames and want a single I/O manage
 
 ## Executing custom SQL commands with the BigQuery resource
 
-In addition to the BigQuery I/O manager, Dagster also provides a BigQuery [resource](/guides/build/external-resources/) for executing custom SQL queries.
+In addition to the BigQuery I/O manager, Dagster also provides a BigQuery [resource](/guides/build/external-resources) for executing custom SQL queries.
 
 <CodeExample path="docs_snippets/docs_snippets/integrations/bigquery/reference/resource.py" />
 

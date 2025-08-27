@@ -1,3 +1,4 @@
+# ruff: noqa: I001 - import order differs between CI and local due to package installation differences
 import json
 import subprocess
 import tempfile
@@ -8,22 +9,18 @@ import pytest
 import responses
 import yaml
 from dagster_aws.ecs.container_context import EcsContainerContext
-from dagster_dg_cli.cli.plus.constants import DgPlusAgentPlatform
-from dagster_dg_cli.cli.scaffold import REGISTRY_INFOS
-from dagster_dg_cli.utils.plus import gql
-from dagster_dg_core.utils import ensure_dagster_dg_tests_import, pushd
+from dagster_dg_core.utils import pushd
 from dagster_docker.container_context import DockerContainerContext
 from dagster_k8s.container_context import K8sContainerContext
-
-ensure_dagster_dg_tests_import()
-
-
-from dagster_dg_core_tests.utils import (
+from dagster_test.dg_utils.utils import (
     ProxyRunner,
     isolated_example_project_foo_bar,
     isolated_example_workspace,
 )
 
+from dagster_dg_cli.cli.plus.constants import DgPlusAgentPlatform
+from dagster_dg_cli.cli.scaffold.github_actions import REGISTRY_INFOS
+from dagster_dg_cli.utils.plus import gql
 from dagster_dg_cli_tests.cli_tests.plus_tests.utils import (
     PYTHON_VERSION,
     mock_gql_response,
@@ -48,10 +45,13 @@ def _get_error_message(file: Path, details: dict[str, Any]):
     return f"Action validator found errors in {file}:\n{contents_snippet}\n\n{details['detail']}"
 
 
-def validate_github_actions_workflow(workflow_path: Path):
+def validate_github_actions_workflow(workflow_path: Path, *, expected_version: str = "main"):
     """Runs action-validator on the given file, and asserts that it returns a zero exit code.
     Prints a nicely formatted error message if it does not.
     """
+    assert f"@{expected_version}" in workflow_path.read_text(), (
+        f"TEMPLATE_DAGSTER_CLOUD_ACTION_VERSION should be replaced with @{expected_version} in the workflow"
+    )
     assert "TEMPLATE_" not in workflow_path.read_text(), (
         "TEMPLATE_ placeholders should be replaced in the workflow"
     )
@@ -261,24 +261,45 @@ def setup_populated_git_workspace():
 
 
 @responses.activate
+@pytest.mark.parametrize(
+    "version_override",
+    [
+        None,  # Use default version
+        "1.11.0",  # Override version
+    ],
+)
 def test_scaffold_github_actions_command_success_serverless(
     dg_plus_cli_config,
     setup_populated_git_workspace: ProxyRunner,
+    version_override: Optional[str],
 ):
-    mock_gql_response(
-        query=gql.DEPLOYMENT_INFO_QUERY,
-        json_data={"data": {"currentDeployment": {"agentType": "SERVERLESS"}}},
-    )
-    runner = setup_populated_git_workspace
-    result = runner.invoke("scaffold", "github-actions")
-    assert result.exit_code == 0, result.output + " " + str(result.exception)
+    from dagster_dg_cli import version
 
-    assert Path(".github/workflows/dagster-plus-deploy.yml").exists()
-    assert "hooli" in Path(".github/workflows/dagster-plus-deploy.yml").read_text()
-    assert not Path("dagster_cloud.yaml").exists()
-    assert "https://github.com/hooli/example-repo/settings/secrets/actions" in result.output
+    current_version = version.__version__
+    try:
+        if version_override:
+            version.__version__ = version_override
 
-    validate_github_actions_workflow(Path(".github/workflows/dagster-plus-deploy.yml"))
+        mock_gql_response(
+            query=gql.DEPLOYMENT_INFO_QUERY,
+            json_data={"data": {"currentDeployment": {"agentType": "SERVERLESS"}}},
+        )
+        runner = setup_populated_git_workspace
+        result = runner.invoke("scaffold", "github-actions")
+        assert result.exit_code == 0, result.output + " " + str(result.exception)
+
+        assert Path(".github/workflows/dagster-plus-deploy.yml").exists()
+        assert "hooli" in Path(".github/workflows/dagster-plus-deploy.yml").read_text()
+        assert not Path("dagster_cloud.yaml").exists()
+        assert "https://github.com/hooli/example-repo/settings/secrets/actions" in result.output
+
+        expected_version = f"v{version_override}" if version_override else "main"
+        validate_github_actions_workflow(
+            Path(".github/workflows/dagster-plus-deploy.yml"),
+            expected_version=expected_version,
+        )
+    finally:
+        version.__version__ = current_version
 
 
 @responses.activate

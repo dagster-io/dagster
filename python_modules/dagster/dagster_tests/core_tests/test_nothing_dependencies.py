@@ -1,62 +1,48 @@
 from collections import defaultdict
 
+import dagster as dg
 import pytest
-from dagster import (
-    AssetMaterialization,
-    DagsterInvalidDefinitionError,
-    DagsterTypeCheckDidNotPass,
-    In,
-    Int,
-    List,
-    Nothing,
-    Optional,
-    Out,
-    Output,
-    asset,
-    job,
-    materialize_to_memory,
-    op,
-)
+from dagster import AssetMaterialization, Nothing
 from dagster._core.execution.api import create_execution_plan
 
 
 def _define_nothing_dep_job():
-    @op(out={"complete": Out(Nothing)})
+    @dg.op(out={"complete": dg.Out(dg.Nothing)})
     def start_nothing():
         pass
 
-    @op(
+    @dg.op(
         ins={
-            "add_complete": In(Nothing),
-            "yield_complete": In(Nothing),
+            "add_complete": dg.In(dg.Nothing),
+            "yield_complete": dg.In(dg.Nothing),
         }
     )
     def end_nothing():
         pass
 
-    @op
+    @dg.op
     def emit_value() -> int:
         return 1
 
-    @op(ins={"on_complete": In(Nothing), "num": In(Int)})
+    @dg.op(ins={"on_complete": dg.In(dg.Nothing), "num": dg.In(dg.Int)})
     def add_value(num) -> int:
         return 1 + num
 
-    @op(
+    @dg.op(
         name="yield_values",
-        ins={"on_complete": In(Nothing)},
+        ins={"on_complete": dg.In(dg.Nothing)},
         out={
-            "num_1": Out(Int),
-            "num_2": Out(Int),
-            "complete": Out(Nothing),
+            "num_1": dg.Out(dg.Int),
+            "num_2": dg.Out(dg.Int),
+            "complete": dg.Out(dg.Nothing),
         },
     )
     def yield_values():
-        yield Output(1, "num_1")
-        yield Output(2, "num_2")
-        yield Output(None, "complete")
+        yield dg.Output(1, "num_1")
+        yield dg.Output(2, "num_2")
+        yield dg.Output(None, "complete")
 
-    @job
+    @dg.job
     def simple_exc():
         start_complete = start_nothing()
         _, _, yield_complete = yield_values(start_complete)
@@ -75,60 +61,60 @@ def test_valid_nothing_dependencies():
 
 
 def test_output_input_type_mismatch():
-    @op
+    @dg.op
     def do_nothing():
         pass
 
-    @op(ins={"num": In(Int)})
+    @dg.op(ins={"num": dg.In(dg.Int)})
     def add_one(num) -> int:
         return num + 1
 
-    @job
+    @dg.job
     def bad_dep():
         add_one(do_nothing())
 
-    with pytest.raises(DagsterTypeCheckDidNotPass):
+    with pytest.raises(dg.DagsterTypeCheckDidNotPass):
         bad_dep.execute_in_process()
 
 
 def test_result_type_check():
-    @op(out=Out(Nothing))
+    @dg.op(out=dg.Out(dg.Nothing))
     def bad():
-        yield Output("oops")
+        yield dg.Output("oops")
 
-    @job
+    @dg.job
     def fail():
         bad()
 
-    with pytest.raises(DagsterTypeCheckDidNotPass):
+    with pytest.raises(dg.DagsterTypeCheckDidNotPass):
         fail.execute_in_process()
 
 
 def test_nothing_inputs():
-    @op(ins={"never_defined": In(Nothing)})
+    @dg.op(ins={"never_defined": dg.In(dg.Nothing)})
     def emit_one():
         return 1
 
-    @op
+    @dg.op
     def emit_two():
         return 2
 
-    @op
+    @dg.op
     def emit_three():
         return 3
 
-    @op(out=Out(Nothing))
+    @dg.op(out=dg.Out(dg.Nothing))
     def emit_nothing():
         pass
 
-    @op(
+    @dg.op(
         ins={
-            "_one": In(Nothing),
-            "one": In(Int),
-            "_two": In(Nothing),
-            "two": In(Int),
-            "_three": In(Nothing),
-            "three": In(Int),
+            "_one": dg.In(dg.Nothing),
+            "one": dg.In(dg.Int),
+            "_two": dg.In(dg.Nothing),
+            "two": dg.In(dg.Int),
+            "_three": dg.In(dg.Nothing),
+            "three": dg.In(dg.Int),
         }
     )
     def adder(one, two, three):
@@ -137,7 +123,7 @@ def test_nothing_inputs():
         assert three == 3
         return one + two + three
 
-    @job
+    @dg.job
     def input_test():
         _one = emit_nothing.alias("_one")()
         _two = emit_nothing.alias("_two")()
@@ -158,19 +144,19 @@ def test_nothing_inputs():
 def test_fanin_deps():
     called = defaultdict(int)
 
-    @op
+    @dg.op
     def emit_two():
         return 2
 
-    @op(out=Out(Nothing))
+    @dg.op(out=dg.Out(dg.Nothing))
     def emit_nothing():
         called["emit_nothing"] += 1
 
-    @op(
+    @dg.op(
         ins={
-            "ready": In(Nothing),
-            "num_1": In(Int),
-            "num_2": In(Int),
+            "ready": dg.In(dg.Nothing),
+            "num_1": dg.In(dg.Int),
+            "num_2": dg.In(dg.Int),
         }
     )
     def adder(num_1, num_2):
@@ -178,7 +164,7 @@ def test_fanin_deps():
         called["adder"] += 1
         return num_1 + num_2
 
-    @job
+    @dg.job
     def input_test():
         adder(
             ready=[
@@ -197,27 +183,27 @@ def test_fanin_deps():
 
 
 def test_valid_nothing_fns():
-    @op(out=Out(Nothing))
+    @dg.op(out=dg.Out(dg.Nothing))
     def just_pass():
         pass
 
-    @op(out=Out(Nothing))
+    @dg.op(out=dg.Out(dg.Nothing))
     def just_pass2():
         pass
 
-    @op(out=Out(Nothing))
+    @dg.op(out=dg.Out(dg.Nothing))
     def ret_none():
         return None
 
-    @op(out=Out(Nothing))
+    @dg.op(out=dg.Out(dg.Nothing))
     def yield_none():
-        yield Output(None)
+        yield dg.Output(None)
 
-    @op(out=Out(Nothing))
+    @dg.op(out=dg.Out(dg.Nothing))
     def yield_stuff():
         yield AssetMaterialization.file("/path/to/nowhere")
 
-    @job
+    @dg.job
     def fn_test():
         just_pass()
         just_pass2()
@@ -237,25 +223,25 @@ def test_valid_nothing_fns():
 
 
 def test_invalid_nothing_fns():
-    @op(out=Out(Nothing))
+    @dg.op(out=dg.Out(dg.Nothing))
     def ret_val():
         return "val"
 
-    @op(out=Out(Nothing))
+    @dg.op(out=dg.Out(dg.Nothing))
     def yield_val():
-        yield Output("val")
+        yield dg.Output("val")
 
-    with pytest.raises(DagsterTypeCheckDidNotPass):
+    with pytest.raises(dg.DagsterTypeCheckDidNotPass):
 
-        @job
+        @dg.job
         def fn_test():
             ret_val()
 
         fn_test.execute_in_process()
 
-    with pytest.raises(DagsterTypeCheckDidNotPass):
+    with pytest.raises(dg.DagsterTypeCheckDidNotPass):
 
-        @job
+        @dg.job
         def fn_test2():
             yield_val()
 
@@ -263,41 +249,41 @@ def test_invalid_nothing_fns():
 
 
 def test_wrapping_nothing():
-    with pytest.raises(DagsterInvalidDefinitionError):
+    with pytest.raises(dg.DagsterInvalidDefinitionError):
 
-        @op(out=Out(List[Nothing]))
+        @dg.op(out=dg.Out(dg.List[dg.Nothing]))
         def _():
             pass
 
-    with pytest.raises(DagsterInvalidDefinitionError):
+    with pytest.raises(dg.DagsterInvalidDefinitionError):
 
-        @op(ins={"in": In(List[Nothing])})
+        @dg.op(ins={"in": dg.In(dg.List[dg.Nothing])})
         def _(_in):
             pass
 
-    with pytest.raises(DagsterInvalidDefinitionError):
+    with pytest.raises(dg.DagsterInvalidDefinitionError):
 
-        @op(out=Out(Optional[Nothing]))
+        @dg.op(out=dg.Out(dg.Optional[dg.Nothing]))
         def _():
             pass
 
-    with pytest.raises(DagsterInvalidDefinitionError):
+    with pytest.raises(dg.DagsterInvalidDefinitionError):
 
-        @op(ins={"in": In(Optional[Nothing])})
+        @dg.op(ins={"in": dg.In(dg.Optional[dg.Nothing])})
         def _(_in):
             pass
 
 
 def test_execution_plan():
-    @op(out=Out(Nothing))
+    @dg.op(out=dg.Out(dg.Nothing))
     def emit_nothing():
         yield AssetMaterialization.file(path="/path/")
 
-    @op(ins={"ready": In(Nothing)})
+    @dg.op(ins={"ready": dg.In(dg.Nothing)})
     def consume_nothing():
         pass
 
-    @job
+    @dg.job
     def pipe():
         consume_nothing(emit_nothing())
 
@@ -313,37 +299,37 @@ def test_execution_plan():
 
 def test_nothing_infer():
     with pytest.raises(
-        DagsterInvalidDefinitionError,
+        dg.DagsterInvalidDefinitionError,
         match="which should not be included since no data will be passed for it",
     ):
 
-        @op(ins={"_previous_steps_complete": In(Nothing)})
+        @dg.op(ins={"_previous_steps_complete": dg.In(dg.Nothing)})
         def _bad(_previous_steps_complete):
             pass
 
     with pytest.raises(
-        DagsterInvalidDefinitionError,
+        dg.DagsterInvalidDefinitionError,
         match=(
             r"must be used via In\(\) and no parameter should be included in the @op decorated"
             r" function"
         ),
     ):
 
-        @op
+        @dg.op
         def _bad(_previous_steps_complete: Nothing):  # type: ignore
             pass
 
 
 def test_none_output_non_none_input():
-    @op
+    @dg.op
     def op1():
         pass
 
-    @op
+    @dg.op
     def op2(input1):
         assert input1 is None
 
-    @job
+    @dg.job
     def job1():
         op2(op1())
 
@@ -351,25 +337,25 @@ def test_none_output_non_none_input():
 
 
 def test_asset_none_output_non_none_input():
-    @asset
+    @dg.asset
     def asset1():
         pass
 
-    @asset
+    @dg.asset
     def asset2(asset1):
         assert asset1 is None
 
-    assert materialize_to_memory([asset1, asset2]).success
+    assert dg.materialize_to_memory([asset1, asset2]).success
 
 
 def test_asset_nothing_output_non_none_input():
-    @asset(dagster_type=Nothing)  # pyright: ignore[reportArgumentType]
+    @dg.asset(dagster_type=Nothing)  # pyright: ignore[reportArgumentType]
     def asset1():
         pass
 
-    @asset
+    @dg.asset
     def asset2(asset1):
         assert asset1 is None
 
     with pytest.raises(KeyError):
-        assert materialize_to_memory([asset1, asset2]).success
+        assert dg.materialize_to_memory([asset1, asset2]).success

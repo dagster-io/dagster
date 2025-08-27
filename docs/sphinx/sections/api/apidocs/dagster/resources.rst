@@ -6,7 +6,7 @@ Resources
 Pythonic resource system
 ------------------------
 
-The following classes are used as part of the new `Pythonic resources system <https://docs.dagster.io/guides/build/external-resources/>`_.
+The following classes are used as part of the new `Pythonic resources system <https://docs.dagster.io/guides/build/external-resources>`_.
 
 
 .. autoclass:: ConfigurableResource

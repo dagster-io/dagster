@@ -6,7 +6,7 @@ import signal
 import subprocess
 import sys
 from collections.abc import Iterator, Mapping, Sequence
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 from pathlib import Path
 from typing import Any, Final, NamedTuple, Optional, Union, cast
 
@@ -23,12 +23,18 @@ from dagster import (
 )
 from dagster._annotations import public
 from dagster._core.errors import DagsterExecutionInterruptedError
-from dbt.adapters.base.impl import BaseAdapter, BaseColumn, BaseRelation
+from packaging import version
 from typing_extensions import Literal
 
-from dagster_dbt.core.dbt_cli_event import DbtCliEventMessage
+from dagster_dbt.compat import BaseAdapter, BaseColumn, BaseRelation
+from dagster_dbt.core.dbt_cli_event import (
+    DbtCliEventMessage,
+    DbtCoreCliEventMessage,
+    DbtFusionCliEventMessage,
+)
 from dagster_dbt.core.dbt_event_iterator import DbtDagsterEventType, DbtEventIterator
 from dagster_dbt.dagster_dbt_translator import DagsterDbtTranslator
+from dagster_dbt.dbt_project import DbtProject
 from dagster_dbt.errors import DagsterDbtCliRuntimeError
 
 PARTIAL_PARSE_FILE_NAME = "partial_parse.msgpack"
@@ -75,6 +81,7 @@ class DbtCliInvocation:
     Args:
         process (subprocess.Popen): The process running the dbt command.
         manifest (Mapping[str, Any]): The dbt manifest blob.
+        project (Optional[DbtProject]): The dbt project.
         project_dir (Path): The path to the dbt project.
         target_path (Path): The path to the dbt target folder.
         raise_on_error (bool): Whether to raise an exception if the dbt command fails.
@@ -86,6 +93,8 @@ class DbtCliInvocation:
     project_dir: Path
     target_path: Path
     raise_on_error: bool
+    cli_version: version.Version
+    project: Optional[DbtProject] = field(default=None)
     context: Optional[Union[OpExecutionContext, AssetExecutionContext]] = field(
         default=None, repr=False
     )
@@ -140,6 +149,8 @@ class DbtCliInvocation:
         raise_on_error: bool,
         context: Optional[Union[OpExecutionContext, AssetExecutionContext]],
         adapter: Optional[BaseAdapter],
+        cli_version: version.Version,
+        dbt_project: Optional[DbtProject] = None,
     ) -> "DbtCliInvocation":
         # Attempt to take advantage of partial parsing. If there is a `partial_parse.msgpack` in
         # in the target folder, then copy it to the dynamic target path.
@@ -176,12 +187,14 @@ class DbtCliInvocation:
         dbt_cli_invocation = cls(
             process=process,
             manifest=manifest,
+            project=dbt_project,
             dagster_dbt_translator=dagster_dbt_translator,
             project_dir=project_dir,
             target_path=target_path,
             raise_on_error=raise_on_error,
             context=context,
             adapter=adapter,
+            cli_version=cli_version,
         )
         logger.info(f"Running dbt command: `{dbt_cli_invocation.dbt_command}`.")
 
@@ -279,6 +292,7 @@ class DbtCliInvocation:
                 dagster_dbt_translator=self.dagster_dbt_translator,
                 context=self.context,
                 target_path=self.target_path,
+                project=self.project,
             )
 
     @public
@@ -330,20 +344,20 @@ class DbtCliInvocation:
                 # If we can't parse the event, then just emit it as a raw log.
                 sys.stdout.write(raw_event + "\n")
                 sys.stdout.flush()
-
                 continue
 
             unique_id: Optional[str] = raw_event["data"].get("node_info", {}).get("unique_id")
-            is_result_event = DbtCliEventMessage.is_result_event(raw_event)
-            event_history_metadata: dict[str, Any] = {}
-            if unique_id and is_result_event:
+
+            if self.cli_version.major < 2:
+                event = DbtCoreCliEventMessage(raw_event=raw_event, event_history_metadata={})
+            else:
+                event = DbtFusionCliEventMessage(raw_event=raw_event, event_history_metadata={})
+
+            if unique_id and event.is_result_event:
                 event_history_metadata = copy.deepcopy(
                     event_history_metadata_by_unique_id.get(unique_id, {})
                 )
-
-            event = DbtCliEventMessage(
-                raw_event=raw_event, event_history_metadata=event_history_metadata
-            )
+                event = replace(event, event_history_metadata=event_history_metadata)
 
             # Attempt to parse the column level metadata from the event message.
             # If it exists, save it as historical metadata to attach to the NodeFinished event.

@@ -50,6 +50,8 @@ enum DagsterEventType {
   STEP_EXPECTATION_RESULT
   ASSET_CHECK_EVALUATION_PLANNED
   ASSET_CHECK_EVALUATION
+  ASSET_HEALTH_CHANGED
+  ASSET_WIPED
   RUN_ENQUEUED
   RUN_DEQUEUED
   RUN_STARTING
@@ -606,21 +608,18 @@ type Asset {
   key: AssetKey!
   assetMaterializations(
     partitions: [String!]
-    partitionInLast: Int
     beforeTimestampMillis: String
     afterTimestampMillis: String
     limit: Int
   ): [MaterializationEvent!]!
   assetObservations(
     partitions: [String!]
-    partitionInLast: Int
     beforeTimestampMillis: String
     afterTimestampMillis: String
     limit: Int
   ): [ObservationEvent!]!
   assetEventHistory(
     partitions: [String!]
-    partitionInLast: Int
     beforeTimestampMillis: String
     afterTimestampMillis: String
     limit: Int!
@@ -678,7 +677,6 @@ enum AssetEventHistoryEventTypeSelector {
 }
 
 type AssetNode {
-  assetHealth: AssetHealth
   assetKey: AssetKey!
   assetMaterializations(
     partitions: [String!]
@@ -707,6 +705,7 @@ type AssetNode {
   description: String
   freshnessInfo: AssetFreshnessInfo
   freshnessPolicy: FreshnessPolicy
+  freshnessStatusInfo: FreshnessStatusInfo
   internalFreshnessPolicy: InternalFreshnessPolicy
   autoMaterializePolicy: AutoMaterializePolicy
   automationCondition: AutomationCondition
@@ -750,69 +749,6 @@ type AssetNode {
   assetChecksOrError(limit: Int, pipeline: PipelineSelector): AssetChecksOrError!
   currentAutoMaterializeEvaluationId: ID
   targetingInstigators: [Instigator!]!
-}
-
-type AssetHealth {
-  assetHealth: AssetHealthStatus!
-  materializationStatus: AssetHealthStatus!
-  materializationStatusMetadata: AssetHealthMaterializationMeta
-  assetChecksStatus: AssetHealthStatus!
-  assetChecksStatusMetadata: AssetHealthCheckMeta
-  freshnessStatus: AssetHealthStatus!
-  freshnessStatusMetadata: AssetHealthFreshnessMeta
-}
-
-enum AssetHealthStatus {
-  HEALTHY
-  WARNING
-  DEGRADED
-  UNKNOWN
-  NOT_APPLICABLE
-}
-
-union AssetHealthMaterializationMeta =
-  | AssetHealthMaterializationDegradedPartitionedMeta
-  | AssetHealthMaterializationHealthyPartitionedMeta
-  | AssetHealthMaterializationDegradedNotPartitionedMeta
-
-type AssetHealthMaterializationDegradedPartitionedMeta {
-  numFailedPartitions: Int!
-  numMissingPartitions: Int!
-  totalNumPartitions: Int!
-}
-
-type AssetHealthMaterializationHealthyPartitionedMeta {
-  numMissingPartitions: Int!
-  totalNumPartitions: Int!
-}
-
-type AssetHealthMaterializationDegradedNotPartitionedMeta {
-  failedRunId: String!
-}
-
-union AssetHealthCheckMeta =
-  | AssetHealthCheckDegradedMeta
-  | AssetHealthCheckWarningMeta
-  | AssetHealthCheckUnknownMeta
-
-type AssetHealthCheckDegradedMeta {
-  numFailedChecks: Int!
-  numWarningChecks: Int!
-  totalNumChecks: Int!
-}
-
-type AssetHealthCheckWarningMeta {
-  numWarningChecks: Int!
-  totalNumChecks: Int!
-}
-
-type AssetHealthCheckUnknownMeta {
-  numNotExecutedChecks: Int!
-  totalNumChecks: Int!
-}
-
-type AssetHealthFreshnessMeta {
-  lastMaterializedTimestamp: Float
 }
 
 type MaterializationUpstreamDataVersion {
@@ -926,6 +862,23 @@ type FreshnessPolicy {
   cronSchedule: String
   cronScheduleTimezone: String
   lastEvaluationTimestamp: String
+}
+
+type FreshnessStatusInfo {
+  freshnessStatus: AssetHealthStatus!
+  freshnessStatusMetadata: AssetHealthFreshnessMeta
+}
+
+enum AssetHealthStatus {
+  HEALTHY
+  WARNING
+  DEGRADED
+  UNKNOWN
+  NOT_APPLICABLE
+}
+
+type AssetHealthFreshnessMeta {
+  lastMaterializedTimestamp: Float
 }
 
 union InternalFreshnessPolicy = TimeWindowFreshnessPolicy | CronFreshnessPolicy
@@ -1161,6 +1114,57 @@ type AssetCheckNeedsAgentUpgradeError implements Error {
 
 union Instigator = Schedule | Sensor
 
+type AssetHealth {
+  assetHealth: AssetHealthStatus!
+  materializationStatus: AssetHealthStatus!
+  materializationStatusMetadata: AssetHealthMaterializationMeta
+  assetChecksStatus: AssetHealthStatus!
+  assetChecksStatusMetadata: AssetHealthCheckMeta
+  freshnessStatus: AssetHealthStatus!
+  freshnessStatusMetadata: AssetHealthFreshnessMeta
+}
+
+union AssetHealthMaterializationMeta =
+  | AssetHealthMaterializationDegradedPartitionedMeta
+  | AssetHealthMaterializationHealthyPartitionedMeta
+  | AssetHealthMaterializationDegradedNotPartitionedMeta
+
+type AssetHealthMaterializationDegradedPartitionedMeta {
+  numFailedPartitions: Int!
+  numMissingPartitions: Int!
+  totalNumPartitions: Int!
+}
+
+type AssetHealthMaterializationHealthyPartitionedMeta {
+  numMissingPartitions: Int!
+  totalNumPartitions: Int!
+}
+
+type AssetHealthMaterializationDegradedNotPartitionedMeta {
+  failedRunId: String!
+}
+
+union AssetHealthCheckMeta =
+  | AssetHealthCheckDegradedMeta
+  | AssetHealthCheckWarningMeta
+  | AssetHealthCheckUnknownMeta
+
+type AssetHealthCheckDegradedMeta {
+  numFailedChecks: Int!
+  numWarningChecks: Int!
+  totalNumChecks: Int!
+}
+
+type AssetHealthCheckWarningMeta {
+  numWarningChecks: Int!
+  totalNumChecks: Int!
+}
+
+type AssetHealthCheckUnknownMeta {
+  numNotExecutedChecks: Int!
+  totalNumChecks: Int!
+}
+
 enum EvaluationErrorReason {
   RUNTIME_TYPE_MISMATCH
   MISSING_REQUIRED_FIELD
@@ -1392,6 +1396,7 @@ union DagsterRunEvent =
   | ExecutionStepSuccessEvent
   | ExecutionStepUpForRetryEvent
   | ExecutionStepRestartEvent
+  | HealthChangedEvent
   | LogMessageEvent
   | ResourceInitFailureEvent
   | ResourceInitStartedEvent
@@ -1424,6 +1429,24 @@ union DagsterRunEvent =
   | AssetMaterializationPlannedEvent
   | AssetCheckEvaluationPlannedEvent
   | AssetCheckEvaluationEvent
+
+type HealthChangedEvent implements MessageEvent & StepEvent & DisplayableEvent {
+  runId: String!
+  message: String!
+  timestamp: String!
+  level: LogLevel!
+  stepKey: String
+  solidHandleID: String
+  eventType: DagsterEventType
+  label: String
+  description: String
+  metadataEntries: [MetadataEntry!]!
+  assetKey: AssetKey
+  runOrError: RunOrError!
+  stepStats: RunStepStats!
+  partition: String
+  tags: [EventTag!]!
+}
 
 type LogsCapturedEvent implements MessageEvent {
   runId: String!
@@ -1750,6 +1773,7 @@ type WorkspaceLocationEntry {
   displayMetadata: [RepositoryMetadata!]!
   updatedTimestamp: Float!
   versionKey: String!
+  defsStateInfo: DefsStateInfo
   permissions: [Permission!]!
   featureFlags: [FeatureFlag!]!
 }
@@ -2488,6 +2512,20 @@ union RepositoryOrError = PythonError | Repository | RepositoryNotFoundError
 
 union WorkspaceLocationEntryOrError = WorkspaceLocationEntry | PythonError
 
+type DefsStateInfo {
+  keyStateInfo: [DefsStateInfoEntry!]!
+}
+
+type DefsKeyStateInfo {
+  version: String!
+  createTimestamp: Float!
+}
+
+type DefsStateInfoEntry {
+  name: String!
+  info: DefsKeyStateInfo!
+}
+
 input AssetKeyInput {
   path: [String!]!
 }
@@ -2555,6 +2593,7 @@ input LaunchBackfillParams {
   forceSynchronousSubmission: Boolean
   title: String
   description: String
+  runConfigData: RunConfigData
 }
 
 input PartitionSetSelector {
@@ -2698,6 +2737,7 @@ type Instance {
   concurrencyLimit(concurrencyKey: String): ConcurrencyKeyInfo!
   useAutoMaterializeSensors: Boolean!
   poolConfig: PoolConfig
+  freshnessEvaluationEnabled: Boolean!
 }
 
 type RunQueueConfig {
@@ -2773,6 +2813,7 @@ type RunRequest {
   tags: [PipelineTag!]!
   runConfigYaml: String!
   assetSelection: [AssetKey!]
+  assetChecks: [AssetCheckhandle!]
   jobName: String
 }
 
@@ -3645,6 +3686,7 @@ type Query {
     limit: Int!
     cursor: String
   ): [AssetCheckExecution!]!
+  latestDefsStateInfo: DefsStateInfo
 }
 
 union WorkspaceOrError = Workspace | PythonError

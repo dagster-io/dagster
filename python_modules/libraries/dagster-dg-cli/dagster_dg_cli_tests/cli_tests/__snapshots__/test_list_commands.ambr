@@ -1,30 +1,52 @@
 # serializer version: 1
+# name: test_list_component_tree_succeeds
+  '''
+  ├── assets
+  │   └── ...
+  ├── my_function
+  │   └── defs.yaml (FunctionComponent)
+  └── pythonic_components
+      └── my_component.py
+          ├── first
+          └── second
+  '''
+# ---
 # name: test_list_defs_complex_assets_succeeds
   '''
-  ┏━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
-  ┃ Section      ┃ Definitions                                                            ┃
-  ┡━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┩
-  │ Assets       │ ┏━━━━━━━━━┳━━━━━━━━━┳━━━━━━━┳━━━━━━━┳━━━━━━━━━━━━━━━━━━┓               │
-  │              │ ┃ Key     ┃ Group   ┃ Deps  ┃ Kinds ┃ Description      ┃               │
-  │              │ ┡━━━━━━━━━╇━━━━━━━━━╇━━━━━━━╇━━━━━━━╇━━━━━━━━━━━━━━━━━━┩               │
-  │              │ │ alpha   │ group_1 │       │ sling │                  │               │
-  │              │ ├─────────┼─────────┼───────┼───────┼──────────────────┤               │
-  │              │ │ beta    │ group_2 │       │ dbt   │ This is beta.    │               │
-  │              │ ├─────────┼─────────┼───────┼───────┼──────────────────┤               │
-  │              │ │ delta   │ group_2 │ alpha │ dbt   │                  │               │
-  │              │ │         │         │ beta  │       │                  │               │
-  │              │ ├─────────┼─────────┼───────┼───────┼──────────────────┤               │
-  │              │ │ epsilon │ group_2 │ delta │ dbt   │ This is epsilon. │               │
-  │              │ └─────────┴─────────┴───────┴───────┴──────────────────┘               │
-  │ Asset Checks │ ┏━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓ │
-  │              │ ┃ Key                    ┃ Deps  ┃ Description                       ┃ │
-  │              │ ┡━━━━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┩ │
-  │              │ │ alpha:alpha_beta_check │ alpha │ This check is for alpha and beta. │ │
-  │              │ │                        │ beta  │                                   │ │
-  │              │ ├────────────────────────┼───────┼───────────────────────────────────┤ │
-  │              │ │ alpha:alpha_check      │ alpha │ This check is for alpha.          │ │
-  │              │ └────────────────────────┴───────┴───────────────────────────────────┘ │
-  └──────────────┴────────────────────────────────────────────────────────────────────────┘
+  ┏━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
+  ┃ Section      ┃ Definitions                                                                                           ┃
+  ┡━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┩
+  │ Assets       │ ┏━━━━━━━━━┳━━━━━━━━━┳━━━━━━━━━┳━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓ │
+  │              │ ┃ Key     ┃ Group   ┃ Deps    ┃ Kinds ┃ Description                                                 ┃ │
+  │              │ ┡━━━━━━━━━╇━━━━━━━━━╇━━━━━━━━━╇━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┩ │
+  │              │ │ alpha   │ group_1 │         │ sling │                                                             │ │
+  │              │ ├─────────┼─────────┼─────────┼───────┼─────────────────────────────────────────────────────────────┤ │
+  │              │ │ beta    │ group_2 │         │ dbt   │ This is beta.                                               │ │
+  │              │ ├─────────┼─────────┼─────────┼───────┼─────────────────────────────────────────────────────────────┤ │
+  │              │ │ delta   │ group_2 │ alpha   │ dbt   │                                                             │ │
+  │              │ │         │         │ beta    │       │                                                             │ │
+  │              │ ├─────────┼─────────┼─────────┼───────┼─────────────────────────────────────────────────────────────┤ │
+  │              │ │ epsilon │ group_2 │ delta   │ dbt   │ This is epsilon.                                            │ │
+  │              │ ├─────────┼─────────┼─────────┼───────┼─────────────────────────────────────────────────────────────┤ │
+  │              │ │ omega   │ default │ alpha   │       │ This is omega asset and it has a very very very long        │ │
+  │              │ │         │         │ beta    │       │ description that should be truncated.                       │ │
+  │              │ │         │         │ delta   │       │                                                             │ │
+  │              │ │         │         │ epsilon │       │ Wow look …                                                  │ │
+  │              │ └─────────┴─────────┴─────────┴───────┴─────────────────────────────────────────────────────────────┘ │
+  │ Asset Checks │ ┏━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓                                │
+  │              │ ┃ Key                    ┃ Deps  ┃ Description                       ┃                                │
+  │              │ ┡━━━━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┩                                │
+  │              │ │ alpha:alpha_beta_check │ alpha │ This check is for alpha and beta. │                                │
+  │              │ │                        │ beta  │                                   │                                │
+  │              │ ├────────────────────────┼───────┼───────────────────────────────────┤                                │
+  │              │ │ alpha:alpha_check      │ alpha │ This check is for alpha.          │                                │
+  │              │ └────────────────────────┴───────┴───────────────────────────────────┘                                │
+  │ Jobs         │ ┏━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━┓                                                              │
+  │              │ ┃ Key                    ┃ Description ┃                                                              │
+  │              │ ┡━━━━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━┩                                                              │
+  │              │ │ should_not_be_included │             │                                                              │
+  │              │ └────────────────────────┴─────────────┘                                                              │
+  └──────────────┴───────────────────────────────────────────────────────────────────────────────────────────────────────┘
   '''
 # ---
 # name: test_list_defs_succeeds[False]
@@ -64,43 +86,61 @@
 # ---
 # name: test_list_defs_succeeds[True]
   '''
-  [
-      {
-          "key": "my_asset_1",
-          "deps": [],
-          "kinds": [],
-          "group": "default",
-          "description": null,
-          "automation_condition": null,
-          "tags": [],
-          "metadata": []
-      },
-      {
-          "key": "my_asset_2",
-          "deps": [],
-          "kinds": [],
-          "group": "default",
-          "description": null,
-          "automation_condition": null,
-          "tags": [],
-          "metadata": []
-      },
-      {
-          "name": "my_job",
-          "description": null
-      },
-      {
-          "name": "my_schedule",
-          "cron_schedule": "@daily"
-      },
-      {
-          "name": "my_sensor"
-      },
-      {
-          "name": "my_resource",
-          "type": "foo_bar.defs.mydefs.definitions.MyResource"
-      }
-  ]
+  {
+      "assets": [
+          {
+              "key": "my_asset_1",
+              "deps": [],
+              "kinds": [],
+              "group": "default",
+              "description": null,
+              "automation_condition": null,
+              "tags": [],
+              "is_executable": true,
+              "source": "src/foo_bar/defs/mydefs/defs.yaml:1",
+              "owners": []
+          },
+          {
+              "key": "my_asset_2",
+              "deps": [],
+              "kinds": [],
+              "group": "default",
+              "description": null,
+              "automation_condition": null,
+              "tags": [],
+              "is_executable": true,
+              "source": "src/foo_bar/defs/mydefs/defs.yaml:1",
+              "owners": []
+          }
+      ],
+      "asset_checks": [],
+      "jobs": [
+          {
+              "name": "my_job",
+              "description": null,
+              "source": "src/foo_bar/defs/mydefs/defs.yaml:1"
+          }
+      ],
+      "resources": [
+          {
+              "name": "my_resource",
+              "type": "foo_bar.defs.mydefs.definitions.MyResource"
+          }
+      ],
+      "schedules": [
+          {
+              "name": "my_schedule",
+              "cron_schedule": "@daily",
+              "source": "src/foo_bar/defs/mydefs/defs.yaml:1"
+          }
+      ],
+      "sensors": [
+          {
+              "name": "my_sensor",
+              "source": "src/foo_bar/defs/mydefs/defs.yaml:1"
+          }
+      ]
+  }
   '''
 # ---
 # name: test_list_defs_with_env_file_succeeds

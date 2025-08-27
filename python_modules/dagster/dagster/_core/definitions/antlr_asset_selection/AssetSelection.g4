@@ -43,7 +43,7 @@ attributeExpr:
 EQUAL: '=';
 
 // Value can be a quoted or unquoted string
-value: QUOTED_STRING | UNQUOTED_STRING;
+value: NULL_STRING | QUOTED_STRING | UNQUOTED_STRING;
 keyValue:
 	QUOTED_STRING
 	| UNQUOTED_STRING
@@ -86,6 +86,7 @@ ROOTS: 'roots';
 QUOTED_STRING: '"' (~["\\\r\n])* '"';
 UNQUOTED_STRING: [a-zA-Z_][a-zA-Z0-9_/]*;
 UNQUOTED_WILDCARD_STRING: [a-zA-Z_*][a-zA-Z0-9_*/]*;
+NULL_STRING: '<null>';
 
 // Whitespace
 WS: [ \t\r\n]+ -> skip;

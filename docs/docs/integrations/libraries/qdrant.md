@@ -25,4 +25,4 @@ partnerlink: https://qdrant.tech/
 
 Qdrant (read: quadrant) is a vector similarity search engine. It provides a production-ready service with a convenient API to store, search, and manage vectors with additional payload and extended filtering support. It makes it useful for all sorts of neural network or semantic-based matching, faceted search, and other applications.
 
-Learn more from the [Qdrant documentation](https://qdrant.tech/).
+Learn more from the [Qdrant documentation](https://qdrant.tech).

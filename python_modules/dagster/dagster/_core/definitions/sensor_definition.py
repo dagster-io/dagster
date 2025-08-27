@@ -13,7 +13,7 @@ from typing_extensions import TypeAlias
 import dagster._check as check
 from dagster._annotations import deprecated, deprecated_param, public
 from dagster._core.decorator_utils import get_function_params
-from dagster._core.definitions.asset_check_evaluation import AssetCheckEvaluation
+from dagster._core.definitions.asset_checks.asset_check_evaluation import AssetCheckEvaluation
 from dagster._core.definitions.asset_selection import (
     AssetCheckKeysSelection,
     AssetSelection,
@@ -32,7 +32,6 @@ from dagster._core.definitions.instigation_logger import InstigationLogger
 from dagster._core.definitions.job_definition import JobDefinition
 from dagster._core.definitions.metadata import RawMetadataMapping, normalize_metadata
 from dagster._core.definitions.metadata.metadata_value import MetadataValue
-from dagster._core.definitions.partition import CachingDynamicPartitionsLoader
 from dagster._core.definitions.resource_annotation import get_resource_args
 from dagster._core.definitions.resource_definition import Resources
 from dagster._core.definitions.run_request import (
@@ -56,6 +55,7 @@ from dagster._core.errors import (
 )
 from dagster._core.instance import DagsterInstance
 from dagster._core.instance.ref import InstanceRef
+from dagster._core.instance.types import CachingDynamicPartitionsLoader
 from dagster._core.storage.dagster_run import DagsterRun
 from dagster._serdes import whitelist_for_serdes
 from dagster._time import get_current_datetime
@@ -66,13 +66,13 @@ from dagster._utils.warnings import deprecation_warning, normalize_renamed_param
 
 if TYPE_CHECKING:
     from dagster import ResourceDefinition
-    from dagster._core.definitions.assets import AssetsDefinition
+    from dagster._core.definitions.assets.definition.assets_definition import AssetsDefinition
     from dagster._core.definitions.definitions_class import Definitions
     from dagster._core.definitions.repository_definition import RepositoryDefinition
     from dagster._core.definitions.unresolved_asset_job_definition import (
         UnresolvedAssetJobDefinition,
     )
-    from dagster._core.remote_representation.origin import CodeLocationOrigin
+    from dagster._core.remote_origin import CodeLocationOrigin
 
 
 @whitelist_for_serdes
@@ -106,6 +106,7 @@ DEFAULT_SENSOR_DAEMON_INTERVAL = 30
     breaking_version="2.0",
     additional_warn_text="Use `last_tick_completion_time` instead.",
 )
+@public
 class SensorEvaluationContext:
     """The context object available as the argument to the evaluation function of a :py:class:`dagster.SensorDefinition`.
 
@@ -166,7 +167,7 @@ class SensorEvaluationContext:
     ):
         from dagster._core.definitions.definitions_class import Definitions
         from dagster._core.definitions.repository_definition import RepositoryDefinition
-        from dagster._core.remote_representation.origin import CodeLocationOrigin
+        from dagster._core.remote_origin import CodeLocationOrigin
 
         self._exit_stack = ExitStack()
         self._instance_ref = check.opt_inst_param(instance_ref, "instance_ref", InstanceRef)
@@ -554,6 +555,7 @@ def split_run_requests(
     return run_requests_for_backfill_daemon, run_requests_for_single_runs
 
 
+@public
 class SensorDefinition(IHasInternalInit):
     """Define a sensor that initiates a set of runs based on some external state.
 
@@ -595,19 +597,34 @@ class SensorDefinition(IHasInternalInit):
         metadata: Optional[RawMetadataMapping] = None,
     ) -> "SensorDefinition":
         """Returns a copy of this sensor with the attributes replaced."""
+        # unfortunate re-derivation of how inputs map to _targets
         if jobs is not None:
             new_jobs = jobs if len(jobs) > 1 else None
             new_job = jobs[0] if len(jobs) == 1 else None
-        else:
+            job_name = None
+        elif self.has_jobs:
             new_job = self.job if len(self.jobs) == 1 else None
             new_jobs = self.jobs if len(self.jobs) > 1 else None
+            job_name = None
+        elif self._targets:
+            check.invariant(
+                len(self._targets) == 1 and not self._targets[0].has_job_def,
+                "Expected only one target by job name string.",
+            )
+            job_name = self._targets[0].job_name
+            new_job = None
+            new_jobs = None
+        else:
+            job_name = None
+            new_job = None
+            new_jobs = None
 
         return SensorDefinition.dagster_internal_init(
             name=self.name,
             evaluation_fn=self._raw_fn,
             minimum_interval_seconds=self.minimum_interval_seconds,
             description=self.description,
-            job_name=None,  # if original init was passed job name, was resolved to a job
+            job_name=job_name,
             jobs=new_jobs,
             job=new_job,
             default_status=self.default_status,
@@ -848,20 +865,24 @@ class SensorDefinition(IHasInternalInit):
                 )
         raise DagsterInvalidDefinitionError("No job was provided to SensorDefinition.")
 
+    @property
+    def _job_targets(self) -> list[AutomationTarget]:
+        """Returns targets attached to job definitions (not just job name string)."""
+        return [t for t in self._targets if t.has_job_def]
+
     @public
     @property
     def jobs(self) -> list[ExecutableDefinition]:
         """List[Union[GraphDefinition, JobDefinition, UnresolvedAssetJobDefinition]]: A list of jobs
         that are targeted by this schedule.
         """
-        targets = [t for t in self._targets if t.has_job_def]
-        if not targets:
+        if not self._job_targets:
             raise DagsterInvalidDefinitionError("No job was provided to SensorDefinition.")
-        return [t.job_def for t in targets]
+        return [t.job_def for t in self._job_targets]
 
     @property
     def has_jobs(self) -> bool:
-        return bool(self._targets)
+        return bool(self._job_targets)
 
     @property
     def tags(self) -> Mapping[str, str]:
@@ -1073,7 +1094,6 @@ class SensorDefinition(IHasInternalInit):
                 resolved_run_requests.append(
                     run_request.with_resolved_tags_and_config(
                         target_definition=selected_job,
-                        current_time=None,
                         dynamic_partitions_store=context.caching_dynamic_partitions_loader,
                         dynamic_partitions_requests=dynamic_partitions_requests,
                     )
@@ -1242,6 +1262,7 @@ def wrap_sensor_evaluation(
     return _wrapped_fn
 
 
+@public
 def build_sensor_context(
     instance: Optional[DagsterInstance] = None,
     cursor: Optional[str] = None,

@@ -3,6 +3,8 @@ from typing import Any, NamedTuple, Optional
 
 from dagster_shared import check
 from dagster_shared.serdes import whitelist_for_serdes
+from dagster_shared.serdes.objects import DefsStateInfo
+from dagster_shared.serdes.serdes import serialize_value
 
 from dagster_cloud_cli.core.agent_queue import AgentQueue
 
@@ -48,19 +50,6 @@ class PexMetadata(
             check.opt_str_param(python_version, "python_version"),
         )
 
-    def resolve_image(self) -> Optional[str]:
-        if not self.python_version:
-            return None
-        agent_image_tag = os.getenv("DAGSTER_CLOUD_AGENT_IMAGE_TAG")
-        serverless_service_name = os.getenv("SERVERLESS_SERVICE_NAME")
-        if not agent_image_tag or not serverless_service_name:
-            return None
-        image_tag = agent_image_tag if self.python_version != "3.8" else _PYTHON_38_BASE_IMAGE_TAG
-        if serverless_service_name in ["serverless-agents", "serverless-agents-public-demo"]:
-            return f"657821118200.dkr.ecr.us-west-2.amazonaws.com/dagster-cloud-serverless-base-py{self.python_version}:{image_tag}"
-        else:
-            return f"878483074102.dkr.ecr.us-west-2.amazonaws.com/dagster-cloud-serverless-base-py{self.python_version}:{image_tag}"
-
 
 # History of CodeLocationDeployData
 # 1. Removal of `enable_metrics` field
@@ -82,6 +71,8 @@ class CodeLocationDeployData(
             ("cloud_context_env", dict[str, Any]),
             ("pex_metadata", Optional[PexMetadata]),
             ("agent_queue", Optional[AgentQueue]),
+            ("autoload_defs_module_name", Optional[str]),
+            ("defs_state_info", Optional[DefsStateInfo]),
         ],
     )
 ):
@@ -99,10 +90,19 @@ class CodeLocationDeployData(
         cloud_context_env=None,
         pex_metadata=None,
         agent_queue=None,
+        autoload_defs_module_name=None,
+        defs_state_info=None,
     ):
         check.invariant(
-            len([val for val in [python_file, package_name, module_name] if val]) == 1,
-            "Must supply exactly one of a file name, a package name, or a module name",
+            len(
+                [
+                    val
+                    for val in [python_file, package_name, module_name, autoload_defs_module_name]
+                    if val
+                ]
+            )
+            == 1,
+            "Must supply exactly one of python_file, package_name, module_name, or autoload_defs_module_name.",
         )
 
         return super().__new__(
@@ -119,6 +119,8 @@ class CodeLocationDeployData(
             check.opt_dict_param(cloud_context_env, "cloud_context_env", key_type=str),
             check.opt_inst_param(pex_metadata, "pex_metadata", PexMetadata),
             check.opt_str_param(agent_queue, "agent_queue"),
+            check.opt_str_param(autoload_defs_module_name, "autoload_defs_module_name"),
+            check.opt_inst_param(defs_state_info, "defs_state_info", DefsStateInfo),
         )
 
     def with_cloud_context_env(self, cloud_context_env: dict[str, Any]) -> "CodeLocationDeployData":
@@ -135,6 +137,11 @@ class CodeLocationDeployData(
             + (["--port", str(port)] if port else [])
             + (["--socket", str(socket)] if socket else [])
             + (["--enable-metrics"] if metrics_enabled else [])
+            + (
+                ["--defs-state-info", serialize_value(self.defs_state_info)]
+                if self.defs_state_info
+                else []
+            )
         )
 
     def get_multipex_server_env(self) -> dict[str, str]:
@@ -149,4 +156,9 @@ class CodeLocationDeployData(
                 "grpc",
             ]
             + (["--enable-metrics"] if metrics_enabled else [])
+            + (
+                ["--defs-state-info", serialize_value(self.defs_state_info)]
+                if self.defs_state_info
+                else []
+            )
         )

@@ -7,7 +7,7 @@ from typing import Any, Optional, cast
 
 import requests
 from dagster import Failure, MetadataValue, get_dagster_logger
-from dagster._annotations import preview
+from dagster._annotations import beta
 from dagster._utils.cached_method import cached_method
 from dagster_shared.dagster_model import DagsterModel
 from pydantic import Field
@@ -22,11 +22,11 @@ DAGSTER_DBT_CLOUD_BATCH_RUNS_REQUEST_LIMIT = int(
     os.getenv("DAGSTER_DBT_CLOUD_BATCH_RUNS_REQUEST_LIMIT", "100")
 )
 DAGSTER_ADHOC_TRIGGER_CAUSE = "Triggered by dagster."
-DEFAULT_POLL_INTERVAL = 1
-DEFAULT_POLL_TIMEOUT = 60
+DAGSTER_DBT_CLOUD_POLL_INTERVAL = int(os.getenv("DAGSTER_DBT_CLOUD_POLL_INTERVAL", "1"))
+DAGSTER_DBT_CLOUD_POLL_TIMEOUT = int(os.getenv("DAGSTER_DBT_CLOUD_POLL_TIMEOUT", "60"))
 
 
-@preview
+@beta
 class DbtCloudWorkspaceClient(DagsterModel):
     account_id: int = Field(
         ...,
@@ -321,9 +321,9 @@ class DbtCloudWorkspaceClient(DagsterModel):
             Dict[str, Any]: Parsed json data representing the API response.
         """
         if not poll_interval:
-            poll_interval = DEFAULT_POLL_INTERVAL
+            poll_interval = DAGSTER_DBT_CLOUD_POLL_INTERVAL
         if not poll_timeout:
-            poll_timeout = DEFAULT_POLL_TIMEOUT
+            poll_timeout = DAGSTER_DBT_CLOUD_POLL_TIMEOUT
         start_time = time.time()
         while time.time() - start_time < poll_timeout:
             run_details = self.get_run_details(run_id)

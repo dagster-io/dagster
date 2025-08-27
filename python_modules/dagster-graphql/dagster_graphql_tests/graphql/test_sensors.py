@@ -5,7 +5,7 @@ import sys
 import pytest
 from dagster._core.definitions.run_request import InstigatorType
 from dagster._core.definitions.sensor_definition import SensorType
-from dagster._core.remote_representation import InProcessCodeLocationOrigin, RemoteRepositoryOrigin
+from dagster._core.remote_origin import InProcessCodeLocationOrigin, RemoteRepositoryOrigin
 from dagster._core.remote_representation.external import CompoundID
 from dagster._core.scheduler.instigation import (
     InstigatorState,
@@ -1387,8 +1387,8 @@ def test_repository_batching(graphql_context: WorkspaceRequestContext):
     # each sensor (~5 distinct sensors in the repo)
     # 1) `get_batch_ticks` is called to fetch all the ticks for the sensors
     # 2) `all_instigator_state` is fetched to instantiate GrapheneSensor
-    assert counts.get("DagsterInstance.get_batch_ticks") == 1
-    assert counts.get("DagsterInstance.all_instigator_state") == 1
+    assert counts.get("SchedulingMethods.get_batch_ticks") == 1
+    assert counts.get("SchedulingMethods.all_instigator_state") == 1
 
 
 def test_sensor_ticks_filtered(graphql_context: WorkspaceRequestContext):

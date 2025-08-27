@@ -4,11 +4,13 @@ from collections.abc import Iterable, Mapping, Sequence
 from typing import TYPE_CHECKING, AbstractSet, NamedTuple, Optional, Union  # noqa: UP035
 
 import dagster._check as check
+from dagster._annotations import public
 from dagster._core.assets import AssetDetails
-from dagster._core.definitions.asset_check_spec import AssetCheckKey
+from dagster._core.definitions.asset_checks.asset_check_spec import AssetCheckKey
 from dagster._core.definitions.data_version import DATA_VERSION_TAG
 from dagster._core.definitions.events import AssetKey
-from dagster._core.definitions.partition import PartitionsDefinition
+from dagster._core.definitions.freshness import FreshnessStateRecord
+from dagster._core.definitions.partitions.definition import PartitionsDefinition
 from dagster._core.event_api import (
     AssetRecordsFilter,
     EventHandlerFn,
@@ -170,6 +172,7 @@ class AssetEntry(
         return max(event_ids) if event_ids else None
 
 
+@public
 class AssetRecord(
     NamedTuple("_NamedTuple", [("storage_id", int), ("asset_entry", AssetEntry)]),
     LoadableBy[AssetKey],
@@ -237,6 +240,7 @@ class PoolLimit:
     from_default: bool
 
 
+@public
 class EventLogStorage(ABC, MayHaveInstanceWeakref[T_DagsterInstance]):
     """Abstract base class for storing structured event logs from pipeline runs.
 
@@ -410,6 +414,12 @@ class EventLogStorage(ABC, MayHaveInstanceWeakref[T_DagsterInstance]):
     def get_asset_records(
         self, asset_keys: Optional[Sequence[AssetKey]] = None
     ) -> Sequence[AssetRecord]:
+        pass
+
+    @abstractmethod
+    def get_freshness_state_records(
+        self, keys: Sequence[AssetKey]
+    ) -> Mapping[AssetKey, FreshnessStateRecord]:
         pass
 
     @abstractmethod

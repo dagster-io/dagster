@@ -1,44 +1,12 @@
 from datetime import datetime
 from pathlib import Path
 
+import dagster as dg
 import pytest
 import pytz
-from dagster import (
-    AssetMaterialization,
-    AssetObservation,
-    BoolMetadataValue,
-    DagsterEventType,
-    FloatMetadataValue,
-    IntMetadataValue,
-    JsonMetadataValue,
-    MetadataValue,
-    NullMetadataValue,
-    PathMetadataValue,
-    PythonArtifactMetadataValue,
-    TextMetadataValue,
-    TimestampMetadataValue,
-    UrlMetadataValue,
-    job,
-    op,
-)
+from dagster import DagsterEventType, MetadataValue
 from dagster._check import CheckError
-from dagster._core.definitions.asset_key import AssetKey
-from dagster._core.definitions.decorators.asset_decorator import asset
-from dagster._core.definitions.definitions_class import Definitions
-from dagster._core.definitions.metadata import (
-    DagsterInvalidMetadata,
-    TableColumnLineageMetadataValue,
-    normalize_metadata,
-)
-from dagster._core.definitions.metadata.table import (
-    TableColumn,
-    TableColumnConstraints,
-    TableColumnDep,
-    TableColumnLineage,
-    TableConstraints,
-    TableRecord,
-    TableSchema,
-)
+from dagster._core.definitions.metadata import DagsterInvalidMetadata, normalize_metadata
 from dagster._core.execution.execution_result import ExecutionResult
 from dagster._core.snap.node import build_node_defs_snapshot
 
@@ -52,9 +20,9 @@ def step_events_of_type(result: ExecutionResult, node_name: str, event_type: Dag
 
 
 def test_metadata_asset_materialization():
-    @op(out={})
+    @dg.op(out={})
     def the_op(_context):
-        yield AssetMaterialization(
+        yield dg.AssetMaterialization(
             asset_key="foo",
             metadata={
                 "text": "FOO",
@@ -62,13 +30,13 @@ def test_metadata_asset_materialization():
                 "url": MetadataValue.url("http://fake.com"),
                 "float": 0.1,
                 "path": MetadataValue.path(Path("/a/b.csv")),
-                "python": MetadataValue.python_artifact(MetadataValue),
+                "python": MetadataValue.python_artifact(dg.MetadataValue),
                 "timestamp": MetadataValue.timestamp(2000.5),
                 "column_lineage": MetadataValue.column_lineage(
-                    TableColumnLineage(
+                    dg.TableColumnLineage(
                         {
                             "foo": [
-                                TableColumnDep(asset_key=AssetKey("bar"), column_name="baz"),
+                                dg.TableColumnDep(asset_key=dg.AssetKey("bar"), column_name="baz"),
                             ]
                         }
                     )
@@ -76,7 +44,7 @@ def test_metadata_asset_materialization():
             },
         )
 
-    @job
+    @dg.job
     def the_job():
         the_op()
 
@@ -92,31 +60,31 @@ def test_metadata_asset_materialization():
     materialization = materialization_events[0].event_specific_data.materialization  # pyright: ignore[reportOptionalMemberAccess,reportAttributeAccessIssue]
     assert len(materialization.metadata) == 8
     entry_map = {k: v.__class__ for k, v in materialization.metadata.items()}
-    assert entry_map["text"] == TextMetadataValue
-    assert entry_map["int"] == IntMetadataValue
-    assert entry_map["url"] == UrlMetadataValue
-    assert entry_map["float"] == FloatMetadataValue
-    assert entry_map["path"] == PathMetadataValue
-    assert entry_map["python"] == PythonArtifactMetadataValue
-    assert entry_map["timestamp"] == TimestampMetadataValue
-    assert entry_map["column_lineage"] == TableColumnLineageMetadataValue
+    assert entry_map["text"] == dg.TextMetadataValue
+    assert entry_map["int"] == dg.IntMetadataValue
+    assert entry_map["url"] == dg.UrlMetadataValue
+    assert entry_map["float"] == dg.FloatMetadataValue
+    assert entry_map["path"] == dg.PathMetadataValue
+    assert entry_map["python"] == dg.PythonArtifactMetadataValue
+    assert entry_map["timestamp"] == dg.TimestampMetadataValue
+    assert entry_map["column_lineage"] == dg.TableColumnLineageMetadataValue
 
 
 def test_metadata_asset_observation():
-    @op(out={})
+    @dg.op(out={})
     def the_op(_context):
-        yield AssetObservation(
+        yield dg.AssetObservation(
             asset_key="foo",
             metadata={
                 "text": "FOO",
                 "int": 22,
                 "url": MetadataValue.url("http://fake.com"),
                 "float": 0.1,
-                "python": MetadataValue.python_artifact(MetadataValue),
+                "python": MetadataValue.python_artifact(dg.MetadataValue),
             },
         )
 
-    @job
+    @dg.job
     def the_job():
         the_op()
 
@@ -130,11 +98,11 @@ def test_metadata_asset_observation():
     observation = observation_events[0].event_specific_data.asset_observation  # pyright: ignore[reportOptionalMemberAccess,reportAttributeAccessIssue]
     assert len(observation.metadata) == 5
     entry_map = {k: v.__class__ for k, v in observation.metadata.items()}
-    assert entry_map["text"] == TextMetadataValue
-    assert entry_map["int"] == IntMetadataValue
-    assert entry_map["url"] == UrlMetadataValue
-    assert entry_map["float"] == FloatMetadataValue
-    assert entry_map["python"] == PythonArtifactMetadataValue
+    assert entry_map["text"] == dg.TextMetadataValue
+    assert entry_map["int"] == dg.IntMetadataValue
+    assert entry_map["url"] == dg.UrlMetadataValue
+    assert entry_map["float"] == dg.FloatMetadataValue
+    assert entry_map["python"] == dg.PythonArtifactMetadataValue
 
 
 def test_metadata_value_timestamp():
@@ -150,14 +118,14 @@ def test_metadata_value_timestamp():
 
 
 def test_unknown_metadata_value():
-    @op(out={})
+    @dg.op(out={})
     def the_op(context):
-        yield AssetMaterialization(
+        yield dg.AssetMaterialization(
             asset_key="foo",
             metadata={"bad": context.instance},
         )
 
-    @job
+    @dg.job
     def the_job():
         the_op()
 
@@ -166,7 +134,7 @@ def test_unknown_metadata_value():
 
     assert (
         str(exc_info.value) == 'Could not resolve the metadata value for "bad" to a known type. '
-        "Its type was <class 'dagster._core.instance.DagsterInstance'>. "
+        "Its type was <class 'dagster._core.instance.instance.DagsterInstance'>. "
         "Consider wrapping the value with the appropriate MetadataValue type."
     )
 
@@ -174,13 +142,13 @@ def test_unknown_metadata_value():
 def test_parse_null_metadata():
     metadata = {"foo": None}
     normalized = normalize_metadata(metadata)
-    assert normalized["foo"] == NullMetadataValue()
+    assert normalized["foo"] == dg.NullMetadataValue()
 
 
 def test_parse_list_metadata():
     metadata = {"foo": ["bar"]}
     normalized = normalize_metadata(metadata)
-    assert normalized["foo"] == JsonMetadataValue(["bar"])
+    assert normalized["foo"] == dg.JsonMetadataValue(["bar"])
 
 
 def test_parse_invalid_metadata():
@@ -190,24 +158,24 @@ def test_parse_invalid_metadata():
         normalize_metadata(metadata)  # pyright: ignore[reportArgumentType]
 
     normalized = normalize_metadata(metadata, allow_invalid=True)  # pyright: ignore[reportArgumentType]
-    assert normalized["foo"] == TextMetadataValue("[object] (unserializable)")
+    assert normalized["foo"] == dg.TextMetadataValue("[object] (unserializable)")
 
 
 def test_parse_path_metadata():
     metadata = {"path": Path("/a/b.csv")}
     normalized = normalize_metadata(metadata)
-    assert normalized["path"] == PathMetadataValue("/a/b.csv")
+    assert normalized["path"] == dg.PathMetadataValue("/a/b.csv")
 
 
 def test_bad_json_metadata_value():
-    @op(out={})
+    @dg.op(out={})
     def the_op(context):
-        yield AssetMaterialization(
+        yield dg.AssetMaterialization(
             asset_key="foo",
             metadata={"bad": {"nested": context.instance}},
         )
 
-    @job
+    @dg.job
     def the_job():
         the_op()
 
@@ -223,16 +191,16 @@ def test_bad_json_metadata_value():
 def test_table_metadata_value_schema_inference():
     table = MetadataValue.table(
         records=[
-            TableRecord(data=dict(name="foo", status=False)),
-            TableRecord(data=dict(name="bar", status=True)),
+            dg.TableRecord(data=dict(name="foo", status=False)),
+            dg.TableRecord(data=dict(name="bar", status=True)),
         ],
     )
 
     schema = table.schema
-    assert isinstance(schema, TableSchema)
+    assert isinstance(schema, dg.TableSchema)
     assert schema.columns == [
-        TableColumn(name="name", type="string"),
-        TableColumn(name="status", type="bool"),
+        dg.TableColumn(name="name", type="string"),
+        dg.TableColumn(name="status", type="bool"),
     ]
 
 
@@ -255,7 +223,7 @@ bad_values = {
 
 def test_table_column_keys():
     with pytest.raises(TypeError):
-        TableColumn(bad_key="foo", description="bar", type="string")  # pyright: ignore[reportCallIssue]
+        dg.TableColumn(bad_key="foo", description="bar", type="string")  # pyright: ignore[reportCallIssue]
 
 
 @pytest.mark.parametrize("key,value", list(bad_values["table_column"].items()))
@@ -264,16 +232,16 @@ def test_table_column_values(key, value):
         "name": "foo",
         "type": "string",
         "description": "bar",
-        "constraints": TableColumnConstraints(other=["foo"]),
+        "constraints": dg.TableColumnConstraints(other=["foo"]),
     }
     kwargs[key] = value
     with pytest.raises(CheckError):
-        TableColumn(**kwargs)
+        dg.TableColumn(**kwargs)
 
 
 def test_table_constraints_keys():
     with pytest.raises(TypeError):
-        TableColumn(bad_key="foo")  # pyright: ignore[reportCallIssue]
+        dg.TableColumn(bad_key="foo")  # pyright: ignore[reportCallIssue]
 
 
 @pytest.mark.parametrize("key,value", list(bad_values["table_constraints"].items()))
@@ -281,12 +249,12 @@ def test_table_constraints(key, value):
     kwargs = {"other": ["foo"]}
     kwargs[key] = value
     with pytest.raises(CheckError):
-        TableConstraints(**kwargs)
+        dg.TableConstraints(**kwargs)
 
 
 def test_table_column_constraints_keys():
     with pytest.raises(TypeError):
-        TableColumnConstraints(bad_key="foo")  # pyright: ignore[reportCallIssue]
+        dg.TableColumnConstraints(bad_key="foo")  # pyright: ignore[reportCallIssue]
 
 
 # minimum and maximum aren't checked because they depend on the type of the column
@@ -299,69 +267,69 @@ def test_table_column_constraints_values(key, value):
     }
     kwargs[key] = value
     with pytest.raises(CheckError):
-        TableColumnConstraints(**kwargs)
+        dg.TableColumnConstraints(**kwargs)
 
 
 def test_table_schema_keys():
     with pytest.raises(TypeError):
-        TableSchema(bad_key="foo")  # pyright: ignore[reportCallIssue]
+        dg.TableSchema(bad_key="foo")  # pyright: ignore[reportCallIssue]
 
 
 @pytest.mark.parametrize("key,value", list(bad_values["table_schema"].items()))
 def test_table_schema_values(key, value):
     kwargs = {
-        "constraints": TableConstraints(other=["foo"]),
+        "constraints": dg.TableConstraints(other=["foo"]),
         "columns": [
-            TableColumn(
+            dg.TableColumn(
                 name="foo",
                 type="string",
                 description="bar",
-                constraints=TableColumnConstraints(other=["foo"]),
+                constraints=dg.TableColumnConstraints(other=["foo"]),
             )
         ],
     }
     kwargs[key] = value
     with pytest.raises(CheckError):
-        TableSchema(**kwargs)
+        dg.TableSchema(**kwargs)
 
 
 def test_complex_table_schema():
     assert isinstance(
-        TableSchema(
+        dg.TableSchema(
             columns=[
-                TableColumn(
+                dg.TableColumn(
                     name="foo",
                     type="customtype",
-                    constraints=TableColumnConstraints(
+                    constraints=dg.TableColumnConstraints(
                         nullable=True,
                         unique=True,
                     ),
                 ),
-                TableColumn(
+                dg.TableColumn(
                     name="bar",
                     type="string",
                     description="bar",
-                    constraints=TableColumnConstraints(
+                    constraints=dg.TableColumnConstraints(
                         nullable=False,
                         other=["foo"],
                     ),
                 ),
             ],
-            constraints=TableConstraints(other=["foo"]),
+            constraints=dg.TableConstraints(other=["foo"]),
         ),
-        TableSchema,
+        dg.TableSchema,
     )
 
 
 def test_bool_metadata_value():
-    @op(out={})
+    @dg.op(out={})
     def the_op():
-        yield AssetMaterialization(
+        yield dg.AssetMaterialization(
             asset_key="foo",
-            metadata={"first_bool": True, "second_bool": BoolMetadataValue(False)},
+            metadata={"first_bool": True, "second_bool": dg.BoolMetadataValue(False)},
         )
 
-    @job
+    @dg.job
     def the_job():
         the_op()
 
@@ -376,17 +344,17 @@ def test_bool_metadata_value():
     assert len(materialization_events) == 1
     materialization = materialization_events[0].event_specific_data.materialization  # pyright: ignore[reportOptionalMemberAccess,reportAttributeAccessIssue]
     entry_map = {k: v.__class__ for k, v in materialization.metadata.items()}
-    assert entry_map["first_bool"] == BoolMetadataValue
-    assert entry_map["second_bool"] == BoolMetadataValue
+    assert entry_map["first_bool"] == dg.BoolMetadataValue
+    assert entry_map["second_bool"] == dg.BoolMetadataValue
 
 
 def test_snapshot_arbitrary_metadata():
     # Asset decorator accepts arbitrary metadata. Need to ensure this doesn't throw an error when a
     # snap is created.
-    @asset(metadata={"my_key": [object()]})
+    @dg.asset(metadata={"my_key": [object()]})
     def foo_asset():
         pass
 
     assert build_node_defs_snapshot(
-        Definitions(assets=[foo_asset]).resolve_implicit_global_asset_job_def()
+        dg.Definitions(assets=[foo_asset]).resolve_implicit_global_asset_job_def()
     )

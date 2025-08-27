@@ -1,20 +1,33 @@
-from typing import List
-
-from dagster_buildkite.python_version import AvailablePythonVersion
-from dagster_buildkite.step_builder import CommandStepBuilder
-from dagster_buildkite.utils import (
-    BuildkiteLeafStep,
-    BuildkiteStep,
-    GroupStep,
-    skip_if_no_docs_changes,
+from buildkite_shared.python_version import AvailablePythonVersion
+from buildkite_shared.step_builders.command_step_builder import CommandStepBuilder
+from buildkite_shared.step_builders.group_step_builder import (
+    GroupLeafStepConfiguration,
+    GroupStepBuilder,
 )
+from buildkite_shared.step_builders.step_builder import StepConfiguration
+from dagster_buildkite.images.versions import add_test_image
+from dagster_buildkite.utils import skip_if_no_docs_changes
 
 
-def build_docs_steps() -> List[BuildkiteStep]:
-    steps: List[BuildkiteStep] = []
+def build_repo_wide_format_docs_step() -> GroupLeafStepConfiguration:
+    return (
+        add_test_image(
+            CommandStepBuilder(":notebook: yarn format_check"),
+            AvailablePythonVersion.get_default(),
+        )
+        .run(
+            "cd docs",
+            "yarn install",
+            "yarn format_check",
+        )
+        .skip_if(skip_if_no_docs_changes())
+        .build()
+    )
 
-    docs_steps: List[BuildkiteLeafStep] = [
-        CommandStepBuilder("build docs")
+
+def build_build_docs_step():
+    return (
+        add_test_image(CommandStepBuilder("build docs"), AvailablePythonVersion.get_default())
         .run(
             "cd docs",
             "yarn install",
@@ -22,17 +35,42 @@ def build_docs_steps() -> List[BuildkiteStep]:
             "yarn build-api-docs",
             "yarn build",
         )
-        .with_skip(skip_if_no_docs_changes())
-        .on_test_image(AvailablePythonVersion.get_default())
-        .build(),
-    ]
+        .skip_if(skip_if_no_docs_changes())
+        .build()
+    )
 
-    steps += [
-        GroupStep(
-            group=":book: docs",
-            key="docs",
-            steps=docs_steps,
+
+def build_docstring_validation_step() -> GroupLeafStepConfiguration:
+    python_version = AvailablePythonVersion.get_default()
+    tox_env = f"py{python_version.value.replace('.', '')}"
+    return (
+        add_test_image(
+            CommandStepBuilder(
+                f":pytest: docstring validation {python_version.value}", retry_automatically=False
+            ),
+            python_version,
         )
-    ]
+        .run(
+            "cd python_modules/automation",
+            'pip install "uv==0.7.2"',
+            "uv pip install --system -e .[buildkite]",
+            f"echo -e '--- \\033[0;32m:pytest: Running tox env: {tox_env}\\033[0m'",
+            f"tox -vv -e {tox_env}",
+            "python -m automation.dagster_docs.main check docstrings --all",
+        )
+        .build()
+    )
 
-    return steps
+
+def build_docs_steps() -> list[StepConfiguration]:
+    return [
+        GroupStepBuilder(
+            name=":book: docs",
+            key="docs",
+            steps=[
+                build_build_docs_step(),
+                build_repo_wide_format_docs_step(),
+                build_docstring_validation_step(),
+            ],
+        ).build()
+    ]

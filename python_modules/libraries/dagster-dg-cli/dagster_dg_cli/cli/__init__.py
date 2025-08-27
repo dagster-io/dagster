@@ -2,8 +2,6 @@ import os
 from pathlib import Path
 
 import click
-from dagster_dg_core.config import normalize_cli_config
-from dagster_dg_core.context import DgContext
 from dagster_dg_core.shared_options import dg_global_options, dg_path_options
 from dagster_dg_core.utils import DG_CLI_MAX_OUTPUT_WIDTH, DgClickGroup
 
@@ -43,12 +41,6 @@ def create_dg_cli():
     @dg_path_options
     @dg_global_options
     @click.option(
-        "--clear-cache",
-        is_flag=True,
-        help="Clear the cache.",
-        default=False,
-    )
-    @click.option(
         "--install-completion",
         is_flag=True,
         help="Automatically detect your shell and install a completion script for the `dg` command. This will append to your shell startup file.",
@@ -57,7 +49,6 @@ def create_dg_cli():
     @click.version_option(__version__, "--version", "-v")
     def group(
         install_completion: bool,
-        clear_cache: bool,
         target_path: Path,
         **global_options: object,
     ):
@@ -70,21 +61,6 @@ def create_dg_cli():
 
             dagster_dg_core.completion.install_completion(context)
             context.exit(0)
-        elif clear_cache:
-            from dagster_dg_core.cache import DgCache
-
-            cli_config = normalize_cli_config(global_options, context)
-            dg_context = DgContext.from_file_discovery_and_command_line_config(
-                target_path, cli_config
-            )
-            # Normally we would access the cache through the DgContext, but cache is currently
-            # disabled outside of a project context. When that restriction is lifted, we will change
-            # this to access the cache through the DgContext.
-            cache = DgCache.from_config(dg_context.config)
-            cache.clear_all()
-            if context.invoked_subcommand is None:
-                context.exit(0)
-
         elif context.invoked_subcommand is None:
             click.echo(context.get_help())
             context.exit(0)

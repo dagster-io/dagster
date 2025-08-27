@@ -1,14 +1,20 @@
+from pathlib import Path
+from tempfile import TemporaryDirectory
 from unittest.mock import MagicMock
 
 import pytest
 import responses
+from click.testing import CliRunner
 from dagster import Failure
 from dagster._config.field_utils import EnvVar
+from dagster._core.code_pointer import CodePointer
 from dagster._core.definitions import materialize
 from dagster._core.definitions.asset_key import AssetKey
-from dagster._core.definitions.asset_spec import AssetSpec
+from dagster._core.definitions.assets.definition.asset_spec import AssetSpec
+from dagster._core.definitions.reconstruct import initialize_repository_def_from_pointer
 from dagster._core.errors import DagsterInvariantViolationError
 from dagster._core.execution.context.asset_execution_context import AssetExecutionContext
+from dagster._core.instance_for_test import instance_for_test
 from dagster._core.test_utils import environ
 from dagster_fivetran import (
     DagsterFivetranTranslator,
@@ -389,3 +395,47 @@ def test_translator_invariant_group_name_with_asset_decorator(
                 dagster_fivetran_translator=MyCustomTranslatorWithGroupName(),
             )
             def my_fivetran_assets(): ...
+
+
+@pytest.mark.parametrize(
+    "pending_repo, expected_assets",
+    [
+        ("pending_repo_snapshot.py", 0),
+        ("pending_repo_snapshot_with_assets.py", 4),
+    ],
+    ids=[
+        "pending_repo_snapshot_without_assets",
+        "pending_repo_snapshot_with_assets",
+    ],
+)
+def test_load_fivetran_specs_with_snapshot(
+    pending_repo: str,
+    expected_assets: int,
+    fetch_workspace_data_api_mocks: responses.RequestsMock,
+) -> None:
+    with instance_for_test() as _instance, TemporaryDirectory() as temp_dir:
+        from dagster_fivetran.cli import fivetran_snapshot_command
+
+        temp_file = Path(temp_dir) / "snapshot.snap"
+        out = CliRunner().invoke(
+            fivetran_snapshot_command,
+            args=[
+                "-f",
+                str(Path(__file__).parent / pending_repo),
+                "--output-path",
+                str(temp_file),
+            ],
+        )
+        assert out.exit_code == 0
+
+        calls = len(responses.calls)
+        # Ensure that we can reconstruct the repository from the snapshot without making any calls
+        with environ({"FIVETRAN_SNAPSHOT_PATH": str(temp_file)}):
+            repository_def = initialize_repository_def_from_pointer(
+                CodePointer.from_python_file(
+                    str(Path(__file__).parent / pending_repo), "defs", None
+                ),
+            )
+            assert len(repository_def.assets_defs_by_key) == expected_assets
+
+            assert len(responses.calls) == calls

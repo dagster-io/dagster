@@ -1,3 +1,4 @@
+import textwrap
 from contextlib import ExitStack
 from pathlib import Path
 
@@ -26,6 +27,7 @@ COMPONENTS_SNIPPETS_DIR = (
     / "guides"
     / "components"
     / "shell-script-component"
+    / "generated"
 )
 
 
@@ -70,15 +72,20 @@ def test_creating_a_component(
         # Add config schema
         context.create_file(
             Path("src") / "my_project" / "components" / "shell_command.py",
-            contents=(COMPONENTS_SNIPPETS_DIR / "with-config-schema.py").read_text(),
+            contents=(
+                COMPONENTS_SNIPPETS_DIR.parent / "with-config-schema.py"
+            ).read_text(),
         )
         # Sanity check that the component type is registered properly
-        _run_command("dg list components")
+        if not update_snippets:
+            _run_command("dg list components")
 
         # Add build defs
         context.create_file(
             Path("src") / "my_project" / "components" / "shell_command.py",
-            contents=(COMPONENTS_SNIPPETS_DIR / "with-build-defs.py").read_text(),
+            contents=(
+                COMPONENTS_SNIPPETS_DIR.parent / "with-build-defs.py"
+            ).read_text(),
         )
 
         #########################################################
@@ -132,7 +139,9 @@ def test_creating_a_component(
         # that we can actually run a shell script.
         context.create_file(
             Path("src") / "my_project" / "components" / "shell_command.py",
-            contents=(COMPONENTS_SNIPPETS_DIR / "with-scaffolder.py").read_text(),
+            contents=(
+                COMPONENTS_SNIPPETS_DIR.parent / "with-scaffolder.py"
+            ).read_text(),
         )
         context.run_command_and_snippet_output(
             cmd="dg scaffold defs 'my_project.components.shell_command.ShellCommand' my_shell_command",
@@ -147,4 +156,49 @@ def test_creating_a_component(
             Path("src") / "my_project" / "defs" / "my_shell_command" / "script.sh",
             f"{context.get_next_snip_number()}-scaffolded-component-script.sh",
         )
-        _run_command("dg launch --assets '*'")
+        if not update_snippets:
+            _run_command("dg launch --assets '*'")
+
+        # Test "Providing resolution logic for non-standard types" section
+        # in docs/docs/guides/labs/components/creating-new-components/component-customization.md
+        context.create_file(
+            Path("src") / "my_project" / "components" / "shell_command.py",
+            contents=(
+                COMPONENTS_SNIPPETS_DIR.parent / "custom-schema-resolution.py"
+            ).read_text(),
+        )
+
+        # We check that instantiating MyComponent with an API key will resolve to MyApiClient
+        _run_command(
+            "python -c 'from my_project.components.shell_command import MyComponent, MyApiClient;"
+            'assert isinstance(MyComponent.resolve_from_dict({"api_key": "foo"}).api_client, MyApiClient)\''
+        )
+
+        # Test "Customizing rendering of YAML values" section
+        # in docs/docs/guides/labs/components/creating-new-components/component-customization.md
+        context.create_file(
+            Path("src") / "my_project" / "components" / "shell_command.py",
+            contents=(
+                COMPONENTS_SNIPPETS_DIR.parent / "with-custom-scope.py"
+            ).read_text(),
+        )
+
+        yaml_contents = textwrap.dedent("""
+            type: my_project.components.shell_command.ShellCommand
+
+            attributes:
+              script_path: script.sh
+              asset_specs:
+                - key: my_asset
+                  partitions_def: '{{ daily_partitions }}'
+        """)
+
+        context.create_file(
+            Path("src") / "my_project" / "defs" / "my_shell_command" / "defs.yaml",
+            yaml_contents,
+            snippet_path=f"{context.get_next_snip_number()}-custom-scope-defs.yaml",
+        )
+        if not update_snippets:
+            _run_command("dg check yaml")
+            _run_command("dg check defs")
+            _run_command("dg launch --assets '*' --partition '2024-01-01'")

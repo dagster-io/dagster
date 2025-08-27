@@ -44,6 +44,7 @@ export const GanttStatusPanel = React.memo(
       const succeeded = [];
       const notExecuted = [];
       for (const key of keys) {
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
         const state = metadata.steps[key]!.state;
         switch (state) {
           case IStepState.PREPARING:

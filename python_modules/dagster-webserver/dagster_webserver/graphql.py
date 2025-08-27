@@ -1,7 +1,9 @@
 from abc import ABC, abstractmethod
 from asyncio import Task, get_event_loop, run
-from collections.abc import AsyncGenerator, Sequence
+from collections.abc import AsyncGenerator, Collection, Iterator, Sequence
+from contextlib import AbstractContextManager, contextmanager
 from enum import Enum
+from inspect import isawaitable
 from typing import TYPE_CHECKING, Any, Generic, Optional, TypeVar, Union, cast
 
 import dagster._check as check
@@ -10,7 +12,15 @@ from dagster._utils.error import serializable_error_info_from_exc_info
 from dagster_graphql.implementation.utils import ErrorCapture
 from dagster_shared.seven import json
 from graphene import Schema
-from graphql import GraphQLError, GraphQLFormattedError
+from graphql import (
+    ASTValidationRule,
+    GraphQLError,
+    GraphQLFormattedError,
+    execute,
+    parse,
+    specified_rules,
+    validate,
+)
 from graphql.execution import ExecutionResult
 from starlette import status
 from starlette.applications import Starlette
@@ -43,21 +53,25 @@ class GraphQLWS(str, Enum):
     STOP = "stop"
 
 
-TRequestContext = TypeVar("TRequestContext")
+TRequestContext = TypeVar("TRequestContext", bound=AbstractContextManager)
 
 
 class GraphQLServer(ABC, Generic[TRequestContext]):
     def __init__(self, app_path_prefix: str = ""):
         self._app_path_prefix = app_path_prefix
 
-        self._graphql_schema = self.build_graphql_schema()
+        self._graphene_schema = self.build_graphql_schema()
         self._graphql_middleware = self.build_graphql_middleware()
+        self._graphql_validation_rules = self.build_graphql_validation_rules()
 
     @abstractmethod
     def build_graphql_schema(self) -> Schema: ...
 
     @abstractmethod
     def build_graphql_middleware(self) -> list: ...
+
+    def build_graphql_validation_rules(self) -> Collection[type[ASTValidationRule]]:
+        return specified_rules
 
     @abstractmethod
     def build_middleware(self) -> list[Middleware]: ...
@@ -66,7 +80,13 @@ class GraphQLServer(ABC, Generic[TRequestContext]):
     def build_routes(self) -> list[BaseRoute]: ...
 
     @abstractmethod
-    def make_request_context(self, conn: HTTPConnection) -> TRequestContext: ...
+    def _make_request_context(self, conn: HTTPConnection) -> TRequestContext: ...
+
+    @contextmanager
+    def request_context(self, conn: HTTPConnection) -> Iterator[TRequestContext]:
+        """Creates a request context for the given connection and ensures that it is entered before use."""
+        with self._make_request_context(conn) as request_context:
+            yield request_context
 
     def handle_graphql_errors(self, errors: Sequence[GraphQLError]):
         results = []
@@ -146,26 +166,11 @@ class GraphQLServer(ABC, Generic[TRequestContext]):
                     status_code=status.HTTP_400_BAD_REQUEST,
                 )
 
-        captured_errors: list[Exception] = []
-        with ErrorCapture.watch(captured_errors.append):
-            result = await self.execute_graphql_request(
-                request=request,
-                query=query,
-                variables=variables,
-                operation_name=operation_name,
-            )
-
-        response_data: dict[str, Any] = {"data": result.data}
-
-        if result.errors:
-            response_data["errors"] = self.handle_graphql_errors(result.errors)
-
-        return JSONResponse(
-            response_data,
-            status_code=self._determine_status_code(
-                resolver_errors=result.errors,
-                captured_errors=captured_errors,
-            ),
+        return await self.execute_graphql_request(
+            request=request,
+            query=query,
+            variables=variables,
+            operation_name=operation_name,
         )
 
     async def graphql_ws_endpoint(self, websocket: WebSocket):
@@ -232,7 +237,7 @@ class GraphQLServer(ABC, Generic[TRequestContext]):
         query: str,
         variables: Optional[dict[str, Any]],
         operation_name: Optional[str],
-    ) -> ExecutionResult:
+    ) -> JSONResponse:
         # run each query in a separate thread, as much of the schema is sync/blocking
         # use execute_async to allow async resolvers to facilitate dataloader pattern
         return await run_in_threadpool(
@@ -249,16 +254,16 @@ class GraphQLServer(ABC, Generic[TRequestContext]):
         query: str,
         variables: Optional[dict[str, Any]],
         operation_name: Optional[str],
-    ) -> ExecutionResult:
-        request_context = self.make_request_context(request)
-        return run(
-            self.gen_graphql_response(
-                request_context=request_context,
-                query=query,
-                variables=variables,
-                operation_name=operation_name,
+    ) -> JSONResponse:
+        with self.request_context(request) as request_context:
+            return run(
+                self.gen_graphql_response(
+                    request_context=request_context,
+                    query=query,
+                    variables=variables,
+                    operation_name=operation_name,
+                )
             )
-        )
 
     async def gen_graphql_response(
         self,
@@ -266,13 +271,59 @@ class GraphQLServer(ABC, Generic[TRequestContext]):
         query: str,
         variables: Optional[dict[str, Any]],
         operation_name: Optional[str],
-    ) -> ExecutionResult:
-        return await self._graphql_schema.execute_async(
-            query,
-            variables=variables,
-            operation_name=operation_name,
-            context=request_context,
-            middleware=self._graphql_middleware,
+    ) -> JSONResponse:
+        # Parse
+        try:
+            document = parse(query)
+        except GraphQLError as error:
+            return JSONResponse(
+                {
+                    "data": None,
+                    "errors": self.handle_graphql_errors([error]),
+                },
+                status_code=status.HTTP_400_BAD_REQUEST,
+            )
+
+        # Validate
+        validation_errors = validate(
+            self._graphene_schema.graphql_schema,
+            document,
+            rules=self._graphql_validation_rules,
+        )
+        if validation_errors:
+            return JSONResponse(
+                {
+                    "data": None,
+                    "errors": self.handle_graphql_errors(validation_errors),
+                },
+                status_code=status.HTTP_400_BAD_REQUEST,
+            )
+
+        # Execute
+        captured_errors: list[Exception] = []
+        with ErrorCapture.watch(captured_errors.append):
+            gql_result = execute(
+                schema=self._graphene_schema.graphql_schema,
+                document=document,
+                context_value=request_context,
+                variable_values=variables,
+                operation_name=operation_name,
+                middleware=self._graphql_middleware,
+            )
+            if isawaitable(gql_result):
+                gql_result = await gql_result
+
+        response_data: dict[str, Any] = {"data": gql_result.data}
+
+        if gql_result.errors:
+            response_data["errors"] = self.handle_graphql_errors(gql_result.errors)
+
+        return JSONResponse(
+            response_data,
+            status_code=self._determine_status_code(
+                resolver_errors=gql_result.errors,
+                captured_errors=captured_errors,
+            ),
         )
 
     async def execute_graphql_subscription(
@@ -283,31 +334,31 @@ class GraphQLServer(ABC, Generic[TRequestContext]):
         variables: Optional[dict[str, Any]],
         operation_name: Optional[str],
     ) -> tuple[Optional[Task], Optional[GraphQLFormattedError]]:
-        request_context = self.make_request_context(websocket)
-        try:
-            async_result = await self._graphql_schema.subscribe(
-                query,
-                variables=variables,
-                operation_name=operation_name,
-                context=request_context,
+        with self.request_context(websocket) as request_context:
+            try:
+                async_result = await self._graphene_schema.subscribe(
+                    query,
+                    variables=variables,
+                    operation_name=operation_name,
+                    context=request_context,
+                )
+            except GraphQLError as error:
+                error_payload = error.formatted
+                return None, error_payload
+
+            if isinstance(async_result, ExecutionResult):
+                if not async_result.errors:
+                    check.failed(f"Only expect non-async result on error, got {async_result}")
+                handled_errors = self.handle_graphql_errors(async_result.errors)
+                # return only one entry for subscription response
+                return None, handled_errors[0]
+
+            # in the future we should get back async gen directly, back compat for now
+            task = get_event_loop().create_task(
+                _handle_async_results(async_result, operation_id, websocket)
             )
-        except GraphQLError as error:
-            error_payload = error.formatted
-            return None, error_payload
 
-        if isinstance(async_result, ExecutionResult):
-            if not async_result.errors:
-                check.failed(f"Only expect non-async result on error, got {async_result}")
-            handled_errors = self.handle_graphql_errors(async_result.errors)
-            # return only one entry for subscription response
-            return None, handled_errors[0]
-
-        # in the future we should get back async gen directly, back compat for now
-        task = get_event_loop().create_task(
-            _handle_async_results(async_result, operation_id, websocket)
-        )
-
-        return task, None
+            return task, None
 
     def create_asgi_app(
         self,

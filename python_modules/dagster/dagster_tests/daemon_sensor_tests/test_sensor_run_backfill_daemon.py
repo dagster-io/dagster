@@ -1,17 +1,9 @@
 import os
 
+import dagster as dg
 import pytest
-from dagster import (
-    DagsterInstance,
-    Definitions,
-    DynamicPartitionsDefinition,
-    SensorResult,
-    StaticPartitionsDefinition,
-    asset,
-    load_assets_from_current_module,
-    sensor,
-)
-from dagster._core.definitions.asset_graph_subset import AssetGraphSubset
+from dagster import DagsterInstance, sensor
+from dagster._core.definitions.assets.graph.asset_graph_subset import AssetGraphSubset
 from dagster._core.definitions.events import AssetKeyPartitionKey
 from dagster._core.definitions.run_request import InstigatorType, RunRequest
 from dagster._core.scheduler.instigation import InstigatorState, InstigatorStatus, TickStatus
@@ -20,18 +12,18 @@ from dagster._core.workspace.load_target import ModuleTarget
 
 from dagster_tests.daemon_sensor_tests.test_sensor_run import evaluate_sensors, validate_tick
 
-dynamic_partitions_def = DynamicPartitionsDefinition(name="abc")
+dynamic_partitions_def = dg.DynamicPartitionsDefinition(name="abc")
 
 
-@asset(partitions_def=dynamic_partitions_def)
+@dg.asset(partitions_def=dynamic_partitions_def)
 def asset1() -> None: ...
 
 
-@asset(deps=[asset1])
+@dg.asset(deps=[asset1])
 def unpartitioned_child(): ...
 
 
-def make_run_request_uses_backfill_daemon(context) -> RunRequest:
+def make_run_request_uses_backfill_daemon(context) -> dg.RunRequest:
     ags = AssetGraphSubset.from_asset_partition_set(
         asset_partitions_set={
             AssetKeyPartitionKey(asset1.key, "foo"),
@@ -48,7 +40,7 @@ def make_run_request_uses_backfill_daemon(context) -> RunRequest:
 
 @sensor(asset_selection=[asset1, unpartitioned_child])
 def sensor_result_backfill_request_sensor(context):
-    return SensorResult(
+    return dg.SensorResult(
         dynamic_partitions_requests=[dynamic_partitions_def.build_add_request(["foo", "bar"])],
         run_requests=[make_run_request_uses_backfill_daemon(context)],
     )
@@ -66,7 +58,7 @@ def yield_backfill_request_sensor(context):
     yield make_run_request_uses_backfill_daemon(context)
 
 
-@asset(partitions_def=StaticPartitionsDefinition(["a", "b", "c"]))
+@dg.asset(partitions_def=dg.StaticPartitionsDefinition(["a", "b", "c"]))
 def static_partitioned_asset(): ...
 
 
@@ -123,11 +115,11 @@ def backfill_and_run_request_sensor(context):
     )
     yield RunRequest.for_asset_graph_subset(asset_graph_subset=ags, tags={"tagkey": "tagvalue"})
 
-    yield RunRequest(asset_selection=[static_partitioned_asset.key], partition_key="c")
+    yield dg.RunRequest(asset_selection=[static_partitioned_asset.key], partition_key="c")
 
 
-defs = Definitions(
-    assets=load_assets_from_current_module(),
+defs = dg.Definitions(
+    assets=dg.load_assets_from_current_module(),
     sensors=[
         sensor_result_backfill_request_sensor,
         return_backfill_request_sensor,

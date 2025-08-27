@@ -1,6 +1,7 @@
 from typing import Annotated
 
-from dagster import Resolvable, Resolver
+import dagster as dg
+from dagster import Resolver
 from dagster.components.resolved.context import ResolutionContext
 
 
@@ -8,7 +9,7 @@ def test_simple_dataclass_resolveable_from_model():
     from dataclasses import dataclass
 
     @dataclass
-    class Hello(Resolvable):
+    class Hello(dg.Resolvable):
         hello: Annotated[
             int,
             Resolver.from_model(
@@ -29,10 +30,10 @@ def test_simple_dataclass_resolveable_from_model():
 def test_simple_pydantic_resolveable_from_schema():
     from pydantic import BaseModel
 
-    class Hello(BaseModel, Resolvable):
+    class Hello(BaseModel, dg.Resolvable):
         hello: Annotated[
             int,
-            Resolver(
+            dg.Resolver(
                 lambda context, v: int(v),
                 model_field_type=str,
             ),
@@ -51,10 +52,10 @@ def test_simple_dataclass_resolveable_field():
     from dataclasses import dataclass
 
     @dataclass
-    class Hello(Resolvable):
+    class Hello(dg.Resolvable):
         hello: Annotated[
             int,
-            Resolver(
+            dg.Resolver(
                 lambda context, val: int(val),
                 model_field_type=str,
             ),

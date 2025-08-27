@@ -22,7 +22,7 @@ If your instance is using the <PyObject section="libraries" module="dagster_k8s"
 - `jobSpecConfig`: The Job's JobSpec
 - `jobMetadata`: The Job's Metadata
 
-Refer to the [Kubernetes documentation](https://kubernetes.io/docs/home/) for more information about containers, Pod Specs, etc.
+Refer to the [Kubernetes documentation](https://kubernetes.io/docs/home) for more information about containers, Pod Specs, etc.
 
 The value for each of these keys is a dictionary with the YAML configuration for the underlying Kubernetes object. The Kubernetes object fields can be configured using either snake case (for example, `volume_mounts`) or camel case (`volumeMounts`). For example:
 
@@ -42,7 +42,7 @@ If your instance is using the <PyObject section="libraries" module="dagster_k8s"
 - `job_spec_config`: The Job's JobSpec
 - `job_metadata`: The Job's Metadata
 
-Refer to the [Kubernetes documentation](https://kubernetes.io/docs/home/) for more information about containers, Pod Specs, etc.
+Refer to the [Kubernetes documentation](https://kubernetes.io/docs/home) for more information about containers, Pod Specs, etc.
 
 The value for each of these keys is a dictionary with the YAML configuration for the underlying Kubernetes object. The Kubernetes object fields can be configured using either snake case (for example, `volume_mounts`) or camel case (`volumeMounts`). For example:
 
@@ -70,7 +70,7 @@ If your Dagster job is configured with the <PyObject section="libraries" module=
 - `job_spec_config`: The Job's JobSpec
 - `job_metadata`: The Job's Metadata
 
-Refer to the [Kubernetes documentation](https://kubernetes.io/docs/home/) for more information about containers, Pod Specs, etc.
+Refer to the [Kubernetes documentation](https://kubernetes.io/docs/home) for more information about containers, Pod Specs, etc.
 
 The value for each of these keys is a dictionary with the YAML configuration for the underlying Kubernetes object. The Kubernetes object fields can be configured using either snake case (for example, `volume_mounts`) or camel case (`volumeMounts`). For example:
 
@@ -92,7 +92,7 @@ As above when used on jobs, `dagster-k8s/config` is a dictionary with the follow
 - `job_spec_config`: The Job's JobSpec
 - `job_metadata`: The Job's Metadata
 
-Refer to the [Kubernetes documentation](https://kubernetes.io/docs/home/) for more information about containers, Pod Specs, etc.
+Refer to the [Kubernetes documentation](https://kubernetes.io/docs/home) for more information about containers, Pod Specs, etc.
 
 The value for each of these keys is a dictionary with the YAML configuration for the underlying Kubernetes object. The Kubernetes object fields can be configured using either snake case (for example, `volume_mounts`) or camel case (`volumeMounts`). For example:
 
@@ -233,7 +233,7 @@ generatePostgresqlPasswordSecret: false
 
 Users will likely want to permission a ServiceAccount bound to a properly scoped Role to launch Jobs and create other Kubernetes resources.
 
-Users will likely want to use [Secrets](https://kubernetes.io/docs/concepts/configuration/secret/) for managing secure information such as database logins.
+Users will likely want to use [Secrets](https://kubernetes.io/docs/concepts/configuration/secret) for managing secure information such as database logins.
 
 ### Separately deploying Dagster infrastructure and user code
 
@@ -275,7 +275,7 @@ helm upgrade --install user-code dagster/dagster-user-deployments -f /path/to/va
 
 ## Kubernetes Job and Pod TTL management
 
-If you use a Kubernetes distribution that supports the [TTL Controller](https://kubernetes.io/docs/concepts/workloads/controllers/ttlafterfinished/#ttl-controller), then `Completed` and `Failed` [Jobs](https://kubernetes.io/docs/concepts/workloads/controllers/job/) (and their associated [Pods](https://kubernetes.io/docs/concepts/workloads/pods/)) will be deleted after 1 day. The TTL value can be modified in your job tags:
+If you use a Kubernetes distribution that supports the [TTL Controller](https://kubernetes.io/docs/concepts/workloads/controllers/ttlafterfinished/#ttl-controller), then `Completed` and `Failed` [Jobs](https://kubernetes.io/docs/concepts/workloads/controllers/job) (and their associated [Pods](https://kubernetes.io/docs/concepts/workloads/pods)) will be deleted after 1 day. The TTL value can be modified in your job tags:
 
 <CodeExample
   path="docs_snippets/docs_snippets/deploying/kubernetes/ttl_config_job.py"
@@ -285,14 +285,14 @@ If you use a Kubernetes distribution that supports the [TTL Controller](https://
 
 If you do not use a Kubernetes distribution that supports the [TTL Controller](https://kubernetes.io/docs/concepts/workloads/controllers/ttlafterfinished/#ttl-controller), then you can run the following commands:
 
-- Delete Dagster [Jobs](https://kubernetes.io/docs/concepts/workloads/controllers/job/) older than one day:
+- Delete Dagster [Jobs](https://kubernetes.io/docs/concepts/workloads/controllers/job) older than one day:
 
   ```shell
-  kubectl get job | grep -e dagster-run -e dagster-step | awk 'match($4,/[0-9]+d/) {print $1}' | xargs kubectl delete job
+  kubectl get job | grep -e dagster-run -e dagster-step | awk 'match($4,/[0-9]+d) {print $1}' | xargs kubectl delete job
   ```
 
-- Delete completed [Pods](https://kubernetes.io/docs/concepts/workloads/pods/) older than one day:
+- Delete completed [Pods](https://kubernetes.io/docs/concepts/workloads/pods) older than one day:
 
   ```shell
-  kubectl get pod | grep -e dagster-run -e dagster-step | awk 'match($3,/Completed/) {print $0}' | awk 'match($5,/[0-9]+d/) {print $1}' | xargs kubectl delete pod
+  kubectl get pod | grep -e dagster-run -e dagster-step | awk 'match($3,/Completed) {print $0}' | awk 'match($5,/[0-9]+d) {print $1}' | xargs kubectl delete pod
   ```

@@ -18,7 +18,7 @@ In this code block, we use `define_dagstermill_asset` to create a Dagster asset.
 
 ## Notebooks as ops
 
-Dagstermill also supports running Jupyter notebooks as [ops](/guides/build/ops/). We can use <PyObject section="libraries" module="dagstermill" object="define_dagstermill_op" /> to turn a notebook into an op.
+Dagstermill also supports running Jupyter notebooks as [ops](/guides/build/ops). We can use <PyObject section="libraries" module="dagstermill" object="define_dagstermill_op" /> to turn a notebook into an op.
 
 <CodeExample path="docs_snippets/docs_snippets/integrations/dagstermill/iris_notebook_op.py" startAfter="start" />
 

@@ -26,29 +26,6 @@ class MockAirbyteWorkspace(AirbyteCloudWorkspace):
         Returns:
             AirbyteWorkspaceData: A snapshot of the Airbyte workspace's content.
         """
-        # connections_by_id = {}
-        # destinations_by_id = {}
-
-        # client = self.get_client()
-        # connections = client.get_connections()["data"]
-
-        # for partial_connection_details in connections:
-        #     full_connection_details = client.get_connection_details(
-        #         connection_id=partial_connection_details["connectionId"]
-        #     )
-        #     connection = AirbyteConnection.from_connection_details(
-        #         connection_details=full_connection_details
-        #     )
-        #     connections_by_id[connection.id] = connection
-
-        #     destination_details = client.get_destination_details(
-        #         destination_id=connection.destination_id
-        #     )
-        #     destination = AirbyteDestination.from_destination_details(
-        #         destination_details=destination_details
-        #     )
-        #     destinations_by_id[destination.id] = destination
-
         return AirbyteWorkspaceData(
             connections_by_id={
                 "my_salesforce_connection": AirbyteConnection(

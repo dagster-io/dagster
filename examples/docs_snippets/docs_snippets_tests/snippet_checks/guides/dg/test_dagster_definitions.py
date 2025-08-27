@@ -84,4 +84,5 @@ def test_dagster_definitions(update_snippets: bool) -> None:
             )
 
             # validate loads
-            _run_command("uv pip freeze && uv run dg launch --assets '*'")
+            if not update_snippets:
+                _run_command("uv pip freeze && uv run dg launch --assets '*'")

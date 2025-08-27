@@ -1,20 +1,26 @@
 from collections.abc import Mapping, Sequence
-from dataclasses import dataclass
 from typing import Annotated, Any, Callable, Literal, Optional, Union
 
 from dagster_shared.record import record
 from typing_extensions import TypeAlias
 
 import dagster._check as check
-from dagster._annotations import preview, public
-from dagster._core.definitions.asset_check_spec import AssetCheckSpec
+from dagster._core.definitions.asset_checks.asset_check_spec import AssetCheckSpec
 from dagster._core.definitions.asset_key import AssetKey, CoercibleToAssetKeyPrefix
-from dagster._core.definitions.asset_spec import AssetSpec
+from dagster._core.definitions.assets.definition.asset_spec import AssetSpec
 from dagster._core.definitions.backfill_policy import BackfillPolicy
 from dagster._core.definitions.declarative_automation.automation_condition import (
     AutomationCondition,
 )
 from dagster._core.definitions.definitions_class import Definitions
+from dagster._core.definitions.partitions.definition import (
+    DailyPartitionsDefinition,
+    HourlyPartitionsDefinition,
+    PartitionsDefinition,
+    StaticPartitionsDefinition,
+    TimeWindowPartitionsDefinition,
+    WeeklyPartitionsDefinition,
+)
 from dagster.components.resolved.base import Resolvable, resolve_fields
 from dagster.components.resolved.context import ResolutionContext
 from dagster.components.resolved.model import Injected, Model, Resolver
@@ -28,6 +34,89 @@ def _resolve_asset_key(context: ResolutionContext, key: str) -> AssetKey:
 
 
 PostProcessorFn: TypeAlias = Callable[[Definitions], Definitions]
+
+
+class HourlyPartitionsDefinitionModel(Resolvable, Model):
+    type: Literal["hourly"] = "hourly"
+    start_date: str
+    end_date: Optional[str] = None
+    timezone: Optional[str] = None
+    minute_offset: int = 0
+
+
+class DailyPartitionsDefinitionModel(Resolvable, Model):
+    type: Literal["daily"] = "daily"
+    start_date: str
+    end_date: Optional[str] = None
+    timezone: Optional[str] = None
+    minute_offset: int = 0
+    hour_offset: int = 0
+
+
+class WeeklyPartitionsDefinitionModel(Resolvable, Model):
+    type: Literal["weekly"] = "weekly"
+    start_date: str
+    end_date: Optional[str] = None
+    timezone: Optional[str] = None
+    minute_offset: int = 0
+    hour_offset: int = 0
+    day_offset: int = 0
+
+
+class TimeWindowPartitionsDefinitionModel(Resolvable, Model):
+    type: Literal["time_window"] = "time_window"
+    start_date: str
+    end_date: Optional[str] = None
+    timezone: Optional[str] = None
+    fmt: str
+    cron_schedule: str
+
+
+class StaticPartitionsDefinitionModel(Resolvable, Model):
+    type: Literal["static"] = "static"
+    partition_keys: Sequence[str]
+
+
+def resolve_partitions_def(context: ResolutionContext, model) -> Optional[PartitionsDefinition]:
+    if model is None:
+        return None
+
+    elif model.type == "hourly":
+        return HourlyPartitionsDefinition(
+            start_date=model.start_date,
+            end_date=model.end_date,
+            timezone=model.timezone,
+            minute_offset=model.minute_offset,
+        )
+    elif model.type == "daily":
+        return DailyPartitionsDefinition(
+            start_date=model.start_date,
+            end_date=model.end_date,
+            timezone=model.timezone,
+            minute_offset=model.minute_offset,
+            hour_offset=model.hour_offset,
+        )
+    elif model.type == "weekly":
+        return WeeklyPartitionsDefinition(
+            start_date=model.start_date,
+            end_date=model.end_date,
+            timezone=model.timezone,
+            minute_offset=model.minute_offset,
+            hour_offset=model.hour_offset,
+            day_offset=model.day_offset,
+        )
+    elif model.type == "time_window":
+        return TimeWindowPartitionsDefinition(
+            start=model.start_date,
+            end=model.end_date,
+            timezone=model.timezone,
+            fmt=model.fmt,
+            cron_schedule=model.cron_schedule,
+        )
+    elif model.type == "static":
+        return StaticPartitionsDefinition(partition_keys=model.partition_keys)
+    else:
+        raise ValueError(f"Invalid partitions definition type: {model.type}")
 
 
 class SingleRunBackfillPolicyModel(Resolvable, Model):
@@ -56,10 +145,11 @@ def resolve_backfill_policy(
     raise ValueError(f"Invalid backfill policy: {backfill_policy}")
 
 
-@dataclass
-class OpSpec(Resolvable):
+class OpSpec(Model, Resolvable):
     name: Optional[str] = None
-    tags: Optional[dict[str, str]] = None
+    tags: Optional[dict[str, Any]] = None
+    description: Optional[str] = None
+    pool: Optional[str] = None
     backfill_policy: Annotated[
         Optional[BackfillPolicy],
         Resolver(
@@ -151,6 +241,20 @@ class SharedAssetKwargs(Resolvable):
         Resolver.default(
             model_field_type=Optional[str],
             description="The condition under which the asset will be automatically materialized.",
+        ),
+    ] = None
+    partitions_def: Annotated[
+        Optional[PartitionsDefinition],
+        Resolver(
+            resolve_partitions_def,
+            description="The partitions definition for the asset.",
+            model_field_type=Union[
+                HourlyPartitionsDefinitionModel,
+                DailyPartitionsDefinitionModel,
+                WeeklyPartitionsDefinitionModel,
+                TimeWindowPartitionsDefinitionModel,
+                StaticPartitionsDefinitionModel,
+            ],
         ),
     ] = None
 
@@ -258,8 +362,6 @@ ResolvedAssetAttributes: TypeAlias = Annotated[
 ]
 
 
-@public
-@preview(emit_runtime_warning=False)
 class AssetPostProcessorModel(Resolvable, Model):
     """An object that defines asset transforms to be done via Definitions.map_asset_specs."""
 
@@ -322,6 +424,13 @@ AssetPostProcessor: TypeAlias = Annotated[
         model_field_type=AssetPostProcessorModel.model(),
     ),
 ]
+
+
+def post_process_defs(defs: Definitions, post_processors: Optional[list[AssetPostProcessor]]):
+    for post_processor in post_processors or []:
+        defs = post_processor(defs)
+    return defs
+
 
 CORE_MODEL_SUGGESTIONS = {
     AssetKey: "ResolvedAssetKey",

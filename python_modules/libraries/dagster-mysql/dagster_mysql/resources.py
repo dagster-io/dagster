@@ -25,7 +25,7 @@ class MySQLResource(ConfigurableResource):
                     with conn.cursor() as cur:
                         cur.execute("SELECT * FROM table;")
 
-            defs = Definitions(
+            Definitions(
                 assets=[my_table],
                 resources={
                     "mysql": MySQLResource(

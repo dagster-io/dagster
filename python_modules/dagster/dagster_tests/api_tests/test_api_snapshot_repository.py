@@ -2,32 +2,32 @@ import asyncio
 import sys
 from contextlib import contextmanager
 
+import dagster as dg
 import pytest
-from dagster import IntMetadataValue, TextMetadataValue, job, op, repository
+from dagster import job
 from dagster._api.snapshot_repository import (
     gen_streaming_external_repositories_data_grpc,
     sync_get_streaming_external_repositories_data_grpc,
 )
 from dagster._core.errors import DagsterUserCodeProcessError
 from dagster._core.instance import DagsterInstance
-from dagster._core.remote_representation import (
+from dagster._core.remote_origin import (
     ManagedGrpcPythonEnvCodeLocationOrigin,
-    RepositorySnap,
+    RemoteRepositoryOrigin,
 )
 from dagster._core.remote_representation.external import RemoteRepository
 from dagster._core.remote_representation.external_data import (
     DISABLE_FAST_EXTRACT_ENV_VAR,
     JobDataSnap,
     JobRefSnap,
+    RepositorySnap,
     extract_serialized_job_snap_from_serialized_job_data_snap,
 )
 from dagster._core.remote_representation.handle import RepositoryHandle
-from dagster._core.remote_representation.origin import RemoteRepositoryOrigin
 from dagster._core.storage.tags import EXTERNAL_JOB_SOURCE_TAG_KEY
-from dagster._core.test_utils import instance_for_test
 from dagster._core.types.loadable_target_origin import LoadableTargetOrigin
 from dagster._utils.env import environ
-from dagster_shared.serdes.serdes import deserialize_value, get_storage_fields
+from dagster_shared.serdes.serdes import get_storage_fields
 from dagster_shared.serdes.utils import hash_str
 
 from dagster_tests.api_tests.utils import get_bar_repo_code_location
@@ -46,8 +46,8 @@ def test_streaming_external_repositories_api_grpc(instance):
         assert isinstance(repository_snap, RepositorySnap)
         assert repository_snap.name == "bar_repo"
         assert repository_snap.metadata == {
-            "string": TextMetadataValue("foo"),
-            "integer": IntMetadataValue(123),
+            "string": dg.TextMetadataValue("foo"),
+            "integer": dg.IntMetadataValue(123),
         }
 
         async_repository_snaps = asyncio.run(
@@ -77,7 +77,7 @@ def test_streaming_external_repositories_error(instance):
             )
 
 
-@op
+@dg.op
 def do_something():
     return 1
 
@@ -90,7 +90,7 @@ def giant_job():
         do_something()
 
 
-@repository  # pyright: ignore[reportArgumentType]
+@dg.repository  # pyright: ignore[reportArgumentType]
 def giant_repo():
     return {
         "jobs": {
@@ -114,7 +114,7 @@ def get_giant_repo_grpc_code_location(instance):
 
 @pytest.mark.skip("https://github.com/dagster-io/dagster/issues/6940")
 def test_giant_external_repository_streaming_grpc():
-    with instance_for_test() as instance:
+    with dg.instance_for_test() as instance:
         with get_giant_repo_grpc_code_location(instance) as code_location:
             # Using streaming allows the giant repo to load
             repository_snaps = sync_get_streaming_external_repositories_data_grpc(
@@ -160,10 +160,10 @@ def test_defer_snapshots(instance: DagsterInstance, env):
                 == ref.snapshot_id
             ), ref.name
 
-            job_data_snap = deserialize_value(reply.serialized_job_data, JobDataSnap)
+            job_data_snap = dg.deserialize_value(reply.serialized_job_data, JobDataSnap)
             return job_data_snap
 
-        repository_snap = deserialize_value(ser_repo_data, RepositorySnap)
+        repository_snap = dg.deserialize_value(ser_repo_data, RepositorySnap)
         assert repository_snap.job_refs and len(repository_snap.job_refs) == 8
         assert repository_snap.job_datas is None
 

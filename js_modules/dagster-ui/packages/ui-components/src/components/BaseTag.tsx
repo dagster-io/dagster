@@ -39,7 +39,12 @@ export const BaseTag = (props: Props) => {
     tooltipText,
   } = props;
   return (
-    <StyledTag $fillColor={fillColor} $interactive={interactive} $textColor={textColor}>
+    <StyledTag
+      className="StyledTag"
+      $fillColor={fillColor}
+      $interactive={interactive}
+      $textColor={textColor}
+    >
       {icon || null}
       {label !== undefined && label !== null ? (
         <span

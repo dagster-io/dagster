@@ -180,7 +180,7 @@ def pagerduty_resource(context) -> PagerDutyService:
             @op
             def pagerduty_op(pagerduty: PagerDutyService):
                 pagerduty.EventV2_create(
-                    summary='alert from dagster'
+                    summary='alert from dagster',
                     source='localhost',
                     severity='error',
                     event_action='trigger',

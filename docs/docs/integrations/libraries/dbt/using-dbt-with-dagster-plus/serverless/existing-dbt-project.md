@@ -33,7 +33,7 @@ In this section, we'll demonstrate how to import an existing project to Dagster+
 
 6. If prompted, sign into your GitHub account and complete the authorization process for the Dagster+ application. **Note**: The profile or organization you're using to authorize Dagster+ must have read and write access to the repository containing the project. After the authorization is complete, you'll be redirected back to Dagster+.
 
-7. In Dagster+, locate and select the repository containing the project by using the dropdowns. **Note**: dbt projects must have `dbt_profiles.yml` and `profiles.yml` files in the repository root or an error will display.
+7. In Dagster+, locate and select the repository containing the project by using the dropdowns. **Note**: dbt projects must have `dbt_project.yml` and `profiles.yml` files in the repository root or an error will display.
 
 8. Click **Continue** to begin the import process.
 
@@ -106,13 +106,13 @@ To ensure your project parses correctly with `dbt parse`, you need to include cr
 1. In your dbt project root directory, open the `profiles.yml` file and add the following:
    ```yaml
    my_profile:
-    target: dev
-    outputs:
-      dev:
-        type: snowflake
-        account: "{{ env_var('SNOWFLAKE_ACCOUNT', 'dummy-account') }}"
-        user: "{{ env_var('SNOWFLAKE_USER', 'dummy-user') }}"
-        password: "{{ env_var('SNOWFLAKE_PASSWORD', 'dummy-password') }}"
+     target: dev
+     outputs:
+       dev:
+         type: snowflake
+         account: "{{ env_var('SNOWFLAKE_ACCOUNT', 'dummy-account') }}"
+         user: "{{ env_var('SNOWFLAKE_USER', 'dummy-user') }}"
+         password: "{{ env_var('SNOWFLAKE_PASSWORD', 'dummy-password') }}"
    ```
 2. Save the changes.
 3. Commit the changes to the repository.

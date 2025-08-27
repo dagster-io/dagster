@@ -70,11 +70,3 @@ def daily_sales_schedule(context):
         run_key=date,
         partition_key=date,
     )
-
-
-# Define the Definitions object
-defs = dg.Definitions(
-    assets=[daily_sales_data, daily_sales_summary],
-    jobs=[daily_sales_job],
-    schedules=[daily_sales_schedule],
-)

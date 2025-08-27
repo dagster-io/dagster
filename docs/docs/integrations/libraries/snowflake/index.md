@@ -8,6 +8,8 @@ pypi: https://pypi.org/project/dagster-snowflake/
 sidebar_custom_props:
   logo: images/integrations/snowflake.svg
 partnerlink: https://www.snowflake.com/en/
+canonicalUrl: '/integrations/libraries/snowflake'
+slug: '/integrations/libraries/snowflake'
 ---
 
 <p>{frontMatter.description}</p>

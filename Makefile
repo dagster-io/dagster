@@ -30,25 +30,33 @@ unannotated_pyright:
 	python scripts/run-pyright.py --unannotated
 
 ruff:
-	-ruff check --fix .
+	ruff check --fix .
 	ruff format .
 
 check_ruff:
 	ruff check .
 	ruff format --check .
 
+unsafe_ruff:
+	ruff check --fix --unsafe-fixes .
+	ruff format .
+
 check_prettier:
-#NOTE:  excludes README.md because it's a symlink
+#NOTE: excludes symlinked md files
 	prettier `git ls-files \
 	'python_modules/*.yml' 'python_modules/*.yaml' 'helm/*.yml' 'helm/*.yaml' \
-	':!:helm/**/templates/*.yml' ':!:helm/**/templates/*.yaml' '*.md' ':!:docs/*.md' \
-	':!:README.md'` --check
+	'*.md' '.claude/*.md' \
+	':!:docs/*.md' ':!:helm/**/templates/*.yml' ':!:helm/**/templates/*.yaml' \
+	':!:README.md' ':!:GEMINI.md'` \
+	--check
 
 prettier:
 	prettier `git ls-files \
 	'python_modules/*.yml' 'python_modules/*.yaml' 'helm/*.yml' 'helm/*.yaml' \
-	':!:helm/**/templates/*.yml' ':!:helm/**/templates/*.yaml' '*.md' ':!:docs/*.md' \
-	':!:README.md'` --write
+	'*.md' '.claude/*.md' \
+	':!:docs/*.md' ':!:helm/**/templates/*.yml' ':!:helm/**/templates/*.yaml' \
+	':!:README.md' ':!:GEMINI.md'` \
+	--write
 
 install_dev_python_modules:
 	python scripts/install_dev_python_modules.py -q
@@ -98,3 +106,6 @@ ready_dagster_dg_docs_for_publish:
 	rm -rf python_modules/libraries/dagster-dg-cli/dagster_dg_cli/docs/packages/dg-docs-site/.next
 	rm -rf python_modules/libraries/dagster-dg-cli/dagster_dg_cli/docs/packages/dg-docs-components/node_modules
 	rm -rf python_modules/libraries/dagster-dg-cli/dagster_dg_cli/docs/packages/dg-docs-site/node_modules
+
+format_docs:
+	cd docs; yarn format

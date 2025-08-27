@@ -6,18 +6,19 @@ import {Colors} from './Color';
 import {Group} from './Group';
 import {Icon, IconName} from './Icon';
 
-export type AlertIntent = 'info' | 'warning' | 'error' | 'success';
+export type AlertIntent = 'info' | 'warning' | 'error' | 'success' | 'none';
 
 interface Props {
   intent?: AlertIntent;
   title: React.ReactNode;
   description?: React.ReactNode;
   icon?: React.ReactNode;
+  rightButton?: React.ReactNode;
   onClose?: () => void;
 }
 
 export const Alert = (props: Props) => {
-  const {intent = 'info', title, description, onClose} = props;
+  const {intent = 'info', title, description, rightButton, onClose} = props;
 
   const {backgroundColor, borderColor, icon, iconColor, textColor} = React.useMemo(() => {
     switch (intent) {
@@ -44,6 +45,15 @@ export const Alert = (props: Props) => {
           icon: 'done',
           iconColor: Colors.accentGreen(),
           textColor: Colors.textGreen(),
+        };
+
+      case 'none':
+        return {
+          backgroundColor: Colors.backgroundGray(),
+          borderColor: Colors.accentGray(),
+          icon: 'info',
+          iconColor: Colors.accentGray(),
+          textColor: Colors.textLight(),
         };
       case 'info':
       default:
@@ -76,6 +86,8 @@ export const Alert = (props: Props) => {
           <ButtonWrapper onClick={onClose}>
             <Icon name="close" color={textColor} />
           </ButtonWrapper>
+        ) : rightButton ? (
+          <div style={{alignSelf: 'center'}}>{rightButton}</div>
         ) : null}
       </Box>
     </AlertContainer>

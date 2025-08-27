@@ -5,7 +5,7 @@ import {Link} from 'react-router-dom';
 import {NoValue} from './Common';
 import {displayNameForAssetKey, sortAssetKeys, tokenForAssetKey} from '../../asset-graph/Utils';
 import {StatusDot} from '../../asset-graph/sidebar/StatusDot';
-import {AssetNodeForGraphQueryFragment} from '../../asset-graph/types/useAssetGraphData.types';
+import {WorkspaceAssetFragment} from '../../workspace/WorkspaceContext/types/WorkspaceQueries.types';
 import {DependsOnSelfBanner} from '../DependsOnSelfBanner';
 import {assetDetailsPathForKey} from '../assetDetailsPathForKey';
 
@@ -14,8 +14,8 @@ export const LineageSection = ({
   upstream,
   downstream,
 }: {
-  upstream: AssetNodeForGraphQueryFragment[] | null;
-  downstream: AssetNodeForGraphQueryFragment[] | null;
+  upstream: WorkspaceAssetFragment[] | null;
+  downstream: WorkspaceAssetFragment[] | null;
   dependsOnSelf: boolean;
 }) => {
   return (
@@ -56,7 +56,7 @@ const AssetLinksWithStatus = ({
   assets,
   displayedByDefault = 20,
 }: {
-  assets: AssetNodeForGraphQueryFragment[];
+  assets: WorkspaceAssetFragment[];
   displayedByDefault?: number;
 }) => {
   const [displayedCount, setDisplayedCount] = useState(displayedByDefault);
@@ -85,13 +85,11 @@ const AssetLinksWithStatus = ({
       ))}
       <Box>
         {displayed.length < assets.length ? (
-          <Button small onClick={() => setDisplayedCount(Number.MAX_SAFE_INTEGER)}>
+          <Button onClick={() => setDisplayedCount(Number.MAX_SAFE_INTEGER)}>
             Show {assets.length - displayed.length} more
           </Button>
         ) : displayed.length > displayedByDefault ? (
-          <Button small onClick={() => setDisplayedCount(displayedByDefault)}>
-            Show less
-          </Button>
+          <Button onClick={() => setDisplayedCount(displayedByDefault)}>Show less</Button>
         ) : undefined}
       </Box>
     </Box>

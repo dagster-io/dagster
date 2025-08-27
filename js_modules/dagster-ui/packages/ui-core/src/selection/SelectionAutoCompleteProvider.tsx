@@ -9,6 +9,7 @@ import {
 } from '@dagster-io/ui-components';
 import React from 'react';
 
+import styles from './SelectionAutoComplete.module.css';
 import {assertUnreachable} from '../app/Util';
 
 export interface SelectionAutoCompleteProvider {
@@ -75,7 +76,7 @@ export interface SelectionAutoCompleteProvider {
    * @param textCallback - An optional callback to transform the display text of each result. Used to insert spaces or double quotes if necessary depending on surrounding context
    * @returns An array of attribute values along with their attribute names that match the query.
    */
-  getAttributeValueIncludeAttributeResultsMatchingQuery: (prop: {
+  getAllResults: (prop: {
     query: string;
     textCallback?: (value: string) => string;
   }) => Array<Suggestion>;
@@ -94,6 +95,8 @@ export interface SelectionAutoCompleteProvider {
     };
     loading: boolean;
   };
+
+  supportsTraversal?: boolean;
 }
 
 export type Suggestion =
@@ -193,6 +196,7 @@ export const SuggestionJSXBase = ({
   );
 };
 
+type Functions = Array<'sinks' | 'roots'>;
 export const createProvider = <
   TAttributeMap extends {[key: string]: string[] | {key: string; value?: string}[]},
   TPrimaryAttributeKey extends keyof TAttributeMap,
@@ -200,12 +204,13 @@ export const createProvider = <
   attributeToIcon,
   primaryAttributeKey,
   attributesMap,
+  functions = ['sinks', 'roots'],
 }: {
   attributeToIcon: Record<keyof TAttributeMap, IconName>;
   primaryAttributeKey: TPrimaryAttributeKey;
   attributesMap: TAttributeMap;
+  functions?: Functions;
 }): Omit<SelectionAutoCompleteProvider, 'useAutoComplete'> => {
-  const functions = ['sinks', 'roots'] as const;
   function doesValueIncludeQuery({
     value,
     query,
@@ -234,6 +239,7 @@ export const createProvider = <
     const displayText = `${attribute as string}:`;
     const icon: IconName = attributeToIcon[attribute];
     let label = (attribute as string).replace(/_/g, ' ');
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     label = label[0]!.toUpperCase() + label.slice(1);
     return {
       text,
@@ -247,6 +253,13 @@ export const createProvider = <
     };
   }
 
+  function nullSuggestion({textCallback}: {textCallback?: (text: string) => string}) {
+    return {
+      text: textCallback ? textCallback('<null>') : '<null>',
+      jsx: <SuggestionJSXBase label={<span className={styles.nullString}>No value</span>} />,
+    };
+  }
+
   function createAttributeValueSuggestion({
     value,
     textCallback,
@@ -256,10 +269,16 @@ export const createProvider = <
   }) {
     if (typeof value !== 'string') {
       const valueText = value.value ? `"${value.key}"="${value.value}"` : `"${value.key}"`;
+      if (value.key === '' && !value.value) {
+        return nullSuggestion({textCallback});
+      }
       return {
         text: textCallback ? textCallback(valueText) : valueText,
         jsx: <AttributeValueTagSuggestion tag={value} />,
       };
+    }
+    if (value === '') {
+      return nullSuggestion({textCallback});
     }
     return {
       text: textCallback ? textCallback(`"${value}"`) : `"${value}"`,
@@ -276,6 +295,7 @@ export const createProvider = <
     text: string;
     options?: {includeParenthesis?: boolean};
   }) {
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     const functionName = func[0]!.toUpperCase() + func.slice(1);
     const rightLabel = options?.includeParenthesis ? `${func}()` : func;
     let icon: IconName;
@@ -305,6 +325,7 @@ export const createProvider = <
     const attribute = primaryAttributeKey as string;
     const text = `${attribute}:"*${query}*"`;
     let displayAttribute = attribute.replace(/_/g, ' ');
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     displayAttribute = displayAttribute[0]!.toUpperCase() + displayAttribute.slice(1);
     const displayText = (
       <Box flex={{direction: 'row', alignItems: 'center', gap: 2}}>
@@ -317,7 +338,7 @@ export const createProvider = <
     };
   }
 
-  function createAttributeValueIncludeAttributeSuggestion({
+  function createAttributeAndValueSuggestion({
     attribute,
     value,
     textCallback,
@@ -376,9 +397,20 @@ export const createProvider = <
     },
     getAttributeValueResultsMatchingQuery: ({attribute, query, textCallback}) => {
       const values = attributesMap[attribute as keyof typeof attributesMap];
+      const shouldTreatAsteriskAsWildcard = attribute === primaryAttributeKey;
+
+      const regex = createRegex(query, shouldTreatAsteriskAsWildcard);
       const results =
         values
-          ?.filter((value) => doesValueIncludeQuery({value, query}))
+          ?.filter((value) => {
+            if (shouldTreatAsteriskAsWildcard) {
+              if (typeof value === 'string') {
+                return regex.test(value);
+              }
+              return regex.test(value.key) || (value.value && regex.test(value.value));
+            }
+            return doesValueIncludeQuery({value, query});
+          })
           .map((value) =>
             createAttributeValueSuggestion({
               value,
@@ -418,13 +450,13 @@ export const createProvider = <
     getSubstringResultMatchingQuery: ({query, textCallback}) => {
       return createSubstringSuggestion({query, textCallback});
     },
-    getAttributeValueIncludeAttributeResultsMatchingQuery: ({query, textCallback}) => {
+    getAllResults: ({query, textCallback}) => {
       return Object.keys(attributesMap).flatMap((attribute) => {
         return (
           attributesMap[attribute]
             ?.filter((value) => doesValueIncludeQuery({value, query}))
             .map((value) =>
-              createAttributeValueIncludeAttributeSuggestion({
+              createAttributeAndValueSuggestion({
                 attribute,
                 value,
                 textCallback,
@@ -435,3 +467,19 @@ export const createProvider = <
     },
   };
 };
+
+function createRegex(pattern: string, interpretWildcards: boolean): RegExp {
+  if (!interpretWildcards) {
+    // Escape all regex special characters
+    const escaped = pattern.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    return new RegExp(escaped, 'i');
+  }
+
+  // Escape all regex special characters except asterisks
+  const escaped = pattern.replace(/[.+?^${}()|[\]\\]/g, '\\$&');
+
+  // Replace asterisks with .* for wildcard matching
+  const wildcardPattern = escaped.replace(/\*/g, '.*');
+
+  return new RegExp(wildcardPattern, 'i');
+}

@@ -1,3 +1,4 @@
+import sys
 from pathlib import Path
 
 from setuptools import find_packages, setup
@@ -24,8 +25,12 @@ def get_version() -> str:
     return version["__version__"]
 
 
+# grpcio 1.66.2 is the min version compatible with python 3.13
+if sys.version_info >= (3, 13):
+    GRPC_VERSION_FLOOR = "1.66.2"
 # grpcio 1.44.0 is the min version compatible with both protobuf 3 and 4
-GRPC_VERSION_FLOOR = "1.44.0"
+else:
+    GRPC_VERSION_FLOOR = "1.44.0"
 
 ver = get_version()
 # dont pin dev installs to avoid pip dep resolver issues
@@ -65,6 +70,7 @@ setup(
         "Programming Language :: Python :: 3.10",
         "Programming Language :: Python :: 3.11",
         "Programming Language :: Python :: 3.12",
+        "Programming Language :: Python :: 3.13",
         "License :: OSI Approved :: Apache Software License",
         "Topic :: System :: Monitoring",
         "Topic :: Software Development :: Libraries :: Application Frameworks",
@@ -72,7 +78,7 @@ setup(
     ],
     packages=find_packages(exclude=["dagster_tests*"]),
     include_package_data=True,
-    python_requires=">=3.9,<3.13",
+    python_requires=">=3.9,<3.14",
     install_requires=[
         # cli
         "click>=5.0,<8.2",
@@ -83,8 +89,8 @@ setup(
         "alembic>=1.2.1,!=1.6.3,!=1.7.0,!=1.11.0",
         f"grpcio>={GRPC_VERSION_FLOOR}",
         f"grpcio-health-checking>={GRPC_VERSION_FLOOR}",
-        "protobuf>=3.20.0,<6; python_version<'3.11'",  # min protobuf version to be compatible with both protobuf 3 and greater
-        "protobuf>=4,<6; python_version>='3.11'",
+        "protobuf>=3.20.0,<7; python_version<'3.11'",  # min protobuf version to be compatible with both protobuf 3 and greater
+        "protobuf>=4,<7; python_version>='3.11'",
         "python-dotenv",
         "pytz",
         "requests",
@@ -93,7 +99,7 @@ setup(
         "tabulate",
         "tomli<3",
         "tqdm<5",
-        'tzdata; platform_system=="Windows"',
+        "tzdata",
         "structlog",
         "sqlalchemy>=1.0,<3",
         "toposort>=1.0",

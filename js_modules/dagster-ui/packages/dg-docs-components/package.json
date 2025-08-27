@@ -19,10 +19,10 @@
     "strip-markdown": "^6.0.0"
   },
   "devDependencies": {
-    "@eslint/js": "^9.21.0",
+    "@eslint/js": "^9.31.0",
     "@types/node": "^22.13.13",
     "@types/react": "^18.3.9",
-    "eslint": "^9.21.0",
+    "eslint": "^9.31.0",
     "eslint-config-prettier": "^10.1.1",
     "eslint-plugin-prettier": "^5.2.5",
     "eslint-plugin-react-hooks": "^5.1.0",

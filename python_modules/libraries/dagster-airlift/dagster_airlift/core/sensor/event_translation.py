@@ -11,9 +11,9 @@ from dagster import (
     TimestampMetadataValue,
     _check as check,
 )
-from dagster._core.definitions.asset_check_evaluation import AssetCheckEvaluation
+from dagster._core.definitions.asset_checks.asset_check_evaluation import AssetCheckEvaluation
 from dagster._core.definitions.asset_key import AssetKey
-from dagster._core.definitions.time_window_partitions import TimeWindowPartitionsDefinition
+from dagster._core.definitions.partitions.definition import TimeWindowPartitionsDefinition
 from dagster._time import datetime_from_timestamp, get_current_timestamp
 
 from dagster_airlift.constants import (

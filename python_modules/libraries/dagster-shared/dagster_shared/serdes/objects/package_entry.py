@@ -32,6 +32,15 @@ class EnvRegistryKey:
         return f"{self.namespace}.{self.name}"
 
     @staticmethod
+    def is_valid_typename(typename: str) -> bool:
+        """Check if the typename is valid."""
+        try:
+            EnvRegistryKey.from_typename(typename)
+            return True
+        except ValueError:
+            return False
+
+    @staticmethod
     def from_typename(typename: str) -> "EnvRegistryKey":
         parts = typename.split(".")
         for part in parts:
@@ -77,7 +86,7 @@ class ScaffoldTargetTypeData(EnvRegistryObjectFeatureData):
 
 
 ###############
-# PLUGIN MANIFEST
+# ENV REGISTRY MANIFEST
 ###############
 
 
@@ -121,6 +130,10 @@ class EnvRegistryObjectSnap:
     def component_schema(self) -> Optional[dict[str, Any]]:
         component_data = self.get_feature_data("component")
         return component_data.schema if component_data else None
+
+    @property
+    def is_component(self) -> bool:
+        return self.get_feature_data("component") is not None
 
     @property
     def all_keys(self) -> Sequence[EnvRegistryKey]:

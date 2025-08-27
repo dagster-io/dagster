@@ -8,16 +8,13 @@ Usage: dg [OPTIONS] COMMAND [ARGS]...
 ╭─ Options ────────────────────────────────────────────────────────────────────────────────────────────────────────────╮
 │ --target-path                 PATH  Specify a directory to use to load the context for this command. This will       │
 │                                     typically be a folder with a dg.toml or pyproject.toml file in it.               │
-│ --clear-cache                       Clear the cache.                                                                 │
 │ --install-completion                Automatically detect your shell and install a completion script for the `dg`     │
 │                                     command. This will append to your shell startup file.                            │
 │ --version             -v            Show the version and exit.                                                       │
 │ --help                -h            Show this message and exit.                                                      │
 ╰──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
 ╭─ Global options ─────────────────────────────────────────────────────────────────────────────────────────────────────╮
-│ --verbose                    Enable verbose output for debugging.                                                    │
-│ --disable-cache              Disable the cache..                                                                     │
-│ --cache-dir            TEXT  Specify a directory to use for the cache.                                               │
+│ --verbose          Enable verbose output for debugging.                                                              │
 ╰──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
 ╭─ Commands ───────────────────────────────────────────────────────────────────────────────────────────────────────────╮
 │ check      Commands for checking the integrity of your Dagster code.                                                 │

@@ -1,5 +1,5 @@
-from dagster import asset
+import dagster as dg
 
 
-@asset
+@dg.asset
 def asset_in_some_other_file() -> None: ...

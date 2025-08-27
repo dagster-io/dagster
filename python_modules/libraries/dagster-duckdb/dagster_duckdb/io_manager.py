@@ -6,7 +6,7 @@ from typing import Any, Optional, cast
 import duckdb
 from dagster import IOManagerDefinition, OutputContext, io_manager
 from dagster._config.pythonic_config import ConfigurableIOManagerFactory
-from dagster._core.definitions.time_window_partitions import TimeWindow
+from dagster._core.definitions.partitions.utils import TimeWindow
 from dagster._core.storage.db_io_manager import (
     DbClient,
     DbIOManager,
@@ -30,7 +30,7 @@ def build_duckdb_io_manager(
     Args:
         type_handlers (Sequence[DbTypeHandler]): Each handler defines how to translate between
             DuckDB tables and an in-memory type - e.g. a Pandas DataFrame. If only
-            one DbTypeHandler is provided, it will be used as teh default_load_type.
+            one DbTypeHandler is provided, it will be used as the default_load_type.
         default_load_type (Type): When an input has no type annotation, load it as this type.
 
     Returns:
@@ -50,7 +50,7 @@ def build_duckdb_io_manager(
 
             duckdb_io_manager = build_duckdb_io_manager([DuckDBPandasTypeHandler()])
 
-            defs = Definitions(
+            Definitions(
                 assets=[my_table]
                 resources={"io_manager" duckdb_io_manager.configured({"database": "my_db.duckdb"})}
             )
@@ -60,7 +60,7 @@ def build_duckdb_io_manager(
 
     .. code-block:: python
 
-        defs = Definitions(
+        Definitions(
             assets=[my_table]
             resources={"io_manager" duckdb_io_manager.configured(
                 {"database": "my_db.duckdb", "schema": "my_schema"} # will be used as the schema
@@ -154,7 +154,7 @@ class DuckDBIOManager(ConfigurableIOManagerFactory):
             def my_table() -> pd.DataFrame:  # the name of the asset will be the table name
                 ...
 
-            defs = Definitions(
+            Definitions(
                 assets=[my_table],
                 resources={"io_manager": MyDuckDBIOManager(database="my_db.duckdb")}
             )
@@ -164,7 +164,7 @@ class DuckDBIOManager(ConfigurableIOManagerFactory):
 
     .. code-block:: python
 
-        defs = Definitions(
+        Definitions(
             assets=[my_table],
             resources={"io_manager": MyDuckDBIOManager(database="my_db.duckdb", schema="my_schema")}
         )
@@ -216,7 +216,7 @@ class DuckDBIOManager(ConfigurableIOManagerFactory):
 
     .. code-block:: python
 
-        defs = Definitions(
+        Definitions(
             assets=[my_table],
             resources={"io_manager": MyDuckDBIOManager(database="my_db.duckdb",
                                                        connection_config={"arrow_large_buffer_size": True})}

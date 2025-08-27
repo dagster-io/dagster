@@ -24,25 +24,6 @@ DEFAULT_LOCATIONS_YAML_FILENAME = "locations.yaml"
 app = Typer(help="Manage your Dagster Cloud workspace.")
 
 
-def _get_location_input(location: str, kwargs: dict[str, Any]) -> gql.CliInputCodeLocation:
-    python_file = kwargs.get("python_file")
-
-    return gql.CliInputCodeLocation(
-        name=location,
-        python_file=str(python_file) if python_file else None,
-        package_name=kwargs.get("package_name"),
-        image=kwargs.get("image"),
-        module_name=kwargs.get("module_name"),
-        working_directory=kwargs.get("working_directory"),
-        executable_path=kwargs.get("executable_path"),
-        attribute=kwargs.get("attribute"),
-        commit_hash=(
-            kwargs["git"].get("commit_hash") if "git" in kwargs else kwargs.get("commit_hash")
-        ),
-        url=kwargs["git"].get("url") if "git" in kwargs else kwargs.get("git_url"),
-    )
-
-
 def _add_or_update_location(
     client: DagsterCloudGraphQLClient,
     location_document: dict[str, Any],
@@ -144,7 +125,7 @@ def wait_for_load(
     client,
     locations,
     location_load_timeout=DEFAULT_LOCATION_LOAD_TIMEOUT,
-    agent_heartbeat_timeout=DEFAULT_LOCATION_LOAD_TIMEOUT,
+    agent_heartbeat_timeout: Optional[int] = DEFAULT_LOCATION_LOAD_TIMEOUT,
     url: Optional[str] = None,
 ):
     start_time = time.time()
@@ -159,7 +140,7 @@ def wait_for_load(
     iterations = 0
     while True:
         if not has_agent_heartbeat:
-            if time.time() - start_time > agent_heartbeat_timeout:
+            if agent_heartbeat_timeout and time.time() - start_time > agent_heartbeat_timeout:
                 raise ui.error(
                     "No Dagster Cloud agent is actively heartbeating. Make sure that you have a"
                     " Dagster Cloud agent running."
@@ -333,7 +314,8 @@ def format_workspace_config(workspace_config) -> dict[str, Any]:
             new_location = {
                 k: v
                 for k, v in location.items()
-                if k not in ("python_file", "package_name", "module_name")
+                if k
+                not in ("python_file", "package_name", "module_name", "autoload_defs_module_name")
             }
             new_location["code_source"] = {}
             if "python_file" in location:
@@ -342,9 +324,9 @@ def format_workspace_config(workspace_config) -> dict[str, Any]:
                 new_location["code_source"]["package_name"] = location["package_name"]
             if "module_name" in location:
                 new_location["code_source"]["module_name"] = location["module_name"]
-            if "autodefs_module_name" in location:
-                new_location["code_source"]["autodefs_module_name"] = location[
-                    "autodefs_module_name"
+            if "autoload_defs_module_name" in location:
+                new_location["code_source"]["autoload_defs_module_name"] = location[
+                    "autoload_defs_module_name"
                 ]
 
             new_location["location_name"] = name

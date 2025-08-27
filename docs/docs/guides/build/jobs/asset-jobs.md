@@ -14,7 +14,7 @@ Jobs are the main unit of execution and monitoring for [asset definitions](/guid
 
 In this section, we'll demonstrate how to create a few asset jobs that target the following assets:
 
-<CodeExample path="docs_snippets/docs_snippets/guides/data-modeling/asset-jobs/asset-jobs.py" language="python" startAfter="start_marker_assets" endBefore="end_marker_assets" />
+<CodeExample path="docs_snippets/docs_snippets/guides/data-modeling/asset-jobs/asset-jobs.py" language="python" startAfter="start_marker_assets" endBefore="end_marker_assets" title="src/<project_name>/defs/assets.py" />
 
 To create an asset job, use the [`define_asset_job`](/api/dagster/assets#dagster.define_asset_job) method. An asset-based job is based on the assets the job targets and their dependencies.
 
@@ -23,13 +23,13 @@ You can target one or multiple assets, or create multiple jobs that target overl
 - `all_assets_job` targets all assets
 - `sugary_cereals_job` targets only the `sugary_cereals` asset
 
-<CodeExample path="docs_snippets/docs_snippets/guides/data-modeling/asset-jobs/asset-jobs.py" language="python" startAfter="start_marker_jobs" endBefore="end_marker_jobs" />
+<CodeExample path="docs_snippets/docs_snippets/guides/data-modeling/asset-jobs/asset-jobs.py" language="python" startAfter="start_marker_jobs" endBefore="end_marker_jobs" title="src/<project_name>/defs/jobs.py" />
 
 ## Making asset jobs available to Dagster tools
 
-Including the jobs in a [`Definitions`](/api/dagster/definitions) object located at the top level of a Python module or file makes asset jobs available to the UI, GraphQL, and the command line. The Dagster tool loads that module as a code location. If you include schedules or sensors, the [code location](/deployment/code-locations) will automatically include jobs that those schedules or sensors target.
+Jobs are loaded automatically with [`dg`](/api/clis) and there is no need to explicity define a [`Definitions`](/api/dagster/definitions) object for them. If you include schedules or sensors, the [code location](/deployment/code-locations) will automatically include jobs that those schedules or sensors target.
 
-<CodeExample path="docs_snippets/docs_snippets/concepts/assets/jobs_to_definitions.py" />
+<CodeExample path="docs_snippets/docs_snippets/concepts/assets/jobs_to_definitions.py" title="src/<project_name>/defs/assets.py"/>
 
 ## Testing asset jobs
 

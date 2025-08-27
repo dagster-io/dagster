@@ -3,7 +3,7 @@
 Schedules and sensors
 =====================
 
-Dagster offers several ways to run data pipelines without manual intervation, including traditional scheduling and event-based triggers. `Automating your Dagster pipelines <https://docs.dagster.io/guides/automate/>`_ can boost efficiency and ensure that data is produced consistently and reliably.
+Dagster offers several ways to run data pipelines without manual intervention, including traditional scheduling and event-based triggers. `Automating your Dagster pipelines <https://docs.dagster.io/guides/automate>`_ can boost efficiency and ensure that data is produced consistently and reliably.
 
 ----
 
@@ -17,7 +17,7 @@ Run requests
 Schedules
 ---------
 
-`Schedules <https://docs.dagster.io/guides/automate/schedules/>`__ are Dagster's way to support traditional ways of automation, such as specifying a job should run at Mondays at 9:00AM. Jobs triggered by schedules can contain a subset of `assets <https://docs.dagster.io/guides/build/assets/>`__ or `ops <https://legacy-docs.dagster.io/concepts/ops-jobs-graphs/ops>`__.
+`Schedules <https://docs.dagster.io/guides/automate/schedules>`__ are Dagster's way to support traditional ways of automation, such as specifying a job should run at Mondays at 9:00AM. Jobs triggered by schedules can contain a subset of `assets <https://docs.dagster.io/guides/build/assets>`__ or `ops <https://legacy-docs.dagster.io/concepts/ops-jobs-graphs/ops>`__.
 
 .. autodecorator:: schedule
 
@@ -39,7 +39,7 @@ Schedules
 Sensors
 -------
 
-`Sensors <https://docs.dagster.io/guides/automate/sensors/>`_ are typically used to poll, listen, and respond to external events. For example, you could configure a sensor to run a job or materialize an asset in response to specific events.
+`Sensors <https://docs.dagster.io/guides/automate/sensors>`_ are typically used to poll, listen, and respond to external events. For example, you could configure a sensor to run a job or materialize an asset in response to specific events.
 
 .. currentmodule:: dagster
 

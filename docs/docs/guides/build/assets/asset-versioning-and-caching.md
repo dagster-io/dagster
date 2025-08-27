@@ -4,10 +4,6 @@ sidebar_position: 1300
 title: Asset versioning and caching
 ---
 
-import Beta from '@site/docs/partials/\_Beta.md';
-
-<Beta />
-
 This guide demonstrates how to build memoizable graphs of assets. Memoizable assets help avoid unnecessary recomputations, speed up the developer workflow, and save computational resources.
 
 ## Context
@@ -29,6 +25,10 @@ By keeping track of code and data versions, Dagster can predict whether a materi
 
 In computationally expensive data pipelining, this approach can yield tremendous benefits.
 
+import ScaffoldAsset from '@site/docs/partials/\_ScaffoldAsset.md';
+
+<ScaffoldAsset />
+
 ## Step one: Understanding data versions
 
 By default, Dagster automatically computes a data version for each materialization of an asset. It does this by hashing a code version together with the data versions of any input assets.
@@ -36,12 +36,12 @@ By default, Dagster automatically computes a data version for each materializati
 Let's start with a trivial asset that returns a hardcoded number:
 
 
-<CodeExample path="docs_snippets/docs_snippets/guides/dagster/asset_versioning_and_caching/vanilla_asset.py" />
+<CodeExample path="docs_snippets/docs_snippets/guides/dagster/asset_versioning_and_caching/vanilla_asset.py" title="src/<project_name>/defs/assets.py" />
 
 Next, start the Dagster UI:
 
 ```shell
-dagster dev
+dg dev
 ```
 
 Navigate to the **Asset catalog** and click **Materialize** to materialize the asset.
@@ -58,7 +58,7 @@ If you materialize the asset again, you'll notice that both the code version and
 
 Let's improve this situation by setting an explicit code version. Add a `code_version` on the asset:
 
-<CodeExample path="docs_snippets/docs_snippets/guides/dagster/asset_versioning_and_caching/vanilla_asset_with_code_version.py" />
+<CodeExample path="docs_snippets/docs_snippets/guides/dagster/asset_versioning_and_caching/vanilla_asset_with_code_version.py" title="src/<project_name>/defs/assets.py" />
 
 Now, materialize the asset. The user-defined code version `v1` will be associated with the latest materialization:
 
@@ -66,7 +66,7 @@ Now, materialize the asset. The user-defined code version `v1` will be associate
 
 Now, let's update the code and inform Dagster that the code has changed. Do this by changing the `code_version` argument:
 
-<CodeExample path="docs_snippets/docs_snippets/guides/dagster/asset_versioning_and_caching/vanilla_asset_with_code_version_v2.py" />
+<CodeExample path="docs_snippets/docs_snippets/guides/dagster/asset_versioning_and_caching/vanilla_asset_with_code_version_v2.py" title="src/<project_name>/defs/assets.py" />
 
 Click **Reload definitions** to pick up the changes.
 
@@ -89,7 +89,7 @@ The `versioned_number` asset must be materialized again to become up-to-date. Cl
 Tracking changes becomes more powerful when there are dependencies in play. Let's add an asset downstream of our first asset:
 
 
-<CodeExample path="docs_snippets/docs_snippets/guides/dagster/asset_versioning_and_caching/dependencies_code_version_only.py" />
+<CodeExample path="docs_snippets/docs_snippets/guides/dagster/asset_versioning_and_caching/dependencies_code_version_only.py" title="src/<project_name>/defs/assets.py" />
 
 In the Dagster UI, click **Reload definitions**. The `multiplied_number` asset will be marked as **Never materialized**.
 
@@ -99,7 +99,7 @@ Once again, click the toggle to the right side of the **Materialize** button to 
 
 Now, let's update the `versioned_number` asset. Specifically, we'll change its return value and code version:
 
-<CodeExample path="docs_snippets/docs_snippets/guides/dagster/asset_versioning_and_caching/dependencies_code_version_only_v2.py" />
+<CodeExample path="docs_snippets/docs_snippets/guides/dagster/asset_versioning_and_caching/dependencies_code_version_only_v2.py" title="src/<project_name>/defs/assets.py" />
 
 As before, this will cause `versioned_number` to get an "Unsynced" label indicating that its code version has changed since its latest materialization. You might think that, since `multiplied_number` depends on `versioned_number`, it would also appear to be "Unsynced". However, "Unsynced" status is _not_ transitive in Dagster. `multiplied_number` will only appear to be "Unsynced" if its last materialization is against an outdated version of `versioned_number`. Materialize `versioned_number` and you will see that `multiplied_number` then becomes "Unsynced", with a reported reason of "Upstream data version change".
 
@@ -115,7 +115,7 @@ For example, when a materialization function contains an element of randomness, 
 
 Dagster accommodates these and similar scenarios by allowing user code to supply its own data versions. To do so, include the data version alongside the returned asset value in an <PyObject section="ops" module="dagster" object="Output" /> object. Let's update `versioned_number` to do this. For simplicity, you'll use the stringified return value as the data version:
 
-<CodeExample path="docs_snippets/docs_snippets/guides/dagster/asset_versioning_and_caching/manual_data_versions_1.py" />
+<CodeExample path="docs_snippets/docs_snippets/guides/dagster/asset_versioning_and_caching/manual_data_versions_1.py" title="src/<project_name>/defs/assets.py" />
 
 If you reload definitions, as before, you will see `versioned_number` gets an "Unsynced" label to indicate the latest materialization is out of sync with its code version. We also know that if we materialize `versioned_number`, `multiplied_number` will become unsynced. Let's re-materialize them both in one run to avoid that intermediate state. Notice the `DataVersion` of `versioned_number` is now `20`:
 
@@ -123,7 +123,7 @@ If you reload definitions, as before, you will see `versioned_number` gets an "U
 
 Let's simulate a cosmetic refactor by updating `versioned_number` again, but without changing the returned value. Bump the code version to `v5` and change `20` to `10 + 10`:
 
-<CodeExample path="docs_snippets/docs_snippets/guides/dagster/asset_versioning_and_caching/manual_data_versions_2.py" />
+<CodeExample path="docs_snippets/docs_snippets/guides/dagster/asset_versioning_and_caching/manual_data_versions_2.py" title="src/<project_name>/defs/assets.py" />
 
 Once again, `versioned_asset` will have an "Unsynced" label to indicate the change in the code version.
 
@@ -147,7 +147,7 @@ Let's add an <PyObject section="assets" module="dagster" object="observable_sour
 
 The body of the `input_number` function computes a hash of the file contents and returns it as a `DataVersion`. We'll set `input_number` as an upstream dependency of `versioned_number` and have `versioned_number` return the value it reads from the file:
 
-<CodeExample path="docs_snippets/docs_snippets/guides/dagster/asset_versioning_and_caching/observable_source_asset_path_with_non_argument_deps.py" />
+<CodeExample path="docs_snippets/docs_snippets/guides/dagster/asset_versioning_and_caching/observable_source_asset_path_with_non_argument_deps.py" title="src/<project_name>/defs/assets.py" />
 
 Adding an observable source asset to an asset graph will cause a new button, **Observe sources**, to appear:
 

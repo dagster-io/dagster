@@ -1,9 +1,9 @@
 from datetime import datetime
 from unittest import mock
 
-from dagster import TimeWindow
 from dagster._core.definitions import materialize
 from dagster._core.definitions.decorators import asset
+from dagster._core.definitions.partitions.utils import TimeWindow
 from dagster._core.storage.db_io_manager import DbTypeHandler, TablePartitionDimension, TableSlice
 from dagster_snowflake.snowflake_io_manager import (
     SnowflakeDbClient,

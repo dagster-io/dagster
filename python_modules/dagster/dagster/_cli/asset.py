@@ -18,6 +18,7 @@ from dagster._cli.workspace.cli_target import (
 from dagster._core.definitions.asset_selection import AssetSelection
 from dagster._core.definitions.backfill_policy import BackfillPolicyType
 from dagster._core.definitions.events import AssetKey
+from dagster._core.definitions.partitions.context import partition_loading_context
 from dagster._core.errors import DagsterInvalidSubsetError, DagsterUnknownPartitionError
 from dagster._core.execution.api import execute_job
 from dagster._core.instance import DagsterInstance
@@ -123,6 +124,9 @@ def execute_materialize_command(
         JobPythonOrigin(implicit_job_def.name, repository_origin=repository_origin)
     )
 
+    with partition_loading_context(dynamic_partitions_store=instance) as ctx:
+        context = ctx
+
     if partition and partition_range:
         check.failed("Cannot specify both --partition and --partition-range options. Use only one.")
 
@@ -135,7 +139,7 @@ def execute_materialize_command(
 
         try:
             implicit_job_def.validate_partition_key(
-                partition, selected_asset_keys=asset_keys, dynamic_partitions_store=instance
+                partition, selected_asset_keys=asset_keys, context=context
             )
             tags = implicit_job_def.get_tags_for_partition_key(
                 partition, selected_asset_keys=asset_keys
@@ -162,14 +166,10 @@ def execute_materialize_command(
                 )
         try:
             implicit_job_def.validate_partition_key(
-                partition_range_start,
-                selected_asset_keys=asset_keys,
-                dynamic_partitions_store=instance,
+                partition_range_start, selected_asset_keys=asset_keys, context=context
             )
             implicit_job_def.validate_partition_key(
-                check.not_none(partition_range_end),
-                selected_asset_keys=asset_keys,
-                dynamic_partitions_store=instance,
+                check.not_none(partition_range_end), selected_asset_keys=asset_keys, context=context
             )
         except DagsterUnknownPartitionError:
             raise DagsterInvalidSubsetError(

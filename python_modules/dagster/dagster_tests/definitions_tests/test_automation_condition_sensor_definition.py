@@ -1,14 +1,10 @@
+import dagster as dg
 import pytest
-from dagster import AssetSelection, DefaultSensorStatus, build_sensor_context
+from dagster import AssetSelection, DefaultSensorStatus
 from dagster._check import ParameterCheckError
-from dagster._core.definitions.automation_condition_sensor_definition import (
-    AutomationConditionSensorDefinition,
-)
 from dagster._core.definitions.declarative_automation.automation_condition import (
     AutomationCondition,
 )
-from dagster._core.definitions.definitions_class import Definitions
-from dagster._core.errors import DagsterInvalidInvocationError
 from dagster._core.instance import DagsterInstance
 from dagster_test.toys.auto_materializing.large_graph import AssetLayerConfig, build_assets
 
@@ -19,7 +15,7 @@ from dagster_test.toys.auto_materializing.large_graph import AssetLayerConfig, b
 @pytest.mark.parametrize("user_code", [True, False])
 def test_constructor(selection: AssetSelection, user_code: bool) -> None:
     tags = {"apple": "banana", "orange": "kiwi"}
-    automation_sensor = AutomationConditionSensorDefinition(
+    automation_sensor = dg.AutomationConditionSensorDefinition(
         "foo",
         target=selection,
         run_tags=tags,
@@ -40,16 +36,16 @@ def test_constructor(selection: AssetSelection, user_code: bool) -> None:
             NotImplementedError,
             match="Automation condition sensors cannot be evaluated like regular user-space sensors.",
         ):
-            automation_sensor(build_sensor_context())
+            automation_sensor(dg.build_sensor_context())
 
 
 def test_default_condition() -> None:
     with pytest.raises(ParameterCheckError, match="non-user-code"):
-        AutomationConditionSensorDefinition(
+        dg.AutomationConditionSensorDefinition(
             "foo", target="*", default_condition=AutomationCondition.eager()
         )
 
-    sensor = AutomationConditionSensorDefinition(
+    sensor = dg.AutomationConditionSensorDefinition(
         "foo",
         target="*",
         default_condition=AutomationCondition.eager(),
@@ -59,18 +55,20 @@ def test_default_condition() -> None:
 
 
 def test_limits() -> None:
-    sensor = AutomationConditionSensorDefinition("foo", target="*", use_user_code_server=True)
+    sensor = dg.AutomationConditionSensorDefinition("foo", target="*", use_user_code_server=True)
 
-    defs = Definitions(
+    defs = dg.Definitions(
         assets=build_assets(
             "test",
             layer_configs=[AssetLayerConfig(1000)],
             automation_condition=AutomationCondition.eager(),
         )
     )
-    with pytest.raises(DagsterInvalidInvocationError, match='"foo" targets 1000 assets or checks'):
+    with pytest.raises(
+        dg.DagsterInvalidInvocationError, match='"foo" targets 1000 assets or checks'
+    ):
         sensor(
-            build_sensor_context(
+            dg.build_sensor_context(
                 instance=DagsterInstance.ephemeral(),
                 repository_def=defs.get_repository_def(),
             ),
@@ -87,9 +85,9 @@ def test_limits() -> None:
         layer_configs=[AssetLayerConfig(400)],
         automation_condition=None,
     )
-    defs = Definitions(assets=[*with_condition, *without_condition])
+    defs = dg.Definitions(assets=[*with_condition, *without_condition])
     sensor(
-        build_sensor_context(
+        dg.build_sensor_context(
             instance=DagsterInstance.ephemeral(),
             repository_def=defs.get_repository_def(),
         ),

@@ -4,40 +4,57 @@ description: "Learn to integrate Dagster Pipes with Databricks to launch externa
 sidebar_position: 50
 ---
 
-This article covers how to use [Dagster Pipes](/guides/build/external-pipelines/) with Dagster's [Databricks integration](/integrations/libraries/databricks) to launch Databricks jobs.
+import ScaffoldProject from '@site/docs/partials/\_ScaffoldProject.md';
+
+This article covers how to use [Dagster Pipes](/guides/build/external-pipelines) with Dagster's [Databricks integration](/integrations/libraries/databricks) to launch Databricks jobs.
 
 Pipes allows your Databricks jobs to stream logs (including `stdout` and `stderr` of the driver process) and events back to Dagster. This does not require a full Dagster environment on Databricks; instead:
 
 - The Databricks environment needs to include [`dagster-pipes`](https://pypi.org/project/dagster-pipes), a single-file Python package with no dependencies that can be installed from PyPI or easily vendored, and
 -  Databricks jobs must be launched from Dagster
 
-<details>
-    <summary>Prerequisites</summary>
 
-    - **In the Dagster environment**, you'll need to install the following packages:
+## Prerequisites
+
+To run the examples, you'll need to:
+
+- Create a new Dagster project:
+  <ScaffoldProject />
+- Install the necessary Python libraries:
+
+<Tabs groupId="package-manager">
+   <TabItem value="uv" label="uv">
+      Install the required dependencies:
+
+         ```shell
+         uv add dagster-databricks
+         ```
+
+   </TabItem>
+
+   <TabItem value="pip" label="pip">
+      Install the required dependencies:
+
+         ```shell
+         pip install dagster-databricks
+         ```
+
+   </TabItem>
+</Tabs>
+
+- Refer to the [Dagster installation guide](/getting-started/installation) for more info. In Databricks, you'll need:
+  - **A Databricks workspace**. If you don't have this, follow the [Databricks quickstart](https://docs.databricks.com/workflows/jobs/jobs-quickstart.html) to set one up.
+  - **The following information about your Databricks workspace**:
+
+    - `host` - The host URL of your Databricks workspace, ex: `https://dbc-xxxxxxx-yyyy.cloud.databricks.com/`
+    - `token` - A personal access token for the Databricks workspace. Refer to the Databricks API authentication documentation for more info about retrieving these values.
+
+    You should set and export the Databricks host and token environment variables in your shell session:
 
     ```shell
-    pip install dagster dagster-webserver dagster-databricks
+    export DATABRICKS_HOST=<your-host-url>
+    export DATABRICKS_TOKEN=<your-personal-access-token>
     ```
-
-    Refer to the [Dagster installation guide](/getting-started/installation) for more info.
-
-    - **In Databricks**, you'll need:
-
-    - **A Databricks workspace**. If you don't have this, follow the [Databricks quickstart](https://docs.databricks.com/workflows/jobs/jobs-quickstart.html) to set one up.
-    - **The following information about your Databricks workspace**:
-
-        - `host` - The host URL of your Databricks workspace, ex: `https://dbc-xxxxxxx-yyyy.cloud.databricks.com/`
-        - `token` - A personal access token for the Databricks workspace. Refer to the Databricks API authentication documentation for more info about retrieving these values.
-
-        You should set and export the Databricks host and token environment variables in your shell session:
-
-        ```shell
-        export DATABRICKS_HOST=<your-host-url>
-        export DATABRICKS_TOKEN<your-personal-access-token>
-        ```
-
-</details>
 
 ## Step 1: Create an asset computed in Databricks
 
@@ -45,9 +62,15 @@ In this step, you'll create a Dagster asset that, when materialized, opens a Dag
 
 ### Step 1.1: Define the Dagster asset
 
+import ScaffoldAsset from '@site/docs/partials/\_ScaffoldAsset.md';
+
+<ScaffoldAsset />
+
 In your Dagster project, create a file named `dagster_databricks_pipes.py` and paste in the following code:
 
-<CodeExample path="docs_snippets/docs_snippets/guides/dagster/dagster_pipes/databricks/databricks_asset_client.py" startAfter="start_databricks_asset" endBefore="end_databricks_asset" />
+
+<CodeExample path="docs_snippets/docs_snippets/guides/dagster/dagster_pipes/databricks/databricks_asset_client.py" title="src/<project_name>/defs/assets.py" />
+
 
 Let's review what's happening in this code:
 
@@ -75,15 +98,21 @@ Let's review what's happening in this code:
 - **Returns a <PyObject section="assets" module="dagster" object="MaterializeResult" /> object representing the result of execution**. This is obtained by calling `get_materialize_result` on the `PipesClientCompletedInvocation` object returned by `run` after the Databricks job has finished. **Note**: Execution can take several minutes even for trivial scripts due to Databricks cluster provisioning times.
 {/* TODO replace `PipesClientCompletedInvocation` with <PyObject section="pipes" module="dagster" object="PipesClientCompletedInvocation" /> */}
 
-### Step 1.2: Define the Databricks Pipes client and definitions
+### Step 1.2: Define the Databricks Pipes client and Definitions
+
+import ScaffoldResource from '@site/docs/partials/\_ScaffoldResource.md';
+
+<ScaffoldResource />
 
 The [`dagster-databricks`](/api/libraries/dagster-databricks) library provides a <PyObject section="libraries" module="dagster_databricks" object="PipesDatabricksClient" />, which is a pre-built Dagster resource that allows you to quickly get Pipes working with your Databricks workspace.
 
 Add the following to the bottom of `dagster_databricks_pipes.py` to define the resource and a <PyObject section="definitions" module="dagster" object="Definitions" /> object that binds it to the `databricks_asset`:
 
-<CodeExample path="docs_snippets/docs_snippets/guides/dagster/dagster_pipes/databricks/databricks_asset_client.py" startAfter="start_definitions" endBefore="end_definitions" />
 
-## Step 2: Write a script for execution on Databricks
+<CodeExample path="docs_snippets/docs_snippets/guides/dagster/dagster_pipes/databricks/resources.py" title="src/<project_name>/defs/resources.py"/>
+
+
+### Step 2: Write a script for execution on Databricks
 
 The next step is to write the code that will be executed on Databricks. In the Databricks task specification in [Step 1.1](#step-11-define-the-dagster-asset), we referenced a file `dbfs:/my_python_script.py` in the `spark_python_task`:
 
@@ -110,7 +139,7 @@ The metadata format shown above (`{"raw_value": value, "type": type}`) is part o
 
 :::
 
-Before we go any futher, let's review what this script does:
+Before we go any further, let's review what this script does:
 
 - **Imports `PipesDbfsContextLoader`, `PipesDbfsMessageWriter`, and `open_dagster_pipes` from `dagster_pipes`.** The <PyObject section="libraries" object="PipesDbfsContextLoader" module="dagster_pipes" /> and <PyObject section="libraries" object="PipesDbfsMessageWriter" module="dagster_pipes" /> are DBFS-specific implementations of the <PyObject section="libraries" module="dagster_pipes" object="PipesContextLoader" /> and <PyObject section="libraries" module="dagster_pipes" object="PipesMessageWriter" />. Refer to the [Dagster Pipes details and customization Guide](/guides/build/external-pipelines/dagster-pipes-details-and-customization) for protocol details.
 
@@ -118,7 +147,7 @@ Before we go any futher, let's review what this script does:
 
 - **Passes the context loader and message writer to the <PyObject section="libraries" object="open_dagster_pipes" module="dagster_pipes" /> context manager**, which yields an instance of <PyObject section="libraries" object="PipesContext" module="dagster_pipes" /> called `pipes`. **Note**: when using `existing_cluster_id`, you must also import `PipesCliArgsParamsLoader` and pass an instance of it to `open_dagster_pipes` as the `params_loader` parameter.
 
-  Inside the body of the context manager are various calls against `pipes` to retrieve an extra, log, and report an asset materialization. All of these calls will use the DBFS temporary file-based communications channels established by <PyObject section="libraries" object="PipesDbfsContextLoader" module="dagster_pipes" /> and <PyObject section="libraries" object="PipesDbfsMessageWriter" module="dagster_pipes" />. To see the full range of what you can do with the <PyObject section="libraries" object="PipesContext" module="dagster_pipes" />, see the API docs or the general [Pipes guide](/guides/build/external-pipelines/).
+  Inside the body of the context manager are various calls against `pipes` to retrieve an extra, log, and report an asset materialization. All of these calls will use the DBFS temporary file-based communications channels established by <PyObject section="libraries" object="PipesDbfsContextLoader" module="dagster_pipes" /> and <PyObject section="libraries" object="PipesDbfsMessageWriter" module="dagster_pipes" />. To see the full range of what you can do with the <PyObject section="libraries" object="PipesContext" module="dagster_pipes" />, see the API docs or the general [Pipes guide](/guides/build/external-pipelines).
 
 At this point you can execute the rest of your Databricks code as normal, invoking various <PyObject section="libraries" object="PipesContext" module="dagster_pipes" /> APIs as needed.
 
@@ -137,10 +166,10 @@ In this step, you'll run the Databricks job you created in [Step 1.2](#step-12-d
 1. In a new command line session, run the following to start the UI:
 
    ```shell
-   dagster dev -f dagster_databricks_pipes.py
+   dg dev
    ```
 
-2. Navigate to [localhost:3000](http://localhost:3000/), where you should see the UI:
+2. Navigate to [localhost:3000](http://localhost:3000), where you should see the UI:
 
     ![Databricks asset](/images/guides/build/external-pipelines/databricks/asset.png)
 
@@ -164,4 +193,4 @@ While your Databricks code is running, any calls to `report_asset_materializatio
 
 With either option, once the <PyObject section="pipes" module="dagster" object="open_pipes_session" /> block closes, you must call `yield pipes_session.get_results()` to yield any remaining buffered results, since we cannot guarantee that all communications from Databricks have been processed until the `open_pipes_session` block closes.
 
-<CodeExample path="docs_snippets/docs_snippets/guides/dagster/dagster_pipes/databricks/databricks_asset_open_pipes_session.py" />
+<CodeExample path="docs_snippets/docs_snippets/guides/dagster/dagster_pipes/databricks/databricks_asset_open_pipes_session.py" title="src/<project_name>/defs/assets.py" />

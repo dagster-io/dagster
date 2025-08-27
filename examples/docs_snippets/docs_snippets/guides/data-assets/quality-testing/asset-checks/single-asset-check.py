@@ -21,9 +21,3 @@ def orders_id_has_no_nulls():
         passed=bool(num_null_order_ids == 0),
     )
     # highlight-end
-
-
-defs = dg.Definitions(
-    assets=[orders],
-    asset_checks=[orders_id_has_no_nulls],
-)

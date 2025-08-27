@@ -4,61 +4,43 @@ import re
 from collections.abc import Sequence
 from typing import Optional
 
+import dagster as dg
 import pytest
-from dagster import (
-    DagsterEventType,
-    DagsterExecutionStepNotFoundError,
-    DependencyDefinition,
-    GraphDefinition,
-    In,
-    Int,
-    Out,
-    in_process_executor,
-    mem_io_manager,
-    op,
-    reconstructable,
-)
-from dagster._core.definitions.asset_key import AssetKey
-from dagster._core.definitions.assets import AssetsDefinition
-from dagster._core.definitions.cacheable_assets import (
+from dagster import DagsterEventType
+from dagster._core.definitions.assets.definition.assets_definition import AssetsDefinition
+from dagster._core.definitions.assets.definition.cacheable_assets_definition import (
     AssetsDefinitionCacheableData,
     CacheableAssetsDefinition,
 )
-from dagster._core.definitions.decorators.asset_decorator import asset
-from dagster._core.definitions.decorators.repository_decorator import repository
 from dagster._core.definitions.job_base import InMemoryJob
 from dagster._core.definitions.metadata.metadata_value import MetadataValue
-from dagster._core.definitions.metadata.table import TableColumn, TableSchema
 from dagster._core.definitions.reconstruct import ReconstructableJob, ReconstructableRepository
-from dagster._core.definitions.unresolved_asset_job_definition import define_asset_job
-from dagster._core.events import DagsterEvent
 from dagster._core.execution.api import create_execution_plan, execute_plan
 from dagster._core.instance import DagsterInstance
 from dagster._core.system_config.objects import ResolvedRunConfig
-from dagster._core.test_utils import instance_for_test
 from dagster.components.definitions import lazy_repository
 
 
 def define_inty_job(using_file_system=False):
-    @op
+    @dg.op
     def return_one():
         return 1
 
-    @op(ins={"num": In(Int)}, out=Out(Int))
+    @dg.op(ins={"num": dg.In(dg.Int)}, out=dg.Out(dg.Int))
     def add_one(num):
         return num + 1
 
-    @op
+    @dg.op
     def user_throw_exception():
         raise Exception("whoops")
 
-    the_job = GraphDefinition(
+    the_job = dg.GraphDefinition(
         name="basic_external_plan_execution",
         node_defs=[return_one, add_one, user_throw_exception],
-        dependencies={"add_one": {"num": DependencyDefinition("return_one")}},
+        dependencies={"add_one": {"num": dg.DependencyDefinition("return_one")}},
     ).to_job(
-        resource_defs=None if using_file_system else {"io_manager": mem_io_manager},
-        executor_def=None if using_file_system else in_process_executor,
+        resource_defs=None if using_file_system else {"io_manager": dg.mem_io_manager},
+        executor_def=None if using_file_system else dg.in_process_executor,
     )
     return the_job
 
@@ -68,8 +50,8 @@ def define_reconstructable_inty_job():
 
 
 def get_step_output(
-    step_events: Sequence[DagsterEvent], step_key: str, output_name: str = "result"
-) -> Optional[DagsterEvent]:
+    step_events: Sequence[dg.DagsterEvent], step_key: str, output_name: str = "result"
+) -> Optional[dg.DagsterEvent]:
     for step_event in step_events:
         if (
             step_event.event_type == DagsterEventType.STEP_OUTPUT
@@ -124,8 +106,8 @@ def test_using_file_system_for_subplan():
 
 
 def test_using_file_system_for_subplan_multiprocessing():
-    with instance_for_test() as instance:
-        foo_job = reconstructable(define_reconstructable_inty_job)
+    with dg.instance_for_test() as instance:
+        foo_job = dg.reconstructable(define_reconstructable_inty_job)
 
         resolved_run_config = ResolvedRunConfig.build(
             foo_job.get_definition(),
@@ -192,7 +174,7 @@ def test_execute_step_wrong_step_key():
     execution_plan = create_execution_plan(foo_job)
     run = instance.create_run_for_job(job_def=foo_job, execution_plan=execution_plan)
 
-    with pytest.raises(DagsterExecutionStepNotFoundError) as exc_info:
+    with pytest.raises(dg.DagsterExecutionStepNotFoundError) as exc_info:
         execute_plan(
             execution_plan.build_subset_plan(["nope.compute"], foo_job, resolved_run_config),
             InMemoryJob(foo_job),
@@ -204,7 +186,7 @@ def test_execute_step_wrong_step_key():
 
     assert str(exc_info.value) == "Can not build subset plan from unknown step: nope.compute"
 
-    with pytest.raises(DagsterExecutionStepNotFoundError) as exc_info:
+    with pytest.raises(dg.DagsterExecutionStepNotFoundError) as exc_info:
         execute_plan(
             execution_plan.build_subset_plan(
                 ["nope.compute", "nuh_uh.compute"], foo_job, resolved_run_config
@@ -249,7 +231,7 @@ def test_using_file_system_for_subplan_invalid_step():
 
     run = instance.create_run_for_job(job_def=foo_job, execution_plan=execution_plan)
 
-    with pytest.raises(DagsterExecutionStepNotFoundError):
+    with pytest.raises(dg.DagsterExecutionStepNotFoundError):
         execute_plan(
             execution_plan.build_subset_plan(["nope.compute"], foo_job, resolved_run_config),
             InMemoryJob(foo_job),
@@ -259,7 +241,7 @@ def test_using_file_system_for_subplan_invalid_step():
 
 
 def test_using_repository_data() -> None:
-    with instance_for_test() as instance:
+    with dg.instance_for_test() as instance:
         # first, we resolve the repository to generate our cached metadata
         recon_repo = ReconstructableRepository.for_file(__file__, fn_name="cacheable_asset_defs")
         repo_def = recon_repo.get_definition()
@@ -312,11 +294,11 @@ def test_using_repository_data() -> None:
 
 class MyCacheableAssetsDefinition(CacheableAssetsDefinition):
     _cacheable_data = AssetsDefinitionCacheableData(
-        keys_by_output_name={"result": AssetKey("foo")},
+        keys_by_output_name={"result": dg.AssetKey("foo")},
         metadata_by_output_name={
             "result": {
                 "some_val": MetadataValue.table_schema(
-                    schema=TableSchema(columns=[TableColumn("some_col")])
+                    schema=dg.TableSchema(columns=[dg.TableColumn("some_col")])
                 )
             }
         },
@@ -345,7 +327,7 @@ class MyCacheableAssetsDefinition(CacheableAssetsDefinition):
         )
         instance.run_storage.set_cursor_values({kvs_key: str(get_definitions_called + 1)})
 
-        @op
+        @dg.op
         def _op():
             return 1
 
@@ -356,16 +338,16 @@ class MyCacheableAssetsDefinition(CacheableAssetsDefinition):
 
 @lazy_repository
 def cacheable_asset_defs():
-    @asset
+    @dg.asset
     def bar(foo):
         return foo + 1
 
-    @repository
+    @dg.repository
     def cacheable_asset_defs():
         return [
             bar,
             MyCacheableAssetsDefinition("xyz"),
-            define_asset_job("all_asset_job"),
+            dg.define_asset_job("all_asset_job"),
         ]
 
     return cacheable_asset_defs

@@ -113,4 +113,4 @@ defs = dg.Definitions(
 
 ## About Not Diamond
 
-[Not Diamond](https://www.notdiamond.ai/) is a service that recommends the best model for every query, improving accuracy and reducing costs. It can train your own router with your evaluation data and support joint prompt optimization.
+[Not Diamond](https://www.notdiamond.ai) is a service that recommends the best model for every query, improving accuracy and reducing costs. It can train your own router with your evaluation data and support joint prompt optimization.

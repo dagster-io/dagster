@@ -2,6 +2,8 @@
 title: 'Using dbt with Dagster+'
 description: Deploy your dbt & Dagster project in Dagster+.
 sidebar_position: 300
+canonicalUrl: '/integrations/libraries/dbt/using-dbt-with-dagster-plus'
+slug: '/integrations/libraries/dbt/using-dbt-with-dagster-plus'
 ---
 
 Using a dbt project in Dagster+ allows you to automatically load your dbt models as Dagster assets. This can be be done with both deployment options in Dagster+: Serverless and Hybrid.
@@ -25,4 +27,3 @@ If you have a Hybrid deployment, you must make the dbt project accessible to the
 - When using a local agent, you must make your dbt project accessible to your Dagster code on the same machine as your agent.
 
 For more information, see "[Using dbt with Hybrid deployments in Dagster+](/integrations/libraries/dbt/using-dbt-with-dagster-plus/hybrid)".
-

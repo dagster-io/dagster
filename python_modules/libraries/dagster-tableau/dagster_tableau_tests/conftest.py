@@ -13,23 +13,41 @@ FAKE_USERNAME = "fake_username"
 FAKE_SITE_NAME = "fake_site_name"
 FAKE_POD_NAME = "fake_pod_name"
 
+TEST_DATA_SOURCE_ID = "0f5660c7-2b05-4ff0-90ce-3199226956c6"
 TEST_EMBEDDED_DATA_SOURCE_ID = "1f5660c7-3b05-5ff0-90ce-4199226956c6"
+TEST_DATA_SOURCE_HIDDEN_SHEET_ID = "test_data_source_hidden_sheet_id"
+
+TEST_WORKBOOK_ID = "b75fc023-a7ca-4115-857b-4342028640d0"
+TEST_PROJECT_NAME = "test_project_name"
+TEST_PROJECT_ID = "test_project_id"
 
 
 SAMPLE_DATA_SOURCE = {
-    "luid": "0f5660c7-2b05-4ff0-90ce-3199226956c6",
+    "luid": TEST_DATA_SOURCE_ID,
     "name": "Superstore Datasource",
     "hasExtracts": False,
+    "isPublished": True,
 }
 
 SAMPLE_EMBEDDED_DATA_SOURCE = {
     "id": TEST_EMBEDDED_DATA_SOURCE_ID,
     "name": "Embedded Superstore Datasource",
     "hasExtracts": True,
+    "isPublished": False,
+    "workbook": {"luid": TEST_WORKBOOK_ID},
 }
+
+SAMPLE_DATA_SOURCE_HIDDEN_SHEET = {
+    "luid": TEST_DATA_SOURCE_HIDDEN_SHEET_ID,
+    "name": "Hidden Sheet Datasource",
+    "hasExtracts": True,
+    "isPublished": True,
+}
+
 
 SAMPLE_SHEET = {
     "luid": "ae8a5f27-8b2f-44e9-aec3-94fe6c638f4f",
+    "id": "sample_sheet_1_metadata_id",
     "name": "Sales",
     "createdAt": "2024-09-05T21:33:26Z",
     "updatedAt": "2024-09-13T00:15:23Z",
@@ -43,11 +61,12 @@ SAMPLE_SHEET = {
             ]
         }
     ],
-    "workbook": {"luid": "b75fc023-a7ca-4115-857b-4342028640d0"},
+    "workbook": {"luid": TEST_WORKBOOK_ID},
 }
 
 SAMPLE_SHEET_2 = {
     "luid": "be8a5f27-9b2f-54e9-bec3-84fe6c638f4f",
+    "id": "sample_sheet_2_metadata_id",
     "name": "Account",
     "createdAt": "2024-09-06T22:33:26Z",
     "updatedAt": "2024-09-14T01:15:23Z",
@@ -55,12 +74,29 @@ SAMPLE_SHEET_2 = {
     "parentEmbeddedDatasources": [
         {**SAMPLE_EMBEDDED_DATA_SOURCE, "parentPublishedDatasources": []}
     ],
-    "workbook": {"luid": "b75fc023-a7ca-4115-857b-4342028640d0"},
+    "workbook": {"luid": TEST_WORKBOOK_ID},
 }
 
-SHEET_LIST = []
-SHEET_LIST += [SAMPLE_SHEET]
-SHEET_LIST += [SAMPLE_SHEET_2]
+SAMPLE_HIDDEN_SHEET = {
+    "luid": None,
+    "id": "sample_hidden_sheet_metadata_id",
+    "name": "hidden",
+    "createdAt": "2024-09-06T22:33:26Z",
+    "updatedAt": "2024-09-14T01:15:23Z",
+    "path": "TestWorkbook/Account",
+    "parentEmbeddedDatasources": [
+        {
+            "parentPublishedDatasources": [
+                {
+                    **SAMPLE_DATA_SOURCE_HIDDEN_SHEET,
+                }
+            ]
+        }
+    ],
+    "workbook": {"luid": TEST_WORKBOOK_ID},
+}
+
+SHEET_LIST = [SAMPLE_SHEET, SAMPLE_SHEET_2, SAMPLE_HIDDEN_SHEET]
 
 SAMPLE_DASHBOARD = {
     "luid": "c9bf8403-5daf-427a-b3d6-2ce9bed7798f",
@@ -68,17 +104,28 @@ SAMPLE_DASHBOARD = {
     "createdAt": "2024-09-06T14:38:42Z",
     "updatedAt": "2024-09-13T00:15:23Z",
     "path": "TestWorkbook/Dashboard_Sales",
-    "sheets": [{"luid": "ae8a5f27-8b2f-44e9-aec3-94fe6c638f4f"}],
-    "workbook": {"luid": "b75fc023-a7ca-4115-857b-4342028640d0"},
+    "sheets": [
+        {
+            "luid": "ae8a5f27-8b2f-44e9-aec3-94fe6c638f4f",
+            "id": "sample_sheet_1_metadata_id",
+        },
+        {
+            "luid": None,
+            "id": "sample_hidden_sheet_metadata_id",
+        },
+    ],
+    "workbook": {"luid": TEST_WORKBOOK_ID},
 }
 
 
 SAMPLE_WORKBOOK = {
-    "luid": "b75fc023-a7ca-4115-857b-4342028640d0",
+    "luid": TEST_WORKBOOK_ID,
     "name": "Test Workbook",
     "createdAt": "2024-09-05T21:33:26Z",
     "updatedAt": "2024-09-13T00:15:27Z",
     "uri": "sites/49445/workbooks/690496",
+    "projectName": TEST_PROJECT_NAME,
+    "projectLuid": TEST_PROJECT_ID,
     "sheets": SHEET_LIST,
     "dashboards": [
         {
@@ -87,11 +134,11 @@ SAMPLE_WORKBOOK = {
     ],
 }
 
-SAMPLE_WORKBOOKS = {"workbooks": {"workbook": [{"id": "b75fc023-a7ca-4115-857b-4342028640d0"}]}}
+SAMPLE_WORKBOOKS = {"workbooks": {"workbook": [{"id": TEST_WORKBOOK_ID}]}}
 
 SAMPLE_VIEW_SHEET = {
     "view": {
-        "workbook": {"id": "b75fc023-a7ca-4115-857b-4342028640d0"},
+        "workbook": {"id": TEST_WORKBOOK_ID},
         "owner": {"id": "2a59b27f-a842-4c7a-a6ed-8c9f814e6119"},
         "tags": {},
         "location": {"id": "7239fbb5-f0a3-426f-b9c0-05f829c6cd64", "type": "PersonalSpace"},
@@ -106,7 +153,7 @@ SAMPLE_VIEW_SHEET = {
 
 SAMPLE_VIEW_DASHBOARD = {
     "view": {
-        "workbook": {"id": "b75fc023-a7ca-4115-857b-4342028640d0"},
+        "workbook": {"id": TEST_WORKBOOK_ID},
         "owner": {"id": "2a59b27f-a842-4c7a-a6ed-8c9f814e6119"},
         "tags": {},
         "location": {"id": "7239fbb5-f0a3-426f-b9c0-05f829c6cd64", "type": "PersonalSpace"},
@@ -137,7 +184,7 @@ def api_token_fixture() -> str:
 
 @pytest.fixture(name="workbook_id")
 def workbook_id_fixture() -> str:
-    return "b75fc023-a7ca-4115-857b-4342028640d0"
+    return TEST_WORKBOOK_ID
 
 
 @pytest.fixture(name="sheet_id")
@@ -152,7 +199,7 @@ def dashboard_id_fixture() -> str:
 
 @pytest.fixture(name="data_source_id")
 def data_source_id_fixture() -> str:
-    return "0f5660c7-2b05-4ff0-90ce-3199226956c6"
+    return TEST_DATA_SOURCE_ID
 
 
 @pytest.fixture(name="embedded_data_source_id")
@@ -200,13 +247,13 @@ def get_data_source_fixture(build_data_source_item):
 
 
 @pytest.fixture(name="get_job", autouse=True)
-def get_job_fixture(embedded_data_source_id, workbook_id, job_id):
+def get_job_fixture(workbook_id, job_id):
     with patch("dagster_tableau.resources.BaseTableauClient.get_job") as mocked_function:
         type(mocked_function.return_value).id = PropertyMock(return_value=job_id)
         type(mocked_function.return_value).finish_code = PropertyMock(return_value=0)
         type(mocked_function.return_value).workbook_id = PropertyMock(return_value=workbook_id)
         type(mocked_function.return_value).datasource_id = PropertyMock(
-            return_value=embedded_data_source_id
+            return_value=TEST_DATA_SOURCE_HIDDEN_SHEET_ID
         )
         yield mocked_function
 
@@ -221,14 +268,14 @@ def refresh_workbook_fixture(workbook_id, job_id):
 
 
 @pytest.fixture(name="refresh_data_source", autouse=True)
-def refresh_data_source_fixture(embedded_data_source_id, job_id):
+def refresh_data_source_fixture(job_id):
     with patch(
         "dagster_tableau.resources.BaseTableauClient.refresh_data_source"
     ) as mocked_function:
         type(mocked_function.return_value).id = PropertyMock(return_value=job_id)
         type(mocked_function.return_value).finish_code = PropertyMock(return_value=-1)
         type(mocked_function.return_value).datasource_id = PropertyMock(
-            return_value=embedded_data_source_id
+            return_value=TEST_DATA_SOURCE_HIDDEN_SHEET_ID
         )
         yield mocked_function
 

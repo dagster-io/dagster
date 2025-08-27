@@ -3,7 +3,7 @@ from unittest.mock import MagicMock
 
 import pytest
 
-from dagster._core.definitions.asset_check_spec import AssetCheckKey
+from dagster._core.definitions.asset_checks.asset_check_spec import AssetCheckKey
 from dagster._core.definitions.events import AssetKey
 from docs_snippets.concepts.assets.asset_checks.asset_with_check import (
     defs as asset_with_check_defs,

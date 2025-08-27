@@ -9,7 +9,7 @@ You often want to control the number of concurrent runs for a Dagster job, a spe
 
 :::note
 
-This article assumes familiarity with [assets](/guides/build/assets/) and [jobs](/guides/build/jobs/).
+This article assumes familiarity with [assets](/guides/build/assets) and [jobs](/guides/build/jobs).
 
 :::
 
@@ -29,22 +29,22 @@ concurrency:
 You can assign assets and ops to concurrency pools which allow you to limit the number of in progress op executions across all runs. You first assign your asset or op to a concurrency pool using the `pool` keyword argument.
 
 <CodeExample
-  path="docs_snippets/docs_snippets/guides/operate/concurrency-pool-api.py"
+  path="docs_snippets/docs_snippets/guides/operate/managing_concurrency/concurrency_pool_api.py"
+  title="src/<project_name>/defs/assets.py"
   language="python"
-  title="Specifying pools on assets and ops"
 />
 
 You should be able to verify that you have set the pool correctly by viewing the details pane for the asset or op in the Dagster UI.
 
 ![Viewing the pool tag](/images/guides/operate/managing-concurrency/asset-pool-tag.png)
 
-Once you have assigned your assets and ops to a concurrency pool, you can configure a pool limit for that pool in your deployment by using the Dagster UI or the Dagster CLI.
+Once you have assigned your assets and ops to a concurrency pool, you can configure a pool limit for that pool in your deployment by using the [Dagster UI](/guides/operate/webserver) or the [`dagster` CLI](/api/clis/cli).
 
 To specify a limit for the pool "database" using the UI, navigate to the `Deployments` &rarr; `Concurrency` settings page and click the `Add pool limit` button:
 
 ![Setting the pool limit](/images/guides/operate/managing-concurrency/add-pool-ui.png)
 
-To specify a limit for the pool "database" using the CLI, use:
+To specify a limit for the pool "database" using the `dagster` CLI, use:
 
 ```
 dagster instance concurrency set database 1
@@ -69,7 +69,7 @@ Without this granularity set, the default granularity is set to the `op`. This m
 
 ### Setting a default limit for concurrency pools
 
-- Dagster+: Edit the `concurrency` config in deployment settings via the [Dagster+ UI](/guides/operate/webserver) or the [`dagster-cloud` CLI](/deployment/dagster-plus/management/dagster-cloud-cli/).
+- Dagster+: Edit the `concurrency` config in deployment settings via the [Dagster+ UI](/guides/operate/webserver) or the [`dagster-cloud` CLI](/api/clis/dagster-cloud-cli).
 - Dagster Open Source: Use your instance's [dagster.yaml](/deployment/oss/dagster-yaml)
 
 ```yaml
@@ -112,22 +112,36 @@ concurrency:
 While pool limits allow you to [limit the number of ops executing across all runs](#limit-the-number-of-assets-or-ops-actively-executing-across-all-runs), to limit the number of ops executing _within a single run_, you need to configure your [run executor](/guides/operate/run-executors). You can
 limit concurrency for ops and assets in runs, by using `max_concurrent` in the run config, either in Python or using the Launchpad in the Dagster UI.
 
-<CodeExample
-  path="docs_snippets/docs_snippets/guides/operate/concurrency-run-scoped-op-concurrency.py"
-  language="python"
-  title="Limit concurrent op execution for a single run"
-/>
+:::info
 
 The default limit for op execution within a run depends on which executor you are using. For example, the <PyObject section="execution" module="dagster" object="multiprocess_executor" /> by default limits the number of ops executing to the value of `multiprocessing.cpu_count()` in the launched run.
+
+:::
+
+### Limit concurrent execution for a specific job
+
+<CodeExample
+  path="docs_snippets/docs_snippets/guides/operate/managing_concurrency/limit_execution_job.py"
+  language="python"
+  title="src/<project_name>/defs/assets.py"
+/>
+
+### Limit concurrent execution for all runs in a code location
+
+<CodeExample
+  path="docs_snippets/docs_snippets/guides/operate/managing_concurrency/limit_execution_code_location.py"
+  language="python"
+  title="src/<project_name>/defs/executor.py"
+/>
 
 ## Prevent runs from starting if another run is already occurring (advanced)
 
 You can use Dagster's rich metadata to use a schedule or a sensor to only start a run when there are no currently running jobs.
 
 <CodeExample
-  path="docs_snippets/docs_snippets/guides/operate/concurrency-no-more-than-1-job.py"
+  path="docs_snippets/docs_snippets/guides/operate/managing_concurrency/concurrency_no_more_than_1_job.py"
   language="python"
-  title="No more than 1 running job from a schedule"
+  title="src/<project_name>/defs/assets.py"
 />
 
 ## Troubleshooting
@@ -150,7 +164,7 @@ The possible causes for runs remaining in `QUEUED` status depend on whether you'
   <TabItem value="Dagster+" label="Dagster+">
     If runs aren't being dequeued in Dagster+, the root causes could be:
     * **If using a [hybrid deployment](/deployment/dagster-plus/hybrid)**, the agent serving the deployment may be down. In this situation, runs will be paused.
-    * **Dagster+ is experiencing downtime**. Check the [status page](https://dagstercloud.statuspage.io/) for the latest on potential outages.
+    * **Dagster+ is experiencing downtime**. Check the [status page](https://dagstercloud.statuspage.io) for the latest on potential outages.
 
   </TabItem>
   <TabItem value="Dagster Open Source" label="Dagster Open Source">

@@ -111,6 +111,7 @@ value:
 	| INCOMPLETE_LEFT_QUOTED_STRING		# IncompleteLeftQuotedStringValue
 	| INCOMPLETE_RIGHT_QUOTED_STRING	# IncompleteRightQuotedStringValue
 	| IDENTIFIER						# UnquotedStringValue
+	| NULL_STRING    					# NullStringValue
 	| DIGITS							# DigitsValue;
 
 // Tokens for operators and keywords
@@ -132,6 +133,7 @@ RPAREN: ')';
 QUOTED_STRING: '"' (~["\\\r\n])* '"';
 INCOMPLETE_LEFT_QUOTED_STRING: '"' (~["\\\r\n():=])*;
 INCOMPLETE_RIGHT_QUOTED_STRING: (~["\\\r\n:()=])* '"';
+NULL_STRING: '<null>';
 
 EQUAL: '=';
 

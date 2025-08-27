@@ -8,7 +8,7 @@ from dagster import (
     AssetMaterialization,
     Output,
 )
-from dagster._annotations import preview
+from dagster._annotations import beta
 from dagster._record import record
 
 from dagster_dbt.cloud_v2.client import DbtCloudWorkspaceClient
@@ -16,7 +16,7 @@ from dagster_dbt.cloud_v2.run_handler import DbtCloudJobRunHandler, DbtCloudJobR
 from dagster_dbt.dagster_dbt_translator import DagsterDbtTranslator
 
 
-@preview
+@beta
 @record
 class DbtCloudCliInvocation:
     """Represents a dbt Cloud cli invocation."""

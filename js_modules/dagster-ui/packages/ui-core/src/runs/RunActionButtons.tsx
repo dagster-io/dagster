@@ -11,7 +11,6 @@ import {RunFragment, RunPageFragment} from './types/RunFragments.types';
 import {useJobAvailabilityErrorForRun} from './useJobAvailabilityErrorForRun';
 import {useJobReexecution} from './useJobReExecution';
 import {showSharedToaster} from '../app/DomUtils';
-import {useFeatureFlags} from '../app/Flags';
 import {GraphQueryItem, filterByQuery} from '../app/GraphQueryImpl';
 import {DEFAULT_DISABLED_REASON} from '../app/Permissions';
 import {ReexecutionStrategy} from '../graphql/types';
@@ -109,7 +108,6 @@ export const RunActionButtons = (props: RunActionButtonsProps) => {
 
   const repoMatch = useRepositoryForRunWithParentSnapshot(run);
   const jobError = useJobAvailabilityErrorForRun(run);
-  const {flagAssetRetries} = useFeatureFlags();
 
   const artifactsPersisted = run?.executionPlan?.artifactsPersisted;
 
@@ -157,6 +155,7 @@ export const RunActionButtons = (props: RunActionButtonsProps) => {
         <StepSelectionDescription selection={currentRunSelection} />
       </div>
     ),
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     onClick: () => reexecuteWithSelection(currentRunSelection!),
   };
 
@@ -239,7 +238,7 @@ export const RunActionButtons = (props: RunActionButtonsProps) => {
     selected,
     fromSelected,
     fromFailure,
-    flagAssetRetries && run.executionPlan?.assetSelection.length ? fromAssetFailure : null,
+    run.executionPlan?.assetSelection.length ? fromAssetFailure : null,
   ].filter(Boolean) as LaunchButtonConfiguration[];
   const preferredRerun = selection.present
     ? selected

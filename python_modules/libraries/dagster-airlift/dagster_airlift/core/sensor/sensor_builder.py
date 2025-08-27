@@ -15,7 +15,7 @@ from dagster import (
     sensor,
 )
 from dagster._annotations import beta
-from dagster._core.definitions.asset_check_evaluation import AssetCheckEvaluation
+from dagster._core.definitions.asset_checks.asset_check_evaluation import AssetCheckEvaluation
 from dagster._core.definitions.asset_selection import AssetSelection
 from dagster._core.definitions.events import AssetObservation
 from dagster._core.definitions.repository_definition.repository_definition import (

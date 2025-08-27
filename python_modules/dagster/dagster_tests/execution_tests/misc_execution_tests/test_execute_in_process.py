@@ -1,35 +1,15 @@
+import dagster as dg
 import pytest
-from dagster import (
-    AssetKey,
-    AssetMaterialization,
-    AssetObservation,
-    DagsterInvariantViolationError,
-    DynamicOut,
-    DynamicOutput,
-    Out,
-    Output,
-    RetryRequested,
-    daily_partitioned_config,
-    graph,
-    job,
-    mem_io_manager,
-    op,
-    resource,
-    schedule,
-    sensor,
-)
-from dagster._core.definitions.definitions_class import Definitions
-from dagster._core.definitions.output import GraphOut
 from dagster._core.errors import DagsterMaxRetriesExceededError
 from dagster._core.execution.context.op_execution_context import OpExecutionContext
 
 
 def get_solids():
-    @op
+    @dg.op
     def emit_one():
         return 1
 
-    @op
+    @dg.op
     def add(x, y):
         return x + y
 
@@ -37,7 +17,7 @@ def get_solids():
 
 
 def test_output_value():
-    @graph
+    @dg.graph
     def a():
         get_solids()[0]()
 
@@ -48,11 +28,11 @@ def test_output_value():
 
 
 def test_output_values():
-    @op(out={"a": Out(), "b": Out()})
+    @dg.op(out={"a": dg.Out(), "b": dg.Out()})
     def two_outs():
         return 1, 2
 
-    @graph
+    @dg.graph
     def a():
         two_outs()
 
@@ -64,16 +44,16 @@ def test_output_values():
 
 
 def test_dynamic_output_values():
-    @op(out=DynamicOut())
+    @dg.op(out=dg.DynamicOut())
     def two_outs():
-        yield DynamicOutput(1, "a")
-        yield DynamicOutput(2, "b")
+        yield dg.DynamicOutput(1, "a")
+        yield dg.DynamicOutput(2, "b")
 
-    @op
+    @dg.op
     def add_one(x):
         return x + 1
 
-    @graph
+    @dg.graph
     def a():
         two_outs().map(add_one)
 
@@ -87,11 +67,11 @@ def test_dynamic_output_values():
 def test_execute_graph():
     emit_one, add = get_solids()
 
-    @graph
+    @dg.graph
     def emit_two():
         return add(emit_one(), emit_one())
 
-    @graph
+    @dg.graph
     def emit_three():
         return add(emit_two(), emit_one())
 
@@ -109,18 +89,18 @@ def test_execute_graph():
 
 
 def test_graph_with_required_resources():
-    @op(required_resource_keys={"a"})
+    @dg.op(required_resource_keys={"a"})
     def basic_reqs(context):
         return context.resources.a
 
-    @graph
+    @dg.graph
     def basic_graph():
         return basic_reqs()
 
     result = basic_graph.execute_in_process(resources={"a": "foo"})
     assert result.output_value() == "foo"
 
-    @resource
+    @dg.resource
     def basic_resource():
         return "bar"
 
@@ -130,11 +110,11 @@ def test_graph_with_required_resources():
 
 def test_executor_config_ignored_by_execute_in_process():
     # Ensure that execute_in_process is able to properly ignore provided executor config.
-    @op
+    @dg.op
     def my_op():
         return 0
 
-    @graph
+    @dg.graph
     def my_graph():
         my_op()
 
@@ -147,15 +127,15 @@ def test_executor_config_ignored_by_execute_in_process():
 
 
 def test_output_for_node_composite():
-    @op(out={"foo": Out()})
+    @dg.op(out={"foo": dg.Out()})
     def my_op():
         return 5
 
-    @graph(out={"bar": GraphOut()})
+    @dg.graph(out={"bar": dg.GraphOut()})
     def my_graph():
         return my_op()
 
-    @graph(out={"baz": GraphOut()})
+    @dg.graph(out={"baz": dg.GraphOut()})
     def my_top_graph():
         return my_graph()
 
@@ -171,28 +151,28 @@ def test_output_for_node_composite():
 
 
 def test_output_for_node_not_found():
-    @op
+    @dg.op
     def op_exists():
         return 5
 
-    @graph
+    @dg.graph
     def basic():
         return op_exists()
 
     result = basic.execute_in_process()
     assert result.success
 
-    with pytest.raises(DagsterInvariantViolationError, match="name_doesnt_exist"):
+    with pytest.raises(dg.DagsterInvariantViolationError, match="name_doesnt_exist"):
         result.output_for_node("op_exists", "name_doesnt_exist")
 
     with pytest.raises(
-        DagsterInvariantViolationError,
+        dg.DagsterInvariantViolationError,
         match="Could not find top-level output 'name_doesnt_exist'",
     ):
         result.output_value("name_doesnt_exist")
 
     with pytest.raises(
-        DagsterInvariantViolationError, match="basic has no op named op_doesnt_exist"
+        dg.DagsterInvariantViolationError, match="basic has no op named op_doesnt_exist"
     ):
         result.output_for_node("op_doesnt_exist")
 
@@ -202,15 +182,15 @@ def _get_step_successes(event_list):
 
 
 def test_step_events_for_node():
-    @op
+    @dg.op
     def op_exists():
         return 5
 
-    @graph
+    @dg.graph
     def basic():
         return op_exists()
 
-    @graph
+    @dg.graph
     def nested():
         return basic()
 
@@ -226,32 +206,32 @@ def test_step_events_for_node():
 
 
 def test_output_value_error():
-    @job
+    @dg.job
     def my_job():
         pass
 
     result = my_job.execute_in_process()
 
     with pytest.raises(
-        DagsterInvariantViolationError,
+        dg.DagsterInvariantViolationError,
         match="Attempted to retrieve top-level outputs for 'my_job', which has no outputs.",
     ):
         result.output_value()
 
 
 def test_partitions_key():
-    @op
+    @dg.op
     def my_op(context):
         assert (
             context._step_execution_context.plan_data.dagster_run.tags["dagster/partition"]  # noqa: SLF001
             == "2020-01-01"
         )
 
-    @daily_partitioned_config(start_date="2020-01-01")
+    @dg.daily_partitioned_config(start_date="2020-01-01")
     def my_partitioned_config(_start, _end):
         return {}
 
-    @job(config=my_partitioned_config)
+    @dg.job(config=my_partitioned_config)
     def my_job():
         my_op()
 
@@ -259,41 +239,41 @@ def test_partitions_key():
 
 
 def test_asset_materialization():
-    @op(out={})
+    @dg.op(out={})
     def my_op():
-        yield AssetMaterialization("abc")
+        yield dg.AssetMaterialization("abc")
 
-    @job
+    @dg.job
     def my_job():
         my_op()
 
     result = my_job.execute_in_process()
     assert result.asset_materializations_for_node("my_op") == [
-        AssetMaterialization(asset_key=AssetKey(["abc"]))
+        dg.AssetMaterialization(asset_key=dg.AssetKey(["abc"]))
     ]
 
 
 def test_asset_observation():
-    @op(out={})
+    @dg.op(out={})
     def my_op():
-        yield AssetObservation("abc")
+        yield dg.AssetObservation("abc")
 
-    @job
+    @dg.job
     def my_job():
         my_op()
 
     result = my_job.execute_in_process()
     assert result.asset_observations_for_node("my_op") == [
-        AssetObservation(asset_key=AssetKey(["abc"]))
+        dg.AssetObservation(asset_key=dg.AssetKey(["abc"]))
     ]
 
 
 def test_dagster_run():
-    @op
+    @dg.op
     def success_op():
         return True
 
-    @job
+    @dg.job
     def my_success_job():
         success_op()
 
@@ -301,11 +281,11 @@ def test_dagster_run():
     assert result.success
     assert result.dagster_run.is_success
 
-    @op
+    @dg.op
     def fail_op():
         raise Exception
 
-    @job
+    @dg.job
     def my_failure_job():
         fail_op()
 
@@ -315,22 +295,22 @@ def test_dagster_run():
 
 
 def test_dynamic_output_for_node():
-    @op(out=DynamicOut())
+    @dg.op(out=dg.DynamicOut())
     def fanout():
         for i in range(3):
-            yield DynamicOutput(value=i, mapping_key=str(i))
+            yield dg.DynamicOutput(value=i, mapping_key=str(i))
 
-    @op(
+    @dg.op(
         out={
-            "output1": Out(int),
-            "output2": Out(int),
+            "output1": dg.Out(int),
+            "output2": dg.Out(int),
         }
     )
     def return_as_tuple(x):
-        yield Output(value=x, output_name="output1")
-        yield Output(value=5, output_name="output2")
+        yield dg.Output(value=x, output_name="output1")
+        yield dg.Output(value=5, output_name="output2")
 
-    @job
+    @dg.job
     def myjob():
         fanout().map(return_as_tuple)
 
@@ -351,11 +331,11 @@ def test_dynamic_output_for_node():
 
 
 def test_execute_in_process_input_values():
-    @op
+    @dg.op
     def requires_input_op(x: int):
         return x + 1
 
-    @graph
+    @dg.graph
     def requires_input_graph(x):
         return requires_input_op(x)
 
@@ -370,13 +350,13 @@ def test_execute_in_process_input_values():
 def test_retries_exceeded():
     called = []
 
-    @op
+    @dg.op
     def always_fail():
         exception = Exception("I have failed.")
         called.append("yes")
-        raise RetryRequested(max_retries=2) from exception
+        raise dg.RetryRequested(max_retries=2) from exception
 
-    @graph
+    @dg.graph
     def fail():
         always_fail()
 
@@ -394,11 +374,11 @@ def test_retries_exceeded():
 
 
 def test_execute_in_process_defaults_override():
-    @op
+    @dg.op
     def some_op(context):
-        assert context.job_def.resource_defs["io_manager"] == mem_io_manager
+        assert context.job_def.resource_defs["io_manager"] == dg.mem_io_manager
 
-    @graph
+    @dg.graph
     def some_graph():
         some_op()
 
@@ -416,24 +396,24 @@ from dagster_test.utils.definitions_execute_in_process import definitions_execut
 def test_definitions_method():
     """Test definitions-based in process execution, which should have attached the repository."""
 
-    @op
+    @dg.op
     def some_op(context: OpExecutionContext):
         assert context.repository_def
 
-    @job
+    @dg.job
     def my_job():
         some_op()
 
-    @schedule(job=my_job, cron_schedule="0 0 * * *")
+    @dg.schedule(job=my_job, cron_schedule="0 0 * * *")
     def my_schedule():
         pass
 
-    @sensor(job=my_job)
+    @dg.sensor(job=my_job)
     def my_sensor():
         pass
 
     result = definitions_execute_job_in_process(
-        defs=Definitions(jobs=[my_job], schedules=[my_schedule], sensors=[my_sensor]),
+        defs=dg.Definitions(jobs=[my_job], schedules=[my_schedule], sensors=[my_sensor]),
         job_name="my_job",
     )
     assert result.success

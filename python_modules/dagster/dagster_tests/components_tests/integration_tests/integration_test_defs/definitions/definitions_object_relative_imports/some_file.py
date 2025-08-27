@@ -1,9 +1,9 @@
-from dagster import asset
+import dagster as dg
 
 
-@asset
+@dg.asset
 def asset_in_some_file() -> None: ...
 
 
-@asset
+@dg.asset
 def asset_that_isnt_included() -> None: ...

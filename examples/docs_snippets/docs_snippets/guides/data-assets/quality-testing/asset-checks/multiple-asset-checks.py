@@ -38,9 +38,3 @@ def orders_check() -> Iterable[dg.AssetCheckResult]:
         asset_key="orders",
     )
     # highlight-end
-
-
-defs = dg.Definitions(
-    assets=[orders],
-    asset_checks=[orders_check],
-)

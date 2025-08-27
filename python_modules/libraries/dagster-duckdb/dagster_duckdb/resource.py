@@ -22,7 +22,7 @@ class DuckDBResource(ConfigurableResource):
                 with duckdb.get_connection() as conn:
                     conn.execute("SELECT * from MY_SCHEMA.MY_TABLE")
 
-            defs = Definitions(
+            Definitions(
                 assets=[my_table],
                 resources={"duckdb": DuckDBResource(database="path/to/db.duckdb")}
             )

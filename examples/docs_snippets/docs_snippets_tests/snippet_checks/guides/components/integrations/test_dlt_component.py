@@ -11,6 +11,7 @@ from docs_snippets_tests.snippet_checks.guides.components.utils import (
     EDITABLE_DIR,
 )
 from docs_snippets_tests.snippet_checks.utils import (
+    _run_command,
     compare_tree_output,
     isolated_snippet_generation_environment,
 )
@@ -198,3 +199,32 @@ def test_dlt_components_docs_adding_attributes_to_assets(
             snippet_path=SNIPPETS_DIR
             / f"{context.get_next_snip_number()}-list-defs.txt",
         )
+
+
+def test_dlt_components_basic_scaffold() -> None:
+    # Added to test odd edge case where scaffolding & loading defs in a bare env failed
+    # https://github.com/dagster-io/dagster/pull/30905
+    # Does not power docs, but easiest to test this using the docs snippets utilities
+    with ExitStack() as stack:
+        stack.enter_context(
+            isolated_snippet_generation_environment(
+                should_update_snippets=False,
+                snapshot_base_dir=SNIPPETS_DIR,
+            )
+        )
+        tmp_dir = stack.enter_context(tempfile.TemporaryDirectory())
+        stack.enter_context(
+            environ(
+                {"SOURCES__GITHUB__ACCESS_TOKEN": "XX", "DLT_CONFIG_FOLDER": tmp_dir}
+            )
+        )
+        _run_command(
+            cmd="create-dagster project my-project --uv-sync --use-editable-dagster && cd my-project/src"
+        )
+        stack.enter_context(activate_venv("../.venv"))
+        _run_command(cmd=f"uv add --editable {EDITABLE_DIR / 'dagster-dlt'}")
+        _run_command(
+            cmd="dg scaffold defs dagster_dlt.DltLoadCollectionComponent github_snowflake_ingest"
+        )
+
+        _run_command(cmd="dg list defs")

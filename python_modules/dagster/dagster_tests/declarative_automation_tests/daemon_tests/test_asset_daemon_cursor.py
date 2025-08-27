@@ -1,18 +1,17 @@
 import datetime
 import json
 
-from dagster import StaticPartitionsDefinition, asset
+import dagster as dg
 from dagster._core.definitions.asset_daemon_cursor import (
     AssetDaemonCursor,
     backcompat_deserialize_asset_daemon_cursor_str,
 )
-from dagster._core.definitions.asset_graph import AssetGraph
-from dagster_shared.serdes import deserialize_value, serialize_value
+from dagster._core.definitions.assets.graph.asset_graph import AssetGraph
 
-partitions = StaticPartitionsDefinition(partition_keys=["a", "b", "c"])
+partitions = dg.StaticPartitionsDefinition(partition_keys=["a", "b", "c"])
 
 
-@asset(partitions_def=partitions)
+@dg.asset(partitions_def=partitions)
 def my_asset(_):
     pass
 
@@ -36,7 +35,7 @@ def test_asset_reconciliation_cursor_evaluation_id_backcompat() -> None:
 
     c2 = c.with_updates(21, datetime.datetime.now().timestamp(), [], [], asset_graph)
 
-    serdes_c2 = deserialize_value(serialize_value(c2), as_type=AssetDaemonCursor)
+    serdes_c2 = dg.deserialize_value(dg.serialize_value(c2), as_type=AssetDaemonCursor)
     assert serdes_c2 == c2
     assert serdes_c2.evaluation_id == 21
 
@@ -50,12 +49,12 @@ def test_asset_reconciliation_cursor_evaluation_id_backcompat2() -> None:
 
 
 def test_asset_reconciliation_cursor_auto_observe_backcompat() -> None:
-    partitions_def = StaticPartitionsDefinition(["a", "b", "c"])
+    partitions_def = dg.StaticPartitionsDefinition(["a", "b", "c"])
 
-    @asset(partitions_def=partitions_def)
+    @dg.asset(partitions_def=partitions_def)
     def asset1(): ...
 
-    @asset
+    @dg.asset
     def asset2(): ...
 
     handled_root_partitions_by_asset_key = {

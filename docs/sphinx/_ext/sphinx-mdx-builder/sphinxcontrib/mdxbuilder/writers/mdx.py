@@ -168,6 +168,107 @@ class MdxTranslator(SphinxTranslator):
             ord(">"): "&gt;",
         }
 
+    def _unwrap_function_object(self, obj):
+        """Attempt to unwrap function-like objects to get the underlying callable.
+
+        This method handles various common patterns used by decorators and frameworks
+        that wrap functions in custom objects while preserving access to the original function.
+
+        Args:
+            obj: The object to unwrap
+
+        Returns:
+            The unwrapped function if found, otherwise the original object
+        """
+        # Common patterns for accessing wrapped functions
+        function_attributes = [
+            # Standard functools.wraps pattern (already handled above via __wrapped__)
+            "__wrapped__",
+            # Common patterns in various frameworks:
+            "func",  # Used by many decorators
+            "function",  # Alternative naming
+            "__func__",  # Method objects
+            "fget",  # Property objects
+            "__call__",  # Callable objects (last resort)
+            # Generic function storage patterns:
+            "decorated",  # Generic decorated function access
+            "inner",  # Generic inner function access
+            "wrapped",  # Alternative to __wrapped__
+            "_func",  # Private function storage
+            "_fn",  # Private function storage (short form)
+            "callback",  # Callback-style wrappers
+            "handler",  # Handler-style wrappers
+            "target",  # Target function in wrappers
+            "original",  # Original function reference
+            "impl",  # Implementation function
+            "implementation",  # Full implementation name
+            # Common framework patterns (type_fn suffix pattern):
+            "fn",  # Simple fn suffix
+            "logger_fn",  # Any logger-type function
+            "main_fn",  # Main function reference
+            "exec_fn",  # Execution function
+            "run_fn",  # Run function
+            "call_fn",  # Call function
+        ]
+
+        current_obj = obj
+
+        # Try each attribute pattern
+        for attr_name in function_attributes:
+            if hasattr(current_obj, attr_name):
+                potential_func = getattr(current_obj, attr_name)
+
+                # Verify it's actually a callable and has source code
+                if callable(potential_func):
+                    try:
+                        # Test if we can get source info from this object
+                        if inspect.getsourcefile(potential_func):
+                            current_obj = potential_func
+                            break
+                    except (TypeError, OSError):
+                        # If this attribute doesn't have source info, continue to next
+                        continue
+
+        # Handle callable objects that might contain the function logic
+        # but only if we haven't found a better candidate
+        if current_obj is obj and callable(obj) and not inspect.isfunction(obj):
+            # For callable objects, try to access their __call__ method's source
+            # This is a last resort and might not always work
+            if hasattr(obj, "__call__") and hasattr(obj.__call__, "__func__"):
+                try:
+                    call_method = obj.__call__.__func__
+                    if inspect.getsourcefile(call_method):
+                        current_obj = call_method
+                except (TypeError, OSError):
+                    pass
+
+        return current_obj
+
+    def _find_dagster_repo_root(self, source_file: str) -> Optional[str]:
+        """Find the Dagster repository root by looking for python_modules directory.
+
+        Args:
+            source_file: Path to the source file
+
+        Returns:
+            Path to the repository root or None if not found
+        """
+        current_dir = os.path.dirname(os.path.abspath(source_file))
+
+        while current_dir and current_dir != os.path.dirname(current_dir):
+            # Check if this directory contains python_modules
+            python_modules_path = os.path.join(current_dir, "python_modules")
+            if os.path.isdir(python_modules_path):
+                # Additional validation: check for dagster package within python_modules
+                dagster_path = os.path.join(python_modules_path, "dagster")
+                if os.path.isdir(dagster_path):
+                    return current_dir
+
+            # Move up one directory
+            current_dir = os.path.dirname(current_dir)
+
+        return None
+
     ############################################################
     # Utility and State Methods
     ############################################################
@@ -202,9 +303,16 @@ class MdxTranslator(SphinxTranslator):
                 logger.warning(f"No object for {fullname}")
                 return None
 
-            # unwrap the root function if function is wrapped
-            while hasattr(obj, "__wrapped__"):
-                obj = obj.__wrapped__
+            # Don't unwrap enum classes as they should point to their definition
+            from enum import Enum
+
+            if not (isinstance(obj, type) and issubclass(obj, Enum)):
+                # unwrap the root function if function is wrapped
+                while hasattr(obj, "__wrapped__"):
+                    obj = obj.__wrapped__
+
+                # Handle various patterns of function-wrapping objects
+                obj = self._unwrap_function_object(obj)
 
             try:
                 source_file = inspect.getsourcefile(obj)
@@ -212,8 +320,15 @@ class MdxTranslator(SphinxTranslator):
                     logger.warning(f"No source file for {fullname}")
                     return None
 
-                # get relative path, and trim `..`
-                repo_path = os.path.relpath(source_file).replace("../", "")
+                # Find the repository root by looking for python_modules directory
+                repo_root = self._find_dagster_repo_root(source_file)
+                if repo_root:
+                    # Calculate relative path from repository root
+                    repo_path = os.path.relpath(source_file, repo_root)
+                else:
+                    # Fallback to original behavior if repo root not found
+                    repo_path = os.path.relpath(source_file).replace("../", "")
+
                 source_line = inspect.getsourcelines(obj)[1]
 
                 return f"{self.github_url}/{repo_path}#L{source_line}"

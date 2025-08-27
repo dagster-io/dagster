@@ -2,25 +2,21 @@ from concurrent.futures import ThreadPoolExecutor, wait
 from datetime import datetime
 from unittest import mock
 
-from dagster import daily_partitioned_config, job, op, repository
-from dagster._core.definitions.decorators.schedule_decorator import schedule
-from dagster._core.remote_representation.external_data import (
-    JobDataSnap,
-    RepositorySnap,
-    TimeWindowPartitionsSnap,
-)
+import dagster as dg
+from dagster._core.definitions.partitions.snap import TimeWindowPartitionsSnap
+from dagster._core.remote_representation.external_data import JobDataSnap, RepositorySnap
 from dagster._core.snap.job_snapshot import _create_job_snapshot_id
-from dagster._core.test_utils import create_test_daemon_workspace_context, instance_for_test
+from dagster._core.test_utils import create_test_daemon_workspace_context
 from dagster._serdes import serialize_pp
 from dagster._time import get_current_datetime
 
 
-@op
+@dg.op
 def foo_op(_):
     pass
 
 
-@schedule(
+@dg.schedule(
     cron_schedule="@daily",
     job_name="foo_job",
     execution_timezone="US/Central",
@@ -29,23 +25,23 @@ def foo_schedule():
     return {}
 
 
-@daily_partitioned_config(start_date=datetime(2020, 1, 1), minute_offset=15)
+@dg.daily_partitioned_config(start_date=datetime(2020, 1, 1), minute_offset=15)
 def my_partitioned_config(_start: datetime, _end: datetime):
     return {}
 
 
-@job(config=my_partitioned_config)
+@dg.job(config=my_partitioned_config)
 def foo_job():
     foo_op()
 
 
-@repository
+@dg.repository
 def a_repo():
     return [foo_job]
 
 
 def test_repository_snap(snapshot):
-    @repository
+    @dg.repository
     def repo():
         return [foo_job, foo_schedule]
 
@@ -90,7 +86,7 @@ def test_remote_repo_shared_index_single_threaded():
     # ensure we don't rebuild indexes / snapshot ids repeatedly
     with mock.patch("dagster._core.snap.job_snapshot._create_job_snapshot_id") as snapshot_mock:
         snapshot_mock.side_effect = _create_job_snapshot_id
-        with instance_for_test() as instance:
+        with dg.instance_for_test() as instance:
             with create_test_daemon_workspace_context(
                 workspace_load_target(),
                 instance,
@@ -113,7 +109,7 @@ def test_remote_repo_shared_index_multi_threaded():
     # ensure we don't rebuild indexes / snapshot ids repeatedly across threads
     with mock.patch("dagster._core.snap.job_snapshot._create_job_snapshot_id") as snapshot_mock:
         snapshot_mock.side_effect = _create_job_snapshot_id
-        with instance_for_test() as instance:
+        with dg.instance_for_test() as instance:
             with create_test_daemon_workspace_context(
                 workspace_load_target(),
                 instance,

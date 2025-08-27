@@ -11,7 +11,7 @@ except ImportError:
     from yaml import Loader
 
 from dagster import AssetKey, AssetsDefinition, asset, file_relative_path, multi_asset
-from dagster._core.definitions.asset_spec import AssetSpec
+from dagster._core.definitions.assets.definition.asset_spec import AssetSpec
 from dagster._core.pipes.subprocess import PipesSubprocessClient
 
 

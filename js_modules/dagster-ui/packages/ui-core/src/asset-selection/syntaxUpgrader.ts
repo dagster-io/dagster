@@ -26,7 +26,9 @@ class SyntaxUpgradingVisitor
   defaultResult() {}
 
   visitUnmatchedValue(ctx: UnmatchedValueContext) {
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     const originalStart = ctx.value().start!.startIndex;
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     const originalEnd = ctx.value().stop!.stopIndex;
 
     const currentStart = originalStart + this.offset;
@@ -49,6 +51,7 @@ class SyntaxUpgradingVisitor
 
   visitCommaToken(ctx: CommaTokenContext) {
     const start = ctx.start.startIndex + this.offset;
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     const end = ctx.stop!.stopIndex + this.offset;
 
     // Remove any spaces around the comma and replace with ' or '

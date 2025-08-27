@@ -1,5 +1,6 @@
 import importlib
 import json
+import re
 import subprocess
 import textwrap
 from pathlib import Path
@@ -10,14 +11,9 @@ from dagster_dg_core.utils import (
     activate_venv,
     create_toml_node,
     cross_platfrom_string_path,
-    ensure_dagster_dg_tests_import,
     modify_toml_as_dict,
 )
-
-ensure_dagster_dg_tests_import()
-
-from dagster_dg_core.utils import ensure_dagster_dg_tests_import
-from dagster_dg_core_tests.utils import (
+from dagster_test.dg_utils.utils import (
     ProxyRunner,
     assert_runner_result,
     isolated_example_component_library_foo_bar,
@@ -40,14 +36,18 @@ def test_scaffold_defs_dynamic_subcommand_generation() -> None:
 
         normalized_output = standardize_box_characters(result.output)
         # These are wrapped in a table so it's hard to check exact output.
+        # The " +\w" at the end is used to ensure that a help message is generated for the
+        # component.
         for line in [
-            "╭─ Commands",
-            "│ dagster_test.components.AllMetadataEmptyComponent",
-            "│ dagster_test.components.ComplexAssetComponent",
-            "│ dagster_test.components.SimpleAssetComponent",
-            "│ dagster_test.components.SimplePipesScriptComponent",
+            r"╭─ Commands",
+            r"│ dagster_test.components.AllMetadataEmptyComponent +\w",
+            r"│ dagster_test.components.ComplexAssetComponent +\w",
+            r"│ dagster_test.components.SimpleAssetComponent +\w",
+            r"│ dagster_test.components.SimplePipesScriptComponent +\w",
         ]:
-            assert standardize_box_characters(line) in normalized_output
+            assert re.search(standardize_box_characters(line), normalized_output), (
+                f"Expected line not found: {line}"
+            )
 
 
 @pytest.mark.parametrize(
@@ -83,6 +83,42 @@ def test_scaffold_defs_classname_conflict_no_alias() -> None:
             assert defs_yaml_path.exists()
             full_type = "foo_bar.components.defs_folder_component.DefsFolderComponent"
             assert f"type: {full_type}" in defs_yaml_path.read_text()
+
+
+def test_scaffold_defs_validation_failure() -> None:
+    with (
+        ProxyRunner.test(use_fixed_test_components=True) as runner,
+        isolated_example_project_foo_bar(runner),
+    ):
+        result = runner.invoke(
+            "scaffold", "defs", "dagster_test.components.SimplePipesScriptComponent", "qux"
+        )
+        assert_runner_result(result, exit_0=False)
+        assert (
+            result.output.strip()
+            == textwrap.dedent("""
+            Error validating scaffold parameters for `dagster_test.components.SimplePipesScriptComponent`:\\n\\n[
+                {
+                    "type": "missing",
+                    "loc": [
+                        "asset_key"
+                    ],
+                    "msg": "Field required",
+                    "input": {},
+                    "url": "https://errors.pydantic.dev/2.11/v/missing"
+                },
+                {
+                    "type": "missing",
+                    "loc": [
+                        "filename"
+                    ],
+                    "msg": "Field required",
+                    "input": {},
+                    "url": "https://errors.pydantic.dev/2.11/v/missing"
+                }
+            ]
+        """).strip()
+        )
 
 
 @pytest.mark.parametrize("in_workspace", [True, False])
@@ -135,6 +171,29 @@ def test_scaffold_defs_component_substring_single_match_success(selection: str) 
             assert_runner_result(result)
             assert "Did you mean this one?" in result.output
             assert "Exiting." in result.output
+
+
+def test_scaffold_defs_component_unregistered_success() -> None:
+    """Ensure that a valid python symbol reference to a component type still works even if it is not registered."""
+    with ProxyRunner.test() as runner, isolated_example_project_foo_bar(runner):
+        result = runner.invoke("scaffold", "component", "Baz")
+        assert_runner_result(result, exit_0=True)
+        importlib.invalidate_caches()  # Ensure component discovery not blocked by python import cache
+
+        # Remove registry module entry that would make the newly scaffolded component discoverable
+        with modify_toml_as_dict(Path("pyproject.toml")) as toml_dict:
+            create_toml_node(toml_dict, ("tool", "dg", "project", "registry_modules"), [])
+
+        # Make sure the new component is not registered
+        result = runner.invoke("list", "components", "--json")
+        assert_runner_result(result)
+        component_keys = [c["key"] for c in json.loads(result.stdout)]
+        assert "foo_bar.components.baz.Baz" not in component_keys
+
+        # dg scaffold defs foo_bar.components.baz.Baz should still work
+        result = runner.invoke("scaffold", "defs", "foo_bar.components.baz.Baz", "qux")
+        assert_runner_result(result)
+        assert Path("src/foo_bar/defs/qux").exists()
 
 
 @pytest.mark.parametrize(
@@ -247,7 +306,7 @@ def test_scaffold_defs_component_undefined_component_type_fails() -> None:
     with ProxyRunner.test() as runner, isolated_example_project_foo_bar(runner):
         result = runner.invoke("scaffold", "defs", "fake.Fake", "qux")
         assert_runner_result(result, exit_0=False)
-        assert "No plugin object `fake.Fake` is registered" in result.output
+        assert "No registry object `fake.Fake` is registered" in result.output
 
 
 def test_scaffold_defs_component_command_with_non_matching_module_name():
@@ -263,7 +322,9 @@ def test_scaffold_defs_component_command_with_non_matching_module_name():
             "scaffold", "defs", "dagster_test.components.AllMetadataEmptyComponent", "qux"
         )
         assert_runner_result(result, exit_0=False)
-        assert "Cannot find module `foo_bar" in result.output
+        assert "Ensure folder `src/foo_bar/defs` exists in the project root." in str(
+            result.exception
+        )
 
 
 @pytest.mark.parametrize("in_workspace", [True, False])
@@ -315,7 +376,9 @@ def test_scaffold_defs_component_fails_defs_module_does_not_exist() -> None:
             "scaffold", "defs", "dagster_test.components.AllMetadataEmptyComponent", "qux"
         )
         assert_runner_result(result, exit_0=False)
-        assert "Cannot find module `foo_bar._defs`" in result.output
+        assert "Ensure folder `src/foo_bar/_defs` exists in the project root." in str(
+            result.exception
+        )
 
 
 def test_scaffold_defs_component_succeeds_scaffolded_component_type() -> None:
@@ -579,6 +642,20 @@ def test_scaffold_defs_asset() -> None:
         assert not Path("src/foo_bar/defs/assets/defs.yaml").exists()
 
 
+def test_scaffold_defs_asset_already_exists_fails() -> None:
+    with (
+        ProxyRunner.test() as runner,
+        isolated_example_project_foo_bar(runner),
+    ):
+        result = runner.invoke("scaffold", "defs", "dagster.asset", "assets/foo.py")
+        assert_runner_result(result)
+
+        # invoke again, should fail with nice error message
+        result = runner.invoke("scaffold", "defs", "dagster.asset", "assets/foo.py")
+        assert_runner_result(result, exit_0=False)
+        assert "already exists" in result.output
+
+
 def test_scaffold_defs_asset_check_with_key() -> None:
     with (
         ProxyRunner.test() as runner,
@@ -736,6 +813,47 @@ def test_scaffold_defs_sensor() -> None:
         assert not Path("src/foo_bar/defs/defs.yaml").exists()
 
 
+# ########################
+# ##### DEFS OPTIONS
+# ########################
+
+
+def test_scaffold_defs_json_params_option_only_for_scaffold_params() -> None:
+    with (
+        ProxyRunner.test(use_fixed_test_components=True) as runner,
+        isolated_example_project_foo_bar(runner),
+    ):
+        # SimplePipesScriptComponent has scaffold params, so --json-params should be defined
+        result = runner.invoke(
+            "scaffold", "defs", "dagster_test.components.SimplePipesScriptComponent", "--help"
+        )
+        assert_runner_result(result)
+        assert "--json-params" in result.output
+
+        # AllMetadataEmptyComponent does not have scaffold params, so --json-params should not be
+        # defined
+        result = runner.invoke(
+            "scaffold", "defs", "dagster_test.components.AllMetadataEmptyComponent", "--help"
+        )
+        assert_runner_result(result)
+        assert "--json-params" not in result.output
+
+
+def test_scaffold_defs_format_option_only_for_components() -> None:
+    with (
+        ProxyRunner.test() as runner,
+        isolated_example_project_foo_bar(runner),
+    ):
+        result = runner.invoke("scaffold", "defs", "dagster.DefsFolderComponent", "--help")
+        assert_runner_result(result)
+        assert "--format" in result.output
+
+        # `asset` is not a component, so --format should not be defined
+        result = runner.invoke("scaffold", "defs", "dagster.asset", "--help")
+        assert_runner_result(result)
+        assert "--format" not in result.output
+
+
 # ##### REAL COMPONENTS
 
 
@@ -864,7 +982,7 @@ def test_scaffold_component_succeeds_scaffolded_no_model() -> None:
 
                 def __init__(
                     self,
-                    # added arguments here will define yaml schema via Resolvable
+                    # added params here define needed arguments when instantiated in Python, and yaml schema via Resolvable
                 ):
                     pass
 

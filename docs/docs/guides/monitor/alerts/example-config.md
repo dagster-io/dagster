@@ -198,7 +198,7 @@ dagster-cloud deployment alert-policies sync -a /path/to/alert_policies.yaml
 
 :::note
 
-Alerting when a Hybrid agent becomes unavailable is only available for [Hybrid deployments](/deployment/dagster-plus/hybrid/).
+Alerting when a Hybrid agent becomes unavailable is only available for [Hybrid deployments](/deployment/dagster-plus/hybrid).
 
 :::
 

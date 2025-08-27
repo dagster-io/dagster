@@ -34,7 +34,7 @@ def downstream(upstream) -> pl.LazyFrame:
     return upstream.lazy()  # LazyFrame will be sinked
 
 
-definitions = Definitions(assets=[upstrea, downstream], resources={"polars_parquet_io_manager": PolarsParquetIOManager(...)})
+definitions = Definitions(assets=[upstream, downstream], resources={"polars_parquet_io_manager": PolarsParquetIOManager(...)})
 ```
 
 Lazy pl.LazyFrame can be scanned by annotating the input with pl.LazyFrame, and returning a pl.LazyFrame will sink it:
@@ -46,9 +46,10 @@ def downstream(upstream: pl.LazyFrame) -> pl.LazyFrame:
     return upstream
 ```
 
-Find out more in the [API docs](/api/libraries/dagster-polars)
+{/* Find out more in the [API docs](/api/libraries/dagster-polars) */}
 
 ## Supplementary
 
-- [API docs](/api/libraries/dagster-polars)
+{/* - [API docs](/api/libraries/dagster-polars) */}
+
 - [Patito integration](/integrations/libraries/patito)

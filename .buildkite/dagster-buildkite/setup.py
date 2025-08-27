@@ -1,4 +1,10 @@
+from pathlib import Path
+
 from setuptools import find_packages, setup
+
+# Path to buildkite-shared package
+_current_dir = Path(__file__).parent
+_buildkite_shared_path = _current_dir.parent / "buildkite-shared"
 
 setup(
     name="dagster-buildkite",
@@ -16,6 +22,7 @@ setup(
     ],
     packages=find_packages(exclude=["test"]),
     install_requires=[
+        f"buildkite-shared @ file://{_buildkite_shared_path.absolute()}",
         "PyYAML",
         "tomli",
         "packaging>=20.9",

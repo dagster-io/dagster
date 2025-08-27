@@ -13,7 +13,11 @@ import ThemedImage from '@theme/ThemedImage';
 
 Dagster is a data orchestrator built for data engineers, with integrated lineage, observability, a declarative programming model, and best-in-class testability.
 
-<CodeExample path="docs_snippets/docs_snippets/getting-started/hello-world.py" language="python" />
+<CodeExample
+  path="docs_snippets/docs_snippets/getting-started/hello-world.py"
+  language="python"
+  title="defs/assets.py"
+/>
 <ThemedImage
   alt="Docusaurus themed image"
   style={{width: '100%', height: 'auto'}}
@@ -29,7 +33,7 @@ Dagster is a data orchestrator built for data engineers, with integrated lineage
   <Card title="Quickstart" href="/getting-started/quickstart" imagePath="./img/getting-started/icon-start.svg">
     Build your first Dagster pipeline in our Quickstart tutorial.
   </Card>
-  <Card title="Thinking in Assets" href="/guides/build/assets/" imagePath="./img/getting-started/icon-assets.svg">
+  <Card title="Thinking in Assets" href="/guides/build/assets" imagePath="./img/getting-started/icon-assets.svg">
     New to Dagster? Learn about how thinking in assets can help you manage your data better.
   </Card>
   <Card title="Dagster Plus" href="/deployment/dagster-plus" imagePath="./img/getting-started/icon-plus.svg">

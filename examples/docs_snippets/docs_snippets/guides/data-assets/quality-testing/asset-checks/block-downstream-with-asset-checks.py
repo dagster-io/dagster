@@ -27,9 +27,3 @@ def augmented_orders():
     orders_df = pd.read_csv("orders.csv")
     augmented_orders_df = orders_df.assign(description=["item_432", "item_878"])
     augmented_orders_df.to_csv("augmented_orders.csv")
-
-
-defs = dg.Definitions(
-    assets=[orders, augmented_orders],
-    asset_checks=[orders_id_has_no_nulls],
-)

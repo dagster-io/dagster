@@ -15,7 +15,7 @@ To complete the steps in this guide, you'll need:
 - **The following in PingOne:**
   - An existing PingOne account
   - Organization admin permissions
-- **To install the [`dagster-cloud` CLI](/deployment/dagster-plus/management/dagster-cloud-cli/installing-and-configuring)**
+- **To install the [`dagster-cloud` CLI](/api/clis/dagster-cloud-cli/installing-and-configuring)**
 - **The following in Dagster+:**
   - A Pro plan
   - [Access to a user token](/deployment/dagster-plus/management/tokens/user-tokens)

@@ -2,13 +2,12 @@ import string
 from contextlib import contextmanager, nullcontext
 from typing import Optional
 
+import dagster as dg
 import pytest
 from click.testing import CliRunner
 from dagster._cli.job import execute_backfill_command, job_backfill_command
 from dagster._cli.workspace.cli_target import WorkspaceOpts
 from dagster._core.instance import DagsterInstance
-from dagster._core.test_utils import instance_for_test
-from dagster._utils import file_relative_path
 
 from dagster_tests.cli_tests.command_tests.test_cli_commands import (
     BackfillCommandTestContext,
@@ -46,7 +45,7 @@ def _backfill_contexts():
     repo_args = {
         "noprompt": True,
         "workspace_opts": WorkspaceOpts(
-            workspace=(file_relative_path(__file__, "repository_file.yaml"),)
+            workspace=(dg.file_relative_path(__file__, "repository_file.yaml"),)
         ),
     }
     return [
@@ -147,7 +146,7 @@ def test_backfill_tags_job(backfill_context: BackfillCommandTestContext):
 def valid_remote_job_backfill_cli_args():
     qux_job_args = [
         "-w",
-        file_relative_path(__file__, "repository_file.yaml"),
+        dg.file_relative_path(__file__, "repository_file.yaml"),
         "-j",
         "qux",
         "--noprompt",
@@ -165,7 +164,7 @@ def valid_remote_job_backfill_cli_args():
 
 @pytest.mark.parametrize("cli_args", valid_remote_job_backfill_cli_args())
 def test_job_backfill_command_cli(cli_args):
-    with instance_for_test():
+    with dg.instance_for_test():
         runner = CliRunner()
 
         result = runner.invoke(job_backfill_command, cli_args)

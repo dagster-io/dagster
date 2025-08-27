@@ -4,38 +4,52 @@ description: "Learn to integrate Dagster Pipes with AWS EMR to launch external c
 sidebar_position: 300
 ---
 
-This article covers how to use [Dagster Pipes](/guides/build/external-pipelines/) with [AWS EMR](https://aws.amazon.com/emr/).
+import ScaffoldProject from '@site/docs/partials/\_ScaffoldProject.md';
+
+This article covers how to use [Dagster Pipes](/guides/build/external-pipelines) with [AWS EMR](https://aws.amazon.com/emr).
 
 The [dagster-aws](/api/libraries/dagster-aws) integration library provides the <PyObject section="libraries" object="pipes.PipesEMRClient" module="dagster_aws" /> resource, which can be used to launch AWS EMR jobs from Dagster assets and ops. Dagster can receive regular events such as logs, asset checks, or asset materializations from jobs launched with this client. Using it requires minimal code changes to your EMR jobs.
 
 
-<details>
-  <summary>Prerequisites</summary>
+## Prerequisites
 
-    - **In the Dagster environment**, you'll need to:
+To run the examples, you'll need to:
 
-    - Install the following packages:
+- Create a new Dagster project:
+  <ScaffoldProject />
+- Install the necessary Python libraries:
 
-        ```shell
-        pip install dagster dagster-webserver dagster-aws
-        ```
+<Tabs groupId="package-manager">
+   <TabItem value="uv" label="uv">
+      Install the required dependencies:
 
-        Refer to the [Dagster installation guide](/getting-started/installation) for more info.
+         ```shell
+         uv add dagster-aws
+         ```
 
-    - **Configure AWS authentication credentials.** If you don't have this set up already, refer to the [boto3 quickstart](https://boto3.amazonaws.com/v1/documentation/api/latest/guide/quickstart.html).
+   </TabItem>
 
-    - **In AWS**, you'll need:
+   <TabItem value="pip" label="pip">
+      Install the required dependencies:
 
+         ```shell
+         pip install dagster-aws
+         ```
+
+   </TabItem>
+</Tabs>
+
+- Configure AWS authentication credentials. If you don't have this set up already, refer to the [boto3 quickstart](https://boto3.amazonaws.com/v1/documentation/api/latest/guide/quickstart.html).
+- In AWS, you'll need:
     - An existing AWS account
     - Prepared infrastructure such as S3 buckets, IAM roles, and other resources required for your EMR job
 
-</details>
 
 ## Step 1: Install the dagster-pipes module in your EMR environment
 
 Choose one of the [options](https://spark.apache.org/docs/latest/api/python/user_guide/python_packaging.html#python-package-management) to install `dagster-pipes` in the EMR environment.
 
-For example, this `Dockerfile` can be used to package all required dependencies into a single [PEX](https://docs.pex-tool.org/) file (in practice, the most straightforward way to package Python dependencies for EMR jobs):
+For example, this `Dockerfile` can be used to package all required dependencies into a single [PEX](https://docs.pex-tool.org) file (in practice, the most straightforward way to package Python dependencies for EMR jobs):
 
 ```Dockerfile file=/guides/dagster/dagster_pipes/emr/Dockerfile
 # this Dockerfile can be used to create a venv archive for PySpark on AWS EMR
@@ -100,9 +114,13 @@ The metadata format shown above (`{"raw_value": value, "type": type}`) is part o
 
 ## Step 3: Create an asset using the PipesEMRClient to launch the job
 
+import ScaffoldAsset from '@site/docs/partials/\_ScaffoldAsset.md';
+
+<ScaffoldAsset />
+
 In the Dagster asset/op code, use the `PipesEMRClient` resource to launch the job:
 
-<CodeExample path="docs_snippets/docs_snippets/guides/dagster/dagster_pipes/emr/dagster_code.py" startAfter="start_asset_marker" endBefore="end_asset_marker" />
+<CodeExample path="docs_snippets/docs_snippets/guides/dagster/dagster_pipes/emr/dagster_code.py" title="src/<project_name>/defs/assets.py" />
 
 This will launch the AWS EMR job and wait for it completion. If the job fails, the Dagster process will raise an exception. If the Dagster process is interrupted while the job is still running, the job will be terminated.
 
@@ -110,8 +128,12 @@ EMR application steps `stdout` and `stderr` will be forwarded to the Dagster pro
 
 ## Step 4: Create Dagster definitions
 
+import ScaffoldResource from '@site/docs/partials/\_ScaffoldResource.md';
+
+<ScaffoldResource />
+
 Next, add the `PipesEMRClient` resource to your project's <PyObject section="definitions" module="dagster" object="Definitions" /> object:
 
-<CodeExample path="docs_snippets/docs_snippets/guides/dagster/dagster_pipes/emr/dagster_code.py" startAfter="start_definitions_marker" endBefore="end_definitions_marker" />
+<CodeExample path="docs_snippets/docs_snippets/guides/dagster/dagster_pipes/emr/resources.py" title="src/<project_name>/defs/resources.py" />
 
 Dagster will now be able to launch the AWS EMR job from the `emr_asset` asset, and receive logs and events from the job.

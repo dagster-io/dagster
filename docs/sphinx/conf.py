@@ -155,3 +155,5 @@ napoleon_numpy_docstring = False
 
 # Prevent docs generation for Sphinx-specific files
 exclude_patterns = ["_build", "_ext"]
+
+suppress_warnings = ["autosectionlabel.*"]

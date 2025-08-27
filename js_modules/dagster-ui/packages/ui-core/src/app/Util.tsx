@@ -78,7 +78,7 @@ const msecFormatter = memoize((locale: string) => {
  * Return an i18n-formatted millisecond in seconds as a decimal, with no leading zero.
  */
 const formatMsecMantissa = (msec: number) =>
-  msecFormatter(navigator.language)
+  msecFormatter(typeof navigator !== 'undefined' ? navigator.language : 'en-US')
     .format(msec / 1000)
     .slice(-4);
 
@@ -110,23 +110,31 @@ export function breakOnUnderscores(str: string) {
 }
 
 export function patchCopyToRemoveZeroWidthUnderscores() {
-  document.addEventListener('copy', (event) => {
-    if (!event.clipboardData) {
-      // afaik this is always defined, but the TS field is optional
-      return;
-    }
+  if (typeof document !== 'undefined') {
+    document.addEventListener('copy', (event) => {
+      if (!event.clipboardData) {
+        // afaik this is always defined, but the TS field is optional
+        return;
+      }
 
-    // Note: This returns the text of the current selection if DOM
-    // nodes are selected. If the selection on the page is text within
-    // codemirror or an input or textarea, this returns "" and we fall
-    // through to the default pasteboard content.
-    const text = (window.getSelection() || '').toString().replace(/_\u200b/g, '_');
+      // Note: This returns the text of the current selection if DOM
+      // nodes are selected. If the selection on the page is text within
+      // codemirror or an input or textarea, this returns "" and we fall
+      // through to the default pasteboard content.
+      const text =
+        (typeof window !== 'undefined'
+          ? window
+              .getSelection()
+              ?.toString()
+              ?.replace(/_\u200b/g, '_')
+          : '') || '';
 
-    if (text.length) {
-      event.preventDefault();
-      event.clipboardData.setData('Text', text);
-    }
-  });
+      if (text.length) {
+        event.preventDefault();
+        event.clipboardData.setData('Text', text);
+      }
+    });
+  }
 }
 
 export function asyncMemoize<T, R, U extends (arg: T, ...rest: any[]) => PromiseLike<R>>(
@@ -152,6 +160,7 @@ export const indexedDBAsyncMemoize = <R, U extends (...args: any[]) => Promise<R
   hashFn?: (...args: Parameters<U>) => any,
 ): U & {
   isCached: (...args: Parameters<U>) => Promise<boolean>;
+  clearEntry: (...args: Parameters<U>) => Promise<void>;
 } => {
   let lru: ReturnType<typeof cache<R>> | undefined;
   try {
@@ -163,9 +172,9 @@ export const indexedDBAsyncMemoize = <R, U extends (...args: any[]) => Promise<R
 
   const hashToPromise: Record<string, Promise<R>> = {};
 
-  const genHashKey = async (...args: Parameters<U>) => {
+  const genHashKey = weakMapMemoize(async (...args: Parameters<U>) => {
     return hashFn ? hashFn(...args) : hashObject(args);
-  };
+  });
 
   const ret = weakMapMemoize(async (...args: Parameters<U>) => {
     return new Promise<R>(async (resolve, reject) => {
@@ -190,14 +199,17 @@ export const indexedDBAsyncMemoize = <R, U extends (...args: any[]) => Promise<R
               delete hashToPromise[hashKey];
             }
           } catch (e) {
+            delete hashToPromise[hashKey];
             rej(e);
           }
         });
       }
       try {
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
         const result = await hashToPromise[hashKey]!;
         resolve(result);
       } catch (e) {
+        delete hashToPromise[hashKey];
         reject(e);
       }
     });
@@ -208,6 +220,14 @@ export const indexedDBAsyncMemoize = <R, U extends (...args: any[]) => Promise<R
       return false;
     }
     return await lru.has(hashKey);
+  };
+  ret.clearEntry = async (...args: Parameters<U>) => {
+    if (!lru) {
+      return;
+    }
+    const hashKey = await genHashKey(...args);
+    delete hashToPromise[hashKey];
+    await lru.delete(hashKey);
   };
   return ret;
 };
@@ -242,4 +262,4 @@ export const gqlTypePredicate =
     return node.__typename === typename;
   };
 
-export const COMMON_COLLATOR = new Intl.Collator(navigator.language, {sensitivity: 'base'});
+export {COMMON_COLLATOR} from './commonCollator';

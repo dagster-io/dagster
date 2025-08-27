@@ -1,28 +1,27 @@
+import dagster as dg
 import pytest
-from dagster import job, op, validate_run_config
-from dagster._core.errors import DagsterInvalidConfigError
 
 
 def test_validate_run_config():
-    @op
+    @dg.op
     def basic():
         pass
 
-    @job
+    @dg.job
     def basic_job():
         basic()
 
-    validate_run_config(basic_job)
+    dg.validate_run_config(basic_job)
 
-    @op(config_schema={"foo": str})
+    @dg.op(config_schema={"foo": str})
     def requires_config(_):
         pass
 
-    @job
+    @dg.job
     def job_requires_config():
         requires_config()
 
-    result = validate_run_config(
+    result = dg.validate_run_config(
         job_requires_config,
         {"ops": {"requires_config": {"config": {"foo": "bar"}}}},
     )
@@ -38,5 +37,5 @@ def test_validate_run_config():
         "loggers": {},
     }
 
-    with pytest.raises(DagsterInvalidConfigError):
-        validate_run_config(job_requires_config)
+    with pytest.raises(dg.DagsterInvalidConfigError):
+        dg.validate_run_config(job_requires_config)

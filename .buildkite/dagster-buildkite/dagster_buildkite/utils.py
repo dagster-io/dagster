@@ -2,14 +2,16 @@ import functools
 import logging
 import os
 import subprocess
+from collections.abc import Sequence
 from pathlib import Path
-from typing import Dict, List, Optional, Sequence, Union
+from typing import Optional
 
 import packaging.version
 import yaml
-from typing_extensions import Literal, TypeAlias, TypedDict, TypeGuard
-
-from dagster_buildkite.git import ChangedFiles, get_commit_message
+from buildkite_shared.environment import is_feature_branch, message_contains
+from buildkite_shared.git import ChangedFiles
+from buildkite_shared.packages import run_all_tests
+from buildkite_shared.step_builders.step_builder import StepConfiguration
 
 BUILD_CREATOR_EMAIL_TO_SLACK_CHANNEL_MAP = {
     "rex@dagsterlabs.com": "eng-buildkite-rex",
@@ -18,109 +20,12 @@ BUILD_CREATOR_EMAIL_TO_SLACK_CHANNEL_MAP = {
 }
 
 # ########################
-# ##### BUILDKITE STEP DATA STRUCTURES
-# ########################
-
-# Buildkite step configurations can be quite complex-- the full specifications are in the Pipelines
-# -> Step Types section of the Buildkite docs:
-#   https://buildkite.com/docs/pipelines/command-step
-#
-# The structures defined below are subsets of the full specifications that only cover the attributes
-# we use. Additional keys can be added from the full spec as needed.
-
-
-class CommandStep(TypedDict, total=False):
-    agents: Dict[str, str]
-    commands: List[str]
-    depends_on: List[str]
-    key: str
-    label: str
-    plugins: List[Dict[str, object]]
-    retry: Dict[str, object]
-    timeout_in_minutes: int
-    skip: str
-
-
-class GroupStep(TypedDict):
-    group: str
-    key: str
-    steps: List["BuildkiteLeafStep"]  # no nested groups
-
-
-# use alt syntax because of `async` and `if` reserved words
-TriggerStep = TypedDict(
-    "TriggerStep",
-    {
-        "trigger": str,
-        "label": str,
-        "async": Optional[bool],
-        "build": Dict[str, object],
-        "branches": Optional[str],
-        "if": Optional[str],
-    },
-    total=False,
-)
-
-WaitStep: TypeAlias = Literal["wait"]
-
-InputSelectOption = TypedDict("InputSelectOption", {"label": str, "value": str})
-InputSelectField = TypedDict(
-    "InputSelectField",
-    {
-        "select": str,
-        "key": str,
-        "options": List[InputSelectOption],
-        "hint": Optional[str],
-        "default": Optional[str],
-        "required": Optional[bool],
-        "multiple": Optional[bool],
-    },
-)
-InputTextField = TypedDict(
-    "InputTextField",
-    {
-        "text": str,
-        "key": str,
-        "hint": Optional[str],
-        "default": Optional[str],
-        "required": Optional[bool],
-    },
-)
-
-BlockStep = TypedDict(
-    "BlockStep",
-    {
-        "block": str,
-        "prompt": Optional[str],
-        "fields": List[Union[InputSelectField, InputTextField]],
-    },
-)
-
-BuildkiteStep: TypeAlias = Union[
-    CommandStep, GroupStep, TriggerStep, WaitStep, BlockStep
-]
-BuildkiteLeafStep = Union[CommandStep, TriggerStep, WaitStep]
-BuildkiteTopLevelStep = Union[CommandStep, GroupStep]
-
-UV_PIN = "uv==0.7.2"
-
-
-def is_command_step(step: BuildkiteStep) -> TypeGuard[CommandStep]:
-    return isinstance(step, dict) and "commands" in step
-
-
-# ########################
 # ##### FUNCTIONS
 # ########################
 
 
-def safe_getenv(env_var: str) -> str:
-    assert env_var in os.environ, f"${env_var} must be set."
-    return os.environ[env_var]
-
-
 def buildkite_yaml_for_steps(
-    steps: Sequence[BuildkiteStep], custom_slack_channel: Optional[str] = None
+    steps: Sequence[StepConfiguration], custom_slack_channel: Optional[str] = None
 ) -> str:
     return yaml.dump(
         {
@@ -167,7 +72,7 @@ def check_for_release() -> bool:
     except subprocess.CalledProcessError:
         return False
 
-    version: Dict[str, object] = {}
+    version: dict[str, object] = {}
     with open("python_modules/dagster/dagster/version.py", encoding="utf8") as fp:
         exec(fp.read(), version)
 
@@ -177,7 +82,7 @@ def check_for_release() -> bool:
     return False
 
 
-def network_buildkite_container(network_name: str) -> List[str]:
+def network_buildkite_container(network_name: str) -> list[str]:
     return [
         # hold onto your hats, this is docker networking at its best. First, we figure out
         # the name of the currently running container...
@@ -191,7 +96,7 @@ def network_buildkite_container(network_name: str) -> List[str]:
 
 def connect_sibling_docker_container(
     network_name: str, container_name: str, env_variable: str
-) -> List[str]:
+) -> list[str]:
     return [
         # Now, we grab the IP address of the target container from within the target
         # bridge network and export it; this will let the tox tests talk to the target cot.
@@ -199,14 +104,6 @@ def connect_sibling_docker_container(
         f"'{{{{ .NetworkSettings.Networks.{network_name}.IPAddress }}}}' "
         f"{container_name}`"
     ]
-
-
-def is_feature_branch(branch_name: str = safe_getenv("BUILDKITE_BRANCH")) -> bool:
-    return not (branch_name == "master" or branch_name.startswith("release"))
-
-
-def is_release_branch(branch_name: str) -> bool:
-    return branch_name.startswith("release-")
 
 
 # Preceding a line of BK output with "---" turns it into a section header.
@@ -240,15 +137,11 @@ def parse_package_version(version_str: str) -> packaging.version.Version:
 
 
 def get_commit(rev):
-    return (
-        subprocess.check_output(["git", "rev-parse", "--short", rev])
-        .decode("utf-8")
-        .strip()
-    )
+    return subprocess.check_output(["git", "rev-parse", "--short", rev]).decode("utf-8").strip()
 
 
 def skip_if_no_python_changes(overrides: Optional[Sequence[str]] = None):
-    if message_contains("NO_SKIP"):
+    if run_all_tests():
         return None
 
     if not is_feature_branch():
@@ -258,9 +151,7 @@ def skip_if_no_python_changes(overrides: Optional[Sequence[str]] = None):
         return None
 
     if overrides and any(
-        Path(override) in path.parents
-        for override in overrides
-        for path in ChangedFiles.all
+        Path(override) in path.parents for override in overrides for path in ChangedFiles.all
     ):
         return None
 
@@ -268,7 +159,7 @@ def skip_if_no_python_changes(overrides: Optional[Sequence[str]] = None):
 
 
 def skip_if_no_pyright_requirements_txt_changes():
-    if message_contains("NO_SKIP"):
+    if run_all_tests():
         return None
 
     if not is_feature_branch():
@@ -281,7 +172,7 @@ def skip_if_no_pyright_requirements_txt_changes():
 
 
 def skip_if_no_yaml_changes():
-    if message_contains("NO_SKIP"):
+    if run_all_tests():
         return None
 
     if not is_feature_branch():
@@ -294,40 +185,36 @@ def skip_if_no_yaml_changes():
 
 
 def skip_if_no_non_docs_markdown_changes():
-    if message_contains("NO_SKIP"):
+    if run_all_tests():
         return None
 
     if not is_feature_branch():
         return None
 
-    if any(
-        path.suffix == ".md" and Path("docs") not in path.parents
-        for path in ChangedFiles.all
-    ):
+    if any(path.suffix == ".md" and Path("docs") not in path.parents for path in ChangedFiles.all):
         return None
 
     return "No markdown changes outside of docs"
 
 
-@functools.lru_cache(maxsize=None)
+@functools.cache
 def has_helm_changes():
     return any(Path("helm") in path.parents for path in ChangedFiles.all)
 
 
-@functools.lru_cache(maxsize=None)
+@functools.cache
 def has_dagster_airlift_changes():
     return any("dagster-airlift" in str(path) for path in ChangedFiles.all)
 
 
-@functools.lru_cache(maxsize=None)
+@functools.cache
 def has_dg_changes():
     return any(
-        "dagster-dg" in str(path) or "docs_snippets" in str(path)
-        for path in ChangedFiles.all
+        "dagster-dg" in str(path) or "docs_snippets" in str(path) for path in ChangedFiles.all
     )
 
 
-@functools.lru_cache(maxsize=None)
+@functools.cache
 def has_storage_test_fixture_changes():
     # Attempt to ensure that changes to TestRunStorage and TestEventLogStorage suites trigger integration
     return any(
@@ -350,8 +237,17 @@ def skip_if_not_dagster_dbt_cloud_commit() -> Optional[str]:
     )
 
 
+def skip_if_not_dagster_dbt_commit() -> Optional[str]:
+    """If no dagster-dbt files are touched, then do NOT run. Even if on master."""
+    return (
+        None
+        if (any("dagster_dbt" in str(path) for path in ChangedFiles.all))
+        else "Not a dagster-dbt commit"
+    )
+
+
 def skip_if_no_helm_changes():
-    if message_contains("NO_SKIP"):
+    if run_all_tests():
         return None
 
     if not is_feature_branch():
@@ -364,15 +260,8 @@ def skip_if_no_helm_changes():
     return "No helm changes"
 
 
-def message_contains(substring: str) -> bool:
-    return any(
-        substring in message
-        for message in [os.getenv("BUILDKITE_MESSAGE", ""), get_commit_message("HEAD")]
-    )
-
-
 def skip_if_no_docs_changes():
-    if message_contains("NO_SKIP"):
+    if run_all_tests():
         return None
 
     if message_contains("BUILDKITE_DOCS"):

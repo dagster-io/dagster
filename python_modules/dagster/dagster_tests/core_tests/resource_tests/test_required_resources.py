@@ -1,44 +1,28 @@
+import dagster as dg
 import pytest
-from dagster import (
-    DagsterType,
-    DagsterUnknownResourceError,
-    In,
-    Out,
-    ResourceDefinition,
-    String,
-    dagster_type_loader,
-    graph,
-    job,
-    op,
-    repository,
-    resource,
-    usable_as_dagster_type,
-)
-from dagster._core.definitions.configurable import configured
-from dagster._core.definitions.job_definition import JobDefinition
-from dagster._core.errors import DagsterInvalidDefinitionError, DagsterInvalidSubsetError
+from dagster import ResourceDefinition
 
 
-def get_resource_init_job(resources_initted: dict[str, bool]) -> JobDefinition:
-    @resource
+def get_resource_init_job(resources_initted: dict[str, bool]) -> dg.JobDefinition:
+    @dg.resource
     def resource_a(_):
         resources_initted["a"] = True
         yield "A"
 
-    @resource
+    @dg.resource
     def resource_b(_):
         resources_initted["b"] = True
         yield "B"
 
-    @op(required_resource_keys={"a"})
+    @dg.op(required_resource_keys={"a"})
     def consumes_resource_a(context):
         assert context.resources.a == "A"
 
-    @op(required_resource_keys={"b"})
+    @dg.op(required_resource_keys={"b"})
     def consumes_resource_b(context):
         assert context.resources.b == "B"
 
-    @job(
+    @dg.job(
         resource_defs={
             "a": resource_a,
             "b": resource_b,
@@ -52,22 +36,22 @@ def get_resource_init_job(resources_initted: dict[str, bool]) -> JobDefinition:
 
 
 def test_filter_out_resources():
-    @op(required_resource_keys={"a"})
+    @dg.op(required_resource_keys={"a"})
     def requires_resource_a(context):
         assert context.resources.a
         assert not hasattr(context.resources, "b")
 
-    @op(required_resource_keys={"b"})
+    @dg.op(required_resource_keys={"b"})
     def requires_resource_b(context):
         assert not hasattr(context.resources, "a")
         assert context.resources.b
 
-    @op
+    @dg.op
     def not_resources(context):
         assert not hasattr(context.resources, "a")
         assert not hasattr(context.resources, "b")
 
-    @job(
+    @dg.job(
         resource_defs={
             "a": ResourceDefinition.hardcoded_resource("foo"),
             "b": ResourceDefinition.hardcoded_resource("bar"),
@@ -92,21 +76,21 @@ def test_selective_init_resources():
 def test_selective_init_resources_only_a():
     resources_initted = {}
 
-    @resource
+    @dg.resource
     def resource_a(_):
         resources_initted["a"] = True
         yield "A"
 
-    @resource
+    @dg.resource
     def resource_b(_):
         resources_initted["b"] = True
         yield "B"
 
-    @op(required_resource_keys={"a"})
+    @dg.op(required_resource_keys={"a"})
     def consumes_resource_a(context):
         assert context.resources.a == "A"
 
-    @job(resource_defs={"a": resource_a, "b": resource_b})
+    @dg.job(resource_defs={"a": resource_a, "b": resource_b})
     def selective_init_test_job():
         consumes_resource_a()
 
@@ -141,25 +125,25 @@ def test_op_selection_strict_resources():
 def test_op_selection_with_aliases_strict_resources():
     resources_initted = {}
 
-    @resource
+    @dg.resource
     def resource_a(_):
         resources_initted["a"] = True
         yield "A"
 
-    @resource
+    @dg.resource
     def resource_b(_):
         resources_initted["b"] = True
         yield "B"
 
-    @op(required_resource_keys={"a"})
+    @dg.op(required_resource_keys={"a"})
     def consumes_resource_a(context):
         assert context.resources.a == "A"
 
-    @op(required_resource_keys={"b"})
+    @dg.op(required_resource_keys={"b"})
     def consumes_resource_b(context):
         assert context.resources.b == "B"
 
-    @job(
+    @dg.job(
         resource_defs={
             "a": resource_a,
             "b": resource_b,
@@ -175,43 +159,43 @@ def test_op_selection_with_aliases_strict_resources():
     assert set(resources_initted.keys()) == {"a"}
 
 
-def create_nested_graph_job(resources_initted: dict[str, bool]) -> JobDefinition:
-    @resource
+def create_nested_graph_job(resources_initted: dict[str, bool]) -> dg.JobDefinition:
+    @dg.resource
     def resource_a(_):
         resources_initted["a"] = True
         yield "A"
 
-    @resource
+    @dg.resource
     def resource_b(_):
         resources_initted["b"] = True
         yield "B"
 
-    @op(required_resource_keys={"a"})
+    @dg.op(required_resource_keys={"a"})
     def consumes_resource_a(context):
         assert context.resources.a == "A"
 
-    @op(required_resource_keys={"b"})
+    @dg.op(required_resource_keys={"b"})
     def consumes_resource_b(context):
         assert context.resources.b == "B"
 
-    @op
+    @dg.op
     def consumes_resource_b_error(context):
         assert context.resources.b == "B"
 
-    @graph
+    @dg.graph
     def wraps_a():
         consumes_resource_a()
 
-    @graph
+    @dg.graph
     def wraps_b():
         consumes_resource_b()
 
-    @graph
+    @dg.graph
     def wraps_b_error():
         consumes_resource_b()
         consumes_resource_b_error()
 
-    @job(
+    @dg.job(
         resource_defs={
             "a": resource_a,
             "b": resource_b,
@@ -249,7 +233,7 @@ def test_execution_plan_subset_strict_resources_within_composite():
 def test_unknown_resource_composite_error():
     resources_initted = {}
 
-    with pytest.raises(DagsterUnknownResourceError):
+    with pytest.raises(dg.DagsterUnknownResourceError):
         create_nested_graph_job(resources_initted).execute_in_process(
             op_selection=["wraps_b_error"]
         )
@@ -258,25 +242,25 @@ def test_unknown_resource_composite_error():
 def test_execution_plan_subset_with_aliases():
     resources_initted = {}
 
-    @resource
+    @dg.resource
     def resource_a(_):
         resources_initted["a"] = True
         yield "A"
 
-    @resource
+    @dg.resource
     def resource_b(_):
         resources_initted["b"] = True
         yield "B"
 
-    @op(required_resource_keys={"a"})
+    @dg.op(required_resource_keys={"a"})
     def consumes_resource_a(context):
         assert context.resources.a == "A"
 
-    @op(required_resource_keys={"b"})
+    @dg.op(required_resource_keys={"b"})
     def consumes_resource_b(context):
         assert context.resources.b == "B"
 
-    @job(
+    @dg.job(
         resource_defs={
             "a": resource_a,
             "b": resource_b,
@@ -293,33 +277,33 @@ def test_execution_plan_subset_with_aliases():
 
 def test_custom_type_with_resource_dependent_hydration():
     def define_input_hydration_job(should_require_resources):
-        @resource
+        @dg.resource
         def resource_a(_):
             yield "A"
 
-        @dagster_type_loader(
-            String, required_resource_keys={"a"} if should_require_resources else set()
+        @dg.dagster_type_loader(
+            dg.String, required_resource_keys={"a"} if should_require_resources else set()
         )
         def InputHydration(context, hello):
             assert context.resources.a == "A"
             return CustomType(hello)
 
-        @usable_as_dagster_type(loader=InputHydration)
+        @dg.usable_as_dagster_type(loader=InputHydration)
         class CustomType(str):
             pass
 
-        @op(ins={"custom_type": In(CustomType)})
+        @dg.op(ins={"custom_type": dg.In(CustomType)})
         def input_hydration_op(context, custom_type):
             context.log.info(custom_type)
 
-        @job(resource_defs={"a": resource_a})
+        @dg.job(resource_defs={"a": resource_a})
         def input_hydration_job():
             input_hydration_op()
 
         return input_hydration_job
 
     under_required_job = define_input_hydration_job(should_require_resources=False)
-    with pytest.raises(DagsterUnknownResourceError):
+    with pytest.raises(dg.DagsterUnknownResourceError):
         under_required_job.execute_in_process(
             {"ops": {"input_hydration_op": {"inputs": {"custom_type": "hello"}}}},
         )
@@ -332,29 +316,29 @@ def test_custom_type_with_resource_dependent_hydration():
 
 def test_resource_dependent_hydration_with_selective_init():
     def get_resource_init_input_hydration_job(resources_initted):
-        @resource
+        @dg.resource
         def resource_a(_):
             resources_initted["a"] = True
             yield "A"
 
-        @dagster_type_loader(String, required_resource_keys={"a"})
+        @dg.dagster_type_loader(dg.String, required_resource_keys={"a"})
         def InputHydration(context, hello):
             assert context.resources.a == "A"
             return CustomType(hello)
 
-        @usable_as_dagster_type(loader=InputHydration)
+        @dg.usable_as_dagster_type(loader=InputHydration)
         class CustomType(str):
             pass
 
-        @op(ins={"custom_type": In(CustomType)})
+        @dg.op(ins={"custom_type": dg.In(CustomType)})
         def input_hydration_op(context, custom_type):
             context.log.info(custom_type)
 
-        @op(out=Out(CustomType))
+        @dg.op(out=dg.Out(CustomType))
         def source_custom_type(_):
             return CustomType("from solid")
 
-        @job(resource_defs={"a": resource_a})
+        @dg.job(resource_defs={"a": resource_a})
         def selective_job():
             input_hydration_op(source_custom_type())
 
@@ -367,22 +351,22 @@ def test_resource_dependent_hydration_with_selective_init():
 
 def test_custom_type_with_resource_dependent_type_check():
     def define_type_check_job(should_require_resources):
-        @resource
+        @dg.resource
         def resource_a(_):
             yield "A"
 
         def resource_based_type_check(context, value):
             return context.resources.a == value
 
-        CustomType = DagsterType(
+        CustomType = dg.DagsterType(
             name="NeedsA",
             type_check_fn=resource_based_type_check,
             required_resource_keys={"a"} if should_require_resources else None,
         )
 
-        @op(
+        @dg.op(
             out={
-                "custom_type": Out(
+                "custom_type": dg.Out(
                     CustomType,
                 )
             }
@@ -390,14 +374,14 @@ def test_custom_type_with_resource_dependent_type_check():
         def custom_type_op(_):
             return "A"
 
-        @job(resource_defs={"a": resource_a})
+        @dg.job(resource_defs={"a": resource_a})
         def type_check_job():
             custom_type_op()
 
         return type_check_job
 
     under_required_job = define_type_check_job(should_require_resources=False)
-    with pytest.raises(DagsterUnknownResourceError):
+    with pytest.raises(dg.DagsterUnknownResourceError):
         under_required_job.execute_in_process()
 
     sufficiently_required_job = define_type_check_job(should_require_resources=True)
@@ -405,7 +389,7 @@ def test_custom_type_with_resource_dependent_type_check():
 
 
 def test_resource_no_version():
-    @resource
+    @dg.resource
     def no_version_resource(_):
         pass
 
@@ -413,7 +397,7 @@ def test_resource_no_version():
 
 
 def test_resource_passed_version():
-    @resource(version="42")
+    @dg.resource(version="42")
     def passed_version_resource(_):
         pass
 
@@ -424,15 +408,15 @@ def test_type_missing_resource_fails():
     def resource_based_type_check(context, value):
         return context.resources.a == value
 
-    CustomType = DagsterType(
+    CustomType = dg.DagsterType(
         name="NeedsA",
         type_check_fn=resource_based_type_check,
         required_resource_keys={"a"},
     )
 
-    @op(
+    @dg.op(
         out={
-            "custom_type": Out(
+            "custom_type": dg.Out(
                 CustomType,
             )
         }
@@ -440,59 +424,59 @@ def test_type_missing_resource_fails():
     def custom_type_op(_):
         return "A"
 
-    with pytest.raises(DagsterInvalidDefinitionError, match="required by type 'NeedsA'"):
+    with pytest.raises(dg.DagsterInvalidDefinitionError, match="required by type 'NeedsA'"):
 
-        @job
+        @dg.job
         def _type_check_job():
             custom_type_op()
 
-        @repository
+        @dg.repository
         def _repo():
             return [_type_check_job]
 
 
 def test_loader_missing_resource_fails():
-    @dagster_type_loader(String, required_resource_keys={"a"})
+    @dg.dagster_type_loader(dg.String, required_resource_keys={"a"})
     def InputHydration(context, hello):
         assert context.resources.a == "A"
         return CustomType(hello)
 
-    @usable_as_dagster_type(loader=InputHydration)
+    @dg.usable_as_dagster_type(loader=InputHydration)
     class CustomType(str):
         pass
 
-    @op(ins={"_custom_type": In(CustomType)})
+    @dg.op(ins={"_custom_type": dg.In(CustomType)})
     def custom_type_op(_, _custom_type):
         return "A"
 
     with pytest.raises(
-        DagsterInvalidDefinitionError,
+        dg.DagsterInvalidDefinitionError,
         match="required by the loader on type 'CustomType'",
     ):
 
-        @job
+        @dg.job
         def _type_check_job():
             custom_type_op()
 
-        @repository
+        @dg.repository
         def _repo():
             return [_type_check_job]
 
 
 def test_extra_resources():
-    @resource
+    @dg.resource
     def resource_a(_):
         return "a"
 
-    @resource(config_schema=int)
+    @dg.resource(config_schema=int)
     def resource_b(_):
         return "b"
 
-    @op(required_resource_keys={"A"})
+    @dg.op(required_resource_keys={"A"})
     def echo(context):
         return context.resources.A
 
-    @job(
+    @dg.job(
         resource_defs={
             "A": resource_a,
             "B": resource_b,
@@ -507,24 +491,24 @@ def test_extra_resources():
 
 
 def test_extra_configured_resources():
-    @resource
+    @dg.resource
     def resource_a(_):
         return "a"
 
-    @resource(config_schema=int)
+    @dg.resource(config_schema=int)
     def resource_b(_):
         return "b"
 
-    @configured(resource_b, str)
+    @dg.configured(resource_b, str)
     def resource_b2(config):
         assert False, "resource_b2 config mapping should not have been invoked"
         return int(config)
 
-    @op(required_resource_keys={"A"})
+    @dg.op(required_resource_keys={"A"})
     def echo(context):
         return context.resources.A
 
-    @job(
+    @dg.job(
         resource_defs={
             "A": resource_a,
             "B": resource_b2,
@@ -537,61 +521,61 @@ def test_extra_configured_resources():
 
 
 def test_input_manager():
-    @op
+    @dg.op
     def start(_):
         return 4
 
-    @op(ins={"x": In(input_manager_key="root_in")})
+    @dg.op(ins={"x": dg.In(input_manager_key="root_in")})
     def end(_, x):
         return x
 
-    @job
+    @dg.job
     def _valid():
         end(start())
 
-    with pytest.raises(DagsterInvalidSubsetError):
+    with pytest.raises(dg.DagsterInvalidSubsetError):
         _invalid = _valid.get_subset(op_selection=["wraps_b_error"])
 
 
 def test_input_manager_missing_fails():
-    @op(ins={"root_input": In(input_manager_key="missing_input_manager")})
+    @dg.op(ins={"root_input": dg.In(input_manager_key="missing_input_manager")})
     def requires_missing_input_manager(root_input: int):
         return root_input
 
     with pytest.raises(
-        DagsterInvalidDefinitionError,
+        dg.DagsterInvalidDefinitionError,
         match=(
             "input manager with key 'missing_input_manager' required by input 'root_input' of"
             " op 'requires_missing_input_manager' was not provided"
         ),
     ):
 
-        @job
+        @dg.job
         def _invalid():
             requires_missing_input_manager()
 
-        @repository
+        @dg.repository
         def _repo():
             return [_invalid]
 
 
 def test_io_manager_missing_fails():
-    @op(out={"result": Out(int, io_manager_key="missing_io_manager")})
+    @dg.op(out={"result": dg.Out(int, io_manager_key="missing_io_manager")})
     def requires_missing_io_manager():
         return 1
 
     with pytest.raises(
-        DagsterInvalidDefinitionError,
+        dg.DagsterInvalidDefinitionError,
         match=(
             "io manager with key 'missing_io_manager' required by output 'result' of op"
             " 'requires_missing_io_manager'' was not provided"
         ),
     ):
 
-        @job
+        @dg.job
         def _invalid():
             requires_missing_io_manager()
 
-        @repository
+        @dg.repository
         def _repo():
             return [_invalid]

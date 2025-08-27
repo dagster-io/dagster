@@ -1,4 +1,5 @@
 import click
+import dagster as dg
 import pytest
 from click.testing import CliRunner
 from dagster._cli.workspace.cli_target import (
@@ -8,9 +9,7 @@ from dagster._cli.workspace.cli_target import (
     repository_options,
 )
 from dagster._core.instance import DagsterInstance
-from dagster._core.remote_representation import RemoteJob
-from dagster._core.test_utils import instance_for_test
-from dagster._utils import file_relative_path
+from dagster._core.remote_representation.external import RemoteJob
 from dagster_shared.cli import WorkspaceOpts, workspace_options
 
 
@@ -34,7 +33,7 @@ def load_pipeline_via_cli_runner(cli_args):
         ) as remote_job:
             capture_result["external_pipeline"] = remote_job  # pyright: ignore[reportArgumentType]
 
-    with instance_for_test():
+    with dg.instance_for_test():
         runner = CliRunner()
         result = runner.invoke(command, cli_args)
 
@@ -49,7 +48,7 @@ def successfully_load_pipeline_via_cli(cli_args):
     return remote_job
 
 
-PYTHON_FILE_IN_NAMED_LOCATION_WORKSPACE = file_relative_path(
+PYTHON_FILE_IN_NAMED_LOCATION_WORKSPACE = dg.file_relative_path(
     __file__, "hello_world_in_file/python_file_with_named_location_workspace.yaml"
 )
 
@@ -95,7 +94,7 @@ def test_repository_target_argument_one_repo_and_specified_wrong():
     ) in result.stdout
 
 
-MULTI_JOB_WORKSPACE = file_relative_path(__file__, "multi_job/multi_job.yaml")
+MULTI_JOB_WORKSPACE = dg.file_relative_path(__file__, "multi_job/multi_job.yaml")
 
 
 def test_successfully_find_job():

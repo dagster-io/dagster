@@ -1,17 +1,16 @@
-from dagster import Failure, job
-from dagster._core.definitions.decorators import op
+import dagster as dg
 from dagster._core.definitions.metadata import MetadataValue
 
 
 def test_failure():
-    @op
+    @dg.op
     def throw():
-        raise Failure(
+        raise dg.Failure(
             description="it Failure",
             metadata={"label": "text"},
         )
 
-    @job
+    @dg.job
     def failure():
         throw()
 

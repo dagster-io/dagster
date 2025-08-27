@@ -40,7 +40,7 @@ class RDSResource(ResourceWithBoto3Configuration):
                         sql="SELECT * from mytable",
                     )
 
-            defs = Definitions(
+            Definitions(
                 assets=[my_table],
                 resources={
                     "rds_resource": RDSResource(

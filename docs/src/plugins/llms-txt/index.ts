@@ -25,7 +25,7 @@ module.exports = function (context, options) {
         const entries = await fs.promises.readdir(dir, {withFileTypes: true});
 
         for (const entry of entries) {
-          if (EXCLUDED_DIRECTORIES.some((dir) => entry.path.endsWith(dir))) {
+          if (entry.path && EXCLUDED_DIRECTORIES.some((dir) => entry.path.endsWith(dir))) {
             continue;
           }
 

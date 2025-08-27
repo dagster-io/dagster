@@ -5,13 +5,15 @@ from dagster import (
     AssetDep,
     AssetsDefinition,
     AutoMaterializePolicy,
-    DailyPartitionsDefinition,
     Definitions,
-    HourlyPartitionsDefinition,
     PartitionsDefinition,
     RunRequest,
     TimeWindowPartitionMapping,
     asset,
+)
+from dagster._core.definitions.partitions.definition import (
+    DailyPartitionsDefinition,
+    HourlyPartitionsDefinition,
 )
 from dagster._core.storage.tags import (
     ASSET_PARTITION_RANGE_END_TAG,

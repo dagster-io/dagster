@@ -1,8 +1,7 @@
-from dagster._core.definitions.materialize import materialize
-from dagster._core.definitions.metadata.metadata_value import TextMetadataValue
+import dagster as dg
 from dagster.components.lib.executable_component.script_utils import ScriptSpec
 from dagster.components.lib.executable_component.uv_run_component import UvRunComponent
-from dagster.components.testing import scaffold_defs_sandbox
+from dagster.components.testing import create_defs_folder_sandbox
 
 SCRIPT_CONTENT = """# /// script
 # dependencies = [
@@ -26,13 +25,11 @@ if __name__ == "__main__":
 
 
 def test_pipes_subprocess_script_hello_world() -> None:
-    with scaffold_defs_sandbox(component_cls=UvRunComponent) as sandbox:
-        execute_path = sandbox.defs_folder_path / "script.py"
-        execute_path.write_text(SCRIPT_CONTENT)
-
-        with sandbox.load(
-            component_body={
-                "type": "dagster.components.lib.executable_component.uv_run_component.UvRunComponent",
+    with create_defs_folder_sandbox() as sandbox:
+        defs_path = sandbox.scaffold_component(
+            component_cls=UvRunComponent,
+            defs_yaml_contents={
+                "type": "dagster.UvRunComponent",
                 "attributes": {
                     "execution": {
                         "name": "op_name",
@@ -45,16 +42,23 @@ def test_pipes_subprocess_script_hello_world() -> None:
                         }
                     ],
                 },
-            }
-        ) as (component, defs):
-            assert isinstance(component, UvRunComponent)
+            },
+        )
+        execute_path = defs_path / "script.py"
+        execute_path.write_text(SCRIPT_CONTENT)
+
+        with sandbox.load_component_and_build_defs(defs_path=defs_path) as (
+            component,
+            defs,
+        ):
+            assert isinstance(component, dg.UvRunComponent)
             assert isinstance(component.execution, ScriptSpec)
             assets_def = defs.get_assets_def("asset")
-            result = materialize([assets_def])
+            result = dg.materialize([assets_def])
             assert result.success
             mats = result.asset_materializations_for_node("op_name")
             assert len(mats) == 1
             assert next(iter(mats)).metadata == {
-                "arg": TextMetadataValue("hello"),
-                "pycowsay_module_name": TextMetadataValue("pycowsay"),
+                "arg": dg.TextMetadataValue("hello"),
+                "pycowsay_module_name": dg.TextMetadataValue("pycowsay"),
             }

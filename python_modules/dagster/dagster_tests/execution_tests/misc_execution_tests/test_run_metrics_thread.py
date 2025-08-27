@@ -2,6 +2,7 @@ import logging
 import time
 from unittest.mock import MagicMock, patch
 
+import dagster as dg
 import dagster._core.execution.run_metrics_thread as run_metrics_thread
 from dagster import DagsterInstance, DagsterRun
 from dagster._core.execution.telemetry import RunTelemetryData
@@ -16,7 +17,7 @@ def dagster_instance():
 
 @fixture()
 def dagster_run():
-    return DagsterRun(job_name="test", run_id="123")
+    return dg.DagsterRun(job_name="test", run_id="123")
 
 
 @fixture()

@@ -1,6 +1,14 @@
-import {Box, Colors, Icon, MiddleTruncate, UnstyledButton} from '@dagster-io/ui-components';
+import {
+  Box,
+  Colors,
+  Icon,
+  MiddleTruncate,
+  UnstyledButton,
+  useDelayedState,
+} from '@dagster-io/ui-components';
 import * as React from 'react';
-import {FeatureFlag} from 'shared/app/FeatureFlags.oss';
+import {useMemo} from 'react';
+import {observeEnabled} from 'shared/app/observeEnabled.oss';
 import styled from 'styled-components';
 
 import {StatusDot, StatusDotNode} from './StatusDot';
@@ -10,7 +18,6 @@ import {
   FolderNodeNonAssetType,
   getDisplayName,
 } from './util';
-import {featureEnabled} from '../../app/Flags';
 import {AssetHealthSummary} from '../../assets/AssetHealthSummary';
 import {ExplorerPath} from '../../pipelines/PipelinePathUtils';
 import {AssetGroup} from '../AssetGraphExplorer';
@@ -21,6 +28,7 @@ import {GraphData, GraphNode} from '../Utils';
 
 type AssetSidebarNodeProps = {
   fullAssetGraphData?: GraphData;
+  graphData: GraphData;
   node: GraphNode | FolderNodeNonAssetType;
   level: number;
   toggleOpen: () => void;
@@ -32,17 +40,40 @@ type AssetSidebarNodeProps = {
   explorerPath: ExplorerPath;
   onChangeExplorerPath: (path: ExplorerPath, mode: 'replace' | 'push') => void;
   onFilterToGroup: (group: AssetGroup) => void;
+  viewType: 'tree' | 'group';
+  direction?: 'root-to-leaf' | 'leaf-to-root';
+  collapseAllNodes?: () => void;
 };
 
 export const AssetSidebarNode = (props: AssetSidebarNodeProps) => {
-  const {node, level, toggleOpen, isOpen, selectThisNode} = props;
+  const {
+    node,
+    level,
+    toggleOpen,
+    isOpen,
+    selectThisNode,
+    viewType,
+    graphData,
+    direction = 'root-to-leaf',
+    collapseAllNodes,
+  } = props;
   const isGroupNode = 'groupNode' in node;
   const isLocationNode = 'locationName' in node;
   const isAssetNode = !isGroupNode && !isLocationNode;
 
+  const connectedNodes =
+    direction === 'root-to-leaf'
+      ? Object.keys(graphData.downstream[node.id] ?? {})
+      : Object.keys(graphData.upstream[node.id] ?? {});
   const elementRef = React.useRef<HTMLDivElement | null>(null);
 
-  const showArrow = !isAssetNode;
+  const showArrow = useMemo(() => {
+    if (viewType === 'tree') {
+      // If the connected node is not in graphData then it is filtered out by the asset selection
+      return connectedNodes.filter((id) => graphData.nodes[id]).length > 0;
+    }
+    return !isAssetNode && !('openAlways' in node && node.openAlways);
+  }, [isAssetNode, node, viewType, connectedNodes, graphData.nodes]);
 
   return (
     <Box ref={elementRef} padding={{left: 8, right: 12}}>
@@ -83,7 +114,7 @@ export const AssetSidebarNode = (props: AssetSidebarNodeProps) => {
             <div style={{width: 18}} />
           )}
           {isAssetNode ? (
-            <AssetSidebarAssetLabel {...props} node={node} />
+            <AssetSidebarAssetLabel {...props} node={node} collapseAllNodes={collapseAllNodes} />
           ) : isGroupNode ? (
             <AssetSidebarGroupLabel {...props} node={node} />
           ) : (
@@ -103,6 +134,7 @@ type AssetSidebarAssetLabelProps = {
   isSelected: boolean;
   explorerPath: ExplorerPath;
   onChangeExplorerPath: (path: ExplorerPath, mode: 'replace' | 'push') => void;
+  collapseAllNodes?: () => void;
 };
 
 const AssetSidebarAssetLabel = ({
@@ -113,6 +145,7 @@ const AssetSidebarAssetLabel = ({
   selectNode,
   explorerPath,
   onChangeExplorerPath,
+  collapseAllNodes,
 }: AssetSidebarAssetLabelProps) => {
   const {menu, dialog} = useAssetNodeMenu({
     graphData: fullAssetGraphData,
@@ -120,7 +153,12 @@ const AssetSidebarAssetLabel = ({
     selectNode,
     explorerPath,
     onChangeExplorerPath,
+    collapseAllNodes,
   });
+
+  // This is a hack: prevent showing the popover for a second in case we are scrolling very fast.
+  // This is to workaround a bug with blueprint Popover's ResizeSensor causing an infinite loop during the animated scrolling.
+  const canShowPopover = useDelayedState(1000);
 
   return (
     <ContextMenuWrapper stopPropagation menu={menu} wrapperOuterStyles={{width: '100%'}}>
@@ -128,9 +166,13 @@ const AssetSidebarAssetLabel = ({
         isSelected={isSelected}
         isLastSelected={isLastSelected}
         icon={
-          featureEnabled(FeatureFlag.flagUseNewObserveUIs) ? (
+          observeEnabled() ? (
             <div style={{marginLeft: -8, marginRight: -8}}>
-              <AssetHealthSummary iconOnly assetKey={node.assetKey} />
+              <AssetHealthSummary
+                iconOnly
+                assetKey={node.assetKey}
+                canShowPopover={canShowPopover}
+              />
             </div>
           ) : (
             <StatusDot node={node} />
@@ -141,7 +183,8 @@ const AssetSidebarAssetLabel = ({
       <ExpandMore onClick={triggerContextMenu}>
         <Icon name="more_horiz" color={Colors.accentGray()} />
       </ExpandMore>
-      {dialog}
+      {/* Stop propagation of clicks from the dialog otherwise they will trigger the click handler from `ItemContainer` */}
+      <div onClick={(e) => e.stopPropagation()}>{dialog}</div>
     </ContextMenuWrapper>
   );
 };
@@ -229,7 +272,7 @@ const FocusableLabelContainer = ({
 const BoxWrapper = ({level, children}: {level: number; children: React.ReactNode}) => {
   const wrapper = React.useMemo(() => {
     let sofar = children;
-    for (let i = 0; i < level; i++) {
+    for (let i = 1; i < level; i++) {
       sofar = (
         <Box
           padding={{left: 8}}

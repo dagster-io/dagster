@@ -1,67 +1,61 @@
+import dagster as dg
 import pytest
-from dagster import (
-    AssetKey,
-    DailyPartitionsDefinition,
-    DynamicPartitionsDefinition,
-    StaticPartitionsDefinition,
-)
 from dagster._check import CheckError
 from dagster._core.asset_graph_view.serializable_entity_subset import SerializableEntitySubset
-from dagster._core.test_utils import instance_for_test
 
 
 def test_union():
-    a_true = SerializableEntitySubset(key=AssetKey("a"), value=True)
-    a_false = SerializableEntitySubset(key=AssetKey("a"), value=False)
+    a_true = SerializableEntitySubset(key=dg.AssetKey("a"), value=True)
+    a_false = SerializableEntitySubset(key=dg.AssetKey("a"), value=False)
 
     assert a_true.compute_union(a_false) == a_true
     assert a_false.compute_union(a_true) == a_true
     assert a_true.compute_union(a_true) == a_true
     assert a_false.compute_union(a_false) == a_false
 
-    partitions_def = StaticPartitionsDefinition(["1", "2", "3", "4"])
+    partitions_def = dg.StaticPartitionsDefinition(["1", "2", "3", "4"])
 
     b_12 = SerializableEntitySubset(
-        key=AssetKey("b"),
+        key=dg.AssetKey("b"),
         value=partitions_def.subset_with_partition_keys(["1", "2"]),
     )
     b_3 = SerializableEntitySubset(
-        key=AssetKey("b"),
+        key=dg.AssetKey("b"),
         value=partitions_def.subset_with_partition_keys(["3"]),
     )
 
     assert b_12.compute_union(b_3) == SerializableEntitySubset(
-        key=AssetKey("b"),
+        key=dg.AssetKey("b"),
         value=partitions_def.subset_with_partition_keys(["1", "2", "3"]),
     )
 
 
 def test_intersection():
-    a_true = SerializableEntitySubset(key=AssetKey("a"), value=True)
-    a_false = SerializableEntitySubset(key=AssetKey("a"), value=False)
+    a_true = SerializableEntitySubset(key=dg.AssetKey("a"), value=True)
+    a_false = SerializableEntitySubset(key=dg.AssetKey("a"), value=False)
 
     assert a_true.compute_intersection(a_false) == a_false
     assert a_false.compute_intersection(a_true) == a_false
     assert a_true.compute_intersection(a_true) == a_true
     assert a_false.compute_intersection(a_false) == a_false
 
-    partitions_def = StaticPartitionsDefinition(["1", "2", "3", "4"])
+    partitions_def = dg.StaticPartitionsDefinition(["1", "2", "3", "4"])
 
     b_12 = SerializableEntitySubset(
-        key=AssetKey("b"),
+        key=dg.AssetKey("b"),
         value=partitions_def.subset_with_partition_keys(["1", "2"]),
     )
     b_3 = SerializableEntitySubset(
-        key=AssetKey("b"),
+        key=dg.AssetKey("b"),
         value=partitions_def.subset_with_partition_keys(["3"]),
     )
     b_1 = SerializableEntitySubset(
-        key=AssetKey("b"),
+        key=dg.AssetKey("b"),
         value=partitions_def.subset_with_partition_keys(["1"]),
     )
 
     assert b_12.compute_intersection(b_3) == SerializableEntitySubset(
-        key=AssetKey("b"),
+        key=dg.AssetKey("b"),
         value=partitions_def.empty_subset(),
     )
 
@@ -69,53 +63,53 @@ def test_intersection():
 
 
 def test_difference():
-    a_true = SerializableEntitySubset(key=AssetKey("a"), value=True)
-    a_false = SerializableEntitySubset(key=AssetKey("a"), value=False)
+    a_true = SerializableEntitySubset(key=dg.AssetKey("a"), value=True)
+    a_false = SerializableEntitySubset(key=dg.AssetKey("a"), value=False)
 
     assert a_true.compute_difference(a_false) == a_true
     assert a_false.compute_difference(a_true) == a_false
     assert a_true.compute_difference(a_true) == a_false
     assert a_false.compute_difference(a_false) == a_false
 
-    partitions_def = StaticPartitionsDefinition(["1", "2", "3", "4"])
+    partitions_def = dg.StaticPartitionsDefinition(["1", "2", "3", "4"])
 
     b_12 = SerializableEntitySubset(
-        key=AssetKey("b"),
+        key=dg.AssetKey("b"),
         value=partitions_def.subset_with_partition_keys(["1", "2"]),
     )
     b_3 = SerializableEntitySubset(
-        key=AssetKey("b"),
+        key=dg.AssetKey("b"),
         value=partitions_def.subset_with_partition_keys(["3"]),
     )
     b_1 = SerializableEntitySubset(
-        key=AssetKey("b"),
+        key=dg.AssetKey("b"),
         value=partitions_def.subset_with_partition_keys(["1"]),
     )
 
     assert b_12.compute_difference(b_3) == b_12
 
     assert b_12.compute_difference(b_1) == SerializableEntitySubset(
-        key=AssetKey("b"),
+        key=dg.AssetKey("b"),
         value=partitions_def.subset_with_partition_keys(["2"]),
     )
 
 
 def test_from_coercible_value():
-    a = AssetKey("a")
-    partitions_def = StaticPartitionsDefinition(["1", "2", "3", "4"])
+    a = dg.AssetKey("a")
+    partitions_def = dg.StaticPartitionsDefinition(["1", "2", "3", "4"])
 
     assert SerializableEntitySubset.from_coercible_value(
         key=a,
         value=None,
         partitions_def=None,
-    ) == SerializableEntitySubset(key=AssetKey("a"), value=True)
+    ) == SerializableEntitySubset(key=dg.AssetKey("a"), value=True)
 
     assert SerializableEntitySubset.from_coercible_value(
         key=a,
         value="1",
         partitions_def=partitions_def,
     ) == SerializableEntitySubset(
-        key=AssetKey("a"),
+        key=dg.AssetKey("a"),
         value=partitions_def.subset_with_partition_keys(["1"]),
     )
 
@@ -124,7 +118,7 @@ def test_from_coercible_value():
         value=["1", "2"],
         partitions_def=partitions_def,
     ) == SerializableEntitySubset(
-        key=AssetKey("a"),
+        key=dg.AssetKey("a"),
         value=partitions_def.subset_with_partition_keys(["1", "2"]),
     )
 
@@ -133,7 +127,7 @@ def test_from_coercible_value():
         value=partitions_def.subset_with_partition_keys(["1"]),
         partitions_def=None,
     ) == SerializableEntitySubset(
-        key=AssetKey("a"),
+        key=dg.AssetKey("a"),
         value=partitions_def.subset_with_partition_keys(["1"]),
     )
 
@@ -142,7 +136,7 @@ def test_from_coercible_value():
         value=partitions_def.subset_with_partition_keys(["1"]),
         partitions_def=partitions_def,
     ) == SerializableEntitySubset(
-        key=AssetKey("a"),
+        key=dg.AssetKey("a"),
         value=partitions_def.subset_with_partition_keys(["1"]),
     )
 
@@ -150,7 +144,7 @@ def test_from_coercible_value():
         SerializableEntitySubset.from_coercible_value(
             key=a,
             value=partitions_def.subset_with_partition_keys(["1"]),
-            partitions_def=DailyPartitionsDefinition(start_date="2024-01-01"),
+            partitions_def=dg.DailyPartitionsDefinition(start_date="2024-01-01"),
         )
 
     with pytest.raises(CheckError):
@@ -169,21 +163,21 @@ def test_from_coercible_value():
 
 
 def test_try_from_coercible_value():
-    a = AssetKey("a")
-    partitions_def = StaticPartitionsDefinition(["1", "2", "3", "4"])
+    a = dg.AssetKey("a")
+    partitions_def = dg.StaticPartitionsDefinition(["1", "2", "3", "4"])
 
     assert SerializableEntitySubset.try_from_coercible_value(
         key=a,
         value=None,
         partitions_def=None,
-    ) == SerializableEntitySubset(key=AssetKey("a"), value=True)
+    ) == SerializableEntitySubset(key=dg.AssetKey("a"), value=True)
 
     assert SerializableEntitySubset.try_from_coercible_value(
         key=a,
         value="1",
         partitions_def=partitions_def,
     ) == SerializableEntitySubset(
-        key=AssetKey("a"),
+        key=dg.AssetKey("a"),
         value=partitions_def.subset_with_partition_keys(["1"]),
     )
 
@@ -192,7 +186,7 @@ def test_try_from_coercible_value():
         value=["1", "2"],
         partitions_def=partitions_def,
     ) == SerializableEntitySubset(
-        key=AssetKey("a"),
+        key=dg.AssetKey("a"),
         value=partitions_def.subset_with_partition_keys(["1", "2"]),
     )
 
@@ -201,7 +195,7 @@ def test_try_from_coercible_value():
         value=partitions_def.subset_with_partition_keys(["1"]),
         partitions_def=None,
     ) == SerializableEntitySubset(
-        key=AssetKey("a"),
+        key=dg.AssetKey("a"),
         value=partitions_def.subset_with_partition_keys(["1"]),
     )
 
@@ -225,15 +219,15 @@ def test_try_from_coercible_value():
 
 
 def test_from_coercible_time_partitions():
-    time_window_partitions_def = DailyPartitionsDefinition(start_date="2024-01-01")
-    a = AssetKey("a")
+    time_window_partitions_def = dg.DailyPartitionsDefinition(start_date="2024-01-01")
+    a = dg.AssetKey("a")
 
     assert SerializableEntitySubset.try_from_coercible_value(
         key=a,
         value=time_window_partitions_def.subset_with_partition_keys(["2024-01-01"]),
         partitions_def=time_window_partitions_def,
     ) == SerializableEntitySubset(
-        key=AssetKey("a"),
+        key=dg.AssetKey("a"),
         value=time_window_partitions_def.subset_with_partition_keys(["2024-01-01"]),
     )
 
@@ -242,7 +236,7 @@ def test_from_coercible_time_partitions():
         value="2024-01-01",
         partitions_def=time_window_partitions_def,
     ) == SerializableEntitySubset(
-        key=AssetKey("a"),
+        key=dg.AssetKey("a"),
         value=time_window_partitions_def.subset_with_partition_keys(["2024-01-01"]),
     )
 
@@ -278,21 +272,22 @@ def test_from_coercible_time_partitions():
         is None
     )
 
-    assert SerializableEntitySubset.from_coercible_value(
-        key=a,
-        value=["2024-01-01 12:45:45", "2024-01-02"],
-        partitions_def=time_window_partitions_def,
-    ) == SerializableEntitySubset(
-        key=AssetKey("a"),
-        value=time_window_partitions_def.subset_with_partition_keys(["2024-01-02"]),
-    )
+    with pytest.raises(ValueError):
+        assert SerializableEntitySubset.from_coercible_value(
+            key=a,
+            value=["2024-01-01 12:45:45", "2024-01-02"],
+            partitions_def=time_window_partitions_def,
+        ) == SerializableEntitySubset(
+            key=dg.AssetKey("a"),
+            value=time_window_partitions_def.subset_with_partition_keys(["2024-01-02"]),
+        )
 
 
 def test_from_coercible_value_dynamic_partitions():
-    partitions_def = DynamicPartitionsDefinition(name="test")
-    a = AssetKey("a")
+    partitions_def = dg.DynamicPartitionsDefinition(name="test")
+    a = dg.AssetKey("a")
 
-    with instance_for_test() as instance:
+    with dg.instance_for_test() as instance:
         instance.add_dynamic_partitions("test", ["1", "2"])
 
         assert SerializableEntitySubset.from_coercible_value(

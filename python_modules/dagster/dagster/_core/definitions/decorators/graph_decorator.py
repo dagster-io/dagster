@@ -3,6 +3,7 @@ from functools import update_wrapper
 from typing import Any, Callable, Optional, Union, overload
 
 import dagster._check as check
+from dagster._annotations import public
 from dagster._core.decorator_utils import format_docstring_for_description
 from dagster._core.definitions.config import ConfigMapping
 from dagster._core.definitions.graph_definition import GraphDefinition
@@ -121,6 +122,7 @@ def graph(
 ) -> _Graph: ...
 
 
+@public
 def graph(
     compose_fn: Optional[Callable] = None,
     *,

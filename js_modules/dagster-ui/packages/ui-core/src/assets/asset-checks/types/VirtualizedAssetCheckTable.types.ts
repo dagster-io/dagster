@@ -7,6 +7,7 @@ export type AssetCheckTableFragment = {
   name: string;
   description: string | null;
   canExecuteIndividually: Types.AssetCheckCanExecuteIndividually;
+  blocking: boolean;
   jobNames: Array<string>;
   automationCondition: {
     __typename: 'AutomationCondition';

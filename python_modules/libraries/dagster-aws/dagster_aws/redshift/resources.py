@@ -301,7 +301,7 @@ class RedshiftClientResource(ConfigurableResource):
                 database='dev',
             )
 
-            defs = Definitions(
+            Definitions(
                 assets=[example_redshift_asset],
                 resources={'redshift': redshift_configured},
             )

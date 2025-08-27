@@ -1,18 +1,8 @@
-from dagster import (
-    AssetKey,
-    DailyPartitionsDefinition,
-    MultiPartitionsDefinition,
-    PartitionKeyRange,
-    StaticPartitionsDefinition,
-)
+import dagster as dg
 from dagster._core.definitions.auto_materialize_policy import AutoMaterializePolicy
 from dagster._core.definitions.auto_materialize_rule import AutoMaterializeRule
 from dagster._core.definitions.auto_materialize_rule_evaluation import AutoMaterializeRuleEvaluation
-from dagster._core.definitions.partition import DynamicPartitionsDefinition
-from dagster._core.definitions.time_window_partitions import (
-    HourlyPartitionsDefinition,
-    TimeWindowPartitionsSubset,
-)
+from dagster._core.definitions.partitions.subset import TimeWindowPartitionsSubset
 from dagster._time import create_datetime
 
 from dagster_tests.declarative_automation_tests.scenario_utils.base_scenario import (
@@ -24,15 +14,15 @@ from dagster_tests.declarative_automation_tests.scenario_utils.base_scenario imp
     with_auto_materialize_policy,
 )
 
-daily_partitions_def = DailyPartitionsDefinition("2013-01-05")
-hourly_partitions_def = HourlyPartitionsDefinition("2013-01-05-00:00")
-one_partition_partitions_def = StaticPartitionsDefinition(["a"])
-two_partitions_partitions_def = StaticPartitionsDefinition(["a", "b"])
-other_two_partitions_partitions_def = StaticPartitionsDefinition(["1", "2"])
-time_multipartitions_def = MultiPartitionsDefinition(
+daily_partitions_def = dg.DailyPartitionsDefinition("2013-01-05")
+hourly_partitions_def = dg.HourlyPartitionsDefinition("2013-01-05-00:00")
+one_partition_partitions_def = dg.StaticPartitionsDefinition(["a"])
+two_partitions_partitions_def = dg.StaticPartitionsDefinition(["a", "b"])
+other_two_partitions_partitions_def = dg.StaticPartitionsDefinition(["1", "2"])
+time_multipartitions_def = dg.MultiPartitionsDefinition(
     {"time": daily_partitions_def, "static": two_partitions_partitions_def}
 )
-static_multipartitions_def = MultiPartitionsDefinition(
+static_multipartitions_def = dg.MultiPartitionsDefinition(
     {"static_1": one_partition_partitions_def, "static_2": two_partitions_partitions_def}
 )
 
@@ -72,12 +62,12 @@ daily_to_hourly_partitions = [
 
 unpartitioned_after_dynamic_asset = [
     asset_def("asset1"),
-    asset_def("asset2", ["asset1"], partitions_def=DynamicPartitionsDefinition(name="foo")),
+    asset_def("asset2", ["asset1"], partitions_def=dg.DynamicPartitionsDefinition(name="foo")),
 ]
 
 two_dynamic_assets = [
-    asset_def("asset1", partitions_def=DynamicPartitionsDefinition(name="foo")),
-    asset_def("asset2", ["asset1"], partitions_def=DynamicPartitionsDefinition(name="foo")),
+    asset_def("asset1", partitions_def=dg.DynamicPartitionsDefinition(name="foo")),
+    asset_def("asset2", ["asset1"], partitions_def=dg.DynamicPartitionsDefinition(name="foo")),
 ]
 
 
@@ -98,13 +88,13 @@ partitioned_after_non_partitioned = [
     asset_def(
         "asset3",
         ["asset1", "asset2"],
-        partitions_def=DailyPartitionsDefinition(start_date="2020-01-01"),
+        partitions_def=dg.DailyPartitionsDefinition(start_date="2020-01-01"),
     ),
 ]
 non_partitioned_after_partitioned = [
     asset_def(
         "asset1",
-        partitions_def=DailyPartitionsDefinition(start_date="2020-01-01"),
+        partitions_def=dg.DailyPartitionsDefinition(start_date="2020-01-01"),
     ),
     asset_def("asset2", ["asset1"]),
 ]
@@ -120,7 +110,7 @@ two_hourly_to_one_daily = [
 ]
 
 unpartitioned_with_one_parent_partitioned = [
-    asset_def("asset1", partitions_def=DailyPartitionsDefinition(start_date="2020-01-01")),
+    asset_def("asset1", partitions_def=dg.DailyPartitionsDefinition(start_date="2020-01-01")),
     asset_def("asset2"),
     asset_def(
         "asset3",
@@ -134,12 +124,12 @@ partition_scenarios = {
         unevaluated_runs=[],
         active_backfill_targets=[
             {
-                AssetKey("daily"): TimeWindowPartitionsSubset(
+                dg.AssetKey("daily"): TimeWindowPartitionsSubset(
                     daily_partitions_def, num_partitions=None, included_time_windows=[]
                 ).with_partition_keys(["2013-01-06"])
             },
             {
-                AssetKey("hourly"): TimeWindowPartitionsSubset(
+                dg.AssetKey("hourly"): TimeWindowPartitionsSubset(
                     hourly_partitions_def, num_partitions=None, included_time_windows=[]
                 ).with_partition_keys(
                     [
@@ -154,7 +144,7 @@ partition_scenarios = {
         expected_run_requests=[
             run_request(asset_keys=["hourly"], partition_key=partition_key)
             for partition_key in hourly_partitions_def.get_partition_keys_in_range(
-                PartitionKeyRange(start="2013-01-06-04:00", end="2013-01-07-03:00")
+                dg.PartitionKeyRange(start="2013-01-06-04:00", end="2013-01-07-03:00")
             )
         ],
     ),
@@ -163,7 +153,7 @@ partition_scenarios = {
         unevaluated_runs=[],
         active_backfill_targets=[
             {
-                AssetKey("hourly"): TimeWindowPartitionsSubset(
+                dg.AssetKey("hourly"): TimeWindowPartitionsSubset(
                     hourly_partitions_def, num_partitions=None, included_time_windows=[]
                 ).with_partition_keys(
                     [
@@ -173,13 +163,13 @@ partition_scenarios = {
                     ],
                 ),
             },
-            [AssetKey("non_existant_asset")],  # ignored since can't be loaded
+            [dg.AssetKey("non_existant_asset")],  # ignored since can't be loaded
         ],
         current_time=create_datetime(year=2013, month=1, day=5, hour=17),
         expected_run_requests=[
             run_request(asset_keys=["hourly"], partition_key=partition_key)
             for partition_key in hourly_partitions_def.get_partition_keys_in_range(
-                PartitionKeyRange(start="2013-01-05-03:00", end="2013-01-05-16:00")
+                dg.PartitionKeyRange(start="2013-01-05-03:00", end="2013-01-05-16:00")
             )
         ],
     ),
@@ -188,11 +178,11 @@ partition_scenarios = {
         unevaluated_runs=[],
         active_backfill_targets=[
             {
-                AssetKey("hourly"): TimeWindowPartitionsSubset(
+                dg.AssetKey("hourly"): TimeWindowPartitionsSubset(
                     hourly_partitions_def, num_partitions=None, included_time_windows=[]
                 ).with_partition_keys(
                     hourly_partitions_def.get_partition_keys_in_range(
-                        PartitionKeyRange(start="2013-01-05-00:00", end="2013-01-07-03:00")
+                        dg.PartitionKeyRange(start="2013-01-05-00:00", end="2013-01-07-03:00")
                     )
                 )
             }
@@ -227,7 +217,7 @@ partition_scenarios = {
         ),
         active_backfill_targets=[
             {
-                AssetKey("hourly"): TimeWindowPartitionsSubset(
+                dg.AssetKey("hourly"): TimeWindowPartitionsSubset(
                     hourly_partitions_def, num_partitions=None, included_time_windows=[]
                 ).with_partition_keys(["2013-01-05-04:00"])
             }
@@ -285,7 +275,7 @@ partition_scenarios = {
         ),
         active_backfill_targets=[
             {
-                AssetKey("hourly"): TimeWindowPartitionsSubset(
+                dg.AssetKey("hourly"): TimeWindowPartitionsSubset(
                     hourly_partitions_def, num_partitions=None, included_time_windows=[]
                 ).with_partition_keys(["2013-01-05-04:00"])
             }

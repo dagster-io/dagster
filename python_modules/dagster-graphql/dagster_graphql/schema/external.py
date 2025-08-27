@@ -1,14 +1,11 @@
 import asyncio
-from typing import TYPE_CHECKING, Optional, cast
+from typing import TYPE_CHECKING, Optional
 
 import graphene
 from dagster import _check as check
 from dagster._core.definitions.sensor_definition import SensorType
-from dagster._core.remote_representation import (
-    CodeLocation,
-    GrpcServerCodeLocation,
-    RemoteRepository,
-)
+from dagster._core.remote_representation.code_location import CodeLocation, GrpcServerCodeLocation
+from dagster._core.remote_representation.external import RemoteRepository
 from dagster._core.remote_representation.feature_flags import get_feature_flags_for_location
 from dagster._core.remote_representation.grpc_server_state_subscriber import (
     LocationStateChangeEvent,
@@ -19,9 +16,10 @@ from dagster._core.remote_representation.handle import RepositoryHandle
 from dagster._core.workspace.context import WorkspaceProcessContext
 from dagster._core.workspace.workspace import CodeLocationEntry, CodeLocationLoadStatus
 from dagster.components.core.load_defs import PLUGIN_COMPONENT_TYPES_JSON_METADATA_KEY
+from dagster_shared.serdes.objects import DefsStateInfo
 
 from dagster_graphql.implementation.fetch_solids import get_solid, get_solids
-from dagster_graphql.implementation.loader import RepositoryScopedBatchLoader, StaleStatusLoader
+from dagster_graphql.implementation.loader import RepositoryScopedBatchLoader
 from dagster_graphql.implementation.utils import capture_error
 from dagster_graphql.schema.asset_graph import GrapheneAssetGroup, GrapheneAssetNode
 from dagster_graphql.schema.env_vars import (
@@ -196,6 +194,7 @@ class GrapheneWorkspaceLocationEntry(graphene.ObjectType):
     displayMetadata = non_null_list(GrapheneRepositoryMetadata)
     updatedTimestamp = graphene.NonNull(graphene.Float)
     versionKey = graphene.NonNull(graphene.String)
+    defsStateInfo = graphene.Field(lambda: GrapheneDefsStateInfo)
 
     permissions = graphene.Field(non_null_list(GraphenePermission))
 
@@ -233,6 +232,16 @@ class GrapheneWorkspaceLocationEntry(graphene.ObjectType):
             for key, value in metadata.items()
             if value is not None
         ]
+
+    def resolve_defsStateInfo(self, graphene_info: ResolveInfo):
+        if not self._location_entry.code_location:
+            return None
+
+        defs_state_info = self._location_entry.code_location.get_defs_state_info()
+        if not defs_state_info:
+            return None
+
+        return GrapheneDefsStateInfo(defs_state_info)
 
     def resolve_updatedTimestamp(self, _) -> float:
         return self._location_entry.update_timestamp
@@ -385,16 +394,9 @@ class GrapheneRepository(graphene.ObjectType):
     def resolve_assetNodes(self, graphene_info: ResolveInfo):
         remote_nodes = self.get_repository(graphene_info).asset_graph.asset_nodes
 
-        stale_status_loader = StaleStatusLoader(
-            instance=graphene_info.context.instance,
-            asset_graph=lambda: self.get_repository(graphene_info).asset_graph,
-            loading_context=graphene_info.context,
-        )
-
         return [
             GrapheneAssetNode(
                 remote_node=remote_node,
-                stale_status_loader=stale_status_loader,
             )
             for remote_node in remote_nodes
         ]
@@ -444,18 +446,15 @@ class GrapheneRepository(graphene.ObjectType):
         graphene_info: ResolveInfo,
     ) -> GrapheneLocationDocsJson:
         repository = self.get_repository(graphene_info)
-        plugin_docs_json = (
-            cast(
-                "list",
-                repository.repository_snap.metadata.get(
-                    PLUGIN_COMPONENT_TYPES_JSON_METADATA_KEY, [[]]
-                ),
-            )[0]
-            if repository.repository_snap.metadata
-            else []
-        )
+        value = []
+        if repository.repository_snap.metadata:
+            entry = repository.repository_snap.metadata.get(
+                PLUGIN_COMPONENT_TYPES_JSON_METADATA_KEY
+            )
+            if entry:
+                value = entry.value
 
-        return GrapheneLocationDocsJson(json=plugin_docs_json)
+        return GrapheneLocationDocsJson(json=value)
 
 
 class GrapheneRepositoryConnection(graphene.ObjectType):
@@ -555,6 +554,39 @@ class GrapheneWorkspaceLocationEntryOrError(graphene.Union):
         name = "WorkspaceLocationEntryOrError"
 
 
+class GrapheneDefsKeyStateInfo(graphene.ObjectType):
+    version = graphene.NonNull(graphene.String)
+    createTimestamp = graphene.NonNull(graphene.Float)
+
+    class Meta:
+        name = "DefsKeyStateInfo"
+
+
+class GrapheneDefsKeyStateInfoEntry(graphene.ObjectType):
+    name = graphene.NonNull(graphene.String)
+    info = graphene.NonNull(GrapheneDefsKeyStateInfo)
+
+    class Meta:
+        name = "DefsStateInfoEntry"
+
+
+class GrapheneDefsStateInfo(graphene.ObjectType):
+    keyStateInfo = non_null_list(GrapheneDefsKeyStateInfoEntry)
+
+    class Meta:
+        name = "DefsStateInfo"
+
+    def __init__(self, defs_state_info: DefsStateInfo):
+        super().__init__(
+            keyStateInfo=[
+                GrapheneDefsKeyStateInfoEntry(
+                    key, GrapheneDefsKeyStateInfo(info.version, info.create_timestamp)
+                )
+                for key, info in defs_state_info.info_mapping.items()
+            ]
+        )
+
+
 types = [
     GrapheneLocationStateChangeEvent,
     GrapheneLocationStateChangeEventType,
@@ -565,4 +597,7 @@ types = [
     GrapheneRepositoryLocation,
     GrapheneRepositoryOrError,
     GrapheneWorkspaceLocationEntryOrError,
+    GrapheneDefsStateInfo,
+    GrapheneDefsKeyStateInfo,
+    GrapheneDefsKeyStateInfoEntry,
 ]

@@ -32,8 +32,15 @@ class CustomJSDOM extends JSDOMEnvironment {
 
 module.exports = CustomJSDOM;
 
-export function getFullTestName(event: {test: {name: string; parent?: {name: string}}}): string {
-  const testName = event.test.name;
-  const testFile = event.test.parent?.name;
-  return `${testFile} ${testName}`;
+export function getFullTestName(event: {
+  test: {name: string; parent?: {name: string; parent?: any}};
+}): string {
+  let fullTestName = event.test.name;
+  let parent = event.test.parent;
+
+  while (parent && parent.name !== 'ROOT_DESCRIBE_BLOCK') {
+    fullTestName = `${parent.name} ${fullTestName}`;
+    parent = parent.parent;
+  }
+  return fullTestName;
 }

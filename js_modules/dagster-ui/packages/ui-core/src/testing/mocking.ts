@@ -71,11 +71,13 @@ export function buildMutationMock<
 }
 
 export function getMockResultFn<T>(mock: MockedResponse<T>) {
+  // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
   const result = mock.result!;
   let mockFn;
   if (typeof result === 'function') {
     mockFn = jest.fn(result);
   } else {
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     mockFn = jest.fn(() => result!);
   }
   mock.result = mockFn;
@@ -90,17 +92,21 @@ export function mergeMockQueries<T extends Record<string, any>>(
   defaultData: MockedResponse<T>,
   ...queries: Array<MockedResponse<T>>
 ): MockedResponse<T> {
+  // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
   let mergedResult = resultData(queries[0]!.result, queries[0]!.request.variables);
   for (let i = 1; i < queries.length; i++) {
     mergedResult = deepmerge(
       mergedResult,
       removeDefaultValues(
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
         resultData(defaultData.result!),
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
         resultData(queries[i]!.result!, queries[i]?.request.variables),
       ),
     );
   }
   return {
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     ...queries[0]!,
     result: mergedResult,
   };
@@ -108,8 +114,10 @@ export function mergeMockQueries<T extends Record<string, any>>(
 
 function resultData<T>(result: MockedResponse<T>['result'], variables: Record<string, any> = {}) {
   if (result instanceof Function) {
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     return result(variables)!;
   } else {
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     return result!;
   }
 }

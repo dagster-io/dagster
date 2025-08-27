@@ -4,9 +4,11 @@ from typing import NamedTuple
 from dagster_shared.serdes import whitelist_for_serdes
 
 import dagster._check as check
+from dagster._annotations import public
 
 
 @whitelist_for_serdes
+@public
 class AddDynamicPartitionsRequest(
     NamedTuple(
         "_AddDynamicPartitionsRequest",
@@ -31,6 +33,7 @@ class AddDynamicPartitionsRequest(
 
 
 @whitelist_for_serdes
+@public
 class DeleteDynamicPartitionsRequest(
     NamedTuple(
         "_AddDynamicPartitionsRequest",

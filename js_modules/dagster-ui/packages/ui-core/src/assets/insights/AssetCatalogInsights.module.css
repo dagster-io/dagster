@@ -1,64 +1,8 @@
-.TileContainer {
-  position: relative;
-  width: 100%;
-  height: 100%;
-}
-
-.Tile {
-  position: absolute;
-  width: 100%;
-  height: 100%;
-  border-radius: 2px;
-
-  background-color: var(--tile-color, var(--color-background-light));
-  &:hover {
-    background-color: var(--tile-hover-color, var(--color-background-light-hover));
-  }
-}
-
-.Tooltip {
-  padding: 4px 8px;
-  border-radius: 4px;
-}
-
-.ActivityChartContainer {
-  padding: 16px 24px;
-  border-radius: 12px;
-  border: 1px solid var(--color-keyline-default);
-}
-
-.ActivityChartRow {
-  display: grid;
-  grid-template-columns: 42px 1fr;
-  gap: 12px;
-}
-
-.ActivityChartBottomLegend {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  align-self: stretch;
-  gap: 6px;
-}
-
-.MainLineCharts {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 12px;
-}
-
 .LineCharts {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 12px;
   padding-bottom: 12px;
-}
-
-.ActivityChart {
-  display: grid;
-  grid-template-columns: 1fr;
-  gap: 2px;
-  color: var(--color-text-light);
 }
 
 .TopAssetsChartsSection {
@@ -71,8 +15,4 @@
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 12px;
-}
-
-.Popover {
-  pointer-events: none;
 }

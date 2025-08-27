@@ -2,16 +2,8 @@ import textwrap
 
 import click
 from click.testing import CliRunner
-from dagster_dg_core.utils import (
-    DgClickCommand,
-    DgClickGroup,
-    ensure_dagster_dg_tests_import,
-    set_option_help_output_group,
-)
-
-ensure_dagster_dg_tests_import()
-
-from dagster_dg_core_tests.utils import (
+from dagster_dg_core.utils import DgClickCommand, DgClickGroup, set_option_help_output_group
+from dagster_test.dg_utils.utils import (
     ProxyRunner,
     assert_runner_result,
     fixed_panel_width,
@@ -23,22 +15,22 @@ from dagster_dg_core_tests.utils import (
 # ##### TEST CLI
 # ########################
 
-# The names of our global options are special-cased, so use one of them here (--disable-cache) as
+# The names of our global options are special-cased, so use one of them here (--verbose) as
 # a test case.
 
 
 @click.group(name="root", cls=DgClickGroup)
 @click.option("--root-opt", type=str, default="root", help="Root option.")
-@click.option("--disable-cache", type=str, default="test", help="Disable cache.")
-def root(root_opt, disable_cache):
+@click.option("--verbose", type=str, default="test", help="Verbose output.")
+def root(root_opt, verbose):
     """Root group."""
     pass
 
 
 @root.group(name="sub-group", cls=DgClickGroup)
 @click.option("--sub-group-opt", type=str, default="sub-group", help="Sub-group option.")
-@click.option("--disable-cache", type=str, default="test", help="Disable cache.")
-def sub_group(sub_group_opt, disable_cache):
+@click.option("--verbose", type=str, default="test", help="Verbose output.")
+def sub_group(sub_group_opt, verbose):
     """Sub-group."""
     pass
 
@@ -50,24 +42,24 @@ def sub_group(sub_group_opt, disable_cache):
     default="sub_group_command",
     help="Sub-group-command option.",
 )
-@click.option("--disable-cache", type=str, default="test", help="Disable cache.")
-def sub_group_command(sub_group_command_opt, disable_cache):
+@click.option("--verbose", type=str, default="test", help="Verbose output.")
+def sub_group_command(sub_group_command_opt, verbose):
     """Sub-group-command."""
     pass
 
 
 @root.group(name="sub-command", cls=DgClickGroup)
 @click.option("--sub-command-opt", type=str, default="sub-command", help="Sub-command option.")
-@click.option("--disable-cache", type=str, default="test", help="Disable cache.")
-def sub_command(sub_command_opt, disable_cache):
+@click.option("--verbose", type=str, default="test", help="Verbose output.")
+def sub_command(sub_command_opt, verbose):
     """Sub-command."""
     pass
 
 
 for cmd in [root, sub_group, sub_group_command, sub_command]:
     # Make this a global option
-    disable_cache_opt = next(p for p in cmd.params if p.name == "disable_cache")
-    set_option_help_output_group(disable_cache_opt, "Global options")
+    verbose_opt = next(p for p in cmd.params if p.name == "verbose")
+    set_option_help_output_group(verbose_opt, "Global options")
 
 
 # ########################
@@ -94,7 +86,7 @@ def test_root_help_message():
             │ --help                  Show this message and exit.                          │
             ╰──────────────────────────────────────────────────────────────────────────────╯
             ╭─ Global options ─────────────────────────────────────────────────────────────╮
-            │ --disable-cache        TEXT  Disable cache.                                  │
+            │ --verbose        TEXT  Verbose output.                                       │
             ╰──────────────────────────────────────────────────────────────────────────────╯
             ╭─ Commands ───────────────────────────────────────────────────────────────────╮
             │ sub-command   Sub-command.                                                   │
@@ -122,7 +114,7 @@ def test_sub_group_with_option_help_message():
             │ --help                       Show this message and exit.                     │
             ╰──────────────────────────────────────────────────────────────────────────────╯
             ╭─ Global options ─────────────────────────────────────────────────────────────╮
-            │ --disable-cache        TEXT  Disable cache.                                  │
+            │ --verbose        TEXT  Verbose output.                                       │
             ╰──────────────────────────────────────────────────────────────────────────────╯
             ╭─ Commands ───────────────────────────────────────────────────────────────────╮
             │ sub-group-command   Sub-group-command.                                       │
@@ -149,7 +141,7 @@ def test_sub_group_command_with_option_help_message():
             │ --help                               Show this message and exit.             │
             ╰──────────────────────────────────────────────────────────────────────────────╯
             ╭─ Global options ─────────────────────────────────────────────────────────────╮
-            │ --disable-cache        TEXT  Disable cache.                                  │
+            │ --verbose        TEXT  Verbose output.                                       │
             ╰──────────────────────────────────────────────────────────────────────────────╯
     """).strip(),
     )
@@ -173,7 +165,7 @@ def test_sub_command_with_option_help_message():
             │ --help                         Show this message and exit.                   │
             ╰──────────────────────────────────────────────────────────────────────────────╯
             ╭─ Global options ─────────────────────────────────────────────────────────────╮
-            │ --disable-cache        TEXT  Disable cache.                                  │
+            │ --verbose        TEXT  Verbose output.                                       │
             ╰──────────────────────────────────────────────────────────────────────────────╯
     """).strip(),
     )
@@ -192,22 +184,25 @@ def test_dynamic_subcommand_help_message():
             assert match_terminal_box_output(
                 result.output.strip(),
                 textwrap.dedent("""
-                Usage: dg scaffold defs [GLOBAL OPTIONS] dagster_test.components.SimplePipesScriptComponent [OPTIONS] INSTANCE_NAME
+                Usage: dg scaffold defs [GLOBAL OPTIONS] dagster_test.components.SimplePipesScriptComponent [OPTIONS] DEFS_PATH
+
+                A simple asset that runs a Python script with the Pipes subprocess client.                                             
+                                                                                                                                        
+                Because it is a pipes asset, no value is returned.
 
                 ╭─ Arguments ──────────────────────────────────────────────────────────────────────────────────────────────────────────╮
-                │ *    instance_name      TEXT  [required]                                                                             │
+                │ *    defs_path      TEXT  [required]                                                                                 │
                 ╰──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
                 ╭─ Options ────────────────────────────────────────────────────────────────────────────────────────────────────────────╮
-                │ --json-params          TEXT           JSON string of component parameters.                                           │
                 │ --format               [yaml|python]  Format of the component configuration (yaml or python)                         │
-                │ --asset-key            TEXT           asset_key                                                                      │
-                │ --filename             TEXT           filename                                                                       │
+                │ --json-params          TEXT           JSON string of scaffolder parameters. Mutually exclusive with passing          │
+                │                                       individual parameters as options.                                              │
+                │ --asset-key            TEXT           (scaffolder param) asset_key                                                   │
+                │ --filename             TEXT           (scaffolder param) filename                                                    │
                 │ --help         -h                     Show this message and exit.                                                    │
                 ╰──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
                 ╭─ Global options ─────────────────────────────────────────────────────────────────────────────────────────────────────╮
-                │ --cache-dir            TEXT  Specify a directory to use for the cache.                                               │
-                │ --disable-cache              Disable the cache..                                                                     │
-                │ --verbose                    Enable verbose output for debugging.                                                    │
+                │ --verbose          Enable verbose output for debugging.                                                              │
                 ╰──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
                 """).strip(),
             )

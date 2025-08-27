@@ -1,3 +1,4 @@
+# start_use_configurable_resource_in_asset
 import requests
 
 import dagster as dg
@@ -31,16 +32,24 @@ def sfo_sunrise(context: dg.AssetExecutionContext, sun_resource: SunResource) ->
     context.log.info(f"Sunrise in San Francisco is at {sunrise}.")
 
 
-defs = dg.Definitions(
-    assets=[sfo_sunrise],
-    # highlight-start
-    # Define configuration values
-    resources={
-        "sun_resource": SunResource(
-            latitude="37.615223",
-            longitude="-122.389977",
-            time_zone="America/Los_Angeles",
-        )
-    },
-    # highlight-end
-)
+# end_use_configurable_resource_in_asset
+
+
+# start_use_configurable_resource_in_asset_defs
+@dg.definitions
+def resources():
+    return dg.Definitions(
+        # highlight-start
+        # Define configuration values
+        resources={
+            "sun_resource": SunResource(
+                latitude="37.615223",
+                longitude="-122.389977",
+                time_zone="America/Los_Angeles",
+            )
+        },
+        # highlight-end
+    )
+
+
+# end_use_configurable_resource_in_asset_defs

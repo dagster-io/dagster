@@ -183,7 +183,11 @@ def get_assets_latest_info(
         asset_key: graphene_info.context.asset_graph.get(asset_key) for asset_key in asset_keys
     }
 
-    asset_records = AssetRecord.blocking_get_many(graphene_info.context, asset_keys)
+    asset_records = [
+        record
+        for record in AssetRecord.blocking_get_many(graphene_info.context, asset_keys)
+        if record is not None
+    ]
 
     latest_materialization_by_asset = {
         asset_record.asset_entry.asset_key: (

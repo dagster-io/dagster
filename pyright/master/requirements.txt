@@ -88,6 +88,7 @@
 -e python_modules/libraries/dagster-sling/
 -e python_modules/libraries/dagster-snowflake/
 -e python_modules/libraries/dagster-snowflake-pandas/
+-e python_modules/libraries/dagster-snowflake-polars/
 -e python_modules/libraries/dagster-snowflake-pyspark/
 -e python_modules/libraries/dagster-spark/
 -e python_modules/libraries/dagster-ssh/
@@ -147,9 +148,9 @@ fastapi>=0.115.6 # producing a bizarrely early version of fastapi without this
 -e python_modules/libraries/dagster-airlift/perf-harness
 -e examples/airlift-migration-tutorial
 -e examples/use_case_repository[dev]
--e examples/docs_projects/project_atproto_dashboard
--e examples/docs_projects/project_dagster_modal_pipes
--e examples/docs_projects/project_prompt_eng
+# -e examples/docs_projects/project_atproto_dashboard
+# -e examples/docs_projects/project_dagster_modal_pipes
+# -e examples/docs_projects/project_prompt_eng
 # -e examples/docs_projects/project_ask_ai_dagster
 # -e examples/docs_projects/project_llm_fine_tune
--e examples/docs_projects/project_components_pdf_extraction
+# -e examples/docs_projects/project_components_pdf_extraction

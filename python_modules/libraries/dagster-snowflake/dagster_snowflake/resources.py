@@ -19,6 +19,7 @@ from dagster._annotations import public
 from dagster._core.definitions.resource_definition import dagster_maintained_resource
 from dagster._core.storage.event_log.sql_event_log import SqlDbConnection
 from dagster._utils.cached_method import cached_method
+from dagster.components.lib.sql_component.sql_client import SQLClient
 from pydantic import Field, model_validator, validator
 
 from dagster_snowflake.constants import (
@@ -40,7 +41,7 @@ except ImportError:
     raise
 
 
-class SnowflakeResource(ConfigurableResource, IAttachDifferentObjectToOpContext):
+class SnowflakeResource(ConfigurableResource, IAttachDifferentObjectToOpContext, SQLClient):
     """A resource for connecting to the Snowflake data warehouse.
 
     If connector configuration is not set, SnowflakeResource.get_connection() will return a
@@ -281,9 +282,9 @@ class SnowflakeResource(ConfigurableResource, IAttachDifferentObjectToOpContext)
 
     @validator("connector")
     def validate_connector(cls, v: Optional[str]) -> Optional[str]:
-        if v is not None and v != "sqlalchemy":
+        if v is not None and v not in ["sqlalchemy", "adbc"]:
             raise ValueError(
-                "Snowflake Resource: 'connector' configuration value must be None or sqlalchemy."
+                "Snowflake Resource: 'connector' configuration value must be None, sqlalchemy or adbc."
             )
         return v
 
@@ -391,6 +392,81 @@ class SnowflakeResource(ConfigurableResource, IAttachDifferentObjectToOpContext)
 
         return sqlalchemy_engine_args
 
+    @property
+    @cached_method
+    def _adbc_connection_args(self) -> Mapping[str, Any]:
+        config = self._resolved_config_dict
+        adbc_engine_args = {}
+
+        if config.get("account"):
+            adbc_engine_args["adbc.snowflake.sql.account"] = config["account"]
+        if config.get("user"):
+            adbc_engine_args["username"] = config["user"]
+        if config.get("password"):
+            adbc_engine_args["password"] = config["password"]
+        if config.get("database"):
+            adbc_engine_args["adbc.snowflake.sql.db"] = config["database"]
+        if config.get("schema"):
+            adbc_engine_args["adbc.snowflake.sql.schema"] = config["schema"]
+        if config.get("role"):
+            adbc_engine_args["adbc.snowflake.sql.role"] = config["role"]
+        if config.get("warehouse"):
+            adbc_engine_args["adbc.snowflake.sql.warehouse"] = config["warehouse"]
+
+        if config.get("authenticator"):
+            auth_mapping = {
+                "snowflake": "auth_snowflake",
+                "oauth": "auth_oauth",
+                "externalbrowser": "auth_ext_browser",
+                "okta": "auth_okta",
+                "jwt": "auth_jwt",
+                "snowflake_jwt": "auth_jwt",
+            }
+            auth_type = auth_mapping.get(config["authenticator"].lower(), config["authenticator"])
+            adbc_engine_args["adbc.snowflake.sql.auth_type"] = auth_type
+
+        if config.get("private_key") or config.get("private_key_path"):
+            # ADBC expects the raw private key value as bytes for jwt_private_key_pkcs8_value
+            adbc_engine_args["adbc.snowflake.sql.auth_type"] = "auth_jwt"
+            if config.get("private_key"):
+                adbc_engine_args["adbc.snowflake.sql.client_option.jwt_private_key_pkcs8_value"] = (
+                    config["private_key"]
+                )
+            elif config.get("private_key_path"):
+                adbc_engine_args["adbc.snowflake.sql.client_option.jwt_private_key"] = config[
+                    "private_key_path"
+                ]
+
+            if config.get("private_key_password"):
+                adbc_engine_args[
+                    "adbc.snowflake.sql.client_option.jwt_private_key_pkcs8_password"
+                ] = config["private_key_password"]
+
+        if config.get("login_timeout"):
+            adbc_engine_args["adbc.snowflake.sql.client_option.login_timeout"] = (
+                f"{config['login_timeout']}s"
+            )
+        if config.get("network_timeout"):
+            adbc_engine_args["adbc.snowflake.sql.client_option.request_timeout"] = (
+                f"{config['network_timeout']}s"
+            )
+        if config.get("client_session_keep_alive") is not None:
+            adbc_engine_args["adbc.snowflake.sql.client_option.keep_session_alive"] = str(
+                config["client_session_keep_alive"]
+            ).lower()
+
+        adbc_engine_args["adbc.snowflake.sql.client_option.app_name"] = (
+            SNOWFLAKE_PARTNER_CONNECTION_IDENTIFIER
+        )
+
+        if config.get("additional_snowflake_connection_args"):
+            for key, value in config["additional_snowflake_connection_args"].items():
+                # Allow direct ADBC option names to be passed through
+                if key.startswith("adbc.snowflake."):
+                    adbc_engine_args[key] = value  # noqa: PERF403
+
+        return adbc_engine_args
+
     def _snowflake_private_key(self, config) -> bytes:
         # If the user has defined a path to a private key, we will use that.
         if config.get("private_key_path", None) is not None:
@@ -476,6 +552,15 @@ class SnowflakeResource(ConfigurableResource, IAttachDifferentObjectToOpContext)
             yield conn
             conn.close()
             engine.dispose()
+        elif self.connector == "adbc":
+            import adbc_driver_snowflake.dbapi
+
+            conn = adbc_driver_snowflake.dbapi.connect(
+                db_kwargs=self._adbc_connection_args,  # pyright: ignore[reportArgumentType]
+            )
+
+            yield conn
+            conn.close()
         else:
             conn = snowflake.connector.connect(**self._connection_args)
 
@@ -492,6 +577,10 @@ class SnowflakeResource(ConfigurableResource, IAttachDifferentObjectToOpContext)
             log=get_dagster_logger(),
             snowflake_connection_resource=self,
         )
+
+    def connect_and_execute(self, sql: str) -> None:
+        with self.get_connection() as conn:
+            conn.cursor().execute(sql)
 
 
 class SnowflakeConnection:

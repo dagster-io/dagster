@@ -20,7 +20,7 @@ class DeltaTableResource(ConfigurableResource):
             def my_table(delta_table: DeltaTableResource):
                 df = delta_table.load().to_pandas()
 
-            defs = Definitions(
+            Definitions(
                 assets=[my_table],
                 resources={
                     "delta_table": DeltaTableResource(

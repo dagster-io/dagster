@@ -43,11 +43,7 @@ export function useStepLogs({runId, stepKeys}: {runId?: string; stepKeys?: strin
     ),
     button:
       runId && stepKeys ? (
-        <Button
-          small
-          icon={<Icon name="wysiwyg" />}
-          onClick={() => setShowingLogs({runId, stepKeys})}
-        >
+        <Button icon={<Icon name="wysiwyg" />} onClick={() => setShowingLogs({runId, stepKeys})}>
           View logs
         </Button>
       ) : undefined,
@@ -125,7 +121,6 @@ export const StepLogsDialogContent = ({
   const firstLogForStepTime = firstLogForStep ? Number(firstLogForStep.timestamp) : 0;
 
   const [filter, setFilter] = useState<LogFilter>({
-    hideNonMatches: false,
     focusedTime: firstLogForStepTime,
     levels: Object.fromEntries(DefaultLogLevels.map((l) => [l, true])),
     logQuery: stepKeys.map((stepKey) => ({token: 'step', value: stepKey})),

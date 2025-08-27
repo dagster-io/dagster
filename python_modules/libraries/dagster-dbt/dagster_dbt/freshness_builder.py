@@ -7,21 +7,21 @@ from dagster import (
     _check as check,
 )
 from dagster._annotations import beta
-from dagster._core.definitions.asset_check_factories.freshness_checks.last_update import (
+from dagster._core.definitions.asset_checks.asset_check_factories.freshness_checks.last_update import (
     build_last_update_freshness_checks,
 )
-from dagster._core.definitions.asset_check_factories.freshness_checks.time_partition import (
+from dagster._core.definitions.asset_checks.asset_check_factories.freshness_checks.time_partition import (
     build_time_partition_freshness_checks,
 )
-from dagster._core.definitions.asset_check_factories.utils import (
+from dagster._core.definitions.asset_checks.asset_check_factories.utils import (
     DEFAULT_FRESHNESS_SEVERITY,
     asset_to_keys_iterable,
     assets_to_keys,
     ensure_no_duplicate_assets,
 )
-from dagster._core.definitions.asset_check_spec import AssetCheckSeverity
-from dagster._core.definitions.asset_checks import AssetChecksDefinition
-from dagster._core.definitions.time_window_partitions import TimeWindowPartitionsDefinition
+from dagster._core.definitions.asset_checks.asset_check_spec import AssetCheckSeverity
+from dagster._core.definitions.asset_checks.asset_checks_definition import AssetChecksDefinition
+from dagster._core.definitions.partitions.definition import TimeWindowPartitionsDefinition
 from dagster._core.errors import DagsterInvariantViolationError
 
 if TYPE_CHECKING:
@@ -92,7 +92,7 @@ def build_freshness_checks_from_dbt_assets(
     asset_key_to_assets_def: dict[AssetKey, AssetsDefinition] = {}
     asset_key_to_resource_props: Mapping[AssetKey, Mapping[str, Any]] = {}
     for assets_def in dbt_assets:
-        manifest, translator = get_manifest_and_translator_from_dbt_assets([assets_def])
+        manifest, translator, _ = get_manifest_and_translator_from_dbt_assets([assets_def])
         asset_key_to_resource_props_for_def = get_asset_keys_to_resource_props(manifest, translator)
         for asset_key in asset_to_keys_iterable(assets_def):
             if asset_key not in asset_key_to_resource_props_for_def:

@@ -1,7 +1,7 @@
 import inspect
 from typing import Callable, Generic, Optional, TypeVar, Union, cast
 
-from dagster._annotations import preview, public
+from dagster._annotations import public
 from dagster._core.definitions.definitions_class import Definitions
 from dagster._core.definitions.repository_definition.repository_definition import (
     RepositoryDefinition,
@@ -15,7 +15,7 @@ T_Defs = TypeVar("T_Defs", Definitions, RepositoryDefinition)
 
 @record
 class LazyDefinitions(Generic[T_Defs]):
-    """An object that can be invoked to load a set of definitions. Useful in tests when you want to regenerate the same definitions in multiple contexts."""
+    """An object that can be invoked to load a set of definitions."""
 
     load_fn: Callable[..., T_Defs]
     has_context_arg: bool
@@ -46,44 +46,83 @@ class LazyDefinitions(Generic[T_Defs]):
 
 
 @public
-@preview(emit_runtime_warning=False)
 def definitions(
     fn: Union[Callable[[], Definitions], Callable[[ComponentLoadContext], Definitions]],
 ) -> Callable[..., Definitions]:
-    """Marks a function as an entry point for loading a set of Dagster definitions. It is an alternative
-    to directly instantiating a Definitions object and assigning it to a local variable. This enables
-    a user to import a python module that contains a loadable definitions object without having
-    to create it at import time.
+    """Decorator that marks a function as an entry point for loading Dagster definitions.
 
-    The function can optionally accept a ComponentLoadContext parameter. If it does, the context will be
-    passed to the function when it is called. If it doesn't, the function will be called without any
-    parameters.
+    This decorator provides a lazy loading mechanism for Definitions objects, which is the
+    preferred approach over directly instantiating Definitions at module import time. It
+    enables Dagster's tools to discover and load definitions on-demand without executing
+    the definition creation logic during module imports. The user can also import this
+    function and import it for test cases.
+
+    The decorated function must return a Definitions object and can optionally accept a
+    ComponentLoadContext parameter, populated when loaded in the context of
+    autoloaded defs folders in the dg project layout.
+
+    Args:
+        fn: A function that returns a Definitions object. The function can either:
+            - Accept no parameters: ``() -> Definitions``
+            - Accept a ComponentLoadContext: ``(ComponentLoadContext) -> Definitions``
 
     Returns:
-        Callable[..., Definitions]: A callable that will load a set of definitions when invoked.
-            The callable accepts an optional ComponentLoadContext parameter that defaults to None.
+        A callable that will invoke the original function and return its
+        Definitions object when called by Dagster's loading mechanisms or directly
+        by the user.
+
+    Raises:
+        DagsterInvariantViolationError: If the function signature doesn't match the expected
+            patterns (no parameters or exactly one ComponentLoadContext parameter).
 
     Examples:
+        Basic usage without context:
+
         .. code-block:: python
 
             import dagster as dg
 
-            # Example with context parameter
             @dg.definitions
-            def defs_with_context(context: ComponentLoadContext):
-                @asset
-                def regular_asset(): ...
+            def my_definitions():
+                @dg.asset
+                def sales_data():
+                    return [1, 2, 3]
 
-                return Definitions(assets=[regular_asset])
+                return dg.Definitions(assets=[sales_data])
 
-            # Example without context parameter
+        Usage with ComponentLoadContext for autoloaded definitions:
+
+        .. code-block:: python
+
+            import dagster as dg
+
             @dg.definitions
-            def defs_without_context():
-                @asset
-                def regular_asset(): ...
+            def my_definitions(context: dg.ComponentLoadContext):
+                @dg.asset
+                def sales_data():
+                    # Can use context for environment-specific logic
+                    return load_data_from(context.path)
 
-                return Definitions(assets=[regular_asset])
+                return dg.Definitions(assets=[sales_data])
 
+        The decorated function can be imported and used by Dagster tools:
+
+        .. code-block:: python
+
+            # my_definitions.py
+            @dg.definitions
+            def defs():
+                return dg.Definitions(assets=[my_asset])
+
+            # dg dev -f my_definitions.py
+
+    Note:
+        When used in autoloaded defs folders, the ComponentLoadContext provides access to
+        environment variables and other contextual information for dynamic definition loading.
+
+    See Also:
+        - :py:class:`dagster.Definitions`: The object that should be returned by the decorated function
+        - :py:class:`dagster.ComponentLoadContext`: Context object for autoloaded definitions
     """
     sig = inspect.signature(fn)
     has_context_arg = False
@@ -108,4 +147,4 @@ def definitions(
 # For backwards compatibility with existing test cases
 def lazy_repository(fn: Callable[[], RepositoryDefinition]) -> Callable[[], RepositoryDefinition]:
     lazy_defs = LazyDefinitions[RepositoryDefinition](load_fn=fn, has_context_arg=False)
-    return cast("Callable[[],RepositoryDefinition]", lazy_defs)
+    return cast("Callable[[], RepositoryDefinition]", lazy_defs)

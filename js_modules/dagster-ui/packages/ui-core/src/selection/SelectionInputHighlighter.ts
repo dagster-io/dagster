@@ -16,6 +16,7 @@ import {
   IncompleteAttributeExpressionMissingKeyContext,
   IncompleteAttributeExpressionMissingValueContext,
   IncompletePlusTraversalExpressionContext,
+  NullStringValueContext,
   ParenthesizedExpressionContext,
   PostAttributeValueWhitespaceContext,
   QuotedStringValueContext,
@@ -75,6 +76,7 @@ export class SyntaxHighlightingVisitor
     ctx: IncompleteAttributeExpressionMissingKeyContext,
   ) {
     const start = ctx.start.startIndex;
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     let end = ctx.stop!.stopIndex;
     if (ctx.postExpressionWhitespace()) {
       end = ctx.postExpressionWhitespace().start.startIndex;
@@ -85,6 +87,7 @@ export class SyntaxHighlightingVisitor
 
   visitAttributeExpression(ctx: AttributeExpressionContext) {
     const start = ctx.start.startIndex;
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     let end = ctx.stop!.stopIndex;
     if (ctx.postAttributeValueWhitespace()) {
       end = ctx.postAttributeValueWhitespace().start.startIndex;
@@ -114,6 +117,11 @@ export class SyntaxHighlightingVisitor
   }
 
   visitUnquotedStringValue(ctx: UnquotedStringValueContext) {
+    this.addClass(ctx, 'value');
+    this.visitChildren(ctx);
+  }
+
+  visitNullStringValue(ctx: NullStringValueContext) {
     this.addClass(ctx, 'value');
     this.visitChildren(ctx);
   }

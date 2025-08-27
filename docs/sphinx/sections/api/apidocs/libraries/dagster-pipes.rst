@@ -3,13 +3,13 @@ Pipes (dagster-pipes)
 
 .. currentmodule:: dagster_pipes
 
-The ``dagster-pipes`` library is intended for inclusion in an external process that integrates with Dagster using the `Pipes <https://docs.dagster.io/guides/build/external-pipelines/>`_ protocol. This could be in an environment like Databricks, Kubernetes, or Docker. Using this library, you can write code in the external process that streams metadata back to Dagster.
+The ``dagster-pipes`` library is intended for inclusion in an external process that integrates with Dagster using the `Pipes <https://docs.dagster.io/guides/build/external-pipelines>`_ protocol. This could be in an environment like Databricks, Kubernetes, or Docker. Using this library, you can write code in the external process that streams metadata back to Dagster.
 
 For a detailed look at the Pipes process, including how to customize it, refer to the `Dagster Pipes details and customization guide <https://docs.dagster.io/guides/build/external-pipelines/dagster-pipes-details-and-customization>`__.
 
-**Looking to set up a Pipes client in Dagster?** Refer to the `Dagster Pipes API reference <https://docs.dagster.io/api/python-api/libraries/dagster-pipes>`_.
+**Looking to set up a Pipes client in Dagster?** Refer to the `Dagster Pipes API reference <https://docs.dagster.io/api/libraries/dagster-pipes>`_.
 
-**Note**: This library isn't included with ``dagster`` and must be `installed separately <https://pypi.org/project/dagster-pipes/>`_.
+**Note**: This library isn't included with ``dagster`` and must be `installed separately <https://pypi.org/project/dagster-pipes>`_.
 
 ----
 

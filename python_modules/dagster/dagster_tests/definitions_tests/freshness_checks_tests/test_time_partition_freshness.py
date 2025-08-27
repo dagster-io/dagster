@@ -1,34 +1,18 @@
 # pyright: reportPrivateImportUsage=false
-
 import datetime
 import json
 import time
 from collections.abc import Iterator
 
+import dagster as dg
 import pytest
-from dagster import asset
 from dagster._check import CheckError
-from dagster._core.definitions.asset_check_factories.freshness_checks.time_partition import (
-    build_time_partition_freshness_checks,
-)
-from dagster._core.definitions.asset_check_factories.utils import (
+from dagster._core.definitions.asset_checks.asset_check_factories.utils import (
     unique_id_from_asset_and_check_keys,
 )
-from dagster._core.definitions.asset_check_spec import AssetCheckSeverity
-from dagster._core.definitions.asset_checks import AssetChecksDefinition
-from dagster._core.definitions.asset_out import AssetOut
+from dagster._core.definitions.asset_checks.asset_check_spec import AssetCheckSeverity
 from dagster._core.definitions.asset_selection import AssetChecksForAssetKeysSelection
-from dagster._core.definitions.decorators.asset_decorator import multi_asset
-from dagster._core.definitions.definitions_class import Definitions
 from dagster._core.definitions.events import AssetKey
-from dagster._core.definitions.metadata import JsonMetadataValue, TimestampMetadataValue
-from dagster._core.definitions.partition import StaticPartitionsDefinition
-from dagster._core.definitions.source_asset import SourceAsset
-from dagster._core.definitions.time_window_partitions import (
-    DailyPartitionsDefinition,
-    HourlyPartitionsDefinition,
-)
-from dagster._core.definitions.unresolved_asset_job_definition import define_asset_job
 from dagster._core.instance import DagsterInstance
 from dagster._core.test_utils import freeze_time
 from dagster._time import create_datetime, get_timezone
@@ -44,20 +28,20 @@ from dagster_tests.definitions_tests.freshness_checks_tests.conftest import (
 def test_params() -> None:
     """Test definition-time errors and parameter validation for the check builder."""
 
-    @asset(
-        partitions_def=DailyPartitionsDefinition(start_date=create_datetime(2020, 1, 1, 0, 0, 0))
+    @dg.asset(
+        partitions_def=dg.DailyPartitionsDefinition(start_date=create_datetime(2020, 1, 1, 0, 0, 0))
     )
     def my_partitioned_asset():
         pass
 
-    check = build_time_partition_freshness_checks(
+    check = dg.build_time_partition_freshness_checks(
         assets=[my_partitioned_asset], deadline_cron="0 0 * * *"
     )[0]
 
-    assert isinstance(check, AssetChecksDefinition)
+    assert isinstance(check, dg.AssetChecksDefinition)
     assert next(iter(check.check_keys)).asset_key == my_partitioned_asset.key
     assert next(iter(check.check_specs)).metadata == {
-        "dagster/freshness_params": JsonMetadataValue(
+        "dagster/freshness_params": dg.JsonMetadataValue(
             {
                 "deadline_cron": "0 0 * * *",
                 "timezone": "UTC",
@@ -66,7 +50,7 @@ def test_params() -> None:
     }
     assert not next(iter(check.check_specs)).blocking
 
-    blocking_check = build_time_partition_freshness_checks(
+    blocking_check = dg.build_time_partition_freshness_checks(
         assets=[my_partitioned_asset], deadline_cron="0 0 * * *", blocking=True
     )[0]
     assert next(iter(blocking_check.check_specs)).blocking
@@ -75,126 +59,128 @@ def test_params() -> None:
         == f"freshness_check_{non_secure_md5_hash_str(json.dumps([str(my_partitioned_asset.key)]).encode())[:8]}"
     )
 
-    @asset(
-        partitions_def=DailyPartitionsDefinition(start_date=create_datetime(2020, 1, 1, 0, 0, 0))
+    @dg.asset(
+        partitions_def=dg.DailyPartitionsDefinition(start_date=create_datetime(2020, 1, 1, 0, 0, 0))
     )
     def other_partitioned_asset():
         pass
 
-    other_check = build_time_partition_freshness_checks(
+    other_check = dg.build_time_partition_freshness_checks(
         assets=[other_partitioned_asset], deadline_cron="0 0 * * *", timezone="UTC"
     )[0]
-    assert isinstance(other_check, AssetChecksDefinition)
+    assert isinstance(other_check, dg.AssetChecksDefinition)
     assert not check.node_def.name == other_check.node_def.name
 
-    check = build_time_partition_freshness_checks(
+    check = dg.build_time_partition_freshness_checks(
         assets=[my_partitioned_asset.key], deadline_cron="0 0 * * *", timezone="UTC"
     )[0]
-    assert isinstance(check, AssetChecksDefinition)
+    assert isinstance(check, dg.AssetChecksDefinition)
     assert next(iter(check.check_keys)).asset_key == my_partitioned_asset.key
 
-    src_asset = SourceAsset("source_asset")
-    check = build_time_partition_freshness_checks(
+    src_asset = dg.SourceAsset("source_asset")
+    check = dg.build_time_partition_freshness_checks(
         assets=[src_asset], deadline_cron="0 0 * * *", timezone="UTC"
     )[0]
-    assert isinstance(check, AssetChecksDefinition)
+    assert isinstance(check, dg.AssetChecksDefinition)
     assert {check_key.asset_key for check_key in check.check_keys} == {src_asset.key}
 
-    check = build_time_partition_freshness_checks(
+    check = dg.build_time_partition_freshness_checks(
         assets=[my_partitioned_asset, src_asset],
         deadline_cron="0 0 * * *",
         timezone="UTC",
     )[0]
-    assert isinstance(check, AssetChecksDefinition)
+    assert isinstance(check, dg.AssetChecksDefinition)
     assert {check_key.asset_key for check_key in check.check_keys} == {
         my_partitioned_asset.key,
         src_asset.key,
     }
 
     with pytest.raises(Exception, match="Found duplicate assets"):
-        build_time_partition_freshness_checks(
+        dg.build_time_partition_freshness_checks(
             assets=[my_partitioned_asset, my_partitioned_asset],
             deadline_cron="0 0 * * *",
             timezone="UTC",
         )
 
-    @multi_asset(
+    @dg.multi_asset(
         outs={
-            "my_partitioned_asset": AssetOut(),
-            "b": AssetOut(),
+            "my_partitioned_asset": dg.AssetOut(),
+            "b": dg.AssetOut(),
         },
         can_subset=True,
-        partitions_def=DailyPartitionsDefinition(start_date=create_datetime(2020, 1, 1, 0, 0, 0)),
+        partitions_def=dg.DailyPartitionsDefinition(
+            start_date=create_datetime(2020, 1, 1, 0, 0, 0)
+        ),
     )
     def my_multi_asset(context):
         pass
 
-    check = build_time_partition_freshness_checks(
+    check = dg.build_time_partition_freshness_checks(
         assets=[my_multi_asset], deadline_cron="0 0 * * *", timezone="UTC"
     )[0]
-    assert isinstance(check, AssetChecksDefinition)
+    assert isinstance(check, dg.AssetChecksDefinition)
     assert {check_key.asset_key for check_key in check.check_keys} == set(my_multi_asset.keys)
 
     with pytest.raises(Exception, match="Invalid cron string."):
-        build_time_partition_freshness_checks(
+        dg.build_time_partition_freshness_checks(
             assets=[my_multi_asset], deadline_cron="0 0 * * * *", timezone="UTC"
         )
 
     with pytest.raises(Exception, match="Found duplicate assets"):
-        build_time_partition_freshness_checks(
+        dg.build_time_partition_freshness_checks(
             assets=[my_multi_asset, my_multi_asset],
             deadline_cron="0 0 * * *",
             timezone="UTC",
         )
 
     with pytest.raises(Exception, match="Found duplicate assets"):
-        build_time_partition_freshness_checks(
+        dg.build_time_partition_freshness_checks(
             assets=[my_multi_asset, my_partitioned_asset],
             deadline_cron="0 0 * * *",
             timezone="UTC",
         )
 
     coercible_key = "blah"
-    check = build_time_partition_freshness_checks(
+    check = dg.build_time_partition_freshness_checks(
         assets=[coercible_key], deadline_cron="0 0 * * *", timezone="UTC"
     )[0]
-    assert isinstance(check, AssetChecksDefinition)
+    assert isinstance(check, dg.AssetChecksDefinition)
     assert {check_key.asset_key for check_key in check.check_keys} == {
         AssetKey.from_coercible(coercible_key)
     }
 
     with pytest.raises(Exception, match="Found duplicate assets"):
-        build_time_partition_freshness_checks(
+        dg.build_time_partition_freshness_checks(
             assets=[coercible_key, coercible_key],
             deadline_cron="0 0 * * *",
             timezone="UTC",
         )
 
-    regular_asset_key = AssetKey("regular_asset_key")
-    check = build_time_partition_freshness_checks(
+    regular_asset_key = dg.AssetKey("regular_asset_key")
+    check = dg.build_time_partition_freshness_checks(
         assets=[regular_asset_key], deadline_cron="0 0 * * *", timezone="UTC"
     )[0]
-    assert isinstance(check, AssetChecksDefinition)
+    assert isinstance(check, dg.AssetChecksDefinition)
     assert next(iter(check.check_keys)).asset_key == regular_asset_key
 
     with pytest.raises(Exception, match="Found duplicate assets"):
-        build_time_partition_freshness_checks(
+        dg.build_time_partition_freshness_checks(
             assets=[regular_asset_key, regular_asset_key],
             deadline_cron="0 0 * * *",
             timezone="UTC",
         )
 
-    @asset(
-        partitions_def=DailyPartitionsDefinition(start_date=create_datetime(2020, 1, 1, 0, 0, 0))
+    @dg.asset(
+        partitions_def=dg.DailyPartitionsDefinition(start_date=create_datetime(2020, 1, 1, 0, 0, 0))
     )
     def my_other_partitioned_asset():
         pass
 
-    check_multiple_assets = build_time_partition_freshness_checks(
+    check_multiple_assets = dg.build_time_partition_freshness_checks(
         assets=[my_partitioned_asset, my_other_partitioned_asset],
         deadline_cron="0 9 * * *",
     )[0]
-    check_multiple_assets_switched_order = build_time_partition_freshness_checks(
+    check_multiple_assets_switched_order = dg.build_time_partition_freshness_checks(
         assets=[my_partitioned_asset, my_other_partitioned_asset],
         deadline_cron="0 9 * * *",
     )[0]
@@ -213,15 +199,15 @@ def test_result_cron_param(
     instance: DagsterInstance,
 ) -> None:
     """Move time forward and backward, with a freshness check parameterized with a cron, and ensure that the check passes and fails as expected."""
-    partitions_def = DailyPartitionsDefinition(start_date=create_datetime(2020, 1, 1, 0, 0, 0))
+    partitions_def = dg.DailyPartitionsDefinition(start_date=create_datetime(2020, 1, 1, 0, 0, 0))
 
-    @asset(partitions_def=partitions_def)
+    @dg.asset(partitions_def=partitions_def)
     def my_asset():
         pass
 
     start_time = create_datetime(2021, 1, 3, 1, 0, 0)  # 2021-01-03 at 01:00:00
 
-    check = build_time_partition_freshness_checks(
+    check = dg.build_time_partition_freshness_checks(
         assets=[my_asset],
         deadline_cron="0 9 * * *",  # 09:00 UTC
         timezone="UTC",
@@ -239,13 +225,13 @@ def test_result_cron_param(
             # We expected the asset to arrive between the end of the partition window (2021-01-02) and the current time (2021-01-03).
             description_match="The asset has never been observed/materialized.",
             metadata_match={
-                "dagster/freshness_params": JsonMetadataValue(
+                "dagster/freshness_params": dg.JsonMetadataValue(
                     {
                         "timezone": "UTC",
                         "deadline_cron": "0 9 * * *",
                     }
                 ),
-                "dagster/latest_cron_tick_timestamp": TimestampMetadataValue(
+                "dagster/latest_cron_tick_timestamp": dg.TimestampMetadataValue(
                     create_datetime(2021, 1, 2, 9, 0, 0).timestamp()
                 ),
             },
@@ -276,13 +262,13 @@ def test_result_cron_param(
             True,
             description_match="Asset is currently fresh",
             metadata_match={
-                "dagster/fresh_until_timestamp": TimestampMetadataValue(
+                "dagster/fresh_until_timestamp": dg.TimestampMetadataValue(
                     create_datetime(2021, 1, 3, 9, 0, 0).timestamp()
                 ),
-                "dagster/freshness_params": JsonMetadataValue(
+                "dagster/freshness_params": dg.JsonMetadataValue(
                     {"timezone": "UTC", "deadline_cron": "0 9 * * *"}
                 ),
-                "dagster/latest_cron_tick_timestamp": TimestampMetadataValue(
+                "dagster/latest_cron_tick_timestamp": dg.TimestampMetadataValue(
                     create_datetime(2021, 1, 2, 9, 0, 0).timestamp()
                 ),
             },
@@ -332,17 +318,17 @@ def test_result_cron_param(
 def test_result_end_offset(
     instance: DagsterInstance,
 ) -> None:
-    partitions_def = DailyPartitionsDefinition(
+    partitions_def = dg.DailyPartitionsDefinition(
         start_date=create_datetime(2020, 1, 1, 0, 0, 0), end_offset=1
     )
 
-    @asset(partitions_def=partitions_def)
+    @dg.asset(partitions_def=partitions_def)
     def my_asset():
         pass
 
     start_time = create_datetime(2021, 1, 3, 1, 0, 0)  # 2021-01-03 at 01:00:00
 
-    check = build_time_partition_freshness_checks(
+    check = dg.build_time_partition_freshness_checks(
         assets=[my_asset],
         deadline_cron="0 9 * * *",  # 09:00 UTC
         timezone="UTC",
@@ -360,13 +346,13 @@ def test_result_end_offset(
             # We expected the asset to arrive between the end of the partition window (2021-01-02) and the current time (2021-01-03).
             description_match="The asset has never been observed/materialized.",
             metadata_match={
-                "dagster/freshness_params": JsonMetadataValue(
+                "dagster/freshness_params": dg.JsonMetadataValue(
                     {
                         "timezone": "UTC",
                         "deadline_cron": "0 9 * * *",
                     }
                 ),
-                "dagster/latest_cron_tick_timestamp": TimestampMetadataValue(
+                "dagster/latest_cron_tick_timestamp": dg.TimestampMetadataValue(
                     create_datetime(2021, 1, 2, 9, 0, 0).timestamp()
                 ),
             },
@@ -397,13 +383,13 @@ def test_result_end_offset(
             True,
             description_match="Asset is currently fresh",
             metadata_match={
-                "dagster/fresh_until_timestamp": TimestampMetadataValue(
+                "dagster/fresh_until_timestamp": dg.TimestampMetadataValue(
                     create_datetime(2021, 1, 3, 9, 0, 0).timestamp()
                 ),
-                "dagster/freshness_params": JsonMetadataValue(
+                "dagster/freshness_params": dg.JsonMetadataValue(
                     {"timezone": "UTC", "deadline_cron": "0 9 * * *"}
                 ),
-                "dagster/latest_cron_tick_timestamp": TimestampMetadataValue(
+                "dagster/latest_cron_tick_timestamp": dg.TimestampMetadataValue(
                     create_datetime(2021, 1, 2, 9, 0, 0).timestamp()
                 ),
             },
@@ -415,11 +401,11 @@ def test_invalid_runtime_assets(
 ) -> None:
     """Ensure that the check fails when the asset does not have a TimeWindowPartitionsDefinition."""
 
-    @asset
+    @dg.asset
     def non_partitioned_asset():
         pass
 
-    check = build_time_partition_freshness_checks(
+    check = dg.build_time_partition_freshness_checks(
         assets=[non_partitioned_asset], deadline_cron="0 9 * * *", timezone="UTC"
     )[0]
 
@@ -432,11 +418,11 @@ def test_invalid_runtime_assets(
             True,
         )
 
-    @asset(partitions_def=StaticPartitionsDefinition(["2021-01-01", "2021-01-02"]))
+    @dg.asset(partitions_def=dg.StaticPartitionsDefinition(["2021-01-01", "2021-01-02"]))
     def static_partitioned_asset():
         pass
 
-    check = build_time_partition_freshness_checks(
+    check = dg.build_time_partition_freshness_checks(
         assets=[static_partitioned_asset], deadline_cron="0 9 * * *", timezone="UTC"
     )[0]
 
@@ -453,13 +439,13 @@ def test_invalid_runtime_assets(
 def test_observations(
     instance: DagsterInstance,
 ) -> None:
-    partitions_def = DailyPartitionsDefinition(start_date=create_datetime(2020, 1, 1, 0, 0, 0))
+    partitions_def = dg.DailyPartitionsDefinition(start_date=create_datetime(2020, 1, 1, 0, 0, 0))
 
-    @asset(partitions_def=partitions_def)
+    @dg.asset(partitions_def=partitions_def)
     def my_asset():
         pass
 
-    check = build_time_partition_freshness_checks(
+    check = dg.build_time_partition_freshness_checks(
         assets=[my_asset],
         deadline_cron="0 9 * * *",
         timezone="UTC",  # 09:00 UTC
@@ -481,13 +467,13 @@ def test_observations(
 def test_materialization_and_observation(instance: DagsterInstance) -> None:
     """Test that freshness check works when latest event is an observation, but it has no last_updated_time."""
 
-    @asset(
-        partitions_def=DailyPartitionsDefinition(start_date=create_datetime(2020, 1, 1, 0, 0, 0))
+    @dg.asset(
+        partitions_def=dg.DailyPartitionsDefinition(start_date=create_datetime(2020, 1, 1, 0, 0, 0))
     )
     def my_asset():
         pass
 
-    check = build_time_partition_freshness_checks(
+    check = dg.build_time_partition_freshness_checks(
         assets=[my_asset],
         deadline_cron="0 9 * * *",
         timezone="UTC",  # 09:00 UTC
@@ -522,16 +508,16 @@ def test_differing_timezones(
     new_york_time: None,
 ) -> None:
     """Test the interplay between the three different timezones: the timezone of the cron, the timezone of the asset, and the timezone of the running process."""
-    partitions_def = DailyPartitionsDefinition(
+    partitions_def = dg.DailyPartitionsDefinition(
         start_date=datetime.datetime(2020, 1, 1, 0, 0, 0, tzinfo=get_timezone("America/Chicago")),
         timezone="America/Chicago",
     )
 
-    @asset(partitions_def=partitions_def)
+    @dg.asset(partitions_def=partitions_def)
     def my_chicago_asset():
         pass
 
-    check = build_time_partition_freshness_checks(
+    check = dg.build_time_partition_freshness_checks(
         assets=[my_chicago_asset],
         deadline_cron="0 9 * * *",
         timezone="America/Los_Angeles",  # 09:00 Los Angeles time
@@ -609,34 +595,36 @@ def test_subset_freshness_checks(instance: DagsterInstance):
     on a subset of assets.
     """
 
-    @asset(
-        partitions_def=DailyPartitionsDefinition(start_date=create_datetime(2020, 1, 1, 0, 0, 0))
+    @dg.asset(
+        partitions_def=dg.DailyPartitionsDefinition(start_date=create_datetime(2020, 1, 1, 0, 0, 0))
     )
     def my_asset():
         pass
 
     # Test multiple different partition defs
-    @asset(
-        partitions_def=HourlyPartitionsDefinition(start_date=create_datetime(2020, 1, 1, 0, 0, 0))
+    @dg.asset(
+        partitions_def=dg.HourlyPartitionsDefinition(
+            start_date=create_datetime(2020, 1, 1, 0, 0, 0)
+        )
     )
     def my_other_asset():
         pass
 
-    check = build_time_partition_freshness_checks(
+    check = dg.build_time_partition_freshness_checks(
         assets=[my_asset, my_other_asset],
         deadline_cron="0 9 * * *",
         timezone="UTC",  # 09:00 UTC
     )[0]
-    single_check_job = define_asset_job(
+    single_check_job = dg.define_asset_job(
         "the_job", selection=AssetChecksForAssetKeysSelection(selected_asset_keys=[my_asset.key])
     )
-    both_checks_job = define_asset_job(
+    both_checks_job = dg.define_asset_job(
         "both_checks_job",
         selection=AssetChecksForAssetKeysSelection(
             selected_asset_keys=[my_asset.key, my_other_asset.key]
         ),
     )
-    defs = Definitions(
+    defs = dg.Definitions(
         assets=[my_asset, my_other_asset],
         asset_checks=[check],
         jobs=[single_check_job, both_checks_job],
@@ -662,8 +650,8 @@ def test_subset_freshness_checks(instance: DagsterInstance):
 
 
 def test_observation_descriptions(instance: DagsterInstance) -> None:
-    @asset(
-        partitions_def=DailyPartitionsDefinition(start_date=create_datetime(2020, 1, 1, 0, 0, 0))
+    @dg.asset(
+        partitions_def=dg.DailyPartitionsDefinition(start_date=create_datetime(2020, 1, 1, 0, 0, 0))
     )
     def my_asset():
         pass
@@ -672,7 +660,7 @@ def test_observation_descriptions(instance: DagsterInstance) -> None:
         2021, 1, 3, 9, 0, 1
     )  # 2021-01-03 at 09:00:00. We expect the 2021-01-02 partition to be fresh.
 
-    check = build_time_partition_freshness_checks(
+    check = dg.build_time_partition_freshness_checks(
         assets=[my_asset],
         deadline_cron="0 9 * * *",
     )[0]

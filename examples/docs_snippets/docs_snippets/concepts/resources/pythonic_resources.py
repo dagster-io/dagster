@@ -13,10 +13,13 @@ def new_resource_testing() -> None:
         def get_value(self) -> str:
             return self.value
 
+    # end_new_resource_testing
+
+    # start_test_my_resource
     def test_my_resource():
         assert MyResource(value="foo").get_value() == "foo"
 
-    # end_new_resource_testing
+    # end_test_my_resource
 
     test_my_resource()
 
@@ -32,13 +35,16 @@ def new_resource_testing_with_nesting() -> None:
         foo: StringHolderResource
         bar: str
 
+    # end_new_resource_testing_with_nesting
+
+    # start_test_my_resource_with_nesting
     def test_my_resource_with_nesting():
         string_holder = StringHolderResource(value="foo")
         resource = MyResourceRequiresAnother(foo=string_holder, bar="bar")
         assert resource.foo.value == "foo"
         assert resource.bar == "bar"
 
-    # end_new_resource_testing_with_nesting
+    # end_test_my_resource_with_nesting
 
     test_my_resource_with_nesting()
 
@@ -57,14 +63,18 @@ def new_resources_assets_defs() -> "dg.Definitions":
     def data_from_url(data_url: dg.ResourceParam[str]) -> dict[str, Any]:
         return requests.get(data_url).json()
 
-    defs = dg.Definitions(
-        assets=[data_from_url],
-        resources={"data_url": "https://dagster.io"},
-    )
+    @dg.definitions
+    def resources():
+        return dg.Definitions(
+            resources={"data_url": "https://dagster.io"},
+        )
 
     # end_new_resources_assets_defs
 
-    return defs
+    return dg.Definitions(
+        assets=[data_from_url],
+        resources={"data_url": "https://dagster.io"},
+    )
 
 
 def new_resources_ops_defs() -> "dg.Definitions":
@@ -80,14 +90,13 @@ def new_resources_ops_defs() -> "dg.Definitions":
     def print_data_from_url_job():
         print_data_from_resource()
 
-    defs = dg.Definitions(
-        jobs=[print_data_from_url_job],
-        resources={"data_url": "https://dagster.io"},
-    )
+    @dg.definitions
+    def resources():
+        return dg.Definitions(
+            resources={"data_url": "https://dagster.io"},
+        )
 
     # end_new_resources_ops_defs
-
-    return defs
 
 
 def new_resources_configurable_defs() -> "dg.Definitions":
@@ -110,16 +119,25 @@ def new_resources_configurable_defs() -> "dg.Definitions":
     def data_from_service(my_conn: MyConnectionResource) -> dict[str, Any]:
         return my_conn.request("/fetch_data").json()
 
-    defs = dg.Definitions(
+    # end_new_resources_configurable_defs
+
+    # start_new_resources_configurable_defs_defs
+    @dg.definitions
+    def resources():
+        return dg.Definitions(
+            resources={
+                "my_conn": MyConnectionResource(username="my_user"),
+            },
+        )
+
+    # end_new_resources_configurable_defs_defs
+
+    return dg.Definitions(
         assets=[data_from_service],
         resources={
             "my_conn": MyConnectionResource(username="my_user"),
         },
     )
-
-    # end_new_resources_configurable_defs
-
-    return defs
 
 
 def new_resources_configurable_defs_ops() -> "dg.Definitions":
@@ -146,16 +164,18 @@ def new_resources_configurable_defs_ops() -> "dg.Definitions":
     def update_service_job():
         update_service()
 
-    defs = dg.Definitions(
-        jobs=[update_service_job],
-        resources={
-            "my_conn": MyConnectionResource(username="my_user"),
-        },
-    )
-
     # end_new_resources_configurable_defs_ops
 
-    return defs
+    # start_new_resources_configurable_defs_ops_defs
+    @dg.definitions
+    def resources():
+        return dg.Definitions(
+            resources={
+                "my_conn": MyConnectionResource(username="my_user"),
+            },
+        )
+
+    # end_new_resources_configurable_defs_ops_defs
 
 
 def new_resource_runtime() -> "dg.Definitions":
@@ -171,12 +191,16 @@ def new_resource_runtime() -> "dg.Definitions":
     def data_from_database(db_conn: DatabaseResource):
         return db_conn.read()
 
-    defs = dg.Definitions(
-        assets=[data_from_database],
-        resources={"db_conn": DatabaseResource.configure_at_launch()},
-    )
-
     # end_new_resource_runtime
+
+    # start_new_resource_runtime_defs
+    @dg.definitions
+    def resources():
+        return dg.Definitions(
+            resources={"db_conn": DatabaseResource.configure_at_launch()},
+        )
+
+    # end_new_resource_runtime_defs
 
     # start_new_resource_runtime_launch
     import dagster as dg
@@ -199,13 +223,18 @@ def new_resource_runtime() -> "dg.Definitions":
 
     # end_new_resource_runtime_launch
 
-    defs = dg.Definitions(
+    @dg.definitions
+    def resources():
+        return dg.Definitions(
+            resources={"db_conn": DatabaseResource.configure_at_launch()},
+        )
+
+    return dg.Definitions(
         assets=[data_from_database],
         jobs=[update_data_job],
         resources={"db_conn": DatabaseResource.configure_at_launch()},
         sensors=[table_update_sensor],
     )
-    return defs
 
 
 def get_filestore_client(*args, **kwargs):
@@ -239,23 +268,39 @@ def new_resources_nesting() -> dg.Definitions:
                 region=self.region,
             ).write(data)
 
-    defs = dg.Definitions(
-        assets=[my_asset],
-        resources={
-            "bucket": FileStoreBucket(
-                credentials=CredentialsResource(
-                    username="my_user", password="my_password"
+    @dg.definitions
+    def resources():
+        return dg.Definitions(
+            resources={
+                "bucket": FileStoreBucket(
+                    credentials=CredentialsResource(
+                        username="my_user", password="my_password"
+                    ),
+                    region="us-east-1",
                 ),
-                region="us-east-1",
-            ),
-        },
-    )
+            },
+        )
+
     # end_new_resources_nesting
 
     # start_new_resource_dep_job_runtime
     credentials = CredentialsResource.configure_at_launch()
 
-    defs = dg.Definitions(
+    @dg.definitions
+    def resources():
+        return dg.Definitions(
+            resources={
+                "credentials": credentials,
+                "bucket": FileStoreBucket(
+                    credentials=credentials,
+                    region="us-east-1",
+                ),
+            },
+        )
+
+    # end_new_resource_dep_job_runtime
+
+    return dg.Definitions(
         assets=[my_asset],
         resources={
             "credentials": credentials,
@@ -266,10 +311,6 @@ def new_resources_nesting() -> dg.Definitions:
         },
     )
 
-    # end_new_resource_dep_job_runtime
-
-    return defs
-
 
 def new_resources_env_vars() -> None:
     # start_new_resources_env_vars
@@ -279,8 +320,20 @@ def new_resources_env_vars() -> None:
         username: str
         password: str
 
-    defs = dg.Definitions(
-        assets=...,
+    @dg.definitions
+    def resources():
+        return dg.Definitions(
+            resources={
+                "credentials": CredentialsResource(
+                    username=dg.EnvVar("MY_USERNAME"),
+                    password=dg.EnvVar("MY_PASSWORD"),
+                )
+            },
+        )
+
+    # end_new_resources_env_vars
+
+    return dg.Definitions(
         resources={
             "credentials": CredentialsResource(
                 username=dg.EnvVar("MY_USERNAME"),
@@ -288,7 +341,6 @@ def new_resources_env_vars() -> None:
             )
         },
     )
-    # end_new_resources_env_vars
 
 
 class GitHubOrganization:
@@ -320,12 +372,16 @@ def raw_github_resource() -> None:
     def public_github_repos(github: dg.ResourceParam[GitHub]):
         return github.organization("dagster-io").repositories()
 
-    defs = dg.Definitions(
-        assets=[public_github_repos],
-        resources={"github": GitHub(...)},
-    )
-
     # end_raw_github_resource
+
+    # start_raw_github_resource_defs
+    @dg.definitions
+    def resources():
+        return dg.Definitions(
+            resources={"github": GitHub(...)},
+        )
+
+    # end_raw_github_resource_defs
 
 
 from contextlib import AbstractContextManager
@@ -363,10 +419,12 @@ def raw_github_resource_dep() -> None:
                 return conn.execute(query)
 
     engine = create_engine(...)
-    defs = dg.Definitions(
-        assets=...,
-        resources={"db": DBResource(engine=engine)},
-    )
+
+    @dg.definitions
+    def resources():
+        return dg.Definitions(
+            resources={"db": DBResource(engine=engine)},
+        )
 
     # end_raw_github_resource_dep
 
@@ -400,9 +458,9 @@ def resource_adapter() -> None:
     def my_asset(writer: Writer):
         writer.output("hello, world!")
 
-    defs = dg.Definitions(
-        assets=[my_asset], resources={"writer": WriterResource(prefix="greeting: ")}
-    )
+    @dg.definitions
+    def resources():
+        return dg.Definitions(resources={"writer": WriterResource(prefix="greeting: ")})
 
     # end_resource_adapter
 
@@ -447,12 +505,13 @@ def io_adapter() -> None:
         def wrapped_io_manager(self) -> dg.IOManagerDefinition:
             return old_file_io_manager
 
-    defs = dg.Definitions(
-        assets=...,
-        resources={
-            "dg.io_manager": MyIOManager(base_path="/tmp/"),
-        },
-    )
+    @dg.definitions
+    def resources():
+        return dg.Definitions(
+            resources={
+                "dg.io_manager": MyIOManager(base_path="/tmp/"),
+            },
+        )
 
     # end_io_adapter
 
@@ -517,10 +576,11 @@ def new_io_manager() -> None:
         def load_input(self, context: dg.InputContext):
             return read_csv(self._get_path(context.asset_key))
 
-    defs = dg.Definitions(
-        assets=...,
-        resources={"dg.io_manager": MyIOManager(root_path="/tmp/")},
-    )
+    @dg.definitions
+    def resources():
+        return dg.Definitions(
+            resources={"dg.io_manager": MyIOManager(root_path="/tmp/")},
+        )
 
     # end_new_io_manager
 
@@ -539,12 +599,13 @@ def raw_github_resource_factory() -> None:
     def public_github_repos(github: dg.Resource[GitHub]):
         return github.organization("dagster-io").repositories()
 
-    defs = dg.Definitions(
-        assets=[public_github_repos],
-        resources={
-            "github": GitHubResource(access_token=dg.EnvVar("GITHUB_ACCESS_TOKEN"))
-        },
-    )
+    @dg.definitions
+    def resources():
+        return dg.Definitions(
+            resources={
+                "github": GitHubResource(access_token=dg.EnvVar("GITHUB_ACCESS_TOKEN"))
+            },
+        )
 
     # end_raw_github_resource_factory
 
@@ -565,6 +626,9 @@ def new_resource_testing_with_context():
             assert instance
             return instance.storage_directory()
 
+    # end_new_resource_testing_with_context
+
+    # start_test_my_context_resource
     def test_my_context_resource():
         with dg.DagsterInstance.ephemeral() as instance:
             context = dg.build_init_resource_context(instance=instance)
@@ -575,7 +639,7 @@ def new_resource_testing_with_context():
                 == instance.storage_directory()
             )
 
-    # end_new_resource_testing_with_context
+    # end_test_my_context_resource
 
 
 def with_state_example() -> None:
@@ -719,23 +783,27 @@ def new_resource_on_sensor() -> None:
 
         context.update_cursor(str(num_users))
 
-    defs = dg.Definitions(
-        jobs=[process_user],
-        sensors=[process_new_users_sensor],
-        resources={"users_api": UsersAPI(url="https://my-api.com/users")},
-    )
     # end_new_resource_on_sensor
+
+    # start_new_resource_on_sensor_defs
+    @dg.definitions
+    def resources():
+        return dg.Definitions(
+            resources={"users_api": UsersAPI(url="https://my-api.com/users")},
+        )
+
+    # end_new_resource_on_sensor_defs
 
     # start_test_resource_on_sensor
 
-    from dagster import build_sensor_context
+    import dagster as dg
 
     def test_process_new_users_sensor():
         class FakeUsersAPI:
             def fetch_users(self) -> list[str]:
                 return ["1", "2", "3"]
 
-        context = build_sensor_context()
+        context = dg.build_sensor_context()
         run_requests = process_new_users_sensor(context, users_api=FakeUsersAPI())
         assert len(run_requests) == 3
 
@@ -769,18 +837,22 @@ def new_resource_on_schedule() -> None:
             tags={"date": formatted_date},
         )
 
-    defs = dg.Definitions(
-        jobs=[process_data],
-        schedules=[process_data_schedule],
-        resources={"date_formatter": DateFormatter(format="%Y-%m-%d")},
-    )
     # end_new_resource_on_schedule
-    # start_test_resource_on_schedule
 
-    from dagster import build_schedule_context
+    # start_new_resource_on_schedule_defs
+    @dg.definitions
+    def resources():
+        return dg.Definitions(
+            resources={"date_formatter": DateFormatter(format="%Y-%m-%d")},
+        )
+
+    # end_new_resource_on_schedule_defs
+
+    # start_test_resource_on_schedule
+    import dagster as dg
 
     def test_process_data_schedule():
-        context = build_schedule_context(
+        context = dg.build_schedule_context(
             scheduled_execution_time=datetime.datetime(2020, 1, 1)
         )
         run_request = process_data_schedule(

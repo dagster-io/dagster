@@ -17,20 +17,39 @@ The asset factory pattern can solve both of these problems.
 
 This article assumes familiarity with:
   - [Assets](/guides/build/assets/defining-assets)
-  - [Resources](/guides/build/external-resources/)
+  - [Resources](/guides/build/external-resources)
   - SQL, YAML, and Amazon Web Services (AWS) S3
-  - [Pydantic](https://docs.pydantic.dev/latest/) and [Jinja2](https://jinja.palletsprojects.com/en/3.1.x/)
+  - [Pydantic](https://docs.pydantic.dev/latest) and [Jinja2](https://jinja.palletsprojects.com/en/3.1.x)
 
 :::
 
 <details>
   <summary>Prerequisites</summary>
 
-To run the code in this article, you'll need to create and activate a Python virtual environment and install the following dependencies:
+To run the example code in this article, you'll need:
 
-   ```bash
-   pip install dagster dagster-aws duckdb pyyaml pydantic
-   ```
+- Install the necessary Python libraries:
+
+<Tabs groupId="package-manager">
+   <TabItem value="uv" label="uv">
+      Install the required dependencies:
+
+         ```shell
+         uv add dagster dagster-aws duckdb pyyaml pydantic
+         ```
+
+   </TabItem>
+
+   <TabItem value="pip" label="pip">
+      Install the required dependencies:
+
+         ```shell
+         pip install dagster dagster-aws duckdb pyyaml pydantic
+         ```
+
+   </TabItem>
+</Tabs>
+
 </details>
 
 ## Building an asset factory in Python
@@ -39,7 +58,7 @@ Let's imagine a team that often has to perform the same repetitive ETL task: dow
 
 To automate this process, you might define an asset factory in Python like the following:
 
-<CodeExample path="docs_snippets/docs_snippets/guides/data-modeling/asset-factories/python-asset-factory.py" language="python" />
+<CodeExample path="docs_snippets/docs_snippets/guides/data-modeling/asset-factories/python-asset-factory.py" language="python" title="src/<project_name>/defs/assets.py" />
 
 The asset factory pattern is essentially a function that takes in some configuration and returns `dg.Definitions`.
 
@@ -51,7 +70,7 @@ Now, the team wants to be able to configure the asset factory using YAML instead
 
 To implement this, parse the YAML file and use it to create the S3 resource and ETL jobs:
 
-<CodeExample path="docs_snippets/docs_snippets/guides/data-modeling/asset-factories/simple-yaml-asset-factory.py" language="python" />
+<CodeExample path="docs_snippets/docs_snippets/guides/data-modeling/asset-factories/simple-yaml-asset-factory.py" language="python" title="src/<project_name>/defs/assets.py" />
 
 ## Improving usability with Pydantic and Jinja
 
@@ -68,4 +87,4 @@ Here's what the new YAML file might look like. Note how Jinja templating is used
 
 And the Python implementation:
 
-<CodeExample path="docs_snippets/docs_snippets/guides/data-modeling/asset-factories/advanced-yaml-asset-factory.py" language="python" />
+<CodeExample path="docs_snippets/docs_snippets/guides/data-modeling/asset-factories/advanced-yaml-asset-factory.py" language="python" title="src/<project_name>/defs/assets.py" />

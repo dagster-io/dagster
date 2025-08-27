@@ -19,7 +19,5 @@ def asset2(context: dg.AssetExecutionContext):
         # highlight-end
 
 
-defs = dg.Definitions(assets=[asset1, asset2])
-
 if __name__ == "__main__":
     dg.materialize(assets=[asset1, asset2])

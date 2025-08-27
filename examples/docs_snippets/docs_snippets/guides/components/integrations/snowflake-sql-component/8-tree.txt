@@ -1,0 +1,10 @@
+tree my_project/defs
+
+my_project/defs
+├── __init__.py
+├── daily_revenue
+│   └── defs.yaml
+└── snowflake_connection
+    └── defs.yaml
+
+3 directories, 3 files

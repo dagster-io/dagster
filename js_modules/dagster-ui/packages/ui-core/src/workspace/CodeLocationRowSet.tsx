@@ -82,7 +82,11 @@ export const ModuleOrPackageOrFile = ({
   metadata: WorkspaceDisplayMetadataFragment[];
 }) => {
   const imageKV = metadata.find(
-    ({key}) => key === 'module_name' || key === 'package_name' || key === 'python_file',
+    ({key}) =>
+      key === 'module_name' ||
+      key === 'package_name' ||
+      key === 'python_file' ||
+      key === 'autoload_defs_module_name',
   );
   if (imageKV) {
     return (

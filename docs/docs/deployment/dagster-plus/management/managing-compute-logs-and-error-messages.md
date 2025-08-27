@@ -6,7 +6,6 @@ title: Managing compute logs and error messages
 
 import ThemedImage from '@theme/ThemedImage';
 
-
 In this guide, we'll cover how to adjust where Dagster+ compute logs are stored and manage masking of error messages in the Dagster+ UI.
 
 By default, Dagster+ ingests [structured event logs and compute logs](/guides/monitor/logging/index.md#log-types) from runs and surfaces error messages from [code locations](/deployment/code-locations) in the UI.

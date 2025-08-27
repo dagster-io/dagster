@@ -1,7 +1,30 @@
-[build-system]
-requires = ["setuptools"]
-build-backend = "setuptools.build_meta"
+[project]
+name = "project_llm_fine_tune"
+version = "0.0.1"
+description = "Project LLM Fine Tune"
+readme = "README.md"
+requires-python = ">=3.9"
+dependencies = [
+    "dagster",
+    "dagster-dg-cli",
+    "dagster-openai",
+    "dagster-duckdb",
+    "pandas",
+    "openai",
+]
 
-[tool.dagster]
-module_name = "project_llm_fine_tune.definitions"
-code_location_name = "project_llm_fine_tune"
+[tool.uv]
+dev-dependencies = [
+    "ruff==0.8.4",
+    "pytest",
+    "dagster-webserver",
+]
+
+[tool.dg]
+directory_type = "project"
+
+[tool.dg.project]
+root_module = "project_llm_fine_tune"
+
+[tool.dg.project.python_environment]
+active = true

@@ -77,6 +77,7 @@ export const Body2 = styled(Text)`
 export const Caption = styled(Text)`
   font-family: ${FontFamily.default};
   font-size: 12px;
+  line-height: 16px;
 `;
 
 export const CaptionSubtitle = styled(Text)`
@@ -89,6 +90,7 @@ export const CaptionBolded = styled(Text)`
   font-family: ${FontFamily.default};
   font-size: 12px;
   font-weight: 700;
+  line-height: 16px;
 `;
 
 export const Code = styled(Text)`
@@ -112,6 +114,7 @@ export const CaptionMono = styled(Text)`
   font-family: ${FontFamily.monospace};
   font-variant-ligatures: none;
   font-size: 12px;
+  line-height: 16px;
 `;
 export const SubtitleLarge = styled(Text)`
   font-size: 16px;

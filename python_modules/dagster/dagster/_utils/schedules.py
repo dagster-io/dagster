@@ -13,7 +13,7 @@ from dagster._vendored.dateutil.relativedelta import relativedelta
 from dagster._vendored.dateutil.tz import datetime_ambiguous, datetime_exists
 
 if TYPE_CHECKING:
-    from dagster._core.definitions.partition import ScheduleType
+    from dagster._core.definitions.partitions.schedule_type import ScheduleType
 
 # Monthly schedules with 29-31 won't reliably run every month
 MAX_DAY_OF_MONTH_WITH_GUARANTEED_MONTHLY_INTERVAL = 28
@@ -369,7 +369,7 @@ def _find_schedule_time(
     # we are already on the boundary of the cron interval
     already_on_boundary: bool,
 ) -> datetime.datetime:
-    from dagster._core.definitions.partition import ScheduleType
+    from dagster._core.definitions.partitions.schedule_type import ScheduleType
 
     if schedule_type == ScheduleType.HOURLY:
         return _find_hourly_schedule_time(
@@ -628,7 +628,7 @@ def cron_string_iterator(
     start_offset: int = 0,
 ) -> Iterator[datetime.datetime]:
     """Generator of datetimes >= start_timestamp for the given cron string."""
-    from dagster._core.definitions.partition import ScheduleType
+    from dagster._core.definitions.partitions.schedule_type import ScheduleType
 
     # leap day special casing
     if cron_string.endswith(" 29 2 *"):

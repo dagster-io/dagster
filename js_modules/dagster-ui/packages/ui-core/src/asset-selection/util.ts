@@ -8,6 +8,8 @@ import {
   UpTraversalContext,
   ValueContext,
 } from './generated/AssetSelectionParser';
+import {ValueContext as OpSelectionValueContext} from '../op-selection/generated/OpSelectionParser';
+import {ValueContext as RunSelectionValueContext} from '../run-selection/generated/RunSelectionParser';
 
 export function getTraversalDepth(ctx: UpTraversalContext | DownTraversalContext): number {
   const digits = ctx.DIGITS();
@@ -27,7 +29,9 @@ export function getFunctionName(ctx: FunctionNameContext): string {
   throw new Error('Invalid function name');
 }
 
-export function getValue(ctx: ValueContext | KeyValueContext): string {
+export function getValue(
+  ctx: ValueContext | KeyValueContext | OpSelectionValueContext | RunSelectionValueContext,
+): string {
   if (ctx.QUOTED_STRING()) {
     return ctx.text.slice(1, -1);
   }
@@ -37,7 +41,17 @@ export function getValue(ctx: ValueContext | KeyValueContext): string {
   if ('UNQUOTED_WILDCARD_STRING' in ctx && ctx.UNQUOTED_WILDCARD_STRING()) {
     return ctx.text;
   }
+  if ('NULL_STRING' in ctx && ctx.NULL_STRING()) {
+    return '';
+  }
   throw new Error('Invalid value');
+}
+
+export function isNullValue(ctx: Pick<ValueContext, 'NULL_STRING'>): boolean {
+  if ('NULL_STRING' in ctx && ctx.NULL_STRING()) {
+    return true;
+  }
+  return false;
 }
 
 export function getSupplementaryDataKey({
@@ -45,7 +59,7 @@ export function getSupplementaryDataKey({
   value,
 }: {
   field: string;
-  value: string | {key: string; value: string};
+  value: string | {key: string; value?: string | undefined};
 }): string {
   return JSON.stringify({field, value});
 }

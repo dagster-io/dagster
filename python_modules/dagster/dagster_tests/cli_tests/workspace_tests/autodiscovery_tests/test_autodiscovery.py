@@ -1,8 +1,8 @@
 import os
 import sys
 
+import dagster as dg
 import pytest
-from dagster import DagsterInvariantViolationError, RepositoryDefinition
 from dagster._core.code_pointer import CodePointer
 from dagster._core.definitions.reconstruct import initialize_repository_def_from_pointer
 from dagster._core.errors import DagsterImportError
@@ -12,11 +12,11 @@ from dagster._core.workspace.autodiscovery import (
     loadable_targets_from_python_module,
     loadable_targets_from_python_package,
 )
-from dagster._utils import alter_sys_path, file_relative_path, restore_sys_modules
+from dagster._utils import alter_sys_path, restore_sys_modules
 
 
 def test_single_repository() -> None:
-    single_repo_path = file_relative_path(__file__, "single_repository.py")
+    single_repo_path = dg.file_relative_path(__file__, "single_repository.py")
     loadable_targets = loadable_targets_from_python_file(single_repo_path)
 
     assert len(loadable_targets) == 1
@@ -24,26 +24,26 @@ def test_single_repository() -> None:
     assert symbol == "single_repository"
 
     repo_def = CodePointer.from_python_file(single_repo_path, symbol, None).load_target()
-    assert isinstance(repo_def, RepositoryDefinition)
+    assert isinstance(repo_def, dg.RepositoryDefinition)
 
     assert repo_def.name == "single_repository"
 
 
 def test_double_repository() -> None:
     loadable_repos = loadable_targets_from_python_file(
-        file_relative_path(__file__, "double_repository.py"),
+        dg.file_relative_path(__file__, "double_repository.py"),
     )
 
     found_names = set()
     for lr in loadable_repos:
-        assert isinstance(lr.target_definition, RepositoryDefinition)
+        assert isinstance(lr.target_definition, dg.RepositoryDefinition)
         found_names.add(lr.target_definition.name)
 
     assert found_names == {"repo_one", "repo_two"}
 
 
 def test_single_job() -> None:
-    single_job_path = file_relative_path(__file__, "single_job.py")
+    single_job_path = dg.file_relative_path(__file__, "single_job.py")
     loadable_targets = loadable_targets_from_python_file(single_job_path)
 
     assert len(loadable_targets) == 1
@@ -54,13 +54,13 @@ def test_single_job() -> None:
         CodePointer.from_python_file(single_job_path, symbol, None),
     )
 
-    assert isinstance(repo_def, RepositoryDefinition)
+    assert isinstance(repo_def, dg.RepositoryDefinition)
     assert repo_def.get_job("a_job")
 
 
 def test_double_job() -> None:
-    double_job_path = file_relative_path(__file__, "double_job.py")
-    with pytest.raises(DagsterInvariantViolationError) as exc_info:
+    double_job_path = dg.file_relative_path(__file__, "double_job.py")
+    with pytest.raises(dg.DagsterInvariantViolationError) as exc_info:
         loadable_targets_from_python_file(double_job_path)
 
     assert (
@@ -72,7 +72,7 @@ def test_double_job() -> None:
 
 
 def test_single_graph() -> None:
-    single_graph_path = file_relative_path(__file__, "single_graph.py")
+    single_graph_path = dg.file_relative_path(__file__, "single_graph.py")
     loadable_targets = loadable_targets_from_python_file(single_graph_path)
 
     assert len(loadable_targets) == 1
@@ -83,13 +83,13 @@ def test_single_graph() -> None:
         CodePointer.from_python_file(single_graph_path, symbol, None),
     )
 
-    assert isinstance(repo_def, RepositoryDefinition)
+    assert isinstance(repo_def, dg.RepositoryDefinition)
     assert repo_def.get_job("graph_one")
 
 
 def test_double_graph() -> None:
-    double_job_path = file_relative_path(__file__, "double_graph.py")
-    with pytest.raises(DagsterInvariantViolationError) as exc_info:
+    double_job_path = dg.file_relative_path(__file__, "double_graph.py")
+    with pytest.raises(dg.DagsterInvariantViolationError) as exc_info:
         loadable_targets_from_python_file(double_job_path)
 
     assert (
@@ -101,7 +101,7 @@ def test_double_graph() -> None:
 
 
 def test_multiple_assets() -> None:
-    path = file_relative_path(__file__, "multiple_assets.py")
+    path = dg.file_relative_path(__file__, "multiple_assets.py")
     loadable_targets = loadable_targets_from_python_file(path)
 
     assert len(loadable_targets) == 1
@@ -112,14 +112,14 @@ def test_multiple_assets() -> None:
         CodePointer.from_python_file(path, symbol, None),
     )
 
-    assert isinstance(repo_def, RepositoryDefinition)
+    assert isinstance(repo_def, dg.RepositoryDefinition)
     the_job = repo_def.get_implicit_global_asset_job_def()
     assert len(the_job.graph.node_defs) == 2
 
 
 def test_no_loadable_targets() -> None:
-    with pytest.raises(DagsterInvariantViolationError) as exc_info:
-        loadable_targets_from_python_file(file_relative_path(__file__, "nada.py"))
+    with pytest.raises(dg.DagsterInvariantViolationError) as exc_info:
+        loadable_targets_from_python_file(dg.file_relative_path(__file__, "nada.py"))
 
     assert (
         str(exc_info.value)
@@ -128,7 +128,7 @@ def test_no_loadable_targets() -> None:
 
 
 def test_single_pending_repository():
-    single_cacheable_asset_path = file_relative_path(
+    single_cacheable_asset_path = dg.file_relative_path(
         __file__, "single_cacheable_asset_repository.py"
     )
     loadable_targets = loadable_targets_from_python_file(single_cacheable_asset_path)
@@ -138,7 +138,7 @@ def test_single_pending_repository():
     assert symbol == "single_cacheable_asset_repository"
 
     repo_def = CodePointer.from_python_file(single_cacheable_asset_path, symbol, None).load_target()
-    assert isinstance(repo_def, RepositoryDefinition)
+    assert isinstance(repo_def, dg.RepositoryDefinition)
     assert repo_def.name == "single_cacheable_asset_repository"
 
 
@@ -154,7 +154,7 @@ def test_single_repository_in_module() -> None:
     repo_def = CodePointer.from_module(
         "dagster.utils.test.toys.single_repository", symbol, working_directory=None
     ).load_target()
-    assert isinstance(repo_def, RepositoryDefinition)
+    assert isinstance(repo_def, dg.RepositoryDefinition)
     assert repo_def.name == "single_repository"
 
 
@@ -170,12 +170,12 @@ def test_single_repository_in_package() -> None:
     repo_def = CodePointer.from_python_package(
         "dagster.utils.test.toys.single_repository", symbol, working_directory=None
     ).load_target()
-    assert isinstance(repo_def, RepositoryDefinition)
+    assert isinstance(repo_def, dg.RepositoryDefinition)
     assert repo_def.name == "single_repository"
 
 
 def test_single_defs_in_file() -> None:
-    dagster_defs_path = file_relative_path(__file__, "single_defs.py")
+    dagster_defs_path = dg.file_relative_path(__file__, "single_defs.py")
     loadable_targets = loadable_targets_from_python_file(dagster_defs_path)
 
     assert len(loadable_targets) == 1
@@ -186,11 +186,11 @@ def test_single_defs_in_file() -> None:
         CodePointer.from_python_file(dagster_defs_path, symbol, None),
     )
 
-    assert isinstance(repo_def, RepositoryDefinition)
+    assert isinstance(repo_def, dg.RepositoryDefinition)
 
 
 def test_single_def_any_name() -> None:
-    dagster_defs_path = file_relative_path(__file__, "single_defs_any_name.py")
+    dagster_defs_path = dg.file_relative_path(__file__, "single_defs_any_name.py")
     loadable_targets = loadable_targets_from_python_file(dagster_defs_path)
 
     assert len(loadable_targets) == 1
@@ -199,9 +199,9 @@ def test_single_def_any_name() -> None:
 
 
 def test_double_defs_in_file() -> None:
-    dagster_defs_path = file_relative_path(__file__, "double_defs.py")
+    dagster_defs_path = dg.file_relative_path(__file__, "double_defs.py")
     with pytest.raises(
-        DagsterInvariantViolationError,
+        dg.DagsterInvariantViolationError,
         match="Cannot have more than one Definitions object defined at module scope. Found Definitions objects: double_defs.defs, double_defs.double_defs",
     ):
         loadable_targets_from_python_file(dagster_defs_path)
@@ -213,14 +213,14 @@ def test_local_directory_module_multiple_defs() -> None:
 
     # pytest will insert the current directory onto the path when the current directory does is not
     # a module
-    assert not os.path.exists(file_relative_path(__file__, "__init__.py"))
+    assert not os.path.exists(dg.file_relative_path(__file__, "__init__.py"))
     assert os.path.dirname(__file__) in sys.path
 
     if "autodiscover_in_module_multiple" in sys.modules:
         del sys.modules["autodiscover_in_module_multiple"]
 
     with pytest.raises(
-        DagsterInvariantViolationError,
+        dg.DagsterInvariantViolationError,
         match="Cannot have more than one Definitions object defined at module scope. Found Definitions objects: autodiscover_in_module_multiple.defs, autodiscover_in_module_multiple.defs1, autodiscover_in_module_multiple.defs2",
     ):
         loadable_targets_from_python_module(
@@ -245,7 +245,7 @@ def test_local_directory_module() -> None:
 
     # pytest will insert the current directory onto the path when the current directory does is not
     # a module
-    assert not os.path.exists(file_relative_path(__file__, "__init__.py"))
+    assert not os.path.exists(dg.file_relative_path(__file__, "__init__.py"))
     assert os.path.dirname(__file__) in sys.path
 
     if "autodiscover_in_module" in sys.modules:
@@ -274,7 +274,7 @@ def test_local_directory_module() -> None:
 
 
 def test_local_directory_file() -> None:
-    path = file_relative_path(__file__, "autodiscover_file_in_directory/repository.py")
+    path = dg.file_relative_path(__file__, "autodiscover_file_in_directory/repository.py")
 
     with restore_sys_modules():
         with pytest.raises(DagsterImportError) as exc_info:
@@ -287,7 +287,7 @@ def test_local_directory_file() -> None:
 
 
 def test_lazy_definitions() -> None:
-    module_path = file_relative_path(__file__, "lazy_definitions.py")
+    module_path = dg.file_relative_path(__file__, "lazy_definitions.py")
     loadable_targets = loadable_targets_from_python_file(module_path)
 
     assert len(loadable_targets) == 1
@@ -298,5 +298,5 @@ def test_lazy_definitions() -> None:
         CodePointer.from_python_file(module_path, symbol, None),
     )
 
-    assert isinstance(repo_def, RepositoryDefinition)
+    assert isinstance(repo_def, dg.RepositoryDefinition)
     assert len(repo_def.assets_defs_by_key) == 1

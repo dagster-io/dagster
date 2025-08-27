@@ -60,7 +60,7 @@ class AzureBlobStorageResource(ConfigurableResource):
                 with azure_blob_storage.get_client() as blob_storage_client:
                     response = blob_storage_client.list_containers()
 
-            defs = Definitions(
+            Definitions(
                 assets=[my_table],
                 resources={
                     "azure_blob_storage": AzureBlobStorageResource(

@@ -1,9 +1,9 @@
 // eslint-disable-next-line no-restricted-imports
-import {AnchorButton as BlueprintAnchorButton, Button as BlueprintButton} from '@blueprintjs/core';
+import {Button as BlueprintButton} from '@blueprintjs/core';
 import * as React from 'react';
 import styled from 'styled-components';
 
-import {BaseButton} from './BaseButton';
+import {BaseButton, BaseButtonProps, CommonButtonProps} from './BaseButton';
 import {Colors} from './Color';
 import {Spinner} from './Spinner';
 import {StyledButton, StyledButtonText} from './StyledButton';
@@ -185,11 +185,13 @@ export const buildColorSet = (config: {intent?: BlueprintIntent; outlined: Bluep
   };
 };
 
+type ButtonProps = BaseButtonProps & {
+  intent?: BlueprintIntent;
+  outlined?: BlueprintOutlined;
+};
+
 export const Button = React.forwardRef(
-  (
-    props: React.ComponentProps<typeof BlueprintButton>,
-    ref: React.ForwardedRef<HTMLButtonElement>,
-  ) => {
+  (props: ButtonProps, ref: React.ForwardedRef<HTMLButtonElement>) => {
     const {children, icon, intent, loading, outlined, rightIcon, ...rest} = props;
 
     let iconOrSpinner = icon;
@@ -248,11 +250,14 @@ export const JoinedButtons = styled.div`
   }
 `;
 
+export type ExternalAnchorButtonProps = CommonButtonProps &
+  React.ComponentPropsWithRef<'a'> & {
+    intent?: BlueprintIntent;
+    outlined?: BlueprintOutlined;
+  };
+
 export const ExternalAnchorButton = React.forwardRef(
-  (
-    props: Omit<React.ComponentProps<typeof BlueprintAnchorButton>, 'loading'>,
-    ref: React.ForwardedRef<HTMLAnchorElement>,
-  ) => {
+  (props: ExternalAnchorButtonProps, ref: React.ForwardedRef<HTMLAnchorElement>) => {
     const {children, icon, intent, outlined, rightIcon, ...rest} = props;
 
     const {fillColor, fillColorHover, textColor, iconColor, strokeColor, strokeColorHover} =

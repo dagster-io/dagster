@@ -1,25 +1,9 @@
 import datetime
 
+import dagster as dg
 import pytest
-from dagster import (
-    AssetDep,
-    AssetKey,
-    AssetMaterialization,
-    AutomationCondition,
-    DagsterInstance,
-    DailyPartitionsDefinition,
-    Definitions,
-    DimensionPartitionMapping,
-    MultiPartitionMapping,
-    MultiPartitionsDefinition,
-    Output,
-    StaticPartitionsDefinition,
-    TimeWindowPartitionMapping,
-    asset,
-    asset_check,
-    evaluate_automation_conditions,
-)
-from dagster._core.instance_for_test import instance_for_test
+from dagster import AutomationCondition, DagsterInstance
+from dagster._core.definitions.partitions.definition import StaticPartitionsDefinition
 
 from dagster_tests.declarative_automation_tests.scenario_utils.automation_condition_scenario import (
     AutomationConditionScenarioState,
@@ -135,60 +119,62 @@ async def test_eager_hourly_partitioned() -> None:
 
 
 def test_eager_static_partitioned() -> None:
-    two_partitions = StaticPartitionsDefinition(["a", "b"])
-    four_partitions = StaticPartitionsDefinition(["a", "b", "c", "d"])
+    two_partitions = dg.StaticPartitionsDefinition(["a", "b"])
+    four_partitions = dg.StaticPartitionsDefinition(["a", "b", "c", "d"])
 
-    def _get_defs(pd: StaticPartitionsDefinition) -> Definitions:
-        @asset(partitions_def=pd, automation_condition=AutomationCondition.eager())
+    def _get_defs(pd: StaticPartitionsDefinition) -> dg.Definitions:
+        @dg.asset(partitions_def=pd, automation_condition=AutomationCondition.eager())
         def A() -> None: ...
 
-        @asset(partitions_def=pd, automation_condition=AutomationCondition.eager())
+        @dg.asset(partitions_def=pd, automation_condition=AutomationCondition.eager())
         def B() -> None: ...
 
-        return Definitions(assets=[A, B])
+        return dg.Definitions(assets=[A, B])
 
-    with instance_for_test() as instance:
+    with dg.instance_for_test() as instance:
         # no "surprise backfill"
-        result = evaluate_automation_conditions(defs=_get_defs(two_partitions), instance=instance)
+        result = dg.evaluate_automation_conditions(
+            defs=_get_defs(two_partitions), instance=instance
+        )
         assert result.total_requested == 0
 
         # now add two more partitions to the definition, kick off a run for those
-        result = evaluate_automation_conditions(
+        result = dg.evaluate_automation_conditions(
             defs=_get_defs(four_partitions), instance=instance, cursor=result.cursor
         )
         assert result.total_requested == 4
-        assert result.get_requested_partitions(AssetKey("A")) == {"c", "d"}
-        assert result.get_requested_partitions(AssetKey("B")) == {"c", "d"}
+        assert result.get_requested_partitions(dg.AssetKey("A")) == {"c", "d"}
+        assert result.get_requested_partitions(dg.AssetKey("B")) == {"c", "d"}
 
         # already requested, no more
-        result = evaluate_automation_conditions(
+        result = dg.evaluate_automation_conditions(
             defs=_get_defs(four_partitions), instance=instance, cursor=result.cursor
         )
         assert result.total_requested == 0
 
 
 def test_eager_self_dependency() -> None:
-    @asset
+    @dg.asset
     def root() -> None: ...
 
-    @asset(
+    @dg.asset(
         deps=[
             root,
-            AssetDep(
-                "A", partition_mapping=TimeWindowPartitionMapping(start_offset=-1, end_offset=-1)
+            dg.AssetDep(
+                "A", partition_mapping=dg.TimeWindowPartitionMapping(start_offset=-1, end_offset=-1)
             ),
         ],
         automation_condition=AutomationCondition.eager(),
-        partitions_def=DailyPartitionsDefinition("2024-01-01"),
+        partitions_def=dg.DailyPartitionsDefinition("2024-01-01"),
     )
     def A() -> None: ...
 
-    defs = Definitions(assets=[root, A])
+    defs = dg.Definitions(assets=[root, A])
     instance = DagsterInstance.ephemeral()
 
     # parent doesn't exist
     evaluation_time = datetime.datetime(2024, 8, 16, 1, 1)
-    result = evaluate_automation_conditions(
+    result = dg.evaluate_automation_conditions(
         defs=defs, instance=instance, evaluation_time=evaluation_time
     )
     assert result.total_requested == 0
@@ -197,13 +183,13 @@ def test_eager_self_dependency() -> None:
     defs.resolve_implicit_global_asset_job_def().execute_in_process(
         instance=instance, asset_selection=[root.key, A.key], partition_key="2024-08-14"
     )
-    result = evaluate_automation_conditions(
+    result = dg.evaluate_automation_conditions(
         defs=defs, instance=instance, cursor=result.cursor, evaluation_time=evaluation_time
     )
     assert result.total_requested == 1
 
     # don't keep requesting
-    result = evaluate_automation_conditions(
+    result = dg.evaluate_automation_conditions(
         defs=defs, instance=instance, cursor=result.cursor, evaluation_time=evaluation_time
     )
     assert result.total_requested == 0
@@ -212,38 +198,38 @@ def test_eager_self_dependency() -> None:
     defs.resolve_implicit_global_asset_job_def().execute_in_process(
         instance=instance, asset_selection=[A.key], partition_key="2024-08-14"
     )
-    result = evaluate_automation_conditions(
+    result = dg.evaluate_automation_conditions(
         defs=defs, instance=instance, cursor=result.cursor, evaluation_time=evaluation_time
     )
     assert result.total_requested == 1
 
     # don't keep requesting
-    result = evaluate_automation_conditions(
+    result = dg.evaluate_automation_conditions(
         defs=defs, instance=instance, cursor=result.cursor, evaluation_time=evaluation_time
     )
     assert result.total_requested == 0
 
 
 def test_eager_multi_partitioned_self_dependency() -> None:
-    pd = MultiPartitionsDefinition(
+    pd = dg.MultiPartitionsDefinition(
         {
-            "time": DailyPartitionsDefinition(start_date="2024-08-01"),
-            "static": StaticPartitionsDefinition(["a", "b", "c"]),
+            "time": dg.DailyPartitionsDefinition(start_date="2024-08-01"),
+            "static": dg.StaticPartitionsDefinition(["a", "b", "c"]),
         }
     )
 
-    @asset(partitions_def=pd)
+    @dg.asset(partitions_def=pd)
     def parent() -> None: ...
 
-    @asset(
+    @dg.asset(
         deps=[
             parent,
-            AssetDep(
+            dg.AssetDep(
                 "child",
-                partition_mapping=MultiPartitionMapping(
+                partition_mapping=dg.MultiPartitionMapping(
                     {
-                        "time": DimensionPartitionMapping(
-                            "time", TimeWindowPartitionMapping(start_offset=-1, end_offset=-1)
+                        "time": dg.DimensionPartitionMapping(
+                            "time", dg.TimeWindowPartitionMapping(start_offset=-1, end_offset=-1)
                         ),
                     }
                 ),
@@ -256,97 +242,99 @@ def test_eager_multi_partitioned_self_dependency() -> None:
     )
     def child() -> None: ...
 
-    defs = Definitions(assets=[parent, child])
+    defs = dg.Definitions(assets=[parent, child])
 
-    with instance_for_test() as instance:
+    with dg.instance_for_test() as instance:
         # nothing happening
-        result = evaluate_automation_conditions(defs=defs, instance=instance)
+        result = dg.evaluate_automation_conditions(defs=defs, instance=instance)
         assert result.total_requested == 0
 
         # materialize upstream
         instance.report_runless_asset_event(
-            AssetMaterialization("parent", partition="a|2024-08-16")
+            dg.AssetMaterialization("parent", partition="a|2024-08-16")
         )
-        result = evaluate_automation_conditions(defs=defs, instance=instance, cursor=result.cursor)
+        result = dg.evaluate_automation_conditions(
+            defs=defs, instance=instance, cursor=result.cursor
+        )
         # can't materialize downstream yet because previous partition of child is still missing
         assert result.total_requested == 0
 
 
 def test_eager_on_asset_check() -> None:
-    @asset
+    @dg.asset
     def A() -> None: ...
 
-    @asset_check(asset=A, automation_condition=AutomationCondition.eager())
+    @dg.asset_check(asset=A, automation_condition=AutomationCondition.eager())
     def foo_check() -> ...: ...
 
-    defs = Definitions(assets=[A], asset_checks=[foo_check])
+    defs = dg.Definitions(assets=[A], asset_checks=[foo_check])
 
     instance = DagsterInstance.ephemeral()
 
     # parent hasn't been updated yet
-    result = evaluate_automation_conditions(defs=defs, instance=instance)
+    result = dg.evaluate_automation_conditions(defs=defs, instance=instance)
     assert result.total_requested == 0
 
     # now A is updated, so request
-    instance.report_runless_asset_event(AssetMaterialization("A"))
-    result = evaluate_automation_conditions(defs=defs, instance=instance, cursor=result.cursor)
+    instance.report_runless_asset_event(dg.AssetMaterialization("A"))
+    result = dg.evaluate_automation_conditions(defs=defs, instance=instance, cursor=result.cursor)
     assert result.total_requested == 1
 
     # don't keep requesting
-    result = evaluate_automation_conditions(defs=defs, instance=instance, cursor=result.cursor)
+    result = dg.evaluate_automation_conditions(defs=defs, instance=instance, cursor=result.cursor)
     assert result.total_requested == 0
 
     # A updated again, re-request
-    instance.report_runless_asset_event(AssetMaterialization("A"))
-    result = evaluate_automation_conditions(defs=defs, instance=instance, cursor=result.cursor)
+    instance.report_runless_asset_event(dg.AssetMaterialization("A"))
+    result = dg.evaluate_automation_conditions(defs=defs, instance=instance, cursor=result.cursor)
     assert result.total_requested == 1
 
     # don't keep requesting
-    result = evaluate_automation_conditions(defs=defs, instance=instance, cursor=result.cursor)
+    result = dg.evaluate_automation_conditions(defs=defs, instance=instance, cursor=result.cursor)
     assert result.total_requested == 0
 
 
 @pytest.mark.parametrize("b_result", ["skip", "fail", "materialize"])
 def test_eager_partial_run(b_result: str) -> None:
-    @asset
+    @dg.asset
     def root() -> None: ...
 
-    @asset(deps=[root], automation_condition=AutomationCondition.eager())
+    @dg.asset(deps=[root], automation_condition=AutomationCondition.eager())
     def A() -> None: ...
 
-    @asset(deps=[A], output_required=False, automation_condition=AutomationCondition.eager())
+    @dg.asset(deps=[A], output_required=False, automation_condition=AutomationCondition.eager())
     def B():
         if b_result == "skip":
             pass
         elif b_result == "materialize":
-            yield Output(1)
+            yield dg.Output(1)
         else:
             return 1 / 0
 
-    @asset(deps=[B], automation_condition=AutomationCondition.eager())
+    @dg.asset(deps=[B], automation_condition=AutomationCondition.eager())
     def C() -> None: ...
 
-    defs = Definitions(assets=[root, A, B, C])
+    defs = dg.Definitions(assets=[root, A, B, C])
     instance = DagsterInstance.ephemeral()
 
     # nothing updated yet
-    result = evaluate_automation_conditions(defs=defs, instance=instance)
+    result = dg.evaluate_automation_conditions(defs=defs, instance=instance)
     assert result.total_requested == 0
 
     # now root updated, so request a, b, and c
-    instance.report_runless_asset_event(AssetMaterialization("root"))
-    result = evaluate_automation_conditions(defs=defs, instance=instance, cursor=result.cursor)
+    instance.report_runless_asset_event(dg.AssetMaterialization("root"))
+    result = dg.evaluate_automation_conditions(defs=defs, instance=instance, cursor=result.cursor)
     assert result.total_requested == 3
 
     # don't keep requesting
-    result = evaluate_automation_conditions(defs=defs, instance=instance, cursor=result.cursor)
+    result = dg.evaluate_automation_conditions(defs=defs, instance=instance, cursor=result.cursor)
     assert result.total_requested == 0
 
     # now simulate the above run, B / C will not be materialized
     defs.resolve_implicit_global_asset_job_def().execute_in_process(
         instance=instance, asset_selection=[A.key, B.key, C.key], raise_on_error=False
     )
-    result = evaluate_automation_conditions(defs=defs, instance=instance, cursor=result.cursor)
+    result = dg.evaluate_automation_conditions(defs=defs, instance=instance, cursor=result.cursor)
     # A gets materialized, but this shouldn't kick off B and C
     assert result.total_requested == 0
 
@@ -354,5 +342,5 @@ def test_eager_partial_run(b_result: str) -> None:
     defs.resolve_implicit_global_asset_job_def().execute_in_process(
         instance=instance, asset_selection=[A.key]
     )
-    result = evaluate_automation_conditions(defs=defs, instance=instance, cursor=result.cursor)
+    result = dg.evaluate_automation_conditions(defs=defs, instance=instance, cursor=result.cursor)
     assert result.total_requested == 2

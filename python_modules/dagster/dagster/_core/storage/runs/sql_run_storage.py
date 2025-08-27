@@ -28,7 +28,7 @@ from dagster._core.events import (
     RunFailureReason,
 )
 from dagster._core.execution.backfill import BulkActionsFilter, BulkActionStatus, PartitionBackfill
-from dagster._core.remote_representation.origin import RemoteJobOrigin
+from dagster._core.remote_origin import RemoteJobOrigin
 from dagster._core.snap import ExecutionPlanSnapshot, JobSnap, create_execution_plan_snapshot_id
 from dagster._core.storage.dagster_run import (
     DagsterRun,

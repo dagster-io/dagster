@@ -38,18 +38,19 @@ from dagster import (
 )
 from dagster._config import Array, Field
 from dagster._core.definitions.asset_selection import CoercibleToAssetSelection
-from dagster._core.definitions.assets import AssetsDefinition
+from dagster._core.definitions.assets.definition.assets_definition import AssetsDefinition
 from dagster._core.definitions.decorators import op
 from dagster._core.definitions.decorators.graph_decorator import graph
 from dagster._core.definitions.definitions_class import Definitions
 from dagster._core.definitions.graph_definition import GraphDefinition
 from dagster._core.definitions.job_definition import JobDefinition
 from dagster._core.definitions.node_definition import NodeDefinition
-from dagster._core.definitions.partition import PartitionLoadingContext, TemporalContext
+from dagster._core.definitions.partitions.context import PartitionLoadingContext
 from dagster._core.definitions.repository_definition.repository_definition import (
     RepositoryDefinition,
 )
 from dagster._core.definitions.source_asset import SourceAsset
+from dagster._core.definitions.temporal_context import TemporalContext
 from dagster._core.definitions.unresolved_asset_job_definition import define_asset_job
 from dagster._core.errors import DagsterUserCodeUnreachableError
 from dagster._core.events import DagsterEvent
@@ -62,11 +63,11 @@ from dagster._core.instance_for_test import (
     instance_for_test as instance_for_test,
 )
 from dagster._core.launcher import RunLauncher
-from dagster._core.remote_representation import RemoteRepository
+from dagster._core.remote_origin import InProcessCodeLocationOrigin
 from dagster._core.remote_representation.code_location import CodeLocation
+from dagster._core.remote_representation.external import RemoteRepository
 from dagster._core.remote_representation.external_data import RepositorySnap
 from dagster._core.remote_representation.handle import RepositoryHandle
-from dagster._core.remote_representation.origin import InProcessCodeLocationOrigin
 from dagster._core.run_coordinator import RunCoordinator, SubmitRunContext
 from dagster._core.secrets import SecretsLoader
 from dagster._core.storage.dagster_run import DagsterRun, DagsterRunStatus, RunsFilter
@@ -168,6 +169,8 @@ def create_run_for_test(
     op_selection=None,
     asset_graph=None,
 ):
+    from unittest import mock
+
     return instance.create_run(
         job_name=job_name,
         run_id=run_id,
@@ -186,7 +189,7 @@ def create_run_for_test(
         asset_selection=asset_selection,
         asset_check_selection=asset_check_selection,
         op_selection=op_selection,
-        asset_graph=asset_graph,
+        asset_graph=asset_graph or mock.MagicMock(),
     )
 
 

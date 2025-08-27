@@ -1,22 +1,16 @@
 import datetime
 import time
 
-from dagster import (
-    AutomationCondition,
-    DagsterInstance,
-    DailyPartitionsDefinition,
-    Definitions,
-    HourlyPartitionsDefinition,
-    evaluate_automation_conditions,
-)
+import dagster as dg
+from dagster import AutomationCondition, DagsterInstance
 from dagster._core.definitions.automation_tick_evaluation_context import build_run_requests
 from dagster._time import get_current_datetime
 from dagster_test.toys.auto_materializing.large_graph import AssetLayerConfig, build_assets
 
 
 def run_declarative_automation_perf_simulation(instance: DagsterInstance) -> None:
-    hourly_partitions_def = HourlyPartitionsDefinition("2020-01-01-00:00")
-    daily_partitions_def = DailyPartitionsDefinition("2020-01-01")
+    hourly_partitions_def = dg.HourlyPartitionsDefinition("2020-01-01-00:00")
+    daily_partitions_def = dg.DailyPartitionsDefinition("2020-01-01")
     assets = build_assets(
         id="perf_test",
         layer_configs=[
@@ -30,14 +24,14 @@ def run_declarative_automation_perf_simulation(instance: DagsterInstance) -> Non
         automation_condition=AutomationCondition.eager()
         & AutomationCondition.all_deps_blocking_checks_passed(),
     )
-    defs = Definitions(assets=assets)
+    defs = dg.Definitions(assets=assets)
     asset_job = defs.resolve_implicit_global_asset_job_def()
 
     cursor = None
     start = time.time()
     evaluation_time = get_current_datetime() - datetime.timedelta(days=1)
     for _ in range(3):
-        result = evaluate_automation_conditions(
+        result = dg.evaluate_automation_conditions(
             defs=assets, instance=instance, cursor=cursor, evaluation_time=evaluation_time
         )
         cursor = result.cursor

@@ -1,26 +1,15 @@
 # ruff: noqa: D416, UP006, UP035
-
 from typing import Any, Dict, List, Optional, Tuple
 
+import dagster as dg
 import pytest
-from dagster import (
-    DagsterInvalidDefinitionError,
-    DagsterType,
-    In,
-    Int,
-    graph,
-    job,
-    make_python_type_usable_as_dagster_type,
-    op,
-    usable_as_dagster_type,
-)
 from dagster._core.definitions.inference import infer_input_props, infer_output_props
 from dagster._core.types.dagster_type import DagsterTypeKind
 from dagster._utils.test import wrap_op_in_graph_and_execute
 
 
 def test_infer_op_description_from_docstring():
-    @op
+    @dg.op
     def my_op(_):
         """Here is some docstring."""
 
@@ -28,7 +17,7 @@ def test_infer_op_description_from_docstring():
 
 
 def test_infer_op_description_no_docstring():
-    @op
+    @dg.op
     def my_op(_):
         pass
 
@@ -36,7 +25,7 @@ def test_infer_op_description_no_docstring():
 
 
 def test_docstring_does_not_override():
-    @op(description="abc")
+    @dg.op(description="abc")
     def my_op(_):
         """Here is some docstring."""
 
@@ -44,11 +33,11 @@ def test_docstring_does_not_override():
 
 
 def test_single_typed_input():
-    @op
+    @dg.op
     def add_one_infer(_context, num: int):
         return num + 1
 
-    @op(ins={"num": In(Int)})
+    @dg.op(ins={"num": dg.In(dg.Int)})
     def add_one_ex(_context, num):
         return num + 1
 
@@ -62,7 +51,7 @@ def test_single_typed_input():
 
 
 def test_precedence():
-    @op(ins={"num": In(Int)})
+    @dg.op(ins={"num": dg.In(dg.Int)})
     def add_one(_context, num: Any):
         return num + 1
 
@@ -70,7 +59,7 @@ def test_precedence():
 
 
 def test_double_typed_input():
-    @op
+    @dg.op
     def subtract(_context, num_one: int, num_two: int):
         return num_one + num_two
 
@@ -84,7 +73,7 @@ def test_double_typed_input():
 
 
 def test_single_typed_input_and_output():
-    @op
+    @dg.op
     def add_one(_context, num: int) -> int:
         return num + 1
 
@@ -98,7 +87,7 @@ def test_single_typed_input_and_output():
 
 
 def test_single_typed_input_and_output_lambda():
-    @op
+    @dg.op
     def add_one(num: int) -> int:
         return num + 1
 
@@ -112,7 +101,7 @@ def test_single_typed_input_and_output_lambda():
 
 
 def test_string_typed_input_and_output():
-    @op
+    @dg.op
     def add_one(_context, num: "Optional[int]") -> "int":
         return num + 1 if num else 1
 
@@ -137,13 +126,13 @@ def _make_foo():
 
 def test_invalid_string_typed_input():
     with pytest.raises(
-        DagsterInvalidDefinitionError, match='Failed to resolve type annotation "Foo"'
+        dg.DagsterInvalidDefinitionError, match='Failed to resolve type annotation "Foo"'
     ):
-        op(_make_foo())
+        dg.op(_make_foo())
 
 
 def test_wrapped_input_and_output_lambda():
-    @op
+    @dg.op
     def add_one(nums: List[int]) -> Optional[List[int]]:
         return [num + 1 for num in nums]
 
@@ -159,11 +148,11 @@ def test_wrapped_input_and_output_lambda():
 
 
 def test_kitchen_sink():
-    @usable_as_dagster_type
+    @dg.usable_as_dagster_type
     class Custom:
         pass
 
-    @op
+    @dg.op
     def sink(
         n: int,
         f: float,
@@ -202,15 +191,15 @@ def test_kitchen_sink():
 
 
 def test_composites():
-    @op
+    @dg.op
     def emit_one() -> int:
         return 1
 
-    @op
+    @dg.op
     def subtract(n1: int, n2: int) -> int:
         return n1 - n2
 
-    @graph
+    @dg.graph
     def add_one(a: int) -> int:
         return subtract(a, emit_one())
 
@@ -218,7 +207,7 @@ def test_composites():
 
 
 def test_emit_dict():
-    @op
+    @dg.op
     def emit_dict() -> dict:
         return {"foo": "bar"}
 
@@ -228,7 +217,7 @@ def test_emit_dict():
 
 
 def test_dict_input():
-    @op
+    @dg.op
     def intake_dict(inp: dict) -> str:
         return inp["foo"]
 
@@ -237,7 +226,7 @@ def test_dict_input():
 
 
 def test_emit_dagster_dict():
-    @op
+    @dg.op
     def emit_dagster_dict() -> Dict:
         return {"foo": "bar"}
 
@@ -247,7 +236,7 @@ def test_emit_dagster_dict():
 
 
 def test_dict_dagster_input():
-    @op
+    @dg.op
     def intake_dagster_dict(inp: Dict) -> str:
         return inp["foo"]
 
@@ -258,7 +247,7 @@ def test_dict_dagster_input():
 
 
 def test_python_tuple_input():
-    @op
+    @dg.op
     def intake_tuple(inp: tuple) -> int:
         return inp[1]
 
@@ -268,7 +257,7 @@ def test_python_tuple_input():
 
 
 def test_python_tuple_output():
-    @op
+    @dg.op
     def emit_tuple() -> tuple:
         return (4, 5)
 
@@ -276,7 +265,7 @@ def test_python_tuple_output():
 
 
 def test_nested_kitchen_sink():
-    @op
+    @dg.op
     def no_execute() -> Optional[List[Tuple[List[int], str, Dict[str, Optional[List[str]]]]]]:
         pass
 
@@ -294,7 +283,7 @@ def test_nested_kitchen_sink():
 def test_infer_input_description_from_docstring_failure():
     # docstring is invalid because has a dash instead of a colon to delimit the argument type and
     # description
-    @op
+    @dg.op
     def my_op(_arg1):
         """
         Args:
@@ -305,7 +294,7 @@ def test_infer_input_description_from_docstring_failure():
 
 
 def test_infer_input_description_from_docstring_rest():
-    @op
+    @dg.op
     def rest(_context, hello: str, optional: int = 5):
         """
         :param str hello: hello world param
@@ -327,7 +316,7 @@ def test_infer_input_description_from_docstring_rest():
 
 
 def test_infer_descriptions_from_docstring_numpy():
-    @op
+    @dg.op
     def good_numpy(_context, hello: str, optional: int = 5):
         """
         Test.
@@ -357,7 +346,7 @@ def test_infer_descriptions_from_docstring_numpy():
 
 
 def test_infer_descriptions_from_docstring_google():
-    @op
+    @dg.op
     def good_google(_context, hello: str, optional: int = 5):
         """Test.
 
@@ -385,7 +374,7 @@ def test_infer_descriptions_from_docstring_google():
 def test_infer_output_description_from_docstring_failure():
     # docstring is invalid because has a dash instead of a colon to delimit the return type and
     # description
-    @op
+    @dg.op
     def google() -> int:
         """
         Returns:
@@ -397,7 +386,7 @@ def test_infer_output_description_from_docstring_failure():
 
 
 def test_infer_output_description_from_docstring_numpy():
-    @op
+    @dg.op
     def numpy(_context) -> int:
         """
         Returns
@@ -413,7 +402,7 @@ def test_infer_output_description_from_docstring_numpy():
 
 
 def test_infer_output_description_from_docstring_rest():
-    @op
+    @dg.op
     def rest(_context) -> int:
         """
         :return int: a number.
@@ -426,7 +415,7 @@ def test_infer_output_description_from_docstring_rest():
 
 
 def test_infer_output_description_from_docstring_google():
-    @op
+    @dg.op
     def google(_context) -> int:
         """
         Returns:
@@ -441,7 +430,7 @@ def test_infer_output_description_from_docstring_google():
 
 
 def test_job_api_stability():
-    @job
+    @dg.job
     def empty() -> None:
         pass
 
@@ -453,14 +442,14 @@ def test_unregistered_type_annotation_output():
     class MyClass:
         pass
 
-    @op
+    @dg.op
     def my_op(_) -> MyClass:
         return MyClass()
 
     assert my_op.output_defs[0].dagster_type.display_name == "MyClass"
     assert my_op.output_defs[0].dagster_type.typing_type == MyClass
 
-    @job
+    @dg.job
     def my_job():
         my_op()
 
@@ -471,15 +460,15 @@ def test_unregistered_type_annotation_input():
     class MyClass:
         pass
 
-    @op
+    @dg.op
     def op1(_):
         return MyClass()
 
-    @op
+    @dg.op
     def op2(_, _input1: MyClass):
         pass
 
-    @job
+    @dg.job
     def my_job():
         op2(op1())
 
@@ -491,7 +480,7 @@ def test_unregistered_type_annotation_input_op():
     class MyClass:
         pass
 
-    @op
+    @dg.op
     def op2(_, _input1: MyClass):
         pass
 
@@ -502,7 +491,7 @@ def test_unregistered_type_annotation_input_op_merge():
     class MyClass:
         pass
 
-    @op(ins={"_input1": In()})
+    @dg.op(ins={"_input1": dg.In()})
     def op2(_input1: MyClass):
         pass
 
@@ -513,15 +502,15 @@ def test_use_auto_type_twice():
     class MyClass:
         pass
 
-    @op
+    @dg.op
     def my_op(_) -> MyClass:
         return MyClass()
 
-    @op
+    @dg.op
     def my_op_2(_) -> MyClass:
         return MyClass()
 
-    @job
+    @dg.job
     def my_job():
         my_op()
         my_op_2()
@@ -533,14 +522,14 @@ def test_register_after_op_definition():
     class MyClass:
         pass
 
-    @op
+    @dg.op
     def _my_op(_) -> MyClass:
         return MyClass()
 
-    my_dagster_type = DagsterType(name="aaaa", type_check_fn=lambda _, _a: True)
+    my_dagster_type = dg.DagsterType(name="aaaa", type_check_fn=lambda _, _a: True)
 
-    with pytest.raises(DagsterInvalidDefinitionError):
-        make_python_type_usable_as_dagster_type(MyClass, my_dagster_type)
+    with pytest.raises(dg.DagsterInvalidDefinitionError):
+        dg.make_python_type_usable_as_dagster_type(MyClass, my_dagster_type)
 
 
 def test_same_name_different_modules():
@@ -549,15 +538,15 @@ def test_same_name_different_modules():
 
     from dagster_tests.general_tests.py3_tests.other_module import MyClass as OtherModuleMyClass
 
-    @op
+    @dg.op
     def my_op(_) -> MyClass:
         return MyClass()
 
-    @op
+    @dg.op
     def my_op_2(_) -> OtherModuleMyClass:
         return OtherModuleMyClass()
 
-    @job
+    @dg.job
     def my_job():
         my_op()
         my_op_2()
@@ -569,15 +558,15 @@ def test_fan_in():
     class MyClass:
         pass
 
-    @op
+    @dg.op
     def upstream_op(_):
         return MyClass()
 
-    @op
+    @dg.op
     def downstream_op(_, _input: List[MyClass]):
         pass
 
-    @job
+    @dg.job
     def my_job():
         downstream_op([upstream_op.alias("a")(), upstream_op.alias("b")()])
 
@@ -591,15 +580,15 @@ def test_composites_user_defined_type():
     class MyClass:
         pass
 
-    @op
+    @dg.op
     def emit_one() -> MyClass:
         return MyClass()
 
-    @op
+    @dg.op
     def subtract(_n1: MyClass, _n2: MyClass) -> MyClass:
         return MyClass()
 
-    @graph
+    @dg.graph
     def add_one(a: MyClass) -> MyClass:
         return subtract(a, emit_one())
 

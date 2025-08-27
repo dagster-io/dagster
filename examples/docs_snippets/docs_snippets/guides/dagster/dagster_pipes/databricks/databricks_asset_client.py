@@ -1,19 +1,16 @@
-# start_databricks_asset
-### dagster_databricks_pipes.py
-
 import os
 import sys
 
 from dagster_databricks import PipesDatabricksClient
 
-from dagster import AssetExecutionContext, Definitions, asset
+import dagster as dg
 from databricks.sdk import WorkspaceClient
 from databricks.sdk.service import jobs
 
 
-@asset
+@dg.asset
 def databricks_asset(
-    context: AssetExecutionContext, pipes_databricks: PipesDatabricksClient
+    context: dg.AssetExecutionContext, pipes_databricks: PipesDatabricksClient
 ):
     task = jobs.SubmitTask.from_dict(
         {
@@ -51,20 +48,3 @@ def databricks_asset(
         context=context,
         extras=extras,
     ).get_materialize_result()
-
-
-# end_databricks_asset
-
-# start_definitions
-
-pipes_databricks_resource = PipesDatabricksClient(
-    client=WorkspaceClient(
-        host=os.environ["DATABRICKS_HOST"],
-        token=os.environ["DATABRICKS_TOKEN"],
-    )
-)
-
-defs = Definitions(
-    assets=[databricks_asset], resources={"pipes_databricks": pipes_databricks_resource}
-)
-# end_definitions

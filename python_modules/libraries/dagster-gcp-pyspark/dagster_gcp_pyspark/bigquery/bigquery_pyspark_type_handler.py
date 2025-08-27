@@ -44,12 +44,12 @@ class BigQueryPySparkTypeHandler(DbTypeHandler[DataFrame]):
                     return [BigQueryPySparkTypeHandler()]
 
             @asset(
-                key_prefix=["my_dataset"]  # my_dataset will be used as the dataset in BigQuery
+                key_prefix=["my_dataset"],  # my_dataset will be used as the dataset in BigQuery
             )
             def my_table() -> pyspark.sql.DataFrame:  # the name of the asset will be the table name
                 ...
 
-            defs = Definitions(
+            Definitions(
                 assets=[my_table],
                 resources={
                     "io_manager": MyBigQueryIOManager(project=EnvVar("GCP_PROJECT"))
@@ -115,16 +115,16 @@ Examples:
         from dagster import Definitions
 
         @asset(
-            key_prefix=["my_dataset"]  # will be used as the dataset in BigQuery
+            key_prefix=["my_dataset"],  # will be used as the dataset in BigQuery
         )
         def my_table() -> pd.DataFrame:  # the name of the asset will be the table name
             ...
 
-        defs = Definitions(
+        Definitions(
             assets=[my_table],
             resources={
                 "io_manager": bigquery_pyspark_io_manager.configured({
-                    "project" : {"env": "GCP_PROJECT"}
+                    "project": {"env": "GCP_PROJECT"}
                 })
             }
         )
@@ -134,11 +134,11 @@ Examples:
 
     .. code-block:: python
 
-        defs = Definitions(
+        Definitions(
             assets=[my_table],
             resources={
-                    "io_manager": bigquery_pandas_io_manager.configured({
-                        "project" : {"env": "GCP_PROJECT"}
+                    "io_manager": bigquery_pyspark_io_manager.configured({
+                        "project": {"env": "GCP_PROJECT"},
                         "dataset": "my_dataset"
                     })
                 }
@@ -216,7 +216,7 @@ class BigQueryPySparkIOManager(BigQueryIOManager):
             def my_table() -> pyspark.sql.DataFrame:  # the name of the asset will be the table name
                 ...
 
-            defs = Definitions(
+            Definitions(
                 assets=[my_table],
                 resources={
                     "io_manager": BigQueryPySparkIOManager(project=EnvVar("GCP_PROJECT"))
@@ -228,10 +228,10 @@ class BigQueryPySparkIOManager(BigQueryIOManager):
 
         .. code-block:: python
 
-            defs = Definitions(
+            Definitions(
                 assets=[my_table],
                 resources={
-                        "io_manager": BigQueryPySparkIOManager(project=EnvVar("GCP_PROJECT", dataset="my_dataset")
+                        "io_manager": BigQueryPySparkIOManager(project=EnvVar("GCP_PROJECT"), dataset="my_dataset")
                     }
             )
 

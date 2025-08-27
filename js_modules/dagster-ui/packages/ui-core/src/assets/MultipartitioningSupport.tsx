@@ -17,7 +17,9 @@ export function isTimeseriesDimension(dimension: PartitionHealthDimension) {
 export function isTimeseriesPartition(aPartitionKey = '') {
   return /\d{4}-\d{2}-\d{2}/.test(aPartitionKey); // cheak trick for now
 }
-
+export function isTimeBasedPartition(dimension: PartitionHealthDimension): boolean {
+  return dimension.type === PartitionDefinitionType.TIME_WINDOW; // check with type
+}
 /*
 This function takes the health of several assets and returns a single health object in which SUCCESS
 means that all the assets were in a SUCCESS state for that partition and SUCCESS_MISSING means only
@@ -45,6 +47,7 @@ export function mergedAssetHealth(assetHealth: PartitionHealthData[]): Partition
     };
   }
 
+  // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
   const dimensions = assetHealth[0]!.dimensions;
 
   if (!assetHealth.every((h) => h.dimensions.length === dimensions.length)) {
@@ -63,6 +66,7 @@ export function mergedAssetHealth(assetHealth: PartitionHealthData[]): Partition
       uniq(assetHealth.map((health) => health.stateForKeyIdx(dimensionKeyIdxs))),
     rangesForSingleDimension: (dimensionIdx, otherDimensionSelectedRanges?) =>
       mergedRanges(
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
         dimensions[dimensionIdx]!.partitionKeys,
         assetHealth.map((health) =>
           health.rangesForSingleDimension(dimensionIdx, otherDimensionSelectedRanges),
@@ -91,6 +95,7 @@ export function mergedAssetHealth(assetHealth: PartitionHealthData[]): Partition
  */
 export function mergedRanges(allKeys: string[], rangeSets: Range[][]): Range[] {
   if (rangeSets.length === 1) {
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     return rangeSets[0]!;
   }
 
@@ -168,11 +173,14 @@ export function assembleRangesFromTransitions(
     if (!isEqual(last?.value, value)) {
       if (last) {
         const clippedLastEndIdx = Math.min(idx - 1, allKeys.length - 1);
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
         last.end = {idx: clippedLastEndIdx, key: allKeys[clippedLastEndIdx]!};
       }
       const clippedEndIdx = Math.min(idx, allKeys.length - 1);
       result.push({
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
         start: {idx, key: allKeys[idx]!},
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
         end: {idx: clippedEndIdx, key: allKeys[clippedEndIdx]!},
         value,
       });
@@ -213,9 +221,11 @@ export function explodePartitionKeysInSelectionMatching(
   let keyNotFound = false;
 
   if (selections.length === 1) {
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     for (const range of selections[0]!.selectedRanges) {
       for (let idx = range.start.idx; idx <= range.end.idx; idx++) {
         if (shouldIncludeKey([idx])) {
+          // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
           const value = selections[0]!.dimension.partitionKeys[idx];
           if (value === undefined) {
             keyNotFound = true;
@@ -229,16 +239,20 @@ export function explodePartitionKeysInSelectionMatching(
   }
 
   if (selections.length === 2) {
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     for (const range1 of selections[0]!.selectedRanges) {
       for (let idx1 = range1.start.idx; idx1 <= range1.end.idx; idx1++) {
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
         const key1 = selections[0]!.dimension.partitionKeys[idx1];
         if (key1 === undefined) {
           keyNotFound = true;
           break;
         }
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
         for (const range2 of selections[1]!.selectedRanges) {
           for (let idx2 = range2.start.idx; idx2 <= range2.end.idx; idx2++) {
             if (shouldIncludeKey([idx1, idx2])) {
+              // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
               const key2 = selections[1]!.dimension.partitionKeys[idx2];
               if (key2 === undefined) {
                 keyNotFound = true;

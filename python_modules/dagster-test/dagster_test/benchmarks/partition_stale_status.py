@@ -4,15 +4,16 @@ from collections.abc import Sequence
 from random import randint
 from typing import Union
 
-from dagster import StaticPartitionsDefinition, asset
+from dagster import asset
 from dagster._core.asset_graph_view.asset_graph_view import AssetGraphView, TemporalContext
-from dagster._core.definitions.asset_graph import AssetGraph
-from dagster._core.definitions.assets import AssetsDefinition
+from dagster._core.definitions.assets.definition.assets_definition import AssetsDefinition
+from dagster._core.definitions.assets.graph.asset_graph import AssetGraph
 from dagster._core.definitions.data_version import (
     SKIP_PARTITION_DATA_VERSION_DEPENDENCY_THRESHOLD,
     CachingStaleStatusResolver,
     StaleStatus,
 )
+from dagster._core.definitions.partitions.definition import StaticPartitionsDefinition
 from dagster._core.definitions.source_asset import SourceAsset
 from dagster._core.instance import DagsterInstance
 from dagster._core.instance_for_test import instance_for_test

@@ -1,6 +1,6 @@
 [project]
 name = "{{ project_name }}"
-requires-python = ">=3.9,<3.13"
+requires-python = ">=3.9,<3.14"
 version = "0.1.0"
 {{ dependencies }}
 
@@ -16,7 +16,6 @@ directory_type = "project"
 
 [tool.dg.project]
 root_module = "{{ project_name }}"
-autoload_defs = true
 registry_modules = [
     "{{ project_name }}.components.*",
 ]

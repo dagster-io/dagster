@@ -12,6 +12,7 @@ describe('AssetKeyTagCollection', () => {
   };
 
   it('renders individual tag if there is just one key', async () => {
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     const key = makeKeys(1)[0]!;
     render(
       <MemoryRouter>

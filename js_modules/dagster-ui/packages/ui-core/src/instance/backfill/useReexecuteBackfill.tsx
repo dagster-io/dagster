@@ -27,7 +27,7 @@ export function useReexecuteBackfill(
       variables: {reexecutionParams: {parentRunId: backfill.id, strategy}},
     });
     if (data && data.reexecutePartitionBackfill.__typename === 'LaunchBackfillSuccess') {
-      showBackfillSuccessToast(data.reexecutePartitionBackfill.backfillId, true);
+      showBackfillSuccessToast(data.reexecutePartitionBackfill.backfillId);
       refetch();
     } else if (data && data.reexecutePartitionBackfill.__typename === 'UnauthorizedError') {
       await showSharedToaster({

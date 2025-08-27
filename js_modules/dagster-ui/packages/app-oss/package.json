@@ -40,7 +40,7 @@
     "@types/webpack-bundle-analyzer": "^4",
     "@typescript-eslint/eslint-plugin": "^8.9.0",
     "@typescript-eslint/parser": "^8.9.0",
-    "eslint": "^8.57.0",
+    "eslint": "^8.57.1",
     "eslint-plugin-import": "^2.31.0",
     "eslint-plugin-jest": "^26.4.6",
     "eslint-plugin-prettier": "^5.0.0",

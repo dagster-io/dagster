@@ -242,6 +242,7 @@ const VirtualizedPartitionList = ({partitionKeys, runsByPartitionKey}: Virtualiz
     <Container ref={container} style={{padding: '8px 24px'}}>
       <Inner $totalHeight={totalHeight}>
         {items.map(({index, key, size, start}) => {
+          // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
           const partitionKey = partitionKeys[index]!;
           const runForPartition = runsByPartitionKey ? runsByPartitionKey[partitionKey] : null;
 

@@ -6,7 +6,7 @@ last_update:
 sidebar_position: 40
 ---
 
-After running the ingestion assets, we will have all the data we need in R2 to start modeling. We will use [dbt](https://www.getdbt.com/) to handle our transformation logic and [DuckDB](https://duckdb.org/) as our query engine. We will combine both of these together and add them into our Dagster asset graph.
+After running the ingestion assets, we will have all the data we need in R2 to start modeling. We will use [dbt](https://www.getdbt.com) to handle our transformation logic and [DuckDB](https://duckdb.org) as our query engine. We will combine both of these together and add them into our Dagster asset graph.
 
 The first thing to do is set up our dbt project. We will configure the connection details for the R2 bucket and the DuckDB database in the `profiles.yml` file. We will define two profiles, each with their own schema and path for our dev and production environments.
 
@@ -51,24 +51,26 @@ Within the dbt project the `analysis` directory builds out the rest of the model
   endBefore="end_latest_feed_cte"
 />
 
-### dbt assets
+## dbt assets
 
 Moving back into Dagster, there is not too much we need to do to turn the dbt models into assets. Dagster can parse a dbt project and generate all the assets by using a path to the project directory.
 
 <CodeExample
-  path="docs_projects/project_atproto_dashboard/project_atproto_dashboard/modeling/definitions.py"
+  path="docs_projects/project_atproto_dashboard/src/project_atproto_dashboard/defs/modeling.py"
   language="python"
   startAfter="start_dbt_project"
   endBefore="end_dbt_project"
+  title="src/project_atproto_dashboard/defs/modeling.py"
 />
 
 We will use the `DagsterDbtTranslator` to map our ingestion assets that bring in the Bluesky data to the tables we defined in the `sources.yml`. This will ensure that everything exists as part of the same DAG and lineage within Dagster. Next we will combine the translator and dbt project to generate our Dagster assets.
 
 <CodeExample
-  path="docs_projects/project_atproto_dashboard/project_atproto_dashboard/modeling/definitions.py"
+  path="docs_projects/project_atproto_dashboard/src/project_atproto_dashboard/defs/modeling.py"
   language="python"
   startAfter="start_dbt_assets"
   endBefore="end_dbt_assets"
+  title="src/project_atproto_dashboard/defs/modeling.py"
 />
 
 Like the ingestion layer, we will create a definition specific to dbt and modeling which we will combine with the other layers of our project.

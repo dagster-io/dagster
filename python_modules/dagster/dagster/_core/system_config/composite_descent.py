@@ -5,7 +5,7 @@ from typing_extensions import TypeAlias
 
 import dagster._check as check
 from dagster._config import EvaluateValueResult, process_config
-from dagster._core.definitions.asset_layer import AssetLayer
+from dagster._core.definitions.assets.job.asset_layer import AssetLayer
 from dagster._core.definitions.dependency import GraphNode, Node, NodeHandle, OpNode
 from dagster._core.definitions.graph_definition import GraphDefinition, SubselectedGraphDefinition
 from dagster._core.definitions.job_definition import JobDefinition

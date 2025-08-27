@@ -1,13 +1,35 @@
 import useResizeObserver from '@react-hook/resize-observer';
-import * as React from 'react';
-import styled from 'styled-components';
+import {
+  ClipboardEvent,
+  RefObject,
+  memo,
+  useCallback,
+  useLayoutEffect,
+  useRef,
+  useState,
+} from 'react';
 
 import {calculateMiddleTruncation} from './calculateMiddleTruncation';
+import styles from './css/MiddleTruncate.module.css';
 
 interface Props {
-  text: string;
+  // `null` should not happen, but we've seen it sneak through with `!` usage and crash the page,
+  // so we'll guard against it.
+  text: string | null;
   showTitle?: boolean;
 }
+
+const useWidth = (target: RefObject<HTMLDivElement>) => {
+  const [width, setWidth] = useState(0);
+  useLayoutEffect(() => {
+    if (target.current) {
+      setWidth(target.current.getBoundingClientRect().width);
+    }
+  }, [target]);
+
+  useResizeObserver(target, (entry) => setWidth(entry.contentRect.width));
+  return width;
+};
 
 /**
  * A component that performs middle truncation on a given string, based on the evaluated width
@@ -19,75 +41,58 @@ interface Props {
  *
  * When the DOM element resizes, the measurement and calculation steps will occur again.
  */
-export const MiddleTruncate = React.memo(({text, showTitle = true}: Props) => {
+export const MiddleTruncate = memo(({text, showTitle = true}: Props) => {
+  const textString = text ?? '';
+
   // An element that renders the full text into the container, for the purpose of
   // measuring the maximum available/necessary width for our truncated string.
-  const measure = React.useRef<HTMLDivElement>(null);
-  const truncated = React.useRef<HTMLDivElement>(null);
+  const measure = useRef<HTMLDivElement>(null);
+  const width = useWidth(measure);
+  const [truncatedText, setTruncatedText] = useState(textString);
 
-  // Given the target font style and allotted width, calculate the largest possible middle-
-  // truncated string.
-  const calculateTargetStyle = React.useCallback(() => {
-    if (measure.current && truncated.current) {
-      truncated.current.textContent = calculateMiddleTruncatedText(measure.current, text);
+  useLayoutEffect(() => {
+    if (measure.current) {
+      const font = getComputedStyle(measure.current).font;
+      const result = calculateMiddleTruncatedText({font, width, text: textString});
+      setTruncatedText(result ?? textString);
     }
-  }, [text]);
-
-  // Use a layout effect to trigger the process of calculating the truncated text, for the
-  // initial render.
-  React.useLayoutEffect(() => {
-    window.requestAnimationFrame(calculateTargetStyle);
-  }, [calculateTargetStyle]);
-
-  // If the container has just been resized, recalculate.
-  useResizeObserver(measure.current, () => {
-    calculateTargetStyle();
-  });
+  }, [textString, width]);
 
   // Copy the full text, not just the truncated version shown in the DOM.
-  const handleCopy = React.useCallback(
-    (e: React.ClipboardEvent<HTMLDivElement>) => {
+  const handleCopy = useCallback(
+    (e: ClipboardEvent<HTMLDivElement>) => {
       e.preventDefault();
       const clipboardAPI = navigator.clipboard;
-      clipboardAPI.writeText(text);
+      clipboardAPI.writeText(textString);
     },
-    [text],
+    [textString],
   );
 
   return (
-    <Container onCopy={handleCopy} title={showTitle ? text : undefined}>
-      <span ref={truncated}></span>
-      <MeasureWidth ref={measure}>{text}</MeasureWidth>
-    </Container>
+    <div
+      className={styles.container}
+      onCopy={handleCopy}
+      title={showTitle ? textString : undefined}
+    >
+      <span>{truncatedText}</span>
+      <div ref={measure} className={styles.measure}>
+        {textString}
+      </div>
+    </div>
   );
 });
 
-// An invisible target element that contains the full, no-wrapped text. This is used
-// to measure the maximum available width for our truncated string.
-const MeasureWidth = styled.div`
-  height: 0;
-  overflow: hidden;
-  white-space: nowrap;
-`;
-
-const Container = styled.div`
-  overflow: hidden;
-  white-space: nowrap;
-`;
+type MeasurementConfig = {
+  font: string;
+  width: number;
+  text: string;
+};
 
 /**
- * Compute the font style and maximum/necessary width for the measured container,
- * for the specified string of text.
- *
- * Given those values, use a 2D canvas context to determine the longest possible
- * middle-truncated string.
+ * Given a font style and a container width, use a canvas to determine the longest possible
+ * middle-truncated string that will fit within the container.
  */
-const calculateMiddleTruncatedText = (container: HTMLDivElement, text: string) => {
-  const font = getComputedStyle(container).font;
-
-  // https://developer.mozilla.org/en-US/docs/Web/API/CSS_Object_Model/Determining_the_dimensions_of_elements#how_much_room_does_it_use_up
-  const width = container.offsetWidth;
-
+const calculateMiddleTruncatedText = ({font, width, text}: MeasurementConfig) => {
   const body = document.body;
 
   const canvas = document.createElement('canvas');

@@ -29,12 +29,17 @@ setup(
     ],
     packages=find_packages(exclude=["dagster_celery_docker_tests*"]),
     include_package_data=True,
-    python_requires=">=3.9,<3.13",
+    python_requires=">=3.9,<3.14",
     install_requires=[
         f"dagster{pin}",
         f"dagster-celery{pin}",
         f"dagster-graphql{pin}",
         "docker",
     ],
+    extras_require={
+        "test": [
+            "botocore>=1.21.49",  # first botocore version that works on python 3.9+
+        ],
+    },
     zip_safe=False,
 )

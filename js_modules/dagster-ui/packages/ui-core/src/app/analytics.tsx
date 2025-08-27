@@ -14,6 +14,7 @@ export interface GenericAnalytics {
   track: (eventName: string, properties?: Record<string, any>) => void;
 }
 
+// eslint-disable-next-line @typescript-eslint/no-non-null-assertion
 export const AnalyticsContext = createContext<GenericAnalytics>(undefined!);
 
 const PAGEVIEW_DELAY = 300;

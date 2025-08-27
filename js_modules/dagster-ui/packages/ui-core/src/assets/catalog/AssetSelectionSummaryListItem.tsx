@@ -1,69 +1,61 @@
 import {
   Box,
-  Colors,
-  IconWrapper,
-  Menu,
+  HorizontalControls,
+  ListItem,
   MiddleTruncate,
   Spinner,
-  ifPlural,
 } from '@dagster-io/ui-components';
 import React, {useMemo} from 'react';
 import {Link} from 'react-router-dom';
-import styled from 'styled-components';
 
 import styles from './AssetSelectionSummaryTile.module.css';
-import {ViewType, getThreadId, useAssetHealthStatuses} from './util';
-import {useAssetSelectionFiltering} from '../../asset-selection/useAssetSelectionFiltering';
+import {useSelectionHealthData} from './useSelectionHealthData';
+import {ViewType, getHealthStatuses, getThreadId, useAssetHealthStatuses} from './util';
 import {InsightsIcon, InsightsIconType} from '../../insights/InsightsIcon';
 import {numberFormatter} from '../../ui/formatters';
 import {AssetTableFragment} from '../types/AssetTableFragment.types';
-import {useAllAssets} from '../useAllAssets';
 
 export const AssetSelectionSummaryListItemFromSelection = React.memo(
-  ({
-    item,
-  }: {
-    icon: React.ReactNode;
-    item: Extract<ViewType, {__typename: 'CatalogView'}>;
-    menu: React.ReactNode;
-  }) => {
-    const {assets, loading} = useAllAssets();
-    const {filtered, loading: filteredLoading} = useAssetSelectionFiltering({
-      assets,
-      assetSelection: item.selection.querySelection ?? '',
-      loading,
-      useWorker: false,
-      includeExternalAssets: true,
+  ({index, item}: {index: number; item: Extract<ViewType, {__typename: 'CatalogView'}>}) => {
+    const {liveDataByNode, assetCount, loading} = useSelectionHealthData({
+      selection: item.selection.querySelection ?? '',
     });
+    const {jsx} = useMemo(
+      () => getHealthStatuses({liveDataByNode, loading, assetCount}),
+      [liveDataByNode, loading, assetCount],
+    );
     return (
-      <AssetSelectionSummaryListItem
-        assets={filtered}
+      <AssetSelectionSummaryListItemWithHealthStatus
+        index={index}
         icon={<InsightsIcon name={item.icon as InsightsIconType} size={16} />}
         label={item.name}
         link={item.link}
-        menu={<Menu />}
-        loading={loading || filteredLoading}
+        statusJsx={jsx}
+        loading={loading}
+        assetCount={assetCount}
       />
     );
   },
 );
 
+interface AssetSelectionSummaryListItemProps {
+  index: number;
+  assets: AssetTableFragment[];
+  icon: React.ReactNode;
+  label: string;
+  link: string;
+  loading?: boolean;
+}
+
 export const AssetSelectionSummaryListItem = React.memo(
   ({
+    index,
     assets,
     icon,
     label,
     link,
     loading: assetsLoading,
-  }: {
-    assets: AssetTableFragment[];
-    icon: React.ReactNode;
-    label: string;
-    link: string;
-    menu: React.ReactNode;
-    loading?: boolean;
-    threadId?: string;
-  }) => {
+  }: AssetSelectionSummaryListItemProps) => {
     const {jsx, loading} = useAssetHealthStatuses({
       assets,
       threadId: useMemo(() => getThreadId(), []),
@@ -71,62 +63,71 @@ export const AssetSelectionSummaryListItem = React.memo(
     });
 
     return (
-      <RowWrapper as={Link} to={link}>
-        <Box
-          padding={{horizontal: 24, vertical: 12}}
-          flex={{alignItems: 'center', gap: 8, justifyContent: 'space-between'}}
-          border="bottom"
-        >
-          <Box flex={{direction: 'row', alignItems: 'center', gap: 8}} className="row-icon">
-            {icon}
-            <MiddleTruncate text={label} />
-          </Box>
-          <Box flex={{direction: 'row', alignItems: 'center', gap: 12}}>
-            {loading ? (
-              <Spinner purpose="caption-text" />
-            ) : (
-              <Box className={styles.statusCountListWrapper} border="right" padding={{right: 12}}>
-                {jsx}
-              </Box>
-            )}
-            <span>
-              {numberFormatter.format(assets.length)} asset
-              {ifPlural(assets.length, '', 's')}
-            </span>
-          </Box>
-        </Box>
-      </RowWrapper>
+      <AssetSelectionSummaryListItemWithHealthStatus
+        index={index}
+        icon={icon}
+        label={label}
+        statusJsx={jsx}
+        link={link}
+        assetCount={assets.length}
+        loading={loading}
+      />
     );
   },
 );
 
-const RowWrapper = styled.div`
-  &,
-  &:hover {
-    text-decoration: none;
-    cursor: pointer;
-  }
-  color: ${Colors.textLight()};
-  .row-icon {
-    ${IconWrapper} {
-      color: ${Colors.textLight()};
-    }
-    ${IconWrapper} {
-      background: ${Colors.textLight()};
-    }
-  }
-  cursor: pointer;
-  &:hover {
-    & {
-      color: ${Colors.textDefault()};
-    }
-    .row-icon {
-      ${IconWrapper} {
-        color: ${Colors.textDefault()};
-      }
-      ${IconWrapper} {
-        background: ${Colors.textDefault()};
-      }
-    }
-  }
-`;
+export const AssetSelectionSummaryListItemWithHealthStatus = React.memo(
+  ({
+    icon,
+    label,
+    statusJsx,
+    link,
+    loading,
+    assetCount,
+    index,
+  }: {
+    icon: React.ReactNode;
+    label: string;
+    link: string;
+    statusJsx: React.ReactNode;
+    loading?: boolean;
+    assetCount: number;
+    index: number;
+  }) => {
+    return (
+      <ListItem
+        href={link}
+        index={index}
+        renderLink={({href, ...rest}) => <Link to={href || '#'} {...rest} />}
+        left={
+          <Box flex={{direction: 'row', alignItems: 'center', gap: 8}} className="row-icon">
+            {icon}
+            <MiddleTruncate text={label} />
+          </Box>
+        }
+        right={
+          <HorizontalControls
+            controls={[
+              {
+                key: 'status',
+                control: loading ? (
+                  <Spinner purpose="caption-text" />
+                ) : (
+                  <div className={styles.statusCountListWrapper}>{statusJsx}</div>
+                ),
+              },
+              {
+                key: 'count',
+                control: (
+                  <Box padding={{left: 4}}>
+                    {assetCount === 1 ? '1 asset' : `${numberFormatter.format(assetCount)} assets`}
+                  </Box>
+                ),
+              },
+            ]}
+          />
+        }
+      />
+    );
+  },
+);

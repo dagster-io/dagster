@@ -11,31 +11,19 @@ import {
   linkToCodeLocation,
 } from './links';
 import {AssetFilterSearchResultType, SearchResult, SearchResultType} from './types';
-import {
-  SearchPrimaryQuery,
-  SearchPrimaryQueryVariables,
-  SearchPrimaryQueryVersion,
-} from './types/useGlobalSearch.types';
-import {useIndexedDBCachedQuery} from './useIndexedDBCachedQuery';
-import {gql} from '../apollo-client';
-import {AppContext} from '../app/AppContext';
-import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
+import {useShowAssetsWithoutDefinitions} from '../app/UserSettingsDialog/useShowAssetsWithoutDefinitions';
+import {useShowStubAssets} from '../app/UserSettingsDialog/useShowStubAssets';
 import {displayNameForAssetKey, isHiddenAssetGroupJob} from '../asset-graph/Utils';
 import {assetDetailsPathForKey} from '../assets/assetDetailsPathForKey';
 import {AssetTableFragment} from '../assets/types/AssetTableFragment.types';
 import {useAllAssets} from '../assets/useAllAssets';
 import {buildTagString} from '../ui/tagAsString';
+import {WorkspaceContext, WorkspaceState} from '../workspace/WorkspaceContext/WorkspaceContext';
 import {assetOwnerAsString} from '../workspace/assetOwnerAsString';
 import {buildRepoPathForHuman} from '../workspace/buildRepoAddress';
 import {workspacePath} from '../workspace/workspacePath';
-const primaryDataToSearchResults = (input: {data?: SearchPrimaryQuery}) => {
-  const {data} = input;
 
-  if (!data?.workspaceOrError || data?.workspaceOrError?.__typename !== 'Workspace') {
-    return [];
-  }
-
-  const {locationEntries} = data.workspaceOrError;
+const primaryDataToSearchResults = (locationEntries: WorkspaceState['locationEntries']) => {
   const firstEntry = locationEntries[0];
   const manyLocations =
     locationEntries.length > 1 ||
@@ -176,13 +164,17 @@ const secondaryDataToSearchResults = (
     key: node.key,
     label: displayNameForAssetKey(node.key),
     description: `Asset in ${buildRepoPathForHuman(
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
       node.definition!.repository.name,
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
       node.definition!.repository.location.name,
     )}`,
     node,
     href: assetDetailsPathForKey(node.key),
     type: SearchResultType.Asset,
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     tags: node.definition!.tags,
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     kinds: node.definition!.kinds,
   }));
 
@@ -293,19 +285,20 @@ export const useGlobalSearch = ({searchContext}: {searchContext: 'global' | 'cat
 
   const augmentSearchResults = useAugmentSearchResults();
 
-  const {localCacheIdPrefix} = useContext(AppContext);
+  const {locationEntries, loadingNonAssets} = useContext(WorkspaceContext);
 
-  const {
-    data: primaryData,
-    fetch: fetchPrimaryData,
-    loading: primaryDataLoading,
-  } = useIndexedDBCachedQuery<SearchPrimaryQuery, SearchPrimaryQueryVariables>({
-    query: SEARCH_PRIMARY_QUERY,
-    key: `${localCacheIdPrefix}/SearchPrimary`,
-    version: SearchPrimaryQueryVersion,
+  const {assets: _assets, loading: assetsLoading} = useAllAssets();
+  const {showAssetsWithoutDefinitions} = useShowAssetsWithoutDefinitions();
+  const {showStubAssets} = useShowStubAssets();
+  const assets = _assets.filter((asset) => {
+    if (!showStubAssets && asset.definition?.isAutoCreatedStub) {
+      return false;
+    }
+    if (!showAssetsWithoutDefinitions && !asset.definition) {
+      return false;
+    }
+    return true;
   });
-
-  const {assets, loading: assetsLoading} = useAllAssets();
 
   const consumeBufferEffect = useCallback(
     async (buffer: React.MutableRefObject<IndexBuffer | null>, search: WorkerSearchResult) => {
@@ -320,20 +313,20 @@ export const useGlobalSearch = ({searchContext}: {searchContext: 'global' | 'cat
   );
 
   useEffect(() => {
-    if (!primaryData) {
+    if (loadingNonAssets) {
       return;
     }
-    const results = primaryDataToSearchResults({data: primaryData});
+    const results = primaryDataToSearchResults(locationEntries);
     const augmentedResults = augmentSearchResults(results);
     if (!primarySearch.current) {
       primarySearch.current = createSearchWorker('primary', fuseOptions);
     }
     primarySearch.current.update(augmentedResults);
     consumeBufferEffect(primarySearchBuffer, primarySearch.current);
-  }, [consumeBufferEffect, primaryData, augmentSearchResults]);
+  }, [consumeBufferEffect, locationEntries, augmentSearchResults, loadingNonAssets]);
 
   useEffect(() => {
-    if (!assets) {
+    if (assetsLoading) {
       return;
     }
 
@@ -344,16 +337,10 @@ export const useGlobalSearch = ({searchContext}: {searchContext: 'global' | 'cat
     }
     secondarySearch.current.update(augmentedResults);
     consumeBufferEffect(secondarySearchBuffer, secondarySearch.current);
-  }, [consumeBufferEffect, assets, searchContext, augmentSearchResults]);
+  }, [consumeBufferEffect, assets, searchContext, augmentSearchResults, assetsLoading]);
 
   const primarySearchBuffer = useRef<IndexBuffer | null>(null);
   const secondarySearchBuffer = useRef<IndexBuffer | null>(null);
-
-  const initialize = useCallback(() => {
-    if (!primaryData && !primaryDataLoading) {
-      fetchPrimaryData();
-    }
-  }, [fetchPrimaryData, primaryData, primaryDataLoading]);
 
   const searchIndex = useCallback(
     (
@@ -416,92 +403,9 @@ export const useGlobalSearch = ({searchContext}: {searchContext: 'global' | 'cat
   }, []);
 
   return {
-    initialize,
-    loading: primaryDataLoading || assetsLoading,
+    loading: assetsLoading || loadingNonAssets,
     searchPrimary,
     searchSecondary,
     terminate,
   };
 };
-
-export const SEARCH_PRIMARY_QUERY = gql`
-  query SearchPrimaryQuery {
-    workspaceOrError {
-      ... on Workspace {
-        id
-        locationEntries {
-          id
-          locationOrLoadError {
-            ... on RepositoryLocation {
-              id
-              name
-              repositories {
-                id
-                ... on Repository {
-                  id
-                  name
-                  assetGroups {
-                    id
-                    ...SearchGroupFragment
-                  }
-                  pipelines {
-                    id
-                    ...SearchPipelineFragment
-                  }
-                  schedules {
-                    id
-                    ...SearchScheduleFragment
-                  }
-                  sensors {
-                    id
-                    ...SearchSensorFragment
-                  }
-                  partitionSets {
-                    id
-                    ...SearchPartitionSetFragment
-                  }
-                  allTopLevelResourceDetails {
-                    id
-                    ...SearchResourceDetailFragment
-                  }
-                }
-              }
-            }
-          }
-        }
-      }
-      ...PythonErrorFragment
-    }
-  }
-
-  fragment SearchGroupFragment on AssetGroup {
-    id
-    groupName
-  }
-
-  fragment SearchPipelineFragment on Pipeline {
-    id
-    isJob
-    name
-  }
-
-  fragment SearchScheduleFragment on Schedule {
-    id
-    name
-  }
-  fragment SearchSensorFragment on Sensor {
-    id
-    name
-  }
-  fragment SearchPartitionSetFragment on PartitionSet {
-    id
-    name
-    pipelineName
-  }
-  fragment SearchResourceDetailFragment on ResourceDetails {
-    id
-    name
-  }
-
-  ${PYTHON_ERROR_FRAGMENT}
-`;

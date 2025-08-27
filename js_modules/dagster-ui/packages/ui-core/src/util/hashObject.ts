@@ -1,9 +1,11 @@
+import {weakMapMemoize} from './weakMapMemoize';
+
 /**
  * Creates a fast deterministic hash from a large JSON object iteratively
  * @param obj - The JSON object to hash (must not contain circular references)
  * @returns A deterministic hash string
  */
-export function hashObject(obj: any): string {
+export const hashObject = weakMapMemoize((obj: any): string => {
   // Using MurmurHash3
   let h1: number = 0x12345678; // Seed
 
@@ -69,6 +71,7 @@ export function hashObject(obj: any): string {
 
   // Process the object iteratively
   while (stack.length > 0) {
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     const current = stack[stack.length - 1]!;
 
     // Start processing a new item
@@ -138,6 +141,7 @@ export function hashObject(obj: any): string {
           current.state = 2;
         }
       } else if (current.type === TYPE_OBJECT) {
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
         const keys = current.keys!;
 
         if (current.index > 0) {
@@ -145,6 +149,7 @@ export function hashObject(obj: any): string {
         }
 
         if (current.index < keys.length) {
+          // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
           const key = keys[current.index++]!;
           hashChunk(key);
           hashChunk(smallBuffer[4]); // ':'
@@ -185,4 +190,4 @@ export function hashObject(obj: any): string {
   h1 ^= h1 >>> 16;
 
   return h1.toString(16).padStart(8, '0');
-}
+});

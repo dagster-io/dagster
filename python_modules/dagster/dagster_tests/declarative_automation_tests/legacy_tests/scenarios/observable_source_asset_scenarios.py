@@ -1,12 +1,11 @@
 import datetime
 
-from dagster import PartitionKeyRange
+import dagster as dg
 from dagster._core.definitions.auto_materialize_rule import AutoMaterializeRule
 from dagster._core.definitions.auto_materialize_rule_evaluation import (
     AutoMaterializeRuleEvaluation,
     ParentUpdatedRuleEvaluationData,
 )
-from dagster._core.definitions.events import AssetKey
 from dagster._time import create_datetime
 
 from dagster_tests.declarative_automation_tests.legacy_tests.scenarios.partition_scenarios import (
@@ -114,7 +113,7 @@ observable_source_asset_scenarios = {
         + [
             run(["asset1"], partition_key=partition_key)
             for partition_key in hourly_partitions_def.get_partition_keys_in_range(
-                PartitionKeyRange(start="2013-01-05-00:00", end="2013-01-06-00:00")
+                dg.PartitionKeyRange(start="2013-01-05-00:00", end="2013-01-06-00:00")
             )
         ],
         expected_run_requests=[],
@@ -128,7 +127,7 @@ observable_source_asset_scenarios = {
         + [
             run(["asset1"], partition_key=partition_key)
             for partition_key in hourly_partitions_def.get_partition_keys_in_range(
-                PartitionKeyRange(start="2013-01-05-00:00", end="2013-01-06-00:00")
+                dg.PartitionKeyRange(start="2013-01-05-00:00", end="2013-01-06-00:00")
             )
         ]
         + [
@@ -138,7 +137,7 @@ observable_source_asset_scenarios = {
             # update some subset of the partitions
             run(["asset1"], partition_key=partition_key)
             for partition_key in hourly_partitions_def.get_partition_keys_in_range(
-                PartitionKeyRange(start="2013-01-05-04:00", end="2013-01-05-17:00")
+                dg.PartitionKeyRange(start="2013-01-05-04:00", end="2013-01-05-17:00")
             )
         ],
         expected_run_requests=[
@@ -223,7 +222,7 @@ observable_source_asset_scenarios = {
                         AutoMaterializeRuleEvaluation(
                             rule_snapshot=AutoMaterializeRule.materialize_on_parent_updated().to_snapshot(),
                             evaluation_data=ParentUpdatedRuleEvaluationData(
-                                updated_asset_keys=frozenset([AssetKey("source_asset")]),
+                                updated_asset_keys=frozenset([dg.AssetKey("source_asset")]),
                                 will_update_asset_keys=frozenset(),
                             ),
                         ),

@@ -1,17 +1,21 @@
 from abc import ABC
-from collections.abc import Mapping
+from collections.abc import Iterable, Mapping
 from datetime import datetime, timedelta
 from enum import Enum
-from typing import Any, Optional, Union
+from typing import TYPE_CHECKING, Any, Optional, Union
 
 from dagster_shared.serdes.utils import SerializableTimeDelta
 
 from dagster._core.definitions.asset_key import AssetKey
+from dagster._core.loader import LoadableBy, LoadingContext
 from dagster._record import IHaveNew, record, record_custom
 from dagster._serdes import deserialize_value, whitelist_for_serdes
-from dagster._time import get_timezone
+from dagster._time import datetime_from_timestamp, get_timezone
 from dagster._utils import check
 from dagster._utils.schedules import get_smallest_cron_interval, is_valid_cron_string
+
+if TYPE_CHECKING:
+    from dagster._core.events.log import EventLogEntry
 
 
 @whitelist_for_serdes
@@ -45,12 +49,23 @@ INTERNAL_FRESHNESS_POLICY_METADATA_KEY = "dagster/internal_freshness_policy"
 
 
 class InternalFreshnessPolicy(ABC):
+    """Base class for all freshness policies.
+    The "internal" prefix is a temporary measure to distinguish these policies from an existing, deprecated freshness policy model
+    which has since been renamed to `LegacyFreshnessPolicy`.
+    Expect the name of this class to change to `FreshnessPolicy` in a future release.
+
+    """
+
     @classmethod
     def from_asset_spec_metadata(
         cls, metadata: Mapping[str, Any]
     ) -> Optional["InternalFreshnessPolicy"]:
         serialized_policy = metadata.get(INTERNAL_FRESHNESS_POLICY_METADATA_KEY)
-        if serialized_policy is None:
+
+        # We had a few asset spec metadatas with internal freshness policies set to literal "null" string,
+        # need special handling for those cases.
+        # https://github.com/dagster-io/dagster/pull/30615
+        if serialized_policy is None or serialized_policy.value == "null":
             return None
         return deserialize_value(serialized_policy.value, cls)  # pyright: ignore
 
@@ -195,7 +210,7 @@ class FreshnessStateRecordBody:
 
 
 @record
-class FreshnessStateRecord:
+class FreshnessStateRecord(LoadableBy[AssetKey]):
     entity_key: AssetKey
     freshness_state: FreshnessState
     updated_at: datetime
@@ -209,3 +224,23 @@ class FreshnessStateRecord:
             record_body=deserialize_value(db_row[4], FreshnessStateRecordBody),
             updated_at=db_row[5],
         )
+
+    @staticmethod
+    def from_event_log_entry(entry: "EventLogEntry") -> "FreshnessStateRecord":
+        dagster_event = check.not_none(entry.dagster_event)
+        event_data = check.inst(dagster_event.event_specific_data, FreshnessStateChange)
+        return FreshnessStateRecord(
+            entity_key=event_data.key,
+            freshness_state=event_data.new_state,
+            updated_at=datetime_from_timestamp(event_data.state_change_timestamp),
+            # note: metadata is not currently stored in the event log
+            record_body=FreshnessStateRecordBody(metadata={}),
+        )
+
+    @classmethod
+    def _blocking_batch_load(
+        cls, keys: Iterable[AssetKey], context: LoadingContext
+    ) -> Iterable[Optional["FreshnessStateRecord"]]:
+        keys = list(keys)
+        state_records = context.instance.get_freshness_state_records(keys)
+        return [state_records.get(key) for key in keys]

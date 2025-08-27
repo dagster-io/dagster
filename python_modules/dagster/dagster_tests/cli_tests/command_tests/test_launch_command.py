@@ -1,6 +1,7 @@
 from typing import Any, Optional
 
 import click
+import dagster as dg
 import pytest
 from click.testing import CliRunner
 from dagster._cli.job import execute_launch_command, job_launch_command
@@ -9,7 +10,6 @@ from dagster._core.instance import DagsterInstance
 from dagster._core.storage.dagster_run import DagsterRunStatus
 from dagster._core.test_utils import new_cwd
 from dagster._core.utils import make_new_run_id
-from dagster._utils import file_relative_path
 
 from dagster_tests.cli_tests.command_tests.test_cli_commands import (
     default_cli_test_instance,
@@ -204,7 +204,7 @@ def test_default_working_directory():
                 job_launch_command,
                 [
                     "-f",
-                    file_relative_path(__file__, "file_with_local_import.py"),
+                    dg.file_relative_path(__file__, "file_with_local_import.py"),
                     "-a",
                     "qux_job",
                 ],

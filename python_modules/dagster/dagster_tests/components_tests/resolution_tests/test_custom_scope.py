@@ -1,21 +1,21 @@
 import importlib
 from pathlib import Path
 
-from dagster import AssetSpec, AutomationCondition
-from dagster.components.core.context import ComponentLoadContext
-from dagster.components.core.load_defs import load_defs
+import dagster as dg
+from dagster import AutomationCondition
+from dagster.components.core.component_tree import ComponentTree
 
 
 def test_custom_scope() -> None:
     module = importlib.import_module(
         "dagster_tests.components_tests.resolution_tests.custom_scope_component"
     )
-    defs = load_defs(module, project_root=Path(__file__).parent)
+    defs = dg.load_defs(module, project_root=Path(__file__).parent)
 
     assets = list(defs.assets or [])
     assert len(assets) == 1
     spec = assets[0]
-    assert isinstance(spec, AssetSpec)
+    assert isinstance(spec, dg.AssetSpec)
 
     assert spec.group_name == "xyz"
     assert spec.tags == {"a": "b"}
@@ -37,5 +37,5 @@ asset_attributes:
     foo: ''
 """)
 
-    defs = c.build_defs(ComponentLoadContext.for_test())
+    defs = c.build_defs(ComponentTree.for_test().load_context)
     assert defs.assets

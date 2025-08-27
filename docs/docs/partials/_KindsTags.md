@@ -9,10 +9,12 @@
 | `aws`               | <img src="/images/guides/build/assets/metadata-tags/kinds/icons/tool-aws-color.svg" width={20} height={20} />               |
 | `awsstepfunction`   | <img src="/images/guides/build/assets/metadata-tags/kinds/icons/tool-stepfunctions-color.svg" width={20} height={20} />     |
 | `awsstepfunctions`  | <img src="/images/guides/build/assets/metadata-tags/kinds/icons/tool-stepfunctions-color.svg" width={20} height={20} />     |
+| `ax`                | <img src="/images/guides/build/assets/metadata-tags/kinds/icons/tool-ax-color.svg" width={20} height={20} />                |
 | `axioma`            | <img src="/images/guides/build/assets/metadata-tags/kinds/icons/tool-axioma-color.svg" width={20} height={20} />            |
 | `azure`             | <img src="/images/guides/build/assets/metadata-tags/kinds/icons/tool-azure-color.svg" width={20} height={20} />             |
 | `azureml`           | <img src="/images/guides/build/assets/metadata-tags/kinds/icons/tool-azureml-color.svg" width={20} height={20} />           |
 | `bigquery`          | <img src="/images/guides/build/assets/metadata-tags/kinds/icons/tool-bigquery-color.svg" width={20} height={20} />          |
+| `botorch`           | <img src="/images/guides/build/assets/metadata-tags/kinds/icons/tool-botorch-color.svg" width={20} height={20} />           |
 | `cassandra`         | <img src="/images/guides/build/assets/metadata-tags/kinds/icons/tool-cassandra-color.svg" width={20} height={20} />         |
 | `catboost`          | <img src="/images/guides/build/assets/metadata-tags/kinds/icons/tool-catboost-color.svg" width={20} height={20} />          |
 | `celery`            | <img src="/images/guides/build/assets/metadata-tags/kinds/icons/tool-celery-color.svg" width={20} height={20} />            |
@@ -27,6 +29,7 @@
 | `csharp`            | <img src="/images/guides/build/assets/metadata-tags/kinds/icons/tool-csharp-color.svg" width={20} height={20} />            |
 | `cube`              | <img src="/images/guides/build/assets/metadata-tags/kinds/icons/tool-cube-color.svg" width={20} height={20} />              |
 | `dask`              | <img src="/images/guides/build/assets/metadata-tags/kinds/icons/tool-dask-color.svg" width={20} height={20} />              |
+| `databento`         | <img src="/images/guides/build/assets/metadata-tags/kinds/icons/tool-databento-color.svg" width={20} height={20} />         |
 | `databricks`        | <img src="/images/guides/build/assets/metadata-tags/kinds/icons/tool-databricks-color.svg" width={20} height={20} />        |
 | `datadog`           | <img src="/images/guides/build/assets/metadata-tags/kinds/icons/tool-datadog-color.svg" width={20} height={20} />           |
 | `datahub`           | <img src="/images/guides/build/assets/metadata-tags/kinds/icons/tool-datahub-color.svg" width={20} height={20} />           |
@@ -48,6 +51,7 @@
 | `duckdb`            | <img src="/images/guides/build/assets/metadata-tags/kinds/icons/tool-duckdb-color.svg" width={20} height={20} />            |
 | `elasticsearch`     | <img src="/images/guides/build/assets/metadata-tags/kinds/icons/tool-elasticsearch-color.svg" width={20} height={20} />     |
 | `evidence`          | <img src="/images/guides/build/assets/metadata-tags/kinds/icons/tool-evidence.svg" width={20} height={20} />                |
+| `exasol`            | <img src="/images/guides/build/assets/metadata-tags/kinds/icons/tool-exasol-color.svg" width={20} height={20} />            |
 | `excel`             | <img src="/images/guides/build/assets/metadata-tags/kinds/icons/tool-excel-color.svg" width={20} height={20} />             |
 | `facebook`          | <img src="/images/guides/build/assets/metadata-tags/kinds/icons/tool-facebook-color.svg" width={20} height={20} />          |
 | `fivetran`          | <img src="/images/guides/build/assets/metadata-tags/kinds/icons/tool-fivetran-color.svg" width={20} height={20} />          |
