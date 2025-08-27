@@ -7,6 +7,7 @@ from functools import cache
 from typing import Union, get_args, get_origin
 
 import pytest
+from dagster_dg_cli.dagster_plus_api.api.asset import DgPlusApiAssetAPI
 from dagster_dg_cli.dagster_plus_api.api.deployments import DeploymentAPI
 from pydantic import BaseModel
 
@@ -26,8 +27,7 @@ REST_PREFIXES = {
 
 def get_all_api_classes():
     """Get all API classes to test."""
-    # For now just DeploymentAPI, but this can be expanded
-    return [DeploymentAPI]
+    return [DeploymentAPI, DgPlusApiAssetAPI]
 
 
 @cache

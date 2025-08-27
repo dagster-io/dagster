@@ -1,0 +1,13 @@
+{
+  "id": "dagster_open_platform.__repository__.[\"aws\", \"cloud-prod\", \"workspace_staging_pipelines\"]",
+  "asset_key": "aws/cloud-prod/workspace_staging_pipelines",
+  "asset_key_parts": [
+    "aws",
+    "cloud-prod",
+    "workspace_staging_pipelines"
+  ],
+  "description": "Snowflake stages for AWS data, creates new stages for new assets, refreses existing stages.",
+  "group_name": "aws_stages",
+  "kinds": [],
+  "metadata_entries": []
+}

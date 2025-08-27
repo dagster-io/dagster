@@ -1,4 +1,4 @@
-"""Fixture loading utilities for deployment API tests."""
+"""Fixture loading utilities for asset API tests."""
 
 import json
 from pathlib import Path
@@ -9,11 +9,11 @@ from dagster_dg_cli_tests.cli_tests.api_tests.shared.yaml_loader import (
 )
 
 
-def load_deployment_response_fixture(response_name: str) -> list[dict[str, Any]]:
-    """Load deployment GraphQL responses from a scenario folder.
+def load_asset_response_fixture(response_name: str) -> list[dict[str, Any]]:
+    """Load asset GraphQL responses from a scenario folder.
 
     Args:
-        response_name: Name of the response scenario (e.g., 'success_multiple_deployments')
+        response_name: Name of the response scenario (e.g., 'success_multiple_assets')
 
     Returns:
         List of GraphQL response data in order
@@ -68,8 +68,8 @@ def load_scenario_cli_output(scenario_name: str) -> str:
         return f.read()
 
 
-def get_deployment_fixture_command(response_name: str) -> str:
-    """Get the command that generates a specific deployment fixture.
+def get_asset_fixture_command(response_name: str) -> str:
+    """Get the command that generates a specific asset fixture.
 
     Args:
         response_name: Name of the response fixture
@@ -87,8 +87,8 @@ def get_deployment_fixture_command(response_name: str) -> str:
     return fixture_commands[response_name].command
 
 
-def list_deployment_fixtures() -> dict[str, Any]:
-    """List all available deployment fixtures."""
+def list_asset_fixtures() -> dict[str, Any]:
+    """List all available asset fixtures."""
     commands_file = Path(__file__).parent / "commands.yaml"
     fixture_commands = load_fixture_commands_from_yaml(commands_file)
 

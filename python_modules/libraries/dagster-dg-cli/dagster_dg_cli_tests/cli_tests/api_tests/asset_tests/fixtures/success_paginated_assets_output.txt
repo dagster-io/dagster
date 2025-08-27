@@ -1,0 +1,5 @@
+{
+  "items": [],
+  "cursor": "[\"__snowflake_query_metadata_self_serve_customer_attribution_check_all_partitions_job\"]",
+  "has_more": true
+}

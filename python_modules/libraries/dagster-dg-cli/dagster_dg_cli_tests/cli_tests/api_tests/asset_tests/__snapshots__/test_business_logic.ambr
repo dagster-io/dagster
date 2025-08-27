@@ -1,0 +1,195 @@
+# serializer version: 1
+# name: TestAssetDataProcessing.test_asset_creation_with_complex_metadata[0]
+  dict({
+    'asset_key': 'analytics/complex_table',
+    'asset_key_parts': list([
+      'analytics',
+      'complex_table',
+    ]),
+    'description': 'Complex asset with various metadata types',
+    'group_name': 'analytics',
+    'id': 'complex-asset',
+    'kinds': list([
+      'dbt',
+      'table',
+      'materialized',
+    ]),
+    'metadata_entries': list([
+      dict({
+        'description': 'Some text',
+        'label': 'text_meta',
+        'text': 'example_text',
+      }),
+      dict({
+        'description': 'Documentation',
+        'label': 'url_meta',
+        'url': 'https://docs.example.com',
+      }),
+      dict({
+        'description': 'File path',
+        'label': 'path_meta',
+        'path': '/data/warehouse/table.sql',
+      }),
+      dict({
+        'description': 'Config',
+        'jsonString': '{"key": "value"}',
+        'label': 'json_meta',
+      }),
+      dict({
+        'description': 'Notes',
+        'label': 'markdown_meta',
+        'mdStr': '''
+          # Notes
+          This is markdown
+        ''',
+      }),
+      dict({
+        'description': 'Python class',
+        'label': 'python_meta',
+        'module': 'mymodule',
+        'name': 'MyClass',
+      }),
+      dict({
+        'description': 'Score',
+        'floatValue': 95.5,
+        'label': 'float_meta',
+      }),
+      dict({
+        'description': 'Count',
+        'intValue': 42,
+        'label': 'int_meta',
+      }),
+      dict({
+        'boolValue': True,
+        'description': 'Is active',
+        'label': 'bool_meta',
+      }),
+    ]),
+  })
+# ---
+# name: TestFormatAssets.test_format_asset_without_metadata[0]
+  '''
+  Asset Key: simple
+  ID: simple-asset
+  Group: default
+  Description: (none)
+  Kinds: (none)
+  '''
+# ---
+# name: TestFormatAssets.test_format_assets_json_output[0]
+  dict({
+    'cursor': 'next_cursor',
+    'has_more': True,
+    'items': list([
+      dict({
+        'asset_key': 'users',
+        'asset_key_parts': list([
+          'users',
+        ]),
+        'description': 'User data table',
+        'group_name': 'core_tables',
+        'id': 'asset-1',
+        'kinds': list([
+          'dbt',
+          'table',
+        ]),
+        'metadata_entries': list([
+          dict({
+            'description': 'data-team',
+            'label': 'owner',
+          }),
+          dict({
+            'description': '1000000',
+            'intValue': 1000000,
+            'label': 'rows',
+          }),
+        ]),
+      }),
+      dict({
+        'asset_key': 'analytics/user_metrics',
+        'asset_key_parts': list([
+          'analytics',
+          'user_metrics',
+        ]),
+        'description': 'Aggregated user metrics',
+        'group_name': 'analytics',
+        'id': 'asset-2',
+        'kinds': list([
+          'dbt',
+          'view',
+        ]),
+        'metadata_entries': list([
+        ]),
+      }),
+    ]),
+  })
+# ---
+# name: TestFormatAssets.test_format_assets_text_output[0]
+  '''
+  Asset Key: users
+  ID: asset-1
+  Group: core_tables
+  Description: User data table
+  Kinds: dbt, table
+  
+  Asset Key: analytics/user_metrics
+  ID: asset-2
+  Group: analytics
+  Description: Aggregated user metrics
+  Kinds: dbt, view
+  
+  Pagination:
+    Has More: True
+    Next Cursor: next_cursor
+  '''
+# ---
+# name: TestFormatAssets.test_format_empty_assets_json_output[0]
+  dict({
+    'cursor': None,
+    'has_more': False,
+    'items': list([
+    ]),
+  })
+# ---
+# name: TestFormatAssets.test_format_empty_assets_text_output[0]
+  'No assets found.'
+# ---
+# name: TestFormatAssets.test_format_single_asset_json_output[0]
+  dict({
+    'asset_key': 'users',
+    'asset_key_parts': list([
+      'users',
+    ]),
+    'description': 'User data table',
+    'group_name': 'core_tables',
+    'id': 'asset-1',
+    'kinds': list([
+      'dbt',
+      'table',
+    ]),
+    'metadata_entries': list([
+      dict({
+        'description': 'data-team',
+        'label': 'owner',
+      }),
+      dict({
+        'description': 'public',
+        'label': 'schema',
+        'text': 'public',
+      }),
+    ]),
+  })
+# ---
+# name: TestFormatAssets.test_format_single_asset_text_output[0]
+  '''
+  Asset Key: users
+  ID: asset-1
+  Group: core_tables
+  Description: User data table
+  Kinds: dbt, table
+  
+  Metadata:
+    owner: data-team
+    schema: public
+  '''
+# ---

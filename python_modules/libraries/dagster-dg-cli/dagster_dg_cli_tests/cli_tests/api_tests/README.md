@@ -11,15 +11,20 @@
      command: "dg plus api your_noun your_verb --your-flag --json"
    ```
 
-2. **Record GraphQL**: `dagster-dev dg-api-record-graphql domain your_fixture_name`
+2. **Record with new folder structure**: `dagster-dev dg-api-record domain --fixture your_fixture_name --folder-structure`
 
-3. **Record CLI**: `dagster-dev dg-api-record-cli-output domain your_fixture_name`
+3. **Record CLI snapshots**: `dagster-dev dg-api-record domain --cli`
 
 ### Re-record a single test case:
 
-1. **Re-record GraphQL** (if API response changed): `dagster-dev dg-api-record-graphql noun your_fixture_name`
+1. **Re-record with new structure** (if API response changed): `dagster-dev dg-api-record domain --fixture your_fixture_name --folder-structure`
 
-2. **Re-record CLI** (always needed after GraphQL changes): `dagster-dev dg-api-record-cli-output noun your_fixture_name`
+2. **Re-record CLI** (always needed after GraphQL changes): `dagster-dev dg-api-record domain --fixture your_fixture_name --cli`
+
+### Legacy Commands (for backwards compatibility):
+
+- **Record GraphQL (old format)**: `dagster-dev dg-api-record domain --fixture your_fixture_name --graphql`
+- **Record CLI**: `dagster-dev dg-api-record domain --fixture your_fixture_name --cli`
 
 ---
 
@@ -36,6 +41,8 @@ The two-step recording system separates GraphQL response capture from CLI output
 
 ## Directory Structure
 
+### New Folder-per-Scenario Structure (Recommended)
+
 ```
 api_tests/
 ├── shared/                      # Shared utilities across all domains
@@ -43,8 +50,14 @@ api_tests/
 │   └── yaml_loader.py           # YAML loading utilities
 ├── deployment_tests/
 │   ├── fixtures/
-│   │   ├── __init__.py          # Loading utilities
-│   │   ├── responses.json       # GraphQL response fixtures
+│   │   ├── __init__.py          # Loading utilities (supports both structures)
+│   │   ├── success_multiple_deployments/  # Scenario folder
+│   │   │   ├── 01_asset_records_query.json    # First GraphQL response
+│   │   │   ├── 02_asset_nodes_query.json      # Second GraphQL response
+│   │   │   └── cli_output.txt                 # Final CLI output
+│   │   ├── error_deployment_not_found/        # Error scenario folder
+│   │   │   ├── 01_error_response.json         # GraphQL error response
+│   │   │   └── cli_output.txt                 # CLI error output
 │   │   └── commands.yaml        # Command registry (YAML format)
 │   ├── __snapshots__/           # Auto-generated snapshots
 │   ├── test_business_logic.py   # Pure function tests
@@ -55,36 +68,50 @@ api_tests/
 
 ## Adding a New Test Scenario
 
-### Step 1: Capture GraphQL Response
+### Step 1: Capture GraphQL Responses (New Folder Structure)
 
-Use the `dg-api-record-graphql` command to capture live API responses:
+Use the `dg-api-record` command with `--folder-structure` to capture live API responses:
 
 ```bash
-dagster-dev dg-api-record-graphql deployment success_single_deployment
-dagster-dev dg-api-record-graphql deployment error_deployment_not_found
-dagster-dev dg-api-record-graphql deployment empty_organization_deployments
+dagster-dev dg-api-record deployment --fixture success_single_deployment --folder-structure
+dagster-dev dg-api-record deployment --fixture error_deployment_not_found --folder-structure
+dagster-dev dg-api-record deployment --fixture empty_organization_deployments --folder-structure
 ```
 
 **What this does:**
 
 - Reads the command from `{domain}_tests/fixtures/commands.yaml`
 - Executes the live `dg plus api` command
-- Captures the GraphQL response JSON
-- Updates `{domain}_tests/fixtures/responses.json` with the new fixture
+- Creates a scenario folder with the fixture name
+- Captures each individual GraphQL call as numbered JSON files (01_*.json, 02_*.json, etc.)
+- Saves final CLI output as `cli_output.txt`
 - Handles both success and error cases automatically
 
-### Step 2: Record CLI Output Snapshots
+### Step 1 (Legacy): Capture GraphQL Response (Old Format)
 
-Use the `dg-api-record-cli-output` command to generate CLI output snapshots:
+For backwards compatibility, you can still use the old single-file format:
 
 ```bash
-# Uses the fixture from Step 1 to mock GraphQL, runs CLI command, updates snapshots
-dagster-dev dg-api-record-cli-output deployment success_single_deployment
+dagster-dev dg-api-record deployment --fixture success_single_deployment --graphql
 ```
 
 **What this does:**
 
-- Uses the fixture from Step 1 to mock GraphQL client
+- Updates `{domain}_tests/fixtures/responses.json` with the new fixture
+- Creates individual `*_output.txt` files for CLI output
+
+### Step 2: Record CLI Output Snapshots
+
+Use the `dg-api-record` command with `--cli` to generate CLI output snapshots:
+
+```bash
+# Uses the fixture from Step 1 to mock GraphQL, runs CLI command, updates snapshots
+dagster-dev dg-api-record deployment --cli
+```
+
+**What this does:**
+
+- Uses the fixtures (from either folder structure or responses.json) to mock GraphQL client
 - Runs all tests in the domain directory
 - Updates snapshot files via `pytest --snapshot-update`
 - Captures both JSON and text CLI output formats

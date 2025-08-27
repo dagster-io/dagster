@@ -1,0 +1,5 @@
+=== STDERR ===
+{"error": "Asset not found: ''"}
+Error: Failed to get asset: Asset not found: ''
+
+=== STDOUT ===
