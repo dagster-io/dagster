@@ -16,13 +16,13 @@
 
 ```bash
 # Implemented
-dg plus api deployment list [--json]
+dg api deployment list [--json]
 
 # Future verbs
-dg plus api deployment view <name> [--json]
-dg plus api deployment create --name <name> --type <serverless|hybrid>
-dg plus api deployment update <name> [--settings <file>]
-dg plus api deployment delete <name>
+dg api deployment view <name> [--json]
+dg api deployment create --name <name> --type <serverless|hybrid>
+dg api deployment update <name> [--settings <file>]
+dg api deployment delete <name>
 ```
 
 **GraphQL**: `fullDeployments`, `currentDeployment`, `deploymentByName`
@@ -30,11 +30,11 @@ dg plus api deployment delete <name>
 ### 2. **secret**
 
 ```bash
-dg plus api secret list [--location <name>] [--scope <deployment|organization>] [--json]
-dg plus api secret view <name> [--location <name>] [--json]
-dg plus api secret create --name <name> --value <value> [--location <name>] [--scope <scope>]
-dg plus api secret update <name> --value <value> [--location <name>]
-dg plus api secret delete <name> [--location <name>]
+dg api secret list [--location <name>] [--scope <deployment|organization>] [--json]
+dg api secret view <name> [--location <name>] [--json]
+dg api secret create --name <name> --value <value> [--location <name>] [--scope <scope>]
+dg api secret update <name> --value <value> [--location <name>]
+dg api secret delete <name> [--location <name>]
 ```
 
 **GraphQL**: `secretsOrError`
@@ -42,8 +42,8 @@ dg plus api secret delete <name> [--location <name>]
 ### 3. **agent**
 
 ```bash
-dg plus api agent list [--json]
-dg plus api agent view <id> [--json]
+dg api agent list [--json]
+dg api agent view <id> [--json]
 # Agents are typically managed via configuration, not CRUD operations
 ```
 
@@ -52,11 +52,11 @@ dg plus api agent view <id> [--json]
 ### 4. **run**
 
 ```bash
-dg plus api run list [--status <status>] [--pipeline <name>] [--limit <n>] [--json]
-dg plus api run view <run-id> [--json]
-dg plus api run create --pipeline <name> [--config <file>] [--tags <key=value>]
-dg plus api run terminate <run-id>
-dg plus api run delete <run-id>
+dg api run list [--status <status>] [--pipeline <name>] [--limit <n>] [--json]
+dg api run view <run-id> [--json]
+dg api run create --pipeline <name> [--config <file>] [--tags <key=value>]
+dg api run terminate <run-id>
+dg api run delete <run-id>
 ```
 
 **GraphQL**: `runsOrError`, `pipelineRunsOrError`, `runOrError`
@@ -64,8 +64,8 @@ dg plus api run delete <run-id>
 ### 5. **asset**
 
 ```bash
-dg plus api asset list [--prefix <path>] [--limit <n>] [--json]
-dg plus api asset view <asset-key> [--json]
+dg api asset list [--prefix <path>] [--limit <n>] [--json]
+dg api asset view <asset-key> [--json]
 # Assets are typically managed through code, not direct API
 ```
 
@@ -78,11 +78,11 @@ dg plus api asset view <asset-key> [--json]
 ### 6. **user**
 
 ```bash
-dg plus api user list [--json]
-dg plus api user view <user-id> [--json]
-dg plus api user create --email <email> --role <role>
-dg plus api user update <user-id> --role <role>
-dg plus api user delete <user-id>
+dg api user list [--json]
+dg api user view <user-id> [--json]
+dg api user create --email <email> --role <role>
+dg api user update <user-id> --role <role>
+dg api user delete <user-id>
 ```
 
 **GraphQL**: `usersOrError`
@@ -90,11 +90,11 @@ dg plus api user delete <user-id>
 ### 7. **team**
 
 ```bash
-dg plus api team list [--json]
-dg plus api team view <team-id> [--json]
-dg plus api team create --name <name> [--members <user-id1,user-id2>]
-dg plus api team update <team-id> [--add-member <user-id>] [--remove-member <user-id>]
-dg plus api team delete <team-id>
+dg api team list [--json]
+dg api team view <team-id> [--json]
+dg api team create --name <name> [--members <user-id1,user-id2>]
+dg api team update <team-id> [--add-member <user-id>] [--remove-member <user-id>]
+dg api team delete <team-id>
 ```
 
 **GraphQL**: `teamPermissions`
@@ -102,11 +102,11 @@ dg plus api team delete <team-id>
 ### 8. **alert-policy**
 
 ```bash
-dg plus api alert-policy list [--json]
-dg plus api alert-policy view <policy-id> [--json]
-dg plus api alert-policy create --name <name> --config <file>
-dg plus api alert-policy update <policy-id> --config <file>
-dg plus api alert-policy delete <policy-id>
+dg api alert-policy list [--json]
+dg api alert-policy view <policy-id> [--json]
+dg api alert-policy create --name <name> --config <file>
+dg api alert-policy update <policy-id> --config <file>
+dg api alert-policy delete <policy-id>
 ```
 
 **GraphQL**: `alertPolicies`, `alertPolicyById`
@@ -114,11 +114,11 @@ dg plus api alert-policy delete <policy-id>
 ### 9. **code-location**
 
 ```bash
-dg plus api code-location list [--json]
-dg plus api code-location view <location-name> [--json]
-dg plus api code-location create --name <name> --image <image> --config <file>
-dg plus api code-location update <location-name> --image <image> [--config <file>]
-dg plus api code-location delete <location-name>
+dg api code-location list [--json]
+dg api code-location view <location-name> [--json]
+dg api code-location create --name <name> --image <image> --config <file>
+dg api code-location update <location-name> --image <image> [--config <file>]
+dg api code-location delete <location-name>
 ```
 
 **GraphQL**: `repositoriesOrError`, `repositoryOrError`
@@ -126,9 +126,9 @@ dg plus api code-location delete <location-name>
 ### 10. **workspace**
 
 ```bash
-dg plus api workspace list [--json]
-dg plus api workspace view [--json]
-dg plus api workspace update --config <file>
+dg api workspace list [--json]
+dg api workspace view [--json]
+dg api workspace update --config <file>
 # Workspace is typically singular per deployment
 ```
 
@@ -141,8 +141,8 @@ dg plus api workspace update --config <file>
 ### 11. **check**
 
 ```bash
-dg plus api check list [--asset <asset-key>] [--status <status>] [--json]
-dg plus api check view <check-name> --asset <asset-key> [--json]
+dg api check list [--asset <asset-key>] [--status <status>] [--json]
+dg api check view <check-name> --asset <asset-key> [--json]
 # Checks are defined in code, not directly manageable
 ```
 
@@ -151,10 +151,10 @@ dg plus api check view <check-name> --asset <asset-key> [--json]
 ### 12. **schedule**
 
 ```bash
-dg plus api schedule list [--location <name>] [--status <running|stopped>] [--json]
-dg plus api schedule view <schedule-name> --location <name> [--json]
-dg plus api schedule start <schedule-name> --location <name>
-dg plus api schedule stop <schedule-name> --location <name>
+dg api schedule list [--location <name>] [--status <running|stopped>] [--json]
+dg api schedule view <schedule-name> --location <name> [--json]
+dg api schedule start <schedule-name> --location <name>
+dg api schedule stop <schedule-name> --location <name>
 ```
 
 **GraphQL**: `schedulesOrError`, `scheduleOrError`
@@ -162,10 +162,10 @@ dg plus api schedule stop <schedule-name> --location <name>
 ### 13. **sensor**
 
 ```bash
-dg plus api sensor list [--location <name>] [--status <running|stopped>] [--json]
-dg plus api sensor view <sensor-name> --location <name> [--json]
-dg plus api sensor start <sensor-name> --location <name>
-dg plus api sensor stop <sensor-name> --location <name>
+dg api sensor list [--location <name>] [--status <running|stopped>] [--json]
+dg api sensor view <sensor-name> --location <name> [--json]
+dg api sensor start <sensor-name> --location <name>
+dg api sensor stop <sensor-name> --location <name>
 ```
 
 **GraphQL**: `sensorsOrError`, `sensorOrError`
@@ -173,10 +173,10 @@ dg plus api sensor stop <sensor-name> --location <name>
 ### 14. **backfill**
 
 ```bash
-dg plus api backfill list [--status <status>] [--json]
-dg plus api backfill view <backfill-id> [--json]
-dg plus api backfill create --asset <asset-key> --partitions <range>
-dg plus api backfill cancel <backfill-id>
+dg api backfill list [--status <status>] [--json]
+dg api backfill view <backfill-id> [--json]
+dg api backfill create --asset <asset-key> --partitions <range>
+dg api backfill cancel <backfill-id>
 ```
 
 **GraphQL**: `partitionBackfillsOrError`, `partitionBackfillOrError`
@@ -184,8 +184,8 @@ dg plus api backfill cancel <backfill-id>
 ### 15. **env-var**
 
 ```bash
-dg plus api env-var list [--location <name>] [--json]
-dg plus api env-var view <var-name> [--location <name>] [--json]
+dg api env-var list [--location <name>] [--json]
+dg api env-var view <var-name> [--location <name>] [--json]
 # Environment variables managed through deployment settings
 ```
 
@@ -198,8 +198,8 @@ dg plus api env-var view <var-name> [--location <name>] [--json]
 ### 16. **alert-notification**
 
 ```bash
-dg plus api alert-notification list [--policy-id <id>] [--limit <n>] [--json]
-dg plus api alert-notification view <notification-id> [--json]
+dg api alert-notification list [--policy-id <id>] [--limit <n>] [--json]
+dg api alert-notification view <notification-id> [--json]
 # Notifications are read-only audit trail
 ```
 
@@ -208,8 +208,8 @@ dg plus api alert-notification view <notification-id> [--json]
 ### 17. **audit-log**
 
 ```bash
-dg plus api audit-log list [--user <user-id>] [--action <action>] [--limit <n>] [--json]
-dg plus api audit-log view <log-id> [--json]
+dg api audit-log list [--user <user-id>] [--action <action>] [--limit <n>] [--json]
+dg api audit-log view <log-id> [--json]
 # Audit logs are read-only
 ```
 
@@ -218,11 +218,11 @@ dg plus api audit-log view <log-id> [--json]
 ### 18. **custom-role**
 
 ```bash
-dg plus api custom-role list [--json]
-dg plus api custom-role view <role-id> [--json]
-dg plus api custom-role create --name <name> --permissions <file>
-dg plus api custom-role update <role-id> --permissions <file>
-dg plus api custom-role delete <role-id>
+dg api custom-role list [--json]
+dg api custom-role view <role-id> [--json]
+dg api custom-role create --name <name> --permissions <file>
+dg api custom-role update <role-id> --permissions <file>
+dg api custom-role delete <role-id>
 ```
 
 **GraphQL**: `customRoles`, `customRoleOrError`
@@ -230,10 +230,10 @@ dg plus api custom-role delete <role-id>
 ### 19. **api-token**
 
 ```bash
-dg plus api api-token list [--type <user|agent>] [--json]
-dg plus api api-token view <token-id> [--json]
-dg plus api api-token create --description <desc> [--type <type>]
-dg plus api api-token revoke <token-id>
+dg api api-token list [--type <user|agent>] [--json]
+dg api api-token view <token-id> [--json]
+dg api api-token create --description <desc> [--type <type>]
+dg api api-token revoke <token-id>
 ```
 
 **GraphQL**: `apiTokensOrError`, `agentTokensOrError`
@@ -241,10 +241,10 @@ dg plus api api-token revoke <token-id>
 ### 20. **user-token**
 
 ```bash
-dg plus api user-token list --user <user-id> [--json]
-dg plus api user-token view <token-id> [--json]
-dg plus api user-token create --user <user-id> --description <desc>
-dg plus api user-token revoke <token-id>
+dg api user-token list --user <user-id> [--json]
+dg api user-token view <token-id> [--json]
+dg api user-token create --user <user-id> --description <desc>
+dg api user-token revoke <token-id>
 ```
 
 **GraphQL**: `userTokensOrError`
@@ -256,10 +256,10 @@ dg plus api user-token revoke <token-id>
 ### 21. **branch-deployment**
 
 ```bash
-dg plus api branch-deployment list [--pr-status <open|merged>] [--json]
-dg plus api branch-deployment view <deployment-name> [--json]
-dg plus api branch-deployment create --branch <branch> --repo <repo>
-dg plus api branch-deployment delete <deployment-name>
+dg api branch-deployment list [--pr-status <open|merged>] [--json]
+dg api branch-deployment view <deployment-name> [--json]
+dg api branch-deployment create --branch <branch> --repo <repo>
+dg api branch-deployment delete <deployment-name>
 ```
 
 **GraphQL**: `branchDeployments`
@@ -267,8 +267,8 @@ dg plus api branch-deployment delete <deployment-name>
 ### 22. **location-schema**
 
 ```bash
-dg plus api location-schema list [--json]
-dg plus api location-schema view [--json]
+dg api location-schema list [--json]
+dg api location-schema view [--json]
 # Schema is typically read-only metadata
 ```
 
@@ -277,9 +277,9 @@ dg plus api location-schema view [--json]
 ### 23. **deployment-setting**
 
 ```bash
-dg plus api deployment-setting list [--json]
-dg plus api deployment-setting view [--json]
-dg plus api deployment-setting update --config <file>
+dg api deployment-setting list [--json]
+dg api deployment-setting view [--json]
+dg api deployment-setting update --config <file>
 # Settings are typically singular per deployment
 ```
 
@@ -376,7 +376,7 @@ dagster_dg_cli/cli/plus/api/
 
 ### **Consistency**
 
-- All commands follow `dg plus api <noun> <verb>` pattern
+- All commands follow `dg api <noun> <verb>` pattern
 - Standard verbs: `list`, `view`, `create`, `update`, `delete`
 - `--json` flag available on all commands
 - Consistent parameter naming across similar operations

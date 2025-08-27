@@ -3,7 +3,7 @@
 import click
 from dagster_dg_core.utils import DgClickGroup
 
-from dagster_dg_cli.cli.plus.api.deployment import deployment_group
+from dagster_dg_cli.cli.api.deployment import deployment_group
 
 
 @click.group(

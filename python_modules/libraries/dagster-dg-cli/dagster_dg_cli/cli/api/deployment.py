@@ -7,7 +7,7 @@ from dagster_dg_core.utils import DgClickCommand, DgClickGroup
 from dagster_dg_core.utils.telemetry import cli_telemetry_wrapper
 from dagster_shared.plus.config import DagsterPlusCliConfig
 
-from dagster_dg_cli.cli.plus.api.formatters import format_deployments
+from dagster_dg_cli.cli.api.formatters import format_deployments
 from dagster_dg_cli.dagster_plus_api.api.deployments import DeploymentAPI
 
 

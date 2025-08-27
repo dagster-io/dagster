@@ -1,19 +1,19 @@
 # Dagster Plus API CLI Conventions
 
-This document outlines the conventions for implementing CLI commands in the `dg plus api` namespace, following GitHub CLI best practices.
+This document outlines the conventions for implementing CLI commands in the `dg api` namespace, following GitHub CLI best practices.
 
 ## Command Structure
 
-The API commands follow the pattern: `dg plus api <noun> <verb>`
+The API commands follow the pattern: `dg api <noun> <verb>`
 
 ### Examples:
 
 ```bash
-dg plus api deployment list
-dg plus api deployment view <id>
-dg plus api secret list
-dg plus api secret create
-dg plus api agent list
+dg api deployment list
+dg api deployment view <id>
+dg api secret list
+dg api secret create
+dg api agent list
 ```
 
 This mirrors GitHub CLI patterns like:
@@ -265,38 +265,38 @@ When adding new nouns or verbs:
 
 ```bash
 # List deployments in table format
-dg plus api deployment list
+dg api deployment list
 
 # List deployments in JSON format
-dg plus api deployment list --json
+dg api deployment list --json
 ```
 
 ### Planned Extensions:
 
 ```bash
 # Secret management
-dg plus api secret list
-dg plus api secret create --name API_KEY --value secret123
+dg api secret list
+dg api secret create --name API_KEY --value secret123
 
 # Agent management
-dg plus api agent list
-dg plus api agent view <agent-id>
+dg api agent list
+dg api agent view <agent-id>
 
 # Run management
-dg plus api run list --limit 10
-dg plus api run view <run-id>
+dg api run list --limit 10
+dg api run view <run-id>
 
 # Asset check management
-dg plus api check list
-dg plus api check view <check-name>
+dg api check list
+dg api check view <check-name>
 
 # Code location management
-dg plus api code-location list
-dg plus api code-location view <location-name>
+dg api code-location list
+dg api code-location view <location-name>
 
 # Environment variable management
-dg plus api env-var list
-dg plus api env-var view <var-name>
+dg api env-var list
+dg api env-var view <var-name>
 ```
 
 This structure provides a clean, REST-like interface while hiding the complexity of GraphQL operations underneath.
