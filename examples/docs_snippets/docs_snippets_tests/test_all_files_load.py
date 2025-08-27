@@ -1,5 +1,6 @@
 import importlib.util
 import os
+from typing import Generator
 
 import pytest
 
@@ -138,6 +139,8 @@ EXCLUDED_FILES = {
     f"{snippets_folder}/tutorial/scheduling/with_schedule/with_schedule.py",
     f"{snippets_folder}/guides/dagster/dagster_pipes/databricks/resources.py",
     f"{snippets_folder}/guides/tutorials/spark_connect/databricks_resources.py",
+    # Environment variables that don't exist
+    f"{snippets_folder}/integrations/databricks/dagster_code_serverless.py",
 }
 EXCLUDED_DIRS = {
     # integrations are excluded because they have external dependencies that are easier to manage in
@@ -157,7 +160,7 @@ def get_python_files(directory):
 
 
 @pytest.mark.parametrize("file_path", get_python_files(snippets_folder))
-def test_file_loads(file_path):
+def test_file_loads(file_path: Generator[Any, Any, None]):
     if file_path in EXCLUDED_FILES:
         pytest.skip(f"Skipped {file_path}")
         return
