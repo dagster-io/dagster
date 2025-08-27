@@ -62,7 +62,6 @@ from dagster._time import get_current_datetime
 from packaging import version
 
 from dagster_graphql.implementation.events import iterate_metadata_entries
-from dagster_graphql.implementation.fetch_asset_checks import has_asset_checks
 from dagster_graphql.implementation.fetch_assets import (
     build_partition_statuses,
     get_asset_materializations,
@@ -1385,7 +1384,7 @@ class GrapheneAssetNode(graphene.ObjectType):
             check.failed("Asset node has no partitions definition")
 
     def resolve_hasAssetChecks(self, graphene_info: ResolveInfo) -> bool:
-        return has_asset_checks(graphene_info, self._asset_node_snap.asset_key)
+        return bool(self._remote_node.check_keys)
 
     def resolve_assetChecksOrError(
         self,
