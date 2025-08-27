@@ -1,12 +1,12 @@
 ---
 title: dbt tests
-description: Executing dbt tests through Dagster
+description: Integrating dbt tests
 last_update:
   author: Dennis Hume
-sidebar_position: 50
+sidebar_position: 60
 ---
 
-As you may have noticed, while configuring our dbt assets, we didn’t explicitly define anything related to tests. And yet, our dbt project includes tests—specifically, for the `stg_zones` model.
+You may have noticed that while configuring our dbt assets, we didn’t define anything related to tests. And yet, our dbt project includes them—specifically for the `stg_zones` model:
 
 <CodeExample
   path="docs_projects/project_dbt/src/project_dbt/analytics/models/staging/staging.yml"
@@ -14,25 +14,25 @@ As you may have noticed, while configuring our dbt assets, we didn’t explicitl
   title="src/project_dbt/analytics/models/staging/staging.yml"
 />
 
-Fortunately, no additional configuration is required to include these tests in Dagster. When Dagster parses the dbt project, it automatically:
+The good news: no extra configuration is required to include these tests in Dagster. When Dagster parses the dbt project, it automatically:
 
-- Identifies any associated dbt tests declared in the project.
-- Converts them into asset checks, which are then linked to the Dagster asset that represents the model.
+- Detects any dbt tests declared in the project.
+- Converts them into asset checks, linked to the Dagster asset that represents the model.
 
-For example, the `stg_zones` model has two tests defined in its .yml file. Dagster registers these as two separate asset checks on the `stg_zones` asset.
+For example, the `stg_zones` model defines two tests in its YAML file. Dagster registers these as two separate asset checks on the `stg_zones` asset.
 
 ![2048 resolution](/images/examples/dbt/asset_check.png)
 
-You can see the two asset checks for the model, for the two tests set in the yaml. When the asset executes, its underlying dbt tests will be executed as well and recorded.
+In the UI, you can see the two asset checks tied to the model. When the asset runs, its underlying dbt tests execute as well, and their results are recorded:
 
 ![2048 resolution](/images/examples/dbt/asset_check_executed.png)
 
-Once your dbt project is integrated this way, you can view a model’s complete lineage in the Asset Catalog within Dagster:
+Once your dbt project is integrated this way, the Asset Catalog in Dagster shows both lineage and quality signals:
 
-- The asset’s materialization history (i.e., successful or failed runs).
-- A complete history of its associated tests, showing which checks passed or failed over time.
+- Materialization history (successful or failed runs).
+- A complete history of associated tests, showing which checks passed or failed over time.
 
-This gives you a unified view of both data freshness and quality, helping you catch regressions or upstream data issues as early as possible.
+This unified view helps you monitor both **data freshness** and **data quality**, catching regressions or upstream issues early.
 
 ![2048 resolution](/images/examples/dbt/asset_check_page.png)
 

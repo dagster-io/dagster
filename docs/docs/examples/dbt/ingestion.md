@@ -6,14 +6,14 @@ last_update:
 sidebar_position: 20
 ---
 
-In order to work on a dbt project, we need both a storage layer and data. While setting this up won’t be the focus of this example, it’s a necessary foundation for working effectively with dbt.
+To work with dbt, you need both a storage layer and data. Setting these up isn’t the main focus here, but they’re the foundation for running dbt effectively.
 
-We’ll use DuckDB as our storage layer since it is a OLAP database we can run locally with minimal setup. Our dbt project will rely on two tables in DuckDB:
+We’ll use DuckDB as the storage layer. It’s a lightweight OLAP database that runs locally with minimal setup. Our dbt project will rely on two tables in DuckDB:
 
 - `taxi_trips`
 - `taxi_zones`
 
-The data for these tables resides in cloud storage. The first table, `taxi_zones`, is created directly from an S3 file using [CREATE TABLE](https://duckdb.org/docs/stable/sql/statements/create_table.html):
+The data for these tables lives in cloud storage. The first table, `taxi_zones`, is created directly from an S3 file using [CREATE TABLE](https://duckdb.org/docs/stable/sql/statements/create_table.html):
 
 <CodeExample
   path="docs_projects/project_dbt/src/project_dbt/defs/assets/trips.py"
@@ -25,9 +25,9 @@ The data for these tables resides in cloud storage. The first table, `taxi_zones
 
 ## Partitioned table
 
-The second table, `taxi_trips`, is made up of multiple files spread across time. Each file represents a different month, making this a great use case for [partitions](/guides/build/partitions-and-backfills), which allow us to organize the underlying data into separate chronological sections.
+The second table, `taxi_trips`, comes from multiple monthly files. Each file represents a month of data, making this a natural use case for [partitions](/guides/build/partitions-and-backfills), which split data into chronological sections.
 
-Similar to the `taxi_zones` data, all of the files are in cloud storage. But the asset for `taxi_trips` will look slightly different because instead of creating the table directly from an S3 file, we will first create an empty table and then populate it for each month according to each partition. When we execute the asset for a specific partition, data will be removed from the table with `DELETE` before that month's data is added with an `INSERT`. This ensures that our asset remains idempotent:
+Like `taxi_zones`, the files are in cloud storage. But instead of creating the table directly from a file, we first create an empty table and then populate it per month. When you run the asset for a partition, it deletes that month’s data with `DELETE` and reloads it with `INSERT`. This keeps the asset idempotent:
 
 <CodeExample
   path="docs_projects/project_dbt/src/project_dbt/defs/assets/trips.py"
@@ -37,11 +37,11 @@ Similar to the `taxi_zones` data, all of the files are in cloud storage. But the
   title="src/project_dbt/defs/assets/trips.py"
 />
 
-The partition key used to determine the month of data to operate on—is provided via `context.partition_key`.
+The partition key that selects the month is available in `context.partition_key`.
 
 ## Resources
 
-Since both of our assets rely on DuckDB, we will need to configure a DuckDB resource in the Dagster project. This standardize and share the connection across any Dagster entities that use the resource:
+Since both assets use DuckDB, we need to configure a DuckDB resource in the Dagster project. This centralizes the connection and makes it reusable across Dagster entities:
 
 <CodeExample
   path="docs_projects/project_dbt/src/project_dbt/defs/resources.py"
@@ -49,14 +49,14 @@ Since both of our assets rely on DuckDB, we will need to configure a DuckDB reso
   title="src/project_dbt/defs/resources.py"
 />
 
-Dagster projects can have any number of resources, but this is all that is needed for this example.
+A project can define multiple resources, but this is all we need for now.
 
 ## More on ingestion
 
-If you're interested in the ingestion layer or if this setup looks familiar, much of it is borrowed from the [Dagster Essentials course](https://courses.dagster.io/courses/dagster-essentials). This course covers asset creation and resource configuration in much more detail.
+This setup is based on the [Dagster Essentials course](https://courses.dagster.io/courses/dagster-essentials), which covers ingestion, asset creation, and resource configuration in more depth.
 
-But for now, with this foundation in place, we’re ready to start building with dbt in Dagster.
+With this foundation in place, we’re ready to build with dbt in Dagster.
 
 ## Next steps
 
-- Continue this example with [dbt project](/examples/dbt/dbt-project)
+- Continue with the [dbt project](/examples/dbt/dbt-project)

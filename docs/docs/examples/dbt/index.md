@@ -1,11 +1,13 @@
 ---
-title: dbt
+title: Dagster integration with dbt
 description: Learn how to integrate with dbt
 last_update:
   author: Dennis Hume
 sidebar_custom_props:
   logo: images/integrations/dbt/dbt.svg
 tags: [code-example]
+canonicalUrl: '/examples/dbt'
+slug: '/examples/dbt'
 ---
 
 # dbt
