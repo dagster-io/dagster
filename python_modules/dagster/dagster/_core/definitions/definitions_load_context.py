@@ -139,6 +139,14 @@ class DefinitionsLoadContext:
     def defs_state_info(self) -> Optional[DefsStateInfo]:
         return self._defs_state_info
 
+    def _get_defs_state_version(self, key: str) -> Optional[str]:
+        """Ensures that if we attempt to access a key that doesn't exist, we mark it as None."""
+        current_info = self._defs_state_info or DefsStateInfo.empty()
+        version = current_info.get_version(key)
+        if version is None:
+            self._defs_state_info = DefsStateInfo.add_version(current_info, key, None)
+        return version
+
     @contextmanager
     def temp_state_path(self, key: str) -> Iterator[Optional[Path]]:
         """Context manager that creates a temporary path to hold local state for a component."""
@@ -149,7 +157,7 @@ class DefinitionsLoadContext:
                 "This is likely the result of an internal framework error."
             )
         # if no state has ever been written for this key, we return None to indicate that no state is available
-        version = self._defs_state_info.get_version(key) if self._defs_state_info else None
+        version = self._get_defs_state_version(key)
         if version is None:
             yield None
             return

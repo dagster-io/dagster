@@ -33,11 +33,6 @@ export const CodeLocationDefsStateComparisonSection = ({locationName}: Props) =>
       ? data.workspaceLocationEntryOrError.defsStateInfo
       : null;
 
-  // Only show the section if we have data to compare
-  if (!latestDefsStateInfo || !defsStateInfo) {
-    return null;
-  }
-
   // Don't show the section if there are no versions available in the current state
   if (!defsStateInfo.keyStateInfo || defsStateInfo.keyStateInfo.length === 0) {
     return null;
