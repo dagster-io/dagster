@@ -20,7 +20,6 @@ from dagster._core.execution.backfill import (
     BulkActionsFilter,
     BulkActionStatus,
     PartitionBackfill,
-    cancel_backfill_runs_and_cancellation_complete,
 )
 from dagster._core.execution.job_backfill import execute_job_backfill_iteration
 from dagster._core.workspace.context import IWorkspaceProcessContext
@@ -226,19 +225,8 @@ def execute_backfill_iteration_with_instigation_logger(
                     logger=backfill_logger,
                     log_message=f"Backfill failed for {backfill.backfill_id}",
                 )
-                logger.info(
-                    f"Sending cancellation requests for all runs in backfill {backfill.backfill_id}"
-                )
-                # since the backfill failed, we want to cancel all of the runs it has launched so far.
-                # but we don't want to hold up future iteration by waiting for the runs to successfully terminate
-                # so we operate on a fire-and-forget approach in this case when the backfill has failed.
-                cancel_backfill_runs_and_cancellation_complete(
-                    instance=instance,
-                    backfill_id=backfill.backfill_id,
-                    logger=backfill_logger,
-                )
                 instance.update_backfill(
-                    backfill.with_status(BulkActionStatus.FAILED)
+                    backfill.with_status(BulkActionStatus.FAILING)
                     .with_error(error_info)
                     .with_failure_count(backfill.failure_count + 1)
                     .with_end_timestamp(get_current_timestamp())
