@@ -7,7 +7,7 @@ from abc import abstractmethod
 from collections.abc import Iterator, Mapping, Sequence
 from contextlib import contextmanager
 from datetime import datetime, timedelta
-from typing import Any, Callable, Optional, cast
+from typing import Any, Callable, ClassVar, Optional, Union, cast
 
 import requests
 from dagster import (
@@ -1144,28 +1144,11 @@ class AirbyteClient(DagsterModel):
 
 
 @beta
-class AirbyteWorkspace(ConfigurableResource):
+class BaseAirbyteWorkspace(ConfigurableResource):
     """This class represents a Airbyte workspace and provides utilities
     to interact with Airbyte APIs.
     """
 
-    rest_api_base_url: str = Field(
-        default=AIRBYTE_CLOUD_REST_API_BASE_URL,
-        description="The base URL for the Airbyte REST API.",
-    )
-    configuration_api_base_url: str = Field(
-        default=AIRBYTE_CLOUD_CONFIGURATION_API_BASE_URL,
-        description="The base URL for the Airbyte Configuration API.",
-    )
-    workspace_id: str = Field(..., description="The Airbyte workspace ID")
-    client_id: Optional[str] = Field(default=None, description="The Airbyte client ID.")
-    client_secret: Optional[str] = Field(default=None, description="The Airbyte client secret.")
-    username: Optional[str] = Field(
-        default=None, description="The Airbyte username for authentication."
-    )
-    password: Optional[str] = Field(
-        default=None, description="The Airbyte password for authentication."
-    )
     request_max_retries: int = Field(
         default=3,
         description=(
@@ -1182,61 +1165,6 @@ class AirbyteWorkspace(ConfigurableResource):
         description="Time (in seconds) after which the requests to Airbyte are declared timed out.",
     )
     _client: AirbyteClient = PrivateAttr(default=None)  # type: ignore
-
-    @model_validator(mode="before")
-    def validate_authentication(cls, values):
-        rest_api_is_cloud = values.get(
-            "rest_api_base_url", AIRBYTE_CLOUD_REST_API_BASE_URL
-        ).startswith(AIRBYTE_CLOUD_REST_API_BASE)
-        configuration_api_is_cloud = values.get(
-            "configuration_api_base_url", AIRBYTE_CLOUD_CONFIGURATION_API_BASE_URL
-        ).startswith(AIRBYTE_CLOUD_CONFIGURATION_API_BASE)
-        has_client_id = values.get("client_id") is not None
-        has_client_secret = values.get("client_secret") is not None
-        has_username = values.get("username") is not None
-        has_password = values.get("password") is not None
-
-        check.invariant(
-            configuration_api_is_cloud == rest_api_is_cloud,
-            "Invalid config: Configuration API and REST API must both be either Airbyte Cloud or self-managed.",
-        )
-
-        if rest_api_is_cloud or configuration_api_is_cloud:
-            check.invariant(
-                has_client_id and has_client_secret,
-                "Missing config: both client_id and client_secret are required for Airbyte authentication.",
-            )
-        else:
-            check.invariant(
-                has_username == has_password,
-                "Missing config: both username and password are required for Airbyte authentication.",
-            )
-
-            check.invariant(
-                has_client_id == has_client_secret,
-                "Missing config: both client_id and client_secret are required for Airbyte authentication.",
-            )
-
-            check.invariant(
-                not ((has_client_id or has_client_secret) and (has_username or has_password)),
-                "Invalid config: cannot provide both client_id/client_secret and username/password for Airbyte authentication.",
-            )
-        return values
-
-    @cached_method
-    def get_client(self) -> AirbyteClient:
-        return AirbyteClient(
-            rest_api_base_url=self.rest_api_base_url,
-            configuration_api_base_url=self.configuration_api_base_url,
-            workspace_id=self.workspace_id,
-            client_id=self.client_id,
-            client_secret=self.client_secret,
-            username=self.username,
-            password=self.password,
-            request_max_retries=self.request_max_retries,
-            request_retry_delay=self.request_retry_delay,
-            request_timeout=self.request_timeout,
-        )
 
     @cached_method
     def fetch_airbyte_workspace_data(
@@ -1421,15 +1349,100 @@ class AirbyteWorkspace(ConfigurableResource):
 
 
 @beta
+class AirbyteWorkspace(BaseAirbyteWorkspace):
+    """This class represents a Airbyte workspace and provides utilities
+    to interact with Airbyte APIs.
+    """
+
+    rest_api_base_url: str = Field(
+        ...,
+        description="The base URL for the Airbyte REST API.",
+    )
+    configuration_api_base_url: str = Field(
+        ...,
+        description="The base URL for the Airbyte Configuration API.",
+    )
+    workspace_id: str = Field(..., description="The Airbyte workspace ID")
+    client_id: Optional[str] = Field(default=None, description="The Airbyte client ID.")
+    client_secret: Optional[str] = Field(default=None, description="The Airbyte client secret.")
+    username: Optional[str] = Field(
+        default=None, description="The Airbyte username for authentication."
+    )
+    password: Optional[str] = Field(
+        default=None, description="The Airbyte password for authentication."
+    )
+
+    @model_validator(mode="before")
+    def validation(cls, values):
+        has_client_id = values.get("client_id") is not None
+        has_client_secret = values.get("client_secret") is not None
+        has_username = values.get("username") is not None
+        has_password = values.get("password") is not None
+
+        check.invariant(
+            has_username == has_password,
+            "Missing config: both username and password are required for Airbyte authentication.",
+        )
+
+        check.invariant(
+            has_client_id == has_client_secret,
+            "Missing config: both client_id and client_secret are required for Airbyte authentication.",
+        )
+
+        check.invariant(
+            not ((has_client_id or has_client_secret) and (has_username or has_password)),
+            "Invalid config: cannot provide both client_id/client_secret and username/password for Airbyte authentication.",
+        )
+        return values
+
+    @cached_method
+    def get_client(self) -> AirbyteClient:
+        return AirbyteClient(
+            rest_api_base_url=self.rest_api_base_url,
+            configuration_api_base_url=self.configuration_api_base_url,
+            workspace_id=self.workspace_id,
+            client_id=self.client_id,
+            client_secret=self.client_secret,
+            username=self.username,
+            password=self.password,
+            request_max_retries=self.request_max_retries,
+            request_retry_delay=self.request_retry_delay,
+            request_timeout=self.request_timeout,
+        )
+
+
+@beta
+class AirbyteCloudWorkspace(BaseAirbyteWorkspace):
+    rest_api_base_url: ClassVar[str] = AIRBYTE_CLOUD_REST_API_BASE_URL
+    configuration_api_base_url: ClassVar[str] = AIRBYTE_CLOUD_CONFIGURATION_API_BASE_URL
+    workspace_id: str = Field(..., description="The Airbyte workspace ID")
+    client_id: Optional[str] = Field(..., description="The Airbyte client ID.")
+    client_secret: Optional[str] = Field(..., description="The Airbyte client secret.")
+
+    @cached_method
+    def get_client(self) -> AirbyteClient:
+        return AirbyteClient(
+            rest_api_base_url=self.rest_api_base_url,
+            configuration_api_base_url=self.configuration_api_base_url,
+            workspace_id=self.workspace_id,
+            client_id=self.client_id,
+            client_secret=self.client_secret,
+            request_max_retries=self.request_max_retries,
+            request_retry_delay=self.request_retry_delay,
+            request_timeout=self.request_timeout,
+        )
+
+
+@beta
 def load_airbyte_asset_specs(
-    workspace: AirbyteWorkspace,
+    workspace: Union[AirbyteWorkspace, AirbyteCloudWorkspace],
     dagster_airbyte_translator: Optional[DagsterAirbyteTranslator] = None,
     connection_selector_fn: Optional[Callable[[AirbyteConnection], bool]] = None,
 ) -> Sequence[AssetSpec]:
     """Returns a list of AssetSpecs representing the Airbyte content in the workspace.
 
     Args:
-        workspace (AirbyteWorkspace): The Airbyte workspace to fetch assets from.
+        workspace (Union[AirbyteWorkspace, AirbyteCloudWorkspace]): The Airbyte workspace to fetch assets from.
         dagster_airbyte_translator (Optional[DagsterAirbyteTranslator], optional): The translator to use
             to convert Airbyte content into :py:class:`dagster.AssetSpec`.
             Defaults to :py:class:`DagsterAirbyteTranslator`.
@@ -1499,7 +1512,7 @@ def load_airbyte_asset_specs(
 
 @record
 class AirbyteWorkspaceDefsLoader(StateBackedDefinitionsLoader[AirbyteWorkspaceData]):
-    workspace: AirbyteWorkspace
+    workspace: Union[AirbyteWorkspace, AirbyteCloudWorkspace]
     translator: DagsterAirbyteTranslator
     connection_selector_fn: Optional[Callable[[AirbyteConnection], bool]]
 
