@@ -6,13 +6,14 @@ This package implements a three-layer architecture that provides a clean separat
 
 The goal is the provide an obvious mapping between the CLI and REST semantics, and to set us up to deploy an REST API on plus at some point in the future. REST is a much better interface for API consumption across organizations and for simple use cases.
 
-This structure also makes this subsystem ideal for AI codegen to expand surface area. 
+This structure also makes this subsystem ideal for AI codegen to expand surface area.
 
 ## Architecture Layers
 
 ### 1. CLI Layer (`dagster_dg_cli/cli/`)
 
 **Example:**
+
 ```bash
 dg plus api deployment list --json
 ```
@@ -22,13 +23,14 @@ The API is modeled on `gh`, which is quite nice.
 Every command has a `--json` for scripting use cases.
 
 ### 2. REST-like API Layer (`dagster_dg_cli/dagster_plus_api/`)
+
 An intermediate abstraction layer that provides REST semantics.
 
 **Structure:**
+
 - `api/` - REST-like interface classes (e.g., `DeploymentAPI`)
 - `schemas/` - Pydantic models for type-safe request/response structures
 - `graphql_adapter/` - Adapters that translate REST calls to GraphQL queries
-
 
 ## Request Flow Example
 
@@ -77,6 +79,7 @@ dagster_plus_api/
 To add a new REST-like endpoint:
 
 1. **Define the schema** in `schemas/`:
+
    ```python
    # schemas/my_resource.py
    class MyResource(BaseModel):
@@ -85,6 +88,7 @@ To add a new REST-like endpoint:
    ```
 
 2. **Create the GraphQL adapter** in `graphql_adapter/`:
+
    ```python
    # graphql_adapter/my_resource.py
    def list_my_resources_via_graphql(config):
@@ -93,6 +97,7 @@ To add a new REST-like endpoint:
    ```
 
 3. **Implement the API class** in `api/`:
+
    ```python
    # api/my_resources.py
    class MyResourceAPI:
@@ -105,5 +110,5 @@ To add a new REST-like endpoint:
 5. Add test to enforce naming conventions and standards in the API layer in test_rest_compliance.
 
 def get_all_api_classes():
-    """Get all API classes to test."""
-    return [..., MyResourceAPI]
+"""Get all API classes to test."""
+return [..., MyResourceAPI]
