@@ -49,7 +49,8 @@ def list_deployments_via_graphql(
         for d in deployments_data
     ]
 
-    # Apply limit if specified
+    # Apply limit if specified - GraphQL fullDeployments does not support limit parameter
+    # so we must filter client-side
     if limit:
         deployments = deployments[:limit]
 
