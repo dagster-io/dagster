@@ -8,7 +8,7 @@ from typing import Optional
 import click
 import dagster_shared.seven as seven
 from dagster_shared.cli import python_pointer_options
-from dagster_shared.serdes.objects import DefsStateInfo
+from dagster_shared.serdes.objects.models.defs_state_info import DefsStateInfo
 
 from dagster._cli.utils import assert_no_remaining_opts
 from dagster._cli.workspace.cli_target import PythonPointerOpts

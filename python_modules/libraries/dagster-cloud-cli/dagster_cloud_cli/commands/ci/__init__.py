@@ -511,7 +511,9 @@ def init_impl(
             location_name=location.location_name,
             is_branch_deployment=is_branch_deployment,
             build=state.BuildMetadata(
-                git_url=git_url, commit_hash=commit_hash, build_config=location.build
+                git_url=git_url,
+                commit_hash=commit_hash,
+                build_config=location.build,
             ),
             build_output=None,
             status_url=status_url,
@@ -1037,6 +1039,11 @@ def _deploy(
             "location_file": location_state.location_file,
             "git_url": location_state.build.git_url,
             "commit_hash": location_state.build.commit_hash,
+            **(
+                {"defs_state_info": location_state.defs_state_info.model_dump()}
+                if location_state.defs_state_info
+                else {}
+            ),
         }
         if build_output.strategy == "python-executable":
             metrics.instrument_add_tags([CliEventTags.server_strategy.pex])

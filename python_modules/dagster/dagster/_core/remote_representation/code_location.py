@@ -7,7 +7,7 @@ from functools import cached_property
 from typing import TYPE_CHECKING, AbstractSet, Any, Optional, Union, cast  # noqa: UP035
 
 from dagster_shared.libraries import DagsterLibraryRegistry
-from dagster_shared.serdes.objects import DefsStateInfo
+from dagster_shared.serdes.objects.models.defs_state_info import DefsStateInfo
 
 import dagster._check as check
 from dagster._check import checked
