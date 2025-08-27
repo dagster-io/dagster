@@ -118,7 +118,7 @@ def get_origins_from_toml(
             return ModuleTarget(
                 module_name=dagster_block.get("module_name"),
                 attribute=None,
-                working_directory=os.getcwd(),
+                working_directory=dagster_block["working_directory"] or os.getcwd(),
                 location_name=dagster_block.get("code_location_name"),
             ).create_origins()
         elif "modules" in dagster_block and is_valid_modules_list(dagster_block.get("modules")):
