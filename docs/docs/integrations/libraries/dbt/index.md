@@ -22,7 +22,7 @@ Dagster assets understand dbt at the level of individual dbt models. This means 
 
 :::tip[dbt Fusion is supported as of 1.11.5]
 
-Dagster supports dbt Fusion as of the 1.11.5 release. Dagster will automatically detect which engine you have installed. If you're currently using core, to migrate just uninstall dbt-core and install dbt Fusion. For more information please reference the dbt [docs](https://docs.getdbt.com/docs/dbt-versions/core-upgrade/upgrading-to-fusion).
+Dagster supports dbt Fusion as of the 1.11.5 release. Dagster will automatically detect which engine you have installed. If you're currently using core, to migrate uninstall dbt-core and install dbt Fusion. For more information please reference the dbt [docs](https://docs.getdbt.com/docs/dbt-versions/core-upgrade/upgrading-to-fusion).
 
 This feature is still in preview pending dbt Fusion GA.
 :::
