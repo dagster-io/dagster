@@ -1,7 +1,7 @@
 import pickle
 import random
 from collections.abc import Sequence
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from typing import Optional, cast
 
 import dagster as dg
@@ -2303,3 +2303,158 @@ def test_reverse_pagination_negative_end_offset():
     assert get_paginated_partition_keys(
         partitions_def, current_time=current_time, ascending=False
     ) == list(reversed(all_keys))
+
+
+def test_exclusions():
+    company_holidays = [
+        create_datetime(2025, 1, 1),
+        create_datetime(2025, 1, 20),
+        create_datetime(2025, 2, 17),
+        create_datetime(2025, 5, 26),
+        create_datetime(2025, 6, 19),
+        create_datetime(2025, 7, 4),
+        create_datetime(2025, 9, 1),
+        create_datetime(2025, 11, 27),
+        create_datetime(2025, 11, 28),
+        create_datetime(2025, 12, 24),
+        create_datetime(2025, 12, 25),
+    ]
+    daily_calendar = TimeWindowPartitionsDefinition(
+        start="2025-01-01",
+        end="2026-01-01",
+        fmt="%Y-%m-%d",
+        cron_schedule="0 0 * * *",
+    )
+    weekday_calendar = TimeWindowPartitionsDefinition(
+        start="2025-01-01",
+        end="2026-01-01",
+        fmt="%Y-%m-%d",
+        cron_schedule="0 0 * * *",
+        exclusions=[
+            "0 0 * * 6-7",  # exclude weekends
+        ],
+    )
+    dagsterlabs_calendar = TimeWindowPartitionsDefinition(
+        start="2025-01-01",
+        end="2026-01-01",
+        fmt="%Y-%m-%d",
+        cron_schedule="0 0 * * *",  # weekdays only
+        exclusions=[
+            "0 0 * * 6-7",  # exclude weekends
+            *company_holidays,  # exclude company holidays
+        ],
+    )
+
+    assert daily_calendar.get_first_partition_key() == "2025-01-01"
+    assert weekday_calendar.get_first_partition_key() == "2025-01-01"
+    assert dagsterlabs_calendar.get_first_partition_key() == "2025-01-02"
+
+    # normal weekday
+    assert dagsterlabs_calendar.get_next_partition_key("2025-01-09") == "2025-01-10"
+    # respects weekends
+    assert dagsterlabs_calendar.get_next_partition_key("2025-01-10") == "2025-01-13"
+    # respects holiday weekends
+    assert dagsterlabs_calendar.get_next_partition_key("2025-01-17") == "2025-01-21"
+    all_keys = set(dagsterlabs_calendar.get_partition_keys())
+    assert all_keys.intersection(company_holidays) == set()
+
+    saturday_key = "2025-01-11"
+    holiday_key = "2025-01-20"
+    next_year = datetime.strptime("2026-01-01", "%Y-%m-%d")
+    with partition_loading_context(effective_dt=next_year):
+        assert daily_calendar.get_num_partitions() == 365
+        daily_keys = set(daily_calendar.get_partition_keys())
+        assert saturday_key in daily_keys
+        assert holiday_key in daily_keys
+        assert weekday_calendar.get_num_partitions() == 261
+        weekday_keys = set(weekday_calendar.get_partition_keys())
+        assert saturday_key not in weekday_keys
+        assert holiday_key in weekday_keys
+        assert dagsterlabs_calendar.get_num_partitions() == 250
+        dagsterlabs_keys = set(dagsterlabs_calendar.get_partition_keys())
+        assert saturday_key not in dagsterlabs_keys
+        assert holiday_key not in dagsterlabs_keys
+
+    # get the time window for a Friday
+    monday = datetime.strptime("2025-01-13", "%Y-%m-%d")
+    window = weekday_calendar.get_prev_partition_window(monday)
+    assert window
+    assert window.start == datetime.strptime("2025-01-10", "%Y-%m-%d").replace(tzinfo=timezone.utc)
+    assert window.end == datetime.strptime("2025-01-11", "%Y-%m-%d").replace(tzinfo=timezone.utc)
+
+    # get the time window for a Friday
+    monday = datetime.strptime("2025-01-13", "%Y-%m-%d")
+    window = weekday_calendar.get_prev_partition_window(monday)
+    assert window
+    assert window.start == datetime.strptime("2025-01-10", "%Y-%m-%d").replace(tzinfo=timezone.utc)
+    assert window.end == datetime.strptime("2025-01-11", "%Y-%m-%d").replace(tzinfo=timezone.utc)
+
+    # get the time window for the day before a holiday
+    with partition_loading_context(effective_dt=next_year):
+        assert dagsterlabs_calendar.get_next_partition_key("2025-12-23") == "2025-12-26"
+
+    after_christmas = datetime.strptime("2025-12-26", "%Y-%m-%d")
+    window = dagsterlabs_calendar.get_prev_partition_window(after_christmas)
+    assert window
+    assert window.start == datetime.strptime("2025-12-23", "%Y-%m-%d").replace(tzinfo=timezone.utc)
+    assert window.end == datetime.strptime("2025-12-24", "%Y-%m-%d").replace(tzinfo=timezone.utc)
+
+
+def test_exclusions_with_end_offset():
+    partitions_def = dg.DailyPartitionsDefinition(
+        start_date="2021-05-05",
+        end_offset=2,
+        exclusions=[
+            datetime.strptime("2021-06-04", DATE_FORMAT),
+        ],
+    )
+    current_time = datetime.strptime("2021-06-05", DATE_FORMAT)
+    partition_context = PartitionLoadingContext(
+        temporal_context=TemporalContext(
+            effective_dt=current_time,
+            last_event_id=None,
+        ),
+        dynamic_partitions_store=None,
+    )
+
+    paginated_results = partitions_def.get_paginated_partition_keys(
+        context=partition_context, limit=5, ascending=False, cursor=None
+    )
+
+    assert paginated_results.results == [
+        "2021-06-06",
+        "2021-06-05",
+        "2021-06-03",
+        "2021-06-02",
+        "2021-06-01",
+    ]
+
+
+def test_exclusions_with_negative_end_offset():
+    partitions_def = dg.DailyPartitionsDefinition(
+        start_date="2021-05-05",
+        end_offset=-2,
+        exclusions=[
+            datetime.strptime("2021-06-01", DATE_FORMAT),
+        ],
+    )
+    current_time = datetime.strptime("2021-06-05", DATE_FORMAT)
+    partition_context = PartitionLoadingContext(
+        temporal_context=TemporalContext(
+            effective_dt=current_time,
+            last_event_id=None,
+        ),
+        dynamic_partitions_store=None,
+    )
+
+    paginated_results = partitions_def.get_paginated_partition_keys(
+        context=partition_context, limit=5, ascending=False, cursor=None
+    )
+
+    assert paginated_results.results == [
+        "2021-06-02",
+        "2021-05-31",
+        "2021-05-30",
+        "2021-05-29",
+        "2021-05-28",
+    ]
