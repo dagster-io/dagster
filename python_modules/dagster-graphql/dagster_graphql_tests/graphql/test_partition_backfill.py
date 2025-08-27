@@ -790,6 +790,7 @@ class TestDaemonPartitionBackfill(ExecutingGraphQLContextTestMatrix):
         assert len(runs) == 1
         assert runs[0].status == DagsterRunStatus.STARTED
 
+        # simulate the backfill failing for some reason and being marked FAILING
         updated_backfill = graphql_context.instance.get_backfill(backfill_id).with_status(
             BulkActionStatus.FAILING
         )
@@ -1056,11 +1057,7 @@ class TestDaemonPartitionBackfill(ExecutingGraphQLContextTestMatrix):
                 time.sleep(0.1)
                 assert time.time() - start < 60, "timed out waiting for file"
 
-            result = execute_dagster_graphql(
-                graphql_context,
-                CANCEL_BACKFILL_MUTATION,
-                variables={"backfillId": backfill_id},
-            )
+            # simulate the backfill failing for some reason and being marked FAILING
             updated_backfill = graphql_context.instance.get_backfill(backfill_id).with_status(
                 BulkActionStatus.FAILING
             )
