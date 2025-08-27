@@ -1,3 +1,4 @@
+import copy
 import hashlib
 import json
 import logging
@@ -977,8 +978,12 @@ class AirbyteClient(DagsterModel):
         data: Optional[Mapping[str, Any]] = None,
         params: Optional[Mapping[str, Any]] = None,
         include_additional_request_params: bool = True,
-    ) -> Mapping[str, Any]:
+        paginate: bool = False,
+        page_size: int = 100,
+    ) -> Union[Mapping[str, Any], Iterator[Mapping[str, Any]]]:
         """Creates and sends a request to the desired Airbyte REST API endpoint.
+
+        Supports automatic pagination when paginate=True.
 
         Args:
             method (str): The http method to use for this request (e.g. "POST", "GET", "PATCH").
@@ -987,11 +992,45 @@ class AirbyteClient(DagsterModel):
             data (Optional[Dict[str, Any]]): JSON-formatted data string to be included in the request.
             params (Optional[Dict[str, Any]]): JSON-formatted query params to be included in the request.
             include_additional_request_params (bool): Whether to include authorization and user-agent headers
-            to the request parameters. Defaults to True.
+                to the request parameters. Defaults to True.
+            paginate (bool): Whether to automatically paginate through all results. Defaults to False.
+            page_size (int): Number of items per page when paginating. Defaults to 100.
 
         Returns:
-            Dict[str, Any]: Parsed json data from the response to this request
+            Union[Dict[str, Any], Iterator[Dict[str, Any]]]:
+                - If paginate=False: Parsed json data from the response
+                - If paginate=True: Iterator yielding all items across pages
         """
+        if paginate:
+            return self._paginated_request(
+                method=method,
+                endpoint=endpoint,
+                base_url=base_url,
+                data=data,
+                params=params or {},
+                include_additional_request_params=include_additional_request_params,
+                page_size=page_size,
+            )
+
+        return self._single_request(
+            method=method,
+            endpoint=endpoint,
+            base_url=base_url,
+            data=data,
+            params=params,
+            include_additional_request_params=include_additional_request_params,
+        )
+
+    def _single_request(
+        self,
+        method: str,
+        endpoint: str,
+        base_url: str,
+        data: Optional[Mapping[str, Any]] = None,
+        params: Optional[Mapping[str, Any]] = None,
+        include_additional_request_params: bool = True,
+    ) -> Mapping[str, Any]:
+        """Execute a single HTTP request with retry logic."""
         url = f"{base_url}/{endpoint}"
 
         num_retries = 0
@@ -1014,7 +1053,57 @@ class AirbyteClient(DagsterModel):
                 num_retries += 1
                 time.sleep(self.request_retry_delay)
 
-        raise Failure(f"Max retries ({self.request_max_retries}) exceeded with url: {url}.")
+            raise Failure(f"Max retries ({self.request_max_retries}) exceeded with url: {url}.")
+
+    def _paginated_request(
+        self,
+        method: str,
+        endpoint: str,
+        base_url: str,
+        params: Mapping[str, Any],
+        data: Optional[Mapping[str, Any]] = None,
+        include_additional_request_params: bool = True,
+        page_size: int = 100,
+    ) -> Iterator[Mapping[str, Any]]:
+        """Execute paginated requests and yield all items."""
+        offset = 0
+        params = copy.copy(params) if params else {}
+
+        while True:
+            params.update({"limit": page_size, "offset": offset})
+
+            response = self._single_request(
+                method=method,
+                endpoint=endpoint,
+                base_url=base_url,
+                data=data,
+                params=params,
+                include_additional_request_params=include_additional_request_params,
+            )
+
+            # Handle different response structures
+            items = response.get("data", response.get("items", []))
+            if isinstance(response, list):
+                items = response
+
+            if not items:
+                break
+
+            yield from items
+
+            # Check if we've received fewer items than requested (last page)
+            if len(items) < page_size:
+                break
+
+            offset += page_size
+
+    def validate_workspace_id(self) -> None:
+        """Fetches workspace details. This is used to validate that the workspace exists."""
+        self._make_request(
+            method="GET",
+            endpoint=f"workspaces/{self.workspace_id}",
+            base_url=self.rest_api_base_url,
+        )
 
     def get_connections(self) -> Mapping[str, Any]:
         """Fetches all connections of an Airbyte workspace from the Airbyte REST API."""
@@ -1023,6 +1112,7 @@ class AirbyteClient(DagsterModel):
             endpoint="connections",
             base_url=self.rest_api_base_url,
             params={"workspaceIds": self.workspace_id},
+            paginate=True,
         )
 
     def get_connection_details(self, connection_id) -> Mapping[str, Any]:
@@ -1179,6 +1269,9 @@ class BaseAirbyteWorkspace(ConfigurableResource):
         destinations_by_id = {}
 
         client = self.get_client()
+
+        client.validate_workspace_id()
+
         connections = client.get_connections()["data"]
 
         for partial_connection_details in connections:
