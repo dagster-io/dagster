@@ -1,22 +1,29 @@
 Fivetran (dagster-fivetran)
----------------------------
+###########################
 
 This library provides a Dagster integration with `Fivetran <https://www.fivetran.com>`_.
 
 .. currentmodule:: dagster_fivetran
 
-Component YAML
-==============
+************************
+FivetranAccountComponent
+************************
+
+.. autoclass:: FivetranAccountComponent
 
 To use the Fivetran component, see the `Fivetran component integration guide <https://docs.dagster.io/integrations/libraries/fivetran>`_.
+
+Component YAML
+==============
 
 When you scaffold a Fivetran component definition, the following ``defs.yaml`` configuration file will be created:
 
 .. literalinclude:: ../../../../../../examples/docs_snippets/docs_snippets/guides/components/integrations/fivetran-component/5-component.yaml
     :language: yaml
 
+*********************
 Assets (Fivetran API)
-=====================
+*********************
 
 .. autoclass:: FivetranWorkspace
 
@@ -32,9 +39,9 @@ Assets (Fivetran API)
 
 .. autoclass:: ConnectorSelectorFn
 
-
+******
 Legacy
-======
+******
 
 .. autoconfigurable:: fivetran_resource
     :annotation: ResourceDefinition

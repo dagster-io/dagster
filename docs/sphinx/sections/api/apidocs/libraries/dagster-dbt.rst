@@ -1,4 +1,3 @@
-#################
 dbt (dagster-dbt)
 #################
 
@@ -17,6 +16,8 @@ DbtProjectComponent
 *******************
 
 .. autoclass:: DbtProjectComponent
+
+To use the dbt component, see the `dbt component integration guide <https://docs.dagster.io/integrations/libraries/dbt/dbt-component>`_.
 
 Component YAML
 ==============
