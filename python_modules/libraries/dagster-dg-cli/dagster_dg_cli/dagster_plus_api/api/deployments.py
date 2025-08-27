@@ -11,10 +11,6 @@ if TYPE_CHECKING:
 
 
 class DeploymentAPI:
-    """Deployment API matching future FastAPI endpoints.
-    This is the interface that will remain stable when we switch from GraphQL to REST.
-    """
-
     def __init__(self, config: DagsterPlusCliConfig):
         self.config = config
 
@@ -22,7 +18,4 @@ class DeploymentAPI:
         self,
         limit: Optional[int] = None,
     ) -> "DeploymentList":
-        """GET /api/v1/deployments
-        List all deployments in the organization.
-        """
         return list_deployments_via_graphql(self.config, limit=limit)
