@@ -120,7 +120,7 @@ CANCELABLE_RUN_STATUSES = [DagsterRunStatus.STARTED, DagsterRunStatus.QUEUED]
 
 
 @whitelist_for_serdes(storage_name="PipelineRunStatsSnapshot")
-@record
+@record_custom
 class DagsterRunStatsSnapshot(IHaveNew):
     run_id: str
     steps_succeeded: int
@@ -129,6 +129,34 @@ class DagsterRunStatsSnapshot(IHaveNew):
     launch_time: Optional[float]
     start_time: Optional[float]
     end_time: Optional[float]
+    # deprecated fields
+    materializations: int
+    expectations: int
+
+    def __new__(
+        cls,
+        run_id: str,
+        steps_succeeded: int,
+        steps_failed: int,
+        enqueued_time: Optional[float] = None,
+        launch_time: Optional[float] = None,
+        start_time: Optional[float] = None,
+        end_time: Optional[float] = None,
+        materializations: int = 0,  # deprecated
+        expectations: int = 0,  # deprecated
+    ):
+        return super().__new__(
+            cls,
+            run_id=run_id,
+            steps_succeeded=steps_succeeded,
+            steps_failed=steps_failed,
+            enqueued_time=enqueued_time,
+            launch_time=launch_time,
+            start_time=start_time,
+            end_time=end_time,
+            materializations=materializations,  # deprecated
+            expectations=expectations,  # deprecated
+        )
 
 
 @whitelist_for_serdes

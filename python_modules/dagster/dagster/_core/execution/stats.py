@@ -4,6 +4,7 @@ from enum import Enum
 from typing import Any, Optional
 
 import dagster._check as check
+from dagster._core.definitions import ExpectationResult
 from dagster._core.events import MARKER_EVENTS, PIPELINE_EVENTS, DagsterEventType
 from dagster._core.events.log import EventLogEntry
 from dagster._core.storage.dagster_run import DagsterRunStatsSnapshot
@@ -131,6 +132,9 @@ class RunStepKeyStatsSnapshot(IHaveNew):
     attempts_list: Sequence[RunStepMarker]
     markers: Sequence[RunStepMarker]
     partial_attempt_start: Optional[float]
+    # deprecated fields
+    materialization_events: Sequence[EventLogEntry]
+    expectation_results: Sequence[ExpectationResult]
 
     def __new__(
         cls,
@@ -143,6 +147,8 @@ class RunStepKeyStatsSnapshot(IHaveNew):
         attempts_list: Optional[Sequence[RunStepMarker]] = None,
         markers: Optional[Sequence[RunStepMarker]] = None,
         partial_attempt_start: Optional[float] = None,
+        materialization_events: Optional[Sequence[EventLogEntry]] = None,  # deprecated
+        expectation_results: Optional[Sequence[ExpectationResult]] = None,  # deprecated
     ):
         return super().__new__(
             cls,
@@ -158,6 +164,10 @@ class RunStepKeyStatsSnapshot(IHaveNew):
             partial_attempt_start=check.opt_float_param(
                 partial_attempt_start, "partial_attempt_start"
             ),
+            materialization_events=materialization_events
+            if materialization_events
+            else [],  # deprecated
+            expectation_results=expectation_results if expectation_results else [],  # deprecated
         )
 
 
