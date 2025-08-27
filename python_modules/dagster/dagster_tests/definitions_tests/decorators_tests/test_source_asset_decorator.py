@@ -1,3 +1,6 @@
+from collections import deque
+from collections.abc import Callable, Iterable, Sequence
+
 import pytest
 from dagster import AssetSpec, Definitions, multi_observable_source_asset
 from dagster._core.definitions.data_version import DataVersion
@@ -130,6 +133,19 @@ def test_multi_observable_source_asset_tags():
 
         @multi_observable_source_asset(specs=[AssetSpec("asset1", tags={"a%": "b"})])
         def assets(): ...
+
+
+@pytest.mark.parametrize("sequence_factory", [list, tuple, deque])
+def test_multi_observable_source_sequence_specs(
+    sequence_factory: Callable[[Iterable[AssetSpec]], Sequence[AssetSpec]],
+):
+    specs = [AssetSpec("asset1", group_name="group1")]
+    sequence_specs = sequence_factory(specs)
+
+    @multi_observable_source_asset(specs=specs)
+    def assets(): ...
+
+    assert list(assets.specs) == list(sequence_specs)
 
 
 def test_op_tags_forwarded_to_execution_step() -> None:
