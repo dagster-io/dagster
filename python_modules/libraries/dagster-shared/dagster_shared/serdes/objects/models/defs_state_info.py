@@ -1,30 +1,21 @@
 import time
 from collections.abc import Mapping
-from typing import Any, Optional
+from typing import Optional
 
-from dagster_shared.record import record
+from dagster_shared.dagster_model import DagsterModel
 from dagster_shared.serdes import whitelist_for_serdes
 
 
 @whitelist_for_serdes
-@record
-class DefsKeyStateInfo:
+class DefsKeyStateInfo(DagsterModel):
     """Records information about the version of the state for a given defs key."""
 
     version: str
     create_timestamp: float
 
-    @staticmethod
-    def from_dict(val: dict[str, Any]) -> "DefsKeyStateInfo":
-        return DefsKeyStateInfo(version=val["version"], create_timestamp=val["create_timestamp"])
-
-    def to_dict(self) -> dict[str, Any]:
-        return {"version": self.version, "create_timestamp": self.create_timestamp}
-
 
 @whitelist_for_serdes
-@record
-class DefsStateInfo:
+class DefsStateInfo(DagsterModel):
     """All of the information about the state version that will be used to load a given code location."""
 
     info_mapping: Mapping[str, Optional[DefsKeyStateInfo]]
@@ -44,19 +35,6 @@ class DefsStateInfo:
             return DefsStateInfo(info_mapping={key: new_info})
         else:
             return DefsStateInfo(info_mapping={**current_info.info_mapping, key: new_info})
-
-    @staticmethod
-    def from_dict(val: dict[str, Any]) -> "DefsStateInfo":
-        """Used for converting from the user-facing dict representation."""
-        return DefsStateInfo(
-            info_mapping={
-                key: DefsKeyStateInfo.from_dict(info) if info else None for key, info in val.items()
-            }
-        )
-
-    def to_dict(self) -> dict[str, Any]:
-        """Used for converting to the user-facing dict representation."""
-        return {key: info.to_dict() if info else None for key, info in self.info_mapping.items()}
 
     def get_version(self, key: str) -> Optional[str]:
         info = self.info_mapping.get(key)

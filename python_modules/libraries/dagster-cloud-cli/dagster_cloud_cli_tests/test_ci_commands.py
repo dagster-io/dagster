@@ -131,6 +131,7 @@ def test_ci_init_local_branch_deployment(monkeypatch, mocker, empty_config) -> N
                 "url": "https://some-org.dagster.cloud",
                 "history": [{"log": "initialized", "status": "pending", "timestamp": "-"}],
                 "status_url": "http://github/run-url",
+                "defs_state_info": None,
             }
 
 
@@ -186,6 +187,7 @@ def test_ci_init(monkeypatch, mocker, empty_config) -> None:
                 "url": "https://some-org.dagster.cloud",
                 "history": [{"log": "initialized", "status": "pending", "timestamp": "-"}],
                 "status_url": "http://github/run-url",
+                "defs_state_info": None,
             }
 
             location_auto = locations[3]
