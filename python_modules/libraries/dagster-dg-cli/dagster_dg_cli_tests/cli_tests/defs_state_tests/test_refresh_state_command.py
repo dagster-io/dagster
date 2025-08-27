@@ -78,8 +78,8 @@ def test_refresh_state_command():
         assert new_latest_state_info is not None
         assert new_latest_state_info.info_mapping.keys() == {"SampleStateBackedComponent"}
         assert (
-            new_latest_state_info.info_mapping["SampleStateBackedComponent"].version
-            != latest_state_info.info_mapping["SampleStateBackedComponent"].version
+            new_latest_state_info.info_mapping["SampleStateBackedComponent"]
+            != latest_state_info.info_mapping["SampleStateBackedComponent"]
         )
 
 

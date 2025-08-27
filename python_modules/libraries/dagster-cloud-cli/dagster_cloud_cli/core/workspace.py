@@ -97,7 +97,12 @@ class CodeLocationDeployData(
             len(
                 [
                     val
-                    for val in [python_file, package_name, module_name, autoload_defs_module_name]
+                    for val in [
+                        python_file,
+                        package_name,
+                        module_name,
+                        autoload_defs_module_name,
+                    ]
                     if val
                 ]
             )
@@ -157,8 +162,9 @@ class CodeLocationDeployData(
             ]
             + (["--enable-metrics"] if metrics_enabled else [])
             + (
-                ["--defs-state-info", serialize_value(self.defs_state_info)]
-                if self.defs_state_info
-                else []
+                [
+                    "--defs-state-info",
+                    serialize_value(self.defs_state_info or DefsStateInfo(info_mapping={})),
+                ]
             )
         )
