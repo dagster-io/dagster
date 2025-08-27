@@ -142,7 +142,7 @@ def test_multi_observable_source_sequence_specs(
     specs = [AssetSpec("asset1", group_name="group1")]
     sequence_specs = sequence_factory(specs)
 
-    @multi_observable_source_asset(specs=specs)
+    @multi_observable_source_asset(specs=sequence_specs)
     def assets(): ...
 
     assert list(assets.specs) == list(sequence_specs)
