@@ -7,7 +7,7 @@ from functools import cache
 from typing import Union, get_args, get_origin
 
 import pytest
-from dagster_dg_cli.dagster_plus_api.api.v1.endpoints.deployments import DeploymentAPI
+from dagster_dg_cli.dagster_plus_api.api.deployments import DeploymentAPI
 from pydantic import BaseModel
 
 # Primitive types allowed in REST APIs
