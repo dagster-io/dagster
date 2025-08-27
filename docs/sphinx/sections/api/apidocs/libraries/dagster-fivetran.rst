@@ -5,16 +5,16 @@ This library provides a Dagster integration with `Fivetran <https://www.fivetran
 
 .. currentmodule:: dagster_fivetran
 
-************************
-FivetranAccountComponent
-************************
+*********
+Component
+*********
 
 .. autoclass:: FivetranAccountComponent
 
 To use the Fivetran component, see the `Fivetran component integration guide <https://docs.dagster.io/integrations/libraries/fivetran>`_.
 
-Component YAML
-==============
+YAML configuration
+==================
 
 When you scaffold a Fivetran component definition, the following ``defs.yaml`` configuration file will be created:
 

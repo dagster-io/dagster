@@ -8,16 +8,16 @@ For more information on getting started, see the `Dagster & Sling <https://docs.
 
 .. currentmodule:: dagster_sling
 
-***********************************
-SlingReplicationCollectionComponent
-***********************************
+*********
+Component
+*********
 
 .. autoclass:: SlingReplicationCollectionComponent
 
 To use the Sling component, see the `Sling component integration guide <https://docs.dagster.io/integrations/libraries/sling>`_.
 
-Component YAML
-==============
+YAML configuration
+==================
 
 When you scaffold a Sling component definition, the following ``defs.yaml`` configuration file will be created:
 
