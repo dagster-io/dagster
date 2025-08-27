@@ -1509,8 +1509,8 @@ class AirbyteCloudWorkspace(BaseAirbyteWorkspace):
     rest_api_base_url: ClassVar[str] = AIRBYTE_CLOUD_REST_API_BASE_URL
     configuration_api_base_url: ClassVar[str] = AIRBYTE_CLOUD_CONFIGURATION_API_BASE_URL
     workspace_id: str = Field(..., description="The Airbyte workspace ID")
-    client_id: Optional[str] = Field(..., description="The Airbyte client ID.")
-    client_secret: Optional[str] = Field(..., description="The Airbyte client secret.")
+    client_id: str = Field(..., description="The Airbyte client ID.")
+    client_secret: str = Field(..., description="The Airbyte client secret.")
 
     @cached_method
     def get_client(self) -> AirbyteClient:

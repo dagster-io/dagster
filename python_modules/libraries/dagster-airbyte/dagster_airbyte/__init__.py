@@ -29,6 +29,7 @@ from dagster_airbyte.resources import (
     AirbyteCloudResource as AirbyteCloudResource,
     AirbyteResource as AirbyteResource,
     AirbyteWorkspace as AirbyteWorkspace,
+    AirbyteCloudWorkspace as AirbyteCloudWorkspace,
     airbyte_cloud_resource as airbyte_cloud_resource,
     airbyte_resource as airbyte_resource,
     load_airbyte_asset_specs as load_airbyte_asset_specs,
