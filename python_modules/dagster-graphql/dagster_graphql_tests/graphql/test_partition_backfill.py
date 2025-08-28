@@ -1074,6 +1074,16 @@ class TestDaemonPartitionBackfill(ExecutingGraphQLContextTestMatrix):
             assert len(runs) == 1
             assert runs[0].status == DagsterRunStatus.CANCELED
 
+        result = execute_dagster_graphql(
+            graphql_context,
+            PARTITION_PROGRESS_QUERY,
+            variables={"backfillId": backfill_id},
+        )
+        assert not result.errors
+        assert result.data
+        assert result.data["partitionBackfillOrError"]["__typename"] == "PartitionBackfill"
+        assert result.data["partitionBackfillOrError"]["status"] == "FAILED"
+
     def test_resume_backfill(self, graphql_context):
         repository_selector = infer_repository_selector(graphql_context)
         result = execute_dagster_graphql(

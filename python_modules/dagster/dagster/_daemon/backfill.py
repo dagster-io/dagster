@@ -121,13 +121,16 @@ def execute_backfill_iteration(
     canceling_backfills = instance.get_backfills(
         filters=BulkActionsFilter(statuses=[BulkActionStatus.CANCELING])
     )
+    failing_backfills = instance.get_backfills(
+        filters=BulkActionsFilter(statuses=[BulkActionStatus.FAILING])
+    )
 
-    if not in_progress_backfills and not canceling_backfills:
+    if not in_progress_backfills and not canceling_backfills and not failing_backfills:
         logger.debug("No backfill jobs in progress or canceling.")
         yield None
         return
 
-    backfill_jobs = [*in_progress_backfills, *canceling_backfills]
+    backfill_jobs = [*in_progress_backfills, *canceling_backfills, *failing_backfills]
     backfill_jobs = sorted(backfill_jobs, key=lambda x: x.backfill_timestamp)
 
     yield from execute_backfill_jobs(
