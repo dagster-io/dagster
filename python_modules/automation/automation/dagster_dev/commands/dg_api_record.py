@@ -180,28 +180,26 @@ def dg_api_record(domain: str, fixture: str, graphql: bool):
 
     click.echo(f"📁 Domain: {domain}")
     click.echo(f"🎯 Target fixtures: {target_fixtures}")
-    click.echo(f"🔄 Steps: GraphQL")
+    click.echo("🔄 Steps: GraphQL")
 
     # Process GraphQL recording
     click.echo(f"🚀 Recording GraphQL responses for {domain}...")
     graphql_success = True
-        for fixture_name in target_fixtures:
-            fixture_data = commands_data[fixture_name]
-            command = (
-                fixture_data if isinstance(fixture_data, str) else fixture_data.get("command", "")
-            )
+    for fixture_name in target_fixtures:
+        fixture_data = commands_data[fixture_name]
+        command = fixture_data if isinstance(fixture_data, str) else fixture_data.get("command", "")
 
-            if not command:
-                click.echo(f"Error: No command found for fixture {fixture_name}", err=True)
-                graphql_success = False
-                continue
+        if not command:
+            click.echo(f"Error: No command found for fixture {fixture_name}", err=True)
+            graphql_success = False
+            continue
 
-            success = record_graphql_for_fixture(domain, fixture_name, command)
-            if not success:
-                graphql_success = False
-                click.echo(f"❌ Failed to record GraphQL for {fixture_name}")
-            else:
-                click.echo(f"✅ GraphQL recorded for {fixture_name}")
+        success = record_graphql_for_fixture(domain, fixture_name, command)
+        if not success:
+            graphql_success = False
+            click.echo(f"❌ Failed to record GraphQL for {fixture_name}")
+        else:
+            click.echo(f"✅ GraphQL recorded for {fixture_name}")
 
     # Final status
     if graphql_success:
