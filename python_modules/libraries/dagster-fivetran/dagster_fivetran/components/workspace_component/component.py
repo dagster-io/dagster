@@ -4,6 +4,7 @@ from typing import Annotated, Callable, Optional, Union
 
 import dagster as dg
 import pydantic
+from dagster._annotations import public
 from dagster._core.definitions.job_definition import default_job_io_manager
 from dagster.components.resolved.base import resolve_fields
 from dagster.components.utils.translation import TranslationFn, TranslationFnResolver
@@ -70,6 +71,7 @@ def resolve_connector_selector(
         check.failed(f"Unknown connector target type: {type(model)}")
 
 
+@public
 @dg.scaffold_with(FivetranAccountComponentScaffolder)
 class FivetranAccountComponent(dg.Component, dg.Model, dg.Resolvable):
     """Loads Fivetran connectors from a given Fivetran instance as Dagster assets.

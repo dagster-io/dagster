@@ -3,6 +3,7 @@ from functools import cached_property
 from typing import Annotated, Any, Callable, Optional, Union
 
 import dagster as dg
+from dagster._annotations import public
 from dagster._core.definitions.asset_key import CoercibleToAssetKeyPrefix
 from dagster._core.definitions.assets.definition.asset_spec import AssetSpec
 from dagster._core.definitions.assets.definition.assets_definition import AssetsDefinition
@@ -203,6 +204,7 @@ def _resolve_powerbi_workspace(context: ResolutionContext, model: BaseModel) -> 
     )
 
 
+@public
 @dataclass
 class PowerBIWorkspaceComponent(Component, Resolvable):
     """Pulls in the contents of a PowerBI workspace into Dagster assets."""
