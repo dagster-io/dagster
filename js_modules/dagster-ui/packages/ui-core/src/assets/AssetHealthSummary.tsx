@@ -203,7 +203,6 @@ const Criteria = React.memo(
       | undefined
       | null;
     type: 'materialization' | 'freshness' | 'checks' | 'no-definition';
-    customText?: React.ReactNode;
   }) => {
     const {subStatusIconName, iconColor, textColor} = statusToIconAndColor[status ?? 'undefined'];
 
@@ -217,7 +216,7 @@ const Criteria = React.memo(
 
     const derivedExplanation = useMemo(() => {
       if (type === 'no-definition') {
-        return <Body>It may have been deleted or is a stub imported through an integration</Body>;
+        return <Body>It may have been deleted or be a stub imported through an integration.</Body>;
       }
 
       switch (metadata?.__typename) {

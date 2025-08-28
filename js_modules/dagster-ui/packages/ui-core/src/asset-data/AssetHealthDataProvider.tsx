@@ -40,6 +40,8 @@ function init() {
       if (loading) {
         // This is future proofing in case we somehow start requesting health data without having first loaded all assets nodes in the future
         // Today that doesn't happen in the app but if it ever does we'd basically just no-op every 500milliseconds until theyre loaded.
+        // We need all of the assets keys to be loaded so that we can avoid making queries for assets that don't have definitions because
+        // those queries are expensive.
         await new Promise((resolve) => setTimeout(resolve, 500));
         return {};
       }
