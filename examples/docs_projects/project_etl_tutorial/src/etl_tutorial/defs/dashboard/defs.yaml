@@ -1,0 +1,10 @@
+type: dagster_evidence.EvidenceProject
+
+attributes:
+  project_path: ../../../../dashboard
+  asset:
+    key: dashboard
+    deps:
+      - target/main/orders
+      - target/main/customers
+  deploy_command: 'echo "Dashboard built at $EVIDENCE_BUILD_PATH"'
