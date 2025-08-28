@@ -37,6 +37,7 @@ setup(
     install_requires=[
         f"dagster-dg-core{pin}",
         f"dagster{pin}",
+        f"dagster-cloud-cli{pin}",
         "anthropic; python_version>='3.10'",  # anthropic not available for 3.9
         "claude-code-sdk>=0.0.19; python_version>='3.10'",  # claude-code-sdk not available for 3.9
         "mcp; python_version>='3.10'",  # mcp not available for 3.9
