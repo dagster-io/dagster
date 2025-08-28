@@ -1,0 +1,8 @@
+# serializer version: 1
+# name: TestDynamicCommandExecution.test_command_execution[0]
+  dict({
+    'items': list([
+    ]),
+    'total': 0,
+  })
+# ---
