@@ -13,6 +13,7 @@ from dagster_dg_cli.utils.plus.gql_client import DagsterPlusGraphQLClient
 @cli_telemetry_wrapper
 def login_command() -> None:
     """Login to Dagster Plus."""
+    # Import login server only when the command is actually used
     from dagster_shared.plus.login_server import start_login_server
 
     org_url = DagsterPlusCliConfig.get().url if DagsterPlusCliConfig.exists() else None
