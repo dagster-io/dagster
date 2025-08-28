@@ -3001,6 +3001,7 @@ class SqlEventLogStorage(EventLogStorage):
                     execution_status=AssetCheckExecutionRecordStatus.PLANNED.value,
                     evaluation_event=serialize_value(event),
                     evaluation_event_timestamp=self._event_insert_timestamp(event),
+                    partition=planned.partition,
                 )
             )
 
@@ -3041,7 +3042,7 @@ class SqlEventLogStorage(EventLogStorage):
             "AssetCheckEvaluation", check.not_none(event.dagster_event).event_specific_data
         )
         with self.index_connection() as conn:
-            rows_updated = conn.execute(
+            update_statement = (
                 AssetCheckExecutionsTable.update()
                 .where(
                     # (asset_key, check_name, run_id) uniquely identifies the row created for the planned event
@@ -3066,7 +3067,16 @@ class SqlEventLogStorage(EventLogStorage):
                         else None
                     ),
                 )
-            ).rowcount
+            )
+            if evaluation.partition:
+                update_statement = update_statement.where(
+                    AssetCheckExecutionsTable.c.partition == evaluation.partition
+                )
+            else:
+                update_statement = update_statement.where(
+                    AssetCheckExecutionsTable.c.partition.is_(None)
+                )
+            rows_updated = conn.execute(update_statement).rowcount
 
             # TODO fix the idx_asset_check_executions_unique index so that this can be a single
             # upsert
@@ -3089,6 +3099,7 @@ class SqlEventLogStorage(EventLogStorage):
                             if evaluation.target_materialization_data
                             else None
                         ),
+                        partition=evaluation.partition,
                     )
                 ).rowcount
 
