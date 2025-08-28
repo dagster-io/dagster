@@ -20,22 +20,15 @@ def adhoc_request_sensor(context: dg.SensorEvaluationContext):
             current_state[filename] = last_modified
 
             # if the file is new or has been modified since the last run, add it to the request queue
-            if (
-                filename not in previous_state
-                or previous_state[filename] != last_modified
-            ):
+            if filename not in previous_state or previous_state[filename] != last_modified:
                 with open(file_path) as f:
                     request_config = json.load(f)
 
                 runs_to_request.append(
                     dg.RunRequest(
                         run_key=f"adhoc_request_{filename}_{last_modified}",
-                        run_config={
-                            "ops": {"adhoc_request": {"config": {**request_config}}}
-                        },
+                        run_config={"ops": {"adhoc_request": {"config": {**request_config}}}},
                     )
                 )
 
-    return dg.SensorResult(
-        run_requests=runs_to_request, cursor=json.dumps(current_state)
-    )
+    return dg.SensorResult(run_requests=runs_to_request, cursor=json.dumps(current_state))

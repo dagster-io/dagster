@@ -1,3 +1,5 @@
+# ruff: noqa: F811
+
 # start_serial_execute
 import duckdb
 import filelock
@@ -142,9 +144,7 @@ def raw_payments(duckdb: DuckDBResource) -> None:
     kinds={"duckdb"},
     key=["target", "main", "raw_customers"],
     # highlight-start
-    automation_condition=dg.AutomationCondition.on_cron(
-        "0 0 * * 1"
-    ),  # every Monday at midnight
+    automation_condition=dg.AutomationCondition.on_cron("0 0 * * 1"),  # every Monday at midnight
     # highlight-end
 )
 def raw_customers(duckdb: DuckDBResource) -> None:
@@ -159,9 +159,7 @@ def raw_customers(duckdb: DuckDBResource) -> None:
     kinds={"duckdb"},
     key=["target", "main", "raw_orders"],
     # highlight-start
-    automation_condition=dg.AutomationCondition.on_cron(
-        "0 0 * * 1"
-    ),  # every Monday at midnight
+    automation_condition=dg.AutomationCondition.on_cron("0 0 * * 1"),  # every Monday at midnight
     # highlight-end
 )
 def raw_orders(duckdb: DuckDBResource) -> None:
@@ -176,9 +174,7 @@ def raw_orders(duckdb: DuckDBResource) -> None:
     kinds={"duckdb"},
     key=["target", "main", "raw_payments"],
     # highlight-start
-    automation_condition=dg.AutomationCondition.on_cron(
-        "0 0 * * 1"
-    ),  # every Monday at midnight
+    automation_condition=dg.AutomationCondition.on_cron("0 0 * * 1"),  # every Monday at midnight
     # highlight-end
 )
 def raw_payments(duckdb: DuckDBResource) -> None:
@@ -210,9 +206,7 @@ def missing_dimension_check(duckdb: DuckDBResource) -> dg.AssetCheckResult:
         ).fetchone()
 
         count = query_result[0] if query_result else 0
-        return dg.AssetCheckResult(
-            passed=count == 0, metadata={"customer_id is null": count}
-        )
+        return dg.AssetCheckResult(passed=count == 0, metadata={"customer_id is null": count})
 
 
 # end_asset_check
@@ -264,9 +258,7 @@ def monthly_orders(context: dg.AssetExecutionContext, duckdb: DuckDBResource):
             """
         )
 
-        preview_query = (
-            f"select * from {table_name} where partition_date = '{month_to_fetch}';"
-        )
+        preview_query = f"select * from {table_name} where partition_date = '{month_to_fetch}';"
         preview_df = conn.execute(preview_query).fetchdf()
         row_count = conn.execute(
             f"""
@@ -326,9 +318,7 @@ def monthly_orders(context: dg.AssetExecutionContext, duckdb: DuckDBResource):
             """
         )
 
-        preview_query = (
-            f"select * from {table_name} where partition_date = '{month_to_fetch}';"
-        )
+        preview_query = f"select * from {table_name} where partition_date = '{month_to_fetch}';"
         preview_df = conn.execute(preview_query).fetchdf()
         row_count = conn.execute(
             f"""
@@ -358,9 +348,7 @@ class AdhocRequestConfig(dg.Config):
     kinds={"python"},
     description="Adhoc order requests",
 )
-def adhoc_request(
-    config: AdhocRequestConfig, duckdb: DuckDBResource
-) -> dg.MaterializeResult:
+def adhoc_request(config: AdhocRequestConfig, duckdb: DuckDBResource) -> dg.MaterializeResult:
     table_name = "jaffle_platform.main.stg_orders"
 
     with duckdb.get_connection() as conn:
