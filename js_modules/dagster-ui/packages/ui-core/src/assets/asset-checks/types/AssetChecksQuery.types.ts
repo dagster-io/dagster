@@ -50,6 +50,7 @@ export type AssetChecksQuery = {
                     severity: Types.AssetCheckSeverity;
                     timestamp: number;
                     description: string | null;
+                    partition: string | null;
                     targetMaterialization: {
                       __typename: 'AssetCheckEvaluationTargetMaterializationData';
                       timestamp: number;
@@ -257,4 +258,4 @@ export type AssetChecksQuery = {
     | {__typename: 'AssetNotFoundError'};
 };
 
-export const AssetChecksQueryVersion = 'df2f0eba0bb9816ab3ffabe630b837f47a61ae541a1b543bd7abf365b0754094';
+export const AssetChecksQueryVersion = '300e4020fa9d4b646097f3d49e5446c7556dfc6f289375f54fc70ffe25901484';

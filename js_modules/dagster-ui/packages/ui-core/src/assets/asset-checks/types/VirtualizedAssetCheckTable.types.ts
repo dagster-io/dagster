@@ -26,6 +26,7 @@ export type AssetCheckTableFragment = {
       severity: Types.AssetCheckSeverity;
       timestamp: number;
       description: string | null;
+      partition: string | null;
       targetMaterialization: {
         __typename: 'AssetCheckEvaluationTargetMaterializationData';
         timestamp: number;
