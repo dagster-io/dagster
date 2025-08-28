@@ -129,7 +129,9 @@ def record_graphql_for_fixture(
         click.echo(f"🚀 Recording scenario folder for {domain}.{fixture_name}: {command}")
     else:
         fixture_file = fixture_dir / "responses.json"
-        fixture_dir.mkdir(parents=True, exist_ok=True)  # Create fixture directory if it doesn't exist
+        fixture_dir.mkdir(
+            parents=True, exist_ok=True
+        )  # Create fixture directory if it doesn't exist
         click.echo(f"🚀 Recording GraphQL for {domain}.{fixture_name}: {command}")
 
     # Ensure --json flag is present for structured output

@@ -1,6 +1,7 @@
 # Plan: Hard Cutover to Folder-per-Scenario Structure
 
 ## New Structure
+
 ```
 fixtures/
 ├── success_multiple_assets/           # Scenario folder
@@ -8,14 +9,14 @@ fixtures/
 │   ├── 02_asset_nodes_query.json      # Second GraphQL response
 │   └── cli_output.txt                 # Final CLI output (JSON or text)
 ├── error_asset_not_found/
-│   ├── 01_error_response.json          # GraphQL error response  
+│   ├── 01_error_response.json          # GraphQL error response
 │   └── cli_output.txt                 # CLI error output
 ├── commands.yaml                      # Unchanged
 ```
 
 ## Implementation Steps
 
-1. **Update fixture loading functions** 
+1. **Update fixture loading functions**
    - Change from loading single `responses.json[name]` to loading scenario folders
    - Return list of GraphQL responses from numbered JSON files
    - Support loading `cli_output.txt` for reference
@@ -34,12 +35,14 @@ fixtures/
 6. **Test changes** by running existing test suites
 
 ## Benefits
+
 - **No migration complexity** - Clean slate approach
 - **Proper GraphQL granularity** - Individual queries captured
-- **Better version control** - Changes isolated to specific scenarios  
+- **Better version control** - Changes isolated to specific scenarios
 - **Handles multi-query commands** - Each GraphQL request gets its own file
 
 ## No Backwards Compatibility
+
 - Remove all existing fixture files
 - Re-record all scenarios from scratch
 - Update all loading code to use new folder structure
@@ -56,6 +59,7 @@ The current single `responses.json` approach only captures the final combined re
 ## Final Output Format
 
 The `cli_output.txt` file contains the actual CLI output, which may be:
+
 - JSON format (if `--json` flag is used)
 - Formatted text (if no `--json` flag)
 

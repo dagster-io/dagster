@@ -83,7 +83,7 @@ dagster-dev dg-api-record deployment --fixture empty_organization_deployments --
 - Reads the command from `{domain}_tests/fixtures/commands.yaml`
 - Executes the live `dg plus api` command
 - Creates a scenario folder with the fixture name
-- Captures each individual GraphQL call as numbered JSON files (01_*.json, 02_*.json, etc.)
+- Captures each individual GraphQL call as numbered JSON files (01*\*.json, 02*\*.json, etc.)
 - Saves final CLI output as `cli_output.txt`
 - Handles both success and error cases automatically
 
