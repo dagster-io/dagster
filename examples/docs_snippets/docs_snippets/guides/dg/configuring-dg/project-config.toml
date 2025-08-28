@@ -34,7 +34,7 @@ code_location_name = "my-project"
 # - foo.*.bar matches foo.baz.bar and foo.qux.bar
 # - foo.*bar is invalid because * does not constitute an entire segment
 #
-# When a new component scaffolded with `dg scaffold component <module>.MyComponent`, this setting
+# When a new component is scaffolded with `dg scaffold component <module>.MyComponent`, this setting
 # will be created if it does not already exist and the module will be added to the list.
 # 
 # Defaults to [].
