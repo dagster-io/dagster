@@ -27,6 +27,21 @@ code_location_target_module = "my_project.definitions"
 # the root module name).
 code_location_name = "my-project"
 
+# (list[string], optional) List of module names or name-matching patterns to include in the dg
+# registry. Defaults to `<root_module>.components`. Patterns can include `*` to match entire
+# segments of the module name. * does NOT match partial segments. Example:
+#
+# - foo.*.bar matches foo.baz.bar and foo.qux.bar
+# - foo.*bar is invalid because * does not constitute an entire segment
+#
+# When a new component is scaffolded with `dg scaffold component <module>.MyComponent`, this setting
+# will be created if it does not already exist and the module will be added to the list.
+# 
+# Defaults to [].
+registry_modules = [
+  "my_project.alternate_components.*",
+]
+
 [tool.dg.cli]
 
 # Application-level settings can be set here. See "User configuration file"
