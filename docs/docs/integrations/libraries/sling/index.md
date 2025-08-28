@@ -34,7 +34,7 @@ Now that you have a Dagster project, you can scaffold a Sling component definiti
 
 <CliInvocationExample path="docs_snippets/docs_snippets/guides/components/integrations/sling-component/3-scaffold-sling-component.txt" />
 
-The `dg scaffold defs` call will generate a `defs.yaml` file and a unpopulated Sling `replication.yaml` file:
+The `dg scaffold defs` call will generate a `defs.yaml` file and an unpopulated Sling `replication.yaml` file:
 
 <CliInvocationExample path="docs_snippets/docs_snippets/guides/components/integrations/sling-component/4-tree.txt" />
 
