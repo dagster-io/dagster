@@ -46,13 +46,13 @@ We will create a `profiles.yml` file in the `dbt` directory to configure the pro
   language="yaml"
 />
 
-## 3. Scaffold a dbt component
+## 3. Scaffold a dbt component definition
 
-Now that you have a Dagster project with a dbt project, you can scaffold a dbt component. You'll need to provide the path to your dbt project:
+Now that you have a Dagster project with a dbt project, you can scaffold a dbt component definition. You'll need to provide the path to your dbt project:
 
 <CliInvocationExample path="docs_snippets/docs_snippets/guides/components/integrations/dbt-component/5-scaffold-dbt-component.txt" />
 
-The scaffold call will generate a `defs.yaml` file in your project structure:
+The `dg scaffold defs` call will generate a `defs.yaml` file in your project structure:
 
 <CliInvocationExample path="docs_snippets/docs_snippets/guides/components/integrations/dbt-component/6-tree.txt" />
 
@@ -75,6 +75,15 @@ This is sufficient to load your dbt models as assets. You can use `dg list defs`
 To execute your dbt models, you can use the `dg launch` command to kick off a run through the CLI:
 
 <CliInvocationExample path="docs_snippets/docs_snippets/guides/components/integrations/dbt-component/9-dbt-run.txt" />
+
+:::tip
+
+You can also pass an [asset selection](https://docs.dagster.io/guides/build/assets/asset-selection-syntax) to the [dg launch --assets](https://docs.dagster.io/api/clis/dg-cli/dg-cli-reference#dg-launch) command:
+
+```bash
+dg launch --assets "key:'customers' and key:'orders'"
+```
+:::
 
 ## 5. Select or exclude specific models
 
