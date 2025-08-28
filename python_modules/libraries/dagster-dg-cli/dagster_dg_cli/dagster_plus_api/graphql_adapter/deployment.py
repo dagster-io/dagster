@@ -1,6 +1,6 @@
 """GraphQL implementation for deployment operations."""
 
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any, Optional
 
 from dagster_shared.plus.config import DagsterPlusCliConfig
 
@@ -21,11 +21,19 @@ query ListDeployments {
 """
 
 
-def list_deployments_via_graphql(
-    config: DagsterPlusCliConfig,
+def process_deployments_response(
+    graphql_response: dict[str, Any], limit: Optional[int] = None
 ) -> "DeploymentList":
-    """Fetch deployments using GraphQL.
-    This is an implementation detail that can be replaced with REST calls later.
+    """Process GraphQL response into DeploymentList.
+
+    This is a pure function that can be easily tested without mocking GraphQL clients.
+
+    Args:
+        graphql_response: Raw GraphQL response containing "fullDeployments"
+        limit: Optional limit to apply to results
+
+    Returns:
+        DeploymentList: Processed deployment data
     """
     # Import pydantic models only when needed
     from dagster_dg_cli.dagster_plus_api.schemas.deployment import (
@@ -34,10 +42,7 @@ def list_deployments_via_graphql(
         DeploymentType,
     )
 
-    client = DagsterPlusGraphQLClient.from_config(config)
-    result = client.execute(LIST_DEPLOYMENTS_QUERY)
-
-    deployments_data = result.get("fullDeployments", [])
+    deployments_data = graphql_response.get("fullDeployments", [])
 
     deployments = [
         Deployment(
@@ -52,3 +57,16 @@ def list_deployments_via_graphql(
         items=deployments,
         total=len(deployments),
     )
+
+
+def list_deployments_via_graphql(
+    config: DagsterPlusCliConfig,
+    limit: Optional[int] = None,
+) -> "DeploymentList":
+    """Fetch deployments using GraphQL.
+    This is an implementation detail that can be replaced with REST calls later.
+    """
+    client = DagsterPlusGraphQLClient.from_config(config)
+    result = client.execute(LIST_DEPLOYMENTS_QUERY)
+
+    return process_deployments_response(result, limit=limit)
