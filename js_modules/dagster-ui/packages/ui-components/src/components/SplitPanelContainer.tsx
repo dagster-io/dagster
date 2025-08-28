@@ -8,7 +8,7 @@ const DIVIDER_THICKNESS = 2;
 interface SplitPanelContainerProps {
   axis?: 'horizontal' | 'vertical';
   identifier: string;
-  first: React.ReactNode;
+  first: React.ReactNode | null;
   firstInitialPercent: number;
   firstMinSize?: number;
   secondMinSize?: number;
@@ -62,15 +62,25 @@ export const SplitPanelContainer = forwardRef<SplitPanelContainerHandle, SplitPa
     // Note: The divider appears after the first panel, so making the first panel 100% wide
     // hides the divider offscreen. To prevent this, we subtract the divider depth.
     if (axis === 'horizontal') {
-      firstPaneStyles.minWidth = firstMinSize;
-      firstPaneStyles.width = `calc(${firstSize / 100} * (100% - ${
-        DIVIDER_THICKNESS + (second ? secondMinSize : 0)
-      }px))`;
+      if (!first) {
+        firstPaneStyles.minWidth = 0;
+        firstPaneStyles.width = 0;
+      } else {
+        firstPaneStyles.minWidth = firstMinSize;
+        firstPaneStyles.width = `calc(${firstSize / 100} * (100% - ${
+          DIVIDER_THICKNESS + (second ? secondMinSize : 0)
+        }px))`;
+      }
     } else {
-      firstPaneStyles.minHeight = firstMinSize;
-      firstPaneStyles.height = `calc(${firstSize / 100} * (100% - ${
-        DIVIDER_THICKNESS + (second ? secondMinSize : 0)
-      }px))`;
+      if (!first) {
+        firstPaneStyles.minHeight = 0;
+        firstPaneStyles.height = 0;
+      } else {
+        firstPaneStyles.minHeight = firstMinSize;
+        firstPaneStyles.height = `calc(${firstSize / 100} * (100% - ${
+          DIVIDER_THICKNESS + (second ? secondMinSize : 0)
+        }px))`;
+      }
     }
 
     return (
@@ -78,13 +88,15 @@ export const SplitPanelContainer = forwardRef<SplitPanelContainerHandle, SplitPa
         <div className="split-panel" style={firstPaneStyles}>
           {first}
         </div>
-        <PanelDivider
-          axis={axis}
-          resizing={resizing}
-          secondMinSize={secondMinSize}
-          onSetResizing={setResizing}
-          onMove={onChangeSize}
-        />
+        {first && second ? (
+          <PanelDivider
+            axis={axis}
+            resizing={resizing}
+            secondMinSize={secondMinSize}
+            onSetResizing={setResizing}
+            onMove={onChangeSize}
+          />
+        ) : undefined}
         <div className="split-panel" style={{flex: 1}}>
           {second}
         </div>

@@ -5,7 +5,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Optional, TypeVar, Union
 
-from dagster_shared.record import record
+from dagster_shared.record import record, replace
 from dagster_shared.yaml_utils.source_position import SourcePosition
 from pydantic import BaseModel, ConfigDict, TypeAdapter
 
@@ -39,6 +39,8 @@ if TYPE_CHECKING:
     from dagster.components.core.decl import ComponentDecl
 
 T = TypeVar("T", bound=BaseModel)
+
+ResolvableToComponentPath = Union[Path, "ComponentPath", str]
 
 
 class ComponentRequirementsModel(BaseModel):
@@ -151,12 +153,32 @@ class CompositeYamlComponent(Component):
 @record
 class ComponentPath:
     """Identifier for where a Component instance was defined:
-    file_path: The Path to the file or directory relative to the root defs module.
+    file_path_posix: The absolute path to the file or directory.
     instance_key: The optional identifier to distinguish instances originating from the same file.
     """
 
-    file_path: Path
+    file_path_posix: str
     instance_key: Optional[Union[int, str]] = None
+
+    @property
+    def file_path(self) -> Path:
+        return Path(self.file_path_posix)
+
+    @staticmethod
+    def from_resolvable(root_path: Path, path: ResolvableToComponentPath) -> "ComponentPath":
+        if isinstance(path, ComponentPath):
+            return path
+        path = Path(path)
+        normalized_path = (root_path / path) if not path.is_absolute() else path
+        return ComponentPath.from_path(path=normalized_path, instance_key=None)
+
+    @staticmethod
+    def from_path(path: Path, instance_key: Optional[Union[int, str]] = None) -> "ComponentPath":
+        check.param_invariant(path.is_absolute(), "Path must be absolute")
+        return ComponentPath(file_path_posix=path.as_posix(), instance_key=instance_key)
+
+    def without_instance_key(self) -> "ComponentPath":
+        return replace(self, instance_key=None)
 
     def get_relative_key(self, parent_path: Path):
         key = self.file_path.relative_to(parent_path).as_posix()
@@ -321,18 +343,18 @@ class DefsFolderComponent(Component):
 
     def iterate_path_component_pairs(self) -> Iterator[tuple[ComponentPath, Component]]:
         for path, component in self.children.items():
-            yield ComponentPath(file_path=path), component
+            yield ComponentPath.from_path(path), component
 
             if isinstance(component, DefsFolderComponent):
                 yield from component.iterate_path_component_pairs()
 
             if isinstance(component, CompositeYamlComponent):
                 for idx, inner_comp in enumerate(component.components):
-                    yield ComponentPath(file_path=path, instance_key=idx), inner_comp
+                    yield ComponentPath.from_path(path, idx), inner_comp
 
             if isinstance(component, PythonFileComponent):
                 for attr, inner_comp in component.components.items():
-                    yield ComponentPath(file_path=path, instance_key=attr), inner_comp
+                    yield ComponentPath.from_path(path, attr), inner_comp
 
 
 EXPLICITLY_IGNORED_GLOB_PATTERNS = [
@@ -347,7 +369,9 @@ def find_components_from_context(context: ComponentLoadContext) -> Mapping[Path,
         relative_subpath = subpath.relative_to(context.path)
         if any(relative_subpath.match(pattern) for pattern in EXPLICITLY_IGNORED_GLOB_PATTERNS):
             continue
-        component = get_component(context.for_component_path(ComponentPath(file_path=subpath)))
+        component = get_component(
+            context.for_component_path(ComponentPath(file_path_posix=subpath.absolute().as_posix()))
+        )
         if component:
             found[subpath] = component
     return found

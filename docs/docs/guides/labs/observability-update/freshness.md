@@ -16,6 +16,12 @@ For example, freshness policies can help identify stale assets caused by:
 - Runs not being scheduled due to an upstream failure
 - Runs taking longer than expected to complete
 
+:::info
+
+You can set an [asset freshness alert](/guides/labs/observability-update/alerts) to notify you when an asset is failing its freshness policy.
+
+:::
+
 ### Enabling freshness policies
 
 Freshness policies are not enabled by default while in preview. To use them in open source and local development, add the following to your `dagster.yaml`:

@@ -191,6 +191,7 @@ def build_schedule_from_partitioned_job(
                 cron_schedule,
                 "Creating a schedule from a static partitions definition requires a cron schedule",
             )
+            should_execute = None
         else:
             if cron_schedule or execution_timezone:
                 check.failed(
@@ -202,6 +203,23 @@ def build_schedule_from_partitioned_job(
                 minute_of_hour, hour_of_day, day_of_week, day_of_month
             )
             execution_timezone = time_partitions_def.timezone
+            if time_partitions_def.exclusions:
+
+                def _should_execute(context: ScheduleEvaluationContext) -> bool:
+                    with partition_loading_context(
+                        effective_dt=context.scheduled_execution_time,
+                        dynamic_partitions_store=context.instance
+                        if context.instance_ref is not None
+                        else None,
+                    ):
+                        window = time_partitions_def.get_last_partition_window_ignoring_exclusions()
+                        if not window:
+                            return True
+                        return not time_partitions_def.is_window_start_excluded(window.start)
+
+                should_execute = _should_execute
+            else:
+                should_execute = None
 
         return schedule(
             cron_schedule=cron_schedule,  # type: ignore[arg-type]
@@ -210,6 +228,7 @@ def build_schedule_from_partitioned_job(
             execution_timezone=execution_timezone,
             name=check.opt_str_param(name, "name", f"{job.name}_schedule"),
             description=check.opt_str_param(description, "description"),
+            should_execute=should_execute,
         )(_get_schedule_evaluation_fn(partitions_def, job, tags))
 
 
