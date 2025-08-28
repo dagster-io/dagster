@@ -128,7 +128,7 @@ class SlingReplicationCollectionComponent(Component, Resolvable):
     """Expose one or more Sling replications to Dagster as assets.
 
     To get started, run:
-    
+
     ``dg scaffold defs dagster_sling.SlingReplicationCollectionComponent {defs_path}``
 
     This will create a defs.yaml as well as a ``replication.yaml``, which is a Sling-specific configuration
