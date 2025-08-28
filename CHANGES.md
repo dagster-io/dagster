@@ -8,7 +8,7 @@
 - The `dagster` library now supports `protobuf==6.x`
 - [dg] `dg scaffold defs --help` now shows descriptions for subcommands.
 - [dg] A new `dg check toml` command has been added to validate your TOML configuration files.
-- [dagster-databricks] The `DatabricksAssetBundleComponent` has been added in preview. Databricks task can now be represented has assets and submitted via Dagster.
+- [dagster-databricks] The `DatabricksAssetBundleComponent` has been added in preview. Databricks task can now be represented as assets and submitted via Dagster.
 - [dagster-dbt] The DbtProjectComponent now takes an optional `cli_args` configuration to allow customizing the command that is run when your assets are executed.
 - [dagster-dbt] The polling interval and timeout used for runs triggered with the `DbtCloudWorkspace` resource can now be customized with the `DAGSTER_DBT_CLOUD_POLL_INTERVAL` and `DAGSTER_DBT_CLOUD_POLL_TIMEOUT` environment variables.
 - [ui] Added the ability to filter to failed/missing partitions in the asset report events dialog.
