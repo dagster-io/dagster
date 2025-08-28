@@ -8,11 +8,12 @@ import {
   MiddleTruncate,
   Mono,
   Row,
+  Tooltip,
   UnstyledButton,
 } from '@dagster-io/ui-components';
 import {useVirtualizer} from '@tanstack/react-virtual';
 import clsx from 'clsx';
-import React, {useMemo, useRef, useState} from 'react';
+import React, {memo, useMemo, useRef, useState} from 'react';
 import {Link} from 'react-router-dom';
 
 import styles from './AssetCatalogHorizontalTopAssetsChart.module.css';
@@ -56,13 +57,15 @@ const getChangeColor = (change: number) => {
 type MaybeData = null | {labels: string[]; data: number[]};
 
 interface Props {
+  currentTimeString: string;
+  previousTimeString: string;
   currentData: MaybeData;
   previousData: MaybeData;
   unitType: ReportingUnitType;
 }
 
-export const AssetCatalogHorizontalTopAssetsChart = React.memo(
-  ({currentData, previousData, unitType}: Props) => {
+export const AssetCatalogHorizontalTopAssetsChart = memo(
+  ({currentData, previousData, unitType, currentTimeString, previousTimeString}: Props) => {
     const [sortBy, setSortBy] = useState<{by: SortBy; dir: SortDir}>(() => ({
       by: getInitialSortBy(currentData, previousData),
       dir: 'desc',
@@ -164,22 +167,28 @@ export const AssetCatalogHorizontalTopAssetsChart = React.memo(
               <Icon name={sortBy.by === 'name' ? icon : 'expand'} />
             </UnstyledButton>
             {currentData ? (
-              <UnstyledButton
-                onClick={() => onSort('current')}
-                className={clsx(styles.sortButton, sortBy.by === 'current' && styles.active)}
-              >
-                <span>This period</span>
-                <Icon name={sortBy.by === 'current' ? icon : 'expand'} />
-              </UnstyledButton>
+              <Tooltip content={currentTimeString} placement="top">
+                <UnstyledButton
+                  onClick={() => onSort('current')}
+                  className={clsx(styles.sortButton, sortBy.by === 'current' && styles.active)}
+                >
+                  <span>This period</span>
+                  <Icon name="calendar" color={Colors.textLight()} />
+                  <Icon name={sortBy.by === 'current' ? icon : 'expand'} />
+                </UnstyledButton>
+              </Tooltip>
             ) : null}
             {previousData ? (
-              <UnstyledButton
-                onClick={() => onSort('previous')}
-                className={clsx(styles.sortButton, sortBy.by === 'previous' && styles.active)}
-              >
-                <span>Prev period</span>
-                <Icon name={sortBy.by === 'previous' ? icon : 'expand'} />
-              </UnstyledButton>
+              <Tooltip content={previousTimeString} placement="top">
+                <UnstyledButton
+                  onClick={() => onSort('previous')}
+                  className={clsx(styles.sortButton, sortBy.by === 'previous' && styles.active)}
+                >
+                  <span>Prev period</span>
+                  <Icon name="calendar" color={Colors.textLight()} />
+                  <Icon name={sortBy.by === 'previous' ? icon : 'expand'} />
+                </UnstyledButton>
+              </Tooltip>
             ) : null}
             {currentData && previousData ? (
               <UnstyledButton
