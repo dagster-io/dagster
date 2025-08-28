@@ -17,7 +17,7 @@
 
 ### Bugfixes
 
-- Fixed an issue that would require config provided to backfills to contain config for all assets in the conde location rather than just the selected ones.
+- Fixed an issue that would require config provided to backfills to contain config for all assets in the code location rather than just the selected ones.
 
 ## 1.11.7 (core) / 0.27.7 (libraries)
 
