@@ -3,7 +3,20 @@
 import re
 import subprocess
 from dataclasses import dataclass
+from enum import Enum
 from typing import Any
+
+
+class ChangeCategory(Enum):
+    """Categories of changes for diff analysis."""
+
+    FEATURE = "feature"
+    BUGFIX = "bugfix"
+    REFACTOR = "refactor"
+    DOCS = "docs"
+    TEST = "test"
+    CHORE = "chore"
+    UNKNOWN = "unknown"
 
 
 @dataclass
@@ -35,6 +48,10 @@ class SmartDiffSummary:
 
     # Context for AI
     summary_confidence: float  # How confident we are in this analysis
+
+    # Analysis categorization
+    change_category: ChangeCategory  # Type of change (feature, bugfix, etc.)
+    needs_detailed_review: bool  # Whether this change requires detailed review
 
 
 def run_git_command(cmd: list[str]) -> subprocess.CompletedProcess:
@@ -164,6 +181,47 @@ def detect_api_changes(functions: list[StructuralChange]) -> list[str]:
     return api_changes
 
 
+def determine_change_category(
+    functions: list[StructuralChange], classes: list[StructuralChange], modified_files: list[str]
+) -> ChangeCategory:
+    """Determine the category of change based on patterns in the diff."""
+    # Check for test files
+    test_files = [f for f in modified_files if "test" in f.lower()]
+    if len(test_files) == len(modified_files) and test_files:
+        return ChangeCategory.TEST
+
+    # Check for documentation files
+    doc_files = [
+        f
+        for f in modified_files
+        if any(ext in f.lower() for ext in [".md", ".rst", ".txt", "docs/"])
+    ]
+    if doc_files and len(doc_files) >= len(modified_files) / 2:
+        return ChangeCategory.DOCS
+
+    # Check for bugfix patterns
+    bugfix_patterns = ["fix", "bug", "error", "issue", "patch"]
+    if any(pattern in f.lower() for f in modified_files for pattern in bugfix_patterns):
+        return ChangeCategory.BUGFIX
+
+    # Check for refactor patterns
+    refactor_patterns = ["refactor", "cleanup", "reorganize", "restructure"]
+    if any(pattern in f.lower() for f in modified_files for pattern in refactor_patterns):
+        return ChangeCategory.REFACTOR
+
+    # If there are new functions/classes, likely a feature
+    if any(change.change_type == "added" for change in functions + classes):
+        return ChangeCategory.FEATURE
+
+    # Check for configuration/build files
+    config_patterns = [".yml", ".yaml", ".json", ".toml", "setup.py", "requirements", "makefile"]
+    if any(pattern in f.lower() for f in modified_files for pattern in config_patterns):
+        return ChangeCategory.CHORE
+
+    # Default to unknown if we can't categorize
+    return ChangeCategory.UNKNOWN
+
+
 def get_smart_diff_summary(diff_range: str) -> SmartDiffSummary:
     """Generate intelligent diff summary optimized for AI consumption."""
     # Get basic file statistics (lightweight)
@@ -233,6 +291,20 @@ def get_smart_diff_summary(diff_range: str) -> SmartDiffSummary:
     # Detect API changes
     api_changes = detect_api_changes(all_functions)
 
+    # Determine change category based on patterns
+    change_category = determine_change_category(all_functions, all_classes, modified_files)
+
+    # Determine if detailed review is needed
+    needs_detailed_review = (
+        files_changed > 10
+        or additions > 500
+        or len(api_changes) > 5
+        or (
+            any("test" not in f.lower() for f in modified_files if f.endswith(".py"))
+            and len(all_functions) > 20
+        )
+    )
+
     return SmartDiffSummary(
         files_changed=files_changed,
         additions=additions,
@@ -243,6 +315,8 @@ def get_smart_diff_summary(diff_range: str) -> SmartDiffSummary:
         key_implementation_details=key_details,
         api_changes=api_changes,
         summary_confidence=confidence,
+        change_category=change_category,
+        needs_detailed_review=needs_detailed_review,
     )
 
 
