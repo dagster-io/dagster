@@ -17,158 +17,111 @@ This directory contains infrastructure for testing Dagster Plus CLI API commands
 
 3. **Run tests to generate syrupy snapshots**: `pytest api_tests/{domain}_tests/ --snapshot-update`
 
-## Directory Structure
+## Core Concepts
 
-```
-api_tests/
-├── shared/                           # Shared utilities
-│   ├── fixture_config.py             # FixtureScenario dataclass
-│   └── yaml_loader.py                # YAML loading utilities
-├── deployment_tests/                 # Deployment API tests
-│   ├── fixtures/
-│   │   ├── __init__.py               # Fixture loading functions
-│   │   ├── scenarios.yaml            # Test scenarios registry
-│   │   ├── success_multiple_deployments/  # Individual scenario directories
-│   │   │   ├── 01_response.json      # GraphQL response from recording
-│   │   │   └── cli_output.txt        # Raw CLI output
-│   │   └── empty_deployments/
-│   │       ├── 01_response.json
-│   │       └── cli_output.txt
-│   ├── __snapshots__/                # Syrupy-generated snapshot files
-│   │   ├── test_business_logic.ambr  # Business logic snapshots
-│   │   └── test_dynamic_command_execution.ambr  # CLI output snapshots
-│   ├── test_business_logic.py        # Pure function tests with syrupy
-│   └── test_dynamic_command_execution.py  # CLI integration tests with syrupy
-├── asset_tests/                      # Asset API tests (similar structure)
-├── rest_compliance_infrastructure.py # REST API compliance utilities
-├── test_rest_compliance.py          # REST compliance test suite
-└── conftest.py                       # Shared test configuration with syrupy
-```
+### Test Infrastructure
+
+The API test infrastructure provides a comprehensive framework for testing CLI commands that interact with GraphQL APIs. It separates concerns between:
+
+- **GraphQL response recording**: Capturing real API responses for test scenarios
+- **Business logic testing**: Validating data processing functions
+- **CLI integration testing**: Ensuring commands produce correct output
+- **REST compliance**: Enforcing API design conventions
+
+### Domain Organization
+
+Each API domain (deployments, assets, etc.) maintains its own test directory with:
+
+- **Scenario registry** (`scenarios.yaml`): Defines test commands and their context
+- **Recorded fixtures**: Real GraphQL responses and CLI outputs
+- **Test modules**: Business logic and CLI integration tests
+- **Snapshots**: Syrupy-managed expected outputs for validation
 
 ## Test Types
 
-### 1. Business Logic Tests (`test_business_logic.py`)
+### Business Logic Tests
 
-Tests pure functions that process GraphQL responses without external dependencies.
+Pure function tests that validate data processing logic without external dependencies. These tests use recorded GraphQL responses as input and snapshot the transformed output.
 
-```python
-def test_process_deployments_response(snapshot):
-    """Test the deployment response processing function."""
-    response = load_deployment_response_fixture("success_multiple_deployments")[0]
-    result = process_deployments_response(response)
-    snapshot.assert_match(result)
-```
+### Dynamic CLI Integration Tests
 
-### 2. Dynamic CLI Integration Tests (`test_dynamic_command_execution.py`)
+Automated tests that execute CLI commands with mocked GraphQL responses. The test framework discovers scenarios from YAML registries and validates outputs using syrupy snapshots.
 
-Automatically tests all scenarios from `scenarios.yaml` by mocking GraphQL responses and using syrupy for output validation.
+### REST Compliance Tests
 
-```python
-@pytest.mark.parametrize("domain,fixture_name,command", list(discover_scenario_fixtures()))
-def test_command_execution(self, domain: str, fixture_name: str, command: str, snapshot):
-    """Test executing a command against its recorded GraphQL responses."""
-    # Load fixtures, mock GraphQL, run command
-    result = self._test_deployment_command(click_command, args, graphql_responses, fixture_name)
+Automated validation ensuring API classes follow REST conventions:
 
-    # Syrupy snapshot validation
-    if "--json" in args:
-        parsed_output = json.loads(result.output)
-        snapshot.assert_match(parsed_output, name=f"{fixture_name}_json_output")
-    else:
-        snapshot.assert_match(result.output, name=f"{fixture_name}_text_output")
-```
-
-### 3. REST Compliance Tests (`test_rest_compliance.py`)
-
-Automated tests ensuring API classes follow REST conventions:
-
-- Method naming (get*, list*, create*, update*, delete\_)
+- Method naming patterns (get*, list*, create*, update*, delete\_)
 - Type signatures (primitives + Pydantic models only)
-- Response consistency (list methods return objects with `items` field)
-- Parameter patterns (consistent ID naming, Optional typing)
+- Response consistency (list methods return standardized structures)
+- Parameter patterns (consistent naming and typing conventions)
 
-## Recording New Test Scenarios
+## Working with Test Scenarios
 
-### Step 1: Define Scenario
+### Creating New Scenarios
 
-Add to `{domain}_tests/fixtures/scenarios.yaml`:
+1. **Define the scenario** in the domain's `scenarios.yaml` file with a descriptive name and command
+2. **Record live responses** using `dagster-dev dg-api-record` to capture real API interactions
+3. **Generate snapshots** by running tests with `--snapshot-update` to establish baselines
 
-```yaml
-success_asset_details:
-  command: "dg api asset view my-asset-key --json"
-```
+### Updating Existing Scenarios
 
-### Step 2: Record Live Responses
+When CLI output changes (e.g., formatting updates, new fields):
 
-```bash
-# Records GraphQL responses and CLI output to fixture folders
-dagster-dev dg-api-record asset --fixture success_asset_details
-```
+- Run tests with `--snapshot-update` to accept new outputs
+- Review snapshot diffs to ensure changes are intentional
+- Commit both code and snapshot changes together
 
-This creates:
+When API responses change:
 
-- `success_asset_details/01_response.json` - GraphQL response
-- `success_asset_details/cli_output.txt` - Raw CLI output
+- Re-record fixtures using `dagster-dev dg-api-record`
+- Update snapshots to match new responses
+- Validate that business logic handles the changes correctly
 
-### Step 3: Run Tests to Generate Snapshots
-
-```bash
-# Generate syrupy snapshots from recorded fixtures
-pytest api_tests/asset_tests/ --snapshot-update
-```
-
-Tests automatically use the recorded fixtures and validate CLI outputs with syrupy snapshots.
-
-## Commands Available
+## Key Commands
 
 - `dagster-dev dg-api-record {domain}` - Record all scenarios for a domain
 - `dagster-dev dg-api-record {domain} --fixture {name}` - Record specific scenario
-- `pytest api_tests/{domain}_tests/ --snapshot-update` - Update syrupy snapshots when outputs change
+- `pytest api_tests/{domain}_tests/ --snapshot-update` - Update snapshots when outputs change
 
-## Fixture Loading
+## Extending the Test Suite
 
-Each domain provides a fixture loader in `{domain}_tests/fixtures/__init__.py`:
+### Adding New API Domains
 
-```python
-def load_deployment_response_fixture(fixture_name: str) -> list[dict[str, Any]]:
-    """Load GraphQL responses for a deployment test scenario."""
-    # Returns list of GraphQL responses (one per API call made)
-```
+When introducing a new API domain:
 
-## Adding New API Domains
+1. Create the domain test directory structure
+2. Define test scenarios in `scenarios.yaml`
+3. Implement fixture loading functions
+4. Record initial fixtures from the live API
+5. Write domain-specific tests as needed
+6. Ensure REST compliance tests cover new API classes
 
-1. **Create directory structure**:
+### Adding Test Categories
 
-   ```bash
-   mkdir -p api_tests/new_domain_tests/{fixtures,__snapshots__}
-   ```
+The infrastructure supports various test categories beyond the core types:
 
-2. **Create `fixtures/scenarios.yaml`**:
+- **Error handling tests**: Validate graceful failures and error messages
+- **Performance tests**: Monitor response times and data processing efficiency
+- **Integration tests**: Verify interactions between multiple API domains
+- **Migration tests**: Ensure backward compatibility during API evolution
 
-   ```yaml
-   success_basic_operation:
-     command: "dg api new-domain operation --json"
-   ```
+## Architecture Benefits
 
-3. **Create `fixtures/__init__.py`** with domain-specific loader:
+### Development Velocity
 
-   ```python
-   def load_new_domain_response_fixture(fixture_name: str) -> list[dict[str, Any]]:
-       # Implementation following pattern from deployment_tests
-   ```
+- **Rapid iteration**: Update snapshots instantly when outputs change intentionally
+- **Real data testing**: Work with actual API responses, not mocked data
+- **Parallel development**: Multiple domains can evolve independently
 
-4. **Record fixtures**: `dagster-dev dg-api-record new-domain`
+### Maintainability
 
-5. **Write tests** following the established patterns
+- **Clear separation**: GraphQL fixtures, business logic, and CLI output are distinct
+- **Version control friendly**: Human-readable diffs for all test artifacts
+- **Automated compliance**: REST conventions enforced programmatically
 
-## Benefits
+### Test Quality
 
-- **Syrupy snapshot testing**: Superior diff experience with colored output and atomic updates
-- **Simplified recording**: No complex JSON fixture management - just capture and snapshot
-- **Separation of concerns**: GraphQL recording vs CLI testing
-- **Real data**: All fixtures from actual API responses
-- **Fast updates**: CLI changes only need `pytest --snapshot-update`, no API calls
-- **Domain isolation**: Each API area has independent fixtures
-- **REST compliance**: Automated enforcement of API conventions
-- **Version control friendly**: Clear diffs for API vs CLI changes
-- **Batch updates**: `pytest --snapshot-update` updates all snapshots atomically
+- **Comprehensive coverage**: Every command path tested with real scenarios
+- **Regression detection**: Snapshots catch unintended output changes
+- **Consistency validation**: Ensures uniform behavior across API domains
