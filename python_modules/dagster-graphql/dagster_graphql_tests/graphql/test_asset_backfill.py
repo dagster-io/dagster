@@ -1,7 +1,7 @@
 from typing import Optional
 from unittest import mock
 
-from dagster import AssetKey, Definitions, asset
+from dagster import AssetKey, AssetOut, Definitions, asset, multi_asset
 from dagster._core.definitions.assets.graph.asset_graph_subset import AssetGraphSubset
 from dagster._core.definitions.partitions.definition import (
     DailyPartitionsDefinition,
@@ -172,6 +172,15 @@ def get_repo_with_non_partitioned_asset() -> RepositoryDefinition:
     def asset2(asset1): ...
 
     return Definitions(assets=[asset1, asset2]).get_repository_def()
+
+
+def get_repo_with_non_subsettable_multi_asset() -> RepositoryDefinition:
+    partitions_def = StaticPartitionsDefinition(["x", "y", "z"])
+
+    @multi_asset(outs={"a": AssetOut(), "b": AssetOut()}, partitions_def=partitions_def)
+    def non_subsettable_multi_asset(): ...
+
+    return Definitions(assets=[non_subsettable_multi_asset]).get_repository_def()
 
 
 def get_repo_with_missing_upstream_partition() -> RepositoryDefinition:
@@ -675,6 +684,84 @@ def test_launch_asset_backfill_with_nonexistent_upstream_partition_key():
             assert (
                 "depends on non-existent partitions: EntitySubset<AssetKey(['parent'])>(DefaultPartitionsSubset(subset={'c'}"
                 in launch_backfill_result.data["launchPartitionBackfill"]["message"]
+            )
+
+
+def test_launch_asset_backfill_with_non_subsettable_multi_asset():
+    with instance_for_test() as instance:
+        with define_out_of_process_context(
+            __file__, "get_repo_with_non_subsettable_multi_asset", instance
+        ) as context:
+            # launchPartitionBackfill
+            launch_backfill_result = execute_dagster_graphql(
+                context,
+                LAUNCH_PARTITION_BACKFILL_MUTATION,
+                variables={
+                    "backfillParams": {
+                        "partitionNames": ["x", "y"],
+                        "assetSelection": [{"path": ["a"]}],
+                    }
+                },
+            )
+            assert (
+                launch_backfill_result.data["launchPartitionBackfill"]["__typename"]
+                == "PythonError"
+            )
+            assert (
+                "Backfill must include every key in a non-subsettable multi-asset, included a but not b"
+                in launch_backfill_result.data["launchPartitionBackfill"]["message"]
+            )
+
+            launch_backfill_result = execute_dagster_graphql(
+                context,
+                LAUNCH_PARTITION_BACKFILL_MUTATION,
+                variables={
+                    "backfillParams": {
+                        "partitionsByAssets": [
+                            {
+                                "assetKey": {"path": ["a"]},
+                                "partitions": {
+                                    "range": {
+                                        "start": "x",
+                                        "end": "x",
+                                    }
+                                },
+                            },
+                            {
+                                "assetKey": {"path": ["b"]},
+                                "partitions": {
+                                    "range": {
+                                        "start": "x",
+                                        "end": "y",
+                                    }
+                                },
+                            },
+                        ],
+                    }
+                },
+            )
+            assert (
+                launch_backfill_result.data["launchPartitionBackfill"]["__typename"]
+                == "PythonError"
+            )
+            assert (
+                "Targeted subset must match between every key in a non-subsettable multi-asset, but does not match between"
+                in launch_backfill_result.data["launchPartitionBackfill"]["message"]
+            )
+
+            launch_backfill_result = execute_dagster_graphql(
+                context,
+                LAUNCH_PARTITION_BACKFILL_MUTATION,
+                variables={
+                    "backfillParams": {
+                        "partitionNames": ["x", "y"],
+                        "assetSelection": [{"path": ["a"]}, {"path": ["b"]}],
+                    }
+                },
+            )
+            assert (
+                launch_backfill_result.data["launchPartitionBackfill"]["__typename"]
+                == "LaunchBackfillSuccess"
             )
 
 

@@ -196,12 +196,41 @@ def assert_valid_asset_partition_backfill(
     if not asset_backfill_data:
         return
 
+    checked_execution_set_asset_keys = set()
+
     for asset_key in asset_backfill_data.target_subset.asset_keys:
+        asset_node = asset_graph.get(asset_key)
+
         entity_subset = asset_graph_view.get_entity_subset_from_asset_graph_subset(
             asset_backfill_data.target_subset, asset_key
         )
 
-        partitions_def = asset_graph.get(asset_key).partitions_def
+        if asset_key not in checked_execution_set_asset_keys:
+            checked_execution_set_asset_keys.add(asset_key)
+            for execution_set_key in asset_node.execution_set_asset_keys:
+                if execution_set_key == asset_key:
+                    continue
+
+                if execution_set_key not in asset_backfill_data.target_subset.asset_keys:
+                    raise DagsterInvariantViolationError(
+                        f"Backfill must include every key in a non-subsettable multi-asset, included "
+                        f"{asset_key.to_user_string()} but not {execution_set_key.to_user_string()}"
+                    )
+
+                other_entity_subset = asset_graph_view.get_entity_subset_from_asset_graph_subset(
+                    asset_backfill_data.target_subset, execution_set_key
+                )
+
+                if entity_subset.get_internal_value() != other_entity_subset.get_internal_value():
+                    raise DagsterInvariantViolationError(
+                        f"Targeted subset must match between every key in"
+                        f" a non-subsettable multi-asset, but does not match between {asset_key.to_user_string()} "
+                        f"and {execution_set_key.to_user_string()}"
+                    )
+
+                checked_execution_set_asset_keys.add(execution_set_key)
+
+        partitions_def = asset_node.partitions_def
 
         if not partitions_def:
             continue
