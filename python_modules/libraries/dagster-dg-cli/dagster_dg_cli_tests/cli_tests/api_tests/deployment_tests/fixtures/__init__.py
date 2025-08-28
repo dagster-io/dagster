@@ -49,25 +49,6 @@ def load_scenario_graphql_responses(scenario_name: str) -> list[dict[str, Any]]:
     return responses
 
 
-def load_scenario_cli_output(scenario_name: str) -> str:
-    """Load CLI output from a scenario folder.
-
-    Args:
-        scenario_name: Name of the scenario folder
-
-    Returns:
-        CLI output content
-    """
-    scenario_folder = Path(__file__).parent / scenario_name
-    cli_output_file = scenario_folder / "cli_output.txt"
-
-    if not cli_output_file.exists():
-        raise ValueError(f"CLI output file not found: {cli_output_file}")
-
-    with open(cli_output_file) as f:
-        return f.read()
-
-
 def get_deployment_fixture_scenario(response_name: str) -> str:
     """Get the scenario command that generates a specific deployment fixture.
 

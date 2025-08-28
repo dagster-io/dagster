@@ -33,7 +33,7 @@ The API test infrastructure provides a comprehensive framework for testing CLI c
 Each API domain (deployments, assets, etc.) maintains its own test directory with:
 
 - **Scenario registry** (`scenarios.yaml`): Defines test commands and their context
-- **Recorded fixtures**: Real GraphQL responses and CLI outputs
+- **Recorded fixtures**: GraphQL responses as JSON files (e.g., `01_placeholder_query.json`)
 - **Test modules**: Business logic and CLI integration tests
 - **Snapshots**: Syrupy-managed expected outputs for validation
 
@@ -47,6 +47,13 @@ Pure function tests that validate data processing logic without external depende
 
 Automated tests that execute CLI commands with mocked GraphQL responses. The test framework discovers scenarios from YAML registries and validates outputs using syrupy snapshots.
 
+The `test_dynamic_command_execution.py` file:
+
+- Discovers all scenarios from `scenarios.yaml` files across domains
+- Loads corresponding GraphQL response fixtures (JSON files)
+- Executes commands with mocked GraphQL clients
+- Validates output using syrupy snapshots (both JSON and text formats)
+
 ### REST Compliance Tests
 
 Automated validation ensuring API classes follow REST conventions:
@@ -55,6 +62,15 @@ Automated validation ensuring API classes follow REST conventions:
 - Type signatures (primitives + Pydantic models only)
 - Response consistency (list methods return standardized structures)
 - Parameter patterns (consistent naming and typing conventions)
+
+## Fixture Structure
+
+Each test scenario has a corresponding directory under `{domain}_tests/fixtures/{scenario_name}/` containing:
+
+- `01_placeholder_query.json`: The GraphQL response data used by tests
+- Additional numbered JSON files if multiple GraphQL calls are needed
+
+The JSON files are loaded by `load_deployment_response_fixture()` (or equivalent for other domains) and used to mock GraphQL responses during testing.
 
 ## Working with Test Scenarios
 

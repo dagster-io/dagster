@@ -129,13 +129,13 @@ class TestDynamicCommandExecution:
                     # For JSON output, parse and snapshot the structure
                     try:
                         parsed_output = json.loads(result.output)
-                        snapshot.assert_match(parsed_output, name=f"{fixture_name}_json_output")
+                        snapshot.assert_match(parsed_output)
                     except json.JSONDecodeError:
                         # For error cases, snapshot the raw output
-                        snapshot.assert_match(result.output, name=f"{fixture_name}_error_output")
+                        snapshot.assert_match(result.output)
                 else:
                     # For text output, snapshot the raw CLI output
-                    snapshot.assert_match(result.output, name=f"{fixture_name}_text_output")
+                    snapshot.assert_match(result.output)
 
                 # Keep existing exit code assertions for safety
                 if "error" not in fixture_name.lower():

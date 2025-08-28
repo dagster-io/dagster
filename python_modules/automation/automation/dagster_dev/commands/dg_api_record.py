@@ -97,16 +97,8 @@ def record_graphql_for_fixture(domain: str, fixture_name: str, command: str) -> 
             timeout=60,
         )
 
-        # Save the raw CLI output as a text file for inspection
-        output_file = fixture_dir / "cli_output.txt"
-        with open(output_file, "w") as f:
-            if result.returncode == 0:
-                f.write(result.stdout)
-            else:
-                f.write("=== STDERR ===\n")
-                f.write(result.stderr)
-                f.write("\n=== STDOUT ===\n")
-                f.write(result.stdout)
+        # Note: cli_output.txt files are no longer created as they're not used by tests
+        # Tests use syrupy snapshots instead
 
         # For JSON commands, also save the parsed response as a numbered JSON file
         if result.returncode == 0:
@@ -116,10 +108,10 @@ def record_graphql_for_fixture(domain: str, fixture_name: str, command: str) -> 
                 with open(json_file, "w") as f:
                     json.dump(graphql_response, f, indent=2, sort_keys=True)
                 click.echo(f"✅ Captured successful response for {fixture_name}")
-                click.echo(f"📄 Saved to {json_file} and {output_file}")
+                click.echo(f"📄 Saved to {json_file}")
             except json.JSONDecodeError as e:
                 click.echo(f"Warning: Command output is not valid JSON: {e}")
-                click.echo(f"Output saved to {output_file} only")
+                click.echo("No JSON file created")
         else:
             click.echo(f"⚠️  Command failed with exit code {result.returncode}")
             if fixture_name.startswith("error_"):
