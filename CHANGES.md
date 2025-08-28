@@ -1,5 +1,24 @@
 # Changelog
 
+## 1.11.8 (core) / 0.27.8 (libraries)
+
+### New
+
+- A param `exclusions` was added to time window partition definitions to support custom calendars.
+- The `dagster` library now supports `protobuf==6.x`
+- [dg] `dg scaffold defs --help` now shows descriptions for subcommands.
+- [dg] A new `dg check toml` command has been added to validate your TOML configuration files.
+- [dagster-databricks] The `DatabricksAssetBundleComponent` has been added in preview. Databricks task can now be represented has assets and submitted via Dagster.
+- [dagster-dbt] The DbtProjectComponent now takes an optional `cli_args` configuration to allow customizing the command that is run when your assets are executed.
+- [dagster-dbt] The polling interval and timeout used for runs triggered with the `DbtCloudWorkspace` resource can now be customized with the `DAGSTER_DBT_CLOUD_POLL_INTERVAL` and `DAGSTER_DBT_CLOUD_POLL_TIMEOUT` environment variables.
+- [ui] Added the ability to filter to failed/missing partitions in the asset report events dialog.
+- [ui] A tree view has been added in the Global Asset Lineage.
+- [telemetry] Telemetry disclaimer now prints to stderr.
+
+### Bugfixes
+
+- Fixed an issue that would require config provided to backfills to contain config for all assets in the conde location rather than just the selected ones.
+
 ## 1.11.7 (core) / 0.27.7 (libraries)
 
 ### New
