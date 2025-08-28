@@ -1,14 +1,14 @@
+import json
+
 from dagster_dbt import DbtCliResource, dbt_assets
 
 import dagster as dg
-import json
 
 from .resources import dbt_project
 
 INCREMENTAL_SELECTOR = "config.materialized:incremental"
 
 daily_partition = dg.DailyPartitionsDefinition()
-
 
 
 @dbt_assets(
