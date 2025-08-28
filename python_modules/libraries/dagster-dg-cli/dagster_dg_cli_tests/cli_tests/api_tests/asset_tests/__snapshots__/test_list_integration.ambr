@@ -1,0 +1,114 @@
+# serializer version: 1
+# name: TestAssetListCommand.test_list_assets_api_error[0]
+  '''
+  Error querying Dagster Plus API: GraphQL API Error
+  Error: Failed to list assets: GraphQL API Error
+  
+  '''
+# ---
+# name: TestAssetListCommand.test_list_assets_api_error_json_output[0]
+  '''
+  {"error": "GraphQL API Error"}
+  Error: Failed to list assets: GraphQL API Error
+  
+  '''
+# ---
+# name: TestAssetListCommand.test_list_assets_json_output[0]
+  dict({
+    'cursor': None,
+    'has_more': False,
+    'items': list([
+      dict({
+        'asset_key': 'users',
+        'asset_key_parts': list([
+          'users',
+        ]),
+        'description': 'User data table',
+        'group_name': 'core_tables',
+        'id': 'asset-1',
+        'kinds': list([
+          'dbt',
+          'table',
+        ]),
+        'metadata_entries': list([
+          dict({
+            'description': 'data-team',
+            'label': 'owner',
+          }),
+        ]),
+      }),
+    ]),
+  })
+# ---
+# name: TestAssetListCommand.test_list_assets_text_output[0]
+  '''
+  Asset Key: users
+  ID: asset-1
+  Group: core_tables
+  Description: User data table
+  Kinds: dbt, table
+  
+  Asset Key: analytics/user_metrics
+  ID: asset-2
+  Group: analytics
+  Description: Aggregated user metrics
+  Kinds: dbt, view
+  
+  Pagination:
+    Has More: True
+    Next Cursor: next_cursor
+  
+  '''
+# ---
+# name: TestAssetListCommand.test_list_assets_with_pagination_options[0]
+  '''
+  No assets found.
+  
+  '''
+# ---
+# name: TestAssetViewCommand.test_view_asset_json_output[0]
+  dict({
+    'asset_key': 'analytics/user_metrics',
+    'asset_key_parts': list([
+      'analytics',
+      'user_metrics',
+    ]),
+    'description': 'Aggregated user metrics',
+    'group_name': 'analytics',
+    'id': 'asset-2',
+    'kinds': list([
+      'dbt',
+      'view',
+    ]),
+    'metadata_entries': list([
+    ]),
+  })
+# ---
+# name: TestAssetViewCommand.test_view_asset_not_found[0]
+  '''
+  Error querying Dagster Plus API: Asset not found: nonexistent-asset
+  Error: Failed to get asset: Asset not found: nonexistent-asset
+  
+  '''
+# ---
+# name: TestAssetViewCommand.test_view_asset_not_found_json_output[0]
+  '''
+  {"error": "Asset not found: nonexistent-asset"}
+  Error: Failed to get asset: Asset not found: nonexistent-asset
+  
+  '''
+# ---
+# name: TestAssetViewCommand.test_view_asset_text_output[0]
+  '''
+  Asset Key: users
+  ID: asset-1
+  Group: core_tables
+  Description: User data table
+  Kinds: dbt, table
+  
+  Metadata:
+    owner: data-team
+    rows: 1000000
+  
+  '''
+# ---

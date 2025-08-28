@@ -3,6 +3,7 @@
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
+    from dagster_dg_cli.dagster_plus_api.schemas.asset import DgPlusApiAsset, DgPlusApiAssetList
     from dagster_dg_cli.dagster_plus_api.schemas.deployment import DeploymentList
 
 
@@ -23,3 +24,55 @@ def format_deployments(deployments: "DeploymentList", as_json: bool) -> str:
         )
 
     return "\n".join(lines).rstrip()  # Remove trailing empty line
+
+
+def format_assets(assets: "DgPlusApiAssetList", as_json: bool) -> str:
+    """Format asset list for output."""
+    if as_json:
+        return assets.model_dump_json(indent=2)
+
+    lines = []
+    for asset in assets.items:
+        lines.extend(
+            [
+                f"Asset Key: {asset.asset_key}",
+                f"ID: {asset.id}",
+                f"Description: {asset.description or 'None'}",
+                f"Group: {asset.group_name}",
+                f"Kinds: {', '.join(asset.kinds) if asset.kinds else 'None'}",
+                "",  # Empty line between assets
+            ]
+        )
+
+    return "\n".join(lines).rstrip()  # Remove trailing empty line
+
+
+def format_asset(asset: "DgPlusApiAsset", as_json: bool) -> str:
+    """Format single asset for output."""
+    if as_json:
+        return asset.model_dump_json(indent=2)
+
+    lines = [
+        f"Asset Key: {asset.asset_key}",
+        f"ID: {asset.id}",
+        f"Description: {asset.description or 'None'}",
+        f"Group: {asset.group_name}",
+        f"Kinds: {', '.join(asset.kinds) if asset.kinds else 'None'}",
+    ]
+
+    if asset.metadata_entries:
+        lines.append("")
+        lines.append("Metadata:")
+        for entry in asset.metadata_entries:
+            value = entry.get("description", "")
+            for key in ["text", "url", "path", "jsonString", "mdStr"]:
+                if entry.get(key):
+                    value = entry[key]
+                    break
+            for key in ["floatValue", "intValue", "boolValue"]:
+                if entry.get(key) is not None:
+                    value = str(entry[key])
+                    break
+            lines.append(f"  {entry['label']}: {value}")
+
+    return "\n".join(lines)
