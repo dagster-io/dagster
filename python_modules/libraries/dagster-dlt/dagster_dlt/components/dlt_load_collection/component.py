@@ -92,11 +92,7 @@ class DltLoadSpecModel(Resolvable):
 @scaffold_with(DltLoadCollectionScaffolder)
 @dataclass
 class DltLoadCollectionComponent(Component, Resolvable):
-    """Expose one or more dlt loads to Dagster as assets.
-
-    [dlt](https://dlthub.com/) is a tool for extracting data from various sources and loading it into a
-    destination.
-    """
+    """Expose one or more dlt loads to Dagster as assets."""
 
     loads: Sequence[DltLoadSpecModel]
 

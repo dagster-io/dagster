@@ -85,7 +85,7 @@ def resolve_dbt_project(context: ResolutionContext, model) -> DbtProject:
 class DbtProjectComponent(Component, Resolvable):
     """Expose a DBT project to Dagster as a set of assets.
 
-    This component assumes that you have already set up a dbt project, for example, the dbt [Jaffle shop](https://github.com/dbt-labs/jaffle-shop). Run `git clone --depth=1 https://github.com/dbt-labs/jaffle-shop.git jaffle_shop && rm -rf jaffle_shop/.git` to copy that project
+    This component assumes that you have already set up a dbt project, for example, the dbt `Jaffle shop <https://github.com/dbt-labs/jaffle-shop>`_. Run `git clone --depth=1 https://github.com/dbt-labs/jaffle-shop.git jaffle_shop && rm -rf jaffle_shop/.git` to copy that project
     into your Dagster project directory.
 
     Scaffold a DbtProjectComponent definition by running `dg scaffold defs dagster_dbt.DbtProjectComponent --project-path path/to/your/existing/dbt_project`
