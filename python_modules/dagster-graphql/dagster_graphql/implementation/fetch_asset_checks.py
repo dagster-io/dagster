@@ -1,10 +1,7 @@
 from collections.abc import Sequence
 from typing import TYPE_CHECKING, Optional
 
-from dagster import (
-    AssetKey,
-    _check as check,
-)
+from dagster import _check as check
 from dagster._core.definitions.asset_checks.asset_check_spec import AssetCheckKey
 from dagster._core.events import ASSET_CHECK_EVENTS, DagsterEventType
 from dagster._core.loader import LoadingContext
@@ -15,16 +12,6 @@ if TYPE_CHECKING:
     from dagster_graphql.schema.asset_checks import GrapheneAssetCheckExecution
     from dagster_graphql.schema.entity_key import GrapheneAssetCheckHandle
     from dagster_graphql.schema.util import ResolveInfo
-
-
-def has_asset_checks(
-    graphene_info: "ResolveInfo",
-    asset_key: AssetKey,
-) -> bool:
-    return any(
-        external_check.asset_key == asset_key
-        for external_check in graphene_info.context.asset_graph.asset_checks
-    )
 
 
 def fetch_asset_check_executions(

@@ -64,3 +64,5 @@ With the dbt resource defined, you can use the dbt project to generate the dbt a
 To execute your dbt models, you can use the `dg launch` command to kick off a run through the CLI:
 
 <CliInvocationExample path="docs_snippets/docs_snippets/guides/components/integrations/dbt-component/9-dbt-run.txt" />
+
+## 5. Handling incremental models

@@ -8,6 +8,8 @@ from multiprocessing.context import BaseContext as MultiprocessingBaseContext
 from multiprocessing.process import BaseProcess
 from typing import TYPE_CHECKING, Any, Optional
 
+from dagster_shared.utils.timing import format_duration
+
 from dagster import _check as check
 from dagster._core.definitions.metadata import MetadataValue
 from dagster._core.definitions.reconstruct import ReconstructableJob
@@ -38,7 +40,7 @@ from dagster._core.executor.child_process_executor import (
 from dagster._core.instance import DagsterInstance
 from dagster._utils import get_run_crash_explanation, start_termination_thread
 from dagster._utils.error import SerializableErrorInfo, serializable_error_info_from_exc_info
-from dagster._utils.timing import TimerResult, format_duration, time_execution_scope
+from dagster._utils.timing import TimerResult, time_execution_scope
 
 if TYPE_CHECKING:
     from dagster._core.instance.ref import InstanceRef

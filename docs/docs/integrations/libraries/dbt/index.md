@@ -135,3 +135,43 @@ You can refer to the `customers` asset in this component by using the `asset_key
 <WideContent maxSize={1100}>
   <CliInvocationExample path="docs_snippets/docs_snippets/guides/components/integrations/dbt-component/17-list-defs.txt" />
 </WideContent>
+
+## 8. Handling incremental models
+
+If you have incremental models in your dbt project, you can model these as partitioned assets, and update the command that is used to run the dbt models to pass in `--vars` based on the range of partitions that are being processed.
+
+The first step is to add a new [template var](/guides/build/components/building-pipelines-with-components/using-template-variables) to your component. This will be used to define the partitions definition that will be used to partition the assets.
+
+<CodeExample
+  path="docs_snippets/docs_snippets/guides/components/integrations/dbt-component/18-template-vars.py"
+  language="python"
+  title="my_project/defs/dbt_ingest/template_vars.py"
+/>
+
+The next step is to update the `defs.yaml` file to use the new template var and apply this partitions definition to all assets using the `post_process` field:
+
+<CodeExample
+  path="docs_snippets/docs_snippets/guides/components/integrations/dbt-component/19-defs.yaml"
+  title="my_project/defs/dbt_ingest/defs.yaml"
+  language="yaml"
+/>
+
+Finally, we need to pass in new configuration to the `cli_args` field so that the dbt execution actually changes based on what partition is executing. In particular, we want to pass in values to the `--vars` configuration field that determine the range of time that our incremental models should process.
+
+The specific format of this configuration depends on your specific dbt project setup, but one common pattern is to use a `start_date` and `end_date` parameter for this purpose.
+
+When the `cli_args` field is resolved, it has access to a `context.partition_time_window` object, which is Dagster's representation of the time range that should be processed on the current run. This can be converted into a format recognized by your dbt project using template variables:
+
+<CodeExample
+  path="docs_snippets/docs_snippets/guides/components/integrations/dbt-component/20-defs.yaml"
+  title="my_project/defs/dbt_ingest/defs.yaml"
+  language="yaml"
+/>
+
+Dagster will automatically convert this configuration dictionary into the JSON-encoded string that is expected by the dbt CLI.
+
+<WideContent maxSize={1100}>
+  <CliInvocationExample path="docs_snippets/docs_snippets/guides/components/integrations/dbt-component/21-list-defs.txt" />
+</WideContent>
+
+If you have multiple different partitions definitions, you will need to create separate `DbtProjectComponent` instances for each `PartitionsDefinition` you want to use. You can filter each component to a selection of dbt models using the `select` configuration option.

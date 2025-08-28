@@ -19,7 +19,7 @@ if TYPE_CHECKING:
     from dagster.components.component.component import Component
     from dagster.components.core.component_tree import ComponentTree
     from dagster.components.core.decl import ComponentDecl
-    from dagster.components.core.defs_module import ComponentPath
+    from dagster.components.core.defs_module import ComponentPath, ResolvableToComponentPath
 
 
 RESOLUTION_CONTEXT_STASH_KEY = "component_load_context"
@@ -165,16 +165,14 @@ class ComponentDeclLoadContext:
         return importlib.import_module(self.defs_relative_module_name(path))
 
     @overload
-    def load_component_at_path(
-        self, defs_path: Union[Path, "ComponentPath", str]
-    ) -> "Component": ...
+    def load_component_at_path(self, defs_path: "ResolvableToComponentPath") -> "Component": ...
     @overload
     def load_component_at_path(
-        self, defs_path: Union[Path, "ComponentPath", str], expected_type: type[T]
+        self, defs_path: "ResolvableToComponentPath", expected_type: type[T]
     ) -> T: ...
 
     def load_component_at_path(
-        self, defs_path: Union[Path, "ComponentPath", str], expected_type: Optional[type[T]] = None
+        self, defs_path: "ResolvableToComponentPath", expected_type: Optional[type[T]] = None
     ) -> Any:
         """Loads a component from the given path.
 
@@ -184,13 +182,16 @@ class ComponentDeclLoadContext:
         Returns:
             Component: The component loaded from the given path.
         """
+        from dagster.components.core.defs_module import ComponentPath
+
+        resolved_path = ComponentPath.from_resolvable(self.defs_module_path, defs_path)
         self.component_tree.mark_component_load_dependency(
-            from_path=self.component_path, to_path=defs_path
+            from_path=self.component_path, to_path=resolved_path
         )
-        return self.component_tree.load_component_at_path(defs_path, expected_type)  # type: ignore[reportIncompatibleArgumentType]
+        return self.component_tree.load_component_at_path(resolved_path, expected_type)  # type: ignore[reportIncompatibleArgumentType]
 
     def load_structural_component_at_path(
-        self, defs_path: Union[Path, "ComponentPath"]
+        self, defs_path: "ResolvableToComponentPath"
     ) -> "Component":
         """Loads a component from the given path.
 
@@ -200,10 +201,13 @@ class ComponentDeclLoadContext:
         Returns:
             Component: The component loaded from the given path.
         """
+        from dagster.components.core.defs_module import ComponentPath
+
+        resolved_path = ComponentPath.from_resolvable(self.defs_module_path, defs_path)
         self.component_tree.mark_component_load_dependency(
-            from_path=self.component_path, to_path=defs_path
+            from_path=self.component_path, to_path=resolved_path
         )
-        return self.component_tree.load_structural_component_at_path(defs_path)
+        return self.component_tree.load_structural_component_at_path(resolved_path)
 
 
 @public
@@ -290,10 +294,13 @@ class ComponentLoadContext(ComponentDeclLoadContext):
         Returns:
             Definitions: The definitions loaded from the given path.
         """
+        from dagster.components.core.defs_module import ComponentPath
+
+        resolved_path = ComponentPath.from_resolvable(self.defs_module_path, defs_path)
         self.component_tree.mark_component_defs_dependency(
-            from_path=self.component_path, to_path=defs_path
+            from_path=self.component_path, to_path=resolved_path
         )
-        return self.component_tree.build_defs_at_path(defs_path)
+        return self.component_tree.build_defs_at_path(resolved_path)
 
     def for_path(self, path: Path) -> "Self":
         """Creates a new context for the given path.
@@ -306,5 +313,5 @@ class ComponentLoadContext(ComponentDeclLoadContext):
         """
         from dagster.components.core.defs_module import ComponentPath
 
-        component_path = ComponentPath(file_path=path)
+        component_path = ComponentPath.from_path(path=path)
         return self.for_component_path(component_path)

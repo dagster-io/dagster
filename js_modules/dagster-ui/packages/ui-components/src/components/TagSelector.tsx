@@ -51,6 +51,7 @@ type Props = {
 const defaultRenderTag = (tag: string, tagProps: TagSelectorTagProps, disabled?: boolean) => {
   return (
     <BaseTag
+      fillColor={Colors.backgroundGray()}
       textColor={disabled ? Colors.textDisabled() : Colors.textDefault()}
       label={
         <div

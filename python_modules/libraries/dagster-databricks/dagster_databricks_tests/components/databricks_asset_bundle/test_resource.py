@@ -9,22 +9,24 @@ from dagster_databricks.components.databricks_asset_bundle.component import (
 from databricks.sdk.service.jobs import Run, RunResultState, RunState, RunTask
 
 from dagster_databricks_tests.components.databricks_asset_bundle.conftest import (
+    EXISTING_CLUSTER_CONFIG,
+    NEW_CLUSTER_CONFIG,
     TEST_DATABRICKS_WORKSPACE_HOST,
     TEST_DATABRICKS_WORKSPACE_TOKEN,
 )
 
 
 @pytest.mark.parametrize(
-    "use_existing_cluster, is_serverless",
+    "use_existing_cluster, use_new_cluster",
     [
         (False, False),
         (True, False),
         (False, True),
     ],
     ids=[
+        "serverless_compute_config",
         "new_cluster_compute_config",
         "existing_cluster_compute_config",
-        "serverless_compute_config",
     ],
 )
 @mock.patch(
@@ -39,7 +41,7 @@ def test_load_component(
     mock_get_run_fn: mock.MagicMock,
     mock_wait_fn: mock.MagicMock,
     use_existing_cluster: bool,
-    is_serverless: bool,
+    use_new_cluster: bool,
     databricks_config_path: str,
 ):
     mock_get_run_fn.return_value = Run(
@@ -84,12 +86,8 @@ def test_load_component(
                 "attributes": {
                     "databricks_config_path": databricks_config_path,
                     "compute_config": {
-                        **(
-                            {"existing_cluster_id": "test_existing_cluster_id"}
-                            if use_existing_cluster
-                            else {}
-                        ),
-                        **({"is_serverless": True} if is_serverless else {}),
+                        **(EXISTING_CLUSTER_CONFIG if use_existing_cluster else {}),
+                        **(NEW_CLUSTER_CONFIG if use_new_cluster else {}),
                     },
                     "workspace": {
                         "host": TEST_DATABRICKS_WORKSPACE_HOST,
@@ -143,9 +141,11 @@ def test_load_component(
                 == 4
             )
 
-            # cluster config is expected in 4 of the 6 submit tasks we create if not using serverless compute,
+            # Serverless compute config is used by default
+            # if no new cluster config or existing cluster config is passed.
+            # Cluster config is expected in 4 of the 6 submit tasks we create if not using serverless compute,
             # otherwise not expected.
-            expected_cluster_config_calls = 4 if not is_serverless else 0
+            expected_cluster_config_calls = 4 if use_existing_cluster or use_new_cluster else 0
             cluster_config_key = "existing_cluster_id" if use_existing_cluster else "new_cluster"
             assert (
                 len(

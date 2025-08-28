@@ -30,13 +30,13 @@ Finally, add the `dagster-fivetran` library to the project:
 
 <CliInvocationExample path="docs_snippets/docs_snippets/guides/components/integrations/fivetran-component/2-add-fivetran.txt" />
 
-## 2. Scaffold a Fivetran component
+## 2. Scaffold a Fivetran component definition
 
-Now that you have a Dagster project, you can scaffold a Fivetran component. You'll need to provide your Fivetran account ID and API credentials, which you can set as environment variables on the command line:
+Now that you have a Dagster project, you can scaffold a Fivetran component definition. You'll need to provide your Fivetran account ID and API credentials, which you can set as environment variables on the command line:
 
 <CliInvocationExample path="docs_snippets/docs_snippets/guides/components/integrations/fivetran-component/3-scaffold-fivetran-component.txt" />
 
-The scaffold call will generate a `defs.yaml` file:
+The `dg scaffold defs` call will generate a `defs.yaml` file:
 
 <CliInvocationExample path="docs_snippets/docs_snippets/guides/components/integrations/fivetran-component/4-tree.txt" />
 

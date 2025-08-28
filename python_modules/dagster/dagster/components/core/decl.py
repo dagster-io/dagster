@@ -283,7 +283,7 @@ def build_component_decl_from_context(context: ComponentDeclLoadContext) -> Opti
     ):
         return PythonFileDecl(
             context=context,
-            path=ComponentPath(file_path=context.path / "definitions.py", instance_key=None),
+            path=ComponentPath.from_path(context.path / "definitions.py"),
             decls={},
         )
     elif context.path.suffix == ".py":
@@ -294,7 +294,7 @@ def build_component_decl_from_context(context: ComponentDeclLoadContext) -> Opti
         if children:
             return DefsFolderDecl(
                 context=context,
-                path=ComponentPath(file_path=context.path, instance_key=None),
+                path=ComponentPath.from_path(context.path),
                 children=children,
                 source_tree=None,
                 component_file_model=None,
@@ -315,7 +315,7 @@ def build_component_decls_from_directory_items(
             context,
             DefsFolderComponent,
             component_file_model.template_vars_module if component_file_model else None,
-        ).for_component_path(ComponentPath(file_path=subpath, instance_key=None))
+        ).for_component_path(ComponentPath.from_path(subpath))
 
         component_node = build_component_decl_from_context(path_context)
         if component_node:
@@ -332,15 +332,13 @@ def build_component_decl_from_python_file(
     component_loaders = list(inspect.getmembers(module, is_component_loader))
 
     return PythonFileDecl(
-        path=ComponentPath(file_path=context.path, instance_key=None),
+        path=ComponentPath.from_path(context.path),
         context=context,
         decls={
             attr: ComponentLoaderDecl(
-                context=context.for_component_path(
-                    ComponentPath(file_path=context.path, instance_key=attr)
-                ),
+                context=context.for_component_path(ComponentPath.from_path(context.path, attr)),
                 component_node_fn=component_loader,
-                path=ComponentPath(file_path=context.path, instance_key=attr),
+                path=ComponentPath.from_path(context.path, attr),
             )
             for attr, component_loader in component_loaders
         },
@@ -366,17 +364,15 @@ def build_component_decl_from_yaml_file(
     for i, source_tree in enumerate(source_trees):
         component_nodes.append(
             build_component_decl_from_yaml_document(
-                context=context.for_component_path(
-                    ComponentPath(file_path=context.path, instance_key=i)
-                ),
+                context=context.for_component_path(ComponentPath.from_path(context.path, i)),
                 source_tree=source_tree,
-                path=ComponentPath(file_path=context.path, instance_key=i),
+                path=ComponentPath.from_path(context.path, i),
             )
         )
 
     check.invariant(len(component_nodes) > 0, "No components found in YAML file")
     return YamlFileDecl(
-        path=ComponentPath(file_path=context.path, instance_key=None),
+        path=ComponentPath.from_path(context.path),
         context=context,
         decls=component_nodes,
         source_positions=[

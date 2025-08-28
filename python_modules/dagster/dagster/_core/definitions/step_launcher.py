@@ -60,7 +60,7 @@ class StepRunRef(
 
 _step_launcher_supersession = superseded(
     subject="StepLauncher",
-    additional_warn_text="While there is no plan to remove this functionality, for new projects, we recommend using Dagster Pipes. For more information, see https://docs.dagster.io/guides/build/external-pipelines/",
+    additional_warn_text="While there is no plan to remove this functionality, for new projects, we recommend using Dagster Pipes. For more information, see https://docs.dagster.io/guides/build/external-pipelines",
 )
 
 
