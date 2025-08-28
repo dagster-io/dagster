@@ -11,7 +11,7 @@ from typing import Any, Callable, Optional, cast
 import click
 import dagster_shared.seven as seven
 from dagster_shared.cli import python_pointer_options
-from dagster_shared.serdes.objects import DefsStateInfo
+from dagster_shared.serdes.objects.models.defs_state_info import DefsStateInfo
 
 import dagster._check as check
 from dagster._cli.utils import assert_no_remaining_opts, get_instance_for_cli

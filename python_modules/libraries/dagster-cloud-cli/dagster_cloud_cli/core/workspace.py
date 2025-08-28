@@ -3,7 +3,7 @@ from typing import Any, NamedTuple, Optional
 
 from dagster_shared import check
 from dagster_shared.serdes import whitelist_for_serdes
-from dagster_shared.serdes.objects import DefsStateInfo
+from dagster_shared.serdes.objects.models.defs_state_info import DefsStateInfo
 from dagster_shared.serdes.serdes import serialize_value
 
 from dagster_cloud_cli.core.agent_queue import AgentQueue

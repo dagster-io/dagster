@@ -2,7 +2,7 @@ from abc import ABC, abstractmethod
 from pathlib import Path
 from typing import ClassVar, Optional
 
-from dagster_shared.serdes.objects import DefsStateInfo
+from dagster_shared.serdes.objects.models.defs_state_info import DefsStateInfo
 
 from dagster._core.instance import MayHaveInstanceWeakref, T_DagsterInstance
 
