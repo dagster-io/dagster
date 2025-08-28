@@ -135,7 +135,7 @@ def record_graphql_for_fixture(domain: str, fixture_name: str, command: str) -> 
         click.echo(f"Error: Command timed out after 60 seconds: {command}", err=True)
         return False
     except KeyboardInterrupt:
-        click.echo("\\n⏹️  Recording interrupted", err=True)
+        click.echo("\n⏹️  Recording interrupted", err=True)
         return False
     except Exception as e:
         click.echo(f"Error executing command: {e}", err=True)
