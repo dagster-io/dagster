@@ -1,6 +1,7 @@
 import importlib.util
 import os
-from typing import Generator
+from collections.abc import Generator
+from typing import Any
 
 import pytest
 
@@ -140,8 +141,6 @@ EXCLUDED_FILES = {
     f"{snippets_folder}/tutorial/scheduling/with_schedule/with_schedule.py",
     f"{snippets_folder}/guides/dagster/dagster_pipes/databricks/resources.py",
     f"{snippets_folder}/guides/tutorials/spark_connect/databricks_resources.py",
-    # Environment variables that don't exist
-    f"{snippets_folder}/integrations/databricks/dagster_code_serverless.py",
 }
 EXCLUDED_DIRS = {
     # integrations are excluded because they have external dependencies that are easier to manage in
