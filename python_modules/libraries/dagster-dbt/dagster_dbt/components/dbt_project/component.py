@@ -10,9 +10,6 @@ from dagster import Resolvable
 from dagster._annotations import public
 from dagster._core.definitions.asset_key import AssetKey
 from dagster._core.definitions.definitions_class import Definitions
-from dagster._core.definitions.partitions.definition.time_window import (
-    TimeWindowPartitionsDefinition,
-)
 from dagster._core.execution.context.asset_execution_context import AssetExecutionContext
 from dagster._utils.cached_method import cached_method
 from dagster.components.component.component import Component
@@ -228,14 +225,11 @@ class DbtProjectComponent(Component, Resolvable):
         partition_key_range = (
             context.partition_key_range if context.has_partition_key_range else None
         )
-        partition_time_window = (
-            context.partition_time_window
-            if isinstance(
-                context.op_execution_context.get_step_execution_context().run_partitions_def,
-                TimeWindowPartitionsDefinition,
-            )
-            else None
-        )
+        try:
+            partition_time_window = context.partition_time_window
+        except Exception:
+            partition_time_window = None
+
         scope = dict(
             partition_key=partition_key,
             partition_key_range=partition_key_range,
