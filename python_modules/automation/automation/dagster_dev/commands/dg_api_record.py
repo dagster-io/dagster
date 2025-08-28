@@ -5,6 +5,7 @@ commands, with support for batch processing entire domains or individual fixture
 """
 
 import json
+import shlex
 import subprocess
 import sys
 from pathlib import Path
@@ -90,7 +91,7 @@ def record_graphql_for_fixture(domain: str, fixture_name: str, command: str) -> 
     try:
         # Execute the dg command and capture output
         result = subprocess.run(
-            command.split(),
+            shlex.split(command),
             capture_output=True,
             text=True,
             check=False,
@@ -159,12 +160,7 @@ def dg_api_record(domain: str, fixture: str, graphql: bool):
         # Record GraphQL only
         dagster-dev dg-api-record asset --graphql
     """
-    # Determine which steps to run
-    if not graphql:
-        # Default: run GraphQL recording
-        run_graphql = True
-    else:
-        run_graphql = graphql
+    # Always run GraphQL recording
 
     # Load domain commands
     commands_data = load_domain_commands(domain)
@@ -184,12 +180,11 @@ def dg_api_record(domain: str, fixture: str, graphql: bool):
 
     click.echo(f"📁 Domain: {domain}")
     click.echo(f"🎯 Target fixtures: {target_fixtures}")
-    click.echo(f"🔄 Steps: {'GraphQL' if run_graphql else 'None'}")
+    click.echo(f"🔄 Steps: GraphQL")
 
     # Process GraphQL recording
+    click.echo(f"🚀 Recording GraphQL responses for {domain}...")
     graphql_success = True
-    if run_graphql:
-        click.echo(f"🚀 Recording GraphQL responses for {domain}...")
         for fixture_name in target_fixtures:
             fixture_data = commands_data[fixture_name]
             command = (
@@ -209,12 +204,11 @@ def dg_api_record(domain: str, fixture: str, graphql: bool):
                 click.echo(f"✅ GraphQL recorded for {fixture_name}")
 
     # Final status
-    if run_graphql:
-        if graphql_success:
-            click.echo(f"🎉 Successfully recorded GraphQL for {domain}")
-        else:
-            click.echo(f"⚠️  GraphQL recording completed with some failures for {domain}")
+    if graphql_success:
+        click.echo(f"🎉 Successfully recorded GraphQL for {domain}")
+    else:
+        click.echo(f"⚠️  GraphQL recording completed with some failures for {domain}")
 
     # Exit with error code if any step failed
-    if run_graphql and not graphql_success:
+    if not graphql_success:
         sys.exit(1)
