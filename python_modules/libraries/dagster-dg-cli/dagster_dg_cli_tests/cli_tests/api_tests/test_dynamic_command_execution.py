@@ -124,18 +124,22 @@ class TestDynamicCommandExecution:
                     click_command, args, graphql_responses, fixture_name
                 )
 
-                # Use syrupy to snapshot the CLI output
+                # Create a unique snapshot name based on fixture and output type
+                output_type = "json" if "--json" in args else "text"
+                snapshot_name = f"{domain}_{fixture_name}_{output_type}"
+
+                # Use syrupy to snapshot the CLI output with custom name
                 if "--json" in args:
                     # For JSON output, parse and snapshot the structure
                     try:
                         parsed_output = json.loads(result.output)
-                        snapshot.assert_match(parsed_output)
+                        assert parsed_output == snapshot(name=snapshot_name)
                     except json.JSONDecodeError:
                         # For error cases, snapshot the raw output
-                        snapshot.assert_match(result.output)
+                        assert result.output == snapshot(name=snapshot_name)
                 else:
                     # For text output, snapshot the raw CLI output
-                    snapshot.assert_match(result.output)
+                    assert result.output == snapshot(name=snapshot_name)
 
                 # Keep existing exit code assertions for safety
                 if "error" not in fixture_name.lower():
