@@ -149,7 +149,7 @@ The specific format of this configuration depends on your specific dbt project s
 When the `cli_args` field is resolved, it has access to a `context.partition_time_window` object, which is Dagster's representation of the time range that should be processed on the current run. This can be converted into a format recognized by your dbt project using template variables:
 
 <CodeExample
-  path="docs_snippets/docs_snippets/guides/components/integrations/dbt-component/20-component.yaml"
+  path="docs_snippets/docs_snippets/guides/components/integrations/dbt-component/20-defs.yaml"
   title="my_project/defs/dbt_ingest/defs.yaml"
   language="yaml"
 />
