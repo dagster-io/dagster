@@ -1057,6 +1057,8 @@ type AssetCheck {
   blocking: Boolean!
   additionalAssetKeys: [AssetKey!]!
   automationCondition: AutomationCondition
+  partitionDefinition: PartitionDefinition
+  partitionKeysByDimension(startIdx: Int, endIdx: Int): [DimensionPartitionKeys!]!
 }
 
 type AssetCheckExecution {
@@ -1085,6 +1087,7 @@ type AssetCheckEvaluation {
   severity: AssetCheckSeverity!
   description: String
   success: Boolean!
+  partition: String
 }
 
 type AssetCheckEvaluationTargetMaterializationData {

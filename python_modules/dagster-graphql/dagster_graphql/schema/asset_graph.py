@@ -35,17 +35,10 @@ from dagster._core.definitions.partitions.context import (
 )
 from dagster._core.definitions.partitions.definition import PartitionsDefinition
 from dagster._core.definitions.partitions.mapping import PartitionMapping
-from dagster._core.definitions.partitions.snap import (
-    DynamicPartitionsSnap,
-    MultiPartitionsSnap,
-    PartitionsSnap,
-    StaticPartitionsSnap,
-    TimeWindowPartitionsSnap,
-)
+from dagster._core.definitions.partitions.snap import MultiPartitionsSnap, PartitionsSnap
 from dagster._core.definitions.selector import JobSelector
 from dagster._core.definitions.sensor_definition import SensorType
 from dagster._core.definitions.temporal_context import TemporalContext
-from dagster._core.errors import DagsterInvariantViolationError
 from dagster._core.event_api import AssetRecordsFilter
 from dagster._core.events import DagsterEventType
 from dagster._core.remote_representation.external import RemoteJob, RemoteRepository, RemoteSensor
@@ -122,6 +115,7 @@ from dagster_graphql.schema.partition_sets import (
     GrapheneDimensionPartitionKeys,
     GraphenePartitionDefinition,
     GraphenePartitionDefinitionType,
+    get_partition_keys_from_snap,
 )
 from dagster_graphql.schema.pipelines.pipeline import (
     GrapheneAssetPartitionStatuses,
@@ -496,30 +490,12 @@ class GrapheneAssetNode(graphene.ObjectType):
             self._asset_node_snap.partitions if not partitions_snap else partitions_snap
         )
         if partitions_snap:
-            if isinstance(
+            return get_partition_keys_from_snap(
                 partitions_snap,
-                (
-                    StaticPartitionsSnap,
-                    TimeWindowPartitionsSnap,
-                    MultiPartitionsSnap,
-                ),
-            ):
-                if start_idx and end_idx and isinstance(partitions_snap, TimeWindowPartitionsSnap):
-                    return partitions_snap.get_partitions_definition().get_partition_keys_between_indexes(
-                        start_idx, end_idx
-                    )
-                else:
-                    return partitions_snap.get_partitions_definition().get_partition_keys(
-                        dynamic_partitions_store=dynamic_partitions_loader
-                    )
-            elif isinstance(partitions_snap, DynamicPartitionsSnap):
-                return dynamic_partitions_loader.get_dynamic_partitions(
-                    partitions_def_name=partitions_snap.name
-                )
-            else:
-                raise DagsterInvariantViolationError(
-                    f"Unsupported partition definition type {partitions_snap}"
-                )
+                dynamic_partitions_loader,
+                start_idx=start_idx,
+                end_idx=end_idx,
+            )
         return []
 
     def is_multipartitioned(self) -> bool:

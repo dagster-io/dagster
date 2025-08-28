@@ -167,6 +167,13 @@ export type AssetCheck = {
   executionForLatestMaterialization: Maybe<AssetCheckExecution>;
   jobNames: Array<Scalars['String']['output']>;
   name: Scalars['String']['output'];
+  partitionDefinition: Maybe<PartitionDefinition>;
+  partitionKeysByDimension: Array<DimensionPartitionKeys>;
+};
+
+export type AssetCheckPartitionKeysByDimensionArgs = {
+  endIdx?: InputMaybe<Scalars['Int']['input']>;
+  startIdx?: InputMaybe<Scalars['Int']['input']>;
 };
 
 export enum AssetCheckCanExecuteIndividually {
@@ -202,6 +209,7 @@ export type AssetCheckEvaluation = {
     | TimestampMetadataEntry
     | UrlMetadataEntry
   >;
+  partition: Maybe<Scalars['String']['output']>;
   severity: AssetCheckSeverity;
   success: Scalars['Boolean']['output'];
   targetMaterialization: Maybe<AssetCheckEvaluationTargetMaterializationData>;
@@ -6472,6 +6480,16 @@ export const buildAssetCheck = (
           : buildAssetCheckExecution({}, relationshipsToOmit),
     jobNames: overrides && overrides.hasOwnProperty('jobNames') ? overrides.jobNames! : [],
     name: overrides && overrides.hasOwnProperty('name') ? overrides.name! : 'dignissimos',
+    partitionDefinition:
+      overrides && overrides.hasOwnProperty('partitionDefinition')
+        ? overrides.partitionDefinition!
+        : relationshipsToOmit.has('PartitionDefinition')
+          ? ({} as PartitionDefinition)
+          : buildPartitionDefinition({}, relationshipsToOmit),
+    partitionKeysByDimension:
+      overrides && overrides.hasOwnProperty('partitionKeysByDimension')
+        ? overrides.partitionKeysByDimension!
+        : [],
   };
 };
 
@@ -6494,6 +6512,7 @@ export const buildAssetCheckEvaluation = (
       overrides && overrides.hasOwnProperty('description') ? overrides.description! : 'quia',
     metadataEntries:
       overrides && overrides.hasOwnProperty('metadataEntries') ? overrides.metadataEntries! : [],
+    partition: overrides && overrides.hasOwnProperty('partition') ? overrides.partition! : 'non',
     severity:
       overrides && overrides.hasOwnProperty('severity')
         ? overrides.severity!
