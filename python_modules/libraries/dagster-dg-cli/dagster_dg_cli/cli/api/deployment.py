@@ -5,18 +5,10 @@ import json
 import click
 from dagster_dg_core.utils import DgClickCommand, DgClickGroup
 from dagster_dg_core.utils.telemetry import cli_telemetry_wrapper
-from dagster_shared.plus.config import DagsterPlusCliConfig
 
 from dagster_dg_cli.cli.api.formatters import format_deployments
+from dagster_dg_cli.cli.api.shared import get_config_or_error
 from dagster_dg_cli.dagster_plus_api.api.deployments import DgApiDeploymentApi
-
-
-def _get_config_or_error() -> DagsterPlusCliConfig:
-    if not DagsterPlusCliConfig.exists():
-        raise click.UsageError(
-            "`dg plus` commands require authentication with Dagster Plus. Run `dg plus login` to authenticate."
-        )
-    return DagsterPlusCliConfig.get()
 
 
 @click.command(name="list", cls=DgClickCommand, unlaunched=True)
@@ -29,7 +21,7 @@ def _get_config_or_error() -> DagsterPlusCliConfig:
 @cli_telemetry_wrapper
 def list_deployments_command(output_json: bool) -> None:
     """List all deployments in the organization."""
-    config = _get_config_or_error()
+    config = get_config_or_error()
     api = DgApiDeploymentApi(config)
 
     try:

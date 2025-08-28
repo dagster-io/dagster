@@ -1,6 +1,6 @@
 """Deployment endpoints - REST-like interface."""
 
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING
 
 from dagster_shared.plus.config import DagsterPlusCliConfig
 
@@ -14,8 +14,5 @@ class DgApiDeploymentApi:
     def __init__(self, config: DagsterPlusCliConfig):
         self.config = config
 
-    def list_deployments(
-        self,
-        limit: Optional[int] = None,
-    ) -> "DeploymentList":
-        return list_deployments_via_graphql(self.config, limit=limit)
+    def list_deployments(self) -> "DeploymentList":
+        return list_deployments_via_graphql(self.config)

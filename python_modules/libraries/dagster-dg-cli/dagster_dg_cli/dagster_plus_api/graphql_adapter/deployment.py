@@ -1,6 +1,6 @@
 """GraphQL implementation for deployment operations."""
 
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING
 
 from dagster_shared.plus.config import DagsterPlusCliConfig
 
@@ -23,7 +23,6 @@ query ListDeployments {
 
 def list_deployments_via_graphql(
     config: DagsterPlusCliConfig,
-    limit: Optional[int] = None,
 ) -> "DeploymentList":
     """Fetch deployments using GraphQL.
     This is an implementation detail that can be replaced with REST calls later.
@@ -48,11 +47,6 @@ def list_deployments_via_graphql(
         )
         for d in deployments_data
     ]
-
-    # Apply limit if specified - GraphQL fullDeployments does not support limit parameter
-    # so we must filter client-side
-    if limit:
-        deployments = deployments[:limit]
 
     return DeploymentList(
         items=deployments,

@@ -1,4 +1,4 @@
-# Dagster Plus API CLI Conventions
+# Dagster API CLI Conventions
 
 This document outlines the conventions for implementing CLI commands in the `dg api` namespace, following GitHub CLI best practices.
 
@@ -55,7 +55,8 @@ Each noun file (e.g., `deployment.py`) contains:
 
 ### Common Optional Flags:
 
-- `--limit <n>` for pagination
+- `--limit <n>` for pagination (default: 50)
+- `--cursor <cursor>` for cursor-based pagination (preferred)
 - `--filter <query>` for filtering results
 - `--format <table|json>` (alternative to --json flag)
 
@@ -105,6 +106,26 @@ Error querying Dagster Plus API: Unauthorized access
   "error": "Unauthorized access"
 }
 ```
+
+## Pagination Standards
+
+**All list commands MUST implement pagination by default:**
+
+1. **Default Limit**: 50 items per page (always applied)
+2. **Cursor-based Pagination**: ALWAYS prefer cursor-based over offset-based
+3. **Standard Flags**:
+   - `--limit <n>`: Override default limit (max: 1000)
+   - `--cursor <cursor>`: Continue from specific cursor
+   - `--all`: Bypass pagination (use with caution)
+
+4. **Response Format**:
+   ```json
+   {
+     "items": [...],
+     "cursor": "next_cursor_value",
+     "hasMore": true
+   }
+   ```
 
 ## GraphQL Abstraction
 

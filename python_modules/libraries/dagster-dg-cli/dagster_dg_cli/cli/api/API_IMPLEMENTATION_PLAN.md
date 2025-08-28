@@ -52,14 +52,14 @@ dg api agent view <id> [--json]
 ### 4. **run**
 
 ```bash
-dg api run list [--status <status>] [--pipeline <name>] [--limit <n>] [--json]
+dg api run list [--status <status>] [--job <name>] [--limit <n>] [--json]
 dg api run view <run-id> [--json]
-dg api run create --pipeline <name> [--config <file>] [--tags <key=value>]
+dg api run create --job <name> [--config <file>] [--tags <key=value>]
 dg api run terminate <run-id>
 dg api run delete <run-id>
 ```
 
-**GraphQL**: `runsOrError`, `pipelineRunsOrError`, `runOrError`
+**GraphQL**: `runsOrError`, `runOrError`
 
 ### 5. **asset**
 
@@ -123,17 +123,6 @@ dg api code-location delete <location-name>
 
 **GraphQL**: `repositoriesOrError`, `repositoryOrError`
 
-### 10. **workspace**
-
-```bash
-dg api workspace list [--json]
-dg api workspace view [--json]
-dg api workspace update --config <file>
-# Workspace is typically singular per deployment
-```
-
-**GraphQL**: `workspaceOrError`
-
 ---
 
 ## **Tier 3: Extended Management**
@@ -181,16 +170,6 @@ dg api backfill cancel <backfill-id>
 
 **GraphQL**: `partitionBackfillsOrError`, `partitionBackfillOrError`
 
-### 15. **env-var**
-
-```bash
-dg api env-var list [--location <name>] [--json]
-dg api env-var view <var-name> [--location <name>] [--json]
-# Environment variables managed through deployment settings
-```
-
-**GraphQL**: `utilizedEnvVarsOrError`
-
 ---
 
 ## **Tier 4: Advanced/Monitoring**
@@ -229,12 +208,7 @@ dg api custom-role delete <role-id>
 
 ### 19. **api-token**
 
-```bash
-dg api api-token list [--type <user|agent>] [--json]
-dg api api-token view <token-id> [--json]
-dg api api-token create --description <desc> [--type <type>]
-dg api api-token revoke <token-id>
-```
+**TODO**: Handle agent and api tokens
 
 **GraphQL**: `apiTokensOrError`, `agentTokensOrError`
 
@@ -264,16 +238,6 @@ dg api branch-deployment delete <deployment-name>
 
 **GraphQL**: `branchDeployments`
 
-### 22. **location-schema**
-
-```bash
-dg api location-schema list [--json]
-dg api location-schema view [--json]
-# Schema is typically read-only metadata
-```
-
-**GraphQL**: `locationSchema`
-
 ### 23. **deployment-setting**
 
 ```bash
@@ -284,6 +248,17 @@ dg api deployment-setting update --config <file>
 ```
 
 **GraphQL**: `deploymentSettings`
+
+### 24. **organization-setting**
+
+```bash
+dg api organization-setting list [--json]
+dg api organization-setting view [--json]
+dg api organization-setting update --config <file>
+# Settings are typically singular per organization
+```
+
+**GraphQL**: `organizationSettings`
 
 ---
 
@@ -308,24 +283,21 @@ dg api deployment-setting update --config <file>
 9. schedule
 10. sensor
 11. backfill
-12. env-var
-13. check
+12. check
 
 ### **Phase 4** (Advanced - Weeks 7-8)
 
 14. team
-15. workspace
-16. custom-role
-17. api-token
+15. custom-role
+16. api-token
 
 ### **Phase 5** (Specialized - Week 9)
 
 18. branch-deployment
 19. deployment-setting
-20. location-schema
-21. alert-notification
-22. audit-log
-23. user-token
+20. alert-notification
+21. audit-log
+22. user-token
 
 ---
 
@@ -340,7 +312,7 @@ dagster_dg_cli/cli/plus/api/
 ├── deployment.py                 # ✅ Already implemented
 ├── secret.py                     # Secrets management
 ├── agent.py                      # Agent monitoring
-├── run.py                        # Pipeline runs
+├── run.py                        # Job runs
 ├── asset.py                      # Asset catalog
 │
 # Tier 2: Cloud Management
@@ -348,14 +320,12 @@ dagster_dg_cli/cli/plus/api/
 ├── team.py                       # Team management
 ├── alert_policy.py               # Alert configurations
 ├── code_location.py              # Code deployment locations
-├── workspace.py                  # Workspace management
 │
 # Tier 3: Extended Management
 ├── check.py                      # Asset checks
 ├── schedule.py                   # Scheduled jobs
 ├── sensor.py                     # Event-driven triggers
 ├── backfill.py                   # Bulk operations
-├── env_var.py                    # Environment variables
 │
 # Tier 4: Advanced/Monitoring
 ├── alert_notification.py         # Alert history

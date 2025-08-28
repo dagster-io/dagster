@@ -19,8 +19,8 @@ This document summarizes the GraphQL schema located in `schema.graphql` to provi
 
 ### Runs & Execution
 
-- `pipelineRunsOrError`: Query pipeline runs with filtering
-- `pipelineRunOrError`: Get specific run details
+- `runsOrError`: Query runs with filtering
+- `runOrError`: Get specific run details
 - `runMetricsOrError`: Run execution metrics and statistics
 
 ### Assets & Data
@@ -31,7 +31,7 @@ This document summarizes the GraphQL schema located in `schema.graphql` to provi
 
 ### Logs & Events
 
-- `logsForRunOrError`: Structured logs for pipeline runs
+- `logsForRunOrError`: Structured logs for runs
 - `capturedLogsMetadata`: Log capture configuration and status
 
 ### Secrets & Configuration
@@ -43,9 +43,9 @@ This document summarizes the GraphQL schema located in `schema.graphql` to provi
 
 ### Deployment Management
 
-- `launchPipelineExecution`: Start pipeline runs
-- `terminateRun`: Stop running pipelines
-- `deletePipelineRun`: Remove run records
+- `launchRun`: Start runs
+- `terminateRun`: Stop running jobs
+- `deletePipelineRun`: Remove run records (legacy - use job-based APIs)
 
 ### Secrets & Config
 
@@ -69,7 +69,7 @@ The schema implements a comprehensive event-driven system:
 
 ### Event Categories (30+ types)
 
-**Pipeline Events:**
+**Run Events:** _(formerly Pipeline Events - use job terminology)_
 
 - `RunStartingEvent`, `RunStartEvent`, `RunSuccessEvent`, `RunFailureEvent`
 - `RunCancelingEvent`, `RunCanceledEvent`
@@ -106,7 +106,15 @@ The schemas are **mostly disjoint** but share core Dagster domain types:
 
 - **Plus Schema**: Cloud-specific operations (deployments, agents, cloud infrastructure)
 - **OSS Schema**: Core Dagster types (runs, assets, schedules, sensors)
-- **Shared**: Basic domain objects like PipelineRun, Asset, LogLevel enums
+- **Shared**: Basic domain objects like Run (formerly PipelineRun), Asset, LogLevel enums
+
+## Terminology Note
+
+**Pipeline → Job Migration**: The GraphQL schema contains many references to "pipeline" for backwards compatibility, but Dagster now uses "job" terminology. When building new integrations:
+
+- Use **job-based APIs** when available
+- Refer to executions as **"runs"** rather than "pipeline runs"
+- Legacy `Pipeline*` types exist for compatibility but prefer `Job` equivalents
 
 ## Usage with DagsterPlusGraphQLClient
 
@@ -133,7 +141,7 @@ result = client.execute(query)
 ## Common Query Patterns
 
 1. **List Resources**: `fullDeployments`, `agents`, `secretsOrError`
-2. **Get Details**: `pipelineRunOrError`, `currentDeployment`
+2. **Get Details**: `runOrError`, `currentDeployment`
 3. **Filter/Search**: Most queries support filtering parameters
 4. **Error Handling**: Results use `OrError` pattern with union types for error handling
 5. **Pagination**: Many queries support cursor-based pagination
