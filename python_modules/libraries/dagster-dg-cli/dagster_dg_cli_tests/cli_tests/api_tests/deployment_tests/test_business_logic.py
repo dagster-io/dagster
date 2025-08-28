@@ -4,8 +4,15 @@ These tests focus on testing pure functions that process data without requiring
 GraphQL client mocking or external dependencies.
 """
 
+import json
+
 from dagster_dg_cli.cli.api.formatters import format_deployments
 from dagster_dg_cli.dagster_plus_api.graphql_adapter.deployment import process_deployments_response
+from dagster_dg_cli.dagster_plus_api.schemas.deployment import (
+    Deployment,
+    DeploymentList,
+    DeploymentType,
+)
 
 from dagster_dg_cli_tests.cli_tests.api_tests.deployment_tests.fixtures import (
     load_deployment_response_fixture,
@@ -53,12 +60,6 @@ class TestFormatDeployments:
 
     def _create_sample_deployment_list(self):
         """Create sample DeploymentList from fixture data."""
-        from dagster_dg_cli.dagster_plus_api.schemas.deployment import (
-            Deployment,
-            DeploymentList,
-            DeploymentType,
-        )
-
         # Load from fixture and convert to domain objects
         response = load_deployment_response_fixture("success_multiple_deployments")[0]
         deployments = [
@@ -85,7 +86,5 @@ class TestFormatDeployments:
         result = format_deployments(deployment_list, as_json=True)
 
         # For JSON, we want to snapshot the parsed structure to avoid formatting differences
-        import json
-
         parsed = json.loads(result)
         snapshot.assert_match(parsed)

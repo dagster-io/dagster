@@ -10,6 +10,7 @@ import sys
 from pathlib import Path
 
 import click
+import yaml
 
 
 def find_repo_root() -> Path:
@@ -48,8 +49,6 @@ def load_domain_commands(domain: str) -> dict[str, dict]:
         return {}
 
     try:
-        import yaml
-
         with open(scenarios_file) as f:
             scenarios_data = yaml.safe_load(f) or {}
         return scenarios_data
