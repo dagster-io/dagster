@@ -25,6 +25,14 @@ from dagster._serdes import deserialize_value, serialize_value
 from dagster._time import create_datetime, get_current_datetime
 
 
+def test_default_subset():
+    default_subset = DefaultPartitionsSubset({"a", "b", "c"})
+    assert not default_subset.is_empty
+
+    empty_subset = DefaultPartitionsSubset(set())
+    assert empty_subset.is_empty
+
+
 def test_default_subset_cannot_deserialize_invalid_version():
     static_partitions_def = dg.StaticPartitionsDefinition(["a", "b", "c", "d"])
     serialized_subset = (

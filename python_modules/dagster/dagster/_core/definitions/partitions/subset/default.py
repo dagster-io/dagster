@@ -28,6 +28,10 @@ class DefaultPartitionsSubset(
         check.opt_set_param(subset, "subset")
         return super().__new__(cls, subset or set())
 
+    @property
+    def is_empty(self) -> bool:
+        return len(self.subset) == 0
+
     def get_partition_keys_not_in_subset(
         self, partitions_def: PartitionsDefinition
     ) -> Iterable[str]:
