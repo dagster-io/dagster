@@ -30,7 +30,7 @@ sphinx_objects_inv:
 	cp sphinx/_build/json/objects.inv static/.
 
 regenerate_cli_snippets:
-	cd ../examples/docs_snippets && tox -e docs_snapshot_update && echo "\nSnippets regenerated!"
+	cd ../examples/docs_snippets && tox -e docs_snapshot_update -- -k dbt && echo "\nSnippets regenerated!"
 
 regenerate_cli_snippets_and_screenshots:
 	cd ../examples/docs_snippets && EXTRA_PARAMS='--update-screenshots' tox -e docs_snapshot_update && echo "\nSnippets regenerated!"
