@@ -75,8 +75,6 @@ def execute_job_backfill_iteration(
             f" {backfill.last_submitted_partition_name}"
         )
 
-    partition_set = _get_partition_set(workspace_process_context, backfill)
-
     # refetch in case the backfill status has changed
     backfill = cast("PartitionBackfill", instance.get_backfill(backfill.backfill_id))
     if backfill.status == BulkActionStatus.CANCELING or backfill.status == BulkActionStatus.FAILING:
@@ -100,6 +98,7 @@ def execute_job_backfill_iteration(
             )
         return
 
+    partition_set = _get_partition_set(workspace_process_context, backfill)
     has_more = True
     while has_more:
         if backfill.status != BulkActionStatus.REQUESTED:
