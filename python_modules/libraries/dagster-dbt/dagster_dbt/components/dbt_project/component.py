@@ -7,6 +7,7 @@ from pathlib import Path
 from typing import Annotated, Any, Optional, Union
 
 from dagster import Resolvable
+from dagster._annotations import public
 from dagster._core.definitions.asset_key import AssetKey
 from dagster._core.definitions.definitions_class import Definitions
 from dagster._core.execution.context.asset_execution_context import AssetExecutionContext
@@ -80,6 +81,7 @@ def resolve_dbt_project(context: ResolutionContext, model) -> DbtProject:
     )
 
 
+@public
 @scaffold_with(DbtProjectComponentScaffolder)
 @dataclass
 class DbtProjectComponent(Component, Resolvable):

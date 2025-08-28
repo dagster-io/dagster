@@ -6,6 +6,7 @@ from typing import TYPE_CHECKING, Annotated, Callable, Optional
 
 import dagster as dg
 from dagster import AssetKey, AssetSpec, Component, ComponentLoadContext, Resolvable, Resolver
+from dagster._annotations import public
 from dagster._core.execution.context.asset_execution_context import AssetExecutionContext
 from dagster.components.resolved.context import ResolutionContext
 from dagster.components.scaffold.scaffold import scaffold_with
@@ -89,6 +90,7 @@ class DltLoadSpecModel(Resolvable):
         return ComponentDagsterDltTranslator()
 
 
+@public
 @scaffold_with(DltLoadCollectionScaffolder)
 @dataclass
 class DltLoadCollectionComponent(Component, Resolvable):
