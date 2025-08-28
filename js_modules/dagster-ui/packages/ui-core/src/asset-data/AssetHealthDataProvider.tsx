@@ -1,4 +1,3 @@
-import {useMemo} from 'react';
 import {observeEnabled} from 'shared/app/observeEnabled.oss';
 
 import {ApolloClient, gql, useApolloClient} from '../apollo-client';
@@ -26,21 +25,17 @@ const EMPTY_ARRAY: any[] = [];
 function init() {
   return liveDataFactory(
     () => {
-      const {assets: allAssetNodes, loading} = useAllAssetsNodes();
+      const {allAssetKeys, loading} = useAllAssetsNodes();
 
-      const allAssetNodeKeys = useMemo(
-        () => new Set(allAssetNodes.map((node) => tokenForAssetKey(node.key))),
-        [allAssetNodes],
-      );
-      return {client: useApolloClient(), allAssetNodeKeys, loading};
+      return {client: useApolloClient(), allAssetKeys, loading};
     },
     async (
       keys,
       {
         client,
-        allAssetNodeKeys,
+        allAssetKeys,
         loading,
-      }: {client: ApolloClient<any>; allAssetNodeKeys: Set<string>; loading: boolean},
+      }: {client: ApolloClient<any>; allAssetKeys: Set<string>; loading: boolean},
     ) => {
       if (loading) {
         // This is future proofing in case we somehow start requesting health data without having first loaded all assets nodes in the future
@@ -49,11 +44,7 @@ function init() {
         return {};
       }
 
-      // We only send keys that have definitions for performance reasons.
-      // for other keys we'll manually insert empty data for them.
-      const assetKeys = keys
-        .map(tokenToAssetKey)
-        .filter((key) => allAssetNodeKeys.has(tokenForAssetKey(key)));
+      const assetKeys = keys.filter((key) => allAssetKeys.has(key)).map(tokenToAssetKey);
 
       const healthResponse = await client.query<AssetHealthQuery, AssetHealthQueryVariables>({
         query: ASSETS_HEALTH_INFO_QUERY,
