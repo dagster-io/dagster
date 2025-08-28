@@ -6,6 +6,13 @@ sidebar_position: 100
 
 The easiest way to start building a Dagster project is by using the [`create-dagster` CLI](/api/clis/create-dagster). This CLI tool allows you to create a special type of Python package, called a _project_, that defines a [Dagster code location](/deployment/code-locations/managing-code-locations-with-definitions).
 
+:::note
+New projects do not have to be created with the `create-dagster` CLI. You can
+also create them manually. For guidance on manually creating a new project, see
+the [Dagster project file
+reference](/guides/build/projects/dagster-project-file-reference).
+:::
+
 import ProjectCreationPrereqs from '@site/docs/partials/\_ProjectCreationPrereqs.md';
 
 <ProjectCreationPrereqs />
