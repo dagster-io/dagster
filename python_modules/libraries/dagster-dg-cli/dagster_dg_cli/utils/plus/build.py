@@ -28,7 +28,7 @@ def get_dockerfile_path(
 
 
 def get_agent_type_and_platform_from_graphql(
-    gql_client: DagsterPlusGraphQLClient,
+    gql_client,
 ) -> tuple[DgPlusAgentType, DgPlusAgentPlatform]:
     result = gql_client.execute(DEPLOYMENT_INFO_QUERY)
 
