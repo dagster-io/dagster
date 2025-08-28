@@ -184,14 +184,18 @@ export const ComputeLogToolbar = ({
               itemPredicate={(query, item) =>
                 fileKeyText(item).toLocaleLowerCase().includes(query.toLocaleLowerCase())
               }
-              itemRenderer={(item, itemProps) => (
-                <MenuItem
-                  active={itemProps.modifiers.active}
-                  onClick={(e) => itemProps.handleClick(e)}
-                  text={fileKeyText(item)}
-                  key={item}
-                />
-              )}
+              itemRenderer={(item, itemProps) => {
+                const text = fileKeyText(item);
+                return (
+                  <MenuItem
+                    active={itemProps.modifiers.active}
+                    onClick={(e) => itemProps.handleClick(e)}
+                    text={text}
+                    key={item}
+                    title={text}
+                  />
+                );
+              }}
               menuWidth={500}
               onItemSelect={(fileKey) => {
                 onSetComputeLogKey(fileKey);
