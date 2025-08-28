@@ -4,7 +4,7 @@ import shutil
 import uuid
 from argparse import ArgumentParser, Namespace
 from collections.abc import Sequence
-from functools import cached_property
+from functools import cache, cached_property
 from pathlib import Path
 from subprocess import check_output
 from typing import Any, Optional, Union, cast
@@ -35,7 +35,15 @@ from dagster_dbt.dbt_project import DbtProject
 logger = get_dagster_logger()
 
 
-DBT_EXECUTABLE = "dbt"
+@cache
+def _get_dbt_executable() -> str:
+    if shutil.which("dbtf"):
+        return "dbtf"
+    else:
+        return "dbt"
+
+
+DBT_EXECUTABLE = _get_dbt_executable()
 DBT_PROJECT_YML_NAME = "dbt_project.yml"
 DBT_PROFILES_YML_NAME = "profiles.yml"
 
@@ -171,7 +179,7 @@ class DbtCliResource(ConfigurableResource):
     )
     dbt_executable: str = Field(
         default=DBT_EXECUTABLE,
-        description="The path to the dbt executable.",
+        description="The path to the dbt executable. Defaults to `dbtf` if available, otherwise `dbt`.",
     )
     state_path: Optional[str] = Field(
         default=None,
