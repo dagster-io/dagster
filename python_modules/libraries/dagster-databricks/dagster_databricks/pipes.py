@@ -11,7 +11,7 @@ from contextlib import ExitStack, contextmanager
 from typing import Any, Literal, Optional, TextIO, Union
 
 import dagster._check as check
-from dagster._core.definitions.metadata import RawMetadataMapping
+from dagster._core.definitions.metadata import RawMetadataMapping, UrlMetadataValue
 from dagster._core.definitions.resource_annotation import TreatAsResourceParam
 from dagster._core.errors import DagsterExecutionInterruptedError, DagsterPipesExecutionError
 from dagster._core.execution.context.asset_execution_context import AssetExecutionContext
@@ -136,7 +136,7 @@ class BasePipesDatabricksClient(PipesClient):
         metadata["Databricks Job Run ID"] = str(run_id)
 
         if run_page_url := run.run_page_url:
-            metadata["Databricks Job Run URL"] = run_page_url
+            metadata["Databricks Job Run URL"] = UrlMetadataValue(run_page_url)
 
         return metadata
 
