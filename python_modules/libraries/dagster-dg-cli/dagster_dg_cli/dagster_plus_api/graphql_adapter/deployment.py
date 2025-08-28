@@ -21,16 +21,13 @@ query ListDeployments {
 """
 
 
-def process_deployments_response(
-    graphql_response: dict[str, Any], limit: Optional[int] = None
-) -> "DeploymentList":
+def process_deployments_response(graphql_response: dict[str, Any]) -> "DeploymentList":
     """Process GraphQL response into DeploymentList.
 
     This is a pure function that can be easily tested without mocking GraphQL clients.
 
     Args:
         graphql_response: Raw GraphQL response containing "fullDeployments"
-        limit: Optional limit to apply to results
 
     Returns:
         DeploymentList: Processed deployment data
@@ -69,4 +66,11 @@ def list_deployments_via_graphql(
     client = DagsterPlusGraphQLClient.from_config(config)
     result = client.execute(LIST_DEPLOYMENTS_QUERY)
 
-    return process_deployments_response(result, limit=limit)
+    deployment_list = process_deployments_response(result)
+
+    # Apply limit if specified
+    if limit is not None:
+        deployment_list.items = deployment_list.items[:limit]
+        deployment_list.total = len(deployment_list.items)
+
+    return deployment_list

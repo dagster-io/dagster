@@ -33,9 +33,9 @@ class TestProcessDeploymentsResponse:
     def test_response_processing_with_limit(self, snapshot):
         """Test response processing with a limit applied."""
         response = load_deployment_response_fixture("success_multiple_deployments")[0]
-        result = process_deployments_response(response, limit=3)
+        result = process_deployments_response(response)
 
-        # Snapshot the limited result
+        # Snapshot the full result (limit functionality moved to higher level)
         snapshot.assert_match(result)
 
     def test_empty_response_processing(self, snapshot):
