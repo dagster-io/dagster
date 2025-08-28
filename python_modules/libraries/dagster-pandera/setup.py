@@ -35,7 +35,7 @@ setup(
     include_package_data=True,
     python_requires=">=3.9,<3.14",
     install_requires=[
-        f"dagster{pin}",
+        "dagster==1.11.8",
         "pandas",
         "pandera>=0.24.0",
     ],

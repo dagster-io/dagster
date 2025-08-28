@@ -37,8 +37,8 @@ setup(
     include_package_data=True,
     python_requires=">=3.9,<3.14",
     install_requires=[
-        f"dagster{pin}",
-        f"dagster-snowflake{pin}",
+        "dagster==1.11.8",
+        "dagster-snowflake==0.27.8",
         "polars>=1.0.0",
         "requests",
         "adbc-driver-snowflake>=1.6.0",

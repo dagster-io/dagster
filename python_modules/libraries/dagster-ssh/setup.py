@@ -34,7 +34,7 @@ setup(
     packages=find_packages(exclude=["dagster_ssh_tests*"]),
     include_package_data=True,
     python_requires=">=3.9,<3.14",
-    install_requires=[f"dagster{pin}", "sshtunnel", "paramiko"],
+    install_requires=["dagster==1.11.8", "sshtunnel", "paramiko"],
     extras_require={"test": ["cryptography==2.6.1", "pytest-sftpserver==1.2.0"]},
     zip_safe=False,
 )
