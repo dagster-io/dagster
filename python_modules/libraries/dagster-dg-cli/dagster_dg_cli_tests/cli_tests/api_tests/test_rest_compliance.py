@@ -152,6 +152,120 @@ class TestRestCompliance:
                                 f"has a default value but is not typed as Optional"
                             )
 
+    def test_error_handling_consistency(self):
+        """Test that all API methods handle errors consistently."""
+        from dagster_dg_cli.cli.api.shared import get_graphql_error_mappings
+
+        # Verify error mapping completeness
+        mappings = get_graphql_error_mappings()
+        assert mappings, "GraphQL error mappings should be defined"
+
+        # Verify all error mappings have required structure
+        for error_type, mapping in mappings.items():
+            assert hasattr(mapping, "code"), f"Error mapping for {error_type} missing code"
+            assert hasattr(mapping, "status_code"), (
+                f"Error mapping for {error_type} missing status_code"
+            )
+            assert isinstance(mapping.code, str), f"Error code for {error_type} should be string"
+            assert isinstance(mapping.status_code, int), (
+                f"Status code for {error_type} should be int"
+            )
+
+            # Status codes should be valid HTTP error codes
+            valid_statuses = {400, 401, 403, 404, 422, 500}
+            assert mapping.status_code in valid_statuses, (
+                f"Invalid status code {mapping.status_code} for {error_type}"
+            )
+
+    def test_error_response_format_consistency(self):
+        """Test that error responses follow consistent format across all domains."""
+        from dagster_dg_cli.cli.api.shared import DgApiError, format_error_for_output
+
+        # Test JSON error format
+        test_error = DgApiError("Test error message", "TEST_ERROR", 400)
+        json_output, json_exit_code = format_error_for_output(test_error, output_json=True)
+
+        # Should be valid JSON
+        import json
+
+        try:
+            json_data = json.loads(json_output)
+        except json.JSONDecodeError:
+            pytest.fail("Error output should be valid JSON")
+
+        # Should have required fields
+        required_fields = {"error", "code", "statusCode", "type"}
+        assert set(json_data.keys()) >= required_fields, (
+            f"JSON error response missing required fields: {required_fields - set(json_data.keys())}"
+        )
+
+        # Test text error format
+        text_output, text_exit_code = format_error_for_output(test_error, output_json=False)
+
+        # Should start with consistent prefix
+        assert text_output.startswith("Error querying Dagster Plus API: "), (
+            "Text error output should have consistent prefix"
+        )
+
+        # Exit codes should map correctly
+        assert json_exit_code == 1, "400 status should map to exit code 1"
+        assert text_exit_code == 1, "400 status should map to exit code 1"
+
+    def test_error_code_naming_conventions(self):
+        """Test that error codes follow consistent naming conventions."""
+        from dagster_dg_cli.cli.api.shared import get_graphql_error_mappings
+
+        mappings = get_graphql_error_mappings()
+
+        for mapping in mappings.values():
+            code = mapping.code
+
+            # Should be uppercase
+            assert code.isupper(), f"Error code {code} should be uppercase"
+
+            # Should use underscores
+            assert " " not in code, f"Error code {code} should not contain spaces"
+            assert "-" not in code, f"Error code {code} should use underscores, not hyphens"
+
+            # Should be descriptive
+            assert len(code) > 2, f"Error code {code} should be descriptive (more than 2 chars)"
+
+            # Should end with _ERROR or be a resource-specific format
+            valid_suffixes = ["_ERROR", "_REQUIRED", "_NOT_FOUND", "_DEFINED"]
+            valid_formats = ["UNAUTHORIZED", "FORBIDDEN", "INTERNAL_ERROR"]
+
+            is_valid = (
+                any(code.endswith(suffix) for suffix in valid_suffixes)
+                or code in valid_formats
+                or "_NOT_" in code  # Patterns like ASSET_NOT_FOUND
+            )
+
+            assert is_valid, f"Error code {code} should follow naming conventions"
+
+    def test_status_code_categorization(self):
+        """Test that status codes properly categorize error types."""
+        from dagster_dg_cli.cli.api.shared import get_error_type_from_status_code
+
+        # Test expected mappings
+        expected_mappings = {
+            400: "client_error",
+            401: "authentication_error",
+            403: "authorization_error",
+            404: "not_found_error",
+            422: "migration_error",
+            500: "server_error",
+        }
+
+        for status_code, expected_type in expected_mappings.items():
+            actual_type = get_error_type_from_status_code(status_code)
+            assert actual_type == expected_type, (
+                f"Status {status_code} should map to {expected_type}, got {actual_type}"
+            )
+
+        # Test unknown status defaults to server_error
+        unknown_status = 418  # I'm a teapot
+        assert get_error_type_from_status_code(unknown_status) == "server_error"
+
 
 if __name__ == "__main__":
     pytest.main([__file__, "-v"])
