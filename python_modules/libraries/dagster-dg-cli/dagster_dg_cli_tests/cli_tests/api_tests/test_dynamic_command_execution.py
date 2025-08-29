@@ -154,7 +154,7 @@ class TestDynamicCommandExecution:
         self, click_command: Any, args: list[str], graphql_responses: list[dict], fixture_name: str
     ):
         """Test a deployment domain command with mocked GraphQL responses."""
-        with patch("dagster_dg_cli.cli.api.deployment._get_config_or_error") as mock_config:
+        with patch("dagster_dg_cli.cli.api.shared.get_config_or_error") as mock_config:
             with patch(
                 "dagster_dg_cli.dagster_plus_api.graphql_adapter.deployment.DagsterPlusGraphQLClient.from_config"
             ) as mock_client_class:
