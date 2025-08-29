@@ -119,16 +119,24 @@ def _format_asset_status_lines(status) -> list[str]:
             lines.append(f"Warning Checks: {metadata.num_warning_checks}")
         if metadata.last_materialized_timestamp:
             lines.append(
+<<<<<<< HEAD
                 f"Last Materialized: {_format_timestamp(metadata.last_materialized_timestamp, 'milliseconds')}"
+=======
+                f"Last Materialized: {_format_timestamp(metadata.last_materialized_timestamp)}"
+>>>>>>> 50367ba0ec (cp)
             )
 
     # Latest materialization
     if status.latest_materialization:
         mat = status.latest_materialization
         if mat.timestamp:
+<<<<<<< HEAD
             lines.append(
                 f"Latest Materialization: {_format_timestamp(mat.timestamp, 'milliseconds')}"
             )
+=======
+            lines.append(f"Latest Materialization: {_format_timestamp(mat.timestamp)}")
+>>>>>>> 50367ba0ec (cp)
         if mat.run_id:
             lines.append(f"Latest Run ID: {mat.run_id}")
         if mat.partition:

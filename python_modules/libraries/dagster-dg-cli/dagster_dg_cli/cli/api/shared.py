@@ -8,11 +8,13 @@ import click
 from dagster._record import record
 from dagster_shared.plus.config import DagsterPlusCliConfig
 
+from dagster_dg_cli.utils.plus.gql_client import IGraphQLClient
+
 
 class GraphQLClientFactory(Protocol):
     """Protocol for GraphQL client factories used in testing."""
 
-    def __call__(self, config: DagsterPlusCliConfig): ...
+    def __call__(self, config: DagsterPlusCliConfig) -> IGraphQLClient: ...
 
 
 class DgApiTestContext:
