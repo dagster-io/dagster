@@ -227,9 +227,13 @@ class DagsterType:
 
     @public
     @property
-    def unique_name(self) -> t.Optional[str]:
-        """The unique name of this type. Can be None if the type is not unique, such as container types."""
-        # TODO: docstring and body inconsistent-- can this be None or not?
+    def unique_name(self) -> str:
+        """The unique user-facing name for this type.
+
+        For types that do not have a unique name (e.g. container/parameterized types like List or
+        Optional), access is invalid. Use ``has_unique_name`` to guard access, or use
+        ``display_name`` if you need a human-readable label regardless of uniqueness.
+        """
         check.invariant(
             self._name is not None,
             f"unique_name requested but is None for type {self.display_name}",
