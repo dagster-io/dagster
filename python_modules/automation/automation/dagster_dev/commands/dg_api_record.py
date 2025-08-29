@@ -8,6 +8,7 @@ import json
 import shlex
 import subprocess
 import sys
+import traceback
 from pathlib import Path
 
 import click
@@ -81,13 +82,6 @@ def record_graphql_for_fixture(domain: str, fixture_name: str, command: str) -> 
     fixture_dir.mkdir(parents=True, exist_ok=True)
     click.echo(f"🚀 Recording for {domain}.{fixture_name}: {command}")
 
-    # Ensure --json flag is present for structured output
-    if "--json" not in command:
-        click.echo(
-            f"Error: --json flag is required for GraphQL response capture: {command}", err=True
-        )
-        return False
-
     try:
         # Execute the dg command and capture output
         result = subprocess.run(
@@ -101,20 +95,34 @@ def record_graphql_for_fixture(domain: str, fixture_name: str, command: str) -> 
         # Note: cli_output.txt files are no longer created as they're not used by tests
         # Tests use syrupy snapshots instead
 
-        # For JSON commands, also save the parsed response as a numbered JSON file
+        # Handle successful command execution
         if result.returncode == 0:
-            try:
-                graphql_response = json.loads(result.stdout)
-                json_file = fixture_dir / "01_response.json"
-                with open(json_file, "w") as f:
-                    json.dump(graphql_response, f, indent=2, sort_keys=True)
-                click.echo(f"✅ Captured successful response for {fixture_name}")
-                click.echo(f"📄 Saved to {json_file}")
-            except json.JSONDecodeError as e:
-                click.echo(f"Warning: Command output is not valid JSON: {e}")
-                click.echo("No JSON file created")
+            # Try to parse as JSON if the command used --json flag
+            if "--json" in command:
+                try:
+                    graphql_response = json.loads(result.stdout)
+                    json_file = fixture_dir / "01_response.json"
+                    with open(json_file, "w") as f:
+                        json.dump(graphql_response, f, indent=2, sort_keys=True)
+                    click.echo(f"✅ Captured JSON response for {fixture_name}")
+                    click.echo(f"📄 Saved to {json_file}")
+                except json.JSONDecodeError as e:
+                    click.echo(f"Warning: Expected JSON output but parsing failed: {e}")
+                    click.echo("No JSON file created")
+            else:
+                # Text output - let tests use snapshots for validation
+                click.echo(f"✅ Captured text response for {fixture_name}")
+                click.echo("📄 Text output will be validated via test snapshots")
         else:
             click.echo(f"⚠️  Command failed with exit code {result.returncode}")
+            # Print command output for debugging
+            if result.stderr:
+                click.echo("📤 Command stderr:")
+                click.echo(result.stderr)
+            if result.stdout:
+                click.echo("📤 Command stdout:")
+                click.echo(result.stdout)
+
             if fixture_name.startswith("error_"):
                 click.echo(f"✅ Captured error response for {fixture_name}")
             else:
@@ -123,14 +131,19 @@ def record_graphql_for_fixture(domain: str, fixture_name: str, command: str) -> 
 
         return True
 
-    except subprocess.TimeoutExpired:
+    except subprocess.TimeoutExpired as e:
         click.echo(f"Error: Command timed out after 60 seconds: {command}", err=True)
+        click.echo("🔍 Timeout details:")
+        click.echo(f"  stdout: {e.stdout}")
+        click.echo(f"  stderr: {e.stderr}")
         return False
     except KeyboardInterrupt:
         click.echo("\n⏹️  Recording interrupted", err=True)
         return False
     except Exception as e:
         click.echo(f"Error executing command: {e}", err=True)
+        click.echo("🔍 Full traceback:")
+        click.echo(traceback.format_exc())
         return False
 
 
@@ -159,6 +172,7 @@ def dg_api_record(domain: str, fixture: str, graphql: bool):
 
         # Record GraphQL only
         dagster-dev dg-api-record asset --graphql
+
     """
     # Always run GraphQL recording
 

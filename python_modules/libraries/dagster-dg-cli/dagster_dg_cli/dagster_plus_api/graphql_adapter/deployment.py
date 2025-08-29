@@ -2,8 +2,6 @@
 
 from typing import TYPE_CHECKING, Any, Optional
 
-from dagster_shared.plus.config import DagsterPlusCliConfig
-
 from dagster_dg_cli.utils.plus.gql_client import DagsterPlusGraphQLClient
 
 if TYPE_CHECKING:
@@ -57,13 +55,12 @@ def process_deployments_response(graphql_response: dict[str, Any]) -> "Deploymen
 
 
 def list_deployments_via_graphql(
-    config: DagsterPlusCliConfig,
+    client: DagsterPlusGraphQLClient,
     limit: Optional[int] = None,
 ) -> "DeploymentList":
     """Fetch deployments using GraphQL.
     This is an implementation detail that can be replaced with REST calls later.
     """
-    client = DagsterPlusGraphQLClient.from_config(config)
     result = client.execute(LIST_DEPLOYMENTS_QUERY)
 
     deployment_list = process_deployments_response(result)

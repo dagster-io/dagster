@@ -8,6 +8,7 @@ from dagster_dg_core.utils.telemetry import cli_telemetry_wrapper
 from dagster_shared.plus.config import DagsterPlusCliConfig
 from dagster_shared.plus.config_utils import dg_api_options
 
+from dagster_dg_cli.cli.api.client import create_dg_api_graphql_client
 from dagster_dg_cli.cli.api.formatters import format_asset, format_assets
 from dagster_dg_cli.dagster_plus_api.api.asset import DgApiAssetApi
 
@@ -32,8 +33,15 @@ from dagster_dg_cli.dagster_plus_api.api.asset import DgApiAssetApi
 )
 @dg_api_options(deployment_scoped=True)
 @cli_telemetry_wrapper
+@click.pass_context
 def list_assets_command(
-    limit: int, cursor: str, output_json: bool, organization: str, deployment: str, api_token: str
+    ctx: click.Context,
+    limit: int,
+    cursor: str,
+    output_json: bool,
+    organization: str,
+    deployment: str,
+    api_token: str,
 ) -> None:
     """List assets with pagination."""
     config = DagsterPlusCliConfig.create_for_deployment(
@@ -41,7 +49,8 @@ def list_assets_command(
         organization=organization,
         user_token=api_token,
     )
-    api = DgApiAssetApi(config)
+    client = create_dg_api_graphql_client(ctx, config)
+    api = DgApiAssetApi(client)
 
     try:
         assets = api.list_assets(limit=limit, cursor=cursor)
@@ -66,8 +75,14 @@ def list_assets_command(
 )
 @dg_api_options(deployment_scoped=True)
 @cli_telemetry_wrapper
+@click.pass_context
 def view_asset_command(
-    asset_key: str, output_json: bool, organization: str, deployment: str, api_token: str
+    ctx: click.Context,
+    asset_key: str,
+    output_json: bool,
+    organization: str,
+    deployment: str,
+    api_token: str,
 ) -> None:
     """Get specific asset details."""
     config = DagsterPlusCliConfig.create_for_deployment(
@@ -75,7 +90,8 @@ def view_asset_command(
         organization=organization,
         user_token=api_token,
     )
-    api = DgApiAssetApi(config)
+    client = create_dg_api_graphql_client(ctx, config)
+    api = DgApiAssetApi(client)
 
     try:
         asset = api.get_asset(asset_key)

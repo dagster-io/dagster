@@ -2,8 +2,6 @@
 
 from typing import Optional
 
-from dagster_shared.plus.config import DagsterPlusCliConfig
-
 from dagster_dg_cli.dagster_plus_api.schemas.asset import DgApiAsset, DgApiAssetList
 from dagster_dg_cli.utils.plus.gql_client import DagsterPlusGraphQLClient
 
@@ -76,7 +74,7 @@ query AssetNodes($assetKeys: [AssetKeyInput!]!) {
 
 
 def list_dg_plus_api_assets_via_graphql(
-    config: DagsterPlusCliConfig,
+    client: DagsterPlusGraphQLClient,
     limit: Optional[int] = None,
     cursor: Optional[str] = None,
 ) -> DgApiAssetList:
@@ -86,8 +84,6 @@ def list_dg_plus_api_assets_via_graphql(
     2. Use assetNodes to fetch metadata for those keys
     3. Combine and transform data
     """
-    client = DagsterPlusGraphQLClient.from_config(config)
-
     # Step 1: Get paginated asset keys
     variables = {}
     if cursor:
@@ -172,11 +168,9 @@ def list_dg_plus_api_assets_via_graphql(
 
 
 def get_dg_plus_api_asset_via_graphql(
-    config: DagsterPlusCliConfig, asset_key_parts: list[str]
+    client: DagsterPlusGraphQLClient, asset_key_parts: list[str]
 ) -> DgApiAsset:
     """Single asset fetch using assetNodes with specific assetKey."""
-    client = DagsterPlusGraphQLClient.from_config(config)
-
     variables = {"assetKeys": [{"path": asset_key_parts}]}
 
     result = client.execute(ASSET_NODES_QUERY, variables=variables)
