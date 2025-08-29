@@ -23,9 +23,9 @@ class DgApiAssetApi:
         cursor: Optional[str] = None,
     ) -> "DgApiAssetList":
         """List assets with cursor-based pagination."""
-        # Apply max limit constraint
+        # Enforce max limit constraint
         if limit and limit > 1000:
-            limit = 1000
+            raise ValueError("Limit cannot exceed 1000")
 
         return list_dg_plus_api_assets_via_graphql(self.client, limit=limit, cursor=cursor)
 

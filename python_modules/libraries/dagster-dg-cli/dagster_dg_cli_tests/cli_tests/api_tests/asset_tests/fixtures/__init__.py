@@ -1,1 +1,0 @@
-"""Asset API test fixtures."""

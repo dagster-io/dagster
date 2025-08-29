@@ -37,7 +37,7 @@ def discover_scenario_fixtures() -> Iterator[tuple[str, str, str]]:
     domain_dirs = [d for d in api_tests_dir.iterdir() if d.is_dir() and d.name.endswith("_tests")]
 
     for domain_dir in domain_dirs:
-        scenarios_yaml = domain_dir / "fixtures" / "scenarios.yaml"
+        scenarios_yaml = domain_dir / "scenarios.yaml"
         if not scenarios_yaml.exists():
             continue
 

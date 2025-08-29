@@ -6,7 +6,7 @@ This directory contains infrastructure for testing Dagster Plus CLI API commands
 
 ### Record fixtures for a new test scenario:
 
-1. **Add scenario to registry**: Edit `{domain}_tests/fixtures/scenarios.yaml`:
+1. **Add scenario to registry**: Edit `{domain}_tests/scenarios.yaml`:
 
    ```yaml
    success_list_assets:

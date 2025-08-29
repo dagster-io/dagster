@@ -36,14 +36,13 @@ def load_domain_commands(domain: str) -> dict[str, dict]:
         / "cli_tests"
         / "api_tests"
     )
-    fixture_dir = api_tests_dir / f"{domain}_tests" / "fixtures"
-    scenarios_file = fixture_dir / "scenarios.yaml"
+    domain_dir = api_tests_dir / f"{domain}_tests"
+    fixture_dir = domain_dir / "fixtures"
+    scenarios_file = domain_dir / "scenarios.yaml"
 
     if not fixture_dir.exists():
-        click.echo(f"Error: Domain directory not found: {fixture_dir}", err=True)
-        available_domains = [d.name.replace("_tests", "") for d in api_tests_dir.glob("*_tests")]
-        click.echo(f"Available domains: {available_domains}")
-        return {}
+        click.echo(f"Creating domain directory: {fixture_dir}")
+        fixture_dir.mkdir(parents=True, exist_ok=True)
 
     if not scenarios_file.exists():
         click.echo(f"Error: Scenarios file not found: {scenarios_file}", err=True)

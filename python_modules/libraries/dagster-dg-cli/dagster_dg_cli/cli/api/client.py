@@ -1,6 +1,6 @@
 """Client factory for DG API commands."""
 
-from typing import Optional, Protocol
+from typing import Protocol
 
 import click
 from dagster_shared.plus.config import DagsterPlusCliConfig
@@ -17,7 +17,7 @@ class GraphQLClientFactory(Protocol):
 class DgApiTestContext:
     """Test context for DG API commands."""
 
-    def __init__(self, client_factory: Optional[GraphQLClientFactory] = None):
+    def __init__(self, client_factory: GraphQLClientFactory):
         self.client_factory = client_factory
 
 

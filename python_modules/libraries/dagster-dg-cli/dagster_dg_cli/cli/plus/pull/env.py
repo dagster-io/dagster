@@ -23,7 +23,7 @@ def _get_config_or_error() -> DagsterPlusCliConfig:
 
 
 def _get_local_secrets_for_locations(
-    client, location_names: set[str]
+    client: DagsterPlusGraphQLClient, location_names: set[str]
 ) -> Mapping[str, Mapping[str, str]]:
     secrets_by_location = {location_name: {} for location_name in location_names}
 
