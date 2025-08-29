@@ -159,6 +159,9 @@ deployments:
     service:
       annotations: {}
 
+    # Allow custom container name for the dagster user deployment. Defaults to $.Chart.Name
+    # containerName: "dagster-example-container"
+
 # Specify secrets to run containers based on images in private registries. See:
 # https://kubernetes.io/docs/concepts/containers/images/#referring-to-an-imagepullsecrets-on-a-pod
 imagePullSecrets: []
