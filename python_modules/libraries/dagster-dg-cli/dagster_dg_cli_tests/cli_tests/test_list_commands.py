@@ -139,7 +139,7 @@ def test_list_components_json_success():
 
 def test_list_components_filtered():
     with (
-        ProxyRunner.test(use_fixed_test_components=True) as runner,
+        ProxyRunner.test(use_fixed_test_components=True, mix_stderr=False) as runner,
         isolated_components_venv(runner),
     ):
         result = runner.invoke("list", "components", "--json", "--package", "fake")

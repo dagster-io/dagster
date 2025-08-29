@@ -16,6 +16,7 @@ from dagster_shared.utils.config import (
 from typing_extensions import Self, TypeVar
 
 from dagster._core.definitions.definitions_class import Definitions
+from dagster._core.errors import DagsterError
 from dagster.components.component.component import Component
 from dagster.components.core.component_tree_state import ComponentTreeStateTracker
 from dagster.components.core.context import ComponentDeclLoadContext, ComponentLoadContext
@@ -130,12 +131,12 @@ class ComponentTree(IHaveNew):
             ComponentTree: The ComponentTree for the project.
         """
         root_config_path = discover_config_file(path_within_project)
-        toml_config = load_toml_as_dict(
-            check.not_none(
-                root_config_path,
-                additional_message=f"No config file found at project root {path_within_project}",
+        if not root_config_path:
+            raise DagsterError(
+                f"Could not find config file (pyproject.toml/dg.toml) in {path_within_project} or any parent of."
             )
-        )
+
+        toml_config = load_toml_as_dict(root_config_path)
 
         if root_config_path and root_config_path.stem == "dg":
             project = toml_config.get("project", {})
@@ -152,7 +153,10 @@ class ComponentTree(IHaveNew):
 
         defs_module = importlib.import_module(defs_module_name)
 
-        return cls(defs_module=defs_module, project_root=path_within_project)
+        return cls(
+            defs_module=defs_module,
+            project_root=root_config_path.parent,
+        )
 
     @property
     def decl_load_context(self) -> ComponentDeclLoadContext:

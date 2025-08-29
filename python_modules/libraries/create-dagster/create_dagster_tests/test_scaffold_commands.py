@@ -1,5 +1,6 @@
 import os
 import subprocess
+import sys
 from pathlib import Path
 from typing import Literal, Optional, get_args
 
@@ -7,6 +8,7 @@ import create_dagster.version_check
 import dagster_shared.check as check
 import pytest
 import tomlkit
+from create_dagster.scaffold import _get_editable_dagster_from_env
 from dagster_dg_core.shared_options import DEFAULT_EDITABLE_DAGSTER_PROJECTS_ENV_VAR
 from dagster_dg_core.utils import (
     create_toml_node,
@@ -408,6 +410,45 @@ def test_scaffold_project_use_editable_dagster_env_var_succeeds(monkeypatch) -> 
             validate_pyproject_toml_with_editable(
                 toml, "--use-editable-dagster", dagster_git_repo_dir
             )
+
+
+def test_scaffold_project_normal_package_installation_works(monkeypatch) -> None:
+    with ProxyRunner.test() as runner, runner.isolated_filesystem():
+        result = runner.invoke_create_dagster("project", "--no-uv-sync", "foo-bar")
+        assert_runner_result(result)
+
+        venv_dir = Path("test_venv")
+        subprocess.run([sys.executable, "-m", "venv", str(venv_dir)], check=True)
+        venv_python = venv_dir / "bin" / "python"
+        root = _get_editable_dagster_from_env()
+        subprocess.run(
+            [venv_python, "-m", "pip", "install", "uv"],
+            check=True,
+        )
+        subprocess.run(
+            [
+                venv_python,
+                "-m",
+                "uv",
+                "pip",
+                "install",
+                "./foo-bar",
+                "-e",
+                f"{root}/python_modules/dagster",
+                "-e",
+                f"{root}/python_modules/libraries/dagster-shared",
+            ],
+            check=True,
+        )
+
+        result = subprocess.run(
+            [
+                venv_python,
+                "-c",
+                "import foo_bar.definitions; foo_bar.definitions.defs()",
+            ],
+            check=True,
+        )
 
 
 @pytest.mark.parametrize("option", get_args(EditableOption))
