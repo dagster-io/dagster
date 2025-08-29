@@ -7,6 +7,10 @@ from dagster_shared.plus.config import DagsterPlusCliConfig
 
 from dagster_dg_cli.utils.plus.gql_client import DagsterPlusGraphQLClient, IGraphQLClient
 
+# Test constants
+TEST_ORGANIZATION = "test-org"
+TEST_DEPLOYMENT = "test-deployment"
+
 
 class GraphQLClientFactory(Protocol):
     """Protocol for GraphQL client factories used in testing."""
@@ -19,6 +23,8 @@ class DgApiTestContext:
 
     def __init__(self, client_factory: GraphQLClientFactory):
         self.client_factory = client_factory
+        self.organization = TEST_ORGANIZATION
+        self.deployment = TEST_DEPLOYMENT
 
 
 def create_dg_api_graphql_client(

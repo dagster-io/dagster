@@ -133,10 +133,19 @@ def dg_api_options(
         def wrapper(*args, **kwargs):
             ctx = click.get_current_context()
 
-            # Get resolved values using precedence chain
-            organization = get_organization(ctx)
-            deployment = get_deployment(ctx) if deployment_scoped else None
-            api_token = get_user_token(ctx)
+            # Check if we're in test mode with DgApiTestContext
+            # Import here to avoid circular imports
+            from dagster_dg_cli.cli.api.client import DgApiTestContext
+
+            if ctx.obj and isinstance(ctx.obj, DgApiTestContext):
+                organization = ctx.obj.organization
+                deployment = ctx.obj.deployment if deployment_scoped else None
+                api_token = None
+            else:
+                # Get resolved values using precedence chain
+                organization = get_organization(ctx)
+                deployment = get_deployment(ctx) if deployment_scoped else None
+                api_token = get_user_token(ctx)
 
             if not organization:
                 raise click.UsageError(
