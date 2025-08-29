@@ -2,7 +2,7 @@
 
 from typing import Optional
 
-from dagster_dg_cli.dagster_plus_api.schemas.asset import DgApiAsset, DgApiAssetList
+from dagster_dg_cli.api_layer.schemas.asset import DgApiAsset, DgApiAssetList
 from dagster_dg_cli.utils.plus.gql_client import IGraphQLClient
 
 # GraphQL queries

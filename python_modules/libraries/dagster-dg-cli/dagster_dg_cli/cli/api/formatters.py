@@ -3,8 +3,8 @@
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from dagster_dg_cli.dagster_plus_api.schemas.asset import DgApiAsset, DgApiAssetList
-    from dagster_dg_cli.dagster_plus_api.schemas.deployment import DeploymentList
+    from dagster_dg_cli.api_layer.schemas.asset import DgApiAsset, DgApiAssetList
+    from dagster_dg_cli.api_layer.schemas.deployment import DeploymentList
 
 
 def format_deployments(deployments: "DeploymentList", as_json: bool) -> str:

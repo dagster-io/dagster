@@ -5,7 +5,7 @@ from typing import TYPE_CHECKING, Any, Optional
 from dagster_dg_cli.utils.plus.gql_client import IGraphQLClient
 
 if TYPE_CHECKING:
-    from dagster_dg_cli.dagster_plus_api.schemas.deployment import DeploymentList
+    from dagster_dg_cli.api_layer.schemas.deployment import DeploymentList
 
 # GraphQL queries
 LIST_DEPLOYMENTS_QUERY = """
@@ -31,7 +31,7 @@ def process_deployments_response(graphql_response: dict[str, Any]) -> "Deploymen
         DeploymentList: Processed deployment data
     """
     # Import pydantic models only when needed
-    from dagster_dg_cli.dagster_plus_api.schemas.deployment import (
+    from dagster_dg_cli.api_layer.schemas.deployment import (
         Deployment,
         DeploymentList,
         DeploymentType,

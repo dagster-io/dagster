@@ -6,10 +6,10 @@ import click
 from dagster_dg_core.utils import DgClickCommand, DgClickGroup
 from dagster_dg_core.utils.telemetry import cli_telemetry_wrapper
 
+from dagster_dg_cli.api_layer.api.deployments import DgApiDeploymentApi
 from dagster_dg_cli.cli.api.client import create_dg_api_graphql_client
 from dagster_dg_cli.cli.api.formatters import format_deployments
 from dagster_dg_cli.cli.api.shared import get_config_or_error
-from dagster_dg_cli.dagster_plus_api.api.deployments import DgApiDeploymentApi
 
 
 @click.command(name="list", cls=DgClickCommand, unlaunched=True)

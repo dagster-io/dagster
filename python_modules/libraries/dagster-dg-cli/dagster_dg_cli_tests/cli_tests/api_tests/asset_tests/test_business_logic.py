@@ -4,8 +4,8 @@ These tests focus on testing pure functions that process data without requiring
 GraphQL client mocking or external dependencies.
 """
 
+from dagster_dg_cli.api_layer.schemas.asset import DgApiAsset, DgApiAssetList
 from dagster_dg_cli.cli.api.formatters import format_asset, format_assets
-from dagster_dg_cli.dagster_plus_api.schemas.asset import DgApiAsset, DgApiAssetList
 
 
 class TestFormatAssets:

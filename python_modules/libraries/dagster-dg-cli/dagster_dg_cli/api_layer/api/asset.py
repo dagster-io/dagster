@@ -3,14 +3,14 @@
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Optional
 
-from dagster_dg_cli.dagster_plus_api.graphql_adapter.asset import (
+from dagster_dg_cli.api_layer.graphql_adapter.asset import (
     get_dg_plus_api_asset_via_graphql,
     list_dg_plus_api_assets_via_graphql,
 )
 from dagster_dg_cli.utils.plus.gql_client import IGraphQLClient
 
 if TYPE_CHECKING:
-    from dagster_dg_cli.dagster_plus_api.schemas.asset import DgApiAsset, DgApiAssetList
+    from dagster_dg_cli.api_layer.schemas.asset import DgApiAsset, DgApiAssetList
 
 
 @dataclass(frozen=True)

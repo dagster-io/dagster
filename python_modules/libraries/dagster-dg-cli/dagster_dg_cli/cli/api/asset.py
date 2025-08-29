@@ -8,9 +8,9 @@ from dagster_dg_core.utils.telemetry import cli_telemetry_wrapper
 from dagster_shared.plus.config import DagsterPlusCliConfig
 from dagster_shared.plus.config_utils import dg_api_options
 
+from dagster_dg_cli.api_layer.api.asset import DgApiAssetApi
 from dagster_dg_cli.cli.api.client import create_dg_api_graphql_client
 from dagster_dg_cli.cli.api.formatters import format_asset, format_assets
-from dagster_dg_cli.dagster_plus_api.api.asset import DgApiAssetApi
 
 
 @click.command(name="list", cls=DgClickCommand, unlaunched=True)
