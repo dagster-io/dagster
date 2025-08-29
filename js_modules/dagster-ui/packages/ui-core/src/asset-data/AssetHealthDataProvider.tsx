@@ -48,24 +48,27 @@ function init() {
 
       const assetKeys = keys.filter((key) => allAssetKeys.has(key)).map(tokenToAssetKey);
 
-      const healthResponse = await client.query<AssetHealthQuery, AssetHealthQueryVariables>({
-        query: ASSETS_HEALTH_INFO_QUERY,
-        fetchPolicy: 'no-cache',
-        variables: {
-          assetKeys,
-        },
-      });
+      let healthResponse;
+      if (assetKeys.length > 0) {
+        healthResponse = await client.query<AssetHealthQuery, AssetHealthQueryVariables>({
+          query: ASSETS_HEALTH_INFO_QUERY,
+          fetchPolicy: 'no-cache',
+          variables: {
+            assetKeys,
+          },
+        });
+      }
 
-      const assetData = healthResponse.data.assetsOrError;
-      if (assetData.__typename === 'PythonError') {
+      const assetData = healthResponse?.data.assetsOrError;
+      if (assetData?.__typename === 'PythonError') {
         showCustomAlert({
           title: 'An error occurred',
           body: <PythonErrorInfo error={assetData} />,
         });
         return {};
-      } else if (assetData.__typename === 'AssetConnection') {
+      } else if (assetData?.__typename === 'AssetConnection' || !assetKeys.length) {
         const result: Record<string, AssetHealthFragment> = Object.fromEntries(
-          assetData.nodes.map((node) => [tokenForAssetKey(node.key), node]),
+          assetData?.nodes.map((node) => [tokenForAssetKey(node.key), node]) ?? [],
         );
         // provide null values for any keys that do not have results returned by the query
         keys.forEach((key) => {
