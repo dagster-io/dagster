@@ -33,12 +33,7 @@ const DEFAULT_BATCH_LIMIT = 1000;
 export function useAllAssetsNodes() {
   const {assetEntries, loadingAssets: loading} = useContext(WorkspaceContext);
   const allAssetNodes = useMemo(() => getAllAssetNodes(assetEntries), [assetEntries]);
-
-  const allAssetKeys = useMemo(() => {
-    return new Set(allAssetNodes.map((node) => tokenForAssetKey(node.key)));
-  }, [allAssetNodes]);
-
-  return {assets: allAssetNodes, allAssetKeys, loading};
+  return {assets: allAssetNodes, loading};
 }
 
 export function useAllAssets({
