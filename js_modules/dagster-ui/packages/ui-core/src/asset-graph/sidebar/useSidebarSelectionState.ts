@@ -97,96 +97,94 @@ export function useSidebarSelectionState({
      * 3. Both root-to-leaf and leaf-to-root views are updated independently to maintain
      *    their own expansion states.
      */
-    if (lastSelectedNode) {
-      // Helper function to expand nodes along a path in tree view
-      const expandTreePath = (
-        prevOpenNodes: Set<string>,
-        direction: 'root-to-leaf' | 'leaf-to-root',
-        lastSelectedSidebarNode: SelectedNode | null,
-        setSelectedNode: (node: SelectedNode) => void,
-        selectedNode: SelectedNode | null,
-      ) => {
-        // Try to reuse cached path if the same node is selected
-        let path =
-          lastSelectedSidebarNode?.id === lastSelectedNode?.id
-            ? lastSelectedSidebarNode.path
-            : undefined;
 
-        // Calculate path if not cached
-        if (!path) {
-          path = getNodePath(lastSelectedNode, direction, graphData);
-        }
-
-        const nodesInPath = path.split(':');
-        let currentPath = nodesInPath[0];
-
-        if (!currentPath) {
-          return prevOpenNodes;
-        }
-
-        // Expand all nodes along the path
-        const nextOpenNodes = new Set(prevOpenNodes);
-        nextOpenNodes.add(currentPath);
-        for (let i = 1; i < nodesInPath.length; i++) {
-          currentPath = `${currentPath}:${nodesInPath[i]}`;
-          nextOpenNodes.add(currentPath);
-        }
-
-        // Update selected node if it changed
-        if (selectedNode?.id !== lastSelectedNode.id) {
-          setSelectedNode({id: lastSelectedNode.id, path: currentPath});
-        }
-
-        return nextOpenNodes;
-      };
-
-      // Update root-to-leaf view
-      setOpenNodesRootToLeaf((prevOpenNodes) => {
-        if (sidebarViewType === 'tree') {
-          return expandTreePath(
-            prevOpenNodes,
-            'root-to-leaf',
-            lastSelectedSidebarNodeRootToLeaf,
-            setSelectedNodeRootToLeaf,
-            selectedNodeRootToLeaf,
-          );
-        }
-
-        // Group view: expand location and group
-        const nextOpenNodes = new Set(prevOpenNodes);
-        const assetNode = graphData.nodes[lastSelectedNode.id];
-        if (assetNode) {
-          const locationName = buildRepoPathForHuman(
-            assetNode.definition.repository.name,
-            assetNode.definition.repository.location.name,
-          );
-          const groupName = assetNode.definition.groupName || 'default';
-          nextOpenNodes.add(locationName);
-          nextOpenNodes.add(locationName + ':' + groupName);
-        }
-        if (selectedNodeRootToLeaf?.id !== lastSelectedNode.id) {
-          setSelectedNodeRootToLeaf({id: lastSelectedNode.id});
-        }
-        return nextOpenNodes;
-      });
-
-      // Update leaf-to-root view (only for tree view)
-      if (sidebarViewType === 'tree') {
-        setOpenNodesLeafToRoot((prevOpenNodes) => {
-          return expandTreePath(
-            prevOpenNodes,
-            'leaf-to-root',
-            lastSelectedSidebarNodeLeafToRoot,
-            setSelectedNodeLeafToRoot,
-            selectedNodeLeafToRoot,
-          );
-        });
-      }
-    } else {
+    if (!lastSelectedNode) {
       // Clear selection when no node is selected
       setSelectedNodeRootToLeaf(null);
       setSelectedNodeLeafToRoot(null);
+      return;
     }
+    // helper to expand nodes along a path in tree view
+    const expandTreePath = (
+      prevOpenNodes: Set<string>,
+      direction: 'root-to-leaf' | 'leaf-to-root',
+      lastSelectedSidebarNode: SelectedNode | null,
+      setSelectedNode: (node: SelectedNode) => void, // setSelectedNodeRootToLeaf or setSelectedNodeLeafToRoot
+      selectedNode: SelectedNode | null,
+    ) => {
+      // Reuse the last selected sidebar node path if the same node is selected
+      // To ensure that when the user selects a node, the path is expanded to the correct node.
+      // and not to another instance of the node with the same id but different path.
+      let path =
+        lastSelectedSidebarNode?.id === lastSelectedNode?.id
+          ? lastSelectedSidebarNode.path
+          : undefined;
+
+      // Calculate path if the the last selected sidebar node's ID is not the same as the last selected node
+      if (!path) {
+        path = getNodePath(lastSelectedNode, direction, graphData);
+      }
+
+      const nodesInPath = path.split(':');
+      let currentPath = nodesInPath[0];
+
+      if (!currentPath) {
+        return prevOpenNodes;
+      }
+
+      // Expand all nodes along the path
+      const nextOpenNodes = new Set(prevOpenNodes);
+      nextOpenNodes.add(currentPath);
+      for (let i = 1; i < nodesInPath.length; i++) {
+        currentPath = `${currentPath}:${nodesInPath[i]}`;
+        nextOpenNodes.add(currentPath);
+      }
+
+      // Update selected node if it changed
+      if (selectedNode?.id !== lastSelectedNode.id) {
+        setSelectedNode({id: lastSelectedNode.id, path: currentPath});
+      }
+
+      return nextOpenNodes;
+    };
+
+    setOpenNodesRootToLeaf((prevOpenNodes) => {
+      if (sidebarViewType === 'tree') {
+        return expandTreePath(
+          prevOpenNodes,
+          'root-to-leaf',
+          lastSelectedSidebarNodeRootToLeaf,
+          setSelectedNodeRootToLeaf,
+          selectedNodeRootToLeaf,
+        );
+      }
+
+      // Group view: expand location and group
+      const nextOpenNodes = new Set(prevOpenNodes);
+      const assetNode = graphData.nodes[lastSelectedNode.id];
+      if (assetNode) {
+        const locationName = buildRepoPathForHuman(
+          assetNode.definition.repository.name,
+          assetNode.definition.repository.location.name,
+        );
+        const groupName = assetNode.definition.groupName || 'default';
+        nextOpenNodes.add(locationName);
+        nextOpenNodes.add(locationName + ':' + groupName);
+      }
+      if (selectedNodeRootToLeaf?.id !== lastSelectedNode.id) {
+        setSelectedNodeRootToLeaf({id: lastSelectedNode.id});
+      }
+      return nextOpenNodes;
+    });
+    setOpenNodesLeafToRoot((prevOpenNodes) => {
+      return expandTreePath(
+        prevOpenNodes,
+        'leaf-to-root',
+        lastSelectedSidebarNodeLeafToRoot,
+        setSelectedNodeLeafToRoot,
+        selectedNodeLeafToRoot,
+      );
+    });
   }, [
     lastSelectedNode,
     lastSelectedSidebarNodeRootToLeaf,
