@@ -699,7 +699,8 @@ const AssetGraphExplorerWithData = ({
   if (!nextLayoutLoading && isInitialLayout.current) {
     isInitialLayout.current = false;
   }
-  const loading = (layoutLoading || dataLoading) && isInitialLayout.current;
+  const sidebarLoading = dataLoading && isInitialLayout.current;
+  const loading = sidebarLoading || nextLayoutLoading;
 
   const [errorState, setErrorState] = useState<SyntaxError[]>([]);
 
@@ -734,7 +735,7 @@ const AssetGraphExplorerWithData = ({
       firstMinSize={400}
       secondMinSize={400}
       first={
-        loading ? (
+        sidebarLoading ? (
           <LoadingContainer>
             <Box margin={{bottom: 24}}>Loading assets…</Box>
             <Spinner purpose="page" />
