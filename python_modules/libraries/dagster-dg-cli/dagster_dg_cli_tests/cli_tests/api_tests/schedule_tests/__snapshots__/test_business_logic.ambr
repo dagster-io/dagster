@@ -1,0 +1,217 @@
+# serializer version: 1
+# name: TestFormatSchedules.test_format_empty_schedules_json_output[0]
+  dict({
+    'items': list([
+    ]),
+  })
+# ---
+# name: TestFormatSchedules.test_format_empty_schedules_text_output[0]
+  ''
+# ---
+# name: TestFormatSchedules.test_format_schedule_pipeline_to_job_name_conversion[0]
+  '''
+  Name: test_schedule
+  Job Name: my_pipeline_name
+  Cron Schedule: 0 0 * * *
+  Description: Test pipeline name conversion
+  Execution Timezone: UTC
+  '''
+# ---
+# name: TestFormatSchedules.test_format_schedule_without_metadata[0]
+  '''
+  Name: simple_job
+  Job Name: simple_pipeline
+  Cron Schedule: 0 0 * * *
+  Description: None
+  Execution Timezone: UTC
+  '''
+# ---
+# name: TestFormatSchedules.test_format_schedules_json_output[0]
+  dict({
+    'items': list([
+      dict({
+        'cron_schedule': '0 2 * * *',
+        'description': 'Refreshes data tables daily at 2 AM',
+        'execution_timezone': 'UTC',
+        'id': 'schedule-1',
+        'metadata_entries': list([
+          dict({
+            'description': 'data-team',
+            'label': 'owner',
+          }),
+          dict({
+            'description': '#data-alerts',
+            'label': 'slack_channel',
+            'text': '#data-alerts',
+          }),
+        ]),
+        'name': 'daily_data_refresh',
+        'pipeline_name': 'daily_data_job',
+        'tags': list([
+          dict({
+            'key': 'team',
+            'value': 'data-platform',
+          }),
+          dict({
+            'key': 'priority',
+            'value': 'high',
+          }),
+        ]),
+      }),
+      dict({
+        'cron_schedule': '0 * * * *',
+        'description': 'Calculates hourly metrics',
+        'execution_timezone': 'America/New_York',
+        'id': 'schedule-2',
+        'metadata_entries': list([
+        ]),
+        'name': 'hourly_metrics',
+        'pipeline_name': 'metrics_job',
+        'tags': list([
+        ]),
+      }),
+    ]),
+  })
+# ---
+# name: TestFormatSchedules.test_format_schedules_text_output[0]
+  '''
+  Name: daily_data_refresh
+  Job Name: daily_data_job
+  Cron Schedule: 0 2 * * *
+  
+  Name: hourly_metrics
+  Job Name: metrics_job
+  Cron Schedule: 0 * * * *
+  '''
+# ---
+# name: TestFormatSchedules.test_format_single_schedule_json_output[0]
+  dict({
+    'cron_schedule': '0 8 * * 1-5',
+    'description': 'Generates daily reports on weekdays',
+    'execution_timezone': 'America/Los_Angeles',
+    'id': 'schedule-1',
+    'metadata_entries': list([
+      dict({
+        'description': 'Wiki link',
+        'label': 'documentation',
+        'url': 'https://wiki.company.com/reports',
+      }),
+      dict({
+        'description': 'Max runtime',
+        'intValue': 3600,
+        'label': 'run_timeout',
+      }),
+      dict({
+        'description': 'Retry config',
+        'jsonString': '{"max_retries": 3, "delay": "30s"}',
+        'label': 'retry_policy',
+      }),
+    ]),
+    'name': 'daily_reports',
+    'pipeline_name': 'reporting_job',
+    'tags': list([
+      dict({
+        'key': 'environment',
+        'value': 'production',
+      }),
+      dict({
+        'key': 'cost_center',
+        'value': 'analytics',
+      }),
+    ]),
+  })
+# ---
+# name: TestFormatSchedules.test_format_single_schedule_text_output[0]
+  '''
+  Name: daily_reports
+  Job Name: reporting_job
+  Cron Schedule: 0 8 * * 1-5
+  Description: Generates daily reports on weekdays
+  Execution Timezone: America/Los_Angeles
+  
+  Tags:
+    environment: production
+    cost_center: analytics
+  
+  Metadata:
+    documentation: https://wiki.company.com/reports
+    run_timeout: 3600
+    retry_policy: {"max_retries": 3, "delay": "30s"}
+  '''
+# ---
+# name: TestScheduleDataProcessing.test_schedule_creation_with_complex_metadata[0]
+  dict({
+    'cron_schedule': '0 2,14 * * *',
+    'description': 'Complex schedule with various metadata types',
+    'execution_timezone': 'Europe/London',
+    'id': 'complex-schedule',
+    'metadata_entries': list([
+      dict({
+        'description': 'Some text',
+        'label': 'text_meta',
+        'text': 'example_text',
+      }),
+      dict({
+        'description': 'Documentation',
+        'label': 'url_meta',
+        'url': 'https://docs.example.com/schedules/complex',
+      }),
+      dict({
+        'description': 'Config file path',
+        'label': 'path_meta',
+        'path': '/etc/dagster/schedules/complex.yaml',
+      }),
+      dict({
+        'description': 'Config',
+        'jsonString': '{"timeout": 3600, "retries": 3}',
+        'label': 'json_meta',
+      }),
+      dict({
+        'description': 'Schedule notes',
+        'label': 'markdown_meta',
+        'mdStr': '''
+          # Analytics Schedule
+          
+          Runs twice daily for analytics processing
+        ''',
+      }),
+      dict({
+        'description': 'Handler class',
+        'label': 'python_meta',
+        'module': 'analytics.schedules',
+        'name': 'ComplexScheduleHandler',
+      }),
+      dict({
+        'description': 'Success rate',
+        'floatValue': 99.9,
+        'label': 'float_meta',
+      }),
+      dict({
+        'description': 'Average runtime',
+        'intValue': 1800,
+        'label': 'int_meta',
+      }),
+      dict({
+        'boolValue': True,
+        'description': 'Auto retry enabled',
+        'label': 'bool_meta',
+      }),
+    ]),
+    'name': 'complex_analytics_job',
+    'pipeline_name': 'analytics_pipeline',
+    'tags': list([
+      dict({
+        'key': 'team',
+        'value': 'data-engineering',
+      }),
+      dict({
+        'key': 'sla',
+        'value': '4h',
+      }),
+      dict({
+        'key': 'cost_center',
+        'value': 'engineering',
+      }),
+    ]),
+  })
+# ---
