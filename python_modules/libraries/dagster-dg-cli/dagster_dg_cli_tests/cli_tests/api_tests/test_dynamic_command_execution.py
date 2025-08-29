@@ -154,18 +154,20 @@ class TestDynamicCommandExecution:
         self, click_command: Any, args: list[str], graphql_responses: list[dict], fixture_name: str
     ):
         """Test a deployment domain command with mocked GraphQL responses."""
-        with patch("dagster_dg_cli.cli.api.shared.get_config_or_error") as mock_config:
-            with patch(
-                "dagster_dg_cli.dagster_plus_api.graphql_adapter.deployment.DagsterPlusGraphQLClient.from_config"
-            ) as mock_client_class:
-                # Setup mocks
-                mock_config.return_value = "mock-config"
-                mock_client = mock_client_class.return_value
-                mock_client.execute.return_value = graphql_responses[0]
+        with patch("dagster_shared.plus.config.DagsterPlusCliConfig.exists") as mock_exists:
+            with patch("dagster_dg_cli.cli.api.shared.get_config_or_error") as mock_config:
+                with patch(
+                    "dagster_dg_cli.dagster_plus_api.graphql_adapter.deployment.DagsterPlusGraphQLClient.from_config"
+                ) as mock_client_class:
+                    # Setup mocks
+                    mock_exists.return_value = True
+                    mock_config.return_value = "mock-config"
+                    mock_client = mock_client_class.return_value
+                    mock_client.execute.return_value = graphql_responses[0]
 
-                # Execute command
-                runner = CliRunner()
-                result = runner.invoke(click_command, args)
+                    # Execute command
+                    runner = CliRunner()
+                    result = runner.invoke(click_command, args)
 
-                # Return the result for snapshot testing
-                return result
+                    # Return the result for snapshot testing
+                    return result
