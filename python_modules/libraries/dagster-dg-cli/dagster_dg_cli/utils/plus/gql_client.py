@@ -5,12 +5,6 @@ from typing import Any, Optional
 import click
 from dagster_shared.plus.config import DagsterPlusCliConfig
 
-from dagster_dg_cli.cli.api.shared import (
-    DgApiError,
-    get_default_error_mapping,
-    get_graphql_error_mappings,
-)
-
 
 class IGraphQLClient(ABC):
     """Abstract base class for GraphQL clients with execute method."""
@@ -52,7 +46,13 @@ class DagsterPlusGraphQLClient(IGraphQLClient):
         # defer for import performance
         from gql import gql
 
-        from dagster_dg_cli.cli.api.shared import get_graphql_error_types
+        # Import error handling classes locally to avoid circular imports
+        from dagster_dg_cli.cli.api.shared import (
+            DgApiError,
+            get_default_error_mapping,
+            get_graphql_error_mappings,
+            get_graphql_error_types,
+        )
 
         result = self.client.execute(gql(query), variable_values=dict(variables or {}))
         value = next(iter(result.values()))

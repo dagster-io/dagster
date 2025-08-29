@@ -22,20 +22,15 @@ def discover_commands():
         if module_info.name.endswith(".__init__"):
             continue
 
-        try:
-            # Import the module
-            module = importlib.import_module(module_info.name)
+        # Import the module
+        module = importlib.import_module(module_info.name)
 
-            # Look for click commands in the module
-            for name, obj in inspect.getmembers(module):
-                if isinstance(obj, click.Command):
-                    # Use the command name from click, or fallback to module name
-                    cmd_name = obj.name or module_info.name.split(".")[-1]
-                    discovered_commands[cmd_name] = obj
-
-        except ImportError as e:
-            # Log import errors but don't fail the entire CLI
-            click.echo(f"Warning: Could not import {module_info.name}: {e}", err=True)
+        # Look for click commands in the module
+        for name, obj in inspect.getmembers(module):
+            if isinstance(obj, click.Command):
+                # Use the command name from click, or fallback to module name
+                cmd_name = obj.name or module_info.name.split(".")[-1]
+                discovered_commands[cmd_name] = obj
 
     return discovered_commands
 
