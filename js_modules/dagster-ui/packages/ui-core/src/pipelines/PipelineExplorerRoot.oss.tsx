@@ -24,6 +24,7 @@ import {AssetLocation} from '../asset-graph/useFindAssetLocation';
 import {assetDetailsPathForKey} from '../assets/assetDetailsPathForKey';
 import {useDocumentTitle} from '../hooks/useDocumentTitle';
 import {useOpenInNewTab} from '../hooks/useOpenInNewTab';
+import {useStateWithStorage} from '../hooks/useStateWithStorage';
 import {METADATA_ENTRY_FRAGMENT} from '../metadata/MetadataEntryFragment';
 import {Loading} from '../ui/Loading';
 import {buildPipelineSelector, useJob} from '../workspace/WorkspaceContext/util';
@@ -81,6 +82,16 @@ export const PipelineExplorerContainer = (props: {
     }
     return () => {};
   }, [isExternal, options]);
+  const [hideEdgesToNodesOutsideQuery, setHideEdgesToNodesOutsideQuery] = useStateWithStorage(
+    'hideEdgesToNodesOutsideQuery',
+    (json) => {
+      if (json === 'false' || json === false) {
+        return false;
+      }
+      return true;
+    },
+  );
+
   if (job && job.isAssetJob && options.preferAssetRendering) {
     const pipelineSelector = buildPipelineSelector(repoAddress || null, explorerPath.pipelineName);
     return (
@@ -88,11 +99,12 @@ export const PipelineExplorerContainer = (props: {
         key={explorerPath.pipelineName}
         options={options}
         setOptions={setOptions}
-        fetchOptions={{pipelineSelector}}
+        fetchOptions={{pipelineSelector, hideEdgesToNodesOutsideQuery}}
         explorerPath={explorerPath}
         onChangeExplorerPath={props.onChangeExplorerPath}
         onNavigateToSourceAssetNode={props.onNavigateToSourceAssetNode}
         viewType={AssetGraphViewType.JOB}
+        setHideEdgesToNodesOutsideQuery={setHideEdgesToNodesOutsideQuery}
       />
     );
   }
