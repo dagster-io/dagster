@@ -1,6 +1,6 @@
 """Deployment API commands following GitHub CLI patterns."""
 
-import json
+import sys
 
 import click
 from dagster_dg_core.utils import DgClickCommand, DgClickGroup
@@ -9,6 +9,7 @@ from dagster_dg_core.utils.telemetry import cli_telemetry_wrapper
 # Lazy import to avoid loading pydantic at CLI startup
 from dagster_dg_cli.cli.api.client import create_dg_api_client
 from dagster_dg_cli.cli.api.formatters import format_deployments
+from dagster_dg_cli.cli.api.shared import format_error_for_output
 
 
 @click.command(name="list", cls=DgClickCommand, unlaunched=True)
@@ -32,12 +33,9 @@ def list_deployments_command(ctx: click.Context, output_json: bool) -> None:
         output = format_deployments(deployments, as_json=output_json)
         click.echo(output)
     except Exception as e:
-        if output_json:
-            error_response = {"error": str(e)}
-            click.echo(json.dumps(error_response), err=True)
-        else:
-            click.echo(f"Error querying Dagster Plus API: {e}", err=True)
-        raise click.ClickException(f"Failed to list deployments: {e}")
+        error_output, exit_code = format_error_for_output(e, output_json)
+        click.echo(error_output, err=True)
+        sys.exit(exit_code)
 
 
 @click.group(

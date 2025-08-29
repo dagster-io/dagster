@@ -1,30 +1,9 @@
 """Client factory for DG API commands."""
 
-from typing import Protocol
-
 import click
 from dagster_shared.plus.config import DagsterPlusCliConfig
 
 from dagster_dg_cli.utils.plus.gql_client import DagsterPlusGraphQLClient, IGraphQLClient
-
-# Test constants
-TEST_ORGANIZATION = "test-org"
-TEST_DEPLOYMENT = "test-deployment"
-
-
-class GraphQLClientFactory(Protocol):
-    """Protocol for GraphQL client factories used in testing."""
-
-    def __call__(self, config: DagsterPlusCliConfig) -> IGraphQLClient: ...
-
-
-class DgApiTestContext:
-    """Test context for DG API commands."""
-
-    def __init__(self, client_factory: GraphQLClientFactory):
-        self.client_factory = client_factory
-        self.organization = TEST_ORGANIZATION
-        self.deployment = TEST_DEPLOYMENT
 
 
 def create_dg_api_graphql_client(
@@ -42,6 +21,8 @@ def create_dg_api_graphql_client(
     Returns:
         IGraphQLClient instance
     """
+    from dagster_dg_cli.cli.api.shared import DgApiTestContext
+
     # Check if we have a test context with custom factory
     if ctx.obj and isinstance(ctx.obj, DgApiTestContext) and ctx.obj.client_factory:
         return ctx.obj.client_factory(config)
