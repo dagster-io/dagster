@@ -4,13 +4,14 @@ import inspect
 from typing import Union, get_args, get_origin
 
 import pytest
-from dagster_dg_cli_tests.dagster_plus_api_tests.api_classes import get_all_api_classes
-from dagster_dg_cli_tests.dagster_plus_api_tests.rest_compliance_infrastructure import (
+from pydantic import BaseModel
+
+from dagster_dg_cli_tests.cli_tests.api_tests.api_classes import get_all_api_classes
+from dagster_dg_cli_tests.cli_tests.api_tests.rest_compliance_infrastructure import (
     REST_PREFIXES,
     is_allowed_type,
     is_pydantic_model,
 )
-from pydantic import BaseModel
 
 
 class TestRestCompliance:

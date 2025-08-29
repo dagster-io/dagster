@@ -1,3 +1,4 @@
+from abc import ABC, abstractmethod
 from collections.abc import Mapping
 from typing import Any, Optional
 
@@ -5,11 +6,18 @@ import click
 from dagster_shared.plus.config import DagsterPlusCliConfig
 
 
+class IGraphQLClient(ABC):
+    """Abstract base class for GraphQL clients with execute method."""
+
+    @abstractmethod
+    def execute(self, query: str, variables: Optional[Mapping[str, Any]] = None) -> dict: ...
+
+
 class DagsterPlusUnauthorizedError(click.ClickException):
     pass
 
 
-class DagsterPlusGraphQLClient:
+class DagsterPlusGraphQLClient(IGraphQLClient):
     def __init__(self, url: str, headers: Mapping[str, str]):
         # defer for import performance
         from gql import Client

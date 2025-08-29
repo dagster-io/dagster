@@ -26,11 +26,11 @@ REST_PREFIXES = {
 def get_pydantic_models_from_schemas():
     """Discover all Pydantic models from the schemas package."""
     models = set()
-    schemas_module = importlib.import_module("dagster_dg_cli.dagster_plus_api.schemas")
+    schemas_module = importlib.import_module("dagster_dg_cli.api_layer.schemas")
 
     # Iterate through all modules in the schemas package
     for _, module_name, _ in pkgutil.iter_modules(schemas_module.__path__):
-        full_module_name = f"dagster_dg_cli.dagster_plus_api.schemas.{module_name}"
+        full_module_name = f"dagster_dg_cli.api_layer.schemas.{module_name}"
         module = importlib.import_module(full_module_name)
         for name, obj in inspect.getmembers(module):
             if inspect.isclass(obj) and issubclass(obj, BaseModel) and obj != BaseModel:
