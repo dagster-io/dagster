@@ -8,7 +8,7 @@ So far, we have built our pipeline out of existing `Definitions`, but this is no
 
 If we think about the code for our three assets (`customers`, `orders`, and `payments`), it is all very similar. Each asset performs the same action, turning an S3 file into a DuckDB table, while differing only in the URL path and table name.
 
-These assets are a great candidate for a [custom component](/guides/build/components/creating-new-components). Components generate `Definitions` through a configuration layer. There are built-in components that let you integrate with common workflows (such as turning Python scripts into assets), or dynamically generate `Definitions` for tools like [dbt](/integrations/libraries/dbt/dbt-component) or [Fivetran](/integrations/libraries/fivetran). With custom components, you can define your own specific use cases.
+These assets are a great candidate for a [custom component](/guides/build/components/creating-new-components). Components generate `Definitions` through a configuration layer. There are built-in components that let you integrate with common workflows (such as turning Python scripts into assets), or dynamically generate `Definitions` for tools like [dbt](/integrations/libraries/dbt) or [Fivetran](/integrations/libraries/fivetran). With custom components, you can define your own specific use cases.
 
 In this step, you will use a custom component to streamline the development of similar assets and replace their `Definitions` in your project with a Component that can generate them from a a YAML configuration file instead.
 
