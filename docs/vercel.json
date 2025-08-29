@@ -3449,6 +3449,14 @@
     {
       "source": "/etl-pipeline-tutorial/create-a-sensor",
       "destination": "/examples/etl-pipeline/create-a-sensor"
+    },
+    {
+      "source": "/integrations/libraries/dbt/dbt-component",
+      "destination": "/integrations/libraries/dbt"
+    },
+    {
+      "source": "/integrations/libraries/dbt/quickstart",
+      "destination": "/integrations/libraries/dbt"
     }
   ],
   "trailingSlash": false
