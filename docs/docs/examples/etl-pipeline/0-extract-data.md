@@ -89,7 +89,7 @@ In Dagster, an asset is defined by the <PyObject section="assets" module="dagste
 
 ## 4. Dagster definitions
 
-In Dagster, all the objects we define (such as assets) need to be associated with a top-level <PyObject section="definitions" module="dagster" object="Definitions" /> object in order to be deployed. When we first created our project with `uvx create project`, a `definitions.py` file was created as well:
+In Dagster, all the objects we define (such as assets) need to be associated with a top-level <PyObject section="definitions" module="dagster" object="Definitions" /> object in order to be deployed. When we first created our project with `uvx create-dagster project`, a `definitions.py` file was created as well:
 
 <CodeExample
   path="docs_snippets/docs_snippets/guides/tutorials/etl_tutorial/src/etl_tutorial/definitions.py"
