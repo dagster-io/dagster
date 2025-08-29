@@ -1,13 +1,11 @@
 """GraphQL implementation for asset operations."""
 
-from typing import TYPE_CHECKING, Optional
+from typing import Optional
 
 from dagster_shared.plus.config import DagsterPlusCliConfig
 
+from dagster_dg_cli.dagster_plus_api.schemas.asset import DgApiAsset, DgApiAssetList
 from dagster_dg_cli.utils.plus.gql_client import DagsterPlusGraphQLClient
-
-if TYPE_CHECKING:
-    from dagster_dg_cli.dagster_plus_api.schemas.asset import DgPlusApiAsset, DgPlusApiAssetList
 
 # GraphQL queries
 ASSET_RECORDS_QUERY = """
@@ -81,15 +79,13 @@ def list_dg_plus_api_assets_via_graphql(
     config: DagsterPlusCliConfig,
     limit: Optional[int] = None,
     cursor: Optional[str] = None,
-) -> "DgPlusApiAssetList":
+) -> DgApiAssetList:
     """Fetch assets using two-step GraphQL approach.
 
     1. Use assetRecordsOrError for paginated asset keys
     2. Use assetNodes to fetch metadata for those keys
     3. Combine and transform data
     """
-    from dagster_dg_cli.dagster_plus_api.schemas.asset import DgPlusApiAsset, DgPlusApiAssetList
-
     client = DagsterPlusGraphQLClient.from_config(config)
 
     # Step 1: Get paginated asset keys
@@ -109,7 +105,7 @@ def list_dg_plus_api_assets_via_graphql(
     next_cursor = asset_records_or_error.get("cursor")
 
     if not records:
-        return DgPlusApiAssetList(items=[], cursor=None, has_more=False)
+        return DgApiAssetList(items=[], cursor=None, has_more=False)
 
     # Step 2: Get detailed metadata for these asset keys
     asset_keys = [{"path": record["key"]["path"]} for record in records]
@@ -154,7 +150,7 @@ def list_dg_plus_api_assets_via_graphql(
 
             metadata_entries.append(metadata_dict)
 
-        asset = DgPlusApiAsset(
+        asset = DgApiAsset(
             id=node["id"],
             asset_key=asset_key,
             asset_key_parts=asset_key_parts,
@@ -168,7 +164,7 @@ def list_dg_plus_api_assets_via_graphql(
     # Determine if there are more results
     has_more = next_cursor is not None
 
-    return DgPlusApiAssetList(
+    return DgApiAssetList(
         items=assets,
         cursor=next_cursor,
         has_more=has_more,
@@ -177,10 +173,8 @@ def list_dg_plus_api_assets_via_graphql(
 
 def get_dg_plus_api_asset_via_graphql(
     config: DagsterPlusCliConfig, asset_key_parts: list[str]
-) -> "DgPlusApiAsset":
+) -> DgApiAsset:
     """Single asset fetch using assetNodes with specific assetKey."""
-    from dagster_dg_cli.dagster_plus_api.schemas.asset import DgPlusApiAsset
-
     client = DagsterPlusGraphQLClient.from_config(config)
 
     variables = {"assetKeys": [{"path": asset_key_parts}]}
@@ -225,7 +219,7 @@ def get_dg_plus_api_asset_via_graphql(
 
         metadata_entries.append(metadata_dict)
 
-    return DgPlusApiAsset(
+    return DgApiAsset(
         id=node["id"],
         asset_key=asset_key,
         asset_key_parts=asset_key_parts,

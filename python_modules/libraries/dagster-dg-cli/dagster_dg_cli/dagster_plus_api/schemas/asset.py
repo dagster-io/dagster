@@ -5,7 +5,7 @@ from typing import Optional
 from pydantic import BaseModel
 
 
-class DgPlusApiAsset(BaseModel):
+class DgApiAsset(BaseModel):
     """Asset resource model."""
 
     id: str
@@ -20,9 +20,9 @@ class DgPlusApiAsset(BaseModel):
         from_attributes = True
 
 
-class DgPlusApiAssetList(BaseModel):
+class DgApiAssetList(BaseModel):
     """GET /api/assets response."""
 
-    items: list[DgPlusApiAsset]
+    items: list[DgApiAsset]
     cursor: Optional[str]  # Next cursor for pagination
     has_more: bool  # Whether more results exist

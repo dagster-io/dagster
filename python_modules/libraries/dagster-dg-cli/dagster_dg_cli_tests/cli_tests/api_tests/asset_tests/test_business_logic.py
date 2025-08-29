@@ -5,16 +5,16 @@ GraphQL client mocking or external dependencies.
 """
 
 from dagster_dg_cli.cli.api.formatters import format_asset, format_assets
-from dagster_dg_cli.dagster_plus_api.schemas.asset import DgPlusApiAsset, DgPlusApiAssetList
+from dagster_dg_cli.dagster_plus_api.schemas.asset import DgApiAsset, DgApiAssetList
 
 
 class TestFormatAssets:
     """Test the asset formatting functions."""
 
     def _create_sample_asset_list(self):
-        """Create sample DgPlusApiAssetList for testing."""
+        """Create sample DgApiAssetList for testing."""
         assets = [
-            DgPlusApiAsset(
+            DgApiAsset(
                 id="asset-1",
                 asset_key="users",
                 asset_key_parts=["users"],
@@ -26,7 +26,7 @@ class TestFormatAssets:
                     {"label": "rows", "description": "1000000", "intValue": 1000000},
                 ],
             ),
-            DgPlusApiAsset(
+            DgApiAsset(
                 id="asset-2",
                 asset_key="analytics/user_metrics",
                 asset_key_parts=["analytics", "user_metrics"],
@@ -36,15 +36,15 @@ class TestFormatAssets:
                 metadata_entries=[],
             ),
         ]
-        return DgPlusApiAssetList(items=assets, cursor="next_cursor", has_more=True)
+        return DgApiAssetList(items=assets, cursor="next_cursor", has_more=True)
 
     def _create_empty_asset_list(self):
-        """Create empty DgPlusApiAssetList for testing."""
-        return DgPlusApiAssetList(items=[], cursor=None, has_more=False)
+        """Create empty DgApiAssetList for testing."""
+        return DgApiAssetList(items=[], cursor=None, has_more=False)
 
     def _create_single_asset(self):
-        """Create single DgPlusApiAsset for testing."""
-        return DgPlusApiAsset(
+        """Create single DgApiAsset for testing."""
+        return DgApiAsset(
             id="asset-1",
             asset_key="users",
             asset_key_parts=["users"],
@@ -112,7 +112,7 @@ class TestFormatAssets:
 
     def test_format_asset_without_metadata(self, snapshot):
         """Test formatting asset with no metadata."""
-        asset = DgPlusApiAsset(
+        asset = DgApiAsset(
             id="simple-asset",
             asset_key="simple",
             asset_key_parts=["simple"],
@@ -137,7 +137,7 @@ class TestAssetDataProcessing:
 
     def test_asset_creation_with_complex_metadata(self, snapshot):
         """Test creating asset with various metadata types."""
-        asset = DgPlusApiAsset(
+        asset = DgApiAsset(
             id="complex-asset",
             asset_key="analytics/complex_table",
             asset_key_parts=["analytics", "complex_table"],
@@ -183,7 +183,7 @@ class TestAssetDataProcessing:
 
     def test_nested_asset_key_parsing(self):
         """Test asset key parsing with nested paths."""
-        asset = DgPlusApiAsset(
+        asset = DgApiAsset(
             id="nested-asset",
             asset_key="level1/level2/level3/asset",
             asset_key_parts=["level1", "level2", "level3", "asset"],

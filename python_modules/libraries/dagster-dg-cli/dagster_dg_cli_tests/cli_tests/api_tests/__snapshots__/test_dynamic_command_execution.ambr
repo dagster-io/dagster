@@ -1,4 +1,43 @@
 # serializer version: 1
+# name: TestDynamicCommandExecution.test_command_execution[asset_success_multiple_assets_json]
+  dict({
+    'cursor': 'next_cursor',
+    'has_more': True,
+    'items': list([
+      dict({
+        'asset_key': 'users',
+        'asset_key_parts': list([
+          'users',
+        ]),
+        'description': 'User data table',
+        'group_name': 'core_tables',
+        'id': 'asset-1',
+        'kinds': list([
+          'dbt',
+          'table',
+        ]),
+        'metadata_entries': list([
+        ]),
+      }),
+      dict({
+        'asset_key': 'analytics/user_metrics',
+        'asset_key_parts': list([
+          'analytics',
+          'user_metrics',
+        ]),
+        'description': 'Aggregated user metrics',
+        'group_name': 'analytics',
+        'id': 'asset-2',
+        'kinds': list([
+          'dbt',
+          'view',
+        ]),
+        'metadata_entries': list([
+        ]),
+      }),
+    ]),
+  })
+# ---
 # name: TestDynamicCommandExecution.test_command_execution[deployment_empty_deployments_json]
   dict({
     'items': list([

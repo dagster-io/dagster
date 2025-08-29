@@ -3,7 +3,7 @@
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from dagster_dg_cli.dagster_plus_api.schemas.asset import DgPlusApiAsset, DgPlusApiAssetList
+    from dagster_dg_cli.dagster_plus_api.schemas.asset import DgApiAsset, DgApiAssetList
     from dagster_dg_cli.dagster_plus_api.schemas.deployment import DeploymentList
 
 
@@ -26,7 +26,7 @@ def format_deployments(deployments: "DeploymentList", as_json: bool) -> str:
     return "\n".join(lines).rstrip()  # Remove trailing empty line
 
 
-def format_assets(assets: "DgPlusApiAssetList", as_json: bool) -> str:
+def format_assets(assets: "DgApiAssetList", as_json: bool) -> str:
     """Format asset list for output."""
     if as_json:
         return assets.model_dump_json(indent=2)
@@ -47,7 +47,7 @@ def format_assets(assets: "DgPlusApiAssetList", as_json: bool) -> str:
     return "\n".join(lines).rstrip()  # Remove trailing empty line
 
 
-def format_asset(asset: "DgPlusApiAsset", as_json: bool) -> str:
+def format_asset(asset: "DgApiAsset", as_json: bool) -> str:
     """Format single asset for output."""
     if as_json:
         return asset.model_dump_json(indent=2)

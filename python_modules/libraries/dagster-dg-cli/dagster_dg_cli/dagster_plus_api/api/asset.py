@@ -10,7 +10,7 @@ from dagster_dg_cli.dagster_plus_api.graphql_adapter.asset import (
 )
 
 if TYPE_CHECKING:
-    from dagster_dg_cli.dagster_plus_api.schemas.asset import DgPlusApiAsset, DgPlusApiAssetList
+    from dagster_dg_cli.dagster_plus_api.schemas.asset import DgApiAsset, DgApiAssetList
 
 
 class DgApiAssetApi:
@@ -21,7 +21,7 @@ class DgApiAssetApi:
         self,
         limit: Optional[int] = 50,
         cursor: Optional[str] = None,
-    ) -> "DgPlusApiAssetList":
+    ) -> "DgApiAssetList":
         """List assets with cursor-based pagination."""
         # Apply max limit constraint
         if limit and limit > 1000:
@@ -29,7 +29,7 @@ class DgApiAssetApi:
 
         return list_dg_plus_api_assets_via_graphql(self.config, limit=limit, cursor=cursor)
 
-    def get_asset(self, asset_key: str) -> "DgPlusApiAsset":
+    def get_asset(self, asset_key: str) -> "DgApiAsset":
         """Get single asset by slash-separated key (e.g., 'foo/bar')."""
         # Parse "foo/bar" to ["foo", "bar"]
         asset_key_parts = asset_key.split("/")
