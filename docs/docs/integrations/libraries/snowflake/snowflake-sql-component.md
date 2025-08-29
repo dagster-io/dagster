@@ -25,13 +25,13 @@ Finally, add the `dagster-snowflake` library to the project:
 
 <CliInvocationExample path="docs_snippets/docs_snippets/guides/components/integrations/snowflake-sql-component/2-add-snowflake.txt" />
 
-## 2. Scaffold a SQL component
+## 2. Scaffold a SQL component definition
 
-Now that you have a Dagster project, you can scaffold a templated SQL component. You'll need to provide a name for your component. In this example, we'll create a component that will execute a SQL query to calculate the daily revenue from a table of sales transactions.
+Now that you have a Dagster project, you can scaffold a templated SQL component definition. You'll need to provide a name for your component instance. In this example, we'll create a component definition that will execute a SQL query to calculate the daily revenue from a table of sales transactions.
 
 <CliInvocationExample path="docs_snippets/docs_snippets/guides/components/integrations/snowflake-sql-component/3-scaffold-snowflake-component.txt" />
 
-The scaffold call will generate a `defs.yaml` file:
+The `dg scaffold defs` call will generate a `defs.yaml` file:
 
 <CliInvocationExample path="docs_snippets/docs_snippets/guides/components/integrations/snowflake-sql-component/4-tree.txt" />
 

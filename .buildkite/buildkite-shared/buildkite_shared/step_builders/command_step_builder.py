@@ -3,7 +3,6 @@ from collections.abc import Mapping
 from enum import Enum
 from typing import Any, Callable, Optional, TypedDict
 
-from buildkite_shared.environment import is_feature_branch
 from typing_extensions import NotRequired
 
 DEFAULT_TIMEOUT_IN_MIN = 35
@@ -79,24 +78,12 @@ CommandStepConfiguration = TypedDict(
 class CommandStepBuilder:
     _step: CommandStepConfiguration
 
-    def _should_enable_automatic_retry(self) -> bool:
-        """Determine if automatic retry should be enabled based on branch detection.
-
-        Returns True if automatic retry should be enabled, False otherwise.
-        Enables retries on master/release branches only.
-        """
-        try:
-            return not is_feature_branch()
-        except (AssertionError, KeyError):
-            # If BUILDKITE_BRANCH is not set, default to retry (safer fallback)
-            return True
-
     def __init__(
         self,
         label,
         key: Optional[str] = None,
         timeout_in_minutes: int = DEFAULT_TIMEOUT_IN_MIN,
-        retry_automatically: Optional[bool] = None,
+        retry_automatically: bool = True,
         plugins: Optional[list[dict[str, object]]] = None,
     ):
         self._secrets = {}
@@ -106,12 +93,11 @@ class CommandStepBuilder:
         retry: dict[str, Any] = {
             "manual": {"permit_on_passed": True},
         }
-        should_retry = (
-            retry_automatically
-            if retry_automatically is not None
-            else self._should_enable_automatic_retry()
-        )
-        if should_retry:
+
+        if retry_automatically:
+            # This list contains exit codes that should map only to ephemeral infrastructure issues.
+            # Normal test failures (exit code 1), make command failures (exit code 2) and the like
+            # should not be included here.
             retry["automatic"] = [
                 # https://buildkite.com/docs/agent/v3#exit-codes
                 {"exit_status": -1, "limit": 2},  # agent lost
@@ -122,7 +108,6 @@ class CommandStepBuilder:
                 {"exit_status": 125, "limit": 2},  # docker daemon error
                 {"exit_status": 128, "limit": 2},  # k8s git clone error
                 {"exit_status": 143, "limit": 2},  # agent lost
-                {"exit_status": 2, "limit": 2},  # often a uv read timeout
                 {"exit_status": 255, "limit": 2},  # agent forced shut down
                 {
                     "exit_status": ECR_LOGIN_FAILURE_EXIT_CODE,
@@ -252,7 +237,7 @@ class CommandStepBuilder:
 
     def with_retry(self, num_retries):
         # Update default retry config to blanket limit with num_retries
-        if num_retries is not None and num_retries > 0 and self._should_enable_automatic_retry():
+        if num_retries is not None and num_retries > 0:
             self._step["retry"]["automatic"] = {"limit": num_retries}
 
         return self
