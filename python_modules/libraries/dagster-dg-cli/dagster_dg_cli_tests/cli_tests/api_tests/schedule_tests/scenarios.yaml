@@ -1,0 +1,17 @@
+success_multiple_schedules:
+  command: "dg api schedule list --json"
+
+success_single_schedule:
+  command: "dg api schedule get check_linear_issues_schedule --json"
+
+success_schedules_human_readable:
+  command: "dg api schedule list"
+
+success_single_schedule_human_readable:
+  command: "dg api schedule get check_linear_issues_schedule"
+
+error_schedule_not_found:
+  command: "dg api schedule get nonexistent-schedule --json"
+
+error_empty_schedule_name:
+  command: "dg api schedule get '' --json"

@@ -5,6 +5,7 @@ from dagster_dg_core.utils import DgClickGroup
 
 from dagster_dg_cli.cli.api.asset import asset_group
 from dagster_dg_cli.cli.api.deployment import deployment_group
+from dagster_dg_cli.cli.api.schedule import schedule_group
 
 
 @click.group(
@@ -14,6 +15,7 @@ from dagster_dg_cli.cli.api.deployment import deployment_group
     commands={
         "asset": asset_group,
         "deployment": deployment_group,
+        "schedule": schedule_group,
     },
 )
 def api_group():
