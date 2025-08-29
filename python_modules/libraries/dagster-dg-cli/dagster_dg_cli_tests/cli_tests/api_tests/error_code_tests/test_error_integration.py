@@ -12,7 +12,7 @@ import pytest
 import yaml
 from click.testing import CliRunner
 from dagster_dg_cli.cli import cli as root_cli
-from dagster_dg_cli.cli.api.client import DgApiTestContext
+from dagster_dg_cli.cli.api.shared import DgApiTestContext
 from syrupy.assertion import SnapshotAssertion
 
 from dagster_dg_cli_tests.cli_tests.api_tests.shared.replay_utils import ReplayClient

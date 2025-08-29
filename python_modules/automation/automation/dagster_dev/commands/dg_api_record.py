@@ -105,7 +105,7 @@ def record_graphql_for_fixture(domain: str, fixture_name: str, command: str) -> 
         # Import dependencies needed for command execution
         from click.testing import CliRunner
         from dagster_dg_cli.cli import cli as root_cli
-        from dagster_dg_cli.cli.api.client import DgApiTestContext
+        from dagster_dg_cli.cli.api.shared import DgApiTestContext
         from dagster_dg_cli.utils.plus.gql_client import DagsterPlusGraphQLClient
 
         # Create a real GraphQL client for recording (assumes user is already authenticated)

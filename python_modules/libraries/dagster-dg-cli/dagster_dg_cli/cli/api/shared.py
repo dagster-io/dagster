@@ -2,13 +2,27 @@
 
 import json
 from functools import cache
-from typing import Literal
+from typing import Literal, Protocol
 
 import click
 from dagster._record import record
 from dagster_shared.plus.config import DagsterPlusCliConfig
 
-from dagster_dg_cli.cli.api.client import DgApiTestContext
+
+class GraphQLClientFactory(Protocol):
+    """Protocol for GraphQL client factories used in testing."""
+
+    def __call__(self, config: DagsterPlusCliConfig): ...
+
+
+class DgApiTestContext:
+    """Test context for DG API commands."""
+
+    def __init__(self, client_factory: GraphQLClientFactory):
+        self.client_factory = client_factory
+        # Test constants
+        self.organization = "test-org"
+        self.deployment = "test-deployment"
 
 
 @cache

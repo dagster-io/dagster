@@ -17,11 +17,11 @@ record:
 		echo "Error: SCENARIO parameter is required"; \
 		exit 1; \
 	fi
-	cd ../../../../../.. && dagster-dev dg-api-record error_code --recording $(SCENARIO)
+	dagster-dev dg-api-record error_code --recording $(SCENARIO)
 
 # Record all error scenarios
 record-all:
-	cd ../../../../../.. && dagster-dev dg-api-record error_code
+	dagster-dev dg-api-record error_code
 
 # Update test snapshots
 update-snapshots:
