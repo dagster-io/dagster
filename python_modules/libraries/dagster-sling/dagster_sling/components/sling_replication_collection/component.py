@@ -5,6 +5,7 @@ from pathlib import Path
 from typing import Annotated, Any, Literal, Optional, Union
 
 from dagster import Resolvable, Resolver
+from dagster._annotations import public
 from dagster._core.definitions.assets.definition.asset_spec import AssetSpec
 from dagster._core.definitions.assets.definition.assets_definition import AssetsDefinition
 from dagster._core.definitions.definitions_class import Definitions
@@ -122,18 +123,18 @@ ResolvedSlingConnections: TypeAlias = Annotated[
 ]
 
 
+@public
 @scaffold_with(SlingReplicationComponentScaffolder)
 @dataclass
 class SlingReplicationCollectionComponent(Component, Resolvable):
     """Expose one or more Sling replications to Dagster as assets.
 
-    [Sling](https://slingdata.io/) is a Powerful Data Integration tool enabling seamless ELT
-    operations as well as quality checks across files, databases, and storage systems.
+    To get started, run:
 
-    dg scaffold dagster_sling.SlingReplicationCollectionComponent {defs_path} to get started.
+    ``dg scaffold defs dagster_sling.SlingReplicationCollectionComponent {defs_path}``
 
-    This will create a defs.yaml as well as a `replication.yaml` which is a Sling-specific configuration
-    file. See Sling's [documentation](https://docs.slingdata.io/concepts/replication#overview) on `replication.yaml`.
+    This will create a defs.yaml as well as a ``replication.yaml``, which is a Sling-specific configuration
+    file. See Sling's `documentation <https://docs.slingdata.io/concepts/replication#overview>`_ on ``replication.yaml``.
     """
 
     connections: ResolvedSlingConnections = field(default_factory=list)

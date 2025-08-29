@@ -393,83 +393,83 @@
     },
     {
       "source": "/tutorial/introduction",
-      "destination": "/etl-pipeline-tutorial"
+      "destination": "/dagster-basics-tutorial"
     },
     {
       "source": "/tutorial/setup",
-      "destination": "/etl-pipeline-tutorial"
+      "destination": "/dagster-basics-tutorial"
     },
     {
       "source": "/tutorial/writing-your-first-asset",
-      "destination": "/etl-pipeline-tutorial"
+      "destination": "/dagster-basics-tutorial"
     },
     {
       "source": "/tutorial/building-an-asset-graph",
-      "destination": "/etl-pipeline-tutorial"
+      "destination": "/dagster-basics-tutorial"
     },
     {
       "source": "/tutorial/scheduling-your-pipeline",
-      "destination": "/etl-pipeline-tutorial"
+      "destination": "/dagster-basics-tutorial"
     },
     {
       "source": "/tutorial/connecting-to-external-services",
-      "destination": "/etl-pipeline-tutorial"
+      "destination": "/dagster-basics-tutorial"
     },
     {
       "source": "/tutorial/intro-tutorial/single-op-job",
-      "destination": "/etl-pipeline-tutorial"
+      "destination": "/dagster-basics-tutorial"
     },
     {
       "source": "/tutorial/intro-tutorial/single-solid-pipeline",
-      "destination": "/etl-pipeline-tutorial"
+      "destination": "/dagster-basics-tutorial"
     },
     {
       "source": "/tutorial/intro-tutorial/connecting-ops",
-      "destination": "/etl-pipeline-tutorial"
+      "destination": "/dagster-basics-tutorial"
     },
     {
       "source": "/tutorial/intro-tutorial/connecting-solids",
-      "destination": "/etl-pipeline-tutorial"
+      "destination": "/dagster-basics-tutorial"
     },
     {
       "source": "/tutorial/intro-tutorial/testable",
-      "destination": "/etl-pipeline-tutorial"
+      "destination": "/dagster-basics-tutorial"
     },
     {
       "source": "/tutorial/intro-tutorial/configuring-solids",
-      "destination": "/etl-pipeline-tutorial"
+      "destination": "/dagster-basics-tutorial"
     },
     {
       "source": "/tutorial/advanced-tutorial/configuring-solids",
-      "destination": "/etl-pipeline-tutorial"
+      "destination": "/dagster-basics-tutorial"
     },
     {
       "source": "/tutorial/advanced-tutorial/configuring-ops",
-      "destination": "/etl-pipeline-tutorial"
+      "destination": "/dagster-basics-tutorial"
     },
     {
       "source": "/tutorial/advanced-tutorial/pipelines",
-      "destination": "/etl-pipeline-tutorial"
+      "destination": "/dagster-basics-tutorial"
     },
     {
       "source": "/tutorial/advanced-tutorial/types",
-      "destination": "/etl-pipeline-tutorial"
+      "destination": "/dagster-basics-tutorial"
     },
     {
       "source": "/tutorial/advanced-tutorial/resources",
-      "destination": "/etl-pipeline-tutorial"
+      "destination": "/dagster-basics-tutorial"
     },
     {
       "source": "/tutorial/advanced-tutorial/repositories",
-      "destination": "/etl-pipeline-tutorial"
+      "destination": "/dagster-basics-tutorial"
     },
     {
       "source": "/tutorial/advanced-tutorial/scheduling",
-      "destination": "/etl-pipeline-tutorial"
+      "destination": "/dagster-basics-tutorial"
     },
     {
       "source": "/tutorial/advanced-tutorial/materializations",
-      "destination": "/etl-pipeline-tutorial"
+      "destination": "/dagster-basics-tutorial"
     },
     {
       "source": "/concepts/solids-pipelines/solids",
@@ -1624,7 +1624,7 @@
     },
     {
       "source": "/guides/dagster/example_project",
-      "destination": "/etl-pipeline-tutorial"
+      "destination": "/dagster-basics-tutorial"
     },
     {
       "source": "/guides/experimental-features",
@@ -2884,7 +2884,7 @@
     },
     {
       "source": "/guides/dagster/asset-tutorial",
-      "destination": "/etl-pipeline-tutorial"
+      "destination": "/dagster-basics-tutorial"
     },
     {
       "source": "/getting-started/project-file-reference",
@@ -3024,7 +3024,7 @@
     },
     {
       "source": "/tutorial/saving-your-data",
-      "destination": "/etl-pipeline-tutorial"
+      "destination": "/dagster-basics-tutorial"
     },
     {
       "source": "/master/guides/dagster/run-attribution",
@@ -3348,7 +3348,7 @@
     },
     {
       "source": "/guides/labs/components/components-etl-pipeline-tutorial",
-      "destination": "/etl-pipeline-tutorial"
+      "destination": "/dagster-basics-tutorial"
     },
     {
       "source": "/guides/labs/components/creating-new-components/dg-plugin",
@@ -3413,6 +3413,50 @@
     {
       "source": "/guides/labs/freshness",
       "destination": "/guides/labs/observability-update/freshness"
+    },
+    {
+      "source": "/etl-pipeline-tutorial",
+      "destination": "/examples/etl-pipeline"
+    },
+    {
+      "source": "/etl-pipeline-tutorial/extract-data",
+      "destination": "/examples/etl-pipeline/extract-data"
+    },
+    {
+      "source": "/etl-pipeline-tutorial/transform-data",
+      "destination": "/examples/etl-pipeline/transform-data"
+    },
+    {
+      "source": "/etl-pipeline-tutorial/add-a-resource",
+      "destination": "/examples/etl-pipeline/add-a-resource"
+    },
+    {
+      "source": "/etl-pipeline-tutorial/data-quality",
+      "destination": "/examples/etl-pipeline/data-quality"
+    },
+    {
+      "source": "/etl-pipeline-tutorial/partition-asset",
+      "destination": "/examples/etl-pipeline/partition-asset"
+    },
+    {
+      "source": "/etl-pipeline-tutorial/automate-your-pipeline",
+      "destination": "/examples/etl-pipeline/automate-your-pipeline"
+    },
+    {
+      "source": "/etl-pipeline-tutorial/visualize-data",
+      "destination": "/examples/etl-pipeline/visualize-data"
+    },
+    {
+      "source": "/etl-pipeline-tutorial/create-a-sensor",
+      "destination": "/examples/etl-pipeline/create-a-sensor"
+    },
+    {
+      "source": "/integrations/libraries/dbt/dbt-component",
+      "destination": "/integrations/libraries/dbt"
+    },
+    {
+      "source": "/integrations/libraries/dbt/quickstart",
+      "destination": "/integrations/libraries/dbt"
     }
   ],
   "trailingSlash": false

@@ -17,6 +17,12 @@ from typing import Optional
 import click
 from packaging import version
 
+try:
+    import tomllib  # pyright: ignore[reportMissingImports]
+except ImportError:
+    # Python < 3.11 fallback
+    import tomli as tomllib
+
 from dagster_cloud_cli import ui
 from dagster_cloud_cli.core import docker_runner
 from dagster_cloud_cli.core.pex_builder import util
@@ -81,9 +87,10 @@ def local_path_for(line: str, relative_to: str) -> Optional[str]:
 
 
 def get_requirements_lines(local_dir, python_interpreter: str) -> list[str]:
-    # Combine dependencies specified in requirements.txt and setup.py
+    # Combine dependencies specified in requirements.txt, setup.py, and pyproject.toml
     lines = get_requirements_txt_deps(local_dir)
     lines.extend(get_setup_py_deps(local_dir, python_interpreter))
+    lines.extend(get_pyproject_toml_deps(local_dir))
     return lines
 
 
@@ -357,6 +364,63 @@ def get_setup_py_deps(code_directory: str, python_interpreter: str) -> list[str]
         dist = dists[0]
         for requirement in dist.requires or []:
             lines.append(requirement)
+
+    return lines
+
+
+def get_pyproject_toml_deps(code_directory: str) -> list[str]:
+    pyproject_path = os.path.join(code_directory, "pyproject.toml")
+    if not os.path.exists(pyproject_path):
+        return []
+
+    try:
+        with open(pyproject_path, "rb") as file:
+            pyproject_data = tomllib.load(file)
+    except Exception as e:
+        raise ValueError(f"Error parsing pyproject.toml: {e}")
+
+    lines = []
+
+    # Handle dependencies in [project] section (PEP 621)
+    project_section = pyproject_data.get("project", {})
+    dependencies = project_section.get("dependencies", [])
+    for dep in dependencies:
+        lines.append(str(dep))
+
+    # Handle optional dependencies in [project.optional-dependencies]
+    optional_deps = project_section.get("optional-dependencies", {})
+    for group_deps in optional_deps.values():
+        for dep in group_deps:
+            lines.append(str(dep))
+
+    # Handle legacy [tool.poetry.dependencies] for Poetry projects
+    poetry_section = pyproject_data.get("tool", {}).get("poetry", {})
+    poetry_deps = poetry_section.get("dependencies", {})
+    for dep_name, dep_spec in poetry_deps.items():
+        if dep_name == "python":
+            continue  # Skip python version constraint
+
+        if isinstance(dep_spec, str):
+            lines.append(f"{dep_name}{dep_spec}")
+        elif isinstance(dep_spec, dict):
+            version_spec = dep_spec.get("version", "")
+            if version_spec:
+                lines.append(f"{dep_name}{version_spec}")
+            else:
+                # Handle complex dependency specs (git, path, etc.)
+                lines.append(dep_name)
+
+    # Handle legacy [tool.poetry.dev-dependencies] (older Poetry format)
+    poetry_dev_deps = poetry_section.get("dev-dependencies", {})
+    for dep_name, dep_spec in poetry_dev_deps.items():
+        if isinstance(dep_spec, str):
+            lines.append(f"{dep_name}{dep_spec}")
+        elif isinstance(dep_spec, dict):
+            version_spec = dep_spec.get("version", "")
+            if version_spec:
+                lines.append(f"{dep_name}{version_spec}")
+            else:
+                lines.append(dep_name)
 
     return lines
 

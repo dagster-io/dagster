@@ -208,3 +208,76 @@ def test_components_docs_dbt_project(
             cmd="dg list defs",
             snippet_path=f"{context.get_next_snip_number()}-list-defs.txt",
         )
+
+        # Add a partitions definition template
+        context.create_file(
+            Path("src") / "my_project" / "defs" / "dbt_ingest" / "template_vars.py",
+            contents=textwrap.dedent(
+                """\
+                import dagster as dg
+
+                @dg.template_var
+                def daily_partitions_def() -> dg.DailyPartitionsDefinition:
+                    return dg.DailyPartitionsDefinition(start_date="2023-01-01")
+                """
+            ),
+            snippet_path=f"{context.get_next_snip_number()}-template-vars.py",
+        )
+
+        # Update component.yaml with post process
+        context.create_file(
+            Path("src") / "my_project" / "defs" / "dbt_ingest" / "defs.yaml",
+            contents=textwrap.dedent(
+                """\
+                type: dagster_dbt.DbtProjectComponent
+
+                template_vars_module: .template_vars
+                attributes:
+                  project: '{{ project_root }}/dbt'
+                  select: "customers"
+                  translation:
+                    group_name: dbt_models
+                    description: "Transforms data using dbt model {{ node.name }}"
+                post_processing:
+                  assets:
+                    - target: "*"
+                      attributes:
+                        partitions_def: "{{ daily_partitions_def }}"
+                """
+            ),
+            snippet_path=f"{context.get_next_snip_number()}-defs.yaml",
+        )
+
+        # Update component.yaml with cli args
+        context.create_file(
+            Path("src") / "my_project" / "defs" / "dbt_ingest" / "defs.yaml",
+            contents=textwrap.dedent(
+                """\
+                type: dagster_dbt.DbtProjectComponent
+
+                template_vars_module: .template_vars
+                attributes:
+                  project: '{{ project_root }}/dbt'
+                  select: "customers"
+                  translation:
+                    group_name: dbt_models
+                    description: "Transforms data using dbt model {{ node.name }}"
+                  cli_args:
+                    - build
+                    - --vars:
+                      start_date: "{{ context.partition_time_window.start.strftime('%Y-%m-%d') }}"
+                      end_date: "{{ context.partition_time_window.end.strftime('%Y-%m-%d') }}"
+                post_processing:
+                  assets:
+                    - target: "*"
+                      attributes:
+                        partitions_def: "{{ daily_partitions_def }}"
+                """
+            ),
+            snippet_path=f"{context.get_next_snip_number()}-defs.yaml",
+        )
+
+        context.run_command_and_snippet_output(
+            cmd="dg list defs",
+            snippet_path=f"{context.get_next_snip_number()}-list-defs.txt",
+        )

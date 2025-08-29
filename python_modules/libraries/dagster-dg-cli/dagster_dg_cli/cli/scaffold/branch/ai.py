@@ -1,16 +1,16 @@
 """AI interaction and input type handling for scaffold branch command."""
 
 import asyncio
-import os
+import re
 from abc import ABC
 from collections.abc import Iterator
 from contextlib import contextmanager
 from pathlib import Path
 from time import perf_counter
-from typing import Any
 
 import click
 from dagster_shared.record import record
+from dagster_shared.utils.timing import format_duration
 
 from dagster_dg_cli.cli.scaffold.branch.claude.diagnostics import ClaudeDiagnostics
 from dagster_dg_cli.cli.scaffold.branch.claude.sdk_client import OutputChannel
@@ -24,80 +24,9 @@ from dagster_dg_cli.utils.ui import daggy_spinner_context
 
 
 @record
-class BranchNameGeneration:
-    """Branch name generation result."""
-
-    original_branch_name: str
-    final_branch_name: str
+class ExtractedNames:
+    branch_name: str
     pr_title: str
-    generation_metadata: dict[str, Any]
-
-
-MAX_TURNS = 20
-
-
-def invoke_anthropic_api_direct(
-    prompt: str,
-    diagnostics: ClaudeDiagnostics,
-    operation_name: str,
-) -> str:
-    """Invoke Anthropic API directly to get a single string result.
-
-    Args:
-        prompt: The prompt to send to Claude
-        diagnostics: Diagnostics service for logging
-        operation_name: Name of the operation for logging
-
-    Returns:
-        Clean string result from Claude
-
-    Raises:
-        ValueError: If no valid string result can be extracted
-    """
-    # Get API key from environment
-    api_key = os.environ.get("ANTHROPIC_API_KEY")
-    if not api_key:
-        raise ValueError("ANTHROPIC_API_KEY environment variable is required for direct API calls")
-
-    with diagnostics.claude_operation(
-        operation_name=operation_name,
-        error_code=f"{operation_name}_generation_failed",
-        error_message=f"Failed to generate {operation_name} via Anthropic API",
-        prompt_length=len(prompt),
-    ):
-        # Lazy import to avoid performance regression
-        import anthropic
-
-        client = anthropic.Anthropic(api_key=api_key)
-
-        response = client.messages.create(
-            model="claude-3-haiku-20240307",
-            max_tokens=100,  # Short responses for branch names/titles
-            temperature=0.0,  # Deterministic output
-            messages=[{"role": "user", "content": prompt}],
-        )
-
-        # Extract text content from response
-        if not response.content:
-            raise ValueError(f"Empty response from Anthropic API for {operation_name}")
-
-        # Get text from the first content block
-        text_content = None
-        for content_block in response.content:
-            if content_block.type == "text":
-                text_content = content_block.text
-                break
-
-        if not text_content:
-            raise ValueError(f"No text content in Anthropic API response for {operation_name}")
-
-        # Return the entire text content with newlines preserved
-        result = text_content
-
-        if not result.strip():
-            raise ValueError(f"Empty {operation_name} returned from Anthropic API")
-
-        return result
 
 
 def load_prompt_template(prompt_filename: str, context: str) -> str:
@@ -113,48 +42,6 @@ def load_prompt_template(prompt_filename: str, context: str) -> str:
     prompt_path = Path(__file__).parent / "prompts" / prompt_filename
     template = prompt_path.read_text()
     return template.format(context=context)
-
-
-def get_branch_name(
-    context: str,
-    diagnostics: ClaudeDiagnostics,
-) -> str:
-    """Generate a git branch name from context.
-
-    Args:
-        context: The context to inject into the prompt
-        input_type: The input type for additional allowed tools (unused in direct API mode)
-        diagnostics: Diagnostics service for logging
-
-    Returns:
-        Generated branch name
-
-    Raises:
-        ValueError: If no valid branch name can be extracted
-    """
-    prompt = load_prompt_template("branch_name_only.md", context)
-    return invoke_anthropic_api_direct(prompt, diagnostics, "branch_name")
-
-
-def get_pr_title(
-    context: str,
-    diagnostics: ClaudeDiagnostics,
-) -> str:
-    """Generate a PR title from context.
-
-    Args:
-        context: The context to inject into the prompt
-        input_type: The input type for additional allowed tools (unused in direct API mode)
-        diagnostics: Diagnostics service for logging
-
-    Returns:
-        Generated PR title
-
-    Raises:
-        ValueError: If no valid PR title can be extracted
-    """
-    prompt = load_prompt_template("pr_title_only.md", context)
-    return invoke_anthropic_api_direct(prompt, diagnostics, "pr_title")
 
 
 def load_scaffolding_prompt(plan: str) -> str:
@@ -244,12 +131,58 @@ class GithubIssueInputType(InputType):
 INPUT_TYPES = [GithubIssueInputType]
 
 
+def get_branch_name(plan: str, diagnostics: ClaudeDiagnostics) -> str:
+    """Extract branch name from plan using regex based on planning_prompt.md format.
+
+    Expected format: **Proposed Branch Name:** `branch-name`
+    """
+    match = re.search(r"\*\*Proposed Branch Name:\*\* `([^`]+)`", plan)
+    if match:
+        branch_name = match.group(1)
+        diagnostics.info(
+            category="branch_name_extracted",
+            message="Successfully extracted branch name from plan",
+            data={"branch_name": branch_name},
+        )
+        return branch_name
+
+    diagnostics.error(
+        category="branch_name_extraction_failed",
+        message="Could not extract branch name from plan",
+        data={"plan_snippet": plan[:200]},
+    )
+    raise click.ClickException("Could not extract branch name from plan")
+
+
+def get_pr_title(plan: str, diagnostics: ClaudeDiagnostics) -> str:
+    """Extract PR title from plan using regex based on planning_prompt.md format.
+
+    Expected format: **Proposed PR Title:** "Title text"
+    """
+    match = re.search(r'\*\*Proposed PR Title:\*\* "([^"]+)"', plan)
+    if match:
+        pr_title = match.group(1)
+        diagnostics.info(
+            category="pr_title_extracted",
+            message="Successfully extracted PR title from plan",
+            data={"pr_title": pr_title},
+        )
+        return pr_title
+
+    diagnostics.error(
+        category="pr_title_extraction_failed",
+        message="Could not extract PR title from plan",
+        data={"plan_snippet": plan[:200]},
+    )
+    raise click.ClickException("Could not extract PR title from plan")
+
+
 def get_branch_name_and_pr_title_from_plan(
     plan: str,
     diagnostics: ClaudeDiagnostics,
-) -> BranchNameGeneration:
-    """Invokes Claude under the hood to generate a reasonable, valid
-    git branch name and pull request title based on the user's stated goal.
+) -> ExtractedNames:
+    """Extracts branch name and PR title from the plan using regex based on
+    the format defined in planning_prompt.md.
     """
     diagnostics.info(
         category="branch_name_and_title_generation_start",
@@ -261,7 +194,6 @@ def get_branch_name_and_pr_title_from_plan(
 
     start_time = perf_counter()
 
-    # Generate branch name and PR title separately for reliability
     branch_name = get_branch_name(plan, diagnostics)
     pr_title = get_pr_title(plan, diagnostics)
 
@@ -277,15 +209,9 @@ def get_branch_name_and_pr_title_from_plan(
         },
     )
 
-    return BranchNameGeneration(
-        original_branch_name=branch_name,
-        final_branch_name=branch_name,  # Will be updated later if needed
+    return ExtractedNames(
+        branch_name=branch_name,
         pr_title=pr_title,
-        generation_metadata={
-            "duration_ms": duration_ms,
-            "context_length": len(plan),
-            "approach": "separate_prompts",
-        },
     )
 
 
@@ -322,6 +248,8 @@ def scaffold_content_for_plan(
     """Scaffolds content from the plan generated by the planning phase."""
     ensure_claude_sdk_python_version()
 
+    from claude_code_sdk.types import ResultMessage
+
     from dagster_dg_cli.cli.scaffold.branch.claude.sdk_client import ClaudeSDKClient
 
     prompt = load_scaffolding_prompt(plan)
@@ -335,7 +263,7 @@ def scaffold_content_for_plan(
         ):
             claude_sdk = ClaudeSDKClient(diagnostics)
 
-            asyncio.run(
+            messages = asyncio.run(
                 claude_sdk.scaffold_with_streaming(
                     prompt=prompt,
                     model=model,
@@ -344,4 +272,10 @@ def scaffold_content_for_plan(
                     disallowed_tools=["Bash(python:*)", "WebSearch", "WebFetch"],
                     verbose=verbose,
                 )
+            )
+
+    for message in messages:
+        if isinstance(message, ResultMessage):
+            click.echo(
+                f"✅ Scaffolding completed (${message.total_cost_usd:.2f}, {format_duration(message.duration_ms)})."
             )

@@ -546,9 +546,13 @@ SOURCE_INSTRUCTIONS = (
 def _check_source_directory(source_directory):
     contents = os.listdir(source_directory)
 
-    if "setup.py" not in contents and "requirements.txt" not in contents:
+    if (
+        "setup.py" not in contents
+        and "requirements.txt" not in contents
+        and "pyproject.toml" not in contents
+    ):
         message = (
-            "Could not find a `setup.py` or `requirements.txt` in the target directory. You must "
+            "Could not find a `setup.py`, `requirements.txt`, or `pyproject.toml` in the target directory. You must "
             "specify your required Python dependencies (including the `dagster-cloud` package) "
             "along with your source files to deploy to Dagster Cloud."
         )

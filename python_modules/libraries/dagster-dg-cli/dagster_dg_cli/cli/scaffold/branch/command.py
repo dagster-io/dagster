@@ -1,7 +1,6 @@
 """Main scaffold branch command implementation."""
 
 import json
-import os
 import re
 import uuid
 from datetime import datetime
@@ -14,7 +13,7 @@ from dagster_dg_core.context import DgContext
 from dagster_dg_core.shared_options import dg_global_options, dg_path_options
 from dagster_dg_core.utils import DgClickCommand
 from dagster_dg_core.utils.telemetry import cli_telemetry_wrapper
-from dagster_shared.record import as_dict, replace
+from dagster_shared.record import as_dict
 
 from dagster_dg_cli.cli.scaffold.branch.ai import enter_waiting_phase
 from dagster_dg_cli.cli.scaffold.branch.claude.diagnostics import (
@@ -224,10 +223,6 @@ def execute_scaffold_branch_command(
                 "claude_code_sdk is required for AI scaffolding functionality. "
                 "Install with: pip install claude-code-sdk>=0.0.19"
             )
-        if not os.getenv("ANTHROPIC_API_KEY"):
-            raise click.ClickException(
-                "ANTHROPIC_API_KEY environment variable is required for AI scaffolding functionality"
-            )
 
         # Import AI modules only when needed and available
         from dagster_dg_cli.cli.scaffold.branch.ai import (
@@ -342,32 +337,20 @@ def execute_scaffold_branch_command(
         # Proceed with execution after plan approval
         click.echo("\n🚀 Beginning implementation...")
 
-        # Generate branch name and PR title for execution
-        with enter_waiting_phase("Generating branch name and PR title", spin=not disable_progress):
-            with diagnostics.time_operation("branch_name_generation", "ai_generation"):
-                branch_generation = get_branch_name_and_pr_title_from_plan(
-                    prompt_text,
-                    diagnostics,
-                )
-        # Update final branch name with suffix to avoid conflicts
-        final_branch_name = branch_generation.original_branch_name + "-" + str(uuid.uuid4())[:8]
-        branch_generation = replace(branch_generation, final_branch_name=final_branch_name)
-
-        generated_outputs["branch_name"] = branch_generation.original_branch_name
-        generated_outputs["pr_title"] = branch_generation.pr_title
-        branch_name = final_branch_name
-        pr_title = branch_generation.pr_title
-        ai_scaffolding = True
-
-        diagnostics.info(
-            category="branch_name_generated",
-            message="Generated branch name and PR title",
-            data={
-                "original_branch_name": branch_generation.original_branch_name,
-                "final_branch_name": branch_generation.final_branch_name,
-                "pr_title": branch_generation.pr_title,
-            },
+        click.echo("Extracting branch name and PR title")
+        extracted = get_branch_name_and_pr_title_from_plan(
+            current_plan.markdown_content,
+            diagnostics,
         )
+
+        # Update final branch name with suffix to avoid conflicts
+        final_branch_name = extracted.branch_name + "-" + str(uuid.uuid4())[:8]
+
+        generated_outputs["branch_name"] = extracted.branch_name
+        generated_outputs["pr_title"] = extracted.pr_title
+        branch_name = final_branch_name
+        pr_title = extracted.pr_title
+        ai_scaffolding = True
 
     click.echo(f"Creating new branch: {branch_name}")
 
@@ -455,5 +438,3 @@ def execute_scaffold_branch_command(
             message="Session data recorded to file",
             data={"record_path": str(record_path)},
         )
-
-    # Success logging is handled by claude_operation

@@ -23,7 +23,6 @@ class BlobStorageStateStorage(DefsStateStorage, ConfigurableClass):
     def __init__(self, base_path: "UPath", inst_data: Optional[ConfigurableClassData] = None):
         self._inst_data = inst_data
         self._base_path = base_path
-        self._base_path.mkdir(parents=True, exist_ok=True)
 
     @property
     def base_path(self) -> "UPath":
