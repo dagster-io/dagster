@@ -30,13 +30,13 @@ Finally, add the `dagster-powerbi` library to the project:
 
 <CliInvocationExample path="docs_snippets/docs_snippets/guides/components/integrations/powerbi-component/2-add-powerbi.txt" />
 
-## 2. Scaffold a Power BI component
+## 2. Scaffold a Power BI component definition
 
-Now that you have a Dagster project, you can scaffold a Power BI component:
+Now that you have a Dagster project, you can scaffold a Power BI component definition:
 
 <CliInvocationExample path="docs_snippets/docs_snippets/guides/components/integrations/powerbi-component/3-scaffold-powerbi-component.txt" />
 
-The scaffold call will generate a `defs.yaml` file:
+The `dg scaffold defs` call will generate a `defs.yaml` file:
 
 <CliInvocationExample path="docs_snippets/docs_snippets/guides/components/integrations/powerbi-component/4-tree.txt" />
 

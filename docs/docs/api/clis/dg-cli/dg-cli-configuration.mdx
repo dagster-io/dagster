@@ -41,7 +41,7 @@ workspace.
 
 There are three kinds of `dg` configuration files: user, project, and workspace.
 
-- [User configuration files](#user-configuration-file) are optional and contain only application-level settings. They are located in a platform-specific location, `~/.dg.toml` (Unix) or `%APPDATA%/dg/dg.toml` (Windows).
+- [User configuration files](#user-configuration-file) are optional and contain only application-level settings. They are located in a platform-specific location, `~/.config/dg.toml` (Unix) or `%APPDATA%/dg/dg.toml` (Windows).
 - [Project configuration files](#project-configuration-file) are required to mark a directory as a `dg` project. They are located in the root of a `dg` project and contain project-specific settings. They may also contain application-level settings if the project is not inside a workspace.
 - [Workspace configuration files](#workspace-configuration-file) are required to mark a directory as a `dg` workspace. They are located in the root of a `dg` workspace and contain workspace-specific settings. They may also contain application-level settings. When projects are inside a workspace, the application-level settings of the workspace apply to all contained projects as well.
 
@@ -49,7 +49,7 @@ When `dg` is launched, it will attempt to discover all three configuration files
 
 ### User configuration file
 
-A user configuration file can be placed at `~/.dg.toml` (Unix) or
+A user configuration file can be placed at `~/.config/dg.toml` (Unix) or
 `%APPDATA%/dg/dg.toml` (Windows).
 
 Below is an example of a user configuration file. The `cli` section contains

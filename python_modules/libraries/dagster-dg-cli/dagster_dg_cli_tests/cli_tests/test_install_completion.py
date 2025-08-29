@@ -8,11 +8,10 @@ from dagster_test.dg_utils.utils import ProxyRunner, assert_runner_result
 # just ensure that the command executes and prints the correct output.
 def test_install_completion(monkeypatch):
     for shell in ["bash", "cmd", "powershell"]:
-        monkeypatch.setenv("SHELL", shell)
         with ProxyRunner.test() as runner, runner.isolated_filesystem():
             with (
-                patch("typer._completion_shared.install") as mock_install,
                 patch("shellingham.detect_shell") as mock_detect_shell,
+                patch("typer._completion_shared.install") as mock_install,
             ):
                 mock_install.return_value = shell, "/some/path"
                 mock_detect_shell.return_value = (shell, "/some/path")

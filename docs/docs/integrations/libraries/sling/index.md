@@ -28,13 +28,13 @@ Finally, add the `dagster-sling` library to the project. We will also add `duckd
 
 <CliInvocationExample path="docs_snippets/docs_snippets/guides/components/integrations/sling-component/2-add-sling.txt" />
 
-## 2. Scaffold a Sling component
+## 2. Scaffold a Sling component definition
 
-Now that you have a Dagster project, you can scaffold a Sling component:
+Now that you have a Dagster project, you can scaffold a Sling component definition:
 
 <CliInvocationExample path="docs_snippets/docs_snippets/guides/components/integrations/sling-component/3-scaffold-sling-component.txt" />
 
-The scaffold call will generate a `defs.yaml` file and a unpopulated Sling `replication.yaml` file:
+The `dg scaffold defs` call will generate a `defs.yaml` file and an unpopulated Sling `replication.yaml` file:
 
 <CliInvocationExample path="docs_snippets/docs_snippets/guides/components/integrations/sling-component/4-tree.txt" />
 

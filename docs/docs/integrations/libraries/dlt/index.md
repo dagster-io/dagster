@@ -30,13 +30,13 @@ Finally, add the `dagster-dlt` library to the project:
 
 <CliInvocationExample path="docs_snippets/docs_snippets/guides/components/integrations/dlt-component/2-add-dlt.txt" />
 
-## 2. Scaffold a dlt component
+## 2. Scaffold a dlt component definition
 
-Now that you have a Dagster project, you can scaffold a dlt component. You may optionally provide the source and destination types, which will pull in the appropriate dlt source:
+Now that you have a Dagster project, you can scaffold a dlt component definition. You may optionally provide the source and destination types, which will pull in the appropriate dlt source:
 
 <CliInvocationExample path="docs_snippets/docs_snippets/guides/components/integrations/dlt-component/3-scaffold-dlt-component.txt" />
 
-The scaffold call will generate a basic `defs.yaml` file and a `loads.py` file:
+The `dg scaffold defs` call will generate a basic `defs.yaml` file and a `loads.py` file:
 
 <CliInvocationExample path="docs_snippets/docs_snippets/guides/components/integrations/dlt-component/4-tree.txt" />
 

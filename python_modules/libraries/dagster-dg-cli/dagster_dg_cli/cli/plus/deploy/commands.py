@@ -3,7 +3,6 @@ from pathlib import Path
 from typing import Optional
 
 import click
-from dagster_cloud_cli.types import SnapshotBaseDeploymentCondition
 from dagster_dg_core.config import DgRawCliConfig, normalize_cli_config
 from dagster_dg_core.context import DgContext
 from dagster_dg_core.shared_options import (
@@ -18,7 +17,7 @@ from dagster_shared.plus.config import DagsterPlusCliConfig
 from dagster_shared.seven.temp_dir import get_system_temp_directory
 
 from dagster_dg_cli.cli.plus.constants import DgPlusAgentType, DgPlusDeploymentType
-from dagster_dg_cli.cli.plus.deploy_session import (
+from dagster_dg_cli.cli.plus.deploy.deploy_session import (
     build_artifact,
     finish_deploy_session,
     init_deploy_session,
@@ -30,6 +29,13 @@ DEFAULT_STATEDIR_PATH = os.path.join(get_system_temp_directory(), "dg-build-stat
 
 def _get_statedir():
     return os.getenv("DAGSTER_BUILD_STATEDIR", DEFAULT_STATEDIR_PATH)
+
+
+def _get_snapshot_base_deployment_conditions():
+    # Lazy import to avoid loading dagster_cloud_cli at module import time
+    from dagster_cloud_cli.types import SnapshotBaseDeploymentCondition
+
+    return SnapshotBaseDeploymentCondition
 
 
 def _get_organization(input_organization: Optional[str], plus_config: DagsterPlusCliConfig) -> str:
@@ -119,7 +125,7 @@ org_and_deploy_option_group = make_option_group(
     type=click.Choice(
         [
             snapshot_base_condition.value
-            for snapshot_base_condition in SnapshotBaseDeploymentCondition
+            for snapshot_base_condition in _get_snapshot_base_deployment_conditions()
         ]
     ),
 )
@@ -157,7 +163,7 @@ def deploy_group(
         return
 
     snapshot_base_condition = (
-        SnapshotBaseDeploymentCondition(snapshot_base_condition_str)
+        _get_snapshot_base_deployment_conditions()(snapshot_base_condition_str)
         if snapshot_base_condition_str
         else None
     )
@@ -259,7 +265,7 @@ def _validate_location_names(
     type=click.Choice(
         [
             snapshot_base_condition.value
-            for snapshot_base_condition in SnapshotBaseDeploymentCondition
+            for snapshot_base_condition in _get_snapshot_base_deployment_conditions()
         ]
     ),
 )
@@ -294,7 +300,7 @@ def start_deploy_session_command(
     statedir = _get_statedir()
 
     snapshot_base_condition = (
-        SnapshotBaseDeploymentCondition(snapshot_base_condition_str)
+        _get_snapshot_base_deployment_conditions()(snapshot_base_condition_str)
         if snapshot_base_condition_str
         else None
     )
@@ -398,6 +404,7 @@ def set_build_output_command(
     """If building a Docker image was built outside of the `dg` CLI, configures the deploy session
     to indicate the correct tag to use when the session is finished.
     """
+    # Lazy import to avoid loading dagster_cloud_cli at module import time
     from dagster_cloud_cli.commands.ci import set_build_output
 
     cli_config = normalize_cli_config(global_options, click.get_current_context())
