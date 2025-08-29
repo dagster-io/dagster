@@ -13,8 +13,33 @@ success_paginated_assets:
 success_assets_with_cursor:
   command: "dg api asset list --cursor abc123 --json"
 
+# Status view scenarios
+success_assets_status_view:
+  command: "dg api asset list --view status --json"
+
+success_single_asset_status_view:
+  command: "dg api asset get aws/cloud-prod/workspace_staging_pipelines --view status --json"
+
+success_assets_status_view_human_readable:
+  command: "dg api asset list --view status"
+
+success_single_asset_status_view_human_readable:
+  command: "dg api asset get aws/cloud-prod/workspace_staging_pipelines --view status"
+
+success_paginated_assets_status_view:
+  command: "dg api asset list --view status --limit 10 --json"
+
+success_assets_status_view_with_cursor:
+  command: "dg api asset list --view status --cursor abc123 --json"
+
 error_asset_not_found:
   command: "dg api asset get nonexistent-asset --json"
 
+error_asset_not_found_status_view:
+  command: "dg api asset get nonexistent-asset --view status --json"
+
 error_malformed_asset_key:
   command: "dg api asset get '' --json"
+
+error_invalid_view:
+  command: "dg api asset get aws/cloud-prod/workspace_staging_pipelines --view invalid --json"
