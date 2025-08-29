@@ -65,7 +65,7 @@ def list_assets_command(
         raise click.ClickException(f"Failed to list assets: {e}")
 
 
-@click.command(name="view", cls=DgClickCommand, unlaunched=True)
+@click.command(name="get", cls=DgClickCommand, unlaunched=True)
 @click.argument("asset_key", type=str)
 @click.option(
     "--json",
@@ -76,7 +76,7 @@ def list_assets_command(
 @dg_api_options(deployment_scoped=True)
 @cli_telemetry_wrapper
 @click.pass_context
-def view_asset_command(
+def get_asset_command(
     ctx: click.Context,
     asset_key: str,
     output_json: bool,
@@ -112,7 +112,7 @@ def view_asset_command(
     unlaunched=True,
     commands={
         "list": list_assets_command,
-        "view": view_asset_command,
+        "get": get_asset_command,
     },
 )
 def asset_group():

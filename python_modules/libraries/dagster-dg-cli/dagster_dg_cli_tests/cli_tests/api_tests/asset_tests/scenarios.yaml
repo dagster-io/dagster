@@ -2,10 +2,10 @@ success_multiple_assets:
   command: "dg api asset list --json"
 
 success_single_asset:
-  command: "dg api asset view aws/cloud-prod/workspace_staging_pipelines --json"
+  command: "dg api asset get aws/cloud-prod/workspace_staging_pipelines --json"
 
 success_nested_asset:
-  command: "dg api asset view aws/cloud-prod/workspace_staging_pipelines --json"
+  command: "dg api asset get aws/cloud-prod/workspace_staging_pipelines --json"
 
 success_paginated_assets:
   command: "dg api asset list --limit 10 --json"
@@ -14,7 +14,7 @@ success_assets_with_cursor:
   command: "dg api asset list --cursor abc123 --json"
 
 error_asset_not_found:
-  command: "dg api asset view nonexistent-asset --json"
+  command: "dg api asset get nonexistent-asset --json"
 
 error_malformed_asset_key:
-  command: "dg api asset view '' --json"
+  command: "dg api asset get '' --json"

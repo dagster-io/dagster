@@ -3,7 +3,7 @@
 ## Standard Verbs Pattern
 
 - **list** - List all resources with filtering/pagination
-- **view <id>** - Show detailed information about specific resource
+- **get <id>** - Show detailed information about specific resource
 - **create** - Create new resource (where applicable)
 - **update <id>** - Update existing resource (where applicable)
 - **delete <id>** - Remove resource (where applicable)
@@ -19,7 +19,7 @@
 dg api deployment list [--json]
 
 # Future verbs
-dg api deployment view <name> [--json]
+dg api deployment get <name> [--json]
 dg api deployment create --name <name> --type <serverless|hybrid>
 dg api deployment update <name> [--settings <file>]
 dg api deployment delete <name>
@@ -31,7 +31,7 @@ dg api deployment delete <name>
 
 ```bash
 dg api secret list [--location <name>] [--scope <deployment|organization>] [--json]
-dg api secret view <name> [--location <name>] [--json]
+dg api secret get <name> [--location <name>] [--json]
 dg api secret create --name <name> --value <value> [--location <name>] [--scope <scope>]
 dg api secret update <name> --value <value> [--location <name>]
 dg api secret delete <name> [--location <name>]
@@ -43,7 +43,7 @@ dg api secret delete <name> [--location <name>]
 
 ```bash
 dg api agent list [--json]
-dg api agent view <id> [--json]
+dg api agent get <id> [--json]
 # Agents are typically managed via configuration, not CRUD operations
 ```
 
@@ -53,7 +53,7 @@ dg api agent view <id> [--json]
 
 ```bash
 dg api run list [--status <status>] [--job <name>] [--limit <n>] [--json]
-dg api run view <run-id> [--json]
+dg api run get <run-id> [--json]
 dg api run create --job <name> [--config <file>] [--tags <key=value>]
 dg api run terminate <run-id>
 dg api run delete <run-id>
@@ -65,7 +65,7 @@ dg api run delete <run-id>
 
 ```bash
 dg api asset list [--prefix <path>] [--limit <n>] [--json]
-dg api asset view <asset-key> [--json]
+dg api asset get <asset-key> [--json]
 # Assets are typically managed through code, not direct API
 ```
 
@@ -79,7 +79,7 @@ dg api asset view <asset-key> [--json]
 
 ```bash
 dg api user list [--json]
-dg api user view <user-id> [--json]
+dg api user get <user-id> [--json]
 dg api user create --email <email> --role <role>
 dg api user update <user-id> --role <role>
 dg api user delete <user-id>
@@ -91,7 +91,7 @@ dg api user delete <user-id>
 
 ```bash
 dg api team list [--json]
-dg api team view <team-id> [--json]
+dg api team get <team-id> [--json]
 dg api team create --name <name> [--members <user-id1,user-id2>]
 dg api team update <team-id> [--add-member <user-id>] [--remove-member <user-id>]
 dg api team delete <team-id>
@@ -103,7 +103,7 @@ dg api team delete <team-id>
 
 ```bash
 dg api alert-policy list [--json]
-dg api alert-policy view <policy-id> [--json]
+dg api alert-policy get <policy-id> [--json]
 dg api alert-policy create --name <name> --config <file>
 dg api alert-policy update <policy-id> --config <file>
 dg api alert-policy delete <policy-id>
@@ -115,7 +115,7 @@ dg api alert-policy delete <policy-id>
 
 ```bash
 dg api code-location list [--json]
-dg api code-location view <location-name> [--json]
+dg api code-location get <location-name> [--json]
 dg api code-location create --name <name> --image <image> --config <file>
 dg api code-location update <location-name> --image <image> [--config <file>]
 dg api code-location delete <location-name>
@@ -131,7 +131,7 @@ dg api code-location delete <location-name>
 
 ```bash
 dg api check list [--asset <asset-key>] [--status <status>] [--json]
-dg api check view <check-name> --asset <asset-key> [--json]
+dg api check get <check-name> --asset <asset-key> [--json]
 # Checks are defined in code, not directly manageable
 ```
 
@@ -141,7 +141,7 @@ dg api check view <check-name> --asset <asset-key> [--json]
 
 ```bash
 dg api schedule list [--location <name>] [--status <running|stopped>] [--json]
-dg api schedule view <schedule-name> --location <name> [--json]
+dg api schedule get <schedule-name> --location <name> [--json]
 dg api schedule start <schedule-name> --location <name>
 dg api schedule stop <schedule-name> --location <name>
 ```
@@ -152,7 +152,7 @@ dg api schedule stop <schedule-name> --location <name>
 
 ```bash
 dg api sensor list [--location <name>] [--status <running|stopped>] [--json]
-dg api sensor view <sensor-name> --location <name> [--json]
+dg api sensor get <sensor-name> --location <name> [--json]
 dg api sensor start <sensor-name> --location <name>
 dg api sensor stop <sensor-name> --location <name>
 ```
@@ -163,7 +163,7 @@ dg api sensor stop <sensor-name> --location <name>
 
 ```bash
 dg api backfill list [--status <status>] [--json]
-dg api backfill view <backfill-id> [--json]
+dg api backfill get <backfill-id> [--json]
 dg api backfill create --asset <asset-key> --partitions <range>
 dg api backfill cancel <backfill-id>
 ```
@@ -178,7 +178,7 @@ dg api backfill cancel <backfill-id>
 
 ```bash
 dg api alert-notification list [--policy-id <id>] [--limit <n>] [--json]
-dg api alert-notification view <notification-id> [--json]
+dg api alert-notification get <notification-id> [--json]
 # Notifications are read-only audit trail
 ```
 
@@ -188,7 +188,7 @@ dg api alert-notification view <notification-id> [--json]
 
 ```bash
 dg api audit-log list [--user <user-id>] [--action <action>] [--limit <n>] [--json]
-dg api audit-log view <log-id> [--json]
+dg api audit-log get <log-id> [--json]
 # Audit logs are read-only
 ```
 
@@ -198,7 +198,7 @@ dg api audit-log view <log-id> [--json]
 
 ```bash
 dg api custom-role list [--json]
-dg api custom-role view <role-id> [--json]
+dg api custom-role get <role-id> [--json]
 dg api custom-role create --name <name> --permissions <file>
 dg api custom-role update <role-id> --permissions <file>
 dg api custom-role delete <role-id>
@@ -216,7 +216,7 @@ dg api custom-role delete <role-id>
 
 ```bash
 dg api user-token list --user <user-id> [--json]
-dg api user-token view <token-id> [--json]
+dg api user-token get <token-id> [--json]
 dg api user-token create --user <user-id> --description <desc>
 dg api user-token revoke <token-id>
 ```
@@ -231,7 +231,7 @@ dg api user-token revoke <token-id>
 
 ```bash
 dg api branch-deployment list [--pr-status <open|merged>] [--json]
-dg api branch-deployment view <deployment-name> [--json]
+dg api branch-deployment get <deployment-name> [--json]
 dg api branch-deployment create --branch <branch> --repo <repo>
 dg api branch-deployment delete <deployment-name>
 ```
@@ -242,7 +242,7 @@ dg api branch-deployment delete <deployment-name>
 
 ```bash
 dg api deployment-setting list [--json]
-dg api deployment-setting view [--json]
+dg api deployment-setting get [--json]
 dg api deployment-setting update --config <file>
 # Settings are typically singular per deployment
 ```
@@ -253,7 +253,7 @@ dg api deployment-setting update --config <file>
 
 ```bash
 dg api organization-setting list [--json]
-dg api organization-setting view [--json]
+dg api organization-setting get [--json]
 dg api organization-setting update --config <file>
 # Settings are typically singular per organization
 ```
@@ -347,7 +347,7 @@ dagster_dg_cli/cli/plus/api/
 ### **Consistency**
 
 - All commands follow `dg api <noun> <verb>` pattern
-- Standard verbs: `list`, `view`, `create`, `update`, `delete`
+- Standard verbs: `list`, `get`, `create`, `update`, `delete`
 - `--json` flag available on all commands
 - Consistent parameter naming across similar operations
 

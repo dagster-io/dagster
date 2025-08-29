@@ -2,6 +2,15 @@
 
 ## QUICKSTART
 
+Highly recommend you use prompting (and point the AI to thie file) to accomplish it.
+
+We have the dagster plus schema checked in at python_modules/libraries/dagster-dg-cli/dagster_dg_cli/cli/plus/schema.graphql
+which is critical to have in context. It should be combine to generate most of this code easily.
+
+For a given noun you want to add to the system, have it interrgate the schema, ensure that you are picking
+the most up-to-date queries, and then have it follow the patterns here for implementation and the testing
+
+patterns in python_modules/libraries/dagster-dg-cli/dagster_dg_cli_tests/cli_tests/api_tests/README.md.
 ### Add a new API endpoint in 4 steps:
 
 1. **Define the schema** in `schemas/my_resource.py`:
@@ -58,7 +67,7 @@ User-facing commands with consistent interface:
 ```bash
 dg api deployment list --json
 dg api asset list --json
-dg api asset view my-asset --json
+dg api asset get my-asset --json
 ```
 
 Every command supports `--json` for scripting. The API is modeled on GitHub's `gh` CLI.
@@ -138,32 +147,37 @@ Pydantic models for type safety:
 
 ## Testing Strategy
 
-### 1. Add test scenario
+### Add a new API endpoint test in 3 steps:
 
-Edit `api_tests/{domain}_tests/scenarios.yaml`:
+1. **Add test scenario** in `api_tests/{domain}_tests/scenarios.yaml`:
+   ```yaml
+   success_list_assets:
+     command: "dg api asset list --json"
+   ```
 
-```yaml
-success_list_resources:
-  command: "dg api resource list --json"
-```
+2. **Record GraphQL responses:**
+   ```bash
+   dagster-dev dg-api-record asset --recording success_list_assets
+   ```
 
-### 2. Record GraphQL responses
+3. **Generate snapshots:**
+   ```bash
+   pytest api_tests/asset_tests/ --snapshot-update
+   ```
+
+### Update tests when logic changes:
 
 ```bash
-dagster-dev dg-api-record resource --fixture success_list_resources
+# Re-record responses (when API behavior changes)
+dagster-dev dg-api-record asset --recording success_list_assets
+
+# Update snapshots (when CLI output changes)
+pytest api_tests/asset_tests/ --snapshot-update
 ```
 
-### 3. Run tests
+For detailed testing documentation, troubleshooting, and advanced workflows, see [api_tests/README.md](../../../dagster_dg_cli_tests/cli_tests/api_tests/README.md).
 
-```bash
-# Generate snapshots
-pytest api_tests/resource_tests/ --snapshot-update
-
-# Run tests
-pytest api_tests/resource_tests/
-```
-
-### 4. Compliance testing
+### Compliance testing
 
 Tests automatically validate:
 
@@ -274,11 +288,3 @@ GraphQL errors are automatically handled by the client and converted to appropri
 ### Authentication
 
 Authentication is handled by `DagsterPlusCliConfig` and passed through all layers automatically.
-
-## Architecture Benefits
-
-- **Separation of Concerns**: Each layer has a single responsibility
-- **Testability**: Mock at any layer for testing
-- **Evolvability**: Change GraphQL without affecting CLI
-- **Type Safety**: Pydantic models throughout
-- **Future REST API**: Ready to expose as HTTP REST endpoints

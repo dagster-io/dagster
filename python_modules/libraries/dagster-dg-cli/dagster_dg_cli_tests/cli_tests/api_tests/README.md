@@ -2,8 +2,6 @@
 
 ## QUICKSTART
 
-### Add a new test in 3 steps:
-
 1. **Add your command to `scenarios.yaml`:**
 
    ```yaml
@@ -14,7 +12,7 @@
 2. **Record the GraphQL response:**
 
    ```bash
-   dagster-dev dg-api-record asset --fixture my_new_test
+   dagster-dev dg-api-record asset --recording my_new_test
    ```
 
 3. **Generate snapshots:**
@@ -131,7 +129,7 @@ When API responses change:
 
 ```bash
 # Re-record responses
-dagster-dev dg-api-record asset --fixture success_single_asset
+dagster-dev dg-api-record asset --recording success_single_asset
 
 # Update snapshots
 pytest api_tests/asset_tests/ --snapshot-update
@@ -161,7 +159,7 @@ Record GraphQL responses for test scenarios:
 dagster-dev dg-api-record asset
 
 # Record specific scenario
-dagster-dev dg-api-record asset --fixture success_single_asset
+dagster-dev dg-api-record asset --recording success_single_asset
 
 # Available domains
 dagster-dev dg-api-record [asset|deployment|run|...]

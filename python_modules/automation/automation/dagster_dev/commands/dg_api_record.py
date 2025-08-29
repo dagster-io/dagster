@@ -169,11 +169,11 @@ def record_graphql_for_fixture(domain: str, fixture_name: str, command: str) -> 
 @click.command(name="dg-api-record")
 @click.argument("domain", required=True)
 @click.option(
-    "--fixture",
+    "--recording",
     type=str,
-    help="Specific fixture to record (if omitted, runs all fixtures in domain)",
+    help="Specific recording to record (if omitted, runs all recordings in domain)",
 )
-def dg_api_record(domain: str, fixture: str):
+def dg_api_record(domain: str, recording: str):
     """Record GraphQL responses for API tests.
 
     Records GraphQL responses for API tests. Can process a single fixture or all fixtures in a domain.
@@ -185,8 +185,8 @@ def dg_api_record(domain: str, fixture: str):
         # Record entire domain
         dagster-dev dg-api-record asset
 
-        # Record single fixture
-        dagster-dev dg-api-record asset --fixture success_multiple_assets
+        # Record single recording
+        dagster-dev dg-api-record asset --recording success_multiple_assets
 
     """
     # Load domain commands
@@ -194,19 +194,19 @@ def dg_api_record(domain: str, fixture: str):
     if not commands_data:
         sys.exit(1)
 
-    # Determine which fixtures to process
-    if fixture:
-        if fixture not in commands_data:
+    # Determine which recordings to process
+    if recording:
+        if recording not in commands_data:
             available = list(commands_data.keys())
-            click.echo(f"Error: Fixture '{fixture}' not found in {domain} commands", err=True)
-            click.echo(f"Available fixtures: {available}")
+            click.echo(f"Error: Recording '{recording}' not found in {domain} commands", err=True)
+            click.echo(f"Available recordings: {available}")
             sys.exit(1)
-        target_fixtures = [fixture]
+        target_fixtures = [recording]
     else:
         target_fixtures = list(commands_data.keys())
 
     click.echo(f"📁 Domain: {domain}")
-    click.echo(f"🎯 Target fixtures: {target_fixtures}")
+    click.echo(f"🎯 Target recordings: {target_fixtures}")
     click.echo("🔄 Steps: Recording")
 
     # Process GraphQL recording
