@@ -11,6 +11,7 @@ For a given noun you want to add to the system, have it interrgate the schema, e
 the most up-to-date queries, and then have it follow the patterns here for implementation and the testing
 
 patterns in python_modules/libraries/dagster-dg-cli/dagster_dg_cli_tests/cli_tests/api_tests/README.md.
+
 ### Add a new API endpoint in 4 steps:
 
 1. **Define the schema** in `schemas/my_resource.py`:
@@ -150,12 +151,14 @@ Pydantic models for type safety:
 ### Add a new API endpoint test in 3 steps:
 
 1. **Add test scenario** in `api_tests/{domain}_tests/scenarios.yaml`:
+
    ```yaml
    success_list_assets:
      command: "dg api asset list --json"
    ```
 
 2. **Record GraphQL responses:**
+
    ```bash
    dagster-dev dg-api-record asset --recording success_list_assets
    ```
