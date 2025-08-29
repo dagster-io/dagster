@@ -46,6 +46,19 @@ description: "Comprehensive documentation of asset health and stateful GraphQL q
 
 4. **Update Process:** Re-run analysis whenever internal app introduces new GraphQL usage patterns for any entity or when planning new API endpoints. Focus on production usage patterns to ensure API consistency across the entire Dagster Plus ontology.
 
+## **IMPORTANT: Deprecated "Pipeline" Terminology**
+
+**⚠️ Avoid Pipeline Language in dg API Implementation**
+
+The GraphQL schema and internal frontend still contain legacy "pipeline" terminology that should **NOT** be exposed in new `dg api` commands. When implementing APIs:
+
+- **Use "Job" terminology** exclusively in user-facing APIs, even when underlying GraphQL uses `pipelineName`
+- **Filter/translate** any pipeline references to job terminology in outputs
+- **Only use pipeline GraphQL fields** when they are the sole source of required information
+- **Hide pipeline terminology** from users through API abstraction layers
+
+This ensures `dg api` uses current Dagster language conventions while maintaining compatibility with existing GraphQL schemas.
+
 ---
 
 ## Standard Practice Documentation
