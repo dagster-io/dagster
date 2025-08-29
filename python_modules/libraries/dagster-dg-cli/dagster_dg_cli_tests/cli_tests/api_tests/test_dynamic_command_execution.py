@@ -30,8 +30,8 @@ class ReplayClient(DagsterPlusGraphQLClient):
         return response
 
 
-def discover_scenario_fixtures() -> Iterator[tuple[str, str, str]]:
-    """Discover all scenario fixtures across API test domains."""
+def discover_scenario_recordings() -> Iterator[tuple[str, str, str]]:
+    """Discover all scenario recordings across API test domains."""
     api_tests_dir = Path(__file__).parent
 
     domain_dirs = [d for d in api_tests_dir.iterdir() if d.is_dir() and d.name.endswith("_tests")]
@@ -42,18 +42,18 @@ def discover_scenario_fixtures() -> Iterator[tuple[str, str, str]]:
             continue
 
         domain = domain_dir.name.replace("_tests", "")
-        fixture_scenarios = load_fixture_scenarios_from_yaml(scenarios_yaml)
+        recording_scenarios = load_fixture_scenarios_from_yaml(scenarios_yaml)
 
-        for fixture_name, fixture_config in fixture_scenarios.items():
-            yield (domain, fixture_name, fixture_config.command)
+        for recording_name, recording_config in recording_scenarios.items():
+            yield (domain, recording_name, recording_config.command)
 
 
-def load_fixture_graphql_responses(domain: str, fixture_name: str) -> list[dict[str, Any]]:
-    """Load GraphQL response fixtures for a given domain and fixture."""
-    scenario_folder = Path(__file__).parent / f"{domain}_tests" / "fixtures" / fixture_name
+def load_recorded_graphql_responses(domain: str, scenario_name: str) -> list[dict[str, Any]]:
+    """Load GraphQL response recordings for a given domain and scenario."""
+    scenario_folder = Path(__file__).parent / f"{domain}_tests" / "recordings" / scenario_name
 
     if not scenario_folder.exists():
-        raise ValueError(f"Fixture scenario not found: {scenario_folder}")
+        raise ValueError(f"Recording scenario not found: {scenario_folder}")
 
     json_files = sorted([f for f in scenario_folder.glob("*.json") if f.name[0:2].isdigit()])
 
@@ -69,10 +69,10 @@ def load_fixture_graphql_responses(domain: str, fixture_name: str) -> list[dict[
 
 
 class TestDynamicCommandExecution:
-    """Test all commands from YAML fixtures against recorded GraphQL responses."""
+    """Test all commands from YAML scenarios against recorded GraphQL responses."""
 
-    @pytest.mark.parametrize("domain,fixture_name,command", list(discover_scenario_fixtures()))
-    def test_command_execution(self, domain: str, fixture_name: str, command: str, snapshot):
+    @pytest.mark.parametrize("domain,scenario_name,command", list(discover_scenario_recordings()))
+    def test_command_execution(self, domain: str, scenario_name: str, command: str, snapshot):
         """Test executing a command against its recorded GraphQL responses.
 
         Uses Click's dependency injection to provide a test client factory.
@@ -80,8 +80,8 @@ class TestDynamicCommandExecution:
         """
         from dagster_dg_cli.cli import cli as root_cli
 
-        # Load GraphQL responses for this fixture
-        graphql_responses = load_fixture_graphql_responses(domain, fixture_name)
+        # Load GraphQL responses for this scenario
+        graphql_responses = load_recorded_graphql_responses(domain, scenario_name)
 
         # Create replay client
         replay_client = ReplayClient(graphql_responses)
@@ -98,7 +98,7 @@ class TestDynamicCommandExecution:
 
         # Snapshot testing
         output_type = "json" if "--json" in command else "text"
-        snapshot_name = f"{domain}_{fixture_name}_{output_type}"
+        snapshot_name = f"{domain}_{scenario_name}_{output_type}"
 
         if "--json" in command:
             try:
@@ -109,5 +109,5 @@ class TestDynamicCommandExecution:
         else:
             assert result.output == snapshot(name=snapshot_name)
 
-        if "error" not in fixture_name.lower():
+        if "error" not in scenario_name.lower():
             assert result.exit_code == 0

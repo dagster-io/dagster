@@ -3,7 +3,7 @@
 from typing import Optional
 
 from dagster_dg_cli.dagster_plus_api.schemas.asset import DgApiAsset, DgApiAssetList
-from dagster_dg_cli.utils.plus.gql_client import DagsterPlusGraphQLClient
+from dagster_dg_cli.utils.plus.gql_client import IGraphQLClient
 
 # GraphQL queries
 ASSET_RECORDS_QUERY = """
@@ -74,7 +74,7 @@ query AssetNodes($assetKeys: [AssetKeyInput!]!) {
 
 
 def list_dg_plus_api_assets_via_graphql(
-    client: DagsterPlusGraphQLClient,
+    client: IGraphQLClient,
     limit: Optional[int] = None,
     cursor: Optional[str] = None,
 ) -> DgApiAssetList:
@@ -168,7 +168,7 @@ def list_dg_plus_api_assets_via_graphql(
 
 
 def get_dg_plus_api_asset_via_graphql(
-    client: DagsterPlusGraphQLClient, asset_key_parts: list[str]
+    client: IGraphQLClient, asset_key_parts: list[str]
 ) -> DgApiAsset:
     """Single asset fetch using assetNodes with specific assetKey."""
     variables = {"assetKeys": [{"path": asset_key_parts}]}

@@ -5,13 +5,13 @@ from typing import Protocol
 import click
 from dagster_shared.plus.config import DagsterPlusCliConfig
 
-from dagster_dg_cli.utils.plus.gql_client import DagsterPlusGraphQLClient
+from dagster_dg_cli.utils.plus.gql_client import DagsterPlusGraphQLClient, IGraphQLClient
 
 
 class GraphQLClientFactory(Protocol):
     """Protocol for GraphQL client factories used in testing."""
 
-    def __call__(self, config: DagsterPlusCliConfig) -> DagsterPlusGraphQLClient: ...
+    def __call__(self, config: DagsterPlusCliConfig) -> IGraphQLClient: ...
 
 
 class DgApiTestContext:
@@ -23,7 +23,7 @@ class DgApiTestContext:
 
 def create_dg_api_graphql_client(
     ctx: click.Context, config: DagsterPlusCliConfig
-) -> DagsterPlusGraphQLClient:
+) -> IGraphQLClient:
     """Create GraphQL client for DG API commands.
 
     This is the single entry point for GraphQL client creation in DG API commands.
@@ -34,7 +34,7 @@ def create_dg_api_graphql_client(
         config: Optional config to use, falls back to global config if not provided
 
     Returns:
-        DagsterPlusGraphQLClient instance
+        IGraphQLClient instance
     """
     # Check if we have a test context with custom factory
     if ctx.obj and isinstance(ctx.obj, DgApiTestContext) and ctx.obj.client_factory:

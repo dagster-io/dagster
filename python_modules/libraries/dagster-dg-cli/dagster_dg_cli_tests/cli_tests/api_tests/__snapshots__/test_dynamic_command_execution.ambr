@@ -1,36 +1,147 @@
 # serializer version: 1
+# name: TestDynamicCommandExecution.test_command_execution[asset_error_asset_not_found_json]
+  '''
+  {"error": "Asset not found: nonexistent-asset"}
+  Error: Failed to get asset: Asset not found: nonexistent-asset
+  
+  '''
+# ---
+# name: TestDynamicCommandExecution.test_command_execution[asset_error_malformed_asset_key_json]
+  '''
+  {"error": "Asset not found: ''"}
+  Error: Failed to get asset: Asset not found: ''
+  
+  '''
+# ---
+# name: TestDynamicCommandExecution.test_command_execution[asset_success_assets_with_cursor_json]
+  dict({
+    'cursor': None,
+    'has_more': False,
+    'items': list([
+    ]),
+  })
+# ---
 # name: TestDynamicCommandExecution.test_command_execution[asset_success_multiple_assets_json]
   dict({
-    'cursor': 'next_cursor',
+    'cursor': '["aws", "cloud-prod", "workspace_staging_pipelines"]',
     'has_more': True,
     'items': list([
       dict({
-        'asset_key': 'users',
+        'asset_key': 'aws/cloud-prod/user_roles',
         'asset_key_parts': list([
-          'users',
+          'aws',
+          'cloud-prod',
+          'user_roles',
         ]),
-        'description': 'User data table',
-        'group_name': 'core_tables',
-        'id': 'asset-1',
+        'description': 'Snowflake stages for AWS data, creates new stages for new assets, refreses existing stages.',
+        'group_name': 'aws_stages',
+        'id': 'dagster_open_platform.__repository__.["aws", "cloud-prod", "user_roles"]',
         'kinds': list([
-          'dbt',
-          'table',
         ]),
         'metadata_entries': list([
         ]),
       }),
       dict({
-        'asset_key': 'analytics/user_metrics',
+        'asset_key': 'aws/cloud-prod/workspace_staging_asset_checks',
         'asset_key_parts': list([
-          'analytics',
-          'user_metrics',
+          'aws',
+          'cloud-prod',
+          'workspace_staging_asset_checks',
         ]),
-        'description': 'Aggregated user metrics',
-        'group_name': 'analytics',
-        'id': 'asset-2',
+        'description': 'Snowflake stages for AWS data, creates new stages for new assets, refreses existing stages.',
+        'group_name': 'aws_stages',
+        'id': 'dagster_open_platform.__repository__.["aws", "cloud-prod", "workspace_staging_asset_checks"]',
         'kinds': list([
-          'dbt',
-          'view',
+        ]),
+        'metadata_entries': list([
+        ]),
+      }),
+      dict({
+        'asset_key': 'aws/cloud-prod/workspace_staging_assets',
+        'asset_key_parts': list([
+          'aws',
+          'cloud-prod',
+          'workspace_staging_assets',
+        ]),
+        'description': 'Snowflake stages for AWS data, creates new stages for new assets, refreses existing stages.',
+        'group_name': 'aws_stages',
+        'id': 'dagster_open_platform.__repository__.["aws", "cloud-prod", "workspace_staging_assets"]',
+        'kinds': list([
+        ]),
+        'metadata_entries': list([
+        ]),
+      }),
+      dict({
+        'asset_key': 'aws/cloud-prod/workspace_staging_external_repo_metadata',
+        'asset_key_parts': list([
+          'aws',
+          'cloud-prod',
+          'workspace_staging_external_repo_metadata',
+        ]),
+        'description': 'Snowflake stages for AWS data, creates new stages for new assets, refreses existing stages.',
+        'group_name': 'aws_stages',
+        'id': 'dagster_open_platform.__repository__.["aws", "cloud-prod", "workspace_staging_external_repo_metadata"]',
+        'kinds': list([
+        ]),
+        'metadata_entries': list([
+        ]),
+      }),
+      dict({
+        'asset_key': 'aws/cloud-prod/workspace_staging_jobs',
+        'asset_key_parts': list([
+          'aws',
+          'cloud-prod',
+          'workspace_staging_jobs',
+        ]),
+        'description': 'Snowflake stages for AWS data, creates new stages for new assets, refreses existing stages.',
+        'group_name': 'aws_stages',
+        'id': 'dagster_open_platform.__repository__.["aws", "cloud-prod", "workspace_staging_jobs"]',
+        'kinds': list([
+        ]),
+        'metadata_entries': list([
+        ]),
+      }),
+      dict({
+        'asset_key': 'aws/cloud-prod/workspace_staging_metadata',
+        'asset_key_parts': list([
+          'aws',
+          'cloud-prod',
+          'workspace_staging_metadata',
+        ]),
+        'description': 'Snowflake stages for AWS data, creates new stages for new assets, refreses existing stages.',
+        'group_name': 'aws_stages',
+        'id': 'dagster_open_platform.__repository__.["aws", "cloud-prod", "workspace_staging_metadata"]',
+        'kinds': list([
+        ]),
+        'metadata_entries': list([
+        ]),
+      }),
+      dict({
+        'asset_key': 'aws/cloud-prod/workspace_staging_partitions',
+        'asset_key_parts': list([
+          'aws',
+          'cloud-prod',
+          'workspace_staging_partitions',
+        ]),
+        'description': 'Snowflake stages for AWS data, creates new stages for new assets, refreses existing stages.',
+        'group_name': 'aws_stages',
+        'id': 'dagster_open_platform.__repository__.["aws", "cloud-prod", "workspace_staging_partitions"]',
+        'kinds': list([
+        ]),
+        'metadata_entries': list([
+        ]),
+      }),
+      dict({
+        'asset_key': 'aws/cloud-prod/workspace_staging_pipelines',
+        'asset_key_parts': list([
+          'aws',
+          'cloud-prod',
+          'workspace_staging_pipelines',
+        ]),
+        'description': 'Snowflake stages for AWS data, creates new stages for new assets, refreses existing stages.',
+        'group_name': 'aws_stages',
+        'id': 'dagster_open_platform.__repository__.["aws", "cloud-prod", "workspace_staging_pipelines"]',
+        'kinds': list([
         ]),
         'metadata_entries': list([
         ]),
@@ -38,11 +149,83 @@
     ]),
   })
 # ---
+# name: TestDynamicCommandExecution.test_command_execution[asset_success_nested_asset_json]
+  dict({
+    'asset_key': 'aws/cloud-prod/workspace_staging_pipelines',
+    'asset_key_parts': list([
+      'aws',
+      'cloud-prod',
+      'workspace_staging_pipelines',
+    ]),
+    'description': 'Snowflake stages for AWS data, creates new stages for new assets, refreses existing stages.',
+    'group_name': 'aws_stages',
+    'id': 'dagster_open_platform.__repository__.["aws", "cloud-prod", "workspace_staging_pipelines"]',
+    'kinds': list([
+    ]),
+    'metadata_entries': list([
+    ]),
+  })
+# ---
+# name: TestDynamicCommandExecution.test_command_execution[asset_success_paginated_assets_json]
+  dict({
+    'cursor': '["__snowflake_query_metadata_self_serve_customer_attribution_check_all_partitions_job"]',
+    'has_more': True,
+    'items': list([
+    ]),
+  })
+# ---
+# name: TestDynamicCommandExecution.test_command_execution[asset_success_single_asset_json]
+  dict({
+    'asset_key': 'aws/cloud-prod/workspace_staging_pipelines',
+    'asset_key_parts': list([
+      'aws',
+      'cloud-prod',
+      'workspace_staging_pipelines',
+    ]),
+    'description': 'Snowflake stages for AWS data, creates new stages for new assets, refreses existing stages.',
+    'group_name': 'aws_stages',
+    'id': 'dagster_open_platform.__repository__.["aws", "cloud-prod", "workspace_staging_pipelines"]',
+    'kinds': list([
+    ]),
+    'metadata_entries': list([
+    ]),
+  })
+# ---
 # name: TestDynamicCommandExecution.test_command_execution[deployment_empty_deployments_json]
   dict({
     'items': list([
+      dict({
+        'id': 6935,
+        'name': 'uat',
+        'type': 'PRODUCTION',
+      }),
+      dict({
+        'id': 6936,
+        'name': 'excessive',
+        'type': 'PRODUCTION',
+      }),
+      dict({
+        'id': 84915,
+        'name': 'ben-test',
+        'type': 'PRODUCTION',
+      }),
+      dict({
+        'id': 37,
+        'name': 'ecs',
+        'type': 'PRODUCTION',
+      }),
+      dict({
+        'id': 6934,
+        'name': 'staging',
+        'type': 'PRODUCTION',
+      }),
+      dict({
+        'id': 80,
+        'name': 'prod',
+        'type': 'PRODUCTION',
+      }),
     ]),
-    'total': 0,
+    'total': 6,
   })
 # ---
 # name: TestDynamicCommandExecution.test_command_execution[deployment_success_multiple_deployments_json]

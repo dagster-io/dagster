@@ -7,7 +7,7 @@ from dagster_dg_cli.dagster_plus_api.graphql_adapter.asset import (
     get_dg_plus_api_asset_via_graphql,
     list_dg_plus_api_assets_via_graphql,
 )
-from dagster_dg_cli.utils.plus.gql_client import DagsterPlusGraphQLClient
+from dagster_dg_cli.utils.plus.gql_client import IGraphQLClient
 
 if TYPE_CHECKING:
     from dagster_dg_cli.dagster_plus_api.schemas.asset import DgApiAsset, DgApiAssetList
@@ -15,7 +15,7 @@ if TYPE_CHECKING:
 
 @dataclass(frozen=True)
 class DgApiAssetApi:
-    client: DagsterPlusGraphQLClient
+    client: IGraphQLClient
 
     def list_assets(
         self,

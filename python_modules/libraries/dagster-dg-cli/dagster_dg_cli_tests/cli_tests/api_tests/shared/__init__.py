@@ -1,1 +1,1 @@
-"""Shared utilities for API test fixtures."""
+"""Shared utilities for API test recordings."""

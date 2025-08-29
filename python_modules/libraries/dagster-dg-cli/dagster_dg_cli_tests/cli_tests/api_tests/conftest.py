@@ -1,4 +1,4 @@
-"""Shared fixtures for API testing."""
+"""Shared test utilities for API testing."""
 
 from typing import TYPE_CHECKING
 from unittest.mock import Mock

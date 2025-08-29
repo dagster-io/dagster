@@ -64,7 +64,7 @@
   '''
 # ---
 # name: TestProcessDeploymentsResponse.test_empty_response_processing[0]
-  DeploymentList(items=[], total=0)
+  DeploymentList(items=[Deployment(id=6935, name='uat', type=<DeploymentType.PRODUCTION: 'PRODUCTION'>), Deployment(id=6936, name='excessive', type=<DeploymentType.PRODUCTION: 'PRODUCTION'>), Deployment(id=84915, name='ben-test', type=<DeploymentType.PRODUCTION: 'PRODUCTION'>), Deployment(id=37, name='ecs', type=<DeploymentType.PRODUCTION: 'PRODUCTION'>), Deployment(id=6934, name='staging', type=<DeploymentType.PRODUCTION: 'PRODUCTION'>), Deployment(id=80, name='prod', type=<DeploymentType.PRODUCTION: 'PRODUCTION'>)], total=6)
 # ---
 # name: TestProcessDeploymentsResponse.test_missing_full_deployments_key[0]
   DeploymentList(items=[], total=0)

@@ -1,143 +1,239 @@
 # API Test Infrastructure
 
-This directory contains infrastructure for testing Dagster Plus CLI API commands with syrupy snapshot testing and GraphQL response mocking.
+## QUICKSTART
 
-## Quick Start
+### Add a new test in 3 steps:
 
-### Record fixtures for a new test scenario:
-
-1. **Add scenario to registry**: Edit `{domain}_tests/scenarios.yaml`:
+1. **Add your command to `scenarios.yaml`:**
 
    ```yaml
-   success_list_assets:
+   my_new_test:
      command: "dg api asset list --json"
    ```
 
-2. **Record GraphQL responses**: `dagster-dev dg-api-record asset --fixture success_list_assets`
+2. **Record the GraphQL response:**
 
-3. **Run tests to generate syrupy snapshots**: `pytest api_tests/{domain}_tests/ --snapshot-update`
+   ```bash
+   dagster-dev dg-api-record asset --fixture my_new_test
+   ```
 
-## Core Concepts
+3. **Generate snapshots:**
+   ```bash
+   pytest api_tests/asset_tests/ --snapshot-update
+   ```
 
-### Test Infrastructure
+That's it! Your test is now ready. 🎉
 
-The API test infrastructure provides a comprehensive framework for testing CLI commands that interact with GraphQL APIs. It separates concerns between:
+### Running tests:
 
-- **GraphQL response recording**: Capturing real API responses for test scenarios
-- **Business logic testing**: Validating data processing functions
-- **CLI integration testing**: Ensuring commands produce correct output
-- **REST compliance**: Enforcing API design conventions
+```bash
+# Run all tests for a domain
+pytest api_tests/asset_tests/
 
-### Domain Organization
+# Update snapshots when output changes
+pytest api_tests/asset_tests/ --snapshot-update
+```
 
-Each API domain (deployments, assets, etc.) maintains its own test directory with:
+## Overview
 
-- **Scenario registry** (`scenarios.yaml`): Defines test commands and their context
-- **Recorded fixtures**: GraphQL responses as JSON files (e.g., `01_placeholder_query.json`)
-- **Test modules**: Business logic and CLI integration tests
-- **Snapshots**: Syrupy-managed expected outputs for validation
+This directory contains the test infrastructure for Dagster Plus CLI API commands. The system uses:
 
-## Test Types
+- **GraphQL response recording** from real APIs
+- **Syrupy snapshot testing** for output validation
+- **Dynamic test discovery** from YAML configuration files
 
-### Business Logic Tests
+## Directory Structure
 
-Pure function tests that validate data processing logic without external dependencies. These tests use recorded GraphQL responses as input and snapshot the transformed output.
+```
+api_tests/
+├── asset_tests/              # Asset API domain tests
+│   ├── scenarios.yaml        # Test scenario definitions
+│   ├── recordings/             # Recorded GraphQL responses
+│   │   ├── success_single_asset/
+│   │   │   └── 01_response.json
+│   │   └── error_asset_not_found/
+│   │       └── 01_response.json
+│   ├── __snapshots__/        # Syrupy test snapshots
+│   └── test_business_logic.py
+├── deployment_tests/         # Deployment API domain tests
+│   └── ...                   # Same structure as asset_tests
+└── test_dynamic_command_execution.py  # Shared test runner
+```
 
-### Dynamic CLI Integration Tests
+## Key Concepts
 
-Automated tests that execute CLI commands with mocked GraphQL responses. The test framework discovers scenarios from YAML registries and validates outputs using syrupy snapshots.
+### Scenarios
 
-The `test_dynamic_command_execution.py` file:
+Each test scenario is defined in `scenarios.yaml` with:
 
-- Discovers all scenarios from `scenarios.yaml` files across domains
-- Loads corresponding GraphQL response fixtures (JSON files)
-- Executes commands with mocked GraphQL clients
-- Validates output using syrupy snapshots (both JSON and text formats)
+- **Scenario name**: Descriptive identifier (e.g., `success_single_asset`)
+- **Command**: The CLI command to test (e.g., `dg api asset list --json`)
 
-### REST Compliance Tests
+### Recordings
 
-Automated validation ensuring API classes follow REST conventions:
+GraphQL responses are recorded from live APIs and stored as JSON files:
 
-- Method naming patterns (get*, list*, create*, update*, delete\_)
-- Type signatures (primitives + Pydantic models only)
-- Response consistency (list methods return standardized structures)
-- Parameter patterns (consistent naming and typing conventions)
+- Located in `recordings/{scenario_name}/01_response.json`
+- Multiple responses supported with numbered files (01, 02, etc.)
+- Automatically created by `dg-api-record` command
 
-## Fixture Structure
+### Snapshots
 
-Each test scenario has a corresponding directory under `{domain}_tests/fixtures/{scenario_name}/` containing:
+Output validation uses syrupy snapshots:
 
-- `01_placeholder_query.json`: The GraphQL response data used by tests
-- Additional numbered JSON files if multiple GraphQL calls are needed
+- Automatically generated on first test run
+- Stored in `__snapshots__/` directories
+- Both JSON and text output formats supported
 
-The JSON files are loaded by `load_deployment_response_fixture()` (or equivalent for other domains) and used to mock GraphQL responses during testing.
+## Common Tasks
 
-## Working with Test Scenarios
+### Add a new API domain
 
-### Creating New Scenarios
+1. **Create domain directory:**
 
-1. **Define the scenario** in the domain's `scenarios.yaml` file with a descriptive name and command
-2. **Record live responses** using `dagster-dev dg-api-record` to capture real API interactions
-3. **Generate snapshots** by running tests with `--snapshot-update` to establish baselines
+   ```bash
+   mkdir api_tests/my_domain_tests
+   mkdir api_tests/my_domain_tests/recordings
+   ```
 
-### Updating Existing Scenarios
+2. **Create scenarios.yaml:**
 
-When CLI output changes (e.g., formatting updates, new fields):
+   ```yaml
+   # api_tests/my_domain_tests/scenarios.yaml
+   success_list:
+     command: "dg api my_domain list --json"
+   ```
 
-- Run tests with `--snapshot-update` to accept new outputs
-- Review snapshot diffs to ensure changes are intentional
-- Commit both code and snapshot changes together
+3. **Record responses:**
+
+   ```bash
+   dagster-dev dg-api-record my_domain
+   ```
+
+4. **Run tests to generate snapshots:**
+   ```bash
+   pytest api_tests/my_domain_tests/ --snapshot-update
+   ```
+
+### Update existing tests
+
+When CLI output changes:
+
+```bash
+# Re-run tests and update snapshots
+pytest api_tests/asset_tests/ --snapshot-update
+
+# Review changes
+git diff api_tests/asset_tests/__snapshots__/
+```
 
 When API responses change:
 
-- Re-record fixtures using `dagster-dev dg-api-record`
-- Update snapshots to match new responses
-- Validate that business logic handles the changes correctly
+```bash
+# Re-record responses
+dagster-dev dg-api-record asset --fixture success_single_asset
 
-## Key Commands
+# Update snapshots
+pytest api_tests/asset_tests/ --snapshot-update
+```
 
-- `dagster-dev dg-api-record {domain}` - Record all scenarios for a domain
-- `dagster-dev dg-api-record {domain} --fixture {name}` - Record specific scenario
-- `pytest api_tests/{domain}_tests/ --snapshot-update` - Update snapshots when outputs change
+### Debug test failures
 
-## Extending the Test Suite
+```bash
+# Run tests with verbose output
+pytest api_tests/asset_tests/ -v
 
-### Adding New API Domains
+# Run specific test scenario
+pytest api_tests/asset_tests/ -k "success_single_asset"
 
-When introducing a new API domain:
+# Show detailed diff on snapshot mismatch
+pytest api_tests/asset_tests/ --snapshot-diff
+```
 
-1. Create the domain test directory structure
-2. Define test scenarios in `scenarios.yaml`
-3. Implement fixture loading functions
-4. Record initial fixtures from the live API
-5. Write domain-specific tests as needed
-6. Ensure REST compliance tests cover new API classes
+## Command Reference
 
-### Adding Test Categories
+### dg-api-record
 
-The infrastructure supports various test categories beyond the core types:
+Record GraphQL responses for test scenarios:
 
-- **Error handling tests**: Validate graceful failures and error messages
-- **Performance tests**: Monitor response times and data processing efficiency
-- **Integration tests**: Verify interactions between multiple API domains
-- **Migration tests**: Ensure backward compatibility during API evolution
+```bash
+# Record all scenarios in a domain
+dagster-dev dg-api-record asset
 
-## Architecture Benefits
+# Record specific scenario
+dagster-dev dg-api-record asset --fixture success_single_asset
 
-### Development Velocity
+# Available domains
+dagster-dev dg-api-record [asset|deployment|run|...]
+```
 
-- **Rapid iteration**: Update snapshots instantly when outputs change intentionally
-- **Real data testing**: Work with actual API responses, not mocked data
-- **Parallel development**: Multiple domains can evolve independently
+### pytest options
 
-### Maintainability
+```bash
+--snapshot-update    # Accept current output as new baseline
+--snapshot-diff      # Show detailed diff on mismatch
+-k PATTERN          # Run only tests matching pattern
+-v                  # Verbose output
+```
 
-- **Clear separation**: GraphQL fixtures, business logic, and CLI output are distinct
-- **Version control friendly**: Human-readable diffs for all test artifacts
-- **Automated compliance**: REST conventions enforced programmatically
+## Test Types
 
-### Test Quality
+### Business Logic Tests (`test_business_logic.py`)
 
-- **Comprehensive coverage**: Every command path tested with real scenarios
-- **Regression detection**: Snapshots catch unintended output changes
-- **Consistency validation**: Ensures uniform behavior across API domains
+- Test data processing functions in isolation
+- Use recorded responses as input
+- Validate transformed output with snapshots
+
+### Dynamic Command Execution Tests (`test_dynamic_command_execution.py`)
+
+- Automatically discover and run all scenarios
+- Mock GraphQL client with recorded responses
+- Validate CLI output against snapshots
+
+### REST Compliance Tests (`test_rest_compliance.py`)
+
+- Validate API method naming conventions
+- Check type signatures and response patterns
+- Ensure consistency across API domains
+
+## Best Practices
+
+1. **Descriptive scenario names**: Use clear names like `success_multiple_assets` or `error_not_found`
+2. **Test both success and error cases**: Include `error_*` scenarios for failure paths
+3. **Keep recordings minimal**: Record only the data needed for tests
+4. **Review snapshot changes**: Always inspect diffs before committing
+5. **Update recordings when APIs change**: Re-record to match current behavior
+
+## Troubleshooting
+
+### "Exhausted responses" error
+
+The test tried to make more GraphQL calls than recorded. Re-record the scenario.
+
+### Snapshot mismatches
+
+Either the output changed (update snapshots) or there's a regression (fix the code).
+
+### Missing recordings
+
+Run `dg-api-record` to create the recording directory and record responses.
+
+### Tests not discovering scenarios
+
+Ensure `scenarios.yaml` exists and has valid YAML syntax.
+
+## Architecture Notes
+
+The test infrastructure separates concerns:
+
+- **Recording**: Captures real API responses once
+- **Mocking**: Replays recorded responses during tests
+- **Validation**: Snapshots verify output consistency
+- **Discovery**: Dynamic test generation from YAML
+
+This design enables:
+
+- Fast test execution (no network calls)
+- Reliable tests (deterministic responses)
+- Easy updates (re-record or update snapshots)
+- Broad coverage (all scenarios tested automatically)

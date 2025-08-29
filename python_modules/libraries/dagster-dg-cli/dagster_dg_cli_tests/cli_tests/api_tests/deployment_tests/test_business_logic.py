@@ -15,7 +15,7 @@ from dagster_dg_cli.dagster_plus_api.schemas.deployment import (
 )
 
 from dagster_dg_cli_tests.cli_tests.api_tests.test_dynamic_command_execution import (
-    load_fixture_graphql_responses,
+    load_recorded_graphql_responses,
 )
 
 
@@ -24,7 +24,7 @@ class TestProcessDeploymentsResponse:
 
     def test_successful_response_processing(self, snapshot):
         """Test processing a successful GraphQL response."""
-        response = load_fixture_graphql_responses("deployment", "success_multiple_deployments")[0]
+        response = load_recorded_graphql_responses("deployment", "success_multiple_deployments")[0]
         result = process_deployments_response(response)
 
         # Snapshot the entire result to capture structure and data
@@ -32,7 +32,7 @@ class TestProcessDeploymentsResponse:
 
     def test_response_processing_with_limit(self, snapshot):
         """Test response processing with a limit applied."""
-        response = load_fixture_graphql_responses("deployment", "success_multiple_deployments")[0]
+        response = load_recorded_graphql_responses("deployment", "success_multiple_deployments")[0]
         result = process_deployments_response(response)
 
         # Snapshot the full result (limit functionality moved to higher level)
@@ -40,7 +40,7 @@ class TestProcessDeploymentsResponse:
 
     def test_empty_response_processing(self, snapshot):
         """Test processing an empty GraphQL response."""
-        response = load_fixture_graphql_responses("deployment", "empty_deployments")[0]
+        response = load_recorded_graphql_responses("deployment", "empty_deployments")[0]
         result = process_deployments_response(response)
 
         # Snapshot empty result
@@ -61,7 +61,7 @@ class TestFormatDeployments:
     def _create_sample_deployment_list(self):
         """Create sample DeploymentList from fixture data."""
         # Load from fixture and convert to domain objects
-        response = load_fixture_graphql_responses("deployment", "success_multiple_deployments")[0]
+        response = load_recorded_graphql_responses("deployment", "success_multiple_deployments")[0]
         deployments = [
             Deployment(
                 id=dep["deploymentId"],
