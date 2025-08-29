@@ -142,7 +142,7 @@ def dg_api_options(
 
             # Check if we're in test mode with DgApiTestContext
             # Import here to avoid circular imports
-            from dagster_dg_cli.cli.api.client import DgApiTestContext
+            from dagster_dg_cli.cli.api.shared import DgApiTestContext
 
             if ctx.obj and isinstance(ctx.obj, DgApiTestContext):
                 organization = ctx.obj.organization
