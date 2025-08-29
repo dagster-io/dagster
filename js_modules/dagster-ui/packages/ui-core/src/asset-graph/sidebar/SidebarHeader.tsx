@@ -1,6 +1,7 @@
 import {Box, Button, ButtonGroup, Icon, Tooltip} from '@dagster-io/ui-components';
 import * as React from 'react';
-import styled from 'styled-components';
+
+import styles from './SidebarHeader.module.css';
 
 interface SidebarHeaderProps {
   sidebarViewType: 'tree' | 'group';
@@ -8,11 +9,11 @@ interface SidebarHeaderProps {
   hideSidebar: () => void;
 }
 
-export const SidebarHeader: React.FC<SidebarHeaderProps> = ({
+export const SidebarHeader = ({
   sidebarViewType,
   setSidebarViewType,
   hideSidebar,
-}) => {
+}: SidebarHeaderProps) => {
   return (
     <Box
       style={{
@@ -22,7 +23,7 @@ export const SidebarHeader: React.FC<SidebarHeaderProps> = ({
         padding: '12px',
       }}
     >
-      <ButtonGroupWrapper>
+      <div className={styles.buttonGroupWrapper}>
         <ButtonGroup
           activeItems={new Set([sidebarViewType])}
           buttons={[
@@ -33,23 +34,10 @@ export const SidebarHeader: React.FC<SidebarHeaderProps> = ({
             setSidebarViewType(id);
           }}
         />
-      </ButtonGroupWrapper>
+      </div>
       <Tooltip content="Hide sidebar">
         <Button icon={<Icon name="panel_show_right" />} onClick={hideSidebar} />
       </Tooltip>
     </Box>
   );
 };
-
-const ButtonGroupWrapper = styled.div`
-  > * {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    > * {
-      place-content: center;
-    }
-    span {
-      flex: initial;
-    }
-  }
-`;

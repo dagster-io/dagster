@@ -51,7 +51,7 @@ export const TreeViewPanel = ({
       <div
         style={{
           display: isHidden ? 'none' : 'block',
-          height: isHidden ? 0 : '100%',
+          height: '100%',
           overflow: 'hidden',
         }}
       >

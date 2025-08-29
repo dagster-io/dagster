@@ -14,12 +14,7 @@ export function getRootNodes(graphData: GraphData): string[] {
         !Object.keys(graphData.upstream[id] ?? {}).filter((id) => graphData.nodes[id]).length,
     )
     .sort((a, b) =>
-      COLLATOR.compare(
-        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-        getDisplayName(graphData.nodes[a]!),
-        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-        getDisplayName(graphData.nodes[b]!),
-      ),
+      COLLATOR.compare(getDisplayName(graphData.nodes[a]), getDisplayName(graphData.nodes[b])),
     );
 }
 
@@ -32,10 +27,8 @@ export function getLeafNodes(graphData: GraphData): string[] {
     )
     .sort((a, b) =>
       COLLATOR.compare(
-        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-        getDisplayName(graphData.nodes[a]!),
-        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-        getDisplayName(graphData.nodes[b]!),
+        graphData.nodes[a] ? getDisplayName(graphData.nodes[a]) : '',
+        graphData.nodes[b] ? getDisplayName(graphData.nodes[b]) : '',
       ),
     );
 }
@@ -193,7 +186,6 @@ export function buildFolderNodes(
   return folderNodes;
 }
 
-function getDisplayName(node: GraphNode) {
-  // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-  return node.assetKey.path[node.assetKey.path.length - 1]!;
+function getDisplayName(node?: GraphNode) {
+  return node?.assetKey.path[node?.assetKey.path.length - 1] ?? '';
 }

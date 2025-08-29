@@ -17,8 +17,7 @@ export const SearchInput = ({allAssetKeys, selectNode}: SearchInputProps) => {
   const searchValues = React.useMemo(() => {
     return allAssetKeys.map((key) => ({
       value: JSON.stringify(key.path),
-      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-      label: key.path[key.path.length - 1]!,
+      label: key.path[key.path.length - 1] ?? '',
     }));
   }, [allAssetKeys]);
 

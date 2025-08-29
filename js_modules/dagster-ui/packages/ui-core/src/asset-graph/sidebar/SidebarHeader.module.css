@@ -1,0 +1,12 @@
+.buttonGroupWrapper > * {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+}
+
+.buttonGroupWrapper > * > * {
+  place-content: center;
+}
+
+.buttonGroupWrapper > * span {
+  flex: initial;
+}
