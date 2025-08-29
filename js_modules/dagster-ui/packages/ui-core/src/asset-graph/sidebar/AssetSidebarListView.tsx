@@ -125,7 +125,11 @@ export const AssetSidebarListView = ({
             // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
             renderedNodes[(nextIndex + renderedNodes.length) % renderedNodes.length]!;
           setSelectedNode(nextNode);
-          selectNode(e, nextNode.id, 'path' in nextNode ? nextNode.path : undefined);
+          selectNode(
+            e,
+            nextNode.id,
+            'path' in nextNode ? {path: nextNode.path, direction} : undefined,
+          );
         } else if (e.code === 'ArrowLeft' || e.code === 'ArrowRight') {
           const open = e.code === 'ArrowRight';
           const node = renderedNodes[indexOfLastSelectedNode];
@@ -182,7 +186,11 @@ export const AssetSidebarListView = ({
                   }}
                   selectThisNode={(e) => {
                     setSelectedNode(node);
-                    selectNode(e, node.id, 'path' in node ? node.path : undefined);
+                    selectNode(
+                      e,
+                      node.id,
+                      'path' in node ? {path: node.path, direction} : undefined,
+                    );
                   }}
                   explorerPath={explorerPath}
                   onChangeExplorerPath={onChangeExplorerPath}
