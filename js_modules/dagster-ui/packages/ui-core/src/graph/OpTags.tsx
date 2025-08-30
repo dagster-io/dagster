@@ -21,6 +21,7 @@ import toml from './kindtag-images/toml.svg';
 import airbyte from './kindtag-images/tool-airbyte-color.svg';
 import airflow from './kindtag-images/tool-airflow-color.svg';
 import airtable from './kindtag-images/tool-airtable-color.svg';
+import arrow from './kindtag-images/tool-arrow-color.svg';
 import atlan from './kindtag-images/tool-atlan-color.svg';
 import aws from './kindtag-images/tool-aws-color.svg';
 import ax from './kindtag-images/tool-ax-color.svg';
@@ -228,6 +229,7 @@ type KnownTag = {
 };
 
 export type KnownTagType =
+  | 'arrow'
   | 'ax'
   | 'botorch'
   | 'json'
@@ -1391,6 +1393,10 @@ export const KNOWN_TAGS: Record<KnownTagType, KnownTag> = {
   databento: {
     icon: databento,
     content: 'Databento',
+  },
+  arrow: {
+    icon: arrow,
+    content: 'Arrow',
   },
   expand: {color: '#D7A540', content: 'Expand'},
 };
