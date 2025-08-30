@@ -5,20 +5,17 @@ sidebar_position: 40
 title: Migrate from Dagster+ Serverless to Hybrid
 ---
 
-After utilizing a Dagster+ [Serverless](/deployment/dagster-plus/serverless) deployment, you may decide to leverage your own infrastructure to execute your code. Transitioning to a Hybrid deployment requires only a few steps and can be done without any loss of execution history or metadata, allowing you to maintain continuity and control over your operations.
+After using a Dagster+ [Serverless](/deployment/dagster-plus/serverless) deployment, you may decide to use your own infrastructure to execute your code. Transitioning to a [Hybrid deployment](/deployment/dagster-plus/hybrid) only requires a few steps, and can be done without any loss of execution history or metadata, allowing you to maintain continuity and control over your operations.
 
 :::warning
+
 Transitioning from Serverless to Hybrid requires some downtime, as your Dagster+ deployment won't have an agent to execute user code.
+
+:::info Prerequisites
+
+To follow the steps in this guide, you'll need **Organization Admin** permissions in your Dagster+ account.
+
 :::
-
-<details>
-  <summary>Prerequisites</summary>
-
-To follow the steps in this guide, you'll need:
-
-- **Organization Admin** permissions in your Dagster+ account
-
-</details>
 
 ## Step 1: Deactivate your Serverless agent
 
@@ -34,9 +31,9 @@ It may take a few minutes for the agent to deactivate and be removed from the li
 Next, you'll need to create a Hybrid agent to execute your code. Follow the setup instructions for the agent of your choice:
 
 - **[Amazon Web Services (AWS)](/deployment/dagster-plus/hybrid/amazon-ecs)**, which launches user code as Amazon Elastic Container Service (ECS) tasks.
-- **[Docker](/deployment/dagster-plus/hybrid/docker)**, which launches user code in Docker containers on your machine
-- **[Kubernetes](/deployment/dagster-plus/hybrid/kubernetes)**, which launches user code on a Kubernetes cluster
-- **[Local](/deployment/dagster-plus/hybrid/local)**, which launches user code in operating system subprocesses on your machine
+- **[Docker](/deployment/dagster-plus/hybrid/docker)**, which launches user code in Docker containers on your machine.
+- **[Kubernetes](/deployment/dagster-plus/hybrid/kubernetes)**, which launches user code on a Kubernetes cluster.
+- **[Local](/deployment/dagster-plus/hybrid/local)**, which launches user code in operating system subprocesses on your machine.
 
 ## Step 3: Confirm successful setup
 
