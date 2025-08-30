@@ -10,8 +10,6 @@ class GraphenePipelineRunStatsSnapshot(graphene.Interface):
     runId = graphene.NonNull(graphene.String)
     stepsSucceeded = graphene.NonNull(graphene.Int)
     stepsFailed = graphene.NonNull(graphene.Int)
-    materializations = graphene.NonNull(graphene.Int)
-    expectations = graphene.NonNull(graphene.Int)
     enqueuedTime = graphene.Field(graphene.Float)
     launchTime = graphene.Field(graphene.Float)
     startTime = graphene.Field(graphene.Float)
@@ -26,8 +24,6 @@ class GrapheneRunStatsSnapshot(graphene.ObjectType):
     runId = graphene.NonNull(graphene.String)
     stepsSucceeded = graphene.NonNull(graphene.Int)
     stepsFailed = graphene.NonNull(graphene.Int)
-    materializations = graphene.NonNull(graphene.Int)
-    expectations = graphene.NonNull(graphene.Int)
     enqueuedTime = graphene.Field(graphene.Float)
     launchTime = graphene.Field(graphene.Float)
     startTime = graphene.Field(graphene.Float)
@@ -44,8 +40,6 @@ class GrapheneRunStatsSnapshot(graphene.ObjectType):
             runId=self._stats.run_id,
             stepsSucceeded=self._stats.steps_succeeded,
             stepsFailed=self._stats.steps_failed,
-            materializations=self._stats.materializations,
-            expectations=self._stats.expectations,
             enqueuedTime=stats.enqueued_time,
             launchTime=stats.launch_time,
             startTime=self._stats.start_time,
