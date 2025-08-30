@@ -14,6 +14,15 @@
 
 ### 1. **deployment** ✅ _Already implemented_
 
+
+;lkasd
+lfkjasldkfja
+kj
+asld
+
+
+
+        
 ```bash
 # Implemented
 dg api deployment list [--json]
