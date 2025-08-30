@@ -1,0 +1,8 @@
+tree my_project/defs
+
+my_project/defs
+├── __init__.py
+└── generate_revenue_report
+    └── defs.yaml
+
+2 directories, 2 files
