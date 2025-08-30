@@ -390,6 +390,7 @@ def test_run_task(ecs, ec2, subnet):
     response = ecs.run_task(taskDefinition="container")
     assert response["tasks"][0]["containers"]
     # ECS does not expose the task definition's environment when
+    # does not expose the task definition's environment when
     # describing tasks
     assert "FOO" not in response
 
