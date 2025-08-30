@@ -43,6 +43,10 @@ class Executor(ABC):
         Returns: RetryMode
         """
 
+    @property
+    def allow_execution_after_failed_steps(self) -> bool:
+        return False
+
     def get_failure_or_retry_event_after_crash(
         self,
         step_context: "IStepContext",

@@ -132,6 +132,10 @@ class IPlanContext(ABC):
         return self.plan_data.execution_plan
 
     @property
+    def allow_execution_after_failed_steps(self) -> bool:
+        return self.plan_data.allow_execution_after_failed_steps
+
+    @property
     @abstractmethod
     def output_capture(self) -> Optional[Mapping[StepOutputHandle, Any]]:
         raise NotImplementedError()
@@ -174,6 +178,7 @@ class PlanData(NamedTuple):
     execution_plan: "ExecutionPlan"
     raise_on_error: bool = False
     retry_mode: RetryMode = RetryMode.DISABLED
+    allow_execution_after_failed_steps: bool = False
 
 
 class ExecutionData(NamedTuple):

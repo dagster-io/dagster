@@ -269,3 +269,84 @@ def test_explicit_failure():
 
     assert exc_info.value.description == "Always fails."
     assert exc_info.value.metadata == {"always_fails": MetadataValue.text("why")}
+
+
+def _get_partial_job() -> dg.JobDefinition:
+    @dg.op(
+        out={
+            "a": dg.Out(),
+            "b": dg.Out(),
+            "c": dg.Out(),
+            "d": dg.Out(),
+            "e": dg.Out(),
+        }
+    )
+    def many_outputs(inp: int):
+        for output_name in ["a", "b", "c"]:
+            yield dg.Output(output_name, output_name)
+        raise Exception("broken!")
+
+    @dg.op
+    def all_pass(a: str, b: str, c: str):
+        return 1
+
+    @dg.op
+    def all_fail(d: str, e: str):
+        return 1
+
+    @dg.op
+    def partial(a: str, e: str):
+        return 1
+
+    @dg.op
+    def downstream(inp: int):
+        pass
+
+    @dg.op
+    def root():
+        return 1
+
+    @dg.job()
+    def partial_job():
+        root_val = root()
+        downstream.alias("downstream_of_root")(root_val)
+        a, b, c, d, e = many_outputs(root_val)
+        downstream.alias("downstream_of_all_pass")(all_pass(a, b, c))
+        downstream.alias("downstream_of_all_fail")(all_fail(d, e))
+        downstream.alias("downstream_of_partial")(partial(a, e))
+
+    return partial_job
+
+
+@pytest.mark.parametrize("allow_execution_after_failed_steps", [True, False])
+@pytest.mark.parametrize("executor", ["in_process", "multiprocess"])
+def test_some_inputs_failed(allow_execution_after_failed_steps: bool, executor: str) -> None:
+    run_config = dg.RunConfig(
+        execution={
+            "config": {
+                executor: {"allow_execution_after_failed_steps": allow_execution_after_failed_steps}
+            }
+        }
+    )
+    with dg.instance_for_test() as instance:
+        with dg.execute_job(
+            dg.reconstructable(_get_partial_job),
+            instance=instance,
+            run_config=run_config.to_config_dict(),
+        ) as result:
+            assert did_op_succeed("root", result)
+            assert did_op_succeed("downstream_of_root", result)
+            assert did_op_fail("many_outputs", result)
+
+            if allow_execution_after_failed_steps:
+                assert did_op_succeed("all_pass", result)
+            else:
+                assert not did_op_succeed("all_pass", result)
+
+
+# should a step execute after all step dependencies have completed or after all upstream outputs have completed?
+# should a step execute AS SOON AS all upstream outputs have completed, or should it wait for the step
+
+# StepLaunch.ON_UPSTREAM_STEPS_COMPLETE
+#
+# StepExecution.ON_UPSTREAM_OUTPUTS_COMPLETE

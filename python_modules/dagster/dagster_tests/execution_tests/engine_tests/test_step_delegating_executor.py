@@ -329,6 +329,7 @@ def test_step_delegating_executor_verify_step(exc_init):
             "check_step_health_interval_seconds"
         ),
         should_verify_step=True,
+        allow_execution_after_failed_steps=exc_init["allow_execution_after_failed_steps"],  # type: ignore
     )
 
 

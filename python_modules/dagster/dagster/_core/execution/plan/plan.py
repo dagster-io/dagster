@@ -890,6 +890,7 @@ class ExecutionPlan(
         max_concurrent: Optional[int] = None,
         tag_concurrency_limits: Optional[list[dict[str, Any]]] = None,
         instance_concurrency_context: Optional[InstanceConcurrencyContext] = None,
+        allow_execution_after_failed_steps: bool = False,
     ) -> "ActiveExecution":
         from dagster._core.execution.plan.active import ActiveExecution
 
@@ -900,6 +901,7 @@ class ExecutionPlan(
             max_concurrent,
             tag_concurrency_limits,
             instance_concurrency_context=instance_concurrency_context,
+            allow_execution_after_failed_steps=allow_execution_after_failed_steps,
         )
 
     def step_handle_for_single_step_plans(

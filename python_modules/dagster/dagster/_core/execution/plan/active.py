@@ -52,6 +52,7 @@ class ActiveExecution:
         max_concurrent: Optional[int] = None,
         tag_concurrency_limits: Optional[list[dict[str, Any]]] = None,
         instance_concurrency_context: Optional[InstanceConcurrencyContext] = None,
+        allow_execution_after_failed_steps: bool = False,
     ):
         self._plan: ExecutionPlan = check.inst_param(
             execution_plan, "execution_plan", ExecutionPlan
@@ -59,6 +60,7 @@ class ActiveExecution:
         self._retry_mode = check.inst_param(retry_mode, "retry_mode", RetryMode)
         self._retry_state = self._plan.known_state.get_retry_state()
         self._instance_concurrency_context = instance_concurrency_context
+        self._allow_execution_after_failed_steps = allow_execution_after_failed_steps
 
         self._sort_key_fn: Callable[[ExecutionStep], float] = (
             check.opt_callable_param(
@@ -212,6 +214,39 @@ class ActiveExecution:
                     return True
         return False
 
+    def _should_abandon_step(
+        self, step_key: str, depends_on_steps: set[str], failed_or_abandoned_steps: set[str]
+    ) -> bool:
+        if self._allow_execution_after_failed_steps:
+            # more complicated logic checks that all upstream outputs have completed,
+            # rather than just checking the upstream step states.
+            step = self.get_step_by_key(step_key)
+            for step_input in step.step_inputs:
+                if any(
+                    source_handle not in self._step_outputs
+                    and source_handle.step_key in failed_or_abandoned_steps
+                    for source_handle in step_input.get_step_output_handle_dependencies()
+                ):
+                    return True
+            return False
+        else:
+            return bool(depends_on_steps.intersection(failed_or_abandoned_steps))
+
+    def _should_execute_step(
+        self, step_key: str, depends_on_steps: set[str], successful_steps: set[str]
+    ) -> bool:
+        if not self._allow_execution_after_failed_steps:
+            return depends_on_steps.issubset(successful_steps)
+
+        step = self.get_step_by_key(step_key)
+        for step_input in step.step_inputs:
+            if any(
+                source_handle not in self._step_outputs
+                for source_handle in step_input.get_step_output_handle_dependencies()
+            ):
+                return False
+        return True
+
     def _update(self) -> None:
         """Moves steps from _pending to _executable / _pending_skip / _pending_retry
         as a function of what has been _completed.
@@ -222,7 +257,6 @@ class ActiveExecution:
 
         successful_or_skipped_steps = self._success | self._skipped
         failed_or_abandoned_steps = self._failed | self._abandoned
-        resolved_steps = self._success | self._skipped | self._failed | self._abandoned
 
         if self._new_dynamic_mappings:
             new_step_deps = self._plan.resolve(self._completed_dynamic_outputs)
@@ -232,13 +266,12 @@ class ActiveExecution:
             self._new_dynamic_mappings = False
 
         for step_key, depends_on_steps in self._pending.items():
-            if depends_on_steps.issubset(resolved_steps):
-                if self._should_skip_step(step_key, successful_or_skipped_steps):
-                    new_steps_to_skip.append(step_key)
-                elif depends_on_steps.intersection(failed_or_abandoned_steps):
-                    new_steps_to_abandon.append(step_key)
-                else:
-                    new_steps_to_execute.append(step_key)
+            if self._should_skip_step(step_key, successful_or_skipped_steps):
+                new_steps_to_skip.append(step_key)
+            elif self._should_abandon_step(step_key, depends_on_steps, failed_or_abandoned_steps):
+                new_steps_to_abandon.append(step_key)
+            elif self._should_execute_step(step_key, depends_on_steps, self._success):
+                new_steps_to_execute.append(step_key)
 
         for key in new_steps_to_execute:
             self._executable.append(key)

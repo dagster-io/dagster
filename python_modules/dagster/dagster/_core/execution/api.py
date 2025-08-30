@@ -588,6 +588,7 @@ def execute_plan_iterator(
     instance: DagsterInstance,
     retry_mode: Optional[RetryMode] = None,
     run_config: Optional[Mapping[str, object]] = None,
+    allow_execution_after_failed_steps: bool = False,
 ) -> Iterator[DagsterEvent]:
     check.inst_param(execution_plan, "execution_plan", ExecutionPlan)
     check.inst_param(job, "job", IJob)
@@ -610,6 +611,7 @@ def execute_plan_iterator(
                 run_config=run_config,
                 dagster_run=dagster_run,
                 instance=instance,
+                allow_execution_after_failed_steps=allow_execution_after_failed_steps,
             ),
         )
     )

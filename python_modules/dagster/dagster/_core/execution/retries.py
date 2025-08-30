@@ -27,6 +27,14 @@ def get_retries_config():
     )
 
 
+def get_allow_execution_after_failed_steps_config():
+    return Field(
+        bool,
+        is_required=False,
+        description="Allow execution after failed steps.",
+    )
+
+
 @whitelist_for_serdes
 class RetryMode(Enum):
     ENABLED = "enabled"
