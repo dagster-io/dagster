@@ -27,7 +27,7 @@ For this asset, we need to define the structure of the request that it is expect
 Other than that, defining this asset is the same as our previous assets. Copy the following code beneath `product_performance`.
 
 <CodeExample
-  path="docs_snippets/docs_snippets/guides/tutorials/etl_tutorial/src/etl_tutorial/defs/assets.py"
+  path="docs_projects/project_etl_tutorial/src/etl_tutorial/defs/assets.py"
   language="python"
   startAfter="start_adhoc_request_asset"
   endBefore="end_adhoc_request_asset"
@@ -45,12 +45,12 @@ Sensors include the following elements:
 
 First we will use `dg` to create the sensor file:
 
-<CliInvocationExample path="docs_snippets/docs_snippets/guides/tutorials/etl_tutorial/commands/dg-scaffold-sensors.txt" />
+<CliInvocationExample path="docs_projects/project_etl_tutorial/commands/dg-scaffold-sensors.txt" />
 
 Now copy the following sensor code in the `sensors.py` file:
 
 <CodeExample
-  path="docs_snippets/docs_snippets/guides/tutorials/etl_tutorial/src/etl_tutorial/defs/sensors.py"
+  path="docs_projects/project_etl_tutorial/src/etl_tutorial/defs/sensors.py"
   language="python"
   title="src/etl_tutorial/defs/sensors.py"
 />
@@ -83,7 +83,7 @@ Now copy the following sensor code in the `sensors.py` file:
 
 One new files have been added to the `etl_tutorial` module, `sensors.py`:
 
-<CliInvocationExample path="docs_snippets/docs_snippets/guides/tutorials/etl_tutorial/tree/step-6.txt" />
+<CliInvocationExample path="docs_projects/project_etl_tutorial/tree/step-6.txt" />
 
 Sensors provide a fine grained way to build event driven systems. Combined with declarative automation, there are a number of ways to automate your pipelines.
 

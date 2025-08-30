@@ -20,7 +20,7 @@ There are many ways to partition an asset. When an asset is partitioned, it is s
 Dagster natively supports partitioning assets by datetime groups. To create the monthly partition, copy the following code below the `missing_dimension_check` asset check in the `assets.py` file:
 
 <CodeExample
-  path="docs_snippets/docs_snippets/guides/tutorials/etl_tutorial/src/etl_tutorial/defs/assets.py"
+  path="docs_projects/project_etl_tutorial/src/etl_tutorial/defs/assets.py"
   language="python"
   startAfter="start_monthly_partition"
   endBefore="end_monthly_partition"
@@ -30,7 +30,7 @@ Dagster natively supports partitioning assets by datetime groups. To create the 
 This partition definition can now be used in an asset:
 
 <CodeExample
-  path="docs_snippets/docs_snippets/guides/tutorials/etl_tutorial/src/etl_tutorial/defs/assets.py"
+  path="docs_projects/project_etl_tutorial/src/etl_tutorial/defs/assets.py"
   language="python"
   startAfter="start_monthly_sales_performance_asset"
   endBefore="end_monthly_sales_performance_asset"

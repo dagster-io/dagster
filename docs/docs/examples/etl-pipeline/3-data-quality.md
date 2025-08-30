@@ -18,7 +18,7 @@ You can place an asset check in the `assets.py` file alongside the asset it vali
 In our case, we'll create an asset check on the `raw_customers` asset. We want to make sure that the underlying DuckDB table in that asset does not have any nulls in the `id` column:
 
 <CodeExample
-  path="docs_snippets/docs_snippets/guides/tutorials/etl_tutorial/src/etl_tutorial/defs/assets.py"
+  path="docs_projects/project_etl_tutorial/src/etl_tutorial/defs/assets.py"
   language="python"
   startAfter="start_asset_check"
   endBefore="end_asset_check"
@@ -71,7 +71,7 @@ Asset checks will run when an asset is materialized, but asset checks can also b
 
 The structure of the `etl_tutorial` module has remained the same:
 
-<CliInvocationExample path="docs_snippets/docs_snippets/guides/tutorials/etl_tutorial/tree/step-2.txt" />
+<CliInvocationExample path="docs_projects/project_etl_tutorial/tree/step-2.txt" />
 
 But there are now data checks on the assets we have created to help ensure the quality of the data in our pipeline.
 

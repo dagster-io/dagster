@@ -34,16 +34,16 @@ First, we will need to install the `dagster-duckdb` and `pandas` libraries:
 
 Next, we need to scaffold our resources file with `dg`:
 
-<CliInvocationExample path="docs_snippets/docs_snippets/guides/tutorials/etl_tutorial/commands/dg-scaffold-resources.txt" />
+<CliInvocationExample path="docs_projects/project_etl_tutorial/commands/dg-scaffold-resources.txt" />
 
 This adds a generic resources file to our project. The `resources.py`, is now part of our `etl_tutorial` module:
 
-<CliInvocationExample path="docs_snippets/docs_snippets/guides/tutorials/etl_tutorial/tree/resources.txt" />
+<CliInvocationExample path="docs_projects/project_etl_tutorial/tree/resources.txt" />
 
 Within this file, we will define our `DuckDBResource` resource from the `dagster-duckdb` library. This consolidates the database connection in one place. Next, we will define a `resources` function with the <PyObject section="definitions" module="dagster" object="Definitions" decorator />. This function will map all of our resources to specific keys throughout our Dagster project:
 
 <CodeExample
-  path="docs_snippets/docs_snippets/guides/tutorials/etl_tutorial/src/etl_tutorial/defs/resources.py"
+  path="docs_projects/project_etl_tutorial/src/etl_tutorial/defs/resources.py"
   language="python"
   title="src/etl_tutorial/defs/resources.py"
 />
@@ -76,7 +76,7 @@ Here we are setting the key `duckdb` to the `DuckDBResource` we just defined. No
 With our resource defined, we need to update our asset code. Since all of our ingestion assets rely on the `import_url_to_duckdb` to execute the query, we will first update that function to use the `DuckDBResource` to handle query execution:
 
 <CodeExample
-  path="docs_snippets/docs_snippets/guides/tutorials/etl_tutorial/src/etl_tutorial/defs/assets.py"
+  path="docs_projects/project_etl_tutorial/src/etl_tutorial/defs/assets.py"
   language="python"
   startAfter="start_import_url_to_duckdb_with_resource"
   endBefore="end_import_url_to_duckdb_with_resource"
@@ -86,7 +86,7 @@ With our resource defined, we need to update our asset code. Since all of our in
 The `DuckDBResource` is designed to handle concurrent queries, so we no longer need the `serialize_duckdb_query` function. Now we can update the assets themselves. We will add `duckdb` as a parameter to each asset function. Within our Dagster project, the `DuckDBResource` will now be available which we can pass through to the `import_url_to_duckdb` function:
 
 <CodeExample
-  path="docs_snippets/docs_snippets/guides/tutorials/etl_tutorial/src/etl_tutorial/defs/assets.py"
+  path="docs_projects/project_etl_tutorial/src/etl_tutorial/defs/assets.py"
   language="python"
   startAfter="start_ingest_assets_2"
   endBefore="end_ingest_assets_2"
@@ -113,7 +113,7 @@ You can see that this resource has three uses that line up with our three assets
 
 We have introduced resources into our project. The `etl_tutorial` module should look like this:
 
-<CliInvocationExample path="docs_snippets/docs_snippets/guides/tutorials/etl_tutorial/tree/step-2.txt" />
+<CliInvocationExample path="docs_projects/project_etl_tutorial/tree/step-2.txt" />
 
 Resources are very helpful as projects grow more complex and help ensure that all assets are using the same connection details and reduce the amount of custom code that needs to be written. We will also see that resources can be used by other Dagster objects.
 

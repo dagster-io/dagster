@@ -54,11 +54,11 @@ Next, we will need to install Dagster's [Evidence integration](https://docs.dags
 
 Now we can scaffold Evidence with `dg`:
 
-<CliInvocationExample path="docs_snippets/docs_snippets/guides/tutorials/etl_tutorial/commands/dg-scaffold-evidence.txt" />
+<CliInvocationExample path="docs_projects/project_etl_tutorial/commands/dg-scaffold-evidence.txt" />
 
 This will add the directory `dashboard` to the `etl_tutorial` module:
 
-<CliInvocationExample path="docs_snippets/docs_snippets/guides/tutorials/etl_tutorial/tree/evidence.txt" />
+<CliInvocationExample path="docs_projects/project_etl_tutorial/tree/evidence.txt" />
 
 ## 3. Configure the Evidence `defs.yaml`
 
@@ -67,7 +67,7 @@ Unlike the other components we used, which generated individual assets for each 
 However, we can still configure our Evidence component to be dependent on multiple upstream assets by setting the `deps` value within the `attributes` key of the Evidence component `defs.yaml` file:
 
 <CodeExample
-  path="docs_snippets/docs_snippets/guides/tutorials/etl_tutorial/src/etl_tutorial/defs/dashboard/defs.yaml"
+  path="docs_projects/project_etl_tutorial/src/etl_tutorial/defs/dashboard/defs.yaml"
   language="yaml"
   title="src/etl_tutorial/defs/dashboard/defs.yaml"
 />
@@ -94,7 +94,7 @@ You can now execute the Evidence asset and view the output:
 
 Here is the final structure of our `etl_tutorial` project:
 
-<CliInvocationExample path="docs_snippets/docs_snippets/guides/tutorials/etl_tutorial/tree/step-7.txt" />
+<CliInvocationExample path="docs_projects/project_etl_tutorial/tree/step-7.txt" />
 
 Congratulations! You've just built a fully functional, end-to-end data platform—one that seamlessly handles everything from raw data ingestion to transformation, modeling, and even downstream visualization. This is no small feat! You've laid the foundation for a scalable, maintainable, and observable data ecosystem using modern tools and best practices.
 
