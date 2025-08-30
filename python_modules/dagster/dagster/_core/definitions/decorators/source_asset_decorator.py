@@ -280,7 +280,7 @@ def multi_observable_source_asset(
     args = DecoratorAssetsDefinitionBuilderArgs(
         name=name,
         op_description=description,
-        specs=check.opt_list_param(specs, "specs", of_type=AssetSpec),
+        specs=check.opt_sequence_param(specs, "specs", of_type=AssetSpec),
         check_specs_by_output_name=create_check_specs_by_output_name(check_specs),
         asset_out_map={},
         upstream_asset_deps=None,
