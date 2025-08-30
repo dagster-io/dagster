@@ -1,0 +1,3 @@
+dg scaffold defs dagster_dbt.DbtProjectComponent transform --project-path src/project_dbt/analytics
+
+Creating defs at <YOUR PATH>/src/dagster_tutorial/defs/transform.
