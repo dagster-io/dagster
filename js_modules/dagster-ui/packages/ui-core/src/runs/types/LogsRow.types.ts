@@ -2894,6 +2894,15 @@ export type LogsRowStructuredFragment_RunSuccessEvent = {
   stepKey: string | null;
 };
 
+export type LogsRowStructuredFragment_RunSuccessWithWarningsEvent = {
+  __typename: 'RunSuccessWithWarningsEvent';
+  message: string;
+  eventType: Types.DagsterEventType | null;
+  timestamp: string;
+  level: Types.LogLevel;
+  stepKey: string | null;
+};
+
 export type LogsRowStructuredFragment_StepExpectationResultEvent = {
   __typename: 'StepExpectationResultEvent';
   message: string;
@@ -3423,6 +3432,7 @@ export type LogsRowStructuredFragment =
   | LogsRowStructuredFragment_RunStartEvent
   | LogsRowStructuredFragment_RunStartingEvent
   | LogsRowStructuredFragment_RunSuccessEvent
+  | LogsRowStructuredFragment_RunSuccessWithWarningsEvent
   | LogsRowStructuredFragment_StepExpectationResultEvent
   | LogsRowStructuredFragment_StepWorkerStartedEvent
   | LogsRowStructuredFragment_StepWorkerStartingEvent;
@@ -3731,6 +3741,14 @@ export type LogsRowUnstructuredFragment_RunSuccessEvent = {
   stepKey: string | null;
 };
 
+export type LogsRowUnstructuredFragment_RunSuccessWithWarningsEvent = {
+  __typename: 'RunSuccessWithWarningsEvent';
+  message: string;
+  timestamp: string;
+  level: Types.LogLevel;
+  stepKey: string | null;
+};
+
 export type LogsRowUnstructuredFragment_StepExpectationResultEvent = {
   __typename: 'StepExpectationResultEvent';
   message: string;
@@ -3794,6 +3812,7 @@ export type LogsRowUnstructuredFragment =
   | LogsRowUnstructuredFragment_RunStartEvent
   | LogsRowUnstructuredFragment_RunStartingEvent
   | LogsRowUnstructuredFragment_RunSuccessEvent
+  | LogsRowUnstructuredFragment_RunSuccessWithWarningsEvent
   | LogsRowUnstructuredFragment_StepExpectationResultEvent
   | LogsRowUnstructuredFragment_StepWorkerStartedEvent
   | LogsRowUnstructuredFragment_StepWorkerStartingEvent;
