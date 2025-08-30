@@ -126,6 +126,7 @@ class GrapheneBulkActionStatus(graphene.Enum):
     CANCELING = "CANCELING"
     COMPLETED_SUCCESS = "COMPLETED_SUCCESS"
     COMPLETED_FAILED = "COMPLETED_FAILED"
+    FAILING = "FAILING"
 
     class Meta:
         name = "BulkActionStatus"
@@ -148,6 +149,8 @@ class GrapheneBulkActionStatus(graphene.Enum):
             return GrapheneRunStatus.CANCELED  # pyright: ignore[reportReturnType]
         if self.args[0] == GrapheneBulkActionStatus.CANCELING.value:  # pyright: ignore[reportAttributeAccessIssue]
             return GrapheneRunStatus.CANCELING  # pyright: ignore[reportReturnType]
+        if self.args[0] == GrapheneBulkActionStatus.FAILING.value:  # pyright: ignore[reportAttributeAccessIssue]
+            return GrapheneRunStatus.FAILURE  # pyright: ignore[reportReturnType]
 
         raise DagsterInvariantViolationError(
             f"Unable to convert BulkActionStatus {self.args[0]} to a RunStatus. {self.args[0]} is an unknown status."
