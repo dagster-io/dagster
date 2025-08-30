@@ -27,12 +27,14 @@ def download_artifact(
     scope: DagsterCloudInstanceScope,
     key: str,
     path: Union[Path, str],
+    deployment: Optional[str] = None,
 ):
     response = _dagster_cloud_http_client().post(
         url=f"{url}/gen_artifact_get",
         headers=get_dagster_cloud_api_headers(
             api_token,
             scope,
+            deployment_name=deployment,
         ),
         json={"key": key},
     )
@@ -63,6 +65,7 @@ def upload_artifact(
         headers=get_dagster_cloud_api_headers(
             api_token,
             scope,
+            deployment_name=deployment,
         ),
         json={"key": key},
     )

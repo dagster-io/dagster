@@ -13,7 +13,7 @@ export type CodeLocationDefsStateQuery = {
     keyStateInfo: Array<{
       __typename: 'DefsStateInfoEntry';
       name: string;
-      info: {__typename: 'DefsKeyStateInfo'; version: string; createTimestamp: number};
+      info: {__typename: 'DefsKeyStateInfo'; version: string; createTimestamp: number} | null;
     }>;
   } | null;
   workspaceLocationEntryOrError:
@@ -35,7 +35,7 @@ export type CodeLocationDefsStateQuery = {
           keyStateInfo: Array<{
             __typename: 'DefsStateInfoEntry';
             name: string;
-            info: {__typename: 'DefsKeyStateInfo'; version: string; createTimestamp: number};
+            info: {__typename: 'DefsKeyStateInfo'; version: string; createTimestamp: number} | null;
           }>;
         } | null;
       }

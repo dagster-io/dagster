@@ -1287,7 +1287,7 @@ export type DefsStateInfo = {
 
 export type DefsStateInfoEntry = {
   __typename: 'DefsStateInfoEntry';
-  info: DefsKeyStateInfo;
+  info: Maybe<DefsKeyStateInfo>;
   name: Scalars['String']['output'];
 };
 
