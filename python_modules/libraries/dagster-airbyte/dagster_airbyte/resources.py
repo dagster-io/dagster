@@ -1,3 +1,4 @@
+import copy
 import hashlib
 import json
 import logging
@@ -7,12 +8,13 @@ from abc import abstractmethod
 from collections.abc import Iterator, Mapping, Sequence
 from contextlib import contextmanager
 from datetime import datetime, timedelta
-from typing import Any, Callable, Optional, cast
+from typing import Any, Callable, ClassVar, Optional, Union, cast
 
 import requests
 from dagster import (
     AssetExecutionContext,
     AssetMaterialization,
+    AssetSpec,
     ConfigurableResource,
     Definitions,
     Failure,
@@ -22,16 +24,16 @@ from dagster import (
     get_dagster_logger,
     resource,
 )
-from dagster._annotations import beta, public, superseded
+from dagster._annotations import superseded
 from dagster._config.pythonic_config import infer_schema_from_config_class
-from dagster._core.definitions.assets.definition.asset_spec import AssetSpec
 from dagster._core.definitions.definitions_load_context import StateBackedDefinitionsLoader
 from dagster._core.definitions.resource_definition import dagster_maintained_resource
-from dagster._record import record
-from dagster._utils.cached_method import cached_method
+from dagster._symbol_annotations import beta, public
 from dagster._utils.merger import deep_merge_dicts
 from dagster_shared.dagster_model import DagsterModel
-from pydantic import Field, PrivateAttr
+from dagster_shared.record import record
+from dagster_shared.utils.cached_method import cached_method
+from pydantic import Field, PrivateAttr, model_validator
 from requests.exceptions import RequestException
 
 from dagster_airbyte.translator import (
@@ -51,17 +53,20 @@ from dagster_airbyte.utils import (
     get_translator_from_airbyte_assets,
 )
 
-AIRBYTE_REST_API_BASE = "https://api.airbyte.com"
-AIRBYTE_REST_API_VERSION = "v1"
-
-AIRBYTE_CONFIGURATION_API_BASE = "https://cloud.airbyte.com/api"
-AIRBYTE_CONFIGURATION_API_VERSION = "v1"
+AIRBYTE_CLOUD_REST_API_BASE = "https://api.airbyte.com"
+AIRBYTE_CLOUD_REST_API_VERSION = "v1"
+AIRBYTE_CLOUD_REST_API_BASE_URL = f"{AIRBYTE_CLOUD_REST_API_BASE}/{AIRBYTE_CLOUD_REST_API_VERSION}"
+AIRBYTE_CLOUD_CONFIGURATION_API_BASE = "https://cloud.airbyte.com/api"
+AIRBYTE_CLOUD_CONFIGURATION_API_VERSION = "v1"
+AIRBYTE_CLOUD_CONFIGURATION_API_BASE_URL = (
+    f"{AIRBYTE_CLOUD_CONFIGURATION_API_BASE}/{AIRBYTE_CLOUD_CONFIGURATION_API_VERSION}"
+)
 
 DEFAULT_POLL_INTERVAL_SECONDS = 10
 
 # The access token expire every 3 minutes in Airbyte Cloud.
 # Refresh is needed after 2.5 minutes to avoid the "token expired" error message.
-AIRBYTE_CLOUD_REFRESH_TIMEDELTA_SECONDS = 150
+AIRBYTE_REFRESH_TIMEDELTA_SECONDS = 150
 
 AIRBYTE_RECONSTRUCTION_METADATA_KEY_PREFIX = "dagster-airbyte/reconstruction_metadata"
 
@@ -410,7 +415,7 @@ class AirbyteCloudResource(BaseAirbyteResource):
             or not self._access_token_timestamp
             or self._access_token_timestamp
             <= datetime.timestamp(
-                datetime.now() - timedelta(seconds=AIRBYTE_CLOUD_REFRESH_TIMEDELTA_SECONDS)
+                datetime.now() - timedelta(seconds=AIRBYTE_REFRESH_TIMEDELTA_SECONDS)
             )
         )
 
@@ -849,12 +854,36 @@ def airbyte_cloud_resource(context) -> AirbyteCloudResource:
 
 
 @beta
-class AirbyteCloudClient(DagsterModel):
-    """This class exposes methods on top of the Airbyte APIs for Airbyte Cloud."""
+class AirbyteClient(DagsterModel):
+    """This class exposes methods on top of the Airbyte APIs for Airbyte."""
 
+    rest_api_base_url: str = Field(
+        default=AIRBYTE_CLOUD_REST_API_BASE_URL,
+        description=(
+            "The base URL for the Airbyte REST API. "
+            "For Airbyte Cloud, leave this as the default. "
+            "For self-managed Airbyte, this is usually <your Airbyte host>/api/public/v1."
+        ),
+    )
+    configuration_api_base_url: str = Field(
+        default=AIRBYTE_CLOUD_CONFIGURATION_API_BASE_URL,
+        description=(
+            "The base URL for the Airbyte Configuration API. "
+            "For Airbyte Cloud, leave this as the default. "
+            "For self-managed Airbyte, this is usually <your Airbyte host>/api/v1."
+        ),
+    )
     workspace_id: str = Field(..., description="The Airbyte workspace ID")
-    client_id: str = Field(..., description="The Airbyte client ID.")
-    client_secret: str = Field(..., description="The Airbyte client secret.")
+    client_id: Optional[str] = Field(default=None, description="The Airbyte client ID.")
+    client_secret: Optional[str] = Field(default=None, description="The Airbyte client secret.")
+    username: Optional[str] = Field(
+        default=None,
+        description="The Airbyte username for authentication. Used for self-managed Airbyte with basic auth.",
+    )
+    password: Optional[str] = Field(
+        default=None,
+        description="The Airbyte password for authentication. Used for self-managed Airbyte with basic auth.",
+    )
     request_max_retries: int = Field(
         ...,
         description=(
@@ -880,20 +909,15 @@ class AirbyteCloudClient(DagsterModel):
         return get_dagster_logger()
 
     @property
-    def rest_api_base_url(self) -> str:
-        return f"{AIRBYTE_REST_API_BASE}/{AIRBYTE_REST_API_VERSION}"
-
-    @property
-    def configuration_api_base_url(self) -> str:
-        return f"{AIRBYTE_CONFIGURATION_API_BASE}/{AIRBYTE_CONFIGURATION_API_VERSION}"
-
-    @property
     def all_additional_request_params(self) -> Mapping[str, Any]:
         return {**self.authorization_request_params, **self.user_agent_request_params}
 
     @property
     def authorization_request_params(self) -> Mapping[str, Any]:
         # Make sure the access token is refreshed before using it when calling the API.
+        if not (self.client_id and self.client_secret):
+            return {}
+
         if self._needs_refreshed_access_token():
             self._refresh_access_token()
         return {
@@ -928,9 +952,7 @@ class AirbyteCloudClient(DagsterModel):
             not self._access_token_value
             or not self._access_token_timestamp
             or self._access_token_timestamp
-            <= (
-                datetime.now() - timedelta(seconds=AIRBYTE_CLOUD_REFRESH_TIMEDELTA_SECONDS)
-            ).timestamp()
+            <= (datetime.now() - timedelta(seconds=AIRBYTE_REFRESH_TIMEDELTA_SECONDS)).timestamp()
         )
 
     def _get_session(self, include_additional_request_params: bool) -> requests.Session:
@@ -942,6 +964,10 @@ class AirbyteCloudClient(DagsterModel):
             }
         session = requests.Session()
         session.headers.update(headers)
+
+        if self.username and self.password:
+            session.auth = (self.username, self.password)
+
         return session
 
     def _make_request(
@@ -952,8 +978,12 @@ class AirbyteCloudClient(DagsterModel):
         data: Optional[Mapping[str, Any]] = None,
         params: Optional[Mapping[str, Any]] = None,
         include_additional_request_params: bool = True,
-    ) -> Mapping[str, Any]:
+        paginate: bool = False,
+        page_size: int = 100,
+    ) -> Union[Mapping[str, Any], Iterator[Mapping[str, Any]]]:
         """Creates and sends a request to the desired Airbyte REST API endpoint.
+
+        Supports automatic pagination when paginate=True.
 
         Args:
             method (str): The http method to use for this request (e.g. "POST", "GET", "PATCH").
@@ -962,11 +992,45 @@ class AirbyteCloudClient(DagsterModel):
             data (Optional[Dict[str, Any]]): JSON-formatted data string to be included in the request.
             params (Optional[Dict[str, Any]]): JSON-formatted query params to be included in the request.
             include_additional_request_params (bool): Whether to include authorization and user-agent headers
-            to the request parameters. Defaults to True.
+                to the request parameters. Defaults to True.
+            paginate (bool): Whether to automatically paginate through all results. Defaults to False.
+            page_size (int): Number of items per page when paginating. Defaults to 100.
 
         Returns:
-            Dict[str, Any]: Parsed json data from the response to this request
+            Union[Dict[str, Any], Iterator[Dict[str, Any]]]:
+                - If paginate=False: Parsed json data from the response
+                - If paginate=True: Iterator yielding all items across pages
         """
+        if paginate:
+            return self._paginated_request(
+                method=method,
+                endpoint=endpoint,
+                base_url=base_url,
+                data=data,
+                params=params or {},
+                include_additional_request_params=include_additional_request_params,
+                page_size=page_size,
+            )
+
+        return self._single_request(
+            method=method,
+            endpoint=endpoint,
+            base_url=base_url,
+            data=data,
+            params=params,
+            include_additional_request_params=include_additional_request_params,
+        )
+
+    def _single_request(
+        self,
+        method: str,
+        endpoint: str,
+        base_url: str,
+        data: Optional[Mapping[str, Any]] = None,
+        params: Optional[Mapping[str, Any]] = None,
+        include_additional_request_params: bool = True,
+    ) -> Mapping[str, Any]:
+        """Execute a single HTTP request with retry logic."""
         url = f"{base_url}/{endpoint}"
 
         num_retries = 0
@@ -989,7 +1053,57 @@ class AirbyteCloudClient(DagsterModel):
                 num_retries += 1
                 time.sleep(self.request_retry_delay)
 
-        raise Failure(f"Max retries ({self.request_max_retries}) exceeded with url: {url}.")
+            raise Failure(f"Max retries ({self.request_max_retries}) exceeded with url: {url}.")
+
+    def _paginated_request(
+        self,
+        method: str,
+        endpoint: str,
+        base_url: str,
+        params: Mapping[str, Any],
+        data: Optional[Mapping[str, Any]] = None,
+        include_additional_request_params: bool = True,
+        page_size: int = 100,
+    ) -> Iterator[Mapping[str, Any]]:
+        """Execute paginated requests and yield all items."""
+        offset = 0
+        params = copy.copy(params) if params else {}
+
+        while True:
+            params.update({"limit": page_size, "offset": offset})
+
+            response = self._single_request(
+                method=method,
+                endpoint=endpoint,
+                base_url=base_url,
+                data=data,
+                params=params,
+                include_additional_request_params=include_additional_request_params,
+            )
+
+            # Handle different response structures
+            items = response.get("data", response.get("items", []))
+            if isinstance(response, list):
+                items = response
+
+            if not items:
+                break
+
+            yield from items
+
+            # Check if we've received fewer items than requested (last page)
+            if len(items) < page_size:
+                break
+
+            offset += page_size
+
+    def validate_workspace_id(self) -> None:
+        """Fetches workspace details. This is used to validate that the workspace exists."""
+        self._make_request(
+            method="GET",
+            endpoint=f"workspaces/{self.workspace_id}",
+            base_url=self.rest_api_base_url,
+        )
 
     def get_connections(self) -> Mapping[str, Any]:
         """Fetches all connections of an Airbyte workspace from the Airbyte REST API."""
@@ -998,6 +1112,7 @@ class AirbyteCloudClient(DagsterModel):
             endpoint="connections",
             base_url=self.rest_api_base_url,
             params={"workspaceIds": self.workspace_id},
+            paginate=True,
         )
 
     def get_connection_details(self, connection_id) -> Mapping[str, Any]:
@@ -1119,14 +1234,11 @@ class AirbyteCloudClient(DagsterModel):
 
 
 @beta
-class AirbyteCloudWorkspace(ConfigurableResource):
-    """This class represents a Airbyte Cloud workspace and provides utilities
+class BaseAirbyteWorkspace(ConfigurableResource):
+    """This class represents a Airbyte workspace and provides utilities
     to interact with Airbyte APIs.
     """
 
-    workspace_id: str = Field(..., description="The Airbyte Cloud workspace ID")
-    client_id: str = Field(..., description="The Airbyte Cloud client ID.")
-    client_secret: str = Field(..., description="The Airbyte Cloud client secret.")
     request_max_retries: int = Field(
         default=3,
         description=(
@@ -1142,18 +1254,7 @@ class AirbyteCloudWorkspace(ConfigurableResource):
         default=15,
         description="Time (in seconds) after which the requests to Airbyte are declared timed out.",
     )
-    _client: AirbyteCloudClient = PrivateAttr(default=None)  # type: ignore
-
-    @cached_method
-    def get_client(self) -> AirbyteCloudClient:
-        return AirbyteCloudClient(
-            workspace_id=self.workspace_id,
-            client_id=self.client_id,
-            client_secret=self.client_secret,
-            request_max_retries=self.request_max_retries,
-            request_retry_delay=self.request_retry_delay,
-            request_timeout=self.request_timeout,
-        )
+    _client: AirbyteClient = PrivateAttr(default=None)  # type: ignore
 
     @cached_method
     def fetch_airbyte_workspace_data(
@@ -1168,6 +1269,9 @@ class AirbyteCloudWorkspace(ConfigurableResource):
         destinations_by_id = {}
 
         client = self.get_client()
+
+        client.validate_workspace_id()
+
         connections = client.get_connections()["data"]
 
         for partial_connection_details in connections:
@@ -1214,14 +1318,14 @@ class AirbyteCloudWorkspace(ConfigurableResource):
             Loading the asset specs for a given Airbyte workspace:
             .. code-block:: python
 
-                from dagster_airbyte import AirbyteCloudWorkspace
+                from dagster_airbyte import AirbyteWorkspace
 
                 import dagster as dg
 
-                airbyte_workspace = AirbyteCloudWorkspace(
-                    workspace_id=dg.EnvVar("AIRBYTE_CLOUD_WORKSPACE_ID"),
-                    client_id=dg.EnvVar("AIRBYTE_CLOUD_CLIENT_ID"),
-                    client_secret=dg.EnvVar("AIRBYTE_CLOUD_CLIENT_SECRET"),
+                airbyte_workspace = AirbyteWorkspace(
+                    workspace_id=dg.EnvVar("AIRBYTE_WORKSPACE_ID"),
+                    client_id=dg.EnvVar("AIRBYTE_CLIENT_ID"),
+                    client_secret=dg.EnvVar("AIRBYTE_CLIENT_SECRET"),
                 )
 
                 airbyte_specs = airbyte_workspace.load_asset_specs()
@@ -1229,7 +1333,7 @@ class AirbyteCloudWorkspace(ConfigurableResource):
         """
         dagster_airbyte_translator = dagster_airbyte_translator or DagsterAirbyteTranslator()
 
-        return load_airbyte_cloud_asset_specs(
+        return load_airbyte_asset_specs(
             workspace=self,
             dagster_airbyte_translator=dagster_airbyte_translator,
             connection_selector_fn=connection_selector_fn,
@@ -1267,7 +1371,7 @@ class AirbyteCloudWorkspace(ConfigurableResource):
                 yield AssetMaterialization(
                     asset_key=stream_asset_spec.key,
                     description=(
-                        f"Table generated via Airbyte Cloud sync "
+                        f"Table generated via Airbyte sync "
                         f"for connection {connection.name}: {connection_table_name}"
                     ),
                     metadata=stream_asset_spec.metadata,
@@ -1276,7 +1380,7 @@ class AirbyteCloudWorkspace(ConfigurableResource):
     @public
     @beta
     def sync_and_poll(self, context: AssetExecutionContext):
-        """Executes a sync and poll process to materialize Airbyte Cloud assets.
+        """Executes a sync and poll process to materialize Airbyte assets.
             This method can only be used in the context of an asset execution.
 
         Args:
@@ -1322,9 +1426,9 @@ class AirbyteCloudWorkspace(ConfigurableResource):
             context.log.warning(f"Assets were not materialized: {unmaterialized_asset_keys}")
 
     @contextmanager
-    def process_config_and_initialize_cm_cached(self) -> Iterator["AirbyteCloudWorkspace"]:
+    def process_config_and_initialize_cm_cached(self) -> Iterator["AirbyteWorkspace"]:
         # Hack to avoid reconstructing initialized copies of this resource, which invalidates
-        # @cached_method caches. This means that multiple calls to load_airbyte_cloud_asset_specs
+        # @cached_method caches. This means that multiple calls to load_airbyte_asset_specs
         # will not trigger multiple API calls to fetch the workspace data.
         # Bespoke impl since @cached_method doesn't play nice with iterators; it's exhausted after
         # the first call.
@@ -1338,15 +1442,100 @@ class AirbyteCloudWorkspace(ConfigurableResource):
 
 
 @beta
-def load_airbyte_cloud_asset_specs(
-    workspace: AirbyteCloudWorkspace,
+class AirbyteWorkspace(BaseAirbyteWorkspace):
+    """This class represents a Airbyte workspace and provides utilities
+    to interact with Airbyte APIs.
+    """
+
+    rest_api_base_url: str = Field(
+        ...,
+        description="The base URL for the Airbyte REST API.",
+    )
+    configuration_api_base_url: str = Field(
+        ...,
+        description="The base URL for the Airbyte Configuration API.",
+    )
+    workspace_id: str = Field(..., description="The Airbyte workspace ID")
+    client_id: Optional[str] = Field(default=None, description="The Airbyte client ID.")
+    client_secret: Optional[str] = Field(default=None, description="The Airbyte client secret.")
+    username: Optional[str] = Field(
+        default=None, description="The Airbyte username for authentication."
+    )
+    password: Optional[str] = Field(
+        default=None, description="The Airbyte password for authentication."
+    )
+
+    @model_validator(mode="before")
+    def validation(cls, values):
+        has_client_id = values.get("client_id") is not None
+        has_client_secret = values.get("client_secret") is not None
+        has_username = values.get("username") is not None
+        has_password = values.get("password") is not None
+
+        check.invariant(
+            has_username == has_password,
+            "Missing config: both username and password are required for Airbyte authentication.",
+        )
+
+        check.invariant(
+            has_client_id == has_client_secret,
+            "Missing config: both client_id and client_secret are required for Airbyte authentication.",
+        )
+
+        check.invariant(
+            not ((has_client_id or has_client_secret) and (has_username or has_password)),
+            "Invalid config: cannot provide both client_id/client_secret and username/password for Airbyte authentication.",
+        )
+        return values
+
+    @cached_method
+    def get_client(self) -> AirbyteClient:
+        return AirbyteClient(
+            rest_api_base_url=self.rest_api_base_url,
+            configuration_api_base_url=self.configuration_api_base_url,
+            workspace_id=self.workspace_id,
+            client_id=self.client_id,
+            client_secret=self.client_secret,
+            username=self.username,
+            password=self.password,
+            request_max_retries=self.request_max_retries,
+            request_retry_delay=self.request_retry_delay,
+            request_timeout=self.request_timeout,
+        )
+
+
+@beta
+class AirbyteCloudWorkspace(BaseAirbyteWorkspace):
+    rest_api_base_url: ClassVar[str] = AIRBYTE_CLOUD_REST_API_BASE_URL
+    configuration_api_base_url: ClassVar[str] = AIRBYTE_CLOUD_CONFIGURATION_API_BASE_URL
+    workspace_id: str = Field(..., description="The Airbyte workspace ID")
+    client_id: str = Field(..., description="The Airbyte client ID.")
+    client_secret: str = Field(..., description="The Airbyte client secret.")
+
+    @cached_method
+    def get_client(self) -> AirbyteClient:
+        return AirbyteClient(
+            rest_api_base_url=self.rest_api_base_url,
+            configuration_api_base_url=self.configuration_api_base_url,
+            workspace_id=self.workspace_id,
+            client_id=self.client_id,
+            client_secret=self.client_secret,
+            request_max_retries=self.request_max_retries,
+            request_retry_delay=self.request_retry_delay,
+            request_timeout=self.request_timeout,
+        )
+
+
+@beta
+def load_airbyte_asset_specs(
+    workspace: Union[AirbyteWorkspace, AirbyteCloudWorkspace],
     dagster_airbyte_translator: Optional[DagsterAirbyteTranslator] = None,
     connection_selector_fn: Optional[Callable[[AirbyteConnection], bool]] = None,
 ) -> Sequence[AssetSpec]:
     """Returns a list of AssetSpecs representing the Airbyte content in the workspace.
 
     Args:
-        workspace (AirbyteCloudWorkspace): The Airbyte Cloud workspace to fetch assets from.
+        workspace (Union[AirbyteWorkspace, AirbyteCloudWorkspace]): The Airbyte workspace to fetch assets from.
         dagster_airbyte_translator (Optional[DagsterAirbyteTranslator], optional): The translator to use
             to convert Airbyte content into :py:class:`dagster.AssetSpec`.
             Defaults to :py:class:`DagsterAirbyteTranslator`.
@@ -1357,42 +1546,42 @@ def load_airbyte_cloud_asset_specs(
         List[AssetSpec]: The set of assets representing the Airbyte content in the workspace.
 
     Examples:
-        Loading the asset specs for a given Airbyte Cloud workspace:
+        Loading the asset specs for a given Airbyte workspace:
 
         .. code-block:: python
 
-            from dagster_airbyte import AirbyteCloudWorkspace, load_airbyte_cloud_asset_specs
+            from dagster_airbyte import AirbyteWorkspace, load_airbyte_asset_specs
 
             import dagster as dg
 
-            airbyte_cloud_workspace = AirbyteCloudWorkspace(
-                workspace_id=dg.EnvVar("AIRBYTE_CLOUD_WORKSPACE_ID"),
-                client_id=dg.EnvVar("AIRBYTE_CLOUD_CLIENT_ID"),
-                client_secret=dg.EnvVar("AIRBYTE_CLOUD_CLIENT_SECRET"),
+            airbyte_workspace = AirbyteWorkspace(
+                workspace_id=dg.EnvVar("AIRBYTE_WORKSPACE_ID"),
+                client_id=dg.EnvVar("AIRBYTE_CLIENT_ID"),
+                client_secret=dg.EnvVar("AIRBYTE_CLIENT_SECRET"),
             )
 
-            airbyte_cloud_specs = load_airbyte_cloud_asset_specs(airbyte_cloud_workspace)
-            dg.Definitions(assets=airbyte_cloud_specs)
+            airbyte_specs = load_airbyte_asset_specs(airbyte_workspace)
+            dg.Definitions(assets=airbyte_specs)
 
         Filter connections by name:
 
         .. code-block:: python
 
-            from dagster_airbyte import AirbyteCloudWorkspace, load_airbyte_cloud_asset_specs
+            from dagster_airbyte import AirbyteWorkspace, load_airbyte_asset_specs
 
             import dagster as dg
 
-            airbyte_cloud_workspace = AirbyteCloudWorkspace(
-                workspace_id=dg.EnvVar("AIRBYTE_CLOUD_WORKSPACE_ID"),
-                client_id=dg.EnvVar("AIRBYTE_CLOUD_CLIENT_ID"),
-                client_secret=dg.EnvVar("AIRBYTE_CLOUD_CLIENT_SECRET"),
+            airbyte_workspace = AirbyteWorkspace(
+                workspace_id=dg.EnvVar("AIRBYTE_WORKSPACE_ID"),
+                client_id=dg.EnvVar("AIRBYTE_CLIENT_ID"),
+                client_secret=dg.EnvVar("AIRBYTE_CLIENT_SECRET"),
             )
 
-            airbyte_cloud_specs = load_airbyte_cloud_asset_specs(
-                workspace=airbyte_cloud_workspace,
+            airbyte_specs = load_airbyte_asset_specs(
+                workspace=airbyte_workspace,
                 connection_selector_fn=lambda connection: connection.name in ["connection1", "connection2"]
             )
-            dg.Definitions(assets=airbyte_cloud_specs)
+            dg.Definitions(assets=airbyte_specs)
     """
     dagster_airbyte_translator = dagster_airbyte_translator or DagsterAirbyteTranslator()
 
@@ -1402,7 +1591,7 @@ def load_airbyte_cloud_asset_specs(
                 metadata={DAGSTER_AIRBYTE_TRANSLATOR_METADATA_KEY: dagster_airbyte_translator}
             )
             for spec in check.is_list(
-                AirbyteCloudWorkspaceDefsLoader(
+                AirbyteWorkspaceDefsLoader(
                     workspace=initialized_workspace,
                     translator=dagster_airbyte_translator,
                     connection_selector_fn=connection_selector_fn,
@@ -1415,8 +1604,8 @@ def load_airbyte_cloud_asset_specs(
 
 
 @record
-class AirbyteCloudWorkspaceDefsLoader(StateBackedDefinitionsLoader[AirbyteWorkspaceData]):
-    workspace: AirbyteCloudWorkspace
+class AirbyteWorkspaceDefsLoader(StateBackedDefinitionsLoader[AirbyteWorkspaceData]):
+    workspace: Union[AirbyteWorkspace, AirbyteCloudWorkspace]
     translator: DagsterAirbyteTranslator
     connection_selector_fn: Optional[Callable[[AirbyteConnection], bool]]
 
