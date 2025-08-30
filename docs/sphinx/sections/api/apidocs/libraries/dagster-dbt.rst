@@ -84,6 +84,14 @@ CLI Resource
 
 .. autoclass:: DbtCliEventMessage
 
+************
+dbt Cloud v2
+************
+
+Here, we provide updated interfaces to manage dbt projects invoked by the hosted dbt Cloud service.
+
+.. autodecorator:: dbt_cloud_assets
+
 *********
 dbt Cloud
 *********
