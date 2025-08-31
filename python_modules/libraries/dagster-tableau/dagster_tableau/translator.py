@@ -257,7 +257,6 @@ class DagsterTableauTranslator:
         return AssetSpec(
             key=asset_key,
             deps=data_source_keys if data_source_keys else None,
-            tags={"dagster/storage_kind": "tableau", **TableauTagSet(asset_type="sheet")},
             metadata={
                 **TableauViewMetadataSet(
                     id=data.properties["luid"],
@@ -266,6 +265,7 @@ class DagsterTableauTranslator:
                     project_id=workbook_data.properties["projectLuid"],
                 )
             },
+            kinds = {"tableau", "sheet"}
         )
 
     def get_dashboard_spec(self, data: TableauTranslatorData) -> AssetSpec:
@@ -309,7 +309,6 @@ class DagsterTableauTranslator:
         return AssetSpec(
             key=asset_key,
             deps=upstream_keys if upstream_keys else None,
-            tags={"dagster/storage_kind": "tableau", **TableauTagSet(asset_type="dashboard")},
             metadata={
                 **TableauViewMetadataSet(
                     id=data.properties["luid"],
@@ -318,12 +317,23 @@ class DagsterTableauTranslator:
                     project_id=workbook_data.properties["projectLuid"],
                 )
             },
+            kinds = {"tableau", "dashboard"}
         )
 
     def get_data_source_spec(self, data: TableauTranslatorData) -> AssetSpec:
+        kinds = {"tableau"}
+        if data.properties["hasExtracts"] is True:
+            kinds.add("extract")
+        else:
+            kinds.add("live")
+
+        if data.properties["isPublished"] is True:
+            kinds.add("published")
+        else:
+            kinds.add("embedded")
+        
         return AssetSpec(
             key=AssetKey([_coerce_input_to_valid_name(data.properties["name"])]),
-            tags={"dagster/storage_kind": "tableau", **TableauTagSet(asset_type="data_source")},
             metadata={
                 **TableauDataSourceMetadataSet(
                     id=data.properties["luid"],
@@ -334,4 +344,5 @@ class DagsterTableauTranslator:
                     else None,
                 )
             },
+            kinds = kinds
         )
