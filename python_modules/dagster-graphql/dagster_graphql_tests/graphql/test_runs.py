@@ -15,7 +15,7 @@ from dagster._core.execution.api import execute_run
 from dagster._core.execution.plan.handle import StepHandle
 from dagster._core.storage.dagster_run import DagsterRunStatus
 from dagster._core.storage.tags import PARENT_RUN_ID_TAG, ROOT_RUN_ID_TAG
-from dagster._core.test_utils import instance_for_test
+from dagster._core.test_utils import environ, instance_for_test
 from dagster._core.workspace.context import WorkspaceRequestContext
 from dagster._utils import Counter, traced_counter
 from dagster_graphql.test.utils import (
@@ -449,10 +449,39 @@ class TestGetRuns(ExecutingGraphQLContextTestMatrix):
         run_logs_result = execute_dagster_graphql(
             read_context,
             RUN_LOGS_QUERY,
-            variables={"runId": run_id_one, "limit": 5000, "afterCursor": cursor},
+            variables={"runId": run_id_one, "limit": 1000, "afterCursor": cursor},
         )
 
         assert not run_logs_result.data["pipelineRunOrError"]["eventConnection"]["hasMore"]
+
+        with pytest.raises(Exception, match="Limit of 5000 is too large. Max is 1000"):
+            run_logs_result = execute_dagster_graphql(
+                read_context,
+                RUN_LOGS_QUERY,
+                variables={"runId": run_id_one, "limit": 5000, "afterCursor": cursor},
+            )
+
+        with environ({"DAGSTER_UI_EVENT_LOAD_CHUNK_SIZE": "5"}):
+            run_logs_result = execute_dagster_graphql(
+                read_context,
+                RUN_LOGS_QUERY,
+                variables={"runId": run_id_one, "afterCursor": cursor},
+            )
+            assert len(run_logs_result.data["pipelineRunOrError"]["eventConnection"]["events"]) == 5
+
+            with pytest.raises(Exception, match="Limit of 1000 is too large. Max is 5"):
+                run_logs_result = execute_dagster_graphql(
+                    read_context,
+                    RUN_LOGS_QUERY,
+                    variables={"runId": run_id_one, "limit": 1000, "afterCursor": cursor},
+                )
+
+            run_logs_result = execute_dagster_graphql(
+                read_context,
+                RUN_LOGS_QUERY,
+                variables={"runId": run_id_one, "limit": 4, "afterCursor": cursor},
+            )
+            assert len(run_logs_result.data["pipelineRunOrError"]["eventConnection"]["events"]) == 4
 
         # delete the second run
         result = execute_dagster_graphql(

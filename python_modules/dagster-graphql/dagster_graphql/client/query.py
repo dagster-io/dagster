@@ -257,14 +257,18 @@ subscription subscribeTest($runId: ID!) {
 RUN_EVENTS_QUERY = (
     MESSAGE_EVENT_FRAGMENTS
     + """
-query pipelineRunEvents($runId: ID!, $cursor: String) {
-  logsForRun(runId: $runId, afterCursor: $cursor) {
+query pipelineRunEvents($runId: ID!, $cursor: String, $limit: Int) {
+  logsForRun(runId: $runId, afterCursor: $cursor, limit: $limit) {
     __typename
     ... on EventConnection {
       events {
         ...messageEventFragment
       }
       cursor
+    }
+    ... on PythonError {
+      message
+      stack
     }
   }
 }

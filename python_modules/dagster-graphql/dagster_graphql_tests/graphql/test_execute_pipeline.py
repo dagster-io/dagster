@@ -4,7 +4,7 @@ import uuid
 from typing import Any, Optional
 
 from dagster._core.storage.dagster_run import RunsFilter
-from dagster._core.test_utils import wait_for_runs_to_finish
+from dagster._core.test_utils import environ, wait_for_runs_to_finish
 from dagster._core.utils import make_new_run_id
 from dagster._core.workspace.context import WorkspaceRequestContext
 from dagster._utils import file_relative_path
@@ -391,6 +391,53 @@ class TestExecutePipeline(ExecutingGraphQLContextTestMatrix):
             non_engine_event_types == self._csv_hello_world_event_sequence()
             or non_engine_event_types == self._legacy_csv_hello_world_event_sequence()
         )
+
+        with environ({"DAGSTER_UI_EVENT_LOAD_CHUNK_SIZE": "5"}):
+            events_result = execute_dagster_graphql(
+                graphql_context,
+                RUN_EVENTS_QUERY,
+                variables={"runId": exc_result.data["launchPipelineExecution"]["run"]["runId"]},
+            )
+
+            assert not events_result.errors
+            assert events_result.data
+            assert events_result.data["logsForRun"]["__typename"] == "EventConnection"
+            assert len(events_result.data["logsForRun"]["events"]) == 5
+
+            # exceeding default limit results in an error
+            assert events_result.data["logsForRun"]["cursor"]
+
+            events_result = execute_dagster_graphql(
+                graphql_context,
+                RUN_EVENTS_QUERY,
+                variables={
+                    "limit": 10,
+                    "runId": exc_result.data["launchPipelineExecution"]["run"]["runId"],
+                },
+            )
+
+            assert not events_result.errors
+            assert events_result.data
+            assert events_result.data["logsForRun"]["__typename"] == "PythonError"
+            assert (
+                "Limit of 10 is too large. Max is 5" in events_result.data["logsForRun"]["message"]
+            )
+
+            # passing in a lower value than max chunk size is respected
+            events_result = execute_dagster_graphql(
+                graphql_context,
+                RUN_EVENTS_QUERY,
+                variables={
+                    "limit": 4,
+                    "runId": exc_result.data["launchPipelineExecution"]["run"]["runId"],
+                },
+            )
+
+            assert not events_result.errors
+            assert events_result.data
+            assert events_result.data["logsForRun"]["__typename"] == "EventConnection"
+            assert len(events_result.data["logsForRun"]["events"]) == 4
+            assert events_result.data["logsForRun"]["cursor"]
 
     def test_basic_start_pipeline_and_poll(self, graphql_context: WorkspaceRequestContext):
         selector = infer_job_selector(graphql_context, "csv_hello_world")

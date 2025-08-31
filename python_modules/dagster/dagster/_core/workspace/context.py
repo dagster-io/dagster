@@ -1,4 +1,5 @@
 import logging
+import os
 import sys
 import threading
 import warnings
@@ -187,6 +188,10 @@ class BaseWorkspaceRequestContext(LoadingContext):
 
     @abstractmethod
     def was_permission_checked(self, permission: str) -> bool: ...
+
+    @property
+    @abstractmethod
+    def records_for_run_default_limit(self) -> Optional[int]: ...
 
     @property
     def show_instance_config(self) -> bool:
@@ -620,6 +625,10 @@ class WorkspaceRequestContext(BaseWorkspaceRequestContext):
     @property
     def loaders(self) -> dict[type, DataLoader]:  # pyright: ignore[reportIncompatibleMethodOverride]
         return self._loaders
+
+    @property
+    def records_for_run_default_limit(self) -> Optional[int]:
+        return int(os.getenv("DAGSTER_UI_EVENT_LOAD_CHUNK_SIZE", "1000"))
 
 
 class IWorkspaceProcessContext(ABC):
