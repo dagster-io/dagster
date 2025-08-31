@@ -344,5 +344,5 @@ class DagsterTableauTranslator:
                     else None,
                 )
             },
-            kinds = kinds
+            kinds=kinds
         )
