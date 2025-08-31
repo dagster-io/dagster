@@ -257,6 +257,7 @@ class DagsterTableauTranslator:
         return AssetSpec(
             key=asset_key,
             deps=data_source_keys if data_source_keys else None,
+            tags={"dagster/storage_kind": "tableau", **TableauTagSet(asset_type="sheet")},
             metadata={
                 **TableauViewMetadataSet(
                     id=data.properties["luid"],
@@ -309,6 +310,7 @@ class DagsterTableauTranslator:
         return AssetSpec(
             key=asset_key,
             deps=upstream_keys if upstream_keys else None,
+            tags={"dagster/storage_kind": "tableau", **TableauTagSet(asset_type="dashboard")},
             metadata={
                 **TableauViewMetadataSet(
                     id=data.properties["luid"],
@@ -334,6 +336,7 @@ class DagsterTableauTranslator:
         
         return AssetSpec(
             key=AssetKey([_coerce_input_to_valid_name(data.properties["name"])]),
+            tags={"dagster/storage_kind": "tableau", **TableauTagSet(asset_type="data_source")},
             metadata={
                 **TableauDataSourceMetadataSet(
                     id=data.properties["luid"],
