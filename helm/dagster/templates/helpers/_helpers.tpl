@@ -62,7 +62,7 @@ If release name contains chart name it will be used as a full name.
 {{- $userDeployments := index .Values "dagster-user-deployments" -}}
 dagster-daemon run
 {{- if $userDeployments.enabled }} -w /dagster-workspace/workspace.yaml {{- end -}}
-{{- with $_.Values.dagsterWebserver.logFormat }} --log-format {{ . }} {{- end -}}
+{{- with $_.Values.dagsterDaemon.logFormat }} --log-format {{ . }} {{- end -}}
 {{- end -}}
 
 {{- define "dagster.webserver.fullname" -}}
