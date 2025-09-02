@@ -2,12 +2,10 @@ from collections.abc import Mapping, Sequence
 from enum import Enum
 from typing import Any, Optional
 
-from dagster._annotations import beta
 from dagster._record import record
 from dagster._serdes import whitelist_for_serdes
 
 
-@beta
 @record
 class DbtCloudAccount:
     """Represents a dbt Cloud Account, based on data as returned from the API."""
@@ -23,7 +21,6 @@ class DbtCloudAccount:
         )
 
 
-@beta
 @record
 class DbtCloudProject:
     """Represents a dbt Cloud Project, based on data as returned from the API."""
@@ -39,7 +36,6 @@ class DbtCloudProject:
         )
 
 
-@beta
 @record
 class DbtCloudEnvironment:
     """Represents a dbt Cloud Environment, based on data as returned from the API."""
@@ -57,7 +53,6 @@ class DbtCloudEnvironment:
         )
 
 
-@beta
 @record
 class DbtCloudJob:
     """Represents a dbt Cloud job, based on data as returned from the API."""
@@ -90,7 +85,6 @@ class DbtCloudJobRunStatusType(int, Enum):
     CANCELLED = 30
 
 
-@beta
 @record
 class DbtCloudRun:
     """Represents a dbt Cloud run, based on data as returned from the API."""
@@ -120,7 +114,6 @@ class DbtCloudRun:
         )
 
 
-@beta
 @whitelist_for_serdes
 @record
 class DbtCloudWorkspaceData:
