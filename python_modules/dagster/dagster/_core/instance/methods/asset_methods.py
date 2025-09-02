@@ -2,7 +2,7 @@
 
 import os
 from collections.abc import Iterable, Mapping, Sequence
-from typing import TYPE_CHECKING, Optional, Union
+from typing import TYPE_CHECKING, Literal, Optional, Union
 
 import dagster._check as check
 from dagster._annotations import deprecated
@@ -43,6 +43,10 @@ if TYPE_CHECKING:
         AssetPartitionStatus,
         AssetStatusCacheValue,
     )
+
+StreamlineName = Literal[
+    "asset-materialization-health", "asset-check-health", "asset-freshness-health"
+]
 
 
 class AssetMethods:
@@ -452,11 +456,11 @@ class AssetMethods:
         """Check if internal asset freshness is enabled - moved from AssetMixin.internal_asset_freshness_enabled()."""
         return os.getenv("DAGSTER_ASSET_FRESHNESS_ENABLED", "").lower() == "true"
 
-    def streamline_read_asset_health_supported(self) -> bool:
+    def streamline_read_asset_health_supported(self, streamline_name: StreamlineName) -> bool:
         """Check if streamline read asset health is supported - moved from AssetMixin.streamline_read_asset_health_supported()."""
         return False
 
-    def streamline_read_asset_health_required(self) -> bool:
+    def streamline_read_asset_health_required(self, streamline_name: StreamlineName) -> bool:
         """Check if streamline read asset health is required - moved from AssetMixin.streamline_read_asset_health_required()."""
         return False
 
