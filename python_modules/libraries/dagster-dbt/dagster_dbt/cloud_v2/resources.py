@@ -224,7 +224,8 @@ class DbtCloudWorkspace(ConfigurableResource):
             args=["parse"],
             client=self.get_client(),
         )
-        run_handler.wait_for_success()
+        run = run_handler.wait()
+        run.raise_for_status()
         return DbtCloudWorkspaceData(
             project_id=self.project_id,
             environment_id=self.environment_id,

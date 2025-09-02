@@ -53,15 +53,15 @@ class DbtCloudCliInvocation:
     def wait(
         self, timeout: Optional[float] = None
     ) -> Iterator[Union[AssetCheckEvaluation, AssetCheckResult, AssetMaterialization, Output]]:
-        self.run_handler.wait_for_success(timeout=timeout)
-        if "run_results.json" not in self.run_handler.list_run_artifacts():
-            return
-        run_results = DbtCloudJobRunResults.from_run_results_json(
-            run_results_json=self.run_handler.get_run_results()
-        )
-        yield from run_results.to_default_asset_events(
-            client=self.client,
-            manifest=self.manifest,
-            dagster_dbt_translator=self.dagster_dbt_translator,
-            context=self.context,
-        )
+        run = self.run_handler.wait(timeout=timeout)
+        if "run_results.json" in self.run_handler.list_run_artifacts():
+            run_results = DbtCloudJobRunResults.from_run_results_json(
+                run_results_json=self.run_handler.get_run_results()
+            )
+            yield from run_results.to_default_asset_events(
+                client=self.client,
+                manifest=self.manifest,
+                dagster_dbt_translator=self.dagster_dbt_translator,
+                context=self.context,
+            )
+        run.raise_for_status()
