@@ -1,7 +1,11 @@
 import {useMemo, useState} from 'react';
 
+import {
+  AssetCheckPartitionStatus,
+  executionStatusToPartitionStatus,
+} from './AssetCheckPartitionStatus';
 import {gql, useApolloClient} from '../../apollo-client';
-import {AssetPartitionStatus} from '../AssetPartitionStatus';
+import {AssetCheckExecutionResolvedStatus} from '../../graphql/types';
 import {usePartitionDataSubscriber} from '../PartitionSubscribers';
 import {AssetKey} from '../types';
 import {
@@ -14,7 +18,7 @@ export interface AssetCheckPartitionData {
   checkName: string;
   dimensions: AssetCheckPartitionDimension[];
   partitions: string[];
-  statusForPartition: (dimensionKey: string) => AssetPartitionStatus[];
+  statusForPartition: (dimensionKey: string) => AssetCheckPartitionStatus[];
 }
 
 export interface AssetCheckPartitionDimension {
@@ -108,23 +112,24 @@ function buildAssetCheckPartitionData(
   const dim = dimensions[0]!;
   const partitions = dimensions.length > 0 ? dim.partitionKeys : [];
 
-  const partitionStatusMap = new Map<string, AssetPartitionStatus[]>();
+  const partitionStatusMap = new Map<string, AssetCheckPartitionStatus[]>();
   const executions = data.assetCheckExecutions || [];
 
   for (const partition of partitions) {
-    partitionStatusMap.set(partition, [AssetPartitionStatus.MISSING]);
+    partitionStatusMap.set(partition, [AssetCheckPartitionStatus.MISSING]);
   }
 
   for (const execution of executions) {
     const partition = execution.evaluation?.partition;
     if (partition && partitions.includes(partition)) {
-      const status = getStatusFromExecution(execution);
-      partitionStatusMap.set(partition, [status]);
+      const executionStatus = execution.status || AssetCheckExecutionResolvedStatus.SKIPPED;
+      const partitionStatus = executionStatusToPartitionStatus(executionStatus);
+      partitionStatusMap.set(partition, [partitionStatus]);
     }
   }
 
-  const statusForPartition = (dimensionKey: string): AssetPartitionStatus[] => {
-    return partitionStatusMap.get(dimensionKey) || [AssetPartitionStatus.MISSING];
+  const statusForPartition = (dimensionKey: string): AssetCheckPartitionStatus[] => {
+    return partitionStatusMap.get(dimensionKey) || [AssetCheckPartitionStatus.MISSING];
   };
 
   return {
@@ -134,27 +139,6 @@ function buildAssetCheckPartitionData(
     partitions,
     statusForPartition,
   };
-}
-
-function getStatusFromExecution(execution: any): AssetPartitionStatus {
-  if (!execution.evaluation) {
-    return AssetPartitionStatus.MISSING;
-  }
-
-  switch (execution.status) {
-    case 'SUCCEEDED':
-      return execution.evaluation.success
-        ? AssetPartitionStatus.MATERIALIZED
-        : AssetPartitionStatus.FAILED;
-    case 'IN_PROGRESS':
-      return AssetPartitionStatus.MATERIALIZING;
-    case 'FAILED':
-    case 'EXECUTION_FAILED':
-      return AssetPartitionStatus.FAILED;
-    case 'SKIPPED':
-    default:
-      return AssetPartitionStatus.MISSING;
-  }
 }
 
 export const ASSET_CHECK_PARTITION_HEALTH_QUERY = gql`
