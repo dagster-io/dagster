@@ -22,7 +22,11 @@ export interface AssetSidebarListViewProps {
   setSelectedNode: React.Dispatch<
     React.SetStateAction<null | {id: string; path: string} | {id: string}>
   >;
-  selectNode: (e: React.MouseEvent<any> | React.KeyboardEvent<any>, nodeId: string) => void;
+  selectNode: (
+    e: React.MouseEvent<any> | React.KeyboardEvent<any>,
+    nodeId: string,
+    sidebarNodeInfo?: {path: string; direction: 'root-to-leaf' | 'leaf-to-root'},
+  ) => void;
   explorerPath: ExplorerPath;
   onChangeExplorerPath: (path: ExplorerPath, mode: 'replace' | 'push') => void;
   onFilterToGroup: (group: AssetGroup) => void;
@@ -121,7 +125,11 @@ export const AssetSidebarListView = ({
             // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
             renderedNodes[(nextIndex + renderedNodes.length) % renderedNodes.length]!;
           setSelectedNode(nextNode);
-          selectNode(e, nextNode.id);
+          selectNode(
+            e,
+            nextNode.id,
+            'path' in nextNode ? {path: nextNode.path, direction} : undefined,
+          );
         } else if (e.code === 'ArrowLeft' || e.code === 'ArrowRight') {
           const open = e.code === 'ArrowRight';
           const node = renderedNodes[indexOfLastSelectedNode];
@@ -173,12 +181,16 @@ export const AssetSidebarListView = ({
                     });
                   }}
                   collapseAllNodes={collapseAllNodes}
-                  selectNode={(e, id) => {
-                    selectNode(e, id);
+                  selectNode={(e, id, path) => {
+                    selectNode(e, id, path);
                   }}
                   selectThisNode={(e) => {
                     setSelectedNode(node);
-                    selectNode(e, node.id);
+                    selectNode(
+                      e,
+                      node.id,
+                      'path' in node ? {path: node.path, direction} : undefined,
+                    );
                   }}
                   explorerPath={explorerPath}
                   onChangeExplorerPath={onChangeExplorerPath}

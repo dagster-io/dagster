@@ -13,7 +13,7 @@ Cron-based schedules are common in data orchestration. They use time-based expre
 While it is possible to define a standalone [schedule](/guides/automate/schedules) object in Dagster, we can also add a schedule directly to the asset with [declarative automation](/guides/automate/declarative-automation) by including this schedule information within the <PyObject section="asset-checks" module="dagster" object="asset_check" decorator />. Now our assets will execute every day at midnight:
 
 <CodeExample
-  path="docs_snippets/docs_snippets/guides/tutorials/etl_tutorial/src/etl_tutorial/defs/assets.py"
+  path="docs_projects/project_etl_tutorial/src/etl_tutorial/defs/assets.py"
   language="python"
   startAfter="start_ingest_assets_3"
   endBefore="end_ingest_assets_3"
@@ -27,7 +27,7 @@ Now let's look at `monthly_sales_performance`. This asset should be executed onc
 We already set this in the `monthly_sales_performance` by setting the `automation_condition`. We want it to update when all the dependencies are updated. To accomplish this, we will use the `eager` automation condition:
 
 <CodeExample
-  path="docs_snippets/docs_snippets/guides/tutorials/etl_tutorial/src/etl_tutorial/defs/assets.py"
+  path="docs_projects/project_etl_tutorial/src/etl_tutorial/defs/assets.py"
   language="python"
   startAfter="start_monthly_sales_performance_asset_highlight"
   endBefore="end_monthly_sales_performance_asset_highlight"

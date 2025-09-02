@@ -33,7 +33,11 @@ type AssetSidebarNodeProps = {
   level: number;
   toggleOpen: () => void;
   selectThisNode: (e: React.MouseEvent<any> | React.KeyboardEvent<any>) => void;
-  selectNode: (e: React.MouseEvent<any> | React.KeyboardEvent<any>, nodeId: string) => void;
+  selectNode: (
+    e: React.MouseEvent<any> | React.KeyboardEvent<any>,
+    nodeId: string,
+    sidebarNodeInfo?: {path: string; direction: 'root-to-leaf' | 'leaf-to-root'},
+  ) => void;
   isOpen: boolean;
   isLastSelected: boolean;
   isSelected: boolean;
@@ -129,7 +133,11 @@ export const AssetSidebarNode = (props: AssetSidebarNodeProps) => {
 type AssetSidebarAssetLabelProps = {
   fullAssetGraphData?: GraphData;
   node: AssetNodeMenuProps['node'] & StatusDotNode;
-  selectNode: (e: React.MouseEvent<any> | React.KeyboardEvent<any>, nodeId: string) => void;
+  selectNode: (
+    e: React.MouseEvent<any> | React.KeyboardEvent<any>,
+    nodeId: string,
+    sidebarNodeInfo?: {path: string; direction: 'root-to-leaf' | 'leaf-to-root'},
+  ) => void;
   isLastSelected: boolean;
   isSelected: boolean;
   explorerPath: ExplorerPath;

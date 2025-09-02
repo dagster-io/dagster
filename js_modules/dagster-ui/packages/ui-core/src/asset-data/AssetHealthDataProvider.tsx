@@ -5,7 +5,6 @@ import {showCustomAlert} from '../app/CustomAlertProvider';
 import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
 import {PythonErrorInfo} from '../app/PythonErrorInfo';
 import {tokenForAssetKey, tokenToAssetKey} from '../asset-graph/Utils';
-import {useAllAssetsNodes} from '../assets/useAllAssets';
 import {AssetKeyInput} from '../graphql/types';
 import {liveDataFactory} from '../live-data-provider/Factory';
 import {LiveDataThreadID} from '../live-data-provider/LiveDataThread';
@@ -25,28 +24,10 @@ const EMPTY_ARRAY: any[] = [];
 function init() {
   return liveDataFactory(
     () => {
-      const {allAssetKeys, loading} = useAllAssetsNodes();
-
-      return {client: useApolloClient(), allAssetKeys, loading};
+      return useApolloClient();
     },
-    async (
-      keys,
-      {
-        client,
-        allAssetKeys,
-        loading,
-      }: {client: ApolloClient<any>; allAssetKeys: Set<string>; loading: boolean},
-    ) => {
-      if (loading) {
-        // This is future proofing in case we somehow start requesting health data without having first loaded all assets nodes in the future
-        // Today that doesn't happen in the app but if it ever does we'd basically just no-op every 500milliseconds until theyre loaded.
-        // We need all of the assets keys to be loaded so that we can avoid making queries for assets that don't have definitions because
-        // those queries are expensive.
-        await new Promise((resolve) => setTimeout(resolve, 500));
-        return {};
-      }
-
-      const assetKeys = keys.filter((key) => allAssetKeys.has(key)).map(tokenToAssetKey);
+    async (keys, client: ApolloClient<any>) => {
+      const assetKeys = keys.map(tokenToAssetKey);
 
       const healthResponse = await client.query<AssetHealthQuery, AssetHealthQueryVariables>({
         query: ASSETS_HEALTH_INFO_QUERY,
