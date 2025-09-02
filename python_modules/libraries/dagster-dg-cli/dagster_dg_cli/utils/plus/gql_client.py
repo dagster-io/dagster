@@ -1,3 +1,4 @@
+import json
 from abc import ABC, abstractmethod
 from collections.abc import Mapping
 from typing import Any, Optional
@@ -15,6 +16,33 @@ class IGraphQLClient(ABC):
 
 class DagsterPlusUnauthorizedError(click.ClickException):
     pass
+
+
+class DebugGraphQLClient(IGraphQLClient):
+    """GraphQL client wrapper that logs queries and responses to stderr for debugging."""
+
+    def __init__(self, wrapped_client: IGraphQLClient):
+        self.wrapped_client = wrapped_client
+
+    def execute(self, query: str, variables: Optional[Mapping[str, Any]] = None) -> dict:
+        """Execute GraphQL query and log details to stderr."""
+        # Print query details to stderr
+        click.echo("=== GraphQL Query ===", err=True)
+        click.echo(query, err=True)
+
+        if variables:
+            click.echo("=== Variables ===", err=True)
+            click.echo(json.dumps(dict(variables), indent=2), err=True)
+
+        # Execute the actual query
+        result = self.wrapped_client.execute(query, variables)
+
+        # Print response to stderr
+        click.echo("=== Response ===", err=True)
+        click.echo(json.dumps(result, indent=2), err=True)
+        click.echo("=" * 20, err=True)
+
+        return result
 
 
 class DagsterPlusGraphQLClient(IGraphQLClient):

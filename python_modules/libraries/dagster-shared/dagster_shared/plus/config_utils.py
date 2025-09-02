@@ -104,6 +104,12 @@ TOKEN_OPTION = click.option(
     envvar=TOKEN_ENV_VAR_NAME,
 )
 
+VIEW_GRAPHQL_OPTION = click.option(
+    "--view-graphql",
+    is_flag=True,
+    help="Print GraphQL queries and responses to stderr for debugging.",
+)
+
 
 def dg_api_options(
     deployment_scoped: bool = False,
@@ -123,6 +129,7 @@ def dg_api_options(
 
     def decorator(func):
         # Add options in reverse order (Click applies them in reverse)
+        func = VIEW_GRAPHQL_OPTION(func)
         func = TOKEN_OPTION(func)
         func = ORGANIZATION_OPTION(func)
 
@@ -141,11 +148,13 @@ def dg_api_options(
                 organization = ctx.obj.organization
                 deployment = ctx.obj.deployment if deployment_scoped else None
                 api_token = None
+                view_graphql = False  # Default to False in test mode
             else:
                 # Get resolved values using precedence chain
                 organization = get_organization(ctx)
                 deployment = get_deployment(ctx) if deployment_scoped else None
                 api_token = get_user_token(ctx)
+                view_graphql = kwargs.get("view_graphql", False)
 
             if not organization:
                 raise click.UsageError(
@@ -166,6 +175,7 @@ def dg_api_options(
             # Update kwargs with resolved values
             kwargs["organization"] = organization
             kwargs["api_token"] = api_token
+            kwargs["view_graphql"] = view_graphql
             if deployment_scoped:
                 kwargs["deployment"] = deployment
 
