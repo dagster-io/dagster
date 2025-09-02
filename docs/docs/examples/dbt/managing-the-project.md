@@ -1,19 +1,19 @@
 ---
-title: Managing the project
-description: Managing your dbt project
+title: Best practices for managing a dbt project
+description: Managing your combined Dagster+ dbt project
 last_update:
   author: Dennis Hume
 sidebar_position: 70
 ---
 
-With most of the integration logic in place, this final section covers best practices for managing a hybrid Dagster+ dbt pipeline—focusing on partitioning and handling dependencies.
+With most of the integration logic in place, this final section covers best practices for managing a combined Dagster+ dbt pipeline, focusing on partitioning and dependency management.
 
 ## Handling multiple partitions
 
 Both the `taxi_trips` asset and the dbt-generated assets are partitioned over time, but they don’t need to use the same partitioning scheme.
 
 - `taxi_trips` ingests monthly files, so a **monthly partitioning strategy** makes sense.
-- dbt models can run more frequently—for example, **daily** to deliver fresher analytical outputs.
+- dbt models can run more frequently (for example, **daily**) to deliver fresher analytical outputs.
 
 To support this, the codebase defines two partition definitions over the same time range:
 
@@ -35,8 +35,10 @@ In the asset graph, you can see this difference:
 
 ![2048 resolution](/images/examples/dbt/asset_graph_partitions.png)
 
-:::note
-When executing Dagster assets, you can only materialize subsets of the graph that share the same partition definition. Because of this, it’s best to separate automation logic between ingestion and transformation layers—especially when they use different granularities.
+:::tip
+
+When executing Dagster assets, you can only materialize subsets of the graph that share the same partition definition. Because of this, it’s best to separate automation logic between ingestion and transformation layers, especially when they use different granularities.
+
 :::
 
 ## Downstream assets

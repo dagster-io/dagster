@@ -1,5 +1,5 @@
 ---
-title: dbt incremental assets
+title: Adjust dbt asset config for incremental models
 description: The dbt incremental assets
 last_update:
   author: Dennis Hume
@@ -19,7 +19,9 @@ Here’s how incremental models work:
 - **First run**: the model processes the full dataset with no filters.
 - **Subsequent runs**: dbt applies the `is_incremental()` filter, using `min_date` and `max_date` values provided at runtime.
 
-Since Dagster is orchestrating dbt, we want Dagster to supply those variables. The values come directly from the Dagster partition context.
+1. Update dbt component configuration
+
+Since Dagster is orchestrating dbt, we want Dagster to supply the `min_date` and `max_date` variables. The values come directly from the Dagster [partition](/guides/build/partitions-and-backfills/partitioning-assets) context.
 
 To enable this, we update the scaffolding YAML to include partitions:
 
@@ -35,8 +37,8 @@ This design lets us:
 - Keep partitioning consistent across upstream and downstream assets.
 - Run incremental updates or full backfills as needed.
 
-Best of all, this pattern applies automatically to every dbt model in the project. As you add more models—incremental or not—Dagster will handle them the same way, with no extra structural changes.
+Best of all, this pattern applies automatically to every dbt model in the project. As you add more models — incremental or not — Dagster will handle them the same way, with no extra structural changes.
 
 ## Next steps
 
-- Continue this example with [dbt tests](/examples/dbt/dbt-tests)
+- Continue this example with [dbt tests](/examples/dbt/dbt-tests).

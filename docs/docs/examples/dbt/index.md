@@ -1,6 +1,6 @@
 ---
 title: Dagster integration with dbt
-description: Learn how to integrate with dbt
+description: Learn how to integrate Dagster with dbt
 last_update:
   author: Dennis Hume
 sidebar_custom_props:
@@ -10,14 +10,11 @@ canonicalUrl: '/examples/dbt'
 slug: '/examples/dbt'
 ---
 
-# dbt
 
-In this example, you'll build a pipeline with Dagster that:
+In this example, you'll build a pipeline with Dagster that integrates with dbt.
 
-- Integrates with dbt
 
-<details>
-  <summary>Prerequisites</summary>
+## Prerequisites
 
 To follow the steps in this guide, you'll need:
 
@@ -25,9 +22,8 @@ To follow the steps in this guide, you'll need:
 - Python 3.9+ installed on your system. Refer to the [Installation guide](/getting-started/installation) for information.
 - Familiar with [dbt](https://www.getdbt.com) and data transformation.
 
-</details>
 
-## Step 1: Set up your Dagster environment
+## 1. Set up your Dagster environment
 
 First, set up a new Dagster project.
 
@@ -54,7 +50,7 @@ First, set up a new Dagster project.
      </TabItem>
    </Tabs>
 
-4. Ensure the following environments have been populated in your .env file. Start by copying the template:
+4. Ensure the following environments have been populated in your `.env` file. Start by copying the template:
 
    ```bash
    cp .env.example .env
@@ -62,7 +58,7 @@ First, set up a new Dagster project.
 
    And then populate the fields.
 
-## Step 2: Launch the Dagster webserver
+## 2. Launch the Dagster webserver
 
 To make sure Dagster and its dependencies were installed correctly, navigate to the project root directory and start the Dagster webserver:
 
@@ -74,4 +70,4 @@ dg dev
 
 ## Next steps
 
-- Continue this example with [ingestion](/examples/dbt/ingestion)
+Continue this example with the [ingestion step](/examples/dbt/ingestion).
