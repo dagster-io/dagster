@@ -9,7 +9,7 @@ from dagster import (
     AssetMaterialization,
     MetadataValue,
     Output,
-    get_dagster_logger
+    get_dagster_logger,
 )
 from dagster._annotations import beta
 from dagster._record import record
