@@ -7,7 +7,6 @@ from typing import Any, Optional, cast
 
 import requests
 from dagster import Failure, MetadataValue, get_dagster_logger
-from dagster._annotations import beta
 from dagster._utils.cached_method import cached_method
 from dagster_shared.dagster_model import DagsterModel
 from pydantic import Field
@@ -26,7 +25,6 @@ DAGSTER_DBT_CLOUD_POLL_INTERVAL = int(os.getenv("DAGSTER_DBT_CLOUD_POLL_INTERVAL
 DAGSTER_DBT_CLOUD_POLL_TIMEOUT = int(os.getenv("DAGSTER_DBT_CLOUD_POLL_TIMEOUT", "60"))
 
 
-@beta
 class DbtCloudWorkspaceClient(DagsterModel):
     account_id: int = Field(
         ...,

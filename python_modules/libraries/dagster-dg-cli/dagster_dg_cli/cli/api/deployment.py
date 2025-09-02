@@ -5,9 +5,11 @@ import json
 import click
 from dagster_dg_core.utils import DgClickCommand, DgClickGroup
 from dagster_dg_core.utils.telemetry import cli_telemetry_wrapper
+from dagster_shared.plus.config import DagsterPlusCliConfig
+from dagster_shared.plus.config_utils import dg_api_options
 
 # Lazy import to avoid loading pydantic at CLI startup
-from dagster_dg_cli.cli.api.client import create_dg_api_client
+from dagster_dg_cli.cli.api.client import create_dg_api_graphql_client
 from dagster_dg_cli.cli.api.formatters import format_deployments
 
 
@@ -18,11 +20,18 @@ from dagster_dg_cli.cli.api.formatters import format_deployments
     is_flag=True,
     help="Output in JSON format for machine readability",
 )
+@dg_api_options(organization_scoped=True)
 @cli_telemetry_wrapper
 @click.pass_context
-def list_deployments_command(ctx: click.Context, output_json: bool) -> None:
+def list_deployments_command(
+    ctx: click.Context, output_json: bool, organization: str, api_token: str, view_graphql: bool
+) -> None:
     """List all deployments in the organization."""
-    client = create_dg_api_client(ctx)
+    config = DagsterPlusCliConfig.create_for_organization(
+        organization=organization,
+        user_token=api_token,
+    )
+    client = create_dg_api_graphql_client(ctx, config, view_graphql=view_graphql)
     from dagster_dg_cli.api_layer.api.deployments import DgApiDeploymentApi
 
     api = DgApiDeploymentApi(client)

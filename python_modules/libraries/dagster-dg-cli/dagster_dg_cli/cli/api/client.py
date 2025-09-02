@@ -28,7 +28,7 @@ class DgApiTestContext:
 
 
 def create_dg_api_graphql_client(
-    ctx: click.Context, config: DagsterPlusCliConfig
+    ctx: click.Context, config: DagsterPlusCliConfig, view_graphql: bool = False
 ) -> IGraphQLClient:
     """Create GraphQL client for DG API commands.
 
@@ -38,25 +38,34 @@ def create_dg_api_graphql_client(
     Args:
         ctx: Click context from the CLI command
         config: Config to use for creating the client
+        view_graphql: If True, wrap the client with debugging output
 
     Returns:
         IGraphQLClient instance
     """
     # Check if we have a test context with custom factory
     if ctx.obj and isinstance(ctx.obj, DgApiTestContext) and ctx.obj.client_factory:
-        return ctx.obj.client_factory(config)
+        client = ctx.obj.client_factory(config)
+    else:
+        # For normal operation, validate token exists and create client
+        if not config.user_token:
+            raise click.UsageError(
+                "A Dagster Cloud API token must be specified.\n\n"
+                "You may specify a token by:\n"
+                "- Providing the --api-token parameter\n"
+                "- Setting the DAGSTER_CLOUD_API_TOKEN environment variable"
+            )
 
-    # For normal operation, validate token exists and create client
-    if not config.user_token:
-        raise click.UsageError(
-            "A Dagster Cloud API token must be specified.\n\n"
-            "You may specify a token by:\n"
-            "- Providing the --api-token parameter\n"
-            "- Setting the DAGSTER_CLOUD_API_TOKEN environment variable"
-        )
+        # Normal operation: create real client from config
+        client = DagsterPlusGraphQLClient.from_config(config)
 
-    # Normal operation: create real client from config
-    return DagsterPlusGraphQLClient.from_config(config)
+    # Wrap with debug client if requested
+    if view_graphql:
+        from dagster_dg_cli.utils.plus.gql_client import DebugGraphQLClient
+
+        client = DebugGraphQLClient(client)
+
+    return client
 
 
 def create_dg_api_client(ctx: click.Context) -> IGraphQLClient:

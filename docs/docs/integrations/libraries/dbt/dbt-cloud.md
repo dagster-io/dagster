@@ -11,10 +11,6 @@ partnerlink:
 sidebar_position: 500
 ---
 
-import Beta from '@site/docs/partials/\_Beta.md';
-
-<Beta />
-
 <p>{frontMatter.description}</p>
 
 Our updated dbt Cloud integration offers two capabilities:

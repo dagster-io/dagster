@@ -9,8 +9,8 @@ from dagster import (
     AssetMaterialization,
     MetadataValue,
     Output,
+    get_dagster_logger,
 )
-from dagster._annotations import beta
 from dagster._record import record
 from dateutil import parser
 
@@ -22,8 +22,9 @@ from dagster_dbt.dagster_dbt_translator import DagsterDbtTranslator
 
 COMPLETED_AT_TIMESTAMP_METADATA_KEY = "dagster_dbt/completed_at_timestamp"
 
+logger = get_dagster_logger()
 
-@beta
+
 @record
 class DbtCloudJobRunHandler:
     """Handles the process of a dbt Cloud job run."""
@@ -70,7 +71,6 @@ def get_completed_at_timestamp(result: Mapping[str, Any]) -> float:
     return parser.parse(result["timing"][-1]["completed_at"]).timestamp()
 
 
-@beta
 @record
 class DbtCloudJobRunResults:
     """Represents the run results of a dbt Cloud job run."""
@@ -121,7 +121,15 @@ class DbtCloudJobRunResults:
         invocation_id: str = self.run_results["metadata"]["invocation_id"]
         for result in self.run_results["results"]:
             unique_id: str = result["unique_id"]
-            dbt_resource_props: Mapping[str, Any] = manifest["nodes"][unique_id]
+            dbt_resource_props: Mapping[str, Any] = manifest["nodes"].get(unique_id)
+            if not dbt_resource_props:
+                logger.warning(
+                    f"Unique ID {unique_id} not found in manifest. "
+                    f"This can happen if you are parsing old runs fetched via the sensor, "
+                    f"or if your manifest is out of date. "
+                    f"Reloading your code location will fix the latter."
+                )
+                continue
             select: str = ".".join(dbt_resource_props["fqn"])
 
             default_metadata = {

@@ -41,6 +41,7 @@ def list_assets_command(
     organization: str,
     deployment: str,
     api_token: str,
+    view_graphql: bool,
 ) -> None:
     """List assets with pagination."""
     config = DagsterPlusCliConfig.create_for_deployment(
@@ -48,7 +49,7 @@ def list_assets_command(
         organization=organization,
         user_token=api_token,
     )
-    client = create_dg_api_graphql_client(ctx, config)
+    client = create_dg_api_graphql_client(ctx, config, view_graphql=view_graphql)
     from dagster_dg_cli.api_layer.api.asset import DgApiAssetApi
 
     api = DgApiAssetApi(client)
@@ -84,6 +85,7 @@ def get_asset_command(
     organization: str,
     deployment: str,
     api_token: str,
+    view_graphql: bool,
 ) -> None:
     """Get specific asset details."""
     config = DagsterPlusCliConfig.create_for_deployment(
@@ -91,7 +93,7 @@ def get_asset_command(
         organization=organization,
         user_token=api_token,
     )
-    client = create_dg_api_graphql_client(ctx, config)
+    client = create_dg_api_graphql_client(ctx, config, view_graphql=view_graphql)
     from dagster_dg_cli.api_layer.api.asset import DgApiAssetApi
 
     api = DgApiAssetApi(client)

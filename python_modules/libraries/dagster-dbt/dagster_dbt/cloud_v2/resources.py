@@ -13,7 +13,7 @@ from dagster import (
     get_dagster_logger,
     multi_asset_check,
 )
-from dagster._annotations import beta, public
+from dagster._annotations import public
 from dagster._config.pythonic_config.resource import ResourceDependency
 from dagster._core.definitions.definitions_load_context import StateBackedDefinitionsLoader
 from dagster._record import record
@@ -58,7 +58,6 @@ def get_dagster_adhoc_job_name(
 
 
 @public
-@beta
 class DbtCloudCredentials(NamedTuple):
     """The DbtCloudCredentials to access your dbt Cloud Workspace."""
 
@@ -68,7 +67,6 @@ class DbtCloudCredentials(NamedTuple):
 
 
 @public
-@beta
 class DbtCloudWorkspace(ConfigurableResource):
     """This class represents a dbt Cloud workspace and provides utilities
     to interact with dbt Cloud APIs.
@@ -363,7 +361,6 @@ class DbtCloudWorkspace(ConfigurableResource):
         )
 
 
-@beta
 def load_dbt_cloud_asset_specs(
     workspace: DbtCloudWorkspace,
     dagster_dbt_translator: Optional[DagsterDbtTranslator] = None,
@@ -379,7 +376,6 @@ def load_dbt_cloud_asset_specs(
     )
 
 
-@beta
 def load_dbt_cloud_check_specs(
     workspace: DbtCloudWorkspace,
     dagster_dbt_translator: Optional[DagsterDbtTranslator] = None,
@@ -395,7 +391,6 @@ def load_dbt_cloud_check_specs(
     )
 
 
-@beta
 @record
 class DbtCloudWorkspaceDefsLoader(StateBackedDefinitionsLoader[DbtCloudWorkspaceData]):
     workspace: DbtCloudWorkspace
