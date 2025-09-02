@@ -264,7 +264,11 @@ export const AssetChecks = ({
             />
           ) : null}
           {activeTab === 'execution-history' ? (
-            <AssetCheckExecutionList executions={executions} paginationProps={paginationProps} />
+            <AssetCheckExecutionList
+              executions={executions}
+              paginationProps={paginationProps}
+              hasPartitions={hasPartitions}
+            />
           ) : null}
           {activeTab === 'automation-history' ? (
             <AssetCheckAutomationList assetCheck={selectedCheck} checkName={selectedCheck.name} />
