@@ -4,6 +4,9 @@ rerecord:
 	dagster-dev dg-api-record asset
 
 test:
+	pytest . -v
+
+snapshot:
 	pytest . --snapshot-update -v
 
 clean:
