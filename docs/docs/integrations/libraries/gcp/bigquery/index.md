@@ -12,10 +12,6 @@ canonicalUrl: '/integrations/libraries/gcp/bigquery'
 slug: '/integrations/libraries/gcp/bigquery'
 ---
 
-import Beta from '@site/docs/partials/\_Beta.md';
-
-<Beta />
-
 The Google Cloud Platform BigQuery integration allows data engineers to easily query and store data in the BigQuery data warehouse through the use of the `BigQueryResource`.
 
 ### Installation
