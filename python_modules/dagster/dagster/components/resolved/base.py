@@ -30,6 +30,7 @@ except ImportError:
 class _TypeContainer(Enum):
     SEQUENCE = auto()
     OPTIONAL = auto()
+    DICT = auto()
 
 
 _DERIVED_MODEL_REGISTRY = {}
@@ -508,6 +509,14 @@ def _dig_for_resolver(annotation, path: Sequence[_TypeContainer]) -> Optional[Re
         if res:
             return res
 
+    elif origin is dict:
+        key_type, value_type = args
+        if key_type != str:
+            raise ResolutionException(f"dict key type must be str, got {key_type}")
+        value_res = _dig_for_resolver(value_type, [*path, _TypeContainer.DICT])
+        if value_res:
+            return value_res
+
 
 def _wrap(ttype, path: Sequence[_TypeContainer]):
     result_type = ttype
@@ -517,6 +526,8 @@ def _wrap(ttype, path: Sequence[_TypeContainer]):
         elif container is _TypeContainer.SEQUENCE:
             # use tuple instead of Sequence for perf
             result_type = tuple[result_type, ...]
+        elif container is _TypeContainer.DICT:
+            result_type = dict[str, result_type]
         else:
             check.assert_never(container)
     return result_type
@@ -540,6 +551,11 @@ def _resolve_at_path(
             _resolve_at_path(context.at_path(idx), i, inner_path, resolver)
             for idx, i in enumerate(value)
         ]
+    elif container is _TypeContainer.DICT:
+        return {
+            k: _resolve_at_path(context.at_path(k), v, inner_path, resolver)
+            for k, v in value.items()
+        }
 
     check.assert_never(container)
 
