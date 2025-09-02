@@ -13,7 +13,7 @@ from dagster import (
     get_dagster_logger,
     multi_asset_check,
 )
-from dagster._annotations import beta
+from dagster._annotations import beta, public
 from dagster._config.pythonic_config.resource import ResourceDependency
 from dagster._core.definitions.definitions_load_context import StateBackedDefinitionsLoader
 from dagster._record import record
@@ -57,6 +57,7 @@ def get_dagster_adhoc_job_name(
     return clean_name(name).upper()
 
 
+@public
 @beta
 class DbtCloudCredentials(NamedTuple):
     """The DbtCloudCredentials to access your dbt Cloud Workspace."""
@@ -66,6 +67,7 @@ class DbtCloudCredentials(NamedTuple):
     access_url: str
 
 
+@public
 @beta
 class DbtCloudWorkspace(ConfigurableResource):
     """This class represents a dbt Cloud workspace and provides utilities

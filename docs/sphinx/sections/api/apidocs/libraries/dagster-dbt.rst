@@ -88,9 +88,19 @@ CLI Resource
 dbt Cloud v2
 ************
 
-Here, we provide updated interfaces to manage dbt projects invoked by the hosted dbt Cloud service.
+Updated interfaces to manage dbt projects invoked by the hosted dbt Cloud service.
+
+Assets (dbt Cloud v2)
+=====================
 
 .. autodecorator:: dbt_cloud_assets
+
+Resources (dbt Cloud v2)
+========================
+
+.. autoclass:: DbtCloudCredentials
+
+.. autoclass:: DbtCloudWorkspace
 
 *********
 dbt Cloud

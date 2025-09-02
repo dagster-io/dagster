@@ -1,8 +1,9 @@
 from typing import Any, Callable, Optional
 
 from dagster import AssetsDefinition, multi_asset
-from dagster._annotations import beta
+from dagster._annotations import beta, public
 from dagster._core.errors import DagsterInvariantViolationError
+
 
 from dagster_dbt.asset_utils import (
     DAGSTER_DBT_EXCLUDE_METADATA_KEY,
@@ -17,6 +18,7 @@ from dagster_dbt.dagster_dbt_translator import DagsterDbtTranslator
 
 
 @beta
+@public
 def dbt_cloud_assets(
     *,
     workspace: DbtCloudWorkspace,
