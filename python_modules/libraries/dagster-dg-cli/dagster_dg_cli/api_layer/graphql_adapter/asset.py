@@ -4,6 +4,7 @@ from typing import Optional
 
 from dagster_dg_cli.api_layer.schemas.asset import (
     DgApiAsset,
+    DgApiAssetChecksStatus,
     DgApiAssetFreshnessInfo,
     DgApiAssetList,
     DgApiAssetMaterialization,
@@ -230,43 +231,93 @@ def get_dg_plus_api_asset_via_graphql(
     )
 
 
-# Status view GraphQL queries - using only assetNodes (no assets field available)
+# Status view GraphQL queries - using assetsOrError to get assetHealth data
 ASSETS_WITH_STATUS_QUERY = """
 query AssetsWithStatus($assetKeys: [AssetKeyInput!]!) {
-    assetNodes(assetKeys: $assetKeys) {
-        id
-        assetKey { path }
-        description
-        groupName
-        kinds
-        metadataEntries {
-            label
-            description
-            ... on TextMetadataEntry { text }
-            ... on UrlMetadataEntry { url }
-            ... on PathMetadataEntry { path }
-            ... on JsonMetadataEntry { jsonString }
-            ... on MarkdownMetadataEntry { mdStr }
-            ... on PythonArtifactMetadataEntry { module name }
-            ... on FloatMetadataEntry { floatValue }
-            ... on IntMetadataEntry { intValue }
-            ... on BoolMetadataEntry { boolValue }
+    assetsOrError(assetKeys: $assetKeys) {
+        __typename
+        ... on AssetConnection {
+            nodes {
+                id
+                key { path }
+                # Asset definition contains the metadata, description, etc.
+                definition {
+                    description
+                    groupName
+                    kinds
+                    metadataEntries {
+                        label
+                        description
+                        ... on TextMetadataEntry { text }
+                        ... on UrlMetadataEntry { url }
+                        ... on PathMetadataEntry { path }
+                        ... on JsonMetadataEntry { jsonString }
+                        ... on MarkdownMetadataEntry { mdStr }
+                        ... on PythonArtifactMetadataEntry { module name }
+                        ... on FloatMetadataEntry { floatValue }
+                        ... on IntMetadataEntry { intValue }
+                        ... on BoolMetadataEntry { boolValue }
+                    }
+                    # Freshness information from definition
+                    freshnessInfo {
+                        currentLagMinutes
+                        currentMinutesLate
+                        latestMaterializationMinutesLate
+                    }
+                    freshnessPolicy {
+                        maximumLagMinutes
+                        cronSchedule
+                    }
+                }
+                # Asset health status information - this is the key missing data
+                assetHealth {
+                    assetHealth
+                    materializationStatus
+                    materializationStatusMetadata {
+                        ... on AssetHealthMaterializationDegradedPartitionedMeta {
+                            numMissingPartitions
+                            numFailedPartitions
+                            totalNumPartitions
+                        }
+                        ... on AssetHealthMaterializationHealthyPartitionedMeta {
+                            numMissingPartitions
+                            totalNumPartitions
+                        }
+                        ... on AssetHealthMaterializationDegradedNotPartitionedMeta {
+                            failedRunId
+                        }
+                    }
+                    assetChecksStatus
+                    assetChecksStatusMetadata {
+                        ... on AssetHealthCheckDegradedMeta {
+                            numFailedChecks
+                            numWarningChecks
+                            totalNumChecks
+                        }
+                        ... on AssetHealthCheckWarningMeta {
+                            numWarningChecks
+                            totalNumChecks
+                        }
+                        ... on AssetHealthCheckUnknownMeta {
+                            numNotExecutedChecks
+                            totalNumChecks
+                        }
+                    }
+                    freshnessStatus
+                    freshnessStatusMetadata {
+                        lastMaterializedTimestamp
+                    }
+                }
+                # Latest materialization information
+                assetMaterializations(limit: 1) {
+                    timestamp
+                    runId
+                    partition
+                }
+            }
         }
-        # Freshness information
-        freshnessInfo {
-            currentLagMinutes
-            currentMinutesLate
-            latestMaterializationMinutesLate
-        }
-        freshnessPolicy {
-            maximumLagMinutes
-            cronSchedule
-        }
-        # Latest materialization with partition info
-        latestMaterializationByPartition(partitions: []) {
-            timestamp
-            runId
-            partition
+        ... on PythonError {
+            message
         }
     }
 }
@@ -291,17 +342,48 @@ query AssetRecordsWithStatus($cursor: String, $limit: Int) {
 """
 
 
-def _transform_asset_status_data(asset_node_data) -> DgApiAssetStatus:
-    """Transform GraphQL node data into status format."""
-    # Note: Asset health data is not available in the current Dagster Plus API
-    # This is a simplified status view with available data
+def _transform_asset_status_data(asset_data) -> DgApiAssetStatus:
+    """Transform GraphQL asset data (from assetsOrError) into status format."""
+    if not asset_data:
+        return DgApiAssetStatus(
+            asset_health=None,
+            materialization_status=None,
+            freshness_status=None,
+            asset_checks_status=None,
+            health_metadata=None,
+            latest_materialization=None,
+            freshness_info=None,
+            checks_status=None,
+        )
 
-    # Extract freshness info
+    # Extract asset health data - this is now available from assetsOrError query
+    asset_health_data = asset_data.get("assetHealth", {})
+
+    # Extract status values from assetHealth
+    asset_health = asset_health_data.get("assetHealth")
+    materialization_status = asset_health_data.get("materializationStatus")
+    freshness_status = asset_health_data.get("freshnessStatus")
+    asset_checks_status = asset_health_data.get("assetChecksStatus")
+
+    # Extract freshness info from both sources
     freshness_info = None
-    if asset_node_data:
-        freshness_data = asset_node_data.get("freshnessInfo", {})
-        freshness_policy = asset_node_data.get("freshnessPolicy", {})
 
+    # Try freshness status metadata first (from assetHealth)
+    freshness_status_metadata = asset_health_data.get("freshnessStatusMetadata", {})
+    if freshness_status_metadata:
+        freshness_info = DgApiAssetFreshnessInfo(
+            current_lag_minutes=None,  # Not available in status metadata
+            current_minutes_late=None,  # Not available in status metadata
+            latest_materialization_minutes_late=None,  # Not available in status metadata
+            maximum_lag_minutes=None,  # Not available in status metadata
+            cron_schedule=None,  # Not available in status metadata
+        )
+
+    # Fall back to freshnessInfo and freshnessPolicy for compatibility
+    if not freshness_info:
+        definition_data = asset_data.get("definition", {})
+        freshness_data = definition_data.get("freshnessInfo", {})
+        freshness_policy = definition_data.get("freshnessPolicy", {})
         if freshness_data or freshness_policy:
             freshness_info = DgApiAssetFreshnessInfo(
                 current_lag_minutes=freshness_data.get("currentLagMinutes"),
@@ -313,28 +395,39 @@ def _transform_asset_status_data(asset_node_data) -> DgApiAssetStatus:
                 cron_schedule=freshness_policy.get("cronSchedule"),
             )
 
-    # Extract latest materialization
+    # Extract latest materialization from assetMaterializations
     latest_materialization = None
-    if asset_node_data:
-        mat_events = asset_node_data.get("latestMaterializationByPartition", [])
-        if mat_events:
-            latest = mat_events[0]  # Take most recent
-            latest_materialization = DgApiAssetMaterialization(
-                timestamp=latest.get("timestamp"),
-                run_id=latest.get("runId"),
-                partition=latest.get("partition"),
-            )
+    mat_events = asset_data.get("assetMaterializations", [])
+    if mat_events:
+        latest = mat_events[0]  # Already limited to 1 in query
+        latest_materialization = DgApiAssetMaterialization(
+            timestamp=latest.get("timestamp"),
+            run_id=latest.get("runId"),
+            partition=latest.get("partition"),
+        )
 
-    # Return status with available data (no health data available in current API)
+    # Create checks status object from raw status and metadata
+    checks_status = None
+    if asset_checks_status:
+        # Extract check metadata if available
+        checks_metadata = asset_health_data.get("assetChecksStatusMetadata") or {}
+        checks_status = DgApiAssetChecksStatus(
+            status=asset_checks_status,
+            num_failed_checks=checks_metadata.get("numFailedChecks"),
+            num_warning_checks=checks_metadata.get("numWarningChecks"),
+            total_num_checks=checks_metadata.get("totalNumChecks"),
+        )
+
+    # Return status with actual health data
     return DgApiAssetStatus(
-        asset_health=None,
-        materialization_status=None,
-        freshness_status=None,
-        asset_checks_status=None,
-        health_metadata=None,
+        asset_health=asset_health,
+        materialization_status=materialization_status,
+        freshness_status=freshness_status,
+        asset_checks_status=asset_checks_status,
+        health_metadata=None,  # Could be populated from status metadata if needed
         latest_materialization=latest_materialization,
         freshness_info=freshness_info,
-        checks_status=None,
+        checks_status=checks_status,
     )
 
 
@@ -367,13 +460,19 @@ def list_dg_plus_api_assets_with_status_via_graphql(
     asset_keys = [{"path": record["key"]["path"]} for record in records]
 
     status_result = client.execute(ASSETS_WITH_STATUS_QUERY, variables={"assetKeys": asset_keys})
-    asset_nodes = status_result.get("assetNodes", [])
+
+    # Handle assetsOrError response structure
+    assets_or_error = status_result.get("assetsOrError", {})
+    if assets_or_error.get("__typename") == "PythonError":
+        raise Exception(f"GraphQL error: {assets_or_error.get('message', 'Unknown error')}")
+
+    asset_nodes = assets_or_error.get("nodes", [])
 
     # Step 3: Transform and combine data
     assets = []
 
     # Create lookup map for efficient merging
-    nodes_by_key = {"/".join(node["assetKey"]["path"]): node for node in asset_nodes}
+    nodes_by_key = {"/".join(node["key"]["path"]): node for node in asset_nodes}
 
     for record in records:
         asset_key_parts = record["key"]["path"]
@@ -385,9 +484,10 @@ def list_dg_plus_api_assets_with_status_via_graphql(
         if not node_data:
             continue  # Skip if we don't have node data
 
-        # Build basic asset data
+        # Build basic asset data from definition
+        definition_data = node_data.get("definition", {})
         metadata_entries = []
-        for entry in node_data.get("metadataEntries", []):
+        for entry in definition_data.get("metadataEntries", []):
             metadata_dict = {
                 "label": entry.get("label", ""),
                 "description": entry.get("description", ""),
@@ -418,9 +518,9 @@ def list_dg_plus_api_assets_with_status_via_graphql(
             id=node_data["id"],
             asset_key=asset_key,
             asset_key_parts=asset_key_parts,
-            description=node_data.get("description"),
-            group_name=node_data.get("groupName", ""),
-            kinds=node_data.get("kinds", []),
+            description=definition_data.get("description"),
+            group_name=definition_data.get("groupName", ""),
+            kinds=definition_data.get("kinds", []),
             metadata_entries=metadata_entries,
             status=status,
         )
@@ -442,7 +542,13 @@ def get_dg_plus_api_asset_with_status_via_graphql(
     variables = {"assetKeys": [{"path": asset_key_parts}]}
 
     result = client.execute(ASSETS_WITH_STATUS_QUERY, variables=variables)
-    asset_nodes = result.get("assetNodes", [])
+
+    # Handle assetsOrError response structure
+    assets_or_error = result.get("assetsOrError", {})
+    if assets_or_error.get("__typename") == "PythonError":
+        raise Exception(f"GraphQL error: {assets_or_error.get('message', 'Unknown error')}")
+
+    asset_nodes = assets_or_error.get("nodes", [])
 
     if not asset_nodes:
         raise Exception(f"Asset not found: {'/'.join(asset_key_parts)}")
@@ -450,9 +556,10 @@ def get_dg_plus_api_asset_with_status_via_graphql(
     node = asset_nodes[0]
     asset_key = "/".join(asset_key_parts)
 
-    # Build metadata entries (same logic as existing)
+    # Build metadata entries from definition
+    definition_data = node.get("definition", {})
     metadata_entries = []
-    for entry in node.get("metadataEntries", []):
+    for entry in definition_data.get("metadataEntries", []):
         metadata_dict = {
             "label": entry.get("label", ""),
             "description": entry.get("description", ""),
@@ -482,9 +589,9 @@ def get_dg_plus_api_asset_with_status_via_graphql(
         id=node["id"],
         asset_key=asset_key,
         asset_key_parts=asset_key_parts,
-        description=node.get("description"),
-        group_name=node.get("groupName", ""),
-        kinds=node.get("kinds", []),
+        description=definition_data.get("description"),
+        group_name=definition_data.get("groupName", ""),
+        kinds=definition_data.get("kinds", []),
         metadata_entries=metadata_entries,
         status=status,
     )

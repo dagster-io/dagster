@@ -20,6 +20,9 @@ success_assets_status_view:
 success_single_asset_status_view:
   command: "dg api asset get aws/cloud-prod/workspace_staging_pipelines --view status --json"
 
+success_purina_asset_status_view:
+  command: "dg api asset get purina/core/gtm_user_attribution --view status --json"
+
 success_assets_status_view_human_readable:
   command: "dg api asset list --view status"
 
