@@ -36,6 +36,10 @@ query AssetNodes($assetKeys: [AssetKeyInput!]!) {
         description
         groupName
         kinds
+        tags {
+            key
+            value
+        }
         metadataEntries {
             label
             description
@@ -146,6 +150,16 @@ def list_dg_plus_api_assets_via_graphql(
 
             metadata_entries.append(metadata_dict)
 
+        # Convert tags to dict format
+        tags = []
+        for tag in node.get("tags", []):
+            tags.append(
+                {
+                    "key": tag.get("key", ""),
+                    "value": tag.get("value", ""),
+                }
+            )
+
         asset = DgApiAsset(
             id=node["id"],
             asset_key=asset_key,
@@ -153,6 +167,7 @@ def list_dg_plus_api_assets_via_graphql(
             description=node.get("description"),
             group_name=node.get("groupName", ""),
             kinds=node.get("kinds", []),
+            tags=tags,
             metadata_entries=metadata_entries,
         )
         assets.append(asset)
@@ -213,6 +228,16 @@ def get_dg_plus_api_asset_via_graphql(
 
         metadata_entries.append(metadata_dict)
 
+    # Convert tags to dict format
+    tags = []
+    for tag in node.get("tags", []):
+        tags.append(
+            {
+                "key": tag.get("key", ""),
+                "value": tag.get("value", ""),
+            }
+        )
+
     return DgApiAsset(
         id=node["id"],
         asset_key=asset_key,
@@ -220,5 +245,6 @@ def get_dg_plus_api_asset_via_graphql(
         description=node.get("description"),
         group_name=node.get("groupName", ""),
         kinds=node.get("kinds", []),
+        tags=tags,
         metadata_entries=metadata_entries,
     )

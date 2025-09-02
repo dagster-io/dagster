@@ -14,6 +14,7 @@ class DgApiAsset(BaseModel):
     description: Optional[str]
     group_name: str
     kinds: list[str]
+    tags: Optional[list[dict]] = []
     metadata_entries: list[dict]
 
     class Config:

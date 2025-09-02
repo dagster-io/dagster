@@ -65,15 +65,16 @@
         'label': 'bool_meta',
       }),
     ]),
+    'tags': list([
+    ]),
   })
 # ---
 # name: TestFormatAssets.test_format_asset_without_metadata[0]
   '''
-  Asset Key: simple
+  Asset: simple [default]
+  
+  ━━━ Technical Details ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
   ID: simple-asset
-  Description: None
-  Group: default
-  Kinds: None
   '''
 # ---
 # name: TestFormatAssets.test_format_assets_json_output[0]
@@ -104,6 +105,8 @@
             'label': 'rows',
           }),
         ]),
+        'tags': list([
+        ]),
       }),
       dict({
         'asset_key': 'analytics/user_metrics',
@@ -120,23 +123,30 @@
         ]),
         'metadata_entries': list([
         ]),
+        'tags': list([
+        ]),
       }),
     ]),
   })
 # ---
+# name: TestFormatAssets.test_format_assets_markdown_output[0]
+  '''
+  # Assets
+  
+  | Asset Key | Group | Kinds | Description |
+  |-----------|-------|-------|-------------|
+  | users | core_tables | dbt, table | User data table |
+  | analytics/user_metrics | analytics | dbt, view | Aggregated user metrics |
+  '''
+# ---
 # name: TestFormatAssets.test_format_assets_text_output[0]
   '''
-  Asset Key: users
-  ID: asset-1
-  Description: User data table
-  Group: core_tables
-  Kinds: dbt, table
-  
-  Asset Key: analytics/user_metrics
-  ID: asset-2
-  Description: Aggregated user metrics
-  Group: analytics
-  Kinds: dbt, view
+  ┏━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━
+  ┃ Asset Key              ┃ Group        ┃ Kinds        ┃ Description            
+  ┡━━━━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━━━
+  │ users                  │ core_tables  │ dbt, table   │ User data table        
+  │ analytics/user_metrics │ analytics    │ dbt, view    │ Aggregated user metrics
+  └────────────────────────┴──────────────┴──────────────┴────────────────────────
   '''
 # ---
 # name: TestFormatAssets.test_format_empty_assets_json_output[0]
@@ -147,8 +157,11 @@
     ]),
   })
 # ---
+# name: TestFormatAssets.test_format_empty_assets_markdown_output[0]
+  'No assets found.'
+# ---
 # name: TestFormatAssets.test_format_empty_assets_text_output[0]
-  ''
+  'No assets found.'
 # ---
 # name: TestFormatAssets.test_format_single_asset_json_output[0]
   dict({
@@ -174,18 +187,47 @@
         'text': 'public',
       }),
     ]),
+    'tags': list([
+    ]),
   })
+# ---
+# name: TestFormatAssets.test_format_single_asset_markdown_output[0]
+  '''
+  # Asset: users
+  **Group:** core_tables
+  **Kinds:** dbt, table
+  
+  ## Description
+  
+  User data table
+  
+  ## Metadata
+  
+  - **owner:** data-team
+    - _(owner)_
+  - **schema:** public
+    - _(schema)_
+  
+  ## Technical Details
+  
+  **ID:** asset-1
+  '''
 # ---
 # name: TestFormatAssets.test_format_single_asset_text_output[0]
   '''
-  Asset Key: users
-  ID: asset-1
-  Description: User data table
-  Group: core_tables
+  Asset: users [core_tables]
   Kinds: dbt, table
   
-  Metadata:
-    owner: data-team
-    schema: public
+  ━━━ Description ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+    User data table
+  
+  ━━━ Metadata ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  owner: data-team
+         (owner)
+  schema: public
+         (schema)
+  
+  ━━━ Technical Details ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  ID: asset-1
   '''
 # ---

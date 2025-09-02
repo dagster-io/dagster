@@ -20,13 +20,36 @@ from dagster_dg_cli.cli.api.formatters import format_deployments
     is_flag=True,
     help="Output in JSON format for machine readability",
 )
+@click.option(
+    "--md",
+    "output_md",
+    is_flag=True,
+    help="Output in Markdown format for agent consumption",
+)
 @dg_api_options(organization_scoped=True)
 @cli_telemetry_wrapper
 @click.pass_context
 def list_deployments_command(
-    ctx: click.Context, output_json: bool, organization: str, api_token: str, view_graphql: bool
+    ctx: click.Context,
+    output_json: bool,
+    output_md: bool,
+    organization: str,
+    api_token: str,
+    view_graphql: bool,
 ) -> None:
     """List all deployments in the organization."""
+    # Validate that only one output format is specified
+    if output_json and output_md:
+        raise click.UsageError("Cannot specify both --json and --md flags")
+
+    # Determine output format
+    if output_json:
+        output_format = "json"
+    elif output_md:
+        output_format = "markdown"
+    else:
+        output_format = "table"
+
     config = DagsterPlusCliConfig.create_for_organization(
         organization=organization,
         user_token=api_token,
@@ -38,7 +61,7 @@ def list_deployments_command(
 
     try:
         deployments = api.list_deployments()
-        output = format_deployments(deployments, as_json=output_json)
+        output = format_deployments(deployments, output_format=output_format)
         click.echo(output)
     except Exception as e:
         if output_json:

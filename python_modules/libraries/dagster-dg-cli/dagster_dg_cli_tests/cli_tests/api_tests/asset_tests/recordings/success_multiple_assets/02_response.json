@@ -12,7 +12,8 @@
       "groupName": "aws_stages",
       "id": "dagster_open_platform.__repository__.[\"aws\", \"cloud-prod\", \"user_roles\"]",
       "kinds": [],
-      "metadataEntries": []
+      "metadataEntries": [],
+      "tags": []
     },
     {
       "assetKey": {
@@ -26,7 +27,8 @@
       "groupName": "aws_stages",
       "id": "dagster_open_platform.__repository__.[\"aws\", \"cloud-prod\", \"workspace_staging_asset_checks\"]",
       "kinds": [],
-      "metadataEntries": []
+      "metadataEntries": [],
+      "tags": []
     },
     {
       "assetKey": {
@@ -40,7 +42,8 @@
       "groupName": "aws_stages",
       "id": "dagster_open_platform.__repository__.[\"aws\", \"cloud-prod\", \"workspace_staging_assets\"]",
       "kinds": [],
-      "metadataEntries": []
+      "metadataEntries": [],
+      "tags": []
     },
     {
       "assetKey": {
@@ -54,7 +57,8 @@
       "groupName": "aws_stages",
       "id": "dagster_open_platform.__repository__.[\"aws\", \"cloud-prod\", \"workspace_staging_external_repo_metadata\"]",
       "kinds": [],
-      "metadataEntries": []
+      "metadataEntries": [],
+      "tags": []
     },
     {
       "assetKey": {
@@ -68,7 +72,8 @@
       "groupName": "aws_stages",
       "id": "dagster_open_platform.__repository__.[\"aws\", \"cloud-prod\", \"workspace_staging_jobs\"]",
       "kinds": [],
-      "metadataEntries": []
+      "metadataEntries": [],
+      "tags": []
     },
     {
       "assetKey": {
@@ -82,7 +87,8 @@
       "groupName": "aws_stages",
       "id": "dagster_open_platform.__repository__.[\"aws\", \"cloud-prod\", \"workspace_staging_metadata\"]",
       "kinds": [],
-      "metadataEntries": []
+      "metadataEntries": [],
+      "tags": []
     },
     {
       "assetKey": {
@@ -96,7 +102,8 @@
       "groupName": "aws_stages",
       "id": "dagster_open_platform.__repository__.[\"aws\", \"cloud-prod\", \"workspace_staging_partitions\"]",
       "kinds": [],
-      "metadataEntries": []
+      "metadataEntries": [],
+      "tags": []
     },
     {
       "assetKey": {
@@ -110,7 +117,8 @@
       "groupName": "aws_stages",
       "id": "dagster_open_platform.__repository__.[\"aws\", \"cloud-prod\", \"workspace_staging_pipelines\"]",
       "kinds": [],
-      "metadataEntries": []
+      "metadataEntries": [],
+      "tags": []
     }
   ]
 }

@@ -36,32 +36,36 @@
     'total': 6,
   })
 # ---
+# name: TestFormatDeployments.test_format_deployments_markdown_output[0]
+  '''
+  # Deployments
+  
+  | Name | ID | Type |
+  |------|-----|------|
+  | uat | 6935 | PRODUCTION |
+  | excessive | 6936 | PRODUCTION |
+  | ben-test | 84915 | PRODUCTION |
+  | ecs | 37 | PRODUCTION |
+  | staging | 6934 | PRODUCTION |
+  | prod | 80 | PRODUCTION |
+  '''
+# ---
 # name: TestFormatDeployments.test_format_deployments_text_output[0]
   '''
-  Name: uat
-  ID: 6935
-  Type: PRODUCTION
-  
-  Name: excessive
-  ID: 6936
-  Type: PRODUCTION
-  
-  Name: ben-test
-  ID: 84915
-  Type: PRODUCTION
-  
-  Name: ecs
-  ID: 37
-  Type: PRODUCTION
-  
-  Name: staging
-  ID: 6934
-  Type: PRODUCTION
-  
-  Name: prod
-  ID: 80
-  Type: PRODUCTION
+  ┏━━━━━━━━━━━━┳━━━━━━━━┳━━━━━━━━━━━━┓
+  ┃ Name       ┃     ID ┃ Type       ┃
+  ┡━━━━━━━━━━━━╇━━━━━━━━╇━━━━━━━━━━━━┩
+  │ uat        │   6935 │ PRODUCTION │
+  │ excessive  │   6936 │ PRODUCTION │
+  │ ben-test   │  84915 │ PRODUCTION │
+  │ ecs        │     37 │ PRODUCTION │
+  │ staging    │   6934 │ PRODUCTION │
+  │ prod       │     80 │ PRODUCTION │
+  └────────────┴────────┴────────────┘
   '''
+# ---
+# name: TestFormatDeployments.test_format_empty_deployments_markdown_output[0]
+  'No deployments found.'
 # ---
 # name: TestProcessDeploymentsResponse.test_empty_response_processing[0]
   DeploymentList(items=[Deployment(id=6935, name='uat', type=<DeploymentType.PRODUCTION: 'PRODUCTION'>), Deployment(id=6936, name='excessive', type=<DeploymentType.PRODUCTION: 'PRODUCTION'>), Deployment(id=84915, name='ben-test', type=<DeploymentType.PRODUCTION: 'PRODUCTION'>), Deployment(id=37, name='ecs', type=<DeploymentType.PRODUCTION: 'PRODUCTION'>), Deployment(id=6934, name='staging', type=<DeploymentType.PRODUCTION: 'PRODUCTION'>), Deployment(id=80, name='prod', type=<DeploymentType.PRODUCTION: 'PRODUCTION'>)], total=6)
