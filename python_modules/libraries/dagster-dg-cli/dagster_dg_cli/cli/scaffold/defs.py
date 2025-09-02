@@ -317,7 +317,6 @@ def scaffold_defs_group(context: click.Context, help_: bool, **global_options: o
 @scaffold_defs_group.command(
     name="inline-component",
     cls=ScaffoldDefsSubCommand,
-    hidden=True,  # hiding for initial launch of 1.11 as it is undocumented. Will push out incrementally in later release -- schrockn 2025-06-20
 )
 @click.argument("path", type=str)
 @click.option(
