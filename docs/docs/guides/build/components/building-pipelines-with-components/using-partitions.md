@@ -18,7 +18,7 @@ Before adding partitions to a component, you must either [create a components-re
 
 ## Adding partitions in YAML
 
-If you've defined your component using a `defs.yaml` file, you'll first want to define a new `template_var` that returns the `PartitionsDef` object:
+If you've defined your component using a `defs.yaml` file, you'll first want to define a new `template_var` that returns the `PartitionsDef` object. Create a `template_vars.py` file in the same directory as your component's `defs.yaml`:
 
 <CodeExample
   path="docs_snippets/docs_snippets/guides/components/partitions/template_vars.py"
@@ -39,48 +39,27 @@ post_processing:
         partitions_def: "{{ the_daily_partitions_def }}"
 ```
 
-In the above snippet, we're applying the same `partitions_def` to all assets within the component. In general, it is recommended to avoid applying different partition definitions to different assets within a single component because each execution step must map to only a single partitions definition at a time. Any integration that maps multiple assets to the same step must take care to ensure that all of those assets have the same partitions definition, which is easiest if all assets in the entire component share a single partitions definition.
+We're applying the same `partitions_def` to all assets within the component. In general, it is recommended to avoid applying different partition definitions to different assets within a single component because each execution step must map to only a single partitions definition at a time. Any integration that maps multiple assets to the same step must take care to ensure that all of those assets have the same partitions definition, which is easiest if all assets in the entire component share a single partitions definition.
 
 ## Adding partitions in Python
 
-If you are using the `@component_instance` decorator to define your component, the simplest path will often be to create a new subclass of your component class. For example, you would transform:
+If you are using the `@component_instance` decorator to define your component, you can create a subclass of your component class that applies partitions to all assets:
 
-```python
-import dagster as dg
-
-@dg.component_instance
-def the_component():
-    return SomeComponent()
-```
-
-into:
-
-```python
-import dagster as dg
-
-def add_partitions_def(spec: dg.AssetSpec) -> dg.AssetSpec:
-    return spec.replace_attributes(
-        partitions_def=dg.DailyPartitionsDefinition(start_date="2020-01-01")
-    )
-
-class SomeComponentWithPartitions(SomeComponent):
-    def build_defs(self, context: dg.ComponentLoadContext) -> dg.Definitions:
-        # Use map_asset_specs to add a property to all assets
-        return super().build_defs(context).map_asset_specs(
-            add_partitions_def
-        )
-        
-        
-@dg.component_instance
-def the_component():
-    return SomeComponentWithPartitions()
-```
+<CodeExample
+  path="docs_snippets/docs_snippets/guides/components/partitions/python_partitions.py"
+  title="Adding partitions with Python"
+  language="python"
+/>
 
 ## Updating your execution logic
 
-If you intend to materialize the assets that you've defined, you'll generally need to update your execution function to handle the new partitions definition. This can be done by creating a subclass of your component definition. The specifics of how you do this depend on the details of how the asset is being executed.
+Once you've added partitions to your assets, you'll need to update your asset execution logic to work with the partition context. When Dagster executes a partitioned asset, it provides information about which partition is currently being processed.
 
-The general strategy is to look at the `AssetExecutionContext.partition_key` (which is the partition key that is intended to be executed for the current execution), and change the code that you're running based on its value. For example, you might have code that only computes data for the range of time defined by that key.
+In your asset functions, you can access partition information through the `AssetExecutionContext`. The key properties are:
+- `partition_key`: The string key identifying the current partition
+- `partition_time_window`: For time-based partitions, the start and end times for this partition
+
+Your execution logic should use this partition information to process only the relevant subset of data.
 
 <CodeExample
   path="docs_snippets/docs_snippets/guides/components/partitions/partitioned_execution.py"
