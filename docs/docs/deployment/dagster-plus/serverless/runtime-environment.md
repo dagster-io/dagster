@@ -150,7 +150,7 @@ To add data files to your deployment, create a `data` directory under the `src/{
 quickstart-etl
 ├── dagster_cloud.yaml
 ├── pyproject.toml
-├── quickstart_etl_tests
+├── tests
 │   ├── __init__.py
 │   └── test_defs.py
 ├── README.md
