@@ -165,7 +165,7 @@ const config: Config = {
         },
         {
           to: 'https://dagster.plus/signup',
-          label: 'Create account',
+          label: 'Try Dagster+',
           position: 'right',
           className: 'cta-button hide-mobile',
           style: { order: 99, margin: '0px 0px 2px 0px' },
