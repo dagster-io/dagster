@@ -1,7 +1,7 @@
 import time
 
 import pytest
-from dagster._utils.backoff import backoff, backoff_delay_generator
+from dagster._utils.backoff import backoff, exponential_delay_generator
 
 
 class UnretryableException(Exception):
@@ -36,7 +36,7 @@ class Failer:
 
 
 def test_backoff_delay_generator():
-    gen = backoff_delay_generator()
+    gen = exponential_delay_generator()
     vals = []
     for _ in range(10):
         vals.append(next(gen))
