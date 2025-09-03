@@ -74,5 +74,5 @@ Your execution logic should use this partition information to process only the r
 ## Best practices
 
 - **Use consistent partitions**: All assets within a single component should generally use the same partitions definition to avoid execution complexity.
-- **Handle partition context**: Always use `AssetExecutionContext.partition_key` or related methods to access partition information in your execution logic.
+- **Handle partition context**: Always use <PyObject section="execution" module="dagster" object="AssetExecutionContext.partition_key" /> or related methods to access partition information in your execution logic.
 - **Test partitioned assets**: Ensure your partitioned assets work correctly by testing with different partition keys during development.
