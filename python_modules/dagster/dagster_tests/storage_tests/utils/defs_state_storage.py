@@ -4,7 +4,7 @@ from typing import Any, Optional
 
 import pytest
 from dagster._core.storage.defs_state.base import DefsStateStorage
-from dagster_shared.serdes.objects import DefsStateInfo
+from dagster_shared.serdes.objects.models.defs_state_info import DefsStateInfo
 
 
 def _version_map(state_info: Optional[DefsStateInfo]) -> Optional[dict[str, Optional[str]]]:

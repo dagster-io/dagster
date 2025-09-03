@@ -5,7 +5,7 @@ import time
 from contextlib import ExitStack
 from typing import TYPE_CHECKING, Optional
 
-from dagster_shared.serdes.objects import DefsStateInfo
+from dagster_shared.serdes.objects.models.defs_state_info import DefsStateInfo
 
 import dagster._check as check
 from dagster._core.instance import InstanceRef
