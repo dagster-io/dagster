@@ -27,13 +27,19 @@ class DefsKeyStateInfo:
 class DefsStateInfo:
     """All of the information about the state version that will be used to load a given code location."""
 
-    info_mapping: Mapping[str, DefsKeyStateInfo]
+    info_mapping: Mapping[str, Optional[DefsKeyStateInfo]]
+
+    @staticmethod
+    def empty() -> "DefsStateInfo":
+        return DefsStateInfo(info_mapping={})
 
     @staticmethod
     def add_version(
-        current_info: Optional["DefsStateInfo"], key: str, version: str
+        current_info: Optional["DefsStateInfo"], key: str, version: Optional[str]
     ) -> "DefsStateInfo":
-        new_info = DefsKeyStateInfo(version=version, create_timestamp=time.time())
+        new_info = (
+            DefsKeyStateInfo(version=version, create_timestamp=time.time()) if version else None
+        )
         if current_info is None:
             return DefsStateInfo(info_mapping={key: new_info})
         else:
@@ -43,12 +49,14 @@ class DefsStateInfo:
     def from_dict(val: dict[str, Any]) -> "DefsStateInfo":
         """Used for converting from the user-facing dict representation."""
         return DefsStateInfo(
-            info_mapping={key: DefsKeyStateInfo.from_dict(info) for key, info in val.items()}
+            info_mapping={
+                key: DefsKeyStateInfo.from_dict(info) if info else None for key, info in val.items()
+            }
         )
 
     def to_dict(self) -> dict[str, Any]:
         """Used for converting to the user-facing dict representation."""
-        return {key: info.to_dict() for key, info in self.info_mapping.items()}
+        return {key: info.to_dict() if info else None for key, info in self.info_mapping.items()}
 
     def get_version(self, key: str) -> Optional[str]:
         info = self.info_mapping.get(key)

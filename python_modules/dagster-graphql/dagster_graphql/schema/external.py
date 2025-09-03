@@ -564,7 +564,7 @@ class GrapheneDefsKeyStateInfo(graphene.ObjectType):
 
 class GrapheneDefsKeyStateInfoEntry(graphene.ObjectType):
     name = graphene.NonNull(graphene.String)
-    info = graphene.NonNull(GrapheneDefsKeyStateInfo)
+    info = graphene.Field(GrapheneDefsKeyStateInfo)
 
     class Meta:
         name = "DefsStateInfoEntry"
@@ -580,7 +580,8 @@ class GrapheneDefsStateInfo(graphene.ObjectType):
         super().__init__(
             keyStateInfo=[
                 GrapheneDefsKeyStateInfoEntry(
-                    key, GrapheneDefsKeyStateInfo(info.version, info.create_timestamp)
+                    key,
+                    GrapheneDefsKeyStateInfo(info.version, info.create_timestamp) if info else None,
                 )
                 for key, info in defs_state_info.info_mapping.items()
             ]
