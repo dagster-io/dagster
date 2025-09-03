@@ -58,6 +58,7 @@ from dagster._core.storage.asset_check_execution_record import (
     COMPLETED_ASSET_CHECK_EXECUTION_RECORD_STATUSES,
     AssetCheckExecutionRecord,
     AssetCheckExecutionRecordStatus,
+    AssetCheckPartitionStatusCache,
 )
 from dagster._core.storage.dagster_run import DagsterRunStatsSnapshot
 from dagster._core.storage.event_log.base import (
@@ -80,6 +81,8 @@ from dagster._core.storage.event_log.migration import (
 )
 from dagster._core.storage.event_log.schema import (
     AssetCheckExecutionsTable,
+    AssetCheckPartitionsTable,
+    AssetChecksTable,
     AssetEventTagsTable,
     AssetKeyTable,
     ConcurrencyLimitsTable,
@@ -2986,6 +2989,9 @@ class SqlEventLogStorage(EventLogStorage):
             else:
                 self._update_asset_check_evaluation(event, event_id)
 
+            # Update summary tables if schema migration has been run
+            self._update_asset_check_summary_tables(event, event_id)
+
     def _store_asset_check_evaluation_planned(
         self, event: EventLogEntry, event_id: Optional[int]
     ) -> None:
@@ -3111,6 +3117,99 @@ class SqlEventLogStorage(EventLogStorage):
                 "as a result of duplicate AssetCheckPlanned events."
             )
 
+    def _update_asset_check_summary_tables(
+        self, event: EventLogEntry, event_id: Optional[int]
+    ) -> None:
+        """Update asset_checks and asset_check_partitions tables when check executions complete."""
+        # Only update if the new tables exist (migration has been run)
+        if not (self.has_table("asset_checks") and self.has_table("asset_check_partitions")):
+            return
+
+        # Only process actual evaluation events (not planned events)
+        if event.dagster_event_type != DagsterEventType.ASSET_CHECK_EVALUATION:
+            return
+
+        evaluation = cast(
+            "AssetCheckEvaluation", check.not_none(event.dagster_event).event_specific_data
+        )
+
+        asset_key_str = evaluation.asset_key.to_string()
+        check_name = evaluation.check_name
+        partition_key = evaluation.partition  # May be None for non-partitioned checks
+
+        # Determine execution status from evaluation
+        execution_status = (
+            AssetCheckExecutionRecordStatus.SUCCEEDED.value
+            if evaluation.passed
+            else AssetCheckExecutionRecordStatus.FAILED.value
+        )
+
+        with self.index_connection() as conn:
+            # Ensure asset_checks row exists (lazy creation)
+            try:
+                conn.execute(
+                    AssetChecksTable.insert().values(
+                        asset_key=asset_key_str,
+                        check_name=check_name,
+                        created_timestamp=datetime.now(timezone.utc),
+                        updated_timestamp=datetime.now(timezone.utc),
+                    )
+                )
+            except db_exc.IntegrityError:
+                # Row already exists, update timestamp
+                conn.execute(
+                    AssetChecksTable.update()
+                    .where(
+                        db.and_(
+                            AssetChecksTable.c.asset_key == asset_key_str,
+                            AssetChecksTable.c.check_name == check_name,
+                        )
+                    )
+                    .values(updated_timestamp=datetime.now(timezone.utc))
+                )
+
+            # Update partition status - try insert first
+            try:
+                conn.execute(
+                    AssetCheckPartitionsTable.insert().values(
+                        asset_key=asset_key_str,
+                        check_name=check_name,
+                        partition_key=partition_key,
+                        last_execution_status=execution_status,
+                        last_execution_id=event_id,
+                        last_execution_timestamp=self._event_insert_timestamp(event),
+                        last_event_id=event_id,  # Track when this partition was updated
+                        created_timestamp=datetime.now(timezone.utc),
+                        updated_timestamp=datetime.now(timezone.utc),
+                    )
+                )
+            except db_exc.IntegrityError:
+                # Row exists, update it
+                where_clause = db.and_(
+                    AssetCheckPartitionsTable.c.asset_key == asset_key_str,
+                    AssetCheckPartitionsTable.c.check_name == check_name,
+                )
+                if partition_key is not None:
+                    where_clause = db.and_(
+                        where_clause, AssetCheckPartitionsTable.c.partition_key == partition_key
+                    )
+                else:
+                    where_clause = db.and_(
+                        where_clause, AssetCheckPartitionsTable.c.partition_key.is_(None)
+                    )
+
+                conn.execute(
+                    AssetCheckPartitionsTable.update()
+                    .where(where_clause)
+                    .values(
+                        last_execution_status=execution_status,
+                        last_execution_id=event_id,
+                        last_execution_timestamp=self._event_insert_timestamp(event),
+                        last_event_id=event_id,  # Update event tracking for cache invalidation
+                        updated_timestamp=datetime.now(timezone.utc),
+                    )
+                )
+
     def get_asset_check_execution_history(
         self,
         check_key: AssetCheckKey,
@@ -3210,6 +3309,119 @@ class SqlEventLogStorage(EventLogStorage):
             )
             results[check_key] = AssetCheckExecutionRecord.from_db_row(row, key=check_key)
         return results
+
+    def get_asset_check_partition_statuses(
+        self, check_key: AssetCheckKey
+    ) -> Mapping[str, AssetCheckExecutionRecordStatus]:
+        """Get partition statuses using hybrid cache approach for optimal performance."""
+        # Only use optimized path if new tables exist
+        if not (self.has_table("asset_checks") and self.has_table("asset_check_partitions")):
+            return {}
+
+        with self.index_connection() as conn:
+            # 1. Get current cache state
+            cache_info = db_fetch_mappings(
+                conn,
+                db_select(
+                    [
+                        AssetChecksTable.c.serialized_partition_subset,
+                        AssetChecksTable.c.subset_cache_event_id,
+                    ]
+                ).where(
+                    db.and_(
+                        AssetChecksTable.c.asset_key == check_key.asset_key.to_string(),
+                        AssetChecksTable.c.check_name == check_key.name,
+                    )
+                ),
+            )
+
+            if not cache_info:
+                return {}  # Check doesn't exist
+
+            cache_row = cache_info[0]
+            cached_subset = cache_row["serialized_partition_subset"]
+            last_cache_event_id = cache_row["subset_cache_event_id"] or 0
+
+            # 2. Get partitions updated SINCE the cache was built
+            stale_partitions = db_fetch_mappings(
+                conn,
+                db_select(
+                    [
+                        AssetCheckPartitionsTable.c.partition_key,
+                        AssetCheckPartitionsTable.c.last_execution_status,
+                        AssetCheckPartitionsTable.c.last_event_id,
+                    ]
+                ).where(
+                    db.and_(
+                        AssetCheckPartitionsTable.c.asset_key == check_key.asset_key.to_string(),
+                        AssetCheckPartitionsTable.c.check_name == check_key.name,
+                        AssetCheckPartitionsTable.c.last_event_id > last_cache_event_id,
+                    )
+                ),
+            )
+
+            if not stale_partitions:
+                # 3a. Cache is fresh - deserialize and return (FAST PATH)
+                try:
+                    cache_obj = deserialize_value(
+                        cached_subset or "{}", AssetCheckPartitionStatusCache
+                    )
+                    return cache_obj.partition_statuses
+                except (DeserializationError, ValueError):
+                    return {}
+
+            # 3b. Cache is stale - incrementally update it (EFFICIENT PATH)
+            return self._update_asset_check_partition_cache(
+                check_key, conn, cached_subset, stale_partitions
+            )
+
+    def _update_asset_check_partition_cache(
+        self,
+        check_key: AssetCheckKey,
+        conn: Connection,
+        cached_subset: Optional[str],
+        stale_partitions,
+    ) -> Mapping[str, AssetCheckExecutionRecordStatus]:
+        """Merge stale partition updates with existing cache - efficient incremental update."""
+        # Start with existing cached data
+        if cached_subset:
+            existing_cache = deserialize_value(cached_subset, AssetCheckPartitionStatusCache)
+        else:
+            existing_cache = AssetCheckPartitionStatusCache(partition_statuses={})
+
+        # Build updates from stale partitions
+        updates = {}
+        max_event_id = 0
+        for row in stale_partitions:
+            partition_key = row["partition_key"]
+            if row["last_execution_status"]:
+                updates[partition_key] = AssetCheckExecutionRecordStatus(
+                    row["last_execution_status"]
+                )
+            max_event_id = max(max_event_id, row["last_event_id"] or 0)
+
+        # Apply incremental updates to cache using @record method
+        updated_cache = existing_cache.with_updated_partitions(updates)
+
+        # Serialize and store updated cache
+        updated_serialized_subset = serialize_value(updated_cache)
+
+        conn.execute(
+            AssetChecksTable.update()
+            .where(
+                db.and_(
+                    AssetChecksTable.c.asset_key == check_key.asset_key.to_string(),
+                    AssetChecksTable.c.check_name == check_key.name,
+                )
+            )
+            .values(
+                serialized_partition_subset=updated_serialized_subset,
+                subset_cache_event_id=max_event_id,  # Update cache timestamp
+                updated_timestamp=datetime.now(timezone.utc),
+            )
+        )
+
+        return updated_cache.partition_statuses
 
     @property
     def supports_asset_checks(self):  # pyright: ignore[reportIncompatibleMethodOverride]

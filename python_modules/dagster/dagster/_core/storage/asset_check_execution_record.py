@@ -2,6 +2,7 @@ import enum
 from collections.abc import Iterable
 from typing import NamedTuple, Optional, cast
 
+from dagster_shared.record import record
 from dagster_shared.serdes import deserialize_value
 
 import dagster._check as check
@@ -36,6 +37,33 @@ COMPLETED_ASSET_CHECK_EXECUTION_RECORD_STATUSES = {
     AssetCheckExecutionRecordStatus.SUCCEEDED,
     AssetCheckExecutionRecordStatus.FAILED,
 }
+
+
+@record
+class AssetCheckPartitionStatusCache:
+    """Serializable cache of partition statuses for a partitioned asset check."""
+
+    partition_statuses: dict[str, AssetCheckExecutionRecordStatus]
+
+    @staticmethod
+    def from_partition_map(
+        partition_map: dict[str, AssetCheckExecutionRecordStatus],
+    ) -> "AssetCheckPartitionStatusCache":
+        return AssetCheckPartitionStatusCache(partition_statuses=partition_map)
+
+    def with_updated_partition(
+        self, partition_key: str, status: AssetCheckExecutionRecordStatus
+    ) -> "AssetCheckPartitionStatusCache":
+        """Return new cache with updated partition status."""
+        updated_statuses = {**self.partition_statuses, partition_key: status}
+        return AssetCheckPartitionStatusCache(partition_statuses=updated_statuses)
+
+    def with_updated_partitions(
+        self, updates: dict[str, AssetCheckExecutionRecordStatus]
+    ) -> "AssetCheckPartitionStatusCache":
+        """Return new cache with multiple partition updates applied."""
+        updated_statuses = {**self.partition_statuses, **updates}
+        return AssetCheckPartitionStatusCache(partition_statuses=updated_statuses)
 
 
 @whitelist_for_serdes

@@ -690,6 +690,13 @@ class EventLogStorage(ABC, MayHaveInstanceWeakref[T_DagsterInstance]):
         pass
 
     @abstractmethod
+    def get_asset_check_partition_statuses(
+        self, check_key: AssetCheckKey
+    ) -> Mapping[str, AssetCheckExecutionRecordStatus]:
+        """Get partition statuses for a partitioned asset check using hybrid cache approach."""
+        pass
+
+    @abstractmethod
     def fetch_materializations(
         self,
         records_filter: Union[AssetKey, AssetRecordsFilter],
