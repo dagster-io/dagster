@@ -395,7 +395,6 @@ def test_validate_run_config():
                 "multiprocess": {
                     "max_concurrent": None,
                     "retries": {"enabled": {}},
-                    "step_execution_mode": {"after_upstream_steps": {}},
                 }
             }
         },
@@ -425,7 +424,6 @@ def test_validate_run_config():
                 "multiprocess": {
                     "max_concurrent": None,
                     "retries": {"enabled": {}},
-                    "step_execution_mode": {"after_upstream_steps": {}},
                 }
             }
         },

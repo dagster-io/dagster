@@ -29,7 +29,7 @@ from dagster._core.execution.plan.plan import ExecutionPlan
 from dagster._core.execution.plan.state import KnownExecutionState
 from dagster._core.execution.plan.step import ExecutionStep
 from dagster._core.execution.retries import RetryMode
-from dagster._core.execution.step_execution_mode import StepExecutionMode
+from dagster._core.execution.step_dependency_config import StepDependencyConfig
 from dagster._core.executor.base import Executor
 from dagster._core.executor.child_process_executor import (
     ChildProcessCommand,
@@ -119,11 +119,11 @@ class MultiprocessExecutor(Executor):
         tag_concurrency_limits: Optional[list[dict[str, Any]]] = None,
         start_method: Optional[str] = None,
         explicit_forkserver_preload: Optional[Sequence[str]] = None,
-        step_execution_mode: StepExecutionMode = StepExecutionMode.AFTER_UPSTREAM_STEPS,
+        step_dependency_config: StepDependencyConfig = StepDependencyConfig.default(),
     ):
         self._retries = check.inst_param(retries, "retries", RetryMode)
-        self._step_execution_mode = check.inst_param(
-            step_execution_mode, "step_execution_mode", StepExecutionMode
+        self._step_dependency_config = check.inst_param(
+            step_dependency_config, "step_dependency_config", StepDependencyConfig
         )
 
         if not max_concurrent:
@@ -155,8 +155,8 @@ class MultiprocessExecutor(Executor):
         return self._retries
 
     @property
-    def step_execution_mode(self) -> StepExecutionMode:
-        return self._step_execution_mode
+    def step_dependency_config(self) -> StepDependencyConfig:
+        return self._step_dependency_config
 
     def execute(
         self, plan_context: PlanOrchestrationContext, execution_plan: ExecutionPlan
@@ -213,7 +213,7 @@ class MultiprocessExecutor(Executor):
                     max_concurrent=limit,
                     tag_concurrency_limits=tag_concurrency_limits,
                     instance_concurrency_context=instance_concurrency_context,
-                    step_execution_mode=self._step_execution_mode,
+                    step_dependency_config=self._step_dependency_config,
                 )
             )
             active_iters: dict[str, Iterator[Optional[DagsterEvent]]] = {}

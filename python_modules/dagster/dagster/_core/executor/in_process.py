@@ -13,7 +13,7 @@ from dagster._core.execution.plan.execute_plan import inner_plan_execution_itera
 from dagster._core.execution.plan.instance_concurrency_context import InstanceConcurrencyContext
 from dagster._core.execution.plan.plan import ExecutionPlan
 from dagster._core.execution.retries import RetryMode
-from dagster._core.execution.step_execution_mode import StepExecutionMode
+from dagster._core.execution.step_dependency_config import StepDependencyConfig
 from dagster._core.executor.base import Executor
 from dagster._utils.timing import time_execution_scope
 
@@ -37,12 +37,12 @@ class InProcessExecutor(Executor):
     def __init__(
         self,
         retries: RetryMode,
-        step_execution_mode: StepExecutionMode = StepExecutionMode.AFTER_UPSTREAM_STEPS,
+        step_dependency_config: StepDependencyConfig = StepDependencyConfig.default(),
         marker_to_close: Optional[str] = None,
     ):
         self._retries = check.inst_param(retries, "retries", RetryMode)
-        self._step_execution_mode = check.inst_param(
-            step_execution_mode, "step_execution_mode", StepExecutionMode
+        self._step_dependency_config = check.inst_param(
+            step_dependency_config, "step_dependency_config", StepDependencyConfig
         )
         self.marker_to_close = check.opt_str_param(marker_to_close, "marker_to_close")
 
@@ -51,8 +51,8 @@ class InProcessExecutor(Executor):
         return self._retries
 
     @property
-    def step_execution_mode(self) -> StepExecutionMode:
-        return self._step_execution_mode
+    def step_dependency_config(self) -> StepDependencyConfig:
+        return self._step_dependency_config
 
     def execute(
         self, plan_context: PlanOrchestrationContext, execution_plan: ExecutionPlan
@@ -82,7 +82,7 @@ class InProcessExecutor(Executor):
                         instance=plan_context.instance,
                         raise_on_error=plan_context.raise_on_error,
                         output_capture=plan_context.output_capture,
-                        step_execution_mode=self.step_execution_mode,
+                        step_dependency_config=self.step_dependency_config,
                     ),
                 )
             )

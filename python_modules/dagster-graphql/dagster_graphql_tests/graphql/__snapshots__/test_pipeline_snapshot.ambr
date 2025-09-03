@@ -32,7 +32,7 @@
         }
       ],
       "name": "some_external_job",
-      "pipelineSnapshotId": "30417b660ad6e9d5b81e832dd57ce29d0020f0f5",
+      "pipelineSnapshotId": "104d8b266375c6fc64d4f4757d4525e70a8ca503",
       "runTags": [],
       "solidHandles": [],
       "solids": [],
@@ -88,7 +88,7 @@
         }
       ],
       "name": "tagged_job",
-      "pipelineSnapshotId": "4c4ec95090c09a6b040c613b71bc32d8a58f2385",
+      "pipelineSnapshotId": "914adff8702faf5150d5383dcd65e48aff70e65f",
       "runTags": [
         {
           "key": "baz",

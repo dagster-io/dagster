@@ -11,11 +11,8 @@
             'enabled': dict({
             }),
           }),
-          'step_execution_mode': dict({
-            'after_upstream_outputs': dict({
-            }),
-            'after_upstream_steps': dict({
-            }),
+          'step_dependency_config': dict({
+            'require_upstream_step_success': True,
           }),
         }),
         'multiprocess': dict({
@@ -34,11 +31,8 @@
             'spawn': dict({
             }),
           }),
-          'step_execution_mode': dict({
-            'after_upstream_outputs': dict({
-            }),
-            'after_upstream_steps': dict({
-            }),
+          'step_dependency_config': dict({
+            'require_upstream_step_success': True,
           }),
           'tag_concurrency_limits': list([
           ]),

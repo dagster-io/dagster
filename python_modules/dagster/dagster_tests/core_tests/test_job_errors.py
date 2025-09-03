@@ -7,7 +7,6 @@ from dagster import (
     _check as check,
 )
 from dagster._core.definitions.metadata import MetadataValue
-from dagster._core.execution.step_execution_mode import StepExecutionMode
 from dagster._utils.test import wrap_op_in_graph_and_execute
 
 
@@ -328,14 +327,23 @@ def _get_partial_job() -> dg.JobDefinition:
 
 
 @pytest.mark.parametrize(
-    "step_execution_mode",
-    [StepExecutionMode.AFTER_UPSTREAM_STEPS, StepExecutionMode.AFTER_UPSTREAM_OUTPUTS],
+    "require_upstream_step_success",
+    [True, False],
 )
 @pytest.mark.parametrize("executor", ["in_process", "multiprocess"])
-def test_some_inputs_failed(step_execution_mode: StepExecutionMode, executor: str) -> None:
+def test_some_inputs_failed(require_upstream_step_success: bool, executor: str) -> None:
     run_config = dg.RunConfig(
-        execution={"config": {executor: {"step_execution_mode": {step_execution_mode.value: {}}}}}
+        execution={
+            "config": {
+                executor: {
+                    "step_dependency_config": {
+                        "require_upstream_step_success": require_upstream_step_success
+                    }
+                }
+            }
+        }
     )
+
     with dg.instance_for_test() as instance:
         with dg.execute_job(
             dg.reconstructable(_get_partial_job),
@@ -343,7 +351,7 @@ def test_some_inputs_failed(step_execution_mode: StepExecutionMode, executor: st
             run_config=run_config.to_config_dict(),
         ) as result:
             expected_success_steps = {"root", "downstream_of_root"}
-            if step_execution_mode == StepExecutionMode.AFTER_UPSTREAM_OUTPUTS:
+            if not require_upstream_step_success:
                 expected_success_steps.add("all_pass")
                 expected_success_steps.add("downstream_of_all_pass")
             assert {
@@ -353,7 +361,7 @@ def test_some_inputs_failed(step_execution_mode: StepExecutionMode, executor: st
             assert did_op_succeed("downstream_of_root", result)
             assert did_op_fail("many_outputs", result)
 
-            if step_execution_mode == StepExecutionMode.AFTER_UPSTREAM_OUTPUTS:
+            if not require_upstream_step_success:
                 assert did_op_succeed("all_pass", result)
             else:
                 assert not did_op_succeed("all_pass", result)

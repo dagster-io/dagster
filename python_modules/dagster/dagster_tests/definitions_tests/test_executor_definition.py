@@ -15,7 +15,7 @@ from dagster._core.definitions.executor_definition import (
 )
 from dagster._core.events import DagsterEventType, RunFailureReason
 from dagster._core.execution.retries import RetryMode
-from dagster._core.execution.step_execution_mode import StepExecutionMode
+from dagster._core.execution.step_dependency_config import StepDependencyConfig
 from dagster._core.executor.multiprocess import MultiprocessExecutor
 from dagster._core.storage.tags import RUN_FAILURE_REASON_TAG
 from dagster._core.test_utils import environ
@@ -307,7 +307,7 @@ def test_multiprocess_executor_config():
     assert executor._retries == RetryMode.DISABLED  # noqa: SLF001
     assert executor._max_concurrent == 2  # noqa: SLF001
     assert executor._tag_concurrency_limits == tag_concurrency_limits  # noqa: SLF001
-    assert executor._step_execution_mode == StepExecutionMode.AFTER_UPSTREAM_STEPS  # noqa: SLF001
+    assert executor._step_dependency_config == StepDependencyConfig.default()  # noqa: SLF001
 
 
 def test_multiprocess_executor_config_none_is_sentinel() -> None:
@@ -320,7 +320,7 @@ def test_multiprocess_executor_config_none_is_sentinel() -> None:
         }
     )
     assert executor._max_concurrent == multiprocessing.cpu_count()  # noqa: SLF001
-    assert executor._step_execution_mode == StepExecutionMode.AFTER_UPSTREAM_STEPS  # noqa: SLF001
+    assert executor._step_dependency_config == StepDependencyConfig.default()  # noqa: SLF001
 
 
 def test_multiprocess_executor_config_zero_is_sentinel() -> None:
@@ -333,4 +333,4 @@ def test_multiprocess_executor_config_zero_is_sentinel() -> None:
         }
     )
     assert executor._max_concurrent == multiprocessing.cpu_count()  # noqa: SLF001
-    assert executor._step_execution_mode == StepExecutionMode.AFTER_UPSTREAM_STEPS  # noqa: SLF001
+    assert executor._step_dependency_config == StepDependencyConfig.default()  # noqa: SLF001

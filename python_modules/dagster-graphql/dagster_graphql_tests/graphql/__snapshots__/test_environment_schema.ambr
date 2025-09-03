@@ -8,7 +8,7 @@
           dict({
             '__typename': 'FieldNotDefinedConfigError',
             'fieldName': 'nope',
-            'message': 'Received unexpected config entry "nope" at the root. Expected: "{ execution?: { config?: { marker_to_close?: String retries?: { disabled?: { } enabled?: { } } step_execution_mode?: { after_upstream_outputs?: { } after_upstream_steps?: { } } } } loggers?: { console?: { config?: { log_level?: String name?: String } } } ops: { sum_op: { config?: Any inputs: { num: String } } sum_sq_op?: { config?: Any } } resources?: { io_manager?: { config?: Any } } }".',
+            'message': 'Received unexpected config entry "nope" at the root. Expected: "{ execution?: { config?: { marker_to_close?: String retries?: { disabled?: { } enabled?: { } } step_dependency_config?: { require_upstream_step_success?: Bool } } } loggers?: { console?: { config?: { log_level?: String name?: String } } } ops: { sum_op: { config?: Any inputs: { num: String } } sum_sq_op?: { config?: Any } } resources?: { io_manager?: { config?: Any } } }".',
             'reason': 'FIELD_NOT_DEFINED',
             'stack': dict({
               'entries': list([
