@@ -61,7 +61,7 @@ Once you've added partitions to your assets, you'll need to update your asset ex
 
 In your asset functions, you can access partition information through the <PyObject section="execution" module="dagster" object="AssetExecutionContext" />. The key properties are:
 - <PyObject section="execution" module="dagster" object="AssetExecutionContext.partition_key" displayText="partition_key" />: The string key identifying the current partition.
-- `partition_time_window`: For time-based partitions, the start and end times for this partition
+- <PyObject section="execution" module="dagster" object="AssetExecutionContext.partition_time_window" displayText="partition_time_window" />: For time-based partitions, the start and end times for this partition.
 
 Your execution logic should use this partition information to process only the relevant subset of data.
 
