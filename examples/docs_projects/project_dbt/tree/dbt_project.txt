@@ -1,0 +1,10 @@
+analytics
+├── marts
+│   ├── daily_metrics.sql
+│   └── location_metrics.sql
+├── sources
+│   └── raw_taxis.yml
+└── staging
+    ├── staging.yml
+    ├── stg_trips.sql
+    └── stg_zones.sql
