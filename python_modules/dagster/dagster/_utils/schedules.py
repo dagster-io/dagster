@@ -868,8 +868,11 @@ def get_smallest_cron_interval(
 ) -> datetime.timedelta:
     """Find the smallest interval between cron ticks for a given cron schedule.
 
-    Uses a naive, sampling-based approach to find the minimum interval by generating
-    consecutive cron ticks and measuring the gaps between them.
+    Uses a sampling-based approach to find the minimum interval by generating
+    consecutive cron ticks and measuring the gaps between them. Sampling stops
+    early if either of these limits is reached:
+      - A maximum of 1000 generated ticks
+      - A time horizon of 20 years past the sampling start
 
     Args:
         cron_string: A cron string
@@ -892,6 +895,8 @@ def get_smallest_cron_interval(
 
     # Start sampling from a year ago to capture seasonal variations (DST, leap years)
     sampling_start = start_time - datetime.timedelta(days=365)
+    # Cap the lookahead horizon to avoid extremely distant datetimes (e.g., year ~3000 on Windows)
+    horizon_deadline = sampling_start + relativedelta(years=20)
 
     # Generate consecutive cron ticks
     cron_iter = schedule_execution_time_iterator(
@@ -905,10 +910,13 @@ def get_smallest_cron_interval(
     prev_tick = next(cron_iter)
     min_interval = None
 
-    # Sample 1000 ticks to cover various edge cases
+    # Sample up to 1000 ticks, but also stop at the 20-year horizon
     for _ in range(999):
         try:
             current_tick = next(cron_iter)
+            # Stop if we've gone beyond our lookahead horizon
+            if current_tick > horizon_deadline:
+                break
             interval = current_tick - prev_tick
 
             # Update minimum interval
