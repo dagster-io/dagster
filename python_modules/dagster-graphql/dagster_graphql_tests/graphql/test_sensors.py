@@ -18,7 +18,7 @@ from dagster._core.storage.dagster_run import DagsterRun
 from dagster._core.storage.tags import RUN_KEY_TAG, SENSOR_NAME_TAG
 from dagster._core.test_utils import SingleThreadPoolExecutor, freeze_time, wait_for_futures
 from dagster._core.types.loadable_target_origin import LoadableTargetOrigin
-from dagster._core.utils import make_new_backfill_id
+from dagster._core.utils import make_new_backfill_id, make_new_run_id
 from dagster._core.workspace.context import WorkspaceRequestContext
 from dagster._daemon import get_default_daemon_logger
 from dagster._daemon.sensor import execute_sensor_iteration
@@ -628,7 +628,7 @@ class TestSensors(NonLaunchableGraphQLContextTestMatrix):
         graphql_context.instance.add_run(
             DagsterRun(
                 job_name="run_key_sensor",
-                run_id="123",
+                run_id=make_new_run_id(),
                 tags={RUN_KEY_TAG: "the_key", SENSOR_NAME_TAG: "run_key_sensor"},
             )
         )
