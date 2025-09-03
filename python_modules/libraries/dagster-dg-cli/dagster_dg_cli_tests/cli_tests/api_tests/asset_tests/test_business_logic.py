@@ -5,7 +5,7 @@ GraphQL client mocking or external dependencies.
 """
 
 from dagster_dg_cli.api_layer.schemas.asset import DgApiAsset, DgApiAssetList
-from dagster_dg_cli.cli.api.formatters import format_asset, format_assets
+from dagster_dg_cli.cli.api.asset.formatters import format_asset, format_assets
 
 
 class TestFormatAssets:

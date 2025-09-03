@@ -8,7 +8,7 @@ import json
 
 from dagster_dg_cli.api_layer.graphql_adapter.deployment import process_deployments_response
 from dagster_dg_cli.api_layer.schemas.deployment import Deployment, DeploymentList, DeploymentType
-from dagster_dg_cli.cli.api.formatters import format_deployments
+from dagster_dg_cli.cli.api.deployment.formatters import format_deployments
 
 from dagster_dg_cli_tests.cli_tests.api_tests.test_dynamic_command_execution import (
     load_recorded_graphql_responses,
