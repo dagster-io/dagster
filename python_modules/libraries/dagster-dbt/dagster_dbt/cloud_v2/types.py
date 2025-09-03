@@ -2,8 +2,10 @@ from collections.abc import Mapping, Sequence
 from enum import Enum
 from typing import Any, Optional
 
+from dagster import Failure, MetadataValue
 from dagster._record import record
 from dagster._serdes import whitelist_for_serdes
+from dagster_shared.record import as_dict
 
 
 @record
@@ -112,6 +114,18 @@ class DbtCloudRun:
             else None,
             url=run_details.get("href"),
         )
+
+    def raise_for_status(self) -> None:
+        if self.status in {
+            DbtCloudJobRunStatusType.ERROR,
+            DbtCloudJobRunStatusType.CANCELLED,
+        }:
+            raise Failure(
+                f"dbt Cloud run '{self.id}' failed!",
+                metadata={
+                    "run_details": MetadataValue.json(as_dict(self)),
+                },
+            )
 
 
 @whitelist_for_serdes

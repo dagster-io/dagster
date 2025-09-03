@@ -6,7 +6,7 @@ from collections.abc import Mapping, Sequence
 from typing import Any, Optional, cast
 
 import requests
-from dagster import Failure, MetadataValue, get_dagster_logger
+from dagster import Failure, get_dagster_logger
 from dagster._utils.cached_method import cached_method
 from dagster_shared.dagster_model import DagsterModel
 from pydantic import Field
@@ -326,18 +326,12 @@ class DbtCloudWorkspaceClient(DagsterModel):
         while time.time() - start_time < poll_timeout:
             run_details = self.get_run_details(run_id)
             run = DbtCloudRun.from_run_details(run_details=run_details)
-            if run.status == DbtCloudJobRunStatusType.SUCCESS:
-                return run_details
-            elif run.status in {
+            if run.status in {
+                DbtCloudJobRunStatusType.SUCCESS,
                 DbtCloudJobRunStatusType.ERROR,
                 DbtCloudJobRunStatusType.CANCELLED,
             }:
-                raise Failure(
-                    f"dbt Cloud run '{run.id}' failed!",
-                    metadata={
-                        "run_details": MetadataValue.json(run_details),
-                    },
-                )
+                return run_details
             # Sleep for the configured time interval before polling again.
             time.sleep(poll_interval)
         raise Exception(f"Run {run.id} did not complete within {poll_timeout} seconds.")  # pyright: ignore[reportPossiblyUnboundVariable]
