@@ -1,0 +1,34 @@
+[project]
+name = "quickstart_etl"
+requires-python = ">=3.9,<3.14"
+version = "0.1.0"
+dependencies = [
+    "dagster",
+    "dagster-cloud",
+    "boto3",
+    "matplotlib",
+    "pandas",
+    "textblob",
+    "tweepy",
+    "wordcloud",
+]
+
+[project.optional-dependencies]
+dev = [
+    "dagster-dg-cli",
+    "dagster-webserver",
+    "pytest",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.dg]
+directory_type = "project"
+
+[tool.dg.project]
+root_module = "quickstart_etl"
+registry_modules = [
+    "quickstart_etl.components.*",
+]
