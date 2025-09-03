@@ -127,8 +127,7 @@ def test_dev_project_context_success():
     is_windows() == "Windows", reason="Temporarily skipping (signal issues in CLI).."
 )
 def test_dev_has_options_of_dagster_dev():
-    from dagster._cli.dev import dev_command as dagster_dev_command
-    from dagster_dg_cli.cli import dev_command as dev_command
+    from dagster_dg_cli.cli.dev import dev_command
 
     exclude_dagster_dev_params = {
         # Exclude options that are used to set the target. `dg dev` does not use.
@@ -149,7 +148,7 @@ def test_dev_has_options_of_dagster_dev():
     }
 
     dg_dev_param_names = {param.name for param in dev_command.params}
-    dagster_dev_param_names = {param.name for param in dagster_dev_command.params}
+    dagster_dev_param_names = {param.name for param in dev_command.params}
     dagster_dev_params_to_check = dagster_dev_param_names - exclude_dagster_dev_params
 
     unmatched_params = dagster_dev_params_to_check - dg_dev_param_names
