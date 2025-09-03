@@ -47,7 +47,7 @@ In general, it is best to avoid applying different partition definitions to diff
 
 ## Adding partitions in Python
 
-If you are using the `@component_instance` decorator to define your component, you can create a subclass of your component class that applies partitions to all assets:
+If you are using the <PyObject section="components" module="dagster" object="component_instance" decorator /> decorator to define your component, you can create a subclass of your component class that applies partitions to all assets:
 
 <CodeExample
   path="docs_snippets/docs_snippets/guides/components/partitions/python_partitions.py"
