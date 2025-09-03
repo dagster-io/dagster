@@ -8,7 +8,7 @@ import Tabs from '@theme/Tabs';
 import TabItem from '@theme/TabItem';
 import CodeExample from '@site/src/components/CodeExample';
 
-Partitions allow you to divide your assets into subsets based on time, categories, or other dimensions. When working with Dagster components, you can add partitions to your assets using either YAML configuration or Python code.
+[Partitions](/guides/build/partitions-and-backfills/partitioning-assets) allow you to divide your assets into subsets based on time, categories, or other dimensions. When working with Dagster components, you can add partitions to your assets using either YAML configuration or Python code.
 
 :::note Prerequisites
 
