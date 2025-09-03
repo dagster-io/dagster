@@ -20,7 +20,7 @@ You can add dependencies by including the corresponding Python libraries in your
 
 <CodeExample
   path="docs_snippets/docs_snippets/dagster-plus/deployment/serverless/runtime-environment/example_pyproject.toml"
-  language="Python"
+  language="TOML"
   title="Example pyproject.toml"
 />
 
@@ -28,7 +28,7 @@ You can also use a tarball to install a dependency, such as if `pip` is unable t
 
 <CodeExample
   path="docs_snippets/docs_snippets/dagster-plus/deployment/serverless/runtime-environment/example_tarball_pyproject.toml"
-  language="Python"
+  language="TOML"
   title="Example pyproject.toml with tarball links"
 />
 
@@ -152,8 +152,6 @@ quickstart-etl
 │   ├── __init__.py
 │   └── test_defs.py
 ├── README.md
-├── setup.cfg
-├── setup.py
 ├── src
 │   └── quickstart_etl
 │       ├── __init__.py
