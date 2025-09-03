@@ -1,7 +1,7 @@
 # alert_policies.yaml
 
 alert_policies:
-  alert_targets:
+- alert_targets:
   - long_running_job_threshold_target:
       threshold_seconds: 3600
   description: Sends an email when a run is taking too long to complete.

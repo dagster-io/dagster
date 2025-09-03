@@ -155,13 +155,15 @@ def _make_yaml_code_snippet(alert: AlertType, service: NotificationService) -> N
     alert_name = f"{alert.alert_name}-{service.name}"
     yaml_block = yaml.dump(
         dict(
-            alert_policies=dict(
-                name=alert_name,
-                event_types=alert.event_types,
-                description=f"Sends {service.effect_description} {alert.condition_description}.",
-                **(alert.config_snippet if alert.config_snippet else {}),
-                notification_service={service.name: service.config_snippet},
-            )
+            alert_policies=[
+                dict(
+                    name=alert_name,
+                    event_types=alert.event_types,
+                    description=f"Sends {service.effect_description} {alert.condition_description}.",
+                    **(alert.config_snippet if alert.config_snippet else {}),
+                    notification_service={service.name: service.config_snippet},
+                )
+            ]
         ),
     )
     path = f"{alert_name}.yaml"
