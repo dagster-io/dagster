@@ -26,7 +26,7 @@ from dagster._core.definitions.events import AssetKey
 from dagster._core.definitions.partitions.definition import PartitionsDefinition
 from dagster._core.definitions.selector import GraphSelector, JobSubsetSelector
 from dagster._core.definitions.temporal_context import TemporalContext
-from dagster._core.errors import DagsterInvariantViolationError
+from dagster._core.errors import DagsterError, DagsterInvariantViolationError
 from dagster._core.execution.backfill import PartitionBackfill
 from dagster._utils.caching_instance_queryer import CachingInstanceQueryer
 from dagster._utils.error import serializable_error_info_from_exc_info
@@ -486,6 +486,18 @@ def apply_cursor_limit_reverse(
             end = start + limit
 
     return items[max(start, 0) : end]
+
+
+def get_query_limit_with_default(provided_limit: Optional[int], default_limit: int) -> int:
+    check.opt_int_param(provided_limit, "provided_limit")
+
+    if provided_limit is None:
+        return default_limit
+
+    if provided_limit > default_limit:
+        raise DagsterError(f"Limit of {provided_limit} is too large. Max is {default_limit}")
+
+    return provided_limit
 
 
 BackfillParams: TypeAlias = Mapping[str, Any]

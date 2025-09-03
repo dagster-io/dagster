@@ -47,6 +47,7 @@ from dagster_graphql.implementation.utils import (
     UserFacingGraphQLError,
     apply_cursor_limit_reverse,
     capture_error,
+    get_query_limit_with_default,
 )
 from dagster_graphql.schema.asset_health import GrapheneAssetHealth
 from dagster_graphql.schema.dagster_types import (
@@ -740,6 +741,10 @@ class GrapheneRun(graphene.ObjectType):
         ]
 
     def resolve_eventConnection(self, graphene_info: ResolveInfo, afterCursor=None, limit=None):
+        default_limit = graphene_info.context.records_for_run_default_limit
+        if default_limit:
+            limit = get_query_limit_with_default(limit, default_limit)
+
         conn = graphene_info.context.instance.get_records_for_run(
             self.run_id, cursor=afterCursor, limit=limit
         )
