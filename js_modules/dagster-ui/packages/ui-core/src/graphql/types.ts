@@ -169,6 +169,7 @@ export type AssetCheck = {
   name: Scalars['String']['output'];
   partitionDefinition: Maybe<PartitionDefinition>;
   partitionKeysByDimension: Array<DimensionPartitionKeys>;
+  partitionStatuses: Maybe<AssetCheckPartitionStatuses>;
 };
 
 export type AssetCheckPartitionKeysByDimensionArgs = {
@@ -286,6 +287,16 @@ export type AssetCheckNeedsMigrationError = Error & {
 export type AssetCheckNeedsUserCodeUpgrade = Error & {
   __typename: 'AssetCheckNeedsUserCodeUpgrade';
   message: Scalars['String']['output'];
+};
+
+export type AssetCheckPartitionStatuses = {
+  __typename: 'AssetCheckPartitionStatuses';
+  executionFailed: Array<Scalars['String']['output']>;
+  failed: Array<Scalars['String']['output']>;
+  inProgress: Array<Scalars['String']['output']>;
+  missing: Array<Scalars['String']['output']>;
+  skipped: Array<Scalars['String']['output']>;
+  succeeded: Array<Scalars['String']['output']>;
 };
 
 export enum AssetCheckSeverity {
@@ -6490,6 +6501,12 @@ export const buildAssetCheck = (
       overrides && overrides.hasOwnProperty('partitionKeysByDimension')
         ? overrides.partitionKeysByDimension!
         : [],
+    partitionStatuses:
+      overrides && overrides.hasOwnProperty('partitionStatuses')
+        ? overrides.partitionStatuses!
+        : relationshipsToOmit.has('AssetCheckPartitionStatuses')
+          ? ({} as AssetCheckPartitionStatuses)
+          : buildAssetCheckPartitionStatuses({}, relationshipsToOmit),
   };
 };
 
@@ -6680,6 +6697,24 @@ export const buildAssetCheckNeedsUserCodeUpgrade = (
   return {
     __typename: 'AssetCheckNeedsUserCodeUpgrade',
     message: overrides && overrides.hasOwnProperty('message') ? overrides.message! : 'tempora',
+  };
+};
+
+export const buildAssetCheckPartitionStatuses = (
+  overrides?: Partial<AssetCheckPartitionStatuses>,
+  _relationshipsToOmit: Set<string> = new Set(),
+): {__typename: 'AssetCheckPartitionStatuses'} & AssetCheckPartitionStatuses => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('AssetCheckPartitionStatuses');
+  return {
+    __typename: 'AssetCheckPartitionStatuses',
+    executionFailed:
+      overrides && overrides.hasOwnProperty('executionFailed') ? overrides.executionFailed! : [],
+    failed: overrides && overrides.hasOwnProperty('failed') ? overrides.failed! : [],
+    inProgress: overrides && overrides.hasOwnProperty('inProgress') ? overrides.inProgress! : [],
+    missing: overrides && overrides.hasOwnProperty('missing') ? overrides.missing! : [],
+    skipped: overrides && overrides.hasOwnProperty('skipped') ? overrides.skipped! : [],
+    succeeded: overrides && overrides.hasOwnProperty('succeeded') ? overrides.succeeded! : [],
   };
 };
 

@@ -1059,6 +1059,7 @@ type AssetCheck {
   automationCondition: AutomationCondition
   partitionDefinition: PartitionDefinition
   partitionKeysByDimension(startIdx: Int, endIdx: Int): [DimensionPartitionKeys!]!
+  partitionStatuses: AssetCheckPartitionStatuses
 }
 
 type AssetCheckExecution {
@@ -1105,6 +1106,15 @@ enum AssetCheckCanExecuteIndividually {
   CAN_EXECUTE
   REQUIRES_MATERIALIZATION
   NEEDS_USER_CODE_UPGRADE
+}
+
+type AssetCheckPartitionStatuses {
+  missing: [String!]!
+  succeeded: [String!]!
+  failed: [String!]!
+  inProgress: [String!]!
+  skipped: [String!]!
+  executionFailed: [String!]!
 }
 
 type AssetCheckNeedsMigrationError implements Error {
