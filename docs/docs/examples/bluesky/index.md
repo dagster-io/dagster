@@ -44,7 +44,7 @@ First, set up a new Dagster project.
 1. Clone the [Dagster repo](https://github.com/dagster-io/dagster) and navigate to the project:
 
    ```bash
-   cd examples/docs_project/project_atproto_dashboard
+   cd examples/docs_projects/project_atproto_dashboard
    ```
 
 2. Install the required dependencies with `uv`:
@@ -75,8 +75,6 @@ First, set up a new Dagster project.
 ## Step 2: Launch the Dagster webserver
 
 To make sure Dagster and its dependencies were installed correctly, navigate to the project root directory and start the Dagster webserver:
-
-followed by a bash code snippet for
 
 ```bash
 dg dev

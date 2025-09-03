@@ -1,22 +1,19 @@
 type: dagster_dbt.DbtProjectComponent
 
+# highlight-start
 template_vars_module: .template_vars
+# highlight-end
 attributes:
   project: '{{ project_root }}/src/project_dbt/analytics'
   select: "tag:daily"
   translation:
     key: "taxi_{{ node.name }}"
     group_name: dbt
-  # highlight-start
-  cli_args:
-    - build
-    - --vars:
-      min_date: "{{ context.partition_time_window.start.strftime('%Y-%m-%d') }}"
-      max_date: "{{ context.partition_time_window.end.strftime('%Y-%m-%d') }}"
-  # highlight-end
 
+# highlight-start
 post_processing:
   assets:
     - target: "*"
       attributes:
         partitions_def: "{{ daily_partitions_def }}"
+# highlight-end

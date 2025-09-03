@@ -59,7 +59,6 @@ This setup is based on the [Dagster Essentials course](https://courses.dagster.i
 
 :::
 
-
 ## Next steps
 
 - Continue with the [dbt project](/examples/dbt/dbt-project).

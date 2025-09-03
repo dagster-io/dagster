@@ -19,11 +19,29 @@ Here’s how incremental models work:
 - **First run**: the model processes the full dataset with no filters.
 - **Subsequent runs**: dbt applies the `is_incremental()` filter, using `min_date` and `max_date` values provided at runtime.
 
-1. Update dbt component configuration
+## 1. Include a template var
 
-Since Dagster is orchestrating dbt, we want Dagster to supply the `min_date` and `max_date` variables. The values come directly from the Dagster [partition](/guides/build/partitions-and-backfills/partitioning-assets) context.
+The first step is to add a new [template var](/guides/build/components/building-pipelines-with-components/using-template-variables) to your component. This will be used to define the partitions definition that will be used to partition the assets.
 
-To enable this, we update the scaffolding YAML to include partitions:
+<CodeExample
+  path="docs_projects/project_dbt/src/project_dbt/defs/transform/template_vars.py"
+  language="python"
+  title="src/project_dbt/defs/transform/template_vars.py"
+/>
+
+## 2. Update dbt component configuration
+
+The next step is to update the `defs.yaml` file to use the new template var and apply this partitions definition to all assets using the `post_process` field:
+
+<CodeExample
+  path="docs_projects/project_dbt/src/project_dbt/defs/transform/_defs.yaml"
+  language="yaml"
+  title="src/project_dbt/defs/transform/defs.yaml"
+/>
+
+Finally, we need to pass in new configuration to the `cli_args` field so that the dbt execution actually changes based on what partition is executing. In particular, we want to pass in values to the `--vars` configuration field that determine the range of time that our incremental models should process.
+
+When the `cli_args` field is resolved, it has access to a `context.partition_time_window` object, which is Dagster's representation of the time range that should be processed on the current run. This can be converted into a format recognized by your dbt project using template variables:
 
 <CodeExample
   path="docs_projects/project_dbt/src/project_dbt/defs/transform/defs.yaml"

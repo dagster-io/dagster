@@ -6,7 +6,7 @@ last_update:
 sidebar_position: 70
 ---
 
-With most of the integration logic in place, this final section covers best practices for managing a combined Dagster+ dbt pipeline, focusing on partitioning and dependency management.
+With most of the integration logic in place, this final section covers best practices for managing a combined [Dagster+](/deployment/dagster-plus) dbt pipeline, focusing on partitioning and dependency management.
 
 ## Handling multiple partitions
 

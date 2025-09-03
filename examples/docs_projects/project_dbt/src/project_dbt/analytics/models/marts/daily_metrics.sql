@@ -1,7 +1,8 @@
 {{
   config(
     materialized='incremental',
-    unique_key='date_of_business'
+    unique_key='date_of_business',
+    tags=["daily"]
   )
 }}
 
