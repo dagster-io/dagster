@@ -30,7 +30,11 @@ def test_validate_run_config():
         "ops": {"requires_config": {"config": {"foo": "bar"}, "inputs": {}, "outputs": None}},
         "execution": {
             "multi_or_in_process_executor": {
-                "multiprocess": {"max_concurrent": None, "retries": {"enabled": {}}}
+                "multiprocess": {
+                    "max_concurrent": None,
+                    "retries": {"enabled": {}},
+                    "step_execution_mode": {"after_upstream_steps": {}},
+                }
             }
         },
         "resources": {"io_manager": {"config": None}},
