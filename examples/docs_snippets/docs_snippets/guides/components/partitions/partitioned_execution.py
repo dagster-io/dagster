@@ -11,12 +11,16 @@ class MyPartitionedComponent:
     def build_defs(self, context: dg.ComponentLoadContext) -> dg.Definitions:
         @dg.asset
         def my_partitioned_asset(context: dg.AssetExecutionContext):
+            # highlight-start
             # Access the current partition key
             partition_key = context.partition_key
+            # highlight-end
 
+            # highlight-start
             # Use partition key to filter data or modify execution logic
             # For example, if using a time-based partition:
             partition_date = context.partition_time_window.start
+            # highlight-end
 
             # Your execution logic here, using the partition information
             return process_data_for_partition(partition_date)
