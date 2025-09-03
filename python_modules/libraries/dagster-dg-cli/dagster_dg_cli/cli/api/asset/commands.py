@@ -8,8 +8,9 @@ from dagster_dg_core.utils.telemetry import cli_telemetry_wrapper
 from dagster_shared.plus.config import DagsterPlusCliConfig
 from dagster_shared.plus.config_utils import dg_api_options
 
+from dagster_dg_cli.cli.api.asset.formatters import format_asset, format_assets
 from dagster_dg_cli.cli.api.client import create_dg_api_graphql_client
-from dagster_dg_cli.cli.api.formatters import format_asset, format_assets
+from dagster_dg_cli.cli.api.shared import determine_output_format
 
 
 @click.command(name="list", cls=DgClickCommand, unlaunched=True)
@@ -51,17 +52,7 @@ def list_assets_command(
     view_graphql: bool,
 ) -> None:
     """List assets with pagination."""
-    # Validate that only one output format is specified
-    if output_json and output_md:
-        raise click.UsageError("Cannot specify both --json and --md flags")
-
-    # Determine output format
-    if output_json:
-        output_format = "json"
-    elif output_md:
-        output_format = "markdown"
-    else:
-        output_format = "table"
+    output_format = determine_output_format(output_json, output_md)
 
     config = DagsterPlusCliConfig.create_for_deployment(
         deployment=deployment,
@@ -114,17 +105,7 @@ def get_asset_command(
     view_graphql: bool,
 ) -> None:
     """Get specific asset details."""
-    # Validate that only one output format is specified
-    if output_json and output_md:
-        raise click.UsageError("Cannot specify both --json and --md flags")
-
-    # Determine output format
-    if output_json:
-        output_format = "json"
-    elif output_md:
-        output_format = "markdown"
-    else:
-        output_format = "table"
+    output_format = determine_output_format(output_json, output_md)
 
     config = DagsterPlusCliConfig.create_for_deployment(
         deployment=deployment,

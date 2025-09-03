@@ -1,5 +1,7 @@
 """Shared utilities for API commands."""
 
+from typing import Literal
+
 import click
 from dagster_shared.plus.config import DagsterPlusCliConfig
 
@@ -28,3 +30,31 @@ def get_config_for_api_command(ctx: click.Context) -> DagsterPlusCliConfig:
 
     # Normal operation - use existing authentication logic
     return get_config_or_error()
+
+
+def determine_output_format(
+    output_json: bool, output_md: bool
+) -> Literal["json", "markdown", "table"]:
+    """Determine output format from boolean flags.
+
+    Args:
+        output_json: Whether JSON output was requested
+        output_md: Whether Markdown output was requested
+
+    Returns:
+        Output format string: "json", "markdown", or "table"
+
+    Raises:
+        click.UsageError: If both flags are specified
+    """
+    # Validate that only one output format is specified
+    if output_json and output_md:
+        raise click.UsageError("Cannot specify both --json and --md flags")
+
+    # Determine output format
+    if output_json:
+        return "json"
+    elif output_md:
+        return "markdown"
+    else:
+        return "table"

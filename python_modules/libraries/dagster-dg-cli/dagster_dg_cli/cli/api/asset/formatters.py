@@ -1,4 +1,4 @@
-"""Output formatters for CLI display."""
+"""Asset output formatters for CLI display."""
 
 import re
 from typing import TYPE_CHECKING, Literal
@@ -7,19 +7,16 @@ from rich.console import Console
 from rich.table import Table
 from rich.text import Text
 
-from dagster_dg_cli.cli.api.display_models import (
+from dagster_dg_cli.cli.api.asset.display_models import (
     AssetDisplay,
     AssetListDisplay,
-    DeploymentListDisplay,
     MetadataSection,
     asset_list_to_display,
     asset_to_display,
-    deployment_list_to_display,
 )
 
 if TYPE_CHECKING:
     from dagster_dg_cli.api_layer.schemas.asset import DgApiAsset, DgApiAssetList
-    from dagster_dg_cli.api_layer.schemas.deployment import DeploymentList
 
 OutputFormat = Literal["table", "json", "markdown"]
 
@@ -117,19 +114,6 @@ def _create_horizontal_separator(section_name: str, section_color: str, width: i
     return separator_text
 
 
-def format_deployments(deployments: "DeploymentList", output_format: OutputFormat = "table") -> str:
-    """Format deployment list for output."""
-    if output_format == "json":
-        return deployments.model_dump_json(indent=2)
-
-    display = deployment_list_to_display(deployments)
-
-    if output_format == "markdown":
-        return _format_deployment_list_display_as_markdown(display)
-
-    return _format_deployment_list_display_as_table(display)
-
-
 def format_assets(assets: "DgApiAssetList", output_format: OutputFormat = "table") -> str:
     """Format asset list for output."""
     if output_format == "json":
@@ -154,42 +138,6 @@ def format_asset(asset: "DgApiAsset", output_format: OutputFormat = "table") -> 
         return _format_asset_display_as_markdown(display)
 
     return _format_asset_display_as_table(display)
-
-
-def _format_deployment_list_display_as_table(display: DeploymentListDisplay) -> str:
-    """Format deployment list display model as table."""
-    if not display.items:
-        return "No deployments found."
-
-    table = Table(border_style="dim")
-    table.add_column("Name", style="bold cyan", min_width=10)
-    table.add_column("ID", justify="right", min_width=6)
-    table.add_column("Type", style="bold", min_width=10)
-
-    for deployment in display.items:
-        table.add_row(
-            deployment.name,
-            deployment.id,
-            deployment.type,
-        )
-
-    console = Console()
-    with console.capture() as capture:
-        console.print(table)
-    return capture.get().rstrip()
-
-
-def _format_deployment_list_display_as_markdown(display: DeploymentListDisplay) -> str:
-    """Format deployment list display model as markdown."""
-    if not display.items:
-        return "No deployments found."
-
-    lines = ["# Deployments", "", "| Name | ID | Type |", "|------|-----|------|"]
-
-    for deployment in display.items:
-        lines.append(f"| {deployment.name} | {deployment.id} | {deployment.type} |")
-
-    return "\n".join(lines)
 
 
 def _format_asset_list_display_as_table(display: AssetListDisplay) -> str:
