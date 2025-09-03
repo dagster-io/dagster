@@ -40,6 +40,8 @@
         ]),
         'metadata_entries': list([
         ]),
+        'tags': list([
+        ]),
       }),
       dict({
         'asset_key': 'aws/cloud-prod/workspace_staging_asset_checks',
@@ -54,6 +56,8 @@
         'kinds': list([
         ]),
         'metadata_entries': list([
+        ]),
+        'tags': list([
         ]),
       }),
       dict({
@@ -70,6 +74,8 @@
         ]),
         'metadata_entries': list([
         ]),
+        'tags': list([
+        ]),
       }),
       dict({
         'asset_key': 'aws/cloud-prod/workspace_staging_external_repo_metadata',
@@ -84,6 +90,8 @@
         'kinds': list([
         ]),
         'metadata_entries': list([
+        ]),
+        'tags': list([
         ]),
       }),
       dict({
@@ -100,6 +108,8 @@
         ]),
         'metadata_entries': list([
         ]),
+        'tags': list([
+        ]),
       }),
       dict({
         'asset_key': 'aws/cloud-prod/workspace_staging_metadata',
@@ -114,6 +124,8 @@
         'kinds': list([
         ]),
         'metadata_entries': list([
+        ]),
+        'tags': list([
         ]),
       }),
       dict({
@@ -130,6 +142,8 @@
         ]),
         'metadata_entries': list([
         ]),
+        'tags': list([
+        ]),
       }),
       dict({
         'asset_key': 'aws/cloud-prod/workspace_staging_pipelines',
@@ -144,6 +158,8 @@
         'kinds': list([
         ]),
         'metadata_entries': list([
+        ]),
+        'tags': list([
         ]),
       }),
     ]),
@@ -163,6 +179,8 @@
     'kinds': list([
     ]),
     'metadata_entries': list([
+    ]),
+    'tags': list([
     ]),
   })
 # ---
@@ -188,6 +206,8 @@
     'kinds': list([
     ]),
     'metadata_entries': list([
+    ]),
+    'tags': list([
     ]),
   })
 # ---
@@ -267,29 +287,16 @@
 # ---
 # name: TestDynamicCommandExecution.test_command_execution[deployment_success_multiple_deployments_text_text]
   '''
-  Name: uat
-  ID: 6935
-  Type: PRODUCTION
-  
-  Name: excessive
-  ID: 6936
-  Type: PRODUCTION
-  
-  Name: ben-test
-  ID: 84915
-  Type: PRODUCTION
-  
-  Name: ecs
-  ID: 37
-  Type: PRODUCTION
-  
-  Name: staging
-  ID: 6934
-  Type: PRODUCTION
-  
-  Name: prod
-  ID: 80
-  Type: PRODUCTION
+  ┏━━━━━━━━━━━━┳━━━━━━━━┳━━━━━━━━━━━━┓
+  ┃ Name       ┃     ID ┃ Type       ┃
+  ┡━━━━━━━━━━━━╇━━━━━━━━╇━━━━━━━━━━━━┩
+  │ uat        │   6935 │ PRODUCTION │
+  │ excessive  │   6936 │ PRODUCTION │
+  │ ben-test   │  84915 │ PRODUCTION │
+  │ ecs        │     37 │ PRODUCTION │
+  │ staging    │   6934 │ PRODUCTION │
+  │ prod       │     80 │ PRODUCTION │
+  └────────────┴────────┴────────────┘
   
   '''
 # ---

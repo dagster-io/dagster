@@ -8,9 +8,9 @@ from dagster_dg_core.utils.telemetry import cli_telemetry_wrapper
 from dagster_shared.plus.config import DagsterPlusCliConfig
 from dagster_shared.plus.config_utils import dg_api_options
 
-# Lazy import to avoid loading pydantic at CLI startup
 from dagster_dg_cli.cli.api.client import create_dg_api_graphql_client
-from dagster_dg_cli.cli.api.formatters import format_deployments
+from dagster_dg_cli.cli.api.deployment.formatters import format_deployments
+from dagster_dg_cli.cli.api.shared import determine_output_format
 
 
 @click.command(name="list", cls=DgClickCommand, unlaunched=True)
@@ -20,13 +20,26 @@ from dagster_dg_cli.cli.api.formatters import format_deployments
     is_flag=True,
     help="Output in JSON format for machine readability",
 )
+@click.option(
+    "--md",
+    "output_md",
+    is_flag=True,
+    help="Output in Markdown format for agent consumption",
+)
 @dg_api_options(organization_scoped=True)
 @cli_telemetry_wrapper
 @click.pass_context
 def list_deployments_command(
-    ctx: click.Context, output_json: bool, organization: str, api_token: str, view_graphql: bool
+    ctx: click.Context,
+    output_json: bool,
+    output_md: bool,
+    organization: str,
+    api_token: str,
+    view_graphql: bool,
 ) -> None:
     """List all deployments in the organization."""
+    output_format = determine_output_format(output_json, output_md)
+
     config = DagsterPlusCliConfig.create_for_organization(
         organization=organization,
         user_token=api_token,
@@ -38,7 +51,7 @@ def list_deployments_command(
 
     try:
         deployments = api.list_deployments()
-        output = format_deployments(deployments, as_json=output_json)
+        output = format_deployments(deployments, output_format=output_format)
         click.echo(output)
     except Exception as e:
         if output_json:

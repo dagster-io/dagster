@@ -8,8 +8,9 @@ from dagster_dg_core.utils.telemetry import cli_telemetry_wrapper
 from dagster_shared.plus.config import DagsterPlusCliConfig
 from dagster_shared.plus.config_utils import dg_api_options
 
+from dagster_dg_cli.cli.api.asset.formatters import format_asset, format_assets
 from dagster_dg_cli.cli.api.client import create_dg_api_graphql_client
-from dagster_dg_cli.cli.api.formatters import format_asset, format_assets
+from dagster_dg_cli.cli.api.shared import determine_output_format
 
 
 @click.command(name="list", cls=DgClickCommand, unlaunched=True)
@@ -30,6 +31,12 @@ from dagster_dg_cli.cli.api.formatters import format_asset, format_assets
     is_flag=True,
     help="Output in JSON format for machine readability",
 )
+@click.option(
+    "--md",
+    "output_md",
+    is_flag=True,
+    help="Output in Markdown format for agent consumption",
+)
 @dg_api_options(deployment_scoped=True)
 @cli_telemetry_wrapper
 @click.pass_context
@@ -38,12 +45,15 @@ def list_assets_command(
     limit: int,
     cursor: str,
     output_json: bool,
+    output_md: bool,
     organization: str,
     deployment: str,
     api_token: str,
     view_graphql: bool,
 ) -> None:
     """List assets with pagination."""
+    output_format = determine_output_format(output_json, output_md)
+
     config = DagsterPlusCliConfig.create_for_deployment(
         deployment=deployment,
         organization=organization,
@@ -56,7 +66,7 @@ def list_assets_command(
 
     try:
         assets = api.list_assets(limit=limit, cursor=cursor)
-        output = format_assets(assets, as_json=output_json)
+        output = format_assets(assets, output_format=output_format)
         click.echo(output)
     except Exception as e:
         if output_json:
@@ -75,6 +85,12 @@ def list_assets_command(
     is_flag=True,
     help="Output in JSON format for machine readability",
 )
+@click.option(
+    "--md",
+    "output_md",
+    is_flag=True,
+    help="Output in Markdown format for agent consumption",
+)
 @dg_api_options(deployment_scoped=True)
 @cli_telemetry_wrapper
 @click.pass_context
@@ -82,12 +98,15 @@ def get_asset_command(
     ctx: click.Context,
     asset_key: str,
     output_json: bool,
+    output_md: bool,
     organization: str,
     deployment: str,
     api_token: str,
     view_graphql: bool,
 ) -> None:
     """Get specific asset details."""
+    output_format = determine_output_format(output_json, output_md)
+
     config = DagsterPlusCliConfig.create_for_deployment(
         deployment=deployment,
         organization=organization,
@@ -100,7 +119,7 @@ def get_asset_command(
 
     try:
         asset = api.get_asset(asset_key)
-        output = format_asset(asset, as_json=output_json)
+        output = format_asset(asset, output_format=output_format)
         click.echo(output)
     except Exception as e:
         if output_json:

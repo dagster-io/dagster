@@ -8,7 +8,7 @@ import json
 
 from dagster_dg_cli.api_layer.graphql_adapter.deployment import process_deployments_response
 from dagster_dg_cli.api_layer.schemas.deployment import Deployment, DeploymentList, DeploymentType
-from dagster_dg_cli.cli.api.formatters import format_deployments
+from dagster_dg_cli.cli.api.deployment.formatters import format_deployments
 
 from dagster_dg_cli_tests.cli_tests.api_tests.test_dynamic_command_execution import (
     load_recorded_graphql_responses,
@@ -71,7 +71,7 @@ class TestFormatDeployments:
     def test_format_deployments_text_output(self, snapshot):
         """Test formatting deployments as text."""
         deployment_list = self._create_sample_deployment_list()
-        result = format_deployments(deployment_list, as_json=False)
+        result = format_deployments(deployment_list, output_format="table")
 
         # Snapshot the entire text output
         snapshot.assert_match(result)
@@ -79,8 +79,22 @@ class TestFormatDeployments:
     def test_format_deployments_json_output(self, snapshot):
         """Test formatting deployments as JSON."""
         deployment_list = self._create_sample_deployment_list()
-        result = format_deployments(deployment_list, as_json=True)
+        result = format_deployments(deployment_list, output_format="json")
 
         # For JSON, we want to snapshot the parsed structure to avoid formatting differences
         parsed = json.loads(result)
         snapshot.assert_match(parsed)
+
+    def test_format_deployments_markdown_output(self, snapshot):
+        """Test formatting deployments as markdown."""
+        deployment_list = self._create_sample_deployment_list()
+        result = format_deployments(deployment_list, output_format="markdown")
+
+        snapshot.assert_match(result)
+
+    def test_format_empty_deployments_markdown_output(self, snapshot):
+        """Test formatting empty deployment list as markdown."""
+        deployment_list = DeploymentList(items=[], total=0)
+        result = format_deployments(deployment_list, output_format="markdown")
+
+        snapshot.assert_match(result)

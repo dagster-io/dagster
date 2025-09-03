@@ -12,7 +12,8 @@
       "groupName": "aws_stages",
       "id": "dagster_open_platform.__repository__.[\"aws\", \"cloud-prod\", \"workspace_staging_pipelines\"]",
       "kinds": [],
-      "metadataEntries": []
+      "metadataEntries": [],
+      "tags": []
     }
   ]
 }

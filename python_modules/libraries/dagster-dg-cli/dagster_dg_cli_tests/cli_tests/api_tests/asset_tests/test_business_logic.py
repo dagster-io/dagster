@@ -5,7 +5,7 @@ GraphQL client mocking or external dependencies.
 """
 
 from dagster_dg_cli.api_layer.schemas.asset import DgApiAsset, DgApiAssetList
-from dagster_dg_cli.cli.api.formatters import format_asset, format_assets
+from dagster_dg_cli.cli.api.asset.formatters import format_asset, format_assets
 
 
 class TestFormatAssets:
@@ -21,6 +21,7 @@ class TestFormatAssets:
                 description="User data table",
                 group_name="core_tables",
                 kinds=["dbt", "table"],
+                tags=[],
                 metadata_entries=[
                     {"label": "owner", "description": "data-team"},
                     {"label": "rows", "description": "1000000", "intValue": 1000000},
@@ -33,6 +34,7 @@ class TestFormatAssets:
                 description="Aggregated user metrics",
                 group_name="analytics",
                 kinds=["dbt", "view"],
+                tags=[],
                 metadata_entries=[],
             ),
         ]
@@ -51,6 +53,7 @@ class TestFormatAssets:
             description="User data table",
             group_name="core_tables",
             kinds=["dbt", "table"],
+            tags=[],
             metadata_entries=[
                 {"label": "owner", "description": "data-team"},
                 {"label": "schema", "description": "public", "text": "public"},
@@ -60,7 +63,7 @@ class TestFormatAssets:
     def test_format_assets_text_output(self, snapshot):
         """Test formatting assets as text."""
         asset_list = self._create_sample_asset_list()
-        result = format_assets(asset_list, as_json=False)
+        result = format_assets(asset_list, output_format="table")
 
         # Snapshot the entire text output
         snapshot.assert_match(result)
@@ -68,7 +71,7 @@ class TestFormatAssets:
     def test_format_assets_json_output(self, snapshot):
         """Test formatting assets as JSON."""
         asset_list = self._create_sample_asset_list()
-        result = format_assets(asset_list, as_json=True)
+        result = format_assets(asset_list, output_format="json")
 
         # For JSON, we want to snapshot the parsed structure to avoid formatting differences
         import json
@@ -79,14 +82,14 @@ class TestFormatAssets:
     def test_format_empty_assets_text_output(self, snapshot):
         """Test formatting empty asset list as text."""
         asset_list = self._create_empty_asset_list()
-        result = format_assets(asset_list, as_json=False)
+        result = format_assets(asset_list, output_format="table")
 
         snapshot.assert_match(result)
 
     def test_format_empty_assets_json_output(self, snapshot):
         """Test formatting empty asset list as JSON."""
         asset_list = self._create_empty_asset_list()
-        result = format_assets(asset_list, as_json=True)
+        result = format_assets(asset_list, output_format="json")
 
         import json
 
@@ -96,14 +99,14 @@ class TestFormatAssets:
     def test_format_single_asset_text_output(self, snapshot):
         """Test formatting single asset as text."""
         asset = self._create_single_asset()
-        result = format_asset(asset, as_json=False)
+        result = format_asset(asset, output_format="table")
 
         snapshot.assert_match(result)
 
     def test_format_single_asset_json_output(self, snapshot):
         """Test formatting single asset as JSON."""
         asset = self._create_single_asset()
-        result = format_asset(asset, as_json=True)
+        result = format_asset(asset, output_format="json")
 
         import json
 
@@ -119,9 +122,31 @@ class TestFormatAssets:
             description=None,
             group_name="default",
             kinds=[],
+            tags=[],
             metadata_entries=[],
         )
-        result = format_asset(asset, as_json=False)
+        result = format_asset(asset, output_format="table")
+
+        snapshot.assert_match(result)
+
+    def test_format_assets_markdown_output(self, snapshot):
+        """Test formatting assets as markdown."""
+        asset_list = self._create_sample_asset_list()
+        result = format_assets(asset_list, output_format="markdown")
+
+        snapshot.assert_match(result)
+
+    def test_format_single_asset_markdown_output(self, snapshot):
+        """Test formatting single asset as markdown."""
+        asset = self._create_single_asset()
+        result = format_asset(asset, output_format="markdown")
+
+        snapshot.assert_match(result)
+
+    def test_format_empty_assets_markdown_output(self, snapshot):
+        """Test formatting empty asset list as markdown."""
+        asset_list = self._create_empty_asset_list()
+        result = format_assets(asset_list, output_format="markdown")
 
         snapshot.assert_match(result)
 
@@ -144,6 +169,7 @@ class TestAssetDataProcessing:
             description="Complex asset with various metadata types",
             group_name="analytics",
             kinds=["dbt", "table", "materialized"],
+            tags=[],
             metadata_entries=[
                 {"label": "text_meta", "description": "Some text", "text": "example_text"},
                 {
@@ -190,6 +216,7 @@ class TestAssetDataProcessing:
             description="Deeply nested asset",
             group_name="nested_group",
             kinds=["table"],
+            tags=[],
             metadata_entries=[],
         )
 
