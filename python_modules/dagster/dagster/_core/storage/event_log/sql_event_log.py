@@ -3423,6 +3423,73 @@ class SqlEventLogStorage(EventLogStorage):
 
         return updated_cache.partition_statuses
 
+    def get_asset_check_cached_value(
+        self, check_key: AssetCheckKey
+    ) -> Optional[AssetCheckPartitionStatusCache]:
+        """Get the cached partition status record - pure storage retrieval."""
+        # Only use if new tables exist
+        if not self.has_table("asset_checks"):
+            return None
+
+        with self.index_connection() as conn:
+            cache_info = db_fetch_mappings(
+                conn,
+                db_select([AssetChecksTable.c.serialized_partition_subset]).where(
+                    db.and_(
+                        AssetChecksTable.c.asset_key == check_key.asset_key.to_string(),
+                        AssetChecksTable.c.check_name == check_key.name,
+                    )
+                ),
+            )
+
+            if not cache_info or not cache_info[0]["serialized_partition_subset"]:
+                return None
+
+            try:
+                return deserialize_value(
+                    cache_info[0]["serialized_partition_subset"], AssetCheckPartitionStatusCache
+                )
+            except (DeserializationError, ValueError):
+                return None
+
+    def update_asset_check_cached_value(
+        self, check_key: AssetCheckKey, cache_value: AssetCheckPartitionStatusCache
+    ) -> None:
+        """Update the cached partition status record - pure storage write."""
+        # Only use if new tables exist
+        if not self.has_table("asset_checks"):
+            return
+
+        serialized_cache = serialize_value(cache_value)
+
+        with self.index_connection() as conn:
+            # Try insert first
+            try:
+                conn.execute(
+                    AssetChecksTable.insert().values(
+                        asset_key=check_key.asset_key.to_string(),
+                        check_name=check_key.name,
+                        serialized_partition_subset=serialized_cache,
+                        created_timestamp=datetime.now(timezone.utc),
+                        updated_timestamp=datetime.now(timezone.utc),
+                    )
+                )
+            except db_exc.IntegrityError:
+                # Row exists, update it
+                conn.execute(
+                    AssetChecksTable.update()
+                    .where(
+                        db.and_(
+                            AssetChecksTable.c.asset_key == check_key.asset_key.to_string(),
+                            AssetChecksTable.c.check_name == check_key.name,
+                        )
+                    )
+                    .values(
+                        serialized_partition_subset=serialized_cache,
+                        updated_timestamp=datetime.now(timezone.utc),
+                    )
+                )
+
     @property
     def supports_asset_checks(self):  # pyright: ignore[reportIncompatibleMethodOverride]
         return self.has_table(AssetCheckExecutionsTable.name)

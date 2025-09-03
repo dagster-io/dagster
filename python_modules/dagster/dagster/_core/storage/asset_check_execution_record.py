@@ -1,6 +1,6 @@
 import enum
 from collections.abc import Iterable
-from typing import NamedTuple, Optional, cast
+from typing import TYPE_CHECKING, NamedTuple, Optional, cast
 
 from dagster_shared.record import record
 from dagster_shared.serdes import deserialize_value
@@ -13,6 +13,9 @@ from dagster._core.loader import LoadableBy, LoadingContext
 from dagster._core.storage.dagster_run import DagsterRunStatus, RunRecord
 from dagster._serdes import whitelist_for_serdes
 from dagster._time import utc_datetime_from_naive
+
+if TYPE_CHECKING:
+    from dagster._core.definitions.partitions.subset import PartitionsSubset
 
 
 class AssetCheckInstanceSupport(enum.Enum):
@@ -64,6 +67,18 @@ class AssetCheckPartitionStatusCache:
         """Return new cache with multiple partition updates applied."""
         updated_statuses = {**self.partition_statuses, **updates}
         return AssetCheckPartitionStatusCache(partition_statuses=updated_statuses)
+
+
+@record
+class AssetCheckPartitionSubsets:
+    """Partition subsets grouped by execution status for an asset check."""
+
+    missing: "PartitionsSubset"
+    succeeded: "PartitionsSubset"
+    failed: "PartitionsSubset"
+    inProgress: "PartitionsSubset"
+    skipped: "PartitionsSubset"
+    executionFailed: "PartitionsSubset"
 
 
 @whitelist_for_serdes

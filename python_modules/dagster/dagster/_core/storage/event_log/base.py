@@ -34,6 +34,7 @@ from dagster._core.loader import LoadableBy, LoadingContext
 from dagster._core.storage.asset_check_execution_record import (
     AssetCheckExecutionRecord,
     AssetCheckExecutionRecordStatus,
+    AssetCheckPartitionStatusCache,
 )
 from dagster._core.storage.dagster_run import DagsterRunStatsSnapshot
 from dagster._core.storage.partition_status_cache import get_and_update_asset_status_cache_value
@@ -694,6 +695,20 @@ class EventLogStorage(ABC, MayHaveInstanceWeakref[T_DagsterInstance]):
         self, check_key: AssetCheckKey
     ) -> Mapping[str, AssetCheckExecutionRecordStatus]:
         """Get partition statuses for a partitioned asset check using hybrid cache approach."""
+        pass
+
+    @abstractmethod
+    def get_asset_check_cached_value(
+        self, check_key: AssetCheckKey
+    ) -> Optional["AssetCheckPartitionStatusCache"]:
+        """Get the cached partition status record - pure storage retrieval."""
+        pass
+
+    @abstractmethod
+    def update_asset_check_cached_value(
+        self, check_key: AssetCheckKey, cache_value: "AssetCheckPartitionStatusCache"
+    ) -> None:
+        """Update the cached partition status record - pure storage write."""
         pass
 
     @abstractmethod
