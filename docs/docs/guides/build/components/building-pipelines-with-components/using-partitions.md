@@ -60,7 +60,7 @@ If you are using the <PyObject section="components" module="dagster" object="com
 Once you've added partitions to your assets, you'll need to update your asset execution logic to work with the partition context. When Dagster executes a partitioned asset, it provides information about which partition is currently being processed.
 
 In your asset functions, you can access partition information through the <PyObject section="execution" module="dagster" object="AssetExecutionContext" />. The key properties are:
-- `partition_key`: The string key identifying the current partition
+- <PyObject section="execution" module="dagster" object="AssetExecutionContext.partition_key" displayText="partition_key" />: The string key identifying the current partition.
 - `partition_time_window`: For time-based partitions, the start and end times for this partition
 
 Your execution logic should use this partition information to process only the relevant subset of data.
