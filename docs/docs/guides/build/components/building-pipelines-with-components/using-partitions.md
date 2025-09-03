@@ -39,7 +39,11 @@ post_processing:
         partitions_def: "{{ the_daily_partitions_def }}"
 ```
 
-We're applying the same `partitions_def` to all assets within the component. In general, it is recommended to avoid applying different partition definitions to different assets within a single component because each execution step must map to only a single partitions definition at a time. Any integration that maps multiple assets to the same step must take care to ensure that all of those assets have the same partitions definition, which is easiest if all assets in the entire component share a single partitions definition.
+:::info
+
+In general, it is best to avoid applying different partition definitions to different assets within a single component, since each execution step must map to only a single partitions definition at a time. Any integration that maps multiple assets to the same step must take care to ensure that all of those assets have the same partitions definition, which is easiest if all assets in the entire component share a single partitions definition.
+
+:::
 
 ## Adding partitions in Python
 
