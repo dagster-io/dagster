@@ -18,8 +18,12 @@ import {
   buildAssetConnection,
   buildAssetHealth,
   buildAssetKey,
+  buildAssetNode,
   buildAssetRecord,
   buildAssetRecordConnection,
+  buildRepository,
+  buildRepositoryLocation,
+  buildWorkspaceLocationEntry,
 } from '../../graphql/types';
 import {buildQueryMock, getMockResultFn} from '../../testing/mocking';
 import {WorkspaceProvider} from '../../workspace/WorkspaceContext/WorkspaceContext';
@@ -151,7 +155,23 @@ const getHealthQueryMock = (assetKeys: AssetKey[]) =>
     },
   });
 
-const workspaceMocks = buildWorkspaceMocks([]);
+const workspaceMocks = buildWorkspaceMocks([
+  buildWorkspaceLocationEntry({
+    locationOrLoadError: buildRepositoryLocation({
+      repositories: [
+        buildRepository({
+          assetNodes: [
+            buildAssetNode({assetKey: asset1}),
+            buildAssetNode({assetKey: asset2}),
+            buildAssetNode({assetKey: asset3}),
+            buildAssetNode({assetKey: asset4}),
+            buildAssetNode({assetKey: asset5}),
+          ],
+        }),
+      ],
+    }),
+  }),
+]);
 
 describe('AssetCatalogTableV2', () => {
   it('renders', async () => {
