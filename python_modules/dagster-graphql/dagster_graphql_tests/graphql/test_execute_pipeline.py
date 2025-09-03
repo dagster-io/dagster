@@ -2,9 +2,10 @@ import json
 import time
 import uuid
 from typing import Any, Optional
+from unittest import mock
 
 from dagster._core.storage.dagster_run import RunsFilter
-from dagster._core.test_utils import environ, wait_for_runs_to_finish
+from dagster._core.test_utils import wait_for_runs_to_finish
 from dagster._core.utils import make_new_run_id
 from dagster._core.workspace.context import WorkspaceRequestContext
 from dagster._utils import file_relative_path
@@ -392,7 +393,12 @@ class TestExecutePipeline(ExecutingGraphQLContextTestMatrix):
             or non_engine_event_types == self._legacy_csv_hello_world_event_sequence()
         )
 
-        with environ({"DAGSTER_UI_EVENT_LOAD_CHUNK_SIZE": "5"}):
+        with mock.patch.object(
+            type(graphql_context),
+            "records_for_run_default_limit",
+            new_callable=mock.PropertyMock,
+        ) as mock_records_for_run_default_limit:
+            mock_records_for_run_default_limit.return_value = 5
             events_result = execute_dagster_graphql(
                 graphql_context,
                 RUN_EVENTS_QUERY,
