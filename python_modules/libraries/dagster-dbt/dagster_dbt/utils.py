@@ -36,11 +36,20 @@ def select_unique_ids(
     manifest_json: Mapping[str, Any],
 ) -> AbstractSet[str]:
     """Given dbt selection paramters, return the unique ids of all resources that match that selection."""
-    if DBT_PYTHON_VERSION is not None:
+    manifest_version = version.parse(manifest_json.get("metadata", {}).get("dbt_version", "0.0.0"))
+    # using dbt Fusion, efficient to invoke the CLI for selection
+    if manifest_version.major >= 2 and project is not None:
+        return _select_unique_ids_from_cli(select, exclude, selector, project)
+    # using dbt-core, too slow to invoke the CLI, so we use library functions instead
+    elif DBT_PYTHON_VERSION is not None:
         return _select_unique_ids_from_manifest(select, exclude, selector, manifest_json)
     else:
-        project = check.not_none(project, "project must be passed if dbt-core is not installed")
-        return _select_unique_ids_from_cli(select, exclude, selector, project)
+        # in theory, as long as dbt-core is a dependency of dagster-dbt, this can't happen, but adding
+        # this for now to be safe
+        check.failed(
+            "dbt-core is not installed and no `project` was passed to `select_unique_ids`. "
+            "This can happen if you are using the dbt Cloud integration without the dbt-core package installed."
+        )
 
 
 def _select_unique_ids_from_cli(

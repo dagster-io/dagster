@@ -29,7 +29,7 @@ def test_basic(project: DbtProject, fail: bool) -> None:
     n_assets = len(list(the_assets.specs))
     n_checks = len(list(the_assets.check_specs))
     assert n_assets == 8
-    assert n_checks == 19
+    assert n_checks == 20
 
     result = dg.materialize(
         [the_assets],
@@ -43,8 +43,8 @@ def test_basic(project: DbtProject, fail: bool) -> None:
     if fail:
         # one asset fails, no materialization
         assert n_materializations == n_assets - 1
-        # two checks on that asset, no check evaluations for them
-        assert n_check_evaluations == n_checks - 2
+        # three checks on that asset, no check evaluations for them
+        assert n_check_evaluations == n_checks - 3
     else:
         assert n_materializations == n_assets
         assert n_check_evaluations == n_checks
