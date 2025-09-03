@@ -1,5 +1,6 @@
 import os
 from pathlib import Path
+from typing import Optional
 
 import click
 from dagster_dg_core.shared_options import dg_global_options, dg_path_options
@@ -25,7 +26,7 @@ _LAZY_COMMANDS = {
 class LazyDgClickGroup(DgClickGroup):
     """A Click group that loads commands lazily to avoid expensive imports at startup."""
 
-    def get_command(self, ctx: click.Context, cmd_name: str) -> click.Command | None:
+    def get_command(self, ctx: click.Context, cmd_name: str) -> Optional[click.Command]:
         # First check if command is already loaded
         if cmd_name in self.commands:
             return self.commands[cmd_name]
