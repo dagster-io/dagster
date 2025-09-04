@@ -37,10 +37,11 @@ You can add dependencies by including the corresponding Python libraries in your
     />
 
     :::info
-    
+
     If you are using a `setup.py` file, you will need to add a TOML configuration file to the root of your project in order to make it `dg`-compatible and use Components. For more information, see [Converting an existing project](/guides/build/projects/moving-to-components/migrating-project).
 
     :::
+
   </TabItem>
 </Tabs>
 
@@ -56,9 +57,9 @@ You can add dependencies by including the corresponding Python libraries in your
   </TabItem>
   <TabItem value="pip" label="pip">
     <CodeExample
-    path="docs_snippets/docs_snippets/dagster-plus/deployment/serverless/runtime-environment/example_tarball_setup.py"
-    language="Python"
-    title="Example setup.py with tarball links"
+      path="docs_snippets/docs_snippets/dagster-plus/deployment/serverless/runtime-environment/example_tarball_setup.py"
+      language="Python"
+      title="Example setup.py with tarball links"
     />
   </TabItem>
 </Tabs>
@@ -202,6 +203,7 @@ dagster-cloud serverless deploy-python-executable \
     │               └── schedules.py
     └── workspace.yaml
     ```
+
   </TabItem>
   <TabItem value="pip" label="pip">
     To add data files to your deployment, use the [data files support](https://setuptools.pypa.io/en/latest/userguide/datafiles.html) built into Python's `setup.py`. This requires adding a `package_data` or `include_package_data` keyword in the call to `setup()` in `setup.py`. For example, given this directory structure:
@@ -224,6 +226,7 @@ dagster-cloud serverless deploy-python-executable \
       language="Python"
       title="Loading data files in setup.py"
     />
+
   </TabItem>
 </Tabs>
 
@@ -346,26 +349,16 @@ If you use PEX deploys in your workflow (`ENABLE_FAST_DEPLOYS: 'true'`), the fol
 
 2.  Create a GitHub personal access token and set it as the `GH_PAT` secret for your Actions.
 3.  Add your package to your Dagster project's package configuration file:
-  <Tabs groupId="package-manager">
-    <TabItem value="uv" label="uv">
-      In your `pyproject.toml` file, add your package name to the `dependencies` section:
-      ```python
-          dependencies = [
-            "dagster",
-            "dagster-cloud",
-            "private-package",   # add this line - must match your private Python package name
-          ]
-      ```
-    </TabItem>
-    <TabItem value="pip" label="pip">
-      In your `setup.py` file, add your package name to the `install_requires` section:
-      ```python
-          install_requires=[
-            "dagster",
-            "dagster-cloud",
-            "private-package",   # add this line - must match your private Python package name
-      ```
-    </TabItem>
-  </Tabs>
+    <Tabs groupId="package-manager">
+      <TabItem value="uv" label="uv">
+        In your `pyproject.toml` file, add your package name to the `dependencies` section: ```python dependencies = [
+        "dagster", "dagster-cloud", "private-package", # add this line - must match your private Python package name ]
+        ```
+      </TabItem>
+      <TabItem value="pip" label="pip">
+        In your `setup.py` file, add your package name to the `install_requires` section: ```python install_requires=[
+        "dagster", "dagster-cloud", "private-package", # add this line - must match your private Python package name ```
+      </TabItem>
+    </Tabs>
 
 Once the `deploy.yml` is updated and changes pushed to your repo, then any subsequent code deploy should checkout your private repository, build the package and install it as a dependency in your Dagster+ project. Repeat the above steps for your `branch_deployments.yml` if needed.
