@@ -1,7 +1,7 @@
 import time
 from collections.abc import Iterator, Mapping, Sequence
 from types import TracebackType
-from typing import Any, Callable, Optional, Union, cast
+from typing import TYPE_CHECKING, Any, Callable, Optional, Union, cast
 
 from typing_extensions import Self
 
@@ -23,9 +23,13 @@ from dagster._core.execution.plan.plan import ExecutionPlan
 from dagster._core.execution.plan.state import KnownExecutionState
 from dagster._core.execution.plan.step import ExecutionStep
 from dagster._core.execution.retries import RetryMode, RetryState
+from dagster._core.execution.step_dependency_config import StepDependencyConfig
 from dagster._core.storage.tags import GLOBAL_CONCURRENCY_TAG, PRIORITY_TAG
 from dagster._utils.interrupts import pop_captured_interrupt
 from dagster._utils.tags import TagConcurrencyLimitsCounter
+
+if TYPE_CHECKING:
+    from dagster._core.execution.plan.state import PastExecutionState
 
 
 def _default_sort_key(step: ExecutionStep) -> float:
@@ -52,6 +56,7 @@ class ActiveExecution:
         max_concurrent: Optional[int] = None,
         tag_concurrency_limits: Optional[list[dict[str, Any]]] = None,
         instance_concurrency_context: Optional[InstanceConcurrencyContext] = None,
+        step_dependency_config: StepDependencyConfig = StepDependencyConfig.default(),
     ):
         self._plan: ExecutionPlan = check.inst_param(
             execution_plan, "execution_plan", ExecutionPlan
@@ -59,6 +64,7 @@ class ActiveExecution:
         self._retry_mode = check.inst_param(retry_mode, "retry_mode", RetryMode)
         self._retry_state = self._plan.known_state.get_retry_state()
         self._instance_concurrency_context = instance_concurrency_context
+        self._step_dependency_config = step_dependency_config
 
         self._sort_key_fn: Callable[[ExecutionStep], float] = (
             check.opt_callable_param(
@@ -190,7 +196,8 @@ class ActiveExecution:
             ),
         )
 
-    def _should_skip_step(self, step_key: str, successful_or_skipped_steps: set[str]) -> bool:
+    def _should_skip_step(self, step_key: str) -> bool:
+        successful_or_skipped_steps = self._success | self._skipped
         step = self.get_step_by_key(step_key)
         for step_input in step.step_inputs:
             missing_source_handles = []
@@ -212,6 +219,47 @@ class ActiveExecution:
                     return True
         return False
 
+    def _all_upstream_outputs_failed_or_abandoned(self, step_key: str) -> bool:
+        failed_or_abandoned_steps = self._failed | self._abandoned
+        # check that all upstream outputs have failed or been abandoned
+        step = self.get_step_by_key(step_key)
+        for step_input in step.step_inputs:
+            if any(
+                source_handle not in self._step_outputs
+                and source_handle.step_key in failed_or_abandoned_steps
+                for source_handle in step_input.get_step_output_handle_dependencies()
+            ):
+                return True
+        return False
+
+    def _has_produced_output(self, step_output_handle: StepOutputHandle) -> bool:
+        # check if the step output has been produced by this run or any parent run
+        if step_output_handle in self._step_outputs:
+            return True
+        elif step_output_handle.step_key in self._plan.step_keys_to_execute:
+            # step will be executed in this run, so should wait for this run to
+            # produce the output instead of looking at past runs
+            return False
+
+        # this case can happen if the original run was executed with AFTER_UPSTREAM_OUTPUTS
+        parent_state = self._plan.known_state.parent_state
+        while parent_state is not None:
+            if step_output_handle in parent_state.produced_outputs:
+                return True
+            parent_state = cast("Optional[PastExecutionState]", parent_state.parent_state)
+        return False
+
+    def _all_upstream_outputs_produced(self, step_key: str) -> bool:
+        # check that all upstream outputs have been emitted
+        step = self.get_step_by_key(step_key)
+        for step_input in step.step_inputs:
+            if any(
+                not self._has_produced_output(source_handle)
+                for source_handle in step_input.get_step_output_handle_dependencies()
+            ):
+                return False
+        return True
+
     def _update(self) -> None:
         """Moves steps from _pending to _executable / _pending_skip / _pending_retry
         as a function of what has been _completed.
@@ -220,10 +268,6 @@ class ActiveExecution:
         new_steps_to_skip: list[str] = []
         new_steps_to_abandon: list[str] = []
 
-        successful_or_skipped_steps = self._success | self._skipped
-        failed_or_abandoned_steps = self._failed | self._abandoned
-        resolved_steps = self._success | self._skipped | self._failed | self._abandoned
-
         if self._new_dynamic_mappings:
             new_step_deps = self._plan.resolve(self._completed_dynamic_outputs)
             for step_key, deps in new_step_deps.items():
@@ -231,13 +275,24 @@ class ActiveExecution:
 
             self._new_dynamic_mappings = False
 
+        resolved_steps = self._success | self._skipped | self._failed | self._abandoned
         for step_key, depends_on_steps in self._pending.items():
-            if depends_on_steps.issubset(resolved_steps):
-                if self._should_skip_step(step_key, successful_or_skipped_steps):
+            # traditional behavior, wait for all upstream steps before executing
+            if self._step_dependency_config.require_upstream_step_success:
+                if depends_on_steps.issubset(resolved_steps):
+                    if self._should_skip_step(step_key):
+                        new_steps_to_skip.append(step_key)
+                    elif depends_on_steps.intersection(self._failed | self._abandoned):
+                        new_steps_to_abandon.append(step_key)
+                    else:
+                        new_steps_to_execute.append(step_key)
+            # optional behavior, executes as soon as all upstream outputs are available
+            else:
+                if self._should_skip_step(step_key):
                     new_steps_to_skip.append(step_key)
-                elif depends_on_steps.intersection(failed_or_abandoned_steps):
+                elif self._all_upstream_outputs_failed_or_abandoned(step_key):
                     new_steps_to_abandon.append(step_key)
-                else:
+                elif self._all_upstream_outputs_produced(step_key):
                     new_steps_to_execute.append(step_key)
 
         for key in new_steps_to_execute:

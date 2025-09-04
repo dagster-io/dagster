@@ -25,6 +25,7 @@ from dagster._core.execution.plan.execute_plan import inner_plan_execution_itera
 from dagster._core.execution.plan.plan import ExecutionPlan
 from dagster._core.execution.plan.state import KnownExecutionState
 from dagster._core.execution.retries import RetryMode
+from dagster._core.execution.step_dependency_config import StepDependencyConfig
 from dagster._core.instance import DagsterInstance, InstanceRef
 from dagster._core.selector import parse_step_selection
 from dagster._core.storage.dagster_run import DagsterRun, DagsterRunStatus
@@ -588,6 +589,7 @@ def execute_plan_iterator(
     instance: DagsterInstance,
     retry_mode: Optional[RetryMode] = None,
     run_config: Optional[Mapping[str, object]] = None,
+    step_dependency_config: StepDependencyConfig = StepDependencyConfig.default(),
 ) -> Iterator[DagsterEvent]:
     check.inst_param(execution_plan, "execution_plan", ExecutionPlan)
     check.inst_param(job, "job", IJob)
@@ -610,6 +612,7 @@ def execute_plan_iterator(
                 run_config=run_config,
                 dagster_run=dagster_run,
                 instance=instance,
+                step_dependency_config=step_dependency_config,
             ),
         )
     )

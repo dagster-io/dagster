@@ -52,6 +52,7 @@ from dagster._core.execution.plan.handle import ResolvedFromDynamicStepHandle, S
 from dagster._core.execution.plan.outputs import StepOutputHandle
 from dagster._core.execution.plan.step import ExecutionStep
 from dagster._core.execution.retries import RetryMode
+from dagster._core.execution.step_dependency_config import StepDependencyConfig
 from dagster._core.executor.base import Executor
 from dagster._core.log_manager import DagsterLogManager
 from dagster._core.storage.dagster_run import DagsterRun
@@ -132,6 +133,10 @@ class IPlanContext(ABC):
         return self.plan_data.execution_plan
 
     @property
+    def step_dependency_config(self) -> StepDependencyConfig:
+        return self.plan_data.step_dependency_config
+
+    @property
     @abstractmethod
     def output_capture(self) -> Optional[Mapping[StepOutputHandle, Any]]:
         raise NotImplementedError()
@@ -174,6 +179,7 @@ class PlanData(NamedTuple):
     execution_plan: "ExecutionPlan"
     raise_on_error: bool = False
     retry_mode: RetryMode = RetryMode.DISABLED
+    step_dependency_config: StepDependencyConfig = StepDependencyConfig.default()
 
 
 class ExecutionData(NamedTuple):

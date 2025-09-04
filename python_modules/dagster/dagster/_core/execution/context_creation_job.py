@@ -43,6 +43,7 @@ from dagster._core.execution.resources_init import (
     resource_initialization_manager,
 )
 from dagster._core.execution.retries import RetryMode
+from dagster._core.execution.step_dependency_config import StepDependencyConfig
 from dagster._core.executor.init import InitExecutorContext
 from dagster._core.instance import DagsterInstance
 from dagster._core.storage.dagster_run import DagsterRun
@@ -127,7 +128,10 @@ def create_context_creation_data(
 
 
 def create_plan_data(
-    context_creation_data: "ContextCreationData", raise_on_error: bool, retry_mode: RetryMode
+    context_creation_data: "ContextCreationData",
+    raise_on_error: bool,
+    retry_mode: RetryMode,
+    step_dependency_config: StepDependencyConfig,
 ) -> PlanData:
     return PlanData(
         job=context_creation_data.job,
@@ -136,6 +140,7 @@ def create_plan_data(
         execution_plan=context_creation_data.execution_plan,
         raise_on_error=raise_on_error,
         retry_mode=retry_mode,
+        step_dependency_config=step_dependency_config,
     )
 
 
@@ -194,6 +199,7 @@ def execution_context_event_generator(
     ] = None,
     raise_on_error: Optional[bool] = False,
     output_capture: Optional[dict["StepOutputHandle", Any]] = None,
+    step_dependency_config: StepDependencyConfig = StepDependencyConfig.default(),
 ) -> Generator[Union[DagsterEvent, PlanExecutionContext], None, None]:
     scoped_resources_builder_cm = cast(
         "Callable[..., EventGenerationManager[ScopedResourcesBuilder]]",
@@ -242,7 +248,12 @@ def execution_context_event_generator(
         )
 
         execution_context = PlanExecutionContext(
-            plan_data=create_plan_data(context_creation_data, raise_on_error, retry_mode),
+            plan_data=create_plan_data(
+                context_creation_data,
+                raise_on_error,
+                retry_mode,
+                step_dependency_config,
+            ),
             execution_data=create_execution_data(context_creation_data, scoped_resources_builder),
             log_manager=log_manager,
             output_capture=output_capture,
@@ -328,7 +339,12 @@ def orchestration_context_event_generator(
         executor = create_executor(context_creation_data)
 
         execution_context = PlanOrchestrationContext(
-            plan_data=create_plan_data(context_creation_data, raise_on_error, executor.retries),
+            plan_data=create_plan_data(
+                context_creation_data,
+                raise_on_error,
+                executor.retries,
+                executor.step_dependency_config,
+            ),
             log_manager=log_manager,
             executor=executor,
             output_capture=output_capture,
@@ -379,6 +395,7 @@ class PlanExecutionContextManager(ExecutionContextManager[PlanExecutionContext])
         ] = None,
         raise_on_error: Optional[bool] = False,
         output_capture: Optional[dict["StepOutputHandle", Any]] = None,
+        step_dependency_config: StepDependencyConfig = StepDependencyConfig.default(),
     ):
         super().__init__(
             execution_context_event_generator(
@@ -391,6 +408,7 @@ class PlanExecutionContextManager(ExecutionContextManager[PlanExecutionContext])
                 scoped_resources_builder_cm,
                 raise_on_error=raise_on_error,
                 output_capture=output_capture,
+                step_dependency_config=step_dependency_config,
             )
         )
 
