@@ -34,7 +34,8 @@ from dagster._core.loader import LoadableBy, LoadingContext
 from dagster._core.storage.asset_check_execution_record import (
     AssetCheckExecutionRecord,
     AssetCheckExecutionRecordStatus,
-    AssetCheckPartitionStatusCache,
+    AssetCheckPartitionRecord,
+    AssetCheckPartitionStatusCacheValue,
 )
 from dagster._core.storage.dagster_run import DagsterRunStatsSnapshot
 from dagster._core.storage.partition_status_cache import get_and_update_asset_status_cache_value
@@ -691,24 +692,24 @@ class EventLogStorage(ABC, MayHaveInstanceWeakref[T_DagsterInstance]):
         pass
 
     @abstractmethod
-    def get_asset_check_partition_statuses(
-        self, check_key: AssetCheckKey
-    ) -> Mapping[str, AssetCheckExecutionRecordStatus]:
-        """Get partition statuses for a partitioned asset check using hybrid cache approach."""
-        pass
-
-    @abstractmethod
     def get_asset_check_cached_value(
         self, check_key: AssetCheckKey
-    ) -> Optional["AssetCheckPartitionStatusCache"]:
+    ) -> Optional["AssetCheckPartitionStatusCacheValue"]:
         """Get the cached partition status record - pure storage retrieval."""
         pass
 
     @abstractmethod
     def update_asset_check_cached_value(
-        self, check_key: AssetCheckKey, cache_value: "AssetCheckPartitionStatusCache"
+        self, check_key: AssetCheckKey, cache_value: "AssetCheckPartitionStatusCacheValue"
     ) -> None:
         """Update the cached partition status record - pure storage write."""
+        pass
+
+    @abstractmethod
+    def get_asset_check_partition_records(
+        self, check_key: AssetCheckKey, after_storage_id: Optional[int] = None
+    ) -> Sequence[AssetCheckPartitionRecord]:
+        """Get asset check partition records with execution status and planned run info."""
         pass
 
     @abstractmethod

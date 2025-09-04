@@ -15,6 +15,7 @@ from dagster._serdes import whitelist_for_serdes
 from dagster._time import utc_datetime_from_naive
 
 if TYPE_CHECKING:
+    from dagster._core.definitions.partitions.definition import PartitionsDefinition
     from dagster._core.definitions.partitions.subset import PartitionsSubset
 
 
@@ -42,43 +43,54 @@ COMPLETED_ASSET_CHECK_EXECUTION_RECORD_STATUSES = {
 }
 
 
+@whitelist_for_serdes
 @record
-class AssetCheckPartitionStatusCache:
-    """Serializable cache of partition statuses for a partitioned asset check."""
+class AssetCheckPartitionStatusCacheValue:
+    """Serializable cache value stored in database for asset check partition status."""
 
-    partition_statuses: dict[str, AssetCheckExecutionRecordStatus]
+    latest_storage_id: int
+    partitions_def_id: Optional[str]
+    planned_partition_subset: "PartitionsSubset"
+    succeeded_partition_subset: "PartitionsSubset"
+    failed_partition_subset: "PartitionsSubset"
+    # Map of partition key -> run_id for planned partitions (to resolve run status)
+    planned_partition_run_mapping: dict[str, str]
 
-    @staticmethod
-    def from_partition_map(
-        partition_map: dict[str, AssetCheckExecutionRecordStatus],
-    ) -> "AssetCheckPartitionStatusCache":
-        return AssetCheckPartitionStatusCache(partition_statuses=partition_map)
-
-    def with_updated_partition(
-        self, partition_key: str, status: AssetCheckExecutionRecordStatus
-    ) -> "AssetCheckPartitionStatusCache":
-        """Return new cache with updated partition status."""
-        updated_statuses = {**self.partition_statuses, partition_key: status}
-        return AssetCheckPartitionStatusCache(partition_statuses=updated_statuses)
-
-    def with_updated_partitions(
-        self, updates: dict[str, AssetCheckExecutionRecordStatus]
-    ) -> "AssetCheckPartitionStatusCache":
-        """Return new cache with multiple partition updates applied."""
-        updated_statuses = {**self.partition_statuses, **updates}
-        return AssetCheckPartitionStatusCache(partition_statuses=updated_statuses)
+    @classmethod
+    def from_partitions_def(
+        cls, partitions_def: "PartitionsDefinition"
+    ) -> "AssetCheckPartitionStatusCacheValue":
+        empty_subset = partitions_def.empty_subset()
+        return cls(
+            latest_storage_id=0,
+            partitions_def_id=partitions_def.get_serializable_unique_identifier(),
+            planned_partition_subset=empty_subset,
+            succeeded_partition_subset=empty_subset,
+            failed_partition_subset=empty_subset,
+            planned_partition_run_mapping={},
+        )
 
 
 @record
-class AssetCheckPartitionSubsets:
-    """Partition subsets grouped by execution status for an asset check."""
+class AssetCheckPartitionRecord:
+    """Record representing a single asset check partition with execution and run info."""
+
+    partition_key: str
+    last_execution_status: AssetCheckExecutionRecordStatus
+    last_planned_run_id: Optional[str]
+    last_event_id: int
+
+
+@record
+class AssetCheckPartitionStatus:
+    """Computed partition status with fine-grained execution states for an asset check."""
 
     missing: "PartitionsSubset"
     succeeded: "PartitionsSubset"
     failed: "PartitionsSubset"
-    inProgress: "PartitionsSubset"
+    in_progress: "PartitionsSubset"
     skipped: "PartitionsSubset"
-    executionFailed: "PartitionsSubset"
+    execution_failed: "PartitionsSubset"
 
 
 @whitelist_for_serdes
