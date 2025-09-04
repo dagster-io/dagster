@@ -1,0 +1,18 @@
+[project]
+name = "quickstart_etl"
+requires-python = ">=3.9,<3.14"
+version = "0.1.0"
+dependencies = [
+    "dagster",
+    "dagster-cloud",
+    "boto3",
+    "matplotlib",
+    "pandas",
+    "textblob",
+    "tweepy",
+    "wordcloud",
+    # highlight-start
+    "soda @ https://pypi.cloud.soda.io/packages/soda-1.6.2.tar.gz",
+    "soda-snowflake @ https://pypi.cloud.soda.io/packages/soda_snowflake-1.6.2.tar.gz",
+    # highlight-end
+]

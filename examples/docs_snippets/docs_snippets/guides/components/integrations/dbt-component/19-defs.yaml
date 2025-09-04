@@ -1,0 +1,14 @@
+type: dagster_dbt.DbtProjectComponent
+
+template_vars_module: .template_vars
+attributes:
+  project: '{{ project_root }}/dbt'
+  select: "customers"
+  translation:
+    group_name: dbt_models
+    description: "Transforms data using dbt model {{ node.name }}"
+post_processing:
+  assets:
+    - target: "*"
+      attributes:
+        partitions_def: "{{ daily_partitions_def }}"

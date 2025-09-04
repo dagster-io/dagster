@@ -24,7 +24,7 @@ def test_refresh_state_command():
         state_storage = DefsStateStorage.get_current()
         assert state_storage is not None
         # no components, nothing to refresh
-        result = runner.invoke("utils", "refresh-component-state")
+        result = runner.invoke("utils", "refresh-defs-state")
         assert_runner_result(result)
         latest_state_info = state_storage.get_latest_defs_state_info()
         assert latest_state_info is None
@@ -44,7 +44,7 @@ def test_refresh_state_command():
 
         # now we have a state-backed component, command should succeed
         # and we should have a new state version
-        result = runner.invoke("utils", "refresh-component-state")
+        result = runner.invoke("utils", "refresh-defs-state")
         assert_runner_result(result)
 
         latest_state_info = state_storage.get_latest_defs_state_info()
@@ -71,15 +71,15 @@ def test_refresh_state_command():
             )
 
         # command should fail, but state should be updated for the non-failing component
-        result = runner.invoke("utils", "refresh-component-state")
+        result = runner.invoke("utils", "refresh-defs-state")
         assert result.exit_code == 1
 
         new_latest_state_info = state_storage.get_latest_defs_state_info()
         assert new_latest_state_info is not None
         assert new_latest_state_info.info_mapping.keys() == {"SampleStateBackedComponent"}
         assert (
-            new_latest_state_info.info_mapping["SampleStateBackedComponent"].version
-            != latest_state_info.info_mapping["SampleStateBackedComponent"].version
+            new_latest_state_info.info_mapping["SampleStateBackedComponent"]
+            != latest_state_info.info_mapping["SampleStateBackedComponent"]
         )
 
 
@@ -132,7 +132,7 @@ def test_refresh_state_command_with_defs_key_filter():
         # Refresh only component1
         result = runner.invoke(
             "utils",
-            "refresh-component-state",
+            "refresh-defs-state",
             "--defs-state-key",
             "SampleStateBackedComponent[first]",
         )
@@ -146,7 +146,7 @@ def test_refresh_state_command_with_defs_key_filter():
         # Refresh both components using multiple --defs-key flags
         result = runner.invoke(
             "utils",
-            "refresh-component-state",
+            "refresh-defs-state",
             "--defs-state-key",
             "SampleStateBackedComponent[first]",
             "--defs-state-key",
@@ -163,9 +163,7 @@ def test_refresh_state_command_with_defs_key_filter():
         }
 
         # Test with non-existent defs-key
-        result = runner.invoke(
-            "utils", "refresh-component-state", "--defs-state-key", "nonexistent"
-        )
+        result = runner.invoke("utils", "refresh-defs-state", "--defs-state-key", "nonexistent")
         assert result.exit_code == 1
         assert "The following defs state keys were not found:" in result.output
         assert "nonexistent" in result.output

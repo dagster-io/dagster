@@ -87,6 +87,7 @@ Quick reference for Python packages in the Dagster repository.
 **dagster-tableau**: `python_modules/libraries/dagster-tableau`
 **dagster-powerbi**: `python_modules/libraries/dagster-powerbi`
 **dagster-sigma**: `python_modules/libraries/dagster-sigma`
+**dagster-omni**: `python_modules/libraries/dagster-omni`
 
 ## ml platforms
 

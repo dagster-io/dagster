@@ -67,6 +67,64 @@ class DagsterPlusCliConfig:
         _, _, raw_plus_config, _ = result
         return cls(**raw_plus_config)
 
+    @classmethod
+    def create_for_deployment(
+        cls,
+        deployment: Optional[str],
+        organization: Optional[str] = None,
+        user_token: Optional[str] = None,
+    ) -> "DagsterPlusCliConfig":
+        """Create a DagsterPlusCliConfig instance for deployment-scoped operations.
+
+        Args:
+            deployment: The deployment name to target
+            organization: Organization name (if None, will try to load from existing config)
+            user_token: User token (if None, will try to load from existing config)
+        """
+        # Try to get base config if it exists, but don't require it
+        base_config = {}
+        if cls.exists():
+            try:
+                base_config = cls.get().__dict__
+            except Exception:
+                # If config exists but is invalid, start with empty base
+                pass
+
+        return cls(
+            url=base_config.get("url"),
+            organization=organization or base_config.get("organization"),
+            default_deployment=deployment,  # Override with specific deployment
+            user_token=user_token or base_config.get("user_token"),
+            agent_timeout=base_config.get("agent_timeout"),
+        )
+
+    @classmethod
+    def create_for_organization(
+        cls, organization: Optional[str] = None, user_token: Optional[str] = None
+    ) -> "DagsterPlusCliConfig":
+        """Create a DagsterPlusCliConfig instance for organization-scoped operations.
+
+        Args:
+            organization: Organization name (if None, will try to load from existing config)
+            user_token: User token (if None, will try to load from existing config)
+        """
+        # Try to get base config if it exists, but don't require it
+        base_config = {}
+        if cls.exists():
+            try:
+                base_config = cls.get().__dict__
+            except Exception:
+                # If config exists but is invalid, start with empty base
+                pass
+
+        return cls(
+            url=base_config.get("url"),
+            organization=organization or base_config.get("organization"),
+            default_deployment=None,  # No deployment for organization-scoped operations
+            user_token=user_token or base_config.get("user_token"),
+            agent_timeout=base_config.get("agent_timeout"),
+        )
+
     def write(self):
         existing_config = _get_dagster_plus_config_path_and_raw_config()
         if existing_config is None:

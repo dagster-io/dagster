@@ -11,13 +11,9 @@ interface Props {
 
 export const CodeLocationDefsStateComparison = ({latestDefsStateInfo, defsStateInfo}: Props) => {
   const comparisonData = useMemo(() => {
-    if (!latestDefsStateInfo?.keyStateInfo || !defsStateInfo?.keyStateInfo) {
-      return [];
-    }
-
     // Use the current defs state info as the primary source for table rows
     const currentKeys = new Set<string>();
-    defsStateInfo.keyStateInfo.forEach((entry) => {
+    defsStateInfo?.keyStateInfo.forEach((entry) => {
       if (entry) {
         currentKeys.add(entry.name);
       }
@@ -26,8 +22,8 @@ export const CodeLocationDefsStateComparison = ({latestDefsStateInfo, defsStateI
     // Build comparison data only for keys that exist in the current state
     return Array.from(currentKeys)
       .map((key) => {
-        const latestEntry = latestDefsStateInfo.keyStateInfo?.find((entry) => entry?.name === key);
-        const currentEntry = defsStateInfo.keyStateInfo?.find((entry) => entry?.name === key);
+        const latestEntry = latestDefsStateInfo?.keyStateInfo?.find((entry) => entry?.name === key);
+        const currentEntry = defsStateInfo?.keyStateInfo?.find((entry) => entry?.name === key);
 
         return {
           key,
@@ -39,10 +35,6 @@ export const CodeLocationDefsStateComparison = ({latestDefsStateInfo, defsStateI
       })
       .sort((a, b) => a.key.localeCompare(b.key));
   }, [latestDefsStateInfo, defsStateInfo]);
-
-  if (!latestDefsStateInfo?.keyStateInfo || !defsStateInfo?.keyStateInfo) {
-    return null;
-  }
 
   const truncateVersion = (version: string | null) => {
     if (!version) {
@@ -71,11 +63,14 @@ export const CodeLocationDefsStateComparison = ({latestDefsStateInfo, defsStateI
     currentVersion: string | null,
     key: string,
   ) => {
-    if (!latestVersion || !currentVersion) {
-      return '—';
-    }
-
-    if (latestVersion === currentVersion) {
+    if (!latestVersion) {
+      return (
+        <Box flex={{direction: 'row', alignItems: 'center', gap: 8}}>
+          <Icon name="warning" color={Colors.accentYellow()} size={16} />
+          <span style={{color: Colors.textYellow()}}>No state available</span>
+        </Box>
+      );
+    } else if (latestVersion === currentVersion) {
       return (
         <Box flex={{direction: 'row', alignItems: 'center', gap: 8}}>
           <Icon name="check_circle" color={Colors.accentGreen()} size={16} />
@@ -83,7 +78,7 @@ export const CodeLocationDefsStateComparison = ({latestDefsStateInfo, defsStateI
         </Box>
       );
     } else {
-      const latestEntry = latestDefsStateInfo.keyStateInfo?.find((e) => e?.name === key);
+      const latestEntry = latestDefsStateInfo?.keyStateInfo?.find((e) => e?.name === key);
       return (
         <Box flex={{direction: 'row', alignItems: 'center', gap: 8}}>
           <Icon name="warning" color={Colors.accentYellow()} size={16} />

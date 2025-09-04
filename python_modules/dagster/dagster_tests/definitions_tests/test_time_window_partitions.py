@@ -1340,6 +1340,17 @@ def test_time_window_partition_len():
     with partition_loading_context(current_time):
         assert partitions_def.get_num_partitions() == len(partitions_def.get_partition_keys())
 
+    partitions_def = dg.TimeWindowPartitionsDefinition(
+        cron_schedule="* * * * *",
+        start="2020-11-01-00:30",
+        timezone="US/Pacific",
+        fmt="%Y-%m-%d-%H:%M",
+    )
+    current_time = datetime.strptime("2020-11-05-02:30", "%Y-%m-%d-%H:%M")
+
+    with partition_loading_context(current_time):
+        assert partitions_def.get_num_partitions() == len(partitions_def.get_partition_keys())
+
     @dg.daily_partitioned_config(start_date="2020-01-01", timezone="US/Pacific")
     def my_daily_dst_transition_partitioned_config(_start, _end):
         return {}

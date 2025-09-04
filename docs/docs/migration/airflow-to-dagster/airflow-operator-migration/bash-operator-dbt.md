@@ -35,7 +35,7 @@ First, you'll need to make the dbt project available to the Dagster runtime and 
 
 ### Step 2: Writing a @dbt_asset-decorated function
 
-Once your dbt project is available, you can write a function that runs your dbt commands using the <PyObject section="libraries" object="dbt_assets" module="dagster_dbt"/> decorator and <PyObject section="libraries" object="DbtCliResource" module="dagster_dbt"/>. Most dbt CLI commands and flags are supported - to learn more about using `@dbt_assets`, check out the [dagster-dbt quickstart](/integrations/libraries/dbt/quickstart) and [reference](/integrations/libraries/dbt/reference).
+Once your dbt project is available, you can write a function that runs your dbt commands using the <PyObject section="libraries" object="dbt_assets" module="dagster_dbt"/> decorator and <PyObject section="libraries" object="DbtCliResource" module="dagster_dbt"/>. Most dbt CLI commands and flags are supported - to learn more about using `@dbt_assets`, check out the [dagster-dbt](/integrations/libraries/dbt) and [reference](/integrations/libraries/dbt/reference).
 
 ### Step 3: Using dagster-airlift to proxy execution
 

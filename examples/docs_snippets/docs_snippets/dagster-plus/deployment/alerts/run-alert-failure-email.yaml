@@ -1,7 +1,7 @@
 # alert_policies.yaml
 
 alert_policies:
-  description: Sends an email when a run fails.
+- description: Sends an email when a run fails.
   event_types:
   - JOB_FAILURE
   name: run-alert-failure-email

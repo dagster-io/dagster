@@ -11,7 +11,7 @@ import {
 } from '@dagster-io/ui-components';
 import pick from 'lodash/pick';
 import uniq from 'lodash/uniq';
-import React, {useContext, useState} from 'react';
+import React, {useContext, useMemo, useState} from 'react';
 import {Link} from 'react-router-dom';
 import {observeEnabled} from 'shared/app/observeEnabled.oss';
 import {MaterializeButton} from 'shared/assets/MaterializeButton.oss';
@@ -41,6 +41,7 @@ import {
 } from './types/LaunchAssetExecutionButton.types';
 import {useObserveAction} from './useObserveAction';
 import {ApolloClient, gql, useApolloClient} from '../apollo-client';
+import {useWipeMaterializations} from './useWipeMaterializations';
 import {CloudOSSContext} from '../app/CloudOSSContext';
 import {showCustomAlert} from '../app/CustomAlertProvider';
 import {useConfirmation} from '../app/CustomConfirmationProvider';
@@ -99,17 +100,17 @@ const countIfNotAll = (k: unknown[], all: unknown[]) =>
 type Asset =
   | {
       assetKey: AssetKey;
-      hasMaterializePermission: boolean;
-      partitionDefinition: {__typename: string} | null;
-      isExecutable: boolean;
-      isObservable: boolean;
+      hasMaterializePermission?: boolean;
+      partitionDefinition?: {__typename: string} | null;
+      isExecutable?: boolean;
+      isObservable?: boolean;
     }
   | {
       assetKey: AssetKey;
-      hasMaterializePermission: boolean;
-      isPartitioned: boolean;
-      isExecutable: boolean;
-      isObservable: boolean;
+      hasMaterializePermission?: boolean;
+      isPartitioned?: boolean;
+      isExecutable?: boolean;
+      isObservable?: boolean;
     };
 
 export type AssetsInScope =
@@ -143,7 +144,7 @@ function materializationDisabledReason(all: Asset[], materializable: Asset[], is
     }
     return 'Select one or more assets to materialize';
   }
-  if (all.some((a) => !a.hasMaterializePermission)) {
+  if (all.some((a) => 'hasMaterializePermission' in a && !a.hasMaterializePermission)) {
     return 'You do not have permission to materialize assets';
   }
   if (all.every((a) => !a.isExecutable)) {
@@ -182,8 +183,10 @@ export function optionsForExecuteButton(
     isSingle,
   }: {skipAllTerm?: boolean; isSelection?: boolean; isSingle?: boolean},
 ): {materializeOption: LaunchOption; observeOption: LaunchOption} {
-  const materializable = assets.filter((a) => !a.isObservable && a.isExecutable);
-  const observable = assets.filter((a) => a.isObservable && a.isExecutable);
+  const materializable = assets.filter(
+    (a) => 'isExecutable' in a && !a.isObservable && a.isExecutable,
+  );
+  const observable = assets.filter((a) => 'isObservable' in a && a.isObservable && a.isExecutable);
   const ellipsis = isAnyPartitioned(materializable) ? '…' : '';
 
   return {
@@ -244,9 +247,6 @@ export const LaunchAssetExecutionButton = ({
     featureContext: {canSeeMaterializeAction},
   } = useContext(CloudOSSContext);
 
-  if (!canSeeMaterializeAction) {
-    return null;
-  }
   const [assets, {materializeOption, observeOption}] =
     'selected' in scope
       ? [scope.selected, optionsForExecuteButton(scope.selected, {isSelection: true})]
@@ -256,6 +256,14 @@ export const LaunchAssetExecutionButton = ({
             optionsForExecuteButton(scope.single ? [scope.single] : [], {isSingle: true}),
           ]
         : [scope.all, optionsForExecuteButton(scope.all, {skipAllTerm: scope.skipAllTerm})];
+
+  const {menuItem: wipeMenuItem, dialog: wipeDialog} = useWipeMaterializations({
+    selected: useMemo(() => assets.map((asset) => ({key: asset.assetKey})), [assets]),
+  });
+
+  if (!canSeeMaterializeAction) {
+    return null;
+  }
 
   const [firstOption, firstAction, secondOption, secondAction] =
     materializeOption.disabledReason && !observeOption.disabledReason
@@ -373,6 +381,7 @@ export const LaunchAssetExecutionButton = ({
                     }}
                   />
                 ) : null}
+                {wipeMenuItem}
                 {additionalDropdownOptions?.map((option) => {
                   if (!('label' in option)) {
                     return option;
@@ -411,6 +420,7 @@ export const LaunchAssetExecutionButton = ({
         )}
       </Box>
       {materialize.launchpadElement}
+      {wipeDialog}
     </>
   );
 };

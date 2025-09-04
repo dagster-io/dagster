@@ -11,7 +11,7 @@ from collections.abc import Iterable, Mapping, Sequence
 from enum import Enum
 from typing import Any, Final, NamedTuple, Optional, Union, cast
 
-from dagster_shared.serdes.objects import DefsStateInfo
+from dagster_shared.serdes.objects.models.defs_state_info import DefsStateInfo
 from dagster_shared.serdes.serdes import (
     FieldSerializer,
     get_prefix_for_a_serialized,

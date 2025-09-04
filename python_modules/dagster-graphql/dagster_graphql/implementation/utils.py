@@ -26,7 +26,7 @@ from dagster._core.definitions.events import AssetKey
 from dagster._core.definitions.partitions.definition import PartitionsDefinition
 from dagster._core.definitions.selector import GraphSelector, JobSubsetSelector
 from dagster._core.definitions.temporal_context import TemporalContext
-from dagster._core.errors import DagsterInvariantViolationError
+from dagster._core.errors import DagsterError, DagsterInvariantViolationError
 from dagster._core.execution.backfill import PartitionBackfill
 from dagster._utils.caching_instance_queryer import CachingInstanceQueryer
 from dagster._utils.error import serializable_error_info_from_exc_info
@@ -196,12 +196,41 @@ def assert_valid_asset_partition_backfill(
     if not asset_backfill_data:
         return
 
+    checked_execution_set_asset_keys = set()
+
     for asset_key in asset_backfill_data.target_subset.asset_keys:
+        asset_node = asset_graph.get(asset_key)
+
         entity_subset = asset_graph_view.get_entity_subset_from_asset_graph_subset(
             asset_backfill_data.target_subset, asset_key
         )
 
-        partitions_def = asset_graph.get(asset_key).partitions_def
+        if asset_key not in checked_execution_set_asset_keys:
+            checked_execution_set_asset_keys.add(asset_key)
+            for execution_set_key in asset_node.execution_set_asset_keys:
+                if execution_set_key == asset_key:
+                    continue
+
+                if execution_set_key not in asset_backfill_data.target_subset.asset_keys:
+                    raise DagsterInvariantViolationError(
+                        f"Backfill must include every key in a non-subsettable multi-asset, included "
+                        f"{asset_key.to_user_string()} but not {execution_set_key.to_user_string()}"
+                    )
+
+                other_entity_subset = asset_graph_view.get_entity_subset_from_asset_graph_subset(
+                    asset_backfill_data.target_subset, execution_set_key
+                )
+
+                if entity_subset.get_internal_value() != other_entity_subset.get_internal_value():
+                    raise DagsterInvariantViolationError(
+                        f"Targeted subset must match between every key in"
+                        f" a non-subsettable multi-asset, but does not match between {asset_key.to_user_string()} "
+                        f"and {execution_set_key.to_user_string()}"
+                    )
+
+                checked_execution_set_asset_keys.add(execution_set_key)
+
+        partitions_def = asset_node.partitions_def
 
         if not partitions_def:
             continue
@@ -457,6 +486,18 @@ def apply_cursor_limit_reverse(
             end = start + limit
 
     return items[max(start, 0) : end]
+
+
+def get_query_limit_with_default(provided_limit: Optional[int], default_limit: int) -> int:
+    check.opt_int_param(provided_limit, "provided_limit")
+
+    if provided_limit is None:
+        return default_limit
+
+    if provided_limit > default_limit:
+        raise DagsterError(f"Limit of {provided_limit} is too large. Max is {default_limit}")
+
+    return provided_limit
 
 
 BackfillParams: TypeAlias = Mapping[str, Any]

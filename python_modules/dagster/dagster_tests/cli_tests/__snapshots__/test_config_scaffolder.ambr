@@ -11,6 +11,9 @@
             'enabled': dict({
             }),
           }),
+          'step_dependency_config': dict({
+            'require_upstream_step_success': True,
+          }),
         }),
         'multiprocess': dict({
           'max_concurrent': None,
@@ -27,6 +30,9 @@
             }),
             'spawn': dict({
             }),
+          }),
+          'step_dependency_config': dict({
+            'require_upstream_step_success': True,
           }),
           'tag_concurrency_limits': list([
           ]),

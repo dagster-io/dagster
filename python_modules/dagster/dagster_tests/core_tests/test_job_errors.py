@@ -2,7 +2,10 @@ import re
 
 import dagster as dg
 import pytest
-from dagster import _check as check
+from dagster import (
+    ReexecutionOptions,
+    _check as check,
+)
 from dagster._core.definitions.metadata import MetadataValue
 from dagster._utils.test import wrap_op_in_graph_and_execute
 
@@ -269,3 +272,133 @@ def test_explicit_failure():
 
     assert exc_info.value.description == "Always fails."
     assert exc_info.value.metadata == {"always_fails": MetadataValue.text("why")}
+
+
+def _get_partial_job() -> dg.JobDefinition:
+    @dg.op(
+        out={
+            "a": dg.Out(),
+            "b": dg.Out(),
+            "c": dg.Out(),
+            "d": dg.Out(),
+            "e": dg.Out(),
+        }
+    )
+    def many_outputs(context: dg.OpExecutionContext, inp: int):
+        for output_name in ["a", "b", "c"]:
+            yield dg.Output(output_name, output_name)
+
+        if "should_pass" not in context.dagster_run.tags:
+            raise Exception("broken!")
+
+        for output_name in ["d", "e"]:
+            yield dg.Output(output_name, output_name)
+
+    @dg.op
+    def all_pass(a: str, b: str, c: str):
+        return 1
+
+    @dg.op
+    def all_fail(d: str, e: str):
+        return 1
+
+    @dg.op
+    def partial(a: str, e: str):
+        return 1
+
+    @dg.op
+    def downstream(inp: int):
+        pass
+
+    @dg.op
+    def root():
+        return 1
+
+    @dg.job()
+    def partial_job():
+        root_val = root()
+        downstream.alias("downstream_of_root")(root_val)
+        a, b, c, d, e = many_outputs(root_val)
+        downstream.alias("downstream_of_all_pass")(all_pass(a, b, c))
+        downstream.alias("downstream_of_all_fail")(all_fail(d, e))
+        downstream.alias("downstream_of_partial")(partial(a, e))
+
+    return partial_job
+
+
+@pytest.mark.parametrize(
+    "require_upstream_step_success",
+    [True, False],
+)
+@pytest.mark.parametrize("executor", ["in_process", "multiprocess"])
+def test_some_inputs_failed(require_upstream_step_success: bool, executor: str) -> None:
+    run_config = dg.RunConfig(
+        execution={
+            "config": {
+                executor: {
+                    "step_dependency_config": {
+                        "require_upstream_step_success": require_upstream_step_success
+                    }
+                }
+            }
+        }
+    )
+
+    with dg.instance_for_test() as instance:
+        with dg.execute_job(
+            dg.reconstructable(_get_partial_job),
+            instance=instance,
+            run_config=run_config.to_config_dict(),
+        ) as result:
+            expected_success_steps = {"root", "downstream_of_root"}
+            if not require_upstream_step_success:
+                expected_success_steps.add("all_pass")
+                expected_success_steps.add("downstream_of_all_pass")
+            assert {
+                event.step_key for event in result.get_step_success_events()
+            } == expected_success_steps
+            assert did_op_succeed("root", result)
+            assert did_op_succeed("downstream_of_root", result)
+            assert did_op_fail("many_outputs", result)
+
+            if not require_upstream_step_success:
+                assert did_op_succeed("all_pass", result)
+            else:
+                assert not did_op_succeed("all_pass", result)
+
+        reexecution_options = ReexecutionOptions.from_failure(result.run_id, instance)
+
+        with dg.execute_job(
+            dg.reconstructable(_get_partial_job),
+            instance=instance,
+            reexecution_options=reexecution_options,
+            tags={"should_pass": ""},
+        ) as reexecution_result:
+            assert reexecution_result.success
+            # NOTE: regardless of step execution mode, re-execution includes any step
+            # that failed or is downstream of a failed step. this is debatable (techincally,
+            # this results in re-executing steps that were already completely successful in the
+            # AFTER_UPSTREAM_OUTPUTS mode), but it is the most consistent and predictable thing
+            # to do.
+            expected_success_steps = {
+                "many_outputs",
+                "all_pass",
+                "downstream_of_all_pass",
+                "all_fail",
+                "downstream_of_all_fail",
+                "partial",
+                "downstream_of_partial",
+            }
+            assert {
+                event.step_key for event in reexecution_result.get_step_success_events()
+            } == expected_success_steps
+            assert reexecution_result.success
+            # Verify that the previously failed op now succeeds
+            assert did_op_succeed("many_outputs", reexecution_result)
+            # Verify that downstream ops that depend on the previously failed op now succeed
+            assert did_op_succeed("all_pass", reexecution_result)
+            assert did_op_succeed("all_fail", reexecution_result)
+            assert did_op_succeed("partial", reexecution_result)
+            assert did_op_succeed("downstream_of_all_pass", reexecution_result)
+            assert did_op_succeed("downstream_of_all_fail", reexecution_result)
+            assert did_op_succeed("downstream_of_partial", reexecution_result)
