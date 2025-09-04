@@ -189,8 +189,6 @@ export function optionsForExecuteButton(
   const observable = assets.filter((a) => 'isObservable' in a && a.isObservable && a.isExecutable);
   const ellipsis = isAnyPartitioned(materializable) ? '…' : '';
 
-  console.log({assets, materializable, observable});
-
   return {
     materializeOption: {
       assetKeys: materializable.map((a) => a.assetKey),
@@ -374,7 +372,6 @@ export const LaunchAssetExecutionButton = ({
                     onClick={() => setShowCalculatingUnsyncedDialog(true)}
                   />
                 ) : null}
-                {wipeMenuItem}
                 {canLaunch ? (
                   <MenuItem
                     text="Open launchpad"
@@ -384,6 +381,7 @@ export const LaunchAssetExecutionButton = ({
                     }}
                   />
                 ) : null}
+                {wipeMenuItem}
                 {additionalDropdownOptions?.map((option) => {
                   if (!('label' in option)) {
                     return option;
