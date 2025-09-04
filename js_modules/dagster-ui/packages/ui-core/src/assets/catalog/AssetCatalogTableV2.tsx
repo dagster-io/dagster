@@ -466,7 +466,3 @@ const Table = React.memo(
   },
 );
 Table.displayName = 'Table';
-
-type AssetWithDefinition = AssetTableFragment & {
-  definition: NonNullable<AssetTableFragment['definition']>;
-};
