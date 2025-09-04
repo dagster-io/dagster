@@ -349,16 +349,27 @@ If you use PEX deploys in your workflow (`ENABLE_FAST_DEPLOYS: 'true'`), the fol
 
 2.  Create a GitHub personal access token and set it as the `GH_PAT` secret for your Actions.
 3.  Add your package to your Dagster project's package configuration file:
+
     <Tabs groupId="package-manager">
-      <TabItem value="uv" label="uv">
-        In your `pyproject.toml` file, add your package name to the `dependencies` section: ```python dependencies = [
-        "dagster", "dagster-cloud", "private-package", # add this line - must match your private Python package name ]
-        ```
+  <TabItem value="uv" label="uv">
+    In your `pyproject.toml` file, add your package name to the `dependencies` section:
+
+        <CodeExample
+          path="docs_snippets/docs_snippets/dagster-plus/deployment/serverless/runtime-environment/private_packages_pyproject.toml"
+          language="toml"
+          title="Adding private packages to pyproject.toml"
+        />
+
       </TabItem>
-      <TabItem value="pip" label="pip">
-        In your `setup.py` file, add your package name to the `install_requires` section: ```python install_requires=[
-        "dagster", "dagster-cloud", "private-package", # add this line - must match your private Python package name ```
-      </TabItem>
-    </Tabs>
+  <TabItem value="pip" label="pip">
+    In your `setup.py` file, add your package name to the `install_requires` section:
+    
+    <CodeExample
+      path="docs_snippets/docs_snippets/dagster-plus/deployment/serverless/runtime-environment/private_packages_setup.py"
+      language="python"
+      title="Adding private packages to setup.py"
+    />
+  </TabItem>
+</Tabs>
 
 Once the `deploy.yml` is updated and changes pushed to your repo, then any subsequent code deploy should checkout your private repository, build the package and install it as a dependency in your Dagster+ project. Repeat the above steps for your `branch_deployments.yml` if needed.
