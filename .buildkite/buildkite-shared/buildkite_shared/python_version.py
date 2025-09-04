@@ -31,7 +31,16 @@ class AvailablePythonVersion(Enum):
         branch_name = safe_getenv("BUILDKITE_BRANCH")
         commit_message = safe_getenv("BUILDKITE_MESSAGE")
         if is_release_branch(branch_name):
-            return cls.get_all()
+            # to prevent explosion of steps, we only test the oldest, default, and newest versions
+            versions = list(cls)
+            return list(
+                {
+                    versions[0],
+                    cls.get_default(),
+                    versions[-1],
+                }
+            )
+
         else:
             # environment variable-specified defaults
             # branch name or commit message-specified defaults
