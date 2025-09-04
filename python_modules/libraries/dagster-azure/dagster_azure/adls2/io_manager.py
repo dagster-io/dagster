@@ -105,10 +105,6 @@ class PickledObjectADLS2IOManager(UPathIOManager):
         return pickle.loads(stream.readall())
 
     def dump_to_path(self, context: OutputContext, obj: Any, path: UPath) -> None:
-        if self.path_exists(path):
-            context.log.warning(f"Removing existing ADLS2 key: {path}")
-            self.unlink(path)
-
         pickled_obj = pickle.dumps(obj, PICKLE_PROTOCOL)
         file = self.file_system_client.create_file(path.as_posix())
         with self._acquire_lease(file) as lease:
