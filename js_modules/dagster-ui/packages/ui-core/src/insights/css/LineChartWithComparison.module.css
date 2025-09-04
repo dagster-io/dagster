@@ -16,6 +16,7 @@
 .chartGraph {
   flex-grow: 1;
   cursor: pointer;
+  margin-top: 12px;
 }
 
 .chartHeader {
