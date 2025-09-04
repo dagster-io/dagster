@@ -33,8 +33,8 @@ def upgrade():
             db.Column("asset_key", db.Text, nullable=False),
             db.Column("check_name", db.Text, nullable=False),
             db.Column(
-                "serialized_partition_subset", db.Text
-            ),  # Cached partition statuses as JSON blob
+                "cached_check_status_data", db.Text
+            ),  # Serialized AssetCheckPartitionStatusCacheValue
             db.Column(
                 "subset_cache_event_id",
                 db.BigInteger().with_variant(sqlite.INTEGER(), "sqlite"),
@@ -64,6 +64,8 @@ def upgrade():
                 db.BigInteger().with_variant(sqlite.INTEGER(), "sqlite"),
             ),
             db.Column("last_execution_timestamp", db.DateTime),
+            # Run ID when this partition was planned (for resolving planned -> in_progress/skipped/failed)
+            db.Column("last_planned_run_id", db.String(255)),
             # Event log entry ID when this partition row was last updated (for cache invalidation)
             db.Column(
                 "last_event_id",

@@ -196,8 +196,8 @@ AssetChecksTable = db.Table(
     db.Column("asset_key", db.Text, nullable=False),
     db.Column("check_name", db.Text, nullable=False),
     db.Column(
-        "serialized_partition_subset", db.Text
-    ),  # JSON blob for partitioned checks, NULL for non-partitioned
+        "cached_check_status_data", db.Text
+    ),  # Serialized AssetCheckPartitionStatusCacheValue, NULL for non-partitioned
     db.Column("created_timestamp", db.DateTime, server_default=get_sql_current_timestamp()),
     db.Column("updated_timestamp", db.DateTime),
     db.UniqueConstraint("asset_key", "check_name"),
@@ -215,17 +215,16 @@ AssetCheckPartitionsTable = db.Table(
     ),
     db.Column("asset_key", db.Text, nullable=False),
     db.Column("check_name", db.Text, nullable=False),
-    db.Column("partition_key", db.Text),  # NULL for non-partitioned checks
+    db.Column("partition_key", db.Text),
     db.Column("last_execution_status", db.Text),
-    # Reference to the asset_check_executions.id for detailed execution info
     db.Column(
-        "last_execution_id",
+        "last_execution_id",  # Reference to the asset_check_executions.id
         db.BigInteger().with_variant(sqlite.INTEGER(), "sqlite"),
     ),
     db.Column("last_execution_timestamp", db.DateTime),
-    # Event log entry ID when this partition row was last updated (for cache invalidation)
+    db.Column("last_planned_run_id", db.String(255)),
     db.Column(
-        "last_event_id",
+        "last_event_id",  # Reference to the event_logs.id
         db.BigInteger().with_variant(sqlite.INTEGER(), "sqlite"),
         nullable=False,
     ),
