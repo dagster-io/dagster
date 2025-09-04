@@ -1,6 +1,7 @@
 import json
 import os
 import tempfile
+from collections.abc import Iterator
 from difflib import SequenceMatcher
 from typing import Any
 from unittest import mock
@@ -36,6 +37,7 @@ from dagster_shared.telemetry import (
     get_telemetry_logger,
 )
 from dagster_test.utils.data_factory import remote_repository
+from typing_extensions import TypeAlias
 
 EXPECTED_KEYS = set(
     [
@@ -54,132 +56,151 @@ EXPECTED_KEYS = set(
     ]
 )
 
+Telemetry: TypeAlias = tuple[dg.DagsterInstance, pytest.LogCaptureFixture]
+
 
 @pytest.fixture
-def telemetry_caplog(caplog):
+def enabled_instance():
+    with dg.instance_for_test(overrides={"telemetry": {"enabled": True}}) as instance:
+        yield instance
+
+
+# use stacked fixtures to ensure telemetry logger file is cleaned up before we close the temp instance
+@pytest.fixture
+def enabled_telemetry(
+    caplog,
+    enabled_instance,
+) -> Iterator[Telemetry]:
     # telemetry logger doesn't propagate to the root logger, so need to attach the caplog handler
     get_telemetry_logger().addHandler(caplog.handler)
-    yield caplog
+    yield enabled_instance, caplog
     get_telemetry_logger().removeHandler(caplog.handler)
-
-    # Needed to avoid file contention issues on windows with the telemetry log file
     cleanup_telemetry_logger()
+
+
+@pytest.fixture
+def disabled_instance():
+    with dg.instance_for_test(overrides={"telemetry": {"enabled": False}}) as instance:
+        yield instance
+
+
+@pytest.fixture
+def disabled_telemetry(
+    caplog,
+    disabled_instance,
+) -> Iterator[Telemetry]:
+    yield disabled_instance, caplog
 
 
 def path_to_file(path):
     return script_relative_path(os.path.join("./", path))
 
 
-@pytest.fixture
-def instance():
-    with dg.instance_for_test() as instance:
-        return instance
-
-
-def test_dagster_telemetry_enabled(telemetry_caplog):
-    with dg.instance_for_test(overrides={"telemetry": {"enabled": True}}):
-        runner = CliRunner()
-        with pushd(path_to_file("")):
-            job_attribute = "qux_job"
-            job_name = "qux"
-            result = runner.invoke(
-                job_execute_command,
-                [
-                    "-f",
-                    path_to_file("test_cli_commands.py"),
-                    "-a",
-                    job_attribute,
-                ],
-            )
-
-            for record in telemetry_caplog.records:
-                message = json.loads(record.getMessage())
-                if message.get("action") == UPDATE_REPO_STATS:
-                    metadata = message.get("metadata")
-                    assert metadata.get("pipeline_name_hash") == hash_name(job_name)
-                    assert metadata.get("num_pipelines_in_repo") == str(1)
-                    assert metadata.get("repo_hash") == hash_name(
-                        get_ephemeral_repository_name(job_name)
-                    )
-                assert set(message.keys()) == EXPECTED_KEYS
-            assert len(telemetry_caplog.records) == 9
-            assert result.exit_code == 0
-
-
-def test_dagster_telemetry_disabled_avoids_run_storage_query(telemetry_caplog):
-    """Verify that when telemetry is disabled, we don't query run_storage_id."""
-    with dg.instance_for_test(overrides={"telemetry": {"enabled": False}}) as instance:
-        # Ensure the instance uses SqlRunStorage for the mock target to be relevant
-        assert isinstance(instance.run_storage, SqlRunStorage)
-
-        with mock.patch.object(
-            SqlRunStorage, "get_run_storage_id", wraps=instance.run_storage.get_run_storage_id
-        ) as mock_get_id:
-            # Call a function that triggers the telemetry info check
-            log_action(instance, "TEST_ACTION")
-
-            # Assert that the run storage ID was not queried
-            mock_get_id.assert_not_called()
-
-    # Double check: enable telemetry and ensure it *is* called
-    with dg.instance_for_test(overrides={"telemetry": {"enabled": True}}) as instance_enabled:
-        assert isinstance(instance_enabled.run_storage, SqlRunStorage)
-        with mock.patch.object(
-            SqlRunStorage,
-            "get_run_storage_id",
-            wraps=instance_enabled.run_storage.get_run_storage_id,
-        ) as mock_get_id_enabled:
-            log_action(instance_enabled, "TEST_ACTION_ENABLED")
-            mock_get_id_enabled.assert_called_once()
-
-
-def test_dagster_telemetry_disabled(telemetry_caplog):
-    with dg.instance_for_test(overrides={"telemetry": {"enabled": False}}):
-        runner = CliRunner()
-        with pushd(path_to_file("")):
-            job_name = "qux_job"
-            result = runner.invoke(
-                job_execute_command,
-                [
-                    "-f",
-                    path_to_file("test_cli_commands.py"),
-                    "-a",
-                    job_name,
-                ],
-            )
-
-        assert not os.path.exists(
-            os.path.join(get_or_create_dir_from_dagster_home("logs"), "event.log")
+def test_dagster_telemetry_enabled(enabled_telemetry: Telemetry):
+    _, telemetry_caplog = enabled_telemetry
+    runner = CliRunner()
+    with pushd(path_to_file("")):
+        job_attribute = "qux_job"
+        job_name = "qux"
+        result = runner.invoke(
+            job_execute_command,
+            [
+                "-f",
+                path_to_file("test_cli_commands.py"),
+                "-a",
+                job_attribute,
+            ],
         )
-        assert len(telemetry_caplog.records) == 0
+
+        for record in telemetry_caplog.records:
+            message = json.loads(record.getMessage())
+            if message.get("action") == UPDATE_REPO_STATS:
+                metadata = message.get("metadata")
+                assert metadata.get("pipeline_name_hash") == hash_name(job_name)
+                assert metadata.get("num_pipelines_in_repo") == str(1)
+                assert metadata.get("repo_hash") == hash_name(
+                    get_ephemeral_repository_name(job_name)
+                )
+            assert set(message.keys()) == EXPECTED_KEYS
+        assert len(telemetry_caplog.records) == 9
         assert result.exit_code == 0
 
 
-def test_dagster_telemetry_unset(telemetry_caplog):
-    with tempfile.TemporaryDirectory() as temp_dir:
-        with dg.instance_for_test(temp_dir=temp_dir, overrides={"telemetry": {"enabled": True}}):
-            runner = CliRunner(env={"DAGSTER_HOME": temp_dir})
-            with pushd(path_to_file("")):
-                job_attribute = "qux_job"
-                job_name = "qux"
-                result = runner.invoke(
-                    job_execute_command,
-                    ["-f", path_to_file("test_cli_commands.py"), "-a", job_attribute],
+def test_dagster_telemetry_disabled_avoids_run_storage_query(disabled_telemetry: Telemetry):
+    """Verify that when telemetry is disabled, we don't query run_storage_id."""
+    instance, _ = disabled_telemetry
+    # Ensure the instance uses SqlRunStorage for the mock target to be relevant
+    assert isinstance(instance.run_storage, SqlRunStorage)
+
+    with mock.patch.object(
+        SqlRunStorage, "get_run_storage_id", wraps=instance.run_storage.get_run_storage_id
+    ) as mock_get_id:
+        # Call a function that triggers the telemetry info check
+        log_action(instance, "TEST_ACTION")
+
+        # Assert that the run storage ID was not queried
+        mock_get_id.assert_not_called()
+
+
+def test_dagster_telemetry_disabled_uses_run_storage_query(enabled_telemetry: Telemetry):
+    # Double check: enable telemetry and ensure it *is* called
+    instance_enabled, _ = enabled_telemetry
+    assert isinstance(instance_enabled.run_storage, SqlRunStorage)
+    with mock.patch.object(
+        SqlRunStorage,
+        "get_run_storage_id",
+        wraps=instance_enabled.run_storage.get_run_storage_id,
+    ) as mock_get_id_enabled:
+        log_action(instance_enabled, "TEST_ACTION_ENABLED")
+        mock_get_id_enabled.assert_called_once()
+
+
+def test_dagster_telemetry_disabled(disabled_telemetry: Telemetry):
+    _, telemetry_caplog = disabled_telemetry
+    runner = CliRunner()
+    with pushd(path_to_file("")):
+        job_name = "qux_job"
+        result = runner.invoke(
+            job_execute_command,
+            [
+                "-f",
+                path_to_file("test_cli_commands.py"),
+                "-a",
+                job_name,
+            ],
+        )
+
+    assert not os.path.exists(
+        os.path.join(get_or_create_dir_from_dagster_home("logs"), "event.log")
+    )
+    assert len(telemetry_caplog.records) == 0
+    assert result.exit_code == 0
+
+
+def test_dagster_telemetry_unset(enabled_telemetry: Telemetry):
+    _, telemetry_caplog = enabled_telemetry
+    runner = CliRunner()
+    with pushd(path_to_file("")):
+        job_attribute = "qux_job"
+        job_name = "qux"
+        result = runner.invoke(
+            job_execute_command,
+            ["-f", path_to_file("test_cli_commands.py"), "-a", job_attribute],
+        )
+
+        for record in telemetry_caplog.records:
+            message = json.loads(record.getMessage())
+            if message.get("action") == UPDATE_REPO_STATS:
+                metadata = message.get("metadata")
+                assert metadata.get("pipeline_name_hash") == hash_name(job_name)
+                assert metadata.get("num_pipelines_in_repo") == str(1)
+                assert metadata.get("repo_hash") == hash_name(
+                    get_ephemeral_repository_name(job_name)
                 )
+            assert set(message.keys()) == EXPECTED_KEYS
 
-                for record in telemetry_caplog.records:
-                    message = json.loads(record.getMessage())
-                    if message.get("action") == UPDATE_REPO_STATS:
-                        metadata = message.get("metadata")
-                        assert metadata.get("pipeline_name_hash") == hash_name(job_name)
-                        assert metadata.get("num_pipelines_in_repo") == str(1)
-                        assert metadata.get("repo_hash") == hash_name(
-                            get_ephemeral_repository_name(job_name)
-                        )
-                    assert set(message.keys()) == EXPECTED_KEYS
-
-                assert len(telemetry_caplog.records) == 9
-                assert result.exit_code == 0
+        assert len(telemetry_caplog.records) == 9
+        assert result.exit_code == 0
 
 
 def get_dynamic_partitioned_asset_repo():
@@ -194,34 +215,34 @@ def get_dynamic_partitioned_asset_repo():
     return my_repo
 
 
-def test_update_repo_stats_dynamic_partitions(telemetry_caplog):
-    with dg.instance_for_test(overrides={"telemetry": {"enabled": True}}) as instance:
-        instance.add_dynamic_partitions("fruit", ["apple"])
-        runner = CliRunner()
-        with pushd(path_to_file("")):
-            job_attribute = "get_dynamic_partitioned_asset_repo"
-            job_name = "dynamic_job"
-            result = runner.invoke(
-                job_execute_command,
-                [
-                    "-f",
-                    __file__,
-                    "-a",
-                    job_attribute,
-                    "--job",
-                    job_name,
-                    "--tags",
-                    '{"dagster/partition": "apple"}',
-                ],
-            )
+def test_update_repo_stats_dynamic_partitions(enabled_telemetry: Telemetry):
+    instance, telemetry_caplog = enabled_telemetry
+    instance.add_dynamic_partitions("fruit", ["apple"])
+    runner = CliRunner()
+    with pushd(path_to_file("")):
+        job_attribute = "get_dynamic_partitioned_asset_repo"
+        job_name = "dynamic_job"
+        result = runner.invoke(
+            job_execute_command,
+            [
+                "-f",
+                __file__,
+                "-a",
+                job_attribute,
+                "--job",
+                job_name,
+                "--tags",
+                '{"dagster/partition": "apple"}',
+            ],
+        )
 
-            for record in telemetry_caplog.records:
-                message = json.loads(record.getMessage())
-                if message.get("action") == UPDATE_REPO_STATS:
-                    metadata = message.get("metadata")
-                    assert metadata.get("num_pipelines_in_repo") == str(2)
-                    assert metadata.get("num_dynamic_partitioned_assets_in_repo") == str(1)
-            assert result.exit_code == 0
+        for record in telemetry_caplog.records:
+            message = json.loads(record.getMessage())
+            if message.get("action") == UPDATE_REPO_STATS:
+                metadata = message.get("metadata")
+                assert metadata.get("num_pipelines_in_repo") == str(2)
+                assert metadata.get("num_dynamic_partitioned_assets_in_repo") == str(1)
+        assert result.exit_code == 0
 
 
 def test_get_stats_from_remote_repo_partitions():
@@ -244,7 +265,9 @@ def test_get_stats_from_remote_repo_partitions():
     assert stats["num_partitioned_assets_in_repo"] == "2"
 
 
-def test_get_stats_from_remote_repo_multi_partitions(instance):
+def test_get_stats_from_remote_repo_multi_partitions(enabled_telemetry: Telemetry):
+    instance, _ = enabled_telemetry
+
     @dg.asset(
         partitions_def=dg.MultiPartitionsDefinition(
             {
@@ -595,56 +618,55 @@ def test_get_stats_from_remote_repo_delayed_resource_configuration():
 
 
 # TODO - not sure what this test is testing for, so unclear as to how to update it to jobs
-def test_repo_stats(telemetry_caplog):
-    with tempfile.TemporaryDirectory() as temp_dir:
-        with dg.instance_for_test(temp_dir=temp_dir, overrides={"telemetry": {"enabled": True}}):
-            runner = CliRunner(env={"DAGSTER_HOME": temp_dir})
-            with pushd(path_to_file("")):
-                job_name = "double_adder_job"
-                result = runner.invoke(
-                    job_execute_command,
-                    [
-                        "-f",
-                        dg.file_relative_path(__file__, "../../general_tests/test_repository.py"),
-                        "-a",
-                        "dagster_test_repository",
-                        "--config",
-                        dg.file_relative_path(__file__, "../../environments/double_adder_job.yaml"),
-                        "-j",
-                        job_name,
-                        "--tags",
-                        '{ "foo": "bar" }',
-                    ],
-                )
+def test_repo_stats(enabled_telemetry: Telemetry):
+    _, telemetry_caplog = enabled_telemetry
+    runner = CliRunner()
+    with pushd(path_to_file("")):
+        job_name = "double_adder_job"
+        result = runner.invoke(
+            job_execute_command,
+            [
+                "-f",
+                dg.file_relative_path(__file__, "../../general_tests/test_repository.py"),
+                "-a",
+                "dagster_test_repository",
+                "--config",
+                dg.file_relative_path(__file__, "../../environments/double_adder_job.yaml"),
+                "-j",
+                job_name,
+                "--tags",
+                '{ "foo": "bar" }',
+            ],
+        )
 
-                assert result.exit_code == 0, result.stdout
+        assert result.exit_code == 0, result.stdout
 
-                for record in telemetry_caplog.records:
-                    message = json.loads(record.getMessage())
-                    if message.get("action") == UPDATE_REPO_STATS:
-                        metadata = message.get("metadata")
-                        assert metadata.get("pipeline_name_hash") == hash_name(job_name)
-                        assert metadata.get("num_pipelines_in_repo") == str(6)
-                        assert metadata.get("repo_hash") == hash_name("dagster_test_repository")
-                    assert set(message.keys()) == EXPECTED_KEYS
+        for record in telemetry_caplog.records:
+            message = json.loads(record.getMessage())
+            if message.get("action") == UPDATE_REPO_STATS:
+                metadata = message.get("metadata")
+                assert metadata.get("pipeline_name_hash") == hash_name(job_name)
+                assert metadata.get("num_pipelines_in_repo") == str(6)
+                assert metadata.get("repo_hash") == hash_name("dagster_test_repository")
+            assert set(message.keys()) == EXPECTED_KEYS
 
-                assert len(telemetry_caplog.records) == 7
-                assert result.exit_code == 0
+        assert len(telemetry_caplog.records) == 7
+        assert result.exit_code == 0
 
 
-def test_log_workspace_stats(telemetry_caplog):
-    with dg.instance_for_test(overrides={"telemetry": {"enabled": True}}) as instance:
-        with load_workspace_process_context_from_yaml_paths(
-            instance, [dg.file_relative_path(__file__, "./multi_env_telemetry_workspace.yaml")]
-        ) as context:
-            log_workspace_stats(instance, context)
+def test_log_workspace_stats(enabled_telemetry: Telemetry):
+    instance, telemetry_caplog = enabled_telemetry
+    with load_workspace_process_context_from_yaml_paths(
+        instance, [dg.file_relative_path(__file__, "./multi_env_telemetry_workspace.yaml")]
+    ) as context:
+        log_workspace_stats(instance, context)
 
-            for record in telemetry_caplog.records:
-                message = json.loads(record.getMessage())
-                assert message.get("action") == UPDATE_REPO_STATS
-                assert set(message.keys()) == EXPECTED_KEYS
+        for record in telemetry_caplog.records:
+            message = json.loads(record.getMessage())
+            assert message.get("action") == UPDATE_REPO_STATS
+            assert set(message.keys()) == EXPECTED_KEYS
 
-            assert len(telemetry_caplog.records) == 2
+        assert len(telemetry_caplog.records) == 2
 
 
 # Sanity check that the hash function maps these similar names to sufficiently dissimilar strings

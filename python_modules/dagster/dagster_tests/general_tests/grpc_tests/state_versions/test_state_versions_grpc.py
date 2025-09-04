@@ -30,6 +30,7 @@ from dagster._grpc.server import wait_for_grpc_server
 from dagster._grpc.types import ExecuteRunArgs
 from dagster._utils import find_free_port
 from dagster_dg_core.utils import activate_venv
+from dagster_shared import seven
 from dagster_test.dg_utils.utils import ProxyRunner, isolated_example_project_foo_bar
 
 from dagster_tests.general_tests.grpc_tests.test_persistent import entrypoints
@@ -228,6 +229,10 @@ def create_and_verify_run(
     assert materialization_event.dagster_event.asset_key == dg.AssetKey("hi")
 
 
+@pytest.mark.skipif(
+    seven.IS_WINDOWS,
+    reason="Timing issue with subprocesses having open files in temp dir while its being cleaned up.",
+)
 @pytest.mark.parametrize("entrypoint", entrypoints())
 @pytest.mark.parametrize("execution_method", ["launcher", "cli"])
 def test_state_versions_grpc(entrypoint, execution_method):

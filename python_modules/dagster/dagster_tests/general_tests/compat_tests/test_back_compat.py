@@ -77,9 +77,10 @@ def _event_log_migration_regex(_run_id, current_revision, expected_revision=None
 
 def test_event_log_step_key_migration():
     src_dir = dg.file_relative_path(__file__, "snapshot_0_7_6_pre_event_log_migration/sqlite")
-    with copy_directory(src_dir) as test_dir:
-        instance = DagsterInstance.from_ref(InstanceRef.from_dir(test_dir))
-
+    with (
+        copy_directory(src_dir) as test_dir,
+        DagsterInstance.from_ref(InstanceRef.from_dir(test_dir)) as instance,
+    ):
         # Make sure the schema is migrated
         instance.upgrade()
 
@@ -119,31 +120,47 @@ def get_sqlite3_tables(db_path):
     con = sqlite3.connect(db_path)
     cursor = con.cursor()
     cursor.execute("SELECT name FROM sqlite_master WHERE type='table';")
-    return [r[0] for r in cursor.fetchall()]
+    res = [r[0] for r in cursor.fetchall()]
+    con.close()
+    return res
 
 
 def get_current_alembic_version(db_path):
     con = sqlite3.connect(db_path)
     cursor = con.cursor()
     cursor.execute("SELECT * FROM alembic_version")
-    return cursor.fetchall()[0][0]
+    res = cursor.fetchall()[0][0]
+    con.close()
+    return res
 
 
 def get_sqlite3_columns(db_path, table_name):
     con = sqlite3.connect(db_path)
     cursor = con.cursor()
     cursor.execute(f'PRAGMA table_info("{table_name}");')
-    return [r[1] for r in cursor.fetchall()]
+    res = [r[1] for r in cursor.fetchall()]
+    con.close()
+    return res
 
 
 def get_sqlite3_indexes(db_path, table_name):
     con = sqlite3.connect(db_path)
     cursor = con.cursor()
     cursor.execute(f'PRAGMA index_list("{table_name}");')
-    return [r[1] for r in cursor.fetchall()]
+    res = [r[1] for r in cursor.fetchall()]
+    con.close()
+    return res
 
 
 def test_snapshot_0_7_6_pre_add_job_snapshot():
+    @dg.op
+    def noop_op(_):
+        pass
+
+    @dg.job
+    def noop_job():
+        noop_op()
+
     run_id = "fb0b3905-068b-4444-8f00-76fcbaef7e8b"
     src_dir = dg.file_relative_path(__file__, "snapshot_0_7_6_pre_add_pipeline_snapshot/sqlite")
     with copy_directory(src_dir) as test_dir:
@@ -155,50 +172,41 @@ def test_snapshot_0_7_6_pre_add_job_snapshot():
 
         assert "snapshots" not in get_sqlite3_tables(db_path)
 
-        instance = DagsterInstance.from_ref(InstanceRef.from_dir(test_dir))
+        with DagsterInstance.from_ref(InstanceRef.from_dir(test_dir)) as instance:
+            with pytest.raises(
+                (db.exc.OperationalError, db.exc.ProgrammingError, db.exc.StatementError)  # pyright: ignore[reportAttributeAccessIssue]
+            ):
+                noop_job.execute_in_process(instance=instance)
 
-        @dg.op
-        def noop_op(_):
-            pass
+            assert len(instance.get_runs()) == 1
 
-        @dg.job
-        def noop_job():
-            noop_op()
+            # Make sure the schema is migrated
+            instance.upgrade()
 
-        with pytest.raises(
-            (db.exc.OperationalError, db.exc.ProgrammingError, db.exc.StatementError)  # pyright: ignore[reportAttributeAccessIssue]
-        ):
-            noop_job.execute_in_process(instance=instance)
+            assert "snapshots" in get_sqlite3_tables(db_path)
+            assert {"id", "snapshot_id", "snapshot_body", "snapshot_type"} == set(
+                get_sqlite3_columns(db_path, "snapshots")
+            )
 
-        assert len(instance.get_runs()) == 1
+            assert len(instance.get_runs()) == 1
 
-        # Make sure the schema is migrated
-        instance.upgrade()
+            run = instance.get_run_by_id(run_id)
 
-        assert "snapshots" in get_sqlite3_tables(db_path)
-        assert {"id", "snapshot_id", "snapshot_body", "snapshot_type"} == set(
-            get_sqlite3_columns(db_path, "snapshots")
-        )
+            assert run.run_id == run_id  # pyright: ignore[reportOptionalMemberAccess]
+            assert run.job_snapshot_id is None  # pyright: ignore[reportOptionalMemberAccess]
 
-        assert len(instance.get_runs()) == 1
+            result = noop_job.execute_in_process(instance=instance)
 
-        run = instance.get_run_by_id(run_id)
+            assert result.success
 
-        assert run.run_id == run_id  # pyright: ignore[reportOptionalMemberAccess]
-        assert run.job_snapshot_id is None  # pyright: ignore[reportOptionalMemberAccess]
+            runs = instance.get_runs()
+            assert len(runs) == 2
 
-        result = noop_job.execute_in_process(instance=instance)
+            new_run_id = result.run_id
 
-        assert result.success
+            new_run = instance.get_run_by_id(new_run_id)
 
-        runs = instance.get_runs()
-        assert len(runs) == 2
-
-        new_run_id = result.run_id
-
-        new_run = instance.get_run_by_id(new_run_id)
-
-        assert new_run.job_snapshot_id  # pyright: ignore[reportOptionalMemberAccess]
+            assert new_run.job_snapshot_id  # pyright: ignore[reportOptionalMemberAccess]
 
 
 def test_downgrade_and_upgrade():
@@ -212,38 +220,35 @@ def test_downgrade_and_upgrade():
 
         assert "snapshots" not in get_sqlite3_tables(db_path)
 
-        instance = DagsterInstance.from_ref(InstanceRef.from_dir(test_dir))
+        with DagsterInstance.from_ref(InstanceRef.from_dir(test_dir)) as instance:
+            assert len(instance.get_runs()) == 1
 
-        assert len(instance.get_runs()) == 1
+            # Make sure the schema is migrated
+            instance.upgrade()
 
-        # Make sure the schema is migrated
-        instance.upgrade()
+            assert "snapshots" in get_sqlite3_tables(db_path)
+            assert {"id", "snapshot_id", "snapshot_body", "snapshot_type"} == set(
+                get_sqlite3_columns(db_path, "snapshots")
+            )
 
-        assert "snapshots" in get_sqlite3_tables(db_path)
-        assert {"id", "snapshot_id", "snapshot_body", "snapshot_type"} == set(
-            get_sqlite3_columns(db_path, "snapshots")
-        )
+            assert len(instance.get_runs()) == 1
 
-        assert len(instance.get_runs()) == 1
+            instance._run_storage._alembic_downgrade(rev="9fe9e746268c")  # pyright: ignore[reportAttributeAccessIssue]
 
-        instance._run_storage._alembic_downgrade(rev="9fe9e746268c")  # pyright: ignore[reportAttributeAccessIssue]
+            assert get_current_alembic_version(db_path) == "9fe9e746268c"
 
-        assert get_current_alembic_version(db_path) == "9fe9e746268c"
+            assert "snapshots" not in get_sqlite3_tables(db_path)
 
-        assert "snapshots" not in get_sqlite3_tables(db_path)
+            assert len(instance.get_runs()) == 1
 
-        instance = DagsterInstance.from_ref(InstanceRef.from_dir(test_dir))
+            instance.upgrade()
 
-        assert len(instance.get_runs()) == 1
+            assert "snapshots" in get_sqlite3_tables(db_path)
+            assert {"id", "snapshot_id", "snapshot_body", "snapshot_type"} == set(
+                get_sqlite3_columns(db_path, "snapshots")
+            )
 
-        instance.upgrade()
-
-        assert "snapshots" in get_sqlite3_tables(db_path)
-        assert {"id", "snapshot_id", "snapshot_body", "snapshot_type"} == set(
-            get_sqlite3_columns(db_path, "snapshots")
-        )
-
-        assert len(instance.get_runs()) == 1
+            assert len(instance.get_runs()) == 1
 
 
 def test_event_log_asset_key_migration():
@@ -256,8 +261,8 @@ def test_event_log_asset_key_migration():
         assert "asset_key" not in set(get_sqlite3_columns(db_path, "event_logs"))
 
         # Make sure the schema is migrated
-        instance = DagsterInstance.from_ref(InstanceRef.from_dir(test_dir))
-        instance.upgrade()
+        with DagsterInstance.from_ref(InstanceRef.from_dir(test_dir)) as instance:
+            instance.upgrade()
 
         assert "asset_key" in set(get_sqlite3_columns(db_path, "event_logs"))
 
@@ -291,8 +296,8 @@ def test_event_log_asset_partition_migration():
         assert "partition" not in set(get_sqlite3_columns(db_path, "event_logs"))
 
         # Make sure the schema is migrated
-        instance = DagsterInstance.from_ref(InstanceRef.from_dir(test_dir))
-        instance.upgrade()
+        with DagsterInstance.from_ref(InstanceRef.from_dir(test_dir)) as instance:
+            instance.upgrade()
 
         assert "partition" in set(get_sqlite3_columns(db_path, "event_logs"))
 
@@ -310,22 +315,22 @@ def test_mode_column_migration():
         assert "mode" not in set(get_sqlite3_columns(db_path, "runs"))
 
         # this migration was optional, so make sure things work before migrating
-        instance = DagsterInstance.from_ref(InstanceRef.from_dir(test_dir))
-        assert "mode" not in set(get_sqlite3_columns(db_path, "runs"))
-        assert instance.get_run_records()
-        assert instance.create_run_for_job(_test)
+        with DagsterInstance.from_ref(InstanceRef.from_dir(test_dir)) as instance:
+            assert "mode" not in set(get_sqlite3_columns(db_path, "runs"))
+            assert instance.get_run_records()
+            assert instance.create_run_for_job(_test)
 
-        instance.upgrade()
+            instance.upgrade()
 
-        # Make sure the schema is migrated
-        assert "mode" in set(get_sqlite3_columns(db_path, "runs"))
-        assert instance.get_run_records()
-        assert instance.create_run_for_job(_test)
+            # Make sure the schema is migrated
+            assert "mode" in set(get_sqlite3_columns(db_path, "runs"))
+            assert instance.get_run_records()
+            assert instance.create_run_for_job(_test)
 
-        instance._run_storage._alembic_downgrade(rev="72686963a802")  # pyright: ignore[reportAttributeAccessIssue]
+            instance._run_storage._alembic_downgrade(rev="72686963a802")  # pyright: ignore[reportAttributeAccessIssue]
 
-        assert get_current_alembic_version(db_path) == "72686963a802"
-        assert "mode" not in set(get_sqlite3_columns(db_path, "runs"))
+            assert get_current_alembic_version(db_path) == "72686963a802"
+            assert "mode" not in set(get_sqlite3_columns(db_path, "runs"))
 
 
 def test_run_partition_migration():
@@ -337,17 +342,17 @@ def test_run_partition_migration():
         assert "partition_set" not in set(get_sqlite3_columns(db_path, "runs"))
 
         # Make sure the schema is migrated
-        instance = DagsterInstance.from_ref(InstanceRef.from_dir(test_dir))
-        instance.upgrade()
+        with DagsterInstance.from_ref(InstanceRef.from_dir(test_dir)) as instance:
+            instance.upgrade()
 
-        assert "partition" in set(get_sqlite3_columns(db_path, "runs"))
-        assert "partition_set" in set(get_sqlite3_columns(db_path, "runs"))
+            assert "partition" in set(get_sqlite3_columns(db_path, "runs"))
+            assert "partition_set" in set(get_sqlite3_columns(db_path, "runs"))
 
-        instance._run_storage._alembic_downgrade(rev="224640159acf")  # pyright: ignore[reportAttributeAccessIssue]
-        assert get_current_alembic_version(db_path) == "224640159acf"
+            instance._run_storage._alembic_downgrade(rev="224640159acf")  # pyright: ignore[reportAttributeAccessIssue]
+            assert get_current_alembic_version(db_path) == "224640159acf"
 
-        assert "partition" not in set(get_sqlite3_columns(db_path, "runs"))
-        assert "partition_set" not in set(get_sqlite3_columns(db_path, "runs"))
+            assert "partition" not in set(get_sqlite3_columns(db_path, "runs"))
+            assert "partition_set" not in set(get_sqlite3_columns(db_path, "runs"))
 
 
 def test_run_partition_data_migration():
@@ -598,23 +603,23 @@ def test_start_time_end_time():
         assert "end_time" not in set(get_sqlite3_columns(db_path, "runs"))
 
         # this migration was optional, so make sure things work before migrating
-        instance = DagsterInstance.from_ref(InstanceRef.from_dir(test_dir))
-        assert "start_time" not in set(get_sqlite3_columns(db_path, "runs"))
-        assert "end_time" not in set(get_sqlite3_columns(db_path, "runs"))
-        assert instance.get_run_records()
-        assert instance.create_run_for_job(_test)
+        with DagsterInstance.from_ref(InstanceRef.from_dir(test_dir)) as instance:
+            assert "start_time" not in set(get_sqlite3_columns(db_path, "runs"))
+            assert "end_time" not in set(get_sqlite3_columns(db_path, "runs"))
+            assert instance.get_run_records()
+            assert instance.create_run_for_job(_test)
 
-        instance.upgrade()
+            instance.upgrade()
 
-        # Make sure the schema is migrated
-        assert "start_time" in set(get_sqlite3_columns(db_path, "runs"))
-        assert instance.get_run_records()
-        assert instance.create_run_for_job(_test)
+            # Make sure the schema is migrated
+            assert "start_time" in set(get_sqlite3_columns(db_path, "runs"))
+            assert instance.get_run_records()
+            assert instance.create_run_for_job(_test)
 
-        instance._run_storage._alembic_downgrade(rev="7f2b1a4ca7a5")  # pyright: ignore[reportAttributeAccessIssue]
+            instance._run_storage._alembic_downgrade(rev="7f2b1a4ca7a5")  # pyright: ignore[reportAttributeAccessIssue]
 
-        assert get_current_alembic_version(db_path) == "7f2b1a4ca7a5"
-        assert True
+            assert get_current_alembic_version(db_path) == "7f2b1a4ca7a5"
+            assert True
 
 
 def test_remote_job_origin_instigator_origin():
@@ -1311,6 +1316,7 @@ def test_bad_alembic_stamp():
         cursor.execute("SELECT * FROM alembic_version")
         rows = cursor.fetchall()
         conn.close()
+
         assert len(rows) == 0
         with DagsterInstance.from_ref(InstanceRef.from_dir(test_dir)) as instance:
             assert "idx_runs_by_backfill_id" not in get_sqlite3_indexes(db_path, "runs")
