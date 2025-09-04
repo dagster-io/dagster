@@ -2,6 +2,7 @@ import json
 import os
 import tempfile
 from difflib import SequenceMatcher
+from pathlib import Path
 from typing import Any
 from unittest import mock
 
@@ -66,8 +67,9 @@ def telemetry_caplog(caplog):
     cleanup_telemetry_logger()
 
 
-def path_to_file(path):
-    return script_relative_path(os.path.join("./", path))
+def path_to_file(path: str) -> str:
+    str_path = script_relative_path(os.path.join("./", path))
+    return str(Path(str_path))
 
 
 @pytest.fixture

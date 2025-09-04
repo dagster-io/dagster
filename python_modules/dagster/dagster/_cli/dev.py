@@ -162,7 +162,7 @@ def dev_command_impl(
         )
 
     os.environ["DAGSTER_IS_DEV_CLI"] = "1"
-    os.environ["DAGSTER_verbose"] = "1" if verbose else ""
+    os.environ["DAGSTER_VERBOSE"] = "1" if verbose else "0"
 
     configure_loggers(formatter=log_format, log_level=log_level.upper())
     logger = logging.getLogger("dagster")

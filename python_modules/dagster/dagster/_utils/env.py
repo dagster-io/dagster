@@ -8,4 +8,4 @@ def using_dagster_dev() -> bool:
 
 
 def use_verbose() -> bool:
-    return bool(os.getenv("DAGSTER_verbose", "1"))
+    return os.getenv("DAGSTER_VERBOSE", "1") == "1"
