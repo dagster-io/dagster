@@ -9,8 +9,8 @@ setup(
         "pandas",
         "matplotlib",
         # highlight-start
-        'soda @ https://pypi.cloud.soda.io/packages/soda-1.6.2.tar.gz',
-        'soda-snowflake @ https://pypi.cloud.soda.io/packages/soda_snowflake-1.6.2.tar.gz'
+        "soda @ https://pypi.cloud.soda.io/packages/soda-1.6.2.tar.gz",
+        "soda-snowflake @ https://pypi.cloud.soda.io/packages/soda_snowflake-1.6.2.tar.gz",
         # highlight-end
     ],
     extras_require={"dev": ["dagster-webserver", "pytest"]},
