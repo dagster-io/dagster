@@ -1,7 +1,7 @@
 # alert_policies.yaml
 
 alert_policies:
-  description: Sends a Slack message when a Hybrid agent hasn't sent a heartbeat in
+- description: Sends a Slack message when a Hybrid agent hasn't sent a heartbeat in
     the last 5 minutes.
   event_types:
   - AGENT_UNAVAILABLE
