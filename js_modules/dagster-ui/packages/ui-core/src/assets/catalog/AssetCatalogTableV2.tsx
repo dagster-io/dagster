@@ -326,8 +326,9 @@ const Table = React.memo(
     ITEMS_BY_KEY,
   }: TableProps<T, TAsset>) => {
     const scope = useMemo(() => {
-      const list = (assets ?? []).filter((a): a is AssetWithDefinition => !!a.definition);
-      const selected = list.filter((a) => checkedDisplayKeys.has(tokenForAssetKey(a.key)));
+      const selected = (assets ?? []).filter((a) =>
+        checkedDisplayKeys.has(tokenForAssetKey(a.key)),
+      );
       return {
         selected: selected.map((a) => ({...a.definition, assetKey: a.key})),
       };
@@ -465,7 +466,3 @@ const Table = React.memo(
   },
 );
 Table.displayName = 'Table';
-
-type AssetWithDefinition = AssetTableFragment & {
-  definition: NonNullable<AssetTableFragment['definition']>;
-};
