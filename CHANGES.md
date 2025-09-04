@@ -11,7 +11,7 @@
 
 - Launching a backfill of a non-subsettable multi-asset without including every asset will now raise a clear error at backfill submission time, instead of failing with a confusing error after the backfill has started.
 - Fixed an issue where passing in an empty list to the `assetKeys` argument of the `assetsOrError` field in the GraphQL API would return every asset instead of an empty list of assets.
-- [dagster-dbt] Fixed an issue that would cause the DbtCloudWorkspace to error before yielding asset events if the associated dbt Cloud run failed. Now, it will raise the error _after_ all relevant asset events have been produced.
+- [dagster-dbt] Fixed an issue that would cause the DbtCloudWorkspace to error before yielding asset events if the associated DBT Cloud run failed. Now, it will raise the error _after_ all relevant asset events have been produced.
 
 ### Dagster Plus
 
