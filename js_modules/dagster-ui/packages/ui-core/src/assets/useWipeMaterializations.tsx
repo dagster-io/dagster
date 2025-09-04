@@ -32,6 +32,7 @@ export const useWipeMaterializations = ({
       <MenuItem
         text="Wipe materializations"
         icon="delete"
+        intent="danger"
         onClick={() => setShowWipeDialog(true)}
       />
     );
