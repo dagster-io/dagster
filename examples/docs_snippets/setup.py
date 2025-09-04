@@ -42,6 +42,7 @@ setup(
             "xgboost",
             "apache-airflow<3.0.0",
             "pytest-httpserver",
+            "dagster-evidence",
         ],
     },
 )
