@@ -23,6 +23,7 @@ EXCLUDED_FILES = {
     # setup() expects. So omit files that call setup() since they cannot be loaded without errors.
     f"{snippets_folder}/dagster-plus/deployment/serverless/runtime-environment/data_files_setup.py",
     f"{snippets_folder}/dagster-plus/deployment/serverless/runtime-environment/example_setup.py",
+    f"{snippets_folder}/dagster-plus/deployment/serverless/runtime-environment/example_tarball_setup.py",
     # there are no components defined in the snippets and so it would fail to load
     f"{snippets_folder}/guides/components/existing-project/definitions-after.py",
     # there are no components defined in the snippets and so it would fail to load
