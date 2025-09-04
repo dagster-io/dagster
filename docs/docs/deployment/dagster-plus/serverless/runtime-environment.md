@@ -16,21 +16,52 @@ By default, Dagster+ Serverless will package your code as PEX files and deploy t
 
 ## Add dependencies
 
-You can add dependencies by including the corresponding Python libraries in your Dagster project's `pyproject.toml` file. These should follow the [pyproject.toml specification](https://packaging.python.org/en/latest/specifications/pyproject-toml/#pyproject-toml-spec).
+You can add dependencies by including the corresponding Python libraries in your Dagster project's package configuration file.
 
-<CodeExample
-  path="docs_snippets/docs_snippets/dagster-plus/deployment/serverless/runtime-environment/example_pyproject.toml"
-  language="TOML"
-  title="Example pyproject.toml"
-/>
+<Tabs groupId="package-manager">
+  <TabItem value="uv" label="uv">
+   If you are using `uv` with a `pyproject.toml` file, you should follow the [pyproject.toml specification](https://packaging.python.org/en/latest/specifications/pyproject-toml/#pyproject-toml-spec).
+    <CodeExample
+      path="docs_snippets/docs_snippets/dagster-plus/deployment/serverless/runtime-environment/example_pyproject.toml"
+      language="TOML"
+      title="Example pyproject.toml"
+    />
+  </TabItem>
+  <TabItem value="pip" label="pip">
+    If you are using `pip` with a `setup.py` file, you should follow [PEP 508](https://peps.python.org/pep-0508).
 
-You can also use a tarball to install a dependency, such as if `pip` is unable to resolve a package using `dependency_links`. For example, `soda` and `soda-snowflake` provide tarballs that you can include in the `install_requires` section:
+    <CodeExample
+      path="docs_snippets/docs_snippets/dagster-plus/deployment/serverless/runtime-environment/example_setup.py"
+      language="Python"
+      title="Example setup.py"
+    />
 
-<CodeExample
-  path="docs_snippets/docs_snippets/dagster-plus/deployment/serverless/runtime-environment/example_tarball_pyproject.toml"
-  language="TOML"
-  title="Example pyproject.toml with tarball links"
-/>
+    :::info
+    
+    If you are using a `setup.py` file, you will need to add a TOML configuration file to the root of your project in order to make it `dg`-compatible and use Components. For more information, see [Converting an existing project](/guides/build/projects/moving-to-components/migrating-project).
+
+    :::
+  </TabItem>
+</Tabs>
+
+### Add dependencies from tarballs
+
+<Tabs groupId="package-manager">
+  <TabItem value="uv" label="uv">
+    <CodeExample
+      path="docs_snippets/docs_snippets/dagster-plus/deployment/serverless/runtime-environment/example_tarball_pyproject.toml"
+      language="TOML"
+      title="Example pyproject.toml with tarball links"
+    />
+  </TabItem>
+  <TabItem value="pip" label="pip">
+    <CodeExample
+    path="docs_snippets/docs_snippets/dagster-plus/deployment/serverless/runtime-environment/example_tarball_setup.py"
+    language="Python"
+    title="Example setup.py with tarball links"
+    />
+  </TabItem>
+</Tabs>
 
 :::tip
 
@@ -40,7 +71,7 @@ To add a package from a private GitHub repository, see [Use private Python packa
 
 ## Use a different Python version
 
-Python versions 3.9 through 3.13 are all supported for Serverless deployments. You can specify the Python version you want to use in your GitHub or GitLab workflow, or by using the `dagster-cloud` CLI.
+Python versions 3.9 through 3.13 are all supported for Serverless deployments. You can specify the Python version you want to use in your GitHub or GitLab workflow, or by using the [`dagster-cloud` CLI](/api/clis/dagster-cloud-cli).
 
 <Tabs groupId="method">
 <TabItem value="GitHub" label="GitHub">
@@ -78,7 +109,7 @@ Dagster+ runs your code on a Docker image that we build as follows:
 - The standard Python "slim" Docker image, such as python:3.10-slim is used as the base
 - The dagster-cloud[serverless] module installed in the image
 
-You can [add dependencies](#add-dependencies) in your `pyproject.toml` file, but when that is not possible, you can build and upload a custom base image that will be used to run your Python code:
+You can [add dependencies](#add-dependencies) in your `pyproject.toml` or `setup.py` file, but when that is not possible, you can build and upload a custom base image that will be used to run your Python code:
 
 :::note
 
@@ -144,30 +175,57 @@ dagster-cloud serverless deploy-python-executable \
 
 ## Include data files
 
-To add data files to your deployment, create a `data` directory under the `src/{PACKAGE NAME}` directory:
+<Tabs groupId="package-manager">
+  <TabItem value="uv" label="uv">
 
-```bash
-quickstart-etl
-├── dagster_cloud.yaml
-├── pyproject.toml
-├── tests
-│   ├── __init__.py
-│   └── test_defs.py
-├── README.md
-├── src
-│   └── quickstart_etl
-│       ├── __init__.py
-│       ├── data
-│       │   ├── file1.txt
-│       │   └── file2.csv
-│       ├── definitions.py
-│       └── defs
-│           └── assets
-│               ├── __init__.py
-│               ├── hackernews.py
-│               └── schedules.py
-└── workspace.yaml
-```
+    To add data files to your deployment, create a `data` directory under the `src/{PACKAGE NAME}` directory:
+
+    ```bash
+    quickstart-etl
+    ├── dagster_cloud.yaml
+    ├── pyproject.toml
+    ├── tests
+    │   ├── __init__.py
+    │   └── test_defs.py
+    ├── README.md
+    ├── src
+    │   └── quickstart_etl
+    │       ├── __init__.py
+    │       ├── data
+    │       │   ├── file1.txt
+    │       │   └── file2.csv
+    │       ├── definitions.py
+    │       └── defs
+    │           └── assets
+    │               ├── __init__.py
+    │               ├── hackernews.py
+    │               └── schedules.py
+    └── workspace.yaml
+    ```
+  </TabItem>
+  <TabItem value="pip" label="pip">
+    To add data files to your deployment, use the [data files support](https://setuptools.pypa.io/en/latest/userguide/datafiles.html) built into Python's `setup.py`. This requires adding a `package_data` or `include_package_data` keyword in the call to `setup()` in `setup.py`. For example, given this directory structure:
+
+    ```bash
+    .
+    ├── quickstart_etl
+    │   ├── data
+    │   │   ├── file1.txt
+    │   │   └── file2.txt
+    │   ├── definitions.py
+    │   └── init.py
+    └── setup.py
+    ```
+
+    To include the data folder, modify your `setup.py` to add the `package_data` line:
+
+    <CodeExample
+      path="docs_snippets/docs_snippets/dagster-plus/deployment/serverless/runtime-environment/data_files_setup.py"
+      language="Python"
+      title="Loading data files in setup.py"
+    />
+  </TabItem>
+</Tabs>
 
 ## Disable PEX deploys
 
@@ -287,13 +345,27 @@ If you use PEX deploys in your workflow (`ENABLE_FAST_DEPLOYS: 'true'`), the fol
     ```
 
 2.  Create a GitHub personal access token and set it as the `GH_PAT` secret for your Actions.
-3.  In your Dagster project's `pyproject.toml` file, add your package name to the `dependencies` section:
-    ```python
-        dependencies = [
-          "dagster",
-          "dagster-cloud",
-          "private-package",   # add this line - must match your private Python package name
-        ]
-    ```
+3.  Add your package to your Dagster project's package configuration file:
+  <Tabs groupId="package-manager">
+    <TabItem value="uv" label="uv">
+      In your `pyproject.toml` file, add your package name to the `dependencies` section:
+      ```python
+          dependencies = [
+            "dagster",
+            "dagster-cloud",
+            "private-package",   # add this line - must match your private Python package name
+          ]
+      ```
+    </TabItem>
+    <TabItem value="pip" label="pip">
+      In your `setup.py` file, add your package name to the `install_requires` section:
+      ```python
+          install_requires=[
+            "dagster",
+            "dagster-cloud",
+            "private-package",   # add this line - must match your private Python package name
+      ```
+    </TabItem>
+  </Tabs>
 
 Once the `deploy.yml` is updated and changes pushed to your repo, then any subsequent code deploy should checkout your private repository, build the package and install it as a dependency in your Dagster+ project. Repeat the above steps for your `branch_deployments.yml` if needed.
