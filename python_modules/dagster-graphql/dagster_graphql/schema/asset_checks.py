@@ -30,7 +30,7 @@ from dagster_graphql.schema.metadata import GrapheneMetadataEntry
 from dagster_graphql.schema.util import ResolveInfo, non_null_list
 
 if TYPE_CHECKING:
-    from dagster._core.storage.asset_check_execution_record import AssetCheckPartitionSubsets
+    from dagster._core.storage.asset_check_execution_record import AssetCheckPartitionStatus
 
     from dagster_graphql.schema.partition_sets import (
         GrapheneDimensionPartitionKeys,
@@ -153,13 +153,13 @@ class GrapheneAssetCheckPartitionStatuses(graphene.ObjectType):
     class Meta:
         name = "AssetCheckPartitionStatuses"
 
-    def __init__(self, partition_subsets: "AssetCheckPartitionSubsets"):
-        self.missing = list(partition_subsets.missing.get_partition_keys())
-        self.succeeded = list(partition_subsets.succeeded.get_partition_keys())
-        self.failed = list(partition_subsets.failed.get_partition_keys())
-        self.inProgress = list(partition_subsets.inProgress.get_partition_keys())
-        self.skipped = list(partition_subsets.skipped.get_partition_keys())
-        self.executionFailed = list(partition_subsets.executionFailed.get_partition_keys())
+    def __init__(self, partition_status: "AssetCheckPartitionStatus"):
+        self.missing = list(partition_status.missing.get_partition_keys())
+        self.succeeded = list(partition_status.succeeded.get_partition_keys())
+        self.failed = list(partition_status.failed.get_partition_keys())
+        self.inProgress = list(partition_status.in_progress.get_partition_keys())
+        self.skipped = list(partition_status.skipped.get_partition_keys())
+        self.executionFailed = list(partition_status.execution_failed.get_partition_keys())
 
 
 class GrapheneAssetCheck(graphene.ObjectType):
@@ -319,7 +319,7 @@ class GrapheneAssetCheck(graphene.ObjectType):
         """Resolve partition statuses using partition subsets for efficient representation."""
         from dagster._core.definitions.asset_checks.asset_check_spec import AssetCheckKey
         from dagster._core.storage.asset_check_partition_cache import (
-            get_asset_check_partition_subsets,
+            get_asset_check_partition_status,
         )
 
         # Only return partition statuses for partitioned checks
@@ -335,15 +335,14 @@ class GrapheneAssetCheck(graphene.ObjectType):
             self._asset_check.partitions_def_snapshot.get_partitions_definition()
         )
 
-        # Get partition subsets using the cache service (handles storage + reconciliation)
-        partition_subsets = get_asset_check_partition_subsets(
+        # Get partition status cache using the cache service (handles storage + reconciliation)
+        partition_status = get_asset_check_partition_status(
             instance=graphene_info.context.instance,
             check_key=check_key,
             partitions_def=current_partition_def,
-            dynamic_partitions_store=graphene_info.context.instance,
         )
 
-        return GrapheneAssetCheckPartitionStatuses(partition_subsets)
+        return GrapheneAssetCheckPartitionStatuses(partition_status)
 
 
 class GrapheneAssetChecks(graphene.ObjectType):

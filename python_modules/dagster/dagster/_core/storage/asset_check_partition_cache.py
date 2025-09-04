@@ -29,42 +29,61 @@ def get_asset_check_partition_status(
     current_def_id = partitions_def.get_serializable_unique_identifier()
 
     if cache_value and cache_value.partitions_def_id == current_def_id:
-        # 3a. Use cached subsets
         planned_subset = cache_value.planned_partition_subset
         succeeded_subset = cache_value.succeeded_partition_subset
         failed_subset = cache_value.failed_partition_subset
         planned_run_mapping = cache_value.planned_partition_run_mapping
+        after_storage_id = cache_value.latest_storage_id
     else:
-        # 3b. Cache invalid - rebuild from partition records
         planned_subset = partitions_def.empty_subset()
         succeeded_subset = partitions_def.empty_subset()
         failed_subset = partitions_def.empty_subset()
         planned_run_mapping = {}
+        after_storage_id = None
 
-        # Get all partition records and rebuild cache
-        partition_records = instance.event_log_storage.get_asset_check_partition_records(check_key)
-
-        planned_keys = []
-        succeeded_keys = []
-        failed_keys = []
+    # fetch all partition records updated after the last cached event ID, to incrementally update
+    # the cached value
+    partition_records = instance.event_log_storage.get_asset_check_partition_records(
+        check_key, after_storage_id
+    )
+    if partition_records:
+        planned_keys = list(planned_subset.get_partition_keys())
+        succeeded_keys = list(succeeded_subset.get_partition_keys())
+        failed_keys = list(failed_subset.get_partition_keys())
 
         for record in partition_records:
-            if record.last_execution_status == AssetCheckExecutionRecordStatus.PLANNED:
-                planned_keys.append(record.partition_key)
-                if record.last_planned_run_id:
-                    planned_run_mapping[record.partition_key] = record.last_planned_run_id
-            elif record.last_execution_status == AssetCheckExecutionRecordStatus.SUCCEEDED:
-                succeeded_keys.append(record.partition_key)
-            elif record.last_execution_status == AssetCheckExecutionRecordStatus.FAILED:
-                failed_keys.append(record.partition_key)
+            # Remove partition from old status lists
+            partition_key = record.partition_key
+            if partition_key in planned_keys:
+                planned_keys.remove(partition_key)
+            if partition_key in succeeded_keys:
+                succeeded_keys.remove(partition_key)
+            if partition_key in failed_keys:
+                failed_keys.remove(partition_key)
 
+            # update status for each partition
+            if record.last_execution_status == AssetCheckExecutionRecordStatus.PLANNED:
+                planned_keys.append(partition_key)
+                if record.last_planned_run_id:
+                    planned_run_mapping[partition_key] = record.last_planned_run_id
+            elif record.last_execution_status == AssetCheckExecutionRecordStatus.SUCCEEDED:
+                succeeded_keys.append(partition_key)
+                planned_run_mapping.pop(partition_key, None)
+            elif record.last_execution_status == AssetCheckExecutionRecordStatus.FAILED:
+                failed_keys.append(partition_key)
+                planned_run_mapping.pop(partition_key, None)
+
+        # update the subsets
         planned_subset = partitions_def.subset_with_partition_keys(planned_keys)
         succeeded_subset = partitions_def.subset_with_partition_keys(succeeded_keys)
         failed_subset = partitions_def.subset_with_partition_keys(failed_keys)
 
-        # Update cache with rebuilt data
+        max_storage_id = max(
+            (r.last_event_id for r in partition_records),
+            default=(cache_value.latest_storage_id if cache_value else 0),
+        )
         new_cache_value = AssetCheckPartitionStatusCacheValue(
-            latest_storage_id=max((r.last_event_id for r in partition_records), default=0),
+            latest_storage_id=max_storage_id,
             partitions_def_id=current_def_id,
             planned_partition_subset=planned_subset,
             succeeded_partition_subset=succeeded_subset,
@@ -73,12 +92,11 @@ def get_asset_check_partition_status(
         )
         instance.event_log_storage.update_asset_check_cached_value(check_key, new_cache_value)
 
-    # 4. Resolve planned partitions into fine-grained statuses using run information
+    # fetch run status for all planned partitions to break them down into in_progress, skipped, and failed
     in_progress, skipped, execution_failed = _resolve_planned_partition_statuses(
         instance, planned_subset, planned_run_mapping
     )
 
-    # 5. Compute missing subset (current partitions - all executed partitions)
     all_subset = partitions_def.subset_with_all_partitions()
     missing_subset = all_subset - (succeeded_subset & failed_subset & planned_subset)
 
