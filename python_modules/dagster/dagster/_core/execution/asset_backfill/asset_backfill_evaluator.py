@@ -1,10 +1,11 @@
 import logging
 import os
 import time
-from collections.abc import Sequence
+from collections import defaultdict
+from collections.abc import Mapping, Sequence
 from typing import Optional, cast
 
-from dagster_shared.record import record
+from dagster_shared.record import record, replace
 
 from dagster._core.asset_graph_view.asset_graph_subset_view import AssetGraphSubsetView
 from dagster._core.asset_graph_view.asset_graph_view import AssetGraphView
@@ -412,10 +413,90 @@ class AssetBackfillEvaluator:
 
         return None
 
-    def _evaluate_entity_subset(
+    def _get_updated_result(
+        self,
+        view: AssetGraphView,
+        original_result: AssetBackfillComputationResult,
+        intersected_value: EntitySubsetValue,
+        neighbor_key: AssetKey,
+    ) -> AssetBackfillComputationResult:
+        to_request = view.get_entity_subset_from_subset_value(
+            original_result.to_request.key, intersected_value
+        )
+        reasons = (
+            [
+                *original_result.rejected_subsets_with_reasons,
+                (
+                    to_request.compute_difference(original_result.to_request),
+                    f"Requested partitions are not compatible with neighbor {neighbor_key}",
+                ),
+            ]
+            # it's possible that the intersection is the same as the original value at this point
+            # if one value was a superset of the other
+            if to_request != original_result.to_request
+            else []
+        )
+        return replace(
+            original_result, to_request=to_request, rejected_subsets_with_reasons=reasons
+        )
+
+    def _intersect_results(
+        self,
+        view: AssetGraphView,
+        result_a: AssetBackfillComputationResult,
+        result_b: AssetBackfillComputationResult,
+    ) -> tuple[AssetBackfillComputationResult, AssetBackfillComputationResult]:
+        value_a = result_a.to_request.get_internal_value()
+        value_b = result_b.to_request.get_internal_value()
+
+        # no need to update
+        if value_a == value_b:
+            return (result_a, result_b)
+
+        # find the intersection of the two values and create new result objects that
+        # will only request the intersection of the two values and have rejection reasons
+        # for anything eliminated by the intersection
+        intersected_value = value_a & value_b  # type: ignore
+        return (
+            self._get_updated_result(view, result_a, intersected_value, result_b.to_request.key),
+            self._get_updated_result(view, result_b, intersected_value, result_a.to_request.key),
+        )
+
+    def _evaluate_toposorted_execution_set(
         self,
         data: AssetBackfillComputationData,
-        candidate_subset: EntitySubset[AssetKey],
+        to_request_subset: AssetGraphSubsetView[AssetKey],
+        toposorted_execution_set: list[AssetKey],
+    ) -> Mapping[AssetKey, AssetBackfillComputationResult]:
+        """Evaluates all nodes in a toposorted execution set as a unit, and returns a mapping of their
+        results by key.
+        """
+        results: dict[AssetKey, AssetBackfillComputationResult] = {}
+        for i, current_key in enumerate(toposorted_execution_set):
+            # we keep an internal tally of the `to_request_subset` so that downstream
+            # nodes within the execution set are aware of their parents requests
+            neighbor_to_request_subset = AssetGraphSubsetView(
+                data.view, [result.to_request for result in results.values()]
+            )
+            results[current_key] = self._evaluate_entity_subset(
+                current_key, data, to_request_subset.compute_union(neighbor_to_request_subset)
+            )
+
+            # intersect this new result with all previous results to ensure that all nodes
+            # share the same requested subset
+            for neighbor_key in toposorted_execution_set[:i]:
+                current_result, neighbor_result = self._intersect_results(
+                    data.view, results[current_key], results[neighbor_key]
+                )
+                results[current_key] = current_result
+                results[neighbor_key] = neighbor_result
+
+        return results
+
+    def _evaluate_entity_subset(
+        self,
+        key: AssetKey,
+        data: AssetBackfillComputationData,
         to_request_subset: AssetGraphSubsetView[AssetKey],
     ) -> AssetBackfillComputationResult:
         """Core logic for evaluating a single entity subset.
@@ -423,9 +504,9 @@ class AssetBackfillEvaluator:
         Returns a subset of the candidate subset that should be requested, and a list of subsets that
         were rejected with reasons why.
         """
+        candidate_subset = data.candidate_subset.get(key)
         rejected_subsets_with_reasons: list[tuple[EntitySubset[AssetKey], str]] = []
 
-        key = candidate_subset.key
         missing_in_target_partitions = candidate_subset.compute_difference(
             data.target_subset.get(key)
         )
@@ -574,11 +655,10 @@ class AssetBackfillEvaluator:
     def evaluate(self) -> AssetBackfillIterationResult:
         # query the instance to find any updates to the set of materialized and failed partitions
         updated_data = self._get_updated_data()
-        candidate_graph_subset = updated_data.get_candidate_subset()
 
         self.logger.info(
-            f"Considering the following candidate subset:\n{candidate_graph_subset!s}"
-            if not candidate_graph_subset.is_empty
+            f"Considering the following candidate subset:\n{updated_data.candidate_subset!s}"
+            if not updated_data.candidate_subset.is_empty
             else "Candidate subset is empty."
         )
 
@@ -587,14 +667,29 @@ class AssetBackfillEvaluator:
         asset_graph_view = updated_data.view
         to_request_subset = AssetGraphSubsetView.empty(asset_graph_view)
         rejected_subsets_with_reasons = []
+
+        toposorted_execution_sets = defaultdict(list)
         for asset_key in asset_graph_view.asset_graph.toposorted_asset_keys:
-            candidate_subset = candidate_graph_subset.get(asset_key)
+            candidate_subset = updated_data.candidate_subset.get(asset_key)
             if candidate_subset.is_empty:
                 continue
 
-            result = self._evaluate_entity_subset(updated_data, candidate_subset, to_request_subset)
-            to_request_subset = to_request_subset.compute_union(result.to_request)
-            rejected_subsets_with_reasons.extend(result.rejected_subsets_with_reasons)
+            # this bit of complexity is to handle non-subsettable multi-assets. in these cases, we make sure we
+            # only evaluate the entire unit after all dependencies of the entire unit
+            execution_set = asset_graph_view.asset_graph.get(asset_key).execution_set_asset_keys
+            index = min(execution_set)
+            toposorted_execution_sets[index].append(asset_key)
+            # have not yet visisted all members of the execution set
+            if len(toposorted_execution_sets[index]) < len(execution_set):
+                continue
+            toposorted_execution_set = toposorted_execution_sets[index]
+
+            results = self._evaluate_toposorted_execution_set(
+                updated_data, to_request_subset, toposorted_execution_set
+            )
+            for result in results.values():
+                to_request_subset = to_request_subset.compute_union(result.to_request)
+                rejected_subsets_with_reasons.extend(result.rejected_subsets_with_reasons)
 
         self._log_results(to_request_subset, rejected_subsets_with_reasons)
 
@@ -611,7 +706,9 @@ class AssetBackfillEvaluator:
 
         return AssetBackfillIterationResult(
             run_requests=run_requests,
-            backfill_data=updated_data.to_asset_backfill_data(),
+            backfill_data=updated_data.with_to_request_subset(
+                to_request_subset
+            ).to_asset_backfill_data(),
             reserved_run_ids=[make_new_run_id() for _ in range(len(run_requests))],
         )
 

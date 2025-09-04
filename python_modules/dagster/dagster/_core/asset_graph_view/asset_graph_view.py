@@ -15,7 +15,10 @@ from dagster import _check as check
 from dagster._check import CheckError
 from dagster._core.asset_graph_view.asset_graph_subset_view import AssetGraphSubsetView
 from dagster._core.asset_graph_view.entity_subset import EntitySubset, _ValidatedEntitySubsetValue
-from dagster._core.asset_graph_view.serializable_entity_subset import SerializableEntitySubset
+from dagster._core.asset_graph_view.serializable_entity_subset import (
+    EntitySubsetValue,
+    SerializableEntitySubset,
+)
 from dagster._core.definitions.asset_key import AssetCheckKey, AssetKey, EntityKey, T_EntityKey
 from dagster._core.definitions.assets.graph.asset_graph_subset import AssetGraphSubset
 from dagster._core.definitions.events import AssetKeyPartitionKey
@@ -245,6 +248,12 @@ class AssetGraphView(LoadingContext):
         return EntitySubset(
             self, key=key, value=_ValidatedEntitySubsetValue(serializable_subset.value)
         )
+
+    @use_partition_loading_context
+    def get_entity_subset_from_subset_value(
+        self, key: AssetKey, value: EntitySubsetValue
+    ) -> EntitySubset[AssetKey]:
+        return EntitySubset(self, key=key, value=_ValidatedEntitySubsetValue(value))
 
     def _with_current_partitions_def(
         self, serializable_subset: SerializableEntitySubset
