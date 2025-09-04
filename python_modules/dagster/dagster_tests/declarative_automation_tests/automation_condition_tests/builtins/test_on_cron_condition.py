@@ -321,3 +321,39 @@ def test_invalid_schedules(schedule: str, should_fail: bool) -> None:
             AutomationCondition.on_cron(cron_schedule=schedule)
     else:
         AutomationCondition.on_cron(cron_schedule=schedule)
+
+
+def test_on_cron_with_dynamic_partitions() -> None:
+    @dg.asset(
+        partitions_def=dg.DynamicPartitionsDefinition(name="some_def"),
+        automation_condition=AutomationCondition.on_cron("@hourly"),
+    )
+    def A() -> None: ...
+
+    current_time = datetime.datetime(2024, 8, 16, 4, 35)
+    defs = dg.Definitions(assets=[A])
+    instance = DagsterInstance.ephemeral()
+
+    # add a, b, c
+    instance.add_dynamic_partitions("some_def", ["a", "b", "c"])
+
+    # first evaluation, baseline no requests
+    result = dg.evaluate_automation_conditions(
+        defs=defs, instance=instance, evaluation_time=current_time
+    )
+    assert result.total_requested == 0
+
+    # now an hour later, so all requested
+    current_time += datetime.timedelta(hours=1)
+    result = dg.evaluate_automation_conditions(
+        defs=defs, instance=instance, evaluation_time=current_time, cursor=result.cursor
+    )
+    assert result.total_requested == 3
+
+    # now c gets deleted, which shouldn't cause an error
+    current_time += datetime.timedelta(minutes=1)
+    instance.delete_dynamic_partition("some_def", "c")
+    result = dg.evaluate_automation_conditions(
+        defs=defs, instance=instance, evaluation_time=current_time, cursor=result.cursor
+    )
+    assert result.total_requested == 0
