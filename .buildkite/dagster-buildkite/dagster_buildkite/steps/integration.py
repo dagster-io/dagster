@@ -163,7 +163,7 @@ def build_auto_materialize_perf_suite_steps():
         unsupported_python_versions=[
             version
             for version in AvailablePythonVersion.get_all()
-            if version != AvailablePythonVersion.V3_11
+            if version != AvailablePythonVersion.V3_12
         ],
     )
 
