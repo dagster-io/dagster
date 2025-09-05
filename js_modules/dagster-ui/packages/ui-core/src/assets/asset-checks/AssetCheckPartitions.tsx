@@ -79,8 +79,7 @@ export const AssetCheckPartitions = ({assetKey, checkName}: AssetCheckPartitions
         return false;
       }
 
-      const statuses = partitionData.statusForPartition(partition);
-      const primaryStatus = statuses[0] || AssetCheckPartitionStatus.MISSING;
+      const primaryStatus = partitionData.statusForPartition(partition);
 
       counts[primaryStatus] = !counts[primaryStatus] ? 1 : counts[primaryStatus] + 1;
       return statusFilters.includes(primaryStatus);
@@ -110,7 +109,7 @@ export const AssetCheckPartitions = ({assetKey, checkName}: AssetCheckPartitions
   }
 
   const statusForPartition = (dimensionKey: string): AssetCheckPartitionStatus[] => {
-    return partitionData.statusForPartition(dimensionKey);
+    return [partitionData.statusForPartition(dimensionKey)];
   };
 
   return (

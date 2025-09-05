@@ -1,11 +1,7 @@
 import {useMemo, useState} from 'react';
 
-import {
-  AssetCheckPartitionStatus,
-  executionStatusToPartitionStatus,
-} from './AssetCheckPartitionStatus';
+import {AssetCheckPartitionStatus} from './AssetCheckPartitionStatus';
 import {gql, useApolloClient} from '../../apollo-client';
-import {AssetCheckExecutionResolvedStatus} from '../../graphql/types';
 import {usePartitionDataSubscriber} from '../PartitionSubscribers';
 import {AssetKey} from '../types';
 import {
@@ -18,7 +14,7 @@ export interface AssetCheckPartitionData {
   checkName: string;
   dimensions: AssetCheckPartitionDimension[];
   partitions: string[];
-  statusForPartition: (dimensionKey: string) => AssetCheckPartitionStatus[];
+  statusForPartition: (dimensionKey: string) => AssetCheckPartitionStatus;
 }
 
 export interface AssetCheckPartitionDimension {
@@ -94,14 +90,11 @@ function buildAssetCheckPartitionData(
 ): AssetCheckPartitionData | null {
   const assetNode = data.assetNodeOrError.__typename === 'AssetNode' ? data.assetNodeOrError : null;
 
-  if (!assetNode?.assetChecksOrError || assetNode.assetChecksOrError.__typename !== 'AssetChecks') {
+  if (!assetNode?.assetCheckOrError || assetNode.assetCheckOrError.__typename !== 'AssetCheck') {
     return null;
   }
 
-  const check = assetNode.assetChecksOrError.checks.find((c) => c.name === checkName);
-  if (!check) {
-    return null;
-  }
+  const check = assetNode.assetCheckOrError;
 
   const dimensions = (check.partitionKeysByDimension || []).map((dim) => ({
     name: dim.name,
@@ -112,24 +105,44 @@ function buildAssetCheckPartitionData(
   const dim = dimensions[0]!;
   const partitions = dimensions.length > 0 ? dim.partitionKeys : [];
 
-  const partitionStatusMap = new Map<string, AssetCheckPartitionStatus[]>();
-  const executions = data.assetCheckExecutions || [];
+  const partitionStatusMap = new Map<string, AssetCheckPartitionStatus>();
+  const partitionStatuses = check.partitionStatuses;
 
+  // Initialize all partitions as missing
   for (const partition of partitions) {
-    partitionStatusMap.set(partition, [AssetCheckPartitionStatus.MISSING]);
+    partitionStatusMap.set(partition, AssetCheckPartitionStatus.MISSING);
   }
 
-  for (const execution of executions) {
-    const partition = execution.evaluation?.partition;
-    if (partition && partitions.includes(partition)) {
-      const executionStatus = execution.status || AssetCheckExecutionResolvedStatus.SKIPPED;
-      const partitionStatus = executionStatusToPartitionStatus(executionStatus);
-      partitionStatusMap.set(partition, [partitionStatus]);
-    }
+  // Update with actual statuses from GraphQL
+  if (partitionStatuses) {
+    // Process each status type
+    partitionStatuses.missing?.forEach((partition) => {
+      partitionStatusMap.set(partition, AssetCheckPartitionStatus.MISSING);
+    });
+
+    partitionStatuses.succeeded?.forEach((partition) => {
+      partitionStatusMap.set(partition, AssetCheckPartitionStatus.SUCCEEDED);
+    });
+
+    partitionStatuses.failed?.forEach((partition) => {
+      partitionStatusMap.set(partition, AssetCheckPartitionStatus.FAILED);
+    });
+
+    partitionStatuses.inProgress?.forEach((partition) => {
+      partitionStatusMap.set(partition, AssetCheckPartitionStatus.IN_PROGRESS);
+    });
+
+    partitionStatuses.skipped?.forEach((partition) => {
+      partitionStatusMap.set(partition, AssetCheckPartitionStatus.SKIPPED);
+    });
+
+    partitionStatuses.executionFailed?.forEach((partition) => {
+      partitionStatusMap.set(partition, AssetCheckPartitionStatus.EXECUTION_FAILED);
+    });
   }
 
-  const statusForPartition = (dimensionKey: string): AssetCheckPartitionStatus[] => {
-    return partitionStatusMap.get(dimensionKey) || [AssetCheckPartitionStatus.MISSING];
+  const statusForPartition = (dimensionKey: string): AssetCheckPartitionStatus => {
+    return partitionStatusMap.get(dimensionKey) || AssetCheckPartitionStatus.MISSING;
   };
 
   return {
@@ -146,25 +159,23 @@ export const ASSET_CHECK_PARTITION_HEALTH_QUERY = gql`
     assetNodeOrError(assetKey: $assetKey) {
       ... on AssetNode {
         id
-        assetChecksOrError {
-          ... on AssetChecks {
-            checks {
+        assetCheckOrError(checkName: $checkName) {
+          ... on AssetCheck {
+            name
+            partitionKeysByDimension {
               name
-              partitionKeysByDimension {
-                name
-                partitionKeys
-              }
+              partitionKeys
+            }
+            partitionStatuses {
+              missing
+              succeeded
+              failed
+              inProgress
+              skipped
+              executionFailed
             }
           }
         }
-      }
-    }
-    assetCheckExecutions(assetKey: $assetKey, checkName: $checkName, limit: 1000) {
-      id
-      status
-      evaluation {
-        success
-        partition
       }
     }
   }

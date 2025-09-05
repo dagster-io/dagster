@@ -13,34 +13,31 @@ export type AssetCheckPartitionHealthQuery = {
     | {
         __typename: 'AssetNode';
         id: string;
-        assetChecksOrError:
+        assetCheckOrError:
+          | {
+              __typename: 'AssetCheck';
+              name: string;
+              partitionKeysByDimension: Array<{
+                __typename: 'DimensionPartitionKeys';
+                name: string;
+                partitionKeys: Array<string>;
+              }>;
+              partitionStatuses: {
+                __typename: 'AssetCheckPartitionStatuses';
+                missing: Array<string>;
+                succeeded: Array<string>;
+                failed: Array<string>;
+                inProgress: Array<string>;
+                skipped: Array<string>;
+                executionFailed: Array<string>;
+              } | null;
+            }
           | {__typename: 'AssetCheckNeedsAgentUpgradeError'}
           | {__typename: 'AssetCheckNeedsMigrationError'}
           | {__typename: 'AssetCheckNeedsUserCodeUpgrade'}
-          | {
-              __typename: 'AssetChecks';
-              checks: Array<{
-                __typename: 'AssetCheck';
-                name: string;
-                partitionKeysByDimension: Array<{
-                  __typename: 'DimensionPartitionKeys';
-                  name: string;
-                  partitionKeys: Array<string>;
-                }>;
-              }>;
-            };
+          | {__typename: 'AssetCheckNotFoundError'};
       }
     | {__typename: 'AssetNotFoundError'};
-  assetCheckExecutions: Array<{
-    __typename: 'AssetCheckExecution';
-    id: string;
-    status: Types.AssetCheckExecutionResolvedStatus;
-    evaluation: {
-      __typename: 'AssetCheckEvaluation';
-      success: boolean;
-      partition: string | null;
-    } | null;
-  }>;
 };
 
-export const AssetCheckPartitionHealthQueryVersion = 'd900b12f7b169e196c455d8e9bb1e7d7b1434f47e8a335be228d072ad4a7b891';
+export const AssetCheckPartitionHealthQueryVersion = '85d84ebb07a4f45fa3c774e3c2bbaa51eeeb4215cd7a95ea374bd2ce9e10656a';

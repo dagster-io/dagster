@@ -289,6 +289,18 @@ export type AssetCheckNeedsUserCodeUpgrade = Error & {
   message: Scalars['String']['output'];
 };
 
+export type AssetCheckNotFoundError = Error & {
+  __typename: 'AssetCheckNotFoundError';
+  message: Scalars['String']['output'];
+};
+
+export type AssetCheckOrError =
+  | AssetCheck
+  | AssetCheckNeedsAgentUpgradeError
+  | AssetCheckNeedsMigrationError
+  | AssetCheckNeedsUserCodeUpgrade
+  | AssetCheckNotFoundError;
+
 export type AssetCheckPartitionStatuses = {
   __typename: 'AssetCheckPartitionStatuses';
   executionFailed: Array<Scalars['String']['output']>;
@@ -539,6 +551,7 @@ export type AssetMetadataEntry = MetadataEntry & {
 
 export type AssetNode = {
   __typename: 'AssetNode';
+  assetCheckOrError: AssetCheckOrError;
   assetChecksOrError: AssetChecksOrError;
   assetKey: AssetKey;
   assetMaterializationUsedData: Array<MaterializationUpstreamDataVersion>;
@@ -622,6 +635,10 @@ export type AssetNode = {
   tags: Array<DefinitionTag>;
   targetingInstigators: Array<Instigator>;
   type: Maybe<ListDagsterType | NullableDagsterType | RegularDagsterType>;
+};
+
+export type AssetNodeAssetCheckOrErrorArgs = {
+  checkName: Scalars['String']['input'];
 };
 
 export type AssetNodeAssetChecksOrErrorArgs = {
@@ -4191,6 +4208,7 @@ export type QueryAssetCheckExecutionsArgs = {
   checkName: Scalars['String']['input'];
   cursor?: InputMaybe<Scalars['String']['input']>;
   limit: Scalars['Int']['input'];
+  partition?: InputMaybe<Scalars['String']['input']>;
 };
 
 export type QueryAssetConditionEvaluationForPartitionArgs = {
@@ -6700,6 +6718,18 @@ export const buildAssetCheckNeedsUserCodeUpgrade = (
   };
 };
 
+export const buildAssetCheckNotFoundError = (
+  overrides?: Partial<AssetCheckNotFoundError>,
+  _relationshipsToOmit: Set<string> = new Set(),
+): {__typename: 'AssetCheckNotFoundError'} & AssetCheckNotFoundError => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('AssetCheckNotFoundError');
+  return {
+    __typename: 'AssetCheckNotFoundError',
+    message: overrides && overrides.hasOwnProperty('message') ? overrides.message! : 'molestiae',
+  };
+};
+
 export const buildAssetCheckPartitionStatuses = (
   overrides?: Partial<AssetCheckPartitionStatuses>,
   _relationshipsToOmit: Set<string> = new Set(),
@@ -7234,6 +7264,12 @@ export const buildAssetNode = (
   relationshipsToOmit.add('AssetNode');
   return {
     __typename: 'AssetNode',
+    assetCheckOrError:
+      overrides && overrides.hasOwnProperty('assetCheckOrError')
+        ? overrides.assetCheckOrError!
+        : relationshipsToOmit.has('AssetCheck')
+          ? ({} as AssetCheck)
+          : buildAssetCheck({}, relationshipsToOmit),
     assetChecksOrError:
       overrides && overrides.hasOwnProperty('assetChecksOrError')
         ? overrides.assetChecksOrError!
