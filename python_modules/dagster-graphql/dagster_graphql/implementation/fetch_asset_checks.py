@@ -1,12 +1,23 @@
 from collections.abc import Sequence
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING, Optional, Union
 
 from dagster import _check as check
 from dagster._core.definitions.asset_checks.asset_check_spec import AssetCheckKey
 from dagster._core.events import ASSET_CHECK_EVENTS, DagsterEventType
 from dagster._core.loader import LoadingContext
-from dagster._core.storage.asset_check_execution_record import AssetCheckExecutionRecordStatus
+from dagster._core.remote_representation.handle import RepositoryHandle
+from dagster._core.storage.asset_check_execution_record import (
+    AssetCheckExecutionRecordStatus,
+    AssetCheckInstanceSupport,
+)
 from dagster._core.storage.dagster_run import RunRecord
+from packaging import version
+
+from dagster_graphql.schema.asset_checks import (
+    GrapheneAssetCheckNeedsAgentUpgradeError,
+    GrapheneAssetCheckNeedsMigrationError,
+    GrapheneAssetCheckNeedsUserCodeUpgrade,
+)
 
 if TYPE_CHECKING:
     from dagster_graphql.schema.asset_checks import GrapheneAssetCheckExecution
@@ -14,9 +25,46 @@ if TYPE_CHECKING:
     from dagster_graphql.schema.util import ResolveInfo
 
 
+def check_asset_checks_support(
+    graphene_info: "ResolveInfo", repository_handle: RepositoryHandle
+) -> Union[
+    GrapheneAssetCheckNeedsMigrationError,
+    GrapheneAssetCheckNeedsUserCodeUpgrade,
+    GrapheneAssetCheckNeedsAgentUpgradeError,
+    None,
+]:
+    asset_check_support = graphene_info.context.instance.get_asset_check_support()
+    if asset_check_support == AssetCheckInstanceSupport.NEEDS_MIGRATION:
+        return GrapheneAssetCheckNeedsMigrationError(
+            message="Asset checks require an instance migration. Run `dagster instance migrate`."
+        )
+    elif asset_check_support == AssetCheckInstanceSupport.NEEDS_AGENT_UPGRADE:
+        return GrapheneAssetCheckNeedsAgentUpgradeError(
+            "Asset checks require an agent upgrade to 1.5.0 or greater."
+        )
+    else:
+        check.invariant(
+            asset_check_support == AssetCheckInstanceSupport.SUPPORTED,
+            f"Unexpected asset check support status {asset_check_support}",
+        )
+
+    library_versions = graphene_info.context.get_dagster_library_versions(
+        repository_handle.location_name
+    )
+    code_location_version = (library_versions or {}).get("dagster")
+    if code_location_version and version.parse(code_location_version) < version.parse("1.5"):
+        return GrapheneAssetCheckNeedsUserCodeUpgrade(
+            message=(
+                "Asset checks require dagster>=1.5. Upgrade your dagster"
+                " version for this code location."
+            )
+        )
+
+
 def fetch_asset_check_executions(
     loading_context: LoadingContext,
     asset_check_key: AssetCheckKey,
+    partition: Optional[str],
     limit: int,
     cursor: Optional[str],
 ) -> list["GrapheneAssetCheckExecution"]:
@@ -26,6 +74,7 @@ def fetch_asset_check_executions(
         check_key=asset_check_key,
         limit=limit,
         cursor=int(cursor) if cursor else None,
+        partition=partition,
     )
 
     RunRecord.prepare(

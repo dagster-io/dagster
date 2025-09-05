@@ -393,3 +393,23 @@ class GrapheneAssetChecksOrError(graphene.Union):
             GrapheneAssetCheckNeedsAgentUpgradeError,
         )
         name = "AssetChecksOrError"
+
+
+class GrapheneAssetCheckNotFoundError(graphene.ObjectType):
+    message = graphene.NonNull(graphene.String)
+
+    class Meta:
+        interfaces = (GrapheneError,)
+        name = "AssetCheckNotFoundError"
+
+
+class GrapheneAssetCheckOrError(graphene.Union):
+    class Meta:
+        types = (
+            GrapheneAssetCheck,
+            GrapheneAssetCheckNotFoundError,
+            GrapheneAssetCheckNeedsMigrationError,
+            GrapheneAssetCheckNeedsUserCodeUpgrade,
+            GrapheneAssetCheckNeedsAgentUpgradeError,
+        )
+        name = "AssetCheckOrError"

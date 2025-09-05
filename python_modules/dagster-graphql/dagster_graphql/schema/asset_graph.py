@@ -54,6 +54,7 @@ from dagster._time import get_current_datetime
 from packaging import version
 
 from dagster_graphql.implementation.events import iterate_metadata_entries
+from dagster_graphql.implementation.fetch_asset_checks import check_asset_checks_support
 from dagster_graphql.implementation.fetch_assets import (
     build_partition_statuses,
     get_asset_materializations,
@@ -70,6 +71,8 @@ from dagster_graphql.schema.asset_checks import (
     GrapheneAssetCheckNeedsAgentUpgradeError,
     GrapheneAssetCheckNeedsMigrationError,
     GrapheneAssetCheckNeedsUserCodeUpgrade,
+    GrapheneAssetCheckNotFoundError,
+    GrapheneAssetCheckOrError,
     GrapheneAssetChecks,
     GrapheneAssetChecksOrError,
 )
@@ -324,6 +327,10 @@ class GrapheneAssetNode(graphene.ObjectType):
     # the acutal checks are listed in the assetChecksOrError resolver. We use this boolean
     # to show/hide the checks tab. We plan to remove this field once we always show the checks tab.
     hasAssetChecks = graphene.NonNull(graphene.Boolean)
+    assetCheckOrError = graphene.Field(
+        graphene.NonNull(GrapheneAssetCheckOrError),
+        checkName=graphene.Argument(graphene.NonNull(graphene.String)),
+    )
     assetChecksOrError = graphene.Field(
         graphene.NonNull(GrapheneAssetChecksOrError),
         limit=graphene.Argument(graphene.Int),
@@ -1348,6 +1355,35 @@ class GrapheneAssetNode(graphene.ObjectType):
     def resolve_hasAssetChecks(self, graphene_info: ResolveInfo) -> bool:
         return bool(self._remote_node.check_keys)
 
+    def resolve_assetCheckOrError(
+        self,
+        graphene_info: ResolveInfo,
+        checkName: str,
+    ) -> GrapheneAssetCheckOrError:
+        validation_error = check_asset_checks_support(graphene_info, self._repository_handle)
+        if validation_error:
+            return validation_error
+
+        remote_check_nodes = graphene_info.context.asset_graph.get_checks_for_asset(
+            self._asset_node_snap.asset_key
+        )
+
+        matching_node = next(
+            iter(
+                [
+                    remote_check_node
+                    for remote_check_node in remote_check_nodes
+                    if remote_check_node.asset_check.name == checkName
+                ]
+            ),
+            None,
+        )
+        if not matching_node:
+            return GrapheneAssetCheckNotFoundError(
+                message=f"Asset check '{checkName}' not found for asset '{self._asset_node_snap.asset_key.to_user_string()}'"
+            )
+        return GrapheneAssetCheck(matching_node)
+
     def resolve_assetChecksOrError(
         self,
         graphene_info: ResolveInfo,
@@ -1359,6 +1395,10 @@ class GrapheneAssetNode(graphene.ObjectType):
         )
         if not remote_check_nodes:
             return GrapheneAssetChecks(checks=[])
+
+        validation_error = check_asset_checks_support(graphene_info, self._repository_handle)
+        if validation_error:
+            return validation_error
 
         asset_check_support = graphene_info.context.instance.get_asset_check_support()
         if asset_check_support == AssetCheckInstanceSupport.NEEDS_MIGRATION:
