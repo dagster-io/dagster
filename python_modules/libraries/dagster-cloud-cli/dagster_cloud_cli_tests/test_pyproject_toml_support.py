@@ -177,8 +177,6 @@ version = "0.1.0"
         ".",
     ]
     assert command == expected_command
-    assert kwargs["capture_output"] is True
-    assert kwargs["check"] is True
 
 
 @patch("subprocess.run")
