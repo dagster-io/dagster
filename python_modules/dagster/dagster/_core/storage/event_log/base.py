@@ -680,6 +680,7 @@ class EventLogStorage(ABC, MayHaveInstanceWeakref[T_DagsterInstance]):
         limit: int,
         cursor: Optional[int] = None,
         status: Optional[AbstractSet[AssetCheckExecutionRecordStatus]] = None,
+        partition: Optional[str] = None,
     ) -> Sequence[AssetCheckExecutionRecord]:
         """Get executions for one asset check, sorted by recency."""
         pass

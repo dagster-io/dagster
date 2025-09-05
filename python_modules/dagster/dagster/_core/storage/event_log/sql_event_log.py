@@ -3220,6 +3220,7 @@ class SqlEventLogStorage(EventLogStorage):
         limit: int,
         cursor: Optional[int] = None,
         status: Optional[AbstractSet[AssetCheckExecutionRecordStatus]] = None,
+        partition: Optional[str] = None,
     ) -> Sequence[AssetCheckExecutionRecord]:
         check.inst_param(check_key, "key", AssetCheckKey)
         check.int_param(limit, "limit")
@@ -3251,6 +3252,9 @@ class SqlEventLogStorage(EventLogStorage):
             query = query.where(
                 AssetCheckExecutionsTable.c.execution_status.in_([s.value for s in status])
             )
+
+        if partition:
+            query = query.where(AssetCheckExecutionsTable.c.partition == partition)
 
         with self.index_connection() as conn:
             rows = db_fetch_mappings(conn, query)
