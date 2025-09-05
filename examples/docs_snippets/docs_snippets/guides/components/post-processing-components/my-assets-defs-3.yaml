@@ -1,0 +1,13 @@
+type: dagster.DefsFolderComponent
+
+post_processing:
+  assets:
+    - attributes:
+        kinds:
+        - "some_kind"
+    - target: foo
+      attributes:
+        group_name: "foo_group"
+    - target: bar
+      attributes:
+        group_name: "bar_group"

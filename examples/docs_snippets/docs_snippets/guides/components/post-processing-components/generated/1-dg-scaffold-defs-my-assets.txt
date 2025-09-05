@@ -1,0 +1,3 @@
+dg scaffold defs DefsFolderComponent my_assets
+
+Creating defs at /.../my-project/src/my_project/defs/my_assets.
