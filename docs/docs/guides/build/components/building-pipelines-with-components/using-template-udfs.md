@@ -21,7 +21,7 @@ This approach provides several advantages:
 - **Full IDE support**: Get autocomplete, type checking, and refactoring tools
 - **Maintainability**: Complex business rules are easier to understand and modify in Python
 
-## Motivating example: dynamically generating tags
+## Example: Dynamically generating tags
 
 Let's walk through a common scenario where you might start with static YAML configuration but need to evolve to dynamic generation.
 
