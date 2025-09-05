@@ -39,6 +39,16 @@ def upgrade():
                 "subset_cache_event_id",
                 db.BigInteger().with_variant(sqlite.INTEGER(), "sqlite"),
             ),  # Event ID when subset cache was last updated
+            # Summary data for efficient AssetCheckSummaryRecord creation
+            db.Column(
+                "last_execution_record_id",
+                db.BigInteger().with_variant(sqlite.INTEGER(), "sqlite"),
+            ),  # Reference to latest asset_check_executions.id
+            db.Column("last_run_id", db.String(255)),  # Run ID of latest execution
+            db.Column(
+                "last_completed_execution_record_id",
+                db.BigInteger().with_variant(sqlite.INTEGER(), "sqlite"),
+            ),  # Reference to latest completed asset_check_executions.id
             db.Column("created_timestamp", db.DateTime, server_default=get_sql_current_timestamp()),
             db.Column("updated_timestamp", db.DateTime),
             db.UniqueConstraint("asset_key", "check_name"),

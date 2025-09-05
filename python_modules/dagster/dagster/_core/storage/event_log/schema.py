@@ -198,6 +198,16 @@ AssetChecksTable = db.Table(
     db.Column(
         "cached_check_status_data", db.Text
     ),  # Serialized AssetCheckPartitionStatusCacheValue, NULL for non-partitioned
+    # Summary data for efficient AssetCheckSummaryRecord creation
+    db.Column(
+        "last_execution_record_id",
+        db.BigInteger().with_variant(sqlite.INTEGER(), "sqlite"),
+    ),  # Reference to latest asset_check_executions.id
+    db.Column("last_run_id", db.String(255)),  # Run ID of latest execution
+    db.Column(
+        "last_completed_execution_record_id",
+        db.BigInteger().with_variant(sqlite.INTEGER(), "sqlite"),
+    ),  # Reference to latest completed asset_check_executions.id
     db.Column("created_timestamp", db.DateTime, server_default=get_sql_current_timestamp()),
     db.Column("updated_timestamp", db.DateTime),
     db.UniqueConstraint("asset_key", "check_name"),
