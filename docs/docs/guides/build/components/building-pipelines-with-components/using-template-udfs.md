@@ -44,7 +44,7 @@ How do you ensure that these rules are applied generically
 
 ### Evolving to dynamic tag generation
 
-Instead of duplicating this logic across multiple YAML files, you can create a template UDF that generates tags dynamically:
+Instead of duplicating logic across multiple YAML files, you can create a template UDF that generates tags dynamically:
 
 <CodeExample
   path="docs_snippets/docs_snippets/guides/components/using-template-variables/template_udfs.py"
