@@ -6,7 +6,7 @@
   justify-content: space-between;
   background-color: var(--color-background-default);
   color: var(--color-text-default);
-  transition: background-color 0.3s ease-in-out;
+  transition: background-color 0.1s ease-in-out;
   cursor: pointer;
   &:hover {
     background-color: var(--color-background-default-hover);
@@ -45,7 +45,7 @@
 }
 
 .title {
-  font-size: 16px;
+  font-size: 14px;
   font-weight: 400;
   margin-bottom: 4px;
 }

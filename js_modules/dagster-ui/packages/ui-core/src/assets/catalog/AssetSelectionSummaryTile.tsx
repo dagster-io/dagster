@@ -157,10 +157,12 @@ export const JobTile = ({name, repoAddress}: {name: string; repoAddress: RepoAdd
         className={styles.tile}
       >
         <div className={styles.header}>
-          <div>
+          <Box
+            flex={{direction: 'row', justifyContent: 'space-between', alignItems: 'center', gap: 4}}
+          >
             <Icon name="job" size={20} />
-          </div>
-          <div className={styles.title} style={{color: Colors.textLight()}}>
+          </Box>
+          <div className={styles.title} style={{color: Colors.textDefault()}}>
             <MiddleTruncate text={name} />
           </div>
         </div>
@@ -171,7 +173,9 @@ export const JobTile = ({name, repoAddress}: {name: string; repoAddress: RepoAdd
               launched <TimeFromNow unixTimestamp={latestRun.startTime} />
             </BodySmall>
           </Box>
-        ) : null}
+        ) : (
+          <BodySmall color={Colors.textLight()}>Never launched</BodySmall>
+        )}
       </Box>
     </Link>
   );
