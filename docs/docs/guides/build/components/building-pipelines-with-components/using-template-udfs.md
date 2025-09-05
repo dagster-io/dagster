@@ -38,7 +38,7 @@ Initially, you might have a simple component with hardcoded compliance tags:
 This works well at first, but what happens when your compliance requirements become more complex? For example:
 
 - Retention days need to be calculated based on data classification.
-- Different rules apply when PII is present
+- Different rules apply when PII is present.
 
 How do you ensure that these rules are applied generically 
 
