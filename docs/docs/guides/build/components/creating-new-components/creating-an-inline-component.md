@@ -4,11 +4,11 @@ sidebar_position: 200
 title: Creating an inline component
 ---
 
-Sometimes you need to define an _ad hoc_ component that you are unlikely to
+Sometimes you need to define a component that you are unlikely to
 reuse. In this situation, you can create an **inline component**. An inline
 component is a component that is defined in the `defs` directory alongside
-its instance definitions, rather than in a directory exposed to the dg registry
-(e.g. the `components` directory in a standard `dg` project).
+its instance definitions, rather than in a directory exposed to the `dg` registry
+(for example, the `components` directory in a standard `dg` project).
 
 Let's say we want to define a set of assets with each asset being materialized
 on its own schedule. This isn't a pattern we imagine
@@ -17,12 +17,18 @@ an inline component.
 
 To create the component, we use the `dg scaffold inline-component` command:
 
-<CliInvocationExample path="docs_snippets/docs_snippets/guides/components/generated/creating-an-inline-component/generated/1-dg-scaffold-defs-inline-component.txt" />
+<CliInvocationExample
+    path="docs_snippets/docs_snippets/guides/components/creating-an-inline-component/generated/1-dg-scaffold-defs-inline-component.txt"
+/>
 
 Supposing we are in a project called `my_project`, this will create a new
-directory at `my_project/defs/assets_with_schedules` with two files.
+directory at `my_project/defs/assets_with_schedules` with two files:
+* asset_with_schedule.py
+* defs.yaml
 
-`my_project/defs/assets_with_schedules/asset_with_schedule.py` contains a barebones
+### assets_with_schedules.py
+
+`my_project/defs/assets_with_schedules/asset_with_schedule.py` contains a basic
 definition of the `AssetWithSchedule` component class:
 
 <CodeExample
@@ -33,8 +39,8 @@ definition of the `AssetWithSchedule` component class:
 
 Let's parameterize our component to take an asset key and a cron schedule
 string, and output a corresponding `AssetsDefinition` and `ScheduleDefinition`.
-Because this is just for illustrative purposes, we'll just generate random
-numbers for the asset materialization function:
+Because this is just for illustrative purposes, we'll just set the asset materialization function
+to generate random numbers:
 
 <CodeExample
   path="docs_snippets/docs_snippets/guides/components/creating-an-inline-component/asset-with-schedule-final.py"
@@ -43,11 +49,13 @@ numbers for the asset materialization function:
 />
 
 
+### defs.yaml
+
 `my_project/defs/assets_with_schedules/defs.yaml` starts us off with an instance of the new
 component with no defined attributes:
 
 <CodeExample
-  path="docs_snippets/docs_snippets/guides/components/creating-an-inline-component/generated/3-assets-with-schedules-defs-init.py"
+  path="docs_snippets/docs_snippets/guides/components/creating-an-inline-component/generated/3-assets-with-schedules-defs-init.yaml"
   language="yaml"
   title="src/my_project/defs/assets_with_schedules/defs.yaml"
 />
@@ -55,7 +63,7 @@ component with no defined attributes:
 
 Note that there is nothing special about the `type` field. It is just a
 fully-qualified Python object reference, as it is when defining instances of
-registered components. The only difference between `AssetWithSchedule` and a
+[reusable registered components](/guides/build/components/creating-new-components/creating-and-registering-a-component). The only difference between `AssetWithSchedule` and a
 registered component is that `AssetWithSchedule` won't show up in the `dg`
 registry.
 
@@ -63,15 +71,15 @@ We'll modify this file to define three instances of our component, each
 representing an asset with a corresponding schedule:
 
 <CodeExample
-  path="docs_snippets/docs_snippets/guides/components/creating-an-inline-component/assets-with-schedules-defs-final.py"
+  path="docs_snippets/docs_snippets/guides/components/creating-an-inline-component/assets-with-schedules-defs-final.yaml"
   language="yaml"
   title="src/my_project/defs/assets_with_schedules/defs.yaml"
 />
 
 If we now run `dg list defs`, we can see our three assets and schedules:
 
-<CliInvocationExample path="docs_snippets/docs_snippets/guides/components/generated/creating-an-inline-component/generated/4-dg-list-defs.txt" />
+<CliInvocationExample path="docs_snippets/docs_snippets/guides/components/creating-an-inline-component/generated/4-dg-list-defs.txt" />
 
-Now if we open this up in `dg dev` and look at the "Automations" tab, we should see three schedules targeting their corresponding assets:
+Now if we run `dg dev` and look at the "Automations" tab, we should see three schedules targeting their corresponding assets:
 
 ![UI Deployment - Configuration tab](/images/guides/build/projects-and-components/components/inline-component-schedules.png)
