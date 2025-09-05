@@ -18,10 +18,12 @@ definitions.
 
 :::
 
-Let's look at a simple example using the `DefsFolderComponent`. `DefsFolderComponent`
+## Setup
+
+Let's look at a simple example using the <PyObject module="dagster" section="components" object="DefsFolderComponent" />. `DefsFolderComponent`
 simply loads all definitions from a specified folder.
 
-Starting from a blank project, let's scaffold a `DefsFolderComponent` called
+Starting from a [blank project](/guides/build/projects/creating-a-new-project), let's scaffold a `DefsFolderComponent` called
 `my_assets`:
 
 <CliInvocationExample path="docs_snippets/docs_snippets/guides/components/post-processing-components/generated/1-dg-scaffold-defs-my-assets.txt" />
@@ -61,7 +63,9 @@ Let's run `dg list defs` to see our assets:
 
 <CliInvocationExample path="docs_snippets/docs_snippets/guides/components/post-processing-components/generated/3-dg-list-defs-1.txt" />
 
-Now suppose we want to add a compute kind to every asset defined in this folder.
+## Example 1: Adding kind tags to assets
+
+Now suppose we want to add a [compute kind](/guides/build/assets/metadata-and-tags/kind-tags) to every asset defined in this folder.
 We could do this by manually adding the kind on each asset declaration or by using
 a factory. However, component post-processing provides a simpler solution. We
 modify our `defs.yaml` to add a `post_processing` field that specifies the
@@ -87,6 +91,8 @@ Let's run `dg list defs` again to see the result:
 You can see that both assets now have the `kind` we defined in our
 `post_processing` field.
 
+##  Example 2: Assigning assets to different groups
+
 Adding a `kind` isn't the only thing we can do. The full schema for
 `attributes` contains many other fields:
 
@@ -109,7 +115,9 @@ argument to specify which assets they apply to:
 />
 
 :::note
+
 The `target` field supports the full Dagster [asset selection syntax](/guides/build/assets/asset-selection-syntax/reference).
+
 :::
 
 Now if we run `dg list defs` again, we can see that the assets are in different
