@@ -11,7 +11,7 @@ seamlessly.
 
 ## Why UDFs instead of template logic?
 
-Many templating engines offer features like embedded conditionals (`{% if %}`) and loops (`{% for %}`) to handle these complex use cases. UDFs are an alternative to this. Instead of using `{% for %}` you can instead invoke a python function that has a `for` loop
+Many templating engines offer features like embedded conditionals (`{% if %}`) and loops (`{% for %}`) to handle complex use cases. UDFs are an alternative to this. Instead of using `{% for %}`, you can invoke a Python function that has a `for` loop.
 
 This approach provides several advantages:
 
