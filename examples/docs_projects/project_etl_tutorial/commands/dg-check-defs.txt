@@ -1,0 +1,4 @@
+dg check defs
+
+All component YAML validated successfully.
+All definitions loaded successfully.

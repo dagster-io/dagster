@@ -16,16 +16,18 @@ export function usePartitionSetDetailsForLaunchpad({
   partitionSetName,
   repositorySelector,
   assetSelection,
+  skipConfigQuery,
 }: {
   pipelineName: string;
   partitionSetName: string;
   repositorySelector: RepositorySelector;
   assetSelection?: IExecutionSession['assetSelection'];
+  skipConfigQuery: boolean;
 }) {
   const queryResultNoAssets = useQuery<ConfigPartitionsQuery, ConfigPartitionsQueryVariables>(
     CONFIG_PARTITIONS_QUERY,
     {
-      skip: !!assetSelection,
+      skip: !!assetSelection || skipConfigQuery,
       variables: {repositorySelector, partitionSetName},
       fetchPolicy: 'network-only',
     },
@@ -35,7 +37,7 @@ export function usePartitionSetDetailsForLaunchpad({
     ConfigPartitionsAssetsQuery,
     ConfigPartitionsAssetsQueryVariables
   >(CONFIG_PARTITIONS_ASSETS_QUERY, {
-    skip: !assetSelection,
+    skip: !assetSelection || skipConfigQuery,
     variables: {
       params: {...repositorySelector, pipelineName},
       assetKeys: assetSelection

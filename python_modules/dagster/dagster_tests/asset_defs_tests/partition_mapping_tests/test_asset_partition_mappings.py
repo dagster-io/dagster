@@ -1019,3 +1019,49 @@ def test_invalid_mappings_with_asset_deps():
                 assets=[daily_partitioned_asset, static_mapped_asset],
             )
         )
+
+
+def test_time_window_partition_mapping_with_exclusions():
+    """Test that TimeWindowPartitionMapping correctly handles excluded partitions with datetime exclusions."""
+    excluded_partition_dts = [
+        datetime(2023, 1, 7),  # Saturday
+        datetime(2023, 1, 8),  # Sunday
+        datetime(2023, 1, 14),  # Saturday
+        datetime(2023, 1, 15),  # Sunday
+    ]
+    partitions_def_with_exclusions = dg.TimeWindowPartitionsDefinition(
+        cron_schedule="@daily",
+        start="2023-01-01",
+        fmt="%Y-%m-%d",
+        exclusions=excluded_partition_dts,
+    )
+
+    @dg.asset(partitions_def=partitions_def_with_exclusions)
+    def upstream():
+        return
+
+    @dg.asset(
+        partitions_def=partitions_def_with_exclusions,
+        deps=[
+            dg.AssetDep(
+                upstream,
+                partition_mapping=dg.TimeWindowPartitionMapping(start_offset=-1, end_offset=-1),
+            )
+        ],
+    )
+    def downstream(context: AssetExecutionContext):
+        upstream_partition_dt = datetime.strptime(
+            context.asset_partition_key_for_input("upstream"), "%Y-%m-%d"
+        )
+        current_partition_dt = datetime.strptime(context.partition_key, "%Y-%m-%d")
+        assert upstream_partition_dt not in excluded_partition_dts
+        assert current_partition_dt not in excluded_partition_dts
+        assert current_partition_dt - upstream_partition_dt > timedelta(days=1)
+
+    result = dg.materialize(assets=[upstream, downstream], partition_key="2023-01-09")
+
+    assert_namedtuple_lists_equal(
+        result.asset_materializations_for_node("downstream"),
+        [dg.AssetMaterialization(dg.AssetKey(["downstream"]), partition="2023-01-09")],
+        exclude_fields=["tags"],
+    )

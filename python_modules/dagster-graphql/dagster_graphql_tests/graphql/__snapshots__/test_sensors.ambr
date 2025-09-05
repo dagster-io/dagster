@@ -301,6 +301,26 @@
     dict({
       'description': None,
       'minIntervalSeconds': 30,
+      'name': 'run_key_sensor',
+      'sensorState': dict({
+        'runs': list([
+        ]),
+        'runsCount': 0,
+        'status': 'STOPPED',
+        'ticks': list([
+        ]),
+      }),
+      'targets': list([
+        dict({
+          'mode': 'default',
+          'pipelineName': 'no_config_job',
+          'solidSelection': None,
+        }),
+      ]),
+    }),
+    dict({
+      'description': None,
+      'minIntervalSeconds': 30,
       'name': 'run_status',
       'sensorState': dict({
         'runs': list([

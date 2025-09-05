@@ -1,4 +1,5 @@
 import logging
+import os
 import sys
 import threading
 import warnings
@@ -14,7 +15,10 @@ from typing_extensions import Self
 import dagster._check as check
 from dagster._config.snap import ConfigTypeSnap
 from dagster._core.definitions.asset_key import AssetKey
-from dagster._core.definitions.assets.graph.remote_asset_graph import RemoteRepositoryAssetNode
+from dagster._core.definitions.assets.graph.remote_asset_graph import (
+    RemoteAssetGraph,
+    RemoteRepositoryAssetNode,
+)
 from dagster._core.definitions.data_time import CachingDataTimeResolver
 from dagster._core.definitions.data_version import CachingStaleStatusResolver
 from dagster._core.definitions.partitions.context import partition_loading_context
@@ -184,6 +188,10 @@ class BaseWorkspaceRequestContext(LoadingContext):
 
     @abstractmethod
     def was_permission_checked(self, permission: str) -> bool: ...
+
+    @property
+    @abstractmethod
+    def records_for_run_default_limit(self) -> Optional[int]: ...
 
     @property
     def show_instance_config(self) -> bool:
@@ -397,7 +405,9 @@ class BaseWorkspaceRequestContext(LoadingContext):
         code_location = self.get_code_location(code_location_name)
         return code_location.get_notebook_data(notebook_path=notebook_path)
 
-    def get_base_deployment_asset_graph(self) -> Optional["RemoteWorkspaceAssetGraph"]:
+    def get_base_deployment_asset_graph(
+        self, repository_selector: Optional["RepositorySelector"]
+    ) -> Optional["RemoteAssetGraph"]:
         return None
 
     def get_repository(
@@ -615,6 +625,10 @@ class WorkspaceRequestContext(BaseWorkspaceRequestContext):
     @property
     def loaders(self) -> dict[type, DataLoader]:  # pyright: ignore[reportIncompatibleMethodOverride]
         return self._loaders
+
+    @property
+    def records_for_run_default_limit(self) -> Optional[int]:
+        return int(os.getenv("DAGSTER_UI_EVENT_LOAD_CHUNK_SIZE", "1000"))
 
 
 class IWorkspaceProcessContext(ABC):

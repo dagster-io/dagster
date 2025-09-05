@@ -7,6 +7,7 @@ from pathlib import Path
 from typing import Annotated, Any, Optional, Union
 
 from dagster import Resolvable
+from dagster._annotations import public
 from dagster._core.definitions.asset_key import AssetKey
 from dagster._core.definitions.definitions_class import Definitions
 from dagster._core.execution.context.asset_execution_context import AssetExecutionContext
@@ -80,25 +81,17 @@ def resolve_dbt_project(context: ResolutionContext, model) -> DbtProject:
     )
 
 
+@public
 @scaffold_with(DbtProjectComponentScaffolder)
 @dataclass
 class DbtProjectComponent(Component, Resolvable):
     """Expose a DBT project to Dagster as a set of assets.
 
-    This component assumes that you have already set up a dbt project. [Jaffle shop](https://github.com/dbt-labs/jaffle-shop) is their pre-existing
-    example. Run `git clone --depth=1 https://github.com/dbt-labs/jaffle-shop.git jaffle_shop && rm -rf jaffle_shop/.git` to copy that project
+    This component assumes that you have already set up a dbt project, for example, the dbt `Jaffle shop <https://github.com/dbt-labs/jaffle-shop>`_. Run `git clone --depth=1 https://github.com/dbt-labs/jaffle-shop.git jaffle_shop && rm -rf jaffle_shop/.git` to copy that project
     into your Dagster project directory.
 
-
-
-    Scaffold by running `dagster scaffold component dagster_dbt.DbtProjectComponent --project-path path/to/your/existing/dbt_project`
+    Scaffold a DbtProjectComponent definition by running `dg scaffold defs dagster_dbt.DbtProjectComponent --project-path path/to/your/existing/dbt_project`
     in the Dagster project directory.
-
-    ### What is dbt?
-
-    dbt is the industry standard for data transformation. Learn how it can help you transform
-    data and deploy analytics code following software engineering best practices like
-    version control, modularity, portability, CI/CD, and documentation.
     """
 
     project: Annotated[
@@ -232,9 +225,15 @@ class DbtProjectComponent(Component, Resolvable):
         partition_key_range = (
             context.partition_key_range if context.has_partition_key_range else None
         )
+        try:
+            partition_time_window = context.partition_time_window
+        except Exception:
+            partition_time_window = None
+
         scope = dict(
             partition_key=partition_key,
             partition_key_range=partition_key_range,
+            partition_time_window=partition_time_window,
         )
 
         # resolve the cli args with this additional scope

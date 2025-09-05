@@ -566,6 +566,10 @@ const LaunchpadSession = (props: LaunchpadSessionProps) => {
         : '',
     assetSelection: currentSession.assetSelection,
     repositorySelector,
+    // do not fetch config for backfill launchpad because the core job
+    // will often have multiple partitions defs, which will cause the
+    // queries to fail
+    skipConfigQuery: !!onSaveConfig,
   });
   const {
     preview,

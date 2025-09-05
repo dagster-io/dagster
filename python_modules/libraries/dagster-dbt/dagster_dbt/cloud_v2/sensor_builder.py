@@ -14,7 +14,6 @@ from dagster import (
     _check as check,
     sensor,
 )
-from dagster._annotations import beta
 from dagster._core.definitions.repository_definition.repository_definition import (
     RepositoryDefinition,
 )
@@ -148,7 +147,6 @@ def sorted_asset_events(
     ]
 
 
-@beta
 def build_dbt_cloud_polling_sensor(
     *,
     workspace: DbtCloudWorkspace,

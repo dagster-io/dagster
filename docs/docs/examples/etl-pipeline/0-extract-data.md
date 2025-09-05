@@ -12,11 +12,11 @@ We will start by writing our ingestion assets. Assets serve as the building bloc
 
 When building assets, the first step is to scaffold the assets file with the [`dg scaffold` command](/api/clis/dg-cli/dg-cli-reference#dg-scaffold). The `dg` CLI provides a number of commands to help structure and navigate Dagster projects. For more information, see the [`dg` CLI documentation](/api/clis/dg-cli/dg-cli-reference):
 
-<CliInvocationExample path="docs_snippets/docs_snippets/guides/tutorials/etl_tutorial/commands/dg-scaffold-assets.txt" />
+<CliInvocationExample path="docs_projects/project_etl_tutorial/commands/dg-scaffold-assets.txt" />
 
 This adds a file called `assets.py` that will contain our asset code to the `etl_tutorial` module. Using `dg` to create the file ensures that the file is in a location where it can be automatically discovered by Dagster:
 
-<CliInvocationExample path="docs_snippets/docs_snippets/guides/tutorials/etl_tutorial/tree/assets.txt" />
+<CliInvocationExample path="docs_projects/project_etl_tutorial/tree/assets.txt" />
 
 ## 2. Write DuckDB helper functions
 
@@ -45,7 +45,7 @@ Since we will be working with DuckDB, we will need to add the DuckDB Python libr
 We can use this library to establish a connection with a DuckDB database running locally. We will define multiple assets using the same DuckDB database, so we will want to write a helper function to ensure that each asset can acquire a lock on the DuckDB database file when writing data:
 
 <CodeExample
-  path="docs_snippets/docs_snippets/guides/tutorials/etl_tutorial/src/etl_tutorial/defs/assets.py"
+  path="docs_projects/project_etl_tutorial/src/etl_tutorial/defs/assets.py"
   language="python"
   startAfter="start_serial_execute"
   endBefore="end_serial_execute"
@@ -61,7 +61,7 @@ This function ensures that the query holds a lock on the file throughout its exe
 All of these files are located in cloud storage, and we would like to ingest each of them into a separate table in the DuckDB database. In Dagster, we want each table to be represented as its own asset. Because each asset will have similar logic for ingesting the files, we can write a function to standardize the logic:
 
 <CodeExample
-  path="docs_snippets/docs_snippets/guides/tutorials/etl_tutorial/src/etl_tutorial/defs/assets.py"
+  path="docs_projects/project_etl_tutorial/src/etl_tutorial/defs/assets.py"
   language="python"
   startAfter="start_import_url_to_duckdb"
   endBefore="end_import_url_to_duckdb"
@@ -75,7 +75,7 @@ This function will take in the URL for one of our files and a table name, and lo
 Now that we have written our DuckDB helper functions, we are ready to create our assets. We will define an asset for each file we want to ingest:
 
 <CodeExample
-  path="docs_snippets/docs_snippets/guides/tutorials/etl_tutorial/src/etl_tutorial/defs/assets.py"
+  path="docs_projects/project_etl_tutorial/src/etl_tutorial/defs/assets.py"
   language="python"
   startAfter="start_ingest_assets_1"
   endBefore="end_ingest_assets_1"
@@ -89,10 +89,10 @@ In Dagster, an asset is defined by the <PyObject section="assets" module="dagste
 
 ## 4. Dagster definitions
 
-In Dagster, all the objects we define (such as assets) need to be associated with a top-level <PyObject section="definitions" module="dagster" object="Definitions" /> object in order to be deployed. When we first created our project with `uvx create project`, a `definitions.py` file was created as well:
+In Dagster, all the objects we define (such as assets) need to be associated with a top-level <PyObject section="definitions" module="dagster" object="Definitions" /> object in order to be deployed. When we first created our project with `uvx create-dagster project`, a `definitions.py` file was created as well:
 
 <CodeExample
-  path="docs_snippets/docs_snippets/guides/tutorials/etl_tutorial/src/etl_tutorial/definitions.py"
+  path="docs_projects/project_etl_tutorial/src/etl_tutorial/definitions.py"
   language="python"
   title="src/etl_tutorial/definitions.py"
 />
@@ -101,7 +101,7 @@ This `Definitions` object loads the `etl_tutorial` module and automatically disc
 
 We can use `dg` to ensure that everything we define in our module is loading correctly and that our project is deployable. Here we can use the [`dg check defs`](/api/clis/dg-cli/dg-cli-reference#dg-check) command:
 
-<CliInvocationExample path="docs_snippets/docs_snippets/guides/tutorials/etl_tutorial/commands/dg-check-defs.txt" />
+<CliInvocationExample path="docs_projects/project_etl_tutorial/commands/dg-check-defs.txt" />
 
 This tells us there are no issues with any of the assets we have defined. As you develop your Dagster project, it is a good habit to run `dg check` to ensure everything is working as expected.
 
@@ -140,7 +140,7 @@ To launch specific assets, pass an [asset selection](/guides/build/assets/asset-
 
 At this point, we have handled the ingestion layer of our ETL pipeline. The `etl_tutorial` module should look like this:
 
-<CliInvocationExample path="docs_snippets/docs_snippets/guides/tutorials/etl_tutorial/tree/step-0.txt" />
+<CliInvocationExample path="docs_projects/project_etl_tutorial/tree/step-0.txt" />
 
 There are three assets which each load a file into DuckDB. We have also seen how assets are automatically loaded into the `definitions` object that holds all of the objects in our project.
 

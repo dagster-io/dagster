@@ -600,3 +600,29 @@ def test_enums():
         wrapper: Wrapper
 
     assert Indirect.resolve_from_dict({"wrapper": {"thing": "BAR"}})
+
+
+def test_dicts():
+    class Inner(dg.Resolvable, dg.Model):
+        name: str
+        value: Optional[dg.ResolvedAssetSpec]
+
+    class HasDict(dg.Resolvable, dg.Model):
+        thing: dict[str, Inner]
+        other_thing: dict[str, Inner]
+
+    assert HasDict.resolve_from_dict(
+        {
+            "thing": {"a": {"name": "a", "value": {"key": "a"}}},
+            "other_thing": {"b": {"name": "b", "value": {"key": "b"}}},
+        }
+    ) == HasDict(
+        thing={"a": Inner(name="a", value=dg.AssetSpec("a"))},
+        other_thing={"b": Inner(name="b", value=dg.AssetSpec("b"))},
+    )
+
+    class BadHasDict(dg.Resolvable, dg.Model):
+        thing: dict[int, Inner]
+
+    with pytest.raises(ResolutionException, match="dict key type must be str"):
+        BadHasDict.resolve_from_dict({"thing": {"a": {"name": "a", "value": {"key": "a"}}}})

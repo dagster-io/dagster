@@ -3,6 +3,9 @@
   overflow: hidden;
   display: flex;
   flex-direction: column;
+
+  --value-grid-column-width: 112px;
+  --change-grid-column-width: 80px;
 }
 
 .listContainer {
@@ -26,13 +29,21 @@
   padding: 0px 20px 8px 24px;
 }
 
+.headerGrid :global(.bp5-popover-target) {
+  display: flex;
+  flex-direction: row;
+  justify-content: flex-end;
+}
+
 .headerGrid.hasCurrentData,
 .headerGrid.hasPreviousData {
-  grid-template-columns: 1fr 88px;
+  grid-template-columns: 1fr var(--value-grid-column-width);
 }
 
 .headerGrid.change.change {
-  grid-template-columns: 1fr repeat(3, 88px);
+  grid-template-columns: 1fr repeat(2, var(--value-grid-column-width)) var(
+      --change-grid-column-width
+    );
 }
 
 .sortButton.sortButton {
@@ -56,15 +67,15 @@
 
 .rightGrid {
   display: grid;
-  grid-template-columns: repeat(3, 88px);
+  grid-template-columns: repeat(2, var(--value-grid-column-width)) var(--change-grid-column-width);
   gap: 12px;
 }
 
 .rightGrid.hasCurrentData,
 .rightGrid.hasPreviousData {
-  grid-template-columns: 88px;
+  grid-template-columns: var(--value-grid-column-width);
 }
 
 .rightGrid.change.change {
-  grid-template-columns: repeat(3, 88px);
+  grid-template-columns: repeat(2, var(--value-grid-column-width)) var(--change-grid-column-width);
 }

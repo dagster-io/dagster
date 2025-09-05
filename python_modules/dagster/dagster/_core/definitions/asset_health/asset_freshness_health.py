@@ -6,6 +6,9 @@ from dagster_shared.serdes import whitelist_for_serdes
 
 import dagster._check as check
 from dagster._core.definitions.asset_health.asset_health import AssetHealthStatus
+from dagster._core.definitions.asset_health.asset_materialization_health import (
+    MinimalAssetMaterializationHealthState,
+)
 from dagster._core.definitions.asset_key import AssetKey
 from dagster._core.definitions.freshness import FreshnessState, FreshnessStateRecord
 from dagster._core.loader import LoadableBy, LoadingContext
@@ -78,7 +81,7 @@ async def get_freshness_status_and_metadata(
     if (
         asset_freshness_health_state is None
     ):  # if streamline reads are off or no streamline state exists for the asset compute it from the DB
-        if context.instance.streamline_read_asset_health_required():
+        if context.instance.streamline_read_asset_health_required("asset-freshness-health"):
             return AssetHealthStatus.UNKNOWN, None
 
         if (
@@ -91,14 +94,22 @@ async def get_freshness_status_and_metadata(
             context,
         )
 
-    asset_record = await AssetRecord.gen(context, asset_key)
-    materialization_timestamp = (
-        asset_record.asset_entry.last_materialization.timestamp
-        if asset_record
-        and asset_record.asset_entry
-        and asset_record.asset_entry.last_materialization
-        else None
+    asset_materialization_health_state = await MinimalAssetMaterializationHealthState.gen(
+        context, asset_key
     )
+    if asset_materialization_health_state is None:
+        asset_record = await AssetRecord.gen(context, asset_key)
+        materialization_timestamp = (
+            asset_record.asset_entry.last_materialization.timestamp
+            if asset_record
+            and asset_record.asset_entry
+            and asset_record.asset_entry.last_materialization
+            else None
+        )
+    else:
+        materialization_timestamp = (
+            asset_materialization_health_state.latest_materialization_timestamp
+        )
 
     if asset_freshness_health_state.freshness_state == FreshnessState.PASS:
         return AssetHealthStatus.HEALTHY, AssetHealthFreshnessMetadata(

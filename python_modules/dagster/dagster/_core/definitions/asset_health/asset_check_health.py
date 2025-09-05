@@ -190,13 +190,19 @@ async def get_asset_check_status_and_metadata(
     asset_check_health_state = await AssetCheckHealthState.gen(context, asset_key)
     # captures streamline disabled or consumer state doesn't exist
     if asset_check_health_state is None:
-        if context.instance.streamline_read_asset_health_required():
+        if context.instance.streamline_read_asset_health_required("asset-check-health"):
             return AssetHealthStatus.UNKNOWN, None
 
         # Note - this will only compute check health if there is a definition for the asset and checks in the
         # asset graph. If check results are reported for assets or checks that are not in the asset graph, those
         # results will not be picked up. If we add storage methods to get all check results for an asset by
         # asset key, rather than by check keys, we could compute check health for the asset in this case.
+
+        if not context.asset_graph.has(
+            asset_key
+        ) or not context.asset_graph.get_check_keys_for_assets({asset_key}):
+            return AssetHealthStatus.NOT_APPLICABLE, None
+
         remote_check_nodes = context.asset_graph.get_checks_for_asset(asset_key)
         asset_check_health_state = await AssetCheckHealthState.compute_for_asset_checks(
             {remote_check_node.asset_check.key for remote_check_node in remote_check_nodes},

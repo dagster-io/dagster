@@ -1,3 +1,4 @@
+from collections.abc import Sequence
 from datetime import datetime
 from typing import Optional, Union
 
@@ -7,6 +8,7 @@ from dagster._core.definitions.partitions.definition.time_window import (
     TimeWindowPartitionsDefinition,
 )
 from dagster._core.definitions.partitions.schedule_type import ScheduleType
+from dagster._core.definitions.timestamp import TimestampWithTimezone
 from dagster._utils.partitions import DEFAULT_DATE_FORMAT, DEFAULT_HOURLY_FORMAT_WITHOUT_TIMEZONE
 
 
@@ -38,6 +40,10 @@ class HourlyPartitionsDefinition(TimeWindowPartitionsDefinition):
             passed. If end_offset is 0 (the default), the last partition ends before the current
             time. If end_offset is 1, the second-to-last partition ends before the current time,
             and so on.
+        exclusions (Optional[Sequence[Union[str, datetime]]]): Specifies a sequence of cron strings
+            or datetime objects that should be excluded from the partition set. Every tick of the
+            cron schedule that matches an excluded datetime or matches the tick of an excluded
+            cron string will be excluded from the partition set.
 
     .. code-block:: python
 
@@ -68,6 +74,7 @@ class HourlyPartitionsDefinition(TimeWindowPartitionsDefinition):
         timezone: Optional[str] = None,
         fmt: Optional[str] = None,
         end_offset: int = 0,
+        exclusions: Optional[Sequence[Union[str, datetime, TimestampWithTimezone]]] = None,
         **kwargs,
     ):
         _fmt = fmt or DEFAULT_HOURLY_FORMAT_WITHOUT_TIMEZONE
@@ -88,6 +95,7 @@ class HourlyPartitionsDefinition(TimeWindowPartitionsDefinition):
             fmt=_fmt,
             end_offset=end_offset,
             cron_schedule=cron_schedule,
+            exclusions=exclusions,
         )
 
 
@@ -116,6 +124,10 @@ class DailyPartitionsDefinition(TimeWindowPartitionsDefinition):
             passed. If end_offset is 0 (the default), the last partition ends before the current
             time. If end_offset is 1, the second-to-last partition ends before the current time,
             and so on.
+        exclusions (Optional[Sequence[Union[str, datetime]]]): Specifies a sequence of cron strings
+            or datetime objects that should be excluded from the partition set. Every tick of the
+            cron schedule that matches an excluded datetime or matches the tick of an excluded
+            cron string will be excluded from the partition set.
 
     .. code-block:: python
 
@@ -141,6 +153,7 @@ class DailyPartitionsDefinition(TimeWindowPartitionsDefinition):
         timezone: Optional[str] = None,
         fmt: Optional[str] = None,
         end_offset: int = 0,
+        exclusions: Optional[Sequence[Union[str, datetime, TimestampWithTimezone]]] = None,
         **kwargs,
     ):
         _fmt = fmt or DEFAULT_DATE_FORMAT
@@ -163,6 +176,7 @@ class DailyPartitionsDefinition(TimeWindowPartitionsDefinition):
             fmt=_fmt,
             end_offset=end_offset,
             cron_schedule=cron_schedule,
+            exclusions=exclusions,
         )
 
 
@@ -194,6 +208,10 @@ class WeeklyPartitionsDefinition(TimeWindowPartitionsDefinition):
             passed. If end_offset is 0 (the default), the last partition ends before the current
             time. If end_offset is 1, the second-to-last partition ends before the current time,
             and so on.
+        exclusions (Optional[Sequence[Union[str, datetime]]]): Specifies a sequence of cron strings
+            or datetime objects that should be excluded from the partition set. Every tick of the
+            cron schedule that matches an excluded datetime or matches the tick of an excluded
+            cron string will be excluded from the partition set.
 
     .. code-block:: python
 
@@ -220,6 +238,7 @@ class WeeklyPartitionsDefinition(TimeWindowPartitionsDefinition):
         timezone: Optional[str] = None,
         fmt: Optional[str] = None,
         end_offset: int = 0,
+        exclusions: Optional[Sequence[Union[str, datetime, TimestampWithTimezone]]] = None,
         **kwargs,
     ):
         _fmt = fmt or DEFAULT_DATE_FORMAT
@@ -241,6 +260,7 @@ class WeeklyPartitionsDefinition(TimeWindowPartitionsDefinition):
             fmt=_fmt,
             end_offset=end_offset,
             cron_schedule=cron_schedule,
+            exclusions=exclusions,
         )
 
 
@@ -272,6 +292,10 @@ class MonthlyPartitionsDefinition(TimeWindowPartitionsDefinition):
             passed. If end_offset is 0 (the default), the last partition ends before the current
             time. If end_offset is 1, the second-to-last partition ends before the current time,
             and so on.
+        exclusions (Optional[Sequence[Union[str, datetime]]]): Specifies a sequence of cron strings
+            or datetime objects that should be excluded from the partition set. Every tick of the
+            cron schedule that matches an excluded datetime or matches the tick of an excluded
+            cron string will be excluded from the partition set.
 
     .. code-block:: python
 
@@ -298,6 +322,7 @@ class MonthlyPartitionsDefinition(TimeWindowPartitionsDefinition):
         timezone: Optional[str] = None,
         fmt: Optional[str] = None,
         end_offset: int = 0,
+        exclusions: Optional[Sequence[Union[str, datetime, TimestampWithTimezone]]] = None,
         **kwargs,
     ):
         _fmt = fmt or DEFAULT_DATE_FORMAT
@@ -325,4 +350,5 @@ class MonthlyPartitionsDefinition(TimeWindowPartitionsDefinition):
             fmt=_fmt,
             end_offset=end_offset,
             cron_schedule=cron_schedule,
+            exclusions=exclusions,
         )

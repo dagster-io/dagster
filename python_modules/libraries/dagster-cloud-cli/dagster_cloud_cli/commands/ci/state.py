@@ -5,6 +5,7 @@ from abc import ABCMeta, abstractmethod
 from enum import Enum
 from typing import Literal, Optional, Union
 
+from dagster_shared.serdes.objects.models import DefsStateInfo
 from pydantic import BaseModel, Extra, Field
 
 from dagster_cloud_cli.config import models
@@ -53,6 +54,7 @@ class LocationState(BaseModel, extra=Extra.forbid):
     build_output: Optional[Union[DockerBuildOutput, PexBuildOutput]] = Field(
         None, discriminator="strategy"
     )
+    defs_state_info: Optional[DefsStateInfo] = None
     status_url: Optional[str]  # link to cicd run url when building and dagster cloud url when done
     history: list[StatusChange] = []
 

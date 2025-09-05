@@ -22,7 +22,7 @@ import grpc
 from dagster_shared.error import remove_system_frames_from_error
 from dagster_shared.ipc import open_ipc_subprocess
 from dagster_shared.libraries import DagsterLibraryRegistry
-from dagster_shared.serdes.objects import DefsStateInfo
+from dagster_shared.serdes.objects.models.defs_state_info import DefsStateInfo
 from dagster_shared.utils import find_free_port
 from grpc_health.v1 import health, health_pb2, health_pb2_grpc
 

@@ -3,7 +3,7 @@ import zlib
 from collections.abc import Mapping, Sequence
 from typing import AbstractSet, Any, NamedTuple, Optional  # noqa: UP035
 
-from dagster_shared.serdes.objects import DefsStateInfo
+from dagster_shared.serdes.objects.models.defs_state_info import DefsStateInfo
 from dagster_shared.serdes.serdes import SetToSequenceFieldSerializer
 
 import dagster._check as check

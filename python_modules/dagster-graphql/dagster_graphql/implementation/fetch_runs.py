@@ -19,6 +19,7 @@ from dagster._time import datetime_from_timestamp
 from dagster._utils.warnings import disable_dagster_warnings
 
 from dagster_graphql.implementation.external import ensure_valid_config, get_remote_job_or_raise
+from dagster_graphql.implementation.utils import get_query_limit_with_default
 
 if TYPE_CHECKING:
     from dagster_graphql.schema.asset_graph import GrapheneAssetLatestInfo
@@ -377,6 +378,10 @@ def get_logs_for_run(
     run = instance.get_run_by_id(run_id)
     if not run:
         return GrapheneRunNotFoundError(run_id)
+
+    default_limit = graphene_info.context.records_for_run_default_limit
+    if default_limit:
+        limit = get_query_limit_with_default(limit, default_limit)
 
     conn = instance.get_records_for_run(run_id, cursor=cursor, limit=limit)
 

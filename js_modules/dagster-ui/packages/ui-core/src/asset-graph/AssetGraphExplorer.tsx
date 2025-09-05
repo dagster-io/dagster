@@ -227,17 +227,28 @@ const AssetGraphExplorerWithData = ({
 
   const viewportEl = React.useRef<SVGViewportRef>();
 
-  const selectedTokens =
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    explorerPath.opNames[explorerPath.opNames.length - 1]!.split(',').filter(Boolean);
-  const selectedGraphNodes = Object.values(assetGraphData.nodes).filter((node) =>
-    selectedTokens.includes(tokenForAssetKey(node.definition.assetKey)),
-  );
-  // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-  const lastSelectedNode = selectedGraphNodes[selectedGraphNodes.length - 1]!;
+  const selectedTokens = useMemo(() => {
+    return explorerPath.opNames[explorerPath.opNames.length - 1]?.split(',').filter(Boolean) ?? [];
+  }, [explorerPath.opNames]);
 
-  const selectedDefinitions = selectedGraphNodes.map((a) => a.definition);
-  const allDefinitionsForMaterialize = Object.values(assetGraphData.nodes).map((a) => a.definition);
+  const selectedGraphNodes = useMemo(
+    () =>
+      Object.values(assetGraphData.nodes).filter((node) =>
+        selectedTokens.includes(tokenForAssetKey(node.definition.assetKey)),
+      ),
+    [assetGraphData.nodes, selectedTokens],
+  );
+
+  const lastSelectedNode = selectedGraphNodes[selectedGraphNodes.length - 1];
+
+  const selectedDefinitions = useMemo(
+    () => selectedGraphNodes.map((a) => a.definition),
+    [selectedGraphNodes],
+  );
+  const allDefinitionsForMaterialize = useMemo(
+    () => Object.values(assetGraphData.nodes).map((a) => a.definition),
+    [assetGraphData.nodes],
+  );
 
   const onSelectNode = React.useCallback(
     async (
@@ -454,13 +465,33 @@ const AssetGraphExplorerWithData = ({
     viewType === 'global' || viewType === 'catalog',
   );
 
-  const onFilterToGroup = (group: AssetGroup | GroupLayout) => {
-    const codeLocationFilter = buildRepoPathForHuman(
-      group.repositoryName,
-      group.repositoryLocationName,
-    );
-    onChangeAssetSelection(`group:"${group.groupName}" and code_location:"${codeLocationFilter}"`);
-  };
+  const onFilterToGroup = useCallback(
+    (group: AssetGroup | GroupLayout) => {
+      const codeLocationFilter = buildRepoPathForHuman(
+        group.repositoryName,
+        group.repositoryLocationName,
+      );
+      onChangeAssetSelection(
+        `group:"${group.groupName}" and code_location:"${codeLocationFilter}"`,
+      );
+    },
+    [onChangeAssetSelection],
+  );
+
+  const onFilterToGroupMemo = useMemo(() => {
+    const callbackCache: Record<string, () => void> = {};
+    return (group: AssetGroup | GroupLayout) => {
+      const groupId = `${group.repositoryName}:${group.repositoryLocationName}:${group.groupName}`;
+      let callback = callbackCache[groupId];
+      if (!callback) {
+        callback = () => {
+          onFilterToGroup(group);
+        };
+        callbackCache[groupId] = callback;
+      }
+      return callback;
+    };
+  }, [onFilterToGroup]);
 
   const svgViewport = layout ? (
     <SVGViewport
@@ -541,7 +572,7 @@ const AssetGraphExplorerWithData = ({
                   <ExpandedGroupNode
                     setHighlighted={setHighlighted}
                     preferredJobName={explorerPath.pipelineName}
-                    onFilterToGroup={() => onFilterToGroup(group)}
+                    onFilterToGroup={onFilterToGroupMemo(group)}
                     group={{...group, assets: groupedAssets[group.id] || []}}
                     minimal={scale < MINIMAL_SCALE}
                     onCollapse={() => {
@@ -574,7 +605,7 @@ const AssetGraphExplorerWithData = ({
                 >
                   <CollapsedGroupNode
                     preferredJobName={explorerPath.pipelineName}
-                    onFilterToGroup={() => onFilterToGroup(group)}
+                    onFilterToGroup={onFilterToGroupMemo(group)}
                     minimal={scale < MINIMAL_SCALE}
                     group={{
                       ...group,
@@ -864,15 +895,15 @@ const AssetGraphExplorerWithData = ({
     />
   );
 
-  if (showSidebar) {
-    return (
-      <SplitPanelContainer
-        key="explorer-wrapper"
-        identifier="explorer-wrapper"
-        firstMinSize={300}
-        firstInitialPercent={0}
-        secondMinSize={400}
-        first={
+  return (
+    <SplitPanelContainer
+      key="explorer-wrapper"
+      identifier="explorer-wrapper"
+      firstMinSize={300}
+      firstInitialPercent={0}
+      secondMinSize={400}
+      first={
+        showSidebar ? (
           <AssetGraphExplorerSidebar
             viewType={viewType}
             allAssetKeys={allAssetKeys}
@@ -890,12 +921,11 @@ const AssetGraphExplorerWithData = ({
             onFilterToGroup={onFilterToGroup}
             loading={loading}
           />
-        }
-        second={explorer}
-      />
-    );
-  }
-  return explorer;
+        ) : null
+      }
+      second={explorer}
+    />
+  );
 };
 
 export interface AssetGroup {

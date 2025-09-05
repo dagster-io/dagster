@@ -66,7 +66,7 @@ try:
     if is_32bit():
         datetime.datetime.fromtimestamp(3999999999)
     OVERFLOW32B_MODE = False
-except OverflowError:
+except (OverflowError, OSError):
     OVERFLOW32B_MODE = True
 
 try:

@@ -156,6 +156,20 @@ const config: Config = {
               position: 'right',
               className: 'feedback-nav-link',
             },
+        {
+          to: 'https://dagster.plus/',
+          label: 'Sign in',
+          position: 'right',
+          className: 'hide-mobile',
+          style: {order: 98, margin: '0px 16px 0px 48px'},
+        },
+        {
+          to: 'https://dagster.plus/signup',
+          label: 'Try Dagster+',
+          position: 'right',
+          className: 'cta-button hide-mobile',
+          style: {order: 99, margin: '0px 0px 2px 0px'},
+        },
       ],
     },
     image: 'images/og.png',
@@ -207,7 +221,7 @@ const config: Config = {
           lastVersion: 'current',
           versions: {
             current: {
-              label: 'Latest (1.11.7)',
+              label: 'Latest (1.11.9)',
               path: '/',
             },
           },

@@ -10,7 +10,7 @@
     "ready_outputs": { "__frozenset__": [] },
     "step_output_versions": []
   },
-  "pipeline_snapshot_id": "9a5b4119d1943a5cc594da3f86e813f44bfb5549",
+  "pipeline_snapshot_id": "0a5747d153c08bb4487a208ca1e5885177f396b1",
   "snapshot_version": 1,
   "step_keys_to_execute": ["noop_asset"],
   "steps": [

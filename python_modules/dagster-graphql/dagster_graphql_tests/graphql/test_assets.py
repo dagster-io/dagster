@@ -85,6 +85,23 @@ GET_ASSETS_QUERY = """
     }
 """
 
+GET_ASSETS_BY_KEYS_QUERY = """
+    query AssetKeyQuery($assetKeys: [AssetKeyInput!]) {
+        assetsOrError(assetKeys: $assetKeys) {
+            __typename
+            ...on AssetConnection {
+                nodes {
+                    id
+                    key {
+                        path
+                    }
+                }
+                cursor
+            }
+        }
+    }
+"""
+
 GET_ASSET_MATERIALIZATION = """
     query AssetQuery($assetKey: AssetKeyInput!) {
         assetOrError(assetKey: $assetKey) {
@@ -1083,6 +1100,41 @@ class TestAssetAwareEventLog(ExecutingGraphQLContextTestMatrix):
         result.data["assetsOrError"]["nodes"].sort(key=lambda e: e["key"]["path"][0])
 
         snapshot.assert_match(result.data)
+
+    def test_assets_by_keys(self, graphql_context: WorkspaceRequestContext, snapshot):
+        _create_run(graphql_context, "multi_asset_job")
+        result = execute_dagster_graphql(graphql_context, GET_ASSETS_BY_KEYS_QUERY)
+        assert result.data
+        assert result.data["assetsOrError"]
+        assert len(result.data["assetsOrError"]["nodes"]) > 1
+
+        result = execute_dagster_graphql(
+            graphql_context,
+            GET_ASSETS_BY_KEYS_QUERY,
+            variables={"assetKeys": None},
+        )
+        assert result.data
+        assert result.data["assetsOrError"]
+        assert len(result.data["assetsOrError"]["nodes"]) > 1
+
+        result = execute_dagster_graphql(
+            graphql_context,
+            GET_ASSETS_BY_KEYS_QUERY,
+            variables={"assetKeys": []},
+        )
+        assert result.data
+        assert result.data["assetsOrError"]
+        assert len(result.data["assetsOrError"]["nodes"]) == 0
+
+        result = execute_dagster_graphql(
+            graphql_context,
+            GET_ASSETS_BY_KEYS_QUERY,
+            variables={"assetKeys": [{"path": ["a"]}]},
+        )
+        assert result.data
+        assert result.data["assetsOrError"]
+        assert len(result.data["assetsOrError"]["nodes"]) == 1
+        assert result.data["assetsOrError"]["nodes"][0]["key"]["path"] == ["a"]
 
     def test_asset_key_pagination(self, graphql_context: WorkspaceRequestContext):
         _create_run(graphql_context, "multi_asset_job")

@@ -3,7 +3,7 @@ from collections.abc import Mapping
 from enum import Enum
 from typing import Any, Callable, Optional, TypedDict
 
-from buildkite_shared.environment import is_feature_branch
+from typing_extensions import NotRequired
 
 DEFAULT_TIMEOUT_IN_MIN = 35
 
@@ -57,46 +57,33 @@ CommandStepConfiguration = TypedDict(
     "CommandStepConfiguration",
     {
         "agents": dict[str, str],
-        "commands": list[str],
-        "depends_on": list[str],
-        "key": str,
         "label": str,
+        "timeout_in_minutes": int,
         "plugins": list[dict[str, object]],
         "retry": dict[str, object],
-        "timeout_in_minutes": int,
-        "skip": Optional[str],
-        "artifact_paths": list[str],
-        "concurrency": int,
-        "concurrency_group": str,
-        "allow_dependency_failure": bool,
-        "soft_fail": bool,
-        "if": str,  # Reserved word handled with quotes
+        "commands": NotRequired[list[str]],
+        "depends_on": NotRequired[list[str]],
+        "key": NotRequired[str],
+        "skip": NotRequired[Optional[str]],
+        "artifact_paths": NotRequired[list[str]],
+        "concurrency": NotRequired[int],
+        "concurrency_group": NotRequired[str],
+        "allow_dependency_failure": NotRequired[bool],
+        "soft_fail": NotRequired[bool],
+        "if": NotRequired[str],  # Reserved word handled with quotes
     },
-    total=False,
 )
 
 
 class CommandStepBuilder:
     _step: CommandStepConfiguration
 
-    def _should_enable_automatic_retry(self) -> bool:
-        """Determine if automatic retry should be enabled based on branch detection.
-
-        Returns True if automatic retry should be enabled, False otherwise.
-        Enables retries on master/release branches only.
-        """
-        try:
-            return not is_feature_branch()
-        except (AssertionError, KeyError):
-            # If BUILDKITE_BRANCH is not set, default to retry (safer fallback)
-            return True
-
     def __init__(
         self,
         label,
         key: Optional[str] = None,
         timeout_in_minutes: int = DEFAULT_TIMEOUT_IN_MIN,
-        retry_automatically: Optional[bool] = None,
+        retry_automatically: bool = True,
         plugins: Optional[list[dict[str, object]]] = None,
     ):
         self._secrets = {}
@@ -106,12 +93,11 @@ class CommandStepBuilder:
         retry: dict[str, Any] = {
             "manual": {"permit_on_passed": True},
         }
-        should_retry = (
-            retry_automatically
-            if retry_automatically is not None
-            else self._should_enable_automatic_retry()
-        )
-        if should_retry:
+
+        if retry_automatically:
+            # This list contains exit codes that should map only to ephemeral infrastructure issues.
+            # Normal test failures (exit code 1), make command failures (exit code 2) and the like
+            # should not be included here.
             retry["automatic"] = [
                 # https://buildkite.com/docs/agent/v3#exit-codes
                 {"exit_status": -1, "limit": 2},  # agent lost
@@ -122,7 +108,6 @@ class CommandStepBuilder:
                 {"exit_status": 125, "limit": 2},  # docker daemon error
                 {"exit_status": 128, "limit": 2},  # k8s git clone error
                 {"exit_status": 143, "limit": 2},  # agent lost
-                {"exit_status": 2, "limit": 2},  # often a uv read timeout
                 {"exit_status": 255, "limit": 2},  # agent forced shut down
                 {
                     "exit_status": ECR_LOGIN_FAILURE_EXIT_CODE,
@@ -251,18 +236,14 @@ class CommandStepBuilder:
         return self
 
     def with_retry(self, num_retries):
-        # Always include manual retry configuration to match constructor behavior
-        retry_config: dict[str, object] = {"manual": {"permit_on_passed": True}}
+        # Update default retry config to blanket limit with num_retries
+        if num_retries is not None and num_retries > 0:
+            self._step["retry"]["automatic"] = {"limit": num_retries}
 
-        # Add automatic retry only when appropriate
-        if num_retries is not None and num_retries > 0 and self._should_enable_automatic_retry():
-            retry_config["automatic"] = {"limit": num_retries}
-
-        self._step["retry"] = retry_config
         return self
 
     def on_queue(self, queue: BuildkiteQueue):
-        self._step["agents"]["queue"] = queue.value  # type: ignore
+        self._step["agents"]["queue"] = queue.value
         return self
 
     def with_kubernetes_secret(self, secret: str) -> "CommandStepBuilder":

@@ -1,5 +1,41 @@
 # Changelog
 
+## 1.11.9 (core) / 0.27.9 (libraries)
+
+### New
+
+- Subclasses of `Resolved` now support fields of type `dict[str, T]`.
+- [ui] Added a new 'arrow' icon to the set of supported kind tags (thanks [@aleewen](https://github.com/aleewen)!)
+
+### Bugfixes
+
+- Launching a backfill of a non-subsettable multi-asset without including every asset will now raise a clear error at backfill submission time, instead of failing with a confusing error after the backfill has started.
+- Fixed an issue where passing in an empty list to the `assetKeys` argument of the `assetsOrError` field in the GraphQL API would return every asset instead of an empty list of assets.
+- [dagster-dbt] Fixed an issue that would cause the DbtCloudWorkspace to error before yielding asset events if the associated DBT Cloud run failed. Now, it will raise the error _after_ all relevant asset events have been produced.
+
+### Dagster Plus
+
+- Serverless pex builds now support pyproject.toml-based packages.
+
+## 1.11.8 (core) / 0.27.8 (libraries)
+
+### New
+
+- A param `exclusions` was added to time window partition definitions to support custom calendars.
+- The `dagster` library now supports `protobuf==6.x`
+- [dg] `dg scaffold defs --help` now shows descriptions for subcommands.
+- [dg] A new `dg check toml` command has been added to validate your TOML configuration files.
+- [dagster-databricks] The `DatabricksAssetBundleComponent` has been added in preview. Databricks tasks can now be represented as assets and submitted via Dagster.
+- [dagster-dbt] The DbtProjectComponent now takes an optional `cli_args` configuration to allow customizing the command that is run when your assets are executed.
+- [dagster-dbt] The polling interval and timeout used for runs triggered with the `DbtCloudWorkspace` resource can now be customized with the `DAGSTER_DBT_CLOUD_POLL_INTERVAL` and `DAGSTER_DBT_CLOUD_POLL_TIMEOUT` environment variables.
+- [ui] Added the ability to filter to failed/missing partitions in the asset report events dialog.
+- [ui] A tree view has been added in the Global Asset Lineage.
+- [telemetry] Telemetry disclaimer now prints to stderr.
+
+### Bugfixes
+
+- Fixed an issue that would require config provided to backfills to contain config for all assets in the code location rather than just the selected ones.
+
 ## 1.11.7 (core) / 0.27.7 (libraries)
 
 ### New

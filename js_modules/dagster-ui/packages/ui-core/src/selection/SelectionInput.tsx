@@ -159,12 +159,8 @@ export const SelectionAutoCompleteInput = ({
 
       // Enforce single line by preventing newlines
       cmInstance.current.on('beforeChange', (_instance: Editor, change) => {
-        if (
-          change.text.length !== 1 ||
-          change.text[0]?.includes('\n') ||
-          change.text[0]?.includes('  ')
-        ) {
-          change.cancel();
+        if (change.text[0] && /\s+/.test(change.text[0])) {
+          change.text[0] = change.text[0].replace(/\s+/g, ' ');
         }
       });
 

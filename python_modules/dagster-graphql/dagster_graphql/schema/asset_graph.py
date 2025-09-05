@@ -18,6 +18,7 @@ from dagster._core.definitions.assets.graph.asset_graph_differ import (
 )
 from dagster._core.definitions.assets.graph.remote_asset_graph import (
     RemoteAssetNode,
+    RemoteRepositoryAssetNode,
     RemoteWorkspaceAssetNode,
 )
 from dagster._core.definitions.data_version import (
@@ -47,7 +48,7 @@ from dagster._core.definitions.temporal_context import TemporalContext
 from dagster._core.errors import DagsterInvariantViolationError
 from dagster._core.event_api import AssetRecordsFilter
 from dagster._core.events import DagsterEventType
-from dagster._core.remote_representation.external import RemoteJob, RemoteSensor
+from dagster._core.remote_representation.external import RemoteJob, RemoteRepository, RemoteSensor
 from dagster._core.remote_representation.external_data import AssetNodeSnap
 from dagster._core.snap.node import GraphDefSnap, OpDefSnap
 from dagster._core.storage.asset_check_execution_record import AssetCheckInstanceSupport
@@ -55,12 +56,12 @@ from dagster._core.storage.event_log.base import AssetRecord
 from dagster._core.storage.partition_status_cache import get_partition_subsets
 from dagster._core.storage.tags import KIND_PREFIX
 from dagster._core.utils import is_valid_email
+from dagster._core.workspace.context import BaseWorkspaceRequestContext
 from dagster._core.workspace.permissions import Permissions
 from dagster._time import get_current_datetime
 from packaging import version
 
 from dagster_graphql.implementation.events import iterate_metadata_entries
-from dagster_graphql.implementation.fetch_asset_checks import has_asset_checks
 from dagster_graphql.implementation.fetch_assets import (
     build_partition_statuses,
     get_asset_materializations,
@@ -406,17 +407,51 @@ class GrapheneAssetNode(graphene.ObjectType):
     def asset_node_snap(self) -> AssetNodeSnap:
         return self._asset_node_snap
 
+    def _get_remote_repo_from_context(
+        self, context: BaseWorkspaceRequestContext, code_location_name: str, repository_name: str
+    ) -> Optional[RemoteRepository]:
+        """Returns the ExternalRepository specified by the code location name and repository name
+        for the provided workspace context. If the repository doesn't exist, return None.
+        """
+        if context.has_code_location(code_location_name):
+            cl = context.get_code_location(code_location_name)
+            if cl.has_repository(repository_name):
+                return cl.get_repository(repository_name)
+
+        return None
+
     def _get_asset_graph_differ(self, graphene_info: ResolveInfo) -> Optional[AssetGraphDiffer]:
         if self._asset_graph_differ is not None:
             return self._asset_graph_differ
 
-        base_deployment_asset_graph = graphene_info.context.get_base_deployment_asset_graph()
+        repo_selector = (
+            self._remote_node.repository_handle.to_selector()
+            if isinstance(self._remote_node, RemoteRepositoryAssetNode)
+            else None
+        )
+
+        base_deployment_asset_graph = graphene_info.context.get_base_deployment_asset_graph(
+            repo_selector
+        )
 
         if base_deployment_asset_graph is None:
             return None
 
+        if isinstance(self._remote_node, RemoteRepositoryAssetNode):
+            repo_handle = self._remote_node.repository_handle
+            repository = check.not_none(
+                self._get_remote_repo_from_context(
+                    graphene_info.context,
+                    repo_handle.location_name,
+                    repo_handle.repository_name,
+                )
+            )
+            branch_asset_graph = repository.asset_graph
+        else:
+            branch_asset_graph = graphene_info.context.asset_graph
+
         self._asset_graph_differ = AssetGraphDiffer(
-            branch_asset_graph=graphene_info.context.asset_graph,
+            branch_asset_graph=branch_asset_graph,
             base_asset_graph=base_deployment_asset_graph,
         )
         return self._asset_graph_differ
@@ -1349,7 +1384,7 @@ class GrapheneAssetNode(graphene.ObjectType):
             check.failed("Asset node has no partitions definition")
 
     def resolve_hasAssetChecks(self, graphene_info: ResolveInfo) -> bool:
-        return has_asset_checks(graphene_info, self._asset_node_snap.asset_key)
+        return bool(self._remote_node.check_keys)
 
     def resolve_assetChecksOrError(
         self,

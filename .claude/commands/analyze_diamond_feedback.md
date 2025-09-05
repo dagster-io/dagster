@@ -190,11 +190,11 @@ query($owner: String!, $name: String!, $pr: Int!) {
   }
 }' -f owner=OWNER -f name=REPO -F pr=PR_NUMBER
 
-# Step 2: Filter for Diamond threads and extract thread IDs
-# Use jq to find threads containing Diamond comments (graphite-app author)
+# Step 2: Filter for UNRESOLVED Diamond threads and extract thread IDs
+# Use jq to find unresolved threads containing Diamond comments (graphite-app author)
 gh api graphql -f query='...' | jq '
 .data.repository.pullRequest.reviewThreads.nodes[] |
-select(.comments.nodes[] | .author.login | contains("graphite-app")) |
+select(.isResolved == false and (.comments.nodes[] | .author.login | contains("graphite-app"))) |
 {threadId: .id, isResolved: .isResolved, diamondComment: (.comments.nodes[] | select(.author.login | contains("graphite-app")) | .body)}
 '
 
