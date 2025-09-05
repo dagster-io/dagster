@@ -64,7 +64,7 @@ Now you can use this function in your component definition:
 
 The UDF approach allows you to start with simple declarative YAML, then incrementally move to Python without having to alter the schema of the target components.
 
-While one *could* do this by implementing custom schema and then writing the equivalent code within the `build_defs` function of a custom component, the UDF provides a much more more incremental and less disruptive approach:
+While you *could* do this by implementing custom schema and then writing the equivalent code within the `build_defs` function of a custom component, the UDF provides a much more more incremental and less disruptive approach:
 
 * You do not have to create a custom component.
 * You can use UDFs in definitions where it is need, but still use the simple YAML declarations where it is not, while keeping the component types the same.
