@@ -8,4 +8,4 @@ def table_prefix() -> str:
     if os.getenv("IS_PROD"):
         return "warehouse"
     else:
-        return "dev_warehouse"
+        return "staging"
