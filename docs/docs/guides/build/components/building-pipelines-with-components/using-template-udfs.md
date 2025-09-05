@@ -62,7 +62,7 @@ Now you can use this function in your component definition:
 
 ## Using UDFs to incrementally move to Python
 
-This approach allows you to start with simple declarative YAML and then incrementally move to Python without having to alter the schema of the target components.
+The UDF approach allows you to start with simple declarative YAML, then incrementally move to Python without having to alter the schema of the target components.
 
 While one *could* do this by implementing custom schema and then writing the equivalent code within the `build_defs` function of a custom component, the UDF provides a much more more incremental and less disruptive approach:
 
