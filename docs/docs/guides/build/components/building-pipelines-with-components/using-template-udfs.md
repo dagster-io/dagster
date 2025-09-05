@@ -18,7 +18,7 @@ This approach provides several advantages:
 - **Clean YAML**: Nested conditionals and for loops often make template documents difficult to parse and reason about.
 - **Testing**: You can write unit tests for your configuration logic.
 - **Reusability**: You can reuse your UDFs across components.
-- **Full IDE support**: Get autocomplete, type checking, and refactoring tools
+- **Full IDE support**: Get autocomplete, type checking, and refactoring tools.
 - **Maintainability**: Complex business rules are easier to understand and modify in Python
 
 ## Example: Dynamically generating tags
