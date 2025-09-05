@@ -4,7 +4,7 @@ sidebar_position: 350
 title: Using template UDFs 
 ---
 
-Template variables can be used to create user-defined functions (UDFs). There is no formal concept of a UDF in dagster. It is just a convention to a describe template variable that is a function.
+While there is no formal concept of user-defined functions (UDFs) in Dagster, it is possible to use template variables that define a function to accomplish this behavior.
 
 This is a powerful feature that enables you to inject Python functions into your component YAML definitions. Those functions are evaluated at definition load time, and their output is injected into the YAML document. This can occur anywhere in the document, allowing you to "mix and match" Python and YAML
 seamlessly.
@@ -39,8 +39,6 @@ This works well at first, but what happens when your compliance requirements bec
 
 - Retention days need to be calculated based on data classification.
 - Different rules apply when PII is present.
-
-How do you ensure that these rules are applied generically 
 
 ### Evolving to dynamic tag generation
 
