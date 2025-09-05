@@ -23,7 +23,7 @@ This approach provides several advantages:
 
 ## Example: Dynamically generating tags
 
-Let's walk through a common scenario where you might start with static YAML configuration but need to evolve to dynamic generation.
+Let's walk through a common scenario where you might start with static YAML configuration, but need to evolve to dynamic generation.
 
 ### Starting with static tags
 
