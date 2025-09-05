@@ -16,7 +16,7 @@ Many templating engines offer features like embedded conditionals (`{% if %}`) a
 This approach provides several advantages:
 
 - **Clean YAML**: Nested conditionals and for loops often make template documents difficult to parse and reason about.
-- **Testing**: Write unit tests for your configuration logic
+- **Testing**: You can write unit tests for your configuration logic.
 - **Reusability**: You can reuse your UDFs across components.
 - **Full IDE support**: Get autocomplete, type checking, and refactoring tools
 - **Maintainability**: Complex business rules are easier to understand and modify in Python
