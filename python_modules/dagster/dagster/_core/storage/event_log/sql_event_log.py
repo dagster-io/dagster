@@ -76,6 +76,7 @@ from dagster._core.storage.event_log.base import (
     PoolLimit,
 )
 from dagster._core.storage.event_log.migration import (
+    ASSET_CHECK_SUMMARY_DATA,
     ASSET_DATA_MIGRATIONS,
     ASSET_KEY_INDEX_COLS,
     EVENT_LOG_DATA_MIGRATIONS,
@@ -1310,6 +1311,11 @@ class SqlEventLogStorage(EventLogStorage):
     def get_asset_check_summary_records(
         self, asset_check_keys: Sequence[AssetCheckKey]
     ) -> Mapping[AssetCheckKey, AssetCheckSummaryRecord]:
+        # If we have migrated asset check executions to the summary table
+        if self.has_table("asset_checks") and self.has_secondary_index(ASSET_CHECK_SUMMARY_DATA):
+            return self._get_asset_check_summary_records_from_asset_checks_table(asset_check_keys)
+
+        # Fallback to existing implementation, which does individual queries over the asset check execution table
         states = {}
         for asset_check_key in asset_check_keys:
             last_execution_record = self.get_asset_check_execution_history(asset_check_key, limit=1)
@@ -1337,6 +1343,85 @@ class SqlEventLogStorage(EventLogStorage):
                 else None,
             )
         return states
+
+    def _get_asset_check_summary_records_from_asset_checks_table(
+        self, asset_check_keys: Sequence[AssetCheckKey]
+    ) -> Mapping[AssetCheckKey, AssetCheckSummaryRecord]:
+        """Optimized implementation using asset_checks table - single bulk query."""
+        if not asset_check_keys:
+            return {}
+
+        with self.index_connection() as conn:
+            # Single query gets all summary data
+            query = db_select(
+                [
+                    AssetChecksTable.c.asset_key,
+                    AssetChecksTable.c.check_name,
+                    AssetChecksTable.c.last_execution_record_id,
+                    AssetChecksTable.c.last_run_id,
+                    AssetChecksTable.c.last_completed_execution_record_id,
+                ]
+            ).where(
+                db.tuple_(AssetChecksTable.c.asset_key, AssetChecksTable.c.check_name).in_(
+                    [(key.asset_key.to_string(), key.name) for key in asset_check_keys]
+                )
+            )
+
+            summary_rows = list(db_fetch_mappings(conn, query))
+
+            # Get full execution records for the referenced IDs
+            execution_ids = set()
+            for row in summary_rows:
+                if row["last_execution_record_id"]:
+                    execution_ids.add(row["last_execution_record_id"])
+                if row["last_completed_execution_record_id"]:
+                    execution_ids.add(row["last_completed_execution_record_id"])
+
+            execution_records_by_id = {}
+            if execution_ids:
+                executions_query = db_select(
+                    [
+                        AssetCheckExecutionsTable.c.id,
+                        AssetCheckExecutionsTable.c.asset_key,
+                        AssetCheckExecutionsTable.c.check_name,
+                        AssetCheckExecutionsTable.c.run_id,
+                        AssetCheckExecutionsTable.c.execution_status,
+                        AssetCheckExecutionsTable.c.evaluation_event,
+                        AssetCheckExecutionsTable.c.create_timestamp,
+                    ]
+                ).where(AssetCheckExecutionsTable.c.id.in_(execution_ids))
+
+                execution_rows = list(db_fetch_mappings(conn, executions_query))
+                for row in execution_rows:
+                    asset_key = AssetKey.from_db_string(row["asset_key"])
+                    if not asset_key:
+                        continue
+                    check_key = AssetCheckKey(asset_key=asset_key, name=row["check_name"])
+                    execution_records_by_id[row["id"]] = AssetCheckExecutionRecord.from_db_row(
+                        row, key=check_key
+                    )
+
+            # Build summary records efficiently
+            results = {}
+            for row in summary_rows:
+                asset_key = AssetKey.from_db_string(row["asset_key"])
+                if not asset_key:
+                    continue
+                check_key = AssetCheckKey(asset_key=asset_key, name=row["check_name"])
+
+                latest_record = execution_records_by_id.get(row["last_execution_record_id"])
+                completed_record = execution_records_by_id.get(
+                    row["last_completed_execution_record_id"]
+                )
+
+                results[check_key] = AssetCheckSummaryRecord(
+                    asset_check_key=check_key,
+                    last_check_execution_record=latest_record,
+                    last_run_id=row["last_run_id"],
+                    last_completed_check_execution_record=completed_record,
+                )
+
+            return results
 
     def has_asset_key(self, asset_key: AssetKey) -> bool:
         check.inst_param(asset_key, "asset_key", AssetKey)
@@ -2986,22 +3071,26 @@ class SqlEventLogStorage(EventLogStorage):
             "Asset checks require a database schema migration. Run `dagster instance migrate`.",
         )
 
+        execution_id: Optional[int] = None
+
         if event.dagster_event_type == DagsterEventType.ASSET_CHECK_EVALUATION_PLANNED:
-            self._store_asset_check_evaluation_planned(event, event_id)
+            execution_id = self._store_asset_check_evaluation_planned(event, event_id)
+
         if event.dagster_event_type == DagsterEventType.ASSET_CHECK_EVALUATION:
             if event.run_id == "" or event.run_id is None:
-                self._store_runless_asset_check_evaluation(event, event_id)
+                execution_id = self._store_runless_asset_check_evaluation(event, event_id)
             else:
-                self._update_asset_check_evaluation(event, event_id)
+                execution_id = self._update_asset_check_evaluation(event, event_id)
 
-        self._update_asset_check_summary_tables(event, event_id)
+        if execution_id:
+            self._update_asset_check_summary_tables(event, event_id, execution_id)
 
-    def _store_asset_check_evaluation_planned(self, event: EventLogEntry, event_id: int) -> None:
+    def _store_asset_check_evaluation_planned(self, event: EventLogEntry, event_id: int) -> int:
         planned = cast(
             "AssetCheckEvaluationPlanned", check.not_none(event.dagster_event).event_specific_data
         )
         with self.index_connection() as conn:
-            conn.execute(
+            result = conn.execute(
                 AssetCheckExecutionsTable.insert().values(
                     asset_key=planned.asset_key.to_string(),
                     check_name=planned.check_name,
@@ -3012,17 +3101,20 @@ class SqlEventLogStorage(EventLogStorage):
                     partition=planned.partition,
                 )
             )
+            execution_id = result.inserted_primary_key[0]
+
+        return execution_id
 
     def _event_insert_timestamp(self, event):
         # Postgres requires a datetime that is in UTC but has no timezone info
         return datetime.fromtimestamp(event.timestamp, timezone.utc).replace(tzinfo=None)
 
-    def _store_runless_asset_check_evaluation(self, event: EventLogEntry, event_id: int) -> None:
+    def _store_runless_asset_check_evaluation(self, event: EventLogEntry, event_id: int) -> int:
         evaluation = cast(
             "AssetCheckEvaluation", check.not_none(event.dagster_event).event_specific_data
         )
         with self.index_connection() as conn:
-            conn.execute(
+            result = conn.execute(
                 AssetCheckExecutionsTable.insert().values(
                     asset_key=evaluation.asset_key.to_string(),
                     check_name=evaluation.check_name,
@@ -3042,22 +3134,31 @@ class SqlEventLogStorage(EventLogStorage):
                     ),
                 )
             )
+            event_id = result.inserted_primary_key[0]
+            return event_id
 
-    def _update_asset_check_evaluation(self, event: EventLogEntry, event_id: Optional[int]) -> None:
+    def _update_asset_check_evaluation(self, event: EventLogEntry, event_id: Optional[int]) -> int:
         evaluation = cast(
             "AssetCheckEvaluation", check.not_none(event.dagster_event).event_specific_data
         )
         with self.index_connection() as conn:
+            if evaluation.partition:
+                where_clause = db.and_(
+                    AssetCheckExecutionsTable.c.asset_key == evaluation.asset_key.to_string(),
+                    AssetCheckExecutionsTable.c.check_name == evaluation.check_name,
+                    AssetCheckExecutionsTable.c.run_id == event.run_id,
+                    AssetCheckExecutionsTable.c.partition == evaluation.partition,
+                )
+            else:
+                where_clause = db.and_(
+                    AssetCheckExecutionsTable.c.asset_key == evaluation.asset_key.to_string(),
+                    AssetCheckExecutionsTable.c.check_name == evaluation.check_name,
+                    AssetCheckExecutionsTable.c.run_id == event.run_id,
+                    AssetCheckExecutionsTable.c.partition.is_(None),
+                )
             update_statement = (
                 AssetCheckExecutionsTable.update()
-                .where(
-                    # (asset_key, check_name, run_id) uniquely identifies the row created for the planned event
-                    db.and_(
-                        AssetCheckExecutionsTable.c.asset_key == evaluation.asset_key.to_string(),
-                        AssetCheckExecutionsTable.c.check_name == evaluation.check_name,
-                        AssetCheckExecutionsTable.c.run_id == event.run_id,
-                    )
-                )
+                .where(where_clause)
                 .values(
                     execution_status=(
                         AssetCheckExecutionRecordStatus.SUCCEEDED.value
@@ -3074,20 +3175,23 @@ class SqlEventLogStorage(EventLogStorage):
                     ),
                 )
             )
-            if evaluation.partition:
-                update_statement = update_statement.where(
-                    AssetCheckExecutionsTable.c.partition == evaluation.partition
-                )
-            else:
-                update_statement = update_statement.where(
-                    AssetCheckExecutionsTable.c.partition.is_(None)
-                )
             rows_updated = conn.execute(update_statement).rowcount
 
             # TODO fix the idx_asset_check_executions_unique index so that this can be a single
             # upsert
-            if rows_updated == 0:
-                rows_updated = conn.execute(
+            if rows_updated:
+                execution_id_row = conn.execute(
+                    db_select([AssetCheckExecutionsTable.c.id]).where(where_clause)
+                ).fetchone()
+                if not execution_id_row:
+                    raise DagsterInvariantViolationError(
+                        f"Failed to find asset check execution after update for asset check {evaluation.asset_check_key} "
+                        f"and run id {event.run_id}"
+                    )
+                execution_id = cast("int", execution_id_row[0])
+
+            else:
+                result = conn.execute(
                     AssetCheckExecutionsTable.insert().values(
                         asset_key=evaluation.asset_key.to_string(),
                         check_name=evaluation.check_name,
@@ -3107,7 +3211,9 @@ class SqlEventLogStorage(EventLogStorage):
                         ),
                         partition=evaluation.partition,
                     )
-                ).rowcount
+                )
+                rows_updated = result.rowcount
+                execution_id = cast("int", result.inserted_primary_key[0])
 
         # 0 isn't normally expected, but occurs with the external instance of step launchers where
         # they don't have planned events.
@@ -3116,8 +3222,11 @@ class SqlEventLogStorage(EventLogStorage):
                 f"Updated {rows_updated} rows for asset check evaluation {evaluation.asset_check_key} "
                 "as a result of duplicate AssetCheckPlanned events."
             )
+        return execution_id
 
-    def _update_asset_check_summary_tables(self, event: EventLogEntry, event_id: int) -> None:
+    def _update_asset_check_summary_tables(
+        self, event: EventLogEntry, event_id: int, execution_id: int
+    ) -> None:
         """Update asset_checks and asset_check_partitions tables when check executions complete."""
         # Only update if the new tables exist (migration has been run)
         if not (self.has_table("asset_checks") and self.has_table("asset_check_partitions")):
@@ -3150,7 +3259,9 @@ class SqlEventLogStorage(EventLogStorage):
             )
             planned_run_id = None  # Evaluation events don't update planned run ID
         else:
-            return
+            check.failed(
+                f"Unexpected event type {event.dagster_event_type} for asset check summary update"
+            )
 
         with self.index_connection() as conn:
             try:
@@ -3181,9 +3292,9 @@ class SqlEventLogStorage(EventLogStorage):
                         "check_name": check_name,
                         "partition_key": partition_key,
                         "last_execution_status": execution_status,
-                        "last_execution_id": event_id,
-                        "last_execution_timestamp": self._event_insert_timestamp(event),
+                        "last_execution_id": execution_id,
                         "last_event_id": event_id,
+                        "last_execution_timestamp": self._event_insert_timestamp(event),
                         "created_timestamp": datetime.now(timezone.utc),
                         "updated_timestamp": datetime.now(timezone.utc),
                     }
@@ -3195,7 +3306,7 @@ class SqlEventLogStorage(EventLogStorage):
                 except db_exc.IntegrityError:
                     update_values = {
                         "last_execution_status": execution_status,
-                        "last_execution_id": event_id,
+                        "last_execution_id": execution_id,
                         "last_execution_timestamp": self._event_insert_timestamp(event),
                         "last_event_id": event_id,
                         "updated_timestamp": datetime.now(timezone.utc),
