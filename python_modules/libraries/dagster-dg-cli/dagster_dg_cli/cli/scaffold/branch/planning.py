@@ -14,12 +14,11 @@ from dagster_shared.record import record
 from dagster_shared.utils.timing import format_duration
 
 from dagster_dg_cli.cli.scaffold.branch.claude.diagnostics import ClaudeDiagnostics
-from dagster_dg_cli.cli.scaffold.branch.claude.sdk_client import OutputChannel
 from dagster_dg_cli.cli.scaffold.branch.constants import ALLOWED_COMMANDS_PLANNING, ModelType
 from dagster_dg_cli.cli.scaffold.branch.version_utils import ensure_claude_sdk_python_version
 
 if TYPE_CHECKING:
-    from dagster_dg_cli.cli.scaffold.branch.claude.sdk_client import ClaudeSDKClient
+    from dagster_dg_cli.cli.scaffold.branch.claude.sdk_client import ClaudeSDKClient, OutputChannel
 
 
 @record
@@ -60,7 +59,7 @@ class PlanGenerator:
     def generate_initial_plan(
         self,
         context: PlanningContext,
-        output_channel: OutputChannel,
+        output_channel: "OutputChannel",
     ) -> GeneratedPlan:
         """Generate initial implementation plan from user input.
 
@@ -125,7 +124,7 @@ class PlanGenerator:
         context: PlanningContext,
         current_plan: GeneratedPlan,
         user_feedback: str,
-        output_channel: OutputChannel,
+        output_channel: "OutputChannel",
     ) -> GeneratedPlan:
         """Refine existing plan based on user feedback.
 
@@ -234,7 +233,7 @@ Please generate an improved version of the implementation plan that addresses th
 
 Provide the complete updated plan in the same markdown format as before."""
 
-    def _extract_plan_from_messages(self, messages: list, output_channel: OutputChannel) -> str:
+    def _extract_plan_from_messages(self, messages: list, output_channel: "OutputChannel") -> str:
         """Extract plan content from Claude's response messages.
 
         Args:
