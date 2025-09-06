@@ -1670,6 +1670,8 @@ class DagsterEvent(
             event_specific_data=AssetCheckEvaluationPlanned(
                 asset_key=asset_check_key.asset_key,
                 check_name=asset_check_key.name,
+                partition=partition,
+                partitions_subset=partitions_subset,
             ),
             step_key=step_key,
         )
