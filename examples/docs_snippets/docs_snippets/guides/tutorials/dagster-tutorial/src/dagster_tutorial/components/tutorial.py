@@ -26,8 +26,8 @@ class Tutorial(dg.Component, dg.Model, dg.Resolvable):
             @dg.asset(
                 name=etl.table,
             )
-            def _table(database: DuckDBResource):
-                with database.get_connection() as conn:
+            def _table(duckdb: DuckDBResource):
+                with duckdb.get_connection() as conn:
                     conn.execute(
                         f"""
                         create or replace table {etl.table} as (
