@@ -1153,8 +1153,16 @@ async def execute_asset_backfill_iteration(
             f"Updated asset backfill data for {updated_backfill.backfill_id}: {updated_backfill_data}"
         )
 
-    elif backfill.status == BulkActionStatus.CANCELING:
+    elif (
+        backfill.status == BulkActionStatus.CANCELING or backfill.status == BulkActionStatus.FAILING
+    ):
         from dagster._core.execution.backfill import cancel_backfill_runs_and_cancellation_complete
+
+        status_once_runs_are_complete = (
+            BulkActionStatus.CANCELED
+            if backfill.status == BulkActionStatus.CANCELING
+            else BulkActionStatus.FAILED
+        )
 
         all_runs_canceled = cancel_backfill_runs_and_cancellation_complete(
             instance=instance,
@@ -1184,9 +1192,10 @@ async def execute_asset_backfill_iteration(
         all_partitions_marked_completed = (
             updated_asset_backfill_data.all_requested_partitions_marked_as_materialized_or_failed()
         )
+
         if all_partitions_marked_completed:
             updated_backfill = updated_backfill.with_status(
-                BulkActionStatus.CANCELED
+                status_once_runs_are_complete
             ).with_end_timestamp(get_current_timestamp())
 
         if all_runs_canceled and not all_partitions_marked_completed:
@@ -1195,7 +1204,7 @@ async def execute_asset_backfill_iteration(
                 "This may indicate that some runs succeeded without materializing their expected partitions."
             )
             updated_backfill = updated_backfill.with_status(
-                BulkActionStatus.CANCELED
+                status_once_runs_are_complete
             ).with_end_timestamp(get_current_timestamp())
 
         instance.update_backfill(updated_backfill)
