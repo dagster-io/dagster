@@ -39,11 +39,9 @@ export type RunStatsQuery = {
               id: string;
               stepsSucceeded: number;
               stepsFailed: number;
-              expectations: number;
-              materializations: number;
             };
       }
     | {__typename: 'RunNotFoundError'; message: string};
 };
 
-export const RunStatsQueryVersion = '75e80f740a79607de9e1152f9b7074d319197fbc219784c767c1abd5553e9a49';
+export const RunStatsQueryVersion = '5aa2922c5e4a7b4ce8e8096878fa9f08eaf037ab689a4b2a66b452ad542ee278';

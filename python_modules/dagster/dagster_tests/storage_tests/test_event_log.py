@@ -337,7 +337,6 @@ def test_run_stats():
     run_stats = build_run_stats_from_events(result.run_id, events)
 
     assert run_stats.run_id == result.run_id
-    assert run_stats.materializations == 1
     assert run_stats.steps_succeeded == 2
     assert run_stats.steps_failed == 1
     assert (
