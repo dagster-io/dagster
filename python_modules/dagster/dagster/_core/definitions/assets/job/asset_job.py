@@ -245,7 +245,11 @@ def get_asset_graph_for_job(
             "Selected keys must be a subset of existing executable asset keys."
             f" Invalid selected keys: {e.args}",
         )
-    
+    except Exception:
+        raise DagsterInvalidDefinitionError(
+            f"Invalid asset selection: {selection}",
+        )
+
     invalid_keys = selected_keys - parent_asset_graph.executable_asset_keys
     if invalid_keys:
         raise DagsterInvalidDefinitionError(
