@@ -1,0 +1,81 @@
+{
+  "assetsOrError": {
+    "__typename": "AssetConnection",
+    "nodes": [
+      {
+        "assetHealth": {
+          "assetChecksStatus": "NOT_APPLICABLE",
+          "assetChecksStatusMetadata": null,
+          "assetHealth": "DEGRADED",
+          "freshnessStatus": "NOT_APPLICABLE",
+          "freshnessStatusMetadata": null,
+          "materializationStatus": "DEGRADED",
+          "materializationStatusMetadata": {
+            "failedRunId": "d4cd180f-aa48-47c0-ba34-74c8222e5123"
+          }
+        },
+        "assetMaterializations": [
+          {
+            "partition": null,
+            "runId": "c27f2af5-deba-4269-ad6b-4e57dc722ad1",
+            "timestamp": "1756785569553"
+          }
+        ],
+        "definition": {
+          "description": "Signup attribution information for Dagster+ users.\n\n#### Raw SQL:\n```sql\n    with gtm_user_mapping as (\n    \n       select * from {{ ref('gtm_user_mappings') }}\n\n    ), gtm_user_activity as (\n    \n       select * from {{ ref('gtm_user_activity') }}\n\n    ), hubspot_contacts as (\n\n        select * from {{ ref('hubspot_contacts') }}\n\n    ), user_signup as (\n\n        select distinct\n            gtm_user_unique_key,\n            email,\n            hubspot_contact_id,\n            salesforce_contact_id,\n            dagster_user_id,\n            event_time as user_signup_at,\n            cast(event_time as date) as user_signup_date\n        from gtm_user_activity\n        where event_category = 'User Created'\n\n    ), user_signup_attribution as (\n\n        select\n            user_signup.dagster_user_id,\n            user_signup.user_signup_at,\n            user_signup.user_signup_date,\n            gtm_user_activity.unique_key as user_signup_attribution_unique_key,\n            gtm_user_activity.event_category as user_signup_event_category,\n            gtm_user_activity.event_subcategory as user_signup_event_subcategory,\n            gtm_user_activity.event_time as user_signup_attribution_at,\n            gtm_user_activity.event_date as user_signup_attribution_date,\n            gtm_user_activity.event_attributes as user_signup_attribution_event_attributes,\n            coalesce(event_category || coalesce(': ' || coalesce(\n                gtm_user_activity.event_attributes:first_touch_attribution_category,\n                gtm_user_activity.event_attributes:hubspot_contact_lead_source,\n                gtm_user_activity.event_attributes:hubspot_contact_lead_source,\n                gtm_user_activity.event_attributes:salesforce_contact_lead_source,\n                gtm_user_activity.event_attributes:hubspot_form_name,\n                gtm_user_activity.event_attributes:campaign_name\n            ), ''), 'User Invited')::varchar as user_signup_attribution\n        from user_signup\n        left join gtm_user_activity on user_signup.dagster_user_id = gtm_user_activity.dagster_user_id\n            and user_signup.user_signup_at > gtm_user_activity.event_time\n                and datediff(\n                    'days',\n                    gtm_user_activity.event_time,\n                    user_signup.user_signup_at\n                )\n                <= {{ var('attribution_lookback_days') }}\n        qualify row_number() over (partition by user_signup.dagster_user_id order by gtm_user_activity.event_time asc nulls last) = 1\n\n    ), gtm_user_attribution as (\n\n        select\n            gtm_user_mapping.gtm_user_unique_key,\n            gtm_user_mapping.email,\n            gtm_user_mapping.hubspot_contact_id,\n            gtm_user_mapping.salesforce_contact_id,\n            gtm_user_mapping.dagster_user_id,\n            user_signup_attribution.user_signup_at,\n            user_signup_attribution.user_signup_date,\n            user_signup_attribution.user_signup_attribution_unique_key,\n            user_signup_attribution.user_signup_event_category,\n            user_signup_attribution.user_signup_event_subcategory,\n            user_signup_attribution.user_signup_attribution_at,\n            user_signup_attribution.user_signup_attribution_date,\n            user_signup_attribution.user_signup_attribution_event_attributes,\n            user_signup_attribution.user_signup_attribution\n        from gtm_user_mapping\n        left join user_signup_attribution\n            on gtm_user_mapping.dagster_user_id = user_signup_attribution.dagster_user_id\n\n    )\n\n    select * from gtm_user_attribution\n```",
+          "freshnessInfo": null,
+          "freshnessPolicy": null,
+          "groupName": "core",
+          "kinds": [
+            "dbt",
+            "snowflake"
+          ],
+          "metadataEntries": [
+            {
+              "description": null,
+              "label": "dagster-dbt/materialization_type",
+              "text": "table"
+            },
+            {
+              "description": null,
+              "label": "dagster/table_name",
+              "text": "purina.core.gtm_user_attribution"
+            },
+            {
+              "description": null,
+              "label": "url",
+              "url": "https://app.snowflake.com/ax61354/na94824/#/data/databases/PURINA/schemas/CORE/table/GTM_USER_ATTRIBUTION"
+            },
+            {
+              "description": null,
+              "label": "dagster_dbt/manifest",
+              "text": "[DbtManifestWrapper] (unserializable)"
+            },
+            {
+              "description": null,
+              "label": "dagster_dbt/dagster_dbt_translator",
+              "text": "[CustomDagsterDbtTranslator] (unserializable)"
+            },
+            {
+              "description": null,
+              "label": "dagster_dbt/unique_id",
+              "text": "model.dagster_open_platform.gtm_user_attribution"
+            },
+            {
+              "description": null,
+              "label": "dagster/code_references"
+            }
+          ]
+        },
+        "id": "[\"purina\", \"core\", \"gtm_user_attribution\"]",
+        "key": {
+          "path": [
+            "purina",
+            "core",
+            "gtm_user_attribution"
+          ]
+        }
+      }
+    ]
+  }
+}

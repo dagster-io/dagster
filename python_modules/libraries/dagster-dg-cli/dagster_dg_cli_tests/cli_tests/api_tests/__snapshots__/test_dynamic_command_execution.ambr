@@ -6,12 +6,41 @@
   
   '''
 # ---
+# name: TestDynamicCommandExecution.test_command_execution[asset_error_asset_not_found_status_view_json]
+  '''
+  {"error": "Asset not found: nonexistent-asset"}
+  Error: Failed to get asset: Asset not found: nonexistent-asset
+  
+  '''
+# ---
 # name: TestDynamicCommandExecution.test_command_execution[asset_error_malformed_asset_key_json]
   '''
   {"error": "Asset not found: ''"}
   Error: Failed to get asset: Asset not found: ''
   
   '''
+# ---
+# name: TestDynamicCommandExecution.test_command_execution[asset_success_assets_status_view_human_readable_text]
+  '''
+  
+  
+  '''
+# ---
+# name: TestDynamicCommandExecution.test_command_execution[asset_success_assets_status_view_json]
+  dict({
+    'cursor': '["aws", "cloud-prod", "workspace_staging_pipelines"]',
+    'has_more': True,
+    'items': list([
+    ]),
+  })
+# ---
+# name: TestDynamicCommandExecution.test_command_execution[asset_success_assets_status_view_with_cursor_json]
+  dict({
+    'cursor': None,
+    'has_more': False,
+    'items': list([
+    ]),
+  })
 # ---
 # name: TestDynamicCommandExecution.test_command_execution[asset_success_assets_with_cursor_json]
   dict({
@@ -40,6 +69,7 @@
         ]),
         'metadata_entries': list([
         ]),
+        'status': None,
       }),
       dict({
         'asset_key': 'aws/cloud-prod/workspace_staging_asset_checks',
@@ -55,6 +85,7 @@
         ]),
         'metadata_entries': list([
         ]),
+        'status': None,
       }),
       dict({
         'asset_key': 'aws/cloud-prod/workspace_staging_assets',
@@ -70,6 +101,7 @@
         ]),
         'metadata_entries': list([
         ]),
+        'status': None,
       }),
       dict({
         'asset_key': 'aws/cloud-prod/workspace_staging_external_repo_metadata',
@@ -85,6 +117,7 @@
         ]),
         'metadata_entries': list([
         ]),
+        'status': None,
       }),
       dict({
         'asset_key': 'aws/cloud-prod/workspace_staging_jobs',
@@ -100,6 +133,7 @@
         ]),
         'metadata_entries': list([
         ]),
+        'status': None,
       }),
       dict({
         'asset_key': 'aws/cloud-prod/workspace_staging_metadata',
@@ -115,6 +149,7 @@
         ]),
         'metadata_entries': list([
         ]),
+        'status': None,
       }),
       dict({
         'asset_key': 'aws/cloud-prod/workspace_staging_partitions',
@@ -130,6 +165,7 @@
         ]),
         'metadata_entries': list([
         ]),
+        'status': None,
       }),
       dict({
         'asset_key': 'aws/cloud-prod/workspace_staging_pipelines',
@@ -145,6 +181,7 @@
         ]),
         'metadata_entries': list([
         ]),
+        'status': None,
       }),
     ]),
   })
@@ -164,6 +201,7 @@
     ]),
     'metadata_entries': list([
     ]),
+    'status': None,
   })
 # ---
 # name: TestDynamicCommandExecution.test_command_execution[asset_success_paginated_assets_json]
@@ -172,6 +210,172 @@
     'has_more': True,
     'items': list([
     ]),
+  })
+# ---
+# name: TestDynamicCommandExecution.test_command_execution[asset_success_paginated_assets_status_view_json]
+  dict({
+    'cursor': '["__snowflake_query_metadata_self_serve_customer_attribution_check_all_partitions_job"]',
+    'has_more': True,
+    'items': list([
+    ]),
+  })
+# ---
+# name: TestDynamicCommandExecution.test_command_execution[asset_success_purina_asset_status_view_json]
+  dict({
+    'asset_key': 'purina/core/gtm_user_attribution',
+    'asset_key_parts': list([
+      'purina',
+      'core',
+      'gtm_user_attribution',
+    ]),
+    'description': '''
+      Signup attribution information for Dagster+ users.
+      
+      #### Raw SQL:
+      ```sql
+          with gtm_user_mapping as (
+          
+             select * from {{ ref('gtm_user_mappings') }}
+      
+          ), gtm_user_activity as (
+          
+             select * from {{ ref('gtm_user_activity') }}
+      
+          ), hubspot_contacts as (
+      
+              select * from {{ ref('hubspot_contacts') }}
+      
+          ), user_signup as (
+      
+              select distinct
+                  gtm_user_unique_key,
+                  email,
+                  hubspot_contact_id,
+                  salesforce_contact_id,
+                  dagster_user_id,
+                  event_time as user_signup_at,
+                  cast(event_time as date) as user_signup_date
+              from gtm_user_activity
+              where event_category = 'User Created'
+      
+          ), user_signup_attribution as (
+      
+              select
+                  user_signup.dagster_user_id,
+                  user_signup.user_signup_at,
+                  user_signup.user_signup_date,
+                  gtm_user_activity.unique_key as user_signup_attribution_unique_key,
+                  gtm_user_activity.event_category as user_signup_event_category,
+                  gtm_user_activity.event_subcategory as user_signup_event_subcategory,
+                  gtm_user_activity.event_time as user_signup_attribution_at,
+                  gtm_user_activity.event_date as user_signup_attribution_date,
+                  gtm_user_activity.event_attributes as user_signup_attribution_event_attributes,
+                  coalesce(event_category || coalesce(': ' || coalesce(
+                      gtm_user_activity.event_attributes:first_touch_attribution_category,
+                      gtm_user_activity.event_attributes:hubspot_contact_lead_source,
+                      gtm_user_activity.event_attributes:hubspot_contact_lead_source,
+                      gtm_user_activity.event_attributes:salesforce_contact_lead_source,
+                      gtm_user_activity.event_attributes:hubspot_form_name,
+                      gtm_user_activity.event_attributes:campaign_name
+                  ), ''), 'User Invited')::varchar as user_signup_attribution
+              from user_signup
+              left join gtm_user_activity on user_signup.dagster_user_id = gtm_user_activity.dagster_user_id
+                  and user_signup.user_signup_at > gtm_user_activity.event_time
+                      and datediff(
+                          'days',
+                          gtm_user_activity.event_time,
+                          user_signup.user_signup_at
+                      )
+                      <= {{ var('attribution_lookback_days') }}
+              qualify row_number() over (partition by user_signup.dagster_user_id order by gtm_user_activity.event_time asc nulls last) = 1
+      
+          ), gtm_user_attribution as (
+      
+              select
+                  gtm_user_mapping.gtm_user_unique_key,
+                  gtm_user_mapping.email,
+                  gtm_user_mapping.hubspot_contact_id,
+                  gtm_user_mapping.salesforce_contact_id,
+                  gtm_user_mapping.dagster_user_id,
+                  user_signup_attribution.user_signup_at,
+                  user_signup_attribution.user_signup_date,
+                  user_signup_attribution.user_signup_attribution_unique_key,
+                  user_signup_attribution.user_signup_event_category,
+                  user_signup_attribution.user_signup_event_subcategory,
+                  user_signup_attribution.user_signup_attribution_at,
+                  user_signup_attribution.user_signup_attribution_date,
+                  user_signup_attribution.user_signup_attribution_event_attributes,
+                  user_signup_attribution.user_signup_attribution
+              from gtm_user_mapping
+              left join user_signup_attribution
+                  on gtm_user_mapping.dagster_user_id = user_signup_attribution.dagster_user_id
+      
+          )
+      
+          select * from gtm_user_attribution
+      ```
+    ''',
+    'group_name': 'core',
+    'id': '["purina", "core", "gtm_user_attribution"]',
+    'kinds': list([
+      'dbt',
+      'snowflake',
+    ]),
+    'metadata_entries': list([
+      dict({
+        'description': None,
+        'label': 'dagster-dbt/materialization_type',
+        'text': 'table',
+      }),
+      dict({
+        'description': None,
+        'label': 'dagster/table_name',
+        'text': 'purina.core.gtm_user_attribution',
+      }),
+      dict({
+        'description': None,
+        'label': 'url',
+        'url': 'https://app.snowflake.com/ax61354/na94824/#/data/databases/PURINA/schemas/CORE/table/GTM_USER_ATTRIBUTION',
+      }),
+      dict({
+        'description': None,
+        'label': 'dagster_dbt/manifest',
+        'text': '[DbtManifestWrapper] (unserializable)',
+      }),
+      dict({
+        'description': None,
+        'label': 'dagster_dbt/dagster_dbt_translator',
+        'text': '[CustomDagsterDbtTranslator] (unserializable)',
+      }),
+      dict({
+        'description': None,
+        'label': 'dagster_dbt/unique_id',
+        'text': 'model.dagster_open_platform.gtm_user_attribution',
+      }),
+      dict({
+        'description': None,
+        'label': 'dagster/code_references',
+      }),
+    ]),
+    'status': dict({
+      'asset_checks_status': 'NOT_APPLICABLE',
+      'asset_health': 'DEGRADED',
+      'checks_status': dict({
+        'num_failed_checks': None,
+        'num_warning_checks': None,
+        'status': 'NOT_APPLICABLE',
+        'total_num_checks': None,
+      }),
+      'freshness_info': None,
+      'freshness_status': 'NOT_APPLICABLE',
+      'health_metadata': None,
+      'latest_materialization': dict({
+        'partition': None,
+        'run_id': 'c27f2af5-deba-4269-ad6b-4e57dc722ad1',
+        'timestamp': 1756785569553.0,
+      }),
+      'materialization_status': 'DEGRADED',
+    }),
   })
 # ---
 # name: TestDynamicCommandExecution.test_command_execution[asset_success_single_asset_json]
@@ -189,7 +393,22 @@
     ]),
     'metadata_entries': list([
     ]),
+    'status': None,
   })
+# ---
+# name: TestDynamicCommandExecution.test_command_execution[asset_success_single_asset_status_view_human_readable_text]
+  '''
+  Error querying Dagster Plus API: Asset not found: aws/cloud-prod/workspace_staging_pipelines
+  Error: Failed to get asset: Asset not found: aws/cloud-prod/workspace_staging_pipelines
+  
+  '''
+# ---
+# name: TestDynamicCommandExecution.test_command_execution[asset_success_single_asset_status_view_json]
+  '''
+  {"error": "Asset not found: aws/cloud-prod/workspace_staging_pipelines"}
+  Error: Failed to get asset: Asset not found: aws/cloud-prod/workspace_staging_pipelines
+  
+  '''
 # ---
 # name: TestDynamicCommandExecution.test_command_execution[deployment_empty_deployments_json]
   dict({
