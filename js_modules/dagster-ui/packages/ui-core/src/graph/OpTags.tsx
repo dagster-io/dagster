@@ -540,7 +540,7 @@ export const KNOWN_TAGS: Record<KnownTagType, KnownTag> = {
   ducklake: {
     icon: ducklake,
     content: 'DuckLake'
-  }
+  },
   tensorflow: {
     icon: tensorflow,
     content: 'TensorFlow',
