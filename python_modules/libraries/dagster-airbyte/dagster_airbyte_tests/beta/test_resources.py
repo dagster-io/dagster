@@ -2,25 +2,22 @@ import json
 import re
 from datetime import datetime
 from enum import Enum
-from typing import Optional
+from typing import Optional, Union
 from unittest.mock import MagicMock, patch
 
 import pytest
 import responses
-from dagster import AssetExecutionContext, AssetKey, EnvVar, Failure, materialize
+from dagster import AssetExecutionContext, AssetKey, Failure, materialize
 from dagster._core.events import DagsterEventType
-from dagster._core.test_utils import environ
 from dagster_airbyte import AirbyteCloudWorkspace, airbyte_assets
-from dagster_airbyte.resources import (
-    AIRBYTE_CLOUD_CONFIGURATION_API_BASE_URL,
-    AIRBYTE_CLOUD_REST_API_BASE_URL,
-    AirbyteWorkspace,
-)
+from dagster_airbyte.resources import AirbyteWorkspace
 from dagster_airbyte.translator import AirbyteJobStatusType
 from dagster_airbyte.types import AirbyteOutput
 from dagster_airbyte.utils import clean_name
 
 from dagster_airbyte_tests.beta.conftest import (
+    AIRBYTE_OSS_CONFIGURATION_API_BASE_URL,
+    AIRBYTE_OSS_REST_API_BASE_URL,
     SAMPLE_ACCESS_TOKEN,
     SAMPLE_CONNECTION_DETAILS,
     TEST_ACCESS_TOKEN,
@@ -31,8 +28,6 @@ from dagster_airbyte_tests.beta.conftest import (
     TEST_CONNECTION_ID,
     TEST_DESTINATION_ID,
     TEST_JOB_ID,
-    TEST_OSS_CONFIG_API_BASE,
-    TEST_OSS_REST_API_BASE,
     TEST_PASSWORD,
     TEST_STREAM_PREFIX,
     TEST_UNEXPECTED_STREAM_NAME,
@@ -44,13 +39,13 @@ from dagster_airbyte_tests.beta.conftest import (
 from dagster_airbyte_tests.beta.utils import optional_pytest_raise
 
 
-def assert_token_call_and_split_calls(calls: responses.CallList):
+def assert_token_call_and_split_calls(base_url: str, calls: responses.CallList):
     access_token_call = calls[0]
     assert "Authorization" not in access_token_call.request.headers
     access_token_call_body = json.loads(access_token_call.request.body.decode("utf-8"))
     assert access_token_call_body["client_id"] == TEST_CLIENT_ID
     assert access_token_call_body["client_secret"] == TEST_CLIENT_SECRET
-    assert access_token_call.request.url == f"{AIRBYTE_CLOUD_REST_API_BASE_URL}/applications/token"
+    assert access_token_call.request.url == f"{base_url}/applications/token"
     return calls[1:]
 
 
@@ -66,7 +61,7 @@ def assert_api_call(
     endpoint: str,
     object_id: Optional[str] = None,
     method: Optional[str] = None,
-    auth_method: AuthMethod = AuthMethod.NO_AUTH,
+    auth_method: AuthMethod = AuthMethod.BEARER,
 ):
     rest_api_url = call.request.url.split("?")[0]
     assert rest_api_url == f"{base_url}/{endpoint}"
@@ -85,49 +80,17 @@ def assert_api_call(
         assert "Authorization" not in call.request.headers
 
 
-def assert_cloud_rest_api_call(
-    call: responses.Call,
-    endpoint: str,
-    object_id: Optional[str] = None,
-    method: Optional[str] = None,
-):
-    """Asserts that the API call matches the expected Airbyte Cloud REST API call."""
-    assert_api_call(
-        call=call,
-        base_url=AIRBYTE_CLOUD_REST_API_BASE_URL,
-        endpoint=endpoint,
-        object_id=object_id,
-        method=method,
-        auth_method=AuthMethod.BEARER,
-    )
-
-
-def assert_cloud_configuration_api_call(
-    call: responses.Call, endpoint: str, object_id: Optional[str] = None
-):
-    """Asserts that the API call matches the expected Airbyte Cloud Configuration API call."""
-    assert_api_call(
-        call=call,
-        base_url=AIRBYTE_CLOUD_CONFIGURATION_API_BASE_URL,
-        endpoint=endpoint,
-        object_id=object_id,
-        method="POST",
-        auth_method=AuthMethod.BEARER,
-    )
-
-
-def test_refresh_access_token(base_api_mocks: responses.RequestsMock) -> None:
+def test_refresh_access_token(
+    base_api_mocks: responses.RequestsMock,
+    resource: Union[AirbyteCloudWorkspace, AirbyteWorkspace],
+    rest_api_url: str,
+) -> None:
     """Tests the `AirbyteCloudClient._single_request` method and how the API access token is refreshed.
 
     Args:
         base_api_mocks (responses.RequestsMock): The mock responses for the base API requests,
         i.e. generating the access token.
     """
-    resource = AirbyteCloudWorkspace(
-        workspace_id=TEST_WORKSPACE_ID,
-        client_id=TEST_CLIENT_ID,
-        client_secret=TEST_CLIENT_SECRET,
-    )
     client = resource.get_client()
 
     base_api_mocks.add(
@@ -146,10 +109,12 @@ def test_refresh_access_token(base_api_mocks: responses.RequestsMock) -> None:
         client._single_request(method="GET", url=f"{client.rest_api_base_url}/test")  # noqa
 
         assert len(base_api_mocks.calls) == 2
-        api_calls = assert_token_call_and_split_calls(calls=base_api_mocks.calls)
+        api_calls = assert_token_call_and_split_calls(
+            base_url=rest_api_url, calls=base_api_mocks.calls
+        )
 
         assert len(api_calls) == 1
-        assert_cloud_rest_api_call(call=api_calls[0], endpoint="test")
+        assert_api_call(base_url=rest_api_url, call=api_calls[0], endpoint="test")
 
         base_api_mocks.calls.reset()
 
@@ -158,7 +123,7 @@ def test_refresh_access_token(base_api_mocks: responses.RequestsMock) -> None:
         client._single_request(method="GET", url=f"{client.rest_api_base_url}/test")  # noqa
 
         assert len(base_api_mocks.calls) == 1
-        assert_cloud_rest_api_call(call=base_api_mocks.calls[0], endpoint="test")
+        assert_api_call(base_url=rest_api_url, call=base_api_mocks.calls[0], endpoint="test")
 
         base_api_mocks.calls.reset()
 
@@ -168,20 +133,20 @@ def test_refresh_access_token(base_api_mocks: responses.RequestsMock) -> None:
         client._single_request(method="GET", url=f"{client.rest_api_base_url}/test")  # noqa
 
         assert len(base_api_mocks.calls) == 2
-        api_calls = assert_token_call_and_split_calls(calls=base_api_mocks.calls)
+        api_calls = assert_token_call_and_split_calls(
+            base_url=rest_api_url, calls=base_api_mocks.calls
+        )
 
         assert len(api_calls) == 1
-        assert_cloud_rest_api_call(call=api_calls[0], endpoint="test")
+        assert_api_call(base_url=rest_api_url, call=api_calls[0], endpoint="test")
 
 
 def test_basic_resource_request(
     all_api_mocks: responses.RequestsMock,
+    resource: Union[AirbyteCloudWorkspace, AirbyteWorkspace],
+    rest_api_url: str,
+    config_api_url: str,
 ) -> None:
-    resource = AirbyteCloudWorkspace(
-        workspace_id=TEST_WORKSPACE_ID,
-        client_id=TEST_CLIENT_ID,
-        client_secret=TEST_CLIENT_SECRET,
-    )
     client = resource.get_client()
 
     # fetch workspace data calls
@@ -195,17 +160,26 @@ def test_basic_resource_request(
 
     assert len(all_api_mocks.calls) == 9
     # The first call is to create the access token
-    api_calls = assert_token_call_and_split_calls(calls=all_api_mocks.calls)
+    api_calls = assert_token_call_and_split_calls(base_url=rest_api_url, calls=all_api_mocks.calls)
     # The next calls are actual API calls
-    assert_cloud_rest_api_call(call=api_calls[0], endpoint=f"workspaces/{TEST_WORKSPACE_ID}")
-    assert_cloud_rest_api_call(call=api_calls[1], endpoint="connections")
-    assert_cloud_configuration_api_call(
-        call=api_calls[3], endpoint="connections/get", object_id=TEST_CONNECTION_ID
+    assert_api_call(
+        base_url=rest_api_url, call=api_calls[0], endpoint=f"workspaces/{TEST_WORKSPACE_ID}"
     )
-    assert_cloud_rest_api_call(call=api_calls[4], endpoint=f"destinations/{TEST_DESTINATION_ID}")
-    assert_cloud_rest_api_call(call=api_calls[5], endpoint="jobs", object_id=TEST_CONNECTION_ID)
-    assert_cloud_rest_api_call(call=api_calls[6], endpoint=f"jobs/{TEST_JOB_ID}")
-    assert_cloud_rest_api_call(call=api_calls[7], endpoint=f"jobs/{TEST_JOB_ID}")
+    assert_api_call(base_url=rest_api_url, call=api_calls[1], endpoint="connections")
+    assert_api_call(
+        base_url=config_api_url,
+        call=api_calls[3],
+        endpoint="connections/get",
+        object_id=TEST_CONNECTION_ID,
+    )
+    assert_api_call(
+        base_url=rest_api_url, call=api_calls[4], endpoint=f"destinations/{TEST_DESTINATION_ID}"
+    )
+    assert_api_call(
+        base_url=rest_api_url, call=api_calls[5], endpoint="jobs", object_id=TEST_CONNECTION_ID
+    )
+    assert_api_call(base_url=rest_api_url, call=api_calls[6], endpoint=f"jobs/{TEST_JOB_ID}")
+    assert_api_call(base_url=rest_api_url, call=api_calls[7], endpoint=f"jobs/{TEST_JOB_ID}")
 
 
 @pytest.mark.parametrize(
@@ -230,21 +204,19 @@ def test_airbyte_sync_and_poll_client_job_status(
     error_expected: bool,
     exception_message: str,
     base_api_mocks: responses.RequestsMock,
+    resource: Union[AirbyteCloudWorkspace, AirbyteWorkspace],
+    rest_api_url: str,
+    config_api_url: str,
 ) -> None:
-    resource = AirbyteCloudWorkspace(
-        workspace_id=TEST_WORKSPACE_ID,
-        client_id=TEST_CLIENT_ID,
-        client_secret=TEST_CLIENT_SECRET,
-    )
     client = resource.get_client()
 
     test_job_endpoint = f"jobs/{TEST_JOB_ID}"
-    test_job_api_url = f"{AIRBYTE_CLOUD_REST_API_BASE_URL}/{test_job_endpoint}"
+    test_job_api_url = f"{rest_api_url}/{test_job_endpoint}"
 
     # Create mock responses to mock full sync and poll behavior to test statuses, used only in this test
     base_api_mocks.add(
         method=responses.POST,
-        url=f"{AIRBYTE_CLOUD_REST_API_BASE_URL}/jobs",
+        url=f"{rest_api_url}/jobs",
         json=get_job_details_sample(status=AirbyteJobStatusType.PENDING),
         status=200,
     )
@@ -256,7 +228,7 @@ def test_airbyte_sync_and_poll_client_job_status(
     )
     base_api_mocks.add(
         method=responses.POST,
-        url=f"{AIRBYTE_CLOUD_CONFIGURATION_API_BASE_URL}/connections/get",
+        url=f"{config_api_url}/connections/get",
         json=SAMPLE_CONNECTION_DETAILS,
         status=200,
     )
@@ -293,13 +265,13 @@ def test_airbyte_sync_and_poll_client_job_status(
     ],
 )
 def test_airbyte_sync_and_poll_client_poll_process(
-    n_polls: int, error_expected: bool, base_api_mocks: responses.RequestsMock
+    n_polls: int,
+    error_expected: bool,
+    base_api_mocks: responses.RequestsMock,
+    resource: Union[AirbyteCloudWorkspace, AirbyteWorkspace],
+    rest_api_url: str,
+    config_api_url: str,
 ):
-    resource = AirbyteCloudWorkspace(
-        workspace_id=TEST_WORKSPACE_ID,
-        client_id=TEST_CLIENT_ID,
-        client_secret=TEST_CLIENT_SECRET,
-    )
     client = resource.get_client()
 
     # Create mock responses to mock full sync and poll behavior, used only in this test
@@ -307,13 +279,13 @@ def test_airbyte_sync_and_poll_client_poll_process(
         # initial state
         base_api_mocks.add(
             method=responses.POST,
-            url=f"{AIRBYTE_CLOUD_REST_API_BASE_URL}/jobs",
+            url=f"{rest_api_url}/jobs",
             json=get_job_details_sample(status=AirbyteJobStatusType.PENDING),
             status=200,
         )
         base_api_mocks.add(
             method=responses.POST,
-            url=f"{AIRBYTE_CLOUD_CONFIGURATION_API_BASE_URL}/connections/get",
+            url=f"{config_api_url}/connections/get",
             json=SAMPLE_CONNECTION_DETAILS,
             status=200,
         )
@@ -321,14 +293,14 @@ def test_airbyte_sync_and_poll_client_poll_process(
         for _ in range(n_polls):
             base_api_mocks.add(
                 method=responses.GET,
-                url=f"{AIRBYTE_CLOUD_REST_API_BASE_URL}/jobs/{TEST_JOB_ID}",
+                url=f"{rest_api_url}/jobs/{TEST_JOB_ID}",
                 json=get_job_details_sample(status=AirbyteJobStatusType.RUNNING),
                 status=200,
             )
         # final state will be updated
         base_api_mocks.add(
             method=responses.GET,
-            url=f"{AIRBYTE_CLOUD_REST_API_BASE_URL}/jobs/{TEST_JOB_ID}",
+            url=f"{rest_api_url}/jobs/{TEST_JOB_ID}",
             json=get_job_details_sample(
                 status=AirbyteJobStatusType.SUCCEEDED
                 if not error_expected
@@ -362,22 +334,22 @@ def test_airbyte_sync_and_poll_client_poll_process(
     ],
 )
 def test_airbyte_sync_and_poll_client_cancel_on_termination(
-    cancel_on_termination: bool, last_call_method: str, base_api_mocks: responses.RequestsMock
+    cancel_on_termination: bool,
+    last_call_method: str,
+    base_api_mocks: responses.RequestsMock,
+    resource: Union[AirbyteCloudWorkspace, AirbyteWorkspace],
+    rest_api_url: str,
+    config_api_url: str,
 ) -> None:
-    resource = AirbyteCloudWorkspace(
-        workspace_id=TEST_WORKSPACE_ID,
-        client_id=TEST_CLIENT_ID,
-        client_secret=TEST_CLIENT_SECRET,
-    )
     client = resource.get_client()
 
     test_job_endpoint = f"jobs/{TEST_JOB_ID}"
-    test_job_api_url = f"{AIRBYTE_CLOUD_REST_API_BASE_URL}/{test_job_endpoint}"
+    test_job_api_url = f"{rest_api_url}/{test_job_endpoint}"
 
     # Create mock responses to mock full sync and poll behavior to test statuses, used only in this test
     base_api_mocks.add(
         method=responses.POST,
-        url=f"{AIRBYTE_CLOUD_REST_API_BASE_URL}/jobs",
+        url=f"{rest_api_url}/jobs",
         json=get_job_details_sample(status=AirbyteJobStatusType.PENDING),
         status=200,
     )
@@ -389,7 +361,7 @@ def test_airbyte_sync_and_poll_client_cancel_on_termination(
     )
     base_api_mocks.add(
         method=responses.POST,
-        url=f"{AIRBYTE_CLOUD_CONFIGURATION_API_BASE_URL}/connections/get",
+        url=f"{config_api_url}/connections/get",
         json=SAMPLE_CONNECTION_DETAILS,
         status=200,
     )
@@ -409,94 +381,85 @@ def test_airbyte_sync_and_poll_client_cancel_on_termination(
             cancel_on_termination=cancel_on_termination,
         )
 
-    assert_cloud_rest_api_call(
-        call=base_api_mocks.calls[-1], endpoint=test_job_endpoint, method=last_call_method
+    assert_api_call(
+        base_url=rest_api_url,
+        call=base_api_mocks.calls[-1],
+        endpoint=test_job_endpoint,
+        method=last_call_method,
     )
 
 
 def test_fivetran_airbyte_cloud_sync_and_poll_materialization_method(
     fetch_workspace_data_api_mocks: responses.RequestsMock,
     airbyte_cloud_sync_and_poll: MagicMock,
+    resource: Union[AirbyteCloudWorkspace, AirbyteWorkspace],
     capsys: pytest.CaptureFixture,
 ) -> None:
-    with environ(
-        {"AIRBYTE_CLIENT_ID": TEST_CLIENT_ID, "AIRBYTE_CLIENT_SECRET": TEST_CLIENT_SECRET}
-    ):
-        workspace = AirbyteCloudWorkspace(
-            workspace_id=TEST_WORKSPACE_ID,
-            client_id=EnvVar("AIRBYTE_CLIENT_ID"),
-            client_secret=EnvVar("AIRBYTE_CLIENT_SECRET"),
-        )
+    cleaned_connection_id = clean_name(TEST_CONNECTION_ID)
 
-        cleaned_connection_id = clean_name(TEST_CONNECTION_ID)
+    @airbyte_assets(
+        connection_id=TEST_CONNECTION_ID, workspace=resource, name=cleaned_connection_id
+    )
+    def my_airbyte_assets(context: AssetExecutionContext, airbyte: AirbyteCloudWorkspace):
+        yield from airbyte.sync_and_poll(context=context)
 
-        @airbyte_assets(
-            connection_id=TEST_CONNECTION_ID, workspace=workspace, name=cleaned_connection_id
-        )
-        def my_airbyte_assets(context: AssetExecutionContext, airbyte: AirbyteCloudWorkspace):
-            yield from airbyte.sync_and_poll(context=context)
+    # Mocked AirbyteCloudClient.sync_and_poll returns API response where all connection tables are expected
+    result = materialize(
+        [my_airbyte_assets],
+        resources={"airbyte": resource},
+    )
+    assert result.success
+    asset_materializations = [
+        event
+        for event in result.events_for_node(cleaned_connection_id)
+        if event.event_type_value == DagsterEventType.ASSET_MATERIALIZATION
+    ]
+    assert len(asset_materializations) == 2
+    materialized_asset_keys = {
+        asset_materialization.asset_key for asset_materialization in asset_materializations
+    }
+    assert len(materialized_asset_keys) == 2
+    assert my_airbyte_assets.keys == materialized_asset_keys
 
-        # Mocked AirbyteCloudClient.sync_and_poll returns API response where all connection tables are expected
-        result = materialize(
-            [my_airbyte_assets],
-            resources={"airbyte": workspace},
-        )
-        assert result.success
-        asset_materializations = [
-            event
-            for event in result.events_for_node(cleaned_connection_id)
-            if event.event_type_value == DagsterEventType.ASSET_MATERIALIZATION
-        ]
-        assert len(asset_materializations) == 2
-        materialized_asset_keys = {
-            asset_materialization.asset_key for asset_materialization in asset_materializations
-        }
-        assert len(materialized_asset_keys) == 2
-        assert my_airbyte_assets.keys == materialized_asset_keys
+    # Mocked FivetranClient.sync_and_poll returns API response
+    # where one expected table is missing and an unexpected table is present
+    result = materialize(
+        [my_airbyte_assets],
+        resources={"airbyte": resource},
+    )
 
-        # Mocked FivetranClient.sync_and_poll returns API response
-        # where one expected table is missing and an unexpected table is present
-        result = materialize(
-            [my_airbyte_assets],
-            resources={"airbyte": workspace},
-        )
+    assert result.success
+    asset_materializations = [
+        event
+        for event in result.events_for_node(cleaned_connection_id)
+        if event.event_type_value == DagsterEventType.ASSET_MATERIALIZATION
+    ]
+    assert len(asset_materializations) == 2
+    materialized_asset_keys = {
+        asset_materialization.asset_key for asset_materialization in asset_materializations
+    }
+    assert len(materialized_asset_keys) == 2
+    assert my_airbyte_assets.keys != materialized_asset_keys
+    assert (
+        AssetKey([f"{TEST_STREAM_PREFIX}{TEST_UNEXPECTED_STREAM_NAME}"]) in materialized_asset_keys
+    )
+    assert (
+        AssetKey([f"{TEST_STREAM_PREFIX}{TEST_ANOTHER_STREAM_NAME}"]) not in materialized_asset_keys
+    )
 
-        assert result.success
-        asset_materializations = [
-            event
-            for event in result.events_for_node(cleaned_connection_id)
-            if event.event_type_value == DagsterEventType.ASSET_MATERIALIZATION
-        ]
-        assert len(asset_materializations) == 2
-        materialized_asset_keys = {
-            asset_materialization.asset_key for asset_materialization in asset_materializations
-        }
-        assert len(materialized_asset_keys) == 2
-        assert my_airbyte_assets.keys != materialized_asset_keys
-        assert (
-            AssetKey([f"{TEST_STREAM_PREFIX}{TEST_UNEXPECTED_STREAM_NAME}"])
-            in materialized_asset_keys
-        )
-        assert (
-            AssetKey([f"{TEST_STREAM_PREFIX}{TEST_ANOTHER_STREAM_NAME}"])
-            not in materialized_asset_keys
-        )
-
-        captured = capsys.readouterr()
-        assert re.search(
-            r"dagster - WARNING - (?s:.)+ - An unexpected asset was materialized", captured.err
-        )
-        assert re.search(
-            r"dagster - WARNING - (?s:.)+ - Assets were not materialized", captured.err
-        )
+    captured = capsys.readouterr()
+    assert re.search(
+        r"dagster - WARNING - (?s:.)+ - An unexpected asset was materialized", captured.err
+    )
+    assert re.search(r"dagster - WARNING - (?s:.)+ - Assets were not materialized", captured.err)
 
 
 def test_airbyte_oss_api_url_configuration() -> None:
     """Tests that Airbyte OSS instances can configure custom API URLs."""
     with responses.RequestsMock() as response:
         resource = AirbyteWorkspace(
-            rest_api_base_url=TEST_OSS_REST_API_BASE,
-            configuration_api_base_url=TEST_OSS_CONFIG_API_BASE,
+            rest_api_base_url=AIRBYTE_OSS_REST_API_BASE_URL,
+            configuration_api_base_url=AIRBYTE_OSS_CONFIGURATION_API_BASE_URL,
             workspace_id=TEST_WORKSPACE_ID,
             username=TEST_USERNAME,
             password=TEST_PASSWORD,
@@ -506,14 +469,14 @@ def test_airbyte_oss_api_url_configuration() -> None:
         # Mock the API endpoints with custom URLs
         response.add(
             method=responses.GET,
-            url=f"{TEST_OSS_REST_API_BASE}/connections",
+            url=f"{AIRBYTE_OSS_REST_API_BASE_URL}/connections",
             json={"connections": []},
             status=200,
         )
 
         response.add(
             method=responses.POST,
-            url=f"{TEST_OSS_CONFIG_API_BASE}/connections/get",
+            url=f"{AIRBYTE_OSS_CONFIGURATION_API_BASE_URL}/connections/get",
             json=SAMPLE_CONNECTION_DETAILS,
             status=200,
         )
@@ -527,14 +490,14 @@ def test_airbyte_oss_api_url_configuration() -> None:
         # Verify the calls went to the custom URLs
         assert_api_call(
             call=response.calls[0],
-            base_url=TEST_OSS_REST_API_BASE,
+            base_url=AIRBYTE_OSS_REST_API_BASE_URL,
             endpoint="connections",
             method="GET",
             auth_method=AuthMethod.BASIC,
         )
         assert_api_call(
             call=response.calls[1],
-            base_url=TEST_OSS_CONFIG_API_BASE,
+            base_url=AIRBYTE_OSS_CONFIGURATION_API_BASE_URL,
             endpoint="connections/get",
             method="POST",
             object_id=TEST_CONNECTION_ID,
@@ -546,8 +509,8 @@ def test_airbyte_oss_username_password_auth() -> None:
     """Tests that Airbyte OSS instances can use username/password authentication."""
     with responses.RequestsMock() as response:
         resource = AirbyteWorkspace(
-            rest_api_base_url=TEST_OSS_REST_API_BASE,
-            configuration_api_base_url=TEST_OSS_CONFIG_API_BASE,
+            rest_api_base_url=AIRBYTE_OSS_REST_API_BASE_URL,
+            configuration_api_base_url=AIRBYTE_OSS_CONFIGURATION_API_BASE_URL,
             workspace_id=TEST_WORKSPACE_ID,
             username=TEST_USERNAME,
             password=TEST_PASSWORD,
@@ -557,7 +520,7 @@ def test_airbyte_oss_username_password_auth() -> None:
         # Mock an API call to verify auth is working
         response.add(
             method=responses.GET,
-            url=f"{TEST_OSS_REST_API_BASE}/connections",
+            url=f"{AIRBYTE_OSS_REST_API_BASE_URL}/connections",
             json={"connections": []},
             status=200,
         )
@@ -574,7 +537,7 @@ def test_airbyte_oss_username_password_auth() -> None:
         # assert not auth_header.startswith("Bearer")
         assert_api_call(
             call=response.calls[0],
-            base_url=TEST_OSS_REST_API_BASE,
+            base_url=AIRBYTE_OSS_REST_API_BASE_URL,
             endpoint="connections",
             method="GET",
             auth_method=AuthMethod.BASIC,
@@ -586,13 +549,13 @@ def test_airbyte_oss_client_credentials_auth() -> None:
     with responses.RequestsMock() as response:
         response.add(
             method=responses.POST,
-            url=f"{TEST_OSS_REST_API_BASE}/applications/token",
+            url=f"{AIRBYTE_OSS_REST_API_BASE_URL}/applications/token",
             json=SAMPLE_ACCESS_TOKEN,
             status=201,
         )
         resource = AirbyteWorkspace(
-            rest_api_base_url=TEST_OSS_REST_API_BASE,
-            configuration_api_base_url=TEST_OSS_CONFIG_API_BASE,
+            rest_api_base_url=AIRBYTE_OSS_REST_API_BASE_URL,
+            configuration_api_base_url=AIRBYTE_OSS_CONFIGURATION_API_BASE_URL,
             workspace_id=TEST_WORKSPACE_ID,
             client_id=TEST_CLIENT_ID,
             client_secret=TEST_CLIENT_SECRET,
@@ -602,7 +565,7 @@ def test_airbyte_oss_client_credentials_auth() -> None:
         # Mock a test endpoint
         response.add(
             method=responses.GET,
-            url=f"{TEST_OSS_REST_API_BASE}/connections",
+            url=f"{AIRBYTE_OSS_REST_API_BASE_URL}/connections",
             json={"connections": []},
             status=200,
         )
@@ -615,7 +578,7 @@ def test_airbyte_oss_client_credentials_auth() -> None:
         # Verify token request
         assert_api_call(
             call=response.calls[1],
-            base_url=TEST_OSS_REST_API_BASE,
+            base_url=AIRBYTE_OSS_REST_API_BASE_URL,
             endpoint="connections",
             method="GET",
             auth_method=AuthMethod.BEARER,
@@ -629,8 +592,8 @@ def test_airbyte_oss_auth_method_mutual_exclusivity() -> None:
         Exception, match="cannot provide both client_id/client_secret and username/password"
     ):
         workspace = AirbyteWorkspace(
-            rest_api_base_url=TEST_OSS_REST_API_BASE,
-            configuration_api_base_url=TEST_OSS_CONFIG_API_BASE,
+            rest_api_base_url=AIRBYTE_OSS_REST_API_BASE_URL,
+            configuration_api_base_url=AIRBYTE_OSS_CONFIGURATION_API_BASE_URL,
             workspace_id=TEST_WORKSPACE_ID,
             username=TEST_USERNAME,
             password=TEST_PASSWORD,
@@ -642,8 +605,8 @@ def test_airbyte_oss_auth_method_mutual_exclusivity() -> None:
     # Test providing incomplete username/password fails
     with pytest.raises(Exception, match="both username and password are required"):
         workspace = AirbyteWorkspace(
-            rest_api_base_url=TEST_OSS_REST_API_BASE,
-            configuration_api_base_url=TEST_OSS_CONFIG_API_BASE,
+            rest_api_base_url=AIRBYTE_OSS_REST_API_BASE_URL,
+            configuration_api_base_url=AIRBYTE_OSS_CONFIGURATION_API_BASE_URL,
             workspace_id=TEST_WORKSPACE_ID,
             username=TEST_USERNAME,
             # Missing password
@@ -653,8 +616,8 @@ def test_airbyte_oss_auth_method_mutual_exclusivity() -> None:
     # Test providing incomplete client credentials fails
     with pytest.raises(Exception, match="both client_id and client_secret are required"):
         workspace = AirbyteWorkspace(
-            rest_api_base_url=TEST_OSS_REST_API_BASE,
-            configuration_api_base_url=TEST_OSS_CONFIG_API_BASE,
+            rest_api_base_url=AIRBYTE_OSS_REST_API_BASE_URL,
+            configuration_api_base_url=AIRBYTE_OSS_CONFIGURATION_API_BASE_URL,
             workspace_id=TEST_WORKSPACE_ID,
             client_secret="test_secret",
             # Missing client_id

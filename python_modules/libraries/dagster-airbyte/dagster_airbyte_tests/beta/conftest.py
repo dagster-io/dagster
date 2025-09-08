@@ -1,6 +1,6 @@
 import base64
 from collections.abc import Iterator, Mapping
-from typing import Any
+from typing import Any, Union
 from unittest.mock import patch
 
 import pytest
@@ -8,12 +8,11 @@ import responses
 from dagster_airbyte.resources import (
     AIRBYTE_CLOUD_CONFIGURATION_API_BASE_URL,
     AIRBYTE_CLOUD_REST_API_BASE_URL,
+    AirbyteCloudWorkspace,
+    AirbyteWorkspace,
 )
 from dagster_airbyte.translator import AirbyteConnectionTableProps, AirbyteJobStatusType
 from dagster_airbyte.types import AirbyteOutput
-
-TEST_OSS_REST_API_BASE = "http://localhost:8000/api/public/v1"
-TEST_OSS_CONFIG_API_BASE = "http://localhost:8000/api/v1"
 
 TEST_WORKSPACE_ID = "some_workspace_id"
 TEST_CLIENT_ID = "some_client_id"
@@ -64,29 +63,32 @@ SAMPLE_ACCESS_TOKEN = {"access_token": TEST_ACCESS_TOKEN}
 
 # Taken from Airbyte REST API documentation
 # https://reference.airbyte.com/reference/listconnections
-SAMPLE_CONNECTIONS = {
-    "next": "https://api.airbyte.com/v1/connections?limit=5&offset=10",
-    "previous": "https://api.airbyte.com/v1/connections?limit=5&offset=0",
-    "data": [
-        {
-            "connectionId": TEST_CONNECTION_ID,
-            "workspaceId": "744cc0ed-7f05-4949-9e60-2a814f90c035",
-            "name": TEST_CONNECTION_NAME,
-            "sourceId": "0c31738c-0b2d-4887-b506-e2cd1c39cc35",
-            "destinationId": TEST_DESTINATION_ID,
-            "status": "active",
-            "schedule": {
-                "schedule_type": "cron",
-            },
-        }
-    ],
-}
+def get_sample_connections(api_base_url: str) -> Mapping[str, Any]:
+    return {
+        "next": f"{api_base_url}/connections?limit=5&offset=10",
+        "previous": f"{api_base_url}/connections?limit=5&offset=0",
+        "data": [
+            {
+                "connectionId": TEST_CONNECTION_ID,
+                "workspaceId": "744cc0ed-7f05-4949-9e60-2a814f90c035",
+                "name": TEST_CONNECTION_NAME,
+                "sourceId": "0c31738c-0b2d-4887-b506-e2cd1c39cc35",
+                "destinationId": TEST_DESTINATION_ID,
+                "status": "active",
+                "schedule": {
+                    "schedule_type": "cron",
+                },
+            }
+        ],
+    }
 
-SAMPLE_CONNECTIONS_NEXT_PAGE = {
-    "next": "",
-    "previous": "https://api.airbyte.com/v1/connections?limit=5&offset=10",
-    "data": [],
-}
+
+def get_sample_connections_next_page(api_base_url: str) -> Mapping[str, Any]:
+    return {
+        "next": "",
+        "previous": f"{api_base_url}/connections?limit=5&offset=10",
+        "data": [],
+    }
 
 
 def get_stream_details(name: str) -> Mapping[str, Any]:
@@ -128,7 +130,7 @@ def get_stream_details(name: str) -> Mapping[str, Any]:
 
 # Taken from Airbyte Configuration API documentation
 # https://airbyte-public-api-docs.s3.us-east-2.amazonaws.com/rapidoc-api-docs.html#post-/v1/connections/get
-# https://github.com/airbytehq/airbyte-platform/blob/v1.0.0/airbyte-api/server-api/src/main/openapi/config.yaml
+# https://github.com/airbytehq/airbyte-platform/blob/v1.8.0/airbyte-api/server-api/src/main/openapi/config.yaml
 def get_connection_details_sample(streams: list[Mapping[str, Any]]) -> Mapping[str, Any]:
     return {
         "connectionId": TEST_CONNECTION_ID,
@@ -226,85 +228,157 @@ SAMPLE_ANOTHER_WORKSPACE_RESPOMSE = {
     "dataResidency": "auto",
 }
 
+AIRBYTE_OSS_REST_API_BASE_URL = "http://localhost:8000/api/public/v1"
+AIRBYTE_OSS_CONFIGURATION_API_BASE_URL = "http://localhost:8000/api/v1"
+
 
 @pytest.fixture(
-    name="base_api_mocks",
+    params=[
+        (AIRBYTE_CLOUD_REST_API_BASE_URL, AIRBYTE_CLOUD_CONFIGURATION_API_BASE_URL),
+        (AIRBYTE_OSS_REST_API_BASE_URL, AIRBYTE_OSS_CONFIGURATION_API_BASE_URL),
+    ],
+    ids=["cloud", "oss"],
 )
-def base_api_mocks_fixture() -> Iterator[responses.RequestsMock]:
+def api_urls(request) -> tuple[str, str]:
+    """Provides both REST and Configuration API URLs for each environment."""
+    return request.param
+
+
+@pytest.fixture
+def rest_api_url(api_urls) -> str:
+    """Extracts REST API URL from the api_urls fixture."""
+    return api_urls[0]
+
+
+@pytest.fixture
+def config_api_url(api_urls) -> str:
+    """Extracts Configuration API URL from the api_urls fixture."""
+    return api_urls[1]
+
+
+@pytest.fixture(name="base_api_mocks")
+def base_api_mocks_fixture(rest_api_url) -> Iterator[responses.RequestsMock]:
     with responses.RequestsMock() as response:
         response.add(
             method=responses.POST,
-            url=f"{AIRBYTE_CLOUD_REST_API_BASE_URL}/applications/token",
+            url=f"{rest_api_url}/applications/token",
             json=SAMPLE_ACCESS_TOKEN,
             status=201,
         )
         yield response
 
 
-@pytest.fixture(
-    name="fetch_workspace_data_api_mocks",
-)
+@pytest.fixture(name="fetch_workspace_data_api_mocks")
 def fetch_workspace_data_api_mocks_fixture(
     base_api_mocks: responses.RequestsMock,
+    rest_api_url: str,
+    config_api_url: str,
 ) -> Iterator[responses.RequestsMock]:
     base_api_mocks.add(
         method=responses.GET,
-        url=f"{AIRBYTE_CLOUD_REST_API_BASE_URL}/workspaces/{TEST_WORKSPACE_ID}",
+        url=f"{rest_api_url}/workspaces/{TEST_WORKSPACE_ID}",
         json=SAMPLE_WORKSPACE_RESPOMSE,
         status=200,
     )
     base_api_mocks.add(
         method=responses.GET,
-        url=f"{AIRBYTE_CLOUD_REST_API_BASE_URL}/connections",
-        json=SAMPLE_CONNECTIONS,
+        url=f"{rest_api_url}/connections",
+        json=get_sample_connections(api_base_url=rest_api_url),
         status=200,
     )
     base_api_mocks.add(
         method=responses.GET,
-        url=f"{AIRBYTE_CLOUD_REST_API_BASE_URL}/connections?limit=5&offset=10",
-        json=SAMPLE_CONNECTIONS_NEXT_PAGE,
+        url=f"{rest_api_url}/connections?limit=5&offset=10",
+        json=get_sample_connections_next_page(api_base_url=rest_api_url),
         status=200,
     )
     base_api_mocks.add(
         method=responses.POST,
-        url=f"{AIRBYTE_CLOUD_CONFIGURATION_API_BASE_URL}/connections/get",
+        url=f"{config_api_url}/connections/get",
         json=SAMPLE_CONNECTION_DETAILS,
         status=200,
     )
     base_api_mocks.add(
         method=responses.GET,
-        url=f"{AIRBYTE_CLOUD_REST_API_BASE_URL}/destinations/{TEST_DESTINATION_ID}",
+        url=f"{rest_api_url}/destinations/{TEST_DESTINATION_ID}",
         json=SAMPLE_DESTINATION_DETAILS,
         status=200,
     )
     yield base_api_mocks
 
 
-@pytest.fixture(
-    name="all_api_mocks",
-)
+@pytest.fixture(name="all_api_mocks")
 def all_api_mocks_fixture(
     fetch_workspace_data_api_mocks: responses.RequestsMock,
+    rest_api_url: str,
 ) -> Iterator[responses.RequestsMock]:
     fetch_workspace_data_api_mocks.add(
         method=responses.POST,
-        url=f"{AIRBYTE_CLOUD_REST_API_BASE_URL}/jobs",
+        url=f"{rest_api_url}/jobs",
         json=SAMPLE_JOB_RESPONSE_RUNNING,
         status=200,
     )
     fetch_workspace_data_api_mocks.add(
         method=responses.GET,
-        url=f"{AIRBYTE_CLOUD_REST_API_BASE_URL}/jobs/{TEST_JOB_ID}",
+        url=f"{rest_api_url}/jobs/{TEST_JOB_ID}",
         json=SAMPLE_JOB_RESPONSE_RUNNING,
         status=200,
     )
     fetch_workspace_data_api_mocks.add(
         method=responses.DELETE,
-        url=f"{AIRBYTE_CLOUD_REST_API_BASE_URL}/jobs/{TEST_JOB_ID}",
+        url=f"{rest_api_url}/jobs/{TEST_JOB_ID}",
         json=SAMPLE_JOB_RESPONSE_RUNNING,
         status=200,
     )
     yield fetch_workspace_data_api_mocks
+
+
+@pytest.fixture
+def resource(
+    rest_api_url: str, config_api_url: str
+) -> Union[AirbyteWorkspace, AirbyteCloudWorkspace]:
+    """Returns the appropriate workspace type based on the API environment."""
+    if (
+        rest_api_url == AIRBYTE_CLOUD_REST_API_BASE_URL
+        and config_api_url == AIRBYTE_CLOUD_CONFIGURATION_API_BASE_URL
+    ):
+        return AirbyteCloudWorkspace(
+            workspace_id=TEST_WORKSPACE_ID,
+            client_id=TEST_CLIENT_ID,
+            client_secret=TEST_CLIENT_SECRET,
+        )
+    else:
+        return AirbyteWorkspace(
+            rest_api_base_url=rest_api_url,
+            configuration_api_base_url=config_api_url,
+            workspace_id=TEST_WORKSPACE_ID,
+            client_id=TEST_CLIENT_ID,
+            client_secret=TEST_CLIENT_SECRET,
+        )
+
+
+@pytest.fixture
+def another_resource(
+    rest_api_url: str, config_api_url: str
+) -> Union[AirbyteWorkspace, AirbyteCloudWorkspace]:
+    """Returns the appropriate workspace type based on the API environment."""
+    if (
+        rest_api_url == AIRBYTE_CLOUD_REST_API_BASE_URL
+        and config_api_url == AIRBYTE_CLOUD_CONFIGURATION_API_BASE_URL
+    ):
+        return AirbyteCloudWorkspace(
+            workspace_id=TEST_ANOTHER_WORKSPACE_ID,
+            client_id=TEST_CLIENT_ID,
+            client_secret=TEST_CLIENT_SECRET,
+        )
+    else:
+        return AirbyteWorkspace(
+            rest_api_base_url=rest_api_url,
+            configuration_api_base_url=config_api_url,
+            workspace_id=TEST_ANOTHER_WORKSPACE_ID,
+            client_id=TEST_CLIENT_ID,
+            client_secret=TEST_CLIENT_SECRET,
+        )
 
 
 @pytest.fixture(name="airbyte_cloud_sync_and_poll")
