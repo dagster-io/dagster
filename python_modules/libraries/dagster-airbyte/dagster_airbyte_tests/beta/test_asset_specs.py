@@ -5,11 +5,12 @@ from dagster._core.definitions.tags import has_kind
 from dagster._core.errors import DagsterInvariantViolationError
 from dagster._core.test_utils import environ
 from dagster_airbyte import (
-    AirbyteWorkspace,
+    AirbyteCloudWorkspace,
     airbyte_assets,
     build_airbyte_assets_definitions,
     load_airbyte_asset_specs,
 )
+from dagster_airbyte.resources import AIRBYTE_CLOUD_REST_API_BASE_URL
 from dagster_airbyte.translator import (
     AirbyteConnectionTableProps,
     AirbyteMetadataSet,
@@ -17,6 +18,9 @@ from dagster_airbyte.translator import (
 )
 
 from dagster_airbyte_tests.beta.conftest import (
+    SAMPLE_ANOTHER_WORKSPACE_RESPOMSE,
+    SAMPLE_CONNECTIONS,
+    SAMPLE_CONNECTIONS_NEXT_PAGE,
     TEST_ANOTHER_WORKSPACE_ID,
     TEST_CLIENT_ID,
     TEST_CLIENT_SECRET,
@@ -29,7 +33,7 @@ from dagster_airbyte_tests.beta.conftest import (
 def test_fetch_airbyte_workspace_data(
     fetch_workspace_data_api_mocks: responses.RequestsMock,
 ) -> None:
-    resource = AirbyteWorkspace(
+    resource = AirbyteCloudWorkspace(
         workspace_id=TEST_WORKSPACE_ID,
         client_id=TEST_CLIENT_ID,
         client_secret=TEST_CLIENT_SECRET,
@@ -46,7 +50,7 @@ def test_translator_spec(
     with environ(
         {"AIRBYTE_CLIENT_ID": TEST_CLIENT_ID, "AIRBYTE_CLIENT_SECRET": TEST_CLIENT_SECRET}
     ):
-        resource = AirbyteWorkspace(
+        resource = AirbyteCloudWorkspace(
             workspace_id=TEST_WORKSPACE_ID,
             client_id=EnvVar("AIRBYTE_CLIENT_ID"),
             client_secret=EnvVar("AIRBYTE_CLIENT_SECRET"),
@@ -73,7 +77,7 @@ def test_connection_selector(
     with environ(
         {"AIRBYTE_CLIENT_ID": TEST_CLIENT_ID, "AIRBYTE_CLIENT_SECRET": TEST_CLIENT_SECRET}
     ):
-        workspace = AirbyteWorkspace(
+        workspace = AirbyteCloudWorkspace(
             workspace_id=TEST_WORKSPACE_ID,
             client_id=EnvVar("AIRBYTE_CLIENT_ID"),
             client_secret=EnvVar("AIRBYTE_CLIENT_SECRET"),
@@ -104,7 +108,7 @@ def test_cached_load_spec_single_resource(
     with environ(
         {"AIRBYTE_CLIENT_ID": TEST_CLIENT_ID, "AIRBYTE_CLIENT_SECRET": TEST_CLIENT_SECRET}
     ):
-        workspace = AirbyteWorkspace(
+        workspace = AirbyteCloudWorkspace(
             workspace_id=TEST_WORKSPACE_ID,
             client_id=EnvVar("AIRBYTE_CLIENT_ID"),
             client_secret=EnvVar("AIRBYTE_CLIENT_SECRET"),
@@ -112,26 +116,45 @@ def test_cached_load_spec_single_resource(
 
         # load asset specs, calls are made
         workspace.load_asset_specs()
-        assert len(fetch_workspace_data_api_mocks.calls) == 4
+        assert len(fetch_workspace_data_api_mocks.calls) == 6
 
         # load asset specs another time, no additional calls are made
         workspace.load_asset_specs()
-        assert len(fetch_workspace_data_api_mocks.calls) == 4
+        assert len(fetch_workspace_data_api_mocks.calls) == 6
 
 
 def test_cached_load_spec_multiple_resources(
     fetch_workspace_data_api_mocks: responses.RequestsMock,
 ) -> None:
+    fetch_workspace_data_api_mocks.add(
+        method=responses.GET,
+        url=f"{AIRBYTE_CLOUD_REST_API_BASE_URL}/workspaces/{TEST_ANOTHER_WORKSPACE_ID}",
+        json=SAMPLE_ANOTHER_WORKSPACE_RESPOMSE,
+        status=200,
+    )
+    fetch_workspace_data_api_mocks.add(
+        method=responses.GET,
+        url=f"{AIRBYTE_CLOUD_REST_API_BASE_URL}/connections",
+        json=SAMPLE_CONNECTIONS,
+        status=200,
+    )
+    fetch_workspace_data_api_mocks.add(
+        method=responses.GET,
+        url=f"{AIRBYTE_CLOUD_REST_API_BASE_URL}/connections?limit=5&offset=10",
+        json=SAMPLE_CONNECTIONS_NEXT_PAGE,
+        status=200,
+    )
+
     with environ(
         {"AIRBYTE_CLIENT_ID": TEST_CLIENT_ID, "AIRBYTE_CLIENT_SECRET": TEST_CLIENT_SECRET}
     ):
-        workspace = AirbyteWorkspace(
+        workspace = AirbyteCloudWorkspace(
             workspace_id=TEST_WORKSPACE_ID,
             client_id=EnvVar("AIRBYTE_CLIENT_ID"),
             client_secret=EnvVar("AIRBYTE_CLIENT_SECRET"),
         )
 
-        another_workspace = AirbyteWorkspace(
+        another_workspace = AirbyteCloudWorkspace(
             workspace_id=TEST_ANOTHER_WORKSPACE_ID,
             client_id=EnvVar("AIRBYTE_CLIENT_ID"),
             client_secret=EnvVar("AIRBYTE_CLIENT_SECRET"),
@@ -139,12 +162,12 @@ def test_cached_load_spec_multiple_resources(
 
         # load asset specs with a resource
         workspace.load_asset_specs()
-        assert len(fetch_workspace_data_api_mocks.calls) == 4
+        assert len(fetch_workspace_data_api_mocks.calls) == 6
 
         # load asset specs with another resource,
         # additional calls are made to load its specs
         another_workspace.load_asset_specs()
-        assert len(fetch_workspace_data_api_mocks.calls) == 4 + 4
+        assert len(fetch_workspace_data_api_mocks.calls) == 6 + 6
 
 
 def test_cached_load_spec_with_asset_factory(
@@ -153,7 +176,7 @@ def test_cached_load_spec_with_asset_factory(
     with environ(
         {"AIRBYTE_CLIENT_ID": TEST_CLIENT_ID, "AIRBYTE_CLIENT_SECRET": TEST_CLIENT_SECRET}
     ):
-        workspace = AirbyteWorkspace(
+        workspace = AirbyteCloudWorkspace(
             workspace_id=TEST_WORKSPACE_ID,
             client_id=EnvVar("AIRBYTE_CLIENT_ID"),
             client_secret=EnvVar("AIRBYTE_CLIENT_SECRET"),
@@ -163,7 +186,7 @@ def test_cached_load_spec_with_asset_factory(
         # then workspace.load_asset_specs is called once per connection ID in airbyte_assets,
         # but the four calls to the API are only made once.
         build_airbyte_assets_definitions(workspace=workspace)
-        assert len(fetch_workspace_data_api_mocks.calls) == 4
+        assert len(fetch_workspace_data_api_mocks.calls) == 6
 
 
 class MyCustomTranslator(DagsterAirbyteTranslator):
@@ -180,7 +203,7 @@ def test_translator_custom_metadata(
     with environ(
         {"AIRBYTE_CLIENT_ID": TEST_CLIENT_ID, "AIRBYTE_CLIENT_SECRET": TEST_CLIENT_SECRET}
     ):
-        workspace = AirbyteWorkspace(
+        workspace = AirbyteCloudWorkspace(
             workspace_id=TEST_WORKSPACE_ID,
             client_id=EnvVar("AIRBYTE_CLIENT_ID"),
             client_secret=EnvVar("AIRBYTE_CLIENT_SECRET"),
@@ -209,7 +232,7 @@ def test_translator_custom_group_name_with_asset_factory(
     with environ(
         {"AIRBYTE_CLIENT_ID": TEST_CLIENT_ID, "AIRBYTE_CLIENT_SECRET": TEST_CLIENT_SECRET}
     ):
-        workspace = AirbyteWorkspace(
+        workspace = AirbyteCloudWorkspace(
             workspace_id=TEST_WORKSPACE_ID,
             client_id=EnvVar("AIRBYTE_CLIENT_ID"),
             client_secret=EnvVar("AIRBYTE_CLIENT_SECRET"),
@@ -230,7 +253,7 @@ def test_translator_invariant_group_name_with_asset_decorator(
     with environ(
         {"AIRBYTE_CLIENT_ID": TEST_CLIENT_ID, "AIRBYTE_CLIENT_SECRET": TEST_CLIENT_SECRET}
     ):
-        workspace = AirbyteWorkspace(
+        workspace = AirbyteCloudWorkspace(
             workspace_id=TEST_WORKSPACE_ID,
             client_id=EnvVar("AIRBYTE_CLIENT_ID"),
             client_secret=EnvVar("AIRBYTE_CLIENT_SECRET"),

@@ -1,4 +1,3 @@
-import copy
 import hashlib
 import json
 import logging
@@ -33,7 +32,7 @@ from dagster._utils.merger import deep_merge_dicts
 from dagster_shared.dagster_model import DagsterModel
 from dagster_shared.record import record
 from dagster_shared.utils.cached_method import cached_method
-from pydantic import Field, PrivateAttr, model_validator
+from pydantic import Field, PrivateAttr
 from requests.exceptions import RequestException
 
 from dagster_airbyte.translator import (
@@ -979,7 +978,6 @@ class AirbyteClient(DagsterModel):
         params: Optional[Mapping[str, Any]] = None,
         include_additional_request_params: bool = True,
         paginate: bool = False,
-        page_size: int = 100,
     ) -> Union[Mapping[str, Any], Iterator[Mapping[str, Any]]]:
         """Creates and sends a request to the desired Airbyte REST API endpoint.
 
@@ -1004,18 +1002,15 @@ class AirbyteClient(DagsterModel):
         if paginate:
             return self._paginated_request(
                 method=method,
-                endpoint=endpoint,
-                base_url=base_url,
+                url=f"{base_url}/{endpoint}",
                 data=data,
                 params=params or {},
                 include_additional_request_params=include_additional_request_params,
-                page_size=page_size,
             )
 
         return self._single_request(
             method=method,
-            endpoint=endpoint,
-            base_url=base_url,
+            url=f"{base_url}/{endpoint}",
             data=data,
             params=params,
             include_additional_request_params=include_additional_request_params,
@@ -1024,15 +1019,12 @@ class AirbyteClient(DagsterModel):
     def _single_request(
         self,
         method: str,
-        endpoint: str,
-        base_url: str,
+        url: str,
         data: Optional[Mapping[str, Any]] = None,
         params: Optional[Mapping[str, Any]] = None,
         include_additional_request_params: bool = True,
     ) -> Mapping[str, Any]:
         """Execute a single HTTP request with retry logic."""
-        url = f"{base_url}/{endpoint}"
-
         num_retries = 0
         while True:
             try:
@@ -1058,44 +1050,28 @@ class AirbyteClient(DagsterModel):
     def _paginated_request(
         self,
         method: str,
-        endpoint: str,
-        base_url: str,
+        url: str,
         params: Mapping[str, Any],
         data: Optional[Mapping[str, Any]] = None,
         include_additional_request_params: bool = True,
-        page_size: int = 100,
     ) -> Iterator[Mapping[str, Any]]:
         """Execute paginated requests and yield all items."""
-        offset = 0
-        params = copy.copy(params) if params else {}
-
-        while True:
-            params.update({"limit": page_size, "offset": offset})
-
+        result_data = []
+        while url != "":
             response = self._single_request(
                 method=method,
-                endpoint=endpoint,
-                base_url=base_url,
+                url=url,
                 data=data,
                 params=params,
                 include_additional_request_params=include_additional_request_params,
             )
 
             # Handle different response structures
-            items = response.get("data", response.get("items", []))
-            if isinstance(response, list):
-                items = response
+            result_data.extend(response.get("data", []))
+            url = response.get("next")
+            params = {}
 
-            if not items:
-                break
-
-            yield from items
-
-            # Check if we've received fewer items than requested (last page)
-            if len(items) < page_size:
-                break
-
-            offset += page_size
+        return result_data
 
     def validate_workspace_id(self) -> None:
         """Fetches workspace details. This is used to validate that the workspace exists."""
@@ -1272,7 +1248,7 @@ class BaseAirbyteWorkspace(ConfigurableResource):
 
         client.validate_workspace_id()
 
-        connections = client.get_connections()["data"]
+        connections = client.get_connections()
 
         for partial_connection_details in connections:
             full_connection_details = client.get_connection_details(
@@ -1465,12 +1441,12 @@ class AirbyteWorkspace(BaseAirbyteWorkspace):
         default=None, description="The Airbyte password for authentication."
     )
 
-    @model_validator(mode="before")
-    def validation(cls, values):
-        has_client_id = values.get("client_id") is not None
-        has_client_secret = values.get("client_secret") is not None
-        has_username = values.get("username") is not None
-        has_password = values.get("password") is not None
+    @cached_method
+    def get_client(self) -> AirbyteClient:
+        has_client_id = self.client_id is not None
+        has_client_secret = self.client_secret is not None
+        has_username = self.username is not None
+        has_password = self.password is not None
 
         check.invariant(
             has_username == has_password,
@@ -1486,10 +1462,6 @@ class AirbyteWorkspace(BaseAirbyteWorkspace):
             not ((has_client_id or has_client_secret) and (has_username or has_password)),
             "Invalid config: cannot provide both client_id/client_secret and username/password for Airbyte authentication.",
         )
-        return values
-
-    @cached_method
-    def get_client(self) -> AirbyteClient:
         return AirbyteClient(
             rest_api_base_url=self.rest_api_base_url,
             configuration_api_base_url=self.configuration_api_base_url,

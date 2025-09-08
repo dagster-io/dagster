@@ -27,9 +27,9 @@ from dagster_airbyte.asset_defs import (
 from dagster_airbyte.ops import airbyte_sync_op as airbyte_sync_op
 from dagster_airbyte.resources import (
     AirbyteCloudResource as AirbyteCloudResource,
+    AirbyteCloudWorkspace as AirbyteCloudWorkspace,
     AirbyteResource as AirbyteResource,
     AirbyteWorkspace as AirbyteWorkspace,
-    AirbyteCloudWorkspace as AirbyteCloudWorkspace,
     airbyte_cloud_resource as airbyte_cloud_resource,
     airbyte_resource as airbyte_resource,
     load_airbyte_asset_specs as load_airbyte_asset_specs,

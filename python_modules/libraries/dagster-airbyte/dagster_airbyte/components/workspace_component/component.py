@@ -32,7 +32,7 @@ class ProxyDagsterAirbyteTranslator(DagsterAirbyteTranslator):
         return spec
 
 
-class BaseAirbyteWorkspaceModel(dg.Model):
+class BaseAirbyteWorkspaceModel(dg.Model, dg.Resolvable):
     request_max_retries: Annotated[
         int,
         pydantic.Field(
@@ -167,7 +167,7 @@ class AirbyteWorkspaceComponent(dg.Component, dg.Model, dg.Resolvable):
         Union[AirbyteWorkspace, AirbyteCloudWorkspace],
         dg.Resolver(
             resolve_airbyte_workspace_type,
-            model_field_type=[AirbyteWorkspaceModel, AirbyteCloudWorkspaceModel],
+            model_field_type=Union[AirbyteWorkspaceModel, AirbyteCloudWorkspaceModel],
         ),
     ]
     connection_selector: Annotated[
@@ -191,10 +191,6 @@ class AirbyteWorkspaceComponent(dg.Component, dg.Model, dg.Resolvable):
     )
 
     @cached_property
-    def workspace_resource(self) -> AirbyteWorkspace:
-        return self.workspace
-
-    @cached_property
     def translator(self) -> DagsterAirbyteTranslator:
         if self.translation:
             return ProxyDagsterAirbyteTranslator(self.translation)
@@ -202,14 +198,14 @@ class AirbyteWorkspaceComponent(dg.Component, dg.Model, dg.Resolvable):
 
     def build_defs(self, context: dg.ComponentLoadContext) -> dg.Definitions:
         airbyte_assets = build_airbyte_assets_definitions(
-            workspace=self.workspace_resource,
+            workspace=self.workspace,
             dagster_airbyte_translator=self.translator,
             connection_selector_fn=self.connection_selector,
         )
         assets_with_resource = [
             airbyte_asset.with_resources(
                 {
-                    "airbyte": self.workspace_resource.get_resource_definition(),
+                    "airbyte": self.workspace.get_resource_definition(),
                     "io_manager": default_job_io_manager,
                 }
             )

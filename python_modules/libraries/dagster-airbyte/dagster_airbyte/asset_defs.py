@@ -40,6 +40,7 @@ from dagster_airbyte.resources import (
     AirbyteResource,
     AirbyteWorkspace,
     BaseAirbyteResource,
+    BaseAirbyteWorkspace,
 )
 from dagster_airbyte.translator import (
     AirbyteConnection,
@@ -1165,9 +1166,7 @@ def build_airbyte_assets_definitions(
             name=f"airbyte_{clean_name(connection_name)}",
             dagster_airbyte_translator=dagster_airbyte_translator,
         )
-        def _asset_fn(
-            context: AssetExecutionContext, airbyte: Union[AirbyteWorkspace, AirbyteCloudWorkspace]
-        ):
+        def _asset_fn(context: AssetExecutionContext, airbyte: BaseAirbyteWorkspace):
             yield from airbyte.sync_and_poll(context=context)
 
         _asset_fns.append(_asset_fn)

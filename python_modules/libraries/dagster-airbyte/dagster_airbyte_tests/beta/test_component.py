@@ -14,7 +14,7 @@ from dagster._utils.env import environ
 from dagster.components.core.component_tree import ComponentTree
 from dagster.components.testing.test_cases import TestTranslation
 from dagster.components.testing.utils import create_defs_folder_sandbox
-from dagster_airbyte import AirbyteWorkspace
+from dagster_airbyte import AirbyteCloudWorkspace
 from dagster_airbyte.components.workspace_component.component import AirbyteWorkspaceComponent
 from dagster_airbyte.translator import AirbyteConnection
 from dagster_shared.merger import deep_merge_dicts
@@ -153,7 +153,7 @@ def test_custom_filter_fn_python(
     num_assets: int,
 ) -> None:
     defs = AirbyteWorkspaceComponent(
-        workspace=AirbyteWorkspace(
+        workspace=AirbyteCloudWorkspace(
             client_id=TEST_CLIENT_ID,
             client_secret=TEST_CLIENT_SECRET,
             workspace_id=TEST_WORKSPACE_ID,

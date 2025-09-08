@@ -82,6 +82,12 @@ SAMPLE_CONNECTIONS = {
     ],
 }
 
+SAMPLE_CONNECTIONS_NEXT_PAGE = {
+    "next": "",
+    "previous": "https://api.airbyte.com/v1/connections?limit=5&offset=10",
+    "data": [],
+}
+
 
 def get_stream_details(name: str) -> Mapping[str, Any]:
     return {
@@ -208,6 +214,18 @@ def get_job_details_sample(status: str) -> Mapping[str, Any]:
 
 SAMPLE_JOB_RESPONSE_RUNNING = get_job_details_sample(status=AirbyteJobStatusType.RUNNING)
 
+SAMPLE_WORKSPACE_RESPOMSE = {
+    "workspaceId": TEST_WORKSPACE_ID,
+    "name": "Acme Company",
+    "dataResidency": "auto",
+}
+
+SAMPLE_ANOTHER_WORKSPACE_RESPOMSE = {
+    "workspaceId": TEST_ANOTHER_WORKSPACE_ID,
+    "name": "Acme Company 2",
+    "dataResidency": "auto",
+}
+
 
 @pytest.fixture(
     name="base_api_mocks",
@@ -231,8 +249,20 @@ def fetch_workspace_data_api_mocks_fixture(
 ) -> Iterator[responses.RequestsMock]:
     base_api_mocks.add(
         method=responses.GET,
+        url=f"{AIRBYTE_CLOUD_REST_API_BASE_URL}/workspaces/{TEST_WORKSPACE_ID}",
+        json=SAMPLE_WORKSPACE_RESPOMSE,
+        status=200,
+    )
+    base_api_mocks.add(
+        method=responses.GET,
         url=f"{AIRBYTE_CLOUD_REST_API_BASE_URL}/connections",
         json=SAMPLE_CONNECTIONS,
+        status=200,
+    )
+    base_api_mocks.add(
+        method=responses.GET,
+        url=f"{AIRBYTE_CLOUD_REST_API_BASE_URL}/connections?limit=5&offset=10",
+        json=SAMPLE_CONNECTIONS_NEXT_PAGE,
         status=200,
     )
     base_api_mocks.add(
