@@ -1,16 +1,14 @@
 ---
-description: How to test components.
+description: Best practices for testing components you have created.
 sidebar_position: 500
-title: Testing your component
+title: Testing custom components
 ---
-
-## Testing custom components
 
 After you [create a new component](/guides/build/components/creating-new-components/creating-and-registering-a-component), we recommend testing scaffolding and runtime execution with the Dagster framework utilities outlined below.
 
-### Setting up a sandbox with `create_defs_folder_sandbox`
+## Setting up a sandbox
 
-The function at the core of our testing workflows is `dagster.components.testing.create_defs_folder_sandbox`. This context manager allows you to construct a temporary defs folder, which can be populated with components and loaded into Component objects or built into dagster Definitions just as they would be in a real Dagster project.
+The function at the core of our testing workflows is `testing.create_defs_folder_sandbox`. This context manager allows you to construct a temporary defs folder, which can be populated with components and loaded into Component objects or built into dagster Definitions just as they would be in a real Dagster project.
 
 The function signature is the following:
 
@@ -22,13 +20,16 @@ def create_defs_folder_sandbox(
 ) -> Iterator[DefsFolderSandbox]: ...
 ```
 
-### The `DefsFolderSandbox` object
+### About the sandbox object
 
-Once created, the `DefsFolderSandbox` object provides a number of useful utilities for scaffolding and loading components.
+Once created, the `DefsFolderSandbox` object provides a number of useful utilities for scaffolding and loading components:
 
-#### Creating a component with `scaffold_component`
+* `scaffold_component` to scaffold a component into the `defs` folder.
+* `load_component_and_build_defs` to test instantiation of a component, and to validate the definitions it produces.
 
-The `scaffold_component` method allows you to scaffold a component into the defs folder, just as a user would using the `dg scaffold component` CLI command.
+### Scaffolding a component
+
+The `scaffold_component` method allows you to scaffold a component into the `defs` folder, just as a user would using the `dg scaffold component` CLI command.
 
 The signature is
 
@@ -57,7 +58,7 @@ def test_scaffold_sling():
 
 For ease of use, the `defs_yaml_contents` argument can be used to replace the contents of the `defs.yaml` file after the component has been scaffolded.
 
-#### Loading and building definitions with `load_component_and_build_defs`
+### Loading and building definitions
 
 To test instantiation of a component, and to validate the definitions it produces, you can use the `load_component_and_build_defs` method, which loads an already-scaffolded component and builds the corresponding Definitions.
 
@@ -79,7 +80,7 @@ def test_dlt_component():
             }
 ```
 
-#### Testing multiple components
+## Testing multiple components
 
 These utilities are also useful for testing multiple components in a single test. For example, testing the `TemplatedSqlComponent` with a Snowflake connection:
 
