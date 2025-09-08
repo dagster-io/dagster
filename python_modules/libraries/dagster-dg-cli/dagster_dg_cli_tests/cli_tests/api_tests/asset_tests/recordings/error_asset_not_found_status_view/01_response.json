@@ -1,3 +1,26 @@
 {
-  "assetNodes": []
+  "assetsOrError": {
+    "__typename": "AssetConnection",
+    "nodes": [
+      {
+        "assetHealth": {
+          "assetChecksStatus": "UNKNOWN",
+          "assetChecksStatusMetadata": null,
+          "assetHealth": "UNKNOWN",
+          "freshnessStatus": "UNKNOWN",
+          "freshnessStatusMetadata": null,
+          "materializationStatus": "UNKNOWN",
+          "materializationStatusMetadata": null
+        },
+        "assetMaterializations": [],
+        "definition": null,
+        "id": "[\"nonexistent-asset\"]",
+        "key": {
+          "path": [
+            "nonexistent-asset"
+          ]
+        }
+      }
+    ]
+  }
 }

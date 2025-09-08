@@ -6,19 +6,17 @@
         "assetHealth": {
           "assetChecksStatus": "NOT_APPLICABLE",
           "assetChecksStatusMetadata": null,
-          "assetHealth": "DEGRADED",
+          "assetHealth": "HEALTHY",
           "freshnessStatus": "NOT_APPLICABLE",
           "freshnessStatusMetadata": null,
-          "materializationStatus": "DEGRADED",
-          "materializationStatusMetadata": {
-            "failedRunId": "d4cd180f-aa48-47c0-ba34-74c8222e5123"
-          }
+          "materializationStatus": "HEALTHY",
+          "materializationStatusMetadata": null
         },
         "assetMaterializations": [
           {
             "partition": null,
-            "runId": "c27f2af5-deba-4269-ad6b-4e57dc722ad1",
-            "timestamp": "1756785569553"
+            "runId": "56db7aee-159f-4e13-a9e5-874476b2ec87",
+            "timestamp": "1757345195945"
           }
         ],
         "definition": {

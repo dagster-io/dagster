@@ -1,21 +1,43 @@
 {
-  "assetNodes": [
-    {
-      "assetKey": {
-        "path": [
-          "aws",
-          "cloud-prod",
-          "workspace_staging_pipelines"
-        ]
-      },
-      "description": "Snowflake stages for AWS data, creates new stages for new assets, refreses existing stages.",
-      "freshnessInfo": null,
-      "freshnessPolicy": null,
-      "groupName": "aws_stages",
-      "id": "dagster_open_platform.__repository__.[\"aws\", \"cloud-prod\", \"workspace_staging_pipelines\"]",
-      "kinds": [],
-      "latestMaterializationByPartition": [],
-      "metadataEntries": []
-    }
-  ]
+  "assetsOrError": {
+    "__typename": "AssetConnection",
+    "nodes": [
+      {
+        "assetHealth": {
+          "assetChecksStatus": "NOT_APPLICABLE",
+          "assetChecksStatusMetadata": null,
+          "assetHealth": "HEALTHY",
+          "freshnessStatus": "HEALTHY",
+          "freshnessStatusMetadata": {
+            "lastMaterializedTimestamp": 1757317149.2161427
+          },
+          "materializationStatus": "HEALTHY",
+          "materializationStatusMetadata": null
+        },
+        "assetMaterializations": [
+          {
+            "partition": null,
+            "runId": "7fb5157a-9ffa-456b-aa21-fd9ff2f4d180",
+            "timestamp": "1757317149216"
+          }
+        ],
+        "definition": {
+          "description": "Snowflake stages for AWS data, creates new stages for new assets, refreses existing stages.",
+          "freshnessInfo": null,
+          "freshnessPolicy": null,
+          "groupName": "aws_stages",
+          "kinds": [],
+          "metadataEntries": []
+        },
+        "id": "[\"aws\", \"cloud-prod\", \"workspace_staging_pipelines\"]",
+        "key": {
+          "path": [
+            "aws",
+            "cloud-prod",
+            "workspace_staging_pipelines"
+          ]
+        }
+      }
+    ]
+  }
 }
