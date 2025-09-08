@@ -2,6 +2,7 @@ import dagster._check as check
 from dagster._core.definitions.asset_checks.asset_check_spec import AssetCheckKey
 from dagster._core.definitions.partitions.definition import PartitionsDefinition
 from dagster._core.definitions.partitions.subset import PartitionsSubset
+from dagster._core.definitions.partitions.subset.serialized import SerializedPartitionsSubset
 from dagster._core.instance import DagsterInstance
 from dagster._core.storage.asset_check_execution_record import (
     AssetCheckExecutionRecordStatus,
@@ -29,9 +30,9 @@ def get_asset_check_partition_status(
     current_def_id = partitions_def.get_serializable_unique_identifier()
 
     if cache_value and cache_value.partitions_def_id == current_def_id:
-        planned_subset = cache_value.planned_partition_subset
-        succeeded_subset = cache_value.succeeded_partition_subset
-        failed_subset = cache_value.failed_partition_subset
+        planned_subset = cache_value.serialized_planned_subset.deserialize(partitions_def)
+        succeeded_subset = cache_value.serialized_succeeded_subset.deserialize(partitions_def)
+        failed_subset = cache_value.serialized_failed_subset.deserialize(partitions_def)
         planned_run_mapping = cache_value.planned_partition_run_mapping
         after_storage_id = cache_value.latest_storage_id
     else:
@@ -44,7 +45,7 @@ def get_asset_check_partition_status(
     # fetch all partition records updated after the last cached event ID, to incrementally update
     # the cached value
     partition_records = instance.event_log_storage.get_asset_check_partition_records(
-        check_key, after_storage_id
+        check_key, after_event_storage_id=after_storage_id
     )
     if partition_records:
         planned_keys = list(planned_subset.get_partition_keys())
@@ -85,9 +86,15 @@ def get_asset_check_partition_status(
         new_cache_value = AssetCheckPartitionStatusCacheValue(
             latest_storage_id=max_storage_id,
             partitions_def_id=current_def_id,
-            planned_partition_subset=planned_subset,
-            succeeded_partition_subset=succeeded_subset,
-            failed_partition_subset=failed_subset,
+            serialized_planned_subset=SerializedPartitionsSubset.from_subset(
+                planned_subset, partitions_def
+            ),
+            serialized_succeeded_subset=SerializedPartitionsSubset.from_subset(
+                succeeded_subset, partitions_def
+            ),
+            serialized_failed_subset=SerializedPartitionsSubset.from_subset(
+                failed_subset, partitions_def
+            ),
             planned_partition_run_mapping=planned_run_mapping,
         )
         instance.event_log_storage.update_asset_check_cached_value(check_key, new_cache_value)

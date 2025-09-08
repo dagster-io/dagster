@@ -661,6 +661,12 @@ class SqlEventLogStorage(EventLogStorage):
             if self.has_table("asset_check_executions"):
                 conn.execute(AssetCheckExecutionsTable.delete())
 
+            if self.has_table("asset_check_partitions"):
+                conn.execute(AssetCheckPartitionsTable.delete())
+
+            if self.has_table("asset_checks"):
+                conn.execute(AssetChecksTable.delete())
+
         self._wipe_index()
 
     def _wipe_index(self):
@@ -682,6 +688,12 @@ class SqlEventLogStorage(EventLogStorage):
 
             if self.has_table("asset_check_executions"):
                 conn.execute(AssetCheckExecutionsTable.delete())
+
+            if self.has_table("asset_check_partitions"):
+                conn.execute(AssetCheckPartitionsTable.delete())
+
+            if self.has_table("asset_checks"):
+                conn.execute(AssetChecksTable.delete())
 
     def delete_events(self, run_id: str) -> None:
         with self.run_connection(run_id) as conn:
@@ -1421,7 +1433,18 @@ class SqlEventLogStorage(EventLogStorage):
                     last_completed_check_execution_record=completed_record,
                 )
 
-            return results
+            return {
+                key: results.get(
+                    key,
+                    AssetCheckSummaryRecord(
+                        asset_check_key=key,
+                        last_check_execution_record=None,
+                        last_run_id=None,
+                        last_completed_check_execution_record=None,
+                    ),
+                )
+                for key in asset_check_keys
+            }
 
     def has_asset_key(self, asset_key: AssetKey) -> bool:
         check.inst_param(asset_key, "asset_key", AssetKey)
@@ -1879,6 +1902,20 @@ class SqlEventLogStorage(EventLogStorage):
                 conn.execute(
                     AssetCheckExecutionsTable.delete().where(
                         AssetCheckExecutionsTable.c.asset_key == asset_key.to_string()
+                    )
+                )
+
+            if self.has_table("asset_check_partitions"):
+                conn.execute(
+                    AssetCheckPartitionsTable.delete().where(
+                        AssetCheckPartitionsTable.c.asset_key == asset_key.to_string()
+                    )
+                )
+
+            if self.has_table("asset_checks"):
+                conn.execute(
+                    AssetChecksTable.delete().where(
+                        AssetChecksTable.c.asset_key == asset_key.to_string()
                     )
                 )
 
@@ -3233,7 +3270,6 @@ class SqlEventLogStorage(EventLogStorage):
             return
 
         if event.dagster_event_type == DagsterEventType.ASSET_CHECK_EVALUATION_PLANNED:
-            # Handle planned events
             planned = cast(
                 "AssetCheckEvaluationPlanned",
                 check.not_none(event.dagster_event).event_specific_data,
@@ -3243,7 +3279,6 @@ class SqlEventLogStorage(EventLogStorage):
             partition_key = planned.partition
             execution_status = AssetCheckExecutionRecordStatus.PLANNED.value
             planned_run_id = event.run_id
-
         elif event.dagster_event_type == DagsterEventType.ASSET_CHECK_EVALUATION:
             # Handle evaluation events
             evaluation = cast(
@@ -3269,11 +3304,23 @@ class SqlEventLogStorage(EventLogStorage):
                     AssetChecksTable.insert().values(
                         asset_key=asset_key_str,
                         check_name=check_name,
+                        last_execution_record_id=execution_id,
+                        last_run_id=event.run_id,
+                        last_completed_execution_record_id=execution_id
+                        if execution_status != AssetCheckExecutionRecordStatus.PLANNED.value
+                        else None,
                         created_timestamp=datetime.now(timezone.utc),
                         updated_timestamp=datetime.now(timezone.utc),
                     )
                 )
             except db_exc.IntegrityError:
+                values = {
+                    "updated_timestamp": datetime.now(timezone.utc),
+                    "last_execution_record_id": execution_id,
+                    "last_run_id": event.run_id,
+                }
+                if execution_status != AssetCheckExecutionRecordStatus.PLANNED.value:
+                    values["last_completed_execution_record_id"] = execution_id
                 conn.execute(
                     AssetChecksTable.update()
                     .where(
@@ -3282,7 +3329,7 @@ class SqlEventLogStorage(EventLogStorage):
                             AssetChecksTable.c.check_name == check_name,
                         )
                     )
-                    .values(updated_timestamp=datetime.now(timezone.utc))
+                    .values(**values)
                 )
 
             if partition_key:
@@ -3497,7 +3544,10 @@ class SqlEventLogStorage(EventLogStorage):
                 )
 
     def get_asset_check_partition_records(
-        self, check_key: AssetCheckKey, after_storage_id: Optional[int] = None
+        self,
+        check_key: AssetCheckKey,
+        partition_key: Optional[str] = None,
+        after_event_storage_id: Optional[int] = None,
     ) -> Sequence[AssetCheckPartitionRecord]:
         """Get asset check partition records with execution status and planned run info."""
         if not self.has_table("asset_check_partitions"):
@@ -3517,8 +3567,11 @@ class SqlEventLogStorage(EventLogStorage):
             )
         )
 
-        if after_storage_id is not None:
-            query = query.where(AssetCheckPartitionsTable.c.last_event_id > after_storage_id)
+        if partition_key is not None:
+            query = query.where(AssetCheckPartitionsTable.c.partition_key == partition_key)
+
+        if after_event_storage_id is not None:
+            query = query.where(AssetCheckPartitionsTable.c.last_event_id > after_event_storage_id)
 
         with self.index_connection() as conn:
             rows = db_fetch_mappings(conn, query)

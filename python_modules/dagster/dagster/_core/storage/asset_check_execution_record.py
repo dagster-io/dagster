@@ -8,6 +8,7 @@ from dagster_shared.serdes import deserialize_value
 import dagster._check as check
 from dagster._core.definitions.asset_checks.asset_check_evaluation import AssetCheckEvaluation
 from dagster._core.definitions.asset_key import AssetCheckKey
+from dagster._core.definitions.partitions.subset.serialized import SerializedPartitionsSubset
 from dagster._core.events.log import DagsterEventType, EventLogEntry
 from dagster._core.loader import LoadableBy, LoadingContext
 from dagster._core.storage.dagster_run import DagsterRunStatus, RunRecord
@@ -50,9 +51,9 @@ class AssetCheckPartitionStatusCacheValue:
 
     latest_storage_id: int
     partitions_def_id: Optional[str]
-    planned_partition_subset: "PartitionsSubset"
-    succeeded_partition_subset: "PartitionsSubset"
-    failed_partition_subset: "PartitionsSubset"
+    serialized_planned_subset: "SerializedPartitionsSubset"
+    serialized_succeeded_subset: "SerializedPartitionsSubset"
+    serialized_failed_subset: "SerializedPartitionsSubset"
     # Map of partition key -> run_id for planned partitions (to resolve run status)
     planned_partition_run_mapping: dict[str, str]
 
@@ -60,13 +61,15 @@ class AssetCheckPartitionStatusCacheValue:
     def from_partitions_def(
         cls, partitions_def: "PartitionsDefinition"
     ) -> "AssetCheckPartitionStatusCacheValue":
-        empty_subset = partitions_def.empty_subset()
-        return cls(
+        serialized_subset = SerializedPartitionsSubset.from_subset(
+            partitions_def.empty_subset(), partitions_def
+        )
+        return AssetCheckPartitionStatusCacheValue(
             latest_storage_id=0,
             partitions_def_id=partitions_def.get_serializable_unique_identifier(),
-            planned_partition_subset=empty_subset,
-            succeeded_partition_subset=empty_subset,
-            failed_partition_subset=empty_subset,
+            serialized_planned_subset=serialized_subset,
+            serialized_succeeded_subset=serialized_subset,
+            serialized_failed_subset=serialized_subset,
             planned_partition_run_mapping={},
         )
 

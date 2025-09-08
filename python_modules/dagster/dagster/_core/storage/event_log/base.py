@@ -708,7 +708,10 @@ class EventLogStorage(ABC, MayHaveInstanceWeakref[T_DagsterInstance]):
 
     @abstractmethod
     def get_asset_check_partition_records(
-        self, check_key: AssetCheckKey, after_storage_id: Optional[int] = None
+        self,
+        check_key: AssetCheckKey,
+        partition_key: Optional[str] = None,
+        after_event_storage_id: Optional[int] = None,
     ) -> Sequence[AssetCheckPartitionRecord]:
         """Get asset check partition records with execution status and planned run info."""
         pass
