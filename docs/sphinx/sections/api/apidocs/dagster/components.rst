@@ -92,3 +92,15 @@ Loading Components
 ------------------
 
 .. autofunction:: load_from_defs_folder
+
+
+Testing Components
+------------------
+
+.. currentmodule:: dagster.components.testing
+
+.. autofunction:: create_defs_folder_sandbox
+
+.. autoclass:: DefsFolderSandbox
+    :members:
+
