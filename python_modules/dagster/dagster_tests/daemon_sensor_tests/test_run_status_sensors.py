@@ -25,6 +25,7 @@ from dagster._core.workspace.context import WorkspaceProcessContext
 from dagster._core.workspace.load_target import WorkspaceFileTarget, WorkspaceLoadTarget
 from dagster._time import get_current_datetime
 from dagster._vendored.dateutil.relativedelta import relativedelta
+from dagster_shared.seven import IS_WINDOWS
 
 from dagster_tests.daemon_sensor_tests.conftest import create_workspace_load_target
 from dagster_tests.daemon_sensor_tests.test_sensor_run import (
@@ -813,6 +814,7 @@ def test_run_failure_sensor_empty_run_records(
                 )
 
 
+@pytest.mark.skipif(IS_WINDOWS, reason="times out on azure")
 def test_all_code_locations_run_status_sensor(executor: Optional[ThreadPoolExecutor]):
     freeze_datetime = get_current_datetime()
 
