@@ -14,6 +14,7 @@ from dagster_airbyte import AirbyteCloudWorkspace, airbyte_assets
 from dagster_airbyte.resources import (
     AIRBYTE_CLOUD_CONFIGURATION_API_BASE_URL,
     AIRBYTE_CLOUD_REST_API_BASE_URL,
+    AirbyteWorkspace,
 )
 from dagster_airbyte.translator import AirbyteJobStatusType
 from dagster_airbyte.types import AirbyteOutput
@@ -116,7 +117,7 @@ def assert_cloud_configuration_api_call(
 
 
 def test_refresh_access_token(base_api_mocks: responses.RequestsMock) -> None:
-    """Tests the `AirbyteCloudClient._make_request` method and how the API access token is refreshed.
+    """Tests the `AirbyteCloudClient._single_request` method and how the API access token is refreshed.
 
     Args:
         base_api_mocks (responses.RequestsMock): The mock responses for the base API requests,
@@ -142,7 +143,7 @@ def test_refresh_access_token(base_api_mocks: responses.RequestsMock) -> None:
     with patch("dagster_airbyte.resources.datetime", wraps=datetime) as dt:
         # Test first call, must get the access token before calling the jobs api
         dt.now.return_value = test_time_first_call
-        client._make_request(method="GET", endpoint="test", base_url=client.rest_api_base_url)  # noqa
+        client._single_request(method="GET", url=f"{client.rest_api_base_url}/test")  # noqa
 
         assert len(base_api_mocks.calls) == 2
         api_calls = assert_token_call_and_split_calls(calls=base_api_mocks.calls)
@@ -154,7 +155,7 @@ def test_refresh_access_token(base_api_mocks: responses.RequestsMock) -> None:
 
         # Test second call, occurs before the access token expiration, only the jobs api is called
         dt.now.return_value = test_time_before_expiration
-        client._make_request(method="GET", endpoint="test", base_url=client.rest_api_base_url)  # noqa
+        client._single_request(method="GET", url=f"{client.rest_api_base_url}/test")  # noqa
 
         assert len(base_api_mocks.calls) == 1
         assert_cloud_rest_api_call(call=base_api_mocks.calls[0], endpoint="test")
@@ -164,7 +165,7 @@ def test_refresh_access_token(base_api_mocks: responses.RequestsMock) -> None:
         # Test third call, occurs after the token expiration,
         # must refresh the access token before calling the jobs api
         dt.now.return_value = test_time_after_expiration
-        client._make_request(method="GET", endpoint="test", base_url=client.rest_api_base_url)  # noqa
+        client._single_request(method="GET", url=f"{client.rest_api_base_url}/test")  # noqa
 
         assert len(base_api_mocks.calls) == 2
         api_calls = assert_token_call_and_split_calls(calls=base_api_mocks.calls)
@@ -493,7 +494,7 @@ def test_fivetran_airbyte_cloud_sync_and_poll_materialization_method(
 def test_airbyte_oss_api_url_configuration() -> None:
     """Tests that Airbyte OSS instances can configure custom API URLs."""
     with responses.RequestsMock() as response:
-        resource = AirbyteCloudWorkspace(
+        resource = AirbyteWorkspace(
             rest_api_base_url=TEST_OSS_REST_API_BASE,
             configuration_api_base_url=TEST_OSS_CONFIG_API_BASE,
             workspace_id=TEST_WORKSPACE_ID,
@@ -544,7 +545,7 @@ def test_airbyte_oss_api_url_configuration() -> None:
 def test_airbyte_oss_username_password_auth() -> None:
     """Tests that Airbyte OSS instances can use username/password authentication."""
     with responses.RequestsMock() as response:
-        resource = AirbyteCloudWorkspace(
+        resource = AirbyteWorkspace(
             rest_api_base_url=TEST_OSS_REST_API_BASE,
             configuration_api_base_url=TEST_OSS_CONFIG_API_BASE,
             workspace_id=TEST_WORKSPACE_ID,
@@ -589,7 +590,7 @@ def test_airbyte_oss_client_credentials_auth() -> None:
             json=SAMPLE_ACCESS_TOKEN,
             status=201,
         )
-        resource = AirbyteCloudWorkspace(
+        resource = AirbyteWorkspace(
             rest_api_base_url=TEST_OSS_REST_API_BASE,
             configuration_api_base_url=TEST_OSS_CONFIG_API_BASE,
             workspace_id=TEST_WORKSPACE_ID,
@@ -621,31 +622,13 @@ def test_airbyte_oss_client_credentials_auth() -> None:
         )
 
 
-def test_airbyte_cloud_requires_client_credentials() -> None:
-    """Tests that Airbyte Cloud instances require client_id and client_secret."""
-    with pytest.raises(Exception, match="both client_id and client_secret are required"):
-        AirbyteCloudWorkspace(
-            workspace_id=TEST_WORKSPACE_ID,
-            # Using default Cloud URLs but missing credentials
-            client_id=None,
-            client_secret=None,
-        )
-
-    with pytest.raises(Exception, match="both client_id and client_secret are required"):
-        AirbyteCloudWorkspace(
-            workspace_id=TEST_WORKSPACE_ID,
-            client_id=TEST_CLIENT_ID,
-            # Missing client_secret
-        )
-
-
 def test_airbyte_oss_auth_method_mutual_exclusivity() -> None:
     """Tests that auth methods are mutually exclusive for OSS instances."""
     # Test providing both username/password and client credentials fails
     with pytest.raises(
         Exception, match="cannot provide both client_id/client_secret and username/password"
     ):
-        AirbyteCloudWorkspace(
+        workspace = AirbyteWorkspace(
             rest_api_base_url=TEST_OSS_REST_API_BASE,
             configuration_api_base_url=TEST_OSS_CONFIG_API_BASE,
             workspace_id=TEST_WORKSPACE_ID,
@@ -654,23 +637,26 @@ def test_airbyte_oss_auth_method_mutual_exclusivity() -> None:
             client_id="test_client",
             client_secret="test_secret",
         )
+        workspace.get_client()
 
     # Test providing incomplete username/password fails
     with pytest.raises(Exception, match="both username and password are required"):
-        AirbyteCloudWorkspace(
+        workspace = AirbyteWorkspace(
             rest_api_base_url=TEST_OSS_REST_API_BASE,
             configuration_api_base_url=TEST_OSS_CONFIG_API_BASE,
             workspace_id=TEST_WORKSPACE_ID,
             username=TEST_USERNAME,
             # Missing password
         )
+        workspace.get_client()
 
     # Test providing incomplete client credentials fails
     with pytest.raises(Exception, match="both client_id and client_secret are required"):
-        AirbyteCloudWorkspace(
+        workspace = AirbyteWorkspace(
             rest_api_base_url=TEST_OSS_REST_API_BASE,
             configuration_api_base_url=TEST_OSS_CONFIG_API_BASE,
             workspace_id=TEST_WORKSPACE_ID,
             client_secret="test_secret",
             # Missing client_id
         )
+        workspace.get_client()

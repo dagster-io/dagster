@@ -32,7 +32,7 @@ from dagster._utils.merger import deep_merge_dicts
 from dagster_shared.dagster_model import DagsterModel
 from dagster_shared.record import record
 from dagster_shared.utils.cached_method import cached_method
-from pydantic import Field, PrivateAttr
+from pydantic import Field, PrivateAttr, model_validator
 from requests.exceptions import RequestException
 
 from dagster_airbyte.translator import (
@@ -902,6 +902,29 @@ class AirbyteClient(DagsterModel):
     _access_token_value: Optional[str] = PrivateAttr(default=None)
     _access_token_timestamp: Optional[float] = PrivateAttr(default=None)
 
+    @model_validator(mode="before")
+    def validate_authentication(cls, values):
+        has_client_id = values.get("client_id") is not None
+        has_client_secret = values.get("client_secret") is not None
+        has_username = values.get("username") is not None
+        has_password = values.get("password") is not None
+
+        check.invariant(
+            has_username == has_password,
+            "Missing config: both username and password are required for Airbyte authentication.",
+        )
+
+        check.invariant(
+            has_client_id == has_client_secret,
+            "Missing config: both client_id and client_secret are required for Airbyte authentication.",
+        )
+
+        check.invariant(
+            not ((has_client_id or has_client_secret) and (has_username or has_password)),
+            "Invalid config: cannot provide both client_id/client_secret and username/password for Airbyte authentication.",
+        )
+        return values
+
     @property
     @cached_method
     def _log(self) -> logging.Logger:
@@ -931,10 +954,9 @@ class AirbyteClient(DagsterModel):
 
     def _refresh_access_token(self) -> None:
         response = check.not_none(
-            self._make_request(
+            self._single_request(
                 method="POST",
-                endpoint="applications/token",
-                base_url=self.rest_api_base_url,
+                url=f"{self.rest_api_base_url}/applications/token",
                 data={
                     "client_id": self.client_id,
                     "client_secret": self.client_secret,
@@ -969,53 +991,6 @@ class AirbyteClient(DagsterModel):
 
         return session
 
-    def _make_request(
-        self,
-        method: str,
-        endpoint: str,
-        base_url: str,
-        data: Optional[Mapping[str, Any]] = None,
-        params: Optional[Mapping[str, Any]] = None,
-        include_additional_request_params: bool = True,
-        paginate: bool = False,
-    ) -> Union[Mapping[str, Any], Iterator[Mapping[str, Any]]]:
-        """Creates and sends a request to the desired Airbyte REST API endpoint.
-
-        Supports automatic pagination when paginate=True.
-
-        Args:
-            method (str): The http method to use for this request (e.g. "POST", "GET", "PATCH").
-            endpoint (str): The Airbyte API endpoint to send this request to.
-            base_url (str): The base url to the Airbyte API to use.
-            data (Optional[Dict[str, Any]]): JSON-formatted data string to be included in the request.
-            params (Optional[Dict[str, Any]]): JSON-formatted query params to be included in the request.
-            include_additional_request_params (bool): Whether to include authorization and user-agent headers
-                to the request parameters. Defaults to True.
-            paginate (bool): Whether to automatically paginate through all results. Defaults to False.
-            page_size (int): Number of items per page when paginating. Defaults to 100.
-
-        Returns:
-            Union[Dict[str, Any], Iterator[Dict[str, Any]]]:
-                - If paginate=False: Parsed json data from the response
-                - If paginate=True: Iterator yielding all items across pages
-        """
-        if paginate:
-            return self._paginated_request(
-                method=method,
-                url=f"{base_url}/{endpoint}",
-                data=data,
-                params=params or {},
-                include_additional_request_params=include_additional_request_params,
-            )
-
-        return self._single_request(
-            method=method,
-            url=f"{base_url}/{endpoint}",
-            data=data,
-            params=params,
-            include_additional_request_params=include_additional_request_params,
-        )
-
     def _single_request(
         self,
         method: str,
@@ -1047,6 +1022,8 @@ class AirbyteClient(DagsterModel):
 
             raise Failure(f"Max retries ({self.request_max_retries}) exceeded with url: {url}.")
 
+        return {}
+
     def _paginated_request(
         self,
         method: str,
@@ -1054,7 +1031,7 @@ class AirbyteClient(DagsterModel):
         params: Mapping[str, Any],
         data: Optional[Mapping[str, Any]] = None,
         include_additional_request_params: bool = True,
-    ) -> Iterator[Mapping[str, Any]]:
+    ) -> Sequence[Mapping[str, Any]]:
         """Execute paginated requests and yield all items."""
         result_data = []
         while url != "":
@@ -1068,27 +1045,24 @@ class AirbyteClient(DagsterModel):
 
             # Handle different response structures
             result_data.extend(response.get("data", []))
-            url = response.get("next")
+            url = response.get("next", "")
             params = {}
 
         return result_data
 
     def validate_workspace_id(self) -> None:
         """Fetches workspace details. This is used to validate that the workspace exists."""
-        self._make_request(
+        self._single_request(
             method="GET",
-            endpoint=f"workspaces/{self.workspace_id}",
-            base_url=self.rest_api_base_url,
+            url=f"{self.rest_api_base_url}/workspaces/{self.workspace_id}",
         )
 
-    def get_connections(self) -> Mapping[str, Any]:
+    def get_connections(self) -> Sequence[Mapping[str, Any]]:
         """Fetches all connections of an Airbyte workspace from the Airbyte REST API."""
-        return self._make_request(
+        return self._paginated_request(
             method="GET",
-            endpoint="connections",
-            base_url=self.rest_api_base_url,
+            url=f"{self.rest_api_base_url}/connections",
             params={"workspaceIds": self.workspace_id},
-            paginate=True,
         )
 
     def get_connection_details(self, connection_id) -> Mapping[str, Any]:
@@ -1098,26 +1072,23 @@ class AirbyteClient(DagsterModel):
         # Using the Airbyte Configuration API to get the connection details, including streams and their configs.
         # https://airbyte-public-api-docs.s3.us-east-2.amazonaws.com/rapidoc-api-docs.html#post-/v1/connections/get
         # https://github.com/airbytehq/airbyte-platform/blob/v1.0.0/airbyte-api/server-api/src/main/openapi/config.yaml
-        return self._make_request(
+        return self._single_request(
             method="POST",
-            endpoint="connections/get",
-            base_url=self.configuration_api_base_url,
+            url=f"{self.configuration_api_base_url}/connections/get",
             data={"connectionId": connection_id},
         )
 
     def get_destination_details(self, destination_id: str) -> Mapping[str, Any]:
         """Fetches details about a given destination from the Airbyte REST API."""
-        return self._make_request(
+        return self._single_request(
             method="GET",
-            endpoint=f"destinations/{destination_id}",
-            base_url=self.rest_api_base_url,
+            url=f"{self.rest_api_base_url}/destinations/{destination_id}",
         )
 
     def start_sync_job(self, connection_id: str) -> Mapping[str, Any]:
-        return self._make_request(
+        return self._single_request(
             method="POST",
-            endpoint="jobs",
-            base_url=self.rest_api_base_url,
+            url=f"{self.rest_api_base_url}/jobs",
             data={
                 "connectionId": connection_id,
                 "jobType": "sync",
@@ -1125,13 +1096,15 @@ class AirbyteClient(DagsterModel):
         )
 
     def get_job_details(self, job_id: int) -> Mapping[str, Any]:
-        return self._make_request(
-            method="GET", endpoint=f"jobs/{job_id}", base_url=self.rest_api_base_url
+        return self._single_request(
+            method="GET",
+            url=f"{self.rest_api_base_url}/jobs/{job_id}",
         )
 
     def cancel_job(self, job_id: int) -> Mapping[str, Any]:
-        return self._make_request(
-            method="DELETE", endpoint=f"jobs/{job_id}", base_url=self.rest_api_base_url
+        return self._single_request(
+            method="DELETE",
+            url=f"{self.rest_api_base_url}/jobs/{job_id}",
         )
 
     def sync_and_poll(
@@ -1443,25 +1416,6 @@ class AirbyteWorkspace(BaseAirbyteWorkspace):
 
     @cached_method
     def get_client(self) -> AirbyteClient:
-        has_client_id = self.client_id is not None
-        has_client_secret = self.client_secret is not None
-        has_username = self.username is not None
-        has_password = self.password is not None
-
-        check.invariant(
-            has_username == has_password,
-            "Missing config: both username and password are required for Airbyte authentication.",
-        )
-
-        check.invariant(
-            has_client_id == has_client_secret,
-            "Missing config: both client_id and client_secret are required for Airbyte authentication.",
-        )
-
-        check.invariant(
-            not ((has_client_id or has_client_secret) and (has_username or has_password)),
-            "Invalid config: cannot provide both client_id/client_secret and username/password for Airbyte authentication.",
-        )
         return AirbyteClient(
             rest_api_base_url=self.rest_api_base_url,
             configuration_api_base_url=self.configuration_api_base_url,
@@ -1500,14 +1454,14 @@ class AirbyteCloudWorkspace(BaseAirbyteWorkspace):
 
 @beta
 def load_airbyte_asset_specs(
-    workspace: Union[AirbyteWorkspace, AirbyteCloudWorkspace],
+    workspace: BaseAirbyteWorkspace,
     dagster_airbyte_translator: Optional[DagsterAirbyteTranslator] = None,
     connection_selector_fn: Optional[Callable[[AirbyteConnection], bool]] = None,
 ) -> Sequence[AssetSpec]:
     """Returns a list of AssetSpecs representing the Airbyte content in the workspace.
 
     Args:
-        workspace (Union[AirbyteWorkspace, AirbyteCloudWorkspace]): The Airbyte workspace to fetch assets from.
+        workspace (BaseAirbyteWorkspace): The Airbyte workspace to fetch assets from.
         dagster_airbyte_translator (Optional[DagsterAirbyteTranslator], optional): The translator to use
             to convert Airbyte content into :py:class:`dagster.AssetSpec`.
             Defaults to :py:class:`DagsterAirbyteTranslator`.
