@@ -99,6 +99,7 @@
 | `llama`             | <img src="/images/guides/build/assets/metadata-tags/kinds/icons/tool-llama-color.svg" width={20} height={20} />             |
 | `looker`            | <img src="/images/guides/build/assets/metadata-tags/kinds/icons/tool-looker-color.svg" width={20} height={20} />            |
 | `mariadb`           | <img src="/images/guides/build/assets/metadata-tags/kinds/icons/tool-mariadb-color.svg" width={20} height={20} />           |
+| `matillion`        | <img src="/images/guides/build/assets/metadata-tags/kinds/icons/tool-matillion-color.svg" width={20} height={20} />        |
 | `matplotlib`        | <img src="/images/guides/build/assets/metadata-tags/kinds/icons/tool-matplotlib-color.svg" width={20} height={20} />        |
 | `meltano`           | <img src="/images/guides/build/assets/metadata-tags/kinds/icons/tool-meltano-color.svg" width={20} height={20} />           |
 | `meta`              | <img src="/images/guides/build/assets/metadata-tags/kinds/icons/tool-meta-color.svg" width={20} height={20} />              |

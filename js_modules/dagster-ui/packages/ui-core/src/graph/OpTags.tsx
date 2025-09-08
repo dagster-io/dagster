@@ -104,6 +104,7 @@ import linkedin from './kindtag-images/tool-linkedin-color.svg';
 import llama from './kindtag-images/tool-llama-color.svg';
 import looker from './kindtag-images/tool-looker-color.svg';
 import mariadb from './kindtag-images/tool-mariadb-color.svg';
+import matillion from './kindtag-images/tool-matillion-color.svg';
 import matplotlib from './kindtag-images/tool-matplotlib-color.svg';
 import meltano from './kindtag-images/tool-meltano-color.svg';
 import meta from './kindtag-images/tool-meta-color.svg';
@@ -302,6 +303,7 @@ export type KnownTagType =
   | 'plotly'
   | 'modal'
   | 'meltano'
+  | 'matillion'
   | 'matplotlib'
   | 'numpy'
   | 'scipy'
@@ -730,6 +732,10 @@ export const KNOWN_TAGS: Record<KnownTagType, KnownTag> = {
   meltano: {
     icon: meltano,
     content: 'Meltano',
+  },
+  matillion: {
+    icon: matillion,
+    content: 'matillion',
   },
   matplotlib: {
     icon: matplotlib,
