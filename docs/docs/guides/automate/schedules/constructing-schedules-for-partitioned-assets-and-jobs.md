@@ -157,11 +157,11 @@ If we only want to target the `Antarctica` partition, we can create a schedule l
   title="src/<project_name>/defs/schedules.py"
 />
 
-## Schedules on different cadence than partitions
+## Running schedules on different cadence than partitions
 
 Sometimes you may want to run a schedule on a cadence that differs from your partition. In such cases, you should not use <PyObject section="schedules-sensors" module="dagster" object="build_schedule_from_partitioned_job"/> , since it automatically sets the schedule based on the partition.
 
-For example, consider an asset partitioned by hour, while the schedule is set to run every minute. In this case, you can use context.scheduled_execution_time from the ScheduleEvaluationContext to determine the correct partition key:
+For example, consider an asset partitioned by hour, while the schedule is set to run every minute. In this case, you can use <PyObject section="schedules-sensors" module="dagster" object="ScheduleEvaluationContext.scheduled_execution_time" displayText="context.scheduled_execution_context" /> from the <PyObject section="schedules-sensors" module="dagster" object="ScheduleEvaluationContext" /> class to determine the correct partition key:
 
 <CodeExample
   path="docs_snippets/docs_snippets/concepts/partitions_schedules_sensors/partition_with_different_schedule.py"
