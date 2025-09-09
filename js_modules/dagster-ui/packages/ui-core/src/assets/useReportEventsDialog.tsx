@@ -168,7 +168,7 @@ const ReportEventDialogBody = ({
   const [filterMissing, setFilterMissing] = useState(true);
   const keysFiltered = useMemo(() => {
     return explodePartitionKeysInSelectionMatching(selections, (keyIdx) => {
-      if (!filterFailed && !filterMissing) {
+      if (selections.length <= 1 || (!filterFailed && !filterMissing)) {
         return true;
       }
 
