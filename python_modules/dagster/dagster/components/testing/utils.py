@@ -310,8 +310,8 @@ def create_defs_folder_sandbox(
     This sandbox does not provide complete environmental isolation, but does provide some isolation guarantees
     to do its best to isolate the test from and restore the environment after the test.
 
-    * A file structure like this is created: <<temp folder>> / src / <<project_name>> / defs
-    * <<temp folder>> / src is placed in ``sys.path`` during the loading process
+    * A file structure like this is created: ``<<temp folder>> / src / <<project_name>> / defs``
+    * ``<<temp folder>> / src`` is placed in ``sys.path`` during the loading process
     * Any modules loaded during the process that descend from defs module are evicted from ``sys.modules`` on cleanup.
 
     Args:

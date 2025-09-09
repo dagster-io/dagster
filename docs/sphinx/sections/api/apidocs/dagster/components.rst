@@ -1,25 +1,11 @@
 .. currentmodule:: dagster
 
 Components
-==========
+##########
 
-Using Components
-----------------
-
-.. autodecorator:: component_instance
-
-
-.. autoclass:: ComponentLoadContext
-   :members:
-
-.. autoclass:: ComponentTree
-   :members:
-
-
-Building Components
--------------------
-
-.. autodecorator:: template_var
+**************************
+Building custom Components
+**************************
 
 .. autoclass:: Component
     :members:
@@ -27,29 +13,25 @@ Building Components
 .. autoclass:: StateBackedComponent
     :members:
 
-
 .. autoclass:: Resolvable
     :members:
-
 
 .. autoclass:: ResolutionContext
     :members:
 
-
 .. autoclass:: Resolver
     :members:
-
 
 .. autoclass:: Model
     :members:
 
+.. autodecorator:: template_var
 
 Core Models
------------
+===========
 
 These Annotated TypeAliases can be used when defining custom Components for
 common Dagster types.
-
 
 .. py:data:: ResolvedAssetKey
     :type: Annotated[AssetKey, ...]
@@ -93,7 +75,6 @@ Loading Components
 
 .. autofunction:: load_from_defs_folder
 
-
 Testing Components
 ------------------
 
@@ -104,3 +85,26 @@ Testing Components
 .. autoclass:: DefsFolderSandbox
     :members:
 
+
+****************
+Using Components
+****************
+
+.. currentmodule:: dagster
+
+.. autodecorator:: component_instance
+
+
+.. autoclass:: ComponentLoadContext
+   :members:
+
+
+.. autoclass:: ComponentTree
+   :members:
+
+
+*****************************
+Loading Component definitions
+*****************************
+
+.. autofunction:: load_from_defs_folder
