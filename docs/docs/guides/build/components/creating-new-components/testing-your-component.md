@@ -8,45 +8,20 @@ After you [create a new component](/guides/build/components/creating-new-compone
 
 ## Setting up a sandbox
 
-The function at the core of our testing workflows is `testing.create_defs_folder_sandbox`. This context manager allows you to construct a temporary defs folder, which can be populated with components and loaded into Component objects or built into dagster Definitions just as they would be in a real Dagster project.
+The function at the core of our testing workflows is <PyObject section="components" module="dagster" object="components.testing.create_defs_folder_sandbox" displayText="create_defs_folder_sandbox" />. This context manager allows you to construct a temporary `defs` folder, which can be populated with components and loaded into Component objects, or built into dagster <PyObject section="definitions" module="dagster" object="Definitions" /> just as they would be in a real Dagster project. It then yields a <PyObject section="components" module="dagster" object="components.testing.DefsFolderSandbox" displayText="DefsFolderSandbox" /> object that can be used to scaffold and load components.
 
-The function signature is the following:
+Once created, the <PyObject section="components" module="dagster" object="components.testing.DefsFolderSandbox" displayText="DefsFolderSandbox" /> object provides a number of useful utilities for scaffolding and loading components:
 
-```python
-@contextmanager
-def create_defs_folder_sandbox(
-    *,
-    project_name: Optional[str] = None,
-) -> Iterator[DefsFolderSandbox]: ...
-```
-
-### About the sandbox object
-
-Once created, the `DefsFolderSandbox` object provides a number of useful utilities for scaffolding and loading components:
-
-* `scaffold_component` to scaffold a component into the `defs` folder.
-* `load_component_and_build_defs` to test instantiation of a component, and to validate the definitions it produces.
+* <PyObject section="components" module="dagster" object="components.testing.DefsFolderSandbox.scaffold_component" displayText="scaffold_component" /> to scaffold a component into the `defs` folder.
+* <PyObject section="components" module="dagster" object="components.testing.DefsFolderSandbox.load_component_and_build_defs" displayText="load_component_and_build_defs" /> to test instantiation of a component, and to validate the definitions it produces.
 
 ### Scaffolding a component
 
-The `scaffold_component` method allows you to scaffold a component into the `defs` folder, just as a user would using the `dg scaffold component` CLI command.
+The <PyObject section="components" module="dagster" object="components.testing.DefsFolderSandbox.scaffold_component" displayText="scaffold_component" /> method allows you to scaffold a component into the `defs` folder, just as a user would using the `dg scaffold defs <COMPONENT_NAME>` CLI command.
 
-The signature is
+The only required parameter is `component_cls`, which is the class of the component to scaffold. Without providing any other parameters, this will scaffold a YAML component with a random name and default contents. Other parameters allow you to simulate passing parameters to the scaffolding CLI command, or to specify a specific path for the newly created component.
 
-```python
-def scaffold_component(
-    self,
-    component_cls: Any,
-    defs_path: Optional[Union[Path, str]] = None,
-    scaffold_params: Optional[dict[str, Any]] = None,
-    scaffold_format: ScaffoldFormatOptions = "yaml",
-    defs_yaml_contents: Optional[dict[str, Any]] = None,
-) -> Path: ...
-```
-
-The only required parameter is `component_cls`, which is the class of the component to scaffold - without providing any other parameters, this will scaffold a YAML component with a random name and default contents. Other parameters allow you to simulate passing parameters to the scaffolding CLI command, or to specify a specific path for the newly created component.
-
-This can be used to verify the behavior of a custom scaffolder. Here is an example of use in our test of our Sling component (which scaffolds a `replication.yaml` file):
+This can be used to verify the behavior of a custom scaffolder. Here is an example of use in our test of our [Sling component](/integrations/libraries/sling) (which scaffolds a `replication.yaml` file):
 
 ```python
 def test_scaffold_sling():
@@ -60,9 +35,9 @@ For ease of use, the `defs_yaml_contents` argument can be used to replace the co
 
 ### Loading and building definitions
 
-To test instantiation of a component, and to validate the definitions it produces, you can use the `load_component_and_build_defs` method, which loads an already-scaffolded component and builds the corresponding Definitions.
+To test instantiation of a component, and to validate the definitions it produces, you can use the <PyObject section="components" module="dagster" object="components.testing.DefsFolderSandbox.load_component_and_build_defs" displayText="load_component_and_build_defs" /> method, which loads an already-scaffolded component and builds the corresponding Definitions.
 
-For example, the following is code from our tests of our [dlt component](/integrations/libraries/dlt). In this case, we ensure that the definitions have loaded, and that the correct asset keys have been created:
+For example, the following is code from our [dlt component](/integrations/libraries/dlt) tests. In this case, we ensure that the definitions have loaded, and that the correct asset keys have been created:
 
 ```python
 def test_dlt_component():

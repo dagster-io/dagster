@@ -227,11 +227,17 @@ class Component(ABC):
                 pass
 
     See Also:
-        - :py:class:`dagster.Definitions`: The object returned by ``build_defs()``
-        - :py:class:`dagster.ComponentLoadContext`: Context provided to ``build_defs()``
-        - :py:class:`dagster.components.resolved.base.Resolvable`: Base for configurable components
-        - :py:class:`dagster.Model`: Recommended base class for component schemas
-        - :py:func:`dagster.scaffold_with`: Decorator for custom scaffolding
+
+        * :py:class:`dagster.Definitions`
+            The object returned by ``build_defs()``
+        * :py:class:`dagster.ComponentLoadContext`
+            Context provided to ``build_defs()``
+        * :py:class:`dagster.components.resolved.base.Resolvable`
+            Base for configurable components
+        * :py:class:`dagster.Model`
+            Recommended base class for component schemas
+        * :py:func:`dagster.scaffold_with`
+            Decorator for custom scaffolding
 
     """
 
