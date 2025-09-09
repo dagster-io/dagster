@@ -227,7 +227,6 @@ class Component(ABC):
                 pass
 
     See Also:
-
         * :py:class:`dagster.Definitions`
             The object returned by ``build_defs()``
         * :py:class:`dagster.ComponentLoadContext`
