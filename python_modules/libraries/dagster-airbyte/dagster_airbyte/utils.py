@@ -13,7 +13,7 @@ from dagster._utils.names import clean_name_lower
 from dagster_airbyte.types import AirbyteOutput
 
 if TYPE_CHECKING:
-    from dagster_airbyte.translator import DagsterAirbyteTranslator
+    from dagster_airbyte import DagsterAirbyteTranslator
 
 DAGSTER_AIRBYTE_TRANSLATOR_METADATA_KEY = "dagster-airbyte/dagster_airbyte_translator"
 
