@@ -14,7 +14,7 @@ export type AssetHealthQuery = {
         nodes: Array<{
           __typename: 'Asset';
           id: string;
-          latestMaterializationTimestamp: string | null;
+          latestMaterializationTimestamp: number | null;
           key: {__typename: 'AssetKey'; path: Array<string>};
           assetHealth: {
             __typename: 'AssetHealth';
@@ -78,7 +78,7 @@ export type AssetHealthQuery = {
 
 export type AssetHealthFragment = {
   __typename: 'Asset';
-  latestMaterializationTimestamp: string | null;
+  latestMaterializationTimestamp: number | null;
   key: {__typename: 'AssetKey'; path: Array<string>};
   assetHealth: {
     __typename: 'AssetHealth';
