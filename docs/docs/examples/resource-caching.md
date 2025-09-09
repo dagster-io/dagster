@@ -9,11 +9,9 @@ sidebar_custom_props:
 tags: [mini-project]
 ---
 
-# Resource Caching
 
-## Objective
 
-We’ll explore different ways to handle caching in Dagster. Caching is especially useful for assets that rely on expensive operations (such as API calls, database queries, or heavy computations), as it can dramatically improve performance, reduce costs, and make pipelines more efficient. In practice, it’s usually best to implement caching within resources rather than assets, since this makes the functionality easier to share and reuse.
+In this example, we'll explore different ways to handle caching in Dagster. Caching is especially useful for assets that rely on expensive operations ,such as API calls, database queries, or heavy computations, as it can dramatically improve performance, reduce costs, and make pipelines more efficient. In practice, it’s usually best to implement caching within [resources](/guides/build/external-resources) rather than [assets](/guides/build/assets), since this makes the functionality easier to share and reuse.
 
 ### 1. Expensive resources
 
@@ -22,7 +20,7 @@ In this example, we define a simple resource `ExpensiveResource` with an `additi
 <CodeExample
   path="docs_projects/project_mini/src/project_mini/defs/resource_caching/expensive_resource.py"
   language="python"
-  title="src/project_mini/defs/assets.py"
+  title="src/project_mini/defs/resource_caching/expensive_resource.py"
 />
 
 |                | `expensive_asset` | `another_expensive_asset` |
@@ -31,7 +29,7 @@ In this example, we define a simple resource `ExpensiveResource` with an `additi
 
 ### 2. Caching within the resource
 
-The in-memory caching implementation uses Python’s [functools.lru_cache](https://docs.python.org/3/library/functools.html#functools.cache) decorator to store results of the `addition` method. Once a particular set of arguments has been computed, the result is stored in memory within the resource. Subsequent calls with the same arguments return immediately from the cache instead of redoing the expensive operation.
+The in-memory caching implementation uses Python’s `@[functools.lru_cache](https://docs.python.org/3/library/functools.html#functools.cache)` decorator to store results of the `addition` method. Once a particular set of arguments has been computed, the result is stored in memory within the resource. Subsequent calls with the same arguments return immediately from the cache instead of redoing the expensive operation.
 
 However, because each asset initializes its own resource, cached results are not shared across asset executions.
 
@@ -61,6 +59,6 @@ The external caching implementation persists results to disk using a [pickle](ht
 
 :::note
 
-Using a pickle file assumes that all assets execute on the same node. Depending on how you execute Dagster you might want to use an external caching layer such as [AWS Dynamo](https://aws.amazon.com/dynamodb/) or [Redis](https://redis.io/) and then ensure your assets have access to it.
+Using a pickle file assumes that all assets execute on the same node. Depending on how you execute Dagster you might want to use an external caching layer such as [AWS Dynamo](https://aws.amazon.com/dynamodb/) or [Redis](https://redis.io/) that your assets have access to.
 
 :::
