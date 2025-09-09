@@ -282,7 +282,7 @@ class GrapheneAsset(graphene.ObjectType):
     definition = graphene.Field("dagster_graphql.schema.asset_graph.GrapheneAssetNode")
     latestEventSortKey = graphene.Field(graphene.ID)
     assetHealth = graphene.Field(GrapheneAssetHealth)
-    latestMaterializationTimestamp = graphene.Field(graphene.String)
+    latestMaterializationTimestamp = graphene.Int()
 
     class Meta:
         name = "Asset"

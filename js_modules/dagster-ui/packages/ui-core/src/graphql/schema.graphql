@@ -629,7 +629,7 @@ type Asset {
   definition: AssetNode
   latestEventSortKey: ID
   assetHealth: AssetHealth
-  latestMaterializationTimestamp: String
+  latestMaterializationTimestamp: Int
 }
 
 type AssetResultEventHistoryConnection {

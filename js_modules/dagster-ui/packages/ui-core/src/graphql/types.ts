@@ -108,7 +108,7 @@ export type Asset = {
   id: Scalars['String']['output'];
   key: AssetKey;
   latestEventSortKey: Maybe<Scalars['ID']['output']>;
-  latestMaterializationTimestamp: Maybe<Scalars['String']['output']>;
+  latestMaterializationTimestamp: Maybe<Scalars['Int']['output']>;
 };
 
 export type AssetAssetEventHistoryArgs = {
@@ -6337,7 +6337,7 @@ export const buildAsset = (
     latestMaterializationTimestamp:
       overrides && overrides.hasOwnProperty('latestMaterializationTimestamp')
         ? overrides.latestMaterializationTimestamp!
-        : 'odit',
+        : 1036,
   };
 };
 
