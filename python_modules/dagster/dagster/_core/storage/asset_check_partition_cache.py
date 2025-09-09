@@ -105,7 +105,7 @@ def get_asset_check_partition_status(
     )
 
     all_subset = partitions_def.subset_with_all_partitions()
-    missing_subset = all_subset - (succeeded_subset & failed_subset & planned_subset)
+    missing_subset = all_subset - (succeeded_subset | failed_subset | planned_subset)
 
     return AssetCheckPartitionStatus(
         missing=missing_subset,

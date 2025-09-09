@@ -84,6 +84,15 @@ class AssetCheckPartitionRecord:
     last_event_id: int
 
 
+@whitelist_for_serdes
+class AssetCheckExecutionResolvedStatus(enum.Enum):
+    IN_PROGRESS = "IN_PROGRESS"
+    SUCCEEDED = "SUCCEEDED"
+    FAILED = "FAILED"  # explicit fail result
+    EXECUTION_FAILED = "EXECUTION_FAILED"  # hit some exception
+    SKIPPED = "SKIPPED"  # the run finished, didn't fail, but the check didn't execute
+
+
 @record
 class AssetCheckPartitionStatus:
     """Computed partition status with fine-grained execution states for an asset check."""
@@ -95,14 +104,21 @@ class AssetCheckPartitionStatus:
     skipped: "PartitionsSubset"
     execution_failed: "PartitionsSubset"
 
-
-@whitelist_for_serdes
-class AssetCheckExecutionResolvedStatus(enum.Enum):
-    IN_PROGRESS = "IN_PROGRESS"
-    SUCCEEDED = "SUCCEEDED"
-    FAILED = "FAILED"  # explicit fail result
-    EXECUTION_FAILED = "EXECUTION_FAILED"  # hit some exception
-    SKIPPED = "SKIPPED"  # the run finished, didn't fail, but the check didn't execute
+    def get_subset_for_status(
+        self, status: AssetCheckExecutionResolvedStatus
+    ) -> "PartitionsSubset":
+        if status == AssetCheckExecutionResolvedStatus.IN_PROGRESS:
+            return self.in_progress
+        elif status == AssetCheckExecutionResolvedStatus.SKIPPED:
+            return self.skipped
+        elif status == AssetCheckExecutionResolvedStatus.EXECUTION_FAILED:
+            return self.execution_failed
+        elif status == AssetCheckExecutionResolvedStatus.SUCCEEDED:
+            return self.succeeded
+        elif status == AssetCheckExecutionResolvedStatus.FAILED:
+            return self.failed
+        else:
+            check.failed(f"Unexpected check status {status}")
 
 
 class AssetCheckExecutionRecord(
