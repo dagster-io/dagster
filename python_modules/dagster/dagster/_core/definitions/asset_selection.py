@@ -54,6 +54,12 @@ def is_coercible_to_asset_selection(
     )
 
 
+class DagsterInvalidAssetSelectionError(DagsterError):
+    """An error raised when an invalid asset selection is provided."""
+
+    pass
+
+
 @public
 class AssetSelection(ABC):
     """An AssetSelection defines a query over a set of assets and asset checks, normally all that are defined in a project.
@@ -548,7 +554,7 @@ class AssetSelection(ABC):
             tag_str = string[len("tag:") :]
             return cls.tag_string(tag_str)
 
-        raise DagsterError(f"Invalid selection string: {string}")
+        raise DagsterInvalidAssetSelectionError(f"Invalid selection string: {string}")
 
     @classmethod
     def from_coercible(cls, selection: CoercibleToAssetSelection) -> "AssetSelection":

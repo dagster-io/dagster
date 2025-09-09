@@ -17,6 +17,7 @@ from dagster._core.definitions.asset_selection import (
     CodeLocationAssetSelection,
     ColumnAssetSelection,
     ColumnTagAssetSelection,
+    DagsterInvalidAssetSelectionError,
     DownstreamAssetSelection,
     GroupsAssetSelection,
     KeyPrefixesAssetSelection,
@@ -752,6 +753,9 @@ def test_to_string_basic():
         == 'key:"prefix/thing*"'
     )
     assert AssetSelection.from_string("column:foo").to_selection_str() == 'column:"foo"'
+
+    with pytest.raises(DagsterInvalidAssetSelectionError):
+        AssetSelection.from_string("kind: or *")
 
 
 def test_to_string_binary_operators():
