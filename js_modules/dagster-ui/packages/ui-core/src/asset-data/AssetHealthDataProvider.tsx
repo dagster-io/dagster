@@ -334,7 +334,7 @@ function buildEmptyAssetHealthFragment(key: string): AssetHealthFragment {
       __typename: 'AssetKey',
       ...tokenToAssetKey(key),
     },
-    assetMaterializations: [],
+    latestMaterializationTimestamp: null,
     assetHealth: null,
   };
 }

@@ -363,9 +363,9 @@ export function sortAssetsByMaterializationTimestamp(
   b: AssetHealthFragment | {key: {path: string[]}},
 ) {
   const aMaterialization =
-    'assetMaterializations' in a ? a.assetMaterializations[0]?.timestamp : undefined;
+    'latestMaterializationTimestamp' in a ? a.latestMaterializationTimestamp : undefined;
   const bMaterialization =
-    'assetMaterializations' in b ? b.assetMaterializations[0]?.timestamp : undefined;
+    'latestMaterializationTimestamp' in b ? b.latestMaterializationTimestamp : undefined;
   if (!aMaterialization && !bMaterialization) {
     return 0;
   }
