@@ -26,9 +26,11 @@ class DgApiAssetApi:
         view: Optional[str] = None,
     ) -> "DgApiAssetList":
         """List assets with cursor-based pagination and optional view."""
+        from dagster_dg_cli.cli.api.asset import DG_API_MAX_ASSET_LIMIT
+
         # Enforce max limit constraint
-        if limit and limit > 1000:
-            raise ValueError("Limit cannot exceed 1000")
+        if limit and limit > DG_API_MAX_ASSET_LIMIT:
+            raise ValueError(f"Limit cannot exceed {DG_API_MAX_ASSET_LIMIT}")
 
         # Validate view parameter
         if view and view not in ["status"]:

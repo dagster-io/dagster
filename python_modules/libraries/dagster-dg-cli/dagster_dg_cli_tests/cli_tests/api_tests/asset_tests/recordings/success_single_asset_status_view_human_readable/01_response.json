@@ -7,34 +7,42 @@
           "assetChecksStatus": "NOT_APPLICABLE",
           "assetChecksStatusMetadata": null,
           "assetHealth": "HEALTHY",
-          "freshnessStatus": "HEALTHY",
-          "freshnessStatusMetadata": {
-            "lastMaterializedTimestamp": 1757317149.2161427
-          },
+          "freshnessStatus": "NOT_APPLICABLE",
+          "freshnessStatusMetadata": null,
           "materializationStatus": "HEALTHY",
-          "materializationStatusMetadata": null
+          "materializationStatusMetadata": {
+            "numMissingPartitions": 31,
+            "totalNumPartitions": 44
+          }
         },
         "assetMaterializations": [
           {
-            "partition": null,
-            "runId": "7fb5157a-9ffa-456b-aa21-fd9ff2f4d180",
-            "timestamp": "1757317149216"
+            "partition": "2023-01-01",
+            "runId": "fc70230e-2fcc-4bff-8400-5eefca046bbf",
+            "timestamp": "1677621777152"
           }
         ],
         "definition": {
-          "description": "Snowflake stages for AWS data, creates new stages for new assets, refreses existing stages.",
+          "description": "Model errors by month",
           "freshnessInfo": null,
           "freshnessPolicy": null,
-          "groupName": "aws_stages",
-          "kinds": [],
-          "metadataEntries": []
+          "groupName": "FORECASTING",
+          "kinds": [
+            "scikitlearn",
+            "snowflake"
+          ],
+          "metadataEntries": [
+            {
+              "description": null,
+              "label": "dagster/code_references"
+            }
+          ]
         },
-        "id": "[\"aws\", \"cloud-prod\", \"workspace_staging_pipelines\"]",
+        "id": "[\"forecasting\", \"model_stats_by_month\"]",
         "key": {
           "path": [
-            "aws",
-            "cloud-prod",
-            "workspace_staging_pipelines"
+            "forecasting",
+            "model_stats_by_month"
           ]
         }
       }

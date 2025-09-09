@@ -3,86 +3,96 @@
     "__typename": "AssetRecordConnection",
     "assets": [
       {
-        "id": "[\"__bigquery_query_metadata___ASSET_JOB_0\"]",
+        "id": "[\"ANALYTICS\", \"all_orders\"]",
         "key": {
           "path": [
-            "__bigquery_query_metadata___ASSET_JOB_0"
+            "ANALYTICS",
+            "all_orders"
           ]
         }
       },
       {
-        "id": "[\"__bigquery_query_metadata_bigquery_jaffle_shop_job\"]",
+        "id": "[\"ANALYTICS\", \"company_perf\"]",
         "key": {
           "path": [
-            "__bigquery_query_metadata_bigquery_jaffle_shop_job"
+            "ANALYTICS",
+            "company_perf"
           ]
         }
       },
       {
-        "id": "[\"__bigquery_query_metadata_bigquery_standalone_op_job\"]",
+        "id": "[\"ANALYTICS\", \"company_stats\"]",
         "key": {
           "path": [
-            "__bigquery_query_metadata_bigquery_standalone_op_job"
+            "ANALYTICS",
+            "company_stats"
           ]
         }
       },
       {
-        "id": "[\"__snowflake_query_metadata___ASSET_JOB\"]",
+        "id": "[\"ANALYTICS\", \"daily_order_summary\"]",
         "key": {
           "path": [
-            "__snowflake_query_metadata___ASSET_JOB"
+            "ANALYTICS",
+            "daily_order_summary"
           ]
         }
       },
       {
-        "id": "[\"__snowflake_query_metadata___ASSET_JOB_0\"]",
+        "id": "[\"ANALYTICS\", \"order_stats\"]",
         "key": {
           "path": [
-            "__snowflake_query_metadata___ASSET_JOB_0"
+            "ANALYTICS",
+            "order_stats"
           ]
         }
       },
       {
-        "id": "[\"__snowflake_query_metadata_billing_issues_rollup\"]",
+        "id": "[\"ANALYTICS\", \"orders_augmented\"]",
         "key": {
           "path": [
-            "__snowflake_query_metadata_billing_issues_rollup"
+            "ANALYTICS",
+            "orders_augmented"
           ]
         }
       },
       {
-        "id": "[\"__snowflake_query_metadata_detect_self_serve_customers\"]",
+        "id": "[\"ANALYTICS\", \"orders_cleaned\"]",
         "key": {
           "path": [
-            "__snowflake_query_metadata_detect_self_serve_customers"
+            "ANALYTICS",
+            "orders_cleaned"
           ]
         }
       },
       {
-        "id": "[\"__snowflake_query_metadata_detect_self_serve_customers_job\"]",
+        "id": "[\"ANALYTICS\", \"sku_stats\"]",
         "key": {
           "path": [
-            "__snowflake_query_metadata_detect_self_serve_customers_job"
+            "ANALYTICS",
+            "sku_stats"
           ]
         }
       },
       {
-        "id": "[\"__snowflake_query_metadata_self_serve_attribution_job\"]",
+        "id": "[\"ANALYTICS\", \"top_users\"]",
         "key": {
           "path": [
-            "__snowflake_query_metadata_self_serve_attribution_job"
+            "ANALYTICS",
+            "top_users"
           ]
         }
       },
       {
-        "id": "[\"__snowflake_query_metadata_self_serve_customer_attribution_check_all_partitions_job\"]",
+        "id": "[\"ANALYTICS\", \"users_cleaned\"]",
         "key": {
           "path": [
-            "__snowflake_query_metadata_self_serve_customer_attribution_check_all_partitions_job"
+            "ANALYTICS",
+            "users_cleaned"
           ]
         }
       }
     ],
-    "cursor": "[\"__snowflake_query_metadata_self_serve_customer_attribution_check_all_partitions_job\"]"
+    "cursor": "[\"ANALYTICS\", \"users_cleaned\"]"
   }
 }

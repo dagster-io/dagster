@@ -1,6 +1,7 @@
 """Asset API commands following GitHub CLI patterns."""
 
 import json
+from typing import Final
 
 import click
 from dagster_dg_core.utils import DgClickCommand, DgClickGroup
@@ -11,13 +12,15 @@ from dagster_shared.plus.config_utils import dg_api_options
 from dagster_dg_cli.cli.api.client import create_dg_api_graphql_client
 from dagster_dg_cli.cli.api.formatters import format_asset, format_assets
 
+DG_API_MAX_ASSET_LIMIT: Final = 1000
+
 
 @click.command(name="list", cls=DgClickCommand, unlaunched=True)
 @click.option(
     "--limit",
-    type=click.IntRange(1, 1000),
+    type=click.IntRange(1, DG_API_MAX_ASSET_LIMIT),
     default=50,
-    help="Number of assets to return (default: 50, max: 1000)",
+    help=f"Number of assets to return (default: 50, max: {DG_API_MAX_ASSET_LIMIT})",
 )
 @click.option(
     "--cursor",
