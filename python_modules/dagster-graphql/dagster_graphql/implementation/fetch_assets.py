@@ -521,9 +521,9 @@ def build_partition_statuses(
             in_progress_keys = in_progress_partitions_subset.get_partition_keys()
 
             return GrapheneDefaultPartitionStatuses(
-                materializedPartitions=set(materialized_keys)
-                - set(failed_keys)
-                - set(in_progress_keys),
+                materializedPartitions=sorted(
+                    set(materialized_keys) - set(failed_keys) - set(in_progress_keys)
+                ),
                 failedPartitions=failed_keys,
                 unmaterializedPartitions=materialized_partitions_subset.get_partition_keys_not_in_subset(
                     partitions_def=partitions_def
