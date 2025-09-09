@@ -735,7 +735,7 @@ export const KNOWN_TAGS: Record<KnownTagType, KnownTag> = {
   },
   matillion: {
     icon: matillion,
-    content: 'matillion',
+    content: 'Matillion',
   },
   matplotlib: {
     icon: matplotlib,
