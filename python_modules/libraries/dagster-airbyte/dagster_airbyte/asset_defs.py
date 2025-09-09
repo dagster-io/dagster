@@ -38,9 +38,7 @@ from dagster_airbyte.resources import (
     AirbyteCloudResource,
     AirbyteCloudWorkspace,
     AirbyteResource,
-    AirbyteWorkspace,
     BaseAirbyteResource,
-    BaseAirbyteWorkspace,
 )
 from dagster_airbyte.translator import (
     AirbyteConnection,
@@ -1042,14 +1040,14 @@ def load_assets_from_airbyte_instance(
 @beta
 def build_airbyte_assets_definitions(
     *,
-    workspace: Union[AirbyteWorkspace, AirbyteCloudWorkspace],
+    workspace: AirbyteCloudWorkspace,
     dagster_airbyte_translator: Optional[DagsterAirbyteTranslator] = None,
     connection_selector_fn: Optional[Callable[[AirbyteConnection], bool]] = None,
 ) -> Sequence[AssetsDefinition]:
     """The list of AssetsDefinition for all connections in the Airbyte workspace.
 
     Args:
-        workspace (Union[AirbyteWorkspace, AirbyteCloudWorkspace]): The Airbyte workspace to fetch assets from.
+        workspace (AirbyteCloudWorkspace): The Airbyte workspace to fetch assets from.
         dagster_airbyte_translator (Optional[DagsterAirbyteTranslator], optional): The translator to use
             to convert Airbyte content into :py:class:`dagster.AssetSpec`.
             Defaults to :py:class:`DagsterAirbyteTranslator`.
@@ -1166,7 +1164,7 @@ def build_airbyte_assets_definitions(
             name=f"airbyte_{clean_name(connection_name)}",
             dagster_airbyte_translator=dagster_airbyte_translator,
         )
-        def _asset_fn(context: AssetExecutionContext, airbyte: BaseAirbyteWorkspace):
+        def _asset_fn(context: AssetExecutionContext, airbyte: AirbyteCloudWorkspace):
             yield from airbyte.sync_and_poll(context=context)
 
         _asset_fns.append(_asset_fn)

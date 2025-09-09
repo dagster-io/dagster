@@ -12,7 +12,7 @@ class AirbyteScaffolderParams(BaseModel):
     client_secret: Optional[str] = None
 
 
-class AirbyteWorkspaceComponentScaffolder(Scaffolder[AirbyteScaffolderParams]):
+class AirbyteCloudWorkspaceComponentScaffolder(Scaffolder[AirbyteScaffolderParams]):
     @classmethod
     def get_scaffold_params(cls) -> type[AirbyteScaffolderParams]:
         return AirbyteScaffolderParams
