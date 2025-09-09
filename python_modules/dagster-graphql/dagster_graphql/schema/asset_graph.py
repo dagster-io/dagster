@@ -1121,7 +1121,7 @@ class GrapheneAssetNode(graphene.ObjectType):
         run_record = graphene_info.context.instance.get_run_record_by_id(planned_info.run_id)
         return GrapheneRun(run_record) if run_record else None
 
-    def resolve_assetPartitionStatuses(
+    async def resolve_assetPartitionStatuses(
         self, graphene_info: ResolveInfo
     ) -> Union[
         "GrapheneTimePartitionStatuses",
@@ -1140,7 +1140,7 @@ class GrapheneAssetNode(graphene.ObjectType):
             materialized_partition_subset,
             failed_partition_subset,
             in_progress_subset,
-        ) = get_partition_subsets(
+        ) = await get_partition_subsets(
             graphene_info.context.instance,
             graphene_info.context,
             asset_key,
@@ -1156,7 +1156,7 @@ class GrapheneAssetNode(graphene.ObjectType):
             partitions_def,
         )
 
-    def resolve_partitionStats(
+    async def resolve_partitionStats(
         self, graphene_info: ResolveInfo
     ) -> Optional[GraphenePartitionStats]:
         partitions_snap = self._asset_node_snap.partitions
@@ -1168,7 +1168,7 @@ class GrapheneAssetNode(graphene.ObjectType):
                     materialized_partition_subset,
                     failed_partition_subset,
                     in_progress_subset,
-                ) = regenerate_and_check_partition_subsets(
+                ) = await regenerate_and_check_partition_subsets(
                     graphene_info.context,
                     self._asset_node_snap,
                     graphene_info.context.dynamic_partitions_loader,
