@@ -21,7 +21,7 @@ def test_refresh_state_command():
         activate_venv(project_dir / ".venv"),
         dg.instance_for_test(),
     ):
-        state_storage = DefsStateStorage.get_current()
+        state_storage = DefsStateStorage.get()
         assert state_storage is not None
         # no components, nothing to refresh
         result = runner.invoke("utils", "refresh-defs-state")
@@ -92,7 +92,7 @@ def test_refresh_state_command_with_defs_key_filter():
         activate_venv(project_dir / ".venv"),
         dg.instance_for_test(),
     ):
-        state_storage = DefsStateStorage.get_current()
+        state_storage = DefsStateStorage.get()
         assert state_storage is not None
         # Create two components
         component1_dir = project_dir / "src/foo_bar/defs/component1"

@@ -41,7 +41,7 @@ class StateBackedComponent(Component):
     async def refresh_state(self) -> None:
         """Rebuilds the state for this component and persists it to the current StateStore."""
         key = self.get_defs_state_key()
-        state_storage = DefsStateStorage.get_current()
+        state_storage = DefsStateStorage.get()
         if state_storage is None:
             raise DagsterInvalidInvocationError(
                 f"Attempted to refresh state of {key} without a StateStorage in context. "
