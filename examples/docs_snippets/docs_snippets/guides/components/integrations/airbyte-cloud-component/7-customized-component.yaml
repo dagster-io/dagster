@@ -1,4 +1,4 @@
-type: dagster_airbyte.AirbyteCloudWorkspaceComponent
+type: dagster_airbyte.AirbyteWorkspaceComponent
 
 attributes:
   workspace:

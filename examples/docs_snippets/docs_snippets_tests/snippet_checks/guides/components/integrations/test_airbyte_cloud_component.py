@@ -36,7 +36,7 @@ SNIPPETS_DIR = (
 def _swap_to_mock_airbyte_component(path: Path) -> None:
     path.write_text(
         path.read_text().replace(
-            "dagster_airbyte.AirbyteCloudWorkspaceComponent",
+            "dagster_airbyte.AirbyteWorkspaceComponent",
             "my_project.defs.airbyte_ingest.test_airbyte_utils.MockAirbyteComponent",
         )
     )
@@ -87,7 +87,7 @@ def test_components_docs_airbyte_workspace(
 
         # scaffold airbyte component
         context.run_command_and_snippet_output(
-            cmd='dg scaffold defs dagster_airbyte.AirbyteCloudWorkspaceComponent airbyte_ingest \\\n  --workspace-id test_workspace --client-id "{{ env.AIRBYTE_CLIENT_ID }}" --client-secret "{{ env.AIRBYTE_CLIENT_SECRET }}"',
+            cmd='dg scaffold defs dagster_airbyte.AirbyteWorkspaceComponent airbyte_ingest \\\n  --workspace-id test_workspace --client-id "{{ env.AIRBYTE_CLIENT_ID }}" --client-secret "{{ env.AIRBYTE_CLIENT_SECRET }}"',
             snippet_path=SNIPPETS_DIR
             / f"{context.get_next_snip_number()}-scaffold-airbyte-component.txt",
         )
@@ -123,7 +123,7 @@ def test_components_docs_airbyte_workspace(
             Path("my_project") / "defs" / "airbyte_ingest" / "defs.yaml",
             contents=textwrap.dedent(
                 """\
-                type: dagster_airbyte.AirbyteCloudWorkspaceComponent
+                type: dagster_airbyte.AirbyteWorkspaceComponent
 
                 attributes:
                   workspace:
@@ -151,7 +151,7 @@ def test_components_docs_airbyte_workspace(
             Path("my_project") / "defs" / "airbyte_ingest" / "defs.yaml",
             contents=textwrap.dedent(
                 """\
-                type: dagster_airbyte.AirbyteCloudWorkspaceComponent
+                type: dagster_airbyte.AirbyteWorkspaceComponent
 
                 attributes:
                   workspace:

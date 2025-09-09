@@ -13,9 +13,11 @@ Assets (Airbyte API)
 
 .. autoclass:: AirbyteCloudWorkspace
 
+.. autoclass:: AirbyteWorkspace
+
 .. autoclass:: DagsterAirbyteTranslator
 
-.. autofunction:: load_airbyte_cloud_asset_specs
+.. autofunction:: load_airbyte_asset_specs
 
 .. autodecorator:: airbyte_assets
 

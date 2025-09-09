@@ -4,7 +4,7 @@ from typing import Optional
 
 from dagster_airbyte import AirbyteCloudWorkspace
 from dagster_airbyte.components.workspace_component.component import (
-    AirbyteCloudWorkspaceComponent,
+    AirbyteWorkspaceComponent,
 )
 from dagster_airbyte.translator import (
     AirbyteConnection,
@@ -73,7 +73,7 @@ class MockAirbyteWorkspace(AirbyteCloudWorkspace):
         )
 
 
-class MockAirbyteComponent(AirbyteCloudWorkspaceComponent):
+class MockAirbyteComponent(AirbyteWorkspaceComponent):
     @cached_property
     def workspace_resource(self) -> MockAirbyteWorkspace:
         return MockAirbyteWorkspace(**self.workspace.model_dump())
