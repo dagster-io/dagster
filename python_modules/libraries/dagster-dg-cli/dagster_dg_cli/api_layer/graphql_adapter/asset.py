@@ -381,7 +381,7 @@ def _transform_asset_status_data(asset_data) -> DgApiAssetStatus:
 
     # Fall back to freshnessInfo and freshnessPolicy for compatibility
     if not freshness_info:
-        definition_data = asset_data.get("definition", {})
+        definition_data = asset_data.get("definition") or {}
         freshness_data = definition_data.get("freshnessInfo", {})
         freshness_policy = definition_data.get("freshnessPolicy", {})
         if freshness_data or freshness_policy:
@@ -478,10 +478,10 @@ def list_dg_plus_api_assets_with_status_via_graphql(
         asset_key_parts = record["key"]["path"]
         asset_key = "/".join(asset_key_parts)
 
-        # Get corresponding node data
-        node_data = nodes_by_key.get(asset_key)
-
-        if not node_data:
+        # There will always be a node since we queried for these keys specifically, but the
+        # definition may be null if the asset does not exist.
+        node_data = nodes_by_key[asset_key]
+        if not node_data.get("definition"):
             continue  # Skip if we don't have node data
 
         # Build basic asset data from definition
@@ -550,14 +550,14 @@ def get_dg_plus_api_asset_with_status_via_graphql(
 
     asset_nodes = assets_or_error.get("nodes", [])
 
-    if not asset_nodes:
+    # If an asset does not exist, it will return a node but the definition will be null
+    node = asset_nodes[0]
+    if node.get("definition") is None:
         raise Exception(f"Asset not found: {'/'.join(asset_key_parts)}")
 
-    node = asset_nodes[0]
     asset_key = "/".join(asset_key_parts)
-
     # Build metadata entries from definition
-    definition_data = node.get("definition", {})
+    definition_data = node.get("definition") or {}
     metadata_entries = []
     for entry in definition_data.get("metadataEntries", []):
         metadata_dict = {
