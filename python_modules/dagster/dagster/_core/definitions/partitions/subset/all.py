@@ -41,7 +41,7 @@ class AllPartitionsSubset(PartitionsSubset):
     def get_partition_keys_not_in_subset(
         self, partitions_def: PartitionsDefinition
     ) -> Iterable[str]:
-        return set()
+        return []
 
     @use_partition_loading_context
     def get_partition_key_ranges(
