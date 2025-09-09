@@ -155,12 +155,16 @@ class TranslationFnResolver(Resolver, Generic[T]):
 
     """
 
-    def __init__(self, template_vars_for_translation_fn: Callable[[T], Mapping[str, Any]]):
+    def __init__(
+        self,
+        template_vars_for_translation_fn: Callable[[T], Mapping[str, Any]],
+        model_field_type: type = AssetAttributesModel,
+    ):
         super().__init__(
             _build_translation_fn(
                 template_vars_for_translation_fn=template_vars_for_translation_fn
             ),
-            model_field_type=Union[str, AssetAttributesModel],
+            model_field_type=Union[str, model_field_type],
             inject_before_resolve=False,
         )
 
