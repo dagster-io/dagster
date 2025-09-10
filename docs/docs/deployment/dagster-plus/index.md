@@ -5,6 +5,7 @@ sidebar_position: 10
 title: About Dagster+
 canonicalUrl: '/deployment/dagster-plus'
 slug: '/deployment/dagster-plus'
+tags: [dagster-plus-feature]
 ---
 
 Dagster+ is a managed orchestration platform built on top of Dagster's open source engine.

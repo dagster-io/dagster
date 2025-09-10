@@ -3,6 +3,7 @@ description: Configure environment variables in Dagster+ Hybrid deployments usin
 sidebar_label: Set with agent config
 sidebar_position: 2300
 title: Setting environment variables using agent config
+tags: [dagster-plus-feature]
 ---
 
 In this guide, we'll walk you through setting environment variables for a Dagster+ [Hybrid deployment](/deployment/dagster-plus/hybrid) using the Hybrid agent's configuration.

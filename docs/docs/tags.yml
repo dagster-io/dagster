@@ -54,7 +54,7 @@ mini-project:
   label: 'mini-project'
   permalink: '/examples/mini-project'
   description: 'Mini project.'
-dagster-plus:
-  label: 'dagster-plus'
-  permalink: '/features/dagster-plus'
+dagster-plus-feature:
+  label: 'dagster-plus-feature'
+  permalink: '/features/dagster-plus-feature'
   description: 'Dagster+ features.'

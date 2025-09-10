@@ -1,7 +1,7 @@
 ---
 description: Learn about Dagster+ alert policy types for assets, runs, code locations, automation, agent downtime, insights, and credit budget limits.
 sidebar_position: 300
-tags: [dagster-plus]
+tags: [dagster-plus-feature]
 title: Alert policy types
 ---
 

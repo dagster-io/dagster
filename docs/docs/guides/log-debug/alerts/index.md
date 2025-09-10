@@ -3,7 +3,7 @@ description: Define alerts and configure alert notification services to monitor 
 sidebar_position: 40
 title: Dagster+ Alerts
 canonicalUrl: '/guides/monitor/alerts'
-tags: [dagster-plus]
+tags: [dagster-plus-feature]
 slug: '/guides/monitor/alerts'
 ---
 

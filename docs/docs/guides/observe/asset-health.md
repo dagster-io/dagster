@@ -1,7 +1,7 @@
 ---
 title: Asset health reporting
 description: With asset health criteria, you can quickly identify which datasets are performing well and which need attention.
-tags: [dagster-plus]
+tags: [dagster-plus-feature]
 sidebar_position: 200
 ---
 

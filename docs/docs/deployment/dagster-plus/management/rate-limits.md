@@ -2,6 +2,7 @@
 description: Dagster+ imposes rate limits of 40,000 user log events per minute and 100MB of events per minute, with automatic retries for requests that exceed limits.
 sidebar_position: 5000
 title: Rate limits
+tags: [dagster-plus-feature]
 ---
 
 Dagster+ enforces several rate limits to smoothly distribute the load. Deployments are limited to:

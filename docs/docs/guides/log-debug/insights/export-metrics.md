@@ -2,7 +2,7 @@
 description: Export Dagster+ Insights metrics using the Dagster GraphQL API.
 sidebar_label: Export metrics
 sidebar_position: 200
-tags: [dagster-plus]
+tags: [dagster-plus-feature]
 title: Export metrics from Dagster+ Insights
 ---
 
