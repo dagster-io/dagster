@@ -43,7 +43,6 @@ const INVALID_PARITION_SUBSTRINGS = [
   ',',
   '[',
   ']',
-  ' ',
 ];
 
 const INVALID_PARTITION_SUBSTRINGS_READABLE = [
@@ -88,7 +87,9 @@ export const CreatePartitionDialog = ({
   const isValidPartitionName = useMemo(() => {
     return (
       partitionName.length === 0 ||
-      !INVALID_PARITION_SUBSTRINGS.some((s) => partitionName.includes(s))
+      (!INVALID_PARITION_SUBSTRINGS.some((s) => partitionName.includes(s)) &&
+        !partitionName.startsWith(' ') &&
+        !partitionName.endsWith(' '))
     );
   }, [partitionName]);
 
