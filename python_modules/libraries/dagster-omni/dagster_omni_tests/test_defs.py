@@ -1,5 +1,6 @@
 import asyncio
-from unittest.mock import patch
+from pathlib import Path
+from unittest.mock import Mock, patch
 
 import pytest
 from dagster import AssetKey, DagsterInvalidDefinitionError
@@ -15,14 +16,17 @@ from dagster_omni_tests.utils import (
     get_sample_queries_api_response,
 )
 
+context = Mock()
 
-def test_get_asset_spec_document(component):
+
+def test_get_asset_spec_document(component: OmniComponent):
     """Test creating AssetSpec from OmniDocument."""
     doc = create_sample_document()
     workspace_data = create_sample_workspace_data([doc])
     data = OmniTranslatorData(obj=doc, workspace_data=workspace_data)
 
-    spec = component.get_asset_spec(data)
+    spec = component.get_asset_spec(context, data)
+    assert spec
 
     assert spec.key == AssetKey(["analytics", "reports", "User Analysis"])
     assert spec.group_name == "analytics"
@@ -30,8 +34,8 @@ def test_get_asset_spec_document(component):
     assert "dashboard" in spec.tags and spec.tags["dashboard"] == ""
     assert "sales" in spec.tags and spec.tags["sales"] == ""
     assert spec.kinds == {"omni"}
-    assert len(spec.deps) == 1
-    assert spec.deps[0].asset_key == AssetKey(["users"])
+    assert len(list(spec.deps)) == 1
+    assert next(iter(spec.deps)).asset_key == AssetKey(["users"])
 
     # Check metadata
     assert spec.metadata["dagster-omni/document_name"] == "User Analysis"
@@ -42,41 +46,44 @@ def test_get_asset_spec_document(component):
     assert ".dagster-omni/translator_data" in spec.metadata
 
 
-def test_get_asset_spec_document_no_folder(component):
+def test_get_asset_spec_document_no_folder(component: OmniComponent):
     """Test creating AssetSpec from OmniDocument without folder."""
     doc = create_sample_document(folder=None)
     workspace_data = create_sample_workspace_data([doc])
     data = OmniTranslatorData(obj=doc, workspace_data=workspace_data)
 
-    spec = component.get_asset_spec(data)
+    spec = component.get_asset_spec(context, data)
+    assert spec
 
     assert spec.key == AssetKey(["User Analysis"])
     assert spec.group_name is None
 
 
-def test_get_asset_spec_document_no_dashboard(component):
+def test_get_asset_spec_document_no_dashboard(component: OmniComponent):
     """Test creating AssetSpec from OmniDocument without dashboard."""
     doc = create_sample_document(has_dashboard=False)
     workspace_data = create_sample_workspace_data([doc])
     data = OmniTranslatorData(obj=doc, workspace_data=workspace_data)
 
-    spec = component.get_asset_spec(data)
+    spec = component.get_asset_spec(context, data)
+    assert spec
 
     assert "dagster-omni/url" not in spec.metadata
 
 
-def test_get_asset_spec_query(component):
+def test_get_asset_spec_query(component: OmniComponent):
     """Test creating AssetSpec from OmniQuery."""
     query = create_sample_query()
     workspace_data = create_sample_workspace_data()
     data = OmniTranslatorData(obj=query, workspace_data=workspace_data)
 
-    spec = component.get_asset_spec(data)
+    spec = component.get_asset_spec(context, data)
+    assert spec
 
     assert spec.key == AssetKey(["users"])
 
 
-def test_get_asset_spec_with_translation(component):
+def test_get_asset_spec_with_translation(component: OmniComponent):
     """Test get_asset_spec with custom translation function."""
 
     def custom_translation(spec, data):
@@ -91,20 +98,21 @@ def test_get_asset_spec_with_translation(component):
     workspace_data = create_sample_workspace_data([doc])
     data = OmniTranslatorData(obj=doc, workspace_data=workspace_data)
 
-    spec = component.get_asset_spec(data)
+    spec = component.get_asset_spec(context, data)
+    assert spec
 
     assert spec is not None
     assert spec.key == AssetKey(["custom", "analytics", "reports", "User Analysis"])
 
 
-def test_build_defs_no_conflicts(omni_workspace):
+def test_build_defs_no_conflicts(omni_workspace: OmniWorkspace):
     """Test building asset specs with no key conflicts."""
     component = OmniComponent(workspace=omni_workspace)
     doc1 = create_sample_document(identifier="doc-1", name="Doc One")
     doc2 = create_sample_document(identifier="doc-2", name="Doc Two")
     workspace_data = create_sample_workspace_data([doc1, doc2])
 
-    specs = component.build_defs_from_workspace_data(workspace_data).get_all_asset_specs()
+    specs = component.build_defs_from_workspace_data(context, workspace_data).get_all_asset_specs()
 
     # Should have 2 documents + 1 shared query = 3 total specs (queries deduplicate by table)
     assert len(specs) == 3
@@ -113,7 +121,7 @@ def test_build_defs_no_conflicts(omni_workspace):
     assert AssetKey(["analytics", "reports", "Doc Two"]) in keys
 
 
-def test_build_defs_conflicts(omni_workspace):
+def test_build_defs_conflicts(omni_workspace: OmniWorkspace):
     component = OmniComponent(workspace=omni_workspace)
     # Create two documents with same name but different identifiers
     doc1 = create_sample_document(identifier="doc-1", name="Same Name")
@@ -121,10 +129,10 @@ def test_build_defs_conflicts(omni_workspace):
     workspace_data = create_sample_workspace_data([doc1, doc2])
 
     with pytest.raises(DagsterInvalidDefinitionError, match="Multiple objects map to the same key"):
-        component.build_defs_from_workspace_data(workspace_data)
+        component.build_defs_from_workspace_data(context, workspace_data)
 
 
-def test_load_state_from_serialized_file(component, tmp_path):
+def test_load_state_from_serialized_file(component: OmniComponent, tmp_path: Path):
     """Test loading workspace state from a serialized JSON file."""
     from dagster import serialize_value
 
@@ -143,7 +151,7 @@ def test_load_state_from_serialized_file(component, tmp_path):
     assert loaded_state.documents[0].name == "User Analysis"
 
 
-def test_complex_folder_structures(component):
+def test_complex_folder_structures(component: OmniComponent):
     """Test asset generation with complex folder hierarchies."""
     from dagster_omni.objects import OmniFolder
 
@@ -154,7 +162,7 @@ def test_complex_folder_structures(component):
     doc = create_sample_document(folder=deep_folder, name="Deep Document")
     workspace_data = create_sample_workspace_data([doc])
 
-    defs = component.build_defs_from_workspace_data(workspace_data)
+    defs = component.build_defs_from_workspace_data(context, workspace_data)
     assets = defs.get_all_asset_specs()
 
     # Find the document asset
@@ -167,7 +175,7 @@ def test_complex_folder_structures(component):
     assert doc_asset.group_name == "level1"  # First folder level becomes group
 
 
-def test_folder_name_sanitization(component):
+def test_folder_name_sanitization(component: OmniComponent):
     """Test that folder names with special characters are properly sanitized for group names."""
     from dagster_omni.objects import OmniFolder
 
@@ -181,7 +189,7 @@ def test_folder_name_sanitization(component):
     doc = create_sample_document(folder=folder_with_dashes, name="Test Doc")
     workspace_data = create_sample_workspace_data([doc])
 
-    defs = component.build_defs_from_workspace_data(workspace_data)
+    defs = component.build_defs_from_workspace_data(context, workspace_data)
     assets = defs.get_all_asset_specs()
 
     # Find the document asset
@@ -214,7 +222,7 @@ def test_end_to_end_integration(omni_workspace):
         workspace_data = asyncio.run(fetch_data())
 
         # Step 2: Build definitions from workspace data
-        defs = component.build_defs_from_workspace_data(workspace_data)
+        defs = component.build_defs_from_workspace_data(context, workspace_data)
         assets = defs.get_all_asset_specs()
 
     # Verify end-to-end results

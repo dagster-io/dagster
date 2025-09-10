@@ -39,14 +39,14 @@ class OmniComponent(StateBackedComponent, dg.Model, dg.Resolvable):
         return dg.deserialize_value(state_path.read_text(), OmniWorkspaceData)
 
     def _get_default_omni_spec(
-        self, data: OmniTranslatorData, workspace: OmniWorkspace
+        self, context: dg.ComponentLoadContext, data: OmniTranslatorData, workspace: OmniWorkspace
     ) -> Optional[dg.AssetSpec]:
         """Core function for converting an Omni document into an AssetSpec object."""
         if isinstance(data.obj, OmniDocument):
             doc = data.obj
             maybe_deps = [
                 self.get_asset_spec(
-                    OmniTranslatorData(obj=query, workspace_data=data.workspace_data)
+                    context, OmniTranslatorData(obj=query, workspace_data=data.workspace_data)
                 )
                 for query in data.obj.queries
             ]
@@ -67,21 +67,25 @@ class OmniComponent(StateBackedComponent, dg.Model, dg.Resolvable):
             return dg.AssetSpec(key=dg.AssetKey([data.obj.query_config.table]))
         return None
 
-    def get_asset_spec(self, data: OmniTranslatorData) -> Optional[dg.AssetSpec]:
+    def get_asset_spec(
+        self, context: dg.ComponentLoadContext, data: OmniTranslatorData
+    ) -> Optional[dg.AssetSpec]:
         """Core function for converting an Omni document into an AssetSpec object."""
-        base_asset_spec = self._get_default_omni_spec(data, self.workspace)
+        base_asset_spec = self._get_default_omni_spec(context, data, self.workspace)
         if self.translation and base_asset_spec:
             return self.translation(base_asset_spec, data)
         else:
             return base_asset_spec
 
-    def _build_asset_specs(self, workspace_data: OmniWorkspaceData) -> list[dg.AssetSpec]:
+    def _build_asset_specs(
+        self, context: dg.ComponentLoadContext, workspace_data: OmniWorkspaceData
+    ) -> list[dg.AssetSpec]:
         """Invokes the `get_asset_spec` method on all objects in the provided `workspace_data`.
         Filters out any cases where the asset_spec is `None`, and provides a helpful error
         message in cases where keys overlap between different documents.
         """
         maybe_specs = [
-            self.get_asset_spec(OmniTranslatorData(obj=doc, workspace_data=workspace_data))
+            self.get_asset_spec(context, OmniTranslatorData(obj=doc, workspace_data=workspace_data))
             for doc in workspace_data.documents
         ]
 
@@ -103,8 +107,10 @@ class OmniComponent(StateBackedComponent, dg.Model, dg.Resolvable):
 
         return list(itertools.chain.from_iterable(specs_by_key.values()))
 
-    def build_defs_from_workspace_data(self, workspace_data: OmniWorkspaceData) -> dg.Definitions:
-        return dg.Definitions(assets=self._build_asset_specs(workspace_data))
+    def build_defs_from_workspace_data(
+        self, context: dg.ComponentLoadContext, workspace_data: OmniWorkspaceData
+    ) -> dg.Definitions:
+        return dg.Definitions(assets=self._build_asset_specs(context, workspace_data))
 
     def build_defs_from_state(
         self, context: dg.ComponentLoadContext, state_path: Optional[Path]
@@ -113,4 +119,4 @@ class OmniComponent(StateBackedComponent, dg.Model, dg.Resolvable):
             return dg.Definitions()
 
         state = self.load_state_from_path(state_path)
-        return self.build_defs_from_workspace_data(state)
+        return self.build_defs_from_workspace_data(context, state)
