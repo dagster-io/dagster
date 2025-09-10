@@ -59,7 +59,6 @@ const INVALID_PARTITION_SUBSTRINGS_READABLE = [
   '","',
   '[',
   ']',
-  '" "',
 ];
 
 export const CreatePartitionDialog = ({
