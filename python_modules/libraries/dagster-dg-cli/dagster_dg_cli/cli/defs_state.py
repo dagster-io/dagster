@@ -122,9 +122,11 @@ def get_updated_defs_state_info_task_and_statuses(
     (e.g. display progress) while the task is running.
     """
     from dagster.components.core.component_tree import ComponentTree
+    from dagster_shared.utils.warnings import disable_dagster_warnings
 
-    component_tree = ComponentTree.for_project(project_path)
-    components_to_refresh = _get_components_to_refresh(component_tree, defs_state_keys)
+    with disable_dagster_warnings():
+        component_tree = ComponentTree.for_project(project_path)
+        components_to_refresh = _get_components_to_refresh(component_tree, defs_state_keys)
 
     # shared dictionary to be used for all subtasks
     statuses = dict()
