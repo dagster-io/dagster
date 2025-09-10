@@ -52,6 +52,9 @@ class OmniComponent(StateBackedComponent, dg.Model, dg.Resolvable):
             ]
 
             prefix = doc.folder.path.split("/") if doc.folder else []
+            user = data.workspace_data.get_user(doc.owner.id)
+            owner_email = user.primary_email if user else None
+
             return dg.AssetSpec(
                 key=dg.AssetKey([*prefix, doc.name]),
                 group_name=prefix[0].replace("-", "_") if prefix else None,
@@ -62,6 +65,7 @@ class OmniComponent(StateBackedComponent, dg.Model, dg.Resolvable):
                     TRANSLATOR_DATA_METADATA_KEY: data,
                 },
                 kinds={"omni"},
+                owners=[owner_email] if owner_email else None,
             )
         if isinstance(data.obj, OmniQuery):
             return dg.AssetSpec(key=dg.AssetKey([data.obj.query_config.table]))
