@@ -28,7 +28,7 @@ In a large organization, it's important to know which individuals and teams are 
 :::
 
 :::tip
-With Dagster+ Pro, you can create asset-based alerts that automatically notify an asset's owners when triggered. Refer to the [Dagster+ alert documentation](/guides/monitor/alerts) for more information.
+With Dagster+ Pro, you can create asset-based alerts that automatically notify an asset's owners when triggered. Refer to the [Dagster+ alert documentation](/guides/log-debug/alerts) for more information.
 :::
 
 ## Organizing assets with tags \{#tags}

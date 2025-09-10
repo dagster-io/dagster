@@ -20,7 +20,7 @@ The BigQuery cost metric is based off of the bytes billed for queries executed w
 To use these features, you will need:
 
 - A Dagster+ account on the **Pro** plan
-- Access to the [Dagster+ Insights feature](/guides/monitor/insights)
+- Access to the [Dagster+ Insights feature](/guides/log-debug/insights)
 - BigQuery credentials which have access to the **`INFORMATION_SCHEMA.JOBS`** table, such as a BigQuery Resource viewer role.
   - For more information, see the [BigQuery Documentation](https://cloud.google.com/bigquery/docs/information-schema-jobs)
 - The following packages installed:

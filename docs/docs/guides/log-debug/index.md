@@ -1,10 +1,10 @@
 ---
-description: Best practices for monitoring and debugging Dagster pipelines.
+description: Best practices for logging and debugging Dagster pipelines.
 sidebar_class_name: hidden
-title: Monitoring & debugging pipelines
+title: Logging & debugging pipelines
 sidebar_position: 10
-canonicalUrl: '/guides/monitor'
-slug: '/guides/monitor'
+canonicalUrl: '/guides/log-debug'
+slug: '/guides/log-debug'
 ---
 
 import DocCardList from '@theme/DocCardList';

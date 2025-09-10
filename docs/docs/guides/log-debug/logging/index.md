@@ -2,8 +2,8 @@
 description: Dagster supports a variety of built-in logging options, as well as the ability to extend and customize them. Logs can be produced by runs, sensor and schedule evaluations, and processes like the Dagster webserver and daemon.
 sidebar_position: 10
 title: Logging
-canonicalUrl: '/guides/monitor/logging'
-slug: '/guides/monitor/logging'
+canonicalUrl: '/guides/log-debug/logging'
+slug: '/guides/log-debug/logging'
 ---
 
 Dagster supports a variety of [built-in logging options](/api/dagster/loggers#built-in-loggers), as well as the ability to extend and customize them. Logs can be produced by runs, sensor and schedule evaluations, and processes like the [Dagster webserver](/guides/operate/webserver) and daemon.
@@ -45,11 +45,11 @@ Structured logs are enriched and categorized with metadata. For example, a label
 
 #### Logs streaming back to the UI in real time
 
-![Real time logs in the Dagster UI](/images/guides/monitor/logging/job-log-ui.png)
+![Real time logs in the Dagster UI](/images/guides/log-debug/logging/job-log-ui.png)
 
 #### Log messages filtered based on execution steps and log levels
 
-![Log filtering in the Dagster UI](/images/guides/monitor/logging/job-ui-filter.png)
+![Log filtering in the Dagster UI](/images/guides/log-debug/logging/job-ui-filter.png)
 
 ### Raw compute logs
 
@@ -57,7 +57,7 @@ The raw compute logs contain logs for both [`stdout` and `stderr`](https://stack
 
 Custom log messages are also included in these logs. Notice in the following image that the `Hello world!` message is included on line three:
 
-![Raw compute logs in the Run details page](/images/guides/monitor/logging/loggers-compute-logs.png)
+![Raw compute logs in the Run details page](/images/guides/log-debug/logging/loggers-compute-logs.png)
 
 :::note
 
@@ -81,10 +81,10 @@ Dagster's [built-in loggers](/api/dagster/loggers#built-in-loggers):
 - Can be configured to capture only specified levels, such as `ERROR`
 - Can include manually-defined messages produced inside certain Dagster definitions like assets, ops, and sensors
 
-For more information on customizing loggers, see "[Customizing Dagster's built-in loggers](/guides/monitor/logging/custom-logging)".
+For more information on customizing loggers, see "[Customizing Dagster's built-in loggers](/guides/log-debug/logging/custom-logging)".
 
 ## Integrating external loggers
 
 In addition to built-in loggers, you can also integrate external loggers to augment Dagster's default logs and configure them to display in the UI. Other options, such as custom handlers and formatters, can be configured in your project's `dagster.yaml`.
 
-Refer to the [Python logging guide](/guides/monitor/logging/python-logging) for more information and examples.
+Refer to the [Python logging guide](/guides/log-debug/logging/python-logging) for more information and examples.

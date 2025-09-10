@@ -28,7 +28,7 @@ First, add the `context` parameter to your asset definition, and add `context.pd
 
 Next, launch the Dagster webserver from your terminal with `dagster dev`, then, in the UI, materialize the asset. The asset will remain in a "Materializing" state while the interactive debugger is running.
 
-![pdb Asset Running](/images/guides/monitor/debugging/pdb-asset-running.png)
+![pdb Asset Running](/images/guides/log-debug/debugging/pdb-asset-running.png)
 
 ## 3. Debug your asset in the `pdb` debugger
 
@@ -82,10 +82,10 @@ You can navigate through the asset code using any [pdb commands](https://docs.py
 
 While these `pdb` commands occur in the terminal, they will also be recorded in `stdout` of the Dagster asset execution:
 
-![pdb stdout](/images/guides/monitor/debugging/stdout.png)
+![pdb stdout](/images/guides/log-debug/debugging/stdout.png)
 
 ## 4. End debugging and finish materializing your asset
 
 The asset will remain in the "Materializing" state until you have navigated through all the statements of the asset with `next` or until you execute `continue` within `pdb`. The asset will then finish materializing and close `pdb` in the terminal:
 
-![pdb Asset Success](/images/guides/monitor/debugging/pdb-asset-success.png)
+![pdb Asset Success](/images/guides/log-debug/debugging/pdb-asset-success.png)

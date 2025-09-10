@@ -18,7 +18,7 @@ For example, freshness policies can help identify stale assets caused by:
 
 :::info
 
-You can set an [asset freshness alert](/guides/labs/observability-update/alerts) to notify you when an asset is failing its freshness policy.
+You can set an [asset freshness alert](/guides/observe/alerts) to notify you when an asset is failing its freshness policy.
 
 :::
 
@@ -31,7 +31,7 @@ freshness:
   enabled: True
 ```
 
-To use freshness policies in Dagster+, sign up for the [Observability update early access program](/guides/labs/observability-update#how-to-join-the-early-access-program).
+To use freshness policies in Dagster+, sign up for the [Observability update early access program](/guides/observe#how-to-join-the-early-access-program).
 
 ### Relationship to existing `FreshnessPolicy`
 

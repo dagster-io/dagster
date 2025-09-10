@@ -52,7 +52,7 @@ However, this default behavior can be changed to treat these sort of log stateme
 
 Once this key is set, Dagster will treat any normal Python log call from one of the listed loggers in the exact same way as a `context.log` call. This means you should be able to see this log statement in the UI:
 
-![Log Python error](/images/guides/monitor/logging/log-python-error.png)
+![Log Python error](/images/guides/log-debug/logging/log-python-error.png)
 
 :::note
 
@@ -85,7 +85,7 @@ Handler, filter and formatter configuration follows the [dictionary config schem
 
 From there, standard `context.log` calls will output with the configured handlers, formatters and filters. After execution, read the stdout log in the UI. As expected, it contains the formatted log:
 
-![Log stream output](/images/guides/monitor/logging/log-stream-output.png)
+![Log stream output](/images/guides/log-debug/logging/log-stream-output.png)
 
 ## Examples
 
@@ -131,4 +131,4 @@ If we execute the following job:
 
 And then read the `my_dagster_logs.log` output log file, we'll see the log file contains the formatted log:
 
-![Log file output](/images/guides/monitor/logging/log-file-output.png)
+![Log file output](/images/guides/log-debug/logging/log-file-output.png)

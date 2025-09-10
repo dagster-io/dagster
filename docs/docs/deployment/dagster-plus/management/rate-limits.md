@@ -13,4 +13,4 @@ Dagster+ enforces several rate limits to smoothly distribute the load. Deploymen
 Rate-limited requests return a "429 - Too Many Requests" response. Dagster+ agents automatically retry these requests.
 
 {/* Switching from [Structured event logs](/concepts/logging#structured-event-logs) to [Raw compute logs](/concepts/logging#raw-compute-logs) or reducing your custom log volume can help you stay within these limits. */}
-Switching from [Structured event logs](/guides/monitor/logging/index.md#structured-event-logs) to [Raw compute logs](/guides/monitor/logging/index.md#raw-compute-logs) or reducing your custom log volume can help you stay within these limits.
+Switching from [Structured event logs](/guides/log-debug/logging#structured-event-logs) to [Raw compute logs](/guides/log-debug/logging#raw-compute-logs) or reducing your custom log volume can help you stay within these limits.

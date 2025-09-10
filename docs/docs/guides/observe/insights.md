@@ -5,7 +5,7 @@ tags: [dagster-plus-feature]
 sidebar_position: 300
 ---
 
-The Dagster+ Observability update includes the next-generation version of [Dagster+ Insights](/guides/monitor/insights) with the following improvements:
+The Dagster+ Observability update includes the next-generation version of [Dagster+ Insights](/guides/log-debug/insights) with the following improvements:
 
 - [New insights views to help you understand trends](#insights-views)
 - [New KPI dashboard to help you understand platform health](#kpi-dashboard)
@@ -40,7 +40,7 @@ KPIs allow you to understand your platform health at a high level, and compare m
 
 ## New asset health metrics
 
-Insights views will continue to display existing [built-in metrics](/guides/monitor/insights#built-in-metrics) alongside new asset health metrics:
+Insights views will continue to display existing [built-in metrics](/guides/log-debug/insights#built-in-metrics) alongside new asset health metrics:
 
 | Metric                               | Description                                                     |
 | ------------------------------------ | --------------------------------------------------------------- |
