@@ -1,8 +1,12 @@
 from typing import Annotated, Optional, Union
 
+import dateutil
 from dagster._core.definitions.assets.definition.asset_spec import AssetSpec
 from dagster._core.definitions.metadata.metadata_set import NamespacedMetadataSet
-from dagster._core.definitions.metadata.metadata_value import UrlMetadataValue
+from dagster._core.definitions.metadata.metadata_value import (
+    TimestampMetadataValue,
+    UrlMetadataValue,
+)
 from dagster.components import Resolvable, Resolver
 from dagster.components.resolved.base import resolve_fields
 from dagster.components.resolved.context import ResolutionContext
@@ -22,16 +26,23 @@ class OmniDocumentMetadataSet(NamespacedMetadataSet):
     """Represents metadata that is captured from an Omni document."""
 
     url: Optional[UrlMetadataValue] = None
+    owner_name: str
     document_name: str
     document_type: str
+    updated_at: TimestampMetadataValue
 
     @classmethod
     def from_document(cls, workspace: OmniWorkspace, document: OmniDocument) -> Self:
         url_str = f"{workspace.base_url.rstrip('/')}/dashboards/{document.identifier}"
+
         return cls(
             url=UrlMetadataValue(url_str) if document.has_dashboard else None,
             document_name=document.name,
             document_type=document.type,
+            updated_at=TimestampMetadataValue(
+                dateutil.parser.parse(document.updated_at).timestamp()
+            ),
+            owner_name=document.owner.name,
         )
 
     @classmethod

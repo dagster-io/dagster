@@ -14,6 +14,7 @@ from dagster_omni_tests.utils import (
     create_sample_workspace_data,
     get_sample_documents_api_response,
     get_sample_queries_api_response,
+    get_sample_users_api_response,
 )
 
 context = Mock()
@@ -207,10 +208,12 @@ def test_end_to_end_integration(omni_workspace):
 
     # Mock the workspace's HTTP layer
     async def mock_make_request(self, endpoint, params=None, headers=None):
-        if endpoint == "documents":
+        if endpoint == "api/v1/documents":
             return get_sample_documents_api_response()
-        elif endpoint.startswith("documents/") and endpoint.endswith("/queries"):
+        elif endpoint.startswith("api/v1/documents/") and endpoint.endswith("/queries"):
             return get_sample_queries_api_response()
+        elif endpoint == "api/scim/v2/users":
+            return get_sample_users_api_response()
         else:
             raise ValueError(f"Unexpected endpoint: {endpoint}")
 

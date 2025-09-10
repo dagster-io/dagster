@@ -7,6 +7,7 @@ from dagster_omni.objects import (
     OmniOwner,
     OmniQuery,
     OmniQueryConfig,
+    OmniUser,
     OmniWorkspaceData,
 )
 
@@ -16,11 +17,6 @@ def create_sample_folder() -> OmniFolder:
     return OmniFolder(
         id="folder-123", name="Analytics", path="analytics/reports", scope="workspace"
     )
-
-
-def create_sample_owner() -> OmniOwner:
-    """Create a sample OmniOwner for testing."""
-    return OmniOwner(id="owner-456", name="John Doe")
 
 
 def create_sample_labels() -> list[OmniLabel]:
@@ -60,20 +56,44 @@ def create_sample_document(
         has_dashboard=has_dashboard,
         type="document",
         updated_at="2023-01-01T00:00:00Z",
-        owner=create_sample_owner(),
+        owner=OmniOwner(id="owner-456", name="John Doe"),
         folder=folder,
         labels=create_sample_labels(),
         queries=queries,
     )
 
 
+def create_sample_user(
+    user_id: str = "user-123",
+    name: str = "John Doe",
+    display_name: str = "John Doe",
+    user_name: str = "john.doe@example.com",
+    active: bool = True,
+) -> OmniUser:
+    """Create a sample OmniUser for testing."""
+    return OmniUser(
+        id=user_id,
+        name=name,
+        display_name=display_name,
+        user_name=user_name,
+        active=active,
+        primary_email="john.doe@example.com",
+        groups=["Admins", "Analysts"],
+        created="2023-01-01T00:00:00Z",
+        last_modified="2023-06-01T00:00:00Z",
+    )
+
+
 def create_sample_workspace_data(
     documents: Optional[list[OmniDocument]] = None,
+    users: Optional[list[OmniUser]] = None,
 ) -> OmniWorkspaceData:
     """Create sample OmniWorkspaceData for testing."""
     if documents is None:
         documents = [create_sample_document()]
-    return OmniWorkspaceData(documents=documents)
+    if users is None:
+        users = [create_sample_user()]
+    return OmniWorkspaceData(documents=documents, users=users)
 
 
 def get_sample_documents_api_response() -> dict[str, Any]:
@@ -142,6 +162,38 @@ def get_sample_queries_api_response() -> dict[str, Any]:
                     "fields": ["products.category", "order_items.count"],
                     "filters": {},
                 },
+            },
+        ]
+    }
+
+
+def get_sample_users_api_response() -> dict[str, Any]:
+    """Create sample API response for SCIM users endpoint.
+
+    Based off of: https://docs.omni.co/docs/API/users
+    """
+    return {
+        "Resources": [
+            {
+                "id": "9e8719d9-276a-4964-9395-a493189a247c",
+                "userName": "blobby@example.com",
+                "displayName": "Blobby",
+                "active": True,
+                "emails": [{"value": "blobby@example.com", "primary": True, "type": "work"}],
+                "groups": [
+                    {"display": "Admins", "value": "admin-group-id"},
+                    {"display": "Analysts", "value": "analyst-group-id"},
+                ],
+                "meta": {"created": "2023-01-01T00:00:00Z", "lastModified": "2023-06-01T00:00:00Z"},
+            },
+            {
+                "id": "7f4219b8-165a-3854-8295-b483289b148d",
+                "userName": "jane.smith@example.com",
+                "displayName": "Jane Smith",
+                "active": True,
+                "emails": [{"value": "jane.smith@example.com", "primary": True, "type": "work"}],
+                "groups": [{"display": "Analysts", "value": "analyst-group-id"}],
+                "meta": {"created": "2023-02-15T00:00:00Z", "lastModified": "2023-07-01T00:00:00Z"},
             },
         ]
     }
