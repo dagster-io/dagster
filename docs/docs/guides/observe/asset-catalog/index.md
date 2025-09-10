@@ -2,8 +2,8 @@
 description: Use the Dagster+ asset catalog to view assets, access the global asset lineage, reload definitions, and search assets by asset key, compute kind, asset group, code location, and more.
 title: Asset Catalog (Dagster+)
 tags: [dagster-plus-feature]
-canonicalUrl: "/guides/build/assets/asset-catalog"
-slug: "/guides/build/assets/asset-catalog"
+canonicalUrl: "/guides/observe/asset-catalog"
+slug: "/guides/observe/asset-catalog"
 ---
 
 import DagsterPlus from '@site/docs/partials/\_DagsterPlus.md';

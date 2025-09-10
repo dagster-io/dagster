@@ -1,7 +1,8 @@
 ---
-title: Asset health alerts and freshness alerts (Dagster+)
-description: Asset health alerts and freshness alerts keep you informed about the status of your assets in Dagster+.
+title: Asset health alerts (Dagster+)
+description: Asset health alerts keep you informed about the overall health status of your assets in Dagster+.
 tags: [dagster-plus-feature]
+sidebar_position: 200
 ---
 
 import DagsterPlus from '@site/docs/partials/\_DagsterPlus.md';
@@ -10,13 +11,13 @@ import DagsterPlus from '@site/docs/partials/\_DagsterPlus.md';
 
 In Dagster+, you can configure alerts on the status of your assets with asset health alerts and freshness alerts.
 
-## Enabling new alerts
+:::info Enabling new alerts
 
 To create and edit the new alerts, you will need to enable the "New homepage & observability UIs" user setting. Note that if you opt out of the new homepage and observability features, you will be unable to create new health or freshness alerts, or edit existing health or freshness alerts.
 
-## Health alerts
+:::
 
-Asset health alerts send notifications when the overall [health status](/guides/observe/asset-health) of the asset changes:
+Asset health alerts send notifications when the overall [health status](/guides/observe/asset-health/reporting) of the asset changes:
 
 ![Create new health alert policy UI](/images/guides/observe/create-new-alert-policy.png)
 
@@ -29,11 +30,3 @@ For example, assume you have set up an asset health alert to notify when an asse
 You cannot create an alert policy that notifies on both health status changes and on individual events (such as materialization failure).
 
 :::
-
-## Freshness alerts
-
-Asset freshness alerts send notifications when an asset's [freshness status](/guides/observe/freshness) changes:
-
-![Asset freshness alert in UI](/images/guides/observe/create-new-freshness-alert.png)
-
-For example, if you have an asset that you expect to materialize every six hours, you can create a [freshness policy](/guides/observe/freshness) for the asset, and set up an alert to notify you when that policy is failing. If it's been six hours since the last materialization of the asset, you will receive a notification about the failing policy.
