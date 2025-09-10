@@ -4,6 +4,10 @@ description: Using real-time insights, you can gain visibility into historical a
 tags: [dagster-plus-feature]
 ---
 
+import DagsterPlus from '@site/docs/partials/\_DagsterPlus.md';
+
+<DagsterPlus />
+
 The Dagster+ Observability update includes the next-generation version of [Dagster+ Insights](/guides/log-debug/insights) with the following improvements:
 
 - [New insights views to help you understand trends](#insights-views)
