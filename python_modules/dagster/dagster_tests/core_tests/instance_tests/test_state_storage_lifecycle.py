@@ -4,11 +4,12 @@ from dagster._core.definitions.reconstruct import ReconstructableJob
 from dagster._core.execution.api import create_execution_plan, execute_run_iterator
 from dagster._core.storage.defs_state import DefsStateStorage
 from dagster._core.test_utils import create_run_for_test
+from dagster._utils.cached_method import cached_method
 
 
 @dg.op
 def recon_op():
-    state_store = DefsStateStorage.get_current()
+    state_store = DefsStateStorage.get()
     assert isinstance(state_store, DefsStateStorage)
     return "value"
 
@@ -24,7 +25,7 @@ def test_state_store_get_current_during_asset_execution():
 
     @dg.asset
     def test_asset():
-        state_storage = DefsStateStorage.get_current()
+        state_storage = DefsStateStorage.get()
         assert isinstance(state_storage, DefsStateStorage)
         executed_assets.append("test_asset")
         return "value"
@@ -51,7 +52,7 @@ def test_state_store_get_current_during_execution_plan_creation():
 
     @dg.op
     def test_op():
-        state_storage = DefsStateStorage.get_current()
+        state_storage = DefsStateStorage.get()
         assert isinstance(state_storage, DefsStateStorage)
         plan_created.append("plan_created")
         return "value"
@@ -65,7 +66,58 @@ def test_state_store_get_current_during_execution_plan_creation():
         assert plan is not None
 
 
+def test_defs_state_storage_get_current_after_init_resource_context():
+    with instance_for_test() as instance:
+        expected_storage = instance.defs_state_storage
+        assert DefsStateStorage.get() is expected_storage
+
+        with dg.build_init_resource_context():
+            # ends up being None in here because an ephemeral instance is created
+            assert DefsStateStorage.get() is None
+
+        # no longer None once we leave the context
+        assert DefsStateStorage.get() is expected_storage
+
+        with dg.build_init_resource_context(instance=instance):
+            # if we pass the instance in, the state storage is the same
+            assert DefsStateStorage.get() is expected_storage
+
+        assert DefsStateStorage.get() is expected_storage
+
+    # once the instance is disposed, the state storage is None
+    assert DefsStateStorage.get() is None
+
+
+def test_defs_state_storage_get_current_after_configurable_resouce():
+    class Holder:
+        def __init__(self, stuff: tuple):
+            self.stuff = stuff
+
+    class AResource(dg.ConfigurableResource):
+        foo: str
+
+        # use cached_method to avoid garbage collection
+        @cached_method
+        def get_some_val(self) -> Holder:
+            with self.process_config_and_initialize_cm() as initialized:
+                # include initialized so that __del__ is not called on it
+                # once we return from this function
+                return Holder(stuff=(self.foo + "baz", initialized))
+
+    with instance_for_test() as instance:
+        expected_storage = instance.defs_state_storage
+        assert DefsStateStorage.get() is expected_storage
+
+        resource = AResource(foo="bar")
+        assert resource.get_some_val().stuff[0] == "barbaz"
+
+        # should not have changed after get_some_val is called
+        assert DefsStateStorage.get() is expected_storage
+
+    assert DefsStateStorage.get() is None
+
+
 def test_state_storage_disposed() -> None:
     with instance_for_test():
-        assert DefsStateStorage.get_current() is not None
-    assert DefsStateStorage.get_current() is None
+        assert DefsStateStorage.get() is not None
+    assert DefsStateStorage.get() is None

@@ -200,13 +200,17 @@ class UnboundInitResourceContext(InitResourceContext):
 
     def __exit__(self, *exc):
         self._resources_cm.__exit__(*exc)
-        if self._instance_provided:
+        # if an instance was provided, assume the outer context will handle disposing of it
+        if not self._instance_provided:
             self._instance_cm.__exit__(*exc)
 
     def __del__(self):
         if self._resources_cm and self._resources_contain_cm and not self._cm_scope_entered:
             self._resources_cm.__exit__(None, None, None)
-        if self._instance_provided and not self._cm_scope_entered:
+        # if an instance was provided, assume the outer context will handle disposing of it
+        # if _cm_scope_entered is True, then we can rely on __exit__ being called to dispose
+        # of the instance if necessary
+        if not self._instance_provided and not self._cm_scope_entered:
             self._instance_cm.__exit__(None, None, None)
 
     @property
@@ -260,7 +264,7 @@ def build_init_resource_context(
     config: Optional[Mapping[str, Any]] = None,
     resources: Optional[Mapping[str, Any]] = None,
     instance: Optional[DagsterInstance] = None,
-) -> InitResourceContext:
+) -> UnboundInitResourceContext:
     """Builds resource initialization context from provided parameters.
 
     ``build_init_resource_context`` can be used as either a function or context manager. If there is a

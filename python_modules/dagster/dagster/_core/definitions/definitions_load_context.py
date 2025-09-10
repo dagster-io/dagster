@@ -65,7 +65,7 @@ class DefinitionsLoadContext:
         if load_type == DefinitionsLoadType.INITIALIZATION and defs_state_info is None:
             # defs_state_info is passed in during INITIALIZATION if explicit state versions
             # are provided via CLI arguments, otherwise we use the latest available state info
-            state_storage = DefsStateStorage.get_current()
+            state_storage = DefsStateStorage.get()
             self._defs_state_info = (
                 state_storage.get_latest_defs_state_info() if state_storage else None
             )
@@ -150,7 +150,7 @@ class DefinitionsLoadContext:
     @contextmanager
     def temp_state_path(self, key: str) -> Iterator[Optional[Path]]:
         """Context manager that creates a temporary path to hold local state for a component."""
-        state_storage = DefsStateStorage.get_current()
+        state_storage = DefsStateStorage.get()
         if state_storage is None:
             raise DagsterInvalidInvocationError(
                 "Attempted to get a temp state path without a StateStorage in context. "
