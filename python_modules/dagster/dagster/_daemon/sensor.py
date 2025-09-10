@@ -51,7 +51,7 @@ from dagster._core.storage.dagster_run import DagsterRun, DagsterRunStatus, Runs
 from dagster._core.storage.tags import RUN_KEY_TAG, SENSOR_NAME_TAG
 from dagster._core.telemetry import SENSOR_RUN_CREATED, hash_name, log_action
 from dagster._core.utils import make_new_backfill_id, make_new_run_id
-from dagster._core.workspace.context import IWorkspaceProcessContext
+from dagster._core.workspace.context import BaseWorkspaceRequestContext, IWorkspaceProcessContext
 from dagster._daemon.utils import DaemonErrorCapture
 from dagster._scheduler.stale import resolve_stale_or_missing_assets
 from dagster._time import get_current_datetime, get_current_timestamp
@@ -367,14 +367,16 @@ def execute_sensor_iteration_loop(
         yield SpanMarker.START_SPAN
 
         try:
-            yield from execute_sensor_iteration(
-                workspace_process_context,
-                logger,
-                threadpool_executor=threadpool_executor,
-                submit_threadpool_executor=submit_threadpool_executor,
-                sensor_tick_futures=sensor_tick_futures,
-                instrument_elapsed=instrument_elapsed,
-            )
+            with workspace_process_context.create_request_context() as workspace_request_context:
+                yield from execute_sensor_iteration(
+                    workspace_process_context,
+                    workspace_request_context,
+                    logger,
+                    threadpool_executor=threadpool_executor,
+                    submit_threadpool_executor=submit_threadpool_executor,
+                    sensor_tick_futures=sensor_tick_futures,
+                    instrument_elapsed=instrument_elapsed,
+                )
         except Exception:
             error_info = DaemonErrorCapture.process_exception(
                 exc_info=sys.exc_info(),
@@ -396,6 +398,7 @@ def execute_sensor_iteration_loop(
 
 def execute_sensor_iteration(
     workspace_process_context: IWorkspaceProcessContext,
+    workspace_request_context: BaseWorkspaceRequestContext,
     logger: logging.Logger,
     threadpool_executor: Optional[ThreadPoolExecutor],
     submit_threadpool_executor: Optional[ThreadPoolExecutor],
@@ -407,9 +410,7 @@ def execute_sensor_iteration(
 
     current_workspace = {
         location_entry.origin.location_name: location_entry
-        for location_entry in workspace_process_context.create_request_context()
-        .get_code_location_entries()
-        .values()
+        for location_entry in workspace_request_context.get_code_location_entries().values()
     }
 
     all_sensor_states = {
@@ -490,6 +491,7 @@ def execute_sensor_iteration(
             # heartbeat
             yield from _process_tick_generator(
                 workspace_process_context,
+                workspace_request_context,
                 logger,
                 sensor,
                 sensor_state,
@@ -578,6 +580,7 @@ def _get_evaluation_tick(
 
 def _process_tick_generator(
     workspace_process_context: IWorkspaceProcessContext,
+    workspace_request_context: BaseWorkspaceRequestContext,
     logger: logging.Logger,
     remote_sensor: RemoteSensor,
     sensor_state: InstigatorState,
@@ -625,6 +628,7 @@ def _process_tick_generator(
             if len(tick.unsubmitted_run_ids_with_requests) > 0:
                 yield from _resume_tick(
                     workspace_process_context,
+                    workspace_request_context,
                     tick_context,
                     tick,
                     remote_sensor,
@@ -634,6 +638,7 @@ def _process_tick_generator(
             else:
                 yield from _evaluate_sensor(
                     workspace_process_context,
+                    workspace_request_context,
                     tick_context,
                     remote_sensor,
                     sensor_state,
@@ -701,6 +706,7 @@ def _submit_run_request(
     run_id: str,
     run_request: RunRequest,
     workspace_process_context: IWorkspaceProcessContext,
+    workspace_request_context: BaseWorkspaceRequestContext,
     remote_sensor: RemoteSensor,
     existing_runs_by_key,
     logger,
@@ -715,7 +721,7 @@ def _submit_run_request(
     # reload the code_location on each submission, request_context derived data can become out date
     # * non-threaded: if number of serial submissions is too many
     # * threaded: if thread sits pending in pool too long
-    code_location = _get_code_location_for_sensor(workspace_process_context, remote_sensor)
+    code_location = _get_code_location_for_sensor(workspace_request_context, remote_sensor)
     job_subset_selector = JobSubsetSelector(
         location_name=code_location.name,
         repository_name=sensor_origin.repository_origin.repository_name,
@@ -745,7 +751,7 @@ def _submit_run_request(
     error_info = None
     try:
         logger.info(f"Launching run for {remote_sensor.name}")
-        instance.submit_run(run.run_id, workspace_process_context.create_request_context())
+        instance.submit_run(run.run_id, workspace_request_context)
         logger.info(f"Completed launch of run {run.run_id} for {remote_sensor.name}")
     except Exception:
         error_info = DaemonErrorCapture.process_exception(
@@ -760,6 +766,7 @@ def _submit_run_request(
 
 def _resume_tick(
     workspace_process_context: IWorkspaceProcessContext,
+    workspace_request_context: BaseWorkspaceRequestContext,
     context: SensorLaunchContext,
     tick: InstigatorTick,
     remote_sensor: RemoteSensor,
@@ -788,6 +795,7 @@ def _resume_tick(
         context=context,
         remote_sensor=remote_sensor,
         workspace_process_context=workspace_process_context,
+        workspace_request_context=workspace_request_context,
         submit_threadpool_executor=submit_threadpool_executor,
         sensor_debug_crash_flags=sensor_debug_crash_flags,
     )
@@ -802,17 +810,18 @@ def _resume_tick(
 
 
 def _get_code_location_for_sensor(
-    workspace_process_context: IWorkspaceProcessContext,
+    workspace_request_context: BaseWorkspaceRequestContext,
     remote_sensor: RemoteSensor,
 ) -> CodeLocation:
     sensor_origin = remote_sensor.get_remote_origin()
-    return workspace_process_context.create_request_context().get_code_location(
+    return workspace_request_context.get_code_location(
         sensor_origin.repository_origin.code_location_origin.location_name
     )
 
 
 def _evaluate_sensor(
     workspace_process_context: IWorkspaceProcessContext,
+    workspace_request_context: BaseWorkspaceRequestContext,
     context: SensorLaunchContext,
     remote_sensor: RemoteSensor,
     state: InstigatorState,
@@ -830,7 +839,7 @@ def _evaluate_sensor(
         )
 
     context.logger.info(f"Checking for new runs for sensor: {remote_sensor.name}")
-    code_location = _get_code_location_for_sensor(workspace_process_context, remote_sensor)
+    code_location = _get_code_location_for_sensor(workspace_request_context, remote_sensor)
     repository_handle = remote_sensor.handle.repository_handle
     instigator_data = _sensor_instigator_data(state)
 
@@ -896,6 +905,7 @@ def _evaluate_sensor(
             instance=instance,
             remote_sensor=remote_sensor,
             workspace_process_context=workspace_process_context,
+            workspace_request_context=workspace_request_context,
             submit_threadpool_executor=submit_threadpool_executor,
             sensor_debug_crash_flags=sensor_debug_crash_flags,
         )
@@ -1072,6 +1082,7 @@ def _handle_run_requests_and_automation_condition_evaluations(
     context: SensorLaunchContext,
     remote_sensor: RemoteSensor,
     workspace_process_context: IWorkspaceProcessContext,
+    workspace_request_context: BaseWorkspaceRequestContext,
     submit_threadpool_executor: Optional[ThreadPoolExecutor],
     sensor_debug_crash_flags: Optional[SingleInstigatorDebugCrashFlags] = None,
 ):
@@ -1113,6 +1124,7 @@ def _handle_run_requests_and_automation_condition_evaluations(
         context,
         remote_sensor,
         workspace_process_context,
+        workspace_request_context,
         submit_threadpool_executor,
         sensor_debug_crash_flags,
     )
@@ -1125,6 +1137,7 @@ def _submit_run_requests(
     context: SensorLaunchContext,
     remote_sensor: RemoteSensor,
     workspace_process_context: IWorkspaceProcessContext,
+    workspace_request_context: BaseWorkspaceRequestContext,
     submit_threadpool_executor: Optional[ThreadPoolExecutor],
     sensor_debug_crash_flags: Optional[SingleInstigatorDebugCrashFlags] = None,
 ):
@@ -1151,6 +1164,7 @@ def _submit_run_requests(
                 run_id,
                 run_request,
                 workspace_process_context,
+                workspace_request_context,
                 remote_sensor,
                 existing_runs_by_key,
                 context.logger,
