@@ -2,7 +2,6 @@
 title: Asset health reporting
 description: With asset health criteria, you can quickly identify which datasets are performing well and which need attention.
 tags: [dagster-plus-feature]
-sidebar_position: 200
 ---
 
 All assets now have a single health status that combines the status of the most recent materialization, freshness, and asset checks. These statuses appear on the home page, throughout the asset catalog, and in the asset lineage view, and can be used to group and filter your assets. You can also [set alerts](/guides/observe/alerts) to send notifications when the health status of the asset changes.

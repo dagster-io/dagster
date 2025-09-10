@@ -2,7 +2,6 @@
 title: Asset health alerts and freshness alerts
 description: Asset health alerts and freshness alerts keep you informed about the status of your assets.
 tags: [dagster-plus-feature]
-sidebar_position: 600
 ---
 
 The [Dagster+ Summer Update](/guides/observe) introduces two new ways to alert on the status of your assets: asset health alerts and freshness alerts.
