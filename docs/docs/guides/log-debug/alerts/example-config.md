@@ -2,6 +2,7 @@
 description: Example Dagster+ YAML alert configuration.
 sidebar_position: 400
 title: Example alert policy configuration
+tags: [dagster-plus]
 ---
 
 {/* To update or regenerate the yaml code snippets in this doc, run `python ./examples/docs_snippets/docs_snippets/dagster-plus/deployment/alerts/generate_alerts_config_code_snippets.py` */}

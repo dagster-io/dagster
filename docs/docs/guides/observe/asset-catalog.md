@@ -1,6 +1,7 @@
 ---
 title: Custom asset catalog dashboards
 description: Flexibly build dashboards in the asset catalog scoped by tags, teams, owners, or asset groups in order to enable everyone on your team to focus on the assets that matter most to them.
+tags: [dagster-plus]
 sidebar_position: 400
 ---
 

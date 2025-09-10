@@ -1,6 +1,7 @@
 ---
 title: Asset health alerts and freshness alerts
 description: Asset health alerts and freshness alerts keep you informed about the status of your assets.
+tags: [dagster-plus]
 sidebar_position: 600
 ---
 
