@@ -108,6 +108,7 @@ export type Asset = {
   id: Scalars['String']['output'];
   key: AssetKey;
   latestEventSortKey: Maybe<Scalars['ID']['output']>;
+  latestMaterializationTimestamp: Maybe<Scalars['Float']['output']>;
 };
 
 export type AssetAssetEventHistoryArgs = {
@@ -6333,6 +6334,10 @@ export const buildAsset = (
       overrides && overrides.hasOwnProperty('latestEventSortKey')
         ? overrides.latestEventSortKey!
         : 'b9e5eeed-491e-4839-9bbf-1dedd727f77b',
+    latestMaterializationTimestamp:
+      overrides && overrides.hasOwnProperty('latestMaterializationTimestamp')
+        ? overrides.latestMaterializationTimestamp!
+        : 1.04,
   };
 };
 
