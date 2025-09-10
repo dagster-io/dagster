@@ -1,7 +1,7 @@
 ---
 description: Create, access, and share Dagster+ catalog views using asset selection syntax to filter and manage asset visibility.
 tags: [dagster-plus-feature]
-title: Catalog views
+title: Catalog views (Dagster+)
 ---
 
 import DagsterPlus from '@site/docs/partials/\_DagsterPlus.md';

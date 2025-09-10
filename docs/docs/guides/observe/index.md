@@ -1,16 +1,10 @@
 ---
-title: 'Dagster+ Observability update'
-description: An upcoming suite of tools for end-to-end data platform observability
-sidebar_position: 100
+title: Observe
+description: A suite of tools for end-to-end data platform observability in Dagster.
+sidebar_class_name: hidden
 canonicalUrl: '/guides/observe'
 slug: '/guides/observe'
 ---
-
-:::info
-
-These features are under active development, and are in limited early access. You may encounter feature gaps, and the functionality and APIs may change. To join the early access program, sign up on the [Dagster+ Summer Update page](https://dagster.io/summer). To report issues or give feedback, use the "Share feedback" button at the top of your homepage.
-
-:::
 
 The Dagster+ Summer Update is a collection of new functionality that marks a major leap forward in observability and orchestration for data platforms. It focuses on improving real-time understanding of data health, operational metrics, and historical trends. With a redesigned user experience, the update makes it easier for you to monitor, troubleshoot, and explore your data workflows.
 

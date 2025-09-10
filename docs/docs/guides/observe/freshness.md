@@ -1,5 +1,5 @@
 ---
-title: 'Freshness policies'
+title: Freshness policies
 description: Dagster Freshness policies help you understand which of your assets have materialized recently and which ones are running behind - a key component of asset health.
 ---
 
