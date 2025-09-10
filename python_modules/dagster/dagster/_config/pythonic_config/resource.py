@@ -318,7 +318,7 @@ class ConfigurableResourceFactory(
         return self._nested_resources
 
     @classmethod
-    def configure_at_launch(cls: "type[T_Self]", **kwargs) -> "PartialResource[T_Self]":
+    def configure_at_launch(cls: "type[T_Self]", **kwargs) -> "PartialResource[TResValue]":
         """Returns a partially initialized copy of the resource, with remaining config fields
         set at runtime.
         """
