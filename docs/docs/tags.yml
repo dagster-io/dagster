@@ -50,3 +50,7 @@ code-example:
   label: 'code-example'
   permalink: '/examples/code-example'
   description: 'Code example.'
+mini-project:
+  label: 'mini-project'
+  permalink: '/examples/mini-project'
+  description: 'Mini project.'
