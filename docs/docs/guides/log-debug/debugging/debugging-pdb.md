@@ -19,7 +19,7 @@ To follow the steps in this guide, you'll need to [create a Dagster project](/gu
 First, add the `context` parameter to your asset definition, and add `context.pdb.set_trace()` to the asset code where you want to add a breakpoint. You should insert your breakpoint after the variables you are interested in have been initialized but before any mutations. With `pdb` you will be able to proceed to the next statement of the asset but will not be able to reverse the state of a variable so it is better to set the break point early.
 
 <CodeExample
-  path="docs_snippets/docs_snippets/guides/monitor-alert/debugging/pdb.py"
+  path="docs_snippets/docs_snippets/guides/log-debug/debugging/pdb.py"
   language="python"
   title="src/<project_name>/defs/assets.py"
 />
