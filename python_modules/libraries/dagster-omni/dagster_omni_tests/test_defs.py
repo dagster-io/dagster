@@ -93,6 +93,7 @@ def test_get_asset_spec_with_translation(component):
 
     spec = component.get_asset_spec(data)
 
+    assert spec is not None
     assert spec.key == AssetKey(["custom", "analytics", "reports", "User Analysis"])
 
 
