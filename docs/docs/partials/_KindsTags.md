@@ -50,7 +50,7 @@
 | `doubao`            | <img src="/images/guides/build/assets/metadata-tags/kinds/icons/tool-doubao-color.svg" width={20} height={20} />            |
 | `druid`             | <img src="/images/guides/build/assets/metadata-tags/kinds/icons/tool-druid-color.svg" width={20} height={20} />             |
 | `duckdb`            | <img src="/images/guides/build/assets/metadata-tags/kinds/icons/tool-duckdb-color.svg" width={20} height={20} />            |
-| `ducklake`          | <img src="/images/guides/build/assets/metadata-tags/kinds/icons/tool-ducklake-color.svg" width={20} height={20} />        |
+| `ducklake`          | <img src="/images/guides/build/assets/metadata-tags/kinds/icons/tool-ducklake-color.svg" width={20} height={20} />          |
 | `elasticsearch`     | <img src="/images/guides/build/assets/metadata-tags/kinds/icons/tool-elasticsearch-color.svg" width={20} height={20} />     |
 | `evidence`          | <img src="/images/guides/build/assets/metadata-tags/kinds/icons/tool-evidence.svg" width={20} height={20} />                |
 | `exasol`            | <img src="/images/guides/build/assets/metadata-tags/kinds/icons/tool-exasol-color.svg" width={20} height={20} />            |
