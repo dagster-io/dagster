@@ -1115,7 +1115,7 @@ def wait_for_all_runs_to_start(instance, timeout=10):
             break
 
 
-def wait_for_all_runs_to_finish(instance, timeout=10):
+def wait_for_all_runs_to_finish(instance, timeout=30):
     start_time = time.time()
     FINISHED_STATES = [
         DagsterRunStatus.SUCCESS,

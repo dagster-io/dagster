@@ -139,7 +139,7 @@ class AssetMaterializationHealthState(LoadableBy[AssetKey]):
                 materialized_partition_subset,
                 failed_partition_subset,
                 _,
-            ) = get_partition_subsets(
+            ) = await get_partition_subsets(
                 loading_context.instance,
                 loading_context,
                 asset_key,

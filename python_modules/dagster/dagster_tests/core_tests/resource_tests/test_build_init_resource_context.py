@@ -50,7 +50,7 @@ def test_build_with_cm_resource():
     del context
     assert entered == ["true"]
 
-    with dg.build_init_resource_context(resources={"foo": foo}) as context:  # pyright: ignore[reportGeneralTypeIssues]
+    with dg.build_init_resource_context(resources={"foo": foo}) as context:
         assert context.resources.foo == "foo"
         assert reqs_cm_resource(context) == "foobar"
 

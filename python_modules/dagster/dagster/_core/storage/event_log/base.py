@@ -760,11 +760,23 @@ class EventLogStorage(ABC, MayHaveInstanceWeakref[T_DagsterInstance]):
         context: LoadingContext,
     ) -> Sequence[Optional["AssetStatusCacheValue"]]:
         """Get the cached status information for each asset."""
+        from dagster._core.workspace.context import BaseWorkspaceRequestContext
+
         values = []
+
+        if isinstance(context, BaseWorkspaceRequestContext):
+            dynamic_partitions_loader = context.dynamic_partitions_loader
+        else:
+            dynamic_partitions_loader = None
+
         for asset_key, partitions_def in partitions_defs_by_key:
             values.append(
                 get_and_update_asset_status_cache_value(
-                    self._instance, asset_key, partitions_def, loading_context=context
+                    self._instance,
+                    asset_key,
+                    partitions_def,
+                    dynamic_partitions_loader=dynamic_partitions_loader,
+                    loading_context=context,
                 )
             )
         return values

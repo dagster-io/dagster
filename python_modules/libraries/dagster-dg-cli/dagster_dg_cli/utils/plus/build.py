@@ -109,13 +109,10 @@ def defs_state_storage_from_config(
     """Creates a DefsStateStorage based on the provided DagsterPlusCliConfig and sets it as the current
     DefsStateStorage within the bounds of the context manager.
     """
-    from dagster._core.storage.defs_state.base import DefsStateStorage
+    from dagster._core.storage.defs_state.base import set_defs_state_storage
 
     from dagster_dg_cli.utils.plus.defs_state_storage import DagsterPlusCliDefsStateStorage
 
-    try:
-        defs_state_storage = DagsterPlusCliDefsStateStorage.from_config(plus_config)
-        DefsStateStorage.set_current(defs_state_storage)
+    defs_state_storage = DagsterPlusCliDefsStateStorage.from_config(plus_config)
+    with set_defs_state_storage(defs_state_storage):
         yield defs_state_storage
-    finally:
-        DefsStateStorage.set_current(None)
