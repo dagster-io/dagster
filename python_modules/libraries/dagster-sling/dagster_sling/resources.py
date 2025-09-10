@@ -97,7 +97,7 @@ class SlingConnectionResource(PermissiveConfig):
                 host=EnvVar("SNOWFLAKE_HOST"),
                 user=EnvVar("SNOWFLAKE_USER"),
                 database=EnvVar("SNOWFLAKE_DATABASE"),
-                password=EnvVar("SNOWFLAKE_PASSWORD"),
+                private_key=EnvVar("SNOWFLAKE_PRIVATE_KEY"),
                 role=EnvVar("SNOWFLAKE_ROLE")
             )
     """
@@ -138,7 +138,7 @@ class SlingResource(ConfigurableResource):
                         host=EnvVar("SNOWFLAKE_HOST"),
                         user=EnvVar("SNOWFLAKE_USER"),
                         database=EnvVar("SNOWFLAKE_DATABASE"),
-                        password=EnvVar("SNOWFLAKE_PASSWORD"),
+                        private_key=EnvVar("SNOWFLAKE_PRIVATE_KEY"),
                         role=EnvVar("SNOWFLAKE_ROLE"),
                     ),
                 ]
