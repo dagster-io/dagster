@@ -2956,6 +2956,7 @@ type FloatMetadataEntry implements MetadataEntry {
   label: String!
   description: String
   floatValue: Float
+  floatRepr: String!
 }
 
 type IntMetadataEntry implements MetadataEntry {
