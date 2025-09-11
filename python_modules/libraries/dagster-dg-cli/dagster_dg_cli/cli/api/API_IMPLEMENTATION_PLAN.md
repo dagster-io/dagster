@@ -1,5 +1,7 @@
 # Dagster Plus API CLI Implementation Plan
 
+**Reference:** See [INTERNAL_GRAPHQL_USAGE.md](./INTERNAL_GRAPHQL_USAGE.md) for complete GraphQL schema documentation and production usage patterns from the internal Dagster Cloud frontend.
+
 ## Standard Verbs Pattern
 
 - **list** - List all resources with filtering/pagination
@@ -380,4 +382,42 @@ dagster_dg_cli/cli/plus/api/
 - 🚧 **Next**: secret, agent, run, asset (Phase 1)
 - 📋 **Planned**: 22 additional nouns across 4 more phases
 
-This plan provides a comprehensive roadmap for implementing a complete Dagster Plus API CLI following established patterns and best practices.
+## **Domains Not Yet Implemented**
+
+Based on the comprehensive GraphQL schema documentation in [INTERNAL_GRAPHQL_USAGE.md](./INTERNAL_GRAPHQL_USAGE.md), the following domains from the production Dagster Plus ontology are not yet covered in this implementation plan:
+
+### **Core Data Platform Domains:**
+
+- **Asset Health & Status Views** - Comprehensive asset health monitoring with materialization, freshness, and check status
+- **Real-time Subscriptions** - Asset events, health changes, and live data updates
+- **Container Metrics** - Run resource usage, CPU/memory monitoring, and performance analytics
+- **Fragment Libraries** - Reusable GraphQL fragments for consistent data fetching across entities
+
+### **Advanced Management Domains:**
+
+- **Insights & Reporting** - Multi-entity performance metrics, cost analysis, and trend monitoring
+- **Usage Metrics** - Step duration, credit consumption, and serverless compute tracking by job/asset/deployment
+- **Catalog Views & Favorites** - User-defined asset selections, personal favorites, and view sharing
+- **Onboarding & Setup** - Progressive setup workflows, integration tracking, and milestone recognition
+
+### **Enterprise & Compliance Domains:**
+
+- **Advanced RBAC** - Custom roles, location-level permissions, and hierarchical permission grants
+- **Audit Logging** - Complete audit trail for compliance and security monitoring
+- **Organization Settings** - Feature flags, SSO configuration, and billing plan management
+- **Branch Deployments** - PR-based deployments with Git metadata integration
+
+### **Infrastructure & Monitoring Domains:**
+
+- **Serverless Infrastructure** - Auto-scaling policies, compute configurations, and container metrics
+- **Cloud Infrastructure** - Multi-region deployments, network configuration, and security compliance
+- **Alert Notification History** - Read-only alert audit trail and notification status tracking
+- **Error Aggregation** - Structured error collection with timestamps across all entity types
+
+### **Integration & Automation Domains:**
+
+- **Schedule/Sensor Execution Monitoring** - Tick logs, error handling, and automation failure tracking
+- **Asset Check Integration** - Check execution status, severity levels, and health metadata
+- **Multi-tenant Agent Management** - Agent heartbeats, code location states, and run worker tracking
+- **Git Integration** - Commit tracking, branch metadata, and PR status monitoring
+  This plan provides a comprehensive roadmap for implementing a complete Dagster Plus API CLI following established patterns and best practices.
