@@ -16,7 +16,7 @@ import Beta from '@site/docs/partials/\_Beta.md';
 
 :::note
 
-If you are just getting started with the Airbyte Cloud integration, we recommend using the new [Airbyte Cloud component](/integrations/libraries/airbyte/airbyte-cloud-component).
+If you are just getting started with the Airbyte Cloud integration, we recommend using the new [Airbyte Cloud component](/integrations/libraries/airbyte/airbyte-component).
 
 :::
 
