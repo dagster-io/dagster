@@ -11,9 +11,11 @@ For more information on getting started, see the `Airbyte integration guide <htt
 Assets (Airbyte API)
 ====================
 
-.. autoclass:: AirbyteCloudWorkspace
+.. autoconfigurable:: AirbyteCloudWorkspace
+    :annotation: ResourceDefinition
 
-.. autoclass:: AirbyteWorkspace
+.. autoconfigurable:: AirbyteWorkspace
+    :annotation: ResourceDefinition
 
 .. autoclass:: DagsterAirbyteTranslator
 
