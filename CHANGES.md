@@ -5,9 +5,9 @@
 ### New
 
 - Added `inline-component` command to the publicly available scaffold commands in the Dagster CLI.
-- Added a new `step_execution_mode` config param to all executors. If `{"step_execution_mode": {"after_upstream_outputs": {}}}` is set, this will allow downstream steps to execute immediately after all required upstream outputs have finished, even if the upstream step has not completed in its entirety yet. This can be useful particularly in cases where there are large multi-assets with downstream assets that depend on only a subset of the assets in the upstream step.
-- [dagster-airbyte] `@airbyte_assets` and `AirbyteWorkspaceComponent` (previously `AirbyteCloudWorkspaceComponent`) now support Airbyte OSS and Enterprise.
+- Added a new `require_upstream_step_success` config param to all executors. If `{"step_dependency_config": {"require_upstream_step_success": False}}` is set, this will allow downstream steps to execute immediately after all required upstream outputs have finished, even if the upstream step has not completed in its entirety yet. This can be useful particularly in cases where there are large multi-assets with downstream assets that depend on only a subset of the assets in the upstream step.
 - The `logsForRun`​ resolvers and `eventConnection`​ resolvers in the Dagster GraphQL API will now apply a default limit of 1000 to the number of logs returned from a single graphql query. The `cursor`​ field in the response can be used to continue iterating through the logs for a given run.
+- [dagster-airbyte] `@airbyte_assets` and `AirbyteWorkspaceComponent` (previously `AirbyteCloudWorkspaceComponent`) now support Airbyte OSS and Enterprise.
 
 ### Bugfixes
 
