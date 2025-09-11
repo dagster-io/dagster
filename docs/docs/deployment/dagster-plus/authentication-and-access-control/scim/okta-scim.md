@@ -23,7 +23,7 @@ Dagster+ currently supports the following attributes for SCIM syncing:
 
 To complete the steps in this guide, you'll need:
 
-- **To have set up Okta SSO for Dagster+.** For more information, see the [Okta SSO setup guide](//dagster-plus/features/authentication-and-access-control/sso/okta-sso).
+- **To have set up Okta SSO for Dagster+.** For more information, see the [Okta SSO setup guide](/deployment/dagster-plus/authentication-and-access-control/sso/okta-sso).
 - **Permissions in Okta that allow you to configure applications.**
 - **The following in Dagster+:**
   - A Pro plan

@@ -728,6 +728,8 @@ def materialization_job():
                 ),
                 "my job": MetadataValue.job("materialization_job", location_name="test_location"),
                 "some_class": ObjectMetadataValue(SomeClass()),
+                "float inf": float("inf"),
+                "float -inf": float("-inf"),
             },
         )
         yield Output(None)

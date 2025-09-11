@@ -26,7 +26,8 @@ class KeyRangesPartitionsSubset(PartitionsSubset):
     def get_partition_keys_not_in_subset(
         self, partitions_def: PartitionsDefinition
     ) -> Iterable[str]:
-        return set(partitions_def.get_partition_keys()) - set(self.get_partition_keys())
+        partition_key_set = set(self.get_partition_keys())
+        return [key for key in partitions_def.get_partition_keys() if key not in partition_key_set]
 
     @property
     def is_empty(self) -> bool:

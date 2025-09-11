@@ -12,7 +12,7 @@ In this guide, we'll walk you through configuring [Microsoft Entra ID provisioni
 
 To complete the steps in this guide, you'll need:
 
-- **To have set up Entra ID SSO for Dagster+.** For more information, see the [Entra ID setup guide](//dagster-plus/features/authentication-and-access-control/sso/azure-ad-sso).
+- **To have set up Entra ID SSO for Dagster+.** For more information, see the [Entra ID setup guide](/deployment/dagster-plus/authentication-and-access-control/sso/azure-ad-sso).
 - **Permissions in Entra ID that allow you to configure SSO and SCIM provisioning.**
 - **The following in Dagster+:**
   - A Pro plan
