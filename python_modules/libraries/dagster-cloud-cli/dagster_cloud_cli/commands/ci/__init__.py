@@ -263,7 +263,7 @@ def check_command(
                 success_message="Checked OK",
                 failure_message=(
                     "Invalid dagster_cloud.yaml, please see"
-                    " https://docs.dagster.io/dagster-cloud/managing-deployments/dagster-cloud-yaml"
+                    " https://docs.dagster.io/deployment/code-locations/dagster-cloud-yaml"
                 ),
             )
         )
