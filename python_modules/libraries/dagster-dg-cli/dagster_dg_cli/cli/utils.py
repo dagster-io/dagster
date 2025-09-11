@@ -453,6 +453,19 @@ def refresh_defs_state(
 ) -> None:
     """Refresh the defs state for the current project."""
     from dagster._cli.utils import get_possibly_temporary_instance_for_cli
+    from dagster._core.instance.config import is_dagster_home_set
+
+    # Check if DAGSTER_HOME is set before proceeding
+    if not is_dagster_home_set():
+        raise click.UsageError(
+            "DAGSTER_HOME is not set, which means defs state cannot be stored in a persistent location, "
+            "please set it to use this command.\n"
+            "You can resolve this error by exporting the environment variable. "
+            "For example, you can run the following command in your shell or "
+            "include it in your shell configuration file:\n"
+            '\texport DAGSTER_HOME="~/dagster_home"'
+            "\n\n"
+        )
 
     cli_config = normalize_cli_config(other_opts, click.get_current_context())
     dg_context = DgContext.for_project_environment(target_path, cli_config)

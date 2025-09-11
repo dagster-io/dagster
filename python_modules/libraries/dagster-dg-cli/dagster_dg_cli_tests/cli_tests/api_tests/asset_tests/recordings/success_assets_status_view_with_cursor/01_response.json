@@ -1,0 +1,7 @@
+{
+  "assetRecordsOrError": {
+    "__typename": "AssetRecordConnection",
+    "assets": [],
+    "cursor": null
+  }
+}

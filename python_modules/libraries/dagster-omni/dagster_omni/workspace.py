@@ -8,7 +8,7 @@ from aiohttp.client_exceptions import ClientResponseError
 from dagster._utils.backoff import async_backoff, exponential_delay_generator
 from pydantic import Field
 
-from dagster_omni.objects import OmniDocument, OmniQuery, OmniWorkspaceData
+from dagster_omni.objects import OmniDocument, OmniQuery, OmniUser, OmniWorkspaceData
 
 
 class OmniWorkspace(dg.Resolvable, dg.Model):
@@ -50,7 +50,7 @@ class OmniWorkspace(dg.Resolvable, dg.Model):
         return isinstance(exc, aiohttp.ClientError)
 
     def _build_url(self, endpoint: str) -> str:
-        return f"{self.base_url.rstrip('/')}/api/v1/{endpoint.lstrip('/')}"
+        return f"{self.base_url.rstrip('/')}/{endpoint.lstrip('/')}"
 
     async def make_request(
         self,
@@ -79,7 +79,7 @@ class OmniWorkspace(dg.Resolvable, dg.Model):
 
     async def _fetch_document_queries(self, document_identifier: str) -> list[OmniQuery]:
         """Fetch all queries for a specific document."""
-        endpoint = f"documents/{document_identifier}/queries"
+        endpoint = f"api/v1/documents/{document_identifier}/queries"
         try:
             response = await self.make_request(endpoint)
             return [OmniQuery.from_json(query_data) for query_data in response.get("queries", [])]
@@ -105,7 +105,7 @@ class OmniWorkspace(dg.Resolvable, dg.Model):
             if next_cursor:
                 params["cursor"] = next_cursor
 
-            response = await self.make_request("documents", params)
+            response = await self.make_request("api/v1/documents", params)
 
             # Fan out the requests to fetch queries for each document in parallel
             coroutines = [
@@ -120,10 +120,37 @@ class OmniWorkspace(dg.Resolvable, dg.Model):
 
         return documents
 
+    async def _fetch_users(self) -> list[OmniUser]:
+        """Fetch all users from the Omni SCIM API."""
+        base_params = {"count": "100"}
+        users = []
+        start_index = 1
+
+        while True:
+            params = base_params.copy()
+            params["startIndex"] = str(start_index)
+
+            response = await self.make_request("api/scim/v2/users", params)
+
+            user_resources = response.get("Resources", [])
+            if not user_resources:
+                break
+
+            users.extend([OmniUser.from_json(user_data) for user_data in user_resources])
+
+            # Check if we've received fewer users than requested, indicating we're done
+            if len(user_resources) < int(base_params["count"]):
+                break
+
+            start_index += len(user_resources)
+
+        return users
+
     async def fetch_omni_state(self) -> OmniWorkspaceData:
-        """Fetch all documents from the Omni API with queries embedded.
+        """Fetch all documents and users from the Omni API.
 
         This is the main public method for getting complete Omni state.
         """
-        documents = await self._fetch_documents()
-        return OmniWorkspaceData(documents=documents)
+        # Fetch documents and users concurrently
+        documents, users = await asyncio.gather(self._fetch_documents(), self._fetch_users())
+        return OmniWorkspaceData(documents=documents, users=users)
