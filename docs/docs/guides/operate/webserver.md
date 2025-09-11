@@ -114,7 +114,7 @@ The **Asset details** page contains details about a single asset. Use the tabs o
 - **Checks** - The [Asset checks](/guides/test/asset-checks) defined for the asset
 - **Lineage** - The asset's lineage in the **Global asset lineage** page
 - **Automation** - The [Declarative Automation conditions](/guides/automate/declarative-automation) associated with the asset
-- **Insights** - **Dagster+ only.** Historical information about the asset, such as failures and credit usage. Refer to the [Dagster+ Insights](/guides/log-debug/insights) documentation for more information.
+- **Insights** - **Dagster+ only.** Historical information about the asset, such as failures and credit usage. Refer to the [Dagster+ Insights](/guides/observe/insights) documentation for more information.
 
 To access the asset details page, click an asset in the **Asset catalog**.
 

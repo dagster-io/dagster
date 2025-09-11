@@ -1,7 +1,7 @@
 ---
 title: Insights (Dagster+)
 description: Using real-time insights, you can gain visibility into historical asset health and usage metrics in Dagster+.
-sidebar_position: 500
+sidebar_position: 600
 tags: [dagster-plus-feature]
 ---
 
@@ -9,7 +9,7 @@ import DagsterPlus from '@site/docs/partials/\_DagsterPlus.md';
 
 <DagsterPlus />
 
-The Dagster+ Observability update includes the next-generation version of [Dagster+ Insights](/guides/log-debug/insights) with the following improvements:
+The Dagster+ Observability update includes the next-generation version of [Dagster+ Insights](/guides/observe/insights) with the following improvements:
 
 - [New insights views to help you understand trends](#insights-views)
 - [New KPI dashboard to help you understand platform health](#kpi-dashboard)
@@ -44,7 +44,7 @@ KPIs allow you to understand your platform health at a high level, and compare m
 
 ## New asset health metrics
 
-Insights views will continue to display existing [built-in metrics](/guides/log-debug/insights#built-in-metrics) alongside new asset health metrics:
+Insights views will continue to display existing [built-in metrics](/guides/observe/insights#built-in-metrics) alongside new asset health metrics:
 
 | Metric                               | Description                                                     |
 | ------------------------------------ | --------------------------------------------------------------- |

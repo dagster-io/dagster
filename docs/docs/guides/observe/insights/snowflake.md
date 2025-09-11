@@ -1,7 +1,7 @@
 ---
 description: Track Snowflake usage metrics with the Dagster+ Insights UI or the dagster-cloud package.
 sidebar_label: Snowflake
-sidebar_position: 300
+sidebar_position: 3000
 title: Track Snowflake usage with Dagster+ Insights
 ---
 
@@ -16,7 +16,7 @@ Dagster+ allows you to track external metrics, such as Snowflake usage, in the I
 To use these features, you will need:
 
 - A [Dagster+](/deployment/dagster-plus) account on the **Pro** plan
-- Access to the [Dagster+ Insights feature](/guides/log-debug/insights)
+- Access to the [Dagster+ Insights feature](/guides/observe/insights)
 - Snowflake credentials which have access to the **`snowflake.account_usage.query_history`**.
   - For more information, see the [Snowflake Documentation](https://docs.snowflake.com/en/sql-reference/account-usage#enabling-the-snowflake-database-usage-for-other-roles)
 - The following packages installed:

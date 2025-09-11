@@ -1,7 +1,7 @@
 ---
 description: Export Dagster+ Insights metrics using the Dagster GraphQL API.
 sidebar_label: Export metrics
-sidebar_position: 200
+sidebar_position: 2000
 tags: [dagster-plus-feature]
 title: Export metrics from Dagster+ Insights
 ---
@@ -10,16 +10,16 @@ import DagsterPlus from '@site/docs/partials/\_DagsterPlus.md';
 
 <DagsterPlus />
 
-Using a GraphQL API endpoint, you can export [Dagster+ Insights](/guides/log-debug/insights) metrics from your Dagster+ instance.
+Using a GraphQL API endpoint, you can export [Dagster+ Insights](/guides/observe/insights) metrics from your Dagster+ instance.
 
-Refer to the [Built-in Insights metrics](/guides/log-debug/insights/index.md#built-in-metrics) for a list of available metrics.
+Refer to the [Built-in Insights metrics](/guides/observe/insights/#built-in-metrics) for a list of available metrics.
 
 ## Prerequisites
 
 To complete the steps in this guide, you'll need:
 
 - A Dagster+ account
-- Access to the [Dagster+ Insights feature](/guides/log-debug/insights)
+- Access to the [Dagster+ Insights feature](/guides/observe/insights)
 - A Dagster+ [user token](/deployment/dagster-plus/management/tokens/user-tokens)
 - Your deployment-scoped Dagster+ deployment URL. For example: `dagster-university.dagster.cloud/prod`
 
