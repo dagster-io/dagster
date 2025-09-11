@@ -1,7 +1,7 @@
 from abc import ABC, abstractmethod
 from collections.abc import Iterator, Mapping, Sequence
 from contextlib import contextmanager
-from typing import TYPE_CHECKING, Any, Generic, NamedTuple, Optional, TypeVar, Union, cast
+from typing import Any, Generic, NamedTuple, Optional, TypeVar, Union, cast
 
 import dagster._check as check
 from dagster._check import CheckError
@@ -11,14 +11,12 @@ from dagster._core.definitions.partitions.definition import (
     MultiPartitionsDefinition,
     TimeWindowPartitionsDefinition,
 )
+from dagster._core.definitions.partitions.partition_key_range import PartitionKeyRange
 from dagster._core.definitions.partitions.utils import MultiPartitionKey, TimeWindow
 from dagster._core.errors import DagsterInvalidMetadata, DagsterInvariantViolationError
 from dagster._core.execution.context.input import InputContext
 from dagster._core.execution.context.output import OutputContext
 from dagster._core.storage.io_manager import IOManager
-
-if TYPE_CHECKING:
-    from dagster._core.definitions.partitions.utils.multi import MultiPartitionKey
 
 T = TypeVar("T")
 
@@ -215,17 +213,30 @@ class DbIOManager(IOManager):
                     )
 
                 if isinstance(context.asset_partitions_def, MultiPartitionsDefinition):
-                    multi_partition_key_mapping = cast(
-                        "MultiPartitionKey", context.asset_partition_key
-                    ).keys_by_dimension
+                    partition_range = context.asset_partition_key_range
+
                     for part in context.asset_partitions_def.partitions_defs:
-                        partition_key = multi_partition_key_mapping[part.name]
+                        start_key_for_partition = cast(
+                            "MultiPartitionKey", partition_range.start
+                        ).keys_by_dimension[part.name]
+                        end_key_for_partition = cast(
+                            "MultiPartitionKey", partition_range.end
+                        ).keys_by_dimension[part.name]
+
                         if isinstance(part.partitions_def, TimeWindowPartitionsDefinition):
-                            partitions = part.partitions_def.time_window_for_partition_key(
-                                partition_key
-                            )
+                            start_time = part.partitions_def.time_window_for_partition_key(
+                                start_key_for_partition
+                            ).start
+                            end_time = part.partitions_def.time_window_for_partition_key(
+                                end_key_for_partition
+                            ).end
+                            partitions = TimeWindow(start_time, end_time)
                         else:
-                            partitions = [partition_key]
+                            partitions = part.partitions_def.get_partition_keys_in_range(
+                                PartitionKeyRange(
+                                    start=start_key_for_partition, end=end_key_for_partition
+                                )
+                            )
 
                         partition_expr_str = cast("Mapping[str, str]", partition_expr).get(
                             part.name
