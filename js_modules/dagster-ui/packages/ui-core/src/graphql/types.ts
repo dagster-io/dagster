@@ -3424,7 +3424,6 @@ export type PartitionBackfill = RunsFeedEntry & {
   isValidSerialization: Scalars['Boolean']['output'];
   jobName: Maybe<Scalars['String']['output']>;
   logEvents: InstigationEventConnection;
-  numCancelable: Scalars['Int']['output'];
   numPartitions: Maybe<Scalars['Int']['output']>;
   partitionNames: Maybe<Array<Scalars['String']['output']>>;
   partitionSet: Maybe<PartitionSet>;
@@ -11874,8 +11873,6 @@ export const buildPartitionBackfill = (
         : relationshipsToOmit.has('InstigationEventConnection')
           ? ({} as InstigationEventConnection)
           : buildInstigationEventConnection({}, relationshipsToOmit),
-    numCancelable:
-      overrides && overrides.hasOwnProperty('numCancelable') ? overrides.numCancelable! : 53,
     numPartitions:
       overrides && overrides.hasOwnProperty('numPartitions') ? overrides.numPartitions! : 4165,
     partitionNames:
