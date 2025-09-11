@@ -1,6 +1,6 @@
 ---
-description: Use the Dagster+ asset catalog to view assets, access the global asset lineage, reload definitions, and search assets by asset key, compute kind, asset group, code location, and more.
-title: Asset Catalog (Dagster+)
+description: Use the Dagster+ asset catalog to view assets, access the global asset lineage, build dasbhoards, reload definitions, and search assets by asset key, compute kind, asset group, code location, and more.
+title: Asset catalog (Dagster+)
 tags: [dagster-plus-feature]
 canonicalUrl: "/guides/observe/asset-catalog"
 slug: "/guides/observe/asset-catalog"
@@ -21,4 +21,4 @@ The Dagster+ version of the asset catalog page displays assets broken out by com
 
 To access the asset catalog, click **Catalog** in the top navigation.
 
-![The Asset Catalog page in the Dagster UI](/images/dagster-plus/features/asset-catalog/asset-catalog-cloud-pro.png)
+![The Asset catalog page in the Dagster UI](/images/dagster-plus/features/asset-catalog/asset-catalog-cloud-pro.png)

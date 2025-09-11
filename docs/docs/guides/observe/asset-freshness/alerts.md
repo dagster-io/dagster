@@ -1,6 +1,6 @@
 ---
 title: Asset freshness alerts (Dagster+)
-description: Asset freshness alerts keep you informed about the freshness of your assets in Dagster+.
+description: Dagster+ asset freshness alerts keep you informed about the freshness of your assets in Dagster+.
 tags: [dagster-plus-feature]
 sidebar_position: 200
 ---

@@ -8,7 +8,7 @@ import DagsterPlus from '@site/docs/partials/\_DagsterPlus.md';
 
 <DagsterPlus />
 
-Catalog views enable you to filter down your view of the Dagster Asset catalog in Dagster+ with the [asset selection syntax](/guides/build/assets/asset-selection-syntax), allowing you to toggle between sets of assets that you care about most.
+Catalog views enable you to filter down your view of the asset catalog in Dagster+ with the [asset selection syntax](/guides/build/assets/asset-selection-syntax), allowing you to toggle between sets of assets that you care about most.
 
 You can save catalog views for your own use or share them with your team. For example, you could create views that:
 
@@ -26,7 +26,7 @@ Catalog views require **Organization Admin**, **Admin**, or **Editor** permissio
 
 ## Creating catalog views
 
-On any Dagster+ Catalog page, you can access the current catalog view, or create a new catalog view with the catalog view dropdown at the top left of the screen. By default, this button is labeled **All assets**, and has a globe icon.
+On any Dagster+ catalog page, you can access the current catalog view, or create a new catalog view with the catalog view dropdown at the top left of the screen. By default, this button is labeled **All assets**, and has a globe icon.
 
 ![Screenshot of the catalog view dropdown](/images/dagster-plus/features/asset-catalog/catalog-views.png)
 
