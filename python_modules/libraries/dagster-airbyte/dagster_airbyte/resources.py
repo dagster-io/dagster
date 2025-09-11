@@ -1392,17 +1392,92 @@ class BaseAirbyteWorkspace(ConfigurableResource):
 
 @beta
 class AirbyteWorkspace(BaseAirbyteWorkspace):
-    """This class represents a Airbyte workspace and provides utilities
-    to interact with Airbyte APIs.
+    """This resource allows users to programatically interface with the Airbyte REST API to launch
+    syncs and monitor their progress for a given Airbyte workspace.
+
+    **Examples:**
+    Using OAuth client credentials:
+
+    .. code-block:: python
+
+        import dagster as dg
+        from dagster_airbyte import AirbyteWorkspace, build_airbyte_assets_definitions
+
+        airbyte_workspace = AirbyteWorkspace(
+            rest_api_base_url=dg.EnvVar("AIRBYTE_REST_API_BASE_URL"),
+            configuration_api_base_url=dg.EnvVar("AIRBYTE_CONFIGURATION_API_BASE_URL"),
+            workspace_id=dg.EnvVar("AIRBYTE_WORKSPACE_ID"),
+            client_id=dg.EnvVar("AIRBYTE_CLIENT_ID"),
+            client_secret=dg.EnvVar("AIRBYTE_CLIENT_SECRET"),
+        )
+
+        all_airbyte_assets = build_airbyte_assets_definitions(workspace=airbyte_workspace)
+
+        defs = dg.Definitions(
+            assets=all_airbyte_assets,
+            resources={"airbyte": airbyte_workspace},
+        )
+
+    Using basic Authentication:
+
+    .. code-block:: python
+
+        import dagster as dg
+        from dagster_airbyte import AirbyteWorkspace, build_airbyte_assets_definitions
+
+        airbyte_workspace = AirbyteWorkspace(
+            rest_api_base_url=dg.EnvVar("AIRBYTE_REST_API_BASE_URL"),
+            configuration_api_base_url=dg.EnvVar("AIRBYTE_CONFIGURATION_API_BASE_URL"),
+            workspace_id=dg.EnvVar("AIRBYTE_WORKSPACE_ID"),
+            username=dg.EnvVar("AIRBYTE_USERNAME"),
+            password=dg.EnvVar("AIRBYTE_PASSWORD"),
+        )
+
+        all_airbyte_assets = build_airbyte_assets_definitions(workspace=airbyte_workspace)
+
+        defs = dg.Definitions(
+            assets=all_airbyte_assets,
+            resources={"airbyte": airbyte_workspace},
+        )
+
+    Using no authentication:
+
+    .. code-block:: python
+
+        import dagster as dg
+        from dagster_airbyte import AirbyteWorkspace, build_airbyte_assets_definitions
+
+        airbyte_workspace = AirbyteWorkspace(
+            rest_api_base_url=dg.EnvVar("AIRBYTE_REST_API_BASE_URL"),
+            configuration_api_base_url=dg.EnvVar("AIRBYTE_CONFIGURATION_API_BASE_URL"),
+            workspace_id=dg.EnvVar("AIRBYTE_WORKSPACE_ID"),
+        )
+
+        all_airbyte_assets = build_airbyte_assets_definitions(workspace=airbyte_workspace)
+
+        defs = dg.Definitions(
+            assets=all_airbyte_assets,
+            resources={"airbyte": airbyte_workspace},
+        )
     """
 
     rest_api_base_url: str = Field(
         ...,
         description="The base URL for the Airbyte REST API.",
+        examples=[
+            "http://localhost:8000/api/public/v1",
+            "https://my-airbyte-server.com/api/public/v1",
+            "http://airbyte-airbyte-server-svc.airbyte.svc.cluster.local:8001/api/public/v1",
+        ],
     )
     configuration_api_base_url: str = Field(
         ...,
         description="The base URL for the Airbyte Configuration API.",
+        examples=[
+            "http://localhost:8000/api/v1",
+            "https://my-airbyte-server.com/api/v1",
+            "http://airbyte-airbyte-server-svc.airbyte.svc.cluster.local:8001/api/v1",
+        ],
     )
     workspace_id: str = Field(..., description="The Airbyte workspace ID")
     client_id: Optional[str] = Field(default=None, description="The Airbyte client ID.")
@@ -1432,6 +1507,31 @@ class AirbyteWorkspace(BaseAirbyteWorkspace):
 
 @beta
 class AirbyteCloudWorkspace(BaseAirbyteWorkspace):
+    """This resource allows users to programatically interface with the Airbyte Cloud REST API to launch
+    syncs and monitor their progress for a given Airbyte Cloud workspace.
+
+    **Examples:**
+
+    .. code-block:: python
+
+        from dagster_airbyte import AirbyteCloudWorkspace, build_airbyte_assets_definitions
+
+        import dagster as dg
+
+        airbyte_workspace = AirbyteCloudWorkspace(
+            workspace_id=dg.EnvVar("AIRBYTE_CLOUD_WORKSPACE_ID"),
+            client_id=dg.EnvVar("AIRBYTE_CLOUD_CLIENT_ID"),
+            client_secret=dg.EnvVar("AIRBYTE_CLOUD_CLIENT_SECRET"),
+        )
+
+        all_airbyte_assets = build_airbyte_assets_definitions(workspace=airbyte_workspace)
+
+        defs = dg.Definitions(
+            assets=all_airbyte_assets,
+            resources={"airbyte": airbyte_workspace},
+        )
+    """
+
     rest_api_base_url: ClassVar[str] = AIRBYTE_CLOUD_REST_API_BASE_URL
     configuration_api_base_url: ClassVar[str] = AIRBYTE_CLOUD_CONFIGURATION_API_BASE_URL
     workspace_id: str = Field(..., description="The Airbyte workspace ID")
@@ -1452,6 +1552,7 @@ class AirbyteCloudWorkspace(BaseAirbyteWorkspace):
         )
 
 
+@public
 @beta
 def load_airbyte_asset_specs(
     workspace: BaseAirbyteWorkspace,

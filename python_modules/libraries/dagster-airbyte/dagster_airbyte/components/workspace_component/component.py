@@ -69,6 +69,11 @@ class AirbyteWorkspaceModel(BaseAirbyteWorkspaceModel):
                 "For Airbyte Cloud, leave this as the default. "
                 "For self-managed Airbyte, this is usually <your Airbyte host>/api/public/v1."
             ),
+            examples=[
+                "http://localhost:8000/api/public/v1",
+                "https://my-airbyte-server.com/api/public/v1",
+                "http://airbyte-airbyte-server-svc.airbyte.svc.cluster.local:8001/api/public/v1",
+            ],
         ),
     ]
     configuration_api_base_url: Annotated[
@@ -80,6 +85,11 @@ class AirbyteWorkspaceModel(BaseAirbyteWorkspaceModel):
                 "For Airbyte Cloud, leave this as the default. "
                 "For self-managed Airbyte, this is usually <your Airbyte host>/api/v1."
             ),
+            examples=[
+                "http://localhost:8000/api/v1",
+                "https://my-airbyte-server.com/api/v1",
+                "http://airbyte-airbyte-server-svc.airbyte.svc.cluster.local:8001/api/v1",
+            ],
         ),
     ]
     workspace_id: Annotated[str, pydantic.Field(..., description="The Airbyte workspace ID.")]

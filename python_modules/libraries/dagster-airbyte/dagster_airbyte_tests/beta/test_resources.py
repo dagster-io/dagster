@@ -16,11 +16,11 @@ from dagster_airbyte.types import AirbyteOutput
 from dagster_airbyte.utils import clean_name
 
 from dagster_airbyte_tests.beta.conftest import (
-    TEST_AIRBYTE_OSS_CONFIGURATION_API_BASE_URL,
-    TEST_AIRBYTE_OSS_REST_API_BASE_URL,
     SAMPLE_ACCESS_TOKEN,
     SAMPLE_CONNECTION_DETAILS,
     TEST_ACCESS_TOKEN,
+    TEST_AIRBYTE_OSS_CONFIGURATION_API_BASE_URL,
+    TEST_AIRBYTE_OSS_REST_API_BASE_URL,
     TEST_ANOTHER_STREAM_NAME,
     TEST_BASIC_AUTH_B64,
     TEST_CLIENT_ID,
