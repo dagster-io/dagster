@@ -108,6 +108,10 @@ class GraphenePythonArtifactMetadataEntry(graphene.ObjectType):
 
 class GrapheneFloatMetadataEntry(graphene.ObjectType):
     floatValue = graphene.Field(graphene.Float)
+    floatRepr = graphene.NonNull(
+        graphene.String,
+        description="String representation of the float to support nan/inf/-inf",
+    )
 
     class Meta:
         interfaces = (GrapheneMetadataEntry,)

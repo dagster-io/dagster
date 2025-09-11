@@ -1884,6 +1884,7 @@ export type FieldsNotDefinedConfigError = PipelineConfigValidationError & {
 export type FloatMetadataEntry = MetadataEntry & {
   __typename: 'FloatMetadataEntry';
   description: Maybe<Scalars['String']['output']>;
+  floatRepr: Scalars['String']['output'];
   floatValue: Maybe<Scalars['Float']['output']>;
   label: Scalars['String']['output'];
 };
@@ -9342,6 +9343,7 @@ export const buildFloatMetadataEntry = (
     __typename: 'FloatMetadataEntry',
     description:
       overrides && overrides.hasOwnProperty('description') ? overrides.description! : 'iusto',
+    floatRepr: overrides && overrides.hasOwnProperty('floatRepr') ? overrides.floatRepr! : 'omnis',
     floatValue: overrides && overrides.hasOwnProperty('floatValue') ? overrides.floatValue! : 5.68,
     label: overrides && overrides.hasOwnProperty('label') ? overrides.label! : 'velit',
   };
