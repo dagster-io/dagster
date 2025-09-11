@@ -29,7 +29,7 @@ SNIPPETS_DIR = (
     / "guides"
     / "components"
     / "integrations"
-    / "airbyte-cloud-component"
+    / "airbyte-component"
 )
 
 
