@@ -629,6 +629,7 @@ type Asset {
   definition: AssetNode
   latestEventSortKey: ID
   assetHealth: AssetHealth
+  latestMaterializationTimestamp: Float
 }
 
 type AssetResultEventHistoryConnection {
@@ -2956,6 +2957,7 @@ type FloatMetadataEntry implements MetadataEntry {
   label: String!
   description: String
   floatValue: Float
+  floatRepr: String!
 }
 
 type IntMetadataEntry implements MetadataEntry {

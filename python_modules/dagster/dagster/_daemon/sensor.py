@@ -25,6 +25,7 @@ from dagster._core.definitions.dynamic_partitions_request import (
     AddDynamicPartitionsRequest,
     DeleteDynamicPartitionsRequest,
 )
+from dagster._core.definitions.partitions.context import partition_loading_context
 from dagster._core.definitions.run_request import DagsterRunReaction, InstigatorType, RunRequest
 from dagster._core.definitions.selector import JobSubsetSelector
 from dagster._core.definitions.sensor_definition import DefaultSensorStatus, SensorType
@@ -621,25 +622,26 @@ def _process_tick_generator(
             check_for_debug_crash(sensor_debug_crash_flags, "TICK_HELD")
             tick_context.add_log_key(tick_context.log_key)
 
-            # in cases where there is unresolved work left to do, do it
-            if len(tick.unsubmitted_run_ids_with_requests) > 0:
-                yield from _resume_tick(
-                    workspace_process_context,
-                    tick_context,
-                    tick,
-                    remote_sensor,
-                    submit_threadpool_executor,
-                    sensor_debug_crash_flags,
-                )
-            else:
-                yield from _evaluate_sensor(
-                    workspace_process_context,
-                    tick_context,
-                    remote_sensor,
-                    sensor_state,
-                    submit_threadpool_executor,
-                    sensor_debug_crash_flags,
-                )
+            with partition_loading_context(dynamic_partitions_store=instance):
+                # in cases where there is unresolved work left to do, do it
+                if len(tick.unsubmitted_run_ids_with_requests) > 0:
+                    yield from _resume_tick(
+                        workspace_process_context,
+                        tick_context,
+                        tick,
+                        remote_sensor,
+                        submit_threadpool_executor,
+                        sensor_debug_crash_flags,
+                    )
+                else:
+                    yield from _evaluate_sensor(
+                        workspace_process_context,
+                        tick_context,
+                        remote_sensor,
+                        sensor_state,
+                        submit_threadpool_executor,
+                        sensor_debug_crash_flags,
+                    )
 
     except Exception:
         error_info = DaemonErrorCapture.process_exception(

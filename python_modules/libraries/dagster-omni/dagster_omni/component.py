@@ -1,56 +1,22 @@
 import itertools
 from collections import defaultdict
 from pathlib import Path
-from typing import Optional, Union
+from typing import Optional
 
 import dagster as dg
 from dagster._annotations import preview
-from dagster._core.definitions.metadata.metadata_set import NamespacedMetadataSet
-from dagster._core.definitions.metadata.metadata_value import UrlMetadataValue
 from dagster._core.errors import DagsterInvalidDefinitionError
 from dagster.components.component.state_backed_component import StateBackedComponent
-from dagster.components.utils.translation import ResolvedTranslationFn
-from dagster_shared.record import record
 from pydantic import Field
-from typing_extensions import Self
 
 from dagster_omni.objects import OmniDocument, OmniQuery, OmniWorkspaceData
+from dagster_omni.translation import (
+    TRANSLATOR_DATA_METADATA_KEY,
+    OmniDocumentMetadataSet,
+    OmniTranslatorData,
+    ResolvedOmniTranslationFn,
+)
 from dagster_omni.workspace import OmniWorkspace
-
-_TRANSLATOR_DATA_METADATA_KEY = ".dagster-omni/translator_data"
-
-
-class OmniDocumentMetadataSet(NamespacedMetadataSet):
-    url: Optional[UrlMetadataValue] = None
-    document_name: str
-    document_type: str
-
-    @classmethod
-    def from_document(cls, workspace: OmniWorkspace, document: OmniDocument) -> Self:
-        url_str = f"{workspace.base_url.rstrip('/')}/dashboards/{document.identifier}"
-        return cls(
-            url=UrlMetadataValue(url_str) if document.has_dashboard else None,
-            document_name=document.name,
-            document_type=document.type,
-        )
-
-    @classmethod
-    def namespace(cls) -> str:
-        return "dagster-omni"
-
-
-@record
-class OmniTranslatorData:
-    """Container class for data required to translate an object in an
-    Omni workspace into a Dagster definition.
-
-    Properties:
-        obj (Union[OmniDocument, OmniQuery]): The object to translate.
-        workspace_data (OmniWorkspaceData): Global workspace data.
-    """
-
-    obj: Union[OmniDocument, OmniQuery]
-    workspace_data: OmniWorkspaceData
 
 
 @preview
@@ -58,7 +24,7 @@ class OmniComponent(StateBackedComponent, dg.Model, dg.Resolvable):
     workspace: OmniWorkspace = Field(
         description="Defines configuration for interacting with an Omni instance.",
     )
-    translation: Optional[ResolvedTranslationFn[OmniTranslatorData]] = Field(
+    translation: Optional[ResolvedOmniTranslationFn] = Field(
         default=None,
         description="Defines how to translate an Omni object into an AssetSpec object.",
     )
@@ -72,49 +38,58 @@ class OmniComponent(StateBackedComponent, dg.Model, dg.Resolvable):
         """Load state from path using Dagster's deserialization system."""
         return dg.deserialize_value(state_path.read_text(), OmniWorkspaceData)
 
-    def _get_default_asset_spec(self, data: OmniTranslatorData) -> dg.AssetSpec:
+    def _get_default_omni_spec(
+        self, context: dg.ComponentLoadContext, data: OmniTranslatorData, workspace: OmniWorkspace
+    ) -> Optional[dg.AssetSpec]:
         """Core function for converting an Omni document into an AssetSpec object."""
         if isinstance(data.obj, OmniDocument):
             doc = data.obj
-            deps = [
+            maybe_deps = [
                 self.get_asset_spec(
-                    OmniTranslatorData(obj=query, workspace_data=data.workspace_data)
+                    context, OmniTranslatorData(obj=query, workspace_data=data.workspace_data)
                 )
-                for query in doc.queries
+                for query in data.obj.queries
             ]
 
             prefix = doc.folder.path.split("/") if doc.folder else []
+            user = data.workspace_data.get_user(doc.owner.id)
+            owner_email = user.primary_email if user else None
+
             return dg.AssetSpec(
                 key=dg.AssetKey([*prefix, doc.name]),
                 group_name=prefix[0].replace("-", "_") if prefix else None,
                 tags={label.name: "" for label in doc.labels},
-                deps=deps,
+                deps=list(filter(None, maybe_deps)),
                 metadata={
-                    **OmniDocumentMetadataSet.from_document(self.workspace, doc),
-                    _TRANSLATOR_DATA_METADATA_KEY: data,
+                    **OmniDocumentMetadataSet.from_document(workspace, doc),
+                    TRANSLATOR_DATA_METADATA_KEY: data,
                 },
                 kinds={"omni"},
+                owners=[owner_email] if owner_email else None,
             )
-        elif isinstance(data.obj, OmniQuery):
+        if isinstance(data.obj, OmniQuery):
             return dg.AssetSpec(key=dg.AssetKey([data.obj.query_config.table]))
-        else:
-            raise ValueError(f"Unsupported object type: {type(data.obj)}")
+        return None
 
-    def get_asset_spec(self, data: OmniTranslatorData) -> dg.AssetSpec:
+    def get_asset_spec(
+        self, context: dg.ComponentLoadContext, data: OmniTranslatorData
+    ) -> Optional[dg.AssetSpec]:
         """Core function for converting an Omni document into an AssetSpec object."""
-        base_asset_spec = self._get_default_asset_spec(data)
-        if self.translation:
+        base_asset_spec = self._get_default_omni_spec(context, data, self.workspace)
+        if self.translation and base_asset_spec:
             return self.translation(base_asset_spec, data)
         else:
             return base_asset_spec
 
-    def _build_asset_specs(self, workspace_data: OmniWorkspaceData) -> list[dg.AssetSpec]:
+    def _build_asset_specs(
+        self, context: dg.ComponentLoadContext, workspace_data: OmniWorkspaceData
+    ) -> list[dg.AssetSpec]:
         """Invokes the `get_asset_spec` method on all objects in the provided `workspace_data`.
         Filters out any cases where the asset_spec is `None`, and provides a helpful error
         message in cases where keys overlap between different documents.
         """
         maybe_specs = [
-            self.get_asset_spec(OmniTranslatorData(obj=doc, workspace_data=workspace_data))
+            self.get_asset_spec(context, OmniTranslatorData(obj=doc, workspace_data=workspace_data))
             for doc in workspace_data.documents
         ]
 
@@ -136,8 +111,10 @@ class OmniComponent(StateBackedComponent, dg.Model, dg.Resolvable):
 
         return list(itertools.chain.from_iterable(specs_by_key.values()))
 
-    def build_defs_from_workspace_data(self, workspace_data: OmniWorkspaceData) -> dg.Definitions:
-        return dg.Definitions(assets=self._build_asset_specs(workspace_data))
+    def build_defs_from_workspace_data(
+        self, context: dg.ComponentLoadContext, workspace_data: OmniWorkspaceData
+    ) -> dg.Definitions:
+        return dg.Definitions(assets=self._build_asset_specs(context, workspace_data))
 
     def build_defs_from_state(
         self, context: dg.ComponentLoadContext, state_path: Optional[Path]
@@ -146,4 +123,4 @@ class OmniComponent(StateBackedComponent, dg.Model, dg.Resolvable):
             return dg.Definitions()
 
         state = self.load_state_from_path(state_path)
-        return self.build_defs_from_workspace_data(state)
+        return self.build_defs_from_workspace_data(context, state)

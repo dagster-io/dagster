@@ -59,6 +59,43 @@ Each noun file (e.g., `deployment.py`) contains:
 - `--cursor <cursor>` for cursor-based pagination (preferred)
 - `--filter <query>` for filtering results
 - `--format <table|json>` (alternative to --json flag)
+- `--view <view>` for view-specific data (see View Patterns section)
+
+## View Patterns
+
+Some commands support different "views" that fetch distinct subsets of entity data:
+
+### Asset Views:
+
+- **Default view** (no `--view` flag): Definition-time data (description, group, kinds, metadata)
+- **Status view** (`--view status`): Runtime/stateful data including:
+  - Asset health status (overall, materialization, freshness, checks)
+  - Health metadata (failure details, run IDs, timestamps)
+  - Latest materialization information (with natural partition data)
+  - Freshness information (lag minutes, policy details)
+  - Asset checks execution status
+
+### View Usage Examples:
+
+```bash
+# Default definition view
+dg api asset list
+dg api asset get my/asset/key
+
+# Status view for operational monitoring
+dg api asset list --view status
+dg api asset get my/asset/key --view status
+
+# JSON output works with all views
+dg api asset list --view status --json
+```
+
+### Implementation Guidelines:
+
+1. **View Parameter Validation**: Always validate view parameter values
+2. **Backward Compatibility**: Default behavior (no view) must remain unchanged
+3. **GraphQL Efficiency**: Use appropriate queries for each view to avoid over-fetching
+4. **Documentation**: Each view should be documented with specific data included/excluded
 
 ## Output Formatting
 
@@ -269,6 +306,9 @@ result = client.execute(query, variables)
 - Test error handling in both output modes
 - Verify REST-like data transformation
 - Ensure --json flag works on all commands
+- Test all supported views (default and view-specific)
+- Verify view parameter validation and error messages
+- Test backward compatibility (no view parameter)
 
 ## Future Extensions
 
@@ -290,6 +330,12 @@ dg api deployment list
 
 # List deployments in JSON format
 dg api deployment list --json
+
+# Asset management with view support
+dg api asset list                    # Default definition view
+dg api asset list --view status      # Status view with health information
+dg api asset get my/asset --json     # Single asset in JSON
+dg api asset get my/asset --view status  # Single asset with status
 ```
 
 ### Planned Extensions:

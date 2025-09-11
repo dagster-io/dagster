@@ -39,7 +39,9 @@ def load_fixture_scenarios_from_yaml(yaml_file: Path) -> dict[str, FixtureScenar
             raise ValueError(f"Missing 'command' field for fixture '{fixture_name}'")
 
         fixture_scenarios[fixture_name] = FixtureScenario(
-            command=config_data["command"], depends_on=config_data.get("depends_on")
+            command=config_data["command"],
+            depends_on=config_data.get("depends_on"),
+            has_recording=config_data.get("has_recording", True),
         )
 
     return fixture_scenarios
