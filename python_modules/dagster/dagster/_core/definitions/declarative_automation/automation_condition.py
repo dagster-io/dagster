@@ -546,6 +546,30 @@ class AutomationCondition(ABC, Generic[T_EntityKey]):
 
         return LatestRunExecutedWithTagsCondition(tag_keys=tag_keys, tag_values=tag_values)
 
+    @staticmethod
+    def all_new_executed_with_tags(
+        *,
+        tag_keys: Optional[Set[str]] = None,
+        tag_values: Optional[Mapping[str, str]] = None,
+    ) -> "BuiltinAutomationCondition":
+        """Returns an AutomationCondition that is true if all new materializations since the
+        previous tick were executed in runs with the provided tags. Can be used to require or
+        prevent certain run tags from triggering downstream declarative automation conditions.
+
+        Args:
+            tag_keys (Optional[AbstractSet[str]]): If provided, the condition will only be true if
+                all new materializations since the previous tick were executed in runs with
+                all of the provided tags.
+            tag_values (Optional[Mapping[str, str]]): If provided, the condition will only be true if the
+                all new materializations since the previous tick were executed in runs with
+                all of the provided values for the specified keys.
+        """
+        from dagster._core.definitions.declarative_automation.operands import (
+            AllNewExecutedWithTagsCondition,
+        )
+
+        return AllNewExecutedWithTagsCondition(tag_keys=tag_keys, tag_values=tag_values)
+
     @public
     @staticmethod
     def newly_requested() -> "BuiltinAutomationCondition":

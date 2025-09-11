@@ -1,4 +1,5 @@
 import datetime
+import os
 from collections.abc import Mapping, Set
 from typing import TYPE_CHECKING, Optional
 
@@ -15,6 +16,7 @@ from dagster._core.definitions.declarative_automation.automation_context import 
 from dagster._core.definitions.declarative_automation.operands.subset_automation_condition import (
     SubsetAutomationCondition,
 )
+from dagster._core.definitions.events import AssetKeyPartitionKey
 from dagster._core.definitions.partitions.snap.snap import PartitionsSnap
 from dagster._core.definitions.partitions.subset.key_ranges import KeyRangesPartitionsSubset
 from dagster._record import record
@@ -243,6 +245,111 @@ class LatestRunExecutedWithTagsCondition(SubsetAutomationCondition):
 
         return await context.asset_graph_view.compute_latest_run_matches_subset(
             from_subset=context.candidate_subset, filter_fn=_filter_fn
+        )
+
+
+@whitelist_for_serdes
+@record
+class AllNewExecutedWithTagsCondition(SubsetAutomationCondition):
+    tag_keys: Optional[Set[str]] = None
+    tag_values: Optional[Mapping[str, str]] = None
+
+    @property
+    def name(self) -> str:
+        name = "all_new_executed_with_tags"
+        props = []
+        if self.tag_keys is not None:
+            tag_key_str = ",".join(sorted(self.tag_keys))
+            props.append(f"tag_keys={{{tag_key_str}}}")
+        if self.tag_values is not None:
+            tag_value_str = ",".join(
+                [f"{key}:{value}" for key, value in sorted(self.tag_values.items())]
+            )
+            props.append(f"tag_values={{{tag_value_str}}}")
+
+        if props:
+            name += f"({', '.join(props)})"
+        return name
+
+    async def compute_subset(self, context: AutomationContext) -> EntitySubset:  # pyright: ignore[reportIncompatibleMethodOverride]
+        from dagster._core.storage.dagster_run import RunRecord
+
+        def _filter_fn(run_record: "RunRecord") -> bool:
+            if self.tag_keys and not all(
+                key in run_record.dagster_run.tags for key in self.tag_keys
+            ):
+                return False
+            if self.tag_values and not all(
+                run_record.dagster_run.tags.get(key) == value
+                for key, value in self.tag_values.items()
+            ):
+                return False
+            return True
+
+        if (
+            not context.previous_temporal_context
+            or not context.previous_temporal_context.last_event_id
+        ):
+            return context.get_empty_subset()
+
+        new_materializations = context.asset_graph_view.get_inner_queryer_for_back_compat().get_asset_materializations_updated_after_cursor(
+            asset_key=context.key,
+            after_cursor=context.previous_temporal_context.last_event_id,
+        )
+        if not new_materializations:
+            return context.get_empty_subset()
+
+        run_ids = list({record.run_id for record in new_materializations if record.run_id})
+
+        run_records = []
+
+        if run_ids:
+            run_step = int(os.getenv("DAGSTER_ASSET_DAEMON_RUN_TAGS_RUN_FETCH_LIMIT", "1000"))
+            for i in range(0, len(run_ids), run_step):
+                chunk = run_ids[i : i + run_step]
+                chunk_records = await RunRecord.gen_many(
+                    context.asset_graph_view,
+                    chunk,
+                )
+                run_records.extend([record for record in chunk_records if record])
+
+        else:
+            run_records = []
+
+        invalid_run_ids = {
+            run_record.dagster_run.run_id
+            for run_record in run_records
+            if not _filter_fn(run_record)
+        }
+
+        materialized_partition_keys = set()
+        invalid_partition_keys = set()
+
+        for materialization in new_materializations:
+            materialized_partition_keys.add(materialization.partition_key)
+            if not materialization.run_id or (materialization.run_id in invalid_run_ids):
+                invalid_partition_keys.add(materialization.partition_key)
+
+        valid_partition_keys = materialized_partition_keys - invalid_partition_keys
+
+        partitions_def = context.asset_graph.get(context.key).partitions_def
+        if partitions_def is None:
+            valid_partition_keys = {
+                partition_key for partition_key in valid_partition_keys if partition_key is None
+            }
+        else:
+            valid_partition_keys = {
+                partition_key
+                for partition_key in valid_partition_keys
+                if partition_key is not None and partitions_def.has_partition_key(partition_key)
+            }
+
+        return context.asset_graph_view.get_asset_subset_from_asset_partitions(
+            key=context.key,
+            asset_partitions={
+                AssetKeyPartitionKey(context.key, partition_key)
+                for partition_key in valid_partition_keys
+            },
         )
 
 
