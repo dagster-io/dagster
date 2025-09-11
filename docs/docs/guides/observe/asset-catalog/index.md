@@ -3,8 +3,8 @@ description: Use the Dagster+ asset catalog to view assets, access the global as
 title: Asset catalog (Dagster+)
 sidebar_position: 100
 tags: [dagster-plus-feature]
-canonicalUrl: "/guides/observe/asset-catalog"
-slug: "/guides/observe/asset-catalog"
+canonicalUrl: '/guides/observe/asset-catalog'
+slug: '/guides/observe/asset-catalog'
 ---
 
 import DagsterPlus from '@site/docs/partials/\_DagsterPlus.md';

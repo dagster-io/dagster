@@ -43,4 +43,3 @@ Quickly identify which pipelines are running smoothly and which need attention w
 ### Insights
 
 Unlock a comprehensive, dashboard-style view of your data platform’s health. The new Insights experience surfaces critical metrics, like success rate, freshness hit rate, and time to resolution for any selection of assets or jobs – all in real time. For more information, see the [Real-time Insights guide](/guides/observe/insights).
-
