@@ -23,6 +23,7 @@ fragment metadataEntryFragment on MetadataEntry {
   description
   ... on FloatMetadataEntry {
     floatValue
+    floatRepr
   }
   ... on IntMetadataEntry {
     intRepr
