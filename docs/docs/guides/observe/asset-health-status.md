@@ -1,8 +1,8 @@
 ---
-title: Asset health reporting (Dagster+)
+title: Asset health status (Dagster+)
 description: With asset health criteria, you can quickly identify which datasets are performing well and which need attention in Dagster+.
+sidebar_position: 300
 tags: [dagster-plus-feature]
-sidebar_position: 100
 ---
 
 import DagsterPlus from '@site/docs/partials/\_DagsterPlus.md';

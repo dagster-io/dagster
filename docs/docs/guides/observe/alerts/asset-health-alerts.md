@@ -1,8 +1,7 @@
 ---
-title: Asset health alerts (Dagster+)
+title: Asset health alerts
 description: Asset health alerts keep you informed about the overall health status of your assets in Dagster+.
 tags: [dagster-plus-feature]
-sidebar_position: 200
 ---
 
 import DagsterPlus from '@site/docs/partials/\_DagsterPlus.md';

@@ -1,6 +1,7 @@
 ---
 title: Insights (Dagster+)
 description: Using real-time insights, you can gain visibility into historical asset health and usage metrics in Dagster+.
+sidebar_position: 500
 tags: [dagster-plus-feature]
 ---
 

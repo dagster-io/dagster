@@ -1,7 +1,7 @@
 ---
-title: Freshness policies
+title: Asset freshness policies
 description: Dagster+ freshness policies help you understand which of your assets have materialized recently and which ones are running behind - a key component of asset health.
-sidebar_position: 100
+sidebar_position: 400
 ---
 
 import FreshnessPoliciesPreview from '@site/docs/partials/\_FreshnessPoliciesPreview.md';
