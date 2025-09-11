@@ -17,7 +17,7 @@ To create and edit the new alerts, you will need to enable the "New homepage & o
 
 :::
 
-Asset health alerts send notifications when the overall [health status](/guides/observe/asset-health/reporting) of the asset changes:
+Asset health alerts send notifications when the overall [health status](/guides/observe/asset-health-status) of the asset changes:
 
 ![Create new health alert policy UI](/images/guides/observe/create-new-alert-policy.png)
 

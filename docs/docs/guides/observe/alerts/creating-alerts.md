@@ -15,23 +15,23 @@ Alert policies are configured on a per-deployment basis. This means, for example
 
 :::note
 
-To send alert notifications through a channel other than email, you will need to [configure an alert notification service](/guides/log-debug/alerts/configuring-an-alert-notification-service).
+To send alert notifications through a channel other than email, you will need to [configure an alert notification service](/guides/observe/alerts/configuring-an-alert-notification-service).
 
 :::
 
 ## In the UI
 
-1. In the Dagster UI, click **Deployment**.
-2. In the left sidebar, click **Alert policies**.
+1. In the Dagster+ UI, in the left sidebar, click **Deployment**.
+2. In the top nav, click **Alert policies**.
 3. Click **Create alert policy**.
-4. Choose the [policy type](/guides/log-debug/alerts/alert-policy-types) from the menu and click **Continue**.
+4. Choose the [policy type](/guides/observe/alerts/alert-policy-types) from the menu and click **Continue**.
 5. Choose targets and events (if applicable) for your alert and click **Continue**.
 6. Choose a notification channel for your alert and click **Continue**.
 7. Review and save your alert and click **Save alert**.
 
 ## Using the CLI
 
-1. Create an alert policy configuration file. For examples, see the [example configuration reference](/guides/log-debug/alerts/example-config).
+1. Create an alert policy configuration file. For examples, see the [example configuration reference](/guides/observe/alerts/example-config).
 2. Sync the alert policy configuration file to your Dagster+ deployment:
 
 ```bash

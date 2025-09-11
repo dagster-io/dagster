@@ -5,7 +5,7 @@ title: Example alert policy configuration
 tags: [dagster-plus-feature]
 ---
 
-{/* To update or regenerate the yaml code snippets in this doc, run `python ./examples/docs_snippets/docs_snippets/dagster-plus/deployment/alerts/generate_alerts_config_code_snippets.py` */}
+{/* To update or regenerate the yaml code snippets in this doc, run `python ./examples/docs_snippets/docs_snippets/guides/observe/alerts/generate_alerts_config_code_snippets.py` */}
 
 import DagsterPlus from '@site/docs/partials/\_DagsterPlus.md';
 
@@ -24,25 +24,25 @@ dagster-cloud deployment alert-policies sync -a /path/to/alert_policies.yaml
 <Tabs groupId="notification_service">
   <TabItem value="email" label="Email">
     <CodeExample
-      path="docs_snippets/docs_snippets/dagster-plus/deployment/alerts/asset-materialization-failure-alert-email.yaml"
+      path="docs_snippets/docs_snippets/guides/observe/alerts/asset-materialization-failure-alert-email.yaml"
       language="yaml"
     />
   </TabItem>
   <TabItem value="microsoft_teams" label="Microsoft Teams">
     <CodeExample
-      path="docs_snippets/docs_snippets/dagster-plus/deployment/alerts/asset-materialization-failure-alert-microsoft_teams.yaml"
+      path="docs_snippets/docs_snippets/guides/observe/alerts/asset-materialization-failure-alert-microsoft_teams.yaml"
       language="yaml"
     />
   </TabItem>
   <TabItem value="pagerduty" label="PagerDuty">
     <CodeExample
-      path="docs_snippets/docs_snippets/dagster-plus/deployment/alerts/asset-materialization-failure-alert-pagerduty.yaml"
+      path="docs_snippets/docs_snippets/guides/observe/alerts/asset-materialization-failure-alert-pagerduty.yaml"
       language="yaml"
     />
   </TabItem>
   <TabItem value="slack" label="Slack">
     <CodeExample
-      path="docs_snippets/docs_snippets/dagster-plus/deployment/alerts/asset-materialization-failure-alert-slack.yaml"
+      path="docs_snippets/docs_snippets/guides/observe/alerts/asset-materialization-failure-alert-slack.yaml"
       language="yaml"
     />
   </TabItem>
@@ -53,25 +53,25 @@ dagster-cloud deployment alert-policies sync -a /path/to/alert_policies.yaml
 <Tabs groupId="notification_service">
   <TabItem value="email" label="Email">
     <CodeExample
-      path="docs_snippets/docs_snippets/dagster-plus/deployment/alerts/asset-check-failed-email.yaml"
+      path="docs_snippets/docs_snippets/guides/observe/alerts/asset-check-failed-email.yaml"
       language="yaml"
     />
   </TabItem>
   <TabItem value="microsoft_teams" label="Microsoft Teams">
     <CodeExample
-      path="docs_snippets/docs_snippets/dagster-plus/deployment/alerts/asset-check-failed-microsoft_teams.yaml"
+      path="docs_snippets/docs_snippets/guides/observe/alerts/asset-check-failed-microsoft_teams.yaml"
       language="yaml"
     />
   </TabItem>
   <TabItem value="pagerduty" label="PagerDuty">
     <CodeExample
-      path="docs_snippets/docs_snippets/dagster-plus/deployment/alerts/asset-check-failed-pagerduty.yaml"
+      path="docs_snippets/docs_snippets/guides/observe/alerts/asset-check-failed-pagerduty.yaml"
       language="yaml"
     />
   </TabItem>
   <TabItem value="slack" label="Slack">
     <CodeExample
-      path="docs_snippets/docs_snippets/dagster-plus/deployment/alerts/asset-check-failed-slack.yaml"
+      path="docs_snippets/docs_snippets/guides/observe/alerts/asset-check-failed-slack.yaml"
       language="yaml"
     />
   </TabItem>
@@ -84,25 +84,25 @@ dagster-cloud deployment alert-policies sync -a /path/to/alert_policies.yaml
 <Tabs groupId="notification_service">
   <TabItem value="email" label="Email">
     <CodeExample
-      path="docs_snippets/docs_snippets/dagster-plus/deployment/alerts/run-alert-failure-email.yaml"
+      path="docs_snippets/docs_snippets/guides/observe/alerts/run-alert-failure-email.yaml"
       language="yaml"
     />
   </TabItem>
   <TabItem value="microsoft_teams" label="Microsoft Teams">
     <CodeExample
-      path="docs_snippets/docs_snippets/dagster-plus/deployment/alerts/run-alert-failure-microsoft_teams.yaml"
+      path="docs_snippets/docs_snippets/guides/observe/alerts/run-alert-failure-microsoft_teams.yaml"
       language="yaml"
     />
   </TabItem>
   <TabItem value="pagerduty" label="PagerDuty">
     <CodeExample
-      path="docs_snippets/docs_snippets/dagster-plus/deployment/alerts/run-alert-failure-pagerduty.yaml"
+      path="docs_snippets/docs_snippets/guides/observe/alerts/run-alert-failure-pagerduty.yaml"
       language="yaml"
     />
   </TabItem>
   <TabItem value="slack" label="Slack">
     <CodeExample
-      path="docs_snippets/docs_snippets/dagster-plus/deployment/alerts/run-alert-failure-slack.yaml"
+      path="docs_snippets/docs_snippets/guides/observe/alerts/run-alert-failure-slack.yaml"
       language="yaml"
     />
   </TabItem>
@@ -113,25 +113,25 @@ dagster-cloud deployment alert-policies sync -a /path/to/alert_policies.yaml
 <Tabs groupId="notification_service">
   <TabItem value="email" label="Email">
     <CodeExample
-      path="docs_snippets/docs_snippets/dagster-plus/deployment/alerts/job-running-over-one-hour-email.yaml"
+      path="docs_snippets/docs_snippets/guides/observe/alerts/job-running-over-one-hour-email.yaml"
       language="yaml"
     />
   </TabItem>
   <TabItem value="microsoft_teams" label="Microsoft Teams">
     <CodeExample
-      path="docs_snippets/docs_snippets/dagster-plus/deployment/alerts/job-running-over-one-hour-microsoft_teams.yaml"
+      path="docs_snippets/docs_snippets/guides/observe/alerts/job-running-over-one-hour-microsoft_teams.yaml"
       language="yaml"
     />
   </TabItem>
   <TabItem value="pagerduty" label="PagerDuty">
     <CodeExample
-      path="docs_snippets/docs_snippets/dagster-plus/deployment/alerts/job-running-over-one-hour-pagerduty.yaml"
+      path="docs_snippets/docs_snippets/guides/observe/alerts/job-running-over-one-hour-pagerduty.yaml"
       language="yaml"
     />
   </TabItem>
   <TabItem value="slack" label="Slack">
     <CodeExample
-      path="docs_snippets/docs_snippets/dagster-plus/deployment/alerts/job-running-over-one-hour-slack.yaml"
+      path="docs_snippets/docs_snippets/guides/observe/alerts/job-running-over-one-hour-slack.yaml"
       language="yaml"
     />
   </TabItem>
@@ -142,25 +142,25 @@ dagster-cloud deployment alert-policies sync -a /path/to/alert_policies.yaml
 <Tabs groupId="notification_service">
   <TabItem value="email" label="Email">
     <CodeExample
-      path="docs_snippets/docs_snippets/dagster-plus/deployment/alerts/code-location-error-email.yaml"
+      path="docs_snippets/docs_snippets/guides/observe/alerts/code-location-error-email.yaml"
       language="yaml"
     />
   </TabItem>
   <TabItem value="microsoft_teams" label="Microsoft Teams">
     <CodeExample
-      path="docs_snippets/docs_snippets/dagster-plus/deployment/alerts/code-location-error-microsoft_teams.yaml"
+      path="docs_snippets/docs_snippets/guides/observe/alerts/code-location-error-microsoft_teams.yaml"
       language="yaml"
     />
   </TabItem>
   <TabItem value="pagerduty" label="PagerDuty">
     <CodeExample
-      path="docs_snippets/docs_snippets/dagster-plus/deployment/alerts/code-location-error-pagerduty.yaml"
+      path="docs_snippets/docs_snippets/guides/observe/alerts/code-location-error-pagerduty.yaml"
       language="yaml"
     />
   </TabItem>
   <TabItem value="slack" label="Slack">
     <CodeExample
-      path="docs_snippets/docs_snippets/dagster-plus/deployment/alerts/code-location-error-slack.yaml"
+      path="docs_snippets/docs_snippets/guides/observe/alerts/code-location-error-slack.yaml"
       language="yaml"
     />
   </TabItem>
@@ -171,25 +171,25 @@ dagster-cloud deployment alert-policies sync -a /path/to/alert_policies.yaml
 <Tabs groupId="notification_service">
   <TabItem value="email" label="Email">
     <CodeExample
-      path="docs_snippets/docs_snippets/dagster-plus/deployment/alerts/schedule-sensor-failure-email.yaml"
+      path="docs_snippets/docs_snippets/guides/observe/alerts/schedule-sensor-failure-email.yaml"
       language="yaml"
     />
   </TabItem>
   <TabItem value="microsoft_teams" label="Microsoft Teams">
     <CodeExample
-      path="docs_snippets/docs_snippets/dagster-plus/deployment/alerts/schedule-sensor-failure-microsoft_teams.yaml"
+      path="docs_snippets/docs_snippets/guides/observe/alerts/schedule-sensor-failure-microsoft_teams.yaml"
       language="yaml"
     />
   </TabItem>
   <TabItem value="pagerduty" label="PagerDuty">
     <CodeExample
-      path="docs_snippets/docs_snippets/dagster-plus/deployment/alerts/schedule-sensor-failure-pagerduty.yaml"
+      path="docs_snippets/docs_snippets/guides/observe/alerts/schedule-sensor-failure-pagerduty.yaml"
       language="yaml"
     />
   </TabItem>
   <TabItem value="slack" label="Slack">
     <CodeExample
-      path="docs_snippets/docs_snippets/dagster-plus/deployment/alerts/schedule-sensor-failure-slack.yaml"
+      path="docs_snippets/docs_snippets/guides/observe/alerts/schedule-sensor-failure-slack.yaml"
       language="yaml"
     />
   </TabItem>
@@ -206,25 +206,25 @@ Alerting when a Hybrid agent becomes unavailable is only available for [Hybrid d
 <Tabs groupId="notification_service">
   <TabItem value="email" label="Email">
     <CodeExample
-      path="docs_snippets/docs_snippets/dagster-plus/deployment/alerts/agent-unavailable-alert-email.yaml"
+      path="docs_snippets/docs_snippets/guides/observe/alerts/agent-unavailable-alert-email.yaml"
       language="yaml"
     />
   </TabItem>
   <TabItem value="microsoft_teams" label="Microsoft Teams">
     <CodeExample
-      path="docs_snippets/docs_snippets/dagster-plus/deployment/alerts/agent-unavailable-alert-microsoft_teams.yaml"
+      path="docs_snippets/docs_snippets/guides/observe/alerts/agent-unavailable-alert-microsoft_teams.yaml"
       language="yaml"
     />
   </TabItem>
   <TabItem value="pagerduty" label="PagerDuty">
     <CodeExample
-      path="docs_snippets/docs_snippets/dagster-plus/deployment/alerts/agent-unavailable-alert-pagerduty.yaml"
+      path="docs_snippets/docs_snippets/guides/observe/alerts/agent-unavailable-alert-pagerduty.yaml"
       language="yaml"
     />
   </TabItem>
   <TabItem value="slack" label="Slack">
     <CodeExample
-      path="docs_snippets/docs_snippets/dagster-plus/deployment/alerts/agent-unavailable-alert-slack.yaml"
+      path="docs_snippets/docs_snippets/guides/observe/alerts/agent-unavailable-alert-slack.yaml"
       language="yaml"
     />
   </TabItem>
@@ -241,25 +241,25 @@ The example configuration below can be used in both Serverless and Hybrid deploy
 <Tabs groupId="notification_service">
   <TabItem value="email" label="Email">
     <CodeExample
-      path="docs_snippets/docs_snippets/dagster-plus/deployment/alerts/credit-budget-alert-email.yaml"
+      path="docs_snippets/docs_snippets/guides/observe/alerts/credit-budget-alert-email.yaml"
       language="yaml"
     />
   </TabItem>
   <TabItem value="microsoft_teams" label="Microsoft Teams">
     <CodeExample
-      path="docs_snippets/docs_snippets/dagster-plus/deployment/alerts/credit-budget-alert-microsoft_teams.yaml"
+      path="docs_snippets/docs_snippets/guides/observe/alerts/credit-budget-alert-microsoft_teams.yaml"
       language="yaml"
     />
   </TabItem>
   <TabItem value="pagerduty" label="PagerDuty">
     <CodeExample
-      path="docs_snippets/docs_snippets/dagster-plus/deployment/alerts/credit-budget-alert-pagerduty.yaml"
+      path="docs_snippets/docs_snippets/guides/observe/alerts/credit-budget-alert-pagerduty.yaml"
       language="yaml"
     />
   </TabItem>
   <TabItem value="slack" label="Slack">
     <CodeExample
-      path="docs_snippets/docs_snippets/dagster-plus/deployment/alerts/credit-budget-alert-slack.yaml"
+      path="docs_snippets/docs_snippets/guides/observe/alerts/credit-budget-alert-slack.yaml"
       language="yaml"
     />
   </TabItem>

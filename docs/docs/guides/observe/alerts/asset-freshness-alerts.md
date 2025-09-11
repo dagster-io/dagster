@@ -15,8 +15,8 @@ To create and edit the new alerts, you will need to enable the "New homepage & o
 
 :::
 
-Asset freshness alerts send notifications when an asset's [freshness status](/guides/observe/freshness) changes:
+Asset freshness alerts send notifications when an asset's [freshness status](/guides/observe/asset-freshness-policies) changes:
 
 ![Asset freshness alert in UI](/images/guides/observe/create-new-freshness-alert.png)
 
-For example, if you have an asset that you expect to materialize every six hours, you can create a [freshness policy](/guides/observe/freshness) for the asset, and set up an alert to notify you when that policy is failing. If it's been six hours since the last materialization of the asset, you will receive a notification about the failing policy.
+For example, if you have an asset that you expect to materialize every six hours, you can create a [freshness policy](/guides/observe/asset-freshness-policies) for the asset, and set up an alert to notify you when that policy is failing. If it's been six hours since the last materialization of the asset, you will receive a notification about the failing policy.

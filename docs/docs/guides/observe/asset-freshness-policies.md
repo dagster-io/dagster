@@ -18,7 +18,7 @@ For example, freshness policies can help identify stale assets caused by:
 
 :::info
 
-You can set an [asset freshness alert](/guides/observe/alerts) to notify you when an asset is failing its freshness policy.
+You can set an [asset freshness alert](/guides/observe/alerts/creating-alerts) to notify you when an asset is failing its freshness policy.
 
 :::
 
@@ -31,8 +31,6 @@ freshness:
   enabled: True
 ```
 
-To use freshness policies in Dagster+, sign up for the [Observability update early access program](/guides/observe#how-to-join-the-early-access-program).
-
 ### Relationship to existing `FreshnessPolicy`
 
 There is an existing `FreshnessPolicy` API that has been deprecated since version 1.6. We're opting to reuse the name for the new freshness APIs, and have renamed the deprecated functionality to `LegacyFreshnessPolicy`. To continue using the deprecated functionality, follow the instructions in the [1.11 migration guide](/migration/upgrading#upgrading-to-1110).
@@ -43,7 +41,7 @@ Freshness policies are not yet recommended for production use, but are intended 
 
 ## Freshness policy types
 
-Currently, we support time window-based freshness policies, which are suitable for most use cases. We plan to add more policy types in the future.
+Currently, we support [time window](#time-window) and [cron](#cron) freshness policies, which are suitable for most use cases.
 
 ### Time window
 

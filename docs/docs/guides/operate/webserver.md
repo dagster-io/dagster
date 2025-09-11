@@ -415,7 +415,7 @@ To access this tab, on the **Deployment overview** page, click the **Environment
 </TabItem>
 <TabItem value="Alerts tab">
 
-The **Alerts** tab contains information about the alert policies configured for a Dagster+ deployment. For more information, see the [Dagster+ alerts documentation](/guides/log-debug/alerts).
+The **Alerts** tab contains information about the alert policies configured for a Dagster+ deployment. For more information, see the [Dagster+ alerts documentation](/guides/observe/alerts).
 
 To access this tab, on the **Deployment overview** page, click the **Alerts** tab.
 

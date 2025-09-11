@@ -6,38 +6,41 @@ canonicalUrl: '/guides/observe'
 slug: '/guides/observe'
 ---
 
-The Dagster+ Summer Update is a collection of new functionality that marks a major leap forward in observability and orchestration for data platforms. It focuses on improving real-time understanding of data health, operational metrics, and historical trends. With a redesigned user experience, the update makes it easier for you to monitor, troubleshoot, and explore your data workflows.
+Dagster observability features focus on improving real-time understanding of data health, operational metrics, and historical trends, making it easier for you to monitor, troubleshoot, and explore your data workflows.
 
-### How to join the early access program
+:::info
 
-The full suite of new features is available in limited early access for Dagster+ users. To join the early access program, sign up on the [Dagster+ Summer Update page](https://dagster.io/summer).
+The full suite of new observability features is available in early access for Dagster+ users. You can enable or disable the new experiences in your user settings, via the "New health & observability UIs" setting.
 
-Once you are a member of the early access program, you can enable or disable the new experiences in your user settings, via the "New health & observability UIs" setting.
+:::
 
 ## Features
 
-### New homepage
+### Alerts (Dagster+)
 
-Get a holistic view of your data platform’s health from the moment you log in. The redesigned Dagster+ homepage keeps your most important signals front and center so you can track key metrics in real time, surface issues quickly, and stay focused on what matters most.
+TK
 
-![New Dagster+ homepage](/images/guides/observe/new-dagster-plus-homepage.png)
+#### Asset health alerts and freshness alerts
 
-### Asset health reporting
+Get notified when the overall health status of your assets changes, or when an asset has violated its freshness policy. For more information, see the [Asset health alerts and freshness alerts guide](/guides/observe/alerts).
 
-Quickly identify which pipelines are running smoothly and which need attention with intuitive health indicators that highlight data quality and platform reliability in real time. For more information, see the [Asset health reporting guide](/guides/observe/asset-health).
+### Asset catalog (Dagster+)
 
-### Real-time Insights
+TK
 
-Unlock a comprehensive, dashboard-style view of your data platform’s health. The new Insights experience surfaces critical metrics, like success rate, freshness hit rate, and time to resolution for any selection of assets or jobs – all in real time. For more information, see the [Real-time Insights guide](/guides/observe/insights).
-
-### Custom asset catalog dashboards
+#### Custom asset catalog dashboards
 
 Give teams a focused view of the data that matters most. Create flexible, shareable dashboards organized by asset, owner, tag, or business domain so every stakeholder can monitor performance and act with clarity. For more information, see the [Asset catalog with custom selections guide](/guides/observe/asset-catalog).
 
-### Freshness policies
+### Asset freshness policies
 
-Ensure your most critical data stays fresh and trustworthy so teams can make timely, confident decisions without second-guessing the source. For more information, see the [Freshness policies guide](/guides/observe/freshness).
+Ensure your most critical data stays fresh and trustworthy so teams can make timely, confident decisions without second-guessing the source. For more information, see the [Freshness policies guide](/guides/observe/asset-freshness-policies).
 
-### Asset health alerts and freshness alerts
+### Asset health reporting (Dagster+)
 
-Get notified when the overall health status of your assets changes, or when an asset has violated its freshness policy. For more information, see the [Asset health alerts and freshness alerts guide](/guides/observe/alerts).
+Quickly identify which pipelines are running smoothly and which need attention with intuitive health indicators that highlight data quality and platform reliability in real time. For more information, see the [Asset health reporting guide](/guides/observe/asset-health-status).
+
+### Insights
+
+Unlock a comprehensive, dashboard-style view of your data platform’s health. The new Insights experience surfaces critical metrics, like success rate, freshness hit rate, and time to resolution for any selection of assets or jobs – all in real time. For more information, see the [Real-time Insights guide](/guides/observe/insights).
+
