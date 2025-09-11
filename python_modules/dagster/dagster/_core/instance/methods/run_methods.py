@@ -1,9 +1,9 @@
 """Run methods implementation - consolidated from RunsMixin and RunDomain."""
 
-from collections.abc import Mapping, Sequence, Set
+from collections.abc import Mapping, Sequence
 from datetime import datetime
 from functools import cached_property
-from typing import TYPE_CHECKING, Any, Optional, Union
+from typing import TYPE_CHECKING, AbstractSet, Any, Optional, Union  # noqa: UP035
 
 from dagster._core.definitions.events import AssetKey
 from dagster._core.storage.dagster_run import (
@@ -113,13 +113,13 @@ class RunMethods:
         execution_plan: Optional["ExecutionPlan"] = None,
         run_id: Optional[str] = None,
         run_config: Optional[Mapping[str, object]] = None,
-        resolved_op_selection: Optional[Set[str]] = None,
+        resolved_op_selection: Optional[AbstractSet[str]] = None,
         status: Optional[Union[DagsterRunStatus, str]] = None,
         tags: Optional[Mapping[str, str]] = None,
         root_run_id: Optional[str] = None,
         parent_run_id: Optional[str] = None,
         op_selection: Optional[Sequence[str]] = None,
-        asset_selection: Optional[Set[AssetKey]] = None,
+        asset_selection: Optional[AbstractSet[AssetKey]] = None,
         remote_job_origin: Optional["RemoteJobOrigin"] = None,
         job_code_origin: Optional["JobPythonOrigin"] = None,
         repository_load_data: Optional["RepositoryLoadData"] = None,
@@ -131,7 +131,7 @@ class RunMethods:
             run_id=run_id,
             run_config=run_config,
             resolved_op_selection=resolved_op_selection,
-            status=DagsterRunStatus(status) if status else None,
+            status=status,
             tags=tags,
             root_run_id=root_run_id,
             parent_run_id=parent_run_id,
@@ -156,9 +156,9 @@ class RunMethods:
         execution_plan_snapshot: Optional["ExecutionPlanSnapshot"],
         job_snapshot: Optional["JobSnap"],
         parent_job_snapshot: Optional["JobSnap"],
-        asset_selection: Optional[Set[AssetKey]],
-        asset_check_selection: Optional[Set["AssetCheckKey"]],
-        resolved_op_selection: Optional[Set[str]],
+        asset_selection: Optional[AbstractSet[AssetKey]],
+        asset_check_selection: Optional[AbstractSet["AssetCheckKey"]],
+        resolved_op_selection: Optional[AbstractSet[str]],
         op_selection: Optional[Sequence[str]],
         remote_job_origin: Optional["RemoteJobOrigin"],
         job_code_origin: Optional["JobPythonOrigin"],
@@ -212,7 +212,7 @@ class RunMethods:
         job_name: str,
         run_id: str,
         run_config: Optional[Mapping[str, object]],
-        resolved_op_selection: Optional[Set[str]],
+        resolved_op_selection: Optional[AbstractSet[str]],
         step_keys_to_execute: Optional[Sequence[str]],
         tags: Mapping[str, str],
         root_run_id: Optional[str],

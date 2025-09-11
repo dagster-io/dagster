@@ -1,7 +1,7 @@
 import logging
 import warnings
 from collections.abc import Mapping, Sequence, Set
-from typing import TYPE_CHECKING, Any, Optional
+from typing import TYPE_CHECKING, AbstractSet, Any, Optional, Union  # noqa: UP035
 
 import dagster._check as check
 from dagster._core.definitions.asset_checks.asset_check_evaluation import (
@@ -93,9 +93,9 @@ class RunDomain:
         execution_plan_snapshot: Optional["ExecutionPlanSnapshot"],
         job_snapshot: Optional["JobSnap"],
         parent_job_snapshot: Optional["JobSnap"],
-        asset_selection: Optional[Set[AssetKey]],
-        asset_check_selection: Optional[Set["AssetCheckKey"]],
-        resolved_op_selection: Optional[Set[str]],
+        asset_selection: Optional[AbstractSet[AssetKey]],
+        asset_check_selection: Optional[AbstractSet["AssetCheckKey"]],
+        resolved_op_selection: Optional[AbstractSet[str]],
         op_selection: Optional[Sequence[str]],
         remote_job_origin: Optional["RemoteJobOrigin"],
         job_code_origin: Optional[JobPythonOrigin],
@@ -212,7 +212,7 @@ class RunDomain:
         check.opt_inst_param(remote_job_origin, "remote_job_origin", RemoteJobOrigin)
         check.opt_inst_param(job_code_origin, "job_code_origin", JobPythonOrigin)
 
-        dagster_run = self.construct_run_with_snapshots(
+        dagster_run = self._construct_run_with_snapshots(
             job_name=job_name,
             run_id=run_id,  # type: ignore  # (possible none)
             run_config=run_config,
@@ -236,16 +236,16 @@ class RunDomain:
         dagster_run = self._instance.run_storage.add_run(dagster_run)
 
         if execution_plan_snapshot and not assets_are_externally_managed(dagster_run):
-            self.log_asset_planned_events(dagster_run, execution_plan_snapshot, asset_graph)
+            self._log_asset_planned_events(dagster_run, execution_plan_snapshot, asset_graph)
 
         return dagster_run
 
-    def construct_run_with_snapshots(
+    def _construct_run_with_snapshots(
         self,
         job_name: str,
         run_id: str,
         run_config: Optional[Mapping[str, object]],
-        resolved_op_selection: Optional[Set[str]],
+        resolved_op_selection: Optional[AbstractSet[str]],
         step_keys_to_execute: Optional[Sequence[str]],
         status: Optional[DagsterRunStatus],
         tags: Mapping[str, str],
@@ -254,8 +254,8 @@ class RunDomain:
         job_snapshot: Optional["JobSnap"],
         execution_plan_snapshot: Optional["ExecutionPlanSnapshot"],
         parent_job_snapshot: Optional["JobSnap"],
-        asset_selection: Optional[Set[AssetKey]] = None,
-        asset_check_selection: Optional[Set["AssetCheckKey"]] = None,
+        asset_selection: Optional[AbstractSet[AssetKey]] = None,
+        asset_check_selection: Optional[AbstractSet["AssetCheckKey"]] = None,
         op_selection: Optional[Sequence[str]] = None,
         remote_job_origin: Optional["RemoteJobOrigin"] = None,
         job_code_origin: Optional[JobPythonOrigin] = None,
@@ -278,7 +278,7 @@ class RunDomain:
         )
 
         job_snapshot_id = (
-            self.ensure_persisted_job_snapshot(job_snapshot, parent_job_snapshot)
+            self._ensure_persisted_job_snapshot(job_snapshot, parent_job_snapshot)
             if job_snapshot
             else None
         )
@@ -318,7 +318,7 @@ class RunDomain:
             execution_plan_snapshot = execution_plan_snapshot._replace(steps=adjusted_steps)
 
         execution_plan_snapshot_id = (
-            self.ensure_persisted_execution_plan_snapshot(
+            self._ensure_persisted_execution_plan_snapshot(
                 execution_plan_snapshot, job_snapshot_id, step_keys_to_execute
             )
             if execution_plan_snapshot and job_snapshot_id
@@ -549,7 +549,7 @@ class RunDomain:
         job_name: str,
         run_id: str,
         run_config: Optional[Mapping[str, object]],
-        resolved_op_selection: Optional[Set[str]],
+        resolved_op_selection: Optional[AbstractSet[str]],
         step_keys_to_execute: Optional[Sequence[str]],
         tags: Mapping[str, str],
         root_run_id: Optional[str],
@@ -572,7 +572,7 @@ class RunDomain:
         # error; at this point, the failed tasks try again to fetch the existing run.
         # https://github.com/dagster-io/dagster/issues/2412
 
-        dagster_run = self.construct_run_with_snapshots(
+        dagster_run = self._construct_run_with_snapshots(
             job_name=job_name,
             run_id=run_id,
             run_config=run_config,
@@ -609,7 +609,7 @@ class RunDomain:
         except DagsterRunAlreadyExists:
             return get_run()
 
-    def ensure_persisted_job_snapshot(
+    def _ensure_persisted_job_snapshot(
         self,
         job_snapshot: "JobSnap",
         parent_job_snapshot: "Optional[JobSnap]",
@@ -638,7 +638,7 @@ class RunDomain:
 
         return job_snapshot_id
 
-    def ensure_persisted_execution_plan_snapshot(
+    def _ensure_persisted_execution_plan_snapshot(
         self,
         execution_plan_snapshot: "ExecutionPlanSnapshot",
         job_snapshot_id: str,
@@ -740,7 +740,7 @@ class RunDomain:
             {key for key in to_reexecute if isinstance(key, AssetCheckKey)},
         )
 
-    def log_asset_planned_events(
+    def _log_asset_planned_events(
         self,
         dagster_run: DagsterRun,
         execution_plan_snapshot: "ExecutionPlanSnapshot",
@@ -756,7 +756,7 @@ class RunDomain:
                 for output in step.outputs:
                     asset_key = check.not_none(output.properties).asset_key
                     if asset_key:
-                        self.log_materialization_planned_event_for_asset(
+                        self._log_materialization_planned_event_for_asset(
                             dagster_run, asset_key, job_name, step, output, asset_graph
                         )
 
@@ -784,7 +784,7 @@ class RunDomain:
                             event, dagster_run.run_id, logging.DEBUG
                         )
 
-    def log_materialization_planned_event_for_asset(
+    def _log_materialization_planned_event_for_asset(
         self,
         dagster_run: DagsterRun,
         asset_key: AssetKey,
@@ -890,13 +890,13 @@ class RunDomain:
         execution_plan: Optional["ExecutionPlan"] = None,
         run_id: Optional[str] = None,
         run_config: Optional[Mapping[str, object]] = None,
-        resolved_op_selection: Optional[Set[str]] = None,
-        status: Optional[DagsterRunStatus] = None,
+        resolved_op_selection: Optional[AbstractSet[str]] = None,
+        status: Optional[Union[DagsterRunStatus, str]] = None,
         tags: Optional[Mapping[str, str]] = None,
         root_run_id: Optional[str] = None,
         parent_run_id: Optional[str] = None,
         op_selection: Optional[Sequence[str]] = None,
-        asset_selection: Optional[Set[AssetKey]] = None,
+        asset_selection: Optional[AbstractSet[AssetKey]] = None,
         remote_job_origin: Optional["RemoteJobOrigin"] = None,
         job_code_origin: Optional[JobPythonOrigin] = None,
         repository_load_data: Optional["RepositoryLoadData"] = None,
@@ -917,6 +917,10 @@ class RunDomain:
         check.opt_set_param(resolved_op_selection, "resolved_op_selection", of_type=str)
         check.opt_list_param(op_selection, "op_selection", of_type=str)
         check.opt_set_param(asset_selection, "asset_selection", of_type=AssetKey)
+
+        # Convert string status to DagsterRunStatus if needed
+        if isinstance(status, str):
+            status = DagsterRunStatus(status)
 
         # op_selection never provided
         if asset_selection or op_selection:
