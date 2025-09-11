@@ -1,5 +1,38 @@
 # Changelog
 
+## 1.11.10 (core) / 0.27.10 (libraries)
+
+### New
+
+- Added `inline-component` command to the publicly available scaffold commands in the Dagster CLI.
+- Added a new `step_execution_mode` config param to all executors. If `{"step_execution_mode": {"after_upstream_outputs": {}}}` is set, this will allow downstream steps to execute immediately after all required upstream outputs have finished, even if the upstream step has not completed in its entirety yet. This can be useful particularly in cases where there are large multi-assets with downstream assets that depend on only a subset of the assets in the upstream step.
+- [dagster-airbyte] `@airbyte_assets` and `AirbyteWorkspaceComponent` (previously `AirbyteCloudWorkspaceComponent`) now support Airbyte OSS and Enterprise.
+- The `logsForRun`​ resolvers and `eventConnection`​ resolvers in the Dagster GraphQL API will now apply a default limit of 1000 to the number of logs returned from a single graphql query. The `cursor`​ field in the response can be used to continue iterating through the logs for a given run.
+
+### Bugfixes
+
+- Fixed an issue where the `dagster_dg_cli` package failed to import when using Python 3.9.
+- Fixed an issue with `AutomationCondition.eager()` that could cause runs for materializable assets to be launched at the same time as an upstream observable source asset that had an automation condition, even if the upstream observation would not result in a new data version.
+- Fixed an issue which could, in some circumstances, cause errors during Declarative Automation evaluation after a dynamic partition was deleted.
+- Fixed an issue that could cause confusing errors when attempting to supply `attributes` configuration to `Component` subclasses that did not inherit from `Resolvable`.
+- Added a Matillion kind tag, thanks [@RobBrownFreeAgent](https://github.com/RobBrownFreeAgent)!
+- [ui] Fixed an issue where the "Report materialization events" dialog for partitioned assets only worked if the partition was failed or missing.
+- [ui] Fixed a browser crash which could occur in the global asset graph.
+- [ui] Fixed a bug with the sensor preview behavior that would cause run requests contianing `run_key`s that had already been submitted to show up in the preview result.
+- [dagster-dbt] Fixed an issue that would cause the DbtCloudWorkspace to error before yielding asset events if the associated dbt Cloud run failed. Now, it will raise the error _after_ all relevant asset events have been produced.
+- [dagster-dbt] Added the `dbt-core` dependency back to `dagster-dbt` as it is still required for the dbt Cloud integration. If both `dbt-core` and `dbt Fusion` are installed, `dagster-dbt` will still prefer using `dbt Fusion` by default.
+
+### Documentation
+
+- Introduced a new "Post-processing components" guide.
+- Fixed incorrect YAML code snippets for alert policies docs page.
+- Fixed incorrect chart keys in Helm documentation. Thanks, [@charlottevdscheun](https://github.com/charlottevdscheun)!
+- Fixed incorrect owner tags in Components docs. Thanks, [@aaronprice00](https://github.com/aaronprice00)!
+
+### Dagster Plus
+
+- Improved the Dagster+ agent's retry behavior during when it experiences outbound connection timeouts while a code location is being deployed.
+
 ## 1.11.9 (core) / 0.27.9 (libraries)
 
 ### New
