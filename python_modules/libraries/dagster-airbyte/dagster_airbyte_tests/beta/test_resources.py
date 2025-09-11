@@ -16,8 +16,8 @@ from dagster_airbyte.types import AirbyteOutput
 from dagster_airbyte.utils import clean_name
 
 from dagster_airbyte_tests.beta.conftest import (
-    AIRBYTE_OSS_CONFIGURATION_API_BASE_URL,
-    AIRBYTE_OSS_REST_API_BASE_URL,
+    TEST_AIRBYTE_OSS_CONFIGURATION_API_BASE_URL,
+    TEST_AIRBYTE_OSS_REST_API_BASE_URL,
     SAMPLE_ACCESS_TOKEN,
     SAMPLE_CONNECTION_DETAILS,
     TEST_ACCESS_TOKEN,
@@ -458,8 +458,8 @@ def test_airbyte_oss_api_url_configuration() -> None:
     """Tests that Airbyte OSS instances can configure custom API URLs."""
     with responses.RequestsMock() as response:
         resource = AirbyteWorkspace(
-            rest_api_base_url=AIRBYTE_OSS_REST_API_BASE_URL,
-            configuration_api_base_url=AIRBYTE_OSS_CONFIGURATION_API_BASE_URL,
+            rest_api_base_url=TEST_AIRBYTE_OSS_REST_API_BASE_URL,
+            configuration_api_base_url=TEST_AIRBYTE_OSS_CONFIGURATION_API_BASE_URL,
             workspace_id=TEST_WORKSPACE_ID,
             username=TEST_USERNAME,
             password=TEST_PASSWORD,
@@ -469,14 +469,14 @@ def test_airbyte_oss_api_url_configuration() -> None:
         # Mock the API endpoints with custom URLs
         response.add(
             method=responses.GET,
-            url=f"{AIRBYTE_OSS_REST_API_BASE_URL}/connections",
+            url=f"{TEST_AIRBYTE_OSS_REST_API_BASE_URL}/connections",
             json={"connections": []},
             status=200,
         )
 
         response.add(
             method=responses.POST,
-            url=f"{AIRBYTE_OSS_CONFIGURATION_API_BASE_URL}/connections/get",
+            url=f"{TEST_AIRBYTE_OSS_CONFIGURATION_API_BASE_URL}/connections/get",
             json=SAMPLE_CONNECTION_DETAILS,
             status=200,
         )
@@ -490,14 +490,14 @@ def test_airbyte_oss_api_url_configuration() -> None:
         # Verify the calls went to the custom URLs
         assert_api_call(
             call=response.calls[0],
-            base_url=AIRBYTE_OSS_REST_API_BASE_URL,
+            base_url=TEST_AIRBYTE_OSS_REST_API_BASE_URL,
             endpoint="connections",
             method="GET",
             auth_method=AuthMethod.BASIC,
         )
         assert_api_call(
             call=response.calls[1],
-            base_url=AIRBYTE_OSS_CONFIGURATION_API_BASE_URL,
+            base_url=TEST_AIRBYTE_OSS_CONFIGURATION_API_BASE_URL,
             endpoint="connections/get",
             method="POST",
             object_id=TEST_CONNECTION_ID,
@@ -509,8 +509,8 @@ def test_airbyte_oss_username_password_auth() -> None:
     """Tests that Airbyte OSS instances can use username/password authentication."""
     with responses.RequestsMock() as response:
         resource = AirbyteWorkspace(
-            rest_api_base_url=AIRBYTE_OSS_REST_API_BASE_URL,
-            configuration_api_base_url=AIRBYTE_OSS_CONFIGURATION_API_BASE_URL,
+            rest_api_base_url=TEST_AIRBYTE_OSS_REST_API_BASE_URL,
+            configuration_api_base_url=TEST_AIRBYTE_OSS_CONFIGURATION_API_BASE_URL,
             workspace_id=TEST_WORKSPACE_ID,
             username=TEST_USERNAME,
             password=TEST_PASSWORD,
@@ -520,7 +520,7 @@ def test_airbyte_oss_username_password_auth() -> None:
         # Mock an API call to verify auth is working
         response.add(
             method=responses.GET,
-            url=f"{AIRBYTE_OSS_REST_API_BASE_URL}/connections",
+            url=f"{TEST_AIRBYTE_OSS_REST_API_BASE_URL}/connections",
             json={"connections": []},
             status=200,
         )
@@ -537,7 +537,7 @@ def test_airbyte_oss_username_password_auth() -> None:
         # assert not auth_header.startswith("Bearer")
         assert_api_call(
             call=response.calls[0],
-            base_url=AIRBYTE_OSS_REST_API_BASE_URL,
+            base_url=TEST_AIRBYTE_OSS_REST_API_BASE_URL,
             endpoint="connections",
             method="GET",
             auth_method=AuthMethod.BASIC,
@@ -549,13 +549,13 @@ def test_airbyte_oss_client_credentials_auth() -> None:
     with responses.RequestsMock() as response:
         response.add(
             method=responses.POST,
-            url=f"{AIRBYTE_OSS_REST_API_BASE_URL}/applications/token",
+            url=f"{TEST_AIRBYTE_OSS_REST_API_BASE_URL}/applications/token",
             json=SAMPLE_ACCESS_TOKEN,
             status=201,
         )
         resource = AirbyteWorkspace(
-            rest_api_base_url=AIRBYTE_OSS_REST_API_BASE_URL,
-            configuration_api_base_url=AIRBYTE_OSS_CONFIGURATION_API_BASE_URL,
+            rest_api_base_url=TEST_AIRBYTE_OSS_REST_API_BASE_URL,
+            configuration_api_base_url=TEST_AIRBYTE_OSS_CONFIGURATION_API_BASE_URL,
             workspace_id=TEST_WORKSPACE_ID,
             client_id=TEST_CLIENT_ID,
             client_secret=TEST_CLIENT_SECRET,
@@ -565,7 +565,7 @@ def test_airbyte_oss_client_credentials_auth() -> None:
         # Mock a test endpoint
         response.add(
             method=responses.GET,
-            url=f"{AIRBYTE_OSS_REST_API_BASE_URL}/connections",
+            url=f"{TEST_AIRBYTE_OSS_REST_API_BASE_URL}/connections",
             json={"connections": []},
             status=200,
         )
@@ -578,7 +578,7 @@ def test_airbyte_oss_client_credentials_auth() -> None:
         # Verify token request
         assert_api_call(
             call=response.calls[1],
-            base_url=AIRBYTE_OSS_REST_API_BASE_URL,
+            base_url=TEST_AIRBYTE_OSS_REST_API_BASE_URL,
             endpoint="connections",
             method="GET",
             auth_method=AuthMethod.BEARER,
@@ -592,8 +592,8 @@ def test_airbyte_oss_auth_method_mutual_exclusivity() -> None:
         Exception, match="cannot provide both client_id/client_secret and username/password"
     ):
         workspace = AirbyteWorkspace(
-            rest_api_base_url=AIRBYTE_OSS_REST_API_BASE_URL,
-            configuration_api_base_url=AIRBYTE_OSS_CONFIGURATION_API_BASE_URL,
+            rest_api_base_url=TEST_AIRBYTE_OSS_REST_API_BASE_URL,
+            configuration_api_base_url=TEST_AIRBYTE_OSS_CONFIGURATION_API_BASE_URL,
             workspace_id=TEST_WORKSPACE_ID,
             username=TEST_USERNAME,
             password=TEST_PASSWORD,
@@ -605,8 +605,8 @@ def test_airbyte_oss_auth_method_mutual_exclusivity() -> None:
     # Test providing incomplete username/password fails
     with pytest.raises(Exception, match="both username and password are required"):
         workspace = AirbyteWorkspace(
-            rest_api_base_url=AIRBYTE_OSS_REST_API_BASE_URL,
-            configuration_api_base_url=AIRBYTE_OSS_CONFIGURATION_API_BASE_URL,
+            rest_api_base_url=TEST_AIRBYTE_OSS_REST_API_BASE_URL,
+            configuration_api_base_url=TEST_AIRBYTE_OSS_CONFIGURATION_API_BASE_URL,
             workspace_id=TEST_WORKSPACE_ID,
             username=TEST_USERNAME,
             # Missing password
@@ -616,8 +616,8 @@ def test_airbyte_oss_auth_method_mutual_exclusivity() -> None:
     # Test providing incomplete client credentials fails
     with pytest.raises(Exception, match="both client_id and client_secret are required"):
         workspace = AirbyteWorkspace(
-            rest_api_base_url=AIRBYTE_OSS_REST_API_BASE_URL,
-            configuration_api_base_url=AIRBYTE_OSS_CONFIGURATION_API_BASE_URL,
+            rest_api_base_url=TEST_AIRBYTE_OSS_REST_API_BASE_URL,
+            configuration_api_base_url=TEST_AIRBYTE_OSS_CONFIGURATION_API_BASE_URL,
             workspace_id=TEST_WORKSPACE_ID,
             client_secret="test_secret",
             # Missing client_id

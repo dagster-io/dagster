@@ -25,7 +25,7 @@ ensure_dagster_tests_import()
 from dagster_test.dg_utils.utils import ProxyRunner, isolated_example_project_foo_bar
 
 from dagster_airbyte_tests.beta.conftest import (
-    AIRBYTE_OSS_REST_API_BASE_URL,
+    TEST_AIRBYTE_OSS_REST_API_BASE_URL,
     TEST_CLIENT_ID,
     TEST_CLIENT_SECRET,
     TEST_CONNECTION_ID,
@@ -122,7 +122,7 @@ def should_test_combinations(
         pytest.skip("Only run Airbyte Cloud tests against Airbyte Cloud API URL")
     if (
         expected_workspace_type == AirbyteWorkspace
-        and rest_api_url != AIRBYTE_OSS_REST_API_BASE_URL
+        and rest_api_url != TEST_AIRBYTE_OSS_REST_API_BASE_URL
     ):
         fetch_workspace_data_api_mocks.assert_all_requests_are_fired = False
         pytest.skip("Only run Airbyte OSS tests against Airbyte OSS API URL")
