@@ -6,6 +6,7 @@ from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from dagster_dg_cli.api_layer.schemas.asset import DgApiAsset, DgApiAssetList
     from dagster_dg_cli.api_layer.schemas.deployment import DeploymentList
+    from dagster_dg_cli.api_layer.schemas.run import RunList
 
 
 def format_deployments(deployments: "DeploymentList", as_json: bool) -> str:
@@ -166,3 +167,38 @@ def format_asset(asset: "DgApiAsset", as_json: bool) -> str:
             lines.append(f"  {entry['label']}: {value}")
 
     return "\n".join(lines)
+
+
+def format_runs(runs: "RunList", as_json: bool) -> str:
+    """Format run list for output."""
+    if as_json:
+        return runs.model_dump_json(indent=2)
+
+    if not runs.items:
+        return "No runs found."
+
+    lines = []
+    for run in runs.items:
+        run_lines = [
+            f"Run ID: {run.run_id}",
+            f"Status: {run.status.value}",
+            f"Job: {run.job_name}",
+        ]
+
+        if run.start_time:
+            run_lines.append(f"Started: {run.start_time.strftime('%Y-%m-%d %H:%M:%S')}")
+
+        if run.end_time:
+            run_lines.append(f"Ended: {run.end_time.strftime('%Y-%m-%d %H:%M:%S')}")
+        elif run.status.value in ["STARTED", "STARTING"]:
+            run_lines.append("Ended: Running")
+
+        run_lines.append(f"Created: {run.creation_time.strftime('%Y-%m-%d %H:%M:%S')}")
+
+        if run.can_terminate:
+            run_lines.append("Terminable: Yes")
+
+        run_lines.append("")  # Empty line between runs
+        lines.extend(run_lines)
+
+    return "\n".join(lines).rstrip()  # Remove trailing empty line
