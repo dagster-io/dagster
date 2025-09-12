@@ -128,3 +128,42 @@ def test_executed_with_tag_values() -> None:
     job.execute_in_process(instance=instance, tags={"non_target_tag": "b"})
     result = dg.evaluate_automation_conditions(defs=defs, instance=instance, cursor=result.cursor)
     assert result.total_requested == 0
+
+
+from dagster_tests.declarative_automation_tests.scenario_utils.automation_condition_scenario import (
+    AutomationConditionScenarioState,
+)
+from dagster_tests.declarative_automation_tests.scenario_utils.base_scenario import run_request
+from dagster_tests.declarative_automation_tests.scenario_utils.scenario_specs import one_asset
+
+
+@pytest.mark.asyncio
+async def test_all_new_executed_with_tags() -> None:
+    state = AutomationConditionScenarioState(
+        one_asset,
+        automation_condition=AutomationCondition.all_new_executed_with_tags(
+            tag_values={"target_tag": "a"}
+        ),
+    )
+
+    state, result = await state.evaluate("A")
+    assert result.true_subset.size == 0
+
+    state = state.with_runs(run_request("A"), run_request("A"))
+    state, result = await state.evaluate("A")
+    assert result.true_subset.size == 0
+
+    state = state.with_runs(run_request("A", tags={"target_tag": "a"}), run_request("A"))
+    state, result = await state.evaluate("A")
+    assert result.true_subset.size == 0
+
+    state = state.with_runs(
+        run_request("A", tags={"target_tag": "a"}), run_request("A", tags={"target_tag": "a"})
+    )
+    state, result = await state.evaluate("A")
+    assert result.true_subset.size == 1
+
+    # has to be new
+
+    state, result = await state.evaluate("A")
+    assert result.true_subset.size == 0

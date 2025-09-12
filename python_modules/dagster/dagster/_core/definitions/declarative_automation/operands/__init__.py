@@ -1,4 +1,5 @@
 from dagster._core.definitions.declarative_automation.operands.operands import (
+    AllNewExecutedWithTagsCondition as AllNewExecutedWithTagsCondition,
     BackfillInProgressAutomationCondition as BackfillInProgressAutomationCondition,
     CheckResultCondition as CheckResultCondition,
     CodeVersionChangedCondition as CodeVersionChangedCondition,
