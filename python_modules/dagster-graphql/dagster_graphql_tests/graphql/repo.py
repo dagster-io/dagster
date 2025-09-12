@@ -2199,6 +2199,8 @@ def define_standard_jobs() -> Sequence[JobDefinition]:
         tagged_job,
         two_ins_job,
         some_external_job,
+        owned_job,
+        unowned_job,
     ]
 
 
@@ -2223,6 +2225,21 @@ def owned_partitioned_asset():
 @asset(partitions_def=partitions_def_for_permissions)
 def unowned_partitioned_asset():
     return 2
+
+
+@op
+def permission_test_op():
+    pass
+
+
+@job
+def owned_job():
+    permission_test_op()
+
+
+@job
+def unowned_job():
+    permission_test_op()
 
 
 def define_assets():

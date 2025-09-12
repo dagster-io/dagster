@@ -12,7 +12,7 @@ from dagster_graphql.implementation.external import get_remote_job_or_raise
 from dagster_graphql.implementation.utils import (
     ExecutionMetadata,
     ExecutionParams,
-    assert_permission_for_location,
+    assert_permission_for_remote_job,
 )
 
 if TYPE_CHECKING:
@@ -98,14 +98,14 @@ async def launch_reexecution_from_parent_run(
         op_selection=None,
     )
 
-    assert_permission_for_location(
-        graphene_info,
-        Permissions.LAUNCH_PIPELINE_REEXECUTION,
-        selector.location_name,
-    )
-
     repo_location = graphene_info.context.get_code_location(selector.location_name)
     external_pipeline = await get_remote_job_or_raise(graphene_info, selector)
+    assert_permission_for_remote_job(
+        graphene_info,
+        Permissions.LAUNCH_PIPELINE_REEXECUTION,
+        external_pipeline,
+        list(parent_run.asset_selection) if parent_run.asset_selection else None,
+    )
 
     run = instance.create_reexecuted_run(
         parent_run=cast("DagsterRun", parent_run),

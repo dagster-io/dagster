@@ -40,6 +40,7 @@ from dagster_graphql.implementation.utils import (
     UserFacingGraphQLError,
     assert_permission_for_asset_graph,
     assert_permission_for_location,
+    assert_permission_for_remote_job,
     capture_error,
     check_permission,
     pipeline_selector_from_graphql,
@@ -290,10 +291,14 @@ class GrapheneTerminateRunsResultOrError(graphene.Union):
 
 async def create_execution_params_and_launch_pipeline_exec(graphene_info, execution_params_dict):
     execution_params = await create_execution_params(graphene_info, execution_params_dict)
-    assert_permission_for_location(
-        graphene_info,
-        Permissions.LAUNCH_PIPELINE_EXECUTION,
-        execution_params.selector.location_name,
+    remote_job = await get_full_remote_job_or_raise(graphene_info, execution_params.selector)
+    asset_keys: Optional[Sequence[AssetKey]] = (
+        list(execution_params.selector.asset_selection)
+        if execution_params.selector.asset_selection
+        else None
+    )
+    assert_permission_for_remote_job(
+        graphene_info, Permissions.LAUNCH_PIPELINE_EXECUTION, remote_job, asset_keys
     )
     return await launch_pipeline_execution(
         graphene_info,
@@ -488,10 +493,14 @@ class GrapheneDeleteDynamicPartitionsMutation(graphene.Mutation):
 
 async def create_execution_params_and_launch_pipeline_reexec(graphene_info, execution_params_dict):
     execution_params = await create_execution_params(graphene_info, execution_params_dict)
-    assert_permission_for_location(
-        graphene_info,
-        Permissions.LAUNCH_PIPELINE_REEXECUTION,
-        execution_params.selector.location_name,
+    remote_job = await get_full_remote_job_or_raise(graphene_info, execution_params.selector)
+    asset_keys: Optional[Sequence[AssetKey]] = (
+        list(execution_params.selector.asset_selection)
+        if execution_params.selector.asset_selection
+        else None
+    )
+    assert_permission_for_remote_job(
+        graphene_info, Permissions.LAUNCH_PIPELINE_REEXECUTION, remote_job, asset_keys
     )
     return await launch_pipeline_reexecution(graphene_info, execution_params=execution_params)
 

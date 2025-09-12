@@ -28,6 +28,8 @@ from dagster._core.definitions.selector import GraphSelector, JobSubsetSelector
 from dagster._core.definitions.temporal_context import TemporalContext
 from dagster._core.errors import DagsterError, DagsterInvariantViolationError
 from dagster._core.execution.backfill import PartitionBackfill
+from dagster._core.remote_representation.external import RemoteJob
+from dagster._core.workspace.permissions import Permissions
 from dagster._utils.caching_instance_queryer import CachingInstanceQueryer
 from dagster._utils.error import serializable_error_info_from_exc_info
 from typing_extensions import ParamSpec, TypeAlias
@@ -191,6 +193,22 @@ def assert_permission_for_asset_graph(
 
     if not has_permission_for_asset_graph(graphene_info, asset_graph, asset_selection, permission):
         raise UserFacingGraphQLError(GrapheneUnauthorizedError())
+
+
+def assert_permission_for_remote_job(
+    graphene_info: "ResolveInfo",
+    permission: Permissions,
+    remote_job: RemoteJob,
+    asset_keys: Optional[Sequence[AssetKey]] = None,
+):
+    from dagster._core.remote_representation.code_location import is_implicit_asset_job_name
+
+    if is_implicit_asset_job_name(remote_job.name) and asset_keys:
+        assert_permission_for_asset_graph(
+            graphene_info, graphene_info.context.asset_graph, asset_keys, permission
+        )
+    else:
+        assert_permission_for_definition(graphene_info, permission, remote_job)
 
 
 def assert_valid_job_partition_backfill(
