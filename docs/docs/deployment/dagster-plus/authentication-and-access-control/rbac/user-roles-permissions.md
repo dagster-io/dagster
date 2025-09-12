@@ -3,6 +3,7 @@ description: Role-based access control (RBAC) enables you to grant specific perm
 sidebar_label: User roles and permissions
 sidebar_position: 8130
 title: User roles and permissions
+tags: [dagster-plus-feature]
 ---
 
 Role-based access control (RBAC) enables you to grant specific permissions to users in your organization, ensuring that Dagster users have access to what they require in Dagster+, and no more.
@@ -224,7 +225,7 @@ Team management is accessed in the UI by navigating to **user menu (your icon) >
 
 |                                         | Viewer | Launcher | Editor | Admin | Organization <br/> admin |
 | --------------------------------------- | ------ | -------- | ------ | ----- | ------------------------ |
-| Manage [alerts](/guides/monitor/alerts) | ❌     | ❌       | ✅     | ✅    | ✅                       |
+| Manage [alerts](/guides/observe/alerts) | ❌     | ❌       | ✅     | ✅    | ✅                       |
 | Edit workspace                          | ❌     | ❌       | ✅     | ✅    | ✅                       |
 | Administer SAML                         | ❌     | ❌       | ❌     | ❌    | ✅                       |
 | Manage SCIM                             | ❌     | ❌       | ❌     | ❌    | ✅                       |

@@ -3,6 +3,7 @@ title: 'Configuring Microsoft Entra ID SCIM provisioning'
 sidebar_position: 8320
 sidebar_label: 'Microsoft Entra ID (formerly Azure Active Directory)'
 description: Configure Microsoft Entra ID provisioning for Dagster+ to sync user information between Microsoft Entra ID and your Dagster+ deployment.
+tags: [dagster-plus-feature]
 ---
 
 In this guide, we'll walk you through configuring [Microsoft Entra ID provisioning](https://learn.microsoft.com/en-us/entra/architecture/sync-scim) for Dagster+.

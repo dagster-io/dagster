@@ -2,6 +2,7 @@
 description: Deploy Dagster code to Azure Kubernetes Service using GitHub Actions and Azure Container Registry.
 sidebar_position: 5200
 title: Deploy user code in Azure Container Registry
+tags: [dagster-plus-feature]
 ---
 
 This guide will walk you through setting up a new repository for your Dagster code, setting up CI/CD with GitHub Actions backed by Azure Container Registry (ACR), and deploying your code to your Azure Kubernetes Service (AKS) cluster.

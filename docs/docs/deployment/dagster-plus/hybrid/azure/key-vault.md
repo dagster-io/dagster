@@ -2,6 +2,7 @@
 description: Retrieve secrets and credentials from Azure Key Vault in an Azure Kubernetes Service (AKS) cluster.
 sidebar_position: 5400
 title: Retrieve secrets and credentials from Azure Key Vault in AKS
+tags: [dagster-plus-feature]
 ---
 
 :::note

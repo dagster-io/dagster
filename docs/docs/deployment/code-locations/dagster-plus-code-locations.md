@@ -1,6 +1,7 @@
 ---
 description: Separate code locations allow you to deploy different Dagster projects that still roll up into a single Dagster+ deployment with one global lineage graph.
 sidebar_position: 300
+tags: [dagster-plus-feature]
 title: Dagster+ code locations
 ---
 

@@ -4,6 +4,7 @@ sidebar_position: 7300
 title: Branch deployments
 canonicalUrl: '/deployment/dagster-plus/ci-cd/branch-deployments'
 slug: '/deployment/dagster-plus/ci-cd/branch-deployments'
+tags: [dagster-plus-feature]
 ---
 
 import DagsterPlus from '@site/docs/partials/\_DagsterPlus.md';

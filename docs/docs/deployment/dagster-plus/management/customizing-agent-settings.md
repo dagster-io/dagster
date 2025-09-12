@@ -2,6 +2,7 @@
 description: Customize Dagster+ agent settings in dagster.yaml
 sidebar_position: 1000
 title: Customizing agent settings
+tags: [dagster-plus-feature]
 ---
 
 The Dagster+ Agent is a special variant of the Dagster instance used in Dagster Open Source and is configured through the same `dagster.yaml` file. You can customize your agent with these settings.

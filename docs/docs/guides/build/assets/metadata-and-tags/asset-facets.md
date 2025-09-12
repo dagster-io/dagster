@@ -8,9 +8,9 @@ With asset facets, you can customize asset views to surface the most relevant me
 
 To configure asset facets, click the facet configuration button on the Global Asset Lineage page, then select the facets you want to display:
 
-![Asset facets configuration button](/images/guides/labs/observability-update/asset-facets-config-button.png)
+![Asset facets configuration button](/images/guides/observe/asset-facets-config-button.png)
 
-![Asset facets configuration modal](/images/guides/labs/observability-update/asset-facets-config-modal.png)
+![Asset facets configuration modal](/images/guides/observe/asset-facets-config-modal.png)
 
 :::info
 

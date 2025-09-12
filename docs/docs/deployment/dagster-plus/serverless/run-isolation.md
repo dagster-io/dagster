@@ -3,6 +3,7 @@ description: Dagster+ Serverless run isolation offers isolated runs for producti
 sidebar_label: Run isolation
 sidebar_position: 2000
 title: Serverless run isolation
+tags: [dagster-plus-feature]
 ---
 
 Dagster+ Serverless offers two settings for run isolation: isolated and non-isolated. Isolated runs are the default and are intended for production, while non-isolated runs are intended for faster iteration during development.
