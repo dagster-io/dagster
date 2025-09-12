@@ -235,6 +235,22 @@ const ReportEventDialogBody = ({
     }
   };
 
+  const tooltipState = useMemo(() => {
+    if (!asset.hasReportRunlessAssetEventPermission) {
+      return {
+        content: DEFAULT_DISABLED_REASON,
+        canShow: true,
+      };
+    }
+    if (asset.isPartitioned && keysFiltered.length === 0) {
+      return {
+        content: 'No partitions selected',
+        canShow: true,
+      };
+    }
+    return {content: '', canShow: false};
+  }, [asset, keysFiltered.length]);
+
   return (
     <>
       <DialogHeader
@@ -309,26 +325,21 @@ const ReportEventDialogBody = ({
       </Box>
       <DialogFooter topBorder>
         <Button onClick={() => setIsOpen(false)}>Cancel</Button>
-        <Tooltip content="No partitions selected" canShow={keysFiltered.length === 0}>
-          <Tooltip
-            content={DEFAULT_DISABLED_REASON}
-            canShow={!asset.hasReportRunlessAssetEventPermission}
+        <Tooltip content={tooltipState.content} canShow={tooltipState.canShow}>
+          <Button
+            intent="primary"
+            onClick={onReportEvent}
+            disabled={
+              !asset.hasReportRunlessAssetEventPermission ||
+              isReporting ||
+              (asset.isPartitioned && keysFiltered.length === 0)
+            }
+            loading={isReporting}
           >
-            <Button
-              intent="primary"
-              onClick={onReportEvent}
-              disabled={
-                !asset.hasReportRunlessAssetEventPermission ||
-                isReporting ||
-                keysFiltered.length === 0
-              }
-              loading={isReporting}
-            >
-              {keysFiltered.length > 1
-                ? `Report ${keysFiltered.length.toLocaleString()} events`
-                : 'Report event'}
-            </Button>
-          </Tooltip>
+            {keysFiltered.length > 1
+              ? `Report ${keysFiltered.length.toLocaleString()} events`
+              : 'Report event'}
+          </Button>
         </Tooltip>
       </DialogFooter>
     </>
