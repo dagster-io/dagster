@@ -2202,6 +2202,29 @@ def define_standard_jobs() -> Sequence[JobDefinition]:
     ]
 
 
+partitions_def_for_permissions = StaticPartitionsDefinition(["a", "b", "c"])
+
+
+@asset(owners=["test@elementl.com"])
+def owned_asset():
+    return 1
+
+
+@asset
+def unowned_asset():
+    return 2
+
+
+@asset(partitions_def=partitions_def_for_permissions, owners=["test@elementl.com"])
+def owned_partitioned_asset():
+    return 1
+
+
+@asset(partitions_def=partitions_def_for_permissions)
+def unowned_partitioned_asset():
+    return 2
+
+
 def define_assets():
     return [
         asset_one,
@@ -2276,6 +2299,10 @@ def define_assets():
         asset_with_prefix_3,
         asset_with_prefix_4,
         asset_with_prefix_5,
+        owned_asset,
+        unowned_asset,
+        owned_partitioned_asset,
+        unowned_partitioned_asset,
     ]
 
 
