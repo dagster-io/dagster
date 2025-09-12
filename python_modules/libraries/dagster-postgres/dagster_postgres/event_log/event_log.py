@@ -211,14 +211,10 @@ class PostgresEventLogStorage(SqlEventLogStorage, ConfigurableClass):
             self.store_asset_check_event(event, event_id)
 
     def store_event_batch(self, events: Sequence[EventLogEntry]) -> None:
-        from dagster import DagsterEventType
-
         check.sequence_param(events, "event", of_type=EventLogEntry)
 
-        event_types = {event.get_dagster_event().event_type for event in events}
-
         check.invariant(
-            all(event_type in BATCH_WRITABLE_EVENTS for event_type in event_types),
+            all(event.get_dagster_event().event_type in BATCH_WRITABLE_EVENTS for event in events),
             f"{BATCH_WRITABLE_EVENTS} are the only currently supported events for batch writes.",
         )
         events = [
@@ -229,27 +225,18 @@ class PostgresEventLogStorage(SqlEventLogStorage, ConfigurableClass):
         if len(events) == 0:
             return
 
-        if event_types == {DagsterEventType.ASSET_MATERIALIZATION} or event_types == {
-            DagsterEventType.ASSET_OBSERVATION
-        }:
-            insert_event_statement = self.prepare_insert_event_batch(events)
-            with self._connect() as conn:
-                result = conn.execute(
-                    insert_event_statement.returning(SqlEventLogStorageTable.c.id)
-                )
-                event_ids = [cast("int", row[0]) for row in result.fetchall()]
+        insert_event_statement = self.prepare_insert_event_batch(events)
+        with self._connect() as conn:
+            result = conn.execute(insert_event_statement.returning(SqlEventLogStorageTable.c.id))
+            event_ids = [cast("int", row[0]) for row in result.fetchall()]
 
-            # We only update the asset table with the last event
-            self.store_asset_event(events[-1], event_ids[-1])
+        # We only update the asset table with the last event
+        self.store_asset_event(events[-1], event_ids[-1])
 
-            if any(event_id is None for event_id in event_ids):
-                raise DagsterInvariantViolationError(
-                    "Cannot store asset event tags for null event id."
-                )
+        if any(event_id is None for event_id in event_ids):
+            raise DagsterInvariantViolationError("Cannot store asset event tags for null event id.")
 
-            self.store_asset_event_tags(events, event_ids)
-        else:
-            return super().store_event_batch(events)
+        self.store_asset_event_tags(events, event_ids)
 
     def store_asset_event(self, event: EventLogEntry, event_id: int) -> None:
         check.inst_param(event, "event", EventLogEntry)

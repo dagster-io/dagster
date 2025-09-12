@@ -8,15 +8,7 @@ from dagster._time import get_current_timestamp
 warnings.simplefilter("ignore", category=PreviewWarning)
 warnings.simplefilter("ignore", category=BetaWarning)
 
-from dagster import (
-    AssetMaterialization,
-    Output,
-    define_asset_job,
-    graph,
-    load_assets_from_modules,
-    op,
-    repository,
-)
+from dagster import AssetMaterialization, Output, graph, load_assets_from_modules, op, repository
 
 from dagster_test.toys import big_honkin_asset_graph as big_honkin_asset_graph_module
 from dagster_test.toys.asset_checks import get_checks_and_assets
@@ -31,7 +23,7 @@ from dagster_test.toys.auto_materializing.repo_1 import (
 from dagster_test.toys.auto_materializing.repo_2 import (
     auto_materialize_repo_2 as auto_materialize_repo_2,
 )
-from dagster_test.toys.big_honkin_asset_graph import big_honkin_non_sda_job
+from dagster_test.toys.big_honkin_asset_graph import big_honkin_assets_job
 from dagster_test.toys.branches import branch_failed_job, branch_job
 from dagster_test.toys.composition import composition_job
 from dagster_test.toys.cross_repo_assets import (
@@ -194,11 +186,7 @@ def long_asset_keys_repository():
 
 @repository
 def big_honkin_assets_repository():
-    return [
-        load_assets_from_modules([big_honkin_asset_graph_module]),
-        big_honkin_non_sda_job,
-        define_asset_job(name="big_honkin_sda_job", selection="*"),
-    ]
+    return [load_assets_from_modules([big_honkin_asset_graph_module]), big_honkin_assets_job]
 
 
 @repository

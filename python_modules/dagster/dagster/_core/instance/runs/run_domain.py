@@ -1,5 +1,4 @@
 import logging
-import os
 import warnings
 from collections.abc import Mapping, Sequence, Set
 from typing import TYPE_CHECKING, Any, Optional
@@ -57,7 +56,6 @@ if TYPE_CHECKING:
         RepositoryLoadData,
     )
     from dagster._core.definitions.utils import EntityKey
-    from dagster._core.events import DagsterEvent
     from dagster._core.execution.plan.plan import ExecutionPlan
     from dagster._core.execution.plan.resume_retry import ReexecutionStrategy
     from dagster._core.instance.instance import DagsterInstance
@@ -749,26 +747,17 @@ class RunDomain:
         asset_graph: "BaseAssetGraph",
     ) -> None:
         """Moved from DagsterInstance._log_asset_planned_events."""
-        from dagster._core.events import (
-            DagsterEvent,
-            DagsterEventBatchMetadata,
-            DagsterEventType,
-            generate_event_batch_id,
-        )
+        from dagster._core.events import DagsterEvent, DagsterEventType
 
         job_name = dagster_run.job_name
-
-        events = []
 
         for step in execution_plan_snapshot.steps:
             if step.key in execution_plan_snapshot.step_keys_to_execute:
                 for output in step.outputs:
                     asset_key = check.not_none(output.properties).asset_key
                     if asset_key:
-                        events.extend(
-                            self.get_materialization_planned_events_for_asset(
-                                dagster_run, asset_key, job_name, step, output, asset_graph
-                            )
+                        self.log_materialization_planned_event_for_asset(
+                            dagster_run, asset_key, job_name, step, output, asset_graph
                         )
 
                     if check.not_none(output.properties).asset_check_key:
@@ -791,21 +780,11 @@ class RunDomain:
                             ),
                             step_key=step.key,
                         )
-                        events.append(event)
+                        self._instance.report_dagster_event(
+                            event, dagster_run.run_id, logging.DEBUG
+                        )
 
-        batch_id = generate_event_batch_id()
-        last_index = len(events) - 1
-        for i, event in enumerate(events):
-            batch_metadata = (
-                DagsterEventBatchMetadata(batch_id, i == last_index)
-                if os.getenv("DAGSTER_BATCH_PLANNED_EVENTS")
-                else None
-            )
-            self._instance.report_dagster_event(
-                event, dagster_run.run_id, logging.DEBUG, batch_metadata=batch_metadata
-            )
-
-    def get_materialization_planned_events_for_asset(
+    def log_materialization_planned_event_for_asset(
         self,
         dagster_run: DagsterRun,
         asset_key: AssetKey,
@@ -813,13 +792,11 @@ class RunDomain:
         step: "ExecutionStepSnap",
         output: "ExecutionStepOutputSnap",
         asset_graph: "BaseAssetGraph[BaseAssetNode]",
-    ) -> Sequence["DagsterEvent"]:
+    ) -> None:
         """Moved from DagsterInstance._log_materialization_planned_event_for_asset."""
         from dagster._core.definitions.partitions.context import partition_loading_context
         from dagster._core.definitions.partitions.definition import DynamicPartitionsDefinition
         from dagster._core.events import AssetMaterializationPlannedData, DagsterEvent
-
-        events = []
 
         partition_tag = dagster_run.tags.get(PARTITION_NAME_TAG)
         partition_range_start, partition_range_end = (
@@ -878,7 +855,9 @@ class RunDomain:
                 step.key,
                 AssetMaterializationPlannedData(asset_key, partition=None, partitions_subset=None),
             )
-            events.append(materialization_planned)
+            self._instance.report_dagster_event(
+                materialization_planned, dagster_run.run_id, logging.DEBUG
+            )
         elif individual_partitions:
             for individual_partition in individual_partitions:
                 materialization_planned = DagsterEvent.build_asset_materialization_planned_event(
@@ -890,8 +869,9 @@ class RunDomain:
                         partitions_subset=partitions_subset,
                     ),
                 )
-                events.append(materialization_planned)
-
+                self._instance.report_dagster_event(
+                    materialization_planned, dagster_run.run_id, logging.DEBUG
+                )
         else:
             materialization_planned = DagsterEvent.build_asset_materialization_planned_event(
                 job_name,
@@ -900,9 +880,9 @@ class RunDomain:
                     asset_key, partition=None, partitions_subset=partitions_subset
                 ),
             )
-            events.append(materialization_planned)
-
-        return events
+            self._instance.report_dagster_event(
+                materialization_planned, dagster_run.run_id, logging.DEBUG
+            )
 
     def create_run_for_job(
         self,
