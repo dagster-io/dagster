@@ -3,11 +3,11 @@
   "redirects": [
     {
       "source": "/dagster-cloud/insights",
-      "destination": "/guides/monitor/insights"
+      "destination": "/guides/observe/insights"
     },
     {
       "source": "/dagster-cloud/insights/:path*",
-      "destination": "/guides/monitor/insights/:path*"
+      "destination": "/guides/observe/insights/:path*"
     },
     {
       "source": "/dagster-cloud/:path*",
@@ -582,7 +582,7 @@
     },
     {
       "source": "/dagster-plus/managing-deployments/setting-up-alerts",
-      "destination": "/guides/monitor/alerts"
+      "destination": "/guides/observe/alerts"
     },
     {
       "source": "/dagster-plus/managing-deployments/dagster-cloud-cli",
@@ -1315,31 +1315,31 @@
     },
     {
       "source": "/dagster-plus/managing-deployments/alerts",
-      "destination": "/guides/monitor/alerts"
+      "destination": "/guides/observe/alerts"
     },
     {
       "source": "/dagster-plus/managing-deployments/alerts/managing-alerts-in-ui",
-      "destination": "/guides/monitor/alerts/creating-alerts"
+      "destination": "/guides/observe/alerts/creating-alerts"
     },
     {
       "source": "/dagster-plus/managing-deployments/alerts/managing-alerts-cli",
-      "destination": "/guides/monitor/alerts/creating-alerts"
+      "destination": "/guides/observe/alerts/creating-alerts"
     },
     {
       "source": "/dagster-plus/managing-deployments/alerts/email",
-      "destination": "/guides/monitor/alerts/configuring-an-alert-notification-service"
+      "destination": "/guides/observe/alerts/configuring-an-alert-notification-service"
     },
     {
       "source": "/dagster-plus/managing-deployments/alerts/microsoft-teams",
-      "destination": "/guides/monitor/alerts/configuring-an-alert-notification-service"
+      "destination": "/guides/observe/alerts/configuring-an-alert-notification-service"
     },
     {
       "source": "/dagster-plus/managing-deployments/alerts/slack",
-      "destination": "/guides/monitor/alerts/configuring-an-alert-notification-service"
+      "destination": "/guides/observe/alerts/configuring-an-alert-notification-service"
     },
     {
       "source": "/dagster-plus/managing-deployments/alerts/pagerduty",
-      "destination": "/guides/monitor/alerts/configuring-an-alert-notification-service"
+      "destination": "/guides/observe/alerts/configuring-an-alert-notification-service"
     },
     {
       "source": "/dagster-plus/managing-deployments/environment-variables-and-secrets",
@@ -1395,35 +1395,35 @@
     },
     {
       "source": "/dagster-plus/insights",
-      "destination": "/guides/monitor/insights"
+      "destination": "/guides/observe/insights"
     },
     {
       "source": "/dagster-plus/insights/asset-metadata",
-      "destination": "/guides/monitor/insights"
+      "destination": "/guides/observe/insights"
     },
     {
       "source": "/dagster-plus/insights/integrating-external-metrics",
-      "destination": "/guides/monitor/insights"
+      "destination": "/guides/observe/insights"
     },
     {
       "source": "/dagster-plus/insights/integrating-bigquery",
-      "destination": "/guides/monitor/insights"
+      "destination": "/guides/observe/insights"
     },
     {
       "source": "/dagster-plus/insights/integrating-bigquery-and-dbt",
-      "destination": "/guides/monitor/insights"
+      "destination": "/guides/observe/insights"
     },
     {
       "source": "/dagster-plus/insights/integrating-snowflake",
-      "destination": "/guides/monitor/insights"
+      "destination": "/guides/observe/insights"
     },
     {
       "source": "/dagster-plus/insights/integrating-snowflake-and-dbt",
-      "destination": "/guides/monitor/insights"
+      "destination": "/guides/observe/insights"
     },
     {
       "source": "/dagster-plus/insights/exporting-insights-metrics",
-      "destination": "/guides/monitor/insights"
+      "destination": "/guides/observe/insights"
     },
     {
       "source": "/dagster-plus/managing-deployments/dagster-plus-cli",
@@ -2924,7 +2924,7 @@
     },
     {
       "source": "/dagster-cloud/insights",
-      "destination": "/guides/monitor/insights"
+      "destination": "/guides/observe/insights"
     },
     {
       "source": "/dagster-cloud/managing-deployments/branch-deployments",
@@ -2936,11 +2936,11 @@
     },
     {
       "source": "/dagster-cloud/managing-deployments/alerts/microsoft-teams",
-      "destination": "/guides/monitor/alerts/configuring-an-alert-notification-service"
+      "destination": "/guides/observe/alerts/configuring-an-alert-notification-service"
     },
     {
       "source": "/dagster-cloud/managing-deployments/alerts/pagerduty",
-      "destination": "/guides/monitor/alerts/configuring-an-alert-notification-service"
+      "destination": "/guides/observe/alerts/configuring-an-alert-notification-service"
     },
     {
       "source": "/dagster-cloud/account/managing-users/managing-user-roles-permissions",
@@ -2948,7 +2948,7 @@
     },
     {
       "source": "/dagster-cloud/managing-deployments/alerts/email",
-      "destination": "/guides/monitor/alerts/configuring-an-alert-notification-service"
+      "destination": "/guides/observe/alerts/configuring-an-alert-notification-service"
     },
     {
       "source": "/dagster-cloud/account/authentication/utilizing-scim-provisioning",
@@ -2968,7 +2968,7 @@
     },
     {
       "source": "/dagster-cloud/managing-deployments/alerts/slack",
-      "destination": "/guides/monitor/alerts/configuring-an-alert-notification-service"
+      "destination": "/guides/observe/alerts/configuring-an-alert-notification-service"
     },
     {
       "source": "/dagster-cloud/managing-deployments/branch-deployments/using-branch-deployments-with-gitlab",
@@ -2976,19 +2976,19 @@
     },
     {
       "source": "/dagster-cloud/managing-deployments/setting-up-alerts",
-      "destination": "/guides/monitor/alerts/configuring-an-alert-notification-service"
+      "destination": "/guides/observe/alerts/configuring-an-alert-notification-service"
     },
     {
       "source": "/dagster-cloud/managing-deployments/alerts/managing-alerts-cli",
-      "destination": "/guides/monitor/alerts/creating-alerts"
+      "destination": "/guides/observe/alerts/creating-alerts"
     },
     {
       "source": "/dagster-cloud/managing-deployments/alerts",
-      "destination": "/guides/monitor/alerts"
+      "destination": "/guides/observe/alerts"
     },
     {
       "source": "/dagster-cloud/managing-deployments/alerts/managing-alerts-in-ui",
-      "destination": "/guides/monitor/alerts/creating-alerts"
+      "destination": "/guides/observe/alerts/creating-alerts"
     },
     {
       "source": "/dagster-cloud/managing-deployments/managing-deployments",
@@ -3212,19 +3212,19 @@
     },
     {
       "source": "/dagster-plus/features/insights",
-      "destination": "/guides/monitor/insights"
+      "destination": "/guides/observe/insights"
     },
     {
       "source": "/dagster-plus/features/insights/:path*",
-      "destination": "/guides/monitor/insights/:path*"
+      "destination": "/guides/observe/insights/:path*"
     },
     {
       "source": "/dagster-plus/features/alerts",
-      "destination": "/guides/monitor/alerts"
+      "destination": "/guides/observe/alerts"
     },
     {
       "source": "/dagster-plus/features/alerts/:path*",
-      "destination": "/guides/monitor/alerts/:path*"
+      "destination": "/guides/observe/alerts/:path*"
     },
     {
       "source": "/dagster-plus/features/authentication-and-access-control",
@@ -3236,11 +3236,11 @@
     },
     {
       "source": "/dagster-plus/features/asset-catalog",
-      "destination": "/guides/build/assets/asset-catalog"
+      "destination": "/guides/observe/asset-catalog"
     },
     {
       "source": "/dagster-plus/features/asset-catalog/:path*",
-      "destination": "/guides/build/assets/asset-catalog/:path*"
+      "destination": "/guides/observe/asset-catalog/:path*"
     },
     {
       "source": "/dagster-plus/features/ci-cd",
@@ -3424,7 +3424,7 @@
     },
     {
       "source": "/guides/labs/freshness",
-      "destination": "/guides/labs/observability-update/freshness"
+      "destination": "/guides/observe/asset-freshness-policies"
     },
     {
       "source": "/etl-pipeline-tutorial",
@@ -3557,6 +3557,54 @@
     {
       "source": "/integrations/libraries/dbt/quickstart",
       "destination": "/integrations/libraries/dbt"
+    },
+    {
+      "source": "/guides/labs/observability-update",
+      "destination": "/guides/observe"
+    },
+    {
+      "source": "/guides/labs/observability-update/asset-health",
+      "destination": "/guides/observe/asset-health-status"
+    },
+    {
+      "source": "/guides/labs/observability-update/insights",
+      "destination": "/guides/observe/insights"
+    },
+    {
+      "source": "/guides/labs/observability-update/asset-catalog",
+      "destination": "/guides/observe/asset-catalog"
+    },
+    {
+      "source": "/guides/labs/observability-update/freshness",
+      "destination": "/guides/observe/asset-freshness-policies"
+    },
+    {
+      "source": "/guides/labs/observability-update/alerts",
+      "destination": "/guides/observe/alerts"
+    },
+    {
+      "source": "/guides/monitor/insights",
+      "destination": "/guides/observe/insights"
+    },
+    {
+      "source": "/guides/monitor/insights/:path/*",
+      "destination": "/guides/observe/insights/:path*"
+    },
+    {
+      "source": "/guides/monitor/alerts",
+      "destination": "/guides/observe/alerts"
+    },
+    {
+      "source": "/guides/monitor/alerts/:path*",
+      "destination": "/guides/observe/alerts/:path*"
+    },
+    {
+      "source": "/guides/build/assets/asset-catalog",
+      "destination": "/guides/observe/asset-catalog"
+    },
+    {
+      "source": "/guides/build/assets/asset-catalog/catalog-views",
+      "destination": "/guides/observe/asset-catalog/catalog-views"
     }
   ],
   "trailingSlash": false
