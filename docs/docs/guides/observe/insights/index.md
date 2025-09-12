@@ -11,32 +11,34 @@ import DagsterPlus from '@site/docs/partials/\_DagsterPlus.md';
 
 <DagsterPlus />
 
-Using Dagster+ Insights, you can gain visibility into historical usage and cost metrics such as Dagster+ run duration, credit usage, and failures. You can also define your own custom metrics, such as the number of rows processed by an asset.
+Using Dagster+ Insights, you can gain visibility into historical usage and cost metrics, such as Dagster+ run duration, credit usage, and failures. You can also define your own custom metrics, such as the number of rows processed by an asset.
 
 Visualizations are built into the Dagster+ UI, allowing you to explore metrics from Dagster and external systems, such as Google BigQuery, in one place.
 
-## Insights benefits
-
 With Insights, you can:
 
-- [Understand platform health with Insights views](#understand-health)
-- Compare metrics across asset selections (TK)
-- [Integrate additional metrics](#integrate-metrics), like data warehouse cost or your own custom metadata
+- [Understand platform health with real-time Insights views](#understand-health)
+- [Compare metrics across asset selections](#compare-metrics)
+- [Integrate additional metrics](#integrate-metrics), like data warehouse cost, or your own custom metadata
 - [Export metrics](#export-metrics) from Dagster+
 - [Create alerts](/guides/observe/alerts) based off of Insights metrics
 
-## Understand platform health with Insights views \{#understand-health}
+## Understand platform health with real-time Insights views \{#understand-health}
 
-Insights views can help you understand the health of **Assets**, **Selections**, **Jobs**, and **Deployments**.
+Real-time Insights views can help you understand the health of **Assets**, **Selections**, **Jobs**, and **Deployments**.
 
-You can access Insights views by either
+To access Insights views, you can either:
 
-- Clicking **Insights** in the left sidebar, or
-- Navigating to a [selection of assets](/guides/build/assets/asset-selection-syntax/reference) in the [asset catalog](/guides/observe/asset-catalog), then clicking **Insights** in the top navigation bar in the UI.
+- Click **Insights** in the left sidebar, or
+- Navigate to a [selection of assets](/guides/build/assets/asset-selection-syntax/reference) in the [asset catalog](/guides/observe/asset-catalog), then click **Insights** in the top navigation bar.
 
 ![Insights UI](/images/guides/observe/insights/insights-ui.png)
 
-Key asset health metrics, like materialization and failure count, are prominently displayed for all assets. To scope the view to a specific set of assets, type an [asset selection](/guides/build/assets/asset-selection-syntax/reference) in the search bar. Or, to view specific events in a time slice, click a datapoint in the line chart:
+Key asset health metrics, like materialization and failure count, are prominently displayed for assets and selections, and additional metrics are displayed for jobs and deployments. Historical Insights data is retained for 120 days.
+
+For a full list of metrics, see the [built-in metrics](#built-in-metrics) section. If you are on a Dagster+ Pro plan, you can also [integrate other metrics](#integrate-metrics) into Insights views.
+
+To limit the view to a specific set of assets, type an [asset selection](/guides/build/assets/asset-selection-syntax/reference) in the search bar. Or, to view specific events in a time slice, hover over a datapoint in the line chart, then click to view details:
 
 ![Click datapoint to view details hover](/images/guides/observe/insights/click-datapoint-to-view-details.png)
 
@@ -46,15 +48,7 @@ Insights views also features activity charts that group events by hour to help y
 
 ![Activity charts](/images/guides/observe/insights/activity-charts.png)
 
-For more information on the metrics Dagster provides by default, see the [built-in metrics](#built-in-metrics) section.
-
-:::info
-
-Events now stream back to Insights views in real time. Insights views show metrics bucketed by hour through the last 120 days.
-
-:::
-
-### Known limitations
+:::info Limitations
 
 Since updated Insights views are still under active development, there are a few limitations we aim to address in upcoming releases:
 
@@ -63,12 +57,23 @@ Since updated Insights views are still under active development, there are a few
 - Insights views do not currently show cost, Dagster credits, and metadata metrics
 - The new pages are all asset-focused, and haven’t yet been implemented for jobs
 
-### Data retention
+:::
 
-How long historical Insights data is retained depends on your Dagster+ plan:
+## Compare metrics across asset selections \{#compare-metrics}
 
-- **Dagster+ Pro** - 120 days
-- **All other plans** - 30 days
+Insights views allow you to compare metrics across all assets, or a chosen subset of saved asset selections.
+
+To compare metrics across specific selections, navigate to the **Selections** tab, then click **Choose a selection**. You can choose up to five saved selections:
+
+![Choose a selection dropdown](/images/guides/observe/insights/choose-selection.png)
+
+To remove a selection from comparison, click the three dots menu on the selection column, then click **Remove from grid**:
+
+![Remove selection from grid](/images/guides/observe/insights/remove-selection.png)
+
+To choose which metrics to compare across selections, click **Choose metrics**, then check the metrics you'd like to include:
+
+![Choose metrics dropdown](/images/guides/observe/insights/choose-metrics.png)
 
 ### Built-in metrics
 
@@ -114,13 +119,13 @@ How long historical Insights data is retained depends on your Dagster+ plan:
 | Observations     | The number of [asset observations](/guides/build/assets/metadata-and-tags/asset-observations) associated with computing this object.                                                                                                        |
 | Step failures    | The number of times steps failed when computing this object. **Note**: Steps that retry and succeed aren't included in this metric.                                                                                                         |
 
-## Integrate other metrics \{#integrate-metrics}
+## Integrate additional metrics \{#integrate-metrics}
 
-If you are on the Pro plan, you can integration other metrics into Insights, such as asset materialization metadata or Snowflake credits. Insights supports the following additional metrics:
+If you are on the Pro plan, you can integration additional metrics into Insights, such as asset materialization metadata or Snowflake usage. Insights supports the following additional metrics:
 
 - **[Asset materialization metadata](/guides/observe/insights/asset-metadata)**
-- **[Google BigQuery usage](/guides/observe/insights/google-bigquery)** generated by queries made to BigQuery resources or using dbt to materialize tables.
 - **[Snowflake usage](/guides/observe/insights/snowflake)** generated by queries made to Snowflake resources or using dbt to materialize tables.
+- **[Google BigQuery usage](/guides/observe/insights/google-bigquery)** generated by queries made to BigQuery resources or using dbt to materialize tables.
 
 ## Export metrics
 
