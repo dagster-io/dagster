@@ -109,11 +109,12 @@ def has_permission_for_asset_graph(
     if context.has_permission(permission):
         return True
 
-    if not any(
-        context.has_permission_for_location(permission, location_name)
-        for location_name in context.code_location_names
-    ):
-        return False
+    # TODO (prha): figure out what this up-front permission check is for, how much this affects perf
+    # if not any(
+    #     context.has_permission_for_location(permission, location_name)
+    #     for location_name in context.code_location_names
+    # ):
+    #     return False
 
     if asset_keys:
         location_names = set()
@@ -133,11 +134,29 @@ def has_permission_for_asset_graph(
 
     if not location_names:
         return context.has_permission(permission)
-    else:
+
+    # if we have permission for all locations relevant to the asset graph, we're good
+    if all(
+        context.has_permission_for_location(permission, location_name)
+        for location_name in location_names
+    ):
+        return True
+
+    # No need to check individual asset keys if we don't have owner permissions
+    if not context.has_owner_permission(permission):
+        return False
+
+    if asset_keys:
+        # if we have owner permissions and are checking specific asset keys, check that we own all of
+        # the asset keys
         return all(
-            context.has_permission_for_location(permission, location_name)
-            for location_name in location_names
+            context.is_viewer_definition_owner(asset_graph.get(key))
+            for key in asset_keys
+            if asset_graph.has(key)
         )
+
+    # enumerate all the nodes (keys and checks) and ensure we own all of them
+    return all(context.is_viewer_definition_owner(node) for node in asset_graph.nodes)
 
 
 def assert_permission_for_asset_graph(
