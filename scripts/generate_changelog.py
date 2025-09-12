@@ -1,11 +1,14 @@
 import os
+import re
 from collections import defaultdict
 from collections.abc import Iterator, Mapping, Sequence
 from pathlib import Path
+from time import sleep
 from typing import NamedTuple, Optional
 
 import click
 import git
+import requests
 
 GITHUB_URL = "https://github.com/dagster-io"
 OSS_ROOT = Path(__file__).parent.parent
@@ -35,12 +38,78 @@ class ParsedCommit(NamedTuple):
     raw_changelog_entry: Optional[str]
     raw_title: str
     author: str
+    author_email: str
     repo_name: str
     ignore: bool
 
     @property
     def documented(self) -> bool:
         return bool(self.raw_changelog_entry)
+
+
+def _fetch_github_username_from_pr(pr_url: str) -> Optional[str]:
+    """Fetch GitHub username from PR using GitHub API."""
+    try:
+        # Parse PR URL to extract owner, repo, and PR number
+        # Expected format: https://github.com/owner/repo/pull/123
+        url_parts = pr_url.split("/")
+        if len(url_parts) >= 6 and "github.com" in pr_url:
+            owner = url_parts[-4]  # dagster-io
+            repo = url_parts[-3]  # dagster
+            pr_number = url_parts[-1]  # 123
+
+            # Use GitHub API to get PR info
+            api_url = f"https://api.github.com/repos/{owner}/{repo}/pulls/{pr_number}"
+
+            # Add a small delay to be respectful to GitHub API
+            sleep(0.1)
+
+            response = requests.get(api_url, timeout=10)
+            response.raise_for_status()
+
+            pr_data = response.json()
+            username = pr_data.get("user", {}).get("login")
+
+            if username and 3 <= len(username) <= 39:
+                return username
+
+    except Exception:
+        # Silently fail - we'll fall back to "could not parse"
+        pass
+
+    return None
+
+
+def _extract_github_username(commit: ParsedCommit) -> Optional[str]:
+    """Extract GitHub username from commit author email, name, or PR webpage."""
+    # Check if email is a GitHub noreply email
+    if "@users.noreply.github.com" in commit.author_email:
+        email_part = commit.author_email.split("@")[0]
+
+        # Handle numeric format (12345+username@users.noreply.github.com)
+        if "+" in email_part:
+            return email_part.split("+")[1]  # "username"
+
+        # Handle simple format (username@users.noreply.github.com)
+        return email_part
+
+    # Use author name as GitHub username if it looks like a reasonable username
+    # (no spaces, reasonable length)
+    author_name = commit.author
+    if " " not in author_name and 3 <= len(author_name) <= 39:  # GitHub username limits
+        return author_name
+
+    # Last resort: try to fetch from the PR webpage
+    if commit.issue_link and "github.com" in commit.issue_link:
+        # Extract the URL from the markdown link [#123](https://github.com/...)
+        url_match = re.search(r"\(([^)]+)\)", commit.issue_link)
+        if url_match:
+            pr_url = url_match.group(1)
+            username = _fetch_github_username_from_pr(pr_url)
+            if username:
+                return username
+
+    return None
 
 
 def _get_previous_version(new_version: str) -> str:
@@ -72,6 +141,8 @@ def _get_parsed_commit(commit: git.Commit) -> ParsedCommit:
     ignore = False
     changelog_category = None
     raw_changelog_entry_lines: list[str] = []
+    has_testing_section = "## How I Tested These Changes" in str(commit.message)
+
     for line in str(commit.message).split("\n"):
         if found_start and line.strip():
             if line.startswith(IGNORE_TOKEN):
@@ -93,12 +164,23 @@ def _get_parsed_commit(commit: git.Commit) -> ParsedCommit:
         if line.startswith(CHANGELOG_HEADER):
             found_start = True
 
+    # If there's a "How I Tested These Changes" section but no changelog content, ignore this commit
+    if has_testing_section and not raw_changelog_entry_lines:
+        ignore = True
+
+    raw_changelog_entry = " ".join(raw_changelog_entry_lines)
+
+    # If changelog entry contains the placeholder text, ignore this commit
+    if "Insert changelog entry or delete this section" in raw_changelog_entry:
+        ignore = True
+
     return ParsedCommit(
         issue_link=issue_link,
         changelog_category=CATEGORIES.get(changelog_category, "Invalid"),
-        raw_changelog_entry=" ".join(raw_changelog_entry_lines),
+        raw_changelog_entry=raw_changelog_entry,
         raw_title=title,
         author=str(commit.author.name),
+        author_email=str(commit.author.email),
         repo_name=repo_name,
         ignore=ignore,
     )
@@ -111,26 +193,26 @@ def _get_documented_section(documented: Sequence[ParsedCommit]) -> str:
 
     documented_text = ""
     for category in CATEGORIES.values():
+        category_commits = grouped_commits.get(category, [])
+        if not category_commits:
+            continue  # Skip empty categories
+
         documented_text += f"\n\n### {category}\n"
-        for commit in grouped_commits.get(category, []):
-            documented_text += f"\n- {commit.raw_changelog_entry} {commit.issue_link}"
+        for commit in category_commits:
+            entry = commit.raw_changelog_entry or commit.raw_title
+
+            # Put PR link on separate bullet point for easier deletion
+            documented_text += f"\n- {entry}\n  - {commit.issue_link}"
+
+            # Add GitHub profile link for the author if available
+            github_username = _extract_github_username(commit)
+            if github_username:
+                documented_text += (
+                    f"\n  - [@{github_username}](https://github.com/{github_username})"
+                )
+            else:
+                documented_text += f"\n  - Could not parse user (author: {commit.author}, email: {commit.author_email})"
     return documented_text
-
-
-def _get_undocumented_section(undocumented: Sequence[ParsedCommit]) -> str:
-    undocumented_text = "# Undocumented Changes"
-
-    grouped_commits: Mapping[str, list[ParsedCommit]] = defaultdict(list)
-    for commit in undocumented:
-        grouped_commits[commit.author].append(commit)
-
-    for author, commits in sorted(grouped_commits.items()):
-        undocumented_text += f"\n- [ ] {author}"
-        for commit in commits:
-            undocumented_text += (
-                f"\n\t- [ ] (repo:{commit.repo_name}) {commit.issue_link} {commit.raw_title}"
-            )
-    return undocumented_text
 
 
 def _get_commits(
@@ -143,19 +225,52 @@ def _get_commits(
 
 def _generate_changelog_text(new_version: str, prev_version: str) -> str:
     documented: list[ParsedCommit] = []
+    documented_internal: list[ParsedCommit] = []
     undocumented: list[ParsedCommit] = []
+
+    internal_repo_name = str(INTERNAL_REPO.git_dir).split("/")[-2]
 
     for commit in _get_commits([OSS_REPO, INTERNAL_REPO], new_version, prev_version):
         if commit.ignore:
             continue
         elif commit.documented:
-            documented.append(commit)
-        elif commit.repo_name != str(INTERNAL_REPO.git_dir).split("/")[-2]:
+            if commit.repo_name == internal_repo_name:
+                documented_internal.append(commit)
+            else:
+                documented.append(commit)
+        elif commit.repo_name != internal_repo_name:
             # default to ignoring undocumented internal commits
             undocumented.append(commit)
 
+    # Convert undocumented commits to Invalid category entries with <UNDOCUMENTED> placeholder
+    for commit in undocumented:
+        undocumented_commit = ParsedCommit(
+            issue_link=commit.issue_link,
+            changelog_category="Invalid",
+            raw_changelog_entry="<UNDOCUMENTED>",
+            raw_title=commit.raw_title,
+            author=commit.author,
+            author_email=commit.author_email,
+            repo_name=commit.repo_name,
+            ignore=False,
+        )
+        documented.append(undocumented_commit)
+
     header = f"# Changelog\n\n## {new_version} (core) / {_get_libraries_version(new_version)} (libraries)"
-    return f"{header}{_get_documented_section(documented)}\n\n{_get_undocumented_section(undocumented)}"
+
+    sections = []
+
+    # Main documented section (OSS repo + undocumented as Invalid)
+    if documented:
+        sections.append(_get_documented_section(documented))
+
+    # Internal repo documented section
+    if documented_internal:
+        sections.append(
+            f"\n\n## Internal Repository Changes\n{_get_documented_section(documented_internal)}"
+        )
+
+    return header + "".join(sections)
 
 
 @click.command()
