@@ -1283,6 +1283,20 @@ class TestEventLogStorage:
         assert all(event.is_asset_materialization_planned for event in planned_events)
         return planned_events
 
+    def _get_planned_check_keys_from_event_log(self, instance, run_id):
+        return set(
+            event.asset_check_planned_data.asset_check_key
+            for event in self._get_planned_check_events(instance, run_id)
+        )
+
+    def _get_planned_check_events(self, instance, run_id):
+        records = instance.get_records_for_run(
+            run_id, of_type=DagsterEventType.ASSET_CHECK_EVALUATION_PLANNED
+        ).records
+        planned_events = [record.event_log_entry.dagster_event for record in records]
+        assert all(event.asset_check_planned_data is not None for event in planned_events)
+        return planned_events
+
     def _get_planned_asset_keys_from_execution_plan_snapshot(
         self, instance, run_id
     ) -> set[dg.AssetKey]:
@@ -1565,6 +1579,101 @@ class TestEventLogStorage:
 
         result = storage.fetch_materializations(foo.key, limit=100)
         assert len(result.records) == 2
+
+    def test_batch_multiple_assets(self, storage, test_run_id):
+        partitions_def = dg.StaticPartitionsDefinition(["a", "b"])
+
+        class DummyIOManager(dg.IOManager):
+            def handle_output(self, context, obj):
+                pass
+
+            def load_input(self, context):
+                return 1
+
+        @dg.asset(partitions_def=partitions_def, io_manager_def=DummyIOManager())
+        def foo():
+            return {"a": 1, "b": 2}
+
+        @dg.asset(partitions_def=partitions_def, io_manager_def=DummyIOManager())
+        def bar():
+            return {"c": 1, "d": 2}
+
+        with dg.instance_for_test() as test_instance:
+            events, _ = _synthesize_events(
+                [foo, bar],
+                instance=test_instance,
+                run_id=test_run_id,
+                tags={ASSET_PARTITION_RANGE_START_TAG: "a", ASSET_PARTITION_RANGE_END_TAG: "b"},
+            )
+
+        materializations = [
+            e
+            for e in events
+            if e.dagster_event.event_type == "ASSET_MATERIALIZATION"  # pyright: ignore[reportOptionalMemberAccess]
+        ]
+        storage.store_event_batch(materializations)
+
+        result = storage.fetch_materializations(foo.key, limit=100)
+        assert len(result.records) == 2
+
+        result = storage.fetch_materializations(bar.key, limit=100)
+        assert len(result.records) == 2
+
+    @pytest.mark.parametrize("batch_planned_events", [True, False])
+    def test_create_run_with_store_batch_enabled(self, storage, instance, batch_planned_events):
+        @dg.multi_asset(
+            outs={
+                "my_out_name": dg.AssetOut(key=dg.AssetKey("my_asset_name")),
+                "my_other_out_name": dg.AssetOut(key=dg.AssetKey("my_other_asset")),
+            },
+            check_specs=[
+                dg.AssetCheckSpec(
+                    name="my_check",
+                    asset="my_asset_name",
+                    description="My check",
+                ),
+                dg.AssetCheckSpec(
+                    name="my_other_check",
+                    asset="my_other_asset",
+                    description="My other check",
+                ),
+            ],
+        )
+        def my_asset():
+            yield dg.Output(1, "my_out_name")
+            yield dg.Output(2, "my_other_out_name")
+            yield dg.AssetCheckResult(
+                check_name="my_check",
+                asset_key=dg.AssetKey("my_asset_name"),
+                passed=True,
+                metadata={"foo": "bar"},
+            )
+            yield dg.AssetCheckResult(
+                check_name="my_other_check",
+                asset_key=dg.AssetKey("my_other_asset"),
+                passed=False,
+                metadata={"foo": "baz"},
+            )
+
+        from dagster._core.test_utils import environ
+
+        with environ(
+            {
+                "DAGSTER_EVENT_BATCH_SIZE": "25",
+                "DAGSTER_BATCH_PLANNED_EVENTS": "1" if batch_planned_events else "",
+            }
+        ):
+            result = materialize([my_asset], instance=instance)
+
+            assert self._get_planned_asset_keys_from_event_log(instance, result.run_id) == {
+                dg.AssetKey("my_asset_name"),
+                dg.AssetKey("my_other_asset"),
+            }
+
+            assert self._get_planned_check_keys_from_event_log(instance, result.run_id) == {
+                dg.AssetCheckKey(dg.AssetKey("my_asset_name"), "my_check"),
+                dg.AssetCheckKey(dg.AssetKey("my_other_asset"), "my_other_check"),
+            }
 
     def test_asset_materialization_fetch(self, storage, instance):
         asset_key = dg.AssetKey(["path", "to", "asset_one"])
