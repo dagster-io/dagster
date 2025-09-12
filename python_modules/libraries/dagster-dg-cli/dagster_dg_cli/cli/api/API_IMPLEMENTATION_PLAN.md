@@ -51,14 +51,14 @@ dg api agent get <id> [--json]
 
 **GraphQL**: `agents`
 
-### 4. **run** ✅ _list command implemented_
+### 4. **run** ✅ _list and get commands implemented_
 
 ```bash
 # Implemented
 dg api run list [--status <status>] [--job <name>] [--limit <n>] [--json]
+dg api run get <run-id> [--json]
 
 # Future verbs
-dg api run get <run-id> [--json]
 dg api run create --job <name> [--config <file>] [--tags <key=value>]
 dg api run terminate <run-id>
 dg api run delete <run-id>
@@ -383,7 +383,8 @@ dagster_dg_cli/cli/plus/api/
 
 - ✅ **deployment list** - Completed
 - ✅ **run list** - Completed
-- 🚧 **Next**: secret, agent, run (get/create/terminate/delete), asset (Phase 1)
+- ✅ **run get** - Completed
+- 🚧 **Next**: secret, agent, run (create/terminate/delete), asset (Phase 1)
 - 📋 **Planned**: 22 additional nouns across 4 more phases
 
 ## **Domains Not Yet Implemented**
