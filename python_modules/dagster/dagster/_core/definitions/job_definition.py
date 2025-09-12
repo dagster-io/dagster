@@ -1156,6 +1156,61 @@ class JobDefinition(IHasInternalInit):
     def with_metadata(self, metadata: Mapping[str, RawMetadataValue]) -> "JobDefinition":
         return self._copy(metadata=normalize_metadata(metadata))
 
+    @public
+    def rename_resources(self, resource_mapping: Mapping[str, str]) -> "JobDefinition":
+        """Create a copy of this job with resource keys renamed according to the provided mapping.
+
+        Args:
+            resource_mapping: A mapping from old resource key to new resource key. Only resource 
+                keys that are being renamed need to be included in the mapping.
+
+        Returns:
+            A new JobDefinition with resources renamed.
+
+        Example:
+            .. code-block:: python
+
+                job_with_renamed_resources = my_job.rename_resources({"old_db": "new_db"})
+        """
+        from dagster._core.definitions.resource_aliasing import (
+            validate_resource_mapping,
+        )
+
+        # Validate the resource mapping
+        all_resource_keys = set(self.resource_defs.keys())
+        validate_resource_mapping(resource_mapping, all_resource_keys)
+
+        # Remap resource_defs keys
+        new_resource_defs = {}
+        for old_key, resource_def in self.resource_defs.items():
+            new_key = resource_mapping.get(old_key, old_key)
+            new_resource_defs[new_key] = resource_def
+
+        # Create a new graph definition with renamed resources in nodes
+        new_node_defs = []
+        for node_def in self.graph.node_defs:
+            if hasattr(node_def, 'rename_resources'):
+                new_node_defs.append(node_def.rename_resources(resource_mapping))
+            else:
+                new_node_defs.append(node_def)
+
+        new_graph_def = self.graph.copy() if not new_node_defs else self.graph.__class__(
+            name=self.graph.name,
+            node_defs=new_node_defs,
+            dependencies=self.graph.dependencies,
+            input_mappings=self.graph._input_mappings,
+            output_mappings=self.graph._output_mappings,
+            description=self.graph.description,
+            config=self.graph.config_mapping,
+            tags=self.graph.tags,
+            input_assets=self.graph.input_assets,
+        )
+
+        return self._copy(
+            resource_defs=new_resource_defs,
+            graph_def=new_graph_def,
+        )
+
     @property
     def op_selection(self) -> Optional[AbstractSet[str]]:
         return set(self.op_selection_data.op_selection) if self.op_selection_data else None

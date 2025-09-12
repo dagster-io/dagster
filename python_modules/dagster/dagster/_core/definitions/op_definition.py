@@ -408,6 +408,80 @@ class OpDefinition(NodeDefinition, IHasInternalInit):
             config_schema=config_schema,
         )
 
+    @public
+    def rename_resources(self, resource_mapping: Mapping[str, str]) -> "OpDefinition":
+        """Create a copy of this OpDefinition with remapped resource keys.
+
+        Args:
+            resource_mapping: A mapping from old resource key to new resource key.
+
+        Returns:
+            A new OpDefinition with remapped resource keys.
+        """
+        from dagster._core.definitions.resource_aliasing import (
+            remap_resource_keys_in_set,
+            validate_resource_mapping,
+        )
+
+        resource_mapping = check.mapping_param(resource_mapping, "resource_mapping", key_type=str, value_type=str)
+        if not resource_mapping:
+            return self
+
+        # Validate the mapping
+        all_resource_keys = self.required_resource_keys.union(
+            {
+                input_def.input_manager_key
+                for input_def in self.input_defs
+                if input_def.input_manager_key
+            },
+            {output_def.io_manager_key for output_def in self.output_defs},
+        )
+        validate_resource_mapping(resource_mapping, all_resource_keys)
+
+        # Remap required_resource_keys
+        new_required_resource_keys = remap_resource_keys_in_set(
+            self.required_resource_keys, resource_mapping
+        )
+
+        # Remap input manager keys in input definitions
+        new_ins = {}
+        for input_def in self.input_defs:
+            if input_def.input_manager_key and input_def.input_manager_key in resource_mapping:
+                # Create new In with updated input_manager_key
+                old_in = In.from_definition(input_def)
+                new_ins[input_def.name] = old_in._replace(
+                    input_manager_key=resource_mapping[input_def.input_manager_key]
+                )
+            else:
+                new_ins[input_def.name] = In.from_definition(input_def)
+
+        # Remap output manager keys in output definitions
+        new_outs = {}
+        for output_def in self.output_defs:
+            if output_def.io_manager_key in resource_mapping:
+                # Create new Out with updated io_manager_key
+                old_out = Out.from_definition(output_def)
+                new_outs[output_def.name] = old_out._replace(
+                    io_manager_key=resource_mapping[output_def.io_manager_key]
+                )
+            else:
+                new_outs[output_def.name] = Out.from_definition(output_def)
+
+        return OpDefinition.dagster_internal_init(
+            name=self.name,
+            ins=new_ins,
+            outs=new_outs,
+            compute_fn=self.compute_fn,
+            config_schema=self.config_schema,
+            description=self.description,
+            tags=self.tags,
+            required_resource_keys=new_required_resource_keys,
+            code_version=self._version,
+            retry_policy=self.retry_policy,
+            version=None,  # code_version replaces version
+            pool=self.pool,
+        )
+
     def get_resource_requirements(
         self,
         handle: Optional[NodeHandle],
