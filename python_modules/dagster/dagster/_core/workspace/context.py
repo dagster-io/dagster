@@ -16,7 +16,9 @@ import dagster._check as check
 from dagster._config.snap import ConfigTypeSnap
 from dagster._core.definitions.asset_key import AssetKey
 from dagster._core.definitions.assets.graph.remote_asset_graph import (
+    RemoteAssetCheckNode,
     RemoteAssetGraph,
+    RemoteAssetNode,
     RemoteRepositoryAssetNode,
 )
 from dagster._core.definitions.data_time import CachingDataTimeResolver
@@ -90,6 +92,14 @@ if TYPE_CHECKING:
 T = TypeVar("T")
 
 WEBSERVER_GRPC_SERVER_HEARTBEAT_TTL = 45
+
+RemoteDefinition = Union[
+    RemoteAssetNode,
+    RemoteAssetCheckNode,
+    RemoteJob,
+    RemoteSchedule,
+    RemoteSensor,
+]
 
 
 class BaseWorkspaceRequestContext(LoadingContext):
@@ -189,6 +199,18 @@ class BaseWorkspaceRequestContext(LoadingContext):
     @abstractmethod
     def was_permission_checked(self, permission: str) -> bool: ...
 
+    def has_permission_for_definition(
+        self, permission: str, remote_definition: RemoteDefinition
+    ) -> bool:
+        if self.has_permission(permission):
+            return True
+        location_name = get_location_name_for_definition(remote_definition)
+        if self.has_permission_for_location(permission, location_name):
+            return True
+        return self.is_viewer_definition_owner(remote_definition) and self.has_owner_permission(
+            permission
+        )
+
     @property
     @abstractmethod
     def records_for_run_default_limit(self) -> Optional[int]: ...
@@ -196,6 +218,12 @@ class BaseWorkspaceRequestContext(LoadingContext):
     @property
     def show_instance_config(self) -> bool:
         return True
+
+    def is_viewer_definition_owner(self, remote_definition: RemoteDefinition) -> bool:
+        return False
+
+    def has_owner_permission(self, permission: str) -> bool:
+        return False
 
     def get_viewer_tags(self) -> dict[str, str]:
         return {}
@@ -1050,3 +1078,16 @@ class WorkspaceProcessContext(IWorkspaceProcessContext):
             read_only=self.read_only,
             grpc_server_registry=self._grpc_server_registry,
         )
+
+
+def get_location_name_for_definition(remote_definition: RemoteDefinition) -> str:
+    if isinstance(remote_definition, RemoteAssetNode):
+        return (
+            remote_definition.resolve_to_singular_repo_scoped_node().repository_handle.location_name
+        )
+    elif isinstance(
+        remote_definition, (RemoteJob, RemoteSchedule, RemoteSensor, RemoteAssetCheckNode)
+    ):
+        return remote_definition.handle.location_name
+    else:
+        check.failed(f"Unexpected remote definition type {type(remote_definition)}")
