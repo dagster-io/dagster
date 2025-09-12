@@ -580,6 +580,62 @@ class ScheduleDefinition(IHasInternalInit):
             target=None,
         )
 
+    def rename_resources(self, resource_mapping: Mapping[str, str]) -> "ScheduleDefinition":
+        """Create a copy of this schedule with resource keys renamed according to the provided mapping.
+
+        Args:
+            resource_mapping: A mapping from old resource key to new resource key. Only resource 
+                keys that are being renamed need to be included in the mapping.
+
+        Returns:
+            A new ScheduleDefinition with resources renamed.
+
+        Example:
+            .. code-block:: python
+
+                schedule_with_renamed_resources = my_schedule.rename_resources({"old_db": "new_db"})
+        """
+        from dagster._core.definitions.resource_aliasing import (
+            remap_resource_keys_in_set,
+            validate_resource_mapping,
+        )
+
+        # Validate the resource mapping
+        all_resource_keys = self.required_resource_keys
+        validate_resource_mapping(resource_mapping, all_resource_keys)
+
+        # Remap required_resource_keys
+        new_required_resource_keys = remap_resource_keys_in_set(
+            self._raw_required_resource_keys or set(), resource_mapping
+        )
+
+        # Remap the target (job or assets) if it has rename_resources
+        new_job = None
+        if self._target.has_job_def and hasattr(self.job, 'rename_resources'):
+            new_job = self.job.rename_resources(resource_mapping)
+        elif self._target.has_job_def:
+            new_job = self.job
+
+        return ScheduleDefinition.dagster_internal_init(
+            name=self.name,
+            cron_schedule=self._cron_schedule,
+            job_name=self.job_name if not new_job else None,
+            execution_timezone=self.execution_timezone,
+            execution_fn=self._execution_fn,
+            description=self.description,
+            job=new_job,
+            default_status=self.default_status,
+            environment_vars=self._environment_vars,
+            required_resource_keys=new_required_resource_keys,
+            run_config=None,
+            run_config_fn=None,
+            tags=self.tags,
+            tags_fn=None,
+            metadata=self.metadata,
+            should_execute=None,
+            target=None,
+        )
+
     def __init__(
         self,
         name: Optional[str] = None,
