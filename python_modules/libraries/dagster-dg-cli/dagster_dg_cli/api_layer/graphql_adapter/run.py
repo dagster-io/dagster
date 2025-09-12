@@ -6,7 +6,7 @@ from typing import TYPE_CHECKING, Any, Optional
 from dagster_dg_cli.utils.plus.gql_client import IGraphQLClient
 
 if TYPE_CHECKING:
-    from dagster_dg_cli.api_layer.schemas.run import RunList
+    from dagster_dg_cli.api_layer.schemas.run import Run, RunList
 
 # GraphQL queries
 LIST_RUNS_QUERY = """
@@ -28,6 +28,31 @@ query ListRuns($cursor: String, $limit: Int, $filter: RunsFilter) {
             count
         }
         ... on InvalidPipelineRunsFilterError {
+            message
+        }
+        ... on PythonError {
+            message
+        }
+    }
+}
+"""
+
+GET_RUN_QUERY = """
+query GetRun($runId: ID!) {
+    runOrError(runId: $runId) {
+        ... on Run {
+            id
+            runId
+            status
+            jobName
+            pipelineName
+            startTime
+            endTime
+            updateTime
+            creationTime
+            canTerminate
+        }
+        ... on RunNotFoundError {
             message
         }
         ... on PythonError {
@@ -144,3 +169,78 @@ def list_runs_via_graphql(
 
     result = client.execute(LIST_RUNS_QUERY, variables)
     return process_runs_response(result)
+
+
+def process_run_response(graphql_response: dict[str, Any]) -> "Run":
+    """Process GraphQL response into a single Run.
+
+    This is a pure function that can be easily tested without mocking GraphQL clients.
+
+    Args:
+        graphql_response: Raw GraphQL response containing "runOrError"
+
+    Returns:
+        Run: Processed run data
+
+    Raises:
+        Exception: If GraphQL response contains errors or run not found
+    """
+    # Import pydantic models only when needed
+    from dagster_dg_cli.api_layer.schemas.run import Run, RunStatus
+
+    run_or_error = graphql_response.get("runOrError")
+
+    if not run_or_error:
+        raise Exception("Invalid GraphQL response: missing runOrError")
+
+    # Check for GraphQL errors
+    if "message" in run_or_error:
+        raise Exception(f"GraphQL error: {run_or_error['message']}")
+
+    r = run_or_error
+
+    # Convert timestamp fields from GraphQL (float seconds since epoch) to datetime
+    start_time = None
+    if r.get("startTime"):
+        start_time = datetime.fromtimestamp(r["startTime"])
+
+    end_time = None
+    if r.get("endTime"):
+        end_time = datetime.fromtimestamp(r["endTime"])
+
+    update_time = None
+    if r.get("updateTime"):
+        update_time = datetime.fromtimestamp(r["updateTime"])
+
+    creation_time = datetime.fromtimestamp(r["creationTime"])
+
+    return Run(
+        id=r["id"],
+        run_id=r["runId"],
+        status=RunStatus[r["status"]],
+        job_name=r["jobName"],
+        pipeline_name=r.get("pipelineName"),
+        start_time=start_time,
+        end_time=end_time,
+        update_time=update_time,
+        creation_time=creation_time,
+        can_terminate=r.get("canTerminate", False),
+    )
+
+
+def get_run_via_graphql(client: IGraphQLClient, run_id: str) -> "Run":
+    """Fetch a single run using GraphQL.
+
+    Args:
+        client: GraphQL client instance
+        run_id: The run ID to fetch
+
+    Returns:
+        Run: The requested run
+
+    Raises:
+        Exception: If run not found or GraphQL error occurs
+    """
+    variables = {"runId": run_id}
+    result = client.execute(GET_RUN_QUERY, variables)
+    return process_run_response(result)
