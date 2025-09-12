@@ -36,15 +36,20 @@ export function VirtualizedItemListForDialog<A>({
           // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
           const assetKey = items[index]!;
           return (
-            <Row $height={size} $start={start} key={key} data-key={key}>
-              <div ref={rowVirtualizer.measureElement}>
-                <Box
-                  flex={{direction: 'row', alignItems: 'center'}}
-                  border={itemBorders && index < items.length - 1 ? 'bottom' : null}
-                >
-                  {renderItem(assetKey)}
-                </Box>
-              </div>
+            <Row
+              $height={size}
+              $start={start}
+              key={key}
+              ref={rowVirtualizer.measureElement}
+              data-key={key}
+            >
+              <Box
+                style={{height: '100%'}}
+                flex={{direction: 'row', alignItems: 'center'}}
+                border={itemBorders && index < items.length - 1 ? 'bottom' : null}
+              >
+                {renderItem(assetKey)}
+              </Box>
             </Row>
           );
         })}
