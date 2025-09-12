@@ -365,6 +365,7 @@ class BaseAssetGraph(ABC, Generic[T_AssetNode]):
     def unpartitioned_asset_keys(self) -> AbstractSet[AssetKey]:
         return {node.key for node in self.asset_nodes if not node.is_partitioned}
 
+    @cached_method
     def asset_keys_for_group(self, group_name: str) -> AbstractSet[AssetKey]:
         return {node.key for node in self.asset_nodes if node.group_name == group_name}
 
