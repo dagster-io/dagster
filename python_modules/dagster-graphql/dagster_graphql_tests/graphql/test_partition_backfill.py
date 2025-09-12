@@ -619,10 +619,12 @@ class TestDaemonPartitionBackfill(ExecutingGraphQLContextTestMatrix):
         assert result.data["partitionBackfillOrError"]["__typename"] == "PartitionBackfill"
         assert result.data["partitionBackfillOrError"]["status"] == "CANCELING"
 
+        start = time.time()
         while (
             graphql_context.instance.get_backfill(backfill_id).status != BulkActionStatus.CANCELED
         ):
-            _execute_job_backfill_iteration_with_side_effects(graphql_context, backfill_id)
+            _execute_backfill_iteration_with_side_effects(graphql_context, backfill_id)
+            assert time.time() - start < 60, "timed out waiting for backfill to cancel"
 
         runs = graphql_context.instance.get_runs(RunsFilter(tags={BACKFILL_ID_TAG: backfill_id}))
         assert len(runs) == 1
@@ -806,8 +808,10 @@ class TestDaemonPartitionBackfill(ExecutingGraphQLContextTestMatrix):
         assert result.data["partitionBackfillOrError"]["__typename"] == "PartitionBackfill"
         assert result.data["partitionBackfillOrError"]["status"] == "FAILING"
 
+        start = time.time()
         while graphql_context.instance.get_backfill(backfill_id).status != BulkActionStatus.FAILED:
-            _execute_job_backfill_iteration_with_side_effects(graphql_context, backfill_id)
+            _execute_backfill_iteration_with_side_effects(graphql_context, backfill_id)
+            assert time.time() - start < 60, "timed out waiting for backfill to fail"
 
         runs = graphql_context.instance.get_runs(RunsFilter(tags={BACKFILL_ID_TAG: backfill_id}))
         assert len(runs) == 1
@@ -887,11 +891,13 @@ class TestDaemonPartitionBackfill(ExecutingGraphQLContextTestMatrix):
             assert result.data
             assert result.data["cancelPartitionBackfill"]["__typename"] == "CancelBackfillSuccess"
 
+            start = time.time()
             while (
                 graphql_context.instance.get_backfill(backfill_id).status
                 != BulkActionStatus.CANCELED
             ):
                 _execute_backfill_iteration_with_side_effects(graphql_context, backfill_id)
+                assert time.time() - start < 60, "timed out waiting for backfill to cancel"
 
             runs = graphql_context.instance.get_runs(
                 RunsFilter(tags={BACKFILL_ID_TAG: backfill_id})
@@ -1063,10 +1069,12 @@ class TestDaemonPartitionBackfill(ExecutingGraphQLContextTestMatrix):
             )
             graphql_context.instance.update_backfill(updated_backfill)
 
+            start = time.time()
             while (
                 graphql_context.instance.get_backfill(backfill_id).status != BulkActionStatus.FAILED
             ):
                 _execute_backfill_iteration_with_side_effects(graphql_context, backfill_id)
+                assert time.time() - start < 60, "timed out waiting for backfill to fail"
 
             runs = graphql_context.instance.get_runs(
                 RunsFilter(tags={BACKFILL_ID_TAG: backfill_id})
