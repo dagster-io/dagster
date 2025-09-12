@@ -3587,7 +3587,7 @@
       "destination": "/guides/observe/insights"
     },
     {
-      "source": "/guides/monitor/insights/:path/*",
+      "source": "/guides/monitor/insights/:path*",
       "destination": "/guides/observe/insights/:path*"
     },
     {
