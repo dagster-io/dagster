@@ -5,7 +5,7 @@ from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from dagster_dg_cli.api_layer.schemas.asset import DgApiAsset, DgApiAssetList
-    from dagster_dg_cli.api_layer.schemas.deployment import DeploymentList
+    from dagster_dg_cli.api_layer.schemas.deployment import Deployment, DeploymentList
 
 
 def format_deployments(deployments: "DeploymentList", as_json: bool) -> str:
@@ -25,6 +25,20 @@ def format_deployments(deployments: "DeploymentList", as_json: bool) -> str:
         )
 
     return "\n".join(lines).rstrip()  # Remove trailing empty line
+
+
+def format_deployment(deployment: "Deployment", as_json: bool) -> str:
+    """Format single deployment for output."""
+    if as_json:
+        return deployment.model_dump_json(indent=2)
+
+    lines = [
+        f"Name: {deployment.name}",
+        f"ID: {deployment.id}",
+        f"Type: {deployment.type.value}",
+    ]
+
+    return "\n".join(lines)
 
 
 def format_assets(assets: "DgApiAssetList", as_json: bool) -> str:
