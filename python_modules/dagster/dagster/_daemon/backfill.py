@@ -126,7 +126,7 @@ def execute_backfill_iteration(
     )
 
     if not in_progress_backfills and not canceling_backfills and not failing_backfills:
-        logger.debug("No backfill jobs in progress or canceling.")
+        logger.debug("No backfill jobs in progress, canceling, or failing.")
         yield None
         return
 
@@ -232,7 +232,6 @@ def execute_backfill_iteration_with_instigation_logger(
                     backfill.with_status(BulkActionStatus.FAILING)
                     .with_error(error_info)
                     .with_failure_count(backfill.failure_count + 1)
-                    .with_end_timestamp(get_current_timestamp())
                 )
             yield error_info
 
