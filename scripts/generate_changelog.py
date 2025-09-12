@@ -273,10 +273,270 @@ def _generate_changelog_text(new_version: str, prev_version: str) -> str:
     return header + "".join(sections)
 
 
+def _print_commit_info(commit: ParsedCommit, index: int, total: int) -> None:
+    """Display commit information for interactive review."""
+    print(f"\n{'=' * 80}")
+    print(f"COMMIT {index}/{total}")
+    print(f"{'=' * 80}")
+    print(f"PR Link: {commit.issue_link}")
+    print(f"Author: {commit.author} ({commit.author_email})")
+    print(f"Commit Title: {commit.raw_title}")
+    print(f"Current Category: {commit.changelog_category}")
+    print(f"Current Entry: {commit.raw_changelog_entry or '<UNDOCUMENTED>'}")
+
+    # Show GitHub username info
+    github_username = _extract_github_username(commit)
+    if github_username:
+        print(f"GitHub Profile: @{github_username}")
+    else:
+        print("GitHub Profile: Could not parse")
+    print("-" * 80)
+
+
+def _get_user_action() -> str:
+    """Get user's action choice for current commit."""
+    while True:
+        print("\nWhat would you like to do with this commit?")
+        print("1) Accept as-is")
+        print("2) Edit changelog entry")
+        print("3) Ignore this commit (skip entirely)")
+        print("q) Quit and save progress")
+
+        choice = input("Enter choice (1/2/3/q): ").strip().lower()
+
+        if choice in ["1", "accept", "a"]:
+            return "accept"
+        elif choice in ["2", "edit", "e"]:
+            return "edit"
+        elif choice in ["3", "ignore", "i"]:
+            return "ignore"
+        elif choice in ["q", "quit"]:
+            return "quit"
+        else:
+            print("Invalid choice. Please enter 1, 2, 3, or q.")
+
+
+def _get_edited_entry() -> str:
+    """Get user's edited changelog entry."""
+    print("\nEnter new changelog entry (or press Enter to keep current):")
+    entry = input("> ").strip()
+    return entry
+
+
+def _get_category_choice() -> str:
+    """Get user's category choice."""
+    categories = [
+        "New",
+        "Bugfixes",
+        "Documentation",
+        "Dagster Plus",
+        "Breaking Changes",
+        "Deprecations",
+    ]
+
+    while True:
+        print("\nSelect category:")
+        for i, cat in enumerate(categories, 1):
+            print(f"{i}) {cat}")
+
+        choice = input("Enter number: ").strip()
+
+        try:
+            idx = int(choice) - 1
+            if 0 <= idx < len(categories):
+                return categories[idx]
+        except ValueError:
+            pass
+
+        print("Invalid choice. Please enter a number from the list.")
+
+
+def _get_thanks_decision(commit: ParsedCommit) -> bool:
+    """Get user's decision on whether to thank contributor."""
+    github_username = _extract_github_username(commit)
+    is_external = not any(
+        domain in commit.author_email for domain in ["elementl.com", "dagsterlabs.com"]
+    )
+
+    # Show suggestion based on detection
+    if github_username and is_external:
+        default_msg = f" (suggested: YES - external contributor @{github_username})"
+        default_choice = "y"
+    else:
+        default_msg = " (suggested: NO - appears to be internal)"
+        default_choice = "n"
+
+    while True:
+        choice = input(f"Add thanks to contributor?{default_msg} [y/N]: ").strip().lower()
+
+        if not choice:  # Empty input, use default
+            choice = default_choice
+
+        if choice in ["y", "yes"]:
+            return True
+        elif choice in ["n", "no"]:
+            return False
+        else:
+            print("Please enter 'y' or 'n'")
+
+
+def _interactive_changelog_generation(new_version: str, prev_version: str) -> str:
+    """Interactive changelog generation with user review of each commit."""
+    print(f"🚀 Interactive Changelog Generation for {new_version}")
+    print("You'll review each commit and decide how to handle it.")
+    print("Press Ctrl+C at any time to quit.\n")
+
+    # Collect all commits first
+    all_commits = []
+    documented_internal = []
+
+    internal_repo_name = str(INTERNAL_REPO.git_dir).split("/")[-2]
+
+    for commit in _get_commits([OSS_REPO, INTERNAL_REPO], new_version, prev_version):
+        if commit.ignore:
+            continue
+        elif commit.repo_name == internal_repo_name and commit.documented:
+            documented_internal.append(commit)
+        else:
+            # Convert undocumented to <UNDOCUMENTED> entries for review
+            if not commit.documented:
+                commit = ParsedCommit(
+                    issue_link=commit.issue_link,
+                    changelog_category="Invalid",
+                    raw_changelog_entry="<UNDOCUMENTED>",
+                    raw_title=commit.raw_title,
+                    author=commit.author,
+                    author_email=commit.author_email,
+                    repo_name=commit.repo_name,
+                    ignore=False,
+                )
+            all_commits.append(commit)
+
+    print(f"Found {len(all_commits)} commits to review.")
+    if documented_internal:
+        print(
+            f"Found {len(documented_internal)} internal repo commits (will be added automatically)."
+        )
+
+    # Interactive review
+    processed_commits = []
+
+    try:
+        for i, commit in enumerate(all_commits, 1):
+            _print_commit_info(commit, i, len(all_commits))
+
+            # Get user action
+            action = _get_user_action()
+
+            if action == "quit":
+                print("\n⚠️  Quitting early. Generating changelog with processed commits so far...")
+                break
+            elif action == "ignore":
+                print("✅ Skipping this commit")
+                continue
+            elif action == "edit":
+                new_entry = _get_edited_entry()
+                if new_entry:  # Only update if user provided something
+                    commit = ParsedCommit(
+                        issue_link=commit.issue_link,
+                        changelog_category=commit.changelog_category,
+                        raw_changelog_entry=new_entry,
+                        raw_title=commit.raw_title,
+                        author=commit.author,
+                        author_email=commit.author_email,
+                        repo_name=commit.repo_name,
+                        ignore=False,
+                    )
+
+            # Get category (unless it's already properly categorized)
+            if commit.changelog_category == "Invalid":
+                category = _get_category_choice()
+                commit = ParsedCommit(
+                    issue_link=commit.issue_link,
+                    changelog_category=category,
+                    raw_changelog_entry=commit.raw_changelog_entry,
+                    raw_title=commit.raw_title,
+                    author=commit.author,
+                    author_email=commit.author_email,
+                    repo_name=commit.repo_name,
+                    ignore=False,
+                )
+
+            # Get thanks decision
+            should_thank = _get_thanks_decision(commit)
+
+            # Store the thanks decision in a way we can use later
+            # We'll modify the commit to include this info
+            commit = ParsedCommit(
+                issue_link=commit.issue_link,
+                changelog_category=commit.changelog_category,
+                raw_changelog_entry=commit.raw_changelog_entry,
+                raw_title=commit.raw_title,
+                author=commit.author,
+                author_email=commit.author_email,
+                repo_name=commit.repo_name,
+                ignore=not should_thank,  # Repurpose ignore field to track thanks decision
+            )
+
+            processed_commits.append(commit)
+            print("✅ Commit processed!")
+
+    except KeyboardInterrupt:
+        print("\n\n⚠️  Interrupted by user. Generating changelog with processed commits so far...")
+
+    # Generate final changelog
+    header = f"# Changelog\n\n## {new_version} (core) / {_get_libraries_version(new_version)} (libraries)"
+
+    sections = []
+    if processed_commits:
+        sections.append(_get_documented_section_with_thanks(processed_commits))
+
+    if documented_internal:
+        sections.append(
+            f"\n\n## Internal Repository Changes\n{_get_documented_section(documented_internal)}"
+        )
+
+    return header + "".join(sections)
+
+
+def _get_documented_section_with_thanks(documented: Sequence[ParsedCommit]) -> str:
+    """Modified documented section that respects user's thanks decisions."""
+    grouped_commits: Mapping[str, list[ParsedCommit]] = defaultdict(list)
+    for commit in documented:
+        grouped_commits[commit.changelog_category].append(commit)
+
+    documented_text = ""
+    for category in CATEGORIES.values():
+        category_commits = grouped_commits.get(category, [])
+        if not category_commits:
+            continue  # Skip empty categories
+
+        documented_text += f"\n\n### {category}\n"
+        for commit in category_commits:
+            entry = commit.raw_changelog_entry or commit.raw_title
+
+            # Put PR link on separate bullet point for easier deletion
+            documented_text += f"\n- {entry}\n  - {commit.issue_link}"
+
+            # Add GitHub profile link based on user's thanks decision
+            if not commit.ignore:  # User chose to thank
+                github_username = _extract_github_username(commit)
+                if github_username:
+                    documented_text += (
+                        f"\n  - [@{github_username}](https://github.com/{github_username})"
+                    )
+                else:
+                    documented_text += f"\n  - Could not parse user (author: {commit.author}, email: {commit.author_email})"
+    return documented_text
+
+
 @click.command()
 @click.argument("new_version", type=str, required=True)
 @click.argument("prev_version", type=str, required=False)
-def generate_changelog(new_version: str, prev_version: Optional[str] = None) -> None:
+@click.option("--interactive", "-i", is_flag=True, help="Interactive mode to review each commit")
+def generate_changelog(
+    new_version: str, prev_version: Optional[str] = None, interactive: bool = False
+) -> None:
     if prev_version is None:
         prev_version = _get_previous_version(new_version)
 
@@ -290,7 +550,12 @@ def generate_changelog(new_version: str, prev_version: Optional[str] = None) -> 
         repo.git.pull()
         repo.git.checkout("master")
 
-    new_text = _generate_changelog_text(new_version, prev_version)
+    # Generate changelog based on mode
+    if interactive:
+        new_text = _interactive_changelog_generation(new_version, prev_version)
+    else:
+        new_text = _generate_changelog_text(new_version, prev_version)
+
     with open(CHANGELOG_PATH) as f:
         current_changelog = f.read()
 
@@ -298,6 +563,12 @@ def generate_changelog(new_version: str, prev_version: Optional[str] = None) -> 
 
     with open(CHANGELOG_PATH, "w") as f:
         f.write(new_changelog)
+
+    if interactive:
+        print("\n🎉 Interactive changelog generation complete!")
+        print(f"📝 Changelog updated in {CHANGELOG_PATH}")
+    else:
+        print(f"📝 Automatic changelog generated in {CHANGELOG_PATH}")
 
 
 if __name__ == "__main__":
