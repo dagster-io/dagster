@@ -1586,13 +1586,11 @@ def execute_asset_backfill_iteration_consume_generator(
             backfill_id,
             None,
         )
-        result = AssetBackfillEvaluator(
-            previous_data=previous_data, logger=logging.getLogger("fake_logger")
-        ).evaluate()
+        logger = logging.getLogger("fake_logger")
+        logger.setLevel(logging.DEBUG)
+        result = AssetBackfillEvaluator(previous_data=previous_data, logger=logger).evaluate()
         assert counter.counts().get("DagsterInstance.get_dynamic_partitions", 0) <= 1
         return result
-
-    assert False
 
 
 def run_backfill_to_completion(
@@ -2861,3 +2859,120 @@ def test_asset_backfill_with_asset_check():
     run_request = result.run_requests[0]
     assert run_request.asset_selection == [foo.key]
     assert run_request.asset_check_keys == [foo_check.check_key]
+
+
+def test_non_subsettable_multi_asset_with_complex_internal_deps_backfill(caplog) -> None:
+    """Test backfill behavior for non-subsettable multi assets with daily partitions and hourly upstream dependencies."""
+    # Create hourly upstream assets with different start dates
+    daily_partitions = dg.DailyPartitionsDefinition("2024-01-01")
+    daily_partitions_alt = dg.DailyPartitionsDefinition("2024-01-02")
+
+    @dg.asset(partitions_def=daily_partitions)
+    def upstream_a():
+        pass
+
+    @dg.asset(partitions_def=daily_partitions)
+    def upstream_d():
+        pass
+
+    @dg.asset(partitions_def=daily_partitions_alt, deps=[upstream_d])
+    def upstream_d_alt():
+        pass
+
+    @dg.multi_asset(
+        specs=[
+            dg.AssetSpec(
+                "multi_a",
+                partitions_def=daily_partitions,
+                deps=["upstream_a"],
+            ),
+            dg.AssetSpec(
+                "multi_b",
+                partitions_def=daily_partitions,
+                deps=["multi_a"],
+            ),
+            dg.AssetSpec(
+                "multi_c",
+                partitions_def=daily_partitions,
+                deps=["multi_a", "multi_b"],
+            ),
+            # multi_d depends on upstream_d_alt, which cannot be grouped in the same run
+            # as upstream_a. this means that the ENTIRE multi asset must wait for upstream_a,
+            # upstream_d, and upstream_d_alt to be materialized before proceeding.
+            dg.AssetSpec(
+                "multi_d",
+                partitions_def=daily_partitions,
+                deps=["upstream_d", "upstream_d_alt"],
+            ),
+        ],
+        can_subset=False,
+    )
+    def complex_multi_asset():
+        pass
+
+    instance = DagsterInstance.ephemeral()
+    repo_dict = {"repo": [complex_multi_asset, upstream_a, upstream_d, upstream_d_alt]}
+    asset_graph = get_asset_graph(repo_dict)
+    current_time = create_datetime(2024, 1, 10, 0, 0, 0)
+
+    # Test backfill with specific daily partitions
+    with partition_loading_context(current_time, instance):
+        asset_backfill_data = AssetBackfillData.from_asset_partitions(
+            asset_graph=asset_graph,
+            partition_names=["2024-01-05"],  # one day
+            asset_selection=[
+                dg.AssetKey("upstream_a"),
+                dg.AssetKey("upstream_d"),
+                dg.AssetKey("upstream_d_alt"),
+                dg.AssetKey("multi_a"),
+                dg.AssetKey("multi_b"),
+                dg.AssetKey("multi_c"),
+                dg.AssetKey("multi_d"),
+            ],
+            dynamic_partitions_store=MagicMock(),
+            all_partitions=False,
+            backfill_start_timestamp=current_time.timestamp(),
+        )
+
+    # Execute backfill iteration
+    new_backfill_data = _single_backfill_iteration(
+        "fake_id", asset_backfill_data, asset_graph, instance, repo_dict
+    )
+
+    # Verify that all assets are included in the requested subset
+    # since it's non-subsettable, all assets must be backfilled together
+    new_requested_subset = new_backfill_data.requested_subset
+
+    assert set(new_requested_subset.iterate_asset_partitions()) == {
+        AssetKeyPartitionKey(dg.AssetKey("upstream_a"), "2024-01-05"),
+        AssetKeyPartitionKey(dg.AssetKey("upstream_d"), "2024-01-05"),
+    }
+
+    # now run another iteration, should just be upstream_d_alt
+    new_backfill_data = _single_backfill_iteration(
+        "fake_id", new_backfill_data, asset_graph, instance, repo_dict
+    )
+
+    assert set(new_backfill_data.requested_subset.iterate_asset_partitions()) == {
+        # previous
+        AssetKeyPartitionKey(dg.AssetKey("upstream_a"), "2024-01-05"),
+        AssetKeyPartitionKey(dg.AssetKey("upstream_d"), "2024-01-05"),
+        # new
+        AssetKeyPartitionKey(dg.AssetKey("upstream_d_alt"), "2024-01-05"),
+    }
+
+    # final iteration, should run all multi assets
+    new_backfill_data = _single_backfill_iteration(
+        "fake_id", new_backfill_data, asset_graph, instance, repo_dict
+    )
+    assert set(new_backfill_data.requested_subset.iterate_asset_partitions()) == {
+        # previous
+        AssetKeyPartitionKey(dg.AssetKey("upstream_a"), "2024-01-05"),
+        AssetKeyPartitionKey(dg.AssetKey("upstream_d"), "2024-01-05"),
+        AssetKeyPartitionKey(dg.AssetKey("upstream_d_alt"), "2024-01-05"),
+        # new
+        AssetKeyPartitionKey(dg.AssetKey("multi_a"), "2024-01-05"),
+        AssetKeyPartitionKey(dg.AssetKey("multi_b"), "2024-01-05"),
+        AssetKeyPartitionKey(dg.AssetKey("multi_c"), "2024-01-05"),
+        AssetKeyPartitionKey(dg.AssetKey("multi_d"), "2024-01-05"),
+    }

@@ -1,9 +1,10 @@
 import json
 from collections.abc import Mapping, Sequence
 from datetime import datetime
+from functools import cached_property
 from typing import Any, NamedTuple, Optional, Union, cast
 
-from dagster_shared.record import record
+from dagster_shared.record import record, replace
 
 import dagster._check as check
 from dagster._core.asset_graph_view.asset_graph_subset_view import AssetGraphSubsetView
@@ -50,7 +51,8 @@ class AssetBackfillComputationData:
     failed_and_downstream_subset: AssetGraphSubsetView[AssetKey]
     run_config: Optional[Mapping[str, Any]]
 
-    def get_candidate_subset(self) -> AssetGraphSubsetView[AssetKey]:
+    @cached_property
+    def candidate_subset(self) -> AssetGraphSubsetView[AssetKey]:
         """We consider executing any partition in the target subset that has not already
         been requested, or is downstream of a partition that has failed.
         """
@@ -68,6 +70,13 @@ class AssetBackfillComputationData:
             backfill_start_time=TimestampWithTimezone(self.backfill_start_timestamp, "UTC"),
             # legacy, no longer used
             requested_runs_for_target_roots=True,
+        )
+
+    def with_to_request_subset(
+        self, to_request_subset: AssetGraphSubsetView[AssetKey]
+    ) -> "AssetBackfillComputationData":
+        return replace(
+            self, requested_subset=self.requested_subset.compute_union(to_request_subset)
         )
 
 
