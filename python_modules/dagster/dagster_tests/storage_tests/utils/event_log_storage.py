@@ -879,8 +879,6 @@ class TestEventLogStorage:
         assert d_stats.end_time
         assert d_stats.start_time
         assert d_stats.end_time - d_stats.start_time == 150
-        assert len(d_stats.materialization_events) == 3
-        assert len(d_stats.expectation_results) == 2
         assert len(c_stats.attempts_list) == 1
 
     def test_secondary_index(self, storage: EventLogStorage):

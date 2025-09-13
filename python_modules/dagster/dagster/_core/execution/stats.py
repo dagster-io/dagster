@@ -1,16 +1,11 @@
 from collections import defaultdict
 from collections.abc import Iterable, Mapping, Sequence
 from enum import Enum
-from typing import Any, Optional, cast
+from typing import Any, Optional
 
 import dagster._check as check
 from dagster._core.definitions import ExpectationResult
-from dagster._core.events import (
-    MARKER_EVENTS,
-    PIPELINE_EVENTS,
-    DagsterEventType,
-    StepExpectationResultData,
-)
+from dagster._core.events import MARKER_EVENTS, PIPELINE_EVENTS, DagsterEventType
 from dagster._core.events.log import EventLogEntry
 from dagster._core.storage.dagster_run import DagsterRunStatsSnapshot
 from dagster._record import IHaveNew, record, record_custom
@@ -20,8 +15,6 @@ RUN_STATS_EVENT_TYPES = {
     *PIPELINE_EVENTS,
     DagsterEventType.STEP_FAILURE,
     DagsterEventType.STEP_SUCCESS,
-    DagsterEventType.ASSET_MATERIALIZATION,
-    DagsterEventType.STEP_EXPECTATION_RESULT,
 }
 
 STEP_STATS_EVENT_TYPES = {
@@ -30,8 +23,6 @@ STEP_STATS_EVENT_TYPES = {
     DagsterEventType.STEP_RESTARTED,
     DagsterEventType.STEP_SUCCESS,
     DagsterEventType.STEP_SKIPPED,
-    DagsterEventType.ASSET_MATERIALIZATION,
-    DagsterEventType.STEP_EXPECTATION_RESULT,
     DagsterEventType.STEP_UP_FOR_RETRY,
     DagsterEventType.STEP_RESTARTED,
     *MARKER_EVENTS,
@@ -55,8 +46,6 @@ def build_run_stats_from_events(
     if previous_stats:
         steps_succeeded = previous_stats.steps_succeeded
         steps_failed = previous_stats.steps_failed
-        materializations = previous_stats.materializations
-        expectations = previous_stats.expectations
         enqueued_time = previous_stats.enqueued_time
         launch_time = previous_stats.launch_time
         start_time = previous_stats.start_time
@@ -64,8 +53,6 @@ def build_run_stats_from_events(
     else:
         steps_succeeded = 0
         steps_failed = 0
-        materializations = 0
-        expectations = 0
         enqueued_time = None
         launch_time = None
         start_time = None
@@ -86,10 +73,6 @@ def build_run_stats_from_events(
             steps_failed += 1
         if dagster_event.event_type == DagsterEventType.STEP_SUCCESS:
             steps_succeeded += 1
-        if dagster_event.event_type == DagsterEventType.ASSET_MATERIALIZATION:
-            materializations += 1
-        if dagster_event.event_type == DagsterEventType.STEP_EXPECTATION_RESULT:
-            expectations += 1
         if (
             dagster_event.event_type == DagsterEventType.PIPELINE_SUCCESS
             or dagster_event.event_type == DagsterEventType.PIPELINE_FAILURE
@@ -101,8 +84,6 @@ def build_run_stats_from_events(
         run_id=run_id,
         steps_succeeded=steps_succeeded,
         steps_failed=steps_failed,
-        materializations=materializations,
-        expectations=expectations,
         enqueued_time=enqueued_time,
         launch_time=launch_time,
         start_time=start_time,
@@ -147,12 +128,13 @@ class RunStepKeyStatsSnapshot(IHaveNew):
     status: Optional[StepEventStatus]
     start_time: Optional[float]
     end_time: Optional[float]
-    materialization_events: Sequence[EventLogEntry]
-    expectation_results: Sequence[ExpectationResult]
     attempts: Optional[int]
     attempts_list: Sequence[RunStepMarker]
     markers: Sequence[RunStepMarker]
     partial_attempt_start: Optional[float]
+    # deprecated fields
+    materialization_events: Sequence[EventLogEntry]
+    expectation_results: Sequence[ExpectationResult]
 
     def __new__(
         cls,
@@ -161,12 +143,12 @@ class RunStepKeyStatsSnapshot(IHaveNew):
         status: Optional[StepEventStatus] = None,
         start_time: Optional[float] = None,
         end_time: Optional[float] = None,
-        materialization_events: Optional[Sequence[EventLogEntry]] = None,
-        expectation_results: Optional[Sequence[ExpectationResult]] = None,
         attempts: Optional[int] = None,
         attempts_list: Optional[Sequence[RunStepMarker]] = None,
         markers: Optional[Sequence[RunStepMarker]] = None,
         partial_attempt_start: Optional[float] = None,
+        materialization_events: Optional[Sequence[EventLogEntry]] = None,  # deprecated
+        expectation_results: Optional[Sequence[ExpectationResult]] = None,  # deprecated
     ):
         return super().__new__(
             cls,
@@ -175,14 +157,6 @@ class RunStepKeyStatsSnapshot(IHaveNew):
             status=check.opt_inst_param(status, "status", StepEventStatus),
             start_time=check.opt_float_param(start_time, "start_time"),
             end_time=check.opt_float_param(end_time, "end_time"),
-            materialization_events=check.opt_sequence_param(
-                materialization_events,
-                "materialization_events",
-                EventLogEntry,
-            ),
-            expectation_results=check.opt_sequence_param(
-                expectation_results, "expectation_results", ExpectationResult
-            ),
             attempts=check.opt_int_param(attempts, "attempts"),
             attempts_list=check.opt_sequence_param(attempts_list, "attempts_list", RunStepMarker),
             markers=check.opt_sequence_param(markers, "markers", RunStepMarker),
@@ -190,6 +164,10 @@ class RunStepKeyStatsSnapshot(IHaveNew):
             partial_attempt_start=check.opt_float_param(
                 partial_attempt_start, "partial_attempt_start"
             ),
+            materialization_events=materialization_events
+            if materialization_events
+            else [],  # deprecated
+            expectation_results=expectation_results if expectation_results else [],  # deprecated
         )
 
 
@@ -225,8 +203,6 @@ def build_run_step_stats_snapshot_from_events(
                 "start_time": step_stats.start_time,
                 "end_time": step_stats.end_time,
                 "status": step_stats.status,
-                "materialization_events": step_stats.materialization_events,
-                "expectation_results": step_stats.expectation_results,
                 "attempts": step_stats.attempts,
                 "partial_attempt_start": step_stats.partial_attempt_start,
             }
@@ -304,16 +280,6 @@ def build_run_step_stats_snapshot_from_events(
             by_step_key[step_key]["end_time"] = event.timestamp
             by_step_key[step_key]["status"] = StepEventStatus.SKIPPED
             _close_attempt(step_key, event)
-        if dagster_event.event_type == DagsterEventType.ASSET_MATERIALIZATION:
-            materialization_events = by_step_key[step_key].get("materialization_events", [])
-            materialization_events.append(event)
-            by_step_key[step_key]["materialization_events"] = materialization_events
-        if dagster_event.event_type == DagsterEventType.STEP_EXPECTATION_RESULT:
-            expectation_data = cast("StepExpectationResultData", dagster_event.event_specific_data)
-            expectation_result = expectation_data.expectation_result
-            step_expectation_results = by_step_key[step_key].get("expectation_results", [])
-            step_expectation_results.append(expectation_result)
-            by_step_key[step_key]["expectation_results"] = step_expectation_results
 
         if dagster_event.event_type in MARKER_EVENTS:
             if dagster_event.engine_event_data.marker_start:

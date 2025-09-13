@@ -691,8 +691,6 @@ class GraphenePipelineRunStepStats(graphene.Interface):
     status = graphene.Field(GrapheneStepEventStatus)
     startTime = graphene.Field(graphene.Float)
     endTime = graphene.Field(graphene.Float)
-    materializations = non_null_list(GrapheneMaterializationEvent)
-    expectationResults = non_null_list(GrapheneExpectationResult)
 
     class Meta:
         name = "PipelineRunStepStats"
@@ -712,8 +710,6 @@ class GrapheneRunStepStats(graphene.ObjectType):
     status = graphene.Field(GrapheneStepEventStatus)
     startTime = graphene.Field(graphene.Float)
     endTime = graphene.Field(graphene.Float)
-    materializations = non_null_list(GrapheneMaterializationEvent)
-    expectationResults = non_null_list(GrapheneExpectationResult)
     attempts = non_null_list(GrapheneRunMarker)
     markers = non_null_list(GrapheneRunMarker)
 
@@ -729,12 +725,6 @@ class GrapheneRunStepStats(graphene.ObjectType):
             status=stats.status.value if stats.status else None,
             startTime=stats.start_time,
             endTime=stats.end_time,
-            materializations=[
-                GrapheneMaterializationEvent(event) for event in stats.materialization_events
-            ],
-            expectationResults=[
-                GrapheneExpectationResult(result) for result in stats.expectation_results
-            ],
             attempts=[
                 GrapheneRunMarker(startTime=attempt.start_time, endTime=attempt.end_time)
                 for attempt in stats.attempts_list
