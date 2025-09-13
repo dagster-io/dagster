@@ -45,6 +45,11 @@ class ExecutionResult(ABC):
     def success(self) -> bool:
         """bool: Whether execution was successful."""
         return self.dagster_run.is_success
+    
+    @property
+    def success_with_warnings(self) -> bool:
+        """bool: Whether execution was successful with warnings."""
+        return self.dagster_run.is_success_with_warnings
 
     @property
     def all_node_events(self) -> Sequence[DagsterEvent]:
