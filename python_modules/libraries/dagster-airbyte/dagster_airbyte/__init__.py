@@ -1,7 +1,7 @@
 from dagster_shared.libraries import DagsterLibraryRegistry
 
 from dagster_airbyte.components.workspace_component.component import (
-    AirbyteCloudWorkspaceComponent as AirbyteCloudWorkspaceComponent,
+    AirbyteWorkspaceComponent as AirbyteWorkspaceComponent,
 )
 
 try:
@@ -29,9 +29,10 @@ from dagster_airbyte.resources import (
     AirbyteCloudResource as AirbyteCloudResource,
     AirbyteCloudWorkspace as AirbyteCloudWorkspace,
     AirbyteResource as AirbyteResource,
+    AirbyteWorkspace as AirbyteWorkspace,
     airbyte_cloud_resource as airbyte_cloud_resource,
     airbyte_resource as airbyte_resource,
-    load_airbyte_cloud_asset_specs as load_airbyte_cloud_asset_specs,
+    load_airbyte_asset_specs as load_airbyte_asset_specs,
 )
 from dagster_airbyte.translator import (
     AirbyteConnectionTableProps as AirbyteConnectionTableProps,
