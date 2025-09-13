@@ -94,6 +94,7 @@ class Daemon(BaseModel, extra="forbid"):
     envSecrets: list[kubernetes.SecretEnvSource]
     deploymentLabels: dict[str, str]
     labels: dict[str, str]
+    logFormat: Optional[str] = None
     nodeSelector: kubernetes.NodeSelector
     affinity: kubernetes.Affinity
     tolerations: kubernetes.Tolerations
