@@ -118,6 +118,12 @@ def test_components_docs_airbyte_workspace(
             snippet_path=f"{context.get_next_snip_number()}-list-defs.txt",
         )
 
+        # Skip OSS component defs as they demonstrate the different authentication methods which
+        # are already tested in the integration tests and considering the tests here mock the
+        # entire AirbyteWorkspace class in test_airbyte_utils.py with MockAirbyteWorkspace, it seems
+        # pretty pointless to test these.
+        context._snip_number += 3  # noqa: SLF001
+
         # Update component.yaml with connection selector
         context.create_file(
             Path("my_project") / "defs" / "airbyte_ingest" / "defs.yaml",
