@@ -1,5 +1,4 @@
 import tempfile
-from dataclasses import dataclass
 
 import dagster_aws.s3 as s3
 import duckdb
@@ -36,6 +35,7 @@ class AssetFactory(dg.Component, dg.Model, dg.Resolvable):
             def create_etl_asset(etl_config):
                 @dg.asset(name=asset_key)
                 def _etl_asset(context):
+                    s3_client = s3.get_client()
                     with tempfile.TemporaryDirectory() as root:
                         source_path = f"{root}/{etl_config.source_object}"
                         target_path = f"{root}/{etl_config.target_object}"
@@ -43,7 +43,7 @@ class AssetFactory(dg.Component, dg.Model, dg.Resolvable):
                         # these steps could be split into separate assets, but
                         # for brevity we will keep them together.
                         # 1. extract
-                        context.resources.s3.download_file(
+                        s3_client.download_file(
                             etl_config.bucket, etl_config.source_object, source_path
                         )
 
@@ -55,7 +55,7 @@ class AssetFactory(dg.Component, dg.Model, dg.Resolvable):
                         db.query(etl_config.sql).to_csv(target_path)
 
                         # 3. load
-                        context.resources.s3.upload_file(
+                        s3_client.upload_file(
                             etl_config.bucket, etl_config.target_object, target_path
                         )
 
