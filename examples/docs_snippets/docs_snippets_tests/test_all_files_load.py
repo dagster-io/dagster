@@ -1,5 +1,7 @@
 import importlib.util
 import os
+from collections.abc import Generator
+from typing import Any
 
 import pytest
 
@@ -158,7 +160,7 @@ def get_python_files(directory):
 
 
 @pytest.mark.parametrize("file_path", get_python_files(snippets_folder))
-def test_file_loads(file_path):
+def test_file_loads(file_path: Generator[Any, Any, None]):
     if file_path in EXCLUDED_FILES:
         pytest.skip(f"Skipped {file_path}")
         return
