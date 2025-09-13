@@ -1,7 +1,7 @@
 ---
 description: Use the dg CLI to create and register a reusable component with a YAML or Pythonic interface.
 sidebar_position: 100
-title: Creating and registering a component
+title: Creating and registering a reusable component
 ---
 
 The components system makes it easy to create new components that you and your teammates can reuse across your Dagster project.
