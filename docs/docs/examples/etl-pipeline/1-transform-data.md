@@ -59,11 +59,11 @@ We still want our dbt project to be represented as assets in our graph, but we w
 
 The dbt component was installed when we installed the `dagster-dbt` library. This means we can now scaffold a dbt component definition with `dg scaffold defs` command:
 
-<CliInvocationExample path="docs_snippets/docs_snippets/guides/tutorials/etl_tutorial/commands/dg-scaffold-dbt.txt" />
+<CliInvocationExample path="docs_projects/project_etl_tutorial/commands/dg-scaffold-dbt.txt" />
 
 This will look similar to scaffolding assets, though also include the `--project-path` flag to set the directory of our dbt project. After the `dg` command runs, the directory `transform` is added to the `etl_tutorial` module:
 
-<CliInvocationExample path="docs_snippets/docs_snippets/guides/tutorials/etl_tutorial/tree/dbt.txt" />
+<CliInvocationExample path="docs_projects/project_etl_tutorial/tree/dbt.txt" />
 
 ## 3. Configure the dbt `defs.yaml`
 
@@ -78,12 +78,12 @@ attributes:
 
 To check that Dagster can load the dbt component definition correctly in the top-level `Definitions` object, run `dg check` again:
 
-<CliInvocationExample path="docs_snippets/docs_snippets/guides/tutorials/etl_tutorial/commands/dg-check-defs.txt" />
+<CliInvocationExample path="docs_projects/project_etl_tutorial/commands/dg-check-defs.txt" />
 
 The component is correctly configured for our dbt project, but we need to make one addition to the YAML file:
 
 <CodeExample
-  path="docs_snippets/docs_snippets/guides/tutorials/etl_tutorial/src/etl_tutorial/defs/transform/defs.yaml"
+  path="docs_projects/project_etl_tutorial/src/etl_tutorial/defs/transform/defs.yaml"
   language="yaml"
   title="src/etl_tutorial/defs/transform/defs.yaml"
 />
@@ -109,7 +109,7 @@ You can also materialize your assets from the command line with the `dg launch` 
 
 We have now layered dbt into the project. The `etl_tutorial` module should look like this:
 
-<CliInvocationExample path="docs_snippets/docs_snippets/guides/tutorials/etl_tutorial/tree/step-1.txt" />
+<CliInvocationExample path="docs_projects/project_etl_tutorial/tree/step-1.txt" />
 
 Regardless of how your assets are added to your project, they will all appear together within the asset graph.
 

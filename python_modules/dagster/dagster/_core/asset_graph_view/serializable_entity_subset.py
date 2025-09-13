@@ -11,12 +11,14 @@ from dagster._core.definitions.asset_key import T_EntityKey
 from dagster._core.definitions.events import AssetKeyPartitionKey
 from dagster._core.definitions.partitions.context import partition_loading_context
 from dagster._core.definitions.partitions.definition import PartitionsDefinition
+from dagster._core.definitions.partitions.snap.snap import PartitionsSnap
 from dagster._core.definitions.partitions.subset import (
     AllPartitionsSubset,
     DefaultPartitionsSubset,
     PartitionsSubset,
     TimeWindowPartitionsSubset,
 )
+from dagster._core.definitions.partitions.subset.key_ranges import KeyRangesPartitionsSubset
 
 EntitySubsetValue = Union[bool, PartitionsSubset]
 
@@ -135,6 +137,19 @@ class SerializableEntitySubset(Generic[T_EntityKey]):
             # definitions, so we can ensure those are identical
             if isinstance(self.value, (TimeWindowPartitionsSubset, AllPartitionsSubset)):
                 return self.value.partitions_def == partitions_def
+            # for KeyRangesPartitionsSubset, we have the PartitionsSnap, so we can use that
+            elif isinstance(self.value, KeyRangesPartitionsSubset):
+                if (
+                    partitions_def is None
+                    or PartitionsSnap.from_def(partitions_def) != self.value.partitions_snap
+                ):
+                    return False
+                # all ranges must be valid
+                return all(
+                    partitions_def.has_partition_key(r.start)
+                    and partitions_def.has_partition_key(r.end)
+                    for r in self.value.key_ranges
+                )
             else:
                 return partitions_def is not None
         else:

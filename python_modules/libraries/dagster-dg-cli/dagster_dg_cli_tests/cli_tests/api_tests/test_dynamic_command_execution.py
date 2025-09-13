@@ -30,7 +30,7 @@ class ReplayClient(DagsterPlusGraphQLClient):
         return response
 
 
-def discover_scenario_recordings() -> Iterator[tuple[str, str, str]]:
+def discover_scenario_recordings() -> Iterator[tuple[str, str, str, bool]]:
     """Discover all scenario recordings across API test domains."""
     api_tests_dir = Path(__file__).parent
 
@@ -44,8 +44,8 @@ def discover_scenario_recordings() -> Iterator[tuple[str, str, str]]:
         domain = domain_dir.name.replace("_tests", "")
         recording_scenarios = load_fixture_scenarios_from_yaml(scenarios_yaml)
 
-        for recording_name, recording_config in recording_scenarios.items():
-            yield (domain, recording_name, recording_config.command)
+        for scenario_name, scenario_config in recording_scenarios.items():
+            yield (domain, scenario_name, scenario_config.command, scenario_config.has_recording)
 
 
 def load_recorded_graphql_responses(domain: str, scenario_name: str) -> list[dict[str, Any]]:
@@ -71,17 +71,24 @@ def load_recorded_graphql_responses(domain: str, scenario_name: str) -> list[dic
 class TestDynamicCommandExecution:
     """Test all commands from YAML scenarios against recorded GraphQL responses."""
 
-    @pytest.mark.parametrize("domain,scenario_name,command", list(discover_scenario_recordings()))
-    def test_command_execution(self, domain: str, scenario_name: str, command: str, snapshot):
+    @pytest.mark.parametrize(
+        "domain,scenario_name,command,has_recording", list(discover_scenario_recordings())
+    )
+    def test_command_execution(
+        self, domain: str, scenario_name: str, command: str, has_recording: bool, snapshot
+    ):
         """Test executing a command against its recorded GraphQL responses.
 
         Uses Click's dependency injection to provide a test client factory.
         No mocking required - just inject a context with our replay client.
         """
         from dagster_dg_cli.cli import cli as root_cli
+        from dagster_shared.utils.timing import fixed_timezone
 
         # Load GraphQL responses for this scenario
-        graphql_responses = load_recorded_graphql_responses(domain, scenario_name)
+        graphql_responses = (
+            load_recorded_graphql_responses(domain, scenario_name) if has_recording else []
+        )
 
         # Create replay client
         replay_client = ReplayClient(graphql_responses)
@@ -93,8 +100,11 @@ class TestDynamicCommandExecution:
         runner = CliRunner()
         args = command.split()[1:]  # Skip 'dg'
 
-        # Click's obj parameter passes our context through
-        result = runner.invoke(root_cli, args, obj=test_context)
+        # This is necessary because some commands output formatted timestamps that don't include
+        # timezone info. Fixing the timezone ensures consistent output across environments.
+        with fixed_timezone("UTC"):
+            # Click's obj parameter passes our context through
+            result = runner.invoke(root_cli, args, obj=test_context)
 
         # Snapshot testing
         output_type = "json" if "--json" in command else "text"

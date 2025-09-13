@@ -1,5 +1,6 @@
 import textwrap
-from tempfile import NamedTemporaryFile
+from pathlib import Path
+from tempfile import TemporaryDirectory
 
 import dagster as dg
 from dagster._core.workspace.load_target import get_origins_from_toml, is_valid_modules_list
@@ -21,30 +22,29 @@ def test_load_python_module_from_toml():
 
 
 def test_load_python_module_from_dg_toml():
-    with NamedTemporaryFile("w") as f:
-        f.write(
+    with TemporaryDirectory() as tmp_dir:
+        toml_path = Path(tmp_dir).joinpath("dg.toml")
+        toml_path.write_text(
             textwrap.dedent("""
                 [tool.dg.project]
                 root_module = "baaz"
                 code_location_name = "foo"
             """).strip()
         )
-        f.flush()
-        origins = get_origins_from_toml(f.name)
+        origins = get_origins_from_toml(str(toml_path))
         assert len(origins) == 1
         assert origins[0].loadable_target_origin.module_name == "baaz.definitions"
         assert origins[0].location_name == "foo"
 
-    with NamedTemporaryFile("w") as f:
-        f.write(
+        toml_path = Path(tmp_dir).joinpath("other.toml")
+        toml_path.write_text(
             textwrap.dedent("""
                 [tool.dg.project]
                 root_module = "baaz"
                 code_location_target_module = "baaz.other_definitions"
             """).strip()
         )
-        f.flush()
-        origins = get_origins_from_toml(f.name)
+        origins = get_origins_from_toml(str(toml_path))
         assert len(origins) == 1
         assert origins[0].loadable_target_origin.module_name == "baaz.other_definitions"
 

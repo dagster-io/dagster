@@ -96,7 +96,7 @@ class DagsterGraphQLClient:
             ),
         )
         try:
-            self._client = Client(transport=self._transport, fetch_schema_from_transport=True)
+            self._client = Client(transport=self._transport)
         except requests.exceptions.ConnectionError as exc:
             raise DagsterGraphQLClientError(
                 f"Error when connecting to url {self._url}. "
@@ -108,6 +108,13 @@ class DagsterGraphQLClient:
     def _execute(self, query: str, variables: Optional[dict[str, Any]] = None):
         try:
             return self._client.execute(gql(query), variable_values=variables)
+        except requests.exceptions.ConnectionError as exc:
+            raise DagsterGraphQLClientError(
+                f"Error when connecting to url {self._url}. "
+                + f"Did you specify hostname: {self._hostname} "
+                + (f"and port_number: {self._port_number} " if self._port_number else "")
+                + "correctly?"
+            ) from exc
         except TransportServerError as exc:
             raise DagsterGraphQLClientError(
                 f"Server error with code {exc.code}\nand message {exc}\n"

@@ -1,3 +1,5 @@
+import random
+
 import dagster as dg
 
 static_partitions1 = dg.StaticPartitionsDefinition(["x", "y", "z"])
@@ -7,7 +9,8 @@ static_partitions1 = dg.StaticPartitionsDefinition(["x", "y", "z"])
     automation_condition=dg.AutomationCondition.on_cron("@hourly"),
     partitions_def=static_partitions1,
 )
-def obs() -> None: ...
+def obs():
+    return dg.ObserveResult(data_version=dg.DataVersion(str(random.random())))
 
 
 @dg.asset(

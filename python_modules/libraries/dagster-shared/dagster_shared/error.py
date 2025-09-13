@@ -1,4 +1,5 @@
 # mypy does not support recursive types, so "cause" has to be typed `Any`
+import os
 import sys
 import traceback
 from collections.abc import Sequence
@@ -102,14 +103,14 @@ class SerializableErrorInfo(
 
 
 DAGSTER_FRAMEWORK_SUBSTRINGS = [
-    "/site-packages/dagster",
-    "/python_modules/dagster",
-    "/python_modules/libraries/dagster",
+    os.sep + os.path.join("site-packages", "dagster"),
+    os.sep + os.path.join("python_modules", "dagster"),
+    os.sep + os.path.join("python_modules", "libraries", "dagster"),
 ]
 
 IMPORT_MACHINERY_SUBSTRINGS = [
-    "importlib/__init__.py",
-    "importlib/metadata/__init__.py",
+    os.path.join("importlib", "__init__.py"),
+    os.path.join("importlib", "metadata", "__init__.py"),
     "importlib._bootstrap",
 ]
 

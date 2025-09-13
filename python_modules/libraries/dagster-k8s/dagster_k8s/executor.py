@@ -16,6 +16,10 @@ from dagster._core.definitions.executor_definition import multiple_process_execu
 from dagster._core.definitions.metadata import MetadataValue
 from dagster._core.events import DagsterEvent, EngineEventData
 from dagster._core.execution.retries import RetryMode, get_retries_config
+from dagster._core.execution.step_dependency_config import (
+    StepDependencyConfig,
+    get_step_dependency_config_field,
+)
 from dagster._core.execution.tags import get_tag_concurrency_limits_config
 from dagster._core.executor.base import Executor
 from dagster._core.executor.init import InitExecutorContext
@@ -93,6 +97,7 @@ _K8S_EXECUTOR_CONFIG_SCHEMA = merge_dicts(
             " This ensures that step jobs and step pods are garbage collected when the run pod is deleted."
             " For more information, see https://kubernetes.io/docs/concepts/overview/working-with-objects/owners-dependents/",
         ),
+        "step_dependency_config": get_step_dependency_config_field(),
     },
 )
 
@@ -190,6 +195,9 @@ def k8s_job_executor(init_context: InitExecutorContext) -> Executor:
         max_concurrent=check.opt_int_elem(exc_cfg, "max_concurrent"),
         tag_concurrency_limits=check.opt_list_elem(exc_cfg, "tag_concurrency_limits"),
         should_verify_step=True,
+        step_dependency_config=StepDependencyConfig.from_config(
+            exc_cfg.get("step_dependency_config")  # type: ignore
+        ),
     )
 
 

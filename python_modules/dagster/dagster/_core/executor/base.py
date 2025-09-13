@@ -6,6 +6,7 @@ from dagster import _check as check
 from dagster._annotations import public
 from dagster._core.execution.plan.objects import StepFailureData, StepRetryData
 from dagster._core.execution.retries import RetryMode
+from dagster._core.execution.step_dependency_config import StepDependencyConfig
 from dagster._utils.error import SerializableErrorInfo
 
 if TYPE_CHECKING:
@@ -42,6 +43,10 @@ class Executor(ABC):
 
         Returns: RetryMode
         """
+
+    @property
+    def step_dependency_config(self) -> StepDependencyConfig:
+        return StepDependencyConfig.default()
 
     def get_failure_or_retry_event_after_crash(
         self,

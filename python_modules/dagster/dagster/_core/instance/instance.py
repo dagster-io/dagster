@@ -2,6 +2,7 @@ import os
 import weakref
 from collections import defaultdict
 from collections.abc import Iterable, Mapping, Sequence
+from contextlib import ExitStack
 from types import TracebackType
 from typing import TYPE_CHECKING, Any, Callable, Optional, Union, cast
 
@@ -914,9 +915,10 @@ class DagsterInstance(
     # directories
 
     def __enter__(self) -> Self:
-        from dagster._core.storage.defs_state.base import DefsStateStorage
+        from dagster._core.storage.defs_state.base import set_defs_state_storage
 
-        DefsStateStorage.set_current(self.defs_state_storage)
+        self._exit_stack = ExitStack()
+        self._exit_stack.enter_context(set_defs_state_storage(self.defs_state_storage))
         return self
 
     def __exit__(
@@ -925,10 +927,8 @@ class DagsterInstance(
         _exception_value: Optional[BaseException],
         _traceback: Optional[TracebackType],
     ) -> None:
-        from dagster._core.storage.defs_state.base import DefsStateStorage
-
-        DefsStateStorage.set_current(None)
         self.dispose()
+        self._exit_stack.close()
 
     # backfill
 

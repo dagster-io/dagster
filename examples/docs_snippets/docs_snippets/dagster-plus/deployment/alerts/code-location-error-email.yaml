@@ -1,7 +1,7 @@
 # alert_policies.yaml
 
 alert_policies:
-  description: Sends an email when a code location fails to load.
+- description: Sends an email when a code location fails to load.
   event_types:
   - CODE_LOCATION_ERROR
   name: code-location-error-email

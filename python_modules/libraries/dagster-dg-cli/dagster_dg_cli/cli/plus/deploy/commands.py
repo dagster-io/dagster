@@ -1,8 +1,10 @@
+import asyncio
 import os
 from pathlib import Path
 from typing import Optional
 
 import click
+from dagster_cloud_cli.types import SnapshotBaseDeploymentCondition
 from dagster_dg_core.config import DgRawCliConfig, normalize_cli_config
 from dagster_dg_core.context import DgContext
 from dagster_dg_core.shared_options import (
@@ -16,13 +18,17 @@ from dagster_dg_core.utils.telemetry import cli_telemetry_wrapper
 from dagster_shared.plus.config import DagsterPlusCliConfig
 from dagster_shared.seven.temp_dir import get_system_temp_directory
 
+from dagster_dg_cli.cli.defs_state import (
+    get_updated_defs_state_info_and_statuses,
+    raise_component_state_refresh_errors,
+)
 from dagster_dg_cli.cli.plus.constants import DgPlusAgentType, DgPlusDeploymentType
 from dagster_dg_cli.cli.plus.deploy.deploy_session import (
     build_artifact,
     finish_deploy_session,
     init_deploy_session,
 )
-from dagster_dg_cli.utils.plus.build import get_agent_type
+from dagster_dg_cli.utils.plus.build import defs_state_storage_from_config, get_agent_type
 
 DEFAULT_STATEDIR_PATH = os.path.join(get_system_temp_directory(), "dg-build-state")
 
@@ -33,7 +39,6 @@ def _get_statedir():
 
 def _get_snapshot_base_deployment_conditions():
     # Lazy import to avoid loading dagster_cloud_cli at module import time
-    from dagster_cloud_cli.types import SnapshotBaseDeploymentCondition
 
     return SnapshotBaseDeploymentCondition
 
@@ -379,6 +384,47 @@ def build_and_push_command(
         python_version,
         location_names,
     )
+
+
+def refresh_defs_state_impl(statedir: str, project_path: Path):
+    from dagster_cloud_cli.commands.ci import state
+
+    plus_config = (
+        DagsterPlusCliConfig.get() if DagsterPlusCliConfig.exists() else DagsterPlusCliConfig()
+    )
+    with defs_state_storage_from_config(plus_config) as defs_state_storage:
+        defs_state_info, statuses = asyncio.run(
+            get_updated_defs_state_info_and_statuses(project_path, defs_state_storage)
+        )
+        raise_component_state_refresh_errors(statuses)
+
+    state_store = state.FileStore(statedir=statedir)
+    if defs_state_info is None:
+        click.echo("No defs_state_info to update")
+        return
+
+    for location_state in state_store.list_locations():
+        location_state.defs_state_info = defs_state_info
+        state_store.save(location_state)
+    click.echo("Updated defs_state_info for all locations.")
+
+
+@deploy_group.command(name="refresh-defs-state", cls=DgClickCommand)
+@dg_editable_dagster_options
+@dg_path_options
+@dg_global_options
+@cli_telemetry_wrapper
+def refresh_defs_state_command(
+    target_path: Path,
+    **global_options: object,
+):
+    """[Experimental] If using StateBackedComponents, this command will execute the `refresh_state` on each of them,
+    and set the defs_state_info for each location.
+    """
+    cli_config = normalize_cli_config(global_options, click.get_current_context())
+    # ensure that the command is executed in a project
+    dg_context = DgContext.for_project_environment(target_path, cli_config)
+    refresh_defs_state_impl(statedir=_get_statedir(), project_path=dg_context.root_path)
 
 
 @deploy_group.command(name="set-build-output", cls=DgClickCommand)

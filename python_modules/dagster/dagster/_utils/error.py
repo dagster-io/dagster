@@ -175,18 +175,6 @@ def serializable_error_info_from_exc_info(
         return SerializableErrorInfo.from_traceback(tb_exc)
 
 
-DAGSTER_FRAMEWORK_SUBSTRINGS = [
-    "/site-packages/dagster",
-    "/python_modules/dagster",
-    "/python_modules/libraries/dagster",
-]
-
-IMPORT_MACHINERY_SUBSTRINGS = [
-    "importlib/__init__.py",
-    "importlib._bootstrap",
-]
-
-
 def unwrap_user_code_error(error_info: SerializableErrorInfo) -> SerializableErrorInfo:
     """Extracts the underlying error from the passed error, if it is a DagsterUserCodeLoadError."""
     if error_info.cls_name == "DagsterUserCodeLoadError":

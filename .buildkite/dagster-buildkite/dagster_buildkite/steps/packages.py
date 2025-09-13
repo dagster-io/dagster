@@ -761,30 +761,30 @@ LIBRARY_PACKAGES_WITH_CUSTOM_CONFIG: list[PackageSpec] = [
         "python_modules/libraries/dagster-airbyte",
         pytest_tox_factors=[ToxFactor("unit"), ToxFactor("integration")],
     ),
-    PackageSpec(
-        "python_modules/libraries/dagster-airflow",
-        # omit python 3.10 until we add support
-        unsupported_python_versions=[
-            AvailablePythonVersion.V3_10,
-            AvailablePythonVersion.V3_11,
-            AvailablePythonVersion.V3_12,
-            AvailablePythonVersion.V3_13,
-        ],
-        env_vars=[
-            "AIRFLOW_HOME",
-            "AWS_ACCOUNT_ID",
-            "AWS_ACCESS_KEY_ID",
-            "AWS_SECRET_ACCESS_KEY",
-            "BUILDKITE_SECRETS_BUCKET",
-            "GOOGLE_APPLICATION_CREDENTIALS",
-        ],
-        pytest_extra_cmds=airflow_extra_cmds,
-        pytest_tox_factors=[
-            ToxFactor("default-airflow2"),
-            ToxFactor("localdb-airflow2"),
-            ToxFactor("persistentdb-airflow2"),
-        ],
-    ),
+    # PackageSpec(
+    #     "python_modules/libraries/dagster-airflow",
+    #     # omit python 3.10 until we add support
+    #     unsupported_python_versions=[
+    #         AvailablePythonVersion.V3_10,
+    #         AvailablePythonVersion.V3_11,
+    #         AvailablePythonVersion.V3_12,
+    #         AvailablePythonVersion.V3_13,
+    #     ],
+    #     env_vars=[
+    #         "AIRFLOW_HOME",
+    #         "AWS_ACCOUNT_ID",
+    #         "AWS_ACCESS_KEY_ID",
+    #         "AWS_SECRET_ACCESS_KEY",
+    #         "BUILDKITE_SECRETS_BUCKET",
+    #         "GOOGLE_APPLICATION_CREDENTIALS",
+    #     ],
+    #     pytest_extra_cmds=airflow_extra_cmds,
+    #     pytest_tox_factors=[
+    #         ToxFactor("default-airflow2"),
+    #         ToxFactor("localdb-airflow2"),
+    #         ToxFactor("persistentdb-airflow2"),
+    #     ],
+    # ),
     PackageSpec(
         "python_modules/libraries/dagster-dg-cli",
         pytest_tox_factors=[

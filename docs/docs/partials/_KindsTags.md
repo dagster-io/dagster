@@ -4,6 +4,7 @@
 | `airflow`           | <img src="/images/guides/build/assets/metadata-tags/kinds/icons/tool-airflow-color.svg" width={20} height={20} />           |
 | `airliftmapped`     | <img src="/images/guides/build/assets/metadata-tags/kinds/icons/tool-airflow-color.svg" width={20} height={20} />           |
 | `airtable`          | <img src="/images/guides/build/assets/metadata-tags/kinds/icons/tool-airtable-color.svg" width={20} height={20} />          |
+| `arrow`             | <img src="/images/guides/build/assets/metadata-tags/kinds/icons/tool-arrow-color.svg" width={20} height={20} />             |
 | `athena`            | <img src="/images/guides/build/assets/metadata-tags/kinds/icons/tool-aws-color.svg" width={20} height={20} />               |
 | `atlan`             | <img src="/images/guides/build/assets/metadata-tags/kinds/icons/tool-atlan-color.svg" width={20} height={20} />             |
 | `aws`               | <img src="/images/guides/build/assets/metadata-tags/kinds/icons/tool-aws-color.svg" width={20} height={20} />               |
@@ -49,6 +50,7 @@
 | `doubao`            | <img src="/images/guides/build/assets/metadata-tags/kinds/icons/tool-doubao-color.svg" width={20} height={20} />            |
 | `druid`             | <img src="/images/guides/build/assets/metadata-tags/kinds/icons/tool-druid-color.svg" width={20} height={20} />             |
 | `duckdb`            | <img src="/images/guides/build/assets/metadata-tags/kinds/icons/tool-duckdb-color.svg" width={20} height={20} />            |
+| `ducklake`          | <img src="/images/guides/build/assets/metadata-tags/kinds/icons/tool-ducklake-color.svg" width={20} height={20} />          |
 | `elasticsearch`     | <img src="/images/guides/build/assets/metadata-tags/kinds/icons/tool-elasticsearch-color.svg" width={20} height={20} />     |
 | `evidence`          | <img src="/images/guides/build/assets/metadata-tags/kinds/icons/tool-evidence.svg" width={20} height={20} />                |
 | `exasol`            | <img src="/images/guides/build/assets/metadata-tags/kinds/icons/tool-exasol-color.svg" width={20} height={20} />            |
@@ -98,6 +100,7 @@
 | `llama`             | <img src="/images/guides/build/assets/metadata-tags/kinds/icons/tool-llama-color.svg" width={20} height={20} />             |
 | `looker`            | <img src="/images/guides/build/assets/metadata-tags/kinds/icons/tool-looker-color.svg" width={20} height={20} />            |
 | `mariadb`           | <img src="/images/guides/build/assets/metadata-tags/kinds/icons/tool-mariadb-color.svg" width={20} height={20} />           |
+| `matillion`         | <img src="/images/guides/build/assets/metadata-tags/kinds/icons/tool-matillion-color.svg" width={20} height={20} />         |
 | `matplotlib`        | <img src="/images/guides/build/assets/metadata-tags/kinds/icons/tool-matplotlib-color.svg" width={20} height={20} />        |
 | `meltano`           | <img src="/images/guides/build/assets/metadata-tags/kinds/icons/tool-meltano-color.svg" width={20} height={20} />           |
 | `meta`              | <img src="/images/guides/build/assets/metadata-tags/kinds/icons/tool-meta-color.svg" width={20} height={20} />              |

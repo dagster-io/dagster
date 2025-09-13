@@ -1133,7 +1133,7 @@ class GrapheneQuery(graphene.ObjectType):
             asset_keys=[
                 AssetKey.from_graphql_input(asset_key_input) for asset_key_input in assetKeys
             ]
-            if assetKeys
+            if assetKeys is not None
             else None,
         )
 

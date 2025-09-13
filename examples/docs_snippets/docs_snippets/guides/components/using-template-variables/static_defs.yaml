@@ -1,0 +1,10 @@
+type: dagster.PythonScriptComponent
+attributes:
+  execution:
+    path: process_data.py
+  assets:
+    - key: processed_data
+      tags:
+        data_classification: internal
+        retention_days: "90"
+        pii_contains: "false"

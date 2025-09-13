@@ -120,13 +120,16 @@ def iterate_metadata_entries(metadata: Mapping[str, MetadataValue]) -> Iterator[
         elif isinstance(value, FloatMetadataValue):
             float_val = value.value
 
-            # coerce NaN to null
-            if float_val is not None and isnan(float_val):
+            # coerce NaN and inf/-inf to null
+            if float_val is not None and (
+                isnan(float_val) or (float_val in [float("inf"), float("-inf")])
+            ):
                 float_val = None
 
             yield GrapheneFloatMetadataEntry(
                 label=key,
                 floatValue=float_val,
+                floatRepr=str(value.value),
             )
         elif isinstance(value, IntMetadataValue):
             # coerce > 32 bit ints to null

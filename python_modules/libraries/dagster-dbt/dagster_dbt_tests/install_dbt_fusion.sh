@@ -386,11 +386,6 @@ install_package() {
         return 0
     fi
 
-    # If we get here, version is different, so check if we can proceed
-    if [ -e "$dest/$package_name" ] && [ "$update" = false ]; then
-        err "$package_name already exists in $dest, use the --update flag to reinstall"
-        return 1
-    fi
 
     log "Installing $package_name to: $dest"
     # Create the directory if it doesn't exist
@@ -438,7 +433,7 @@ install_package() {
             continue
         }
 
-        if [ -e "$dest/$package_name" ] && [ "$update" = true ]; then
+        if [ -e "$dest/$package_name" ]; then
             # Remove file - no sudo needed for home directory
             rm -f "$dest/$package_name" || {
                 err "Error: Failed to remove existing $package_name binary."

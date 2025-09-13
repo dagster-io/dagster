@@ -21,6 +21,7 @@ import toml from './kindtag-images/toml.svg';
 import airbyte from './kindtag-images/tool-airbyte-color.svg';
 import airflow from './kindtag-images/tool-airflow-color.svg';
 import airtable from './kindtag-images/tool-airtable-color.svg';
+import arrow from './kindtag-images/tool-arrow-color.svg';
 import atlan from './kindtag-images/tool-atlan-color.svg';
 import aws from './kindtag-images/tool-aws-color.svg';
 import ax from './kindtag-images/tool-ax-color.svg';
@@ -60,6 +61,7 @@ import doris from './kindtag-images/tool-doris-color.svg';
 import doubao from './kindtag-images/tool-doubao-color.svg';
 import druid from './kindtag-images/tool-druid-color.svg';
 import duckdb from './kindtag-images/tool-duckdb-color.svg';
+import ducklake from './kindtag-images/tool-ducklake-color.svg';
 import elasticsearch from './kindtag-images/tool-elasticsearch-color.svg';
 import evidence from './kindtag-images/tool-evidence.svg';
 import exasol from './kindtag-images/tool-exasol-color.svg';
@@ -103,6 +105,7 @@ import linkedin from './kindtag-images/tool-linkedin-color.svg';
 import llama from './kindtag-images/tool-llama-color.svg';
 import looker from './kindtag-images/tool-looker-color.svg';
 import mariadb from './kindtag-images/tool-mariadb-color.svg';
+import matillion from './kindtag-images/tool-matillion-color.svg';
 import matplotlib from './kindtag-images/tool-matplotlib-color.svg';
 import meltano from './kindtag-images/tool-meltano-color.svg';
 import meta from './kindtag-images/tool-meta-color.svg';
@@ -228,6 +231,7 @@ type KnownTag = {
 };
 
 export type KnownTagType =
+  | 'arrow'
   | 'ax'
   | 'botorch'
   | 'json'
@@ -249,6 +253,7 @@ export type KnownTagType =
   | 'pyspark'
   | 'spark'
   | 'duckdb'
+  | 'ducklake'
   | 'tensorflow'
   | 'teradata'
   | 'treasuredata'
@@ -300,6 +305,7 @@ export type KnownTagType =
   | 'plotly'
   | 'modal'
   | 'meltano'
+  | 'matillion'
   | 'matplotlib'
   | 'numpy'
   | 'scipy'
@@ -533,6 +539,10 @@ export const KNOWN_TAGS: Record<KnownTagType, KnownTag> = {
     icon: duckdb,
     content: 'DuckDB',
   },
+  ducklake: {
+    icon: ducklake,
+    content: 'DuckLake',
+  },
   tensorflow: {
     icon: tensorflow,
     content: 'TensorFlow',
@@ -728,6 +738,10 @@ export const KNOWN_TAGS: Record<KnownTagType, KnownTag> = {
   meltano: {
     icon: meltano,
     content: 'Meltano',
+  },
+  matillion: {
+    icon: matillion,
+    content: 'Matillion',
   },
   matplotlib: {
     icon: matplotlib,
@@ -1391,6 +1405,10 @@ export const KNOWN_TAGS: Record<KnownTagType, KnownTag> = {
   databento: {
     icon: databento,
     content: 'Databento',
+  },
+  arrow: {
+    icon: arrow,
+    content: 'Arrow',
   },
   expand: {color: '#D7A540', content: 'Expand'},
 };

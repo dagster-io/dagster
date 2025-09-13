@@ -3,16 +3,22 @@
     {
       "assetKey": {
         "path": [
-          "aws",
-          "cloud-prod",
-          "workspace_staging_pipelines"
+          "country_stats"
         ]
       },
-      "description": "Snowflake stages for AWS data, creates new stages for new assets, refreses existing stages.",
-      "groupName": "aws_stages",
-      "id": "dagster_open_platform.__repository__.[\"aws\", \"cloud-prod\", \"workspace_staging_pipelines\"]",
-      "kinds": [],
-      "metadataEntries": []
+      "description": null,
+      "groupName": "default",
+      "id": "basics.__repository__.[\"country_stats\"]",
+      "kinds": [
+        "Kubernetes",
+        "S3"
+      ],
+      "metadataEntries": [
+        {
+          "description": null,
+          "label": "dagster/code_references"
+        }
+      ]
     }
   ]
 }

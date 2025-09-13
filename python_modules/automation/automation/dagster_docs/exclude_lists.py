@@ -301,6 +301,7 @@ EXCLUDE_MISSING_PUBLIC = {
     "dagster_mysql.MySQLEventLogStorage",
     "dagster_mysql.MySQLRunStorage",
     "dagster_mysql.MySQLScheduleStorage",
+    "dagster_omni.OmniComponent",
     "dagster_pandas.PandasColumn",
     "dagster_pandas.RowCountConstraint",
     "dagster_pandas.StrictColumnsConstraint",

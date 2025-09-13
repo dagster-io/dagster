@@ -850,7 +850,7 @@ rabbitmq:
   enabled: false
 
   image:
-    repository: "bitnami/rabbitmq"
+    repository: "bitnamilegacy/rabbitmq"
     tag: "3.8.12"
     pullPolicy: IfNotPresent
 

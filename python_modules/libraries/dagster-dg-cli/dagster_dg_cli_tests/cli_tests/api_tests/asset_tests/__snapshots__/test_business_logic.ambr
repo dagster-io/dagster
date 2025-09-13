@@ -65,6 +65,7 @@
         'label': 'bool_meta',
       }),
     ]),
+    'status': None,
   })
 # ---
 # name: TestFormatAssets.test_format_asset_without_metadata[0]
@@ -104,6 +105,7 @@
             'label': 'rows',
           }),
         ]),
+        'status': None,
       }),
       dict({
         'asset_key': 'analytics/user_metrics',
@@ -120,6 +122,7 @@
         ]),
         'metadata_entries': list([
         ]),
+        'status': None,
       }),
     ]),
   })
@@ -174,6 +177,7 @@
         'text': 'public',
       }),
     ]),
+    'status': None,
   })
 # ---
 # name: TestFormatAssets.test_format_single_asset_text_output[0]

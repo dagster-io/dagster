@@ -1,10 +1,9 @@
 from dataclasses import dataclass
 from functools import cached_property
-from typing import Annotated, Any, Callable, Optional, Union
+from typing import Annotated, Any, Optional, Union
 
 import dagster as dg
 from dagster._annotations import public
-from dagster._core.definitions.asset_key import CoercibleToAssetKeyPrefix
 from dagster._core.definitions.assets.definition.asset_spec import AssetSpec
 from dagster._core.definitions.assets.definition.assets_definition import AssetsDefinition
 from dagster._core.definitions.decorators.asset_decorator import multi_asset
@@ -12,12 +11,9 @@ from dagster._core.execution.context.asset_execution_context import AssetExecuti
 from dagster.components import Component, ComponentLoadContext, Model, Resolvable, Resolver
 from dagster.components.resolved.base import resolve_fields
 from dagster.components.resolved.context import ResolutionContext
-from dagster.components.resolved.core_models import (
-    AssetAttributesModel,
-    AssetSpecUpdateKwargs,
-    ResolvedAssetKey,
-)
+from dagster.components.resolved.core_models import AssetSpecKeyUpdateKwargs, AssetSpecUpdateKwargs
 from dagster.components.utils import TranslatorResolvingInfo
+from dagster.components.utils.translation import TranslationFn, TranslationFnResolver
 from dagster_shared import check
 from dagster_shared.record import record
 from pydantic import BaseModel
@@ -64,59 +60,28 @@ def resolve_powerbi_credentials(
     )
 
 
-TranslationFn: TypeAlias = Callable[[AssetSpec, PowerBITranslatorData], AssetSpec]
+PowerBITranslationFn: TypeAlias = TranslationFn[PowerBITranslatorData]
 
-
-def resolve_translation(context: ResolutionContext, model):
-    info = TranslatorResolvingInfo(
-        asset_attributes=model,
-        resolution_context=context,
-        model_key="translation",
-    )
-    return lambda base_asset_spec, data: info.get_asset_spec(
-        base_asset_spec,
-        {
-            "data": data,
-            "spec": base_asset_spec,
-        },
-    )
-
-
-@record
-class AssetKeyOnly(Resolvable):
-    """Resolvable object representing only a configurable asset key."""
-
-    key: Optional[ResolvedAssetKey] = None
-    key_prefix: Annotated[
-        Optional[CoercibleToAssetKeyPrefix],
-        Resolver.default(description="Prefix the existing asset key with the provided value."),
-    ] = None
-
-
-ResolvedTranslationFn: TypeAlias = Annotated[
-    TranslationFn,
-    Resolver(
-        resolve_translation,
-        model_field_type=Union[str, AssetAttributesModel],
-    ),
+ResolvedTargetedPowerBITranslationFn = Annotated[
+    PowerBITranslationFn,
+    TranslationFnResolver[PowerBITranslatorData](lambda data: {"data": data}),
 ]
 
-ResolvedKeyOnlyTranslationFn: TypeAlias = Annotated[
-    TranslationFn,
-    Resolver(
-        resolve_translation,
-        model_field_type=AssetKeyOnly.model(),
+ResolvedTargetedKeyOnlyPowerBITranslationFn = Annotated[
+    PowerBITranslationFn,
+    TranslationFnResolver[PowerBITranslatorData](
+        lambda data: {"data": data}, model_field_type=AssetSpecKeyUpdateKwargs.model()
     ),
 ]
 
 
 @record
 class PowerBIAssetArgs(AssetSpecUpdateKwargs, Resolvable):
-    for_dashboard: Optional[ResolvedTranslationFn] = None
-    for_report: Optional[ResolvedTranslationFn] = None
-    for_semantic_model: Optional[ResolvedTranslationFn] = None
+    for_dashboard: Optional[ResolvedTargetedPowerBITranslationFn] = None
+    for_report: Optional[ResolvedTargetedPowerBITranslationFn] = None
+    for_semantic_model: Optional[ResolvedTargetedPowerBITranslationFn] = None
     # data sources are external assets, so only the key can be user-customized
-    for_data_source: Optional[ResolvedKeyOnlyTranslationFn] = None
+    for_data_source: Optional[ResolvedTargetedKeyOnlyPowerBITranslationFn] = None
 
 
 def resolve_multilayer_translation(context: ResolutionContext, model):

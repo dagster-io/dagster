@@ -392,7 +392,10 @@ def test_validate_run_config():
         "ops": {"requires_config": {"config": {"foo": "bar"}, "inputs": {}, "outputs": None}},
         "execution": {
             "multi_or_in_process_executor": {
-                "multiprocess": {"max_concurrent": None, "retries": {"enabled": {}}}
+                "multiprocess": {
+                    "max_concurrent": None,
+                    "retries": {"enabled": {}},
+                }
             }
         },
         "resources": {"io_manager": {"config": None}},
@@ -418,7 +421,10 @@ def test_validate_run_config():
         "ops": {"requires_config": {"config": {"foo": "bar"}, "inputs": {}, "outputs": None}},
         "execution": {
             "multi_or_in_process_executor": {
-                "multiprocess": {"max_concurrent": None, "retries": {"enabled": {}}}
+                "multiprocess": {
+                    "max_concurrent": None,
+                    "retries": {"enabled": {}},
+                }
             }
         },
         "resources": {"io_manager": {"config": None}},

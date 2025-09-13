@@ -19,7 +19,7 @@ from dagster._utils.pydantic_yaml import (
     _parse_and_populate_model_with_annotated_errors,
     enrich_validation_errors_with_source_position,
 )
-from dagster.components.component.component import Component
+from dagster.components.component.component import Component, EmptyAttributesModel
 from dagster.components.component.component_loader import is_component_loader
 from dagster.components.core.context import ComponentDeclLoadContext, ComponentLoadContext
 from dagster.components.core.defs_module import (
@@ -133,8 +133,13 @@ def _process_attributes_with_enriched_validation_err(
         if attributes_position_tree
         else nullcontext()
     ):
+        if issubclass(model_cls, EmptyAttributesModel):
+            raise DagsterInvalidDefinitionError(
+                "Component is not resolvable from YAML, but attributes were provided. This error can be avoided by "
+                "making the component a subclass of `Resolvable` or by overriding `get_model_cls` on your component."
+            )
+
         return TypeAdapter(model_cls).validate_python(component_file_model.attributes)
-    return None
 
 
 @record

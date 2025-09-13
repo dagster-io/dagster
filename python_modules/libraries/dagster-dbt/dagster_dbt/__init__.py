@@ -18,6 +18,14 @@ from dagster_dbt.cloud import (
     dbt_cloud_run_op as dbt_cloud_run_op,
     load_assets_from_dbt_cloud_job as load_assets_from_dbt_cloud_job,
 )
+from dagster_dbt.cloud_v2 import (
+    DbtCloudCredentials as DbtCloudCredentials,
+    DbtCloudWorkspace as DbtCloudWorkspace,
+    build_dbt_cloud_polling_sensor as build_dbt_cloud_polling_sensor,
+    dbt_cloud_assets as dbt_cloud_assets,
+    load_dbt_cloud_asset_specs as load_dbt_cloud_asset_specs,
+    load_dbt_cloud_check_specs as load_dbt_cloud_check_specs,
+)
 from dagster_dbt.components.dbt_project.component import DbtProjectComponent as DbtProjectComponent
 from dagster_dbt.core.dbt_cli_event import DbtCliEventMessage as DbtCliEventMessage
 from dagster_dbt.core.dbt_cli_invocation import DbtCliInvocation as DbtCliInvocation
