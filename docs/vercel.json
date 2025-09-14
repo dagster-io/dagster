@@ -2014,6 +2014,10 @@
       "destination": "/integrations/libraries/airbyte/airbyte-cloud-component"
     },
     {
+      "source": "/integrations/libraries/airbyte/airbyte-cloud-component",
+      "destination": "/integrations/libraries/airbyte/airbyte-component"
+    },
+    {
       "source": "/guides/build/components/integrations/powerbi-component-tutorial",
       "destination": "/integrations/libraries/powerbi"
     },
