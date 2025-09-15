@@ -72,7 +72,11 @@
     },
     {
       "source": "/_apidocs/cli",
-      "destination": "/api/dagster/cli"
+      "destination": "/api/clis/cli"
+    },
+    {
+      "source": "/api/dagster/cli",
+      "destination": "/api/clis/cli"
     },
     {
       "source": "/_apidocs/schedules-sensors",
