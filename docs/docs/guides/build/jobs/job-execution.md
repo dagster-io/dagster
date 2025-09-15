@@ -70,8 +70,6 @@ dg launch --jobs my_job
 </TabItem>
 <TabItem value="Python">
 
-### Python APIs
-
 Dagster includes Python APIs for execution that are useful when writing tests or scripts.
 
 <PyObject section="jobs" module="dagster" object="JobDefinition.execute_in_process" /> executes a job and
