@@ -23,9 +23,9 @@ class DgApiRun(BaseModel):
 
     id: str
     status: DgApiRunStatus
-    created_at: float  # ISO 8601 timestamp
-    started_at: Optional[float] = None  # ISO 8601 timestamp
-    ended_at: Optional[float] = None  # ISO 8601 timestamp
+    created_at: float  # Unix timestamp (seconds since epoch)
+    started_at: Optional[float] = None  # Unix timestamp (seconds since epoch)
+    ended_at: Optional[float] = None  # Unix timestamp (seconds since epoch)
     job_name: Optional[str] = None
 
     class Config:
