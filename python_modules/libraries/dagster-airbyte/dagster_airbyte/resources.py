@@ -1631,7 +1631,7 @@ def load_airbyte_asset_specs(
 
 
 @public
-@beta
+@superseded(additional_warn_text="Use load_airbyte_asset_specs instead.")
 def load_airbyte_cloud_asset_specs(
     workspace: AirbyteCloudWorkspace,
     dagster_airbyte_translator: Optional[DagsterAirbyteTranslator] = None,
