@@ -1,4 +1,4 @@
-from typing import Union
+from typing import Callable, Union
 
 import pytest
 import responses
@@ -10,6 +10,7 @@ from dagster_airbyte import (
     airbyte_assets,
     build_airbyte_assets_definitions,
     load_airbyte_asset_specs,
+    load_airbyte_cloud_asset_specs,
 )
 from dagster_airbyte.resources import AirbyteWorkspace
 from dagster_airbyte.translator import (
@@ -37,11 +38,23 @@ def test_fetch_airbyte_workspace_data(
     assert len(actual_workspace_data.destinations_by_id) == 1
 
 
+@pytest.mark.parametrize(
+    "asset_specs_loader_fn",
+    [
+        (load_airbyte_asset_specs),
+        (load_airbyte_cloud_asset_specs),
+    ],
+    ids=[
+        "load_airbyte_asset_specs",
+        "load_airbyte_cloud_asset_specs",
+    ],
+)
 def test_translator_spec(
+    asset_specs_loader_fn: Callable,
     fetch_workspace_data_api_mocks: responses.RequestsMock,
     resource: Union[AirbyteCloudWorkspace, AirbyteWorkspace],
 ) -> None:
-    all_assets = load_airbyte_asset_specs(resource)
+    all_assets = asset_specs_loader_fn(resource)
     all_assets_keys = [asset.key for asset in all_assets]
 
     # 1 table for the connection
@@ -56,23 +69,35 @@ def test_translator_spec(
     assert AirbyteMetadataSet.extract(first_asset_metadata).connection_id == TEST_CONNECTION_ID
 
 
+@pytest.mark.parametrize(
+    "asset_specs_loader_fn",
+    [
+        (load_airbyte_asset_specs),
+        (load_airbyte_cloud_asset_specs),
+    ],
+    ids=[
+        "load_airbyte_asset_specs",
+        "load_airbyte_cloud_asset_specs",
+    ],
+)
 def test_connection_selector(
+    asset_specs_loader_fn: Callable,
     fetch_workspace_data_api_mocks: responses.RequestsMock,
     resource: Union[AirbyteCloudWorkspace, AirbyteWorkspace],
 ) -> None:
     # Test with no selector (should include all connections)
-    all_assets = load_airbyte_asset_specs(workspace=resource)
+    all_assets = asset_specs_loader_fn(workspace=resource)
     assert len(all_assets) == 2  # Based on the mock data
 
     # Test with selector that matches the connection
-    matching_assets = load_airbyte_asset_specs(
+    matching_assets = asset_specs_loader_fn(
         workspace=resource,
         connection_selector_fn=lambda connection: connection.name == "Postgres To Snowflake",
     )
     assert len(matching_assets) == 2  # Should still get all assets from the matching connection
 
     # Test with selector that doesn't match any connections
-    no_matching_assets = load_airbyte_asset_specs(
+    no_matching_assets = asset_specs_loader_fn(
         workspace=resource,
         connection_selector_fn=lambda connection: connection.name == "non_existent_connection",
     )
