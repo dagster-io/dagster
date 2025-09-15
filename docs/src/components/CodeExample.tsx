@@ -13,6 +13,7 @@ interface CodeExampleProps {
   startAfter?: string; // marker that indicates beginning of code snippet
   endBefore?: string; // marker that indicates ending of code snippet
   dedent?: number;
+  trimMainBlock?: boolean; // Hide the __main__ block
 }
 
 const contentCache: Record<string, {content?: string; error?: string | null}> = {};
@@ -25,6 +26,7 @@ function processModule({
   startAfter,
   endBefore,
   dedent,
+  trimMainBlock,
 }: {
   cacheKey: string;
   module: any;
@@ -33,6 +35,7 @@ function processModule({
   startAfter?: string;
   endBefore?: string;
   dedent?: number;
+  trimMainBlock?: boolean;
 }) {
   var lines = module.default.split('\n');
 
@@ -52,7 +55,9 @@ function processModule({
 
   lines = filterComments(lines);
 
-  lines = trimMainBlock(lines);
+  if (trimMainBlock) {
+    lines = trimMainBlock(lines);
+  }
 
   if (dedent && dedent > 0) {
     lines = dedentLines(lines, dedent);
@@ -91,6 +96,7 @@ export function useLoadModule(
           startAfter,
           endBefore,
           dedent,
+          trimMainBlock,
         });
       })
       .catch((e) => {
@@ -119,6 +125,7 @@ const CodeExampleInner: React.FC<CodeExampleProps> = (props) => {
     endBefore,
     language = 'python',
     dedent = 0,
+    trimMainBlock = true,
     ...extraProps
   } = props;
 
