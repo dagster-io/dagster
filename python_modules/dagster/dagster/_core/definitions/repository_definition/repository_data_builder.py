@@ -9,6 +9,7 @@ from dagster._config.pythonic_config import (
     ConfigurableIOManagerFactoryResourceDefinition,
     ConfigurableResourceFactoryResourceDefinition,
 )
+from dagster._core.definitions.asset_checks.asset_check_spec import AssetCheckSpec
 from dagster._core.definitions.assets.definition.assets_definition import AssetsDefinition
 from dagster._core.definitions.assets.graph.asset_graph import AssetGraph
 from dagster._core.definitions.assets.graph.base_asset_graph import BaseAssetGraph
@@ -177,6 +178,20 @@ def build_caching_repository_data_from_list(
     source_assets: list[SourceAsset] = []
     asset_checks_defs: list[AssetsDefinition] = []
     partitions_defs: set[PartitionsDefinition] = set()
+    # JAMIE - maybe this is where we inject the check specs
+    # get the in-app checks defined for this repository
+    # for each check, make a spec and a stub definition and add it to the repository definitions
+    asset_with_check_key = "always_materializes"
+    check_key = "num_rows_threshold"
+    check_spec = AssetCheckSpec(
+        name=check_key,
+        asset=asset_with_check_key,
+        blocking=False,
+    )
+    repository_definitions = [rd for rd in repository_definitions] + [
+        check_spec.to_stub_definition()
+    ]
+
     for definition in repository_definitions:
         if isinstance(definition, JobDefinition):
             if (
