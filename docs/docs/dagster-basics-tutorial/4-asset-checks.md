@@ -17,7 +17,7 @@ To create an asset check, define a function and decorate it with the <PyObject s
 The code below creates an asset check for the `orders_aggregation` asset to ensure that there are rows in the underlying DuckDB table:
 
 <CodeExample
-  path="docs_snippets/docs_snippets/guides/tutorials/dagster-tutorial/src/dagster_tutorial/defs/assets.py"
+  path="docs_snippets/docs_snippets/guides/tutorials/dagster_tutorial/src/dagster_tutorial/defs/assets.py"
   language="python"
   startAfter="start_define_asset_checks"
   endBefore="end_define_asset_checks"
