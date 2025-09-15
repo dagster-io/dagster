@@ -1,0 +1,19 @@
+success_single_run:
+  command: "dg api run get 2e562bd3-7e72-4448-9f05-32bad2ea8046 --json"
+
+success_single_run_text:
+  command: "dg api run get 2e562bd3-7e72-4448-9f05-32bad2ea8046"
+
+success_failed_run:
+  command: "dg api run get 4db16a22-4124-4d43-bd4c-ea0aeaa78172 --json"
+
+success_canceled_run:
+  command: "dg api run get e0248005-fc38-4e55-a9fb-472c8694303b --json"
+
+error_run_not_found:
+  command: "dg api run get nonexistent-run-id"
+  has_recording: false
+
+error_invalid_run_id:
+  command: "dg api run get '' --json"
+  has_recording: false
