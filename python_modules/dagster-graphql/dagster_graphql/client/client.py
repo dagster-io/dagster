@@ -19,6 +19,7 @@ from dagster_graphql.client.client_queries import (
     CLIENT_GET_REPO_LOCATIONS_NAMES_AND_PIPELINES_QUERY,
     CLIENT_SUBMIT_PIPELINE_RUN_MUTATION,
     GET_PIPELINE_RUN_STATUS_QUERY,
+    GET_PIPELINE_RUN_TAGS_QUERY,
     RELOAD_REPOSITORY_LOCATION_MUTATION,
     SHUTDOWN_REPOSITORY_LOCATION_MUTATION,
     TERMINATE_RUN_JOB_MUTATION,
@@ -322,6 +323,32 @@ class DagsterGraphQLClient:
         query_result_type: str = query_result["__typename"]
         if query_result_type == "PipelineRun" or query_result_type == "Run":
             return DagsterRunStatus(query_result["status"])
+        else:
+            raise DagsterGraphQLClientError(query_result_type, query_result["message"])
+    
+    @public
+    def get_run_tags(self, run_id: str) -> Dict[str, str]:
+        """Get the tags of a given Pipeline Run.
+        
+        Args:
+            run_id (str): run id of the requested pipeline run.
+        
+        Raises:
+            DagsterGraphQLClientError("PipelineNotFoundError", message): if the requested run id is not found
+            DagsterGraphQLClientError("PythonError", message): on internal framework errors
+        
+        Returns:
+            Dict[str, str]: returns a dictionary of tags for the requested pipeline run
+        """
+        check.str_param(run_id, "run_id")
+        
+        res_data: Dict[str, Dict[str, Any]] = self._execute(
+            GET_PIPELINE_RUN_TAGS_QUERY, {"runId": run_id}
+        )
+        query_result: Dict[str, Any] = res_data["pipelineRunOrError"]
+        query_result_type: str = query_result["__typename"]
+        if query_result_type == "PipelineRun" or query_result_type == "Run":
+            return {tag["key"]: tag["value"] for tag in query_result["tags"]}
         else:
             raise DagsterGraphQLClientError(query_result_type, query_result["message"])
 
