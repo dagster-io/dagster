@@ -13,7 +13,7 @@ interface CodeExampleProps {
   startAfter?: string; // marker that indicates beginning of code snippet
   endBefore?: string; // marker that indicates ending of code snippet
   dedent?: number;
-  trimMainBlock?: boolean; // Hide the __main__ block
+  trimMain?: boolean; // Hide the __main__ block
 }
 
 const contentCache: Record<string, {content?: string; error?: string | null}> = {};
@@ -26,7 +26,7 @@ function processModule({
   startAfter,
   endBefore,
   dedent,
-  trimMainBlock,
+  trimMain,
 }: {
   cacheKey: string;
   module: any;
@@ -35,7 +35,7 @@ function processModule({
   startAfter?: string;
   endBefore?: string;
   dedent?: number;
-  trimMainBlock?: boolean;
+  trimMain?: boolean;
 }) {
   var lines = module.default.split('\n');
 
@@ -55,7 +55,7 @@ function processModule({
 
   lines = filterComments(lines);
 
-  if (trimMainBlock) {
+  if (trimMain) {
     lines = trimMainBlock(lines);
   }
 
@@ -74,6 +74,7 @@ export function useLoadModule(
   startAfter: string,
   endBefore: string,
   dedent: number,
+  trimMain: boolean,
 ) {
   //const isServer = typeof window === 'undefined';
   //if (isServer) {
@@ -96,7 +97,7 @@ export function useLoadModule(
           startAfter,
           endBefore,
           dedent,
-          trimMainBlock,
+          trimMain,
         });
       })
       .catch((e) => {
@@ -125,12 +126,12 @@ const CodeExampleInner: React.FC<CodeExampleProps> = (props) => {
     endBefore,
     language = 'python',
     dedent = 0,
-    trimMainBlock = true,
+    trimMain = true,
     ...extraProps
   } = props;
 
   const cacheKey = JSON.stringify(props);
-  const {content, error} = useLoadModule(cacheKey, path, lineStart, lineEnd, startAfter, endBefore, dedent);
+  const {content, error} = useLoadModule(cacheKey, path, lineStart, lineEnd, startAfter, endBefore, dedent, trimMain);
 
   if (error) {
     return <div style={{color: 'red', padding: '1rem', border: '1px solid red'}}>{error}</div>;
