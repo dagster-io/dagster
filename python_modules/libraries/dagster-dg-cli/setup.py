@@ -43,9 +43,9 @@ setup(
     extras_require={
         "test": ["syrupy>=4.0.0"],
         "ai": [
-            "anthropic",
-            "claude-code-sdk>=0.0.19",
-            "mcp",
+            "anthropic; python_version>='3.10'",
+            "claude-code-sdk>=0.0.19; python_version>='3.10'",
+            "mcp; python_version>='3.10'",
         ],
     },
     entry_points={
