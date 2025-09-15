@@ -110,6 +110,7 @@ interface LaunchpadSessionProps {
 
 interface ILaunchpadSessionState {
   preview: PreviewConfigQuery | null;
+  previewDefaultsToExpand: boolean;
   previewLoading: boolean;
   previewedDocument: any | null;
   configLoading: boolean;
@@ -125,6 +126,7 @@ type Action =
         preview: PreviewConfigQuery | null;
         previewLoading: boolean;
         previewedDocument: string | null;
+        previewDefaultsToExpand: boolean;
       };
     }
   | {type: 'toggle-tag-editor'; payload: boolean}
@@ -136,11 +138,12 @@ const reducer = (state: ILaunchpadSessionState, action: Action) => {
     case 'preview-loading':
       return {...state, previewLoading: action.payload};
     case 'set-preview': {
-      const {preview, previewedDocument, previewLoading} = action.payload;
+      const {preview, previewedDocument, previewDefaultsToExpand, previewLoading} = action.payload;
       return {
         ...state,
         preview,
         previewedDocument,
+        previewDefaultsToExpand,
         previewLoading,
       };
     }
@@ -178,6 +181,7 @@ const LaunchButtonContainer = ({
 const initialState: ILaunchpadSessionState = {
   preview: null,
   previewLoading: false,
+  previewDefaultsToExpand: false,
   previewedDocument: null,
   configLoading: false,
   editorHelpContext: null,
@@ -285,20 +289,6 @@ const LaunchpadSession = (props: LaunchpadSessionProps) => {
     configSchemaOrError?.__typename === 'RunConfigSchema' ? configSchemaOrError : undefined;
   const modeError =
     configSchemaOrError?.__typename === 'ModeNotFoundError' ? configSchemaOrError : undefined;
-
-  const anyDefaultsToExpand = React.useMemo(() => {
-    if (!rootDefaultYaml) {
-      return false;
-    }
-    try {
-      return (
-        mergeYaml(rootDefaultYaml, currentSession.runConfigYaml, {sortMapEntries: true}) !==
-        mergeYaml({}, currentSession.runConfigYaml, {sortMapEntries: true})
-      );
-    } catch {
-      return false;
-    }
-  }, [currentSession.runConfigYaml, rootDefaultYaml]);
 
   const onScaffoldMissingConfig = () => {
     const config = runConfigSchema ? scaffoldPipelineConfig(runConfigSchema) : {};
@@ -429,13 +419,23 @@ const LaunchpadSession = (props: LaunchpadSessionProps) => {
             preview: data,
             previewedDocument: configYamlOrEmpty,
             previewLoading: isLatestRequest ? false : state.previewLoading,
+            previewDefaultsToExpand: isLatestRequest
+              ? hasDefaultsToExpand(rootDefaultYaml, configYamlOrEmpty)
+              : state.previewDefaultsToExpand,
           },
         });
       }
 
       return responseToYamlValidationResult(configYamlOrEmpty, data.isPipelineConfigValid);
     },
-    [client, currentSession.mode, pipelineSelector, state.previewLoading],
+    [
+      client,
+      currentSession.mode,
+      pipelineSelector,
+      rootDefaultYaml,
+      state.previewLoading,
+      state.previewDefaultsToExpand,
+    ],
   );
 
   const tagsApplyingNewBaseTags = (newBaseTags: PipelineRunTag[]) => {
@@ -575,6 +575,7 @@ const LaunchpadSession = (props: LaunchpadSessionProps) => {
     preview,
     previewLoading,
     previewedDocument,
+    previewDefaultsToExpand,
     configLoading,
     editorHelpContext,
     tagEditorOpen,
@@ -879,7 +880,7 @@ const LaunchpadSession = (props: LaunchpadSessionProps) => {
               onRemoveExtraPaths={(paths) => onRemoveExtraPaths(paths)}
               onScaffoldMissingConfig={onScaffoldMissingConfig}
               onExpandDefaults={onExpandDefaults}
-              anyDefaultsToExpand={anyDefaultsToExpand}
+              anyDefaultsToExpand={previewDefaultsToExpand}
             />
           </>
         }
@@ -967,4 +968,19 @@ function isMissingPartition(base: SessionBase | null) {
     return !base.partitionName;
   }
   return false;
+}
+
+function hasDefaultsToExpand(rootDefaultYaml: string | undefined, runConfigYaml: string) {
+  if (!rootDefaultYaml) {
+    return false;
+  }
+  // "If we ran the expansion, would the Yaml be any different?"
+  try {
+    return (
+      mergeYaml(rootDefaultYaml, runConfigYaml, {sortMapEntries: true}) !==
+      mergeYaml({}, runConfigYaml, {sortMapEntries: true})
+    );
+  } catch {
+    return false;
+  }
 }

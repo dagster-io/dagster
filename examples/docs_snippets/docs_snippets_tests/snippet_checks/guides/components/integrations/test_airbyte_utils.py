@@ -1,10 +1,8 @@
-from collections.abc import Sequence
-from functools import cached_property
-from typing import Optional
+from typing import Annotated
 
 from dagster_airbyte import AirbyteCloudWorkspace
 from dagster_airbyte.components.workspace_component.component import (
-    AirbyteCloudWorkspaceComponent,
+    AirbyteWorkspaceComponent,
 )
 from dagster_airbyte.translator import (
     AirbyteConnection,
@@ -13,7 +11,9 @@ from dagster_airbyte.translator import (
     AirbyteWorkspaceData,
 )
 
+import dagster as dg
 from dagster._utils.cached_method import cached_method
+from dagster.components.resolved.base import resolve_fields
 
 
 class MockAirbyteWorkspace(AirbyteCloudWorkspace):
@@ -73,7 +73,12 @@ class MockAirbyteWorkspace(AirbyteCloudWorkspace):
         )
 
 
-class MockAirbyteComponent(AirbyteCloudWorkspaceComponent):
-    @cached_property
-    def workspace_resource(self) -> MockAirbyteWorkspace:
-        return MockAirbyteWorkspace(**self.workspace.model_dump())
+class MockAirbyteComponent(AirbyteWorkspaceComponent):
+    workspace: Annotated[
+        MockAirbyteWorkspace,
+        dg.Resolver(
+            lambda context, model: MockAirbyteWorkspace(
+                **resolve_fields(model, MockAirbyteWorkspace, context)
+            )
+        ),
+    ]
