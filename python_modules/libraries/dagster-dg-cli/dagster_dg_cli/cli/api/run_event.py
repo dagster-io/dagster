@@ -97,6 +97,7 @@ def get_run_events_command(
     organization: str,
     deployment: str,
     api_token: str,
+    view_graphql: bool,
 ) -> None:
     """Get run events with filtering options."""
     config = DagsterPlusCliConfig.create_for_deployment(
@@ -104,7 +105,7 @@ def get_run_events_command(
         organization=organization,
         user_token=api_token,
     )
-    client = create_dg_api_graphql_client(ctx, config)
+    client = create_dg_api_graphql_client(ctx, config, view_graphql=view_graphql)
     api = DgApiRunEventApi(client)
 
     try:

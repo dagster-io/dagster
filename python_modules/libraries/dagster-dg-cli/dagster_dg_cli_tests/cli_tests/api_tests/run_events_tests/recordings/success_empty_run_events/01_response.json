@@ -1,0 +1,333 @@
+{
+  "logsForRun": {
+    "__typename": "EventConnection",
+    "cursor": "eyJmaWxlX2NvdW50ZXIiOiAxLCAiZmlyc3RfcmVjb3JkX2ZpbGVfY291bnRlciI6IDEsICJ0eXBlIjogIlNUT1JBR0VfSUQiLCAidmFsdWUiOiAiMzk4NzI3MjA0MjcifQ==",
+    "events": [
+      {
+        "__typename": "AssetMaterializationPlannedEvent",
+        "eventType": "ASSET_MATERIALIZATION_PLANNED",
+        "level": "DEBUG",
+        "message": "run_etl_pipeline intends to materialize asset [\"enriched_data\"]",
+        "runId": "e0248005-fc38-4e55-a9fb-472c8694303b",
+        "stepKey": "enriched_data.concat_chunk_list",
+        "timestamp": "1751036896315"
+      },
+      {
+        "__typename": "AssetMaterializationPlannedEvent",
+        "eventType": "ASSET_MATERIALIZATION_PLANNED",
+        "level": "DEBUG",
+        "message": "run_etl_pipeline intends to materialize asset [\"raw_data\"]",
+        "runId": "e0248005-fc38-4e55-a9fb-472c8694303b",
+        "stepKey": "raw_data",
+        "timestamp": "1751036896330"
+      },
+      {
+        "__typename": "RunEnqueuedEvent",
+        "eventType": "RUN_ENQUEUED",
+        "level": "INFO",
+        "message": "",
+        "runId": "e0248005-fc38-4e55-a9fb-472c8694303b",
+        "stepKey": null,
+        "timestamp": "1751036896379"
+      },
+      {
+        "__typename": "RunStartingEvent",
+        "eventType": "RUN_STARTING",
+        "level": "INFO",
+        "message": "",
+        "runId": "e0248005-fc38-4e55-a9fb-472c8694303b",
+        "stepKey": null,
+        "timestamp": "1751036898884"
+      },
+      {
+        "__typename": "EngineEvent",
+        "eventType": "ENGINE_EVENT",
+        "level": "INFO",
+        "message": "Sending a request to the agent to execute steps in the user cloud",
+        "runId": "e0248005-fc38-4e55-a9fb-472c8694303b",
+        "stepKey": null,
+        "timestamp": "1751036898960"
+      },
+      {
+        "__typename": "EngineEvent",
+        "eventType": "ENGINE_EVENT",
+        "level": "INFO",
+        "message": "[DagsterCloudAgent] Agent b3f10481 is launching run e0248005-fc38-4e55-a9fb-472c8694303b",
+        "runId": "e0248005-fc38-4e55-a9fb-472c8694303b",
+        "stepKey": null,
+        "timestamp": "1751036899203"
+      },
+      {
+        "__typename": "EngineEvent",
+        "eventType": "ENGINE_EVENT",
+        "level": "INFO",
+        "message": "[CloudK8sRunLauncher] Creating Kubernetes run worker job",
+        "runId": "e0248005-fc38-4e55-a9fb-472c8694303b",
+        "stepKey": null,
+        "timestamp": "1751036899977"
+      },
+      {
+        "__typename": "EngineEvent",
+        "eventType": "ENGINE_EVENT",
+        "level": "INFO",
+        "message": "[CloudK8sRunLauncher] Kubernetes run worker job created",
+        "runId": "e0248005-fc38-4e55-a9fb-472c8694303b",
+        "stepKey": null,
+        "timestamp": "1751036900152"
+      },
+      {
+        "__typename": "EngineEvent",
+        "eventType": "ENGINE_EVENT",
+        "level": "INFO",
+        "message": "Starting run metrics thread with container_metrics_enabled=True and python_metrics_enabled=False",
+        "runId": "e0248005-fc38-4e55-a9fb-472c8694303b",
+        "stepKey": null,
+        "timestamp": "1751036902537"
+      },
+      {
+        "__typename": "EngineEvent",
+        "eventType": "ENGINE_EVENT",
+        "level": "INFO",
+        "message": "Started process for run (pid: 1).",
+        "runId": "e0248005-fc38-4e55-a9fb-472c8694303b",
+        "stepKey": null,
+        "timestamp": "1751036902594"
+      },
+      {
+        "__typename": "RunStartEvent",
+        "eventType": "RUN_START",
+        "level": "DEBUG",
+        "message": "Started execution of run for \"run_etl_pipeline\".",
+        "runId": "e0248005-fc38-4e55-a9fb-472c8694303b",
+        "stepKey": null,
+        "timestamp": "1751036903353"
+      },
+      {
+        "__typename": "EngineEvent",
+        "eventType": "ENGINE_EVENT",
+        "level": "DEBUG",
+        "message": "Executing steps using multiprocess executor: parent process (pid: 1)",
+        "runId": "e0248005-fc38-4e55-a9fb-472c8694303b",
+        "stepKey": null,
+        "timestamp": "1751036903399"
+      },
+      {
+        "__typename": "StepWorkerStartingEvent",
+        "eventType": "STEP_WORKER_STARTING",
+        "level": "DEBUG",
+        "message": "Launching subprocess for \"raw_data\".",
+        "runId": "e0248005-fc38-4e55-a9fb-472c8694303b",
+        "stepKey": "raw_data",
+        "timestamp": "1751036903704"
+      },
+      {
+        "__typename": "StepWorkerStartedEvent",
+        "eventType": "STEP_WORKER_STARTED",
+        "level": "DEBUG",
+        "message": "Executing step \"raw_data\" in subprocess.",
+        "runId": "e0248005-fc38-4e55-a9fb-472c8694303b",
+        "stepKey": "raw_data",
+        "timestamp": "1751036904836"
+      },
+      {
+        "__typename": "ResourceInitStartedEvent",
+        "eventType": "RESOURCE_INIT_STARTED",
+        "level": "DEBUG",
+        "message": "Starting initialization of resources [io_manager, warehouse].",
+        "runId": "e0248005-fc38-4e55-a9fb-472c8694303b",
+        "stepKey": "raw_data",
+        "timestamp": "1751036905400"
+      },
+      {
+        "__typename": "ResourceInitSuccessEvent",
+        "eventType": "RESOURCE_INIT_SUCCESS",
+        "level": "DEBUG",
+        "message": "Finished initialization of resources [io_manager, warehouse].",
+        "runId": "e0248005-fc38-4e55-a9fb-472c8694303b",
+        "stepKey": "raw_data",
+        "timestamp": "1751036905913"
+      },
+      {
+        "__typename": "LogsCapturedEvent",
+        "eventType": "LOGS_CAPTURED",
+        "level": "DEBUG",
+        "message": "Started capturing logs in process (pid: 16).",
+        "runId": "e0248005-fc38-4e55-a9fb-472c8694303b",
+        "stepKey": null,
+        "timestamp": "1751036905968"
+      },
+      {
+        "__typename": "ExecutionStepStartEvent",
+        "eventType": "STEP_START",
+        "level": "DEBUG",
+        "message": "Started execution of step \"raw_data\".",
+        "runId": "e0248005-fc38-4e55-a9fb-472c8694303b",
+        "stepKey": "raw_data",
+        "timestamp": "1751036906061"
+      },
+      {
+        "__typename": "LogMessageEvent",
+        "eventType": null,
+        "level": "INFO",
+        "message": "Received 523 orders to process",
+        "runId": "e0248005-fc38-4e55-a9fb-472c8694303b",
+        "stepKey": "raw_data",
+        "timestamp": "1751036906136"
+      },
+      {
+        "__typename": "ExecutionStepOutputEvent",
+        "eventType": "STEP_OUTPUT",
+        "level": "DEBUG",
+        "message": "Yielded output \"result\" of type \"Any\". (Type check passed).",
+        "runId": "e0248005-fc38-4e55-a9fb-472c8694303b",
+        "stepKey": "raw_data",
+        "timestamp": "1751036906243"
+      },
+      {
+        "__typename": "LogMessageEvent",
+        "eventType": null,
+        "level": "DEBUG",
+        "message": "Writing file at: /opt/dagster/dagster_home/storage/raw_data using PickledObjectFilesystemIOManager...",
+        "runId": "e0248005-fc38-4e55-a9fb-472c8694303b",
+        "stepKey": "raw_data",
+        "timestamp": "1751036906284"
+      },
+      {
+        "__typename": "MaterializationEvent",
+        "eventType": "ASSET_MATERIALIZATION",
+        "level": "DEBUG",
+        "message": "Materialized value raw_data.",
+        "runId": "e0248005-fc38-4e55-a9fb-472c8694303b",
+        "stepKey": "raw_data",
+        "timestamp": "1751036906348"
+      },
+      {
+        "__typename": "HandledOutputEvent",
+        "eventType": "HANDLED_OUTPUT",
+        "level": "DEBUG",
+        "message": "Handled output \"result\" using IO manager \"io_manager\"",
+        "runId": "e0248005-fc38-4e55-a9fb-472c8694303b",
+        "stepKey": "raw_data",
+        "timestamp": "1751036906378"
+      },
+      {
+        "__typename": "ExecutionStepSuccessEvent",
+        "eventType": "STEP_SUCCESS",
+        "level": "DEBUG",
+        "message": "Finished execution of step \"raw_data\" in 310ms.",
+        "runId": "e0248005-fc38-4e55-a9fb-472c8694303b",
+        "stepKey": "raw_data",
+        "timestamp": "1751036906424"
+      },
+      {
+        "__typename": "StepWorkerStartingEvent",
+        "eventType": "STEP_WORKER_STARTING",
+        "level": "DEBUG",
+        "message": "Launching subprocess for \"enriched_data.split_rows\".",
+        "runId": "e0248005-fc38-4e55-a9fb-472c8694303b",
+        "stepKey": "enriched_data.split_rows",
+        "timestamp": "1751036906960"
+      },
+      {
+        "__typename": "EngineEvent",
+        "eventType": "ENGINE_EVENT",
+        "level": "INFO",
+        "message": "Sending request to the agent to cancel the run",
+        "runId": "e0248005-fc38-4e55-a9fb-472c8694303b",
+        "stepKey": null,
+        "timestamp": "1751036907511"
+      },
+      {
+        "__typename": "EngineEvent",
+        "eventType": "ENGINE_EVENT",
+        "level": "INFO",
+        "message": "[DagsterCloudAgent] Agent b3f10481 received request to terminate run",
+        "runId": "e0248005-fc38-4e55-a9fb-472c8694303b",
+        "stepKey": null,
+        "timestamp": "1751036907951"
+      },
+      {
+        "__typename": "StepWorkerStartedEvent",
+        "eventType": "STEP_WORKER_STARTED",
+        "level": "DEBUG",
+        "message": "Executing step \"enriched_data.split_rows\" in subprocess.",
+        "runId": "e0248005-fc38-4e55-a9fb-472c8694303b",
+        "stepKey": "enriched_data.split_rows",
+        "timestamp": "1751036908214"
+      },
+      {
+        "__typename": "RunCancelingEvent",
+        "eventType": "RUN_CANCELING",
+        "level": "INFO",
+        "message": "Sending run termination request.",
+        "runId": "e0248005-fc38-4e55-a9fb-472c8694303b",
+        "stepKey": null,
+        "timestamp": "1751036908248"
+      },
+      {
+        "__typename": "EngineEvent",
+        "eventType": "ENGINE_EVENT",
+        "level": "INFO",
+        "message": "[CloudK8sRunLauncher] Run was terminated successfully.",
+        "runId": "e0248005-fc38-4e55-a9fb-472c8694303b",
+        "stepKey": null,
+        "timestamp": "1751036908611"
+      },
+      {
+        "__typename": "EngineEvent",
+        "eventType": "ENGINE_EVENT",
+        "level": "DEBUG",
+        "message": "Multiprocess executor: received termination signal - forwarding to active child processes",
+        "runId": "e0248005-fc38-4e55-a9fb-472c8694303b",
+        "stepKey": null,
+        "timestamp": "1751036908640"
+      },
+      {
+        "__typename": "ResourceInitStartedEvent",
+        "eventType": "RESOURCE_INIT_STARTED",
+        "level": "DEBUG",
+        "message": "Starting initialization of resources [io_manager].",
+        "runId": "e0248005-fc38-4e55-a9fb-472c8694303b",
+        "stepKey": "enriched_data.split_rows",
+        "timestamp": "1751036908698"
+      },
+      {
+        "__typename": "LogMessageEvent",
+        "eventType": null,
+        "level": "ERROR",
+        "message": "Step enriched_data.split_rows finished without success or failure event. Downstream steps will not execute.",
+        "runId": "e0248005-fc38-4e55-a9fb-472c8694303b",
+        "stepKey": null,
+        "timestamp": "1751036909042"
+      },
+      {
+        "__typename": "EngineEvent",
+        "eventType": "ENGINE_EVENT",
+        "level": "DEBUG",
+        "message": "Multiprocess executor: interrupted all active child processes",
+        "runId": "e0248005-fc38-4e55-a9fb-472c8694303b",
+        "stepKey": null,
+        "timestamp": "1751036909079"
+      },
+      {
+        "__typename": "RunCanceledEvent",
+        "eventType": "RUN_CANCELED",
+        "level": "ERROR",
+        "message": "Execution of run for \"run_etl_pipeline\" canceled.",
+        "runId": "e0248005-fc38-4e55-a9fb-472c8694303b",
+        "stepKey": null,
+        "timestamp": "1751036909142"
+      },
+      {
+        "__typename": "EngineEvent",
+        "eventType": "ENGINE_EVENT",
+        "level": "INFO",
+        "message": "Process for run exited (pid: 1).",
+        "runId": "e0248005-fc38-4e55-a9fb-472c8694303b",
+        "stepKey": null,
+        "timestamp": "1751036909192"
+      }
+    ],
+    "hasMore": false
+  }
+}
