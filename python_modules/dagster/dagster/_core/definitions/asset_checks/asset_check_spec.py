@@ -15,8 +15,10 @@ from typing_extensions import TypeAlias
 
 from dagster._annotations import PublicAttr, public
 from dagster._core.definitions.asset_key import AssetCheckKey, AssetKey, CoercibleToAssetKey
+from dagster._core.definitions.utils import DEFAULT_OUTPUT
 
 if TYPE_CHECKING:
+    from dagster._core.definitions.asset_checks.asset_checks_definition import AssetChecksDefinition
     from dagster._core.definitions.assets.definition.asset_dep import AssetDep, CoercibleToAssetDep
     from dagster._core.definitions.assets.definition.assets_definition import AssetsDefinition
     from dagster._core.definitions.declarative_automation.automation_condition import (
@@ -138,6 +140,19 @@ class AssetCheckSpec(IHaveNew, LegacyNamedTupleMixin):
 
     def with_metadata(self, metadata: Mapping[str, Any]) -> "AssetCheckSpec":
         return replace(self, metadata=metadata)
+
+    def to_stub_definition(self) -> "AssetChecksDefinition":
+        from dagster._core.definitions.asset_checks.asset_checks_definition import (
+            AssetChecksDefinition,
+        )
+
+        return AssetChecksDefinition.create(
+            keys_by_input_name={},
+            node_def=None,
+            resource_defs=None,
+            check_specs_by_output_name={DEFAULT_OUTPUT: self},
+            can_subset=False,
+        )
 
 
 """
