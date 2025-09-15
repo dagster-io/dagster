@@ -43,11 +43,13 @@ tox -e all
 This runs all documentation tests, which can be slow and result in a less-than-ideal feedback loop. To run tests for a specific file:
 
 ### Testing Specific Files
+
 ```
 TOX_TESTENV_PASSENV=PYTEST_ADDOPTS PYTEST_ADDOPTS="docs_snippets_tests/{PATH TO TEST}.py" tox -e all
 ```
 
 ### Testing Specific Tests
+
 ```
 TOX_TESTENV_PASSENV=PYTEST_ADDOPTS PYTEST_ADDOPTS="docs_snippets_tests/{PATH TO TEST}.py::{TEST NAME}" tox -e all
 ```
@@ -58,7 +60,7 @@ By default, whenever a file is added to `examples/docs_snippets/docs_snippets`, 
 
 There are two variations of the `test_file_loads` test, covering both docs snippets and integrations:
 
-* [examples/docs_snippets/docs_snippets_tests/test_integration_files_load.py](examples/docs_snippets/docs_snippets_tests/test_integration_files_load.py)
-* [examples/docs_snippets/docs_snippets_tests/test_all_files_load.py](examples/docs_snippets/docs_snippets_tests/test_all_files_load.py)
+- [docs_snippets_tests/test_integration_files_load.py](docs_snippets_tests/test_integration_files_load.py)
+- [docs_snippets_tests/test_all_files_load.py](docs_snippets_tests/test_all_files_load.py)
 
 If you need to exclude a file (typically due to relative imports or other import issues), add it to the `EXCLUDED_FILES` list at the top of the test.
