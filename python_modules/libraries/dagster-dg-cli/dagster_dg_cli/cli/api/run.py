@@ -1,6 +1,6 @@
 """Run API commands following GitHub CLI patterns."""
 
-import sys
+import json
 
 import click
 from dagster_dg_core.utils import DgClickCommand, DgClickGroup
@@ -8,9 +8,7 @@ from dagster_dg_core.utils.telemetry import cli_telemetry_wrapper
 from dagster_shared.plus.config import DagsterPlusCliConfig
 from dagster_shared.plus.config_utils import dg_api_options
 
-from dagster_dg_cli.api_layer.api.run import DgApiRunApi
 from dagster_dg_cli.cli.api.client import create_dg_api_graphql_client
-from dagster_dg_cli.cli.api.shared import format_error_for_output
 
 
 def format_run_table(run) -> str:
@@ -25,10 +23,8 @@ def format_run_table(run) -> str:
         lines.append(f"Started: {run.started_at}")
     if run.ended_at:
         lines.append(f"Ended: {run.ended_at}")
-    if run.pipeline_name:
-        lines.append(f"Pipeline: {run.pipeline_name}")
-    if run.mode:
-        lines.append(f"Mode: {run.mode}")
+    if run.job_name:
+        lines.append(f"Pipeline: {run.job_name}")
 
     return "\n".join(lines)
 
@@ -51,14 +47,17 @@ def get_run_command(
     organization: str,
     deployment: str,
     api_token: str,
+    view_graphql: bool,
 ) -> None:
     """Get run metadata by ID."""
+    from dagster_dg_cli.api_layer.api.run import DgApiRunApi
+
     config = DagsterPlusCliConfig.create_for_deployment(
         deployment=deployment,
         organization=organization,
         user_token=api_token,
     )
-    client = create_dg_api_graphql_client(ctx, config)
+    client = create_dg_api_graphql_client(ctx, config, view_graphql=view_graphql)
     api = DgApiRunApi(client)
 
     try:
@@ -71,9 +70,11 @@ def get_run_command(
 
         click.echo(output)
     except Exception as e:
-        error_output, exit_code = format_error_for_output(e, output_json)
-        click.echo(error_output, err=True)
-        sys.exit(exit_code)
+        if output_json:
+            error_response = {"error": str(e)}
+            click.echo(json.dumps(error_response), err=True)
+        else:
+            click.echo(f"Error querying Dagster Plus API: {e}", err=True)
 
 
 @click.group(

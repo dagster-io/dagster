@@ -2,11 +2,6 @@
 
 from typing import Any, Optional
 
-from dagster_dg_cli.cli.api.shared import (
-    DgApiError,
-    get_default_error_mapping,
-    get_graphql_error_mappings,
-)
 from dagster_dg_cli.utils.plus.gql_client import IGraphQLClient
 
 # Exact GraphQL query from specification
@@ -89,24 +84,13 @@ def get_run_events_via_graphql(
 
     logs_result = result.get("logsForRun")
     if not logs_result:
-        raise DgApiError(
-            message="Empty response from GraphQL API", code="INTERNAL_ERROR", status_code=500
-        )
+        raise Exception("Empty response from GraphQL API")
 
     typename = logs_result.get("__typename")
 
-    # Handle GraphQL errors
-    error_mappings = get_graphql_error_mappings()
-    if typename in error_mappings:
-        mapping = error_mappings[typename]
-        error_msg = logs_result.get("message", f"Unknown error: {typename}")
-        raise DgApiError(message=error_msg, code=mapping.code, status_code=mapping.status_code)
-
     if typename != "EventConnection":
-        # Unmapped error type
-        mapping = get_default_error_mapping()
         error_msg = logs_result.get("message", f"Unknown error: {typename}")
-        raise DgApiError(message=error_msg, code=mapping.code, status_code=mapping.status_code)
+        raise Exception(error_msg)
 
     # Extract and filter events
     events_data = logs_result.get("events", [])

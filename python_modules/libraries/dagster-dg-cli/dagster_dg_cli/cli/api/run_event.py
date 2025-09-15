@@ -1,7 +1,6 @@
 """Run events API commands following GitHub CLI patterns."""
 
 import json
-import sys
 
 import click
 from dagster_dg_core.utils import DgClickCommand, DgClickGroup
@@ -11,7 +10,6 @@ from dagster_shared.plus.config_utils import dg_api_options
 
 from dagster_dg_cli.api_layer.api.run_event import DgApiRunEventApi
 from dagster_dg_cli.cli.api.client import create_dg_api_graphql_client
-from dagster_dg_cli.cli.api.shared import format_error_for_output
 
 
 def format_run_events_table(events, run_id: str) -> str:
@@ -121,9 +119,11 @@ def get_run_events_command(
 
         click.echo(output)
     except Exception as e:
-        error_output, exit_code = format_error_for_output(e, output_json)
-        click.echo(error_output, err=True)
-        sys.exit(exit_code)
+        if output_json:
+            error_response = {"error": str(e)}
+            click.echo(json.dumps(error_response), err=True)
+        else:
+            click.echo(f"Error querying Dagster Plus API: {e}", err=True)
 
 
 @click.group(

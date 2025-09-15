@@ -6,7 +6,7 @@ from typing import Optional
 from pydantic import BaseModel
 
 
-class RunStatus(str, Enum):
+class DgApiRunStatus(str, Enum):
     """Run execution status."""
 
     QUEUED = "QUEUED"
@@ -18,16 +18,15 @@ class RunStatus(str, Enum):
     CANCELED = "CANCELED"
 
 
-class Run(BaseModel):
+class DgApiRun(BaseModel):
     """Single run metadata model."""
 
     id: str
-    status: RunStatus
-    created_at: str  # ISO 8601 timestamp
-    started_at: Optional[str] = None  # ISO 8601 timestamp
-    ended_at: Optional[str] = None  # ISO 8601 timestamp
-    pipeline_name: Optional[str] = None
-    mode: Optional[str] = None
+    status: DgApiRunStatus
+    created_at: float  # ISO 8601 timestamp
+    started_at: Optional[float] = None  # ISO 8601 timestamp
+    ended_at: Optional[float] = None  # ISO 8601 timestamp
+    job_name: Optional[str] = None
 
     class Config:
         from_attributes = True

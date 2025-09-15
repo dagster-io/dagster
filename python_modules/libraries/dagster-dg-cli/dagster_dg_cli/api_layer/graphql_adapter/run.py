@@ -1,12 +1,6 @@
 """GraphQL adapter for run metadata."""
 
-from typing import Any
-
-from dagster_dg_cli.cli.api.shared import (
-    DgApiError,
-    get_default_error_mapping,
-    get_graphql_error_mappings,
-)
+from dagster_dg_cli.api_layer.schemas.run import DgApiRun, DgApiRunStatus
 from dagster_dg_cli.utils.plus.gql_client import IGraphQLClient
 
 RUN_METADATA_QUERY = """
@@ -15,12 +9,12 @@ query DgApiRunMetadataQuery($runId: ID!) {
         __typename
         ... on Run {
             id
+            runId
             status
             creationTime
             startTime
             endTime
-            pipelineName
-            mode
+            jobName
         }
         ... on RunNotFoundError {
             message
@@ -34,30 +28,33 @@ query DgApiRunMetadataQuery($runId: ID!) {
 """
 
 
-def get_run_via_graphql(client: IGraphQLClient, run_id: str) -> dict[str, Any]:
+def get_run_via_graphql(client: IGraphQLClient, run_id: str) -> DgApiRun:
     """Get run metadata via GraphQL."""
     variables = {"runId": run_id}
-    result = client.execute(RUN_METADATA_QUERY, variables)
+
+    # Try/catch here is a temporary solution until we fix the GQL-- client.execute is throwing an
+    # error if the run is not found, instead of returning the error in the response.
+    try:
+        result = client.execute(RUN_METADATA_QUERY, variables)
+    except Exception:
+        raise Exception(f"Run not found: {run_id}")
 
     run_result = result.get("runOrError")
     if not run_result:
-        raise DgApiError(
-            message="Empty response from GraphQL API", code="INTERNAL_ERROR", status_code=500
-        )
+        raise Exception(f"Run not found: {run_id}")
 
     typename = run_result.get("__typename")
 
     # Handle GraphQL errors
-    error_mappings = get_graphql_error_mappings()
-    if typename in error_mappings:
-        mapping = error_mappings[typename]
-        error_msg = run_result.get("message", f"Unknown error: {typename}")
-        raise DgApiError(message=error_msg, code=mapping.code, status_code=mapping.status_code)
+    if run_result.get("__typename") != "Run":
+        error_msg = run_result.get("message", f"Graphql error: {typename}")
+        raise Exception(error_msg)
 
-    if typename != "Run":
-        # Unmapped error type
-        mapping = get_default_error_mapping()
-        error_msg = run_result.get("message", f"Unknown error: {typename}")
-        raise DgApiError(message=error_msg, code=mapping.code, status_code=mapping.status_code)
-
-    return run_result
+    return DgApiRun(
+        id=run_result["runId"],
+        status=DgApiRunStatus(run_result["status"]),
+        created_at=run_result["creationTime"],
+        started_at=run_result.get("startTime"),
+        ended_at=run_result.get("endTime"),
+        job_name=run_result.get("jobName"),
+    )
