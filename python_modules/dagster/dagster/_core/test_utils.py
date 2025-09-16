@@ -63,6 +63,7 @@ from dagster._core.instance_for_test import (
     instance_for_test as instance_for_test,
 )
 from dagster._core.launcher import RunLauncher
+from dagster._core.loader import LoadingContext
 from dagster._core.remote_origin import InProcessCodeLocationOrigin
 from dagster._core.remote_representation.code_location import CodeLocation
 from dagster._core.remote_representation.external import RemoteRepository
@@ -830,3 +831,19 @@ def get_paginated_partition_keys(
             raise Exception("Too many pages")
 
     return all_results
+
+
+class BasicLoadingContext(LoadingContext):
+    def __init__(self, instance: Optional[DagsterInstance] = None):
+        from unittest import mock
+
+        self._loaders = {}
+        self._instance = instance or mock.MagicMock()
+
+    @property
+    def loaders(self):
+        return self._loaders
+
+    @property
+    def instance(self):
+        return self._instance

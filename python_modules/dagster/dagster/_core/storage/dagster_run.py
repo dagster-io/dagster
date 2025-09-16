@@ -641,13 +641,19 @@ class RunRecord(
     ) -> Iterable[Optional["RunRecord"]]:
         result_map: dict[str, Optional[RunRecord]] = {run_id: None for run_id in keys}
 
-        # this should be replaced with an async DB call
-        records = context.instance.get_run_records(RunsFilter(run_ids=list(result_map.keys())))
+        run_ids = list(result_map.keys())
+
+        records = []
+        batch_size = int(os.getenv("DAGSTER_RUN_RECORD_LOADER_BATCH_SIZE", "100"))
+        for i in range(0, len(run_ids), batch_size):
+            chunk = run_ids[i : i + batch_size]
+            chunk_records = context.instance.get_run_records(RunsFilter(run_ids=chunk))
+            records.extend([record for record in chunk_records if record])
 
         for r in records:
             result_map[r.dagster_run.run_id] = r
 
-        return result_map.values()
+        return [result_map[k] for k in keys]
 
 
 @whitelist_for_serdes
