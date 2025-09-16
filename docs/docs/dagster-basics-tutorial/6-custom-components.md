@@ -18,11 +18,11 @@ In this step, you will use a custom component to streamline the development of s
 
 First, scaffold a custom component using `dg`:
 
-<CliInvocationExample path="docs_snippets/docs_snippets/guides/tutorials/dagster-tutorial/commands/dg-create-custom-component.txt" />
+<CliInvocationExample path="docs_snippets/docs_snippets/guides/tutorials/dagster_tutorial/commands/dg-create-custom-component.txt" />
 
 This adds a new directory, `components`, within `src/dagster_tutorial`:
 
-<CliInvocationExample path="docs_snippets/docs_snippets/guides/tutorials/dagster-tutorial/tree/step-6a.txt" />
+<CliInvocationExample path="docs_snippets/docs_snippets/guides/tutorials/dagster_tutorial/tree/step-6a.txt" />
 
 This directory contains the files needed to define the custom component.
 
@@ -38,7 +38,7 @@ The first step is to create a `dg.Model` for the ETL assets. `dg.Model` turns an
 This model will contain the two attributes that define an asset:
 
 <CodeExample
-  path="docs_snippets/docs_snippets/guides/tutorials/dagster-tutorial/src/dagster_tutorial/components/tutorial.py"
+  path="docs_snippets/docs_snippets/guides/tutorials/dagster_tutorial/src/dagster_tutorial/components/tutorial.py"
   language="python"
   startAfter="start_etl_model"
   endBefore="end_etl_model"
@@ -55,7 +55,7 @@ Next, add the interface to the `dg.Component` class. In this case, there will be
 The rest of the code will look very similar to the asset definitions you wrote earlier. The `build_defs` method constructs a `Definitions` object containing all the Dagster objects created by the component. Based on the interface defined at the class level, you will generate multiple ETL assets. The final Dagster object to include is the `resource` that the assets rely on, which can also be set with an attribute.
 
 <CodeExample
-  path="docs_snippets/docs_snippets/guides/tutorials/dagster-tutorial/src/dagster_tutorial/components/tutorial.py"
+  path="docs_snippets/docs_snippets/guides/tutorials/dagster_tutorial/src/dagster_tutorial/components/tutorial.py"
   language="python"
   startAfter="start_tutorial_component"
   endBefore="end_tutorial_component"
@@ -64,28 +64,28 @@ The rest of the code will look very similar to the asset definitions you wrote e
 
 Run the check again to ensure that the component code is correct:
 
-<CliInvocationExample path="docs_snippets/docs_snippets/guides/tutorials/dagster-tutorial/commands/dg-check-defs.txt" />
+<CliInvocationExample path="docs_snippets/docs_snippets/guides/tutorials/dagster_tutorial/commands/dg-check-defs.txt" />
 
 ## 3. Scaffold the component definition
 
 If you list your components again, you should see that the custom component is now registered:
 
-<CliInvocationExample path="docs_snippets/docs_snippets/guides/tutorials/dagster-tutorial/commands/dg-list-components-custom.txt" />
+<CliInvocationExample path="docs_snippets/docs_snippets/guides/tutorials/dagster_tutorial/commands/dg-list-components-custom.txt" />
 
 You can now scaffold definitions from it just like any other component:
 
-<CliInvocationExample path="docs_snippets/docs_snippets/guides/tutorials/dagster-tutorial/commands/dg-scaffold-custom-component.txt" />
+<CliInvocationExample path="docs_snippets/docs_snippets/guides/tutorials/dagster_tutorial/commands/dg-scaffold-custom-component.txt" />
 
 This adds a new directory, `tutorials`, within `defs`:
 
-<CliInvocationExample path="docs_snippets/docs_snippets/guides/tutorials/dagster-tutorial/tree/step-6b.txt" />
+<CliInvocationExample path="docs_snippets/docs_snippets/guides/tutorials/dagster_tutorial/tree/step-6b.txt" />
 
 ## 4. Configure the component
 
 To configure the component, update the YAML file created when you scaffolded a definition from the component:
 
 <CodeExample
-  path="docs_snippets/docs_snippets/guides/tutorials/dagster-tutorial/src/dagster_tutorial/components/defs.yaml"
+  path="docs_snippets/docs_snippets/guides/tutorials/dagster_tutorial/src/dagster_tutorial/components/defs.yaml"
   language="yaml"
   title="src/dagster_tutorial/defs/tutorial/defs.yaml"
 />
@@ -94,7 +94,7 @@ To configure the component, update the YAML file created when you scaffolded a d
 
 Before running `dg check` again, remove the `customers`, `orders`, and `payments` assets from `assets.py` and the `resource.py` file. The component is now responsible for generating these objects (otherwise there will be duplicate keys in the asset lineage).
 
-<CliInvocationExample path="docs_snippets/docs_snippets/guides/tutorials/dagster-tutorial/tree/step-6c.txt" />
+<CliInvocationExample path="docs_snippets/docs_snippets/guides/tutorials/dagster_tutorial/tree/step-6c.txt" />
 
 ## 6. Materialize the assets
 
