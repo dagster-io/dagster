@@ -135,14 +135,8 @@ class DynamicPartitionsStore(Protocol):
     @abstractmethod
     def has_dynamic_partition(self, partitions_def_name: str, partition_key: str) -> bool: ...
 
-    def get_dynamic_partitions_definition_id(self, partitions_def_name: str) -> str:
-        from dagster._core.definitions.partitions.utils import (
-            generate_partition_key_based_definition_id,
-        )
-
-        # matches the base implementation of the get_serializable_unique_identifier on PartitionsDefinition
-        partition_keys = self.get_dynamic_partitions(partitions_def_name)
-        return generate_partition_key_based_definition_id(partition_keys)
+    @abstractmethod
+    def get_dynamic_partitions_definition_id(self, partitions_def_name: str) -> str: ...
 
 
 class CachingDynamicPartitionsLoader(DynamicPartitionsStore):
@@ -168,6 +162,10 @@ class CachingDynamicPartitionsLoader(DynamicPartitionsStore):
     @cached_method
     def has_dynamic_partition(self, partitions_def_name: str, partition_key: str) -> bool:
         return self._instance.has_dynamic_partition(partitions_def_name, partition_key)
+
+    @cached_method
+    def get_dynamic_partitions_definition_id(self, partitions_def_name: str) -> str:
+        return self._instance.get_dynamic_partitions_definition_id(partitions_def_name)
 
 
 @record
@@ -241,4 +239,9 @@ class DynamicPartitionsStoreAfterRequests(DynamicPartitionsStore):
             or self.wrapped_dynamic_partitions_store.has_dynamic_partition(
                 partitions_def_name, partition_key
             )
+        )
+
+    def get_dynamic_partitions_definition_id(self, partitions_def_name: str) -> str:
+        return self.wrapped_dynamic_partitions_store.get_dynamic_partitions_definition_id(
+            partitions_def_name
         )

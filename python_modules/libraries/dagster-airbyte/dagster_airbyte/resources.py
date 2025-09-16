@@ -1630,6 +1630,71 @@ def load_airbyte_asset_specs(
         ]
 
 
+@public
+@beta
+def load_airbyte_cloud_asset_specs(
+    workspace: AirbyteCloudWorkspace,
+    dagster_airbyte_translator: Optional[DagsterAirbyteTranslator] = None,
+    connection_selector_fn: Optional[Callable[[AirbyteConnection], bool]] = None,
+) -> Sequence[AssetSpec]:
+    """Returns a list of AssetSpecs representing the Airbyte content in the workspace.
+
+    Args:
+        workspace (AirbyteCloudWorkspace): The Airbyte Cloud workspace to fetch assets from.
+        dagster_airbyte_translator (Optional[DagsterAirbyteTranslator], optional): The translator to use
+            to convert Airbyte content into :py:class:`dagster.AssetSpec`.
+            Defaults to :py:class:`DagsterAirbyteTranslator`.
+        connection_selector_fn (Optional[Callable[[AirbyteConnection], bool]]): A function that allows for filtering
+            which Airbyte connection assets are created for.
+
+    Returns:
+        List[AssetSpec]: The set of assets representing the Airbyte content in the workspace.
+
+    Examples:
+        Loading the asset specs for a given Airbyte Cloud workspace:
+
+        .. code-block:: python
+
+            from dagster_airbyte import AirbyteCloudWorkspace, load_airbyte_cloud_asset_specs
+
+            import dagster as dg
+
+            airbyte_cloud_workspace = AirbyteCloudWorkspace(
+                workspace_id=dg.EnvVar("AIRBYTE_CLOUD_WORKSPACE_ID"),
+                client_id=dg.EnvVar("AIRBYTE_CLOUD_CLIENT_ID"),
+                client_secret=dg.EnvVar("AIRBYTE_CLOUD_CLIENT_SECRET"),
+            )
+
+            airbyte_cloud_specs = load_airbyte_cloud_asset_specs(airbyte_cloud_workspace)
+            dg.Definitions(assets=airbyte_cloud_specs)
+
+        Filter connections by name:
+
+        .. code-block:: python
+
+            from dagster_airbyte import AirbyteCloudWorkspace, load_airbyte_cloud_asset_specs
+
+            import dagster as dg
+
+            airbyte_cloud_workspace = AirbyteCloudWorkspace(
+                workspace_id=dg.EnvVar("AIRBYTE_CLOUD_WORKSPACE_ID"),
+                client_id=dg.EnvVar("AIRBYTE_CLOUD_CLIENT_ID"),
+                client_secret=dg.EnvVar("AIRBYTE_CLOUD_CLIENT_SECRET"),
+            )
+
+            airbyte_cloud_specs = load_airbyte_cloud_asset_specs(
+                workspace=airbyte_cloud_workspace,
+                connection_selector_fn=lambda connection: connection.name in ["connection1", "connection2"]
+            )
+            dg.Definitions(assets=airbyte_cloud_specs)
+    """
+    return load_airbyte_asset_specs(
+        workspace=workspace,
+        dagster_airbyte_translator=dagster_airbyte_translator,
+        connection_selector_fn=connection_selector_fn,
+    )
+
+
 @record
 class AirbyteWorkspaceDefsLoader(StateBackedDefinitionsLoader[AirbyteWorkspaceData]):
     workspace: Union[AirbyteWorkspace, AirbyteCloudWorkspace]
