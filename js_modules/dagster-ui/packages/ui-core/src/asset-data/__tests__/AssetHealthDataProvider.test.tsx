@@ -77,7 +77,7 @@ describe('AssetHealthDataProvider integration tests', () => {
             __typename: 'AssetKey',
             path: ['asset_without_def'],
           }),
-          assetMaterializations: [],
+          latestMaterializationTimestamp: null,
           assetHealth: null,
         });
       });
@@ -147,7 +147,7 @@ describe('AssetHealthDataProvider integration tests', () => {
             __typename: 'AssetKey',
             path: ['asset3'],
           }),
-          assetMaterializations: [],
+          latestMaterializationTimestamp: null,
           assetHealth: null,
         });
 
@@ -157,7 +157,7 @@ describe('AssetHealthDataProvider integration tests', () => {
             __typename: 'AssetKey',
             path: ['asset4'],
           }),
-          assetMaterializations: [],
+          latestMaterializationTimestamp: null,
           assetHealth: null,
         });
       });
@@ -195,7 +195,7 @@ describe('AssetHealthDataProvider integration tests', () => {
             __typename: 'AssetKey',
             path: ['asset1'],
           }),
-          assetMaterializations: [],
+          latestMaterializationTimestamp: null,
           assetHealth: null,
         });
 
@@ -205,7 +205,7 @@ describe('AssetHealthDataProvider integration tests', () => {
             __typename: 'AssetKey',
             path: ['asset2'],
           }),
-          assetMaterializations: [],
+          latestMaterializationTimestamp: null,
           assetHealth: null,
         });
       });
@@ -310,7 +310,7 @@ describe('AssetHealthDataProvider integration tests', () => {
             __typename: 'AssetKey',
             path: ['namespace', 'deeply', 'nested', 'asset'],
           }),
-          assetMaterializations: [],
+          latestMaterializationTimestamp: null,
           assetHealth: null,
         });
       });
@@ -337,7 +337,7 @@ describe('AssetHealthDataProvider integration tests', () => {
             __typename: 'AssetKey',
             path: ['asset-with-dashes', 'asset_with_underscores'],
           }),
-          assetMaterializations: [],
+          latestMaterializationTimestamp: null,
           assetHealth: null,
         });
       });
