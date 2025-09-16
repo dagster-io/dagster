@@ -4,6 +4,7 @@ import datetime
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
+    from dagster_dg_cli.api_layer.schemas.agent import Agent, AgentList
     from dagster_dg_cli.api_layer.schemas.asset import DgApiAsset, DgApiAssetList
     from dagster_dg_cli.api_layer.schemas.deployment import DeploymentList
 
@@ -56,6 +57,15 @@ def _format_timestamp(timestamp: float) -> str:
     """Format timestamp for human-readable display."""
     try:
         dt = datetime.datetime.fromtimestamp(timestamp / 1000)  # Assume milliseconds
+        return dt.strftime("%Y-%m-%d %H:%M:%S")
+    except (ValueError, OSError):
+        return f"Invalid timestamp: {timestamp}"
+
+
+def _format_agent_timestamp(timestamp: float) -> str:
+    """Format agent timestamp for human-readable display (assumes seconds)."""
+    try:
+        dt = datetime.datetime.fromtimestamp(timestamp)  # Agent timestamps are in seconds
         return dt.strftime("%Y-%m-%d %H:%M:%S")
     except (ValueError, OSError):
         return f"Invalid timestamp: {timestamp}"
@@ -164,5 +174,50 @@ def format_asset(asset: "DgApiAsset", as_json: bool) -> str:
                     value = str(entry[key])
                     break
             lines.append(f"  {entry['label']}: {value}")
+
+    return "\n".join(lines)
+
+
+def format_agents(agents: "AgentList", as_json: bool) -> str:
+    """Format agent list for output."""
+    if as_json:
+        return agents.model_dump_json(indent=2)
+
+    lines = []
+    for agent in agents.items:
+        # Use agent_label if available, otherwise format as "Agent {first_8_chars_of_id}"
+        display_label = agent.agent_label or f"Agent {agent.id[:8]}"
+        lines.extend(
+            [
+                f"Label: {display_label}",
+                f"ID: {agent.id}",
+                f"Status: {agent.status.value}",
+                f"Last Heartbeat: {_format_agent_timestamp(agent.last_heartbeat_time) if agent.last_heartbeat_time else 'Never'}",
+                "",  # Empty line between agents
+            ]
+        )
+
+    return "\n".join(lines).rstrip()  # Remove trailing empty line
+
+
+def format_agent(agent: "Agent", as_json: bool) -> str:
+    """Format single agent for output."""
+    if as_json:
+        return agent.model_dump_json(indent=2)
+
+    # Use agent_label if available, otherwise format as "Agent {first_8_chars_of_id}"
+    display_label = agent.agent_label or f"Agent {agent.id[:8]}"
+    lines = [
+        f"Label: {display_label}",
+        f"ID: {agent.id}",
+        f"Status: {agent.status.value}",
+        f"Last Heartbeat: {_format_agent_timestamp(agent.last_heartbeat_time) if agent.last_heartbeat_time else 'Never'}",
+    ]
+
+    if agent.metadata:
+        lines.append("")
+        lines.append("Metadata:")
+        for meta in agent.metadata:
+            lines.append(f"  {meta.key}: {meta.value}")
 
     return "\n".join(lines)
