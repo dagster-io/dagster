@@ -140,7 +140,7 @@ class AssetCheckSpec(IHaveNew, LegacyNamedTupleMixin):
     def with_metadata(self, metadata: Mapping[str, Any]) -> "AssetCheckSpec":
         return replace(self, metadata=metadata)
 
-    def to_stub_definition(self) -> "AssetChecksDefinition":
+    def to_in_app_check_definition(self) -> "AssetChecksDefinition":
         from dagster import asset_check
 
         # doing this as a hack. one issue is that this actually runs in the same run
@@ -152,6 +152,8 @@ class AssetCheckSpec(IHaveNew, LegacyNamedTupleMixin):
             metadata=self.metadata,
             additional_deps=self.additional_deps,
             automation_condition=self.automation_condition,
+            op_tags={"in_app_check": "true"},
+            compute_kind="in_app_check",
         )
         def check_fn():
             pass

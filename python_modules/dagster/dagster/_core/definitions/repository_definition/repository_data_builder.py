@@ -189,7 +189,7 @@ def build_caching_repository_data_from_list(
         blocking=False,
     )
     repository_definitions = [rd for rd in repository_definitions] + [
-        check_spec.to_stub_definition()
+        check_spec.to_in_app_check_definition()
     ]
 
     for definition in repository_definitions:
