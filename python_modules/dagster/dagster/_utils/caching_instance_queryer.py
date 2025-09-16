@@ -656,6 +656,9 @@ class CachingInstanceQueryer(DynamicPartitionsStore):
     def has_dynamic_partition(self, partitions_def_name: str, partition_key: str) -> bool:
         return partition_key in self.get_dynamic_partitions(partitions_def_name)
 
+    def get_dynamic_partitions_definition_id(self, partitions_def_name: str) -> str:
+        return self.instance.get_dynamic_partitions_definition_id(partitions_def_name)
+
     @cached_method
     def asset_partitions_with_newly_updated_parents_and_new_cursor(
         self,

@@ -629,6 +629,18 @@ class DagsterInstance(
         """
         return self._event_storage.get_dynamic_partitions(partitions_def_name)
 
+    def get_dynamic_partitions_definition_id(self, partitions_def_name: str) -> str:
+        from dagster._core.definitions.partitions.context import partition_loading_context
+        from dagster._core.definitions.partitions.utils import (
+            generate_partition_key_based_definition_id,
+        )
+
+        with partition_loading_context() as calling_context:
+            dynamic_partitions_store = calling_context.dynamic_partitions_store or self
+            # matches the base implementation of the get_serializable_unique_identifier on PartitionsDefinition
+            partition_keys = dynamic_partitions_store.get_dynamic_partitions(partitions_def_name)
+            return generate_partition_key_based_definition_id(partition_keys)
+
     @public
     @traced
     def has_dynamic_partition(self, partitions_def_name: str, partition_key: str) -> bool:
