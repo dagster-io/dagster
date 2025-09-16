@@ -1192,12 +1192,13 @@ def test_unloadable_asset_backfill(instance, workspace_context):
     assert backfill.status == BulkActionStatus.FAILING
     assert backfill.failure_count == 1
     assert isinstance(backfill.error, SerializableErrorInfo)
-    assert backfill.backfill_end_timestamp is not None
+    assert backfill.backfill_end_timestamp is None
 
     # once more iteration to ensure all launched runs are canceled, then the backfill is marked failed
     list(execute_backfill_iteration(workspace_context, get_default_daemon_logger("BackfillDaemon")))
     backfill = instance.get_backfill("simple_fan_out_backfill")
     assert backfill.status == BulkActionStatus.FAILED
+    assert backfill.backfill_end_timestamp is not None
 
 
 def test_asset_backfill_retryable_error(instance, workspace_context):
@@ -1292,7 +1293,7 @@ def test_asset_backfill_retryable_error(instance, workspace_context):
             updated_backfill = instance.get_backfill(backfill_id)
             assert updated_backfill.status == BulkActionStatus.FAILING
             assert updated_backfill.failure_count == 3
-            assert updated_backfill.backfill_end_timestamp is not None
+            assert updated_backfill.backfill_end_timestamp is None
 
             # one more iteration for the backfill to ensure all runs are canceled, then it's marked failed
             list(
@@ -1302,6 +1303,7 @@ def test_asset_backfill_retryable_error(instance, workspace_context):
             )
             updated_backfill = instance.get_backfill(backfill_id)
             assert updated_backfill.status == BulkActionStatus.FAILED
+            assert updated_backfill.backfill_end_timestamp is not None
 
 
 def test_unloadable_backfill_retry(
