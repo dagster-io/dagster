@@ -15,7 +15,6 @@ from typing_extensions import TypeAlias
 
 from dagster._annotations import PublicAttr, public
 from dagster._core.definitions.asset_key import AssetCheckKey, AssetKey, CoercibleToAssetKey
-from dagster._core.definitions.utils import DEFAULT_OUTPUT
 
 if TYPE_CHECKING:
     from dagster._core.definitions.asset_checks.asset_checks_definition import AssetChecksDefinition
@@ -142,17 +141,22 @@ class AssetCheckSpec(IHaveNew, LegacyNamedTupleMixin):
         return replace(self, metadata=metadata)
 
     def to_stub_definition(self) -> "AssetChecksDefinition":
-        from dagster._core.definitions.asset_checks.asset_checks_definition import (
-            AssetChecksDefinition,
-        )
+        from dagster import asset_check
 
-        return AssetChecksDefinition.create(
-            keys_by_input_name={},
-            node_def=None,
-            resource_defs=None,
-            check_specs_by_output_name={DEFAULT_OUTPUT: self},
-            can_subset=False,
+        # doing this as a hack. one issue is that this actually runs in the same run
+        # as the asset materialization
+        @asset_check(
+            asset=self.asset_key,
+            name=self.name,
+            description=self.description,
+            metadata=self.metadata,
+            additional_deps=self.additional_deps,
+            automation_condition=self.automation_condition,
         )
+        def check_fn():
+            pass
+
+        return check_fn
 
 
 """

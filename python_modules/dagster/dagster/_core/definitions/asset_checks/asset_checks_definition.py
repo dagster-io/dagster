@@ -1,8 +1,9 @@
-from collections.abc import Mapping
+from collections.abc import Mapping, Sequence
 from typing import Optional
 
 from dagster._annotations import public
 from dagster._core.definitions.asset_checks.asset_check_spec import AssetCheckSpec
+from dagster._core.definitions.assets.definition.asset_spec import AssetSpec
 from dagster._core.definitions.assets.definition.assets_definition import AssetsDefinition
 from dagster._core.definitions.events import AssetKey
 from dagster._core.definitions.op_definition import OpDefinition
@@ -20,12 +21,15 @@ class AssetChecksDefinition(AssetsDefinition):
     def create(
         *,
         keys_by_input_name: Mapping[str, AssetKey],
-        node_def: OpDefinition,
+        node_def: Optional[OpDefinition],
         check_specs_by_output_name: Mapping[str, AssetCheckSpec],
         can_subset: bool,
         resource_defs: Optional[Mapping[str, ResourceDefinition]] = None,
+        tags_by_key: Optional[Mapping[str, Mapping[str, str]]] = None,
+        asset_specs: Optional[Sequence[AssetSpec]] = None,
     ):
         """Create an AssetChecksDefinition."""
+        # hacking over the node def check by passing at tag
         return AssetChecksDefinition(
             keys_by_input_name=keys_by_input_name,
             keys_by_output_name={},
@@ -46,6 +50,7 @@ class AssetChecksDefinition(AssetsDefinition):
             selected_asset_check_keys=None,
             is_subset=False,
             owners_by_key=None,
+            specs=asset_specs,
         )
 
 

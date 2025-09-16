@@ -36,7 +36,7 @@ def random_3(context, random_1):
 
 @dg.asset
 def always_materializes():
-    return 1
+    return dg.MaterializeResult(metadata={"num_rows": dg.MetadataValue.int(1)})
 
 
 @dg.asset
