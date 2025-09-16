@@ -16,16 +16,17 @@ market_holidays_2024_strings = [
     "2024-12-25",  # Christmas Day
 ]
 
+exclusions = [
+    datetime.strptime(date_str, "%Y-%m-%d") for date_str in market_holidays_2024_strings
+]
+
 # Create weekday partitions excluding holidays
 market_calendar = dg.TimeWindowPartitionsDefinition(
     start=datetime(2024, 1, 1),
     cron_schedule="0 0 * * 1-5",  # Weekdays only
     fmt="%Y-%m-%d",
     # Exclude specific holiday dates
-    exclusions=[
-        datetime.strptime(date_str, "%Y-%m-%d")
-        for date_str in market_holidays_2024_strings
-    ],
+    exclusions=exclusions,
 )
 
 
@@ -33,4 +34,3 @@ market_calendar = dg.TimeWindowPartitionsDefinition(
 def market_data(context: dg.AssetExecutionContext):
     trading_date = context.partition_key
     context.log.info(f"Processing market data for trading day: {trading_date}")
-    return {"date": trading_date, "data": "market_data_here"}
