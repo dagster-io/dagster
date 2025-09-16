@@ -16,7 +16,10 @@ from dagster.components.core.component_tree import ComponentTree
 from dagster.components.testing.test_cases import TestTranslation
 from dagster.components.testing.utils import create_defs_folder_sandbox
 from dagster_airbyte import AirbyteCloudWorkspace, AirbyteWorkspace
-from dagster_airbyte.components.workspace_component.component import AirbyteWorkspaceComponent
+from dagster_airbyte.components.workspace_component.component import (
+    AirbyteCloudWorkspaceComponent,
+    AirbyteWorkspaceComponent,
+)
 from dagster_airbyte.resources import AIRBYTE_CLOUD_REST_API_BASE_URL, BaseAirbyteWorkspace
 from dagster_airbyte.translator import AirbyteConnection
 from dagster_shared.merger import deep_merge_dicts
@@ -62,6 +65,16 @@ def setup_airbyte_component(
             yield component, defs
 
 
+OAUTH_AIRBYTE_CLOUD_COMPONENT_BODY_LEGACY_COMPONENT = {
+    "type": "dagster_airbyte.AirbyteCloudWorkspaceComponent",
+    "attributes": {
+        "workspace": {
+            "client_id": "{{ env.AIRBYTE_CLIENT_ID }}",
+            "client_secret": "{{ env.AIRBYTE_CLIENT_SECRET }}",
+            "workspace_id": "{{ env.AIRBYTE_WORKSPACE_ID }}",
+        },
+    },
+}
 OAUTH_AIRBYTE_CLOUD_COMPONENT_BODY = {
     "type": "dagster_airbyte.AirbyteWorkspaceComponent",
     "attributes": {
@@ -131,12 +144,14 @@ def should_test_combinations(
 @pytest.mark.parametrize(
     "component_body,expected_workspace_type,assert_all_requests_are_fired",
     [
+        (OAUTH_AIRBYTE_CLOUD_COMPONENT_BODY_LEGACY_COMPONENT, AirbyteCloudWorkspace, True),
         (OAUTH_AIRBYTE_CLOUD_COMPONENT_BODY, AirbyteCloudWorkspace, True),
         (OAUTH_AIRBYTE_OSS_COMPONENT_BODY, AirbyteWorkspace, True),
         (BASIC_AIRBYTE_OSS_COMPONENT_BODY, AirbyteWorkspace, False),
         (NO_AUTH_AIRBYTE_OSS_COMPONENT_BODY, AirbyteWorkspace, False),
     ],
     ids=[
+        "oauth_cloud_legacy_component",
         "oauth_cloud",
         "oauth_oss",
         "basic_oss",
@@ -188,12 +203,14 @@ def test_basic_component_load(
 @pytest.mark.parametrize(
     "component_body,expected_workspace_type,assert_all_requests_are_fired",
     [
+        (OAUTH_AIRBYTE_CLOUD_COMPONENT_BODY_LEGACY_COMPONENT, AirbyteCloudWorkspace, True),
         (OAUTH_AIRBYTE_CLOUD_COMPONENT_BODY, AirbyteCloudWorkspace, True),
         (OAUTH_AIRBYTE_OSS_COMPONENT_BODY, AirbyteWorkspace, True),
         (BASIC_AIRBYTE_OSS_COMPONENT_BODY, AirbyteWorkspace, False),
         (NO_AUTH_AIRBYTE_OSS_COMPONENT_BODY, AirbyteWorkspace, False),
     ],
     ids=[
+        "oauth_cloud_legacy_component",
         "oauth_cloud",
         "oauth_oss",
         "basic_oss",
@@ -254,6 +271,17 @@ def test_basic_component_filter(
 
 
 @pytest.mark.parametrize(
+    "component_class",
+    [
+        AirbyteCloudWorkspaceComponent,
+        AirbyteWorkspaceComponent,
+    ],
+    ids=[
+        "airbyte_cloud_legacy_component",
+        "airbyte_component",
+    ],
+)
+@pytest.mark.parametrize(
     "filter_fn, num_assets",
     [
         (lambda _: True, 2),
@@ -270,11 +298,12 @@ def test_custom_filter_fn_python(
     fetch_workspace_data_api_mocks: responses.RequestsMock,
     filter_fn: Callable[[AirbyteConnection], bool],
     num_assets: int,
+    component_class: Union[type[AirbyteCloudWorkspaceComponent], type[AirbyteWorkspaceComponent]],
     rest_api_url: str,
     config_api_url: str,
     resource: Union[AirbyteCloudWorkspace, AirbyteWorkspace],
 ) -> None:
-    defs = AirbyteWorkspaceComponent(
+    defs = component_class(
         workspace=resource,
         connection_selector=filter_fn,
         translation=None,
@@ -285,12 +314,14 @@ def test_custom_filter_fn_python(
 @pytest.mark.parametrize(
     "component_body,expected_workspace_type,assert_all_requests_are_fired",
     [
+        (OAUTH_AIRBYTE_CLOUD_COMPONENT_BODY_LEGACY_COMPONENT, AirbyteCloudWorkspace, True),
         (OAUTH_AIRBYTE_CLOUD_COMPONENT_BODY, AirbyteCloudWorkspace, True),
         (OAUTH_AIRBYTE_OSS_COMPONENT_BODY, AirbyteWorkspace, True),
         (BASIC_AIRBYTE_OSS_COMPONENT_BODY, AirbyteWorkspace, False),
         (NO_AUTH_AIRBYTE_OSS_COMPONENT_BODY, AirbyteWorkspace, False),
     ],
     ids=[
+        "oauth_cloud_legacy_component",
         "oauth_cloud",
         "oauth_oss",
         "basic_oss",
