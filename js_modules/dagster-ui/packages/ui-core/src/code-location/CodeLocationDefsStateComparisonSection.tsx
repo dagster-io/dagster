@@ -4,16 +4,23 @@ import {useQuery} from '../apollo-client';
 import {CodeLocationDefsStateComparison} from './CodeLocationDefsStateComparison';
 import {CODE_LOCATION_DEFS_STATE_QUERY} from './CodeLocationDefsStateQuery';
 import {CodeLocationOverviewSectionHeader} from './CodeLocationOverviewSectionHeader';
+import {
+  CodeLocationDefsStateQuery,
+  CodeLocationDefsStateQueryVariables,
+} from './types/CodeLocationDefsStateQuery.types';
 
 interface Props {
   locationName: string;
 }
 
 export const CodeLocationDefsStateComparisonSection = ({locationName}: Props) => {
-  const {data, loading, error} = useQuery(CODE_LOCATION_DEFS_STATE_QUERY, {
-    variables: {locationName},
-    fetchPolicy: 'cache-and-network',
-  });
+  const {data, loading} = useQuery<CodeLocationDefsStateQuery, CodeLocationDefsStateQueryVariables>(
+    CODE_LOCATION_DEFS_STATE_QUERY,
+    {
+      variables: {locationName},
+      fetchPolicy: 'cache-and-network',
+    },
+  );
 
   if (loading && !data) {
     return (
@@ -23,29 +30,20 @@ export const CodeLocationDefsStateComparisonSection = ({locationName}: Props) =>
     );
   }
 
-  if (error) {
-    return null; // Silently fail if there's an error
-  }
-
-  const latestDefsStateInfo = data?.latestDefsStateInfo || null;
   const defsStateInfo =
     data?.workspaceLocationEntryOrError?.__typename === 'WorkspaceLocationEntry'
       ? data.workspaceLocationEntryOrError.defsStateInfo
       : null;
 
-  // Only show the section if we have data to compare
-  if (!latestDefsStateInfo || !defsStateInfo) {
-    return null;
-  }
-
   // Don't show the section if there are no versions available in the current state
-  if (!defsStateInfo.keyStateInfo || defsStateInfo.keyStateInfo.length === 0) {
+  if (!defsStateInfo?.keyStateInfo || defsStateInfo.keyStateInfo.length === 0) {
     return null;
   }
 
+  const latestDefsStateInfo = data?.latestDefsStateInfo ?? null;
   return (
     <>
-      <CodeLocationOverviewSectionHeader label="Defs State Versions" />
+      <CodeLocationOverviewSectionHeader label="Defs state versions" />
       <CodeLocationDefsStateComparison
         latestDefsStateInfo={latestDefsStateInfo}
         defsStateInfo={defsStateInfo}

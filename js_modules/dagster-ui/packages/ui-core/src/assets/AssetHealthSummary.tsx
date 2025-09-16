@@ -18,6 +18,7 @@ import {Link} from 'react-router-dom';
 import {observeEnabled} from 'shared/app/observeEnabled.oss';
 
 import {assetDetailsPathForKey} from './assetDetailsPathForKey';
+import {useAllAssetsNodes} from './useAllAssets';
 import {assertUnreachable} from '../app/Util';
 import {useTrackEvent} from '../app/analytics';
 import {useAssetHealthData} from '../asset-data/AssetHealthDataProvider';
@@ -32,45 +33,24 @@ import {
   AssetHealthMaterializationHealthyPartitionedMetaFragment,
 } from '../asset-data/types/AssetHealthDataProvider.types';
 import {StatusCase} from '../asset-graph/AssetNodeStatusContent';
+import {tokenForAssetKey} from '../asset-graph/Utils';
 import {StatusCaseDot} from '../asset-graph/sidebar/util';
 import {AssetHealthStatus, AssetKeyInput} from '../graphql/types';
 import {TimeFromNow} from '../ui/TimeFromNow';
 import {numberFormatter} from '../ui/formatters';
 
 export const AssetHealthSummary = React.memo(
-  ({
-    assetKey,
-    iconOnly,
-    canShowPopover = true,
-  }: {
-    assetKey: {path: string[]};
-    iconOnly?: boolean;
-    canShowPopover?: boolean;
-  }) => {
+  ({assetKey, iconOnly}: {assetKey: {path: string[]}; iconOnly?: boolean}) => {
     if (!observeEnabled()) {
       return null;
     }
 
-    return (
-      <AssetHealthSummaryImpl
-        assetKey={assetKey}
-        iconOnly={iconOnly}
-        canShowPopover={canShowPopover}
-      />
-    );
+    return <AssetHealthSummaryImpl assetKey={assetKey} iconOnly={iconOnly} />;
   },
 );
 
 const AssetHealthSummaryImpl = React.memo(
-  ({
-    assetKey,
-    iconOnly,
-    canShowPopover,
-  }: {
-    assetKey: {path: string[]};
-    iconOnly?: boolean;
-    canShowPopover?: boolean;
-  }) => {
+  ({assetKey, iconOnly}: {assetKey: {path: string[]}; iconOnly?: boolean}) => {
     const {liveData} = useAssetHealthData(assetKey);
     const health = liveData?.assetHealth;
 
@@ -105,11 +85,7 @@ const AssetHealthSummaryImpl = React.memo(
     }
 
     return (
-      <AssetHealthSummaryPopover
-        assetKey={assetKey}
-        health={health}
-        canShowPopover={canShowPopover}
-      >
+      <AssetHealthSummaryPopover assetKey={assetKey} health={health}>
         {content()}
       </AssetHealthSummaryPopover>
     );
@@ -120,45 +96,56 @@ export const AssetHealthSummaryPopover = ({
   health,
   assetKey,
   children,
-  canShowPopover = true,
 }: {
   health: AssetHealthFragment['assetHealth'] | undefined;
   assetKey: AssetKeyInput;
   children: React.ReactNode;
-  canShowPopover?: boolean;
 }) => {
   const {iconName, iconColor, text} = useMemo(() => {
     return statusToIconAndColor[health?.assetHealth ?? 'undefined'];
   }, [health]);
 
+  const {allAssetKeys, loading} = useAllAssetsNodes();
+
+  function content() {
+    if (!loading && !allAssetKeys.has(tokenForAssetKey(assetKey))) {
+      // This asset is not in the workspace.
+      return <Criteria assetKey={assetKey} status={health?.assetHealth} type="no-definition" />;
+    }
+    return (
+      <>
+        <Criteria
+          assetKey={assetKey}
+          status={health?.materializationStatus}
+          metadata={health?.materializationStatusMetadata}
+          type="materialization"
+        />
+        <Criteria
+          assetKey={assetKey}
+          status={health?.freshnessStatus}
+          metadata={health?.freshnessStatusMetadata}
+          type="freshness"
+        />
+        <Criteria
+          assetKey={assetKey}
+          status={health?.assetChecksStatus}
+          metadata={health?.assetChecksStatusMetadata}
+          type="checks"
+        />
+      </>
+    );
+  }
+
   return (
     <Popover
       interactionKind="hover"
-      isOpen={canShowPopover ? undefined : false}
       content={
         <div onClick={(e) => e.stopPropagation()}>
           <Box padding={12} flex={{direction: 'row', alignItems: 'center', gap: 6}} border="bottom">
             <Icon name={iconName} color={iconColor} />
             <SubtitleLarge>{text}</SubtitleLarge>
           </Box>
-          <Criteria
-            assetKey={assetKey}
-            status={health?.materializationStatus}
-            metadata={health?.materializationStatusMetadata}
-            type="materialization"
-          />
-          <Criteria
-            assetKey={assetKey}
-            status={health?.freshnessStatus}
-            metadata={health?.freshnessStatusMetadata}
-            type="freshness"
-          />
-          <Criteria
-            assetKey={assetKey}
-            status={health?.assetChecksStatus}
-            metadata={health?.assetChecksStatusMetadata}
-            type="checks"
-          />
+          {content()}
         </div>
       }
     >
@@ -186,7 +173,7 @@ const Criteria = React.memo(
       | AssetHealthFreshnessMetaFragment
       | undefined
       | null;
-    type: 'materialization' | 'freshness' | 'checks';
+    type: 'materialization' | 'freshness' | 'checks' | 'no-definition';
   }) => {
     const {subStatusIconName, iconColor, textColor} = statusToIconAndColor[status ?? 'undefined'];
 
@@ -199,6 +186,10 @@ const Criteria = React.memo(
     );
 
     const derivedExplanation = useMemo(() => {
+      if (type === 'no-definition') {
+        return <Body>It may have been deleted or be a stub imported through an integration.</Body>;
+      }
+
       switch (metadata?.__typename) {
         case 'AssetHealthCheckUnknownMeta':
           if (metadata.numNotExecutedChecks > 0) {
@@ -326,7 +317,7 @@ const Criteria = React.memo(
         default:
           assertUnreachable(metadata);
       }
-    }, [metadata, assetKey, onClick]);
+    }, [type, metadata, assetKey, onClick]);
 
     const {text, shouldDim} = useMemo(() => {
       switch (type) {
@@ -389,6 +380,11 @@ const Criteria = React.memo(
             default:
               assertUnreachable(status);
           }
+        case 'no-definition':
+          return {
+            text: `Missing software definition`,
+            shouldDim: false,
+          };
       }
     }, [type, status, metadata]);
 
@@ -402,6 +398,7 @@ const Criteria = React.memo(
           padding: '4px 12px',
           alignItems: 'center',
           opacity: shouldDim ? 0.5 : 1,
+          maxWidth: 300,
         }}
       >
         <Icon name={subStatusIconName} color={iconColor} style={{paddingTop: 2}} />

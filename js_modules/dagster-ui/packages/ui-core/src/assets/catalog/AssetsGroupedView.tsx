@@ -374,7 +374,7 @@ export const SelectionTile = React.memo(
   }) => {
     return item.__typename === 'FavoritesView' ? (
       <AssetSelectionSummaryTile
-        icon={<Icon name={item.icon as IconName} size={24} />}
+        icon={<Icon name={item.icon as IconName} size={20} />}
         label={item.name}
         // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
         assets={item.assets.map((assetKey: any) => assetsByAssetKey.get(assetKey)!).filter(Boolean)}
@@ -382,7 +382,7 @@ export const SelectionTile = React.memo(
       />
     ) : (
       <AssetSelectionSummaryTileFromSelection
-        icon={<InsightsIcon name={item.icon as IconName} size={24} />}
+        icon={<InsightsIcon name={item.icon as IconName} size={20} />}
         selection={item}
       />
     );

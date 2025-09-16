@@ -4,13 +4,13 @@ from typing import Any, Optional
 
 import pytest
 from dagster._core.storage.defs_state.base import DefsStateStorage
-from dagster_shared.serdes.objects import DefsStateInfo
+from dagster_shared.serdes.objects.models.defs_state_info import DefsStateInfo
 
 
-def _version_map(state_info: Optional[DefsStateInfo]) -> Optional[dict[str, str]]:
+def _version_map(state_info: Optional[DefsStateInfo]) -> Optional[dict[str, Optional[str]]]:
     if state_info is None:
         return None
-    return {k: v.version for k, v in state_info.info_mapping.items()}
+    return {k: v.version if v else None for k, v in state_info.info_mapping.items()}
 
 
 class TestDefsStateStorage:

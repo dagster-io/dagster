@@ -524,10 +524,13 @@ class ConfigurableResourceFactory(
                 post_processed_config,
             )
 
-        with self.from_resource_context_cm(
-            build_init_resource_context(config=post_processed_config.value),
-            nested_resources=self.nested_resources,
-        ) as out:
+        with (
+            build_init_resource_context(config=post_processed_config.value) as context,
+            self.from_resource_context_cm(
+                context,
+                nested_resources=self.nested_resources,
+            ) as out,
+        ):
             yield out
 
     @classmethod

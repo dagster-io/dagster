@@ -68,12 +68,17 @@ export const DimensionRangeInput = ({
       onBlur={tryCommit}
       disabled={disabled}
       rightElement={
-        <ClearButton
-          style={{display: valueString.length ? 'initial' : 'none'}}
-          onClick={() => onChange([])}
-        >
-          <Icon name="cancel" />
-        </ClearButton>
+        disabled ? undefined : (
+          <ClearButton
+            style={{display: valueString.length ? 'initial' : 'none'}}
+            onClick={() => {
+              setValueString('');
+              onChange([]);
+            }}
+          >
+            <Icon name="cancel" />
+          </ClearButton>
+        )
       }
     />
   );

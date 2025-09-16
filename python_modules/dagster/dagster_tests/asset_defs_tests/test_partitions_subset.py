@@ -305,7 +305,9 @@ def test_multi_partition_subset_to_range_conversion():
 
 
 def test_key_ranges_subset():
-    color_partition = dg.StaticPartitionsDefinition(["red", "yellow", "blue", "green", "orange"])
+    color_partition = dg.StaticPartitionsDefinition(
+        ["red", "yellow", "blue", "green", "purple", "orange"]
+    )
 
     key_ranges_subset = KeyRangesPartitionsSubset(
         key_ranges=[
@@ -326,7 +328,10 @@ def test_key_ranges_subset():
             effective_dt=get_current_datetime(), dynamic_partitions_store=instance
         ),
     ):
-        assert key_ranges_subset.get_partition_keys_not_in_subset(color_partition) == {"green"}
+        assert key_ranges_subset.get_partition_keys_not_in_subset(color_partition) == [
+            "green",
+            "purple",
+        ]
         assert not key_ranges_subset.is_empty
         assert key_ranges_subset.partitions_definition == color_partition
 

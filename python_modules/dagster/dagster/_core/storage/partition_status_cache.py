@@ -491,7 +491,7 @@ def get_and_update_asset_status_cache_value(
         return updated_cache_value
 
 
-def get_partition_subsets(
+async def get_partition_subsets(
     instance: DagsterInstance,
     loading_context: LoadingContext,
     asset_key: AssetKey,
@@ -510,13 +510,10 @@ def get_partition_subsets(
         if instance.can_read_asset_status_cache() and is_cacheable_partition_type(partitions_def):
             # When the "cached_status_data" column exists in storage, update the column to contain
             # the latest partition status values
-            updated_cache_value = get_and_update_asset_status_cache_value(
-                instance,
-                asset_key,
-                partitions_def,
-                dynamic_partitions_loader,
-                loading_context,
+            updated_cache_value = await AssetStatusCacheValue.gen(
+                loading_context, (asset_key, partitions_def)
             )
+
             materialized_subset = (
                 updated_cache_value.deserialize_materialized_partition_subsets(partitions_def)
                 if updated_cache_value

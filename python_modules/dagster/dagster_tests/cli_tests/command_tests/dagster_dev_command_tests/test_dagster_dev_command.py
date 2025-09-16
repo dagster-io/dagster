@@ -242,7 +242,7 @@ def _launch_dev_command(
     finally:
         child_processes = _get_child_processes(proc.pid)
         send_ipc_shutdown_message(write_fd)
-        proc.wait(timeout=10)
+        proc.wait(timeout=30)
         # The `dagster dev` command exits before the gRPC servers it spins up have shutdown. Wait
         # for the child processes to exit here to make sure we don't leave any hanging processes.
         #

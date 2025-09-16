@@ -1,4 +1,0 @@
-dg scaffold defs dagster_airbyte.AirbyteCloudWorkspaceComponent airbyte_ingest \
-  --workspace-id test_workspace --client-id "{{ env.AIRBYTE_CLIENT_ID }}" --client-secret "{{ env.AIRBYTE_CLIENT_SECRET }}"
-
-Creating defs at /.../my-project/src/my_project/defs/airbyte_ingest.

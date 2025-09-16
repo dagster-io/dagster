@@ -8,7 +8,7 @@ from dagster._core.test_utils import environ
 from dagster_dbt.asset_utils import DBT_INDIRECT_SELECTION_ENV
 from dagster_dbt.cloud_v2.asset_decorator import dbt_cloud_assets
 from dagster_dbt.cloud_v2.resources import DbtCloudCredentials, DbtCloudWorkspace
-from dagster_dbt.cloud_v2.types import DbtCloudJobRunStatusType
+from dagster_dbt.cloud_v2.types import DbtCloudJobRunStatusType, DbtCloudRun
 
 from dagster_dbt_tests.cloud_v2.conftest import (
     SAMPLE_CUSTOM_CREATE_JOB_RESPONSE,
@@ -315,7 +315,10 @@ def test_poll_run(n_polls, last_status, succeed_at_end, workspace: DbtCloudWorks
                 status=200,
             )
 
-            return client.poll_run(TEST_RUN_ID, poll_interval=0.1)
+            run_data = client.poll_run(TEST_RUN_ID, poll_interval=0.1)
+            run = DbtCloudRun.from_run_details(run_details=run_data)
+            run.raise_for_status()
+            return run_data
 
     if succeed_at_end:
         assert (

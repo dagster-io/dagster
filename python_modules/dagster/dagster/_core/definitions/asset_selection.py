@@ -54,6 +54,12 @@ def is_coercible_to_asset_selection(
     )
 
 
+class DagsterInvalidAssetSelectionError(DagsterError):
+    """An error raised when an invalid asset selection is provided."""
+
+    pass
+
+
 @public
 class AssetSelection(ABC):
     """An AssetSelection defines a query over a set of assets and asset checks, normally all that are defined in a project.
@@ -548,7 +554,7 @@ class AssetSelection(ABC):
             tag_str = string[len("tag:") :]
             return cls.tag_string(tag_str)
 
-        raise DagsterError(f"Invalid selection string: {string}")
+        raise DagsterInvalidAssetSelectionError(f"Invalid selection string: {string}")
 
     @classmethod
     def from_coercible(cls, selection: CoercibleToAssetSelection) -> "AssetSelection":
@@ -935,16 +941,12 @@ class GroupsAssetSelection(AssetSelection):
     def resolve_inner(
         self, asset_graph: BaseAssetGraph, allow_missing: bool
     ) -> AbstractSet[AssetKey]:
-        base_set = (
-            asset_graph.get_all_asset_keys()
-            if self.include_sources
-            else asset_graph.materializable_asset_keys
-        )
         return {
             key
             for group in self.selected_groups
-            for key in asset_graph.asset_keys_for_group(group)
-            if key is not None and key in base_set
+            for key in asset_graph.asset_keys_for_group(
+                group, require_materializable=not self.include_sources
+            )
         }
 
     def to_serializable_asset_selection(self, asset_graph: BaseAssetGraph) -> "AssetSelection":

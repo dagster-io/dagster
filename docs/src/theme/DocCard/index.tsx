@@ -48,6 +48,7 @@ function CardLayout({
   description,
   community,
   referenceArchitecture,
+  miniProject,
 }: {
   href: string;
   title: string;
@@ -55,6 +56,7 @@ function CardLayout({
   description?: string;
   community: boolean;
   referenceArchitecture: boolean;
+  miniProject: boolean;
 }): ReactNode {
   return (
     <CardContainer href={href}>
@@ -86,6 +88,11 @@ function CardLayout({
                 <div className={clsx(styles.cardTags)}>Reference architecture</div>
               </span>
             )}
+            {miniProject && (
+              <span style={{marginLeft: 'auto'}}>
+                <div className={clsx(styles.cardTags)}>Mini</div>
+              </span>
+            )}
           </div>
           {description && (
             <p className={clsx(styles.cardDescription)} title={description}>
@@ -107,7 +114,8 @@ function CardCategory({item}: {item: PropSidebarItemCategory}): ReactNode {
     return null;
   }
 
-  const logo: string | null = item?.customProps?.logo || null;
+  const logo: string | null = (item?.customProps?.logo as string) || null;
+  const miniProject: boolean = (item?.customProps?.miniProject as boolean) || false;
 
   return (
     <CardLayout
@@ -115,6 +123,9 @@ function CardCategory({item}: {item: PropSidebarItemCategory}): ReactNode {
       title={item.label}
       logo={logo}
       description={item.description ?? categoryItemsPlural(item.items.length)}
+      community={false}
+      referenceArchitecture={false}
+      miniProject={false}
     />
   );
 }
@@ -122,9 +133,10 @@ function CardCategory({item}: {item: PropSidebarItemCategory}): ReactNode {
 function CardLink({item}: {item: PropSidebarItemLink}): ReactNode {
   // https://github.com/facebook/docusaurus/discussions/10476
   //const icon = item?.customProps?.myEmoji ?? (isInternalUrl(item.href) ? '📄️' : '🔗');
-  const logo: string | null = item?.customProps?.logo || null;
-  const community: boolean = item?.customProps?.community || false;
-  const referenceArchitecture: boolean = item?.customProps?.referenceArchitecture || false;
+  const logo: string | null = (item?.customProps?.logo as string) || null;
+  const community: boolean = (item?.customProps?.community as boolean) || false;
+  const referenceArchitecture: boolean = (item?.customProps?.referenceArchitecture as boolean) || false;
+  const miniProject: boolean = (item?.customProps?.miniProject as boolean) || false;
   const doc = useDocById(item.docId ?? undefined);
 
   return (
@@ -135,6 +147,7 @@ function CardLink({item}: {item: PropSidebarItemLink}): ReactNode {
       description={item.description ?? doc?.description}
       community={community}
       referenceArchitecture={referenceArchitecture}
+      miniProject={miniProject}
     />
   );
 }

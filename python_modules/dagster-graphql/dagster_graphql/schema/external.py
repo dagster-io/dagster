@@ -16,7 +16,7 @@ from dagster._core.remote_representation.handle import RepositoryHandle
 from dagster._core.workspace.context import WorkspaceProcessContext
 from dagster._core.workspace.workspace import CodeLocationEntry, CodeLocationLoadStatus
 from dagster.components.core.load_defs import PLUGIN_COMPONENT_TYPES_JSON_METADATA_KEY
-from dagster_shared.serdes.objects import DefsStateInfo
+from dagster_shared.serdes.objects.models.defs_state_info import DefsStateInfo
 
 from dagster_graphql.implementation.fetch_solids import get_solid, get_solids
 from dagster_graphql.implementation.loader import RepositoryScopedBatchLoader
@@ -564,7 +564,7 @@ class GrapheneDefsKeyStateInfo(graphene.ObjectType):
 
 class GrapheneDefsKeyStateInfoEntry(graphene.ObjectType):
     name = graphene.NonNull(graphene.String)
-    info = graphene.NonNull(GrapheneDefsKeyStateInfo)
+    info = graphene.Field(GrapheneDefsKeyStateInfo)
 
     class Meta:
         name = "DefsStateInfoEntry"
@@ -580,7 +580,8 @@ class GrapheneDefsStateInfo(graphene.ObjectType):
         super().__init__(
             keyStateInfo=[
                 GrapheneDefsKeyStateInfoEntry(
-                    key, GrapheneDefsKeyStateInfo(info.version, info.create_timestamp)
+                    key,
+                    GrapheneDefsKeyStateInfo(info.version, info.create_timestamp) if info else None,
                 )
                 for key, info in defs_state_info.info_mapping.items()
             ]

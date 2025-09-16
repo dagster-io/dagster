@@ -1,13 +1,30 @@
 from abc import ABC, abstractmethod
+from contextlib import contextmanager
+from contextvars import ContextVar
 from pathlib import Path
-from typing import ClassVar, Optional
+from typing import Optional
 
-from dagster_shared.serdes.objects import DefsStateInfo
+from dagster_shared.serdes.objects.models.defs_state_info import DefsStateInfo
 
 from dagster._core.instance import MayHaveInstanceWeakref, T_DagsterInstance
 
 # constant indicating where to store the latest defs state info in a kvs context
 DEFS_STATE_INFO_CURSOR_KEY = "__latest_defs_state_info__"
+
+_current_storage: ContextVar[Optional["DefsStateStorage"]] = ContextVar(
+    "_current_storage", default=None
+)
+
+
+@contextmanager
+def set_defs_state_storage(storage: Optional["DefsStateStorage"]):
+    """Context manager to set the current DefsStateStorage, accessible via `DefsStateStorage.get()`."""
+    token = _current_storage.set(storage)
+
+    try:
+        yield
+    finally:
+        _current_storage.reset(token)
 
 
 class DefsStateStorage(ABC, MayHaveInstanceWeakref[T_DagsterInstance]):
@@ -17,8 +34,6 @@ class DefsStateStorage(ABC, MayHaveInstanceWeakref[T_DagsterInstance]):
     using the `set` class method. This is used to ensure a StateStore is available to code
     that is loading definitions.
     """
-
-    _current: ClassVar[Optional["DefsStateStorage"]] = None
 
     def get_latest_version(self, key: str) -> Optional[str]:
         """Returns the saved state version for the given defs key, if it exists.
@@ -85,11 +100,6 @@ class DefsStateStorage(ABC, MayHaveInstanceWeakref[T_DagsterInstance]):
         return f"__state__/{key}/{version}"
 
     @classmethod
-    def set_current(cls, state_storage: Optional["DefsStateStorage"]) -> None:
-        """Set the current StateStorage."""
-        cls._current = state_storage
-
-    @classmethod
-    def get_current(cls) -> Optional["DefsStateStorage"]:
+    def get(cls) -> Optional["DefsStateStorage"]:
         """Get the current StateStorage, if it has been set."""
-        return cls._current
+        return _current_storage.get()

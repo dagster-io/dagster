@@ -593,6 +593,14 @@
       "destination": "/api/clis/dagster-cloud-cli"
     },
     {
+      "source": "/deployment/dagster-plus/management/dagster-cloud-cli/dagster-cloud-cli-reference",
+      "destination": "/api/clis/dagster-cloud-cli/dagster-cloud-cli-reference"
+    },
+    {
+      "source": "/deployment/dagster-plus/management/dagster-cloud-cli/installing-and-configuring",
+      "destination": "/api/clis/dagster-cloud-cli/installing-and-configuring"
+    },
+    {
       "source": "/dagster-plus/developing-testing/code-locations",
       "destination": "/deployment/code-locations"
     },
@@ -2006,6 +2014,10 @@
       "destination": "/integrations/libraries/airbyte/airbyte-cloud-component"
     },
     {
+      "source": "/integrations/libraries/airbyte/airbyte-cloud-component",
+      "destination": "/integrations/libraries/airbyte/airbyte-component"
+    },
+    {
       "source": "/guides/build/components/integrations/powerbi-component-tutorial",
       "destination": "/integrations/libraries/powerbi"
     },
@@ -3375,6 +3387,10 @@
       "destination": "/api/clis/dg-cli/dg-cli-reference"
     },
     {
+      "source": "/api/dagster/resolved",
+      "destination": "/api/dagster/components"
+    },
+    {
       "source": "/guides/labs/dg/dagster-definitions",
       "destination": "/api/clis/dg-cli/dg-cli-reference"
     },
@@ -3449,6 +3465,94 @@
     {
       "source": "/etl-pipeline-tutorial/create-a-sensor",
       "destination": "/examples/etl-pipeline/create-a-sensor"
+    },
+    {
+      "source": "/etl-pipeline-tutorial/create-a-sensor-asset",
+      "destination": "/examples/etl-pipeline/create-a-sensor"
+    },
+    {
+      "source": "/etl-pipeline-tutorial/create-and-materialize-a-downstream-asset",
+      "destination": "/examples/etl-pipeline"
+    },
+    {
+      "source": "/etl-pipeline-tutorial/create-and-materialize-partitioned-asset",
+      "destination": "/examples/etl-pipeline/partition-asset"
+    },
+    {
+      "source": "/etl-pipeline-tutorial/ensure-data-quality-with-asset-checks",
+      "destination": "/examples/etl-pipeline/data-quality"
+    },
+    {
+      "source": "/guides/build/components/building-pipelines-with-components/adding-attributes-to-assets",
+      "destination": "/guides/build/assets/metadata-and-tags/adding-attributes-to-assets"
+    },
+    {
+      "source": "/guides/labs/components/building-pipelines-with-components/adding-attributes-to-assets",
+      "destination": "/guides/build/assets/metadata-and-tags/adding-attributes-to-assets"
+    },
+    {
+      "source": "/guides/labs/components/building-pipelines-with-components/adding-components",
+      "destination": "/guides/build/components/building-pipelines-with-components/adding-component-definitions"
+    },
+    {
+      "source": "/guides/labs/components/building-pipelines-with-components/creating-a-project-with-components",
+      "destination": "/guides/build/projects/creating-a-new-project"
+    },
+    {
+      "source": "/guides/labs/components/creating-new-component-types/creating-dg-plugin",
+      "destination": "/guides/build/components/creating-new-components/creating-and-registering-a-component"
+    },
+    {
+      "source": "/guides/labs/components/creating-new-component-types/subclassing-components",
+      "destination": "/guides/build/components/creating-new-components/subclassing-components"
+    },
+    {
+      "source": "/guides/labs/dg/incrementally-adopting-dg/migrating-definitions",
+      "destination": "/guides/build/projects/moving-to-components/migrating-project"
+    },
+    {
+      "source": "/guides/labs/dg/python-environment-management-and-uv-integration",
+      "destination": "/guides/build/components"
+    },
+    {
+      "source": "/migration/airflow-to-dagster/dag-level-migration/migrate",
+      "destination": "/migration/airflow-to-dagster/airlift-v1/dag-level-migration"
+    },
+    {
+      "source": "/migration/airflow-to-dagster/dag-level-migration/observe",
+      "destination": "/migration/airflow-to-dagster/airlift-v1/dag-level-migration/observe"
+    },
+    {
+      "source": "/migration/airflow-to-dagster/dag-level-migration/peer",
+      "destination": "/migration/airflow-to-dagster/airlift-v1/dag-level-migration/peer"
+    },
+    {
+      "source": "/migration/airflow-to-dagster/dag-level-migration/setup",
+      "destination": "/migration/airflow-to-dagster/airlift-v1/dag-level-migration/setup"
+    },
+    {
+      "source": "/migration/airflow-to-dagster/federation/federate-execution",
+      "destination": "/migration/airflow-to-dagster/airlift-v1/federation/federate-execution"
+    },
+    {
+      "source": "/migration/airflow-to-dagster/federation/observe",
+      "destination": "/migration/airflow-to-dagster/airlift-v1/federation/observe"
+    },
+    {
+      "source": "/migration/airflow-to-dagster/federation/setup",
+      "destination": "/migration/airflow-to-dagster/airlift-v1/federation/setup"
+    },
+    {
+      "source": "/migration/airflow-to-dagster/task-level-migration/decommission",
+      "destination": "/migration/airflow-to-dagster/airlift-v1/task-level-migration/decommission"
+    },
+    {
+      "source": "/migration/airflow-to-dagster/task-level-migration/peer",
+      "destination": "/migration/airflow-to-dagster/airlift-v1/task-level-migration/peer"
+    },
+    {
+      "source": "/migration/airflow-to-dagster/task-level-migration/setup",
+      "destination": "/migration/airflow-to-dagster/airlift-v1/task-level-migration/setup"
     },
     {
       "source": "/integrations/libraries/dbt/dbt-component",

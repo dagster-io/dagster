@@ -81,7 +81,7 @@ async def get_freshness_status_and_metadata(
     if (
         asset_freshness_health_state is None
     ):  # if streamline reads are off or no streamline state exists for the asset compute it from the DB
-        if context.instance.streamline_read_asset_health_required():
+        if context.instance.streamline_read_asset_health_required("asset-freshness-health"):
             return AssetHealthStatus.UNKNOWN, None
 
         if (

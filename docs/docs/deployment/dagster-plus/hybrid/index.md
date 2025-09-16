@@ -9,7 +9,7 @@ slug: '/deployment/dagster-plus/hybrid'
 
 In a Dagster+ Hybrid deployment, the orchestration control plane is run by Dagster+ while your Dagster code is executed within your environment.
 
-:::note
+:::info
 
 For an overview of the Hybrid design, including security considerations, see [Dagster+ Hybrid architecture](/deployment/dagster-plus/hybrid/architecture).
 
@@ -23,6 +23,12 @@ To get started with a Hybrid deployment, you'll need to:
 2. [Install a Dagster+ Hybrid agent](#dagster-hybrid-agents)
 3. [Add a code location](/deployment/code-locations), typically using a Git repository and CI/CD
 
+:::note
+
+If you are migrating from from Dagster+ Serverless, see the [Dagster+ Serverless to Hybrid migration guide](/migration/serverless-to-hybrid).
+
+:::
+
 ## Dagster+ Hybrid agents
 
 The Dagster+ agent is a long-lived process that polls Dagster+'s API servers for new work. Currently supported agents include:
@@ -30,6 +36,7 @@ The Dagster+ agent is a long-lived process that polls Dagster+'s API servers for
 - [Kubernetes](/deployment/dagster-plus/hybrid/kubernetes)
 - [AWS ECS](/deployment/dagster-plus/hybrid/amazon-ecs/new-vpc)
 - [Docker](/deployment/dagster-plus/hybrid/docker)
+- [Microsoft Azure](/deployment/dagster-plus/hybrid/azure)
 - [Local agent](/deployment/dagster-plus/hybrid/local)
 
 :::tip

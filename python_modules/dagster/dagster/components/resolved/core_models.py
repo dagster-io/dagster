@@ -287,6 +287,17 @@ class AssetSpecUpdateKwargs(SharedAssetKwargs):
     ] = None
 
 
+@record
+class AssetSpecKeyUpdateKwargs(Resolvable):
+    """Resolvable object representing only a configurable asset key."""
+
+    key: Optional[ResolvedAssetKey] = None
+    key_prefix: Annotated[
+        Optional[CoercibleToAssetKeyPrefix],
+        Resolver.default(description="Prefix the existing asset key with the provided value."),
+    ] = None
+
+
 def resolve_asset_spec(context: ResolutionContext, model):
     return AssetSpec(**resolve_fields(model, AssetSpecKwargs, context))
 

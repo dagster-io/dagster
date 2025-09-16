@@ -5,6 +5,7 @@ import dagster as dg
 import yaml
 from dagster._core.storage.defs_state.base import DefsStateStorage
 from dagster_dg_core.utils import activate_venv
+from dagster_shared.utils import environ
 from dagster_test.dg_utils.utils import (
     ProxyRunner,
     assert_runner_result,
@@ -21,10 +22,10 @@ def test_refresh_state_command():
         activate_venv(project_dir / ".venv"),
         dg.instance_for_test(),
     ):
-        state_storage = DefsStateStorage.get_current()
+        state_storage = DefsStateStorage.get()
         assert state_storage is not None
         # no components, nothing to refresh
-        result = runner.invoke("utils", "refresh-component-state")
+        result = runner.invoke("utils", "refresh-defs-state")
         assert_runner_result(result)
         latest_state_info = state_storage.get_latest_defs_state_info()
         assert latest_state_info is None
@@ -44,7 +45,7 @@ def test_refresh_state_command():
 
         # now we have a state-backed component, command should succeed
         # and we should have a new state version
-        result = runner.invoke("utils", "refresh-component-state")
+        result = runner.invoke("utils", "refresh-defs-state")
         assert_runner_result(result)
 
         latest_state_info = state_storage.get_latest_defs_state_info()
@@ -71,15 +72,15 @@ def test_refresh_state_command():
             )
 
         # command should fail, but state should be updated for the non-failing component
-        result = runner.invoke("utils", "refresh-component-state")
+        result = runner.invoke("utils", "refresh-defs-state")
         assert result.exit_code == 1
 
         new_latest_state_info = state_storage.get_latest_defs_state_info()
         assert new_latest_state_info is not None
         assert new_latest_state_info.info_mapping.keys() == {"SampleStateBackedComponent"}
         assert (
-            new_latest_state_info.info_mapping["SampleStateBackedComponent"].version
-            != latest_state_info.info_mapping["SampleStateBackedComponent"].version
+            new_latest_state_info.info_mapping["SampleStateBackedComponent"]
+            != latest_state_info.info_mapping["SampleStateBackedComponent"]
         )
 
 
@@ -92,7 +93,7 @@ def test_refresh_state_command_with_defs_key_filter():
         activate_venv(project_dir / ".venv"),
         dg.instance_for_test(),
     ):
-        state_storage = DefsStateStorage.get_current()
+        state_storage = DefsStateStorage.get()
         assert state_storage is not None
         # Create two components
         component1_dir = project_dir / "src/foo_bar/defs/component1"
@@ -132,7 +133,7 @@ def test_refresh_state_command_with_defs_key_filter():
         # Refresh only component1
         result = runner.invoke(
             "utils",
-            "refresh-component-state",
+            "refresh-defs-state",
             "--defs-state-key",
             "SampleStateBackedComponent[first]",
         )
@@ -146,7 +147,7 @@ def test_refresh_state_command_with_defs_key_filter():
         # Refresh both components using multiple --defs-key flags
         result = runner.invoke(
             "utils",
-            "refresh-component-state",
+            "refresh-defs-state",
             "--defs-state-key",
             "SampleStateBackedComponent[first]",
             "--defs-state-key",
@@ -163,10 +164,28 @@ def test_refresh_state_command_with_defs_key_filter():
         }
 
         # Test with non-existent defs-key
-        result = runner.invoke(
-            "utils", "refresh-component-state", "--defs-state-key", "nonexistent"
-        )
+        result = runner.invoke("utils", "refresh-defs-state", "--defs-state-key", "nonexistent")
         assert result.exit_code == 1
         assert "The following defs state keys were not found:" in result.output
         assert "nonexistent" in result.output
         assert "Available defs state keys:" in result.output
+
+
+def test_refresh_state_command_dagster_home_not_set():
+    """Test that refresh-defs-state command errors when DAGSTER_HOME is not set."""
+    with (
+        ProxyRunner.test() as runner,
+        isolated_example_project_foo_bar(
+            runner, in_workspace=False, use_editable_dagster=True, uv_sync=True
+        ) as project_dir,
+        activate_venv(project_dir / ".venv"),
+        environ({"DAGSTER_HOME": None}),  # pyright: ignore[reportArgumentType]  # Temporarily unset DAGSTER_HOME
+    ):
+        result = runner.invoke("utils", "refresh-defs-state")
+        assert result.exit_code == 2  # Click.UsageError raises SystemExit(2)
+        assert (
+            "DAGSTER_HOME is not set, which means defs state cannot be stored in a persistent location"
+            in result.output
+        )
+        assert "please set it to use this command" in result.output
+        assert "export DAGSTER_HOME" in result.output

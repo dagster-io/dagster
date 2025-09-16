@@ -12,7 +12,7 @@ from dagster._core.definitions.schedule_definition import ScheduleExecutionData
 from dagster._core.definitions.selector import ScheduleSelector, SensorSelector
 from dagster._core.definitions.sensor_definition import SensorExecutionData
 from dagster._core.definitions.timestamp import TimestampWithTimezone
-from dagster._core.remote_representation.external import CompoundID
+from dagster._core.remote_representation.external import CompoundID, RemoteSchedule, RemoteSensor
 from dagster._core.scheduler.instigation import (
     DynamicPartitionsRequestResult,
     InstigatorState,
@@ -381,7 +381,8 @@ class GrapheneDryRunInstigationTick(graphene.ObjectType):
                 )
             except Exception:
                 sensor_data = serializable_error_info_from_exc_info(sys.exc_info())
-            return GrapheneTickEvaluation(sensor_data)
+            sensor = repository.get_sensor(self._selector.sensor_name)
+            return GrapheneTickEvaluation(sensor_data, sensor)
         else:
             if not repository.has_schedule(self._selector.schedule_name):
                 raise UserFacingGraphQLError(
@@ -413,7 +414,7 @@ class GrapheneDryRunInstigationTick(graphene.ObjectType):
             except Exception:
                 schedule_data = serializable_error_info_from_exc_info(sys.exc_info())
 
-            return GrapheneTickEvaluation(schedule_data)
+            return GrapheneTickEvaluation(schedule_data, schedule)
 
 
 class GrapheneTickEvaluation(graphene.ObjectType):
@@ -431,6 +432,7 @@ class GrapheneTickEvaluation(graphene.ObjectType):
     def __init__(
         self,
         execution_data: Union[ScheduleExecutionData, SensorExecutionData, SerializableErrorInfo],
+        instigator: Union[RemoteSensor, RemoteSchedule],
     ):
         check.inst_param(
             execution_data,
@@ -461,6 +463,7 @@ class GrapheneTickEvaluation(graphene.ObjectType):
         )
 
         cursor = execution_data.cursor if isinstance(execution_data, SensorExecutionData) else None
+        self._instigator = instigator
         super().__init__(
             skipReason=skip_reason,
             error=error,
@@ -468,10 +471,27 @@ class GrapheneTickEvaluation(graphene.ObjectType):
         )
 
     def resolve_runRequests(self, _graphene_info: ResolveInfo):
+        from dagster._daemon.sensor import fetch_existing_runs
+
         if not self._run_requests:
             return self._run_requests
 
-        return [GrapheneRunRequest(run_request) for run_request in self._run_requests]
+        # filter out run requests that already have runs matching their run_keys
+        if isinstance(self._instigator, RemoteSensor):
+            existing_runs = fetch_existing_runs(
+                _graphene_info.context.instance,
+                self._instigator,
+                self._run_requests,
+            )
+            valid_run_requests = [
+                run_request
+                for run_request in self._run_requests
+                if run_request.run_key not in existing_runs
+            ]
+        else:
+            valid_run_requests = self._run_requests
+
+        return [GrapheneRunRequest(run_request) for run_request in valid_run_requests]
 
     def resolve_dynamicPartitionsRequests(self, _graphene_info: ResolveInfo):
         if not self._dynamic_partitions_requests:

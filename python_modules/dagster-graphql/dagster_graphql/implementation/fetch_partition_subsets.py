@@ -8,7 +8,7 @@ from dagster._core.storage.partition_status_cache import get_partition_subsets
 from dagster._core.workspace.context import WorkspaceRequestContext
 
 
-def regenerate_and_check_partition_subsets(
+async def regenerate_and_check_partition_subsets(
     context: WorkspaceRequestContext,
     asset_node_snap: AssetNodeSnap,
     dynamic_partitions_loader: Optional[CachingDynamicPartitionsLoader],
@@ -20,7 +20,7 @@ def regenerate_and_check_partition_subsets(
         materialized_partition_subset,
         failed_partition_subset,
         in_progress_subset,
-    ) = get_partition_subsets(
+    ) = await get_partition_subsets(
         context.instance,
         context,
         asset_node_snap.asset_key,

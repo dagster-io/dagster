@@ -1,0 +1,26 @@
+{
+  "assetsOrError": {
+    "__typename": "AssetConnection",
+    "nodes": [
+      {
+        "assetHealth": {
+          "assetChecksStatus": "NOT_APPLICABLE",
+          "assetChecksStatusMetadata": null,
+          "assetHealth": "UNKNOWN",
+          "freshnessStatus": "NOT_APPLICABLE",
+          "freshnessStatusMetadata": null,
+          "materializationStatus": "UNKNOWN",
+          "materializationStatusMetadata": null
+        },
+        "assetMaterializations": [],
+        "definition": null,
+        "id": "[\"nonexistent-asset\"]",
+        "key": {
+          "path": [
+            "nonexistent-asset"
+          ]
+        }
+      }
+    ]
+  }
+}

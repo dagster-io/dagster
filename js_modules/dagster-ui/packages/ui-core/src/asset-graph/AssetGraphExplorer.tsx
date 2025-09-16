@@ -227,28 +227,17 @@ const AssetGraphExplorerWithData = ({
 
   const viewportEl = React.useRef<SVGViewportRef>();
 
-  const selectedTokens = useMemo(() => {
-    return explorerPath.opNames[explorerPath.opNames.length - 1]?.split(',').filter(Boolean) ?? [];
-  }, [explorerPath.opNames]);
-
-  const selectedGraphNodes = useMemo(
-    () =>
-      Object.values(assetGraphData.nodes).filter((node) =>
-        selectedTokens.includes(tokenForAssetKey(node.definition.assetKey)),
-      ),
-    [assetGraphData.nodes, selectedTokens],
+  const selectedTokens =
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+    explorerPath.opNames[explorerPath.opNames.length - 1]!.split(',').filter(Boolean);
+  const selectedGraphNodes = Object.values(assetGraphData.nodes).filter((node) =>
+    selectedTokens.includes(tokenForAssetKey(node.definition.assetKey)),
   );
+  // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+  const lastSelectedNode = selectedGraphNodes[selectedGraphNodes.length - 1]!;
 
-  const lastSelectedNode = selectedGraphNodes[selectedGraphNodes.length - 1];
-
-  const selectedDefinitions = useMemo(
-    () => selectedGraphNodes.map((a) => a.definition),
-    [selectedGraphNodes],
-  );
-  const allDefinitionsForMaterialize = useMemo(
-    () => Object.values(assetGraphData.nodes).map((a) => a.definition),
-    [assetGraphData.nodes],
-  );
+  const selectedDefinitions = selectedGraphNodes.map((a) => a.definition);
+  const allDefinitionsForMaterialize = Object.values(assetGraphData.nodes).map((a) => a.definition);
 
   const onSelectNode = React.useCallback(
     async (
@@ -465,33 +454,13 @@ const AssetGraphExplorerWithData = ({
     viewType === 'global' || viewType === 'catalog',
   );
 
-  const onFilterToGroup = useCallback(
-    (group: AssetGroup | GroupLayout) => {
-      const codeLocationFilter = buildRepoPathForHuman(
-        group.repositoryName,
-        group.repositoryLocationName,
-      );
-      onChangeAssetSelection(
-        `group:"${group.groupName}" and code_location:"${codeLocationFilter}"`,
-      );
-    },
-    [onChangeAssetSelection],
-  );
-
-  const onFilterToGroupMemo = useMemo(() => {
-    const callbackCache: Record<string, () => void> = {};
-    return (group: AssetGroup | GroupLayout) => {
-      const groupId = `${group.repositoryName}:${group.repositoryLocationName}:${group.groupName}`;
-      let callback = callbackCache[groupId];
-      if (!callback) {
-        callback = () => {
-          onFilterToGroup(group);
-        };
-        callbackCache[groupId] = callback;
-      }
-      return callback;
-    };
-  }, [onFilterToGroup]);
+  const onFilterToGroup = (group: AssetGroup | GroupLayout) => {
+    const codeLocationFilter = buildRepoPathForHuman(
+      group.repositoryName,
+      group.repositoryLocationName,
+    );
+    onChangeAssetSelection(`group:"${group.groupName}" and code_location:"${codeLocationFilter}"`);
+  };
 
   const svgViewport = layout ? (
     <SVGViewport
@@ -572,7 +541,7 @@ const AssetGraphExplorerWithData = ({
                   <ExpandedGroupNode
                     setHighlighted={setHighlighted}
                     preferredJobName={explorerPath.pipelineName}
-                    onFilterToGroup={onFilterToGroupMemo(group)}
+                    onFilterToGroup={() => onFilterToGroup(group)}
                     group={{...group, assets: groupedAssets[group.id] || []}}
                     minimal={scale < MINIMAL_SCALE}
                     onCollapse={() => {
@@ -605,7 +574,7 @@ const AssetGraphExplorerWithData = ({
                 >
                   <CollapsedGroupNode
                     preferredJobName={explorerPath.pipelineName}
-                    onFilterToGroup={onFilterToGroupMemo(group)}
+                    onFilterToGroup={() => onFilterToGroup(group)}
                     minimal={scale < MINIMAL_SCALE}
                     group={{
                       ...group,
@@ -699,8 +668,7 @@ const AssetGraphExplorerWithData = ({
   if (!nextLayoutLoading && isInitialLayout.current) {
     isInitialLayout.current = false;
   }
-  const sidebarLoading = dataLoading && isInitialLayout.current;
-  const loading = sidebarLoading || nextLayoutLoading;
+  const loading = (layoutLoading || dataLoading) && isInitialLayout.current;
 
   const [errorState, setErrorState] = useState<SyntaxError[]>([]);
 
@@ -735,7 +703,7 @@ const AssetGraphExplorerWithData = ({
       firstMinSize={400}
       secondMinSize={400}
       first={
-        sidebarLoading ? (
+        loading ? (
           <LoadingContainer>
             <Box margin={{bottom: 24}}>Loading assets…</Box>
             <Spinner purpose="page" />

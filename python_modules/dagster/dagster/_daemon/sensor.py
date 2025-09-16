@@ -25,6 +25,7 @@ from dagster._core.definitions.dynamic_partitions_request import (
     AddDynamicPartitionsRequest,
     DeleteDynamicPartitionsRequest,
 )
+from dagster._core.definitions.partitions.context import partition_loading_context
 from dagster._core.definitions.run_request import DagsterRunReaction, InstigatorType, RunRequest
 from dagster._core.definitions.selector import JobSubsetSelector
 from dagster._core.definitions.sensor_definition import DefaultSensorStatus, SensorType
@@ -621,25 +622,26 @@ def _process_tick_generator(
             check_for_debug_crash(sensor_debug_crash_flags, "TICK_HELD")
             tick_context.add_log_key(tick_context.log_key)
 
-            # in cases where there is unresolved work left to do, do it
-            if len(tick.unsubmitted_run_ids_with_requests) > 0:
-                yield from _resume_tick(
-                    workspace_process_context,
-                    tick_context,
-                    tick,
-                    remote_sensor,
-                    submit_threadpool_executor,
-                    sensor_debug_crash_flags,
-                )
-            else:
-                yield from _evaluate_sensor(
-                    workspace_process_context,
-                    tick_context,
-                    remote_sensor,
-                    sensor_state,
-                    submit_threadpool_executor,
-                    sensor_debug_crash_flags,
-                )
+            with partition_loading_context(dynamic_partitions_store=instance):
+                # in cases where there is unresolved work left to do, do it
+                if len(tick.unsubmitted_run_ids_with_requests) > 0:
+                    yield from _resume_tick(
+                        workspace_process_context,
+                        tick_context,
+                        tick,
+                        remote_sensor,
+                        submit_threadpool_executor,
+                        sensor_debug_crash_flags,
+                    )
+                else:
+                    yield from _evaluate_sensor(
+                        workspace_process_context,
+                        tick_context,
+                        remote_sensor,
+                        sensor_state,
+                        submit_threadpool_executor,
+                        sensor_debug_crash_flags,
+                    )
 
     except Exception:
         error_info = DaemonErrorCapture.process_exception(
@@ -1135,7 +1137,7 @@ def _submit_run_requests(
         raw_run_ids_with_requests,
         has_evaluations=len(automation_condition_evaluations) > 0,
     )
-    existing_runs_by_key = _fetch_existing_runs(
+    existing_runs_by_key = fetch_existing_runs(
         instance, remote_sensor, [request for _, request in resolved_run_ids_with_requests]
     )
     check_after_runs_num = instance.get_tick_termination_check_interval()
@@ -1274,7 +1276,7 @@ def get_elapsed(state: InstigatorState) -> Optional[float]:
     )
 
 
-def _fetch_existing_runs(
+def fetch_existing_runs(
     instance: DagsterInstance,
     remote_sensor: RemoteSensor,
     run_requests: Sequence[RunRequest],

@@ -1,0 +1,51 @@
+{
+  "assetsOrError": {
+    "__typename": "AssetConnection",
+    "nodes": [
+      {
+        "assetHealth": {
+          "assetChecksStatus": "NOT_APPLICABLE",
+          "assetChecksStatusMetadata": null,
+          "assetHealth": "HEALTHY",
+          "freshnessStatus": "NOT_APPLICABLE",
+          "freshnessStatusMetadata": null,
+          "materializationStatus": "HEALTHY",
+          "materializationStatusMetadata": {
+            "numMissingPartitions": 31,
+            "totalNumPartitions": 44
+          }
+        },
+        "assetMaterializations": [
+          {
+            "partition": "2023-01-01",
+            "runId": "fc70230e-2fcc-4bff-8400-5eefca046bbf",
+            "timestamp": "1677621777152"
+          }
+        ],
+        "definition": {
+          "description": "Model errors by month",
+          "freshnessInfo": null,
+          "freshnessPolicy": null,
+          "groupName": "FORECASTING",
+          "kinds": [
+            "scikitlearn",
+            "snowflake"
+          ],
+          "metadataEntries": [
+            {
+              "description": null,
+              "label": "dagster/code_references"
+            }
+          ]
+        },
+        "id": "[\"forecasting\", \"model_stats_by_month\"]",
+        "key": {
+          "path": [
+            "forecasting",
+            "model_stats_by_month"
+          ]
+        }
+      }
+    ]
+  }
+}

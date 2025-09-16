@@ -1,0 +1,3 @@
+dg scaffold defs inline-component --typename AssetWithSchedule assets_with_schedules
+
+Creating a Dagster inline component and corresponding component instance at assets_with_schedules.

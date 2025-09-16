@@ -1,19 +1,11 @@
-import {
-  Box,
-  HoverButton,
-  Icon,
-  Menu,
-  MenuDivider,
-  MenuItem,
-  Spinner,
-} from '@dagster-io/ui-components';
+import {Box, Menu, MenuDivider, MenuItem, Spinner} from '@dagster-io/ui-components';
 import * as React from 'react';
 import {AddToFavoritesMenuItem} from 'shared/assets/AddToFavoritesMenuItem.oss';
 
 import {GraphData, tokenForAssetKey} from './Utils';
+import {StatusDot} from './sidebar/StatusDot';
 import {useAssetBaseData} from '../asset-data/AssetBaseDataProvider';
 import {useExecuteAssetMenuItem} from '../assets/AssetActionMenu';
-import {AssetHealthSummary} from '../assets/AssetHealthSummary';
 import {
   AssetKeysDialog,
   AssetKeysDialogEmptyState,
@@ -43,7 +35,6 @@ export type AssetNodeMenuProps = {
   explorerPath?: ExplorerPath;
   onChangeExplorerPath?: (path: ExplorerPath, mode: 'replace' | 'push') => void;
   selectNode?: (e: React.MouseEvent<any> | React.KeyboardEvent<any>, nodeId: string) => void;
-  collapseAllNodes?: () => void;
 };
 
 export const useAssetNodeMenu = ({
@@ -52,7 +43,6 @@ export const useAssetNodeMenu = ({
   graphData,
   explorerPath,
   onChangeExplorerPath,
-  collapseAllNodes,
 }: AssetNodeMenuProps) => {
   const upstream = graphData ? Object.keys(graphData.upstream[node.id] ?? {}) : [];
   const downstream = graphData ? Object.keys(graphData.downstream[node.id] ?? {}) : [];
@@ -127,13 +117,6 @@ export const useAssetNodeMenu = ({
             text="Show downstream graph"
             icon="arrow_forward"
             onClick={() => showGraph(downstreamGraphQuery(node.assetKey))}
-          />
-        ) : null}
-        {collapseAllNodes ? (
-          <MenuItem
-            text="Collapse all assets"
-            icon="collapse"
-            onClick={() => collapseAllNodes?.()}
           />
         ) : null}
       </Menu>
@@ -211,33 +194,24 @@ const UpstreamDownstreamDialog = ({
                 const path = JSON.parse(assetId);
                 const node = graphData.nodes[assetId];
                 return (
-                  <HoverButton
+                  <MenuItem
+                    icon="asset"
+                    text={
+                      <Box flex={{direction: 'row', alignItems: 'center', gap: 4}}>
+                        {node ? <StatusDot node={node} /> : null}
+                        <span>{path[path.length - 1]}</span>
+                      </Box>
+                    }
                     key={assetId}
                     onClick={
                       selectNode
-                        ? (
-                            e:
-                              | React.MouseEvent<HTMLButtonElement>
-                              | React.KeyboardEvent<HTMLButtonElement>,
-                          ) => {
+                        ? (e) => {
                             selectNode(e, assetId);
                             setIsOpen(false);
                           }
                         : undefined
                     }
-                  >
-                    <Box
-                      flex={{direction: 'row', alignItems: 'center'}}
-                      padding={{horizontal: 8, vertical: 4}}
-                    >
-                      {node ? (
-                        <AssetHealthSummary iconOnly assetKey={node.assetKey} />
-                      ) : (
-                        <Icon name="asset" />
-                      )}
-                      <span>{path[path.length - 1]}</span>
-                    </Box>
-                  </HoverButton>
+                  />
                 );
               }}
             />

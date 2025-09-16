@@ -17,8 +17,15 @@ models:
       - name: status
         tests:
           - accepted_values:
-              values:
-                ["placed", "shipped", "completed", "return_pending", "returned"]
+              arguments:
+                values:
+                  [
+                    "placed",
+                    "shipped",
+                    "completed",
+                    "return_pending",
+                    "returned",
+                  ]
 
   - name: stg_payments
     columns:
@@ -29,4 +36,5 @@ models:
       - name: payment_method
         tests:
           - accepted_values:
-              values: ["credit_card", "coupon", "bank_transfer", "gift_card"]
+              arguments:
+                values: ["credit_card", "coupon", "bank_transfer", "gift_card"]

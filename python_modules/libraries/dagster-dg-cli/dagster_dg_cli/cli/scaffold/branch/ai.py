@@ -7,13 +7,13 @@ from collections.abc import Iterator
 from contextlib import contextmanager
 from pathlib import Path
 from time import perf_counter
+from typing import TYPE_CHECKING
 
 import click
 from dagster_shared.record import record
 from dagster_shared.utils.timing import format_duration
 
 from dagster_dg_cli.cli.scaffold.branch.claude.diagnostics import ClaudeDiagnostics
-from dagster_dg_cli.cli.scaffold.branch.claude.sdk_client import OutputChannel
 from dagster_dg_cli.cli.scaffold.branch.constants import (
     ALLOWED_COMMANDS_PLANNING,
     ALLOWED_COMMANDS_SCAFFOLDING,
@@ -21,6 +21,9 @@ from dagster_dg_cli.cli.scaffold.branch.constants import (
 )
 from dagster_dg_cli.cli.scaffold.branch.version_utils import ensure_claude_sdk_python_version
 from dagster_dg_cli.utils.ui import daggy_spinner_context
+
+if TYPE_CHECKING:
+    from dagster_dg_cli.cli.scaffold.branch.claude.sdk_client import OutputChannel
 
 
 @record
@@ -223,7 +226,7 @@ class PrintOutputChannel:
 
 
 @contextmanager
-def enter_waiting_phase(phase_name: str, spin: bool = True) -> Iterator[OutputChannel]:
+def enter_waiting_phase(phase_name: str, spin: bool = True) -> Iterator["OutputChannel"]:
     """Enter a phase of non interactivity where we wait for the CLI agent to complete its work.
 
     This yields an OutputChannel that coordinates with a loading indicator unless spin is disabled.

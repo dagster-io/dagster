@@ -1,7 +1,7 @@
 from collections.abc import Iterable, Mapping, Sequence
 from typing import TYPE_CHECKING, AbstractSet, Any, NamedTuple, Optional  # noqa: UP035
 
-from dagster_shared.serdes.objects import DefsStateInfo
+from dagster_shared.serdes.objects.models.defs_state_info import DefsStateInfo
 from dagster_shared.utils.hash import hash_collection
 
 import dagster._check as check

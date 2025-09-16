@@ -136,25 +136,30 @@ export function useLiveData<T>(
     };
   }, [keys, manager, thread, updateManager]);
 
-  return {
-    liveDataByNode: data,
+  const refresh = React.useCallback(() => {
+    manager.invalidateCache(keys);
+    setIsRefreshing(true);
+  }, [keys, manager]);
 
-    refresh: React.useCallback(() => {
-      manager.invalidateCache(keys);
-      setIsRefreshing(true);
-    }, [keys, manager]),
+  const refreshing = React.useMemo(() => {
+    if (isRefreshing && !manager.areKeysRefreshing(keys)) {
+      setTimeout(() => {
+        setIsRefreshing(false);
+      });
+      return false;
+    }
+    return true;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [keys, data, isRefreshing]);
 
-    refreshing: React.useMemo(() => {
-      if (isRefreshing && !manager.areKeysRefreshing(keys)) {
-        setTimeout(() => {
-          setIsRefreshing(false);
-        });
-        return false;
-      }
-      return true;
-      // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [keys, data, isRefreshing]),
-  };
+  return useMemo(
+    () => ({
+      liveDataByNode: data,
+      refresh,
+      refreshing,
+    }),
+    [data, refresh, refreshing],
+  );
 }
 
 const LiveDataProviderTyped = <T,>({
