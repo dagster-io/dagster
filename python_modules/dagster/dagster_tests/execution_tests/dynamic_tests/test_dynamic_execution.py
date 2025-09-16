@@ -604,6 +604,28 @@ def test_collect_optional():
     assert "echo" in skips
 
 
+def test_blocking_check_optional():
+    @dg.asset(
+        check_specs=[dg.AssetCheckSpec("check_one", asset="asset_one", blocking=True)],
+        output_required=False,
+    )
+    def asset_one():
+        # do not yield output, only check
+        yield dg.AssetCheckResult(
+            check_name="check_one", passed=True, asset_key=dg.AssetKey("asset_one")
+        )
+
+    @dg.asset(deps=[asset_one])
+    def asset_two():
+        pass
+
+    defs = dg.Definitions(assets=[asset_one, asset_two])
+    job_def = defs.get_implicit_global_asset_job_def()
+    result = job_def.execute_in_process()
+    skips = {ev.step_key for ev in result.get_step_skipped_events()}
+    assert skips == {"asset_two"}
+
+
 def test_non_required_dynamic_collect_skips():
     @dg.op(out=dg.DynamicOut(is_required=False))
     def producer():
