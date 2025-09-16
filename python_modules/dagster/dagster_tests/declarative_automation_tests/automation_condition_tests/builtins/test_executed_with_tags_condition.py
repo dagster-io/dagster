@@ -136,7 +136,6 @@ def small_fetch_batch_sizes():
     with environ(
         {
             "DAGSTER_FETCH_MATERIALIZATIONS_AFTER_CURSOR_CHUNK_SIZE": "1",
-            "DAGSTER_ASSET_DAEMON_RUN_RECORDS_FROM_MATERIALIZATION_LIMIT": "1",
         }
     ):
         yield

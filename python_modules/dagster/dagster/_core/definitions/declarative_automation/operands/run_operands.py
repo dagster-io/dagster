@@ -1,3 +1,5 @@
+from abc import abstractmethod
+from collections import defaultdict
 from collections.abc import Mapping, Sequence, Set
 from typing import TYPE_CHECKING, Optional
 
@@ -56,20 +58,6 @@ def _run_tag_filter_fn(
     return True
 
 
-async def _get_run_records_from_materializations(
-    materializations: Sequence["EventLogRecord"],
-    context: LoadingContext,
-) -> Sequence["RunRecord"]:
-    from dagster._core.storage.dagster_run import RunRecord
-
-    run_ids = list({record.run_id for record in materializations if record.run_id})
-    if not run_ids:
-        return []
-
-    run_records = await RunRecord.gen_many(context, run_ids)
-    return [record for record in run_records if record]
-
-
 def _get_run_tag_filter_name(
     base_name: str,
     tag_keys: Optional[Set[str]],
@@ -108,19 +96,42 @@ class LatestRunExecutedWithTagsCondition(SubsetAutomationCondition):
         )
 
 
-@whitelist_for_serdes
 @record
-class AnyNewUpdateHasRunTagsCondition(SubsetAutomationCondition[AssetKey]):
+class NewUpdatesWithRunTagsCondition(SubsetAutomationCondition[AssetKey]):
     tag_keys: Optional[Set[str]] = None
     tag_values: Optional[Mapping[str, str]] = None
 
     @property
-    def name(self) -> str:
-        return _get_run_tag_filter_name(
-            "any_new_update_has_run_tags", self.tag_keys, self.tag_values
-        )
+    @abstractmethod
+    def base_name(self) -> str: ...
 
-    async def compute_subset(self, context: AutomationContext[AssetKey]) -> EntitySubset[AssetKey]:  # pyright: ignore[reportIncompatibleMethodOverride]
+    @property
+    def name(self) -> str:
+        return _get_run_tag_filter_name(self.base_name, self.tag_keys, self.tag_values)
+
+    @abstractmethod
+    def match_candidate_runs(
+        self, candidate_run_ids: Set[str], matching_run_ids: Set[str]
+    ) -> bool: ...
+
+    async def _get_run_records_from_materializations(
+        self,
+        materializations: Sequence["EventLogRecord"],
+        context: LoadingContext,
+    ) -> Sequence["RunRecord"]:
+        from dagster._core.storage.dagster_run import RunRecord
+
+        run_ids = list({record.run_id for record in materializations if record.run_id})
+        if not run_ids:
+            return []
+
+        run_records = await RunRecord.gen_many(context, run_ids)
+        return [record for record in run_records if record]
+
+    async def compute_subset(  # pyright: ignore[reportIncompatibleMethodOverride]
+        self,
+        context: AutomationContext,
+    ) -> EntitySubset[AssetKey]:
         if (
             not context.previous_temporal_context
             or not context.previous_temporal_context.last_event_id
@@ -134,28 +145,32 @@ class AnyNewUpdateHasRunTagsCondition(SubsetAutomationCondition[AssetKey]):
         if not new_materializations:
             return context.get_empty_subset()
 
-        run_records = await _get_run_records_from_materializations(
+        run_records = await self._get_run_records_from_materializations(
             new_materializations,
             context.asset_graph_view,
         )
 
-        valid_run_ids: Set[str] = {
+        matching_run_ids = {
             run_record.dagster_run.run_id
             for run_record in run_records
             if _run_tag_filter_fn(run_record, self.tag_keys, self.tag_values)
         }
 
-        valid_partition_keys = set()
-
+        partitions_to_run_ids = defaultdict(set)
         for materialization in new_materializations:
-            if materialization.run_id and (materialization.run_id in valid_run_ids):
-                valid_partition_keys.add(materialization.partition_key)
+            partitions_to_run_ids[materialization.partition_key].add(materialization.run_id)
+
+        matching_partition_keys = set()
+
+        for partition_key, run_ids in partitions_to_run_ids.items():
+            if self.match_candidate_runs(run_ids, matching_run_ids):
+                matching_partition_keys.add(partition_key)
 
         return context.asset_graph_view.get_asset_subset_from_asset_partitions(
             key=context.key,
             asset_partitions={
                 AssetKeyPartitionKey(context.key, partition_key)
-                for partition_key in valid_partition_keys
+                for partition_key in matching_partition_keys
             },
             validate_existence=True,
         )
@@ -163,56 +178,26 @@ class AnyNewUpdateHasRunTagsCondition(SubsetAutomationCondition[AssetKey]):
 
 @whitelist_for_serdes
 @record
-class AllNewUpdatesHaveRunTagsCondition(SubsetAutomationCondition[AssetKey]):
+class AnyNewUpdateHasRunTagsCondition(NewUpdatesWithRunTagsCondition):
+    @property
+    def base_name(self) -> str:
+        return "any_new_update_has_run_tags"
+
+    def match_candidate_runs(self, candidate_run_ids: Set[str], matching_run_ids: Set[str]) -> bool:
+        # at least one candidate run must have matched
+        return len(candidate_run_ids & matching_run_ids) > 0
+
+
+@whitelist_for_serdes
+@record
+class AllNewUpdatesHaveRunTagsCondition(NewUpdatesWithRunTagsCondition):
     tag_keys: Optional[Set[str]] = None
     tag_values: Optional[Mapping[str, str]] = None
 
     @property
-    def name(self) -> str:
-        return _get_run_tag_filter_name(
-            "all_new_updates_have_run_tags", self.tag_keys, self.tag_values
-        )
+    def base_name(self) -> str:
+        return "all_new_updates_have_run_tags"
 
-    async def compute_subset(self, context: AutomationContext[AssetKey]) -> EntitySubset[AssetKey]:  # pyright: ignore[reportIncompatibleMethodOverride]
-        if (
-            not context.previous_temporal_context
-            or not context.previous_temporal_context.last_event_id
-        ):
-            return context.get_empty_subset()
-
-        new_materializations = context.asset_graph_view.get_inner_queryer_for_back_compat().get_asset_materializations_updated_after_cursor(
-            asset_key=context.key,
-            after_cursor=context.previous_temporal_context.last_event_id,
-        )
-        if not new_materializations:
-            return context.get_empty_subset()
-
-        run_records = await _get_run_records_from_materializations(
-            new_materializations,
-            context.asset_graph_view,
-        )
-
-        invalid_run_ids = {
-            run_record.dagster_run.run_id
-            for run_record in run_records
-            if not _run_tag_filter_fn(run_record, self.tag_keys, self.tag_values)
-        }
-
-        materialized_partition_keys = set()
-        invalid_partition_keys = set()
-
-        for materialization in new_materializations:
-            materialized_partition_keys.add(materialization.partition_key)
-            if not materialization.run_id or (materialization.run_id in invalid_run_ids):
-                invalid_partition_keys.add(materialization.partition_key)
-
-        valid_partition_keys = materialized_partition_keys - invalid_partition_keys
-
-        return context.asset_graph_view.get_asset_subset_from_asset_partitions(
-            key=context.key,
-            asset_partitions={
-                AssetKeyPartitionKey(context.key, partition_key)
-                for partition_key in valid_partition_keys
-            },
-            validate_existence=True,
-        )
+    def match_candidate_runs(self, candidate_run_ids: Set[str], matching_run_ids: Set[str]) -> bool:
+        # every candidate run must have matched the filters
+        return all(run_id in matching_run_ids for run_id in candidate_run_ids)

@@ -20,12 +20,6 @@ from dagster._core.definitions.declarative_automation.operators.dep_operators im
 from dagster._core.definitions.declarative_automation.operators.newly_true_operator import (
     NewlyTrueCondition as NewlyTrueCondition,
 )
-from dagster._core.definitions.declarative_automation.operators.run_operators import (
-    AllNewUpdatesHaveRunTagsCondition as AllNewUpdatesHaveRunTagsCondition,
-    AnyNewUpdateHasRunTagsCondition as AnyNewUpdateHasRunTagsCondition,
-    LatestRunExecutedWithRootTargetCondition as LatestRunExecutedWithRootTargetCondition,
-    LatestRunExecutedWithTagsCondition as LatestRunExecutedWithTagsCondition,
-)
 from dagster._core.definitions.declarative_automation.operators.since_operator import (
     SinceCondition as SinceCondition,
 )

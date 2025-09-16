@@ -12,3 +12,9 @@ from dagster._core.definitions.declarative_automation.operands.operands import (
     RunInProgressAutomationCondition as RunInProgressAutomationCondition,
     WillBeRequestedCondition as WillBeRequestedCondition,
 )
+from dagster._core.definitions.declarative_automation.operands.run_operands import (
+    AllNewUpdatesHaveRunTagsCondition as AllNewUpdatesHaveRunTagsCondition,
+    AnyNewUpdateHasRunTagsCondition as AnyNewUpdateHasRunTagsCondition,
+    LatestRunExecutedWithRootTargetCondition as LatestRunExecutedWithRootTargetCondition,
+    LatestRunExecutedWithTagsCondition as LatestRunExecutedWithTagsCondition,
+)
