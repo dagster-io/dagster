@@ -127,7 +127,7 @@ class SnowflakeResource(ConfigurableResource, IAttachDifferentObjectToOpContext,
         ),
     )
 
-    private_key: Optional[str] = Field(
+    private_key: Optional[Union[str, bytes]] = Field(
         default=None,
         description=(
             "Raw private key to use. See the `Snowflake documentation"
