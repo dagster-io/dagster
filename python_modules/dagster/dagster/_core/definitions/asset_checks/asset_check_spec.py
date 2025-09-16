@@ -166,6 +166,7 @@ class AssetCheckSpec(IHaveNew, LegacyNamedTupleMixin):
                         asset_key=self.asset_key, check_key=self.key, run_id=context.run.run_id
                     ),
                     job_name=context.job_def.name,
+                    message=f"Logs at {context.run.run_id}/{self.key.to_user_string()}",
                 ),
             )
             return None
