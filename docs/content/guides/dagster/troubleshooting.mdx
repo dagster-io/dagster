@@ -1,0 +1,157 @@
+---
+title: Troubleshooting with Dagster | Dagster Docs
+---
+
+# Troubleshooting with Dagster 
+
+
+This guide helps users troubleshoot common errors and a roadmap to further investigation. 
+
+---
+## Building Resilient Pipelines with Dagster
+
+Before reviewing how to troubleshoot, let's discuss a few things that can be done while building with Dagster to reduce failures, or be able to be notified or track down what went wrong in a data pipeline.
+
+Building a robust data pipeline requires thinking through what can go wrong in a data pipeline using Dagster up front, and pays off later. A few things to consider when building in Dagster:
+
+- This might be an obvious one, but does all my Python code run independent of Dagster?
+- What kind of data is expected? What type of data is possible to get that might be unexpected? What type of data anamolies can break my pipeline? [Validating Data with Dagster](/guides/dagster/dagster_type_factories)
+- Do I have any potential for flakey failures? How do I build retries into my pipeline?
+  [How to recover from flaky failures using retries](concepts/ops-jobs-graphs/op-retries#op-retries)
+- How to diagnose failures? What types of logs would it be helpful to include in my pipeline on portions that might be more sensitive?[Learn about Dagster's built-in loggers](/concepts/logging/loggers#using-built-in-loggers) 
+- What alerts in slack or email are important enough to trigger? When is it time to jump in and see what the problem is?[Setting up run failure alerts in Dagster with Sensors](/concepts/partitions-schedules-sensors/sensors#run-failure-sensor)
+
+--- 
+## Code locations 
+
+Typically, the first thing you will do is load your code into Dagster. Using defintions, you can define what Dagster objects will be loaded into the [code location](/concepts/code-locations). 
+
+While loading the code, Dagster will check for any errors in the code, things like undefined variables, issues with a namespace, packages that are not installed, etc. will come up as an error in loading the items in the definition.
+
+To resolve issues with the defintion, the stack trace in the deployment tab of the Dagster UI. 
+
+<Image
+alt="Viewing the agent console in Dagit"
+src="/images/guides/troubleshooting/code_loc_error.png"
+width={1874}
+height={1262}
+/>
+
+Review the error and redeploy to reload the code to see if the issue was resolved. 
+
+---
+## Op or Asset Failures
+
+One of the most common issues that users will hit in Dagster is either an asset or op failure. 
+
+You can use the Dagster UI to identify which Asset or Op failed by navigating to the specific run. The op or asset name will be on the left side of the table with the event type result.
+
+
+<Image
+alt="Viewing the agent console in Dagit"
+src="/images/guides/troubleshooting/dagster_ui_failed_run.png"
+width={900}
+height={600}
+/>
+
+
+If you would like to see the raw compute logs, click on the toggle on the top left above the event logs.  
+
+
+
+<Image
+alt="Viewing the agent console in Dagit"
+src="/images/guides/troubleshooting/stnd_out.png"
+width={900}
+height={600}
+/>
+
+A few common cases:
+- The Asset or Op received some bad data. For more information see [Validating Data with Dagster](/guides/dagster/dagster_type_factories)
+- An external service has failed, retries in Dagster are helpful to mitigate this. For more information see [How to recover from flaky failures using retries](concepts/ops-jobs-graphs/op-retries#op-retries)
+- If a non-Python sub-process was used, the raw compute logs are helpful (for more information click here)
+- If something is going wrong with another python library, linking the logger to capture some of the events 
+
+<Note>
+  Check out {" "}
+  <a href="https://docs.python.org/3.9/tutorial/errors.html#exception-chaining">
+    about Python exception chaining
+  </a>{" "}
+  which is helpful for bringing in error messages.
+</Note>
+
+---
+
+### Observability 
+
+Dagster provides built-in logger as well an extendible logging system that can be customized. 
+
+Dagster has structured event, compute, agent health and pod logs that can be published. These logs can help dig into what is not working. 
+
+Dagster also has several [error classes](/_apidocs/errors) that you should be aware of while debugging.
+
+<!-- ![Viewing the cereals asset in Dagit](/images/guides/troubleshooting/agents.png) -->
+
+<Image
+alt="Viewing the agent console in Dagit"
+src="/images/guides/troubleshooting/agents.png"
+width={3574}
+height={1962}
+/>
+
+Some helpful [logs](/concepts/logging/loggers#loggers) that are available:
+
+- [Agent](/dagster-cloud/deployment/agents) status is available in the Dagster UI which displays if there is a heartbeat and direct access to raw logs is available 
+- Code server status and logs are directly available 
+- Step & Run worker status is available via agent checks and through the event logs as well as raw logs via the compute logs 
+
+#### Deployment Troubleshooting
+
+Agent and pod logs can be a useful tool for resolving Dagster deployment issues. 
+
+[For more information on Dagster Cloud Hybrid Deploymements](/dagster-cloud/deployment/agents)
+
+---
+
+## Alerting on failures
+
+### Setting up sensors 
+
+When building your data pipeline in Dagster, you can to set up custom sensors that can trigger a warning based on a specific situation. 
+- [Run failure sensors](/concepts/partitions-schedules-sensors/sensors#run-failure-sensor) are a tool that can be used to monitor run failures. 
+- [Dagster's built-in failure sensors](/concepts/partitions-schedules-sensors/sensors#out-of-box-run-failure-sensors) that can trigger either a slack message or an email to notify if a run fails.    
+
+### Monitoring Sensors in Dagit
+
+The [Dagster UI](/concepts/partitions-schedules-sensors/sensors#monitoring-sensors-in-dagit) can be used to check on sensors and ensure that they are up and running. 
+
+---
+
+## Where to go next
+
+
+[Ask for help on Slack](https://dagster.io/slack)
+
+
+
+
+
+
+---
+
+## Related
+
+<ArticleList>
+  <ArticleListItem
+    href="/guides/dagster/using-environment-variables-and-secrets"
+    title="Environment variables and secrets"
+  ></ArticleListItem>
+  <ArticleListItem
+    href="/guides/dagster/dagster_type_factories"
+    title="Validating Data with Dagster Type Factories"
+  ></ArticleListItem>
+  <ArticleListItem
+    href="/concepts/ops-jobs-graphs/op-retries"
+    title="Op Retries"
+  ></ArticleListItem>
+</ArticleList>
