@@ -331,9 +331,25 @@ class AssetGraphView(LoadingContext):
     ) -> EntitySubset[AssetKey]:
         return EntitySubset(self, key=subset.key, value=_ValidatedEntitySubsetValue(subset.value))
 
+    def _validate_partition_keys(
+        self, key: AssetKey, partition_keys: AbstractSet[str]
+    ) -> AbstractSet[str]:
+        partitions_def = self.asset_graph.get(key).partitions_def
+        if partitions_def is None:
+            return {partition_key for partition_key in partition_keys if partition_key is None}
+        else:
+            return {
+                partition_key
+                for partition_key in partition_keys
+                if partition_key is not None and partitions_def.has_partition_key(partition_key)
+            }
+
     @use_partition_loading_context
     def get_asset_subset_from_asset_partitions(
-        self, key: AssetKey, asset_partitions: AbstractSet[AssetKeyPartitionKey]
+        self,
+        key: AssetKey,
+        asset_partitions: AbstractSet[AssetKeyPartitionKey],
+        validate_existence: bool = False,
     ) -> EntitySubset[AssetKey]:
         check.invariant(
             all(akpk.asset_key == key for akpk in asset_partitions),
@@ -342,6 +358,10 @@ class AssetGraphView(LoadingContext):
         partition_keys = {
             akpk.partition_key for akpk in asset_partitions if akpk.partition_key is not None
         }
+
+        if validate_existence:
+            partition_keys = self._validate_partition_keys(key, partition_keys)
+
         partitions_def = self._get_partitions_def(key)
         value = (
             partitions_def.subset_with_partition_keys(partition_keys)

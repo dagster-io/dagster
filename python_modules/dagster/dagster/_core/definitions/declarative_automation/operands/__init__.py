@@ -1,6 +1,4 @@
 from dagster._core.definitions.declarative_automation.operands.operands import (
-    AllNewUpdatesHaveRunTagsCondition as AllNewUpdatesHaveRunTagsCondition,
-    AnyNewMaterializationHasRunTagsCondition as AnyNewMaterializationHasRunTagsCondition,
     BackfillInProgressAutomationCondition as BackfillInProgressAutomationCondition,
     CheckResultCondition as CheckResultCondition,
     CodeVersionChangedCondition as CodeVersionChangedCondition,
@@ -8,8 +6,6 @@ from dagster._core.definitions.declarative_automation.operands.operands import (
     ExecutionFailedAutomationCondition as ExecutionFailedAutomationCondition,
     InitialEvaluationCondition as InitialEvaluationCondition,
     InLatestTimeWindowCondition as InLatestTimeWindowCondition,
-    LatestRunExecutedWithRootTargetCondition as LatestRunExecutedWithRootTargetCondition,
-    LatestRunExecutedWithTagsCondition as LatestRunExecutedWithTagsCondition,
     MissingAutomationCondition as MissingAutomationCondition,
     NewlyRequestedCondition as NewlyRequestedCondition,
     NewlyUpdatedCondition as NewlyUpdatedCondition,
