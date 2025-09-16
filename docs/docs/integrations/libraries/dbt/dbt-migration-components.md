@@ -9,7 +9,7 @@ Dagster supports two main ways to integrate with dbt, [components](/integrations
 
 ## 1. Scaffold the dbt component
 
-The first step is to [scaffold the dbt component](integrations/libraries/dbt#3-scaffold-a-dbt-component-definition). This will generate the `defs.yaml` configuration file with a path to your dbt project:
+The first step is to [scaffold the dbt component](/integrations/libraries/dbt#3-scaffold-a-dbt-component-definition). This will generate the `defs.yaml` configuration file with a path to your dbt project:
 
 <CodeExample
   path="docs_snippets/docs_snippets/guides/components/integrations/dbt-component/7-component.yaml"
@@ -49,7 +49,7 @@ Assuming the check passes, you can also execute:
 dg list defs
 ```
 
-This will list all the assets in you project and allow you to see that the same dbt assets are present
+This will list all the assets in your project and allow you to see that the same dbt assets are present
 
 ## 3. Migrating translators (Optional)
 
