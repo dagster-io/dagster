@@ -142,9 +142,9 @@ def small_fetch_batch_sizes():
         yield
 
 
-def test_all_new_executed_with_tags_unpartitioned(small_fetch_batch_sizes) -> None:
+def test_all_new_updates_have_run_tags_unpartitioned(small_fetch_batch_sizes) -> None:
     @dg.asset(
-        automation_condition=AutomationCondition.all_new_executed_with_tags(
+        automation_condition=AutomationCondition.all_new_updates_have_run_tags(
             tag_values={"target_tag": "a"}
         )
     )
@@ -185,9 +185,9 @@ def test_all_new_executed_with_tags_unpartitioned(small_fetch_batch_sizes) -> No
     assert result.total_requested == 0
 
 
-def test_all_new_executed_with_tags_partitioned(small_fetch_batch_sizes) -> None:
+def test_all_new_updates_have_run_tags_partitioned(small_fetch_batch_sizes) -> None:
     @dg.asset(
-        automation_condition=AutomationCondition.all_new_executed_with_tags(
+        automation_condition=AutomationCondition.all_new_updates_have_run_tags(
             tag_values={"target_tag": "a"}
         ),
         partitions_def=dg.StaticPartitionsDefinition(["a", "b", "c"]),
@@ -234,9 +234,9 @@ def test_all_new_executed_with_tags_partitioned(small_fetch_batch_sizes) -> None
     assert result.total_requested == 0
 
 
-def test_any_new_executed_with_tags(small_fetch_batch_sizes) -> None:
+def test_any_new_materialization_has_run_tags(small_fetch_batch_sizes) -> None:
     @dg.asset(
-        automation_condition=AutomationCondition.any_new_executed_with_tags(
+        automation_condition=AutomationCondition.any_new_materialization_has_run_tags(
             tag_values={"target_tag": "a"}
         )
     )
@@ -277,9 +277,9 @@ def test_any_new_executed_with_tags(small_fetch_batch_sizes) -> None:
     assert result.total_requested == 0
 
 
-def test_any_new_executed_with_tags_partitioned(small_fetch_batch_sizes) -> None:
+def test_any_new_materialization_has_run_tags_partitioned(small_fetch_batch_sizes) -> None:
     @dg.asset(
-        automation_condition=AutomationCondition.any_new_executed_with_tags(
+        automation_condition=AutomationCondition.any_new_materialization_has_run_tags(
             tag_values={"target_tag": "a"}
         ),
         partitions_def=dg.StaticPartitionsDefinition(["a", "b", "c"]),

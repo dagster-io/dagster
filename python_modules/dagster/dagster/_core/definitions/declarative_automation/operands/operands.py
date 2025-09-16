@@ -297,13 +297,13 @@ class LatestRunExecutedWithTagsCondition(SubsetAutomationCondition):
 
 @whitelist_for_serdes
 @record
-class AnyNewExecutedWithTagsCondition(SubsetAutomationCondition):
+class AnyNewMaterializationHasRunTagsCondition(SubsetAutomationCondition):
     tag_keys: Optional[Set[str]] = None
     tag_values: Optional[Mapping[str, str]] = None
 
     @property
     def name(self) -> str:
-        name = "any_new_executed_with_tags"
+        name = "any_new_materialization_has_run_tags"
         props = []
         if self.tag_keys is not None:
             tag_key_str = ",".join(sorted(self.tag_keys))
@@ -362,13 +362,13 @@ class AnyNewExecutedWithTagsCondition(SubsetAutomationCondition):
 
 @whitelist_for_serdes
 @record
-class AllNewExecutedWithTagsCondition(SubsetAutomationCondition):
+class AllNewUpdatesHaveRunTagsCondition(SubsetAutomationCondition):
     tag_keys: Optional[Set[str]] = None
     tag_values: Optional[Mapping[str, str]] = None
 
     @property
     def name(self) -> str:
-        name = "all_new_executed_with_tags"
+        name = "all_new_updates_have_run_tags"
         props = []
         if self.tag_keys is not None:
             tag_key_str = ",".join(sorted(self.tag_keys))
