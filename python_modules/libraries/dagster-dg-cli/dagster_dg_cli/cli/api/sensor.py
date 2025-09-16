@@ -19,17 +19,17 @@ if TYPE_CHECKING:
 def format_sensors(sensors: "DgApiSensorList", as_json: bool) -> str:
     """Format sensor list for output."""
     if as_json:
-        # For JSON output, remove repository_origin to hide repository concepts
+        # For JSON output, remove repository_origin and id to hide internal concepts
         sensors_dict = sensors.model_dump()
         for sensor in sensors_dict["items"]:
             sensor.pop("repository_origin", None)
+            sensor.pop("id", None)
         return json.dumps(sensors_dict, indent=2)
 
     lines = []
     for sensor in sensors.items:
         sensor_lines = [
             f"Name: {sensor.name}",
-            f"ID: {sensor.id}",
             f"Status: {sensor.status.value}",
             f"Type: {sensor.sensor_type.value}",
             f"Description: {sensor.description or 'None'}",
@@ -56,14 +56,14 @@ def format_sensors(sensors: "DgApiSensorList", as_json: bool) -> str:
 def format_sensor(sensor: "DgApiSensor", as_json: bool) -> str:
     """Format single sensor for output."""
     if as_json:
-        # For JSON output, remove repository_origin to hide repository concepts
+        # For JSON output, remove repository_origin and id to hide internal concepts
         sensor_dict = sensor.model_dump()
         sensor_dict.pop("repository_origin", None)
+        sensor_dict.pop("id", None)
         return json.dumps(sensor_dict, indent=2)
 
     lines = [
         f"Name: {sensor.name}",
-        f"ID: {sensor.id}",
         f"Status: {sensor.status.value}",
         f"Type: {sensor.sensor_type.value}",
         f"Description: {sensor.description or 'None'}",
@@ -138,9 +138,9 @@ def list_sensors_command(
         if output_json:
             error_response = {"error": str(e)}
             click.echo(json.dumps(error_response), err=True)
+            ctx.exit(1)
         else:
-            click.echo(f"Error querying Dagster Plus API: {e}", err=True)
-        raise click.ClickException(f"Failed to list sensors: {e}")
+            raise click.ClickException(f"Failed to list sensors: {e}")
 
 
 @click.command(name="get", cls=DgClickCommand, unlaunched=True)
@@ -182,9 +182,9 @@ def get_sensor_command(
         if output_json:
             error_response = {"error": str(e)}
             click.echo(json.dumps(error_response), err=True)
+            ctx.exit(1)
         else:
-            click.echo(f"Error querying Dagster Plus API: {e}", err=True)
-        raise click.ClickException(f"Failed to get sensor: {e}")
+            raise click.ClickException(f"Failed to get sensor: {e}")
 
 
 @click.group(
