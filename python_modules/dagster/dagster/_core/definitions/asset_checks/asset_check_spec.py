@@ -141,7 +141,8 @@ class AssetCheckSpec(IHaveNew, LegacyNamedTupleMixin):
         return replace(self, metadata=metadata)
 
     def to_in_app_check_definition(self) -> "AssetChecksDefinition":
-        from dagster import asset_check
+        from dagster import AssetCheckExecutionContext, asset_check
+        from dagster._core.events import AssetCheckRequestedData, DagsterEvent, DagsterEventType
 
         # doing this as a hack. one issue is that this actually runs in the same run
         # as the asset materialization
@@ -156,7 +157,18 @@ class AssetCheckSpec(IHaveNew, LegacyNamedTupleMixin):
             compute_kind="in_app_check",
         )
         def check_fn():
-            pass
+            context = AssetCheckExecutionContext.get()
+            context.instance.report_dagster_event(
+                run_id=context.run.run_id,
+                dagster_event=DagsterEvent(
+                    event_type_value=DagsterEventType.ASSET_CHECK_REQUESTED.value,
+                    event_specific_data=AssetCheckRequestedData(
+                        asset_key=self.asset_key, check_key=self.key, run_id=context.run.run_id
+                    ),
+                    job_name=context.job_def.name,
+                ),
+            )
+            return None
 
         return check_fn
 

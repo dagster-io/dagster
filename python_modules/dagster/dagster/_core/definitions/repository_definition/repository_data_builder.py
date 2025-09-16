@@ -181,6 +181,9 @@ def build_caching_repository_data_from_list(
     # JAMIE - maybe this is where we inject the check specs
     # get the in-app checks defined for this repository
     # for each check, make a spec and a stub definition and add it to the repository definitions
+    # downside - does this require users to upgrade to whatever dagster version we release this in?
+    # i think yes, right? because the check executes in user code?
+    # if we just have the stub check that has no execution, then we maybe don't have that problem
     assets_with_checks = ["asset_with_in_app_check", "asset_with_code_and_in_app_check"]
     check_key = "num_rows_threshold"
     repository_definitions = [rd for rd in repository_definitions] + [
