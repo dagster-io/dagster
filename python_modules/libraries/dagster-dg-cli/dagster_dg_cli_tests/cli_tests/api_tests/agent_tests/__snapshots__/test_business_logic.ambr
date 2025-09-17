@@ -5,7 +5,7 @@
       dict({
         'agent_label': 'Agent Running',
         'id': 'agent-running-uuid',
-        'last_heartbeat_time': 1640995200.0,
+        'last_heartbeat_time': 1641046800.0,
         'metadata': list([
           dict({
             'key': 'status_test',
@@ -71,7 +71,7 @@
   Label: Agent no-label
   ID: no-label-agent-uuid-123456789
   Status: UNKNOWN
-  Last Heartbeat: 2021-12-31 19:01:40
+  Last Heartbeat: 2022-01-01 09:22:00
   
   Metadata:
     type: serverless
@@ -91,7 +91,7 @@
       dict({
         'agent_label': 'Production Agent',
         'id': 'agent-1-uuid-12345',
-        'last_heartbeat_time': 1640995200.0,
+        'last_heartbeat_time': 1641046800.0,
         'metadata': list([
           dict({
             'key': 'version',
@@ -115,7 +115,7 @@
       dict({
         'agent_label': 'Staging Agent',
         'id': 'agent-3-uuid-abcdef',
-        'last_heartbeat_time': 1640995260.0,
+        'last_heartbeat_time': 1641046860.0,
         'metadata': list([
           dict({
             'key': 'environment',
@@ -133,7 +133,7 @@
   Label: Production Agent
   ID: agent-1-uuid-12345
   Status: RUNNING
-  Last Heartbeat: 2021-12-31 19:00:00
+  Last Heartbeat: 2022-01-01 09:20:00
   
   Label: Agent agent-2-
   ID: agent-2-uuid-67890
@@ -143,7 +143,7 @@
   Label: Staging Agent
   ID: agent-3-uuid-abcdef
   Status: UNHEALTHY
-  Last Heartbeat: 2021-12-31 19:01:00
+  Last Heartbeat: 2022-01-01 09:21:00
   '''
 # ---
 # name: TestFormatAgents.test_format_empty_agents_json_output[0]
@@ -160,7 +160,7 @@
   dict({
     'agent_label': 'Development Agent',
     'id': 'single-agent-uuid-xyz',
-    'last_heartbeat_time': 1640995200.0,
+    'last_heartbeat_time': 1641046800.0,
     'metadata': list([
       dict({
         'key': 'owner',
@@ -183,7 +183,7 @@
   Label: Development Agent
   ID: single-agent-uuid-xyz
   Status: RUNNING
-  Last Heartbeat: 2021-12-31 19:00:00
+  Last Heartbeat: 2022-01-01 09:20:00
   
   Metadata:
     owner: dev-team

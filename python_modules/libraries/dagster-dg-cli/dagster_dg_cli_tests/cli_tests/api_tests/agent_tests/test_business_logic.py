@@ -18,7 +18,7 @@ class TestFormatAgents:
                 id="agent-1-uuid-12345",
                 agent_label="Production Agent",
                 status=AgentStatus.RUNNING,
-                last_heartbeat_time=1640995200.0,  # 2022-01-01 00:00:00 UTC
+                last_heartbeat_time=1641046800.0,  # 2022-01-01 14:20:00 UTC (midday to avoid timezone edge cases)
                 metadata=[
                     AgentMetadataEntry(key="version", value="1.2.3"),
                     AgentMetadataEntry(key="location", value="us-east-1"),
@@ -35,7 +35,7 @@ class TestFormatAgents:
                 id="agent-3-uuid-abcdef",
                 agent_label="Staging Agent",
                 status=AgentStatus.UNHEALTHY,
-                last_heartbeat_time=1640995260.0,  # 2022-01-01 00:01:00 UTC
+                last_heartbeat_time=1641046860.0,  # 2022-01-01 14:21:00 UTC
                 metadata=[
                     AgentMetadataEntry(key="environment", value="staging"),
                 ],
@@ -53,7 +53,7 @@ class TestFormatAgents:
             id="single-agent-uuid-xyz",
             agent_label="Development Agent",
             status=AgentStatus.RUNNING,
-            last_heartbeat_time=1640995200.0,
+            last_heartbeat_time=1641046800.0,
             metadata=[
                 AgentMetadataEntry(key="owner", value="dev-team"),
                 AgentMetadataEntry(key="cpu_limit", value="2"),
@@ -133,7 +133,7 @@ class TestFormatAgents:
             id="no-label-agent-uuid-123456789",
             agent_label=None,
             status=AgentStatus.UNKNOWN,
-            last_heartbeat_time=1640995300.0,
+            last_heartbeat_time=1641046920.0,  # 2022-01-01 14:22:00 UTC
             metadata=[
                 AgentMetadataEntry(key="type", value="serverless"),
             ],
@@ -159,7 +159,7 @@ class TestAgentDataProcessing:
                 id=f"agent-{status.value.lower()}-uuid",
                 agent_label=f"Agent {status.value.title()}",
                 status=status,
-                last_heartbeat_time=1640995200.0 if status == AgentStatus.RUNNING else None,
+                last_heartbeat_time=1641046800.0 if status == AgentStatus.RUNNING else None,
                 metadata=[
                     AgentMetadataEntry(key="status_test", value=status.value),
                 ],
@@ -182,7 +182,7 @@ class TestAgentDataProcessing:
             id="metadata-test-agent",
             agent_label="Metadata Test",
             status=AgentStatus.RUNNING,
-            last_heartbeat_time=1640995200.0,
+            last_heartbeat_time=1641046800.0,
             metadata=[
                 AgentMetadataEntry(key="version", value="1.0.0"),
                 AgentMetadataEntry(key="environment", value="production"),
