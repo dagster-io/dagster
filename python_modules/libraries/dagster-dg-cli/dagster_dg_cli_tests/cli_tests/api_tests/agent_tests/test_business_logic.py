@@ -63,8 +63,11 @@ class TestFormatAgents:
 
     def test_format_agents_text_output(self, snapshot):
         """Test formatting agents as text."""
+        from dagster_shared.utils.timing import fixed_timezone
+
         agent_list = self._create_sample_agent_list()
-        result = format_agents(agent_list, as_json=False)
+        with fixed_timezone("UTC"):
+            result = format_agents(agent_list, as_json=False)
 
         # Snapshot the entire text output
         snapshot.assert_match(result)
@@ -99,8 +102,11 @@ class TestFormatAgents:
 
     def test_format_single_agent_text_output(self, snapshot):
         """Test formatting single agent as text."""
+        from dagster_shared.utils.timing import fixed_timezone
+
         agent = self._create_single_agent()
-        result = format_agent(agent, as_json=False)
+        with fixed_timezone("UTC"):
+            result = format_agent(agent, as_json=False)
 
         snapshot.assert_match(result)
 
@@ -116,6 +122,8 @@ class TestFormatAgents:
 
     def test_format_agent_without_metadata(self, snapshot):
         """Test formatting agent with no metadata."""
+        from dagster_shared.utils.timing import fixed_timezone
+
         agent = Agent(
             id="simple-agent-uuid",
             agent_label="Simple Agent",
@@ -123,12 +131,15 @@ class TestFormatAgents:
             last_heartbeat_time=None,
             metadata=[],
         )
-        result = format_agent(agent, as_json=False)
+        with fixed_timezone("UTC"):
+            result = format_agent(agent, as_json=False)
 
         snapshot.assert_match(result)
 
     def test_format_agent_without_label(self, snapshot):
         """Test formatting agent with no label (should use ID fallback)."""
+        from dagster_shared.utils.timing import fixed_timezone
+
         agent = Agent(
             id="no-label-agent-uuid-123456789",
             agent_label=None,
@@ -138,7 +149,8 @@ class TestFormatAgents:
                 AgentMetadataEntry(key="type", value="serverless"),
             ],
         )
-        result = format_agent(agent, as_json=False)
+        with fixed_timezone("UTC"):
+            result = format_agent(agent, as_json=False)
 
         snapshot.assert_match(result)
 
