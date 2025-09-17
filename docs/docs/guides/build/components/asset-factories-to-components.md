@@ -81,7 +81,7 @@ or interact with them in the Dagster UI by running `dg dev`:
 
 ## 5. Adding downstream assets
 
-Assets generated from components can still be used as dependencies by other assets in your Dagster project by referencing the asset key of the asset.
+You can use assets generated from components as dependencies of other assets in your Dagster project by referencing the asset key of the asset.
 
 Looking at the logic within the component, we can see how the asset key is created for each asset:
 
