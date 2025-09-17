@@ -50,7 +50,6 @@ To only show assets with a particular health status, you can add a filter to the
 
 For a full list of asset health statuses that you can filter on, see the [asset selection syntax reference](/guides/build/assets/asset-selection-syntax/reference#filters).
 
-
 ## Marking an asset as healthy
 
 To mark an asset healthy, you can either:
