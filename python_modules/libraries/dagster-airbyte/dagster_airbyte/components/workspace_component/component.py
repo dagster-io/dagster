@@ -4,6 +4,7 @@ from typing import Annotated, Callable, Optional, Union
 
 import dagster as dg
 import pydantic
+from dagster._annotations import superseded
 from dagster._core.definitions.job_definition import default_job_io_manager
 from dagster.components.resolved.base import resolve_fields
 from dagster.components.utils.translation import TranslationFn, TranslationFnResolver
@@ -222,3 +223,8 @@ class AirbyteWorkspaceComponent(dg.Component, dg.Model, dg.Resolvable):
             for airbyte_asset in airbyte_assets
         ]
         return dg.Definitions(assets=assets_with_resource)
+
+
+# Subclassing to create the alias to be able to use the superseded decorator.
+@superseded(additional_warn_text="Superseded. Use AirbyteWorkspaceComponent instead.")
+class AirbyteCloudWorkspaceComponent(AirbyteWorkspaceComponent): ...
