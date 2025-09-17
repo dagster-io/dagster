@@ -9,7 +9,6 @@ from dagster._config.pythonic_config import (
     ConfigurableIOManagerFactoryResourceDefinition,
     ConfigurableResourceFactoryResourceDefinition,
 )
-from dagster._core.definitions.asset_checks.asset_check_spec import AssetCheckSpec
 from dagster._core.definitions.assets.definition.assets_definition import AssetsDefinition
 from dagster._core.definitions.assets.graph.asset_graph import AssetGraph
 from dagster._core.definitions.assets.graph.base_asset_graph import BaseAssetGraph
@@ -47,6 +46,7 @@ from dagster._core.definitions.source_asset import SourceAsset
 from dagster._core.definitions.unresolved_asset_job_definition import UnresolvedAssetJobDefinition
 from dagster._core.definitions.utils import get_default_automation_condition_sensor
 from dagster._core.errors import DagsterInvalidDefinitionError
+from dagster._core.instance import DagsterInstance
 
 if TYPE_CHECKING:
     from dagster._core.definitions.asset_checks.asset_check_spec import AssetCheckKey
@@ -184,16 +184,14 @@ def build_caching_repository_data_from_list(
     # downside - does this require users to upgrade to whatever dagster version we release this in?
     # i think yes, right? because the check executes in user code?
     # if we just have the stub check that has no execution, then we maybe don't have that problem
-    assets_with_checks = ["asset_with_in_app_check", "asset_with_code_and_in_app_check"]
-    check_key = "num_rows_threshold"
-    repository_definitions = [rd for rd in repository_definitions] + [
-        AssetCheckSpec(
-            name=check_key,
-            asset=asset_key,
-            blocking=False,
-        ).to_in_app_check_definition()
-        for asset_key in assets_with_checks
-    ]
+    repository_definitions = [rd for rd in repository_definitions]
+
+    with DagsterInstance.get() as instance:
+        # TODO - scope this method to the specific repo
+        in_app_checks = instance.get_in_app_checks()
+        for check_config in in_app_checks:
+            check_spec = check_config.check_spec
+            repository_definitions.append(check_spec.to_in_app_check_definition())
 
     for definition in repository_definitions:
         if isinstance(definition, JobDefinition):
