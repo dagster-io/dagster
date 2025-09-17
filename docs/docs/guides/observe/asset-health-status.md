@@ -11,9 +11,9 @@ import DagsterPlus from '@site/docs/partials/\_DagsterPlus.md';
 
 All assets now have a single health status that combines the status of the most recent materialization, freshness, and asset checks. These statuses appear on the home page, throughout the asset catalog, and in the asset lineage view, and can be used to group and filter your assets.
 
-:::info Health status change alerts
+:::info Limitations
 
-You set a [health status change alert](/guides/observe/alerts/creating-alerts) to notify you when the health status of an asset changes.
+Failures from more than TK days ago will not impact asset health.
 
 :::
 
@@ -34,19 +34,26 @@ Health statuses will take asset observations into account (currently they only a
 
 :::
 
-## Filtering and grouping by health status
+## Alerting on health status change
 
-For example, can filter any view for `health_status: DEGRADED`
+You set a [health status change alert](/guides/observe/alerts/creating-alerts) to notify you when the health status of an asset changes.
+
+## Grouping and filtering asset selections by health status
+
+To display assets grouped by health status, click the **Group By** dropdown and select **Health Status** on any saved selection:
+
+![Group by health status dropdown](/images/guides/observe/group-by-health-status.png)
+
+To only show assets with a particular health status, you can add a filter to the saved selection. For example, to filter for degraded assets in a saved selection called Analytics Team that shows assets owned by the `ANALYTICS` group, you would add `and status:DEGRADED` to the selection:
+
+![Analytics team saved selection with asset health status filter](/images/guides/observe/filter-degraded-status-assets.png)
+
+For a full list of asset health statuses that you can filter on, see the [asset selection syntax reference](/guides/build/assets/asset-selection-syntax/reference#filters).
+
 
 ## Marking an asset as healthy
 
-To mark an asset healthy, you can either
+To mark an asset healthy, you can either:
 
 - Report a materialization event in the UI to manually change its status to healthy
 - Wipe materialization events to remove past failures
-
-:::info Limitations
-
-Failures from more than TK days ago will not impact asset health.
-
-:::

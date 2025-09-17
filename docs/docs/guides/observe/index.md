@@ -8,12 +8,6 @@ slug: '/guides/observe'
 
 Dagster observability features focus on improving real-time understanding of data health, operational metrics, and historical trends, making it easier for you to monitor, troubleshoot, and explore your data workflows.
 
-:::info
-
-The full suite of new observability features is available in early access for Dagster+ users. You can enable or disable the new experiences in your user settings, via the "New health & observability UIs" setting.
-
-:::
-
 ## Features
 
 ### Alerts (Dagster+)
