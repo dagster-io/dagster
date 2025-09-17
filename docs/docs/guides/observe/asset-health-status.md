@@ -42,8 +42,8 @@ For example, can filter any view for `health_status: DEGRADED`
 
 To mark an asset healthy, you can either
 
-* Report a materialization event in the UI to manually change its status to healthy
-* Wipe materialization events to remove past failures
+- Report a materialization event in the UI to manually change its status to healthy
+- Wipe materialization events to remove past failures
 
 :::info Limitations
 
