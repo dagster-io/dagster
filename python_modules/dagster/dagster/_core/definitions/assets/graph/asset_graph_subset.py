@@ -52,7 +52,9 @@ class AssetGraphSubset(NamedTuple):
     @property
     def asset_keys(self) -> AbstractSet[AssetKey]:
         return {
-            key for key, subset in self.partitions_subsets_by_asset_key.items() if len(subset) > 0
+            key
+            for key, subset in self.partitions_subsets_by_asset_key.items()
+            if not subset.is_empty
         } | self.non_partitioned_asset_keys
 
     @property
