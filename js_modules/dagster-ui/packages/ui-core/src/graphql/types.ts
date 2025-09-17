@@ -277,6 +277,19 @@ export type AssetCheckNeedsUserCodeUpgrade = Error & {
   message: Scalars['String']['output'];
 };
 
+export type AssetCheckRequestedEvent = MessageEvent &
+  RunEvent & {
+    __typename: 'AssetCheckRequestedEvent';
+    eventType: Maybe<DagsterEventType>;
+    level: LogLevel;
+    message: Scalars['String']['output'];
+    pipelineName: Scalars['String']['output'];
+    runId: Scalars['String']['output'];
+    solidHandleID: Maybe<Scalars['String']['output']>;
+    stepKey: Maybe<Scalars['String']['output']>;
+    timestamp: Scalars['String']['output'];
+  };
+
 export enum AssetCheckSeverity {
   ERROR = 'ERROR',
   WARN = 'WARN',
@@ -1100,6 +1113,7 @@ export enum DagsterEventType {
   ALERT_SUCCESS = 'ALERT_SUCCESS',
   ASSET_CHECK_EVALUATION = 'ASSET_CHECK_EVALUATION',
   ASSET_CHECK_EVALUATION_PLANNED = 'ASSET_CHECK_EVALUATION_PLANNED',
+  ASSET_CHECK_REQUESTED = 'ASSET_CHECK_REQUESTED',
   ASSET_FAILED_TO_MATERIALIZE = 'ASSET_FAILED_TO_MATERIALIZE',
   ASSET_HEALTH_CHANGED = 'ASSET_HEALTH_CHANGED',
   ASSET_MATERIALIZATION = 'ASSET_MATERIALIZATION',
@@ -1161,6 +1175,7 @@ export type DagsterRunEvent =
   | AlertSuccessEvent
   | AssetCheckEvaluationEvent
   | AssetCheckEvaluationPlannedEvent
+  | AssetCheckRequestedEvent
   | AssetMaterializationPlannedEvent
   | EngineEvent
   | ExecutionStepFailureEvent
@@ -6621,6 +6636,32 @@ export const buildAssetCheckNeedsUserCodeUpgrade = (
   return {
     __typename: 'AssetCheckNeedsUserCodeUpgrade',
     message: overrides && overrides.hasOwnProperty('message') ? overrides.message! : 'tempora',
+  };
+};
+
+export const buildAssetCheckRequestedEvent = (
+  overrides?: Partial<AssetCheckRequestedEvent>,
+  _relationshipsToOmit: Set<string> = new Set(),
+): {__typename: 'AssetCheckRequestedEvent'} & AssetCheckRequestedEvent => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('AssetCheckRequestedEvent');
+  return {
+    __typename: 'AssetCheckRequestedEvent',
+    eventType:
+      overrides && overrides.hasOwnProperty('eventType')
+        ? overrides.eventType!
+        : DagsterEventType.ALERT_FAILURE,
+    level: overrides && overrides.hasOwnProperty('level') ? overrides.level! : LogLevel.CRITICAL,
+    message: overrides && overrides.hasOwnProperty('message') ? overrides.message! : 'et',
+    pipelineName:
+      overrides && overrides.hasOwnProperty('pipelineName') ? overrides.pipelineName! : 'velit',
+    runId: overrides && overrides.hasOwnProperty('runId') ? overrides.runId! : 'sunt',
+    solidHandleID:
+      overrides && overrides.hasOwnProperty('solidHandleID')
+        ? overrides.solidHandleID!
+        : 'doloremque',
+    stepKey: overrides && overrides.hasOwnProperty('stepKey') ? overrides.stepKey! : 'vitae',
+    timestamp: overrides && overrides.hasOwnProperty('timestamp') ? overrides.timestamp! : 'est',
   };
 };
 
