@@ -8,7 +8,7 @@ from pathlib import Path
 from typing import Any, Union
 
 import pytest
-from dagster_dg_core.component import EnvRegistry
+from dagster_dg_core.component import EnvRegistry, get_used_env_vars
 from dagster_dg_core.config import DgFileConfigDirectoryType, get_type_str
 from dagster_dg_core.context import OLD_DG_PLUGIN_ENTRY_POINT_GROUPS, DgContext
 from dagster_dg_core.utils import (
@@ -555,3 +555,48 @@ def _set_and_detect_missing_required_key(
         delete_toml_node(toml, path)
     with dg_exits(re.escape(error_message)):
         DgContext.from_file_discovery_and_command_line_config(Path.cwd(), {})
+
+
+# ########################
+# ##### ENV VAR TESTS
+# ########################
+
+
+def test_get_used_env_vars():
+    """Test that get_used_env_vars correctly extracts environment variables from various data structures."""
+    # Test string with env() notation
+    assert get_used_env_vars("{{ env('FOO') }}") == {"FOO"}
+    assert get_used_env_vars('{{ env("BAR") }}') == {"BAR"}
+
+    # Test string with env. notation - this is the main test case
+    assert get_used_env_vars("{{ env.FOO }}") == {"FOO"}
+    assert get_used_env_vars("{{ env.BAR }}") == {"BAR"}
+
+    # Test mixed notation
+    assert get_used_env_vars("{{ env('FOO') }} and {{ env.BAR }}") == {"FOO", "BAR"}
+
+    # Test with whitespace variations
+    assert get_used_env_vars("{{ env.FOO }}") == {"FOO"}  # No trailing space
+    assert get_used_env_vars("{{ env.FOO  }}") == {"FOO"}  # Multiple trailing spaces
+    assert get_used_env_vars("{{  env.FOO  }}") == {"FOO"}  # Leading and trailing spaces
+
+    # Test mapping
+    data = {
+        "key1": "{{ env.FOO }}",
+        "key2": "{{ env('BAR') }}",
+        "nested": {"key3": "{{ env.BAZ }}"},
+    }
+    assert get_used_env_vars(data) == {"FOO", "BAR", "BAZ"}
+
+    # Test sequence
+    data = ["{{ env.FOO }}", "{{ env.BAR }}", "normal string"]
+    assert get_used_env_vars(data) == {"FOO", "BAR"}
+
+    # Test non-string, non-mapping, non-sequence
+    assert get_used_env_vars(123) == set()
+    assert get_used_env_vars(None) == set()
+
+    # Test empty structures
+    assert get_used_env_vars({}) == set()
+    assert get_used_env_vars([]) == set()
+    assert get_used_env_vars("") == set()
