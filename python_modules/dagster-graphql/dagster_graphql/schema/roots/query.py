@@ -1407,7 +1407,7 @@ class GrapheneQuery(graphene.ObjectType):
         return GrapheneDefsStateInfo(latest_info) if latest_info else None
 
     def resolve_assetChecklogEvents(
-        self, graphene_info: ResolveInfo, cursor: Optional[str], runId: str, checkKey: str
+        self, graphene_info: ResolveInfo, runId: str, checkKey: str, cursor: Optional[str] = None
     ):
         from dagster_graphql.schema.instigation import (
             GrapheneInstigationEvent,
@@ -1415,8 +1415,7 @@ class GrapheneQuery(graphene.ObjectType):
         )
         from dagster_graphql.schema.logs.log_level import GrapheneLogLevel
 
-        asset_check_log_key_prefix = [runId, checkKey]
-        print(f"asset_check_log_key_prefix: {asset_check_log_key_prefix}")
+        asset_check_log_key_prefix = [runId, checkKey.replace(":", "_")]
 
         instance = graphene_info.context.instance
 
