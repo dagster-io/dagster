@@ -20,6 +20,7 @@ const InstanceConfig = lazy(() => import('../instance/InstanceConfig'));
 const InstanceConcurrencyPage = lazy(() => import('../instance/InstanceConcurrency'));
 const InstanceHealthPage = lazy(() => import('../instance/InstanceHealthPage'));
 const RunRoot = lazy(() => import('../runs/RunRoot'));
+const InAppCheckLogs = lazy(() => import('../runs/InAppCheckLogs'));
 const SnapshotRoot = lazy(() => import('../snapshots/SnapshotRoot'));
 const GuessJobLocationRoot = lazy(() => import('../workspace/GuessJobLocationRoot'));
 const SettingsRoot = lazy(() => import('../settings/SettingsRoot'));
@@ -58,6 +59,9 @@ export const ContentRoot = memo(() => {
           </Route>
           <Route path="/runs/:runId" exact>
             <RunRoot />
+          </Route>
+          <Route path="/runs/:runId/:checkKey" exact>
+            <InAppCheckLogs />
           </Route>
           <Route path="/snapshots/:pipelinePath/:tab?">
             <SnapshotRoot />
