@@ -3,6 +3,7 @@ import graphene
 from dagster._core.remote_representation.external import RemoteExecutionPlan
 from dagster._core.snap import ExecutionStepInputSnap, ExecutionStepOutputSnap, ExecutionStepSnap
 
+from dagster_graphql.schema.entity_key import GrapheneAssetKey
 from dagster_graphql.schema.metadata import GrapheneMetadataItemDefinition
 from dagster_graphql.schema.util import ResolveInfo, non_null_list
 
@@ -130,7 +131,9 @@ class GrapheneExecutionStep(graphene.ObjectType):
 class GrapheneExecutionPlan(graphene.ObjectType):
     steps = non_null_list(GrapheneExecutionStep)
     artifactsPersisted = graphene.NonNull(graphene.Boolean)
+    # TODO: remove this, as we should be using assetKeys instead
     assetSelection = non_null_list(graphene.String)
+    assetKeys = non_null_list(GrapheneAssetKey)
 
     class Meta:
         name = "ExecutionPlan"
@@ -154,7 +157,14 @@ class GrapheneExecutionPlan(graphene.ObjectType):
         return self._remote_execution_plan.execution_plan_snapshot.artifacts_persisted
 
     def resolve_assetSelection(self, _graphene_info: ResolveInfo):
+        # TODO: remove this, as we should be using assetKeys instead
         return list(self._remote_execution_plan.execution_plan_snapshot.asset_selection)
+
+    def resolve_assetKeys(self, _graphene_info: ResolveInfo) -> list[GrapheneAssetKey]:
+        return [
+            GrapheneAssetKey(path=asset_key.path)
+            for asset_key in self._remote_execution_plan.execution_plan_snapshot.asset_selection
+        ]
 
 
 types = [
