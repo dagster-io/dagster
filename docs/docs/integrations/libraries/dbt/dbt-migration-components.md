@@ -1,15 +1,15 @@
 ---
 title: Migrating to dbt components
 sidebar_label: Migrating to dbt components
-description: How to migrate a Dagster dbt project from Pythonic to components.
+description: How to migrate a Dagster dbt project from the Pythonic integartion to the YAML component.
 sidebar_position: 200
 ---
 
-Dagster supports two main ways to integrate with dbt, [components](/integrations/libraries/dbt) and the creating assets with the [Pythonic API](/integrations/libraries/dbt/dbt-pythonic). If you have already built your Dagster and dbt project in the Pythonic way, you can migrate to using components and get the same result.
+Dagster supports two ways to integrate with dbt: the [dbt component](/integrations/libraries/dbt) (recommended) and the [Pythonic integration libraryI](/integrations/libraries/dbt/dbt-pythonic). If you built your Dagster and dbt project with the Pythonic integration, you can migrate to the dbt component and get the same result.
 
 ## 1. Scaffold the dbt component
 
-The first step is to [scaffold the dbt component](/integrations/libraries/dbt#3-scaffold-a-dbt-component-definition). This will generate the `defs.yaml` configuration file with a path to your dbt project:
+The first step is to [scaffold a dbt component definition](/integrations/libraries/dbt#3-scaffold-a-dbt-component-definition). This will generate the `defs.yaml` configuration file with a path to your dbt project:
 
 <CodeExample
   path="docs_snippets/docs_snippets/guides/components/integrations/dbt-component/7-component.yaml"
@@ -19,7 +19,7 @@ The first step is to [scaffold the dbt component](/integrations/libraries/dbt#3-
 
 ## 2. Remove Pythonic definitions
 
-The component handles the creation of any dbt assets in your Dagster project as well as configuring the underlying resource. You can now remove the explicit dbt resource creation:
+Since the component handles the creation of any dbt assets in your Dagster project, as well as the configuration of the underlying resource, you can remove the explicit dbt resource creation code:
 
 <CodeExample
   path="docs_snippets/docs_snippets/integrations/dbt/pythonic/resources.py"
@@ -41,7 +41,7 @@ To ensure that the dbt assets have been replaced correctly, you can execute:
 dg check defs
 ```
 
-If there are still dbt assets defined via the Pythonic API, or the dbt resource is still present you will receive a validation error due to duplication of definitions.
+If there are still dbt assets defined via the Pythonic API, or the dbt resource is still present, you will receive a validation error due to duplication of definitions.
 
 Assuming the check passes, you can also execute:
 
@@ -49,7 +49,7 @@ Assuming the check passes, you can also execute:
 dg list defs
 ```
 
-This will list all the assets in your project and allow you to see that the same dbt assets are present
+This will list all the assets in your project and allow you to see that the expected dbt assets are present.
 
 ## 3. Migrating translators (Optional)
 
@@ -103,7 +103,7 @@ Can be applied to the components by doing the following. The first step is to ad
 
 This will take the place of the `dg.DailyPartitionsDefinition` definition.
 
-Next apply the partition from the new template vars to the `defs.yaml` using the `post_process` field. You will also need to include configurations to the `cli_args` field so dbt can execute the using the partition:
+Next, apply the partition from the new template vars to the `defs.yaml` using the `post_process` field. You will also need to include configurations to the `cli_args` field so dbt can execute the using the partition:
 
 <CodeExample
   path="docs_snippets/docs_snippets/guides/components/integrations/dbt-component/20-defs.yaml"
