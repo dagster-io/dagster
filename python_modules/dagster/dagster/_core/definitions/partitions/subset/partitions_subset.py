@@ -18,7 +18,7 @@ class PartitionsSubset(ABC, Generic[T_str]):
 
     @property
     def is_empty(self) -> bool:
-        return len(list(self.get_partition_keys())) == 0
+        return len(self) == 0
 
     @abstractmethod
     def get_partition_keys_not_in_subset(
