@@ -18,7 +18,7 @@ The full suite of new observability features is available in early access for Da
 
 ### Alerts (Dagster+)
 
-Dagster+ alerts can notify you of critical events occurring in your deployment, such as [asset health status](/guides/observe/asset-health-status) changes or [freshness policy](/guides/observe/asset-freshness-policy) violations, so you can catch potential issues early, helping you resolve problems before they impact your stakeholders. For more information, see the [alerts guide](/guides/observe/alerts).
+Dagster+ alerts can notify you of critical events occurring in your deployment, such as [asset health status](/guides/observe/asset-health-status) changes or [freshness policy](/guides/observe/asset-freshness-policies) violations, so you can catch potential issues early, helping you resolve problems before they impact your stakeholders. For more information, see the [alerts guide](/guides/observe/alerts).
 
 ### Asset catalog (Dagster+)
 
