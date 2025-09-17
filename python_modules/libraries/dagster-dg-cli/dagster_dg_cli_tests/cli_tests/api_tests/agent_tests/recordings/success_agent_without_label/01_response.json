@@ -1,0 +1,72 @@
+{
+  "agents": [
+    {
+      "agentLabel": null,
+      "id": "858fd654-d0b5-477c-ac1a-c63db56246b7",
+      "lastHeartbeatTime": 1758071731.1026742,
+      "metadata": [
+        {
+          "key": "utilization_metrics",
+          "value": "{}"
+        },
+        {
+          "key": "version",
+          "value": "\"1.11.10\""
+        },
+        {
+          "key": "type",
+          "value": "\"K8sUserCodeLauncher\""
+        },
+        {
+          "key": "queues",
+          "value": "[\"default queue\"]"
+        }
+      ],
+      "status": "RUNNING"
+    },
+    {
+      "agentLabel": null,
+      "id": "da7da2bb-33eb-4ce1-93ef-1a92e6737236",
+      "lastHeartbeatTime": 1758071740.6206646,
+      "metadata": [
+        {
+          "key": "version",
+          "value": "\"1.5.1\""
+        },
+        {
+          "key": "type",
+          "value": "\"K8sUserCodeLauncher\""
+        },
+        {
+          "key": "queues",
+          "value": "[\"default queue\"]"
+        }
+      ],
+      "status": "RUNNING"
+    },
+    {
+      "agentLabel": null,
+      "id": "c767a48d-710c-4af4-8311-66a709fff026",
+      "lastHeartbeatTime": 1757820618.508419,
+      "metadata": [
+        {
+          "key": "utilization_metrics",
+          "value": "{}"
+        },
+        {
+          "key": "version",
+          "value": "\"1.11.10\""
+        },
+        {
+          "key": "type",
+          "value": "\"K8sUserCodeLauncher\""
+        },
+        {
+          "key": "queues",
+          "value": "[\"default queue\"]"
+        }
+      ],
+      "status": "NOT_RUNNING"
+    }
+  ]
+}
