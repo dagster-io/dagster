@@ -40,7 +40,6 @@ from dagster._core.definitions.asset_checks.asset_check_evaluation import (
     AssetCheckEvaluationPlanned,
 )
 from dagster._core.definitions.asset_health.asset_health import AssetHealthStatus
-from dagster._core.definitions.asset_key import AssetCheckKey
 from dagster._core.definitions.events import (
     AssetLineageInfo,
     AssetMaterializationFailure,
@@ -106,7 +105,6 @@ EventSpecificData = Union[
     "FreshnessStateChange",
     "AssetHealthChangedData",
     "AssetWipedData",
-    "AssetCheckRequestedData",
 ]
 
 
@@ -142,7 +140,6 @@ class DagsterEventType(str, Enum):
     STEP_EXPECTATION_RESULT = "STEP_EXPECTATION_RESULT"
     ASSET_CHECK_EVALUATION_PLANNED = "ASSET_CHECK_EVALUATION_PLANNED"
     ASSET_CHECK_EVALUATION = "ASSET_CHECK_EVALUATION"
-    ASSET_CHECK_REQUESTED = "ASSET_CHECK_REQUESTED"
     ASSET_HEALTH_CHANGED = "ASSET_HEALTH_CHANGED"
     ASSET_WIPED = "ASSET_WIPED"
 
@@ -773,8 +770,6 @@ class DagsterEvent(
             return self.asset_health_changed_data.asset_key
         elif self.event_type == DagsterEventType.ASSET_WIPED:
             return self.asset_wiped_data.asset_key
-        elif self.event_type == DagsterEventType.ASSET_CHECK_REQUESTED:
-            return self.asset_check_requested_data.asset_key
         else:
             return None
 
@@ -905,15 +900,6 @@ class DagsterEvent(
             self.event_type,
         )
         return cast("AssetWipedData", self.event_specific_data)
-
-    @property
-    def asset_check_requested_data(self) -> "AssetCheckRequestedData":
-        _assert_type(
-            "asset_check_requested_data",
-            DagsterEventType.ASSET_CHECK_REQUESTED,
-            self.event_type,
-        )
-        return cast("AssetCheckRequestedData", self.event_specific_data)
 
     @property
     def step_expectation_result_data(self) -> "StepExpectationResultData":
@@ -1831,14 +1817,6 @@ class AssetHealthChangedData:
 class AssetWipedData:
     asset_key: AssetKey
     partition_keys: Optional[Sequence[str]]
-
-
-@whitelist_for_serdes
-@record
-class AssetCheckRequestedData:
-    asset_key: AssetKey
-    check_key: AssetCheckKey
-    run_id: str
 
 
 @whitelist_for_serdes

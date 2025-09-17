@@ -253,15 +253,6 @@ export type PipelineRunLogsSubscription = {
               eventType: Types.DagsterEventType | null;
             }
           | {
-              __typename: 'AssetCheckRequestedEvent';
-              runId: string;
-              message: string;
-              timestamp: string;
-              level: Types.LogLevel;
-              stepKey: string | null;
-              eventType: Types.DagsterEventType | null;
-            }
-          | {
               __typename: 'AssetMaterializationPlannedEvent';
               runId: string;
               message: string;
@@ -4114,15 +4105,6 @@ export type RunLogsSubscriptionSuccessFragment = {
         eventType: Types.DagsterEventType | null;
       }
     | {
-        __typename: 'AssetCheckRequestedEvent';
-        runId: string;
-        message: string;
-        timestamp: string;
-        level: Types.LogLevel;
-        stepKey: string | null;
-        eventType: Types.DagsterEventType | null;
-      }
-    | {
         __typename: 'AssetMaterializationPlannedEvent';
         runId: string;
         message: string;
@@ -7908,15 +7890,6 @@ export type RunLogsQuery = {
             }
           | {
               __typename: 'AssetCheckEvaluationPlannedEvent';
-              runId: string;
-              message: string;
-              timestamp: string;
-              level: Types.LogLevel;
-              stepKey: string | null;
-              eventType: Types.DagsterEventType | null;
-            }
-          | {
-              __typename: 'AssetCheckRequestedEvent';
               runId: string;
               message: string;
               timestamp: string;
