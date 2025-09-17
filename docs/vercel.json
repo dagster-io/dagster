@@ -3243,8 +3243,8 @@
       "destination": "/guides/observe/asset-catalog"
     },
     {
-      "source": "/dagster-plus/features/asset-catalog/:path*",
-      "destination": "/guides/observe/asset-catalog/:path*"
+      "source": "/dagster-plus/features/asset-catalog/views",
+      "destination": "/guides/observe/asset-catalog/dashboards"
     },
     {
       "source": "/dagster-plus/features/ci-cd",
