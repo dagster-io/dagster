@@ -16,7 +16,7 @@ For example, freshness policies can help identify stale assets caused by:
 - Runs not being scheduled due to an upstream failure
 - Runs taking longer than expected to complete
 
-:::info
+:::info Asset freshness alerts
 
 You can set an [asset freshness alert](/guides/observe/alerts/creating-alerts) to notify you when an asset is failing its freshness policy.
 

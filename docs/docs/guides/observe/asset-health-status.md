@@ -9,7 +9,13 @@ import DagsterPlus from '@site/docs/partials/\_DagsterPlus.md';
 
 <DagsterPlus />
 
-All assets now have a single health status that combines the status of the most recent materialization, freshness, and asset checks. These statuses appear on the home page, throughout the asset catalog, and in the asset lineage view, and can be used to group and filter your assets. You can also [set alerts](/guides/observe/alerts) to send notifications when the health status of the asset changes.
+All assets now have a single health status that combines the status of the most recent materialization, freshness, and asset checks. These statuses appear on the home page, throughout the asset catalog, and in the asset lineage view, and can be used to group and filter your assets.
+
+:::info Health status change alerts
+
+You set a [health status change alert](/guides/observe/alerts/creating-alerts) to notify you when the health status of an asset changes.
+
+:::
 
 ## Asset health statuses
 
@@ -24,7 +30,23 @@ The overall health status for an asset becomes the most elevated status from amo
 
 :::note Coming soon
 
-- Health statuses will take asset observations into account (currently they only account for materializations).
-- Alerts will be added for health status changes.
+Health statuses will take asset observations into account (currently they only account for materializations).
+
+:::
+
+## Filtering and grouping by health status
+
+For example, can filter any view for `health_status: DEGRADED`
+
+## Marking an asset as healthy
+
+To mark an asset healthy, you can either
+
+* Report a materialization event in the UI to manually change its status to healthy
+* Wipe materialization events to remove past failures
+
+:::info Limitations
+
+Failures from more than TK days ago will not impact asset health.
 
 :::

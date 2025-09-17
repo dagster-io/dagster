@@ -18,28 +18,20 @@ The full suite of new observability features is available in early access for Da
 
 ### Alerts (Dagster+)
 
-TK
-
-#### Asset health alerts and freshness alerts
-
-Get notified when the overall health status of your assets changes, or when an asset has violated its freshness policy. For more information, see the [Asset health alerts and freshness alerts guide](/guides/observe/alerts).
+Dagster+ alerts can notify you of critical events occurring in your deployment, such as [asset health status](/guides/observe/asset-health-status) changes or [freshness policy](/guides/observe/asset-freshness-policy) violations, so you can catch potential issues early, helping you resolve problems before they impact your stakeholders. For more information, see the [alerts guide](/guides/observe/alerts).
 
 ### Asset catalog (Dagster+)
 
-TK
-
-#### Custom asset catalog dashboards
-
-Give teams a focused view of the data that matters most. Create flexible, shareable dashboards organized by asset, owner, tag, or business domain so every stakeholder can monitor performance and act with clarity. For more information, see the [Asset catalog with custom selections guide](/guides/observe/asset-catalog).
+The Dagster+ asset catalog displays assets broken out by compute kind, asset group, [code location](/deployment/code-locations), [tags](/guides/build/assets/metadata-and-tags/tags), owners, and more. You can also create flexible, shareable dashboards organized by asset, owner, tag, or business domain so every stakeholder can monitor performance and act with clarity. For more information, see the [asset catalog guide](/guides/observe/asset-catalog).
 
 ### Asset freshness policies
 
-Ensure your most critical data stays fresh and trustworthy so teams can make timely, confident decisions without second-guessing the source. For more information, see the [Freshness policies guide](/guides/observe/asset-freshness-policies).
+Ensure your most critical data stays fresh and trustworthy so teams can make timely, confident decisions without second-guessing the source. For more information, see the [freshness policies guide](/guides/observe/asset-freshness-policies).
 
 ### Asset health reporting (Dagster+)
 
-Quickly identify which pipelines are running smoothly and which need attention with intuitive health indicators that highlight data quality and platform reliability in real time. For more information, see the [Asset health reporting guide](/guides/observe/asset-health-status).
+Quickly identify which pipelines are running smoothly and which need attention with intuitive health indicators that highlight data quality and platform reliability in real time. For more information, see the [asset health status guide](/guides/observe/asset-health-status).
 
-### Insights
+### Insights (Dagster+)
 
-Unlock a comprehensive, dashboard-style view of your data platform’s health. The new Insights experience surfaces critical metrics, like success rate, freshness hit rate, and time to resolution for any selection of assets or jobs – all in real time. For more information, see the [Real-time Insights guide](/guides/observe/insights).
+Unlock a comprehensive, dashboard-style view of your data platform’s health. Dagster+ Insights surfaces critical metrics, like success rate, freshness hit rate, and time to resolution for any selection of assets or jobs – all in real time. For more information, see the [Insights guide](/guides/observe/insights).

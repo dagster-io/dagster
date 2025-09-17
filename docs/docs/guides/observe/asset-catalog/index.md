@@ -11,7 +11,7 @@ import DagsterPlus from '@site/docs/partials/\_DagsterPlus.md';
 
 <DagsterPlus />
 
-The Dagster+ version of the asset catalog page displays assets broken out by compute kind, asset group, [code location](/deployment/code-locations), [tags](/guides/build/assets/metadata-and-tags/tags), owners, and more. On this page, you can:
+The Dagster+ asset catalog displays assets broken out by compute kind, asset group, [code location](/deployment/code-locations), [tags](/guides/build/assets/metadata-and-tags/tags), owners, and more. On this page, you can:
 
 - View all assets in your Dagster deployment
 - Search assets by asset key, compute kind, asset group, code location, tags, owners, and more
