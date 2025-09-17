@@ -663,6 +663,7 @@ class GrapheneDagsterRunEvent(graphene.Union):
             GrapheneResourceInitFailureEvent,
             GrapheneResourceInitStartedEvent,
             GrapheneResourceInitSuccessEvent,
+            GrapheneAssetCheckRequestedEvent,
             GrapheneRunFailureEvent,
             GrapheneRunStartEvent,
             GrapheneRunEnqueuedEvent,
