@@ -1697,23 +1697,23 @@
     },
     {
       "source": "/integrations/dbt/using-dbt-with-dagster",
-      "destination": "/integrations/libraries/dbt/creating-a-dbt-project-in-dagster"
+      "destination": "/integrations/libraries/dbt"
     },
     {
       "source": "/integrations/dbt/using-dbt-with-dagster/set-up-dbt-project",
-      "destination": "/integrations/libraries/dbt/creating-a-dbt-project-in-dagster/set-up-dbt-project"
+      "destination": "/integrations/libraries/dbt"
     },
     {
       "source": "/integrations/dbt/using-dbt-with-dagster/load-dbt-models",
-      "destination": "/integrations/libraries/dbt/creating-a-dbt-project-in-dagster/load-dbt-models"
+      "destination": "/integrations/libraries/dbt"
     },
     {
       "source": "/integrations/dbt/using-dbt-with-dagster/upstream-assets",
-      "destination": "/integrations/libraries/dbt/creating-a-dbt-project-in-dagster/upstream-assets"
+      "destination": "/integrations/libraries/dbt"
     },
     {
       "source": "/integrations/dbt/using-dbt-with-dagster/downstream-assets",
-      "destination": "/integrations/libraries/dbt/creating-a-dbt-project-in-dagster/downstream-assets"
+      "destination": "/integrations/libraries/dbt"
     },
     {
       "source": "/integrations/dbt/using-dbt-with-dagster-plus",
@@ -1738,11 +1738,11 @@
     },
     {
       "source": "/integrations/libraries/dbt/using-dbt-with-dagster",
-      "destination": "/integrations/libraries/dbt/creating-a-dbt-project-in-dagster"
+      "destination": "/integrations/libraries/dbt"
     },
     {
       "source": "/integrations/libraries/dbt/using-dbt-with-dagster/:path*",
-      "destination": "/integrations/libraries/dbt/creating-a-dbt-project-in-dagster/:path*"
+      "destination": "/integrations/libraries/dbt"
     },
     {
       "source": "/integrations/libraries/dbt/transform-dbt",
@@ -3560,6 +3560,26 @@
     },
     {
       "source": "/integrations/libraries/dbt/quickstart",
+      "destination": "/integrations/libraries/dbt"
+    },
+    {
+      "source": "/integrations/libraries/dbt/creating-a-dbt-project-in-dagster/downstream-assets",
+      "destination": "/integrations/libraries/dbt"
+    },
+    {
+      "source": "/integrations/libraries/dbt/creating-a-dbt-project-in-dagster/upstream-assets",
+      "destination": "/integrations/libraries/dbt"
+    },
+    {
+      "source": "/integrations/libraries/dbt/creating-a-dbt-project-in-dagster/load-dbt-models",
+      "destination": "/integrations/libraries/dbt"
+    },
+    {
+      "source": "/integrations/libraries/dbt/creating-a-dbt-project-in-dagster/set-up-dbt-project",
+      "destination": "/integrations/libraries/dbt"
+    },
+    {
+      "source": "/integrations/libraries/dbt/creating-a-dbt-project-in-dagster",
       "destination": "/integrations/libraries/dbt"
     }
   ],
