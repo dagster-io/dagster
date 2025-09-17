@@ -65,12 +65,12 @@ In this example:
 
 ## Partitions with custom calendars \{#custom-calendar-partitions}
 
-Sometimes you want to partition and asset or create a schedule for a partition that is more complex or involves a custom calendar. In these cases you can include additional logic besides cron syntax.
+Sometimes you want to partition an asset or create a schedule for a partition that is more complex or involves a custom calendar. In these cases, you can include additional logic besides cron syntax.
 
 In this example:
 
 - The holidays are defined
-- The `TimeWindowPartitionsDefinition` creates a partition using the `cron_schedule` but excludes the defined holidays
+- The <PyObject section="partitions" module="dagster" object="TimeWindowPartitionsDefinition" /> creates a partition using the `cron_schedule`, but excludes the defined holidays
 - The `market_data` asset is partition by the cron schedule (every Monday through Friday), except for the holidays listed
 
 <CodeExample path="docs_snippets/docs_snippets/guides/data-modeling/partitioning/custom_calendar_partitioning.py" language="python" title="src/<project_name>/defs/assets.py"/>
