@@ -33,7 +33,7 @@ from dagster._utils.error import serializable_error_info_from_exc_info
 from typing_extensions import ParamSpec, TypeAlias
 
 if TYPE_CHECKING:
-    from dagster._core.workspace.context import BaseWorkspaceRequestContext
+    from dagster._core.workspace.context import BaseWorkspaceRequestContext, RemoteDefinition
 
     from dagster_graphql.schema.errors import GrapheneError, GraphenePythonError
     from dagster_graphql.schema.util import ResolveInfo
@@ -521,3 +521,15 @@ def get_query_limit_with_default(provided_limit: Optional[int], default_limit: i
 
 BackfillParams: TypeAlias = Mapping[str, Any]
 AssetBackfillPreviewParams: TypeAlias = Mapping[str, Any]
+
+
+def assert_permission_for_definition(
+    graphene_info: "ResolveInfo",
+    permission: str,
+    definition: "RemoteDefinition",
+):
+    from dagster_graphql.schema.errors import GrapheneUnauthorizedError
+
+    context = cast("BaseWorkspaceRequestContext", graphene_info.context)
+    if not context.has_permission_for_definition(permission, definition):
+        raise UserFacingGraphQLError(GrapheneUnauthorizedError())
