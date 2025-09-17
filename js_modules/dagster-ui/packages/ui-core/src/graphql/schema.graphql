@@ -2323,6 +2323,7 @@ type ExecutionPlan {
   steps: [ExecutionStep!]!
   artifactsPersisted: Boolean!
   assetSelection: [String!]!
+  assetKeys: [AssetKey!]!
 }
 
 type ExecutionStep {
