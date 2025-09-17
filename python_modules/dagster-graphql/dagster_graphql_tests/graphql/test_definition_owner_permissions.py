@@ -46,11 +46,13 @@ def define_context_with_owner_permissions(
         python_or_workspace_file, fn_name, instance, read_only=True
     ) as context:
         with (
-            mock.patch.object(context, "has_owner_permission", side_effect=lambda _: True),
+            mock.patch.object(
+                context, "viewer_has_any_owner_definition_permissions", side_effect=lambda _: True
+            ),
             mock.patch.object(
                 context,
-                "is_viewer_definition_owner",
-                side_effect=lambda node: node.key in owned_assets,
+                "has_permission_for_definition",
+                side_effect=lambda permission, node: node.key in owned_assets,
             ),
         ):
             yield context

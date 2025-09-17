@@ -105,16 +105,16 @@ def has_permission_for_asset_graph(
     asset_keys = set(asset_selection or [])
     context = cast("BaseWorkspaceRequestContext", graphene_info.context)
 
-    # if we have the permission for all code locations, no need to check specific asset keys or locations
+    # if we have the permission for the whole deployment, no need to check specific asset keys or locations
     if context.has_permission(permission):
         return True
 
-    # TODO (prha): figure out what this up-front permission check is for, how much this affects perf
-    # if not any(
-    #     context.has_permission_for_location(permission, location_name)
-    #     for location_name in context.code_location_names
-    # ):
-    #     return False
+    # if we permission for all code locations, no need to check specific asset keys
+    if all(
+        context.has_permission_for_location(permission, location_name)
+        for location_name in context.code_location_names
+    ):
+        return True
 
     if asset_keys:
         location_names = set()
@@ -143,20 +143,22 @@ def has_permission_for_asset_graph(
         return True
 
     # No need to check individual asset keys if we don't have owner permissions
-    if not context.has_owner_permission(permission):
+    if not context.viewer_has_any_owner_definition_permissions(permission):
         return False
 
     if asset_keys:
         # if we have owner permissions and are checking specific asset keys, check that we own all of
         # the asset keys
         return all(
-            context.is_viewer_definition_owner(asset_graph.get(key))
+            context.has_permission_for_definition(permission, asset_graph.get(key))
             for key in asset_keys
             if asset_graph.has(key)
         )
 
     # enumerate all the nodes (keys and checks) and ensure we own all of them
-    return all(context.is_viewer_definition_owner(node) for node in asset_graph.nodes)
+    return all(
+        context.has_permission_for_definition(permission, node) for node in asset_graph.nodes
+    )
 
 
 def assert_permission_for_asset_graph(

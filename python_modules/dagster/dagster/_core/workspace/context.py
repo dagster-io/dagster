@@ -207,9 +207,9 @@ class BaseWorkspaceRequestContext(LoadingContext):
         location_name = get_location_name_for_definition(remote_definition)
         if self.has_permission_for_location(permission, location_name):
             return True
-        return self.is_viewer_definition_owner(remote_definition) and self.has_owner_permission(
-            permission
-        )
+
+        owners_for_definition = get_owners_for_definition(remote_definition)
+        return self.has_owner_permission(permission, owners_for_definition)
 
     @property
     @abstractmethod
@@ -219,10 +219,10 @@ class BaseWorkspaceRequestContext(LoadingContext):
     def show_instance_config(self) -> bool:
         return True
 
-    def is_viewer_definition_owner(self, remote_definition: RemoteDefinition) -> bool:
+    def viewer_has_any_owner_definition_permissions(self, permission: str) -> bool:
         return False
 
-    def has_owner_permission(self, permission: str) -> bool:
+    def has_owner_permission(self, permission: str, definition_owners: Sequence[str]) -> bool:
         return False
 
     def get_viewer_tags(self) -> dict[str, str]:
@@ -1086,8 +1086,22 @@ def get_location_name_for_definition(remote_definition: RemoteDefinition) -> str
             remote_definition.resolve_to_singular_repo_scoped_node().repository_handle.location_name
         )
     elif isinstance(
-        remote_definition, (RemoteJob, RemoteSchedule, RemoteSensor, RemoteAssetCheckNode)
+        remote_definition,
+        (RemoteJob, RemoteSchedule, RemoteSensor, RemoteAssetCheckNode),
     ):
         return remote_definition.handle.location_name
     else:
         check.failed(f"Unexpected remote definition type {type(remote_definition)}")
+
+
+def get_owners_for_definition(remote_definition: RemoteDefinition) -> Sequence[str]:
+    if isinstance(remote_definition, RemoteAssetNode):
+        return remote_definition.owners
+    if isinstance(
+        remote_definition,
+        (RemoteAssetCheckNode, RemoteJob, RemoteSchedule, RemoteSensor),
+    ):
+        raise NotImplementedError(
+            f"Owners not yet supported for {type(remote_definition).__name__}"
+        )
+    check.failed(f"Unexpected remote definition type {type(remote_definition)}")
