@@ -39,6 +39,9 @@ class PartitionsDefinition(ABC, Generic[T_str]):
 
         return DefaultPartitionsSubset
 
+    def validate_partition_definition(self) -> None:
+        pass
+
     @abstractmethod
     @public
     def get_partition_keys(

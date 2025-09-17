@@ -196,6 +196,21 @@ class TimeWindowPartitionsDefinition(PartitionsDefinition, IHaveNew):
             exclusions=cleaned_exclusions if cleaned_exclusions else None,
         )
 
+    def validate_partition_definition(self) -> None:
+        # Try to determine if there are multiple time ranges being mapped
+        # to the same partition key.
+        first_partition_key = self.get_first_partition_key()
+
+        if first_partition_key is None:
+            return
+
+        if self.get_next_partition_key(first_partition_key) == first_partition_key:
+            raise DagsterInvalidDefinitionError(
+                "This partition set contains multiple time ranges that map to the same partition key. "
+                f"This usually indicates that the partition set's format string ({self.fmt}) is "
+                f"not granular enough to produce a unique key for each time in the cron schedule ({self.cron_schedule})."
+            )
+
     @property
     def start_timestamp(self) -> float:
         return self.start_ts.timestamp
