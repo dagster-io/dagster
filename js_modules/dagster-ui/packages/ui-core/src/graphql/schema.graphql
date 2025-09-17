@@ -3703,6 +3703,11 @@ type Query {
     cursor: String
   ): [AssetCheckExecution!]!
   latestDefsStateInfo: DefsStateInfo
+  assetChecklogEvents(
+    runId: String!
+    checkKey: String!
+    cursor: String
+  ): InstigationEventConnection!
 }
 
 union WorkspaceOrError = Workspace | PythonError

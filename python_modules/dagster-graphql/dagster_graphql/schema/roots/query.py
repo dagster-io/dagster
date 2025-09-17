@@ -1,3 +1,4 @@
+import json
 from collections.abc import Mapping, Sequence
 from typing import Any, Optional, cast
 
@@ -18,8 +19,10 @@ from dagster._core.execution.backfill import BulkActionStatus
 from dagster._core.nux import get_has_seen_nux
 from dagster._core.remote_representation.external import CompoundID
 from dagster._core.scheduler.instigation import InstigatorStatus, InstigatorType
+from dagster._core.storage.compute_log_manager import ComputeIOType
 from dagster._core.storage.event_log.base import AssetRecord
 from dagster._core.workspace.permissions import Permissions
+from dagster_shared import seven
 
 from dagster_graphql.implementation.execution.backfill import get_asset_backfill_preview
 from dagster_graphql.implementation.external import (
@@ -653,6 +656,14 @@ class GrapheneQuery(graphene.ObjectType):
     latestDefsStateInfo = graphene.Field(
         GrapheneDefsStateInfo,
         description="Retrieve the latest available DefsStateInfo for the current workspace.",
+    )
+
+    assetChecklogEvents = graphene.Field(
+        graphene.NonNull("dagster_graphql.schema.instigation.GrapheneInstigationEventConnection"),
+        runId=graphene.Argument(graphene.NonNull(graphene.String)),
+        checkKey=graphene.Argument(graphene.NonNull(graphene.String)),
+        cursor=graphene.String(),
+        description="Retrieve the logs for a given asset check.",
     )
 
     @capture_error
@@ -1394,3 +1405,48 @@ class GrapheneQuery(graphene.ObjectType):
             defs_state_storage.get_latest_defs_state_info() if defs_state_storage else None
         )
         return GrapheneDefsStateInfo(latest_info) if latest_info else None
+
+    def resolve_assetChecklogEvents(
+        self, graphene_info: ResolveInfo, cursor: Optional[str], runId: str, checkKey: str
+    ):
+        from dagster_graphql.schema.instigation import (
+            GrapheneInstigationEvent,
+            GrapheneInstigationEventConnection,
+        )
+        from dagster_graphql.schema.logs.log_level import GrapheneLogLevel
+
+        asset_check_log_key_prefix = [runId, checkKey]
+        print(f"asset_check_log_key_prefix: {asset_check_log_key_prefix}")
+
+        instance = graphene_info.context.instance
+
+        records, new_cursor = instance.compute_log_manager.read_log_lines_for_log_key_prefix(
+            asset_check_log_key_prefix, cursor=cursor, io_type=ComputeIOType.STDERR
+        )
+
+        events = []
+        for line in records:
+            if not line:
+                continue
+            try:
+                record_dict = seven.json.loads(line)
+            except json.JSONDecodeError:
+                continue
+
+            exc_info = record_dict.get("exc_info")
+            message = record_dict.get("msg")
+            if exc_info:
+                message = f"{message}\n\n{exc_info}"
+            event = GrapheneInstigationEvent(
+                message=message,
+                level=GrapheneLogLevel.from_level(record_dict["levelno"]),
+                timestamp=int(record_dict["created"] * 1000),
+            )
+
+            events.append(event)
+
+        return GrapheneInstigationEventConnection(
+            events=events,
+            cursor=new_cursor.to_string() if new_cursor else "",
+            hasMore=new_cursor.has_more_now if new_cursor else False,
+        )
