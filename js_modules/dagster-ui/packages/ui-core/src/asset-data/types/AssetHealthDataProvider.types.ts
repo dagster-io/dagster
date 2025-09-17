@@ -14,8 +14,8 @@ export type AssetHealthQuery = {
         nodes: Array<{
           __typename: 'Asset';
           id: string;
+          latestMaterializationTimestamp: number | null;
           key: {__typename: 'AssetKey'; path: Array<string>};
-          assetMaterializations: Array<{__typename: 'MaterializationEvent'; timestamp: string}>;
           assetHealth: {
             __typename: 'AssetHealth';
             assetHealth: Types.AssetHealthStatus;
@@ -78,8 +78,8 @@ export type AssetHealthQuery = {
 
 export type AssetHealthFragment = {
   __typename: 'Asset';
+  latestMaterializationTimestamp: number | null;
   key: {__typename: 'AssetKey'; path: Array<string>};
-  assetMaterializations: Array<{__typename: 'MaterializationEvent'; timestamp: string}>;
   assetHealth: {
     __typename: 'AssetHealth';
     assetHealth: Types.AssetHealthStatus;
@@ -167,4 +167,4 @@ export type AssetHealthFreshnessMetaFragment = {
   lastMaterializedTimestamp: number | null;
 };
 
-export const AssetHealthQueryVersion = '993ae9eba6562cadf483266d0590b33f26e0315c9110b4126935886b22adf8a9';
+export const AssetHealthQueryVersion = '4b2085823a75ee438b8786c2e65a0611bba1abe02d04b327a508bde77f445f92';

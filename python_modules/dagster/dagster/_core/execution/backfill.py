@@ -49,6 +49,7 @@ class BulkActionStatus(Enum):
     CANCELED = "CANCELED"
     COMPLETED_SUCCESS = "COMPLETED_SUCCESS"
     COMPLETED_FAILED = "COMPLETED_FAILED"  # denotes that the backfill daemon completed successfully, but some runs failed
+    FAILING = "FAILING"  # denotes that there is a daemon failure, or some other issue processing the backfill, launched runs will be canceled and then the backfill marked FAILED
 
     @staticmethod
     def from_graphql_input(graphql_str):
@@ -555,8 +556,7 @@ def cancel_backfill_runs_and_cancellation_complete(
     canceled_any_runs = False
 
     while True:
-        # Query for cancelable runs, enforcing a limit on the number of runs to cancel in an iteration
-        # as canceling runs incurs cost
+        # Cancel all cancelable runs for the backfill in batches
         runs_to_cancel_in_iteration = instance.run_storage.get_runs(
             filters=RunsFilter(
                 statuses=CANCELABLE_RUN_STATUSES,

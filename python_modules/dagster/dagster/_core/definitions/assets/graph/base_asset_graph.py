@@ -366,8 +366,17 @@ class BaseAssetGraph(ABC, Generic[T_AssetNode]):
         return {node.key for node in self.asset_nodes if not node.is_partitioned}
 
     @cached_method
-    def asset_keys_for_group(self, group_name: str) -> AbstractSet[AssetKey]:
-        return {node.key for node in self.asset_nodes if node.group_name == group_name}
+    def asset_keys_for_group(
+        self, group_name: str, require_materializable: bool = False
+    ) -> AbstractSet[AssetKey]:
+        if require_materializable:
+            return {
+                node.key
+                for node in self.asset_nodes
+                if node.group_name == group_name and node.is_materializable
+            }
+        else:
+            return {node.key for node in self.asset_nodes if node.group_name == group_name}
 
     @cached_method
     def asset_keys_for_partitions_def(

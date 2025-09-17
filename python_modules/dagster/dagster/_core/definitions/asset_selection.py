@@ -941,16 +941,12 @@ class GroupsAssetSelection(AssetSelection):
     def resolve_inner(
         self, asset_graph: BaseAssetGraph, allow_missing: bool
     ) -> AbstractSet[AssetKey]:
-        base_set = (
-            asset_graph.get_all_asset_keys()
-            if self.include_sources
-            else asset_graph.materializable_asset_keys
-        )
         return {
             key
             for group in self.selected_groups
-            for key in asset_graph.asset_keys_for_group(group)
-            if key is not None and key in base_set
+            for key in asset_graph.asset_keys_for_group(
+                group, require_materializable=not self.include_sources
+            )
         }
 
     def to_serializable_asset_selection(self, asset_graph: BaseAssetGraph) -> "AssetSelection":
