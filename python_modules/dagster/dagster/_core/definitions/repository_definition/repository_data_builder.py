@@ -181,15 +181,15 @@ def build_caching_repository_data_from_list(
     # JAMIE - maybe this is where we inject the check specs
     # get the in-app checks defined for this repository
     # for each check, make a spec and a stub definition and add it to the repository definitions
-    asset_with_check_key = "always_materializes"
+    assets_with_checks = ["asset_with_in_app_check", "asset_with_code_and_in_app_check"]
     check_key = "num_rows_threshold"
-    check_spec = AssetCheckSpec(
-        name=check_key,
-        asset=asset_with_check_key,
-        blocking=False,
-    )
     repository_definitions = [rd for rd in repository_definitions] + [
-        check_spec.to_in_app_check_definition()
+        AssetCheckSpec(
+            name=check_key,
+            asset=asset_key,
+            blocking=False,
+        ).to_in_app_check_definition()
+        for asset_key in assets_with_checks
     ]
 
     for definition in repository_definitions:
