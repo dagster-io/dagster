@@ -83,13 +83,6 @@ export type RunMetadataProviderMessageFragment_AssetCheckEvaluationPlannedEvent 
   stepKey: string | null;
 };
 
-export type RunMetadataProviderMessageFragment_AssetCheckRequestedEvent = {
-  __typename: 'AssetCheckRequestedEvent';
-  message: string;
-  timestamp: string;
-  stepKey: string | null;
-};
-
 export type RunMetadataProviderMessageFragment_AssetMaterializationPlannedEvent = {
   __typename: 'AssetMaterializationPlannedEvent';
   message: string;
@@ -527,7 +520,6 @@ export type RunMetadataProviderMessageFragment =
   | RunMetadataProviderMessageFragment_AlertSuccessEvent
   | RunMetadataProviderMessageFragment_AssetCheckEvaluationEvent
   | RunMetadataProviderMessageFragment_AssetCheckEvaluationPlannedEvent
-  | RunMetadataProviderMessageFragment_AssetCheckRequestedEvent
   | RunMetadataProviderMessageFragment_AssetMaterializationPlannedEvent
   | RunMetadataProviderMessageFragment_EngineEvent
   | RunMetadataProviderMessageFragment_ExecutionStepFailureEvent
