@@ -85,7 +85,7 @@ In this example, there's a new `home_sunrise` asset. Rather than hard-coding the
 
 <CodeExample path="docs_snippets/docs_snippets/guides/external-systems/apis/env_var_configuration.py" language="python" startAfter="start_env_var_configuration_defs" endBefore="end_env_var_configuration_defs" title="src/<project_name>/defs/resources.py" />
 
-When you materialize `home_sunrise`, Dagster will read the values set for the `HOME_LATITUDE`, `HOME_LONGITUDE`, and `HOME_TIMZONE` environment variables and initialize a `SunResource` with those values.
+When you materialize `home_sunrise`, Dagster will read the values set for the `HOME_LATITUDE`, `HOME_LONGITUDE`, and `HOME_TIMEZONE` environment variables and initialize a `SunResource` with those values.
 
 The initialized `SunResource` will be provided to the `sun_resource` parameter.
 

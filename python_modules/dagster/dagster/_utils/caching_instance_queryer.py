@@ -1,4 +1,5 @@
 import logging
+import os
 from collections import defaultdict
 from collections.abc import Iterable, Mapping, Sequence
 from datetime import datetime
@@ -656,6 +657,9 @@ class CachingInstanceQueryer(DynamicPartitionsStore):
     def has_dynamic_partition(self, partitions_def_name: str, partition_key: str) -> bool:
         return partition_key in self.get_dynamic_partitions(partitions_def_name)
 
+    def get_dynamic_partitions_definition_id(self, partitions_def_name: str) -> str:
+        return self.instance.get_dynamic_partitions_definition_id(partitions_def_name)
+
     @cached_method
     def asset_partitions_with_newly_updated_parents_and_new_cursor(
         self,
@@ -863,6 +867,31 @@ class CachingInstanceQueryer(DynamicPartitionsStore):
             AssetKeyPartitionKey(asset_key, partition_key)
             for partition_key in updated_partition_keys
         )
+
+    @cached_method
+    def get_asset_materializations_updated_after_cursor(
+        self,
+        asset_key: AssetKey,
+        after_cursor: int,
+    ) -> Sequence["EventLogRecord"]:
+        has_more = True
+        cursor = None
+
+        new_materializations = []
+
+        while has_more:
+            result = self.instance.fetch_materializations(
+                AssetRecordsFilter(asset_key=asset_key, after_storage_id=after_cursor),
+                cursor=cursor,
+                limit=int(
+                    os.getenv("DAGSTER_FETCH_MATERIALIZATIONS_AFTER_CURSOR_CHUNK_SIZE", "1000")
+                ),
+            )
+            cursor = result.cursor
+            has_more = result.has_more
+            new_materializations.extend(result.records)
+
+        return new_materializations
 
     def get_asset_partitions_updated_after_cursor(
         self,

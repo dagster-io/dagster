@@ -236,7 +236,7 @@ class DbtCloudWorkspaceClient(DagsterModel):
             base_url=self.api_v2_url,
             data={"steps_override": steps_override, "cause": DAGSTER_ADHOC_TRIGGER_CAUSE}
             if steps_override
-            else None,
+            else {"cause": DAGSTER_ADHOC_TRIGGER_CAUSE},
         )["data"]
 
     def get_runs_batch(

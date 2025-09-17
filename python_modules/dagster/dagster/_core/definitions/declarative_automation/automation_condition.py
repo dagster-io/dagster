@@ -546,6 +546,58 @@ class AutomationCondition(ABC, Generic[T_EntityKey]):
 
         return LatestRunExecutedWithTagsCondition(tag_keys=tag_keys, tag_values=tag_values)
 
+    @staticmethod
+    def all_new_updates_have_run_tags(
+        *,
+        tag_keys: Optional[Set[str]] = None,
+        tag_values: Optional[Mapping[str, str]] = None,
+    ) -> "BuiltinAutomationCondition":
+        """Returns an AutomationCondition that is true if all new materializations since the
+        previous tick were executed in runs with the provided tags. Can be used to prevent
+        certain run tags from triggering downstream declarative automation conditions - for
+        example, `AutomationCondition.newly_updated() &~ AutomationCondition.all_new_updates_have_run_tags(tag_keys={"exclude_tag"})`
+        will prevent any runs with the tag `exclude_tag` from triggering the condition.
+
+        Args:
+            tag_keys (Optional[AbstractSet[str]]): If provided, the condition will only be true if
+                all new materializations since the previous tick were executed in runs with
+                all of the provided tags.
+            tag_values (Optional[Mapping[str, str]]): If provided, the condition will only be true if the
+                all new materializations since the previous tick were executed in runs with
+                all of the provided values for the specified keys.
+        """
+        from dagster._core.definitions.declarative_automation.operands import (
+            AllNewUpdatesHaveRunTagsCondition,
+        )
+
+        return AllNewUpdatesHaveRunTagsCondition(tag_keys=tag_keys, tag_values=tag_values)
+
+    @staticmethod
+    def any_new_update_has_run_tags(
+        *,
+        tag_keys: Optional[Set[str]] = None,
+        tag_values: Optional[Mapping[str, str]] = None,
+    ) -> "BuiltinAutomationCondition":
+        """Returns an AutomationCondition that is true if any new materializations since the
+        previous tick were executed in runs with the provided tags. Can be used to only allow
+        certain run tags to trigger downstream declarative automation conditions - for example,
+        `AutomationCondition.newly_updated() & AutomationCondition.any_new_update_has_run_tags(tag_keys={"include_tag"})`
+        will only trigger for the partitions that were executed in runs with the tag `include_tag`.
+
+        Args:
+            tag_keys (Optional[AbstractSet[str]]): If provided, the condition will only be true if
+                any new materializations since the previous tick were executed in runs with
+                all of the provided tags.
+            tag_values (Optional[Mapping[str, str]]): If provided, the condition will only be true if the
+                any new materializations since the previous tick were executed in runs with
+                all of the provided values for the specified keys.
+        """
+        from dagster._core.definitions.declarative_automation.operands import (
+            AnyNewUpdateHasRunTagsCondition,
+        )
+
+        return AnyNewUpdateHasRunTagsCondition(tag_keys=tag_keys, tag_values=tag_values)
+
     @public
     @staticmethod
     def newly_requested() -> "BuiltinAutomationCondition":
