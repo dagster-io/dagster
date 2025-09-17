@@ -5,7 +5,14 @@ from functools import cached_property
 from pathlib import Path
 from typing import Annotated, Optional, Union
 
-from dagster import AssetExecutionContext, AssetSpec, MetadataValue, Resolvable, multi_asset
+from dagster import (
+    AssetExecutionContext,
+    AssetSpec,
+    MetadataValue,
+    Resolvable,
+    ResolvedAssetSpec,
+    multi_asset,
+)
 from dagster._annotations import preview
 from dagster._core.definitions.definitions_class import Definitions
 from dagster.components.component.component import Component
@@ -139,10 +146,47 @@ class DatabricksAssetBundleComponent(Component, Resolvable):
             ],
         ),
     ] = None
+    asset_specs_by_task_key: Optional[dict[str, list[ResolvedAssetSpec]]] = None
 
     @cached_property
     def databricks_config(self) -> DatabricksConfig:
         return DatabricksConfig(databricks_config_path=self.databricks_config_path)
+
+    @cached_property
+    def asset_specs(self) -> list[AssetSpec]:
+        tasks_by_task_key = self.databricks_config.tasks_by_task_key
+        default_asset_specs_by_task_key = {
+            task_key: self.get_asset_spec(task=task) for task_key, task in tasks_by_task_key.items()
+        }
+
+        provided_asset_specs_by_task_key = self.asset_specs_by_task_key or {}
+
+        provided_task_keys = provided_asset_specs_by_task_key.keys()
+        missing_task_keys = tasks_by_task_key.keys() - provided_task_keys
+
+        missing_asset_specs = [
+            asset_spec
+            for task_key, asset_spec in default_asset_specs_by_task_key.items()
+            if task_key in missing_task_keys
+        ]
+
+        updated_provided_asset_specs = []
+        for task_key, asset_specs in provided_asset_specs_by_task_key.items():
+            for asset_spec in asset_specs:
+                curr_spec = asset_spec
+                # replace with default attributes
+                if not curr_spec.description:
+                    curr_spec = curr_spec.replace_attributes(
+                        description=default_asset_specs_by_task_key[task_key].description
+                    )
+                # merge default attributes
+                curr_spec = curr_spec.merge_attributes(
+                    metadata=default_asset_specs_by_task_key[task_key].metadata,
+                    kinds=default_asset_specs_by_task_key[task_key].kinds,
+                )
+                updated_provided_asset_specs.append(curr_spec)
+
+        return missing_asset_specs + updated_provided_asset_specs
 
     def get_asset_spec(self, task: DatabricksBaseTask) -> AssetSpec:
         return AssetSpec(
@@ -182,7 +226,7 @@ class DatabricksAssetBundleComponent(Component, Resolvable):
             name=self.op.name
             if self.op and self.op.name
             else f"databricks_tasks_multi_asset_{component_defs_path_as_python_str}",
-            specs=[self.get_asset_spec(task=task) for task in self.databricks_config.tasks],
+            specs=self.asset_specs,
             can_subset=True,
             op_tags=self.op.tags if self.op else None,
             description=self.op.description if self.op else None,
