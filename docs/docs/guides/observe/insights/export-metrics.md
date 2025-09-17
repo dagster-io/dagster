@@ -10,6 +10,12 @@ import DagsterPlus from '@site/docs/partials/\_DagsterPlus.md';
 
 <DagsterPlus />
 
+:::info
+
+Support for exporting metrics is coming soon in updated Insights. To use legacy Insights, toggle off "New homepage & observability UIs" in your user settings.
+
+:::
+
 Using a GraphQL API endpoint, you can export [Dagster+ Insights](/guides/observe/insights) metrics from your Dagster+ instance.
 
 Refer to the [Built-in Insights metrics](/guides/observe/insights/#built-in-metrics) for a list of available metrics.
@@ -19,7 +25,6 @@ Refer to the [Built-in Insights metrics](/guides/observe/insights/#built-in-metr
 To complete the steps in this guide, you'll need:
 
 - A Dagster+ account
-- Access to the [Dagster+ Insights feature](/guides/observe/insights)
 - A Dagster+ [user token](/deployment/dagster-plus/management/tokens/user-tokens)
 - Your deployment-scoped Dagster+ deployment URL. For example: `dagster-university.dagster.cloud/prod`
 
@@ -32,7 +37,7 @@ Before you start, note that:
 
 ## Using the API
 
-In this example, we're using the [GraphQL Python Client](/api/graphql/graphql-client) to export the Dagster credits metric for all assets for September 2023:
+In this example, we're using the [GraphQL Python client](/api/graphql/graphql-client) to export the Dagster credits metric for all assets for September 2023:
 
 ```python
 from datetime import datetime

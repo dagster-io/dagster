@@ -10,9 +10,13 @@ import DagsterPlus from '@site/docs/partials/\_DagsterPlus.md';
 
 <DagsterPlus />
 
-Out of the box, Dagster+ Insights gives you visibility into a variety of common metrics across your data platform.
-By creating custom metrics from asset metadata, you can use Insights to perform historical aggregation on any
-data your assets can emit.
+:::info
+
+Support for integrating asset metadata is coming soon in updated Insights. To use legacy Insights, toggle off "New homepage & observability UIs" in your user settings.
+
+:::
+
+By default, Dagster+ Insights gives you visibility into a variety of common metrics across your data platform. By creating custom metrics from asset metadata, you can use Insights to perform historical aggregation on any data your assets can emit.
 
 :::note Prerequisites
 
