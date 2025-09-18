@@ -266,6 +266,8 @@ export const LogsRowStructuredContent = ({node, metadata}: IStructuredContentPro
       return <DefaultContent message={node.message} eventType={eventType} />;
     case 'AssetCheckEvaluationEvent':
       return <AssetCheckEvaluationContent node={node} eventType={eventType} />;
+    case 'AssetCheckRequestedEvent':
+      return <DefaultContent message={node.message} eventType={eventType} />;
     default:
       // This allows us to check that the switch is exhaustive because the union type should
       // have been narrowed following each successive case to `never` at this point.

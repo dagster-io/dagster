@@ -515,6 +515,16 @@ class GrapheneAssetMaterializationPlannedEvent(graphene.ObjectType):
         return await gen_run_by_id(graphene_info, self._event.run_id)
 
 
+class GrapheneAssetCheckRequestedEvent(graphene.ObjectType):
+    class Meta:
+        name = "AssetCheckRequestedEvent"
+        interfaces = (GrapheneMessageEvent, GrapheneRunEvent)
+
+    def __init__(self, event: EventLogEntry):
+        self._event = event
+        super().__init__(**construct_basic_params(event))
+
+
 class GrapheneHandledOutputEvent(graphene.ObjectType):
     class Meta:
         interfaces = (GrapheneMessageEvent, GrapheneStepEvent, GrapheneDisplayableEvent)
@@ -653,6 +663,7 @@ class GrapheneDagsterRunEvent(graphene.Union):
             GrapheneResourceInitFailureEvent,
             GrapheneResourceInitStartedEvent,
             GrapheneResourceInitSuccessEvent,
+            GrapheneAssetCheckRequestedEvent,
             GrapheneRunFailureEvent,
             GrapheneRunStartEvent,
             GrapheneRunEnqueuedEvent,

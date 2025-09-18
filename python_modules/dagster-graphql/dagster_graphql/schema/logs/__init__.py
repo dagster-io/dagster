@@ -1,5 +1,6 @@
 def types():
     from dagster_graphql.schema.logs.events import (
+        GrapheneAssetCheckRequestedEvent,
         GrapheneAssetMaterializationPlannedEvent,
         GrapheneDisplayableEvent,
         GrapheneEngineEvent,
@@ -96,4 +97,5 @@ def types():
         GrapheneObservationEvent,
         GrapheneTypeCheck,
         GrapheneAssetMaterializationPlannedEvent,
+        GrapheneAssetCheckRequestedEvent,
     ]
