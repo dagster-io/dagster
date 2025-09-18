@@ -1,5 +1,23 @@
 # Changelog
 
+## 1.11.11 (core) / 0.27.11 (libraries)
+
+### New
+
+- `anthropic`, `mcp`, and `claude-code-sdk` dependencies of `dagster-dg-cli` are now under a separate `ai` extra, allowing `dagster-dg-cli` to be installed without these dependencies.
+
+### Bugfixes
+
+- Fixed a bug which would cause steps downstream of an asset with `skippable=True` and a blocking asset check to execute as long as the asset check output was produced, even if the asset output was skipped.
+- When a backfill fails, it will now cancel all of its in-progress runs before terminating.
+- Fixed an issue that would cause trailing whitespace to be added to env vars using dot notation (`{{ env.FOO }}`) when listing the env vars used by a component. (Thanks, [@edgarrmondragon](https://github.com/edgarrmondragon)!)
+- Fixed issue that would cause errors when using multi to single partition mappings with `DbIOManager`s.
+- [ui] Fixed issue with the "Report materialization" dialog for non-partitioned assets.
+- [ui] Typing large YAML documents in the launchpad when default config is present is now more performant.
+- [ui] Fixed an issue where setting a FloatMetadataValue to float('inf') or float('-inf') would cause an error when loading that metadata over graphql.
+- [ui] The "Clear" button in the dimension partition text input for multi-partitioned assets now clears invalid selections as expected.
+- [dagster-dbt] Fixed an issue with the `DbtCloudWorkspaceClient` that would cause errors when calling `trigger_job_run` with no `steps_override` parameter.
+
 ## 1.11.10 (core) / 0.27.10 (libraries)
 
 ### New
