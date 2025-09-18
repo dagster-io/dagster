@@ -11,9 +11,9 @@ import DagsterPlus from '@site/docs/partials/\_DagsterPlus.md';
 
 All assets now have a single health status that combines the status of the most recent materialization, freshness, and asset checks. These statuses appear on the home page, throughout the asset catalog, and in the asset lineage view, and can be used to group and filter your assets.
 
-:::info Limitations
+:::note
 
-Failures from more than TK days ago will not impact asset health.
+Asset failures prior to the date your organization was switched to updated observability features will not impact asset health status.
 
 :::
 
