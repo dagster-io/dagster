@@ -70,7 +70,10 @@ class DeltalakeBaseArrowTypeHandler(DbTypeHandler[T], Generic[T]):
 
         # For partitioned tables, determine the appropriate mode and predicate
         predicate = None
-        if table_slice.partition_dimensions is not None:
+        if (
+            table_slice.partition_dimensions is not None
+            and len(table_slice.partition_dimensions) > 0
+        ):
             try:
                 # Check if table already exists
                 existing_table = DeltaTable(
@@ -130,7 +133,10 @@ class DeltalakeBaseArrowTypeHandler(DbTypeHandler[T], Generic[T]):
 
         partition_columns = None
 
-        if table_slice.partition_dimensions is not None:
+        if (
+            table_slice.partition_dimensions is not None
+            and len(table_slice.partition_dimensions) > 0
+        ):
             # TODO make robust and move to function
             partition_columns = [dim.partition_expr for dim in table_slice.partition_dimensions]
 
@@ -292,7 +298,11 @@ def _get_partition_stats(dt: DeltaTable, table_slice: Optional[TableSlice] = Non
     actions_table = pa.Table.from_batches([dt.get_add_actions(flatten=True)])
 
     # If we have partition constraints, filter the actions table
-    if table_slice is not None and table_slice.partition_dimensions is not None:
+    if (
+        table_slice is not None
+        and table_slice.partition_dimensions is not None
+        and len(table_slice.partition_dimensions) > 0
+    ):
         partition_conditions = partition_dimensions_to_dnf(
             partition_dimensions=table_slice.partition_dimensions,
             table_schema=dt.schema(),
@@ -323,7 +333,7 @@ def _table_reader(table_slice: TableSlice, connection: TableConnection) -> ds.Da
     table = DeltaTable(table_uri=connection.table_uri, storage_options=connection.storage_options)
 
     partition_expr = None
-    if table_slice.partition_dimensions is not None:
+    if table_slice.partition_dimensions is not None and len(table_slice.partition_dimensions) > 0:
         partition_conditions = partition_dimensions_to_dnf(
             partition_dimensions=table_slice.partition_dimensions,
             table_schema=table.schema(),
