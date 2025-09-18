@@ -4,6 +4,7 @@ sidebar_position: 3000
 title: Amazon ECS
 canonicalUrl: '/deployment/dagster-plus/hybrid/amazon-ecs'
 slug: '/deployment/dagster-plus/hybrid/amazon-ecs'
+tags: [dagster-plus-feature]
 ---
 
 import DocCardList from '@theme/DocCardList';
