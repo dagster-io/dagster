@@ -18,7 +18,7 @@ Support for exporting metrics is coming soon in updated Insights. To use legacy 
 
 Using a GraphQL API endpoint, you can export [Dagster+ Insights](/guides/observe/insights) metrics from your Dagster+ instance.
 
-Refer to the [Built-in Insights metrics](/guides/observe/insights/#built-in-metrics) for a list of available metrics.
+See the [supported Insights metrics table](/guides/observe/insights/#supported-metrics) for a list of available metrics.
 
 ## Prerequisites
 

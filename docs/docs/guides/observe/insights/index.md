@@ -33,7 +33,7 @@ To access Insights views, you can either:
 
 Key asset health metrics, like materialization and failure count, are prominently displayed for assets and selections, and additional metrics are displayed for jobs and deployments. Historical Insights data is retained for 120 days.
 
-For a full list of metrics, see the [supported metrics](#built-in-metrics) section.
+For a full list of metrics, see the [supported metrics](#supported-metrics) section.
 
 To limit the view to a specific set of assets, type an [asset selection](/guides/build/assets/asset-selection-syntax/reference) in the search bar. Or, to view specific events in a time slice, hover over a datapoint in the line chart, then click to view details:
 
