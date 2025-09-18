@@ -9,7 +9,7 @@ You can use Dagster+ serverless in a HIPAA compliant way. This guide documents w
 ## Prerequisites before PHI processing
 
 - Execute a Business Associates Agreement (BAA) with Dagster Labs (contact your account representative or customer success manager).
-- Request Access to our [Trust Center](https://app.vanta.com/dagsterlabs/trust/zyhc4hyugh7p1jlv6mnj6z) to review our secuirty and compliance documents.
+- Request Access to our [Trust Center](https://app.vanta.com/dagsterlabs/trust/zyhc4hyugh7p1jlv6mnj6z) to review our security and compliance documents.
 - Review security docs: [Dagster+ Serverless Security](/deployment/dagster-plus/serverless/security).
 - Coordinate with your account representative or customer success manager to disable the default serverless I/O manager.
 
