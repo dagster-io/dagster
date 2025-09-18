@@ -11,9 +11,8 @@ import DagsterPlus from '@site/docs/partials/\_DagsterPlus.md';
 
 <DagsterPlus />
 
-Using Dagster+ Insights, you can gain visibility into historical usage and cost metrics, such as Dagster+ run duration, credit usage, and failures. You can also define your own custom metrics, such as the number of rows processed by an asset.
+Using Dagster+ Insights, you can gain visibility into historical usage and trends, such as execution time, success rate, and time to resolving failures. You can also build custom reports to compare different deployments or selections of assets against each other to quickly identify issues across your data platform.
 
-Visualizations are built into the Dagster+ UI, allowing you to explore metrics from Dagster and external systems, such as Google BigQuery, in one place.
 
 With Insights, you can:
 
@@ -52,8 +51,6 @@ Insights views also features activity charts that group events by hour to help y
 
 Since updated Insights views are still under active development, there are a few limitations we aim to address in upcoming releases:
 
-- Health statuses don’t yet take asset observations into account, only materializations
-- Failure events and metrics based on them (time to resolution, materialization success rate, and materialization failure count) will not exist prior to the introduction of the new asset metrics
 - Insights views do not currently show cost, Dagster credits, and metadata metrics
 
 :::
@@ -74,7 +71,7 @@ To choose which metrics to compare across selections, click **Choose metrics**, 
 
 ![Choose metrics dropdown](/images/guides/observe/insights/choose-metrics.png)
 
-### Built-in metrics
+### Supported metrics
 
 #### Assets and selections
 

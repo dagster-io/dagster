@@ -52,7 +52,7 @@ For a full list of asset health statuses that you can filter on, see the [asset 
 
 ## Marking an asset as healthy
 
-To mark an asset healthy, you can either:
+To manually mark an asset healthy, you can either:
 
-- Report a materialization event in the UI to manually change its status to healthy
+- Report a materialization event in the UI
 - Wipe materialization events to remove past failures
