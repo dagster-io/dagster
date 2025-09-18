@@ -1,7 +1,7 @@
 ---
 title: 'Using dbt with Dagster+'
 description: Deploy your dbt & Dagster project in Dagster+.
-sidebar_position: 300
+sidebar_position: 400
 canonicalUrl: '/integrations/libraries/dbt/using-dbt-with-dagster-plus'
 slug: '/integrations/libraries/dbt/using-dbt-with-dagster-plus'
 ---

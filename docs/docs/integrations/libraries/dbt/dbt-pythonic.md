@@ -65,7 +65,17 @@ To execute your dbt models, you can use the `dg launch` command to kick off a ru
 
 <CliInvocationExample path="docs_snippets/docs_snippets/guides/components/integrations/dbt-component/9-dbt-run.txt" />
 
-## 5. Handling incremental models
+## 5. Customize dbt assets
+
+You can customize the properties of the assets emitted by each dbt model using a `DagsterDbtTranslator`. This allows you to modify asset metadata such as group names, descriptions, and other properties. To create a custom translator, create a new class that inherits from `DagsterDbtTranslator`. You can then write custom logic for metadata attributes of the dbt assets by overriding the `get_asset_key` and `get_group_name` methods. The translator is then applied to the `@dbt_assets` assets:
+
+<CodeExample
+  path="docs_snippets/docs_snippets/integrations/dbt/pythonic/assets_translator.py"
+  title="my_project/defs/assets.py"
+  language="python"
+/>
+
+## 6. Handling incremental models
 
 If you have incremental models in your dbt project, you can model these as partitioned assets, and update the command that is used to run the dbt models to pass in `--vars` based on the range of partitions that are being processed.
 
