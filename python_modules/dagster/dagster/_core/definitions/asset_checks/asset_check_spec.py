@@ -17,6 +17,7 @@ from dagster._annotations import PublicAttr, public
 from dagster._core.definitions.asset_key import AssetCheckKey, AssetKey, CoercibleToAssetKey
 
 if TYPE_CHECKING:
+    from dagster._core.definitions.asset_checks.asset_checks_definition import AssetChecksDefinition
     from dagster._core.definitions.assets.definition.asset_dep import AssetDep, CoercibleToAssetDep
     from dagster._core.definitions.assets.definition.assets_definition import AssetsDefinition
     from dagster._core.definitions.declarative_automation.automation_condition import (
@@ -138,6 +139,36 @@ class AssetCheckSpec(IHaveNew, LegacyNamedTupleMixin):
 
     def with_metadata(self, metadata: Mapping[str, Any]) -> "AssetCheckSpec":
         return replace(self, metadata=metadata)
+
+    def to_in_app_check_definition(self) -> "AssetChecksDefinition":
+        from dagster import AssetCheckExecutionContext, asset_check
+        from dagster._core.events import AssetCheckRequestedData, DagsterEvent, DagsterEventType
+
+        @asset_check(
+            asset=self.asset_key,
+            name=self.name,
+            description=self.description,
+            metadata=self.metadata,
+            additional_deps=self.additional_deps,
+            automation_condition=self.automation_condition,
+            op_tags={"in_app_check": "true"},
+            compute_kind="in_app_check",
+        )
+        def check_fn():
+            context = AssetCheckExecutionContext.get()
+            context.instance.report_dagster_event(
+                run_id=context.run.run_id,
+                dagster_event=DagsterEvent(
+                    event_type_value=DagsterEventType.ASSET_CHECK_REQUESTED.value,
+                    event_specific_data=AssetCheckRequestedData(
+                        asset_key=self.asset_key, check_key=self.key, run_id=context.run.run_id
+                    ),
+                    job_name=context.job_def.name,
+                ),
+            )
+            return None
+
+        return check_fn
 
 
 """

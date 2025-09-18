@@ -46,6 +46,7 @@ from dagster._core.definitions.source_asset import SourceAsset
 from dagster._core.definitions.unresolved_asset_job_definition import UnresolvedAssetJobDefinition
 from dagster._core.definitions.utils import get_default_automation_condition_sensor
 from dagster._core.errors import DagsterInvalidDefinitionError
+from dagster._core.instance import DagsterInstance
 
 if TYPE_CHECKING:
     from dagster._core.definitions.asset_checks.asset_check_spec import AssetCheckKey
@@ -177,6 +178,18 @@ def build_caching_repository_data_from_list(
     source_assets: list[SourceAsset] = []
     asset_checks_defs: list[AssetsDefinition] = []
     partitions_defs: set[PartitionsDefinition] = set()
+    # get the in-app checks defined for this repository
+    # for each check, make a spec and a stub definition and add it to the repository definitions
+    # downside - requires a dagster version update.
+    repository_definitions = [rd for rd in repository_definitions]
+
+    with DagsterInstance.get() as instance:
+        # TODO - scope this method to the specific repo
+        in_app_checks = instance.get_in_app_checks()
+        for check_config in in_app_checks:
+            check_spec = check_config.check_spec
+            repository_definitions.append(check_spec.to_in_app_check_definition())
+
     for definition in repository_definitions:
         if isinstance(definition, JobDefinition):
             if (
