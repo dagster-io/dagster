@@ -63,6 +63,62 @@ class DeltalakeBaseArrowTypeHandler(DbTypeHandler[T], Generic[T]):
                 save_mode,
             )
             main_save_mode = save_mode
+
+        # Handle default mode and partitioned table logic
+        if main_save_mode is None:
+            main_save_mode = "overwrite"  # default mode
+
+        # For partitioned tables, determine the appropriate mode and predicate
+        predicate = None
+        if table_slice.partition_dimensions is not None:
+            try:
+                # Check if table already exists
+                existing_table = DeltaTable(
+                    connection.table_uri, storage_options=connection.storage_options
+                )
+                # If we get here, table exists
+                if main_save_mode == "overwrite":
+                    # Build predicate to overwrite only the specific partition being written
+                    predicate_conditions = []
+                    for partition_dim in table_slice.partition_dimensions:
+                        partition_condition = partition_dimensions_to_dnf(
+                            partition_dimensions=[partition_dim],
+                            table_schema=existing_table.schema(),
+                        )
+                        if partition_condition:
+                            # partition_condition is a list of tuples, extract the tuple
+                            condition_tuple = (
+                                partition_condition[0]
+                                if isinstance(partition_condition, list)
+                                else partition_condition
+                            )
+                            field_name, op, value = condition_tuple
+
+                            # Format value appropriately for predicate string
+                            if hasattr(value, "strftime"):  # datetime-like object
+                                value_str = f"'{value.strftime('%Y-%m-%d')}'"
+                            elif isinstance(value, str):
+                                value_str = f"'{value}'"
+                            else:
+                                value_str = str(value)
+
+                            predicate_conditions.append(f"{field_name} {op} {value_str}")
+
+                    if predicate_conditions:
+                        predicate = " AND ".join(predicate_conditions)
+                        context.log.debug(
+                            f"Table exists and is partitioned, using predicate to overwrite specific partition: {predicate}"
+                        )
+                    else:
+                        # Fallback to append if we can't build predicate
+                        main_save_mode = "append"
+                        context.log.debug(
+                            "Table exists and is partitioned, using append mode to preserve other partitions"
+                        )
+            except Exception:
+                # Table doesn't exist, keep the original mode
+                pass
+
         context.log.debug("Writing with mode: %s", main_save_mode)
 
         partition_columns = None
@@ -80,24 +136,31 @@ class DeltalakeBaseArrowTypeHandler(DbTypeHandler[T], Generic[T]):
             CommitProperties(custom_metadata=custom_metadata) if custom_metadata else None
         )
 
-        write_deltalake(
-            table_or_uri=connection.table_uri,
-            data=reader,
-            storage_options=connection.storage_options,
-            mode=main_save_mode,
-            partition_by=partition_columns,
-            schema_mode="overwrite" if overwrite_schema else None,
-            commit_properties=commit_props,
-            writer_properties=WriterProperties(**writerprops)  # type: ignore
+        # Prepare write parameters
+        write_params = {
+            "table_or_uri": connection.table_uri,
+            "data": reader,
+            "storage_options": connection.storage_options,
+            "mode": main_save_mode,
+            "partition_by": partition_columns,
+            "schema_mode": "overwrite" if overwrite_schema else None,
+            "commit_properties": commit_props,
+            "writer_properties": WriterProperties(**writerprops)  # type: ignore
             if writerprops is not None
             else writerprops,
             **delta_params,
-        )
+        }
+
+        # Add predicate if specified for partition-specific overwrite
+        if predicate is not None:
+            write_params["predicate"] = predicate
+
+        write_deltalake(**write_params)
 
         # TODO make stats computation configurable on type handler
         dt = DeltaTable(connection.table_uri, storage_options=connection.storage_options)
         try:
-            _table, stats = _get_partition_stats(dt=dt)
+            _table, stats = _get_partition_stats(dt=dt, table_slice=table_slice)
         except Exception as e:
             context.log.warn(f"error while computing table stats: {e}")
             stats = {}
@@ -217,11 +280,28 @@ def _field_from_schema(field_name: str, schema: Schema) -> Optional[DeltaField]:
     return None
 
 
-def _get_partition_stats(dt: DeltaTable):
-    files = pa.array(dt.file_uris())
-    files_table = pa.Table.from_arrays([files], names=["path"])
+def _get_partition_stats(dt: DeltaTable, table_slice: Optional[TableSlice] = None):
+    # Get all add actions
     actions_table = pa.Table.from_batches([dt.get_add_actions(flatten=True)])
+
+    # If we have partition constraints, filter the actions table
+    if table_slice is not None and table_slice.partition_dimensions is not None:
+        partition_conditions = partition_dimensions_to_dnf(
+            partition_dimensions=table_slice.partition_dimensions,
+            table_schema=dt.schema(),
+        )
+        if partition_conditions is not None:
+            # Create a dataset from actions table and apply filter
+            partition_expr = filters_to_expression([partition_conditions])
+            dataset = ds.dataset(actions_table)
+            filtered_dataset = dataset.filter(partition_expr)
+            actions_table = filtered_dataset.to_table()
+
     actions_table = actions_table.select(["path", "size_bytes", "num_records"])
+
+    # Create files array from the filtered actions
+    files = pa.array(actions_table.column("path").to_pylist())
+    files_table = pa.Table.from_arrays([files], names=["path"])
     table = files_table.join(actions_table, keys="path")
 
     stats = {
