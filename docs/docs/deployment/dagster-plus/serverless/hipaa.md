@@ -1,10 +1,15 @@
-# Using Dagster+ serverless in a HIPAA compliant way
+---
+description: How to setup Dagster+ serverless in a HIPAA compliant way
+sidebar_label: HIPAA compliance
+sidebar_position: 5000
+title: HIPAA Compliance in Dagster+ serverless
+---
+
+You can use Dagster+ serverless in a HIPAA compliant way. This guide documents what you need to do to do so.
 
 :::warning Disclaimer
 This is guidance only, not legal advice. Dagster Labs makes no HIPAA compliance guarantees. Consult legal/compliance professionals.
 :::
-
-You can use Dagster+ serverless in a HIPAA compliant way. This guide documents what you need to do to do so.
 
 ## Prerequisites before PHI processing
 
