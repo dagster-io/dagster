@@ -7,7 +7,7 @@ import pyarrow.compute as pc
 import pyarrow.dataset as ds
 from dagster import InputContext, MetadataValue, OutputContext, TableColumn, TableSchema
 from dagster._core.storage.db_io_manager import DbTypeHandler, TablePartitionDimension, TableSlice
-from deltalake import DeltaTable, WriterProperties, write_deltalake
+from deltalake import CommitProperties, DeltaTable, WriterProperties, write_deltalake
 from deltalake.schema import (
     Field as DeltaField,
     PrimitiveType,
@@ -74,6 +74,12 @@ class DeltalakeBaseArrowTypeHandler(DbTypeHandler[T], Generic[T]):
         # legacy parameter
         overwrite_schema = metadata.get("overwrite_schema") or overwrite_schema
 
+        # Prepare commit properties
+        custom_metadata = metadata.get("custom_metadata") or main_custom_metadata
+        commit_props = (
+            CommitProperties(custom_metadata=custom_metadata) if custom_metadata else None
+        )
+
         write_deltalake(
             table_or_uri=connection.table_uri,
             data=reader,
@@ -81,7 +87,7 @@ class DeltalakeBaseArrowTypeHandler(DbTypeHandler[T], Generic[T]):
             mode=main_save_mode,
             partition_by=partition_columns,
             schema_mode="overwrite" if overwrite_schema else None,
-            commit_properties=metadata.get("custom_metadata") or main_custom_metadata,
+            commit_properties=commit_props,
             writer_properties=WriterProperties(**writerprops)  # type: ignore
             if writerprops is not None
             else writerprops,
