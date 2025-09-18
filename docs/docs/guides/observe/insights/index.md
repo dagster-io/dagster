@@ -13,7 +13,6 @@ import DagsterPlus from '@site/docs/partials/\_DagsterPlus.md';
 
 Using Dagster+ Insights, you can gain visibility into historical usage and trends, such as execution time, success rate, and time to resolving failures. You can also build custom reports to compare different deployments or selections of assets against each other to quickly identify issues across your data platform.
 
-
 With Insights, you can:
 
 - [Understand platform health with real-time Insights views](#understand-health)

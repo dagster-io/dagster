@@ -24,8 +24,8 @@ The overall health status for an asset becomes the most elevated status from amo
 
 :::note Known limitations
 
-* Health statuses currently only account for materializations. (They will take asset observations into account soon.)
-* Asset failures prior to the date the updated observability features were enabled for your organization will not be represented in the event log, but asset health status will still be computed correctly.
+- Health statuses currently only account for materializations. (They will take asset observations into account soon.)
+- Asset failures prior to the date the updated observability features were enabled for your organization will not be represented in the event log, but asset health status will still be computed correctly.
 
 :::
 
