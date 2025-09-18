@@ -879,6 +879,10 @@ redis:
   # To manage redis via helm, set `internal` to `true`. To use an external redis, set `internal` to `false`.
   # Note: If `internal` is true, then redis pod will be created regardless of `enabled` flag.
   internal: false
+  image:
+    repository: "bitnamilegacy/redis"
+    tag: "6.0.16"
+    pullPolicy: IfNotPresent
 
   usePassword: false
   password: "test"
