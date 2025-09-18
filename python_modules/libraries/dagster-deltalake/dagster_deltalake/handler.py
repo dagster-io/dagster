@@ -94,13 +94,20 @@ class DeltalakeBaseArrowTypeHandler(DbTypeHandler[T], Generic[T]):
                             )
                             field_name, op, value = condition_tuple
 
-                            # Format value appropriately for predicate string
-                            if hasattr(value, "strftime"):  # datetime-like object
-                                value_str = f"'{value.strftime('%Y-%m-%d')}'"
-                            elif isinstance(value, str):
-                                value_str = f"'{value}'"
+                            # Handle different value types
+                            if isinstance(value, list) and len(value) == 1:
+                                # Static partitions often return single-element lists
+                                actual_value = value[0]
                             else:
-                                value_str = str(value)
+                                actual_value = value
+
+                            # Format value appropriately for predicate string
+                            if hasattr(actual_value, "strftime"):  # datetime-like object
+                                value_str = f"'{actual_value.strftime('%Y-%m-%d')}'"
+                            elif isinstance(actual_value, str):
+                                value_str = f"'{actual_value}'"
+                            else:
+                                value_str = str(actual_value)
 
                             predicate_conditions.append(f"{field_name} {op} {value_str}")
 
