@@ -1,11 +1,11 @@
 ---
 title: Migrating to dbt components
 sidebar_label: Migrating to dbt components
-description: How to migrate a Dagster dbt project from the Pythonic integartion to the YAML component.
+description: How to migrate a Dagster dbt project from the Pythonic integration to the YAML component.
 sidebar_position: 200
 ---
 
-Dagster supports two ways to integrate with dbt: the [dbt component](/integrations/libraries/dbt) (recommended) and the [Pythonic integration libraryI](/integrations/libraries/dbt/dbt-pythonic). If you built your Dagster and dbt project with the Pythonic integration, you can migrate to the dbt component and get the same result.
+Dagster supports two ways to integrate with dbt: the [dbt component](/integrations/libraries/dbt) (recommended) and the [Pythonic integration library](/integrations/libraries/dbt/dbt-pythonic). If you built your Dagster and dbt project with the Pythonic integration, you can migrate to the dbt component and get the same result.
 
 ## 1. Scaffold the dbt component
 
@@ -22,7 +22,7 @@ The first step is to [scaffold a dbt component definition](/integrations/librari
 Since the component handles the creation of any dbt assets in your Dagster project, as well as the configuration of the underlying resource, you can remove the explicit dbt resource creation code:
 
 <CodeExample
-  path="docs_snippets/docs_snippets/integrations/dbt/pythonic/resources.py"
+  path="docs_snippets/docs_snippets/integrations/dbt/pythonic/remove_resources.py"
   title="my_project/defs/resources.py"
   language="python"
 />
@@ -30,7 +30,7 @@ Since the component handles the creation of any dbt assets in your Dagster proje
 You can also remove any `@dbt_assets` assets from your code:
 
 <CodeExample
-  path="docs_snippets/docs_snippets/integrations/dbt/pythonic/assets.py"
+  path="docs_snippets/docs_snippets/integrations/dbt/pythonic/remove_assets.py"
   title="my_project/defs/assets.py"
   language="python"
 />
