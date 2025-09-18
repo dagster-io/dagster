@@ -2,6 +2,7 @@
 description: Setting up branch deployments with a general continuous integration (CI) or git platform, using the dagster-cloud CLI.
 sidebar_position: 7330
 title: Using branch deployments with the dagster-cloud CLI
+tags: [dagster-plus-feature]
 ---
 
 In this article, we'll walk you through setting up branch deployments with a general continuous integration (CI) or Git platform, using the [`dagster-cloud` CLI](/api/clis/dagster-cloud-cli).

@@ -3,6 +3,7 @@ description: Dagster+ Serverless secures data and secrets with container sandbox
 sidebar_label: Security & data protection
 sidebar_position: 4000
 title: Serverless security & data protection
+tags: [dagster-plus-feature]
 ---
 
 Unlike [Hybrid deployments](/deployment/dagster-plus/hybrid), Dagster+ Serverless deployments require direct access to your data, secrets and source code.
