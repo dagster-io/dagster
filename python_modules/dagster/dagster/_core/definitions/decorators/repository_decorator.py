@@ -149,8 +149,6 @@ class _Repository:
                     f"Got {bad_definitions_str}."
                 )
 
-            # JAMIE - maybe this is where we inject the check specs
-
             repository_data = CachingRepositoryData.from_list(
                 repository_defns,
                 default_executor_def=self.default_executor_def,

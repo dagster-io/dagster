@@ -178,12 +178,9 @@ def build_caching_repository_data_from_list(
     source_assets: list[SourceAsset] = []
     asset_checks_defs: list[AssetsDefinition] = []
     partitions_defs: set[PartitionsDefinition] = set()
-    # JAMIE - maybe this is where we inject the check specs
     # get the in-app checks defined for this repository
     # for each check, make a spec and a stub definition and add it to the repository definitions
-    # downside - does this require users to upgrade to whatever dagster version we release this in?
-    # i think yes, right? because the check executes in user code?
-    # if we just have the stub check that has no execution, then we maybe don't have that problem
+    # downside - requires a dagster version update.
     repository_definitions = [rd for rd in repository_definitions]
 
     with DagsterInstance.get() as instance:
