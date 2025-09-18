@@ -516,9 +516,6 @@ class GrapheneAssetMaterializationPlannedEvent(graphene.ObjectType):
 
 
 class GrapheneAssetCheckRequestedEvent(graphene.ObjectType):
-    # assetKey = graphene.Field(GrapheneAssetKey)
-    # runOrError = graphene.NonNull("dagster_graphql.schema.pipelines.pipeline.GrapheneRunOrError")
-
     class Meta:
         name = "AssetCheckRequestedEvent"
         interfaces = (GrapheneMessageEvent, GrapheneRunEvent)
@@ -526,12 +523,6 @@ class GrapheneAssetCheckRequestedEvent(graphene.ObjectType):
     def __init__(self, event: EventLogEntry):
         self._event = event
         super().__init__(**construct_basic_params(event))
-
-    # def resolve_assetKey(self, _graphene_info: ResolveInfo):
-    #     return self._event.get_dagster_event().asset_check_requested_data.asset_key
-
-    # async def resolve_runOrError(self, graphene_info: ResolveInfo):
-    #     return await gen_run_by_id(graphene_info, self._event.run_id)
 
 
 class GrapheneHandledOutputEvent(graphene.ObjectType):
