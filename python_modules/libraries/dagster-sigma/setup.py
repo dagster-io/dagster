@@ -34,7 +34,7 @@ setup(
         "Operating System :: OS Independent",
     ],
     packages=find_packages(exclude=["dagster_sigma_tests*"]),
-    install_requires=[f"dagster{pin}", "sqlglot", "aiohttp"],
+    install_requires=["dagster==1.11.11", "sqlglot", "aiohttp"],
     extras_require={"test": ["aioresponses", "aiohttp<3.11"]},
     include_package_data=True,
     python_requires=">=3.9,<3.14",
