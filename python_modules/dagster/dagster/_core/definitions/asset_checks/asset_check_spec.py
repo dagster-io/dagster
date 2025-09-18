@@ -144,8 +144,6 @@ class AssetCheckSpec(IHaveNew, LegacyNamedTupleMixin):
         from dagster import AssetCheckExecutionContext, asset_check
         from dagster._core.events import AssetCheckRequestedData, DagsterEvent, DagsterEventType
 
-        # doing this as a hack. one issue is that this actually runs in the same run
-        # as the asset materialization
         @asset_check(
             asset=self.asset_key,
             name=self.name,
