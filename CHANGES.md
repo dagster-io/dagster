@@ -18,7 +18,6 @@
 - [ui] The "Clear" button in the dimension partition text input for multi-partitioned assets now clears invalid selections as expected.
 - [dagster-dbt] Fixed an issue with the `DbtCloudWorkspaceClient` that would cause errors when calling `trigger_job_run` with no `steps_override` parameter.
 
-
 ## 1.11.10 (core) / 0.27.10 (libraries)
 
 ### New
