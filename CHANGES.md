@@ -5,6 +5,7 @@
 ### New
 
 - `anthropic`, `mcp`, and `claude-code-sdk` dependencies of `dagster-dg-cli` are now under a separate `ai` extra, allowing `dagster-dg-cli` to be installed without these dependencies.
+- Added `AutomationCondition.all_new_updates_have_run_tags` and `AutomationCondition.any_new_update_has_run_tags`, which allows automation conditions to be filtered to partitions that have been materialized since the last tick from runs with certain tags. This condition can be used to require or prevent certain run tags from triggering downstream declarative automation conditions. These conditions are similar to `AutomationCondition.executed_with_tags`, but look at all new runs since the most recent tick instead of just looking at the latest run.
 
 ### Bugfixes
 
