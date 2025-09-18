@@ -99,16 +99,18 @@ class DeltalakeBaseArrowTypeHandler(DbTypeHandler[T], Generic[T]):
 
         if _has_partitions(table_slice):
             # TODO make robust and move to function
-            partition_columns = [dim.partition_expr for dim in table_slice.partition_dimensions]
+            partition_columns = [
+                dim.partition_expr for dim in table_slice.partition_dimensions or []
+            ]
 
         # legacy parameter
         overwrite_schema = metadata.get("overwrite_schema") or overwrite_schema
 
         # Prepare commit properties
         custom_metadata = metadata.get("custom_metadata") or main_custom_metadata
-        commit_props = (
-            CommitProperties(custom_metadata=custom_metadata) if custom_metadata else None
-        )
+        commit_props = None
+        if custom_metadata and isinstance(custom_metadata, dict):
+            commit_props = CommitProperties(custom_metadata=custom_metadata)
 
         # Prepare write parameters
         write_params = {
@@ -260,9 +262,13 @@ def _get_partition_stats(dt: DeltaTable, table_slice: Optional[TableSlice] = Non
 
     # If we have partition constraints, filter the actions table
     if table_slice is not None and _has_partitions(table_slice):
-        partition_conditions = partition_dimensions_to_dnf(
-            partition_dimensions=table_slice.partition_dimensions,
-            table_schema=dt.schema(),
+        partition_conditions = (
+            partition_dimensions_to_dnf(
+                partition_dimensions=table_slice.partition_dimensions or [],
+                table_schema=dt.schema(),
+            )
+            if table_slice.partition_dimensions
+            else None
         )
         if partition_conditions is not None:
             # Create a dataset from actions table and apply filter
@@ -293,7 +299,7 @@ def _has_partitions(table_slice: TableSlice) -> bool:
     )
 
 
-def _format_predicate_value(value) -> str:
+def _format_predicate_value(value) -> Optional[str]:
     """Format a value for use in partition predicate."""
     # Handle single-element lists (common in static partitions)
     if isinstance(value, list) and len(value) == 1:
@@ -301,14 +307,14 @@ def _format_predicate_value(value) -> str:
 
     # Format based on type
     if hasattr(value, "strftime"):  # datetime-like object
-        return f"'{value.strftime('%Y-%m-%d')}'"
+        return f"'{value.strftime('%Y-%m-%d')}'"  # type: ignore[attr-defined]
     elif isinstance(value, str):
         return f"'{value}'"
     else:
         return str(value)
 
 
-def _build_partition_predicate(partition_dimensions, table_schema) -> str:
+def _build_partition_predicate(partition_dimensions, table_schema) -> Optional[str]:
     """Build partition predicate string from dimensions."""
     predicate_conditions = []
     for partition_dim in partition_dimensions:
@@ -336,7 +342,7 @@ def _table_reader(table_slice: TableSlice, connection: TableConnection) -> ds.Da
     partition_expr = None
     if _has_partitions(table_slice):
         partition_conditions = partition_dimensions_to_dnf(
-            partition_dimensions=table_slice.partition_dimensions,
+            partition_dimensions=table_slice.partition_dimensions or [],
             table_schema=table.schema(),
         )
         if partition_conditions is not None:
