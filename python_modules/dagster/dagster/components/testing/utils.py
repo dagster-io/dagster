@@ -34,7 +34,6 @@ from dagster.components.core.context import ComponentLoadContext
 from dagster.components.core.defs_module import CompositeYamlComponent, get_component
 
 
-@public
 def component_defs(
     *,
     component: Component,
@@ -152,7 +151,6 @@ class DefsFolderSandbox:
                 for name in modules_to_remove:
                     del sys.modules[name]
 
-    @public
     @contextmanager
     def build_all_defs(self) -> Iterator[Definitions]:
         """Builds a Definitions object corresponding to all components in the sandbox.
@@ -364,7 +362,6 @@ def create_defs_folder_sandbox(
         )
 
 
-@public
 def copy_code_to_file(fn: Callable, file_path: Path) -> None:
     """Takes a function and writes the body of the function to a file.
 
