@@ -12,7 +12,15 @@ import DagsterPlus from '@site/docs/partials/\_DagsterPlus.md';
 Dagster allows you to track external metrics, such as BigQuery usage in the Insights UI. Out of the box integrations are provided to capture query runtime and billed usage, and associate them with the relevant assets or jobs.
 
 :::note
+
 The BigQuery cost metric is based off of the bytes billed for queries executed with Dagster, based on a unit price of $6.25 per TiB.
+
+:::
+
+:::info
+
+Support for integrating asset metadata is coming soon in updated Insights. To use legacy Insights, toggle off "New homepage & observability UIs" in your user settings.
+
 :::
 
 ## Requirements
