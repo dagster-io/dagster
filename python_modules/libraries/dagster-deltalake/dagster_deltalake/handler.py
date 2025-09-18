@@ -70,52 +70,16 @@ class DeltalakeBaseArrowTypeHandler(DbTypeHandler[T], Generic[T]):
 
         # For partitioned tables, determine the appropriate mode and predicate
         predicate = None
-        if (
-            table_slice.partition_dimensions is not None
-            and len(table_slice.partition_dimensions) > 0
-        ):
+        if _has_partitions(table_slice):
             try:
-                # Check if table already exists
                 existing_table = DeltaTable(
                     connection.table_uri, storage_options=connection.storage_options
                 )
-                # If we get here, table exists
                 if main_save_mode == "overwrite":
-                    # Build predicate to overwrite only the specific partition being written
-                    predicate_conditions = []
-                    for partition_dim in table_slice.partition_dimensions:
-                        partition_condition = partition_dimensions_to_dnf(
-                            partition_dimensions=[partition_dim],
-                            table_schema=existing_table.schema(),
-                        )
-                        if partition_condition:
-                            # partition_condition is a list of tuples, extract the tuple
-                            condition_tuple = (
-                                partition_condition[0]
-                                if isinstance(partition_condition, list)
-                                else partition_condition
-                            )
-                            field_name, op, value = condition_tuple
-
-                            # Handle different value types
-                            if isinstance(value, list) and len(value) == 1:
-                                # Static partitions often return single-element lists
-                                actual_value = value[0]
-                            else:
-                                actual_value = value
-
-                            # Format value appropriately for predicate string
-                            if hasattr(actual_value, "strftime"):  # datetime-like object
-                                value_str = f"'{actual_value.strftime('%Y-%m-%d')}'"
-                            elif isinstance(actual_value, str):
-                                value_str = f"'{actual_value}'"
-                            else:
-                                value_str = str(actual_value)
-
-                            predicate_conditions.append(f"{field_name} {op} {value_str}")
-
-                    if predicate_conditions:
-                        predicate = " AND ".join(predicate_conditions)
+                    predicate = _build_partition_predicate(
+                        table_slice.partition_dimensions, existing_table.schema()
+                    )
+                    if predicate:
                         context.log.debug(
                             f"Table exists and is partitioned, using predicate to overwrite specific partition: {predicate}"
                         )
@@ -133,10 +97,7 @@ class DeltalakeBaseArrowTypeHandler(DbTypeHandler[T], Generic[T]):
 
         partition_columns = None
 
-        if (
-            table_slice.partition_dimensions is not None
-            and len(table_slice.partition_dimensions) > 0
-        ):
+        if _has_partitions(table_slice):
             # TODO make robust and move to function
             partition_columns = [dim.partition_expr for dim in table_slice.partition_dimensions]
 
@@ -298,11 +259,7 @@ def _get_partition_stats(dt: DeltaTable, table_slice: Optional[TableSlice] = Non
     actions_table = pa.Table.from_batches([dt.get_add_actions(flatten=True)])
 
     # If we have partition constraints, filter the actions table
-    if (
-        table_slice is not None
-        and table_slice.partition_dimensions is not None
-        and len(table_slice.partition_dimensions) > 0
-    ):
+    if table_slice is not None and _has_partitions(table_slice):
         partition_conditions = partition_dimensions_to_dnf(
             partition_dimensions=table_slice.partition_dimensions,
             table_schema=dt.schema(),
@@ -329,11 +286,55 @@ def _get_partition_stats(dt: DeltaTable, table_slice: Optional[TableSlice] = Non
     return table, stats
 
 
+def _has_partitions(table_slice: TableSlice) -> bool:
+    """Check if table slice has non-empty partition dimensions."""
+    return (
+        table_slice.partition_dimensions is not None and len(table_slice.partition_dimensions) > 0
+    )
+
+
+def _format_predicate_value(value) -> str:
+    """Format a value for use in partition predicate."""
+    # Handle single-element lists (common in static partitions)
+    if isinstance(value, list) and len(value) == 1:
+        value = value[0]
+
+    # Format based on type
+    if hasattr(value, "strftime"):  # datetime-like object
+        return f"'{value.strftime('%Y-%m-%d')}'"
+    elif isinstance(value, str):
+        return f"'{value}'"
+    else:
+        return str(value)
+
+
+def _build_partition_predicate(partition_dimensions, table_schema) -> str:
+    """Build partition predicate string from dimensions."""
+    predicate_conditions = []
+    for partition_dim in partition_dimensions:
+        partition_condition = partition_dimensions_to_dnf(
+            partition_dimensions=[partition_dim],
+            table_schema=table_schema,
+        )
+        if partition_condition:
+            # Extract tuple from list if needed
+            condition_tuple = (
+                partition_condition[0]
+                if isinstance(partition_condition, list)
+                else partition_condition
+            )
+            field_name, op, value = condition_tuple
+            value_str = _format_predicate_value(value)
+            predicate_conditions.append(f"{field_name} {op} {value_str}")
+
+    return " AND ".join(predicate_conditions) if predicate_conditions else None
+
+
 def _table_reader(table_slice: TableSlice, connection: TableConnection) -> ds.Dataset:
     table = DeltaTable(table_uri=connection.table_uri, storage_options=connection.storage_options)
 
     partition_expr = None
-    if table_slice.partition_dimensions is not None and len(table_slice.partition_dimensions) > 0:
+    if _has_partitions(table_slice):
         partition_conditions = partition_dimensions_to_dnf(
             partition_dimensions=table_slice.partition_dimensions,
             table_schema=table.schema(),
