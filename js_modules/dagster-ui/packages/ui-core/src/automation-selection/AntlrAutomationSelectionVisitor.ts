@@ -114,13 +114,14 @@ export class AntlrAutomationSelectionVisitor<T extends Automation>
 
   visitCodeLocationExpr(ctx: CodeLocationExprContext) {
     const value: string = getValue(ctx.value());
+    const regex: RegExp = new RegExp(`^${escapeRegExp(value).replaceAll('\\*', '.*')}$`);
     const selection = new Set<T>();
     for (const automation of this.all_automations) {
       const repository = automation.repo;
       const location = repository.name
         ? buildRepoPathForHuman(repository.name, repository.location)
         : '';
-      if (location === value) {
+      if (regex.test(location)) {
         selection.add(automation);
       }
     }
