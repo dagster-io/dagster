@@ -4096,6 +4096,7 @@ export type Query = {
   allTopLevelResourceDetailsOrError: ResourceDetailsListOrError;
   assetBackfillPreview: Array<AssetPartitions>;
   assetCheckExecutions: Array<AssetCheckExecution>;
+  assetChecklogEvents: InstigationEventConnection;
   assetConditionEvaluationForPartition: Maybe<AssetConditionEvaluation>;
   assetConditionEvaluationRecordsOrError: Maybe<AssetConditionEvaluationRecordsOrError>;
   assetConditionEvaluationsForEvaluationId: Maybe<AssetConditionEvaluationRecordsOrError>;
@@ -4171,6 +4172,12 @@ export type QueryAssetCheckExecutionsArgs = {
   checkName: Scalars['String']['input'];
   cursor?: InputMaybe<Scalars['String']['input']>;
   limit: Scalars['Int']['input'];
+};
+
+export type QueryAssetChecklogEventsArgs = {
+  checkKey: Scalars['String']['input'];
+  cursor?: InputMaybe<Scalars['String']['input']>;
+  runId: Scalars['String']['input'];
 };
 
 export type QueryAssetConditionEvaluationForPartitionArgs = {
@@ -13127,6 +13134,12 @@ export const buildQuery = (
       overrides && overrides.hasOwnProperty('assetCheckExecutions')
         ? overrides.assetCheckExecutions!
         : [],
+    assetChecklogEvents:
+      overrides && overrides.hasOwnProperty('assetChecklogEvents')
+        ? overrides.assetChecklogEvents!
+        : relationshipsToOmit.has('InstigationEventConnection')
+          ? ({} as InstigationEventConnection)
+          : buildInstigationEventConnection({}, relationshipsToOmit),
     assetConditionEvaluationForPartition:
       overrides && overrides.hasOwnProperty('assetConditionEvaluationForPartition')
         ? overrides.assetConditionEvaluationForPartition!
