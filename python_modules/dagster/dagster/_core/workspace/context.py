@@ -1097,11 +1097,6 @@ def get_location_name_for_definition(remote_definition: RemoteDefinition) -> str
 def get_owners_for_definition(remote_definition: RemoteDefinition) -> Sequence[str]:
     if isinstance(remote_definition, RemoteAssetNode):
         return remote_definition.owners
-    if isinstance(
-        remote_definition,
-        (RemoteAssetCheckNode, RemoteJob, RemoteSchedule, RemoteSensor),
-    ):
-        raise NotImplementedError(
-            f"Owners not yet supported for {type(remote_definition).__name__}"
-        )
-    check.failed(f"Unexpected remote definition type {type(remote_definition)}")
+
+    # Owners not yet supported for RemoteAssetCheckNode, RemoteJob, RemoteSchedule, RemoteSensor
+    return []

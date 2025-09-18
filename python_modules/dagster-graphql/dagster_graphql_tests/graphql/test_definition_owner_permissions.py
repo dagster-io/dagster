@@ -98,7 +98,7 @@ def test_definition_owner_permissions_run_launch():
                 # Get the actual location and repository names from the context
                 location_name = context.code_location_names[0]
                 location = context.get_code_location(location_name)
-                repo_name = next(iter(location.repository_names))
+                repo_name = next(iter(location.get_repository_names()))
 
                 result = execute_dagster_graphql(
                     context,

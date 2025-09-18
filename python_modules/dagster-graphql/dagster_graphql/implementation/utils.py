@@ -109,13 +109,6 @@ def has_permission_for_asset_graph(
     if context.has_permission(permission):
         return True
 
-    # if we permission for all code locations, no need to check specific asset keys
-    if all(
-        context.has_permission_for_location(permission, location_name)
-        for location_name in context.code_location_names
-    ):
-        return True
-
     if asset_keys:
         location_names = set()
         for key in asset_keys:
@@ -155,9 +148,9 @@ def has_permission_for_asset_graph(
             if asset_graph.has(key)
         )
 
-    # enumerate all the nodes (keys and checks) and ensure we own all of them
+    # enumerate all the asset nodes and check permissions
     return all(
-        context.has_permission_for_definition(permission, node) for node in asset_graph.nodes
+        context.has_permission_for_definition(permission, node) for node in asset_graph.asset_nodes
     )
 
 
