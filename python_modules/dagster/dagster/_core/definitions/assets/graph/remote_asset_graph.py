@@ -668,7 +668,7 @@ class RemoteWorkspaceAssetGraph(RemoteAssetGraph[RemoteWorkspaceAssetNode]):
         return list(keys_by_repo.values())
 
     @classmethod
-    def build(cls, workspace: CurrentWorkspace):
+    def build(cls, workspace: CurrentWorkspace, instance):
         # Combine repository scoped asset graphs with additional context to form the global graph
 
         code_locations = sorted(
@@ -689,6 +689,32 @@ class RemoteWorkspaceAssetGraph(RemoteAssetGraph[RemoteWorkspaceAssetNode]):
 
         asset_infos_by_key: dict[AssetKey, list[RepositoryScopedAssetInfo]] = defaultdict(list)
         asset_checks_by_key: dict[AssetCheckKey, RemoteAssetCheckNode] = {}
+
+        # load checks from DB here
+        from dagster._core.remote_representation.external_data import AssetCheckNodeSnap
+
+        in_app_checks = instance.get_in_app_checks()
+        for check_config in in_app_checks:
+            check_spec = check_config.check_spec
+            asset_checks_by_key[check_config.check_spec.key] = RemoteAssetCheckNode(
+                handle=RepositoryHandle.from_location(
+                    repository_name="__repository__",
+                    code_location=next(iter(code_locations)),
+                ),
+                asset_check=AssetCheckNodeSnap(
+                    name=check_spec.name,
+                    asset_key=check_spec.asset_key,
+                    description=check_spec.description,
+                    execution_set_identifier=None,
+                    job_names=[],
+                    blocking=check_spec.blocking,
+                    additional_asset_keys=check_spec.additional_deps,
+                    automation_condition=check_spec.automation_condition,
+                    automation_condition_snapshot=None,
+                ),
+                execution_set_entity_keys={check_config.check_spec.key},
+            )
+
         for repo in repos:
             for key, asset_node in repo.asset_graph.remote_asset_nodes_by_key.items():
                 asset_infos_by_key[key].append(

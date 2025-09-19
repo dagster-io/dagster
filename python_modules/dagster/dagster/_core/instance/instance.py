@@ -62,6 +62,28 @@ if TYPE_CHECKING:
 
 DagsterInstanceOverrides: TypeAlias = Mapping[str, Any]
 
+from enum import Enum
+
+from dagster_shared.record import record
+
+
+class AssetCheckType(Enum):
+    METADATA_THRESHOLD = "METADATA_THRESHOLD"
+
+
+from dagster._core.definitions.asset_checks.asset_check_spec import (
+    AssetCheckSeverity,
+    AssetCheckSpec,
+)
+
+
+@record
+class AssetCheckConfig:
+    check_spec: AssetCheckSpec
+    severity: AssetCheckSeverity
+    check_type: AssetCheckType
+    config: dict
+
 
 @public
 class DagsterInstance(
@@ -271,6 +293,29 @@ class DagsterInstance(
         from dagster._core.instance.factory import create_instance_from_dagster_home
 
         return create_instance_from_dagster_home()
+
+    def get_in_app_checks(self) -> Sequence[AssetCheckConfig]:
+        """Real impl would pull from blob storage."""
+        import dagster as dg
+
+        return [
+            AssetCheckConfig(
+                check_spec=dg.AssetCheckSpec(
+                    name="num_rows_threshold",
+                    asset=dg.AssetKey("unpartitioned_asset"),
+                    description="Check that the number of rows in the asset is greater than 0",
+                    blocking=False,
+                    automation_condition=None,
+                ),
+                severity=dg.AssetCheckSeverity.ERROR,
+                check_type=AssetCheckType.METADATA_THRESHOLD,
+                config={
+                    "metadata_key": "num_rows",
+                    "threshold": 0,
+                    "comparison_operator": "greater_than",
+                },
+            )
+        ]
 
     @public
     @staticmethod
