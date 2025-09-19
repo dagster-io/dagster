@@ -130,6 +130,9 @@ EXCLUDED_FILES = {
     f"{snippets_folder}/tableau/refresh-and-materialize-tableau-assets.py",
     f"{snippets_folder}/tableau/representing-tableau-cloud-assets.py",
     f"{snippets_folder}/tableau/representing-tableau-server-assets.py",
+    # FIXME: serverless pipes files require Databricks environment/credentials
+    f"{snippets_folder}/databricks/dagster_code_serverless.py",
+    f"{snippets_folder}/databricks/databricks_code_serverless.py",
 }
 
 
