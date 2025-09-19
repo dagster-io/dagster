@@ -151,11 +151,14 @@ dg api schedule stop <schedule-name> --location <name>
 
 **GraphQL**: `schedulesOrError`, `scheduleOrError`
 
-### 13. **sensor**
+### 13. **sensor** ✅ _list/get implemented_
 
 ```bash
-dg api sensor list [--location <name>] [--status <running|stopped>] [--json]
-dg api sensor get <sensor-name> --location <name> [--json]
+# Implemented
+dg api sensor list [--status <running|stopped>] [--json]
+dg api sensor get <sensor-name> [--json]
+
+# Future verbs
 dg api sensor start <sensor-name> --location <name>
 dg api sensor stop <sensor-name> --location <name>
 ```
@@ -380,6 +383,7 @@ dagster_dg_cli/cli/plus/api/
 ## **Implementation Status**
 
 - ✅ **deployment list** - Completed
+- ✅ **sensor list/get** - Completed (repository concepts hidden from end users)
 - 🚧 **Next**: secret, agent, run, asset (Phase 1)
 - 📋 **Planned**: 22 additional nouns across 4 more phases
 
