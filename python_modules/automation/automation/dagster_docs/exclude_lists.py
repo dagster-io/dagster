@@ -108,6 +108,8 @@ EXCLUDE_MISSING_EXPORT = {
 EXCLUDE_MISSING_PUBLIC = {
     "dagster.BetaWarning",
     "dagster.ComponentTree",
+    "dagster.components.testing.create_defs_folder_sandbox",
+    "dagster.components.testing.DefsFolderSandbox",
     "dagster.DefaultRunCoordinator",
     "dagster.PreviewWarning",
     "dagster.PreviewWarning",
