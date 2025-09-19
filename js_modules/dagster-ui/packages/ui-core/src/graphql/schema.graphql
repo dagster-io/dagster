@@ -383,8 +383,6 @@ interface PipelineRunStepStats {
   status: StepEventStatus
   startTime: Float
   endTime: Float
-  materializations: [MaterializationEvent!]!
-  expectationResults: [ExpectationResult!]!
 }
 
 enum StepEventStatus {
@@ -446,8 +444,6 @@ type RunStepStats implements PipelineRunStepStats {
   status: StepEventStatus
   startTime: Float
   endTime: Float
-  materializations: [MaterializationEvent!]!
-  expectationResults: [ExpectationResult!]!
   attempts: [RunMarker!]!
   markers: [RunMarker!]!
 }
@@ -1551,8 +1547,6 @@ interface PipelineRunStatsSnapshot {
   runId: String!
   stepsSucceeded: Int!
   stepsFailed: Int!
-  materializations: Int!
-  expectations: Int!
   enqueuedTime: Float
   launchTime: Float
   startTime: Float
@@ -1566,8 +1560,6 @@ type RunStatsSnapshot implements PipelineRunStatsSnapshot {
   runId: String!
   stepsSucceeded: Int!
   stepsFailed: Int!
-  materializations: Int!
-  expectations: Int!
   enqueuedTime: Float
   launchTime: Float
   startTime: Float

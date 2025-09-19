@@ -542,8 +542,6 @@ class SqlEventLogStorage(EventLogStorage):
                 run_id=run_id,
                 steps_succeeded=counts.get(DagsterEventType.STEP_SUCCESS.value, 0),
                 steps_failed=counts.get(DagsterEventType.STEP_FAILURE.value, 0),
-                materializations=counts.get(DagsterEventType.ASSET_MATERIALIZATION.value, 0),
-                expectations=counts.get(DagsterEventType.STEP_EXPECTATION_RESULT.value, 0),
                 enqueued_time=(
                     utc_datetime_from_naive(enqueued_time).timestamp() if enqueued_time else None
                 ),

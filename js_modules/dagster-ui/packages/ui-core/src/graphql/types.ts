@@ -3916,10 +3916,8 @@ export type PipelineRunNotFoundError = {
 export type PipelineRunStatsSnapshot = {
   endTime: Maybe<Scalars['Float']['output']>;
   enqueuedTime: Maybe<Scalars['Float']['output']>;
-  expectations: Scalars['Int']['output'];
   id: Scalars['String']['output'];
   launchTime: Maybe<Scalars['Float']['output']>;
-  materializations: Scalars['Int']['output'];
   runId: Scalars['String']['output'];
   startTime: Maybe<Scalars['Float']['output']>;
   stepsFailed: Scalars['Int']['output'];
@@ -3928,8 +3926,6 @@ export type PipelineRunStatsSnapshot = {
 
 export type PipelineRunStepStats = {
   endTime: Maybe<Scalars['Float']['output']>;
-  expectationResults: Array<ExpectationResult>;
-  materializations: Array<MaterializationEvent>;
   runId: Scalars['String']['output'];
   startTime: Maybe<Scalars['Float']['output']>;
   status: Maybe<StepEventStatus>;
@@ -5104,10 +5100,8 @@ export type RunStatsSnapshot = PipelineRunStatsSnapshot & {
   __typename: 'RunStatsSnapshot';
   endTime: Maybe<Scalars['Float']['output']>;
   enqueuedTime: Maybe<Scalars['Float']['output']>;
-  expectations: Scalars['Int']['output'];
   id: Scalars['String']['output'];
   launchTime: Maybe<Scalars['Float']['output']>;
-  materializations: Scalars['Int']['output'];
   runId: Scalars['String']['output'];
   startTime: Maybe<Scalars['Float']['output']>;
   stepsFailed: Scalars['Int']['output'];
@@ -5132,9 +5126,7 @@ export type RunStepStats = PipelineRunStepStats & {
   __typename: 'RunStepStats';
   attempts: Array<RunMarker>;
   endTime: Maybe<Scalars['Float']['output']>;
-  expectationResults: Array<ExpectationResult>;
   markers: Array<RunMarker>;
-  materializations: Array<MaterializationEvent>;
   runId: Scalars['String']['output'];
   startTime: Maybe<Scalars['Float']['output']>;
   status: Maybe<StepEventStatus>;
@@ -12795,14 +12787,8 @@ export const buildPipelineRunStatsSnapshot = (
     endTime: overrides && overrides.hasOwnProperty('endTime') ? overrides.endTime! : 8.08,
     enqueuedTime:
       overrides && overrides.hasOwnProperty('enqueuedTime') ? overrides.enqueuedTime! : 9.65,
-    expectations:
-      overrides && overrides.hasOwnProperty('expectations') ? overrides.expectations! : 7156,
     id: overrides && overrides.hasOwnProperty('id') ? overrides.id! : 'at',
     launchTime: overrides && overrides.hasOwnProperty('launchTime') ? overrides.launchTime! : 0.49,
-    materializations:
-      overrides && overrides.hasOwnProperty('materializations')
-        ? overrides.materializations!
-        : 8186,
     runId: overrides && overrides.hasOwnProperty('runId') ? overrides.runId! : 'cupiditate',
     startTime: overrides && overrides.hasOwnProperty('startTime') ? overrides.startTime! : 3.44,
     stepsFailed:
@@ -12821,12 +12807,6 @@ export const buildPipelineRunStepStats = (
   return {
     __typename: 'PipelineRunStepStats',
     endTime: overrides && overrides.hasOwnProperty('endTime') ? overrides.endTime! : 3.31,
-    expectationResults:
-      overrides && overrides.hasOwnProperty('expectationResults')
-        ? overrides.expectationResults!
-        : [],
-    materializations:
-      overrides && overrides.hasOwnProperty('materializations') ? overrides.materializations! : [],
     runId: overrides && overrides.hasOwnProperty('runId') ? overrides.runId! : 'et',
     startTime: overrides && overrides.hasOwnProperty('startTime') ? overrides.startTime! : 8.43,
     status:
@@ -14654,14 +14634,8 @@ export const buildRunStatsSnapshot = (
     endTime: overrides && overrides.hasOwnProperty('endTime') ? overrides.endTime! : 5.18,
     enqueuedTime:
       overrides && overrides.hasOwnProperty('enqueuedTime') ? overrides.enqueuedTime! : 9.23,
-    expectations:
-      overrides && overrides.hasOwnProperty('expectations') ? overrides.expectations! : 5993,
     id: overrides && overrides.hasOwnProperty('id') ? overrides.id! : 'et',
     launchTime: overrides && overrides.hasOwnProperty('launchTime') ? overrides.launchTime! : 8.17,
-    materializations:
-      overrides && overrides.hasOwnProperty('materializations')
-        ? overrides.materializations!
-        : 7077,
     runId: overrides && overrides.hasOwnProperty('runId') ? overrides.runId! : 'mollitia',
     startTime: overrides && overrides.hasOwnProperty('startTime') ? overrides.startTime! : 8.88,
     stepsFailed:
@@ -14681,13 +14655,7 @@ export const buildRunStepStats = (
     __typename: 'RunStepStats',
     attempts: overrides && overrides.hasOwnProperty('attempts') ? overrides.attempts! : [],
     endTime: overrides && overrides.hasOwnProperty('endTime') ? overrides.endTime! : 0.92,
-    expectationResults:
-      overrides && overrides.hasOwnProperty('expectationResults')
-        ? overrides.expectationResults!
-        : [],
     markers: overrides && overrides.hasOwnProperty('markers') ? overrides.markers! : [],
-    materializations:
-      overrides && overrides.hasOwnProperty('materializations') ? overrides.materializations! : [],
     runId: overrides && overrides.hasOwnProperty('runId') ? overrides.runId! : 'repudiandae',
     startTime: overrides && overrides.hasOwnProperty('startTime') ? overrides.startTime! : 7.96,
     status:
