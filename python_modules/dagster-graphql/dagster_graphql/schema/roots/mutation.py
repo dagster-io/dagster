@@ -39,6 +39,7 @@ from dagster_graphql.implementation.utils import (
     ExecutionParams,
     UserFacingGraphQLError,
     assert_permission_for_asset_graph,
+    assert_permission_for_definition,
     assert_permission_for_location,
     capture_error,
     check_permission,
@@ -289,12 +290,25 @@ class GrapheneTerminateRunsResultOrError(graphene.Union):
 
 
 def create_execution_params_and_launch_pipeline_exec(graphene_info, execution_params_dict):
+    from dagster._core.remote_representation.code_location import is_implicit_asset_job_name
+
+    from dagster_graphql.implementation.external import get_remote_job_or_raise
+
     execution_params = create_execution_params(graphene_info, execution_params_dict)
-    assert_permission_for_location(
-        graphene_info,
-        Permissions.LAUNCH_PIPELINE_EXECUTION,
-        execution_params.selector.location_name,
-    )
+    remote_job = get_remote_job_or_raise(graphene_info, execution_params.selector)
+
+    if is_implicit_asset_job_name(remote_job.name) and execution_params.selector.asset_selection:
+        assert_permission_for_asset_graph(
+            graphene_info,
+            graphene_info.context.asset_graph,
+            list(execution_params.selector.asset_selection),
+            Permissions.LAUNCH_PIPELINE_EXECUTION,
+        )
+    else:
+        assert_permission_for_definition(
+            graphene_info, Permissions.LAUNCH_PIPELINE_EXECUTION, remote_job
+        )
+
     return launch_pipeline_execution(
         graphene_info,
         execution_params,
