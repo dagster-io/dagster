@@ -1,9 +1,9 @@
 [project]
-name = "components_in_app_checks"
+name = "in_app_check_components"
 requires-python = ">=3.9,<3.14"
 version = "0.1.0"
 dependencies = [
-    "dagster==1.11.10",
+    "dagster==1.11.11",
 ]
 
 [dependency-groups]
@@ -23,7 +23,9 @@ force-include = { "pyproject.toml" = "pyproject.toml" }
 directory_type = "project"
 
 [tool.dg.project]
-root_module = "components_in_app_checks"
+root_module = "in_app_check_components"
 registry_modules = [
-    "components_in_app_checks.components.*",
+    "in_app_check_components.components.*",
 ]
+
+
