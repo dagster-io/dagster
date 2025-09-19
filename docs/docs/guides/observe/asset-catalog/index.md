@@ -28,3 +28,9 @@ The Dagster+ asset catalog displays assets broken out by compute kind, asset gro
 To access the asset catalog, click **Catalog** in the left sidebar.
 
 ![The Asset catalog page in the Dagster UI](/images/guides/observe/asset-catalog/dagster-plus-asset-catalog.png)
+
+:::note
+
+By default, assets without definitions are not shown in the asset catalog. These are typically historical assets that have been removed from your definitions. You can choose to see these assets in user settings by toggling "Show assets without definitions in catalog."
+
+:::
