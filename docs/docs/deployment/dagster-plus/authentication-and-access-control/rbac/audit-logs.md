@@ -1,6 +1,7 @@
 ---
 description: The Dagster+ audit log enables Dagster+ Pro organization admins to track and attribute changes to their Dagster deployment with the UI or Dagster+ GraphQL API.
 sidebar_position: 8140
+tags: [dagster-plus-feature]
 title: Viewing and accessing audit logs
 ---
 
@@ -55,7 +56,7 @@ To access a visual GraphiQL interface, visit `https://<org>.dagster.cloud/<deplo
 | Log in                         | A user logs in to the Dagster+ organization                                                                                            |                                                                           |
 | Update sensor                  | A user toggles a sensor on or off                                                                                                      | The sensor name, code location, and cursor                                |
 | Update schedule                | A user toggles a schedule on or off                                                                                                    | The schedule name, code location, and cursor                              |
-| Update alert policy            | A user modifies an [alert policy](/guides/monitor/alerts/creating-alerts)                                                              | The new configuration for the alert policy                                |
+| Update alert policy            | A user modifies an [alert policy](/guides/observe/alerts/creating-alerts)                                                              | The new configuration for the alert policy                                |
 | Create deployment              | A user creates a new deployment                                                                                                        | Whether the deployment is a branch deployment                             |
 | Delete deployment              | A user removes an existing deployment                                                                                                  | Whether the deployment is a branch deployment                             |
 | Create user token              | A user creates a new user token                                                                                                        |                                                                           |

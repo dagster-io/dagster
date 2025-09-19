@@ -16,16 +16,16 @@ Cron-based schedules are common in data orchestration. They use time-based expre
 
 Use the `dg scaffold defs` command to scaffold a new schedule object:
 
-<CliInvocationExample path="docs_snippets/docs_snippets/guides/tutorials/dagster-tutorial/commands/dg-scaffold-schedules.txt" />
+<CliInvocationExample path="docs_snippets/docs_snippets/guides/tutorials/dagster_tutorial/commands/dg-scaffold-schedules.txt" />
 
 This will add a generic schedules file to your project. The `schedules.py` file is now part of the `dagster-tutorial` module:
 
-<CliInvocationExample path="docs_snippets/docs_snippets/guides/tutorials/dagster-tutorial/tree/schedules.txt" />
+<CliInvocationExample path="docs_snippets/docs_snippets/guides/tutorials/dagster_tutorial/tree/schedules.txt" />
 
 There is very little you need to change about the schedule that has been scaffolded. Schedules consist of a `cron_schedule` and `target`. By default the `cron_schedule` will be set to `@daily` and the `target` will be set to `*`. You can keep the `target` as is, but change the `cron_schedule` to something more specific. The code below updates the [cron syntax](https://crontab.guru/) to run at midnight, and updates the schedule name by renaming the function to `tutorial_schedule`:
 
 <CodeExample
-  path="docs_snippets/docs_snippets/guides/tutorials/dagster-tutorial/src/dagster_tutorial/defs/schedules.py"
+  path="docs_snippets/docs_snippets/guides/tutorials/dagster_tutorial/src/dagster_tutorial/defs/schedules.py"
   language="python"
   title="src/dagster_tutorial/defs/schedules.py"
 />

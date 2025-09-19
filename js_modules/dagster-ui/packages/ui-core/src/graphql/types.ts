@@ -884,6 +884,7 @@ export enum BulkActionStatus {
   COMPLETED_FAILED = 'COMPLETED_FAILED',
   COMPLETED_SUCCESS = 'COMPLETED_SUCCESS',
   FAILED = 'FAILED',
+  FAILING = 'FAILING',
   REQUESTED = 'REQUESTED',
 }
 
@@ -1587,6 +1588,7 @@ export type ExecutionParams = {
 export type ExecutionPlan = {
   __typename: 'ExecutionPlan';
   artifactsPersisted: Scalars['Boolean']['output'];
+  assetKeys: Array<AssetKey>;
   assetSelection: Array<Scalars['String']['output']>;
   steps: Array<ExecutionStep>;
 };
@@ -8884,6 +8886,7 @@ export const buildExecutionPlan = (
       overrides && overrides.hasOwnProperty('artifactsPersisted')
         ? overrides.artifactsPersisted!
         : true,
+    assetKeys: overrides && overrides.hasOwnProperty('assetKeys') ? overrides.assetKeys! : [],
     assetSelection:
       overrides && overrides.hasOwnProperty('assetSelection') ? overrides.assetSelection! : [],
     steps: overrides && overrides.hasOwnProperty('steps') ? overrides.steps! : [],

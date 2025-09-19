@@ -2,6 +2,7 @@
 description: Configure and run Dagster+ Docker agents to execute code within Docker containers.
 sidebar_position: 4100
 title: Docker agent setup
+tags: [dagster-plus-feature]
 ---
 
 In this guide, you'll configure and run a Dagster+ Docker agent. Docker agents are used to launch your code in Docker containers.

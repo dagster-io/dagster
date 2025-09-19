@@ -322,6 +322,8 @@ def test_key_ranges_subset():
     ):
         key_ranges_subset.get_partition_keys()
 
+    assert not key_ranges_subset.is_empty
+
     with (
         instance_for_test() as instance,
         partition_loading_context(
@@ -392,14 +394,15 @@ def test_key_ranges_subset_dynamic_partitions():
         with partition_loading_context(dynamic_partitions_store=instance):
             assert key_ranges_subset.get_partition_keys() == ["a", "b", "c"]
 
-            asset_graph_subset = AssetGraphSubset(
-                partitions_subsets_by_asset_key={
-                    dg.AssetKey("asset"): key_ranges_subset,
-                },
-                non_partitioned_asset_keys=set(),
-            )
+        asset_graph_subset = AssetGraphSubset(
+            partitions_subsets_by_asset_key={
+                dg.AssetKey("asset"): key_ranges_subset,
+            },
+            non_partitioned_asset_keys=set(),
+        )
 
-            assert asset_graph_subset.asset_keys == {dg.AssetKey("asset")}
+        # can get asset keys from subset without partition loading context
+        assert asset_graph_subset.asset_keys == {dg.AssetKey("asset")}
 
 
 def test_multi_partition_subset_to_range_conversion_grouping_choices():

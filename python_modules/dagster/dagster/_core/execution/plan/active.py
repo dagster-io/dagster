@@ -17,6 +17,7 @@ from dagster._core.execution.context.system import (
     PlanExecutionContext,
     PlanOrchestrationContext,
 )
+from dagster._core.execution.plan.inputs import FromMultipleSources
 from dagster._core.execution.plan.instance_concurrency_context import InstanceConcurrencyContext
 from dagster._core.execution.plan.outputs import StepOutputData, StepOutputHandle
 from dagster._core.execution.plan.plan import ExecutionPlan
@@ -210,8 +211,14 @@ class ActiveExecution:
                     missing_source_handles.append(source_handle)
 
             if missing_source_handles:
-                if len(missing_source_handles) == len(
-                    step_input.get_step_output_handle_dependencies()
+                if (
+                    # for the FromMultipleSources case (aka fan-in), we only skip if all sources
+                    # are missing. for other cases, we skip if any source is missing
+                    not isinstance(step_input.source, FromMultipleSources)
+                    or (
+                        len(missing_source_handles)
+                        == len(step_input.get_step_output_handle_dependencies())
+                    )
                 ):
                     self._skipped_deps[step_key] = [
                         f"{h.step_key}.{h.output_name}" for h in missing_source_handles

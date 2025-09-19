@@ -2323,6 +2323,7 @@ type ExecutionPlan {
   steps: [ExecutionStep!]!
   artifactsPersisted: Boolean!
   assetSelection: [String!]!
+  assetKeys: [AssetKey!]!
 }
 
 type ExecutionStep {
@@ -2704,6 +2705,7 @@ enum BulkActionStatus {
   CANCELING
   COMPLETED_SUCCESS
   COMPLETED_FAILED
+  FAILING
 }
 
 type DaemonHealth {

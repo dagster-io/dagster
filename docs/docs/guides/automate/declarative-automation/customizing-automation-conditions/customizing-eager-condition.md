@@ -45,7 +45,7 @@ This can be combined with `AutomationCondition.eager()` to ensure that your asse
 
 By default, `AutomationCondition.eager()` materializes a target whenever any upstream event occurs, regardless of the source of that event.
 
-It can be useful to ignore runs of certain types when determining if an upstream asset should be considered "updated". This can be done using `AutomationCondition.executed_with_tags()` to filter updates for runs with tags matching particular keys:
+It can be useful to ignore runs of certain types when determining if an upstream asset should be considered "updated". This can be done using `AutomationCondition.any_new_update_has_run_tags()` to filter updates for runs with tags matching particular keys:
 
 <CodeExample
   path="docs_snippets/docs_snippets/concepts/declarative_automation/eager/executed_with_tags_condition.py"

@@ -3,6 +3,7 @@ description: Manage team permissions in Dagster+ with role-based access control 
 sidebar_label: Managing teams
 sidebar_position: 8120
 title: Managing teams
+tags: [dagster-plus-feature]
 ---
 
 As part of role-based access control (RBAC), Dagster+ supports the ability to assign users to teams. A team is a group of users with a set of default deployment, code location, and Branch Deployment user roles.
