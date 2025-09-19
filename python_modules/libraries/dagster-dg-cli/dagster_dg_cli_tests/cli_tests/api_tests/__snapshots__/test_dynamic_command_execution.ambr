@@ -1,4 +1,281 @@
 # serializer version: 1
+# name: TestDynamicCommandExecution.test_command_execution[agent_error_agent_not_found_json]
+  '''
+  {"error": "Agent with ID 'nonexistent-agent-uuid' not found"}
+  {"error": "Agent not found: nonexistent-agent-uuid"}
+  Error: Failed to get agent: Agent not found: nonexistent-agent-uuid
+  
+  '''
+# ---
+# name: TestDynamicCommandExecution.test_command_execution[agent_error_agent_not_found_text_text]
+  '''
+  Agent with ID 'nonexistent-agent-uuid' not found
+  Error querying Dagster Plus API: Agent not found: nonexistent-agent-uuid
+  Error: Failed to get agent: Agent not found: nonexistent-agent-uuid
+  
+  '''
+# ---
+# name: TestDynamicCommandExecution.test_command_execution[agent_error_malformed_agent_id_json]
+  '''
+  {"error": "Agent with ID '''' not found"}
+  {"error": "Agent not found: ''"}
+  Error: Failed to get agent: Agent not found: ''
+  
+  '''
+# ---
+# name: TestDynamicCommandExecution.test_command_execution[agent_error_malformed_agent_id_text_text]
+  '''
+  Agent with ID '''' not found
+  Error querying Dagster Plus API: Agent not found: ''
+  Error: Failed to get agent: Agent not found: ''
+  
+  '''
+# ---
+# name: TestDynamicCommandExecution.test_command_execution[agent_success_agent_version_metadata_json]
+  dict({
+    'agent_label': None,
+    'id': 'da7da2bb-33eb-4ce1-93ef-1a92e6737236',
+    'last_heartbeat_time': 1758118915.5946717,
+    'metadata': list([
+      dict({
+        'key': 'version',
+        'value': '"1.5.1"',
+      }),
+      dict({
+        'key': 'type',
+        'value': '"K8sUserCodeLauncher"',
+      }),
+      dict({
+        'key': 'queues',
+        'value': '["default queue"]',
+      }),
+    ]),
+    'status': 'RUNNING',
+  })
+# ---
+# name: TestDynamicCommandExecution.test_command_execution[agent_success_agent_with_metadata_json]
+  dict({
+    'agent_label': None,
+    'id': '858fd654-d0b5-477c-ac1a-c63db56246b7',
+    'last_heartbeat_time': 1758118924.6589644,
+    'metadata': list([
+      dict({
+        'key': 'utilization_metrics',
+        'value': '{}',
+      }),
+      dict({
+        'key': 'version',
+        'value': '"1.11.10"',
+      }),
+      dict({
+        'key': 'type',
+        'value': '"K8sUserCodeLauncher"',
+      }),
+      dict({
+        'key': 'queues',
+        'value': '["default queue"]',
+      }),
+    ]),
+    'status': 'RUNNING',
+  })
+# ---
+# name: TestDynamicCommandExecution.test_command_execution[agent_success_agent_without_label_text_text]
+  '''
+  Label: Agent da7da2bb
+  ID: da7da2bb-33eb-4ce1-93ef-1a92e6737236
+  Status: RUNNING
+  Last Heartbeat: 2025-09-17 14:21:55
+  
+  Metadata:
+    version: "1.5.1"
+    type: "K8sUserCodeLauncher"
+    queues: ["default queue"]
+  
+  '''
+# ---
+# name: TestDynamicCommandExecution.test_command_execution[agent_success_multiple_agents_json]
+  dict({
+    'items': list([
+      dict({
+        'agent_label': None,
+        'id': '858fd654-d0b5-477c-ac1a-c63db56246b7',
+        'last_heartbeat_time': 1758118924.6589644,
+        'metadata': list([
+          dict({
+            'key': 'utilization_metrics',
+            'value': '{}',
+          }),
+          dict({
+            'key': 'version',
+            'value': '"1.11.10"',
+          }),
+          dict({
+            'key': 'type',
+            'value': '"K8sUserCodeLauncher"',
+          }),
+          dict({
+            'key': 'queues',
+            'value': '["default queue"]',
+          }),
+        ]),
+        'status': 'RUNNING',
+      }),
+      dict({
+        'agent_label': None,
+        'id': 'da7da2bb-33eb-4ce1-93ef-1a92e6737236',
+        'last_heartbeat_time': 1758118915.5946717,
+        'metadata': list([
+          dict({
+            'key': 'version',
+            'value': '"1.5.1"',
+          }),
+          dict({
+            'key': 'type',
+            'value': '"K8sUserCodeLauncher"',
+          }),
+          dict({
+            'key': 'queues',
+            'value': '["default queue"]',
+          }),
+        ]),
+        'status': 'RUNNING',
+      }),
+    ]),
+    'total': 2,
+  })
+# ---
+# name: TestDynamicCommandExecution.test_command_execution[agent_success_multiple_agents_text_text]
+  '''
+  Label: Agent 858fd654
+  ID: 858fd654-d0b5-477c-ac1a-c63db56246b7
+  Status: RUNNING
+  Last Heartbeat: 2025-09-17 14:22:04
+  
+  Label: Agent da7da2bb
+  ID: da7da2bb-33eb-4ce1-93ef-1a92e6737236
+  Status: RUNNING
+  Last Heartbeat: 2025-09-17 14:21:55
+  
+  '''
+# ---
+# name: TestDynamicCommandExecution.test_command_execution[agent_success_running_agent_json]
+  dict({
+    'agent_label': None,
+    'id': '858fd654-d0b5-477c-ac1a-c63db56246b7',
+    'last_heartbeat_time': 1758118924.6589644,
+    'metadata': list([
+      dict({
+        'key': 'utilization_metrics',
+        'value': '{}',
+      }),
+      dict({
+        'key': 'version',
+        'value': '"1.11.10"',
+      }),
+      dict({
+        'key': 'type',
+        'value': '"K8sUserCodeLauncher"',
+      }),
+      dict({
+        'key': 'queues',
+        'value': '["default queue"]',
+      }),
+    ]),
+    'status': 'RUNNING',
+  })
+# ---
+# name: TestDynamicCommandExecution.test_command_execution[agent_success_running_agent_text_text]
+  '''
+  Label: Agent 858fd654
+  ID: 858fd654-d0b5-477c-ac1a-c63db56246b7
+  Status: RUNNING
+  Last Heartbeat: 2025-09-17 14:22:04
+  
+  Metadata:
+    utilization_metrics: {}
+    version: "1.11.10"
+    type: "K8sUserCodeLauncher"
+    queues: ["default queue"]
+  
+  '''
+# ---
+# name: TestDynamicCommandExecution.test_command_execution[agent_success_second_agent_json_json]
+  dict({
+    'agent_label': None,
+    'id': 'da7da2bb-33eb-4ce1-93ef-1a92e6737236',
+    'last_heartbeat_time': 1758118915.5946717,
+    'metadata': list([
+      dict({
+        'key': 'version',
+        'value': '"1.5.1"',
+      }),
+      dict({
+        'key': 'type',
+        'value': '"K8sUserCodeLauncher"',
+      }),
+      dict({
+        'key': 'queues',
+        'value': '["default queue"]',
+      }),
+    ]),
+    'status': 'RUNNING',
+  })
+# ---
+# name: TestDynamicCommandExecution.test_command_execution[agent_success_second_agent_text_text]
+  '''
+  Label: Agent da7da2bb
+  ID: da7da2bb-33eb-4ce1-93ef-1a92e6737236
+  Status: RUNNING
+  Last Heartbeat: 2025-09-17 14:21:55
+  
+  Metadata:
+    version: "1.5.1"
+    type: "K8sUserCodeLauncher"
+    queues: ["default queue"]
+  
+  '''
+# ---
+# name: TestDynamicCommandExecution.test_command_execution[agent_success_single_agent_json]
+  dict({
+    'agent_label': None,
+    'id': '858fd654-d0b5-477c-ac1a-c63db56246b7',
+    'last_heartbeat_time': 1758118924.6589644,
+    'metadata': list([
+      dict({
+        'key': 'utilization_metrics',
+        'value': '{}',
+      }),
+      dict({
+        'key': 'version',
+        'value': '"1.11.10"',
+      }),
+      dict({
+        'key': 'type',
+        'value': '"K8sUserCodeLauncher"',
+      }),
+      dict({
+        'key': 'queues',
+        'value': '["default queue"]',
+      }),
+    ]),
+    'status': 'RUNNING',
+  })
+# ---
+# name: TestDynamicCommandExecution.test_command_execution[agent_success_single_agent_text_text]
+  '''
+  Label: Agent 858fd654
+  ID: 858fd654-d0b5-477c-ac1a-c63db56246b7
+  Status: RUNNING
+  Last Heartbeat: 2025-09-17 14:22:04
+  
+  Metadata:
+    utilization_metrics: {}
+    version: "1.11.10"
+    type: "K8sUserCodeLauncher"
+    queues: ["default queue"]
+  
+  '''
+# ---
 # name: TestDynamicCommandExecution.test_command_execution[asset_error_asset_not_found_json]
   '''
   {"error": "Asset not found: nonexistent-asset"}
