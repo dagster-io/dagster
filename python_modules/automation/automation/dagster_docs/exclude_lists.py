@@ -26,6 +26,8 @@ EXCLUDE_MISSING_RST = {
     "dagster.components.scaffold.scaffold.Scaffolder",
     "dagster.components.lib.sql_component.sql_component.SqlComponent",
     "dagster.components.core.component_tree.ComponentTree",
+    "dagster.components.testing.create_defs_folder_sandbox",
+    "dagster.components.testing.DefsFolderSandbox",
     # Core internal functionality
     "dagster._core.definitions.definitions_class.create_repository_using_definitions_args",
     # Core storage and compute management - internal functionality
