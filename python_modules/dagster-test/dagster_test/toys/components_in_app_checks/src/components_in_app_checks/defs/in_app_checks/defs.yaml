@@ -1,0 +1,11 @@
+type: components_in_app_checks.components.in_app_check.InAppCheck
+
+attributes:
+  name: first_component_check
+
+---
+
+type: components_in_app_checks.components.in_app_check.InAppCheck
+
+attributes:
+  name: second_component_check

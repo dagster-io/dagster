@@ -149,11 +149,14 @@ class ComponentTree(IHaveNew):
 
         root_module_name = project.get("root_module")
         defs_module_name = project.get("defs_module")
+        print(f"HERE THE DEFS MODULE NAME IS: {defs_module_name}")
+        print(f"HERE THE ROOT MODULE NAME IS: {root_module_name}")
         check.invariant(
             defs_module_name or root_module_name,
             f"Either defs_module or root_module must be set in the project config {root_config_path}",
         )
         defs_module_name = get_canonical_defs_module_name(defs_module_name, root_module_name)
+        print(f"HERE THE DEFS MODULE NAME IS: {defs_module_name}")
 
         defs_module = importlib.import_module(defs_module_name)
 
