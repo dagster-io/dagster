@@ -4,7 +4,12 @@ These tests focus on testing pure functions that process data without requiring
 GraphQL client mocking or external dependencies.
 """
 
-from dagster_dg_cli.api_layer.schemas.agent import Agent, AgentList, AgentMetadataEntry, AgentStatus
+from dagster_dg_cli.api_layer.schemas.agent import (
+    DgApiAgent,
+    DgApiAgentList,
+    DgApiAgentMetadataEntry,
+    DgApiAgentStatus,
+)
 from dagster_dg_cli.cli.api.formatters import format_agent, format_agents
 
 
@@ -14,50 +19,50 @@ class TestFormatAgents:
     def _create_sample_agent_list(self):
         """Create sample AgentList for testing."""
         agents = [
-            Agent(
+            DgApiAgent(
                 id="agent-1-uuid-12345",
                 agent_label="Production Agent",
-                status=AgentStatus.RUNNING,
+                status=DgApiAgentStatus.RUNNING,
                 last_heartbeat_time=1641046800.0,  # 2022-01-01 14:20:00 UTC (midday to avoid timezone edge cases)
                 metadata=[
-                    AgentMetadataEntry(key="version", value="1.2.3"),
-                    AgentMetadataEntry(key="location", value="us-east-1"),
+                    DgApiAgentMetadataEntry(key="version", value="1.2.3"),
+                    DgApiAgentMetadataEntry(key="location", value="us-east-1"),
                 ],
             ),
-            Agent(
+            DgApiAgent(
                 id="agent-2-uuid-67890",
                 agent_label=None,  # No label - should fall back to ID display
-                status=AgentStatus.STOPPED,
+                status=DgApiAgentStatus.STOPPED,
                 last_heartbeat_time=None,
                 metadata=[],
             ),
-            Agent(
+            DgApiAgent(
                 id="agent-3-uuid-abcdef",
                 agent_label="Staging Agent",
-                status=AgentStatus.UNHEALTHY,
+                status=DgApiAgentStatus.UNHEALTHY,
                 last_heartbeat_time=1641046860.0,  # 2022-01-01 14:21:00 UTC
                 metadata=[
-                    AgentMetadataEntry(key="environment", value="staging"),
+                    DgApiAgentMetadataEntry(key="environment", value="staging"),
                 ],
             ),
         ]
-        return AgentList(items=agents, total=3)
+        return DgApiAgentList(items=agents, total=3)
 
     def _create_empty_agent_list(self):
         """Create empty AgentList for testing."""
-        return AgentList(items=[], total=0)
+        return DgApiAgentList(items=[], total=0)
 
     def _create_single_agent(self):
         """Create single Agent for testing."""
-        return Agent(
+        return DgApiAgent(
             id="single-agent-uuid-xyz",
             agent_label="Development Agent",
-            status=AgentStatus.RUNNING,
+            status=DgApiAgentStatus.RUNNING,
             last_heartbeat_time=1641046800.0,
             metadata=[
-                AgentMetadataEntry(key="owner", value="dev-team"),
-                AgentMetadataEntry(key="cpu_limit", value="2"),
-                AgentMetadataEntry(key="memory_limit", value="4Gi"),
+                DgApiAgentMetadataEntry(key="owner", value="dev-team"),
+                DgApiAgentMetadataEntry(key="cpu_limit", value="2"),
+                DgApiAgentMetadataEntry(key="memory_limit", value="4Gi"),
             ],
         )
 
@@ -124,10 +129,10 @@ class TestFormatAgents:
         """Test formatting agent with no metadata."""
         from dagster_shared.utils.timing import fixed_timezone
 
-        agent = Agent(
+        agent = DgApiAgent(
             id="simple-agent-uuid",
             agent_label="Simple Agent",
-            status=AgentStatus.NOT_RUNNING,
+            status=DgApiAgentStatus.NOT_RUNNING,
             last_heartbeat_time=None,
             metadata=[],
         )
@@ -140,13 +145,13 @@ class TestFormatAgents:
         """Test formatting agent with no label (should use ID fallback)."""
         from dagster_shared.utils.timing import fixed_timezone
 
-        agent = Agent(
+        agent = DgApiAgent(
             id="no-label-agent-uuid-123456789",
             agent_label=None,
-            status=AgentStatus.UNKNOWN,
+            status=DgApiAgentStatus.UNKNOWN,
             last_heartbeat_time=1641046920.0,  # 2022-01-01 14:22:00 UTC
             metadata=[
-                AgentMetadataEntry(key="type", value="serverless"),
+                DgApiAgentMetadataEntry(key="type", value="serverless"),
             ],
         )
         with fixed_timezone("UTC"):
@@ -167,19 +172,19 @@ class TestAgentDataProcessing:
     def test_agent_creation_with_all_statuses(self, snapshot):
         """Test creating agents with all possible status values."""
         agents = [
-            Agent(
+            DgApiAgent(
                 id=f"agent-{status.value.lower()}-uuid",
                 agent_label=f"Agent {status.value.title()}",
                 status=status,
-                last_heartbeat_time=1641046800.0 if status == AgentStatus.RUNNING else None,
+                last_heartbeat_time=1641046800.0 if status == DgApiAgentStatus.RUNNING else None,
                 metadata=[
-                    AgentMetadataEntry(key="status_test", value=status.value),
+                    DgApiAgentMetadataEntry(key="status_test", value=status.value),
                 ],
             )
-            for status in AgentStatus
+            for status in DgApiAgentStatus
         ]
 
-        agent_list = AgentList(items=agents, total=len(agents))
+        agent_list = DgApiAgentList(items=agents, total=len(agents))
 
         # Test JSON serialization works correctly for all statuses
         result = agent_list.model_dump_json(indent=2)
@@ -190,15 +195,15 @@ class TestAgentDataProcessing:
 
     def test_agent_metadata_handling(self):
         """Test agent metadata entry creation and access."""
-        agent = Agent(
+        agent = DgApiAgent(
             id="metadata-test-agent",
             agent_label="Metadata Test",
-            status=AgentStatus.RUNNING,
+            status=DgApiAgentStatus.RUNNING,
             last_heartbeat_time=1641046800.0,
             metadata=[
-                AgentMetadataEntry(key="version", value="1.0.0"),
-                AgentMetadataEntry(key="environment", value="production"),
-                AgentMetadataEntry(key="region", value="us-west-2"),
+                DgApiAgentMetadataEntry(key="version", value="1.0.0"),
+                DgApiAgentMetadataEntry(key="environment", value="production"),
+                DgApiAgentMetadataEntry(key="region", value="us-west-2"),
             ],
         )
 
@@ -213,17 +218,17 @@ class TestAgentDataProcessing:
     def test_agent_list_total_count(self):
         """Test that AgentList properly tracks total count."""
         agents = [
-            Agent(
+            DgApiAgent(
                 id=f"agent-{i}",
                 agent_label=f"Agent {i}",
-                status=AgentStatus.RUNNING,
+                status=DgApiAgentStatus.RUNNING,
                 last_heartbeat_time=None,
                 metadata=[],
             )
             for i in range(3)
         ]
 
-        agent_list = AgentList(
+        agent_list = DgApiAgentList(
             items=agents, total=10
         )  # Total could be different from items length (pagination)
 
@@ -233,19 +238,19 @@ class TestAgentDataProcessing:
     def test_agent_id_fallback_display(self):
         """Test agent display label fallback behavior."""
         # Test with label
-        agent_with_label = Agent(
+        agent_with_label = DgApiAgent(
             id="very-long-agent-uuid-12345678901234567890",
             agent_label="Custom Label",
-            status=AgentStatus.RUNNING,
+            status=DgApiAgentStatus.RUNNING,
             last_heartbeat_time=None,
             metadata=[],
         )
 
         # Test without label
-        agent_without_label = Agent(
+        agent_without_label = DgApiAgent(
             id="very-long-agent-uuid-12345678901234567890",
             agent_label=None,
-            status=AgentStatus.RUNNING,
+            status=DgApiAgentStatus.RUNNING,
             last_heartbeat_time=None,
             metadata=[],
         )

@@ -5,7 +5,7 @@ from typing import TYPE_CHECKING, Any, Optional
 from dagster_dg_cli.utils.plus.gql_client import IGraphQLClient
 
 if TYPE_CHECKING:
-    from dagster_dg_cli.api_layer.schemas.agent import Agent, AgentList
+    from dagster_dg_cli.api_layer.schemas.agent import DgApiAgent, DgApiAgentList
 
 # GraphQL queries
 LIST_AGENTS_QUERY = """
@@ -26,7 +26,7 @@ query ListAgents {
 # Note: There's no single 'agent' query, so we use 'agents' and filter client-side
 
 
-def process_agents_response(graphql_response: dict[str, Any]) -> "AgentList":
+def process_agents_response(graphql_response: dict[str, Any]) -> "DgApiAgentList":
     """Process GraphQL response into AgentList.
 
     This is a pure function that can be easily tested without mocking GraphQL clients.
@@ -39,10 +39,10 @@ def process_agents_response(graphql_response: dict[str, Any]) -> "AgentList":
     """
     # Import pydantic models only when needed
     from dagster_dg_cli.api_layer.schemas.agent import (
-        Agent,
-        AgentList,
-        AgentMetadataEntry,
-        AgentStatus,
+        DgApiAgent,
+        DgApiAgentList,
+        DgApiAgentMetadataEntry,
+        DgApiAgentStatus,
     )
 
     agents_data = graphql_response.get("agents", [])
@@ -50,20 +50,20 @@ def process_agents_response(graphql_response: dict[str, Any]) -> "AgentList":
     agents = []
     for a in agents_data:
         metadata = [
-            AgentMetadataEntry(key=m["key"], value=m["value"]) for m in a.get("metadata", [])
+            DgApiAgentMetadataEntry(key=m["key"], value=m["value"]) for m in a.get("metadata", [])
         ]
 
         agents.append(
-            Agent(
+            DgApiAgent(
                 id=a["id"],
                 agent_label=a.get("agentLabel"),
-                status=AgentStatus[a["status"]],
+                status=DgApiAgentStatus[a["status"]],
                 last_heartbeat_time=a.get("lastHeartbeatTime"),
                 metadata=metadata,
             )
         )
 
-    return AgentList(
+    return DgApiAgentList(
         items=agents,
         total=len(agents),
     )
@@ -72,7 +72,7 @@ def process_agents_response(graphql_response: dict[str, Any]) -> "AgentList":
 def list_agents_via_graphql(
     client: IGraphQLClient,
     limit: Optional[int] = None,
-) -> "AgentList":
+) -> "DgApiAgentList":
     """Fetch agents using GraphQL.
     This is an implementation detail that can be replaced with REST calls later.
     """
@@ -91,7 +91,7 @@ def list_agents_via_graphql(
 def get_agent_via_graphql(
     client: IGraphQLClient,
     agent_id: str,
-) -> Optional["Agent"]:
+) -> Optional["DgApiAgent"]:
     """Fetch single agent using GraphQL.
     This is an implementation detail that can be replaced with REST calls later.
 

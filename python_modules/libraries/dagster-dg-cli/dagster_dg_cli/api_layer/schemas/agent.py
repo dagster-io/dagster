@@ -6,7 +6,7 @@ from typing import Optional
 from pydantic import BaseModel
 
 
-class AgentStatus(str, Enum):
+class DgApiAgentStatus(str, Enum):
     """Agent status enum for FastAPI compatibility."""
 
     RUNNING = "RUNNING"
@@ -16,28 +16,28 @@ class AgentStatus(str, Enum):
     UNKNOWN = "UNKNOWN"
 
 
-class AgentMetadataEntry(BaseModel):
+class DgApiAgentMetadataEntry(BaseModel):
     """Agent metadata key-value pair."""
 
     key: str
     value: str
 
 
-class Agent(BaseModel):
+class DgApiAgent(BaseModel):
     """Agent resource model."""
 
     id: str  # Agent IDs are strings in the GraphQL schema
     agent_label: Optional[str]  # Can be None in some cases
-    status: AgentStatus
+    status: DgApiAgentStatus
     last_heartbeat_time: Optional[float]
-    metadata: list[AgentMetadataEntry]
+    metadata: list[DgApiAgentMetadataEntry]
 
     class Config:
         from_attributes = True  # For future ORM compatibility
 
 
-class AgentList(BaseModel):
+class DgApiAgentList(BaseModel):
     """GET /api/agents response."""
 
-    items: list[Agent]
+    items: list[DgApiAgent]
     total: int
