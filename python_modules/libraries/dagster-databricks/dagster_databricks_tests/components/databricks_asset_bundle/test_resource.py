@@ -44,34 +44,130 @@ def test_load_component(
     use_new_cluster: bool,
     databricks_config_path: str,
 ):
-    mock_get_run_fn.return_value = Run(
-        run_id=11111,
-        job_id=22222,
-        state=RunState(result_state=RunResultState.SUCCESS),
-        tasks=[
-            RunTask(
-                task_key="data_processing_notebook",
-                state=RunState(result_state=RunResultState.SUCCESS),
-            ),
-            RunTask(
-                task_key="stage_documents", state=RunState(result_state=RunResultState.SUCCESS)
-            ),
-            RunTask(
-                task_key="spark_processing_jar", state=RunState(result_state=RunResultState.SUCCESS)
-            ),
-            RunTask(
-                task_key="existing_job_with_references",
-                state=RunState(result_state=RunResultState.SUCCESS),
-            ),
-            RunTask(
-                task_key="check_data_quality", state=RunState(result_state=RunResultState.SUCCESS)
-            ),
-            RunTask(
-                task_key="hello_world_spark_task",
-                state=RunState(result_state=RunResultState.SUCCESS),
-            ),
-        ],
-    )
+    mock_get_run_fn.side_effect = [
+        Run(
+            run_id=11111,
+            job_id=22222,
+            state=RunState(result_state=None),
+            tasks=[
+                RunTask(
+                    task_key="data_processing_notebook",
+                    state=RunState(result_state=None),
+                ),
+            ],
+        ),
+        Run(
+            run_id=11111,
+            job_id=22222,
+            state=RunState(result_state=RunResultState.SUCCESS),
+            tasks=[
+                RunTask(
+                    task_key="data_processing_notebook",
+                    state=RunState(result_state=RunResultState.SUCCESS),
+                ),
+            ],
+        ),
+        Run(
+            run_id=11111,
+            job_id=22222,
+            state=RunState(result_state=None),
+            tasks=[
+                RunTask(task_key="stage_documents", state=RunState(result_state=None)),
+            ],
+        ),
+        Run(
+            run_id=11111,
+            job_id=22222,
+            state=RunState(result_state=RunResultState.SUCCESS),
+            tasks=[
+                RunTask(
+                    task_key="stage_documents", state=RunState(result_state=RunResultState.SUCCESS)
+                ),
+            ],
+        ),
+        Run(
+            run_id=11111,
+            job_id=22222,
+            state=RunState(result_state=None),
+            tasks=[
+                RunTask(task_key="spark_processing_jar", state=RunState(result_state=None)),
+            ],
+        ),
+        Run(
+            run_id=11111,
+            job_id=22222,
+            state=RunState(result_state=RunResultState.SUCCESS),
+            tasks=[
+                RunTask(
+                    task_key="spark_processing_jar",
+                    state=RunState(result_state=RunResultState.SUCCESS),
+                ),
+            ],
+        ),
+        Run(
+            run_id=11111,
+            job_id=22222,
+            state=RunState(result_state=None),
+            tasks=[
+                RunTask(
+                    task_key="existing_job_with_references",
+                    state=RunState(result_state=None),
+                ),
+            ],
+        ),
+        Run(
+            run_id=11111,
+            job_id=22222,
+            state=RunState(result_state=RunResultState.SUCCESS),
+            tasks=[
+                RunTask(
+                    task_key="existing_job_with_references",
+                    state=RunState(result_state=RunResultState.SUCCESS),
+                ),
+            ],
+        ),
+        Run(
+            run_id=11111,
+            job_id=22222,
+            state=RunState(result_state=None),
+            tasks=[
+                RunTask(task_key="check_data_quality", state=RunState(result_state=None)),
+            ],
+        ),
+        Run(
+            run_id=11111,
+            job_id=22222,
+            state=RunState(result_state=RunResultState.SUCCESS),
+            tasks=[
+                RunTask(
+                    task_key="check_data_quality",
+                    state=RunState(result_state=RunResultState.SUCCESS),
+                ),
+            ],
+        ),
+        Run(
+            run_id=11111,
+            job_id=22222,
+            state=RunState(result_state=None),
+            tasks=[
+                RunTask(
+                    task_key="hello_world_spark_task",
+                    state=RunState(result_state=None),
+                ),
+            ],
+        ),
+        Run(
+            run_id=11111,
+            job_id=22222,
+            state=RunState(result_state=RunResultState.SUCCESS),
+            tasks=[
+                RunTask(
+                    task_key="hello_world_spark_task",
+                    state=RunState(result_state=RunResultState.SUCCESS),
+                ),
+            ],
+        ),
+    ]
 
     with create_defs_folder_sandbox() as sandbox:
         defs_path = sandbox.scaffold_component(
@@ -103,13 +199,23 @@ def test_load_component(
         ):
             assert isinstance(component, DatabricksAssetBundleComponent)
 
-            assets = list(defs.assets or [])
-            assert len(assets) == 1
-            databricks_assets = assets[0]
-            assert isinstance(databricks_assets, AssetsDefinition)
+            databricks_assets = list(defs.assets or [])
+            assert len(databricks_assets) == 6
+            databricks_asset_keys_list = [
+                databricks_asset_key
+                for databricks_asset in databricks_assets
+                for databricks_asset_key in databricks_asset.keys
+            ]
+            assert len(databricks_asset_keys_list) == 6
+            databricks_asset_keys_set = set(databricks_asset_keys_list)
+            assert len(databricks_asset_keys_list) == len(databricks_asset_keys_set)
+            assert all(
+                isinstance(databricks_asset, AssetsDefinition)
+                for databricks_asset in databricks_assets
+            )
 
             result = materialize(
-                [databricks_assets],
+                databricks_assets,
                 resources={"databricks": component.workspace},
             )
             assert result.success
@@ -123,7 +229,7 @@ def test_load_component(
                 asset_materialization.asset_key for asset_materialization in asset_materializations
             }
             assert len(materialized_asset_keys) == 6
-            assert databricks_assets.keys == materialized_asset_keys
+            assert databricks_asset_keys_set == materialized_asset_keys
             assert mock_submit_task.call_count == 6
 
             # task_key is expected in every submit tasks
