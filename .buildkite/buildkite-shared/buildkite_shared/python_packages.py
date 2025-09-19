@@ -4,9 +4,7 @@
 import logging
 import subprocess
 
-# TODO: core doesn't exist in python 3.12, so remove this once we've migrated to setuptools
-from distutils import core as distutils_core  # pyright: ignore[reportAttributeAccessIssue]
-from importlib import reload
+from setuptools import sandbox
 from pathlib import Path
 from typing import Optional
 
@@ -36,12 +34,9 @@ class PythonPackage:
         self.directory = setup_path
 
         if (setup_path / "setup.py").exists():
-            # run_setup stores state in a global variable. Reload the module
-            # each time we use it - otherwise we'll get the previous invocation's
-            # distribution if our setup.py doesn't implement setup() correctly
-            reload(distutils_core)
-
-            distribution = distutils_core.run_setup(str(setup_path / "setup.py"), stop_after="init")
+            # run_setup stores state in a global variable. We use setuptools.sandbox
+            # which handles cleanup automatically, replacing the deprecated distutils.core
+            distribution = sandbox.run_setup(str(setup_path / "setup.py"), stop_after="init")
 
             self._install_requires = distribution.install_requires  # type: ignore[attr-defined]
             self._extras_require = distribution.extras_require  # type: ignore[attr-defined]

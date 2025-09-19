@@ -2,6 +2,7 @@
 import json
 import os
 import random
+import shutil
 import subprocess
 from collections.abc import Mapping, Sequence
 from typing import Any, Optional
@@ -32,11 +33,9 @@ def check_output(*args, **kwargs):
 
 
 def which_(exe):
-    """Uses distutils to look for an executable, mimicking unix which."""
-    from distutils import spawn
-
-    # https://github.com/PyCQA/pylint/issues/73
-    return spawn.find_executable(exe)
+    """Uses shutil to look for an executable, mimicking unix which."""
+    # Replaced distutils.spawn with shutil.which for Python 3.12+ compatibility
+    return shutil.which(exe)
 
 
 def get_test_namespace(prefix="dagster-test"):
