@@ -186,7 +186,7 @@ def test_load_component(
             assert component.compute_config == expected_resolved_compute_config
 
             assets = list(defs.assets or [])
-            assert len(assets) == 1
+            assert len(assets) == 6
             databricks_assets = assets[0]
             assert isinstance(databricks_assets, AssetsDefinition)
 
