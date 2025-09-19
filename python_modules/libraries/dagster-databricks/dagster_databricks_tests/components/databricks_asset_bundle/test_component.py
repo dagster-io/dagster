@@ -174,7 +174,7 @@ def test_load_component(
                         "host": TEST_DATABRICKS_WORKSPACE_HOST,
                         "token": TEST_DATABRICKS_WORKSPACE_TOKEN,
                     },
-                    "asset_specs_by_task_key": custom_asset_specs,
+                    "assets_by_task_key": custom_asset_specs,
                 },
             },
         )

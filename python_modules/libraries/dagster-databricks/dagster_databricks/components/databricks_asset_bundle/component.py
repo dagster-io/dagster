@@ -146,7 +146,7 @@ class DatabricksAssetBundleComponent(Component, Resolvable):
             ],
         ),
     ] = None
-    asset_specs_by_task_key: Optional[dict[str, list[ResolvedAssetSpec]]] = None
+    assets_by_task_key: Optional[dict[str, list[ResolvedAssetSpec]]] = None
 
     @cached_property
     def databricks_config(self) -> DatabricksConfig:
@@ -159,7 +159,7 @@ class DatabricksAssetBundleComponent(Component, Resolvable):
             task_key: self.get_asset_spec(task=task) for task_key, task in tasks_by_task_key.items()
         }
 
-        provided_asset_specs_by_task_key = self.asset_specs_by_task_key or {}
+        provided_asset_specs_by_task_key = self.assets_by_task_key or {}
 
         provided_task_keys = provided_asset_specs_by_task_key.keys()
         missing_task_keys = tasks_by_task_key.keys() - provided_task_keys
