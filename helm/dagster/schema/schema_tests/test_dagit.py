@@ -331,6 +331,25 @@ def test_webserver_log_level(deployment_template: HelmTemplate):
     assert "--log-level" not in command
 
 
+def test_webserver_log_format(deployment_template: HelmTemplate):
+    log_format = "json"
+    helm_values = DagsterHelmValues.construct(
+        dagsterWebserver=Webserver.construct(logFormat=log_format)
+    )
+
+    deployments = deployment_template.render(helm_values)
+    command = " ".join(deployments[0].spec.template.spec.containers[0].command)
+
+    assert f"--log-format {log_format}" in command
+
+    helm_values = DagsterHelmValues.construct(dagsterWebserver=Webserver.construct())
+
+    deployments = deployment_template.render(helm_values)
+    command = " ".join(deployments[0].spec.template.spec.containers[0].command)
+
+    assert "--log-format" not in command
+
+
 def test_webserver_labels(deployment_template: HelmTemplate):
     deployment_labels = {"deployment_label": "label"}
     pod_labels = {"pod_label": "label"}
