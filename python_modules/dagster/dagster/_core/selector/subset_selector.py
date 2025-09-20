@@ -237,12 +237,12 @@ def fetch_sources(
     def has_upstream_within_selection(key: AssetKey) -> bool:
         if key not in dp:
             dp[key] = any(
-                parent_node in within_selection or has_upstream_within_selection(parent_node)
-                for parent_node in graph.get(key).parent_keys - {key}
+                parent_key in within_selection or has_upstream_within_selection(parent_key)
+                for parent_key in (graph.asset_dep_graph["upstream"][key] - {key})
             )
         return dp[key]
 
-    return {node for node in within_selection if not has_upstream_within_selection(node)}
+    return {key for key in within_selection if not has_upstream_within_selection(key)}
 
 
 def fetch_connected_assets_definitions(
