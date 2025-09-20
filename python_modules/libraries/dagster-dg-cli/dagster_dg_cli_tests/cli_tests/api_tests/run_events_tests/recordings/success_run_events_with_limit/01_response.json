@@ -1,0 +1,99 @@
+{
+  "logsForRun": {
+    "__typename": "EventConnection",
+    "cursor": "eyJ0eXBlIjogIlNUT1JBR0VfSUQiLCAidmFsdWUiOiA0NzI2NzMyMzQ2OH0=",
+    "events": [
+      {
+        "__typename": "AssetMaterializationPlannedEvent",
+        "eventType": "ASSET_MATERIALIZATION_PLANNED",
+        "level": "DEBUG",
+        "message": "__ASSET_JOB intends to materialize asset [\"dim_customers\"]",
+        "runId": "2e562bd3-7e72-4448-9f05-32bad2ea8046",
+        "stepKey": "dim_customers",
+        "timestamp": "1757703683753"
+      },
+      {
+        "__typename": "AssetMaterializationPlannedEvent",
+        "eventType": "ASSET_MATERIALIZATION_PLANNED",
+        "level": "DEBUG",
+        "message": "__ASSET_JOB intends to materialize asset [\"fct_inventory\"]",
+        "runId": "2e562bd3-7e72-4448-9f05-32bad2ea8046",
+        "stepKey": "fct_inventory",
+        "timestamp": "1757703683762"
+      },
+      {
+        "__typename": "AssetMaterializationPlannedEvent",
+        "eventType": "ASSET_MATERIALIZATION_PLANNED",
+        "level": "DEBUG",
+        "message": "__ASSET_JOB intends to materialize asset [\"fct_orders\"]",
+        "runId": "2e562bd3-7e72-4448-9f05-32bad2ea8046",
+        "stepKey": "fct_orders",
+        "timestamp": "1757703683769"
+      },
+      {
+        "__typename": "AssetMaterializationPlannedEvent",
+        "eventType": "ASSET_MATERIALIZATION_PLANNED",
+        "level": "DEBUG",
+        "message": "__ASSET_JOB intends to materialize asset [\"fct_payments\"]",
+        "runId": "2e562bd3-7e72-4448-9f05-32bad2ea8046",
+        "stepKey": "fct_payments",
+        "timestamp": "1757703683777"
+      },
+      {
+        "__typename": "AssetMaterializationPlannedEvent",
+        "eventType": "ASSET_MATERIALIZATION_PLANNED",
+        "level": "DEBUG",
+        "message": "__ASSET_JOB intends to materialize asset [\"fct_suppliers\"]",
+        "runId": "2e562bd3-7e72-4448-9f05-32bad2ea8046",
+        "stepKey": "fct_suppliers",
+        "timestamp": "1757703683784"
+      },
+      {
+        "__typename": "AssetMaterializationPlannedEvent",
+        "eventType": "ASSET_MATERIALIZATION_PLANNED",
+        "level": "DEBUG",
+        "message": "__ASSET_JOB intends to materialize asset [\"fct_warehouses\"]",
+        "runId": "2e562bd3-7e72-4448-9f05-32bad2ea8046",
+        "stepKey": "fct_warehouses",
+        "timestamp": "1757703683792"
+      },
+      {
+        "__typename": "AssetMaterializationPlannedEvent",
+        "eventType": "ASSET_MATERIALIZATION_PLANNED",
+        "level": "DEBUG",
+        "message": "__ASSET_JOB intends to materialize asset [\"stg_customers\"]",
+        "runId": "2e562bd3-7e72-4448-9f05-32bad2ea8046",
+        "stepKey": "stg_customers",
+        "timestamp": "1757703683800"
+      },
+      {
+        "__typename": "AssetMaterializationPlannedEvent",
+        "eventType": "ASSET_MATERIALIZATION_PLANNED",
+        "level": "DEBUG",
+        "message": "__ASSET_JOB intends to materialize asset [\"stg_inventory_items\"]",
+        "runId": "2e562bd3-7e72-4448-9f05-32bad2ea8046",
+        "stepKey": "stg_inventory_items",
+        "timestamp": "1757703683808"
+      },
+      {
+        "__typename": "AssetMaterializationPlannedEvent",
+        "eventType": "ASSET_MATERIALIZATION_PLANNED",
+        "level": "DEBUG",
+        "message": "__ASSET_JOB intends to materialize asset [\"stg_orders\"]",
+        "runId": "2e562bd3-7e72-4448-9f05-32bad2ea8046",
+        "stepKey": "stg_orders",
+        "timestamp": "1757703683816"
+      },
+      {
+        "__typename": "AssetMaterializationPlannedEvent",
+        "eventType": "ASSET_MATERIALIZATION_PLANNED",
+        "level": "DEBUG",
+        "message": "__ASSET_JOB intends to materialize asset [\"stg_payments\"]",
+        "runId": "2e562bd3-7e72-4448-9f05-32bad2ea8046",
+        "stepKey": "stg_payments",
+        "timestamp": "1757703683824"
+      }
+    ],
+    "hasMore": true
+  }
+}

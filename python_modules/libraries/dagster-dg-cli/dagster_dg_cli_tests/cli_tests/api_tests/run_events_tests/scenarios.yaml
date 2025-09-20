@@ -1,0 +1,28 @@
+success_single_run_events:
+  command: "dg api run-events get 2e562bd3-7e72-4448-9f05-32bad2ea8046 --json"
+
+success_single_run_events_text:
+  command: "dg api run-events get 2e562bd3-7e72-4448-9f05-32bad2ea8046"
+
+success_run_events_with_limit:
+  command: "dg api run-events get 2e562bd3-7e72-4448-9f05-32bad2ea8046 --limit 10 --json"
+
+success_run_events_filter_by_type:
+  command: "dg api run-events get 2e562bd3-7e72-4448-9f05-32bad2ea8046 --type RUN_START,RUN_SUCCESS --json"
+
+success_run_events_filter_by_step:
+  command: "dg api run-events get 2e562bd3-7e72-4448-9f05-32bad2ea8046 --step my_step --json"
+
+success_failed_run_events:
+  command: "dg api run-events get 4db16a22-4124-4d43-bd4c-ea0aeaa78172 --json"
+
+success_empty_run_events:
+  command: "dg api run-events get e0248005-fc38-4e55-a9fb-472c8694303b --json"
+
+error_run_not_found:
+  command: "dg api run-events get nonexistent-run-id"
+  has_recording: false
+
+error_invalid_run_id:
+  command: "dg api run-events get '' --json"
+  has_recording: false

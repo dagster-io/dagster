@@ -1,0 +1,909 @@
+{
+  "logsForRun": {
+    "__typename": "EventConnection",
+    "cursor": "eyJ0eXBlIjogIlNUT1JBR0VfSUQiLCAidmFsdWUiOiA0NzI2NzM2ODI1NX0=",
+    "events": [
+      {
+        "__typename": "AssetMaterializationPlannedEvent",
+        "eventType": "ASSET_MATERIALIZATION_PLANNED",
+        "level": "DEBUG",
+        "message": "__ASSET_JOB intends to materialize asset [\"dim_customers\"]",
+        "runId": "2e562bd3-7e72-4448-9f05-32bad2ea8046",
+        "stepKey": "dim_customers",
+        "timestamp": "1757703683753"
+      },
+      {
+        "__typename": "AssetMaterializationPlannedEvent",
+        "eventType": "ASSET_MATERIALIZATION_PLANNED",
+        "level": "DEBUG",
+        "message": "__ASSET_JOB intends to materialize asset [\"fct_inventory\"]",
+        "runId": "2e562bd3-7e72-4448-9f05-32bad2ea8046",
+        "stepKey": "fct_inventory",
+        "timestamp": "1757703683762"
+      },
+      {
+        "__typename": "AssetMaterializationPlannedEvent",
+        "eventType": "ASSET_MATERIALIZATION_PLANNED",
+        "level": "DEBUG",
+        "message": "__ASSET_JOB intends to materialize asset [\"fct_orders\"]",
+        "runId": "2e562bd3-7e72-4448-9f05-32bad2ea8046",
+        "stepKey": "fct_orders",
+        "timestamp": "1757703683769"
+      },
+      {
+        "__typename": "AssetMaterializationPlannedEvent",
+        "eventType": "ASSET_MATERIALIZATION_PLANNED",
+        "level": "DEBUG",
+        "message": "__ASSET_JOB intends to materialize asset [\"fct_payments\"]",
+        "runId": "2e562bd3-7e72-4448-9f05-32bad2ea8046",
+        "stepKey": "fct_payments",
+        "timestamp": "1757703683777"
+      },
+      {
+        "__typename": "AssetMaterializationPlannedEvent",
+        "eventType": "ASSET_MATERIALIZATION_PLANNED",
+        "level": "DEBUG",
+        "message": "__ASSET_JOB intends to materialize asset [\"fct_suppliers\"]",
+        "runId": "2e562bd3-7e72-4448-9f05-32bad2ea8046",
+        "stepKey": "fct_suppliers",
+        "timestamp": "1757703683784"
+      },
+      {
+        "__typename": "AssetMaterializationPlannedEvent",
+        "eventType": "ASSET_MATERIALIZATION_PLANNED",
+        "level": "DEBUG",
+        "message": "__ASSET_JOB intends to materialize asset [\"fct_warehouses\"]",
+        "runId": "2e562bd3-7e72-4448-9f05-32bad2ea8046",
+        "stepKey": "fct_warehouses",
+        "timestamp": "1757703683792"
+      },
+      {
+        "__typename": "AssetMaterializationPlannedEvent",
+        "eventType": "ASSET_MATERIALIZATION_PLANNED",
+        "level": "DEBUG",
+        "message": "__ASSET_JOB intends to materialize asset [\"stg_customers\"]",
+        "runId": "2e562bd3-7e72-4448-9f05-32bad2ea8046",
+        "stepKey": "stg_customers",
+        "timestamp": "1757703683800"
+      },
+      {
+        "__typename": "AssetMaterializationPlannedEvent",
+        "eventType": "ASSET_MATERIALIZATION_PLANNED",
+        "level": "DEBUG",
+        "message": "__ASSET_JOB intends to materialize asset [\"stg_inventory_items\"]",
+        "runId": "2e562bd3-7e72-4448-9f05-32bad2ea8046",
+        "stepKey": "stg_inventory_items",
+        "timestamp": "1757703683808"
+      },
+      {
+        "__typename": "AssetMaterializationPlannedEvent",
+        "eventType": "ASSET_MATERIALIZATION_PLANNED",
+        "level": "DEBUG",
+        "message": "__ASSET_JOB intends to materialize asset [\"stg_orders\"]",
+        "runId": "2e562bd3-7e72-4448-9f05-32bad2ea8046",
+        "stepKey": "stg_orders",
+        "timestamp": "1757703683816"
+      },
+      {
+        "__typename": "AssetMaterializationPlannedEvent",
+        "eventType": "ASSET_MATERIALIZATION_PLANNED",
+        "level": "DEBUG",
+        "message": "__ASSET_JOB intends to materialize asset [\"stg_payments\"]",
+        "runId": "2e562bd3-7e72-4448-9f05-32bad2ea8046",
+        "stepKey": "stg_payments",
+        "timestamp": "1757703683824"
+      },
+      {
+        "__typename": "AssetMaterializationPlannedEvent",
+        "eventType": "ASSET_MATERIALIZATION_PLANNED",
+        "level": "DEBUG",
+        "message": "__ASSET_JOB intends to materialize asset [\"stg_suppliers\"]",
+        "runId": "2e562bd3-7e72-4448-9f05-32bad2ea8046",
+        "stepKey": "stg_suppliers",
+        "timestamp": "1757703683831"
+      },
+      {
+        "__typename": "AssetMaterializationPlannedEvent",
+        "eventType": "ASSET_MATERIALIZATION_PLANNED",
+        "level": "DEBUG",
+        "message": "__ASSET_JOB intends to materialize asset [\"stg_warehouses\"]",
+        "runId": "2e562bd3-7e72-4448-9f05-32bad2ea8046",
+        "stepKey": "stg_warehouses",
+        "timestamp": "1757703683838"
+      },
+      {
+        "__typename": "AssetMaterializationPlannedEvent",
+        "eventType": "ASSET_MATERIALIZATION_PLANNED",
+        "level": "DEBUG",
+        "message": "__ASSET_JOB intends to materialize asset [\"mwaa_hooli_airflow_02\", \"dag\", \"wbr_reporting\"]",
+        "runId": "2e562bd3-7e72-4448-9f05-32bad2ea8046",
+        "stepKey": "wbr_reporting",
+        "timestamp": "1757703683846"
+      },
+      {
+        "__typename": "AssetMaterializationPlannedEvent",
+        "eventType": "ASSET_MATERIALIZATION_PLANNED",
+        "level": "DEBUG",
+        "message": "__ASSET_JOB intends to materialize asset [\"wbr_finance\"]",
+        "runId": "2e562bd3-7e72-4448-9f05-32bad2ea8046",
+        "stepKey": "wbr_reporting",
+        "timestamp": "1757703683853"
+      },
+      {
+        "__typename": "AssetMaterializationPlannedEvent",
+        "eventType": "ASSET_MATERIALIZATION_PLANNED",
+        "level": "DEBUG",
+        "message": "__ASSET_JOB intends to materialize asset [\"wbr_overview\"]",
+        "runId": "2e562bd3-7e72-4448-9f05-32bad2ea8046",
+        "stepKey": "wbr_reporting",
+        "timestamp": "1757703683860"
+      },
+      {
+        "__typename": "AssetMaterializationPlannedEvent",
+        "eventType": "ASSET_MATERIALIZATION_PLANNED",
+        "level": "DEBUG",
+        "message": "__ASSET_JOB intends to materialize asset [\"wbr_performance\"]",
+        "runId": "2e562bd3-7e72-4448-9f05-32bad2ea8046",
+        "stepKey": "wbr_reporting",
+        "timestamp": "1757703683867"
+      },
+      {
+        "__typename": "RunEnqueuedEvent",
+        "eventType": "RUN_ENQUEUED",
+        "level": "INFO",
+        "message": "",
+        "runId": "2e562bd3-7e72-4448-9f05-32bad2ea8046",
+        "stepKey": null,
+        "timestamp": "1757703683895"
+      },
+      {
+        "__typename": "RunStartingEvent",
+        "eventType": "RUN_STARTING",
+        "level": "INFO",
+        "message": "",
+        "runId": "2e562bd3-7e72-4448-9f05-32bad2ea8046",
+        "stepKey": null,
+        "timestamp": "1757703684349"
+      },
+      {
+        "__typename": "EngineEvent",
+        "eventType": "ENGINE_EVENT",
+        "level": "INFO",
+        "message": "Sending a request to the agent to execute steps in the user cloud",
+        "runId": "2e562bd3-7e72-4448-9f05-32bad2ea8046",
+        "stepKey": null,
+        "timestamp": "1757703684382"
+      },
+      {
+        "__typename": "EngineEvent",
+        "eventType": "ENGINE_EVENT",
+        "level": "INFO",
+        "message": "[DagsterCloudAgent] Agent 2099ced9 is launching run 2e562bd3-7e72-4448-9f05-32bad2ea8046",
+        "runId": "2e562bd3-7e72-4448-9f05-32bad2ea8046",
+        "stepKey": null,
+        "timestamp": "1757703684567"
+      },
+      {
+        "__typename": "EngineEvent",
+        "eventType": "ENGINE_EVENT",
+        "level": "INFO",
+        "message": "[CloudK8sRunLauncher] Creating Kubernetes run worker job",
+        "runId": "2e562bd3-7e72-4448-9f05-32bad2ea8046",
+        "stepKey": null,
+        "timestamp": "1757703684746"
+      },
+      {
+        "__typename": "EngineEvent",
+        "eventType": "ENGINE_EVENT",
+        "level": "INFO",
+        "message": "[CloudK8sRunLauncher] Kubernetes run worker job created",
+        "runId": "2e562bd3-7e72-4448-9f05-32bad2ea8046",
+        "stepKey": null,
+        "timestamp": "1757703684798"
+      },
+      {
+        "__typename": "EngineEvent",
+        "eventType": "ENGINE_EVENT",
+        "level": "INFO",
+        "message": "Starting run metrics thread with container_metrics_enabled=True and python_metrics_enabled=False",
+        "runId": "2e562bd3-7e72-4448-9f05-32bad2ea8046",
+        "stepKey": null,
+        "timestamp": "1757703687835"
+      },
+      {
+        "__typename": "EngineEvent",
+        "eventType": "ENGINE_EVENT",
+        "level": "INFO",
+        "message": "Started process for run (pid: 1).",
+        "runId": "2e562bd3-7e72-4448-9f05-32bad2ea8046",
+        "stepKey": null,
+        "timestamp": "1757703688484"
+      },
+      {
+        "__typename": "RunStartEvent",
+        "eventType": "RUN_START",
+        "level": "DEBUG",
+        "message": "Started execution of run for \"__ASSET_JOB\".",
+        "runId": "2e562bd3-7e72-4448-9f05-32bad2ea8046",
+        "stepKey": null,
+        "timestamp": "1757703690474"
+      },
+      {
+        "__typename": "EngineEvent",
+        "eventType": "ENGINE_EVENT",
+        "level": "DEBUG",
+        "message": "Executing steps using multiprocess executor: parent process (pid: 1)",
+        "runId": "2e562bd3-7e72-4448-9f05-32bad2ea8046",
+        "stepKey": null,
+        "timestamp": "1757703690504"
+      },
+      {
+        "__typename": "StepWorkerStartingEvent",
+        "eventType": "STEP_WORKER_STARTING",
+        "level": "DEBUG",
+        "message": "Launching subprocess for \"stg_customers\".",
+        "runId": "2e562bd3-7e72-4448-9f05-32bad2ea8046",
+        "stepKey": "stg_customers",
+        "timestamp": "1757703690613"
+      },
+      {
+        "__typename": "StepWorkerStartingEvent",
+        "eventType": "STEP_WORKER_STARTING",
+        "level": "DEBUG",
+        "message": "Launching subprocess for \"stg_inventory_items\".",
+        "runId": "2e562bd3-7e72-4448-9f05-32bad2ea8046",
+        "stepKey": "stg_inventory_items",
+        "timestamp": "1757703690655"
+      },
+      {
+        "__typename": "StepWorkerStartedEvent",
+        "eventType": "STEP_WORKER_STARTED",
+        "level": "DEBUG",
+        "message": "Executing step \"stg_inventory_items\" in subprocess.",
+        "runId": "2e562bd3-7e72-4448-9f05-32bad2ea8046",
+        "stepKey": "stg_inventory_items",
+        "timestamp": "1757703692511"
+      },
+      {
+        "__typename": "StepWorkerStartedEvent",
+        "eventType": "STEP_WORKER_STARTED",
+        "level": "DEBUG",
+        "message": "Executing step \"stg_customers\" in subprocess.",
+        "runId": "2e562bd3-7e72-4448-9f05-32bad2ea8046",
+        "stepKey": "stg_customers",
+        "timestamp": "1757703692415"
+      },
+      {
+        "__typename": "ResourceInitStartedEvent",
+        "eventType": "RESOURCE_INIT_STARTED",
+        "level": "DEBUG",
+        "message": "Starting initialization of resources [io_manager].",
+        "runId": "2e562bd3-7e72-4448-9f05-32bad2ea8046",
+        "stepKey": "stg_inventory_items",
+        "timestamp": "1757703694068"
+      },
+      {
+        "__typename": "ResourceInitSuccessEvent",
+        "eventType": "RESOURCE_INIT_SUCCESS",
+        "level": "DEBUG",
+        "message": "Finished initialization of resources [io_manager].",
+        "runId": "2e562bd3-7e72-4448-9f05-32bad2ea8046",
+        "stepKey": "stg_inventory_items",
+        "timestamp": "1757703694113"
+      },
+      {
+        "__typename": "LogsCapturedEvent",
+        "eventType": "LOGS_CAPTURED",
+        "level": "DEBUG",
+        "message": "Started capturing logs in process (pid: 16).",
+        "runId": "2e562bd3-7e72-4448-9f05-32bad2ea8046",
+        "stepKey": null,
+        "timestamp": "1757703694207"
+      },
+      {
+        "__typename": "ExecutionStepStartEvent",
+        "eventType": "STEP_START",
+        "level": "DEBUG",
+        "message": "Started execution of step \"stg_inventory_items\".",
+        "runId": "2e562bd3-7e72-4448-9f05-32bad2ea8046",
+        "stepKey": "stg_inventory_items",
+        "timestamp": "1757703694250"
+      },
+      {
+        "__typename": "ExecutionStepOutputEvent",
+        "eventType": "STEP_OUTPUT",
+        "level": "DEBUG",
+        "message": "Yielded output \"result\" of type \"Any\". (Type check passed).",
+        "runId": "2e562bd3-7e72-4448-9f05-32bad2ea8046",
+        "stepKey": "stg_inventory_items",
+        "timestamp": "1757703694325"
+      },
+      {
+        "__typename": "ResourceInitStartedEvent",
+        "eventType": "RESOURCE_INIT_STARTED",
+        "level": "DEBUG",
+        "message": "Starting initialization of resources [io_manager].",
+        "runId": "2e562bd3-7e72-4448-9f05-32bad2ea8046",
+        "stepKey": "stg_customers",
+        "timestamp": "1757703694319"
+      },
+      {
+        "__typename": "LogMessageEvent",
+        "eventType": null,
+        "level": "DEBUG",
+        "message": "Writing file at: /opt/dagster/dagster_home/storage/stg_inventory_items using PickledObjectFilesystemIOManager...",
+        "runId": "2e562bd3-7e72-4448-9f05-32bad2ea8046",
+        "stepKey": "stg_inventory_items",
+        "timestamp": "1757703694367"
+      },
+      {
+        "__typename": "ResourceInitSuccessEvent",
+        "eventType": "RESOURCE_INIT_SUCCESS",
+        "level": "DEBUG",
+        "message": "Finished initialization of resources [io_manager].",
+        "runId": "2e562bd3-7e72-4448-9f05-32bad2ea8046",
+        "stepKey": "stg_customers",
+        "timestamp": "1757703694400"
+      },
+      {
+        "__typename": "MaterializationEvent",
+        "eventType": "ASSET_MATERIALIZATION",
+        "level": "DEBUG",
+        "message": "Materialized value stg_inventory_items.",
+        "runId": "2e562bd3-7e72-4448-9f05-32bad2ea8046",
+        "stepKey": "stg_inventory_items",
+        "timestamp": "1757703694408"
+      },
+      {
+        "__typename": "LogsCapturedEvent",
+        "eventType": "LOGS_CAPTURED",
+        "level": "DEBUG",
+        "message": "Started capturing logs in process (pid: 15).",
+        "runId": "2e562bd3-7e72-4448-9f05-32bad2ea8046",
+        "stepKey": null,
+        "timestamp": "1757703694435"
+      },
+      {
+        "__typename": "ExecutionStepStartEvent",
+        "eventType": "STEP_START",
+        "level": "DEBUG",
+        "message": "Started execution of step \"stg_customers\".",
+        "runId": "2e562bd3-7e72-4448-9f05-32bad2ea8046",
+        "stepKey": "stg_customers",
+        "timestamp": "1757703694477"
+      },
+      {
+        "__typename": "HandledOutputEvent",
+        "eventType": "HANDLED_OUTPUT",
+        "level": "DEBUG",
+        "message": "Handled output \"result\" using IO manager \"io_manager\"",
+        "runId": "2e562bd3-7e72-4448-9f05-32bad2ea8046",
+        "stepKey": "stg_inventory_items",
+        "timestamp": "1757703694458"
+      },
+      {
+        "__typename": "ExecutionStepSuccessEvent",
+        "eventType": "STEP_SUCCESS",
+        "level": "DEBUG",
+        "message": "Finished execution of step \"stg_inventory_items\" in 237ms.",
+        "runId": "2e562bd3-7e72-4448-9f05-32bad2ea8046",
+        "stepKey": "stg_inventory_items",
+        "timestamp": "1757703694523"
+      },
+      {
+        "__typename": "ExecutionStepOutputEvent",
+        "eventType": "STEP_OUTPUT",
+        "level": "DEBUG",
+        "message": "Yielded output \"result\" of type \"Any\". (Type check passed).",
+        "runId": "2e562bd3-7e72-4448-9f05-32bad2ea8046",
+        "stepKey": "stg_customers",
+        "timestamp": "1757703694586"
+      },
+      {
+        "__typename": "LogMessageEvent",
+        "eventType": null,
+        "level": "DEBUG",
+        "message": "Writing file at: /opt/dagster/dagster_home/storage/stg_customers using PickledObjectFilesystemIOManager...",
+        "runId": "2e562bd3-7e72-4448-9f05-32bad2ea8046",
+        "stepKey": "stg_customers",
+        "timestamp": "1757703694644"
+      },
+      {
+        "__typename": "MaterializationEvent",
+        "eventType": "ASSET_MATERIALIZATION",
+        "level": "DEBUG",
+        "message": "Materialized value stg_customers.",
+        "runId": "2e562bd3-7e72-4448-9f05-32bad2ea8046",
+        "stepKey": "stg_customers",
+        "timestamp": "1757703694799"
+      },
+      {
+        "__typename": "HandledOutputEvent",
+        "eventType": "HANDLED_OUTPUT",
+        "level": "DEBUG",
+        "message": "Handled output \"result\" using IO manager \"io_manager\"",
+        "runId": "2e562bd3-7e72-4448-9f05-32bad2ea8046",
+        "stepKey": "stg_customers",
+        "timestamp": "1757703694882"
+      },
+      {
+        "__typename": "ExecutionStepSuccessEvent",
+        "eventType": "STEP_SUCCESS",
+        "level": "DEBUG",
+        "message": "Finished execution of step \"stg_customers\" in 409ms.",
+        "runId": "2e562bd3-7e72-4448-9f05-32bad2ea8046",
+        "stepKey": "stg_customers",
+        "timestamp": "1757703694924"
+      },
+      {
+        "__typename": "StepWorkerStartingEvent",
+        "eventType": "STEP_WORKER_STARTING",
+        "level": "DEBUG",
+        "message": "Launching subprocess for \"stg_orders\".",
+        "runId": "2e562bd3-7e72-4448-9f05-32bad2ea8046",
+        "stepKey": "stg_orders",
+        "timestamp": "1757703694998"
+      },
+      {
+        "__typename": "StepWorkerStartingEvent",
+        "eventType": "STEP_WORKER_STARTING",
+        "level": "DEBUG",
+        "message": "Launching subprocess for \"stg_payments\".",
+        "runId": "2e562bd3-7e72-4448-9f05-32bad2ea8046",
+        "stepKey": "stg_payments",
+        "timestamp": "1757703695559"
+      },
+      {
+        "__typename": "StepWorkerStartedEvent",
+        "eventType": "STEP_WORKER_STARTED",
+        "level": "DEBUG",
+        "message": "Executing step \"stg_orders\" in subprocess.",
+        "runId": "2e562bd3-7e72-4448-9f05-32bad2ea8046",
+        "stepKey": "stg_orders",
+        "timestamp": "1757703696298"
+      },
+      {
+        "__typename": "StepWorkerStartedEvent",
+        "eventType": "STEP_WORKER_STARTED",
+        "level": "DEBUG",
+        "message": "Executing step \"stg_payments\" in subprocess.",
+        "runId": "2e562bd3-7e72-4448-9f05-32bad2ea8046",
+        "stepKey": "stg_payments",
+        "timestamp": "1757703696854"
+      },
+      {
+        "__typename": "ResourceInitStartedEvent",
+        "eventType": "RESOURCE_INIT_STARTED",
+        "level": "DEBUG",
+        "message": "Starting initialization of resources [io_manager].",
+        "runId": "2e562bd3-7e72-4448-9f05-32bad2ea8046",
+        "stepKey": "stg_orders",
+        "timestamp": "1757703698002"
+      },
+      {
+        "__typename": "ResourceInitSuccessEvent",
+        "eventType": "RESOURCE_INIT_SUCCESS",
+        "level": "DEBUG",
+        "message": "Finished initialization of resources [io_manager].",
+        "runId": "2e562bd3-7e72-4448-9f05-32bad2ea8046",
+        "stepKey": "stg_orders",
+        "timestamp": "1757703698068"
+      },
+      {
+        "__typename": "LogsCapturedEvent",
+        "eventType": "LOGS_CAPTURED",
+        "level": "DEBUG",
+        "message": "Started capturing logs in process (pid: 33).",
+        "runId": "2e562bd3-7e72-4448-9f05-32bad2ea8046",
+        "stepKey": null,
+        "timestamp": "1757703698134"
+      },
+      {
+        "__typename": "ResourceInitStartedEvent",
+        "eventType": "RESOURCE_INIT_STARTED",
+        "level": "DEBUG",
+        "message": "Starting initialization of resources [io_manager].",
+        "runId": "2e562bd3-7e72-4448-9f05-32bad2ea8046",
+        "stepKey": "stg_payments",
+        "timestamp": "1757703698249"
+      },
+      {
+        "__typename": "ExecutionStepStartEvent",
+        "eventType": "STEP_START",
+        "level": "DEBUG",
+        "message": "Started execution of step \"stg_orders\".",
+        "runId": "2e562bd3-7e72-4448-9f05-32bad2ea8046",
+        "stepKey": "stg_orders",
+        "timestamp": "1757703698303"
+      },
+      {
+        "__typename": "ResourceInitSuccessEvent",
+        "eventType": "RESOURCE_INIT_SUCCESS",
+        "level": "DEBUG",
+        "message": "Finished initialization of resources [io_manager].",
+        "runId": "2e562bd3-7e72-4448-9f05-32bad2ea8046",
+        "stepKey": "stg_payments",
+        "timestamp": "1757703698365"
+      },
+      {
+        "__typename": "LogsCapturedEvent",
+        "eventType": "LOGS_CAPTURED",
+        "level": "DEBUG",
+        "message": "Started capturing logs in process (pid: 36).",
+        "runId": "2e562bd3-7e72-4448-9f05-32bad2ea8046",
+        "stepKey": null,
+        "timestamp": "1757703698408"
+      },
+      {
+        "__typename": "ExecutionStepStartEvent",
+        "eventType": "STEP_START",
+        "level": "DEBUG",
+        "message": "Started execution of step \"stg_payments\".",
+        "runId": "2e562bd3-7e72-4448-9f05-32bad2ea8046",
+        "stepKey": "stg_payments",
+        "timestamp": "1757703698562"
+      },
+      {
+        "__typename": "ExecutionStepOutputEvent",
+        "eventType": "STEP_OUTPUT",
+        "level": "DEBUG",
+        "message": "Yielded output \"result\" of type \"Any\". (Type check passed).",
+        "runId": "2e562bd3-7e72-4448-9f05-32bad2ea8046",
+        "stepKey": "stg_orders",
+        "timestamp": "1757703698455"
+      },
+      {
+        "__typename": "LogMessageEvent",
+        "eventType": null,
+        "level": "DEBUG",
+        "message": "Writing file at: /opt/dagster/dagster_home/storage/stg_orders using PickledObjectFilesystemIOManager...",
+        "runId": "2e562bd3-7e72-4448-9f05-32bad2ea8046",
+        "stepKey": "stg_orders",
+        "timestamp": "1757703698617"
+      },
+      {
+        "__typename": "ExecutionStepOutputEvent",
+        "eventType": "STEP_OUTPUT",
+        "level": "DEBUG",
+        "message": "Yielded output \"result\" of type \"Any\". (Type check passed).",
+        "runId": "2e562bd3-7e72-4448-9f05-32bad2ea8046",
+        "stepKey": "stg_payments",
+        "timestamp": "1757703698655"
+      },
+      {
+        "__typename": "LogMessageEvent",
+        "eventType": null,
+        "level": "DEBUG",
+        "message": "Writing file at: /opt/dagster/dagster_home/storage/stg_payments using PickledObjectFilesystemIOManager...",
+        "runId": "2e562bd3-7e72-4448-9f05-32bad2ea8046",
+        "stepKey": "stg_payments",
+        "timestamp": "1757703698683"
+      },
+      {
+        "__typename": "MaterializationEvent",
+        "eventType": "ASSET_MATERIALIZATION",
+        "level": "DEBUG",
+        "message": "Materialized value stg_orders.",
+        "runId": "2e562bd3-7e72-4448-9f05-32bad2ea8046",
+        "stepKey": "stg_orders",
+        "timestamp": "1757703698668"
+      },
+      {
+        "__typename": "MaterializationEvent",
+        "eventType": "ASSET_MATERIALIZATION",
+        "level": "DEBUG",
+        "message": "Materialized value stg_payments.",
+        "runId": "2e562bd3-7e72-4448-9f05-32bad2ea8046",
+        "stepKey": "stg_payments",
+        "timestamp": "1757703698713"
+      },
+      {
+        "__typename": "HandledOutputEvent",
+        "eventType": "HANDLED_OUTPUT",
+        "level": "DEBUG",
+        "message": "Handled output \"result\" using IO manager \"io_manager\"",
+        "runId": "2e562bd3-7e72-4448-9f05-32bad2ea8046",
+        "stepKey": "stg_orders",
+        "timestamp": "1757703698760"
+      },
+      {
+        "__typename": "HandledOutputEvent",
+        "eventType": "HANDLED_OUTPUT",
+        "level": "DEBUG",
+        "message": "Handled output \"result\" using IO manager \"io_manager\"",
+        "runId": "2e562bd3-7e72-4448-9f05-32bad2ea8046",
+        "stepKey": "stg_payments",
+        "timestamp": "1757703698765"
+      },
+      {
+        "__typename": "ExecutionStepSuccessEvent",
+        "eventType": "STEP_SUCCESS",
+        "level": "DEBUG",
+        "message": "Finished execution of step \"stg_orders\" in 433ms.",
+        "runId": "2e562bd3-7e72-4448-9f05-32bad2ea8046",
+        "stepKey": "stg_orders",
+        "timestamp": "1757703698819"
+      },
+      {
+        "__typename": "ExecutionStepSuccessEvent",
+        "eventType": "STEP_SUCCESS",
+        "level": "DEBUG",
+        "message": "Finished execution of step \"stg_payments\" in 236ms.",
+        "runId": "2e562bd3-7e72-4448-9f05-32bad2ea8046",
+        "stepKey": "stg_payments",
+        "timestamp": "1757703698833"
+      },
+      {
+        "__typename": "StepWorkerStartingEvent",
+        "eventType": "STEP_WORKER_STARTING",
+        "level": "DEBUG",
+        "message": "Launching subprocess for \"stg_suppliers\".",
+        "runId": "2e562bd3-7e72-4448-9f05-32bad2ea8046",
+        "stepKey": "stg_suppliers",
+        "timestamp": "1757703699447"
+      },
+      {
+        "__typename": "StepWorkerStartingEvent",
+        "eventType": "STEP_WORKER_STARTING",
+        "level": "DEBUG",
+        "message": "Launching subprocess for \"stg_warehouses\".",
+        "runId": "2e562bd3-7e72-4448-9f05-32bad2ea8046",
+        "stepKey": "stg_warehouses",
+        "timestamp": "1757703699642"
+      },
+      {
+        "__typename": "StepWorkerStartedEvent",
+        "eventType": "STEP_WORKER_STARTED",
+        "level": "DEBUG",
+        "message": "Executing step \"stg_suppliers\" in subprocess.",
+        "runId": "2e562bd3-7e72-4448-9f05-32bad2ea8046",
+        "stepKey": "stg_suppliers",
+        "timestamp": "1757703700956"
+      },
+      {
+        "__typename": "StepWorkerStartedEvent",
+        "eventType": "STEP_WORKER_STARTED",
+        "level": "DEBUG",
+        "message": "Executing step \"stg_warehouses\" in subprocess.",
+        "runId": "2e562bd3-7e72-4448-9f05-32bad2ea8046",
+        "stepKey": "stg_warehouses",
+        "timestamp": "1757703700961"
+      },
+      {
+        "__typename": "ResourceInitStartedEvent",
+        "eventType": "RESOURCE_INIT_STARTED",
+        "level": "DEBUG",
+        "message": "Starting initialization of resources [io_manager].",
+        "runId": "2e562bd3-7e72-4448-9f05-32bad2ea8046",
+        "stepKey": "stg_warehouses",
+        "timestamp": "1757703702362"
+      },
+      {
+        "__typename": "ResourceInitStartedEvent",
+        "eventType": "RESOURCE_INIT_STARTED",
+        "level": "DEBUG",
+        "message": "Starting initialization of resources [io_manager].",
+        "runId": "2e562bd3-7e72-4448-9f05-32bad2ea8046",
+        "stepKey": "stg_suppliers",
+        "timestamp": "1757703702352"
+      },
+      {
+        "__typename": "ResourceInitSuccessEvent",
+        "eventType": "RESOURCE_INIT_SUCCESS",
+        "level": "DEBUG",
+        "message": "Finished initialization of resources [io_manager].",
+        "runId": "2e562bd3-7e72-4448-9f05-32bad2ea8046",
+        "stepKey": "stg_warehouses",
+        "timestamp": "1757703702398"
+      },
+      {
+        "__typename": "ResourceInitSuccessEvent",
+        "eventType": "RESOURCE_INIT_SUCCESS",
+        "level": "DEBUG",
+        "message": "Finished initialization of resources [io_manager].",
+        "runId": "2e562bd3-7e72-4448-9f05-32bad2ea8046",
+        "stepKey": "stg_suppliers",
+        "timestamp": "1757703702409"
+      },
+      {
+        "__typename": "LogsCapturedEvent",
+        "eventType": "LOGS_CAPTURED",
+        "level": "DEBUG",
+        "message": "Started capturing logs in process (pid: 52).",
+        "runId": "2e562bd3-7e72-4448-9f05-32bad2ea8046",
+        "stepKey": null,
+        "timestamp": "1757703702459"
+      },
+      {
+        "__typename": "ExecutionStepStartEvent",
+        "eventType": "STEP_START",
+        "level": "DEBUG",
+        "message": "Started execution of step \"stg_warehouses\".",
+        "runId": "2e562bd3-7e72-4448-9f05-32bad2ea8046",
+        "stepKey": "stg_warehouses",
+        "timestamp": "1757703702581"
+      },
+      {
+        "__typename": "LogsCapturedEvent",
+        "eventType": "LOGS_CAPTURED",
+        "level": "DEBUG",
+        "message": "Started capturing logs in process (pid: 51).",
+        "runId": "2e562bd3-7e72-4448-9f05-32bad2ea8046",
+        "stepKey": null,
+        "timestamp": "1757703702486"
+      },
+      {
+        "__typename": "ExecutionStepStartEvent",
+        "eventType": "STEP_START",
+        "level": "DEBUG",
+        "message": "Started execution of step \"stg_suppliers\".",
+        "runId": "2e562bd3-7e72-4448-9f05-32bad2ea8046",
+        "stepKey": "stg_suppliers",
+        "timestamp": "1757703702858"
+      },
+      {
+        "__typename": "ExecutionStepOutputEvent",
+        "eventType": "STEP_OUTPUT",
+        "level": "DEBUG",
+        "message": "Yielded output \"result\" of type \"Any\". (Type check passed).",
+        "runId": "2e562bd3-7e72-4448-9f05-32bad2ea8046",
+        "stepKey": "stg_suppliers",
+        "timestamp": "1757703702908"
+      },
+      {
+        "__typename": "LogMessageEvent",
+        "eventType": null,
+        "level": "DEBUG",
+        "message": "Writing file at: /opt/dagster/dagster_home/storage/stg_suppliers using PickledObjectFilesystemIOManager...",
+        "runId": "2e562bd3-7e72-4448-9f05-32bad2ea8046",
+        "stepKey": "stg_suppliers",
+        "timestamp": "1757703702934"
+      },
+      {
+        "__typename": "MaterializationEvent",
+        "eventType": "ASSET_MATERIALIZATION",
+        "level": "DEBUG",
+        "message": "Materialized value stg_suppliers.",
+        "runId": "2e562bd3-7e72-4448-9f05-32bad2ea8046",
+        "stepKey": "stg_suppliers",
+        "timestamp": "1757703702963"
+      },
+      {
+        "__typename": "HandledOutputEvent",
+        "eventType": "HANDLED_OUTPUT",
+        "level": "DEBUG",
+        "message": "Handled output \"result\" using IO manager \"io_manager\"",
+        "runId": "2e562bd3-7e72-4448-9f05-32bad2ea8046",
+        "stepKey": "stg_suppliers",
+        "timestamp": "1757703702998"
+      },
+      {
+        "__typename": "ExecutionStepOutputEvent",
+        "eventType": "STEP_OUTPUT",
+        "level": "DEBUG",
+        "message": "Yielded output \"result\" of type \"Any\". (Type check passed).",
+        "runId": "2e562bd3-7e72-4448-9f05-32bad2ea8046",
+        "stepKey": "stg_warehouses",
+        "timestamp": "1757703702972"
+      },
+      {
+        "__typename": "ExecutionStepSuccessEvent",
+        "eventType": "STEP_SUCCESS",
+        "level": "DEBUG",
+        "message": "Finished execution of step \"stg_suppliers\" in 208ms.",
+        "runId": "2e562bd3-7e72-4448-9f05-32bad2ea8046",
+        "stepKey": "stg_suppliers",
+        "timestamp": "1757703703090"
+      },
+      {
+        "__typename": "LogMessageEvent",
+        "eventType": null,
+        "level": "DEBUG",
+        "message": "Writing file at: /opt/dagster/dagster_home/storage/stg_warehouses using PickledObjectFilesystemIOManager...",
+        "runId": "2e562bd3-7e72-4448-9f05-32bad2ea8046",
+        "stepKey": "stg_warehouses",
+        "timestamp": "1757703703231"
+      },
+      {
+        "__typename": "MaterializationEvent",
+        "eventType": "ASSET_MATERIALIZATION",
+        "level": "DEBUG",
+        "message": "Materialized value stg_warehouses.",
+        "runId": "2e562bd3-7e72-4448-9f05-32bad2ea8046",
+        "stepKey": "stg_warehouses",
+        "timestamp": "1757703703279"
+      },
+      {
+        "__typename": "HandledOutputEvent",
+        "eventType": "HANDLED_OUTPUT",
+        "level": "DEBUG",
+        "message": "Handled output \"result\" using IO manager \"io_manager\"",
+        "runId": "2e562bd3-7e72-4448-9f05-32bad2ea8046",
+        "stepKey": "stg_warehouses",
+        "timestamp": "1757703703332"
+      },
+      {
+        "__typename": "ExecutionStepSuccessEvent",
+        "eventType": "STEP_SUCCESS",
+        "level": "DEBUG",
+        "message": "Finished execution of step \"stg_warehouses\" in 724ms.",
+        "runId": "2e562bd3-7e72-4448-9f05-32bad2ea8046",
+        "stepKey": "stg_warehouses",
+        "timestamp": "1757703703361"
+      },
+      {
+        "__typename": "StepWorkerStartingEvent",
+        "eventType": "STEP_WORKER_STARTING",
+        "level": "DEBUG",
+        "message": "Launching subprocess for \"fct_inventory\".",
+        "runId": "2e562bd3-7e72-4448-9f05-32bad2ea8046",
+        "stepKey": "fct_inventory",
+        "timestamp": "1757703703876"
+      },
+      {
+        "__typename": "StepWorkerStartingEvent",
+        "eventType": "STEP_WORKER_STARTING",
+        "level": "DEBUG",
+        "message": "Launching subprocess for \"dim_customers\".",
+        "runId": "2e562bd3-7e72-4448-9f05-32bad2ea8046",
+        "stepKey": "dim_customers",
+        "timestamp": "1757703704046"
+      },
+      {
+        "__typename": "StepWorkerStartedEvent",
+        "eventType": "STEP_WORKER_STARTED",
+        "level": "DEBUG",
+        "message": "Executing step \"fct_inventory\" in subprocess.",
+        "runId": "2e562bd3-7e72-4448-9f05-32bad2ea8046",
+        "stepKey": "fct_inventory",
+        "timestamp": "1757703705286"
+      },
+      {
+        "__typename": "StepWorkerStartedEvent",
+        "eventType": "STEP_WORKER_STARTED",
+        "level": "DEBUG",
+        "message": "Executing step \"dim_customers\" in subprocess.",
+        "runId": "2e562bd3-7e72-4448-9f05-32bad2ea8046",
+        "stepKey": "dim_customers",
+        "timestamp": "1757703705347"
+      },
+      {
+        "__typename": "ResourceInitStartedEvent",
+        "eventType": "RESOURCE_INIT_STARTED",
+        "level": "DEBUG",
+        "message": "Starting initialization of resources [io_manager].",
+        "runId": "2e562bd3-7e72-4448-9f05-32bad2ea8046",
+        "stepKey": "dim_customers",
+        "timestamp": "1757703706808"
+      },
+      {
+        "__typename": "ResourceInitSuccessEvent",
+        "eventType": "RESOURCE_INIT_SUCCESS",
+        "level": "DEBUG",
+        "message": "Finished initialization of resources [io_manager].",
+        "runId": "2e562bd3-7e72-4448-9f05-32bad2ea8046",
+        "stepKey": "dim_customers",
+        "timestamp": "1757703706875"
+      },
+      {
+        "__typename": "LogsCapturedEvent",
+        "eventType": "LOGS_CAPTURED",
+        "level": "DEBUG",
+        "message": "Started capturing logs in process (pid: 70).",
+        "runId": "2e562bd3-7e72-4448-9f05-32bad2ea8046",
+        "stepKey": null,
+        "timestamp": "1757703707187"
+      },
+      {
+        "__typename": "ResourceInitStartedEvent",
+        "eventType": "RESOURCE_INIT_STARTED",
+        "level": "DEBUG",
+        "message": "Starting initialization of resources [io_manager].",
+        "runId": "2e562bd3-7e72-4448-9f05-32bad2ea8046",
+        "stepKey": "fct_inventory",
+        "timestamp": "1757703706824"
+      }
+    ],
+    "hasMore": true
+  }
+}
