@@ -238,7 +238,7 @@ export const RunActionButtons = (props: RunActionButtonsProps) => {
     selected,
     fromSelected,
     fromFailure,
-    run.executionPlan?.assetSelection.length ? fromAssetFailure : null,
+    run.executionPlan?.assetKeys.length ? fromAssetFailure : null,
   ].filter(Boolean) as LaunchButtonConfiguration[];
   const preferredRerun = selection.present
     ? selected
