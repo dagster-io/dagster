@@ -15,7 +15,7 @@ interface Props {
   tooltipText?: string;
 }
 
-const BaseTagTooltipStyle: React.CSSProperties = {
+export const BaseTagTooltipStyle: React.CSSProperties = {
   fontSize: 12,
   lineHeight: '16px',
   alignItems: 'center',
