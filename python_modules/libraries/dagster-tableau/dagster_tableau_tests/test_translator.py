@@ -91,7 +91,7 @@ def test_translator_data_source_spec(
         "dagster-tableau/asset_type": "data_source",
         "dagster/kind/tableau": "",
         "dagster/kind/live": "",
-        "dagster/kind/published": "",
+        "dagster/kind/published datasource": "",
     }
     deps = list(asset_spec.deps)
     assert len(deps) == 0
@@ -113,7 +113,7 @@ def test_translator_data_source_spec(
         "dagster-tableau/asset_type": "data_source",
         "dagster/kind/tableau": "",
         "dagster/kind/extract": "",
-        "dagster/kind/embedded": "",
+        "dagster/kind/embedded datasource": "",
     }
     deps = list(asset_spec.deps)
     assert len(deps) == 0

@@ -323,16 +323,11 @@ class DagsterTableauTranslator:
         )
 
     def get_data_source_spec(self, data: TableauTranslatorData) -> AssetSpec:
-        kinds = {"tableau"}
-        if data.properties["hasExtracts"] is True:
-            kinds.add("extract")
-        else:
-            kinds.add("live")
-
-        if data.properties["isPublished"] is True:
-            kinds.add("published")
-        else:
-            kinds.add("embedded")
+        kinds = {
+                "tableau",
+                *["extract" if data.properties["hasExtracts"] else "live"], 
+                *["published datasource" if data.properties["isPublished"] else "embedded datasource"], 
+        }
         
         return AssetSpec(
             key=AssetKey([_coerce_input_to_valid_name(data.properties["name"])]),
