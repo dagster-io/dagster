@@ -7,7 +7,7 @@ import pyarrow.compute as pc
 import pyarrow.dataset as ds
 from dagster import InputContext, MetadataValue, OutputContext, TableColumn, TableSchema
 from dagster._core.storage.db_io_manager import DbTypeHandler, TablePartitionDimension, TableSlice
-from deltalake import DeltaTable, WriterProperties, write_deltalake
+from deltalake import CommitProperties, DeltaTable, WriterProperties, write_deltalake
 from deltalake.schema import (
     Field as DeltaField,
     PrimitiveType,
@@ -50,9 +50,6 @@ class DeltalakeBaseArrowTypeHandler(DbTypeHandler[T], Generic[T]):
         metadata = context.definition_metadata or {}
         resource_config = context.resource_config or {}
         reader, delta_params = self.to_arrow(obj=obj)
-        delta_schema = Schema.from_pyarrow(reader.schema)
-
-        engine = resource_config.get("writer_engine")
         save_mode = metadata.get("mode")
         main_save_mode = resource_config.get("mode")
         main_custom_metadata = resource_config.get("custom_metadata")
@@ -66,47 +63,80 @@ class DeltalakeBaseArrowTypeHandler(DbTypeHandler[T], Generic[T]):
                 save_mode,
             )
             main_save_mode = save_mode
+
+        # Handle default mode and partitioned table logic
+        if main_save_mode is None:
+            main_save_mode = "overwrite"  # default mode
+
+        # For partitioned tables, determine the appropriate mode and predicate
+        predicate = None
+        if _has_partitions(table_slice):
+            try:
+                existing_table = DeltaTable(
+                    connection.table_uri, storage_options=connection.storage_options
+                )
+                if main_save_mode == "overwrite":
+                    predicate = _build_partition_predicate(
+                        table_slice.partition_dimensions, existing_table.schema()
+                    )
+                    if predicate:
+                        context.log.debug(
+                            f"Table exists and is partitioned, using predicate to overwrite specific partition: {predicate}"
+                        )
+                    else:
+                        # Fallback to append if we can't build predicate
+                        main_save_mode = "append"
+                        context.log.debug(
+                            "Table exists and is partitioned, using append mode to preserve other partitions"
+                        )
+            except Exception:
+                # Table doesn't exist, keep the original mode
+                pass
+
         context.log.debug("Writing with mode: %s", main_save_mode)
 
-        partition_filters = None
         partition_columns = None
 
-        if table_slice.partition_dimensions is not None:
-            partition_filters = partition_dimensions_to_dnf(
-                partition_dimensions=table_slice.partition_dimensions,
-                table_schema=delta_schema,
-                str_values=True,
-            )
-            if partition_filters is not None and engine == "rust":
-                raise ValueError(
-                    """Partition dimension with rust engine writer combined is not supported yet, use the default 'pyarrow' engine."""
-                )
+        if _has_partitions(table_slice):
             # TODO make robust and move to function
-            partition_columns = [dim.partition_expr for dim in table_slice.partition_dimensions]
+            partition_columns = [
+                dim.partition_expr for dim in table_slice.partition_dimensions or []
+            ]
 
         # legacy parameter
         overwrite_schema = metadata.get("overwrite_schema") or overwrite_schema
 
-        write_deltalake(
-            table_or_uri=connection.table_uri,
-            data=reader,
-            storage_options=connection.storage_options,
-            mode=main_save_mode,
-            partition_filters=partition_filters,
-            partition_by=partition_columns,
-            engine=engine,
-            schema_mode="overwrite" if overwrite_schema else None,
-            custom_metadata=metadata.get("custom_metadata") or main_custom_metadata,
-            writer_properties=WriterProperties(**writerprops)  # type: ignore
+        # Prepare commit properties
+        custom_metadata = metadata.get("custom_metadata") or main_custom_metadata
+        commit_props = None
+        if custom_metadata and isinstance(custom_metadata, dict):
+            commit_props = CommitProperties(custom_metadata=custom_metadata)
+
+        # Prepare write parameters
+        write_params = {
+            "table_or_uri": connection.table_uri,
+            "data": reader,
+            "storage_options": connection.storage_options,
+            "mode": main_save_mode,
+            "partition_by": partition_columns,
+            "schema_mode": "overwrite" if overwrite_schema else None,
+            "commit_properties": commit_props,
+            "writer_properties": WriterProperties(**writerprops)  # type: ignore
             if writerprops is not None
             else writerprops,
             **delta_params,
-        )
+        }
+
+        # Add predicate if specified for partition-specific overwrite
+        if predicate is not None:
+            write_params["predicate"] = predicate
+
+        write_deltalake(**write_params)
 
         # TODO make stats computation configurable on type handler
         dt = DeltaTable(connection.table_uri, storage_options=connection.storage_options)
         try:
-            _table, stats = _get_partition_stats(dt=dt, partition_filters=partition_filters)
+            _table, stats = _get_partition_stats(dt=dt, table_slice=table_slice)
         except Exception as e:
             context.log.warn(f"error while computing table stats: {e}")
             stats = {}
@@ -226,11 +256,32 @@ def _field_from_schema(field_name: str, schema: Schema) -> Optional[DeltaField]:
     return None
 
 
-def _get_partition_stats(dt: DeltaTable, partition_filters=None):
-    files = pa.array(dt.files(partition_filters=partition_filters))
-    files_table = pa.Table.from_arrays([files], names=["path"])
+def _get_partition_stats(dt: DeltaTable, table_slice: Optional[TableSlice] = None):
+    # Get all add actions
     actions_table = pa.Table.from_batches([dt.get_add_actions(flatten=True)])
+
+    # If we have partition constraints, filter the actions table
+    if table_slice is not None and _has_partitions(table_slice):
+        partition_conditions = (
+            partition_dimensions_to_dnf(
+                partition_dimensions=table_slice.partition_dimensions or [],
+                table_schema=dt.schema(),
+            )
+            if table_slice.partition_dimensions
+            else None
+        )
+        if partition_conditions is not None:
+            # Create a dataset from actions table and apply filter
+            partition_expr = filters_to_expression([partition_conditions])
+            dataset = ds.dataset(actions_table)
+            filtered_dataset = dataset.filter(partition_expr)
+            actions_table = filtered_dataset.to_table()
+
     actions_table = actions_table.select(["path", "size_bytes", "num_records"])
+
+    # Create files array from the filtered actions
+    files = pa.array(actions_table.column("path").to_pylist())
+    files_table = pa.Table.from_arrays([files], names=["path"])
     table = files_table.join(actions_table, keys="path")
 
     stats = {
@@ -241,17 +292,61 @@ def _get_partition_stats(dt: DeltaTable, partition_filters=None):
     return table, stats
 
 
+def _has_partitions(table_slice: TableSlice) -> bool:
+    """Check if table slice has non-empty partition dimensions."""
+    return (
+        table_slice.partition_dimensions is not None and len(table_slice.partition_dimensions) > 0
+    )
+
+
+def _format_predicate_value(value) -> Optional[str]:
+    """Format a value for use in partition predicate."""
+    # Handle single-element lists (common in static partitions)
+    if isinstance(value, list) and len(value) == 1:
+        value = value[0]
+
+    # Format based on type
+    if hasattr(value, "strftime"):  # datetime-like object
+        return f"'{value.strftime('%Y-%m-%d')}'"  # type: ignore[attr-defined]
+    elif isinstance(value, str):
+        return f"'{value}'"
+    else:
+        return str(value)
+
+
+def _build_partition_predicate(partition_dimensions, table_schema) -> Optional[str]:
+    """Build partition predicate string from dimensions."""
+    predicate_conditions = []
+    for partition_dim in partition_dimensions:
+        partition_condition = partition_dimensions_to_dnf(
+            partition_dimensions=[partition_dim],
+            table_schema=table_schema,
+        )
+        if partition_condition:
+            # Extract tuple from list if needed
+            condition_tuple = (
+                partition_condition[0]
+                if isinstance(partition_condition, list)
+                else partition_condition
+            )
+            field_name, op, value = condition_tuple
+            value_str = _format_predicate_value(value)
+            predicate_conditions.append(f"{field_name} {op} {value_str}")
+
+    return " AND ".join(predicate_conditions) if predicate_conditions else None
+
+
 def _table_reader(table_slice: TableSlice, connection: TableConnection) -> ds.Dataset:
     table = DeltaTable(table_uri=connection.table_uri, storage_options=connection.storage_options)
 
     partition_expr = None
-    if table_slice.partition_dimensions is not None:
-        partition_filters = partition_dimensions_to_dnf(
-            partition_dimensions=table_slice.partition_dimensions,
+    if _has_partitions(table_slice):
+        partition_conditions = partition_dimensions_to_dnf(
+            partition_dimensions=table_slice.partition_dimensions or [],
             table_schema=table.schema(),
         )
-        if partition_filters is not None:
-            partition_expr = filters_to_expression([partition_filters])
+        if partition_conditions is not None:
+            partition_expr = filters_to_expression([partition_conditions])
 
     dataset = table.to_pyarrow_dataset()
     if partition_expr is not None:
