@@ -1,6 +1,6 @@
 ---
 description: An asset job is a type of Dagster job that targets a selection of assets and can be launched manually from the UI, or programmatically by schedules or sensors.
-sidebar_position: 100
+sidebar_position: 200
 title: Asset jobs
 ---
 
@@ -43,6 +43,8 @@ You can run an asset job in a variety of ways:
 - Via the command line
 - Via the GraphQL API
 - In the UI
+
+For more information, see [Executing jobs](/guides/build/jobs/job-execution).
 
 ## Examples
 

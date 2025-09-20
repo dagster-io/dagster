@@ -28,6 +28,7 @@ Jobs are supported for both asset definitions and ops, but the usage for each co
 With jobs, you can:
 
 - Automate the execution of [asset definitions](/guides/build/assets/defining-assets) and [ops](/guides/build/ops)
-- Materialize a selection of assets based on a schedule or external trigger (sensor)
+- Materialize a selection of assets based on a [schedule](/guides/automate/schedules) or [external trigger (sensor)](/guides/automate/sensors)
 - Attach information using [metadata](/guides/build/assets/metadata-and-tags) and [tags](/guides/build/assets/metadata-and-tags/tags)
-- View and launch runs of jobs in the [Dagster UI](/guides/operate/webserver#dagster-ui-reference)
+- Launch runs of jobs in the [Dagster UI](/guides/operate/webserver#dagster-ui-reference)
+- View job run metadata, tags, and [run tags](/guides/build/assets/metadata-and-tags/tags#run-tags) attached to job runs automatically by Dagster, including user, op selection, partition, and more, in the [Dagster UI](/guides/operate/webserver#dagster-ui-reference)
