@@ -7,6 +7,7 @@ from dagster_k8s.models import k8s_model_from_dict, k8s_snake_case_dict
 from kubernetes import client as k8s_client
 from kubernetes.client import models
 from schema.charts.dagster.subschema.global_ import Global
+from schema.charts.dagster.subschema.service_account import ServiceAccount
 from schema.charts.dagster.values import DagsterHelmValues
 from schema.charts.dagster_user_deployments.subschema.user_deployments import (
     ReadinessProbeWithEnabled,
@@ -1430,3 +1431,77 @@ def test_deployment_strategy(
     dagster_user_deployment = template.render(helm_values)
     assert len(dagster_user_deployment) == 1
     assert dagster_user_deployment[0].to_dict()["spec"]["strategy"] == expected
+
+
+def test_user_deployment_service_account(template: HelmTemplate):
+    deployment = UserDeployment.construct(
+        name="foo",
+        image=kubernetes.Image(repository="repo/foo", tag="tag1", pullPolicy="Always"),
+        port=3030,
+        serviceAccount=ServiceAccount(
+            create=True,
+            name="custom-service-account",
+            annotations={"key": "value"},
+        ),
+    )
+    helm_values = DagsterHelmValues.construct(
+        dagsterUserDeployments=UserDeployments.construct(deployments=[deployment])
+    )
+
+    [dagster_user_deployment] = template.render(helm_values)
+
+    assert (
+        dagster_user_deployment.spec.template.spec.service_account_name == "custom-service-account"
+    )
+
+
+def test_user_deployment_with_custom_and_default_service_accounts(template: HelmTemplate):
+    custom_service_account_deployment = UserDeployment.construct(
+        name="custom-sa-deployment",
+        image=kubernetes.Image(repository="repo/custom-sa", tag="tag1", pullPolicy="Always"),
+        port=3030,
+        serviceAccount=ServiceAccount(
+            create=True,
+            name="custom-service-account",
+            annotations={"key": "value"},
+        ),
+    )
+
+    default_service_account_deployment = UserDeployment.construct(
+        name="default-sa-deployment",
+        image=kubernetes.Image(repository="repo/default-sa", tag="tag2", pullPolicy="IfNotPresent"),
+        port=4040,
+    )
+
+    helm_values = DagsterHelmValues.construct(
+        dagsterUserDeployments=UserDeployments.construct(
+            deployments=[custom_service_account_deployment, default_service_account_deployment]
+        )
+    )
+
+    dagster_user_deployments = template.render(helm_values)
+
+    custom_deployment = next(
+        (
+            d
+            for d in dagster_user_deployments
+            if d.metadata.name == "release-name-dagster-user-deployments-custom-sa-deployment"
+        ),
+        None,
+    )
+    assert custom_deployment is not None, "Custom deployment not found"
+    assert custom_deployment.spec.template.spec.service_account_name == "custom-service-account"
+
+    default_deployment = next(
+        (
+            d
+            for d in dagster_user_deployments
+            if d.metadata.name == "release-name-dagster-user-deployments-default-sa-deployment"
+        ),
+        None,
+    )
+    assert default_deployment is not None, "Default deployment not found"
+    assert (
+        default_deployment.spec.template.spec.service_account_name
+        == "release-name-dagster-user-deployments-user-deployments"
+    )

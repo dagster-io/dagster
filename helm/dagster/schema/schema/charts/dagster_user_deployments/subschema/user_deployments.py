@@ -2,6 +2,7 @@ from typing import Optional, Union
 
 from pydantic import BaseModel, create_model
 
+from schema.charts.dagster.subschema.service_account import ServiceAccount
 from schema.charts.utils import kubernetes
 
 
@@ -42,6 +43,7 @@ class UserDeployment(BaseModel):
     initContainers: Optional[list[kubernetes.Container]] = None
     sidecarContainers: Optional[list[kubernetes.Container]] = None
     deploymentStrategy: Optional[kubernetes.DeploymentStrategy] = None
+    serviceAccount: Optional[ServiceAccount] = None
 
 
 class UserDeployments(BaseModel):
