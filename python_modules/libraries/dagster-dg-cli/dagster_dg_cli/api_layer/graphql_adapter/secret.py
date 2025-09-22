@@ -104,22 +104,22 @@ def build_secret_scopes_input(scope: Optional[str] = None) -> "DgApiSecretScopes
     if scope == "deployment":
         # For deployment scope, include both full deployment and local deployment
         return DgApiSecretScopesInput(
-            full_deployment_scope=True,
-            local_deployment_scope=True,
+            fullDeploymentScope=True,
+            localDeploymentScope=True,
         )
     elif scope == "organization":
         # For organization scope, include all scopes
         return DgApiSecretScopesInput(
-            full_deployment_scope=True,
-            all_branch_deployments_scope=True,
-            local_deployment_scope=True,
+            fullDeploymentScope=True,
+            allBranchDeploymentsScope=True,
+            localDeploymentScope=True,
         )
     else:
         # Default: include all scopes
         return DgApiSecretScopesInput(
-            full_deployment_scope=True,
-            all_branch_deployments_scope=True,
-            local_deployment_scope=True,
+            fullDeploymentScope=True,
+            allBranchDeploymentsScope=True,
+            localDeploymentScope=True,
         )
 
 
@@ -153,7 +153,7 @@ def list_secrets_via_graphql(
     else:
         query = GET_SECRETS_FOR_SCOPES_QUERY_NO_VALUE
 
-    variables = {
+    variables: dict[str, Any] = {
         "scopes": scopes_input.to_dict(),
     }
 
