@@ -1,13 +1,12 @@
 ---
 title: Build your first Dagster pipeline
 description: Learn how to set up a Dagster environment, create a project, define assets, and run your first pipeline.
-sidebar_position: 30
-sidebar_label: 'Quickstart'
+sidebar_label: Quickstart (OSS)
 ---
 
 Welcome to Dagster! In this guide, we'll cover:
 
-- Setting up a basic Dagster project
+- Setting up a basic Dagster project using Dagster OSS for local development
 - Creating a single Dagster [asset](/guides/build/assets) that encapsulates the entire Extract, Transform, and Load (ETL) process
 - Using Dagster's UI to monitor and execute your pipeline
 
