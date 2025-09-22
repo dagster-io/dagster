@@ -26,8 +26,6 @@ EXCLUDE_MISSING_RST = {
     "dagster.components.scaffold.scaffold.Scaffolder",
     "dagster.components.lib.sql_component.sql_component.SqlComponent",
     "dagster.components.core.component_tree.ComponentTree",
-    "dagster.components.testing.create_defs_folder_sandbox",
-    "dagster.components.testing.DefsFolderSandbox",
     # Core internal functionality
     "dagster._core.definitions.definitions_class.create_repository_using_definitions_args",
     # Core storage and compute management - internal functionality
@@ -100,16 +98,12 @@ EXCLUDE_MISSING_EXPORT = {
     "dagster.components.scaffold.scaffold.scaffold_with",
     "dagster.components.scaffold.scaffold.ScaffoldRequest",
     "dagster.components.scaffold.scaffold.Scaffolder",
-    "dagster.components.testing.create_defs_folder_sandbox",
-    "dagster.components.testing.DefsFolderSandbox",
 }
 
 # Hardcoded list of all RST symbols missing @public decorators
 EXCLUDE_MISSING_PUBLIC = {
     "dagster.BetaWarning",
     "dagster.ComponentTree",
-    "dagster.components.testing.create_defs_folder_sandbox",
-    "dagster.components.testing.DefsFolderSandbox",
     "dagster.DefaultRunCoordinator",
     "dagster.PreviewWarning",
     "dagster.PreviewWarning",
