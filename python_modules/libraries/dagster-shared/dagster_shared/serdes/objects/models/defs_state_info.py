@@ -1,6 +1,6 @@
 import time
 from collections.abc import Mapping
-from typing import Optional
+from typing import Any, Optional
 
 from dagster_shared.dagster_model import DagsterModel
 from dagster_shared.serdes import whitelist_for_serdes
@@ -12,6 +12,10 @@ class DefsKeyStateInfo(DagsterModel):
 
     version: str
     create_timestamp: float
+
+    @classmethod
+    def from_graphql(cls, data: dict[str, Any]) -> "DefsKeyStateInfo":
+        return cls(version=data["version"], create_timestamp=data["createTimestamp"])
 
 
 @whitelist_for_serdes
@@ -39,3 +43,12 @@ class DefsStateInfo(DagsterModel):
     def get_version(self, key: str) -> Optional[str]:
         info = self.info_mapping.get(key)
         return info.version if info else None
+
+    @classmethod
+    def from_graphql(cls, data: dict[str, Any]) -> "DefsStateInfo":
+        return cls(
+            info_mapping={
+                val["name"]: DefsKeyStateInfo.from_graphql(val["info"])
+                for val in data["keyStateInfo"]
+            }
+        )
