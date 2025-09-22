@@ -11,7 +11,12 @@ from dagster._core.definitions.assets.graph.remote_asset_graph import RemoteAsse
 from dagster._core.definitions.assets.job.asset_job import IMPLICIT_ASSET_JOB_NAME
 from dagster._core.definitions.selector import JobSelector, ScheduleSelector, SensorSelector
 from dagster._core.execution.backfill import PartitionBackfill
-from dagster._core.remote_representation.external import RemoteJob, RemoteSchedule, RemoteSensor
+from dagster._core.remote_representation.external import (
+    CompoundID,
+    RemoteJob,
+    RemoteSchedule,
+    RemoteSensor,
+)
 from dagster._core.utils import make_new_backfill_id
 from dagster._core.workspace.context import RemoteDefinition, WorkspaceRequestContext
 from dagster._core.workspace.permissions import Permissions
@@ -33,6 +38,8 @@ from dagster_graphql_tests.graphql.graphql_context_test_suite import (
     make_graphql_context_test_suite,
 )
 from dagster_graphql_tests.graphql.test_partition_backfill import CANCEL_BACKFILL_MUTATION
+from dagster_graphql_tests.graphql.test_scheduler import START_SCHEDULES_QUERY, STOP_SCHEDULES_QUERY
+from dagster_graphql_tests.graphql.test_sensors import START_SENSORS_QUERY
 
 warnings.filterwarnings("ignore", category=BetaWarning, message=r"Parameter `owners` .*")
 
@@ -53,6 +60,8 @@ class BaseDefinitionOwnerPermissionsTestSuite(ABC):
                 AssetKey(["owned_asset"]),
                 AssetKey(["owned_partitioned_asset"]),
                 "owned_job",
+                "owned_schedule",
+                "owned_sensor",
             ]
         )
 
@@ -62,6 +71,8 @@ class BaseDefinitionOwnerPermissionsTestSuite(ABC):
                 AssetKey(["unowned_asset"]),
                 AssetKey(["unowned_partitioned_asset"]),
                 "unowned_job",
+                "unowned_schedule",
+                "unowned_sensor",
             ]
         )
 
@@ -183,6 +194,80 @@ class BaseDefinitionOwnerPermissionsTestSuite(ABC):
         )
         assert result.data
         return result.data["launchPipelineReexecution"]["__typename"]
+
+    def graphql_start_schedule(self, context, schedule_name: str):
+        selector = infer_schedule_selector(context, schedule_name)
+
+        result = execute_dagster_graphql(
+            context,
+            START_SCHEDULES_QUERY,
+            variables={
+                "scheduleSelector": selector,
+            },
+        )
+        assert result.data
+        typename = result.data["startSchedule"]["__typename"]
+        schedule_id = (
+            result.data["startSchedule"]["scheduleState"]["id"]
+            if typename == "ScheduleStateResult"
+            else None
+        )
+        return typename, schedule_id
+
+    def graphql_stop_schedule(self, context, schedule_id: str):
+        result = execute_dagster_graphql(
+            context,
+            STOP_SCHEDULES_QUERY,
+            variables={"id": schedule_id},
+        )
+        assert result.data
+        return result.data["stopRunningSchedule"]["__typename"]
+
+    def _create_started_schedule_state(self, context, schedule_name: str):
+        selector = infer_schedule_selector(context, schedule_name)
+        schedule = context.get_schedule(ScheduleSelector.from_graphql_input(selector))
+        stored_state = context.instance.start_schedule(schedule)
+        return CompoundID(
+            remote_origin_id=stored_state.instigator_origin_id,
+            selector_id=stored_state.selector_id,
+        ).to_string()
+
+    def graphql_start_sensor(self, context, sensor_name: str):
+        selector = infer_sensor_selector(context, sensor_name)
+        result = execute_dagster_graphql(
+            context,
+            START_SENSORS_QUERY,
+            variables={
+                "sensorSelector": selector,
+            },
+        )
+        assert result.data
+        return result.data["startSensor"]["__typename"]
+
+    def graphql_update_sensor_cursor(self, context, sensor_name: str):
+        selector = infer_sensor_selector(context, sensor_name)
+        result = execute_dagster_graphql(
+            context,
+            """
+            mutation SetSensorCursorMutation($sensorSelector: SensorSelector!, $cursor: String) {
+                setSensorCursor(sensorSelector: $sensorSelector, cursor: $cursor) {
+                    __typename
+                    ... on Sensor {
+                        name
+                    }
+                    ... on UnauthorizedError {
+                        message
+                    }
+                }
+            }
+            """,
+            variables={
+                "sensorSelector": selector,
+                "cursor": "new_cursor_value",
+            },
+        )
+        assert result.data
+        return result.data["setSensorCursor"]["__typename"]
 
     def _create_run(self, context, job_name):
         remote_job = context.get_full_job(
@@ -320,6 +405,28 @@ class BaseDefinitionOwnerPermissionsTestSuite(ABC):
         )
         assert (
             self.graphql_launch_job_reexecution(graphql_context, "unowned_job", run_b.run_id)
+            == "UnauthorizedError"
+        )
+
+    def test_start_schedule_permissions(self, graphql_context: WorkspaceRequestContext):
+        typename, _ = self.graphql_start_schedule(graphql_context, "owned_schedule")
+        assert typename == "ScheduleStateResult"
+
+        typename, _ = self.graphql_start_schedule(graphql_context, "unowned_schedule")
+        assert typename == "UnauthorizedError"
+
+    def test_stop_schedule_permissions(self, graphql_context: WorkspaceRequestContext):
+        schedule_a_id = self._create_started_schedule_state(graphql_context, "owned_schedule")
+        schedule_b_id = self._create_started_schedule_state(graphql_context, "unowned_schedule")
+        assert self.graphql_stop_schedule(graphql_context, schedule_a_id) == "ScheduleStateResult"
+        assert self.graphql_stop_schedule(graphql_context, schedule_b_id) == "UnauthorizedError"
+
+    def test_sensor_permissions(self, graphql_context: WorkspaceRequestContext):
+        assert self.graphql_start_sensor(graphql_context, "owned_sensor") == "Sensor"
+        assert self.graphql_start_sensor(graphql_context, "unowned_sensor") == "UnauthorizedError"
+        assert self.graphql_update_sensor_cursor(graphql_context, "owned_sensor") == "Sensor"
+        assert (
+            self.graphql_update_sensor_cursor(graphql_context, "unowned_sensor")
             == "UnauthorizedError"
         )
 

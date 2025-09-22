@@ -24,7 +24,13 @@ from dagster._core.definitions.asset_checks.asset_check_spec import AssetCheckKe
 from dagster._core.definitions.assets.graph.remote_asset_graph import RemoteWorkspaceAssetGraph
 from dagster._core.definitions.events import AssetKey
 from dagster._core.definitions.partitions.definition import PartitionsDefinition
-from dagster._core.definitions.selector import GraphSelector, JobSelector, JobSubsetSelector
+from dagster._core.definitions.selector import (
+    GraphSelector,
+    JobSelector,
+    JobSubsetSelector,
+    ScheduleSelector,
+    SensorSelector,
+)
 from dagster._core.definitions.temporal_context import TemporalContext
 from dagster._core.errors import DagsterError, DagsterInvariantViolationError
 from dagster._core.execution.backfill import PartitionBackfill
@@ -226,6 +232,30 @@ def assert_permission_for_job(
 
     if not has_permission_for_job(graphene_info, permission, job_selector, asset_keys):
         raise UserFacingGraphQLError(GrapheneUnauthorizedError())
+
+
+def assert_permission_for_sensor(
+    graphene_info: "ResolveInfo",
+    permission: Permissions,
+    sensor_selector: SensorSelector,
+):
+    remote_sensor = graphene_info.context.get_sensor(sensor_selector)
+    if not remote_sensor:
+        assert_permission_for_location(graphene_info, permission, sensor_selector.location_name)
+    else:
+        assert_permission_for_definition(graphene_info, permission, remote_sensor)
+
+
+def assert_permission_for_schedule(
+    graphene_info: "ResolveInfo",
+    permission: Permissions,
+    schedule_selector: ScheduleSelector,
+):
+    remote_schedule = graphene_info.context.get_schedule(schedule_selector)
+    if not remote_schedule:
+        assert_permission_for_location(graphene_info, permission, schedule_selector.location_name)
+    else:
+        assert_permission_for_definition(graphene_info, permission, remote_schedule)
 
 
 def assert_valid_job_partition_backfill(
