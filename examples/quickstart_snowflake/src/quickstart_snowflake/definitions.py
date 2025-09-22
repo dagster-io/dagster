@@ -1,13 +1,11 @@
-from dagster import (
-    Definitions,
-    EnvVar,
-    ScheduleDefinition,
-    define_asset_job,
-    load_assets_from_package_module,
-)
+from dagster import Definitions, EnvVar, ScheduleDefinition, define_asset_job
 from dagster_snowflake_pandas import SnowflakePandasIOManager
 
-from . import assets
+from .defs.assets import (
+    hackernews_topstories,
+    hackernews_topstories_word_cloud,
+    hackernews_topstory_ids,
+)
 
 daily_refresh_schedule = ScheduleDefinition(
     job=define_asset_job(name="all_assets_job"), cron_schedule="0 0 * * *"
@@ -15,7 +13,11 @@ daily_refresh_schedule = ScheduleDefinition(
 
 
 defs = Definitions(
-    assets=load_assets_from_package_module(assets),
+    assets=[
+        hackernews_topstory_ids,
+        hackernews_topstories,
+        hackernews_topstories_word_cloud,
+    ],
     resources={
         "io_manager": SnowflakePandasIOManager(
             # Read about using environment variables and secrets in Dagster:
