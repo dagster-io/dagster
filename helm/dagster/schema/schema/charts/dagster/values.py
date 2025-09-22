@@ -36,4 +36,5 @@ class DagsterHelmValues(BaseModel, extra="allow"):
     serviceAccount: subschema.ServiceAccount
     global_: subschema.Global = Field(..., alias="global")
     retention: subschema.Retention
+    defsStateStorage: Optional[subschema.DefsStateStorage] = None
     additionalInstanceConfig: Optional[Mapping[str, Any]] = None

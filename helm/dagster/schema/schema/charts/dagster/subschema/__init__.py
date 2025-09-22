@@ -3,6 +3,7 @@ from schema.charts.dagster.subschema.compute_log_manager import (
     ComputeLogManager as ComputeLogManager,
 )
 from schema.charts.dagster.subschema.daemon import Daemon as Daemon
+from schema.charts.dagster.subschema.defs_state_storage import DefsStateStorage as DefsStateStorage
 from schema.charts.dagster.subschema.flower import Flower as Flower
 from schema.charts.dagster.subschema.global_ import Global as Global
 from schema.charts.dagster.subschema.ingress import Ingress as Ingress

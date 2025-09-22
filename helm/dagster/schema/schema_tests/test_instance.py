@@ -33,6 +33,13 @@ from schema.charts.dagster.subschema.daemon import (
     RunCoordinatorType,
     TagConcurrencyLimit,
 )
+from schema.charts.dagster.subschema.defs_state_storage import (
+    BlobStorageStateStorage,
+    CustomDefsStateStorage,
+    DefsStateStorage,
+    DefsStateStorageConfig,
+    DefsStateStorageType,
+)
 from schema.charts.dagster.subschema.postgresql import PostgreSQL, Service
 from schema.charts.dagster.subschema.python_logs import PythonLogs
 from schema.charts.dagster.subschema.retention import Retention, TickRetention, TickRetentionByType
@@ -1111,3 +1118,130 @@ def test_retention_backcompat(template: HelmTemplate):
     configmaps = template.render(helm_values)
     instance = yaml.full_load(configmaps[0].data["dagster.yaml"])
     assert not instance.get("retention")
+
+
+def test_defs_state_storage_blob_storage(template: HelmTemplate):
+    base_path = "/tmp/dagster/defs_state"
+    storage_options = {"key": "value", "nested": {"option": True}}
+
+    helm_values = DagsterHelmValues.construct(
+        defsStateStorage=DefsStateStorage.construct(
+            type=DefsStateStorageType.BLOB_STORAGE,
+            config=DefsStateStorageConfig.construct(
+                blobStorageStateStorage=BlobStorageStateStorage.construct(
+                    basePath=base_path,
+                    storageOptions=storage_options,
+                )
+            ),
+        )
+    )
+
+    configmaps = template.render(helm_values)
+    assert len(configmaps) == 1
+    instance = yaml.full_load(configmaps[0].data["dagster.yaml"])
+
+    _check_valid_instance_yaml(instance)
+    defs_state_storage_config = instance["defs_state_storage"]
+
+    assert (
+        defs_state_storage_config["module"]
+        == "dagster._core.storage.defs_state.blob_storage_state_storage"
+    )
+    assert defs_state_storage_config["class"] == "BlobStorageStateStorage"
+    assert defs_state_storage_config["config"]["base_path"] == base_path
+    assert defs_state_storage_config["config"]["storage_options"] == storage_options
+
+
+def test_defs_state_storage_blob_storage_minimal(template: HelmTemplate):
+    base_path = "/tmp/dagster/defs_state"
+
+    helm_values = DagsterHelmValues.construct(
+        defsStateStorage=DefsStateStorage.construct(
+            type=DefsStateStorageType.BLOB_STORAGE,
+            config=DefsStateStorageConfig.construct(
+                blobStorageStateStorage=BlobStorageStateStorage.construct(
+                    basePath=base_path,
+                )
+            ),
+        )
+    )
+
+    configmaps = template.render(helm_values)
+    assert len(configmaps) == 1
+    instance = yaml.full_load(configmaps[0].data["dagster.yaml"])
+
+    _check_valid_instance_yaml(instance)
+    defs_state_storage_config = instance["defs_state_storage"]
+
+    assert (
+        defs_state_storage_config["module"]
+        == "dagster._core.storage.defs_state.blob_storage_state_storage"
+    )
+    assert defs_state_storage_config["class"] == "BlobStorageStateStorage"
+    assert defs_state_storage_config["config"]["base_path"] == base_path
+    assert "storage_options" not in defs_state_storage_config["config"]
+
+
+def test_defs_state_storage_custom(template: HelmTemplate):
+    module = "my_module.defs_state_storage"
+    class_ = "MyCustomDefsStateStorage"
+    config = {"custom_option": "value", "nested": {"option": True}}
+
+    helm_values = DagsterHelmValues.construct(
+        defsStateStorage=DefsStateStorage.construct(
+            type=DefsStateStorageType.CUSTOM,
+            config=DefsStateStorageConfig.construct(
+                customDefsStateStorage=CustomDefsStateStorage.construct(
+                    module=module,
+                    class_=class_,
+                    config=config,
+                )
+            ),
+        )
+    )
+
+    configmaps = template.render(helm_values)
+    assert len(configmaps) == 1
+    instance = yaml.full_load(configmaps[0].data["dagster.yaml"])
+
+    _check_valid_instance_yaml(instance)
+    defs_state_storage_config = instance["defs_state_storage"]
+
+    assert defs_state_storage_config["module"] == module
+    assert defs_state_storage_config["class"] == class_
+    assert defs_state_storage_config["config"] == config
+
+
+def test_defs_state_storage_custom_minimal(template: HelmTemplate):
+    module = "my_module.defs_state_storage"
+    class_ = "MyCustomDefsStateStorage"
+
+    helm_values = DagsterHelmValues.construct(
+        defsStateStorage=DefsStateStorage.construct(
+            type=DefsStateStorageType.CUSTOM,
+            config=DefsStateStorageConfig.construct(
+                customDefsStateStorage=CustomDefsStateStorage.construct(
+                    module=module,
+                    class_=class_,
+                )
+            ),
+        )
+    )
+
+    configmaps = template.render(helm_values)
+    assert len(configmaps) == 1
+    instance = yaml.full_load(configmaps[0].data["dagster.yaml"])
+
+    _check_valid_instance_yaml(instance)
+    defs_state_storage_config = instance["defs_state_storage"]
+
+    assert defs_state_storage_config["module"] == module
+    assert defs_state_storage_config["class"] == class_
+    assert "config" not in defs_state_storage_config
+
+
+def test_defs_state_storage_not_configured(template: HelmTemplate):
+    helm_values = DagsterHelmValues.construct()
+    configmaps = template.render(helm_values)
+    instance = yaml.full_load(configmaps[0].data["dagster.yaml"])
+    assert "defs_state_storage" not in instance
