@@ -10,7 +10,7 @@ from dagster_dg_cli.api_layer.graphql_adapter.secret import (
 from dagster_dg_cli.utils.plus.gql_client import IGraphQLClient
 
 if TYPE_CHECKING:
-    from dagster_dg_cli.api_layer.schemas.secret import Secret, SecretList
+    from dagster_dg_cli.api_layer.schemas.secret import DgApiSecret, DgApiSecretList
 
 
 @dataclass(frozen=True)
@@ -24,7 +24,7 @@ class DgApiSecretApi:
         location_name: Optional[str] = None,
         scope: Optional[str] = None,
         limit: Optional[int] = None,
-    ) -> "SecretList":
+    ) -> "DgApiSecretList":
         """List secrets with optional filtering.
 
         Args:
@@ -33,7 +33,7 @@ class DgApiSecretApi:
             limit: Optional limit on number of results
 
         Returns:
-            SecretList: List of secrets (values are never included for security)
+            DgApiSecretList: List of secrets (values are never included for security)
 
         Note:
             Secret values are never exposed in list operations for security.
@@ -52,7 +52,7 @@ class DgApiSecretApi:
         secret_name: str,
         location_name: Optional[str] = None,
         include_value: bool = False,
-    ) -> "Secret":
+    ) -> "DgApiSecret":
         """Get a specific secret.
 
         Args:
@@ -61,7 +61,7 @@ class DgApiSecretApi:
             include_value: Whether to include the secret value (default: False for security)
 
         Returns:
-            Secret: Single secret with optional value
+            DgApiSecret: Single secret with optional value
 
         Raises:
             ValueError: If secret not found

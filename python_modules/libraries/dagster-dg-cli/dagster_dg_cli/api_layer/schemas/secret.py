@@ -7,20 +7,20 @@ from typing import Optional
 from pydantic import BaseModel, Field
 
 
-class SecretScope(str, Enum):
+class DgApiSecretScope(str, Enum):
     """Secret scope enum for filtering."""
 
     DEPLOYMENT = "deployment"
     ORGANIZATION = "organization"
 
 
-class UpdatedBy(BaseModel):
+class DgApiUpdatedBy(BaseModel):
     """User who last updated the secret."""
 
     email: str
 
 
-class Secret(BaseModel):
+class DgApiSecret(BaseModel):
     """Secret resource model."""
 
     id: str
@@ -37,7 +37,7 @@ class Secret(BaseModel):
     local_deployment_scope: bool = Field(alias="localDeploymentScope")
     can_view_secret_value: bool = Field(alias="canViewSecretValue")
     can_edit_secret: bool = Field(alias="canEditSecret")
-    updated_by: Optional[UpdatedBy] = Field(alias="updatedBy", default=None)
+    updated_by: Optional[DgApiUpdatedBy] = Field(alias="updatedBy", default=None)
     update_timestamp: Optional[datetime] = Field(alias="updateTimestamp", default=None)
 
     class Config:
@@ -45,14 +45,14 @@ class Secret(BaseModel):
         populate_by_name = True  # Allow both alias and field name (Pydantic V2)
 
 
-class SecretList(BaseModel):
+class DgApiSecretList(BaseModel):
     """GET /api/secrets response."""
 
-    items: list[Secret]
+    items: list[DgApiSecret]
     total: int
 
 
-class SecretScopesInput(BaseModel):
+class DgApiSecretScopesInput(BaseModel):
     """GraphQL SecretScopesInput type for filtering."""
 
     full_deployment_scope: Optional[bool] = Field(alias="fullDeploymentScope", default=None)

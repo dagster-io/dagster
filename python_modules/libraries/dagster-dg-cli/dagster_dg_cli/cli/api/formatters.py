@@ -7,7 +7,7 @@ if TYPE_CHECKING:
     from dagster_dg_cli.api_layer.schemas.agent import DgApiAgent, DgApiAgentList
     from dagster_dg_cli.api_layer.schemas.asset import DgApiAsset, DgApiAssetList
     from dagster_dg_cli.api_layer.schemas.deployment import Deployment, DeploymentList
-    from dagster_dg_cli.api_layer.schemas.secret import Secret, SecretList
+    from dagster_dg_cli.api_layer.schemas.secret import DgApiSecret, DgApiSecretList
 
 
 def format_deployments(deployments: "DeploymentList", as_json: bool) -> str:
@@ -241,7 +241,7 @@ def format_agent(agent: "DgApiAgent", as_json: bool) -> str:
     return "\n".join(lines)
 
 
-def format_secrets(secrets: "SecretList", as_json: bool) -> str:
+def format_secrets(secrets: "DgApiSecretList", as_json: bool) -> str:
     """Format secret list for output.
 
     Note: Secret values are never shown in list format for security.
@@ -275,7 +275,7 @@ def format_secrets(secrets: "SecretList", as_json: bool) -> str:
     return "\n".join(lines).rstrip()  # Remove trailing empty line
 
 
-def format_secret(secret: "Secret", as_json: bool, show_value: bool = False) -> str:
+def format_secret(secret: "DgApiSecret", as_json: bool, show_value: bool = False) -> str:
     """Format single secret for output.
 
     Args:
@@ -341,7 +341,7 @@ def format_secret(secret: "Secret", as_json: bool, show_value: bool = False) -> 
     return "\n".join(lines)
 
 
-def _format_secret_scopes(secret: "Secret") -> str:
+def _format_secret_scopes(secret: "DgApiSecret") -> str:
     """Format secret scopes into human-readable string."""
     scopes = []
 

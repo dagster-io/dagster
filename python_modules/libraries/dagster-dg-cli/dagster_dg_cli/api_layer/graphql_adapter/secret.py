@@ -9,11 +9,15 @@ from dagster_dg_cli.utils.plus.gql import (
 from dagster_dg_cli.utils.plus.gql_client import IGraphQLClient
 
 if TYPE_CHECKING:
-    from dagster_dg_cli.api_layer.schemas.secret import Secret, SecretList, SecretScopesInput
+    from dagster_dg_cli.api_layer.schemas.secret import (
+        DgApiSecret,
+        DgApiSecretList,
+        DgApiSecretScopesInput,
+    )
 
 
-def process_secrets_response(graphql_response: dict[str, Any]) -> "SecretList":
-    """Process GraphQL response into SecretList.
+def process_secrets_response(graphql_response: dict[str, Any]) -> "DgApiSecretList":
+    """Process GraphQL response into DgApiSecretList.
 
     This is a pure function that can be easily tested without mocking GraphQL clients.
 
@@ -21,17 +25,17 @@ def process_secrets_response(graphql_response: dict[str, Any]) -> "SecretList":
         graphql_response: Raw GraphQL response containing secretsOrError
 
     Returns:
-        SecretList: Processed secrets data
+        DgApiSecretList: Processed secrets data
 
     Raises:
         ValueError: If GraphQL response contains errors
     """
     # Import pydantic models only when needed
-    from dagster_dg_cli.api_layer.schemas.secret import Secret, SecretList
+    from dagster_dg_cli.api_layer.schemas.secret import DgApiSecret, DgApiSecretList
 
     secrets_or_error = graphql_response.get("secretsOrError")
     if not secrets_or_error:
-        return SecretList(items=[], total=0)
+        return DgApiSecretList(items=[], total=0)
 
     # Handle GraphQL error responses
     if secrets_or_error.get("__typename") == "UnauthorizedError":
@@ -46,17 +50,19 @@ def process_secrets_response(graphql_response: dict[str, Any]) -> "SecretList":
 
     secrets = []
     for secret_data in secrets_data:
-        # Convert GraphQL response to Secret model using field aliases
-        secret = Secret.model_validate(secret_data)
+        # Convert GraphQL response to DgApiSecret model using field aliases
+        secret = DgApiSecret.model_validate(secret_data)
         secrets.append(secret)
 
-    return SecretList(
+    return DgApiSecretList(
         items=secrets,
         total=len(secrets),
     )
 
 
-def process_single_secret_response(graphql_response: dict[str, Any], secret_name: str) -> "Secret":
+def process_single_secret_response(
+    graphql_response: dict[str, Any], secret_name: str
+) -> "DgApiSecret":
     """Process GraphQL response for a single secret.
 
     Args:
@@ -64,7 +70,7 @@ def process_single_secret_response(graphql_response: dict[str, Any], secret_name
         secret_name: Name of the requested secret
 
     Returns:
-        Secret: Single secret data
+        DgApiSecret: Single secret data
 
     Raises:
         ValueError: If secret not found or response contains errors
@@ -84,33 +90,33 @@ def process_single_secret_response(graphql_response: dict[str, Any], secret_name
     return secret_list.items[0]
 
 
-def build_secret_scopes_input(scope: Optional[str] = None) -> "SecretScopesInput":
+def build_secret_scopes_input(scope: Optional[str] = None) -> "DgApiSecretScopesInput":
     """Build SecretScopesInput based on scope parameter.
 
     Args:
         scope: Optional scope filter ("deployment" or "organization")
 
     Returns:
-        SecretScopesInput: Scopes configuration for GraphQL query
+        DgApiSecretScopesInput: Scopes configuration for GraphQL query
     """
-    from dagster_dg_cli.api_layer.schemas.secret import SecretScopesInput
+    from dagster_dg_cli.api_layer.schemas.secret import DgApiSecretScopesInput
 
     if scope == "deployment":
         # For deployment scope, include both full deployment and local deployment
-        return SecretScopesInput(
+        return DgApiSecretScopesInput(
             full_deployment_scope=True,
             local_deployment_scope=True,
         )
     elif scope == "organization":
         # For organization scope, include all scopes
-        return SecretScopesInput(
+        return DgApiSecretScopesInput(
             full_deployment_scope=True,
             all_branch_deployments_scope=True,
             local_deployment_scope=True,
         )
     else:
         # Default: include all scopes
-        return SecretScopesInput(
+        return DgApiSecretScopesInput(
             full_deployment_scope=True,
             all_branch_deployments_scope=True,
             local_deployment_scope=True,
@@ -123,7 +129,7 @@ def list_secrets_via_graphql(
     scope: Optional[str] = None,
     include_values: bool = False,
     limit: Optional[int] = None,
-) -> "SecretList":
+) -> "DgApiSecretList":
     """Fetch secrets using GraphQL.
 
     Args:
@@ -134,7 +140,7 @@ def list_secrets_via_graphql(
         limit: Optional limit on number of results
 
     Returns:
-        SecretList: List of secrets
+        DgApiSecretList: List of secrets
 
     Raises:
         ValueError: If GraphQL query fails or returns errors
@@ -171,7 +177,7 @@ def get_secret_via_graphql(
     secret_name: str,
     location_name: Optional[str] = None,
     include_value: bool = False,
-) -> "Secret":
+) -> "DgApiSecret":
     """Fetch a specific secret using GraphQL.
 
     Args:
@@ -181,7 +187,7 @@ def get_secret_via_graphql(
         include_value: Whether to include secret value (security sensitive)
 
     Returns:
-        Secret: Single secret
+        DgApiSecret: Single secret
 
     Raises:
         ValueError: If secret not found or GraphQL query fails
