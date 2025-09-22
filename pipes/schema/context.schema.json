@@ -1,0 +1,78 @@
+{
+    "title": "PipesContext",
+    "type": "object",
+    "description": "The serializable data passed from the orchestration process to the external process. This gets wrapped in a PipesContext.",
+    "properties": {
+        "asset_keys": {
+            "type": ["null", "array"],
+            "items": {
+                "type": "string"
+            }
+        },
+        "code_version_by_asset_key": {
+            "type": ["null", "object"],
+            "additionalProperties": {
+                "type": ["null", "string"]
+            }
+        },
+        "provenance_by_asset_key": {
+            "type": ["null", "object"],
+            "additionalProperties": {
+                "type": ["null", "object"],
+                "properties": {
+                    "code_version": {
+                        "type": "string"
+                    },
+                    "input_data_versions": {
+                        "type": "object",
+                        "additionalProperties": {
+                            "type": "string"
+                        }
+                    },
+                    "is_user_provided": {
+                        "type": "boolean"
+                    }
+                }
+            }
+        },
+        "partition_key": {
+            "type": ["null", "string"]
+        },
+        "partition_key_range": {
+            "type": ["null", "object"],
+            "properties": {
+                "start": {
+                    "type": "string"
+                },
+                "end": {
+                    "type": "string"
+                }
+            }
+        },
+        "partition_time_window": {
+            "type": ["null", "object"],
+            "properties": {
+                "start": {
+                    "type":"string"
+                },
+                "end": {
+                    "type": "string"
+                }
+            }
+        },
+        "run_id": {
+            "type": "string"
+        },
+        "job_name": {
+            "type": ["null", "string"]
+        },
+        "retry_number": {
+            "type": "integer"
+        },
+        "extras": {
+            "type": ["null", "object"]
+        }
+    },
+    "required": ["run_id", "retry_number", "extras"],
+    "additionalProperties": false
+}
