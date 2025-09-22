@@ -5,8 +5,13 @@ const sidebars: SidebarsConfig = {
       type: 'category',
       label: 'Getting Started',
       collapsed: false,
-      items: ['intro', 'getting-started/quickstart', 'getting-started/serverless-quickstart',
-               'getting-started/installation', 'getting-started/concepts'],
+      items: [
+        'intro',
+        'getting-started/quickstart',
+        'getting-started/serverless-quickstart',
+        'getting-started/installation',
+        'getting-started/concepts',
+      ],
     },
     {
       type: 'category',

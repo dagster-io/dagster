@@ -11,15 +11,15 @@ import InstallUv from '@site/docs/partials/\_InstallUv.md';
 
 To follow the steps in this guide, you will need to:
 
-* Sign up for a [Dagster+ Serverless](https://dagster.plus/signup) account.
-* Choose a template repository, and clone the repository to your local machine.
-* Ensure Python 3.9+ is installed on your local machine.
+- Sign up for a [Dagster+ Serverless](https://dagster.plus/signup) account.
+- Choose a template repository, and clone the repository to your local machine.
+- Ensure Python 3.9+ is installed on your local machine.
 
 :::
 
 ## Step 1: Install `uv` (Recommended)
 
-:::note 
+:::note
 
 If you will be using `pip`, skip to [step 2.](#step-2-configure-your-project)
 
@@ -28,7 +28,6 @@ If you will be using `pip`, skip to [step 2.](#step-2-configure-your-project)
 If you will be using `uv` as your package manager, follow the steps below to install the Python package manager [`uv`](https://docs.astral.sh/uv/getting-started/installation):
 
 <InstallUv />
-
 
 ## Step 2: Configure your project
 
@@ -107,15 +106,17 @@ If you will be using `uv` as your package manager, follow the steps below to ins
 ## Step 3: Develop and test locally
 
 TK - development:
-* Create assets
-* Automate your pipeline
-* Add integrations
+
+- Create assets
+- Automate your pipeline
+- Add integrations
 
 TK - testing:
-* Run `dg check defs`
-* Run `dg dev` to start the webserver and run your pipeline in the UI
-* Add asset checks
-* Debug with `pdb`
+
+- Run `dg check defs`
+- Run `dg dev` to start the webserver and run your pipeline in the UI
+- Add asset checks
+- Debug with `pdb`
 
 ## Step 4: Deploy to staging with branch deployments
 
