@@ -76,6 +76,9 @@ EXCLUDE_MISSING_RST = {
     "dagster.SqlComponent",
     # Library components
     "dagster_snowflake.components.sql_component.component.SnowflakeConnectionComponentBase",
+    # Component testing utils
+    "dagster.components.testing.utils.DefsFolderSandbox",
+    "dagster.components.testing.utils.create_defs_folder_sandbox",
 }
 
 # Symbols marked @public but not exported at top-level
@@ -98,6 +101,9 @@ EXCLUDE_MISSING_EXPORT = {
     "dagster.components.scaffold.scaffold.scaffold_with",
     "dagster.components.scaffold.scaffold.ScaffoldRequest",
     "dagster.components.scaffold.scaffold.Scaffolder",
+    # Component testing utils
+    "dagster.components.testing.utils.DefsFolderSandbox",
+    "dagster.components.testing.utils.create_defs_folder_sandbox",
 }
 
 # Hardcoded list of all RST symbols missing @public decorators
@@ -412,6 +418,9 @@ EXCLUDE_MISSING_PUBLIC = {
     "dagster.Scheduler",
     "dagster.ScheduleStorage",
     "dagster_polars.patito.patito_model_to_dagster_type",
+    # Component testing utils
+    "dagster.components.testing.utils.DefsFolderSandbox",
+    "dagster.components.testing.utils.create_defs_folder_sandbox",
 }
 # Total: 305 symbols
 
