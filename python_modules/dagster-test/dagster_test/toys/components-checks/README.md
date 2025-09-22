@@ -1,4 +1,4 @@
-# components_in_app_checks
+# components_checks
 
 ## Getting started
 

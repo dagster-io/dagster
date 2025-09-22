@@ -27,5 +27,3 @@ root_module = "in_app_check_components"
 registry_modules = [
     "in_app_check_components.components.*",
 ]
-
-
