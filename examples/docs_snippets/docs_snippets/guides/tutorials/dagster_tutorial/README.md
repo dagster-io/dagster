@@ -29,7 +29,7 @@ Install the python dependencies with [pip](https://pypi.org/project/pip/):
 python3 -m venv .venv
 ```
 
-Then active the virtual environment:
+Then activate the virtual environment:
 
 | OS      | Command                     |
 | ------- | --------------------------- |
