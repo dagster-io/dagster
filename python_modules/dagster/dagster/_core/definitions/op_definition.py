@@ -453,8 +453,7 @@ class OpDefinition(NodeDefinition, IHasInternalInit):
                     input_manager_key=resource_mapping[input_def.input_manager_key]
                 )
             else:
-                new_ins[input_def.name] = In.from_definition(input_def)
-
+                new_ins[input_def.name] = input_def
         # Remap output manager keys in output definitions
         new_outs = {}
         for output_def in self.output_defs:
@@ -465,7 +464,7 @@ class OpDefinition(NodeDefinition, IHasInternalInit):
                     io_manager_key=resource_mapping[output_def.io_manager_key]
                 )
             else:
-                new_outs[output_def.name] = Out.from_definition(output_def)
+                new_outs[output_def.name] = output_def
 
         return OpDefinition.dagster_internal_init(
             name=self.name,
