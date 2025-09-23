@@ -1292,6 +1292,7 @@ type Pipeline implements SolidContainer & IPipelineSnapshot {
   presets: [PipelinePreset!]!
   isJob: Boolean!
   isAssetJob: Boolean!
+  owners: [DefinitionOwner!]!
   repository: Repository!
   partitionKeysOrError(
     cursor: String
@@ -1300,6 +1301,16 @@ type Pipeline implements SolidContainer & IPipelineSnapshot {
     selectedAssetKeys: [AssetKeyInput!]
   ): PartitionKeys!
   partition(partitionName: String!, selectedAssetKeys: [AssetKeyInput!]): PartitionTagsAndConfig
+}
+
+union DefinitionOwner = UserDefinitionOwner | TeamDefinitionOwner
+
+type UserDefinitionOwner {
+  email: String!
+}
+
+type TeamDefinitionOwner {
+  team: String!
 }
 
 type PartitionTagsAndConfig {
@@ -1881,6 +1892,7 @@ type Schedule {
   futureTick(tickTimestamp: Int!): DryRunInstigationTick!
   potentialTickTimestamps(startTimestamp: Float, upperLimit: Int, lowerLimit: Int): [Float!]!
   assetSelection: AssetSelection
+  owners: [DefinitionOwner!]!
   tags: [DefinitionTag!]!
   metadataEntries: [MetadataEntry!]!
 }
@@ -2414,6 +2426,7 @@ type Job implements SolidContainer & IPipelineSnapshot {
   presets: [PipelinePreset!]!
   isJob: Boolean!
   isAssetJob: Boolean!
+  owners: [DefinitionOwner!]!
   repository: Repository!
   partitionKeysOrError(
     cursor: String
@@ -3331,6 +3344,7 @@ type Sensor {
   metadata: SensorMetadata!
   sensorType: SensorType!
   assetSelection: AssetSelection
+  owners: [DefinitionOwner!]!
   tags: [DefinitionTag!]!
   metadataEntries: [MetadataEntry!]!
 }
