@@ -64,6 +64,10 @@ class JobIndex:
         return self.job_snapshot.metadata
 
     @property
+    def owners(self):
+        return self.job_snapshot.owners
+
+    @property
     def job_snapshot_id(self) -> str:
         return self.job_snapshot.snapshot_id
 
