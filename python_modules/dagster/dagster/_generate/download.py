@@ -35,7 +35,6 @@ AVAILABLE_EXAMPLES = [
     "deploy_k8s",
     "development_to_production",
     "feature_graph_backed_assets",
-    "getting_started_etl_tutorial",
     "google_drive_factory",
     "oss-metadata-to-plus",
     "project_analytics",
