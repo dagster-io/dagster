@@ -12,6 +12,8 @@
     'minIntervalSeconds': 30,
     'name': 'always_no_config_sensor_with_tags_and_metadata',
     'nextTick': None,
+    'owners': list([
+    ]),
     'sensorState': dict({
       'runs': list([
       ]),

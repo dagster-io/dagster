@@ -32,6 +32,10 @@ class RepresentedJob(ABC):
     def description(self) -> Optional[str]:
         return self._job_index.description
 
+    @property
+    def owners(self) -> Optional[Sequence[str]]:
+        return self._job_index.owners
+
     # Snapshot things
 
     @property

@@ -1273,6 +1273,8 @@ export type DefaultPartitionStatuses = {
   unmaterializedPartitions: Array<Scalars['String']['output']>;
 };
 
+export type DefinitionOwner = TeamDefinitionOwner | UserDefinitionOwner;
+
 export type DefinitionTag = {
   __typename: 'DefinitionTag';
   key: Scalars['String']['output'];
@@ -2091,6 +2093,7 @@ export type IPipelineSnapshot = {
   >;
   modes: Array<Mode>;
   name: Scalars['String']['output'];
+  owners: Array<DefinitionOwner>;
   parentSnapshotId: Maybe<Scalars['String']['output']>;
   pipelineSnapshotId: Scalars['String']['output'];
   runs: Array<Run>;
@@ -2387,6 +2390,7 @@ export type Job = IPipelineSnapshot &
     >;
     modes: Array<Mode>;
     name: Scalars['String']['output'];
+    owners: Array<DefinitionOwner>;
     parentSnapshotId: Maybe<Scalars['String']['output']>;
     partition: Maybe<PartitionTagsAndConfig>;
     partitionKeysOrError: PartitionKeys;
@@ -3747,6 +3751,7 @@ export type Pipeline = IPipelineSnapshot &
     >;
     modes: Array<Mode>;
     name: Scalars['String']['output'];
+    owners: Array<DefinitionOwner>;
     parentSnapshotId: Maybe<Scalars['String']['output']>;
     partition: Maybe<PartitionTagsAndConfig>;
     partitionKeysOrError: PartitionKeys;
@@ -3987,6 +3992,7 @@ export type PipelineSnapshot = IPipelineSnapshot &
     >;
     modes: Array<Mode>;
     name: Scalars['String']['output'];
+    owners: Array<DefinitionOwner>;
     parentSnapshotId: Maybe<Scalars['String']['output']>;
     pipelineSnapshotId: Scalars['String']['output'];
     runTags: Array<PipelineTag>;
@@ -5305,6 +5311,7 @@ export type Schedule = {
   >;
   mode: Scalars['String']['output'];
   name: Scalars['String']['output'];
+  owners: Array<DefinitionOwner>;
   partitionSet: Maybe<PartitionSet>;
   pipelineName: Scalars['String']['output'];
   potentialTickTimestamps: Array<Scalars['Float']['output']>;
@@ -5450,6 +5457,7 @@ export type Sensor = {
   minIntervalSeconds: Scalars['Int']['output'];
   name: Scalars['String']['output'];
   nextTick: Maybe<DryRunInstigationTick>;
+  owners: Array<DefinitionOwner>;
   sensorState: InstigationState;
   sensorType: SensorType;
   tags: Array<DefinitionTag>;
@@ -5890,6 +5898,11 @@ export type TeamAssetOwner = {
   team: Scalars['String']['output'];
 };
 
+export type TeamDefinitionOwner = {
+  __typename: 'TeamDefinitionOwner';
+  team: Scalars['String']['output'];
+};
+
 export type TerminatePipelineExecutionFailure = {
   message: Scalars['String']['output'];
   run: Run;
@@ -6095,6 +6108,11 @@ export type UsedSolid = {
 
 export type UserAssetOwner = {
   __typename: 'UserAssetOwner';
+  email: Scalars['String']['output'];
+};
+
+export type UserDefinitionOwner = {
+  __typename: 'UserDefinitionOwner';
   email: Scalars['String']['output'];
 };
 
@@ -9655,6 +9673,7 @@ export const buildIPipelineSnapshot = (
       overrides && overrides.hasOwnProperty('metadataEntries') ? overrides.metadataEntries! : [],
     modes: overrides && overrides.hasOwnProperty('modes') ? overrides.modes! : [],
     name: overrides && overrides.hasOwnProperty('name') ? overrides.name! : 'autem',
+    owners: overrides && overrides.hasOwnProperty('owners') ? overrides.owners! : [],
     parentSnapshotId:
       overrides && overrides.hasOwnProperty('parentSnapshotId')
         ? overrides.parentSnapshotId!
@@ -10182,6 +10201,7 @@ export const buildJob = (
       overrides && overrides.hasOwnProperty('metadataEntries') ? overrides.metadataEntries! : [],
     modes: overrides && overrides.hasOwnProperty('modes') ? overrides.modes! : [],
     name: overrides && overrides.hasOwnProperty('name') ? overrides.name! : 'rerum',
+    owners: overrides && overrides.hasOwnProperty('owners') ? overrides.owners! : [],
     parentSnapshotId:
       overrides && overrides.hasOwnProperty('parentSnapshotId')
         ? overrides.parentSnapshotId!
@@ -12491,6 +12511,7 @@ export const buildPipeline = (
       overrides && overrides.hasOwnProperty('metadataEntries') ? overrides.metadataEntries! : [],
     modes: overrides && overrides.hasOwnProperty('modes') ? overrides.modes! : [],
     name: overrides && overrides.hasOwnProperty('name') ? overrides.name! : 'veritatis',
+    owners: overrides && overrides.hasOwnProperty('owners') ? overrides.owners! : [],
     parentSnapshotId:
       overrides && overrides.hasOwnProperty('parentSnapshotId')
         ? overrides.parentSnapshotId!
@@ -12923,6 +12944,7 @@ export const buildPipelineSnapshot = (
       overrides && overrides.hasOwnProperty('metadataEntries') ? overrides.metadataEntries! : [],
     modes: overrides && overrides.hasOwnProperty('modes') ? overrides.modes! : [],
     name: overrides && overrides.hasOwnProperty('name') ? overrides.name! : 'beatae',
+    owners: overrides && overrides.hasOwnProperty('owners') ? overrides.owners! : [],
     parentSnapshotId:
       overrides && overrides.hasOwnProperty('parentSnapshotId')
         ? overrides.parentSnapshotId!
@@ -15003,6 +15025,7 @@ export const buildSchedule = (
       overrides && overrides.hasOwnProperty('metadataEntries') ? overrides.metadataEntries! : [],
     mode: overrides && overrides.hasOwnProperty('mode') ? overrides.mode! : 'in',
     name: overrides && overrides.hasOwnProperty('name') ? overrides.name! : 'ut',
+    owners: overrides && overrides.hasOwnProperty('owners') ? overrides.owners! : [],
     partitionSet:
       overrides && overrides.hasOwnProperty('partitionSet')
         ? overrides.partitionSet!
@@ -15258,6 +15281,7 @@ export const buildSensor = (
         : relationshipsToOmit.has('DryRunInstigationTick')
           ? ({} as DryRunInstigationTick)
           : buildDryRunInstigationTick({}, relationshipsToOmit),
+    owners: overrides && overrides.hasOwnProperty('owners') ? overrides.owners! : [],
     sensorState:
       overrides && overrides.hasOwnProperty('sensorState')
         ? overrides.sensorState!
@@ -16049,6 +16073,18 @@ export const buildTeamAssetOwner = (
   };
 };
 
+export const buildTeamDefinitionOwner = (
+  overrides?: Partial<TeamDefinitionOwner>,
+  _relationshipsToOmit: Set<string> = new Set(),
+): {__typename: 'TeamDefinitionOwner'} & TeamDefinitionOwner => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('TeamDefinitionOwner');
+  return {
+    __typename: 'TeamDefinitionOwner',
+    team: overrides && overrides.hasOwnProperty('team') ? overrides.team! : 'quas',
+  };
+};
+
 export const buildTerminatePipelineExecutionFailure = (
   overrides?: Partial<TerminatePipelineExecutionFailure>,
   _relationshipsToOmit: Set<string> = new Set(),
@@ -16453,6 +16489,18 @@ export const buildUserAssetOwner = (
   return {
     __typename: 'UserAssetOwner',
     email: overrides && overrides.hasOwnProperty('email') ? overrides.email! : 'velit',
+  };
+};
+
+export const buildUserDefinitionOwner = (
+  overrides?: Partial<UserDefinitionOwner>,
+  _relationshipsToOmit: Set<string> = new Set(),
+): {__typename: 'UserDefinitionOwner'} & UserDefinitionOwner => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('UserDefinitionOwner');
+  return {
+    __typename: 'UserDefinitionOwner',
+    email: overrides && overrides.hasOwnProperty('email') ? overrides.email! : 'tempora',
   };
 };
 
