@@ -1,5 +1,4 @@
 import {MockedProvider} from '@apollo/client/testing';
-import {Meta} from '@storybook/react';
 
 import {InMemoryCache} from '../../apollo-client';
 import {WorkspaceProvider} from '../../workspace/WorkspaceContext/WorkspaceContext';
@@ -13,7 +12,7 @@ import {
 export default {
   title: 'RunsFeedRoot',
   component: RunsFeedRoot,
-} as Meta;
+};
 
 // This cache prevents Apollo Client from stripping fields in mock data.
 const createFixingRunsCache = () => {

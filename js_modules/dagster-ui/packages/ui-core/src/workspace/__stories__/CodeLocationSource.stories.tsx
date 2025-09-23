@@ -1,5 +1,4 @@
 import {Box} from '@dagster-io/ui-components';
-import {Meta} from '@storybook/react';
 
 import {CodeLocationSource} from '../CodeLocationSource';
 
@@ -7,7 +6,7 @@ import {CodeLocationSource} from '../CodeLocationSource';
 export default {
   title: 'CodeLocationSource',
   component: CodeLocationSource,
-} as Meta;
+};
 
 export const Default = () => {
   return (

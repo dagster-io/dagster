@@ -1,4 +1,3 @@
-import {Meta} from '@storybook/react';
 import {useMemo, useState} from 'react';
 
 import {ButtonGroup} from '../ButtonGroup';
@@ -8,7 +7,7 @@ import {ProductTourPosition as Position, ProductTour} from '../ProductTour';
 export default {
   title: 'ProductTour',
   component: ProductTour,
-} as Meta;
+};
 
 export const Positions = () => {
   const [activeItem, setActiveItem] = useState(Position.TOP_LEFT);

@@ -1,4 +1,3 @@
-import {Meta} from '@storybook/react';
 import styled from 'styled-components';
 
 import {Colors} from '../Color';
@@ -9,7 +8,7 @@ import {Menu, MenuDivider, MenuItem} from '../Menu';
 export default {
   title: 'Menu',
   component: Menu,
-} as Meta;
+};
 
 export const Default = () => {
   return (

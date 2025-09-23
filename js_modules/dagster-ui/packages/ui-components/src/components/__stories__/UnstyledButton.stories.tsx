@@ -1,5 +1,3 @@
-import {Meta} from '@storybook/react';
-
 import {Box} from '../Box';
 import {Colors} from '../Color';
 import {Icon} from '../Icon';
@@ -10,7 +8,7 @@ import {UnstyledButton} from '../UnstyledButton';
 export default {
   title: 'UnstyledButton',
   component: UnstyledButton,
-} as Meta;
+};
 
 export const Default = () => {
   return (

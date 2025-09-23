@@ -1,12 +1,10 @@
-import {Meta} from '@storybook/react';
-
 import {Markdown} from '../Markdown';
 
 // eslint-disable-next-line import/no-default-export
 export default {
   title: 'Markdown',
   component: Markdown,
-} as Meta;
+};
 
 export const Simple = () => {
   return (
