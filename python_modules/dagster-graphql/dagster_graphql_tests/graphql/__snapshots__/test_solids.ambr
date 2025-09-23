@@ -2358,6 +2358,30 @@
         dict({
           '__typename': 'UsedSolid',
           'definition': dict({
+            'name': 'permission_partitioned_op',
+          }),
+          'invocations': list([
+            dict({
+              'pipeline': dict({
+                'name': 'owned_partitioned_job',
+              }),
+              'solidHandle': dict({
+                'handleID': 'permission_partitioned_op',
+              }),
+            }),
+            dict({
+              'pipeline': dict({
+                'name': 'unowned_partitioned_job',
+              }),
+              'solidHandle': dict({
+                'handleID': 'permission_partitioned_op',
+              }),
+            }),
+          ]),
+        }),
+        dict({
+          '__typename': 'UsedSolid',
+          'definition': dict({
             'name': 'permission_test_op',
           }),
           'invocations': list([
