@@ -34,10 +34,10 @@ empty_filtered_sensors:
 
 # Success scenarios - get single sensor
 success_single_sensor_running:
-  command: "dg api sensor get run_assets_30min --json"
+  command: "dg api sensor get orders_sensor --json"
 
 success_single_sensor_running_text:
-  command: "dg api sensor get run_assets_30min"
+  command: "dg api sensor get orders_sensor"
 
 # Error scenarios
 error_sensor_not_found:
