@@ -84,11 +84,6 @@ def get_deployment_command(
         click.echo(output)
     except ValueError as e:
         if "Deployment not found" in str(e):
-            if output_json:
-                error_response = {"error": f"Deployment '{name}' not found"}
-                click.echo(json.dumps(error_response), err=True)
-            else:
-                click.echo(f"Deployment '{name}' not found", err=True)
             raise click.ClickException(f"Deployment '{name}' not found")
         else:
             raise
