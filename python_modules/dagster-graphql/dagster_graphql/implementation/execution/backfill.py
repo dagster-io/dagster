@@ -26,7 +26,9 @@ from dagster_graphql.implementation.utils import (
     AssetBackfillPreviewParams,
     BackfillParams,
     assert_permission_for_asset_graph,
+    assert_permission_for_backfill,
     assert_permission_for_location,
+    assert_permission_for_remote_job,
     assert_valid_asset_partition_backfill,
     assert_valid_job_partition_backfill,
 )
@@ -138,9 +140,6 @@ def create_and_launch_partition_backfill(
         repository_selector = RepositorySelector.from_graphql_input(
             partition_set_selector.get("repositorySelector")
         )
-        assert_permission_for_location(
-            graphene_info, Permissions.LAUNCH_PARTITION_BACKFILL, repository_selector.location_name
-        )
         location = graphene_info.context.get_code_location(repository_selector.location_name)
 
         repository = location.get_repository(repository_selector.repository_name)
@@ -149,14 +148,23 @@ def create_and_launch_partition_backfill(
             for partition_set in repository.get_partition_sets()
             if partition_set.name == partition_set_selector.get("partitionSetName")
         ]
-        if not matches:
-            return GraphenePartitionSetNotFoundError(partition_set_name)
-
         if len(matches) != 1:
+            assert_permission_for_location(
+                graphene_info,
+                Permissions.LAUNCH_PARTITION_BACKFILL,
+                repository_selector.location_name,
+            )
+            if not matches:
+                return GraphenePartitionSetNotFoundError(partition_set_name)
+
             raise DagsterInvariantViolationError(
                 f"Partition set names must be unique: found {len(matches)} matches for {partition_set_name}"
             )
         remote_partition_set = next(iter(matches))
+        remote_job = repository.get_full_job(remote_partition_set.job_name)
+        assert_permission_for_remote_job(
+            graphene_info, Permissions.LAUNCH_PARTITION_BACKFILL, remote_job
+        )
 
         if backfill_params.get("allPartitions"):
             result = graphene_info.context.get_partition_names(
@@ -308,20 +316,7 @@ def cancel_partition_backfill(
     if not backfill:
         check.failed(f"No backfill found for id: {backfill_id}")
 
-    if backfill.is_asset_backfill:
-        asset_graph = graphene_info.context.asset_graph
-        assert_permission_for_asset_graph(
-            graphene_info,
-            asset_graph,
-            backfill.asset_selection,
-            Permissions.CANCEL_PARTITION_BACKFILL,
-        )
-    else:
-        partition_set_origin = check.not_none(backfill.partition_set_origin)
-        location_name = partition_set_origin.selector.location_name
-        assert_permission_for_location(
-            graphene_info, Permissions.CANCEL_PARTITION_BACKFILL, location_name
-        )
+    assert_permission_for_backfill(graphene_info, Permissions.CANCEL_PARTITION_BACKFILL, backfill)
 
     graphene_info.context.instance.update_backfill(backfill.with_status(BulkActionStatus.CANCELING))
 
@@ -337,11 +332,7 @@ def resume_partition_backfill(
     if not backfill:
         check.failed(f"No backfill found for id: {backfill_id}")
 
-    partition_set_origin = check.not_none(backfill.partition_set_origin)
-    location_name = partition_set_origin.selector.location_name
-    assert_permission_for_location(
-        graphene_info, Permissions.LAUNCH_PARTITION_BACKFILL, location_name
-    )
+    assert_permission_for_backfill(graphene_info, Permissions.LAUNCH_PARTITION_BACKFILL, backfill)
 
     graphene_info.context.instance.update_backfill(backfill.with_status(BulkActionStatus.REQUESTED))
     return GrapheneResumeBackfillSuccess(backfill_id=backfill_id)
@@ -376,14 +367,10 @@ def retry_partition_backfill(
             raise DagsterInvariantViolationError(
                 "Cannot re-execute from failure an asset backfill that has no missing materializations."
             )
-        asset_graph = graphene_info.context.asset_graph
-        assert_permission_for_asset_graph(
-            graphene_info,
-            asset_graph,
-            list(assets_to_request.asset_keys),
-            Permissions.LAUNCH_PARTITION_BACKFILL,
-        )
 
+        assert_permission_for_backfill(
+            graphene_info, Permissions.LAUNCH_PARTITION_BACKFILL, backfill
+        )
         new_backfill = PartitionBackfill.from_asset_graph_subset(
             backfill_id=make_new_backfill_id(),
             asset_graph_subset=assets_to_request,
@@ -399,10 +386,8 @@ def retry_partition_backfill(
             run_config=backfill.run_config,
         )
     else:  # job backfill
-        partition_set_origin = check.not_none(backfill.partition_set_origin)
-        location_name = partition_set_origin.selector.location_name
-        assert_permission_for_location(
-            graphene_info, Permissions.LAUNCH_PARTITION_BACKFILL, location_name
+        assert_permission_for_backfill(
+            graphene_info, Permissions.LAUNCH_PARTITION_BACKFILL, backfill
         )
 
         new_backfill = PartitionBackfill(
