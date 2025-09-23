@@ -431,3 +431,30 @@ Selects sink assets that depend on assets in the `public_data` group, but do not
     ```
     </TabItem>
 </Tabs>
+
+## Select assets with degraded health status
+
+```shell
+status:"DEGRADED"
+```
+
+Selects sink assets that depend on assets in the `public_data` group, but do not belong to that group.
+
+<Tabs groupId="examples">
+    <TabItem value="dagster-ui" label="Dagster UI">
+    ![Assets with degraded health status](/images/guides/build/assets/asset-selection-syntax/select-assets-degraded-health-status.png)
+    </TabItem>
+    <TabItem value="python" label="Python">
+    ```python
+    degraded_health_status = define_asset_job(
+        name="degraded_health_status_job", selection='status:"DEGRADED"'
+    )
+    ```
+    </TabItem>
+    <TabItem value="cli" label="CLI">
+    ```shell
+    dg list defs --assets 'status:"DEGRADED"'
+    dg launch --assets 'status:"DEGRADED"'
+    ```
+    </TabItem>
+</Tabs>

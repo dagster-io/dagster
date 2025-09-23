@@ -3,6 +3,7 @@ description: Upgrade your Amazon ECS CloudFormation template to use the newest i
 sidebar_label: Upgrading CloudFormation
 sidebar_position: 3500
 title: Upgrading CloudFormation for an Amazon ECS agent
+tags: [dagster-plus-feature]
 ---
 
 :::note

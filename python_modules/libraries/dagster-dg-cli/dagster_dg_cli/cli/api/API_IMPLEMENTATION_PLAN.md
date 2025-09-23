@@ -44,6 +44,7 @@ dg api secret delete <name> [--location <name>]
 ### 3. **agent**
 
 ```bash
+# Implemented
 dg api agent list [--json]
 dg api agent get <id> [--json]
 # Agents are typically managed via configuration, not CRUD operations

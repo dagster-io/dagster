@@ -2,7 +2,7 @@ from dagster_dbt import DbtCliResource, dbt_assets
 
 import dagster as dg
 
-from .resources import dbt_project, dbt_resource
+from .resources import dbt_project
 
 
 @dbt_assets(manifest=dbt_project.manifest_path)

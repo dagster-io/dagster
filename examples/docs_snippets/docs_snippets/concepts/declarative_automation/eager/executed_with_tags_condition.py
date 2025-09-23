@@ -1,7 +1,7 @@
 import dagster as dg
 
-# detects if the latest run of the target was executed via an automation condition
-executed_via_condition = dg.AutomationCondition.executed_with_tags(
+# detects if any of the new updates of the target was executed via an automation condition
+executed_via_condition = dg.AutomationCondition.any_new_update_has_run_tags(
     tag_values={"dagster/from_automation_condition": "true"}
 )
 

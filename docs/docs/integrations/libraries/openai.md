@@ -58,7 +58,7 @@ The OpenAI resource can be used in assets in order to interact with the OpenAI A
   endBefore="end_example"
 />
 
-After materializing your asset, your OpenAI API usage metadata will be available in the **Events** and **Plots** tabs of your asset in the Dagster UI. If you are using [Dagster+](/deployment/dagster-plus), your usage metadata will also be available in [Dagster Insights](/guides/monitor/insights).
+After materializing your asset, your OpenAI API usage metadata will be available in the **Events** and **Plots** tabs of your asset in the Dagster UI. If you are using [Dagster+](/deployment/dagster-plus), your usage metadata will also be available in [Dagster Insights](/guides/observe/insights).
 
 ## Using the OpenAI resource with ops
 

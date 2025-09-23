@@ -5,6 +5,7 @@ sidebar_position: 400
 title: Dagster+ Hybrid deployment
 canonicalUrl: '/deployment/dagster-plus/hybrid'
 slug: '/deployment/dagster-plus/hybrid'
+tags: [dagster-plus-feature]
 ---
 
 In a Dagster+ Hybrid deployment, the orchestration control plane is run by Dagster+ while your Dagster code is executed within your environment.
