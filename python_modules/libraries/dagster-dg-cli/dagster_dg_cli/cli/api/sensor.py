@@ -1,6 +1,5 @@
 """Sensor API commands following GitHub CLI patterns."""
 
-import datetime
 import json
 from typing import TYPE_CHECKING
 
@@ -11,6 +10,7 @@ from dagster_shared.plus.config import DagsterPlusCliConfig
 from dagster_shared.plus.config_utils import dg_api_options
 
 from dagster_dg_cli.cli.api.client import create_dg_api_graphql_client
+from dagster_dg_cli.cli.api.formatters import _format_timestamp
 
 if TYPE_CHECKING:
     from dagster_dg_cli.api_layer.schemas.sensor import DgApiSensor, DgApiSensorList
@@ -40,11 +40,7 @@ def format_sensors(sensors: "DgApiSensorList", as_json: bool) -> str:
         #     sensor_lines.append(f"Repository: {sensor.repository_origin}")
 
         if sensor.next_tick_timestamp:
-            try:
-                dt = datetime.datetime.fromtimestamp(sensor.next_tick_timestamp)
-                next_tick_str = dt.strftime("%Y-%m-%d %H:%M:%S")
-            except (ValueError, OSError):
-                next_tick_str = f"Invalid timestamp: {sensor.next_tick_timestamp}"
+            next_tick_str = _format_timestamp(sensor.next_tick_timestamp)
             sensor_lines.append(f"Next Tick: {next_tick_str}")
 
         sensor_lines.append("")  # Empty line between sensors
@@ -74,11 +70,7 @@ def format_sensor(sensor: "DgApiSensor", as_json: bool) -> str:
     #     lines.append(f"Repository: {sensor.repository_origin}")
 
     if sensor.next_tick_timestamp:
-        try:
-            dt = datetime.datetime.fromtimestamp(sensor.next_tick_timestamp)
-            next_tick_str = dt.strftime("%Y-%m-%d %H:%M:%S")
-        except (ValueError, OSError):
-            next_tick_str = f"Invalid timestamp: {sensor.next_tick_timestamp}"
+        next_tick_str = _format_timestamp(sensor.next_tick_timestamp)
         lines.append(f"Next Tick: {next_tick_str}")
 
     return "\n".join(lines)

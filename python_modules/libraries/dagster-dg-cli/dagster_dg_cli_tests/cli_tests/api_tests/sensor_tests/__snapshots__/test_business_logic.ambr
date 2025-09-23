@@ -31,7 +31,7 @@
   Status: RUNNING
   Type: AUTO_MATERIALIZE
   Description: Critical production sensor
-  Next Tick: 2024-01-15 04:45:00
+  Next Tick: 2024-01-15 09:45:00
   '''
 # ---
 # name: TestFormatSensors.test_format_sensors_json_output[0]
@@ -68,7 +68,7 @@
   Status: RUNNING
   Type: STANDARD
   Description: Daily processing sensor
-  Next Tick: 2024-01-15 04:30:00
+  Next Tick: 2024-01-15 09:30:00
   
   Name: asset_sensor
   Status: STOPPED

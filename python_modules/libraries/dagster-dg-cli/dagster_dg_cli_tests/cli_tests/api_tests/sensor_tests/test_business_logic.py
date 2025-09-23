@@ -220,8 +220,11 @@ class TestFormatSensors:
 
     def test_format_sensors_text_output(self, snapshot):
         """Test formatting sensors as text."""
+        from dagster_shared.utils.timing import fixed_timezone
+
         sensor_list = self._create_sample_sensor_list()
-        result = format_sensors(sensor_list, as_json=False)
+        with fixed_timezone("UTC"):
+            result = format_sensors(sensor_list, as_json=False)
 
         # Snapshot the entire text output
         snapshot.assert_match(result)
@@ -237,8 +240,11 @@ class TestFormatSensors:
 
     def test_format_sensor_text_output(self, snapshot):
         """Test formatting single sensor as text."""
+        from dagster_shared.utils.timing import fixed_timezone
+
         sensor = self._create_sample_sensor()
-        result = format_sensor(sensor, as_json=False)
+        with fixed_timezone("UTC"):
+            result = format_sensor(sensor, as_json=False)
 
         # Snapshot the text output
         snapshot.assert_match(result)
@@ -254,6 +260,8 @@ class TestFormatSensors:
 
     def test_format_minimal_sensor_text_output(self, snapshot):
         """Test formatting minimal sensor as text."""
+        from dagster_shared.utils.timing import fixed_timezone
+
         sensor = DgApiSensor(
             id="minimal-id",
             name="minimal_sensor",
@@ -263,7 +271,8 @@ class TestFormatSensors:
             repository_origin=None,
             next_tick_timestamp=None,
         )
-        result = format_sensor(sensor, as_json=False)
+        with fixed_timezone("UTC"):
+            result = format_sensor(sensor, as_json=False)
 
         snapshot.assert_match(result)
 
