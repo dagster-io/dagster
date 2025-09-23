@@ -758,7 +758,7 @@ def get_upstream_unique_ids(
 
 
 def _build_child_map(manifest: Mapping[str, Any]) -> Mapping[str, AbstractSet[str]]:
-    """Manifests produced by dbt Fusion do not contain a child map, so we need to build it manually."""
+    """Manifests produced by early versions of dbt Fusion do not contain a child map, so we need to build it manually."""
     if manifest.get("child_map"):
         return manifest["child_map"]
 
@@ -812,8 +812,7 @@ def build_dbt_specs(
         specs.append(spec)
 
         # add check specs associated with the asset
-
-        for child_unique_id in child_map[unique_id]:
+        for child_unique_id in child_map.get(unique_id, []):
             if not child_unique_id.startswith("test"):
                 continue
             check_spec = translator.get_asset_check_spec(
@@ -836,7 +835,7 @@ def build_dbt_specs(
                 upstream_id.startswith("source")
                 and translator.settings.enable_source_tests_as_checks
             ):
-                for child_unique_id in child_map[upstream_id]:
+                for child_unique_id in child_map.get(upstream_id, []):
                     if not child_unique_id.startswith("test"):
                         continue
                     check_spec = translator.get_asset_check_spec(
