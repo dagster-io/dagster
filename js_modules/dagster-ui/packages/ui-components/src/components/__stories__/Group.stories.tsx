@@ -1,4 +1,3 @@
-import {Meta} from '@storybook/react';
 import styled from 'styled-components';
 
 import {Box} from '../Box';
@@ -12,7 +11,7 @@ import {AlignItems, FlexWrap, Spacing} from '../types';
 export default {
   title: 'Group',
   component: Group,
-} as Meta;
+};
 
 export const Row = () => {
   const spacings: Spacing[] = [0, 2, 4, 8, 12, 16, 20, 24, 32, 48, 64];

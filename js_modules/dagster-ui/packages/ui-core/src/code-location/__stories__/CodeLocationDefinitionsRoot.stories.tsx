@@ -1,5 +1,4 @@
 import {MockedProvider} from '@apollo/client/testing';
-import {Meta} from '@storybook/react';
 import {useMemo} from 'react';
 import {MemoryRouter} from 'react-router';
 import {RecoilRoot} from 'recoil';
@@ -18,7 +17,7 @@ import {
 export default {
   title: 'Code Location/CodeLocationDefinitionsRoot',
   component: CodeLocationDefinitionsRoot,
-} as Meta;
+};
 
 export const Default = () => {
   const repoName = 'foo';

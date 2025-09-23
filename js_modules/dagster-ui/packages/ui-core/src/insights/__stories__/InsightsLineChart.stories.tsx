@@ -1,5 +1,4 @@
 import {faker} from '@faker-js/faker';
-import {Meta} from '@storybook/react';
 import {useEffect, useMemo, useState} from 'react';
 
 import {orderedColors} from '../InsightsColors';
@@ -10,7 +9,7 @@ import {ReportingMetricsGranularity, ReportingUnitType} from '../types';
 export default {
   title: 'Insights/InsightsLineChart',
   component: InsightsLineChart,
-} as Meta;
+};
 
 const ONE_DAY = 24 * 60 * 60 * 1000;
 const JUNE_1_2023_EDT = 1685592000000;

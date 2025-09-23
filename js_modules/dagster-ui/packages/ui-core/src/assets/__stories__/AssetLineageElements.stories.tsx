@@ -1,4 +1,3 @@
-import {Meta} from '@storybook/react';
 import {useMemo} from 'react';
 
 import {AssetLineageElements} from '../AssetLineageElements';
@@ -8,7 +7,7 @@ import {AssetLineageFragment} from '../types/AssetLineageElements.types';
 export default {
   title: 'Assets/Asset Lineage',
   component: AssetLineageElements,
-} as Meta;
+};
 
 export const FewParents = () => {
   const timestamp = useMemo(() => Date.now(), []);

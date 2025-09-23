@@ -1,5 +1,3 @@
-import {Meta} from '@storybook/react';
-
 import {Group} from '../Group';
 import {NonIdealState} from '../NonIdealState';
 
@@ -7,7 +5,7 @@ import {NonIdealState} from '../NonIdealState';
 export default {
   title: 'NonIdealState',
   component: NonIdealState,
-} as Meta;
+};
 
 export const Default = () => {
   return (

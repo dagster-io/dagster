@@ -1,6 +1,5 @@
 import {MockedProvider} from '@apollo/client/testing';
 import {Button} from '@dagster-io/ui-components';
-import {Meta} from '@storybook/react';
 import {useState} from 'react';
 
 import {OpenWithIntent} from '../../instigation/useInstigationStateReducer';
@@ -21,7 +20,7 @@ import {
 export default {
   title: 'SensorStateChangeDialog',
   component: SensorStateChangeDialog,
-} as Meta;
+};
 
 export const StartSensors = () => {
   const [dialogState, setDialogState] = useState<OpenWithIntent>('not-open');

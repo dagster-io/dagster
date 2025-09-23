@@ -1,5 +1,4 @@
 import {Box, MetadataTable} from '@dagster-io/ui-components';
-import {Meta} from '@storybook/react';
 
 import {RunStatus} from '../../graphql/types';
 import {RunStatusIndicator} from '../RunStatusDots';
@@ -8,7 +7,7 @@ import {RunStatusIndicator} from '../RunStatusDots';
 export default {
   title: 'RunStatus',
   component: RunStatusIndicator,
-} as Meta;
+};
 
 export const Example = () => {
   return (

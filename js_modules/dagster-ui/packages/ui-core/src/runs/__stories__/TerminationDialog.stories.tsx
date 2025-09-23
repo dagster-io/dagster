@@ -1,4 +1,4 @@
-import {Meta, StoryFn} from '@storybook/react';
+import {StoryFn} from '@storybook/nextjs';
 import faker from 'faker';
 
 import {StorybookProvider} from '../../testing/StorybookProvider';
@@ -8,7 +8,7 @@ import {TerminationDialog, Props as TerminationDialogProps} from '../Termination
 export default {
   title: 'TerminationDialog',
   component: TerminationDialog,
-} as Meta;
+};
 
 const Template: StoryFn<TerminationDialogProps> = (props) => (
   <StorybookProvider>
