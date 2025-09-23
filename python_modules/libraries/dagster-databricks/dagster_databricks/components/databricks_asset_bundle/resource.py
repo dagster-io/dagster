@@ -129,7 +129,7 @@ class DatabricksWorkspace(ConfigurableResource):
         final_run_task = final_run_tasks[0]
         if len(final_run_tasks) > 1 or final_run_task.task_key != task_key:
             unexpected_tasks_keys = set([task.task_key for task in final_run_tasks]) - set(task_key)
-            Failure(
+            raise Failure(
                 f"Final run {final_run.run_id} for job {final_run.job_id} contains unexpected tasks: {unexpected_tasks_keys}"
             )
 

@@ -1,7 +1,7 @@
 from unittest import mock
 
 import pytest
-from dagster import AssetsDefinition, DagsterEventType, materialize
+from dagster import AssetsDefinition, DagsterEventType, materialize, _check as check
 from dagster.components.testing import create_defs_folder_sandbox
 from dagster_databricks.components.databricks_asset_bundle.component import (
     DatabricksAssetBundleComponent,
@@ -63,6 +63,28 @@ def test_load_component(
             tasks=[
                 RunTask(
                     task_key="data_processing_notebook",
+                    state=RunState(result_state=RunResultState.SUCCESS),
+                ),
+            ],
+        ),
+        Run(
+            run_id=11111,
+            job_id=22222,
+            state=RunState(result_state=None),
+            tasks=[
+                RunTask(
+                    task_key="hello_world_spark_task",
+                    state=RunState(result_state=None),
+                ),
+            ],
+        ),
+        Run(
+            run_id=11111,
+            job_id=22222,
+            state=RunState(result_state=RunResultState.SUCCESS),
+            tasks=[
+                RunTask(
+                    task_key="hello_world_spark_task",
                     state=RunState(result_state=RunResultState.SUCCESS),
                 ),
             ],
@@ -145,28 +167,6 @@ def test_load_component(
                 ),
             ],
         ),
-        Run(
-            run_id=11111,
-            job_id=22222,
-            state=RunState(result_state=None),
-            tasks=[
-                RunTask(
-                    task_key="hello_world_spark_task",
-                    state=RunState(result_state=None),
-                ),
-            ],
-        ),
-        Run(
-            run_id=11111,
-            job_id=22222,
-            state=RunState(result_state=RunResultState.SUCCESS),
-            tasks=[
-                RunTask(
-                    task_key="hello_world_spark_task",
-                    state=RunState(result_state=RunResultState.SUCCESS),
-                ),
-            ],
-        ),
     ]
 
     with create_defs_folder_sandbox() as sandbox:
@@ -200,6 +200,7 @@ def test_load_component(
             assert isinstance(component, DatabricksAssetBundleComponent)
 
             databricks_assets = list(defs.assets or [])
+            databricks_assets = check.is_list(databricks_assets, of_type=AssetsDefinition)
             assert len(databricks_assets) == 6
             databricks_asset_keys_list = [
                 databricks_asset_key
