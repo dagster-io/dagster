@@ -316,7 +316,7 @@ def format_secret(secret: "DgApiSecret", as_json: bool, show_value: bool = False
             lines.extend(
                 [
                     "",
-                    "Value: <not retrieved - use --show-value to fetch>",
+                    "Value: <not available - you may not have permission to view this value>",
                 ]
             )
     else:
