@@ -289,7 +289,7 @@ def get_sensor_by_name_via_graphql(client: IGraphQLClient, sensor_name: str) -> 
 
     if len(matching_sensors) > 1:
         # If there are multiple sensors with the same name, provide helpful error
-        repo_origins = [sensor.repository_origin for sensor in matching_sensors]
+        repo_origins = [sensor.repository_origin or "unknown" for sensor in matching_sensors]
         raise Exception(
             f"Multiple sensors found with name '{sensor_name}' in repositories: {', '.join(repo_origins)}"
         )
