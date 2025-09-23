@@ -16,10 +16,10 @@ uv sync
 
 Then, activate the virtual environment:
 
-| OS | Command |
-| --- | --- |
-| MacOS | ```source .venv/bin/activate``` |
-| Windows | ```.venv\Scripts\activate``` |
+| OS      | Command                     |
+| ------- | --------------------------- |
+| MacOS   | `source .venv/bin/activate` |
+| Windows | `.venv\Scripts\activate`    |
 
 **Option 2: pip**
 
@@ -31,10 +31,10 @@ python3 -m venv .venv
 
 Then active the virtual environment:
 
-| OS | Command |
-| --- | --- |
-| MacOS | ```source .venv/bin/activate``` |
-| Windows | ```.venv\Scripts\activate``` |
+| OS      | Command                     |
+| ------- | --------------------------- |
+| MacOS   | `source .venv/bin/activate` |
+| Windows | `.venv\Scripts\activate`    |
 
 Install the required dependencies:
 
