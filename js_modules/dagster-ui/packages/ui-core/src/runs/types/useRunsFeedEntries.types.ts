@@ -93,9 +93,13 @@ export type RunsFeedRootQuery = {
                 name: string;
                 assetKey: {__typename: 'AssetKey'; path: Array<string>};
               }> | null;
+              executionPlan: {
+                __typename: 'ExecutionPlan';
+                assetKeys: Array<{__typename: 'AssetKey'; path: Array<string>}>;
+              } | null;
             }
         >;
       };
 };
 
-export const RunsFeedRootQueryVersion = '595b8ee4f5fa5b704053ff7a3c36b8af752935c61e35b39bc75b541d5322d043';
+export const RunsFeedRootQueryVersion = '508fd17076ac393f40a5e4ae7e72d6a9dd2db681a1e893ab5fc7c1f3da178bed';
