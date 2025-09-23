@@ -1,7 +1,12 @@
 from unittest import mock
 
 import pytest
-from dagster import AssetsDefinition, DagsterEventType, materialize, _check as check
+from dagster import (
+    AssetsDefinition,
+    DagsterEventType,
+    _check as check,
+    materialize,
+)
 from dagster.components.testing import create_defs_folder_sandbox
 from dagster_databricks.components.databricks_asset_bundle.component import (
     DatabricksAssetBundleComponent,
