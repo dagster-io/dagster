@@ -306,6 +306,58 @@ def assert_valid_job_partition_backfill(
         raise UserFacingGraphQLError(GraphenePartitionKeysNotFoundError(invalid_keys))
 
 
+def has_permission_for_backfill(
+    graphene_info: "ResolveInfo",
+    permission: Permissions,
+    backfill: PartitionBackfill,
+) -> bool:
+    if backfill.is_asset_backfill:
+        check.invariant(
+            backfill.asset_selection is not None, "Asset backfill must have asset selection"
+        )
+        return has_permission_for_asset_graph(
+            graphene_info,
+            graphene_info.context.asset_graph,
+            cast("list[AssetKey]", backfill.asset_selection),
+            permission,
+        )
+    if not backfill.partition_set_origin:
+        # does not resolve to a partition set, so need deployment-wide permissions
+        return graphene_info.context.has_permission(permission)
+
+    partition_selector = backfill.partition_set_origin.selector
+    try:
+        code_location = graphene_info.context.get_code_location(partition_selector.location_name)
+        repository = code_location.get_repository(partition_selector.repository_name)
+        matches = [
+            partition_set
+            for partition_set in repository.get_partition_sets()
+            if partition_set.name == partition_selector.partition_set_name
+        ]
+        if len(matches) != 1:
+            return graphene_info.context.has_permission_for_location(
+                permission, partition_selector.location_name
+            )
+        remote_partition_set = next(iter(matches))
+        remote_job = repository.get_full_job(remote_partition_set.job_name)
+        return has_permission_for_remote_job(graphene_info, permission, remote_job)
+    except:
+        return graphene_info.context.has_permission_for_location(
+            permission, partition_selector.location_name
+        )
+
+
+def assert_permission_for_backfill(
+    graphene_info: "ResolveInfo",
+    permission: Permissions,
+    backfill: PartitionBackfill,
+) -> None:
+    from dagster_graphql.schema.errors import GrapheneUnauthorizedError
+
+    if not has_permission_for_backfill(graphene_info, permission, backfill):
+        raise UserFacingGraphQLError(GrapheneUnauthorizedError())
+
+
 def assert_valid_asset_partition_backfill(
     graphene_info: "ResolveInfo",
     backfill: PartitionBackfill,

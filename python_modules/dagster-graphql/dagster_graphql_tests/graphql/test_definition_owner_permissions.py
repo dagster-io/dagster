@@ -10,7 +10,7 @@ from dagster import AssetKey, BetaWarning
 from dagster._core.definitions.assets.graph.remote_asset_graph import RemoteAssetNode
 from dagster._core.definitions.assets.job.asset_job import IMPLICIT_ASSET_JOB_NAME
 from dagster._core.definitions.selector import JobSelector, ScheduleSelector, SensorSelector
-from dagster._core.execution.backfill import PartitionBackfill
+from dagster._core.execution.backfill import BulkActionStatus, PartitionBackfill
 from dagster._core.remote_representation.external import (
     CompoundID,
     RemoteJob,
@@ -61,6 +61,7 @@ class BaseDefinitionOwnerPermissionsTestSuite(ABC):
                 AssetKey(["owned_asset"]),
                 AssetKey(["owned_partitioned_asset"]),
                 "owned_job",
+                "owned_partitioned_job",
                 "owned_schedule",
                 "owned_sensor",
             ]
@@ -72,6 +73,7 @@ class BaseDefinitionOwnerPermissionsTestSuite(ABC):
                 AssetKey(["unowned_asset"]),
                 AssetKey(["unowned_partitioned_asset"]),
                 "unowned_job",
+                "unowned_partitioned_job",
                 "unowned_schedule",
                 "unowned_sensor",
             ]
@@ -109,6 +111,35 @@ class BaseDefinitionOwnerPermissionsTestSuite(ABC):
                 "backfillParams": {
                     "partitionNames": ["a", "b", "c"],
                     "assetSelection": [key.to_graphql_input() for key in asset_keys],
+                }
+            },
+        )
+        assert result.data
+        typename = result.data["launchPartitionBackfill"]["__typename"]
+        backfill_id = (
+            result.data["launchPartitionBackfill"].get("backfillId")
+            if typename == "LaunchBackfillSuccess"
+            else None
+        )
+        return typename, backfill_id
+
+    def graphql_launch_job_backfill(self, context, job_name: str):
+        partition_set = self.get_partition_set_by_job_name(context, job_name)
+        assert partition_set is not None
+
+        result = execute_dagster_graphql(
+            context,
+            LAUNCH_PARTITION_BACKFILL_MUTATION,
+            variables={
+                "backfillParams": {
+                    "selector": {
+                        "repositorySelector": {
+                            "repositoryLocationName": partition_set.repository_handle.location_name,
+                            "repositoryName": partition_set.repository_handle.repository_name,
+                        },
+                        "partitionSetName": partition_set.name,
+                    },
+                    "partitionNames": ["a", "b", "c"],
                 }
             },
         )
@@ -303,6 +334,28 @@ class BaseDefinitionOwnerPermissionsTestSuite(ABC):
             asset_graph=repository.asset_graph,
         )
 
+    def _create_job_backfill(self, context: WorkspaceRequestContext, job_name: str):
+        partition_set = self.get_partition_set_by_job_name(context, job_name)
+        assert partition_set is not None
+        backfill_id = make_new_backfill_id()
+        partition_names = ["a", "b", "c"]
+        backfill = PartitionBackfill(
+            backfill_id=backfill_id,
+            partition_set_origin=partition_set.get_remote_origin(),
+            status=BulkActionStatus.REQUESTED,
+            partition_names=partition_names,
+            from_failure=False,
+            reexecution_steps=None,
+            tags={},
+            backfill_timestamp=time.time(),
+            asset_selection=None,
+            title=None,
+            description=None,
+            run_config=None,
+        )
+        context.instance.add_backfill(backfill)
+        return backfill_id
+
     def _create_asset_backfill(self, context: WorkspaceRequestContext, asset_keys: list[AssetKey]):
         backfill_id = make_new_backfill_id()
         backfill = PartitionBackfill.from_asset_partitions(
@@ -441,6 +494,21 @@ class BaseDefinitionOwnerPermissionsTestSuite(ABC):
         run_b = self._create_run(graphql_context, "unowned_job")
         assert self.graphql_delete_run(graphql_context, run_a.run_id) == "DeletePipelineRunSuccess"
         assert self.graphql_delete_run(graphql_context, run_b.run_id) == "UnauthorizedError"
+
+    def test_job_backfill_launch_permissions(self, graphql_context: WorkspaceRequestContext):
+        typename, _ = self.graphql_launch_job_backfill(graphql_context, "owned_partitioned_job")
+        assert typename == "LaunchBackfillSuccess"
+
+        typename, _ = self.graphql_launch_job_backfill(graphql_context, "unowned_partitioned_job")
+        assert typename == "UnauthorizedError"
+
+    def test_job_backfill_cancel_permissions(self, graphql_context: WorkspaceRequestContext):
+        backfill_id_a = self._create_job_backfill(graphql_context, "owned_partitioned_job")
+        backfill_id_b = self._create_job_backfill(graphql_context, "unowned_partitioned_job")
+        assert (
+            self.graphql_cancel_backfill(graphql_context, backfill_id_a) == "CancelBackfillSuccess"
+        )
+        assert self.graphql_cancel_backfill(graphql_context, backfill_id_b) == "UnauthorizedError"
 
 
 class TestDefinitionOwnerPermissions(
