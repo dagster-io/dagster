@@ -1359,6 +1359,48 @@ def test_unloadable_backfill_retry(
         assert instance.get_runs_count() == 1
 
 
+def test_unloadable_failing_backfill_still_cancels_runs(
+    instance, workspace_context, unloadable_location_workspace_context
+):
+    """If a backfill is marked failing or canceling, but the backfill data is no longer loadable,
+    we still want to cancel the runs and mark the backfill as completed. However, we won't be able to
+    update the asset backfill data.
+    """
+    asset_selection = [dg.AssetKey("asset_a"), dg.AssetKey("asset_b"), dg.AssetKey("asset_c")]
+
+    partition_keys = partitions_a.get_partition_keys()
+    instance.add_backfill(
+        PartitionBackfill.from_asset_partitions(
+            asset_graph=workspace_context.create_request_context().asset_graph,
+            backfill_id="retry_backfill",
+            tags={"custom_tag_key": "custom_tag_value"},
+            backfill_timestamp=get_current_timestamp(),
+            asset_selection=asset_selection,
+            partition_names=partition_keys,
+            dynamic_partitions_store=instance,
+            all_partitions=False,
+            title=None,
+            description=None,
+            run_config=None,
+        )
+    )
+    assert instance.get_runs_count() == 0
+
+    backfill = instance.get_backfill("retry_backfill")
+    updated_backfill = backfill.with_status(BulkActionStatus.FAILING)
+    instance.update_backfill(updated_backfill)
+
+    # backfill data will be unloadble
+    list(
+        execute_backfill_iteration(
+            unloadable_location_workspace_context, get_default_daemon_logger("BackfillDaemon")
+        )
+    )
+    assert instance.get_runs_count() == 0
+    backfill = instance.get_backfill("retry_backfill")
+    assert backfill.status == BulkActionStatus.FAILED
+
+
 def test_backfill_from_partitioned_job(
     instance: DagsterInstance,
     workspace_context: WorkspaceProcessContext,
