@@ -5,6 +5,7 @@ from buildkite_shared.step_builders.group_step_builder import (
     GroupStepBuilder,
 )
 from buildkite_shared.step_builders.step_builder import StepConfiguration
+from buildkite_shared.uv import UV_PIN
 from dagster_buildkite.images.versions import add_test_image
 from dagster_buildkite.utils import skip_if_no_docs_changes
 
@@ -30,6 +31,7 @@ def build_build_docs_step():
         add_test_image(CommandStepBuilder("build docs"), AvailablePythonVersion.get_default())
         .run(
             "cd docs",
+            f'pip install -U "{UV_PIN}"',
             "yarn install",
             "yarn test",
             "yarn build-api-docs",
@@ -52,7 +54,7 @@ def build_docstring_validation_step() -> GroupLeafStepConfiguration:
         )
         .run(
             "cd python_modules/automation",
-            'pip install "uv==0.7.2"',
+            f'pip install -U "{UV_PIN}"',
             "uv pip install --system -e .[buildkite]",
             f"echo -e '--- \\033[0;32m:pytest: Running tox env: {tox_env}\\033[0m'",
             f"tox -vv -e {tox_env}",
