@@ -7,8 +7,6 @@ from dagster_dg_cli.utils.plus.gql_client import IGraphQLClient
 if TYPE_CHECKING:
     from dagster_dg_cli.api_layer.schemas.sensor import DgApiSensor, DgApiSensorList
 
-# GraphQL queries
-# Query for when we have a specific repository
 LIST_SENSORS_QUERY = """
 query ListSensors($repositorySelector: RepositorySelector!) {
     sensorsOrError(repositorySelector: $repositorySelector) {
@@ -35,7 +33,6 @@ query ListSensors($repositorySelector: RepositorySelector!) {
 }
 """
 
-# Query to get all repositories so we can list all sensors
 LIST_REPOSITORIES_QUERY = """
 query ListRepositories {
     repositoriesOrError {
@@ -92,7 +89,6 @@ query GetSensor($sensorSelector: SensorSelector!) {
 
 def process_repositories_response(graphql_response: dict[str, Any]) -> "DgApiSensorList":
     """Process GraphQL response from repositories query into DgApiSensorList."""
-    # Import pydantic models only when needed
     from dagster_dg_cli.api_layer.schemas.sensor import (
         DgApiSensor,
         DgApiSensorList,
@@ -118,7 +114,6 @@ def process_repositories_response(graphql_response: dict[str, Any]) -> "DgApiSen
         repository_origin = f"{location_name}@{repo_name}" if location_name and repo_name else None
 
         for s in repo.get("sensors", []):
-            # Extract status from sensor state
             sensor_state = s.get("sensorState", {})
             status = sensor_state.get("status", "STOPPED")
 
@@ -129,7 +124,7 @@ def process_repositories_response(graphql_response: dict[str, Any]) -> "DgApiSen
                 sensor_type=DgApiSensorType(s.get("sensorType", "STANDARD")),
                 description=s.get("description"),
                 repository_origin=repository_origin,
-                next_tick_timestamp=None,  # Not available in this query
+                next_tick_timestamp=None,
             )
             sensors.append(sensor)
 
@@ -148,7 +143,6 @@ def process_sensors_response(graphql_response: dict[str, Any]) -> "DgApiSensorLi
     Returns:
         DgApiSensorList: Processed sensor data
     """
-    # Import pydantic models only when needed
     from dagster_dg_cli.api_layer.schemas.sensor import (
         DgApiSensor,
         DgApiSensorList,
@@ -169,7 +163,6 @@ def process_sensors_response(graphql_response: dict[str, Any]) -> "DgApiSensorLi
 
     sensors = []
     for s in sensors_data:
-        # Extract status from sensor state
         sensor_state = s.get("sensorState", {})
         status = sensor_state.get("status", "STOPPED")
 
@@ -179,8 +172,8 @@ def process_sensors_response(graphql_response: dict[str, Any]) -> "DgApiSensorLi
             status=DgApiSensorStatus(status),
             sensor_type=DgApiSensorType(s.get("sensorType", "STANDARD")),
             description=s.get("description"),
-            repository_origin=None,  # Will be populated later when we fix the schema
-            next_tick_timestamp=None,  # Will be populated later when we fix the schema
+            repository_origin=None,
+            next_tick_timestamp=None,
         )
         sensors.append(sensor)
 
@@ -199,7 +192,6 @@ def process_sensor_response(graphql_response: dict[str, Any]) -> "DgApiSensor":
     Returns:
         DgApiSensor: Processed sensor data
     """
-    # Import pydantic models only when needed
     from dagster_dg_cli.api_layer.schemas.sensor import (
         DgApiSensor,
         DgApiSensorStatus,
@@ -215,7 +207,6 @@ def process_sensor_response(graphql_response: dict[str, Any]) -> "DgApiSensor":
         error_msg = sensor_result.get("message", f"GraphQL error: {typename}")
         raise Exception(error_msg)
 
-    # Extract status from sensor state
     sensor_state = sensor_result.get("sensorState", {})
     status = sensor_state.get("status", "STOPPED")
 
@@ -225,8 +216,8 @@ def process_sensor_response(graphql_response: dict[str, Any]) -> "DgApiSensor":
         status=DgApiSensorStatus(status),
         sensor_type=DgApiSensorType(sensor_result.get("sensorType", "STANDARD")),
         description=sensor_result.get("description"),
-        repository_origin=None,  # Will be populated later when we fix the schema
-        next_tick_timestamp=None,  # Will be populated later when we fix the schema
+        repository_origin=None,
+        next_tick_timestamp=None,
     )
 
 
@@ -237,7 +228,6 @@ def list_sensors_via_graphql(
 ) -> "DgApiSensorList":
     """Fetch sensors using GraphQL."""
     if repository_location_name and repository_name:
-        # Query specific repository
         variables = {
             "repositorySelector": {
                 "repositoryLocationName": repository_location_name,
@@ -247,7 +237,6 @@ def list_sensors_via_graphql(
         result = client.execute(LIST_SENSORS_QUERY, variables)
         return process_sensors_response(result)
     else:
-        # Query all repositories to get all sensors
         result = client.execute(LIST_REPOSITORIES_QUERY)
         return process_repositories_response(result)
 
@@ -267,32 +256,29 @@ def get_sensor_via_graphql(
         }
     }
 
-
     try:
         result = client.execute(GET_SENSOR_QUERY, variables)
-        if result.get("data", {}).get("sensorOrError", {}).get("__typename") == "SensorNotFoundError":
+        if (
+            result.get("data", {}).get("sensorOrError", {}).get("__typename")
+            == "SensorNotFoundError"
+        ):
             raise Exception(f"Sensor not found: {sensor_name}")
         return process_sensor_response(result)
-    except Exception as e:
-        # Re-raise the original exception with its traceback preserved
+    except Exception:
         raise
-
 
 
 def get_sensor_by_name_via_graphql(client: IGraphQLClient, sensor_name: str) -> "DgApiSensor":
     """Get sensor by name, searching across all repositories."""
-    # First, get all sensors
     result = client.execute(LIST_REPOSITORIES_QUERY)
     all_sensors = process_repositories_response(result)
 
-    # Find the sensor with the matching name
     matching_sensors = [sensor for sensor in all_sensors.items if sensor.name == sensor_name]
 
     if not matching_sensors:
         raise Exception(f"Sensor not found: {sensor_name}")
 
     if len(matching_sensors) > 1:
-        # If there are multiple sensors with the same name, provide helpful error
         repo_origins = [sensor.repository_origin or "unknown" for sensor in matching_sensors]
         raise Exception(
             f"Multiple sensors found with name '{sensor_name}' in repositories: {', '.join(repo_origins)}"

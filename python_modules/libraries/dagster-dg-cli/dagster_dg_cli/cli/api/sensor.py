@@ -19,7 +19,6 @@ if TYPE_CHECKING:
 def format_sensors(sensors: "DgApiSensorList", as_json: bool) -> str:
     """Format sensor list for output."""
     if as_json:
-        # For JSON output, remove repository_origin and id to hide internal concepts
         sensors_dict = sensors.model_dump()
         for sensor in sensors_dict["items"]:
             sensor.pop("repository_origin", None)
@@ -35,10 +34,6 @@ def format_sensors(sensors: "DgApiSensorList", as_json: bool) -> str:
             f"Description: {sensor.description or 'None'}",
         ]
 
-        # Hide repository information from end users
-        # if sensor.repository_origin:
-        #     sensor_lines.append(f"Repository: {sensor.repository_origin}")
-
         if sensor.next_tick_timestamp:
             next_tick_str = _format_timestamp(sensor.next_tick_timestamp)
             sensor_lines.append(f"Next Tick: {next_tick_str}")
@@ -52,7 +47,6 @@ def format_sensors(sensors: "DgApiSensorList", as_json: bool) -> str:
 def format_sensor(sensor: "DgApiSensor", as_json: bool) -> str:
     """Format single sensor for output."""
     if as_json:
-        # For JSON output, remove repository_origin and id to hide internal concepts
         sensor_dict = sensor.model_dump()
         sensor_dict.pop("repository_origin", None)
         sensor_dict.pop("id", None)
@@ -64,10 +58,6 @@ def format_sensor(sensor: "DgApiSensor", as_json: bool) -> str:
         f"Type: {sensor.sensor_type.value}",
         f"Description: {sensor.description or 'None'}",
     ]
-
-    # Hide repository information from end users
-    # if sensor.repository_origin:
-    #     lines.append(f"Repository: {sensor.repository_origin}")
 
     if sensor.next_tick_timestamp:
         next_tick_str = _format_timestamp(sensor.next_tick_timestamp)
@@ -112,10 +102,8 @@ def list_sensors_command(
     api = DgApiSensorApi(client)
 
     try:
-        # Always list all sensors (no repository filtering for end users)
         sensors = api.list_sensors()
 
-        # Apply status filter if specified
         if status:
             from dagster_dg_cli.api_layer.schemas.sensor import DgApiSensorList, DgApiSensorStatus
 
