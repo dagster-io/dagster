@@ -267,12 +267,16 @@ def get_sensor_via_graphql(
         }
     }
 
+
     try:
         result = client.execute(GET_SENSOR_QUERY, variables)
-    except Exception:
-        raise Exception(f"Sensor not found: {sensor_name}")
+        if result.get("data", {}).get("sensorOrError", {}).get("__typename") == "SensorNotFoundError":
+            raise Exception(f"Sensor not found: {sensor_name}")
+        return process_sensor_response(result)
+    except Exception as e:
+        # Re-raise the original exception with its traceback preserved
+        raise
 
-    return process_sensor_response(result)
 
 
 def get_sensor_by_name_via_graphql(client: IGraphQLClient, sensor_name: str) -> "DgApiSensor":
