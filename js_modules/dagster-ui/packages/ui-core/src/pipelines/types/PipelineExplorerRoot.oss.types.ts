@@ -474,6 +474,10 @@ export type PipelineExplorerRootQuery = {
           };
         }>;
         tags: Array<{__typename: 'PipelineTag'; key: string; value: string}>;
+        owners: Array<
+          | {__typename: 'TeamDefinitionOwner'; team: string}
+          | {__typename: 'UserDefinitionOwner'; email: string}
+        >;
         modes: Array<{
           __typename: 'Mode';
           id: string;
@@ -1612,4 +1616,4 @@ export type PipelineExplorerRootQuery = {
       };
 };
 
-export const PipelineExplorerRootQueryVersion = '3ee9aa3624890ae0f68accec25d47f4ab0a2103bcfd980f5638e27453e6c4a48';
+export const PipelineExplorerRootQueryVersion = '6d77157e27aefa167d965d487e3761d6f65075409496a1aeb03f923604b7f607';
