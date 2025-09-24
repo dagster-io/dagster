@@ -1,5 +1,3 @@
-import {Meta} from '@storybook/react';
-
 import {Box} from '../Box';
 import {Radio, RadioContainer} from '../Radio';
 
@@ -7,7 +5,7 @@ import {Radio, RadioContainer} from '../Radio';
 export default {
   title: 'Radio',
   component: Radio,
-} as Meta;
+};
 
 export const Default = () => {
   return (

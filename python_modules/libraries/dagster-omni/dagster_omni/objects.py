@@ -58,6 +58,8 @@ class OmniDocument:
     folder: Optional[OmniFolder]
     labels: list[OmniLabel]
     queries: list["OmniQuery"]
+    favorites: Optional[int] = None
+    views: Optional[int] = None
 
     @classmethod
     def from_json(cls, data: dict[str, Any], queries: list["OmniQuery"]) -> "OmniDocument":
@@ -82,6 +84,8 @@ class OmniDocument:
             folder=folder,
             labels=labels,
             queries=queries,
+            favorites=data.get("_count", {}).get("favorites", None),
+            views=data.get("_count", {}).get("views", None),
         )
 
 

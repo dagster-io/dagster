@@ -17,7 +17,7 @@ Creating a downstream asset is the same as creating any other asset. In this ste
 To link the assets together, set the `deps` parameter within the asset decorator. Dagster uses this information to build the asset graph:
 
 <CodeExample
-  path="docs_snippets/docs_snippets/guides/tutorials/dagster-tutorial/src/dagster_tutorial/defs/assets.py"
+  path="docs_snippets/docs_snippets/guides/tutorials/dagster_tutorial/src/dagster_tutorial/defs/assets.py"
   language="python"
   startAfter="start_define_assets_with_dependencies"
   endBefore="end_define_assets_with_dependencies"

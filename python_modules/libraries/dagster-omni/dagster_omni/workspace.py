@@ -96,7 +96,7 @@ class OmniWorkspace(dg.Resolvable, dg.Model):
 
     async def _fetch_documents(self) -> list[OmniDocument]:
         """Fetch all documents from the Omni API with their queries embedded."""
-        base_params = {"pageSize": "100"}
+        base_params = {"pageSize": "100", "include": "_count"}
         documents = []
         next_cursor = None
 

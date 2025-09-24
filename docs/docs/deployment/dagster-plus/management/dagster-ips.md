@@ -3,6 +3,7 @@ description: The Dagster+ agent interacts with a specific set of IP addresses th
 sidebar_label: IP addresses
 sidebar_position: 6000
 title: Dagster+ IP addresses
+tags: [dagster-plus-feature]
 ---
 
 The Dagster+ web interface, CLI, and GraphQL API use [AWS Cloudfront's content delivery network](https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/LocationsOfEdgeServers.html).

@@ -2,6 +2,7 @@
 description: Dagster+ configuration reference for Amazon ECS agents.
 sidebar_position: 3400
 title: Configuration reference
+tags: [dagster-plus-feature]
 ---
 
 :::note
@@ -43,12 +44,12 @@ locations:
         secrets_tags:
           - 'my_tag_name'
         server_resources: # Resources for code servers launched by the agent for this location
-          cpu: 256
-          memory: 512
+          cpu: '256'
+          memory: '512'
           replica_count: 1
         run_resources: # Resources for runs launched by the agent for this location
-          cpu: 4096
-          memory: 16384
+          cpu: '4096'
+          memory: '16384'
         execution_role_arn: arn:aws:iam::123456789012:role/MyECSExecutionRole
         task_role_arn: arn:aws:iam::123456789012:role/MyECSTaskRole
         mount_points:
@@ -177,15 +178,15 @@ user_code_launcher:
     launch_type: <"FARGATE"|"EC2">
     server_process_startup_timeout: <Timeout in seconds>
     server_resources:
-      cpu: <CPU value>
-      memory: <Memory value>
+      cpu: '<CPU value>'
+      memory: '<Memory value>'
     server_sidecar_containers:
       - name: SidecarName
         image: SidecarImage
         <Additional container fields>
     run_resources:
-      cpu: <CPU value>
-      memory: <Memory value>
+      cpu: '<CPU value>'
+      memory: '<Memory value>'
     run_sidecar_containers:
       - name: SidecarName
         image: SidecarImage
@@ -233,9 +234,9 @@ agent_queues:
 | config.server_process_startup_timeout | The amount of time, in seconds, to wait for code to import when launching a new service for a code location. If your code takes an unusually long time to load after your ECS task starts up and results in timeouts in the **Deployment** tab, you can increase this setting above the default. **Note** This setting isn't applicable to the time it takes for a job to execute. <br/>• **Default** - 180 (seconds)                                                                                                                                                                                                                                                                                   |
 | config.ecs_timeout                    | How long (in seconds) to wait for ECS to spin up a new service and task for a code server. If your ECS tasks take an unusually long time to start and result in timeouts, you can increase this setting above the default. <br/>• **Default** - 300 (seconds)                                                                                                                                                                                                                                                                                                                                                                                                                                           |
 | config.ecs_grace_period               | How long (in seconds) to continue polling if an ECS API endpoint fails during creation of a new code server (because the ECS API is eventually consistent). <br/>• **Default** - 30 (seconds)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           |
-| config.server_resources               | The resources that the agent should allocate to the ECS service for each code location that it creates. If set, must be a dictionary with a `cpu` and/or `memory` key. **Note**: [Fargate tasks only support certain combinations of CPU and memory.](https://docs.aws.amazon.com/AmazonECS/latest/developerguide/task-cpu-memory-error.html)                                                                                                                                                                                                                                                                                                                                                           |
+| config.server_resources               | The resources that the agent should allocate to the ECS service for each code location that it creates. If set, must be a dictionary with a `cpu` and/or `memory` key and string values. **Note**: [Fargate tasks only support certain combinations of CPU and memory.](https://docs.aws.amazon.com/AmazonECS/latest/developerguide/task-cpu-memory-error.html)                                                                                                                                                                                                                                                                                                                                         |
 | config.server_sidecar_containers      | Additional sidecar containers to include along with the Dagster container. If set, must be a list of dictionaries with valid ECS container definitions.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 |
-| config.run_resources                  | The resources that the agent should allocate to the ECS task that it creates for each run. If set, must be a dictionary with a `cpu` and/or `memory` key. **Note**: [Fargate tasks only support certain combinations of CPU and memory.](https://docs.aws.amazon.com/AmazonECS/latest/developerguide/task-cpu-memory-error.html)                                                                                                                                                                                                                                                                                                                                                                        |
+| config.run_resources                  | The resources that the agent should allocate to the ECS task that it creates for each run. If set, must be a dictionary with a `cpu` and/or `memory` key and string values. **Note**: [Fargate tasks only support certain combinations of CPU and memory.](https://docs.aws.amazon.com/AmazonECS/latest/developerguide/task-cpu-memory-error.html)                                                                                                                                                                                                                                                                                                                                                      |
 | config.run_sidecar_containers         | Additional sidecar containers to include along with the Dagster container. If set, must be a list of dictionaries with valid ECS container definitions.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 |
 | config.mount_points                   | Mount points to include in the Dagster container. If set, should be a list of dictionaries matching the `mountPoints` field when specifying a container definition to boto3.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            |
 | config.volumes                        | Additional volumes to include in the task definition. If set, should be a list of dictionaries matching the volumes argument to `register_task_definition` in boto3.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    |

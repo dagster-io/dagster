@@ -1,4 +1,3 @@
-import {Meta} from '@storybook/react';
 import {useCallback, useState} from 'react';
 
 import {Button} from '../Button';
@@ -10,7 +9,7 @@ import {secondsToCountdownTime} from '../secondsToCountdownTime';
 export default {
   title: 'useCountdown',
   component: Countdown,
-} as Meta;
+};
 
 export const FiveSeconds = () => {
   const [status, setStatus] = useState<'counting' | 'idle'>('idle');

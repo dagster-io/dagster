@@ -28,7 +28,7 @@ In a large organization, it's important to know which individuals and teams are 
 :::
 
 :::tip
-With Dagster+ Pro, you can create asset-based alerts that automatically notify an asset's owners when triggered. Refer to the [Dagster+ alert documentation](/guides/monitor/alerts) for more information.
+With Dagster+ Pro, you can create asset-based alerts that automatically notify an asset's owners when triggered. Refer to the [Dagster+ alert documentation](/guides/observe/alerts) for more information.
 :::
 
 ## Organizing assets with tags \{#tags}
@@ -95,7 +95,7 @@ The following metadata keys are given special treatment in the Dagster UI.
 
 ## Table and column metadata \{#table-column}
 
-Two of the most powerful metadata types are <PyObject section="metadata" module="dagster" object="TableSchema" /> and <PyObject section="metadata" module="dagster" object="TableColumnLineage" />. These metadata types allow stakeholders to view the schema of a table right within Dagster, and, in Dagster+, navigate to the [Asset catalog](/guides/build/assets/asset-catalog) with the column lineage.
+Two of the most powerful metadata types are <PyObject section="metadata" module="dagster" object="TableSchema" /> and <PyObject section="metadata" module="dagster" object="TableColumnLineage" />. These metadata types allow stakeholders to view the schema of a table right within Dagster, and, in Dagster+, navigate to the [Asset catalog](/guides/observe/asset-catalog) with the column lineage.
 
 ### Table schema metadata \{#table-schema}
 
@@ -116,7 +116,7 @@ Many integrations such as [dbt](/integrations/libraries/dbt) automatically attac
 <CodeExample path="docs_snippets/docs_snippets/guides/data-modeling/metadata/table-column-lineage-metadata.py" language="python" title="Table column lineage metadata" />
 
 :::tip
-Dagster+ provides rich visualization and navigation of column lineage in the Asset catalog. Refer to the [Dagster+ documentation](/guides/build/assets/asset-catalog) for more information.
+Dagster+ provides rich visualization and navigation of column lineage in the Asset catalog. Refer to the [Dagster+ documentation](/guides/observe/asset-catalog) for more information.
 :::
 
 ## Linking assets with source code \{#source-code}

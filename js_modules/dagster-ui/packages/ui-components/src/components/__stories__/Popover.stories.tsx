@@ -1,5 +1,3 @@
-import {Meta} from '@storybook/react';
-
 import {Button} from '../Button';
 import {Group} from '../Group';
 import {Icon} from '../Icon';
@@ -10,7 +8,7 @@ import {GlobalPopoverStyle, Popover} from '../Popover';
 export default {
   title: 'Popover',
   component: Popover,
-} as Meta;
+};
 
 export const Default = () => {
   return (

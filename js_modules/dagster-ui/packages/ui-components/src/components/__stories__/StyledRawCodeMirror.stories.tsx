@@ -1,4 +1,3 @@
-import {Meta} from '@storybook/react';
 import CodeMirror from 'codemirror';
 import {useCallback, useMemo, useState} from 'react';
 
@@ -8,7 +7,7 @@ import {StyledRawCodeMirror} from '../StyledRawCodeMirror';
 export default {
   title: 'StyledRawCodeMirror',
   component: StyledRawCodeMirror,
-} as Meta;
+};
 
 export const Default = () => {
   const [value, setValue] = useState('');

@@ -105,9 +105,11 @@ def cached_method(method: Callable[Concatenate[S, P], T]) -> Callable[Concatenat
                 cache_dict[method.__name__] = {}
 
             cache = cache_dict[method.__name__]
-
-            canonical_kwargs = get_canonical_kwargs(*args, **kwargs)
-            key = make_cached_method_cache_key(canonical_kwargs)
+            if not args and not kwargs:
+                key = NO_ARGS_HASH_VALUE
+            else:
+                canonical_kwargs = get_canonical_kwargs(*args, **kwargs)
+                key = make_cached_method_cache_key(canonical_kwargs)
 
             if key not in cache:
                 result = await method(self, *args, **kwargs)
@@ -128,9 +130,12 @@ def cached_method(method: Callable[Concatenate[S, P], T]) -> Callable[Concatenat
                 cache_dict[method.__name__] = {}
 
             cache = cache_dict[method.__name__]
+            if not args and not kwargs:
+                key = NO_ARGS_HASH_VALUE
+            else:
+                canonical_kwargs = get_canonical_kwargs(*args, **kwargs)
+                key = make_cached_method_cache_key(canonical_kwargs)
 
-            canonical_kwargs = get_canonical_kwargs(*args, **kwargs)
-            key = make_cached_method_cache_key(canonical_kwargs)
             if key not in cache:
                 result = method(self, *args, **kwargs)
                 cache[key] = result

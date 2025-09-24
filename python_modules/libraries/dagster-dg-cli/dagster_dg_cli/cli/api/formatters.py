@@ -4,6 +4,7 @@ import datetime
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
+    from dagster_dg_cli.api_layer.schemas.agent import DgApiAgent, DgApiAgentList
     from dagster_dg_cli.api_layer.schemas.asset import DgApiAsset, DgApiAssetList
     from dagster_dg_cli.api_layer.schemas.deployment import DeploymentList
 
@@ -52,10 +53,20 @@ def format_assets(assets: "DgApiAssetList", as_json: bool) -> str:
     return "\n".join(lines).rstrip()  # Remove trailing empty line
 
 
-def _format_timestamp(timestamp: float) -> str:
-    """Format timestamp for human-readable display."""
+def _format_timestamp(timestamp: float, unit: str = "seconds") -> str:
+    """Format timestamp for human-readable display.
+
+    Args:
+        timestamp: The timestamp value
+        unit: Either "milliseconds" or "seconds" to indicate the timestamp unit
+    """
     try:
-        dt = datetime.datetime.fromtimestamp(timestamp / 1000)  # Assume milliseconds
+        if unit == "milliseconds":
+            dt = datetime.datetime.fromtimestamp(timestamp / 1000)
+        elif unit == "seconds":
+            dt = datetime.datetime.fromtimestamp(timestamp)
+        else:
+            raise ValueError(f"Unsupported unit: {unit}")
         return dt.strftime("%Y-%m-%d %H:%M:%S")
     except (ValueError, OSError):
         return f"Invalid timestamp: {timestamp}"
@@ -92,14 +103,16 @@ def _format_asset_status_lines(status) -> list[str]:
             lines.append(f"Warning Checks: {metadata.num_warning_checks}")
         if metadata.last_materialized_timestamp:
             lines.append(
-                f"Last Materialized: {_format_timestamp(metadata.last_materialized_timestamp)}"
+                f"Last Materialized: {_format_timestamp(metadata.last_materialized_timestamp, 'milliseconds')}"
             )
 
     # Latest materialization
     if status.latest_materialization:
         mat = status.latest_materialization
         if mat.timestamp:
-            lines.append(f"Latest Materialization: {_format_timestamp(mat.timestamp)}")
+            lines.append(
+                f"Latest Materialization: {_format_timestamp(mat.timestamp, 'milliseconds')}"
+            )
         if mat.run_id:
             lines.append(f"Latest Run ID: {mat.run_id}")
         if mat.partition:
@@ -164,5 +177,50 @@ def format_asset(asset: "DgApiAsset", as_json: bool) -> str:
                     value = str(entry[key])
                     break
             lines.append(f"  {entry['label']}: {value}")
+
+    return "\n".join(lines)
+
+
+def format_agents(agents: "DgApiAgentList", as_json: bool) -> str:
+    """Format agent list for output."""
+    if as_json:
+        return agents.model_dump_json(indent=2)
+
+    lines = []
+    for agent in agents.items:
+        # Use agent_label if available, otherwise format as "Agent {first_8_chars_of_id}"
+        display_label = agent.agent_label or f"Agent {agent.id[:8]}"
+        lines.extend(
+            [
+                f"Label: {display_label}",
+                f"ID: {agent.id}",
+                f"Status: {agent.status.value}",
+                f"Last Heartbeat: {_format_timestamp(agent.last_heartbeat_time, 'seconds') if agent.last_heartbeat_time else 'Never'}",
+                "",  # Empty line between agents
+            ]
+        )
+
+    return "\n".join(lines).rstrip()  # Remove trailing empty line
+
+
+def format_agent(agent: "DgApiAgent", as_json: bool) -> str:
+    """Format single agent for output."""
+    if as_json:
+        return agent.model_dump_json(indent=2)
+
+    # Use agent_label if available, otherwise format as "Agent {first_8_chars_of_id}"
+    display_label = agent.agent_label or f"Agent {agent.id[:8]}"
+    lines = [
+        f"Label: {display_label}",
+        f"ID: {agent.id}",
+        f"Status: {agent.status.value}",
+        f"Last Heartbeat: {_format_timestamp(agent.last_heartbeat_time, 'seconds') if agent.last_heartbeat_time else 'Never'}",
+    ]
+
+    if agent.metadata:
+        lines.append("")
+        lines.append("Metadata:")
+        for meta in agent.metadata:
+            lines.append(f"  {meta.key}: {meta.value}")
 
     return "\n".join(lines)

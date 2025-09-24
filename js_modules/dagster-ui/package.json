@@ -20,13 +20,11 @@
     ]
   },
   "dependencies": {
-    "@types/chartjs-plugin-crosshair": "^1.1.5",
-    "chartjs-plugin-crosshair": "^2.0.0",
     "graphql.macro": "^1.4.2",
     "patch-package": "^8.0.0",
     "postinstall-postinstall": "^2.1.0"
   },
-  "packageManager": "yarn@4.5.0",
+  "packageManager": "yarn@4.10.3",
   "engines": {
     "node": ">=20.x"
   },

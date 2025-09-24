@@ -1,3 +1,7 @@
+## 1.0.21 (September 19, 2025)
+
+- Dependency upgrades
+
 ## 1.0.20 (August 19, 2025)
 
 - Disallow TypeScript non-null assertions.

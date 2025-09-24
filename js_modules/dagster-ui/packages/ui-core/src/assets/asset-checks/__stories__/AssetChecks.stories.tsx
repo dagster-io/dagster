@@ -1,5 +1,4 @@
 import {MockedProvider, MockedResponse} from '@apollo/client/testing';
-import {Meta} from '@storybook/react';
 import {MemoryRouter} from 'react-router-dom';
 
 import {
@@ -28,7 +27,7 @@ import {AssetChecksQueryVariables} from '../types/AssetChecksQuery.types';
 export default {
   title: 'Asset Details/Checks',
   component: AssetChecks,
-} as Meta;
+};
 
 const Component = ({mocks}: {mocks: MockedResponse[]}) => {
   return (

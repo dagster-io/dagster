@@ -2,6 +2,7 @@
 description: Configure branch deployments for a code location in Dagster+ using GitHub, GitLab, or the dagster-cloud CLI.
 sidebar_position: 7310
 title: Setting up branch deployments
+tags: [dagster-plus-feature]
 ---
 
 import DagsterPlus from '@site/docs/partials/\_DagsterPlus.md';

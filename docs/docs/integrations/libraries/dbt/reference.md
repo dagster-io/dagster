@@ -1,7 +1,7 @@
 ---
 title: 'dagster-dbt integration reference'
 description: Dagster can orchestrate dbt alongside other technologies.
-sidebar_position: 600
+sidebar_position: 700
 ---
 
 :::note
@@ -12,7 +12,7 @@ Using dbt Cloud? Check out the [dbt Cloud with Dagster guide](/integrations/libr
 
 This reference provides a high-level look at working with dbt models through Dagster's [software-defined assets](/guides/build/assets) framework using the [`dagster-dbt` integration library](/api/libraries/dagster-dbt).
 
-For a step-by-step implementation walkthrough, refer to the [Using dbt with Dagster asset definitions tutorial](/integrations/libraries/dbt/creating-a-dbt-project-in-dagster).
+For a step-by-step implementation walkthrough, refer to the [Using dbt with Dagster asset definitions tutorial](/integrations/libraries/dbt).
 
 ## Relevant APIs
 
@@ -55,12 +55,6 @@ Here's what's happening in this example:
 
 ## Scaffolding a Dagster project from a dbt project
 
-:::note
-
-Check out [part two of the dbt & Dagster tutorial](/integrations/libraries/dbt/creating-a-dbt-project-in-dagster/load-dbt-models) to see this concept in context.
-
-:::
-
 You can create a Dagster project that wraps your dbt project by using the [`dagster-dbt project scaffold`](/api/libraries/dagster-dbt#scaffold) command line interface.
 
 ```shell
@@ -70,12 +64,6 @@ dagster-dbt project scaffold --project-name project_dagster --dbt-project-dir pa
 This creates a directory called `project_dagster/` inside the current directory. The `project_dagster/` directory contains a set of files that define a Dagster project that loads the dbt project at the path defined by `--dbt-project-dir`. The path to the dbt project must contain a `dbt_project.yml`.
 
 ## Loading dbt models from a dbt project
-
-:::note
-
-Check out [part two of the dbt & Dagster tutorial](/integrations/libraries/dbt/creating-a-dbt-project-in-dagster/load-dbt-models) to see this concept in context.
-
-:::
 
 The `dagster-dbt` library offers <PyObject section="libraries" module="dagster_dbt" object="dbt_assets" decorator /> to define Dagster assets for dbt models. It requires a [dbt manifest](https://docs.getdbt.com/reference/artifacts/manifest-json), or `manifest.json`, to be created from your dbt project to parse your dbt project's representation.
 

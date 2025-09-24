@@ -1,0 +1,48 @@
+# Success scenarios for agent list
+success_multiple_agents:
+  command: "dg api agent list --json"
+
+success_multiple_agents_text:
+  command: "dg api agent list"
+
+# Success scenarios for agent get (using real agent IDs from the system)
+success_single_agent:
+  command: "dg api agent get 858fd654-d0b5-477c-ac1a-c63db56246b7 --json"
+
+success_single_agent_text:
+  command: "dg api agent get 858fd654-d0b5-477c-ac1a-c63db56246b7"
+
+success_running_agent:
+  command: "dg api agent get 858fd654-d0b5-477c-ac1a-c63db56246b7 --json"
+
+success_running_agent_text:
+  command: "dg api agent get 858fd654-d0b5-477c-ac1a-c63db56246b7"
+
+success_second_agent_json:
+  command: "dg api agent get da7da2bb-33eb-4ce1-93ef-1a92e6737236 --json"
+
+success_second_agent_text:
+  command: "dg api agent get da7da2bb-33eb-4ce1-93ef-1a92e6737236"
+
+success_agent_with_metadata:
+  command: "dg api agent get 858fd654-d0b5-477c-ac1a-c63db56246b7 --json"
+
+success_agent_without_label_text:
+  command: "dg api agent get da7da2bb-33eb-4ce1-93ef-1a92e6737236"
+
+# Error scenarios
+error_agent_not_found:
+  command: "dg api agent get nonexistent-agent-uuid --json"
+
+error_agent_not_found_text:
+  command: "dg api agent get nonexistent-agent-uuid"
+
+error_malformed_agent_id:
+  command: "dg api agent get '' --json"
+
+error_malformed_agent_id_text:
+  command: "dg api agent get ''"
+
+# Edge case scenarios
+success_agent_version_metadata:
+  command: "dg api agent get da7da2bb-33eb-4ce1-93ef-1a92e6737236 --json"

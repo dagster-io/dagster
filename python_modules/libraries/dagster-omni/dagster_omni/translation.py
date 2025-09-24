@@ -30,6 +30,8 @@ class OmniDocumentMetadataSet(NamespacedMetadataSet):
     document_name: str
     document_type: str
     updated_at: TimestampMetadataValue
+    favorites: Optional[int] = None
+    views: Optional[int] = None
 
     @classmethod
     def from_document(cls, workspace: OmniWorkspace, document: OmniDocument) -> Self:
@@ -43,6 +45,8 @@ class OmniDocumentMetadataSet(NamespacedMetadataSet):
                 dateutil.parser.parse(document.updated_at).timestamp()
             ),
             owner_name=document.owner.name,
+            favorites=document.favorites,
+            views=document.views,
         )
 
     @classmethod

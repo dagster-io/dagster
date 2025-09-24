@@ -1,0 +1,7 @@
+type: dagster_dbt.DbtProjectComponent
+
+attributes:
+  project: '{{ project_root }}/dbt'
+  translation:
+    group_name: my_dbt_group
+    key: 'my_prefix_{{ node.name }}'

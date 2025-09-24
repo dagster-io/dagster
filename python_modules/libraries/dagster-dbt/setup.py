@@ -64,6 +64,7 @@ setup(
             "dagster-duckdb",
             "dagster-duckdb-pandas",
             "dbt-duckdb<1.9.2",  # concurrency issues
+            "duckdb<1.4.0",  # compat issues
         ],
     },
     entry_points={

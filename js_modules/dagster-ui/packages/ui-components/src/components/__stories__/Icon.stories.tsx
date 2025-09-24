@@ -1,5 +1,3 @@
-import {Meta} from '@storybook/react';
-
 import {CoreColors} from '../../palettes/CoreColors';
 import {Box} from '../Box';
 import {Colors} from '../Color';
@@ -12,7 +10,7 @@ const IconNames = _iconNames.slice().sort();
 export default {
   title: 'Icon',
   component: Icon,
-} as Meta;
+};
 
 export const Size16 = () => {
   return (
