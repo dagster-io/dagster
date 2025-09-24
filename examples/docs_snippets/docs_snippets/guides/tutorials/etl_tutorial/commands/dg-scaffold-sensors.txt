@@ -1,3 +1,0 @@
-dg scaffold defs dagster.sensor sensors.py
-
-Creating a component at <YOUR PATH>/etl-tutorial/src/etl_tutorial/defs/sensors.py.
