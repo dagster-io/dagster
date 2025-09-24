@@ -89,10 +89,10 @@ def make_spark_python_task(python_file_path: str):
 @pytest.mark.skipif(IS_BUILDKITE, reason="Not configured to run on BK yet.")
 @pytest.mark.skipif(not IS_WORKSPACE, reason="No DB workspace credentials found.")
 @pytest.mark.parametrize(
-    "file_path, make_task_fn",
+    "file_path_fn, make_task_fn",
     [
-        (get_databricks_notebook_path(), make_notebook_task),
-        (get_databricks_python_file_path(), make_spark_python_task),
+        (get_databricks_notebook_path, make_notebook_task),
+        (get_databricks_python_file_path, make_spark_python_task),
     ],
     ids=[
         "notebook_task",
@@ -101,12 +101,12 @@ def make_spark_python_task(python_file_path: str):
 )
 def test_pipes_client(
     databricks_client: WorkspaceClient,  # noqa: F811
-    file_path: str,
+    file_path_fn: Callable,
     make_task_fn: Callable,
 ):
     @asset
     def number_x(context: AssetExecutionContext, pipes_client: PipesDatabricksServerlessClient):
-        task = make_task_fn(file_path)
+        task = make_task_fn(file_path_fn())
         return pipes_client.run(
             task=task,
             context=context,
