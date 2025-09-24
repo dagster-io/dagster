@@ -65,4 +65,8 @@ export type ScheduleFragment = {
     __typename: 'DryRunInstigationTicks';
     results: Array<{__typename: 'DryRunInstigationTick'; timestamp: number | null}>;
   };
+  owners: Array<
+    | {__typename: 'TeamDefinitionOwner'; team: string}
+    | {__typename: 'UserDefinitionOwner'; email: string}
+  >;
 };
