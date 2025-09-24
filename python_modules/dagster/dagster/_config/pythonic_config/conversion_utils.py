@@ -36,11 +36,11 @@ from dagster._core.errors import (
 )
 from dagster._utils.typing_api import is_closed_python_optional_type
 
-if sys.version() >= (3, 10):
+if sys.version_info >= (3, 10):
     # Support models being built with the `Foo | Bar` syntax,
     # not just `Union[Foo, Bar]`
     from types import UnionType
-    _UNION_TYPES = [Union, UnionType]  
+    _UNION_TYPES = [Union, UnionType]
 else:
     _UNION_TYPES = [Union]
 
