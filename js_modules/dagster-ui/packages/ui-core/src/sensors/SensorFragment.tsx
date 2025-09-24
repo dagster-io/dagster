@@ -27,6 +27,16 @@ export const SENSOR_FRAGMENT = gql`
         path
       }
     }
+    owners {
+      ... on UserDefinitionOwner {
+        __typename
+        email
+      }
+      ... on TeamDefinitionOwner {
+        __typename
+        team
+      }
+    }
   }
 
   ${INSTIGATION_STATE_FRAGMENT}
