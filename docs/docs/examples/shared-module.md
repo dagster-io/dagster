@@ -9,7 +9,7 @@ sidebar_custom_props:
 tags: [mini-project]
 ---
 
-In this example, we'll explore strategies for sharing code across Dagster code locations. This is useful when you have utility functions, factories, or helpers that are used in multiple places and you want to avoid duplication.
+In this example, we'll explore strategies for sharing code across Dagster [code locations](/deployment/code-locations). This is useful when you have utility functions, factories, or helpers that are used in multiple places and you want to avoid duplication.
 
 ### Problem: Sharing modules across codespaces
 
@@ -34,7 +34,7 @@ With a single function `asset_factory`:
   title="src/shared/factory.py"
 />
 
-### Solution 1: Colocating code
+### Solution 1: Colocate the code
 
 If your code locations live in the same repository, the simplest solution is to colocate the shared code in the repo itself.
 
@@ -71,7 +71,7 @@ This works best when:
 - All code locations live in a single repo.
 - You want fast iteration without versioning overhead.
 
-### Solution 2: Git Submodule
+### Solution 2: Include the code as a Git submodule
 
 If each code location exists in its own repository, colocating isn’t an option. Instead, you can maintain the shared library in a separate repository and include it as a Git submodule in each code location repo.
 
@@ -101,9 +101,9 @@ This works best when:
 - Each code location lives in its own repo.
 - You want to ensure the shared library is always available but don’t need fine-grained versioning.
 
-### Solution 3: External Repository
+### Solution 3: Publish the code to a private package registry
 
-For more flexibility and versioning, you can treat your shared module like a standalone library and publish it to a private package registry, such as: [AWS CodeArtifact](https://aws.amazon.com/codeartifact/), [GCP Artifact Registry](https://cloud.google.com/artifact-registry/docs) or [Azure Artifacts](https://azure.microsoft.com/en-us/products/devops/artifacts).
+For more flexibility and the ability to version the shared code, you can treat your shared module like a standalone library and publish it to a private package registry, such as [AWS CodeArtifact](https://aws.amazon.com/codeartifact/), [GCP Artifact Registry](https://cloud.google.com/artifact-registry/docs), or [Azure Artifacts](https://azure.microsoft.com/en-us/products/devops/artifacts).
 
 Then, in each code location’s `pyproject.toml`, you can pin a specific version:
 
