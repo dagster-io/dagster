@@ -436,6 +436,12 @@ class OpDefinition(NodeDefinition, IHasInternalInit):
             },
             {output_def.io_manager_key for output_def in self.output_defs},
         )
+        # Ensure all keys in resource_mapping exist in available resource keys
+        missing_keys = set(resource_mapping.keys()) - all_resource_keys
+        if missing_keys:
+            raise DagsterInvalidDefinitionError(
+                f"Resource mapping contains keys that do not exist in the available resources: {missing_keys}"
+            )
         validate_resource_mapping(resource_mapping, all_resource_keys)
 
         # Remap required_resource_keys

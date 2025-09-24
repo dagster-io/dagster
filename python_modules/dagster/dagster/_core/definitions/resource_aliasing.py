@@ -181,11 +181,18 @@ def validate_resource_mapping(
         if old_key == new_key:
             continue
             
-        # Check that new keys don't conflict with existing keys that aren't being renamed
-        if old_key in available_resources and new_key in available_resources and new_key not in resource_mapping:
+    # Check that new keys don't conflict with existing keys that are already a target of another mapping
+        if (
+            old_key in available_resources
+            and new_key in available_resources
+            and any(
+                other_old != old_key and new_key == other_new
+                for other_old, other_new in resource_mapping.items()
+            )
+        ):
             raise DagsterInvalidInvocationError(
-                f"Cannot rename resource '{old_key}' to '{new_key}' because '{new_key}' already exists "
-                "and is not being renamed. This would create a conflict."
+                f"Cannot rename resource '{old_key}' to '{new_key}' because '{new_key}' is already the target of another resource mapping. This would create a conflict."
+
             )
     
     # Check for circular mappings (A->B, B->A)
