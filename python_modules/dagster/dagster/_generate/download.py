@@ -38,8 +38,6 @@ AVAILABLE_EXAMPLES = [
     "google_drive_factory",
     "oss-metadata-to-plus",
     "project_analytics",
-    "project_dagster_university_start",
-    "project_du_dbt_starter",
     "project_fully_featured",
     "quickstart_aws",
     "quickstart_etl",
