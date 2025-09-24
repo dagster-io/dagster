@@ -2,9 +2,14 @@
 name = "project_mini"
 requires-python = ">=3.9,<3.14"
 version = "0.1.0"
+# start_dependencies
 dependencies = [
-    "dagster==1.11.9",
+    "dagster",
+    # highlight-start
+    "shared",
+    # highlight-end
 ]
+# end_dependencies
 
 [dependency-groups]
 dev = [
@@ -28,4 +33,7 @@ registry_modules = [
     "project_mini.components.*",
 ]
 
-
+# start_uv_sources
+[tool.uv.sources]
+shared = { path = "./shared", editable = true }
+# end_uv_sources
