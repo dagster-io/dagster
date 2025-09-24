@@ -1196,6 +1196,52 @@ export type RecentAssetEventsQuery = {
     | {__typename: 'AssetNotFoundError'};
 };
 
+export type RecentAssetEventsForCatalogViewQueryVariables = Types.Exact<{
+  assetKey: Types.AssetKeyInput;
+  eventTypeSelectors:
+    | Array<Types.AssetEventHistoryEventTypeSelector>
+    | Types.AssetEventHistoryEventTypeSelector;
+  limit: Types.Scalars['Int']['input'];
+  before?: Types.InputMaybe<Types.Scalars['String']['input']>;
+  after?: Types.InputMaybe<Types.Scalars['String']['input']>;
+  cursor?: Types.InputMaybe<Types.Scalars['String']['input']>;
+  partitions?: Types.InputMaybe<
+    Array<Types.Scalars['String']['input']> | Types.Scalars['String']['input']
+  >;
+}>;
+
+export type RecentAssetEventsForCatalogViewQuery = {
+  __typename: 'Query';
+  assetsLatestInfo: Array<{
+    __typename: 'AssetLatestInfo';
+    id: string;
+    inProgressRunIds: Array<string>;
+    unstartedRunIds: Array<string>;
+    latestRun: {
+      __typename: 'Run';
+      id: string;
+      status: Types.RunStatus;
+      startTime: number | null;
+    } | null;
+  }>;
+  assetOrError:
+    | {
+        __typename: 'Asset';
+        id: string;
+        key: {__typename: 'AssetKey'; path: Array<string>};
+        assetEventHistory: {
+          __typename: 'AssetResultEventHistoryConnection';
+          cursor: string;
+          results: Array<
+            | {__typename: 'FailedToMaterializeEvent'; runId: string; timestamp: string}
+            | {__typename: 'MaterializationEvent'; runId: string; timestamp: string}
+            | {__typename: 'ObservationEvent'; runId: string; timestamp: string}
+          >;
+        };
+      }
+    | {__typename: 'AssetNotFoundError'};
+};
+
 export type AssetPartitionEventsQueryVariables = Types.Exact<{
   assetKey: Types.AssetKeyInput;
   partitions: Array<Types.Scalars['String']['input']> | Types.Scalars['String']['input'];
@@ -1436,6 +1482,8 @@ export type LatestAssetPartitionsQuery = {
 };
 
 export const RecentAssetEventsQueryVersion = '6459c0177836dfb98ba88222cdf6461c67b74bed82a41827449e6d47cfb35941';
+
+export const RecentAssetEventsForCatalogViewQueryVersion = '6801960ef79fc4f7c4a33bf258fe9fcb7fd9bbafed9ac7d55b731675f3a19900';
 
 export const AssetPartitionEventsQueryVersion = '859d8d8bf982cc539c932d2fc071b373ca9836cfd083e3fab616d149e1b18646';
 
