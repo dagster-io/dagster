@@ -41,6 +41,7 @@ from dagster._core.errors import (
     user_code_error_boundary,
 )
 from dagster._core.instance import DagsterInstance, InstanceRef
+from dagster._core.instance.config import is_dagster_home_set
 from dagster._core.origin import DEFAULT_DAGSTER_ENTRY_POINT, get_python_environment_entry_point
 from dagster._core.remote_origin import RemoteRepositoryOrigin
 from dagster._core.remote_representation.external_data import (
@@ -440,26 +441,24 @@ class DagsterApiServer(DagsterApiServicer):
         self._server_threadpool_executor = server_threadpool_executor
 
         try:
-            if inject_env_vars_from_instance:
+            if (
+                # if either of these are set, we MUST have access to the instance, so attempt to do so
+                defs_state_info
+                or inject_env_vars_from_instance
+                # if instance_ref is set or we have a valid DAGSTER_HOME, we CAN load the instance, so do so
+                or instance_ref
+                or (is_dagster_home_set() and os.path.exists(os.environ["DAGSTER_HOME"]))
+            ):
                 from dagster._cli.utils import get_instance_for_cli
 
-                # If arguments indicate it wants to load env vars, use the passed-in instance
-                # ref (or the dagster.yaml on the filesystem if no instance ref is provided)
+                # this will have a helpful error message if the instance is not available
                 self._instance = self._exit_stack.enter_context(
                     get_instance_for_cli(instance_ref=instance_ref)
                 )
-
-                self._instance.inject_env_vars(location_name)
+                if inject_env_vars_from_instance:
+                    self._instance.inject_env_vars(location_name)
             else:
                 self._instance = None
-
-            if defs_state_info is not None and self._instance is None:
-                instance_ref = check.not_none(
-                    self._instance_ref, "Cannot set defs_state_info without an instance_ref."
-                )
-                self._instance = self._exit_stack.enter_context(
-                    DagsterInstance.from_ref(instance_ref)
-                )
 
             self._loaded_repositories: Optional[LoadedRepositories] = LoadedRepositories(
                 loadable_target_origin,

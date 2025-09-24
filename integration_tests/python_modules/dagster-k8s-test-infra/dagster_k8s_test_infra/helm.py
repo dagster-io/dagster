@@ -769,7 +769,7 @@ def helm_chart_for_user_deployments_subchart(namespace, docker_image, should_cle
     check.str_param(docker_image, "docker_image")
     check.bool_param(should_cleanup, "should_cleanup")
 
-    helm_config = {"deployments": _deployment_config(docker_image)}
+    helm_config = {"includeInstance": True, "deployments": _deployment_config(docker_image)}
 
     with _helm_chart_helper(
         namespace,
