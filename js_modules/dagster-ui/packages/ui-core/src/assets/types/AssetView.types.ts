@@ -12,6 +12,7 @@ export type AssetViewDefinitionQuery = {
     | {
         __typename: 'Asset';
         id: string;
+        hasDefinitionOrRecord: boolean;
         key: {__typename: 'AssetKey'; path: Array<string>};
         assetMaterializations: Array<{
           __typename: 'MaterializationEvent';
@@ -32753,4 +32754,4 @@ export type AssetViewDefinitionNodeFragment = {
     | null;
 };
 
-export const AssetViewDefinitionQueryVersion = '1bc39b27e9080474973f7426813abf75782273dd4d95bea8ee97ab92b83d3023';
+export const AssetViewDefinitionQueryVersion = 'acbaff586d33b171138603f48f01ea6045470c41c6c7ef1afc716f159f6a446f';
