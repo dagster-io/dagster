@@ -140,6 +140,9 @@ class BasePipesDatabricksClient(PipesClient):
 
         return metadata
 
+    def get_task_fields_which_support_cli_parameters(self) -> set[str]:
+        return {"spark_python_task", "python_wheel_task"}
+
 
 # #########################
 # ##### Databricks
@@ -341,9 +344,6 @@ class PipesDatabricksClient(BasePipesDatabricksClient, TreatAsResourceParam):
         }
 
         return submit_task_dict
-
-    def get_task_fields_which_support_cli_parameters(self) -> set[str]:
-        return {"spark_python_task", "python_wheel_task"}
 
 
 @contextmanager
@@ -605,7 +605,13 @@ class PipesDatabricksServerlessClient(BasePipesDatabricksClient, TreatAsResource
 
         Args:
             task (databricks.sdk.service.jobs.SubmitTask): Specification of the Databricks Serverless
-                task to run. Fields `task_key`, `environment_key` and `notebook_task` must be provided.
+                task to run.
+
+                Field `task_key` must be provided. One of the following task fields must be provided: `notebook_task`,
+                `spark_python_task` or `python_wheel_task`. For Python tasks, field `environment_key` must be provided.
+
+                Note that when `environment_key` is provided, `environments` must be passed
+                in the `submit_args` of this method.
             context (Union[OpExecutionContext, AssetExecutionContext]): The context from the executing op or asset.
             extras (Optional[PipesExtras]): An optional dict of extra parameters to pass to the
                 subprocess.
@@ -631,21 +637,13 @@ class PipesDatabricksServerlessClient(BasePipesDatabricksClient, TreatAsResource
         ) as pipes_session:
             submit_task_dict = task.as_dict()
 
-            submit_task_dict["tags"] = {
-                **submit_task_dict.get("tags", {}),
-                **pipes_session.default_remote_invocation_info,
-            }
+            submit_task_dict = self._enrich_submit_task_dict(
+                context=context, session=pipes_session, submit_task_dict=submit_task_dict
+            )
 
-            existing_params = submit_task_dict["notebook_task"].get("base_parameters", {})
-
-            # merge the existing parameters with the CLI arguments
-            existing_params = {**existing_params, **pipes_session.get_bootstrap_env_vars()}
-
-            submit_task_dict["notebook_task"]["base_parameters"] = existing_params
-
-            task = jobs.SubmitTask.from_dict(submit_task_dict)
+            submit_task = jobs.SubmitTask.from_dict(submit_task_dict)
             run_id = self.client.jobs.submit(
-                tasks=[task],
+                tasks=[submit_task],
                 **(submit_args or {}),
             ).bind()["run_id"]
 
@@ -660,6 +658,45 @@ class PipesDatabricksServerlessClient(BasePipesDatabricksClient, TreatAsResource
         return PipesClientCompletedInvocation(
             pipes_session, metadata=self._extract_dagster_metadata(run_id)
         )
+
+    def _enrich_submit_task_dict(
+        self,
+        context: Union[OpExecutionContext, AssetExecutionContext],
+        session: PipesSession,
+        submit_task_dict: dict[str, Any],
+    ) -> dict[str, Any]:
+        if "notebook_task" in submit_task_dict:
+            existing_params = submit_task_dict["notebook_task"].get("base_parameters", {})
+
+            # merge the existing parameters with the CLI arguments
+            existing_params = {**existing_params, **session.get_bootstrap_env_vars()}
+
+            submit_task_dict["notebook_task"]["base_parameters"] = existing_params
+        else:
+            cli_args = session.get_bootstrap_cli_arguments()  # this is a mapping
+
+            for task_type in self.get_task_fields_which_support_cli_parameters():
+                if task_type in submit_task_dict:
+                    existing_params = submit_task_dict[task_type].get("parameters", [])
+
+                    # merge the existing parameters with the CLI arguments
+                    for key, value in cli_args.items():
+                        existing_params.extend([key, value])
+
+                    submit_task_dict[task_type]["parameters"] = existing_params
+                    context.log.debug(
+                        f"Passing Pipes bootstrap parameters "
+                        f'via Databricks parameters as "{key}.parameters". '  # pyright: ignore[reportPossiblyUnboundVariable]
+                        f"Make sure to use the PipesCliArgsParamsLoader in the task."
+                    )
+                    break
+
+        submit_task_dict["tags"] = {
+            **submit_task_dict.get("tags", {}),
+            **session.default_remote_invocation_info,
+        }
+
+        return submit_task_dict
 
 
 @contextmanager
