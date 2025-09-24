@@ -1,7 +1,6 @@
 ---
 title: Installing Dagster
 description: Learn how to install Dagster and create projects with the dg CLI.
-sidebar_position: 20
 sidebar_label: Installation
 ---
 

@@ -1,6 +1,5 @@
 ---
 description: Dagster offers abstractions for data pipeline orchestration, enabling a modular, declarative approach to data engineering, making it easier to manage dependencies, monitor execution, and ensure data quality.
-sidebar_position: 200
 title: Concepts
 ---
 
