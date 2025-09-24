@@ -6,3 +6,4 @@ class Global(BaseModel):
     dagsterHome: str
     serviceAccountName: str
     celeryConfigSecretName: str
+    dagsterInstanceConfigMap: str
