@@ -9,6 +9,13 @@ dagsterHome: "/opt/dagster/dagster_home"
 postgresqlSecretName: "dagster-postgresql-secret"
 celeryConfigSecretName: "dagster-celery-config-secret"
 
+# Include the Dagster instance configuration from the main chart's configmap in user code pods.
+# Set to true when user deployments are in the same namespace as the main Dagster chart.
+# This is necessary when using features that require access to the instance at code import/startup time,
+# such as StateBackedComponents.
+# Set to false when user deployments are in a different namespace to avoid mount issues.
+includeInstance: false
+
 ####################################################################################################
 # User Code Deployments: Configuration for user code containers to be loaded via GRPC server. For
 # each item in the "deployments" list, a K8s Deployment and K8s Service will be created to run the
