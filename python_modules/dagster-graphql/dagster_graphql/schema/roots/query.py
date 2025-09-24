@@ -1153,7 +1153,7 @@ class GrapheneQuery(graphene.ObjectType):
         )
 
     def resolve_assetOrError(self, graphene_info: ResolveInfo, assetKey: GrapheneAssetKeyInput):
-        return get_asset(graphene_info, AssetKey.from_graphql_input(assetKey))
+        return get_asset(AssetKey.from_graphql_input(assetKey))
 
     def resolve_assetNodeAdditionalRequiredKeys(
         self,

@@ -115,6 +115,7 @@ GET_ASSET_MATERIALIZATION = """
                         partitions
                     }
                 }
+                hasDefinitionOrRecord
             }
             ... on AssetNotFoundError {
                 __typename
@@ -1210,6 +1211,8 @@ class TestAssetAwareEventLog(ExecutingGraphQLContextTestMatrix):
             GET_ASSET_MATERIALIZATION,
             variables={"assetKey": {"path": ["a"]}},
         )
+        assert result.data["assetOrError"]["hasDefinitionOrRecord"]
+
         assert result.data
         snapshot.assert_match(result.data)
 
@@ -1236,7 +1239,22 @@ class TestAssetAwareEventLog(ExecutingGraphQLContextTestMatrix):
             variables={"assetKey": {"path": ["bogus", "asset"]}},
         )
         assert result.data
+        assert not result.data["assetOrError"]["hasDefinitionOrRecord"]
         snapshot.assert_match(result.data)
+
+        graphql_context.instance.report_runless_asset_event(
+            AssetMaterialization(AssetKey(["bogus", "asset"]))
+        )
+
+        graphql_context.clear_loaders()
+
+        result = execute_dagster_graphql(
+            graphql_context,
+            GET_ASSET_MATERIALIZATION,
+            variables={"assetKey": {"path": ["bogus", "asset"]}},
+        )
+        assert result.data
+        assert result.data["assetOrError"]["hasDefinitionOrRecord"]
 
     def test_additional_required_keys_query(self, graphql_context: WorkspaceRequestContext):
         result = execute_dagster_graphql(
