@@ -605,12 +605,15 @@ class JobDefinition(IHasInternalInit):
         resource_requirements = self._get_resource_requirements()
         ensure_requirements_satisfied(self.resource_defs, resource_requirements)
 
-    def is_missing_required_resources(self) -> bool:
+    def get_missing_required_resource_keys(self) -> set[str]:
         requirements = self._get_resource_requirements()
+        missing_keys = set()
         for requirement in requirements:
-            if not requirement.is_satisfied(self.resource_defs):
-                return True
-        return False
+            if not requirement.is_satisfied(self.resource_defs) and isinstance(
+                requirement, ResourceKeyRequirement
+            ):
+                missing_keys.add(requirement.key)
+        return missing_keys
 
     def get_all_hooks_for_handle(self, handle: NodeHandle) -> AbstractSet[HookDefinition]:
         """Gather all the hooks for the given node from all places possibly attached with a hook.

@@ -168,23 +168,34 @@ def _attach_resources_to_jobs_and_instigator_jobs(
         ],
     ]
     # Dedupe
-    jobs = list({id(job): job for job in jobs}.values())
+    jobs_by_id = {id(job): job for job in jobs}
 
     # Find unsatisfied jobs
-    unsatisfied_jobs = [
-        job
-        for job in jobs
+    job_ids_to_missing_resource_keys = {
+        job_id: job.get_missing_required_resource_keys()
+        for job_id, job in jobs_by_id.items()
+        if isinstance(job, JobDefinition)
+    }
+
+    unsatisfied_jobs_by_id = {
+        job_id: job
+        for job_id, job in jobs_by_id.items()
         if isinstance(job, JobDefinition)
         and (
-            job.is_missing_required_resources() or _io_manager_needs_replacement(job, resource_defs)
+            job_ids_to_missing_resource_keys[job_id]
+            or _io_manager_needs_replacement(job, resource_defs)
         )
-    ]
-
+    }
     # Create a mapping of job id to a version of the job with the resource defs bound
     unsatisfied_job_to_resource_bound_job = {
-        id(job): job.with_top_level_resources(
+        job_id: job.with_top_level_resources(
             {
-                **resource_defs,
+                # Only include resource defs that are missing from the job
+                **{
+                    k: resource
+                    for k, resource in resource_defs.items()
+                    if k in job_ids_to_missing_resource_keys[job_id]
+                },
                 **job.resource_defs,
                 # special case for IO manager - the job-level IO manager does not take precedence
                 # if it is the default and a top-level IO manager is provided
@@ -195,14 +206,12 @@ def _attach_resources_to_jobs_and_instigator_jobs(
                 ),
             }
         )
-        for job in jobs
-        if job in unsatisfied_jobs
+        for job_id, job in unsatisfied_jobs_by_id.items()
     }
 
     # Update all jobs to use the resource bound version
     jobs_with_resources = [
-        unsatisfied_job_to_resource_bound_job[id(job)] if job in unsatisfied_jobs else job
-        for job in jobs
+        unsatisfied_job_to_resource_bound_job.get(job_id, job) for job_id, job in jobs_by_id.items()
     ]
 
     # Update all schedules and sensors to use the resource bound version
@@ -212,7 +221,7 @@ def _attach_resources_to_jobs_and_instigator_jobs(
             if (
                 isinstance(schedule, ScheduleDefinition)
                 and schedule.target.has_job_def
-                and schedule.job in unsatisfied_jobs
+                and id(schedule.job) in unsatisfied_jobs_by_id
             )
             else schedule
         )
@@ -224,14 +233,14 @@ def _attach_resources_to_jobs_and_instigator_jobs(
                 [
                     (
                         unsatisfied_job_to_resource_bound_job[id(job)]
-                        if job in unsatisfied_jobs
+                        if id(job) in unsatisfied_jobs_by_id
                         else job
                     )
                     for job in sensor.jobs
                 ]
             )
             if any(target.has_job_def for target in sensor.targets)
-            and any(job in unsatisfied_jobs for job in sensor.jobs)
+            and any(id(job) in unsatisfied_jobs_by_id for job in sensor.jobs)
             else sensor
         )
         for sensor in sensors
