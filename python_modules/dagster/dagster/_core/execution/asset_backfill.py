@@ -861,6 +861,22 @@ def _check_target_partitions_subset_is_valid(
             )
 
 
+def _check_asset_backfill_data_validity(
+    asset_backfill_data: AssetBackfillData,
+    asset_graph: BaseAssetGraph,
+    instance_queryer: CachingInstanceQueryer,
+) -> None:
+    for asset_key in asset_backfill_data.target_subset.asset_keys:
+        _check_target_partitions_subset_is_valid(
+            asset_key,
+            asset_graph,
+            asset_backfill_data.target_subset.get_partitions_subset(asset_key)
+            if asset_key in asset_backfill_data.target_subset.partitions_subsets_by_asset_key
+            else None,
+            instance_queryer,
+        )
+
+
 def _check_validity_and_deserialize_asset_backfill_data(
     workspace_context: BaseWorkspaceRequestContext,
     backfill: "PartitionBackfill",
@@ -875,15 +891,8 @@ def _check_validity_and_deserialize_asset_backfill_data(
 
     try:
         asset_backfill_data = backfill.get_asset_backfill_data(asset_graph)
-        for asset_key in asset_backfill_data.target_subset.asset_keys:
-            _check_target_partitions_subset_is_valid(
-                asset_key,
-                asset_graph,
-                asset_backfill_data.target_subset.get_partitions_subset(asset_key)
-                if asset_key in asset_backfill_data.target_subset.partitions_subsets_by_asset_key
-                else None,
-                instance_queryer,
-            )
+        _check_asset_backfill_data_validity(asset_backfill_data, asset_graph, instance_queryer)
+
     except DagsterDefinitionChangedDeserializationError as ex:
         unloadable_locations_error = (
             "This could be because it's inside a code location that's failing to load:"
