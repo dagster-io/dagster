@@ -5,7 +5,16 @@ const sidebars: SidebarsConfig = {
       type: 'category',
       label: 'Getting Started',
       collapsed: false,
-      items: ['intro', 'getting-started/quickstart', 'getting-started/installation', 'getting-started/concepts'],
+      items: ['intro',
+              'getting-started/quickstart',
+              'getting-started/installation',
+              'getting-started/concepts',
+              {
+                type: 'link',
+                label: 'Python primer',
+                href: 'https://dagster.io/blog/python-packages-primer-1'
+              }
+            ],
     },
     {
       type: 'category',
