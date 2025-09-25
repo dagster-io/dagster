@@ -116,6 +116,7 @@ from dagster_graphql.schema.backfill import (
     GraphenePartitionBackfillOrError,
     GraphenePartitionBackfillsOrError,
 )
+from dagster_graphql.schema.data_quality import GrapheneDataQualityCheck
 from dagster_graphql.schema.entity_key import GrapheneAssetKey
 from dagster_graphql.schema.env_vars import GrapheneEnvVarWithConsumersListOrError
 from dagster_graphql.schema.external import (
@@ -654,6 +655,22 @@ class GrapheneQuery(graphene.ObjectType):
         GrapheneDefsStateInfo,
         description="Retrieve the latest available DefsStateInfo for the current workspace.",
     )
+
+    dataQualityChecksForAsset = graphene.Field(
+        non_null_list(GrapheneDataQualityCheck),
+        assetKey=graphene.Argument(GrapheneAssetKeyInput, required=True),
+    )
+
+    def resolve_dataQualityChecksForAsset(
+        self, graphene_info: ResolveInfo, assetKey: GrapheneAssetKeyInput
+    ):
+        # replace with a query that only returns the checks for the asset. For prototype just filter in mem
+        all_checks = graphene_info.context.instance.get_data_quality_configs()
+        return [
+            GrapheneDataQualityCheck(check)
+            for check in all_checks
+            if check.asset_key.to_graphql_input() == assetKey
+        ]
 
     @capture_error
     def resolve_repositoriesOrError(
