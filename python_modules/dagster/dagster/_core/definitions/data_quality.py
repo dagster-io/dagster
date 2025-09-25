@@ -3,7 +3,7 @@ from enum import Enum
 from dagster_shared.record import record
 from dagster_shared.serdes import whitelist_for_serdes
 
-from dagster import AssetKey
+from dagster._core.definitions.asset_key import AssetKey
 
 
 @whitelist_for_serdes
