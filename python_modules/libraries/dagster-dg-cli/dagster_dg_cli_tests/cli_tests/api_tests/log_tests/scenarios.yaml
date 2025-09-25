@@ -13,7 +13,7 @@ success_logs_basic_json:
 success_logs_basic_text:
   command: "dg api log get b45fff8a-7def-43b8-805d-1cf5f435c997 --limit 20"
 
-# Filtered scenarios (no recordings - these are complex to set up)
+# Filtered scenarios (now have recordings!)
 success_logs_error_level_only_json:
   command: "dg api log get 85156191-170d-4229-8eba-14450b6ca9e3 --level ERROR --json"
 
@@ -34,33 +34,35 @@ success_logs_step_filter_text:
 
 success_logs_small_limit_json:
   command: "dg api log get 85156191-170d-4229-8eba-14450b6ca9e3 --json --limit 5"
-  has_recording: false
 
 success_logs_small_limit_text:
   command: "dg api log get 85156191-170d-4229-8eba-14450b6ca9e3 --limit 5"
-  has_recording: false
 
-success_logs_with_cursor_json:
+error_cursor_no_recording_json:
   command: "dg api log get 85156191-170d-4229-8eba-14450b6ca9e3 --json --limit 10 --cursor eyJza2lwIjo1fQ=="
   has_recording: false
 
-success_logs_with_cursor_text:
+error_cursor_no_recording_text:
   command: "dg api log get 85156191-170d-4229-8eba-14450b6ca9e3 --limit 10 --cursor eyJza2lwIjo1fQ=="
   has_recording: false
 
-# Empty logs scenario
-success_logs_empty_json:
+# Empty logs scenario (no recording to test actual empty response)
+error_empty_logs_no_recording_json:
   command: "dg api log get empty-run-uuid-0000-0000-000000000000 --json"
+  has_recording: false
 
-success_logs_empty_text:
+error_empty_logs_no_recording_text:
   command: "dg api log get empty-run-uuid-0000-0000-000000000000"
+  has_recording: false
 
 # Error scenarios
 error_run_not_found_json:
   command: "dg api log get nonexistent-run-uuid-1234-5678-900000000000 --json"
+  has_recording: false
 
 error_run_not_found_text:
   command: "dg api log get nonexistent-run-uuid-1234-5678-900000000000"
+  has_recording: false
 
 error_malformed_run_id_json:
   command: "dg api log get invalid-uuid-format --json"
@@ -80,8 +82,6 @@ error_empty_run_id_text:
 
 error_invalid_level_json:
   command: "dg api log get 85156191-170d-4229-8eba-14450b6ca9e3 --level INVALID --json"
-  has_recording: false
 
 error_invalid_level_text:
   command: "dg api log get 85156191-170d-4229-8eba-14450b6ca9e3 --level INVALID"
-  has_recording: false

@@ -11,4 +11,3 @@ If there are no errors when filtering with `jq` `select(.level == "ERROR")` then
     dg api log get $1 --json
 
 And provide a summary of the run
-
