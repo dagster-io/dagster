@@ -843,30 +843,16 @@ def _check_target_partitions_subset_is_valid(
                 f"Asset {asset_key} had a PartitionsDefinition at storage-time, but no longer does"
             )
 
-        # If the asset was time-partitioned at storage time but the time partitions def
-        # has changed, mark the backfill as failed
-        if isinstance(
-            target_partitions_subset, TimeWindowPartitionsSubset
-        ) and target_partitions_subset.partitions_def.get_serializable_unique_identifier(
-            instance_queryer
-        ) != partitions_def.get_serializable_unique_identifier(instance_queryer):
+        # Check that all target partitions still exist. If so, the backfill can continue.
+        existent_partitions_subset = (
+            partitions_def.subset_with_all_partitions() & target_partitions_subset
+        )
+        removed_partitions_subset = target_partitions_subset - existent_partitions_subset
+        if len(removed_partitions_subset) > 0:
             raise DagsterDefinitionChangedDeserializationError(
-                f"This partitions definition for asset {asset_key} has changed since this backfill"
-                " was stored. Changing the partitions definition for a time-partitioned "
-                "asset during a backfill is not supported."
+                f"Targeted partitions for asset {asset_key} have been removed since this backfill was stored. "
+                f"The following partitions were removed: {removed_partitions_subset.get_partition_keys()}"
             )
-
-        else:
-            # Check that all target partitions still exist. If so, the backfill can continue.a
-            existent_partitions_subset = (
-                partitions_def.subset_with_all_partitions() & target_partitions_subset
-            )
-            removed_partitions_subset = target_partitions_subset - existent_partitions_subset
-            if len(removed_partitions_subset) > 0:
-                raise DagsterDefinitionChangedDeserializationError(
-                    f"Targeted partitions for asset {asset_key} have been removed since this backfill was stored. "
-                    f"The following partitions were removed: {removed_partitions_subset.get_partition_keys()}"
-                )
 
     else:  # Asset unpartitioned at storage time
         if partitions_def is not None:
