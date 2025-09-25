@@ -251,3 +251,4 @@ Congratulations! You've just built and run your first pipeline with Dagster. Nex
 
 - Follow the [Tutorial](/dagster-basics-tutorial) to learn how to build a more complex ETL pipeline
 - [Create your own Dagster project](/guides/build/projects/creating-a-new-project) and [add assets](/guides/build/assets/defining-assets) to it
+- Check out our [Python primer series](https://dagster.io/blog/python-packages-primer-1) for an in-depth tour of Python modules, packages and imports
