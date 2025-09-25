@@ -396,7 +396,9 @@ class TestLogDataProcessing:
 
         # Test stack trace formatting works for all levels
         assert "Pipeline execution failed" in top_error.message
+        assert top_error.cause is not None
         assert "Failed to process file" in top_error.cause.message
+        assert top_error.cause.cause is not None
         assert "File not found" in top_error.cause.cause.message
 
     def test_run_event_with_no_optional_fields(self):
