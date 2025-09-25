@@ -16,6 +16,20 @@ def my_daily_partitioned_asset() -> MaterializeResult:
     return MaterializeResult(metadata={"foo": some_metadata_value})
 
 
+@asset(group_name="example_asset_group")
+def asset_2() -> MaterializeResult:
+    some_metadata_value = random.randint(0, 100)
+
+    return MaterializeResult(metadata={"foo": some_metadata_value})
+
+
+@asset(group_name="example_asset_group")
+def asset_3() -> MaterializeResult:
+    some_metadata_value = random.randint(0, 100)
+
+    return MaterializeResult(metadata={"foo": some_metadata_value})
+
+
 partitioned_asset_job = define_asset_job("partitioned_job", selection=[my_daily_partitioned_asset])
 
 
