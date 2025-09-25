@@ -3691,6 +3691,7 @@ type Query {
     cursor: String
   ): [AssetCheckExecution!]!
   latestDefsStateInfo: DefsStateInfo
+  dataQualityChecksForAsset(assetKey: AssetKeyInput!): [DataQualityCheck!]!
 }
 
 union WorkspaceOrError = Workspace | PythonError
@@ -3979,6 +3980,21 @@ type AutomationConditionEvaluationNode {
   isPartitioned: Boolean!
   childUniqueIds: [String!]!
   operatorType: String!
+}
+
+type DataQualityCheck {
+  name: String!
+  assetKey: AssetKey!
+  description: String
+  config: GenericScalar!
+  instigator: String!
+  checkType: String!
+  executionHistory(limit: Int): [GrapheneDataQualityCheckExecution!]!
+}
+
+type GrapheneDataQualityCheckExecution {
+  checkExecution: AssetCheckExecution!
+  logsForExecution(cursor: String): InstigationEventConnection!
 }
 
 type Mutation {

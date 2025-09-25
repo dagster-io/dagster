@@ -1262,6 +1262,21 @@ export type DagsterTypeOrError =
   | PythonError
   | RegularDagsterType;
 
+export type DataQualityCheck = {
+  __typename: 'DataQualityCheck';
+  assetKey: AssetKey;
+  checkType: Scalars['String']['output'];
+  config: Scalars['GenericScalar']['output'];
+  description: Maybe<Scalars['String']['output']>;
+  executionHistory: Array<GrapheneDataQualityCheckExecution>;
+  instigator: Scalars['String']['output'];
+  name: Scalars['String']['output'];
+};
+
+export type DataQualityCheckExecutionHistoryArgs = {
+  limit?: InputMaybe<Scalars['Int']['input']>;
+};
+
 export type DefaultPartitionStatuses = {
   __typename: 'DefaultPartitionStatuses';
   failedPartitions: Array<Scalars['String']['output']>;
@@ -1938,6 +1953,16 @@ export type GraphSelector = {
   graphName: Scalars['String']['input'];
   repositoryLocationName: Scalars['String']['input'];
   repositoryName: Scalars['String']['input'];
+};
+
+export type GrapheneDataQualityCheckExecution = {
+  __typename: 'GrapheneDataQualityCheckExecution';
+  checkExecution: AssetCheckExecution;
+  logsForExecution: InstigationEventConnection;
+};
+
+export type GrapheneDataQualityCheckExecutionLogsForExecutionArgs = {
+  cursor?: InputMaybe<Scalars['String']['input']>;
 };
 
 export type HandledOutputEvent = DisplayableEvent &
@@ -4098,6 +4123,7 @@ export type Query = {
   canBulkTerminate: Scalars['Boolean']['output'];
   capturedLogs: CapturedLogs;
   capturedLogsMetadata: CapturedLogsMetadata;
+  dataQualityChecksForAsset: Array<DataQualityCheck>;
   executionPlanOrError: ExecutionPlanOrError;
   graphOrError: GraphOrError;
   instance: Instance;
@@ -4243,6 +4269,10 @@ export type QueryCapturedLogsArgs = {
 
 export type QueryCapturedLogsMetadataArgs = {
   logKey: Array<Scalars['String']['input']>;
+};
+
+export type QueryDataQualityChecksForAssetArgs = {
+  assetKey: AssetKeyInput;
 };
 
 export type QueryExecutionPlanOrErrorArgs = {
@@ -8298,6 +8328,33 @@ export const buildDagsterTypeNotFoundError = (
   };
 };
 
+export const buildDataQualityCheck = (
+  overrides?: Partial<DataQualityCheck>,
+  _relationshipsToOmit: Set<string> = new Set(),
+): {__typename: 'DataQualityCheck'} & DataQualityCheck => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('DataQualityCheck');
+  return {
+    __typename: 'DataQualityCheck',
+    assetKey:
+      overrides && overrides.hasOwnProperty('assetKey')
+        ? overrides.assetKey!
+        : relationshipsToOmit.has('AssetKey')
+          ? ({} as AssetKey)
+          : buildAssetKey({}, relationshipsToOmit),
+    checkType:
+      overrides && overrides.hasOwnProperty('checkType') ? overrides.checkType! : 'voluptates',
+    config: overrides && overrides.hasOwnProperty('config') ? overrides.config! : 'nemo',
+    description:
+      overrides && overrides.hasOwnProperty('description') ? overrides.description! : 'voluptas',
+    executionHistory:
+      overrides && overrides.hasOwnProperty('executionHistory') ? overrides.executionHistory! : [],
+    instigator:
+      overrides && overrides.hasOwnProperty('instigator') ? overrides.instigator! : 'commodi',
+    name: overrides && overrides.hasOwnProperty('name') ? overrides.name! : 'repellat',
+  };
+};
+
 export const buildDefaultPartitionStatuses = (
   overrides?: Partial<DefaultPartitionStatuses>,
   _relationshipsToOmit: Set<string> = new Set(),
@@ -9461,6 +9518,29 @@ export const buildGraphSelector = (
       overrides && overrides.hasOwnProperty('repositoryName')
         ? overrides.repositoryName!
         : 'perferendis',
+  };
+};
+
+export const buildGrapheneDataQualityCheckExecution = (
+  overrides?: Partial<GrapheneDataQualityCheckExecution>,
+  _relationshipsToOmit: Set<string> = new Set(),
+): {__typename: 'GrapheneDataQualityCheckExecution'} & GrapheneDataQualityCheckExecution => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('GrapheneDataQualityCheckExecution');
+  return {
+    __typename: 'GrapheneDataQualityCheckExecution',
+    checkExecution:
+      overrides && overrides.hasOwnProperty('checkExecution')
+        ? overrides.checkExecution!
+        : relationshipsToOmit.has('AssetCheckExecution')
+          ? ({} as AssetCheckExecution)
+          : buildAssetCheckExecution({}, relationshipsToOmit),
+    logsForExecution:
+      overrides && overrides.hasOwnProperty('logsForExecution')
+        ? overrides.logsForExecution!
+        : relationshipsToOmit.has('InstigationEventConnection')
+          ? ({} as InstigationEventConnection)
+          : buildInstigationEventConnection({}, relationshipsToOmit),
   };
 };
 
@@ -13171,6 +13251,10 @@ export const buildQuery = (
         : relationshipsToOmit.has('CapturedLogsMetadata')
           ? ({} as CapturedLogsMetadata)
           : buildCapturedLogsMetadata({}, relationshipsToOmit),
+    dataQualityChecksForAsset:
+      overrides && overrides.hasOwnProperty('dataQualityChecksForAsset')
+        ? overrides.dataQualityChecksForAsset!
+        : [],
     executionPlanOrError:
       overrides && overrides.hasOwnProperty('executionPlanOrError')
         ? overrides.executionPlanOrError!
