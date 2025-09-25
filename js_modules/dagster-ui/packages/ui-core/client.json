@@ -53,6 +53,7 @@
   "PartitionHealthQuery": "4f37a772c8f0e07cf2d76c18915a2a9c393fa8ea6a7b2ad355b80a225c8fe2af",
   "AssetJobPartitionSetsQuery": "43286e824ac1f7d1b30c6744ad472c034d8ed257675a720ac53bcf929e0bc7f7",
   "RecentAssetEventsQuery": "6459c0177836dfb98ba88222cdf6461c67b74bed82a41827449e6d47cfb35941",
+  "RecentAssetEventsForCatalogViewQuery": "6801960ef79fc4f7c4a33bf258fe9fcb7fd9bbafed9ac7d55b731675f3a19900",
   "AssetPartitionEventsQuery": "859d8d8bf982cc539c932d2fc071b373ca9836cfd083e3fab616d149e1b18646",
   "LatestAssetPartitionsQuery": "2568dc5d6ad01d1695e9b6028a69e20785b90e152b15e84efe76b7c2595707da",
   "ReportEventPartitionDefinitionQuery": "e306421344493a9986106de14bca90ec554505d6f1965991ba502725edc41c95",
