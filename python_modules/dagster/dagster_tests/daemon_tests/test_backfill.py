@@ -2731,9 +2731,13 @@ def test_raise_error_on_asset_backfill_partitions_defs_changes(
 
     assert len(errors) == 1
     error_msg = check.not_none(errors[0]).message
-    assert ("partitions definition has changed") in error_msg or (
-        "partitions definition for asset AssetKey(['time_partitions_def_changes']) has changed"
-    ) in error_msg
+    if backcompat_serialization:
+        assert ("partitions definition has changed") in error_msg or (
+            "partitions definition for asset AssetKey(['time_partitions_def_changes']) has changed"
+        ) in error_msg
+    else:
+        # doesn't have deser issues but does detect that the partition was removed
+        assert ("The following partitions were removed: ['2023-01-01']") in error_msg
 
 
 @pytest.mark.parametrize("backcompat_serialization", [True, False])
@@ -2892,9 +2896,10 @@ def test_partitions_def_changed_backfill_retry_envvar_set(
 
         assert len(errors) == 1
         error_msg = check.not_none(errors[0]).message
-        assert ("partitions definition has changed") in error_msg or (
-            "partitions definition for asset AssetKey(['time_partitions_def_changes']) has changed"
+        assert (
+            "Targeted partitions for asset AssetKey(['time_partitions_def_changes']) have been removed since this backfill was stored. The following partitions were removed: ['2023-01-01']"
         ) in error_msg
+    assert ("The following partitions were removed: ['2023-01-01']") in error_msg
 
 
 def test_asset_backfill_logging(caplog, instance, workspace_context):
