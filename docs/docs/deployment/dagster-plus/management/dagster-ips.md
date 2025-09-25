@@ -32,4 +32,11 @@ Additional IP addresses may be added over time. This list was last updated on **
 In addition to these IP addresses, the following URLs also need to be allowed egress access from your agent:
 
 - `cloud-prod-object-snapshots.s3.amazonaws.com`
+- `cloud-prod-compute-logs.s3.amazonaws.com` - Only required if compute logs are being sent to Dagster+'s control plane. Not needed if you've configured compute logs to be sent to your own blob storage. See [Managing compute logs and error messages](/deployment/dagster-plus/management/managing-compute-logs-and-error-messages) for more details.
 - `<organization-name>.agent.dagster.cloud`
+
+### EU Dagster+ Hybrid Control Plane
+
+- `cloud-prod-eu-object-snapshots.s3.amazonaws.com`
+- `cloud-prod-eu-compute-logs.s3.amazonaws.com` - Only required if compute logs are being sent to Dagster+'s control plane. Not needed if you've configured compute logs to be sent to your own blob storage. See [Managing compute logs and error messages](/deployment/dagster-plus/management/managing-compute-logs-and-error-messages) for more details.
+- `<organization-name>.agent.eu.dagster.cloud`
