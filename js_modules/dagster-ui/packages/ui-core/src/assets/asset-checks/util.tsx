@@ -3,12 +3,11 @@ import {Colors, Icon, Spinner} from '@dagster-io/ui-components';
 import {ExecuteChecksButtonCheckFragment} from './types/ExecuteChecksButton.types';
 import {AssetCheckTableFragment} from './types/VirtualizedAssetCheckTable.types';
 import {assertUnreachable} from '../../app/Util';
-import {AssetCheckExecutionResolvedStatus, AssetCheckSeverity} from '../../graphql/types';
+import {AssetCheckExecution, AssetCheckExecutionResolvedStatus, AssetCheckSeverity} from '../../graphql/types';
 
 export function assetCheckStatusDescription(
-  check: AssetCheckTableFragment & ExecuteChecksButtonCheckFragment,
+  lastExecution: AssetCheckExecution | null,
 ) {
-  const lastExecution = check.executionForLatestMaterialization;
   if (!lastExecution) {
     return 'Not evaluated';
   }
@@ -30,9 +29,8 @@ export function assetCheckStatusDescription(
 }
 
 export function getCheckIcon(
-  check: AssetCheckTableFragment & ExecuteChecksButtonCheckFragment,
+  lastExecution: AssetCheckExecution | null,
 ): React.ReactNode {
-  const lastExecution = check.executionForLatestMaterialization;
   if (!lastExecution) {
     return <Icon name="status" color={Colors.accentGray()} />;
   }

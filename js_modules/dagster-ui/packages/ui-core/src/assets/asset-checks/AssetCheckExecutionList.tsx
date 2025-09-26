@@ -11,7 +11,7 @@ import {
 import {Link} from 'react-router-dom';
 
 import {MetadataCell} from './AssetCheckDetailDialog';
-import {AssetCheckStatusTag} from './AssetCheckStatusTag';
+import {AssetCheckStatusTag, DataQualityCheckStatusTag} from './AssetCheckStatusTag';
 import {AssetCheckDetailsQuery} from './types/AssetCheckDetailDialog.types';
 import {Description} from '../../pipelines/Description';
 import {linkToRunEvent} from '../../runs/RunUtils';
@@ -22,9 +22,13 @@ type Execution = AssetCheckDetailsQuery['assetCheckExecutions'][0];
 export const AssetCheckExecutionList = ({
   executions,
   paginationProps,
+  isDataQualityCheck,
+  checkName,
 }: {
   executions: Execution[];
   paginationProps: CursorPaginationProps;
+  isDataQualityCheck: boolean;
+  checkName: string;
 }) => {
   if (!executions) {
     return (
@@ -68,12 +72,16 @@ export const AssetCheckExecutionList = ({
               return (
                 <tr key={execution.id}>
                   <td>
-                    <AssetCheckStatusTag execution={execution} />
+                    {isDataQualityCheck ? (
+                      <DataQualityCheckStatusTag execution={execution} checkName={checkName} executionId={execution.runId} />
+                    ) : (
+                      <AssetCheckStatusTag execution={execution} />
+                    )}
                   </td>
                   <td>
                     {execution.evaluation?.timestamp ? (
                       <Link
-                        to={linkToRunEvent(
+                        to={isDataQualityCheck ? `/data-quality/${checkName}/${execution.runId}` : linkToRunEvent(
                           {id: execution.runId},
                           {stepKey: execution.stepKey, timestamp: execution.timestamp},
                         )}

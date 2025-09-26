@@ -3692,6 +3692,11 @@ type Query {
   ): [AssetCheckExecution!]!
   latestDefsStateInfo: DefsStateInfo
   dataQualityChecksForAsset(assetKey: AssetKeyInput!): [DataQualityCheck!]!
+  dataQualityExecutionLogs(
+    executionId: String!
+    checkName: String!
+    cursor: String
+  ): InstigationEventConnection!
 }
 
 union WorkspaceOrError = Workspace | PythonError

@@ -1,13 +1,13 @@
-import {ErrorBoundary, MainContent} from '@dagster-io/ui-components';
-import {memo, useEffect, useRef} from 'react';
-import {Redirect, Switch, useLocation} from 'react-router-dom';
-import {AssetsOverviewRoot} from 'shared/assets/AssetsOverviewRoot.oss';
+import { ErrorBoundary, MainContent } from '@dagster-io/ui-components';
+import { memo, useEffect, useRef } from 'react';
+import { Redirect, Switch, useLocation } from 'react-router-dom';
+import { AssetsOverviewRoot } from 'shared/assets/AssetsOverviewRoot.oss';
 
-import {Route} from './Route';
-import {AssetFeatureProvider} from '../assets/AssetFeatureContext';
-import {RunsFeedBackfillPage} from '../instance/backfill/RunsFeedBackfillPage';
+import { Route } from './Route';
+import { AssetFeatureProvider } from '../assets/AssetFeatureContext';
+import { RunsFeedBackfillPage } from '../instance/backfill/RunsFeedBackfillPage';
 import RunsFeedRoot from '../runs/RunsFeedRoot';
-import {lazy} from '../util/lazy';
+import { lazy } from '../util/lazy';
 
 const WorkspaceRoot = lazy(() => import('../workspace/WorkspaceRoot'));
 const OverviewRoot = lazy(() => import('../overview/OverviewRoot'));
@@ -20,6 +20,7 @@ const InstanceConfig = lazy(() => import('../instance/InstanceConfig'));
 const InstanceConcurrencyPage = lazy(() => import('../instance/InstanceConcurrency'));
 const InstanceHealthPage = lazy(() => import('../instance/InstanceHealthPage'));
 const RunRoot = lazy(() => import('../runs/RunRoot'));
+const DataQualityExecutionLogs = lazy(() => import('../runs/DataQualityExecutionLogs'));
 const SnapshotRoot = lazy(() => import('../snapshots/SnapshotRoot'));
 const GuessJobLocationRoot = lazy(() => import('../workspace/GuessJobLocationRoot'));
 const SettingsRoot = lazy(() => import('../settings/SettingsRoot'));
@@ -58,6 +59,9 @@ export const ContentRoot = memo(() => {
           </Route>
           <Route path="/runs/:runId" exact>
             <RunRoot />
+          </Route>
+          <Route path="/data-quality/:checkName/:executionId" exact>
+            <DataQualityExecutionLogs />
           </Route>
           <Route path="/snapshots/:pipelinePath/:tab?">
             <SnapshotRoot />
