@@ -22,7 +22,7 @@ from dagster_graphql.implementation.fetch_sensors import (
 )
 from dagster_graphql.implementation.loader import RepositoryScopedBatchLoader
 from dagster_graphql.implementation.utils import (
-    assert_permission_for_location,
+    assert_permission_for_sensor,
     capture_error,
     require_permission_check,
 )
@@ -204,12 +204,10 @@ class GrapheneStartSensorMutation(graphene.Mutation):
         name = "StartSensorMutation"
 
     @capture_error
-    @require_permission_check(Permissions.UPDATE_SENSOR_CURSOR)
+    @require_permission_check(Permissions.EDIT_SENSOR)
     def mutate(self, graphene_info: ResolveInfo, sensor_selector):
         selector = SensorSelector.from_graphql_input(sensor_selector)
-        assert_permission_for_location(
-            graphene_info, Permissions.UPDATE_SENSOR_CURSOR, selector.location_name
-        )
+        assert_permission_for_sensor(graphene_info, Permissions.EDIT_SENSOR, selector)
         return start_sensor(graphene_info, selector)
 
 
@@ -293,9 +291,7 @@ class GrapheneResetSensorMutation(graphene.Mutation):
     def mutate(self, graphene_info: ResolveInfo, sensor_selector):
         selector = SensorSelector.from_graphql_input(sensor_selector)
 
-        assert_permission_for_location(
-            graphene_info, Permissions.EDIT_SENSOR, selector.location_name
-        )
+        assert_permission_for_sensor(graphene_info, Permissions.EDIT_SENSOR, selector)
 
         return reset_sensor(graphene_info, selector)
 
@@ -313,11 +309,10 @@ class GrapheneSetSensorCursorMutation(graphene.Mutation):
         name = "SetSensorCursorMutation"
 
     @capture_error
+    @require_permission_check(Permissions.UPDATE_SENSOR_CURSOR)
     def mutate(self, graphene_info: ResolveInfo, sensor_selector, cursor=None):
         selector = SensorSelector.from_graphql_input(sensor_selector)
-        assert_permission_for_location(
-            graphene_info, Permissions.UPDATE_SENSOR_CURSOR, selector.location_name
-        )
+        assert_permission_for_sensor(graphene_info, Permissions.UPDATE_SENSOR_CURSOR, selector)
         return set_sensor_cursor(graphene_info, selector, cursor)
 
 

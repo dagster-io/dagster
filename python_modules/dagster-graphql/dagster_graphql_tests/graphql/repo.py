@@ -1159,6 +1159,8 @@ def define_schedules():
         provide_config_schedule,
         always_error,
         jobless_schedule,
+        owned_schedule,
+        unowned_schedule,
     ]
 
 
@@ -1307,6 +1309,8 @@ def define_sensors():
         every_asset_sensor,
         invalid_asset_selection_error,
         jobless_sensor,
+        owned_sensor,
+        unowned_sensor,
     ]
 
 
@@ -2244,6 +2248,26 @@ def owned_job():
 @job
 def unowned_job():
     permission_test_op()
+
+
+@sensor(job=owned_job)
+def owned_sensor():
+    pass
+
+
+@sensor(job=unowned_job)
+def unowned_sensor():
+    pass
+
+
+@schedule(job=owned_job, cron_schedule="* * * * *")
+def owned_schedule():
+    return {}
+
+
+@schedule(job=unowned_job, cron_schedule="* * * * *")
+def unowned_schedule():
+    return {}
 
 
 def define_assets():
