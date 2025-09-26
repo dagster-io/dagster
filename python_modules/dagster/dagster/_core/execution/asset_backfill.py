@@ -879,7 +879,8 @@ def _check_asset_backfill_data_validity(
 
 def _check_validity_and_deserialize_asset_backfill_data(
     workspace_context: BaseWorkspaceRequestContext,
-    backfill: "PartitionBackfill",
+    backfill_id: str,
+    asset_backfill_data: AssetBackfillData,
     asset_graph: RemoteWorkspaceAssetGraph,
     instance_queryer: CachingInstanceQueryer,
     logger: logging.Logger,
@@ -890,7 +891,6 @@ def _check_validity_and_deserialize_asset_backfill_data(
     unloadable_locations = _get_unloadable_location_names(workspace_context, logger)
 
     try:
-        asset_backfill_data = backfill.get_asset_backfill_data(asset_graph)
         _check_asset_backfill_data_validity(asset_backfill_data, asset_graph, instance_queryer)
 
     except DagsterDefinitionChangedDeserializationError as ex:
@@ -905,7 +905,7 @@ def _check_validity_and_deserialize_asset_backfill_data(
             and unloadable_locations
         ):
             logger.warning(
-                f"Backfill {backfill.backfill_id} was unable to continue due to a missing asset or"
+                f"Backfill {backfill_id} was unable to continue due to a missing asset or"
                 " partition in the asset graph. The backfill will resume once it is available"
                 f" again.\n{ex}. {unloadable_locations_error}"
             )
@@ -1015,10 +1015,16 @@ async def execute_asset_backfill_iteration(
     )
 
     instance_queryer = asset_graph_view.get_inner_queryer_for_back_compat()
+    previous_asset_backfill_data = backfill.get_asset_backfill_data(asset_graph)
 
     if backfill.status == BulkActionStatus.REQUESTED:
         previous_asset_backfill_data = _check_validity_and_deserialize_asset_backfill_data(
-            workspace_context, backfill, asset_graph, instance_queryer, logger
+            workspace_context,
+            backfill.backfill_id,
+            previous_asset_backfill_data,
+            asset_graph,
+            instance_queryer,
+            logger,
         )
         if previous_asset_backfill_data is None:
             return
@@ -1165,42 +1171,26 @@ async def execute_asset_backfill_iteration(
         )
 
         try:
-            previous_asset_backfill_data = _check_validity_and_deserialize_asset_backfill_data(
-                workspace_context, backfill, asset_graph, instance_queryer, logger
+            # Update the asset backfill data to contain the newly materialized/failed partitions.
+            updated_asset_backfill_data = get_canceling_asset_backfill_iteration_data(
+                backfill.backfill_id,
+                previous_asset_backfill_data,
+                asset_graph_view,
+                backfill.backfill_timestamp,
             )
-            if previous_asset_backfill_data is not None:
-                # Update the asset backfill data to contain the newly materialized/failed partitions.
-                updated_asset_backfill_data = get_canceling_asset_backfill_iteration_data(
-                    backfill.backfill_id,
-                    previous_asset_backfill_data,
-                    asset_graph_view,
-                    backfill.backfill_timestamp,
-                )
 
-                # Refetch, in case the backfill was forcibly marked as canceled in the meantime
-                backfill = cast("PartitionBackfill", instance.get_backfill(backfill.backfill_id))
-                updated_backfill: PartitionBackfill = backfill.with_asset_backfill_data(
-                    updated_asset_backfill_data,
-                    dynamic_partitions_store=instance,
-                    asset_graph=asset_graph,
-                )
-                # The asset backfill is successfully canceled when all requested runs have finished (success,
-                # failure, or cancellation). Since the AssetBackfillData object stores materialization states
-                # per asset partition, the daemon continues to update the backfill data until all runs have
-                # finished in order to display the final partition statuses in the UI.
-                all_partitions_marked_completed = updated_asset_backfill_data.all_requested_partitions_marked_as_materialized_or_failed()
-            else:
-                logger.warning(
-                    f"Asset backfill data for backfill {backfill.backfill_id} is None. Unable to "
-                    "update the backfill data this iteration. If all runs for this backfill have finished, the backfill "
-                    "will be marked as completed without updating the individual asset partition statuses."
-                )
-                all_partitions_marked_completed = False
-                # Refetch, in case the backfill was forcibly marked as canceled in the meantime
-                updated_backfill = cast(
-                    "PartitionBackfill", instance.get_backfill(backfill.backfill_id)
-                )
-                updated_asset_backfill_data = None
+            # Refetch, in case the backfill was forcibly marked as canceled/failed in the meantime
+            backfill = cast("PartitionBackfill", instance.get_backfill(backfill.backfill_id))
+            updated_backfill: PartitionBackfill = backfill.with_asset_backfill_data(
+                updated_asset_backfill_data,
+                dynamic_partitions_store=instance,
+                asset_graph=asset_graph,
+            )
+            # The asset backfill is successfully canceled when all requested runs have finished (success,
+            # failure, or cancellation). Since the AssetBackfillData object stores materialization states
+            # per asset partition, the daemon continues to update the backfill data until all runs have
+            # finished in order to display the final partition statuses in the UI.
+            all_partitions_marked_completed = updated_asset_backfill_data.all_requested_partitions_marked_as_materialized_or_failed()
         except Exception as e:
             logger.warning(
                 f"Error deserializing asset backfill data for backfill {backfill.backfill_id}. Unable to "
@@ -1208,7 +1198,7 @@ async def execute_asset_backfill_iteration(
                 f"will be marked as completed without updating the individual asset partition statuses. Error: {e}"
             )
             all_partitions_marked_completed = False
-            # Refetch, in case the backfill was forcibly marked as canceled in the meantime
+            # Refetch, in case the backfill was forcibly marked as canceled/failed in the meantime
             updated_backfill = cast(
                 "PartitionBackfill", instance.get_backfill(backfill.backfill_id)
             )
