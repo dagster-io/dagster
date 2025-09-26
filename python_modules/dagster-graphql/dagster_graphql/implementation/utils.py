@@ -34,6 +34,7 @@ from dagster._core.definitions.temporal_context import TemporalContext
 from dagster._core.errors import DagsterError, DagsterInvariantViolationError
 from dagster._core.execution.backfill import PartitionBackfill
 from dagster._core.remote_representation.external import RemoteJob
+from dagster._core.storage.dagster_run import DagsterRun
 from dagster._core.workspace.permissions import Permissions
 from dagster._utils.caching_instance_queryer import CachingInstanceQueryer
 from dagster._utils.error import serializable_error_info_from_exc_info
@@ -173,20 +174,70 @@ def assert_permission_for_asset_graph(
         raise UserFacingGraphQLError(GrapheneUnauthorizedError())
 
 
+def has_permission_for_run(
+    graphene_info: "ResolveInfo", permission: Permissions, run: DagsterRun
+) -> bool:
+    if not run.remote_job_origin:
+        return graphene_info.context.has_permission(permission)
+
+    location_name = run.remote_job_origin.location_name
+    try:
+        code_location = graphene_info.context.get_code_location(location_name)
+        remote_job = code_location.get_job(
+            JobSubsetSelector(
+                location_name=location_name,
+                repository_name=run.remote_job_origin.repository_origin.repository_name,
+                job_name=run.job_name,
+                asset_selection=run.asset_selection,
+                asset_check_selection=run.asset_check_selection,
+                op_selection=None,
+            )
+        )
+        return has_permission_for_remote_job(
+            graphene_info,
+            permission,
+            remote_job,
+            list(run.asset_selection) if run.asset_selection else None,
+        )
+    except:
+        return graphene_info.context.has_permission_for_location(permission, location_name)
+
+
+def assert_permission_for_run(
+    graphene_info: "ResolveInfo", permission: Permissions, run: DagsterRun
+) -> None:
+    from dagster_graphql.schema.errors import GrapheneUnauthorizedError
+
+    if not has_permission_for_run(graphene_info, permission, run):
+        raise UserFacingGraphQLError(GrapheneUnauthorizedError())
+
+
+def has_permission_for_remote_job(
+    graphene_info: "ResolveInfo",
+    permission: Permissions,
+    remote_job: RemoteJob,
+    asset_keys: Optional[Sequence[AssetKey]] = None,
+) -> bool:
+    from dagster._core.remote_representation.code_location import is_implicit_asset_job_name
+
+    if is_implicit_asset_job_name(remote_job.name) and asset_keys:
+        return has_permission_for_asset_graph(
+            graphene_info, graphene_info.context.asset_graph, asset_keys, permission
+        )
+    else:
+        return graphene_info.context.has_permission_for_definition(permission, remote_job)
+
+
 def assert_permission_for_remote_job(
     graphene_info: "ResolveInfo",
     permission: Permissions,
     remote_job: RemoteJob,
     asset_keys: Optional[Sequence[AssetKey]] = None,
 ):
-    from dagster._core.remote_representation.code_location import is_implicit_asset_job_name
+    from dagster_graphql.schema.errors import GrapheneUnauthorizedError
 
-    if is_implicit_asset_job_name(remote_job.name) and asset_keys:
-        assert_permission_for_asset_graph(
-            graphene_info, graphene_info.context.asset_graph, asset_keys, permission
-        )
-    else:
-        assert_permission_for_definition(graphene_info, permission, remote_job)
+    if not has_permission_for_remote_job(graphene_info, permission, remote_job, asset_keys):
+        raise UserFacingGraphQLError(GrapheneUnauthorizedError())
 
 
 def assert_permission_for_sensor(
