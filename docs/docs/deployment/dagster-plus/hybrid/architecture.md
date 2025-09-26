@@ -106,7 +106,7 @@ The following metadata is stored in the Dagster+ control plane:
 | [Table metadata](https://docs.dagster.io/guides/build/assets/metadata-and-tags/table-metadata) (column names, types, and descriptions, via <PyObject section="metadata" module="dagster" object="TableSchema" /> and <PyObject section="metadata" module="dagster" object="TableColumn" /> objects) | Stored if defined |
 | [Row count](https://docs.dagster.io/guides/build/assets/metadata-and-tags/table-metadata#attaching-row-count) (stored under `dagster/row_count` metadata key)                                                                                                                                       | Stored if defined |
 | [Column-level lineage](https://docs.dagster.io/guides/build/assets/metadata-and-tags/column-level-lineage) (how columns are created and used)                                                                                                                                                       | Stored if defined |
-| Custom metadata -- various <PyObject section="metadata" module="dagster" object="MetadataValue" /> types including text, Markdown, JSON, numeric values (automatically plotted over time), URLs, file paths, , table schemas, and data previews                                                     | Stored if defined |
+| Custom metadata -- various <PyObject section="metadata" module="dagster" object="MetadataValue" /> types including text, Markdown, JSON, numeric values (automatically plotted over time), URLs, file paths, table schemas, and data previews                                                     | Stored if defined |
 
 #### Run and event metadata
 
