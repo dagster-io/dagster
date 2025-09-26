@@ -141,6 +141,7 @@ class GrapheneAssetCheck(graphene.ObjectType):
     blocking = graphene.NonNull(graphene.Boolean)
     additionalAssetKeys = non_null_list(GrapheneAssetKey)
     automationCondition = graphene.Field(GrapheneAutomationCondition)
+    inAppCheck = graphene.NonNull(graphene.Boolean)
 
     class Meta:
         name = "AssetCheck"
@@ -207,6 +208,9 @@ class GrapheneAssetCheck(graphene.ObjectType):
                 else automation_condition.get_snapshot()
             )
         return None
+
+    def resolve_inAppCheck(self, _) -> bool:
+        return self._asset_check.in_app
 
 
 class GrapheneAssetChecks(graphene.ObjectType):

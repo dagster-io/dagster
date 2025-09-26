@@ -162,6 +162,7 @@ export type AssetCheck = {
   canExecuteIndividually: AssetCheckCanExecuteIndividually;
   description: Maybe<Scalars['String']['output']>;
   executionForLatestMaterialization: Maybe<AssetCheckExecution>;
+  inAppCheck: Scalars['Boolean']['output'];
   jobNames: Array<Scalars['String']['output']>;
   name: Scalars['String']['output'];
 };
@@ -4098,6 +4099,7 @@ export type Query = {
   canBulkTerminate: Scalars['Boolean']['output'];
   capturedLogs: CapturedLogs;
   capturedLogsMetadata: CapturedLogsMetadata;
+  dataQualityExecutionLogs: InstigationEventConnection;
   executionPlanOrError: ExecutionPlanOrError;
   graphOrError: GraphOrError;
   instance: Instance;
@@ -4243,6 +4245,12 @@ export type QueryCapturedLogsArgs = {
 
 export type QueryCapturedLogsMetadataArgs = {
   logKey: Array<Scalars['String']['input']>;
+};
+
+export type QueryDataQualityExecutionLogsArgs = {
+  checkName: Scalars['String']['input'];
+  cursor?: InputMaybe<Scalars['String']['input']>;
+  executionId: Scalars['String']['input'];
 };
 
 export type QueryExecutionPlanOrErrorArgs = {
@@ -6430,6 +6438,7 @@ export const buildAssetCheck = (
         : relationshipsToOmit.has('AssetCheckExecution')
           ? ({} as AssetCheckExecution)
           : buildAssetCheckExecution({}, relationshipsToOmit),
+    inAppCheck: overrides && overrides.hasOwnProperty('inAppCheck') ? overrides.inAppCheck! : false,
     jobNames: overrides && overrides.hasOwnProperty('jobNames') ? overrides.jobNames! : [],
     name: overrides && overrides.hasOwnProperty('name') ? overrides.name! : 'dignissimos',
   };
@@ -13171,6 +13180,12 @@ export const buildQuery = (
         : relationshipsToOmit.has('CapturedLogsMetadata')
           ? ({} as CapturedLogsMetadata)
           : buildCapturedLogsMetadata({}, relationshipsToOmit),
+    dataQualityExecutionLogs:
+      overrides && overrides.hasOwnProperty('dataQualityExecutionLogs')
+        ? overrides.dataQualityExecutionLogs!
+        : relationshipsToOmit.has('InstigationEventConnection')
+          ? ({} as InstigationEventConnection)
+          : buildInstigationEventConnection({}, relationshipsToOmit),
     executionPlanOrError:
       overrides && overrides.hasOwnProperty('executionPlanOrError')
         ? overrides.executionPlanOrError!

@@ -23,8 +23,8 @@ import {AssetCheckTableFragment} from './types/VirtualizedAssetCheckTable.types'
 import {Timestamp} from '../../app/time/Timestamp';
 import {MetadataEntries} from '../../metadata/MetadataEntry';
 import {Description} from '../../pipelines/Description';
-import {linkToRunEvent} from '../../runs/RunUtils';
 import {AssetMaterializationGraphs} from '../AssetMaterializationGraphs';
+import {getCheckLogsLink} from './util';
 
 interface Props {
   selectedCheck: AssetCheckTableFragment;
@@ -112,18 +112,16 @@ export const AssetCheckOverview = ({
             <Box flex={{direction: 'column', gap: 8}}>
               <Subtitle2>Evaluation result</Subtitle2>
               <div>
-                <AssetCheckStatusTag execution={selectedCheck.executionForLatestMaterialization} />
+                <AssetCheckStatusTag
+                  check={selectedCheck}
+                  execution={selectedCheck.executionForLatestMaterialization}
+                />
               </div>
             </Box>
             {lastExecution ? (
               <Box flex={{direction: 'column', gap: 8}}>
                 <Subtitle2>Timestamp</Subtitle2>
-                <Link
-                  to={linkToRunEvent(
-                    {id: lastExecution.runId},
-                    {stepKey: lastExecution.stepKey, timestamp: lastExecution.timestamp},
-                  )}
-                >
+                <Link to={getCheckLogsLink(selectedCheck, lastExecution)}>
                   <Timestamp timestamp={{unix: lastExecution.timestamp}} />
                 </Link>
               </Box>

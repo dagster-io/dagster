@@ -1054,6 +1054,7 @@ type AssetCheck {
   blocking: Boolean!
   additionalAssetKeys: [AssetKey!]!
   automationCondition: AutomationCondition
+  inAppCheck: Boolean!
 }
 
 type AssetCheckExecution {
@@ -3691,6 +3692,11 @@ type Query {
     cursor: String
   ): [AssetCheckExecution!]!
   latestDefsStateInfo: DefsStateInfo
+  dataQualityExecutionLogs(
+    executionId: String!
+    checkName: String!
+    cursor: String
+  ): InstigationEventConnection!
 }
 
 union WorkspaceOrError = Workspace | PythonError

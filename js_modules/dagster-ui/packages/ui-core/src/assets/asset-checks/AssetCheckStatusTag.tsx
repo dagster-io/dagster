@@ -12,6 +12,8 @@ import {
 import {Link} from 'react-router-dom';
 
 import {ChecksSummaryPopover} from './AssetChecksStatusSummary';
+import {AssetCheckTableFragment} from './types/VirtualizedAssetCheckTable.types';
+import {getCheckLogsLink} from './util';
 import {assertUnreachable} from '../../app/Util';
 import {AssetCheckLiveFragment} from '../../asset-data/types/AssetBaseDataProvider.types';
 import {
@@ -144,8 +146,10 @@ export const CheckStatusRow = ({
 };
 
 export const AssetCheckStatusTag = ({
+  check,
   execution,
 }: {
+  check: Pick<AssetCheckTableFragment, 'inAppCheck' | 'name'>;
   execution:
     | (Pick<AssetCheckExecution, 'runId' | 'status' | 'timestamp' | 'stepKey'> & {
         evaluation: Pick<AssetCheckEvaluation, 'severity'> | null;
@@ -164,7 +168,7 @@ export const AssetCheckStatusTag = ({
     );
   }
 
-  const {status, runId, evaluation} = execution;
+  const {status, evaluation} = execution;
   if (!status) {
     return null;
   }
@@ -216,10 +220,7 @@ export const AssetCheckStatusTag = ({
       actions={[
         {
           label: 'View in run logs',
-          to: linkToRunEvent(
-            {id: runId},
-            {stepKey: execution.stepKey, timestamp: execution.timestamp},
-          ),
+          to: getCheckLogsLink(check, execution),
         },
       ]}
     >

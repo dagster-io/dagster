@@ -190,7 +190,7 @@ export const AssetSidebarActivitySummary = ({
                     <MiddleTruncate text={check.name} />
                   </Link>
                   {execution ? (
-                    <AssetCheckStatusTag execution={execution} />
+                    <AssetCheckStatusTag check={check} execution={execution} />
                   ) : (
                     <Spinner purpose="caption-text" />
                   )}

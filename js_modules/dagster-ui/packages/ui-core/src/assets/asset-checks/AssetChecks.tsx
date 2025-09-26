@@ -7,6 +7,7 @@ import {
   MiddleTruncate,
   NonIdealState,
   Subtitle1,
+  Tag,
   TextInput,
   useViewport,
 } from '@dagster-io/ui-components';
@@ -209,6 +210,11 @@ export const AssetChecks = ({
                             </Box>
                             <Body2 style={{overflow: 'hidden'}}>
                               <MiddleTruncate text={check.name} />
+                              {check.inAppCheck ? (
+                                <Tag icon="verified" intent="primary">
+                                  In-app
+                                </Tag>
+                              ) : null}
                               <Caption
                                 color={Colors.textLight()}
                                 style={{textTransform: 'capitalize'}}
@@ -258,7 +264,11 @@ export const AssetChecks = ({
             />
           ) : null}
           {activeTab === 'execution-history' ? (
-            <AssetCheckExecutionList executions={executions} paginationProps={paginationProps} />
+            <AssetCheckExecutionList
+              check={selectedCheck}
+              executions={executions}
+              paginationProps={paginationProps}
+            />
           ) : null}
           {activeTab === 'automation-history' ? (
             <AssetCheckAutomationList assetCheck={selectedCheck} checkName={selectedCheck.name} />

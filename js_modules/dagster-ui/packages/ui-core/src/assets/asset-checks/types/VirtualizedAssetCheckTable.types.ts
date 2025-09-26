@@ -8,6 +8,7 @@ export type AssetCheckTableFragment = {
   description: string | null;
   canExecuteIndividually: Types.AssetCheckCanExecuteIndividually;
   blocking: boolean;
+  inAppCheck: boolean;
   jobNames: Array<string>;
   automationCondition: {
     __typename: 'AutomationCondition';

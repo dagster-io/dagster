@@ -197,6 +197,7 @@ export type SidebarAssetFragment = {
         checks: Array<{
           __typename: 'AssetCheck';
           name: string;
+          inAppCheck: boolean;
           canExecuteIndividually: Types.AssetCheckCanExecuteIndividually;
           jobNames: Array<string>;
         }>;
@@ -16426,6 +16427,7 @@ export type SidebarAssetQuery = {
               checks: Array<{
                 __typename: 'AssetCheck';
                 name: string;
+                inAppCheck: boolean;
                 canExecuteIndividually: Types.AssetCheckCanExecuteIndividually;
                 jobNames: Array<string>;
               }>;
@@ -32580,4 +32582,4 @@ export type SidebarAssetQuery = {
     | {__typename: 'AssetNotFoundError'};
 };
 
-export const SidebarAssetQueryVersion = 'ec1b1b6a078023ee9abc00981cf72a7b7d89dffb4b1094d87311601c25b4a485';
+export const SidebarAssetQueryVersion = 'c3a70f4cb1ff9a9746798194ad41ea7cc1c878320bb1d92e4b50b96412e0964f';
