@@ -668,7 +668,7 @@ class RemoteWorkspaceAssetGraph(RemoteAssetGraph[RemoteWorkspaceAssetNode]):
         return list(keys_by_repo.values())
 
     @classmethod
-    def build(cls, workspace: CurrentWorkspace):
+    def build(cls, workspace: CurrentWorkspace, instance):
         # Combine repository scoped asset graphs with additional context to form the global graph
 
         code_locations = sorted(
@@ -689,6 +689,38 @@ class RemoteWorkspaceAssetGraph(RemoteAssetGraph[RemoteWorkspaceAssetNode]):
 
         asset_infos_by_key: dict[AssetKey, list[RepositoryScopedAssetInfo]] = defaultdict(list)
         asset_checks_by_key: dict[AssetCheckKey, RemoteAssetCheckNode] = {}
+        # load checks from the db
+        from dagster._core.remote_representation.external_data import AssetCheckNodeSnap
+
+        dq_configs = instance.get_data_quality_configs()
+        data_quality_cl = next(iter(code_locations))
+        data_quality_repo = next(iter(data_quality_cl.get_repositories().values()))
+        handle = RepositoryHandle.from_location(
+            repository_name=data_quality_repo.name,
+            code_location=data_quality_cl,
+        )
+        # Need a way to tag these nodes as in app
+        # Need a way to exclude these nodes when you materialize an asset
+        # On the UI, need a way to change the log link based on the type of check
+        # On the UI, add the tag that says it's in app
+        for config in dq_configs:
+            check_key = AssetCheckKey(asset_key=config.asset_key, name=config.name)
+            asset_checks_by_key[check_key] = RemoteAssetCheckNode(
+                handle=handle,
+                asset_check=AssetCheckNodeSnap(
+                    name=config.name,
+                    asset_key=config.asset_key,
+                    description=config.description,
+                    execution_set_identifier=None,
+                    job_names=[],
+                    blocking=False,  # all in app checks are non-blocking (at least for now)
+                    additional_asset_keys=None,
+                    automation_condition=None,
+                    automation_condition_snapshot=None,
+                    in_app=True,
+                ),
+                execution_set_entity_keys={check_key},
+            )
         for repo in repos:
             for key, asset_node in repo.asset_graph.remote_asset_nodes_by_key.items():
                 asset_infos_by_key[key].append(

@@ -152,7 +152,8 @@ def _make_context(instance: DagsterInstance, defs_attrs):
         current_workspace=CurrentWorkspace(
             code_location_entries={
                 defs_attr: _make_location_entry(defs_attr, instance) for defs_attr in defs_attrs
-            }
+            },
+            instance=instance,
         ),
         process_context=mock.MagicMock(),
         version=None,
