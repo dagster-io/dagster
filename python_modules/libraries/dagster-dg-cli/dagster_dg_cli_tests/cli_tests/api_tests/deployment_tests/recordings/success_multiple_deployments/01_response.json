@@ -1,33 +1,23 @@
 {
   "fullDeployments": [
     {
-      "deploymentId": 6935,
-      "deploymentName": "uat",
+      "deploymentId": 87,
+      "deploymentName": "data-eng-prod",
       "deploymentType": "PRODUCTION"
     },
     {
-      "deploymentId": 6936,
-      "deploymentName": "excessive",
+      "deploymentId": 190248,
+      "deploymentName": "gtm20",
       "deploymentType": "PRODUCTION"
     },
     {
-      "deploymentId": 84915,
-      "deploymentName": "ben-test",
+      "deploymentId": 213933,
+      "deploymentName": "data-eng-staging",
       "deploymentType": "PRODUCTION"
     },
     {
-      "deploymentId": 37,
-      "deploymentName": "ecs",
-      "deploymentType": "PRODUCTION"
-    },
-    {
-      "deploymentId": 6934,
-      "deploymentName": "staging",
-      "deploymentType": "PRODUCTION"
-    },
-    {
-      "deploymentId": 80,
-      "deploymentName": "prod",
+      "deploymentId": 217021,
+      "deploymentName": "data-eng-dev",
       "deploymentType": "PRODUCTION"
     }
   ]

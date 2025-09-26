@@ -4028,100 +4028,72 @@
   dict({
     'items': list([
       dict({
-        'id': 6935,
-        'name': 'uat',
+        'id': 87,
+        'name': 'data-eng-prod',
         'type': 'PRODUCTION',
       }),
       dict({
-        'id': 6936,
-        'name': 'excessive',
+        'id': 190248,
+        'name': 'gtm20',
         'type': 'PRODUCTION',
       }),
       dict({
-        'id': 84915,
-        'name': 'ben-test',
+        'id': 213933,
+        'name': 'data-eng-staging',
         'type': 'PRODUCTION',
       }),
       dict({
-        'id': 37,
-        'name': 'ecs',
-        'type': 'PRODUCTION',
-      }),
-      dict({
-        'id': 6934,
-        'name': 'staging',
-        'type': 'PRODUCTION',
-      }),
-      dict({
-        'id': 80,
-        'name': 'prod',
+        'id': 217021,
+        'name': 'data-eng-dev',
         'type': 'PRODUCTION',
       }),
     ]),
-    'total': 6,
+    'total': 4,
   })
 # ---
 # name: TestDynamicCommandExecution.test_command_execution[deployment_success_multiple_deployments_json]
   dict({
     'items': list([
       dict({
-        'id': 6935,
-        'name': 'uat',
+        'id': 87,
+        'name': 'data-eng-prod',
         'type': 'PRODUCTION',
       }),
       dict({
-        'id': 6936,
-        'name': 'excessive',
+        'id': 190248,
+        'name': 'gtm20',
         'type': 'PRODUCTION',
       }),
       dict({
-        'id': 84915,
-        'name': 'ben-test',
+        'id': 213933,
+        'name': 'data-eng-staging',
         'type': 'PRODUCTION',
       }),
       dict({
-        'id': 37,
-        'name': 'ecs',
-        'type': 'PRODUCTION',
-      }),
-      dict({
-        'id': 6934,
-        'name': 'staging',
-        'type': 'PRODUCTION',
-      }),
-      dict({
-        'id': 80,
-        'name': 'prod',
+        'id': 217021,
+        'name': 'data-eng-dev',
         'type': 'PRODUCTION',
       }),
     ]),
-    'total': 6,
+    'total': 4,
   })
 # ---
 # name: TestDynamicCommandExecution.test_command_execution[deployment_success_multiple_deployments_text_text]
   '''
-  Name: uat
-  ID: 6935
+  Name: data-eng-prod
+  ID: 87
   Type: PRODUCTION
   
-  Name: excessive
-  ID: 6936
+  Name: gtm20
+  ID: 190248
   Type: PRODUCTION
   
-  Name: ben-test
-  ID: 84915
+  Name: data-eng-staging
+  ID: 213933
   Type: PRODUCTION
   
-  Name: ecs
-  ID: 37
-  Type: PRODUCTION
-  
-  Name: staging
-  ID: 6934
-  Type: PRODUCTION
-  
-  Name: prod
-  ID: 80
+  Name: data-eng-dev
+  ID: 217021
   Type: PRODUCTION
   
   '''
