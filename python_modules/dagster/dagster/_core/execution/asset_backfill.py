@@ -1201,11 +1201,11 @@ async def execute_asset_backfill_iteration(
                     "PartitionBackfill", instance.get_backfill(backfill.backfill_id)
                 )
                 updated_asset_backfill_data = None
-        except:
+        except Exception as e:
             logger.warning(
                 f"Error deserializing asset backfill data for backfill {backfill.backfill_id}. Unable to "
                 "update the backfill data this iteration. If all runs for this backfill have finished, the backfill "
-                "will be marked as completed without updating the individual asset partition statuses."
+                f"will be marked as completed without updating the individual asset partition statuses. Error: {e}"
             )
             all_partitions_marked_completed = False
             # Refetch, in case the backfill was forcibly marked as canceled in the meantime
