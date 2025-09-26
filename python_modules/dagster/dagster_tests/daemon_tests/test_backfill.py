@@ -1386,19 +1386,41 @@ def test_unloadable_failing_backfill_still_cancels_runs(
     )
     assert instance.get_runs_count() == 0
 
+    create_run_for_test(
+        instance, tags={BACKFILL_ID_TAG: "retry_backfill"}, status=DagsterRunStatus.STARTED
+    )
+    runs = instance.get_runs()
+    assert len(runs) == 1
+    assert runs[0].status == DagsterRunStatus.STARTED
+
     backfill = instance.get_backfill("retry_backfill")
     updated_backfill = backfill.with_status(BulkActionStatus.FAILING)
     instance.update_backfill(updated_backfill)
 
-    # backfill data will be unloadble
+    # backfill data will be unloadble, but will still cancel the run this iteration
     list(
         execute_backfill_iteration(
             unloadable_location_workspace_context, get_default_daemon_logger("BackfillDaemon")
         )
     )
-    assert instance.get_runs_count() == 0
+    backfill = instance.get_backfill("retry_backfill")
+    assert backfill.status == BulkActionStatus.FAILING
+    # the `cancel_run` method is not implemented for the SyncInMemoryRunLauncher which is what it used
+    # in this test. So manually report the run as canceled
+    instance.report_run_canceled(runs[0])
+
+    # on the next iteration, the run has been canceled and the backfill will terminate
+    list(
+        execute_backfill_iteration(
+            unloadable_location_workspace_context, get_default_daemon_logger("BackfillDaemon")
+        )
+    )
+    assert instance.get_runs_count() == 1
     backfill = instance.get_backfill("retry_backfill")
     assert backfill.status == BulkActionStatus.FAILED
+    runs = instance.get_runs()
+    assert len(runs) == 1
+    assert runs[0].status == DagsterRunStatus.CANCELED
 
 
 def test_backfill_from_partitioned_job(

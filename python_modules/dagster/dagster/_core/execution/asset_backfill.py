@@ -877,7 +877,7 @@ def _check_asset_backfill_data_validity(
         )
 
 
-def _check_validity_and_deserialize_asset_backfill_data(
+def _check_validity_of_asset_backfill_data_and_should_process_backfill(
     workspace_context: BaseWorkspaceRequestContext,
     backfill_id: str,
     asset_backfill_data: AssetBackfillData,
@@ -885,8 +885,9 @@ def _check_validity_and_deserialize_asset_backfill_data(
     instance_queryer: CachingInstanceQueryer,
     logger: logging.Logger,
 ) -> bool:
-    """Attempts to deserialize asset backfill data. If the asset backfill data is valid,
-    returns the deserialized data, else returns None.
+    """Validates if the asset backfill data is valid. If it is not an error will be raised unless
+    DAGSTER_BACKFILL_RETRY_DEFINITION_CHANGED_ERROR is set, in which case it returns False so that
+    the backfillis skipped this iteration. Otherwise returns True.
     """
     unloadable_locations = _get_unloadable_location_names(workspace_context, logger)
 
@@ -1018,15 +1019,17 @@ async def execute_asset_backfill_iteration(
     previous_asset_backfill_data = backfill.get_asset_backfill_data(asset_graph)
 
     if backfill.status == BulkActionStatus.REQUESTED:
-        is_valid = _check_validity_and_deserialize_asset_backfill_data(
-            workspace_context,
-            backfill.backfill_id,
-            previous_asset_backfill_data,
-            asset_graph,
-            instance_queryer,
-            logger,
+        should_process_backfill = (
+            _check_validity_of_asset_backfill_data_and_should_process_backfill(
+                workspace_context,
+                backfill.backfill_id,
+                previous_asset_backfill_data,
+                asset_graph,
+                instance_queryer,
+                logger,
+            )
         )
-        if not is_valid:
+        if not should_process_backfill:
             return
 
         logger.info(
@@ -1190,19 +1193,19 @@ async def execute_asset_backfill_iteration(
             # failure, or cancellation). Since the AssetBackfillData object stores materialization states
             # per asset partition, the daemon continues to update the backfill data until all runs have
             # finished in order to display the final partition statuses in the UI.
-            all_partitions_marked_completed = updated_asset_backfill_data.all_requested_partitions_marked_as_materialized_or_failed()
         except Exception as e:
             logger.warning(
-                f"Error deserializing asset backfill data for backfill {backfill.backfill_id}. Unable to "
-                "update the backfill data this iteration. If all runs for this backfill have finished, the backfill "
-                f"will be marked as completed without updating the individual asset partition statuses. Error: {e}"
+                f"Error updating asset backfill data for backfill {backfill.backfill_id} when canceling runs. "
+                "If all runs for this backfill have finished, the backfill will be marked as completed without updating "
+                f"the individual asset partition statuses. Error: {e}"
             )
-            all_partitions_marked_completed = False
             # Refetch, in case the backfill was forcibly marked as canceled/failed in the meantime
             updated_backfill = cast(
                 "PartitionBackfill", instance.get_backfill(backfill.backfill_id)
             )
-            updated_asset_backfill_data = None
+
+        asset_backfill_data_after_iteration = backfill.get_asset_backfill_data(asset_graph)
+        all_partitions_marked_completed = asset_backfill_data_after_iteration.all_requested_partitions_marked_as_materialized_or_failed()
 
         if all_partitions_marked_completed:
             updated_backfill = updated_backfill.with_status(
@@ -1223,10 +1226,10 @@ async def execute_asset_backfill_iteration(
         logger.info(
             f"Asset backfill {backfill.backfill_id} completed cancellation iteration with status {updated_backfill.status}."
         )
-        if updated_asset_backfill_data is not None:
-            logger.debug(
-                f"Updated asset backfill data after cancellation iteration: {updated_asset_backfill_data}"
-            )
+
+        logger.debug(
+            f"Updated asset backfill data after cancellation iteration: {asset_backfill_data_after_iteration}"
+        )
     elif backfill.status == BulkActionStatus.CANCELED:
         # The backfill was forcibly canceled, skip iteration
         pass
