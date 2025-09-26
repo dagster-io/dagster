@@ -1,0 +1,61 @@
+# Success scenarios - list sensors
+success_multiple_sensors:
+  command: "dg api sensor list --json"
+
+success_multiple_sensors_text:
+  command: "dg api sensor list"
+
+success_filtered_sensors_running:
+  command: "dg api sensor list --status RUNNING --json"
+
+success_filtered_sensors_stopped:
+  command: "dg api sensor list --status STOPPED --json"
+
+success_filtered_sensors_paused:
+  command: "dg api sensor list --status PAUSED --json"
+
+success_filtered_sensors_running_text:
+  command: "dg api sensor list --status RUNNING"
+
+success_filtered_sensors_stopped_text:
+  command: "dg api sensor list --status STOPPED"
+
+success_filtered_sensors_paused_text:
+  command: "dg api sensor list --status PAUSED"
+
+empty_sensors:
+  command: "dg api sensor list --json"
+
+empty_sensors_text:
+  command: "dg api sensor list"
+
+empty_filtered_sensors:
+  command: "dg api sensor list --status RUNNING --json"
+
+# Success scenarios - get single sensor
+success_single_sensor_running:
+  command: "dg api sensor get orders_sensor --json"
+
+success_single_sensor_running_text:
+  command: "dg api sensor get orders_sensor"
+
+# Error scenarios
+error_sensor_not_found:
+  command: "dg api sensor get nonexistent_sensor --json"
+  has_recording: false
+
+error_sensor_not_found_text:
+  command: "dg api sensor get nonexistent_sensor"
+  has_recording: false
+
+error_empty_sensor_name:
+  command: "dg api sensor get '' --json"
+  has_recording: false
+
+error_invalid_status_filter:
+  command: "dg api sensor list --status INVALID_STATUS --json"
+  has_recording: false
+
+error_multiple_sensors_same_name:
+  command: "dg api sensor get duplicate_name_sensor --json"
+  has_recording: false

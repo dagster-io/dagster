@@ -1,0 +1,155 @@
+# serializer version: 1
+# name: TestFormatSensors.test_format_minimal_sensor_json_output[0]
+  dict({
+    'description': None,
+    'name': 'minimal_sensor',
+    'next_tick_timestamp': None,
+    'sensor_type': 'STANDARD',
+    'status': 'PAUSED',
+  })
+# ---
+# name: TestFormatSensors.test_format_minimal_sensor_text_output[0]
+  '''
+  Name: minimal_sensor
+  Status: PAUSED
+  Type: STANDARD
+  Description: None
+  '''
+# ---
+# name: TestFormatSensors.test_format_sensor_json_output[0]
+  dict({
+    'description': 'Critical production sensor',
+    'name': 'critical_sensor',
+    'next_tick_timestamp': 1705311900.0,
+    'sensor_type': 'AUTO_MATERIALIZE',
+    'status': 'RUNNING',
+  })
+# ---
+# name: TestFormatSensors.test_format_sensor_text_output[0]
+  '''
+  Name: critical_sensor
+  Status: RUNNING
+  Type: AUTO_MATERIALIZE
+  Description: Critical production sensor
+  Next Tick: 2024-01-15 09:45:00
+  '''
+# ---
+# name: TestFormatSensors.test_format_sensors_json_output[0]
+  dict({
+    'items': list([
+      dict({
+        'description': 'Daily processing sensor',
+        'name': 'daily_sensor',
+        'next_tick_timestamp': 1705311000.0,
+        'sensor_type': 'STANDARD',
+        'status': 'RUNNING',
+      }),
+      dict({
+        'description': 'Asset change sensor',
+        'name': 'asset_sensor',
+        'next_tick_timestamp': None,
+        'sensor_type': 'ASSET',
+        'status': 'STOPPED',
+      }),
+      dict({
+        'description': None,
+        'name': 'minimal_sensor',
+        'next_tick_timestamp': None,
+        'sensor_type': 'MULTI_ASSET',
+        'status': 'PAUSED',
+      }),
+    ]),
+    'total': 3,
+  })
+# ---
+# name: TestFormatSensors.test_format_sensors_text_output[0]
+  '''
+  Name: daily_sensor
+  Status: RUNNING
+  Type: STANDARD
+  Description: Daily processing sensor
+  Next Tick: 2024-01-15 09:30:00
+  
+  Name: asset_sensor
+  Status: STOPPED
+  Type: ASSET
+  Description: Asset change sensor
+  
+  Name: minimal_sensor
+  Status: PAUSED
+  Type: MULTI_ASSET
+  Description: None
+  '''
+# ---
+# name: TestProcessSensorResponses.test_process_repositories_response_empty[0]
+  DgApiSensorList(items=[], total=0)
+# ---
+# name: TestProcessSensorResponses.test_process_repositories_response_success[0]
+  DgApiSensorList(items=[DgApiSensor(id='sensor1-id', name='daily_sensor', status=<DgApiSensorStatus.RUNNING: 'RUNNING'>, sensor_type=<DgApiSensorType.STANDARD: 'STANDARD'>, description='Daily processing sensor', repository_origin='main_location@main_repo', next_tick_timestamp=None), DgApiSensor(id='sensor2-id', name='asset_sensor', status=<DgApiSensorStatus.PAUSED: 'PAUSED'>, sensor_type=<DgApiSensorType.MULTI_ASSET: 'MULTI_ASSET'>, description='Asset change sensor', repository_origin='main_location@main_repo', next_tick_timestamp=None), DgApiSensor(id='sensor3-id', name='hourly_sensor', status=<DgApiSensorStatus.STOPPED: 'STOPPED'>, sensor_type=<DgApiSensorType.FRESHNESS_POLICY: 'FRESHNESS_POLICY'>, description=None, repository_origin='secondary_location@secondary_repo', next_tick_timestamp=None)], total=3)
+# ---
+# name: TestProcessSensorResponses.test_process_sensor_response_not_found_error[0]
+  dict({
+    'error': "Sensor 'nonexistent_sensor' not found",
+  })
+# ---
+# name: TestProcessSensorResponses.test_process_sensor_response_success[0]
+  DgApiSensor(id='single-sensor-id', name='critical_sensor', status=<DgApiSensorStatus.RUNNING: 'RUNNING'>, sensor_type=<DgApiSensorType.AUTO_MATERIALIZE: 'AUTO_MATERIALIZE'>, description='Critical production sensor', repository_origin=None, next_tick_timestamp=None)
+# ---
+# name: TestProcessSensorResponses.test_process_sensors_response_empty[0]
+  DgApiSensorList(items=[], total=0)
+# ---
+# name: TestProcessSensorResponses.test_process_sensors_response_error_typename[0]
+  dict({
+    'error': 'Repository not found',
+  })
+# ---
+# name: TestProcessSensorResponses.test_process_sensors_response_missing_key[0]
+  dict({
+    'error': 'No sensors data in GraphQL response',
+  })
+# ---
+# name: TestProcessSensorResponses.test_process_sensors_response_success[0]
+  DgApiSensorList(items=[DgApiSensor(id='sensor1-id', name='daily_sensor', status=<DgApiSensorStatus.RUNNING: 'RUNNING'>, sensor_type=<DgApiSensorType.STANDARD: 'STANDARD'>, description='Daily processing sensor', repository_origin=None, next_tick_timestamp=None), DgApiSensor(id='sensor2-id', name='asset_sensor', status=<DgApiSensorStatus.STOPPED: 'STOPPED'>, sensor_type=<DgApiSensorType.ASSET: 'ASSET'>, description='Asset change sensor', repository_origin=None, next_tick_timestamp=None)], total=2)
+# ---
+# name: TestSensorDataProcessing.test_sensor_creation_with_all_fields[0]
+  dict({
+    'description': 'Comprehensive test sensor with all fields',
+    'id': 'complete-sensor-xyz',
+    'name': 'comprehensive_sensor',
+    'next_tick_timestamp': 1705311000.0,
+    'repository_origin': 'test_location@test_repo',
+    'sensor_type': 'FRESHNESS_POLICY',
+    'status': 'RUNNING',
+  })
+# ---
+# name: TestSensorDataProcessing.test_sensor_timestamp_handling[0]
+  list([
+    dict({
+      'description': None,
+      'id': 'sensor1',
+      'name': 'normal_timestamp',
+      'next_tick_timestamp': 1705311000.0,
+      'repository_origin': None,
+      'sensor_type': 'STANDARD',
+      'status': 'RUNNING',
+    }),
+    dict({
+      'description': None,
+      'id': 'sensor2',
+      'name': 'no_timestamp',
+      'next_tick_timestamp': None,
+      'repository_origin': None,
+      'sensor_type': 'STANDARD',
+      'status': 'STOPPED',
+    }),
+    dict({
+      'description': None,
+      'id': 'sensor3',
+      'name': 'future_timestamp',
+      'next_tick_timestamp': 2000000000.0,
+      'repository_origin': None,
+      'sensor_type': 'STANDARD',
+      'status': 'PAUSED',
+    }),
+  ])
+# ---
