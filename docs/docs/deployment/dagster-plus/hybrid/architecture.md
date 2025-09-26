@@ -97,7 +97,7 @@ The following metadata is stored in the Dagster+ control plane:
 | Owners (email addresses or team names, like `team:data-eng`)                                                  | Stored if defined |
 | [Tags](https://docs.dagster.io/guides/build/assets/metadata-and-tags/tags) (key-value pairs for organization) | Stored if defined |
 | Asset groups and partitions definitions                                                                       | Stored if defined |
-| Source code references and links                                                                              | Always stored     |
+| Source code references and links                                                                              | Stored if defined     |
 
 #### Runtime/materialization metadata
 
@@ -114,8 +114,8 @@ The following metadata is stored in the Dagster+ control plane:
 | --------------------------------------------- | ----------------- |
 | Run status, timestamps, and execution context | Always stored     |
 | Asset materialization events                  | Always stored     |
-| Output metadata from asset executions         | Always stored     |
-| Backfill and partition information            | Stored if defined |
+| Output metadata from asset executions         | Stored if defined     |
+| Backfill and partition information            | Always stored |
 | Job and schedule execution history            | Always stored     |
 
 #### Operational metadata
