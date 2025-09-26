@@ -4683,6 +4683,10 @@ export type GraphExplorerFragment_PipelineSnapshot = {
     | {__typename: 'UrlMetadataEntry'; url: string; label: string; description: string | null}
   >;
   tags: Array<{__typename: 'PipelineTag'; key: string; value: string}>;
+  owners: Array<
+    | {__typename: 'TeamDefinitionOwner'; team: string}
+    | {__typename: 'UserDefinitionOwner'; email: string}
+  >;
   modes: Array<{
     __typename: 'Mode';
     id: string;

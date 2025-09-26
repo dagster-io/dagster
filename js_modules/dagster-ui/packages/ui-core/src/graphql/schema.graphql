@@ -1223,6 +1223,7 @@ type FieldsNotDefinedConfigError implements PipelineConfigValidationError {
 interface IPipelineSnapshot {
   name: String!
   description: String
+  owners: [DefinitionOwner!]!
   pipelineSnapshotId: String!
   dagsterTypes: [DagsterType!]!
   dagsterTypeOrError(dagsterTypeName: String!): DagsterTypeOrError!
@@ -1237,6 +1238,16 @@ interface IPipelineSnapshot {
   sensors: [Sensor!]!
   parentSnapshotId: String
   graphName: String!
+}
+
+union DefinitionOwner = UserDefinitionOwner | TeamDefinitionOwner
+
+type UserDefinitionOwner {
+  email: String!
+}
+
+type TeamDefinitionOwner {
+  team: String!
 }
 
 type Logger {
@@ -1277,6 +1288,7 @@ type Pipeline implements SolidContainer & IPipelineSnapshot {
   solidHandle(handleID: String!): SolidHandle
   solidHandles(parentHandleID: String): [SolidHandle!]!
   modes: [Mode!]!
+  owners: [DefinitionOwner!]!
   pipelineSnapshotId: String!
   dagsterTypes: [DagsterType!]!
   dagsterTypeOrError(dagsterTypeName: String!): DagsterTypeOrError!
@@ -1292,7 +1304,6 @@ type Pipeline implements SolidContainer & IPipelineSnapshot {
   presets: [PipelinePreset!]!
   isJob: Boolean!
   isAssetJob: Boolean!
-  owners: [DefinitionOwner!]!
   repository: Repository!
   partitionKeysOrError(
     cursor: String
@@ -1301,16 +1312,6 @@ type Pipeline implements SolidContainer & IPipelineSnapshot {
     selectedAssetKeys: [AssetKeyInput!]
   ): PartitionKeys!
   partition(partitionName: String!, selectedAssetKeys: [AssetKeyInput!]): PartitionTagsAndConfig
-}
-
-union DefinitionOwner = UserDefinitionOwner | TeamDefinitionOwner
-
-type UserDefinitionOwner {
-  email: String!
-}
-
-type TeamDefinitionOwner {
-  team: String!
 }
 
 type PartitionTagsAndConfig {
@@ -1606,6 +1607,7 @@ type PipelineSnapshot implements SolidContainer & IPipelineSnapshot & PipelineRe
   solidHandle(handleID: String!): SolidHandle
   solidHandles(parentHandleID: String): [SolidHandle!]!
   modes: [Mode!]!
+  owners: [DefinitionOwner!]!
   pipelineSnapshotId: String!
   dagsterTypes: [DagsterType!]!
   dagsterTypeOrError(dagsterTypeName: String!): DagsterTypeOrError!
@@ -2411,6 +2413,7 @@ type Job implements SolidContainer & IPipelineSnapshot {
   solidHandle(handleID: String!): SolidHandle
   solidHandles(parentHandleID: String): [SolidHandle!]!
   modes: [Mode!]!
+  owners: [DefinitionOwner!]!
   pipelineSnapshotId: String!
   dagsterTypes: [DagsterType!]!
   dagsterTypeOrError(dagsterTypeName: String!): DagsterTypeOrError!
@@ -2426,7 +2429,6 @@ type Job implements SolidContainer & IPipelineSnapshot {
   presets: [PipelinePreset!]!
   isJob: Boolean!
   isAssetJob: Boolean!
-  owners: [DefinitionOwner!]!
   repository: Repository!
   partitionKeysOrError(
     cursor: String

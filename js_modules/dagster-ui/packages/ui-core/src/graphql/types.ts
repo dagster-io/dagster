@@ -2091,6 +2091,7 @@ export type IPipelineSnapshot = {
   >;
   modes: Array<Mode>;
   name: Scalars['String']['output'];
+  owners: Array<DefinitionOwner>;
   parentSnapshotId: Maybe<Scalars['String']['output']>;
   pipelineSnapshotId: Scalars['String']['output'];
   runs: Array<Run>;
@@ -3989,6 +3990,7 @@ export type PipelineSnapshot = IPipelineSnapshot &
     >;
     modes: Array<Mode>;
     name: Scalars['String']['output'];
+    owners: Array<DefinitionOwner>;
     parentSnapshotId: Maybe<Scalars['String']['output']>;
     pipelineSnapshotId: Scalars['String']['output'];
     runTags: Array<PipelineTag>;
@@ -9661,6 +9663,7 @@ export const buildIPipelineSnapshot = (
       overrides && overrides.hasOwnProperty('metadataEntries') ? overrides.metadataEntries! : [],
     modes: overrides && overrides.hasOwnProperty('modes') ? overrides.modes! : [],
     name: overrides && overrides.hasOwnProperty('name') ? overrides.name! : 'autem',
+    owners: overrides && overrides.hasOwnProperty('owners') ? overrides.owners! : [],
     parentSnapshotId:
       overrides && overrides.hasOwnProperty('parentSnapshotId')
         ? overrides.parentSnapshotId!
@@ -12931,6 +12934,7 @@ export const buildPipelineSnapshot = (
       overrides && overrides.hasOwnProperty('metadataEntries') ? overrides.metadataEntries! : [],
     modes: overrides && overrides.hasOwnProperty('modes') ? overrides.modes! : [],
     name: overrides && overrides.hasOwnProperty('name') ? overrides.name! : 'beatae',
+    owners: overrides && overrides.hasOwnProperty('owners') ? overrides.owners! : [],
     parentSnapshotId:
       overrides && overrides.hasOwnProperty('parentSnapshotId')
         ? overrides.parentSnapshotId!
