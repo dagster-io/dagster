@@ -56,6 +56,7 @@ The following highlights are described in more detail below:
 - [Interactions and queries](#interactions-and-queries)
 - [Runs](#runs)
 - [Ingress](#ingress)
+- [Metadata](#metadata)
 
 ### Interactions and queries
 
@@ -81,3 +82,49 @@ By default, the run worker also uploads the compute logs (raw `stdout` and `stde
 ### Ingress
 
 No ingress is required from Dagster+ to user environments. All network requests are outbound from user environments to Dagster+.
+
+### Metadata
+
+The following metadata is stored in the Dagster+ control plane:
+
+#### Asset definition metadata
+
+- Asset names, keys, and descriptions
+- Asset dependencies and lineage
+- Owners (email addresses or team names like team:data-eng)
+- Tags (key-value pairs for organization)
+- Asset groups and partitions definitions
+- Source code references and links
+
+#### Runtime/materialization metadata
+
+- Table schema: Column names, types, and descriptions via <PyObject section="metadata" module="dagster" object="TableSchema" /> and <PyObject section="metadata" module="dagster" object="TableColumn" /> objects
+- Row count: Stored under `dagster/row_count` metadata key
+- Column-level lineage: How columns are created and used
+- Custom metadata: Various <PyObject section="metadata" module="dagster" object="MetadataValue" /> types including:
+    - Text, Markdown, JSON
+    - Numeric values (automatically plotted over time)
+    - URLs, file paths
+    - Table schemas and data previews
+
+#### Run and event metadata
+
+- Run status, timestamps, and execution context
+- Asset materialization events
+- Output metadata from asset executions
+- Backfill and partition information
+- Job and schedule execution history
+
+#### Operational metadata
+
+- Code location configurations
+- Resource definitions and configurations
+- Automation conditions and policies
+- Asset checks and data quality results
+
+#### Key schema fields
+
+- `dagster/column_schema`: Table structure metadata
+- `dagster/row_count`: Row count tracking
+- Custom keys for business-specific metadata
+- Partition keys and time-based metadata
