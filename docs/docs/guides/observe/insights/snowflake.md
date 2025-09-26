@@ -13,7 +13,7 @@ Dagster+ allows you to track external metrics, such as Snowflake usage, in the I
 
 :::info
 
-Support for integrating asset metadata is coming soon in updated Insights. To use legacy Insights, toggle off "New homepage & observability UIs" in your user settings.
+Support for tracking external metrics is coming soon in updated Insights. To use legacy Insights, toggle off "New homepage & observability UIs" in your user settings.
 
 :::
 
