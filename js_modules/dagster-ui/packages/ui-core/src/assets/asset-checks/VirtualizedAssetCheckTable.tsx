@@ -87,7 +87,7 @@ export const VirtualizedAssetCheckRow = ({assetNode, height, start, row}: AssetC
         </RowCell>
         <RowCell style={{flexDirection: 'row', alignItems: 'center'}}>
           <div>
-            <AssetCheckStatusTag execution={execution} />
+            <AssetCheckStatusTag check={row} execution={execution} />
           </div>
         </RowCell>
         <RowCell style={{flexDirection: 'row', alignItems: 'center'}}>
@@ -160,6 +160,7 @@ export const ASSET_CHECK_TABLE_FRAGMENT = gql`
       label
       expandedLabel
     }
+  inAppCheck
     ...ExecuteChecksButtonCheckFragment
     executionForLatestMaterialization {
       ...AssetCheckExecutionFragment

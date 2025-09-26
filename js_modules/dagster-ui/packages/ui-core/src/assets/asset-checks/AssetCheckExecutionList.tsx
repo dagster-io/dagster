@@ -13,16 +13,19 @@ import {Link} from 'react-router-dom';
 import {MetadataCell} from './AssetCheckDetailDialog';
 import {AssetCheckStatusTag} from './AssetCheckStatusTag';
 import {AssetCheckDetailsQuery} from './types/AssetCheckDetailDialog.types';
+import {AssetCheckTableFragment} from './types/VirtualizedAssetCheckTable.types';
+import {getCheckLogsLink} from './util';
 import {Description} from '../../pipelines/Description';
-import {linkToRunEvent} from '../../runs/RunUtils';
 import {TimestampDisplay} from '../../schedules/TimestampDisplay';
 
 type Execution = AssetCheckDetailsQuery['assetCheckExecutions'][0];
 
 export const AssetCheckExecutionList = ({
+  check,
   executions,
   paginationProps,
 }: {
+  check: AssetCheckTableFragment;
   executions: Execution[];
   paginationProps: CursorPaginationProps;
 }) => {
@@ -68,16 +71,11 @@ export const AssetCheckExecutionList = ({
               return (
                 <tr key={execution.id}>
                   <td>
-                    <AssetCheckStatusTag execution={execution} />
+                    <AssetCheckStatusTag check={check} execution={execution} />
                   </td>
                   <td>
                     {execution.evaluation?.timestamp ? (
-                      <Link
-                        to={linkToRunEvent(
-                          {id: execution.runId},
-                          {stepKey: execution.stepKey, timestamp: execution.timestamp},
-                        )}
-                      >
+                      <Link to={getCheckLogsLink(check, execution)}>
                         <TimestampDisplay timestamp={execution.evaluation.timestamp} />
                       </Link>
                     ) : (

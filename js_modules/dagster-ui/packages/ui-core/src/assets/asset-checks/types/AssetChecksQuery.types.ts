@@ -32,6 +32,7 @@ export type AssetChecksQuery = {
                 jobNames: Array<string>;
                 description: string | null;
                 blocking: boolean;
+                inAppCheck: boolean;
                 assetKey: {__typename: 'AssetKey'; path: Array<string>};
                 automationCondition: {
                   __typename: 'AutomationCondition';
@@ -257,4 +258,4 @@ export type AssetChecksQuery = {
     | {__typename: 'AssetNotFoundError'};
 };
 
-export const AssetChecksQueryVersion = 'df2f0eba0bb9816ab3ffabe630b837f47a61ae541a1b543bd7abf365b0754094';
+export const AssetChecksQueryVersion = 'c1f9030cdd5c46aa0ec14c35c0979215780c2b4143cd8e4896d6a93aa67ac421';

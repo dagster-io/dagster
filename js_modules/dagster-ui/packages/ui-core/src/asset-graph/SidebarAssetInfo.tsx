@@ -351,6 +351,7 @@ const SIDEBAR_ASSET_FRAGMENT = gql`
       ... on AssetChecks {
         checks {
           name
+          inAppCheck
           ...ExecuteChecksButtonCheckFragment
         }
       }

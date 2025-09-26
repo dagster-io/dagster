@@ -3,7 +3,12 @@ import {Colors, Icon, Spinner} from '@dagster-io/ui-components';
 import {ExecuteChecksButtonCheckFragment} from './types/ExecuteChecksButton.types';
 import {AssetCheckTableFragment} from './types/VirtualizedAssetCheckTable.types';
 import {assertUnreachable} from '../../app/Util';
-import {AssetCheckExecutionResolvedStatus, AssetCheckSeverity} from '../../graphql/types';
+import {
+  AssetCheckExecution,
+  AssetCheckExecutionResolvedStatus,
+  AssetCheckSeverity,
+} from '../../graphql/types';
+import {linkToRunEvent} from '../../runs/RunUtils';
 
 export function assetCheckStatusDescription(
   check: AssetCheckTableFragment & ExecuteChecksButtonCheckFragment,
@@ -57,4 +62,16 @@ export function getCheckIcon(
     default:
       assertUnreachable(status);
   }
+}
+
+export function getCheckLogsLink(
+  check: Pick<AssetCheckTableFragment, 'inAppCheck' | 'name'>,
+  execution: Pick<AssetCheckExecution, 'runId' | 'timestamp' | 'stepKey'>,
+) {
+  return check.inAppCheck
+    ? `/data-quality/${check.name}/${execution.runId}`
+    : linkToRunEvent(
+        {id: execution.runId},
+        {stepKey: execution.stepKey, timestamp: execution.timestamp},
+      );
 }
