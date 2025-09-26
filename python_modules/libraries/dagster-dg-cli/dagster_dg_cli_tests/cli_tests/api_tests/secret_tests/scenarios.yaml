@@ -1,0 +1,19 @@
+# Success scenarios for secret list
+success_multiple_secrets:
+  command: "dg api secret list --json"
+
+success_multiple_secrets_text:
+  command: "dg api secret list"
+
+# Success scenarios for secret get (using realistic secret names)
+success_single_secret:
+  command: "dg api secret get EXAMPLE_ENVIRONMENT_VARIABLE --json"
+
+success_single_secret_text:
+  command: "dg api secret get EXAMPLE_ENVIRONMENT_VARIABLE"
+
+success_single_secret_with_value:
+  command: "dg api secret get EXAMPLE_ENVIRONMENT_VARIABLE --show-value --json"
+
+success_single_secret_with_value_text:
+  command: "dg api secret get EXAMPLE_ENVIRONMENT_VARIABLE --show-value"

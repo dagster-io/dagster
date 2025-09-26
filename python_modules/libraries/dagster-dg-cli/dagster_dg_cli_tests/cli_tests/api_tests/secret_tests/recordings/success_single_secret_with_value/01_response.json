@@ -1,0 +1,23 @@
+{
+  "secretsOrError": {
+    "__typename": "Secrets",
+    "secrets": [
+      {
+        "allBranchDeploymentsScope": true,
+        "canEditSecret": true,
+        "canViewSecretValue": true,
+        "fullDeploymentScope": true,
+        "id": "a6c8104f3ede4c41935bdd9895acd805",
+        "localDeploymentScope": true,
+        "locationNames": [],
+        "secretName": "EXAMPLE_ENVIRONMENT_VARIABLE",
+        "secretValue": "Hello, World!",
+        "specificBranchDeploymentScope": null,
+        "updateTimestamp": 1758572319.564529,
+        "updatedBy": {
+          "email": "colton@dagsterlabs.com"
+        }
+      }
+    ]
+  }
+}
