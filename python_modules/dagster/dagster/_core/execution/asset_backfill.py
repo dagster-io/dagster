@@ -884,7 +884,7 @@ def _check_validity_and_deserialize_asset_backfill_data(
     asset_graph: RemoteWorkspaceAssetGraph,
     instance_queryer: CachingInstanceQueryer,
     logger: logging.Logger,
-) -> Optional[AssetBackfillData]:
+) -> bool:
     """Attempts to deserialize asset backfill data. If the asset backfill data is valid,
     returns the deserialized data, else returns None.
     """
@@ -909,11 +909,11 @@ def _check_validity_and_deserialize_asset_backfill_data(
                 " partition in the asset graph. The backfill will resume once it is available"
                 f" again.\n{ex}. {unloadable_locations_error}"
             )
-            return None
+            return False
         else:
             raise DagsterAssetBackfillDataLoadError(f"{ex}. {unloadable_locations_error}")
 
-    return asset_backfill_data
+    return True
 
 
 def backfill_is_complete(
@@ -1018,7 +1018,7 @@ async def execute_asset_backfill_iteration(
     previous_asset_backfill_data = backfill.get_asset_backfill_data(asset_graph)
 
     if backfill.status == BulkActionStatus.REQUESTED:
-        previous_asset_backfill_data = _check_validity_and_deserialize_asset_backfill_data(
+        is_valid = _check_validity_and_deserialize_asset_backfill_data(
             workspace_context,
             backfill.backfill_id,
             previous_asset_backfill_data,
@@ -1026,7 +1026,7 @@ async def execute_asset_backfill_iteration(
             instance_queryer,
             logger,
         )
-        if previous_asset_backfill_data is None:
+        if not is_valid:
             return
 
         logger.info(
