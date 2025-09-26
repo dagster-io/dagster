@@ -22,6 +22,7 @@ from dagster_buildkite.steps.test_project import test_project_depends_fn
 from dagster_buildkite.steps.tox import ToxFactor, build_tox_step
 from dagster_buildkite.utils import (
     connect_sibling_docker_container,
+    has_component_integration_changes,
     has_dagster_airlift_changes,
     has_dg_changes,
     has_storage_test_fixture_changes,
@@ -429,6 +430,11 @@ def docker_extra_cmds(version: AvailablePythonVersion, _) -> list[str]:
 ui_extra_cmds = ["make rebuild_ui"]
 
 
+def has_dg_or_component_integration_changes() -> bool:
+    """Check for changes in dagster-dg-cli or in integrations that implement components."""
+    return has_dg_changes() or has_component_integration_changes()
+
+
 mysql_extra_cmds = [
     "pushd python_modules/libraries/dagster-mysql/dagster_mysql_tests/",
     "docker-compose up -d --remove-orphans",  # clean up in hooks/pre-exit,
@@ -793,6 +799,7 @@ LIBRARY_PACKAGES_WITH_CUSTOM_CONFIG: list[PackageSpec] = [
             ToxFactor("plus"),
         ],
         env_vars=["SHELL"],
+        always_run_if=has_dg_or_component_integration_changes,
     ),
     PackageSpec(
         "python_modules/libraries/dagster-dg-cli",
@@ -801,6 +808,7 @@ LIBRARY_PACKAGES_WITH_CUSTOM_CONFIG: list[PackageSpec] = [
         unsupported_python_versions=[
             AvailablePythonVersion.V3_9,
         ],
+        always_run_if=has_dg_or_component_integration_changes,
     ),
     PackageSpec(
         "python_modules/libraries/dagster-aws",
