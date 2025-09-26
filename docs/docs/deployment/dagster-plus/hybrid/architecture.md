@@ -102,10 +102,10 @@ The following metadata is stored in the Dagster+ control plane:
 - Row count: Stored under `dagster/row_count` metadata key
 - Column-level lineage: How columns are created and used
 - Custom metadata: Various <PyObject section="metadata" module="dagster" object="MetadataValue" /> types including:
-    - Text, Markdown, JSON
-    - Numeric values (automatically plotted over time)
-    - URLs, file paths
-    - Table schemas and data previews
+  - Text, Markdown, JSON
+  - Numeric values (automatically plotted over time)
+  - URLs, file paths
+  - Table schemas and data previews
 
 #### Run and event metadata
 
