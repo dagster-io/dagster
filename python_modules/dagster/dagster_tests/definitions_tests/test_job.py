@@ -331,3 +331,32 @@ def test_metadata():
     updated = original.with_metadata({**original.metadata, "foo": "baz"})
     assert updated.metadata["foo"] == dg.TextMetadataValue("baz")
     assert updated.metadata["four"] == dg.IntMetadataValue(4)
+
+
+def test_owners():
+    @dg.job(owners=["user@example.com", "team:data"])
+    def job_with_owners(): ...
+
+    assert job_with_owners.owners == ["user@example.com", "team:data"]
+
+
+def test_owners_validation():
+    # Test that invalid owners are rejected
+
+    # Test invalid team name with special characters
+    with pytest.raises(dg.DagsterInvalidDefinitionError, match="contains invalid characters"):
+
+        @dg.job(owners=["team:bad-name"])
+        def job_with_bad_team(): ...
+
+    # Test empty team name
+    with pytest.raises(dg.DagsterInvalidDefinitionError, match="Team name cannot be empty"):
+
+        @dg.job(owners=["team:"])
+        def job_with_empty_team(): ...
+
+    # Test invalid owner format
+    with pytest.raises(dg.DagsterInvalidDefinitionError, match="Owner must be an email address"):
+
+        @dg.job(owners=["not-an-email-or-team"])
+        def job_with_invalid_owner(): ...

@@ -11,7 +11,7 @@ from dagster_shared.record import IHaveNew, record_custom
 from typing_extensions import TypeAlias
 
 import dagster._check as check
-from dagster._annotations import deprecated, deprecated_param, public
+from dagster._annotations import beta_param, deprecated, deprecated_param, public
 from dagster._core.decorator_utils import get_function_params
 from dagster._core.definitions.asset_checks.asset_check_evaluation import AssetCheckEvaluation
 from dagster._core.definitions.asset_selection import (
@@ -46,7 +46,7 @@ from dagster._core.definitions.target import (
     AutomationTarget,
     ExecutableDefinition,
 )
-from dagster._core.definitions.utils import check_valid_name
+from dagster._core.definitions.utils import check_valid_name, validate_definition_owner
 from dagster._core.errors import (
     DagsterInvalidDefinitionError,
     DagsterInvalidInvocationError,
@@ -556,6 +556,7 @@ def split_run_requests(
 
 
 @public
+@beta_param(param="owners")
 class SensorDefinition(IHasInternalInit):
     """Define a sensor that initiates a set of runs based on some external state.
 
@@ -633,6 +634,7 @@ class SensorDefinition(IHasInternalInit):
             tags=self._tags,
             metadata=metadata if metadata is not None else self._metadata,
             target=None,
+            owners=self._owners,
         )
 
     def with_updated_job(self, new_job: ExecutableDefinition) -> "SensorDefinition":
@@ -676,6 +678,7 @@ class SensorDefinition(IHasInternalInit):
                 "UnresolvedAssetJobDefinition",
             ]
         ] = None,
+        owners: Optional[Sequence[str]] = None,
     ):
         from dagster._config.pythonic_config import validate_resource_annotated_function
 
@@ -759,10 +762,16 @@ class SensorDefinition(IHasInternalInit):
             required_resource_keys, "required_resource_keys", of_type=str
         )
         self._required_resource_keys = self._raw_required_resource_keys or resource_arg_names
-        self._tags = normalize_tags(tags)
+        self._tags = normalize_tags(
+            tags, warning_stacklevel=5
+        )  # reset once owners is out of beta_param
         self._metadata = normalize_metadata(
             check.opt_mapping_param(metadata, "metadata", key_type=str)
         )
+        self._owners = check.opt_sequence_param(owners, "owners", of_type=str)
+        # Validate each owner string
+        for owner in self._owners:
+            validate_definition_owner(owner, "sensor", self._name)
 
     @staticmethod
     def dagster_internal_init(
@@ -787,6 +796,7 @@ class SensorDefinition(IHasInternalInit):
                 "UnresolvedAssetJobDefinition",
             ]
         ],
+        owners: Optional[Sequence[str]],
     ) -> "SensorDefinition":
         return SensorDefinition(
             name=name,
@@ -802,6 +812,7 @@ class SensorDefinition(IHasInternalInit):
             tags=tags,
             metadata=metadata,
             target=target,
+            owners=owners,
         )
 
     def __call__(self, *args, **kwargs) -> SensorReturnTypesUnion:
@@ -897,6 +908,10 @@ class SensorDefinition(IHasInternalInit):
     @property
     def sensor_type(self) -> SensorType:
         return SensorType.STANDARD
+
+    @property
+    def owners(self) -> Optional[Sequence[str]]:
+        return self._owners
 
     def evaluate_tick(self, context: "SensorEvaluationContext") -> "SensorExecutionData":
         """Evaluate sensor using the provided context.
