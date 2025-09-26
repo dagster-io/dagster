@@ -5,6 +5,7 @@ import logging
 import os
 import string
 import time
+import warnings
 from collections import OrderedDict
 from collections.abc import Iterator, Mapping, Sequence
 from contextlib import contextmanager
@@ -133,11 +134,14 @@ from dagster_graphql.test.utils import (
     main_repo_name,
 )
 from dagster_shared.seven import get_system_temp_directory
+from dagster_shared.utils.warnings import BetaWarning
 from typing_extensions import Literal, Never
 
 T = TypeVar("T")
 
 LONG_INT = 2875972244  # 32b unsigned, > 32b signed
+
+warnings.filterwarnings("ignore", category=BetaWarning, message=r"Parameter `owners`")
 
 
 @dagster_type_loader(String)
@@ -2199,6 +2203,8 @@ def define_standard_jobs() -> Sequence[JobDefinition]:
         tagged_job,
         two_ins_job,
         some_external_job,
+        owned_job,
+        unowned_job,
     ]
 
 
@@ -2223,6 +2229,21 @@ def owned_partitioned_asset():
 @asset(partitions_def=partitions_def_for_permissions)
 def unowned_partitioned_asset():
     return 2
+
+
+@op
+def permission_test_op():
+    pass
+
+
+@job
+def owned_job():
+    permission_test_op()
+
+
+@job
+def unowned_job():
+    permission_test_op()
 
 
 def define_assets():
