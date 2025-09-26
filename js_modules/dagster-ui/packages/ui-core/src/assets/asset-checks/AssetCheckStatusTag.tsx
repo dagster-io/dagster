@@ -228,6 +228,94 @@ export const AssetCheckStatusTag = ({
   );
 };
 
+// TODO - i'm too lazy to refactor the AssetCheckStatusTag to take a linkTo arg and update all the callsites
+// So i'm just copy-pasting it so i can update the link for data quality checks
+export const DataQualityCheckStatusTag = ({
+  execution,
+  checkName,
+  executionId,
+}: {
+  execution:
+    | (Pick<AssetCheckExecution, 'status' | 'timestamp' | 'stepKey'> & {
+        evaluation: Pick<AssetCheckEvaluation, 'severity'> | null;
+      })
+    | null;
+  checkName: string;
+  executionId: string | undefined;
+}) => {
+  // Note: this uses BaseTag for a "grayer" style than the default tag intent
+  if (!execution) {
+    return (
+      <BaseTag
+        textColor={Colors.textLight()}
+        fillColor={Colors.backgroundLight()}
+        icon={<Icon name="status" color={Colors.accentGray()} />}
+        label="Not evaluated"
+      />
+    );
+  }
+
+  const {status, evaluation} = execution;
+  if (!status) {
+    return null;
+  }
+
+  const renderTag = () => {
+    const isWarn = evaluation?.severity === AssetCheckSeverity.WARN;
+    switch (status) {
+      case AssetCheckExecutionResolvedStatus.IN_PROGRESS:
+        return (
+          <Tag intent="primary">
+            <Box flex={{direction: 'row', alignItems: 'center', gap: 4}}>
+              <Spinner purpose="body-text" />
+              Running
+            </Box>
+          </Tag>
+        );
+      case AssetCheckExecutionResolvedStatus.FAILED:
+        return isWarn ? (
+          <Tag icon="warning_outline" intent="warning">
+            Failed
+          </Tag>
+        ) : (
+          <Tag icon="cancel" intent="danger">
+            Failed
+          </Tag>
+        );
+      case AssetCheckExecutionResolvedStatus.EXECUTION_FAILED:
+        return (
+          <Tag intent={isWarn ? 'warning' : 'danger'} icon="changes_present">
+            Execution failed
+          </Tag>
+        );
+      case AssetCheckExecutionResolvedStatus.SUCCEEDED:
+        return (
+          <Tag icon="check_circle" intent="success">
+            Passed
+          </Tag>
+        );
+      case AssetCheckExecutionResolvedStatus.SKIPPED:
+        return <Tag icon="dot">Skipped</Tag>;
+      default:
+        assertUnreachable(status);
+    }
+  };
+
+  return (
+    <TagActionsPopover
+      data={{key: '', value: ''}}
+      actions={[
+        {
+          label: 'View logs',
+          to: `/data-quality/${checkName}/${executionId}`,
+        },
+      ]}
+    >
+      {renderTag()}
+    </TagActionsPopover>
+  );
+};
+
 export const AssetCheckErrorsTag = ({
   checks,
   severity,

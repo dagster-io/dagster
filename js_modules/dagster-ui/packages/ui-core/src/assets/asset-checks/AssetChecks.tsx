@@ -7,42 +7,104 @@ import {
   MiddleTruncate,
   NonIdealState,
   Subtitle1,
+  Tag,
   TextInput,
   useViewport,
 } from '@dagster-io/ui-components';
-import {RowProps} from '@dagster-io/ui-components/src/components/VirtualizedTable';
-import {useVirtualizer} from '@tanstack/react-virtual';
-import React, {useState} from 'react';
+import { RowProps } from '@dagster-io/ui-components/src/components/VirtualizedTable';
+import { useVirtualizer } from '@tanstack/react-virtual';
+import React, { useState } from 'react';
 import styled from 'styled-components';
 
-import {AssetCheckAutomationList} from './AssetCheckAutomationList';
+import { AssetCheckAutomationList } from './AssetCheckAutomationList';
 import {
   ASSET_CHECK_DETAILS_QUERY,
   AgentUpgradeRequired,
   MigrationRequired,
   NeedsUserCodeUpgrade,
 } from './AssetCheckDetailDialog';
-import {AssetCheckExecutionList} from './AssetCheckExecutionList';
-import {AssetCheckOverview} from './AssetCheckOverview';
-import {ASSET_CHECKS_QUERY} from './AssetChecksQuery';
-import {ExecuteChecksButton} from './ExecuteChecksButton';
+import { AssetCheckExecutionList } from './AssetCheckExecutionList';
+import { AssetCheckOverview, DataQualityCheckOverview } from './AssetCheckOverview';
+import { ASSET_CHECKS_QUERY } from './AssetChecksQuery';
+import { ExecuteChecksButton } from './ExecuteChecksButton';
 import {
   AssetCheckDetailsQuery,
   AssetCheckDetailsQueryVariables,
 } from './types/AssetCheckDetailDialog.types';
-import {assetCheckStatusDescription, getCheckIcon} from './util';
-import {useQuery} from '../../apollo-client';
-import {FIFTEEN_SECONDS, useQueryRefreshAtInterval} from '../../app/QueryRefresh';
-import {COMMON_COLLATOR, assertUnreachable} from '../../app/Util';
-import {AssetKeyInput} from '../../graphql/types';
-import {useQueryPersistedState} from '../../hooks/useQueryPersistedState';
-import {useCursorPaginatedQuery} from '../../runs/useCursorPaginatedQuery';
-import {Container, Inner, Row} from '../../ui/VirtualizedTable';
-import {numberFormatter} from '../../ui/formatters';
-import {PAGE_SIZE} from '../AutoMaterializePolicyPage/useEvaluationsQueryResult';
-import {AssetKey} from '../types';
-import {AssetChecksTabType, AssetChecksTabs} from './AssetChecksTabs';
-import {AssetChecksQuery, AssetChecksQueryVariables} from './types/AssetChecksQuery.types';
+import { assetCheckStatusDescription, getCheckIcon } from './util';
+import { useQuery } from '../../apollo-client';
+import { FIFTEEN_SECONDS, useQueryRefreshAtInterval } from '../../app/QueryRefresh';
+import { COMMON_COLLATOR, assertUnreachable } from '../../app/Util';
+import { AssetKeyInput } from '../../graphql/types';
+import { useQueryPersistedState } from '../../hooks/useQueryPersistedState';
+import { useCursorPaginatedQuery } from '../../runs/useCursorPaginatedQuery';
+import { Container, Inner, Row } from '../../ui/VirtualizedTable';
+import { numberFormatter } from '../../ui/formatters';
+import { PAGE_SIZE } from '../AutoMaterializePolicyPage/useEvaluationsQueryResult';
+import { AssetKey } from '../types';
+import { AssetChecksTabType, AssetChecksTabs } from './AssetChecksTabs';
+import { AssetChecksQuery, AssetChecksQueryVariables, DataQualityFragment } from './types/AssetChecksQuery.types';
+import { AssetCheckTableFragment } from './types/VirtualizedAssetCheckTable.types';
+import { AssetCheckExecution } from '../../graphql/types';
+
+
+const CodeDefinedCheckRowEntry = ({check}: {check: AssetCheckTableFragment}) => {
+  return (
+  <Box flex={{direction: 'column', gap: 2}}>
+    <Box flex={{direction: 'row', gap: 8, alignItems: 'flex-start'}}>
+      <Box
+        flex={{alignItems: 'center', justifyContent: 'center'}}
+        style={{
+          width: 20,
+          height: 20,
+            }}
+          >
+        {getCheckIcon(check.executionForLatestMaterialization as AssetCheckExecution)}
+      </Box>
+      <Body2 style={{overflow: 'hidden'}}>
+        <MiddleTruncate text={check.name} />
+        <Caption
+          color={Colors.textLight()}
+          style={{textTransform: 'capitalize'}}
+        >
+          {assetCheckStatusDescription(check.executionForLatestMaterialization as AssetCheckExecution)}
+        </Caption>
+      </Body2>
+    </Box>
+  </Box>
+  );
+};
+
+const DataQualityCheckRowEntry = ({check}: {check: DataQualityFragment}) => {
+  return (
+  <Box flex={{direction: 'column', gap: 2}}>
+    <Box flex={{direction: 'row', gap: 8, alignItems: 'flex-start'}}>
+      <Box
+        flex={{alignItems: 'center', justifyContent: 'center'}}
+        style={{
+          width: 20,
+          height: 20,
+            }}
+          >
+        {getCheckIcon(check.executionHistory[0]?.checkExecution as AssetCheckExecution ?? null)}
+      </Box>
+      <Body2 style={{overflow: 'hidden'}}>
+        <MiddleTruncate text={check.name} />
+        <Tag icon="verified" intent="primary">
+            In-app
+        </Tag>
+        <Caption
+          color={Colors.textLight()}
+          style={{textTransform: 'capitalize'}}
+        >
+          {assetCheckStatusDescription(check.executionHistory[0]?.checkExecution as AssetCheckExecution ?? null)}
+        </Caption>
+      </Body2>
+    </Box>
+  </Box>
+  );
+};
+
 
 export const AssetChecks = ({
   assetKey,
@@ -67,13 +129,16 @@ export const AssetChecks = ({
     data?.assetNodeOrError.__typename === 'AssetNode' ? data.assetNodeOrError : null;
 
   const checks = React.useMemo(() => {
+    // update for data quality checks
     if (data?.assetNodeOrError.__typename !== 'AssetNode') {
       return [];
     }
-    if (data.assetNodeOrError.assetChecksOrError.__typename !== 'AssetChecks') {
+    if (data.assetNodeOrError.assetChecksOrError.__typename !== 'AssetChecks' && data.dataQualityChecksForAsset.length === 0) {
       return [];
     }
-    return [...data.assetNodeOrError.assetChecksOrError.checks].sort((a, b) =>
+    const codeDefinedChecks = data.assetNodeOrError.assetChecksOrError.__typename === 'AssetChecks' ? data.assetNodeOrError.assetChecksOrError.checks : [];
+    const inAppChecks = data.dataQualityChecksForAsset;
+    return [...codeDefinedChecks, ...inAppChecks].sort((a, b) =>
       COMMON_COLLATOR.compare(a.name, b.name),
     );
   }, [data]);
@@ -84,6 +149,7 @@ export const AssetChecks = ({
     return checks.filter((check) => check.name.toLowerCase().includes(searchValue.toLowerCase()));
   }, [checks, searchValue]);
 
+  console.log('filteredChecks', filteredChecks);
   const containerRef = React.useRef<HTMLDivElement | null>(null);
 
   const rowVirtualizer = useVirtualizer({
@@ -103,7 +169,8 @@ export const AssetChecks = ({
     return checks.find((check) => check.name === selectedCheckName) ?? checks[0];
   }, [selectedCheckName, checks]);
 
-  const isSelectedCheckAutomated = !!selectedCheck?.automationCondition;
+  // is this that runtime checking thing dish was removing from the codebase
+  const isSelectedCheckAutomated = selectedCheck?.__typename === 'AssetCheck' ? !!selectedCheck.automationCondition : false;
 
   const {paginationProps, executions, executionsLoading} = useHistoricalCheckExecutions(
     selectedCheck ? {assetKey, checkName: selectedCheck.name} : null,
@@ -113,6 +180,7 @@ export const AssetChecks = ({
     return null;
   }
 
+  // update for data quality checks
   if (data.assetNodeOrError.__typename === 'AssetNode') {
     const type = data.assetNodeOrError.assetChecksOrError.__typename;
     switch (type) {
@@ -129,6 +197,7 @@ export const AssetChecks = ({
     }
   }
 
+  // update for data quality checks
   if (!checks.length || !selectedCheck || !assetNode) {
     return (
       <Box flex={{alignItems: 'center'}} padding={32}>
@@ -151,8 +220,10 @@ export const AssetChecks = ({
     );
   }
 
-  const lastExecution = selectedCheck.executionForLatestMaterialization;
-  const targetMaterialization = lastExecution?.evaluation?.targetMaterialization ?? null;
+  // const lastExecution = selectedCheck.executionForLatestMaterialization;
+  // const targetMaterialization = lastExecution?.evaluation?.targetMaterialization ?? null;
+
+  const executableChecks = checks.filter((check) => check.__typename === 'AssetCheck');
 
   return (
     <Box flex={{grow: 1, direction: 'column'}}>
@@ -167,7 +238,7 @@ export const AssetChecks = ({
             <Subtitle1>
               Checks {checks.length ? <>({numberFormatter.format(checks.length)})</> : null}
             </Subtitle1>
-            <ExecuteChecksButton assetNode={assetNode} checks={checks} />
+            <ExecuteChecksButton assetNode={assetNode} checks={executableChecks} />
           </Box>
           <Box
             flex={{direction: 'column', gap: 8, grow: 1}}
@@ -196,28 +267,11 @@ export const AssetChecks = ({
                           setActiveTab('overview');
                         }}
                       >
-                        <Box flex={{direction: 'column', gap: 2}}>
-                          <Box flex={{direction: 'row', gap: 8, alignItems: 'flex-start'}}>
-                            <Box
-                              flex={{alignItems: 'center', justifyContent: 'center'}}
-                              style={{
-                                width: 20,
-                                height: 20,
-                              }}
-                            >
-                              {getCheckIcon(check)}
-                            </Box>
-                            <Body2 style={{overflow: 'hidden'}}>
-                              <MiddleTruncate text={check.name} />
-                              <Caption
-                                color={Colors.textLight()}
-                                style={{textTransform: 'capitalize'}}
-                              >
-                                {assetCheckStatusDescription(check)}
-                              </Caption>
-                            </Body2>
-                          </Box>
-                        </Box>
+                        {check.__typename === 'AssetCheck' ? (
+                          <CodeDefinedCheckRowEntry check={check} />
+                        ) : (
+                          <DataQualityCheckRowEntry check={check} />
+                        )}
                       </CheckRow>
                     );
                   })}
@@ -237,7 +291,10 @@ export const AssetChecks = ({
               <Icon name="asset_check" />
               <Subtitle1>{selectedCheck.name}</Subtitle1>
             </Box>
-            <ExecuteChecksButton assetNode={assetNode} checks={[selectedCheck]} label="Execute" />
+            {/* update once we can do ad-hoc execution of data quality checks */}
+            {selectedCheck.__typename === 'AssetCheck' ? (
+              <ExecuteChecksButton assetNode={assetNode} checks={[selectedCheck]} label="Execute" />
+            ) : null}
           </Box>
           <Box padding={{horizontal: 24}} border="bottom">
             <AssetChecksTabs
@@ -248,20 +305,33 @@ export const AssetChecks = ({
               }}
             />
           </Box>
+          {/* make versions of these tabs for data quality checks and determin which is shown based on check type */}
           {activeTab === 'overview' ? (
-            <AssetCheckOverview
-              selectedCheck={selectedCheck}
-              lastExecution={lastExecution}
-              targetMaterialization={targetMaterialization}
-              executions={executions}
-              executionsLoading={executionsLoading}
-            />
+            selectedCheck.__typename === 'AssetCheck' ? (
+              <AssetCheckOverview
+                selectedCheck={selectedCheck}
+                executions={executions}
+                executionsLoading={executionsLoading}
+              />
+            ) : (
+              <DataQualityCheckOverview
+                selectedCheck={selectedCheck}
+              />
+            )
           ) : null}
           {activeTab === 'execution-history' ? (
-            <AssetCheckExecutionList executions={executions} paginationProps={paginationProps} />
+            selectedCheck.__typename === 'AssetCheck' ? (
+              <AssetCheckExecutionList executions={executions} paginationProps={paginationProps} isDataQualityCheck={false} checkName={selectedCheck.name} />
+            ) : (
+              <AssetCheckExecutionList executions={selectedCheck.executionHistory.map((execution) => execution.checkExecution)} paginationProps={paginationProps} isDataQualityCheck={true} checkName={selectedCheck.name} />
+            )
           ) : null}
           {activeTab === 'automation-history' ? (
-            <AssetCheckAutomationList assetCheck={selectedCheck} checkName={selectedCheck.name} />
+            selectedCheck.__typename === 'AssetCheck' ? (
+              <AssetCheckAutomationList assetCheck={selectedCheck} checkName={selectedCheck.name} />
+            ) : (
+              <div>Data quality check automation history</div>
+            )
           ) : null}
         </Box>
       </Box>

@@ -83,7 +83,7 @@ class GrapheneDataQualityCheck(graphene.ObjectType):
     description = graphene.String()
     config = graphene.NonNull(GenericScalar)
     instigator = graphene.NonNull(graphene.String)
-    checkType = graphene.NonNull(graphene.String)
+    checkType = graphene.NonNull(graphene.String)  # TODO - make enum
 
     executionHistory = graphene.Field(
         non_null_list(GrapheneDataQualityCheckExecution),

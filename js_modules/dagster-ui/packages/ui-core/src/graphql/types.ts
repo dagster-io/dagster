@@ -4124,6 +4124,7 @@ export type Query = {
   capturedLogs: CapturedLogs;
   capturedLogsMetadata: CapturedLogsMetadata;
   dataQualityChecksForAsset: Array<DataQualityCheck>;
+  dataQualityExecutionLogs: InstigationEventConnection;
   executionPlanOrError: ExecutionPlanOrError;
   graphOrError: GraphOrError;
   instance: Instance;
@@ -4273,6 +4274,12 @@ export type QueryCapturedLogsMetadataArgs = {
 
 export type QueryDataQualityChecksForAssetArgs = {
   assetKey: AssetKeyInput;
+};
+
+export type QueryDataQualityExecutionLogsArgs = {
+  checkName: Scalars['String']['input'];
+  cursor?: InputMaybe<Scalars['String']['input']>;
+  executionId: Scalars['String']['input'];
 };
 
 export type QueryExecutionPlanOrErrorArgs = {
@@ -13255,6 +13262,12 @@ export const buildQuery = (
       overrides && overrides.hasOwnProperty('dataQualityChecksForAsset')
         ? overrides.dataQualityChecksForAsset!
         : [],
+    dataQualityExecutionLogs:
+      overrides && overrides.hasOwnProperty('dataQualityExecutionLogs')
+        ? overrides.dataQualityExecutionLogs!
+        : relationshipsToOmit.has('InstigationEventConnection')
+          ? ({} as InstigationEventConnection)
+          : buildInstigationEventConnection({}, relationshipsToOmit),
     executionPlanOrError:
       overrides && overrides.hasOwnProperty('executionPlanOrError')
         ? overrides.executionPlanOrError!

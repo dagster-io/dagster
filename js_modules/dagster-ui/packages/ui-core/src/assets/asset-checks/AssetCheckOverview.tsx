@@ -11,33 +11,29 @@ import {
   Subtitle2,
   Tooltip,
 } from '@dagster-io/ui-components';
-import {useMemo} from 'react';
-import {Link} from 'react-router-dom';
+import { useMemo } from 'react';
+import { Link } from 'react-router-dom';
 
-import {AssetCheckStatusTag} from './AssetCheckStatusTag';
+import { AssetCheckStatusTag, DataQualityCheckStatusTag } from './AssetCheckStatusTag';
 import {
-  AssetCheckEvaluationTargetMaterializationFragment,
-  AssetCheckExecutionFragment,
+  AssetCheckExecutionFragment
 } from './types/AssetCheckDetailDialog.types';
-import {AssetCheckTableFragment} from './types/VirtualizedAssetCheckTable.types';
-import {Timestamp} from '../../app/time/Timestamp';
-import {MetadataEntries} from '../../metadata/MetadataEntry';
-import {Description} from '../../pipelines/Description';
-import {linkToRunEvent} from '../../runs/RunUtils';
-import {AssetMaterializationGraphs} from '../AssetMaterializationGraphs';
+import { AssetCheckTableFragment } from './types/VirtualizedAssetCheckTable.types';
+import { Timestamp } from '../../app/time/Timestamp';
+import { MetadataEntries } from '../../metadata/MetadataEntry';
+import { Description } from '../../pipelines/Description';
+import { linkToRunEvent } from '../../runs/RunUtils';
+import { AssetMaterializationGraphs } from '../AssetMaterializationGraphs';
+import { DataQualityFragment } from './types/AssetChecksQuery.types';
 
 interface Props {
   selectedCheck: AssetCheckTableFragment;
-  lastExecution: AssetCheckExecutionFragment | null;
-  targetMaterialization: AssetCheckEvaluationTargetMaterializationFragment | null;
   executions: AssetCheckExecutionFragment[];
   executionsLoading: boolean;
 }
 
 export const AssetCheckOverview = ({
   selectedCheck,
-  lastExecution,
-  targetMaterialization,
   executions,
   executionsLoading,
 }: Props) => {
@@ -56,6 +52,9 @@ export const AssetCheckOverview = ({
   );
 
   const {blocking} = selectedCheck;
+
+  const lastExecution = selectedCheck.executionForLatestMaterialization;
+  const targetMaterialization = lastExecution?.evaluation?.targetMaterialization ?? null;
 
   return (
     <Box
@@ -173,6 +172,106 @@ export const AssetCheckOverview = ({
             </Box>
           }
         />
+      </CollapsibleSection>
+    </Box>
+  );
+};
+
+interface DataQualityProps {
+  selectedCheck: DataQualityFragment;
+}
+
+export const DataQualityCheckOverview = ({
+  selectedCheck,
+}: DataQualityProps) => {
+
+  const lastExecution = selectedCheck.executionHistory[0]?.checkExecution;
+  const targetMaterialization = lastExecution?.evaluation?.targetMaterialization ?? null;
+
+  return (
+    <Box
+      flex={{grow: 1, direction: 'column', gap: 12}}
+      padding={{horizontal: 24, top: 4, bottom: 12}}
+    >
+      <CollapsibleSection
+        headerWrapperProps={headerWrapperProps}
+        header={<Subtitle1>About</Subtitle1>}
+        arrowSide="right"
+      >
+        <Box flex={{direction: 'row', gap: 4, alignItems: 'center'}} padding={{top: 12}}>
+          <Icon
+            name='shield'
+            color={Colors.accentPrimary()}
+          />
+          <Caption>
+            This is a <strong>non-blocking</strong> data quality check.
+          </Caption>
+          <Tooltip
+            placement="top"
+            display="block"
+            content={
+              <div style={{width: 300}}>
+                {'A non-blocking data quality check allows downstream asset materializations to proceed regardless of the check result.'}
+              </div>
+            }
+          >
+            <Icon name="info" color={Colors.accentGray()} size={12} />
+          </Tooltip>
+        </Box>
+        <Box padding={{top: 12}} flex={{gap: 12, direction: 'column'}}>
+          {selectedCheck.description ? (
+            <Description description={selectedCheck.description} maxHeight={260} />
+          ) : (
+            <Caption color={Colors.textLight()}>No description provided</Caption>
+          )}
+        </Box>
+      </CollapsibleSection>
+      <CollapsibleSection
+        headerWrapperProps={headerWrapperProps}
+        header={<Subtitle1>Latest execution</Subtitle1>}
+        arrowSide="right"
+      >
+        {lastExecution?.evaluation?.description ? (
+          <Box padding={{top: 12}} flex={{gap: 12, direction: 'column'}}>
+            <Description description={lastExecution.evaluation.description} maxHeight={260} />
+          </Box>
+        ) : null}
+        <Box padding={{top: 12}} flex={{direction: 'column', gap: 20}}>
+          <Box flex={{direction: 'row', gap: 48}}>
+            <Box flex={{direction: 'column', gap: 8}}>
+              <Subtitle2>Evaluation result</Subtitle2>
+              <div>
+                <DataQualityCheckStatusTag execution={lastExecution ?? null} checkName={selectedCheck.name} executionId={lastExecution?.runId} />
+              </div>
+            </Box>
+            {lastExecution ? (
+              <Box flex={{direction: 'column', gap: 8}}>
+                <Subtitle2>Timestamp</Subtitle2>
+                <Link
+                  to={`/data-quality/${selectedCheck.name}/${lastExecution.runId}`}
+                >
+                  <Timestamp timestamp={{unix: lastExecution.timestamp}} />
+                </Link>
+              </Box>
+            ) : null}
+            {targetMaterialization ? (
+              <Box flex={{direction: 'column', gap: 8}}>
+                <Subtitle2>Target materialization</Subtitle2>
+                <Link to={`/runs/${targetMaterialization.runId}`}>
+                  <Timestamp timestamp={{unix: targetMaterialization.timestamp}} />
+                </Link>
+              </Box>
+            ) : null}
+          </Box>
+          {lastExecution?.evaluation?.metadataEntries.length ? (
+            <Box flex={{direction: 'column', gap: 8}}>
+              <Subtitle2>Metadata</Subtitle2>
+              <div style={{fontFamily: FontFamily.monospace, fontSize: 12}}>
+                <MetadataEntries entries={lastExecution.evaluation.metadataEntries} />
+              </div>
+            </Box>
+          ) : null}
+        </Box>
       </CollapsibleSection>
     </Box>
   );
