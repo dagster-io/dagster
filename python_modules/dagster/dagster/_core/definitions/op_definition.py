@@ -7,6 +7,7 @@ from typing_extensions import TypeAlias, get_args, get_origin
 import dagster._check as check
 from dagster._annotations import deprecated, deprecated_param, public
 from dagster._config.config_schema import UserConfigSchema
+from dagster._core.decorator_utils import get_type_hints
 from dagster._core.definitions.asset_checks.asset_check_result import AssetCheckResult
 from dagster._core.definitions.definition_config_schema import (
     IDefinitionConfigSchema,
@@ -585,15 +586,19 @@ def _validate_context_type_hint(fn):
 
     params = get_function_params(fn)
     if is_context_provided(params):
-        if params[0].annotation not in [
+        if isinstance(annotation := params[0].annotation, str):
+            # https://github.com/dagster-io/dagster/issues/28342
+            annotation = next(iter(get_type_hints(fn).values()))
+
+        if annotation not in [
             AssetExecutionContext,
             OpExecutionContext,
             EmptyAnnotation,
             AssetCheckExecutionContext,
         ]:
             raise DagsterInvalidDefinitionError(
-                f"Cannot annotate `context` parameter with type {params[0].annotation}. `context`"
-                " must be annotated with AssetExecutionContext, AssetCheckExecutionContext, OpExecutionContext, or left blank."
+                f"Cannot annotate `context` parameter with type {annotation}. `context` must be"
+                " annotated with AssetExecutionContext, AssetCheckExecutionContext, OpExecutionContext, or left blank."
             )
 
 

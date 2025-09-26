@@ -4,6 +4,7 @@ from contextvars import ContextVar
 from inspect import _empty as EmptyAnnotation
 from typing import Optional, Union
 
+from dagster._core.decorator_utils import get_type_hints
 from dagster._core.definitions.decorators.op_decorator import DecoratedOpFunction
 from dagster._core.errors import DagsterInvalidDefinitionError
 from dagster._core.execution.context.asset_check_execution_context import AssetCheckExecutionContext
@@ -58,6 +59,9 @@ def enter_execution_context(
     if compute_fn.has_context_arg():
         context_param = compute_fn.get_context_arg()
         context_annotation = context_param.annotation
+
+        if isinstance(context_annotation, str):
+            context_annotation = next(iter(get_type_hints(compute_fn.decorated_fn).values()))
 
     if context_annotation is AssetCheckExecutionContext and not asset_check_only_step:
         if is_sda_step:
