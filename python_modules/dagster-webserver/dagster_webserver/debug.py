@@ -35,7 +35,7 @@ class WebserverDebugWorkspaceProcessContext(IWorkspaceProcessContext):
     def create_request_context(self, source: Optional[Any] = None) -> BaseWorkspaceRequestContext:
         return WorkspaceRequestContext(
             instance=self._instance,
-            current_workspace=CurrentWorkspace(code_location_entries={}),
+            current_workspace=CurrentWorkspace(code_location_entries={}, instance=self._instance),
             process_context=self,
             version=__version__,
             source=source,

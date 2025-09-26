@@ -793,7 +793,9 @@ def mock_workspace_from_repos(repos: Sequence[RepositoryDefinition]) -> CurrentW
     mock_location = unittest.mock.MagicMock(spec=CodeLocation)
     mock_location.get_repositories.return_value = remote_repos
     type(mock_entry).code_location = unittest.mock.PropertyMock(return_value=mock_location)
-    return CurrentWorkspace(code_location_entries={"test": mock_entry})
+    return CurrentWorkspace(
+        code_location_entries={"test": mock_entry}, instance=unittest.mock.MagicMock()
+    )
 
 
 def get_paginated_partition_keys(

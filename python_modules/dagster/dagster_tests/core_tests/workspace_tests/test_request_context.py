@@ -56,7 +56,8 @@ def workspace_request_context() -> WorkspaceRequestContext:
                     update_timestamp=now,
                     version_key=str(now),
                 ),
-            }
+            },
+            instance=mock.MagicMock(),
         ),
         process_context=mock.MagicMock(),
         version=None,

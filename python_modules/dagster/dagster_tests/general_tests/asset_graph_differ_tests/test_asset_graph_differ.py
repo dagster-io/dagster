@@ -71,7 +71,8 @@ def _make_workspace_context(
             code_location_entries={
                 scenario_name: _make_location_entry(scenario_name, definitions_file, instance)
                 for scenario_name, definitions_file in scenario_to_definitions.items()
-            }
+            },
+            instance=instance,
         ),
         process_context=mock.MagicMock(),
         version=None,

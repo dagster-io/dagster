@@ -889,6 +889,7 @@ class AssetCheckNodeSnap(IHaveNew):
     additional_asset_keys: Sequence[AssetKey]
     automation_condition: Optional[AutomationCondition]
     automation_condition_snapshot: Optional[AutomationConditionSnapshot]
+    in_app: bool
 
     def __new__(
         cls,
@@ -901,6 +902,7 @@ class AssetCheckNodeSnap(IHaveNew):
         additional_asset_keys: Optional[Sequence[AssetKey]] = None,
         automation_condition: Optional[AutomationCondition] = None,
         automation_condition_snapshot: Optional[AutomationConditionSnapshot] = None,
+        in_app: bool = False,
     ):
         return super().__new__(
             cls,
@@ -913,6 +915,7 @@ class AssetCheckNodeSnap(IHaveNew):
             additional_asset_keys=additional_asset_keys or [],
             automation_condition=automation_condition,
             automation_condition_snapshot=automation_condition_snapshot,
+            in_app=in_app,
         )
 
     @property
