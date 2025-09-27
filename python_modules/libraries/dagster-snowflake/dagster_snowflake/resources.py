@@ -73,7 +73,8 @@ class SnowflakeResource(ConfigurableResource, IAttachDifferentObjectToOpContext,
                     'snowflake_resource': SnowflakeResource(
                         account=EnvVar("SNOWFLAKE_ACCOUNT"),
                         user=EnvVar("SNOWFLAKE_USER"),
-                        password=EnvVar("SNOWFLAKE_PASSWORD")
+                        #use private key
+                        private_key=EnvVar("SNOWFLAKE_PRIVATE_KEY"),
                         database="MY_DATABASE",
                         schema="MY_SCHEMA",
                         warehouse="MY_WAREHOUSE"
@@ -807,7 +808,7 @@ def snowflake_resource(context) -> SnowflakeConnection:
                             'config': {
                                 'account': {'env': 'SNOWFLAKE_ACCOUNT'},
                                 'user': {'env': 'SNOWFLAKE_USER'},
-                                'password': {'env': 'SNOWFLAKE_PASSWORD'},
+                                'private_key': {'env': 'SNOWFLAKE_PRIVATE_KEY'},
                                 'database': {'env': 'SNOWFLAKE_DATABASE'},
                                 'schema': {'env': 'SNOWFLAKE_SCHEMA'},
                                 'warehouse': {'env': 'SNOWFLAKE_WAREHOUSE'},
