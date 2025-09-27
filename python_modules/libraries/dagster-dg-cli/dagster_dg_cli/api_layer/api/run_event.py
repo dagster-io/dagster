@@ -7,7 +7,7 @@ from dagster_dg_cli.api_layer.graphql_adapter.run_event import get_run_events_vi
 from dagster_dg_cli.utils.plus.gql_client import IGraphQLClient
 
 if TYPE_CHECKING:
-    from dagster_dg_cli.api_layer.schemas.run_event import RunEventList
+    from dagster_dg_cli.api_layer.schemas.run_event import DgApiRunEventList
 
 
 @dataclass(frozen=True)
@@ -23,9 +23,13 @@ class DgApiRunEventApi:
         step_key: Optional[str] = None,
         limit: int = 100,
         after_cursor: Optional[str] = None,
-    ) -> "RunEventList":
+    ) -> "DgApiRunEventList":
         """Get run events with filtering options."""
-        from dagster_dg_cli.api_layer.schemas.run_event import RunEvent, RunEventLevel, RunEventList
+        from dagster_dg_cli.api_layer.schemas.run_event import (
+            DgApiRunEvent,
+            DgApiRunEventLevel,
+            DgApiRunEventList,
+        )
 
         events_data = get_run_events_via_graphql(
             self.client,
@@ -38,18 +42,18 @@ class DgApiRunEventApi:
 
         # Convert to Pydantic models
         events = [
-            RunEvent(
+            DgApiRunEvent(
                 run_id=e["runId"],
                 message=e["message"],
                 timestamp=e["timestamp"],
-                level=RunEventLevel[e["level"]],
+                level=DgApiRunEventLevel[e["level"]],
                 step_key=e.get("stepKey"),
                 event_type=e["eventType"],
             )
             for e in events_data["events"]
         ]
 
-        return RunEventList(
+        return DgApiRunEventList(
             items=events,
             total=len(events),
             cursor=events_data.get("cursor"),

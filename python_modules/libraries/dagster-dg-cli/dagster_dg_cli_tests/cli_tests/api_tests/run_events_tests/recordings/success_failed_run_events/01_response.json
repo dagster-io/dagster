@@ -1,0 +1,207 @@
+{
+  "logsForRun": {
+    "__typename": "EventConnection",
+    "cursor": "eyJ0eXBlIjogIlNUT1JBR0VfSUQiLCAidmFsdWUiOiA0NzI2NzEzMzc3OX0=",
+    "events": [
+      {
+        "__typename": "AssetMaterializationPlannedEvent",
+        "eventType": "ASSET_MATERIALIZATION_PLANNED",
+        "level": "DEBUG",
+        "message": "snowflake_insights_import intends to materialize asset [\"poll_snowflake_query_history_hour\"]",
+        "runId": "4db16a22-4124-4d43-bd4c-ea0aeaa78172",
+        "stepKey": "poll_snowflake_query_history_hour",
+        "timestamp": "1757703542261"
+      },
+      {
+        "__typename": "RunEnqueuedEvent",
+        "eventType": "RUN_ENQUEUED",
+        "level": "INFO",
+        "message": "",
+        "runId": "4db16a22-4124-4d43-bd4c-ea0aeaa78172",
+        "stepKey": null,
+        "timestamp": "1757703542295"
+      },
+      {
+        "__typename": "RunStartingEvent",
+        "eventType": "RUN_STARTING",
+        "level": "INFO",
+        "message": "",
+        "runId": "4db16a22-4124-4d43-bd4c-ea0aeaa78172",
+        "stepKey": null,
+        "timestamp": "1757703543722"
+      },
+      {
+        "__typename": "EngineEvent",
+        "eventType": "ENGINE_EVENT",
+        "level": "INFO",
+        "message": "Sending a request to the agent to execute steps in the user cloud",
+        "runId": "4db16a22-4124-4d43-bd4c-ea0aeaa78172",
+        "stepKey": null,
+        "timestamp": "1757703543752"
+      },
+      {
+        "__typename": "EngineEvent",
+        "eventType": "ENGINE_EVENT",
+        "level": "INFO",
+        "message": "[DagsterCloudAgent] Agent 5189c82e is launching run 4db16a22-4124-4d43-bd4c-ea0aeaa78172",
+        "runId": "4db16a22-4124-4d43-bd4c-ea0aeaa78172",
+        "stepKey": null,
+        "timestamp": "1757703543844"
+      },
+      {
+        "__typename": "EngineEvent",
+        "eventType": "ENGINE_EVENT",
+        "level": "INFO",
+        "message": "[CloudK8sRunLauncher] Creating Kubernetes run worker job",
+        "runId": "4db16a22-4124-4d43-bd4c-ea0aeaa78172",
+        "stepKey": null,
+        "timestamp": "1757703543974"
+      },
+      {
+        "__typename": "EngineEvent",
+        "eventType": "ENGINE_EVENT",
+        "level": "INFO",
+        "message": "[CloudK8sRunLauncher] Kubernetes run worker job created",
+        "runId": "4db16a22-4124-4d43-bd4c-ea0aeaa78172",
+        "stepKey": null,
+        "timestamp": "1757703544025"
+      },
+      {
+        "__typename": "EngineEvent",
+        "eventType": "ENGINE_EVENT",
+        "level": "INFO",
+        "message": "Starting run metrics thread with container_metrics_enabled=True and python_metrics_enabled=False",
+        "runId": "4db16a22-4124-4d43-bd4c-ea0aeaa78172",
+        "stepKey": null,
+        "timestamp": "1757703547689"
+      },
+      {
+        "__typename": "EngineEvent",
+        "eventType": "ENGINE_EVENT",
+        "level": "INFO",
+        "message": "Started process for run (pid: 1).",
+        "runId": "4db16a22-4124-4d43-bd4c-ea0aeaa78172",
+        "stepKey": null,
+        "timestamp": "1757703547712"
+      },
+      {
+        "__typename": "RunStartEvent",
+        "eventType": "RUN_START",
+        "level": "DEBUG",
+        "message": "Started execution of run for \"snowflake_insights_import\".",
+        "runId": "4db16a22-4124-4d43-bd4c-ea0aeaa78172",
+        "stepKey": null,
+        "timestamp": "1757703550780"
+      },
+      {
+        "__typename": "EngineEvent",
+        "eventType": "ENGINE_EVENT",
+        "level": "DEBUG",
+        "message": "Executing steps using multiprocess executor: parent process (pid: 1)",
+        "runId": "4db16a22-4124-4d43-bd4c-ea0aeaa78172",
+        "stepKey": null,
+        "timestamp": "1757703550827"
+      },
+      {
+        "__typename": "StepWorkerStartingEvent",
+        "eventType": "STEP_WORKER_STARTING",
+        "level": "DEBUG",
+        "message": "Launching subprocess for \"poll_snowflake_query_history_hour\".",
+        "runId": "4db16a22-4124-4d43-bd4c-ea0aeaa78172",
+        "stepKey": "poll_snowflake_query_history_hour",
+        "timestamp": "1757703550871"
+      },
+      {
+        "__typename": "StepWorkerStartedEvent",
+        "eventType": "STEP_WORKER_STARTED",
+        "level": "DEBUG",
+        "message": "Executing step \"poll_snowflake_query_history_hour\" in subprocess.",
+        "runId": "4db16a22-4124-4d43-bd4c-ea0aeaa78172",
+        "stepKey": "poll_snowflake_query_history_hour",
+        "timestamp": "1757703551800"
+      },
+      {
+        "__typename": "ResourceInitStartedEvent",
+        "eventType": "RESOURCE_INIT_STARTED",
+        "level": "DEBUG",
+        "message": "Starting initialization of resources [poll_snowflake_query_history_hour__io_manager, snowflake_insights].",
+        "runId": "4db16a22-4124-4d43-bd4c-ea0aeaa78172",
+        "stepKey": "poll_snowflake_query_history_hour",
+        "timestamp": "1757703553021"
+      },
+      {
+        "__typename": "ResourceInitSuccessEvent",
+        "eventType": "RESOURCE_INIT_SUCCESS",
+        "level": "DEBUG",
+        "message": "Finished initialization of resources [poll_snowflake_query_history_hour__io_manager, snowflake_insights].",
+        "runId": "4db16a22-4124-4d43-bd4c-ea0aeaa78172",
+        "stepKey": "poll_snowflake_query_history_hour",
+        "timestamp": "1757703553113"
+      },
+      {
+        "__typename": "LogsCapturedEvent",
+        "eventType": "LOGS_CAPTURED",
+        "level": "DEBUG",
+        "message": "Started capturing logs in process (pid: 16).",
+        "runId": "4db16a22-4124-4d43-bd4c-ea0aeaa78172",
+        "stepKey": null,
+        "timestamp": "1757703553157"
+      },
+      {
+        "__typename": "ExecutionStepStartEvent",
+        "eventType": "STEP_START",
+        "level": "DEBUG",
+        "message": "Started execution of step \"poll_snowflake_query_history_hour\".",
+        "runId": "4db16a22-4124-4d43-bd4c-ea0aeaa78172",
+        "stepKey": "poll_snowflake_query_history_hour",
+        "timestamp": "1757703553211"
+      },
+      {
+        "__typename": "ExecutionStepFailureEvent",
+        "eventType": "STEP_FAILURE",
+        "level": "ERROR",
+        "message": "Execution of step \"poll_snowflake_query_history_hour\" failed.",
+        "runId": "4db16a22-4124-4d43-bd4c-ea0aeaa78172",
+        "stepKey": "poll_snowflake_query_history_hour",
+        "timestamp": "1757703553855"
+      },
+      {
+        "__typename": "EngineEvent",
+        "eventType": "ENGINE_EVENT",
+        "level": "DEBUG",
+        "message": "Multiprocess executor: parent process exiting after 3.77s (pid: 1)",
+        "runId": "4db16a22-4124-4d43-bd4c-ea0aeaa78172",
+        "stepKey": null,
+        "timestamp": "1757703554616"
+      },
+      {
+        "__typename": "RunFailureEvent",
+        "eventType": "RUN_FAILURE",
+        "level": "ERROR",
+        "message": "Execution of run for \"snowflake_insights_import\" failed. Steps failed: ['poll_snowflake_query_history_hour'].",
+        "runId": "4db16a22-4124-4d43-bd4c-ea0aeaa78172",
+        "stepKey": null,
+        "timestamp": "1757703554673"
+      },
+      {
+        "__typename": "EngineEvent",
+        "eventType": "ENGINE_EVENT",
+        "level": "INFO",
+        "message": "Process for run exited (pid: 1).",
+        "runId": "4db16a22-4124-4d43-bd4c-ea0aeaa78172",
+        "stepKey": null,
+        "timestamp": "1757703554719"
+      },
+      {
+        "__typename": "FailedToMaterializeEvent",
+        "eventType": "ASSET_FAILED_TO_MATERIALIZE",
+        "level": "INFO",
+        "message": "Asset [\"poll_snowflake_query_history_hour\"] failed to materialize",
+        "runId": "4db16a22-4124-4d43-bd4c-ea0aeaa78172",
+        "stepKey": "poll_snowflake_query_history_hour",
+        "timestamp": "1757703559026"
+      }
+    ],
+    "hasMore": false
+  }
+}

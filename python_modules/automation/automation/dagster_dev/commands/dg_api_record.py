@@ -56,7 +56,7 @@ def load_domain_commands(domain: str) -> dict[str, dict]:
         / "cli_tests"
         / "api_tests"
     )
-    domain_dir = api_tests_dir / f"{domain}_tests"
+    domain_dir = api_tests_dir / f"{domain.replace('-', '_')}_tests"
     recordings_dir = domain_dir / "recordings"
     scenarios_file = domain_dir / "scenarios.yaml"
 
@@ -96,7 +96,9 @@ def record_graphql_for_fixture(domain: str, fixture_name: str, command: str) -> 
         / "cli_tests"
         / "api_tests"
     )
-    recording_dir = api_tests_dir / f"{domain}_tests" / "recordings" / fixture_name
+    recording_dir = (
+        api_tests_dir / f"{domain.replace('-', '_')}_tests" / "recordings" / fixture_name
+    )
 
     recording_dir.mkdir(parents=True, exist_ok=True)
     click.echo(f"🚀 Recording for {domain}.{fixture_name}: {command}")

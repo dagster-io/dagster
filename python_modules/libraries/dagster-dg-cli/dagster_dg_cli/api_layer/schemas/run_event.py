@@ -6,7 +6,7 @@ from typing import Optional
 from pydantic import BaseModel
 
 
-class RunEventLevel(str, Enum):
+class DgApiRunEventLevel(str, Enum):
     """Event severity levels."""
 
     CRITICAL = "CRITICAL"
@@ -16,13 +16,13 @@ class RunEventLevel(str, Enum):
     DEBUG = "DEBUG"
 
 
-class RunEvent(BaseModel):
+class DgApiRunEvent(BaseModel):
     """Single run event model."""
 
     run_id: str
     message: str
     timestamp: str  # ISO 8601 timestamp
-    level: RunEventLevel
+    level: DgApiRunEventLevel
     step_key: Optional[str] = None
     event_type: str
 
@@ -30,10 +30,10 @@ class RunEvent(BaseModel):
         from_attributes = True
 
 
-class RunEventList(BaseModel):
+class DgApiRunEventList(BaseModel):
     """Paginated run events response."""
 
-    items: list[RunEvent]
+    items: list[DgApiRunEvent]
     total: int
     cursor: Optional[str] = None
     has_more: bool = False
