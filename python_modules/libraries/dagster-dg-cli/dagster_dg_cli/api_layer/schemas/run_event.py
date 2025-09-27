@@ -16,6 +16,24 @@ class RunEventLevel(str, Enum):
     DEBUG = "DEBUG"
 
 
+class ErrorInfo(BaseModel):
+    """Error information model."""
+
+    message: str
+    className: Optional[str] = None
+    stack: Optional[list[str]] = None
+    cause: Optional["ErrorInfo"] = None
+
+    class Config:
+        from_attributes = True
+
+    def get_stack_trace_string(self) -> str:
+        """Get the stack trace as a formatted string."""
+        if not self.stack:
+            return ""
+        return "\n".join(self.stack)
+
+
 class RunEvent(BaseModel):
     """Single run event model."""
 
@@ -24,7 +42,8 @@ class RunEvent(BaseModel):
     timestamp: str  # ISO 8601 timestamp
     level: RunEventLevel
     step_key: Optional[str] = None
-    event_type: str
+    event_type: Optional[str] = None
+    error: Optional[ErrorInfo] = None
 
     class Config:
         from_attributes = True

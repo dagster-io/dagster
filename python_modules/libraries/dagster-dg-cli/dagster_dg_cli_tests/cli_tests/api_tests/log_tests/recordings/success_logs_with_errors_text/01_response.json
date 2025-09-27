@@ -1,0 +1,404 @@
+{
+  "logsForRun": {
+    "__typename": "EventConnection",
+    "cursor": "eyJ0eXBlIjogIlNUT1JBR0VfSUQiLCAidmFsdWUiOiA0ODgwODU1MzE0M30=",
+    "events": [
+      {
+        "__typename": "AssetMaterializationPlannedEvent",
+        "eventType": "ASSET_MATERIALIZATION_PLANNED",
+        "level": "DEBUG",
+        "message": "run_etl_pipeline intends to materialize asset [\"enriched_data\"]",
+        "runId": "85156191-170d-4229-8eba-14450b6ca9e3",
+        "stepKey": "enriched_data.concat_chunk_list",
+        "timestamp": "1758808865047"
+      },
+      {
+        "__typename": "EngineEvent",
+        "eventType": "ENGINE_EVENT",
+        "level": "INFO",
+        "message": "Launched as an automatic retry",
+        "runId": "85156191-170d-4229-8eba-14450b6ca9e3",
+        "stepKey": null,
+        "timestamp": "1758808865075"
+      },
+      {
+        "__typename": "RunEnqueuedEvent",
+        "eventType": "RUN_ENQUEUED",
+        "level": "INFO",
+        "message": "",
+        "runId": "85156191-170d-4229-8eba-14450b6ca9e3",
+        "stepKey": null,
+        "timestamp": "1758808865098"
+      },
+      {
+        "__typename": "RunStartingEvent",
+        "eventType": "RUN_STARTING",
+        "level": "INFO",
+        "message": "",
+        "runId": "85156191-170d-4229-8eba-14450b6ca9e3",
+        "stepKey": null,
+        "timestamp": "1758808867161"
+      },
+      {
+        "__typename": "EngineEvent",
+        "eventType": "ENGINE_EVENT",
+        "level": "INFO",
+        "message": "Sending a request to the agent to execute steps in the user cloud",
+        "runId": "85156191-170d-4229-8eba-14450b6ca9e3",
+        "stepKey": null,
+        "timestamp": "1758808867189"
+      },
+      {
+        "__typename": "EngineEvent",
+        "eventType": "ENGINE_EVENT",
+        "level": "INFO",
+        "message": "[DagsterCloudAgent] Agent 3a659214 is launching run 85156191-170d-4229-8eba-14450b6ca9e3",
+        "runId": "85156191-170d-4229-8eba-14450b6ca9e3",
+        "stepKey": null,
+        "timestamp": "1758808867555"
+      },
+      {
+        "__typename": "EngineEvent",
+        "eventType": "ENGINE_EVENT",
+        "level": "INFO",
+        "message": "[CloudK8sRunLauncher] Creating Kubernetes run worker job",
+        "runId": "85156191-170d-4229-8eba-14450b6ca9e3",
+        "stepKey": null,
+        "timestamp": "1758808867738"
+      },
+      {
+        "__typename": "EngineEvent",
+        "eventType": "ENGINE_EVENT",
+        "level": "INFO",
+        "message": "[CloudK8sRunLauncher] Kubernetes run worker job created",
+        "runId": "85156191-170d-4229-8eba-14450b6ca9e3",
+        "stepKey": null,
+        "timestamp": "1758808867910"
+      },
+      {
+        "__typename": "EngineEvent",
+        "eventType": "ENGINE_EVENT",
+        "level": "INFO",
+        "message": "Starting run metrics thread with container_metrics_enabled=True and python_metrics_enabled=False",
+        "runId": "85156191-170d-4229-8eba-14450b6ca9e3",
+        "stepKey": null,
+        "timestamp": "1758808870636"
+      },
+      {
+        "__typename": "EngineEvent",
+        "eventType": "ENGINE_EVENT",
+        "level": "INFO",
+        "message": "Started process for run (pid: 1).",
+        "runId": "85156191-170d-4229-8eba-14450b6ca9e3",
+        "stepKey": null,
+        "timestamp": "1758808870686"
+      },
+      {
+        "__typename": "RunStartEvent",
+        "eventType": "RUN_START",
+        "level": "DEBUG",
+        "message": "Started execution of run for \"run_etl_pipeline\".",
+        "runId": "85156191-170d-4229-8eba-14450b6ca9e3",
+        "stepKey": null,
+        "timestamp": "1758808871488"
+      },
+      {
+        "__typename": "EngineEvent",
+        "eventType": "ENGINE_EVENT",
+        "level": "DEBUG",
+        "message": "Executing steps using multiprocess executor: parent process (pid: 1)",
+        "runId": "85156191-170d-4229-8eba-14450b6ca9e3",
+        "stepKey": null,
+        "timestamp": "1758808871524"
+      },
+      {
+        "__typename": "StepWorkerStartingEvent",
+        "eventType": "STEP_WORKER_STARTING",
+        "level": "DEBUG",
+        "message": "Launching subprocess for \"enriched_data.process_chunk[11]\".",
+        "runId": "85156191-170d-4229-8eba-14450b6ca9e3",
+        "stepKey": "enriched_data.process_chunk[11]",
+        "timestamp": "1758808871633"
+      },
+      {
+        "__typename": "StepWorkerStartedEvent",
+        "eventType": "STEP_WORKER_STARTED",
+        "level": "DEBUG",
+        "message": "Executing step \"enriched_data.process_chunk[11]\" in subprocess.",
+        "runId": "85156191-170d-4229-8eba-14450b6ca9e3",
+        "stepKey": "enriched_data.process_chunk[11]",
+        "timestamp": "1758808872870"
+      },
+      {
+        "__typename": "ResourceInitStartedEvent",
+        "eventType": "RESOURCE_INIT_STARTED",
+        "level": "DEBUG",
+        "message": "Starting initialization of resources [api, io_manager].",
+        "runId": "85156191-170d-4229-8eba-14450b6ca9e3",
+        "stepKey": "enriched_data.process_chunk[11]",
+        "timestamp": "1758808873361"
+      },
+      {
+        "__typename": "ResourceInitSuccessEvent",
+        "eventType": "RESOURCE_INIT_SUCCESS",
+        "level": "DEBUG",
+        "message": "Finished initialization of resources [api, io_manager].",
+        "runId": "85156191-170d-4229-8eba-14450b6ca9e3",
+        "stepKey": "enriched_data.process_chunk[11]",
+        "timestamp": "1758808873521"
+      },
+      {
+        "__typename": "LogsCapturedEvent",
+        "eventType": "LOGS_CAPTURED",
+        "level": "DEBUG",
+        "message": "Started capturing logs in process (pid: 16).",
+        "runId": "85156191-170d-4229-8eba-14450b6ca9e3",
+        "stepKey": null,
+        "timestamp": "1758808873570"
+      },
+      {
+        "__typename": "ExecutionStepStartEvent",
+        "eventType": "STEP_START",
+        "level": "DEBUG",
+        "message": "Started execution of step \"enriched_data.process_chunk[11]\".",
+        "runId": "85156191-170d-4229-8eba-14450b6ca9e3",
+        "stepKey": "enriched_data.process_chunk[11]",
+        "timestamp": "1758808873607"
+      },
+      {
+        "__typename": "LogMessageEvent",
+        "eventType": null,
+        "level": "DEBUG",
+        "message": "Loading file from: /opt/dagster/dagster_home/storage/385defa2-7ac6-4d18-8a88-585a42393d9c/enriched_data.split_rows/result/11 using PickledObjectFilesystemIOManager...",
+        "runId": "85156191-170d-4229-8eba-14450b6ca9e3",
+        "stepKey": "enriched_data.process_chunk[11]",
+        "timestamp": "1758808873644"
+      },
+      {
+        "__typename": "ExecutionStepUpForRetryEvent",
+        "eventType": "STEP_UP_FOR_RETRY",
+        "level": "DEBUG",
+        "message": "Execution of step \"enriched_data.process_chunk[11]\" failed and has requested a retry.",
+        "runId": "85156191-170d-4229-8eba-14450b6ca9e3",
+        "stepKey": "enriched_data.process_chunk[11]",
+        "timestamp": "1758808873697"
+      },
+      {
+        "__typename": "StepWorkerStartingEvent",
+        "eventType": "STEP_WORKER_STARTING",
+        "level": "DEBUG",
+        "message": "Launching subprocess for \"enriched_data.process_chunk[11]\".",
+        "runId": "85156191-170d-4229-8eba-14450b6ca9e3",
+        "stepKey": "enriched_data.process_chunk[11]",
+        "timestamp": "1758808873742"
+      },
+      {
+        "__typename": "StepWorkerStartedEvent",
+        "eventType": "STEP_WORKER_STARTED",
+        "level": "DEBUG",
+        "message": "Executing step \"enriched_data.process_chunk[11]\" in subprocess.",
+        "runId": "85156191-170d-4229-8eba-14450b6ca9e3",
+        "stepKey": "enriched_data.process_chunk[11]",
+        "timestamp": "1758808874924"
+      },
+      {
+        "__typename": "ResourceInitStartedEvent",
+        "eventType": "RESOURCE_INIT_STARTED",
+        "level": "DEBUG",
+        "message": "Starting initialization of resources [api, io_manager].",
+        "runId": "85156191-170d-4229-8eba-14450b6ca9e3",
+        "stepKey": "enriched_data.process_chunk[11]",
+        "timestamp": "1758808875309"
+      },
+      {
+        "__typename": "ResourceInitSuccessEvent",
+        "eventType": "RESOURCE_INIT_SUCCESS",
+        "level": "DEBUG",
+        "message": "Finished initialization of resources [api, io_manager].",
+        "runId": "85156191-170d-4229-8eba-14450b6ca9e3",
+        "stepKey": "enriched_data.process_chunk[11]",
+        "timestamp": "1758808875444"
+      },
+      {
+        "__typename": "LogsCapturedEvent",
+        "eventType": "LOGS_CAPTURED",
+        "level": "DEBUG",
+        "message": "Started capturing logs in process (pid: 26).",
+        "runId": "85156191-170d-4229-8eba-14450b6ca9e3",
+        "stepKey": null,
+        "timestamp": "1758808875526"
+      },
+      {
+        "__typename": "ExecutionStepRestartEvent",
+        "eventType": "STEP_RESTARTED",
+        "level": "DEBUG",
+        "message": "Started re-execution (attempt # 2) of step \"enriched_data.process_chunk[11]\".",
+        "runId": "85156191-170d-4229-8eba-14450b6ca9e3",
+        "stepKey": "enriched_data.process_chunk[11]",
+        "timestamp": "1758808875655"
+      },
+      {
+        "__typename": "LogMessageEvent",
+        "eventType": null,
+        "level": "DEBUG",
+        "message": "Loading file from: /opt/dagster/dagster_home/storage/385defa2-7ac6-4d18-8a88-585a42393d9c/enriched_data.split_rows/result/11 using PickledObjectFilesystemIOManager...",
+        "runId": "85156191-170d-4229-8eba-14450b6ca9e3",
+        "stepKey": "enriched_data.process_chunk[11]",
+        "timestamp": "1758808875737"
+      },
+      {
+        "__typename": "ExecutionStepUpForRetryEvent",
+        "eventType": "STEP_UP_FOR_RETRY",
+        "level": "DEBUG",
+        "message": "Execution of step \"enriched_data.process_chunk[11]\" failed and has requested a retry.",
+        "runId": "85156191-170d-4229-8eba-14450b6ca9e3",
+        "stepKey": "enriched_data.process_chunk[11]",
+        "timestamp": "1758808875801"
+      },
+      {
+        "__typename": "StepWorkerStartingEvent",
+        "eventType": "STEP_WORKER_STARTING",
+        "level": "DEBUG",
+        "message": "Launching subprocess for \"enriched_data.process_chunk[11]\".",
+        "runId": "85156191-170d-4229-8eba-14450b6ca9e3",
+        "stepKey": "enriched_data.process_chunk[11]",
+        "timestamp": "1758808875835"
+      },
+      {
+        "__typename": "StepWorkerStartedEvent",
+        "eventType": "STEP_WORKER_STARTED",
+        "level": "DEBUG",
+        "message": "Executing step \"enriched_data.process_chunk[11]\" in subprocess.",
+        "runId": "85156191-170d-4229-8eba-14450b6ca9e3",
+        "stepKey": "enriched_data.process_chunk[11]",
+        "timestamp": "1758808876893"
+      },
+      {
+        "__typename": "ResourceInitStartedEvent",
+        "eventType": "RESOURCE_INIT_STARTED",
+        "level": "DEBUG",
+        "message": "Starting initialization of resources [api, io_manager].",
+        "runId": "85156191-170d-4229-8eba-14450b6ca9e3",
+        "stepKey": "enriched_data.process_chunk[11]",
+        "timestamp": "1758808877224"
+      },
+      {
+        "__typename": "ResourceInitSuccessEvent",
+        "eventType": "RESOURCE_INIT_SUCCESS",
+        "level": "DEBUG",
+        "message": "Finished initialization of resources [api, io_manager].",
+        "runId": "85156191-170d-4229-8eba-14450b6ca9e3",
+        "stepKey": "enriched_data.process_chunk[11]",
+        "timestamp": "1758808877380"
+      },
+      {
+        "__typename": "LogsCapturedEvent",
+        "eventType": "LOGS_CAPTURED",
+        "level": "DEBUG",
+        "message": "Started capturing logs in process (pid: 36).",
+        "runId": "85156191-170d-4229-8eba-14450b6ca9e3",
+        "stepKey": null,
+        "timestamp": "1758808877439"
+      },
+      {
+        "__typename": "ExecutionStepRestartEvent",
+        "eventType": "STEP_RESTARTED",
+        "level": "DEBUG",
+        "message": "Started re-execution (attempt # 3) of step \"enriched_data.process_chunk[11]\".",
+        "runId": "85156191-170d-4229-8eba-14450b6ca9e3",
+        "stepKey": "enriched_data.process_chunk[11]",
+        "timestamp": "1758808877601"
+      },
+      {
+        "__typename": "LogMessageEvent",
+        "eventType": null,
+        "level": "DEBUG",
+        "message": "Loading file from: /opt/dagster/dagster_home/storage/385defa2-7ac6-4d18-8a88-585a42393d9c/enriched_data.split_rows/result/11 using PickledObjectFilesystemIOManager...",
+        "runId": "85156191-170d-4229-8eba-14450b6ca9e3",
+        "stepKey": "enriched_data.process_chunk[11]",
+        "timestamp": "1758808877680"
+      },
+      {
+        "__typename": "ExecutionStepFailureEvent",
+        "error": {
+          "cause": {
+            "cause": null,
+            "className": "FileNotFoundError",
+            "message": "FileNotFoundError: [Errno 2] No such file or directory: '/opt/dagster/dagster_home/storage/385defa2-7ac6-4d18-8a88-585a42393d9c/enriched_data.split_rows/result/11'\n",
+            "stack": [
+              "  File \"/usr/local/lib/python3.12/site-packages/dagster/_core/execution/plan/utils.py\", line 57, in op_execution_error_boundary\n    yield\n",
+              "  File \"/usr/local/lib/python3.12/site-packages/dagster/_core/execution/plan/inputs.py\", line 619, in _load_input_with_input_manager\n    value = input_manager.load_input(context)\n            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n",
+              "  File \"/usr/local/lib/python3.12/site-packages/dagster/_core/storage/upath_io_manager.py\", line 406, in load_input\n    return self._load_single_input(path, context)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n",
+              "  File \"/usr/local/lib/python3.12/site-packages/dagster/_core/storage/upath_io_manager.py\", line 273, in _load_single_input\n    obj = self.load_from_path(context=context, path=path)\n          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n",
+              "  File \"/usr/local/lib/python3.12/site-packages/dagster/_core/storage/fs_io_manager.py\", line 284, in load_from_path\n    with path.open(\"rb\") as file:\n         ^^^^^^^^^^^^^^^\n",
+              "  File \"/usr/local/lib/python3.12/site-packages/upath/implementations/local.py\", line 134, in open\n    return PosixPath.open(self, mode, buffering, encoding, errors, newline)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n",
+              "  File \"/usr/local/lib/python3.12/pathlib.py\", line 1013, in open\n    return io.open(self, mode, buffering, encoding, errors, newline)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n"
+            ]
+          },
+          "className": "RetryRequestedFromPolicy",
+          "message": "Exceeded max_retries of 2\n",
+          "stack": [
+            "  File \"/usr/local/lib/python3.12/site-packages/dagster/_core/execution/plan/execute_plan.py\", line 246, in dagster_event_sequence_for_step\n    yield from check.generator(step_events)\n",
+            "  File \"/usr/local/lib/python3.12/site-packages/dagster/_core/execution/plan/execute_step.py\", line 468, in core_dagster_event_sequence_for_step\n    for event_or_input_value in step_input.source.load_input_object(\n                                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n",
+            "  File \"/usr/local/lib/python3.12/site-packages/dagster/_core/execution/plan/inputs.py\", line 364, in load_input_object\n    yield from _load_input_with_input_manager(input_manager, load_input_context)\n",
+            "  File \"/usr/local/lib/python3.12/site-packages/dagster/_core/execution/plan/inputs.py\", line 612, in _load_input_with_input_manager\n    with op_execution_error_boundary(\n         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n",
+            "  File \"/usr/local/lib/python3.12/contextlib.py\", line 158, in __exit__\n    self.gen.throw(value)\n",
+            "  File \"/usr/local/lib/python3.12/site-packages/dagster/_core/execution/plan/utils.py\", line 75, in op_execution_error_boundary\n    raise RetryRequestedFromPolicy(\n"
+          ]
+        },
+        "eventType": "STEP_FAILURE",
+        "level": "ERROR",
+        "message": "Execution of step \"enriched_data.process_chunk[11]\" failed.",
+        "runId": "85156191-170d-4229-8eba-14450b6ca9e3",
+        "stepKey": "enriched_data.process_chunk[11]",
+        "timestamp": "1758808877726"
+      },
+      {
+        "__typename": "LogMessageEvent",
+        "eventType": null,
+        "level": "ERROR",
+        "message": "Dependencies for step enriched_data.concat_chunk_list failed: ['enriched_data.process_chunk[11]']. Not executing.",
+        "runId": "85156191-170d-4229-8eba-14450b6ca9e3",
+        "stepKey": "enriched_data.concat_chunk_list",
+        "timestamp": "1758808877786"
+      },
+      {
+        "__typename": "EngineEvent",
+        "eventType": "ENGINE_EVENT",
+        "level": "DEBUG",
+        "message": "Multiprocess executor: parent process exiting after 6.79s (pid: 1)",
+        "runId": "85156191-170d-4229-8eba-14450b6ca9e3",
+        "stepKey": null,
+        "timestamp": "1758808878387"
+      },
+      {
+        "__typename": "RunFailureEvent",
+        "eventType": "RUN_FAILURE",
+        "level": "ERROR",
+        "message": "Execution of run for \"run_etl_pipeline\" failed. Steps failed: ['enriched_data.process_chunk[11]'].",
+        "runId": "85156191-170d-4229-8eba-14450b6ca9e3",
+        "stepKey": null,
+        "timestamp": "1758808878519"
+      },
+      {
+        "__typename": "EngineEvent",
+        "eventType": "ENGINE_EVENT",
+        "level": "INFO",
+        "message": "Process for run exited (pid: 1).",
+        "runId": "85156191-170d-4229-8eba-14450b6ca9e3",
+        "stepKey": null,
+        "timestamp": "1758808878602"
+      },
+      {
+        "__typename": "FailedToMaterializeEvent",
+        "eventType": "ASSET_FAILED_TO_MATERIALIZE",
+        "level": "INFO",
+        "message": "Asset [\"enriched_data\"] failed to materialize",
+        "runId": "85156191-170d-4229-8eba-14450b6ca9e3",
+        "stepKey": "enriched_data.concat_chunk_list",
+        "timestamp": "1758808880071"
+      }
+    ],
+    "hasMore": false
+  }
+}

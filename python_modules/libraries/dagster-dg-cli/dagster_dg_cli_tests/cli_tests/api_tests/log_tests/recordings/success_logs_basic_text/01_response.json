@@ -1,0 +1,189 @@
+{
+  "logsForRun": {
+    "__typename": "EventConnection",
+    "cursor": "eyJ0eXBlIjogIlNUT1JBR0VfSUQiLCAidmFsdWUiOiA0ODgyMTg1Nzg2MH0=",
+    "events": [
+      {
+        "__typename": "AssetCheckEvaluationPlannedEvent",
+        "eventType": "ASSET_CHECK_EVALUATION_PLANNED",
+        "level": "DEBUG",
+        "message": "check_avg_orders_freshness_job intends to execute asset check anomaly_detection_freshness_check on asset [\"MARKETING\", \"avg_orders\"]",
+        "runId": "b45fff8a-7def-43b8-805d-1cf5f435c997",
+        "stepKey": "anomaly_detection_freshness_check_458e9b8f",
+        "timestamp": "1758817801771"
+      },
+      {
+        "__typename": "RunEnqueuedEvent",
+        "eventType": "RUN_ENQUEUED",
+        "level": "INFO",
+        "message": "",
+        "runId": "b45fff8a-7def-43b8-805d-1cf5f435c997",
+        "stepKey": null,
+        "timestamp": "1758817801798"
+      },
+      {
+        "__typename": "RunStartingEvent",
+        "eventType": "RUN_STARTING",
+        "level": "INFO",
+        "message": "",
+        "runId": "b45fff8a-7def-43b8-805d-1cf5f435c997",
+        "stepKey": null,
+        "timestamp": "1758817804629"
+      },
+      {
+        "__typename": "EngineEvent",
+        "eventType": "ENGINE_EVENT",
+        "level": "INFO",
+        "message": "Sending a request to the agent to execute steps in the user cloud",
+        "runId": "b45fff8a-7def-43b8-805d-1cf5f435c997",
+        "stepKey": null,
+        "timestamp": "1758817804660"
+      },
+      {
+        "__typename": "EngineEvent",
+        "eventType": "ENGINE_EVENT",
+        "level": "INFO",
+        "message": "[DagsterCloudAgent] Agent d0a5374c is launching run b45fff8a-7def-43b8-805d-1cf5f435c997",
+        "runId": "b45fff8a-7def-43b8-805d-1cf5f435c997",
+        "stepKey": null,
+        "timestamp": "1758817804845"
+      },
+      {
+        "__typename": "EngineEvent",
+        "eventType": "ENGINE_EVENT",
+        "level": "INFO",
+        "message": "[CloudK8sRunLauncher] Creating Kubernetes run worker job",
+        "runId": "b45fff8a-7def-43b8-805d-1cf5f435c997",
+        "stepKey": null,
+        "timestamp": "1758817804996"
+      },
+      {
+        "__typename": "EngineEvent",
+        "eventType": "ENGINE_EVENT",
+        "level": "INFO",
+        "message": "[CloudK8sRunLauncher] Kubernetes run worker job created",
+        "runId": "b45fff8a-7def-43b8-805d-1cf5f435c997",
+        "stepKey": null,
+        "timestamp": "1758817805113"
+      },
+      {
+        "__typename": "EngineEvent",
+        "eventType": "ENGINE_EVENT",
+        "level": "INFO",
+        "message": "Starting run metrics thread with container_metrics_enabled=True and python_metrics_enabled=False",
+        "runId": "b45fff8a-7def-43b8-805d-1cf5f435c997",
+        "stepKey": null,
+        "timestamp": "1758817813386"
+      },
+      {
+        "__typename": "EngineEvent",
+        "eventType": "ENGINE_EVENT",
+        "level": "INFO",
+        "message": "Started process for run (pid: 1).",
+        "runId": "b45fff8a-7def-43b8-805d-1cf5f435c997",
+        "stepKey": null,
+        "timestamp": "1758817813451"
+      },
+      {
+        "__typename": "RunStartEvent",
+        "eventType": "RUN_START",
+        "level": "DEBUG",
+        "message": "Started execution of run for \"check_avg_orders_freshness_job\".",
+        "runId": "b45fff8a-7def-43b8-805d-1cf5f435c997",
+        "stepKey": null,
+        "timestamp": "1758817827876"
+      },
+      {
+        "__typename": "EngineEvent",
+        "eventType": "ENGINE_EVENT",
+        "level": "DEBUG",
+        "message": "Executing steps using multiprocess executor: parent process (pid: 1)",
+        "runId": "b45fff8a-7def-43b8-805d-1cf5f435c997",
+        "stepKey": null,
+        "timestamp": "1758817827919"
+      },
+      {
+        "__typename": "StepWorkerStartingEvent",
+        "eventType": "STEP_WORKER_STARTING",
+        "level": "DEBUG",
+        "message": "Launching subprocess for \"anomaly_detection_freshness_check_458e9b8f\".",
+        "runId": "b45fff8a-7def-43b8-805d-1cf5f435c997",
+        "stepKey": "anomaly_detection_freshness_check_458e9b8f",
+        "timestamp": "1758817828047"
+      },
+      {
+        "__typename": "StepWorkerStartedEvent",
+        "eventType": "STEP_WORKER_STARTED",
+        "level": "DEBUG",
+        "message": "Executing step \"anomaly_detection_freshness_check_458e9b8f\" in subprocess.",
+        "runId": "b45fff8a-7def-43b8-805d-1cf5f435c997",
+        "stepKey": "anomaly_detection_freshness_check_458e9b8f",
+        "timestamp": "1758817829513"
+      },
+      {
+        "__typename": "ResourceInitStartedEvent",
+        "eventType": "RESOURCE_INIT_STARTED",
+        "level": "DEBUG",
+        "message": "Starting initialization of resources [io_manager].",
+        "runId": "b45fff8a-7def-43b8-805d-1cf5f435c997",
+        "stepKey": "anomaly_detection_freshness_check_458e9b8f",
+        "timestamp": "1758817833373"
+      },
+      {
+        "__typename": "ResourceInitSuccessEvent",
+        "eventType": "RESOURCE_INIT_SUCCESS",
+        "level": "DEBUG",
+        "message": "Finished initialization of resources [io_manager].",
+        "runId": "b45fff8a-7def-43b8-805d-1cf5f435c997",
+        "stepKey": "anomaly_detection_freshness_check_458e9b8f",
+        "timestamp": "1758817833453"
+      },
+      {
+        "__typename": "LogsCapturedEvent",
+        "eventType": "LOGS_CAPTURED",
+        "level": "DEBUG",
+        "message": "Started capturing logs in process (pid: 19).",
+        "runId": "b45fff8a-7def-43b8-805d-1cf5f435c997",
+        "stepKey": null,
+        "timestamp": "1758817833507"
+      },
+      {
+        "__typename": "ExecutionStepStartEvent",
+        "eventType": "STEP_START",
+        "level": "DEBUG",
+        "message": "Started execution of step \"anomaly_detection_freshness_check_458e9b8f\".",
+        "runId": "b45fff8a-7def-43b8-805d-1cf5f435c997",
+        "stepKey": "anomaly_detection_freshness_check_458e9b8f",
+        "timestamp": "1758817833533"
+      },
+      {
+        "__typename": "ExecutionStepOutputEvent",
+        "eventType": "STEP_OUTPUT",
+        "level": "DEBUG",
+        "message": "Yielded output \"MARKETING__avg_orders_anomaly_detection_freshness_check\" of type \"Any\". (Type check passed).",
+        "runId": "b45fff8a-7def-43b8-805d-1cf5f435c997",
+        "stepKey": "anomaly_detection_freshness_check_458e9b8f",
+        "timestamp": "1758817833714"
+      },
+      {
+        "__typename": "AssetCheckEvaluationEvent",
+        "eventType": "ASSET_CHECK_EVALUATION",
+        "level": "DEBUG",
+        "message": "Asset check 'anomaly_detection_freshness_check' on 'MARKETING/avg_orders' did not pass. Description: 'Asset is overdue for an update. The last update was 2 days, 16 hours, 25 minutes, 24 seconds ago, which is past the allowed distance of 2 days, 5 minutes, 11 seconds ago.'",
+        "runId": "b45fff8a-7def-43b8-805d-1cf5f435c997",
+        "stepKey": "anomaly_detection_freshness_check_458e9b8f",
+        "timestamp": "1758817833766"
+      },
+      {
+        "__typename": "ExecutionStepSuccessEvent",
+        "eventType": "STEP_SUCCESS",
+        "level": "DEBUG",
+        "message": "Finished execution of step \"anomaly_detection_freshness_check_458e9b8f\" in 246ms.",
+        "runId": "b45fff8a-7def-43b8-805d-1cf5f435c997",
+        "stepKey": "anomaly_detection_freshness_check_458e9b8f",
+        "timestamp": "1758817833807"
+      }
+    ],
+    "hasMore": true
+  }
+}
