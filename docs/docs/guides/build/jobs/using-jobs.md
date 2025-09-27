@@ -1,6 +1,6 @@
 ---
 title: Using jobs in Dagster projects
-sidebar_position: 250
+sidebar_position: 600
 description: Using jobs in Dagster dg projects for entities such as assets .
 ---
 

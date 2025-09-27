@@ -1,7 +1,7 @@
 ---
 title: 'Unconnected inputs in op jobs'
 description: "Learn to work with unconnected inputs in Dagster op jobs."
-sidebar_position: 400
+sidebar_position: 500
 ---
 
 import OpsNote from '@site/docs/partials/\_OpsNote.md';

@@ -72,10 +72,11 @@ The following table lists tags which Dagster may automatically add to assets.
 
 ### Run tags
 
-The following table lists the tags Dagster will, on occasion, automatically add to runs.
+The following table lists the tags Dagster will automatically add to [job](/guides/build/jobs) runs when applicable:
 
 | Tag                     | Description                         |
 | ----------------------- | ----------------------------------- |
+| `dagster/user`          | The user who executed the run.      |
 | `dagster/op_selection`  | The op selection for the run        |
 | `dagster/partition`     | The partition of the run            |
 | `dagster/schedule_name` | The schedule that triggered the run |
