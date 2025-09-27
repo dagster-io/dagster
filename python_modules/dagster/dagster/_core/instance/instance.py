@@ -14,6 +14,7 @@ from typing_extensions import Self, TypeAlias
 
 import dagster._check as check
 from dagster._annotations import public
+from dagster._core.definitions.asset_checks.asset_check_spec import AssetCheckConfig
 from dagster._core.instance.config import DAGSTER_CONFIG_YAML_FILENAME
 from dagster._core.instance.methods.asset_methods import AssetMethods
 from dagster._core.instance.methods.daemon_methods import DaemonMethods
@@ -965,3 +966,7 @@ class DagsterInstance(
 
     def dagster_observe_supported(self) -> bool:
         return False
+
+    def get_in_app_checks(self) -> Sequence[AssetCheckConfig]:
+        """OSS version returns nothing."""
+        return []

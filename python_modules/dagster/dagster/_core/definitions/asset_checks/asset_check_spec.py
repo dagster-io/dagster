@@ -6,6 +6,7 @@ from dagster_shared.record import (
     IHaveNew,
     ImportFrom,
     LegacyNamedTupleMixin,
+    record,
     record_custom,
     replace,
 )
@@ -137,3 +138,20 @@ class AssetCheckSpec(IHaveNew, LegacyNamedTupleMixin):
 
     def with_metadata(self, metadata: Mapping[str, Any]) -> "AssetCheckSpec":
         return replace(self, metadata=metadata)
+
+
+"""
+Prototype for the config information we will need to create an in-app check.
+"""
+
+
+class AssetCheckType(Enum):
+    METADATA_THRESHOLD = "METADATA_THRESHOLD"
+
+
+@record
+class AssetCheckConfig:
+    check_spec: AssetCheckSpec
+    severity: AssetCheckSeverity
+    check_type: AssetCheckType
+    config: dict
