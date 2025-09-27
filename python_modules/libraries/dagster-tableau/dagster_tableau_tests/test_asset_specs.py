@@ -255,6 +255,7 @@ def test_translator_custom_metadata(
         assert asset_spec.metadata["custom"] == "metadata"
         assert asset_spec.key.path == ["prefix", "superstore_datasource"]
         assert asset_spec.tags["dagster/storage_kind"] == "tableau"
+        assert asset_spec.kinds == {"tableau","live","published datasource"}
 
 
 @responses.activate

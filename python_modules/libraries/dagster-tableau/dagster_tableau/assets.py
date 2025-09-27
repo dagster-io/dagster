@@ -59,7 +59,6 @@ def build_tableau_materializable_assets_definition(
 
     @multi_asset(
         name=f"tableau_sync_site_{resource_key}",
-        compute_kind="tableau",
         can_subset=False,
         specs=specs,
         required_resource_keys={resource_key},
