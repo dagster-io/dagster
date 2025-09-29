@@ -29,3 +29,27 @@ Here is an example of a sensor that reports job success in a Slack message:
 />
 
 When a run status sensor is triggered by a run but doesn't return anything, Dagster will report an event back to the run to indicate that the sensor ran.
+
+## Coordinating multiple independent jobs
+
+Run status sensors can be used to coordinate the execution of multiple independent jobs. This approach is useful when you need to trigger a downstream job only after several upstream jobs have completed successfully, particularly when those upstream jobs run on different schedules or are triggered independently.
+
+To coordinate multiple jobs, use a run status sensor that monitors completion status and tracks processed runs using a cursor. This ensures the downstream job triggers exactly once per batch of upstream completions.
+
+<CodeExample
+  path="docs_snippets/docs_snippets/concepts/partitions_schedules_sensors/sensors/run_status_sensor.py"
+  language="python"
+  startAfter="start_assets"
+  endBefore="end_assets"
+  title="src/<project_name>/defs/assets.py"
+/>
+
+<CodeExample
+  path="docs_snippets/docs_snippets/concepts/partitions_schedules_sensors/sensors/run_status_sensor.py"
+  language="python"
+  startAfter="start_sensors"
+  endBefore="end_sensors"
+  title="src/<project_name>/defs/sensors.py"
+/>
+
+This sensor monitors two upstream jobs (`upstream_job_1` and `upstream_job_2`) and triggers a downstream job (`downstream_job`) only after both have completed successfully.
