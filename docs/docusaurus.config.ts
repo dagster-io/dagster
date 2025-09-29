@@ -53,6 +53,7 @@ const config: Config = {
           apiKey: process.env.ALGOLIA_API_KEY,
           indexName: process.env.ALGOLIA_INDEX_NAME,
           contextualSearch: false,
+          keyboardShortcuts: { '/': false },
         },
       }),
     colorMode: {
