@@ -157,12 +157,13 @@ class BaseDefinitionOwnerPermissionsTestSuite(ABC):
         assert typename == "LaunchBackfillSuccess"
 
         typename, _ = self.graphql_launch_asset_backfill(
-            graphql_context, [AssetKey(["unowned_asset"])]
+            graphql_context, [AssetKey(["unowned_partitioned_asset"])]
         )
         assert typename == "UnauthorizedError"
 
         typename, _ = self.graphql_launch_asset_backfill(
-            graphql_context, [AssetKey(["owned_asset"]), AssetKey(["unowned_asset"])]
+            graphql_context,
+            [AssetKey(["owned_partitioned_asset"]), AssetKey(["unowned_partitioned_asset"])],
         )
         assert typename == "UnauthorizedError"
 
