@@ -141,12 +141,10 @@ def create_and_launch_partition_backfill(
         assert_permission_for_location(
             graphene_info, Permissions.LAUNCH_PARTITION_BACKFILL, repository_selector.location_name
         )
-        location = graphene_info.context.get_code_location(repository_selector.location_name)
-
-        repository = location.get_repository(repository_selector.repository_name)
+        partitions_sets = graphene_info.context.get_partition_sets(repository_selector)
         matches = [
             partition_set
-            for partition_set in repository.get_partition_sets()
+            for partition_set in partitions_sets
             if partition_set.name == partition_set_selector.get("partitionSetName")
         ]
         if not matches:
@@ -160,7 +158,7 @@ def create_and_launch_partition_backfill(
 
         if backfill_params.get("allPartitions"):
             result = graphene_info.context.get_partition_names(
-                repository_handle=repository.handle,
+                repository_selector=repository_selector,
                 job_name=remote_partition_set.job_name,
                 instance=graphene_info.context.instance,
                 selected_asset_keys=None,
