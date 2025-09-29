@@ -109,6 +109,7 @@ export type Asset = {
   id: Scalars['String']['output'];
   key: AssetKey;
   latestEventSortKey: Maybe<Scalars['ID']['output']>;
+  latestFailedToMaterializeTimestamp: Maybe<Scalars['Float']['output']>;
   latestMaterializationTimestamp: Maybe<Scalars['Float']['output']>;
 };
 
@@ -6342,6 +6343,10 @@ export const buildAsset = (
       overrides && overrides.hasOwnProperty('latestEventSortKey')
         ? overrides.latestEventSortKey!
         : 'b9e5eeed-491e-4839-9bbf-1dedd727f77b',
+    latestFailedToMaterializeTimestamp:
+      overrides && overrides.hasOwnProperty('latestFailedToMaterializeTimestamp')
+        ? overrides.latestFailedToMaterializeTimestamp!
+        : 3.33,
     latestMaterializationTimestamp:
       overrides && overrides.hasOwnProperty('latestMaterializationTimestamp')
         ? overrides.latestMaterializationTimestamp!
