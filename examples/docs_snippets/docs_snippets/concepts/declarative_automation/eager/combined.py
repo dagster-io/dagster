@@ -4,7 +4,7 @@ daily_success_condition = dg.AutomationCondition.newly_updated().since(
     dg.AutomationCondition.on_cron("*/5 * * * *")
 )
 
-condition = (
+custom_condition = (
     dg.AutomationCondition.on_cron("*/5 * * * *")  # Runs at 9 AM daily
     | (
         dg.AutomationCondition.any_deps_updated()  # When any dependency updates
@@ -14,3 +14,17 @@ condition = (
         & ~dg.AutomationCondition.any_deps_in_progress()  # And not if deps are in progress
     )
 )
+
+
+@dg.asset
+def upstream_asset_1(): ...
+
+
+@dg.asset
+def upstream_asset_2(): ...
+
+
+@dg.asset(
+    automation_condition=custom_condition, deps=["upstream_asset_1", "upstream_asset_2"]
+)
+def automation_condition_combination(context: dg.AssetExecutionContext): ...

@@ -84,11 +84,11 @@ If you want to only consider upstream assets to be "updated" if the data version
 For more complex automation patterns, you can combine scheduled execution with dependency-driven updates. This pattern ensures regular execution on a schedule while also allowing for more frequent updates when dependencies change, with additional safety checks:
 
 <CodeExample
-  path="docs_snippets/docs_snippets/concepts/declarative_automation/eager/complex.py"
+  path="docs_snippets/docs_snippets/concepts/declarative_automation/eager/combined.py"
   title="src/<project_name>/defs/assets.py"
 />
 
-This condition will execute an asset in two scenarios:
+The `custom_condition` in this example will execute the target asset in two scenarios:
 
 1. **Scheduled execution**: Runs on the specified cron schedule (every 5 minutes in this example)
 2. **Dependency-driven execution**: Runs when upstream dependencies are updated, but only if:
