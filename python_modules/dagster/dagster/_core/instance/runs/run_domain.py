@@ -837,10 +837,25 @@ class RunDomain:
 
         batch_id = generate_event_batch_id()
         last_index = len(events) - 1
+
+        batch_planned_events = not bool(os.getenv("DAGSTER_EMIT_PLANNED_EVENTS_INDIVIDUALLY"))
+
+        if batch_planned_events:
+            # sort events by asset key to ensure they are inserted in a consistent order
+            # if they are batched
+            events = sorted(
+                events,
+                key=lambda event: (
+                    event.asset_key.to_db_string()
+                    if event.asset_key
+                    else event.asset_check_planned_data.asset_check_key.to_db_string()
+                ),
+            )
+
         for i, event in enumerate(events):
             batch_metadata = (
                 DagsterEventBatchMetadata(batch_id, i == last_index)
-                if os.getenv("DAGSTER_BATCH_PLANNED_EVENTS")
+                if batch_planned_events
                 else None
             )
             self._instance.report_dagster_event(
