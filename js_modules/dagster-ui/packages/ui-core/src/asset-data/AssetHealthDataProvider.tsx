@@ -265,6 +265,7 @@ export const ASSETS_HEALTH_INFO_QUERY = gql`
 
     latestMaterializationTimestamp
     latestFailedToMaterializeTimestamp
+    freshnessStatusChangedTimestamp
 
     assetHealth {
       assetHealth
