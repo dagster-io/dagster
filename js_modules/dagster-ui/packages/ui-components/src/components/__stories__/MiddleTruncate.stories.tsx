@@ -1,6 +1,5 @@
 // eslint-disable-next-line no-restricted-imports
 import {Breadcrumbs2 as Breadcrumbs} from '@blueprintjs/popover2';
-import {Meta} from '@storybook/react';
 import faker from 'faker';
 import {useMemo, useRef, useState} from 'react';
 import styled from 'styled-components';
@@ -17,7 +16,7 @@ import {Heading, Title} from '../Text';
 export default {
   title: 'MiddleTruncate',
   component: MiddleTruncate,
-} as Meta;
+};
 
 export const Simple = () => {
   const sizer = useRef<HTMLDivElement>(null);

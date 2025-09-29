@@ -1,4 +1,3 @@
-import {Meta} from '@storybook/react';
 import {Fragment} from 'react';
 
 import {Box} from '../../components/Box';
@@ -8,7 +7,7 @@ import {colorNameToVar} from '../colorNameToVar';
 export default {
   title: 'ColorNames',
   // component: colorNameToVar,
-} as Meta;
+};
 
 const KEYS_TO_IGNORE = new Set(['BrowserColorScheme', 'BlueGradient']);
 

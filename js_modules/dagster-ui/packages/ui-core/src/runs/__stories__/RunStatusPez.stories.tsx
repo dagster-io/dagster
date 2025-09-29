@@ -1,5 +1,4 @@
 import {Box, MetadataTable} from '@dagster-io/ui-components';
-import {Meta} from '@storybook/react';
 import faker from 'faker';
 import {useCallback, useMemo} from 'react';
 
@@ -13,7 +12,7 @@ import {RunTimeFragment} from '../types/RunUtils.types';
 export default {
   title: 'RunStatusPez',
   component: RunStatusPez,
-} as Meta;
+};
 
 const mocks = {
   RunStatsSnapshot: () => ({

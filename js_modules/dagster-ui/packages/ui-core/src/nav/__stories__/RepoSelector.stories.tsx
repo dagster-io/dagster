@@ -1,5 +1,4 @@
 import {Box, Colors} from '@dagster-io/ui-components';
-import {Meta} from '@storybook/react';
 import faker from 'faker';
 import {useCallback, useState} from 'react';
 
@@ -10,7 +9,7 @@ import {RepoSelector, RepoSelectorOption} from '../RepoSelector';
 export default {
   title: 'RepoSelector',
   component: RepoSelector,
-} as Meta;
+};
 const OPTIONS: RepoSelectorOption[] = [
   {
     repositoryLocation: {

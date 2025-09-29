@@ -1,5 +1,4 @@
 import {Box} from '@dagster-io/ui-components';
-import {Meta} from '@storybook/react';
 import faker from 'faker';
 import {useCallback, useState} from 'react';
 
@@ -12,7 +11,7 @@ import {RepoSelectorOption} from '../RepoSelector';
 export default {
   title: 'RepoNavItem',
   component: RepoNavItem,
-} as Meta;
+};
 
 const OPTIONS: RepoSelectorOption[] = [
   {

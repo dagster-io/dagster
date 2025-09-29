@@ -1,4 +1,3 @@
-import {Meta} from '@storybook/react';
 import {useState} from 'react';
 
 import {Alert, AlertIntent} from '../Alert';
@@ -9,7 +8,7 @@ import {Button} from '../Button';
 export default {
   title: 'Alert',
   component: Alert,
-} as Meta;
+};
 
 const intents: AlertIntent[] = ['info', 'warning', 'error', 'success', 'none'];
 

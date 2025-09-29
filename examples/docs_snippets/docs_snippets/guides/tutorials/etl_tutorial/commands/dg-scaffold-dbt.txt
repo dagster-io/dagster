@@ -1,3 +1,0 @@
-dg scaffold defs dagster_dbt.DbtProjectComponent transform --project-path transform/jdbt
-
-Creating a component at <YOUR PATH>/src/etl_tutorial/defs/transform.

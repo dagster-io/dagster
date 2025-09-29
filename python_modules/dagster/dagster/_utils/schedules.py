@@ -919,6 +919,24 @@ def get_smallest_cron_interval(
                 break
             interval = current_tick - prev_tick
 
+            # Handle DST transitions where two ticks can have the same wall clock time
+            # but different fold values (indicating they're actually different points in time)
+            if interval == datetime.timedelta(seconds=0):
+                # Check if this is a DST ambiguous time scenario where both ticks
+                # represent the same local time but different actual moments
+                if (
+                    current_tick.hour == prev_tick.hour
+                    and current_tick.minute == prev_tick.minute
+                    and current_tick.second == prev_tick.second
+                    and current_tick.fold != prev_tick.fold
+                ):
+                    # This is a DST fall-back transition - skip this zero interval
+                    # as it's not representative of the true minimum cron interval
+                    prev_tick = current_tick
+                    continue
+                # We've encountered a genuine zero interval (which shouldn't happen)
+                raise Exception("Encountered a genuine zero interval")
+
             # Update minimum interval
             if min_interval is None or interval < min_interval:
                 min_interval = interval

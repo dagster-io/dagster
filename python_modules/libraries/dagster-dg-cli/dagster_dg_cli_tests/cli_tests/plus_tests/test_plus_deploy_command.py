@@ -1,5 +1,4 @@
 import contextlib
-import sys
 import tempfile
 from collections.abc import Generator
 from pathlib import Path
@@ -7,7 +6,6 @@ from typing import NamedTuple
 from unittest import mock
 from unittest.mock import patch
 
-import dagster as dg
 import pytest
 import responses
 import yaml
@@ -15,7 +13,7 @@ from dagster_cloud_cli.commands.ci import BuildStrategy
 from dagster_cloud_cli.core.pex_builder.deps import BuildMethod
 from dagster_cloud_cli.types import SnapshotBaseDeploymentCondition
 from dagster_dg_cli.cli.plus.deploy import DEFAULT_STATEDIR_PATH
-from dagster_dg_core.utils import activate_venv, pushd
+from dagster_dg_core.utils import pushd
 from dagster_shared.plus.config import DagsterPlusCliConfig
 from dagster_test.dg_utils.utils import (
     ProxyRunner,
@@ -1095,50 +1093,3 @@ def test_plus_deploy_hybrid_with_workspace_build_yaml_scaffold(
                     "directory": str(workspace.resolve() / "foo-bar"),  # from build.yaml
                     "registry": "...",
                 }
-
-
-def _add_state_backed_component(project_path: Path):
-    """Copies in a definition for a state-backed component to the project."""
-    import shutil
-
-    component_dir = project_path / "src/foo_bar_2/defs/the_component"
-    component_dir.mkdir(parents=True, exist_ok=True)
-    shutil.copy(
-        Path(__file__).parent.parent / "defs_state_tests" / "sample_state_backed_component.py",
-        component_dir / "local.py",
-    )
-    # Create the defs.yaml file
-    with (component_dir / "defs.yaml").open("w") as f:
-        yaml.dump(
-            {"type": ".local.SampleStateBackedComponent"},
-            f,
-        )
-
-
-def test_plus_deploy_with_refresh_defs_state(logged_in_dg_cli_config, workspace, runner, mocker):
-    """Test the `dg plus deploy refresh-defs-state` command."""
-    with (
-        dg.instance_for_test() as instance,
-        mock_external_dagster_cloud_cli_command(),
-        # use a local DefsStateStorage instead of one hitting cloud
-        mocker.patch(
-            "dagster_dg_cli.utils.plus.defs_state_storage.DagsterPlusCliDefsStateStorage.from_config",
-            return_value=instance.defs_state_storage,
-        ),
-        # move into the project directory
-        pushd(workspace / "foo-bar-2"),
-        # activate the virtualenv
-        activate_venv(workspace / "foo-bar-2" / ".venv"),
-    ):
-        sys.path.append(str(workspace / "foo-bar-2" / "src"))
-        # create a state-backed component
-        _add_state_backed_component(workspace / "foo-bar-2")
-
-        result = runner.invoke(
-            "plus",
-            "deploy",
-            "refresh-defs-state",
-        )
-
-        assert result.exit_code == 0, result.output + " : " + str(result.exception)
-        assert "Updated defs_state_info for all locations." in result.output, result.output

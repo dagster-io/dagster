@@ -5,6 +5,7 @@ sidebar_position: 10
 title: About Dagster+
 canonicalUrl: '/deployment/dagster-plus'
 slug: '/deployment/dagster-plus'
+tags: [dagster-plus-feature]
 ---
 
 Dagster+ is a managed orchestration platform built on top of Dagster's open source engine.
@@ -21,10 +22,10 @@ Dagster+ Serverless is fully managed and your Dagster code executes in our envir
 
 In addition to managed infrastructure, Dagster+ also adds core capabilities on top of Dagster open source to enable teams building data platforms:
 
-- [Insights](/guides/monitor/insights), a powerful tool for identifying trends in your data platform overtime, optimizing cost, and answering questions like "Why does it feel like our pipelines are taking longer this month?".
-- [Alerts](/guides/monitor/alerts) to a variety of services like Slack, PagerDuty, and email to notify your team of failed runs, data quality issues, and violated SLAs.
+- [Insights](/guides/observe/insights), a powerful tool for identifying trends in your data platform overtime, optimizing cost, and answering questions like "Why does it feel like our pipelines are taking longer this month?".
+- [Alerts](/guides/observe/alerts) to a variety of services like Slack, PagerDuty, and email to notify your team of failed runs, data quality issues, and violated SLAs.
 - Authentication, [Role Based Access Control](/deployment/dagster-plus/authentication-and-access-control/rbac), and [Audit Logs](/deployment/dagster-plus/authentication-and-access-control/rbac/audit-logs) which help teams implement data mesh strategies while remaining compliant.
-- [Asset Catalog](/guides/build/assets/asset-catalog), a powerful search-first experience that builds off of Dagster's best-in-class lineage graph to include searching for assets, metadata, column lineage, and more.
+- [Asset Catalog](/guides/observe/asset-catalog), a powerful search-first experience that builds off of Dagster's best-in-class lineage graph to include searching for assets, metadata, column lineage, and more.
 - [Branch Deployments](/deployment/dagster-plus/ci-cd/branch-deployments/index.md)
 
 Ready to [get started](/deployment/dagster-plus/getting-started)?

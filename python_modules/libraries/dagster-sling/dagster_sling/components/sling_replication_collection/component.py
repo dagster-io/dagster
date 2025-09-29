@@ -56,7 +56,16 @@ class SlingReplicationSpecModel(Resolvable):
             ),
         ]
     ] = None
-    include_metadata: list[SlingMetadataAddons] = field(default_factory=list)
+    include_metadata: Annotated[
+        list[SlingMetadataAddons],
+        Resolver.default(
+            description="Optionally include additional metadata in materializations generated while executing your Sling models",
+            examples=[
+                ["row_count"],
+                ["row_count", "column_metadata"],
+            ],
+        ),
+    ] = field(default_factory=list)
 
     @cached_property
     def translator(self):

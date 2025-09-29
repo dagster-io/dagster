@@ -10,6 +10,7 @@ attributes:  # Optional: Attributes details
     packaged_project_dir: <string>  # Optional: 
     state_path: <string>  # Optional: 
   cli_args: <one of: array of item, string>  # Optional: Arguments to pass to the dbt CLI when executing. Defaults to `['build']`.
+  include_metadata: <one of: array of string, string>  # Optional: Optionally include additional metadata in materializations generated while executing your dbt models
   op:  # Optional: Op related arguments to set on the generated @dbt_assets
     name: <string>  # Optional: 
     tags: <one of: object, string>  # Optional: 
@@ -24,6 +25,8 @@ attributes:  # Optional: Attributes details
       # type: <string>  # Optional: 
       # max_partitions_per_run: <integer>  # Optional: 
       #
+  select: <string>  # Optional: The dbt selection string for models in the project you want to include.
+  exclude: <string>  # Optional: The dbt selection string for models in the project you want to exclude.
   translation:  # Optional: 
     deps: <one of: array of string, string>  # Optional: The asset keys for the upstream assets that this asset depends on.
     description: <string>  # Optional: Human-readable description of the asset.
@@ -76,8 +79,6 @@ attributes:  # Optional: Attributes details
       #
     key: <string>  # Optional: 
     key_prefix: <one of: string, array of string>  # Optional: Prefix the existing asset key with the provided value.
-  select: <string>  # Optional: The dbt selection string for models in the project you want to include.
-  exclude: <string>  # Optional: The dbt selection string for models in the project you want to exclude.
   translation_settings:  # Optional: Allows enabling or disabling various features for translating dbt models in to Dagster assets.
     enable_asset_checks: <one of: boolean, string>  # Optional: 
     enable_duplicate_source_asset_keys: <one of: boolean, string>  # Optional: 

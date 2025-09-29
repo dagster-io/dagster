@@ -1,4 +1,3 @@
-import {Meta} from '@storybook/react';
 import {useCallback, useState} from 'react';
 
 import {ButtonGroup, ButtonGroupItem} from '../ButtonGroup';
@@ -7,7 +6,7 @@ import {ButtonGroup, ButtonGroupItem} from '../ButtonGroup';
 export default {
   title: 'ButtonGroup',
   component: ButtonGroup,
-} as Meta;
+};
 
 export const Multiple = () => {
   const [activeItems, setActiveItems] = useState<Set<string>>(() => new Set());

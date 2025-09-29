@@ -16,6 +16,7 @@ from dagster_dg_cli.utils.plus.gql_client import DagsterPlusGraphQLClient
 
 if TYPE_CHECKING:
     from dagster._core.storage.defs_state.base import DefsStateStorage
+    from dagster_cloud_cli.commands.ci.state import LocationState
 
 
 def get_dockerfile_path(
@@ -103,16 +104,23 @@ def create_deploy_dockerfile(dst_path: Path, python_version: str, use_editable_d
 
 
 @contextmanager
-def defs_state_storage_from_config(
-    plus_config: DagsterPlusCliConfig,
+def defs_state_storage_from_location_state(
+    ctx: click.Context,
+    location_state: "LocationState",
 ) -> Iterator["DefsStateStorage"]:
-    """Creates a DefsStateStorage based on the provided DagsterPlusCliConfig and sets it as the current
+    """Creates a DefsStateStorage based on the provided LocationState and sets it as the current
     DefsStateStorage within the bounds of the context manager.
     """
     from dagster._core.storage.defs_state.base import set_defs_state_storage
+    from dagster_cloud_cli.config_utils import get_organization, get_user_token
 
     from dagster_dg_cli.utils.plus.defs_state_storage import DagsterPlusCliDefsStateStorage
 
-    defs_state_storage = DagsterPlusCliDefsStateStorage.from_config(plus_config)
+    api_token = check.not_none(get_user_token(ctx))
+    organization = check.not_none(get_organization(ctx))
+
+    defs_state_storage = DagsterPlusCliDefsStateStorage.from_location_state(
+        location_state, api_token, organization
+    )
     with set_defs_state_storage(defs_state_storage):
         yield defs_state_storage

@@ -148,7 +148,11 @@ const SuggestionList = <T,>(props: SuggestionListProps<T>) => {
       <Container ref={parentRef} style={{maxHeight: MAX_MENU_HEIGHT, width: menuWidth}}>
         <Inner $totalHeight={totalHeight}>
           {items.map(({index, key, size, start}) => {
-            const item = filteredItems[index]!;
+            const item = filteredItems[index];
+            if (!item) {
+              return null;
+            }
+
             return (
               <Row key={key} $height={size} $start={start}>
                 {props.renderItem(item, index)}

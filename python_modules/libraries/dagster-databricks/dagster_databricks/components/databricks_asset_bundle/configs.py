@@ -1,5 +1,6 @@
 from abc import ABC, abstractmethod
 from collections.abc import Mapping
+from functools import cached_property
 from pathlib import Path
 from typing import Any, Generic, Optional, Union
 
@@ -587,6 +588,10 @@ class DatabricksConfig(IHaveNew):
             job_parameters = job_config["job_parameters"]
 
         return job_parameters
+
+    @cached_property
+    def tasks_by_task_key(self) -> dict[str, DatabricksBaseTask]:
+        return {task.task_key: task for task in self.tasks}
 
 
 @preview

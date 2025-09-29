@@ -3,6 +3,7 @@ description: Dagster+ code must load from a single entry point and be able to be
 sidebar_label: Code requirements
 sidebar_position: 200
 title: Dagster+ code requirements
+tags: [dagster-plus-feature]
 ---
 
 Your Dagster project must meet a few requirements to run in Dagster+.

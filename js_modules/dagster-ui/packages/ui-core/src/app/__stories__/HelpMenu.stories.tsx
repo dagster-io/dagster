@@ -1,5 +1,4 @@
 import {Box, Colors} from '@dagster-io/ui-components';
-import {Meta} from '@storybook/react';
 
 import {StorybookProvider} from '../../testing/StorybookProvider';
 import {HelpMenu} from '../HelpMenu';
@@ -8,7 +7,7 @@ import {HelpMenu} from '../HelpMenu';
 export default {
   title: 'HelpMenu',
   component: HelpMenu,
-} as Meta;
+};
 
 export const Default = () => {
   return (

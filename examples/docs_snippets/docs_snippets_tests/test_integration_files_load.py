@@ -63,6 +63,8 @@ EXCLUDED_FILES = {
     f"{snippets_folder}/airlift/operator_migration/python_operator.py",
     f"{snippets_folder}/airlift/operator_migration/using_dbt_assets.py",
     f"{snippets_folder}/bigquery/tutorial/resource/downstream.py",
+    f"{snippets_folder}/databricks/dagster_code.py",
+    f"{snippets_folder}/databricks/databricks_code.py",
     f"{snippets_folder}/dbt/potemkin_dag_for_cover_image.py",
     f"{snippets_folder}/dbt/quickstart/with_project.py",
     f"{snippets_folder}/dbt/quickstart/with_single_file.py",
@@ -128,6 +130,9 @@ EXCLUDED_FILES = {
     f"{snippets_folder}/tableau/refresh-and-materialize-tableau-assets.py",
     f"{snippets_folder}/tableau/representing-tableau-cloud-assets.py",
     f"{snippets_folder}/tableau/representing-tableau-server-assets.py",
+    # FIXME: serverless pipes files require Databricks environment/credentials
+    f"{snippets_folder}/databricks/dagster_code_serverless.py",
+    f"{snippets_folder}/databricks/databricks_code_serverless.py",
 }
 
 

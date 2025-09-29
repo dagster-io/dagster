@@ -1,6 +1,5 @@
 import {MockedProvider, MockedResponse} from '@apollo/client/testing';
 import {Box, Button, CustomTooltipProvider} from '@dagster-io/ui-components';
-import {Meta} from '@storybook/react';
 import {useState} from 'react';
 
 import {RunStatus, buildRun, buildRunGroup, buildRunStatsSnapshot} from '../../graphql/types';
@@ -122,7 +121,7 @@ const GanttTestCase = ({
 export default {
   title: 'GanttChart',
   component: GanttChart,
-} as Meta;
+};
 
 export const SimpleCase = (argValues: any) => {
   return (

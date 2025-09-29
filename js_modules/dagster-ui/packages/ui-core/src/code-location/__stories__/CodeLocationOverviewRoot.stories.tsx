@@ -1,5 +1,4 @@
 import {MockedProvider} from '@apollo/client/testing';
-import {Meta} from '@storybook/react';
 import {useMemo} from 'react';
 
 import {RepositoryLocationLoadStatus, buildWorkspaceLocationStatusEntry} from '../../graphql/types';
@@ -11,7 +10,7 @@ import {buildEmptyWorkspaceLocationEntry} from '../__fixtures__/CodeLocationPage
 export default {
   title: 'Code Location/CodeLocationOverviewRoot',
   component: CodeLocationOverviewRoot,
-} as Meta;
+};
 
 export const Default = () => {
   const repoName = 'foo';

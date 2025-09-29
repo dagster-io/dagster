@@ -1,4 +1,3 @@
-import {Meta} from '@storybook/react';
 import * as React from 'react';
 
 import {ButtonLink} from '../ButtonLink';
@@ -9,7 +8,7 @@ import {useSuggestionsForString} from '../useSuggestionsForString';
 // eslint-disable-next-line import/no-default-export
 export default {
   title: 'useSuggestionsForString',
-} as Meta;
+};
 
 const empties = ['query:', 'prez:', 'state:'];
 

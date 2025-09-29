@@ -1,5 +1,4 @@
 import {MetadataTableWIP} from '@dagster-io/ui-components';
-import {Meta} from '@storybook/react';
 
 import {buildPipelineTag} from '../../graphql/types';
 import {CreatedByTag} from '../CreatedByTag';
@@ -10,7 +9,7 @@ import {RunTagsFragment} from '../types/RunTagsFragment.types';
 export default {
   title: 'CreatedByTag',
   component: CreatedByTag,
-} as Meta;
+};
 
 export const Default = () => {
   return (

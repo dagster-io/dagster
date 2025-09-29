@@ -1,5 +1,3 @@
-import {Meta} from '@storybook/react';
-
 import {Group} from '../Group';
 import {Tag} from '../Tag';
 
@@ -7,7 +5,7 @@ import {Tag} from '../Tag';
 export default {
   title: 'Tag',
   component: Tag,
-} as Meta;
+};
 
 const INTENTS = ['none', 'primary', 'success', 'warning', 'danger'] as any[];
 

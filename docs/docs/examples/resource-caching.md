@@ -13,7 +13,7 @@ In this example, we'll explore different ways to handle caching in Dagster. Cach
 
 ### Problem: Expensive resource
 
-In this example, we define a simple resource `ExpensiveResource` with an `addition` method that includes a forced 5-second sleep. Without caching, the resource executes the method from scratch every time it’s called. Because no intermediate results are stored, repeated calls with the same inputs always re-run the computation and incur the full cost.
+Imagine a simple resource `ExpensiveResource` with an `addition` method that includes a forced 5-second sleep. Without caching, the resource executes the method from scratch every time it’s called. Because no intermediate results are stored, repeated calls with the same inputs always re-run the computation and incur the full cost.
 
 <CodeExample
   path="docs_projects/project_mini/src/project_mini/defs/resource_caching/expensive_resource.py"

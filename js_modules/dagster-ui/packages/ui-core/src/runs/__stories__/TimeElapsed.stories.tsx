@@ -1,4 +1,4 @@
-import {Meta, StoryFn} from '@storybook/react';
+import {StoryFn} from '@storybook/nextjs';
 
 import {Props, TimeElapsed} from '../TimeElapsed';
 
@@ -6,7 +6,7 @@ import {Props, TimeElapsed} from '../TimeElapsed';
 export default {
   title: 'TimeElapsed',
   component: TimeElapsed,
-} as Meta;
+};
 
 const Template: StoryFn<Props> = (props) => <TimeElapsed {...props} />;
 

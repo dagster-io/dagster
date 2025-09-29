@@ -1,4 +1,7 @@
+import asyncio
+
 import dagster as dg
+import pytest
 from dagster import instance_for_test
 from dagster._core.definitions.reconstruct import ReconstructableJob
 from dagster._core.execution.api import create_execution_plan, execute_run_iterator
@@ -120,4 +123,36 @@ def test_defs_state_storage_get_current_after_configurable_resouce():
 def test_state_storage_disposed() -> None:
     with instance_for_test():
         assert DefsStateStorage.get() is not None
+    assert DefsStateStorage.get() is None
+
+
+@pytest.mark.asyncio
+async def test_instance_with_manual_async_context_switching():
+    """Simulates a scenario that can happen when an instance is entered in an async webserver context."""
+
+    async def startup_in_task():
+        instance_cm = instance_for_test()
+        instance = instance_cm.__enter__()
+        instance.__enter__()
+        assert DefsStateStorage.get() is instance.defs_state_storage
+        return instance_cm, instance
+
+    async def shutdown_in_different_task(instance_cm, instance):
+        instance.__exit__(None, None, None)  # This should not fail
+        instance_cm.__exit__(None, None, None)
+
+    # startup in one task
+    startup_task = asyncio.create_task(startup_in_task())
+    instance_cm, instance = await startup_task
+
+    # shutdown in a different task
+    shutdown_task = asyncio.create_task(shutdown_in_different_task(instance_cm, instance))
+    await shutdown_task
+
+    # should just set the value to None instead of erroring
+    assert DefsStateStorage.get() is None
+
+    # everything should still work going forward
+    with instance_for_test() as instance:
+        assert DefsStateStorage.get() is instance.defs_state_storage
     assert DefsStateStorage.get() is None

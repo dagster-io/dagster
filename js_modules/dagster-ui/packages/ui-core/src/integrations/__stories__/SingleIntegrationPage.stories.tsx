@@ -1,5 +1,4 @@
 import {Box, Colors} from '@dagster-io/ui-components';
-import {Meta} from '@storybook/react';
 import {useIntegrationsProvider} from 'shared/integrations/useIntegrationsProvider.oss';
 
 import {SingleIntegrationPage} from '../SingleIntegrationPage';
@@ -9,7 +8,7 @@ import {IntegrationConfig} from '../types';
 export default {
   title: 'Integrations/SingleIntegrationPage',
   component: SingleIntegrationPage,
-} as Meta;
+};
 
 export const MarkdownWithBetaAndSections = () => {
   const provider = useIntegrationsProvider();

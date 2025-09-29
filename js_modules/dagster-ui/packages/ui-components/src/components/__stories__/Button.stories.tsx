@@ -1,5 +1,3 @@
-import {Meta} from '@storybook/react';
-
 import {Box} from '../Box';
 import {Button, JoinedButtons} from '../Button';
 import {Colors} from '../Color';
@@ -12,7 +10,7 @@ import {Popover} from '../Popover';
 export default {
   title: 'Button',
   component: Button,
-} as Meta;
+};
 
 export const Default = () => {
   return (

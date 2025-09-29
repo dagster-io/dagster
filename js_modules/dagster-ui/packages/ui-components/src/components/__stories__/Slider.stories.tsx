@@ -1,6 +1,5 @@
 // eslint-disable-next-line no-restricted-imports
 import {Intent} from '@blueprintjs/core';
-import {Meta} from '@storybook/react';
 import {useState} from 'react';
 
 import {Colors} from '../Color';
@@ -11,7 +10,7 @@ import {MultiSlider, Slider} from '../Slider';
 export default {
   title: 'Slider',
   component: Slider,
-} as Meta;
+};
 
 export const Sizes = () => {
   const [value, setValue] = useState(2);

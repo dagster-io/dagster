@@ -71,7 +71,7 @@ attributes:  # Optional: Attributes details
           #
         key: <string>  # Optional: 
         key_prefix: <one of: string, array of string>  # Optional: Prefix the existing asset key with the provided value.
-      include_metadata: <one of: array of string, string>  # Optional: 
+      include_metadata: <one of: array of string, string>  # Optional: Optionally include additional metadata in materializations generated while executing your Sling models
   sling:  # Optional: 
     connections:  # Optional: 
       - # Array of SlingConnectionResource objects:

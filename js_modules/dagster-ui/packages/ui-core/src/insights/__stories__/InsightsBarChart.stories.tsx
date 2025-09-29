@@ -1,6 +1,5 @@
 import {Colors} from '@dagster-io/ui-components';
 import {faker} from '@faker-js/faker';
-import {Meta} from '@storybook/react';
 import {useEffect, useMemo, useState} from 'react';
 
 import {TimeContext, TimeContextValue} from '../../app/time/TimeContext';
@@ -11,7 +10,7 @@ import {ReportingUnitType} from '../types';
 export default {
   title: 'Insights/InsightsBarChart',
   component: InsightsBarChart,
-} as Meta;
+};
 
 const TWO_HOURS = 2 * 60 * 60 * 1000;
 const JUNE_1_2023_EDT = 1685592000000;

@@ -1,5 +1,3 @@
-import {Meta} from '@storybook/react';
-
 import {Box} from '../Box';
 import {Button} from '../Button';
 import {useDelayedState} from '../useDelayedState';
@@ -7,7 +5,7 @@ import {useDelayedState} from '../useDelayedState';
 // eslint-disable-next-line import/no-default-export
 export default {
   title: 'useDelayedState',
-} as Meta;
+};
 
 export const Default = () => {
   const notDisabled = useDelayedState(5000);

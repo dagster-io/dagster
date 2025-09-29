@@ -1,5 +1,5 @@
 import {MockedProvider} from '@apollo/client/testing';
-import {Meta, StoryFn} from '@storybook/react';
+import {StoryFn} from '@storybook/nextjs';
 import {MemoryRouter} from 'react-router-dom';
 import {RecoilRoot} from 'recoil';
 
@@ -20,7 +20,7 @@ import {buildBackfillDetailsQuery} from '../__fixtures__/buildBackfillDetails';
 export default {
   title: 'Runs/Backfills',
   component: RunsFeedBackfillPage,
-} as Meta;
+};
 
 const Template: StoryFn = ({mocks}) => (
   <RecoilRoot>

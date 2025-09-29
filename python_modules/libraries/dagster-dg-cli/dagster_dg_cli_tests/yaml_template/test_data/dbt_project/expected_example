@@ -11,6 +11,8 @@ attributes:
   cli_args:
     -
       key: "value"
+  include_metadata:
+    - "example_string"
   op:
     name: "example_string"
     tags:
@@ -19,6 +21,8 @@ attributes:
     pool: "example_string"
     backfill_policy:
       type: "example_string"
+  select: "tag:dagster"
+  exclude: "tag:skip_dagster"
   translation:
     deps:
       - "example_string"
@@ -44,8 +48,6 @@ attributes:
     key: "example_string"
     key_prefix:
       - "example_string"
-  select: "tag:dagster"
-  exclude: "tag:skip_dagster"
   translation_settings:
     enable_asset_checks: true
     enable_duplicate_source_asset_keys: true

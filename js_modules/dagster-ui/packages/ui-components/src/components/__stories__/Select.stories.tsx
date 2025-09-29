@@ -1,4 +1,3 @@
-import {Meta} from '@storybook/react';
 import faker from 'faker';
 import {useMemo, useState} from 'react';
 
@@ -11,7 +10,7 @@ import {Select} from '../Select';
 export default {
   title: 'Select',
   component: Select,
-} as Meta;
+};
 
 type Product = {
   productName: string;

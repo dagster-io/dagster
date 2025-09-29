@@ -1,5 +1,4 @@
 import {MockedProvider} from '@apollo/client/testing';
-import {Meta} from '@storybook/react';
 import {RecoilRoot} from 'recoil';
 
 import {CustomAlertProvider} from '../../app/CustomAlertProvider';
@@ -23,7 +22,7 @@ import {AutomationTargetList} from '../AutomationTargetList';
 export default {
   title: 'AutomationTargetList',
   component: AutomationTargetList,
-} as Meta;
+};
 
 export const SingleJob = () => {
   return (

@@ -1,5 +1,3 @@
-import {Meta} from '@storybook/react';
-
 import {Box} from '../Box';
 import {Colors} from '../Color';
 import {Group} from '../Group';
@@ -10,7 +8,7 @@ import {Caption, Code} from '../Text';
 export default {
   title: 'Spinner',
   component: Spinner,
-} as Meta;
+};
 
 export const Sizes = () => {
   return (

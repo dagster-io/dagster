@@ -283,6 +283,7 @@ class GrapheneAsset(graphene.ObjectType):
     latestEventSortKey = graphene.Field(graphene.ID)
     assetHealth = graphene.Field(GrapheneAssetHealth)
     latestMaterializationTimestamp = graphene.Float()
+    hasDefinitionOrRecord = graphene.NonNull(graphene.Boolean)
 
     class Meta:
         name = "Asset"
@@ -457,6 +458,12 @@ class GrapheneAsset(graphene.ObjectType):
         return GrapheneAssetHealth(
             asset_key=self._asset_key,
             dynamic_partitions_loader=graphene_info.context.dynamic_partitions_loader,
+        )
+
+    async def resolve_hasDefinitionOrRecord(self, graphene_info: ResolveInfo) -> bool:
+        return (
+            graphene_info.context.asset_graph.has(self._asset_key)
+            or await AssetRecord.gen(graphene_info.context, self._asset_key) is not None
         )
 
     async def resolve_latestMaterializationTimestamp(

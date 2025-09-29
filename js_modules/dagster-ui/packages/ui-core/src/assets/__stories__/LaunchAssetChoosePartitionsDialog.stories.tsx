@@ -1,5 +1,4 @@
 import {MockedProvider} from '@apollo/client/testing';
-import {Meta} from '@storybook/react';
 
 import {LaunchAssetChoosePartitionsDialog} from '../LaunchAssetChoosePartitionsDialog';
 import {ReleasesJobProps} from '../__fixtures__/LaunchAssetChoosePartitionsDialog.fixtures';
@@ -16,7 +15,7 @@ import {NoRunningBackfills} from '../__fixtures__/RunningBackfillsNoticeQuery.fi
 export default {
   title: 'Assets/LaunchAssetChoosePartitionsDialog',
   component: LaunchAssetChoosePartitionsDialog,
-} as Meta;
+};
 
 export const Empty = () => {
   return (

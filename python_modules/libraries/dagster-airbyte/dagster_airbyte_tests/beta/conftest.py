@@ -65,10 +65,10 @@ SAMPLE_ACCESS_TOKEN = {"access_token": TEST_ACCESS_TOKEN}
 
 # Taken from Airbyte REST API documentation
 # https://reference.airbyte.com/reference/listconnections
-def get_sample_connections(api_base_url: str) -> Mapping[str, Any]:
+def get_sample_connections() -> Mapping[str, Any]:
     return {
-        "next": f"{api_base_url}/connections?limit=5&offset=10",
-        "previous": f"{api_base_url}/connections?limit=5&offset=0",
+        "next": "http://incorrect-url:9999/api/public/v1/connections?limit=5&offset=10",
+        "previous": "http://incorrect-url:9999/api/public/v1/connections?limit=5&offset=0",
         "data": [
             {
                 "connectionId": TEST_CONNECTION_ID,
@@ -85,10 +85,10 @@ def get_sample_connections(api_base_url: str) -> Mapping[str, Any]:
     }
 
 
-def get_sample_connections_next_page(api_base_url: str) -> Mapping[str, Any]:
+def get_sample_connections_next_page() -> Mapping[str, Any]:
     return {
         "next": "",
-        "previous": f"{api_base_url}/connections?limit=5&offset=10",
+        "previous": "http://incorrect-url:9999/api/public/v1/connections?limit=5&offset=10",
         "data": [],
     }
 
@@ -281,15 +281,17 @@ def fetch_workspace_data_api_mocks_fixture(
     )
     base_api_mocks.add(
         method=responses.GET,
-        url=f"{rest_api_url}/connections",
-        json=get_sample_connections(api_base_url=rest_api_url),
+        url=f"{rest_api_url}/connections?workspaceIds={TEST_WORKSPACE_ID}",
+        json=get_sample_connections(),
         status=200,
+        match_querystring=True,
     )
     base_api_mocks.add(
         method=responses.GET,
-        url=f"{rest_api_url}/connections?limit=5&offset=10",
-        json=get_sample_connections_next_page(api_base_url=rest_api_url),
+        url=f"{rest_api_url}/connections?workspaceIds={TEST_WORKSPACE_ID}&limit=5&offset=10",
+        json=get_sample_connections_next_page(),
         status=200,
+        match_querystring=True,
     )
     base_api_mocks.add(
         method=responses.POST,

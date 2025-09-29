@@ -35,6 +35,7 @@ from dagster._core.execution.asset_backfill import (
     AssetBackfillData,
     AssetBackfillIterationResult,
     AssetBackfillStatus,
+    _check_asset_backfill_data_validity,
     backfill_is_complete,
     execute_asset_backfill_iteration_inner,
     get_canceling_asset_backfill_iteration_data,
@@ -2698,6 +2699,54 @@ def test_asset_backfill_unpartitioned_root_turned_to_partitioned():
     assert asset_backfill_data.get_target_root_partitions_subset(
         get_asset_graph(repo_with_partitioned_root)
     ).get_partition_keys() == ["2024-01-01"]  # pyright: ignore[reportOptionalMemberAccess]
+
+
+def test_asset_backfill_start_date_changed():
+    instance = DagsterInstance.ephemeral()
+
+    @dg.asset(
+        partitions_def=dg.DailyPartitionsDefinition("2024-01-01"),
+    )
+    def first():
+        return 1
+
+    @dg.asset(
+        partitions_def=dg.DailyPartitionsDefinition("2023-01-01"),
+        name="first",
+    )
+    def new_first():
+        return 1
+
+    old_repo = {"repo": [first]}
+
+    new_repo = {"repo": [new_first]}
+
+    start_time = create_datetime(2024, 1, 9, 0, 0, 0)
+
+    asset_backfill_data = AssetBackfillData.from_asset_partitions(
+        asset_graph=get_asset_graph(old_repo),
+        partition_names=["2024-01-01"],
+        asset_selection=[first.key],
+        dynamic_partitions_store=MagicMock(),
+        all_partitions=False,
+        backfill_start_timestamp=start_time.timestamp(),
+    )
+
+    new_asset_graph = get_asset_graph(new_repo)
+
+    _check_asset_backfill_data_validity(
+        asset_backfill_data,
+        new_asset_graph,
+        _get_instance_queryer(instance, new_asset_graph, start_time),
+    )
+
+    asset_backfill_data = _single_backfill_iteration(
+        "fake_id", asset_backfill_data, new_asset_graph, instance, new_repo
+    )
+
+    assert list(asset_backfill_data.requested_subset.iterate_asset_partitions()) == list(
+        asset_backfill_data.target_subset.iterate_asset_partitions()
+    )
 
 
 def test_multi_asset_internal_deps_asset_backfill():

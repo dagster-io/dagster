@@ -4,7 +4,7 @@ from collections.abc import Iterator, Mapping
 from dataclasses import dataclass, field
 from functools import cached_property
 from pathlib import Path
-from typing import Annotated, Any, Optional, Union
+from typing import Annotated, Any, Literal, Optional, Union
 
 from dagster import Resolvable
 from dagster._annotations import public
@@ -20,6 +20,7 @@ from dagster.components.resolved.model import Resolver
 from dagster.components.scaffold.scaffold import scaffold_with
 from dagster.components.utils.translation import TranslationFn, TranslationFnResolver
 from dagster_shared import check
+from typing_extensions import TypeAlias
 
 from dagster_dbt.asset_decorator import dbt_assets
 from dagster_dbt.asset_utils import DBT_DEFAULT_EXCLUDE, DBT_DEFAULT_SELECT, get_node
@@ -81,6 +82,9 @@ def resolve_dbt_project(context: ResolutionContext, model) -> DbtProject:
     )
 
 
+DbtMetadataAddons: TypeAlias = Literal["column_metadata", "row_count"]
+
+
 @public
 @scaffold_with(DbtProjectComponentScaffolder)
 @dataclass
@@ -129,6 +133,16 @@ class DbtProjectComponent(Component, Resolvable):
             ],
         ),
     ] = field(default_factory=lambda: ["build"])
+    include_metadata: Annotated[
+        list[DbtMetadataAddons],
+        Resolver.default(
+            description="Optionally include additional metadata in materializations generated while executing your dbt models",
+            examples=[
+                ["row_count"],
+                ["row_count", "column_metadata"],
+            ],
+        ),
+    ] = field(default_factory=list)
     op: Annotated[
         Optional[OpSpec],
         Resolver.default(
@@ -141,10 +155,6 @@ class DbtProjectComponent(Component, Resolvable):
                 },
             ],
         ),
-    ] = None
-    translation: Annotated[
-        Optional[TranslationFn[Mapping[str, Any]]],
-        TranslationFnResolver(template_vars_for_translation_fn=lambda data: {"node": data}),
     ] = None
     select: Annotated[
         str,
@@ -160,6 +170,10 @@ class DbtProjectComponent(Component, Resolvable):
             examples=["tag:skip_dagster"],
         ),
     ] = DBT_DEFAULT_EXCLUDE
+    translation: Annotated[
+        Optional[TranslationFn[Mapping[str, Any]]],
+        TranslationFnResolver(template_vars_for_translation_fn=lambda data: {"node": data}),
+    ] = None
     translation_settings: Annotated[
         Optional[DagsterDbtComponentsTranslatorSettings],
         Resolver.default(
@@ -262,8 +276,18 @@ class DbtProjectComponent(Component, Resolvable):
         )
         return normalized_args
 
+    def _get_dbt_event_iterator(
+        self, context: AssetExecutionContext, dbt: DbtCliResource
+    ) -> Iterator:
+        iterator = dbt.cli(self.get_cli_args(context), context=context).stream()
+        if "column_metadata" in self.include_metadata:
+            iterator = iterator.fetch_column_metadata()
+        if "row_count" in self.include_metadata:
+            iterator = iterator.fetch_row_counts()
+        return iterator
+
     def execute(self, context: AssetExecutionContext, dbt: DbtCliResource) -> Iterator:
-        yield from dbt.cli(self.get_cli_args(context), context=context).stream()
+        yield from self._get_dbt_event_iterator(context, dbt)
 
     @cached_property
     def _validated_manifest(self):

@@ -1,5 +1,3 @@
-import {Meta} from '@storybook/react';
-
 import {Box} from '../Box';
 import {Colors} from '../Color';
 import {Group} from '../Group';
@@ -9,7 +7,7 @@ import {ProgressBar} from '../ProgressBar';
 export default {
   title: 'ProgressBar',
   component: ProgressBar,
-} as Meta;
+};
 
 export const Sizes = () => {
   return (

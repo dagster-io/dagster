@@ -1,5 +1,4 @@
 // eslint-disable-next-line no-restricted-imports
-import {Meta} from '@storybook/react';
 
 import {buildErrorChainLink, buildPythonError} from '../../graphql/types';
 import {PythonErrorInfo} from '../PythonErrorInfo';
@@ -7,7 +6,7 @@ import {PythonErrorInfo} from '../PythonErrorInfo';
 // eslint-disable-next-line import/no-default-export
 export default {
   title: 'PythonErrorInfo',
-} as Meta;
+};
 
 const error = buildPythonError({
   message:

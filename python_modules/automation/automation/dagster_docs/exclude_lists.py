@@ -413,8 +413,9 @@ EXCLUDE_MISSING_PUBLIC = {
     # Component testing utils
     "dagster.components.testing.utils.DefsFolderSandbox",
     "dagster.components.testing.utils.create_defs_folder_sandbox",
+    "dagster_polars.patito.patito_model_to_dagster_type",
 }
-# Total: 297 symbols
+# Total: 298 symbols
 
 # Modules to exclude from @public scanning
 EXCLUDE_MODULES_FROM_PUBLIC_SCAN = set()

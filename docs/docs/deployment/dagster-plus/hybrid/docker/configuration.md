@@ -2,6 +2,7 @@
 description: Configure Docker agents in Dagster+.
 sidebar_position: 4200
 title: Docker agent configuration
+tags: [dagster-plus-feature]
 ---
 
 This reference describes the various configuration options Dagster+ currently supports for Docker agents.

@@ -37,7 +37,7 @@ const colorForString = memoize((s: string) => {
         return a & a;
       }, 0),
     ) % colors.length;
-  return colors[index]!;
+  return colors[index] ?? '';
 });
 
 type IconProps = React.ComponentProps<typeof Icon>;

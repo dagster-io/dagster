@@ -54,9 +54,12 @@ def databricks_client() -> WorkspaceClient:
     )
 
 
-@pytest.fixture
-def databricks_notebook_path() -> str:
+def get_databricks_notebook_path() -> str:
     return os.environ["DATABRICKS_NOTEBOOK_PATH"]
+
+
+def get_databricks_python_file_path() -> str:
+    return os.environ["DATABRICKS_PYTHON_FILE_PATH"]
 
 
 @contextmanager

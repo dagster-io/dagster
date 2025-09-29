@@ -3,6 +3,7 @@ description: Set up and deploy a Dagster+ Amazon ECS agent in a new VPC using Cl
   with Dagster+.
 sidebar_position: 3100
 title: New VPC setup
+tags: [dagster-plus-feature]
 ---
 
 :::note

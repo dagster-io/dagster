@@ -24,7 +24,7 @@ Filters allow you to narrow your asset selection using specific criteria.
 | **Column tag** | `column_tag: "my_tag"` | Selects assets tagged with `my_tag`. | Dagster+ only |
 | **Columns** | `columns: "my_column"` | Selects assets with a column named `my_column`. | Dagster+ only |
 | **Table name** | `table_name: "my_table"` | Selects assets with a table named `my_table`. | Dagster+ only |
-| **Asset health status** | `status: "DEGRADED"` | Selects assets with a given [asset health status](/guides/labs/observability-update/asset-health). Options are `"HEALTHY"`, `"WARNING"`, `"DEGRADED"`, `"UNKNOWN"`, or `"NOT_APPLICABLE"` | Dagster+ only (requires [Observability early access](/guides/labs/observability-update)) |
+| **Asset health status** | `status: "DEGRADED"` | Selects assets with a given [asset health status](/guides/observe/asset-health-status). Options are `"HEALTHY"`, `"WARNING"`, `"DEGRADED"`, `"UNKNOWN"`, or `"NOT_APPLICABLE"` | Dagster+ only |
 
 
 :::info Wildcard matching

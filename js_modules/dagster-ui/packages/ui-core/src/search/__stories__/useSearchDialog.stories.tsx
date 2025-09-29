@@ -1,6 +1,5 @@
 import {MockedProvider} from '@apollo/client/testing';
 import {Button} from '@dagster-io/ui-components';
-import {Meta} from '@storybook/react';
 
 import {AnalyticsContext, dummyAnalytics} from '../../app/analytics';
 import {buildWorkspaceMocks} from '../../workspace/WorkspaceContext/__fixtures__/Workspace.fixtures';
@@ -9,7 +8,7 @@ import {useSearchDialog} from '../SearchDialog';
 // eslint-disable-next-line import/no-default-export
 export default {
   title: 'useSearchDialog',
-} as Meta;
+};
 
 const SearchDialog = () => {
   const {openSearch, overlay} = useSearchDialog();

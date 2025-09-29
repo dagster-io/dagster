@@ -1,5 +1,4 @@
 import {Box} from '@dagster-io/ui-components';
-import {Meta} from '@storybook/react';
 import faker from 'faker';
 import {MemoryRouter} from 'react-router-dom';
 import styled from 'styled-components';
@@ -16,7 +15,7 @@ const makeKeys = (count: number) => {
 export default {
   title: 'AssetKeyTagCollection',
   component: AssetKeyTagCollection,
-} as Meta;
+};
 
 export const Scenarios = () => {
   const single = makeKeys(1);

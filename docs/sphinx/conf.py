@@ -128,7 +128,6 @@ autodoc_mock_imports = [
     "orjson",
     "pandas_gbq",
     "pandera",
-    "polars",
     "prometheus_client",
     "psycopg2",
     "pypd",

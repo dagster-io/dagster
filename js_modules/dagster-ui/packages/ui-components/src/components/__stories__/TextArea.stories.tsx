@@ -1,4 +1,3 @@
-import {Meta} from '@storybook/react';
 import {useState} from 'react';
 
 import {Colors} from '../Color';
@@ -8,7 +7,7 @@ import {TextArea} from '../TextInput';
 export default {
   title: 'TextArea',
   component: TextArea,
-} as Meta;
+};
 
 export const Default = () => {
   const [value, setValue] = useState('');

@@ -1,5 +1,3 @@
-import {Meta} from '@storybook/react';
-
 import {BaseTag} from '../BaseTag';
 import {Colors} from '../Color';
 import {Group} from '../Group';
@@ -9,7 +7,7 @@ import {Icon} from '../Icon';
 export default {
   title: 'BaseTag',
   component: BaseTag,
-} as Meta;
+};
 
 const COLORS = [
   {

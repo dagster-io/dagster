@@ -10,7 +10,7 @@ Importing an existing dbt project in Dagster+ allows you to automatically load y
 
 To follow the steps in this guide, you'll need **Dagster+ Organization Admin**, **Admin**, or **Editor** permissions in order to create a code location.
 
-Additionally, Dagster+ requires several files to be present in your project. To learn more about the structure and files required in a dbt and Dagster project, see "[Creating a dbt project in a Dagster project](/integrations/libraries/dbt/creating-a-dbt-project-in-dagster)".
+Additionally, Dagster+ requires several files to be present in your project. To learn more about the structure and files required in a dbt and Dagster project, see "[Creating a dbt project in a Dagster project](/integrations/libraries/dbt/using-dbt-with-dagster-plus)".
 
 ## Step 1: Import your project in Dagster+
 

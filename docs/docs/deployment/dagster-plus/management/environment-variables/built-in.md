@@ -3,6 +3,7 @@ description: Dagster+ provides a set of built-in, automatically populated enviro
 sidebar_label: Built-in variables
 sidebar_position: 2100
 title: Built-in environment variables
+tags: [dagster-plus-feature]
 ---
 
 Dagster+ provides a set of built-in, automatically populated environment variables, such as the name of a deployment or details about a branch deployment commit, that can be used to modify behavior based on environment.

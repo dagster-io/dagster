@@ -24,7 +24,13 @@ def set_defs_state_storage(storage: Optional["DefsStateStorage"]):
     try:
         yield
     finally:
-        _current_storage.reset(token)
+        try:
+            _current_storage.reset(token)
+        except ValueError:
+            # in certain async contexts, we exit the context manager in a separate
+            # async task from the one that created the token. in these cases, we
+            # can't reset the token value, so we just set it to None
+            _current_storage.set(None)
 
 
 class DefsStateStorage(ABC, MayHaveInstanceWeakref[T_DagsterInstance]):

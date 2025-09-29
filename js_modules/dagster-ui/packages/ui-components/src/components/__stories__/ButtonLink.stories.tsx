@@ -1,4 +1,4 @@
-import {Meta, StoryFn} from '@storybook/react';
+import {StoryFn} from '@storybook/nextjs';
 import * as React from 'react';
 
 import {ButtonLink} from '../ButtonLink';
@@ -8,7 +8,7 @@ import {Colors} from '../Color';
 export default {
   title: 'ButtonLink',
   component: ButtonLink,
-} as Meta;
+};
 
 type Props = React.ComponentProps<typeof ButtonLink>;
 const Template: StoryFn<Props> = (props) => <ButtonLink {...props} />;

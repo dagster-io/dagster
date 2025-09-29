@@ -7,21 +7,15 @@ import {
   Skeleton,
   useDelayedState,
 } from '@dagster-io/ui-components';
-import React, {useMemo} from 'react';
+import React, {ReactNode, useMemo} from 'react';
 import {Link} from 'react-router-dom';
 import styled from 'styled-components';
 
 import {AssetHealthSummary} from './AssetHealthSummary';
-import {
-  AssetFailedToMaterializeFragment,
-  AssetObservationFragment,
-  AssetSuccessfulMaterializationFragment,
-} from './types/useRecentAssetEvents.types';
-import {useRecentAssetEvents} from './useRecentAssetEvents';
+import {useRecentAssetEventsForCatalogView} from './useRecentAssetEvents';
 import {useRefreshAtInterval} from '../app/QueryRefresh';
 import {Timestamp} from '../app/time/Timestamp';
-import {AssetLatestInfoFragment} from '../asset-data/types/AssetBaseDataProvider.types';
-import {AssetEventHistoryEventTypeSelector} from '../graphql/types';
+import {AssetEventHistoryEventTypeSelector, RunStatus} from '../graphql/types';
 import {TimeFromNow} from '../ui/TimeFromNow';
 
 const INTERVAL_MSEC = 30 * 1000;
@@ -34,11 +28,15 @@ export const AssetRecentUpdatesTrend = React.memo(({asset}: {asset: {key: {path:
     latestInfo,
     loading,
     refetch,
-  } = useRecentAssetEvents(shouldQuery ? asset.key : undefined, 5, [
-    AssetEventHistoryEventTypeSelector.MATERIALIZATION,
-    AssetEventHistoryEventTypeSelector.FAILED_TO_MATERIALIZE,
-    AssetEventHistoryEventTypeSelector.OBSERVATION,
-  ]);
+  } = useRecentAssetEventsForCatalogView({
+    assetKey: shouldQuery ? asset.key : undefined,
+    limit: 5,
+    eventTypeSelectors: [
+      AssetEventHistoryEventTypeSelector.MATERIALIZATION,
+      AssetEventHistoryEventTypeSelector.FAILED_TO_MATERIALIZE,
+      AssetEventHistoryEventTypeSelector.OBSERVATION,
+    ],
+  });
 
   const {events} = useMemo(() => {
     if (!latestInfo?.inProgressRunIds.length && !latestInfo?.unstartedRunIds.length) {
@@ -130,39 +128,43 @@ const OPACITIES: Record<number, number> = {
   4: 0.2,
 };
 
+type EventForPopover =
+  | {
+      __typename: 'AssetLatestInfo';
+      latestRun: null | {
+        id: string;
+        status: RunStatus;
+        startTime: number | null;
+      };
+    }
+  | {__typename: 'FailedToMaterializeEvent'; runId: string; timestamp: string}
+  | {__typename: 'ObservationEvent'; runId: string; timestamp: string}
+  | {__typename: 'MaterializationEvent'; runId: string; timestamp: string};
+
 const EventPopover = React.memo(
-  ({
-    event,
-    children,
-  }: {
-    event:
-      | AssetFailedToMaterializeFragment
-      | AssetObservationFragment
-      | AssetSuccessfulMaterializationFragment
-      | AssetLatestInfoFragment
-      | undefined;
-    children: React.ReactNode;
-  }) => {
+  ({event, children}: {event?: EventForPopover; children: ReactNode}) => {
     const {content, icon, runId, timestamp} = useMemo(() => {
       switch (event?.__typename) {
-        case 'AssetLatestInfo':
-          if (event.latestRun?.status === 'STARTED') {
+        case 'AssetLatestInfo': {
+          const {latestRun} = event;
+          if (!latestRun) {
+            return {content: null, icon: null};
+          }
+          if (latestRun.status === 'STARTED') {
             return {
               content: <Body>In progress</Body>,
               icon: <Icon name="run_started" color={Colors.accentBlue()} />,
-              // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-              runId: event.latestRun!.id,
-              // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-              timestamp: Number(event.latestRun!.startTime) * 1000,
+              runId: latestRun.id,
+              timestamp: Number(latestRun.startTime) * 1000,
             };
           }
           return {
             content: <Body>Queued</Body>,
             icon: <Icon name="run_queued" color={Colors.accentBlue()} />,
-            // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-            runId: event.latestRun!.id,
+            runId: latestRun.id,
             timestamp: null,
           };
+        }
         case 'FailedToMaterializeEvent':
           return {
             content: <Body>Failed</Body>,
@@ -188,12 +190,15 @@ const EventPopover = React.memo(
           return {content: null, icon: null};
       }
     }, [event]);
+
     if (!event) {
       return children;
     }
+
     return (
       <Popover
         interactionKind="hover"
+        placement="top"
         content={
           <Box border="all">
             {timestamp ? (

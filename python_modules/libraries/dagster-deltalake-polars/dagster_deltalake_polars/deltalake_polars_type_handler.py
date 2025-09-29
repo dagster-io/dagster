@@ -36,7 +36,7 @@ class DeltaLakePolarsTypeHandler(DeltalakeBaseArrowTypeHandler[PolarsTypes]):
     def to_arrow(self, obj: PolarsTypes) -> tuple[pa.RecordBatchReader, dict[str, Any]]:
         if isinstance(obj, pl.LazyFrame):
             obj = obj.collect()
-        return obj.to_arrow().to_reader(), {"large_dtypes": True}
+        return obj.to_arrow().to_reader(), {}
 
     def load_input(
         self,

@@ -1,4 +1,3 @@
-import {Meta} from '@storybook/react';
 import {useState} from 'react';
 import styled from 'styled-components';
 
@@ -13,7 +12,7 @@ import {TagSelector, TagSelectorWithSearch} from '../TagSelector';
 export default {
   title: 'TagSelector',
   component: TagSelector,
-} as Meta;
+};
 
 const allTags = [
   'NY',

@@ -1,12 +1,10 @@
-import {Meta} from '@storybook/react';
-
 import {Table} from '../Table';
 
 // eslint-disable-next-line import/no-default-export
 export default {
   title: 'Table',
   component: Table,
-} as Meta;
+};
 
 export const Basics = () => {
   return (

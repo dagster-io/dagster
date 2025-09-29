@@ -1,4 +1,3 @@
-import {Meta} from '@storybook/react';
 import {useState} from 'react';
 
 import {Colors} from '../Color';
@@ -10,7 +9,7 @@ import {Tab, Tabs} from '../Tabs';
 export default {
   title: 'Tabs',
   component: Tabs,
-} as Meta;
+};
 
 export const Default = () => {
   const [tab, setTab] = useState('health');

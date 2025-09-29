@@ -3,6 +3,7 @@ description: Add these Dagster+ Serverless IP addresses to an allowlist for outb
 sidebar_label: IP addresses
 sidebar_position: 3000
 title: Dagster+ Serverless IP addresses
+tags: [dagster-plus-feature]
 ---
 
 Dagster+ Serverless code will make requests from one of the following IP addresses. You may need to whitelist / allowlist them for services your code interacts with.

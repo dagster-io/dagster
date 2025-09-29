@@ -1,4 +1,3 @@
-import {Meta} from '@storybook/react';
 import {useState} from 'react';
 import styled from 'styled-components';
 
@@ -15,7 +14,7 @@ import {
 export default {
   title: 'TokenizingField',
   component: TokenizingField,
-} as Meta;
+};
 
 export const Default = () => {
   const [value, setValue] = useState<TokenizingFieldValue[]>([]);

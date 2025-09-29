@@ -140,8 +140,12 @@ export const TagSelector = ({
       >
         <Inner $totalHeight={totalHeight}>
           {items.map(({index, start, end}) => {
-            const tag = allTags[index]!;
-            function content() {
+            const tagAtIndex = allTags[index];
+            if (!tagAtIndex) {
+              return null;
+            }
+
+            function content(tag: string) {
               const selected = selectedTags.includes(tag);
               const toggle = () => {
                 setSelectedTags(
@@ -156,9 +160,10 @@ export const TagSelector = ({
               }
               return defaultRenderDropdownItem(tag, {toggle, selected});
             }
+
             return (
-              <Row key={tag} $height={end - start} $start={start}>
-                {content()}
+              <Row key={tagAtIndex} $height={end - start} $start={start}>
+                {content(tagAtIndex)}
               </Row>
             );
           })}

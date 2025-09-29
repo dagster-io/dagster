@@ -49,7 +49,7 @@ export const ConfigEditorWithSchema = ({
           !isLoading ? (
             <NewConfigEditor
               ref={editor}
-              configCode={config!}
+              configCode={config ?? ''}
               onConfigChange={onConfigChange}
               onHelpContextChange={(next) => {
                 if (next && !isHelpContextEqual(editorHelpContext, next)) {

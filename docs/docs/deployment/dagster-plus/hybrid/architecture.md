@@ -2,6 +2,7 @@
 description: The Dagster+ Hybrid architecture is the most flexible and secure way to deploy Dagster+, allowing you to run your user code in your environment while leveraging Dagster+'s infrastructure for orchestration and metadata management.
 sidebar_position: 1000
 title: Architecture overview
+tags: [dagster-plus-feature]
 ---
 
 The Dagster+ Hybrid architecture is the most flexible and secure way to deploy Dagster+. It allows you to run your user code in your environment while leveraging Dagster+'s infrastructure for orchestration and metadata management.
@@ -55,6 +56,7 @@ The following highlights are described in more detail below:
 - [Interactions and queries](#interactions-and-queries)
 - [Runs](#runs)
 - [Ingress](#ingress)
+- [Metadata](#metadata)
 
 ### Interactions and queries
 
@@ -80,3 +82,56 @@ By default, the run worker also uploads the compute logs (raw `stdout` and `stde
 ### Ingress
 
 No ingress is required from Dagster+ to user environments. All network requests are outbound from user environments to Dagster+.
+
+### Metadata
+
+The following metadata is stored in the Dagster+ control plane:
+
+#### Asset definition metadata
+
+| Metadata type                                                                                                 | When stored       |
+| ------------------------------------------------------------------------------------------------------------- | ----------------- |
+| Asset names and keys                                                                                          | Always stored     |
+| Asset descriptions                                                                                            | Stored if defined |
+| Asset dependencies and lineage                                                                                | Always stored     |
+| Owners (email addresses or team names, like `team:data-eng`)                                                  | Stored if defined |
+| [Tags](https://docs.dagster.io/guides/build/assets/metadata-and-tags/tags) (key-value pairs for organization) | Stored if defined |
+| Asset groups and partitions definitions                                                                       | Stored if defined |
+| Source code references and links                                                                              | Stored if defined |
+
+#### Runtime/materialization metadata
+
+| Metadata type                                                                                                                                                                                                                                                                                       | When stored       |
+| --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------- |
+| [Table metadata](https://docs.dagster.io/guides/build/assets/metadata-and-tags/table-metadata) (column names, types, and descriptions, via <PyObject section="metadata" module="dagster" object="TableSchema" /> and <PyObject section="metadata" module="dagster" object="TableColumn" /> objects) | Stored if defined |
+| [Row count](https://docs.dagster.io/guides/build/assets/metadata-and-tags/table-metadata#attaching-row-count) (stored under `dagster/row_count` metadata key)                                                                                                                                       | Stored if defined |
+| [Column-level lineage](https://docs.dagster.io/guides/build/assets/metadata-and-tags/column-level-lineage) (how columns are created and used)                                                                                                                                                       | Stored if defined |
+| Custom metadata -- various <PyObject section="metadata" module="dagster" object="MetadataValue" /> types including text, Markdown, JSON, numeric values (automatically plotted over time), URLs, file paths, table schemas, and data previews                                                       | Stored if defined |
+
+#### Run and event metadata
+
+| Metadata type                                 | When stored       |
+| --------------------------------------------- | ----------------- |
+| Run status, timestamps, and execution context | Always stored     |
+| Asset materialization events                  | Always stored     |
+| Output metadata from asset executions         | Stored if defined |
+| Backfill and partition information            | Always stored     |
+| Job and schedule execution history            | Always stored     |
+
+#### Operational metadata
+
+| Metadata type                           | When stored       |
+| --------------------------------------- | ----------------- |
+| Code location configurations            | Always stored     |
+| Resource definitions and configurations | Stored if defined |
+| Automation conditions and policies      | Stored if defined |
+| Asset checks and data quality results   | Stored if defined |
+
+#### Key schema fields
+
+| Metadata type                                      | When stored       |
+| -------------------------------------------------- | ----------------- |
+| `dagster/column_schema` (table structure metadata) | Stored if defined |
+| `dagster/row_count` (row count tracking)           | Stored if defined |
+| Custom keys for business-specific metadata         | Stored if defined |
+| Partition keys and time-based metadata             | Stored if defined |

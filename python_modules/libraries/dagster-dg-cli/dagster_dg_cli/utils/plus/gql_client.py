@@ -1,10 +1,13 @@
 import json
 from abc import ABC, abstractmethod
 from collections.abc import Mapping
-from typing import Any, Optional
+from typing import TYPE_CHECKING, Any, Optional
 
 import click
 from dagster_shared.plus.config import DagsterPlusCliConfig
+
+if TYPE_CHECKING:
+    from dagster_cloud_cli.commands.ci.state import LocationState
 
 
 class IGraphQLClient(ABC):
@@ -67,6 +70,19 @@ class DagsterPlusGraphQLClient(IGraphQLClient):
                     "Dagster-Cloud-Deployment": config.default_deployment,
                 }.items()
                 if v is not None
+            },
+        )
+
+    @classmethod
+    def from_location_state(
+        cls, location_state: "LocationState", api_token: str, organization: str
+    ):
+        return cls(
+            url=f"{location_state.url}/graphql",
+            headers={
+                "Dagster-Cloud-Api-Token": api_token,
+                "Dagster-Cloud-Organization": organization,
+                "Dagster-Cloud-Deployment": location_state.deployment_name,
             },
         )
 

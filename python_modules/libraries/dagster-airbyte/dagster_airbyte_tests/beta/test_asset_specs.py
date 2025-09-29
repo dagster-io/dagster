@@ -132,15 +132,17 @@ def test_cached_load_spec_multiple_resources(
     )
     fetch_workspace_data_api_mocks.add(
         method=responses.GET,
-        url=f"{rest_api_url}/connections",
-        json=get_sample_connections(api_base_url=rest_api_url),
+        url=f"{rest_api_url}/connections?workspaceIds={TEST_ANOTHER_WORKSPACE_ID}",
+        json=get_sample_connections(),
         status=200,
+        match_querystring=True,
     )
     fetch_workspace_data_api_mocks.add(
         method=responses.GET,
-        url=f"{rest_api_url}/connections?limit=5&offset=10",
-        json=get_sample_connections_next_page(api_base_url=rest_api_url),
+        url=f"{rest_api_url}/connections?workspaceIds={TEST_ANOTHER_WORKSPACE_ID}&limit=5&offset=10",
+        json=get_sample_connections_next_page(),
         status=200,
+        match_querystring=True,
     )
 
     # load asset specs with a resource

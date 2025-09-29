@@ -1,4 +1,3 @@
-import {Meta} from '@storybook/react';
 import {HTMLProps, useCallback, useState} from 'react';
 
 import {BaseButton} from '../BaseButton';
@@ -17,7 +16,7 @@ import {Tooltip} from '../Tooltip';
 export default {
   title: 'ListItem',
   component: ListItem,
-} as Meta;
+};
 
 export const Default = () => {
   return (

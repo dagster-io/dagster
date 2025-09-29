@@ -1,6 +1,0 @@
-sources:
-  - name: main
-    tables:
-      - name: raw_orders
-      - name: raw_customers
-      - name: raw_payments

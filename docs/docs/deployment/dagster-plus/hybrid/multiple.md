@@ -3,6 +3,7 @@ description: Configure multiple Dagster+ agents for redundancy or isolation in t
 sidebar_label: Multiple agents
 sidebar_position: 7000
 title: Running multiple agents
+tags: [dagster-plus-feature]
 ---
 
 Each Dagster+ full deployment (e.g., `prod`) needs to have at least one agent running. A single agent is adequate for many use cases, but you may want to run multiple agents to provide redundancy if a single agent goes down.

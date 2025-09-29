@@ -1,4 +1,3 @@
-import {Meta} from '@storybook/react';
 import faker from 'faker';
 import {useState} from 'react';
 
@@ -9,7 +8,7 @@ import {LogLevel} from '../LogLevel';
 export default {
   title: 'LogFilterSelect',
   component: LogFilterSelect,
-} as Meta;
+};
 
 export const Default = () => {
   const [options, setOptions] = useState(() => {

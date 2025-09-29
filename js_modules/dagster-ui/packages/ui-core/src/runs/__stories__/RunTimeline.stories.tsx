@@ -1,4 +1,3 @@
-import {Meta} from '@storybook/react';
 import faker from 'faker';
 import {useMemo} from 'react';
 
@@ -12,7 +11,7 @@ import {TimelineRow} from '../RunTimelineTypes';
 export default {
   title: 'RunTimeline',
   component: RunTimeline,
-} as Meta;
+};
 
 const makeRepoAddress = () =>
   buildRepoAddress(faker.random.words(1).toLowerCase(), faker.random.words(1).toLowerCase());

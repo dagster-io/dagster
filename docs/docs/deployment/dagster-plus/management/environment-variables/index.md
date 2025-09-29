@@ -4,6 +4,7 @@ sidebar_position: 2000
 title: Environment variables
 canonicalUrl: '/deployment/dagster-plus/management/environment-variables'
 slug: '/deployment/dagster-plus/management/environment-variables'
+tags: [dagster-plus-feature]
 ---
 
 Environment variables, which are key-value pairs configured outside your source code, allow you to dynamically modify application behavior depending on environment.

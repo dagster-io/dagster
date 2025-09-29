@@ -1,5 +1,25 @@
 # Changelog
 
+## 1.11.12 (core) / 0.27.12 (libraries)
+
+### New
+
+- [ui] Allow searching across code locations with `*` wildcard in selection inputs for jobs and automations.
+- [ui] Added `AutomationCondition.all_new_executed_with_tags`, which allows automation conditions to be filtered to partitions that have been materialized since the last tick from runs with certain tags. This condition can be used to require or prevent certain run tags from triggering downstream declarative automation conditions.
+
+### Bugfixes
+
+- In `dagster==1.11.1`, `partitioned_config` was unintentionally removed from the public exports of the top-level `dagster` package. This has been fixed.
+- Avoid adding trailing whitespace in env vars that use dot notation in components. Thanks [@edgarrmondragon](https://github.com/edgarrmondragon)!
+- [dagster-airbyte] Fix the pagination url issue for the Airbyte API. Thanks [@stevenayers](https://github.com/stevenayers)!
+- [dagster-dbt] Fixed an issue with the DbtCloudWorkspaceClient that would cause errors when calling `trigger_job_run` with no steps_override parameter.
+
+### Dagster Plus
+
+- [ui] Add Cost insights.
+- [ui] For users who have inherited org roles from a team, show those roles when editing the user.
+- [ui] Fix per-asset and per-job insights graphs.
+
 ## 1.11.11 (core) / 0.27.11 (libraries)
 
 ### New

@@ -379,6 +379,7 @@ from dagster._core.definitions.partitions.partitioned_config import (
     dynamic_partitioned_config as dynamic_partitioned_config,
     hourly_partitioned_config as hourly_partitioned_config,
     monthly_partitioned_config as monthly_partitioned_config,
+    partitioned_config as partitioned_config,
     static_partitioned_config as static_partitioned_config,
     weekly_partitioned_config as weekly_partitioned_config,
 )

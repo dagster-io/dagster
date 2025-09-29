@@ -1,5 +1,0 @@
-src
-└── etl_tutorial
-    └── defs
-        └── dashboard
-            └── defs.yaml

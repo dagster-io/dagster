@@ -630,6 +630,7 @@ type Asset {
   latestEventSortKey: ID
   assetHealth: AssetHealth
   latestMaterializationTimestamp: Float
+  hasDefinitionOrRecord: Boolean!
 }
 
 type AssetResultEventHistoryConnection {

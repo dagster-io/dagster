@@ -1,7 +1,32 @@
+[project]
+name = "quickstart_aws"
+requires-python = ">=3.9,<3.14"
+version = "0.1.0"
+dependencies = [
+    "dagster",
+    "dagster-aws",
+    "dagster-cloud",
+    "pandas",
+    "matplotlib",
+    "wordcloud",
+]
+
+[dependency-groups]
+dev = [
+    "dagster-webserver",
+    "pytest",
+]
+
 [build-system]
-requires = ["setuptools"]
-build-backend = "setuptools.build_meta"
+requires = ["hatchling"]
+build-backend = "hatchling.build"
 
 [tool.dagster]
 module_name = "quickstart_aws.definitions"
 code_location_name = "quickstart_aws"
+
+[tool.dg]
+directory_type = "project"
+
+[tool.dg.project]
+root_module = "quickstart_aws"
