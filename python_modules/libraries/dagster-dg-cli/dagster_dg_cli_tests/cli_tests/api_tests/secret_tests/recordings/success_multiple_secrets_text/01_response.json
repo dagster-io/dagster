@@ -1,0 +1,352 @@
+{
+  "secretsOrError": {
+    "__typename": "Secrets",
+    "secrets": [
+      {
+        "allBranchDeploymentsScope": true,
+        "canEditSecret": true,
+        "canViewSecretValue": true,
+        "fullDeploymentScope": true,
+        "id": "9138919ca1b44065b1911ef4c4e92cfa",
+        "localDeploymentScope": true,
+        "locationNames": [],
+        "secretName": "SNOWFLAKE_USER",
+        "specificBranchDeploymentScope": null,
+        "updateTimestamp": 1683227655.542825,
+        "updatedBy": {
+          "email": "lopp@elementl.com"
+        }
+      },
+      {
+        "allBranchDeploymentsScope": true,
+        "canEditSecret": true,
+        "canViewSecretValue": true,
+        "fullDeploymentScope": true,
+        "id": "87198b0f905d4a90809595b310388e2d",
+        "localDeploymentScope": true,
+        "locationNames": [],
+        "secretName": "SNOWFLAKE_ROLE",
+        "specificBranchDeploymentScope": null,
+        "updateTimestamp": 1701295128.844959,
+        "updatedBy": {
+          "email": "izzy@dagsterlabs.com"
+        }
+      },
+      {
+        "allBranchDeploymentsScope": true,
+        "canEditSecret": true,
+        "canViewSecretValue": true,
+        "fullDeploymentScope": true,
+        "id": "6d627d934f3445a59cc80a0700af6d65",
+        "localDeploymentScope": true,
+        "locationNames": [],
+        "secretName": "SNOWFLAKE_USERNAME",
+        "specificBranchDeploymentScope": null,
+        "updateTimestamp": 1677621427.19247,
+        "updatedBy": {
+          "email": "lopp@elementl.com"
+        }
+      },
+      {
+        "allBranchDeploymentsScope": true,
+        "canEditSecret": true,
+        "canViewSecretValue": true,
+        "fullDeploymentScope": true,
+        "id": "4fdd87f4356d44dbbda1ee2f79936a59",
+        "localDeploymentScope": true,
+        "locationNames": [],
+        "secretName": "SNOWFLAKE_ACCOUNT",
+        "specificBranchDeploymentScope": null,
+        "updateTimestamp": 1683227528.067031,
+        "updatedBy": {
+          "email": "lopp@elementl.com"
+        }
+      },
+      {
+        "allBranchDeploymentsScope": true,
+        "canEditSecret": true,
+        "canViewSecretValue": true,
+        "fullDeploymentScope": true,
+        "id": "d09927cee20d4e599e766eb765c09519",
+        "localDeploymentScope": true,
+        "locationNames": [],
+        "secretName": "AWS_REGION",
+        "specificBranchDeploymentScope": null,
+        "updateTimestamp": 1701357488.570713,
+        "updatedBy": {
+          "email": "izzy@dagsterlabs.com"
+        }
+      },
+      {
+        "allBranchDeploymentsScope": true,
+        "canEditSecret": true,
+        "canViewSecretValue": true,
+        "fullDeploymentScope": true,
+        "id": "ef00b8a20b484620a261a50519afd644",
+        "localDeploymentScope": true,
+        "locationNames": [],
+        "secretName": "SNOWFLAKE_HOST",
+        "specificBranchDeploymentScope": null,
+        "updateTimestamp": 1702337222.879755,
+        "updatedBy": {
+          "email": "izzy@dagsterlabs.com"
+        }
+      },
+      {
+        "allBranchDeploymentsScope": true,
+        "canEditSecret": true,
+        "canViewSecretValue": true,
+        "fullDeploymentScope": false,
+        "id": "c607dcb8d19c4f80a2caf0bc1409fdd3",
+        "localDeploymentScope": true,
+        "locationNames": [],
+        "secretName": "DAGSTER_DBT_PARSE_PROJECT_ON_LOAD",
+        "specificBranchDeploymentScope": null,
+        "updateTimestamp": 1712339575.019563,
+        "updatedBy": {
+          "email": "christian@dagsterlabs.com"
+        }
+      },
+      {
+        "allBranchDeploymentsScope": true,
+        "canEditSecret": true,
+        "canViewSecretValue": true,
+        "fullDeploymentScope": true,
+        "id": "0db2f8eec4e1434982b435227f050783",
+        "localDeploymentScope": true,
+        "locationNames": [],
+        "secretName": "AWS_S3_BUCKET",
+        "specificBranchDeploymentScope": null,
+        "updateTimestamp": 1712693018.240532,
+        "updatedBy": {
+          "email": "christian@dagsterlabs.com"
+        }
+      },
+      {
+        "allBranchDeploymentsScope": true,
+        "canEditSecret": true,
+        "canViewSecretValue": true,
+        "fullDeploymentScope": true,
+        "id": "b1467177bc8e4235b655edcfba6ca340",
+        "localDeploymentScope": true,
+        "locationNames": [],
+        "secretName": "AZURE_POWERBI_CLIENT_SECRET_ID",
+        "specificBranchDeploymentScope": null,
+        "updateTimestamp": 1728481423.48392,
+        "updatedBy": {
+          "email": "christian@dagsterlabs.com"
+        }
+      },
+      {
+        "allBranchDeploymentsScope": true,
+        "canEditSecret": true,
+        "canViewSecretValue": true,
+        "fullDeploymentScope": true,
+        "id": "e7b8bc919e4c491e985d6f34cd155604",
+        "localDeploymentScope": true,
+        "locationNames": [],
+        "secretName": "AZURE_POWERBI_CLIENT_ID",
+        "specificBranchDeploymentScope": null,
+        "updateTimestamp": 1728436425.360461,
+        "updatedBy": {
+          "email": "christian@dagsterlabs.com"
+        }
+      },
+      {
+        "allBranchDeploymentsScope": true,
+        "canEditSecret": true,
+        "canViewSecretValue": true,
+        "fullDeploymentScope": true,
+        "id": "7981b0db240a4c02b7ff4663a696efcc",
+        "localDeploymentScope": true,
+        "locationNames": [],
+        "secretName": "AZURE_POWERBI_CLIENT_SECRET",
+        "specificBranchDeploymentScope": null,
+        "updateTimestamp": 1728436436.007341,
+        "updatedBy": {
+          "email": "christian@dagsterlabs.com"
+        }
+      },
+      {
+        "allBranchDeploymentsScope": true,
+        "canEditSecret": true,
+        "canViewSecretValue": true,
+        "fullDeploymentScope": true,
+        "id": "48b8c1ad099545cdbbf44a8b0c520922",
+        "localDeploymentScope": true,
+        "locationNames": [],
+        "secretName": "AZURE_POWERBI_TENANT_ID",
+        "specificBranchDeploymentScope": null,
+        "updateTimestamp": 1728436444.180889,
+        "updatedBy": {
+          "email": "christian@dagsterlabs.com"
+        }
+      },
+      {
+        "allBranchDeploymentsScope": true,
+        "canEditSecret": true,
+        "canViewSecretValue": true,
+        "fullDeploymentScope": true,
+        "id": "58fe4b5791b74556b394167a504876cc",
+        "localDeploymentScope": true,
+        "locationNames": [],
+        "secretName": "AZURE_POWERBI_WORKSPACE_ID",
+        "specificBranchDeploymentScope": null,
+        "updateTimestamp": 1728436452.436403,
+        "updatedBy": {
+          "email": "christian@dagsterlabs.com"
+        }
+      },
+      {
+        "allBranchDeploymentsScope": true,
+        "canEditSecret": true,
+        "canViewSecretValue": true,
+        "fullDeploymentScope": true,
+        "id": "0eb6b13ae2fd4ac2b3d2e6f44688401c",
+        "localDeploymentScope": true,
+        "locationNames": [],
+        "secretName": "SNOWFLAKE_SCHEMA",
+        "specificBranchDeploymentScope": null,
+        "updateTimestamp": 1751052059.521047,
+        "updatedBy": {
+          "email": "christian@dagsterlabs.com"
+        }
+      },
+      {
+        "allBranchDeploymentsScope": true,
+        "canEditSecret": true,
+        "canViewSecretValue": true,
+        "fullDeploymentScope": true,
+        "id": "a6c8104f3ede4c41935bdd9895acd805",
+        "localDeploymentScope": true,
+        "locationNames": [],
+        "secretName": "EXAMPLE_ENVIRONMENT_VARIABLE",
+        "specificBranchDeploymentScope": null,
+        "updateTimestamp": 1758572319.564529,
+        "updatedBy": {
+          "email": "colton@dagsterlabs.com"
+        }
+      },
+      {
+        "allBranchDeploymentsScope": true,
+        "canEditSecret": true,
+        "canViewSecretValue": true,
+        "fullDeploymentScope": true,
+        "id": "c192d89000034a259062630a7fa58aad",
+        "localDeploymentScope": true,
+        "locationNames": [],
+        "secretName": "MWAA_AWS_ACCESS_KEY_ID",
+        "specificBranchDeploymentScope": null,
+        "updateTimestamp": 1741404390.092809,
+        "updatedBy": {
+          "email": "colton@dagsterlabs.com"
+        }
+      },
+      {
+        "allBranchDeploymentsScope": true,
+        "canEditSecret": true,
+        "canViewSecretValue": true,
+        "fullDeploymentScope": true,
+        "id": "bb813ff1bba04e179540839173faf9ed",
+        "localDeploymentScope": true,
+        "locationNames": [],
+        "secretName": "MWAA_AWS_SECRET_ACCESS_KEY",
+        "specificBranchDeploymentScope": null,
+        "updateTimestamp": 1741404401.762188,
+        "updatedBy": {
+          "email": "colton@dagsterlabs.com"
+        }
+      },
+      {
+        "allBranchDeploymentsScope": false,
+        "canEditSecret": true,
+        "canViewSecretValue": true,
+        "fullDeploymentScope": true,
+        "id": "05ed2d9c9ac246adac68389d48ab448a",
+        "localDeploymentScope": true,
+        "locationNames": [],
+        "secretName": "DATABRICKS_TOKEN",
+        "specificBranchDeploymentScope": null,
+        "updateTimestamp": 1753489920.87612,
+        "updatedBy": {
+          "email": "christian@dagsterlabs.com"
+        }
+      },
+      {
+        "allBranchDeploymentsScope": false,
+        "canEditSecret": true,
+        "canViewSecretValue": true,
+        "fullDeploymentScope": true,
+        "id": "18d411d2f8e143159fc348cfe2b9f578",
+        "localDeploymentScope": true,
+        "locationNames": [],
+        "secretName": "DATABRICKS_HOST",
+        "specificBranchDeploymentScope": null,
+        "updateTimestamp": 1753489931.161514,
+        "updatedBy": {
+          "email": "christian@dagsterlabs.com"
+        }
+      },
+      {
+        "allBranchDeploymentsScope": true,
+        "canEditSecret": true,
+        "canViewSecretValue": true,
+        "fullDeploymentScope": false,
+        "id": "5e55512ef0164d6e92b050e54b0a2082",
+        "localDeploymentScope": false,
+        "locationNames": [],
+        "secretName": "DATABRICKS_HOST",
+        "specificBranchDeploymentScope": null,
+        "updateTimestamp": 1753489964.377634,
+        "updatedBy": {
+          "email": "christian@dagsterlabs.com"
+        }
+      },
+      {
+        "allBranchDeploymentsScope": true,
+        "canEditSecret": true,
+        "canViewSecretValue": true,
+        "fullDeploymentScope": false,
+        "id": "65645109569c4acfa4b9f74de40329ce",
+        "localDeploymentScope": false,
+        "locationNames": [],
+        "secretName": "DATABRICKS_TOKEN",
+        "specificBranchDeploymentScope": null,
+        "updateTimestamp": 1753490013.657806,
+        "updatedBy": {
+          "email": "christian@dagsterlabs.com"
+        }
+      },
+      {
+        "allBranchDeploymentsScope": true,
+        "canEditSecret": true,
+        "canViewSecretValue": true,
+        "fullDeploymentScope": true,
+        "id": "2d34f85706f44d77a33620ae5c3ef96b",
+        "localDeploymentScope": true,
+        "locationNames": [],
+        "secretName": "GITHUB_TOKEN",
+        "specificBranchDeploymentScope": null,
+        "updateTimestamp": 1754941152.247125,
+        "updatedBy": {
+          "email": "christian@dagsterlabs.com"
+        }
+      },
+      {
+        "allBranchDeploymentsScope": true,
+        "canEditSecret": true,
+        "canViewSecretValue": true,
+        "fullDeploymentScope": true,
+        "id": "f1a0dee193ac4f3d9a5c88e7f5169a26",
+        "localDeploymentScope": true,
+        "locationNames": [],
+        "secretName": "SNOWFLAKE_KEY",
+        "specificBranchDeploymentScope": null,
+        "updateTimestamp": 1757523758.934973,
+        "updatedBy": {
+          "email": "christian@dagsterlabs.com"
+        }
+      }
+    ]
+  }
+}
