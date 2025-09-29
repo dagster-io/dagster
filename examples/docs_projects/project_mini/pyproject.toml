@@ -8,6 +8,8 @@ dependencies = [
     # highlight-start
     "shared",
     # highlight-end
+    "pandas",
+    "dagster-pandas",
 ]
 # end_dependencies
 
