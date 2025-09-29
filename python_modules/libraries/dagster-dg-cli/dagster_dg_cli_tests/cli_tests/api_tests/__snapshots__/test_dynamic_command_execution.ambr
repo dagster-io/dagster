@@ -4098,6 +4098,1088 @@
   
   '''
 # ---
+# name: TestDynamicCommandExecution.test_command_execution[log_error_cursor_no_recording_json_json]
+  '''
+  {"error": "Exhausted 0 responses"}
+  Error: Failed to get logs for run 85156191-170d-4229-8eba-14450b6ca9e3: Exhausted 0 responses
+  
+  '''
+# ---
+# name: TestDynamicCommandExecution.test_command_execution[log_error_cursor_no_recording_text_text]
+  '''
+  Error querying Dagster Plus API: Exhausted 0 responses
+  Error: Failed to get logs for run 85156191-170d-4229-8eba-14450b6ca9e3: Exhausted 0 responses
+  
+  '''
+# ---
+# name: TestDynamicCommandExecution.test_command_execution[log_error_empty_logs_no_recording_json_json]
+  '''
+  {"error": "Exhausted 0 responses"}
+  Error: Failed to get logs for run empty-run-uuid-0000-0000-000000000000: Exhausted 0 responses
+  
+  '''
+# ---
+# name: TestDynamicCommandExecution.test_command_execution[log_error_empty_logs_no_recording_text_text]
+  '''
+  Error querying Dagster Plus API: Exhausted 0 responses
+  Error: Failed to get logs for run empty-run-uuid-0000-0000-000000000000: Exhausted 0 responses
+  
+  '''
+# ---
+# name: TestDynamicCommandExecution.test_command_execution[log_error_empty_run_id_json_json]
+  '''
+  {"error": "Exhausted 0 responses"}
+  Error: Failed to get logs for run '': Exhausted 0 responses
+  
+  '''
+# ---
+# name: TestDynamicCommandExecution.test_command_execution[log_error_empty_run_id_text_text]
+  '''
+  Error querying Dagster Plus API: Exhausted 0 responses
+  Error: Failed to get logs for run '': Exhausted 0 responses
+  
+  '''
+# ---
+# name: TestDynamicCommandExecution.test_command_execution[log_error_invalid_level_json_json]
+  dict({
+    'count': 0,
+    'cursor': 'eyJ0eXBlIjogIlNUT1JBR0VfSUQiLCAidmFsdWUiOiA0ODgwODU1MzE0M30=',
+    'hasMore': False,
+    'logs': list([
+    ]),
+    'run_id': '85156191-170d-4229-8eba-14450b6ca9e3',
+  })
+# ---
+# name: TestDynamicCommandExecution.test_command_execution[log_error_invalid_level_text_text]
+  '''
+  No logs found for run 85156191-170d-4229-8eba-14450b6ca9e3
+  
+  '''
+# ---
+# name: TestDynamicCommandExecution.test_command_execution[log_error_malformed_run_id_json_json]
+  '''
+  {"error": "Exhausted 0 responses"}
+  Error: Failed to get logs for run invalid-uuid-format: Exhausted 0 responses
+  
+  '''
+# ---
+# name: TestDynamicCommandExecution.test_command_execution[log_error_malformed_run_id_text_text]
+  '''
+  Error querying Dagster Plus API: Exhausted 0 responses
+  Error: Failed to get logs for run invalid-uuid-format: Exhausted 0 responses
+  
+  '''
+# ---
+# name: TestDynamicCommandExecution.test_command_execution[log_error_run_not_found_json_json]
+  '''
+  {"error": "Exhausted 0 responses"}
+  Error: Failed to get logs for run nonexistent-run-uuid-1234-5678-900000000000: Exhausted 0 responses
+  
+  '''
+# ---
+# name: TestDynamicCommandExecution.test_command_execution[log_error_run_not_found_text_text]
+  '''
+  Error querying Dagster Plus API: Exhausted 0 responses
+  Error: Failed to get logs for run nonexistent-run-uuid-1234-5678-900000000000: Exhausted 0 responses
+  
+  '''
+# ---
+# name: TestDynamicCommandExecution.test_command_execution[log_success_logs_basic_json_json]
+  dict({
+    'count': 20,
+    'cursor': 'eyJ0eXBlIjogIlNUT1JBR0VfSUQiLCAidmFsdWUiOiA0ODgyMTg1Nzg2MH0=',
+    'hasMore': True,
+    'logs': list([
+      dict({
+        'error': None,
+        'eventType': 'ASSET_CHECK_EVALUATION_PLANNED',
+        'level': 'DEBUG',
+        'message': 'check_avg_orders_freshness_job intends to execute asset check anomaly_detection_freshness_check on asset ["MARKETING", "avg_orders"]',
+        'runId': 'b45fff8a-7def-43b8-805d-1cf5f435c997',
+        'stepKey': 'anomaly_detection_freshness_check_458e9b8f',
+        'timestamp': '1758817801771',
+      }),
+      dict({
+        'error': None,
+        'eventType': 'RUN_ENQUEUED',
+        'level': 'INFO',
+        'message': '',
+        'runId': 'b45fff8a-7def-43b8-805d-1cf5f435c997',
+        'stepKey': None,
+        'timestamp': '1758817801798',
+      }),
+      dict({
+        'error': None,
+        'eventType': 'RUN_STARTING',
+        'level': 'INFO',
+        'message': '',
+        'runId': 'b45fff8a-7def-43b8-805d-1cf5f435c997',
+        'stepKey': None,
+        'timestamp': '1758817804629',
+      }),
+      dict({
+        'error': None,
+        'eventType': 'ENGINE_EVENT',
+        'level': 'INFO',
+        'message': 'Sending a request to the agent to execute steps in the user cloud',
+        'runId': 'b45fff8a-7def-43b8-805d-1cf5f435c997',
+        'stepKey': None,
+        'timestamp': '1758817804660',
+      }),
+      dict({
+        'error': None,
+        'eventType': 'ENGINE_EVENT',
+        'level': 'INFO',
+        'message': '[DagsterCloudAgent] Agent d0a5374c is launching run b45fff8a-7def-43b8-805d-1cf5f435c997',
+        'runId': 'b45fff8a-7def-43b8-805d-1cf5f435c997',
+        'stepKey': None,
+        'timestamp': '1758817804845',
+      }),
+      dict({
+        'error': None,
+        'eventType': 'ENGINE_EVENT',
+        'level': 'INFO',
+        'message': '[CloudK8sRunLauncher] Creating Kubernetes run worker job',
+        'runId': 'b45fff8a-7def-43b8-805d-1cf5f435c997',
+        'stepKey': None,
+        'timestamp': '1758817804996',
+      }),
+      dict({
+        'error': None,
+        'eventType': 'ENGINE_EVENT',
+        'level': 'INFO',
+        'message': '[CloudK8sRunLauncher] Kubernetes run worker job created',
+        'runId': 'b45fff8a-7def-43b8-805d-1cf5f435c997',
+        'stepKey': None,
+        'timestamp': '1758817805113',
+      }),
+      dict({
+        'error': None,
+        'eventType': 'ENGINE_EVENT',
+        'level': 'INFO',
+        'message': 'Starting run metrics thread with container_metrics_enabled=True and python_metrics_enabled=False',
+        'runId': 'b45fff8a-7def-43b8-805d-1cf5f435c997',
+        'stepKey': None,
+        'timestamp': '1758817813386',
+      }),
+      dict({
+        'error': None,
+        'eventType': 'ENGINE_EVENT',
+        'level': 'INFO',
+        'message': 'Started process for run (pid: 1).',
+        'runId': 'b45fff8a-7def-43b8-805d-1cf5f435c997',
+        'stepKey': None,
+        'timestamp': '1758817813451',
+      }),
+      dict({
+        'error': None,
+        'eventType': 'RUN_START',
+        'level': 'DEBUG',
+        'message': 'Started execution of run for "check_avg_orders_freshness_job".',
+        'runId': 'b45fff8a-7def-43b8-805d-1cf5f435c997',
+        'stepKey': None,
+        'timestamp': '1758817827876',
+      }),
+      dict({
+        'error': None,
+        'eventType': 'ENGINE_EVENT',
+        'level': 'DEBUG',
+        'message': 'Executing steps using multiprocess executor: parent process (pid: 1)',
+        'runId': 'b45fff8a-7def-43b8-805d-1cf5f435c997',
+        'stepKey': None,
+        'timestamp': '1758817827919',
+      }),
+      dict({
+        'error': None,
+        'eventType': 'STEP_WORKER_STARTING',
+        'level': 'DEBUG',
+        'message': 'Launching subprocess for "anomaly_detection_freshness_check_458e9b8f".',
+        'runId': 'b45fff8a-7def-43b8-805d-1cf5f435c997',
+        'stepKey': 'anomaly_detection_freshness_check_458e9b8f',
+        'timestamp': '1758817828047',
+      }),
+      dict({
+        'error': None,
+        'eventType': 'STEP_WORKER_STARTED',
+        'level': 'DEBUG',
+        'message': 'Executing step "anomaly_detection_freshness_check_458e9b8f" in subprocess.',
+        'runId': 'b45fff8a-7def-43b8-805d-1cf5f435c997',
+        'stepKey': 'anomaly_detection_freshness_check_458e9b8f',
+        'timestamp': '1758817829513',
+      }),
+      dict({
+        'error': None,
+        'eventType': 'RESOURCE_INIT_STARTED',
+        'level': 'DEBUG',
+        'message': 'Starting initialization of resources [io_manager].',
+        'runId': 'b45fff8a-7def-43b8-805d-1cf5f435c997',
+        'stepKey': 'anomaly_detection_freshness_check_458e9b8f',
+        'timestamp': '1758817833373',
+      }),
+      dict({
+        'error': None,
+        'eventType': 'RESOURCE_INIT_SUCCESS',
+        'level': 'DEBUG',
+        'message': 'Finished initialization of resources [io_manager].',
+        'runId': 'b45fff8a-7def-43b8-805d-1cf5f435c997',
+        'stepKey': 'anomaly_detection_freshness_check_458e9b8f',
+        'timestamp': '1758817833453',
+      }),
+      dict({
+        'error': None,
+        'eventType': 'LOGS_CAPTURED',
+        'level': 'DEBUG',
+        'message': 'Started capturing logs in process (pid: 19).',
+        'runId': 'b45fff8a-7def-43b8-805d-1cf5f435c997',
+        'stepKey': None,
+        'timestamp': '1758817833507',
+      }),
+      dict({
+        'error': None,
+        'eventType': 'STEP_START',
+        'level': 'DEBUG',
+        'message': 'Started execution of step "anomaly_detection_freshness_check_458e9b8f".',
+        'runId': 'b45fff8a-7def-43b8-805d-1cf5f435c997',
+        'stepKey': 'anomaly_detection_freshness_check_458e9b8f',
+        'timestamp': '1758817833533',
+      }),
+      dict({
+        'error': None,
+        'eventType': 'STEP_OUTPUT',
+        'level': 'DEBUG',
+        'message': 'Yielded output "MARKETING__avg_orders_anomaly_detection_freshness_check" of type "Any". (Type check passed).',
+        'runId': 'b45fff8a-7def-43b8-805d-1cf5f435c997',
+        'stepKey': 'anomaly_detection_freshness_check_458e9b8f',
+        'timestamp': '1758817833714',
+      }),
+      dict({
+        'error': None,
+        'eventType': 'ASSET_CHECK_EVALUATION',
+        'level': 'DEBUG',
+        'message': "Asset check 'anomaly_detection_freshness_check' on 'MARKETING/avg_orders' did not pass. Description: 'Asset is overdue for an update. The last update was 2 days, 16 hours, 25 minutes, 24 seconds ago, which is past the allowed distance of 2 days, 5 minutes, 11 seconds ago.'",
+        'runId': 'b45fff8a-7def-43b8-805d-1cf5f435c997',
+        'stepKey': 'anomaly_detection_freshness_check_458e9b8f',
+        'timestamp': '1758817833766',
+      }),
+      dict({
+        'error': None,
+        'eventType': 'STEP_SUCCESS',
+        'level': 'DEBUG',
+        'message': 'Finished execution of step "anomaly_detection_freshness_check_458e9b8f" in 246ms.',
+        'runId': 'b45fff8a-7def-43b8-805d-1cf5f435c997',
+        'stepKey': 'anomaly_detection_freshness_check_458e9b8f',
+        'timestamp': '1758817833807',
+      }),
+    ]),
+    'run_id': 'b45fff8a-7def-43b8-805d-1cf5f435c997',
+  })
+# ---
+# name: TestDynamicCommandExecution.test_command_execution[log_success_logs_basic_text_text]
+  '''
+  Logs for run b45fff8a-7def-43b8-805d-1cf5f435c997:
+  
+  TIMESTAMP            LEVEL    STEP_KEY                  MESSAGE
+  --------------------------------------------------------------------------------
+  2025-09-25 16:30:01  DEBUG    anomaly_detection_freshn  check_avg_orders_freshness_job intends to execute asset check anomaly_detection_freshness_check on asset ["MARKETING", "avg_orders"]
+  2025-09-25 16:30:01  INFO                               
+  2025-09-25 16:30:04  INFO                               
+  2025-09-25 16:30:04  INFO                               Sending a request to the agent to execute steps in the user cloud
+  2025-09-25 16:30:04  INFO                               [DagsterCloudAgent] Agent d0a5374c is launching run b45fff8a-7def-43b8-805d-1cf5f435c997
+  2025-09-25 16:30:04  INFO                               [CloudK8sRunLauncher] Creating Kubernetes run worker job
+  2025-09-25 16:30:05  INFO                               [CloudK8sRunLauncher] Kubernetes run worker job created
+  2025-09-25 16:30:13  INFO                               Starting run metrics thread with container_metrics_enabled=True and python_metrics_enabled=False
+  2025-09-25 16:30:13  INFO                               Started process for run (pid: 1).
+  2025-09-25 16:30:27  DEBUG                              Started execution of run for "check_avg_orders_freshness_job".
+  2025-09-25 16:30:27  DEBUG                              Executing steps using multiprocess executor: parent process (pid: 1)
+  2025-09-25 16:30:28  DEBUG    anomaly_detection_freshn  Launching subprocess for "anomaly_detection_freshness_check_458e9b8f".
+  2025-09-25 16:30:29  DEBUG    anomaly_detection_freshn  Executing step "anomaly_detection_freshness_check_458e9b8f" in subprocess.
+  2025-09-25 16:30:33  DEBUG    anomaly_detection_freshn  Starting initialization of resources [io_manager].
+  2025-09-25 16:30:33  DEBUG    anomaly_detection_freshn  Finished initialization of resources [io_manager].
+  2025-09-25 16:30:33  DEBUG                              Started capturing logs in process (pid: 19).
+  2025-09-25 16:30:33  DEBUG    anomaly_detection_freshn  Started execution of step "anomaly_detection_freshness_check_458e9b8f".
+  2025-09-25 16:30:33  DEBUG    anomaly_detection_freshn  Yielded output "MARKETING__avg_orders_anomaly_detection_freshness_check" of type "Any". (Type check passed).
+  2025-09-25 16:30:33  DEBUG    anomaly_detection_freshn  Asset check 'anomaly_detection_freshness_check' on 'MARKETING/avg_orders' did not pass. Description: 'Asset is overdue for an update. The last update was 2 days, 16 hours, 25 minutes, 24 seconds ago, which is past the allowed distance of 2 days, 5 minutes, 11 seconds ago.'
+  2025-09-25 16:30:33  DEBUG    anomaly_detection_freshn  Finished execution of step "anomaly_detection_freshness_check_458e9b8f" in 246ms.
+  
+  Total log entries: 20
+  Note: More logs available (use --limit to increase or --cursor to paginate)
+  
+  '''
+# ---
+# name: TestDynamicCommandExecution.test_command_execution[log_success_logs_debug_level_json_json]
+  dict({
+    'count': 0,
+    'cursor': 'eyJ0eXBlIjogIlNUT1JBR0VfSUQiLCAidmFsdWUiOiA0ODgwODUzNTQzOH0=',
+    'hasMore': True,
+    'logs': list([
+    ]),
+    'run_id': '85156191-170d-4229-8eba-14450b6ca9e3',
+  })
+# ---
+# name: TestDynamicCommandExecution.test_command_execution[log_success_logs_debug_level_text_text]
+  '''
+  No logs found for run 85156191-170d-4229-8eba-14450b6ca9e3
+  
+  '''
+# ---
+# name: TestDynamicCommandExecution.test_command_execution[log_success_logs_empty_json_json]
+  '''
+  {"error": "Exhausted 0 responses"}
+  Error: Failed to get logs for run empty-run-uuid-0000-0000-000000000000: Exhausted 0 responses
+  
+  '''
+# ---
+# name: TestDynamicCommandExecution.test_command_execution[log_success_logs_empty_text_text]
+  '''
+  Error querying Dagster Plus API: Exhausted 0 responses
+  Error: Failed to get logs for run empty-run-uuid-0000-0000-000000000000: Exhausted 0 responses
+  
+  '''
+# ---
+# name: TestDynamicCommandExecution.test_command_execution[log_success_logs_error_level_only_json_json]
+  dict({
+    'count': 0,
+    'cursor': 'eyJ0eXBlIjogIlNUT1JBR0VfSUQiLCAidmFsdWUiOiA0ODgwODU1MzE0M30=',
+    'hasMore': False,
+    'logs': list([
+    ]),
+    'run_id': '85156191-170d-4229-8eba-14450b6ca9e3',
+  })
+# ---
+# name: TestDynamicCommandExecution.test_command_execution[log_success_logs_error_level_only_text_text]
+  '''
+  No logs found for run 85156191-170d-4229-8eba-14450b6ca9e3
+  
+  '''
+# ---
+# name: TestDynamicCommandExecution.test_command_execution[log_success_logs_small_limit_json_json]
+  dict({
+    'count': 5,
+    'cursor': 'eyJ0eXBlIjogIlNUT1JBR0VfSUQiLCAidmFsdWUiOiA0ODgwODUyODM1MX0=',
+    'hasMore': True,
+    'logs': list([
+      dict({
+        'error': None,
+        'eventType': 'ASSET_MATERIALIZATION_PLANNED',
+        'level': 'DEBUG',
+        'message': 'run_etl_pipeline intends to materialize asset ["enriched_data"]',
+        'runId': '85156191-170d-4229-8eba-14450b6ca9e3',
+        'stepKey': 'enriched_data.concat_chunk_list',
+        'timestamp': '1758808865047',
+      }),
+      dict({
+        'error': None,
+        'eventType': 'ENGINE_EVENT',
+        'level': 'INFO',
+        'message': 'Launched as an automatic retry',
+        'runId': '85156191-170d-4229-8eba-14450b6ca9e3',
+        'stepKey': None,
+        'timestamp': '1758808865075',
+      }),
+      dict({
+        'error': None,
+        'eventType': 'RUN_ENQUEUED',
+        'level': 'INFO',
+        'message': '',
+        'runId': '85156191-170d-4229-8eba-14450b6ca9e3',
+        'stepKey': None,
+        'timestamp': '1758808865098',
+      }),
+      dict({
+        'error': None,
+        'eventType': 'RUN_STARTING',
+        'level': 'INFO',
+        'message': '',
+        'runId': '85156191-170d-4229-8eba-14450b6ca9e3',
+        'stepKey': None,
+        'timestamp': '1758808867161',
+      }),
+      dict({
+        'error': None,
+        'eventType': 'ENGINE_EVENT',
+        'level': 'INFO',
+        'message': 'Sending a request to the agent to execute steps in the user cloud',
+        'runId': '85156191-170d-4229-8eba-14450b6ca9e3',
+        'stepKey': None,
+        'timestamp': '1758808867189',
+      }),
+    ]),
+    'run_id': '85156191-170d-4229-8eba-14450b6ca9e3',
+  })
+# ---
+# name: TestDynamicCommandExecution.test_command_execution[log_success_logs_small_limit_text_text]
+  '''
+  Logs for run 85156191-170d-4229-8eba-14450b6ca9e3:
+  
+  TIMESTAMP            LEVEL    STEP_KEY                  MESSAGE
+  --------------------------------------------------------------------------------
+  2025-09-25 14:01:05  DEBUG    enriched_data.concat_chu  run_etl_pipeline intends to materialize asset ["enriched_data"]
+  2025-09-25 14:01:05  INFO                               Launched as an automatic retry
+  2025-09-25 14:01:05  INFO                               
+  2025-09-25 14:01:07  INFO                               
+  2025-09-25 14:01:07  INFO                               Sending a request to the agent to execute steps in the user cloud
+  
+  Total log entries: 5
+  Note: More logs available (use --limit to increase or --cursor to paginate)
+  
+  '''
+# ---
+# name: TestDynamicCommandExecution.test_command_execution[log_success_logs_step_filter_json_json]
+  dict({
+    'count': 3,
+    'cursor': 'eyJ0eXBlIjogIlNUT1JBR0VfSUQiLCAidmFsdWUiOiA0ODgwODU0MDMyNn0=',
+    'hasMore': True,
+    'logs': list([
+      dict({
+        'error': None,
+        'eventType': 'STEP_WORKER_STARTING',
+        'level': 'DEBUG',
+        'message': 'Launching subprocess for "enriched_data.process_chunk[11]".',
+        'runId': '85156191-170d-4229-8eba-14450b6ca9e3',
+        'stepKey': 'enriched_data.process_chunk[11]',
+        'timestamp': '1758808871633',
+      }),
+      dict({
+        'error': None,
+        'eventType': 'STEP_WORKER_STARTED',
+        'level': 'DEBUG',
+        'message': 'Executing step "enriched_data.process_chunk[11]" in subprocess.',
+        'runId': '85156191-170d-4229-8eba-14450b6ca9e3',
+        'stepKey': 'enriched_data.process_chunk[11]',
+        'timestamp': '1758808872870',
+      }),
+      dict({
+        'error': None,
+        'eventType': 'RESOURCE_INIT_STARTED',
+        'level': 'DEBUG',
+        'message': 'Starting initialization of resources [api, io_manager].',
+        'runId': '85156191-170d-4229-8eba-14450b6ca9e3',
+        'stepKey': 'enriched_data.process_chunk[11]',
+        'timestamp': '1758808873361',
+      }),
+    ]),
+    'run_id': '85156191-170d-4229-8eba-14450b6ca9e3',
+  })
+# ---
+# name: TestDynamicCommandExecution.test_command_execution[log_success_logs_step_filter_text_text]
+  '''
+  Logs for run 85156191-170d-4229-8eba-14450b6ca9e3:
+  
+  TIMESTAMP            LEVEL    STEP_KEY                  MESSAGE
+  --------------------------------------------------------------------------------
+  2025-09-25 14:01:11  DEBUG    enriched_data.process_ch  Launching subprocess for "enriched_data.process_chunk[11]".
+  2025-09-25 14:01:12  DEBUG    enriched_data.process_ch  Executing step "enriched_data.process_chunk[11]" in subprocess.
+  2025-09-25 14:01:13  DEBUG    enriched_data.process_ch  Starting initialization of resources [api, io_manager].
+  
+  Total log entries: 3
+  Note: More logs available (use --limit to increase or --cursor to paginate)
+  
+  '''
+# ---
+# name: TestDynamicCommandExecution.test_command_execution[log_success_logs_with_cursor_json_json]
+  '''
+  {"error": "Exhausted 0 responses"}
+  Error: Failed to get logs for run 85156191-170d-4229-8eba-14450b6ca9e3: Exhausted 0 responses
+  
+  '''
+# ---
+# name: TestDynamicCommandExecution.test_command_execution[log_success_logs_with_cursor_text_text]
+  '''
+  Error querying Dagster Plus API: Exhausted 0 responses
+  Error: Failed to get logs for run 85156191-170d-4229-8eba-14450b6ca9e3: Exhausted 0 responses
+  
+  '''
+# ---
+# name: TestDynamicCommandExecution.test_command_execution[log_success_logs_with_errors_json_json]
+  dict({
+    'count': 41,
+    'cursor': 'eyJ0eXBlIjogIlNUT1JBR0VfSUQiLCAidmFsdWUiOiA0ODgwODU1MzE0M30=',
+    'hasMore': False,
+    'logs': list([
+      dict({
+        'error': None,
+        'eventType': 'ASSET_MATERIALIZATION_PLANNED',
+        'level': 'DEBUG',
+        'message': 'run_etl_pipeline intends to materialize asset ["enriched_data"]',
+        'runId': '85156191-170d-4229-8eba-14450b6ca9e3',
+        'stepKey': 'enriched_data.concat_chunk_list',
+        'timestamp': '1758808865047',
+      }),
+      dict({
+        'error': None,
+        'eventType': 'ENGINE_EVENT',
+        'level': 'INFO',
+        'message': 'Launched as an automatic retry',
+        'runId': '85156191-170d-4229-8eba-14450b6ca9e3',
+        'stepKey': None,
+        'timestamp': '1758808865075',
+      }),
+      dict({
+        'error': None,
+        'eventType': 'RUN_ENQUEUED',
+        'level': 'INFO',
+        'message': '',
+        'runId': '85156191-170d-4229-8eba-14450b6ca9e3',
+        'stepKey': None,
+        'timestamp': '1758808865098',
+      }),
+      dict({
+        'error': None,
+        'eventType': 'RUN_STARTING',
+        'level': 'INFO',
+        'message': '',
+        'runId': '85156191-170d-4229-8eba-14450b6ca9e3',
+        'stepKey': None,
+        'timestamp': '1758808867161',
+      }),
+      dict({
+        'error': None,
+        'eventType': 'ENGINE_EVENT',
+        'level': 'INFO',
+        'message': 'Sending a request to the agent to execute steps in the user cloud',
+        'runId': '85156191-170d-4229-8eba-14450b6ca9e3',
+        'stepKey': None,
+        'timestamp': '1758808867189',
+      }),
+      dict({
+        'error': None,
+        'eventType': 'ENGINE_EVENT',
+        'level': 'INFO',
+        'message': '[DagsterCloudAgent] Agent 3a659214 is launching run 85156191-170d-4229-8eba-14450b6ca9e3',
+        'runId': '85156191-170d-4229-8eba-14450b6ca9e3',
+        'stepKey': None,
+        'timestamp': '1758808867555',
+      }),
+      dict({
+        'error': None,
+        'eventType': 'ENGINE_EVENT',
+        'level': 'INFO',
+        'message': '[CloudK8sRunLauncher] Creating Kubernetes run worker job',
+        'runId': '85156191-170d-4229-8eba-14450b6ca9e3',
+        'stepKey': None,
+        'timestamp': '1758808867738',
+      }),
+      dict({
+        'error': None,
+        'eventType': 'ENGINE_EVENT',
+        'level': 'INFO',
+        'message': '[CloudK8sRunLauncher] Kubernetes run worker job created',
+        'runId': '85156191-170d-4229-8eba-14450b6ca9e3',
+        'stepKey': None,
+        'timestamp': '1758808867910',
+      }),
+      dict({
+        'error': None,
+        'eventType': 'ENGINE_EVENT',
+        'level': 'INFO',
+        'message': 'Starting run metrics thread with container_metrics_enabled=True and python_metrics_enabled=False',
+        'runId': '85156191-170d-4229-8eba-14450b6ca9e3',
+        'stepKey': None,
+        'timestamp': '1758808870636',
+      }),
+      dict({
+        'error': None,
+        'eventType': 'ENGINE_EVENT',
+        'level': 'INFO',
+        'message': 'Started process for run (pid: 1).',
+        'runId': '85156191-170d-4229-8eba-14450b6ca9e3',
+        'stepKey': None,
+        'timestamp': '1758808870686',
+      }),
+      dict({
+        'error': None,
+        'eventType': 'RUN_START',
+        'level': 'DEBUG',
+        'message': 'Started execution of run for "run_etl_pipeline".',
+        'runId': '85156191-170d-4229-8eba-14450b6ca9e3',
+        'stepKey': None,
+        'timestamp': '1758808871488',
+      }),
+      dict({
+        'error': None,
+        'eventType': 'ENGINE_EVENT',
+        'level': 'DEBUG',
+        'message': 'Executing steps using multiprocess executor: parent process (pid: 1)',
+        'runId': '85156191-170d-4229-8eba-14450b6ca9e3',
+        'stepKey': None,
+        'timestamp': '1758808871524',
+      }),
+      dict({
+        'error': None,
+        'eventType': 'STEP_WORKER_STARTING',
+        'level': 'DEBUG',
+        'message': 'Launching subprocess for "enriched_data.process_chunk[11]".',
+        'runId': '85156191-170d-4229-8eba-14450b6ca9e3',
+        'stepKey': 'enriched_data.process_chunk[11]',
+        'timestamp': '1758808871633',
+      }),
+      dict({
+        'error': None,
+        'eventType': 'STEP_WORKER_STARTED',
+        'level': 'DEBUG',
+        'message': 'Executing step "enriched_data.process_chunk[11]" in subprocess.',
+        'runId': '85156191-170d-4229-8eba-14450b6ca9e3',
+        'stepKey': 'enriched_data.process_chunk[11]',
+        'timestamp': '1758808872870',
+      }),
+      dict({
+        'error': None,
+        'eventType': 'RESOURCE_INIT_STARTED',
+        'level': 'DEBUG',
+        'message': 'Starting initialization of resources [api, io_manager].',
+        'runId': '85156191-170d-4229-8eba-14450b6ca9e3',
+        'stepKey': 'enriched_data.process_chunk[11]',
+        'timestamp': '1758808873361',
+      }),
+      dict({
+        'error': None,
+        'eventType': 'RESOURCE_INIT_SUCCESS',
+        'level': 'DEBUG',
+        'message': 'Finished initialization of resources [api, io_manager].',
+        'runId': '85156191-170d-4229-8eba-14450b6ca9e3',
+        'stepKey': 'enriched_data.process_chunk[11]',
+        'timestamp': '1758808873521',
+      }),
+      dict({
+        'error': None,
+        'eventType': 'LOGS_CAPTURED',
+        'level': 'DEBUG',
+        'message': 'Started capturing logs in process (pid: 16).',
+        'runId': '85156191-170d-4229-8eba-14450b6ca9e3',
+        'stepKey': None,
+        'timestamp': '1758808873570',
+      }),
+      dict({
+        'error': None,
+        'eventType': 'STEP_START',
+        'level': 'DEBUG',
+        'message': 'Started execution of step "enriched_data.process_chunk[11]".',
+        'runId': '85156191-170d-4229-8eba-14450b6ca9e3',
+        'stepKey': 'enriched_data.process_chunk[11]',
+        'timestamp': '1758808873607',
+      }),
+      dict({
+        'error': None,
+        'eventType': None,
+        'level': 'DEBUG',
+        'message': 'Loading file from: /opt/dagster/dagster_home/storage/385defa2-7ac6-4d18-8a88-585a42393d9c/enriched_data.split_rows/result/11 using PickledObjectFilesystemIOManager...',
+        'runId': '85156191-170d-4229-8eba-14450b6ca9e3',
+        'stepKey': 'enriched_data.process_chunk[11]',
+        'timestamp': '1758808873644',
+      }),
+      dict({
+        'error': None,
+        'eventType': 'STEP_UP_FOR_RETRY',
+        'level': 'DEBUG',
+        'message': 'Execution of step "enriched_data.process_chunk[11]" failed and has requested a retry.',
+        'runId': '85156191-170d-4229-8eba-14450b6ca9e3',
+        'stepKey': 'enriched_data.process_chunk[11]',
+        'timestamp': '1758808873697',
+      }),
+      dict({
+        'error': None,
+        'eventType': 'STEP_WORKER_STARTING',
+        'level': 'DEBUG',
+        'message': 'Launching subprocess for "enriched_data.process_chunk[11]".',
+        'runId': '85156191-170d-4229-8eba-14450b6ca9e3',
+        'stepKey': 'enriched_data.process_chunk[11]',
+        'timestamp': '1758808873742',
+      }),
+      dict({
+        'error': None,
+        'eventType': 'STEP_WORKER_STARTED',
+        'level': 'DEBUG',
+        'message': 'Executing step "enriched_data.process_chunk[11]" in subprocess.',
+        'runId': '85156191-170d-4229-8eba-14450b6ca9e3',
+        'stepKey': 'enriched_data.process_chunk[11]',
+        'timestamp': '1758808874924',
+      }),
+      dict({
+        'error': None,
+        'eventType': 'RESOURCE_INIT_STARTED',
+        'level': 'DEBUG',
+        'message': 'Starting initialization of resources [api, io_manager].',
+        'runId': '85156191-170d-4229-8eba-14450b6ca9e3',
+        'stepKey': 'enriched_data.process_chunk[11]',
+        'timestamp': '1758808875309',
+      }),
+      dict({
+        'error': None,
+        'eventType': 'RESOURCE_INIT_SUCCESS',
+        'level': 'DEBUG',
+        'message': 'Finished initialization of resources [api, io_manager].',
+        'runId': '85156191-170d-4229-8eba-14450b6ca9e3',
+        'stepKey': 'enriched_data.process_chunk[11]',
+        'timestamp': '1758808875444',
+      }),
+      dict({
+        'error': None,
+        'eventType': 'LOGS_CAPTURED',
+        'level': 'DEBUG',
+        'message': 'Started capturing logs in process (pid: 26).',
+        'runId': '85156191-170d-4229-8eba-14450b6ca9e3',
+        'stepKey': None,
+        'timestamp': '1758808875526',
+      }),
+      dict({
+        'error': None,
+        'eventType': 'STEP_RESTARTED',
+        'level': 'DEBUG',
+        'message': 'Started re-execution (attempt # 2) of step "enriched_data.process_chunk[11]".',
+        'runId': '85156191-170d-4229-8eba-14450b6ca9e3',
+        'stepKey': 'enriched_data.process_chunk[11]',
+        'timestamp': '1758808875655',
+      }),
+      dict({
+        'error': None,
+        'eventType': None,
+        'level': 'DEBUG',
+        'message': 'Loading file from: /opt/dagster/dagster_home/storage/385defa2-7ac6-4d18-8a88-585a42393d9c/enriched_data.split_rows/result/11 using PickledObjectFilesystemIOManager...',
+        'runId': '85156191-170d-4229-8eba-14450b6ca9e3',
+        'stepKey': 'enriched_data.process_chunk[11]',
+        'timestamp': '1758808875737',
+      }),
+      dict({
+        'error': None,
+        'eventType': 'STEP_UP_FOR_RETRY',
+        'level': 'DEBUG',
+        'message': 'Execution of step "enriched_data.process_chunk[11]" failed and has requested a retry.',
+        'runId': '85156191-170d-4229-8eba-14450b6ca9e3',
+        'stepKey': 'enriched_data.process_chunk[11]',
+        'timestamp': '1758808875801',
+      }),
+      dict({
+        'error': None,
+        'eventType': 'STEP_WORKER_STARTING',
+        'level': 'DEBUG',
+        'message': 'Launching subprocess for "enriched_data.process_chunk[11]".',
+        'runId': '85156191-170d-4229-8eba-14450b6ca9e3',
+        'stepKey': 'enriched_data.process_chunk[11]',
+        'timestamp': '1758808875835',
+      }),
+      dict({
+        'error': None,
+        'eventType': 'STEP_WORKER_STARTED',
+        'level': 'DEBUG',
+        'message': 'Executing step "enriched_data.process_chunk[11]" in subprocess.',
+        'runId': '85156191-170d-4229-8eba-14450b6ca9e3',
+        'stepKey': 'enriched_data.process_chunk[11]',
+        'timestamp': '1758808876893',
+      }),
+      dict({
+        'error': None,
+        'eventType': 'RESOURCE_INIT_STARTED',
+        'level': 'DEBUG',
+        'message': 'Starting initialization of resources [api, io_manager].',
+        'runId': '85156191-170d-4229-8eba-14450b6ca9e3',
+        'stepKey': 'enriched_data.process_chunk[11]',
+        'timestamp': '1758808877224',
+      }),
+      dict({
+        'error': None,
+        'eventType': 'RESOURCE_INIT_SUCCESS',
+        'level': 'DEBUG',
+        'message': 'Finished initialization of resources [api, io_manager].',
+        'runId': '85156191-170d-4229-8eba-14450b6ca9e3',
+        'stepKey': 'enriched_data.process_chunk[11]',
+        'timestamp': '1758808877380',
+      }),
+      dict({
+        'error': None,
+        'eventType': 'LOGS_CAPTURED',
+        'level': 'DEBUG',
+        'message': 'Started capturing logs in process (pid: 36).',
+        'runId': '85156191-170d-4229-8eba-14450b6ca9e3',
+        'stepKey': None,
+        'timestamp': '1758808877439',
+      }),
+      dict({
+        'error': None,
+        'eventType': 'STEP_RESTARTED',
+        'level': 'DEBUG',
+        'message': 'Started re-execution (attempt # 3) of step "enriched_data.process_chunk[11]".',
+        'runId': '85156191-170d-4229-8eba-14450b6ca9e3',
+        'stepKey': 'enriched_data.process_chunk[11]',
+        'timestamp': '1758808877601',
+      }),
+      dict({
+        'error': None,
+        'eventType': None,
+        'level': 'DEBUG',
+        'message': 'Loading file from: /opt/dagster/dagster_home/storage/385defa2-7ac6-4d18-8a88-585a42393d9c/enriched_data.split_rows/result/11 using PickledObjectFilesystemIOManager...',
+        'runId': '85156191-170d-4229-8eba-14450b6ca9e3',
+        'stepKey': 'enriched_data.process_chunk[11]',
+        'timestamp': '1758808877680',
+      }),
+      dict({
+        'error': dict({
+          'cause': dict({
+            'cause': None,
+            'className': 'FileNotFoundError',
+            'message': '''
+              FileNotFoundError: [Errno 2] No such file or directory: '/opt/dagster/dagster_home/storage/385defa2-7ac6-4d18-8a88-585a42393d9c/enriched_data.split_rows/result/11'
+  
+            ''',
+            'stack': list([
+              '''
+                  File "/usr/local/lib/python3.12/site-packages/dagster/_core/execution/plan/utils.py", line 57, in op_execution_error_boundary
+                    yield
+  
+              ''',
+              '''
+                  File "/usr/local/lib/python3.12/site-packages/dagster/_core/execution/plan/inputs.py", line 619, in _load_input_with_input_manager
+                    value = input_manager.load_input(context)
+                            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  
+              ''',
+              '''
+                  File "/usr/local/lib/python3.12/site-packages/dagster/_core/storage/upath_io_manager.py", line 406, in load_input
+                    return self._load_single_input(path, context)
+                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  
+              ''',
+              '''
+                  File "/usr/local/lib/python3.12/site-packages/dagster/_core/storage/upath_io_manager.py", line 273, in _load_single_input
+                    obj = self.load_from_path(context=context, path=path)
+                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  
+              ''',
+              '''
+                  File "/usr/local/lib/python3.12/site-packages/dagster/_core/storage/fs_io_manager.py", line 284, in load_from_path
+                    with path.open("rb") as file:
+                         ^^^^^^^^^^^^^^^
+  
+              ''',
+              '''
+                  File "/usr/local/lib/python3.12/site-packages/upath/implementations/local.py", line 134, in open
+                    return PosixPath.open(self, mode, buffering, encoding, errors, newline)
+                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  
+              ''',
+              '''
+                  File "/usr/local/lib/python3.12/pathlib.py", line 1013, in open
+                    return io.open(self, mode, buffering, encoding, errors, newline)
+                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  
+              ''',
+            ]),
+            'stackTrace': '''
+                File "/usr/local/lib/python3.12/site-packages/dagster/_core/execution/plan/utils.py", line 57, in op_execution_error_boundary
+                  yield
+              
+                File "/usr/local/lib/python3.12/site-packages/dagster/_core/execution/plan/inputs.py", line 619, in _load_input_with_input_manager
+                  value = input_manager.load_input(context)
+                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+              
+                File "/usr/local/lib/python3.12/site-packages/dagster/_core/storage/upath_io_manager.py", line 406, in load_input
+                  return self._load_single_input(path, context)
+                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+              
+                File "/usr/local/lib/python3.12/site-packages/dagster/_core/storage/upath_io_manager.py", line 273, in _load_single_input
+                  obj = self.load_from_path(context=context, path=path)
+                        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+              
+                File "/usr/local/lib/python3.12/site-packages/dagster/_core/storage/fs_io_manager.py", line 284, in load_from_path
+                  with path.open("rb") as file:
+                       ^^^^^^^^^^^^^^^
+              
+                File "/usr/local/lib/python3.12/site-packages/upath/implementations/local.py", line 134, in open
+                  return PosixPath.open(self, mode, buffering, encoding, errors, newline)
+                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+              
+                File "/usr/local/lib/python3.12/pathlib.py", line 1013, in open
+                  return io.open(self, mode, buffering, encoding, errors, newline)
+                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  
+            ''',
+          }),
+          'className': 'RetryRequestedFromPolicy',
+          'message': '''
+            Exceeded max_retries of 2
+  
+          ''',
+          'stack': list([
+            '''
+                File "/usr/local/lib/python3.12/site-packages/dagster/_core/execution/plan/execute_plan.py", line 246, in dagster_event_sequence_for_step
+                  yield from check.generator(step_events)
+  
+            ''',
+            '''
+                File "/usr/local/lib/python3.12/site-packages/dagster/_core/execution/plan/execute_step.py", line 468, in core_dagster_event_sequence_for_step
+                  for event_or_input_value in step_input.source.load_input_object(
+                                              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  
+            ''',
+            '''
+                File "/usr/local/lib/python3.12/site-packages/dagster/_core/execution/plan/inputs.py", line 364, in load_input_object
+                  yield from _load_input_with_input_manager(input_manager, load_input_context)
+  
+            ''',
+            '''
+                File "/usr/local/lib/python3.12/site-packages/dagster/_core/execution/plan/inputs.py", line 612, in _load_input_with_input_manager
+                  with op_execution_error_boundary(
+                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  
+            ''',
+            '''
+                File "/usr/local/lib/python3.12/contextlib.py", line 158, in __exit__
+                  self.gen.throw(value)
+  
+            ''',
+            '''
+                File "/usr/local/lib/python3.12/site-packages/dagster/_core/execution/plan/utils.py", line 75, in op_execution_error_boundary
+                  raise RetryRequestedFromPolicy(
+  
+            ''',
+          ]),
+          'stackTrace': '''
+              File "/usr/local/lib/python3.12/site-packages/dagster/_core/execution/plan/execute_plan.py", line 246, in dagster_event_sequence_for_step
+                yield from check.generator(step_events)
+            
+              File "/usr/local/lib/python3.12/site-packages/dagster/_core/execution/plan/execute_step.py", line 468, in core_dagster_event_sequence_for_step
+                for event_or_input_value in step_input.source.load_input_object(
+                                            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+            
+              File "/usr/local/lib/python3.12/site-packages/dagster/_core/execution/plan/inputs.py", line 364, in load_input_object
+                yield from _load_input_with_input_manager(input_manager, load_input_context)
+            
+              File "/usr/local/lib/python3.12/site-packages/dagster/_core/execution/plan/inputs.py", line 612, in _load_input_with_input_manager
+                with op_execution_error_boundary(
+                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+            
+              File "/usr/local/lib/python3.12/contextlib.py", line 158, in __exit__
+                self.gen.throw(value)
+            
+              File "/usr/local/lib/python3.12/site-packages/dagster/_core/execution/plan/utils.py", line 75, in op_execution_error_boundary
+                raise RetryRequestedFromPolicy(
+  
+          ''',
+        }),
+        'eventType': 'STEP_FAILURE',
+        'level': 'ERROR',
+        'message': 'Execution of step "enriched_data.process_chunk[11]" failed.',
+        'runId': '85156191-170d-4229-8eba-14450b6ca9e3',
+        'stepKey': 'enriched_data.process_chunk[11]',
+        'timestamp': '1758808877726',
+      }),
+      dict({
+        'error': None,
+        'eventType': None,
+        'level': 'ERROR',
+        'message': "Dependencies for step enriched_data.concat_chunk_list failed: ['enriched_data.process_chunk[11]']. Not executing.",
+        'runId': '85156191-170d-4229-8eba-14450b6ca9e3',
+        'stepKey': 'enriched_data.concat_chunk_list',
+        'timestamp': '1758808877786',
+      }),
+      dict({
+        'error': None,
+        'eventType': 'ENGINE_EVENT',
+        'level': 'DEBUG',
+        'message': 'Multiprocess executor: parent process exiting after 6.79s (pid: 1)',
+        'runId': '85156191-170d-4229-8eba-14450b6ca9e3',
+        'stepKey': None,
+        'timestamp': '1758808878387',
+      }),
+      dict({
+        'error': None,
+        'eventType': 'RUN_FAILURE',
+        'level': 'ERROR',
+        'message': 'Execution of run for "run_etl_pipeline" failed. Steps failed: [\'enriched_data.process_chunk[11]\'].',
+        'runId': '85156191-170d-4229-8eba-14450b6ca9e3',
+        'stepKey': None,
+        'timestamp': '1758808878519',
+      }),
+      dict({
+        'error': None,
+        'eventType': 'ENGINE_EVENT',
+        'level': 'INFO',
+        'message': 'Process for run exited (pid: 1).',
+        'runId': '85156191-170d-4229-8eba-14450b6ca9e3',
+        'stepKey': None,
+        'timestamp': '1758808878602',
+      }),
+      dict({
+        'error': None,
+        'eventType': 'ASSET_FAILED_TO_MATERIALIZE',
+        'level': 'INFO',
+        'message': 'Asset ["enriched_data"] failed to materialize',
+        'runId': '85156191-170d-4229-8eba-14450b6ca9e3',
+        'stepKey': 'enriched_data.concat_chunk_list',
+        'timestamp': '1758808880071',
+      }),
+    ]),
+    'run_id': '85156191-170d-4229-8eba-14450b6ca9e3',
+  })
+# ---
+# name: TestDynamicCommandExecution.test_command_execution[log_success_logs_with_errors_text_text]
+  '''
+  Logs for run 85156191-170d-4229-8eba-14450b6ca9e3:
+  
+  TIMESTAMP            LEVEL    STEP_KEY                  MESSAGE
+  --------------------------------------------------------------------------------
+  2025-09-25 14:01:05  DEBUG    enriched_data.concat_chu  run_etl_pipeline intends to materialize asset ["enriched_data"]
+  2025-09-25 14:01:05  INFO                               Launched as an automatic retry
+  2025-09-25 14:01:05  INFO                               
+  2025-09-25 14:01:07  INFO                               
+  2025-09-25 14:01:07  INFO                               Sending a request to the agent to execute steps in the user cloud
+  2025-09-25 14:01:07  INFO                               [DagsterCloudAgent] Agent 3a659214 is launching run 85156191-170d-4229-8eba-14450b6ca9e3
+  2025-09-25 14:01:07  INFO                               [CloudK8sRunLauncher] Creating Kubernetes run worker job
+  2025-09-25 14:01:07  INFO                               [CloudK8sRunLauncher] Kubernetes run worker job created
+  2025-09-25 14:01:10  INFO                               Starting run metrics thread with container_metrics_enabled=True and python_metrics_enabled=False
+  2025-09-25 14:01:10  INFO                               Started process for run (pid: 1).
+  2025-09-25 14:01:11  DEBUG                              Started execution of run for "run_etl_pipeline".
+  2025-09-25 14:01:11  DEBUG                              Executing steps using multiprocess executor: parent process (pid: 1)
+  2025-09-25 14:01:11  DEBUG    enriched_data.process_ch  Launching subprocess for "enriched_data.process_chunk[11]".
+  2025-09-25 14:01:12  DEBUG    enriched_data.process_ch  Executing step "enriched_data.process_chunk[11]" in subprocess.
+  2025-09-25 14:01:13  DEBUG    enriched_data.process_ch  Starting initialization of resources [api, io_manager].
+  2025-09-25 14:01:13  DEBUG    enriched_data.process_ch  Finished initialization of resources [api, io_manager].
+  2025-09-25 14:01:13  DEBUG                              Started capturing logs in process (pid: 16).
+  2025-09-25 14:01:13  DEBUG    enriched_data.process_ch  Started execution of step "enriched_data.process_chunk[11]".
+  2025-09-25 14:01:13  DEBUG    enriched_data.process_ch  Loading file from: /opt/dagster/dagster_home/storage/385defa2-7ac6-4d18-8a88-585a42393d9c/enriched_data.split_rows/result/11 using PickledObjectFilesystemIOManager...
+  2025-09-25 14:01:13  DEBUG    enriched_data.process_ch  Execution of step "enriched_data.process_chunk[11]" failed and has requested a retry.
+  2025-09-25 14:01:13  DEBUG    enriched_data.process_ch  Launching subprocess for "enriched_data.process_chunk[11]".
+  2025-09-25 14:01:14  DEBUG    enriched_data.process_ch  Executing step "enriched_data.process_chunk[11]" in subprocess.
+  2025-09-25 14:01:15  DEBUG    enriched_data.process_ch  Starting initialization of resources [api, io_manager].
+  2025-09-25 14:01:15  DEBUG    enriched_data.process_ch  Finished initialization of resources [api, io_manager].
+  2025-09-25 14:01:15  DEBUG                              Started capturing logs in process (pid: 26).
+  2025-09-25 14:01:15  DEBUG    enriched_data.process_ch  Started re-execution (attempt # 2) of step "enriched_data.process_chunk[11]".
+  2025-09-25 14:01:15  DEBUG    enriched_data.process_ch  Loading file from: /opt/dagster/dagster_home/storage/385defa2-7ac6-4d18-8a88-585a42393d9c/enriched_data.split_rows/result/11 using PickledObjectFilesystemIOManager...
+  2025-09-25 14:01:15  DEBUG    enriched_data.process_ch  Execution of step "enriched_data.process_chunk[11]" failed and has requested a retry.
+  2025-09-25 14:01:15  DEBUG    enriched_data.process_ch  Launching subprocess for "enriched_data.process_chunk[11]".
+  2025-09-25 14:01:16  DEBUG    enriched_data.process_ch  Executing step "enriched_data.process_chunk[11]" in subprocess.
+  2025-09-25 14:01:17  DEBUG    enriched_data.process_ch  Starting initialization of resources [api, io_manager].
+  2025-09-25 14:01:17  DEBUG    enriched_data.process_ch  Finished initialization of resources [api, io_manager].
+  2025-09-25 14:01:17  DEBUG                              Started capturing logs in process (pid: 36).
+  2025-09-25 14:01:17  DEBUG    enriched_data.process_ch  Started re-execution (attempt # 3) of step "enriched_data.process_chunk[11]".
+  2025-09-25 14:01:17  DEBUG    enriched_data.process_ch  Loading file from: /opt/dagster/dagster_home/storage/385defa2-7ac6-4d18-8a88-585a42393d9c/enriched_data.split_rows/result/11 using PickledObjectFilesystemIOManager...
+  2025-09-25 14:01:17  ERROR    enriched_data.process_ch  Execution of step "enriched_data.process_chunk[11]" failed.
+  
+  Stack Trace:
+      File "/usr/local/lib/python3.12/site-packages/dagster/_core/execution/plan/execute_plan.py", line 246, in dagster_event_sequence_for_step
+        yield from check.generator(step_events)
+      File "/usr/local/lib/python3.12/site-packages/dagster/_core/execution/plan/execute_step.py", line 468, in core_dagster_event_sequence_for_step
+        for event_or_input_value in step_input.source.load_input_object(
+                                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+      File "/usr/local/lib/python3.12/site-packages/dagster/_core/execution/plan/inputs.py", line 364, in load_input_object
+        yield from _load_input_with_input_manager(input_manager, load_input_context)
+      File "/usr/local/lib/python3.12/site-packages/dagster/_core/execution/plan/inputs.py", line 612, in _load_input_with_input_manager
+        with op_execution_error_boundary(
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+      File "/usr/local/lib/python3.12/contextlib.py", line 158, in __exit__
+        self.gen.throw(value)
+      File "/usr/local/lib/python3.12/site-packages/dagster/_core/execution/plan/utils.py", line 75, in op_execution_error_boundary
+        raise RetryRequestedFromPolicy(
+  
+  2025-09-25 14:01:17  ERROR    enriched_data.concat_chu  Dependencies for step enriched_data.concat_chunk_list failed: ['enriched_data.process_chunk[11]']. Not executing.
+  2025-09-25 14:01:18  DEBUG                              Multiprocess executor: parent process exiting after 6.79s (pid: 1)
+  2025-09-25 14:01:18  ERROR                              Execution of run for "run_etl_pipeline" failed. Steps failed: ['enriched_data.process_chunk[11]'].
+  2025-09-25 14:01:18  INFO                               Process for run exited (pid: 1).
+  2025-09-25 14:01:20  INFO     enriched_data.concat_chu  Asset ["enriched_data"] failed to materialize
+  
+  Total log entries: 41
+  
+  '''
+# ---
 # name: TestDynamicCommandExecution.test_command_execution[run_error_invalid_run_id_json]
   dict({
     'error': "Run not found: ''",
