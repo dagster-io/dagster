@@ -5,7 +5,7 @@ daily_success_condition = dg.AutomationCondition.newly_updated().since(
 )
 
 custom_condition = (
-    dg.AutomationCondition.on_cron("*/5 * * * *")  # Runs at 9 AM daily
+    dg.AutomationCondition.on_cron("*/5 * * * *")  # Runs every 5 minutes
     | (
         dg.AutomationCondition.any_deps_updated()  # When any dependency updates
         & daily_success_condition  # Only if asset was updated since daily cron
