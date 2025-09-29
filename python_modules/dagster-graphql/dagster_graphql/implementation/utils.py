@@ -99,7 +99,7 @@ def assert_permission(graphene_info: "ResolveInfo", permission: str) -> None:
 def has_permission_for_asset_graph(
     graphene_info: "ResolveInfo",
     asset_graph: RemoteWorkspaceAssetGraph,
-    asset_selection: Optional[Sequence[AssetKey]],
+    asset_selection: Sequence[AssetKey],
     permission: str,
 ) -> bool:
     asset_keys = set(asset_selection or [])
@@ -148,16 +148,13 @@ def has_permission_for_asset_graph(
             if asset_graph.has(key)
         )
 
-    # enumerate all the asset nodes and check permissions
-    return all(
-        context.has_permission_for_definition(permission, node) for node in asset_graph.asset_nodes
-    )
+    return False
 
 
 def assert_permission_for_asset_graph(
     graphene_info: "ResolveInfo",
     asset_graph: RemoteWorkspaceAssetGraph,
-    asset_selection: Optional[Sequence[AssetKey]],
+    asset_selection: Sequence[AssetKey],
     permission: str,
 ) -> None:
     from dagster_graphql.schema.errors import GrapheneUnauthorizedError
