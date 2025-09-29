@@ -4,6 +4,7 @@ from datetime import datetime, timedelta, timezone
 from enum import Enum
 from typing import TYPE_CHECKING, Any, Optional, Union
 
+import pytz
 from dagster_shared.serdes.utils import SerializableTimeDelta
 
 from dagster._core.definitions.asset_key import AssetKey

@@ -61,6 +61,7 @@ function init() {
               },
               latestMaterializationTimestamp: null,
               latestFailedToMaterializeTimestamp: null,
+              freshnessStatusChangedTimestamp: null,
               assetHealth: null,
             };
           }
@@ -339,6 +340,7 @@ function buildEmptyAssetHealthFragment(key: string): AssetHealthFragment {
     },
     latestMaterializationTimestamp: null,
     latestFailedToMaterializeTimestamp: null,
+    freshnessStatusChangedTimestamp: null,
     assetHealth: null,
   };
 }
