@@ -1,4 +1,281 @@
 # serializer version: 1
+# name: TestDynamicCommandExecution.test_command_execution[agent_error_agent_not_found_json]
+  '''
+  {"error": "Agent with ID 'nonexistent-agent-uuid' not found"}
+  {"error": "Agent not found: nonexistent-agent-uuid"}
+  Error: Failed to get agent: Agent not found: nonexistent-agent-uuid
+  
+  '''
+# ---
+# name: TestDynamicCommandExecution.test_command_execution[agent_error_agent_not_found_text_text]
+  '''
+  Agent with ID 'nonexistent-agent-uuid' not found
+  Error querying Dagster Plus API: Agent not found: nonexistent-agent-uuid
+  Error: Failed to get agent: Agent not found: nonexistent-agent-uuid
+  
+  '''
+# ---
+# name: TestDynamicCommandExecution.test_command_execution[agent_error_malformed_agent_id_json]
+  '''
+  {"error": "Agent with ID '''' not found"}
+  {"error": "Agent not found: ''"}
+  Error: Failed to get agent: Agent not found: ''
+  
+  '''
+# ---
+# name: TestDynamicCommandExecution.test_command_execution[agent_error_malformed_agent_id_text_text]
+  '''
+  Agent with ID '''' not found
+  Error querying Dagster Plus API: Agent not found: ''
+  Error: Failed to get agent: Agent not found: ''
+  
+  '''
+# ---
+# name: TestDynamicCommandExecution.test_command_execution[agent_success_agent_version_metadata_json]
+  dict({
+    'agent_label': None,
+    'id': 'da7da2bb-33eb-4ce1-93ef-1a92e6737236',
+    'last_heartbeat_time': 1758118915.5946717,
+    'metadata': list([
+      dict({
+        'key': 'version',
+        'value': '"1.5.1"',
+      }),
+      dict({
+        'key': 'type',
+        'value': '"K8sUserCodeLauncher"',
+      }),
+      dict({
+        'key': 'queues',
+        'value': '["default queue"]',
+      }),
+    ]),
+    'status': 'RUNNING',
+  })
+# ---
+# name: TestDynamicCommandExecution.test_command_execution[agent_success_agent_with_metadata_json]
+  dict({
+    'agent_label': None,
+    'id': '858fd654-d0b5-477c-ac1a-c63db56246b7',
+    'last_heartbeat_time': 1758118924.6589644,
+    'metadata': list([
+      dict({
+        'key': 'utilization_metrics',
+        'value': '{}',
+      }),
+      dict({
+        'key': 'version',
+        'value': '"1.11.10"',
+      }),
+      dict({
+        'key': 'type',
+        'value': '"K8sUserCodeLauncher"',
+      }),
+      dict({
+        'key': 'queues',
+        'value': '["default queue"]',
+      }),
+    ]),
+    'status': 'RUNNING',
+  })
+# ---
+# name: TestDynamicCommandExecution.test_command_execution[agent_success_agent_without_label_text_text]
+  '''
+  Label: Agent da7da2bb
+  ID: da7da2bb-33eb-4ce1-93ef-1a92e6737236
+  Status: RUNNING
+  Last Heartbeat: 2025-09-17 14:21:55
+  
+  Metadata:
+    version: "1.5.1"
+    type: "K8sUserCodeLauncher"
+    queues: ["default queue"]
+  
+  '''
+# ---
+# name: TestDynamicCommandExecution.test_command_execution[agent_success_multiple_agents_json]
+  dict({
+    'items': list([
+      dict({
+        'agent_label': None,
+        'id': '858fd654-d0b5-477c-ac1a-c63db56246b7',
+        'last_heartbeat_time': 1758118924.6589644,
+        'metadata': list([
+          dict({
+            'key': 'utilization_metrics',
+            'value': '{}',
+          }),
+          dict({
+            'key': 'version',
+            'value': '"1.11.10"',
+          }),
+          dict({
+            'key': 'type',
+            'value': '"K8sUserCodeLauncher"',
+          }),
+          dict({
+            'key': 'queues',
+            'value': '["default queue"]',
+          }),
+        ]),
+        'status': 'RUNNING',
+      }),
+      dict({
+        'agent_label': None,
+        'id': 'da7da2bb-33eb-4ce1-93ef-1a92e6737236',
+        'last_heartbeat_time': 1758118915.5946717,
+        'metadata': list([
+          dict({
+            'key': 'version',
+            'value': '"1.5.1"',
+          }),
+          dict({
+            'key': 'type',
+            'value': '"K8sUserCodeLauncher"',
+          }),
+          dict({
+            'key': 'queues',
+            'value': '["default queue"]',
+          }),
+        ]),
+        'status': 'RUNNING',
+      }),
+    ]),
+    'total': 2,
+  })
+# ---
+# name: TestDynamicCommandExecution.test_command_execution[agent_success_multiple_agents_text_text]
+  '''
+  Label: Agent 858fd654
+  ID: 858fd654-d0b5-477c-ac1a-c63db56246b7
+  Status: RUNNING
+  Last Heartbeat: 2025-09-17 14:22:04
+  
+  Label: Agent da7da2bb
+  ID: da7da2bb-33eb-4ce1-93ef-1a92e6737236
+  Status: RUNNING
+  Last Heartbeat: 2025-09-17 14:21:55
+  
+  '''
+# ---
+# name: TestDynamicCommandExecution.test_command_execution[agent_success_running_agent_json]
+  dict({
+    'agent_label': None,
+    'id': '858fd654-d0b5-477c-ac1a-c63db56246b7',
+    'last_heartbeat_time': 1758118924.6589644,
+    'metadata': list([
+      dict({
+        'key': 'utilization_metrics',
+        'value': '{}',
+      }),
+      dict({
+        'key': 'version',
+        'value': '"1.11.10"',
+      }),
+      dict({
+        'key': 'type',
+        'value': '"K8sUserCodeLauncher"',
+      }),
+      dict({
+        'key': 'queues',
+        'value': '["default queue"]',
+      }),
+    ]),
+    'status': 'RUNNING',
+  })
+# ---
+# name: TestDynamicCommandExecution.test_command_execution[agent_success_running_agent_text_text]
+  '''
+  Label: Agent 858fd654
+  ID: 858fd654-d0b5-477c-ac1a-c63db56246b7
+  Status: RUNNING
+  Last Heartbeat: 2025-09-17 14:22:04
+  
+  Metadata:
+    utilization_metrics: {}
+    version: "1.11.10"
+    type: "K8sUserCodeLauncher"
+    queues: ["default queue"]
+  
+  '''
+# ---
+# name: TestDynamicCommandExecution.test_command_execution[agent_success_second_agent_json_json]
+  dict({
+    'agent_label': None,
+    'id': 'da7da2bb-33eb-4ce1-93ef-1a92e6737236',
+    'last_heartbeat_time': 1758118915.5946717,
+    'metadata': list([
+      dict({
+        'key': 'version',
+        'value': '"1.5.1"',
+      }),
+      dict({
+        'key': 'type',
+        'value': '"K8sUserCodeLauncher"',
+      }),
+      dict({
+        'key': 'queues',
+        'value': '["default queue"]',
+      }),
+    ]),
+    'status': 'RUNNING',
+  })
+# ---
+# name: TestDynamicCommandExecution.test_command_execution[agent_success_second_agent_text_text]
+  '''
+  Label: Agent da7da2bb
+  ID: da7da2bb-33eb-4ce1-93ef-1a92e6737236
+  Status: RUNNING
+  Last Heartbeat: 2025-09-17 14:21:55
+  
+  Metadata:
+    version: "1.5.1"
+    type: "K8sUserCodeLauncher"
+    queues: ["default queue"]
+  
+  '''
+# ---
+# name: TestDynamicCommandExecution.test_command_execution[agent_success_single_agent_json]
+  dict({
+    'agent_label': None,
+    'id': '858fd654-d0b5-477c-ac1a-c63db56246b7',
+    'last_heartbeat_time': 1758118924.6589644,
+    'metadata': list([
+      dict({
+        'key': 'utilization_metrics',
+        'value': '{}',
+      }),
+      dict({
+        'key': 'version',
+        'value': '"1.11.10"',
+      }),
+      dict({
+        'key': 'type',
+        'value': '"K8sUserCodeLauncher"',
+      }),
+      dict({
+        'key': 'queues',
+        'value': '["default queue"]',
+      }),
+    ]),
+    'status': 'RUNNING',
+  })
+# ---
+# name: TestDynamicCommandExecution.test_command_execution[agent_success_single_agent_text_text]
+  '''
+  Label: Agent 858fd654
+  ID: 858fd654-d0b5-477c-ac1a-c63db56246b7
+  Status: RUNNING
+  Last Heartbeat: 2025-09-17 14:22:04
+  
+  Metadata:
+    utilization_metrics: {}
+    version: "1.11.10"
+    type: "K8sUserCodeLauncher"
+    queues: ["default queue"]
+  
+  '''
+# ---
 # name: TestDynamicCommandExecution.test_command_execution[asset_error_asset_not_found_json]
   '''
   {"error": "Asset not found: nonexistent-asset"}
@@ -3751,100 +4028,72 @@
   dict({
     'items': list([
       dict({
-        'id': 6935,
-        'name': 'uat',
+        'id': 87,
+        'name': 'data-eng-prod',
         'type': 'PRODUCTION',
       }),
       dict({
-        'id': 6936,
-        'name': 'excessive',
+        'id': 190248,
+        'name': 'gtm20',
         'type': 'PRODUCTION',
       }),
       dict({
-        'id': 84915,
-        'name': 'ben-test',
+        'id': 213933,
+        'name': 'data-eng-staging',
         'type': 'PRODUCTION',
       }),
       dict({
-        'id': 37,
-        'name': 'ecs',
-        'type': 'PRODUCTION',
-      }),
-      dict({
-        'id': 6934,
-        'name': 'staging',
-        'type': 'PRODUCTION',
-      }),
-      dict({
-        'id': 80,
-        'name': 'prod',
+        'id': 217021,
+        'name': 'data-eng-dev',
         'type': 'PRODUCTION',
       }),
     ]),
-    'total': 6,
+    'total': 4,
   })
 # ---
 # name: TestDynamicCommandExecution.test_command_execution[deployment_success_multiple_deployments_json]
   dict({
     'items': list([
       dict({
-        'id': 6935,
-        'name': 'uat',
+        'id': 87,
+        'name': 'data-eng-prod',
         'type': 'PRODUCTION',
       }),
       dict({
-        'id': 6936,
-        'name': 'excessive',
+        'id': 190248,
+        'name': 'gtm20',
         'type': 'PRODUCTION',
       }),
       dict({
-        'id': 84915,
-        'name': 'ben-test',
+        'id': 213933,
+        'name': 'data-eng-staging',
         'type': 'PRODUCTION',
       }),
       dict({
-        'id': 37,
-        'name': 'ecs',
-        'type': 'PRODUCTION',
-      }),
-      dict({
-        'id': 6934,
-        'name': 'staging',
-        'type': 'PRODUCTION',
-      }),
-      dict({
-        'id': 80,
-        'name': 'prod',
+        'id': 217021,
+        'name': 'data-eng-dev',
         'type': 'PRODUCTION',
       }),
     ]),
-    'total': 6,
+    'total': 4,
   })
 # ---
 # name: TestDynamicCommandExecution.test_command_execution[deployment_success_multiple_deployments_text_text]
   '''
-  Name: uat
-  ID: 6935
+  Name: data-eng-prod
+  ID: 87
   Type: PRODUCTION
   
-  Name: excessive
-  ID: 6936
+  Name: gtm20
+  ID: 190248
   Type: PRODUCTION
   
-  Name: ben-test
-  ID: 84915
+  Name: data-eng-staging
+  ID: 213933
   Type: PRODUCTION
   
-  Name: ecs
-  ID: 37
-  Type: PRODUCTION
-  
-  Name: staging
-  ID: 6934
-  Type: PRODUCTION
-  
-  Name: prod
-  ID: 80
+  Name: data-eng-dev
+  ID: 217021
   Type: PRODUCTION
   
   '''
@@ -3898,6 +4147,462 @@
   Started: 1757703690.474944
   Ended: 1757703732.670455
   Pipeline: __ASSET_JOB
+  
+  '''
+# ---
+# name: TestDynamicCommandExecution.test_command_execution[sensor_empty_filtered_sensors_json]
+  dict({
+    'items': list([
+      dict({
+        'description': None,
+        'name': 'default_automation_condition_sensor',
+        'next_tick_timestamp': None,
+        'sensor_type': 'AUTO_MATERIALIZE',
+        'status': 'RUNNING',
+      }),
+      dict({
+        'description': None,
+        'name': 'orders_sensor',
+        'next_tick_timestamp': None,
+        'sensor_type': 'ASSET',
+        'status': 'RUNNING',
+      }),
+      dict({
+        'description': None,
+        'name': 'watch_s3_sensor',
+        'next_tick_timestamp': None,
+        'sensor_type': 'STANDARD',
+        'status': 'RUNNING',
+      }),
+      dict({
+        'description': '''
+          
+              This sensor launches execution of freshness checks for the provided assets. The sensor will
+              only launch a new execution of a freshness check if the check previously passed, but enough
+              time has passed that the check could be overdue again. Once a check has failed, the sensor
+              will not launch a new execution until the asset has been updated (which should automatically
+              execute the check).
+              
+        ''',
+        'name': 'weekly_freshness_check_sensor',
+        'next_tick_timestamp': None,
+        'sensor_type': 'STANDARD',
+        'status': 'RUNNING',
+      }),
+      dict({
+        'description': None,
+        'name': 'default_automation_condition_sensor',
+        'next_tick_timestamp': None,
+        'sensor_type': 'AUTO_MATERIALIZE',
+        'status': 'RUNNING',
+      }),
+      dict({
+        'description': None,
+        'name': 'mwaa_hooli_airflow_01__airflow_dag_status_sensor',
+        'next_tick_timestamp': None,
+        'sensor_type': 'STANDARD',
+        'status': 'RUNNING',
+      }),
+    ]),
+    'total': 6,
+  })
+# ---
+# name: TestDynamicCommandExecution.test_command_execution[sensor_empty_sensors_json]
+  dict({
+    'items': list([
+      dict({
+        'description': None,
+        'name': 'dbt_code_version_sensor',
+        'next_tick_timestamp': None,
+        'sensor_type': 'STANDARD',
+        'status': 'STOPPED',
+      }),
+      dict({
+        'description': None,
+        'name': 'default_automation_condition_sensor',
+        'next_tick_timestamp': None,
+        'sensor_type': 'AUTO_MATERIALIZE',
+        'status': 'RUNNING',
+      }),
+      dict({
+        'description': None,
+        'name': 'orders_sensor',
+        'next_tick_timestamp': None,
+        'sensor_type': 'ASSET',
+        'status': 'RUNNING',
+      }),
+      dict({
+        'description': None,
+        'name': 'watch_s3_sensor',
+        'next_tick_timestamp': None,
+        'sensor_type': 'STANDARD',
+        'status': 'RUNNING',
+      }),
+      dict({
+        'description': '''
+          
+              This sensor launches execution of freshness checks for the provided assets. The sensor will
+              only launch a new execution of a freshness check if the check previously passed, but enough
+              time has passed that the check could be overdue again. Once a check has failed, the sensor
+              will not launch a new execution until the asset has been updated (which should automatically
+              execute the check).
+              
+        ''',
+        'name': 'weekly_freshness_check_sensor',
+        'next_tick_timestamp': None,
+        'sensor_type': 'STANDARD',
+        'status': 'RUNNING',
+      }),
+      dict({
+        'description': None,
+        'name': 'default_automation_condition_sensor',
+        'next_tick_timestamp': None,
+        'sensor_type': 'AUTO_MATERIALIZE',
+        'status': 'RUNNING',
+      }),
+      dict({
+        'description': None,
+        'name': 'mwaa_hooli_airflow_01__airflow_dag_status_sensor',
+        'next_tick_timestamp': None,
+        'sensor_type': 'STANDARD',
+        'status': 'RUNNING',
+      }),
+    ]),
+    'total': 7,
+  })
+# ---
+# name: TestDynamicCommandExecution.test_command_execution[sensor_empty_sensors_text_text]
+  '''
+  Name: dbt_code_version_sensor
+  Status: STOPPED
+  Type: STANDARD
+  Description: None
+  
+  Name: default_automation_condition_sensor
+  Status: RUNNING
+  Type: AUTO_MATERIALIZE
+  Description: None
+  
+  Name: orders_sensor
+  Status: RUNNING
+  Type: ASSET
+  Description: None
+  
+  Name: watch_s3_sensor
+  Status: RUNNING
+  Type: STANDARD
+  Description: None
+  
+  Name: weekly_freshness_check_sensor
+  Status: RUNNING
+  Type: STANDARD
+  Description: 
+      This sensor launches execution of freshness checks for the provided assets. The sensor will
+      only launch a new execution of a freshness check if the check previously passed, but enough
+      time has passed that the check could be overdue again. Once a check has failed, the sensor
+      will not launch a new execution until the asset has been updated (which should automatically
+      execute the check).
+      
+  
+  Name: default_automation_condition_sensor
+  Status: RUNNING
+  Type: AUTO_MATERIALIZE
+  Description: None
+  
+  Name: mwaa_hooli_airflow_01__airflow_dag_status_sensor
+  Status: RUNNING
+  Type: STANDARD
+  Description: None
+  
+  '''
+# ---
+# name: TestDynamicCommandExecution.test_command_execution[sensor_error_empty_sensor_name_json]
+  dict({
+    'error': 'Exhausted 0 responses',
+  })
+# ---
+# name: TestDynamicCommandExecution.test_command_execution[sensor_error_invalid_status_filter_json]
+  '''
+  Usage: dg api sensor list [OPTIONS]
+  Try 'dg api sensor list -h' for help.
+  
+  Error: Invalid value for '--status': 'INVALID_STATUS' is not one of 'RUNNING', 'STOPPED', 'PAUSED'.
+  
+  '''
+# ---
+# name: TestDynamicCommandExecution.test_command_execution[sensor_error_multiple_sensors_same_name_json]
+  dict({
+    'error': 'Exhausted 0 responses',
+  })
+# ---
+# name: TestDynamicCommandExecution.test_command_execution[sensor_error_sensor_not_found_json]
+  dict({
+    'error': 'Exhausted 0 responses',
+  })
+# ---
+# name: TestDynamicCommandExecution.test_command_execution[sensor_error_sensor_not_found_text_text]
+  '''
+  Error: Failed to get sensor: Exhausted 0 responses
+  
+  '''
+# ---
+# name: TestDynamicCommandExecution.test_command_execution[sensor_success_filtered_sensors_paused_json]
+  dict({
+    'items': list([
+    ]),
+    'total': 0,
+  })
+# ---
+# name: TestDynamicCommandExecution.test_command_execution[sensor_success_filtered_sensors_paused_text_text]
+  '''
+  
+  
+  '''
+# ---
+# name: TestDynamicCommandExecution.test_command_execution[sensor_success_filtered_sensors_running_json]
+  dict({
+    'items': list([
+      dict({
+        'description': None,
+        'name': 'default_automation_condition_sensor',
+        'next_tick_timestamp': None,
+        'sensor_type': 'AUTO_MATERIALIZE',
+        'status': 'RUNNING',
+      }),
+      dict({
+        'description': None,
+        'name': 'orders_sensor',
+        'next_tick_timestamp': None,
+        'sensor_type': 'ASSET',
+        'status': 'RUNNING',
+      }),
+      dict({
+        'description': None,
+        'name': 'watch_s3_sensor',
+        'next_tick_timestamp': None,
+        'sensor_type': 'STANDARD',
+        'status': 'RUNNING',
+      }),
+      dict({
+        'description': '''
+          
+              This sensor launches execution of freshness checks for the provided assets. The sensor will
+              only launch a new execution of a freshness check if the check previously passed, but enough
+              time has passed that the check could be overdue again. Once a check has failed, the sensor
+              will not launch a new execution until the asset has been updated (which should automatically
+              execute the check).
+              
+        ''',
+        'name': 'weekly_freshness_check_sensor',
+        'next_tick_timestamp': None,
+        'sensor_type': 'STANDARD',
+        'status': 'RUNNING',
+      }),
+      dict({
+        'description': None,
+        'name': 'default_automation_condition_sensor',
+        'next_tick_timestamp': None,
+        'sensor_type': 'AUTO_MATERIALIZE',
+        'status': 'RUNNING',
+      }),
+      dict({
+        'description': None,
+        'name': 'mwaa_hooli_airflow_01__airflow_dag_status_sensor',
+        'next_tick_timestamp': None,
+        'sensor_type': 'STANDARD',
+        'status': 'RUNNING',
+      }),
+    ]),
+    'total': 6,
+  })
+# ---
+# name: TestDynamicCommandExecution.test_command_execution[sensor_success_filtered_sensors_running_text_text]
+  '''
+  Name: default_automation_condition_sensor
+  Status: RUNNING
+  Type: AUTO_MATERIALIZE
+  Description: None
+  
+  Name: orders_sensor
+  Status: RUNNING
+  Type: ASSET
+  Description: None
+  
+  Name: watch_s3_sensor
+  Status: RUNNING
+  Type: STANDARD
+  Description: None
+  
+  Name: weekly_freshness_check_sensor
+  Status: RUNNING
+  Type: STANDARD
+  Description: 
+      This sensor launches execution of freshness checks for the provided assets. The sensor will
+      only launch a new execution of a freshness check if the check previously passed, but enough
+      time has passed that the check could be overdue again. Once a check has failed, the sensor
+      will not launch a new execution until the asset has been updated (which should automatically
+      execute the check).
+      
+  
+  Name: default_automation_condition_sensor
+  Status: RUNNING
+  Type: AUTO_MATERIALIZE
+  Description: None
+  
+  Name: mwaa_hooli_airflow_01__airflow_dag_status_sensor
+  Status: RUNNING
+  Type: STANDARD
+  Description: None
+  
+  '''
+# ---
+# name: TestDynamicCommandExecution.test_command_execution[sensor_success_filtered_sensors_stopped_json]
+  dict({
+    'items': list([
+      dict({
+        'description': None,
+        'name': 'dbt_code_version_sensor',
+        'next_tick_timestamp': None,
+        'sensor_type': 'STANDARD',
+        'status': 'STOPPED',
+      }),
+    ]),
+    'total': 1,
+  })
+# ---
+# name: TestDynamicCommandExecution.test_command_execution[sensor_success_filtered_sensors_stopped_text_text]
+  '''
+  Name: dbt_code_version_sensor
+  Status: STOPPED
+  Type: STANDARD
+  Description: None
+  
+  '''
+# ---
+# name: TestDynamicCommandExecution.test_command_execution[sensor_success_multiple_sensors_json]
+  dict({
+    'items': list([
+      dict({
+        'description': None,
+        'name': 'dbt_code_version_sensor',
+        'next_tick_timestamp': None,
+        'sensor_type': 'STANDARD',
+        'status': 'STOPPED',
+      }),
+      dict({
+        'description': None,
+        'name': 'default_automation_condition_sensor',
+        'next_tick_timestamp': None,
+        'sensor_type': 'AUTO_MATERIALIZE',
+        'status': 'RUNNING',
+      }),
+      dict({
+        'description': None,
+        'name': 'orders_sensor',
+        'next_tick_timestamp': None,
+        'sensor_type': 'ASSET',
+        'status': 'RUNNING',
+      }),
+      dict({
+        'description': None,
+        'name': 'watch_s3_sensor',
+        'next_tick_timestamp': None,
+        'sensor_type': 'STANDARD',
+        'status': 'RUNNING',
+      }),
+      dict({
+        'description': '''
+          
+              This sensor launches execution of freshness checks for the provided assets. The sensor will
+              only launch a new execution of a freshness check if the check previously passed, but enough
+              time has passed that the check could be overdue again. Once a check has failed, the sensor
+              will not launch a new execution until the asset has been updated (which should automatically
+              execute the check).
+              
+        ''',
+        'name': 'weekly_freshness_check_sensor',
+        'next_tick_timestamp': None,
+        'sensor_type': 'STANDARD',
+        'status': 'RUNNING',
+      }),
+      dict({
+        'description': None,
+        'name': 'default_automation_condition_sensor',
+        'next_tick_timestamp': None,
+        'sensor_type': 'AUTO_MATERIALIZE',
+        'status': 'RUNNING',
+      }),
+      dict({
+        'description': None,
+        'name': 'mwaa_hooli_airflow_01__airflow_dag_status_sensor',
+        'next_tick_timestamp': None,
+        'sensor_type': 'STANDARD',
+        'status': 'RUNNING',
+      }),
+    ]),
+    'total': 7,
+  })
+# ---
+# name: TestDynamicCommandExecution.test_command_execution[sensor_success_multiple_sensors_text_text]
+  '''
+  Name: dbt_code_version_sensor
+  Status: STOPPED
+  Type: STANDARD
+  Description: None
+  
+  Name: default_automation_condition_sensor
+  Status: RUNNING
+  Type: AUTO_MATERIALIZE
+  Description: None
+  
+  Name: orders_sensor
+  Status: RUNNING
+  Type: ASSET
+  Description: None
+  
+  Name: watch_s3_sensor
+  Status: RUNNING
+  Type: STANDARD
+  Description: None
+  
+  Name: weekly_freshness_check_sensor
+  Status: RUNNING
+  Type: STANDARD
+  Description: 
+      This sensor launches execution of freshness checks for the provided assets. The sensor will
+      only launch a new execution of a freshness check if the check previously passed, but enough
+      time has passed that the check could be overdue again. Once a check has failed, the sensor
+      will not launch a new execution until the asset has been updated (which should automatically
+      execute the check).
+      
+  
+  Name: default_automation_condition_sensor
+  Status: RUNNING
+  Type: AUTO_MATERIALIZE
+  Description: None
+  
+  Name: mwaa_hooli_airflow_01__airflow_dag_status_sensor
+  Status: RUNNING
+  Type: STANDARD
+  Description: None
+  
+  '''
+# ---
+# name: TestDynamicCommandExecution.test_command_execution[sensor_success_single_sensor_running_json]
+  dict({
+    'description': None,
+    'name': 'orders_sensor',
+    'next_tick_timestamp': None,
+    'sensor_type': 'ASSET',
+    'status': 'RUNNING',
+  })
+# ---
+# name: TestDynamicCommandExecution.test_command_execution[sensor_success_single_sensor_running_text_text]
+  '''
+  Name: orders_sensor
+  Status: RUNNING
+  Type: ASSET
+  Description: None
   
   '''
 # ---

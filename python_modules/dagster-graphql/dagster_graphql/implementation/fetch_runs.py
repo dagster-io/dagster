@@ -167,7 +167,7 @@ def _get_latest_planned_run_id(instance: DagsterInstance, asset_record: AssetRec
 
 
 def get_assets_latest_info(
-    graphene_info: "ResolveInfo", step_keys_by_asset: Mapping[AssetKey, Sequence[str]]
+    graphene_info: "ResolveInfo", asset_keys: AbstractSet[AssetKey]
 ) -> Sequence["GrapheneAssetLatestInfo"]:
     from dagster_graphql.schema.asset_graph import GrapheneAssetLatestInfo
     from dagster_graphql.schema.logs.events import GrapheneMaterializationEvent
@@ -175,14 +175,8 @@ def get_assets_latest_info(
 
     instance = graphene_info.context.instance
 
-    asset_keys = list(step_keys_by_asset.keys())
-
     if not asset_keys:
         return []
-
-    asset_nodes = {
-        asset_key: graphene_info.context.asset_graph.get(asset_key) for asset_key in asset_keys
-    }
 
     asset_records = [
         record
@@ -194,7 +188,7 @@ def get_assets_latest_info(
         asset_record.asset_entry.asset_key: (
             GrapheneMaterializationEvent(event=asset_record.asset_entry.last_materialization)
             if asset_record.asset_entry.last_materialization
-            and asset_record.asset_entry.asset_key in step_keys_by_asset
+            and asset_record.asset_entry.asset_key in asset_keys
             else None
         )
         for asset_record in asset_records
@@ -207,7 +201,7 @@ def get_assets_latest_info(
         asset_record.asset_entry.asset_key: (
             asset_record.asset_entry.last_materialization.run_id
             if asset_record.asset_entry.last_materialization
-            and asset_record.asset_entry.asset_key in step_keys_by_asset
+            and asset_record.asset_entry.asset_key in asset_keys
             else None
         )
         for asset_record in asset_records
@@ -246,17 +240,8 @@ def get_assets_latest_info(
     from dagster_graphql.implementation.fetch_assets import get_unique_asset_id
 
     latest_infos = []
-    for asset_key in step_keys_by_asset.keys():
-        asset_node = asset_nodes[asset_key]
-        if asset_node:
-            handle = asset_node.resolve_to_singular_repo_scoped_node().repository_handle
-            node_id = get_unique_asset_id(
-                asset_key,
-                handle.repository_name,
-                handle.location_name,
-            )
-        else:
-            node_id = get_unique_asset_id(asset_key)
+    for asset_key in asset_keys:
+        node_id = get_unique_asset_id(asset_key)
 
         latest_infos.append(
             GrapheneAssetLatestInfo(

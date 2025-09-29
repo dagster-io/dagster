@@ -843,36 +843,38 @@ def _check_target_partitions_subset_is_valid(
                 f"Asset {asset_key} had a PartitionsDefinition at storage-time, but no longer does"
             )
 
-        # If the asset was time-partitioned at storage time but the time partitions def
-        # has changed, mark the backfill as failed
-        if isinstance(
-            target_partitions_subset, TimeWindowPartitionsSubset
-        ) and target_partitions_subset.partitions_def.get_serializable_unique_identifier(
-            instance_queryer
-        ) != partitions_def.get_serializable_unique_identifier(instance_queryer):
+        # Check that all target partitions still exist. If so, the backfill can continue.
+        existent_partitions_subset = (
+            partitions_def.subset_with_all_partitions() & target_partitions_subset
+        )
+        removed_partitions_subset = target_partitions_subset - existent_partitions_subset
+        if len(removed_partitions_subset) > 0:
             raise DagsterDefinitionChangedDeserializationError(
-                f"This partitions definition for asset {asset_key} has changed since this backfill"
-                " was stored. Changing the partitions definition for a time-partitioned "
-                "asset during a backfill is not supported."
+                f"Targeted partitions for asset {asset_key} have been removed since this backfill was stored. "
+                f"The following partitions were removed: {removed_partitions_subset.get_partition_keys()}"
             )
-
-        else:
-            # Check that all target partitions still exist. If so, the backfill can continue.a
-            existent_partitions_subset = (
-                partitions_def.subset_with_all_partitions() & target_partitions_subset
-            )
-            removed_partitions_subset = target_partitions_subset - existent_partitions_subset
-            if len(removed_partitions_subset) > 0:
-                raise DagsterDefinitionChangedDeserializationError(
-                    f"Targeted partitions for asset {asset_key} have been removed since this backfill was stored. "
-                    f"The following partitions were removed: {removed_partitions_subset.get_partition_keys()}"
-                )
 
     else:  # Asset unpartitioned at storage time
         if partitions_def is not None:
             raise DagsterDefinitionChangedDeserializationError(
                 f"Asset {asset_key} was not partitioned at storage-time, but is now"
             )
+
+
+def _check_asset_backfill_data_validity(
+    asset_backfill_data: AssetBackfillData,
+    asset_graph: BaseAssetGraph,
+    instance_queryer: CachingInstanceQueryer,
+) -> None:
+    for asset_key in asset_backfill_data.target_subset.asset_keys:
+        _check_target_partitions_subset_is_valid(
+            asset_key,
+            asset_graph,
+            asset_backfill_data.target_subset.get_partitions_subset(asset_key)
+            if asset_key in asset_backfill_data.target_subset.partitions_subsets_by_asset_key
+            else None,
+            instance_queryer,
+        )
 
 
 def _check_validity_and_deserialize_asset_backfill_data(
@@ -889,15 +891,8 @@ def _check_validity_and_deserialize_asset_backfill_data(
 
     try:
         asset_backfill_data = backfill.get_asset_backfill_data(asset_graph)
-        for asset_key in asset_backfill_data.target_subset.asset_keys:
-            _check_target_partitions_subset_is_valid(
-                asset_key,
-                asset_graph,
-                asset_backfill_data.target_subset.get_partitions_subset(asset_key)
-                if asset_key in asset_backfill_data.target_subset.partitions_subsets_by_asset_key
-                else None,
-                instance_queryer,
-            )
+        _check_asset_backfill_data_validity(asset_backfill_data, asset_graph, instance_queryer)
+
     except DagsterDefinitionChangedDeserializationError as ex:
         unloadable_locations_error = (
             "This could be because it's inside a code location that's failing to load:"

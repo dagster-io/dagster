@@ -8,6 +8,7 @@ from collections.abc import Iterator, Mapping, Sequence
 from contextlib import contextmanager
 from datetime import datetime, timedelta
 from typing import Any, Callable, ClassVar, Optional, Union, cast
+from urllib.parse import parse_qsl, urlparse
 
 import requests
 from dagster import (
@@ -1028,13 +1029,13 @@ class AirbyteClient(DagsterModel):
         self,
         method: str,
         url: str,
-        params: Mapping[str, Any],
+        params: dict[str, Any],
         data: Optional[Mapping[str, Any]] = None,
         include_additional_request_params: bool = True,
     ) -> Sequence[Mapping[str, Any]]:
         """Execute paginated requests and yield all items."""
         result_data = []
-        while url != "":
+        while True:
             response = self._single_request(
                 method=method,
                 url=url,
@@ -1045,8 +1046,14 @@ class AirbyteClient(DagsterModel):
 
             # Handle different response structures
             result_data.extend(response.get("data", []))
-            url = response.get("next", "")
-            params = {}
+            next_url = response.get("next", "")
+            if not next_url:
+                break
+
+            # Parse the query string for the next page
+            next_params = parse_qsl(urlparse(next_url).query)
+            # Overwrite the pagination params with the ones for the next page
+            params.update(dict(next_params))
 
         return result_data
 

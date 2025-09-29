@@ -56,7 +56,7 @@
     "@types/babel__core": "^7.20.5",
     "@types/node": "^22.5.4",
     "@types/react": "^18.3.5",
-    "@typescript-eslint/parser": "^8.4.0",
+    "@typescript-eslint/parser": "^8.44.0",
     "eslint": "^8.57.0",
     "eslint-config-prettier": "^9.1.0",
     "eslint-plugin-mdx": "^3.1.5",
@@ -69,8 +69,8 @@
     "remark-frontmatter": "^5.0.0",
     "remark-mdx": "^3.0.1",
     "sass": "^1.78.0",
-    "typescript": "~5.5.4",
-    "typescript-eslint": "^8.4.0",
+    "typescript": "5.9.2",
+    "typescript-eslint": "^8.44.0",
     "vitest": "^3.0.9",
     "webpack": "^5.94.0"
   },
@@ -92,5 +92,5 @@
   "engines": {
     "node": "20.x"
   },
-  "packageManager": "yarn@4.5.0"
+  "packageManager": "yarn@4.10.3"
 }

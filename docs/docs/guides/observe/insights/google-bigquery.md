@@ -19,7 +19,7 @@ The BigQuery cost metric is based off of the bytes billed for queries executed w
 
 :::info
 
-Support for integrating asset metadata is coming soon in updated Insights. To use legacy Insights, toggle off "New homepage & observability UIs" in your user settings.
+Support for tracking external metrics is coming soon in updated Insights. To use legacy Insights, toggle off "New homepage & observability UIs" in your user settings.
 
 :::
 

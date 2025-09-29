@@ -1,5 +1,3 @@
-import {Meta} from '@storybook/react';
-
 import {IPluginSidebarProps} from '../index';
 import {SidebarComponent as SQLDialogComponent} from '../sql';
 
@@ -7,7 +5,7 @@ import {SidebarComponent as SQLDialogComponent} from '../sql';
 export default {
   title: 'SQL Dialog Component',
   component: SQLDialogComponent,
-} as Meta;
+};
 
 const props: IPluginSidebarProps = {
   definition: {

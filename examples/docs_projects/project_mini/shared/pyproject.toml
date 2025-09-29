@@ -1,0 +1,11 @@
+[project]
+name = "shared"
+version = "0.1.0"
+description = "A shared package"
+dependencies = [
+    "dagster",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"

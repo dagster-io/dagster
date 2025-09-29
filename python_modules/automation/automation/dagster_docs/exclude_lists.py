@@ -404,8 +404,9 @@ EXCLUDE_MISSING_PUBLIC = {
     "dagster.RunLauncher",
     "dagster.Scheduler",
     "dagster.ScheduleStorage",
+    "dagster_polars.patito.patito_model_to_dagster_type",
 }
-# Total: 297 symbols
+# Total: 298 symbols
 
 # Modules to exclude from @public scanning
 EXCLUDE_MODULES_FROM_PUBLIC_SCAN = set()

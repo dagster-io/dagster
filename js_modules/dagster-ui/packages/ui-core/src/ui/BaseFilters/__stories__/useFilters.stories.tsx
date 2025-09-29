@@ -1,5 +1,4 @@
 import {Box, CustomTooltipProvider} from '@dagster-io/ui-components';
-import {Meta} from '@storybook/react';
 import {useMemo, useState} from 'react';
 
 import {TruncatedTextWithFullTextOnHover} from '../../../nav/getLeftNavItemsForOption';
@@ -12,7 +11,7 @@ import {TimeRangeState, useTimeRangeFilter} from '../useTimeRangeFilter';
 export default {
   title: 'useFilters',
   component: FilterDropdown,
-} as Meta;
+};
 
 const TestComponent = () => {
   const [userState, setUserState] = useState<Set<any>>(new Set());

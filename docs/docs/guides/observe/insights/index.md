@@ -7,9 +7,12 @@ canonicalUrl: '/guides/observe/insights'
 slug: '/guides/observe/insights'
 ---
 
+import Beta from '@site/docs/partials/\_Beta.md';
 import DagsterPlus from '@site/docs/partials/\_DagsterPlus.md';
 
 <DagsterPlus />
+
+<Beta />
 
 Using Dagster+ Insights, you can gain visibility into historical usage and trends, such as execution time, success rate, and time to resolving failures. You can also build custom reports to compare different deployments or selections of assets against each other to quickly identify issues across your data platform.
 
@@ -30,7 +33,7 @@ To access Insights views, you can either:
 
 ![Insights UI](/images/guides/observe/insights/insights-ui.png)
 
-Key asset health metrics, like materialization and failure count, are prominently displayed for assets and selections, and additional metrics are displayed for jobs and deployments. Historical Insights data is retained for 120 days.
+Key asset health metrics, like materialization and failure count, are prominently displayed for assets and selections, and additional metrics are displayed for jobs and deployments. Historical Insights data can be queried for up to 30 days.
 
 For a full list of metrics, see the [supported metrics](#supported-metrics) section.
 

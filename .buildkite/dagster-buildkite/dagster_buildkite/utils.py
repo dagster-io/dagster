@@ -215,6 +215,25 @@ def has_dg_changes():
 
 
 @functools.cache
+def has_component_integration_changes():
+    """Check for changes in integrations that implement components."""
+    component_integrations = [
+        "dagster-sling",
+        "dagster-dbt",
+        "dagster-databricks",
+        "dagster-airbyte",
+        "dagster-powerbi",
+        "dagster-omni",
+        "dagster-fivetran",
+        "dagster-dlt",
+    ]
+    return any(
+        any(integration in str(path) for integration in component_integrations)
+        for path in ChangedFiles.all
+    )
+
+
+@functools.cache
 def has_storage_test_fixture_changes():
     # Attempt to ensure that changes to TestRunStorage and TestEventLogStorage suites trigger integration
     return any(

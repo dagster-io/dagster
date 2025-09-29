@@ -1,10 +1,14 @@
 import os
-from typing import Any
+from typing import Any, Callable
 
 import pytest
 from dagster import AssetExecutionContext, asset, materialize
 from dagster._core.errors import DagsterPipesExecutionError
-from dagster_databricks._test_utils import databricks_client, databricks_notebook_path  # noqa: F401
+from dagster_databricks._test_utils import (  # noqa: F401
+    databricks_client,
+    get_databricks_notebook_path,
+    get_databricks_python_file_path,
+)
 from dagster_databricks.pipes import PipesDatabricksServerlessClient
 from databricks.sdk import WorkspaceClient
 from databricks.sdk.service import jobs
@@ -47,41 +51,76 @@ TASK_KEY = "DAGSTER_SERVERLESS_PIPES_TASK"
 
 
 def make_submit_task_dict(
-    notebook_path: str,
+    file_path: str,
+    task_type: str,
+    file_path_key: str,
 ) -> dict[str, Any]:
     submit_spec = {
         "task_key": TASK_KEY,
-        "notebook_task": {
-            "notebook_path": notebook_path,
+        task_type: {
+            file_path_key: file_path,
             "source": jobs.Source.WORKSPACE,
         },
     }
     return submit_spec
 
 
-def make_submit_task(
-    notebook_path: str,
-) -> jobs.SubmitTask:
+def make_notebook_task(notebook_path: str):
     return jobs.SubmitTask.from_dict(
         make_submit_task_dict(
-            notebook_path=notebook_path,
+            file_path=notebook_path, task_type="notebook_task", file_path_key="notebook_path"
         )
+    )
+
+
+def make_spark_python_task(python_file_path: str):
+    return jobs.SubmitTask.from_dict(
+        {
+            **make_submit_task_dict(
+                file_path=python_file_path,
+                task_type="spark_python_task",
+                file_path_key="python_file",
+            ),
+            "environment_key": "dagster_pipes_env",
+        }
     )
 
 
 @pytest.mark.skipif(IS_BUILDKITE, reason="Not configured to run on BK yet.")
 @pytest.mark.skipif(not IS_WORKSPACE, reason="No DB workspace credentials found.")
+@pytest.mark.parametrize(
+    "file_path_fn, make_task_fn",
+    [
+        (get_databricks_notebook_path, make_notebook_task),
+        (get_databricks_python_file_path, make_spark_python_task),
+    ],
+    ids=[
+        "notebook_task",
+        "spark_python_task",
+    ],
+)
 def test_pipes_client(
     databricks_client: WorkspaceClient,  # noqa: F811
-    databricks_notebook_path: str,  # noqa: F811
+    file_path_fn: Callable,
+    make_task_fn: Callable,
 ):
     @asset
     def number_x(context: AssetExecutionContext, pipes_client: PipesDatabricksServerlessClient):
-        task = make_submit_task(databricks_notebook_path)
+        task = make_task_fn(file_path_fn())
         return pipes_client.run(
             task=task,
             context=context,
             extras={"multiplier": 2, "storage_root": "fake"},
+            submit_args={
+                "environments": [
+                    jobs.JobEnvironment.from_dict(
+                        {
+                            "environment_key": "dagster_pipes_env",
+                            "spec": {"environment_version": 2, "dependencies": ["dagster_pipes"]},
+                        }
+                    )
+                ]
+            },
         ).get_results()
 
     result = materialize(
@@ -107,7 +146,7 @@ def test_pipes_client(
 def test_nonexistent_entry_point(databricks_client: WorkspaceClient):  # noqa: F811
     @asset
     def fake(context: AssetExecutionContext, pipes_client: PipesDatabricksServerlessClient):
-        task = make_submit_task("/fake/fake")
+        task = make_notebook_task("/fake/fake")
         return pipes_client.run(task=task, context=context).get_results()
 
     with pytest.raises(DagsterPipesExecutionError, match=r"Unable to access the notebook"):

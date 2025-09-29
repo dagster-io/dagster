@@ -1153,7 +1153,7 @@ class GrapheneQuery(graphene.ObjectType):
         )
 
     def resolve_assetOrError(self, graphene_info: ResolveInfo, assetKey: GrapheneAssetKeyInput):
-        return get_asset(graphene_info, AssetKey.from_graphql_input(assetKey))
+        return get_asset(AssetKey.from_graphql_input(assetKey))
 
     def resolve_assetNodeAdditionalRequiredKeys(
         self,
@@ -1215,21 +1215,7 @@ class GrapheneQuery(graphene.ObjectType):
     ):
         asset_keys = set(AssetKey.from_graphql_input(asset_key) for asset_key in assetKeys)
 
-        remote_nodes = {
-            graphene_info.context.asset_graph.get(asset_key)
-            for asset_key in asset_keys
-            if graphene_info.context.asset_graph.has(asset_key)
-        }
-
-        # Build mapping of asset key to the step keys required to generate the asset
-        step_keys_by_asset: dict[AssetKey, Sequence[str]] = {
-            remote_node.key: remote_node.resolve_to_singular_repo_scoped_node().asset_node_snap.op_names
-            for remote_node in remote_nodes
-        }
-
-        AssetRecord.prepare(graphene_info.context, asset_keys)
-
-        return get_assets_latest_info(graphene_info, step_keys_by_asset)
+        return get_assets_latest_info(graphene_info, asset_keys)
 
     @capture_error
     def resolve_logsForRun(

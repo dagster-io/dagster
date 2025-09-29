@@ -60,7 +60,7 @@ Dagster allows using environment variables to handle sensitive information. You 
 
 In this example, we use [`S3PickleIOManager`](https://docs.dagster.io/_apidocs/libraries/dagster-aws#dagster_aws.s3.S3PickleIOManager) to write outputs to S3 and read inputs from it and [`S3Resource`](https://docs.dagster.io/_apidocs/libraries/dagster-aws#dagster_aws.s3.S3Resource) to interact with S3 instance inside an asset.
 
-The configurations of the S3 connection are defined in [`quickstart_aws/repository.py`](./quickstart_aws/repository.py), which requires the following environment variables:
+The configurations of the S3 connection are defined in [`src/quickstart_aws/definitions.py`](./src/quickstart_aws/definitions.py), which requires the following environment variables:
 
 - `AWS_ACCESS_KEY_ID`
   - _Note: `S3Resource` uses boto under the hood, so if you are accessing your private buckets, you will need to provide the `AWS_ACCESS_KEY_ID` and `AWS_SECRET_ACCESS_KEY` environment variables or follow one of the other boto authentication methods. Check out the [AWS documentation for accessing AWS using your AWS credentials](https://docs.aws.amazon.com/general/latest/gr/aws-sec-cred-types.html)._
@@ -117,7 +117,7 @@ An asset is a software object that models a data asset, which can be a file in y
 
 Dagster visualizes upstream and downstream dependencies vertically. Assets below other assets connected by arrows implies a dependency relationship. So we can tell from the UI that the asset `hackernews_topstories` depends on `hackernews_topstory_ids` (i.e. `hackernews_topstories` takes `hackernews_topstory_ids`'s output as an input) and `hackernews_stories_word_cloud` depends on `hackernews_topstories`.
 
-All three assets are defined [in `quickstart_aws/assets/hackernews.py`](./quickstart_aws/assets/hackernews.py). Typically, you'll define assets by annotating ordinary Python functions with the [`@asset`](https://docs.dagster.io/concepts/assets/software-defined-assets#a-basic-software-defined-asset) decorator.
+All three assets are defined [in `src/quickstart_aws/defs/assets.py`](./src/quickstart_aws/defs/assets.py). Typically, you'll define assets by annotating ordinary Python functions with the [`@asset`](https://docs.dagster.io/concepts/assets/software-defined-assets#a-basic-software-defined-asset) decorator.
 
 This project also comes with ways to better organize the assets:
 
@@ -161,7 +161,7 @@ Click **Show Markdown**. You'll see a word cloud of the top 500 HackerNews story
     <img height="500" src="https://raw.githubusercontent.com/dagster-io/dagster/master/docs/static/images/quickstarts/basic/step-2-6-hackernews_word_cloud.png" />
 </p>
 
-The metadata is recorded in the `hackernews_topstories_word_cloud` asset [in `quickstart_aws/assets/hackernews.py`](./quickstart_aws/assets/hackernews.py). Dagster supports attaching arbitrary [metadata](https://docs.dagster.io/_apidocs/ops#dagster.MetadataValue) to asset materializations. This metadata is also be displayed on the **Activity** tab of the **Asset Details** page in the UI or in the **Asset Lineage** view after selecting an asset. From the compute logs of a run, you can click the **View Asset** to go to the **Asset Details** page.
+The metadata is recorded in the `most_frequent_words` asset [in `src/quickstart_aws/defs/assets.py`](./src/quickstart_aws/defs/assets.py). Dagster supports attaching arbitrary [metadata](https://docs.dagster.io/_apidocs/ops#dagster.MetadataValue) to asset materializations. This metadata is also be displayed on the **Activity** tab of the **Asset Details** page in the UI or in the **Asset Lineage** view after selecting an asset. From the compute logs of a run, you can click the **View Asset** to go to the **Asset Details** page.
 
 <p align="center">
     <img height="500" src="https://raw.githubusercontent.com/dagster-io/dagster/master/docs/static/images/quickstarts/basic/step-2-7-view-assets.png" />
@@ -173,7 +173,7 @@ This metadata would be useful for monitoring and maintaining the asset as you it
     <img height="500" src="https://raw.githubusercontent.com/dagster-io/dagster/master/docs/static/images/quickstarts/basic/step-2-8-filter.png" />
 </p>
 
-In the results, you'll see that the `hackernews_topstories` asset has two metadata entries: `num_records` and `preview`. Both are defined [in `quickstart_aws/assets/hackernews.py`](./quickstart_aws/assets/hackernews.py), in which we record the first five rows of the output Pandas DataFrame in the `preview` metadata entry using the Markdown type. This could help debug and keep your assets easily monitored. Click **Show Markdown** to view a preview of the output data frame:
+In the results, you'll see that the `hackernews_topstories` asset has two metadata entries: `num_records` and `preview`. Both are defined [in `src/quickstart_aws/defs/assets.py`](./src/quickstart_aws/defs/assets.py), in which we record the first five rows of the output Pandas DataFrame in the `preview` metadata entry using the Markdown type. This could help debug and keep your assets easily monitored. Click **Show Markdown** to view a preview of the output data frame:
 
 <p align="center">
     <img height="500" src="https://raw.githubusercontent.com/dagster-io/dagster/master/docs/static/images/quickstarts/basic/step-2-9-preview.png" />
@@ -185,7 +185,7 @@ Note: You'll find a `path` metadata attached to every asset. This is because ass
 
 Finally, let's refresh our plots every day so we can monitor popular topics over time. To do so, we can use [schedules](https://docs.dagster.io/concepts/partitions-schedules-sensors/schedules#schedules).
 
-We've defined a daily schedule and job in [`quickstart_aws/definitions.py`](./quickstart_aws/definitions.py) for all assets that are defined in the [`quickstart_aws/assets/`](./quickstart_aws/assets) module.
+We've defined a daily schedule and job in [`src/quickstart_aws/definitions.py`](./src/quickstart_aws/definitions.py) for all assets that are defined in the [`src/quickstart_aws/defs/`](./src/quickstart_aws/defs) module.
 
 Now, let's turn on the daily schedule within Dagster.
 
@@ -196,7 +196,7 @@ Now, let's turn on the daily schedule within Dagster.
     <img height="500" src="https://raw.githubusercontent.com/dagster-io/dagster/master/docs/static/images/quickstarts/basic/step-3-1-schedule-off.png" />
 </p>
 
-You can now turn on the schedule switch to set up the daily job we defined in [quickstart_aws/repository.py](./quickstart_aws/repository.py).
+You can now turn on the schedule switch to set up the daily job we defined in [src/quickstart_aws/definitions.py](./src/quickstart_aws/definitions.py).
 
 <p align="center">
     <img height="500" src="https://raw.githubusercontent.com/dagster-io/dagster/master/docs/static/images/quickstarts/basic/step-3-2-schedule-on.png" />
@@ -247,8 +247,8 @@ You can specify new Python dependencies in `setup.py`.
 
 ### Testing
 
-Tests are in the `quickstart_aws_tests` directory and you can run tests using `pytest`:
+Tests are in the `tests` directory and you can run tests using `pytest`:
 
 ```bash
-pytest quickstart_aws_tests
+pytest tests
 ```

@@ -12,6 +12,7 @@ import pytest
 from dagster._core.asset_graph_view.serializable_entity_subset import SerializableEntitySubset
 from dagster._core.definitions.asset_daemon_cursor import AssetDaemonCursor
 from dagster._core.definitions.assets.graph.base_asset_graph import BaseAssetGraph
+from dagster._core.definitions.partitions.context import partition_loading_context
 from dagster._core.definitions.sensor_definition import SensorType
 from dagster._core.execution.backfill import PartitionBackfill
 from dagster._core.instance import DagsterInstance
@@ -577,6 +578,34 @@ def test_backfill_creation_simple(location: str) -> None:
             backfills = _get_backfills_for_latest_ticks(context)
             assert len(backfills) == 0
             # still don't create runs
+            runs = _get_runs_for_latest_ticks(context)
+            assert len(runs) == 0
+
+
+def test_backfill_creation_dynamic() -> None:
+    with (
+        get_grpc_workspace_request_context("backfill_dynamic_user_code") as context,
+        get_threadpool_executor() as executor,
+    ):
+        context.instance.add_dynamic_partitions("dynamic1", ["a", "b", "c"])
+
+        asset_graph = context.create_request_context().asset_graph
+
+        # all start off missing, should be requested
+        time = get_current_datetime()
+        with freeze_time(time):
+            _execute_ticks(context, executor)  # pyright: ignore[reportArgumentType]
+            backfills = _get_backfills_for_latest_ticks(context)
+            assert len(backfills) == 1
+            subsets_by_key = _get_subsets_by_key(backfills[0], asset_graph)
+            assert subsets_by_key.keys() == {
+                dg.AssetKey("A"),
+            }
+
+            with partition_loading_context(dynamic_partitions_store=context.instance):
+                assert subsets_by_key[dg.AssetKey("A")].size == 3
+
+            # don't create runs
             runs = _get_runs_for_latest_ticks(context)
             assert len(runs) == 0
 
