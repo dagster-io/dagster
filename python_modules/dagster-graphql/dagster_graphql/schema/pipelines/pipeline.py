@@ -286,6 +286,7 @@ class GrapheneAsset(graphene.ObjectType):
     latestMaterializationTimestamp = graphene.Float()
     hasDefinitionOrRecord = graphene.NonNull(graphene.Boolean)
     latestFailedToMaterializeTimestamp = graphene.Float()
+    freshnessStatusChangedTimestamp = graphene.Float()
 
     class Meta:
         name = "Asset"
@@ -499,6 +500,15 @@ class GrapheneAsset(graphene.ObjectType):
             if latest_failed_to_materialize_event
             else None
         )
+
+    def resolve_freshnessStatusChangedTimestamp(
+        self, graphene_info: ResolveInfo
+    ) -> Optional[float]:
+        freshness_state_record = graphene_info.context.instance.get_freshness_state_records(
+            [self._asset_key]
+        ).get(self._asset_key)
+        if freshness_state_record is not None:
+            return freshness_state_record.updated_at.timestamp() * 1000
 
 
 class GrapheneEventConnection(graphene.ObjectType):
