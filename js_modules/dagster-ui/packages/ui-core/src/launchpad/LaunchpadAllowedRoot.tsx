@@ -1,11 +1,10 @@
-import {useMemo} from 'react';
 import * as yaml from 'yaml';
 
 import {
   CONFIG_EDITOR_GENERATOR_PARTITION_SETS_FRAGMENT,
   CONFIG_EDITOR_GENERATOR_PIPELINE_FRAGMENT,
 } from './ConfigEditorConfigPicker';
-import {LaunchpadConfig} from './LaunchpadSession';
+import {LaunchpadConfig, PIPELINE_EXECUTION_CONFIG_SCHEMA_QUERY} from './LaunchpadSession';
 import {LaunchpadSessionError} from './LaunchpadSessionError';
 import {LaunchpadSessionLoading} from './LaunchpadSessionLoading';
 import {LaunchpadTransientSessionContainer} from './LaunchpadTransientSessionContainer';
@@ -20,6 +19,17 @@ import {useJobTitle} from '../pipelines/useJobTitle';
 import {lazy} from '../util/lazy';
 import {isThisThingAJob, useRepository} from '../workspace/WorkspaceContext/util';
 import {RepoAddress} from '../workspace/types';
+import * as React from 'react';
+
+import {
+  PipelineExecutionConfigSchemaQuery,
+  PipelineExecutionConfigSchemaQueryVariables
+} from './types/LaunchpadSession.types';
+import {asAssetKeyInput} from '../assets/asInput';
+import {
+  PipelineSelector
+} from '../graphql/types';
+import {repoAddressToSelector} from '../workspace/repoAddressToSelector';
 
 const LaunchpadStoredSessionsContainer = lazy(() => import('./LaunchpadStoredSessionsContainer'));
 
@@ -69,23 +79,34 @@ export const LaunchpadAllowedRoot = (props: Props) => {
       variables: {repositoryName, repositoryLocationName, pipelineName},
     },
   );
+  const pipelineSelector: PipelineSelector = React.useMemo(() => {
+    return {
+      ...repoAddressToSelector(repoAddress),
+      pipelineName: pipelineName,
+      assetSelection: sessionPresets?.assetSelection?.map(asAssetKeyInput) || [],
+      assetCheckSelection: [],
+    };
+  }, [
+    sessionPresets?.assetSelection,
+    pipelineName,
+    repoAddress,
+  ]);
+
+  const configResult = useQuery<
+    PipelineExecutionConfigSchemaQuery,
+    PipelineExecutionConfigSchemaQueryVariables
+  >(PIPELINE_EXECUTION_CONFIG_SCHEMA_QUERY, {
+    variables: {selector: pipelineSelector, mode: sessionPresets?.mode},
+  });
+
 
   const pipelineOrError = result?.data?.pipelineOrError;
   const partitionSetsOrError = result?.data?.partitionSetsOrError;
 
   const runConfigSchemaOrError = result.data?.runConfigSchemaOrError;
-  const filteredRootDefaultYaml = useMemo(() => {
-    if (!runConfigSchemaOrError || runConfigSchemaOrError.__typename !== 'RunConfigSchema') {
-      return undefined;
-    }
 
-    const rootDefaultYaml = runConfigSchemaOrError.rootDefaultYaml;
-    const opNameList = sessionPresets?.assetSelection
-      ? sessionPresets.assetSelection.map((entry) => entry.opNames ?? []).flat()
-      : [];
-    const opNames = new Set(opNameList);
-    return filterDefaultYamlForSubselection(rootDefaultYaml, opNames);
-  }, [runConfigSchemaOrError, sessionPresets]);
+  const rootDefaultYaml = configResult?.data?.runConfigSchemaOrError?.rootDefaultYaml;
+
 
   if (!pipelineOrError || !partitionSetsOrError) {
     return <LaunchpadSessionLoading />;
@@ -138,6 +159,8 @@ export const LaunchpadAllowedRoot = (props: Props) => {
     );
   }
 
+
+  console.log('runConfigSchemaOrError', runConfigSchemaOrError);
   if (launchpadType === 'asset') {
     return (
       <LaunchpadTransientSessionContainer
@@ -146,7 +169,7 @@ export const LaunchpadAllowedRoot = (props: Props) => {
         partitionSets={partitionSetsOrError}
         repoAddress={repoAddress}
         sessionPresets={sessionPresets || {}}
-        rootDefaultYaml={filteredRootDefaultYaml}
+        rootDefaultYaml={rootDefaultYaml}
         onSaveConfig={onSaveConfig}
       />
     );
