@@ -26,8 +26,8 @@ class DgApiRunEventApi:
     ) -> "RunEventList":
         """Get run events with filtering options."""
         from dagster_dg_cli.api_layer.schemas.run_event import (
-            ErrorInfo,
-            RunEvent,
+            DgApiErrorInfo,
+            DgApiRunEvent,
             RunEventLevel,
             RunEventList,
         )
@@ -41,11 +41,11 @@ class DgApiRunEventApi:
             step_key=step_key,
         )
 
-        # Helper function to convert error data to ErrorInfo recursively
-        def _convert_error_info(error_data: Optional[dict]) -> Optional[ErrorInfo]:
+        # Helper function to convert error data to DgApiErrorInfo recursively
+        def _convert_error_info(error_data: Optional[dict]) -> Optional[DgApiErrorInfo]:
             if not error_data:
                 return None
-            return ErrorInfo(
+            return DgApiErrorInfo(
                 message=error_data.get("message", ""),
                 className=error_data.get("className"),
                 stack=error_data.get("stack"),
@@ -54,7 +54,7 @@ class DgApiRunEventApi:
 
         # Convert to Pydantic models
         events = [
-            RunEvent(
+            DgApiRunEvent(
                 run_id=e["runId"],
                 message=e["message"],
                 timestamp=e["timestamp"],

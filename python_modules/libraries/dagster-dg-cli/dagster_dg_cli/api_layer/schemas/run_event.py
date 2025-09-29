@@ -16,13 +16,13 @@ class RunEventLevel(str, Enum):
     DEBUG = "DEBUG"
 
 
-class ErrorInfo(BaseModel):
+class DgApiErrorInfo(BaseModel):
     """Error information model."""
 
     message: str
     className: Optional[str] = None
     stack: Optional[list[str]] = None
-    cause: Optional["ErrorInfo"] = None
+    cause: Optional["DgApiErrorInfo"] = None
 
     class Config:
         from_attributes = True
@@ -34,7 +34,7 @@ class ErrorInfo(BaseModel):
         return "\n".join(self.stack)
 
 
-class RunEvent(BaseModel):
+class DgApiRunEvent(BaseModel):
     """Single run event model."""
 
     run_id: str
@@ -43,7 +43,7 @@ class RunEvent(BaseModel):
     level: RunEventLevel
     step_key: Optional[str] = None
     event_type: Optional[str] = None
-    error: Optional[ErrorInfo] = None
+    error: Optional[DgApiErrorInfo] = None
 
     class Config:
         from_attributes = True
@@ -52,7 +52,7 @@ class RunEvent(BaseModel):
 class RunEventList(BaseModel):
     """Paginated run events response."""
 
-    items: list[RunEvent]
+    items: list[DgApiRunEvent]
     total: int
     cursor: Optional[str] = None
     has_more: bool = False

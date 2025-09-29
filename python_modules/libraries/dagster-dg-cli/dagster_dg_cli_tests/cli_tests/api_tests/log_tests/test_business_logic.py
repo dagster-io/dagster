@@ -5,8 +5,8 @@ GraphQL client mocking or external dependencies.
 """
 
 from dagster_dg_cli.api_layer.schemas.run_event import (
-    ErrorInfo,
-    RunEvent,
+    DgApiErrorInfo,
+    DgApiRunEvent,
     RunEventLevel,
     RunEventList,
 )
@@ -19,7 +19,7 @@ class TestFormatLogs:
     def _create_sample_log_list(self):
         """Create sample RunEventList for testing."""
         events = [
-            RunEvent(
+            DgApiRunEvent(
                 run_id="test-run-12345",
                 message='Starting execution of run for "test_pipeline".',
                 timestamp="1641046800000",  # 2022-01-01 14:20:00 UTC (as milliseconds)
@@ -28,7 +28,7 @@ class TestFormatLogs:
                 event_type="RunStartEvent",
                 error=None,
             ),
-            RunEvent(
+            DgApiRunEvent(
                 run_id="test-run-12345",
                 message='Started execution of step "process_data".',
                 timestamp="1641046805000",  # 2022-01-01 14:20:05 UTC
@@ -37,7 +37,7 @@ class TestFormatLogs:
                 event_type="ExecutionStepStartEvent",
                 error=None,
             ),
-            RunEvent(
+            DgApiRunEvent(
                 run_id="test-run-12345",
                 message="Loading input from path: /tmp/input.json",
                 timestamp="1641046810000",  # 2022-01-01 14:20:10 UTC
@@ -46,14 +46,14 @@ class TestFormatLogs:
                 event_type="MessageEvent",
                 error=None,
             ),
-            RunEvent(
+            DgApiRunEvent(
                 run_id="test-run-12345",
                 message='Execution of step "process_data" failed.',
                 timestamp="1641046815000",  # 2022-01-01 14:20:15 UTC
                 level=RunEventLevel.ERROR,
                 step_key="process_data",
                 event_type="ExecutionStepFailureEvent",
-                error=ErrorInfo(
+                error=DgApiErrorInfo(
                     message="ValueError: Invalid input data format\n",
                     className="ValueError",
                     stack=[
@@ -64,7 +64,7 @@ class TestFormatLogs:
                     cause=None,
                 ),
             ),
-            RunEvent(
+            DgApiRunEvent(
                 run_id="test-run-12345",
                 message="Execution of run for \"test_pipeline\" failed. Steps failed: ['process_data'].",
                 timestamp="1641046820000",  # 2022-01-01 14:20:20 UTC
@@ -82,21 +82,21 @@ class TestFormatLogs:
 
     def _create_log_with_nested_error(self):
         """Create log with nested error causes."""
-        return RunEvent(
+        return DgApiRunEvent(
             run_id="nested-error-run",
             message="Database connection failed with retry exhausted.",
             timestamp="1641046825000",
             level=RunEventLevel.ERROR,
             step_key="database_query",
             event_type="ExecutionStepFailureEvent",
-            error=ErrorInfo(
+            error=DgApiErrorInfo(
                 message="RetryRequestedFromPolicy: Exceeded max_retries of 3\n",
                 className="RetryRequestedFromPolicy",
                 stack=[
                     '  File "/app/database.py", line 25, in execute_query\n    return self._execute_with_retry(query)\n',
                     '  File "/app/database.py", line 45, in _execute_with_retry\n    raise RetryRequestedFromPolicy(f"Exceeded max_retries of {max_retries}")\n',
                 ],
-                cause=ErrorInfo(
+                cause=DgApiErrorInfo(
                     message="ConnectionError: [Errno 111] Connection refused\n",
                     className="ConnectionError",
                     stack=[
@@ -111,7 +111,7 @@ class TestFormatLogs:
 
     def _create_log_with_very_long_step_key(self):
         """Create log with very long step key to test truncation."""
-        return RunEvent(
+        return DgApiRunEvent(
             run_id="truncation-test-run",
             message="Processing large dataset chunk.",
             timestamp="1641046830000",
@@ -203,7 +203,7 @@ class TestFormatLogs:
         # Create log list that has more data available
         log_list = RunEventList(
             items=[
-                RunEvent(
+                DgApiRunEvent(
                     run_id="paginated-run",
                     message="First log entry",
                     timestamp="1641046800000",
@@ -212,7 +212,7 @@ class TestFormatLogs:
                     event_type="MessageEvent",
                     error=None,
                 ),
-                RunEvent(
+                DgApiRunEvent(
                     run_id="paginated-run",
                     message="Second log entry",
                     timestamp="1641046805000",
@@ -237,7 +237,7 @@ class TestFormatLogs:
         from dagster_shared.utils.timing import fixed_timezone
 
         events = [
-            RunEvent(
+            DgApiRunEvent(
                 run_id="level-test-run",
                 message=f"This is a {level.value} level message",
                 timestamp="1641046800000",
@@ -265,8 +265,8 @@ class TestLogDataProcessing:
     """
 
     def test_error_info_stack_trace_formatting(self):
-        """Test ErrorInfo stack trace string conversion."""
-        error = ErrorInfo(
+        """Test DgApiErrorInfo stack trace string conversion."""
+        error = DgApiErrorInfo(
             message="Test error message",
             className="TestError",
             stack=[
@@ -287,8 +287,8 @@ class TestLogDataProcessing:
         assert stack_trace == expected
 
     def test_error_info_empty_stack(self):
-        """Test ErrorInfo with empty stack."""
-        error = ErrorInfo(
+        """Test DgApiErrorInfo with empty stack."""
+        error = DgApiErrorInfo(
             message="Error with no stack",
             className="EmptyStackError",
             stack=None,
@@ -298,7 +298,7 @@ class TestLogDataProcessing:
         assert error.get_stack_trace_string() == ""
 
         # Test with empty list too
-        error_empty_list = ErrorInfo(
+        error_empty_list = DgApiErrorInfo(
             message="Error with empty stack list",
             className="EmptyStackError",
             stack=[],
@@ -310,7 +310,7 @@ class TestLogDataProcessing:
     def test_run_event_creation_with_all_levels(self, snapshot):
         """Test creating run events with all possible log levels."""
         events = [
-            RunEvent(
+            DgApiRunEvent(
                 run_id=f"level-{level.value.lower()}-run",
                 message=f"Message at {level.value} level",
                 timestamp="1641046800000",
@@ -334,7 +334,7 @@ class TestLogDataProcessing:
     def test_run_event_list_pagination_handling(self):
         """Test RunEventList pagination properties."""
         events = [
-            RunEvent(
+            DgApiRunEvent(
                 run_id=f"pagination-run-{i}",
                 message=f"Message {i}",
                 timestamp=f"164104680{i}000",
@@ -362,7 +362,7 @@ class TestLogDataProcessing:
     def test_nested_error_cause_chain(self):
         """Test deeply nested error cause chains."""
         # Create a 3-level deep error chain
-        root_error = ErrorInfo(
+        root_error = DgApiErrorInfo(
             message="IOError: File not found",
             className="IOError",
             stack=[
@@ -371,7 +371,7 @@ class TestLogDataProcessing:
             cause=None,
         )
 
-        middle_error = ErrorInfo(
+        middle_error = DgApiErrorInfo(
             message="ProcessingError: Failed to process file",
             className="ProcessingError",
             stack=[
@@ -380,7 +380,7 @@ class TestLogDataProcessing:
             cause=root_error,
         )
 
-        top_error = ErrorInfo(
+        top_error = DgApiErrorInfo(
             message="PipelineError: Pipeline execution failed",
             className="PipelineError",
             stack=[
@@ -402,8 +402,8 @@ class TestLogDataProcessing:
         assert "File not found" in top_error.cause.cause.message
 
     def test_run_event_with_no_optional_fields(self):
-        """Test RunEvent creation with minimal required fields."""
-        event = RunEvent(
+        """Test DgApiRunEvent creation with minimal required fields."""
+        event = DgApiRunEvent(
             run_id="minimal-run",
             message="Minimal event",
             timestamp="1641046800000",
@@ -425,7 +425,7 @@ class TestLogDataProcessing:
 
         # Test various timestamp formats
         events = [
-            RunEvent(
+            DgApiRunEvent(
                 run_id="timestamp-test",
                 message="Epoch timestamp",
                 timestamp="0",  # Unix epoch
@@ -434,7 +434,7 @@ class TestLogDataProcessing:
                 event_type="MessageEvent",
                 error=None,
             ),
-            RunEvent(
+            DgApiRunEvent(
                 run_id="timestamp-test",
                 message="Large timestamp",
                 timestamp="32503680000000",  # Year 3000
