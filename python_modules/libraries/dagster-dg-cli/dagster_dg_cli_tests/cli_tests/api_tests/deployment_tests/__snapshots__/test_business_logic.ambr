@@ -3,75 +3,57 @@
   dict({
     'items': list([
       dict({
-        'id': 6935,
-        'name': 'uat',
+        'id': 87,
+        'name': 'data-eng-prod',
         'type': 'PRODUCTION',
       }),
       dict({
-        'id': 6936,
-        'name': 'excessive',
+        'id': 190248,
+        'name': 'gtm20',
         'type': 'PRODUCTION',
       }),
       dict({
-        'id': 84915,
-        'name': 'ben-test',
+        'id': 213933,
+        'name': 'data-eng-staging',
         'type': 'PRODUCTION',
       }),
       dict({
-        'id': 37,
-        'name': 'ecs',
-        'type': 'PRODUCTION',
-      }),
-      dict({
-        'id': 6934,
-        'name': 'staging',
-        'type': 'PRODUCTION',
-      }),
-      dict({
-        'id': 80,
-        'name': 'prod',
+        'id': 217021,
+        'name': 'data-eng-dev',
         'type': 'PRODUCTION',
       }),
     ]),
-    'total': 6,
+    'total': 4,
   })
 # ---
 # name: TestFormatDeployments.test_format_deployments_text_output[0]
   '''
-  Name: uat
-  ID: 6935
+  Name: data-eng-prod
+  ID: 87
   Type: PRODUCTION
   
-  Name: excessive
-  ID: 6936
+  Name: gtm20
+  ID: 190248
   Type: PRODUCTION
   
-  Name: ben-test
-  ID: 84915
+  Name: data-eng-staging
+  ID: 213933
   Type: PRODUCTION
   
-  Name: ecs
-  ID: 37
-  Type: PRODUCTION
-  
-  Name: staging
-  ID: 6934
-  Type: PRODUCTION
-  
-  Name: prod
-  ID: 80
+  Name: data-eng-dev
+  ID: 217021
   Type: PRODUCTION
   '''
 # ---
 # name: TestProcessDeploymentsResponse.test_empty_response_processing[0]
-  DeploymentList(items=[Deployment(id=6935, name='uat', type=<DeploymentType.PRODUCTION: 'PRODUCTION'>), Deployment(id=6936, name='excessive', type=<DeploymentType.PRODUCTION: 'PRODUCTION'>), Deployment(id=84915, name='ben-test', type=<DeploymentType.PRODUCTION: 'PRODUCTION'>), Deployment(id=37, name='ecs', type=<DeploymentType.PRODUCTION: 'PRODUCTION'>), Deployment(id=6934, name='staging', type=<DeploymentType.PRODUCTION: 'PRODUCTION'>), Deployment(id=80, name='prod', type=<DeploymentType.PRODUCTION: 'PRODUCTION'>)], total=6)
+  DeploymentList(items=[Deployment(id=87, name='data-eng-prod', type=<DeploymentType.PRODUCTION: 'PRODUCTION'>), Deployment(id=190248, name='gtm20', type=<DeploymentType.PRODUCTION: 'PRODUCTION'>), Deployment(id=213933, name='data-eng-staging', type=<DeploymentType.PRODUCTION: 'PRODUCTION'>), Deployment(id=217021, name='data-eng-dev', type=<DeploymentType.PRODUCTION: 'PRODUCTION'>)], total=4)
 # ---
 # name: TestProcessDeploymentsResponse.test_missing_full_deployments_key[0]
   DeploymentList(items=[], total=0)
 # ---
 # name: TestProcessDeploymentsResponse.test_response_processing_with_limit[0]
-  DeploymentList(items=[Deployment(id=6935, name='uat', type=<DeploymentType.PRODUCTION: 'PRODUCTION'>), Deployment(id=6936, name='excessive', type=<DeploymentType.PRODUCTION: 'PRODUCTION'>), Deployment(id=84915, name='ben-test', type=<DeploymentType.PRODUCTION: 'PRODUCTION'>), Deployment(id=37, name='ecs', type=<DeploymentType.PRODUCTION: 'PRODUCTION'>), Deployment(id=6934, name='staging', type=<DeploymentType.PRODUCTION: 'PRODUCTION'>), Deployment(id=80, name='prod', type=<DeploymentType.PRODUCTION: 'PRODUCTION'>)], total=6)
+  DeploymentList(items=[Deployment(id=87, name='data-eng-prod', type=<DeploymentType.PRODUCTION: 'PRODUCTION'>), Deployment(id=190248, name='gtm20', type=<DeploymentType.PRODUCTION: 'PRODUCTION'>), Deployment(id=213933, name='data-eng-staging', type=<DeploymentType.PRODUCTION: 'PRODUCTION'>), Deployment(id=217021, name='data-eng-dev', type=<DeploymentType.PRODUCTION: 'PRODUCTION'>)], total=4)
 # ---
 # name: TestProcessDeploymentsResponse.test_successful_response_processing[0]
-  DeploymentList(items=[Deployment(id=6935, name='uat', type=<DeploymentType.PRODUCTION: 'PRODUCTION'>), Deployment(id=6936, name='excessive', type=<DeploymentType.PRODUCTION: 'PRODUCTION'>), Deployment(id=84915, name='ben-test', type=<DeploymentType.PRODUCTION: 'PRODUCTION'>), Deployment(id=37, name='ecs', type=<DeploymentType.PRODUCTION: 'PRODUCTION'>), Deployment(id=6934, name='staging', type=<DeploymentType.PRODUCTION: 'PRODUCTION'>), Deployment(id=80, name='prod', type=<DeploymentType.PRODUCTION: 'PRODUCTION'>)], total=6)
+  DeploymentList(items=[Deployment(id=87, name='data-eng-prod', type=<DeploymentType.PRODUCTION: 'PRODUCTION'>), Deployment(id=190248, name='gtm20', type=<DeploymentType.PRODUCTION: 'PRODUCTION'>), Deployment(id=213933, name='data-eng-staging', type=<DeploymentType.PRODUCTION: 'PRODUCTION'>), Deployment(id=217021, name='data-eng-dev', type=<DeploymentType.PRODUCTION: 'PRODUCTION'>)], total=4)
 # ---
