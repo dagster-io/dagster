@@ -3432,55 +3432,135 @@
     },
     {
       "source": "/etl-pipeline-tutorial",
-      "destination": "/examples/etl-pipeline"
+      "destination": "/examples/full-pipelines/etl-pipeline"
     },
     {
       "source": "/etl-pipeline-tutorial/extract-data",
-      "destination": "/examples/etl-pipeline/extract-data"
+      "destination": "/examples/full-pipelines/etl-pipeline/extract-data"
     },
     {
       "source": "/etl-pipeline-tutorial/transform-data",
-      "destination": "/examples/etl-pipeline/transform-data"
+      "destination": "/examples/full-pipelines/etl-pipeline/transform-data"
     },
     {
       "source": "/etl-pipeline-tutorial/add-a-resource",
-      "destination": "/examples/etl-pipeline/add-a-resource"
+      "destination": "/examples/full-pipelines/etl-pipeline/add-a-resource"
     },
     {
       "source": "/etl-pipeline-tutorial/data-quality",
-      "destination": "/examples/etl-pipeline/data-quality"
+      "destination": "/examples/full-pipelines/etl-pipeline/data-quality"
     },
     {
       "source": "/etl-pipeline-tutorial/partition-asset",
-      "destination": "/examples/etl-pipeline/partition-asset"
+      "destination": "/examples/full-pipelines/etl-pipeline/partition-asset"
     },
     {
       "source": "/etl-pipeline-tutorial/automate-your-pipeline",
-      "destination": "/examples/etl-pipeline/automate-your-pipeline"
+      "destination": "/examples/full-pipelines/etl-pipeline/automate-your-pipeline"
     },
     {
       "source": "/etl-pipeline-tutorial/visualize-data",
-      "destination": "/examples/etl-pipeline/visualize-data"
+      "destination": "/examples/full-pipelines/etl-pipeline/visualize-data"
     },
     {
       "source": "/etl-pipeline-tutorial/create-a-sensor",
-      "destination": "/examples/etl-pipeline/create-a-sensor"
+      "destination": "/examples/full-pipelines/etl-pipeline/create-a-sensor"
     },
     {
       "source": "/etl-pipeline-tutorial/create-a-sensor-asset",
-      "destination": "/examples/etl-pipeline/create-a-sensor"
+      "destination": "/examples/full-pipelines/etl-pipeline/create-a-sensor"
     },
     {
       "source": "/etl-pipeline-tutorial/create-and-materialize-a-downstream-asset",
-      "destination": "/examples/etl-pipeline"
+      "destination": "/examples/full-pipelines/etl-pipeline"
     },
     {
       "source": "/etl-pipeline-tutorial/create-and-materialize-partitioned-asset",
-      "destination": "/examples/etl-pipeline/partition-asset"
+      "destination": "/examples/full-pipelines/etl-pipeline/partition-asset"
     },
     {
       "source": "/etl-pipeline-tutorial/ensure-data-quality-with-asset-checks",
-      "destination": "/examples/etl-pipeline/data-quality"
+      "destination": "/examples/full-pipelines/etl-pipeline/data-quality"
+    },
+    {
+      "source": "/examples/bluesky",
+      "destination": "/examples/full-pipelines/bluesky"
+    },
+    {
+      "source": "/examples/bluesky/:path*",
+      "destination": "/examples/full-pipelines/bluesky/:path*"
+    },
+    {
+      "source": "/examples/dbt",
+      "destination": "/examples/full-pipelines/dbt"
+    },
+    {
+      "source": "/examples/dbt/:path*",
+      "destination": "/examples/full-pipelines/dbt/:path*"
+    },
+    {
+      "source": "/examples/etl-pipeline",
+      "destination": "/examples/full-pipelines/etl-pipeline"
+    },
+    {
+      "source": "/examples/etl-pipeline/:path*",
+      "destination": "/examples/full-pipelines/etl-pipeline/:path*"
+    },
+    {
+      "source": "/examples/llm-fine-tuning",
+      "destination": "/examples/full-pipelines/llm-fine-tuning"
+    },
+    {
+      "source": "/examples/llm-fine-tuning/:path*",
+      "destination": "/examples/full-pipelines/llm-fine-tuning/:path*"
+    },
+    {
+      "source": "/examples/modal",
+      "destination": "/examples/full-pipelines/modal"
+    },
+    {
+      "source": "/examples/modal/:path*",
+      "destination": "/examples/full-pipelines/modal/:path*"
+    },
+    {
+      "source": "/examples/prompt-engineering",
+      "destination": "/examples/full-pipelines/prompt-engineering"
+    },
+    {
+      "source": "/examples/prompt-engineering/:path*",
+      "destination": "/examples/full-pipelines/prompt-engineering/:path*"
+    },
+    {
+      "source": "/examples/rag",
+      "destination": "/examples/full-pipelines/rag"
+    },
+    {
+      "source": "/examples/rag/:path*",
+      "destination": "/examples/full-pipelines/rag/:path*"
+    },
+    {
+      "source": "/examples/resource-caching",
+      "destination": "/examples/mini-examples/resource-caching"
+    },
+    {
+      "source": "/examples/shared-module",
+      "destination": "/examples/mini-examples/shared-module"
+    },
+    {
+      "source": "/examples/bi",
+      "destination": "/examples/reference-architectures/bi"
+    },
+    {
+      "source": "/examples/etl-reverse-etl",
+      "destination": "/examples/reference-architectures/etl-reverse-etl"
+    },
+    {
+      "source": "/examples/real-time",
+      "destination": "/examples/reference-architectures/real-time"
+    },
+    {
+      "source": "/examples/retrieval-augmented-generation",
+      "destination": "/examples/reference-architectures/rag"
     },
     {
       "source": "/guides/build/components/building-pipelines-with-components/adding-attributes-to-assets",
