@@ -285,6 +285,7 @@ class GrapheneAsset(graphene.ObjectType):
     assetHealth = graphene.Field(GrapheneAssetHealth)
     latestMaterializationTimestamp = graphene.Float()
     hasDefinitionOrRecord = graphene.NonNull(graphene.Boolean)
+    latestFailedToMaterializeTimestamp = graphene.Float()
 
     class Meta:
         name = "Asset"
@@ -484,6 +485,19 @@ class GrapheneAsset(graphene.ObjectType):
         latest_materialization_event = record.asset_entry.last_materialization if record else None
         return (
             latest_materialization_event.timestamp * 1000 if latest_materialization_event else None
+        )
+
+    async def resolve_latestFailedToMaterializeTimestamp(
+        self, graphene_info: ResolveInfo
+    ) -> Optional[float]:
+        record = await AssetRecord.gen(graphene_info.context, self._asset_key)
+        latest_failed_to_materialize_event = (
+            record.asset_entry.last_failed_to_materialize_entry if record else None
+        )
+        return (
+            latest_failed_to_materialize_event.timestamp * 1000
+            if latest_failed_to_materialize_event
+            else None
         )
 
 
