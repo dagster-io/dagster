@@ -1,5 +1,5 @@
 ---
-title: Build an ETL Pipeline
+title: Dagster ETL pipeline
 description: Learn how to build an ETL pipeline with Dagster
 last_update:
   author: Dennis Hume

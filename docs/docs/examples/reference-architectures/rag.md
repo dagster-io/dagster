@@ -1,5 +1,5 @@
 ---
-title: Retrieval-Augmented Generation (RAG)
+title: Retrieval-augmented generation (RAG)
 description: A RAG system that indexes data and uses retrieved context to generate responses.
 last_update:
   author: Dennis Hume

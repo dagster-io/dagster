@@ -1,5 +1,5 @@
 ---
-title: Real-time
+title: Real-time system
 description: A real-time system that detects abandoned carts and sends notifications to a marketing platform.
 last_update:
   author: Dennis Hume

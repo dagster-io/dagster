@@ -1,5 +1,5 @@
 ---
-title: Prompt engineering and Anthropic
+title: Prompt engineering with Anthropic
 description: Learn how to do prompt engineering
 last_update:
   author: Dennis Hume

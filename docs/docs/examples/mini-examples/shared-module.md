@@ -1,5 +1,5 @@
 ---
-title: Shared module
+title: Sharing code across code locations
 description: How to share modules across code locations.
 last_update:
   author: Dennis Hume

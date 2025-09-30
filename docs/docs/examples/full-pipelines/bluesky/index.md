@@ -1,5 +1,5 @@
 ---
-title: Analyzing Bluesky data
+title: Bluesky data analysis
 description: Learn how to build an end-to-end analytics pipeline
 last_update:
   author: Dennis Hume
