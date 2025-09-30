@@ -9,8 +9,6 @@ sidebar_custom_props:
 tags: [reference-architecture]
 ---
 
-# Retrieval-Augmented Generation (RAG)
-
 ## Objective
 
 Build a retrieval-augmented generation (RAG) system that extracts data from GitHub using the GitHub API. The extracted content is stored in a vector database (Weaviate) to enable efficient semantic search. When a user submits a question through an asset at runtime, relevant context is retrieved from Weaviate and passed to OpenAI to generate a response grounded in the source material.

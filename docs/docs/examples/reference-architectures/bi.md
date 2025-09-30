@@ -9,8 +9,6 @@ sidebar_custom_props:
 tags: [reference-architecture]
 ---
 
-# BI
-
 ## Objective
 
 Build a platform that ingests data from multiple sources (Postgres and Shopify), using an ETL tool (Airbyte). The data is modeled within the data warehouse (BigQuery using dbt). Once the modeling is complete, the datasets are analyzed in Notebooks (Hex) and presented in the dashboards (Looker).

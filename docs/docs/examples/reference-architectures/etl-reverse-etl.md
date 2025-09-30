@@ -9,8 +9,6 @@ sidebar_custom_props:
 tags: [reference-architecture]
 ---
 
-# ETL/Reverse ETL
-
 ## Objective
 
 Build a platform that ingests data from multiple sources (Salesforce and Segment), using an ETL tool (Fivetran). The data is modeled within the data warehouse (Snowflake using dbt). Once the modeling is complete, the final datasets are exported back into Salesforce using a reverse ETL tool (Hightouch).

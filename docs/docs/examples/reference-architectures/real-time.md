@@ -9,8 +9,6 @@ sidebar_custom_props:
 tags: [reference-architecture]
 ---
 
-# Real-time
-
 ## Objective
 
 Build an abandoned cart notification system that ingests customer data (Postgres) alongside real-time cart data (Kafka). A real-time view (ClickHouse) calculates which users have cart items that haven't been included in an order within the past hour. Newly identified abandoned carts are then sent downstream to the marketing platform (Braze).
