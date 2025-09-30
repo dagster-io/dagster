@@ -37,7 +37,7 @@ def temporary_snowflake_table() -> Iterator[str]:
             "snowflake": SnowflakeResource(
                 account=os.getenv("SNOWFLAKE_ACCOUNT"),
                 user=os.environ["SNOWFLAKE_USER"],
-                password=os.getenv("SNOWFLAKE_PASSWORD"),
+                private_key=os.getenv("SNOWFLAKE_PRIVATE_KEY"),
                 database="TESTDB",
                 schema="TESTSCHEMA",
             )
@@ -67,7 +67,7 @@ def test_snowflake_resource(snowflake_connect):
         {
             "account": "foo",
             "user": "bar",
-            "password": "baz",
+            "private_key": "baz",
             "database": "TESTDB",
             "schema": "TESTSCHEMA",
             "warehouse": "TINY_WAREHOUSE",
@@ -83,7 +83,7 @@ def test_snowflake_resource(snowflake_connect):
     snowflake_connect.assert_called_once_with(
         account="foo",
         user="bar",
-        password="baz",
+        private_key="baz",
         database="TESTDB",
         schema="TESTSCHEMA",
         warehouse="TINY_WAREHOUSE",
@@ -102,7 +102,7 @@ def test_pydantic_snowflake_resource(snowflake_connect):
     resource = SnowflakeResource(
         account="foo",
         user="bar",
-        password="baz",
+        private_key="baz",
         database="TESTDB",
         schema="TESTSCHEMA",
         warehouse="TINY_WAREHOUSE",
@@ -137,7 +137,7 @@ def test_snowflake_resource_from_envvars(snowflake_connect):
         {
             "account": {"env": "SNOWFLAKE_ACCOUNT"},
             "user": {"env": "SNOWFLAKE_USER"},
-            "password": {"env": "SNOWFLAKE_PASSWORD"},
+            "private_key": {"env": "SNOWFLAKE_PRIVATE_KEY"},
             "database": {"env": "SNOWFLAKE_DATABASE"},
             "schema": {"env": "SNOWFLAKE_SCHEMA"},
             "warehouse": {"env": "SNOWFLAKE_WAREHOUSE"},
@@ -151,7 +151,7 @@ def test_snowflake_resource_from_envvars(snowflake_connect):
     env_vars = {
         "SNOWFLAKE_ACCOUNT": "foo",
         "SNOWFLAKE_USER": "bar",
-        "SNOWFLAKE_PASSWORD": "baz",
+        "SNOWFLAKE_PRIVATE_KEY": "baz",
         "SNOWFLAKE_DATABASE": "TESTDB",
         "SNOWFLAKE_SCHEMA": "TESTSCHEMA",
         "SNOWFLAKE_WAREHOUSE": "TINY_WAREHOUSE",
@@ -162,7 +162,7 @@ def test_snowflake_resource_from_envvars(snowflake_connect):
         snowflake_connect.assert_called_once_with(
             account="foo",
             user="bar",
-            password="baz",
+            private_key="baz",
             database="TESTDB",
             schema="TESTSCHEMA",
             warehouse="TINY_WAREHOUSE",
@@ -181,7 +181,7 @@ def test_pydantic_snowflake_resource_from_envvars(snowflake_connect):
     resource = SnowflakeResource(
         account=EnvVar("SNOWFLAKE_ACCOUNT"),
         user=EnvVar("SNOWFLAKE_USER"),
-        password=EnvVar("SNOWFLAKE_PASSWORD"),
+        private_key=EnvVar("SNOWFLAKE_PRIVATE_KEY"),
         database=EnvVar("SNOWFLAKE_DATABASE"),
         schema=EnvVar("SNOWFLAKE_SCHEMA"),
         warehouse=EnvVar("SNOWFLAKE_WAREHOUSE"),
@@ -194,7 +194,7 @@ def test_pydantic_snowflake_resource_from_envvars(snowflake_connect):
     env_vars = {
         "SNOWFLAKE_ACCOUNT": "foo",
         "SNOWFLAKE_USER": "bar",
-        "SNOWFLAKE_PASSWORD": "baz",
+        "SNOWFLAKE_PRIVATE_KEY": "baz",
         "SNOWFLAKE_DATABASE": "TESTDB",
         "SNOWFLAKE_SCHEMA": "TESTSCHEMA",
         "SNOWFLAKE_WAREHOUSE": "TINY_WAREHOUSE",
@@ -205,7 +205,7 @@ def test_pydantic_snowflake_resource_from_envvars(snowflake_connect):
         snowflake_connect.assert_called_once_with(
             account="foo",
             user="bar",
-            password="baz",
+            private_key="baz",
             database="TESTDB",
             schema="TESTSCHEMA",
             warehouse="TINY_WAREHOUSE",
@@ -262,7 +262,7 @@ def test_snowflake_resource_duplicate_auth(snowflake_connect):
         {
             "account": "foo",
             "user": "bar",
-            "password": "baz",
+            "private_key": "baz",
             "database": "TESTDB",
             "schema": "TESTSCHEMA",
             "warehouse": "TINY_WAREHOUSE",
@@ -308,7 +308,7 @@ def test_fetch_last_updated_timestamps_missing_table():
         connector="sqlalchemy",
         account=os.getenv("SNOWFLAKE_ACCOUNT"),
         user=os.environ["SNOWFLAKE_USER"],
-        password=os.getenv("SNOWFLAKE_PASSWORD"),
+        private_key=os.getenv("SNOWFLAKE_PRIVATE_KEY"),
         database="TESTDB",
         schema="TESTSCHEMA",
     ).get_connection() as conn:
@@ -373,7 +373,7 @@ def test_fetch_last_updated_timestamps(db_str: str):
                 "snowflake": SnowflakeResource(
                     account=os.getenv("SNOWFLAKE_ACCOUNT"),
                     user=os.environ["SNOWFLAKE_USER"],
-                    password=os.getenv("SNOWFLAKE_PASSWORD"),
+                    private_key=os.getenv("SNOWFLAKE_PRIVATE_KEY"),
                     database="TESTDB" if db_str is None else db_str,
                 )
             },
@@ -399,7 +399,7 @@ def test_resources_snowflake_sqlalchemy_connection():
         connector="sqlalchemy",
         account=os.getenv("SNOWFLAKE_ACCOUNT"),
         user=os.environ["SNOWFLAKE_USER"],
-        password=os.getenv("SNOWFLAKE_PASSWORD"),
+        private_key=os.getenv("SNOWFLAKE_PRIVATE_KEY"),
         database="TESTDB",
         schema="TESTSCHEMA",
     ).get_connection() as conn:
@@ -435,7 +435,7 @@ def test_resources_snowflake_additional_snowflake_connection_args():
         with SnowflakeResource(
             account="account",
             user="user",
-            password="password",
+            private_key="password",
             database="TESTDB",
             schema="TESTSCHEMA",
             additional_snowflake_connection_args={"foo": "bar"},
