@@ -1,0 +1,10 @@
+type: project_dspy.components.connections_model_builder.ConnectionsModelBuilder
+
+attributes:
+  model_name: connections
+  connections_data_path: data/Connections_Data.csv
+  performance_threshold: 0.3
+  optimization_enabled: true
+  train_test_split: 0.25
+  eval_subset_size: 10
+  num_threads: 4
