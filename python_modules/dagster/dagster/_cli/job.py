@@ -908,6 +908,7 @@ def execute_backfill_command(
 
             for partition_data in partition_execution_data.partition_data:
                 dagster_run = create_backfill_run(
+                    workspace,
                     instance,
                     code_location,
                     remote_job,

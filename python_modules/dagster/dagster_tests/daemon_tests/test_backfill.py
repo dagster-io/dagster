@@ -63,7 +63,7 @@ from dagster._core.test_utils import (
     wait_for_futures,
 )
 from dagster._core.types.loadable_target_origin import LoadableTargetOrigin
-from dagster._core.workspace.context import WorkspaceProcessContext
+from dagster._core.workspace.context import BaseWorkspaceRequestContext, WorkspaceProcessContext
 from dagster._core.workspace.load_target import ModuleTarget
 from dagster._daemon import get_default_daemon_logger
 from dagster._daemon.auto_run_reexecution.auto_run_reexecution import (
@@ -3924,6 +3924,7 @@ def test_asset_backfill_retries_make_downstreams_runnable(
 def test_run_retry_not_part_of_completed_backfill(
     instance: DagsterInstance,
     workspace_context: WorkspaceProcessContext,
+    workspace_request_context: BaseWorkspaceRequestContext,
     code_location: CodeLocation,
     remote_repo: RemoteRepository,
 ):
@@ -3932,7 +3933,7 @@ def test_run_retry_not_part_of_completed_backfill(
     asset_selection = [dg.AssetKey("foo"), dg.AssetKey("a1"), dg.AssetKey("bar")]
     instance.add_backfill(
         PartitionBackfill.from_asset_partitions(
-            asset_graph=workspace_context.create_request_context().asset_graph,
+            asset_graph=workspace_request_context.asset_graph,
             backfill_id=backfill_id,
             tags={"custom_tag_key": "custom_tag_value"},
             backfill_timestamp=get_current_timestamp(),
@@ -3983,6 +3984,7 @@ def test_run_retry_not_part_of_completed_backfill(
     remote_job = code_location.get_job(selector)
     retried_run = instance.create_reexecuted_run(
         parent_run=run_to_retry,
+        request_context=workspace_request_context,
         code_location=code_location,
         remote_job=remote_job,
         strategy=ReexecutionStrategy.ALL_STEPS,
