@@ -1,10 +1,12 @@
 ---
 description: Create Dagster sensors to react to run statuses using run_status_sensor and DagsterRunStatus for automated actions like launching runs or sending alerts.
 sidebar_position: 500
-title: Creating sensors that react to run statuses
+title: Run status sensors
 ---
 
 If you want to act on the status of a run, Dagster provides a way to create a sensor that reacts to run statuses. You can use <PyObject section="schedules-sensors" module="dagster" object="run_status_sensor" /> with a specified <PyObject section="internals" module="dagster" object="DagsterRunStatus" /> to decorate a function that will run when the given status occurs. This can be used to launch other runs, send alerts to a monitoring service on run failure, or report a run success.
+
+## Launching a job run if a run is successful
 
 Here is an example of a run status sensor that launches a run of `status_reporting_job` if a run is successful:
 
@@ -18,6 +20,8 @@ Here is an example of a run status sensor that launches a run of `status_reporti
 `request_job` is the job that will be run when the `RunRequest` is returned.
 
 Note that in `report_status_sensor` we conditionally return a `RunRequest`. This ensures that when `report_status_sensor` runs `status_reporting_job` it doesn't enter an infinite loop where the success of `status_reporting_job` triggers another run of `status_reporting_job`, which triggers another run, and so on.
+
+## Reporting job success in a Slack message
 
 Here is an example of a sensor that reports job success in a Slack message:
 
