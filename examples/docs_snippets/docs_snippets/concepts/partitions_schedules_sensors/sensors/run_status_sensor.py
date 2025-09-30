@@ -80,8 +80,16 @@ def compare_completion_times_sensor(context: dg.SensorEvaluationContext):
     if isinstance(previous_completion_time_b, float):
         previous_completion_time_b = datetime.fromtimestamp(previous_completion_time_b)
 
-    completion_time_a = datetime.fromtimestamp(completion_time_a) if completion_time_a is not None else None
-    completion_time_b = datetime.fromtimestamp(completion_time_b) if completion_time_b is not None else None
+    completion_time_a = (
+        datetime.fromtimestamp(completion_time_a)
+        if completion_time_a is not None
+        else None
+    )
+    completion_time_b = (
+        datetime.fromtimestamp(completion_time_b)
+        if completion_time_b is not None
+        else None
+    )
 
     if (
         completion_time_a
