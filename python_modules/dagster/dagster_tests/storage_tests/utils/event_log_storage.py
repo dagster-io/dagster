@@ -1660,7 +1660,7 @@ class TestEventLogStorage:
         with environ(
             {
                 "DAGSTER_EVENT_BATCH_SIZE": "25",
-                "DAGSTER_BATCH_PLANNED_EVENTS": "1" if batch_planned_events else "",
+                "DAGSTER_EMIT_PLANNED_EVENTS_INDIVIDUALLY": "1" if not batch_planned_events else "",
             }
         ):
             result = materialize([my_asset], instance=instance)
