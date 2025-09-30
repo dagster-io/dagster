@@ -109,6 +109,13 @@ def has_permission_for_asset_graph(
     if context.has_permission(permission):
         return True
 
+    if not any(
+        context.has_permission_for_location(permission, location_name)
+        for location_name in context.code_location_names
+    ) and not context.viewer_has_any_owner_definition_permissions(permission):
+        # short-circuit if we don't have any location-level permissions or definition-level permissions
+        return False
+
     if asset_keys:
         location_names = set()
         for key in asset_keys:

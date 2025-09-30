@@ -327,7 +327,7 @@ class BaseWorkspaceRequestContext(LoadingContext):
         return self.process_context.create_request_context()
 
     def has_job(self, selector: Union[JobSubsetSelector, JobSelector]) -> bool:
-        check.inst_param(selector, "selector", JobSubsetSelector)
+        check.inst_param(selector, "selector", (JobSubsetSelector, JobSelector))
         if not self.has_code_location(selector.location_name):
             return False
 
