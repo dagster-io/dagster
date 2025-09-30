@@ -39,22 +39,20 @@ interface IParseState {
 // Helper methods that mutate parser state. These must return new JavaScript objects.
 //
 function parentsPoppingItemsDeeperThan(parents: IParseStateParent[], indent: number) {
-  while (parents.length > 0) {
-    const immediateParent = parents[parents.length - 1];
-    if (!immediateParent || immediateParent.indent >= indent) {
-      break;
-    }
+  // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+  while (parents.length > 0 && parents[parents.length - 1]!.indent >= indent) {
     parents = parents.slice(0, parents.length - 1);
   }
   return parents;
 }
 
 function parentsAddingChildKeyToLast(parents: IParseStateParent[], key: string) {
-  const immediateParent = parents[parents.length - 1];
-  if (!immediateParent) {
+  if (parents.length === 0) {
     return [];
   }
 
+  // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+  const immediateParent = parents[parents.length - 1]!;
   return [
     ...parents.slice(0, parents.length - 1),
     {
@@ -239,8 +237,9 @@ const defineYamlMode = () => {
         // in case the dict key has subkeys.
         if (!state.inValue) {
           const match = stream.match(RegExps.DICT_KEY);
-          if (match && match[0]) {
-            const key = match[0];
+          if (match) {
+            // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+            const key = match[0]!;
             const keyIndent = stream.pos - key.length;
             state.parents = parentsAddingChildKeyAtIndent(state.parents, key, keyIndent);
             return 'atom';
@@ -256,8 +255,9 @@ const defineYamlMode = () => {
           const match = !stream.string.match(/[^\s]:[^\s]/)
             ? stream.match(RegExps.DICT_KEY)
             : false;
-          if (match && match[0]) {
-            const key = match[0];
+          if (match) {
+            // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+            const key = match[0]!;
             const keyIndent = stream.pos - key.length;
             state.inValue = false;
             state.parents = parentsAddingChildKeyAtIndent(state.parents, key, keyIndent);
@@ -284,7 +284,8 @@ const defineYamlMode = () => {
                     ? stream.match(/^[^,\}]+/)
                     : stream.match(/^.+$/);
             }
-            const value = match && match[0] ? match[0] : '';
+            // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+            const value = match ? match[0]! : '';
             if (value.match(RegExps.VARIABLE)) {
               result = 'variable-2';
             } else if (value.match(RegExps.NUMBER)) {
@@ -606,7 +607,8 @@ function findAutocompletionContext(
   // Tracks the type key to be used for the next depth level
   // Used for Map config types, which specify the type key for their values, otherwise is null
   let nextTypeKey: string | null =
-    type.__typename === 'MapConfigType' && type.typeParamKeys[1] ? type.typeParamKeys[1] : null;
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+    type.__typename === 'MapConfigType' ? type.typeParamKeys[1]! : null;
 
   if ((available || type.__typename === 'MapConfigType') && parents.length > 0) {
     for (const parent of parents) {
@@ -623,27 +625,31 @@ function findAutocompletionContext(
       const typeKey = nextTypeKey ? nextTypeKey : parentTypeDef?.configTypeKey;
       nextTypeKey = null;
 
-      let parentConfigType = schema.allConfigTypes.find((t) => t.key === typeKey);
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+      let parentConfigType = schema.allConfigTypes.find((t) => t.key === typeKey)!;
 
       // If nullable, extract the inner type.
-      if (parentConfigType?.__typename === 'NullableConfigType') {
+      if (parentConfigType.__typename === 'NullableConfigType') {
         const innerType = parentConfigType.typeParamKeys[0];
-        parentConfigType = schema.allConfigTypes.find((t) => t.key === innerType);
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+        parentConfigType = schema.allConfigTypes.find((t) => t.key === innerType)!;
       }
 
-      let childTypeKey = parentConfigType?.key;
+      let childTypeKey = parentConfigType.key;
       let childEntriesUnique = true;
 
-      inArray = parentConfigType?.__typename === 'ArrayConfigType';
+      inArray = parentConfigType.__typename === 'ArrayConfigType';
       if (inArray) {
-        childTypeKey = parentConfigType?.typeParamKeys[0];
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+        childTypeKey = parentConfigType.typeParamKeys[0]!;
         childEntriesUnique = false;
       }
 
       // Maps provide no direct autocompletions, but they do act as the closestMappingType,
       // meaning they show up in the schema sidebar
-      if (parentConfigType?.__typename === 'MapConfigType') {
-        nextTypeKey = parentConfigType.typeParamKeys[1] ?? '';
+      if (parentConfigType.__typename === 'MapConfigType') {
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+        nextTypeKey = parentConfigType.typeParamKeys[1]!;
         closestMappingType = parentConfigType;
         available = [];
         continue;
@@ -885,11 +891,8 @@ export function findRangeInDocumentFromPath(
 function nodeAtPath(doc: yaml.Document, path: Array<string>) {
   let node: any = doc.contents;
   for (let i = 0; i < path.length; i++) {
-    const part = path[i];
-    if (!part) {
-      return null;
-    }
-
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+    const part = path[i]!;
     if (node && node.type && node.type === 'PAIR') {
       node = node.value;
     }
