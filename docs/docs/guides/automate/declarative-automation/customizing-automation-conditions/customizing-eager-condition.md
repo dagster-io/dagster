@@ -96,4 +96,4 @@ The `custom_condition` in this example will execute the target asset in two scen
    - No upstream dependencies are missing
    - No upstream dependencies are currently in progress
 
-This approach is particularly useful for assets that need guaranteed regular execution but should also respond quickly to upstream changes, while avoiding execution during problematic states.
+This approach is particularly useful for assets that need guaranteed regular execution ,but should also respond quickly to upstream changes, while avoiding execution during problematic states.
