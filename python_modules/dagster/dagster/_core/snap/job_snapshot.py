@@ -96,7 +96,7 @@ class JobSnapSerializer(RecordSerializer["JobSnap"]):
     storage_name="PipelineSnapshot",
     serializer=JobSnapSerializer,
     skip_when_empty_fields={"metadata"},
-    skip_when_none_fields={"run_tags"},
+    skip_when_none_fields={"run_tags", "owners"},
     field_serializers={"metadata": MetadataFieldSerializer},
     storage_field_names={"node_defs_snapshot": "solid_definitions_snapshot"},
 )

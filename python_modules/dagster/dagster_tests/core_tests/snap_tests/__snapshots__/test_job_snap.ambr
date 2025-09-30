@@ -1179,7 +1179,6 @@
       }
     ],
     "name": "single_dep_job",
-    "owners": null,
     "solid_definitions_snapshot": {
       "__class__": "SolidDefinitionsSnapshot",
       "composite_solid_def_snaps": [],
@@ -1252,7 +1251,7 @@
   '''
 # ---
 # name: test_basic_dep_fan_out.1
-  '0cf1b2cde3e2ae4a93c9b6c4b48641b23ece5699'
+  'b79f9f7535b754b1baba65141bf73ec5fb898405'
 # ---
 # name: test_basic_fan_in
   '''
@@ -2426,7 +2425,6 @@
       }
     ],
     "name": "fan_in_test",
-    "owners": null,
     "solid_definitions_snapshot": {
       "__class__": "SolidDefinitionsSnapshot",
       "composite_solid_def_snaps": [],
@@ -2499,7 +2497,7 @@
   '''
 # ---
 # name: test_basic_fan_in.1
-  '815d67cd8f0eccdc625b2b14db830c209e104cc6'
+  '63abee692248ff6eabcd376012de5795a95810d3'
 # ---
 # name: test_deserialize_node_def_snaps_multi_type_config
   '''
@@ -3657,7 +3655,6 @@
       }
     ],
     "name": "noop_job",
-    "owners": null,
     "solid_definitions_snapshot": {
       "__class__": "SolidDefinitionsSnapshot",
       "composite_solid_def_snaps": [],
@@ -3696,7 +3693,7 @@
   '''
 # ---
 # name: test_empty_job_snap_props.1
-  '4bcc494bbfb1c1755a9a57edf7a301d47c92168b'
+  '99e0301b80cfe82d2bec98fec8896ae1c55d0e0d'
 # ---
 # name: test_empty_job_snap_snapshot
   '''
@@ -4818,7 +4815,6 @@
       }
     ],
     "name": "noop_job",
-    "owners": null,
     "solid_definitions_snapshot": {
       "__class__": "SolidDefinitionsSnapshot",
       "composite_solid_def_snaps": [],
@@ -5976,7 +5972,6 @@
       }
     ],
     "name": "noop_job",
-    "owners": null,
     "solid_definitions_snapshot": {
       "__class__": "SolidDefinitionsSnapshot",
       "composite_solid_def_snaps": [],
@@ -6017,7 +6012,7 @@
   '''
 # ---
 # name: test_job_snap_all_props.1
-  '4b9904d09a3e8278d54ca17185d6fdeafefe9605'
+  '7c88c3727ac43700821265e6519b2a322011d0a3'
 # ---
 # name: test_multi_type_config_array_dict_fields[Permissive]
   '''
@@ -7394,7 +7389,6 @@
       }
     ],
     "name": "two_op_job",
-    "owners": null,
     "solid_definitions_snapshot": {
       "__class__": "SolidDefinitionsSnapshot",
       "composite_solid_def_snaps": [],
@@ -7433,5 +7427,5 @@
   '''
 # ---
 # name: test_two_invocations_deps_snap.1
-  '0bfef1b9828c2534d092ca7150dfbef39d80dba1'
+  '7c041f7e12d1f0503bb105c496024aa5d40e0b1b'
 # ---
