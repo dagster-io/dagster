@@ -12,6 +12,11 @@ const sidebars: SidebarsConfig = {
         'getting-started/concepts',
         {
           type: 'link',
+          label: 'Dagster University',
+          href: 'https://courses.dagster.io/',
+        },
+        {
+          type: 'link',
           label: 'Python primer',
           href: 'https://dagster.io/blog/python-packages-primer-1',
         },
