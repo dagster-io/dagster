@@ -417,19 +417,11 @@ class GraphenePartitionBackfill(graphene.ObjectType):
             return None
 
         origin = self._backfill_job.partition_set_origin
-        location_name = origin.repository_origin.code_location_origin.location_name
-        repository_name = origin.repository_origin.repository_name
-        if not graphene_info.context.has_code_location(location_name):
-            return None
-
-        location = graphene_info.context.get_code_location(location_name)
-        if not location.has_repository(repository_name):
-            return None
-
-        repository = location.get_repository(repository_name)
         partition_sets = [
             partition_set
-            for partition_set in repository.get_partition_sets()
+            for partition_set in graphene_info.context.get_partition_sets(
+                origin.repository_origin.get_selector()
+            )
             if partition_set.name == origin.partition_set_name
         ]
         if not partition_sets:
@@ -571,7 +563,6 @@ class GraphenePartitionBackfill(graphene.ObjectType):
             return None
 
         return GraphenePartitionSet(
-            repository_handle=partition_set.repository_handle,
             remote_partition_set=partition_set,
         )
 

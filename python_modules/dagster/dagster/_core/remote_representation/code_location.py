@@ -4,7 +4,7 @@ from abc import abstractmethod
 from collections.abc import Mapping, Sequence
 from contextlib import AbstractContextManager
 from functools import cached_property
-from typing import TYPE_CHECKING, AbstractSet, Any, Optional, Union, cast  # noqa: UP035
+from typing import TYPE_CHECKING, Any, Optional, Union, cast
 
 from dagster_shared.libraries import DagsterLibraryRegistry
 from dagster_shared.serdes.objects.models.defs_state_info import DefsStateInfo
@@ -12,7 +12,6 @@ from dagster_shared.serdes.objects.models.defs_state_info import DefsStateInfo
 import dagster._check as check
 from dagster._check import checked
 from dagster._core.code_pointer import CodePointer
-from dagster._core.definitions.asset_key import AssetKey
 from dagster._core.definitions.assets.job.asset_job import IMPLICIT_ASSET_JOB_NAME
 from dagster._core.definitions.reconstruct import ReconstructableJob, ReconstructableRepository
 from dagster._core.definitions.repository_definition import RepositoryDefinition
@@ -43,7 +42,6 @@ from dagster._core.remote_representation.external_data import (
     RepositorySnap,
     ScheduleExecutionErrorSnap,
     SensorExecutionErrorSnap,
-    partition_set_snap_name_for_job_name,
 )
 from dagster._core.remote_representation.grpc_server_registry import GrpcServerRegistry
 from dagster._core.remote_representation.handle import JobHandle, RepositoryHandle
@@ -214,41 +212,6 @@ class CodeLocation(AbstractContextManager):
     ) -> Union["PartitionConfigSnap", "PartitionExecutionErrorSnap"]:
         pass
 
-    def get_partition_tags(
-        self,
-        repository_handle: RepositoryHandle,
-        job_name: str,
-        partition_name: str,
-        instance: DagsterInstance,
-        selected_asset_keys: Optional[AbstractSet[AssetKey]],
-    ) -> Union["PartitionTagsSnap", "PartitionExecutionErrorSnap"]:
-        from dagster._core.remote_representation.external_data import PartitionTagsSnap
-
-        if is_implicit_asset_job_name(job_name):
-            # Implicit asset jobs never have custom tag-for-partition functions, and the
-            # PartitionsDefinitions on the assets are always available on the host, so we can just
-            # determine the tags using information on the host.
-            # In addition to the performance benefits, this is convenient in the case where the
-            # implicit asset job has assets with different PartitionsDefinitions, as the gRPC
-            # API for getting partition tags from the code server doesn't support an asset selection.
-            remote_repo = self.get_repository(repository_handle.repository_name)
-            return PartitionTagsSnap(
-                name=partition_name,
-                tags=remote_repo.get_partition_tags_for_implicit_asset_job(
-                    partition_name=partition_name,
-                    job_name=job_name,
-                    selected_asset_keys=selected_asset_keys,
-                    instance=instance,
-                ),
-            )
-        else:
-            return self.get_partition_tags_from_repo(
-                repository_handle=repository_handle,
-                job_name=job_name,
-                partition_name=partition_name,
-                instance=instance,
-            )
-
     @abstractmethod
     def get_partition_tags_from_repo(
         self,
@@ -258,38 +221,6 @@ class CodeLocation(AbstractContextManager):
         instance: DagsterInstance,
     ) -> Union["PartitionTagsSnap", "PartitionExecutionErrorSnap"]:
         pass
-
-    def get_partition_names(
-        self,
-        repository_handle: RepositoryHandle,
-        job_name: str,
-        instance: DagsterInstance,
-        selected_asset_keys: Optional[AbstractSet[AssetKey]],
-    ) -> Union[PartitionNamesSnap, "PartitionExecutionErrorSnap"]:
-        remote_repo = self.get_repository(repository_handle.repository_name)
-        partition_set_name = partition_set_snap_name_for_job_name(job_name)
-
-        if remote_repo.has_partition_set(partition_set_name):
-            partition_set = remote_repo.get_partition_set(partition_set_name)
-
-            # Prefer to return the names without calling out to user code if there's a corresponding
-            # partition set that allows it
-            if partition_set.has_partition_name_data():
-                return PartitionNamesSnap(
-                    partition_names=partition_set.get_partition_names(instance=instance)
-                )
-            else:
-                return self.get_partition_names_from_repo(repository_handle, job_name)
-        else:
-            # Asset jobs might have no corresponding partition set but still have partitioned
-            # assets, so we get the partition names using the assets.
-            return PartitionNamesSnap(
-                partition_names=remote_repo.get_partition_names_for_asset_job(
-                    job_name=job_name,
-                    selected_asset_keys=selected_asset_keys,
-                    instance=instance,
-                )
-            )
 
     @abstractmethod
     def get_partition_names_from_repo(
