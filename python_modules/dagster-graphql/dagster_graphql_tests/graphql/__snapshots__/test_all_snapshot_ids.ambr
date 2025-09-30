@@ -2856,7 +2856,6 @@
       }
     ],
     "name": "__ASSET_JOB",
-    "owners": null,
     "solid_definitions_snapshot": {
       "__class__": "SolidDefinitionsSnapshot",
       "composite_solid_def_snaps": [
@@ -6355,7 +6354,6 @@
       }
     ],
     "name": "no_config_chain_job",
-    "owners": null,
     "solid_definitions_snapshot": {
       "__class__": "SolidDefinitionsSnapshot",
       "composite_solid_def_snaps": [],
@@ -6428,7 +6426,7 @@
   '''
 # ---
 # name: test_all_snapshot_ids[101]
-  'fa6576d363f2fa51ec402799c0baa8d26ab23c0c'
+  '77a31bebdd806c45ceaae8da998abf7e7e5293e1'
 # ---
 # name: test_all_snapshot_ids[102]
   '''
@@ -7279,7 +7277,6 @@
       }
     ],
     "name": "no_config_job",
-    "owners": null,
     "solid_definitions_snapshot": {
       "__class__": "SolidDefinitionsSnapshot",
       "composite_solid_def_snaps": [],
@@ -7318,7 +7315,7 @@
   '''
 # ---
 # name: test_all_snapshot_ids[103]
-  'ee1eeff9c6a327f252279d4289719ca95529aa1e'
+  '902b465e995a6715869f20b5071cbc6af97bcc57'
 # ---
 # name: test_all_snapshot_ids[104]
   '''
@@ -8346,7 +8343,6 @@
       }
     ],
     "name": "no_multipartitions_job",
-    "owners": null,
     "run_tags": {},
     "solid_definitions_snapshot": {
       "__class__": "SolidDefinitionsSnapshot",
@@ -8386,7 +8382,7 @@
   '''
 # ---
 # name: test_all_snapshot_ids[105]
-  '6342201e1bbb1e8cc8d84c61f78ea70bffd770b9'
+  'aa8ac10f592671c1593c11007b96378b7be85afd'
 # ---
 # name: test_all_snapshot_ids[106]
   '''
@@ -9237,7 +9233,6 @@
       }
     ],
     "name": "noop_job",
-    "owners": null,
     "solid_definitions_snapshot": {
       "__class__": "SolidDefinitionsSnapshot",
       "composite_solid_def_snaps": [],
@@ -9276,7 +9271,7 @@
   '''
 # ---
 # name: test_all_snapshot_ids[107]
-  'e564b89afda061223c7dfdab20ce02a55687328c'
+  '3ce2813354cec5f57b0a42f7ebff155a11559e1e'
 # ---
 # name: test_all_snapshot_ids[108]
   '''
@@ -10304,7 +10299,6 @@
       }
     ],
     "name": "observation_job",
-    "owners": null,
     "run_tags": {},
     "solid_definitions_snapshot": {
       "__class__": "SolidDefinitionsSnapshot",
@@ -10344,7 +10338,7 @@
   '''
 # ---
 # name: test_all_snapshot_ids[109]
-  'a8b72bc7472554ba18523064edd7543b39305677'
+  'c8b79ff4409a5c223827fef49b1f4a43e21eeb76'
 # ---
 # name: test_all_snapshot_ids[10]
   '''
@@ -11163,7 +11157,6 @@
       }
     ],
     "name": "basic_job",
-    "owners": null,
     "solid_definitions_snapshot": {
       "__class__": "SolidDefinitionsSnapshot",
       "composite_solid_def_snaps": [],
@@ -12114,7 +12107,6 @@
       }
     ],
     "name": "output_then_hang_job",
-    "owners": null,
     "run_tags": {},
     "solid_definitions_snapshot": {
       "__class__": "SolidDefinitionsSnapshot",
@@ -12156,7 +12148,7 @@
   '''
 # ---
 # name: test_all_snapshot_ids[111]
-  'cdd9c617b69053858c0abae4b3a76ed79ea2f8e3'
+  '40e047e82678ef52366ac67b8c339951298eb8ab'
 # ---
 # name: test_all_snapshot_ids[112]
   '''
@@ -13007,7 +12999,6 @@
       }
     ],
     "name": "owned_job",
-    "owners": null,
     "solid_definitions_snapshot": {
       "__class__": "SolidDefinitionsSnapshot",
       "composite_solid_def_snaps": [],
@@ -13046,7 +13037,7 @@
   '''
 # ---
 # name: test_all_snapshot_ids[113]
-  'f3e6a617ffebd3977227232db2920271e1780f4b'
+  '7aae08c7502cce74ce9300ebad18a12b3b465441'
 # ---
 # name: test_all_snapshot_ids[114]
   '''
@@ -13897,7 +13888,6 @@
       }
     ],
     "name": "owned_partitioned_job",
-    "owners": null,
     "solid_definitions_snapshot": {
       "__class__": "SolidDefinitionsSnapshot",
       "composite_solid_def_snaps": [],
@@ -13936,7 +13926,7 @@
   '''
 # ---
 # name: test_all_snapshot_ids[115]
-  '38ca16f6a48b63e38e2236acad8a513b36c6fd99'
+  '1b42afdb2cf17f1eb539d6ac57a721f606094d29'
 # ---
 # name: test_all_snapshot_ids[116]
   '''
@@ -14964,7 +14954,6 @@
       }
     ],
     "name": "partition_materialization_job",
-    "owners": null,
     "run_tags": {},
     "solid_definitions_snapshot": {
       "__class__": "SolidDefinitionsSnapshot",
@@ -15004,7 +14993,7 @@
   '''
 # ---
 # name: test_all_snapshot_ids[117]
-  '0060e464d99d5cfddc31e73418565894a711c4d7'
+  '233628b6438c412a9dad42bde19333aaf049c69d'
 # ---
 # name: test_all_snapshot_ids[118]
   '''
@@ -15855,7 +15844,6 @@
       }
     ],
     "name": "partitioned_asset_job",
-    "owners": null,
     "solid_definitions_snapshot": {
       "__class__": "SolidDefinitionsSnapshot",
       "composite_solid_def_snaps": [],
@@ -15894,10 +15882,10 @@
   '''
 # ---
 # name: test_all_snapshot_ids[119]
-  'd681c1aac95261101859257925fb617df86e3c72'
+  'd450ebd7f78aee6ac5a168c0fe067be9d54f73e4'
 # ---
 # name: test_all_snapshot_ids[11]
-  '50537113ea5f981025a5d1ccb75f1ca96a8dbfea'
+  'ad43fd0ed33d251e59699714c9ed3c2a09e68144'
 # ---
 # name: test_all_snapshot_ids[120]
   '''
@@ -16794,7 +16782,6 @@
       }
     ],
     "name": "req_config_job",
-    "owners": null,
     "solid_definitions_snapshot": {
       "__class__": "SolidDefinitionsSnapshot",
       "composite_solid_def_snaps": [],
@@ -16833,7 +16820,7 @@
   '''
 # ---
 # name: test_all_snapshot_ids[121]
-  '19940686f59729a81f1bdc0e632d736e57e12b7b'
+  '9b5e553f89ddbc226dbecab4c7089e674e5fad00'
 # ---
 # name: test_all_snapshot_ids[122]
   '''
@@ -17730,7 +17717,6 @@
       }
     ],
     "name": "required_resource_config_job",
-    "owners": null,
     "solid_definitions_snapshot": {
       "__class__": "SolidDefinitionsSnapshot",
       "composite_solid_def_snaps": [],
@@ -17771,7 +17757,7 @@
   '''
 # ---
 # name: test_all_snapshot_ids[123]
-  '8df3d5cf30d271a4d902bd943427479e4d1c3835'
+  'd4e391bb0b67dc2ab123a6b916dde11512c23309'
 # ---
 # name: test_all_snapshot_ids[124]
   '''
@@ -18668,7 +18654,6 @@
       }
     ],
     "name": "required_resource_job",
-    "owners": null,
     "solid_definitions_snapshot": {
       "__class__": "SolidDefinitionsSnapshot",
       "composite_solid_def_snaps": [],
@@ -18709,7 +18694,7 @@
   '''
 # ---
 # name: test_all_snapshot_ids[125]
-  'b977156026ee1a8b9f3df53cae1427572c16b9f0'
+  'c250d86efc3f664a85d230cc60290d1063af136d'
 # ---
 # name: test_all_snapshot_ids[126]
   '''
@@ -19731,7 +19716,6 @@
       }
     ],
     "name": "retry_multi_input_early_terminate_job",
-    "owners": null,
     "solid_definitions_snapshot": {
       "__class__": "SolidDefinitionsSnapshot",
       "composite_solid_def_snaps": [],
@@ -19882,7 +19866,7 @@
   '''
 # ---
 # name: test_all_snapshot_ids[127]
-  '3c21f489006627fcb279c4cffbe3ff168bde617f'
+  '26153fa2a038ce865a9f760acbb0f835d00d642d'
 # ---
 # name: test_all_snapshot_ids[128]
   '''
@@ -20929,7 +20913,6 @@
       }
     ],
     "name": "retry_multi_output_job",
-    "owners": null,
     "solid_definitions_snapshot": {
       "__class__": "SolidDefinitionsSnapshot",
       "composite_solid_def_snaps": [],
@@ -21077,7 +21060,7 @@
   '''
 # ---
 # name: test_all_snapshot_ids[129]
-  '2bb3692fd92191fd2f5eeb7e052525ea71f9411b'
+  '40916e47f71cc225179f16e1507a7e924ab6701c'
 # ---
 # name: test_all_snapshot_ids[12]
   '''
@@ -21988,7 +21971,6 @@
       }
     ],
     "name": "chained_failure_job",
-    "owners": null,
     "solid_definitions_snapshot": {
       "__class__": "SolidDefinitionsSnapshot",
       "composite_solid_def_snaps": [],
@@ -23019,7 +23001,6 @@
       }
     ],
     "name": "retry_resource_job",
-    "owners": null,
     "solid_definitions_snapshot": {
       "__class__": "SolidDefinitionsSnapshot",
       "composite_solid_def_snaps": [],
@@ -23096,7 +23077,7 @@
   '''
 # ---
 # name: test_all_snapshot_ids[131]
-  '9142cc7dda7afd35d4e36ac8a644fa2907a83d4d'
+  'edf336bed607c5b51c50ae3ffd762803d3bde70f'
 # ---
 # name: test_all_snapshot_ids[132]
   '''
@@ -23998,7 +23979,6 @@
       }
     ],
     "name": "scalar_output_job",
-    "owners": null,
     "solid_definitions_snapshot": {
       "__class__": "SolidDefinitionsSnapshot",
       "composite_solid_def_snaps": [],
@@ -24118,7 +24098,7 @@
   '''
 # ---
 # name: test_all_snapshot_ids[133]
-  '5cad0e94ef28d804c4fd0ad0278e265875f27b8e'
+  'f0125e70947cf8501280a5d1b54be384498c97f8'
 # ---
 # name: test_all_snapshot_ids[134]
   '''
@@ -24969,7 +24949,6 @@
       }
     ],
     "name": "simple_job_a",
-    "owners": null,
     "solid_definitions_snapshot": {
       "__class__": "SolidDefinitionsSnapshot",
       "composite_solid_def_snaps": [],
@@ -25008,7 +24987,7 @@
   '''
 # ---
 # name: test_all_snapshot_ids[135]
-  '76d4c658e41defd5d43b3adaf152e3d0589e9aa9'
+  '23828587fa7961db43eb88d35af5fbccba0ed9a0'
 # ---
 # name: test_all_snapshot_ids[136]
   '''
@@ -25859,7 +25838,6 @@
       }
     ],
     "name": "simple_job_b",
-    "owners": null,
     "solid_definitions_snapshot": {
       "__class__": "SolidDefinitionsSnapshot",
       "composite_solid_def_snaps": [],
@@ -25898,7 +25876,7 @@
   '''
 # ---
 # name: test_all_snapshot_ids[137]
-  '44fb6ad1b9956ba2b76e388731b6f59ab4b4a472'
+  'eba0139bc038cb9dc91b08c8b35ba7f7a06c9ee0'
 # ---
 # name: test_all_snapshot_ids[138]
   '''
@@ -26749,7 +26727,6 @@
       }
     ],
     "name": "single_asset_job",
-    "owners": null,
     "solid_definitions_snapshot": {
       "__class__": "SolidDefinitionsSnapshot",
       "composite_solid_def_snaps": [],
@@ -26788,10 +26765,10 @@
   '''
 # ---
 # name: test_all_snapshot_ids[139]
-  '4f61a4a371ca14af55daf805c506b779607ae394'
+  '7604ec2c6ca86555e6a012cd76c284a7b1fdd4cb'
 # ---
 # name: test_all_snapshot_ids[13]
-  '88d9c2960ab6d917acdd905d7addefad263f5f11'
+  'e3e7246221faa36874b22448f885d15bba1c57db'
 # ---
 # name: test_all_snapshot_ids[140]
   '''
@@ -27610,7 +27587,6 @@
       }
     ],
     "name": "some_external_job",
-    "owners": null,
     "solid_definitions_snapshot": {
       "__class__": "SolidDefinitionsSnapshot",
       "composite_solid_def_snaps": [],
@@ -27623,7 +27599,7 @@
   '''
 # ---
 # name: test_all_snapshot_ids[141]
-  'c30aaa2b84acf973f65b059df9aa08515076eac4'
+  '104d8b266375c6fc64d4f4757d4525e70a8ca503'
 # ---
 # name: test_all_snapshot_ids[142]
   '''
@@ -28474,7 +28450,6 @@
       }
     ],
     "name": "spew_job",
-    "owners": null,
     "solid_definitions_snapshot": {
       "__class__": "SolidDefinitionsSnapshot",
       "composite_solid_def_snaps": [],
@@ -28513,7 +28488,7 @@
   '''
 # ---
 # name: test_all_snapshot_ids[143]
-  'c9900566adb9d7aea0024b10bd355a9cf0942a3e'
+  'ac31af35a98544943af3bfaab4f3b7bdb7beb99e'
 # ---
 # name: test_all_snapshot_ids[144]
   '''
@@ -29650,7 +29625,6 @@
       }
     ],
     "name": "static_partitioned_assets_job",
-    "owners": null,
     "run_tags": {},
     "solid_definitions_snapshot": {
       "__class__": "SolidDefinitionsSnapshot",
@@ -29805,7 +29779,7 @@
   '''
 # ---
 # name: test_all_snapshot_ids[145]
-  'b049d7d23c994d380c014c81c99569b93ced33bc'
+  '339518e30cc74bb0f75ea056184e5e7d5ab86fd7'
 # ---
 # name: test_all_snapshot_ids[146]
   '''
@@ -30656,7 +30630,6 @@
       }
     ],
     "name": "static_partitioned_job",
-    "owners": null,
     "solid_definitions_snapshot": {
       "__class__": "SolidDefinitionsSnapshot",
       "composite_solid_def_snaps": [],
@@ -30695,7 +30668,7 @@
   '''
 # ---
 # name: test_all_snapshot_ids[147]
-  'f6aca34299ab20f3f1fbd03bf43f09251478b39d'
+  '20dbfd64ae411a5f8ec77ce35136f73801c196dd'
 # ---
 # name: test_all_snapshot_ids[148]
   '''
@@ -31546,7 +31519,6 @@
       }
     ],
     "name": "tagged_job",
-    "owners": null,
     "run_tags": {
       "baz": "quux"
     },
@@ -31590,7 +31562,7 @@
   '''
 # ---
 # name: test_all_snapshot_ids[149]
-  '218c73b17f2251cdc2df27c8160efdb33db98c2d'
+  '914adff8702faf5150d5383dcd65e48aff70e65f'
 # ---
 # name: test_all_snapshot_ids[14]
   '''
@@ -32641,7 +32613,6 @@
       }
     ],
     "name": "checked_multi_asset_job",
-    "owners": null,
     "run_tags": {},
     "solid_definitions_snapshot": {
       "__class__": "SolidDefinitionsSnapshot",
@@ -33760,7 +33731,6 @@
       }
     ],
     "name": "time_partitioned_assets_job",
-    "owners": null,
     "run_tags": {},
     "solid_definitions_snapshot": {
       "__class__": "SolidDefinitionsSnapshot",
@@ -33834,7 +33804,7 @@
   '''
 # ---
 # name: test_all_snapshot_ids[151]
-  '753264708388af01972d83c42b0b9ae63155995a'
+  'fbe09239fa8ec2ef2b7a3b9ec5ed7ae1d1903604'
 # ---
 # name: test_all_snapshot_ids[152]
   '''
@@ -34892,7 +34862,6 @@
       }
     ],
     "name": "two_assets_job",
-    "owners": null,
     "run_tags": {},
     "solid_definitions_snapshot": {
       "__class__": "SolidDefinitionsSnapshot",
@@ -34966,7 +34935,7 @@
   '''
 # ---
 # name: test_all_snapshot_ids[153]
-  '0ad28dbf8ab2251214845bb16ba4c56c769487f6'
+  'd0045ede985fd1587c4805554a4869994aa6619e'
 # ---
 # name: test_all_snapshot_ids[154]
   '''
@@ -35876,7 +35845,6 @@
       }
     ],
     "name": "two_ins_job",
-    "owners": null,
     "solid_definitions_snapshot": {
       "__class__": "SolidDefinitionsSnapshot",
       "composite_solid_def_snaps": [],
@@ -35982,7 +35950,7 @@
   '''
 # ---
 # name: test_all_snapshot_ids[155]
-  'c1cdea2c15fb69d107fbfa005d2cdc24f49fd745'
+  'a0e093c8cc63edec2e7d25b157b675c09ce1394b'
 # ---
 # name: test_all_snapshot_ids[156]
   '''
@@ -37093,7 +37061,6 @@
       }
     ],
     "name": "typed_assets",
-    "owners": null,
     "run_tags": {},
     "solid_definitions_snapshot": {
       "__class__": "SolidDefinitionsSnapshot",
@@ -37209,7 +37176,7 @@
   '''
 # ---
 # name: test_all_snapshot_ids[157]
-  '0b1cd09815bea6267820e25e108af1ad51a027b5'
+  'd5c05fa7d8a780d311ebfa0ee60864dd6d93d987'
 # ---
 # name: test_all_snapshot_ids[158]
   '''
@@ -38060,7 +38027,6 @@
       }
     ],
     "name": "unowned_job",
-    "owners": null,
     "solid_definitions_snapshot": {
       "__class__": "SolidDefinitionsSnapshot",
       "composite_solid_def_snaps": [],
@@ -38099,10 +38065,10 @@
   '''
 # ---
 # name: test_all_snapshot_ids[159]
-  'ee0d2ed77b464a017fa14d31801ec45a8b784a66'
+  '36d4589856c8fc7798735287ec51a18ed4700b7f'
 # ---
 # name: test_all_snapshot_ids[15]
-  'e90c3fab21ac320e7eb01681447939811e49a89a'
+  'acd8a1c3941651be0876ae7db6d62ba4cb095461'
 # ---
 # name: test_all_snapshot_ids[160]
   '''
@@ -38953,7 +38919,6 @@
       }
     ],
     "name": "unowned_partitioned_job",
-    "owners": null,
     "solid_definitions_snapshot": {
       "__class__": "SolidDefinitionsSnapshot",
       "composite_solid_def_snaps": [],
@@ -38992,7 +38957,7 @@
   '''
 # ---
 # name: test_all_snapshot_ids[161]
-  '4d482f58678922b243ef570b56735c81d8ffc3d3'
+  '97969234608323f099476d245121a32cb7242665'
 # ---
 # name: test_all_snapshot_ids[16]
   '''
@@ -39889,7 +39854,6 @@
       }
     ],
     "name": "composed_graph",
-    "owners": null,
     "solid_definitions_snapshot": {
       "__class__": "SolidDefinitionsSnapshot",
       "composite_solid_def_snaps": [
@@ -39953,7 +39917,7 @@
   '''
 # ---
 # name: test_all_snapshot_ids[17]
-  '4fe809fe1e9b74433cba2bae405303abc9d46905'
+  '1b20807f9a0e6ab6c964cad95ca988aef9bfac39'
 # ---
 # name: test_all_snapshot_ids[18]
   '''
@@ -41038,7 +41002,6 @@
       }
     ],
     "name": "composites_job",
-    "owners": null,
     "solid_definitions_snapshot": {
       "__class__": "SolidDefinitionsSnapshot",
       "composite_solid_def_snaps": [
@@ -41365,10 +41328,10 @@
   '''
 # ---
 # name: test_all_snapshot_ids[19]
-  '93a3bef37e56cbf4e3d7bddddf9e90718c1538ec'
+  'a42b76205f669056b37fd68ef75743cbb470f27e'
 # ---
 # name: test_all_snapshot_ids[1]
-  '6880ef1adf0ce7fe5fcd5a575b168101fa3b51dc'
+  'add137417ecdf718c8ca4df764a5161f4fc50789'
 # ---
 # name: test_all_snapshot_ids[20]
   '''
@@ -42401,7 +42364,6 @@
       }
     ],
     "name": "config_with_map",
-    "owners": null,
     "solid_definitions_snapshot": {
       "__class__": "SolidDefinitionsSnapshot",
       "composite_solid_def_snaps": [],
@@ -42467,7 +42429,7 @@
   '''
 # ---
 # name: test_all_snapshot_ids[21]
-  'c7b0b1830f0a403e3f86ffb32c95a8b17cb967cc'
+  '0876d8cd7335cef70fbd0d81c9219dad963fb10a'
 # ---
 # name: test_all_snapshot_ids[22]
   '''
@@ -43424,7 +43386,6 @@
       }
     ],
     "name": "csv_hello_world",
-    "owners": null,
     "solid_definitions_snapshot": {
       "__class__": "SolidDefinitionsSnapshot",
       "composite_solid_def_snaps": [],
@@ -43504,7 +43465,7 @@
   '''
 # ---
 # name: test_all_snapshot_ids[23]
-  '4e8482f62aeea59f9b7df1a18ef5836cb4629a39'
+  'f8759f7afaaac02b7aa4af5898bd48cfa0b599a8'
 # ---
 # name: test_all_snapshot_ids[24]
   '''
@@ -44461,7 +44422,6 @@
       }
     ],
     "name": "csv_hello_world_df_input",
-    "owners": null,
     "solid_definitions_snapshot": {
       "__class__": "SolidDefinitionsSnapshot",
       "composite_solid_def_snaps": [],
@@ -44541,7 +44501,7 @@
   '''
 # ---
 # name: test_all_snapshot_ids[25]
-  'fa9385ac44c96ce22269fb57e84b6646a0043b76'
+  'd3428409131ef15de6a446a1b991028b6f754c5d'
 # ---
 # name: test_all_snapshot_ids[26]
   '''
@@ -45468,7 +45428,6 @@
       }
     ],
     "name": "csv_hello_world_two",
-    "owners": null,
     "solid_definitions_snapshot": {
       "__class__": "SolidDefinitionsSnapshot",
       "composite_solid_def_snaps": [],
@@ -45514,7 +45473,7 @@
   '''
 # ---
 # name: test_all_snapshot_ids[27]
-  'f2712a11dc7476043b2b251335a9392464f49950'
+  'cca84fabc0ff32ef250d3b07a391de8ea2cc4cd1'
 # ---
 # name: test_all_snapshot_ids[28]
   '''
@@ -46501,7 +46460,6 @@
       }
     ],
     "name": "csv_hello_world_with_expectations",
-    "owners": null,
     "solid_definitions_snapshot": {
       "__class__": "SolidDefinitionsSnapshot",
       "composite_solid_def_snaps": [],
@@ -46615,7 +46573,7 @@
   '''
 # ---
 # name: test_all_snapshot_ids[29]
-  '186e5d0db177a034f81f9747f309e2695328f051'
+  'f50e3e1efa432f12ed358296456ef91496c60e2e'
 # ---
 # name: test_all_snapshot_ids[2]
   '''
@@ -47643,7 +47601,6 @@
       }
     ],
     "name": "__anonymous_asset_job_jobless_schedule",
-    "owners": null,
     "run_tags": {},
     "solid_definitions_snapshot": {
       "__class__": "SolidDefinitionsSnapshot",
@@ -48531,7 +48488,6 @@
       }
     ],
     "name": "daily_partitioned_job",
-    "owners": null,
     "solid_definitions_snapshot": {
       "__class__": "SolidDefinitionsSnapshot",
       "composite_solid_def_snaps": [],
@@ -48570,7 +48526,7 @@
   '''
 # ---
 # name: test_all_snapshot_ids[31]
-  '3da4e73d675fe4dee9753e8b0c0f489d8855098b'
+  'f6c5d5dbec883cdd2ec3fc230b09aaa89ac6be39'
 # ---
 # name: test_all_snapshot_ids[32]
   '''
@@ -49628,7 +49584,6 @@
       }
     ],
     "name": "dynamic_in_multipartitions_success_job",
-    "owners": null,
     "run_tags": {},
     "solid_definitions_snapshot": {
       "__class__": "SolidDefinitionsSnapshot",
@@ -49702,7 +49657,7 @@
   '''
 # ---
 # name: test_all_snapshot_ids[33]
-  '18620bf4a3a6f6333a72f37923beba5668d0e77d'
+  '39983ab4a77c7148384bd47b122000e401a36918'
 # ---
 # name: test_all_snapshot_ids[34]
   '''
@@ -50763,7 +50718,6 @@
       }
     ],
     "name": "dynamic_job",
-    "owners": null,
     "solid_definitions_snapshot": {
       "__class__": "SolidDefinitionsSnapshot",
       "composite_solid_def_snaps": [],
@@ -50943,7 +50897,7 @@
   '''
 # ---
 # name: test_all_snapshot_ids[35]
-  'de18227ecc2be8d920db64b6734b31641101360f'
+  'fddb79a9f6fac075dc7ce68fe402edb69103fe05'
 # ---
 # name: test_all_snapshot_ids[36]
   '''
@@ -52001,7 +51955,6 @@
       }
     ],
     "name": "dynamic_partitioned_assets_job",
-    "owners": null,
     "run_tags": {},
     "solid_definitions_snapshot": {
       "__class__": "SolidDefinitionsSnapshot",
@@ -52075,7 +52028,7 @@
   '''
 # ---
 # name: test_all_snapshot_ids[37]
-  '004f47310c3a639ee72ff34f1107fda73a8d1182'
+  '219fddf6057f1a93179e87c0b647430612116ccd'
 # ---
 # name: test_all_snapshot_ids[38]
   '''
@@ -53186,7 +53139,6 @@
       }
     ],
     "name": "eventually_successful",
-    "owners": null,
     "solid_definitions_snapshot": {
       "__class__": "SolidDefinitionsSnapshot",
       "composite_solid_def_snaps": [],
@@ -53329,10 +53281,10 @@
   '''
 # ---
 # name: test_all_snapshot_ids[39]
-  'ac83e42b530cce9f07536dcd9ce0657c56e690b3'
+  '77b8a128ec0a305302104163bb10a3a7e7ee37d3'
 # ---
 # name: test_all_snapshot_ids[3]
-  '1cd48d3b11db3b52f83b2814523352178f7f7842'
+  '632512eae69792277a9216b4ada115413348ee7a'
 # ---
 # name: test_all_snapshot_ids[40]
   '''
@@ -54367,7 +54319,6 @@
       }
     ],
     "name": "executable_test_job",
-    "owners": null,
     "run_tags": {},
     "solid_definitions_snapshot": {
       "__class__": "SolidDefinitionsSnapshot",
@@ -54414,7 +54365,7 @@
   '''
 # ---
 # name: test_all_snapshot_ids[41]
-  '6f1cda8d8805dcc5f860ee19e42e82c8258ea734'
+  'e98878562636d7d73d06d6c7a7966fa720284061'
 # ---
 # name: test_all_snapshot_ids[42]
   '''
@@ -55442,7 +55393,6 @@
       }
     ],
     "name": "fail_partition_materialization_job",
-    "owners": null,
     "run_tags": {},
     "solid_definitions_snapshot": {
       "__class__": "SolidDefinitionsSnapshot",
@@ -55482,7 +55432,7 @@
   '''
 # ---
 # name: test_all_snapshot_ids[43]
-  '99e5f7945dfee688c49a4ca8a7ea811436d16939'
+  '60d0249beb8841597d1d718e0d1d627d6508982b'
 # ---
 # name: test_all_snapshot_ids[44]
   '''
@@ -56671,7 +56621,6 @@
       }
     ],
     "name": "failure_assets_job",
-    "owners": null,
     "run_tags": {},
     "solid_definitions_snapshot": {
       "__class__": "SolidDefinitionsSnapshot",
@@ -56887,7 +56836,7 @@
   '''
 # ---
 # name: test_all_snapshot_ids[45]
-  '6789be20b38a037acc2ae3f8490f32f790cfd678'
+  '069bd542f54836904c54e4636a2af36ab038452c'
 # ---
 # name: test_all_snapshot_ids[46]
   '''
@@ -58021,7 +57970,6 @@
       }
     ],
     "name": "foo_job",
-    "owners": null,
     "run_tags": {},
     "solid_definitions_snapshot": {
       "__class__": "SolidDefinitionsSnapshot",
@@ -58189,7 +58137,7 @@
   '''
 # ---
 # name: test_all_snapshot_ids[47]
-  '1102ba48ee39f1cc6663da04bb47bb9d602f55a6'
+  '0e6c270621cf9ee24df798da8772ae1513e9eeab'
 # ---
 # name: test_all_snapshot_ids[48]
   '''
@@ -59326,7 +59274,6 @@
       }
     ],
     "name": "fresh_diamond_assets_job",
-    "owners": null,
     "run_tags": {},
     "solid_definitions_snapshot": {
       "__class__": "SolidDefinitionsSnapshot",
@@ -59481,7 +59428,7 @@
   '''
 # ---
 # name: test_all_snapshot_ids[49]
-  '608d094306917e31c2f93f87af28e01009a417a5'
+  '9c3a2249318a1686f14354dc9a5ac62ae6cd8078'
 # ---
 # name: test_all_snapshot_ids[4]
   '''
@@ -60509,7 +60456,6 @@
       }
     ],
     "name": "__anonymous_asset_job_jobless_sensor",
-    "owners": null,
     "run_tags": {},
     "solid_definitions_snapshot": {
       "__class__": "SolidDefinitionsSnapshot",
@@ -61668,7 +61614,6 @@
       }
     ],
     "name": "hanging_graph_asset_job",
-    "owners": null,
     "run_tags": {},
     "solid_definitions_snapshot": {
       "__class__": "SolidDefinitionsSnapshot",
@@ -61895,7 +61840,7 @@
   '''
 # ---
 # name: test_all_snapshot_ids[51]
-  'f512404f76a2c276ae43ac81ed931f7865436b5c'
+  '5cb5b5e7af12f71148434889e0b3ec95ca126974'
 # ---
 # name: test_all_snapshot_ids[52]
   '''
@@ -62905,7 +62850,6 @@
       }
     ],
     "name": "hanging_job",
-    "owners": null,
     "run_tags": {},
     "solid_definitions_snapshot": {
       "__class__": "SolidDefinitionsSnapshot",
@@ -63022,7 +62966,7 @@
   '''
 # ---
 # name: test_all_snapshot_ids[53]
-  '70b0325e7550b0c16f51cb4c5251f9fc13dd8c13'
+  '819798c48648e192a111b98fa24e27fdf2f184e1'
 # ---
 # name: test_all_snapshot_ids[54]
   '''
@@ -63965,7 +63909,6 @@
       }
     ],
     "name": "hanging_partition_asset_job",
-    "owners": null,
     "run_tags": {},
     "solid_definitions_snapshot": {
       "__class__": "SolidDefinitionsSnapshot",
@@ -64007,7 +63950,7 @@
   '''
 # ---
 # name: test_all_snapshot_ids[55]
-  'e96ce0a026726b7f6b0b1442d9c0f09426edacdf'
+  'dccc2362c2a1166513a4b43ce8f40c060e94395f'
 # ---
 # name: test_all_snapshot_ids[56]
   '''
@@ -64957,7 +64900,6 @@
       }
     ],
     "name": "hanging_partitioned_job",
-    "owners": null,
     "solid_definitions_snapshot": {
       "__class__": "SolidDefinitionsSnapshot",
       "composite_solid_def_snaps": [],
@@ -65032,7 +64974,7 @@
   '''
 # ---
 # name: test_all_snapshot_ids[57]
-  '82d4a89f373a0287b83f0cfbb882ffdca85bb021'
+  'ac907760e35b7bb8d3b9e9a104b9ffeb8e8e1886'
 # ---
 # name: test_all_snapshot_ids[58]
   '''
@@ -65959,7 +65901,6 @@
       }
     ],
     "name": "hard_failer",
-    "owners": null,
     "solid_definitions_snapshot": {
       "__class__": "SolidDefinitionsSnapshot",
       "composite_solid_def_snaps": [],
@@ -66032,10 +65973,10 @@
   '''
 # ---
 # name: test_all_snapshot_ids[59]
-  '248cf56ec0f1a26bccb2d24bbf1f0511a7d7fc0e'
+  'c2737bb2b49b18e272306bcd30199d4fae09d537'
 # ---
 # name: test_all_snapshot_ids[5]
-  'a4d54118d38a2b0ace17a133048fd62a2d799b6b'
+  'e6c435381c9822f78e0d85986661a20206309b62'
 # ---
 # name: test_all_snapshot_ids[60]
   '''
@@ -66886,7 +66827,6 @@
       }
     ],
     "name": "hello_world_with_tags",
-    "owners": null,
     "solid_definitions_snapshot": {
       "__class__": "SolidDefinitionsSnapshot",
       "composite_solid_def_snaps": [],
@@ -66927,7 +66867,7 @@
   '''
 # ---
 # name: test_all_snapshot_ids[61]
-  'cec9c81bc0ecad9a7ff73c08c48990498c7fd960'
+  'a1bb9b6e33e15cc41feb13f2e2c50176dd7eba95'
 # ---
 # name: test_all_snapshot_ids[62]
   '''
@@ -67824,7 +67764,6 @@
       }
     ],
     "name": "infinite_loop_job",
-    "owners": null,
     "solid_definitions_snapshot": {
       "__class__": "SolidDefinitionsSnapshot",
       "composite_solid_def_snaps": [],
@@ -67863,7 +67802,7 @@
   '''
 # ---
 # name: test_all_snapshot_ids[63]
-  'df0d74f92aa85837a3551619432c5d5ae2aa364e'
+  '871168ab8e987c355e7b7a1ed02421ee653074d3'
 # ---
 # name: test_all_snapshot_ids[64]
   '''
@@ -68714,7 +68653,6 @@
       }
     ],
     "name": "integers",
-    "owners": null,
     "solid_definitions_snapshot": {
       "__class__": "SolidDefinitionsSnapshot",
       "composite_solid_def_snaps": [],
@@ -68753,7 +68691,7 @@
   '''
 # ---
 # name: test_all_snapshot_ids[65]
-  '0ea45fd9392134b16aa935df3b9b0c696a2a49b9'
+  '5b7558800cb39b91f248c7c61baa3845e81ae066'
 # ---
 # name: test_all_snapshot_ids[66]
   '''
@@ -69781,7 +69719,6 @@
       }
     ],
     "name": "integers_asset_job",
-    "owners": null,
     "run_tags": {},
     "solid_definitions_snapshot": {
       "__class__": "SolidDefinitionsSnapshot",
@@ -69821,7 +69758,7 @@
   '''
 # ---
 # name: test_all_snapshot_ids[67]
-  '343ce27ab1061e8b400453082e1bbbd7102a0533'
+  '59d6a6451b0187e14b1f60040fde432e3f8f6149'
 # ---
 # name: test_all_snapshot_ids[68]
   '''
@@ -70718,7 +70655,6 @@
       }
     ],
     "name": "job_with_default_config",
-    "owners": null,
     "solid_definitions_snapshot": {
       "__class__": "SolidDefinitionsSnapshot",
       "composite_solid_def_snaps": [],
@@ -70757,7 +70693,7 @@
   '''
 # ---
 # name: test_all_snapshot_ids[69]
-  '5373f0d5dc363cffbd41315b6fd3aad21023fc17'
+  'ed35672b6699fe67124125a34ac2d732ddd116df'
 # ---
 # name: test_all_snapshot_ids[6]
   '''
@@ -71838,7 +71774,6 @@
       }
     ],
     "name": "asset_check_job",
-    "owners": null,
     "run_tags": {},
     "solid_definitions_snapshot": {
       "__class__": "SolidDefinitionsSnapshot",
@@ -72853,7 +72788,6 @@
       }
     ],
     "name": "job_with_enum_config",
-    "owners": null,
     "solid_definitions_snapshot": {
       "__class__": "SolidDefinitionsSnapshot",
       "composite_solid_def_snaps": [],
@@ -72892,7 +72826,7 @@
   '''
 # ---
 # name: test_all_snapshot_ids[71]
-  'acd48c67171efff8021710bd2c36abe149b768e0'
+  '80d2cac752d16d47b82596fb9da2b4e6fde83668'
 # ---
 # name: test_all_snapshot_ids[72]
   '''
@@ -73777,7 +73711,6 @@
       }
     ],
     "name": "job_with_expectations",
-    "owners": null,
     "solid_definitions_snapshot": {
       "__class__": "SolidDefinitionsSnapshot",
       "composite_solid_def_snaps": [],
@@ -73843,7 +73776,7 @@
   '''
 # ---
 # name: test_all_snapshot_ids[73]
-  'bc169d7f5f93219471199be3eea744aec1d5b849'
+  '775508777f34fdf25aa6803b97a9b21dffbe8b2b'
 # ---
 # name: test_all_snapshot_ids[74]
   '''
@@ -74756,7 +74689,6 @@
       }
     ],
     "name": "job_with_input_output_metadata",
-    "owners": null,
     "solid_definitions_snapshot": {
       "__class__": "SolidDefinitionsSnapshot",
       "composite_solid_def_snaps": [],
@@ -74824,7 +74756,7 @@
   '''
 # ---
 # name: test_all_snapshot_ids[75]
-  '7d63aae6306d16b82508ba0515533ea94813eed6'
+  'a4b53899eeba37251c349f719ec43e4986eea88d'
 # ---
 # name: test_all_snapshot_ids[76]
   '''
@@ -75719,7 +75651,6 @@
       }
     ],
     "name": "job_with_invalid_definition_error",
-    "owners": null,
     "solid_definitions_snapshot": {
       "__class__": "SolidDefinitionsSnapshot",
       "composite_solid_def_snaps": [],
@@ -75792,7 +75723,7 @@
   '''
 # ---
 # name: test_all_snapshot_ids[77]
-  'fcea532139d10d78ab36b1dc4ef815ef9c0f9106'
+  '67ffea7ed85ecbabcf57596ea1d05521f85ddcb6'
 # ---
 # name: test_all_snapshot_ids[78]
   '''
@@ -76681,7 +76612,6 @@
       }
     ],
     "name": "job_with_list",
-    "owners": null,
     "solid_definitions_snapshot": {
       "__class__": "SolidDefinitionsSnapshot",
       "composite_solid_def_snaps": [],
@@ -76711,10 +76641,10 @@
   '''
 # ---
 # name: test_all_snapshot_ids[79]
-  'c98b959c09587046e182eba05b2f1231d5ab3f57'
+  'de641aef90df362a099029787629e8746fc77675'
 # ---
 # name: test_all_snapshot_ids[7]
-  'b40d95a5339b6fd8c55d361c9bc40046f72197f2'
+  '390affba56e69d7e1405b736c6df40b68427a6db'
 # ---
 # name: test_all_snapshot_ids[80]
   '''
@@ -77611,7 +77541,6 @@
       }
     ],
     "name": "loggers_job",
-    "owners": null,
     "solid_definitions_snapshot": {
       "__class__": "SolidDefinitionsSnapshot",
       "composite_solid_def_snaps": [],
@@ -77650,7 +77579,7 @@
   '''
 # ---
 # name: test_all_snapshot_ids[81]
-  '974d7c7a229a04a1e8bf2d4046d4bf997fc2d7c1'
+  'e400ab566d31c9c493f1e16373df53d2c319a7f6'
 # ---
 # name: test_all_snapshot_ids[82]
   '''
@@ -78501,7 +78430,6 @@
       }
     ],
     "name": "materialization_job",
-    "owners": null,
     "solid_definitions_snapshot": {
       "__class__": "SolidDefinitionsSnapshot",
       "composite_solid_def_snaps": [],
@@ -78540,7 +78468,7 @@
   '''
 # ---
 # name: test_all_snapshot_ids[83]
-  '51b5ee356746e6e5fcf9a2e7261b7df21542b993'
+  'a68549d687b1979a134ce066a20ce6e872454886'
 # ---
 # name: test_all_snapshot_ids[84]
   '''
@@ -79472,7 +79400,6 @@
       }
     ],
     "name": "more_complicated_config",
-    "owners": null,
     "solid_definitions_snapshot": {
       "__class__": "SolidDefinitionsSnapshot",
       "composite_solid_def_snaps": [],
@@ -79538,7 +79465,7 @@
   '''
 # ---
 # name: test_all_snapshot_ids[85]
-  '13b67438be81a784b61bb4944f73e82ea80b4c4b'
+  'f87a9b11cb97972f7f4ba666833a614eb5c23d17'
 # ---
 # name: test_all_snapshot_ids[86]
   '''
@@ -80542,7 +80469,6 @@
       }
     ],
     "name": "more_complicated_nested_config",
-    "owners": null,
     "solid_definitions_snapshot": {
       "__class__": "SolidDefinitionsSnapshot",
       "composite_solid_def_snaps": [],
@@ -80572,7 +80498,7 @@
   '''
 # ---
 # name: test_all_snapshot_ids[87]
-  '26ba9ce332a13a40af3547fd673b3c8a2811fedb'
+  'd5be0c69024fdc40f4f3a01d433a1c64face4744'
 # ---
 # name: test_all_snapshot_ids[88]
   '''
@@ -81453,7 +81379,6 @@
       }
     ],
     "name": "multi_asset_job",
-    "owners": null,
     "solid_definitions_snapshot": {
       "__class__": "SolidDefinitionsSnapshot",
       "composite_solid_def_snaps": [],
@@ -81526,7 +81451,7 @@
   '''
 # ---
 # name: test_all_snapshot_ids[89]
-  '52368e56897b85c34a55952d206f6d20d8707306'
+  '4749835348e52f0e4306e78370c86b31b318fdcd'
 # ---
 # name: test_all_snapshot_ids[8]
   '''
@@ -82377,7 +82302,6 @@
       }
     ],
     "name": "asset_tag_job",
-    "owners": null,
     "solid_definitions_snapshot": {
       "__class__": "SolidDefinitionsSnapshot",
       "composite_solid_def_snaps": [],
@@ -83441,7 +83365,6 @@
       }
     ],
     "name": "multipartitions_fail_job",
-    "owners": null,
     "run_tags": {},
     "solid_definitions_snapshot": {
       "__class__": "SolidDefinitionsSnapshot",
@@ -83481,7 +83404,7 @@
   '''
 # ---
 # name: test_all_snapshot_ids[91]
-  '34bf49f30c42543c00a69882706b7ddf55151e17'
+  'fce027a9803ff860f2761c83155cd17f47b6a643'
 # ---
 # name: test_all_snapshot_ids[92]
   '''
@@ -84539,7 +84462,6 @@
       }
     ],
     "name": "multipartitions_job",
-    "owners": null,
     "run_tags": {},
     "solid_definitions_snapshot": {
       "__class__": "SolidDefinitionsSnapshot",
@@ -84613,7 +84535,7 @@
   '''
 # ---
 # name: test_all_snapshot_ids[93]
-  '76dd93cd4ae8d71bb631699404cc9cf60177c4bb'
+  '9722cd85d0bbef10c0e2c5caf57751b8b40c59b3'
 # ---
 # name: test_all_snapshot_ids[94]
   '''
@@ -85709,7 +85631,6 @@
       }
     ],
     "name": "named_groups_job",
-    "owners": null,
     "run_tags": {},
     "solid_definitions_snapshot": {
       "__class__": "SolidDefinitionsSnapshot",
@@ -85857,7 +85778,7 @@
   '''
 # ---
 # name: test_all_snapshot_ids[95]
-  '237eca49ce567ac0790327f59ebaa566ccde8b97'
+  '6b38343a81cbd678312890014a737209038f7c0d'
 # ---
 # name: test_all_snapshot_ids[96]
   '''
@@ -86708,7 +86629,6 @@
       }
     ],
     "name": "naughty_programmer_job",
-    "owners": null,
     "solid_definitions_snapshot": {
       "__class__": "SolidDefinitionsSnapshot",
       "composite_solid_def_snaps": [],
@@ -86747,7 +86667,7 @@
   '''
 # ---
 # name: test_all_snapshot_ids[97]
-  '0e4059e8ef032d5c20f70e30536ff75c3b58561b'
+  'dbf5445aebae171dca525057653544ba4eae2e78'
 # ---
 # name: test_all_snapshot_ids[98]
   '''
@@ -87701,7 +87621,6 @@
       }
     ],
     "name": "nested_job",
-    "owners": null,
     "solid_definitions_snapshot": {
       "__class__": "SolidDefinitionsSnapshot",
       "composite_solid_def_snaps": [
@@ -87944,8 +87863,8 @@
   '''
 # ---
 # name: test_all_snapshot_ids[99]
-  '974edfbea08804cc59414f09aacf68dae8d93f36'
+  '46f22ea54950f242f5af0b1fff0d0028ec894c85'
 # ---
 # name: test_all_snapshot_ids[9]
-  '7fb1ef42bddc0e174f96aff6fdb532859859bd9f'
+  'b8600993ad0f486d99c359a7519e3f482eb17864'
 # ---

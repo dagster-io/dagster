@@ -1125,7 +1125,6 @@
         }
       ],
       "name": "foo_job",
-      "owners": null,
       "solid_definitions_snapshot": {
         "__class__": "SolidDefinitionsSnapshot",
         "composite_solid_def_snaps": [],
@@ -2323,7 +2322,6 @@
             }
           ],
           "name": "foo_job",
-          "owners": null,
           "solid_definitions_snapshot": {
             "__class__": "SolidDefinitionsSnapshot",
             "composite_solid_def_snaps": [],
