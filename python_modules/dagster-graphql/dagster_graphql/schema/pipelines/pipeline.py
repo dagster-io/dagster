@@ -477,7 +477,8 @@ class GrapheneAsset(graphene.ObjectType):
         )
         if min_materialization_state is not None:
             return (
-                min_materialization_state.latest_materialization_timestamp * 1000
+                min_materialization_state.latest_materialization_timestamp
+                * 1000  # FE prefers timestamp in milliseconds
                 if min_materialization_state.latest_materialization_timestamp
                 else None
             )
@@ -485,7 +486,9 @@ class GrapheneAsset(graphene.ObjectType):
         record = await AssetRecord.gen(graphene_info.context, self._asset_key)
         latest_materialization_event = record.asset_entry.last_materialization if record else None
         return (
-            latest_materialization_event.timestamp * 1000 if latest_materialization_event else None
+            latest_materialization_event.timestamp * 1000  # FE prefers timestamp in milliseconds
+            if latest_materialization_event
+            else None
         )
 
     async def resolve_latestFailedToMaterializeTimestamp(
@@ -496,7 +499,8 @@ class GrapheneAsset(graphene.ObjectType):
             record.asset_entry.last_failed_to_materialize_entry if record else None
         )
         return (
-            latest_failed_to_materialize_event.timestamp * 1000
+            latest_failed_to_materialize_event.timestamp
+            * 1000  # FE prefers timestamp in milliseconds
             if latest_failed_to_materialize_event
             else None
         )
@@ -508,7 +512,9 @@ class GrapheneAsset(graphene.ObjectType):
             [self._asset_key]
         ).get(self._asset_key)
         if freshness_state_record is not None:
-            return freshness_state_record.updated_at.timestamp() * 1000
+            return (
+                freshness_state_record.updated_at.timestamp() * 1000
+            )  # FE prefers timestamp in milliseconds
 
 
 class GrapheneEventConnection(graphene.ObjectType):
