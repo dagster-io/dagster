@@ -13,11 +13,11 @@ In this example, we'll explore how to implement data contracts in Dagster using 
 
 ### Problem: Managing schema changes and data quality
 
-Imagine you have a `shipments` asset that produces data consumed by multiple downstream assets and processes. Without formal contracts, schema changes—such as renamed columns, type changes, or missing fields—can cause failures in downstream systems. These issues are often discovered too late, leading to broken pipelines and unreliable data.
+Imagine you have a `shipments` asset that produces data consumed by multiple downstream assets and processes. Without formal contracts, schema changes such as renamed columns, type changes, or missing fields can cause failures in downstream systems. These issues are often discovered too late, leading to broken pipelines and unreliable data.
 
 ### Solution: Formal data contracts with automated validation
 
-This approach implements data contracts using three components: an asset that automatically captures schema metadata, an external YAML contract specification, and an asset check that validates the actual schema against the contract.
+This approach implements data contracts using an asset check that validates the actual schema against a YAML contract.
 
 <CodeExample
   path="docs_projects/project_mini/src/project_mini/defs/data_contracts/assets.py"
