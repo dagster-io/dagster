@@ -11,6 +11,7 @@ from dagster._core.definitions.partitions.utils import PartitionRangeStatus
 from dagster._core.errors import DagsterUserCodeProcessError
 from dagster._core.event_api import EventLogCursor
 from dagster._core.events import DagsterEventType
+from dagster._core.remote_representation.code_location import is_implicit_asset_job_name
 from dagster._core.remote_representation.external import RemoteExecutionPlan, RemoteJob
 from dagster._core.remote_representation.external_data import (
     DEFAULT_MODE_NAME,
@@ -284,6 +285,7 @@ class GrapheneAsset(graphene.ObjectType):
     assetHealth = graphene.Field(GrapheneAssetHealth)
     latestMaterializationTimestamp = graphene.Float()
     hasDefinitionOrRecord = graphene.NonNull(graphene.Boolean)
+    latestFailedToMaterializeTimestamp = graphene.Float()
 
     class Meta:
         name = "Asset"
@@ -483,6 +485,19 @@ class GrapheneAsset(graphene.ObjectType):
         latest_materialization_event = record.asset_entry.last_materialization if record else None
         return (
             latest_materialization_event.timestamp * 1000 if latest_materialization_event else None
+        )
+
+    async def resolve_latestFailedToMaterializeTimestamp(
+        self, graphene_info: ResolveInfo
+    ) -> Optional[float]:
+        record = await AssetRecord.gen(graphene_info.context, self._asset_key)
+        latest_failed_to_materialize_event = (
+            record.asset_entry.last_failed_to_materialize_entry if record else None
+        )
+        return (
+            latest_failed_to_materialize_event.timestamp * 1000
+            if latest_failed_to_materialize_event
+            else None
         )
 
 
@@ -1187,10 +1202,10 @@ class GraphenePipeline(GrapheneIPipelineSnapshotMixin, graphene.ObjectType):
         return True
 
     def resolve_isAssetJob(self, graphene_info: ResolveInfo):
-        handle = self._remote_job.repository_handle
-        location = graphene_info.context.get_code_location(handle.location_name)
-        repository = location.get_repository(handle.repository_name)
-        return bool(repository.get_asset_node_snaps(self._remote_job.name))
+        if is_implicit_asset_job_name(self._remote_job.name):
+            return True
+
+        return bool(graphene_info.context.get_assets_in_job(self._remote_job.handle.to_selector()))
 
     def resolve_repository(self, graphene_info: ResolveInfo):
         from dagster_graphql.schema.external import GrapheneRepository

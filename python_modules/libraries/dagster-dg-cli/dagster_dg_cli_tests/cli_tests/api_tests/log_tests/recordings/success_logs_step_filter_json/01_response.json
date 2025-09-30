@@ -1,0 +1,144 @@
+{
+  "logsForRun": {
+    "__typename": "EventConnection",
+    "cursor": "eyJ0eXBlIjogIlNUT1JBR0VfSUQiLCAidmFsdWUiOiA0ODgwODU0MDMyNn0=",
+    "events": [
+      {
+        "__typename": "AssetMaterializationPlannedEvent",
+        "eventType": "ASSET_MATERIALIZATION_PLANNED",
+        "level": "DEBUG",
+        "message": "run_etl_pipeline intends to materialize asset [\"enriched_data\"]",
+        "runId": "85156191-170d-4229-8eba-14450b6ca9e3",
+        "stepKey": "enriched_data.concat_chunk_list",
+        "timestamp": "1758808865047"
+      },
+      {
+        "__typename": "EngineEvent",
+        "eventType": "ENGINE_EVENT",
+        "level": "INFO",
+        "message": "Launched as an automatic retry",
+        "runId": "85156191-170d-4229-8eba-14450b6ca9e3",
+        "stepKey": null,
+        "timestamp": "1758808865075"
+      },
+      {
+        "__typename": "RunEnqueuedEvent",
+        "eventType": "RUN_ENQUEUED",
+        "level": "INFO",
+        "message": "",
+        "runId": "85156191-170d-4229-8eba-14450b6ca9e3",
+        "stepKey": null,
+        "timestamp": "1758808865098"
+      },
+      {
+        "__typename": "RunStartingEvent",
+        "eventType": "RUN_STARTING",
+        "level": "INFO",
+        "message": "",
+        "runId": "85156191-170d-4229-8eba-14450b6ca9e3",
+        "stepKey": null,
+        "timestamp": "1758808867161"
+      },
+      {
+        "__typename": "EngineEvent",
+        "eventType": "ENGINE_EVENT",
+        "level": "INFO",
+        "message": "Sending a request to the agent to execute steps in the user cloud",
+        "runId": "85156191-170d-4229-8eba-14450b6ca9e3",
+        "stepKey": null,
+        "timestamp": "1758808867189"
+      },
+      {
+        "__typename": "EngineEvent",
+        "eventType": "ENGINE_EVENT",
+        "level": "INFO",
+        "message": "[DagsterCloudAgent] Agent 3a659214 is launching run 85156191-170d-4229-8eba-14450b6ca9e3",
+        "runId": "85156191-170d-4229-8eba-14450b6ca9e3",
+        "stepKey": null,
+        "timestamp": "1758808867555"
+      },
+      {
+        "__typename": "EngineEvent",
+        "eventType": "ENGINE_EVENT",
+        "level": "INFO",
+        "message": "[CloudK8sRunLauncher] Creating Kubernetes run worker job",
+        "runId": "85156191-170d-4229-8eba-14450b6ca9e3",
+        "stepKey": null,
+        "timestamp": "1758808867738"
+      },
+      {
+        "__typename": "EngineEvent",
+        "eventType": "ENGINE_EVENT",
+        "level": "INFO",
+        "message": "[CloudK8sRunLauncher] Kubernetes run worker job created",
+        "runId": "85156191-170d-4229-8eba-14450b6ca9e3",
+        "stepKey": null,
+        "timestamp": "1758808867910"
+      },
+      {
+        "__typename": "EngineEvent",
+        "eventType": "ENGINE_EVENT",
+        "level": "INFO",
+        "message": "Starting run metrics thread with container_metrics_enabled=True and python_metrics_enabled=False",
+        "runId": "85156191-170d-4229-8eba-14450b6ca9e3",
+        "stepKey": null,
+        "timestamp": "1758808870636"
+      },
+      {
+        "__typename": "EngineEvent",
+        "eventType": "ENGINE_EVENT",
+        "level": "INFO",
+        "message": "Started process for run (pid: 1).",
+        "runId": "85156191-170d-4229-8eba-14450b6ca9e3",
+        "stepKey": null,
+        "timestamp": "1758808870686"
+      },
+      {
+        "__typename": "RunStartEvent",
+        "eventType": "RUN_START",
+        "level": "DEBUG",
+        "message": "Started execution of run for \"run_etl_pipeline\".",
+        "runId": "85156191-170d-4229-8eba-14450b6ca9e3",
+        "stepKey": null,
+        "timestamp": "1758808871488"
+      },
+      {
+        "__typename": "EngineEvent",
+        "eventType": "ENGINE_EVENT",
+        "level": "DEBUG",
+        "message": "Executing steps using multiprocess executor: parent process (pid: 1)",
+        "runId": "85156191-170d-4229-8eba-14450b6ca9e3",
+        "stepKey": null,
+        "timestamp": "1758808871524"
+      },
+      {
+        "__typename": "StepWorkerStartingEvent",
+        "eventType": "STEP_WORKER_STARTING",
+        "level": "DEBUG",
+        "message": "Launching subprocess for \"enriched_data.process_chunk[11]\".",
+        "runId": "85156191-170d-4229-8eba-14450b6ca9e3",
+        "stepKey": "enriched_data.process_chunk[11]",
+        "timestamp": "1758808871633"
+      },
+      {
+        "__typename": "StepWorkerStartedEvent",
+        "eventType": "STEP_WORKER_STARTED",
+        "level": "DEBUG",
+        "message": "Executing step \"enriched_data.process_chunk[11]\" in subprocess.",
+        "runId": "85156191-170d-4229-8eba-14450b6ca9e3",
+        "stepKey": "enriched_data.process_chunk[11]",
+        "timestamp": "1758808872870"
+      },
+      {
+        "__typename": "ResourceInitStartedEvent",
+        "eventType": "RESOURCE_INIT_STARTED",
+        "level": "DEBUG",
+        "message": "Starting initialization of resources [api, io_manager].",
+        "runId": "85156191-170d-4229-8eba-14450b6ca9e3",
+        "stepKey": "enriched_data.process_chunk[11]",
+        "timestamp": "1758808873361"
+      }
+    ],
+    "hasMore": true
+  }
+}

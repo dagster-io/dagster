@@ -7,6 +7,7 @@ if TYPE_CHECKING:
     from dagster_dg_cli.api_layer.schemas.agent import DgApiAgent, DgApiAgentList
     from dagster_dg_cli.api_layer.schemas.asset import DgApiAsset, DgApiAssetList
     from dagster_dg_cli.api_layer.schemas.deployment import Deployment, DeploymentList
+    from dagster_dg_cli.api_layer.schemas.secret import DgApiSecret, DgApiSecretList
 
 
 def format_deployments(deployments: "DeploymentList", as_json: bool) -> str:
@@ -238,3 +239,122 @@ def format_agent(agent: "DgApiAgent", as_json: bool) -> str:
             lines.append(f"  {meta.key}: {meta.value}")
 
     return "\n".join(lines)
+
+
+def format_secrets(secrets: "DgApiSecretList", as_json: bool) -> str:
+    """Format secret list for output.
+
+    Note: Secret values are never shown in list format for security.
+    """
+    if as_json:
+        return secrets.model_dump_json(indent=2)
+
+    if not secrets.items:
+        return "No secrets found."
+
+    lines = []
+    for secret in secrets.items:
+        lines.extend(
+            [
+                f"Name: {secret.name}",
+                f"Locations: {', '.join(secret.location_names) if secret.location_names else 'All code locations'}",
+                f"Scopes: {_format_secret_scopes(secret)}",
+                f"Can Edit: {'Yes' if secret.can_edit_secret else 'No'}",
+                f"Can View Value: {'Yes' if secret.can_view_secret_value else 'No'}",
+            ]
+        )
+
+        if secret.updated_by:
+            lines.append(f"Updated By: {secret.updated_by.email}")
+
+        if secret.update_timestamp:
+            lines.append(f"Updated: {secret.update_timestamp.strftime('%Y-%m-%d %H:%M:%S')}")
+
+        lines.append("")  # Empty line between secrets
+
+    return "\n".join(lines).rstrip()  # Remove trailing empty line
+
+
+def format_secret(secret: "DgApiSecret", as_json: bool, show_value: bool = False) -> str:
+    """Format single secret for output.
+
+    Args:
+        secret: Secret to format
+        as_json: Whether to output JSON format
+        show_value: Whether to include the secret value (security sensitive)
+    """
+    import json
+
+    if as_json:
+        if not show_value and secret.value is not None:
+            # Create a copy with hidden value for JSON output
+            secret_dict = secret.model_dump()
+            secret_dict["value"] = "<hidden>"
+            return json.dumps(secret_dict, indent=2, default=str)
+        return secret.model_dump_json(indent=2)
+
+    lines = [
+        f"Name: {secret.name}",
+        f"Locations: {', '.join(secret.location_names) if secret.location_names else 'All code locations'}",
+        f"Scopes: {_format_secret_scopes(secret)}",
+        "Permissions:",
+        f"  Can Edit: {'Yes' if secret.can_edit_secret else 'No'}",
+        f"  Can View Value: {'Yes' if secret.can_view_secret_value else 'No'}",
+    ]
+
+    # Show value only if explicitly requested and available
+    if show_value:
+        if secret.value is not None:
+            lines.extend(
+                [
+                    "",
+                    "Value:",
+                    f"  {secret.value}",
+                ]
+            )
+        else:
+            lines.extend(
+                [
+                    "",
+                    "Value: <not available - you may not have permission to view this value>",
+                ]
+            )
+    else:
+        lines.extend(
+            [
+                "",
+                "Value: <hidden - use --show-value to display>",
+            ]
+        )
+
+    if secret.updated_by:
+        lines.extend(
+            [
+                "",
+                f"Updated By: {secret.updated_by.email}",
+            ]
+        )
+
+    if secret.update_timestamp:
+        lines.append(f"Updated: {secret.update_timestamp.strftime('%Y-%m-%d %H:%M:%S')}")
+
+    return "\n".join(lines)
+
+
+def _format_secret_scopes(secret: "DgApiSecret") -> str:
+    """Format secret scopes into human-readable string."""
+    scopes = []
+
+    if secret.full_deployment_scope:
+        scopes.append("Full Deployment")
+
+    if secret.all_branch_deployments_scope:
+        scopes.append("All Branch Deployments")
+
+    if secret.specific_branch_deployment_scope:
+        scopes.append(f"Branch: {secret.specific_branch_deployment_scope}")
+
+    if secret.local_deployment_scope:
+        scopes.append("Local Deployment")
+
+    return ", ".join(scopes) if scopes else "None"
