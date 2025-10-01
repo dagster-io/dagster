@@ -13,7 +13,7 @@ def format_run_table(run) -> str:
     """Format run as human-readable table."""
     lines = [
         f"Run ID: {run.id}",
-        f"Status: {run.status}",
+        f"Status: {run.status.value}",
         f"Created: {run.created_at}",
     ]
 
