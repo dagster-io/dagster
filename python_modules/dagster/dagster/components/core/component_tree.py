@@ -8,6 +8,7 @@ from unittest import mock
 
 from dagster_shared import check
 from dagster_shared.record import IHaveNew, record
+from dagster_shared.utils import safe_is_subclass
 from dagster_shared.utils.config import (
     discover_config_file,
     get_canonical_defs_module_name,
@@ -30,7 +31,6 @@ from dagster.components.core.decl import (
 from dagster.components.core.defs_module import (
     ComponentPath,
     CompositeYamlComponent,
-    DefsFolderComponent,
     PythonFileComponent,
     ResolvableToComponentPath,
 )
@@ -377,14 +377,13 @@ class ComponentTree(IHaveNew):
         self,
         of_type: type[TComponent],
     ) -> list[TComponent]:
-        """Get all components from this context that are instance of the specified type."""
-        root_component = self.load_root_component()
-        if not isinstance(root_component, DefsFolderComponent):
-            raise Exception("Root component is not a DefsFolderComponent")
+        """Get all components from this context that are instance of the specified type.
+        Avoids loading components that are not of the specified type.
+        """
         return [
-            component
-            for component in root_component.iterate_components()
-            if isinstance(component, of_type)
+            check.inst(self.load_component_at_path(path), of_type)
+            for path, decl in self._component_decl_tree().items()
+            if safe_is_subclass(decl.component_type, of_type)
         ]
 
     def _has_loaded_component_at_path(self, path: ResolvableToComponentPath) -> bool:
@@ -418,14 +417,14 @@ class ComponentTree(IHaveNew):
             if isinstance(child_decl, PythonFileDecl) and not child_decl.decls and hide_plain_defs:
                 continue
 
-            component_type = None
             file_path = child_decl.path.file_path.relative_to(parent_path)
 
+            component_type_name = None
             if isinstance(child_decl, ComponentLoaderDecl):
                 name = str(child_decl.path.instance_key)
             elif isinstance(child_decl, YamlDecl):
                 file_path = file_path / "defs.yaml"
-                component_type = child_decl.component_cls.__name__
+                component_type_name = child_decl.component_type.__name__
 
                 if child_decl.path.instance_key is not None and len(decls) > 1:
                     name = f"{file_path}[{child_decl.path.instance_key}]"
@@ -437,8 +436,8 @@ class ComponentTree(IHaveNew):
             connector = "└── " if idx == total - 1 else "├── "
             out_txt = f"{prefix}{connector}{name}"
 
-            if component_type:
-                out_txt += f" ({component_type})"
+            if component_type_name:
+                out_txt += f" ({component_type_name})"
 
             is_error = (
                 match_path
