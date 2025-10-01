@@ -378,10 +378,8 @@ class GrapheneRepository(graphene.ObjectType):
         return get_solids(self.get_repository(graphene_info))
 
     def resolve_partitionSets(self, graphene_info: ResolveInfo):
-        return (
-            GraphenePartitionSet(self._handle, partition_set)
-            for partition_set in self.get_repository(graphene_info).get_partition_sets()
-        )
+        partition_sets = graphene_info.context.get_partition_sets(self._handle.to_selector())
+        return (GraphenePartitionSet(partition_set) for partition_set in partition_sets)
 
     def resolve_displayMetadata(self, graphene_info: ResolveInfo):
         metadata = self._handle.display_metadata

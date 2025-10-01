@@ -12,7 +12,7 @@
 # name: TestFormatRun.test_format_canceled_run_text_output[0]
   '''
   Run ID: canceled-run-789
-  Status: DgApiRunStatus.CANCELED
+  Status: CANCELED
   Created: 1705311000.0
   Started: 1705311060.0
   Ended: 1705311120.0
@@ -32,7 +32,7 @@
 # name: TestFormatRun.test_format_failed_run_text_output[0]
   '''
   Run ID: failed-run-456
-  Status: DgApiRunStatus.FAILURE
+  Status: FAILURE
   Created: 1705311000.0
   Started: 1705311060.0
   Ended: 1705311180.0
@@ -52,7 +52,7 @@
 # name: TestFormatRun.test_format_minimal_run_text_output[0]
   '''
   Run ID: minimal-run-123
-  Status: DgApiRunStatus.QUEUED
+  Status: QUEUED
   Created: 1705311000.0
   '''
 # ---
@@ -69,7 +69,7 @@
 # name: TestFormatRun.test_format_run_text_output[0]
   '''
   Run ID: 123e4567-e89b-12d3-a456-426614174000
-  Status: DgApiRunStatus.SUCCESS
+  Status: SUCCESS
   Created: 1705311000.0
   Started: 1705311060.0
   Ended: 1705311900.0

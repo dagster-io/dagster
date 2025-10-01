@@ -54,6 +54,10 @@ query PipelineSnapshotQueryByActivePipelineName($activePipelineSelector: Pipelin
         ... on PipelineSnapshotNotFoundError {
             snapshotId
         }
+        ... on PythonError {
+            message
+            stack
+        }
     }
 }
 """

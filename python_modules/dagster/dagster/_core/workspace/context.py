@@ -22,6 +22,7 @@ from dagster._core.definitions.assets.graph.remote_asset_graph import (
 from dagster._core.definitions.data_time import CachingDataTimeResolver
 from dagster._core.definitions.data_version import CachingStaleStatusResolver
 from dagster._core.definitions.partitions.context import partition_loading_context
+from dagster._core.definitions.partitions.definition import PartitionsDefinition
 from dagster._core.definitions.selector import (
     JobSelector,
     JobSubsetSelector,
@@ -39,13 +40,26 @@ from dagster._core.remote_origin import (
     GrpcServerCodeLocationOrigin,
     ManagedGrpcPythonEnvCodeLocationOrigin,
 )
-from dagster._core.remote_representation.code_location import CodeLocation, GrpcServerCodeLocation
+from dagster._core.remote_representation.code_location import (
+    CodeLocation,
+    GrpcServerCodeLocation,
+    is_implicit_asset_job_name,
+)
 from dagster._core.remote_representation.external import (
     RemoteExecutionPlan,
     RemoteJob,
+    RemotePartitionSet,
     RemoteRepository,
     RemoteSchedule,
     RemoteSensor,
+)
+from dagster._core.remote_representation.external_data import (
+    PartitionConfigSnap,
+    PartitionExecutionErrorSnap,
+    PartitionNamesSnap,
+    PartitionSetExecutionParamSnap,
+    PartitionTagsSnap,
+    partition_set_snap_name_for_job_name,
 )
 from dagster._core.remote_representation.grpc_server_registry import GrpcServerRegistry
 from dagster._core.remote_representation.grpc_server_state_subscriber import (
@@ -82,9 +96,7 @@ if TYPE_CHECKING:
     from dagster._core.remote_representation.external_data import (
         PartitionConfigSnap,
         PartitionExecutionErrorSnap,
-        PartitionNamesSnap,
         PartitionSetExecutionParamSnap,
-        PartitionTagsSnap,
     )
 
 T = TypeVar("T")
@@ -355,33 +367,122 @@ class BaseWorkspaceRequestContext(LoadingContext):
 
     def get_partition_tags(
         self,
-        repository_handle: RepositoryHandle,
+        repository_selector: RepositorySelector,
         job_name: str,
         partition_name: str,
         instance: DagsterInstance,
         selected_asset_keys: Optional[AbstractSet[AssetKey]],
     ) -> Union["PartitionTagsSnap", "PartitionExecutionErrorSnap"]:
-        return self.get_code_location(repository_handle.location_name).get_partition_tags(
-            repository_handle=repository_handle,
+        if is_implicit_asset_job_name(job_name):
+            # Implicit asset jobs never have custom tag-for-partition functions, and the
+            # PartitionsDefinitions on the assets are always available on the host, so we can just
+            # determine the tags using information on the host.
+            # In addition to the performance benefits, this is convenient in the case where the
+            # implicit asset job has assets with different PartitionsDefinitions, as the gRPC
+            # API for getting partition tags from the code server doesn't support an asset selection.
+            partitions_def = self._get_partitions_def_for_job(
+                job_selector=JobSelector(
+                    location_name=repository_selector.location_name,
+                    repository_name=repository_selector.repository_name,
+                    job_name=job_name,
+                ),
+                selected_asset_keys=selected_asset_keys,
+            )
+            return PartitionTagsSnap(
+                name=partition_name,
+                tags=check.not_none(partitions_def).get_tags_for_partition_key(partition_name),
+            )
+
+        location = self.get_code_location(repository_selector.location_name)
+        return location.get_partition_tags_from_repo(
+            repository_handle=RepositoryHandle.from_location(
+                repository_selector.repository_name,
+                location,
+            ),
             job_name=job_name,
             partition_name=partition_name,
             instance=instance,
-            selected_asset_keys=selected_asset_keys,
         )
 
     def get_partition_names(
         self,
-        repository_handle: RepositoryHandle,
+        repository_selector: RepositorySelector,
         job_name: str,
         instance: DagsterInstance,
         selected_asset_keys: Optional[AbstractSet[AssetKey]],
     ) -> Union["PartitionNamesSnap", "PartitionExecutionErrorSnap"]:
-        return self.get_code_location(repository_handle.location_name).get_partition_names(
-            repository_handle=repository_handle,
-            job_name=job_name,
-            instance=instance,
-            selected_asset_keys=selected_asset_keys,
+        partition_set_name = partition_set_snap_name_for_job_name(job_name)
+        partitions_sets = self.get_partition_sets(repository_selector)
+        match = next(
+            (
+                partitions_set
+                for partitions_set in partitions_sets
+                if partitions_set.name == partition_set_name
+            ),
+            None,
         )
+        if match:
+            partition_set = match
+
+            # Prefer to return the names without calling out to user code if there's a corresponding
+            # partition set that allows it
+            if partition_set.has_partition_name_data():
+                return PartitionNamesSnap(
+                    partition_names=partition_set.get_partition_names(instance=instance)
+                )
+            else:
+                code_location = self.get_code_location(repository_selector.location_name)
+                return code_location.get_partition_names_from_repo(
+                    RepositoryHandle.from_location(
+                        repository_selector.repository_name,
+                        code_location,
+                    ),
+                    job_name,
+                )
+        else:
+            # Asset jobs might have no corresponding partition set but still have partitioned
+            # assets, so we get the partition names using the assets.
+            partitions_def = self._get_partitions_def_for_job(
+                job_selector=JobSelector(
+                    location_name=repository_selector.location_name,
+                    repository_name=repository_selector.repository_name,
+                    job_name=job_name,
+                ),
+                selected_asset_keys=selected_asset_keys,
+            )
+            if not partitions_def:
+                return PartitionNamesSnap([])
+
+            return PartitionNamesSnap(
+                partitions_def.get_partition_keys(dynamic_partitions_store=instance)
+            )
+
+    def _get_partitions_def_for_job(
+        self,
+        job_selector: JobSelector,
+        selected_asset_keys: Optional[AbstractSet[AssetKey]],
+    ) -> Optional[PartitionsDefinition]:
+        asset_nodes = self.get_assets_in_job(job_selector)
+        unique_partitions_defs: set[PartitionsDefinition] = set()
+        for asset_node in asset_nodes:
+            if selected_asset_keys is not None and asset_node.key not in selected_asset_keys:
+                continue
+
+            if asset_node.asset_node_snap.partitions is not None:
+                unique_partitions_defs.add(
+                    asset_node.asset_node_snap.partitions.get_partitions_definition()
+                )
+
+        if len(unique_partitions_defs) == 0:
+            # Assets are all unpartitioned
+            return None
+        if len(unique_partitions_defs) == 1:
+            return next(iter(unique_partitions_defs))
+        else:
+            check.failed(
+                "There is no PartitionsDefinition shared by all the provided assets."
+                f" {len(unique_partitions_defs)} unique PartitionsDefinitions."
+            )
 
     def get_partition_set_execution_param_data(
         self,
@@ -526,6 +627,20 @@ class BaseWorkspaceRequestContext(LoadingContext):
             for snap in snaps
             if repository.asset_graph.has(snap.asset_key)
         ]
+
+    def get_partition_sets(
+        self,
+        repository_selector: RepositorySelector,
+    ) -> Sequence[RemotePartitionSet]:
+        if not self.has_code_location(repository_selector.location_name):
+            return []
+
+        location = self.get_code_location(repository_selector.location_name)
+        if not location.has_repository(repository_selector.repository_name):
+            return []
+
+        repository = location.get_repository(repository_selector.repository_name)
+        return repository.get_partition_sets()
 
 
 class WorkspaceRequestContext(BaseWorkspaceRequestContext):

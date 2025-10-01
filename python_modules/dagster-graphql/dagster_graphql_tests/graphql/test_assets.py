@@ -3717,7 +3717,7 @@ class TestPersistentInstanceAssetInProgress(ExecutingGraphQLContextTestMatrix):
 
             for i in range(2):
                 queued_runs.append(
-                    create_valid_pipeline_run(graphql_context, job, execution_params, code_location)
+                    create_valid_pipeline_run(graphql_context, job, execution_params)
                 )
 
             in_progress_run_id = queued_runs[0].run_id

@@ -3,462 +3,478 @@
     "__typename": "AssetRecordConnection",
     "assets": [
       {
-        "id": "[\"ANALYTICS\", \"all_orders\"]",
+        "id": "[\"__bigquery_query_metadata___ASSET_JOB_0\"]",
         "key": {
           "path": [
-            "ANALYTICS",
-            "all_orders"
+            "__bigquery_query_metadata___ASSET_JOB_0"
           ]
         }
       },
       {
-        "id": "[\"ANALYTICS\", \"company_perf\"]",
+        "id": "[\"__bigquery_query_metadata_bigquery_jaffle_shop_job\"]",
         "key": {
           "path": [
-            "ANALYTICS",
-            "company_perf"
+            "__bigquery_query_metadata_bigquery_jaffle_shop_job"
           ]
         }
       },
       {
-        "id": "[\"ANALYTICS\", \"company_stats\"]",
+        "id": "[\"__bigquery_query_metadata_bigquery_standalone_op_job\"]",
         "key": {
           "path": [
-            "ANALYTICS",
-            "company_stats"
+            "__bigquery_query_metadata_bigquery_standalone_op_job"
           ]
         }
       },
       {
-        "id": "[\"ANALYTICS\", \"daily_order_summary\"]",
+        "id": "[\"__snowflake_query_metadata___ASSET_JOB\"]",
         "key": {
           "path": [
-            "ANALYTICS",
-            "daily_order_summary"
+            "__snowflake_query_metadata___ASSET_JOB"
           ]
         }
       },
       {
-        "id": "[\"ANALYTICS\", \"order_stats\"]",
+        "id": "[\"__snowflake_query_metadata___ASSET_JOB_0\"]",
         "key": {
           "path": [
-            "ANALYTICS",
-            "order_stats"
+            "__snowflake_query_metadata___ASSET_JOB_0"
           ]
         }
       },
       {
-        "id": "[\"ANALYTICS\", \"orders_augmented\"]",
+        "id": "[\"__snowflake_query_metadata_billing_issues_rollup\"]",
         "key": {
           "path": [
-            "ANALYTICS",
-            "orders_augmented"
+            "__snowflake_query_metadata_billing_issues_rollup"
           ]
         }
       },
       {
-        "id": "[\"ANALYTICS\", \"orders_cleaned\"]",
+        "id": "[\"__snowflake_query_metadata_detect_self_serve_customers\"]",
         "key": {
           "path": [
-            "ANALYTICS",
-            "orders_cleaned"
+            "__snowflake_query_metadata_detect_self_serve_customers"
           ]
         }
       },
       {
-        "id": "[\"ANALYTICS\", \"sku_stats\"]",
+        "id": "[\"__snowflake_query_metadata_detect_self_serve_customers_job\"]",
         "key": {
           "path": [
-            "ANALYTICS",
-            "sku_stats"
+            "__snowflake_query_metadata_detect_self_serve_customers_job"
           ]
         }
       },
       {
-        "id": "[\"ANALYTICS\", \"top_users\"]",
+        "id": "[\"__snowflake_query_metadata_self_serve_attribution_job\"]",
         "key": {
           "path": [
-            "ANALYTICS",
-            "top_users"
+            "__snowflake_query_metadata_self_serve_attribution_job"
           ]
         }
       },
       {
-        "id": "[\"ANALYTICS\", \"users_cleaned\"]",
+        "id": "[\"__snowflake_query_metadata_self_serve_customer_attribution_check_all_partitions_job\"]",
         "key": {
           "path": [
-            "ANALYTICS",
-            "users_cleaned"
+            "__snowflake_query_metadata_self_serve_customer_attribution_check_all_partitions_job"
           ]
         }
       },
       {
-        "id": "[\"ANALYTICS\", \"weekly_order_summary\"]",
+        "id": "[\"__snowflake_query_metadata_send_dagster_cloud_usage_to_stripe\"]",
         "key": {
           "path": [
-            "ANALYTICS",
-            "weekly_order_summary"
+            "__snowflake_query_metadata_send_dagster_cloud_usage_to_stripe"
           ]
         }
       },
       {
-        "id": "[\"CLEANED\", \"locations_cleaned\"]",
+        "id": "[\"__snowflake_query_metadata_test_snowflake_job\"]",
         "key": {
           "path": [
-            "CLEANED",
-            "locations_cleaned"
+            "__snowflake_query_metadata_test_snowflake_job"
           ]
         }
       },
       {
-        "id": "[\"CLEANED\", \"orders_cleaned\"]",
+        "id": "[\"asset_health_report_slack\"]",
         "key": {
           "path": [
-            "CLEANED",
-            "orders_cleaned"
+            "asset_health_report_slack"
           ]
         }
       },
       {
-        "id": "[\"CLEANED\", \"users_cleaned\"]",
+        "id": "[\"audit_support_watchlist\"]",
         "key": {
           "path": [
-            "CLEANED",
-            "users_cleaned"
+            "audit_support_watchlist"
           ]
         }
       },
       {
-        "id": "[\"FORECASTING\", \"all_orders\"]",
+        "id": "[\"aws\", \"\", \"workspace_staging_asset_checks\"]",
         "key": {
           "path": [
-            "FORECASTING",
-            "all_orders"
+            "aws",
+            "",
+            "workspace_staging_asset_checks"
           ]
         }
       },
       {
-        "id": "[\"FORECASTING\", \"big_orders\"]",
+        "id": "[\"aws\", \"\", \"workspace_staging_asset_checks_ext\"]",
         "key": {
           "path": [
-            "FORECASTING",
-            "big_orders"
+            "aws",
+            "",
+            "workspace_staging_asset_checks_ext"
           ]
         }
       },
       {
-        "id": "[\"FORECASTING\", \"predicted_orders\"]",
+        "id": "[\"aws\", \"\", \"workspace_staging_assets\"]",
         "key": {
           "path": [
-            "FORECASTING",
-            "predicted_orders"
+            "aws",
+            "",
+            "workspace_staging_assets"
           ]
         }
       },
       {
-        "id": "[\"MARKETING\", \"avg_order\"]",
+        "id": "[\"aws\", \"\", \"workspace_staging_assets_ext\"]",
         "key": {
           "path": [
-            "MARKETING",
-            "avg_order"
+            "aws",
+            "",
+            "workspace_staging_assets_ext"
           ]
         }
       },
       {
-        "id": "[\"MARKETING\", \"avg_orders\"]",
+        "id": "[\"aws\", \"\", \"workspace_staging_external_repo_metadata\"]",
         "key": {
           "path": [
-            "MARKETING",
-            "avg_orders"
+            "aws",
+            "",
+            "workspace_staging_external_repo_metadata"
           ]
         }
       },
       {
-        "id": "[\"MARKETING\", \"key_product_deepdive\"]",
+        "id": "[\"aws\", \"\", \"workspace_staging_external_repo_metadata_ext\"]",
         "key": {
           "path": [
-            "MARKETING",
-            "key_product_deepdive"
+            "aws",
+            "",
+            "workspace_staging_external_repo_metadata_ext"
           ]
         }
       },
       {
-        "id": "[\"MARKETING\", \"max_order\"]",
+        "id": "[\"aws\", \"\", \"workspace_staging_jobs\"]",
         "key": {
           "path": [
-            "MARKETING",
-            "max_order"
+            "aws",
+            "",
+            "workspace_staging_jobs"
           ]
         }
       },
       {
-        "id": "[\"MARKETING\", \"min_order\"]",
+        "id": "[\"aws\", \"\", \"workspace_staging_jobs_ext\"]",
         "key": {
           "path": [
-            "MARKETING",
-            "min_order"
+            "aws",
+            "",
+            "workspace_staging_jobs_ext"
           ]
         }
       },
       {
-        "id": "[\"RAW_DATA\", \"location\"]",
+        "id": "[\"aws\", \"\", \"workspace_staging_metadata\"]",
         "key": {
           "path": [
-            "RAW_DATA",
-            "location"
+            "aws",
+            "",
+            "workspace_staging_metadata"
           ]
         }
       },
       {
-        "id": "[\"RAW_DATA\", \"locations\"]",
+        "id": "[\"aws\", \"\", \"workspace_staging_metadata_ext\"]",
         "key": {
           "path": [
-            "RAW_DATA",
-            "locations"
+            "aws",
+            "",
+            "workspace_staging_metadata_ext"
           ]
         }
       },
       {
-        "id": "[\"RAW_DATA\", \"orders\"]",
+        "id": "[\"aws\", \"\", \"workspace_staging_partitions\"]",
         "key": {
           "path": [
-            "RAW_DATA",
-            "orders"
+            "aws",
+            "",
+            "workspace_staging_partitions"
           ]
         }
       },
       {
-        "id": "[\"RAW_DATA\", \"users\"]",
+        "id": "[\"aws\", \"\", \"workspace_staging_partitions_ext\"]",
         "key": {
           "path": [
-            "RAW_DATA",
-            "users"
+            "aws",
+            "",
+            "workspace_staging_partitions_ext"
           ]
         }
       },
       {
-        "id": "[\"analytics\", \"all_orders\"]",
+        "id": "[\"aws\", \"\", \"workspace_staging_pipelines\"]",
         "key": {
           "path": [
-            "analytics",
-            "all_orders"
+            "aws",
+            "",
+            "workspace_staging_pipelines"
           ]
         }
       },
       {
-        "id": "[\"analytics\", \"company_perf\"]",
+        "id": "[\"aws\", \"\", \"workspace_staging_pipelines_ext\"]",
         "key": {
           "path": [
-            "analytics",
-            "company_perf"
+            "aws",
+            "",
+            "workspace_staging_pipelines_ext"
           ]
         }
       },
       {
-        "id": "[\"analytics\", \"company_stats\"]",
+        "id": "[\"aws\", \"\", \"workspace_staging_repo_metadata\"]",
         "key": {
           "path": [
-            "analytics",
-            "company_stats"
+            "aws",
+            "",
+            "workspace_staging_repo_metadata"
           ]
         }
       },
       {
-        "id": "[\"analytics\", \"daily_order_summary\"]",
+        "id": "[\"aws\", \"\", \"workspace_staging_repo_metadata_ext\"]",
         "key": {
           "path": [
-            "analytics",
-            "daily_order_summary"
+            "aws",
+            "",
+            "workspace_staging_repo_metadata_ext"
           ]
         }
       },
       {
-        "id": "[\"analytics\", \"orders_augmented\"]",
+        "id": "[\"aws\", \"\", \"workspace_staging_resources\"]",
         "key": {
           "path": [
-            "analytics",
-            "orders_augmented"
+            "aws",
+            "",
+            "workspace_staging_resources"
           ]
         }
       },
       {
-        "id": "[\"analytics\", \"orders_cleaned\"]",
+        "id": "[\"aws\", \"\", \"workspace_staging_resources_ext\"]",
         "key": {
           "path": [
-            "analytics",
-            "orders_cleaned"
+            "aws",
+            "",
+            "workspace_staging_resources_ext"
           ]
         }
       },
       {
-        "id": "[\"analytics\", \"sku_stats\"]",
+        "id": "[\"aws\", \"\", \"workspace_staging_schedules\"]",
         "key": {
           "path": [
-            "analytics",
-            "sku_stats"
+            "aws",
+            "",
+            "workspace_staging_schedules"
           ]
         }
       },
       {
-        "id": "[\"analytics\", \"top_users\"]",
+        "id": "[\"aws\", \"\", \"workspace_staging_schedules_ext\"]",
         "key": {
           "path": [
-            "analytics",
-            "top_users"
+            "aws",
+            "",
+            "workspace_staging_schedules_ext"
           ]
         }
       },
       {
-        "id": "[\"analytics\", \"users_cleaned\"]",
+        "id": "[\"aws\", \"\", \"workspace_staging_sensors\"]",
         "key": {
           "path": [
-            "analytics",
-            "users_cleaned"
+            "aws",
+            "",
+            "workspace_staging_sensors"
           ]
         }
       },
       {
-        "id": "[\"change_model\"]",
+        "id": "[\"aws\", \"\", \"workspace_staging_sensors_ext\"]",
         "key": {
           "path": [
-            "change_model"
+            "aws",
+            "",
+            "workspace_staging_sensors_ext"
           ]
         }
       },
       {
-        "id": "[\"comments\"]",
+        "id": "[\"aws\", \"cloud-prod\", \"user_roles\"]",
         "key": {
           "path": [
-            "comments"
+            "aws",
+            "cloud-prod",
+            "user_roles"
           ]
         }
       },
       {
-        "id": "[\"comments_agg\"]",
+        "id": "[\"aws\", \"cloud-prod\", \"user_roles_ext\"]",
         "key": {
           "path": [
-            "comments_agg"
+            "aws",
+            "cloud-prod",
+            "user_roles_ext"
           ]
         }
       },
       {
-        "id": "[\"continent_stats\"]",
+        "id": "[\"aws\", \"cloud-prod\", \"workspace_staging_asset_checks\"]",
         "key": {
           "path": [
-            "continent_stats"
+            "aws",
+            "cloud-prod",
+            "workspace_staging_asset_checks"
           ]
         }
       },
       {
-        "id": "[\"country_stats\"]",
+        "id": "[\"aws\", \"cloud-prod\", \"workspace_staging_asset_checks_ext\"]",
         "key": {
           "path": [
-            "country_stats"
+            "aws",
+            "cloud-prod",
+            "workspace_staging_asset_checks_ext"
           ]
         }
       },
       {
-        "id": "[\"databricks\", \"economic_indicators\"]",
+        "id": "[\"aws\", \"cloud-prod\", \"workspace_staging_assets\"]",
         "key": {
           "path": [
-            "databricks",
-            "economic_indicators"
+            "aws",
+            "cloud-prod",
+            "workspace_staging_assets"
           ]
         }
       },
       {
-        "id": "[\"databricks\", \"news_sentiment\"]",
+        "id": "[\"aws\", \"cloud-prod\", \"workspace_staging_assets_ext\"]",
         "key": {
           "path": [
-            "databricks",
-            "news_sentiment"
+            "aws",
+            "cloud-prod",
+            "workspace_staging_assets_ext"
           ]
         }
       },
       {
-        "id": "[\"databricks\", \"revenue\"]",
+        "id": "[\"aws\", \"cloud-prod\", \"workspace_staging_external_repo_metadata\"]",
         "key": {
           "path": [
-            "databricks",
-            "revenue"
+            "aws",
+            "cloud-prod",
+            "workspace_staging_external_repo_metadata"
           ]
         }
       },
       {
-        "id": "[\"databricks_asset\"]",
+        "id": "[\"aws\", \"cloud-prod\", \"workspace_staging_external_repo_metadata_ext\"]",
         "key": {
           "path": [
-            "databricks_asset"
+            "aws",
+            "cloud-prod",
+            "workspace_staging_external_repo_metadata_ext"
           ]
         }
       },
       {
-        "id": "[\"dbt\", \"model\", \"salesforce\", \"salesforce__manager_performance\"]",
+        "id": "[\"aws\", \"cloud-prod\", \"workspace_staging_jobs\"]",
         "key": {
           "path": [
-            "dbt",
-            "model",
-            "salesforce",
-            "salesforce__manager_performance"
+            "aws",
+            "cloud-prod",
+            "workspace_staging_jobs"
           ]
         }
       },
       {
-        "id": "[\"dbt\", \"model\", \"salesforce\", \"salesforce__opportunity_enhanced\"]",
+        "id": "[\"aws\", \"cloud-prod\", \"workspace_staging_jobs_ext\"]",
         "key": {
           "path": [
-            "dbt",
-            "model",
-            "salesforce",
-            "salesforce__opportunity_enhanced"
+            "aws",
+            "cloud-prod",
+            "workspace_staging_jobs_ext"
           ]
         }
       },
       {
-        "id": "[\"dbt\", \"model\", \"salesforce\", \"salesforce__owner_performance\"]",
+        "id": "[\"aws\", \"cloud-prod\", \"workspace_staging_metadata\"]",
         "key": {
           "path": [
-            "dbt",
-            "model",
-            "salesforce",
-            "salesforce__owner_performance"
+            "aws",
+            "cloud-prod",
+            "workspace_staging_metadata"
           ]
         }
       },
       {
-        "id": "[\"dbt\", \"model\", \"salesforce\", \"salesforce__sales_snapshot\"]",
+        "id": "[\"aws\", \"cloud-prod\", \"workspace_staging_metadata_ext\"]",
         "key": {
           "path": [
-            "dbt",
-            "model",
-            "salesforce",
-            "salesforce__sales_snapshot"
+            "aws",
+            "cloud-prod",
+            "workspace_staging_metadata_ext"
           ]
         }
       },
       {
-        "id": "[\"dbt\", \"model\", \"salesforce_source\", \"stg_salesforce__account\"]",
+        "id": "[\"aws\", \"cloud-prod\", \"workspace_staging_partitions\"]",
         "key": {
           "path": [
-            "dbt",
-            "model",
-            "salesforce_source",
-            "stg_salesforce__account"
+            "aws",
+            "cloud-prod",
+            "workspace_staging_partitions"
           ]
         }
       },
       {
-        "id": "[\"dbt\", \"model\", \"salesforce_source\", \"stg_salesforce__account_tmp\"]",
+        "id": "[\"aws\", \"cloud-prod\", \"workspace_staging_partitions_ext\"]",
         "key": {
           "path": [
-            "dbt",
-            "model",
-            "salesforce_source",
-            "stg_salesforce__account_tmp"
+            "aws",
+            "cloud-prod",
+            "workspace_staging_partitions_ext"
           ]
         }
       }
     ],
-    "cursor": "[\"dbt\", \"model\", \"salesforce_source\", \"stg_salesforce__account_tmp\"]"
+    "cursor": "[\"aws\", \"cloud-prod\", \"workspace_staging_partitions_ext\"]"
   }
 }

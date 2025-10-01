@@ -631,6 +631,8 @@ type Asset {
   assetHealth: AssetHealth
   latestMaterializationTimestamp: Float
   hasDefinitionOrRecord: Boolean!
+  latestFailedToMaterializeTimestamp: Float
+  freshnessStatusChangedTimestamp: Float
 }
 
 type AssetResultEventHistoryConnection {

@@ -69,6 +69,10 @@ export type RunsFeedTableEntryFragment_Run = {
     name: string;
     assetKey: {__typename: 'AssetKey'; path: Array<string>};
   }> | null;
+  executionPlan: {
+    __typename: 'ExecutionPlan';
+    assetKeys: Array<{__typename: 'AssetKey'; path: Array<string>}>;
+  } | null;
 };
 
 export type RunsFeedTableEntryFragment =

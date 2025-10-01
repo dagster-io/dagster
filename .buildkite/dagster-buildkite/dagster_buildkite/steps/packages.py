@@ -794,7 +794,7 @@ LIBRARY_PACKAGES_WITH_CUSTOM_CONFIG: list[PackageSpec] = [
     PackageSpec(
         "python_modules/libraries/dagster-dg-cli",
         pytest_tox_factors=[
-            ToxFactor("general", splits=2),
+            ToxFactor("general", splits=3),
             ToxFactor("docs"),
             ToxFactor("plus"),
         ],
