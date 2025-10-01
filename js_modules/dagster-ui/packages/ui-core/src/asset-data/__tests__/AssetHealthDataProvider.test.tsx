@@ -160,6 +160,7 @@ describe('AssetHealthDataProvider integration tests', () => {
             path: ['asset4'],
           }),
           latestMaterializationTimestamp: null,
+          latestFailedToMaterializeTimestamp: null,
           assetHealth: null,
         });
       });
@@ -209,6 +210,7 @@ describe('AssetHealthDataProvider integration tests', () => {
             path: ['asset2'],
           }),
           latestMaterializationTimestamp: null,
+          latestFailedToMaterializeTimestamp: null,
           assetHealth: null,
         });
       });
