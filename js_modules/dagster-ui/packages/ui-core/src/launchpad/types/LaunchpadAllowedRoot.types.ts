@@ -6,12 +6,13 @@ export type LaunchpadRootQueryVariables = Types.Exact<{
   pipelineName: Types.Scalars['String']['input'];
   repositoryName: Types.Scalars['String']['input'];
   repositoryLocationName: Types.Scalars['String']['input'];
+  assetSelection?: Types.InputMaybe<Array<Types.AssetKeyInput> | Types.AssetKeyInput>;
 }>;
 
 export type LaunchpadRootQuery = {
   __typename: 'Query';
   pipelineOrError:
-    | {__typename: 'InvalidSubsetError'}
+    | {__typename: 'InvalidSubsetError'; message: string}
     | {
         __typename: 'Pipeline';
         id: string;
@@ -99,4 +100,4 @@ export type LaunchpadSessionPipelineFragment = {
   tags: Array<{__typename: 'PipelineTag'; key: string; value: string}>;
 };
 
-export const LaunchpadRootQueryVersion = '0ce31bd283202c8126b2d0a64ceda9eceeb212f56f0fd3a0af255026121b4f6e';
+export const LaunchpadRootQueryVersion = 'f3ec9d433b578615d066d6f8e3eb6d4f651d230a9ab155113103d42868f9aec2';

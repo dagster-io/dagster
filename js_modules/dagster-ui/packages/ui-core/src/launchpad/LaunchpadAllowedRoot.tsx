@@ -15,6 +15,7 @@ import {LaunchpadRootQuery, LaunchpadRootQueryVariables} from './types/Launchpad
 import {IExecutionSession} from '../app/ExecutionSessionStorage';
 import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
 import {useTrackPageView} from '../app/analytics';
+import {asAssetKeyInput} from '../assets/asInput';
 import {explorerPathFromString, useStripSnapshotFromPath} from '../pipelines/PipelinePathUtils';
 import {useJobTitle} from '../pipelines/useJobTitle';
 import {lazy} from '../util/lazy';
@@ -66,7 +67,12 @@ export const LaunchpadAllowedRoot = (props: Props) => {
   const result = useQuery<LaunchpadRootQuery, LaunchpadRootQueryVariables>(
     PIPELINE_EXECUTION_ROOT_QUERY,
     {
-      variables: {repositoryName, repositoryLocationName, pipelineName},
+      variables: {
+        repositoryName,
+        repositoryLocationName,
+        pipelineName,
+        assetSelection: sessionPresets?.assetSelection?.map(asAssetKeyInput) || null,
+      },
     },
   );
 
@@ -115,11 +121,10 @@ export const LaunchpadAllowedRoot = (props: Props) => {
     );
   }
 
-  if (pipelineOrError.__typename === 'InvalidSubsetError') {
-    throw new Error(`Should never happen because we do not request a subset`);
-  }
-
-  if (pipelineOrError.__typename === 'PythonError') {
+  if (
+    pipelineOrError.__typename === 'PythonError' ||
+    pipelineOrError.__typename === 'InvalidSubsetError'
+  ) {
     return (
       <LaunchpadSessionError
         icon="error"
@@ -173,15 +178,20 @@ export const PIPELINE_EXECUTION_ROOT_QUERY = gql`
     $pipelineName: String!
     $repositoryName: String!
     $repositoryLocationName: String!
+    $assetSelection: [AssetKeyInput!]
   ) {
     pipelineOrError(
       params: {
         pipelineName: $pipelineName
         repositoryName: $repositoryName
         repositoryLocationName: $repositoryLocationName
+        assetSelection: $assetSelection
       }
     ) {
       ... on PipelineNotFoundError {
+        message
+      }
+      ... on InvalidSubsetError {
         message
       }
       ... on Pipeline {
@@ -208,6 +218,7 @@ export const PIPELINE_EXECUTION_ROOT_QUERY = gql`
         pipelineName: $pipelineName
         repositoryName: $repositoryName
         repositoryLocationName: $repositoryLocationName
+        assetSelection: $assetSelection
       }
     ) {
       __typename
