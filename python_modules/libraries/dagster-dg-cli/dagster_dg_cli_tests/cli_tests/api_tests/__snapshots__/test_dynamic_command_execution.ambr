@@ -1442,20 +1442,6 @@
   
   '''
 # ---
-# name: TestDynamicCommandExecution.test_command_execution[log_success_logs_empty_json_json]
-  '''
-  {"error": "Exhausted 0 responses"}
-  Error: Failed to get logs for run empty-run-uuid-0000-0000-000000000000: Exhausted 0 responses
-  
-  '''
-# ---
-# name: TestDynamicCommandExecution.test_command_execution[log_success_logs_empty_text_text]
-  '''
-  Error querying Dagster Plus API: Exhausted 0 responses
-  Error: Failed to get logs for run empty-run-uuid-0000-0000-000000000000: Exhausted 0 responses
-  
-  '''
-# ---
 # name: TestDynamicCommandExecution.test_command_execution[log_success_logs_error_level_only_json_json]
   dict({
     'count': 0,
@@ -1593,20 +1579,6 @@
   
   Total log entries: 3
   Note: More logs available (use --limit to increase or --cursor to paginate)
-  
-  '''
-# ---
-# name: TestDynamicCommandExecution.test_command_execution[log_success_logs_with_cursor_json_json]
-  '''
-  {"error": "Exhausted 0 responses"}
-  Error: Failed to get logs for run 85156191-170d-4229-8eba-14450b6ca9e3: Exhausted 0 responses
-  
-  '''
-# ---
-# name: TestDynamicCommandExecution.test_command_execution[log_success_logs_with_cursor_text_text]
-  '''
-  Error querying Dagster Plus API: Exhausted 0 responses
-  Error: Failed to get logs for run 85156191-170d-4229-8eba-14450b6ca9e3: Exhausted 0 responses
   
   '''
 # ---
@@ -2244,7 +2216,7 @@
 # name: TestDynamicCommandExecution.test_command_execution[run_success_single_run_text_text]
   '''
   Run ID: 2e562bd3-7e72-4448-9f05-32bad2ea8046
-  Status: DgApiRunStatus.SUCCESS
+  Status: SUCCESS
   Created: 1757703683.741368
   Started: 1757703690.474944
   Ended: 1757703732.670455
