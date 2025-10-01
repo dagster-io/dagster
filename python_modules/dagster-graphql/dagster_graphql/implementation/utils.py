@@ -120,6 +120,18 @@ def assert_permission(graphene_info: "ResolveInfo", permission: str) -> None:
         raise UserFacingGraphQLError(GrapheneUnauthorizedError())
 
 
+def assert_permission_for_definition(
+    graphene_info: "ResolveInfo",
+    permission: str,
+    definition: "RemoteDefinition",
+):
+    from dagster_graphql.schema.errors import GrapheneUnauthorizedError
+
+    context = cast("BaseWorkspaceRequestContext", graphene_info.context)
+    if not context.has_permission_for_definition(permission, definition):
+        raise UserFacingGraphQLError(GrapheneUnauthorizedError())
+
+
 def has_permission_for_asset_graph(
     graphene_info: "ResolveInfo",
     asset_graph: RemoteWorkspaceAssetGraph,
@@ -207,16 +219,7 @@ def has_permission_for_job(
             graphene_info, graphene_info.context.asset_graph, asset_keys, permission
         )
 
-    if not graphene_info.context.has_code_location_name(job_selector.location_name):
-        return graphene_info.context.has_permission(permission)
-
-    if not graphene_info.context.has_job(job_selector):
-        return graphene_info.context.has_permission_for_location(
-            permission, job_selector.location_name
-        )
-
-    remote_job = graphene_info.context.get_full_job(job_selector)
-    return graphene_info.context.has_permission_for_definition(permission, remote_job)
+    return graphene_info.context.has_permission_for_selector(permission, job_selector)
 
 
 def assert_permission_for_job(
@@ -581,15 +584,3 @@ def get_query_limit_with_default(provided_limit: Optional[int], default_limit: i
 
 BackfillParams: TypeAlias = Mapping[str, Any]
 AssetBackfillPreviewParams: TypeAlias = Mapping[str, Any]
-
-
-def assert_permission_for_definition(
-    graphene_info: "ResolveInfo",
-    permission: str,
-    definition: "RemoteDefinition",
-):
-    from dagster_graphql.schema.errors import GrapheneUnauthorizedError
-
-    context = cast("BaseWorkspaceRequestContext", graphene_info.context)
-    if not context.has_permission_for_definition(permission, definition):
-        raise UserFacingGraphQLError(GrapheneUnauthorizedError())

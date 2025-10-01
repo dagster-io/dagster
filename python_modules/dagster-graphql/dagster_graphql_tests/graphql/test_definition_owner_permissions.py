@@ -361,6 +361,22 @@ class TestDefinitionOwnerPermissions(
                 return definition.name in owned_defs
             return False
 
+        def _mock_selector_ownership(
+            permission: str,
+            selector: Union[JobSelector, ScheduleSelector, SensorSelector, AssetKey],
+        ) -> bool:
+            owned_defs = self.get_owned_definitions()
+            _did_check[permission] = True
+            if isinstance(selector, AssetKey):
+                return selector in owned_defs
+            elif isinstance(selector, JobSelector):
+                return selector.job_name in owned_defs
+            elif isinstance(selector, ScheduleSelector):
+                return selector.schedule_name in owned_defs
+            elif isinstance(selector, SensorSelector):
+                return selector.sensor_name in owned_defs
+            return False
+
         def _mock_permission_check(permission):
             return _did_check.get(permission) or False
 
@@ -379,6 +395,9 @@ class TestDefinitionOwnerPermissions(
                 context,
                 "viewer_has_any_owner_definition_permissions",
                 side_effect=lambda _: True,
+            ),
+            mock.patch.object(
+                context, "has_permission_for_selector", side_effect=_mock_selector_ownership
             ),
             mock.patch.object(
                 context, "has_permission_for_definition", side_effect=_mock_definition_ownership

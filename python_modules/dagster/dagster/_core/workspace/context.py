@@ -223,6 +223,48 @@ class BaseWorkspaceRequestContext(LoadingContext):
         owners_for_definition = get_owners_for_definition(remote_definition)
         return self.has_owner_permission(permission, owners_for_definition)
 
+    def has_permission_for_selector(
+        self,
+        permission: str,
+        selector: Union[JobSelector, ScheduleSelector, SensorSelector, AssetKey],
+    ) -> bool:
+        if self.has_permission(permission):
+            return True
+
+        if isinstance(selector, AssetKey):
+            if not self.asset_graph.has(selector):
+                return False
+
+            node = self.asset_graph.get(selector).resolve_to_singular_repo_scoped_node()
+            if self.has_permission_for_location(permission, node.repository_handle.location_name):
+                return True
+
+            owners = get_owners_for_definition(node)
+            return self.has_owner_permission(permission, owners)
+
+        if not self.has_code_location_name(selector.location_name):
+            return False
+
+        if self.has_permission_for_location(permission, selector.location_name):
+            return True
+
+        if not self.viewer_has_any_owner_definition_permissions(permission):
+            return False
+
+        location = self.get_code_location(selector.location_name)
+        if not location.has_repository(selector.repository_name):
+            return False
+
+        repository = location.get_repository(selector.repository_name)
+        if isinstance(selector, JobSelector):
+            remote_definition = repository.get_full_job(selector.job_name)
+        elif isinstance(selector, ScheduleSelector):
+            remote_definition = repository.get_schedule(selector.schedule_name)
+        elif isinstance(selector, SensorSelector):
+            remote_definition = repository.get_sensor(selector.sensor_name)
+
+        return self.has_permission_for_definition(permission, remote_definition)
+
     @property
     @abstractmethod
     def records_for_run_default_limit(self) -> Optional[int]: ...
