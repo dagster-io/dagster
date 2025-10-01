@@ -144,9 +144,6 @@ def create_and_launch_partition_backfill(
         repository_selector = RepositorySelector.from_graphql_input(
             partition_set_selector.get("repositorySelector")
         )
-        # assert_permission_for_location(
-        #     graphene_info, Permissions.LAUNCH_PARTITION_BACKFILL, repository_selector.location_name
-        # )
         partitions_sets = graphene_info.context.get_partition_sets(repository_selector)
         matches = [
             partition_set
@@ -154,6 +151,9 @@ def create_and_launch_partition_backfill(
             if partition_set.name == partition_set_selector.get("partitionSetName")
         ]
         if len(matches) != 1:
+            # if no matches, either throw a not found error or a more general invariant violation
+            # but, to maintain the same behavior, we should check location permissions first, which
+            # got deferred to support per-definition permissions
             assert_permission_for_location(
                 graphene_info,
                 Permissions.LAUNCH_PARTITION_BACKFILL,

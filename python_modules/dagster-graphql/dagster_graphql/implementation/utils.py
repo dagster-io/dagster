@@ -323,9 +323,8 @@ def has_permission_for_backfill(
             permission,
         )
 
-    # job backfill
+    # job backfill, check permissions for the job
     if not backfill.partition_set_origin:
-        # does not resolve to a partition set, so need deployment-wide permissions
         return graphene_info.context.has_permission(permission)
 
     partition_selector = backfill.partition_set_origin.selector
@@ -338,7 +337,6 @@ def has_permission_for_backfill(
             repository_name=partition_selector.repository_name,
         )
     )
-
     matches = [
         partition_set
         for partition_set in partition_sets
@@ -351,19 +349,7 @@ def has_permission_for_backfill(
         )
 
     remote_partition_set = next(iter(matches))
-    if not graphene_info.context.has_job(
-        JobSelector(
-            location_name=partition_selector.location_name,
-            repository_name=partition_selector.repository_name,
-            job_name=remote_partition_set.job_name,
-        )
-    ):
-        return graphene_info.context.has_permission_for_location(
-            permission, partition_selector.location_name
-        )
-
-    return has_permission_for_job(
-        graphene_info,
+    return graphene_info.context.has_permission_for_selector(
         permission,
         JobSelector(
             location_name=partition_selector.location_name,
